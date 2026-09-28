@@ -6,11 +6,11 @@ refere to BESOIN.md
 
 ## Monorepo layout
 
-- Keep Minecraft mod code and loader-specific builds under `mod/`.
+- Keep Minecraft mod code and loader-specific builds under `minemories/`.
 - Put independently runnable applications under `apps/<app-name>/`.
 - Put product and cross-application technical documentation under `docs/`.
 - Keep root configuration limited to workspace orchestration and repository-wide tooling.
-- The loader-independent Minecraft capture/GLB code belongs in `mod/core/`.
+- The loader-independent Minecraft capture/GLB code belongs in `minemories/core/`.
 
 ## Engineering constraints
 
@@ -27,8 +27,8 @@ refere to BESOIN.md
 
 ## Working in the repository
 
-- Use the root Gradle wrapper for Minecraft builds (`./gradlew :mod:build`).
-- The web viewer is a Bun workspace under `apps/viewer-web`.
-- Use `bun run build` for the full monorepo build; `bun run build:viewer` and `bun run build:mod` build one side.
+- Use the Gradle wrapper in `minemories/` for Minecraft builds (`./gradlew build`).
+- The web viewer is a Bun workspace under `apps/web`.
+- Use `bun run build` for the full monorepo build; `bun run build:web` and `bun run build:mod` build one side.
 - Update `README.md` and relevant docs when repository structure, supported versions, or user workflows change.
 - Keep claims in docs tied to actual implementation or label them as planned/untested.

@@ -10,4 +10,4 @@ plugins {
 }
 
 rootProject.name = 'minemories'
-include 'mod', 'mod:core'
+include 'core'

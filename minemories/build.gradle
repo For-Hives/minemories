@@ -1,15 +1,21 @@
 plugins {
     id 'net.neoforged.moddev' version '2.0.80'
-    id 'com.diffplug.spotless'
-    id 'com.github.spotbugs'
+    id 'com.diffplug.spotless' version '8.9.0'
+    id 'com.github.spotbugs' version '6.5.11'
 }
 
 version = '0.1.0'
 group = 'dev.minemories'
 base { archivesName = 'memory-poc' }
 
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
 dependencies {
-    implementation project(':mod:core')
+    implementation project(':core')
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -46,13 +52,13 @@ tasks.withType(ProcessResources).configureEach {
 }
 
 tasks.named('jar') {
-    from project(':mod:core').sourceSets.main.output
+    from project(':core').sourceSets.main.output
 }
 
 tasks.named('check') {
-    dependsOn project(':mod:core').tasks.named('check')
+    dependsOn project(':core').tasks.named('check')
 }
 
 tasks.named('build') {
-    dependsOn project(':mod:core').tasks.named('build')
+    dependsOn project(':core').tasks.named('build')
 }

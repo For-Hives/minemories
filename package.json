@@ -7,8 +7,7 @@
     "node": ">=22.12.0"
   },
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "trustedDependencies": [
     "@biomejs/biome",
@@ -16,16 +15,16 @@
     "rolldown"
   ],
   "scripts": {
-    "dev:viewer": "bun run --filter @minemories/viewer-web dev",
+    "dev:web": "bun run --filter @minemories/web dev",
     "dev:api": "bun run --filter @minemories/api dev",
-    "format": "biome check --write apps packages scripts package.json biome.json",
-    "lint": "biome check apps packages scripts package.json biome.json",
-    "typecheck": "bun run --filter @minemories/viewer-web typecheck",
+    "format": "biome check --write apps scripts package.json biome.json",
+    "lint": "biome check apps scripts package.json biome.json",
+    "typecheck": "bun run --filter @minemories/web typecheck",
     "typecheck:api": "bun run --filter @minemories/api typecheck",
-    "test:front": "bun run --filter @minemories/viewer-web test:coverage",
+    "test:front": "bun run --filter @minemories/web test:coverage",
     "check:front": "bun run lint && bun run typecheck && bun run typecheck:api && bun run test:front",
     "check": "node scripts/check.mjs",
-    "build:viewer": "bun run --filter @minemories/viewer-web build",
+    "build:web": "bun run --filter @minemories/web build",
     "build:mod": "node scripts/build.mjs mod",
     "build": "node scripts/build.mjs"
   },

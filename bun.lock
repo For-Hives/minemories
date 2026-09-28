@@ -24,8 +24,16 @@
         "typescript": "6.0.3",
       },
     },
-    "apps/viewer-web": {
-      "name": "@minemories/viewer-web",
+    "apps/api-contract": {
+      "name": "@minemories/api-contract",
+      "version": "0.1.0",
+      "dependencies": {
+        "@orpc/contract": "^1.14.0",
+        "zod": "^4.0.0",
+      },
+    },
+    "apps/web": {
+      "name": "@minemories/web",
       "version": "0.1.0",
       "dependencies": {
         "@minemories/api-contract": "workspace:*",
@@ -45,14 +53,6 @@
         "typescript": "6.0.3",
         "vite": "8.1.0",
         "vitest": "5.0.0",
-      },
-    },
-    "packages/api-contract": {
-      "name": "@minemories/api-contract",
-      "version": "0.1.0",
-      "dependencies": {
-        "@orpc/contract": "^1.14.0",
-        "zod": "^4.0.0",
       },
     },
   },
@@ -123,9 +123,9 @@
 
     "@minemories/api": ["@minemories/api@workspace:apps/api"],
 
-    "@minemories/api-contract": ["@minemories/api-contract@workspace:packages/api-contract"],
+    "@minemories/api-contract": ["@minemories/api-contract@workspace:apps/api-contract"],
 
-    "@minemories/viewer-web": ["@minemories/viewer-web@workspace:apps/viewer-web"],
+    "@minemories/web": ["@minemories/web@workspace:apps/web"],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.2.4", "", { "dependencies": { "@tybys/wasm-util": "^0.10.3" }, "peerDependencies": { "@emnapi/core": "^1.7.1 || ^2.0.0-alpha.4", "@emnapi/runtime": "^1.7.1 || ^2.0.0-alpha.4" } }, "sha512-AJxoUD2/15ESHbvpcyjU274nsAPLuOtPHCk0vKJM5pj//Fg/B1FXNWjPnXTT9PymCYYiHo4zPj0ZomXBKhoy7g=="],
 
