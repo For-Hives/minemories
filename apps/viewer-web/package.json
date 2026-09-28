@@ -1,0 +1,25 @@
+{
+  "name": "@minemories/viewer-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "bun run typecheck && vite build",
+    "bundle": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.180.0",
+    "@vitest/coverage-v8": "5.0.0",
+    "typescript": "6.0.3",
+    "vite": "8.1.0",
+    "vitest": "5.0.0"
+  }
+}

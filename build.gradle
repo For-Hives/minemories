@@ -1,0 +1,20 @@
+plugins {
+    id 'base'
+    id 'com.diffplug.spotless' version '8.9.0' apply false
+    id 'com.github.spotbugs' version '6.5.11' apply false
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// Keep `./gradlew build` useful from the monorepo root.
+tasks.named('build') {
+    dependsOn ':mod:build'
+}
+
+tasks.named('check') {
+    dependsOn ':mod:check'
+}

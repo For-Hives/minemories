@@ -1,0 +1,32 @@
+{
+  "name": "minemories",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.2",
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "esbuild",
+    "rolldown"
+  ],
+  "scripts": {
+    "dev:viewer": "bun run --filter @minemories/viewer-web dev",
+    "format": "biome check --write apps/viewer-web scripts package.json biome.json",
+    "lint": "biome check apps/viewer-web scripts package.json biome.json",
+    "typecheck": "bun run --filter @minemories/viewer-web typecheck",
+    "test:front": "bun run --filter @minemories/viewer-web test:coverage",
+    "check:front": "bun run lint && bun run typecheck && bun run test:front",
+    "check": "node scripts/check.mjs",
+    "build:viewer": "bun run --filter @minemories/viewer-web build",
+    "build:mod": "node scripts/build.mjs mod",
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.13"
+  }
+}
