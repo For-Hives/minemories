@@ -16,4 +16,5 @@ hs_err_pid*
 .env
 .env.*
 !.env.example
+TOOLS.md
 apps/api/data/

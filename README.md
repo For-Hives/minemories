@@ -1,69 +1,34 @@
-# Minemories
+refere to BESOIN.md
 
-Monorepo for capturing Minecraft worlds as shareable 3D memories. The repository is being organized around independent applications that share formats and product direction.
+(need to create the readme)
 
-## Repository map
+# Repository instructions
 
-```text
-apps/
-  api/               Bun + Hono API (Better Auth, oRPC, SQLite, MinIO)
-  viewer-web/        React SPA, private memory gallery, Three.js GLB viewer
-packages/
-  api-contract/      Shared typed oRPC contract
-mod/
-  src/               Minecraft client mod (NeoForge adapter)
-  core/              Loader-independent scene and GLB writer
-docs/                Product, architecture, and POC notes
-```
+## Monorepo layout
 
-Gradle is managed from the repository root. The web app is a Bun workspace.
+- Keep Minecraft mod code and loader-specific builds under `mod/`.
+- Put independently runnable applications under `apps/<app-name>/`.
+- Put product and cross-application technical documentation under `docs/`.
+- Keep root configuration limited to workspace orchestration and repository-wide tooling.
+- The loader-independent Minecraft capture/GLB code belongs in `mod/core/`.
 
-## Development
+## Engineering constraints
 
-Requirements: JDK 21, Bun 1.4.2, Node.js 22.12 or newer (used by Vitest).
+- The current mod is a client-side POC for Minecraft 1.21.1 / NeoForge 21.1.248. Do not describe planned loader targets as supported until they have been built and exercised in game.
+- Keep world export local by default. Network/server features require an explicit product decision; the user has authorized the API and the opt-in pairing/upload flow described in `docs/architecture.md`.
+- Treat world data and uploaded GLB files as user data. Do not introduce telemetry or uploads by default.
+- Preserve the `.glb` output contract and document intentional format changes.
+- Do not commit generated builds, game saves, exports, dependency caches, or secrets.
+- Add frontend dependencies with Bun from the repository root and commit the resulting `bun.lock`; CI installs only with `--frozen-lockfile`.
+- Keep Biome and TypeScript checks clean. Add Vitest coverage for new browser-independent logic and meaningful interaction checks when UI behavior is introduced.
+- Keep Java on the configured JDK 21 toolchain. Format with Spotless, address SpotBugs findings instead of suppressing them broadly, and add JUnit tests for loader-independent core behavior.
+- Quality commands are gates: `bun run check`, `bun run build`, and `./gradlew spotlessApply` when intentionally reformatting Java.
+- Prefer small, independently buildable modules and document cross-app contracts before sharing implementation.
 
-```sh
-# Install the pinned web dependencies once
-bun install --frozen-lockfile
+## Working in the repository
 
-# Full quality gates and production build
-bun run build
-
-# Run all checks without producing release artifacts
-bun run check
-
-# Autoformat the web code / Java code
-bun run format
-./gradlew spotlessApply
-
-# Run the browser viewer
-bun run dev:viewer
-
-# Start local object storage and the API
-cp .env.example .env                 # replace both secrets with random values
-docker compose -f infra/dev/docker-compose.yml up -d
-bun run dev:api
-
-# Build a single side
-bun run build:viewer
-bun run build:mod
-```
-
-The React SPA includes a public landing page, Better Auth login/registration, a private gallery for uploaded worlds, and a Three.js viewer. The viewer accepts a `.glb` file by choosing or dropping it onto the page without requiring an account. Its Minecraft-inspired skybox includes a controllable day/night cycle, a moving sun, moon phases, drifting block clouds, and directional sunlight with texel-snapped hard shadows. Imported block textures keep nearest-neighbor filtering, while emissive and point lights are constrained to preserve the world’s colors.
-
-The API uses the shared Bun toolchain, Hono, Better Auth, oRPC and SQLite. MinIO is only used as local S3-compatible object storage in development. See [API development](docs/architecture.md#api-development) for the six-digit mod pairing and upload flow.
-
-## Quality gates
-
-- **Web:** Biome formats/lints TypeScript, JavaScript, CSS and config files; TypeScript runs in strict mode; Vitest tests run on every `check` and `build`.
-- **Java:** Spotless enforces Google Java Format; SpotBugs fails on reported findings; Java compiles with all lint warnings enabled; `mod/core` runs JUnit 6 and emits JaCoCo coverage reports.
-- **CI:** GitHub Actions runs the same monorepo build on pull requests and pushes to `main`.
-- **Dependency repeatability:** Bun is pinned in `.bun-version`; commit `bun.lock` and use frozen installs.
-
-See [the development workflow](docs/development-workflow.md) for coverage thresholds and change rules.
-
-## POC status
-
-The Minecraft POC targets Minecraft 1.21.1 / NeoForge 21.1.248. It exports a selected region as a textured binary glTF to `~/export/capture.glb`. See [the POC recap](docs/poc-status.md) for verified behavior, known gaps, and the last reported GLB validity issue.
-
-Other loaders and future apps are planned, not yet supported. See [loader support](docs/loader-support.md) and [architecture](docs/architecture.md).
+- Use the root Gradle wrapper for Minecraft builds (`./gradlew :mod:build`).
+- The web viewer is a Bun workspace under `apps/viewer-web`.
+- Use `bun run build` for the full monorepo build; `bun run build:viewer` and `bun run build:mod` build one side.
+- Update `README.md` and relevant docs when repository structure, supported versions, or user workflows change.
+- Keep claims in docs tied to actual implementation or label them as planned/untested.
