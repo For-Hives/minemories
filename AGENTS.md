@@ -47,3 +47,12 @@
 ## PRs
 
 Per `.github/pull_request_template.md`: report `bun run check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes (`feat(viewer): …`, `fix(api): …`). Never commit `.env`, `apps/api/data/`, saves, exports, `run/`, `build/`, or `bun.lock` churn from ad-hoc installs.
+
+## Interesting context 
+if needed, you can find more context in diferent files : 
+- README.md for an overview of the project (the summery)
+- BESOIN.md for the initial need and idea that started this project (the vision)
+- TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
+- TASKS.md for the current tasks todo (delete the line when the task is done, add one it todo later/out of scope)
+- LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)
+
