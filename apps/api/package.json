@@ -1,0 +1,23 @@
+{
+  "name": "@minemories/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/index.ts",
+    "start": "bun --env-file=../../.env src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@minemories/api-contract": "workspace:*",
+    "@orpc/server": "^1.14.0",
+    "better-auth": "^1.6.0",
+    "hono": "^4.9.0",
+    "minio": "^8.0.5",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "6.0.3"
+  }
+}

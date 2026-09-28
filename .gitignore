@@ -13,3 +13,7 @@ run/
 export/
 *.log
 hs_err_pid*
+.env
+.env.*
+!.env.example
+apps/api/data/

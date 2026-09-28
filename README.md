@@ -6,7 +6,10 @@ Monorepo for capturing Minecraft worlds as shareable 3D memories. The repository
 
 ```text
 apps/
+  api/               Bun + Hono API (Better Auth, oRPC, SQLite, MinIO)
   viewer-web/        Browser-based GLB viewer (Three.js + Vite)
+packages/
+  api-contract/      Shared typed oRPC contract
 mod/
   src/               Minecraft client mod (NeoForge adapter)
   core/              Loader-independent scene and GLB writer
@@ -36,12 +39,19 @@ bun run format
 # Run the browser viewer
 bun run dev:viewer
 
+# Start local object storage and the API
+cp .env.example .env                 # replace both secrets with random values
+docker compose -f infra/dev/docker-compose.yml up -d
+bun run dev:api
+
 # Build a single side
 bun run build:viewer
 bun run build:mod
 ```
 
-The viewer accepts a `.glb` file by choosing or dropping it onto the page. It runs locally in the browser; no upload service is involved. Its Minecraft-inspired skybox includes a controllable day/night cycle, a moving sun, moon phases, drifting block clouds, and directional sunlight with texel-snapped hard shadows. Imported block textures keep nearest-neighbor filtering, while emissive and point lights are constrained to preserve the world’s colors.
+The viewer accepts a `.glb` file by choosing or dropping it onto the page. It can also connect to the local API for account sessions, device pairing, and account-scoped memory metadata. Its Minecraft-inspired skybox includes a controllable day/night cycle, a moving sun, moon phases, drifting block clouds, and directional sunlight with texel-snapped hard shadows. Imported block textures keep nearest-neighbor filtering, while emissive and point lights are constrained to preserve the world’s colors.
+
+The API uses the shared Bun toolchain, Hono, Better Auth, oRPC and SQLite. MinIO is only used as local S3-compatible object storage in development. See [API development](docs/architecture.md#api-development) for the six-digit mod pairing and upload flow.
 
 ## Quality gates
 

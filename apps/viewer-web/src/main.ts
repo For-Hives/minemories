@@ -1,3 +1,8 @@
+import type { apiContract } from '@minemories/api-contract';
+import { createORPCClient } from '@orpc/client';
+import { RPCLink } from '@orpc/client/fetch';
+import type { ContractRouterClient } from '@orpc/contract';
+import { createAuthClient } from 'better-auth/client';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -11,11 +16,29 @@ function requireElement<T extends Element>(selector: string): T {
 }
 
 const app = requireElement<HTMLDivElement>('#app');
+const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const authClient = createAuthClient({ baseURL: apiBase });
+const rpcLink = new RPCLink({
+  url: `${apiBase}/rpc`,
+  fetch: (request, init) =>
+    globalThis.fetch(request, {
+      ...init,
+      credentials: 'include',
+    }),
+});
+const apiClient: ContractRouterClient<typeof apiContract> = createORPCClient(rpcLink);
+
 app.innerHTML = `
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Minemories, accueil"><span class="brand-mark">m</span><span>minemories</span></a>
-      <div class="topbar-note"><span class="status-dot"></span> Viewer local · aucun upload
+      <div class="topbar-note"><span class="status-dot"></span> Visionneuse GLB locale
+      </div>
+      <div class="account-controls">
+        <span class="account-name" id="account-name" hidden></span>
+        <button class="account-button" id="pair-mod" type="button" hidden>↔ Lier le mod</button>
+        <button class="account-button" id="auth-open" type="button">Se connecter</button>
+        <button class="account-button" id="auth-logout" type="button" hidden>Déconnexion</button>
       </div>
       <button class="open-button" id="open-file" type="button"><span>＋</span> Ouvrir un GLB</button>
       <input id="file-input" type="file" accept=".glb,model/gltf-binary" hidden />
@@ -44,7 +67,30 @@ app.innerHTML = `
         <output id="time-label" for="time-slider">09:30</output>
       </section>
     </section>
-    <footer class="footer"><span>Un fichier à la fois, directement dans votre navigateur.</span><span>Minemories <b>·</b> Viewer POC</span></footer>
+    <dialog class="account-dialog" id="auth-dialog" aria-labelledby="auth-title">
+      <form id="auth-form">
+        <button class="dialog-close" id="auth-close" type="button" aria-label="Fermer">×</button>
+        <p class="eyebrow">MINEMORIES</p>
+        <h2 id="auth-title">Connexion</h2>
+        <label class="form-field" id="name-field" hidden>Nom affiché<input id="auth-name" autocomplete="name" /></label>
+        <label class="form-field">E-mail<input id="auth-email" type="email" autocomplete="email" required /></label>
+        <label class="form-field">Mot de passe<input id="auth-password" type="password" autocomplete="current-password" minlength="12" required /></label>
+        <p class="form-message" id="auth-message" role="status"></p>
+        <button class="dialog-submit" id="auth-submit" type="submit">Se connecter</button>
+        <button class="dialog-switch" id="auth-switch" type="button">Créer un compte</button>
+      </form>
+    </dialog>
+    <dialog class="pairing-dialog" id="pairing-dialog" aria-labelledby="pairing-title">
+      <button class="dialog-close" id="pairing-close" type="button" aria-label="Fermer">×</button>
+      <p class="eyebrow">APPAIRAGE DU MOD</p>
+      <h2 id="pairing-title">Entre ce code dans Minecraft</h2>
+      <p class="pairing-instructions">Dans le jeu, utilise <code>/memorypoc pair CODE</code>.</p>
+      <output class="pairing-code" id="pairing-code">······</output>
+      <button class="dialog-switch" id="copy-pairing-code" type="button">Copier le code</button>
+      <p class="form-message" id="pairing-expiry"></p>
+      <p class="pairing-note">Le code ne fonctionne qu’une fois et expire dans cinq minutes.</p>
+    </dialog>
+    <footer class="footer"><span>Les GLB ouverts ici restent dans votre navigateur.</span><span>Minemories <b>·</b> Viewer POC</span></footer>
   </main>`;
 
 const canvas = requireElement<HTMLCanvasElement>('#scene');
@@ -61,6 +107,26 @@ const timeSlider = requireElement<HTMLInputElement>('#time-slider');
 const timeLabel = requireElement<HTMLOutputElement>('#time-label');
 const cycleToggle = requireElement<HTMLButtonElement>('#cycle-toggle');
 const cycleIcon = requireElement<HTMLElement>('#cycle-icon');
+const authDialog = requireElement<HTMLDialogElement>('#auth-dialog');
+const authForm = requireElement<HTMLFormElement>('#auth-form');
+const authMessage = requireElement<HTMLElement>('#auth-message');
+const authTitle = requireElement<HTMLElement>('#auth-title');
+const authSubmit = requireElement<HTMLButtonElement>('#auth-submit');
+const authSwitch = requireElement<HTMLButtonElement>('#auth-switch');
+const authName = requireElement<HTMLInputElement>('#auth-name');
+const authEmail = requireElement<HTMLInputElement>('#auth-email');
+const authPassword = requireElement<HTMLInputElement>('#auth-password');
+const nameField = requireElement<HTMLElement>('#name-field');
+const accountName = requireElement<HTMLElement>('#account-name');
+const authOpen = requireElement<HTMLButtonElement>('#auth-open');
+const authLogout = requireElement<HTMLButtonElement>('#auth-logout');
+const pairModButton = requireElement<HTMLButtonElement>('#pair-mod');
+const pairingDialog = requireElement<HTMLDialogElement>('#pairing-dialog');
+const pairingCodeOutput = requireElement<HTMLOutputElement>('#pairing-code');
+const pairingExpiry = requireElement<HTMLElement>('#pairing-expiry');
+const pairingClose = requireElement<HTMLButtonElement>('#pairing-close');
+const pairingCopy = requireElement<HTMLButtonElement>('#copy-pairing-code');
+let creatingAccount = false;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -362,6 +428,96 @@ cycleToggle.addEventListener('click', () => {
   cycleToggle.title = cyclePlaying ? 'Mettre en pause le cycle' : 'Reprendre le cycle';
 });
 updateDayCycle();
+
+function setAuthMode(createAccount: boolean) {
+  creatingAccount = createAccount;
+  authTitle.textContent = createAccount ? 'Créer un compte' : 'Connexion';
+  authSubmit.textContent = createAccount ? 'Créer mon compte' : 'Se connecter';
+  authSwitch.textContent = createAccount ? 'J’ai déjà un compte' : 'Créer un compte';
+  nameField.hidden = !createAccount;
+  authName.required = createAccount;
+  authPassword.autocomplete = createAccount ? 'new-password' : 'current-password';
+  authMessage.textContent = '';
+}
+
+async function refreshAccount() {
+  try {
+    const result = await authClient.getSession();
+    const user = result.data?.user;
+    accountName.textContent = user?.name ?? '';
+    accountName.hidden = !user;
+    pairModButton.hidden = !user;
+    authOpen.hidden = Boolean(user);
+    authLogout.hidden = !user;
+  } catch {
+    accountName.hidden = true;
+    pairModButton.hidden = true;
+    authOpen.hidden = false;
+    authLogout.hidden = true;
+  }
+}
+
+authOpen.addEventListener('click', () => {
+  setAuthMode(false);
+  authDialog.showModal();
+});
+requireElement<HTMLButtonElement>('#auth-close').addEventListener('click', () =>
+  authDialog.close(),
+);
+authSwitch.addEventListener('click', () => setAuthMode(!creatingAccount));
+authForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  authSubmit.disabled = true;
+  authMessage.textContent = 'Connexion en cours…';
+  try {
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    const result = creatingAccount
+      ? await authClient.signUp.email({ email, password, name: authName.value.trim() })
+      : await authClient.signIn.email({ email, password });
+    if (result.error) throw new Error(result.error.message);
+    authDialog.close();
+    authForm.reset();
+    await refreshAccount();
+  } catch (error) {
+    authMessage.textContent =
+      error instanceof Error ? error.message : 'Impossible de se connecter.';
+  } finally {
+    authSubmit.disabled = false;
+  }
+});
+
+authLogout.addEventListener('click', async () => {
+  await authClient.signOut();
+  await refreshAccount();
+});
+
+pairModButton.addEventListener('click', async () => {
+  pairModButton.disabled = true;
+  pairingExpiry.textContent = 'Génération du code…';
+  pairingDialog.showModal();
+  try {
+    const pairing = await apiClient.pairing.create();
+    pairingCodeOutput.textContent = pairing.code;
+    pairingExpiry.textContent = `Expire à ${new Date(pairing.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  } catch (error) {
+    pairingExpiry.textContent =
+      error instanceof Error ? error.message : 'Impossible de créer le code.';
+  } finally {
+    pairModButton.disabled = false;
+  }
+});
+
+pairingClose.addEventListener('click', () => pairingDialog.close());
+pairingCopy.addEventListener('click', async () => {
+  await navigator.clipboard.writeText(pairingCodeOutput.textContent ?? '');
+  pairingCopy.textContent = 'Code copié';
+  window.setTimeout(() => {
+    pairingCopy.textContent = 'Copier le code';
+  }, 1600);
+});
+void refreshAccount();
+
 function resize() {
   const { width, height } = canvas.getBoundingClientRect();
   if (width < 1 || height < 1) return;

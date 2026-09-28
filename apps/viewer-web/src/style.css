@@ -74,6 +74,39 @@ button {
   gap: 9px;
   margin-left: auto;
 }
+.account-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-name {
+  max-width: 130px;
+  overflow: hidden;
+  color: #abb3a2;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-button {
+  padding: 9px 11px;
+  border: 1px solid #41493a;
+  border-radius: 7px;
+  background: #171b14;
+  color: #dce2d3;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: 0.2s;
+}
+.account-button:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.account-button:disabled,
+.dialog-submit:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
 .status-dot {
   width: 7px;
   height: 7px;
@@ -446,6 +479,137 @@ h1 em {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.account-dialog,
+.pairing-dialog {
+  position: fixed;
+  width: min(420px, calc(100% - 28px));
+  max-width: none;
+  max-height: calc(100% - 28px);
+  padding: 32px;
+  overflow: auto;
+  border: 1px solid #424b39;
+  border-radius: 12px;
+  background: #151a13;
+  color: #edf0e8;
+  box-shadow: 0 24px 90px #0009;
+}
+.account-dialog::backdrop,
+.pairing-dialog::backdrop {
+  background: #080a08c9;
+  backdrop-filter: blur(5px);
+}
+.account-dialog form {
+  display: grid;
+  gap: 15px;
+}
+.account-dialog h2,
+.pairing-dialog h2 {
+  margin: 0;
+  color: #f1f3eb;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.7px;
+}
+.dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 13px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #343b2e;
+  border-radius: 6px;
+  background: #1b2018;
+  color: #c4cbbb;
+  font-size: 20px;
+  line-height: 1;
+}
+.form-field {
+  display: grid;
+  gap: 7px;
+  color: #bac2b3;
+  font-size: 11px;
+}
+.form-field[hidden] {
+  display: none;
+}
+.form-field input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #394132;
+  border-radius: 6px;
+  outline: none;
+  background: #0f130e;
+  color: #edf0e8;
+  font:
+    13px ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+.form-field input:focus {
+  border-color: var(--lime);
+}
+.form-message {
+  min-height: 15px;
+  margin: 0;
+  color: #aeb69f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dialog-submit {
+  padding: 11px 15px;
+  border: 1px solid var(--lime);
+  border-radius: 6px;
+  background: var(--lime);
+  color: #17200b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dialog-switch {
+  padding: 7px;
+  border: 0;
+  background: transparent;
+  color: #c9f36a;
+  font-size: 11px;
+}
+.pairing-dialog {
+  text-align: center;
+}
+.pairing-dialog .eyebrow {
+  margin-top: 8px;
+}
+.pairing-instructions,
+.pairing-note {
+  color: #a9b19f;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.pairing-instructions code {
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: #252c20;
+  color: var(--lime);
+  font-size: 11px;
+}
+.pairing-code {
+  display: block;
+  margin: 18px 0 3px;
+  color: var(--lime);
+  font:
+    700 clamp(38px, 12vw, 54px) / 1.1 "DM Mono",
+    monospace;
+  letter-spacing: 8px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 28px #c9f36a30;
+}
+.pairing-dialog .dialog-switch {
+  padding: 10px 14px;
+  border: 1px solid #434e36;
+  border-radius: 6px;
+}
+.pairing-note {
+  margin-bottom: 0;
+  font-size: 10px;
+}
 @media (max-width: 650px) {
   .shell {
     padding: 0 14px;
@@ -459,6 +623,20 @@ h1 em {
   }
   .topbar-note {
     display: none;
+  }
+  .topbar {
+    gap: 7px;
+  }
+  .account-controls {
+    gap: 5px;
+    margin-left: auto;
+  }
+  .account-name {
+    display: none;
+  }
+  .account-button {
+    padding: 8px 7px;
+    font-size: 9px;
   }
   .open-button {
     margin-left: auto;

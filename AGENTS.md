@@ -11,7 +11,7 @@
 ## Engineering constraints
 
 - The current mod is a client-side POC for Minecraft 1.21.1 / NeoForge 21.1.248. Do not describe planned loader targets as supported until they have been built and exercised in game.
-- Keep export client-side. Do not add network/server behavior without an explicit product decision.
+- Keep world export local by default. Network/server features require an explicit product decision; the user has authorized the API and the opt-in pairing/upload flow described in `docs/architecture.md`.
 - Treat world data and uploaded GLB files as user data. Do not introduce telemetry or uploads by default.
 - Preserve the `.glb` output contract and document intentional format changes.
 - Do not commit generated builds, game saves, exports, dependency caches, or secrets.

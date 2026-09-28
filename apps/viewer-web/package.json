@@ -13,6 +13,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@minemories/api-contract": "workspace:*",
+    "@orpc/client": "^1.14.0",
+    "@orpc/contract": "^1.14.0",
+    "better-auth": "^1.6.0",
     "three": "^0.180.0"
   },
   "devDependencies": {

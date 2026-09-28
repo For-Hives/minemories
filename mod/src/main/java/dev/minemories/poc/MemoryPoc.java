@@ -3,6 +3,7 @@ package dev.minemories.poc;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import dev.minemories.core.GlbScene;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -81,7 +82,44 @@ public class MemoryPoc {
                             Commands.argument("radius", IntegerArgumentType.integer(2, 48))
                                 .executes(
                                     ctx ->
-                                        export(IntegerArgumentType.getInteger(ctx, "radius"))))));
+                                        export(IntegerArgumentType.getInteger(ctx, "radius")))))
+                .then(
+                    Commands.literal("pair")
+                        .then(
+                            Commands.argument("code", StringArgumentType.word())
+                                .executes(
+                                    ctx -> pair(StringArgumentType.getString(ctx, "code")))))
+                .then(Commands.literal("upload").executes(ctx -> uploadCapture()));
+  }
+
+  private static int pair(String code) {
+    if (!code.matches("\\d{6}")) {
+      tell("Entre le code à 6 chiffres affiché dans l’interface web.");
+      return 0;
+    }
+    tell("Appairage en cours…");
+    PairingClient.pair(code)
+        .whenComplete(
+            (message, error) ->
+                Minecraft.getInstance()
+                    .execute(() -> tell(error == null ? message : pairingError(error))));
+    return 1;
+  }
+
+  private static int uploadCapture() {
+    Path capture = Path.of(System.getProperty("user.home"), "export", "capture.glb");
+    tell("Envoi de " + capture + "…");
+    PairingClient.uploadCapture(capture)
+        .whenComplete(
+            (message, error) ->
+                Minecraft.getInstance()
+                    .execute(() -> tell(error == null ? message : pairingError(error))));
+    return 1;
+  }
+
+  private static String pairingError(Throwable error) {
+    Throwable cause = error.getCause() == null ? error : error.getCause();
+    return "Échec de la requête : " + cause.getMessage();
   }
 
   @SubscribeEvent
