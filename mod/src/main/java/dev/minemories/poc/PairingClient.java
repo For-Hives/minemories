@@ -15,6 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -148,10 +149,10 @@ final class PairingClient {
 
   private static void saveSettings(Properties settings) {
     Path path = settingsPath();
-    Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
+    Path temporary = path.resolveSibling("memorypoc.properties.tmp");
     settings.setProperty("apiUrl", apiUrl(settings));
     try {
-      Files.createDirectories(path.getParent());
+      Files.createDirectories(Objects.requireNonNull(path.getParent()));
       try (StringWriter writer = new StringWriter()) {
         settings.store(writer, "Minemories paired client credentials");
         Files.writeString(temporary, writer.toString());
@@ -164,7 +165,8 @@ final class PairingClient {
         // Windows does not expose POSIX file permissions.
       }
       try {
-        Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        Files.move(
+            temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       } catch (AtomicMoveNotSupportedException ignored) {
         Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
       }

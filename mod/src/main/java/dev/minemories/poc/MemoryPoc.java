@@ -81,15 +81,13 @@ public class MemoryPoc {
                         .then(
                             Commands.argument("radius", IntegerArgumentType.integer(2, 48))
                                 .executes(
-                                    ctx ->
-                                        export(IntegerArgumentType.getInteger(ctx, "radius")))))
+                                    ctx -> export(IntegerArgumentType.getInteger(ctx, "radius")))))
                 .then(
                     Commands.literal("pair")
                         .then(
                             Commands.argument("code", StringArgumentType.word())
-                                .executes(
-                                    ctx -> pair(StringArgumentType.getString(ctx, "code")))))
-                .then(Commands.literal("upload").executes(ctx -> uploadCapture()));
+                                .executes(ctx -> pair(StringArgumentType.getString(ctx, "code")))))
+                .then(Commands.literal("upload").executes(ctx -> uploadCapture())));
   }
 
   private static int pair(String code) {

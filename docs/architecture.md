@@ -34,4 +34,6 @@ bun run dev:api
 
 L'API écoute sur `http://localhost:3001`; la console MinIO de développement est sur `http://localhost:9001` (identifiants du fichier `.env.example`). SQLite est conservé sous `apps/api/data/` et les objets MinIO dans le volume Docker `minio_data`. Arrêter MinIO avec `docker compose -f infra/dev/docker-compose.yml down`; ajouter `-v` supprime les données locales.
 
+Si le daemon Docker n'est pas disponible, le stockage local peut être utilisé le temps du développement en ajoutant `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` à `.env`. Les GLB sont alors écrits dans `apps/api/data/objects/`; cette option ne remplace pas MinIO pour un déploiement.
+
 Le viewer crée un code à six chiffres via la procédure oRPC authentifiée; il expire après cinq minutes et ne peut servir qu'une fois. Le mod utilise `/memorypoc pair <code>` pour échanger le code contre un jeton d'appareil, enregistré dans le dossier `config` du profil Minecraft. `/memorypoc upload` envoie `~/export/capture.glb` à l'API. Le jeton ne donne accès qu'à l'envoi pour le compte auquel l'appareil est lié. L'API garde les octets dans MinIO et les métadonnées propriétaire-scopées dans SQLite. La récupération/téléchargement des souvenirs depuis le viewer reste à implémenter.
