@@ -70,7 +70,10 @@ renderer.toneMappingExposure = 1;
 renderer.setClearColor('#11140f');
 
 const scene = new THREE.Scene();
-const skyUniforms = { uDay: { value: 9.5 / 24 } };
+const skyUniforms = {
+  uDay: { value: 9.5 / 24 },
+  uMoonPhase: { value: 0 },
+};
 const sky = new THREE.Mesh(
   new THREE.SphereGeometry(1, 32, 20),
   new THREE.ShaderMaterial({
@@ -81,6 +84,7 @@ const sky = new THREE.Mesh(
     fragmentShader: `
       varying vec3 vDirection;
       uniform float uDay;
+      uniform float uMoonPhase;
       void main() {
         vec3 direction = normalize(vDirection);
         float angle = (uDay - 0.25) * 6.28318530718;
@@ -94,10 +98,23 @@ const sky = new THREE.Mesh(
         vec3 skyColor = mix(mix(nightHorizon, nightZenith, horizon), mix(dayHorizon, dayZenith, horizon), daylight);
         vec3 sunDirection = normalize(vec3(cos(angle), elevation, 0.30));
         float sunDot = dot(direction, sunDirection);
-        float sunDisk = smoothstep(0.9990, 0.9995, sunDot);
+        vec3 sunRight = normalize(cross(sunDirection, vec3(0.0, 1.0, 0.0)));
+        vec3 sunUp = normalize(cross(sunRight, sunDirection));
+        float sunSquare = step(abs(dot(direction, sunRight)), 0.045) * step(abs(dot(direction, sunUp)), 0.045);
+        float sunDisk = sunSquare * smoothstep(-0.12, 0.20, elevation);
         float sunGlow = pow(max(sunDot, 0.0), 48.0) * daylight;
         vec3 sunColor = mix(vec3(1.0, 0.48, 0.20), vec3(1.0, 0.91, 0.68), smoothstep(0.0, 0.45, elevation));
         skyColor = mix(skyColor, sunColor, max(sunDisk * daylight, sunGlow * 0.38));
+        vec3 moonDirection = -sunDirection;
+        vec3 moonRight = normalize(cross(moonDirection, vec3(0.0, 1.0, 0.0)));
+        vec3 moonUp = normalize(cross(moonRight, moonDirection));
+        float moonSquare = step(abs(dot(direction, moonRight)), 0.030) * step(abs(dot(direction, moonUp)), 0.030);
+        float moonPhase = mod(floor(uMoonPhase), 8.0);
+        float phaseEdge = cos(moonPhase * 0.78539816339);
+        float moonX = dot(direction, moonRight) / 0.030;
+        float moonLit = moonPhase < 4.0 ? step(-phaseEdge, moonX) : step(moonX, phaseEdge);
+        float moonVisible = moonSquare * moonLit * (1.0 - daylight);
+        skyColor = mix(skyColor, vec3(0.78, 0.84, 0.94), moonVisible);
         float stars = step(0.9988, fract(sin(dot(floor(direction * 420.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453));
         skyColor += vec3(0.72, 0.82, 1.0) * stars * (1.0 - daylight) * smoothstep(0.0, 0.15, direction.y);
         gl_FragColor = vec4(skyColor, 1.0);
@@ -111,9 +128,6 @@ scene.add(sky);
 const clouds = new THREE.Group();
 const cloudMaterial = new THREE.MeshBasicMaterial({
   color: 0xf2f5f0,
-  transparent: true,
-  opacity: 0.82,
-  depthWrite: false,
 });
 const cloudShape: Array<[number, number, number, number, number, number]> = [
   [-2, 0, 0, 3, 1, 1],
@@ -125,12 +139,19 @@ const cloudShape: Array<[number, number, number, number, number, number]> = [
 for (let cloudIndex = 0; cloudIndex < 10; cloudIndex += 1) {
   const cloud = new THREE.Group();
   const angle = (cloudIndex * Math.PI * 2) / 10;
-  const radius = 180 + (cloudIndex % 3) * 35;
-  cloud.position.set(Math.cos(angle) * radius, 55 + (cloudIndex % 4) * 9, Math.sin(angle) * radius);
+  const radius = 0.72 + (cloudIndex % 3) * 0.045;
+  cloud.position.set(
+    Math.cos(angle) * radius,
+    0.13 + (cloudIndex % 4) * 0.025,
+    Math.sin(angle) * radius,
+  );
   cloud.rotation.y = -angle;
   for (const [x, y, z, sx, sy, sz] of cloudShape) {
-    const block = new THREE.Mesh(new THREE.BoxGeometry(sx * 8, sy * 5, sz * 8), cloudMaterial);
-    block.position.set(x * 8, y * 5, z * 8);
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry((sx * 8) / 180, (sy * 5) / 180, (sz * 8) / 180),
+      cloudMaterial,
+    );
+    block.position.set((x * 8) / 180, (y * 5) / 180, (z * 8) / 180);
     cloud.add(block);
   }
   clouds.add(cloud);
@@ -156,6 +177,7 @@ scene.add(modelRoot);
 const loader = new GLTFLoader();
 let dayTime = 9.5 / 24;
 let cyclePlaying = true;
+let lunarAge = 0;
 
 function updateDayCycle() {
   dayTime = ((dayTime % 1) + 1) % 1;
@@ -167,11 +189,14 @@ function updateDayCycle() {
   const sunX = Math.cos(angle);
   const daylight = THREE.MathUtils.smoothstep(sunHeight, -0.12, 0.2);
   skyUniforms.uDay.value = dayTime;
+  skyUniforms.uMoonPhase.value = lunarAge;
   keyLight.position.set(sunX * 120, sunHeight * 120, 36);
   keyLight.intensity = 0.08 + daylight * 3.5;
   keyLight.color.set(sunHeight < 0.18 ? 0xff9a62 : 0xffedc2);
   hemisphere.intensity = 0.16 + daylight * 1.45;
   nightFill.intensity = 0.12 + (1 - daylight) * 0.42;
+  nightFill.position.set(-sunX * 120, -sunHeight * 120, -36);
+  cloudMaterial.color.setRGB(0.22 + daylight * 0.72, 0.26 + daylight * 0.7, 0.38 + daylight * 0.58);
   timeSlider.value = String(minutes);
   timeLabel.value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   timeLabel.textContent = timeLabel.value;
@@ -180,6 +205,12 @@ function updateDayCycle() {
 }
 
 timeSlider.addEventListener('input', () => {
+  if (cyclePlaying) {
+    cyclePlaying = false;
+    cycleToggle.textContent = '▶';
+    cycleToggle.setAttribute('aria-label', 'Reprendre le cycle');
+    cycleToggle.title = 'Reprendre le cycle';
+  }
   dayTime = Number(timeSlider.value) / 1440;
   updateDayCycle();
 });
@@ -299,11 +330,16 @@ renderer.setAnimationLoop((timestamp) => {
   const deltaSeconds = previousFrame === 0 ? 0 : Math.min((timestamp - previousFrame) / 1000, 0.1);
   previousFrame = timestamp;
   if (cyclePlaying) {
-    dayTime += deltaSeconds / 120;
+    const elapsedDay = deltaSeconds / 120;
+    dayTime += elapsedDay;
+    lunarAge += elapsedDay;
     updateDayCycle();
   }
   sky.position.copy(camera.position);
-  sky.scale.setScalar(Math.max(camera.far * 0.75, 1000));
+  sky.scale.setScalar(Math.max(camera.far * 0.88, camera.near * 2));
+  clouds.position.copy(camera.position);
+  clouds.scale.setScalar(Math.max(camera.far * 0.82, camera.near * 2));
+  clouds.rotation.y += deltaSeconds * 0.001;
   controls.update();
   renderer.render(scene, camera);
 });
