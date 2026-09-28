@@ -1,4 +1,3 @@
-- passage front sous tailwindcss 
 - ajout de regle complexité congnitif biome
 - ajout de test unit partout
 - ajouter une ui au mod, en mode quand le joueurs fait pause, il doit y avoir une ui sympa pour faire l'appairage, et une snapshot 

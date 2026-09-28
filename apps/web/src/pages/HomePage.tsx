@@ -1,103 +1,143 @@
 import { Link } from 'react-router';
-import { useAppContext } from '../App';
+import { buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App';
 
 export function HomePage() {
   const { session } = useAppContext();
 
   return (
-    <div className="landing-page">
-      <section className="hero-section">
-        <div className="hero-copy">
-          <span className="eyebrow-label">
-            <span /> LE TEMPS PASSE. VOS MONDES RESTENT.
-          </span>
-          <h1>
+    <div className="mx-auto w-[min(100%-88px,1360px)] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)]">
+      <section className="relative grid min-h-[615px] grid-cols-[1fr_1.03fr] items-center gap-[4.8%] py-[65px] pb-[77px] max-tablet:min-h-[570px] max-tablet:grid-cols-2 max-tablet:gap-[3%] max-phone:min-h-0 max-phone:grid-cols-1 max-phone:gap-[33px] max-phone:py-[47px] max-phone:pb-[59px]">
+        <div className="relative z-[1] pb-[3px] pl-[3px]">
+          <Eyebrow>LE TEMPS PASSE. VOS MONDES RESTENT.</Eyebrow>
+          <h1 className="mb-[19px] mt-6 font-sans text-[clamp(45px,5.05vw,72px)] font-semibold leading-[1.03] tracking-[-4.9px] text-[#22281f] max-tablet:text-[clamp(42px,6vw,59px)] max-tablet:tracking-[-3.4px] max-phone:mb-[14px] max-phone:mt-5 max-phone:text-[clamp(44px,12vw,60px)] max-phone:tracking-[-3.5px]">
             Les mondes
             <br />
-            qu’on a <em>faits ensemble.</em>
+            qu’on a <em className="font-medium text-[#718650] not-italic">faits ensemble.</em>
           </h1>
-          <p className="hero-description">
+          <p className="my-4 max-w-[470px] text-[15px] leading-[1.8] text-[#73786d] max-phone:text-[13px]">
             Gardez une trace des lieux, des constructions et des aventures partagées. Revisitez-les
             en 3D, sans relancer le serveur ni retrouver le bon modpack.
           </p>
-          <div className="hero-actions">
-            <Link className="button button-lime" to={session ? '/gallery' : '/register'}>
+          <div className="mt-7 flex flex-wrap gap-[11px] max-phone:mt-[22px] max-phone:gap-2">
+            <Link
+              className={`${buttonLime} max-phone:min-h-[43px] max-phone:px-[13px] max-phone:text-[10px]`}
+              to={session ? '/gallery' : '/register'}
+            >
               {session ? 'Retrouver mes mondes' : 'Créer mon espace'}{' '}
               <span aria-hidden="true">↗</span>
             </Link>
-            <Link className="button button-outline" to="/viewer">
+            <Link
+              className={`${buttonOutline} max-phone:min-h-[43px] max-phone:px-[13px] max-phone:text-[10px]`}
+              to="/viewer"
+            >
               Explorer un fichier local
             </Link>
           </div>
-          <div className="hero-proof">
-            <span className="avatar-stack">
-              <i>J</i>
-              <i>M</i>
-              <i>A</i>
+          <div className="mt-7 flex items-center gap-[13px] text-[11px] text-[#85897f] max-phone:mt-5 max-phone:text-[10px]">
+            <span className="inline-flex pl-1">
+              <i className="-ml-1 grid h-[25px] w-[25px] place-items-center rounded-full border-2 border-paper bg-[#789078] font-mono text-[9px] font-normal not-italic text-white first:ml-0">
+                J
+              </i>
+              <i className="-ml-1 grid h-[25px] w-[25px] place-items-center rounded-full border-2 border-paper bg-[#ba8c68] font-mono text-[9px] font-normal not-italic text-white">
+                M
+              </i>
+              <i className="-ml-1 grid h-[25px] w-[25px] place-items-center rounded-full border-2 border-paper bg-[#708596] font-mono text-[9px] font-normal not-italic text-white">
+                A
+              </i>
             </span>
             <span>Un lien à partager. Un monde à retrouver.</span>
           </div>
         </div>
         <MemoryArtwork />
-        <span className="hero-index">01 — UNE PLACE POUR VOS MONDES</span>
+        <span className="absolute bottom-[30px] left-[3px] font-mono text-[9px] tracking-[0.8px] text-[#8d9187] max-phone:bottom-[21px] max-phone:left-[2px] max-phone:text-[8px]">
+          01 — UNE PLACE POUR VOS MONDES
+        </span>
       </section>
 
-      <section className="story-section">
-        <div className="section-heading">
-          <span className="eyebrow-label">APRÈS LA DERNIÈRE CONNEXION</span>
-          <h2>
+      <section className="grid min-h-[270px] grid-cols-[1fr_0.7fr] items-center gap-[12%] border-t border-line px-[9%] py-[49px] max-tablet:gap-[7%] max-tablet:px-[3%] max-phone:min-h-0 max-phone:grid-cols-1 max-phone:gap-[15px] max-phone:px-0 max-phone:py-[38px] max-phone:pb-[39px]">
+        <div>
+          <Eyebrow>APRÈS LA DERNIÈRE CONNEXION</Eyebrow>
+          <h2 className="mb-0 mt-4 font-sans text-[clamp(32px,3.3vw,46px)] font-semibold tracking-[-2.4px] text-[#22281f] max-phone:text-[35px] max-phone:tracking-[-2px]">
             La sauvegarde existe.
             <br />
-            <em>Le souvenir aussi.</em>
+            <em className="text-[#718650] not-italic">Le souvenir aussi.</em>
           </h2>
         </div>
-        <div className="story-copy">
-          <p>
+        <div className="grid max-w-[425px] gap-[14px] text-[13px] leading-[1.85] text-[#777c71] max-phone:text-xs">
+          <p className="my-4">
             Un serveur ferme, les versions changent, et le dossier du monde finit oublié quelque
             part.
           </p>
-          <p>
+          <p className="my-4">
             Minemories en garde une version légère et explorable. Le fichier original reste sur ton
             ordinateur; tes captures peuvent aussi être retrouvées dans ta galerie privée.
           </p>
         </div>
       </section>
 
-      <section className="steps-section" aria-label="Comment ça marche">
-        <div className="step-card">
-          <span className="step-number">01</span>
-          <span className="step-icon">⌂</span>
-          <h3>Capture ton coin</h3>
-          <p>Choisis une zone depuis Minecraft ou ouvre un fichier GLB de ton ordinateur.</p>
-        </div>
-        <div className="step-card">
-          <span className="step-number">02</span>
-          <span className="step-icon">◌</span>
-          <h3>Revisite-le</h3>
-          <p>Fais le tour de la construction dans le navigateur, comme si tu y retournais.</p>
-        </div>
-        <div className="step-card">
-          <span className="step-number">03</span>
-          <span className="step-icon">↗</span>
-          <h3>Montre-le aux autres</h3>
-          <p>Retrouve tes captures dans un espace personnel et partage-les avec tes amis.</p>
-        </div>
+      <section
+        className="grid grid-cols-3 gap-4 py-[27px] pb-[74px] max-phone:grid-cols-1 max-phone:gap-[9px] max-phone:py-4 max-phone:pb-[46px]"
+        aria-label="Comment ça marche"
+      >
+        <StepCard number="01" icon="⌂" title="Capture ton coin">
+          Choisis une zone depuis Minecraft ou ouvre un fichier GLB de ton ordinateur.
+        </StepCard>
+        <StepCard number="02" icon="◌" title="Revisite-le">
+          Fais le tour de la construction dans le navigateur, comme si tu y retournais.
+        </StepCard>
+        <StepCard number="03" icon="↗" title="Montre-le aux autres">
+          Retrouve tes captures dans un espace personnel et partage-les avec tes amis.
+        </StepCard>
       </section>
 
-      <section className="closing-banner">
-        <div>
-          <span className="eyebrow-label">LE PROCHAIN MONDE PEUT RESTER</span>
-          <h2>
+      <section className="relative mb-[62px] flex min-h-[230px] items-center justify-between gap-5 overflow-hidden rounded-lg bg-forest px-[7%] py-9 max-phone:mb-[37px] max-phone:min-h-[205px] max-phone:flex-col max-phone:items-start max-phone:justify-center max-phone:gap-5 max-phone:p-6">
+        <div className="relative z-[1]">
+          <Eyebrow tone="text-[#bed096]">LE PROCHAIN MONDE PEUT RESTER</Eyebrow>
+          <h2 className="mb-0 mt-[14px] font-sans text-[39px] font-semibold tracking-[-2px] text-[#f1f2e8] max-phone:text-[33px]">
             À la prochaine
             <br />
             saison.
           </h2>
         </div>
-        <Link className="button button-lime" to={session ? '/gallery' : '/register'}>
+        <Link className={`${buttonLime} relative z-[1]`} to={session ? '/gallery' : '/register'}>
           Garder mon premier souvenir <span>↗</span>
         </Link>
-        <span className="banner-spark">✳</span>
+        <span
+          aria-hidden="true"
+          className="absolute top-[-76px] right-[27%] text-[330px] leading-none text-[#ffffff0b] max-phone:top-[-24px] max-phone:right-[4%] max-phone:text-[195px]"
+        >
+          ✳
+        </span>
       </section>
+    </div>
+  );
+}
+
+function StepCard({
+  number,
+  icon,
+  title,
+  children,
+}: {
+  number: string;
+  icon: string;
+  title: string;
+  children: string;
+}) {
+  return (
+    <div className="relative min-h-[202px] rounded-[7px] border border-[#d9dacf] bg-[#f6f5ef] px-[25px] py-6 max-phone:grid max-phone:min-h-0 max-phone:grid-cols-[43px_1fr_auto] max-phone:gap-x-3 max-phone:p-4">
+      <span className="absolute top-6 right-[25px] font-mono text-[10px] text-[#9b9f93] max-phone:top-[17px] max-phone:right-4">
+        {number}
+      </span>
+      <span className="mb-[21px] grid h-[39px] w-[39px] place-items-center rounded-[9px] bg-[#e6ebd9] text-[19px] text-[#5f754d] max-phone:m-0 max-phone:h-[37px] max-phone:w-[37px] max-phone:row-span-2">
+        {icon}
+      </span>
+      <h3 className="mb-[7px] font-sans text-[15px] font-bold tracking-[-0.3px] max-phone:m-0 max-phone:mb-1 max-phone:self-end max-phone:text-[13px]">
+        {title}
+      </h3>
+      <p className="m-0 max-w-[270px] text-[11px] leading-[1.7] text-[#777c71] max-phone:col-[2/-1] max-phone:max-w-none max-phone:text-[10px]">
+        {children}
+      </p>
     </div>
   );
 }
@@ -105,20 +145,21 @@ export function HomePage() {
 function MemoryArtwork() {
   return (
     <div
-      className="memory-artwork"
+      className="relative min-h-[465px] rotate-[0.7deg] overflow-hidden rounded-lg border border-[#d2d3c5] bg-[#e0e3d2] shadow-[0_22px_65px_#37483317] max-tablet:min-h-[380px] max-phone:min-h-[330px] max-phone:rotate-0"
       role="img"
       aria-label="Illustration isométrique d’un monde en blocs"
     >
-      <div className="art-topline">
+      <div className="absolute inset-x-6 top-[22px] z-[2] flex justify-between font-mono text-[9px] tracking-[0.7px] text-[#626d5d] max-phone:inset-x-[14px] max-phone:top-[15px] max-phone:text-[7px]">
         <span>ARCHIVE N° 008</span>
         <span>SAISON D’ÉTÉ · 2024</span>
       </div>
-      <div className="art-sun" />
-      <div className="pixel-scene">
+      <div className="absolute top-[77px] right-[17%] h-[46px] w-[46px] rounded-full bg-[#edce86] shadow-[0_0_45px_#ead08c8c]" />
+      <div className="absolute inset-x-0 top-[52px] bottom-[54px] grid place-items-center">
         <svg
           viewBox="0 0 560 430"
           role="img"
           aria-label="Maison au bord d’une rivière, entourée d’arbres"
+          className="h-full w-full [image-rendering:pixelated]"
         >
           <defs>
             <linearGradient id="artSky" x2="0" y2="1">
@@ -158,18 +199,24 @@ function MemoryArtwork() {
           />
         </svg>
       </div>
-      <div className="art-caption">
-        <span className="art-cube">▧</span>
-        <span>
-          <b>Notre première base</b>
-          <small>Par Léo, Sarah et 4 autres</small>
+      <div className="absolute inset-x-[15px] bottom-[15px] z-[2] flex min-h-[59px] items-center gap-3 rounded-[5px] border border-[#ffffff91] bg-[#f4f3eada] px-3 py-2 backdrop-blur-[8px] max-phone:inset-x-[9px] max-phone:bottom-[9px]">
+        <span className="grid h-[31px] w-[31px] place-items-center rounded bg-[#75865e] text-[17px] text-[#f0f1e5]">
+          ▧
         </span>
-        <span className="art-play">▶</span>
+        <span>
+          <b className="block font-sans text-[11px] font-bold">Notre première base</b>
+          <small className="mt-[3px] block text-[9px] text-[#777c70]">
+            Par Léo, Sarah et 4 autres
+          </small>
+        </span>
+        <span className="ml-auto grid h-[29px] w-[29px] place-items-center rounded-full bg-forest text-[9px] text-white">
+          ▶
+        </span>
       </div>
-      <div className="art-stamp">
+      <div className="absolute top-1/2 right-[13px] -translate-y-1/4 rotate-[8deg] border border-[#6377517a] bg-[#eff1ded1] px-[11px] py-[9px] font-mono text-[8px] leading-[1.5] tracking-[0.7px] text-[#536b45] max-phone:right-[7px] max-phone:text-[6px]">
         FAIT ENSEMBLE
         <br />
-        <b>GARDÉ POUR TOUJOURS</b>
+        <b className="text-[7px]">GARDÉ POUR TOUJOURS</b>
       </div>
     </div>
   );

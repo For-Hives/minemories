@@ -4,7 +4,7 @@
 
 - `minemories/`: projet Gradle du mod client Minecraft NeoForge.
 - `minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
-- `apps/web/`: SPA React avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
+- `apps/web/`: SPA React (stylisée avec Tailwind CSS, thème dans `src/theme.css`) avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
 - `apps/api-contract/`: contrat oRPC partagé par l’API et le viewer.
 - `docs/`: documentation transverse et état du POC.

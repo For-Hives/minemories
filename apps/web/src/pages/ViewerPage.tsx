@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { useAppContext } from '../App';
+import { buttonDark, buttonOutline, Eyebrow, fileInputHidden, useAppContext } from '../App';
 
 export function ViewerPage() {
   const { viewerFile, setViewerFile } = useAppContext();
@@ -27,21 +27,24 @@ export function ViewerPage() {
   }, [frameReady, sendFileToViewer, viewerFile]);
 
   return (
-    <section className="viewer-page">
-      <div className="viewer-heading">
+    <section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
+      <div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
         <div>
-          <span className="eyebrow-label">EXPLORATION 3D</span>
-          <h1>
+          <Eyebrow>EXPLORATION 3D</Eyebrow>
+          <h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
             {viewerFile?.name ?? (memoryId ? 'Un monde à retrouver.' : 'Un monde à revisiter.')}
           </h1>
         </div>
-        <div className="viewer-actions">
-          <label className="button button-outline viewer-file-button">
+        <div className="flex gap-[9px]">
+          <label
+            className={`${buttonOutline} relative min-h-[40px] text-[10px] focus-within:outline-2 focus-within:outline-[#607a4a] focus-within:outline-offset-[3px]`}
+          >
             Choisir un GLB
             <input
               id="local-file-input"
               type="file"
               accept=".glb,model/gltf-binary"
+              className={fileInputHidden}
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file) {
@@ -52,17 +55,18 @@ export function ViewerPage() {
               }}
             />
           </label>
-          <Link className="button button-dark" to="/gallery">
+          <Link className={`${buttonDark} min-h-[40px] text-[10px]`} to="/gallery">
             Ma galerie <span>↗</span>
           </Link>
         </div>
       </div>
-      <div className="viewer-frame-wrap">
+      <div className="h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#d6d8cd] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]">
         <iframe
           key={memoryId ?? 'local'}
           ref={frame}
           title="Exploration du monde en trois dimensions"
           src={`/viewer.html?embed=1${memoryId ? `&memory=${encodeURIComponent(memoryId)}` : ''}`}
+          className="block h-full w-full border-0"
           onLoad={() => {
             lastSentFile.current = null;
             setFrameReady(true);
@@ -70,8 +74,11 @@ export function ViewerPage() {
           }}
         />
       </div>
-      <p className="viewer-tip">
-        <span>⌖</span> Glisser pour orbiter <i /> Molette pour zoomer <i /> Clic droit pour déplacer
+      <p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#85897d] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
+        <span className="text-[15px] text-[#60794a]">⌖</span> Glisser pour orbiter{' '}
+        <i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Molette pour zoomer{' '}
+        <i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Clic droit pour
+        déplacer
       </p>
     </section>
   );
