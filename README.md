@@ -41,7 +41,7 @@ bun run build:viewer
 bun run build:mod
 ```
 
-The viewer accepts a `.glb` file by choosing or dropping it onto the page. It runs locally in the browser; no upload service is involved. Its Minecraft-inspired skybox includes a controllable day/night cycle, a moving sun, moon phases, drifting block clouds, and changing scene lighting.
+The viewer accepts a `.glb` file by choosing or dropping it onto the page. It runs locally in the browser; no upload service is involved. Its Minecraft-inspired skybox includes a controllable day/night cycle, a moving sun, moon phases, drifting block clouds, and directional sunlight with texel-snapped hard shadows. Imported block textures keep nearest-neighbor filtering, while emissive and point lights are constrained to preserve the world’s colors.
 
 ## Quality gates
 

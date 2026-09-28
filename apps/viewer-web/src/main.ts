@@ -65,8 +65,11 @@ const cycleIcon = requireElement<HTMLElement>('#cycle-icon');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 1;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.shadowMap.autoUpdate = false;
 renderer.setClearColor('#11140f');
 
 const scene = new THREE.Scene();
@@ -159,12 +162,24 @@ for (let cloudIndex = 0; cloudIndex < 10; cloudIndex += 1) {
 clouds.frustumCulled = false;
 scene.add(clouds);
 
-const hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 1.25);
+const hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 0.65);
 scene.add(hemisphere);
-const keyLight = new THREE.DirectionalLight(0xffedc2, 3.2);
+const keyLight = new THREE.DirectionalLight(0xffedc2, 1.05);
 keyLight.position.set(8, 14, 10);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(512, 512);
+keyLight.shadow.bias = -0.00015;
+keyLight.shadow.normalBias = 0.025;
+keyLight.shadow.autoUpdate = false;
+keyLight.shadow.camera.left = -32;
+keyLight.shadow.camera.right = 32;
+keyLight.shadow.camera.top = 32;
+keyLight.shadow.camera.bottom = -32;
+keyLight.shadow.camera.near = 0.1;
+keyLight.shadow.camera.far = 128;
+scene.add(keyLight.target);
 scene.add(keyLight);
-const nightFill = new THREE.DirectionalLight(0x7799ff, 0.18);
+const nightFill = new THREE.DirectionalLight(0x7799ff, 0.04);
 scene.add(nightFill);
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 10000);
@@ -178,6 +193,124 @@ const loader = new GLTFLoader();
 let dayTime = 9.5 / 24;
 let cyclePlaying = true;
 let lunarAge = 0;
+const shadowCenter = new THREE.Vector3();
+let shadowExtent = 32;
+const lastShadowDirection = new THREE.Vector3();
+let hasShadowDirection = false;
+
+function updateSunShadow(force = false) {
+  const angle = (dayTime - 0.25) * Math.PI * 2;
+  const sunDirection = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0.3).normalize();
+  const right = new THREE.Vector3()
+    .crossVectors(sunDirection, new THREE.Vector3(0, 1, 0))
+    .normalize();
+  const lightUp = new THREE.Vector3().crossVectors(right, sunDirection).normalize();
+  const texelSize = (shadowExtent * 2) / keyLight.shadow.mapSize.x;
+  const target = shadowCenter.clone();
+  const rightPosition = target.dot(right);
+  const upPosition = target.dot(lightUp);
+  target.addScaledVector(right, Math.round(rightPosition / texelSize) * texelSize - rightPosition);
+  target.addScaledVector(lightUp, Math.round(upPosition / texelSize) * texelSize - upPosition);
+
+  keyLight.target.position.copy(target);
+  keyLight.position.copy(target).addScaledVector(sunDirection, shadowExtent * 2);
+  keyLight.shadow.camera.left = -shadowExtent;
+  keyLight.shadow.camera.right = shadowExtent;
+  keyLight.shadow.camera.top = shadowExtent;
+  keyLight.shadow.camera.bottom = -shadowExtent;
+  keyLight.shadow.camera.near = 0.1;
+  keyLight.shadow.camera.far = shadowExtent * 4;
+  keyLight.shadow.camera.updateProjectionMatrix();
+
+  if (force || !hasShadowDirection || lastShadowDirection.angleTo(sunDirection) > 0.003) {
+    lastShadowDirection.copy(sunDirection);
+    hasShadowDirection = true;
+    keyLight.shadow.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = true;
+  }
+}
+
+function prepareWorldLighting(root: THREE.Object3D) {
+  const importedLights: {
+    light: THREE.PointLight;
+    position: THREE.Vector3;
+    color: THREE.Color;
+    intensity: number;
+    distance: number;
+  }[] = [];
+
+  root.updateMatrixWorld(true);
+  root.traverse((object) => {
+    if (object instanceof THREE.PointLight) {
+      importedLights.push({
+        light: object,
+        position: object.getWorldPosition(new THREE.Vector3()),
+        color: object.color.clone(),
+        intensity: object.intensity,
+        distance: object.distance,
+      });
+      return;
+    }
+    if (!(object instanceof THREE.Mesh)) return;
+
+    object.castShadow = true;
+    object.receiveShadow = true;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    let hasOpaqueSurface = false;
+    for (const material of materials) {
+      const pbrMaterial = material as THREE.MeshStandardMaterial;
+      if (pbrMaterial.isMeshStandardMaterial) {
+        pbrMaterial.roughness = 1;
+        pbrMaterial.metalness = 0;
+        pbrMaterial.flatShading = true;
+        pbrMaterial.emissiveIntensity = Math.min(pbrMaterial.emissiveIntensity, 0.14);
+      }
+      hasOpaqueSurface ||= !material.transparent || material.alphaTest > 0;
+      for (const texture of [
+        pbrMaterial.map,
+        pbrMaterial.emissiveMap,
+        pbrMaterial.normalMap,
+        pbrMaterial.roughnessMap,
+        pbrMaterial.metalnessMap,
+        pbrMaterial.aoMap,
+      ]) {
+        if (!texture) continue;
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestMipmapNearestFilter;
+        texture.generateMipmaps = true;
+        texture.anisotropy = 1;
+        texture.needsUpdate = true;
+      }
+      material.needsUpdate = true;
+    }
+    object.castShadow = hasOpaqueSurface;
+    object.receiveShadow = hasOpaqueSurface;
+  });
+
+  const cellSize = 6;
+  const lightCells = new Map<string, (typeof importedLights)[number]>();
+  for (const light of importedLights) {
+    light.light.removeFromParent();
+    const { x, y, z } = light.position;
+    const cell = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)},${Math.floor(z / cellSize)}`;
+    const current = lightCells.get(cell);
+    if (!current || light.intensity > current.intensity) lightCells.set(cell, light);
+  }
+
+  const selectedLights = [...lightCells.values()]
+    .sort((left, right) => right.intensity - left.intensity)
+    .slice(0, 32);
+  for (const imported of selectedLights) {
+    const light = new THREE.PointLight(
+      imported.color,
+      Math.min(imported.intensity * 0.002, 2),
+      Math.min(Math.max(imported.distance, 1), 10),
+      2,
+    );
+    light.position.copy(imported.position);
+    modelRoot.add(light);
+  }
+}
 
 function updateDayCycle() {
   dayTime = ((dayTime % 1) + 1) % 1;
@@ -186,16 +319,20 @@ function updateDayCycle() {
   const minute = minutes % 60;
   const angle = (dayTime - 0.25) * Math.PI * 2;
   const sunHeight = Math.sin(angle);
-  const sunX = Math.cos(angle);
   const daylight = THREE.MathUtils.smoothstep(sunHeight, -0.12, 0.2);
   skyUniforms.uDay.value = dayTime;
   skyUniforms.uMoonPhase.value = lunarAge;
-  keyLight.position.set(sunX * 120, sunHeight * 120, 36);
-  keyLight.intensity = 0.08 + daylight * 3.5;
+  keyLight.intensity = 0.015 + daylight * 1.05;
+  const shouldCastShadow = daylight > 0.08;
+  if (keyLight.castShadow !== shouldCastShadow) {
+    keyLight.castShadow = shouldCastShadow;
+    keyLight.shadow.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = true;
+  }
   keyLight.color.set(sunHeight < 0.18 ? 0xff9a62 : 0xffedc2);
-  hemisphere.intensity = 0.16 + daylight * 1.45;
-  nightFill.intensity = 0.12 + (1 - daylight) * 0.42;
-  nightFill.position.set(-sunX * 120, -sunHeight * 120, -36);
+  hemisphere.intensity = 0.08 + daylight * 0.62;
+  nightFill.intensity = 0.02 + (1 - daylight) * 0.12;
+  updateSunShadow();
   cloudMaterial.color.setRGB(0.22 + daylight * 0.72, 0.26 + daylight * 0.7, 0.38 + daylight * 0.58);
   timeSlider.value = String(minutes);
   timeLabel.value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -213,6 +350,7 @@ timeSlider.addEventListener('input', () => {
   }
   dayTime = Number(timeSlider.value) / 1440;
   updateDayCycle();
+  updateSunShadow(true);
 });
 cycleToggle.addEventListener('click', () => {
   cyclePlaying = !cyclePlaying;
@@ -239,6 +377,9 @@ function frameModel(root: THREE.Object3D) {
   const size = bounds.getSize(new THREE.Vector3());
   const largest = Math.max(size.x, size.y, size.z, 1);
   controls.target.copy(center);
+  shadowCenter.copy(center);
+  shadowExtent = Math.max(8, size.length() * 0.65);
+  updateSunShadow(true);
   camera.position
     .copy(center)
     .add(new THREE.Vector3(largest * 1.25, largest * 0.9, largest * 1.25));
@@ -278,6 +419,7 @@ async function openFile(file?: File) {
       });
     }
     modelRoot.add(gltf.scene);
+    prepareWorldLighting(gltf.scene);
     frameModel(gltf.scene);
     emptyState.hidden = true;
     sceneInfo.hidden = false;
