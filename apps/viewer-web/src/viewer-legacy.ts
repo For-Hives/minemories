@@ -17,6 +17,8 @@ function requireElement<T extends Element>(selector: string): T {
 
 const app = requireElement<HTMLDivElement>('#app');
 const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const query = new URLSearchParams(window.location.search);
+if (query.has('embed')) document.body.classList.add('embedded-viewer');
 const authClient = createAuthClient({ baseURL: apiBase });
 const rpcLink = new RPCLink({
   url: `${apiBase}/rpc`,
@@ -642,3 +644,29 @@ renderer.setAnimationLoop((timestamp) => {
   renderer.render(scene, camera);
 });
 resize();
+
+const memoryId = query.get('memory');
+if (memoryId) {
+  void fetch(`${apiBase}/api/memories/${encodeURIComponent(memoryId)}/file`, {
+    credentials: 'include',
+  })
+    .then(async (response) => {
+      if (!response.ok) throw new Error('Impossible de charger ce souvenir.');
+      const file = new File([await response.blob()], 'souvenir.glb', {
+        type: 'model/gltf-binary',
+      });
+      await openFile(file);
+    })
+    .catch((error: unknown) => {
+      loading.hidden = false;
+      loadingLabel.textContent =
+        error instanceof Error ? error.message : 'Impossible de charger ce souvenir.';
+    });
+}
+
+window.addEventListener('message', (event: MessageEvent<unknown>) => {
+  if (event.origin !== window.location.origin || typeof event.data !== 'object' || !event.data)
+    return;
+  const message = event.data as { type?: string; file?: unknown };
+  if (message.type === 'load-glb' && message.file instanceof File) void openFile(message.file);
+});

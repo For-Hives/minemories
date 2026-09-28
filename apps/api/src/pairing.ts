@@ -115,6 +115,20 @@ export function listMemories(userId: string) {
   }));
 }
 
+export function getMemoryFile(userId: string, id: string) {
+  return database
+    .query('SELECT object_key, name FROM memories WHERE user_id = ? AND id = ?')
+    .get(userId, id) as { object_key: string; name: string } | null;
+}
+
+export function checkPairingCode(userId: string, code: string) {
+  const pairing = database
+    .query('SELECT expires_at, used_at FROM pairing_codes WHERE user_id = ? AND code_hash = ?')
+    .get(userId, codeHash(code)) as { expires_at: number; used_at: number | null } | null;
+  if (!pairing || pairing.expires_at <= Date.now()) return { status: 'expired' as const };
+  return { status: pairing.used_at === null ? ('pending' as const) : ('paired' as const) };
+}
+
 export function addMemory(input: {
   id: string;
   userId: string;

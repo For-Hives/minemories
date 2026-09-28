@@ -9,12 +9,14 @@ import { auth } from './auth';
 import { database } from './database';
 import {
   addMemory,
+  checkPairingCode,
   createPairingCode,
   exchangePairingCode,
   getDeviceFromToken,
+  getMemoryFile,
   listMemories,
 } from './pairing';
-import { removeMemory, storeMemory } from './storage';
+import { readMemory, removeMemory, storeMemory } from './storage';
 
 const port = Number(process.env.API_PORT ?? 3001);
 const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173';
@@ -30,6 +32,10 @@ const router = os.router({
     create: os.pairing.create.handler(({ context }) => {
       if (!context.userId) throw new ORPCError('UNAUTHORIZED');
       return createPairingCode(context.userId);
+    }),
+    check: os.pairing.check.handler(({ context, input }) => {
+      if (!context.userId) throw new ORPCError('UNAUTHORIZED');
+      return checkPairingCode(context.userId, input.code);
     }),
   },
   memories: {
@@ -107,6 +113,25 @@ app.get('/api/mod/status', async (context) => {
   const device = getDeviceFromToken(token);
   if (!device) return context.json({ error: 'unauthorized' }, 401);
   return context.json({ paired: true, device: { id: device.id, name: device.name } });
+});
+
+app.get('/api/memories/:id/file', async (context) => {
+  const session = await auth.api.getSession({ headers: context.req.raw.headers });
+  if (!session) return context.json({ error: 'unauthorized' }, 401);
+
+  const memory = getMemoryFile(session.user.id, context.req.param('id'));
+  if (!memory) return context.json({ error: 'memory_not_found' }, 404);
+
+  try {
+    const contents = await readMemory(memory.object_key);
+    return context.body(contents, 200, {
+      'Content-Type': 'model/gltf-binary',
+      'Cache-Control': 'private, no-store',
+    });
+  } catch (error) {
+    console.error('[memory-download] failed to read memory', error);
+    return context.json({ error: 'memory_storage_unavailable' }, 503);
+  }
 });
 
 app.post('/api/mod/memories', async (context) => {

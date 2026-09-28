@@ -9,6 +9,9 @@ export const apiContract = {
         expiresAt: z.string().datetime(),
       }),
     ),
+    check: oc
+      .input(z.object({ code: z.string().regex(/^\d{6}$/) }))
+      .output(z.object({ status: z.enum(['pending', 'paired', 'expired']) })),
   },
   memories: {
     list: oc.output(

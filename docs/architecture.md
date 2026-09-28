@@ -4,7 +4,7 @@
 
 - `mod/`: projet Gradle du mod client Minecraft NeoForge.
 - `mod/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
-- `apps/viewer-web/`: viewer web autonome; il charge localement des fichiers GLB dans le navigateur.
+- `apps/viewer-web/`: SPA React avec pages d'accueil, authentification, galerie privée et viewer Three.js. L'ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
 - `packages/api-contract/`: contrat oRPC partagé par l'API et le viewer.
 - `docs/`: documentation transverse et état du POC.
@@ -36,4 +36,6 @@ L'API écoute sur `http://localhost:3001`; la console MinIO de développement es
 
 Si le daemon Docker n'est pas disponible, le stockage local peut être utilisé le temps du développement en ajoutant `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` à `.env`. Les GLB sont alors écrits dans `apps/api/data/objects/`; cette option ne remplace pas MinIO pour un déploiement.
 
-Le viewer crée un code à six chiffres via la procédure oRPC authentifiée; il expire après cinq minutes et ne peut servir qu'une fois. Le mod utilise `/memorypoc pair <code>` pour échanger le code contre un jeton d'appareil, enregistré dans le dossier `config` du profil Minecraft. `/memorypoc upload` envoie `~/export/capture.glb` à l'API. Le jeton ne donne accès qu'à l'envoi pour le compte auquel l'appareil est lié. L'API garde les octets dans MinIO et les métadonnées propriétaire-scopées dans SQLite. La récupération/téléchargement des souvenirs depuis le viewer reste à implémenter.
+Le viewer crée un code à six chiffres via la procédure oRPC authentifiée; il expire après cinq minutes et ne peut servir qu'une fois. Le mod utilise `/memorypoc pair <code>` pour échanger le code contre un jeton d'appareil, enregistré dans le dossier `config` du profil Minecraft. `/memorypoc upload` envoie `~/export/capture.glb` à l'API. Le jeton ne donne accès qu'à l'envoi pour le compte auquel l'appareil est lié. L'API garde les octets dans MinIO et les métadonnées propriétaire-scopées dans SQLite.
+
+La galerie vérifie le statut d'appairage par polling et actualise la liste des souvenirs. Le téléchargement d'un GLB est authentifié et limité au propriétaire; le viewer intégré garde son propre document pour isoler le moteur Three.js du shell React. En développement, un fichier local peut toujours être ouvert depuis la barre de navigation ou l'écran du viewer.

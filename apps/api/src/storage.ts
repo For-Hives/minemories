@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Client } from 'minio';
 
@@ -53,4 +53,17 @@ export async function removeMemory(objectKey: string) {
   }
 
   await client.removeObject(bucket, objectKey);
+}
+
+export async function readMemory(objectKey: string) {
+  if (storageDriver === 'filesystem') {
+    const path = resolve(filesystemRoot, objectKey);
+    if (!path.startsWith(`${filesystemRoot}/`)) throw new Error('Invalid object key.');
+    return readFile(path);
+  }
+
+  const stream = await client.getObject(bucket, objectKey);
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks);
 }
