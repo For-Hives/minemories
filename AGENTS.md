@@ -1,31 +1,49 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Monorepo Map
 
-This is a Bun and Gradle monorepo. Apps live in `apps/` (`viewer-web` and `api`); shared contracts are in `packages/api-contract/`. Minecraft code is under `mod/`: loader-specific integration is in `mod/src/`, and loader-independent capture and GLB logic is in `mod/core/`. Put repository-wide configuration at the root and design documents in `docs/`. Frontend tests sit beside source files (for example, `apps/viewer-web/src/lib/glb.test.ts`); Java core tests are in `mod/core/src/test/`.
+- `apps/viewer-web/` — React + Three.js SPA (Bun workspace `@minemories/viewer-web`).
+- `apps/api/` — Bun/Hono + Better Auth + oRPC + SQLite + S3-compatible storage (`@minemories/api`).
+- `packages/api-contract/` — oRPC + zod contract shared by API and viewer. Edit here first when changing RPC shapes.
+- `mod/` — NeoForge client mod (Gradle). `mod/core/` is loader-independent capture/GLB code (`:mod:core`); `mod/src/` is loader-specific integration.
+- `docs/` (French), `infra/dev/docker-compose.yml`, `scripts/` (`check.mjs`, `build.mjs`).
 
-## Build, Test, and Development Commands
+## Commands (run from repo root)
 
-Run commands from the repository root:
+- Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun `1.4.2` (`.bun-version`), Node `>=22.12`.
+- `bun run dev:viewer` / `bun run dev:api` — API needs root `.env` (`cp .env.example .env`, two distinct 32+ char secrets).
+- `bun run check` = `check:front` (Biome + both typechecks + Vitest coverage) then `:mod:check`. Gate for PRs.
+- `bun run build` = `check:front` + viewer bundle + `:mod:build`. Slow; for iteration use `bun run build:viewer` or `bun run build:mod` (mod only, skips front checks).
+- Focused checks: `bun run lint`, `bun run typecheck`, `bun run typecheck:api`, `bun run test:front`.
+- Single TS test: `bun run --filter @minemories/viewer-web test -- src/lib/glb.test.ts`.
+- Java: `./gradlew :mod:core:test --tests "dev.minemories.core.GlbSceneTest"`; full `./gradlew :mod:build`. Gradle uses `daemon=false`, 3G heap — avoid repeated full builds.
+- `bun run format` (Biome) and `./gradlew spotlessApply` (Google Java Format `1.36.0`) only when intentionally reformatting.
 
-- `bun install` installs workspace dependencies; preserve `bun.lock` when changing dependencies.
-- `bun run dev:viewer` and `bun run dev:api` start the web viewer and API.
-- `bun run check` runs repository checks; `bun run check:front` runs Biome, TypeScript checks, and frontend tests with coverage.
-- `bun run build` builds the monorepo; use `bun run build:viewer` or `bun run build:mod` for one component.
-- `./gradlew :mod:build` builds the Minecraft mod. Run `./gradlew :mod:core:test` for core unit tests; use `./gradlew spotlessApply` only when intentionally formatting Java.
+## Quality Gates (enforced, not optional)
 
-## Coding Style & Naming Conventions
+- Viewer Vitest: 100% lines/branches/functions/statements on `src/lib/**/*.ts` (`apps/viewer-web/vitest.config.ts`). New browser-independent logic needs tests; UI behavior changes need interaction coverage.
+- Core JaCoCo (runs on `check`): 90% line, 60% branch. Fix coverage with tests, not threshold edits.
+- SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
+- `mod/core` compiles with `-Werror -Xlint:all`; `mod` (NeoForge adapter) keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
+- Biome: 2-space, single quotes, semicolons, 100-col, `noExplicitAny: error`, organize-imports on.
 
-Biome is the source of truth for JS/TS formatting: two spaces, single quotes, semicolons, and a 100-character line width. Run `bun run lint` before submitting. Keep TypeScript strict and avoid `any`. Follow existing Java formatting and JDK 21 toolchain settings; use descriptive Java type names and lower camel case for members. Name tests after the behavior or module under test, using `.test.ts` for Vitest.
+## API / Dev Environment Gotchas
 
-## Testing Guidelines
+- API listens on `API_PORT` (default `3001`), CORS-locked to `WEB_ORIGIN` (`http://localhost:5173`). Auth via Better Auth, SQLite under `apps/api/data/` (gitignored).
+- Storage defaults to MinIO (`docker compose -f infra/dev/docker-compose.yml up -d`; console `:9001`). Without Docker, use `STORAGE_DRIVER=filesystem` + `LOCAL_OBJECTS_PATH=./data/objects` for dev only — never as deploy substitute.
+- Upload limits are load-bearing: 100 MiB max (`MAX_MEMORY_BYTES`), content-type `model/gltf-binary` or `application/octet-stream`, owner-scoped download, `Cache-Control: private, no-store`.
 
-Add Vitest tests for browser-independent TypeScript logic and interaction tests when UI behavior changes. Add JUnit tests for loader-independent code in `mod/core`. Run the relevant test suite and build for each changed app; do not claim a loader is supported until it builds and has been exercised in game. There is no repository-wide coverage threshold currently configured.
+## GLB + Mod Contract
 
-## Commits and Pull Requests
+- Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
+- Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/development-workflow.md`).
+- Mod writes `~/export/capture.glb` locally by default. Upload is opt-in: viewer issues a 6-digit code (5-min expiry, single use), `/memorypoc pair <code>` exchanges it for a device token in the MC `config` dir, `/memorypoc upload` sends the file. Commands: `/memorypoc select first|second|status|clear`, `/memorypoc export [<radius 2-48>]`.
+- Treat world saves, zips, and GLBs as untrusted input (zip bombs, path traversal, PII in signs/books). Keep galleries private-by-default; never add telemetry or default uploads.
 
-Recent history uses Conventional Commit-style prefixes, such as `feat(viewer): ...` and `fix(api): ...`. Keep commits focused. Pull requests should explain user-visible changes, list validation commands and results, link related issues when available, and include screenshots or a short recording for viewer changes.
+## Loader Claims
 
-## Security and User Data
+- Only `Minecraft 1.21.1 + NeoForge 21.1.248` (CurseForge profile `mc breval`) is tested. Fabric/Quilt/Forge are planned (`docs/loader-support.md`). Never describe a loader as supported until it builds and has been exercised in game with standard blocks, alpha/tinted textures, and modded content.
 
-Keep `.env`, credentials, world saves, generated exports, and build outputs out of commits. World data and GLB files are user data: uploads must remain opt-in, and changes to export formats or data handling should be documented. Treat uploaded archives as untrusted input and follow existing validation and quota boundaries.
+## PRs
+
+Per `.github/pull_request_template.md`: report `bun run check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes (`feat(viewer): …`, `fix(api): …`). Never commit `.env`, `apps/api/data/`, saves, exports, `run/`, `build/`, or `bun.lock` churn from ad-hoc installs.
