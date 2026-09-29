@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router'
 import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
 import { formatRelativeDate } from '../lib/dates'
-import { groupCaptures } from '../lib/gallery'
+import { groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
+import { shouldShowPaired } from '../lib/pairing'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 type MemoryMetadata = Memories[number]['metadata']
@@ -79,6 +80,8 @@ export function GalleryPage() {
 	const [pairExpires, setPairExpires] = useState('')
 	const [pairBusy, setPairBusy] = useState(false)
 	const [openingId, setOpeningId] = useState('')
+	const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+	const pairedFresh = shouldShowPaired(pairStatus === 'paired', memories)
 
 	const refreshMemories = useCallback(async () => {
 		setLoadError('')
@@ -161,6 +164,15 @@ export function GalleryPage() {
 		setOpeningId('')
 	}
 
+	function toggleGroup(key: string) {
+		setCollapsed(previous => {
+			const next = new Set(previous)
+			if (next.has(key)) next.delete(key)
+			else next.add(key)
+			return next
+		})
+	}
+
 	async function copyCode() {
 		await navigator.clipboard.writeText(pairCode)
 		notify('Code copied to the clipboard.')
@@ -183,22 +195,20 @@ export function GalleryPage() {
 
 			<section
 				className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
-					pairStatus === 'paired' ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
+					pairedFresh ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
 				}`}
 				aria-live="polite"
 			>
 				<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#1c2720] text-[22px] text-[#b4c1ad] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
-					{pairStatus === 'paired' ? '✓' : '⌘'}
+					{pairedFresh ? '✓' : '⌘'}
 				</div>
 				<div className="flex-1">
-					<Eyebrow>{pairStatus === 'paired' ? 'LINKED' : 'CAPTURE FROM THE SERVER'}</Eyebrow>
+					<Eyebrow>{pairedFresh ? 'LINKED' : 'CAPTURE FROM THE SERVER'}</Eyebrow>
 					<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
-						{pairStatus === 'paired' ? 'Your mod is paired.' : 'Link Minecraft to your gallery.'}
+						{pairedFresh ? 'Your mod is paired.' : 'Link Minecraft to your gallery.'}
 					</h2>
 					<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
-						{pairStatus === 'paired'
-							? 'Run /minemories upload after a capture. The gallery updates itself.'
-							: 'A temporary code links your profile to the game client. Once, and you are set.'}
+						{pairingMessage(pairedFresh, pairStatus)}
 					</p>
 					{pairStatus === 'pending' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
@@ -231,12 +241,12 @@ export function GalleryPage() {
 						<small className="text-[9px] text-[#b4c1ad]">Expires at {pairExpires}</small>
 					</div>
 				)}
-				{pairStatus === 'paired' && (
+				{pairedFresh && (
 					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
 						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Linked client
 					</span>
 				)}
-				{pairStatus !== 'pending' && pairStatus !== 'paired' && (
+				{pairStatus !== 'pending' && !pairedFresh && (
 					<button
 						className={`${buttonLime} min-w-[156px] max-phone:col-2 max-phone:min-h-[38px] max-phone:justify-self-start`}
 						type="button"
@@ -278,72 +288,95 @@ export function GalleryPage() {
 					</div>
 				)}
 				{!loading && memories.length > 0 && (
-					<div className="space-y-10">
-						{groupCaptures(memories).map(group => (
-							<section key={group.key} aria-label={group.name}>
-								<div className="mb-4 flex items-baseline gap-3">
-									<h3 className="text-xl font-semibold">{group.name}</h3>
-									<span className="text-xs text-muted-ink">{group.captures.length} captures</span>
-								</div>
-								<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
-									{group.captures.map((memory, index) => (
-										<article
-											className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]"
-											key={memory.id}
-										>
-											<div
-												className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % 4]}`}
-											>
-												{memory.metadata.thumbnail ? (
-													<div
-														aria-hidden="true"
-														className="absolute inset-0 bg-cover bg-center"
-														style={{ backgroundImage: `url("${memory.metadata.thumbnail}")` }}
-													/>
+					<div className="space-y-4">
+						{groupCaptures(memories).map(group => {
+							const open = !collapsed.has(group.key)
+							const stacks = open ? stackCaptures(group.captures) : []
+							return (
+								<section
+									key={group.key}
+									aria-label={group.name}
+									className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#151c17]"
+								>
+									<button
+										type="button"
+										onClick={() => toggleGroup(group.key)}
+										aria-expanded={open}
+										className="flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent p-4 text-left hover:bg-[#1a231c]"
+									>
+										<FolderIcon thumbnail={group.captures[0]?.metadata.thumbnail ?? null} />
+										<span className="min-w-0 flex-1">
+											<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm font-bold text-[#eef3ea]">
+												{group.name}
+											</span>
+											<span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#8e978a]">
+												{folderMotd(group.captures)}
+											</span>
+										</span>
+										<span className="flex flex-none items-center gap-3">
+											<span className="rounded-full border border-[#354238] px-2 py-1 font-mono text-[10px] text-[#b4c1ad]">
+												{group.captures.length}
+											</span>
+											<span aria-hidden="true" className="text-[#b4c1ad]">
+												{open ? '▾' : '▸'}
+											</span>
+										</span>
+									</button>
+									{open && (
+										<div className="space-y-6 border-t border-[#2a332d] p-4">
+											{stacks.map(stack =>
+												stack.captures.length > 1 ? (
+													<div key={stack.key} className="rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
+														<div className="mb-3 flex items-center gap-3">
+															<StackThumbs
+																captures={stack.captures
+																	.slice(0, 3)
+																	.map(item => ({ id: item.id, thumbnail: item.metadata.thumbnail }))}
+															/>
+															<div className="min-w-0">
+																<p className="m-0 text-[11px] font-bold text-[#dfe7da]">
+																	Same area · {stack.captures.length} captures
+																</p>
+																{stack.x !== null && stack.z !== null && (
+																	<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">
+																		Near {Math.floor(stack.x)}, {Math.floor(stack.y ?? 0)}, {Math.floor(stack.z)}
+																	</p>
+																)}
+															</div>
+														</div>
+														<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+															{stack.captures.map((memory, index) => (
+																<SnapshotCard
+																	key={memory.id}
+																	memory={memory}
+																	index={index}
+																	opening={openingId === memory.id}
+																	onOpen={() => openMemory(memory.id)}
+																/>
+															))}
+														</div>
+													</div>
 												) : (
-													<MemoryTile variant={index % 4} />
-												)}
-												<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
-												<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
-													3D CAPTURE
-												</span>
-												<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
-													{String(index + 1).padStart(2, '0')}
-												</span>
-											</div>
-											<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
-												<div>
-													<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
-														{new Date(memory.metadata.capturedAt ?? memory.createdAt).toLocaleString('en-GB', {
-															dateStyle: 'medium',
-															timeStyle: 'short',
-														})}
-													</h3>
-													<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
-														{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
-														<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
-														{memory.metadata.x !== null && memory.metadata.x !== undefined
-															? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
-															: ''}
-														{formatFileSize(memory.size)}
-													</p>
-													<CaptureMetadata metadata={memory.metadata} />
-												</div>
-												<button
-													type="button"
-													onClick={() => openMemory(memory.id)}
-													disabled={openingId === memory.id}
-													aria-label={`Revisit ${memory.name}`}
-													className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#354238] bg-transparent text-[#b4c1ad] hover:border-[#354238] hover:bg-[#1c2720]"
-												>
-													{openingId === memory.id ? '…' : '↗'}
-												</button>
-											</div>
-										</article>
-									))}
-								</div>
-							</section>
-						))}
+													stack.captures[0] && (
+														<div
+															key={stack.key}
+															className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3"
+														>
+															<SnapshotCard
+																memory={stack.captures[0]}
+																index={0}
+																opening={openingId === stack.captures[0].id}
+																onOpen={() => stack.captures[0] && openMemory(stack.captures[0].id)}
+															/>
+														</div>
+													)
+												)
+											)}
+										</div>
+									)}
+								</section>
+							)
+						})}
 					</div>
 				)}
 				{!loading && memories.length === 0 && (
@@ -377,6 +410,127 @@ export function GalleryPage() {
 				)}
 			</section>
 		</div>
+	)
+}
+
+function pairingMessage(pairedFresh: boolean, pairStatus: PairingStatus): string {
+	if (pairedFresh) return 'Run /minemories upload after a capture. The gallery updates itself.'
+	if (pairStatus === 'paired') return 'No snapshot for two months. Link the mod again to resume auto-upload.'
+	return 'A temporary code links your profile to the game client. Once, and you are set.'
+}
+
+function folderMotd(captures: Memories): string {
+	const count = captures.length
+	const newest = captures[0]
+	const seed = captures.find(item => item.metadata.seed)?.metadata.seed
+	const parts = [`${count} capture${count > 1 ? 's' : ''}`]
+	if (seed) parts.push(`Seed ${seed}`)
+	if (newest) parts.push(`last visit ${formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt)}`)
+	return parts.join(' · ')
+}
+
+function FolderIcon({ thumbnail }: { thumbnail: string | null }) {
+	return (
+		<span className="grid h-16 w-16 flex-none place-items-center overflow-hidden rounded-[4px] border border-[#354238] bg-[#10150f]">
+			{thumbnail ? (
+				<span
+					aria-hidden="true"
+					className="block h-full w-full bg-cover bg-center"
+					style={{ backgroundImage: `url("${thumbnail}")` }}
+				/>
+			) : (
+				<span aria-hidden="true" className="block scale-[0.45]">
+					<MemoryTile variant={0} />
+				</span>
+			)}
+		</span>
+	)
+}
+
+function StackThumbs({ captures }: { captures: Array<{ id: string; thumbnail: string | null }> }) {
+	return (
+		<span aria-hidden="true" className="flex flex-none">
+			{captures.map(capture => (
+				<span
+					key={capture.id}
+					className="grid h-9 w-9 place-items-center overflow-hidden rounded-[4px] border border-[#354238] bg-[#1c2720] not-first:-ml-3"
+				>
+					{capture.thumbnail ? (
+						<span
+							className="block h-full w-full bg-cover bg-center"
+							style={{ backgroundImage: `url("${capture.thumbnail}")` }}
+						/>
+					) : (
+						<span className="text-sm text-[#b4c1ad]">▧</span>
+					)}
+				</span>
+			))}
+		</span>
+	)
+}
+
+function SnapshotCard({
+	memory,
+	index,
+	opening,
+	onOpen,
+}: {
+	memory: Memories[number]
+	index: number
+	opening: boolean
+	onOpen: () => void
+}) {
+	return (
+		<article className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]">
+			<div
+				className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % artTones.length]}`}
+			>
+				{memory.metadata.thumbnail ? (
+					<div
+						aria-hidden="true"
+						className="absolute inset-0 bg-cover bg-center"
+						style={{ backgroundImage: `url("${memory.metadata.thumbnail}")` }}
+					/>
+				) : (
+					<MemoryTile variant={index % 4} />
+				)}
+				<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
+				<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
+					3D CAPTURE
+				</span>
+				<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
+					{String(index + 1).padStart(2, '0')}
+				</span>
+			</div>
+			<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
+				<div>
+					<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
+						{new Date(memory.metadata.capturedAt ?? memory.createdAt).toLocaleString('en-GB', {
+							dateStyle: 'medium',
+							timeStyle: 'short',
+						})}
+					</h3>
+					<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
+						{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
+						<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
+						{memory.metadata.x !== null && memory.metadata.x !== undefined
+							? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
+							: ''}
+						{formatFileSize(memory.size)}
+					</p>
+					<CaptureMetadata metadata={memory.metadata} />
+				</div>
+				<button
+					type="button"
+					onClick={onOpen}
+					disabled={opening}
+					aria-label={`Revisit ${memory.name}`}
+					className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#354238] bg-transparent text-[#b4c1ad] hover:border-[#354238] hover:bg-[#1c2720]"
+				>
+					{opening ? '…' : '↗'}
+				</button>
+			</div>
+		</article>
 	)
 }
 

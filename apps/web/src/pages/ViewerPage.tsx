@@ -51,7 +51,15 @@ export function ViewerPage() {
 
 	useEffect(() => {
 		if (viewerFile) {
-			sceneRef.current?.setCaptureContext({ x: null, y: null, z: null, dayTime: null, dimension: null, seed: null })
+			sceneRef.current?.setCaptureContext({
+				x: null,
+				y: null,
+				z: null,
+				dayTime: null,
+				dimension: null,
+				seed: null,
+				biome: null,
+			})
 			void openFile(viewerFile)
 		}
 	}, [viewerFile, openFile])
@@ -85,6 +93,7 @@ export function ViewerPage() {
 			dayTime: metadata.dayTime,
 			dimension: metadata.dimension,
 			seed: metadata.seed,
+			biome: metadata.biome,
 		})
 		if (metadata.dayTime !== null) scene.setMinutes(ticksToMinutes(metadata.dayTime))
 	}
@@ -205,7 +214,15 @@ async function fetchCapture(id: string) {
 	const capture = captures.find(item => item.id === id)
 	return {
 		file,
-		metadata: capture?.metadata ?? { x: null, y: null, z: null, dayTime: null, dimension: null, seed: null },
+		metadata: capture?.metadata ?? {
+			x: null,
+			y: null,
+			z: null,
+			dayTime: null,
+			dimension: null,
+			seed: null,
+			biome: null,
+		},
 	}
 }
 

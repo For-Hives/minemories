@@ -1,6 +1,7 @@
 import { createContext, lazy, type ReactNode, Suspense, useContext, useEffect, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { type AuthSession, authClient } from './auth-client'
+import { avatarUrl } from './lib/avatar'
 import { AuthPage } from './pages/AuthPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { HomePage } from './pages/HomePage'
@@ -115,9 +116,13 @@ function SiteLayout({ notice }: { notice: string }) {
 					to="/gallery"
 					title={session.user.email}
 				>
-					<span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#2a362e] text-xs text-lime-deep max-phone:h-[29px] max-phone:w-[29px]">
-						{session.user.name.slice(0, 1).toUpperCase()}
-					</span>
+					{/* biome-ignore lint/performance/noImgElement: no Next.js here; a lazy 32px CDN avatar is the lightest option. */}
+					<img
+						className="h-8 w-8 flex-none rounded-full bg-[#2a362e] max-phone:h-[29px] max-phone:w-[29px]"
+						src={avatarUrl(session.user)}
+						alt=""
+						loading="lazy"
+					/>
 					<span className="overflow-hidden text-ellipsis whitespace-nowrap max-tablet:hidden">{session.user.name}</span>
 				</Link>
 				<button
