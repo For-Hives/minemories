@@ -8,6 +8,7 @@ import * as z from 'zod'
 import { auth } from './auth'
 import { database } from './database'
 import { isGlbContainer } from './glb'
+import type { MemoryMetadata } from './pairing'
 import {
 	addMemory,
 	checkPairingCode,
@@ -24,6 +25,36 @@ const port = Number(process.env.API_PORT ?? 3001)
 const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173'
 const MAX_MEMORY_BYTES = 100 * 1024 * 1024
 const pairingCodePattern = /^\d{6}$/
+const thumbnailPattern = /^data:image\/png;base64,[A-Za-z0-9+/]*={0,2}$/
+const metadataSchema = z.object({
+	seed: z.string().max(64).nullable().default(null),
+	x: z.number().finite().nullable().default(null),
+	y: z.number().finite().nullable().default(null),
+	z: z.number().finite().nullable().default(null),
+	dimension: z.string().max(128).nullable().default(null),
+	worldName: z.string().max(128).nullable().default(null),
+	serverName: z.string().max(128).nullable().default(null),
+	biome: z.string().max(128).nullable().default(null),
+	dayTime: z.number().int().nullable().default(null),
+	raining: z.boolean().nullable().default(null),
+	thundering: z.boolean().nullable().default(null),
+	thumbnail: z.string().max(96_000).regex(thumbnailPattern).nullable().default(null),
+	capturedAt: z.string().datetime().nullable().default(null),
+})
+
+function parseMetadata(raw: string | undefined): MemoryMetadata | null {
+	let value: unknown = {}
+	if (raw) {
+		try {
+			const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64url').toString('utf8')
+			value = JSON.parse(json)
+		} catch {
+			return null
+		}
+	}
+	const parsed = metadataSchema.safeParse(value)
+	return parsed.success ? parsed.data : null
+}
 
 interface ApiContext {
 	userId: string | null
@@ -64,7 +95,7 @@ app.use(
 		origin: webOrigin,
 		credentials: true,
 		allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name'],
+		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name', 'X-Memory-Metadata'],
 	})
 )
 
@@ -153,16 +184,19 @@ app.post('/api/mod/memories', async context => {
 	if (contentType !== 'model/gltf-binary' && contentType !== 'application/octet-stream') {
 		return context.json({ error: 'unsupported_media_type' }, 415)
 	}
-
 	const contents = Buffer.from(await context.req.arrayBuffer())
-	if (contents.byteLength === 0 || contents.byteLength > MAX_MEMORY_BYTES) {
-		return context.json({ error: 'invalid_memory_size' }, contents.byteLength > MAX_MEMORY_BYTES ? 413 : 400)
-	}
-	if (!isGlbContainer(contents)) return context.json({ error: 'invalid_glb' }, 400)
+	const contentError = validateGlb(contents)
+	if (contentError) return context.json({ error: contentError.error }, contentError.status)
+	const metadata = parseMetadata(context.req.header('x-memory-metadata'))
+	if (!metadata) return context.json({ error: 'invalid_memory_metadata' }, 400)
 
 	const id = randomUUID()
 	const objectKey = `${device.userId}/${id}.glb`
-	const rawName = context.req.header('x-memory-name') ?? 'Souvenir Minecraft'
+	const requestedName = context.req.header('x-memory-name')
+	const rawName =
+		requestedName && requestedName !== 'Minecraft capture'
+			? requestedName
+			: (metadata.worldName ?? metadata.serverName ?? 'Souvenir Minecraft')
 	const name =
 		rawName
 			.replace(/\p{Cc}/gu, '')
@@ -178,6 +212,7 @@ app.post('/api/mod/memories', async context => {
 			name,
 			objectKey,
 			size: contents.byteLength,
+			metadata,
 		})
 	} catch (error) {
 		await removeMemory(objectKey).catch(() => undefined)
@@ -187,6 +222,13 @@ app.post('/api/mod/memories', async context => {
 
 	return context.json({ id, name, size: contents.byteLength }, 201)
 })
+
+function validateGlb(contents: Buffer): { error: string; status: 400 | 413 } | null {
+	if (contents.byteLength === 0) return { error: 'invalid_memory_size', status: 400 }
+	if (contents.byteLength > MAX_MEMORY_BYTES) return { error: 'invalid_memory_size', status: 413 }
+	if (!isGlbContainer(contents)) return { error: 'invalid_glb', status: 400 }
+	return null
+}
 
 if (import.meta.main) {
 	const server = Bun.serve({ port, fetch: app.fetch })
