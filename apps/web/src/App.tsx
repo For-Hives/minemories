@@ -105,7 +105,7 @@ function SiteLayout({ notice }: { notice: string }) {
 	)
 	if (isPending)
 		accountControl = (
-			<span className="h-[30px] w-[75px] rounded-[20px] bg-[linear-gradient(90deg,#e7e6db,#f6f5ef,#e7e6db)]" />
+			<span className="h-[30px] w-[75px] rounded-[20px] bg-[linear-gradient(90deg,#1c2720,#2a362e,#1c2720)]" />
 		)
 	else if (session)
 		accountControl = (
@@ -115,7 +115,7 @@ function SiteLayout({ notice }: { notice: string }) {
 					to="/gallery"
 					title={session.user.email}
 				>
-					<span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#1c2720] text-xs text-forest max-phone:h-[29px] max-phone:w-[29px]">
+					<span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#2a362e] text-xs text-lime-deep max-phone:h-[29px] max-phone:w-[29px]">
 						{session.user.name.slice(0, 1).toUpperCase()}
 					</span>
 					<span className="overflow-hidden text-ellipsis whitespace-nowrap max-tablet:hidden">{session.user.name}</span>

@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { buttonDark, buttonOutline, Eyebrow, fileInputHidden, useAppContext } from '../App'
 import { apiBase, apiClient } from '../api-client'
 import { formatFileSize } from '../lib/glb'
-import { ViewerScene } from '../viewer-scene'
+import { formatClock, ViewerScene } from '../viewer-scene'
 
 export function ViewerPage() {
 	const { viewerFile, setViewerFile } = useAppContext()
@@ -51,7 +51,7 @@ export function ViewerPage() {
 
 	useEffect(() => {
 		if (viewerFile) {
-			sceneRef.current?.setCaptureContext({ x: null, y: null, z: null, dayTime: null, dimension: null })
+			sceneRef.current?.setCaptureContext({ x: null, y: null, z: null, dayTime: null, dimension: null, seed: null })
 			void openFile(viewerFile)
 		}
 	}, [viewerFile, openFile])
@@ -63,10 +63,10 @@ export function ViewerPage() {
 			try {
 				const capture = await fetchCapture(id)
 				if (cancelled) return
-				sceneRef.current?.setCaptureContext(capture.metadata)
+				applyCaptureMetadata(capture.metadata)
 				await openFile(capture.file)
 			} catch (error) {
-				if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Could not load this memory.')
+				if (!cancelled) setLoadError(loadErrorMessage(error))
 			}
 		}
 		void loadMemory(memoryId)
@@ -74,6 +74,20 @@ export function ViewerPage() {
 			cancelled = true
 		}
 	}, [memoryId, viewerFile, openFile])
+
+	function applyCaptureMetadata(metadata: Awaited<ReturnType<typeof fetchCapture>>['metadata']) {
+		const scene = sceneRef.current
+		if (!scene) return
+		scene.setCaptureContext({
+			x: metadata.x,
+			y: metadata.y,
+			z: metadata.z,
+			dayTime: metadata.dayTime,
+			dimension: metadata.dimension,
+			seed: metadata.seed,
+		})
+		if (metadata.dayTime !== null) scene.setMinutes(ticksToMinutes(metadata.dayTime))
+	}
 
 	function chooseLocalFile(event: ChangeEvent<HTMLInputElement>) {
 		const file = event.currentTarget.files?.[0]
@@ -179,8 +193,8 @@ export function ViewerPage() {
 			</div>
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
 				<span className="text-[15px] text-[#b4c1ad]">⌖</span> Drag to orbit{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#1c2720] not-italic" /> Scroll to zoom{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#1c2720] not-italic" /> Right-click to pan
+				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> Scroll to zoom{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> Right-click to pan
 			</p>
 		</section>
 	)
@@ -189,7 +203,19 @@ export function ViewerPage() {
 async function fetchCapture(id: string) {
 	const [file, captures] = await Promise.all([fetchMemoryFile(id), apiClient.memories.list()])
 	const capture = captures.find(item => item.id === id)
-	return { file, metadata: capture?.metadata ?? { x: null, y: null, z: null, dayTime: null, dimension: null } }
+	return {
+		file,
+		metadata: capture?.metadata ?? { x: null, y: null, z: null, dayTime: null, dimension: null, seed: null },
+	}
+}
+
+export function ticksToMinutes(ticks: number): number {
+	const timeOfDay = ((ticks % 24_000) + 24_000) % 24_000
+	return Math.round((((timeOfDay + 6_000) % 24_000) / 24_000) * 1_440) % 1_440
+}
+
+function loadErrorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : 'Could not load this memory.'
 }
 
 async function fetchMemoryFile(memoryId: string): Promise<File> {
@@ -216,23 +242,35 @@ function EmptyState() {
 }
 
 function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
+	const presets = [
+		{ label: 'Morning', minutes: 570, icon: '☀' },
+		{ label: 'Noon', minutes: 720, icon: '☼' },
+		{ label: 'Sunset', minutes: 1080, icon: '◒' },
+		{ label: 'Night', minutes: 0, icon: '☾' },
+	]
+	let active = presets[0]
+	let best = Number.POSITIVE_INFINITY
+	for (const preset of presets) {
+		const distance = Math.min(Math.abs(minutes - preset.minutes), 1_440 - Math.abs(minutes - preset.minutes))
+		if (distance < best) {
+			best = distance
+			active = preset
+		}
+	}
 	return (
 		<fieldset
 			className="absolute top-4 right-4 z-[2] flex gap-1 rounded-lg border border-[#44513d] bg-[#101714ed] p-1 max-phone:top-14"
 			aria-label="Time of day"
 		>
-			{[
-				{ label: 'Morning', minutes: 570, icon: '☀' },
-				{ label: 'Noon', minutes: 720, icon: '☼' },
-				{ label: 'Sunset', minutes: 1080, icon: '◒' },
-				{ label: 'Night', minutes: 0, icon: '☾' },
-			].map(preset => (
+			{presets.map(preset => (
 				<button
 					type="button"
 					key={preset.label}
-					aria-pressed={minutes === preset.minutes}
+					title={`${preset.label} · ${formatClock(preset.minutes)}`}
+					aria-pressed={active?.label === preset.label}
+					aria-label={`${preset.label} (${formatClock(preset.minutes)})`}
 					onClick={() => onSelect(preset.minutes)}
-					className={`cursor-pointer rounded-md px-3 py-2 text-xs transition-colors ${minutes === preset.minutes ? 'bg-lime text-[#253121]' : 'text-[#d3dfce] hover:bg-[#2b392e]'}`}
+					className={`cursor-pointer rounded-md px-3 py-2 text-xs transition-colors ${active?.label === preset.label ? 'bg-lime text-[#253121]' : 'text-[#d3dfce] hover:bg-[#2b392e]'}`}
 				>
 					<span aria-hidden="true">{preset.icon}</span> <span className="max-phone:sr-only">{preset.label}</span>
 				</button>

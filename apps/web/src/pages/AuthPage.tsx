@@ -132,7 +132,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							/>
 						</label>
 						{error && (
-							<p className="m-0 -mt-1 text-xs text-[#e6eee1]" role="alert">
+							<p className="m-0 -mt-1 text-xs text-[#f0a49a]" role="alert">
 								{error}
 							</p>
 						)}

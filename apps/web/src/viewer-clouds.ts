@@ -6,16 +6,37 @@ export interface CloudContext {
 	z: number | null
 	dayTime: number | null
 	dimension: string | null
+	seed: string | null
 }
 
 const CELLS = 80
 const CELL_SIZE = 12
+const DRIFT_PER_SECOND = 0.6
+const TICKS_TO_BLOCKS = 0.03
+
+export function hashSeed(seed: string | null): { x: number; z: number } {
+	if (!seed) return { x: 0, z: 0 }
+	let hash = 0
+	for (let index = 0; index < seed.length; index += 1) {
+		hash = (hash * 31 + (seed.charCodeAt(index) ?? 0)) >>> 0
+	}
+	return { x: hash % 256, z: (hash >>> 8) % 256 }
+}
 
 export class MinecraftClouds extends THREE.Group {
-	readonly material = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })
+	readonly material = new THREE.MeshBasicMaterial({
+		vertexColors: true,
+		side: THREE.DoubleSide,
+		transparent: true,
+		opacity: 0.82,
+		depthWrite: false,
+	})
 	private readonly mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material)
 	private pixels: Uint8ClampedArray | null = null
-	private context: CloudContext = { x: 0, y: 64, z: 0, dayTime: 0, dimension: null }
+	private context: CloudContext = { x: 0, y: 64, z: 0, dayTime: 0, dimension: null, seed: null }
+	private seedOffset = { x: 0, z: 0 }
+	private initialDrift = 0
+	private baseHeight = 90
 	private elapsed = 0
 	private cellKey = ''
 	private disposed = false
@@ -23,6 +44,7 @@ export class MinecraftClouds extends THREE.Group {
 	constructor() {
 		super()
 		this.mesh.frustumCulled = false
+		this.mesh.renderOrder = 5
 		this.add(this.mesh)
 		const image = new Image()
 		image.onload = () => {
@@ -39,17 +61,23 @@ export class MinecraftClouds extends THREE.Group {
 
 	setContext(context: CloudContext): void {
 		this.context = context
+		this.seedOffset = hashSeed(context.seed)
+		this.initialDrift = (context.dayTime ?? 0) * TICKS_TO_BLOCKS
 		this.elapsed = 0
 		this.cellKey = ''
 		this.visible = !context.dimension || context.dimension === 'minecraft:overworld'
 	}
 
+	setBaseHeight(height: number): void {
+		this.baseHeight = height
+	}
+
 	update(camera: THREE.Vector3, deltaSeconds: number): void {
 		this.elapsed += deltaSeconds
 		if (!(this.pixels && this.visible)) return
-		const drift = (this.context.dayTime ?? 0) * 0.03 + this.elapsed * 0.6
-		const x = (this.context.x ?? 0) + camera.x + drift
-		const z = (this.context.z ?? 0) + camera.z
+		const drift = this.initialDrift + this.elapsed * DRIFT_PER_SECOND
+		const x = (this.context.x ?? 0) + camera.x + drift + this.seedOffset.x
+		const z = (this.context.z ?? 0) + camera.z + this.seedOffset.z
 		const cellX = Math.floor(x / CELL_SIZE)
 		const cellZ = Math.floor(z / CELL_SIZE)
 		const key = `${cellX}:${cellZ}`
@@ -57,11 +85,7 @@ export class MinecraftClouds extends THREE.Group {
 			this.rebuild(cellX, cellZ)
 			this.cellKey = key
 		}
-		this.position.set(
-			camera.x - (x - cellX * CELL_SIZE),
-			194 - (this.context.y ?? 64),
-			camera.z - (z - cellZ * CELL_SIZE)
-		)
+		this.position.set(camera.x - (x - cellX * CELL_SIZE), this.baseHeight, camera.z - (z - cellZ * CELL_SIZE))
 	}
 
 	dispose(): void {
@@ -97,6 +121,7 @@ export class MinecraftClouds extends THREE.Group {
 		this.mesh.geometry.dispose()
 		this.mesh.geometry = geometry
 	}
+
 	private addCell(
 		x: number,
 		z: number,
