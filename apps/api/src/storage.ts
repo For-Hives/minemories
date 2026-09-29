@@ -14,7 +14,8 @@ const client = new Client({
   port: Number(endpoint.port || (endpoint.protocol === 'https:' ? 443 : 80)),
   useSSL: endpoint.protocol === 'https:',
   accessKey: process.env.S3_ACCESS_KEY ?? 'GK0123456789abcdef0123456789abcdef',
-  secretKey: process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+  secretKey:
+    process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 });
 
 let bucketReady: Promise<void> | undefined;
