@@ -2,19 +2,19 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Client } from 'minio';
 
-const endpoint = new URL(process.env.MINIO_ENDPOINT ?? 'http://127.0.0.1:9000');
-const bucket = process.env.MINIO_BUCKET ?? 'minemories';
+const endpoint = new URL(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900');
+const bucket = process.env.S3_BUCKET ?? 'minemories';
 const filesystemRoot = resolve(process.env.LOCAL_OBJECTS_PATH ?? './data/objects');
-const storageDriver = process.env.STORAGE_DRIVER ?? 'minio';
-if (storageDriver !== 'minio' && storageDriver !== 'filesystem') {
-  throw new Error('STORAGE_DRIVER must be either "minio" or "filesystem".');
+const storageDriver = process.env.STORAGE_DRIVER ?? 's3';
+if (storageDriver !== 's3' && storageDriver !== 'filesystem') {
+  throw new Error('STORAGE_DRIVER must be either "s3" or "filesystem".');
 }
 const client = new Client({
   endPoint: endpoint.hostname,
   port: Number(endpoint.port || (endpoint.protocol === 'https:' ? 443 : 80)),
   useSSL: endpoint.protocol === 'https:',
-  accessKey: process.env.MINIO_ACCESS_KEY ?? 'minemories_dev',
-  secretKey: process.env.MINIO_SECRET_KEY ?? 'minemories_local_only',
+  accessKey: process.env.S3_ACCESS_KEY ?? 'GK0123456789abcdef0123456789abcdef',
+  secretKey: process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 });
 
 let bucketReady: Promise<void> | undefined;

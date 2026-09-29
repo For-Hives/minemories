@@ -2,14 +2,14 @@
 
 ## Modules actuels
 
-- `minemories/`: projet Gradle du mod client Minecraft NeoForge.
-- `minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
+- `mod/minemories/`: projet Gradle du mod client Minecraft NeoForge.
+- `mod/minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
 - `apps/web/`: SPA React (stylisée avec Tailwind CSS, thème dans `src/theme.css`) avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
 - `apps/api-contract/`: contrat oRPC partagé par l’API et le viewer.
 - `docs/`: documentation transverse et état du POC.
 
-Les builds Minecraft sont orchestrés par le wrapper Gradle dans `minemories/`. Les apps TypeScript sont gérées par Bun workspaces et vérifiées par Biome. Les applications restent indépendantes : une évolution de l’une ne doit pas imposer son runtime aux autres.
+Les builds Minecraft sont orchestrés par le wrapper Gradle dans `mod/minemories/`. Les apps TypeScript sont gérées par Bun workspaces et vérifiées par Biome. Les applications restent indépendantes : une évolution de l’une ne doit pas imposer son runtime aux autres.
 
 ## Contrat mod → viewer
 
@@ -19,7 +19,7 @@ Avant de faire évoluer le format, documenter les métadonnées nécessaires (s�
 
 ## Extensions prévues
 
-Les futurs outils vont dans `apps/<nom>/`. Les adaptateurs Fabric, Forge et Quilt, s'ils sont développés, restent sous `minemories/` et partagent `minemories/core/` lorsqu'une API neutre est appropriée.
+Les futurs outils vont dans `apps/<nom>/`. Les adaptateurs Fabric, Forge et Quilt, s'ils sont développés, restent sous `mod/minemories/` et partagent `mod/minemories/core/` lorsqu'une API neutre est appropriée.
 
 ## Développement de l'API
 
@@ -29,13 +29,13 @@ Prérequis : Bun 1.4.2 et Docker Compose. Depuis la racine :
 cp .env.example .env
 # Remplacer BETTER_AUTH_SECRET et PAIRING_PEPPER par deux secrets distincts d'au moins 32 caractères.
 docker compose up -d
-bun run dev:api
+bun api:dev
 ```
 
-L'API écoute sur `http://localhost:3001`; la console MinIO de développement est sur `http://localhost:9001` (identifiants du fichier `.env.example`). SQLite est conservé sous `apps/api/data/` et les objets MinIO dans le volume Docker `minio_data`. Arrêter MinIO avec `docker compose down`; ajouter `-v` supprime les données locales.
+L'API écoute sur `http://localhost:3001`; l'endpoint S3 Garage de développement est sur `http://127.0.0.1:3900` (identifiants locaux du fichier `.env.example`). SQLite est conservé sous `apps/api/data/` et les objets Garage dans les volumes Docker `garage_meta` et `garage_data`. Arrêter Garage avec `docker compose down`; ajouter `-v` supprime les données locales.
 
-Si le daemon Docker n'est pas disponible, le stockage local peut être utilisé le temps du développement en ajoutant `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` à `.env`. Les GLB sont alors écrits dans `apps/api/data/objects/`; cette option ne remplace pas MinIO pour un déploiement.
+Si le démon Docker n'est pas disponible, le stockage local peut être utilisé le temps du développement en ajoutant `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` à `.env`. Les GLB sont alors écrits dans `apps/api/data/objects/`; cette option ne remplace pas Garage pour un déploiement.
 
-Le viewer crée un code à six chiffres via la procédure oRPC authentifiée; il expire après cinq minutes et ne peut servir qu'une fois. Le mod utilise `/memorypoc pair <code>` pour échanger le code contre un jeton d'appareil, enregistré dans le dossier `config` du profil Minecraft. `/memorypoc upload` envoie `~/export/capture.glb` à l'API. Le jeton ne donne accès qu'à l'envoi pour le compte auquel l'appareil est lié. L'API garde les octets dans MinIO et les métadonnées propriétaire-scopées dans SQLite.
+Le viewer crée un code à six chiffres via la procédure oRPC authentifiée; il expire après cinq minutes et ne peut servir qu'une fois. Le mod utilise `/memorypoc pair <code>` pour échanger le code contre un jeton d'appareil, enregistré dans le dossier `config` du profil Minecraft. `/memorypoc upload` envoie `~/export/capture.glb` à l'API. Le jeton ne donne accès qu'à l'envoi pour le compte auquel l'appareil est lié. L'API garde les octets dans Garage et les métadonnées propriétaire-scopées dans SQLite.
 
 La galerie vérifie le statut d'appairage par polling et actualise la liste des souvenirs. Le téléchargement d'un GLB est authentifié et limité au propriétaire; le viewer intégré garde son propre document pour isoler le moteur Three.js du shell React. En développement, un fichier local peut toujours être ouvert depuis la barre de navigation ou l'écran du viewer.

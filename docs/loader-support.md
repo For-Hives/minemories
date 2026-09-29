@@ -13,7 +13,7 @@ Une cible n'est supportée qu'après compilation **et** validation en jeu de blo
 
 ## Structure visée, par étapes
 
-Le dépôt a déjà Gradle, Spotless et `:core`, une bibliothèque Java sans classes Minecraft qui sérialise le GLB. La racine de `minemories/` est aujourd'hui le mod NeoForge. Il ne faut pas ajouter Architectury comme simple dépendance à cette racine : les hooks `RegisterClientCommandsEvent`, `RenderLevelStageEvent`, `ModelData`, `FluidSpriteCache` et `IClientFluidTypeExtensions` du POC restent spécifiques à NeoForge.
+Le dépôt a déjà Gradle, Spotless et `:core`, une bibliothèque Java sans classes Minecraft qui sérialise le GLB. La racine de `mod/minemories/` est aujourd'hui le mod NeoForge. Il ne faut pas ajouter Architectury comme simple dépendance à cette racine : les hooks `RegisterClientCommandsEvent`, `RenderLevelStageEvent`, `ModelData`, `FluidSpriteCache` et `IClientFluidTypeExtensions` du POC restent spécifiques à NeoForge.
 
 1. Garder `:core` pour la sérialisation GLB et ses tests JUnit. Extraire la capture Minecraft partageable dans un nouveau module `:common` seulement quand son interface avec les loaders est établie.
 2. Déplacer l'adaptateur actuel dans `:neoforge` sans changer son comportement, son `modId` ou son JAR final. Valider `runClient`, `build` et un export visuel après ce déplacement.
