@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { Client } from 'minio';
 
 const endpoint = new URL(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900');
@@ -20,6 +20,20 @@ const client = new Client({
 
 let bucketReady: Promise<void> | undefined;
 
+function localPath(objectKey: string) {
+  const path = resolve(filesystemRoot, objectKey);
+  const relativePath = relative(filesystemRoot, path);
+  if (
+    !relativePath ||
+    relativePath === '..' ||
+    relativePath.startsWith(`..${sep}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new Error('Invalid object key.');
+  }
+  return path;
+}
+
 async function ensureBucket() {
   bucketReady ??= (async () => {
     if (!(await client.bucketExists(bucket))) await client.makeBucket(bucket, 'us-east-1');
@@ -32,8 +46,7 @@ async function ensureBucket() {
 
 export async function storeMemory(objectKey: string, contents: Buffer) {
   if (storageDriver === 'filesystem') {
-    const path = resolve(filesystemRoot, objectKey);
-    if (!path.startsWith(`${filesystemRoot}/`)) throw new Error('Invalid object key.');
+    const path = localPath(objectKey);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, contents, { flag: 'wx' });
     return;
@@ -47,8 +60,7 @@ export async function storeMemory(objectKey: string, contents: Buffer) {
 
 export async function removeMemory(objectKey: string) {
   if (storageDriver === 'filesystem') {
-    const path = resolve(filesystemRoot, objectKey);
-    if (!path.startsWith(`${filesystemRoot}/`)) throw new Error('Invalid object key.');
+    const path = localPath(objectKey);
     await rm(path, { force: true });
     return;
   }
@@ -58,8 +70,7 @@ export async function removeMemory(objectKey: string) {
 
 export async function readMemory(objectKey: string) {
   if (storageDriver === 'filesystem') {
-    const path = resolve(filesystemRoot, objectKey);
-    if (!path.startsWith(`${filesystemRoot}/`)) throw new Error('Invalid object key.');
+    const path = localPath(objectKey);
     return readFile(path);
   }
 

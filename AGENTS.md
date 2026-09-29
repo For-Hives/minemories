@@ -14,7 +14,7 @@
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
 - `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
-- `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check`.
+- `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check` (Biome, typecheck, Bun tests).
 - `bun check` is the no-fix aggregate quality gate. `bun build` checks everything, then builds web and mod.
 - Single TS test: `bun run --filter @minemories/web test -- src/lib/glb.test.ts`.
 - Java (from `mod/minemories/`): `./gradlew :core:test --tests "dev.minemories.core.GlbSceneTest"`.

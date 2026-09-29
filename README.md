@@ -47,7 +47,7 @@ Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancem
 | `bun mod:check:ci` | Même vérification sans modification des fichiers. |
 | `bun web:dev` / `bun api:dev` | Démarre les applications séparément. |
 | `bun web:check` | Biome, TypeScript et Vitest avec couverture du viewer. |
-| `bun api:check` | Biome API et contrat, puis TypeScript API. Aucun test API automatisé pour l'instant. |
+| `bun api:check` | Biome API et contrat, TypeScript API, puis tests Bun (appairage et stockage fichier). |
 | `bun check` / `bun build` | Contrôles de tout le dépôt, puis bundles web et mod pour `build`. |
 
 `bun <script>` est le raccourci Bun pour `bun run <script>`. En CI, `bun check` ne réécrit aucun fichier.
