@@ -133,7 +133,8 @@ final class MinemoriesScreen extends Screen {
                             if (this.minecraft != null && this.minecraft.screen == this) {
                               busy = false;
                               if (error == null) paired = true;
-                              status = error == null ? "Compte lié." : Minemories.pairingError(error);
+                              status =
+                                  error == null ? "Compte lié." : Minemories.pairingError(error);
                               updateButtons();
                             }
                           }));
@@ -179,20 +180,22 @@ final class MinemoriesScreen extends Screen {
       graphics.drawString(
           this.font, "Garde un fragment de ton monde.", left + 14, top + 36, COLOR_MUTED);
     }
-    graphics.drawString(
-        this.font, "CAPTURER", left + 14, top + (compact ? 35 : 56), COLOR_TEXT);
+    graphics.drawString(this.font, "CAPTURER", left + 14, top + (compact ? 35 : 56), COLOR_TEXT);
     if (!compact) {
       graphics.drawString(
-          this.font, "La prochaine capture remplace capture.glb.",
-          left + 14, top + 101, COLOR_MUTED);
+          this.font,
+          "La prochaine capture remplace capture.glb.",
+          left + 14,
+          top + 101,
+          COLOR_MUTED);
     }
     int divider = top + (compact ? 78 : 119);
     graphics.fill(left + 14, divider, left + panelWidth - 14, divider + 1, COLOR_EDGE);
-    graphics.drawString(
-        this.font, "COMPTE", left + 14, top + (compact ? 88 : 131), COLOR_TEXT);
+    graphics.drawString(this.font, "COMPTE", left + 14, top + (compact ? 88 : 131), COLOR_TEXT);
     String linkStatus = paired ? "LIÉ" : "NON LIÉ";
     graphics.drawString(
-        this.font, linkStatus,
+        this.font,
+        linkStatus,
         left + panelWidth - 14 - this.font.width(linkStatus),
         top + (compact ? 88 : 131),
         paired ? COLOR_ACCENT : COLOR_MUTED);

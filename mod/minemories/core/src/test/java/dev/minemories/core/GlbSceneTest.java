@@ -2,8 +2,8 @@ package dev.minemories.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -90,22 +90,43 @@ final class GlbSceneTest {
     GlbScene scene = new GlbScene();
     assertThrows(
         IllegalArgumentException.class,
-        () -> scene.addQuad("short", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1,
-            new float[11], new float[8]));
+        () ->
+            scene.addQuad(
+                "short", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1, new float[11], new float[8]));
     assertThrows(
         IllegalArgumentException.class,
-        () -> scene.addQuad("uv", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1,
-            new float[12], new float[7]));
+        () ->
+            scene.addQuad(
+                "uv", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1, new float[12], new float[7]));
     assertEquals(0, scene.materialCount());
   }
 
   @Test
   void writesFiniteNormalsAndEscapedNamesForExtremeFiniteVertices() throws IOException {
     GlbScene scene = new GlbScene();
-    scene.addQuad("extreme", "line\n\"\\", "sprite\tname", ONE_PIXEL_PNG,
-        0xFFFFFF, 2, Float.NaN, Float.POSITIVE_INFINITY,
-        new float[] {-Float.MAX_VALUE, 0, 0, Float.MAX_VALUE, 0, 0,
-            Float.MAX_VALUE, Float.MAX_VALUE, 0, -Float.MAX_VALUE, Float.MAX_VALUE, 0},
+    scene.addQuad(
+        "extreme",
+        "line\n\"\\",
+        "sprite\tname",
+        ONE_PIXEL_PNG,
+        0xFFFFFF,
+        2,
+        Float.NaN,
+        Float.POSITIVE_INFINITY,
+        new float[] {
+          -Float.MAX_VALUE,
+          0,
+          0,
+          Float.MAX_VALUE,
+          0,
+          0,
+          Float.MAX_VALUE,
+          Float.MAX_VALUE,
+          0,
+          -Float.MAX_VALUE,
+          Float.MAX_VALUE,
+          0
+        },
         new float[] {0, 0, 1, 0, 1, 1, 0, 1});
     Path output = tempDir.resolve("nested/capture.glb");
     scene.write(output);
