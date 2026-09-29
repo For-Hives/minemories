@@ -760,57 +760,60 @@ public class Minemories {
       int y,
       int z)
       throws IOException {
-    FluidVertexConsumer consumer = new FluidVertexConsumer();
-    MultiBufferSource buffers = renderType -> consumer;
+    Map<RenderType, FluidVertexConsumer> consumers = new LinkedHashMap<>();
+    MultiBufferSource buffers =
+        renderType -> consumers.computeIfAbsent(renderType, key -> new FluidVertexConsumer());
     PoseStack pose = new PoseStack();
     pose.translate(x, y, z);
     dispatcher.render(blockEntity, 0f, pose, buffers);
-    for (int offset = 0; offset + 3 < consumer.vertices.size(); offset += 4) {
-      FluidVertex[] quad = {
-        consumer.vertices.get(offset),
-        consumer.vertices.get(offset + 1),
-        consumer.vertices.get(offset + 2),
-        consumer.vertices.get(offset + 3)
-      };
-      TextureAtlasSprite sprite = findAtlasSprite(atlasSprites, quad);
-      if (sprite == null) continue;
-      String imageKey = sprite.contents().name().toString();
-      SpriteAsset asset = sprites.get(imageKey);
-      if (asset == null) {
-        asset = new SpriteAsset(sprite);
-        sprites.put(imageKey, asset);
+    for (FluidVertexConsumer finished : consumers.values()) {
+      for (int offset = 0; offset + 3 < finished.vertices.size(); offset += 4) {
+        FluidVertex[] quad = {
+          finished.vertices.get(offset),
+          finished.vertices.get(offset + 1),
+          finished.vertices.get(offset + 2),
+          finished.vertices.get(offset + 3)
+        };
+        TextureAtlasSprite sprite = findAtlasSprite(atlasSprites, quad);
+        if (sprite == null) continue;
+        String imageKey = sprite.contents().name().toString();
+        SpriteAsset asset = sprites.get(imageKey);
+        if (asset == null) {
+          asset = new SpriteAsset(sprite);
+          sprites.put(imageKey, asset);
+        }
+        float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
+        float[] xyz = new float[12], uv = new float[8];
+        int r = 0, g = 0, b = 0, a = 0;
+        for (int i = 0; i < 4; i++) {
+          FluidVertex vertex = quad[i];
+          xyz[i * 3] = vertex.x;
+          xyz[i * 3 + 1] = vertex.y;
+          xyz[i * 3 + 2] = vertex.z;
+          uv[i * 2] = ur == 0 ? 0 : (vertex.u - sprite.getU0()) / ur;
+          uv[i * 2 + 1] = vr == 0 ? 0 : (vertex.v - sprite.getV0()) / vr;
+          r += vertex.r;
+          g += vertex.g;
+          b += vertex.b;
+          a += vertex.a;
+        }
+        int tint = ((r / 4) << 16) | ((g / 4) << 8) | (b / 4);
+        float opacity = Math.max(0f, Math.min(1f, a / (4f * 255f)));
+        int alphaMode = opacity < 1f ? 2 : asset.alphaMode;
+        int emission = blockEntity.getBlockState().getLightEmission();
+        String key = "be#" + imageKey + "#" + Integer.toHexString(tint);
+        scene.addQuad(
+            key,
+            BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()) + " / " + imageKey,
+            imageKey,
+            asset.png,
+            tint,
+            alphaMode,
+            emission / 15f,
+            opacity,
+            xyz,
+            uv);
       }
-      float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
-      float[] xyz = new float[12], uv = new float[8];
-      int r = 0, g = 0, b = 0, a = 0;
-      for (int i = 0; i < 4; i++) {
-        FluidVertex vertex = quad[i];
-        xyz[i * 3] = vertex.x;
-        xyz[i * 3 + 1] = vertex.y;
-        xyz[i * 3 + 2] = vertex.z;
-        uv[i * 2] = ur == 0 ? 0 : (vertex.u - sprite.getU0()) / ur;
-        uv[i * 2 + 1] = vr == 0 ? 0 : (vertex.v - sprite.getV0()) / vr;
-        r += vertex.r;
-        g += vertex.g;
-        b += vertex.b;
-        a += vertex.a;
-      }
-      int tint = ((r / 4) << 16) | ((g / 4) << 8) | (b / 4);
-      float opacity = Math.max(0f, Math.min(1f, a / (4f * 255f)));
-      int alphaMode = opacity < 1f ? 2 : asset.alphaMode;
-      int emission = blockEntity.getBlockState().getLightEmission();
-      String key = "be#" + imageKey + "#" + Integer.toHexString(tint);
-      scene.addQuad(
-          key,
-          BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()) + " / " + imageKey,
-          imageKey,
-          asset.png,
-          tint,
-          alphaMode,
-          emission / 15f,
-          opacity,
-          xyz,
-          uv);
     }
   }
 
@@ -874,6 +877,11 @@ public class Minemories {
 
     @Override
     public VertexConsumer setUv2(int u, int v) {
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setLight(int light) {
       return this;
     }
 
