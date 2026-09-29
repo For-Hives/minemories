@@ -7,6 +7,7 @@ export interface CloudContext {
 	dayTime: number | null
 	dimension: string | null
 	seed: string | null
+	biome: string | null
 }
 
 const CELLS = 80
@@ -27,13 +28,12 @@ export class MinecraftClouds extends THREE.Group {
 	readonly material = new THREE.MeshBasicMaterial({
 		vertexColors: true,
 		side: THREE.DoubleSide,
-		transparent: true,
-		opacity: 0.82,
-		depthWrite: false,
+		transparent: false,
+		depthWrite: true,
 	})
 	private readonly mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material)
 	private pixels: Uint8ClampedArray | null = null
-	private context: CloudContext = { x: 0, y: 64, z: 0, dayTime: 0, dimension: null, seed: null }
+	private context: CloudContext = { x: 0, y: 64, z: 0, dayTime: 0, dimension: null, seed: null, biome: null }
 	private seedOffset = { x: 0, z: 0 }
 	private initialDrift = 0
 	private baseHeight = 90
@@ -44,7 +44,6 @@ export class MinecraftClouds extends THREE.Group {
 	constructor() {
 		super()
 		this.mesh.frustumCulled = false
-		this.mesh.renderOrder = 5
 		this.add(this.mesh)
 		const image = new Image()
 		image.onload = () => {

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName } from './lib/glb'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 
@@ -34,7 +35,18 @@ export class ViewerScene {
 	private readonly controls: OrbitControls
 	private readonly modelRoot = new THREE.Group()
 	private readonly loader = new GLTFLoader()
-	private readonly skyUniforms = { uDay: { value: 9.5 / 24 }, uMoonPhase: { value: 0 } }
+	private readonly skyUniforms = {
+		uDay: { value: 9.5 / 24 },
+		uMoonPhase: { value: 0 },
+		uDayZenith: { value: new THREE.Vector3(0.2, 0.53, 0.88) },
+		uDayHorizon: { value: new THREE.Vector3(0.64, 0.8, 0.94) },
+		uNightZenith: { value: new THREE.Vector3(0.018, 0.028, 0.075) },
+		uNightHorizon: { value: new THREE.Vector3(0.1, 0.12, 0.2) },
+		uStars: { value: 1 },
+		uCelestial: { value: 1 },
+		uFixed: { value: -1 },
+	}
+	private atmosphere: Atmosphere = getAtmosphere(null, null)
 	private readonly sky: THREE.Mesh
 	private readonly clouds = new MinecraftClouds()
 	private readonly hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 0.65)
@@ -76,15 +88,23 @@ export class ViewerScene {
       varying vec3 vDirection;
       uniform float uDay;
       uniform float uMoonPhase;
+      uniform vec3 uDayZenith;
+      uniform vec3 uDayHorizon;
+      uniform vec3 uNightZenith;
+      uniform vec3 uNightHorizon;
+      uniform float uStars;
+      uniform float uCelestial;
+      uniform float uFixed;
       void main() {
         vec3 direction = normalize(vDirection);
         float angle = (uDay - 0.25) * 6.28318530718;
         float elevation = sin(angle);
-        float daylight = smoothstep(-0.12, 0.20, elevation);
-        vec3 nightZenith = vec3(0.018, 0.028, 0.075);
-        vec3 nightHorizon = vec3(0.10, 0.12, 0.20);
-        vec3 dayZenith = vec3(0.20, 0.53, 0.88);
-        vec3 dayHorizon = vec3(0.64, 0.80, 0.94);
+        float rawLight = smoothstep(-0.12, 0.20, elevation);
+        float daylight = uFixed >= 0.0 ? uFixed : rawLight;
+        vec3 nightZenith = uNightZenith;
+        vec3 nightHorizon = uNightHorizon;
+        vec3 dayZenith = uDayZenith;
+        vec3 dayHorizon = uDayHorizon;
         float horizon = smoothstep(-0.30, 0.85, direction.y);
         vec3 skyColor = mix(mix(nightHorizon, nightZenith, horizon), mix(dayHorizon, dayZenith, horizon), daylight);
         vec3 sunDirection = normalize(vec3(cos(angle), elevation, 0.30));
@@ -92,8 +112,8 @@ export class ViewerScene {
         vec3 sunRight = normalize(cross(sunDirection, vec3(0.0, 1.0, 0.0)));
         vec3 sunUp = normalize(cross(sunRight, sunDirection));
         float sunSquare = step(abs(dot(direction, sunRight)), 0.045) * step(abs(dot(direction, sunUp)), 0.045);
-        float sunDisk = sunSquare * smoothstep(-0.12, 0.20, elevation);
-        float sunGlow = pow(max(sunDot, 0.0), 48.0) * daylight;
+        float sunDisk = sunSquare * smoothstep(-0.12, 0.20, elevation) * uCelestial;
+        float sunGlow = pow(max(sunDot, 0.0), 48.0) * daylight * uCelestial;
         vec3 sunColor = mix(vec3(1.0, 0.48, 0.20), vec3(1.0, 0.91, 0.68), smoothstep(0.0, 0.45, elevation));
         skyColor = mix(skyColor, sunColor, max(sunDisk * daylight, sunGlow * 0.38));
         vec3 moonDirection = -sunDirection;
@@ -104,10 +124,10 @@ export class ViewerScene {
         float phaseEdge = cos(moonPhase * 0.78539816339);
         float moonX = dot(direction, moonRight) / 0.030;
         float moonLit = moonPhase < 4.0 ? step(-phaseEdge, moonX) : step(moonX, phaseEdge);
-        float moonVisible = moonSquare * moonLit * (1.0 - daylight);
+        float moonVisible = moonSquare * moonLit * (1.0 - daylight) * uCelestial;
         skyColor = mix(skyColor, vec3(0.78, 0.84, 0.94), moonVisible);
         float stars = step(0.9988, fract(sin(dot(floor(direction * 420.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453));
-        skyColor += vec3(0.72, 0.82, 1.0) * stars * (1.0 - daylight) * smoothstep(0.0, 0.15, direction.y);
+        skyColor += vec3(0.72, 0.82, 1.0) * stars * (1.0 - daylight) * smoothstep(0.0, 0.15, direction.y) * uStars;
         gl_FragColor = vec4(skyColor, 1.0);
       }`,
 			})
@@ -153,6 +173,25 @@ export class ViewerScene {
 
 	setCaptureContext(context: CloudContext): void {
 		this.clouds.setContext(context)
+		this.atmosphere = getAtmosphere(context.dimension, context.biome)
+		this.skyUniforms.uDayZenith.value.set(...this.atmosphere.dayZenith)
+		this.skyUniforms.uDayHorizon.value.set(...this.atmosphere.dayHorizon)
+		this.skyUniforms.uNightZenith.value.set(...this.atmosphere.nightZenith)
+		this.skyUniforms.uNightHorizon.value.set(...this.atmosphere.nightHorizon)
+		this.skyUniforms.uStars.value = this.atmosphere.starAlpha
+		this.skyUniforms.uCelestial.value = this.atmosphere.celestial ? 1 : 0
+		this.skyUniforms.uFixed.value = this.atmosphere.fixedDaylight ?? -1
+		if (context.dimension === 'minecraft:the_nether') {
+			this.hemisphere.color.set(0xff9a7a)
+			this.hemisphere.groundColor.set(0x4a1a12)
+		} else if (context.dimension === 'minecraft:the_end') {
+			this.hemisphere.color.set(0xb8a8e8)
+			this.hemisphere.groundColor.set(0x1a1626)
+		} else {
+			this.hemisphere.color.set(0xe2efff)
+			this.hemisphere.groundColor.set(0x36352e)
+		}
+		this.updateDayCycle()
 	}
 
 	async loadFile(file: File): Promise<void> {
@@ -360,7 +399,12 @@ export class ViewerScene {
 		const minutes = Math.round(this.dayTime * 1440) % 1440
 		const angle = (this.dayTime - 0.25) * Math.PI * 2
 		const sunHeight = Math.sin(angle)
-		const daylight = THREE.MathUtils.smoothstep(sunHeight, -0.12, 0.2)
+		const rawLight = THREE.MathUtils.smoothstep(sunHeight, -0.12, 0.2)
+		const daylight = THREE.MathUtils.clamp(
+			(this.atmosphere.fixedDaylight ?? rawLight) * this.atmosphere.daylightScale,
+			0,
+			1
+		)
 		this.skyUniforms.uDay.value = this.dayTime
 		this.skyUniforms.uMoonPhase.value = this.lunarAge
 		this.keyLight.intensity = 0.015 + daylight * 1.05
@@ -371,6 +415,9 @@ export class ViewerScene {
 			this.renderer.shadowMap.needsUpdate = true
 		}
 		this.keyLight.color.set(sunHeight < 0.18 ? 0xff9a62 : 0xffedc2)
+		if (this.atmosphere.fixedDaylight !== null && !this.atmosphere.celestial) {
+			this.keyLight.color.set(0xff8a5c)
+		}
 		this.hemisphere.intensity = 0.08 + daylight * 0.62
 		this.nightFill.intensity = 0.02 + (1 - daylight) * 0.12
 		this.updateSunShadow()
