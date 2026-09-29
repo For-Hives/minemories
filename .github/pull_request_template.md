@@ -8,8 +8,8 @@
 
 ## Vérifications
 
-- [ ] `bun run check`
-- [ ] `bun run build` si le build, les assets ou l’intégration entre modules changent
+- [ ] `bun check`
+- [ ] `bun build` si le build, les assets ou l’intégration entre modules changent
 - [ ] Test en jeu si le comportement du mod ou le format GLB change
 
 ## Points à revoir

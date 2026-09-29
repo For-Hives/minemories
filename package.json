@@ -15,19 +15,19 @@
     "rolldown"
   ],
   "scripts": {
-    "dev:web": "bun run --filter @minemories/web dev",
-    "dev:api": "bun run --filter @minemories/api dev",
-    "dev:mod": "node scripts/run-mod.mjs",
+    "mod:dev": "node scripts/gradle.mjs runClient",
+    "mod:build": "node scripts/gradle.mjs build",
+    "mod:check": "node scripts/gradle.mjs spotlessApply check",
+    "mod:check:ci": "node scripts/gradle.mjs check",
+    "web:dev": "bun run --filter @minemories/web dev",
+    "web:check": "biome check apps/web && bun run --filter @minemories/web typecheck && bun run --filter @minemories/web test:coverage",
+    "web:build": "bun run --filter @minemories/web bundle",
+    "api:dev": "bun run --filter @minemories/api dev",
+    "api:check": "biome check apps/api apps/api-contract && bun run --filter @minemories/api typecheck",
     "format": "biome check --write apps scripts package.json biome.json",
     "lint": "biome check apps scripts package.json biome.json",
-    "typecheck": "bun run --filter @minemories/web typecheck",
-    "typecheck:api": "bun run --filter @minemories/api typecheck",
-    "test:front": "bun run --filter @minemories/web test:coverage",
-    "check:front": "bun run lint && bun run typecheck && bun run typecheck:api && bun run test:front",
-    "check": "node scripts/check.mjs",
-    "build:web": "bun run --filter @minemories/web build",
-    "build:mod": "node scripts/build.mjs mod",
-    "build": "node scripts/build.mjs"
+    "check": "bun run lint && bun run web:check && bun run api:check && bun run mod:check:ci",
+    "build": "bun run check && bun run web:build && bun run mod:build"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13"
