@@ -17,6 +17,7 @@
   "scripts": {
     "dev:web": "bun run --filter @minemories/web dev",
     "dev:api": "bun run --filter @minemories/api dev",
+    "dev:mod": "node scripts/run-mod.mjs",
     "format": "biome check --write apps scripts package.json biome.json",
     "lint": "biome check apps scripts package.json biome.json",
     "typecheck": "bun run --filter @minemories/web typecheck",
