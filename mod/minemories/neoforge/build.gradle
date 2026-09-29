@@ -1,0 +1,51 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.80'
+    id 'com.diffplug.spotless'
+    id 'com.github.spotbugs'
+}
+
+base { archivesName = 'memory-poc' }
+
+dependencies {
+    implementation project(':core')
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+spotless {
+    java {
+        googleJavaFormat('1.36.0')
+    }
+}
+
+spotbugs {
+    toolVersion = '4.10.4'
+    ignoreFailures = false
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // Keep upstream NeoForge deprecations visible while allowing the adapter to build.
+    options.compilerArgs.add('-Xlint:all')
+}
+
+neoForge {
+    version = '21.1.248'
+    runs {
+        client {
+            client()
+            gameDirectory = rootProject.file('run')
+        }
+    }
+    mods { memorypoc { sourceSet(sourceSets.main) } }
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var props = [version: project.version]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') { expand props }
+}
+
+tasks.named('jar') {
+    from project(':core').sourceSets.main.output
+}

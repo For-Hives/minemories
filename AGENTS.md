@@ -5,14 +5,14 @@
 - `apps/web/` — React + Three.js SPA (Bun workspace `@minemories/web`).
 - `apps/api/` — Bun/Hono + Better Auth + oRPC + SQLite + S3-compatible storage (`@minemories/api`).
 - `apps/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
-- `mod/minemories/` — NeoForge client mod (Gradle root). `mod/minemories/core/` is loader-independent capture/GLB code (`:core`); `mod/minemories/src/` is loader-specific integration.
+- `mod/minemories/` — Gradle root. `:core` in `mod/minemories/core/` is loader-independent GLB code; `:neoforge` in `mod/minemories/neoforge/` is the client adapter.
 - `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`).
 
 ## Commands (run from repo root)
 
 - Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.2, Node >=22.12, JDK 21.
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
-- `bun mod:dev` starts Gradle `runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
+- `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
 - `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check`.
 - `bun check` is the no-fix aggregate quality gate. `bun build` checks everything, then builds web and mod.

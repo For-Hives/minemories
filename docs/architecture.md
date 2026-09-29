@@ -3,6 +3,7 @@
 ## Modules actuels
 
 - `mod/minemories/`: projet Gradle du mod client Minecraft NeoForge.
+- `mod/minemories/neoforge/`: adaptateur NeoForge, commandes et capture du jeu.
 - `mod/minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
 - `apps/web/`: SPA React (stylisée avec Tailwind CSS, thème dans `src/theme.css`) avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
