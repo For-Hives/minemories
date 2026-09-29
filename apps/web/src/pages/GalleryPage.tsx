@@ -254,6 +254,9 @@ export function GalleryPage() {
 							Verification failed. Check that the API is running.
 						</div>
 					)}
+					{pairStatus !== 'pending' && (
+						<p className="mt-[10px] text-[10px] text-[#8e978a]">{pairingHint(pairedFresh)}</p>
+					)}
 				</div>
 				{pairStatus === 'pending' && (
 					<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
@@ -274,14 +277,14 @@ export function GalleryPage() {
 						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Linked client
 					</span>
 				)}
-				{pairStatus !== 'pending' && !pairedFresh && (
+				{pairStatus !== 'pending' && (
 					<button
 						className={`${buttonLime} min-w-[156px] max-phone:col-2 max-phone:min-h-[38px] max-phone:justify-self-start`}
 						type="button"
 						onClick={() => void createPairing()}
 						disabled={pairBusy}
 					>
-						{pairBusy ? 'Creating…' : 'Link my server'} <span>↗</span>
+						{pairingButtonLabel(pairBusy, pairedFresh)} <span>↗</span>
 					</button>
 				)}
 			</section>
@@ -396,7 +399,7 @@ export function GalleryPage() {
 								type="button"
 								onClick={() => void createPairing()}
 							>
-								Link my server
+								{pairedFresh ? 'New code' : 'Link my server'}
 							</button>
 						</div>
 					</div>
@@ -465,9 +468,19 @@ function useTrashActions(
 	return { trashSnapshot, restoreSnapshot, deleteSnapshot }
 }
 
+function pairingButtonLabel(busy: boolean, pairedFresh: boolean): string {
+	if (busy) return 'Creating…'
+	return pairedFresh ? 'New code' : 'Link my server'
+}
+
 function pairingMessage(pairedFresh: boolean, pairStatus: PairingStatus): string {
 	if (pairedFresh) return 'Run /minemories upload after a capture. The gallery updates itself.'
 	if (pairStatus === 'paired') return 'No snapshot for two months. Link the mod again to resume auto-upload.'
+	return 'A temporary code links your profile to the game client. Once, and you are set.'
+}
+
+function pairingHint(pairedFresh: boolean): string {
+	if (pairedFresh) return 'Already linked? Generate a fresh code for another device.'
 	return 'A temporary code links your profile to the game client. Once, and you are set.'
 }
 
