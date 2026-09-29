@@ -1,5 +1,4 @@
 - ajout de test unit partout
-- ajouter une ui au mod, en mode quand le joueurs fait pause, il doit y avoir une ui sympa pour faire l'appairage, et une snapshot 
 - mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
 - mod export automatique vers le server 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
@@ -8,3 +7,9 @@
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
 - étendre les tests API aux routes HTTP, à l'authentification, aux limites d'upload et au stockage S3 Garage
+- porter le mod sur Fabric avec Architectury Loom, puis tester Quilt et Forge séparément en jeu avant de déclarer ces loaders supportés
+- résoudre l'échec de GitHub Actions avant la première étape et rétablir un build CI vérifiable
+- valider le build Gradle et l'export GLB en jeu après la restructuration `mod/minemories/:core/:neoforge`
+- vérifier Garage de bout en bout (appairage, upload, lecture et suppression d'un GLB) et décider si les données de l'ancien volume MinIO doivent être transférées
+- conserver plusieurs captures horodatées avec historique dans l'interface du mod, avant les snapshots automatiques et la timelapse
+- mesurer le temps d'export en jeu et déplacer les opérations coûteuses hors de la boucle de rendu si nécessaire

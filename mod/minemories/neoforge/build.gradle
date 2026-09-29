@@ -8,9 +8,16 @@ base { archivesName = 'minemories' }
 
 dependencies {
     implementation project(':core')
+    testImplementation platform('org.junit:junit-bom:6.0.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
 
 spotless {
     java {

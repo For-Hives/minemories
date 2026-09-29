@@ -8,6 +8,7 @@ import dev.minemories.core.GlbScene;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,6 +18,10 @@ import java.util.Map;
 import java.util.Objects;
 import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -48,9 +53,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.textures.FluidSpriteCache;
+import org.lwjgl.glfw.GLFW;
 
 @Mod(value = "minemories", dist = net.neoforged.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(
@@ -59,6 +66,7 @@ import net.neoforged.neoforge.client.textures.FluidSpriteCache;
     value = net.neoforged.api.distmarker.Dist.CLIENT)
 public class Minemories {
   private static final int VERTEX_STRIDE = 8;
+  private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
@@ -90,6 +98,73 @@ public class Minemories {
                 .then(Commands.literal("upload").executes(ctx -> uploadCapture())));
   }
 
+  @SubscribeEvent
+  public static void addPauseMenuButton(ScreenEvent.Init.Post event) {
+    if (!(event.getScreen() instanceof PauseScreen screen)) return;
+    Button button =
+        Button.builder(
+                Component.literal("Minemories"),
+                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
+            .build();
+    event.addListener(button);
+    pauseButton = new WeakReference<>(button);
+    placePauseButton(screen, button, event.getListenersList());
+  }
+
+  @SubscribeEvent
+  public static void repositionPauseMenuButton(ScreenEvent.Render.Pre event) {
+    if (!(event.getScreen() instanceof PauseScreen screen)) return;
+    Button button = pauseButton.get();
+    if (button != null && screen.children().contains(button)) {
+      placePauseButton(screen, button, screen.children());
+    }
+  }
+
+  @SubscribeEvent
+  public static void openFromPauseShortcut(ScreenEvent.KeyPressed.Post event) {
+    if (!(event.getScreen() instanceof PauseScreen screen)
+        || event.getKeyCode() != GLFW.GLFW_KEY_M
+        || (event.getModifiers() & (GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SUPER)) == 0) return;
+    Minecraft.getInstance().setScreen(new MinemoriesScreen(screen));
+    event.setCanceled(true);
+  }
+
+  private static void placePauseButton(
+      PauseScreen screen, Button button, List<? extends GuiEventListener> listeners) {
+    List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
+    for (GuiEventListener listener : listeners) {
+      if (listener instanceof AbstractWidget widget && widget != button && widget.visible) {
+        occupied.add(
+            new PauseMenuPlacement.Rect(
+                widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+      }
+    }
+    PauseMenuPlacement.Rect spot =
+        PauseMenuPlacement.find(screen.width, screen.height, occupied);
+    button.visible = spot != null;
+    if (spot != null) {
+      button.setX(spot.x());
+      button.setY(spot.y());
+      button.setWidth(spot.width());
+    }
+  }
+
+  static boolean hasSelection() {
+    Minecraft mc = Minecraft.getInstance();
+    return mc.level != null
+        && selectionFirst != null
+        && selectionSecond != null
+        && selectionDimension == mc.level.dimension();
+  }
+
+  static Path capturePath() {
+    return Path.of(
+        Objects.requireNonNull(System.getProperty("user.home"), "user.home"),
+        "export",
+        "capture.glb");
+  }
+
   private static int pair(String code) {
     if (!code.matches("\\d{6}")) {
       tell("Entre le code à 6 chiffres affiché dans l’interface web.");
@@ -105,7 +180,7 @@ public class Minemories {
   }
 
   private static int uploadCapture() {
-    Path capture = Path.of(System.getProperty("user.home"), "export", "capture.glb");
+    Path capture = capturePath();
     tell("Envoi de " + capture + "…");
     PairingClient.uploadCapture(capture)
         .whenComplete(
@@ -115,7 +190,7 @@ public class Minemories {
     return 1;
   }
 
-  private static String pairingError(Throwable error) {
+  static String pairingError(Throwable error) {
     Throwable cause = error.getCause() == null ? error : error.getCause();
     return "Échec de la requête : " + cause.getMessage();
   }
@@ -199,7 +274,7 @@ public class Minemories {
       mc.player.displayClientMessage(Component.literal("Minemories: " + message), false);
   }
 
-  private static int exportSelection() {
+  static int exportSelection() {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null
         || selectionFirst == null
@@ -221,7 +296,7 @@ public class Minemories {
     return exportBox(min, max);
   }
 
-  private static int export(int radius) {
+  static int export(int radius) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     BlockPos center = mc.player.blockPosition();
@@ -251,9 +326,8 @@ public class Minemories {
             mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS),
             "Block atlas unavailable during export");
     List<TextureAtlasSprite> atlasSprites = new ArrayList<>(blockAtlas.getTextures().values());
-    Path outputDirectory =
-        Path.of(Objects.requireNonNull(System.getProperty("user.home"), "user.home"), "export");
-    Path output = outputDirectory.resolve("capture.glb");
+    Path output = capturePath();
+    Path outputDirectory = output.getParent();
     try {
       Files.createDirectories(outputDirectory);
       BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
@@ -355,6 +429,7 @@ public class Minemories {
       mc.player.displayClientMessage(
           Component.literal("Minemories: échec export: " + e.getMessage()), false);
       e.printStackTrace();
+      return 0;
     }
     return 1;
   }
