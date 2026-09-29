@@ -7,7 +7,7 @@
 - `mod/minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
 - `apps/web/`: SPA React (stylisée avec Tailwind CSS, thème dans `src/theme.css`) avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
-- `apps/api-contract/`: contrat oRPC partagé par l’API et le viewer.
+- `packages/api-contract/`: contrat oRPC partagé par l’API et le viewer, sans logique serveur. Les routes REST utilisées par le mod sont définies dans `apps/api/src/index.ts`.
 - `docs/`: documentation transverse et état du POC.
 
 Les builds Minecraft sont orchestrés par le wrapper Gradle dans `mod/minemories/`. Les apps TypeScript sont gérées par Bun workspaces et vérifiées par Biome. Les applications restent indépendantes : une évolution de l’une ne doit pas imposer son runtime aux autres.

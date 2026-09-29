@@ -9,8 +9,10 @@ Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome
 | `mod/minemories/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:neoforge` contient le client et les hooks propres au loader. |
 | `apps/web/` | Viewer React / Three.js. |
 | `apps/api/` | API Bun / Hono, Better Auth, SQLite et stockage objet S3. |
-| `apps/api-contract/` | Contrat oRPC partagé entre API et web. |
+| `packages/api-contract/` | Contrat oRPC partagé entre API et web ; ce dossier est une bibliothèque, pas une application. |
 | `docs/` | Architecture, workflow et état du POC. |
+
+Le contrat oRPC décrit les procédures `pairing` et `memories` utilisées par le web. Les routes HTTP du mod sont définies dans `apps/api/src/index.ts` et restent distinctes.
 
 Le dossier `mod/` pourra accueillir d'autres projets Minecraft ; le nom `minemories` reste celui du projet Gradle. Le code Java sous `dev.minemories` et l'identifiant actuel `memorypoc` ne sont pas renommés.
 
