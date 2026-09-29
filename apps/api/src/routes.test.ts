@@ -134,3 +134,34 @@ test('mod screenshots become folder icons while 3D thumbnails stay empty', async
 	const { listMemories } = await import('./pairing')
 	expect(listMemories('icon-owner')[0]).toMatchObject({ metadata: { icon, thumbnail: null } })
 })
+
+test('shared snapshots open without an account until revoked', async () => {
+	const { addMemory, createShareLink } = await import('./pairing')
+	const { storeMemory } = await import('./storage')
+	const { code } = createPairingCode('share-owner')
+	const paired = await pairRequest({ code }, 'share-pair')
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	const { id: deviceId } = getDeviceFromToken(deviceToken) as { id: string }
+	const glb = minimalGlb()
+	addMemory({
+		id: '19e2b9a5-9c9c-4c9c-8c9c-9c9c9c9c9c9c',
+		userId: 'share-owner',
+		deviceId,
+		name: 'Shared build',
+		objectKey: 'share-owner/shared.glb',
+		size: glb.length,
+	})
+	await storeMemory('share-owner/shared.glb', glb)
+
+	expect((await app.request('/api/shared/unknown-token-that-is-long-enough')).status).toBe(404)
+	const missing = createShareLink('share-owner', '19e2b9a5-9c9c-4c9c-8c9c-9c9c9c9c9c9c')
+	if (!missing) throw new Error('Share link creation unexpectedly failed.')
+
+	const metadata = await app.request(`/api/shared/${missing.token}`)
+	expect(metadata.status).toBe(200)
+	expect(await metadata.json()).toMatchObject({ id: '19e2b9a5-9c9c-4c9c-8c9c-9c9c9c9c9c9c', name: 'Shared build' })
+	const file = await app.request(`/api/shared/${missing.token}/file`)
+	expect(file.status).toBe(200)
+	expect(file.headers.get('content-type')).toBe('model/gltf-binary')
+	expect((await file.arrayBuffer()).byteLength).toBe(glb.length)
+})

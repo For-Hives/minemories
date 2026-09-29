@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router'
 import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
 import { formatRelativeDate } from '../lib/dates'
-import { groupCaptures, stackCaptures } from '../lib/gallery'
+import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
+import { getStackName, setStackName } from '../lib/stack-names'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
+type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
 type MemoryMetadata = Memories[number]['metadata']
 type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
@@ -80,7 +82,8 @@ export function GalleryPage() {
 	const [pairExpires, setPairExpires] = useState('')
 	const [pairBusy, setPairBusy] = useState(false)
 	const [openingId, setOpeningId] = useState('')
-	const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+	const [expanded, setExpanded] = useState<Set<string>>(new Set())
+	const [trash, setTrash] = useState<TrashMemories>([])
 	const pairedFresh = shouldShowPaired(pairStatus === 'paired', memories)
 
 	const refreshMemories = useCallback(async () => {
@@ -94,8 +97,21 @@ export function GalleryPage() {
 		}
 	}, [])
 
+	const refreshTrash = useCallback(async () => {
+		try {
+			setTrash(await apiClient.memories.listTrash())
+		} catch {
+			// The trash section stays empty when its refresh fails; captures remain visible.
+		}
+	}, [])
+
+	const refreshAll = useCallback(async () => {
+		await Promise.all([refreshMemories(), refreshTrash()])
+	}, [refreshMemories, refreshTrash])
+	const trashActions = useTrashActions(notify, setLoadError, refreshAll)
+
 	useEffect(() => {
-		void refreshMemories()
+		void refreshAll()
 		apiClient.pairing
 			.status()
 			.then(result => {
@@ -104,9 +120,9 @@ export function GalleryPage() {
 			.catch(() => {
 				// Stay on the manual pairing card when the status check fails.
 			})
-		const refreshTimer = window.setInterval(() => void refreshMemories(), 12_000)
+		const refreshTimer = window.setInterval(() => void refreshAll(), 12_000)
 		return () => window.clearInterval(refreshTimer)
-	}, [refreshMemories])
+	}, [refreshAll])
 
 	useEffect(() => {
 		if (!pairCode || pairStatus !== 'pending') return
@@ -165,12 +181,24 @@ export function GalleryPage() {
 	}
 
 	function toggleGroup(key: string) {
-		setCollapsed(previous => {
+		setExpanded(previous => {
 			const next = new Set(previous)
 			if (next.has(key)) next.delete(key)
 			else next.add(key)
 			return next
 		})
+	}
+
+	async function trashSnapshot(id: string) {
+		await trashActions.trashSnapshot(id)
+	}
+
+	async function restoreSnapshot(id: string) {
+		await trashActions.restoreSnapshot(id)
+	}
+
+	async function deleteSnapshot(id: string) {
+		await trashActions.deleteSnapshot(id)
 	}
 
 	async function copyCode() {
@@ -267,7 +295,7 @@ export function GalleryPage() {
 					<button
 						className="cursor-pointer border-0 bg-transparent px-[9px] py-[7px] text-[11px] text-[#b4c1ad] hover:text-[#e6eee1]"
 						type="button"
-						onClick={() => void refreshMemories()}
+						onClick={() => void refreshAll()}
 						title="Refresh the gallery"
 					>
 						↻ Refresh
@@ -290,7 +318,7 @@ export function GalleryPage() {
 				{!loading && memories.length > 0 && (
 					<div className="space-y-4">
 						{groupCaptures(memories).map(group => {
-							const open = !collapsed.has(group.key)
+							const open = expanded.has(group.key)
 							const stacks = open ? stackCaptures(group.captures) : []
 							return (
 								<section
@@ -326,54 +354,17 @@ export function GalleryPage() {
 									</button>
 									{open && (
 										<div className="space-y-6 border-t border-[#2a332d] p-4">
-											{stacks.map(stack =>
-												stack.captures.length > 1 ? (
-													<div key={stack.key} className="rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
-														<div className="mb-3 flex items-center gap-3">
-															<StackThumbs
-																captures={stack.captures
-																	.slice(0, 3)
-																	.map(item => ({ id: item.id, thumbnail: item.metadata.thumbnail }))}
-															/>
-															<div className="min-w-0">
-																<p className="m-0 text-[11px] font-bold text-[#dfe7da]">
-																	Same area · {stack.captures.length} captures
-																</p>
-																{stack.x !== null && stack.z !== null && (
-																	<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">
-																		Near {Math.floor(stack.x)}, {Math.floor(stack.y ?? 0)}, {Math.floor(stack.z)}
-																	</p>
-																)}
-															</div>
-														</div>
-														<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
-															{stack.captures.map((memory, index) => (
-																<SnapshotCard
-																	key={memory.id}
-																	memory={memory}
-																	index={index}
-																	opening={openingId === memory.id}
-																	onOpen={() => openMemory(memory.id)}
-																/>
-															))}
-														</div>
-													</div>
-												) : (
-													stack.captures[0] && (
-														<div
-															key={stack.key}
-															className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3"
-														>
-															<SnapshotCard
-																memory={stack.captures[0]}
-																index={0}
-																opening={openingId === stack.captures[0].id}
-																onOpen={() => stack.captures[0] && openMemory(stack.captures[0].id)}
-															/>
-														</div>
-													)
-												)
-											)}
+											{stacks.map(stack => (
+												<StackBundle
+													key={stack.key}
+													groupKey={group.key}
+													stack={stack}
+													openingId={openingId}
+													onOpenMemory={openMemory}
+													onChanged={() => void refreshAll()}
+													onTrashed={id => void trashSnapshot(id)}
+												/>
+											))}
 										</div>
 									)}
 								</section>
@@ -410,9 +401,68 @@ export function GalleryPage() {
 						</div>
 					</div>
 				)}
+				{!loading && trash.length > 0 && (
+					<section className="mt-12" aria-label="Trash">
+						<div className="mb-[17px]">
+							<Eyebrow>RECYCLE BIN</Eyebrow>
+							<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">Trash · {trash.length}</h2>
+							<p className="mb-0 mt-[6px] text-[11px] text-[#8e978a]">
+								Snapshots disappear forever 30 days after deletion.
+							</p>
+						</div>
+						<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+							{trash.map(item => (
+								<TrashCard
+									key={item.id}
+									item={item}
+									onRestore={() => void restoreSnapshot(item.id)}
+									onDelete={() => void deleteSnapshot(item.id)}
+								/>
+							))}
+						</div>
+					</section>
+				)}
 			</section>
 		</div>
 	)
+}
+
+function useTrashActions(
+	notify: (message: string) => void,
+	setLoadError: (message: string) => void,
+	refreshAll: () => Promise<void>
+) {
+	async function trashSnapshot(id: string) {
+		try {
+			await apiClient.memories.trash({ id })
+			notify('Snapshot moved to trash. It disappears forever after 30 days.')
+			await refreshAll()
+		} catch (error) {
+			setLoadError(error instanceof Error ? error.message : 'Could not trash this snapshot.')
+		}
+	}
+
+	async function restoreSnapshot(id: string) {
+		try {
+			await apiClient.memories.restore({ id })
+			await refreshAll()
+		} catch (error) {
+			setLoadError(error instanceof Error ? error.message : 'Could not restore this snapshot.')
+		}
+	}
+
+	async function deleteSnapshot(id: string) {
+		if (!window.confirm('Delete this snapshot forever? This cannot be undone.')) return
+		try {
+			await apiClient.memories.delete({ id })
+			notify('Snapshot deleted forever.')
+			await refreshAll()
+		} catch (error) {
+			setLoadError(error instanceof Error ? error.message : 'Could not delete this snapshot.')
+		}
+	}
+
+	return { trashSnapshot, restoreSnapshot, deleteSnapshot }
 }
 
 function pairingMessage(pairedFresh: boolean, pairStatus: PairingStatus): string {
@@ -471,17 +521,164 @@ function StackThumbs({ captures }: { captures: Array<{ id: string; thumbnail: st
 	)
 }
 
+function StackBundle({
+	groupKey,
+	stack,
+	openingId,
+	onOpenMemory,
+	onChanged,
+	onTrashed,
+}: {
+	groupKey: string
+	stack: CaptureStack<Memories[number]>
+	openingId: string
+	onOpenMemory: (id: string) => void
+	onChanged: () => void
+	onTrashed: (id: string) => void
+}) {
+	const [custom, setCustom] = useState(() => getStackName(groupKey, stack.key))
+	const [editing, setEditing] = useState(false)
+	const [draft, setDraft] = useState('')
+
+	function startEditing() {
+		setDraft(custom ?? '')
+		setEditing(true)
+	}
+
+	function saveStackName() {
+		setStackName(groupKey, stack.key, draft)
+		setCustom(getStackName(groupKey, stack.key))
+		setEditing(false)
+	}
+
+	const cards = stack.captures.map((memory, index) => (
+		<SnapshotCard
+			key={memory.id}
+			memory={memory}
+			index={index}
+			opening={openingId === memory.id}
+			onOpen={() => onOpenMemory(memory.id)}
+			onChanged={onChanged}
+			onTrashed={onTrashed}
+		/>
+	))
+	if (stack.captures.length <= 1) {
+		return (
+			<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+				{cards}
+			</div>
+		)
+	}
+	return (
+		<div className="rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
+			<div className="mb-3 flex items-center gap-3">
+				<StackThumbs
+					captures={stack.captures.slice(0, 3).map(item => ({ id: item.id, thumbnail: item.metadata.thumbnail }))}
+				/>
+				<div className="min-w-0 flex-1">
+					{editing ? (
+						<span className="flex items-center gap-2">
+							<input
+								value={draft}
+								maxLength={80}
+								placeholder="Name this area…"
+								aria-label="Stack name"
+								onChange={event => setDraft(event.currentTarget.value)}
+								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#1c2720] px-2 text-xs text-ink outline-0"
+							/>
+							<button
+								type="button"
+								onClick={saveStackName}
+								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
+							>
+								Save
+							</button>
+							<button
+								type="button"
+								onClick={() => setEditing(false)}
+								aria-label="Cancel"
+								className="h-8 flex-none cursor-pointer rounded-[4px] border-0 bg-transparent px-2 text-[11px] text-[#b4c1ad]"
+							>
+								✕
+							</button>
+						</span>
+					) : (
+						<>
+							<p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold text-[#dfe7da]">
+								{custom ?? `Same area · ${stack.captures.length} captures`}
+							</p>
+							{stack.x !== null && stack.z !== null && (
+								<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">
+									Near {Math.floor(stack.x)}, {Math.floor(stack.y ?? 0)}, {Math.floor(stack.z)}
+								</p>
+							)}
+						</>
+					)}
+				</div>
+				{!editing && (
+					<button
+						type="button"
+						onClick={startEditing}
+						title="Rename this area"
+						aria-label="Rename this area"
+						className="h-8 w-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent text-xs text-[#b4c1ad]"
+					>
+						✎
+					</button>
+				)}
+			</div>
+			<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+				{cards}
+			</div>
+		</div>
+	)
+}
+
 function SnapshotCard({
 	memory,
 	index,
 	opening,
 	onOpen,
+	onChanged,
+	onTrashed,
 }: {
 	memory: Memories[number]
 	index: number
 	opening: boolean
 	onOpen: () => void
+	onChanged: () => void
+	onTrashed: (id: string) => void
 }) {
+	const { notify } = useAppContext()
+	const [editing, setEditing] = useState(false)
+	const [draft, setDraft] = useState(memory.name)
+	const [saving, setSaving] = useState(false)
+	const [shareOpen, setShareOpen] = useState(false)
+
+	function startEditing() {
+		setDraft(memory.name)
+		setEditing(true)
+	}
+
+	async function saveName() {
+		const name = draft.trim()
+		if (!name || name === memory.name) {
+			setEditing(false)
+			setDraft(memory.name)
+			return
+		}
+		setSaving(true)
+		try {
+			await apiClient.memories.rename({ id: memory.id, name: name.slice(0, 80) })
+			setEditing(false)
+			onChanged()
+		} catch {
+			notify('Could not save this name.')
+		} finally {
+			setSaving(false)
+		}
+	}
+
 	return (
 		<article className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]">
 			<div
@@ -497,43 +694,275 @@ function SnapshotCard({
 					<MemoryTile variant={index % 4} />
 				)}
 				<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
-				<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
-					3D CAPTURE
-				</span>
-				<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
-					{String(index + 1).padStart(2, '0')}
-				</span>
 			</div>
-			<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
-				<div>
-					<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
-						{new Date(memory.metadata.capturedAt ?? memory.createdAt).toLocaleString('en-GB', {
-							dateStyle: 'medium',
-							timeStyle: 'short',
-						})}
-					</h3>
-					<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
-						{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
-						<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
-						{memory.metadata.x !== null && memory.metadata.x !== undefined
-							? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
-							: ''}
-						{formatFileSize(memory.size)}
-					</p>
-					<CaptureMetadata metadata={memory.metadata} />
+			<div className="px-[14px] py-3">
+				<div className="flex items-center justify-between gap-2">
+					{editing ? (
+						<span className="flex min-w-0 flex-1 items-center gap-2">
+							<input
+								value={draft}
+								maxLength={80}
+								aria-label="Snapshot name"
+								onChange={event => setDraft(event.currentTarget.value)}
+								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#10150f] px-2 text-xs text-ink outline-0"
+							/>
+							<button
+								type="button"
+								onClick={() => void saveName()}
+								disabled={saving}
+								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] disabled:opacity-60"
+							>
+								{saving ? '…' : 'Save'}
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setEditing(false)
+									setDraft(memory.name)
+								}}
+								aria-label="Cancel"
+								className="h-8 flex-none cursor-pointer rounded-[4px] border-0 bg-transparent px-1 text-[11px] text-[#b4c1ad]"
+							>
+								✕
+							</button>
+						</span>
+					) : (
+						<>
+							<h3 className="m-0 min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
+								{memory.name}
+							</h3>
+							<button
+								type="button"
+								onClick={startEditing}
+								title="Rename this snapshot"
+								aria-label={`Rename ${memory.name}`}
+								className="h-7 w-7 flex-none cursor-pointer rounded-[4px] border border-transparent bg-transparent text-[11px] text-[#8e978a] hover:border-[#354238] hover:text-[#b4c1ad]"
+							>
+								✎
+							</button>
+						</>
+					)}
 				</div>
-				<button
-					type="button"
-					onClick={onOpen}
-					disabled={opening}
-					aria-label={`Revisit ${memory.name}`}
-					className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#354238] bg-transparent text-[#b4c1ad] hover:border-[#354238] hover:bg-[#1c2720]"
-				>
-					{opening ? '…' : '↗'}
-				</button>
+				<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
+					{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
+					<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
+					{memory.metadata.x !== null && memory.metadata.x !== undefined
+						? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
+						: ''}
+					{formatFileSize(memory.size)}
+				</p>
+				<CaptureMetadata metadata={memory.metadata} />
+				<div className="mt-3 flex items-center gap-2">
+					<button
+						type="button"
+						onClick={onOpen}
+						disabled={opening}
+						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] hover:bg-[#242e26] disabled:opacity-60"
+					>
+						{opening ? '…' : '↗ Revisit'}
+					</button>
+					<button
+						type="button"
+						onClick={() => setShareOpen(open => !open)}
+						aria-expanded={shareOpen}
+						title="Share this snapshot"
+						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:border-[#354238] hover:text-[#b4c1ad]"
+					>
+						🔗 Share
+					</button>
+					<button
+						type="button"
+						onClick={() => onTrashed(memory.id)}
+						title="Move to trash"
+						aria-label={`Move ${memory.name} to trash`}
+						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:border-[#5a3535] hover:text-[#e8a0a0]"
+					>
+						🗑
+					</button>
+				</div>
+				{shareOpen && <SharePanel memoryId={memory.id} />}
 			</div>
 		</article>
 	)
+}
+
+function SharePanel({ memoryId }: { memoryId: string }) {
+	const { notify } = useAppContext()
+	const [status, setStatus] = useState<'checking' | 'off' | 'on'>('checking')
+	const [url, setUrl] = useState('')
+	const [busy, setBusy] = useState(false)
+
+	useEffect(() => {
+		let live = true
+		apiClient.memories
+			.shareStatus({ id: memoryId })
+			.then(result => {
+				if (live) setStatus(result.shared ? 'on' : 'off')
+			})
+			.catch(() => {
+				if (live) setStatus('off')
+			})
+		return () => {
+			live = false
+		}
+	}, [memoryId])
+
+	async function create() {
+		setBusy(true)
+		try {
+			const link = await apiClient.memories.createShare({ id: memoryId })
+			setUrl(`${window.location.origin}${link.urlPath}`)
+			setStatus('on')
+		} catch {
+			notify('Could not create this link.')
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	async function revoke() {
+		setBusy(true)
+		try {
+			await apiClient.memories.revokeShare({ id: memoryId })
+			setStatus('off')
+			setUrl('')
+		} catch {
+			notify('Could not stop sharing.')
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	async function copy() {
+		try {
+			await navigator.clipboard.writeText(url)
+			notify('Link copied to the clipboard.')
+		} catch {
+			notify('Could not copy this link.')
+		}
+	}
+
+	return (
+		<div className="mt-3 rounded-[4px] border border-[#2a332d] bg-[#10150f] p-2" aria-live="polite">
+			{status === 'checking' && <p className="m-0 text-[10px] text-[#8e978a]">Checking the link…</p>}
+			{status === 'off' && (
+				<>
+					<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">Friends open the world without an account.</p>
+					<button
+						type="button"
+						onClick={() => void create()}
+						disabled={busy}
+						className="mt-2 inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] disabled:opacity-60"
+					>
+						{busy ? '…' : 'Create a link'}
+					</button>
+				</>
+			)}
+			{status === 'on' && (
+				<>
+					{url ? (
+						<span className="flex items-center gap-2">
+							<input
+								value={url}
+								readOnly
+								aria-label="Share link"
+								onFocus={event => event.currentTarget.select()}
+								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#1c2720] px-2 font-mono text-[10px] text-ink outline-0"
+							/>
+							<button
+								type="button"
+								onClick={() => void copy()}
+								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
+							>
+								Copy
+							</button>
+						</span>
+					) : (
+						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">A link is active for this snapshot.</p>
+					)}
+					<span className="mt-2 flex items-center gap-2">
+						<button
+							type="button"
+							onClick={() => void create()}
+							disabled={busy}
+							title="Replace the active link with a new one"
+							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#b4c1ad] disabled:opacity-60"
+						>
+							New link
+						</button>
+						<button
+							type="button"
+							onClick={() => void revoke()}
+							disabled={busy}
+							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#e8a0a0] disabled:opacity-60"
+						>
+							Stop sharing
+						</button>
+					</span>
+				</>
+			)}
+		</div>
+	)
+}
+
+function TrashCard({
+	item,
+	onRestore,
+	onDelete,
+}: {
+	item: TrashMemories[number]
+	onRestore: () => void
+	onDelete: () => void
+}) {
+	const remaining = daysUntilPurge(item.deletedAt)
+	return (
+		<article className="overflow-hidden rounded-[7px] border border-[#3a2f2f] bg-[#1c1a1a]">
+			<div className="relative grid h-[130px] place-items-center overflow-hidden bg-[#141214]">
+				{(item.metadata.thumbnail ?? item.metadata.icon) ? (
+					<div
+						aria-hidden="true"
+						className="absolute inset-0 bg-cover bg-center opacity-70"
+						style={{ backgroundImage: `url("${item.metadata.thumbnail ?? item.metadata.icon}")` }}
+					/>
+				) : (
+					<span aria-hidden="true" className="text-xl text-[#6e6a6a]">
+						▧
+					</span>
+				)}
+			</div>
+			<div className="px-[14px] py-3">
+				<h3 className="m-0 overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold text-[#cfc8c8]">
+					{item.name}
+				</h3>
+				<p className="mb-0 mt-[6px] text-[9px] text-[#8e8585]">
+					Deleted {formatRelativeDate(item.deletedAt)}
+					{remaining !== null ? ` · gone in ${remaining}d` : ''}
+				</p>
+				<div className="mt-3 flex items-center gap-2">
+					<button
+						type="button"
+						onClick={onRestore}
+						className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
+					>
+						↩ Restore
+					</button>
+					<button
+						type="button"
+						onClick={onDelete}
+						className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e8585] hover:text-[#e8a0a0]"
+					>
+						Delete forever
+					</button>
+				</div>
+			</div>
+		</article>
+	)
+}
+
+function daysUntilPurge(deletedAt: string): number | null {
+	const deleted = Date.parse(deletedAt)
+	if (Number.isNaN(deleted)) return null
+	return Math.max(0, Math.ceil(30 - (Date.now() - deleted) / (24 * 3_600_1_000)))
 }
 
 function MemoryTile({ variant }: { variant: number }) {

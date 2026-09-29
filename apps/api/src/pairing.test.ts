@@ -12,12 +12,22 @@ const {
 	addMemory,
 	checkPairingCode,
 	createPairingCode,
+	createShareLink,
+	deleteMemory,
 	exchangePairingCode,
 	getDeviceFromToken,
 	getMemoryFile,
+	getSharedMemory,
 	hasPairedDevice,
 	listMemories,
+	listTrash,
+	purgeDeletedMemories,
+	renameMemory,
+	restoreMemory,
+	revokeShareLink,
+	shareStatus,
 	setMemoryThumbnail,
+	trashMemory,
 } = await import('./pairing')
 
 afterAll(() => {
@@ -107,6 +117,81 @@ test('paired devices are reported until revoked', () => {
 	expect(hasPairedDevice('user-e')).toEqual({ paired: true })
 	database.query('UPDATE devices SET revoked_at = ? WHERE id = ?').run(Date.now(), paired.deviceId)
 	expect(hasPairedDevice('user-e')).toEqual({ paired: false })
+})
+
+test('trash hides snapshots for thirty days before the purge removes them', () => {
+	const { code } = createPairingCode('user-h')
+	const paired = exchangePairingCode(code, 'Trash device')
+	if (!paired) throw new Error('Pairing unexpectedly failed.')
+	addMemory({
+		id: 'trash-1',
+		userId: 'user-h',
+		deviceId: paired.deviceId,
+		name: 'Old name',
+		objectKey: 'user-h/trash-1.glb',
+		size: 9,
+	})
+
+	expect(renameMemory('user-h', 'trash-1', 'Cabin above the ravine')).toBe(true)
+	expect(listMemories('user-h')[0]?.name).toBe('Cabin above the ravine')
+	expect(renameMemory('user-g', 'trash-1', 'Hijacked')).toBe(false)
+	expect(renameMemory('user-h', 'missing', 'Ghost')).toBe(false)
+
+	expect(trashMemory('user-h', 'trash-1')).toBe(true)
+	expect(trashMemory('user-h', 'trash-1')).toBe(false)
+	expect(trashMemory('user-g', 'trash-1')).toBe(false)
+	expect(listMemories('user-h')).toEqual([])
+	expect(listTrash('user-h')).toMatchObject([{ id: 'trash-1' }])
+	expect(renameMemory('user-h', 'trash-1', 'Trashed rename')).toBe(false)
+	expect(restoreMemory('user-g', 'trash-1')).toBe(false)
+	expect(restoreMemory('user-h', 'trash-1')).toBe(true)
+	expect(restoreMemory('user-h', 'trash-1')).toBe(false)
+	expect(listMemories('user-h')).toMatchObject([{ id: 'trash-1' }])
+
+	expect(deleteMemory('user-g', 'trash-1')).toBeNull()
+	expect(deleteMemory('user-h', 'missing')).toBeNull()
+	expect(trashMemory('user-h', 'trash-1')).toBe(true)
+	database.query('UPDATE memories SET deleted_at = ? WHERE id = ?').run(Date.now() - 31 * 24 * 3_600_1_000, 'trash-1')
+	expect(purgeDeletedMemories()).toEqual(['user-h/trash-1.glb'])
+	expect(purgeDeletedMemories()).toEqual([])
+	expect(listTrash('user-h')).toEqual([])
+	expect(listMemories('user-h')).toEqual([])
+})
+
+test('share links open one snapshot without an account until revoked', () => {
+	const { code } = createPairingCode('user-i')
+	const paired = exchangePairingCode(code, 'Share device')
+	if (!paired) throw new Error('Pairing unexpectedly failed.')
+	addMemory({
+		id: 'share-1',
+		userId: 'user-i',
+		deviceId: paired.deviceId,
+		name: 'Shared cabin',
+		objectKey: 'user-i/share-1.glb',
+		size: 7,
+		metadata: { worldName: 'Home', seed: '42' },
+	} as Parameters<typeof addMemory>[0])
+
+	expect(shareStatus('user-i', 'share-1')).toEqual({ shared: false })
+	const link = createShareLink('user-i', 'share-1')
+	if (!link) throw new Error('Share link creation unexpectedly failed.')
+	expect(shareStatus('user-i', 'share-1')).toEqual({ shared: true })
+	expect(getSharedMemory('short')).toBeNull()
+	expect(getSharedMemory('A'.repeat(43))).toBeNull()
+	expect(getSharedMemory(link.token)).toMatchObject({ id: 'share-1', name: 'Shared cabin' })
+	expect(createShareLink('user-j', 'share-1')).toBeNull()
+	revokeShareLink('user-i', 'share-1')
+	revokeShareLink('user-i', 'share-1')
+	expect(shareStatus('user-i', 'share-1')).toEqual({ shared: false })
+	expect(getSharedMemory(link.token)).toBeNull()
+
+	expect(trashMemory('user-i', 'share-1')).toBe(true)
+	expect(createShareLink('user-i', 'share-1')).toBeNull()
+	database.query('UPDATE memories SET metadata_json = ? WHERE id = ?').run('{broken', 'share-1')
+	expect(restoreMemory('user-i', 'share-1')).toBe(true)
+	const rotated = createShareLink('user-i', 'share-1')
+	if (!rotated) throw new Error('Share link recreation unexpectedly failed.')
+	expect(getSharedMemory(rotated.token)).toMatchObject({ id: 'share-1' })
 })
 
 test('model-rendered thumbnails persist on the owner memory only', () => {

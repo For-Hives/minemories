@@ -7,6 +7,7 @@ import { GalleryPage } from './pages/GalleryPage'
 import { HomePage } from './pages/HomePage'
 
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
+const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
 
 interface AppContextValue {
 	session: AuthSession | null
@@ -85,6 +86,20 @@ export function App() {
 									}
 								>
 									<ViewerPage />
+								</Suspense>
+							}
+						/>
+						<Route
+							path="/share/:token"
+							element={
+								<Suspense
+									fallback={
+										<div className="grid min-h-[55vh] place-items-center text-sm text-muted-ink">
+											Loading the shared world…
+										</div>
+									}
+								>
+									<SharePage />
 								</Suspense>
 							}
 						/>

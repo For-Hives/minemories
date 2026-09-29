@@ -6,6 +6,31 @@ export const thumbnailDataUrl = z
 	.max(96_000)
 	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
 
+export const TRASH_RETENTION_MS = 30 * 24 * 3_600_1_000
+
+const memorySchema = z.object({
+	id: z.string().uuid(),
+	name: z.string(),
+	size: z.number().int().nonnegative(),
+	createdAt: z.string().datetime(),
+	metadata: z.object({
+		seed: z.string().nullable(),
+		x: z.number().nullable(),
+		y: z.number().nullable(),
+		z: z.number().nullable(),
+		dimension: z.string().nullable(),
+		worldName: z.string().nullable(),
+		serverName: z.string().nullable(),
+		biome: z.string().nullable(),
+		dayTime: z.number().int().nullable(),
+		raining: z.boolean().nullable(),
+		thundering: z.boolean().nullable(),
+		thumbnail: z.string().nullable(),
+		icon: z.string().nullable(),
+		capturedAt: z.string().datetime().nullable(),
+	}),
+})
+
 export const apiContract = {
 	pairing: {
 		create: oc.output(
@@ -20,34 +45,27 @@ export const apiContract = {
 		status: oc.output(z.object({ paired: z.boolean() })),
 	},
 	memories: {
-		list: oc.output(
+		list: oc.output(z.array(memorySchema)),
+		listTrash: oc.output(
 			z.array(
-				z.object({
-					id: z.string().uuid(),
-					name: z.string(),
-					size: z.number().int().nonnegative(),
-					createdAt: z.string().datetime(),
-					metadata: z.object({
-						seed: z.string().nullable(),
-						x: z.number().nullable(),
-						y: z.number().nullable(),
-						z: z.number().nullable(),
-						dimension: z.string().nullable(),
-						worldName: z.string().nullable(),
-						serverName: z.string().nullable(),
-						biome: z.string().nullable(),
-						dayTime: z.number().int().nullable(),
-						raining: z.boolean().nullable(),
-						thundering: z.boolean().nullable(),
-						thumbnail: z.string().nullable(),
-						icon: z.string().nullable(),
-						capturedAt: z.string().datetime().nullable(),
-					}),
+				memorySchema.extend({
+					deletedAt: z.string().datetime(),
 				})
 			)
 		),
+		rename: oc
+			.input(z.object({ id: z.string().uuid(), name: z.string().trim().min(1).max(80) }))
+			.output(z.object({ ok: z.literal(true) })),
+		trash: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		restore: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		delete: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
 		setThumbnail: oc
 			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl, icon: thumbnailDataUrl.nullish() }))
 			.output(z.object({ ok: z.literal(true) })),
+		createShare: oc
+			.input(z.object({ id: z.string().uuid() }))
+			.output(z.object({ token: z.string().min(20), urlPath: z.string().min(1) })),
+		revokeShare: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		shareStatus: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ shared: z.boolean() })),
 	},
 }

@@ -80,4 +80,60 @@ describe('shared oRPC contract', () => {
 		expect(output.safeParse({ ok: true }).success).toBe(true)
 		expect(output.safeParse({ ok: false }).success).toBe(false)
 	})
+
+	it('declares trash, rename and sharing operations', () => {
+		const memories = apiContract.memories
+		const id = crypto.randomUUID()
+		const metadata = {
+			seed: null,
+			x: null,
+			y: null,
+			z: null,
+			dimension: null,
+			worldName: null,
+			serverName: null,
+			biome: null,
+			dayTime: null,
+			raining: null,
+			thundering: null,
+			thumbnail: null,
+			icon: null,
+			capturedAt: null,
+		}
+		const base = { id, name: 'Cabin', size: 10, createdAt: new Date().toISOString(), metadata }
+
+		const trashOutput = memories.listTrash['~orpc'].outputSchema
+		if (!trashOutput) throw new Error('Trash response schema is required')
+		expect(trashOutput.safeParse([{ ...base, deletedAt: new Date().toISOString() }]).success).toBe(true)
+		expect(trashOutput.safeParse([base]).success).toBe(false)
+
+		const renameInput = memories.rename['~orpc'].inputSchema
+		if (!renameInput) throw new Error('Rename input schema is required')
+		expect(renameInput.safeParse({ id, name: 'Cabin above the ravine' }).success).toBe(true)
+		expect(renameInput.safeParse({ id, name: '   ' }).success).toBe(false)
+		expect(renameInput.safeParse({ id, name: 'x'.repeat(81) }).success).toBe(false)
+		expect(renameInput.safeParse({ id: 'nope', name: 'Cabin' }).success).toBe(false)
+
+		for (const endpoint of [memories.trash, memories.restore, memories.delete]) {
+			const schema = endpoint['~orpc'].inputSchema
+			if (!schema) throw new Error('Memory input schema is required')
+			expect(schema.safeParse({ id }).success).toBe(true)
+			expect(schema.safeParse({ id: 'nope' }).success).toBe(false)
+		}
+
+		const shareOutput = memories.createShare['~orpc'].outputSchema
+		if (!shareOutput) throw new Error('Share response schema is required')
+		expect(shareOutput.safeParse({ token: 'A'.repeat(43), urlPath: '/share/abc' }).success).toBe(true)
+		expect(shareOutput.safeParse({ token: 'short', urlPath: '/share/abc' }).success).toBe(false)
+
+		const revokeInput = memories.revokeShare['~orpc'].inputSchema
+		if (!revokeInput) throw new Error('Revoke input schema is required')
+		expect(revokeInput.safeParse({ id }).success).toBe(true)
+
+		const shareState = memories.shareStatus['~orpc'].outputSchema
+		if (!shareState) throw new Error('Share status schema is required')
+		expect(shareState.safeParse({ shared: true }).success).toBe(true)
+		expect(shareState.safeParse({ shared: false }).success).toBe(true)
+		expect(shareState.safeParse({ shared: 'yes' }).success).toBe(false)
+	})
 })

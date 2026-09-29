@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
+import { TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { database } from './database'
 
 const pairingPepper = process.env.PAIRING_PEPPER ?? process.env.BETTER_AUTH_SECRET
@@ -91,7 +92,9 @@ export function getDeviceFromToken(token: string) {
 
 export function listMemories(userId: string) {
 	const rows = database
-		.query('SELECT id, name, size, created_at, metadata_json FROM memories WHERE user_id = ? ORDER BY created_at DESC')
+		.query(
+			'SELECT id, name, size, created_at, metadata_json FROM memories WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC'
+		)
 		.all(userId) as Array<{ id: string; name: string; size: number; created_at: number; metadata_json: string | null }>
 
 	return rows.map(row => ({
@@ -101,6 +104,141 @@ export function listMemories(userId: string) {
 		createdAt: new Date(row.created_at).toISOString(),
 		metadata: row.metadata_json ? { ...emptyMetadata(), ...JSON.parse(row.metadata_json) } : emptyMetadata(),
 	}))
+}
+
+export function listTrash(userId: string) {
+	const rows = database
+		.query(
+			'SELECT id, name, size, created_at, deleted_at, metadata_json FROM memories WHERE user_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC'
+		)
+		.all(userId) as Array<{
+		id: string
+		name: string
+		size: number
+		created_at: number
+		deleted_at: number
+		metadata_json: string | null
+	}>
+
+	return rows.map(row => ({
+		id: row.id,
+		name: row.name,
+		size: row.size,
+		createdAt: new Date(row.created_at).toISOString(),
+		deletedAt: new Date(row.deleted_at).toISOString(),
+		metadata: row.metadata_json ? { ...emptyMetadata(), ...JSON.parse(row.metadata_json) } : emptyMetadata(),
+	}))
+}
+
+export function renameMemory(userId: string, id: string, name: string): boolean {
+	const result = database
+		.query('UPDATE memories SET name = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
+		.run(name, id, userId)
+	return result.changes === 1
+}
+
+export function trashMemory(userId: string, id: string): boolean {
+	const result = database
+		.query('UPDATE memories SET deleted_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
+		.run(Date.now(), id, userId)
+	return result.changes === 1
+}
+
+export function restoreMemory(userId: string, id: string): boolean {
+	const result = database
+		.query('UPDATE memories SET deleted_at = NULL WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL')
+		.run(id, userId)
+	return result.changes === 1
+}
+
+export function deleteMemory(userId: string, id: string): string | null {
+	const row = database.query('SELECT object_key FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
+		object_key: string
+	} | null
+	if (!row) return null
+	database.query('DELETE FROM memories WHERE id = ? AND user_id = ?').run(id, userId)
+	return row.object_key
+}
+
+export function purgeDeletedMemories(olderThanMs = TRASH_RETENTION_MS): string[] {
+	const cutoff = Date.now() - olderThanMs
+	const rows = database
+		.query('SELECT id, object_key FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?')
+		.all(cutoff) as Array<{ id: string; object_key: string }>
+	if (rows.length === 0) return []
+	const placeholders = rows.map(() => '?').join(',')
+	database.query(`DELETE FROM memories WHERE id IN (${placeholders})`).run(...rows.map(row => row.id))
+	return rows.map(row => row.object_key)
+}
+
+export function createShareLink(userId: string, memoryId: string): { token: string } | null {
+	const memory = database
+		.query('SELECT id FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
+		.get(memoryId, userId) as { id: string } | null
+	if (!memory) return null
+	const token = randomBytes(32).toString('base64url')
+	const now = Date.now()
+	database.transaction(() => {
+		database
+			.query('UPDATE share_links SET revoked_at = ? WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL')
+			.run(now, memoryId, userId)
+		database
+			.query(
+				'INSERT INTO share_links (token_hash, memory_id, user_id, created_at, revoked_at) VALUES (?, ?, ?, ?, NULL)'
+			)
+			.run(codeHash(token), memoryId, userId, now)
+	})()
+	return { token }
+}
+
+export function revokeShareLink(userId: string, memoryId: string): void {
+	database
+		.query('UPDATE share_links SET revoked_at = ? WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL')
+		.run(Date.now(), memoryId, userId)
+}
+
+export function shareStatus(userId: string, memoryId: string) {
+	const row = database
+		.query('SELECT 1 AS shared FROM share_links WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL LIMIT 1')
+		.get(memoryId, userId) as { shared: number } | null
+	return { shared: row !== null }
+}
+
+export function getSharedMemory(token: string) {
+	if (!token || token.length < 20) return null
+	const link = database
+		.query('SELECT memory_id, user_id FROM share_links WHERE token_hash = ? AND revoked_at IS NULL')
+		.get(codeHash(token)) as { memory_id: string; user_id: string } | null
+	if (!link) return null
+	const row = database
+		.query(
+			'SELECT id, name, size, created_at, metadata_json, object_key FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
+		)
+		.get(link.memory_id, link.user_id) as {
+		id: string
+		name: string
+		size: number
+		created_at: number
+		metadata_json: string | null
+		object_key: string
+	} | null
+	if (!row) return null
+	let metadata: MemoryMetadata = emptyMetadata()
+	if (row.metadata_json) {
+		try {
+			metadata = { ...metadata, ...JSON.parse(row.metadata_json) }
+		} catch {
+			// Serve the capture with default metadata rather than failing the shared page.
+		}
+	}
+	return {
+		id: row.id,
+		name: row.name,
+		size: row.size,
+		createdAt: new Date(row.created_at).toISOString(),
+		objectKey: row.object_key,
+		metadata,
+	}
 }
 
 export interface MemoryMetadata {
