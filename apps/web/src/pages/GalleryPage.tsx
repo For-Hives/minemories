@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
 import { formatRelativeDate } from '../lib/dates'
+import { groupCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
@@ -12,15 +13,15 @@ type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
 	return (
 		<>
-			{metadata.biome && <p className="mb-0 mt-1 text-[9px] text-[#85897d]">{metadata.biome.replaceAll('_', ' ')}</p>}
+			{metadata.biome && <p className="mb-0 mt-1 text-[9px] text-[#b4c1ad]">{metadata.biome.replaceAll('_', ' ')}</p>}
 			{metadata.dimension && (
-				<p className="mb-0 mt-1 max-w-[230px] overflow-hidden text-ellipsis whitespace-nowrap text-[9px] text-[#85897d]">
+				<p className="mb-0 mt-1 max-w-[230px] overflow-hidden text-ellipsis whitespace-nowrap text-[9px] text-[#b4c1ad]">
 					{metadata.dimension}
 				</p>
 			)}
-			{metadata.seed && <p className="mb-0 mt-1 break-all text-[9px] text-[#85897d]">Seed {metadata.seed}</p>}
+			{metadata.seed && <p className="mb-0 mt-1 break-all text-[9px] text-[#b4c1ad]">Seed {metadata.seed}</p>}
 			{metadata.dayTime !== null || metadata.raining || metadata.thundering ? (
-				<p className="mb-0 mt-1 text-[9px] text-[#85897d]">
+				<p className="mb-0 mt-1 text-[9px] text-[#b4c1ad]">
 					{metadata.dayTime !== null && `World time ${metadata.dayTime}`}
 					{metadata.raining && ' · Rain'}
 					{metadata.thundering && ' · Thunder'}
@@ -30,7 +31,7 @@ function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
 	)
 }
 
-const artTones = ['bg-[#e2e6d7]', 'bg-[#dfe4de]', 'bg-[#e9e1d3]', 'bg-[#d9e1e2]']
+const artTones = ['bg-[#1c2720]', 'bg-[#1c2720]', 'bg-[#1c2720]', 'bg-[#1c2720]']
 
 interface TilePalette {
 	top: string
@@ -173,7 +174,7 @@ export function GalleryPage() {
 					<h1 className="mb-[9px] mt-[13px] font-sans text-[clamp(36px,4vw,53px)] font-semibold leading-[1.1] tracking-[-2.8px] max-phone:text-[36px] max-phone:tracking-[-2px]">
 						{session?.user.name.split(' ')[0] ?? 'Your'} gallery.
 					</h1>
-					<p className="m-0 text-[13px] text-[#777c71]">Every capture keeps a place here, ready to revisit.</p>
+					<p className="m-0 text-[13px] text-[#b4c1ad]">Every capture keeps a place here, ready to revisit.</p>
 				</div>
 				<Link className={buttonDark} to="/viewer">
 					Open a local GLB <span>↗</span>
@@ -181,12 +182,12 @@ export function GalleryPage() {
 			</div>
 
 			<section
-				className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#e8ecdf] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
-					pairStatus === 'paired' ? 'border-[#b3c89e] bg-[#e5eddf]' : 'border-[#d2d9c7]'
+				className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
+					pairStatus === 'paired' ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
 				}`}
 				aria-live="polite"
 			>
-				<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#d7e1c8] text-[22px] text-[#4f6c40] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
+				<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#1c2720] text-[22px] text-[#b4c1ad] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
 					{pairStatus === 'paired' ? '✓' : '⌘'}
 				</div>
 				<div className="flex-1">
@@ -194,44 +195,44 @@ export function GalleryPage() {
 					<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
 						{pairStatus === 'paired' ? 'Your mod is paired.' : 'Link Minecraft to your gallery.'}
 					</h2>
-					<p className="m-0 text-[11px] leading-[1.55] text-[#72786d] max-phone:text-[10px]">
+					<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
 						{pairStatus === 'paired'
 							? 'Run /minemories upload after a capture. The gallery updates itself.'
 							: 'A temporary code links your profile to the game client. Once, and you are set.'}
 					</p>
 					{pairStatus === 'pending' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#62774d]">
+						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
 							<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
 							Waiting for Minecraft…
 						</div>
 					)}
 					{pairStatus === 'expired' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#986641]">
+						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
 							This code expired. Generate a new one.
 						</div>
 					)}
 					{pairStatus === 'error' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#986641]">
+						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
 							Verification failed. Check that the API is running.
 						</div>
 					)}
 				</div>
 				{pairStatus === 'pending' && (
-					<div className="flex min-w-[181px] flex-col items-center border-l border-[#cdd5c1] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
-						<span className="font-mono text-[8px] tracking-[0.4px] text-[#75806d]">CODE FOR THE GAME</span>
+					<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
+						<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">CODE FOR THE GAME</span>
 						<button
 							type="button"
 							onClick={copyCode}
 							aria-label="Copy the pairing code"
-							className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#2b402d] max-phone:text-[26px]"
+							className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#e6eee1] max-phone:text-[26px]"
 						>
 							{pairCode.slice(0, 3)} {pairCode.slice(3)}
 						</button>
-						<small className="text-[9px] text-[#858a7d]">Expires at {pairExpires}</small>
+						<small className="text-[9px] text-[#b4c1ad]">Expires at {pairExpires}</small>
 					</div>
 				)}
 				{pairStatus === 'paired' && (
-					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#b7c7a8] px-[11px] py-2 text-[10px] font-bold text-[#4c6942] max-phone:col-2 max-phone:justify-self-start">
+					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
 						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Linked client
 					</span>
 				)}
@@ -254,7 +255,7 @@ export function GalleryPage() {
 						<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">To revisit</h2>
 					</div>
 					<button
-						className="cursor-pointer border-0 bg-transparent px-[9px] py-[7px] text-[11px] text-[#6b7362] hover:text-[#2f492f]"
+						className="cursor-pointer border-0 bg-transparent px-[9px] py-[7px] text-[11px] text-[#b4c1ad] hover:text-[#e6eee1]"
 						type="button"
 						onClick={() => void refreshMemories()}
 						title="Refresh the gallery"
@@ -264,80 +265,93 @@ export function GalleryPage() {
 				</div>
 				{loadError && (
 					<div
-						className="mb-[15px] rounded-[5px] border border-[#e8c6b8] bg-[#f6e7df] px-[14px] py-[11px] text-xs text-[#914c3b]"
+						className="mb-[15px] rounded-[5px] border border-[#354238] bg-[#1c2720] px-[14px] py-[11px] text-xs text-[#b4c1ad]"
 						role="alert"
 					>
 						{loadError}
 					</div>
 				)}
 				{loading && (
-					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#cbcec2] bg-[#f5f4ee] p-[25px] text-center text-[#818579]">
-						<span className="h-[21px] w-[21px] animate-loading-orbit rounded-full border-2 border-[#d8dccd] border-t-[#75885e]" />
+					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#354238] bg-[#1c2720] p-[25px] text-center text-[#b4c1ad]">
+						<span className="h-[21px] w-[21px] animate-loading-orbit rounded-full border-2 border-[#354238] border-t-[#75885e]" />
 						<p className="mb-0 mt-[6px] text-xs">Gathering your memories…</p>
 					</div>
 				)}
 				{!loading && memories.length > 0 && (
-					<div className="grid grid-cols-3 gap-[17px] max-phone:grid-cols-1 max-phone:gap-3">
-						{memories.map((memory, index) => (
-							<article
-								className="overflow-hidden rounded-[7px] border border-[#dcded4] bg-[#f9f8f2] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]"
-								key={memory.id}
-							>
-								<div
-									className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % 4]}`}
-								>
-									{memory.metadata.thumbnail ? (
-										<div
-											aria-hidden="true"
-											className="absolute inset-0 bg-cover bg-center"
-											style={{ backgroundImage: `url("${memory.metadata.thumbnail}")` }}
-										/>
-									) : (
-										<MemoryTile variant={index % 4} />
-									)}
-									<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
-									<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#65705e]">
-										3D CAPTURE
-									</span>
-									<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#65705e]">
-										{String(index + 1).padStart(2, '0')}
-									</span>
+					<div className="space-y-10">
+						{groupCaptures(memories).map(group => (
+							<section key={group.key} aria-label={group.name}>
+								<div className="mb-4 flex items-baseline gap-3">
+									<h3 className="text-xl font-semibold">{group.name}</h3>
+									<span className="text-xs text-muted-ink">{group.captures.length} captures</span>
 								</div>
-								<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
-									<div>
-										<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
-											{memory.metadata.worldName ?? memory.metadata.serverName ?? memory.name}
-										</h3>
-										<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#85897d]">
-											{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
-											<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
-											{memory.metadata.x !== null && memory.metadata.x !== undefined
-												? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
-												: ''}
-											{formatFileSize(memory.size)}
-										</p>
-										<CaptureMetadata metadata={memory.metadata} />
-									</div>
-									<button
-										type="button"
-										onClick={() => openMemory(memory.id)}
-										disabled={openingId === memory.id}
-										aria-label={`Revisit ${memory.name}`}
-										className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#d6d9cd] bg-transparent text-[#506744] hover:border-[#96a87f] hover:bg-[#edf1e6]"
-									>
-										{openingId === memory.id ? '…' : '↗'}
-									</button>
+								<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+									{group.captures.map((memory, index) => (
+										<article
+											className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]"
+											key={memory.id}
+										>
+											<div
+												className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % 4]}`}
+											>
+												{memory.metadata.thumbnail ? (
+													<div
+														aria-hidden="true"
+														className="absolute inset-0 bg-cover bg-center"
+														style={{ backgroundImage: `url("${memory.metadata.thumbnail}")` }}
+													/>
+												) : (
+													<MemoryTile variant={index % 4} />
+												)}
+												<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
+												<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
+													3D CAPTURE
+												</span>
+												<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#b4c1ad]">
+													{String(index + 1).padStart(2, '0')}
+												</span>
+											</div>
+											<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
+												<div>
+													<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
+														{new Date(memory.metadata.capturedAt ?? memory.createdAt).toLocaleString('en-GB', {
+															dateStyle: 'medium',
+															timeStyle: 'short',
+														})}
+													</h3>
+													<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
+														{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
+														<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
+														{memory.metadata.x !== null && memory.metadata.x !== undefined
+															? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
+															: ''}
+														{formatFileSize(memory.size)}
+													</p>
+													<CaptureMetadata metadata={memory.metadata} />
+												</div>
+												<button
+													type="button"
+													onClick={() => openMemory(memory.id)}
+													disabled={openingId === memory.id}
+													aria-label={`Revisit ${memory.name}`}
+													className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#354238] bg-transparent text-[#b4c1ad] hover:border-[#354238] hover:bg-[#1c2720]"
+												>
+													{openingId === memory.id ? '…' : '↗'}
+												</button>
+											</div>
+										</article>
+									))}
 								</div>
-							</article>
+							</section>
 						))}
 					</div>
 				)}
 				{!loading && memories.length === 0 && (
-					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#cbcec2] bg-[#f5f4ee] p-[25px] text-center text-[#818579]">
-						<span className="grid h-[45px] w-[45px] place-items-center rounded-[13px] bg-[#e9ecdf] text-[22px] text-[#72845b]">
+					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#354238] bg-[#1c2720] p-[25px] text-center text-[#b4c1ad]">
+						<span className="grid h-[45px] w-[45px] place-items-center rounded-[13px] bg-[#1c2720] text-[22px] text-[#b4c1ad]">
 							▧
 						</span>
-						<h3 className="mb-0 mt-[14px] font-sans text-[17px] font-bold text-[#42483d]">
+						<h3 className="mb-0 mt-[14px] font-sans text-[17px] font-bold text-[#e6eee1]">
 							The first memory is still to come.
 						</h3>
 						<p className="mb-0 mt-[6px] text-xs">

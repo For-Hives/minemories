@@ -8,7 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 final class MinemoriesScreen extends Screen {
-  private static final int CAPTURE_RADIUS = 8;
+  private static final int CAPTURE_RADIUS = Minemories.DEFAULT_CAPTURE_RADIUS;
   private static final int COLOR_PANEL = 0xFF252926;
   private static final int COLOR_INSET = 0xFF191C1A;
   private static final int COLOR_EDGE = 0xFF667063;
@@ -56,7 +56,7 @@ final class MinemoriesScreen extends Screen {
             .build());
     nearbyButton =
         this.addRenderableWidget(
-            Button.builder(Component.literal("Around me"), button -> capture(false))
+            Button.builder(Component.literal("Around me (8 chunks)"), button -> capture(false))
                 .bounds(left + 14, top + (compact ? 49 : 72), half, 20)
                 .build());
     selectionButton =
@@ -266,7 +266,7 @@ final class MinemoriesScreen extends Screen {
     graphics.drawString(this.font, "MINEMORIES", left + 14, top + 14, COLOR_ACCENT);
     if (!compact) {
       graphics.drawString(
-          this.font, "Keep a fragment of your world.", left + 14, top + 36, COLOR_MUTED);
+          this.font, "8-chunk radius · loaded terrain", left + 14, top + 36, COLOR_MUTED);
     }
     graphics.drawString(this.font, "CAPTURE", left + 14, top + (compact ? 35 : 56), COLOR_TEXT);
     if (!compact) {

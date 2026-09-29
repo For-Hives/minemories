@@ -4,7 +4,7 @@ import { buttonDark, Eyebrow, useAppContext } from '../App'
 import { authClient } from '../auth-client'
 
 const inputField =
-	'h-[45px] w-full rounded-[5px] border border-[#d6d8cd] bg-[#fbfaf6] px-[13px] text-xs font-normal text-ink outline-0 placeholder:text-[#a5a89d] focus:border-[#82956b] focus:shadow-[0_0_0_3px_#8b9e6320]'
+	'h-[45px] w-full rounded-[5px] border border-[#354238] bg-[#1c2720] px-[13px] text-xs font-normal text-ink outline-0 placeholder:text-[#b4c1ad] focus:border-[#354238] focus:shadow-[0_0_0_3px_#8b9e6320]'
 
 function submitText(creating: boolean, busy: boolean) {
 	if (busy) return 'One moment…'
@@ -49,7 +49,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	}
 
 	return (
-		<section className="mx-auto my-[46px] mb-[58px] grid min-h-[660px] w-[min(100%-88px,1120px)] grid-cols-[0.92fr_1fr] overflow-hidden rounded-[9px] border border-[#deded4] bg-paper-light shadow-[0_16px_45px_#373c2810] max-tablet:w-[min(100%-48px,760px)] max-phone:mx-auto max-phone:mb-7 max-phone:mt-[13px] max-phone:min-h-0 max-phone:w-[calc(100%-24px)] max-phone:grid-cols-1">
+		<section className="mx-auto my-[46px] mb-[58px] grid min-h-[660px] w-[min(100%-88px,1120px)] grid-cols-[0.92fr_1fr] overflow-hidden rounded-[9px] border border-[#354238] bg-paper-light shadow-[0_16px_45px_#373c2810] max-tablet:w-[min(100%-48px,760px)] max-phone:mx-auto max-phone:mb-7 max-phone:mt-[13px] max-phone:min-h-0 max-phone:w-[calc(100%-24px)] max-phone:grid-cols-1">
 			<div className="relative flex flex-col overflow-hidden bg-[#293d2f] px-[39px] py-9 text-[#f2f2e7] max-phone:min-h-[205px] max-phone:p-[22px]">
 				<Link
 					className="inline-flex items-center gap-[11px] font-sans text-[19px] font-extrabold tracking-[-1.1px] text-[#f2f2e7] no-underline max-phone:gap-2 max-phone:text-[15px]"
@@ -71,12 +71,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					aria-hidden="true"
 					className="absolute bottom-[-62px] right-[34px] h-[211px] w-[244px] rotate-[-28deg] opacity-[0.54] max-phone:bottom-[-94px] max-phone:right-[3px] max-phone:origin-bottom-right max-phone:scale-[0.72]"
 				>
-					<span className="absolute top-0 left-[64px] grid h-[90px] w-[90px] place-items-center border border-[#d8e3bd] bg-[#405944] text-[36px] text-lime shadow-[20px_20px_0_#1c302588]">
+					<span className="absolute top-0 left-[64px] grid h-[90px] w-[90px] place-items-center border border-[#354238] bg-[#405944] text-[36px] text-lime shadow-[20px_20px_0_#1c302588]">
 						▧
 					</span>
-					<i className="absolute bottom-5 left-[7px] h-[74px] w-[37px] border border-[#aab995] bg-[#80926d] not-italic" />
-					<i className="absolute bottom-5 left-[54px] h-[106px] w-[37px] border border-[#aab995] bg-[#80926d] not-italic" />
-					<i className="absolute bottom-5 left-[102px] h-[60px] w-[37px] border border-[#aab995] bg-[#80926d] not-italic" />
+					<i className="absolute bottom-5 left-[7px] h-[74px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
+					<i className="absolute bottom-5 left-[54px] h-[106px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
+					<i className="absolute bottom-5 left-[102px] h-[60px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
 					<b className="absolute bottom-[33px] right-[10px] font-mono text-[9px] font-normal text-[#d9e6ca]">
 						SEASON 04
 					</b>
@@ -91,12 +91,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					<h1 className="mb-2 mt-[13px] font-sans text-[34px] font-semibold tracking-[-1.6px] max-phone:text-[28px]">
 						{creating ? 'Create a space' : 'Welcome back.'}
 					</h1>
-					<p className="m-0 text-[13px] text-[#7d8175]">
+					<p className="m-0 text-[13px] text-[#b4c1ad]">
 						{creating ? 'Gather your worlds in a single gallery.' : 'Find your worlds gallery again.'}
 					</p>
 					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit}>
 						{creating && (
-							<label className="grid gap-2 text-[11px] font-bold text-[#53584c]">
+							<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
 								Display name
 								<input
 									name="name"
@@ -108,7 +108,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								/>
 							</label>
 						)}
-						<label className="grid gap-2 text-[11px] font-bold text-[#53584c]">
+						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
 							Email address
 							<input
 								name="email"
@@ -119,7 +119,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								className={inputField}
 							/>
 						</label>
-						<label className="grid gap-2 text-[11px] font-bold text-[#53584c]">
+						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
 							Password
 							<input
 								name="password"
@@ -132,7 +132,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							/>
 						</label>
 						{error && (
-							<p className="m-0 -mt-1 text-xs text-[#a23c30]" role="alert">
+							<p className="m-0 -mt-1 text-xs text-[#e6eee1]" role="alert">
 								{error}
 							</p>
 						)}
@@ -140,18 +140,18 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							{submitText(creating, busy)} <span>↗</span>
 						</button>
 					</form>
-					<p className="mb-0 mt-[22px] text-center text-[11px] text-[#777c70]">
+					<p className="mb-0 mt-[22px] text-center text-[11px] text-[#b4c1ad]">
 						{creating ? 'Already have an account?' : 'No account yet?'}{' '}
 						<Link
-							className="font-bold text-[#557043] underline underline-offset-[3px]"
+							className="font-bold text-[#b4c1ad] underline underline-offset-[3px]"
 							to={creating ? '/login' : '/register'}
 						>
 							{creating ? 'Sign in' : 'Create a space'}
 						</Link>
 					</p>
-					<p className="mb-0 mt-8 text-center text-[11px] text-[#777c70]">
+					<p className="mb-0 mt-8 text-center text-[11px] text-[#b4c1ad]">
 						Just want to open a file?{' '}
-						<Link className="font-bold text-[#557043] underline underline-offset-[3px]" to="/viewer">
+						<Link className="font-bold text-[#b4c1ad] underline underline-offset-[3px]" to="/viewer">
 							Try without an account
 						</Link>
 					</p>

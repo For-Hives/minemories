@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { isGlbFileName } from './lib/glb'
+import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 
 export interface ViewerCycle {
 	minutes: number
@@ -11,7 +12,6 @@ export interface ViewerCycle {
 
 export interface ViewerSceneEvents {
 	onCycle(cycle: ViewerCycle): void
-	onPlayingChange(playing: boolean): void
 	onFileInfo(name: string, size: number): void
 	onEmptyChange(empty: boolean): void
 	onLoading(message: string | null): void
@@ -25,14 +25,6 @@ interface ImportedLight {
 	distance: number
 }
 
-const CLOUD_SHAPE: Array<[number, number, number, number, number, number]> = [
-	[-2, 0, 0, 3, 1, 1],
-	[0, 0, 0, 4, 1, 1],
-	[2, 0, 0, 3, 1, 1],
-	[-1, 1, 0, 2, 1, 1],
-	[1, 1, 0, 2, 1, 1],
-]
-
 export class ViewerScene {
 	private readonly canvas: HTMLCanvasElement
 	private readonly events: ViewerSceneEvents
@@ -44,8 +36,7 @@ export class ViewerScene {
 	private readonly loader = new GLTFLoader()
 	private readonly skyUniforms = { uDay: { value: 9.5 / 24 }, uMoonPhase: { value: 0 } }
 	private readonly sky: THREE.Mesh
-	private readonly clouds = new THREE.Group()
-	private readonly cloudMaterial = new THREE.MeshBasicMaterial({ color: 0xf2f5f0 })
+	private readonly clouds = new MinecraftClouds()
 	private readonly hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 0.65)
 	private readonly keyLight = new THREE.DirectionalLight(0xffedc2, 1.05)
 	private readonly nightFill = new THREE.DirectionalLight(0x7799ff, 0.04)
@@ -55,7 +46,6 @@ export class ViewerScene {
 	private readonly onWindowResize: () => void
 	private dayTime = 9.5 / 24
 	private lunarAge = 0
-	private playing = true
 	private lastMinutes = -1
 	private shadowExtent = 32
 	private hasShadowDirection = false
@@ -71,7 +61,7 @@ export class ViewerScene {
 		this.renderer.toneMapping = THREE.NeutralToneMapping
 		this.renderer.toneMappingExposure = 1
 		this.renderer.shadowMap.enabled = true
-		this.renderer.shadowMap.type = THREE.BasicShadowMap
+		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
 		this.renderer.shadowMap.autoUpdate = false
 		this.renderer.setClearColor('#11140f')
 
@@ -126,29 +116,12 @@ export class ViewerScene {
 		this.sky.renderOrder = -100
 		this.scene.add(this.sky)
 
-		for (let cloudIndex = 0; cloudIndex < 10; cloudIndex += 1) {
-			const cloud = new THREE.Group()
-			const angle = (cloudIndex * Math.PI * 2) / 10
-			const radius = 0.72 + (cloudIndex % 3) * 0.045
-			cloud.position.set(Math.cos(angle) * radius, 0.13 + (cloudIndex % 4) * 0.025, Math.sin(angle) * radius)
-			cloud.rotation.y = -angle
-			for (const [x, y, z, sx, sy, sz] of CLOUD_SHAPE) {
-				const block = new THREE.Mesh(
-					new THREE.BoxGeometry((sx * 8) / 180, (sy * 5) / 180, (sz * 8) / 180),
-					this.cloudMaterial
-				)
-				block.position.set((x * 8) / 180, (y * 5) / 180, (z * 8) / 180)
-				cloud.add(block)
-			}
-			this.clouds.add(cloud)
-		}
-		this.clouds.frustumCulled = false
 		this.scene.add(this.clouds)
 
 		this.scene.add(this.hemisphere)
 		this.keyLight.position.set(8, 14, 10)
 		this.keyLight.castShadow = true
-		this.keyLight.shadow.mapSize.set(512, 512)
+		this.keyLight.shadow.mapSize.set(4096, 4096)
 		this.keyLight.shadow.bias = -0.00015
 		this.keyLight.shadow.normalBias = 0.025
 		this.keyLight.shadow.autoUpdate = false
@@ -176,6 +149,10 @@ export class ViewerScene {
 		this.renderer.setAnimationLoop(timestamp => this.frame(timestamp))
 		this.resize()
 		this.updateDayCycle()
+	}
+
+	setCaptureContext(context: CloudContext): void {
+		this.clouds.setContext(context)
 	}
 
 	async loadFile(file: File): Promise<void> {
@@ -207,14 +184,9 @@ export class ViewerScene {
 	}
 
 	setMinutes(minutes: number): void {
-		if (this.playing) this.setPlaying(false)
 		this.dayTime = minutes / 1440
 		this.updateDayCycle()
 		this.updateSunShadow(true)
-	}
-
-	togglePlaying(): void {
-		this.setPlaying(!this.playing)
 	}
 
 	resetView(): void {
@@ -228,6 +200,7 @@ export class ViewerScene {
 		window.removeEventListener('resize', this.onWindowResize)
 		this.resizeObserver.disconnect()
 		this.controls.dispose()
+		this.clouds.dispose()
 		this.scene.traverse(object => {
 			const mesh = object as THREE.Mesh
 			if (mesh.geometry) mesh.geometry.dispose()
@@ -235,26 +208,14 @@ export class ViewerScene {
 		this.renderer.dispose()
 	}
 
-	private setPlaying(playing: boolean): void {
-		this.playing = playing
-		this.events.onPlayingChange(playing)
-	}
-
 	private frame(timestamp: number): void {
 		if (this.disposed) return
 		const deltaSeconds = this.previousFrame === 0 ? 0 : Math.min((timestamp - this.previousFrame) / 1000, 0.1)
 		this.previousFrame = timestamp
-		if (this.playing) {
-			const elapsedDay = deltaSeconds / 120
-			this.dayTime += elapsedDay
-			this.lunarAge += elapsedDay
-			this.updateDayCycle()
-		}
+
 		this.sky.position.copy(this.camera.position)
 		this.sky.scale.setScalar(Math.max(this.camera.far * 0.88, this.camera.near * 2))
-		this.clouds.position.copy(this.camera.position)
-		this.clouds.scale.setScalar(Math.max(this.camera.far * 0.82, this.camera.near * 2))
-		this.clouds.rotation.y += deltaSeconds * 0.001
+		this.clouds.update(this.camera.position, deltaSeconds)
 		this.controls.update()
 		this.renderer.render(this.scene, this.camera)
 	}
@@ -279,7 +240,7 @@ export class ViewerScene {
 		this.updateSunShadow(true)
 		this.camera.position.copy(center).add(new THREE.Vector3(largest * 1.25, largest * 0.9, largest * 1.25))
 		this.camera.near = Math.max(0.01, largest / 1000)
-		this.camera.far = largest * 30
+		this.camera.far = Math.max(4000, largest * 30)
 		this.camera.updateProjectionMatrix()
 		this.controls.minDistance = Math.max(0.1, largest * 0.015)
 		this.controls.maxDistance = largest * 12
@@ -395,7 +356,7 @@ export class ViewerScene {
 
 	private updateDayCycle(): void {
 		this.dayTime = ((this.dayTime % 1) + 1) % 1
-		const minutes = Math.floor(this.dayTime * 1440)
+		const minutes = Math.round(this.dayTime * 1440) % 1440
 		const angle = (this.dayTime - 0.25) * Math.PI * 2
 		const sunHeight = Math.sin(angle)
 		const daylight = THREE.MathUtils.smoothstep(sunHeight, -0.12, 0.2)
@@ -412,7 +373,7 @@ export class ViewerScene {
 		this.hemisphere.intensity = 0.08 + daylight * 0.62
 		this.nightFill.intensity = 0.02 + (1 - daylight) * 0.12
 		this.updateSunShadow()
-		this.cloudMaterial.color.setRGB(0.22 + daylight * 0.72, 0.26 + daylight * 0.7, 0.38 + daylight * 0.58)
+		this.clouds.material.color.setRGB(0.22 + daylight * 0.72, 0.26 + daylight * 0.7, 0.38 + daylight * 0.58)
 		if (minutes !== this.lastMinutes) {
 			this.lastMinutes = minutes
 			let glyph = '☀'

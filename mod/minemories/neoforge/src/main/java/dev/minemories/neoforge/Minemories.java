@@ -49,6 +49,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -79,7 +80,7 @@ public class Minemories {
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static final long AFK_IDLE_MS = 5 * 60 * 1000;
   private static final long AFK_SNAPSHOT_INTERVAL_MS = 4 * 60 * 60 * 1000;
-  private static final int AFK_SNAPSHOT_RADIUS = 8;
+  static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
   private static long lastActivityMs = System.currentTimeMillis();
   private static double lastPlayerX;
   private static double lastPlayerY;
@@ -177,9 +178,12 @@ public class Minemories {
                         .then(Commands.literal("status").executes(ctx -> selectionStatus())))
                 .then(
                     Commands.literal("export")
-                        .executes(ctx -> exportSelection())
+                        .executes(ctx -> export(DEFAULT_CAPTURE_RADIUS))
+                        .then(Commands.literal("selection").executes(ctx -> exportSelection()))
                         .then(
-                            Commands.argument("radius", IntegerArgumentType.integer(2, 48))
+                            Commands.argument(
+                                    "radius",
+                                    IntegerArgumentType.integer(2, DEFAULT_CAPTURE_RADIUS))
                                 .executes(
                                     ctx -> export(IntegerArgumentType.getInteger(ctx, "radius")))))
                 .then(
@@ -259,7 +263,7 @@ public class Minemories {
     if (!PairingClient.isAfkSnapshots()) return;
     if (now - lastActivityMs < AFK_IDLE_MS) return;
     if (now - lastSnapshotAt() < AFK_SNAPSHOT_INTERVAL_MS) return;
-    if (export(AFK_SNAPSHOT_RADIUS) != 1) return;
+    if (export(DEFAULT_CAPTURE_RADIUS) != 1) return;
     lastActivityMs = now;
     PairingClient.setLastSnapshotAt(now);
     if (PairingClient.isPaired()) {
@@ -462,8 +466,16 @@ public class Minemories {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     BlockPos center = mc.player.blockPosition();
+    var bounds =
+        CaptureBounds.around(
+            center.getX(),
+            center.getZ(),
+            mc.level.getMinBuildHeight(),
+            mc.level.getMaxBuildHeight(),
+            radius);
     return exportBox(
-        center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius));
+        new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
+        new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()));
   }
 
   private static int exportBox(BlockPos min, BlockPos max) {
@@ -472,8 +484,8 @@ public class Minemories {
     long sx = (long) max.getX() - min.getX() + 1,
         sy = (long) max.getY() - min.getY() + 1,
         sz = (long) max.getZ() - min.getZ() + 1;
-    if (sx > 97 || sy > 97 || sz > 97 || sx * sy * sz > 1_000_000L) {
-      tell("Zone trop grande. Maximum: 97 blocs par axe.");
+    if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
+      tell("Zone trop grande. Maximum: 257 blocs de largeur, 1024 de hauteur.");
       return 0;
     }
     BlockPos center =
@@ -497,11 +509,13 @@ public class Minemories {
       BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
       beRenderer.prepare(mc.level, mc.gameRenderer.getMainCamera(), mc.hitResult);
       int blockCount = 0;
-      for (int y = min.getY(); y <= max.getY(); y++)
-        for (int z = min.getZ(); z <= max.getZ(); z++)
-          for (int x = min.getX(); x <= max.getX(); x++) {
+      for (int z = min.getZ(); z <= max.getZ(); z++) {
+        for (int x = min.getX(); x <= max.getX(); x++) {
+          if (!mc.level.hasChunkAt(new BlockPos(x, min.getY(), z))) continue;
+          int columnTop =
+              Math.min(max.getY(), mc.level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+          for (int y = min.getY(); y <= columnTop; y++) {
             BlockPos pos = new BlockPos(x, y, z);
-            if (!mc.level.hasChunkAt(pos)) continue;
             BlockState state = mc.level.getBlockState(pos);
             if (state.isAir()) continue;
             int lightEmission = state.getLightEmission();
@@ -579,6 +593,8 @@ public class Minemories {
             FluidState fluid = state.getFluidState();
             if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center);
           }
+        }
+      }
       scene.write(output);
       Files.writeString(output.resolveSibling("capture.json"), metadata.toString());
       mc.player.displayClientMessage(
