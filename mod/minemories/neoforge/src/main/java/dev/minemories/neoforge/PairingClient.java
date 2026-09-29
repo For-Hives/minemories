@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -130,12 +131,18 @@ final class PairingClient {
 
     HttpRequest request;
     try {
+      JsonObject metadata = Minemories.captureMetadata();
       request =
           HttpRequest.newBuilder(URI.create(apiUrl(settings) + "/api/mod/memories"))
               .timeout(Duration.ofMinutes(3))
               .header("Authorization", "Bearer " + token)
               .header("Content-Type", "model/gltf-binary")
               .header("X-Memory-Name", "Minecraft capture")
+              .header(
+                  "X-Memory-Metadata",
+                  java.util.Base64.getUrlEncoder()
+                      .withoutPadding()
+                      .encodeToString(metadata.toString().getBytes(StandardCharsets.UTF_8)))
               .POST(HttpRequest.BodyPublishers.ofFile(file))
               .build();
     } catch (IOException error) {

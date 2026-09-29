@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,78 @@ public class Minemories {
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
+
+  static com.google.gson.JsonObject captureMetadata() {
+    Path metadataPath = capturePath().resolveSibling("capture.json");
+    if (Files.isRegularFile(metadataPath)) {
+      try {
+        return com.google.gson.JsonParser.parseString(Files.readString(metadataPath))
+            .getAsJsonObject();
+      } catch (Exception ignored) {
+        // Regenerate metadata from the current world if the sidecar is unreadable.
+      }
+    }
+    Minecraft mc = Minecraft.getInstance();
+    return currentCaptureMetadata(mc.player == null ? null : mc.player.blockPosition());
+  }
+
+  private static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
+    Minecraft mc = Minecraft.getInstance();
+    com.google.gson.JsonObject metadata = new com.google.gson.JsonObject();
+    metadata.addProperty("capturedAt", Instant.now().toString());
+    metadata.addProperty("x", position == null ? null : position.getX() + 0.5);
+    metadata.addProperty("y", position == null ? null : position.getY() + 0.5);
+    metadata.addProperty("z", position == null ? null : position.getZ() + 0.5);
+    metadata.addProperty(
+        "dimension", mc.level == null ? null : mc.level.dimension().location().toString());
+    metadata.addProperty(
+        "biome",
+        mc.level == null || position == null
+            ? null
+            : mc.level
+                .getBiome(position)
+                .unwrapKey()
+                .map(key -> key.location().toString())
+                .orElse(null));
+    metadata.addProperty("dayTime", mc.level == null ? null : mc.level.getDayTime());
+    metadata.addProperty("raining", mc.level == null ? null : mc.level.isRaining());
+    metadata.addProperty("thundering", mc.level == null ? null : mc.level.isThundering());
+    if (mc.isLocalServer()) {
+      var worldData = mc.getSingleplayerServer().getWorldData();
+      metadata.addProperty("worldName", worldData.getLevelName());
+      metadata.addProperty("seed", Long.toString(worldData.worldGenOptions().seed()));
+      metadata.addProperty("serverName", (String) null);
+      try {
+        var screenshot = mc.getSingleplayerServer().getWorldScreenshotFile();
+        if (screenshot.isPresent() && Files.isRegularFile(screenshot.get())) {
+          metadata.addProperty(
+              "thumbnail",
+              "data:image/png;base64,"
+                  + Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot.get())));
+        }
+      } catch (IOException ignored) {
+        metadata.addProperty("thumbnail", (String) null);
+      }
+    } else if (mc.getCurrentServer() != null) {
+      metadata.addProperty("worldName", (String) null);
+      String serverName = mc.getCurrentServer().name;
+      metadata.addProperty(
+          "serverName",
+          serverName == null || serverName.isBlank() ? mc.getCurrentServer().ip : serverName);
+      byte[] icon = mc.getCurrentServer().getIconBytes();
+      metadata.addProperty(
+          "thumbnail",
+          icon == null
+              ? null
+              : "data:image/png;base64," + Base64.getEncoder().encodeToString(icon));
+    } else {
+      metadata.addProperty("worldName", (String) null);
+      metadata.addProperty("serverName", (String) null);
+    }
+    if (!metadata.has("thumbnail")) metadata.addProperty("thumbnail", (String) null);
+    if (!metadata.has("seed")) metadata.addProperty("seed", (String) null);
+    return metadata;
+  }
 
   @SubscribeEvent
   public static void registerCommands(RegisterClientCommandsEvent event) {
@@ -407,6 +481,7 @@ public class Minemories {
             (min.getX() + max.getX()) / 2,
             (min.getY() + max.getY()) / 2,
             (min.getZ() + max.getZ()) / 2);
+    com.google.gson.JsonObject metadata = currentCaptureMetadata(center);
     GlbScene scene = new GlbScene();
     Map<String, SpriteAsset> sprites = new LinkedHashMap<>();
     TextureAtlas blockAtlas =
@@ -505,6 +580,7 @@ public class Minemories {
             if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center);
           }
       scene.write(output);
+      Files.writeString(output.resolveSibling("capture.json"), metadata.toString());
       mc.player.displayClientMessage(
           Component.literal(
               "Minemories: "

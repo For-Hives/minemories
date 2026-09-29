@@ -9,8 +9,8 @@ import net.minecraft.network.chat.Component;
 
 final class MinemoriesScreen extends Screen {
   private static final int CAPTURE_RADIUS = 8;
-  private static final int COLOR_PANEL = 0xF0252926;
-  private static final int COLOR_INSET = 0xC9191C1A;
+  private static final int COLOR_PANEL = 0xFF252926;
+  private static final int COLOR_INSET = 0xFF191C1A;
   private static final int COLOR_EDGE = 0xFF667063;
   private static final int COLOR_ACCENT = 0xFFD7BD81;
   private static final int COLOR_TEXT = 0xFFECE8DC;
@@ -244,10 +244,25 @@ final class MinemoriesScreen extends Screen {
 
   @Override
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-    this.renderBackground(graphics, mouseX, mouseY, partialTick);
+    super.render(graphics, mouseX, mouseY, partialTick);
+    int statusTop = top + (compact ? 164 : 205);
+    var lines = this.font.split(Component.literal(status), panelWidth - 40);
+    for (int i = 0; i < Math.min(2, lines.size()); i++) {
+      graphics.drawString(this.font, lines.get(i), left + 20, statusTop + i * 10, COLOR_TEXT);
+    }
+  }
+
+  @Override
+  public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    super.renderBackground(graphics, mouseX, mouseY, partialTick);
     graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + panelHeight + 1, COLOR_EDGE);
     graphics.fill(left, top, left + panelWidth, top + panelHeight, COLOR_PANEL);
     graphics.fill(left + 1, top + 1, left + panelWidth - 1, top + 3, COLOR_ACCENT);
+    int divider = top + (compact ? 78 : 119);
+    graphics.fill(left + 14, divider, left + panelWidth - 14, divider + 1, COLOR_EDGE);
+    int statusTop = top + (compact ? 164 : 205);
+    graphics.fill(
+        left + 14, statusTop - 5, left + panelWidth - 14, top + panelHeight - 10, COLOR_INSET);
     graphics.drawString(this.font, "MINEMORIES", left + 14, top + 14, COLOR_ACCENT);
     if (!compact) {
       graphics.drawString(
@@ -258,8 +273,6 @@ final class MinemoriesScreen extends Screen {
       graphics.drawString(
           this.font, "The next snapshot replaces capture.glb.", left + 14, top + 101, COLOR_MUTED);
     }
-    int divider = top + (compact ? 78 : 119);
-    graphics.fill(left + 14, divider, left + panelWidth - 14, divider + 1, COLOR_EDGE);
     graphics.drawString(this.font, "ACCOUNT", left + 14, top + (compact ? 88 : 131), COLOR_TEXT);
     String linkStatus = paired ? "LINKED" : "NOT LINKED";
     graphics.drawString(
@@ -268,14 +281,6 @@ final class MinemoriesScreen extends Screen {
         left + panelWidth - 14 - this.font.width(linkStatus),
         top + (compact ? 88 : 131),
         paired ? COLOR_ACCENT : COLOR_MUTED);
-    int statusTop = top + (compact ? 164 : 205);
-    graphics.fill(
-        left + 14, statusTop - 5, left + panelWidth - 14, top + panelHeight - 10, COLOR_INSET);
-    super.render(graphics, mouseX, mouseY, partialTick);
-    var lines = this.font.split(Component.literal(status), panelWidth - 40);
-    for (int i = 0; i < Math.min(2, lines.size()); i++) {
-      graphics.drawString(this.font, lines.get(i), left + 20, statusTop + i * 10, COLOR_TEXT);
-    }
   }
 
   @Override

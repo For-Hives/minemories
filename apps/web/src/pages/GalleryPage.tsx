@@ -6,7 +6,29 @@ import { formatRelativeDate } from '../lib/dates'
 import { formatFileSize } from '../lib/glb'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
+type MemoryMetadata = Memories[number]['metadata']
 type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
+
+function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
+	return (
+		<>
+			{metadata.biome && <p className="mb-0 mt-1 text-[9px] text-[#85897d]">{metadata.biome.replaceAll('_', ' ')}</p>}
+			{metadata.dimension && (
+				<p className="mb-0 mt-1 max-w-[230px] overflow-hidden text-ellipsis whitespace-nowrap text-[9px] text-[#85897d]">
+					{metadata.dimension}
+				</p>
+			)}
+			{metadata.seed && <p className="mb-0 mt-1 break-all text-[9px] text-[#85897d]">Seed {metadata.seed}</p>}
+			{metadata.dayTime !== null || metadata.raining || metadata.thundering ? (
+				<p className="mb-0 mt-1 text-[9px] text-[#85897d]">
+					{metadata.dayTime !== null && `World time ${metadata.dayTime}`}
+					{metadata.raining && ' · Rain'}
+					{metadata.thundering && ' · Thunder'}
+				</p>
+			) : null}
+		</>
+	)
+}
 
 const artTones = ['bg-[#e2e6d7]', 'bg-[#dfe4de]', 'bg-[#e9e1d3]', 'bg-[#d9e1e2]']
 
@@ -264,7 +286,15 @@ export function GalleryPage() {
 								<div
 									className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % 4]}`}
 								>
-									<MemoryTile variant={index % 4} />
+									{memory.metadata.thumbnail ? (
+										<div
+											aria-hidden="true"
+											className="absolute inset-0 bg-cover bg-center"
+											style={{ backgroundImage: `url("${memory.metadata.thumbnail}")` }}
+										/>
+									) : (
+										<MemoryTile variant={index % 4} />
+									)}
 									<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
 									<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#65705e]">
 										3D CAPTURE
@@ -276,13 +306,17 @@ export function GalleryPage() {
 								<div className="flex min-h-[74px] items-center justify-between gap-[10px] px-[14px] py-3">
 									<div>
 										<h3 className="m-0 max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-xs font-bold">
-											{memory.name}
+											{memory.metadata.worldName ?? memory.metadata.serverName ?? memory.name}
 										</h3>
 										<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#85897d]">
-											{formatRelativeDate(memory.createdAt)}{' '}
+											{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
 											<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
+											{memory.metadata.x !== null && memory.metadata.x !== undefined
+												? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
+												: ''}
 											{formatFileSize(memory.size)}
 										</p>
+										<CaptureMetadata metadata={memory.metadata} />
 									</div>
 									<button
 										type="button"

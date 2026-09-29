@@ -92,12 +92,24 @@ test('upload checks size and type, stores the bytes and returns metadata', async
 	expect((await upload(glb, { 'content-length': String(100 * 1024 * 1024 + 1) })).status).toBe(413)
 	expect((await upload(Buffer.from('glTF-payload'))).status).toBe(400)
 
-	const response = await upload(glb, { 'x-memory-name': '  My capture  ' })
+	const metadata = JSON.stringify({ x: 12.5, y: 64, z: -4, worldName: 'Test world', seed: '42', raining: false })
+	const response = await upload(glb, {
+		'x-memory-name': 'Minecraft capture',
+		'x-memory-metadata': Buffer.from(metadata).toString('base64url'),
+	})
 	expect(response.status).toBe(201)
 	const memory = (await response.json()) as { id: string; name: string; size: number }
-	expect(memory).toMatchObject({ name: 'My capture', size: glb.length })
+	expect(memory).toMatchObject({ name: 'Test world', size: glb.length })
+	const { listMemories } = await import('./pairing')
+	expect(listMemories('upload-owner')[0]?.metadata).toMatchObject({
+		x: 12.5,
+		worldName: 'Test world',
+		seed: '42',
+		raining: false,
+	})
 	expect(readFileSync(join(directory, 'objects', 'upload-owner', `${memory.id}.glb`)).toString('hex')).toBe(
 		glb.toString('hex')
 	)
+	expect((await upload(glb, { 'x-memory-metadata': '{invalid' })).status).toBe(400)
 	expect((await app.request('/api/mod/status', { headers })).status).toBe(200)
 })

@@ -25,7 +25,29 @@ describe('shared oRPC contract', () => {
 
 		const memories = apiContract.memories.list['~orpc'].outputSchema
 		if (!memories) throw new Error('Memories response schema is required')
-		const valid = [{ id: crypto.randomUUID(), name: 'Capture', size: 0, createdAt: new Date().toISOString() }]
+		const valid = [
+			{
+				id: crypto.randomUUID(),
+				name: 'Capture',
+				size: 0,
+				createdAt: new Date().toISOString(),
+				metadata: {
+					seed: null,
+					x: null,
+					y: null,
+					z: null,
+					dimension: null,
+					worldName: null,
+					serverName: null,
+					biome: null,
+					dayTime: null,
+					raining: null,
+					thundering: null,
+					thumbnail: null,
+					capturedAt: null,
+				},
+			},
+		]
 		expect(memories.safeParse(valid).success).toBe(true)
 		expect(memories.safeParse([{ ...valid[0], size: -1 }]).success).toBe(false)
 		expect(memories.safeParse([{ ...valid[0], id: '../escape' }]).success).toBe(false)

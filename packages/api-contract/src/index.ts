@@ -22,6 +22,21 @@ export const apiContract = {
 					name: z.string(),
 					size: z.number().int().nonnegative(),
 					createdAt: z.string().datetime(),
+					metadata: z.object({
+						seed: z.string().nullable(),
+						x: z.number().nullable(),
+						y: z.number().nullable(),
+						z: z.number().nullable(),
+						dimension: z.string().nullable(),
+						worldName: z.string().nullable(),
+						serverName: z.string().nullable(),
+						biome: z.string().nullable(),
+						dayTime: z.number().int().nullable(),
+						raining: z.boolean().nullable(),
+						thundering: z.boolean().nullable(),
+						thumbnail: z.string().nullable(),
+						capturedAt: z.string().datetime().nullable(),
+					}),
 				})
 			)
 		),

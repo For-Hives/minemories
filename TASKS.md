@@ -2,7 +2,6 @@
 - mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
 - mod export automatique vers le server 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
-- mod enregistre aussi un fichier metadata avec des data sur la seed, la positons, etc... pour pouvoir donnée les bon lighting/effet visuel coté front (biome neige : effet flocons, pluie, couleur ciel, forme nuage, etc) + recuperation nom du server/monde + thumbnail 
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA

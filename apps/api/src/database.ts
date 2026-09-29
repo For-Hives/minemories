@@ -46,3 +46,7 @@ database.exec(`
   CREATE INDEX IF NOT EXISTS memories_user_id_idx
     ON memories(user_id, created_at DESC);
 `)
+const memoryColumns = database.query('PRAGMA table_info(memories)').all() as Array<{ name: string }>
+if (!memoryColumns.some(column => column.name === 'metadata_json')) {
+	database.exec('ALTER TABLE memories ADD COLUMN metadata_json TEXT')
+}

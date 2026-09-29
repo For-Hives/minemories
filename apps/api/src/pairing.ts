@@ -91,15 +91,50 @@ export function getDeviceFromToken(token: string) {
 
 export function listMemories(userId: string) {
 	const rows = database
-		.query('SELECT id, name, size, created_at FROM memories WHERE user_id = ? ORDER BY created_at DESC')
-		.all(userId) as Array<{ id: string; name: string; size: number; created_at: number }>
+		.query('SELECT id, name, size, created_at, metadata_json FROM memories WHERE user_id = ? ORDER BY created_at DESC')
+		.all(userId) as Array<{ id: string; name: string; size: number; created_at: number; metadata_json: string | null }>
 
 	return rows.map(row => ({
 		id: row.id,
 		name: row.name,
 		size: row.size,
 		createdAt: new Date(row.created_at).toISOString(),
+		metadata: row.metadata_json ? JSON.parse(row.metadata_json) : emptyMetadata(),
 	}))
+}
+
+export interface MemoryMetadata {
+	seed: string | null
+	x: number | null
+	y: number | null
+	z: number | null
+	dimension: string | null
+	worldName: string | null
+	serverName: string | null
+	biome: string | null
+	dayTime: number | null
+	raining: boolean | null
+	thundering: boolean | null
+	thumbnail: string | null
+	capturedAt: string | null
+}
+
+function emptyMetadata(): MemoryMetadata {
+	return {
+		seed: null,
+		x: null,
+		y: null,
+		z: null,
+		dimension: null,
+		worldName: null,
+		serverName: null,
+		biome: null,
+		dayTime: null,
+		raining: null,
+		thundering: null,
+		thumbnail: null,
+		capturedAt: null,
+	}
 }
 
 export function getMemoryFile(userId: string, id: string) {
@@ -131,10 +166,20 @@ export function addMemory(input: {
 	name: string
 	objectKey: string
 	size: number
+	metadata?: MemoryMetadata
 }) {
 	database
 		.query(
-			'INSERT INTO memories (id, user_id, device_id, name, object_key, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+			'INSERT INTO memories (id, user_id, device_id, name, object_key, size, created_at, metadata_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 		)
-		.run(input.id, input.userId, input.deviceId, input.name, input.objectKey, input.size, Date.now())
+		.run(
+			input.id,
+			input.userId,
+			input.deviceId,
+			input.name,
+			input.objectKey,
+			input.size,
+			Date.now(),
+			JSON.stringify(input.metadata ?? emptyMetadata())
+		)
 }
