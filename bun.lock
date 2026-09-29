@@ -24,7 +24,7 @@
         "typescript": "6.0.3",
       },
     },
-    "apps/api-contract": {
+    "packages/api-contract": {
       "name": "@minemories/api-contract",
       "version": "0.1.0",
       "dependencies": {
@@ -129,7 +129,7 @@
 
     "@minemories/api": ["@minemories/api@workspace:apps/api"],
 
-    "@minemories/api-contract": ["@minemories/api-contract@workspace:apps/api-contract"],
+    "@minemories/api-contract": ["@minemories/api-contract@workspace:packages/api-contract"],
 
     "@minemories/web": ["@minemories/web@workspace:apps/web"],
 

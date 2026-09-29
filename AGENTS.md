@@ -4,7 +4,7 @@
 
 - `apps/web/` — React + Three.js SPA (Bun workspace `@minemories/web`).
 - `apps/api/` — Bun/Hono + Better Auth + oRPC + SQLite + S3-compatible storage (`@minemories/api`).
-- `apps/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
+- `packages/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
 - `mod/minemories/` — Gradle root. `:core` in `mod/minemories/core/` is loader-independent GLB code; `:neoforge` in `mod/minemories/neoforge/` is the client adapter.
 - `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`).
 
