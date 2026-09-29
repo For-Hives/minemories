@@ -28,6 +28,8 @@ refere to BESOIN.md
 ## Working in the repository
 
 - Use the Gradle wrapper in `minemories/` for Minecraft builds (`./gradlew build`).
+- Run `bun run dev:mod` from the repository root to start the isolated NeoForge development client without building a distributable JAR; see `docs/development-workflow.md`.
+- Loader support and the proposed Architectury migration are tracked in `docs/loader-support.md`.
 - The web viewer is a Bun workspace under `apps/web`.
 - Use `bun run build` for the full monorepo build; `bun run build:web` and `bun run build:mod` build one side.
 - Update `README.md` and relevant docs when repository structure, supported versions, or user workflows change.
