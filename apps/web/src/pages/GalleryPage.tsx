@@ -31,7 +31,7 @@ function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
 	)
 }
 
-const artTones = ['bg-[#1c2720]', 'bg-[#1c2720]', 'bg-[#1c2720]', 'bg-[#1c2720]']
+const artTones = ['bg-[#1c2720]', 'bg-[#202b23]', 'bg-[#1a231f]', 'bg-[#232d26]']
 
 interface TilePalette {
 	top: string

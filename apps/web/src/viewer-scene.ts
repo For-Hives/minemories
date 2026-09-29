@@ -237,6 +237,7 @@ export class ViewerScene {
 		this.controls.target.copy(center)
 		this.shadowCenter.copy(center)
 		this.shadowExtent = Math.max(8, size.length() * 0.65)
+		this.clouds.setBaseHeight(bounds.max.y + 24)
 		this.updateSunShadow(true)
 		this.camera.position.copy(center).add(new THREE.Vector3(largest * 1.25, largest * 0.9, largest * 1.25))
 		this.camera.near = Math.max(0.01, largest / 1000)

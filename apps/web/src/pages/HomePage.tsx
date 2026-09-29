@@ -125,7 +125,7 @@ function StepCard({
 			<span className="absolute top-6 right-[25px] font-mono text-[10px] text-[#b4c1ad] max-phone:top-[17px] max-phone:right-4">
 				{number}
 			</span>
-			<span className="mb-[21px] grid h-[39px] w-[39px] place-items-center rounded-[9px] bg-[#1c2720] text-[19px] text-[#b4c1ad] max-phone:m-0 max-phone:h-[37px] max-phone:w-[37px] max-phone:row-span-2">
+			<span className="mb-[21px] grid h-[39px] w-[39px] place-items-center rounded-[9px] bg-[#2a362e] text-[19px] text-lime-deep max-phone:m-0 max-phone:h-[37px] max-phone:w-[37px] max-phone:row-span-2">
 				{icon}
 			</span>
 			<h3 className="mb-[7px] font-sans text-[15px] font-bold tracking-[-0.3px] max-phone:m-0 max-phone:mb-1 max-phone:self-end max-phone:text-[13px]">
@@ -149,7 +149,7 @@ function MemoryArtwork() {
 				<span>ARCHIVE No. 008</span>
 				<span>SUMMER SEASON · 2024</span>
 			</div>
-			<div className="absolute top-[77px] right-[17%] h-[46px] w-[46px] rounded-full bg-[#1c2720] shadow-[0_0_45px_#ead08c8c]" />
+			<div className="absolute top-[77px] right-[17%] h-[46px] w-[46px] rounded-full bg-[#e8c87a] shadow-[0_0_45px_#ead08c8c]" />
 			<div className="absolute inset-x-0 top-[52px] bottom-[54px] grid place-items-center">
 				<svg
 					viewBox="0 0 560 430"

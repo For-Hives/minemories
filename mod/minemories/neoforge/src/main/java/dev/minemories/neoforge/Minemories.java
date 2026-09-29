@@ -392,7 +392,7 @@ public class Minemories {
         || mc.player == null
         || !(mc.hitResult instanceof BlockHitResult hit)
         || hit.getType() == HitResult.Type.MISS) {
-      tell("Regarde un bloc puis relance /minemories select " + (first ? "first" : "second"));
+      tell("Look at a block then run /minemories select " + (first ? "first" : "second"));
       return 0;
     }
     if (selectionDimension != null && selectionDimension != mc.level.dimension()) {
@@ -485,7 +485,7 @@ public class Minemories {
         sy = (long) max.getY() - min.getY() + 1,
         sz = (long) max.getZ() - min.getZ() + 1;
     if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
-      tell("Zone trop grande. Maximum: 257 blocs de largeur, 1024 de hauteur.");
+      tell("Area too large. Maximum: 257 blocks wide, 1024 blocks tall.");
       return 0;
     }
     BlockPos center =
