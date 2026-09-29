@@ -2,17 +2,17 @@ modLoader="javafml"
 loaderVersion="[4,)"
 license="MIT"
 [[mods]]
-modId="memorypoc"
+modId="minemories"
 version="${version}"
-displayName="Memory POC"
+displayName="Minemories"
 description='''Client-side voxel capture proof of concept.'''
-[[dependencies.memorypoc]]
+[[dependencies.minemories]]
 modId="neoforge"
 type="required"
 versionRange="[21.1.248,)"
 ordering="NONE"
 side="CLIENT"
-[[dependencies.memorypoc]]
+[[dependencies.minemories]]
 modId="minecraft"
 type="required"
 versionRange="[1.21.1,1.22)"

@@ -4,7 +4,7 @@ plugins {
     id 'com.github.spotbugs'
 }
 
-base { archivesName = 'memory-poc' }
+base { archivesName = 'minemories' }
 
 dependencies {
     implementation project(':core')
@@ -37,7 +37,7 @@ neoForge {
             gameDirectory = rootProject.file('run')
         }
     }
-    mods { memorypoc { sourceSet(sourceSets.main) } }
+    mods { minemories { sourceSet(sourceSets.main) } }
 }
 
 tasks.withType(ProcessResources).configureEach {

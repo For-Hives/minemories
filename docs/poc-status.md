@@ -39,8 +39,8 @@ Blender avait refusé un export avec `Bad glTF: json contained NaN`. L'inspectio
 
 ## Commandes du mod
 
-- `/memorypoc select first` / `second`: définit les coins visés.
-- `/memorypoc select status`: affiche la sélection.
-- `/memorypoc select clear`: efface la sélection.
-- `/memorypoc export`: exporte la sélection.
-- `/memorypoc export <radius>`: exporte une boîte autour du joueur (rayon 2–48).
+- `/minemories select first` / `second`: définit les coins visés.
+- `/minemories select status`: affiche la sélection.
+- `/minemories select clear`: efface la sélection.
+- `/minemories export`: exporte la sélection.
+- `/minemories export <radius>`: exporte une boîte autour du joueur (rayon 2–48).
