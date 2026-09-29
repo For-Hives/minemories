@@ -17,11 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.imageio.ImageIO;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -51,7 +54,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -66,6 +71,8 @@ import org.lwjgl.glfw.GLFW;
     value = net.neoforged.api.distmarker.Dist.CLIENT)
 public class Minemories {
   private static final int VERTEX_STRIDE = 8;
+  private static final KeyMapping OPEN_SCREEN =
+      new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
@@ -98,6 +105,17 @@ public class Minemories {
                 .then(Commands.literal("upload").executes(ctx -> uploadCapture())));
   }
 
+  @EventBusSubscriber(
+      modid = "minemories",
+      bus = EventBusSubscriber.Bus.MOD,
+      value = net.neoforged.api.distmarker.Dist.CLIENT)
+  public static final class ClientKeys {
+    @SubscribeEvent
+    public static void registerKeys(RegisterKeyMappingsEvent event) {
+      event.register(OPEN_SCREEN);
+    }
+  }
+
   @SubscribeEvent
   public static void addPauseMenuButton(ScreenEvent.Init.Post event) {
     if (!(event.getScreen() instanceof PauseScreen screen)) return;
@@ -109,7 +127,7 @@ public class Minemories {
             .build();
     event.addListener(button);
     pauseButton = new WeakReference<>(button);
-    placePauseButton(screen, button, event.getListenersList());
+    placeMenuButton(screen, button, event.getListenersList());
   }
 
   @SubscribeEvent
@@ -117,21 +135,35 @@ public class Minemories {
     if (!(event.getScreen() instanceof PauseScreen screen)) return;
     Button button = pauseButton.get();
     if (button != null && screen.children().contains(button)) {
-      placePauseButton(screen, button, screen.children());
+      placeMenuButton(screen, button, screen.children());
     }
   }
 
   @SubscribeEvent
-  public static void openFromPauseShortcut(ScreenEvent.KeyPressed.Post event) {
-    if (!(event.getScreen() instanceof PauseScreen screen)
-        || event.getKeyCode() != GLFW.GLFW_KEY_M
-        || (event.getModifiers() & (GLFW.GLFW_MOD_CONTROL | GLFW.GLFW_MOD_SUPER)) == 0) return;
-    Minecraft.getInstance().setScreen(new MinemoriesScreen(screen));
-    event.setCanceled(true);
+  public static void addOptionsButton(ScreenEvent.Init.Post event) {
+    if (!(event.getScreen() instanceof OptionsScreen screen)) return;
+    Button button =
+        Button.builder(
+                Component.literal("Minemories"),
+                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
+            .build();
+    event.addListener(button);
+    placeMenuButton(screen, button, event.getListenersList());
   }
 
-  private static void placePauseButton(
-      PauseScreen screen, Button button, List<? extends GuiEventListener> listeners) {
+  @SubscribeEvent
+  public static void openFromShortcut(ClientTickEvent.Post event) {
+    while (OPEN_SCREEN.consumeClick()) {
+      Minecraft mc = Minecraft.getInstance();
+      if (!(mc.screen instanceof MinemoriesScreen)) {
+        mc.setScreen(new MinemoriesScreen(mc.screen));
+      }
+    }
+  }
+
+  private static void placeMenuButton(
+      Screen screen, Button button, List<? extends GuiEventListener> listeners) {
     List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
     for (GuiEventListener listener : listeners) {
       if (listener instanceof AbstractWidget widget && widget != button && widget.visible) {
