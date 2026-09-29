@@ -3,6 +3,7 @@ package dev.minemories.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -82,5 +83,39 @@ final class GlbSceneTest {
         new float[] {0, 0, Float.POSITIVE_INFINITY, 0, 1, 1, 0, 1});
 
     assertEquals(0, scene.materialCount());
+  }
+
+  @Test
+  void rejectsWrongVertexCountsBeforeWritingAnything() {
+    GlbScene scene = new GlbScene();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> scene.addQuad("short", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1,
+            new float[11], new float[8]));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> scene.addQuad("uv", "name", "sprite", ONE_PIXEL_PNG, 0, 0, 0, 1,
+            new float[12], new float[7]));
+    assertEquals(0, scene.materialCount());
+  }
+
+  @Test
+  void writesFiniteNormalsAndEscapedNamesForExtremeFiniteVertices() throws IOException {
+    GlbScene scene = new GlbScene();
+    scene.addQuad("extreme", "line\n\"\\", "sprite\tname", ONE_PIXEL_PNG,
+        0xFFFFFF, 2, Float.NaN, Float.POSITIVE_INFINITY,
+        new float[] {-Float.MAX_VALUE, 0, 0, Float.MAX_VALUE, 0, 0,
+            Float.MAX_VALUE, Float.MAX_VALUE, 0, -Float.MAX_VALUE, Float.MAX_VALUE, 0},
+        new float[] {0, 0, 1, 0, 1, 1, 0, 1});
+    Path output = tempDir.resolve("nested/capture.glb");
+    scene.write(output);
+    byte[] glb = Files.readAllBytes(output);
+    ByteBuffer header = ByteBuffer.wrap(glb).order(ByteOrder.LITTLE_ENDIAN);
+    String json = new String(glb, 20, header.getInt(12), StandardCharsets.UTF_8).trim();
+    assertTrue(json.contains("line\\u000a\\\"\\\\"));
+    assertTrue(json.contains("sprite\\u0009name"));
+    assertTrue(json.contains("\"alphaMode\":\"BLEND\""));
+    assertFalse(json.contains("NaN"));
+    assertFalse(json.contains("Infinity"));
   }
 }

@@ -1,36 +1,36 @@
 {
-  "name": "minemories",
-  "private": true,
-  "packageManager": "bun@1.4.2",
-  "engines": {
-    "bun": ">=1.4.2",
-    "node": ">=22.12.0"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "trustedDependencies": [
-    "@biomejs/biome",
-    "esbuild",
-    "rolldown"
-  ],
-  "scripts": {
-    "mod:dev": "node scripts/gradle.mjs :neoforge:runClient",
-    "mod:build": "node scripts/gradle.mjs build",
-    "mod:check": "node scripts/gradle.mjs spotlessApply check",
-    "mod:check:ci": "node scripts/gradle.mjs check",
-    "web:dev": "bun run --filter @minemories/web dev",
-    "web:check": "biome check apps/web && bun run --filter @minemories/web typecheck && bun run --filter @minemories/web test:coverage",
-    "web:build": "bun run --filter @minemories/web bundle",
-    "api:dev": "bun run --filter @minemories/api dev",
-    "api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
-    "format": "biome check --write apps scripts package.json biome.json",
-    "lint": "biome check apps scripts package.json biome.json",
-    "check": "bun run lint && bun run web:check && bun run api:check && bun run mod:check:ci",
-    "build": "bun run check && bun run web:build && bun run mod:build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.5.13"
-  }
+	"name": "minemories",
+	"private": true,
+	"packageManager": "bun@1.4.2",
+	"engines": {
+		"bun": ">=1.4.2",
+		"node": ">=22.12.0"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"trustedDependencies": [
+		"@biomejs/biome",
+		"esbuild",
+		"rolldown"
+	],
+	"scripts": {
+		"mod:dev": "node scripts/gradle.mjs :neoforge:runClient",
+		"mod:build": "node scripts/gradle.mjs build",
+		"mod:check": "node scripts/gradle.mjs spotlessApply check",
+		"mod:check:ci": "node scripts/gradle.mjs check",
+		"web:dev": "bun run --filter @minemories/web dev",
+		"web:check": "biome check apps/web && bun run --filter @minemories/web typecheck && bun run --filter @minemories/web test:coverage",
+		"web:build": "bun run --filter @minemories/web bundle",
+		"api:dev": "bun run --filter @minemories/api dev",
+		"api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
+		"format": "biome check --write apps scripts package.json biome.json",
+		"lint": "biome check apps scripts package.json biome.json",
+		"check": "bun run lint && bun run web:check && bun run api:check && bun run mod:check:ci",
+		"build": "bun run check && bun run web:build && bun run mod:build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.13"
+	}
 }

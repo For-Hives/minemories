@@ -39,4 +39,25 @@ class PauseMenuPlacementTest {
     var spot = PauseMenuPlacement.find(640, 360, List.of());
     assertEquals(new PauseMenuPlacement.Rect(528, 8, 104, 20), spot);
   }
+
+  @Test
+  void rejectsScreensThatCannotFitAReadableButton() {
+    assertNull(PauseMenuPlacement.find(79, 240, List.of()));
+    assertNull(PauseMenuPlacement.find(320, 35, List.of()));
+  }
+
+  @Test
+  void shrinksButtonToFitNarrowScreens() {
+    assertEquals(new PauseMenuPlacement.Rect(8, 8, 64, 20),
+        PauseMenuPlacement.find(80, 240, List.of()));
+  }
+
+  @Test
+  void touchingWidgetsStillLeaveTheRequiredGap() {
+    var candidate = new PauseMenuPlacement.Rect(528, 8, 104, 20);
+    assertFalse(candidate.overlaps(new PauseMenuPlacement.Rect(635, 8, 20, 20)));
+    assertEquals(new PauseMenuPlacement.Rect(8, 8, 104, 20),
+        PauseMenuPlacement.find(640, 360,
+            List.of(new PauseMenuPlacement.Rect(630, 8, 20, 20))));
+  }
 }
