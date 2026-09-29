@@ -37,6 +37,12 @@ bun mod:dev
 
 Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/minemories/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/development-workflow.md).
 
+## Interface du mod
+
+Dans un monde, ouvre le menu pause puis clique sur **Minemories**. Le bouton cherche une place libre autour des autres boutons du menu et s'ajuste si un mod en ajoute un après lui. Si le menu est entièrement occupé, utilise **Ctrl+M** (ou **⌘+M** sur macOS) depuis le menu pause. L'écran propose une capture autour du joueur (rayon de 8 blocs), l'export de la zone définie avec `/minemories select first` et `/minemories select second`, l'appairage avec le code à six chiffres affiché sur le web, puis un bouton d'envoi explicite. Une capture écrit `~/export/capture.glb` et remplace la précédente ; l'envoi n'est jamais automatique. Le bouton d'envoi est disponible une fois le compte lié et le fichier présent. Les commandes restent utilisables. La fermeture de l'écran ramène au menu pause.
+
+Pour tester rapidement le parcours, lance `bun api:dev`, `bun web:dev` et `bun mod:dev`, crée un monde de test, capture, crée le code dans le web, puis lie le mod et envoie le fichier. Le fichier `mod/minemories/run/config/minemories.properties` conserve le jeton local.
+
 ## Commandes
 
 | Commande | Effet |

@@ -28,6 +28,11 @@ final class PairingClient {
 
   private PairingClient() {}
 
+  static boolean isPaired() {
+    String token = readSettings().getProperty("deviceToken");
+    return token != null && !token.isBlank();
+  }
+
   static CompletableFuture<String> pair(String code) {
     Properties settings = readSettings();
     JsonObject payload = new JsonObject();
