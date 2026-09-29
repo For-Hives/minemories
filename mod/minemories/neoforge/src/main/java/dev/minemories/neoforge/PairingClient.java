@@ -129,11 +129,6 @@ final class PairingClient {
   private static Properties readSettings() {
     Properties settings = new Properties();
     Path path = settingsPath();
-    // Existing installations can keep using their paired device token after the mod rename.
-    if (!Files.isRegularFile(path)) {
-      Path previous = path.resolveSibling("memorypoc.properties");
-      if (Files.isRegularFile(previous)) path = previous;
-    }
     if (Files.isRegularFile(path)) {
       try (var reader = Files.newBufferedReader(path)) {
         settings.load(reader);
