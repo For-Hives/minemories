@@ -122,11 +122,11 @@ test('model-rendered thumbnails persist on the owner memory only', () => {
 		size: 8,
 	})
 	const jpeg = `data:image/jpeg;base64,${'A'.repeat(64)}`
-	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg)).toBe(true)
-	expect(listMemories('user-f')[0]?.metadata.thumbnail).toBe(jpeg)
-	expect(setMemoryThumbnail('user-g', 'thumb-1', jpeg)).toBe(false)
-	expect(setMemoryThumbnail('user-f', 'missing', jpeg)).toBe(false)
+	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg, null)).toBe(true)
+	expect(listMemories('user-f')[0]).toMatchObject({ metadata: { thumbnail: jpeg, icon: null } })
+	expect(setMemoryThumbnail('user-g', 'thumb-1', jpeg, null)).toBe(false)
+	expect(setMemoryThumbnail('user-f', 'missing', jpeg, null)).toBe(false)
 	database.query('UPDATE memories SET metadata_json = ? WHERE id = ?').run('{broken', 'thumb-1')
-	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg)).toBe(true)
-	expect(listMemories('user-f')[0]?.metadata.thumbnail).toBe(jpeg)
+	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg, jpeg)).toBe(true)
+	expect(listMemories('user-f')[0]).toMatchObject({ metadata: { thumbnail: jpeg, icon: jpeg } })
 })

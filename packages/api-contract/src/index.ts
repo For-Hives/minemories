@@ -40,13 +40,14 @@ export const apiContract = {
 						raining: z.boolean().nullable(),
 						thundering: z.boolean().nullable(),
 						thumbnail: z.string().nullable(),
+						icon: z.string().nullable(),
 						capturedAt: z.string().datetime().nullable(),
 					}),
 				})
 			)
 		),
 		setThumbnail: oc
-			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl }))
+			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl, icon: thumbnailDataUrl.nullish() }))
 			.output(z.object({ ok: z.literal(true) })),
 	},
 }

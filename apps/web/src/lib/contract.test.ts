@@ -44,6 +44,7 @@ describe('shared oRPC contract', () => {
 					raining: null,
 					thundering: null,
 					thumbnail: null,
+					icon: null,
 					capturedAt: null,
 				},
 			},
@@ -71,6 +72,8 @@ describe('shared oRPC contract', () => {
 		const png = `data:image/png;base64,${'A'.repeat(64)}`
 		expect(input.safeParse({ id, thumbnail: jpeg }).success).toBe(true)
 		expect(input.safeParse({ id, thumbnail: png }).success).toBe(true)
+		expect(input.safeParse({ id, thumbnail: jpeg, icon: png }).success).toBe(true)
+		expect(input.safeParse({ id, thumbnail: jpeg, icon: 'data:image/gif;base64,AAAA' }).success).toBe(false)
 		expect(input.safeParse({ id: '../escape', thumbnail: jpeg }).success).toBe(false)
 		expect(input.safeParse({ id, thumbnail: 'data:image/gif;base64,AAAA' }).success).toBe(false)
 		expect(input.safeParse({ id, thumbnail: `data:image/jpeg;base64,${'A'.repeat(96_001)}` }).success).toBe(false)

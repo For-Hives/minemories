@@ -75,7 +75,7 @@ export function ViewerPage() {
 				if (cancelled) return
 				applyCaptureMetadata(capture.metadata)
 				const ready = await openFile(capture.file)
-				if (!cancelled) afterMemoryOpened(id, capture.metadata.thumbnail, ready)
+				if (!cancelled) afterMemoryOpened(id, capture.metadata.thumbnail, capture.metadata.icon, ready)
 			} catch (error) {
 				if (!cancelled) setLoadError(loadErrorMessage(error))
 			}
@@ -101,12 +101,16 @@ export function ViewerPage() {
 		if (metadata.dayTime !== null) scene.setMinutes(ticksToMinutes(metadata.dayTime))
 	}
 
-	function afterMemoryOpened(id: string, thumbnail: string | null, ready: boolean) {
+	function afterMemoryOpened(id: string, thumbnail: string | null, icon: string | null, ready: boolean) {
 		const scene = sceneRef.current
-		if (!ready || thumbnail !== null || !scene) return
+		if (!(ready && scene) || (thumbnail !== null && icon !== null)) return
 		const snapshot = scene.snapshot()
 		if (!snapshot || snapshot.length > 96_000) return
-		void apiClient.memories.setThumbnail({ id, thumbnail: snapshot }).catch(() => undefined)
+		if (icon === null && thumbnail !== null) {
+			void apiClient.memories.setThumbnail({ id, thumbnail: snapshot, icon: thumbnail }).catch(() => undefined)
+		} else {
+			void apiClient.memories.setThumbnail({ id, thumbnail: snapshot }).catch(() => undefined)
+		}
 	}
 
 	function chooseLocalFile(event: ChangeEvent<HTMLInputElement>) {
@@ -234,6 +238,7 @@ async function fetchCapture(id: string) {
 			seed: null,
 			biome: null,
 			thumbnail: null,
+			icon: null,
 		},
 	}
 }

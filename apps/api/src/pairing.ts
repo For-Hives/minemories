@@ -99,7 +99,7 @@ export function listMemories(userId: string) {
 		name: row.name,
 		size: row.size,
 		createdAt: new Date(row.created_at).toISOString(),
-		metadata: row.metadata_json ? JSON.parse(row.metadata_json) : emptyMetadata(),
+		metadata: row.metadata_json ? { ...emptyMetadata(), ...JSON.parse(row.metadata_json) } : emptyMetadata(),
 	}))
 }
 
@@ -116,6 +116,7 @@ export interface MemoryMetadata {
 	raining: boolean | null
 	thundering: boolean | null
 	thumbnail: string | null
+	icon: string | null
 	capturedAt: string | null
 }
 
@@ -133,6 +134,7 @@ function emptyMetadata(): MemoryMetadata {
 		raining: null,
 		thundering: null,
 		thumbnail: null,
+		icon: null,
 		capturedAt: null,
 	}
 }
@@ -144,7 +146,7 @@ export function getMemoryFile(userId: string, id: string) {
 	} | null
 }
 
-export function setMemoryThumbnail(userId: string, id: string, thumbnail: string): boolean {
+export function setMemoryThumbnail(userId: string, id: string, thumbnail: string, icon: string | null): boolean {
 	const row = database.query('SELECT metadata_json FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
 		metadata_json: string | null
 	} | null
@@ -158,6 +160,7 @@ export function setMemoryThumbnail(userId: string, id: string, thumbnail: string
 		}
 	}
 	metadata.thumbnail = thumbnail
+	if (icon !== null) metadata.icon = icon
 	database
 		.query('UPDATE memories SET metadata_json = ? WHERE id = ? AND user_id = ?')
 		.run(JSON.stringify(metadata), id, userId)

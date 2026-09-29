@@ -304,7 +304,9 @@ export function GalleryPage() {
 										aria-expanded={open}
 										className="flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent p-4 text-left hover:bg-[#1a231c]"
 									>
-										<FolderIcon thumbnail={group.captures[0]?.metadata.thumbnail ?? null} />
+										<FolderIcon
+											thumbnail={group.captures[0]?.metadata.icon ?? group.captures[0]?.metadata.thumbnail ?? null}
+										/>
 										<span className="min-w-0 flex-1">
 											<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm font-bold text-[#eef3ea]">
 												{group.name}
