@@ -45,3 +45,11 @@ Sur Windows, utilise `gradlew.bat` à la place de `./gradlew`. `spotlessApply` f
 La CI GitHub exécute `bun build` sur chaque pull request et chaque push vers `main`. Les protections de branche doivent exiger ce statut avant fusion.
 
 Le mod affiche encore des avertissements de dépréciation provenant des APIs Minecraft/NeoForge de la cible 1.21.1. Ils restent visibles dans le build; le core neutre, lui, traite tout avertissement javac comme une erreur. Migrer ces hooks nécessite une validation en jeu, donc ne pas masquer la sortie javac ni remplacer une API sans exercice du mod.
+
+## Galerie et ambiance du viewer
+
+Le site utilise un thème sombre. La galerie regroupe les captures solo par nom de monde et seed, et les captures multijoueur par nom de serveur. Les anciennes captures sans ces informations restent dans « Other captures ». Deux serveurs enregistrés sous le même nom sont regroupés ensemble tant qu'aucun identifiant de serveur n'est disponible.
+
+Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit). Les ombres sont filtrées en PCF doux, sur une carte de 4096 pixels. Les nuages continuent à avancer à 0,6 bloc/seconde pendant que l'éclairage reste fixe. La couche utilise le motif `assets/minecraft/textures/environment/clouds.png` de Minecraft Java 1.21.1 (copie locale dans `apps/web/public/textures/minecraft-clouds.png`), avec des cellules de 12 × 12 blocs et une épaisseur de 4 blocs, à Y=192. Les coordonnées de la capture décalent le motif ; l'heure enregistrée sert de point de départ reproductible au mouvement. Le Minecraft vanilla utilise un motif indépendant de la seed et une horloge de rendu locale : il ne s'agit pas d'une reproduction synchronisée image par image. Les nuages sont masqués pour les dimensions autres que l'Overworld. Un GLB local sans métadonnées utilise une origine de secours (0,64,0).
+
+`/minemories export` et les boutons de capture utilisent un rayon horizontal de 128 blocs (8 chunks), sur toute la hauteur de la dimension. `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. La limite d'upload de 100 Mio reste inchangée.

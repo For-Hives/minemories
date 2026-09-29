@@ -2,9 +2,9 @@ import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { buttonDark, buttonOutline, Eyebrow, fileInputHidden, useAppContext } from '../App'
-import { apiBase } from '../api-client'
+import { apiBase, apiClient } from '../api-client'
 import { formatFileSize } from '../lib/glb'
-import { formatClock, ViewerScene } from '../viewer-scene'
+import { ViewerScene } from '../viewer-scene'
 
 export function ViewerPage() {
 	const { viewerFile, setViewerFile } = useAppContext()
@@ -13,9 +13,6 @@ export function ViewerPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
 	const [minutes, setMinutes] = useState(570)
-	const [glyph, setGlyph] = useState('☀')
-	const [night, setNight] = useState(false)
-	const [playing, setPlaying] = useState(true)
 	const [fileInfo, setFileInfo] = useState('')
 	const [empty, setEmpty] = useState(true)
 	const [loading, setLoading] = useState<string | null>(null)
@@ -29,10 +26,7 @@ export function ViewerPage() {
 		const scene = new ViewerScene(canvas, {
 			onCycle: cycle => {
 				setMinutes(cycle.minutes)
-				setGlyph(cycle.glyph)
-				setNight(cycle.night)
 			},
-			onPlayingChange: setPlaying,
 			onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
 			onEmptyChange: setEmpty,
 			onLoading: setLoading,
@@ -56,7 +50,10 @@ export function ViewerPage() {
 	}, [])
 
 	useEffect(() => {
-		if (viewerFile) void openFile(viewerFile)
+		if (viewerFile) {
+			sceneRef.current?.setCaptureContext({ x: null, y: null, z: null, dayTime: null, dimension: null })
+			void openFile(viewerFile)
+		}
 	}, [viewerFile, openFile])
 
 	useEffect(() => {
@@ -64,8 +61,10 @@ export function ViewerPage() {
 		let cancelled = false
 		async function loadMemory(id: string) {
 			try {
-				const file = await fetchMemoryFile(id)
-				if (!cancelled) await openFile(file)
+				const capture = await fetchCapture(id)
+				if (cancelled) return
+				sceneRef.current?.setCaptureContext(capture.metadata)
+				await openFile(capture.file)
 			} catch (error) {
 				if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Could not load this memory.')
 			}
@@ -121,7 +120,7 @@ export function ViewerPage() {
 			</div>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: dropping files is a bonus; the Choose button stays keyboard accessible. */}
 			<div
-				className="relative h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#d6d8cd] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]"
+				className="relative h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#354238] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]"
 				onDragEnter={event => {
 					event.preventDefault()
 					setDragOver(true)
@@ -156,16 +155,16 @@ export function ViewerPage() {
 					</div>
 				)}
 				{!empty && (
-					<div className="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#899080] max-phone:bottom-3 max-phone:text-[8px]">
+					<div className="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#b4c1ad] max-phone:hidden">
 						<span className="text-[#e0e5d7]">Drag</span> to orbit{' '}
-						<i className="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i>{' '}
+						<i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
 						<span className="text-[#e0e5d7]">Scroll</span> to zoom{' '}
-						<i className="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i>{' '}
+						<i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
 						<span className="text-[#e0e5d7]">Right-click</span> to pan
 					</div>
 				)}
 				{!empty && (
-					<div className="absolute top-[17px] right-[17px]">
+					<div className="absolute bottom-[17px] right-[17px]">
 						<button
 							className="h-[34px] w-[34px] cursor-pointer rounded-md border border-[#3b4334] bg-[#171b14d9] font-sans text-xl text-lime-deep"
 							type="button"
@@ -176,22 +175,21 @@ export function ViewerPage() {
 						</button>
 					</div>
 				)}
-				<DayCycleBar
-					minutes={minutes}
-					glyph={glyph}
-					night={night}
-					playing={playing}
-					onToggle={() => sceneRef.current?.togglePlaying()}
-					onScrub={value => sceneRef.current?.setMinutes(value)}
-				/>
+				<TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />
 			</div>
-			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#85897d] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
-				<span className="text-[15px] text-[#60794a]">⌖</span> Drag to orbit{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Scroll to zoom{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Right-click to pan
+			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
+				<span className="text-[15px] text-[#b4c1ad]">⌖</span> Drag to orbit{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#1c2720] not-italic" /> Scroll to zoom{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#1c2720] not-italic" /> Right-click to pan
 			</p>
 		</section>
 	)
+}
+
+async function fetchCapture(id: string) {
+	const [file, captures] = await Promise.all([fetchMemoryFile(id), apiClient.memories.list()])
+	const capture = captures.find(item => item.id === id)
+	return { file, metadata: capture?.metadata ?? { x: null, y: null, z: null, dayTime: null, dimension: null } }
 }
 
 async function fetchMemoryFile(memoryId: string): Promise<File> {
@@ -209,7 +207,7 @@ function EmptyState() {
 				<span>◈</span>
 			</div>
 			<p className="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">YOUR MEMORY, IN 3D</p>
-			<p className="mx-0 my-5 mb-[18px] max-w-[300px] text-[13px] leading-[1.6] text-[#a0a597]">
+			<p className="mx-0 my-5 mb-[18px] max-w-[300px] text-[13px] leading-[1.6] text-[#b4c1ad]">
 				Drag a <b className="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">.glb</b>{' '}
 				file here, or open one from your computer.
 			</p>
@@ -217,56 +215,28 @@ function EmptyState() {
 	)
 }
 
-function DayCycleBar({
-	minutes,
-	glyph,
-	night,
-	playing,
-	onToggle,
-	onScrub,
-}: {
-	minutes: number
-	glyph: string
-	night: boolean
-	playing: boolean
-	onToggle: () => void
-	onScrub: (value: number) => void
-}) {
+function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
 	return (
-		<section
-			className="absolute bottom-[22px] left-1/2 z-[2] grid min-h-[52px] w-[min(560px,calc(100%-32px))] -translate-x-1/2 grid-cols-[32px_18px_max-content_minmax(80px,1fr)_42px] items-center gap-[13px] rounded-[9px] border border-[#ffffff24] bg-[#101714c9] px-[14px] py-[9px] text-[#e8eee4] shadow-[0_8px_28px_#0004] backdrop-blur-[14px] max-phone:bottom-[14px] max-phone:gap-2 max-phone:px-[9px] max-phone:py-2 max-phone:grid-cols-[30px_16px_minmax(50px,max-content)_minmax(50px,1fr)_38px]"
-			aria-label="Day cycle"
+		<fieldset
+			className="absolute top-4 right-4 z-[2] flex gap-1 rounded-lg border border-[#44513d] bg-[#101714ed] p-1 max-phone:top-14"
+			aria-label="Time of day"
 		>
-			<button
-				className="cycle-toggle grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-md border border-[#ffffff26] bg-[#ffffff0b] font-sans text-xs text-lime-deep"
-				type="button"
-				aria-label={playing ? 'Pause the cycle' : 'Resume the cycle'}
-				title={playing ? 'Pause the cycle' : 'Resume the cycle'}
-				onClick={onToggle}
-			>
-				{playing ? 'Ⅱ' : '▶'}
-			</button>
-			<span
-				className={`cycle-icon text-center text-base text-[#ffe49b] [text-shadow:0_0_13px_#ffd36c]${night ? ' night' : ''}`}
-				aria-hidden="true"
-			>
-				{glyph}
-			</span>
-			<label className="whitespace-nowrap text-[10px] text-[#b9c1b2] max-phone:text-[9px]" htmlFor="time-slider">
-				World time
-			</label>
-			<input
-				id="time-slider"
-				type="range"
-				min="0"
-				max="1439"
-				value={minutes}
-				aria-label="World time"
-				onChange={event => onScrub(Number(event.currentTarget.value))}
-			/>
-			<output className="text-right font-mono text-[11px] text-[#f4f2e8] tabular-nums" htmlFor="time-slider">
-				{formatClock(minutes)}
-			</output>
-		</section>
+			{[
+				{ label: 'Morning', minutes: 570, icon: '☀' },
+				{ label: 'Noon', minutes: 720, icon: '☼' },
+				{ label: 'Sunset', minutes: 1080, icon: '◒' },
+				{ label: 'Night', minutes: 0, icon: '☾' },
+			].map(preset => (
+				<button
+					type="button"
+					key={preset.label}
+					aria-pressed={minutes === preset.minutes}
+					onClick={() => onSelect(preset.minutes)}
+					className={`cursor-pointer rounded-md px-3 py-2 text-xs transition-colors ${minutes === preset.minutes ? 'bg-lime text-[#253121]' : 'text-[#d3dfce] hover:bg-[#2b392e]'}`}
+				>
+					<span aria-hidden="true">{preset.icon}</span> <span className="max-phone:sr-only">{preset.label}</span>
+				</button>
+			))}
+		</fieldset>
 	)
 }

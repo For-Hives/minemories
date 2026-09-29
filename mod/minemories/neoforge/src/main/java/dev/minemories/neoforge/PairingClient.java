@@ -157,8 +157,7 @@ final class PairingClient {
                     new IllegalStateException(
                         "Upload refused (HTTP " + response.statusCode() + ")"));
               }
-              JsonObject result = JsonParser.parseString(response.body()).getAsJsonObject();
-              return "Memory sent: " + result.get("id").getAsString();
+              return "Your memory is saved. Find it in your gallery.";
             });
   }
 

@@ -24,7 +24,7 @@ export function useAppContext() {
 	return context
 }
 
-export function Eyebrow({ children, tone = 'text-[#63774e]' }: { children: ReactNode; tone?: string }) {
+export function Eyebrow({ children, tone = 'text-[#b4c1ad]' }: { children: ReactNode; tone?: string }) {
 	return (
 		<span className={`font-mono text-[9px] font-medium tracking-[1.45px] ${tone}`}>
 			<span aria-hidden="true" className="mr-2 inline-block h-[7px] w-[7px] rounded-full bg-[#94ad59]" />
@@ -37,8 +37,8 @@ export const buttonBase =
 	'inline-flex min-h-[46px] cursor-pointer items-center justify-center gap-[13px] rounded-[7px] border border-transparent px-[19px] text-xs font-bold no-underline transition hover:-translate-y-px disabled:transform-none disabled:cursor-wait disabled:opacity-[0.62]'
 export const buttonDark = `${buttonBase} bg-forest text-[#f5f4eb] hover:bg-forest-dark`
 export const buttonLime = `${buttonBase} bg-lime text-[#253121] shadow-[0_5px_18px_#5f70231b] hover:bg-[#e2ff7a]`
-export const buttonOutline = `${buttonBase} border-[#bfc2b3] bg-transparent text-ink hover:border-forest hover:bg-[#fff9]`
-export const buttonQuiet = `${buttonBase} min-h-[40px] bg-transparent px-[13px] text-[#575e52] hover:bg-[#e7e8dc]`
+export const buttonOutline = `${buttonBase} border-[#354238] bg-transparent text-ink hover:border-forest hover:bg-[#2c3a30]`
+export const buttonQuiet = `${buttonBase} min-h-[40px] bg-transparent px-[13px] text-[#b4c1ad] hover:bg-[#1c2720]`
 export const fileInputHidden = 'absolute h-px w-px overflow-hidden whitespace-nowrap [clip:rect(0,0,0,0)]'
 
 export function App() {
@@ -115,13 +115,13 @@ function SiteLayout({ notice }: { notice: string }) {
 					to="/gallery"
 					title={session.user.email}
 				>
-					<span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#dce5cf] text-xs text-forest max-phone:h-[29px] max-phone:w-[29px]">
+					<span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[#1c2720] text-xs text-forest max-phone:h-[29px] max-phone:w-[29px]">
 						{session.user.name.slice(0, 1).toUpperCase()}
 					</span>
 					<span className="overflow-hidden text-ellipsis whitespace-nowrap max-tablet:hidden">{session.user.name}</span>
 				</Link>
 				<button
-					className="cursor-pointer border-0 bg-transparent px-0 py-[5px] text-[10px] text-[#85897d] hover:text-[#394d36]"
+					className="cursor-pointer border-0 bg-transparent px-0 py-[5px] text-[10px] text-[#b4c1ad] hover:text-[#e6eee1]"
 					type="button"
 					onClick={async () => {
 						await authClient.signOut()
@@ -136,7 +136,7 @@ function SiteLayout({ notice }: { notice: string }) {
 
 	return (
 		<div className="flex min-h-screen flex-col overflow-clip bg-paper text-ink">
-			<header className="relative z-[4] mx-auto flex h-[88px] w-[min(100%-88px,1360px)] items-center border-b border-[#dcdcd1] max-tablet:w-[min(100%-48px,760px)] max-phone:h-[69px] max-phone:w-[calc(100%-36px)]">
+			<header className="relative z-[4] mx-auto flex h-[88px] w-[min(100%-88px,1360px)] items-center border-b border-[#354238] max-tablet:w-[min(100%-48px,760px)] max-phone:h-[69px] max-phone:w-[calc(100%-36px)]">
 				<Link
 					className="inline-flex items-center gap-[11px] font-sans text-[19px] font-extrabold tracking-[-1.1px] text-ink no-underline max-phone:gap-2 max-phone:text-base"
 					to="/"
@@ -151,11 +151,11 @@ function SiteLayout({ notice }: { notice: string }) {
 					className="ml-[70px] flex items-center gap-8 max-tablet:ml-9 max-phone:hidden"
 					aria-label="Main navigation"
 				>
-					<Link className="text-[13px] text-[#656a5e] no-underline transition-colors hover:text-forest" to="/">
+					<Link className="text-[13px] text-[#b4c1ad] no-underline transition-colors hover:text-forest" to="/">
 						Home
 					</Link>
 					{session && (
-						<Link className="text-[13px] text-[#656a5e] no-underline transition-colors hover:text-forest" to="/gallery">
+						<Link className="text-[13px] text-[#b4c1ad] no-underline transition-colors hover:text-forest" to="/gallery">
 							My gallery
 						</Link>
 					)}
@@ -186,7 +186,7 @@ function SiteLayout({ notice }: { notice: string }) {
 			<main className="w-full flex-1">
 				<Outlet />
 			</main>
-			<footer className="mx-auto flex min-h-[78px] w-[min(100%-88px,1360px)] items-center justify-between border-t border-[#dcdcd1] text-[11px] text-[#85897d] max-tablet:w-[min(100%-48px,760px)] max-phone:min-h-[67px] max-phone:w-[calc(100%-36px)] max-phone:gap-[9px] max-phone:text-[9px]">
+			<footer className="mx-auto flex min-h-[78px] w-[min(100%-88px,1360px)] items-center justify-between border-t border-[#354238] text-[11px] text-[#b4c1ad] max-tablet:w-[min(100%-48px,760px)] max-phone:min-h-[67px] max-phone:w-[calc(100%-36px)] max-phone:gap-[9px] max-phone:text-[9px]">
 				<Link
 					className="inline-flex items-center gap-[11px] font-sans text-sm font-extrabold tracking-[-1.1px] text-ink no-underline max-phone:text-xs"
 					to="/"

@@ -43,4 +43,4 @@ Blender avait refusé un export avec `Bad glTF: json contained NaN`. L'inspectio
 - `/minemories select status`: affiche la sélection.
 - `/minemories select clear`: efface la sélection.
 - `/minemories export`: exporte la sélection.
-- `/minemories export <radius>`: exporte une boîte autour du joueur (rayon 2–48).
+- `/minemories export <radius>`: exporte une zone sur toute la hauteur de la dimension (rayon horizontal 2–128 blocs, 128 par défaut, chunks chargés uniquement).
