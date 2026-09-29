@@ -170,7 +170,7 @@ export function GalleryPage() {
           </h2>
           <p className="m-0 text-[11px] leading-[1.55] text-[#72786d] max-phone:text-[10px]">
             {pairStatus === 'paired'
-              ? 'Lance /memorypoc upload après une capture. La galerie se met à jour automatiquement.'
+              ? 'Lance /minemories upload après une capture. La galerie se met à jour automatiquement.'
               : 'Un code temporaire relie ton profil au client de jeu. Une seule fois, et c’est prêt.'}
           </p>
           {pairStatus === 'pending' && (

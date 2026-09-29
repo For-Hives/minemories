@@ -14,7 +14,7 @@ Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome
 
 Le contrat oRPC décrit les procédures `pairing` et `memories` utilisées par le web. Les routes HTTP du mod sont définies dans `apps/api/src/index.ts` et restent distinctes.
 
-Le dossier `mod/` pourra accueillir d'autres projets Minecraft ; le nom `minemories` reste celui du projet Gradle. Le code Java sous `dev.minemories` et l'identifiant actuel `memorypoc` ne sont pas renommés.
+Le dossier `mod/` pourra accueillir d'autres projets Minecraft ; le nom `minemories` reste celui du projet Gradle. Le mod utilise désormais l'identifiant `minemories`, la commande `/minemories` et le nom de classe `Minemories`.
 
 ## Démarrage local
 
@@ -56,4 +56,4 @@ Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancem
 
 `.env.example` contient uniquement des identifiants de **développement local** pour Garage. Change les clés et la configuration avant tout déploiement, et n'expose pas le port S3 sans protection. Les données Garage vivent dans les volumes `garage_meta` et `garage_data` ; `docker compose down` les conserve, `down -v` les efface. Si tu avais des objets dans l'ancien volume `minio_data`, le passage à Garage **ne les transfère pas** : exporte-les et réimporte-les avant de supprimer ce volume.
 
-L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Voir [l'architecture](docs/architecture.md) et [les loaders](docs/loader-support.md).
+L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Après le renommage, `config/minemories.properties` reçoit les nouveaux appairages ; l'ancien `config/memorypoc.properties` reste lisible pour les profils déjà liés. Voir [l'architecture](docs/architecture.md) et [les loaders](docs/loader-support.md).

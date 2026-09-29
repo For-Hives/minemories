@@ -86,7 +86,7 @@ app.innerHTML = `
       <button class="absolute top-3 right-[13px] h-[30px] w-[30px] cursor-pointer rounded-md border border-[#343b2e] bg-[#1b2018] font-sans text-xl leading-none text-[#c4cbbb]" id="pairing-close" type="button" aria-label="Fermer">×</button>
       <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">APPAIRAGE DU MOD</p>
       <h2 class="m-0 font-sans text-2xl font-semibold tracking-[-0.7px] text-[#f1f3eb]" id="pairing-title">Entre ce code dans Minecraft</h2>
-      <p class="my-4 text-xs leading-[1.6] text-[#a9b19f]">Dans le jeu, utilise <code class="rounded bg-[#252c20] px-[5px] py-[3px] font-mono text-[11px] text-lime-deep">/memorypoc pair CODE</code>.</p>
+      <p class="my-4 text-xs leading-[1.6] text-[#a9b19f]">Dans le jeu, utilise <code class="rounded bg-[#252c20] px-[5px] py-[3px] font-mono text-[11px] text-lime-deep">/minemories pair CODE</code>.</p>
       <output class="my-[18px] mb-[3px] block font-mono text-[clamp(38px,12vw,54px)] font-bold leading-[1.1] tracking-[8px] text-lime-deep tabular-nums [text-shadow:0_0_28px_#c9f36a30]" id="pairing-code">······</output>
       <button class="cursor-pointer rounded-md border border-[#434e36] bg-transparent px-[14px] py-[10px] font-sans text-[11px] text-lime-deep" id="copy-pairing-code" type="button">Copier le code</button>
       <p class="m-0 min-h-[15px] text-[11px] leading-[1.5] text-[#aeb69f]" id="pairing-expiry"></p>

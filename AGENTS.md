@@ -38,7 +38,7 @@
 
 - Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/minemories/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
 - Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/development-workflow.md`).
-- Mod writes `~/export/capture.glb` locally by default. Upload is opt-in: viewer issues a 6-digit code (5-min expiry, single use), `/memorypoc pair <code>` exchanges it for a device token in the MC `config` dir, `/memorypoc upload` sends the file. Commands: `/memorypoc select first|second|status|clear`, `/memorypoc export [<radius 2-48>]`.
+- Mod writes `~/export/capture.glb` locally by default. Upload is opt-in: viewer issues a 6-digit code (5-min expiry, single use), `/minemories pair <code>` exchanges it for a device token in `config/minemories.properties` (legacy `memorypoc.properties` is read when needed), `/minemories upload` sends the file. Commands: `/minemories select first|second|status|clear`, `/minemories export [<radius 2-48>]`.
 - Treat world saves, zips, and GLBs as untrusted input (zip bombs, path traversal, PII in signs/books). Keep galleries private-by-default; never add telemetry or default uploads.
 
 ## Loader Claims

@@ -1,4 +1,4 @@
-package dev.minemories.poc;
+package dev.minemories.neoforge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -52,12 +52,12 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.textures.FluidSpriteCache;
 
-@Mod(value = "memorypoc", dist = net.neoforged.api.distmarker.Dist.CLIENT)
+@Mod(value = "minemories", dist = net.neoforged.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(
-    modid = "memorypoc",
+    modid = "minemories",
     bus = EventBusSubscriber.Bus.GAME,
     value = net.neoforged.api.distmarker.Dist.CLIENT)
-public class MemoryPoc {
+public class Minemories {
   private static final int VERTEX_STRIDE = 8;
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
@@ -68,7 +68,7 @@ public class MemoryPoc {
     event
         .getDispatcher()
         .register(
-            Commands.literal("memorypoc")
+            Commands.literal("minemories")
                 .then(
                     Commands.literal("select")
                         .then(Commands.literal("first").executes(ctx -> selectCorner(true)))
@@ -151,7 +151,7 @@ public class MemoryPoc {
         || mc.player == null
         || !(mc.hitResult instanceof BlockHitResult hit)
         || hit.getType() == HitResult.Type.MISS) {
-      tell("Regarde un bloc puis relance /memorypoc select " + (first ? "first" : "second"));
+      tell("Regarde un bloc puis relance /minemories select " + (first ? "first" : "second"));
       return 0;
     }
     if (selectionDimension != null && selectionDimension != mc.level.dimension()) {
@@ -173,7 +173,7 @@ public class MemoryPoc {
               + sizeY
               + " × "
               + sizeZ
-              + " blocs. /memorypoc export pour générer.");
+              + " blocs. /minemories export pour générer.");
     }
     return 1;
   }
@@ -188,7 +188,7 @@ public class MemoryPoc {
 
   private static int selectionStatus() {
     if (selectionFirst == null || selectionSecond == null)
-      tell("Sélection incomplète. Vise un bloc puis utilise /memorypoc select first et second.");
+      tell("Sélection incomplète. Vise un bloc puis utilise /minemories select first et second.");
     else tell("A " + selectionFirst.toShortString() + " · B " + selectionSecond.toShortString());
     return 1;
   }
@@ -196,7 +196,7 @@ public class MemoryPoc {
   private static void tell(String message) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.player != null)
-      mc.player.displayClientMessage(Component.literal("Memory POC: " + message), false);
+      mc.player.displayClientMessage(Component.literal("Minemories: " + message), false);
   }
 
   private static int exportSelection() {
@@ -205,7 +205,7 @@ public class MemoryPoc {
         || selectionFirst == null
         || selectionSecond == null
         || selectionDimension != mc.level.dimension()) {
-      tell("Sélectionne les coins avec /memorypoc select first puis second.");
+      tell("Sélectionne les coins avec /minemories select first puis second.");
       return 0;
     }
     BlockPos min =
@@ -344,7 +344,7 @@ public class MemoryPoc {
       scene.write(output);
       mc.player.displayClientMessage(
           Component.literal(
-              "Memory POC: "
+              "Minemories: "
                   + blockCount
                   + " blocs / "
                   + scene.materialCount()
@@ -353,7 +353,7 @@ public class MemoryPoc {
           false);
     } catch (Exception e) {
       mc.player.displayClientMessage(
-          Component.literal("Memory POC: échec export: " + e.getMessage()), false);
+          Component.literal("Minemories: échec export: " + e.getMessage()), false);
       e.printStackTrace();
     }
     return 1;

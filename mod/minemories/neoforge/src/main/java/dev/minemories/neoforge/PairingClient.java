@@ -1,4 +1,4 @@
-package dev.minemories.poc;
+package dev.minemories.neoforge;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -52,7 +52,7 @@ final class PairingClient {
               settings.setProperty("deviceToken", result.get("deviceToken").getAsString());
               settings.setProperty("deviceId", result.get("deviceId").getAsString());
               saveSettings(settings);
-              return "Mod appairé. Tu peux maintenant utiliser /memorypoc upload.";
+              return "Mod appairé. Tu peux maintenant utiliser /minemories upload.";
             });
   }
 
@@ -61,7 +61,7 @@ final class PairingClient {
     String token = settings.getProperty("deviceToken");
     if (token == null || token.isBlank()) {
       return CompletableFuture.failedFuture(
-          new IllegalStateException("Le mod n'est pas appairé. Utilise /memorypoc pair CODE."));
+          new IllegalStateException("Le mod n'est pas appairé. Utilise /minemories pair CODE."));
     }
     if (!Files.isRegularFile(file)) {
       return CompletableFuture.failedFuture(
@@ -123,12 +123,17 @@ final class PairingClient {
         .gameDirectory
         .toPath()
         .resolve("config")
-        .resolve("memorypoc.properties");
+        .resolve("minemories.properties");
   }
 
   private static Properties readSettings() {
     Properties settings = new Properties();
     Path path = settingsPath();
+    // Existing installations can keep using their paired device token after the mod rename.
+    if (!Files.isRegularFile(path)) {
+      Path previous = path.resolveSibling("memorypoc.properties");
+      if (Files.isRegularFile(previous)) path = previous;
+    }
     if (Files.isRegularFile(path)) {
       try (var reader = Files.newBufferedReader(path)) {
         settings.load(reader);
@@ -149,7 +154,7 @@ final class PairingClient {
 
   private static void saveSettings(Properties settings) {
     Path path = settingsPath();
-    Path temporary = path.resolveSibling("memorypoc.properties.tmp");
+    Path temporary = path.resolveSibling("minemories.properties.tmp");
     settings.setProperty("apiUrl", apiUrl(settings));
     try {
       Files.createDirectories(Objects.requireNonNull(path.getParent()));
