@@ -1,10 +1,11 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, lazy, type ReactNode, Suspense, useContext, useEffect, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { type AuthSession, authClient } from './auth-client'
 import { AuthPage } from './pages/AuthPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { HomePage } from './pages/HomePage'
-import { ViewerPage } from './pages/ViewerPage'
+
+const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 
 interface AppContextValue {
 	session: AuthSession | null
@@ -72,7 +73,20 @@ export function App() {
 						<Route element={<RequireSession />}>
 							<Route path="/gallery" element={<GalleryPage />} />
 						</Route>
-						<Route path="/viewer" element={<ViewerPage />} />
+						<Route
+							path="/viewer"
+							element={
+								<Suspense
+									fallback={
+										<div className="grid min-h-[55vh] place-items-center text-sm text-muted-ink">
+											Loading the 3D viewer…
+										</div>
+									}
+								>
+									<ViewerPage />
+								</Suspense>
+							}
+						/>
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Routes>
