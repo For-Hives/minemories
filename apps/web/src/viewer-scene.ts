@@ -233,6 +233,39 @@ export class ViewerScene {
 		if (model) this.frameModel(model)
 	}
 
+	snapshot(targetWidth = 400, targetHeight = 250): string | null {
+		if (this.modelRoot.children.length === 0) return null
+		this.controls.update()
+		this.renderer.render(this.scene, this.camera)
+		const sourceWidth = this.canvas.width
+		const sourceHeight = this.canvas.height
+		if (sourceWidth < 2 || sourceHeight < 2) return null
+		const targetAspect = targetWidth / targetHeight
+		let cropWidth = sourceWidth
+		let cropHeight = sourceHeight
+		if (sourceWidth / sourceHeight > targetAspect) cropWidth = sourceHeight * targetAspect
+		else cropHeight = sourceWidth / targetAspect
+		const output = document.createElement('canvas')
+		output.width = targetWidth
+		output.height = targetHeight
+		const context = output.getContext('2d')
+		if (!context) return null
+		context.imageSmoothingEnabled = true
+		context.imageSmoothingQuality = 'high'
+		context.drawImage(
+			this.canvas,
+			(sourceWidth - cropWidth) / 2,
+			(sourceHeight - cropHeight) / 2,
+			cropWidth,
+			cropHeight,
+			0,
+			0,
+			targetWidth,
+			targetHeight
+		)
+		return output.toDataURL('image/jpeg', 0.8)
+	}
+
 	dispose(): void {
 		this.disposed = true
 		this.renderer.setAnimationLoop(null)

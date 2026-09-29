@@ -40,12 +40,14 @@ export function ViewerPage() {
 
 	const openFile = useCallback(async (file: File) => {
 		const scene = sceneRef.current
-		if (!scene) return
+		if (!scene) return false
 		setLoadError('')
 		try {
 			await scene.loadFile(file)
+			return true
 		} catch (error) {
 			setLoadError(error instanceof Error ? error.message : 'Could not read this GLB')
+			return false
 		}
 	}, [])
 
@@ -72,7 +74,8 @@ export function ViewerPage() {
 				const capture = await fetchCapture(id)
 				if (cancelled) return
 				applyCaptureMetadata(capture.metadata)
-				await openFile(capture.file)
+				const ready = await openFile(capture.file)
+				if (!cancelled) afterMemoryOpened(id, capture.metadata.thumbnail, ready)
 			} catch (error) {
 				if (!cancelled) setLoadError(loadErrorMessage(error))
 			}
@@ -96,6 +99,14 @@ export function ViewerPage() {
 			biome: metadata.biome,
 		})
 		if (metadata.dayTime !== null) scene.setMinutes(ticksToMinutes(metadata.dayTime))
+	}
+
+	function afterMemoryOpened(id: string, thumbnail: string | null, ready: boolean) {
+		const scene = sceneRef.current
+		if (!ready || thumbnail !== null || !scene) return
+		const snapshot = scene.snapshot()
+		if (!snapshot || snapshot.length > 96_000) return
+		void apiClient.memories.setThumbnail({ id, thumbnail: snapshot }).catch(() => undefined)
 	}
 
 	function chooseLocalFile(event: ChangeEvent<HTMLInputElement>) {
@@ -222,6 +233,7 @@ async function fetchCapture(id: string) {
 			dimension: null,
 			seed: null,
 			biome: null,
+			thumbnail: null,
 		},
 	}
 }

@@ -144,6 +144,26 @@ export function getMemoryFile(userId: string, id: string) {
 	} | null
 }
 
+export function setMemoryThumbnail(userId: string, id: string, thumbnail: string): boolean {
+	const row = database.query('SELECT metadata_json FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
+		metadata_json: string | null
+	} | null
+	if (!row) return false
+	let metadata: MemoryMetadata = emptyMetadata()
+	if (row.metadata_json) {
+		try {
+			metadata = { ...metadata, ...JSON.parse(row.metadata_json) }
+		} catch {
+			// Keep the defaults and only store the new thumbnail.
+		}
+	}
+	metadata.thumbnail = thumbnail
+	database
+		.query('UPDATE memories SET metadata_json = ? WHERE id = ? AND user_id = ?')
+		.run(JSON.stringify(metadata), id, userId)
+	return true
+}
+
 export function checkPairingCode(userId: string, code: string) {
 	const pairing = database
 		.query('SELECT expires_at, used_at FROM pairing_codes WHERE user_id = ? AND code_hash = ?')

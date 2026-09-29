@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { apiContract } from '@minemories/api-contract'
+import { apiContract, thumbnailDataUrl } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
@@ -18,6 +18,7 @@ import {
 	getMemoryFile,
 	hasPairedDevice,
 	listMemories,
+	setMemoryThumbnail,
 } from './pairing'
 import { readMemory, removeMemory, storeMemory } from './storage'
 
@@ -25,7 +26,6 @@ const port = Number(process.env.API_PORT ?? 3001)
 const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173'
 const MAX_MEMORY_BYTES = 100 * 1024 * 1024
 const pairingCodePattern = /^\d{6}$/
-const thumbnailPattern = /^data:image\/png;base64,[A-Za-z0-9+/]*={0,2}$/
 const metadataSchema = z.object({
 	seed: z.string().max(64).nullable().default(null),
 	x: z.number().finite().nullable().default(null),
@@ -38,7 +38,7 @@ const metadataSchema = z.object({
 	dayTime: z.number().int().nullable().default(null),
 	raining: z.boolean().nullable().default(null),
 	thundering: z.boolean().nullable().default(null),
-	thumbnail: z.string().max(96_000).regex(thumbnailPattern).nullable().default(null),
+	thumbnail: thumbnailDataUrl.nullable().default(null),
 	capturedAt: z.string().datetime().nullable().default(null),
 })
 
@@ -80,6 +80,11 @@ const router = os.router({
 		list: os.memories.list.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 			return listMemories(context.userId)
+		}),
+		setThumbnail: os.memories.setThumbnail.handler(({ context, input }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			if (!setMemoryThumbnail(context.userId, input.id, input.thumbnail)) throw new ORPCError('NOT_FOUND')
+			return { ok: true as const }
 		}),
 	},
 })

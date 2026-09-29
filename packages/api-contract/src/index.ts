@@ -1,6 +1,11 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
 
+export const thumbnailDataUrl = z
+	.string()
+	.max(96_000)
+	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
+
 export const apiContract = {
 	pairing: {
 		create: oc.output(
@@ -40,5 +45,8 @@ export const apiContract = {
 				})
 			)
 		),
+		setThumbnail: oc
+			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl }))
+			.output(z.object({ ok: z.literal(true) })),
 	},
 }

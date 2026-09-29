@@ -17,6 +17,7 @@ const {
 	getMemoryFile,
 	hasPairedDevice,
 	listMemories,
+	setMemoryThumbnail,
 } = await import('./pairing')
 
 afterAll(() => {
@@ -106,4 +107,26 @@ test('paired devices are reported until revoked', () => {
 	expect(hasPairedDevice('user-e')).toEqual({ paired: true })
 	database.query('UPDATE devices SET revoked_at = ? WHERE id = ?').run(Date.now(), paired.deviceId)
 	expect(hasPairedDevice('user-e')).toEqual({ paired: false })
+})
+
+test('model-rendered thumbnails persist on the owner memory only', () => {
+	const { code } = createPairingCode('user-f')
+	const paired = exchangePairingCode(code, 'Thumbnail device')
+	if (!paired) throw new Error('Pairing unexpectedly failed.')
+	addMemory({
+		id: 'thumb-1',
+		userId: 'user-f',
+		deviceId: paired.deviceId,
+		name: 'Capture',
+		objectKey: 'user-f/thumb-1.glb',
+		size: 8,
+	})
+	const jpeg = `data:image/jpeg;base64,${'A'.repeat(64)}`
+	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg)).toBe(true)
+	expect(listMemories('user-f')[0]?.metadata.thumbnail).toBe(jpeg)
+	expect(setMemoryThumbnail('user-g', 'thumb-1', jpeg)).toBe(false)
+	expect(setMemoryThumbnail('user-f', 'missing', jpeg)).toBe(false)
+	database.query('UPDATE memories SET metadata_json = ? WHERE id = ?').run('{broken', 'thumb-1')
+	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg)).toBe(true)
+	expect(listMemories('user-f')[0]?.metadata.thumbnail).toBe(jpeg)
 })

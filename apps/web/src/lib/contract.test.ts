@@ -60,4 +60,21 @@ describe('shared oRPC contract', () => {
 		expect(status.safeParse({ paired: false }).success).toBe(true)
 		expect(status.safeParse({ paired: 'yes' }).success).toBe(false)
 	})
+
+	it('accepts model-rendered thumbnails for saved memories', () => {
+		const endpoint = apiContract.memories.setThumbnail['~orpc']
+		const input = endpoint.inputSchema
+		const output = endpoint.outputSchema
+		if (!(input && output)) throw new Error('Thumbnail schemas are required')
+		const id = crypto.randomUUID()
+		const jpeg = `data:image/jpeg;base64,${'A'.repeat(64)}`
+		const png = `data:image/png;base64,${'A'.repeat(64)}`
+		expect(input.safeParse({ id, thumbnail: jpeg }).success).toBe(true)
+		expect(input.safeParse({ id, thumbnail: png }).success).toBe(true)
+		expect(input.safeParse({ id: '../escape', thumbnail: jpeg }).success).toBe(false)
+		expect(input.safeParse({ id, thumbnail: 'data:image/gif;base64,AAAA' }).success).toBe(false)
+		expect(input.safeParse({ id, thumbnail: `data:image/jpeg;base64,${'A'.repeat(96_001)}` }).success).toBe(false)
+		expect(output.safeParse({ ok: true }).success).toBe(true)
+		expect(output.safeParse({ ok: false }).success).toBe(false)
+	})
 })
