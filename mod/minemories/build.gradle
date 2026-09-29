@@ -1,64 +1,21 @@
 plugins {
-    id 'net.neoforged.moddev' version '2.0.80'
-    id 'com.diffplug.spotless' version '8.9.0'
-    id 'com.github.spotbugs' version '6.5.11'
+    id 'base'
+    id 'com.diffplug.spotless' version '8.9.0' apply false
+    id 'com.github.spotbugs' version '6.5.11' apply false
 }
 
-version = '0.1.0'
-group = 'dev.minemories'
-base { archivesName = 'memory-poc' }
-
 allprojects {
+    version = '0.1.0'
+    group = 'dev.minemories'
     repositories {
         mavenCentral()
     }
 }
 
-dependencies {
-    implementation project(':core')
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-spotless {
-    java {
-        googleJavaFormat('1.36.0')
-    }
-}
-
-spotbugs {
-    toolVersion = '4.10.4'
-    ignoreFailures = false
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    // Keep upstream NeoForge deprecations visible while allowing the adapter to build.
-    options.compilerArgs.add('-Xlint:all')
-}
-
-neoForge {
-    version = '21.1.248'
-    runs {
-        client { client() }
-    }
-    mods { memorypoc { sourceSet(sourceSets.main) } }
-}
-
-tasks.withType(ProcessResources).configureEach {
-    var props = [version: project.version]
-    inputs.properties props
-    filesMatching('META-INF/neoforge.mods.toml') { expand props }
-}
-
-tasks.named('jar') {
-    from project(':core').sourceSets.main.output
-}
-
 tasks.named('check') {
-    dependsOn project(':core').tasks.named('check')
+    dependsOn ':core:check', ':neoforge:check'
 }
 
 tasks.named('build') {
-    dependsOn project(':core').tasks.named('build')
+    dependsOn ':core:build', ':neoforge:build'
 }

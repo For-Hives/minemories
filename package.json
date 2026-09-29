@@ -15,7 +15,7 @@
     "rolldown"
   ],
   "scripts": {
-    "mod:dev": "node scripts/gradle.mjs runClient",
+    "mod:dev": "node scripts/gradle.mjs :neoforge:runClient",
     "mod:build": "node scripts/gradle.mjs build",
     "mod:check": "node scripts/gradle.mjs spotlessApply check",
     "mod:check:ci": "node scripts/gradle.mjs check",

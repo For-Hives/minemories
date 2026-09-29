@@ -6,7 +6,7 @@ Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome
 
 | Chemin | Rôle |
 | --- | --- |
-| `mod/minemories/` | Projet Gradle du mod NeoForge. Son module `:core` sérialise le GLB sans dépendre de Minecraft. |
+| `mod/minemories/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:neoforge` contient le client et les hooks propres au loader. |
 | `apps/web/` | Viewer React / Three.js. |
 | `apps/api/` | API Bun / Hono, Better Auth, SQLite et stockage objet S3. |
 | `apps/api-contract/` | Contrat oRPC partagé entre API et web. |
@@ -40,7 +40,7 @@ Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancem
 | Commande | Effet |
 | --- | --- |
 | `bun mod:dev` | Démarre le client NeoForge de développement (`runClient`). |
-| `bun mod:build` | Construit et vérifie le JAR Gradle dans `mod/minemories/build/libs/`. Ce build n'effectue pas de minification. |
+| `bun mod:build` | Construit et vérifie le JAR Gradle dans `mod/minemories/neoforge/build/libs/`. Ce build n'effectue pas de minification. |
 | `bun mod:check` | Applique Spotless puis lance les contrôles Gradle (JUnit, JaCoCo, SpotBugs, compilation). Modifie les sources si nécessaire. |
 | `bun mod:check:ci` | Même vérification sans modification des fichiers. |
 | `bun web:dev` / `bun api:dev` | Démarre les applications séparément. |
