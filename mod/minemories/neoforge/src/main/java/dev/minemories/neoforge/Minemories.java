@@ -140,8 +140,7 @@ public class Minemories {
                 widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
       }
     }
-    PauseMenuPlacement.Rect spot =
-        PauseMenuPlacement.find(screen.width, screen.height, occupied);
+    PauseMenuPlacement.Rect spot = PauseMenuPlacement.find(screen.width, screen.height, occupied);
     button.visible = spot != null;
     if (spot != null) {
       button.setX(spot.x());
@@ -327,7 +326,8 @@ public class Minemories {
             "Block atlas unavailable during export");
     List<TextureAtlasSprite> atlasSprites = new ArrayList<>(blockAtlas.getTextures().values());
     Path output = capturePath();
-    Path outputDirectory = output.getParent();
+    // capturePath always resolves ~/export/capture.glb, so a null parent is a bug, not input.
+    Path outputDirectory = Objects.requireNonNull(output.getParent(), "Capture path has no parent");
     try {
       Files.createDirectories(outputDirectory);
       BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
