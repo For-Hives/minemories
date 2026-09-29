@@ -6,6 +6,7 @@
 - `bun format`: applique le formatage Biome aux fichiers web et scripts.
 - `bun mod:check`: applique Spotless puis lance `check` Gradle. `bun mod:check:ci` vérifie sans modifier les sources.
 - `bun check`: Biome, vérification TypeScript, Vitest avec seuil de couverture, puis `check` Gradle dans `mod/minemories/` (Spotless, SpotBugs, JUnit et seuils JaCoCo).
+- `bun api:check`: Biome, vérification TypeScript puis tests Bun de l'API. Les tests utilisent une base SQLite et un stockage temporaires isolés.
 - `bun build`: exécute les contrôles du dépôt, produit le viewer, puis construit le mod et le core.
 
 ## Boucle courte pour le mod

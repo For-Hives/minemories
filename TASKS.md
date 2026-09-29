@@ -7,3 +7,4 @@
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
+- étendre les tests API aux routes HTTP, à l'authentification, aux limites d'upload et au stockage S3 Garage

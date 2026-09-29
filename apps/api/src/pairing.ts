@@ -33,8 +33,8 @@ export function createPairingCode(userId: string) {
     try {
       database.transaction(() => {
         database
-          .query('UPDATE pairing_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL')
-          .run(now, userId);
+          .query('DELETE FROM pairing_codes WHERE user_id = ? AND used_at IS NULL')
+          .run(userId);
         database.query('DELETE FROM pairing_codes WHERE expires_at < ?').run(now);
         database
           .query(
@@ -52,7 +52,10 @@ export function createPairingCode(userId: string) {
   throw new Error('Could not allocate a unique pairing code.');
 }
 
-export function exchangePairingCode(code: string, name: string) {
+export function exchangePairingCode(
+  code: string,
+  name: string,
+): { deviceId: string; deviceToken: string } | null {
   const now = Date.now();
   const token = randomBytes(32).toString('base64url');
   const tokenDigest = codeHash(token);
