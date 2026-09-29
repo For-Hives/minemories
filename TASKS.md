@@ -1,4 +1,3 @@
-- ajout de regle complexité congnitif biome
 - ajout de test unit partout
 - ajouter une ui au mod, en mode quand le joueurs fait pause, il doit y avoir une ui sympa pour faire l'appairage, et une snapshot 
 - mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
@@ -8,4 +7,3 @@
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
-- 

@@ -26,7 +26,7 @@
 - Core JaCoCo (runs on `check`): 90% line, 60% branch. Fix coverage with tests, not threshold edits.
 - SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
 - `mod/minemories/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
-- Biome: 2-space, single quotes, semicolons, 100-col, `noExplicitAny: error`, organize-imports on. CSS parser has `tailwindDirectives` on for Tailwind v4 (`@theme` in `apps/web/src/theme.css`).
+- Biome: 2-space, single quotes, semicolons, 100-col, `noExplicitAny: error`, cognitive complexity <= 20, organize-imports on. CSS parser has `tailwindDirectives` on for Tailwind v4 (`@theme` in `apps/web/src/theme.css`).
 
 ## API / Dev Environment Gotchas
 
