@@ -275,7 +275,7 @@ function EmptyState() {
 	)
 }
 
-function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
+export function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
 	const presets = [
 		{ label: 'Morning', minutes: 570, icon: '☀' },
 		{ label: 'Noon', minutes: 720, icon: '☼' },

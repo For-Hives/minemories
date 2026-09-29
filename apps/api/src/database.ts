@@ -50,3 +50,18 @@ const memoryColumns = database.query('PRAGMA table_info(memories)').all() as Arr
 if (!memoryColumns.some(column => column.name === 'metadata_json')) {
 	database.exec('ALTER TABLE memories ADD COLUMN metadata_json TEXT')
 }
+if (!memoryColumns.some(column => column.name === 'deleted_at')) {
+	database.exec('ALTER TABLE memories ADD COLUMN deleted_at INTEGER')
+}
+database.exec(`
+  CREATE TABLE IF NOT EXISTS share_links (
+    token_hash TEXT PRIMARY KEY,
+    memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    revoked_at INTEGER
+  );
+
+  CREATE INDEX IF NOT EXISTS share_links_memory_id_idx
+    ON share_links(memory_id, created_at DESC);
+`)
