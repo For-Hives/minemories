@@ -15,6 +15,7 @@ const client = new Client({
 	useSSL: endpoint.protocol === 'https:',
 	accessKey: process.env.S3_ACCESS_KEY ?? 'GK0123456789abcdef0123456789abcdef',
 	secretKey: process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+	region: process.env.S3_REGION ?? 'garage',
 })
 
 let bucketReady: Promise<void> | undefined
@@ -30,7 +31,7 @@ function localPath(objectKey: string) {
 
 async function ensureBucket() {
 	bucketReady ??= (async () => {
-		if (!(await client.bucketExists(bucket))) await client.makeBucket(bucket, 'us-east-1')
+		if (!(await client.bucketExists(bucket))) await client.makeBucket(bucket, process.env.S3_REGION ?? 'garage')
 	})().catch((error: unknown) => {
 		bucketReady = undefined
 		throw error
