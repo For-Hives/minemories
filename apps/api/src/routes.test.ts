@@ -113,3 +113,24 @@ test('upload checks size and type, stores the bytes and returns metadata', async
 	expect((await upload(glb, { 'x-memory-metadata': '{invalid' })).status).toBe(400)
 	expect((await app.request('/api/mod/status', { headers })).status).toBe(200)
 })
+
+test('mod screenshots become folder icons while 3D thumbnails stay empty', async () => {
+	const { code } = createPairingCode('icon-owner')
+	const paired = await pairRequest({ code }, 'icon-pair')
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	const icon = `data:image/png;base64,${'A'.repeat(64)}`
+	const response = await app.request('/api/mod/memories', {
+		method: 'POST',
+		headers: {
+			authorization: `Bearer ${deviceToken}`,
+			'content-type': 'model/gltf-binary',
+			'x-memory-metadata': Buffer.from(JSON.stringify({ worldName: 'Icon world', thumbnail: icon })).toString(
+				'base64url'
+			),
+		},
+		body: Uint8Array.from(minimalGlb()).buffer,
+	})
+	expect(response.status).toBe(201)
+	const { listMemories } = await import('./pairing')
+	expect(listMemories('icon-owner')[0]).toMatchObject({ metadata: { icon, thumbnail: null } })
+})

@@ -39,6 +39,7 @@ const metadataSchema = z.object({
 	raining: z.boolean().nullable().default(null),
 	thundering: z.boolean().nullable().default(null),
 	thumbnail: thumbnailDataUrl.nullable().default(null),
+	icon: thumbnailDataUrl.nullable().default(null),
 	capturedAt: z.string().datetime().nullable().default(null),
 })
 
@@ -83,7 +84,8 @@ const router = os.router({
 		}),
 		setThumbnail: os.memories.setThumbnail.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			if (!setMemoryThumbnail(context.userId, input.id, input.thumbnail)) throw new ORPCError('NOT_FOUND')
+			if (!setMemoryThumbnail(context.userId, input.id, input.thumbnail, input.icon ?? null))
+				throw new ORPCError('NOT_FOUND')
 			return { ok: true as const }
 		}),
 	},
@@ -177,6 +179,13 @@ app.get('/api/memories/:id/file', async context => {
 	}
 })
 
+function splitModImages(metadata: MemoryMetadata): void {
+	if (metadata.icon === null && metadata.thumbnail !== null) {
+		metadata.icon = metadata.thumbnail
+		metadata.thumbnail = null
+	}
+}
+
 app.post('/api/mod/memories', async context => {
 	const authorization = context.req.header('authorization')
 	const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
@@ -194,6 +203,7 @@ app.post('/api/mod/memories', async context => {
 	if (contentError) return context.json({ error: contentError.error }, contentError.status)
 	const metadata = parseMetadata(context.req.header('x-memory-metadata'))
 	if (!metadata) return context.json({ error: 'invalid_memory_metadata' }, 400)
+	splitModImages(metadata)
 
 	const id = randomUUID()
 	const objectKey = `${device.userId}/${id}.glb`
