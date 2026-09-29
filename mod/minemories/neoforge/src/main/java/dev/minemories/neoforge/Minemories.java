@@ -25,6 +25,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -74,6 +75,16 @@ public class Minemories {
   private static final KeyMapping OPEN_SCREEN =
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
+  private static final long AFK_IDLE_MS = 5 * 60 * 1000;
+  private static final long AFK_SNAPSHOT_INTERVAL_MS = 4 * 60 * 60 * 1000;
+  private static final int AFK_SNAPSHOT_RADIUS = 8;
+  private static long lastActivityMs = System.currentTimeMillis();
+  private static double lastPlayerX;
+  private static double lastPlayerY;
+  private static double lastPlayerZ;
+  private static float lastPlayerYaw;
+  private static float lastPlayerPitch;
+  private static boolean playerPositionKnown;
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
@@ -162,6 +173,52 @@ public class Minemories {
     }
   }
 
+  @SubscribeEvent
+  public static void trackAfkSnapshot(ClientTickEvent.Post event) {
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.level == null || mc.player == null || mc.screen != null) return;
+    long now = System.currentTimeMillis();
+    if (playerMoved(mc.player)) {
+      lastActivityMs = now;
+      return;
+    }
+    if (!PairingClient.isAfkSnapshots()) return;
+    if (now - lastActivityMs < AFK_IDLE_MS) return;
+    if (now - lastSnapshotAt() < AFK_SNAPSHOT_INTERVAL_MS) return;
+    if (export(AFK_SNAPSHOT_RADIUS) != 1) return;
+    lastActivityMs = now;
+    PairingClient.setLastSnapshotAt(now);
+    if (PairingClient.isPaired()) {
+      PairingClient.uploadCapture(capturePath());
+    }
+  }
+
+  private static boolean playerMoved(LocalPlayer player) {
+    boolean moved =
+        !playerPositionKnown
+            || player.getX() != lastPlayerX
+            || player.getY() != lastPlayerY
+            || player.getZ() != lastPlayerZ
+            || player.getYRot() != lastPlayerYaw
+            || player.getXRot() != lastPlayerPitch;
+    lastPlayerX = player.getX();
+    lastPlayerY = player.getY();
+    lastPlayerZ = player.getZ();
+    lastPlayerYaw = player.getYRot();
+    lastPlayerPitch = player.getXRot();
+    playerPositionKnown = true;
+    return moved;
+  }
+
+  private static long lastSnapshotAt() {
+    long stored = PairingClient.lastSnapshotAt();
+    try {
+      return Math.max(stored, Files.getLastModifiedTime(capturePath()).toMillis());
+    } catch (IOException ignored) {
+      return stored;
+    }
+  }
+
   private static void placeMenuButton(
       Screen screen, Button button, List<? extends GuiEventListener> listeners) {
     List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
@@ -198,10 +255,10 @@ public class Minemories {
 
   private static int pair(String code) {
     if (!code.matches("\\d{6}")) {
-      tell("Entre le code à 6 chiffres affiché dans l’interface web.");
+      tell("Enter the 6-digit code shown in the web interface.");
       return 0;
     }
-    tell("Appairage en cours…");
+    tell("Pairing…");
     PairingClient.pair(code)
         .whenComplete(
             (message, error) ->
@@ -212,7 +269,7 @@ public class Minemories {
 
   private static int uploadCapture() {
     Path capture = capturePath();
-    tell("Envoi de " + capture + "…");
+    tell("Sending " + capture + "…");
     PairingClient.uploadCapture(capture)
         .whenComplete(
             (message, error) ->
@@ -223,7 +280,7 @@ public class Minemories {
 
   static String pairingError(Throwable error) {
     Throwable cause = error.getCause() == null ? error : error.getCause();
-    return "Échec de la requête : " + cause.getMessage();
+    return "Request failed: " + cause.getMessage();
   }
 
   @SubscribeEvent
@@ -267,19 +324,19 @@ public class Minemories {
     selectionDimension = mc.level.dimension();
     if (first) selectionFirst = hit.getBlockPos().immutable();
     else selectionSecond = hit.getBlockPos().immutable();
-    tell((first ? "Coin A" : "Coin B") + " défini: " + hit.getBlockPos().toShortString());
+    tell((first ? "Corner A" : "Corner B") + " set: " + hit.getBlockPos().toShortString());
     if (selectionFirst != null && selectionSecond != null) {
       long sizeX = Math.abs(selectionFirst.getX() - selectionSecond.getX()) + 1L;
       long sizeY = Math.abs(selectionFirst.getY() - selectionSecond.getY()) + 1L;
       long sizeZ = Math.abs(selectionFirst.getZ() - selectionSecond.getZ()) + 1L;
       tell(
-          "Zone: "
+          "Area: "
               + sizeX
               + " × "
               + sizeY
               + " × "
               + sizeZ
-              + " blocs. /minemories export pour générer.");
+              + " blocks. /minemories export to generate.");
     }
     return 1;
   }
@@ -288,13 +345,13 @@ public class Minemories {
     selectionFirst = null;
     selectionSecond = null;
     selectionDimension = null;
-    tell("Sélection effacée.");
+    tell("Selection cleared.");
     return 1;
   }
 
   private static int selectionStatus() {
     if (selectionFirst == null || selectionSecond == null)
-      tell("Sélection incomplète. Vise un bloc puis utilise /minemories select first et second.");
+      tell("Incomplete selection. Aim at a block then use /minemories select first and second.");
     else tell("A " + selectionFirst.toShortString() + " · B " + selectionSecond.toShortString());
     return 1;
   }
@@ -311,7 +368,7 @@ public class Minemories {
         || selectionFirst == null
         || selectionSecond == null
         || selectionDimension != mc.level.dimension()) {
-      tell("Sélectionne les coins avec /minemories select first puis second.");
+      tell("Select the corners with /minemories select first then second.");
       return 0;
     }
     BlockPos min =
@@ -452,14 +509,14 @@ public class Minemories {
           Component.literal(
               "Minemories: "
                   + blockCount
-                  + " blocs / "
+                  + " blocks / "
                   + scene.materialCount()
-                  + " matériaux texturés exportés vers "
+                  + " textured materials exported to "
                   + output),
           false);
     } catch (Exception e) {
       mc.player.displayClientMessage(
-          Component.literal("Minemories: échec export: " + e.getMessage()), false);
+          Component.literal("Minemories: export failed: " + e.getMessage()), false);
       e.printStackTrace();
       return 0;
     }

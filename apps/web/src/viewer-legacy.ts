@@ -33,39 +33,39 @@ const apiClient: ContractRouterClient<typeof apiContract> = createORPCClient(rpc
 app.innerHTML = `
   <main class="viewer-shell flex min-h-screen flex-col bg-night px-[4.2vw] font-sans text-[#eef0e9]">
     <header class="viewer-chrome z-[2] flex h-[78px] items-center gap-8 border-b border-night-line max-phone:h-16 max-phone:gap-[7px]">
-      <a class="flex items-center gap-[10px] font-sans text-lg font-extrabold tracking-[-0.7px] text-[#f1f3ea] no-underline max-phone:text-base" href="#" aria-label="Minemories, accueil"><span class="grid h-7 w-7 -rotate-[7deg] place-items-center rounded-lg bg-lime-deep font-sans text-[19px] font-extrabold text-[#17200b]">m</span><span>minemories</span></a>
-      <div class="ml-auto flex items-center gap-[9px] font-mono text-[11px] text-night-muted max-phone:hidden"><span class="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]"></span> Visionneuse GLB locale
+      <a class="flex items-center gap-[10px] font-sans text-lg font-extrabold tracking-[-0.7px] text-[#f1f3ea] no-underline max-phone:text-base" href="#" aria-label="Minemories, home"><span class="grid h-7 w-7 -rotate-[7deg] place-items-center rounded-lg bg-lime-deep font-sans text-[19px] font-extrabold text-[#17200b]">m</span><span>minemories</span></a>
+      <div class="ml-auto flex items-center gap-[9px] font-mono text-[11px] text-night-muted max-phone:hidden"><span class="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]"></span> Local GLB viewer
       </div>
       <div class="flex items-center gap-2 max-phone:ml-auto max-phone:gap-[5px]">
         <span class="max-w-[130px] overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#abb3a2] max-phone:hidden" id="account-name" hidden></span>
-        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="pair-mod" type="button" hidden>↔ Lier le mod</button>
-        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="auth-open" type="button">Se connecter</button>
-        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="auth-logout" type="button" hidden>Déconnexion</button>
+        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="pair-mod" type="button" hidden>↔ Link the mod</button>
+        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="auth-open" type="button">Sign in</button>
+        <button class="cursor-pointer whitespace-nowrap rounded-[7px] border border-[#41493a] bg-night-soft px-[11px] py-[9px] text-[11px] font-semibold text-[#dce2d3] transition hover:border-lime-deep hover:text-lime-deep disabled:cursor-progress disabled:opacity-60 max-phone:px-[7px] max-phone:py-2 max-phone:text-[9px]" id="auth-logout" type="button" hidden>Sign out</button>
       </div>
-      <button class="cursor-pointer rounded-[7px] border border-[#444a3d] bg-[#1b1f18] px-[15px] py-[10px] font-sans text-xs font-semibold text-inherit transition hover:border-lime-deep hover:bg-[#22291a] max-phone:ml-auto max-phone:px-[10px] max-phone:py-[9px] max-phone:text-[11px]" id="open-file" type="button"><span class="mr-[6px] text-base text-lime-deep">＋</span> Ouvrir un GLB</button>
+      <button class="cursor-pointer rounded-[7px] border border-[#444a3d] bg-[#1b1f18] px-[15px] py-[10px] font-sans text-xs font-semibold text-inherit transition hover:border-lime-deep hover:bg-[#22291a] max-phone:ml-auto max-phone:px-[10px] max-phone:py-[9px] max-phone:text-[11px]" id="open-file" type="button"><span class="mr-[6px] text-base text-lime-deep">＋</span> Open a GLB</button>
       <input id="file-input" type="file" accept=".glb,model/gltf-binary" hidden />
     </header>
 
     <section class="viewer-stage relative m-[22px_0_14px] min-h-[550px] flex-1 overflow-hidden rounded-[10px] border border-[#292e26] bg-[#11140f] max-phone:mb-0 max-phone:mt-[14px] max-phone:min-h-[calc(100vh-133px)]" id="drop-zone" aria-label="Viewer 3D">
       <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(#283024_1px,transparent_1px),linear-gradient(90deg,#283024_1px,transparent_1px)] bg-[length:42px_42px] opacity-[0.22] [mask-image:radial-gradient(ellipse_at_center,#000_0%,transparent_73%)]"></div>
-      <canvas class="absolute inset-0 block h-full w-full" id="scene" aria-label="Scène 3D interactive"></canvas>
+      <canvas class="absolute inset-0 block h-full w-full" id="scene" aria-label="Interactive 3D scene"></canvas>
       <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-6 text-center" id="empty-state">
         <div class="mb-[29px] grid h-12 w-12 place-items-center rounded-[14px] border border-[#454d3d] bg-[#171c13] text-2xl text-lime-deep shadow-[0_0_42px_#c9f36a0b]"><span>◈</span></div>
-        <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">VOTRE SOUVENIR, EN 3D</p>
-        <h1 class="m-0 font-sans text-[clamp(38px,5vw,62px)] font-medium leading-[1.02] tracking-[-3px] text-[#f0f1e9]">Un monde à<br /><em class="font-medium text-lime-deep not-italic">revisiter.</em></h1>
-        <p class="mx-0 my-5 mb-[18px] text-[13px] text-[#a0a597] max-phone:max-w-[300px] max-phone:leading-[1.6]">Glissez un fichier <b class="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">.glb</b> ici, ou ouvrez-le depuis votre ordinateur.</p>
-        <button class="pointer-events-auto cursor-pointer rounded-[7px] border border-[#444a3d] bg-[#1b1f18] px-4 py-[11px] font-sans text-xs font-semibold text-inherit transition hover:border-lime-deep hover:bg-[#22291a]" id="drop-open" type="button">Choisir un fichier <span class="ml-3 text-lime-deep">↗</span></button>
+        <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">YOUR MEMORY, IN 3D</p>
+        <h1 class="m-0 font-sans text-[clamp(38px,5vw,62px)] font-medium leading-[1.02] tracking-[-3px] text-[#f0f1e9]">A world to<br /><em class="font-medium text-lime-deep not-italic">revisit.</em></h1>
+        <p class="mx-0 my-5 mb-[18px] text-[13px] text-[#a0a597] max-phone:max-w-[300px] max-phone:leading-[1.6]">Drag a <b class="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">.glb</b> file here, or open one from your computer.</p>
+        <button class="pointer-events-auto cursor-pointer rounded-[7px] border border-[#444a3d] bg-[#1b1f18] px-4 py-[11px] font-sans text-xs font-semibold text-inherit transition hover:border-lime-deep hover:bg-[#22291a]" id="drop-open" type="button">Choose a file <span class="ml-3 text-lime-deep">↗</span></button>
       </div>
-      <div class="drop-overlay absolute inset-[12px] z-[3] hidden place-items-center rounded-lg border border-dashed border-lime-deep bg-[#13180ee8] font-mono text-sm text-lime-deep" id="drop-overlay">Déposez votre monde ici</div>
-      <div class="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 whitespace-nowrap rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]" id="loading" hidden><span class="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep"></span><span id="loading-label">Chargement du monde…</span></div>
+      <div class="drop-overlay absolute inset-[12px] z-[3] hidden place-items-center rounded-lg border border-dashed border-lime-deep bg-[#13180ee8] font-mono text-sm text-lime-deep" id="drop-overlay">Drop your world here</div>
+      <div class="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 whitespace-nowrap rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]" id="loading" hidden><span class="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep"></span><span id="loading-label">Loading the world…</span></div>
       <div class="absolute top-[18px] left-[18px] z-[1] flex max-w-[min(60%,420px)] items-center gap-[9px] overflow-hidden rounded-md border border-[#33392e] bg-[#141811d9] px-[11px] py-[9px] font-mono text-[10px] text-[#e1e5d8]" id="scene-info" hidden><span class="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]"></span><span class="overflow-hidden text-ellipsis whitespace-nowrap" id="file-name"></span></div>
-      <div class="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#899080] max-phone:bottom-3 max-phone:text-[8px]" id="controls-hint" hidden><span class="text-[#e0e5d7]">Glisser</span> orbiter <i class="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i> <span class="text-[#e0e5d7]">Molette</span> zoomer <i class="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i> <span class="text-[#e0e5d7]">Clic droit</span> déplacer</div>
-      <div class="absolute top-[17px] right-[17px]" id="stage-actions" hidden><button class="h-[34px] w-[34px] cursor-pointer rounded-md border border-[#3b4334] bg-[#171b14d9] font-sans text-xl text-lime-deep" id="reset-view" type="button" title="Recentrer la caméra">◎</button></div>
+      <div class="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#899080] max-phone:bottom-3 max-phone:text-[8px]" id="controls-hint" hidden><span class="text-[#e0e5d7]">Drag</span> to orbit <i class="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i> <span class="text-[#e0e5d7]">Scroll</span> to zoom <i class="px-2 text-[#565d50] not-italic max-phone:px-[3px]">·</i> <span class="text-[#e0e5d7]">Right-click</span> to pan</div>
+      <div class="absolute top-[17px] right-[17px]" id="stage-actions" hidden><button class="h-[34px] w-[34px] cursor-pointer rounded-md border border-[#3b4334] bg-[#171b14d9] font-sans text-xl text-lime-deep" id="reset-view" type="button" title="Recenter the camera">◎</button></div>
       <section class="absolute bottom-[22px] left-1/2 z-[2] grid min-h-[52px] w-[min(560px,calc(100%-32px))] -translate-x-1/2 grid-cols-[32px_18px_max-content_minmax(80px,1fr)_42px] items-center gap-[13px] rounded-[9px] border border-[#ffffff24] bg-[#101714c9] px-[14px] py-[9px] text-[#e8eee4] shadow-[0_8px_28px_#0004] backdrop-blur-[14px] max-phone:bottom-[14px] max-phone:gap-2 max-phone:px-[9px] max-phone:py-2 max-phone:grid-cols-[30px_16px_minmax(50px,max-content)_minmax(50px,1fr)_38px]" aria-label="Cycle journalier">
-        <button class="cycle-toggle grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-md border border-[#ffffff26] bg-[#ffffff0b] font-sans text-xs text-lime-deep" id="cycle-toggle" type="button" aria-label="Mettre en pause le cycle" title="Mettre en pause le cycle">Ⅱ</button>
+        <button class="cycle-toggle grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-md border border-[#ffffff26] bg-[#ffffff0b] font-sans text-xs text-lime-deep" id="cycle-toggle" type="button" aria-label="Pause the cycle" title="Pause the cycle">Ⅱ</button>
         <span class="cycle-icon text-center text-base text-[#ffe49b] [text-shadow:0_0_13px_#ffd36c]" id="cycle-icon" aria-hidden="true">☀</span>
-        <label class="whitespace-nowrap text-[10px] text-[#b9c1b2] max-phone:text-[9px]" for="time-slider">Heure du monde</label>
-        <input id="time-slider" type="range" min="0" max="1439" value="570" aria-label="Heure du monde" />
+        <label class="whitespace-nowrap text-[10px] text-[#b9c1b2] max-phone:text-[9px]" for="time-slider">World time</label>
+        <input id="time-slider" type="range" min="0" max="1439" value="570" aria-label="World time" />
         <output class="text-right font-mono text-[11px] text-[#f4f2e8] tabular-nums" id="time-label" for="time-slider">09:30</output>
       </section>
     </section>
@@ -73,26 +73,26 @@ app.innerHTML = `
       <form class="grid gap-[15px]" id="auth-form">
         <button class="absolute top-3 right-[13px] h-[30px] w-[30px] cursor-pointer rounded-md border border-[#343b2e] bg-[#1b2018] font-sans text-xl leading-none text-[#c4cbbb]" id="auth-close" type="button" aria-label="Fermer">×</button>
         <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">MINEMORIES</p>
-        <h2 class="m-0 font-sans text-2xl font-semibold tracking-[-0.7px] text-[#f1f3eb]" id="auth-title">Connexion</h2>
-        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]" id="name-field" hidden>Nom affiché<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-name" autocomplete="name" /></label>
-        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]">E-mail<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-email" type="email" autocomplete="email" required /></label>
-        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]">Mot de passe<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-password" type="password" autocomplete="current-password" minlength="12" required /></label>
+        <h2 class="m-0 font-sans text-2xl font-semibold tracking-[-0.7px] text-[#f1f3eb]" id="auth-title">Sign in</h2>
+        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]" id="name-field" hidden>Display name<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-name" autocomplete="name" /></label>
+        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]">Email<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-email" type="email" autocomplete="email" required /></label>
+        <label class="grid gap-[7px] text-[11px] text-[#bac2b3]">Password<input class="w-full rounded-md border border-[#394132] bg-[#0f130e] px-3 py-[11px] font-sans text-[13px] text-[#edf0e8] outline-none focus:border-lime-deep" id="auth-password" type="password" autocomplete="current-password" minlength="12" required /></label>
         <p class="m-0 min-h-[15px] text-[11px] leading-[1.5] text-[#aeb69f]" id="auth-message" role="status"></p>
-        <button class="cursor-pointer rounded-md border border-lime-deep bg-lime-deep px-[15px] py-[11px] font-sans text-xs font-bold text-[#17200b] disabled:cursor-progress disabled:opacity-60" id="auth-submit" type="submit">Se connecter</button>
-        <button class="cursor-pointer border-0 bg-transparent p-[7px] font-sans text-[11px] text-lime-deep" id="auth-switch" type="button">Créer un compte</button>
+        <button class="cursor-pointer rounded-md border border-lime-deep bg-lime-deep px-[15px] py-[11px] font-sans text-xs font-bold text-[#17200b] disabled:cursor-progress disabled:opacity-60" id="auth-submit" type="submit">Sign in</button>
+        <button class="cursor-pointer border-0 bg-transparent p-[7px] font-sans text-[11px] text-lime-deep" id="auth-switch" type="button">Create an account</button>
       </form>
     </dialog>
     <dialog class="fixed m-auto w-[min(420px,calc(100%-28px))] max-h-[calc(100%-28px)] overflow-auto rounded-xl border border-[#424b39] bg-[#151a13] p-8 text-center text-[#edf0e8] shadow-[0_24px_90px_#0009] backdrop:bg-[#080a08c9] backdrop:backdrop-blur-[5px]" id="pairing-dialog" aria-labelledby="pairing-title">
       <button class="absolute top-3 right-[13px] h-[30px] w-[30px] cursor-pointer rounded-md border border-[#343b2e] bg-[#1b2018] font-sans text-xl leading-none text-[#c4cbbb]" id="pairing-close" type="button" aria-label="Fermer">×</button>
-      <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">APPAIRAGE DU MOD</p>
-      <h2 class="m-0 font-sans text-2xl font-semibold tracking-[-0.7px] text-[#f1f3eb]" id="pairing-title">Entre ce code dans Minecraft</h2>
-      <p class="my-4 text-xs leading-[1.6] text-[#a9b19f]">Dans le jeu, utilise <code class="rounded bg-[#252c20] px-[5px] py-[3px] font-mono text-[11px] text-lime-deep">/minemories pair CODE</code>.</p>
+      <p class="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">MOD PAIRING</p>
+      <h2 class="m-0 font-sans text-2xl font-semibold tracking-[-0.7px] text-[#f1f3eb]" id="pairing-title">Enter this code in Minecraft</h2>
+      <p class="my-4 text-xs leading-[1.6] text-[#a9b19f]">In game, use <code class="rounded bg-[#252c20] px-[5px] py-[3px] font-mono text-[11px] text-lime-deep">/minemories pair CODE</code>.</p>
       <output class="my-[18px] mb-[3px] block font-mono text-[clamp(38px,12vw,54px)] font-bold leading-[1.1] tracking-[8px] text-lime-deep tabular-nums [text-shadow:0_0_28px_#c9f36a30]" id="pairing-code">······</output>
-      <button class="cursor-pointer rounded-md border border-[#434e36] bg-transparent px-[14px] py-[10px] font-sans text-[11px] text-lime-deep" id="copy-pairing-code" type="button">Copier le code</button>
+      <button class="cursor-pointer rounded-md border border-[#434e36] bg-transparent px-[14px] py-[10px] font-sans text-[11px] text-lime-deep" id="copy-pairing-code" type="button">Copy the code</button>
       <p class="m-0 min-h-[15px] text-[11px] leading-[1.5] text-[#aeb69f]" id="pairing-expiry"></p>
-      <p class="mb-0 mt-4 text-[10px] leading-[1.6] text-[#a9b19f]">Le code ne fonctionne qu’une fois et expire dans cinq minutes.</p>
+      <p class="mb-0 mt-4 text-[10px] leading-[1.6] text-[#a9b19f]">The code works once and expires in five minutes.</p>
     </dialog>
-    <footer class="viewer-chrome flex h-[42px] items-center justify-between font-mono text-[10px] text-[#70776a] max-phone:text-[8px]"><span class="max-phone:max-w-[58%]">Les GLB ouverts ici restent dans votre navigateur.</span><span>Minemories <b class="px-1 font-normal text-lime-deep">·</b> Viewer POC</span></footer>
+    <footer class="viewer-chrome flex h-[42px] items-center justify-between font-mono text-[10px] text-[#70776a] max-phone:text-[8px]"><span class="max-phone:max-w-[58%]">GLBs opened here stay in your browser.</span><span>Minemories <b class="px-1 font-normal text-lime-deep">·</b> Viewer POC</span></footer>
   </main>`
 
 const canvas = requireElement<HTMLCanvasElement>('#scene')
@@ -419,16 +419,16 @@ timeSlider.addEventListener('input', () => {
 cycleToggle.addEventListener('click', () => {
 	cyclePlaying = !cyclePlaying
 	cycleToggle.textContent = cyclePlaying ? 'Ⅱ' : '▶'
-	cycleToggle.setAttribute('aria-label', cyclePlaying ? 'Mettre en pause le cycle' : 'Reprendre le cycle')
-	cycleToggle.title = cyclePlaying ? 'Mettre en pause le cycle' : 'Reprendre le cycle'
+	cycleToggle.setAttribute('aria-label', cyclePlaying ? 'Pause the cycle' : 'Resume the cycle')
+	cycleToggle.title = cyclePlaying ? 'Pause the cycle' : 'Resume the cycle'
 })
 updateDayCycle()
 
 function setAuthMode(createAccount: boolean) {
 	creatingAccount = createAccount
-	authTitle.textContent = createAccount ? 'Créer un compte' : 'Connexion'
-	authSubmit.textContent = createAccount ? 'Créer mon compte' : 'Se connecter'
-	authSwitch.textContent = createAccount ? 'J’ai déjà un compte' : 'Créer un compte'
+	authTitle.textContent = createAccount ? 'Create an account' : 'Sign in'
+	authSubmit.textContent = createAccount ? 'Create my account' : 'Sign in'
+	authSwitch.textContent = createAccount ? 'I already have an account' : 'Create an account'
 	nameField.hidden = !createAccount
 	authName.required = createAccount
 	authPassword.autocomplete = createAccount ? 'new-password' : 'current-password'
@@ -461,7 +461,7 @@ authSwitch.addEventListener('click', () => setAuthMode(!creatingAccount))
 authForm.addEventListener('submit', async event => {
 	event.preventDefault()
 	authSubmit.disabled = true
-	authMessage.textContent = 'Connexion en cours…'
+	authMessage.textContent = 'Signing in…'
 	try {
 		const email = authEmail.value.trim()
 		const password = authPassword.value
@@ -473,7 +473,7 @@ authForm.addEventListener('submit', async event => {
 		authForm.reset()
 		await refreshAccount()
 	} catch (error) {
-		authMessage.textContent = error instanceof Error ? error.message : 'Impossible de se connecter.'
+		authMessage.textContent = error instanceof Error ? error.message : 'Could not sign in.'
 	} finally {
 		authSubmit.disabled = false
 	}
@@ -486,14 +486,14 @@ authLogout.addEventListener('click', async () => {
 
 pairModButton.addEventListener('click', async () => {
 	pairModButton.disabled = true
-	pairingExpiry.textContent = 'Génération du code…'
+	pairingExpiry.textContent = 'Generating the code…'
 	pairingDialog.showModal()
 	try {
 		const pairing = await apiClient.pairing.create()
 		pairingCodeOutput.textContent = pairing.code
-		pairingExpiry.textContent = `Expire à ${new Date(pairing.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+		pairingExpiry.textContent = `Expires at ${new Date(pairing.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
 	} catch (error) {
-		pairingExpiry.textContent = error instanceof Error ? error.message : 'Impossible de créer le code.'
+		pairingExpiry.textContent = error instanceof Error ? error.message : 'Could not create the code.'
 	} finally {
 		pairModButton.disabled = false
 	}
@@ -502,9 +502,9 @@ pairModButton.addEventListener('click', async () => {
 pairingClose.addEventListener('click', () => pairingDialog.close())
 pairingCopy.addEventListener('click', async () => {
 	await navigator.clipboard.writeText(pairingCodeOutput.textContent ?? '')
-	pairingCopy.textContent = 'Code copié'
+	pairingCopy.textContent = 'Code copied'
 	window.setTimeout(() => {
-		pairingCopy.textContent = 'Copier le code'
+		pairingCopy.textContent = 'Copy the code'
 	}, 1600)
 })
 void refreshAccount()
@@ -540,14 +540,14 @@ async function openFile(file?: File) {
 	if (!file) return
 	if (!isGlbFileName(file.name)) {
 		loading.hidden = false
-		loadingLabel.textContent = 'Choisissez un fichier .glb'
+		loadingLabel.textContent = 'Choose a .glb file'
 		window.setTimeout(() => {
 			loading.hidden = true
 		}, 2200)
 		return
 	}
 	loading.hidden = false
-	loadingLabel.textContent = 'Chargement du monde…'
+	loadingLabel.textContent = 'Loading the world…'
 	try {
 		const buffer = await file.arrayBuffer()
 		const gltf = await loader.parseAsync(buffer, '')
@@ -574,7 +574,7 @@ async function openFile(file?: File) {
 		loading.hidden = true
 	} catch (error) {
 		console.error(error)
-		loadingLabel.textContent = 'Impossible de lire ce GLB'
+		loadingLabel.textContent = 'Could not read this GLB'
 		window.setTimeout(() => {
 			loading.hidden = true
 		}, 3500)
@@ -637,15 +637,15 @@ if (memoryId) {
 		credentials: 'include',
 	})
 		.then(async response => {
-			if (!response.ok) throw new Error('Impossible de charger ce souvenir.')
-			const file = new File([await response.blob()], 'souvenir.glb', {
+			if (!response.ok) throw new Error('Could not load this memory.')
+			const file = new File([await response.blob()], 'memory.glb', {
 				type: 'model/gltf-binary',
 			})
 			await openFile(file)
 		})
 		.catch((error: unknown) => {
 			loading.hidden = false
-			loadingLabel.textContent = error instanceof Error ? error.message : 'Impossible de charger ce souvenir.'
+			loadingLabel.textContent = error instanceof Error ? error.message : 'Could not load this memory.'
 		})
 }
 

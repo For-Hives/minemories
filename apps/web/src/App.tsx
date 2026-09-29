@@ -86,7 +86,7 @@ function SiteLayout({ notice }: { notice: string }) {
 	const navigate = useNavigate()
 	let accountControl = (
 		<Link className={`${buttonDark} max-phone:min-h-[37px] max-phone:px-[10px] max-phone:text-[10px]`} to="/login">
-			Se connecter
+			Sign in
 		</Link>
 	)
 	if (isPending)
@@ -115,7 +115,7 @@ function SiteLayout({ notice }: { notice: string }) {
 						navigate('/')
 					}}
 				>
-					Quitter
+					Sign out
 				</button>
 			</div>
 		)
@@ -126,7 +126,7 @@ function SiteLayout({ notice }: { notice: string }) {
 				<Link
 					className="inline-flex items-center gap-[11px] font-sans text-[19px] font-extrabold tracking-[-1.1px] text-ink no-underline max-phone:gap-2 max-phone:text-base"
 					to="/"
-					aria-label="Minemories, accueil"
+					aria-label="Minemories, home"
 				>
 					<span className="grid h-[31px] w-[31px] -rotate-5 place-items-center rounded-[10px_10px_10px_4px] bg-lime font-sans text-[20px] font-extrabold text-forest-dark max-phone:h-[27px] max-phone:w-[27px] max-phone:text-[17px]">
 						m
@@ -135,14 +135,14 @@ function SiteLayout({ notice }: { notice: string }) {
 				</Link>
 				<nav
 					className="ml-[70px] flex items-center gap-8 max-tablet:ml-9 max-phone:hidden"
-					aria-label="Navigation principale"
+					aria-label="Main navigation"
 				>
 					<Link className="text-[13px] text-[#656a5e] no-underline transition-colors hover:text-forest" to="/">
-						Accueil
+						Home
 					</Link>
 					{session && (
 						<Link className="text-[13px] text-[#656a5e] no-underline transition-colors hover:text-forest" to="/gallery">
-							Ma galerie
+							My gallery
 						</Link>
 					)}
 				</nav>
@@ -150,7 +150,7 @@ function SiteLayout({ notice }: { notice: string }) {
 					<label
 						className={`${buttonQuiet} relative focus-within:outline-2 focus-within:outline-[#607a4a] focus-within:outline-offset-[3px] max-phone:h-[38px] max-phone:min-h-[38px] max-phone:w-[39px] max-phone:overflow-hidden max-phone:whitespace-nowrap max-phone:p-0 max-phone:text-[0px] max-phone:before:content-["＋"] max-phone:before:text-[19px]`}
 					>
-						Ouvrir un GLB local <span aria-hidden="true">↗</span>
+						Open a local GLB <span aria-hidden="true">↗</span>
 						<input
 							type="file"
 							id="global-file-input"
@@ -182,9 +182,9 @@ function SiteLayout({ notice }: { notice: string }) {
 					</span>{' '}
 					minemories
 				</Link>
-				<span>Vos mondes restent les vôtres.</span>
+				<span>Your worlds stay yours.</span>
 				<span className="font-mono text-[9px] tracking-[0.2px] max-phone:hidden">
-					Non affilié à Mojang ou Microsoft · Ouverture locale
+					Not affiliated with Mojang or Microsoft · Local opening
 				</span>
 			</footer>
 			{notice && (
@@ -203,9 +203,7 @@ function RequireSession() {
 	const { session, isPending } = useAppContext()
 	const location = useLocation()
 	if (isPending)
-		return (
-			<div className="grid min-h-[55vh] place-items-center text-sm text-muted-ink">Chargement de votre espace…</div>
-		)
+		return <div className="grid min-h-[55vh] place-items-center text-sm text-muted-ink">Loading your space…</div>
 	if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />
 	return <Outlet />
 }

@@ -15,6 +15,7 @@ import {
 	exchangePairingCode,
 	getDeviceFromToken,
 	getMemoryFile,
+	hasPairedDevice,
 	listMemories,
 } from './pairing'
 import { readMemory, removeMemory, storeMemory } from './storage'
@@ -38,6 +39,10 @@ const router = os.router({
 		check: os.pairing.check.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 			return checkPairingCode(context.userId, input.code)
+		}),
+		status: os.pairing.status.handler(({ context }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			return hasPairedDevice(context.userId)
 		}),
 	},
 	memories: {

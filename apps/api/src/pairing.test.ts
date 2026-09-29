@@ -15,6 +15,7 @@ const {
 	exchangePairingCode,
 	getDeviceFromToken,
 	getMemoryFile,
+	hasPairedDevice,
 	listMemories,
 } = await import('./pairing')
 
@@ -95,4 +96,14 @@ test('expired codes and revoked tokens cannot be used', () => {
 	if (!paired) throw new Error('Pairing unexpectedly failed.')
 	database.query('UPDATE devices SET revoked_at = ? WHERE id = ?').run(Date.now(), paired.deviceId)
 	expect(getDeviceFromToken(paired.deviceToken)).toBeNull()
+})
+
+test('paired devices are reported until revoked', () => {
+	expect(hasPairedDevice('user-e')).toEqual({ paired: false })
+	const { code } = createPairingCode('user-e')
+	const paired = exchangePairingCode(code, 'Tablet')
+	if (!paired) throw new Error('Pairing unexpectedly failed.')
+	expect(hasPairedDevice('user-e')).toEqual({ paired: true })
+	database.query('UPDATE devices SET revoked_at = ? WHERE id = ?').run(Date.now(), paired.deviceId)
+	expect(hasPairedDevice('user-e')).toEqual({ paired: false })
 })

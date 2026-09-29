@@ -117,6 +117,13 @@ export function checkPairingCode(userId: string, code: string) {
 	return { status: pairing.used_at === null ? ('pending' as const) : ('paired' as const) }
 }
 
+export function hasPairedDevice(userId: string) {
+	const row = database
+		.query('SELECT 1 AS paired FROM devices WHERE user_id = ? AND revoked_at IS NULL LIMIT 1')
+		.get(userId) as { paired: number } | null
+	return { paired: row !== null }
+}
+
 export function addMemory(input: {
 	id: string
 	userId: string

@@ -33,6 +33,37 @@ final class PairingClient {
     return token != null && !token.isBlank();
   }
 
+  static void unlink() {
+    Properties settings = readSettings();
+    settings.remove("deviceToken");
+    settings.remove("deviceId");
+    saveSettings(settings);
+  }
+
+  static boolean isAfkSnapshots() {
+    return !"false".equalsIgnoreCase(readSettings().getProperty("afkSnapshots", "true"));
+  }
+
+  static void setAfkSnapshots(boolean enabled) {
+    Properties settings = readSettings();
+    settings.setProperty("afkSnapshots", Boolean.toString(enabled));
+    saveSettings(settings);
+  }
+
+  static long lastSnapshotAt() {
+    try {
+      return Long.parseLong(readSettings().getProperty("lastSnapshotAt", "0"));
+    } catch (NumberFormatException error) {
+      return 0;
+    }
+  }
+
+  static void setLastSnapshotAt(long timestamp) {
+    Properties settings = readSettings();
+    settings.setProperty("lastSnapshotAt", Long.toString(timestamp));
+    saveSettings(settings);
+  }
+
   static CompletableFuture<String> pair(String code) {
     Properties settings = readSettings();
     JsonObject payload = new JsonObject();
@@ -51,13 +82,13 @@ final class PairingClient {
             response -> {
               if (response.statusCode() != 200) {
                 throw new CompletionException(
-                    new IllegalStateException("API refusée (HTTP " + response.statusCode() + ")"));
+                    new IllegalStateException("API refused (HTTP " + response.statusCode() + ")"));
               }
               JsonObject result = JsonParser.parseString(response.body()).getAsJsonObject();
               settings.setProperty("deviceToken", result.get("deviceToken").getAsString());
               settings.setProperty("deviceId", result.get("deviceId").getAsString());
               saveSettings(settings);
-              return "Mod appairé. Tu peux maintenant utiliser /minemories upload.";
+              return "Mod paired. You can now use /minemories upload.";
             });
   }
 
@@ -66,18 +97,18 @@ final class PairingClient {
     String token = settings.getProperty("deviceToken");
     if (token == null || token.isBlank()) {
       return CompletableFuture.failedFuture(
-          new IllegalStateException("Le mod n'est pas appairé. Utilise /minemories pair CODE."));
+          new IllegalStateException("The mod is not paired. Use /minemories pair CODE."));
     }
     if (!Files.isRegularFile(file)) {
       return CompletableFuture.failedFuture(
-          new IllegalStateException("Aucun export trouvé dans " + file));
+          new IllegalStateException("No export found in " + file));
     }
 
     try {
       long size = Files.size(file);
       if (size > 100L * 1024 * 1024) {
         return CompletableFuture.failedFuture(
-            new IllegalStateException("Le GLB dépasse la limite de 100 Mo."));
+            new IllegalStateException("The GLB exceeds the 100 MB limit."));
       }
     } catch (IOException error) {
       return CompletableFuture.failedFuture(error);
@@ -91,7 +122,7 @@ final class PairingClient {
           || magic[2] != 'T'
           || magic[3] != 'F') {
         return CompletableFuture.failedFuture(
-            new IllegalStateException("Le fichier ne semble pas être un GLB valide."));
+            new IllegalStateException("The file does not look like a valid GLB."));
       }
     } catch (IOException error) {
       return CompletableFuture.failedFuture(error);
@@ -116,10 +147,11 @@ final class PairingClient {
             response -> {
               if (response.statusCode() != 201) {
                 throw new CompletionException(
-                    new IllegalStateException("Envoi refusé (HTTP " + response.statusCode() + ")"));
+                    new IllegalStateException(
+                        "Upload refused (HTTP " + response.statusCode() + ")"));
               }
               JsonObject result = JsonParser.parseString(response.body()).getAsJsonObject();
-              return "Souvenir envoyé : " + result.get("id").getAsString();
+              return "Memory sent: " + result.get("id").getAsString();
             });
   }
 

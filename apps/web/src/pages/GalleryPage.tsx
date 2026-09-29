@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
+import { formatRelativeDate } from '../lib/dates'
 import { formatFileSize } from '../lib/glb'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
@@ -61,7 +62,7 @@ export function GalleryPage() {
 		try {
 			setMemories(await apiClient.memories.list())
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'La galerie est indisponible.')
+			setLoadError(error instanceof Error ? error.message : 'The gallery is unavailable.')
 		} finally {
 			setLoading(false)
 		}
@@ -69,6 +70,14 @@ export function GalleryPage() {
 
 	useEffect(() => {
 		void refreshMemories()
+		apiClient.pairing
+			.status()
+			.then(result => {
+				if (result.paired) setPairStatus('paired')
+			})
+			.catch(() => {
+				// Stay on the manual pairing card when the status check fails.
+			})
 		const refreshTimer = window.setInterval(() => void refreshMemories(), 12_000)
 		return () => window.clearInterval(refreshTimer)
 	}, [refreshMemories])
@@ -84,7 +93,7 @@ export function GalleryPage() {
 				if (stopped) return
 				if (result.status === 'paired') {
 					setPairStatus('paired')
-					notify('Le mod est lié à ton compte. Tu peux envoyer une capture depuis Minecraft.')
+					notify('The mod is linked to your account. Send a capture from Minecraft.')
 					return
 				}
 				if (result.status === 'expired') {
@@ -111,11 +120,11 @@ export function GalleryPage() {
 		try {
 			const pairing = await apiClient.pairing.create()
 			setPairCode(pairing.code)
-			setPairExpires(new Date(pairing.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+			setPairExpires(new Date(pairing.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 			setPairStatus('pending')
 		} catch (error) {
 			setPairStatus('error')
-			setLoadError(error instanceof Error ? error.message : 'Impossible de créer le code.')
+			setLoadError(error instanceof Error ? error.message : 'Could not create the code.')
 		} finally {
 			setPairBusy(false)
 		}
@@ -131,22 +140,21 @@ export function GalleryPage() {
 
 	async function copyCode() {
 		await navigator.clipboard.writeText(pairCode)
-		notify('Code copié dans le presse-papiers.')
+		notify('Code copied to the clipboard.')
 	}
 
 	return (
 		<div className="mx-auto min-h-[670px] w-[min(100%-88px,1180px)] px-0 py-[62px] pb-[79px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-10 max-phone:pb-[53px]">
 			<div className="flex items-end justify-between gap-5 max-phone:flex-col max-phone:items-start">
 				<div>
-					<Eyebrow>L’ALBUM DU SERVEUR</Eyebrow>
+					<Eyebrow>THE SERVER ALBUM</Eyebrow>
 					<h1 className="mb-[9px] mt-[13px] font-sans text-[clamp(36px,4vw,53px)] font-semibold leading-[1.1] tracking-[-2.8px] max-phone:text-[36px] max-phone:tracking-[-2px]">
-						La galerie de{' '}
-						<em className="text-[#718650] not-italic">{session?.user.name.split(' ')[0] ?? 'tes mondes'}.</em>
+						{session?.user.name.split(' ')[0] ?? 'Your'} gallery.
 					</h1>
-					<p className="m-0 text-[13px] text-[#777c71]">Chaque capture garde une place ici, prête à être revisitée.</p>
+					<p className="m-0 text-[13px] text-[#777c71]">Every capture keeps a place here, ready to revisit.</p>
 				</div>
 				<Link className={buttonDark} to="/viewer">
-					Ouvrir un GLB local <span>↗</span>
+					Open a local GLB <span>↗</span>
 				</Link>
 			</div>
 
@@ -160,49 +168,49 @@ export function GalleryPage() {
 					{pairStatus === 'paired' ? '✓' : '⌘'}
 				</div>
 				<div className="flex-1">
-					<Eyebrow>{pairStatus === 'paired' ? 'C’EST LIÉ' : 'CAPTURE DEPUIS LE SERVEUR'}</Eyebrow>
+					<Eyebrow>{pairStatus === 'paired' ? 'LINKED' : 'CAPTURE FROM THE SERVER'}</Eyebrow>
 					<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
-						{pairStatus === 'paired' ? 'Ton mod est appairé.' : 'Relie Minecraft à ta galerie.'}
+						{pairStatus === 'paired' ? 'Your mod is paired.' : 'Link Minecraft to your gallery.'}
 					</h2>
 					<p className="m-0 text-[11px] leading-[1.55] text-[#72786d] max-phone:text-[10px]">
 						{pairStatus === 'paired'
-							? 'Lance /minemories upload après une capture. La galerie se met à jour automatiquement.'
-							: 'Un code temporaire relie ton profil au client de jeu. Une seule fois, et c’est prêt.'}
+							? 'Run /minemories upload after a capture. The gallery updates itself.'
+							: 'A temporary code links your profile to the game client. Once, and you are set.'}
 					</p>
 					{pairStatus === 'pending' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#62774d]">
 							<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
-							En attente de Minecraft…
+							Waiting for Minecraft…
 						</div>
 					)}
 					{pairStatus === 'expired' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#986641]">
-							Ce code a expiré. Génère-en un nouveau.
+							This code expired. Generate a new one.
 						</div>
 					)}
 					{pairStatus === 'error' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#986641]">
-							La vérification a échoué. Vérifie que l’API tourne.
+							Verification failed. Check that the API is running.
 						</div>
 					)}
 				</div>
 				{pairStatus === 'pending' && (
 					<div className="flex min-w-[181px] flex-col items-center border-l border-[#cdd5c1] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
-						<span className="font-mono text-[8px] tracking-[0.4px] text-[#75806d]">CODE À SAISIR DANS LE JEU</span>
+						<span className="font-mono text-[8px] tracking-[0.4px] text-[#75806d]">CODE FOR THE GAME</span>
 						<button
 							type="button"
 							onClick={copyCode}
-							aria-label="Copier le code d’appairage"
+							aria-label="Copy the pairing code"
 							className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#2b402d] max-phone:text-[26px]"
 						>
 							{pairCode.slice(0, 3)} {pairCode.slice(3)}
 						</button>
-						<small className="text-[9px] text-[#858a7d]">Expire à {pairExpires}</small>
+						<small className="text-[9px] text-[#858a7d]">Expires at {pairExpires}</small>
 					</div>
 				)}
 				{pairStatus === 'paired' && (
 					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#b7c7a8] px-[11px] py-2 text-[10px] font-bold text-[#4c6942] max-phone:col-2 max-phone:justify-self-start">
-						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Client lié
+						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Linked client
 					</span>
 				)}
 				{pairStatus !== 'pending' && pairStatus !== 'paired' && (
@@ -212,7 +220,7 @@ export function GalleryPage() {
 						onClick={() => void createPairing()}
 						disabled={pairBusy}
 					>
-						{pairBusy ? 'Création…' : 'Lier mon serveur'} <span>↗</span>
+						{pairBusy ? 'Creating…' : 'Link my server'} <span>↗</span>
 					</button>
 				)}
 			</section>
@@ -220,16 +228,16 @@ export function GalleryPage() {
 			<section>
 				<div className="mb-[17px] flex items-end justify-between">
 					<div>
-						<Eyebrow>VOS CAPTURES</Eyebrow>
-						<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">À revisiter</h2>
+						<Eyebrow>YOUR CAPTURES</Eyebrow>
+						<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">To revisit</h2>
 					</div>
 					<button
 						className="cursor-pointer border-0 bg-transparent px-[9px] py-[7px] text-[11px] text-[#6b7362] hover:text-[#2f492f]"
 						type="button"
 						onClick={() => void refreshMemories()}
-						title="Actualiser la galerie"
+						title="Refresh the gallery"
 					>
-						↻ Actualiser
+						↻ Refresh
 					</button>
 				</div>
 				{loadError && (
@@ -243,7 +251,7 @@ export function GalleryPage() {
 				{loading && (
 					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#cbcec2] bg-[#f5f4ee] p-[25px] text-center text-[#818579]">
 						<span className="h-[21px] w-[21px] animate-loading-orbit rounded-full border-2 border-[#d8dccd] border-t-[#75885e]" />
-						<p className="mb-0 mt-[6px] text-xs">On rassemble tes souvenirs…</p>
+						<p className="mb-0 mt-[6px] text-xs">Gathering your memories…</p>
 					</div>
 				)}
 				{!loading && memories.length > 0 && (
@@ -259,7 +267,7 @@ export function GalleryPage() {
 									<MemoryTile variant={index % 4} />
 									<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_68%,#18251c35)]" />
 									<span className="absolute top-3 left-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#65705e]">
-										CAPTURE 3D
+										3D CAPTURE
 									</span>
 									<span className="absolute top-3 right-[13px] z-[2] font-mono text-[8px] tracking-[0.5px] text-[#65705e]">
 										{String(index + 1).padStart(2, '0')}
@@ -271,11 +279,7 @@ export function GalleryPage() {
 											{memory.name}
 										</h3>
 										<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#85897d]">
-											{new Date(memory.createdAt).toLocaleDateString('fr-FR', {
-												day: 'numeric',
-												month: 'long',
-												year: 'numeric',
-											})}{' '}
+											{formatRelativeDate(memory.createdAt)}{' '}
 											<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
 											{formatFileSize(memory.size)}
 										</p>
@@ -284,7 +288,7 @@ export function GalleryPage() {
 										type="button"
 										onClick={() => openMemory(memory.id)}
 										disabled={openingId === memory.id}
-										aria-label={`Revisiter ${memory.name}`}
+										aria-label={`Revisit ${memory.name}`}
 										className="h-[30px] w-[30px] flex-none cursor-pointer rounded-full border border-[#d6d9cd] bg-transparent text-[#506744] hover:border-[#96a87f] hover:bg-[#edf1e6]"
 									>
 										{openingId === memory.id ? '…' : '↗'}
@@ -300,10 +304,10 @@ export function GalleryPage() {
 							▧
 						</span>
 						<h3 className="mb-0 mt-[14px] font-sans text-[17px] font-bold text-[#42483d]">
-							Le premier souvenir attend son heure.
+							The first memory is still to come.
 						</h3>
 						<p className="mb-0 mt-[6px] text-xs">
-							Relie ton mod pour envoyer une capture, ou ouvre un fichier GLB depuis ton appareil.
+							Link your mod to send a capture, or open a GLB file from your device.
 						</p>
 						<div className="mt-[22px] flex flex-wrap gap-[10px]">
 							<button
@@ -311,14 +315,14 @@ export function GalleryPage() {
 								type="button"
 								onClick={() => document.getElementById('global-file-input')?.click()}
 							>
-								Choisir un fichier local
+								Choose a local file
 							</button>
 							<button
 								className={`${buttonDark} min-h-[40px] text-[10px]`}
 								type="button"
 								onClick={() => void createPairing()}
 							>
-								Lier mon serveur
+								Link my server
 							</button>
 						</div>
 					</div>

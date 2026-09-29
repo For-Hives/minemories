@@ -27,16 +27,16 @@ export function ViewerPage() {
 		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
-					<Eyebrow>EXPLORATION 3D</Eyebrow>
+					<Eyebrow>3D EXPLORATION</Eyebrow>
 					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
-						{viewerFile?.name ?? (memoryId ? 'Un monde à retrouver.' : 'Un monde à revisiter.')}
+						{viewerFile?.name ?? (memoryId ? 'A world to find again.' : 'A world to revisit.')}
 					</h1>
 				</div>
 				<div className="flex gap-[9px]">
 					<label
 						className={`${buttonOutline} relative min-h-[40px] text-[10px] focus-within:outline-2 focus-within:outline-[#607a4a] focus-within:outline-offset-[3px]`}
 					>
-						Choisir un GLB
+						Choose a GLB
 						<input
 							id="local-file-input"
 							type="file"
@@ -53,7 +53,7 @@ export function ViewerPage() {
 						/>
 					</label>
 					<Link className={`${buttonDark} min-h-[40px] text-[10px]`} to="/gallery">
-						Ma galerie <span>↗</span>
+						My gallery <span>↗</span>
 					</Link>
 				</div>
 			</div>
@@ -61,7 +61,7 @@ export function ViewerPage() {
 				<iframe
 					key={memoryId ?? 'local'}
 					ref={frame}
-					title="Exploration du monde en trois dimensions"
+					title="Exploring the world in three dimensions"
 					src={`/viewer.html?embed=1${memoryId ? `&memory=${encodeURIComponent(memoryId)}` : ''}`}
 					className="block h-full w-full border-0"
 					onLoad={() => {
@@ -72,9 +72,9 @@ export function ViewerPage() {
 				/>
 			</div>
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#85897d] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
-				<span className="text-[15px] text-[#60794a]">⌖</span> Glisser pour orbiter{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Molette pour zoomer{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Clic droit pour déplacer
+				<span className="text-[15px] text-[#60794a]">⌖</span> Drag to orbit{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Scroll to zoom{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#b2b5a8] not-italic" /> Right-click to pan
 			</p>
 		</section>
 	)
