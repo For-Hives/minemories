@@ -26,7 +26,8 @@
 - Core JaCoCo (runs on `check`): 90% line, 60% branch. Fix coverage with tests, not threshold edits.
 - SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
 - `mod/minemories/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
-- Biome: 2-space, single quotes, semicolons, 100-col, `noExplicitAny: error`, cognitive complexity <= 20, organize-imports on. CSS parser has `tailwindDirectives` on for Tailwind v4 (`@theme` in `apps/web/src/theme.css`).
+- Biome 2.5.13: tabs, single quotes, optional semicolons, 120 columns, recommended rules plus the explicit rules in `biome.json` (complexity <= 15, `noForEach`, no nested ternaries). Run `bun format` after changing TypeScript/CSS/JSON; new suppressions need a local reason. CSS parser supports Tailwind v4 `@theme`.
+- API Bun tests run in separate processes (`--parallel`) so temporary SQLite paths and environment variables cannot leak between suites. Keep HTTP route tests and real oRPC contract tests when upgrading Hono, Better Auth, Bun or oRPC.
 
 ## API / Dev Environment Gotchas
 
@@ -56,4 +57,3 @@ if needed, you can find more context in diferent files :
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
 - TASKS.md for the current tasks todo (delete the line when the task is done, add one it todo later/out of scope)
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)
-

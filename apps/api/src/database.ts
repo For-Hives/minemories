@@ -1,12 +1,12 @@
-import { Database } from 'bun:sqlite';
-import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { Database } from 'bun:sqlite'
+import { mkdirSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
-const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite');
-mkdirSync(dirname(databasePath), { recursive: true });
+const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite')
+mkdirSync(dirname(databasePath), { recursive: true })
 
-export const database = new Database(databasePath, { create: true });
-database.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
+export const database = new Database(databasePath, { create: true })
+database.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;')
 database.exec(`
   CREATE TABLE IF NOT EXISTS pairing_codes (
     id TEXT PRIMARY KEY,
@@ -45,4 +45,4 @@ database.exec(`
 
   CREATE INDEX IF NOT EXISTS memories_user_id_idx
     ON memories(user_id, created_at DESC);
-`);
+`)

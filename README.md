@@ -52,11 +52,13 @@ Pour tester rapidement le parcours, lance `bun api:dev`, `bun web:dev` et `bun m
 | `bun mod:check` | Applique Spotless puis lance les contrôles Gradle (JUnit, JaCoCo, SpotBugs, compilation). Modifie les sources si nécessaire. |
 | `bun mod:check:ci` | Même vérification sans modification des fichiers. |
 | `bun web:dev` / `bun api:dev` | Démarre les applications séparément. |
-| `bun web:check` | Biome, TypeScript et Vitest avec couverture du viewer. |
-| `bun api:check` | Biome API et contrat, TypeScript API, puis tests Bun (appairage et stockage fichier). |
+| `bun web:check` | Biome, TypeScript et Vitest avec couverture de 100 % des utilitaires du viewer ; tests du contrat oRPC partagé. |
+| `bun api:check` | Biome API et contrat, TypeScript API, puis tests Bun isolés avec rapport de couverture (GLB, routes HTTP, appairage et stockage fichier). |
 | `bun check` / `bun build` | Contrôles de tout le dépôt, puis bundles web et mod pour `build`. |
 
 `bun <script>` est le raccourci Bun pour `bun run <script>`. En CI, `bun check` ne réécrit aucun fichier.
+
+`bun format` applique la configuration Biome 2.5.13 à onglets, largeur 120 et points-virgules facultatifs. Pour Java, `bun mod:check` applique Spotless et lance JUnit, JaCoCo et SpotBugs ; `bun mod:check:ci` vérifie sans modifier. Les tests de `:core` vérifient aussi le conteneur GLB avec des entrées invalides et des coordonnées extrêmes. Les essais du menu et le rendu GLB en jeu restent nécessaires avant d'annoncer le support d'un loader.
 
 ## Stockage et données
 

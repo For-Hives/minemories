@@ -340,16 +340,16 @@ public final class GlbScene {
     }
 
     void addQuad(float[] p, float[] uv) {
-      float ax = p[3] - p[0],
+      double ax = (double) p[3] - p[0],
           ay = p[4] - p[1],
           az = p[5] - p[2],
           bx = p[6] - p[0],
           by = p[7] - p[1],
           bz = p[8] - p[2];
-      float nx = ay * bz - az * by,
+      double nx = ay * bz - az * by,
           ny = az * bx - ax * bz,
           nz = ax * by - ay * bx,
-          len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+          len = Math.sqrt(nx * nx + ny * ny + nz * nz);
       if (len > 0) {
         nx /= len;
         ny /= len;
@@ -360,9 +360,9 @@ public final class GlbScene {
         f(positions, x);
         f(positions, y);
         f(positions, z);
-        f(normals, nx);
-        f(normals, ny);
-        f(normals, nz);
+        f(normals, (float) nx);
+        f(normals, (float) ny);
+        f(normals, (float) nz);
         f(uvs, uv[i * 2]);
         f(uvs, uv[i * 2 + 1]);
         min[0] = Math.min(min[0], x);
@@ -410,7 +410,17 @@ public final class GlbScene {
   }
 
   private static String esc(String s) {
-    return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    StringBuilder escaped = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '\\' || c == '"') escaped.append('\\');
+      if (c < 0x20) {
+        escaped.append(String.format("\\u%04x", (int) c));
+      } else {
+        escaped.append(c);
+      }
+    }
+    return escaped.toString();
   }
 
   private static String indices(int count) {

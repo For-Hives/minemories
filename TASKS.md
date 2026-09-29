@@ -1,4 +1,4 @@
-- ajout de test unit partout
+- compléter la couverture des fonctions et parcours métier : composants web (connexion, appairage, galerie et viewer) avec tests d'interaction, auth Better Auth et procédures oRPC côté API, intégration S3 Garage ; ajouter un seuil de couverture API par fichier lorsque ces cas seront couverts
 - mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
 - mod export automatique vers le server 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
@@ -6,7 +6,8 @@
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
-- étendre les tests API aux routes HTTP, à l'authentification, aux limites d'upload et au stockage S3 Garage
+- tester le stockage S3 Garage de bout en bout, y compris la reprise après panne, et les sessions réelles Better Auth sur les routes HTTP/oRPC
+- extraire les états et le polling de `GalleryPage` avec des tests d'interaction avant de retirer les exceptions Biome localisées
 - porter le mod sur Fabric avec Architectury Loom, puis tester Quilt et Forge séparément en jeu avant de déclarer ces loaders supportés
 - résoudre l'échec de GitHub Actions avant la première étape et rétablir un build CI vérifiable
 - valider le build Gradle et l'export GLB en jeu après la restructuration `mod/minemories/:core/:neoforge`

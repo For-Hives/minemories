@@ -1,13 +1,13 @@
 {
-  "name": "@minemories/api-contract",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "dependencies": {
-    "@orpc/contract": "^1.14.0",
-    "zod": "^4.0.0"
-  }
+	"name": "@minemories/api-contract",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@orpc/contract": "^1.14.0",
+		"zod": "^4.0.0"
+	}
 }
