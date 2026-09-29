@@ -12,6 +12,7 @@ export const apiContract = {
 		check: oc
 			.input(z.object({ code: z.string().regex(/^\d{6}$/) }))
 			.output(z.object({ status: z.enum(['pending', 'paired', 'expired']) })),
+		status: oc.output(z.object({ paired: z.boolean() })),
 	},
 	memories: {
 		list: oc.output(

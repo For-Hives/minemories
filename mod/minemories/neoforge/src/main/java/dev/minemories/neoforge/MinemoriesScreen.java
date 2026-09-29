@@ -1,6 +1,5 @@
 package dev.minemories.neoforge;
 
-import java.nio.file.Files;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -20,10 +19,12 @@ final class MinemoriesScreen extends Screen {
   private final Screen parent;
   private EditBox codeInput;
   private Button pairButton;
+  private Button unlinkButton;
   private Button nearbyButton;
   private Button selectionButton;
-  private Button uploadButton;
-  private String status = "Capture locale · envoi manuel";
+  private Button snapshotButton;
+  private Button afkButton;
+  private String status = "Local capture · manual send";
   private boolean paired;
   private boolean busy;
   private boolean compact;
@@ -55,12 +56,12 @@ final class MinemoriesScreen extends Screen {
             .build());
     nearbyButton =
         this.addRenderableWidget(
-            Button.builder(Component.literal("Autour de moi"), button -> capture(false))
+            Button.builder(Component.literal("Around me"), button -> capture(false))
                 .bounds(left + 14, top + (compact ? 49 : 72), half, 20)
                 .build());
     selectionButton =
         this.addRenderableWidget(
-            Button.builder(Component.literal("Zone choisie"), button -> capture(true))
+            Button.builder(Component.literal("Selected area"), button -> capture(true))
                 .bounds(left + 14 + half + gap, top + (compact ? 49 : 72), half, 20)
                 .build());
     codeInput =
@@ -71,37 +72,59 @@ final class MinemoriesScreen extends Screen {
                 top + (compact ? 103 : 147),
                 innerWidth - 80,
                 20,
-                Component.literal("Code d'appairage")));
+                Component.literal("Pairing code")));
     codeInput.setMaxLength(6);
-    codeInput.setHint(Component.literal("Code à 6 chiffres"));
+    codeInput.setHint(Component.literal("6-digit code"));
     codeInput.setFilter(value -> value.matches("\\d{0,6}"));
     codeInput.setResponder(value -> updateButtons());
     pairButton =
         this.addRenderableWidget(
-            Button.builder(Component.literal("Lier"), button -> pair())
+            Button.builder(Component.literal("Link"), button -> pair())
                 .bounds(left + panelWidth - 94, top + (compact ? 103 : 147), 80, 20)
                 .build());
-    uploadButton =
+    unlinkButton =
         this.addRenderableWidget(
-            Button.builder(Component.literal("Envoyer la capture"), button -> upload())
-                .bounds(left + 14, top + (compact ? 132 : 176), innerWidth, 20)
+            Button.builder(Component.literal("Unlink account"), button -> unlink())
+                .bounds(left + 14, top + (compact ? 103 : 147), innerWidth, 20)
+                .build());
+    snapshotButton =
+        this.addRenderableWidget(
+            Button.builder(Component.literal("Snapshot now"), button -> snapshotNow())
+                .bounds(left + 14, top + (compact ? 132 : 176), half, 20)
+                .build());
+    afkButton =
+        this.addRenderableWidget(
+            Button.builder(Component.literal("AFK snapshots: ON"), button -> toggleAfk())
+                .bounds(left + 14 + half + gap, top + (compact ? 132 : 176), half, 20)
                 .build());
 
+    refreshPaired();
+    updateButtons();
+  }
+
+  private void refreshPaired() {
     try {
       paired = PairingClient.isPaired();
     } catch (RuntimeException error) {
       paired = false;
-      status = "Configuration illisible : " + error.getMessage();
+      status = "Unreadable configuration: " + error.getMessage();
     }
-    updateButtons();
   }
 
   private void updateButtons() {
-    if (uploadButton == null) return;
-    nearbyButton.active = !busy && Minecraft.getInstance().level != null;
+    if (snapshotButton == null) return;
+    Minecraft mc = Minecraft.getInstance();
+    nearbyButton.active = !busy && mc.level != null;
     selectionButton.active = !busy && Minemories.hasSelection();
+    codeInput.visible = !paired;
+    pairButton.visible = !paired;
+    unlinkButton.visible = paired;
     pairButton.active = !busy && codeInput.getValue().matches("\\d{6}");
-    uploadButton.active = !busy && paired && Files.isRegularFile(Minemories.capturePath());
+    unlinkButton.active = !busy;
+    snapshotButton.active = !busy && mc.level != null;
+    afkButton.active = !busy;
+    afkButton.setMessage(
+        Component.literal("AFK snapshots: " + (PairingClient.isAfkSnapshots() ? "ON" : "OFF")));
   }
 
   private void capture(boolean selection) {
@@ -109,10 +132,44 @@ final class MinemoriesScreen extends Screen {
       int result = selection ? Minemories.exportSelection() : Minemories.export(CAPTURE_RADIUS);
       status =
           result == 1
-              ? "Capture enregistrée : ~/export/capture.glb"
-              : "Capture impossible. Vérifie la sélection.";
+              ? "Snapshot saved: ~/export/capture.glb"
+              : "Capture failed. Check the selection.";
     } catch (RuntimeException error) {
-      status = "Capture impossible : " + error.getMessage();
+      status = "Capture failed: " + error.getMessage();
+    }
+    updateButtons();
+  }
+
+  private void snapshotNow() {
+    busy = true;
+    status = "Capturing…";
+    updateButtons();
+    try {
+      int result = Minemories.export(CAPTURE_RADIUS);
+      if (result != 1) {
+        status = "Capture failed.";
+      } else if (!paired) {
+        status = "Snapshot saved: ~/export/capture.glb";
+      } else {
+        upload();
+        return;
+      }
+    } catch (RuntimeException error) {
+      status = "Capture failed: " + error.getMessage();
+    }
+    busy = false;
+    updateButtons();
+  }
+
+  private void toggleAfk() {
+    try {
+      PairingClient.setAfkSnapshots(!PairingClient.isAfkSnapshots());
+      status =
+          PairingClient.isAfkSnapshots()
+              ? "AFK snapshots on: capture after 5 idle minutes."
+              : "AFK snapshots off.";
+    } catch (RuntimeException error) {
+      status = "Could not save the preference: " + error.getMessage();
     }
     updateButtons();
   }
@@ -121,7 +178,7 @@ final class MinemoriesScreen extends Screen {
     String code = codeInput.getValue();
     if (!code.matches("\\d{6}")) return;
     busy = true;
-    status = "Appairage en cours…";
+    status = "Pairing…";
     updateButtons();
     try {
       PairingClient.pair(code)
@@ -132,9 +189,11 @@ final class MinemoriesScreen extends Screen {
                           () -> {
                             if (this.minecraft != null && this.minecraft.screen == this) {
                               busy = false;
-                              if (error == null) paired = true;
+                              if (error == null) refreshPaired();
                               status =
-                                  error == null ? "Compte lié." : Minemories.pairingError(error);
+                                  error == null
+                                      ? "Account linked."
+                                      : Minemories.pairingError(error);
                               updateButtons();
                             }
                           }));
@@ -145,9 +204,23 @@ final class MinemoriesScreen extends Screen {
     }
   }
 
+  private void unlink() {
+    busy = true;
+    updateButtons();
+    try {
+      PairingClient.unlink();
+      refreshPaired();
+      status = "Account unlinked.";
+    } catch (RuntimeException error) {
+      status = Minemories.pairingError(error);
+    }
+    busy = false;
+    updateButtons();
+  }
+
   private void upload() {
     busy = true;
-    status = "Envoi en cours…";
+    status = "Sending…";
     updateButtons();
     try {
       PairingClient.uploadCapture(Minemories.capturePath())
@@ -178,21 +251,17 @@ final class MinemoriesScreen extends Screen {
     graphics.drawString(this.font, "MINEMORIES", left + 14, top + 14, COLOR_ACCENT);
     if (!compact) {
       graphics.drawString(
-          this.font, "Garde un fragment de ton monde.", left + 14, top + 36, COLOR_MUTED);
+          this.font, "Keep a fragment of your world.", left + 14, top + 36, COLOR_MUTED);
     }
-    graphics.drawString(this.font, "CAPTURER", left + 14, top + (compact ? 35 : 56), COLOR_TEXT);
+    graphics.drawString(this.font, "CAPTURE", left + 14, top + (compact ? 35 : 56), COLOR_TEXT);
     if (!compact) {
       graphics.drawString(
-          this.font,
-          "La prochaine capture remplace capture.glb.",
-          left + 14,
-          top + 101,
-          COLOR_MUTED);
+          this.font, "The next snapshot replaces capture.glb.", left + 14, top + 101, COLOR_MUTED);
     }
     int divider = top + (compact ? 78 : 119);
     graphics.fill(left + 14, divider, left + panelWidth - 14, divider + 1, COLOR_EDGE);
-    graphics.drawString(this.font, "COMPTE", left + 14, top + (compact ? 88 : 131), COLOR_TEXT);
-    String linkStatus = paired ? "LIÉ" : "NON LIÉ";
+    graphics.drawString(this.font, "ACCOUNT", left + 14, top + (compact ? 88 : 131), COLOR_TEXT);
+    String linkStatus = paired ? "LINKED" : "NOT LINKED";
     graphics.drawString(
         this.font,
         linkStatus,

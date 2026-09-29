@@ -30,4 +30,12 @@ describe('shared oRPC contract', () => {
 		expect(memories.safeParse([{ ...valid[0], size: -1 }]).success).toBe(false)
 		expect(memories.safeParse([{ ...valid[0], id: '../escape' }]).success).toBe(false)
 	})
+
+	it('reports whether the account already trusts a device', () => {
+		const status = apiContract.pairing.status['~orpc'].outputSchema
+		if (!status) throw new Error('Pairing status schema is required')
+		expect(status.safeParse({ paired: true }).success).toBe(true)
+		expect(status.safeParse({ paired: false }).success).toBe(true)
+		expect(status.safeParse({ paired: 'yes' }).success).toBe(false)
+	})
 })
