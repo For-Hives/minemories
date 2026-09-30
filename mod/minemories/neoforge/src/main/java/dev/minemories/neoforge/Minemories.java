@@ -78,8 +78,10 @@ public class Minemories {
   private static final KeyMapping OPEN_SCREEN =
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
-  private static final long AFK_IDLE_MS = 5 * 60 * 1000;
-  private static final long AFK_SNAPSHOT_INTERVAL_MS = 4 * 60 * 60 * 1000;
+  private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+  private static long lastAfkCheckMs;
+  private static long lastAfkDiagnosticMs;
+  private static boolean afkUploadPending;
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
   private static long lastActivityMs = System.currentTimeMillis();
   private static double lastPlayerX;
@@ -254,20 +256,57 @@ public class Minemories {
   @SubscribeEvent
   public static void trackAfkSnapshot(ClientTickEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
-    if (mc.level == null || mc.player == null || mc.screen != null) return;
     long now = System.currentTimeMillis();
-    if (playerMoved(mc.player)) {
+    if (mc.level == null || mc.player == null) {
+      playerPositionKnown = false;
       lastActivityMs = now;
       return;
     }
+    if (playerMoved(mc.player)) lastActivityMs = now;
+    // Settings and file timestamps do not need to be read on every client tick.
+    if (now - lastAfkCheckMs < 1000) return;
+    lastAfkCheckMs = now;
     if (!PairingClient.isAfkSnapshots()) return;
-    if (now - lastActivityMs < AFK_IDLE_MS) return;
-    if (now - lastSnapshotAt() < AFK_SNAPSHOT_INTERVAL_MS) return;
-    if (export(DEFAULT_CAPTURE_RADIUS) != 1) return;
+    if (now - lastAfkDiagnosticMs >= 15_000) {
+      lastAfkDiagnosticMs = now;
+      String status;
+      if (mc.screen != null) status = "waiting: close the menu to allow automatic capture";
+      else if (!PairingClient.isPaired()) status = "waiting: pair the mod to enable auto-upload";
+      else if (afkUploadPending || PairingClient.isUploading()) status = "upload already running";
+      else
+        status =
+            "next capture in "
+                + AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt())
+                + "s";
+      tell("[AFK debug] " + status);
+    }
+    if (mc.screen != null || !PairingClient.isPaired()) return;
+    if (afkUploadPending || PairingClient.isUploading()) return;
+    if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt()) > 0) return;
+    // Rate-limit failed exports too; otherwise failure would retry each client tick.
     lastActivityMs = now;
-    PairingClient.setLastSnapshotAt(now);
-    if (PairingClient.isPaired()) {
-      PairingClient.uploadCapture(capturePath());
+    tell("[AFK debug] 60s idle: starting export.");
+    try {
+      if (export(DEFAULT_CAPTURE_RADIUS) != 1) {
+        tell("[AFK debug] Export failed; next attempt after 60s idle.");
+        return;
+      }
+      PairingClient.setLastSnapshotAt(System.currentTimeMillis());
+      tell("[AFK debug] Export finished; starting upload.");
+      afkUploadPending = true;
+      PairingClient.uploadCapture(capturePath())
+          .whenComplete(
+              (message, error) ->
+                  mc.execute(
+                      () -> {
+                        afkUploadPending = false;
+                        if (error != null) LOGGER.error("AFK snapshot upload failed", error);
+                        tell("[AFK debug] " + (error == null ? message : pairingError(error)));
+                      }));
+    } catch (RuntimeException error) {
+      afkUploadPending = false;
+      LOGGER.error("AFK snapshot failed", error);
+      tell("[AFK debug] " + pairingError(error));
     }
   }
 
@@ -609,7 +648,7 @@ public class Minemories {
     } catch (Exception e) {
       mc.player.displayClientMessage(
           Component.literal("Minemories: export failed: " + e.getMessage()), false);
-      e.printStackTrace();
+      LOGGER.error("Capture export failed", e);
       return 0;
     }
     return 1;

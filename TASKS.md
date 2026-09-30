@@ -15,3 +15,5 @@
 - mesurer le temps d'export en jeu et déplacer les opérations coûteuses hors de la boucle de rendu si nécessaire
 - setup polar avec betterauth
 - valider en jeu et sur Garage réel l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
+- observabilité en production du mod et de l’API : collecte consentie des exceptions et stack traces clients, versions mod/Minecraft/loader, identifiant de corrélation capture/upload, contexte et breadcrumbs ; consulter et regrouper les erreurs pour diagnostiquer les incidents, sans tokens ni données privées, avec rétention et limites d’envoi
+- valider le diagnostic AFK en jeu (60s, chat, erreurs d’upload), puis remettre une cadence de production configurable (5min AFK / 4h entre captures) et désactiver les logs de debug

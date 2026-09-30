@@ -31,6 +31,10 @@ final class PairingClient {
 
   private PairingClient() {}
 
+  static boolean isUploading() {
+    return UPLOADING.get();
+  }
+
   static boolean isPaired() {
     String token = readSettings().getProperty("deviceToken");
     return token != null && !token.isBlank();
