@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { apiContract, thumbnailDataUrl } from '@minemories/api-contract'
+import { Readable } from 'node:stream'
+import { apiContract } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
@@ -8,6 +9,7 @@ import * as z from 'zod'
 import { auth } from './auth'
 import { database } from './database'
 import { isGlbContainer } from './glb'
+import { parseMetadata } from './memory-metadata'
 import type { MemoryMetadata } from './pairing'
 import {
 	addMemory,
@@ -30,42 +32,13 @@ import {
 	shareStatus,
 	trashMemory,
 } from './pairing'
-import { readMemory, removeMemory, storeMemory } from './storage'
+import { readMemoryStream, removeMemory, storeMemory } from './storage'
+import { cleanupUploads, uploadRouter } from './uploads'
 
 const port = Number(process.env.API_PORT ?? 3001)
 const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173'
 const MAX_MEMORY_BYTES = 100 * 1024 * 1024
 const pairingCodePattern = /^\d{6}$/
-const metadataSchema = z.object({
-	seed: z.string().max(64).nullable().default(null),
-	x: z.number().finite().nullable().default(null),
-	y: z.number().finite().nullable().default(null),
-	z: z.number().finite().nullable().default(null),
-	dimension: z.string().max(128).nullable().default(null),
-	worldName: z.string().max(128).nullable().default(null),
-	serverName: z.string().max(128).nullable().default(null),
-	biome: z.string().max(128).nullable().default(null),
-	dayTime: z.number().int().nullable().default(null),
-	raining: z.boolean().nullable().default(null),
-	thundering: z.boolean().nullable().default(null),
-	thumbnail: thumbnailDataUrl.nullable().default(null),
-	icon: thumbnailDataUrl.nullable().default(null),
-	capturedAt: z.string().datetime().nullable().default(null),
-})
-
-function parseMetadata(raw: string | undefined): MemoryMetadata | null {
-	let value: unknown = {}
-	if (raw) {
-		try {
-			const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64url').toString('utf8')
-			value = JSON.parse(json)
-		} catch {
-			return null
-		}
-	}
-	const parsed = metadataSchema.safeParse(value)
-	return parsed.success ? parsed.data : null
-}
 
 interface ApiContext {
 	userId: string | null
@@ -152,8 +125,8 @@ app.use(
 	cors({
 		origin: webOrigin,
 		credentials: true,
-		allowMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name', 'X-Memory-Metadata'],
+		allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name', 'X-Memory-Metadata', 'Upload-Offset'],
 	})
 )
 
@@ -216,8 +189,8 @@ app.get('/api/shared/:token/file', async context => {
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 
 	try {
-		const contents = await readMemory(shared.objectKey)
-		return context.body(contents, 200, {
+		const contents = await readMemoryStream(shared.objectKey)
+		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'public, max-age=3600',
 		})
@@ -242,8 +215,8 @@ app.get('/api/memories/:id/file', async context => {
 	if (!memory) return context.json({ error: 'memory_not_found' }, 404)
 
 	try {
-		const contents = await readMemory(memory.object_key)
-		return context.body(contents, 200, {
+		const contents = await readMemoryStream(memory.object_key)
+		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 		})
@@ -259,6 +232,8 @@ function splitModImages(metadata: MemoryMetadata): void {
 		metadata.thumbnail = null
 	}
 }
+
+app.route('/api/mod/uploads', uploadRouter)
 
 app.post('/api/mod/memories', async context => {
 	const authorization = context.req.header('authorization')
@@ -320,7 +295,9 @@ function validateGlb(contents: Buffer): { error: string; status: 400 | 413 } | n
 }
 
 if (import.meta.main) {
-	const server = Bun.serve({ port, fetch: app.fetch })
+	const server = Bun.serve({ port, fetch: app.fetch, maxRequestBodySize: MAX_MEMORY_BYTES })
+	void cleanupUploads()
+	setInterval(() => void cleanupUploads(), 3_600_000)
 	console.warn(`Minemories API ready at ${server.url}`)
 
 	for (const objectKey of purgeDeletedMemories()) {

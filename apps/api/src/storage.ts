@@ -1,5 +1,7 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { createReadStream, createWriteStream } from 'node:fs'
+import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
+import { pipeline } from 'node:stream/promises'
 import { Client } from 'minio'
 
 const endpoint = new URL(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900')
@@ -16,6 +18,7 @@ const client = new Client({
 	accessKey: process.env.S3_ACCESS_KEY ?? 'GK0123456789abcdef0123456789abcdef',
 	secretKey: process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 	region: process.env.S3_REGION ?? 'garage',
+	partSize: 8 * 1024 * 1024,
 })
 
 let bucketReady: Promise<void> | undefined
@@ -73,4 +76,42 @@ export async function readMemory(objectKey: string) {
 	const chunks: Buffer[] = []
 	for await (const chunk of stream) chunks.push(Buffer.from(chunk))
 	return Buffer.concat(chunks)
+}
+
+/** Streaming finalization for uploads larger than the legacy in-memory endpoint. */
+export async function storeMemoryFile(objectKey: string, path: string, size: number) {
+	if (storageDriver === 'filesystem') {
+		const target = localPath(objectKey)
+		await mkdir(dirname(target), { recursive: true })
+		await pipeline(createReadStream(path), createWriteStream(target, { flags: 'w' }))
+		return
+	}
+	await ensureBucket()
+	const source = createReadStream(path)
+	try {
+		await client.putObject(bucket, objectKey, source, size, { 'Content-Type': 'model/gltf-binary' })
+	} finally {
+		source.destroy()
+	}
+}
+
+export async function readMemoryStream(objectKey: string) {
+	if (storageDriver === 'filesystem') {
+		const file = await open(localPath(objectKey), 'r')
+		return file.createReadStream()
+	}
+	return client.getObject(bucket, objectKey)
+}
+
+/** Remove an abandoned session's object and unfinished S3 multipart upload. */
+export async function discardMemoryUpload(objectKey: string) {
+	if (storageDriver === 'filesystem') {
+		await removeMemory(objectKey)
+		return
+	}
+	await ensureBucket()
+	for await (const upload of client.listIncompleteUploads(bucket, objectKey, true)) {
+		if (upload.key === objectKey) await client.removeIncompleteUpload(bucket, objectKey)
+	}
+	await client.removeObject(bucket, objectKey)
 }
