@@ -5,9 +5,11 @@
 	},
 	"steps": {
 		"install": {
+			"inputs": [{ "step": "packages:mise" }, { "local": true, "include": ["."] }],
 			"commands": ["bun install --frozen-lockfile"]
 		},
 		"build": {
+			"inputs": [{ "step": "install", "include": ["."] }],
 			"commands": ["bun run --filter @minemories/web build"]
 		}
 	}
