@@ -9,7 +9,7 @@
 			"commands": ["bun install --frozen-lockfile"]
 		},
 		"build": {
-			"inputs": [{ "step": "install", "include": ["."] }],
+			"inputs": [{ "step": "install" }],
 			"commands": ["bun run --filter @minemories/api typecheck"]
 		}
 	},
