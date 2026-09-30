@@ -65,3 +65,5 @@ Pour tester rapidement le parcours, lance `bun api:dev`, `bun web:dev` et `bun m
 `.env.example` contient uniquement des identifiants de **développement local** pour Garage. Change les clés et la configuration avant tout déploiement, et n'expose pas le port S3 sans protection. Les données Garage vivent dans les volumes `garage_meta` et `garage_data` ; `docker compose down` les conserve, `down -v` les efface. Si tu avais des objets dans l'ancien volume `minio_data`, le passage à Garage **ne les transfère pas** : exporte-les et réimporte-les avant de supprimer ce volume.
 
 L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Le jeton d'appairage est enregistré dans `config/minemories.properties`. Voir [l'architecture](docs/architecture.md) et [les loaders](docs/loader-support.md).
+
+Les captures du mod peuvent être envoyées en morceaux de 4 MiB, jusqu’à 200 MiB, avec reprise après interruption. Voir [le protocole et les contraintes de déploiement](docs/resumable-uploads.md).

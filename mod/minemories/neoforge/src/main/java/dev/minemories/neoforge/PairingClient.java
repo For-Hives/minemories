@@ -8,7 +8,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,11 +20,14 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.client.Minecraft;
 
 final class PairingClient {
   private static final HttpClient HTTP =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+
+  private static final AtomicBoolean UPLOADING = new AtomicBoolean();
 
   private PairingClient() {}
 
@@ -105,60 +107,33 @@ final class PairingClient {
           new IllegalStateException("No export found in " + file));
     }
 
+    if (!UPLOADING.compareAndSet(false, true)) {
+      return CompletableFuture.failedFuture(
+          new IllegalStateException("An upload is already running."));
+    }
+    JsonObject metadata;
     try {
-      long size = Files.size(file);
-      if (size > 100L * 1024 * 1024) {
-        return CompletableFuture.failedFuture(
-            new IllegalStateException("The GLB exceeds the 100 MB limit."));
-      }
-    } catch (IOException error) {
+      // Read Minecraft state on the caller's client thread, before starting background I/O.
+      metadata = Minemories.captureMetadata();
+    } catch (RuntimeException error) {
+      UPLOADING.set(false);
       return CompletableFuture.failedFuture(error);
     }
-
-    try (var input = Files.newInputStream(file)) {
-      byte[] magic = input.readNBytes(4);
-      if (magic.length != 4
-          || magic[0] != 'g'
-          || magic[1] != 'l'
-          || magic[2] != 'T'
-          || magic[3] != 'F') {
-        return CompletableFuture.failedFuture(
-            new IllegalStateException("The file does not look like a valid GLB."));
-      }
-    } catch (IOException error) {
-      return CompletableFuture.failedFuture(error);
-    }
-
-    HttpRequest request;
-    try {
-      JsonObject metadata = Minemories.captureMetadata();
-      request =
-          HttpRequest.newBuilder(URI.create(apiUrl(settings) + "/api/mod/memories"))
-              .timeout(Duration.ofMinutes(3))
-              .header("Authorization", "Bearer " + token)
-              .header("Content-Type", "model/gltf-binary")
-              .header("X-Memory-Name", "Minecraft capture")
-              .header(
-                  "X-Memory-Metadata",
-                  java.util.Base64.getUrlEncoder()
-                      .withoutPadding()
-                      .encodeToString(metadata.toString().getBytes(StandardCharsets.UTF_8)))
-              .POST(HttpRequest.BodyPublishers.ofFile(file))
-              .build();
-    } catch (IOException error) {
-      return CompletableFuture.failedFuture(error);
-    }
-
-    return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-        .thenApply(
-            response -> {
-              if (response.statusCode() != 201) {
-                throw new CompletionException(
-                    new IllegalStateException(
-                        "Upload refused (HTTP " + response.statusCode() + ")"));
-              }
-              return "Your memory is saved. Find it in your gallery.";
-            });
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try {
+            new ChunkedUploader(HTTP, 1000)
+                .upload(apiUrl(settings), token, file, metadata, offset -> {});
+            return "Your memory is saved. Find it in your gallery.";
+          } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new CompletionException(error);
+          } catch (IOException error) {
+            throw new CompletionException(error);
+          } finally {
+            UPLOADING.set(false);
+          }
+        });
   }
 
   private static Path settingsPath() {

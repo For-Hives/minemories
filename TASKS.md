@@ -13,3 +13,5 @@
 - vérifier Garage de bout en bout (appairage, upload, lecture et suppression d'un GLB) et décider si les données de l'ancien volume MinIO doivent être transférées
 - conserver plusieurs captures horodatées avec historique dans l'interface du mod, avant les snapshots automatiques et la timelapse
 - mesurer le temps d'export en jeu et déplacer les opérations coûteuses hors de la boucle de rendu si nécessaire
+- setup polar avec betterauth
+- valider en jeu et sur Garage réel l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
