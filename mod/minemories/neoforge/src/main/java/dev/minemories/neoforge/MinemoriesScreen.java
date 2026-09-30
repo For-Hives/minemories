@@ -166,7 +166,7 @@ final class MinemoriesScreen extends Screen {
       PairingClient.setAfkSnapshots(!PairingClient.isAfkSnapshots());
       status =
           PairingClient.isAfkSnapshots()
-              ? "AFK snapshots on: capture after 5 idle minutes."
+              ? "AFK debug on: capture/upload after 60s idle, at most once per minute."
               : "AFK snapshots off.";
     } catch (RuntimeException error) {
       status = "Could not save the preference: " + error.getMessage();

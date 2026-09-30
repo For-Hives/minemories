@@ -88,3 +88,24 @@ pour maintenir l’ancien endpoint ; les nouveaux morceaux restent limités à 4
 - La validation manuelle dans Minecraft et sur Garage réel reste à faire : envoyer
   200 MiB, couper/rétablir le réseau, redémarrer l’API, relancer l’upload et vérifier
   qu’une seule capture complète apparaît dans la galerie.
+
+## Diagnostic AFK temporaire
+
+Pour déboguer en jeu, le délai d’inactivité et l’intervalle minimum entre captures
+sont temporairement de **60 secondes**. Activer **AFK snapshots**, appairer le mod,
+fermer le menu, puis rester immobile sans tourner la caméra. Le chat affiche
+`[AFK debug]` toutes les 15 secondes : compte à rebours ou raison de blocage. Une
+capture manuelle récente retarde aussi la suivante de 60 secondes.
+
+Au déclenchement, le chat confirme le début d’export, le début d’upload et son
+succès ou son erreur. Les stacks d’export/upload AFK restent dans le log local
+Minecraft (`logs/latest.log`) ; aucune collecte distante n’est ajoutée. Une erreur
+d’export attend au moins une minute avant une nouvelle tentative. L’AFK ne remplace
+pas le GLB pendant un upload déjà en cours. Les menus bloquent la capture, et en
+solo une pause peut aussi suspendre les ticks : tester avec le monde actif.
+
+Vérifier successivement un compte lié (une capture par minute AFK), un compte non
+lié (message d’appairage, aucun envoi), AFK OFF (aucun déclenchement), le retour du
+mouvement (compteur réinitialisé), puis une API arrêtée (erreur visible dans le chat
+et stack dans le log). La cadence de production 5 minutes / 4 heures et les logs
+configurables restent à rétablir après cette validation.
