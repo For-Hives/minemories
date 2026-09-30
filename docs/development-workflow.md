@@ -55,3 +55,27 @@ Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit
 `/minemories export` et les boutons de capture utilisent un rayon horizontal de 128 blocs (8 chunks), sur toute la hauteur de la dimension. `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. La limite d'upload de 100 Mio reste inchangée.
 
 Les snapshots se renomment depuis leur carte (80 caractères max) et les zones empilées depuis leur bandeau (stocké dans le navigateur). La corbeille (`deleted_at`, listée via `memories.listTrash`) garde les snapshots 30 jours (`TRASH_RETENTION_MS`) avant purge automatique des lignes et des objets au démarrage puis toutes les heures. Un lien de partage (`/share/:token`, jeton stocké haché, révocable) ouvre la snapshot en lecture seule sans compte via `/api/shared/:token` et `/file`.
+
+
+### Tests des parcours web et API
+
+Les tests React dans `apps/web/src/pages/interactions.test.tsx` utilisent jsdom : connexion,
+inscription, rafraîchissement de galerie, états et annulation du polling d'appairage, choix
+et erreurs de fichier local du viewer. Le moteur WebGL est remplacé par une fixture ; ces
+cas ne valident pas le rendu 3D. La couverture à 100 % reste limitée aux utilitaires `src/lib`.
+
+`apps/api/src/session-rpc.test.ts` crée de vraies sessions Better Auth et traverse les routes
+HTTP/oRPC pour l'appairage, l'isolation entre comptes, les captures, les miniatures, le
+partage, la corbeille, la restauration, la suppression et la déconnexion.
+
+`storage-s3.test.ts` exerce le SDK S3 réel contre un serveur HTTP de test, y compris une
+panne, le retry d'initialisation et les octets binaires. Pour vérifier un Garage réel, utiliser
+un bucket de test dédié et les variables `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`,
+`S3_SECRET_KEY` et `S3_REGION`, puis lancer :
+
+```sh
+RUN_GARAGE_INTEGRATION=1 bun test apps/api/src/storage-garage.test.ts
+```
+
+Sans cette variable, ce test est ignoré. La reprise après panne d'un vrai Garage reste à
+valider séparément. Aucun seuil API par fichier n'est encore activé.

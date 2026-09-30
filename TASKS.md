@@ -1,4 +1,4 @@
-- compléter la couverture des fonctions et parcours métier : composants web (connexion, appairage, galerie et viewer) avec tests d'interaction, auth Better Auth et procédures oRPC côté API, intégration S3 Garage ; ajouter un seuil de couverture API par fichier lorsque ces cas seront couverts
+- compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant ; exécuter le test Garage réel ajouté et sa reprise après panne, puis ajouter un seuil de couverture API par fichier
 - mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
 - mod export automatique vers le server 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
