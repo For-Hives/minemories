@@ -1,0 +1,14 @@
+{
+	"$schema": "https://schema.railpack.com",
+	"packages": {
+		"bun": "1.4.2"
+	},
+	"steps": {
+		"install": {
+			"commands": ["bun install --frozen-lockfile"]
+		},
+		"build": {
+			"commands": ["bun run --filter @minemories/web build"]
+		}
+	}
+}
