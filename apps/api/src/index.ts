@@ -34,9 +34,9 @@ import {
 } from './pairing'
 import { readMemoryStream, removeMemory, storeMemory } from './storage'
 import { cleanupUploads, uploadRouter } from './uploads'
+import { webOrigins } from './web-origins'
 
 const port = Number(process.env.API_PORT ?? 3001)
-const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:5173'
 const MAX_MEMORY_BYTES = 100 * 1024 * 1024
 const pairingCodePattern = /^\d{6}$/
 
@@ -123,7 +123,7 @@ export const app = new Hono()
 app.use(
 	'*',
 	cors({
-		origin: webOrigin,
+		origin: webOrigins,
 		credentials: true,
 		allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name', 'X-Memory-Metadata', 'Upload-Offset'],
