@@ -14,7 +14,9 @@ services:
     volumes:
       - garage-meta-v2:/var/lib/garage/meta
       - garage-data-v2:/var/lib/garage/data
-      - ./garage.coolify.toml:/etc/garage.toml:ro
+    configs:
+      - source: garage-config
+        target: /etc/garage.toml
     expose:
       - "3900"
       - "3902"
@@ -28,3 +30,25 @@ services:
 volumes:
   garage-meta-v2:
   garage-data-v2:
+
+configs:
+  garage-config:
+    content: |
+      metadata_dir = "/var/lib/garage/meta"
+      data_dir = "/var/lib/garage/data"
+      db_engine = "sqlite"
+      replication_factor = 1
+      rpc_bind_addr = "[::]:3901"
+      rpc_public_addr = "127.0.0.1:3901"
+
+      [s3_api]
+      api_bind_addr = "[::]:3900"
+      s3_region = "garage"
+
+      [s3_web]
+      bind_addr = "[::]:3902"
+      root_domain = ".web-minestories.xenos.lightin.io"
+      index = "index.html"
+
+      [admin]
+      api_bind_addr = "[::]:3903"
