@@ -1,5 +1,6 @@
 import { createContext, lazy, type ReactNode, Suspense, useContext, useEffect, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router'
+import webPackage from '../package.json'
 import { type AuthSession, authClient } from './auth-client'
 import { avatarUrl } from './lib/avatar'
 import { AuthPage } from './pages/AuthPage'
@@ -217,8 +218,9 @@ function SiteLayout({ notice }: { notice: string }) {
 					minemories
 				</Link>
 				<span>Your worlds stay yours.</span>
-				<span className="font-mono text-[9px] tracking-[0.2px] max-phone:hidden">
-					Not affiliated with Mojang or Microsoft · Local opening
+				<span className="flex items-center gap-3 font-mono text-[9px] tracking-[0.2px]">
+					<span className="max-phone:hidden">Not affiliated with Mojang or Microsoft · Local opening</span>
+					<span>v{webPackage.version}</span>
 				</span>
 			</footer>
 			{notice && (
