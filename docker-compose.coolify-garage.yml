@@ -1,0 +1,30 @@
+services:
+  garage:
+    image: dxflrs/garage:v2.3.0
+    command: /garage server --single-node --default-bucket
+    restart: unless-stopped
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in Coolify}
+      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in Coolify}
+      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-minemories}
+      GARAGE_RPC_SECRET: ${SERVICE_HEX_64_RPCSECRET:?Set SERVICE_HEX_64_RPCSECRET in Coolify}
+      GARAGE_ADMIN_TOKEN: ${SERVICE_PASSWORD_GARAGE:?Set SERVICE_PASSWORD_GARAGE in Coolify}
+      GARAGE_METRICS_TOKEN: ${SERVICE_PASSWORD_GARAGEMETRICS:?Set SERVICE_PASSWORD_GARAGEMETRICS in Coolify}
+      GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
+    volumes:
+      - garage-meta-v2:/var/lib/garage/meta
+      - garage-data-v2:/var/lib/garage/data
+      - ./garage.coolify.toml:/etc/garage.toml:ro
+    expose:
+      - "3900"
+      - "3902"
+      - "3903"
+    healthcheck:
+      test: [CMD, /garage, stats, -a]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  garage-meta-v2:
+  garage-data-v2:
