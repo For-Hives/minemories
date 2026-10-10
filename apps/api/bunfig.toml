@@ -1,0 +1,6 @@
+[test]
+coverage = true
+coverageReporter = ["text", "lcov"]
+coverageSkipTestFiles = true
+# Per-file gates; keep startup/HTTP handler functions at 80%, and executable lines at 90%.
+coverageThreshold = { lines = 0.90, functions = 0.80 }

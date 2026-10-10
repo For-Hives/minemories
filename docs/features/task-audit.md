@@ -12,7 +12,7 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 ## Travaux encore ouverts
 
-Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie et le seuil de couverture API restent également suivis.
+Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
 
 La profondeur visitée est implémentée avec tests de persistance/isolation et captures réelles importées dans Blender ; sa validation comparative surface/grotte reste suivie tant que le scénario n’est pas documenté complètement. Les faces de coupe terre/pierre sont implémentées, avec tests des limites et des plans, et rendus Blender de surface et de profondeur. La scène de contrôle eau/verre/feuilles/escalier exportée en pause confirme les faces d’eau sur la coupe et les matériaux MASK/BLEND, avec un rendu Blender inspecté. La tâche #8 est terminée.
 

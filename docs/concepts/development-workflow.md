@@ -81,8 +81,12 @@ Sans cette variable, ce test est ignoré. `bun run api:garage` crée un Garage D
 l’appairage et l’envoi de 5 MiB par morceaux, la lecture et la suppression, puis une panne
 réelle de Garage et une reprise dans un nouveau processus API. Le scénario vérifie
 l’absence de doublon et les octets du GLB. Il supprime uniquement son projet Docker
-`minemories-integration`. La CI exécute ce parcours après le build. Aucun seuil API par
-fichier n’est encore activé.
+`minemories-integration`. La CI exécute ce parcours après le build. La couverture API impose 90 % des lignes et 80 % des fonctions **dans chaque fichier**,
+via `apps/api/bunfig.toml`, avec les reporters texte et LCOV. Le contrôle d’inventaire
+`check-api-coverage.mjs` refuse un fichier source absent du rapport ; les tests, fixtures
+et déclarations `.d.ts` sont exclus de cet inventaire. Un test négatif exécute le vrai Bun
+sur une fixture dont la moyenne dépasse les seuils mais dont un fichier reste faible :
+le processus doit échouer. Voir la [documentation Bun](https://bun.sh/docs/test/code-coverage).
 
 ### Modes et distribution
 

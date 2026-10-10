@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "bun --env-file=../../.env --watch src/index.ts",
 		"start": "bun src/index.ts",
-		"test": "bun test src --parallel --coverage",
+		"test": "bun test src --parallel --coverage && node ../../scripts/check-api-coverage.mjs",
 		"typecheck": "tsc --noEmit -p tsconfig.json"
 	},
 	"dependencies": {

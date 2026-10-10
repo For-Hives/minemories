@@ -27,6 +27,7 @@
 - SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
 - `mod/minemories/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
 - Biome 2.5.15: tabs, single quotes, optional semicolons, 120 columns, recommended rules plus the explicit rules in `biome.json` (complexity <= 15, `noForEach`, no nested ternaries). Run `bun format` after changing TypeScript/CSS/JSON; new suppressions need a local reason. CSS parser supports Tailwind v4 `@theme`.
+- API coverage requires 90% lines and 80% functions per reported file (`apps/api/bunfig.toml`); an LCOV inventory gate rejects missing production sources. Keep text + LCOV reporters enabled.
 - API Bun tests run in separate processes (`--parallel`) so temporary SQLite paths and environment variables cannot leak between suites. Keep HTTP route tests and real oRPC contract tests when upgrading Hono, Better Auth, Bun or oRPC.
 
 ## API / Dev Environment Gotchas
@@ -52,7 +53,7 @@
 Per `.github/pull_request_template.md`: report `bun check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes. Never commit `.env`, API data, saves, exports, runs, builds or ad-hoc lockfile churn.
 
 ## Interesting context 
-if needed, you can find more context in diferent files : 
+if needed, you can find more context in diferent files (look inside ./docs/AI ): 
 - README.md for an overview of the project (the summery)
 - BESOIN.md for the initial need and idea that started this project (the vision)
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
