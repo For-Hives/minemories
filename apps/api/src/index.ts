@@ -192,7 +192,7 @@ app.get('/api/shared/:token/file', async context => {
 		const contents = await readMemoryStream(shared.objectKey)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
-			'Cache-Control': 'public, max-age=3600',
+			'Cache-Control': 'private, no-store',
 		})
 	} catch (error) {
 		console.error('[shared-download] failed to read memory', error)
@@ -204,6 +204,7 @@ app.get('/api/shared/:token', context => {
 	const shared = getSharedMemory(context.req.param('token'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 	const { objectKey, ...publicMemory } = shared
+	context.header('Cache-Control', 'private, no-store')
 	return context.json(publicMemory)
 })
 

@@ -58,7 +58,9 @@ objets/parts S3 abandonnés après une tentative de stockage ; un stockage indis
 conserve la session pour un nettoyage ultérieur.
 
 La finalisation utilise un stream fichier vers S3 et des parts SDK de **8 MiB**. Les
-routes de téléchargement privées et partagées utilisent également des streams. Une
+routes de téléchargement privées et partagées utilisent également des streams. Les GLB
+et les métadonnées accessibles par lien de partage portent `Cache-Control: private, no-store`
+pour éviter qu’un cache public continue à les servir après révocation. Une
 capture devient visible uniquement après finalisation du stockage et transaction
 SQLite. Après une panne entre ces deux étapes, une nouvelle finalisation remplace
 l’objet réservé à cette session, puis confirme la même capture.
@@ -82,30 +84,28 @@ pour maintenir l’ancien endpoint ; les nouveaux morceaux restent limités à 4
   permanentes et les offsets invalides.
 - Un smoke test HTTP du client Java avec `-Xmx64m` a transféré et finalisé
   200 MiB sur l’API avec le stockage filesystem (une seule capture publiée).
-- Le build complet est bloqué dans cet environnement : NeoForm Runtime ne reçoit
-  pas le chemin du processus Java via `ProcessHandle.info().command()`. Les tests
-  Java du client indépendant et les contrôles du module core passent.
-- La validation manuelle dans Minecraft et sur Garage réel reste à faire : envoyer
-  200 MiB, couper/rétablir le réseau, redémarrer l’API, relancer l’upload et vérifier
+- `bun run build` vérifie et construit le web, l’API et le JAR NeoForge avec JDK 21.
+- `bun run api:garage` valide le stockage réel, sa panne et sa reprise, ainsi que
+  la reprise après redémarrage du processus API, sans doublon.
+- La validation manuelle du client Minecraft reste à faire : envoyer 200 MiB,
+  couper/rétablir le réseau, redémarrer l’API, relancer l’upload et vérifier
   qu’une seule capture complète apparaît dans la galerie.
 
-## Diagnostic AFK temporaire
+## Captures AFK
 
-Pour déboguer en jeu, le délai d’inactivité et l’intervalle minimum entre captures
-sont temporairement de **60 secondes**. Activer **AFK snapshots**, appairer le mod,
-fermer le menu, puis rester immobile sans tourner la caméra. Le chat affiche
-`[AFK debug]` toutes les 15 secondes : compte à rebours ou raison de blocage. Une
-capture manuelle récente retarde aussi la suivante de 60 secondes.
+L’AFK est actif par défaut : cinq minutes d’inactivité, au plus une capture toutes
+les quatre heures et un rayon de 32 blocs. Une désactivation enregistrée reste
+respectée. Le bouton AFK est dans le menu simple ; les délais et le rayon sont
+configurables dans le mode avancé.
 
-Au déclenchement, le chat confirme le début d’export, le début d’upload et son
-succès ou son erreur. Les stacks d’export/upload AFK restent dans le log local
-Minecraft (`logs/latest.log`) ; aucune collecte distante n’est ajoutée. Une erreur
-d’export attend au moins une minute avant une nouvelle tentative. L’AFK ne remplace
-pas le GLB pendant un upload déjà en cours. Les menus bloquent la capture, et en
-solo une pause peut aussi suspendre les ticks : tester avec le monde actif.
+La capture peut se déclencher pendant la pause et quand Minecraft n’a pas le focus.
+Un joueur appairé envoie automatiquement sa capture ; sans appairage, elle reste
+locale. L’AFK ne remplace pas le GLB pendant un upload déjà en cours. Les erreurs
+restent dans le log local Minecraft ; aucune collecte distante n’est ajoutée.
 
-Vérifier successivement un compte lié (une capture par minute AFK), un compte non
-lié (message d’appairage, aucun envoi), AFK OFF (aucun déclenchement), le retour du
-mouvement (compteur réinitialisé), puis une API arrêtée (erreur visible dans le chat
-et stack dans le log). La cadence de production 5 minutes / 4 heures et les logs
-configurables restent à rétablir après cette validation.
+Pour un test court, configurer temporairement les deux délais à une minute dans
+les réglages avancés, puis rétablir les valeurs souhaitées. Vérifier un compte
+appairé, un compte non appairé, AFK OFF, le retour du mouvement, la pause et une
+API indisponible. Le fonctionnement en pause et les réglages ont été validés sur
+le client de développement ; le JAR distribué et la reprise d’upload après panne
+restent à exercer en jeu.
