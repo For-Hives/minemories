@@ -39,14 +39,14 @@
 ## GLB + Mod Contract
 
 - Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/minemories/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
-- Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/development-workflow.md`).
+- Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/concepts/development-workflow.md`).
 - Mod writes `~/export/capture.glb` locally by default; the folder is configurable. AFK captures are enabled by default (5 minutes idle, at most every 4 hours, radius 32), including while paused or unfocused; preserve an explicit stored disable preference. M opens a simple interface with pairing, manual capture/upload and AFK toggle; timing/radius, local folder and custom API are advanced settings. The official API defaults to `https://api.minemories.xenos.lightin.io`. Upload requires pairing: the viewer issues a 6-digit code (5-min expiry, single use), `/minemories pair <code>` exchanges it for a device token in `config/minemories.properties`; paired AFK captures upload automatically, unpaired captures stay local, and `/minemories upload` sends a file manually. Commands: `/minemories select first|second|status|clear`, `/minemories export [<radius 2-128>|selection]`.
 - Around-player captures default to the lowest locally visited depth in intersecting chunks plus two foundation blocks, scoped per world/dimension/player; explicit selections keep their corners. `captureFullHeight=true` is an advanced override. Exploration history is local and bounded.
 - Treat world saves, zips, and GLBs as untrusted input (zip bombs, path traversal, PII in signs/books). Keep galleries private-by-default; never add telemetry or upload before pairing.
 
 ## Loader Claims
 
-- Only `Minecraft 1.21.1 + NeoForge 21.1.248` (CurseForge profile `mc breval`) is tested. Fabric/Quilt/Forge are planned (`docs/loader-support.md`). Never describe a loader as supported until it builds and has been exercised in game with standard blocks, alpha/tinted textures, and modded content.
+- Only `Minecraft 1.21.1 + NeoForge 21.1.248` (CurseForge profile `mc breval`) is tested. Fabric/Quilt/Forge are planned (`docs/features/loader-support.md`). Never describe a loader as supported until it builds and has been exercised in game with standard blocks, alpha/tinted textures, and modded content.
 
 ## PRs
 

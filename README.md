@@ -35,7 +35,7 @@ L'API écoute sur `localhost:3001`, le web sur `localhost:5173`. Compose lance G
 bun mod:dev
 ```
 
-Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/minemories/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/development-workflow.md).
+Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/minemories/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/concepts/development-workflow.md).
 
 ## Interface du mod
 
@@ -64,9 +64,9 @@ Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et 
 
 `.env.example` contient uniquement des identifiants de **développement local** pour Garage. Change les clés et la configuration avant tout déploiement, et n'expose pas le port S3 sans protection. Les données Garage vivent dans les volumes `garage_meta` et `garage_data` ; `docker compose down` les conserve, `down -v` les efface. Si tu avais des objets dans l'ancien volume `minio_data`, le passage à Garage **ne les transfère pas** : exporte-les et réimporte-les avant de supprimer ce volume.
 
-L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Le jeton d'appairage est enregistré dans `config/minemories.properties`. Voir [l'architecture](docs/architecture.md) et [les loaders](docs/loader-support.md).
+L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Le jeton d'appairage est enregistré dans `config/minemories.properties`. Voir [l'architecture](docs/concepts/architecture.md) et [les loaders](docs/features/loader-support.md).
 
-Les captures du mod peuvent être envoyées en morceaux de 4 MiB, jusqu’à 200 MiB, avec reprise après interruption. Voir [le protocole et les contraintes de déploiement](docs/resumable-uploads.md).
+Les captures du mod peuvent être envoyées en morceaux de 4 MiB, jusqu’à 200 MiB, avec reprise après interruption. Voir [le protocole et les contraintes de déploiement](docs/features/resumable-uploads.md).
 
 ## Installation et distribution du mod
 
@@ -74,4 +74,4 @@ Le mod utilise l’API `https://api.minemories.xenos.lightin.io` par défaut. Le
 
 `bun run build` intègre le JAR installable et son empreinte SHA-256 dans le site. La page `/installation` propose le téléchargement direct : déposer le JAR dans `mods`, sans extraction de ZIP. Pour développer le web séparément, construire le mod puis lancer `bun run package:mod` avant `bun web:dev` ou `bun web:build`.
 
-Le workflow manuel **Build and distribute mod** produit un artefact par défaut ; les publications GitHub Releases, Modrinth et CurseForge sont optionnelles. Voir [la distribution et les réglages](docs/mod-distribution.md) pour la configuration des projets/secrets et les vérifications en jeu.
+Le workflow manuel **Build and distribute mod** produit un artefact par défaut ; les publications GitHub Releases, Modrinth et CurseForge sont optionnelles. Voir [la distribution et les réglages](docs/features/mod-distribution.md) pour la configuration des projets/secrets et les vérifications en jeu.
