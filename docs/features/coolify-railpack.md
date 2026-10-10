@@ -10,6 +10,7 @@ Créer deux applications Coolify connectées au même dépôt Git. Pour les deux
 - Configurer Garage ou un autre stockage S3 avec `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` et `S3_REGION`. L’endpoint doit être joignable depuis le conteneur API ; les valeurs locales de `.env.example` ne conviennent pas à Coolify.
 - Ajouter un volume persistant monté sur `/app/apps/api/data`. Définir `DATABASE_PATH=/app/apps/api/data/minemories.sqlite` et `UPLOADS_PATH=/app/apps/api/data/uploads` pour conserver la base et les uploads en attente entre les redéploiements. Avec `STORAGE_DRIVER=filesystem`, définir aussi `LOCAL_OBJECTS_PATH=/app/apps/api/data/objects`.
 - Le contrôle de santé est `GET /healthz`.
+- Si l’API est derrière un reverse proxy, définir `TRUSTED_PROXY_IPS` avec les IP exactes des proxys immédiatement connectés à Bun, séparées par des virgules. Le proxy doit remplacer `X-Forwarded-For` ou y ajouter l’IP réelle du client en dernière position ; ne pas transmettre le header client inchangé. Restreindre l’accès direct au port API. Sans cette configuration, la limite d’appairage s’applique à l’IP du proxy pour tous ses clients ; les headers IP non fiables sont ignorés. Ne pas ajouter arbitrairement des IP publiques ou celles des joueurs.
 
 Railpack installe le workspace, vérifie les types de l’API puis démarre `bun run --filter @minemories/api start`.
 

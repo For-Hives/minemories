@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from 'bun:test'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { minimalGlb } from './test-support/glb-fixture'
@@ -11,7 +11,7 @@ process.env.STORAGE_DRIVER = 'filesystem'
 process.env.BETTER_AUTH_SECRET = 'test-auth-secret-at-least-32-characters'
 process.env.PAIRING_PEPPER = 'test-pairing-pepper-at-least-32-characters'
 
-const { app } = await import('./index')
+const { app, fetchApi } = await import('./index')
 const { database } = await import('./database')
 const { createPairingCode, getDeviceFromToken } = await import('./pairing')
 
@@ -21,11 +21,15 @@ afterAll(() => {
 })
 
 function pairRequest(body: unknown, address: string) {
-	return app.request('/api/mod/pair', {
-		method: 'POST',
-		headers: { 'content-type': 'application/json', 'x-forwarded-for': address },
-		body: JSON.stringify(body),
-	})
+	return app.request(
+		'/api/mod/pair',
+		{
+			method: 'POST',
+			headers: { 'content-type': 'application/json', 'x-forwarded-for': address },
+			body: JSON.stringify(body),
+		},
+		{ peerAddress: address }
+	)
 }
 
 test('health and CORS keep the web origin explicit', async () => {
@@ -112,6 +116,17 @@ test('upload checks size and type, stores the bytes and returns metadata', async
 	)
 	expect((await upload(glb, { 'x-memory-metadata': '{invalid' })).status).toBe(400)
 	expect((await app.request('/api/mod/status', { headers })).status).toBe(200)
+	database.exec(`CREATE TRIGGER reject_test_memory BEFORE INSERT ON memories
+		WHEN NEW.name = 'Reject fixture' BEGIN SELECT RAISE(ABORT, 'fixture insert failure'); END`)
+	try {
+		const failed = await upload(glb, { 'x-memory-name': 'Reject fixture' })
+		expect(failed.status).toBe(503)
+		expect(await failed.json()).toEqual({ error: 'memory_storage_unavailable' })
+		expect(readdirSync(join(directory, 'objects', 'upload-owner'))).toEqual([`${memory.id}.glb`])
+		expect(listMemories('upload-owner')).toHaveLength(1)
+	} finally {
+		database.exec('DROP TRIGGER reject_test_memory')
+	}
 })
 
 test('mod screenshots become folder icons while 3D thumbnails stay empty', async () => {
@@ -164,4 +179,62 @@ test('shared snapshots open without an account until revoked', async () => {
 	expect(file.status).toBe(200)
 	expect(file.headers.get('content-type')).toBe('model/gltf-binary')
 	expect((await file.arrayBuffer()).byteLength).toBe(glb.length)
+})
+
+test('pairing rejects oversized JSON even with a forged small Content-Length', async () => {
+	for (const declaredLength of ['9999', '1']) {
+		// biome-ignore lint/performance/noAwaitInLoops: exercise both early rejection and streaming enforcement.
+		const response = await app.request(
+			'/api/mod/pair',
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/json', 'content-length': declaredLength },
+				body: JSON.stringify({ code: '123456', padding: 'a'.repeat(4096) }),
+			},
+			{ peerAddress: `body-limit-${declaredLength}` }
+		)
+		expect(response.status).toBe(413)
+		expect(await response.json()).toEqual({ error: 'pairing_request_too_large' })
+	}
+})
+
+test('spoofed proxy headers cannot reset a direct client pairing limit', async () => {
+	for (let attempt = 0; attempt < 9; attempt += 1) {
+		// biome-ignore lint/performance/noAwaitInLoops: requests from the same peer must be counted in order.
+		const response = await app.request(
+			'/api/mod/pair',
+			{
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json',
+					'x-forwarded-for': `198.51.100.${attempt}`,
+					'cf-connecting-ip': `203.0.113.${attempt}`,
+				},
+				body: JSON.stringify({ code: 'abcdef' }),
+			},
+			{ peerAddress: '192.0.2.77' }
+		)
+		expect(response.status).toBe(attempt < 8 ? 400 : 429)
+	}
+	expect((await pairRequest({ code: 'abcdef' }, '192.0.2.78')).status).toBe(400)
+})
+
+test('the actual Bun HTTP server obtains the peer IP instead of trusting request headers', async () => {
+	const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: fetchApi })
+	try {
+		for (let attempt = 0; attempt < 9; attempt += 1) {
+			// biome-ignore lint/performance/noAwaitInLoops: real socket requests exercise one client window.
+			const response = await fetch(new URL('/api/mod/pair', server.url), {
+				method: 'POST',
+				headers: { 'content-type': 'application/json', 'x-forwarded-for': `203.0.113.${attempt}` },
+				body: JSON.stringify({ code: 'abcdef' }),
+			})
+			expect(response.status).toBe(attempt < 8 ? 400 : 429)
+			await response.body?.cancel()
+		}
+		const unknownPeer = await fetchApi(new Request('http://localhost/healthz'), { requestIP: () => null })
+		expect(unknownPeer.status).toBe(200)
+	} finally {
+		server.stop(true)
+	}
 })
