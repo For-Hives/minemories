@@ -8,6 +8,7 @@ const directory = mkdtempSync(join(tmpdir(), 'minemories-routes-'))
 process.env.DATABASE_PATH = join(directory, 'test.sqlite')
 process.env.LOCAL_OBJECTS_PATH = join(directory, 'objects')
 process.env.STORAGE_DRIVER = 'filesystem'
+process.env.TRUSTED_PROXY_IPS = ''
 process.env.BETTER_AUTH_SECRET = 'test-auth-secret-at-least-32-characters'
 process.env.PAIRING_PEPPER = 'test-pairing-pepper-at-least-32-characters'
 

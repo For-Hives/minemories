@@ -35,7 +35,7 @@ test('forwarded addresses are accepted only from an explicitly trusted immediate
 	expect(pairingAddress('127.0.0.1', new Headers({ 'x-forwarded-for': '::1' }), trusted)).toBe('::1')
 })
 
-function streamedBody(chunks: string[], headers?: Record<string, string>) {
+function streamedBody(chunks: Array<string | Uint8Array>, headers?: Record<string, string>) {
 	let cancelled = false
 	let reads = 0
 	const stream = new ReadableStream<Uint8Array>(
@@ -43,7 +43,7 @@ function streamedBody(chunks: string[], headers?: Record<string, string>) {
 			pull(controller) {
 				const chunk = chunks[reads++]
 				if (chunk === undefined) controller.close()
-				else controller.enqueue(new TextEncoder().encode(chunk))
+				else controller.enqueue(typeof chunk === 'string' ? new TextEncoder().encode(chunk) : chunk)
 			},
 			cancel() {
 				cancelled = true
@@ -66,6 +66,12 @@ test('bounded pairing JSON accepts split UTF-8, empty and malformed bodies safel
 	expect(await readPairingBody(streamedBody(['{"code":', '"123456","name":"été"}']).request)).toEqual({
 		tooLarge: false,
 		value: { code: '123456', name: 'été' },
+	})
+	const utf8 = new TextEncoder().encode('{"name":"été"}')
+	const split = utf8.indexOf(0xc3) + 1
+	expect(await readPairingBody(streamedBody([utf8.subarray(0, split), utf8.subarray(split)]).request)).toEqual({
+		tooLarge: false,
+		value: { name: 'été' },
 	})
 	expect(await readPairingBody(streamedBody(['not json']).request)).toEqual({ tooLarge: false, value: null })
 	expect(await readPairingBody(streamedBody(['"', 'a'.repeat(2046), '"']).request)).toEqual({
