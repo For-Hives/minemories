@@ -10,6 +10,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 - Garage réel : `bun run api:garage` passe six scénarios HTTP/oRPC et stockage, dont une panne réelle du conteneur et une reprise par nouveau processus API, sans doublon et avec contrôle des octets. Fixture Docker jetable, distincte des volumes de développement.
 - Ancien volume local `dev_minio_data` : inspection en lecture seule, aucun fichier et aucun bucket de captures trouvé. Pas de migration locale à effectuer. Cette conclusion ne concerne aucun autre déploiement.
 
+- Audit initial API : headers de partage sans cache public, IP du socket et proxys de confiance, limiteur mémoire borné, corps d’appairage limité, correctif source-map-js. Les observations et alertes restantes sont dans [le rapport](api-security-audit.md) et les suites dans `docs/AI/TASKS.md`.
+
 ## Travaux encore ouverts
 
 Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
