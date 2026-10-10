@@ -107,6 +107,10 @@ export function HowItWorksPage() {
 				envoyer ». Le bouton devient disponible quand ton compte est connecté et qu’un monde est ouvert. Si M est déjà
 				utilisée, change son raccourci dans les contrôles de Minecraft.
 			</p>
+			<p>
+				Les côtés et le dessous de la capture sont refermés avec un aspect terre/pierre, comme une portion de monde
+				extraite. Ce sont des faces ajoutées au souvenir 3D : aucun bloc n’est changé dans Minecraft.
+			</p>
 			<h2>3. Revoir le fichier sur ton ordinateur</h2>
 			<p>
 				Le résultat est un fichier <code>capture.glb</code> dans le dossier <code>export</code> de ton dossier

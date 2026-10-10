@@ -17,4 +17,3 @@
 - créer les projets Modrinth/CurseForge, configurer leurs identifiants et secrets dans GitHub, puis lancer la distribution après validation en jeu du JAR exact
 
 - suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
-- fermer les faces de coupe et les bordures du GLB avec un rendu terre/pierre, sans modifier le monde ; traiter grottes, fluides et alpha avec tests et validation Minecraft/Blender : issue #8

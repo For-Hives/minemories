@@ -90,4 +90,21 @@ Le menu démarre en mode simple (connexion et capture/envoi). Le mode avancé pr
 
 Validation viewer du 10 octobre 2026 : ouverture locale du GLB réel de 189,6 MiB dans Chromium avec rendu du terrain et textures. Le parcours galerie affiche désormais le téléchargement avant le chargement 3D, annule les requêtes en quittant la page et donne priorité au souvenir demandé sur un ancien fichier local. La lecture authentifiée du même souvenir en production reste à confirmer.
 
-Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée, tandis que la fermeture des bordures reste à réaliser.
+Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée, la fermeture des bordures est implémentée et validée ci-dessous.
+
+
+Validation locale des coupes du 10 octobre 2026 : exports NeoForge sur une copie isolée
+du monde de test, puis import/rendu Blender 5.2.2. Une capture de surface de 17 × 17
+blocs mesure 5 blocs de haut et présente des côtés terre/pierre fermés, avec neige et
+végétation préservées. Une capture avec historique profond mesure environ 60 blocs de
+haut et referme les ouvertures de grottes sur les bords. Les visites sont persistées
+après redémarrage ; le suivi actif est effectué à chaque tick pour enregistrer les
+courtes descentes, avec un contrôle de rendu en pause. Les modèles déclarant des quads
+sans direction de culling sont filtrés seulement lorsqu’ils coïncident avec la coupe.
+
+Une fixture supplémentaire sur la copie isolée contient un bassin traversant le plan
+de coupe, du verre, des feuilles et un escalier. L’export en pause conserve les matériaux
+MASK (verre/feuilles), BLEND (eau) et le modèle non cubique de l’escalier. Six quads d’eau
+sont présents sur la coupe est malgré l’eau voisine hors capture. Le rendu Blender de
+cette capture de 17 × 17 × 5 blocs a été inspecté : pas de paroi opaque au-dessus du
+fond du bassin, section terre/pierre fermée, transparence conservée.
