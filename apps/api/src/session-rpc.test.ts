@@ -1,4 +1,5 @@
 import { afterAll, expect, test } from 'bun:test'
+import { createHash, randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -11,7 +12,11 @@ import { minimalGlb } from './test-support/glb-fixture'
 const directory = mkdtempSync(join(tmpdir(), 'minemories-session-'))
 process.env.DATABASE_PATH = join(directory, 'db.sqlite')
 process.env.LOCAL_OBJECTS_PATH = join(directory, 'objects')
-process.env.STORAGE_DRIVER = 'filesystem'
+const garageIntegration = process.env.RUN_GARAGE_HTTP_INTEGRATION === '1'
+if (garageIntegration && !process.env.S3_BUCKET?.startsWith('minemories-integration')) {
+	throw new Error('Garage HTTP integration requires a dedicated minemories-integration bucket.')
+}
+process.env.STORAGE_DRIVER = garageIntegration ? 's3' : 'filesystem'
 process.env.BETTER_AUTH_SECRET = 'session-test-secret-with-at-least-32-characters'
 process.env.PAIRING_PEPPER = 'session-test-pepper-with-at-least-32-characters'
 const { app } = await import('./index')
@@ -138,4 +143,54 @@ test('login rejects invalid credentials and restores a real session', async () =
 	expect(
 		(await authRequest('sign-up/email', { email: 'short@example.com', password: 'short', name: 'Tester' })).status
 	).toBe(400)
+})
+
+test('authenticated readers recover a resumable mod capture across the 4 MiB chunk boundary', async () => {
+	const cookie = await register('chunk-owner@example.com')
+	const owner = rpc(cookie)
+	const code = await owner.pairing.create()
+	const paired = await app.request('/api/mod/pair', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ code: code.code }),
+	})
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	const bytes = minimalGlb(Buffer.alloc(5 * 1024 * 1024, 17))
+	const id = randomUUID()
+	const initialized = await app.request('/api/mod/uploads', {
+		method: 'POST',
+		headers: { authorization: `Bearer ${deviceToken}`, 'content-type': 'application/json' },
+		body: JSON.stringify({
+			id,
+			size: bytes.length,
+			sha256: createHash('sha256').update(bytes).digest('hex'),
+			metadata: { worldName: 'Chunk test' },
+		}),
+	})
+	expect(initialized.status).toBe(201)
+	for (let offset = 0; offset < bytes.length; offset += 4 * 1024 * 1024) {
+		const chunk = bytes.subarray(offset, Math.min(offset + 4 * 1024 * 1024, bytes.length))
+		// biome-ignore lint/performance/noAwaitInLoops: offsets require each chunk to finish before the next one.
+		const uploaded = await app.request(`/api/mod/uploads/${id}`, {
+			method: 'PUT',
+			headers: {
+				authorization: `Bearer ${deviceToken}`,
+				'content-type': 'application/octet-stream',
+				'upload-offset': String(offset),
+			},
+			body: Uint8Array.from(chunk).buffer,
+		})
+		expect(uploaded.status).toBe(200)
+	}
+	const completed = await app.request(`/api/mod/uploads/${id}/complete`, {
+		method: 'POST',
+		headers: { authorization: `Bearer ${deviceToken}` },
+	})
+	expect(completed.status).toBe(201)
+	const { id: memoryId } = (await completed.json()) as { id: string }
+	const file = await app.request(`/api/memories/${memoryId}/file`, { headers: { cookie } })
+	expect(file.status).toBe(200)
+	expect(Buffer.from(await file.arrayBuffer()).equals(bytes)).toBe(true)
+	await owner.memories.delete({ id: memoryId })
+	expect((await app.request(`/api/memories/${memoryId}/file`, { headers: { cookie } })).status).toBe(404)
 })

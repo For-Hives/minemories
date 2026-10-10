@@ -46,11 +46,13 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -81,6 +83,16 @@ public class Minemories {
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+  // All exploration state is owned by the Minecraft client thread, including pause rendering.
+  private static final ExplorationState EXPLORATION = new ExplorationState();
+
+  private static final class ExplorationState {
+    private ExplorationDepth depth = new ExplorationDepth();
+    private Path path;
+    private boolean writable;
+    private long lastSaveMs;
+  }
+
   private static long lastAfkCheckMs;
   private static boolean afkUploadPending;
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
@@ -246,6 +258,8 @@ public class Minemories {
 
   @SubscribeEvent
   public static void openFromShortcut(ClientTickEvent.Post event) {
+    // Record short descents during active play; the wall-clock render check remains for pause.
+    trackExploration(Minecraft.getInstance(), System.currentTimeMillis());
     while (OPEN_SCREEN.consumeClick()) {
       Minecraft mc = Minecraft.getInstance();
       if (!(mc.screen instanceof MinemoriesScreen)) {
@@ -269,6 +283,11 @@ public class Minemories {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
     if (mc.level == null || mc.player == null) {
+      if (EXPLORATION.path != null) {
+        saveExploration();
+        EXPLORATION.path = null;
+        EXPLORATION.depth = new ExplorationDepth();
+      }
       playerPositionKnown = false;
       lastActivityMs = now;
       return;
@@ -277,6 +296,7 @@ public class Minemories {
     // Render events also run while paused/unfocused. Read settings at most once a second.
     if (now - lastAfkCheckMs < 1000) return;
     lastAfkCheckMs = now;
+    trackExploration(mc, now);
     if (!PairingClient.isAfkSnapshots() || afkUploadPending || PairingClient.isUploading()) return;
     var options = PairingClient.afkOptions();
     if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt(), options) > 0) return;
@@ -305,6 +325,63 @@ public class Minemories {
       afkUploadPending = false;
       LOGGER.error("AFK snapshot failed", error);
       tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static void trackExploration(Minecraft mc, long now) {
+    if (mc.level == null || mc.player == null) return;
+    String world;
+    if (mc.getSingleplayerServer() != null) {
+      world =
+          "solo:"
+              + mc.getSingleplayerServer()
+                  .getWorldPath(LevelResource.ROOT)
+                  .toAbsolutePath()
+                  .normalize();
+    } else if (mc.getCurrentServer() != null) {
+      world = "server:" + mc.getCurrentServer().ip;
+    } else {
+      // Transient connections without a server identity must never reuse another world's history.
+      saveExploration();
+      EXPLORATION.path = null;
+      EXPLORATION.depth = new ExplorationDepth();
+      EXPLORATION.writable = false;
+      return;
+    }
+    Path path =
+        ExplorationDepth.historyPath(
+            mc.gameDirectory.toPath().resolve("config/minemories/exploration"),
+            world,
+            mc.level.dimension().location().toString(),
+            mc.player.getUUID().toString());
+    if (!path.equals(EXPLORATION.path)) {
+      saveExploration();
+      EXPLORATION.path = path;
+      try {
+        EXPLORATION.depth = ExplorationDepth.read(path);
+        EXPLORATION.writable = true;
+      } catch (IOException | IllegalArgumentException error) {
+        EXPLORATION.depth = new ExplorationDepth();
+        EXPLORATION.writable = false;
+        LOGGER.warn(
+            "Cannot read exploration history; preserving the original file and tracking this session in memory",
+            error);
+      }
+    }
+    BlockPos position = mc.player.blockPosition();
+    EXPLORATION.depth.record(position.getX(), position.getY(), position.getZ());
+    if (now - EXPLORATION.lastSaveMs >= 10_000) {
+      EXPLORATION.lastSaveMs = now;
+      saveExploration();
+    }
+  }
+
+  private static void saveExploration() {
+    if (EXPLORATION.path == null || !EXPLORATION.writable) return;
+    try {
+      EXPLORATION.depth.save(EXPLORATION.path);
+    } catch (IOException error) {
+      LOGGER.warn("Cannot persist local exploration history", error);
     }
   }
 
@@ -507,6 +584,26 @@ public class Minemories {
             mc.level.getMinBuildHeight(),
             mc.level.getMaxBuildHeight(),
             radius);
+    trackExploration(mc, System.currentTimeMillis());
+    int bottom = bounds.minY();
+    if (!PairingClient.isFullHeightCapture()) {
+      int surfaceFloor = Math.min(center.getY(), bounds.maxY());
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+          if (!mc.level.hasChunkAt(new BlockPos(x, bottom, z))) continue;
+          int surface = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+          // Empty/void columns must not force an otherwise shallow island down to dimension bottom.
+          if (surface > bottom) surfaceFloor = Math.min(surfaceFloor, surface);
+        }
+      }
+      bottom =
+          EXPLORATION.depth.captureBottom(
+              bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bottom);
+    }
+    saveExploration();
+    bounds =
+        new CaptureBounds(
+            bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
     return exportBox(
         new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
         new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()));
@@ -542,15 +639,26 @@ public class Minemories {
       Files.createDirectories(outputDirectory);
       BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
       beRenderer.prepare(mc.level, mc.gameRenderer.getMainCamera(), mc.hitResult);
+      var fluidView =
+          new CaptureLevelView(
+              mc.level,
+              new CaptureBounds(
+                  min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
       int blockCount = 0;
       for (int z = min.getZ(); z <= max.getZ(); z++) {
         for (int x = min.getX(); x <= max.getX(); x++) {
           if (!mc.level.hasChunkAt(new BlockPos(x, min.getY(), z))) continue;
           int columnTop =
               Math.min(max.getY(), mc.level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+          int terrainTop = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+          // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
+          while (terrainTop >= min.getY()
+              && !mc.level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
           for (int y = min.getY(); y <= columnTop; y++) {
             BlockPos pos = new BlockPos(x, y, z);
             BlockState state = mc.level.getBlockState(pos);
+            boolean capped =
+                captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
             if (state.isAir()) continue;
             int lightEmission = state.getLightEmission();
             if (lightEmission >= 4) {
@@ -581,7 +689,10 @@ public class Minemories {
               ModelData modelData = model.getModelData(mc.level, pos, state, initialData);
               for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = pos.relative(direction);
-                if (mc.level.hasChunkAt(neighborPos)
+                boolean outside = outsideCapture(neighborPos, min, max);
+                if (outside && capped && direction != Direction.UP) continue;
+                if (!outside
+                    && mc.level.hasChunkAt(neighborPos)
                     && !Block.shouldRenderFace(state, mc.level, pos, direction, neighborPos))
                   continue;
                 RandomSource random = RandomSource.create(state.getSeed(pos));
@@ -599,7 +710,8 @@ public class Minemories {
                       z - center.getZ());
               }
               RandomSource random = RandomSource.create(state.getSeed(pos));
-              for (BakedQuad quad : model.getQuads(state, null, random, modelData, null))
+              for (BakedQuad quad : model.getQuads(state, null, random, modelData, null)) {
+                if (capped && isCutQuad(quad, pos, min, max)) continue;
                 addQuad(
                     scene,
                     sprites,
@@ -611,6 +723,7 @@ public class Minemories {
                     x - center.getX(),
                     y - center.getY(),
                     z - center.getZ());
+              }
               if (blockEntity != null)
                 captureBlockEntityRenderer(
                     scene,
@@ -625,7 +738,8 @@ public class Minemories {
               blockCount++;
             }
             FluidState fluid = state.getFluidState();
-            if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center);
+            if (!fluid.isEmpty())
+              captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
           }
         }
       }
@@ -647,6 +761,77 @@ public class Minemories {
       return 0;
     }
     return 1;
+  }
+
+  private static boolean outsideCapture(BlockPos pos, BlockPos min, BlockPos max) {
+    return CutBoundary.outside(
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+        pos.getX(),
+        pos.getY(),
+        pos.getZ());
+  }
+
+  private static boolean isCutQuad(BakedQuad quad, BlockPos pos, BlockPos min, BlockPos max) {
+    float[] vertices = new float[12];
+    int[] packed = quad.getVertices();
+    for (int i = 0; i < 4; i++) {
+      for (int axis = 0; axis < 3; axis++)
+        vertices[i * 3 + axis] = Float.intBitsToFloat(packed[i * VERTEX_STRIDE + axis]);
+    }
+    for (Direction direction : Direction.values()) {
+      if (direction == Direction.UP || !outsideCapture(pos.relative(direction), min, max)) continue;
+      int axis = direction.getStepX() != 0 ? 0 : direction.getStepY() != 0 ? 1 : 2;
+      float plane = direction.getStepX() + direction.getStepY() + direction.getStepZ() > 0 ? 1 : 0;
+      if (CutBoundary.onPlane(vertices, axis, plane)) return true;
+    }
+    return false;
+  }
+
+  private static boolean captureCutFaces(
+      GlbScene scene,
+      Map<String, SpriteAsset> sprites,
+      Minecraft mc,
+      BlockState state,
+      BlockPos pos,
+      BlockPos min,
+      BlockPos max,
+      BlockPos center,
+      int terrainTop)
+      throws IOException {
+    if (pos.getX() != min.getX()
+        && pos.getX() != max.getX()
+        && pos.getZ() != min.getZ()
+        && pos.getZ() != max.getZ()
+        && pos.getY() != min.getY()) return false;
+    var material =
+        CutBoundary.material(
+            pos.getY(),
+            terrainTop,
+            state.isAir(),
+            !state.getFluidState().isEmpty(),
+            state.canOcclude() && state.isCollisionShapeFullBlock(mc.level, pos));
+    if (material == CutBoundary.Material.NONE) return false;
+    BlockState cut =
+        (material == CutBoundary.Material.DIRT ? Blocks.DIRT : Blocks.STONE).defaultBlockState();
+    BakedModel model = mc.getModelManager().getBlockModelShaper().getBlockModel(cut);
+    for (Direction direction : Direction.values()) {
+      if (direction == Direction.UP || !outsideCapture(pos.relative(direction), min, max)) continue;
+      for (BakedQuad quad :
+          model.getQuads(cut, direction, RandomSource.create(0), ModelData.EMPTY, null)) {
+        addQuad(
+            scene,
+            sprites,
+            mc,
+            cut,
+            pos,
+            "minemories:cut",
+            quad,
+            pos.getX() - center.getX(),
+            pos.getY() - center.getY(),
+            pos.getZ() - center.getZ());
+      }
+    }
+    return true;
   }
 
   private static void addQuad(
@@ -709,12 +894,13 @@ public class Minemories {
       BlockPos pos,
       BlockState block,
       FluidState fluid,
-      BlockPos center)
+      BlockPos center,
+      CaptureLevelView fluidView)
       throws IOException {
     TextureAtlasSprite[] fluidSprites = FluidSpriteCache.getFluidSprites(mc.level, pos, fluid);
     if (fluidSprites == null || fluidSprites.length == 0 || fluidSprites[0] == null) return;
     FluidVertexConsumer consumer = new FluidVertexConsumer();
-    mc.getBlockRenderer().renderLiquid(pos, mc.level, consumer, block, fluid);
+    mc.getBlockRenderer().renderLiquid(pos, fluidView, consumer, block, fluid);
     int tint = IClientFluidTypeExtensions.of(fluid).getTintColor(fluid, mc.level, pos);
     if ((tint & 0xFFFFFF) == 0) tint = 0xFFFFFFFF;
     float opacity =

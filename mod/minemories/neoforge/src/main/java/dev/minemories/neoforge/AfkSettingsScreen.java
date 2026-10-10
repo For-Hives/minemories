@@ -39,6 +39,21 @@ final class AfkSettingsScreen extends Screen {
         Button.builder(Component.literal("Retour"), ignored -> onClose())
             .bounds(left + 20 + (panelWidth - 34) / 2, top + 160, (panelWidth - 34) / 2, 20)
             .build());
+    addRenderableWidget(
+        Button.builder(
+                depthLabel(),
+                button -> {
+                  PairingClient.setFullHeightCapture(!PairingClient.isFullHeightCapture());
+                  button.setMessage(depthLabel());
+                })
+            .bounds(left + 14, top + 184, panelWidth - 28, 20)
+            .build());
+  }
+
+  private Component depthLabel() {
+    return Component.literal(
+        "Profondeur : "
+            + (PairingClient.isFullHeightCapture() ? "toute la dimension" : "zones visitées"));
   }
 
   private EditBox field(String label, int y, int value) {
@@ -83,8 +98,8 @@ final class AfkSettingsScreen extends Screen {
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.render(graphics, mouseX, mouseY, partialTick);
     var lines = font.split(Component.literal(status), panelWidth - 28);
-    for (int i = 0; i < Math.min(4, lines.size()); i++) {
-      graphics.drawString(font, lines.get(i), left + 14, top + 188 + i * 10, 0xFFE3E9DD);
+    for (int i = 0; i < Math.min(2, lines.size()); i++) {
+      graphics.drawString(font, lines.get(i), left + 14, top + 208 + i * 10, 0xFFE3E9DD);
     }
   }
 

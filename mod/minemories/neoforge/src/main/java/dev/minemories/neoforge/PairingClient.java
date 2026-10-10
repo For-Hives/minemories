@@ -51,6 +51,16 @@ final class PairingClient {
     saveSettings(settings);
   }
 
+  static boolean isFullHeightCapture() {
+    return ClientSettings.fullHeightCapture(readSettings());
+  }
+
+  static void setFullHeightCapture(boolean enabled) {
+    Properties settings = readSettings();
+    settings.setProperty("captureFullHeight", Boolean.toString(enabled));
+    saveSettings(settings);
+  }
+
   static ClientSettings.AfkOptions afkOptions() {
     return ClientSettings.afkOptions(readSettings());
   }
