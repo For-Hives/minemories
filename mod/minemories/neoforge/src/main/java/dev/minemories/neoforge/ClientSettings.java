@@ -101,6 +101,10 @@ final class ClientSettings {
     return Boolean.parseBoolean(settings.getProperty("afkSnapshots", "true"));
   }
 
+  static boolean fullHeightCapture(Properties settings) {
+    return Boolean.parseBoolean(settings.getProperty("captureFullHeight", "false"));
+  }
+
   record AfkOptions(int idleMinutes, int intervalMinutes, int radius) {
     AfkOptions {
       if (idleMinutes < 1

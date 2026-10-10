@@ -1,19 +1,14 @@
-- compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant ; exécuter le test Garage réel ajouté et sa reprise après panne, puis ajouter un seuil de couverture API par fichier
-- mod fait automatiquement une snapshot lorsque le jouer est afk depuis plus de 5min et la dernier snapshot date d'il ya plus de 4h 
-- mod export automatique vers le server 
+- compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant ; ajouter un seuil de couverture API par fichier
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
-- tester le stockage S3 Garage de bout en bout, y compris la reprise après panne, et les sessions réelles Better Auth sur les routes HTTP/oRPC
 - extraire les états et le polling de `GalleryPage` avec des tests d'interaction avant de retirer les exceptions Biome localisées
 - porter le mod sur Fabric avec Architectury Loom, puis tester Quilt et Forge séparément en jeu avant de déclarer ces loaders supportés
-- valider le build Gradle et l'export GLB en jeu après la restructuration `mod/minemories/:core/:neoforge`
-- vérifier Garage de bout en bout (appairage, upload, lecture et suppression d'un GLB) et décider si les données de l'ancien volume MinIO doivent être transférées
 - conserver plusieurs captures horodatées avec historique dans l'interface du mod, avant les snapshots automatiques et la timelapse
 - mesurer le temps d'export en jeu et déplacer les opérations coûteuses hors de la boucle de rendu si nécessaire
 - setup polar avec betterauth
-- valider en jeu et sur Garage réel l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
+- valider en jeu l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
 - observabilité en production du mod et de l’API : collecte consentie des exceptions et stack traces clients, versions mod/Minecraft/loader, identifiant de corrélation capture/upload, contexte et breadcrumbs ; consulter et regrouper les erreurs pour diagnostiquer les incidents, sans tokens ni données privées, avec rétention et limites d’envoi
 - valider les captures AFK en pause/arrière-plan et les réglages avancés sur le JAR distribué, puis vérifier les erreurs et la reprise des envois en production
 - rendre les snapshots AFK progressifs : lecture du monde/modèles sur le thread du jeu avec budget de temps par frame, préparation/écriture en arrière-plan, mémoire bornée et upload à débit limité ; suspendre ou ralentir au retour du joueur, gérer les chunks déchargés et la sortie du monde, sans file de captures concurrentes ; mesurer les freezes et enregistrer le début/fin de capture
@@ -22,4 +17,3 @@
 - créer les projets Modrinth/CurseForge, configurer leurs identifiants et secrets dans GitHub, puis lancer la distribution après validation en jeu du JAR exact
 
 - suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
-- fermer les faces de coupe et les bordures du GLB avec un rendu terre/pierre, sans modifier le monde ; traiter grottes, fluides et alpha avec tests et validation Minecraft/Blender : issue #8

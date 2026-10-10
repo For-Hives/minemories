@@ -15,7 +15,7 @@
 - `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
 - `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check` (Biome, typecheck, Bun tests).
-- `bun check` is the no-fix aggregate quality gate. `bun build` checks everything, then builds web and mod.
+- `bun check` is the no-fix aggregate quality gate. `bun run build` checks everything, then builds web and mod.
 - Single TS test: `bun run --filter @minemories/web test -- src/lib/glb.test.ts`.
 - Java (from `mod/minemories/`): `./gradlew :core:test --tests "dev.minemories.core.GlbSceneTest"`.
 - `bun format` formats TypeScript/CSS; `bun mod:check` formats Java intentionally.
@@ -40,6 +40,7 @@
 - Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/minemories/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
 - Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/development-workflow.md`).
 - Mod writes `~/export/capture.glb` locally by default; the folder is configurable. AFK captures are enabled by default (5 minutes idle, at most every 4 hours, radius 32), including while paused or unfocused; preserve an explicit stored disable preference. M opens a simple interface with pairing, manual capture/upload and AFK toggle; timing/radius, local folder and custom API are advanced settings. The official API defaults to `https://api.minemories.xenos.lightin.io`. Upload requires pairing: the viewer issues a 6-digit code (5-min expiry, single use), `/minemories pair <code>` exchanges it for a device token in `config/minemories.properties`; paired AFK captures upload automatically, unpaired captures stay local, and `/minemories upload` sends a file manually. Commands: `/minemories select first|second|status|clear`, `/minemories export [<radius 2-128>|selection]`.
+- Around-player captures default to the lowest locally visited depth in intersecting chunks plus two foundation blocks, scoped per world/dimension/player; explicit selections keep their corners. `captureFullHeight=true` is an advanced override. Exploration history is local and bounded.
 - Treat world saves, zips, and GLBs as untrusted input (zip bombs, path traversal, PII in signs/books). Keep galleries private-by-default; never add telemetry or upload before pairing.
 
 ## Loader Claims
@@ -48,7 +49,7 @@
 
 ## PRs
 
-Per `.github/pull_request_template.md`: report `bun check`; add `bun build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes. Never commit `.env`, API data, saves, exports, runs, builds or ad-hoc lockfile churn.
+Per `.github/pull_request_template.md`: report `bun check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes. Never commit `.env`, API data, saves, exports, runs, builds or ad-hoc lockfile churn.
 
 ## Interesting context 
 if needed, you can find more context in diferent files : 

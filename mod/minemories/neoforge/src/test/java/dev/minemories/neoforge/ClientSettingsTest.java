@@ -147,4 +147,12 @@ class ClientSettingsTest {
     settings.setProperty("afkSnapshots", "false");
     assertFalse(ClientSettings.afkSnapshots(settings));
   }
+
+  @Test
+  void fullHeightCaptureIsAnExplicitAdvancedOverride() {
+    Properties settings = new Properties();
+    assertFalse(ClientSettings.fullHeightCapture(settings));
+    settings.setProperty("captureFullHeight", "true");
+    assertTrue(ClientSettings.fullHeightCapture(settings));
+  }
 }

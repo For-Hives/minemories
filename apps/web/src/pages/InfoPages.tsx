@@ -91,6 +91,12 @@ export function HowItWorksPage() {
 				grande zone peut ralentir le jeu. Le mod capture ce que le client a chargé, pas tout le serveur.
 			</p>
 			<p>
+				Le sous-sol est limité par défaut à la profondeur visitée dans cette zone, avec deux blocs de fondation.
+				Descendre dans une grotte étend les prochaines captures de la zone. Le suivi commence avec cette version du mod
+				et reste enregistré sur ton ordinateur. Des cavités au-dessus de cette limite peuvent encore apparaître. Le mode
+				avancé permet de capturer toute la hauteur ; une sélection précise garde la hauteur de ses deux coins.
+			</p>
+			<p>
 				Pour une zone précise, place-toi au premier coin et saisis <code>/minemories select first</code>, puis au coin
 				opposé avec <code>/minemories select second</code>. Ces deux positions définissent aussi la hauteur. Vérifie
 				avec <code>/minemories select status</code>, puis lance <code>/minemories export selection</code>.
@@ -100,6 +106,10 @@ export function HowItWorksPage() {
 				La touche M ouvre le menu Minemories. En mode simple, entre le code de ta galerie puis clique sur « Capturer et
 				envoyer ». Le bouton devient disponible quand ton compte est connecté et qu’un monde est ouvert. Si M est déjà
 				utilisée, change son raccourci dans les contrôles de Minecraft.
+			</p>
+			<p>
+				Les côtés et le dessous de la capture sont refermés avec un aspect terre/pierre, comme une portion de monde
+				extraite. Ce sont des faces ajoutées au souvenir 3D : aucun bloc n’est changé dans Minecraft.
 			</p>
 			<h2>3. Revoir le fichier sur ton ordinateur</h2>
 			<p>
