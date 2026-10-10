@@ -1,4 +1,4 @@
-- compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant ; ajouter un seuil de couverture API par fichier
+- compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere

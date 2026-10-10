@@ -1,4 +1,8 @@
 import { afterAll, expect, test } from 'bun:test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { Readable } from 'node:stream'
 
 // Exercise the actual SDK over HTTP. This fixture is not a real Garage deployment.
 const objects = new Map<string, Buffer>()
@@ -42,7 +46,7 @@ process.env.STORAGE_DRIVER = 's3'
 process.env.S3_ENDPOINT = server.url.toString()
 process.env.S3_BUCKET = 'minemories'
 process.env.S3_REGION = 'garage'
-const { storeMemory, readMemory, removeMemory } = await import('./storage')
+const { storeMemory, readMemory, removeMemory, storeMemoryFile, readMemoryStream } = await import('./storage')
 afterAll(() => server.stop(true))
 
 test('S3 initialization retries after failure, shares its bucket check and preserves binary bytes', async () => {
@@ -60,4 +64,27 @@ test('S3 initialization retries after failure, shares its bucket check and prese
 	await expect(readMemory('owner/two.glb')).rejects.toThrow()
 	available = true
 	expect(await readMemory('owner/two.glb')).toEqual(bytes)
+})
+
+test('S3 file uploads and downloads stream exact bytes and reject a storage outage', async () => {
+	available = true
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-s3-stream-'))
+	const path = join(directory, 'capture.glb')
+	const bytes = Buffer.alloc(1024 * 1024, 37)
+	await writeFile(path, bytes)
+	try {
+		await storeMemoryFile('owner/stream.glb', path, bytes.length)
+		const stream = await readMemoryStream('owner/stream.glb')
+		const recovered = await new Response(Readable.toWeb(stream) as unknown as ReadableStream).arrayBuffer()
+		expect(Buffer.from(recovered).equals(bytes)).toBe(true)
+		available = false
+		await expect(storeMemoryFile('owner/offline.glb', path, bytes.length)).rejects.toThrow()
+		await expect(readMemoryStream('owner/stream.glb')).rejects.toThrow()
+		available = true
+		expect(objects.has('/minemories/owner/offline.glb')).toBe(false)
+	} finally {
+		available = true
+		await removeMemory('owner/stream.glb')
+		await rm(directory, { recursive: true, force: true })
+	}
 })
