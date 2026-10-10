@@ -18,3 +18,5 @@ hs_err_pid*
 !.env.example
 TOOLS.md
 apps/api/data/
+
+apps/web/public/downloads/

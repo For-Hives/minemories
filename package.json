@@ -27,8 +27,10 @@
 		"api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
 		"format": "biome check --write apps scripts package.json biome.json",
 		"lint": "biome check apps scripts package.json biome.json",
-		"check": "bun run lint && bun run web:check && bun run api:check && bun run mod:check:ci",
-		"build": "bun run check && bun run web:build && bun run mod:build"
+		"check": "bun run lint && bun run package:mod:test && bun run web:check && bun run api:check && bun run mod:check:ci",
+		"build": "bun run check && bun run mod:build && bun run package:mod && bun run web:build",
+		"package:mod": "node scripts/package-mod.mjs",
+		"package:mod:test": "node --test scripts/package-mod.test.mjs"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.13"

@@ -25,8 +25,8 @@ Ces personnages sont des hypothèses de conception, pas des entretiens utilisate
 - Les mots launcher, profil/instance, loader, JAR, GLB et appairage sont expliqués à leur première utilisation dans les guides concernés.
 - Les fonctions actuelles sont séparées du timelapse, de l’import ZIP, des autres loaders, de l’impression et des anciens scénarios de prix.
 - La consultation sans installation est distinguée de la création nécessitant Minecraft compatible.
-- Aucune promesse de compatibilité universelle ou d’hébergement permanent ; confidentialité et envoi AFK de test sont explicites.
-- Aucun faux bouton de téléchargement : le dépôt ne fournit ici ni URL de JAR public vérifiée ni publication catalogue confirmée.
+- Aucune promesse de compatibilité universelle ou d’hébergement permanent ; confidentialité et envoi AFK automatique sont explicites.
+- Le bouton télécharge le JAR inclus dans le build du site ; il reste absent si le manifeste manque ou ne correspond pas à la cible. Les publications catalogue sont en préparation.
 
 ## Sources externes vérifiées le 10 octobre 2026
 
@@ -38,7 +38,7 @@ Les parcours Modrinth et manuel sont des instructions documentées, pas une vali
 
 ## Validation utilisateur à réaliser
 
-Faire lire les pages à une personne représentative de chaque public et lui demander de réaliser son parcours sans explication orale. Vérifier qu’elle sait dire : « une capture ne remplace pas une sauvegarde », « le lien peut être retransmis », « l’appairage peut déclencher des envois AFK », et retrouver le fichier exporté. Noter les hésitations et corriger le texte. Tester séparément les trois parcours d’installation avec un JAR distribué officiellement.
+Faire lire les pages à une personne représentative de chaque public et lui demander de réaliser son parcours sans explication orale. Vérifier qu’elle sait dire : « une capture ne remplace pas une sauvegarde », « le lien peut être retransmis », « les captures AFK sont actives par défaut, et sont envoyées automatiquement seulement après connexion du compte », et retrouver le fichier exporté. Noter les hésitations et corriger le texte. Tester séparément les trois parcours d’installation avec un JAR distribué officiellement.
 
 ## Contrôles sur cette modification
 

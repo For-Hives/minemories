@@ -59,8 +59,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -80,7 +82,6 @@ public class Minemories {
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   private static long lastAfkCheckMs;
-  private static long lastAfkDiagnosticMs;
   private static boolean afkUploadPending;
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
   private static long lastActivityMs = System.currentTimeMillis();
@@ -254,7 +255,17 @@ public class Minemories {
   }
 
   @SubscribeEvent
-  public static void trackAfkSnapshot(ClientTickEvent.Post event) {
+  public static void trackAfkKeyboard(InputEvent.Key event) {
+    if (event.getAction() != GLFW.GLFW_RELEASE) lastActivityMs = System.currentTimeMillis();
+  }
+
+  @SubscribeEvent
+  public static void trackAfkMouse(InputEvent.MouseButton.Pre event) {
+    if (event.getAction() != GLFW.GLFW_RELEASE) lastActivityMs = System.currentTimeMillis();
+  }
+
+  @SubscribeEvent
+  public static void trackAfkSnapshot(RenderFrameEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
     if (mc.level == null || mc.player == null) {
@@ -263,36 +274,19 @@ public class Minemories {
       return;
     }
     if (playerMoved(mc.player)) lastActivityMs = now;
-    // Settings and file timestamps do not need to be read on every client tick.
+    // Render events also run while paused/unfocused. Read settings at most once a second.
     if (now - lastAfkCheckMs < 1000) return;
     lastAfkCheckMs = now;
-    if (!PairingClient.isAfkSnapshots()) return;
-    if (now - lastAfkDiagnosticMs >= 15_000) {
-      lastAfkDiagnosticMs = now;
-      String status;
-      if (mc.screen != null) status = "waiting: close the menu to allow automatic capture";
-      else if (!PairingClient.isPaired()) status = "waiting: pair the mod to enable auto-upload";
-      else if (afkUploadPending || PairingClient.isUploading()) status = "upload already running";
-      else
-        status =
-            "next capture in "
-                + AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt())
-                + "s";
-      tell("[AFK debug] " + status);
-    }
-    if (mc.screen != null || !PairingClient.isPaired()) return;
-    if (afkUploadPending || PairingClient.isUploading()) return;
-    if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt()) > 0) return;
-    // Rate-limit failed exports too; otherwise failure would retry each client tick.
+    if (!PairingClient.isAfkSnapshots() || afkUploadPending || PairingClient.isUploading()) return;
+    var options = PairingClient.afkOptions();
+    if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt(), options) > 0) return;
+    // Rate-limit failed exports too; avoid retrying every frame.
     lastActivityMs = now;
-    tell("[AFK debug] 60s idle: starting export.");
     try {
-      if (export(DEFAULT_CAPTURE_RADIUS) != 1) {
-        tell("[AFK debug] Export failed; next attempt after 60s idle.");
-        return;
-      }
+      LOGGER.info("AFK capture started (paused={}, radius={})", mc.isPaused(), options.radius());
+      if (export(options.radius()) != 1) return;
       PairingClient.setLastSnapshotAt(System.currentTimeMillis());
-      tell("[AFK debug] Export finished; starting upload.");
+      if (!PairingClient.isPaired()) return;
       afkUploadPending = true;
       PairingClient.uploadCapture(capturePath())
           .whenComplete(
@@ -300,13 +294,17 @@ public class Minemories {
                   mc.execute(
                       () -> {
                         afkUploadPending = false;
-                        if (error != null) LOGGER.error("AFK snapshot upload failed", error);
-                        tell("[AFK debug] " + (error == null ? message : pairingError(error)));
+                        if (error != null) {
+                          LOGGER.error("AFK snapshot upload failed", error);
+                          tell("Envoi AFK impossible : " + pairingError(error));
+                        } else {
+                          tell("Souvenir AFK envoyé dans ta galerie.");
+                        }
                       }));
     } catch (RuntimeException error) {
       afkUploadPending = false;
       LOGGER.error("AFK snapshot failed", error);
-      tell("[AFK debug] " + pairingError(error));
+      tell("Capture AFK impossible : " + pairingError(error));
     }
   }
 
@@ -364,10 +362,7 @@ public class Minemories {
   }
 
   static Path capturePath() {
-    return Path.of(
-        Objects.requireNonNull(System.getProperty("user.home"), "user.home"),
-        "export",
-        "capture.glb");
+    return PairingClient.exportDirectory().resolve("capture.glb");
   }
 
   private static int pair(String code) {

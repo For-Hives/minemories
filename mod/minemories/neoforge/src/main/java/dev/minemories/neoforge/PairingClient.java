@@ -3,21 +3,15 @@ package dev.minemories.neoforge;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
 import java.time.Duration;
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,12 +42,22 @@ final class PairingClient {
   }
 
   static boolean isAfkSnapshots() {
-    return !"false".equalsIgnoreCase(readSettings().getProperty("afkSnapshots", "true"));
+    return ClientSettings.afkSnapshots(readSettings());
   }
 
   static void setAfkSnapshots(boolean enabled) {
     Properties settings = readSettings();
     settings.setProperty("afkSnapshots", Boolean.toString(enabled));
+    saveSettings(settings);
+  }
+
+  static ClientSettings.AfkOptions afkOptions() {
+    return ClientSettings.afkOptions(readSettings());
+  }
+
+  static void configureAfk(ClientSettings.AfkOptions options) {
+    Properties settings = readSettings();
+    ClientSettings.configureAfk(settings, options);
     saveSettings(settings);
   }
 
@@ -92,9 +96,14 @@ final class PairingClient {
                     new IllegalStateException("API refused (HTTP " + response.statusCode() + ")"));
               }
               JsonObject result = JsonParser.parseString(response.body()).getAsJsonObject();
-              settings.setProperty("deviceToken", result.get("deviceToken").getAsString());
-              settings.setProperty("deviceId", result.get("deviceId").getAsString());
-              saveSettings(settings);
+              Properties current = readSettings();
+              if (!apiUrl(current).equals(apiUrl(settings))) {
+                throw new CompletionException(
+                    new IllegalStateException("API changed. Generate a new code."));
+              }
+              current.setProperty("deviceToken", result.get("deviceToken").getAsString());
+              current.setProperty("deviceId", result.get("deviceId").getAsString());
+              saveSettings(current);
               return "Mod paired. You can now use /minemories upload.";
             });
   }
@@ -149,49 +158,47 @@ final class PairingClient {
   }
 
   private static Properties readSettings() {
-    Properties settings = new Properties();
-    Path path = settingsPath();
-    if (Files.isRegularFile(path)) {
-      try (var reader = Files.newBufferedReader(path)) {
-        settings.load(reader);
-      } catch (IOException error) {
-        throw new CompletionException(error);
-      }
+    try {
+      return ClientSettings.read(settingsPath());
+    } catch (IOException error) {
+      throw new CompletionException(error);
     }
-    return settings;
+  }
+
+  static String apiUrl() {
+    return apiUrl(readSettings());
   }
 
   private static String apiUrl(Properties settings) {
-    String configured = settings.getProperty("apiUrl");
-    if (configured == null || configured.isBlank()) {
-      configured = System.getenv().getOrDefault("MINEMORIES_API_URL", "http://localhost:3001");
+    return ClientSettings.apiUrl(settings, System.getenv("MINEMORIES_API_URL"));
+  }
+
+  static Path exportDirectory() {
+    return ClientSettings.exportDirectory(readSettings(), home());
+  }
+
+  static boolean configure(String api, String directory) {
+    if (isUploading()) throw new IllegalStateException("Attends la fin de l’envoi.");
+    Properties settings = readSettings();
+    String previousApi;
+    try {
+      previousApi = apiUrl(settings);
+    } catch (IllegalArgumentException error) {
+      previousApi = "invalid";
     }
-    return configured.replaceAll("/+$", "");
+    boolean changed = ClientSettings.configure(settings, previousApi, api, directory, home());
+    saveSettings(settings);
+    return changed;
+  }
+
+  private static Path home() {
+    return Path.of(Objects.requireNonNull(System.getProperty("user.home"), "user.home"));
   }
 
   private static void saveSettings(Properties settings) {
-    Path path = settingsPath();
-    Path temporary = path.resolveSibling("minemories.properties.tmp");
     settings.setProperty("apiUrl", apiUrl(settings));
     try {
-      Files.createDirectories(Objects.requireNonNull(path.getParent()));
-      try (StringWriter writer = new StringWriter()) {
-        settings.store(writer, "Minemories paired client credentials");
-        Files.writeString(temporary, writer.toString());
-      }
-      try {
-        Set<PosixFilePermission> ownerOnly =
-            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
-        Files.setPosixFilePermissions(temporary, ownerOnly);
-      } catch (UnsupportedOperationException ignored) {
-        // Windows does not expose POSIX file permissions.
-      }
-      try {
-        Files.move(
-            temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-      } catch (AtomicMoveNotSupportedException ignored) {
-        Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
-      }
+      ClientSettings.save(settingsPath(), settings);
     } catch (IOException error) {
       throw new CompletionException(error);
     }

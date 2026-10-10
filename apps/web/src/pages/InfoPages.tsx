@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { ModDownload } from './ModDownload'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'Le concept' },
@@ -96,15 +97,17 @@ export function HowItWorksPage() {
 				<code> /minemories select clear</code> efface la sélection.
 			</p>
 			<p>
-				La touche M ouvre aussi le menu Minemories. Si elle est déjà utilisée, change son raccourci dans les contrôles
-				de Minecraft.
+				La touche M ouvre le menu Minemories. En mode simple, entre le code de ta galerie puis clique sur « Capturer et
+				envoyer ». Le bouton devient disponible quand ton compte est connecté et qu’un monde est ouvert. Si M est déjà
+				utilisée, change son raccourci dans les contrôles de Minecraft.
 			</p>
 			<h2>3. Revoir le fichier sur ton ordinateur</h2>
 			<p>
 				Le résultat est un fichier <code>capture.glb</code> dans le dossier <code>export</code> de ton dossier
-				utilisateur (<code>~/export/capture.glb</code>), pas dans le dossier du monde. GLB signifie ici un fichier 3D
-				contenant les formes et les textures. Chaque export remplace ce fichier : copie-le et renomme-le avant la
-				capture suivante.
+				utilisateur (<code>~/export/capture.glb</code>) par défaut, pas dans le dossier du monde. En mode avancé, tu
+				peux choisir un autre dossier et cliquer sur « Exporter en local » sans connecter de compte. GLB signifie ici un
+				fichier 3D contenant les formes et les textures. Chaque export remplace ce fichier : copie-le et renomme-le
+				avant la capture suivante.
 			</p>
 			<p>
 				Sur le site, utilise « Open a local GLB » et choisis ce fichier. Aucun compte n’est nécessaire pour l’ouvrir
@@ -128,11 +131,19 @@ export function HowItWorksPage() {
 				</li>
 			</ol>
 			<p>
-				Attention : cette version de test peut aussi capturer et envoyer automatiquement après 60 secondes d’inactivité
-				quand le compte est lié et qu’aucun menu n’est ouvert. Pour rester uniquement en local, ne fais pas l’appairage.
-				Si tu as déjà lié le mod, ferme Minecraft et retire le jeton du fichier{' '}
-				<code>config/minemories.properties</code>
-				dans le profil avant de relancer. Ne partage jamais ce fichier.
+				Les captures AFK sont actives par défaut : après 5 minutes d’inactivité, au plus une fois toutes les 4 heures,
+				même dans le menu pause ou quand Minecraft est en arrière-plan. Sans compte connecté, elles restent dans ton
+				dossier local. Avec un compte connecté, elles sont aussi envoyées dans ta galerie privée. Tu peux les désactiver
+				en mode simple ; le mode avancé permet de régler les délais et le rayon de capture (32 blocs par défaut). Une
+				préférence de désactivation déjà enregistrée est conservée.
+			</p>
+			<h2>Utiliser sa propre API (avancé)</h2>
+			<p>
+				Le mod utilise <code>https://api.minemories.xenos.lightin.io</code> par défaut. Dans « Mode avancé », tu peux
+				renseigner l’adresse HTTPS d’une API Minemories auto-hébergée compatible et un chemin absolu pour le dossier
+				local, puis cliquer sur « Enregistrer ». HTTP est accepté uniquement pour une API sur localhost. Changer d’API
+				déconnecte le compte : génère ensuite le code dans la galerie correspondant à cette nouvelle API. Le bouton «
+				API Minemories » restaure l’adresse officielle ; enregistre pour l’appliquer.
 			</p>
 			<h2>5. Partager seulement ce que tu choisis</h2>
 			<p>
@@ -171,20 +182,16 @@ export function InstallationPage() {
 				Fais une copie de ton monde et de ton profil avant toute modification. Ne convertis pas un vieux monde ou un
 				modpack Fabric pour suivre ce tuto : demande une version compatible à son responsable.
 			</p>
-			<h2>Récupérer le fichier du mod</h2>
+			<h2>Télécharger le mod</h2>
+			<ModDownload />
 			<p>
-				Le mod est expérimental. Ces instructions ne supposent pas une publication dans les catalogues CurseForge ou
-				Modrinth. Récupère le JAR Minemories pour cette combinaison auprès du responsable du projet. Un JAR est le
-				fichier du mod : garde son extension <code>.jar</code>, sans le décompresser.
+				Le JAR est le fichier du mod. Un ZIP ajouterait une étape d’extraction inutile. Les publications dans les
+				catalogues CurseForge et Modrinth sont en préparation.
 			</p>
 			<p>
-				Le <a href="https://github.com/For-Hives/minemories">dépôt du projet</a> contient les sources. Si aucun JAR
-				vérifié ne t’a été fourni, arrête-toi ici : il n’y a pas de téléchargement public vérifié proposé sur cette
-				page.
-			</p>
-			<p>
-				Pour les développeurs : <code>bun mod:build</code> produit le JAR dans
-				<code> mod/minemories/neoforge/build/libs/</code>. Choisis le JAR du mod, pas un fichier de sources.
+				Tu utilises Prism Launcher, ATLauncher, GDLauncher ou MultiMC ? Ouvre le dossier de l’instance compatible et
+				place le même JAR dans <code>mods</code>. Les launchers qui proposent Modrinth ou CurseForge pourront utiliser
+				ces catalogues après publication. Leur parcours Minemories reste à valider en jeu.
 			</p>
 			<nav aria-label="Méthodes d’installation" className="flex flex-wrap gap-5">
 				<a href="#curseforge">Avec CurseForge</a>
@@ -313,7 +320,7 @@ const questions = [
 	],
 	[
 		'Est-ce que le mod envoie tout automatiquement ?',
-		'Sans appairage, les exports restent locaux. Après appairage, cette version de test peut capturer et envoyer après 60 secondes d’inactivité hors des menus. Pour rester en local, ne lie pas le compte ; si le mod est déjà lié, suis les instructions de déconnexion dans Comment ça marche.',
+		'Les captures AFK sont actives par défaut après 5 minutes d’inactivité, au plus une fois toutes les 4 heures, même en pause ou en arrière-plan. Sans compte lié, elles restent locales ; avec un compte lié, elles sont envoyées dans ta galerie privée. Le mode simple permet de les désactiver, le mode avancé de régler délai, fréquence et rayon (32 blocs par défaut). Une désactivation déjà enregistrée est conservée. Déconnecter le compte arrête les envois, mais conserve les captures locales. Le bouton Exporter en local n’envoie rien.',
 	],
 	[
 		'Mon ancienne capture a disparu du dossier export : pourquoi ?',
