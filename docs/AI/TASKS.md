@@ -8,7 +8,13 @@
 - enregistré les entité dans leurs position au moment de la snapshot (animaux, monstre, joueurs a coté, etc... ) pour faire une "photocopie" figé d'un instant de vie
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
-- security audit of the API
+- corriger les quatre alertes transitives MinIO du premier audit API avec une solution compatible ; conserver les tests multipart, panne et reprise Garage (docs/features/api-security-audit.md)
+- rendre les suppressions/purges S3 réessayables via une file persistante pour éviter les objets orphelins après panne
+- imposer des ressources GLB embarquées et refuser les URI externes de buffers/images, avec validation du viewer et tests des deux parcours d’upload
+- borner le stockage finalisé par compte en plus du quota temporaire des uploads
+- appliquer des limites de corps JSON à auth, RPC et initialisation des uploads sans réduire les plafonds binaires ni bloquer les miniatures valides
+- vérifier explicitement les secrets distincts et la configuration de production au démarrage API, avec tests sans secrets réels
+- vérifier les protections et la configuration de l’infrastructure API réelle : proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
 - SEO audit of the website
 - add umami/sentry/etc.. to web 
 - ability to make a snapshot "public" -> create a gallerie of best/trending snapshot on the website

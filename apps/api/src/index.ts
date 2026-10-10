@@ -32,6 +32,7 @@ import {
 	shareStatus,
 	trashMemory,
 } from './pairing'
+import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
 import { readMemoryStream, removeMemory, storeMemory } from './storage'
 import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
@@ -118,7 +119,7 @@ const router = os.router({
 const rpcHandler = new RPCHandler(router, {
 	interceptors: [onError(error => console.error('[oRPC]', error))],
 })
-export const app = new Hono()
+export const app = new Hono<{ Bindings: { peerAddress: string | undefined } }>()
 
 app.use(
 	'*',
@@ -143,31 +144,30 @@ app.use('/rpc/*', async (context, next) => {
 	return next()
 })
 
-const exchangeWindows = new Map<string, { startedAt: number; requests: number }>()
+const pairingLimiter = new PairingAttemptLimiter()
+const trustedProxies = new Set(
+	(process.env.TRUSTED_PROXY_IPS ?? '')
+		.split(',')
+		.map(address => address.trim())
+		.filter(Boolean)
+)
 app.use('/api/mod/pair', (context, next) => {
-	const forwardedFor = context.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-	const address = context.req.header('cf-connecting-ip') ?? forwardedFor ?? 'local'
-	const now = Date.now()
-	const window = exchangeWindows.get(address)
-	if (!window || now - window.startedAt >= 60_000) {
-		exchangeWindows.set(address, { startedAt: now, requests: 1 })
-	} else if (window.requests >= 8) {
+	const address = pairingAddress(context.env?.peerAddress, context.req.raw.headers, trustedProxies)
+	if (!pairingLimiter.allow(address, Date.now())) {
 		return Promise.resolve(context.json({ error: 'too_many_attempts' }, 429, { 'Retry-After': '60' }))
-	} else {
-		window.requests += 1
 	}
-
 	return next()
 })
 
 app.post('/api/mod/pair', async context => {
-	const body = await context.req.json().catch(() => null)
+	const body = await readPairingBody(context.req.raw)
+	if (body.tooLarge) return context.json({ error: 'pairing_request_too_large' }, 413)
 	const parsed = z
 		.object({
 			code: z.string().regex(pairingCodePattern),
 			name: z.string().trim().min(1).max(80).optional(),
 		})
-		.safeParse(body)
+		.safeParse(body.value)
 	if (!parsed.success) return context.json({ error: 'invalid_pairing_code' }, 400)
 
 	const paired = exchangePairingCode(parsed.data.code, parsed.data.name ?? 'Minecraft client')
@@ -295,8 +295,16 @@ function validateGlb(contents: Buffer): { error: string; status: 400 | 413 } | n
 	return null
 }
 
+export function fetchApi(request: Request, server: { requestIP(request: Request): { address: string } | null }) {
+	return app.fetch(request, { peerAddress: server.requestIP(request)?.address })
+}
+
 if (import.meta.main) {
-	const server = Bun.serve({ port, fetch: app.fetch, maxRequestBodySize: MAX_MEMORY_BYTES })
+	const server = Bun.serve({
+		port,
+		fetch: fetchApi,
+		maxRequestBodySize: MAX_MEMORY_BYTES,
+	})
 	void cleanupUploads()
 	setInterval(() => void cleanupUploads(), 3_600_000)
 	console.warn(`Minemories API ready at ${server.url}`)
