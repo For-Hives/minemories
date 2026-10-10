@@ -2,7 +2,7 @@
 
 ## Sources et périmètre
 
-Les pages `/concept`, `/fonctionnement`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
+Les pages `/concept`, `/fonctionnement`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/features/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
 
 Le contenu est en français et reprend les libellés anglais des boutons existants. Pas de refonte graphique. Les guides sont publics, accessibles depuis toutes les pages, y compris sur mobile.
 
@@ -34,7 +34,7 @@ Ces personnages sont des hypothèses de conception, pas des entretiens utilisate
 - [Modrinth App — aide officielle](https://support.modrinth.com/en/collections/7804910-modrinth-app) : instances, dossiers, versions de loaders.
 - [NeoForge — guide utilisateur](https://docs.neoforged.net/user/docs/) : Java 21 et installation client.
 
-Les parcours Modrinth et manuel sont des instructions documentées, pas une validation en jeu de Minemories. Seul le profil CurseForge documenté dans `docs/loader-support.md` a été exercé.
+Les parcours Modrinth et manuel sont des instructions documentées, pas une validation en jeu de Minemories. Seul le profil CurseForge documenté dans `docs/features/loader-support.md` a été exercé.
 
 ## Validation utilisateur à réaliser
 
