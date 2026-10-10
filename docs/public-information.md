@@ -46,4 +46,4 @@ Faire lire les pages à une personne représentative de chaque public et lui dem
 - Partie web de `bun check` : typecheck et 40 tests réussis, couverture des utilitaires à 100 % ; test d’interaction ajouté pour le parcours entre les quatre guides et les ancres d’installation.
 - Partie API de `bun check` : typecheck et 35 tests réussis.
 - `bun web:build` : réussi.
-- `bun check` complet : arrêté au contrôle Gradle, car aucun Java n’est disponible dans le PATH et JAVA_HOME n’est pas configuré dans cet environnement. Build complet non validé.
+- Validation complète après configuration du JDK 21 local et correction des dépendances de test Java : `bun run build` réussi (inclut `bun check`, le bundle web et le JAR du mod). Le test Garage réel reste ignoré sans environnement dédié ; aucune validation en jeu supplémentaire effectuée.
