@@ -6,6 +6,7 @@ import { avatarUrl } from './lib/avatar'
 import { AuthPage } from './pages/AuthPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { HomePage } from './pages/HomePage'
+import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation, InstallationPage } from './pages/InfoPages'
 
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
@@ -71,6 +72,10 @@ export function App() {
 				<Routes>
 					<Route element={<SiteLayout notice={notice} />}>
 						<Route index element={<HomePage />} />
+						<Route path="/concept" element={<ConceptPage />} />
+						<Route path="/fonctionnement" element={<HowItWorksPage />} />
+						<Route path="/installation" element={<InstallationPage />} />
+						<Route path="/faq" element={<FaqPage />} />
 						<Route path="/login" element={<AuthPage mode="login" />} />
 						<Route path="/register" element={<AuthPage mode="register" />} />
 						<Route element={<RequireSession />}>
@@ -205,6 +210,9 @@ function SiteLayout({ notice }: { notice: string }) {
 				</div>
 			</header>
 			<main className="w-full flex-1">
+				<div className="mx-auto w-[calc(100%-48px)] max-w-3xl">
+					<InfoNavigation />
+				</div>
 				<Outlet />
 			</main>
 			<footer className="mx-auto flex min-h-[78px] w-[min(100%-88px,1360px)] items-center justify-between border-t border-[#354238] text-[11px] text-[#b4c1ad] max-tablet:w-[min(100%-48px,760px)] max-phone:min-h-[67px] max-phone:w-[calc(100%-36px)] max-phone:gap-[9px] max-phone:text-[9px]">
