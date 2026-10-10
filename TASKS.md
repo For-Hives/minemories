@@ -20,3 +20,6 @@
 - stockage hot/cold chez un provider S3 ou R2 : suivre la dernière ouverture réelle du GLB (sans compter galerie, miniatures ou jobs), seuil configurable de 60–90 jours sans ouverture et date de création comme référence initiale ; archiver les GLB éligibles en gardant métadonnées et miniatures accessibles, restaurer à la demande avec état/progression dans le viewer et mettre à jour la dernière ouverture ; choisir les classes et politiques selon les capacités du provider, vérifier coûts de transition/récupération, durées minimales, latence, accès partagé, suppression et réconciliation des états
 - valider les parcours d’installation CurseForge, Modrinth et manuel ainsi que l’appairage/upload de production en jeu ; faire une revue de compréhension avec les six publics de docs/public-information.md
 - créer les projets Modrinth/CurseForge, configurer leurs identifiants et secrets dans GitHub, puis lancer la distribution après validation en jeu du JAR exact
+
+- suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
+- fermer les faces de coupe et les bordures du GLB avec un rendu terre/pierre, sans modifier le monde ; traiter grottes, fluides et alpha avec tests et validation Minecraft/Blender : issue #8

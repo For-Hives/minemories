@@ -63,6 +63,7 @@ export class ViewerScene {
 	private hasShadowDirection = false
 	private previousFrame = 0
 	private disposed = false
+	private preparingWorld = false
 
 	constructor(canvas: HTMLCanvasElement, events: ViewerSceneEvents) {
 		this.canvas = canvas
@@ -196,10 +197,13 @@ export class ViewerScene {
 
 	async loadFile(file: File): Promise<void> {
 		if (!isGlbFileName(file.name)) throw new Error('Choose a .glb file')
-		this.events.onLoading('Loading the world…')
+		this.events.onLoading('Lecture du fichier…')
 		try {
 			const buffer = await file.arrayBuffer()
+			this.events.onLoading('Chargement du modèle et des textures…')
 			const gltf = await this.loader.parseAsync(buffer, '')
+			if (this.disposed) return
+			this.preparingWorld = true
 			for (const child of [...this.modelRoot.children]) {
 				this.modelRoot.remove(child)
 				child.traverse(object => {
@@ -213,12 +217,18 @@ export class ViewerScene {
 			this.modelRoot.add(gltf.scene)
 			this.prepareWorldLighting(gltf.scene)
 			this.frameModel(gltf.scene)
+			this.events.onLoading('Préparation de l’affichage 3D…')
+			await this.renderer.compileAsync(this.scene, this.camera)
+			if (this.disposed) return
+			this.renderer.render(this.scene, this.camera)
 			this.events.onFileInfo(file.name, file.size)
 			this.events.onEmptyChange(false)
 			this.events.onLoading(null)
 		} catch {
 			this.events.onLoading(null)
 			throw new Error('Could not read this GLB')
+		} finally {
+			this.preparingWorld = false
 		}
 	}
 
@@ -281,7 +291,7 @@ export class ViewerScene {
 	}
 
 	private frame(timestamp: number): void {
-		if (this.disposed) return
+		if (this.disposed || this.preparingWorld) return
 		const deltaSeconds = this.previousFrame === 0 ? 0 : Math.min((timestamp - this.previousFrame) / 1000, 0.1)
 		this.previousFrame = timestamp
 
