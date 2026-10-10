@@ -1,7 +1,7 @@
 plugins {
     id 'base'
     id 'com.diffplug.spotless' version '8.9.0' apply false
-    id 'com.github.spotbugs' version '6.5.11' apply false
+    id 'com.github.spotbugs' version '6.5.12' apply false
 }
 
 allprojects {
