@@ -1,16 +1,38 @@
 {
 	"$schema": "https://schema.railpack.com",
 	"packages": {
-		"bun": "1.4.2"
+		"bun": "1.4.2",
+		"node": "24",
+		"java": "temurin-21"
 	},
 	"steps": {
 		"install": {
-			"inputs": [{ "step": "packages:mise" }, { "local": true, "include": ["."] }],
-			"commands": ["bun install --frozen-lockfile"]
+			"inputs": [
+				{
+					"step": "packages:mise"
+				},
+				{
+					"local": true,
+					"include": [
+						"."
+					]
+				}
+			],
+			"commands": [
+				"bun install --frozen-lockfile"
+			]
 		},
 		"build": {
-			"inputs": [{ "step": "install" }],
-			"commands": ["bun run --filter @minemories/web build"]
+			"inputs": [
+				{
+					"step": "install"
+				}
+			],
+			"commands": [
+				"bun mod:build",
+				"bun run package:mod",
+				"bun run --filter @minemories/web build"
+			]
 		}
 	}
 }

@@ -52,7 +52,7 @@ export function ViewerPage() {
 	}, [])
 
 	useEffect(() => {
-		if (viewerFile) {
+		if (viewerFile && !memoryId) {
 			sceneRef.current?.setCaptureContext({
 				x: null,
 				y: null,
@@ -64,27 +64,34 @@ export function ViewerPage() {
 			})
 			void openFile(viewerFile)
 		}
-	}, [viewerFile, openFile])
+	}, [viewerFile, memoryId, openFile])
 
 	useEffect(() => {
-		if (!memoryId || viewerFile) return
+		if (!memoryId) return
 		let cancelled = false
+		const controller = new AbortController()
+		setLoadError('')
+		setLoading('Téléchargement du souvenir…')
 		async function loadMemory(id: string) {
 			try {
-				const capture = await fetchCapture(id)
+				const capture = await fetchCapture(id, controller.signal)
 				if (cancelled) return
 				applyCaptureMetadata(capture.metadata)
 				const ready = await openFile(capture.file)
 				if (!cancelled) afterMemoryOpened(id, capture.metadata.thumbnail, capture.metadata.icon, ready)
 			} catch (error) {
-				if (!cancelled) setLoadError(loadErrorMessage(error))
+				if (!cancelled) {
+					setLoading(null)
+					setLoadError(loadErrorMessage(error))
+				}
 			}
 		}
 		void loadMemory(memoryId)
 		return () => {
 			cancelled = true
+			controller.abort()
 		}
-	}, [memoryId, viewerFile, openFile])
+	}, [memoryId, openFile])
 
 	function applyCaptureMetadata(metadata: Awaited<ReturnType<typeof fetchCapture>>['metadata']) {
 		const scene = sceneRef.current
@@ -135,7 +142,7 @@ export function ViewerPage() {
 				<div>
 					<Eyebrow>3D EXPLORATION</Eyebrow>
 					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
-						{viewerFile?.name ?? (memoryId ? 'A world to find again.' : 'A world to revisit.')}
+						{memoryId ? 'A world to find again.' : (viewerFile?.name ?? 'A world to revisit.')}
 					</h1>
 				</div>
 				<div className="flex gap-[9px]">
@@ -224,8 +231,8 @@ export function ViewerPage() {
 	)
 }
 
-async function fetchCapture(id: string) {
-	const [file, captures] = await Promise.all([fetchMemoryFile(id), apiClient.memories.list()])
+async function fetchCapture(id: string, signal: AbortSignal) {
+	const [file, captures] = await Promise.all([fetchMemoryFile(id, signal), apiClient.memories.list()])
 	const capture = captures.find(item => item.id === id)
 	return {
 		file,
@@ -252,9 +259,10 @@ function loadErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : 'Could not load this memory.'
 }
 
-async function fetchMemoryFile(memoryId: string): Promise<File> {
+async function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<File> {
 	const response = await fetch(`${apiBase}/api/memories/${encodeURIComponent(memoryId)}/file`, {
 		credentials: 'include',
+		signal,
 	})
 	if (!response.ok) throw new Error('Could not load this memory.')
 	return new File([await response.blob()], 'memory.glb', { type: 'model/gltf-binary' })

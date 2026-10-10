@@ -46,7 +46,12 @@ neoForge {
             gameDirectory = rootProject.file('run')
         }
     }
-    mods { minemories { sourceSet(sourceSets.main) } }
+    mods {
+        minemories {
+            sourceSet(sourceSets.main)
+            sourceSet(project(':core').sourceSets.main)
+        }
+    }
 }
 
 tasks.withType(ProcessResources).configureEach {

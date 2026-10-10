@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation, InstallationPage } from './InfoPages'
 
-afterEach(cleanup)
+beforeEach(() => vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false })))
+afterEach(() => {
+	cleanup()
+	vi.unstubAllGlobals()
+})
 
 function mountGuide() {
 	return render(
@@ -26,7 +30,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('saison')
 	fireEvent.click(screen.getByRole('link', { name: 'Créer mon premier souvenir, étape par étape' }))
 	expect(screen.getByText('/minemories export 16')).toBeTruthy()
-	expect(screen.getByText(/60 secondes d’inactivité/)).toBeTruthy()
+	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 	fireEvent.click(screen.getByRole('link', { name: 'Installe le mod' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer le mod Minemories')
 	for (const [name, target] of [
@@ -39,7 +43,7 @@ test('public guides let a visitor move from concept to capture, installation and
 		expect(document.getElementById(target)?.tagName).toBe('H2')
 	}
 	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
-	expect(screen.getByText(/aucun JAR vérifié/)).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Télécharger le mod' })).toBeTruthy()
 	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)

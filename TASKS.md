@@ -8,7 +8,6 @@
 - tester le stockage S3 Garage de bout en bout, y compris la reprise après panne, et les sessions réelles Better Auth sur les routes HTTP/oRPC
 - extraire les états et le polling de `GalleryPage` avec des tests d'interaction avant de retirer les exceptions Biome localisées
 - porter le mod sur Fabric avec Architectury Loom, puis tester Quilt et Forge séparément en jeu avant de déclarer ces loaders supportés
-- résoudre l'échec de GitHub Actions avant la première étape et rétablir un build CI vérifiable
 - valider le build Gradle et l'export GLB en jeu après la restructuration `mod/minemories/:core/:neoforge`
 - vérifier Garage de bout en bout (appairage, upload, lecture et suppression d'un GLB) et décider si les données de l'ancien volume MinIO doivent être transférées
 - conserver plusieurs captures horodatées avec historique dans l'interface du mod, avant les snapshots automatiques et la timelapse
@@ -16,7 +15,8 @@
 - setup polar avec betterauth
 - valider en jeu et sur Garage réel l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
 - observabilité en production du mod et de l’API : collecte consentie des exceptions et stack traces clients, versions mod/Minecraft/loader, identifiant de corrélation capture/upload, contexte et breadcrumbs ; consulter et regrouper les erreurs pour diagnostiquer les incidents, sans tokens ni données privées, avec rétention et limites d’envoi
-- valider le diagnostic AFK en jeu (60s, chat, erreurs d’upload), puis remettre une cadence de production configurable (5min AFK / 4h entre captures) et désactiver les logs de debug
+- valider les captures AFK en pause/arrière-plan et les réglages avancés sur le JAR distribué, puis vérifier les erreurs et la reprise des envois en production
 - rendre les snapshots AFK progressifs : lecture du monde/modèles sur le thread du jeu avec budget de temps par frame, préparation/écriture en arrière-plan, mémoire bornée et upload à débit limité ; suspendre ou ralentir au retour du joueur, gérer les chunks déchargés et la sortie du monde, sans file de captures concurrentes ; mesurer les freezes et enregistrer le début/fin de capture
 - stockage hot/cold chez un provider S3 ou R2 : suivre la dernière ouverture réelle du GLB (sans compter galerie, miniatures ou jobs), seuil configurable de 60–90 jours sans ouverture et date de création comme référence initiale ; archiver les GLB éligibles en gardant métadonnées et miniatures accessibles, restaurer à la demande avec état/progression dans le viewer et mettre à jour la dernière ouverture ; choisir les classes et politiques selon les capacités du provider, vérifier coûts de transition/récupération, durées minimales, latence, accès partagé, suppression et réconciliation des états
-- distribuer un JAR Minemories vérifié avec une URL officielle pour la page installation ; tester les parcours CurseForge, Modrinth et manuel, puis faire une revue de compréhension des guides avec les six publics décrits dans docs/public-information.md
+- valider les parcours d’installation CurseForge, Modrinth et manuel ainsi que l’appairage/upload de production en jeu ; faire une revue de compréhension avec les six publics de docs/public-information.md
+- créer les projets Modrinth/CurseForge, configurer leurs identifiants et secrets dans GitHub, puis lancer la distribution après validation en jeu du JAR exact

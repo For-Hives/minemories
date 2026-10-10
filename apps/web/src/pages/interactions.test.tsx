@@ -189,3 +189,44 @@ test('unmount cancels a pending pairing response without notifying or polling ag
 	expect(mocks.context.notify).not.toHaveBeenCalled()
 	expect(mocks.check).toHaveBeenCalledOnce()
 })
+
+test('gallery memory takes precedence over a previous local file and shows download progress', async () => {
+	mocks.context.viewerFile = new File(['old'], 'previous.glb')
+	let finish: ((response: Response) => void) | undefined
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(
+			() =>
+				new Promise<Response>(resolve => {
+					finish = resolve
+				})
+		)
+	)
+	const view = render(
+		<MemoryRouter initialEntries={['/viewer?memory=remote-id']}>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	expect(screen.getByText('Téléchargement du souvenir…')).toBeTruthy()
+	expect(mocks.loadFile).not.toHaveBeenCalled()
+	await act(async () => {
+		finish?.(new Response(new Blob(['glTF'])))
+	})
+	await waitFor(() => expect(mocks.loadFile).toHaveBeenCalledOnce())
+	expect(mocks.loadFile.mock.calls[0]?.[0].name).toBe('memory.glb')
+	view.unmount()
+	vi.unstubAllGlobals()
+})
+
+test('failed memory downloads replace the progress indicator with an error', async () => {
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 404 })))
+	render(
+		<MemoryRouter initialEntries={['/viewer?memory=missing']}>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	expect(await screen.findByText('Could not load this memory.')).toBeTruthy()
+	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
+	expect(mocks.loadFile).not.toHaveBeenCalled()
+	vi.unstubAllGlobals()
+})

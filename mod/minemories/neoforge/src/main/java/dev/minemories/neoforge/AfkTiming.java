@@ -1,14 +1,14 @@
 package dev.minemories.neoforge;
 
-/** Temporary one-minute AFK cadence for in-game debugging. */
+/** Wall-clock scheduling continues while the integrated server is paused. */
 final class AfkTiming {
-  private static final long INTERVAL_MS = 60_000;
-
   private AfkTiming() {}
 
-  static long remainingSeconds(long now, long lastActivity, long lastSnapshot) {
-    long remaining =
-        Math.max(INTERVAL_MS - (now - lastActivity), INTERVAL_MS - (now - lastSnapshot));
+  static long remainingSeconds(
+      long now, long lastActivity, long lastSnapshot, ClientSettings.AfkOptions options) {
+    long idleMs = options.idleMinutes() * 60_000L;
+    long intervalMs = options.intervalMinutes() * 60_000L;
+    long remaining = Math.max(idleMs - (now - lastActivity), intervalMs - (now - lastSnapshot));
     return Math.max(0, (remaining + 999) / 1000);
   }
 }
