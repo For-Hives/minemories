@@ -8,6 +8,7 @@ import { GalleryPage } from './GalleryPage'
 import { ViewerPage } from './ViewerPage'
 
 const mocks = vi.hoisted(() => ({
+	viewerEvents: null as null | { onLoading(message: string | null): void; onEmptyChange(empty: boolean): void },
 	context: {
 		session: null as null | { user: { name: string } },
 		isPending: false,
@@ -53,6 +54,9 @@ vi.mock('react-router', async importOriginal => ({
 vi.mock('../viewer-scene', () => ({
 	formatClock: (minutes: number) => String(minutes),
 	ViewerScene: class {
+		constructor(_canvas: HTMLCanvasElement, events: NonNullable<typeof mocks.viewerEvents>) {
+			mocks.viewerEvents = events
+		}
 		loadFile = mocks.loadFile
 		dispose = mocks.dispose
 		setMinutes = mocks.setMinutes
@@ -77,6 +81,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup()
 	vi.useRealTimers()
+	vi.unstubAllGlobals()
 })
 function mount(children: ReactNode) {
 	return render(<MemoryRouter>{children}</MemoryRouter>)
@@ -229,4 +234,29 @@ test('failed memory downloads replace the progress indicator with an error', asy
 	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	vi.unstubAllGlobals()
+})
+
+test('viewer keeps an animated loading status through model and GPU preparation', async () => {
+	mocks.context.viewerFile = new File(['glTF'], 'capture.glb')
+	let finish: (() => void) | undefined
+	mocks.loadFile.mockImplementation(
+		() =>
+			new Promise<void>(resolve => {
+				mocks.viewerEvents?.onLoading('Chargement du modèle et des textures…')
+				finish = resolve
+			})
+	)
+	mount(<ViewerPage />)
+	expect(screen.getByRole('status').textContent).toContain('Chargement du modèle')
+	expect(screen.getByRole('status').querySelector('.animate-viewer-spin')).toBeTruthy()
+	await act(async () => {
+		mocks.viewerEvents?.onLoading('Préparation de l’affichage 3D…')
+	})
+	expect(screen.getByRole('status').textContent).toContain('Préparation')
+	await act(async () => {
+		mocks.viewerEvents?.onEmptyChange(false)
+		mocks.viewerEvents?.onLoading(null)
+		finish?.()
+	})
+	expect(screen.queryByRole('status')).toBeNull()
 })
