@@ -7,7 +7,7 @@
 - `bun mod:check`: applique Spotless puis lance `check` Gradle. `bun mod:check:ci` vérifie sans modifier les sources.
 - `bun check`: Biome, vérification TypeScript, Vitest avec seuil de couverture, puis `check` Gradle dans `mod/minemories/` (Spotless, SpotBugs, JUnit et seuils JaCoCo).
 - `bun api:check`: Biome, vérification TypeScript puis tests Bun de l'API. Les tests utilisent une base SQLite et un stockage temporaires isolés.
-- `bun build`: exécute les contrôles du dépôt, produit le viewer, puis construit le mod et le core.
+- `bun run build`: exécute les contrôles du dépôt, produit le viewer, puis construit le mod et le core.
 
 ## Boucle courte pour le mod
 
@@ -42,7 +42,7 @@ Sur Windows, utilise `gradlew.bat` à la place de `./gradlew`. `spotlessApply` f
 5. Les dépendances web sont installées depuis la racine, verrouillées dans `bun.lock`, et mises à jour volontairement. Les versions de plugins et outils Gradle restent explicites.
 6. Une fonctionnalité ne se déclare compatible qu’avec les loaders/version réellement compilés et essayés.
 
-La CI GitHub exécute `bun build` sur chaque pull request et chaque push vers `main`. Les protections de branche doivent exiger ce statut avant fusion.
+La CI GitHub exécute `bun run build` sur chaque pull request et chaque push vers `main`. Les protections de branche doivent exiger ce statut avant fusion.
 
 Le mod affiche encore des avertissements de dépréciation provenant des APIs Minecraft/NeoForge de la cible 1.21.1. Ils restent visibles dans le build; le core neutre, lui, traite tout avertissement javac comme une erreur. Migrer ces hooks nécessite une validation en jeu, donc ne pas masquer la sortie javac ni remplacer une API sans exercice du mod.
 
@@ -52,7 +52,7 @@ Le site utilise un thème sombre. La galerie affiche chaque monde/serveur comme 
 
 Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit). L'éclairage initial reprend l'heure capturée (`dayTime` en ticks converti en minutes) et le preset le plus proche est surligné. La skybox s'adapte à la dimension et au biome (`getAtmosphere`) : halo de braise fixe sans soleil ni étoiles dans le Nether, nuit étoilée violette fixe dans l'End, obscurité atténuée dans le deep dark, cycle jour/nuit classique ailleurs ; les teintes hémisphériques suivent la dimension. Les ombres sont filtrées en PCF doux, sur une carte de 4096 pixels. Les nuages continuent à avancer à 0,6 bloc/seconde vers +X pendant que l'éclairage reste fixe. La couche utilise le motif `assets/minecraft/textures/environment/clouds.png` de Minecraft Java 1.21.1 (copie locale dans `apps/web/public/textures/minecraft-clouds.png`), avec des cellules de 12 × 12 blocs et une épaisseur de 4 blocs. Le rendu place la couche au-dessus du modèle (`bounds.max.y + 24`) avec un matériau non éclairé opaque façon « fast graphics », teinté par la lumière du jour ; l'opaque évite que les nuages se dessinent devant le feuillage transparent. Les coordonnées de la capture, la position caméra et un décalage déduit de la seed (hachage 0-255) décalent le motif ; l'heure enregistrée sert de point de départ reproductible au mouvement (`ticks * 0,03`). Le Minecraft vanilla utilise un motif indépendant de la seed et une horloge de rendu locale : le décalage par seed distingue les mondes sans prétendre à une synchronisation image par image. Les nuages sont masqués pour les dimensions autres que l'Overworld. Un GLB local sans métadonnées utilise une origine de secours (0,64,0).
 
-`/minemories export` et les boutons de capture utilisent un rayon horizontal de 128 blocs (8 chunks), sur toute la hauteur de la dimension. `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. Le nouveau client envoie les captures jusqu’à 200 MiB en morceaux reprenables de 4 MiB ; l’ancien endpoint conserve sa limite de 100 MiB. Voir [le protocole d’upload](resumable-uploads.md).
+`/minemories export` et les boutons de capture utilisent un rayon horizontal de 128 blocs (8 chunks), avec une profondeur limitée aux visites locales par défaut (voir [réglages](mod-distribution.md)). `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. Le nouveau client envoie les captures jusqu’à 200 MiB en morceaux reprenables de 4 MiB ; l’ancien endpoint conserve sa limite de 100 MiB. Voir [le protocole d’upload](resumable-uploads.md).
 
 Les snapshots se renomment depuis leur carte (80 caractères max) et les zones empilées depuis leur bandeau (stocké dans le navigateur). La corbeille (`deleted_at`, listée via `memories.listTrash`) garde les snapshots 30 jours (`TRASH_RETENTION_MS`) avant purge automatique des lignes et des objets au démarrage puis toutes les heures. Un lien de partage (`/share/:token`, jeton stocké haché, révocable) ouvre la snapshot en lecture seule sans compte via `/api/shared/:token` et `/file`.
 
@@ -77,8 +77,12 @@ un bucket de test dédié et les variables `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCES
 RUN_GARAGE_INTEGRATION=1 bun test apps/api/src/storage-garage.test.ts
 ```
 
-Sans cette variable, ce test est ignoré. La reprise après panne d'un vrai Garage reste à
-valider séparément. Aucun seuil API par fichier n'est encore activé.
+Sans cette variable, ce test est ignoré. `bun run api:garage` crée un Garage Docker jetable, exerce les sessions HTTP/oRPC,
+l’appairage et l’envoi de 5 MiB par morceaux, la lecture et la suppression, puis une panne
+réelle de Garage et une reprise dans un nouveau processus API. Le scénario vérifie
+l’absence de doublon et les octets du GLB. Il supprime uniquement son projet Docker
+`minemories-integration`. La CI exécute ce parcours après le build. Aucun seuil API par
+fichier n’est encore activé.
 
 ### Modes et distribution
 
@@ -86,4 +90,4 @@ Le menu démarre en mode simple (connexion et capture/envoi). Le mode avancé pr
 
 Validation viewer du 10 octobre 2026 : ouverture locale du GLB réel de 189,6 MiB dans Chromium avec rendu du terrain et textures. Le parcours galerie affiche désormais le téléchargement avant le chargement 3D, annule les requêtes en quittant la page et donne priorité au souvenir demandé sur un ancien fichier local. La lecture authentifiée du même souvenir en production reste à confirmer.
 
-Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; elles ne sont pas encore implémentées.
+Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée, tandis que la fermeture des bordures reste à réaliser.

@@ -51,6 +51,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -81,6 +82,16 @@ public class Minemories {
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
   private static WeakReference<Button> pauseButton = new WeakReference<>(null);
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+  // All exploration state is owned by the Minecraft client thread, including pause rendering.
+  private static final ExplorationState EXPLORATION = new ExplorationState();
+
+  private static final class ExplorationState {
+    private ExplorationDepth depth = new ExplorationDepth();
+    private Path path;
+    private boolean writable;
+    private long lastSaveMs;
+  }
+
   private static long lastAfkCheckMs;
   private static boolean afkUploadPending;
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
@@ -269,6 +280,11 @@ public class Minemories {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
     if (mc.level == null || mc.player == null) {
+      if (EXPLORATION.path != null) {
+        saveExploration();
+        EXPLORATION.path = null;
+        EXPLORATION.depth = new ExplorationDepth();
+      }
       playerPositionKnown = false;
       lastActivityMs = now;
       return;
@@ -277,6 +293,7 @@ public class Minemories {
     // Render events also run while paused/unfocused. Read settings at most once a second.
     if (now - lastAfkCheckMs < 1000) return;
     lastAfkCheckMs = now;
+    trackExploration(mc, now);
     if (!PairingClient.isAfkSnapshots() || afkUploadPending || PairingClient.isUploading()) return;
     var options = PairingClient.afkOptions();
     if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt(), options) > 0) return;
@@ -305,6 +322,63 @@ public class Minemories {
       afkUploadPending = false;
       LOGGER.error("AFK snapshot failed", error);
       tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static void trackExploration(Minecraft mc, long now) {
+    if (mc.level == null || mc.player == null) return;
+    String world;
+    if (mc.getSingleplayerServer() != null) {
+      world =
+          "solo:"
+              + mc.getSingleplayerServer()
+                  .getWorldPath(LevelResource.ROOT)
+                  .toAbsolutePath()
+                  .normalize();
+    } else if (mc.getCurrentServer() != null) {
+      world = "server:" + mc.getCurrentServer().ip;
+    } else {
+      // Transient connections without a server identity must never reuse another world's history.
+      saveExploration();
+      EXPLORATION.path = null;
+      EXPLORATION.depth = new ExplorationDepth();
+      EXPLORATION.writable = false;
+      return;
+    }
+    Path path =
+        ExplorationDepth.historyPath(
+            mc.gameDirectory.toPath().resolve("config/minemories/exploration"),
+            world,
+            mc.level.dimension().location().toString(),
+            mc.player.getUUID().toString());
+    if (!path.equals(EXPLORATION.path)) {
+      saveExploration();
+      EXPLORATION.path = path;
+      try {
+        EXPLORATION.depth = ExplorationDepth.read(path);
+        EXPLORATION.writable = true;
+      } catch (IOException | IllegalArgumentException error) {
+        EXPLORATION.depth = new ExplorationDepth();
+        EXPLORATION.writable = false;
+        LOGGER.warn(
+            "Cannot read exploration history; preserving the original file and tracking this session in memory",
+            error);
+      }
+    }
+    BlockPos position = mc.player.blockPosition();
+    EXPLORATION.depth.record(position.getX(), position.getY(), position.getZ());
+    if (now - EXPLORATION.lastSaveMs >= 10_000) {
+      EXPLORATION.lastSaveMs = now;
+      saveExploration();
+    }
+  }
+
+  private static void saveExploration() {
+    if (EXPLORATION.path == null || !EXPLORATION.writable) return;
+    try {
+      EXPLORATION.depth.save(EXPLORATION.path);
+    } catch (IOException error) {
+      LOGGER.warn("Cannot persist local exploration history", error);
     }
   }
 
@@ -507,6 +581,26 @@ public class Minemories {
             mc.level.getMinBuildHeight(),
             mc.level.getMaxBuildHeight(),
             radius);
+    trackExploration(mc, System.currentTimeMillis());
+    int bottom = bounds.minY();
+    if (!PairingClient.isFullHeightCapture()) {
+      int surfaceFloor = Math.min(center.getY(), bounds.maxY());
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+          if (!mc.level.hasChunkAt(new BlockPos(x, bottom, z))) continue;
+          int surface = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+          // Empty/void columns must not force an otherwise shallow island down to dimension bottom.
+          if (surface > bottom) surfaceFloor = Math.min(surfaceFloor, surface);
+        }
+      }
+      bottom =
+          EXPLORATION.depth.captureBottom(
+              bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bottom);
+    }
+    saveExploration();
+    bounds =
+        new CaptureBounds(
+            bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
     return exportBox(
         new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
         new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()));

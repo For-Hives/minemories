@@ -91,6 +91,12 @@ export function HowItWorksPage() {
 				grande zone peut ralentir le jeu. Le mod capture ce que le client a chargé, pas tout le serveur.
 			</p>
 			<p>
+				Le sous-sol est limité par défaut à la profondeur visitée dans cette zone, avec deux blocs de fondation.
+				Descendre dans une grotte étend les prochaines captures de la zone. Le suivi commence avec cette version du mod
+				et reste enregistré sur ton ordinateur. Des cavités au-dessus de cette limite peuvent encore apparaître. Le mode
+				avancé permet de capturer toute la hauteur ; une sélection précise garde la hauteur de ses deux coins.
+			</p>
+			<p>
 				Pour une zone précise, place-toi au premier coin et saisis <code>/minemories select first</code>, puis au coin
 				opposé avec <code>/minemories select second</code>. Ces deux positions définissent aussi la hauteur. Vérifie
 				avec <code>/minemories select status</code>, puis lance <code>/minemories export selection</code>.
