@@ -58,7 +58,7 @@ Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et 
 
 `bun <script>` est le raccourci Bun pour `bun run <script>`, sauf pour les commandes natives comme `build` : utilise `bun run build` pour le script du dépôt. En CI, `bun check` ne réécrit aucun fichier.
 
-`bun format` applique la configuration Biome 2.5.13 à onglets, largeur 120 et points-virgules facultatifs. Pour Java, `bun mod:check` applique Spotless et lance JUnit, JaCoCo et SpotBugs ; `bun mod:check:ci` vérifie sans modifier. Les tests de `:core` vérifient aussi le conteneur GLB avec des entrées invalides et des coordonnées extrêmes. Les essais du menu et le rendu GLB en jeu restent nécessaires avant d'annoncer le support d'un loader.
+`bun format` applique la configuration Biome 2.5.15 à onglets, largeur 120 et points-virgules facultatifs. Pour Java, `bun mod:check` applique Spotless et lance JUnit, JaCoCo et SpotBugs ; `bun mod:check:ci` vérifie sans modifier. Les tests de `:core` vérifient aussi le conteneur GLB avec des entrées invalides et des coordonnées extrêmes. Les essais du menu et le rendu GLB en jeu restent nécessaires avant d'annoncer le support d'un loader.
 
 ## Stockage et données
 
