@@ -76,9 +76,10 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
   imposer les ressources embarquées et tester le refus des références externes.
 - Le quota de staging ne borne pas le stockage total des captures finalisées par
   compte. Définir et appliquer cette limite avant une ouverture publique.
-- Les autres routes JSON héritent du plafond legacy de 100 MiB du serveur.
-  Ajouter des limites adaptées à auth, RPC et initialisation d’upload, sans réduire
-  les limites binaires ni rejeter les miniatures valides.
+- Les routes JSON auth/RPC héritent du plafond legacy de 100 MiB du serveur.
+  L’initialisation d’upload utilise déjà la lecture bornée à 4 MiB des morceaux.
+  Ajouter des limites JSON adaptées à ces trois parcours, sans réduire les limites
+  binaires ni rejeter les miniatures valides.
 - Deux secrets distincts sont documentés, mais le pepper d’appairage peut encore
   retomber sur le secret d’auth. Rendre les vérifications de configuration explicites
   avant déploiement public, avec tests de démarrage et sans valeurs locales par défaut.
