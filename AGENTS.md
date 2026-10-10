@@ -53,7 +53,7 @@
 Per `.github/pull_request_template.md`: report `bun check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes. Never commit `.env`, API data, saves, exports, runs, builds or ad-hoc lockfile churn.
 
 ## Interesting context 
-if needed, you can find more context in diferent files : 
+if needed, you can find more context in diferent files (look inside ./docs/AI ): 
 - README.md for an overview of the project (the summery)
 - BESOIN.md for the initial need and idea that started this project (the vision)
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)

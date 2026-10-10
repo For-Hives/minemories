@@ -1,4 +1,9 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
+- mettre i18n dans le site web pour avoir des translations dans toute les langues les plus populaire de joueur minecraft
+- diallow index/google/crawl for now (dev mode)
+- faire en sorte de pouvoir DL le last JAR depuis le site
+- avoir une page avec la liste des Jar (historique de version) + une page changelog automatique 
+- 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
 - optimization maximum du fichier gltf 
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
