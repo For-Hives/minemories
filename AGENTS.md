@@ -10,7 +10,7 @@
 
 ## Commands (run from repo root)
 
-- Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.2, Node >=22.12, JDK 21.
+- Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.3, Node >=22.12, JDK 21.
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
 - `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
