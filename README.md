@@ -18,7 +18,7 @@ Le dossier `mod/` pourra accueillir d'autres projets Minecraft ; le nom `minemor
 
 ## Démarrage local
 
-Prérequis : Bun 1.4.2, Node.js 22.12+, JDK 21 et Docker Compose. À la racine :
+Prérequis : Bun 1.4.3, Node.js 22.12+, JDK 21 et Docker Compose. À la racine :
 
 ```sh
 bun install --frozen-lockfile
