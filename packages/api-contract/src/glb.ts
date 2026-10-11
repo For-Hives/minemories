@@ -1,4 +1,6 @@
 import { validGeometry } from './glb-geometry'
+import { type JsonObject, objects } from './glb-layout'
+import { GLB_VALUE_WINDOW_BYTES, type GlbBufferReader, validAccessorValues } from './glb-values'
 
 export const MAX_GLB_JSON_BYTES = 4 * 1024 * 1024
 const JSON_CHUNK = 0x4e4f534a
@@ -74,20 +76,58 @@ function embeddedImages(value: unknown): boolean {
 	})
 }
 
-export function embeddedGltfJson(json: Uint8Array, binaryLength: number | null = null): boolean {
+function embeddedDocument(json: Uint8Array, binaryLength: number | null): JsonObject | null {
 	try {
 		const document: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(json))
-		return (
+		const valid =
 			record(document) &&
 			record(document.asset) &&
 			document.asset.version === '2.0' &&
 			embeddedBuffers(document.buffers, binaryLength) &&
 			embeddedImages(document.images) &&
 			validGeometry(document)
-		)
+		return valid ? document : null
 	} catch {
-		return false
+		return null
 	}
+}
+
+export function embeddedGltfJson(json: Uint8Array, binaryLength: number | null = null): boolean {
+	return embeddedDocument(json, binaryLength) !== null
+}
+
+function bufferReader(document: JsonObject, binary: GlbBufferReader): GlbBufferReader {
+	const buffers = objects(document.buffers) ?? []
+	const decoded = new Map<number, Uint8Array>()
+	let readBytes = 0
+	return async (index, offset, length) => {
+		const buffer = buffers[index]
+		if (!buffer || length > GLB_VALUE_WINDOW_BYTES || offset + length > (buffer.byteLength as number)) return null
+		readBytes += length
+		if (readBytes >= 256 * 1024) {
+			readBytes = 0
+			// Let loading feedback render for both BIN and inline geometry.
+			await new Promise<void>(resolve => setTimeout(resolve, 0))
+		}
+		if (buffer.uri === undefined) return await binary(index, offset, length)
+		let bytes = decoded.get(index)
+		if (!bytes) {
+			const uri = buffer.uri as string
+			bytes = Uint8Array.from(atob(uri.slice(uri.indexOf(',') + 1)), character => character.charCodeAt(0))
+			decoded.set(index, bytes)
+		}
+		return bytes.subarray(offset, offset + length)
+	}
+}
+
+/** Validate accessor bytes through bounded reads of the embedded BIN or data URI buffers. */
+export async function validEmbeddedGltfValues(
+	json: Uint8Array,
+	binaryLength: number | null,
+	read: GlbBufferReader
+): Promise<boolean> {
+	const document = embeddedDocument(json, binaryLength)
+	return document !== null && (await validAccessorValues(document, bufferReader(document, read)))
 }
 
 export function glbChunk(
@@ -104,17 +144,36 @@ export function glbChunk(
 	return { length, binary: type === BIN_CHUNK }
 }
 
-export function isSelfContainedGlb(contents: Uint8Array): boolean {
+function glbContents(
+	contents: Uint8Array
+): { json: Uint8Array; binaryLength: number | null; binaryOffset: number } | null {
 	const jsonLength = glbJsonLength(contents, contents.byteLength)
-	if (jsonLength === null) return false
+	if (jsonLength === null) return null
 	let offset = 20 + jsonLength
 	let index = 0
 	let binaryLength: number | null = null
+	let binaryOffset = 0
 	while (offset < contents.byteLength) {
 		const chunk = glbChunk(contents.subarray(offset, offset + 8), index++, contents.byteLength - offset)
-		if (chunk === null) return false
-		if (chunk.binary) binaryLength = chunk.length
+		if (chunk === null) return null
+		if (chunk.binary) {
+			binaryLength = chunk.length
+			binaryOffset = offset + 8
+		}
 		offset += 8 + chunk.length
 	}
-	return embeddedGltfJson(contents.subarray(20, 20 + jsonLength), binaryLength)
+	return { json: contents.subarray(20, 20 + jsonLength), binaryLength, binaryOffset }
+}
+
+export function isSelfContainedGlb(contents: Uint8Array): boolean {
+	const parsed = glbContents(contents)
+	return parsed !== null && embeddedGltfJson(parsed.json, parsed.binaryLength)
+}
+
+export async function validateSelfContainedGlb(contents: Uint8Array): Promise<boolean> {
+	const parsed = glbContents(contents)
+	if (!parsed) return false
+	return await validEmbeddedGltfValues(parsed.json, parsed.binaryLength, async (_buffer, offset, length) => {
+		return await Promise.resolve(contents.subarray(parsed.binaryOffset + offset, parsed.binaryOffset + offset + length))
+	})
 }

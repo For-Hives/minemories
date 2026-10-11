@@ -83,8 +83,9 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
 - Correction du 11 octobre : les ressources GLB sont contrôlées en commun dans
   les deux uploads et dans le viewer avant le parseur Three.js. Les URI externes,
   buffers sans données et JSON de remplacement sont refusés. Voir
-  [les règles et les validations](embedded-glb-resources.md). La cohérence complète
-  des attributs et les budgets de décodage restent une suite distincte.
+  [les règles et les validations](embedded-glb-resources.md). La disposition et
+  les valeurs binaires des accessors sont aussi vérifiées avant stockage et
+  chargement ; le budget de pixels des textures reste une suite distincte.
 - Correction du 11 octobre : quota GLB par compte de 2 Gio, configurable, incluant
   la corbeille, les uploads réservés et les objets en attente de suppression.
   Réservations transactionnelles entre legacy et reprenable ; libération après
