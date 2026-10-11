@@ -296,7 +296,7 @@ app.post('/api/mod/memories', async context => {
 		return context.json({ error: 'unsupported_media_type' }, 415)
 	}
 	const contents = Buffer.from(await context.req.arrayBuffer())
-	const contentError = validateGlb(contents)
+	const contentError = await validateGlb(contents)
 	if (contentError) return context.json({ error: contentError.error }, contentError.status)
 	const metadata = parseMetadata(context.req.header('x-memory-metadata'))
 	if (!metadata) return context.json({ error: 'invalid_memory_metadata' }, 400)
@@ -337,10 +337,10 @@ app.post('/api/mod/memories', async context => {
 	return context.json({ id, name, size: contents.byteLength }, 201)
 })
 
-function validateGlb(contents: Buffer): { error: string; status: 400 | 413 } | null {
+async function validateGlb(contents: Buffer): Promise<{ error: string; status: 400 | 413 } | null> {
 	if (contents.byteLength === 0) return { error: 'invalid_memory_size', status: 400 }
 	if (contents.byteLength > MAX_MEMORY_BYTES) return { error: 'invalid_memory_size', status: 413 }
-	if (!isGlbContainer(contents)) return { error: 'invalid_glb', status: 400 }
+	if (!(await isGlbContainer(contents))) return { error: 'invalid_glb', status: 400 }
 	return null
 }
 

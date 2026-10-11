@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
-import { embeddedGltfJson, glbChunk, glbJsonLength } from '@minemories/api-contract/glb'
+import { glbChunk, glbJsonLength, validEmbeddedGltfValues } from '@minemories/api-contract/glb'
 
 export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 export const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024
 
-/** Validate the container without loading the BIN payload into memory. */
+/** Validate container and accessor values without loading the BIN payload into memory. */
 export async function validateUploadFile(path: string, size: number, sha256: string): Promise<boolean> {
 	const file = await open(path, 'r')
 	try {
@@ -17,8 +17,14 @@ export async function validateUploadFile(path: string, size: number, sha256: str
 		if (jsonSize === null) return false
 		const json = Buffer.alloc(jsonSize)
 		await file.read(json, 0, jsonSize, 20)
-		const binaryLength = await validChunks(file, 20 + jsonSize, size)
-		if (binaryLength === false || !embeddedGltfJson(json, binaryLength)) return false
+		const binary = await validChunks(file, 20 + jsonSize, size)
+		if (binary === false) return false
+		const valid = await validEmbeddedGltfValues(json, binary.length, async (_buffer, offset, length) => {
+			const bytes = Buffer.alloc(length)
+			const { bytesRead } = await file.read(bytes, 0, length, binary.offset + offset)
+			return bytesRead === length ? bytes : null
+		})
+		if (!valid) return false
 		const hash = createHash('sha256')
 		for await (const chunk of createReadStream(path)) hash.update(chunk)
 		return hash.digest('hex') === sha256
@@ -54,6 +60,7 @@ async function validChunks(file: import('node:fs/promises').FileHandle, initialO
 	let offset = initialOffset
 	let chunks = 0
 	let binaryLength: number | null = null
+	let binaryOffset = 0
 	while (offset < size) {
 		if (size - offset < 8) return false
 		const chunk = Buffer.alloc(8)
@@ -61,8 +68,11 @@ async function validChunks(file: import('node:fs/promises').FileHandle, initialO
 		await file.read(chunk, 0, 8, offset)
 		const parsed = glbChunk(chunk, chunks++, size - offset)
 		if (parsed === null) return false
-		if (parsed.binary) binaryLength = parsed.length
+		if (parsed.binary) {
+			binaryLength = parsed.length
+			binaryOffset = offset + 8
+		}
 		offset += parsed.length + 8
 	}
-	return binaryLength
+	return { length: binaryLength, offset: binaryOffset }
 }

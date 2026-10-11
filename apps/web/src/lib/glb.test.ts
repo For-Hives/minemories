@@ -125,3 +125,64 @@ it('refuses inconsistent geometry and oversized implied allocations before invok
 	)
 	expect(called).toBe(false)
 })
+
+it('refuses non-finite vertices and false binary bounds before invoking the loader', async () => {
+	let called = false
+	const parse = () => {
+		called = true
+		return Promise.resolve()
+	}
+	await Promise.all(
+		[Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY].map(async value => {
+			const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+			positions[0] = value
+			await expect(
+				parseEmbeddedGlb(fixture(triangle(), new Uint8Array(positions.buffer)), parse)
+			).rejects.toBeInstanceOf(UnsupportedGlbError)
+		})
+	)
+	const wrong = triangle()
+	const accessor = wrong.accessors[0]
+	if (!accessor) throw new Error('Missing triangle accessor')
+	accessor.max = [2, 1, 0]
+	const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])
+	await expect(parseEmbeddedGlb(fixture(wrong, new Uint8Array(positions.buffer)), parse)).rejects.toBeInstanceOf(
+		UnsupportedGlbError
+	)
+	expect(called).toBe(false)
+})
+
+it('loads sparse replacements through Three.js and refuses duplicate sparse indices', async () => {
+	const document = triangle()
+	const sparse = {
+		...document,
+		buffers: [{ byteLength: 28 }],
+		bufferViews: [
+			{ buffer: 0, byteLength: 2 },
+			{ buffer: 0, byteOffset: 4, byteLength: 24 },
+		],
+		accessors: [
+			{
+				...document.accessors[0],
+				bufferView: undefined,
+				sparse: {
+					count: 2,
+					indices: { bufferView: 0, componentType: 5121 },
+					values: { bufferView: 1 },
+				},
+			},
+		],
+	}
+	const binary = new Uint8Array(28)
+	binary.set([1, 2])
+	new Float32Array(binary.buffer, 4, 6).set([1, 0, 0, 0, 1, 0])
+	const loader = new GLTFLoader()
+	const result = await parseEmbeddedGlb(fixture(sparse, binary), data => loader.parseAsync(data, ''))
+	const mesh = result.scene.children[0] as import('three').Mesh
+	expect(Array.from(mesh.geometry.getAttribute('position').array)).toEqual([0, 0, 0, 1, 0, 0, 0, 1, 0])
+	mesh.geometry.dispose()
+	binary[1] = 1
+	await expect(
+		parseEmbeddedGlb(fixture(sparse, binary), () => Promise.reject(new Error('Loader must not run')))
+	).rejects.toBeInstanceOf(UnsupportedGlbError)
+})
