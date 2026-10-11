@@ -94,6 +94,19 @@ Le menu démarre en mode simple (connexion et capture/envoi). Le mode avancé pr
 
 Validation viewer du 10 octobre 2026 : ouverture locale du GLB réel de 189,6 MiB dans Chromium avec rendu du terrain et textures. Le parcours galerie affiche désormais le téléchargement avant le chargement 3D, annule les requêtes en quittant la page et donne priorité au souvenir demandé sur un ancien fichier local. La lecture authentifiée du même souvenir en production reste à confirmer.
 
+Validation Three.js 0.186.1 du 11 octobre 2026 : `bun run build` passe sur la branche
+rebasée, avec 82 tests API et 62 tests web. Le viewer local ouvre le GLB réel de
+10 MiB (134 matériaux, 55 textures intégrées et 128 lumières importées, plafonnées
+à 32 par le viewer) ; terrain, neige, végétation et sous-sol sont visibles après
+la préparation. Le même fichier est importé et rendu dans Blender 5.2.2.
+La première compilation des shaders est longue sur le navigateur de test ;
+son profilage reste suivi dans TASKS.md. Les adaptations du
+[guide de migration officiel](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
+remplacent `PCFSoftShadowMap` par `PCFShadowMap` et appellent `super.dispose()`
+dans les nuages, avec vérification de l’événement de libération. Le bundle viewer
+mesure environ 656 kB minifiés / 166 kB gzip : le léger dépassement de
+l’avertissement de 650 kB reste visible, sans modification du seuil.
+
 Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée, la fermeture des bordures est implémentée et validée ci-dessous.
 
 
