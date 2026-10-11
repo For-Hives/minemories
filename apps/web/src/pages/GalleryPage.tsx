@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
@@ -11,8 +11,70 @@ import { daysUntilPurge } from '../lib/trash'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
+type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
 type MemoryMetadata = Memories[number]['metadata']
 type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
+
+function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
+	if (!storage) {
+		return (
+			<p aria-live="polite">
+				{failed
+					? 'Storage information is unavailable. Your captures remain accessible.'
+					: 'Checking available storage…'}
+			</p>
+		)
+	}
+	return (
+		<section aria-label="Gallery storage" aria-live="polite" className="my-4 text-xs">
+			<p>
+				{formatFileSize(storage.availableBytes)} available of {formatFileSize(storage.limitBytes)} ·{' '}
+				{formatFileSize(storage.usedBytes)} used or reserved.
+			</p>
+			{storage.availableBytes === 0 && (
+				<p>Your gallery has no space available. Refused uploads keep their local GLB file on your computer.</p>
+			)}
+			<p>To free space, use Delete forever in Trash. Moving a capture to Trash keeps its space used.</p>
+			{storage.pendingDeletionBytes > 0 && (
+				<p>
+					Deletion is still in progress for {formatFileSize(storage.pendingDeletionBytes)}. That space becomes available
+					when deletion finishes.
+				</p>
+			)}
+			{storage.reservedBytes > 0 && (
+				<p>
+					Uploads are reserving {formatFileSize(storage.reservedBytes)} until they finish or their cleanup completes.
+				</p>
+			)}
+		</section>
+	)
+}
+
+function useStorageStatus() {
+	const [storage, setStorage] = useState<Storage | null>(null)
+	const [storageError, setStorageError] = useState(false)
+	const requestVersion = useRef(0)
+	useEffect(
+		() => () => {
+			requestVersion.current += 1
+		},
+		[]
+	)
+	const refreshStorage = useCallback(async () => {
+		const version = ++requestVersion.current
+		try {
+			const result = await apiClient.account.storage()
+			if (version !== requestVersion.current) return
+			setStorage(result)
+			setStorageError(false)
+		} catch {
+			if (version !== requestVersion.current) return
+			setStorage(null)
+			setStorageError(true)
+		}
+	}, [])
+	return { storage, storageError, refreshStorage }
+}
 
 function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
 	return (
@@ -85,6 +147,7 @@ export function GalleryPage() {
 	const [openingId, setOpeningId] = useState('')
 	const [expanded, setExpanded] = useState<Set<string>>(new Set())
 	const [trash, setTrash] = useState<TrashMemories>([])
+	const { storage, storageError, refreshStorage } = useStorageStatus()
 	const pairedFresh = shouldShowPaired(pairStatus === 'paired', memories)
 
 	const refreshMemories = useCallback(async () => {
@@ -107,8 +170,8 @@ export function GalleryPage() {
 	}, [])
 
 	const refreshAll = useCallback(async () => {
-		await Promise.all([refreshMemories(), refreshTrash()])
-	}, [refreshMemories, refreshTrash])
+		await Promise.all([refreshMemories(), refreshTrash(), refreshStorage()])
+	}, [refreshMemories, refreshTrash, refreshStorage])
 	const trashActions = useTrashActions(notify, setLoadError, refreshAll)
 
 	useEffect(() => {
@@ -222,6 +285,7 @@ export function GalleryPage() {
 				</Link>
 			</div>
 
+			<StorageSummary storage={storage} failed={storageError} />
 			<section
 				className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
 					pairedFresh ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'

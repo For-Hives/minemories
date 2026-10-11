@@ -34,7 +34,9 @@ function rpc(cookie = ''): ContractRouterClient<typeof apiContract> {
 			fetch: async (request, init) => {
 				const headers = new Headers(request.headers)
 				headers.set('cookie', cookie)
-				return app.fetch(new Request(request, { ...init, headers }))
+				const response = await app.fetch(new Request(request, { ...init, headers }))
+				expect(response.headers.get('cache-control')).toBe('private, no-store')
+				return response
 			},
 		})
 	)
@@ -59,6 +61,8 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	const other = rpc(otherCookie)
 	const owner = rpc(cookie)
 	const anonymous = rpc()
+	await expect(anonymous.account.storage()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+	expect(await owner.account.storage()).toMatchObject({ usedBytes: 0, reservedBytes: 0, pendingDeletionBytes: 0 })
 	expect((await app.request('/rpc/not-a-procedure', { headers: { cookie } })).status).toBe(404)
 	expect(await owner.pairing.status()).toEqual({ paired: false })
 	const pairing = await owner.pairing.create()
@@ -78,6 +82,13 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 		body: Uint8Array.from(glb).buffer,
 	})
 	expect(uploaded.status).toBe(201)
+	const storage = await owner.account.storage()
+	expect(storage.usedBytes).toBe(glb.length)
+	expect(storage.availableBytes).toBe(storage.limitBytes - glb.length)
+	expect(await other.account.storage()).toMatchObject({ usedBytes: 0 })
+	const modStatus = await app.request('/api/mod/status', { headers: { authorization: `Bearer ${deviceToken}` } })
+	expect(modStatus.headers.get('cache-control')).toBe('private, no-store')
+	expect(await modStatus.json()).toMatchObject({ paired: true, storage })
 	const { id } = (await uploaded.json()) as { id: string }
 	const input = { id }
 	const image = largeThumbnail()

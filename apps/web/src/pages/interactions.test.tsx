@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 	signUp: vi.fn(),
 	navigate: vi.fn(),
 	list: vi.fn(),
+	storage: vi.fn(),
 	listTrash: vi.fn(),
 	restore: vi.fn(),
 	status: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('../auth-client', () => ({ authClient: { signIn: { email: mocks.signIn }
 vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
 	apiClient: {
+		account: { storage: mocks.storage },
 		memories: { list: mocks.list, listTrash: mocks.listTrash, restore: mocks.restore },
 		pairing: { status: mocks.status, create: mocks.create, check: mocks.check },
 	},
@@ -74,6 +76,13 @@ beforeEach(() => {
 	mocks.signIn.mockResolvedValue({ error: null })
 	mocks.signUp.mockResolvedValue({ error: null })
 	mocks.list.mockResolvedValue([])
+	mocks.storage.mockResolvedValue({
+		usedBytes: 0,
+		limitBytes: 2 * 1024 ** 3,
+		availableBytes: 2 * 1024 ** 3,
+		reservedBytes: 0,
+		pendingDeletionBytes: 0,
+	})
 	mocks.listTrash.mockResolvedValue([])
 	mocks.restore.mockResolvedValue({ ok: true })
 	mocks.status.mockResolvedValue({ paired: false })
@@ -93,6 +102,91 @@ function credentials() {
 	fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'test@example.com' } })
 	fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long-test-password' } })
 }
+
+test('gallery explains a full quota, unfinished uploads and pending deletion without hiding captures', async () => {
+	mocks.storage.mockResolvedValue({
+		usedBytes: 2 * 1024 ** 3,
+		limitBytes: 2 * 1024 ** 3,
+		availableBytes: 0,
+		reservedBytes: 1024,
+		pendingDeletionBytes: 2048,
+	})
+	mount(<GalleryPage />)
+	const storage = await screen.findByRole('region', { name: 'Gallery storage' })
+	expect(storage.textContent).toContain('0 B available of 2 GiB')
+	expect(storage.textContent).toContain('local GLB file on your computer')
+	expect(storage.textContent).toContain('Delete forever in Trash')
+	expect(storage.textContent).toContain('Deletion is still in progress for 2 KiB')
+	expect(storage.textContent).toContain('Uploads are reserving 1 KiB')
+	expect(screen.getByRole('link', { name: /Open a local GLB/ })).toBeTruthy()
+})
+
+test('gallery storage loads, refreshes and discards stale numbers after a failed refresh', async () => {
+	vi.useFakeTimers()
+	let resolve:
+		| ((value: Awaited<ReturnType<typeof import('../api-client').apiClient.account.storage>>) => void)
+		| undefined
+	mocks.storage.mockReturnValueOnce(
+		new Promise(result => {
+			resolve = result
+		})
+	)
+	mount(<GalleryPage />)
+	expect(screen.getByText('Checking available storage…')).toBeTruthy()
+	await act(async () => {
+		resolve?.({ usedBytes: 0, limitBytes: 1024, availableBytes: 1024, reservedBytes: 0, pendingDeletionBytes: 0 })
+	})
+	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('1 KiB available')
+	mocks.storage.mockResolvedValueOnce({
+		usedBytes: 1024,
+		limitBytes: 1024,
+		availableBytes: 0,
+		reservedBytes: 0,
+		pendingDeletionBytes: 0,
+	})
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(12_000)
+	})
+	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B available')
+	mocks.storage.mockRejectedValueOnce(new Error('private fixture failure'))
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(12_000)
+	})
+	expect(screen.queryByRole('region', { name: 'Gallery storage' })).toBeNull()
+	expect(screen.getByText('Storage information is unavailable. Your captures remain accessible.')).toBeTruthy()
+})
+
+test.each([false, true])(
+	'late storage response cannot replace a newer count or clear it on failure (%s)',
+	async fails => {
+		vi.useFakeTimers()
+		let finish: (() => void) | undefined
+		mocks.storage.mockReturnValueOnce(
+			new Promise((resolve, reject) => {
+				finish = fails
+					? () => reject(new Error('old private failure'))
+					: () =>
+							resolve({
+								usedBytes: 1024,
+								limitBytes: 1024,
+								availableBytes: 0,
+								reservedBytes: 0,
+								pendingDeletionBytes: 0,
+							})
+			})
+		)
+		mount(<GalleryPage />)
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(12_000)
+		})
+		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
+		if (!finish) throw new Error('Missing pending request')
+		await act(async () => {
+			finish?.()
+		})
+		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
+	}
+)
 test('login submits credentials, refreshes the session and opens the gallery', async () => {
 	mount(<AuthPage mode="login" />)
 	credentials()

@@ -12,6 +12,7 @@ export function migrateObjectDeletionClaims(database: Database): void {
 				database.exec(`ALTER TABLE object_deletions ADD COLUMN ${definition}`)
 			}
 		}
+		database.exec('CREATE INDEX IF NOT EXISTS object_deletions_user_id_idx ON object_deletions(user_id)')
 	})()
 }
 

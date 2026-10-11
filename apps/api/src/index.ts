@@ -36,7 +36,7 @@ import {
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
-import { accountStorageFits } from './storage-quota'
+import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
 
@@ -53,6 +53,12 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
 )
 const router = os.router({
+	account: {
+		storage: os.account.storage.handler(({ context }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			return accountStorageSummary(database, context.userId)
+		}),
+	},
 	pairing: {
 		create: os.pairing.create.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
@@ -143,6 +149,7 @@ app.all('/api/auth/*', context => auth.handler(context.req.raw))
 
 app.use('/rpc/*', requestBodyLimit(RPC_BODY_BYTES))
 app.use('/rpc/*', async (context, next) => {
+	context.header('Cache-Control', 'private, no-store')
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const { matched, response } = await rpcHandler.handle(context.req.raw, {
 		prefix: '/rpc',
@@ -189,7 +196,12 @@ app.get('/api/mod/status', context => {
 	if (!token) return context.json({ error: 'unauthorized' }, 401)
 	const device = getDeviceFromToken(token)
 	if (!device) return context.json({ error: 'unauthorized' }, 401)
-	return context.json({ paired: true, device: { id: device.id, name: device.name } })
+	context.header('Cache-Control', 'private, no-store')
+	return context.json({
+		paired: true,
+		device: { id: device.id, name: device.name },
+		storage: accountStorageSummary(database, device.userId),
+	})
 })
 
 app.get('/api/shared/:token/file', async context => {

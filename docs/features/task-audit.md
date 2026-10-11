@@ -24,6 +24,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 - Quota GLB par compte : 2 Gio configurables, captures et corbeille, réservations des deux uploads, objets à effacer ; concurrence, rejeu, panne et libération après nettoyage testés. Legacy durable avant écriture et publication atomique ; crash après upload multipart de 9 MiB, panne Garage et nettoyage par nouveaux processus exercés. Build complet et huit scénarios Garage passent. Voir [le quota et les limites historiques](account-storage-quota.md). La réconciliation historique et l’affichage du quota restent suivis.
 
+- Résumé de stockage privé : contrat oRPC et statut device exposent l’espace disponible, le total, les réservations et les effacements en attente. La galerie explique la libération d’espace et la conservation du GLB local ; chargement, panne, rafraîchissement et réponses tardives testés. Sessions réelles et Garage exercés ; affichage et message spécifiques dans Minecraft restent à terminer. Voir [les champs et le parcours](account-storage-quota.md#consulter-lespace).
+
 ## Travaux encore ouverts
 
 Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
