@@ -2,27 +2,13 @@ import { createReadStream, createWriteStream } from 'node:fs'
 import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { Client } from 'minio'
-import { DEV_S3_ACCESS_KEY, DEV_S3_SECRET_KEY } from './configuration'
+import { discardS3MemoryUpload, readS3MemoryStream, removeS3Memory, uploadS3Memory } from './storage-s3'
 
-const endpoint = new URL(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900')
-const bucket = process.env.S3_BUCKET ?? 'minemories'
 const filesystemRoot = resolve(process.env.LOCAL_OBJECTS_PATH ?? './data/objects')
 const storageDriver = process.env.STORAGE_DRIVER ?? 's3'
 if (storageDriver !== 's3' && storageDriver !== 'filesystem') {
 	throw new Error('STORAGE_DRIVER must be either "s3" or "filesystem".')
 }
-const client = new Client({
-	endPoint: endpoint.hostname,
-	port: Number(endpoint.port || (endpoint.protocol === 'https:' ? 443 : 80)),
-	useSSL: endpoint.protocol === 'https:',
-	accessKey: process.env.S3_ACCESS_KEY ?? DEV_S3_ACCESS_KEY,
-	secretKey: process.env.S3_SECRET_KEY ?? DEV_S3_SECRET_KEY,
-	region: process.env.S3_REGION ?? 'garage',
-	partSize: 8 * 1024 * 1024,
-})
-
-let bucketReady: Promise<void> | undefined
 
 function localPath(objectKey: string) {
 	const path = resolve(filesystemRoot, objectKey)
@@ -33,16 +19,6 @@ function localPath(objectKey: string) {
 	return path
 }
 
-async function ensureBucket() {
-	bucketReady ??= (async () => {
-		if (!(await client.bucketExists(bucket))) await client.makeBucket(bucket, process.env.S3_REGION ?? 'garage')
-	})().catch((error: unknown) => {
-		bucketReady = undefined
-		throw error
-	})
-	await bucketReady
-}
-
 export async function storeMemory(objectKey: string, contents: Buffer) {
 	if (storageDriver === 'filesystem') {
 		const path = localPath(objectKey)
@@ -51,10 +27,7 @@ export async function storeMemory(objectKey: string, contents: Buffer) {
 		return
 	}
 
-	await ensureBucket()
-	await client.putObject(bucket, objectKey, contents, contents.byteLength, {
-		'Content-Type': 'model/gltf-binary',
-	})
+	await uploadS3Memory(objectKey, contents, contents.byteLength)
 }
 
 export async function removeMemory(objectKey: string) {
@@ -64,7 +37,7 @@ export async function removeMemory(objectKey: string) {
 		return
 	}
 
-	await client.removeObject(bucket, objectKey)
+	await removeS3Memory(objectKey)
 }
 
 export async function readMemory(objectKey: string) {
@@ -73,7 +46,7 @@ export async function readMemory(objectKey: string) {
 		return readFile(path)
 	}
 
-	const stream = await client.getObject(bucket, objectKey)
+	const stream = await readS3MemoryStream(objectKey)
 	const chunks: Buffer[] = []
 	for await (const chunk of stream) chunks.push(Buffer.from(chunk))
 	return Buffer.concat(chunks)
@@ -87,10 +60,9 @@ export async function storeMemoryFile(objectKey: string, path: string, size: num
 		await pipeline(createReadStream(path), createWriteStream(target, { flags: 'w' }))
 		return
 	}
-	await ensureBucket()
 	const source = createReadStream(path)
 	try {
-		await client.putObject(bucket, objectKey, source, size, { 'Content-Type': 'model/gltf-binary' })
+		await uploadS3Memory(objectKey, source, size)
 	} finally {
 		source.destroy()
 	}
@@ -101,7 +73,7 @@ export async function readMemoryStream(objectKey: string) {
 		const file = await open(localPath(objectKey), 'r')
 		return file.createReadStream()
 	}
-	return client.getObject(bucket, objectKey)
+	return readS3MemoryStream(objectKey)
 }
 
 /** Remove an abandoned session's object and unfinished S3 multipart upload. */
@@ -110,9 +82,5 @@ export async function discardMemoryUpload(objectKey: string) {
 		await removeMemory(objectKey)
 		return
 	}
-	await ensureBucket()
-	for await (const upload of client.listIncompleteUploads(bucket, objectKey, true)) {
-		if (upload.key === objectKey) await client.removeIncompleteUpload(bucket, objectKey)
-	}
-	await client.removeObject(bucket, objectKey)
+	await discardS3MemoryUpload(objectKey)
 }
