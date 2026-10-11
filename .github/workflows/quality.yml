@@ -35,6 +35,8 @@ jobs:
           cache: gradle
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
+      - name: Audit locked dependencies
+        run: bun audit
       - name: Run all checks and build applications
         run: bun run build
 
