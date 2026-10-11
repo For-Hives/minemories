@@ -16,6 +16,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 - Délais corrigés : trente jours pour les nouvelles mises en corbeille, anciennes échéances préservées avec trente jours de grâce minimum, compte à rebours issu de l’API et cache d’appairage de soixante jours. Migration persistante, rollback, frontières calendaires, contrat oRPC et restauration dans la galerie testés ; build complet et sept scénarios Garage passent. Voir [la migration](trash-retention.md).
 
+- Démarrage API : secrets explicites et distincts, configuration de production validée avant SQLite, origines normalisées et arrêt des minuteries au signal. Tests unitaires et vrais processus Bun avec configuration invalide/valide, sans secrets réels. L’audit du déploiement reste ouvert. Voir [les contrôles et les conséquences d’un changement de pepper](api-startup-configuration.md).
+
 ## Travaux encore ouverts
 
 Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.

@@ -6,13 +6,13 @@ Créer deux applications Coolify connectées au même dépôt Git. Pour les deux
 
 - Fichier de configuration Railpack : `railpack.api.json` (variable de build `RAILPACK_CONFIG_FILE=railpack.api.json`).
 - Application serveur, site statique désactivé ; exposer le port interne `3001`.
-- Variables d’exécution : `API_PORT=3001`, `WEB_ORIGIN=https://<domaine-du-front>`, `BETTER_AUTH_URL=https://<domaine-api>`, `BETTER_AUTH_SECRET` et `PAIRING_PEPPER` (deux secrets aléatoires distincts d’au moins 32 caractères).
+- Variables d’exécution : `NODE_ENV=production`, `API_PORT=3001`, `WEB_ORIGIN=https://<domaine-du-front>`, `BETTER_AUTH_URL=https://<domaine-api>`, `BETTER_AUTH_SECRET` et `PAIRING_PEPPER` (deux secrets aléatoires distincts d’au moins 32 caractères).
 - Configurer Garage ou un autre stockage S3 avec `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` et `S3_REGION`. L’endpoint doit être joignable depuis le conteneur API ; les valeurs locales de `.env.example` ne conviennent pas à Coolify.
 - Ajouter un volume persistant monté sur `/app/apps/api/data`. Définir `DATABASE_PATH=/app/apps/api/data/minemories.sqlite` et `UPLOADS_PATH=/app/apps/api/data/uploads` pour conserver la base et les uploads en attente entre les redéploiements. Avec `STORAGE_DRIVER=filesystem`, définir aussi `LOCAL_OBJECTS_PATH=/app/apps/api/data/objects`.
 - Le contrôle de santé est `GET /healthz`.
 - Si l’API est derrière un reverse proxy, définir `TRUSTED_PROXY_IPS` avec les IP exactes des proxys immédiatement connectés à Bun, séparées par des virgules. Le proxy doit remplacer `X-Forwarded-For` ou y ajouter l’IP réelle du client en dernière position ; ne pas transmettre le header client inchangé. Restreindre l’accès direct au port API. Sans cette configuration, la limite d’appairage s’applique à l’IP du proxy pour tous ses clients ; les headers IP non fiables sont ignorés. Ne pas ajouter arbitrairement des IP publiques ou celles des joueurs.
 
-Railpack installe le workspace, vérifie les types de l’API puis démarre `bun run --filter @minemories/api start`.
+Railpack installe le workspace, vérifie les types de l’API puis démarre `NODE_ENV=production bun run --filter @minemories/api start`. La [validation de configuration](api-startup-configuration.md) refuse les valeurs manquantes ou invalides avant l’ouverture de SQLite. Conserver les secrets stables ; retirer un ancien repli de pepper nécessite de réappairer les mods.
 
 ## Front
 

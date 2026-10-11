@@ -13,8 +13,7 @@
 - imposer des ressources GLB embarquées et refuser les URI externes de buffers/images, avec validation du viewer et tests des deux parcours d’upload
 - borner le stockage finalisé par compte en plus du quota temporaire des uploads
 - appliquer des limites de corps JSON à auth, RPC et initialisation des uploads sans réduire les plafonds binaires ni bloquer les miniatures valides
-- vérifier explicitement les secrets distincts et la configuration de production au démarrage API, avec tests sans secrets réels
-- vérifier les protections et la configuration de l’infrastructure API réelle : proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
+- vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
 - SEO audit of the website
 - add umami/sentry/etc.. to web 
 - ability to make a snapshot "public" -> create a gallerie of best/trending snapshot on the website
