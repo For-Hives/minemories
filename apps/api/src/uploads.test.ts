@@ -57,6 +57,24 @@ function chunk(token: string, id: string, bytes: Buffer, offset = 0) {
 	})
 }
 
+test('an object pending deletion cannot be reused by a new upload', async () => {
+	const { owner, token } = device()
+	const id = randomUUID()
+	const key = `${owner}/${id}.glb`
+	database.query('INSERT INTO object_deletions (object_key, created_at) VALUES (?, 0)').run(key)
+	const response = await request(
+		token,
+		'/',
+		'POST',
+		JSON.stringify({ id, size: minimalGlb().length, sha256: hash(minimalGlb()) })
+	)
+	expect(response.status).toBe(409)
+	expect(await response.json()).toEqual({ error: 'upload_id_conflict' })
+	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id)).toBeNull()
+	database.query('DELETE FROM object_deletions WHERE object_key = ?').run(key)
+	expect(await initialize(token, minimalGlb(), id)).toBe(id)
+})
+
 test('replayed chunks and finalization are idempotent, scoped to the paired device', async () => {
 	const { owner, token } = device()
 	const stranger = device().token

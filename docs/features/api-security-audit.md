@@ -68,9 +68,10 @@ multipart, panne et reprise contre Garage réel.
 
 Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
 
-- La suppression et la purge retirent les lignes SQL avant la suppression S3 et
-  ignorent son échec. Une file persistante de suppressions à réessayer est nécessaire
-  pour éviter les objets orphelins après panne du stockage.
+- Correction du 11 octobre : la suppression et la purge inscrivent maintenant les
+  objets à effacer dans une file SQLite transactionnelle, avec retries et reprise
+  après redémarrage. Voir [les suppressions durables](durable-deletions.md). La
+  réconciliation historique et le nettoyage des uploads legacy restent suivis.
 - La validation GLB vérifie le conteneur et son JSON, mais ne garantit pas encore
   l’absence d’URI externes de buffers/images. Le viewer Three.js parse ces documents :
   imposer les ressources embarquées et tester le refus des références externes.

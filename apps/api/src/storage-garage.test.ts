@@ -1,3 +1,4 @@
+import { Database } from 'bun:sqlite'
 import { expect, test } from 'bun:test'
 import { execFile } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -10,6 +11,60 @@ import { promisify } from 'node:util'
 const execute = promisify(execFile)
 
 import { minimalGlb } from './test-support/glb-fixture'
+
+test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TEST_CONTAINER)(
+	'durable deletion survives an unavailable Garage and retries from a new process',
+	async () => {
+		const container = process.env.GARAGE_TEST_CONTAINER
+		if (!(container && process.env.S3_BUCKET?.startsWith('minemories-integration')))
+			throw new Error('Dedicated fixture required')
+		const { stdout } = await execute('docker', [
+			'inspect',
+			'--format',
+			'{{ index .Config.Labels "com.docker.compose.project" }}',
+			container,
+		])
+		if (stdout.trim() !== 'minemories-integration') throw new Error('Refusing non-test container')
+		process.env.STORAGE_DRIVER = 's3'
+		const { storeMemory, readMemory, removeMemory } = await import('./storage')
+		const key = `integration-tests/${randomUUID()}.glb`
+		const directory = mkdtempSync(join(tmpdir(), 'minemories-deletion-garage-'))
+		const path = join(directory, 'queue.sqlite')
+		const database = new Database(path)
+		database.exec(
+			'CREATE TABLE object_deletions (object_key TEXT PRIMARY KEY, created_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0)'
+		)
+		database.query('INSERT INTO object_deletions (object_key, created_at) VALUES (?, 0)').run(key)
+		database.close()
+		try {
+			await storeMemory(key, minimalGlb())
+			await execute('docker', ['stop', container])
+			expect(await runDeletionWorker(path)).toEqual({ pending: 1 })
+			await execute('docker', ['start', container])
+			await waitForGarage()
+			expect(await runDeletionWorker(path, 3_600_000)).toEqual({ pending: 0 })
+			await expect(readMemory(key)).rejects.toThrow()
+			expect(await runDeletionWorker(path, 3_600_000)).toEqual({ pending: 0 })
+		} finally {
+			await execute('docker', ['start', container])
+			await waitForGarage()
+			await removeMemory(key)
+			rmSync(directory, { recursive: true, force: true })
+		}
+	},
+	45_000
+)
+
+async function runDeletionWorker(path: string, timeShift = 0) {
+	const worker = Bun.spawn([process.execPath, join(import.meta.dir, 'test-support/garage-deletion-worker.ts')], {
+		env: { ...process.env, DELETION_DB: path, DELETION_TIME_SHIFT: String(timeShift) },
+		stdout: 'pipe',
+		stderr: 'pipe',
+	})
+	const [output, errors] = await Promise.all([new Response(worker.stdout).text(), new Response(worker.stderr).text()])
+	expect(await worker.exited, errors).toBe(0)
+	return JSON.parse(output) as { pending: number }
+}
 
 // Opt in with a dedicated Garage test bucket and S3 credentials; never touch real captures.
 test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1')(
@@ -87,8 +142,11 @@ async function waitForGarage() {
 	for (let attempt = 0; attempt < 30; attempt++) {
 		try {
 			// biome-ignore lint/performance/noAwaitInLoops: only the dedicated fixture is polled sequentially.
-			await fetch(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900', { signal: AbortSignal.timeout(1000) })
-			return
+			const response = await fetch(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900', {
+				signal: AbortSignal.timeout(1000),
+			})
+			await response.body?.cancel()
+			if (response.status < 500) return
 		} catch {
 			await Bun.sleep(200)
 		}

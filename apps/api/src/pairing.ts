@@ -156,19 +156,28 @@ export function deleteMemory(userId: string, id: string): string | null {
 		object_key: string
 	} | null
 	if (!row) return null
-	database.query('DELETE FROM memories WHERE id = ? AND user_id = ?').run(id, userId)
+	database.transaction(() => {
+		database
+			.query('INSERT INTO object_deletions (object_key, created_at) VALUES (?, ?)')
+			.run(row.object_key, Date.now())
+		database.query('DELETE FROM memories WHERE id = ? AND user_id = ?').run(id, userId)
+	})()
 	return row.object_key
 }
 
 export function purgeDeletedMemories(olderThanMs = TRASH_RETENTION_MS): string[] {
 	const cutoff = Date.now() - olderThanMs
-	const rows = database
-		.query('SELECT id, object_key FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?')
-		.all(cutoff) as Array<{ id: string; object_key: string }>
-	if (rows.length === 0) return []
-	const placeholders = rows.map(() => '?').join(',')
-	database.query(`DELETE FROM memories WHERE id IN (${placeholders})`).run(...rows.map(row => row.id))
-	return rows.map(row => row.object_key)
+	return database.transaction(() => {
+		database
+			.query(`INSERT INTO object_deletions (object_key, created_at)
+			SELECT object_key, ? FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?`)
+			.run(Date.now(), cutoff)
+		const rows = database
+			.query(`DELETE FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?
+			RETURNING object_key`)
+			.all(cutoff) as Array<{ object_key: string }>
+		return rows.map(row => row.object_key)
+	})()
 }
 
 export function createShareLink(userId: string, memoryId: string): { token: string } | null {

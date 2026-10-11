@@ -153,9 +153,74 @@ test('trash hides snapshots for thirty days before the purge removes them', () =
 	expect(trashMemory('user-h', 'trash-1')).toBe(true)
 	database.query('UPDATE memories SET deleted_at = ? WHERE id = ?').run(Date.now() - 31 * 24 * 3_600_1_000, 'trash-1')
 	expect(purgeDeletedMemories()).toEqual(['user-h/trash-1.glb'])
+	expect(
+		database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get('user-h/trash-1.glb')
+	).toEqual({ object_key: 'user-h/trash-1.glb' })
 	expect(purgeDeletedMemories()).toEqual([])
 	expect(listTrash('user-h')).toEqual([])
 	expect(listMemories('user-h')).toEqual([])
+})
+
+test('deleting metadata and queueing its object are atomic and revoke shared access', () => {
+	const { code } = createPairingCode('delete-owner')
+	const paired = exchangePairingCode(code, 'Fixture')
+	if (!paired) throw new Error('Pairing fixture failed')
+	addMemory({
+		id: 'delete-atomic',
+		userId: 'delete-owner',
+		deviceId: paired.deviceId,
+		name: 'Cabin',
+		objectKey: 'delete-owner/atomic.glb',
+		size: 9,
+	})
+	const link = createShareLink('delete-owner', 'delete-atomic')
+	if (!link) throw new Error('Share fixture failed')
+	database.exec(
+		`CREATE TRIGGER reject_deletion BEFORE INSERT ON object_deletions BEGIN SELECT RAISE(ABORT, 'fixture failure'); END`
+	)
+	try {
+		expect(() => deleteMemory('delete-owner', 'delete-atomic')).toThrow('fixture failure')
+		expect(getMemoryFile('delete-owner', 'delete-atomic')).not.toBeNull()
+		expect(getSharedMemory(link.token)).not.toBeNull()
+	} finally {
+		database.exec('DROP TRIGGER reject_deletion')
+	}
+	expect(deleteMemory('other-owner', 'delete-atomic')).toBeNull()
+	expect(deleteMemory('delete-owner', 'delete-atomic')).toBe('delete-owner/atomic.glb')
+	expect(getMemoryFile('delete-owner', 'delete-atomic')).toBeNull()
+	expect(getSharedMemory(link.token)).toBeNull()
+	expect(
+		database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get('delete-owner/atomic.glb')
+	).toEqual({ object_key: 'delete-owner/atomic.glb' })
+})
+
+test('purge rolls back its queue entries when metadata deletion fails', () => {
+	const { code } = createPairingCode('purge-owner')
+	const paired = exchangePairingCode(code, 'Fixture')
+	if (!paired) throw new Error('Pairing fixture failed')
+	addMemory({
+		id: 'purge-atomic',
+		userId: 'purge-owner',
+		deviceId: paired.deviceId,
+		name: 'Cabin',
+		objectKey: 'purge-owner/atomic.glb',
+		size: 9,
+	})
+	database.query('UPDATE memories SET deleted_at = 0 WHERE id = ?').run('purge-atomic')
+	database.exec(
+		`CREATE TRIGGER reject_purge BEFORE DELETE ON memories WHEN OLD.id = 'purge-atomic' BEGIN SELECT RAISE(ABORT, 'purge failure'); END`
+	)
+	try {
+		expect(() => purgeDeletedMemories()).toThrow('purge failure')
+		expect(getMemoryFile('purge-owner', 'purge-atomic')).not.toBeNull()
+		expect(
+			database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get('purge-owner/atomic.glb')
+		).toBeNull()
+	} finally {
+		database.exec('DROP TRIGGER reject_purge')
+	}
+	expect(purgeDeletedMemories()).toContain('purge-owner/atomic.glb')
+	expect(getMemoryFile('purge-owner', 'purge-atomic')).toBeNull()
 })
 
 test('share links open one snapshot without an account until revoked', () => {
