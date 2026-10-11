@@ -33,6 +33,17 @@ const memorySchema = z.object({
 })
 
 export const apiContract = {
+	account: {
+		storage: oc.output(
+			z.object({
+				usedBytes: z.number().int().nonnegative(),
+				limitBytes: z.number().int().positive(),
+				availableBytes: z.number().int().nonnegative(),
+				reservedBytes: z.number().int().nonnegative(),
+				pendingDeletionBytes: z.number().int().nonnegative(),
+			})
+		),
+	},
 	pairing: {
 		create: oc.output(
 			z.object({

@@ -75,9 +75,39 @@ versionné restent également hors de cet inventaire. Ces suites restent dans
 Le déploiement cible un seul processus API, comme les sessions reprenables.
 Conserver SQLite et le staging sur leurs volumes persistants, et autoriser les
 opérations multipart nécessaires au nettoyage. Le client reçoit actuellement
-le code d’erreur HTTP ; l’affichage du total utilisé/disponible et d’un message
-de quota spécifique dans le mod et la galerie reste une tâche distincte.
+le code d’erreur HTTP ; l’affichage de l’espace et d’un message de quota spécifique
+dans Minecraft reste suivi séparément. La galerie affiche maintenant ces informations.
 La capture locale est conservée après refus d’upload.
+
+## Consulter l’espace
+
+Le contrat oRPC fournit `account.storage()` pour une session web authentifiée.
+`GET /api/mod/status` fournit le même objet `storage` avec un token de device
+valide. Le propriétaire est déduit de la session ou du token ; aucune entrée
+ne permet de choisir un autre compte. Les réponses portent
+`Cache-Control: private, no-store` ; ce header est aussi appliqué aux autres
+réponses RPC privées.
+
+| Champ | Signification, en octets |
+| --- | --- |
+| `usedBytes` | Total de captures, corbeille, uploads réservés et suppressions en attente. |
+| `limitBytes` | Plafond configuré sur cette API. |
+| `availableBytes` | Espace réservable, jamais inférieur à zéro, même pour un compte historique au-dessus du plafond. |
+| `reservedBytes` | Sessions reprenables incomplètes et intentions legacy non publiées, y compris leur nettoyage après échec. |
+| `pendingDeletionBytes` | Captures définitivement supprimées ou purgées dont l’objet attend encore l’effacement. |
+
+Le résumé est calculé dans une seule requête SQLite, sans lire les GLB ni
+interroger le bucket. Un index par propriétaire accompagne la file de nettoyage.
+Les anciens jobs sans taille/propriétaire restent hors du résumé, comme du quota.
+
+La galerie rafraîchit le résumé avec ses captures toutes les douze secondes et
+après ses actions. Elle indique l’espace disponible, la suppression définitive
+nécessaire pour libérer la corbeille, les réservations et les effacements encore
+en cours. Un quota plein rappelle que l’upload refusé conserve le GLB local.
+Lorsqu’un rafraîchissement échoue, les chiffres précédents sont retirés et un
+message d’indisponibilité est affiché ; les captures restent accessibles.
+Une ancienne réponse lente, réussie ou en erreur, ne remplace pas un résumé plus
+récent. Une fermeture de la page invalide les réponses encore attendues.
 
 ## Vérifications
 
@@ -91,8 +121,12 @@ La capture locale est conservée après refus d’upload.
   souvenir, après un upload legacy multipart de 9 MiB. Le GLB stocké est comparé
   octet pour octet, la fixture est arrêtée, le nettoyage échoue dans un nouveau
   processus, puis réussit après redémarrage de Garage dans un autre processus.
-- `bun run build` incluant `bun check` : 82 tests API passent, 57 tests web passent,
+- `bun run build` incluant `bun check` : 82 tests API passent, 62 tests web passent,
   Gradle et JAR distribué construits. Le quota et la file sont couverts à 100 %
   des lignes et fonctions. `bun run api:garage` passe ses huit scénarios réels.
+- Sessions HTTP/oRPC réelles : accès anonyme refusé, isolation entre comptes,
+  résumé identique côté device, headers privés et sans cache. Contrat testé sur
+  les quantités invalides ; interactions galerie couvrant chargement, quota plein,
+  rafraîchissement, panne et réponses tardives.
 
 Aucun changement de format GLB ni de comportement du client Minecraft.
