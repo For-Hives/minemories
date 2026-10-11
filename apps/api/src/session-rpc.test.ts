@@ -8,6 +8,7 @@ import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import type { ContractRouterClient } from '@orpc/contract'
 import { minimalGlb } from './test-support/glb-fixture'
+import { largeThumbnail } from './test-support/thumbnail-fixture'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-session-'))
 process.env.DATABASE_PATH = join(directory, 'db.sqlite')
@@ -79,7 +80,8 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	expect(uploaded.status).toBe(201)
 	const { id } = (await uploaded.json()) as { id: string }
 	const input = { id }
-	const image = 'data:image/png;base64,AAAA'
+	const image = largeThumbnail()
+	expect(image.length).toBe(95_998)
 	const operations = [
 		(client: ReturnType<typeof rpc>) => client.pairing.create(),
 		(client: ReturnType<typeof rpc>) => client.pairing.check({ code: pairing.code }),

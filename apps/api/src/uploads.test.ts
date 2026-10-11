@@ -5,6 +5,7 @@ import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { externalGlbs, minimalGlb } from './test-support/glb-fixture'
+import { largeThumbnail } from './test-support/thumbnail-fixture'
 
 const root = mkdtempSync(join(tmpdir(), 'minemories-chunks-'))
 process.env.DATABASE_PATH = join(root, 'test.sqlite')
@@ -96,6 +97,36 @@ test('an object pending deletion cannot be reused by a new upload', async () => 
 	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id)).toBeNull()
 	database.query('DELETE FROM object_deletions WHERE object_key = ?').run(key)
 	expect(await initialize(token, minimalGlb(), id)).toBe(id)
+})
+
+test('initialization admits both maximum-size PNG previews but refuses oversized JSON before creating staging', async () => {
+	const { owner, token } = device()
+	const bytes = minimalGlb()
+	const image = largeThumbnail()
+	const id = randomUUID()
+	const body = JSON.stringify({
+		id,
+		size: bytes.length,
+		sha256: hash(bytes),
+		metadata: {
+			worldName: 'été',
+			thumbnail: image,
+			icon: image,
+		},
+	})
+	expect(image.length).toBe(95_998)
+	const response = await request(token, '/', 'POST', body, { 'content-type': 'application/json' })
+	expect(response.status).toBe(201)
+	expect((await chunk(token, id, bytes)).status).toBe(200)
+	expect((await request(token, `/${id}/complete`, 'POST')).status).toBe(201)
+	expect(listMemories(owner)).toMatchObject([{ id, metadata: { thumbnail: image, icon: image } }])
+	const refusedId = randomUUID()
+	const huge = JSON.stringify({ id: refusedId, size: bytes.length, sha256: hash(bytes), padding: 'a'.repeat(262_144) })
+	const refused = await request(token, '/', 'POST', huge, { 'content-type': 'application/json', 'content-length': '1' })
+	expect(refused.status).toBe(413)
+	expect(await refused.json()).toEqual({ error: 'request_body_too_large' })
+	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(refusedId)).toBeNull()
+	expect(existsSync(join(root, 'uploads', refusedId))).toBe(false)
 })
 
 test('replayed chunks and finalization are idempotent, scoped to the paired device', async () => {

@@ -79,6 +79,54 @@ test('status and upload require a valid device token', async () => {
 	expect((await app.request('/api/memories/missing/file')).status).toBe(401)
 })
 
+test('network requests enforce JSON limits on auth, RPC and initialization while preserving larger binary uploads', async () => {
+	const { code } = createPairingCode('body-limit-wire-owner')
+	const paired = await pairRequest({ code }, 'body-limit-wire-pair')
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: fetchApi })
+	const endpoints: Array<[string, number]> = [
+		['/api/auth/sign-up/email', 16_384],
+		['/rpc/memories/list', 262_144],
+		['/api/mod/uploads', 262_144],
+	]
+	try {
+		await Promise.all(
+			endpoints.map(async ([path, maximum]) => {
+				const chunks = [new Uint8Array(maximum), new Uint8Array(1)]
+				const body = new ReadableStream<Uint8Array>({
+					start(controller) {
+						for (const chunk of chunks) controller.enqueue(chunk)
+						controller.close()
+					},
+				})
+				const response = await fetch(new URL(path, server.url), {
+					method: 'POST',
+					body,
+					headers: {
+						'content-type': 'application/json',
+						authorization: `Bearer ${deviceToken}`,
+						origin: 'http://localhost:5173',
+					},
+				})
+				expect(response.status).toBe(413)
+				expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
+				expect(await response.json()).toEqual({ error: 'request_body_too_large' })
+			})
+		)
+		const glb = minimalGlb(Buffer.alloc(262_148))
+		const response = await fetch(new URL('/api/mod/memories', server.url), {
+			method: 'POST',
+			body: Uint8Array.from(glb).buffer,
+			headers: { 'content-type': 'model/gltf-binary', authorization: `Bearer ${deviceToken}` },
+		})
+		expect(response.status).toBe(201)
+		const { id } = (await response.json()) as { id: string }
+		expect(readFileSync(join(directory, 'objects', 'body-limit-wire-owner', `${id}.glb`)).equals(glb)).toBe(true)
+	} finally {
+		await server.stop(true)
+	}
+})
+
 test('legacy upload refuses external resources and a replacing JSON chunk before storing any capture', async () => {
 	const { code } = createPairingCode('external-owner')
 	const paired = await pairRequest({ code }, 'external-resource-fixture')

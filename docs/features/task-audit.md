@@ -20,6 +20,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 - Ressources GLB embarquées : validation commune aux uploads legacy/reprenable et au viewer, URI externes refusées, prévention du remplacement de JSON et des buffers absents, limites conservées. Tests HTTP, parseur Three.js réel, interactions local/galerie, capture Minecraft de 10 MiB acceptée et rendu Blender inspecté avec ses 55 textures PNG. Build complet et sept scénarios Garage passent. Voir [la politique et les limites](embedded-glb-resources.md).
 
+- Corps JSON auth/RPC/initialisation : limites distinctes avant parsing, arrêt des flux trop grands même sans taille fiable, conservation des cookies et tokens, deux miniatures proches du maximum acceptées, et plafonds binaires préservés. Tests sur serveur Bun réel et sessions oRPC ; le nouveau middleware est couvert à 100 % des lignes et fonctions. Voir [les plafonds et leur portée](api-json-limits.md).
+
 ## Travaux encore ouverts
 
 Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.

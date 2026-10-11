@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { auth } from './auth'
+import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { database } from './database'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
@@ -134,8 +135,10 @@ app.use(
 )
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
+app.use('/api/auth/*', requestBodyLimit(AUTH_BODY_BYTES))
 app.all('/api/auth/*', context => auth.handler(context.req.raw))
 
+app.use('/rpc/*', requestBodyLimit(RPC_BODY_BYTES))
 app.use('/rpc/*', async (context, next) => {
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const { matched, response } = await rpcHandler.handle(context.req.raw, {
