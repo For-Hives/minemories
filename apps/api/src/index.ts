@@ -10,6 +10,7 @@ import { auth } from './auth'
 import { database } from './database'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
+import { ObjectDeletionQueue } from './object-deletions'
 import type { MemoryMetadata } from './pairing'
 import {
 	addMemory,
@@ -46,6 +47,7 @@ interface ApiContext {
 }
 
 const os = implement(apiContract).$context<ApiContext>()
+const objectDeletions = new ObjectDeletionQueue(database, removeMemory)
 const router = os.router({
 	pairing: {
 		create: os.pairing.create.handler(({ context }) => {
@@ -89,7 +91,7 @@ const router = os.router({
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 			const objectKey = deleteMemory(context.userId, input.id)
 			if (!objectKey) throw new ORPCError('NOT_FOUND')
-			await removeMemory(objectKey).catch(() => undefined)
+			await objectDeletions.drain(objectKey)
 			return { ok: true as const }
 		}),
 		createShare: os.memories.createShare.handler(({ context, input }) => {
@@ -309,14 +311,10 @@ if (import.meta.main) {
 	setInterval(() => void cleanupUploads(), 3_600_000)
 	console.warn(`Minemories API ready at ${server.url}`)
 
-	for (const objectKey of purgeDeletedMemories()) {
-		removeMemory(objectKey).catch(() => undefined)
-	}
-	setInterval(() => {
-		for (const objectKey of purgeDeletedMemories()) {
-			removeMemory(objectKey).catch(() => undefined)
-		}
-	}, 3_600_000)
+	purgeDeletedMemories()
+	void objectDeletions.maintain()
+	setInterval(() => void objectDeletions.maintain(), 60_000)
+	setInterval(() => purgeDeletedMemories(), 3_600_000)
 
 	process.on('SIGINT', () => {
 		server.stop()

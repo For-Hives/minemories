@@ -76,6 +76,12 @@ async function locked<T>(id: string, action: () => Promise<T>): Promise<T> {
 		locks.delete(id)
 	}
 }
+function uploadIdReserved(id: string, userId: string): boolean {
+	return Boolean(
+		database.query('SELECT id FROM memories WHERE id = ?').get(id) ||
+			database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get(`${userId}/${id}.glb`)
+	)
+}
 const initialization = z.object({
 	id: z.string().uuid(),
 	size: z.number().int().min(20).max(MAX_UPLOAD_BYTES),
@@ -109,8 +115,7 @@ uploadRouter.post('/', async context => {
 				throw new HTTPException(409, { message: 'upload_parameters_changed' })
 			return context.json(receipt(upload))
 		}
-		if (database.query('SELECT id FROM memories WHERE id = ?').get(input.id))
-			throw new HTTPException(409, { message: 'upload_id_conflict' })
+		if (uploadIdReserved(input.id, device.userId)) throw new HTTPException(409, { message: 'upload_id_conflict' })
 		const count = database
 			.query('SELECT COUNT(*) AS count FROM mod_uploads WHERE device_id = ? AND completed = 0 AND expires_at > ?')
 			.get(device.id, Date.now()) as { count: number }
