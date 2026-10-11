@@ -37,8 +37,6 @@ La réconciliation historique et le nettoyage après échec d’un upload legacy
 suivis dans TASKS.md. Les versions anciennes d’un bucket versionné dépendent aussi
 de la politique de cycle de vie du provider.
 
-Un défaut antérieur de conversion (`3_600_1_000` au lieu de `3_600_000`) rend
-le seuil de corbeille environ dix fois plus long que les trente jours documentés.
-Il affecte également certains délais web. Sa correction reste suivie avec une
-migration préservant un délai de récupération pour les souvenirs déjà en corbeille ;
-cette livraison ne raccourcit pas leur rétention.
+Les nouvelles mises en corbeille expirent après trente jours. Les anciennes
+échéances sont protégées par [la migration des délais](trash-retention.md), qui
+accorde aussi au moins trente jours de grâce aux souvenirs déjà dépassés.
