@@ -26,6 +26,8 @@ final class MinemoriesScreen extends Screen {
   private Button saveButton;
   private Button defaultsButton;
   private Button modeButton;
+  private Button storageButton;
+  private final StorageStatusView storage = new StorageStatusView();
   private String status = "Aucun envoi sans ton accord.";
   private String service = "Service Minemories";
   private boolean paired;
@@ -46,7 +48,7 @@ final class MinemoriesScreen extends Screen {
   protected void init() {
     super.init();
     panelWidth = Math.min(390, this.width - 12);
-    panelHeight = advanced ? 230 : 226;
+    panelHeight = 236;
     left = (this.width - panelWidth) / 2;
     top = Math.max(4, (this.height - panelHeight) / 2);
     modeButton =
@@ -90,6 +92,9 @@ final class MinemoriesScreen extends Screen {
     unlinkButton = button("Déconnecter ce compte", 14, 70, panelWidth - 28, this::unlink);
     snapshotButton = button("Capturer et envoyer", 14, 97, panelWidth - 28, this::snapshotNow);
     afkButton = button("Captures AFK", 14, 123, panelWidth - 28, this::toggleAfk);
+    storageButton = button("Espace : chargement…", 14, 176, panelWidth - 28, this::openStorage);
+    storageButton.setTooltip(
+        Tooltip.create(Component.literal("Voir l’espace et comment libérer ta galerie.")));
     codeInput.setResponder(value -> updateButtons());
     snapshotButton.setTooltip(
         Tooltip.create(
@@ -129,11 +134,16 @@ final class MinemoriesScreen extends Screen {
         Tooltip.create(
             Component.literal("Définis les deux coins avec /minemories select first et second.")));
     button(
-        "Réglages AFK : délai, fréquence, taille",
+        "Réglages AFK",
         14,
         170,
-        panelWidth - 28,
+        half,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
+    storageButton = button("Stockage galerie", 20 + half, 170, half, this::openStorage);
+  }
+
+  private void openStorage() {
+    Minecraft.getInstance().setScreen(new StorageQuotaScreen(this));
   }
 
   private void refreshSettings() {
@@ -149,12 +159,15 @@ final class MinemoriesScreen extends Screen {
       afk = false;
       status = "Configuration illisible : " + Minemories.pairingError(error);
     }
+    storage.reset(paired);
   }
 
   private void updateButtons() {
     if (modeButton == null) return;
     boolean waiting = busy || PairingClient.isUploading();
     modeButton.active = !waiting;
+    storageButton.active = paired;
+    if (!advanced) storageButton.setMessage(Component.literal(storage.label()));
     Minecraft mc = Minecraft.getInstance();
     if (advanced) {
       saveButton.active = !waiting;
@@ -180,7 +193,18 @@ final class MinemoriesScreen extends Screen {
   @Override
   public void tick() {
     super.tick();
+    storage.update(
+        System.currentTimeMillis(),
+        paired,
+        PairingClient::storageStatus,
+        Minecraft.getInstance()::execute);
     updateButtons();
+  }
+
+  @Override
+  public void removed() {
+    storage.reset(false);
+    super.removed();
   }
 
   private void saveConfiguration() {
@@ -290,7 +314,7 @@ final class MinemoriesScreen extends Screen {
   @Override
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.render(graphics, mouseX, mouseY, partialTick);
-    int statusTop = top + (advanced ? 200 : 176);
+    int statusTop = top + (advanced ? 200 : 201);
     var lines = this.font.split(Component.literal(status), panelWidth - 28);
     for (int i = 0; i < Math.min(3, lines.size()); i++) {
       graphics.drawString(this.font, lines.get(i), left + 14, statusTop + i * 10, COLOR_TEXT);

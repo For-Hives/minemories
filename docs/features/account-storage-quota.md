@@ -74,9 +74,9 @@ versionné restent également hors de cet inventaire. Ces suites restent dans
 
 Le déploiement cible un seul processus API, comme les sessions reprenables.
 Conserver SQLite et le staging sur leurs volumes persistants, et autoriser les
-opérations multipart nécessaires au nettoyage. Le client reçoit actuellement
-le code d’erreur HTTP ; l’affichage de l’espace et d’un message de quota spécifique
-dans Minecraft reste suivi séparément. La galerie affiche maintenant ces informations.
+opérations multipart nécessaires au nettoyage. La galerie affiche ces informations.
+Le client Minecraft affiche aussi l’espace et un message de quota spécifique.
+La lisibilité des modes simple/avancé et du détail a été confirmée en jeu.
 La capture locale est conservée après refus d’upload.
 
 ## Consulter l’espace
@@ -109,6 +109,46 @@ message d’indisponibilité est affiché ; les captures restent accessibles.
 Une ancienne réponse lente, réussie ou en erreur, ne remplace pas un résumé plus
 récent. Une fermeture de la page invalide les réponses encore attendues.
 
+## Dans Minecraft
+
+Le mode simple affiche un bouton `Libre : … / …` après connexion du compte.
+Il ouvre le détail du stockage ; le mode avancé propose `Stockage galerie`,
+à côté des réglages AFK. Le détail présente l’espace libre, le total utilisé,
+les envois réservés et les effacements encore en attente, avec les actions
+de libération dans la galerie. Les unités affichées (Ko, Mo, Go…) sont décimales.
+Le plafond vient de l’API configurée, y compris une API personnelle.
+
+Le statut est demandé en arrière-plan toutes les douze secondes tant que le menu
+est ouvert, puis après un envoi ou un changement de réglages. Aucun statut n’est
+demandé sans token. La fermeture, le changement de mode ou de compte invalident
+les anciennes réponses ; une erreur retire les anciens chiffres. Une ancienne
+API sans champ `storage` reste utilisable pour capturer et envoyer, avec une
+indication d’espace indisponible. Un token refusé demande de reconnecter le compte.
+
+Un HTTP 413 identifié par `storage_quota_exceeded` affiche l’espace insuffisant,
+la conservation du GLB local et la suppression définitive nécessaire dans la
+corbeille, puis `/minemories upload` pour réessayer. Ce refus n’est pas retenté
+automatiquement et conserve l’identifiant de session local pour une reprise.
+Un autre HTTP 413 conserve son message HTTP générique. Les réponses JSON de
+statut, d’appairage et d’upload sont limitées à 16 KiB d’octets reçus, même sans
+Content-Length ; les corps d’envoi GLB et leurs limites restent inchangés.
+
+Cette interface est construite et testée automatiquement. Le 11 octobre 2026,
+le testeur a confirmé que les deux modes et les détails sont lisibles dans le
+client de développement isolé. Le premier refus sur la fixture pleine a conservé
+le GLB et son fichier de reprise dans le dossier local ; la reprise vers l’API
+locale réelle a ensuite abouti.
+
+La première fixture locale simulait une galerie pleine sans recevoir de GLB.
+Elle a été remplacée par l’API du dépôt, avec SQLite et stockage filesystem dans
+le dossier de test isolé, un compte dédié et un quota de **200 Mo**
+(200 000 000 octets). La connexion du client de test reste utilisable. Une capture
+de 13 628 224 octets envoyée depuis Minecraft a été finalisée ; le téléchargement
+avec une session web authentifiée restitue les mêmes octets que le GLB local.
+Le résumé annonce 186 371 776 octets disponibles, sans réservation ni suppression
+en attente. Ce test local ne valide pas un déploiement en production ou le JAR
+distribué installé dans un profil joueur.
+
 ## Vérifications
 
 - Tests de frontières, isolation entre propriétaires/appareils, addition des
@@ -121,7 +161,7 @@ récent. Une fermeture de la page invalide les réponses encore attendues.
   souvenir, après un upload legacy multipart de 9 MiB. Le GLB stocké est comparé
   octet pour octet, la fixture est arrêtée, le nettoyage échoue dans un nouveau
   processus, puis réussit après redémarrage de Garage dans un autre processus.
-- `bun run build` incluant `bun check` : 82 tests API passent, 62 tests web passent,
+- `bun run build` incluant `bun check` : 93 tests API passent, 64 tests web passent,
   Gradle et JAR distribué construits. Le quota et la file sont couverts à 100 %
   des lignes et fonctions. `bun run api:garage` passe ses huit scénarios réels.
 - Sessions HTTP/oRPC réelles : accès anonyme refusé, isolation entre comptes,
@@ -129,4 +169,10 @@ récent. Une fermeture de la page invalide les réponses encore attendues.
   les quantités invalides ; interactions galerie couvrant chargement, quota plein,
   rafraîchissement, panne et réponses tardives.
 
-Aucun changement de format GLB ni de comportement du client Minecraft.
+- Mod : treize nouveaux tests, dont des requêtes HTTP réelles authentifiées,
+  limite exacte/multioctets, API ancienne et connexion refusée, quantités invalides,
+  réponses tardives et application sur le thread du client. Un refus de quota
+  vérifie une seule tentative, les octets locaux inchangés, le fichier de reprise
+  sans token et le rejeu du même identifiant après libération d’espace.
+
+Aucun changement de format GLB.
