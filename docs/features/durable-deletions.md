@@ -31,9 +31,22 @@ Le test Garage arrête la fixture dédiée, échoue la suppression dans un proce
 redémarre Garage puis exécute un nouveau processus contre la même base et vérifie
 l’absence du fichier. Aucun objet de production n’est touché.
 
-La file couvre les suppressions explicites et les purges à partir de cette version.
+La file couvre les suppressions explicites, les purges et, depuis le 11 octobre,
+les uploads legacy. Chaque legacy inscrit une intention avant l’écriture de
+l’objet, protégée tant que l’envoi est en cours. La publication et le retrait
+de cette intention sont atomiques. Un crash avant publication laisse un job
+reprenable, qui retire aussi les parts multipart abandonnées. Une panne garde
+la clé et ses octets réservés jusqu’au nettoyage réussi. Un ancien batch relit
+le job avant effacement, pour préserver un upload qui vient d’être publié.
+Voir [le quota et le test de crash Garage](account-storage-quota.md).
+
+Les suppressions et purges conservent aussi le propriétaire et la taille dans
+leurs nouveaux jobs pour libérer le quota après l’effacement physique. La migration
+préserve les échéances et tentatives des anciens jobs ; leurs tailles oubliées
+restent inconnues.
+
 Elle ne permet pas de retrouver les clés déjà oubliées par une ancienne version.
-La réconciliation historique et le nettoyage après échec d’un upload legacy restent
+La réconciliation historique et le complément des anciens jobs restent
 suivis dans TASKS.md. Les versions anciennes d’un bucket versionné dépendent aussi
 de la politique de cycle de vie du provider.
 

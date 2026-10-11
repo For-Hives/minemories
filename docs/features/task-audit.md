@@ -7,7 +7,7 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 - AFK par défaut, pause/arrière-plan et réglages simples/avancés : validés par l’utilisateur en client de développement. La validation du JAR distribué reste distincte.
 - Sources core/NeoForge et export réel : démarrage et capture validés ; le crash `GlbScene` est corrigé.
 - Envoi automatique après appairage : capture AFK envoyée en production ; sans appairage, capture locale uniquement.
-- Garage réel : `bun run api:garage` passe six scénarios HTTP/oRPC et stockage, dont une panne réelle du conteneur et une reprise par nouveau processus API, sans doublon et avec contrôle des octets. Fixture Docker jetable, distincte des volumes de développement.
+- Garage réel : `bun run api:garage` passe huit scénarios HTTP/oRPC et stockage, dont une panne réelle du conteneur, une reprise par nouveau processus API et un crash après upload legacy multipart, sans doublon et avec contrôle des octets. Fixture Docker jetable, distincte des volumes de développement.
 - Ancien volume local `dev_minio_data` : inspection en lecture seule, aucun fichier et aucun bucket de captures trouvé. Pas de migration locale à effectuer. Cette conclusion ne concerne aucun autre déploiement.
 
 - Audit initial API : headers de partage sans cache public, IP du socket et proxys de confiance, limiteur mémoire borné, corps d’appairage limité, correctif source-map-js. Les observations et alertes restantes sont dans [le rapport](api-security-audit.md) et les suites dans `docs/AI/TASKS.md`.
@@ -21,6 +21,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 - Ressources GLB embarquées : validation commune aux uploads legacy/reprenable et au viewer, URI externes refusées, prévention du remplacement de JSON et des buffers absents, limites conservées. Tests HTTP, parseur Three.js réel, interactions local/galerie, capture Minecraft de 10 MiB acceptée et rendu Blender inspecté avec ses 55 textures PNG. Build complet et sept scénarios Garage passent. Voir [la politique et les limites](embedded-glb-resources.md).
 
 - Corps JSON auth/RPC/initialisation : limites distinctes avant parsing, arrêt des flux trop grands même sans taille fiable, conservation des cookies et tokens, deux miniatures proches du maximum acceptées, et plafonds binaires préservés. Tests sur serveur Bun réel et sessions oRPC ; le nouveau middleware est couvert à 100 % des lignes et fonctions. Voir [les plafonds et leur portée](api-json-limits.md).
+
+- Quota GLB par compte : 2 Gio configurables, captures et corbeille, réservations des deux uploads, objets à effacer ; concurrence, rejeu, panne et libération après nettoyage testés. Legacy durable avant écriture et publication atomique ; crash après upload multipart de 9 MiB, panne Garage et nettoyage par nouveaux processus exercés. Build complet et huit scénarios Garage passent. Voir [le quota et les limites historiques](account-storage-quota.md). La réconciliation historique et l’affichage du quota restent suivis.
 
 ## Travaux encore ouverts
 

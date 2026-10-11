@@ -9,9 +9,9 @@
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
 - corriger les quatre alertes transitives MinIO du premier audit API avec une solution compatible ; conserver les tests multipart, panne et reprise Garage (docs/features/api-security-audit.md)
-- réconcilier les objets orphelins historiques et rendre durable le nettoyage après échec d’un upload legacy ; la file des suppressions explicites/purges est implémentée (docs/features/durable-deletions.md)
+- réconcilier les objets orphelins historiques et compléter les anciens jobs de suppression sans taille/propriétaire ; les nouveaux uploads legacy, suppressions et purges sont durables (docs/features/account-storage-quota.md)
 - valider la cohérence glTF des accessors, bufferViews et attributs, avec des budgets de géométrie et de pixels décompressés dans l’API et le viewer ; les URI externes et conteneurs de remplacement sont déjà refusés (docs/features/embedded-glb-resources.md)
-- borner le stockage finalisé par compte en plus du quota temporaire des uploads
+- exposer l’espace utilisé et disponible par compte via l’API, puis afficher un message de quota compréhensible dans le mod et la galerie, avec les actions de libération d’espace et conservation des captures locales
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
 - SEO audit of the website
 - add umami/sentry/etc.. to web 
