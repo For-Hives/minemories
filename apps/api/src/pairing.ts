@@ -155,14 +155,15 @@ export function restoreMemory(userId: string, id: string): boolean {
 }
 
 export function deleteMemory(userId: string, id: string): string | null {
-	const row = database.query('SELECT object_key FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
+	const row = database.query('SELECT object_key, size FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
 		object_key: string
+		size: number
 	} | null
 	if (!row) return null
 	database.transaction(() => {
 		database
-			.query('INSERT INTO object_deletions (object_key, created_at) VALUES (?, ?)')
-			.run(row.object_key, Date.now())
+			.query('INSERT INTO object_deletions (object_key, created_at, user_id, size) VALUES (?, ?, ?, ?)')
+			.run(row.object_key, Date.now(), userId, row.size)
 		database.query('DELETE FROM memories WHERE id = ? AND user_id = ?').run(id, userId)
 	})()
 	return row.object_key
@@ -171,8 +172,8 @@ export function deleteMemory(userId: string, id: string): string | null {
 export function purgeDeletedMemories(now = Date.now()): string[] {
 	return database.transaction(() => {
 		database
-			.query(`INSERT INTO object_deletions (object_key, created_at)
-			SELECT object_key, ? FROM memories WHERE deleted_at IS NOT NULL AND COALESCE(purge_after, deleted_at + ?) <= ?`)
+			.query(`INSERT INTO object_deletions (object_key, created_at, user_id, size)
+			SELECT object_key, ?, user_id, size FROM memories WHERE deleted_at IS NOT NULL AND COALESCE(purge_after, deleted_at + ?) <= ?`)
 			.run(now, TRASH_RETENTION_MS, now)
 		const rows = database
 			.query(`DELETE FROM memories WHERE deleted_at IS NOT NULL AND COALESCE(purge_after, deleted_at + ?) <= ?

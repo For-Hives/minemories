@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
+	accountStorageBytes,
 	allowedWebOrigins,
 	authSecret,
 	DEV_S3_ACCESS_KEY,
@@ -22,6 +23,18 @@ const production = {
 	S3_BUCKET: 'fixture-bucket',
 	S3_REGION: 'garage',
 }
+
+test('account storage has a finite default and accepts only positive safe integer bytes', () => {
+	expect(accountStorageBytes({})).toBe(2 * 1024 * 1024 * 1024)
+	expect(accountStorageBytes({ ACCOUNT_STORAGE_BYTES: '2147483648' })).toBe(2 * 1024 * 1024 * 1024)
+	expect(accountStorageBytes({ ACCOUNT_STORAGE_BYTES: '1' })).toBe(1)
+	for (const value of ['', ' ', '0', '-1', '1.5', 'NaN', 'Infinity', '1e9', '9007199254740992', 'private-fixture']) {
+		expect(() => accountStorageBytes({ ACCOUNT_STORAGE_BYTES: value })).toThrow('ACCOUNT_STORAGE_BYTES')
+		expect(() => validateProductionConfiguration({ ...production, ACCOUNT_STORAGE_BYTES: value })).toThrow(
+			'ACCOUNT_STORAGE_BYTES'
+		)
+	}
+})
 
 test('secrets are explicit, sufficiently long, distinct and never replaced by each other', () => {
 	expect(authSecret(production)).toBe(production.BETTER_AUTH_SECRET)

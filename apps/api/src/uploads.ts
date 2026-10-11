@@ -8,6 +8,7 @@ import { database } from './database'
 import { parseMetadata } from './memory-metadata'
 import { addMemory, getDeviceFromToken } from './pairing'
 import { discardMemoryUpload, storeMemoryFile } from './storage'
+import { accountStorageFits } from './storage-quota'
 import { MAX_UPLOAD_BYTES, readUploadChunk, UPLOAD_CHUNK_BYTES, validateUploadFile } from './upload-files'
 
 const root = resolve(
@@ -83,6 +84,9 @@ function uploadIdReserved(id: string, userId: string): boolean {
 			database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get(`${userId}/${id}.glb`)
 	)
 }
+function requireAccountSpace(userId: string, size: number): void {
+	if (!accountStorageFits(database, userId, size)) throw new HTTPException(413, { message: 'storage_quota_exceeded' })
+}
 const initialization = z.object({
 	id: z.string().uuid(),
 	size: z.number().int().min(20).max(MAX_UPLOAD_BYTES),
@@ -116,6 +120,7 @@ uploadRouter.post('/', requestBodyLimit(UPLOAD_INIT_BODY_BYTES), async context =
 			return context.json(receipt(upload))
 		}
 		if (uploadIdReserved(input.id, device.userId)) throw new HTTPException(409, { message: 'upload_id_conflict' })
+		requireAccountSpace(device.userId, input.size)
 		const count = database
 			.query('SELECT COUNT(*) AS count FROM mod_uploads WHERE device_id = ? AND completed = 0 AND expires_at > ?')
 			.get(device.id, Date.now()) as { count: number }
@@ -134,19 +139,24 @@ uploadRouter.post('/', requestBodyLimit(UPLOAD_INIT_BODY_BYTES), async context =
 				.slice(0, 80) || 'Souvenir Minecraft'
 		try {
 			database
-				.query(
-					'INSERT INTO mod_uploads (id, device_id, user_id, size, sha256, name, metadata_json, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-				)
-				.run(
-					input.id,
-					device.id,
-					device.userId,
-					input.size,
-					input.sha256,
-					name,
-					JSON.stringify(metadata),
-					Date.now() + TTL
-				)
+				.transaction(() => {
+					requireAccountSpace(device.userId, input.size)
+					database
+						.query(
+							'INSERT INTO mod_uploads (id, device_id, user_id, size, sha256, name, metadata_json, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+						)
+						.run(
+							input.id,
+							device.id,
+							device.userId,
+							input.size,
+							input.sha256,
+							name,
+							JSON.stringify(metadata),
+							Date.now() + TTL
+						)
+				})
+				.immediate()
 		} catch (error) {
 			await rm(join(root, input.id), { force: true })
 			throw error
@@ -211,6 +221,7 @@ uploadRouter.post('/:id/complete', context => {
 		const path = join(root, id)
 		if (!(await validateUploadFile(path, upload.size, upload.sha256)))
 			throw new HTTPException(400, { message: 'invalid_glb_or_checksum' })
+		requireAccountSpace(upload.user_id, 0)
 		const objectKey = `${upload.user_id}/${id}.glb`
 		// The reserved UUID makes replacement of a previous uncommitted attempt safe.
 		database.query('UPDATE mod_uploads SET storage_started = 1 WHERE id = ?').run(id)

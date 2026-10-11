@@ -3,7 +3,7 @@ import { afterAll, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ObjectDeletionQueue } from './object-deletions'
+import { migrateObjectDeletionClaims, ObjectDeletionQueue } from './object-deletions'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-deletions-'))
 const path = join(directory, 'db.sqlite')
@@ -16,6 +16,57 @@ afterAll(() => {
 function enqueue(key: string) {
 	database.query('INSERT INTO object_deletions (object_key, created_at) VALUES (?, 0)').run(key)
 }
+
+test('migration preserves old deletion jobs, their retries and new claim metadata across restarts', () => {
+	const old = new Database(':memory:')
+	try {
+		old.exec(`CREATE TABLE object_deletions (object_key TEXT PRIMARY KEY, created_at INTEGER NOT NULL,
+			attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0);
+			INSERT INTO object_deletions VALUES ('old/job.glb', 10, 3, 1000);`)
+		migrateObjectDeletionClaims(old)
+		expect(old.query('SELECT * FROM object_deletions').get()).toEqual({
+			object_key: 'old/job.glb',
+			created_at: 10,
+			attempts: 3,
+			next_attempt_at: 1000,
+			user_id: null,
+			size: null,
+			discard_upload: 0,
+		})
+		old.query('UPDATE object_deletions SET user_id = ?, size = ?, discard_upload = 1').run('old', 1234)
+		migrateObjectDeletionClaims(old)
+		expect(old.query('SELECT user_id, size, discard_upload, attempts FROM object_deletions').get()).toEqual({
+			user_id: 'old',
+			size: 1234,
+			discard_upload: 1,
+			attempts: 3,
+		})
+	} finally {
+		old.close()
+	}
+})
+
+test('an upload holds its cleanup intent until release and a new queue resumes an abandoned intent', async () => {
+	const key = 'owner/legacy-held.glb'
+	database.query('INSERT INTO object_deletions (object_key, created_at, discard_upload) VALUES (?, 0, 1)').run(key)
+	const removed: Array<[string, boolean]> = []
+	const queue = new ObjectDeletionQueue(database, (objectKey, discardUpload) => {
+		removed.push([objectKey, discardUpload])
+		return Promise.resolve()
+	})
+	const release = queue.hold(key)
+	await queue.drain(key, 0)
+	expect(removed).toEqual([])
+	expect(database.query('SELECT attempts FROM object_deletions WHERE object_key = ?').get(key)).toEqual({ attempts: 0 })
+	release()
+	release()
+	await queue.drain(key, 0)
+	expect(removed).toEqual([[key, true]])
+	enqueue(key)
+	queue.hold(key)
+	await new ObjectDeletionQueue(database, () => Promise.resolve()).drain(key, 0)
+	expect(database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get(key)).toBeNull()
+})
 
 test('failed deletions persist across a new database connection and respect exponential backoff', async () => {
 	enqueue('owner/retry.glb')
@@ -69,6 +120,26 @@ test('a running pass cannot overlap another pass and leaves newly queued work fo
 	release?.()
 	await second
 	expect(calls).toBe(2)
+})
+
+test('a stale batch cannot remove a held upload that committed while an earlier deletion was awaiting storage', async () => {
+	enqueue('owner/slow-cleanup.glb')
+	enqueue('owner/just-published.glb')
+	let finishSlow: (() => void) | undefined
+	const removed: string[] = []
+	const queue = new ObjectDeletionQueue(database, key => {
+		removed.push(key)
+		return new Promise<void>(resolve => {
+			finishSlow = resolve
+		})
+	})
+	const release = queue.hold('owner/just-published.glb')
+	const pending = queue.drain(undefined, 0)
+	database.query('DELETE FROM object_deletions WHERE object_key = ?').run('owner/just-published.glb')
+	release()
+	finishSlow?.()
+	await pending
+	expect(removed).toEqual(['owner/slow-cleanup.glb'])
 })
 
 test('a background pass processes at most one hundred objects', async () => {

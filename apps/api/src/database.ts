@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import './configuration'
+import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateTrashRetention } from './trash-retention'
 
 const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite')
@@ -52,6 +53,7 @@ database.exec(`CREATE TABLE IF NOT EXISTS object_deletions (
  object_key TEXT PRIMARY KEY, created_at INTEGER NOT NULL,
  attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0
 ); CREATE INDEX IF NOT EXISTS object_deletions_due_idx ON object_deletions(next_attempt_at, created_at);`)
+migrateObjectDeletionClaims(database)
 const memoryColumns = database.query('PRAGMA table_info(memories)').all() as Array<{ name: string }>
 if (!memoryColumns.some(column => column.name === 'metadata_json')) {
 	database.exec('ALTER TABLE memories ADD COLUMN metadata_json TEXT')

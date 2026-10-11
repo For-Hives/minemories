@@ -57,6 +57,13 @@ les heures et lors d’une initialisation. Il retire les fichiers temporaires et
 objets/parts S3 abandonnés après une tentative de stockage ; un stockage indisponible
 conserve la session pour un nettoyage ultérieur.
 
+Un [quota GLB par compte](account-storage-quota.md), de 2 Gio par défaut et
+configurable par `ACCOUNT_STORAGE_BYTES`, s’ajoute au staging global. Il partage
+le budget entre tous les devices, les uploads legacy et reprenables, la corbeille
+et les suppressions en attente. Un dépassement reçoit `storage_quota_exceeded`
+(HTTP 413) ; une réservation déjà obtenue n’est pas facturée deux fois au rejeu
+ou à la finalisation. La libération attend le nettoyage réussi.
+
 La finalisation utilise un stream fichier vers S3 et des parts SDK de **8 MiB**. Les
 routes de téléchargement privées et partagées utilisent également des streams. Les GLB
 et les métadonnées accessibles par lien de partage portent `Cache-Control: private, no-store`

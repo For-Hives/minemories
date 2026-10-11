@@ -71,14 +71,18 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
 - Correction du 11 octobre : la suppression et la purge inscrivent maintenant les
   objets à effacer dans une file SQLite transactionnelle, avec retries et reprise
   après redémarrage. Voir [les suppressions durables](durable-deletions.md). La
-  réconciliation historique et le nettoyage des uploads legacy restent suivis.
+  réconciliation historique reste suivie. Le legacy inscrit aussi maintenant une
+  intention avant l’écriture ; son nettoyage après crash et panne a été exercé
+  avec Garage réel. Voir [le quota et cette validation](account-storage-quota.md).
 - Correction du 11 octobre : les ressources GLB sont contrôlées en commun dans
   les deux uploads et dans le viewer avant le parseur Three.js. Les URI externes,
   buffers sans données et JSON de remplacement sont refusés. Voir
   [les règles et les validations](embedded-glb-resources.md). La cohérence complète
   des attributs et les budgets de décodage restent une suite distincte.
-- Le quota de staging ne borne pas le stockage total des captures finalisées par
-  compte. Définir et appliquer cette limite avant une ouverture publique.
+- Correction du 11 octobre : quota GLB par compte de 2 Gio, configurable, incluant
+  la corbeille, les uploads réservés et les objets en attente de suppression.
+  Réservations transactionnelles entre legacy et reprenable ; libération après
+  nettoyage réussi. Voir [le périmètre et la migration](account-storage-quota.md).
 - Correction du 11 octobre : les corps auth sont limités à 16 KiB, les RPC et
   l’initialisation d’upload à 256 KiB avant parsing, avec comptage réel des octets.
   Les deux miniatures maximales restent acceptées et les plafonds binaires restent
