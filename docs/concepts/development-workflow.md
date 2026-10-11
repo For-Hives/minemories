@@ -46,6 +46,8 @@ La CI GitHub exécute `bun run build` sur chaque pull request et chaque push ver
 
 Le wrapper Gradle utilise la version 9.8.1 et vérifie le SHA-256 officiel de la distribution avant son installation. Le JAR du wrapper mis à jour a aussi été comparé à l’empreinte publiée par Gradle. Foojay Resolver 1.0.0 reste compatible avec cette version. Le développement local et le jeu utilisent toujours Java 21 ; les toolchains de `:core` et `:neoforge` ciblent explicitement Java 21. Les prérequis officiels sont décrits dans la [matrice Gradle](https://docs.gradle.org/current/userguide/compatibility.html) et le [README Foojay](https://github.com/gradle/foojay-toolchains/blob/main/README.md).
 
+En CI, `setup-java` installe Java 21 puis Java 25 : le dernier exécute Gradle, tandis que `JAVA_HOME_21_X64` expose explicitement le JDK de compilation et de test du mod. Cette séparation ne change ni les prérequis d’installation du joueur ni le développement local sous Java 21. Voir les [installations multiples de setup-java](https://github.com/actions/setup-java/blob/main/README.md#multiple-jdks-and-maven-toolchains) et les [emplacements de toolchains Gradle](https://docs.gradle.org/current/userguide/toolchains.html#sec:custom_loc).
+
 Le mod affiche encore des avertissements de dépréciation provenant des APIs Minecraft/NeoForge de la cible 1.21.1. Ils restent visibles dans le build; le core neutre, lui, traite tout avertissement javac comme une erreur. Migrer ces hooks nécessite une validation en jeu, donc ne pas masquer la sortie javac ni remplacer une API sans exercice du mod.
 
 ## Galerie et ambiance du viewer

@@ -28,7 +28,10 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 21
+          # Java 21 compiles/tests the mod; Java 25 runs Gradle.
+          java-version: |
+            21
+            25
           cache: gradle
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
