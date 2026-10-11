@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import { newestCaptureTime, PAIRING_FRESH_MS, shouldShowPaired } from './pairing'
 
-const DAY_MS = 24 * 3_600_1_000
+const DAY_MS = 86_400_000
 
 it('finds the newest capture across capturedAt and createdAt', () => {
 	const captures = [
@@ -26,4 +26,10 @@ it('keeps the paired badge for two months after the last snapshot', () => {
 	expect(shouldShowPaired(true, fresh)).toBe(true)
 	expect(shouldShowPaired(true, stale)).toBe(false)
 	vi.useRealTimers()
+})
+
+it('expires the badge at the sixty-day calendar boundary', () => {
+	const captures = [{ createdAt: '2026-03-01T00:00:00Z', metadata: { capturedAt: null } }]
+	expect(shouldShowPaired(true, captures, Date.parse('2026-04-30T00:00:00Z'))).toBe(true)
+	expect(shouldShowPaired(true, captures, Date.parse('2026-04-30T00:00:00.001Z'))).toBe(false)
 })

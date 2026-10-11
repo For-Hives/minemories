@@ -151,7 +151,9 @@ test('trash hides snapshots for thirty days before the purge removes them', () =
 	expect(deleteMemory('user-g', 'trash-1')).toBeNull()
 	expect(deleteMemory('user-h', 'missing')).toBeNull()
 	expect(trashMemory('user-h', 'trash-1')).toBe(true)
-	database.query('UPDATE memories SET deleted_at = ? WHERE id = ?').run(Date.now() - 31 * 24 * 3_600_1_000, 'trash-1')
+	database
+		.query('UPDATE memories SET deleted_at = ?, purge_after = ? WHERE id = ?')
+		.run(Date.now() - 31 * 86_400_000, Date.now() - 86_400_000, 'trash-1')
 	expect(purgeDeletedMemories()).toEqual(['user-h/trash-1.glb'])
 	expect(
 		database.query('SELECT object_key FROM object_deletions WHERE object_key = ?').get('user-h/trash-1.glb')

@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { migrateTrashRetention } from './trash-retention'
 
 const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite')
 mkdirSync(dirname(databasePath), { recursive: true })
@@ -57,6 +58,7 @@ if (!memoryColumns.some(column => column.name === 'metadata_json')) {
 if (!memoryColumns.some(column => column.name === 'deleted_at')) {
 	database.exec('ALTER TABLE memories ADD COLUMN deleted_at INTEGER')
 }
+migrateTrashRetention(database)
 database.exec(`
   CREATE TABLE IF NOT EXISTS share_links (
     token_hash TEXT PRIMARY KEY,

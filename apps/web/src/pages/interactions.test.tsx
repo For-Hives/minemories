@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 	navigate: vi.fn(),
 	list: vi.fn(),
 	listTrash: vi.fn(),
+	restore: vi.fn(),
 	status: vi.fn(),
 	create: vi.fn(),
 	check: vi.fn(),
@@ -43,7 +44,7 @@ vi.mock('../auth-client', () => ({ authClient: { signIn: { email: mocks.signIn }
 vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
 	apiClient: {
-		memories: { list: mocks.list, listTrash: mocks.listTrash },
+		memories: { list: mocks.list, listTrash: mocks.listTrash, restore: mocks.restore },
 		pairing: { status: mocks.status, create: mocks.create, check: mocks.check },
 	},
 }))
@@ -73,6 +74,7 @@ beforeEach(() => {
 	mocks.signUp.mockResolvedValue({ error: null })
 	mocks.list.mockResolvedValue([])
 	mocks.listTrash.mockResolvedValue([])
+	mocks.restore.mockResolvedValue({ ok: true })
 	mocks.status.mockResolvedValue({ paired: false })
 	mocks.create.mockResolvedValue({ code: '123456', expiresAt: '2026-09-30T14:00:00Z' })
 	mocks.check.mockResolvedValue({ status: 'pending' })
@@ -120,6 +122,31 @@ test('gallery retries a failed refresh', async () => {
 	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
 	await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
 	expect(mocks.list).toHaveBeenCalledTimes(2)
+})
+
+test('trash displays the server recovery deadline for a migrated capture', async () => {
+	vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-02-01T12:00:00Z'))
+	mocks.listTrash.mockResolvedValue([
+		{
+			id: 'protected-capture',
+			name: 'Recovered cabin',
+			size: 20,
+			createdAt: '2025-01-01T00:00:00Z',
+			deletedAt: '2025-01-02T00:00:00Z',
+			purgeAt: '2026-04-01T12:00:00Z',
+			metadata: { thumbnail: null, icon: null },
+		},
+	])
+	try {
+		mount(<GalleryPage />)
+		expect(await screen.findByText(/gone in 59d/)).toBeTruthy()
+		mocks.listTrash.mockResolvedValue([])
+		fireEvent.click(screen.getByRole('button', { name: /Restore/ }))
+		await waitFor(() => expect(mocks.restore).toHaveBeenCalledWith({ id: 'protected-capture' }))
+		await waitFor(() => expect(screen.queryByText(/gone in 59d/)).toBeNull())
+	} finally {
+		vi.restoreAllMocks()
+	}
 })
 test.each(['paired', 'expired', 'error'])('pairing polling reaches %s and stops after unmount', async status => {
 	vi.useFakeTimers()

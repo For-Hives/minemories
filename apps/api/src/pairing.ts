@@ -109,14 +109,15 @@ export function listMemories(userId: string) {
 export function listTrash(userId: string) {
 	const rows = database
 		.query(
-			'SELECT id, name, size, created_at, deleted_at, metadata_json FROM memories WHERE user_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC'
+			'SELECT id, name, size, created_at, deleted_at, COALESCE(purge_after, deleted_at + ?) AS purge_after, metadata_json FROM memories WHERE user_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC'
 		)
-		.all(userId) as Array<{
+		.all(TRASH_RETENTION_MS, userId) as Array<{
 		id: string
 		name: string
 		size: number
 		created_at: number
 		deleted_at: number
+		purge_after: number
 		metadata_json: string | null
 	}>
 
@@ -126,6 +127,7 @@ export function listTrash(userId: string) {
 		size: row.size,
 		createdAt: new Date(row.created_at).toISOString(),
 		deletedAt: new Date(row.deleted_at).toISOString(),
+		purgeAt: new Date(row.purge_after).toISOString(),
 		metadata: row.metadata_json ? { ...emptyMetadata(), ...JSON.parse(row.metadata_json) } : emptyMetadata(),
 	}))
 }
@@ -138,15 +140,18 @@ export function renameMemory(userId: string, id: string, name: string): boolean 
 }
 
 export function trashMemory(userId: string, id: string): boolean {
+	const now = Date.now()
 	const result = database
-		.query('UPDATE memories SET deleted_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
-		.run(Date.now(), id, userId)
+		.query('UPDATE memories SET deleted_at = ?, purge_after = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
+		.run(now, now + TRASH_RETENTION_MS, id, userId)
 	return result.changes === 1
 }
 
 export function restoreMemory(userId: string, id: string): boolean {
 	const result = database
-		.query('UPDATE memories SET deleted_at = NULL WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL')
+		.query(
+			'UPDATE memories SET deleted_at = NULL, purge_after = NULL WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL'
+		)
 		.run(id, userId)
 	return result.changes === 1
 }
@@ -165,17 +170,16 @@ export function deleteMemory(userId: string, id: string): string | null {
 	return row.object_key
 }
 
-export function purgeDeletedMemories(olderThanMs = TRASH_RETENTION_MS): string[] {
-	const cutoff = Date.now() - olderThanMs
+export function purgeDeletedMemories(now = Date.now()): string[] {
 	return database.transaction(() => {
 		database
 			.query(`INSERT INTO object_deletions (object_key, created_at)
-			SELECT object_key, ? FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?`)
-			.run(Date.now(), cutoff)
+			SELECT object_key, ? FROM memories WHERE deleted_at IS NOT NULL AND COALESCE(purge_after, deleted_at + ?) <= ?`)
+			.run(now, TRASH_RETENTION_MS, now)
 		const rows = database
-			.query(`DELETE FROM memories WHERE deleted_at IS NOT NULL AND deleted_at <= ?
+			.query(`DELETE FROM memories WHERE deleted_at IS NOT NULL AND COALESCE(purge_after, deleted_at + ?) <= ?
 			RETURNING object_key`)
-			.all(cutoff) as Array<{ object_key: string }>
+			.all(TRASH_RETENTION_MS, now) as Array<{ object_key: string }>
 		return rows.map(row => row.object_key)
 	})()
 }

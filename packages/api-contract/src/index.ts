@@ -6,7 +6,8 @@ export const thumbnailDataUrl = z
 	.max(96_000)
 	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
 
-export const TRASH_RETENTION_MS = 30 * 24 * 3_600_1_000
+export const DAY_MS = 24 * 60 * 60 * 1000
+export const TRASH_RETENTION_MS = 30 * DAY_MS
 
 const memorySchema = z.object({
 	id: z.string().uuid(),
@@ -50,6 +51,7 @@ export const apiContract = {
 			z.array(
 				memorySchema.extend({
 					deletedAt: z.string().datetime(),
+					purgeAt: z.string().datetime().optional(),
 				})
 			)
 		),

@@ -1,9 +1,11 @@
+import { DAY_MS } from '@minemories/api-contract'
+
 interface DatedCapture {
 	createdAt: string
 	metadata: { capturedAt: string | null }
 }
 
-export const PAIRING_FRESH_MS = 60 * 24 * 3_600_1_000
+export const PAIRING_FRESH_MS = 60 * DAY_MS
 
 export function newestCaptureTime(captures: DatedCapture[]): number | null {
 	let newest: number | null = null

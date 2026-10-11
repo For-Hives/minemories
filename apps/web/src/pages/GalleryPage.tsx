@@ -7,6 +7,7 @@ import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
+import { daysUntilPurge } from '../lib/trash'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
@@ -927,7 +928,7 @@ function TrashCard({
 	onRestore: () => void
 	onDelete: () => void
 }) {
-	const remaining = daysUntilPurge(item.deletedAt)
+	const remaining = daysUntilPurge(item.deletedAt, item.purgeAt)
 	return (
 		<article className="overflow-hidden rounded-[7px] border border-[#3a2f2f] bg-[#1c1a1a]">
 			<div className="relative grid h-[130px] place-items-center overflow-hidden bg-[#141214]">
@@ -970,12 +971,6 @@ function TrashCard({
 			</div>
 		</article>
 	)
-}
-
-function daysUntilPurge(deletedAt: string): number | null {
-	const deleted = Date.parse(deletedAt)
-	if (Number.isNaN(deleted)) return null
-	return Math.max(0, Math.ceil(30 - (Date.now() - deleted) / (24 * 3_600_1_000)))
 }
 
 function MemoryTile({ variant }: { variant: number }) {
