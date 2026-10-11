@@ -1,17 +1,13 @@
 import { betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
+import { authSecret } from './configuration'
 import { database } from './database'
 import { webOrigins } from './web-origins'
-
-const authSecret = process.env.BETTER_AUTH_SECRET
-if (!authSecret || authSecret.length < 32) {
-	throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters. Copy .env.example and set it.')
-}
 
 export const auth = betterAuth({
 	appName: 'Minemories',
 	baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
-	secret: authSecret,
+	secret: authSecret(process.env),
 	database,
 	trustedOrigins: webOrigins,
 	emailAndPassword: {

@@ -308,20 +308,20 @@ if (import.meta.main) {
 		maxRequestBodySize: MAX_MEMORY_BYTES,
 	})
 	void cleanupUploads()
-	setInterval(() => void cleanupUploads(), 3_600_000)
 	console.warn(`Minemories API ready at ${server.url}`)
 
 	purgeDeletedMemories()
 	void objectDeletions.maintain()
-	setInterval(() => void objectDeletions.maintain(), 60_000)
-	setInterval(() => purgeDeletedMemories(), 3_600_000)
-
-	process.on('SIGINT', () => {
-		server.stop()
+	const intervals = [
+		setInterval(() => void cleanupUploads(), 3_600_000),
+		setInterval(() => void objectDeletions.maintain(), 60_000),
+		setInterval(() => purgeDeletedMemories(), 3_600_000),
+	]
+	const shutdown = async () => {
+		for (const interval of intervals) clearInterval(interval)
+		await server.stop()
 		database.close()
-	})
-	process.on('SIGTERM', () => {
-		server.stop()
-		database.close()
-	})
+	}
+	process.on('SIGINT', shutdown)
+	process.on('SIGTERM', shutdown)
 }

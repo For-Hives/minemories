@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import './configuration'
 import { migrateTrashRetention } from './trash-retention'
 
 const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite')

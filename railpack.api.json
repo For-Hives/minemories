@@ -14,6 +14,6 @@
 		}
 	},
 	"deploy": {
-		"startCommand": "bun run --filter @minemories/api start"
+		"startCommand": "NODE_ENV=production bun run --filter @minemories/api start"
 	}
 }

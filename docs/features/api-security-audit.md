@@ -81,9 +81,10 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
   L’initialisation d’upload utilise déjà la lecture bornée à 4 MiB des morceaux.
   Ajouter des limites JSON adaptées à ces trois parcours, sans réduire les limites
   binaires ni rejeter les miniatures valides.
-- Deux secrets distincts sont documentés, mais le pepper d’appairage peut encore
-  retomber sur le secret d’auth. Rendre les vérifications de configuration explicites
-  avant déploiement public, avec tests de démarrage et sans valeurs locales par défaut.
+- Correction du 11 octobre : secrets explicitement distincts, suppression du repli
+  du pepper et contrôle de la configuration de production avant ouverture SQLite.
+  Voir [les variables et la migration](api-startup-configuration.md). L’audit de
+  l’infrastructure réelle reste suivi séparément.
 
 ## Exploitation
 

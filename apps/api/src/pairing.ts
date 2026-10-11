@@ -1,14 +1,12 @@
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { TRASH_RETENTION_MS } from '@minemories/api-contract'
+import { pairingPepper } from './configuration'
 import { database } from './database'
 
-const pairingPepper = process.env.PAIRING_PEPPER ?? process.env.BETTER_AUTH_SECRET
-if (!pairingPepper || pairingPepper.length < 32) {
-	throw new Error('PAIRING_PEPPER must contain at least 32 characters.')
-}
+const pepper = pairingPepper(process.env)
 
 const CODE_LIFETIME_MS = 5 * 60 * 1000
-const codeHash = (value: string) => createHmac('sha256', pairingPepper).update(value).digest('hex')
+const codeHash = (value: string) => createHmac('sha256', pepper).update(value).digest('hex')
 
 interface PairingRow {
 	id: string
