@@ -64,8 +64,11 @@ et les suppressions en attente. Un dépassement reçoit `storage_quota_exceeded`
 (HTTP 413) ; une réservation déjà obtenue n’est pas facturée deux fois au rejeu
 ou à la finalisation. La libération attend le nettoyage réussi.
 
-La finalisation utilise un stream fichier vers S3 et des parts SDK de **8 MiB**. Les
-routes de téléchargement privées et partagées utilisent également des streams. Les GLB
+La finalisation utilise un stream fichier vers S3 et des parts SDK de **8 MiB**,
+envoyées une par une avec AWS SDK v3. Le nettoyage durable parcourt
+toutes les pages d’uploads multipart et abandonne uniquement ceux de la clé exacte.
+Les morceaux mod → API restent de **4 MiB**. Voir [le stockage S3](storage-s3.md).
+Les routes de téléchargement privées et partagées utilisent également des streams. Les GLB
 et les métadonnées accessibles par lien de partage portent `Cache-Control: private, no-store`
 pour éviter qu’un cache public continue à les servir après révocation. Une
 capture devient visible uniquement après finalisation du stockage et transaction
@@ -85,8 +88,11 @@ pour maintenir l’ancien endpoint ; les nouveaux morceaux restent limités à 4
 - `bun api:check` : routes, isolation entre devices, rejeu, quotas, expiration,
   checksum, reprise dans un nouveau processus et stockage temporairement indisponible.
 - Le test API assemble et finalise un GLB de 200 MiB en 50 morceaux sans buffer du fichier entier.
-- `storage-stream.test.ts` traverse le SDK MinIO réel contre une fixture HTTP et
-  vérifie les parts S3 de 8 MiB. Cela ne constitue pas un test Garage réel.
+- `storage-stream.test.ts` traverse le SDK S3 réel contre une fixture HTTP et
+  vérifie les parts de 8 MiB, leurs SHA-256 signés et le nettoyage après refus d’une
+  part. Une source qui retient sa fin jusqu’à réception de la première part prouve
+  que l’envoi commence avant lecture du fichier entier. Cela ne constitue pas un
+  test Garage réel.
 - `ChunkedUploaderTest` vérifie les retries bornés, la reprise du sidecar, les erreurs
   permanentes et les offsets invalides.
 - Un smoke test HTTP du client Java avec `-Xmx64m` a transféré et finalisé

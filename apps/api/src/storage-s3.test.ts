@@ -13,15 +13,17 @@ const server = Bun.serve({
 	port: 0,
 	async fetch(request) {
 		const path = new URL(request.url).pathname
-		requests.push(`${request.method} ${path}`)
+		const isBucket = path === '/minemories' || path === '/minemories/'
+		requests.push(`${request.method} ${isBucket ? '/minemories' : path}`)
 		if (!available)
 			return new Response('<Error><Code>ServiceUnavailable</Code><Message>Offline</Message></Error>', {
 				status: 503,
 				headers: { 'content-type': 'application/xml' },
 			})
-		if (path === '/minemories') {
+		if (isBucket) {
 			if (request.method === 'HEAD') return new Response(null, { status: bucketExists ? 200 : 404 })
 			if (request.method === 'PUT') {
+				expect(await request.text()).toContain('<LocationConstraint>garage</LocationConstraint>')
 				bucketExists = true
 				return new Response(null)
 			}

@@ -51,7 +51,7 @@ supprimés après le test. Aucun changement de format GLB ou de comportement Min
 
 ## Alertes et suites autonomes
 
-Le scan après correction conserve quatre alertes modérées dans les dépendances
+Le scan après correction du 10 octobre conservait quatre alertes modérées dans les dépendances
 transitives de `minio@8.0.7` :
 
 | Dépendance | Alerte | Suite |
@@ -59,12 +59,18 @@ transitives de `minio@8.0.7` :
 | `decode-uri-component@0.2.2` via `query-string@7.1.3` | [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr) | Mise à jour compatible du SDK ou correctif maintenu. |
 | `stream-json@1.9.1` | [GHSA-528h-pc64-c93x](https://github.com/advisories/GHSA-528h-pc64-c93x), [GHSA-hqr4-qq8f-hg3x](https://github.com/advisories/GHSA-hqr4-qq8f-hg3x), [GHSA-mjw6-4jj6-33hc](https://github.com/advisories/GHSA-mjw6-4jj6-33hc) | Vérifier la compatibilité avant migration vers la version corrigée. |
 
-Minemories utilise le SDK pour les objets/multipart ; son code n’appelle pas les
-notifications de bucket ni le parsing `query-string`. Cela limite les parcours
-identifiés ici, sans retirer les alertes du scan. Les correctifs proposés hors
-plage changent de version majeure ; aucun override incompatible ni exclusion
-silencieuse n’est ajouté. Toute évolution S3 doit conserver les tests de bytes,
-multipart, panne et reprise contre Garage réel.
+Correction du 11 octobre : le client MinIO est remplacé par
+`@aws-sdk/client-s3` et `@aws-sdk/lib-storage` en version exacte `3.1149.0`.
+Cette migration retire les deux chaînes vulnérables du lockfile, sans override
+incompatible ni exclusion d’audit. `bun audit` retourne un rapport vide avec ce
+lockfile ; la CI exécute désormais aussi ce contrôle.
+
+Les variables S3 et les clés d’objets restent compatibles. Les captures sont
+transmises en stream avec des parts de 8 MiB et un seul envoi simultané ; les
+jobs durables abandonnent les uploads incomplets, y compris ceux listés sur
+plusieurs pages. Les tests couvrent les octets et les signatures des parts,
+la pagination, les refus et les régions. Les huit scénarios Garage réels passent,
+dont panne et reprise après redémarrage. Voir [la migration S3](storage-s3.md).
 
 Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
 

@@ -33,7 +33,7 @@
 ## API / Dev Environment Gotchas
 
 - API listens on `API_PORT` (default `3001`), CORS-locked to `WEB_ORIGIN` (`http://localhost:5173`). Auth via Better Auth, SQLite under `apps/api/data/` (gitignored).
-- Storage defaults to local Garage via the S3-compatible `minio` SDK (`docker compose up -d`). For development without Docker, `STORAGE_DRIVER=filesystem` and `LOCAL_OBJECTS_PATH=./data/objects`. Existing MinIO volume data is not migrated automatically.
+- Storage defaults to local Garage via AWS SDK v3 with the configured S3 endpoint (`docker compose up -d`). Multipart uses 8 MiB parts and one worker; durable cleanup aborts unfinished uploads. For development without Docker, `STORAGE_DRIVER=filesystem` and `LOCAL_OBJECTS_PATH=./data/objects`. Existing MinIO volume data is not migrated automatically.
 - Upload limits are load-bearing: legacy endpoint 100 MiB max (`MAX_MEMORY_BYTES`); resumable mod uploads 200 MiB max in 4 MiB chunks (`upload-files.ts`). Do not buffer whole resumable files. Content-type `model/gltf-binary` or `application/octet-stream`, owner-scoped download, `Cache-Control: private, no-store`.
 
 ## GLB + Mod Contract
