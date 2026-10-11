@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -32,6 +31,22 @@ final class PairingClient {
   static boolean isPaired() {
     String token = readSettings().getProperty("deviceToken");
     return token != null && !token.isBlank();
+  }
+
+  static CompletableFuture<StorageQuota> storageStatus() {
+    Properties settings = readSettings();
+    String api = apiUrl(settings);
+    String token = settings.getProperty("deviceToken");
+    return StorageStatusClient.fetch(HTTP, api, token)
+        .thenApply(
+            quota -> {
+              Properties current = readSettings();
+              if (!api.equals(apiUrl(current))
+                  || !Objects.equals(token, current.getProperty("deviceToken"))) {
+                throw new CompletionException(new IllegalStateException("Compte modifié."));
+              }
+              return quota;
+            });
   }
 
   static void unlink() {
@@ -98,7 +113,7 @@ final class PairingClient {
             .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
             .build();
 
-    return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+    return HTTP.sendAsync(request, ApiResponseBody.bounded())
         .thenApply(
             response -> {
               if (response.statusCode() != 200) {

@@ -11,7 +11,7 @@
 - corriger les quatre alertes transitives MinIO du premier audit API avec une solution compatible ; conserver les tests multipart, panne et reprise Garage (docs/features/api-security-audit.md)
 - réconcilier les objets orphelins historiques et compléter les anciens jobs de suppression sans taille/propriétaire ; les nouveaux uploads legacy, suppressions et purges sont durables (docs/features/account-storage-quota.md)
 - compléter la validation glTF commune API/viewer par les valeurs binaires des attributs (finitude, bornes), des indices et des remplacements sparse, puis les budgets de pixels décompressés ; les références/plages des bufferViews et accessors, la disposition des attributs, les cycles et budgets de géométrie sont contrôlés (docs/features/embedded-glb-resources.md)
-- afficher l’espace disponible et un message de quota compréhensible dans Minecraft, avec les actions de libération d’espace et conservation du GLB local ; contrat privé API/statut device et information galerie implémentés et testés (docs/features/account-storage-quota.md)
+- valider en jeu l’espace disponible et le message de quota dans Minecraft : modes simple/avancé, détail et actions de libération, refus d’envoi avec GLB local conservé ; implémentation, contrat privé API/statut device et information galerie testés automatiquement (docs/features/account-storage-quota.md)
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
 - SEO audit of the website
 - add umami/sentry/etc.. to web 

@@ -181,6 +181,69 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void quotaRefusalPreservesLocalCaptureAndSessionForRetryAfterSpaceIsFreed() throws Exception {
+    Path file = capture(20);
+    byte[] original = Files.readAllBytes(file);
+    AtomicInteger calls = new AtomicInteger();
+    List<String> ids = new ArrayList<>();
+    String url =
+        start(
+            exchange -> {
+              JsonObject input =
+                  JsonParser.parseString(
+                          new String(
+                              exchange.getRequestBody().readAllBytes(),
+                              java.nio.charset.StandardCharsets.UTF_8))
+                      .getAsJsonObject();
+              ids.add(input.get("id").getAsString());
+              int attempt = calls.incrementAndGet();
+              respond(
+                  exchange,
+                  attempt == 1 ? 413 : 200,
+                  attempt == 1 ? "{\"error\":\"storage_quota_exceeded\"}" : session(20, true));
+            });
+    IOException error =
+        assertThrows(
+            IOException.class,
+            () -> uploader().upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+    assertEquals(StorageQuota.NO_SPACE_MESSAGE, error.getMessage());
+    assertEquals(1, calls.get());
+    assertArrayEquals(original, Files.readAllBytes(file));
+    Path state = file.resolveSibling("capture.glb.upload.properties");
+    assertTrue(Files.exists(state));
+    assertFalse(Files.readString(state).contains("test-token"));
+    uploader().upload(url, "test-token", file, new JsonObject(), ignored -> {});
+    assertEquals(ids.getFirst(), ids.getLast());
+    assertEquals(2, calls.get());
+    assertFalse(Files.exists(state));
+    assertArrayEquals(original, Files.readAllBytes(file));
+  }
+
+  @Test
+  void unrelated413ResponsesDoNotClaimTheGalleryIsFull() throws Exception {
+    Path file = capture(20);
+    AtomicInteger calls = new AtomicInteger();
+    List<String> bodies =
+        List.of(
+            "<html>storage_quota_exceeded</html>",
+            "{\"error\":123}",
+            "{\"error\":\"glb_too_large\"}",
+            "{\"error\":null}",
+            "{}");
+    String url = start(exchange -> respond(exchange, 413, bodies.get(calls.getAndIncrement())));
+    for (String ignored : bodies) {
+      IOException error =
+          assertThrows(
+              IOException.class,
+              () -> uploader().upload(url, "test-token", file, new JsonObject(), offset -> {}));
+      assertTrue(error.getMessage().contains("HTTP 413"));
+      assertFalse(error.getMessage().contains("Espace insuffisant"));
+    }
+    assertEquals(bodies.size(), calls.get());
+    assertTrue(Files.exists(file));
+  }
+
+  @Test
   void rejectsOversizedFileBeforeContactingServer() throws Exception {
     Path file = temporary.resolve("large.glb");
     try (var output = new java.io.RandomAccessFile(file.toFile(), "rw")) {
