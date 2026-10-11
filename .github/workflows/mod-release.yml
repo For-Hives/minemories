@@ -60,7 +60,7 @@ jobs:
             const manifest = JSON.parse(readFileSync("apps/web/public/downloads/manifest.json", "utf8"));
             appendFileSync(process.env.GITHUB_OUTPUT, `version=${manifest.version}\n`);
           '
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: minemories-neoforge-mc1.21.1
           path: apps/web/public/downloads/*
@@ -97,7 +97,7 @@ jobs:
               }
             }
           '
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: minemories-neoforge-mc1.21.1
           path: downloads

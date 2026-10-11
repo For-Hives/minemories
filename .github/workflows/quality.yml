@@ -37,7 +37,7 @@ jobs:
         run: bun run api:garage
 
       - name: Keep the installable mod artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: minemories-neoforge-mc1.21.1
           path: apps/web/public/downloads/*
