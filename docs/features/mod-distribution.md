@@ -43,11 +43,11 @@ Le build web Railpack inclut désormais Java 21 et Node 24 pour construire ce m�
 
 ## CI et publications
 
-Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours).
+Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours). Un second job télécharge cet artefact avec `download-artifact` et vérifie l’en-tête JAR, les octets, le manifeste de compatibilité et le fichier d’empreinte contre le SHA-256 émis par le job de build. Un JAR modifié, tronqué ou accompagné de métadonnées incohérentes fait échouer la CI, même si une nouvelle empreinte a été inscrite dans l’artefact téléchargé.
 
 Le workflow manuel **Build and distribute mod** (`.github/workflows/mod-release.yml`) exécute `bun run build` et conserve les fichiers pendant 30 jours. Par défaut, il ne publie rien. Il permet de sélectionner séparément GitHub Releases, Modrinth et CurseForge, avec un canal alpha (défaut), beta ou release.
 
-Pour publier, choisir `main` et confirmer dans l’entrée `tested_in_game` que **la version exacte construite a été validée en jeu**. Le job `publish` utilise l’environnement GitHub `mod-releases`, configurable avec des reviewers si souhaité ; aucune règle d’approbation n’est créée par ce dépôt. Les étapes utilisent la même archive téléchargée depuis le job de build, pas une reconstruction indépendante. GitHub utilise le tag `mod-v<version>` et le commit testé.
+Pour publier, choisir `main` et confirmer dans l’entrée `tested_in_game` que **la version exacte construite a été validée en jeu**. Le job `publish` utilise l’environnement GitHub `mod-releases`, configurable avec des reviewers si souhaité ; aucune règle d’approbation n’est créée par ce dépôt. Les étapes utilisent la même archive téléchargée depuis le job de build, pas une reconstruction indépendante. Le même contrôle du JAR et des métadonnées s’exécute avant toute destination de publication. GitHub utilise le tag `mod-v<version>` et le commit testé.
 
 Avant la première publication catalogue, une personne responsable des comptes doit :
 
@@ -70,7 +70,7 @@ Sources officielles consultées le 10 octobre 2026 : [MC-Publish](https://github
 
 Tests de réglages : défaut officiel et overrides, rejet des URLs dangereuses, invalidation des identifiants au changement d’API, conservation du compte au changement de dossier, validation sans mutation partielle, chemins locaux, défaut AFK et permissions privées/écriture atomique.
 
-Tests du packaging : octets et métadonnées reproductibles, exclusion des sources, builds absents/ambigus/corrompus. Tests React : téléchargement et empreinte, erreurs réseau/manifeste, absence de lien cassé et annulation lors d’un changement de page.
+Tests du packaging et du téléchargement CI : octets et métadonnées reproductibles, exclusion des sources, builds absents/ambigus/corrompus, fichiers modifiés/tronqués/manquants et refus d’une empreinte remplacée dans l’artefact. Tests React : téléchargement et empreinte, erreurs réseau/manifeste, absence de lien cassé et annulation lors d’un changement de page.
 
 La vérification en jeu doit couvrir les modes simple/avancé à différentes échelles GUI, la persistance du dossier, l’export local réel, le changement d’API et le nouvel appairage, les erreurs de connexion, l’envoi en galerie et le retour à l’écran précédent. Tester sur un monde jetable et conserver une copie du profil avant installation.
 

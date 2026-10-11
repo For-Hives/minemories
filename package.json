@@ -30,7 +30,7 @@
 		"check": "bun run lint && bun run package:mod:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
 		"build": "bun run check && bun run mod:build && bun run package:mod && bun run web:build",
 		"package:mod": "node scripts/package-mod.mjs",
-		"package:mod:test": "node --test scripts/package-mod.test.mjs",
+		"package:mod:test": "node --test scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs",
 		"api:garage": "node scripts/garage-integration.mjs",
 		"api:coverage:test": "node --test scripts/check-api-coverage.test.mjs"
 	},
