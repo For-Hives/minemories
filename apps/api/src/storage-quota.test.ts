@@ -18,7 +18,7 @@ process.env.BETTER_AUTH_SECRET = 'quota-fixture-auth-secret-at-least-32-characte
 process.env.PAIRING_PEPPER = 'quota-fixture-pepper-secret-at-least-32-characters'
 const { app } = await import('./index')
 const { database } = await import('./database')
-const { accountStorageUsage, accountStorageFits } = await import('./storage-quota')
+const { accountStorageUsage, accountStorageFits, accountStorageSummary } = await import('./storage-quota')
 const { createPairingCode, exchangePairingCode, deleteMemory, trashMemory, restoreMemory, purgeDeletedMemories } =
 	await import('./pairing')
 const { removeMemory } = await import('./storage')
@@ -63,12 +63,33 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 	try {
 		fixture.exec(`CREATE TABLE memories (user_id TEXT, size INTEGER, deleted_at INTEGER);
 			CREATE TABLE mod_uploads (user_id TEXT, size INTEGER, completed INTEGER, expires_at INTEGER);
-			CREATE TABLE object_deletions (user_id TEXT, size INTEGER);
+			CREATE TABLE object_deletions (user_id TEXT, size INTEGER, discard_upload INTEGER);
 			INSERT INTO memories VALUES ('one', 100, NULL), ('one', 200, 1), ('two', 9000, NULL);
 			INSERT INTO mod_uploads VALUES ('one', 300, 0, 0), ('one', 9000, 1, 0), ('two', 9000, 0, 0);
-			INSERT INTO object_deletions VALUES ('one', 400), ('two', 9000), (NULL, NULL);`)
+			INSERT INTO object_deletions VALUES ('one', 336, 0), ('one', 64, 1), ('two', 9000, 0), (NULL, NULL, 0);`)
 		expect(accountStorageUsage(fixture, 'missing')).toBe(0)
 		expect(accountStorageUsage(fixture, 'one')).toBe(1000)
+		expect(accountStorageSummary(fixture, 'one')).toEqual({
+			usedBytes: 1000,
+			limitBytes: 1024,
+			availableBytes: 24,
+			reservedBytes: 364,
+			pendingDeletionBytes: 336,
+		})
+		expect(accountStorageSummary(fixture, 'two')).toEqual({
+			usedBytes: 27000,
+			limitBytes: 1024,
+			availableBytes: 0,
+			reservedBytes: 9000,
+			pendingDeletionBytes: 9000,
+		})
+		expect(accountStorageSummary(fixture, 'missing')).toEqual({
+			usedBytes: 0,
+			limitBytes: 1024,
+			availableBytes: 1024,
+			reservedBytes: 0,
+			pendingDeletionBytes: 0,
+		})
 		expect(accountStorageFits(fixture, 'one', 24)).toBe(true)
 		expect(accountStorageFits(fixture, 'one', 25)).toBe(false)
 		expect(accountStorageFits(fixture, 'missing', 1024)).toBe(true)

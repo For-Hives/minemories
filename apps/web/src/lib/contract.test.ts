@@ -2,6 +2,19 @@ import { apiContract } from '@minemories/api-contract'
 import { describe, expect, it } from 'vitest'
 
 describe('shared oRPC contract', () => {
+	it('declares private account storage with finite whole-byte quantities', () => {
+		const output = apiContract.account.storage['~orpc'].outputSchema
+		if (!output) throw new Error('Storage response schema is required')
+		const valid = { usedBytes: 10, limitBytes: 100, availableBytes: 90, reservedBytes: 2, pendingDeletionBytes: 3 }
+		expect(output.safeParse(valid).success).toBe(true)
+		expect(output.safeParse({ ...valid, usedBytes: 200, availableBytes: 0 }).success).toBe(true)
+		for (const field of Object.keys(valid)) {
+			for (const value of [-1, 0.5, Infinity, Number.MAX_SAFE_INTEGER + 1, '0', null]) {
+				expect(output.safeParse({ ...valid, [field]: value }).success).toBe(false)
+			}
+		}
+		expect(output.safeParse({ ...valid, limitBytes: 0 }).success).toBe(false)
+	})
 	it('only accepts six digit pairing codes and declared statuses', () => {
 		const check = apiContract.pairing.check['~orpc']
 		const input = check.inputSchema
