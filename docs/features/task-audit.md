@@ -1,4 +1,4 @@
-# État des tâches — 10 octobre 2026
+# État des tâches — 11 octobre 2026
 
 Cet audit retire uniquement les critères exercés ; les critères restants restent dans `TASKS.md`.
 
@@ -13,6 +13,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 - Audit initial API : headers de partage sans cache public, IP du socket et proxys de confiance, limiteur mémoire borné, corps d’appairage limité, correctif source-map-js. Les observations et alertes restantes sont dans [le rapport](api-security-audit.md) et les suites dans `docs/AI/TASKS.md`.
 
 - Suppressions/purges durables : file SQLite transactionnelle, backoff, reprise dans un nouveau processus après panne réelle Garage et refus de réutilisation des clés en attente. Voir [la validation et les limites](durable-deletions.md).
+
+- Délais corrigés : trente jours pour les nouvelles mises en corbeille, anciennes échéances préservées avec trente jours de grâce minimum, compte à rebours issu de l’API et cache d’appairage de soixante jours. Migration persistante, rollback, frontières calendaires, contrat oRPC et restauration dans la galerie testés ; build complet et sept scénarios Garage passent. Voir [la migration](trash-retention.md).
 
 ## Travaux encore ouverts
 

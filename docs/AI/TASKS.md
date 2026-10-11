@@ -9,7 +9,6 @@
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
 - corriger les quatre alertes transitives MinIO du premier audit API avec une solution compatible ; conserver les tests multipart, panne et reprise Garage (docs/features/api-security-audit.md)
-- corriger les conversions de durée de la corbeille (30 jours), du cache d’appairage et du compte à rebours web ; prévoir une migration protégeant la récupération des souvenirs déjà en corbeille avant de raccourcir leur rétention
 - réconcilier les objets orphelins historiques et rendre durable le nettoyage après échec d’un upload legacy ; la file des suppressions explicites/purges est implémentée (docs/features/durable-deletions.md)
 - imposer des ressources GLB embarquées et refuser les URI externes de buffers/images, avec validation du viewer et tests des deux parcours d’upload
 - borner le stockage finalisé par compte en plus du quota temporaire des uploads
