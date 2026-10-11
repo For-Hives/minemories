@@ -35,7 +35,10 @@ it('anchors the cloud layer to the capture, moves it independently of lighting, 
 	clouds.setContext({ x: 0, y: 100, z: 0, dayTime: 0, dimension: 'minecraft:the_nether', biome: null, seed: null })
 	clouds.update(new Vector3(), 1)
 	expect(clouds.visible).toBe(false)
+	const onDispose = vi.fn()
+	clouds.addEventListener('dispose', onDispose)
 	clouds.dispose()
+	expect(onDispose).toHaveBeenCalledOnce()
 })
 
 it('offsets the pattern by seed so worlds stay distinct', () => {
