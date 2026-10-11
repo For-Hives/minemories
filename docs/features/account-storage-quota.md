@@ -75,8 +75,8 @@ versionné restent également hors de cet inventaire. Ces suites restent dans
 Le déploiement cible un seul processus API, comme les sessions reprenables.
 Conserver SQLite et le staging sur leurs volumes persistants, et autoriser les
 opérations multipart nécessaires au nettoyage. La galerie affiche ces informations.
-Le client Minecraft prépare aussi l’affichage de l’espace et un message de quota
-spécifique ; sa validation visuelle en jeu reste nécessaire avant fusion.
+Le client Minecraft affiche aussi l’espace et un message de quota spécifique.
+La lisibilité des modes simple/avancé et du détail a été confirmée en jeu.
 La capture locale est conservée après refus d’upload.
 
 ## Consulter l’espace
@@ -133,9 +133,11 @@ Un autre HTTP 413 conserve son message HTTP générique. Les réponses JSON de
 statut, d’appairage et d’upload sont limitées à 16 KiB d’octets reçus, même sans
 Content-Length ; les corps d’envoi GLB et leurs limites restent inchangés.
 
-Cette interface est construite et testée automatiquement. Le client de
-développement isolé est lancé pour la validation en jeu ; la lisibilité des
-deux modes et des détails reste à confirmer avant fusion.
+Cette interface est construite et testée automatiquement. Le 11 octobre 2026,
+le testeur a confirmé que les deux modes et les détails sont lisibles dans le
+client de développement isolé. Le premier refus sur la fixture pleine a conservé
+le GLB et son fichier de reprise dans le dossier local ; la reprise vers l’API
+locale réelle a ensuite abouti.
 
 La première fixture locale simulait une galerie pleine sans recevoir de GLB.
 Elle a été remplacée par l’API du dépôt, avec SQLite et stockage filesystem dans
@@ -159,7 +161,7 @@ distribué installé dans un profil joueur.
   souvenir, après un upload legacy multipart de 9 MiB. Le GLB stocké est comparé
   octet pour octet, la fixture est arrêtée, le nettoyage échoue dans un nouveau
   processus, puis réussit après redémarrage de Garage dans un autre processus.
-- `bun run build` incluant `bun check` : 82 tests API passent, 62 tests web passent,
+- `bun run build` incluant `bun check` : 93 tests API passent, 64 tests web passent,
   Gradle et JAR distribué construits. Le quota et la file sont couverts à 100 %
   des lignes et fonctions. `bun run api:garage` passe ses huit scénarios réels.
 - Sessions HTTP/oRPC réelles : accès anonyme refusé, isolation entre comptes,
