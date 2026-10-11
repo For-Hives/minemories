@@ -79,10 +79,10 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
   des attributs et les budgets de décodage restent une suite distincte.
 - Le quota de staging ne borne pas le stockage total des captures finalisées par
   compte. Définir et appliquer cette limite avant une ouverture publique.
-- Les routes JSON auth/RPC héritent du plafond legacy de 100 MiB du serveur.
-  L’initialisation d’upload utilise déjà la lecture bornée à 4 MiB des morceaux.
-  Ajouter des limites JSON adaptées à ces trois parcours, sans réduire les limites
-  binaires ni rejeter les miniatures valides.
+- Correction du 11 octobre : les corps auth sont limités à 16 KiB, les RPC et
+  l’initialisation d’upload à 256 KiB avant parsing, avec comptage réel des octets.
+  Les deux miniatures maximales restent acceptées et les plafonds binaires restent
+  inchangés. Voir [les limites et les validations](api-json-limits.md).
 - Correction du 11 octobre : secrets explicitement distincts, suppression du repli
   du pepper et contrôle de la configuration de production avant ouverture SQLite.
   Voir [les variables et la migration](api-startup-configuration.md). L’audit de
