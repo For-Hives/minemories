@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import * as z from 'zod'
+import { requestBodyLimit, UPLOAD_INIT_BODY_BYTES } from './body-limits'
 import { database } from './database'
 import { parseMetadata } from './memory-metadata'
 import { addMemory, getDeviceFromToken } from './pairing'
@@ -88,11 +89,10 @@ const initialization = z.object({
 	sha256: z.string().regex(/^[a-f0-9]{64}$/),
 	metadata: z.record(z.string(), z.unknown()).default({}),
 })
-uploadRouter.post('/', async context => {
-	const body = await readUploadChunk(context.req.raw)
+uploadRouter.post('/', requestBodyLimit(UPLOAD_INIT_BODY_BYTES), async context => {
 	let value: unknown = null
 	try {
-		value = body ? JSON.parse(body.toString('utf8')) : null
+		value = await context.req.json()
 	} catch {
 		throw new HTTPException(400, { message: 'invalid_upload' })
 	}
