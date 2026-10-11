@@ -2,7 +2,7 @@ import { afterAll, expect, test } from 'bun:test'
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { externalGlbs, minimalGlb } from './test-support/glb-fixture'
+import { externalGlbs, malformedGeometryGlbs, minimalGlb } from './test-support/glb-fixture'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-routes-'))
 process.env.DATABASE_PATH = join(directory, 'test.sqlite')
@@ -127,12 +127,12 @@ test('network requests enforce JSON limits on auth, RPC and initialization while
 	}
 })
 
-test('legacy upload refuses external resources and a replacing JSON chunk before storing any capture', async () => {
+test('legacy upload refuses external resources, replacing JSON and incoherent geometry before storing any capture', async () => {
 	const { code } = createPairingCode('external-owner')
 	const paired = await pairRequest({ code }, 'external-resource-fixture')
 	const { deviceToken } = (await paired.json()) as { deviceToken: string }
 	await Promise.all(
-		externalGlbs().map(async bytes => {
+		[...externalGlbs(), ...malformedGeometryGlbs()].map(async bytes => {
 			const response = await app.request('/api/mod/memories', {
 				method: 'POST',
 				headers: { authorization: `Bearer ${deviceToken}`, 'content-type': 'model/gltf-binary' },

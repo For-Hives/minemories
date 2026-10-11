@@ -1,3 +1,5 @@
+import { validGeometry } from './glb-geometry'
+
 export const MAX_GLB_JSON_BYTES = 4 * 1024 * 1024
 const JSON_CHUNK = 0x4e4f534a
 const BIN_CHUNK = 0x004e4942
@@ -31,9 +33,23 @@ function embeddedBuffers(value: unknown, binaryLength: number | null): boolean {
 		if (!record(resource)) return false
 		const length = resource.byteLength
 		if (typeof length !== 'number' || !Number.isSafeInteger(length) || length < 1) return false
-		if (resource.uri !== undefined) return typeof resource.uri === 'string' && BUFFER_DATA_URI.test(resource.uri)
+		if (resource.uri !== undefined)
+			return (
+				typeof resource.uri === 'string' &&
+				BUFFER_DATA_URI.test(resource.uri) &&
+				bufferDataLength(resource.uri) === length
+			)
 		return index === 0 && binaryLength !== null && binaryLength >= length && binaryLength <= length + 3
 	})
+}
+
+function bufferDataLength(uri: string): number {
+	const bytes = uri.slice(uri.indexOf(',') + 1)
+	if (bytes.length % 4 === 1 || (bytes.endsWith('=') && bytes.length % 4 !== 0)) return -1
+	let padding = 0
+	if (bytes.endsWith('==')) padding = 2
+	else if (bytes.endsWith('=')) padding = 1
+	return Math.floor((bytes.length * 3) / 4) - padding
 }
 
 function embeddedImages(value: unknown): boolean {
@@ -66,7 +82,8 @@ export function embeddedGltfJson(json: Uint8Array, binaryLength: number | null =
 			record(document.asset) &&
 			document.asset.version === '2.0' &&
 			embeddedBuffers(document.buffers, binaryLength) &&
-			embeddedImages(document.images)
+			embeddedImages(document.images) &&
+			validGeometry(document)
 		)
 	} catch {
 		return false

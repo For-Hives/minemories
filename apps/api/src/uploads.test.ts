@@ -4,7 +4,7 @@ import { createReadStream, existsSync, mkdtempSync, rmSync, statSync } from 'nod
 import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { externalGlbs, minimalGlb } from './test-support/glb-fixture'
+import { externalGlbs, malformedGeometryGlbs, minimalGlb } from './test-support/glb-fixture'
 import { largeThumbnail } from './test-support/thumbnail-fixture'
 
 const root = mkdtempSync(join(tmpdir(), 'minemories-chunks-'))
@@ -74,8 +74,8 @@ async function assertExternalUploadRejected(bytes: Buffer) {
 	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(200)
 }
 
-test('resumable upload refuses external resources and a replacing JSON chunk without storing or publishing them', async () => {
-	for (const bytes of externalGlbs()) {
+test('resumable upload refuses external resources, replacing JSON and incoherent geometry without storing or publishing them', async () => {
+	for (const bytes of [...externalGlbs(), ...malformedGeometryGlbs()]) {
 		// biome-ignore lint/performance/noAwaitInLoops: initialization holds a global lock, so fixtures must run sequentially.
 		await assertExternalUploadRejected(bytes)
 	}
