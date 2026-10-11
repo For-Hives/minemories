@@ -39,3 +39,22 @@ export function externalGlbs(): Buffer[] {
 	replaced.writeUInt32LE(replaced.length, 8)
 	return [...fixtures, replaced]
 }
+
+export function malformedGeometryGlbs(): Buffer[] {
+	const bufferView = { buffer: 0, byteLength: 36 }
+	const accessor = { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3', min: [0, 0, 0], max: [1, 1, 0] }
+	const document = {
+		asset: { version: '2.0' },
+		buffers: [{ byteLength: 64 }],
+		bufferViews: [bufferView],
+		accessors: [accessor],
+		meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+	}
+	return [
+		{ ...document, bufferViews: [{ ...bufferView, byteLength: 65 }] },
+		{ ...document, accessors: [{ ...accessor, count: 4 }] },
+		{ ...document, meshes: [{ primitives: [{ attributes: { POSITION: 99 } }] }] },
+		{ ...document, accessors: [{ componentType: 5126, count: 32_000_000, type: 'VEC4' }] },
+		{ ...document, nodes: [{ mesh: 0, children: [0] }] },
+	].map(value => minimalGlb(Buffer.alloc(64), value))
+}

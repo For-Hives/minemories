@@ -17,6 +17,8 @@ La validation commune est dans `@minemories/api-contract/glb` :
   positive, entière et compatible avec la taille du BIN, avec trois octets de
   padding au maximum. Tout autre buffer doit fournir ses propres données via une
   URI `data:application/octet-stream` ou `data:application/gltf-buffer` en base64.
+  Leur longueur déclarée doit correspondre aux octets intégrés, avec ou sans
+  padding base64 ; une URI courte ne peut pas annoncer un buffer plus grand.
 - Chaque image fournit une référence `bufferView` avec un type MIME, ou une URI
   `data:` raster intégrée. Les types acceptés sont PNG, JPEG, WebP, AVIF et KTX2.
   Les formats à extensions restent soumis aux capacités du loader ; ce contrôle
@@ -51,7 +53,58 @@ de 10 488 752 octets passe les deux validations ; son import et son rendu Blende
 ont été inspectés, avec un mesh et 55 images PNG intégrées. Aucun fichier privé n’est
 ajouté au dépôt ou envoyé en production pour ces tests.
 
-La validation ne couvre pas encore toute la cohérence glTF des accessors,
-bufferViews, attributs ou extensions, ni un budget de pixels décompressés. Ces
-limites restent suivies dans `docs/AI/TASKS.md` ; une validation URI ne remplace pas
-une validation complète des données de géométrie et d’image.
+## Disposition et budgets de géométrie
+
+Le même contrôle commun vérifie la disposition JSON avant stockage et avant
+appel du loader Three.js. Chaque vue référence un buffer existant et reste dans
+sa longueur. Les offsets et strides sont entiers, alignés et compatibles avec
+les types de composants ; les matrices tiennent compte du padding de colonnes.
+La plage complète d’un accessor, y compris son dernier élément, doit tenir dans
+la vue. Les références et plages des remplacements sparse sont aussi contrôlées.
+
+Les primitives référencent des accessors existants, avec des nombres de sommets
+identiques, des types adaptés aux attributs et des bornes POSITION finies.
+Les indices utilisent un scalaire entier non signé et une topologie cohérente.
+Le contrôle distingue les vues de textures, de sommets et d’indices ; plusieurs
+accessors de sommets partageant une vue exigent un stride explicite. Les morph
+targets, les attributs de skin, les types quantifiés déclarés et les instances GPU
+passent ces contrôles de disposition. Meshopt et Draco sont refusés : le viewer
+n’a pas leurs décodeurs configurés, et leurs dispositions compressées ne peuvent
+pas contourner les budgets.
+
+| Budget commun API / viewer | Plafond |
+| --- | --- |
+| Entrées par liste contrôlée | 16 384 |
+| Éléments d’accessors cumulés, indices compris | 32 000 000 |
+| Géométrie décompressée estimée en float32 | 256 MiB |
+| Primitives cumulées | 4 096 |
+| Éléments à dessiner, répétitions et instances comprises | 32 000 000 |
+| Nœuds | 4 096 |
+| Profondeur de hiérarchie | 128 |
+
+Ces budgets sont des limites Minemories, en plus de la structure glTF. Ils portent
+sur les listes complètes, y compris les données non utilisées dans la scène
+initiale. Les accessors à zéros implicites et les données sparse sont comptés
+avant allocation ; la taille du GLB seule ne bornerait pas leur expansion.
+Les nœuds référencent des meshes existants, avec des transformations finies.
+Les cycles, les parents multiples et les racines de scène incohérentes sont
+refusés sans parcours récursif du graphe.
+
+Les uploads HTTP legacy et reprenables refusent les fixtures de géométrie
+incohérente avant publication ou stockage d’objet. Le viewer refuse les mêmes
+dispositions avant d’invoquer le loader ; une scène triangulaire valide passe
+aussi le parseur Three.js réel. Les captures Minecraft de 10 488 752 et
+13 628 224 octets passent le contrôle en mémoire du viewer et celui du fichier
+reprenable, qui lit seulement le JSON et les en-têtes avant son checksum en stream.
+Le rendu Blender de la capture récente a été inspecté : le village, les textures
+et le volume de terrain restent visibles. `bun run build`, incluant `bun check`,
+passe avec 93 tests API et 64 tests web ; les fonctions et lignes du contrôle
+commun sont couvertes à 100 %. Les huit scénarios Garage réels passent aussi,
+y compris l’envoi reprenable, la panne et le nettoyage dans un nouveau processus.
+
+Le contrôle JSON ne lit pas encore les valeurs binaires des attributs et indices :
+il ne prouve donc pas l’absence de NaN dans le BIN, les bornes de chaque indice,
+l’ordre des indices sparse ou l’accord entre valeurs et bornes annoncées.
+Le budget de pixels décompressés et les validations binaires restent dans
+`docs/AI/TASKS.md`. Les autres contraintes glTF et les extensions ne constituent
+pas une validation exhaustive du format.
