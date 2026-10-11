@@ -31,8 +31,8 @@ Ces règles suivent la structure et les ressources intégrées de la
 avec une politique Minemories qui exige l’autonomie du fichier.
 
 Les plafonds binaires restent 100 MiB pour l’ancien upload et 200 MiB pour l’upload
-reprenable en morceaux de 4 MiB. La validation de ce dernier lit le JSON et les
-en-têtes de blocs, puis calcule le checksum en stream ; elle ne charge pas le BIN
+reprenable en morceaux de 4 MiB. La validation de ce dernier lit le JSON, les
+en-têtes et les fenêtres d’accessors, puis calcule le checksum en stream ; elle ne charge pas le BIN
 entier. Les fichiers refusés ne créent ni souvenir ni objet de stockage. Une
 session reprenable refusée peut être annulée ; sinon son staging privé expire
 avec le mécanisme existant.
@@ -102,9 +102,50 @@ passe avec 93 tests API et 64 tests web ; les fonctions et lignes du contrôle
 commun sont couvertes à 100 %. Les huit scénarios Garage réels passent aussi,
 y compris l’envoi reprenable, la panne et le nettoyage dans un nouveau processus.
 
-Le contrôle JSON ne lit pas encore les valeurs binaires des attributs et indices :
-il ne prouve donc pas l’absence de NaN dans le BIN, les bornes de chaque indice,
-l’ordre des indices sparse ou l’accord entre valeurs et bornes annoncées.
-Le budget de pixels décompressés et les validations binaires restent dans
-`docs/AI/TASKS.md`. Les autres contraintes glTF et les extensions ne constituent
-pas une validation exhaustive du format.
+## Valeurs binaires des accessors
+
+Le contrôle du 11 octobre examine aussi les octets de chaque accessor, y compris
+ceux qui ne sont pas utilisés par la scène initiale. Les uploads legacy et
+reprenable ainsi que le viewer utilisent les mêmes règles avant stockage ou
+appel du loader :
+
+- Les composants flottants doivent être finis : NaN et les deux infinis sont
+  refusés dans les valeurs de base et les remplacements sparse.
+- Les bornes déclarées doivent correspondre aux extrema effectifs. Les nombres
+  JSON sont arrondis en float32 avec `Math.fround` avant comparaison ; les types
+  entiers normalisés conservent leurs bornes brutes, conformément au format.
+- Chaque indice de primitive référence un sommet existant pour toutes les
+  primitives qui l’utilisent. Les valeurs maximales réservées des uint8/16/32
+  sont refusées comme indices.
+- Les indices sparse sont strictement croissants, uniques et inférieurs au
+  nombre d’éléments de l’accessor. Les bornes sont calculées après remplacement,
+  avec les zéros implicites restants. Un accessor sans base ni sparse peut garder
+  des bornes descriptives sans données, comme prévu par glTF.
+- Les strides et le padding des colonnes de matrices sont respectés ; les
+  octets de padding ne deviennent pas des composants.
+
+Chaque lecture reste limitée à **64 KiB**, pour la base, les indices sparse et
+leurs valeurs. Les fenêtres sont parcourues sans construire l’accessor complet
+ni conserver une table de tous les remplacements. Les URI base64 sont décodées
+dans la limite du JSON de 4 MiB. Le contrôle rend régulièrement la main à la
+boucle d’événements, afin que le chargement reste visible. Le checksum final
+reprenable conserve son parcours en stream.
+
+Ces règles suivent les sections Accessor Bounds, Sparse Accessors et Topology
+and Connectivity de la
+[spécification glTF 2.0](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html).
+
+Les tests couvrent les valeurs non finies, les bornes fausses, les trois types
+d’indices, les quatre types entiers normalisés, les matrices avec padding, les
+strides, les remplacements sur plusieurs fenêtres, les lectures trop courtes
+et les buffers inline. Les deux uploads refusent les fichiers malformés sans
+créer d’objet ni publier de souvenir. Le vrai parseur Three.js accepte aussi
+une géométrie sparse valide et n’est pas appelé pour les fixtures refusées.
+
+Les captures réelles de **10 488 752** et **13 628 224** octets passent le contrôle
+en mémoire et la validation du fichier reprenable avec SHA-256. Le rendu Blender
+de la seconde a été revérifié : village, textures et terrain de 65 × 65 × 118
+restent visibles. Aucun changement du fichier exporté ni du code Minecraft.
+
+Le budget de pixels décompressés reste dans `docs/AI/TASKS.md`. Ces contrôles ne
+constituent pas une validation exhaustive des autres contraintes et extensions glTF.

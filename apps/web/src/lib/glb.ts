@@ -1,11 +1,11 @@
-import { isSelfContainedGlb } from '@minemories/api-contract/glb'
+import { validateSelfContainedGlb } from '@minemories/api-contract/glb'
 
 const GLB_EXTENSION = /\.glb$/i
 
 export class UnsupportedGlbError extends Error {}
 
 export async function parseEmbeddedGlb<T>(buffer: ArrayBuffer, parse: (buffer: ArrayBuffer) => Promise<T>): Promise<T> {
-	if (!isSelfContainedGlb(new Uint8Array(buffer))) {
+	if (!(await validateSelfContainedGlb(new Uint8Array(buffer)))) {
 		throw new UnsupportedGlbError(
 			'GLB invalide ou trop complexe : réexporte une zone plus petite avec ses textures et sa géométrie intégrées.'
 		)

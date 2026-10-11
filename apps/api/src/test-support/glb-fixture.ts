@@ -58,3 +58,52 @@ export function malformedGeometryGlbs(): Buffer[] {
 		{ ...document, nodes: [{ mesh: 0, children: [0] }] },
 	].map(value => minimalGlb(Buffer.alloc(64), value))
 }
+
+export function malformedBinaryGlbs(): Buffer[] {
+	const binary = Buffer.alloc(72)
+	new Float32Array(binary.buffer, binary.byteOffset, 9).set([0, 0, 0, 1, 0, 0, 0, 1, 0])
+	binary.writeUInt16LE(1, 38)
+	binary.writeUInt16LE(2, 40)
+	const document = {
+		asset: { version: '2.0' },
+		buffers: [{ byteLength: binary.length }],
+		bufferViews: [
+			{ buffer: 0, byteLength: 36 },
+			{ buffer: 0, byteOffset: 36, byteLength: 6 },
+		],
+		accessors: [
+			{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3', min: [0, 0, 0], max: [1, 1, 0] },
+			{ bufferView: 1, componentType: 5123, count: 3, type: 'SCALAR' },
+		],
+		meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }],
+	}
+	const nan = Buffer.from(binary)
+	nan.writeFloatLE(Number.NaN, 0)
+	const index = Buffer.from(binary)
+	index.writeUInt16LE(3, 40)
+	const sparse = {
+		...document,
+		bufferViews: [
+			...document.bufferViews,
+			{ buffer: 0, byteOffset: 44, byteLength: 2 },
+			{ buffer: 0, byteOffset: 48, byteLength: 24 },
+		],
+		accessors: [
+			{
+				...document.accessors[0],
+				bufferView: undefined,
+				sparse: { count: 2, indices: { bufferView: 2, componentType: 5121 }, values: { bufferView: 3 } },
+			},
+			document.accessors[1],
+		],
+	}
+	return [
+		minimalGlb(nan, document),
+		minimalGlb(index, document),
+		minimalGlb(binary, sparse),
+		minimalGlb(binary, {
+			...document,
+			accessors: [{ ...document.accessors[0], max: [2, 1, 0] }, document.accessors[1]],
+		}),
+	]
+}
