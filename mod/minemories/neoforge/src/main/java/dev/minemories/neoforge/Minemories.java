@@ -468,8 +468,11 @@ public class Minemories {
   }
 
   static String pairingError(Throwable error) {
-    Throwable cause = error.getCause() == null ? error : error.getCause();
-    return "Request failed: " + cause.getMessage();
+    Throwable cause = error;
+    while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) {
+      cause = cause.getCause();
+    }
+    return "Échec : " + cause.getMessage();
   }
 
   @SubscribeEvent

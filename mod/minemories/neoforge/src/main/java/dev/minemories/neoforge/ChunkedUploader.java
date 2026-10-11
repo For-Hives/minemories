@@ -127,7 +127,7 @@ final class ChunkedUploader {
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
-        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = http.send(request, ApiResponseBody.bounded());
         int status = response.statusCode();
         if (status >= 200 && status < 300) {
           try {
@@ -136,7 +136,7 @@ final class ChunkedUploader {
             throw new IOException("Invalid upload API response", error);
           }
         }
-        UploadException error = new UploadException(status);
+        UploadException error = new UploadException(status, response.body());
         boolean transientFailure =
             status == 408
                 || status == 429
@@ -210,9 +210,26 @@ final class ChunkedUploader {
     private static final long serialVersionUID = 1L;
     private final int status;
 
-    UploadException(int status) {
-      super("Upload refused (HTTP " + status + "). Retry /minemories upload to resume.");
+    UploadException(int status, String body) {
+      super(message(status, body));
       this.status = status;
+    }
+
+    private static String message(int status, String body) {
+      if (status == 413) {
+        try {
+          var error = JsonParser.parseString(body).getAsJsonObject().get("error");
+          if (error != null
+              && error.isJsonPrimitive()
+              && error.getAsJsonPrimitive().isString()
+              && error.getAsString().equals("storage_quota_exceeded")) {
+            return StorageQuota.NO_SPACE_MESSAGE;
+          }
+        } catch (RuntimeException ignored) {
+          // An unknown response keeps the generic HTTP message.
+        }
+      }
+      return "Envoi refusé (HTTP " + status + "). Réessaie /minemories upload pour reprendre.";
     }
   }
 }
