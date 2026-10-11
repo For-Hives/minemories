@@ -91,6 +91,7 @@ export class MinecraftClouds extends THREE.Group {
 		this.disposed = true
 		this.mesh.geometry.dispose()
 		this.material.dispose()
+		super.dispose()
 	}
 
 	private occupied(x: number, z: number): boolean {

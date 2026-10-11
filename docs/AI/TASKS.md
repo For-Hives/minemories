@@ -20,6 +20,7 @@
 - section on the website for documention about the functionment, like to github opensource repo, how to selfhost ? 
 - mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
 - optimization maximum du fichier gltf 
+- profiler et réduire la première compilation des shaders du viewer sur les captures riches en matériaux et lumières ; mesurer avant/après sans retirer l’état de chargement ni masquer un rendu en erreur (docs/concepts/development-workflow.md)
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
 - extraire les états et le polling de `GalleryPage` avec des tests d'interaction avant de retirer les exceptions Biome localisées
