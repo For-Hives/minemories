@@ -3,6 +3,7 @@ import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { Client } from 'minio'
+import { DEV_S3_ACCESS_KEY, DEV_S3_SECRET_KEY } from './configuration'
 
 const endpoint = new URL(process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900')
 const bucket = process.env.S3_BUCKET ?? 'minemories'
@@ -15,8 +16,8 @@ const client = new Client({
 	endPoint: endpoint.hostname,
 	port: Number(endpoint.port || (endpoint.protocol === 'https:' ? 443 : 80)),
 	useSSL: endpoint.protocol === 'https:',
-	accessKey: process.env.S3_ACCESS_KEY ?? 'GK0123456789abcdef0123456789abcdef',
-	secretKey: process.env.S3_SECRET_KEY ?? '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+	accessKey: process.env.S3_ACCESS_KEY ?? DEV_S3_ACCESS_KEY,
+	secretKey: process.env.S3_SECRET_KEY ?? DEV_S3_SECRET_KEY,
 	region: process.env.S3_REGION ?? 'garage',
 	partSize: 8 * 1024 * 1024,
 })
