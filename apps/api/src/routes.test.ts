@@ -1,8 +1,8 @@
 import { afterAll, expect, test } from 'bun:test'
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { minimalGlb } from './test-support/glb-fixture'
+import { externalGlbs, minimalGlb } from './test-support/glb-fixture'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-routes-'))
 process.env.DATABASE_PATH = join(directory, 'test.sqlite')
@@ -77,6 +77,26 @@ test('status and upload require a valid device token', async () => {
 	expect((await app.request('/api/mod/status', { headers: { authorization: 'Bearer invalid' } })).status).toBe(401)
 	expect((await app.request('/api/mod/memories', { method: 'POST' })).status).toBe(401)
 	expect((await app.request('/api/memories/missing/file')).status).toBe(401)
+})
+
+test('legacy upload refuses external resources and a replacing JSON chunk before storing any capture', async () => {
+	const { code } = createPairingCode('external-owner')
+	const paired = await pairRequest({ code }, 'external-resource-fixture')
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	await Promise.all(
+		externalGlbs().map(async bytes => {
+			const response = await app.request('/api/mod/memories', {
+				method: 'POST',
+				headers: { authorization: `Bearer ${deviceToken}`, 'content-type': 'model/gltf-binary' },
+				body: Uint8Array.from(bytes).buffer,
+			})
+			expect(response.status).toBe(400)
+			expect(await response.json()).toEqual({ error: 'invalid_glb' })
+		})
+	)
+	const { listMemories } = await import('./pairing')
+	expect(listMemories('external-owner')).toEqual([])
+	expect(existsSync(join(directory, 'objects', 'external-owner'))).toBe(false)
 })
 
 test('upload checks size and type, stores the bytes and returns metadata', async () => {

@@ -1,5 +1,5 @@
-export function minimalGlb(binary?: Buffer): Buffer {
-	const json = Buffer.from('{"asset":{"version":"2.0"}}')
+export function minimalGlb(binary?: Buffer, document: unknown = { asset: { version: '2.0' } }): Buffer {
+	const json = Buffer.from(JSON.stringify(document))
 	const jsonLength = Math.ceil(json.length / 4) * 4
 	const binLength = binary ? Math.ceil(binary.length / 4) * 4 : 0
 	const total = 20 + jsonLength + (binary ? 8 + binLength : 0)
@@ -17,4 +17,25 @@ export function minimalGlb(binary?: Buffer): Buffer {
 		binary.copy(glb, offset + 8)
 	}
 	return glb
+}
+
+export function externalGlbs(): Buffer[] {
+	const fixtures = [
+		'https://private.test/file',
+		'http://127.0.0.1/private',
+		'//private.test/file',
+		'../file',
+		'file:///private',
+		'blob:https://private.test/id',
+	].flatMap(uri =>
+		['buffers', 'images'].map(field =>
+			minimalGlb(undefined, { asset: { version: '2.0' }, [field]: [{ byteLength: 3, uri }] })
+		)
+	)
+	const safe = minimalGlb()
+	const first = fixtures[0]
+	if (!first) throw new Error('Missing external GLB fixture')
+	const replaced = Buffer.concat([safe, first.subarray(12)])
+	replaced.writeUInt32LE(replaced.length, 8)
+	return [...fixtures, replaced]
 }
