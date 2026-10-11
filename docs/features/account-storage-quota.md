@@ -134,10 +134,18 @@ statut, d’appairage et d’upload sont limitées à 16 KiB d’octets reçus, 
 Content-Length ; les corps d’envoi GLB et leurs limites restent inchangés.
 
 Cette interface est construite et testée automatiquement. Le client de
-développement isolé est lancé pour la validation en jeu ; tant que celle-ci
-n’est pas confirmée, la PR reste en brouillon. La fixture locale simule une
-galerie pleine sans recevoir ni transférer les GLB ; elle ne prouve pas un
-déploiement ou un envoi en production.
+développement isolé est lancé pour la validation en jeu ; la lisibilité des
+deux modes et des détails reste à confirmer avant fusion.
+
+La première fixture locale simulait une galerie pleine sans recevoir de GLB.
+Elle a été remplacée par l’API du dépôt, avec SQLite et stockage filesystem dans
+le dossier de test isolé, un compte dédié et un quota de **200 Mo**
+(200 000 000 octets). La connexion du client de test reste utilisable. Une capture
+de 13 628 224 octets envoyée depuis Minecraft a été finalisée ; le téléchargement
+avec une session web authentifiée restitue les mêmes octets que le GLB local.
+Le résumé annonce 186 371 776 octets disponibles, sans réservation ni suppression
+en attente. Ce test local ne valide pas un déploiement en production ou le JAR
+distribué installé dans un profil joueur.
 
 ## Vérifications
 
