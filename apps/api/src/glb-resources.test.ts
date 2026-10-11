@@ -26,7 +26,12 @@ const externalUris = [
 test('embedded BIN references and supported inline data remain accepted', () => {
 	for (const document of [
 		{ asset },
-		{ asset, buffers: [{ byteLength: 4 }], images: [{ bufferView: 0, mimeType: 'image/png' }] },
+		{
+			asset,
+			buffers: [{ byteLength: 4 }],
+			bufferViews: [{ buffer: 0, byteLength: 4 }],
+			images: [{ bufferView: 0, mimeType: 'image/png' }],
+		},
 		{ asset, buffers: [{ byteLength: 3, uri: 'data:application/octet-stream;base64,AAAA' }] },
 		{ asset, buffers: [{ byteLength: 3, uri: 'data:application/gltf-buffer;base64,AAAA' }] },
 		{ asset, images: [{ uri: 'data:image/png;base64,AAAA' }, { uri: 'data:image/jpeg,%FF%D8%FF' }] },
