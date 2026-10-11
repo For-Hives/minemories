@@ -10,7 +10,7 @@
 - create few ads (video format)
 - corriger les quatre alertes transitives MinIO du premier audit API avec une solution compatible ; conserver les tests multipart, panne et reprise Garage (docs/features/api-security-audit.md)
 - réconcilier les objets orphelins historiques et rendre durable le nettoyage après échec d’un upload legacy ; la file des suppressions explicites/purges est implémentée (docs/features/durable-deletions.md)
-- imposer des ressources GLB embarquées et refuser les URI externes de buffers/images, avec validation du viewer et tests des deux parcours d’upload
+- valider la cohérence glTF des accessors, bufferViews et attributs, avec des budgets de géométrie et de pixels décompressés dans l’API et le viewer ; les URI externes et conteneurs de remplacement sont déjà refusés (docs/features/embedded-glb-resources.md)
 - borner le stockage finalisé par compte en plus du quota temporaire des uploads
 - appliquer des limites de corps JSON à auth, RPC et initialisation des uploads sans réduire les plafonds binaires ni bloquer les miniatures valides
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
