@@ -66,6 +66,90 @@ async function runDeletionWorker(path: string, timeShift = 0) {
 	return JSON.parse(output) as { pending: number }
 }
 
+test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TEST_CONTAINER)(
+	'legacy crash after multipart storage retains its quota claim through outage and cleanup in a new process',
+	async () => {
+		const container = process.env.GARAGE_TEST_CONTAINER
+		if (!(container && process.env.S3_BUCKET?.startsWith('minemories-integration')))
+			throw new Error('Dedicated fixture required')
+		const { stdout } = await execute('docker', [
+			'inspect',
+			'--format',
+			'{{ index .Config.Labels "com.docker.compose.project" }}',
+			container,
+		])
+		if (stdout.trim() !== 'minemories-integration') throw new Error('Refusing non-test container')
+		const directory = mkdtempSync(join(tmpdir(), 'minemories-legacy-crash-garage-'))
+		const path = join(directory, 'db.sqlite')
+		const source = join(directory, 'source.glb')
+		const owner = randomUUID()
+		const bytes = minimalGlb(Buffer.alloc(9 * 1024 * 1024, 23))
+		await Bun.write(source, bytes)
+		let key: string | undefined
+		const { readMemory, removeMemory } = await import('./storage')
+		const { accountStorageUsage } = await import('./storage-quota')
+		try {
+			const worker = Bun.spawn(
+				[process.execPath, join(import.meta.dir, 'test-support/garage-legacy-crash-worker.ts')],
+				{
+					env: {
+						...process.env,
+						STORAGE_DRIVER: 's3',
+						DATABASE_PATH: path,
+						UPLOADS_PATH: join(directory, 'uploads'),
+						BETTER_AUTH_SECRET: 'legacy-crash-fixture-auth-secret-at-least-32-characters',
+						PAIRING_PEPPER: 'legacy-crash-fixture-pairing-pepper-at-least-32-characters',
+						ACCOUNT_STORAGE_BYTES: String(bytes.length),
+						LEGACY_SOURCE: source,
+						LEGACY_OWNER: owner,
+					},
+					stdout: 'pipe',
+					stderr: 'pipe',
+				}
+			)
+			const [code, output, errors] = await Promise.all([
+				worker.exited,
+				new Response(worker.stdout).text(),
+				new Response(worker.stderr).text(),
+			])
+			expect({ code, output, errors }).toEqual({ code: 23, output: '', errors: '' })
+			const database = new Database(path)
+			try {
+				const claim = database
+					.query('SELECT object_key, user_id, size, discard_upload FROM object_deletions')
+					.get() as {
+					object_key: string
+					user_id: string
+					size: number
+					discard_upload: number
+				}
+				key = claim.object_key
+				expect(claim).toMatchObject({ user_id: owner, size: bytes.length, discard_upload: 1 })
+				expect(database.query('SELECT id FROM memories').all()).toEqual([])
+				expect(accountStorageUsage(database, owner)).toBe(bytes.length)
+				expect((await readMemory(key)).equals(bytes)).toBe(true)
+				await execute('docker', ['stop', container])
+				expect(await runDeletionWorker(path)).toEqual({ pending: 1 })
+				expect(accountStorageUsage(database, owner)).toBe(bytes.length)
+				await execute('docker', ['start', container])
+				await waitForGarage()
+				expect(await runDeletionWorker(path, 3_600_000)).toEqual({ pending: 0 })
+				expect(accountStorageUsage(database, owner)).toBe(0)
+				await expect(readMemory(key)).rejects.toThrow()
+				expect(await runDeletionWorker(path, 3_600_000)).toEqual({ pending: 0 })
+			} finally {
+				database.close()
+			}
+		} finally {
+			await execute('docker', ['start', container])
+			await waitForGarage()
+			if (key) await removeMemory(key)
+			rmSync(directory, { recursive: true, force: true })
+		}
+	},
+	45_000
+)
+
 // Opt in with a dedicated Garage test bucket and S3 credentials; never touch real captures.
 test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1')(
 	'real Garage preserves GLB bytes and deletes only the test object',

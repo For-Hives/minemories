@@ -5,6 +5,18 @@ type Environment = Readonly<Record<string, string | undefined>>
 
 export const DEV_S3_ACCESS_KEY = 'GK0123456789abcdef0123456789abcdef'
 export const DEV_S3_SECRET_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+const byteCountPattern = /^\d+$/
+
+export function accountStorageBytes(environment: Environment): number {
+	const value = environment.ACCOUNT_STORAGE_BYTES ?? String(2 * 1024 * 1024 * 1024)
+	const bytes = Number(value)
+	if (!(byteCountPattern.test(value) && Number.isSafeInteger(bytes)) || bytes <= 0) {
+		throw new Error('ACCOUNT_STORAGE_BYTES must be a positive safe integer in bytes.')
+	}
+	return bytes
+}
+
+export const ACCOUNT_STORAGE_BYTES = accountStorageBytes(process.env)
 
 function requiredValue(environment: Environment, name: string): string {
 	const value = environment[name]
@@ -82,6 +94,7 @@ function validateS3(environment: Environment): void {
 
 export function validateProductionConfiguration(environment: Environment): void {
 	if (environment.NODE_ENV !== 'production') return
+	accountStorageBytes(environment)
 	authSecret(environment)
 	pairingPepper(environment)
 	configuredUrl(environment, 'BETTER_AUTH_URL', true)

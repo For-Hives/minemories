@@ -35,7 +35,8 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
-import { readMemoryStream, removeMemory, storeMemory } from './storage'
+import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
+import { accountStorageFits } from './storage-quota'
 import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
 
@@ -48,7 +49,9 @@ interface ApiContext {
 }
 
 const os = implement(apiContract).$context<ApiContext>()
-const objectDeletions = new ObjectDeletionQueue(database, removeMemory)
+const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
+	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
+)
 const router = os.router({
 	pairing: {
 		create: os.pairing.create.handler(({ context }) => {
@@ -241,6 +244,33 @@ function splitModImages(metadata: MemoryMetadata): void {
 
 app.route('/api/mod/uploads', uploadRouter)
 
+function reserveLegacyStorage(objectKey: string, userId: string, size: number): boolean {
+	return database
+		.transaction(() => {
+			if (!accountStorageFits(database, userId, size)) return false
+			database
+				.query(
+					'INSERT INTO object_deletions (object_key, created_at, user_id, size, discard_upload) VALUES (?, ?, ?, ?, 1)'
+				)
+				.run(objectKey, Date.now(), userId, size)
+			return true
+		})
+		.immediate()
+}
+
+function captureName(requestedName: string | undefined, metadata: MemoryMetadata): string {
+	const rawName =
+		requestedName && requestedName !== 'Minecraft capture'
+			? requestedName
+			: (metadata.worldName ?? metadata.serverName ?? 'Souvenir Minecraft')
+	return (
+		rawName
+			.replace(/\p{Cc}/gu, '')
+			.trim()
+			.slice(0, 80) || 'Souvenir Minecraft'
+	)
+}
+
 app.post('/api/mod/memories', async context => {
 	const authorization = context.req.header('authorization')
 	const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
@@ -262,32 +292,34 @@ app.post('/api/mod/memories', async context => {
 
 	const id = randomUUID()
 	const objectKey = `${device.userId}/${id}.glb`
-	const requestedName = context.req.header('x-memory-name')
-	const rawName =
-		requestedName && requestedName !== 'Minecraft capture'
-			? requestedName
-			: (metadata.worldName ?? metadata.serverName ?? 'Souvenir Minecraft')
-	const name =
-		rawName
-			.replace(/\p{Cc}/gu, '')
-			.trim()
-			.slice(0, 80) || 'Souvenir Minecraft'
+	const name = captureName(context.req.header('x-memory-name'), metadata)
 
+	const release = objectDeletions.hold(objectKey)
 	try {
+		const reserved = reserveLegacyStorage(objectKey, device.userId, contents.byteLength)
+		if (!reserved) return context.json({ error: 'storage_quota_exceeded' }, 413)
 		await storeMemory(objectKey, contents)
-		addMemory({
-			id,
-			userId: device.userId,
-			deviceId: device.id,
-			name,
-			objectKey,
-			size: contents.byteLength,
-			metadata,
-		})
+		database
+			.transaction(() => {
+				addMemory({
+					id,
+					userId: device.userId,
+					deviceId: device.id,
+					name,
+					objectKey,
+					size: contents.byteLength,
+					metadata,
+				})
+				database.query('DELETE FROM object_deletions WHERE object_key = ?').run(objectKey)
+			})
+			.immediate()
 	} catch (error) {
-		await removeMemory(objectKey).catch(() => undefined)
+		release()
+		await objectDeletions.drain(objectKey).catch(() => undefined)
 		console.error('[memory-upload] failed to save memory', error)
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
+	} finally {
+		release()
 	}
 
 	return context.json({ id, name, size: contents.byteLength }, 201)

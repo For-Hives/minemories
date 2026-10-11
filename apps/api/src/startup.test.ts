@@ -31,6 +31,7 @@ function start(env: Record<string, string>) {
 
 test('invalid production configuration exits before creating the database or exposing secrets', async () => {
 	const cases: Array<{ field: string; overrides: Record<string, string> }> = [
+		{ field: 'ACCOUNT_STORAGE_BYTES', overrides: { ACCOUNT_STORAGE_BYTES: 'invalid-private-fixture-quota' } },
 		{ field: 'PAIRING_PEPPER', overrides: { PAIRING_PEPPER: 'short-private-fixture-value' } },
 		{ field: 'WEB_ORIGIN', overrides: { WEB_ORIGIN: 'http://example.test' } },
 		{ field: 'S3_ENDPOINT', overrides: { STORAGE_DRIVER: 's3', S3_ENDPOINT: 'invalid-private-fixture-endpoint' } },
@@ -49,6 +50,7 @@ test('invalid production configuration exits before creating the database or exp
 			expect(stderr).not.toContain(env.BETTER_AUTH_SECRET)
 			expect(stderr).not.toContain(env.PAIRING_PEPPER)
 			expect(stderr).not.toContain('invalid-private-fixture-endpoint')
+			expect(stderr).not.toContain('invalid-private-fixture-quota')
 			expect(stderr).toContain(field)
 			expect(existsSync(env.DATABASE_PATH)).toBe(false)
 		})
