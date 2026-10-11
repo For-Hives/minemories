@@ -46,6 +46,10 @@ database.exec(`
   CREATE INDEX IF NOT EXISTS memories_user_id_idx
     ON memories(user_id, created_at DESC);
 `)
+database.exec(`CREATE TABLE IF NOT EXISTS object_deletions (
+ object_key TEXT PRIMARY KEY, created_at INTEGER NOT NULL,
+ attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0
+); CREATE INDEX IF NOT EXISTS object_deletions_due_idx ON object_deletions(next_attempt_at, created_at);`)
 const memoryColumns = database.query('PRAGMA table_info(memories)').all() as Array<{ name: string }>
 if (!memoryColumns.some(column => column.name === 'metadata_json')) {
 	database.exec('ALTER TABLE memories ADD COLUMN metadata_json TEXT')

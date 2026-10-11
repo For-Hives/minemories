@@ -12,6 +12,8 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 - Audit initial API : headers de partage sans cache public, IP du socket et proxys de confiance, limiteur mémoire borné, corps d’appairage limité, correctif source-map-js. Les observations et alertes restantes sont dans [le rapport](api-security-audit.md) et les suites dans `docs/AI/TASKS.md`.
 
+- Suppressions/purges durables : file SQLite transactionnelle, backoff, reprise dans un nouveau processus après panne réelle Garage et refus de réutilisation des clés en attente. Voir [la validation et les limites](durable-deletions.md).
+
 ## Travaux encore ouverts
 
 Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, captures horodatées et historique, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
