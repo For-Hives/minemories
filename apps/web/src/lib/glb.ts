@@ -1,4 +1,17 @@
+import { isSelfContainedGlb } from '@minemories/api-contract/glb'
+
 const GLB_EXTENSION = /\.glb$/i
+
+export class UnsupportedGlbError extends Error {}
+
+export async function parseEmbeddedGlb<T>(buffer: ArrayBuffer, parse: (buffer: ArrayBuffer) => Promise<T>): Promise<T> {
+	if (!isSelfContainedGlb(new Uint8Array(buffer))) {
+		throw new UnsupportedGlbError(
+			'GLB invalide ou ressources externes : réexporte le fichier avec ses textures et sa géométrie intégrées.'
+		)
+	}
+	return await parse(buffer)
+}
 
 export function isGlbFileName(fileName: string): boolean {
 	return GLB_EXTENSION.test(fileName)

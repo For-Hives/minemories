@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { act, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { UnsupportedGlbError } from '../lib/glb'
 import { AuthPage } from './AuthPage'
 import { GalleryPage } from './GalleryPage'
 import { ViewerPage } from './ViewerPage'
@@ -261,6 +262,29 @@ test('failed memory downloads replace the progress indicator with an error', asy
 	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	vi.unstubAllGlobals()
+})
+
+test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error and clears loading', async source => {
+	const message =
+		'GLB invalide ou ressources externes : réexporte le fichier avec ses textures et sa géométrie intégrées.'
+	mocks.loadFile.mockImplementation(() => {
+		mocks.viewerEvents?.onLoading(null)
+		return Promise.reject(new UnsupportedGlbError(message))
+	})
+	if (source === 'local') mocks.context.viewerFile = new File(['unsafe'], 'external.glb')
+	else vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Blob(['unsafe']))))
+	try {
+		render(
+			<MemoryRouter initialEntries={[source === 'local' ? '/viewer' : '/viewer?memory=external']}>
+				<ViewerPage />
+			</MemoryRouter>
+		)
+		expect(await screen.findByText(message)).toBeTruthy()
+		expect(screen.getByRole('status').querySelector('.animate-viewer-spin')).toBeNull()
+		expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
+	} finally {
+		vi.unstubAllGlobals()
+	}
 })
 
 test('viewer keeps an animated loading status through model and GPU preparation', async () => {

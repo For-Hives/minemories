@@ -1,5 +1,6 @@
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { describe, expect, it } from 'vitest'
-import { formatFileSize, isGlbFileName } from './glb'
+import { formatFileSize, isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './glb'
 
 describe('isGlbFileName', () => {
 	it('accepts the GLB extension without case sensitivity', () => {
@@ -29,5 +30,50 @@ describe('formatFileSize', () => {
 		expect(() => formatFileSize(-1)).toThrow(RangeError)
 		expect(() => formatFileSize(Number.NaN)).toThrow(RangeError)
 		expect(() => formatFileSize(Number.POSITIVE_INFINITY)).toThrow(RangeError)
+	})
+})
+function fixture(document: unknown): ArrayBuffer {
+	const json = new TextEncoder().encode(JSON.stringify(document))
+	const length = Math.ceil(json.length / 4) * 4
+	const buffer = new ArrayBuffer(20 + length)
+	const bytes = new Uint8Array(buffer)
+	bytes.fill(0x20)
+	const view = new DataView(buffer)
+	view.setUint32(0, 0x46546c67, true)
+	view.setUint32(4, 2, true)
+	view.setUint32(8, buffer.byteLength, true)
+	view.setUint32(12, length, true)
+	view.setUint32(16, 0x4e4f534a, true)
+	bytes.set(json, 20)
+	return buffer
+}
+
+describe('parseEmbeddedGlb', () => {
+	it('passes a self-contained scene to the real Three.js parser', async () => {
+		const buffer = fixture({
+			asset: { version: '2.0' },
+			scene: 0,
+			scenes: [{ nodes: [0] }],
+			nodes: [{ name: 'Cabin' }],
+		})
+		const loader = new GLTFLoader()
+		const result = await parseEmbeddedGlb(buffer, data => loader.parseAsync(data, ''))
+		expect(result.scene.children[0]?.name).toBe('Cabin')
+	})
+
+	it('rejects unsafe or malformed files before the parser can load their resources', async () => {
+		let called = false
+		const parse = () => {
+			called = true
+			return Promise.resolve()
+		}
+		const buffers = [
+			new ArrayBuffer(0),
+			fixture({ asset: { version: '2.0' }, images: [{ uri: 'https://private.test/image.png' }] }),
+		]
+		await Promise.all(
+			buffers.map(buffer => expect(parseEmbeddedGlb(buffer, parse)).rejects.toBeInstanceOf(UnsupportedGlbError))
+		)
+		expect(called).toBe(false)
 	})
 })

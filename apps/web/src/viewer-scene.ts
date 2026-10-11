@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
-import { isGlbFileName } from './lib/glb'
+import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 
 export interface ViewerCycle {
@@ -201,7 +201,7 @@ export class ViewerScene {
 		try {
 			const buffer = await file.arrayBuffer()
 			this.events.onLoading('Chargement du modèle et des textures…')
-			const gltf = await this.loader.parseAsync(buffer, '')
+			const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
 			if (this.disposed) return
 			this.preparingWorld = true
 			for (const child of [...this.modelRoot.children]) {
@@ -224,8 +224,9 @@ export class ViewerScene {
 			this.events.onFileInfo(file.name, file.size)
 			this.events.onEmptyChange(false)
 			this.events.onLoading(null)
-		} catch {
+		} catch (error) {
 			this.events.onLoading(null)
+			if (error instanceof UnsupportedGlbError) throw error
 			throw new Error('Could not read this GLB')
 		} finally {
 			this.preparingWorld = false

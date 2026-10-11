@@ -4,7 +4,8 @@
 	"version": "0.1.0",
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./glb": "./src/glb.ts"
 	},
 	"dependencies": {
 		"@orpc/contract": "^1.14.0",

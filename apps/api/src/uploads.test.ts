@@ -4,7 +4,7 @@ import { createReadStream, existsSync, mkdtempSync, rmSync, statSync } from 'nod
 import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { minimalGlb } from './test-support/glb-fixture'
+import { externalGlbs, minimalGlb } from './test-support/glb-fixture'
 
 const root = mkdtempSync(join(tmpdir(), 'minemories-chunks-'))
 process.env.DATABASE_PATH = join(root, 'test.sqlite')
@@ -56,6 +56,29 @@ function chunk(token: string, id: string, bytes: Buffer, offset = 0) {
 		'upload-offset': String(offset),
 	})
 }
+
+async function assertExternalUploadRejected(bytes: Buffer) {
+	const { owner, token } = device()
+	const id = await initialize(token, bytes)
+	expect((await chunk(token, id, bytes)).status).toBe(200)
+	const response = await request(token, `/${id}/complete`, 'POST')
+	expect(response.status).toBe(400)
+	expect(await response.json()).toEqual({ error: 'invalid_glb_or_checksum' })
+	expect(listMemories(owner)).toEqual([])
+	expect(existsSync(join(root, 'objects', owner, `${id}.glb`))).toBe(false)
+	expect(database.query('SELECT completed, storage_started FROM mod_uploads WHERE id = ?').get(id)).toEqual({
+		completed: 0,
+		storage_started: 0,
+	})
+	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(200)
+}
+
+test('resumable upload refuses external resources and a replacing JSON chunk without storing or publishing them', async () => {
+	for (const bytes of externalGlbs()) {
+		// biome-ignore lint/performance/noAwaitInLoops: initialization holds a global lock, so fixtures must run sequentially.
+		await assertExternalUploadRejected(bytes)
+	}
+})
 
 test('an object pending deletion cannot be reused by a new upload', async () => {
 	const { owner, token } = device()

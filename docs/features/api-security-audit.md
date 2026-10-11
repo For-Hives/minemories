@@ -72,9 +72,11 @@ Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
   objets à effacer dans une file SQLite transactionnelle, avec retries et reprise
   après redémarrage. Voir [les suppressions durables](durable-deletions.md). La
   réconciliation historique et le nettoyage des uploads legacy restent suivis.
-- La validation GLB vérifie le conteneur et son JSON, mais ne garantit pas encore
-  l’absence d’URI externes de buffers/images. Le viewer Three.js parse ces documents :
-  imposer les ressources embarquées et tester le refus des références externes.
+- Correction du 11 octobre : les ressources GLB sont contrôlées en commun dans
+  les deux uploads et dans le viewer avant le parseur Three.js. Les URI externes,
+  buffers sans données et JSON de remplacement sont refusés. Voir
+  [les règles et les validations](embedded-glb-resources.md). La cohérence complète
+  des attributs et les budgets de décodage restent une suite distincte.
 - Le quota de staging ne borne pas le stockage total des captures finalisées par
   compte. Définir et appliquer cette limite avant une ouverture publique.
 - Les routes JSON auth/RPC héritent du plafond legacy de 100 MiB du serveur.
