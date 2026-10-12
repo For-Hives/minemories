@@ -50,10 +50,10 @@ leurs nouveaux jobs pour libérer le quota après l’effacement physique. La mi
 préserve les échéances et tentatives des anciens jobs ; leurs tailles oubliées
 restent inconnues.
 
-Elle ne permet pas de retrouver les clés déjà oubliées par une ancienne version.
-La réconciliation historique et le complément des anciens jobs restent
-suivis dans TASKS.md. Les versions anciennes d’un bucket versionné dépendent aussi
-de la politique de cycle de vie du provider.
+La [réconciliation historique](storage-reconciliation.md) inventorie les clés
+oubliées, complète les claims récupérables et prépare les intentions manquantes.
+Son exécution sur le stockage réel reste suivie dans TASKS.md. Les versions
+anciennes d’un bucket versionné dépendent de la politique de cycle de vie du provider.
 
 Les nouvelles mises en corbeille expirent après trente jours. Les anciennes
 échéances sont protégées par [la migration des délais](trash-retention.md), qui

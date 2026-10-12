@@ -67,7 +67,9 @@ même principe : sa réservation reste présente jusqu’au nettoyage réussi.
 La migration ajoute `user_id`, `size` et `discard_upload` aux jobs existants,
 sans réinitialiser leurs échéances ou leurs tentatives. Les anciens jobs dont
 la taille et le propriétaire ont déjà été oubliés restent à nettoyer, mais
-ne peuvent pas être attribués rétrospectivement au total sans réconciliation.
+peuvent être complétés après revue de l’inventaire avec la
+[réconciliation du stockage](storage-reconciliation.md), quand leur attribution
+et leur taille exacte sont récupérables.
 Les objets historiques sans métadonnées et les anciennes versions d’un bucket
 versionné restent également hors de cet inventaire. Ces suites restent dans
 `docs/AI/TASKS.md` ; aucun scan ou effacement d’objets de production n’est effectué.

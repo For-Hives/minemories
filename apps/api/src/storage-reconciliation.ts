@@ -35,6 +35,7 @@ function knownSize(candidate: StorageCandidate): number | null {
 function claimConflict(candidate: StorageCandidate, owner: string): string | null {
 	const claim = candidate.job
 	if (!claim) return null
+	if (claim.discard_upload !== 0 && claim.discard_upload !== 1) return 'invalid_claim_cleanup_flag'
 	if (claim.user_id !== null && claim.user_id !== owner) return 'claim_owner_conflict'
 	if (claim.size !== null && (!Number.isSafeInteger(claim.size) || claim.size < 0)) return 'invalid_claim_size'
 	if (candidate.object && claim.size !== null && claim.size !== candidate.object.size) return 'claim_size_conflict'

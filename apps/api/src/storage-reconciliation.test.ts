@@ -78,6 +78,7 @@ test('legacy claims are backfilled only from attributable, exact information, re
 			.action
 	).toBe('unchanged')
 	for (const conflict of [
+		{ ...job, discard_upload: 2 },
 		{ ...job, user_id: 'someone-else' },
 		{ ...job, size: -1 },
 		{ ...job, size: 9999 },
