@@ -8,8 +8,7 @@
 - enregistré les entité dans leurs position au moment de la snapshot (animaux, monstre, joueurs a coté, etc... ) pour faire une "photocopie" figé d'un instant de vie
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
-- réconcilier les objets orphelins historiques et compléter les anciens jobs de suppression sans taille/propriétaire ; les nouveaux uploads legacy, suppressions et purges sont durables (docs/features/account-storage-quota.md)
-- compléter la validation glTF commune API/viewer par les budgets de pixels décompressés avant chargement des textures ; les valeurs binaires des accessors, bornes, indices et remplacements sparse sont contrôlés en lectures bornées (docs/features/embedded-glb-resources.md)
+- exécuter la réconciliation du stockage historique en production après revue du plan, arrêt de l’API et sauvegarde ; l’inventaire, les backfills récupérables et la file durable sont implémentés et testés sur Garage (docs/features/storage-reconciliation.md) ; accès/configuration et cas ambigus : issue #6
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
 - SEO audit of the website
 - add umami/sentry/etc.. to web 

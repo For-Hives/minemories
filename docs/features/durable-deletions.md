@@ -20,6 +20,11 @@ nouvelle capture. La purge continue toutes les heures ; les suppressions physiqu
 peuvent être retardées par les pannes et le nombre de jobs en attente.
 
 Cette implémentation vise un seul processus API, comme les verrous des uploads.
+La file refuse aussi les jobs historiques dont la clé référence encore un souvenir
+ou une session reprenable incomplète, même expirée. Elle conserve ces jobs et leurs
+compteurs pour revue ; les reçus déjà terminés ne protègent pas un objet absent des
+souvenirs. Le filtrage précède la limite du batch, afin qu’un grand nombre de conflits
+ne bloque pas les autres suppressions. La référence est revérifiée avant effacement.
 Les permissions S3 doivent inclure la suppression d’objet. Une erreur SQLite de
 maintenance est signalée sans clé d’objet ni token, et n’arrête pas les passages
 suivants. Les jobs contiennent les clés, les dates et les tentatives, aucune copie
@@ -45,10 +50,10 @@ leurs nouveaux jobs pour libérer le quota après l’effacement physique. La mi
 préserve les échéances et tentatives des anciens jobs ; leurs tailles oubliées
 restent inconnues.
 
-Elle ne permet pas de retrouver les clés déjà oubliées par une ancienne version.
-La réconciliation historique et le complément des anciens jobs restent
-suivis dans TASKS.md. Les versions anciennes d’un bucket versionné dépendent aussi
-de la politique de cycle de vie du provider.
+La [réconciliation historique](storage-reconciliation.md) inventorie les clés
+oubliées, complète les claims récupérables et prépare les intentions manquantes.
+Son exécution sur le stockage réel reste suivie dans TASKS.md. Les versions
+anciennes d’un bucket versionné dépendent de la politique de cycle de vie du provider.
 
 Les nouvelles mises en corbeille expirent après trente jours. Les anciennes
 échéances sont protégées par [la migration des délais](trash-retention.md), qui
