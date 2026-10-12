@@ -14,7 +14,7 @@ spotless {
 }
 
 spotbugs {
-    toolVersion = '4.10.4'
+    toolVersion = '4.10.5'
     ignoreFailures = false
 }
 
