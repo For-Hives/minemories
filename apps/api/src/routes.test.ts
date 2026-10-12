@@ -2,7 +2,13 @@ import { afterAll, expect, test } from 'bun:test'
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { externalGlbs, malformedBinaryGlbs, malformedGeometryGlbs, minimalGlb } from './test-support/glb-fixture'
+import {
+	externalGlbs,
+	malformedBinaryGlbs,
+	malformedGeometryGlbs,
+	malformedImageGlbs,
+	minimalGlb,
+} from './test-support/glb-fixture'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-routes-'))
 process.env.DATABASE_PATH = join(directory, 'test.sqlite')
@@ -132,15 +138,17 @@ test('legacy upload refuses external resources, replacing JSON and incoherent ge
 	const paired = await pairRequest({ code }, 'external-resource-fixture')
 	const { deviceToken } = (await paired.json()) as { deviceToken: string }
 	await Promise.all(
-		[...externalGlbs(), ...malformedGeometryGlbs(), ...malformedBinaryGlbs()].map(async bytes => {
-			const response = await app.request('/api/mod/memories', {
-				method: 'POST',
-				headers: { authorization: `Bearer ${deviceToken}`, 'content-type': 'model/gltf-binary' },
-				body: Uint8Array.from(bytes).buffer,
-			})
-			expect(response.status).toBe(400)
-			expect(await response.json()).toEqual({ error: 'invalid_glb' })
-		})
+		[...externalGlbs(), ...malformedGeometryGlbs(), ...malformedBinaryGlbs(), ...malformedImageGlbs()].map(
+			async bytes => {
+				const response = await app.request('/api/mod/memories', {
+					method: 'POST',
+					headers: { authorization: `Bearer ${deviceToken}`, 'content-type': 'model/gltf-binary' },
+					body: Uint8Array.from(bytes).buffer,
+				})
+				expect(response.status).toBe(400)
+				expect(await response.json()).toEqual({ error: 'invalid_glb' })
+			}
+		)
 	)
 	const { listMemories } = await import('./pairing')
 	expect(listMemories('external-owner')).toEqual([])

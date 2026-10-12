@@ -186,3 +186,33 @@ it('loads sparse replacements through Three.js and refuses duplicate sparse indi
 		parseEmbeddedGlb(fixture(sparse, binary), () => Promise.reject(new Error('Loader must not run')))
 	).rejects.toBeInstanceOf(UnsupportedGlbError)
 })
+
+it('refuses oversized textures and repeated texture allocation before the loader starts', async () => {
+	const image = Uint8Array.from(
+		atob(
+			'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAJUlEQVR4nGPU2OLWwEABYKJE86gBEMDEQCFgGjWAYTQMGCgPAwDjKAHCyHtDugAAAABJRU5ErkJggg=='
+		),
+		character => character.charCodeAt(0)
+	)
+	const document = {
+		asset: { version: '2.0' },
+		buffers: [{ byteLength: image.length }],
+		bufferViews: [{ buffer: 0, byteLength: image.length }],
+		images: [{ bufferView: 0, mimeType: 'image/png' }],
+		textures: [{ source: 0 }],
+	}
+	let calls = 0
+	const parse = () => {
+		calls++
+		return Promise.resolve('ready')
+	}
+	expect(await parseEmbeddedGlb(fixture(document, image), parse)).toBe('ready')
+	const view = new DataView(image.buffer)
+	view.setUint32(16, 16385)
+	await expect(parseEmbeddedGlb(fixture(document, image), parse)).rejects.toBeInstanceOf(UnsupportedGlbError)
+	view.setUint32(16, 4096)
+	view.setUint32(20, 4096)
+	document.textures = Array.from({ length: 5 }, () => ({ source: 0 }))
+	await expect(parseEmbeddedGlb(fixture(document, image), parse)).rejects.toBeInstanceOf(UnsupportedGlbError)
+	expect(calls).toBe(1)
+})

@@ -1,4 +1,5 @@
 import { validGeometry } from './glb-geometry'
+import { validImageCosts } from './glb-images'
 import { type JsonObject, objects } from './glb-layout'
 import { GLB_VALUE_WINDOW_BYTES, type GlbBufferReader, validAccessorValues } from './glb-values'
 
@@ -120,14 +121,16 @@ function bufferReader(document: JsonObject, binary: GlbBufferReader): GlbBufferR
 	}
 }
 
-/** Validate accessor bytes through bounded reads of the embedded BIN or data URI buffers. */
+/** Validate image headers and accessor bytes through bounded embedded-buffer reads. */
 export async function validEmbeddedGltfValues(
 	json: Uint8Array,
 	binaryLength: number | null,
 	read: GlbBufferReader
 ): Promise<boolean> {
 	const document = embeddedDocument(json, binaryLength)
-	return document !== null && (await validAccessorValues(document, bufferReader(document, read)))
+	if (document === null) return false
+	const buffers = bufferReader(document, read)
+	return (await validImageCosts(document, buffers)) && (await validAccessorValues(document, buffers))
 }
 
 export function glbChunk(

@@ -6,7 +6,7 @@ import { glbChunk, glbJsonLength, validEmbeddedGltfValues } from '@minemories/ap
 export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 export const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024
 
-/** Validate container and accessor values without loading the BIN payload into memory. */
+/** Validate container, image headers and accessor values without loading the whole BIN. */
 export async function validateUploadFile(path: string, size: number, sha256: string): Promise<boolean> {
 	const file = await open(path, 'r')
 	try {
