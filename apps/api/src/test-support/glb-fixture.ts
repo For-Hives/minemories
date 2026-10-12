@@ -1,3 +1,5 @@
+import { pngImage } from './image-fixture'
+
 export function minimalGlb(binary?: Buffer, document: unknown = { asset: { version: '2.0' } }): Buffer {
 	const json = Buffer.from(JSON.stringify(document))
 	const jsonLength = Math.ceil(json.length / 4) * 4
@@ -104,6 +106,29 @@ export function malformedBinaryGlbs(): Buffer[] {
 		minimalGlb(binary, {
 			...document,
 			accessors: [{ ...document.accessors[0], max: [2, 1, 0] }, document.accessors[1]],
+		}),
+	]
+}
+
+export function malformedImageGlbs(): Buffer[] {
+	const image = Buffer.from(pngImage)
+	image.writeUInt32BE(16385, 16)
+	const document = {
+		asset: { version: '2.0' },
+		buffers: [{ byteLength: image.length }],
+		bufferViews: [{ buffer: 0, byteLength: image.length }],
+		images: [{ bufferView: 0, mimeType: 'image/png' }],
+	}
+	const huge = Buffer.from(pngImage)
+	huge.writeUInt32BE(4096, 16)
+	huge.writeUInt32BE(4096, 20)
+	return [
+		minimalGlb(image, document),
+		minimalGlb(Buffer.alloc(image.length), document),
+		minimalGlb(huge, { ...document, textures: Array.from({ length: 5 }, () => ({ source: 0 })) }),
+		minimalGlb(undefined, {
+			asset: document.asset,
+			images: [{ uri: `data:image/png;base64,${image.toString('base64')}` }],
 		}),
 	]
 }

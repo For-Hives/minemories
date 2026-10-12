@@ -32,8 +32,9 @@ avec une politique Minemories qui exige l’autonomie du fichier.
 
 Les plafonds binaires restent 100 MiB pour l’ancien upload et 200 MiB pour l’upload
 reprenable en morceaux de 4 MiB. La validation de ce dernier lit le JSON, les
-en-têtes et les fenêtres d’accessors, puis calcule le checksum en stream ; elle ne charge pas le BIN
-entier. Les fichiers refusés ne créent ni souvenir ni objet de stockage. Une
+en-têtes de textures et les fenêtres d’accessors, puis calcule le checksum en
+stream ; elle ne charge pas le BIN entier. Les fichiers refusés ne créent ni
+souvenir ni objet de stockage. Une
 session reprenable refusée peut être annulée ; sinon son staging privé expire
 avec le mécanisme existant.
 
@@ -147,5 +148,77 @@ en mémoire et la validation du fichier reprenable avec SHA-256. Le rendu Blende
 de la seconde a été revérifié : village, textures et terrain de 65 × 65 × 118
 restent visibles. Aucun changement du fichier exporté ni du code Minecraft.
 
-Le budget de pixels décompressés reste dans `docs/AI/TASKS.md`. Ces contrôles ne
-constituent pas une validation exhaustive des autres contraintes et extensions glTF.
+Ces contrôles ne constituent pas une validation exhaustive des autres contraintes
+et extensions glTF.
+
+## Dimensions et budgets des textures
+
+Les en-têtes des images sont examinés avant le décodeur du navigateur et avant
+publication par les deux uploads. Un petit fichier compressé ne peut donc pas
+annoncer une texture arbitrairement grande. Les images non utilisées comptent
+aussi. Chaque entrée de texture consomme le coût de ses sources, y compris les
+sources de secours des extensions ; répéter une source dans plusieurs textures
+ne contourne pas le total.
+
+| Budget commun API / viewer | Plafond |
+| --- | --- |
+| Largeur ou hauteur d’une image | 16 384 pixels |
+| Pixels par image, plans et frames comptés | 16 777 216 |
+| Pixels cumulés, sources répétées comprises | 67 108 864 |
+| Taille décompressée estimée par image | 128 MiB |
+| Taille décompressée estimée cumulée | 512 MiB |
+| Images / textures | 1 024 / 4 096 |
+| Octets lus pour les en-têtes, toutes images confondues | 8 MiB |
+| En-têtes de blocs, marqueurs, boxes et extents parcourus | 16 384 |
+| Fenêtre de lecture d’image | 4 KiB |
+
+L’estimation prend huit octets par pixel ; pour KTX2, elle prend le maximum entre
+ce coût et la somme des tailles décompressées déclarées par les niveaux. Les
+mipmaps, couches, faces de cube et profondeur sont examinés ; la profondeur est
+limitée à 16 384 et les couches à 1 024. Les plages et les tailles des niveaux
+supercompressés sont contrôlées avant lecture des données codées.
+
+PNG vérifie l’IHDR et les dimensions des frames APNG. JPEG lit les marqueurs
+jusqu’au premier scan et contrôle le SOF. WebP vérifie à la fois le canvas VP8X,
+les dimensions VP8/VP8L et chaque frame animée. Pour APNG et WebP animé, le budget
+compte un canvas par frame, plus un canvas de composition.
+
+Pour AVIF, le contrôle suit les items AV1 et alpha jusqu’à leurs extents, sans
+concaténer l’image entière. Il lit les maxima de dimensions des véritables
+Sequence Header OBUs AV1 : les propriétés d’affichage `ispe` seules ne bornent
+pas les images intermédiaires. Les grilles comptent leur sortie et, par prudence,
+tous les plans codés pour chaque cellule, afin de couvrir aussi les plans alpha
+réutilisés. Ce calcul peut refuser une grille qu’un décodeur optimisé garderait
+en moins de mémoire. Les références externes, méthodes de construction non
+contrôlées, dérivations inconnues et tracks AVIF animés sont refusés. Les items
+statiques, alpha et grilles restent soumis au budget commun.
+
+Les layouts contrôlés sont décrits par les spécifications
+[PNG/APNG](https://www.w3.org/TR/png-3/),
+[JPEG](https://www.w3.org/Graphics/JPEG/itu-t81.pdf),
+[WebP](https://developers.google.com/speed/webp/docs/riff_container),
+[KTX2](https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html) et
+[AVIF](https://aomediacodec.github.io/av1-avif/), ainsi que la syntaxe du
+[Sequence Header AV1](https://github.com/AOMediaCodec/av1-spec/blob/master/06.bitstream.syntax.md).
+Le cas d’alpha partagé entre cellules est décrit dans le
+[décodeur libavif](https://github.com/AOMediaCodec/libavif/blob/main/src/read.c).
+
+Ces contrôles d’en-têtes ne décodent pas les pixels, ne vérifient pas les CRC PNG
+ou toute la syntaxe des codecs, et ne garantissent pas la mémoire totale du
+processus ou du GPU. Les erreurs du décodeur restent visibles. Aucun décodeur
+KTX2 n’est ajouté au viewer ; valider son budget ne rend pas ce format affichable
+sur une configuration qui ne le prenait pas en charge.
+
+Validation du 11 octobre : fixtures raster produites pour les tests (PNG/APNG,
+JPEG, WebP statique/animé et AVIF avec alpha), en-têtes KTX2 et AV1 synthétiques,
+dimensions excessives, références répétées, budget KTX2 cumulé, grilles AVIF,
+metadata floods, données inline, MIME contradictoires et lectures tronquées.
+Les uploads legacy et reprenable refusent ces fichiers avant stockage et
+publication. Le viewer refuse les mêmes budgets avant d’appeler Three.js.
+
+Les captures Minecraft réelles de **10 488 752** et **13 628 224** octets passent
+encore les validations en mémoire et sur fichier avec SHA-256. Le rendu Blender
+5.2.2 de la seconde a été inspecté : village, feuillage, textures et volume de
+terrain de 65 × 65 × 118 restent visibles. Le format exporté et le code du mod
+ne changent pas. Les fixtures synthétiques testent le contrôle d’en-têtes ; elles
+ne sont pas présentées comme des images décodables.
