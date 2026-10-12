@@ -15,8 +15,9 @@ import { DEV_S3_ACCESS_KEY, DEV_S3_SECRET_KEY } from './configuration'
 
 const bucket = process.env.S3_BUCKET ?? 'minemories'
 const region = process.env.S3_REGION ?? 'garage'
+const endpoint = process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900'
 const client = new S3Client({
-	endpoint: process.env.S3_ENDPOINT ?? 'http://127.0.0.1:3900',
+	endpoint,
 	region,
 	forcePathStyle: true,
 	maxAttempts: 3,
@@ -30,6 +31,10 @@ const client = new S3Client({
 	responseChecksumValidation: 'WHEN_REQUIRED',
 })
 let bucketReady: Promise<void> | undefined
+
+export function s3Target() {
+	return { client, bucket, endpoint }
+}
 
 async function ensureBucket() {
 	bucketReady ??= (async () => {

@@ -11,6 +11,7 @@ import { promisify } from 'node:util'
 const execute = promisify(execFile)
 
 import { minimalGlb } from './test-support/glb-fixture'
+import { reconciliationDatabase } from './test-support/reconciliation-fixture'
 
 test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TEST_CONTAINER)(
 	'durable deletion survives an unavailable Garage and retries from a new process',
@@ -65,6 +66,87 @@ async function runDeletionWorker(path: string, timeShift = 0) {
 	expect(await worker.exited, errors).toBe(0)
 	return JSON.parse(output) as { pending: number }
 }
+
+test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TEST_CONTAINER)(
+	'real Garage reconciliation preserves live captures, repairs old claims and aborts orphan multipart uploads',
+	async () => {
+		if (!process.env.S3_BUCKET?.startsWith('minemories-integration')) throw new Error('Dedicated fixture required')
+		const { CreateMultipartUploadCommand, UploadPartCommand } = await import('@aws-sdk/client-s3')
+		const { storeMemory, readMemory, removeMemory, discardMemoryUpload } = await import('./storage')
+		const { s3Target } = await import('./storage-s3')
+		const { S3Inventory } = await import('./storage-inventory')
+		const { collectReconciliationPlan } = await import('./storage-reconciliation-plan')
+		const { applyReconciliationPlan } = await import('./reconciliation-apply')
+		const { ObjectDeletionQueue } = await import('./object-deletions')
+		const { ORPHAN_GRACE_MS } = await import('./storage-reconciliation')
+		const owner = `reconcile-${randomUUID()}`
+		const keys = Array.from({ length: 4 }, () => `${owner}/${randomUUID()}.glb`)
+		const [orphan, live, old, abandoned] = keys as [string, string, string, string]
+		const directory = mkdtempSync(join(tmpdir(), 'minemories-reconciliation-garage-'))
+		const database = reconciliationDatabase()
+		database.query('INSERT INTO devices VALUES (?)').run(owner)
+		const bytes = minimalGlb()
+		try {
+			await storeMemory(orphan, bytes)
+			await storeMemory(live, bytes)
+			await storeMemory(old, bytes)
+			database.query('INSERT INTO memories VALUES (?, ?)').run(live, owner)
+			database
+				.query(
+					'INSERT INTO object_deletions (object_key, created_at, attempts, next_attempt_at) VALUES (?, 10, 3, 1000)'
+				)
+				.run(old)
+			const { client, bucket } = s3Target()
+			const multipart = await client.send(new CreateMultipartUploadCommand({ Bucket: bucket, Key: abandoned }))
+			if (!multipart.UploadId) throw new Error('Missing fixture multipart ID')
+			await client.send(
+				new UploadPartCommand({
+					Bucket: bucket,
+					Key: abandoned,
+					UploadId: multipart.UploadId,
+					PartNumber: 1,
+					Body: bytes,
+				})
+			)
+			const inventory = new S3Inventory()
+			const now = Date.now() + 2 * ORPHAN_GRACE_MS
+			const plan = await collectReconciliationPlan(database, inventory, {
+				databasePath: database.filename,
+				prefix: `${owner}/`,
+				now,
+			})
+			expect(plan.entries).toHaveLength(4)
+			const applied = await applyReconciliationPlan(database, inventory, plan, {
+				databasePath: database.filename,
+				backupPath: join(directory, 'backup.sqlite'),
+				apiStopped: true,
+				now,
+			})
+			expect(applied).toMatchObject({ queued: 2, repaired: 1, ignored: 1, skipped: 0 })
+			expect(
+				database
+					.query('SELECT user_id, size, attempts, next_attempt_at FROM object_deletions WHERE object_key = ?')
+					.get(old)
+			).toEqual({ user_id: owner, size: bytes.length, attempts: 3, next_attempt_at: 1000 })
+			await new ObjectDeletionQueue(database, (key, discard) =>
+				discard ? discardMemoryUpload(key) : removeMemory(key)
+			).drain(undefined, now)
+			expect(database.query('SELECT * FROM object_deletions').all()).toEqual([])
+			expect((await readMemory(live)).equals(bytes)).toBe(true)
+			await expect(readMemory(orphan)).rejects.toThrow()
+			await expect(readMemory(old)).rejects.toThrow()
+			expect((await inventory.inspect(abandoned)).uploads).toEqual([])
+		} finally {
+			for (const key of keys) {
+				// biome-ignore lint/performance/noAwaitInLoops: Cleanup only this test's unique owner namespace.
+				await discardMemoryUpload(key)
+			}
+			database.close()
+			rmSync(directory, { recursive: true, force: true })
+		}
+	},
+	45_000
+)
 
 test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TEST_CONTAINER)(
 	'legacy crash after multipart storage retains its quota claim through outage and cleanup in a new process',
