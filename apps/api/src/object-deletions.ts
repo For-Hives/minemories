@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite'
+import { ObjectReferences } from './storage-references'
 
 export function migrateObjectDeletionClaims(database: Database): void {
 	database.transaction(() => {
@@ -25,11 +26,14 @@ interface Deletion {
 export class ObjectDeletionQueue {
 	private running = false
 	private readonly held = new Set<string>()
+	private readonly references: ObjectReferences
 
 	constructor(
 		private readonly database: Database,
 		private readonly remove: (key: string, discardUpload: boolean) => Promise<void>
-	) {}
+	) {
+		this.references = new ObjectReferences(database)
+	}
 
 	hold(objectKey: string): () => void {
 		this.held.add(objectKey)
@@ -51,7 +55,8 @@ export class ObjectDeletionQueue {
 			const rows =
 				objectKey === undefined
 					? this.database
-							.query('SELECT object_key FROM object_deletions WHERE next_attempt_at <= ? ORDER BY created_at LIMIT 100')
+							.query(`SELECT object_key FROM object_deletions WHERE next_attempt_at <= ?
+								AND (${this.references.unreferencedSql}) ORDER BY created_at LIMIT 100`)
 							.all(now)
 					: this.database
 							.query('SELECT object_key FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?')
@@ -66,7 +71,7 @@ export class ObjectDeletionQueue {
 	}
 
 	private async attempt(objectKey: string, now: number): Promise<void> {
-		if (this.held.has(objectKey)) return
+		if (this.held.has(objectKey) || this.references.isReferenced(objectKey)) return
 		const row = this.database
 			.query(
 				'SELECT object_key, attempts, discard_upload FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?'
