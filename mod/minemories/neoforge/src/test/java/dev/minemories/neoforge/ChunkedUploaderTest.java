@@ -68,6 +68,55 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void historyUploadKeepsOriginalBytesAndMetadataWhileANewerCaptureIsWritten() throws Exception {
+    var time = java.time.Instant.parse("2026-10-12T12:00:00Z");
+    byte[] bytes = new byte[64];
+    Arrays.fill(bytes, (byte) 42);
+    Path old =
+        CaptureHistory.save(
+            temporary,
+            time,
+            "{\"worldName\":\"Original world\",\"x\":12}",
+            file -> Files.write(file, bytes));
+    AtomicInteger initialized = new AtomicInteger();
+    String url =
+        start(
+            exchange -> {
+              if (exchange.getRequestMethod().equals("PUT")) {
+                CaptureHistory.save(
+                    temporary,
+                    time.plusSeconds(10),
+                    "{\"worldName\":\"New world\",\"x\":99}",
+                    file -> Files.write(file, new byte[64]));
+                assertArrayEquals(bytes, exchange.getRequestBody().readAllBytes());
+                respond(exchange, 200, session(64, false));
+              } else if (exchange.getRequestURI().getPath().endsWith("/complete")) {
+                respond(exchange, 201, "{}");
+              } else {
+                JsonObject payload =
+                    JsonParser.parseString(
+                            new String(
+                                exchange.getRequestBody().readAllBytes(),
+                                java.nio.charset.StandardCharsets.UTF_8))
+                        .getAsJsonObject();
+                assertEquals(
+                    "Original world",
+                    payload.getAsJsonObject("metadata").get("worldName").getAsString());
+                assertEquals(12, payload.getAsJsonObject("metadata").get("x").getAsInt());
+                initialized.incrementAndGet();
+                respond(exchange, 201, session(0, false));
+              }
+            });
+    uploader().upload(url, "test-token", old, CaptureHistory.metadata(old), ignored -> {});
+    assertEquals(1, initialized.get());
+    assertArrayEquals(bytes, Files.readAllBytes(old));
+    assertNotEquals(old, CaptureHistory.latest(temporary));
+    assertEquals(
+        "New world",
+        CaptureHistory.metadata(CaptureHistory.latest(temporary)).get("worldName").getAsString());
+  }
+
+  @Test
   void retriesLostAcknowledgementWithoutDuplicatingChunksOrFinalization() throws Exception {
     int size = ChunkedUploader.CHUNK_BYTES + 20;
     Path file = capture(size);
