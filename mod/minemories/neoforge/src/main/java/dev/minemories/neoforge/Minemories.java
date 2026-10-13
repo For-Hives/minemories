@@ -107,20 +107,6 @@ public class Minemories {
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
 
-  static com.google.gson.JsonObject captureMetadata() {
-    Path metadataPath = capturePath().resolveSibling("capture.json");
-    if (Files.isRegularFile(metadataPath)) {
-      try {
-        return com.google.gson.JsonParser.parseString(Files.readString(metadataPath))
-            .getAsJsonObject();
-      } catch (Exception ignored) {
-        // Regenerate metadata from the current world if the sidecar is unreadable.
-      }
-    }
-    Minecraft mc = Minecraft.getInstance();
-    return currentCaptureMetadata(mc.player == null ? null : mc.player.blockPosition());
-  }
-
   private static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
     Minecraft mc = Minecraft.getInstance();
     com.google.gson.JsonObject metadata = new com.google.gson.JsonObject();
@@ -308,7 +294,7 @@ public class Minemories {
       PairingClient.setLastSnapshotAt(System.currentTimeMillis());
       if (!PairingClient.isPaired()) return;
       afkUploadPending = true;
-      PairingClient.uploadCapture(capturePath())
+      PairingClient.uploadCapture(latestCapturePath())
           .whenComplete(
               (message, error) ->
                   mc.execute(
@@ -442,6 +428,14 @@ public class Minemories {
     return PairingClient.exportDirectory().resolve("capture.glb");
   }
 
+  static Path latestCapturePath() {
+    try {
+      return CaptureHistory.latest(PairingClient.exportDirectory());
+    } catch (IOException error) {
+      throw new java.io.UncheckedIOException(error);
+    }
+  }
+
   private static int pair(String code) {
     if (!code.matches("\\d{6}")) {
       tell("Enter the 6-digit code shown in the web interface.");
@@ -457,7 +451,7 @@ public class Minemories {
   }
 
   private static int uploadCapture() {
-    Path capture = capturePath();
+    Path capture = latestCapturePath();
     tell("Sending " + capture + "…");
     PairingClient.uploadCapture(capture)
         .whenComplete(
@@ -746,8 +740,12 @@ public class Minemories {
           }
         }
       }
-      scene.write(output);
-      Files.writeString(output.resolveSibling("capture.json"), metadata.toString());
+      Path saved =
+          CaptureHistory.save(
+              outputDirectory,
+              Instant.parse(metadata.get("capturedAt").getAsString()),
+              metadata.toString(),
+              scene::write);
       mc.player.displayClientMessage(
           Component.literal(
               "Minemories: "
@@ -755,7 +753,7 @@ public class Minemories {
                   + " blocks / "
                   + scene.materialCount()
                   + " textured materials exported to "
-                  + output),
+                  + saved),
           false);
     } catch (Exception e) {
       mc.player.displayClientMessage(

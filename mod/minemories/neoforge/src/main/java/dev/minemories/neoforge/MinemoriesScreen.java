@@ -27,6 +27,7 @@ final class MinemoriesScreen extends Screen {
   private Button defaultsButton;
   private Button modeButton;
   private Button storageButton;
+  private Button historyButton;
   private final StorageStatusView storage = new StorageStatusView();
   private String status = "Aucun envoi sans ton accord.";
   private String service = "Service Minemories";
@@ -53,14 +54,22 @@ final class MinemoriesScreen extends Screen {
     top = Math.max(4, (this.height - panelHeight) / 2);
     modeButton =
         button(
-            advanced ? "Retour au mode simple" : "Mode avancé",
+            advanced ? "Mode simple" : "Mode avancé",
             14,
             advanced ? 10 : 149,
-            panelWidth - 54,
+            (panelWidth - (advanced ? 60 : 34)) / 2,
             () -> {
               advanced = !advanced;
               rebuildWidgets();
             });
+    int historyWidth = (panelWidth - (advanced ? 60 : 34)) / 2;
+    historyButton =
+        button(
+            "Captures locales",
+            20 + historyWidth,
+            advanced ? 10 : 149,
+            historyWidth,
+            () -> Minecraft.getInstance().setScreen(new CaptureHistoryScreen(this)));
     button("×", panelWidth - 34, 10, 20, this::onClose);
     if (advanced) initAdvanced();
     else initBasic();
@@ -109,7 +118,7 @@ final class MinemoriesScreen extends Screen {
     directoryInput.setTooltip(
         Tooltip.create(
             Component.literal(
-                "Chemin absolu ou ~/export. Chaque capture remplace capture.glb et capture.json.")));
+                "Chemin absolu ou ~/export. Les captures datées restent dans history ; capture.glb donne le dernier export.")));
     try {
       apiInput.setValue(PairingClient.apiUrl());
       directoryInput.setValue(PairingClient.exportDirectory().toString());
@@ -166,6 +175,7 @@ final class MinemoriesScreen extends Screen {
     if (modeButton == null) return;
     boolean waiting = busy || PairingClient.isUploading();
     modeButton.active = !waiting;
+    historyButton.active = !waiting;
     storageButton.active = paired;
     if (!advanced) storageButton.setMessage(Component.literal(storage.label()));
     Minecraft mc = Minecraft.getInstance();
@@ -252,7 +262,7 @@ final class MinemoriesScreen extends Screen {
       }
       status = "Envoi en cours…";
       complete(
-          PairingClient.uploadCapture(Minemories.capturePath()),
+          PairingClient.uploadCapture(Minemories.latestCapturePath()),
           "Souvenir envoyé dans ta galerie.");
     } catch (RuntimeException error) {
       busy = false;
@@ -329,7 +339,7 @@ final class MinemoriesScreen extends Screen {
     if (advanced) {
       graphics.drawString(font, "Adresse de l’API (HTTPS)", left + 14, top + 35, COLOR_TEXT);
       graphics.drawString(
-          font, "Dossier local (capture.glb sera remplacé)", left + 14, top + 79, COLOR_TEXT);
+          font, "Dossier local (historique conservé)", left + 14, top + 79, COLOR_TEXT);
     } else {
       graphics.drawString(font, "MINEMORIES", left + 14, top + 14, COLOR_TEXT);
       graphics.drawString(

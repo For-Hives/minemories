@@ -149,17 +149,10 @@ final class PairingClient {
       return CompletableFuture.failedFuture(
           new IllegalStateException("An upload is already running."));
     }
-    JsonObject metadata;
-    try {
-      // Read Minecraft state on the caller's client thread, before starting background I/O.
-      metadata = Minemories.captureMetadata();
-    } catch (RuntimeException error) {
-      UPLOADING.set(false);
-      return CompletableFuture.failedFuture(error);
-    }
     return CompletableFuture.supplyAsync(
         () -> {
           try {
+            JsonObject metadata = CaptureHistory.metadata(file);
             new ChunkedUploader(HTTP, 1000)
                 .upload(apiUrl(settings), token, file, metadata, offset -> {});
             return "Your memory is saved. Find it in your gallery.";
