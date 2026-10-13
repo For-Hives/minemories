@@ -22,8 +22,8 @@
 - creation d'un logo / DA
 - extraire les états et le polling de `GalleryPage` avec des tests d'interaction avant de retirer les exceptions Biome localisées
 - porter le mod sur Fabric avec Architectury Loom, puis tester Quilt et Forge séparément en jeu avant de déclarer ces loaders supportés
-- conserver plusieurs captures horodatées avec historique dans l'interface du mod, avant les snapshots automatiques et la timelapse
 - mesurer le temps d'export en jeu et déplacer les opérations coûteuses hors de la boucle de rendu si nécessaire
+- refuser les exports sans géométrie quand les chunks du monde ne sont pas encore chargés (M peut être ouvert pendant le chargement) ; garder le dernier souvenir valide et expliquer qu’il faut attendre le terrain
 - setup polar avec betterauth
 - valider en jeu l’upload du mod par morceaux de 4 MiB (200 MiB), y compris reprise après coupure et redémarrage
 - observabilité en production du mod et de l’API : collecte consentie des exceptions et stack traces clients, versions mod/Minecraft/loader, identifiant de corrélation capture/upload, contexte et breadcrumbs ; consulter et regrouper les erreurs pour diagnostiquer les incidents, sans tokens ni données privées, avec rétention et limites d’envoi

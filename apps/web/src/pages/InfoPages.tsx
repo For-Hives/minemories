@@ -116,8 +116,10 @@ export function HowItWorksPage() {
 				Le résultat est un fichier <code>capture.glb</code> dans le dossier <code>export</code> de ton dossier
 				utilisateur (<code>~/export/capture.glb</code>) par défaut, pas dans le dossier du monde. En mode avancé, tu
 				peux choisir un autre dossier et cliquer sur « Exporter en local » sans connecter de compte. GLB signifie ici un
-				fichier 3D contenant les formes et les textures. Chaque export remplace ce fichier : copie-le et renomme-le
-				avant la capture suivante.
+				fichier 3D contenant les formes et les textures. Avec la version actuelle du mod, chaque capture datée est aussi
+				conservée avec ses informations dans le sous-dossier <code>history</code>. <code>capture.glb</code>
+				permet de retrouver le dernier export. Dans le menu M, « Captures locales » permet de choisir et d’envoyer un
+				ancien souvenir. Garde tes propres sauvegardes : l’historique utilise de la place sur ton ordinateur.
 			</p>
 			<p>
 				Sur le site, utilise « Open a local GLB » et choisis ce fichier. Aucun compte n’est nécessaire pour l’ouvrir
@@ -333,8 +335,8 @@ const questions = [
 		'Les captures AFK sont actives par défaut après 5 minutes d’inactivité, au plus une fois toutes les 4 heures, même en pause ou en arrière-plan. Sans compte lié, elles restent locales ; avec un compte lié, elles sont envoyées dans ta galerie privée. Le mode simple permet de les désactiver, le mode avancé de régler délai, fréquence et rayon (32 blocs par défaut). Une désactivation déjà enregistrée est conservée. Déconnecter le compte arrête les envois, mais conserve les captures locales. Le bouton Exporter en local n’envoie rien.',
 	],
 	[
-		'Mon ancienne capture a disparu du dossier export : pourquoi ?',
-		'Chaque export remplace capture.glb. Copie et renomme ce fichier avant le suivant. Les captures déjà envoyées restent distinctes dans la galerie. Garde aussi tes propres copies : aucune conservation en ligne à vie n’est promise.',
+		'Comment retrouver une ancienne capture ?',
+		'Dans la version actuelle du mod, M → Captures locales affiche les captures datées conservées dans le sous-dossier history de ton dossier d’export. Tu peux choisir un souvenir et l’envoyer si ton compte est connecté. capture.glb reste le dernier export. Les anciennes versions du mod écrasaient ce fichier : la mise à jour conserve celui encore présent, mais ne récupère pas les fichiers déjà écrasés. Les captures locales ne sont pas supprimées automatiquement ; prévois de la place et tes propres sauvegardes. Aucune conservation en ligne à vie n’est promise.',
 	],
 	[
 		'Puis-je récupérer un serveur déjà fermé ou importer un ZIP ?',

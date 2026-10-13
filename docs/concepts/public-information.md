@@ -17,7 +17,7 @@ Ces personnages sont des hypothèses de conception, pas des entretiens utilisate
 | Jeune adulte — Sarah, 19 ans | Veut revoir la base de ses amis après la saison, sans réinstaller le pack | Ai-je besoin du mod ou d’un compte pour visiter ? | Concept et FAQ : une capture déjà créée se consulte par lien sans compte ni mod ; un serveur fermé ne se récupère pas directement |
 | Ado — Alex, 15 ans | Veut capturer sa construction et la montrer à ses amis | Quel fichier copier ? Où ? Que taper ? | Installation définit JAR/profil/loader, étapes numérotées ; Fonctionnement donne commandes exactes et explique CODE ; partage et données personnelles explicites |
 | Casual vanilla — Jules, 30 ans | N’a jamais installé de mod ; veut garder sa maison solo | Java ou Bedrock ? Vais-je modifier mon monde ? | Installation annonce les versions, conseille une copie, définit les termes ; FAQ explique pourquoi un profil NeoForge est requis même pour un monde vanilla |
-| Pro modder — Morgan, 27 ans | Utilise plusieurs instances ; veut vérifier la fidélité d’un pack | Quel loader/build ? Quelles limites de rendu et d’export ? | Installation donne les versions et le dossier du profil ; FAQ annonce les rendus non garantis ; Fonctionnement précise bornes de sélection, remplacement du GLB et limite de taille |
+| Pro modder — Morgan, 27 ans | Utilise plusieurs instances ; veut vérifier la fidélité d’un pack | Quel loader/build ? Quelles limites de rendu et d’export ? | Installation donne les versions et le dossier du profil ; FAQ annonce les rendus non garantis ; Fonctionnement précise bornes de sélection, historique local et limite de taille |
 
 ## Vérification éditoriale effectuée
 
