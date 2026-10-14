@@ -104,7 +104,7 @@ rebasée, avec 82 tests API et 62 tests web. Le viewer local ouvre le GLB réel 
 à 32 par le viewer) ; terrain, neige, végétation et sous-sol sont visibles après
 la préparation. Le même fichier est importé et rendu dans Blender 5.2.2.
 La première compilation des shaders est longue sur le navigateur de test ;
-son profilage reste suivi dans TASKS.md. Les adaptations du
+son profilage reste suivi dans [issue #74](https://github.com/For-Hives/minemories/issues/74). Les adaptations du
 [guide de migration officiel](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
 remplacent `PCFSoftShadowMap` par `PCFShadowMap` et appellent `super.dispose()`
 dans les nuages, avec vérification de l’événement de libération. Le bundle viewer

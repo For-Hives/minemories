@@ -64,4 +64,4 @@ ignorés par le runner API ordinaire sont exercés par cette commande dédiée.
 
 Ces plafonds bornent le corps transmis au parseur. Ils ne remplacent pas les
 quotas de stockage par compte ni les protections du proxy contre les connexions
-lentes ou les requêtes concurrentes, suivis séparément dans `docs/AI/TASKS.md`.
+lentes ou les requêtes concurrentes, suivis séparément dans [issue #66](https://github.com/For-Hives/minemories/issues/66).

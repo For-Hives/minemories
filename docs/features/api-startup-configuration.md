@@ -45,4 +45,4 @@ du serveur, puis ferme SQLite ; le test vérifie sa terminaison normale.
 
 Ces validations ne constituent pas un audit de l’infrastructure en production.
 L’accès direct au port API, les droits du bucket, les sauvegardes, les montages
-persistants et la rotation des secrets restent suivis dans `docs/AI/TASKS.md`.
+persistants et la rotation des secrets restent suivis dans [issue #66](https://github.com/For-Hives/minemories/issues/66).
