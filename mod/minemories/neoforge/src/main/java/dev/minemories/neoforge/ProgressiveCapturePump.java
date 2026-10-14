@@ -33,6 +33,7 @@ final class ProgressiveCapturePump {
   private final Set<String> copied = new HashSet<>();
   private CaptureTransfer pending;
   private boolean finished;
+  private long transferNanos;
   private final CaptureTransfer.Output output;
 
   ProgressiveCapturePump(
@@ -67,6 +68,10 @@ final class ProgressiveCapturePump {
     return finished;
   }
 
+  long transferNanos() {
+    return transferNanos;
+  }
+
   void step(CaptureFrameBudget budget) throws IOException {
     while (!finished && !writer.done() && writer.ready() && budget.admit()) {
       if (pending == null) {
@@ -77,7 +82,14 @@ final class ProgressiveCapturePump {
         var copiedElement = producer.next();
         if (copiedElement != null) pending = new CaptureTransfer(copiedElement, copied);
       } else {
-        if (!pending.step(producer::pixels, output)) return;
+        long started = System.nanoTime();
+        boolean admitted;
+        try {
+          admitted = pending.step(producer::pixels, output);
+        } finally {
+          transferNanos += System.nanoTime() - started;
+        }
+        if (!admitted) return;
         if (pending.done()) pending = null;
       }
     }

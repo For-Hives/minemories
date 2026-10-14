@@ -41,6 +41,23 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private String cancellation;
   private int blocks, entityCount;
   private long frames, maximumStepNanos, overruns;
+  private final long[] phaseNanos = new long[3];
+
+  record Phases(
+      long surfaceNanos,
+      long blockNanos,
+      long entityNanos,
+      long pixelReadNanos,
+      long transferNanos) {}
+
+  Phases phases() {
+    return new Phases(
+        phaseNanos[0],
+        phaseNanos[1],
+        phaseNanos[2],
+        pixels.readNanos(),
+        Math.max(0, pump.transferNanos() - pixels.readNanos()));
+  }
 
   ProgressiveGameCapture(Minecraft mc, PairingClient.CaptureSettings settings, long epoch) {
     this.mc = mc;
@@ -83,11 +100,14 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     // cap.
     long nanos = 2_000_000;
     var budget = new CaptureFrameBudget(System::nanoTime, nanos, 4096);
-    pump.step(budget);
-    long elapsed = budget.elapsedNanos();
-    frames++;
-    maximumStepNanos = Math.max(maximumStepNanos, elapsed);
-    if (elapsed > nanos) overruns++;
+    try {
+      pump.step(budget);
+    } finally {
+      long elapsed = budget.elapsedNanos();
+      frames++;
+      maximumStepNanos = Math.max(maximumStepNanos, elapsed);
+      if (elapsed > nanos) overruns++;
+    }
   }
 
   void cancel(String reason) {
@@ -155,6 +175,16 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
 
   @Override
   public CaptureElement.Snapshot next() throws IOException {
+    int phase = !surfaceDone ? 0 : !cursor.done() ? 1 : 2;
+    long started = System.nanoTime();
+    try {
+      return copyNext();
+    } finally {
+      phaseNanos[phase] += System.nanoTime() - started;
+    }
+  }
+
+  private CaptureElement.Snapshot copyNext() throws IOException {
     if (!surfaceDone) {
       surface();
       return null;

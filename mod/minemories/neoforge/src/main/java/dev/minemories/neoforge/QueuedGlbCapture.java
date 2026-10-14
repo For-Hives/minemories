@@ -41,7 +41,15 @@ final class QueuedGlbCapture implements AutoCloseable {
   private final Thread worker;
   private volatile boolean sealing;
 
-  record Result(Path file, int materials, int textures, long quads, Instant finishedAt) {}
+  record Preparation(long textureNanos, long geometryNanos, long publicationNanos) {}
+
+  record Result(
+      Path file,
+      int materials,
+      int textures,
+      long quads,
+      Instant finishedAt,
+      Preparation preparation) {}
 
   private interface Task {}
 
@@ -179,6 +187,7 @@ final class QueuedGlbCapture implements AutoCloseable {
     private RenderedTexture.Rows active;
     private String activeKey;
     private long pixels, textureBytes;
+    private long textureNanos, geometryNanos;
     private String cachedKey;
     private byte[] cachedPng;
 
@@ -191,12 +200,16 @@ final class QueuedGlbCapture implements AutoCloseable {
       while (true) {
         checkCancelled();
         Task task = queue.take();
+        long started = System.nanoTime();
         if (task instanceof Begin begin) startTexture(begin);
         else if (task instanceof Band band) copyBand(band);
         else if (task instanceof End end) endTexture(end);
         else if (task instanceof Batch batch) geometry(batch);
         else if (task instanceof Finish finish) return publish(finish);
         else throw new IOException("Unknown capture packet");
+        long elapsed = System.nanoTime() - started;
+        if (task instanceof Batch) geometryNanos += elapsed;
+        else textureNanos += elapsed;
       }
     }
 
@@ -293,6 +306,7 @@ final class QueuedGlbCapture implements AutoCloseable {
     }
 
     private Result publish(Finish finish) throws IOException {
+      long started = System.nanoTime();
       if (active != null) throw new IOException("Capture ends with an unfinished texture");
       if (!scene.hasGeometry()) throw new IOException("Capture has no visible geometry");
       JsonObject metadata = JsonParser.parseString(finish.metadata).getAsJsonObject();
@@ -319,7 +333,8 @@ final class QueuedGlbCapture implements AutoCloseable {
           scene.materialCount(),
           textures.size(),
           scene.metrics().quads(),
-          Objects.requireNonNull(ended[0]));
+          Objects.requireNonNull(ended[0]),
+          new Preparation(textureNanos, geometryNanos, System.nanoTime() - started));
     }
   }
 
