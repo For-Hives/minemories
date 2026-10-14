@@ -18,8 +18,20 @@ Les captures ne sont pas supprimées automatiquement. Elles utilisent de l’esp
 
 Le mod prépare le GLB et le JSON dans un dossier temporaire, puis publie ce dossier lorsqu’ils sont complets. Une exception durant l’écriture laisse le précédent export utilisable. Les copies du dernier export et sa référence sont remplacées par renommage ; une panne pendant cette phase peut laisser un nouveau souvenir complet dans l’historique alors que l’ancien reste la référence du dernier export. Il reste accessible via **Captures locales**. Les dossiers temporaires laissés par un arrêt brutal ne sont pas présentés dans la liste.
 
+Une zone sans géométrie visible n’est pas publiée. Cela peut arriver avant la réception des chunks ou avec une sélection vide : le menu M explique d’attendre le chargement du terrain ou de choisir une autre zone. Le dernier GLB, son JSON et l’historique restent utilisables ; aucun envoi ni intervalle AFK réussi n’est enregistré pour cet essai. Le suivi de profondeur ignore les positions dans les chunks encore absents. Les captures non vides gardent leurs textures, transparences et lumières ; des lumières seules ne suffisent pas à constituer un souvenir.
+
+Le contrôle utilise le cache des chunks effectivement reçus, sans charger ni générer de terrain : `ClientLevel.hasChunkAt` renvoie toujours vrai et ne constitue pas un contrôle de réception. Une capture d’eau seule reste valide, même si elle ne contient aucun modèle de bloc solide. Les normales sont calculées en double avant sérialisation pour garder des valeurs finies, y compris avec des coordonnées finies extrêmes.
+
 La liste est lue en arrière-plan, avec quatre souvenirs par page et une mémoire bornée pendant le tri. Les JSON sont lus uniquement pour les souvenirs affichés ou envoyés, avec une limite de 2 MiB. Les liens symboliques dans l’historique et les références sortant du dossier ne sont pas suivis. Une réponse arrivée après fermeture ou actualisation de l’écran ne remplace pas la page courante.
 
 Cette conservation locale prépare les snapshots réguliers et la timelapse ; elle ne fournit pas encore de planificateur supplémentaire, de déduplication entre captures ni de lecture animée. Ces tâches restent suivies dans `docs/AI/TASKS.md`.
+
+## Vérification du refus des captures vides
+
+Les tests core refusent les scènes vides ou composées seulement de lumières avant de toucher au fichier, et vérifient directement les normales du buffer binaire pour les coordonnées extrêmes. Un test d’historique conserve le modèle précédent, son JSON et sa référence après ce refus.
+
+Le scénario Minecraft 1.21.1 / NeoForge 21.1.248 du 13 octobre 2026 utilise une copie isolée du monde et une API HTTP locale. Le bouton **Capturer et envoyer** dans un chunk absent et **Exporter la sélection** dans une zone d’air conservent exactement les anciens octets GLB/JSON, sans nouveau dossier d’historique ni référence. Aucun upload n’est lancé et le chunk absent n’entre pas dans l’historique de profondeur. Les messages des deux modes ont été inspectés à l’écran. Une sélection d’eau seule avec géométrie BLEND, puis une capture du terrain chargé, sont exportées avec succès et conservées avec l’ancien souvenir. Cette validation ne prouve pas un envoi en production.
+
+Les deux GLB ont aussi été importés et rendus dans Blender 5.2.2 : un mesh avec 22 triangles pour l’eau, puis un mesh avec 394 triangles pour le terrain. Les images ont été inspectées : transparence et texture d’eau, végétation, textures de terrain et faces de coupe sont présentes.
 
 Envoyer à nouveau un souvenir dont l’envoi a déjà réussi peut créer une autre entrée dans la galerie. L’interface ne présente pas de statut « déjà envoyé » : les comptes et API peuvent changer et la copie distante peut avoir été supprimée.

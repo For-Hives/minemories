@@ -239,10 +239,7 @@ final class MinemoriesScreen extends Screen {
           selection
               ? Minemories.exportSelection()
               : Minemories.export(PairingClient.afkOptions().radius());
-      status =
-          result == 1
-              ? "Fichier local enregistré. Aucun envoi."
-              : "Capture impossible. Vérifie la zone.";
+      status = result == 1 ? "Fichier local enregistré. Aucun envoi." : Minemories.captureFailure();
     } catch (RuntimeException error) {
       status = Minemories.pairingError(error);
     }
@@ -254,9 +251,15 @@ final class MinemoriesScreen extends Screen {
     status = "Capture en cours…";
     updateButtons();
     try {
-      if (!paired || Minemories.export(PairingClient.afkOptions().radius()) != 1) {
+      if (!paired) {
         busy = false;
-        status = "Capture impossible. Vérifie le monde et la connexion du compte.";
+        status = "Connecte ton compte avant d’envoyer un souvenir.";
+        updateButtons();
+        return;
+      }
+      if (Minemories.export(PairingClient.afkOptions().radius()) != 1) {
+        busy = false;
+        status = Minemories.captureFailure();
         updateButtons();
         return;
       }
