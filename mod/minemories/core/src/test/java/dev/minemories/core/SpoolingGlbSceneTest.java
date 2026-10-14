@@ -154,14 +154,9 @@ final class SpoolingGlbSceneTest {
       scene.write(output);
       byte[] expected = Files.readAllBytes(old), actual = Files.readAllBytes(output);
       int binaryStart = 28 + ByteBuffer.wrap(actual).order(ByteOrder.LITTLE_ENDIAN).getInt(12);
-      int normalStart = binaryStart + 96, normalEnd = normalStart + 96;
-      // The legacy writer can overflow a float subtraction on extreme coordinates.
-      // Preserve all geometry/UV/index bytes while requiring finite correct normals here.
-      assertArrayEquals(
-          Arrays.copyOfRange(expected, 0, normalStart), Arrays.copyOfRange(actual, 0, normalStart));
-      assertArrayEquals(
-          Arrays.copyOfRange(expected, normalEnd, expected.length),
-          Arrays.copyOfRange(actual, normalEnd, actual.length));
+      int normalStart = binaryStart + 96;
+      // main now fixes extreme float subtraction too; the complete GLB must stay equivalent.
+      assertArrayEquals(expected, actual);
       ByteBuffer normals = ByteBuffer.wrap(actual).order(ByteOrder.LITTLE_ENDIAN);
       for (int vertex = 0; vertex < 8; vertex++) {
         assertEquals(0f, normals.getFloat(normalStart + vertex * 12));
