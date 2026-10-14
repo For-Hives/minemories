@@ -1,7 +1,7 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
 - mettre i18n dans le site web pour avoir des translations dans toute les langues les plus populaire de joueur minecraft
 - diallow index/google/crawl for now (dev mode)
-- déployer le front avec `railpack.web.json`, puis vérifier en production `/downloads/manifest.json`, le JAR et son SHA-256 : le 14 octobre 2026, le site renvoyait le HTML de la SPA à la place du manifeste ; le build web refuse désormais un téléchargement absent ou incohérent
+- redéployer le front avec `railpack.web.json` sans Java ; publier le premier JAR validé sur GitHub Releases (dépôt public), puis vérifier le téléchargement depuis `/installation`
 - avoir une page avec la liste des Jar (historique de version) + une page changelog automatique 
 - verifier l'alignement du marketing avec besoin.md
 - faire des maquette pour l'ui du mod, et creer reelement une ui cool pour le mode baser sur la DA, en s'inspirant des meilleurs ui de mod (iris, Distant horizon, etc... )
