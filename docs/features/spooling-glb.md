@@ -198,3 +198,12 @@ du verre transparent et une lampe. Les GLB legacy/spoolés sont identiques octet
 pour octet. Blender 5.2.2 importe chaque fichier avec un mesh, quatre matériaux,
 quatre images 2 × 2 et une lumière ; les deux rendus ont été inspectés visuellement.
 Cette validation du format ne constitue pas une validation AFK en jeu.
+
+
+## Coûts détaillés et préparation des métadonnées
+
+Le complément de l’issue #79 ajoute des mesures cumulées par phase client et
+worker, sans modifier le budget de 2 ms / 4 096 admissions ni le pacing 512 Kio/s.
+Le corpus, le JAR mesuré et les limites d’interprétation sont décrits dans
+[Mesures des captures AFK](afk-performance.md). La lecture des icônes de métadonnées
+est bornée à 128 Kio, aux en-têtes PNG ≤512×512, et refuse les liens symboliques.
