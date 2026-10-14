@@ -1,13 +1,13 @@
 # Writer GLB sur disque
 
 `SpoolingGlbScene` est un builder du module `:core`, sans dépendance Minecraft.
-Il prépare le passage des captures AFK à un parcours progressif. Il ne remplace
-pas encore le parcours du mod : la lecture des blocs et des modèles, la queue
-bornée, le coordinateur, la suspension et le débit réseau restent à raccorder.
+La branche de travail l’utilise pour les captures AFK progressives avec une queue
+bornée et une lecture du jeu répartie entre frames. Le parcours manuel conserve
+son writer legacy. La beta publiée reste synchrone ; voir la validation #84 ci-dessous.
 
 ## Raccordement en cours
 
-La branche de travail prépare le raccordement avec `CaptureElement` (copie bornée
+Le coordinateur de la branche de travail utilise `CaptureElement` (copie bornée
 d'un bloc/renderer, sans référence au monde), `CaptureCursor` (une cellule reste
 en attente tant que son résultat n'est pas admis) et `CaptureFrameBudget` (arrêt
 des nouvelles opérations à la limite de temps ou d'items). Le parcours manuel
@@ -34,9 +34,9 @@ contrat et l'API, avec validation d'ordre et compatibilité des anciennes captur
 Les sources `CapturePixels` restent exclusivement sur le thread du client :
 sprites par bandes et framebuffer de lecture temporaire pour les textures de
 renderers. Ce parcours GPU exige encore la validation réelle de l'état OpenGL
-et des images. **Le coordinateur AFK n'utilise pas encore ces composants** :
-raccordement des phases, suspension/annulation sur activité ou sortie de monde,
-rechargement des ressources, limitation réseau et mesures en jeu restent requis.
+et des images. Le coordinateur AFK utilise ces composants ; les scénarios de
+suspension/annulation, le rechargement des ressources et les mesures en jeu
+restent à exercer avant fusion.
 Les tests des composants ne prouvent pas une réduction des freezes. La beta
 publiée reste inchangée ; cette branche prépare une version `0.1.1-dev.1`.
 
@@ -49,7 +49,7 @@ les tableaux avant son retour. Le caller peut ensuite les réutiliser. Les PNG,
 positions, normales, UV et indices sont écrits dans des fichiers du spool, sans
 conserver les tableaux fournis. Les chaînes sont immuables et leur taille est
 contrôlée avant admission. Aucun objet du monde, modèle, renderer ou atlas n’est
-accepté. Ces méthodes font de l’I/O : le pipeline devra les appeler dans son
+accepté. Ces méthodes font de l’I/O : le pipeline les appelle dans son
 worker, après copie des données du jeu sur le thread du client.
 
 Un cache LRU limite les streams ouverts ; la copie finale ouvre seulement la
@@ -60,7 +60,7 @@ texture et JSON. Les buffers sont fixes : 152 octets pour l’encodage d’un qu
 Les descriptions, bornes et compteurs restent en mémoire, bornés par les limites
 d’entrées et de chaînes. Le builder ne conserve ni BIN complet ni GLB complet.
 La mémoire des tableaux entrants et de leur production doit être bornée par le
-futur pipeline ; ce builder ne limite pas une allocation déjà faite par le caller.
+pipeline ; ce builder ne limite pas une allocation déjà faite par le caller.
 
 `write` ferme le cache, vérifie les identités et tailles réelles des fichiers,
 prépare le JSON sur disque puis copie les segments dans un fichier temporaire à
@@ -78,7 +78,8 @@ un lien ou un dossier remplacé. Les autres suppressions sont tentées même si 
 suppression échoue, et `close` permet de réessayer le nettoyage. Les erreurs de
 nettoyage remontent au caller. Un fichier publié par un `write` réussi reste
 conservé si un nettoyage ultérieur échoue. Un arrêt brutal peut laisser un spool
-sur disque : son nettoyage après redémarrage n’est pas encore automatisé.
+sur disque : `CaptureWorkspace` nettoie les espaces abandonnés au démarrage du
+worker, dans les limites décrites plus haut.
 
 ## Limites et format
 
