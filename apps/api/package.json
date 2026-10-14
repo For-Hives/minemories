@@ -13,7 +13,7 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "3.1151.0",
-		"@aws-sdk/lib-storage": "3.1151.0",
+		"@aws-sdk/lib-storage": "3.1152.0",
 		"@minemories/api-contract": "workspace:*",
 		"@orpc/server": "^1.14.0",
 		"better-auth": "^1.6.0",
