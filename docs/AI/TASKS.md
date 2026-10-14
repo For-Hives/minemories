@@ -1,9 +1,8 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
 - compléter les traductions des guides, erreurs API/moteur et dates/métadonnées à partir du catalogue FR/EN ; définir les URL et hreflang lors de la publication d’autres langues
-- redéployer le front avec `railpack.web.json` sans Java ; publier le premier JAR validé sur GitHub Releases (dépôt public), puis vérifier le téléchargement depuis `/installation`
+- contrôler la configuration du front dans Coolify (`railpack.web.json` sans Java) et le parcours galerie/viewer authentifié ; téléchargement du JAR 0.1.0-beta depuis `/installation` vérifié en production (docs/features/mod-distribution.md)
 - avoir une page avec la liste des Jar (historique de version) + une page changelog automatique
 - faire des maquette pour l'ui du mod, et creer reelement une ui cool pour le mode baser sur la DA, en s'inspirant des meilleurs ui de mod (iris, Distant horizon, etc... )
-- après validation des entités/lits/coffres, publier la préversion GitHub `0.1.0-beta` avec le JAR exact, son empreinte et des notes de version ; vérifier le téléchargement réel et mettre à jour les profils CurseForge compatibles
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
 - exécuter la réconciliation du stockage historique en production après revue du plan, arrêt de l’API et sauvegarde ; l’inventaire, les backfills récupérables et la file durable sont implémentés et testés sur Garage (docs/features/storage-reconciliation.md) ; accès/configuration et cas ambigus : issue #6
