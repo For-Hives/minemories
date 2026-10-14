@@ -310,7 +310,7 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 			</p>
 			<CopyText text={exports[system]} label="Copier le dossier du premier souvenir" />
 			<p>
-				Sur le site, clique sur <strong>Open a local GLB</strong> en haut de la page, puis choisis{' '}
+				Sur le site, clique sur <strong>Ouvrir un GLB local / Open a local GLB</strong> en haut de la page, puis choisis{' '}
 				<strong>capture.glb</strong>. Sur mobile, ce bouton est représenté par un +. Ton souvenir doit apparaître en 3D.
 				Cette ouverture reste locale et ne demande aucun compte.
 			</p>
@@ -328,7 +328,7 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 						</Link>
 						, puis ouvre{' '}
 						<Link to="/gallery" target="_blank">
-							My gallery
+							Ma galerie / My gallery
 						</Link>
 						.
 					</li>

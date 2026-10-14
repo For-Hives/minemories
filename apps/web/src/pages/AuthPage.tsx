@@ -1,7 +1,10 @@
 import { type SyntheticEvent, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
-import { buttonDark, Eyebrow, useAppContext } from '../App'
+import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
+import { LoadingSkeleton } from '../components/Loading'
+import { buttonDark, Eyebrow } from '../components/ui'
+import { T, useI18n } from '../i18n/I18n'
 
 const inputField =
 	'h-[45px] w-full rounded-[5px] border border-[#354238] bg-[#1c2720] px-[13px] text-xs font-normal text-ink outline-0 placeholder:text-[#b4c1ad] focus:border-[#354238] focus:shadow-[0_0_0_3px_#8b9e6320]'
@@ -12,6 +15,8 @@ function submitText(creating: boolean, busy: boolean) {
 }
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
+	const { t } = useI18n()
+
 	const { session, isPending, refreshSession } = useAppContext()
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
@@ -20,7 +25,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const creating = mode === 'register'
 	const from = (location.state as { from?: string } | null)?.from ?? '/gallery'
 
-	if (isPending) return <div className="grid min-h-[55vh] place-items-center text-sm text-muted-ink">One moment…</div>
+	if (isPending) return <LoadingSkeleton label="One moment…" />
 	if (session) return <Navigate to="/gallery" replace />
 
 	async function submit(event: SyntheticEvent<HTMLFormElement>) {
@@ -56,16 +61,22 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					to="/"
 				>
 					<span className="grid h-[31px] w-[31px] -rotate-5 place-items-center rounded-[10px_10px_10px_4px] bg-lime font-sans text-[20px] font-extrabold text-forest-dark">
-						m
+						{' '}
+						<T message={'m'} />{' '}
 					</span>{' '}
-					minemories
+					<T message={'minemories'} />{' '}
 				</Link>
 				<div className="relative z-[1] my-auto pb-[70px] max-phone:m-[27px_0_0] max-phone:p-0 max-phone:pb-[2px]">
-					<Eyebrow tone="text-[#d4e4a1]">A PLACE TO COME BACK TO</Eyebrow>
+					<Eyebrow tone="text-[#d4e4a1]">
+						<T message={'A PLACE TO COME BACK TO'} />
+					</Eyebrow>
 					<blockquote className="mb-[14px] mt-[21px] max-w-[385px] font-sans text-[36px] font-semibold leading-[1.2] tracking-[-1.8px] max-phone:mb-1 max-phone:mt-[10px] max-phone:max-w-[260px] max-phone:text-[23px]">
-						“Remember the cabin above the ravine?”
+						{' '}
+						<T message={'“Remember the cabin above the ravine?”'} />{' '}
 					</blockquote>
-					<span className="text-xs text-[#b5c0b0] max-phone:text-[10px]">That is often how it starts.</span>
+					<span className="text-xs text-[#b5c0b0] max-phone:text-[10px]">
+						<T message={'That is often how it starts.'} />
+					</span>
 				</div>
 				<div
 					aria-hidden="true"
@@ -78,56 +89,61 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					<i className="absolute bottom-5 left-[54px] h-[106px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
 					<i className="absolute bottom-5 left-[102px] h-[60px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
 					<b className="absolute bottom-[33px] right-[10px] font-mono text-[9px] font-normal text-[#d9e6ca]">
-						SEASON 04
+						{' '}
+						<T message={'SEASON 04'} />{' '}
 					</b>
 				</div>
 				<span className="relative z-[1] text-[11px] text-[#bdc5b7] max-phone:hidden">
-					A small archive of great adventures.
+					{' '}
+					<T message={'A small archive of great adventures.'} />{' '}
 				</span>
 			</div>
 			<div className="grid place-items-center px-[42px] py-[50px] max-phone:px-[21px] max-phone:py-9 max-phone:pb-[33px]">
 				<div className="w-[min(100%,380px)]">
-					<Eyebrow>{creating ? 'YOUR STORY CONTINUES' : 'GOOD TO SEE YOU AGAIN'}</Eyebrow>
+					<Eyebrow>{creating ? t('YOUR STORY CONTINUES') : t('GOOD TO SEE YOU AGAIN')}</Eyebrow>
 					<h1 className="mb-2 mt-[13px] font-sans text-[34px] font-semibold tracking-[-1.6px] max-phone:text-[28px]">
-						{creating ? 'Create a space' : 'Welcome back.'}
+						{creating ? t('Create a space') : t('Welcome back.')}
 					</h1>
 					<p className="m-0 text-[13px] text-[#b4c1ad]">
-						{creating ? 'Gather your worlds in a single gallery.' : 'Find your worlds gallery again.'}
+						{creating ? t('Gather your worlds in a single gallery.') : t('Find your worlds gallery again.')}
 					</p>
 					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit}>
 						{creating && (
 							<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-								Display name
+								{' '}
+								<T message={'Display name'} />{' '}
 								<input
 									name="name"
 									autoComplete="name"
 									required
 									maxLength={80}
-									placeholder="What do your friends call you?"
+									placeholder={t('What do your friends call you?')}
 									className={inputField}
 								/>
 							</label>
 						)}
 						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-							Email address
+							{' '}
+							<T message={'Email address'} />{' '}
 							<input
 								name="email"
 								type="email"
 								autoComplete="email"
 								required
-								placeholder="you@example.com"
+								placeholder={t('you@example.com')}
 								className={inputField}
 							/>
 						</label>
 						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-							Password
+							{' '}
+							<T message={'Password'} />{' '}
 							<input
 								name="password"
 								type="password"
 								autoComplete={creating ? 'new-password' : 'current-password'}
 								minLength={creating ? 12 : undefined}
 								required
-								placeholder={creating ? '12 characters minimum' : 'Your password'}
+								placeholder={t(creating ? '12 characters minimum' : 'Your password')}
 								className={inputField}
 							/>
 						</label>
@@ -137,22 +153,24 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							</p>
 						)}
 						<button className={`${buttonDark} mt-[2px] w-full`} type="submit" disabled={busy}>
-							{submitText(creating, busy)} <span>↗</span>
+							{t(submitText(creating, busy))} <span>↗</span>
 						</button>
 					</form>
 					<p className="mb-0 mt-[22px] text-center text-[11px] text-[#b4c1ad]">
-						{creating ? 'Already have an account?' : 'No account yet?'}{' '}
+						{creating ? t('Already have an account?') : t('No account yet?')}{' '}
 						<Link
 							className="font-bold text-[#b4c1ad] underline underline-offset-[3px]"
 							to={creating ? '/login' : '/register'}
 						>
-							{creating ? 'Sign in' : 'Create a space'}
+							{creating ? t('Sign in') : t('Create a space')}
 						</Link>
 					</p>
 					<p className="mb-0 mt-8 text-center text-[11px] text-[#b4c1ad]">
-						Just want to open a file?{' '}
+						{' '}
+						<T message={'Just want to open a file?'} />{' '}
 						<Link className="font-bold text-[#b4c1ad] underline underline-offset-[3px]" to="/viewer">
-							Try without an account
+							{' '}
+							<T message={'Try without an account'} />{' '}
 						</Link>
 					</p>
 				</div>

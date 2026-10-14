@@ -3,7 +3,15 @@ import { Link } from 'react-router'
 import { InfoNavigation } from './InfoPages'
 import { InstallationScene } from './InstallationScene'
 import { InstallationStep, launcherNames, stepNames } from './InstallationSteps'
-import { type GuideState, type Launcher, readGuide, resetGuide, type System, saveGuide } from './installation-state'
+import {
+	defaults,
+	type GuideState,
+	type Launcher,
+	readGuide,
+	resetGuide,
+	type System,
+	saveGuide,
+} from './installation-state'
 import './installation.css'
 
 function GuidePreferences({ guide, update }: { guide: GuideState; update: (value: Partial<GuideState>) => void }) {
@@ -126,10 +134,17 @@ function InstallationHelp() {
 }
 
 export function InstallationPage() {
-	const [guide, setGuide] = useState(readGuide)
+	const [guide, setGuide] = useState(() => ({ ...defaults, done: [] as number[] }))
+	const [restored, setRestored] = useState(false)
 	const heading = useRef<HTMLHeadingElement>(null)
 	const [moveFocus, setMoveFocus] = useState(false)
-	useEffect(() => saveGuide(guide), [guide])
+	useEffect(() => {
+		setGuide(readGuide())
+		setRestored(true)
+	}, [])
+	useEffect(() => {
+		if (restored) saveGuide(guide)
+	}, [guide, restored])
 	useEffect(() => {
 		if (moveFocus) heading.current?.focus()
 	}, [guide.step, moveFocus])
@@ -273,6 +288,23 @@ export function InstallationPage() {
 				servent de repères ; elles ne vérifient pas le jeu à ta place.
 			</p>
 			<InfoNavigation />
+			<noscript>
+				<section className="install-help">
+					<h2>Guide manuel Windows sans JavaScript</h2>
+					<p>
+						Télécharge le mod depuis <a href="https://github.com/For-Hives/minemories/releases">GitHub Releases</a>.
+						Voici toutes les étapes du parcours Minecraft Launcher :
+					</p>
+					{stepNames.map((name, index) => (
+						<section key={name}>
+							<h3>
+								{index + 1}. {name}
+							</h3>
+							<InstallationStep step={index} system="windows" launcher="manuel" />
+						</section>
+					))}
+				</section>
+			</noscript>
 		</article>
 	)
 }

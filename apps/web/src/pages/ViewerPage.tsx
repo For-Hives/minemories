@@ -1,12 +1,16 @@
 import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { buttonDark, buttonOutline, Eyebrow, fileInputHidden, useAppContext } from '../App'
 import { apiBase, apiClient } from '../api-client'
+import { useAppContext } from '../app-context'
+import { buttonDark, buttonOutline, Eyebrow, fileInputHidden } from '../components/ui'
+import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { formatClock, ViewerScene } from '../viewer-scene'
 
 export function ViewerPage() {
+	const { t } = useI18n()
+
 	const { viewerFile, setViewerFile } = useAppContext()
 	const [search] = useSearchParams()
 	const navigate = useNavigate()
@@ -140,16 +144,19 @@ export function ViewerPage() {
 		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
-					<Eyebrow>3D EXPLORATION</Eyebrow>
+					<Eyebrow>
+						<T message={'3D EXPLORATION'} />
+					</Eyebrow>
 					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
-						{memoryId ? 'A world to find again.' : (viewerFile?.name ?? 'A world to revisit.')}
+						{memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('A world to revisit.'))}
 					</h1>
 				</div>
 				<div className="flex gap-[9px]">
 					<label
 						className={`${buttonOutline} relative min-h-[40px] text-[10px] focus-within:outline-2 focus-within:outline-[#607a4a] focus-within:outline-offset-[3px]`}
 					>
-						Choose a GLB
+						{' '}
+						<T message={'Choose a GLB'} />{' '}
 						<input
 							id="local-file-input"
 							type="file"
@@ -159,7 +166,8 @@ export function ViewerPage() {
 						/>
 					</label>
 					<Link className={`${buttonDark} min-h-[40px] text-[10px]`} to="/gallery">
-						My gallery <span>↗</span>
+						{' '}
+						<T message={'My gallery'} /> <span>↗</span>
 					</Link>
 				</div>
 			</div>
@@ -178,12 +186,17 @@ export function ViewerPage() {
 				onDrop={handleDrop}
 			>
 				<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(#283024_1px,transparent_1px),linear-gradient(90deg,#283024_1px,transparent_1px)] bg-[length:42px_42px] opacity-[0.22] [mask-image:radial-gradient(ellipse_at_center,#000_0%,transparent_73%)]" />
-				<canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-label="Interactive 3D scene" />
+				<canvas
+					ref={canvasRef}
+					className="absolute inset-0 block h-full w-full"
+					aria-label={t('Interactive 3D scene')}
+				/>
 				{empty && !loading && <EmptyState />}
 				<div
 					className={`drop-overlay absolute inset-[12px] z-[3] hidden place-items-center rounded-lg border border-dashed border-lime-deep bg-[#13180ee8] font-mono text-sm text-lime-deep ${dragOver ? 'visible' : ''}`}
 				>
-					Drop your world here
+					{' '}
+					<T message={'Drop your world here'} />{' '}
 				</div>
 				{(loading ?? loadError) && (
 					<div
@@ -205,11 +218,18 @@ export function ViewerPage() {
 				)}
 				{!empty && (
 					<div className="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#b4c1ad] max-phone:hidden">
-						<span className="text-[#e0e5d7]">Drag</span> to orbit{' '}
-						<i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
-						<span className="text-[#e0e5d7]">Scroll</span> to zoom{' '}
-						<i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
-						<span className="text-[#e0e5d7]">Right-click</span> to pan
+						<span className="text-[#e0e5d7]">
+							<T message={'Drag'} />
+						</span>{' '}
+						<T message={'to orbit'} /> <i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
+						<span className="text-[#e0e5d7]">
+							<T message={'Scroll'} />
+						</span>{' '}
+						<T message={'to zoom'} /> <i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
+						<span className="text-[#e0e5d7]">
+							<T message={'Right-click'} />
+						</span>{' '}
+						<T message={'to pan'} />{' '}
 					</div>
 				)}
 				{!empty && (
@@ -217,7 +237,7 @@ export function ViewerPage() {
 						<button
 							className="h-[34px] w-[34px] cursor-pointer rounded-md border border-[#3b4334] bg-[#171b14d9] font-sans text-xl text-lime-deep"
 							type="button"
-							title="Recenter the camera"
+							title={t('Recenter the camera')}
 							onClick={() => sceneRef.current?.resetView()}
 						>
 							◎
@@ -227,9 +247,9 @@ export function ViewerPage() {
 				<TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />
 			</div>
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
-				<span className="text-[15px] text-[#b4c1ad]">⌖</span> Drag to orbit{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> Scroll to zoom{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> Right-click to pan
+				<span className="text-[15px] text-[#b4c1ad]">⌖</span> <T message={'Drag to orbit'} />{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> <T message={'Scroll to zoom'} />{' '}
+				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> <T message={'Right-click to pan'} />{' '}
 			</p>
 		</section>
 	)
@@ -278,16 +298,24 @@ function EmptyState() {
 			<div className="mb-[29px] grid h-12 w-12 place-items-center rounded-[14px] border border-[#454d3d] bg-[#171c13] text-2xl text-lime-deep shadow-[0_0_42px_#c9f36a0b]">
 				<span>◈</span>
 			</div>
-			<p className="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">YOUR MEMORY, IN 3D</p>
+			<p className="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">
+				<T message={'YOUR MEMORY, IN 3D'} />
+			</p>
 			<p className="mx-0 my-5 mb-[18px] max-w-[300px] text-[13px] leading-[1.6] text-[#b4c1ad]">
-				Drag a <b className="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">.glb</b>{' '}
-				file here, or open one from your computer.
+				{' '}
+				<T message={'Drag a'} />{' '}
+				<b className="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">
+					<T message={'.glb'} />
+				</b>{' '}
+				<T message={'file here, or open one from your computer.'} />{' '}
 			</p>
 		</div>
 	)
 }
 
 export function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
+	const { t } = useI18n()
+
 	const presets = [
 		{ label: 'Morning', minutes: 570, icon: '☀' },
 		{ label: 'Noon', minutes: 720, icon: '☼' },
@@ -306,19 +334,19 @@ export function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: 
 	return (
 		<fieldset
 			className="absolute top-4 right-4 z-[2] flex gap-1 rounded-lg border border-[#44513d] bg-[#101714ed] p-1 max-phone:top-14"
-			aria-label="Time of day"
+			aria-label={t('Time of day')}
 		>
 			{presets.map(preset => (
 				<button
 					type="button"
 					key={preset.label}
-					title={`${preset.label} · ${formatClock(preset.minutes)}`}
+					title={`${t(preset.label)} · ${formatClock(preset.minutes)}`}
 					aria-pressed={active?.label === preset.label}
-					aria-label={`${preset.label} (${formatClock(preset.minutes)})`}
+					aria-label={`${t(preset.label)} (${formatClock(preset.minutes)})`}
 					onClick={() => onSelect(preset.minutes)}
 					className={`cursor-pointer rounded-md px-3 py-2 text-xs transition-colors ${active?.label === preset.label ? 'bg-lime text-[#253121]' : 'text-[#d3dfce] hover:bg-[#2b392e]'}`}
 				>
-					<span aria-hidden="true">{preset.icon}</span> <span className="max-phone:sr-only">{preset.label}</span>
+					<span aria-hidden="true">{preset.icon}</span> <span className="max-phone:sr-only">{t(preset.label)}</span>
 				</button>
 			))}
 		</fieldset>
