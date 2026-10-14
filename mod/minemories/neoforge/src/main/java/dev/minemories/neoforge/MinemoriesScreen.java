@@ -335,7 +335,10 @@ final class MinemoriesScreen extends Screen {
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.render(graphics, mouseX, mouseY, partialTick);
     int statusTop = top + (advanced ? 200 : 201);
-    var lines = this.font.split(Component.literal(status), panelWidth - 28);
+    String captureStatus = Minemories.afkCaptureStatus();
+    var lines =
+        this.font.split(
+            Component.literal(captureStatus.isEmpty() ? status : captureStatus), panelWidth - 28);
     for (int i = 0; i < Math.min(3, lines.size()); i++) {
       graphics.drawString(this.font, lines.get(i), left + 14, statusTop + i * 10, COLOR_TEXT);
     }

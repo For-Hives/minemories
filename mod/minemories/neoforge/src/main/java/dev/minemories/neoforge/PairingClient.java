@@ -23,11 +23,35 @@ final class PairingClient {
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
   private static final AtomicBoolean UPLOADING = new AtomicBoolean();
+  private static final AtomicBoolean AFK_CANCELLED = new AtomicBoolean();
   private static final AtomicLong ACCOUNT_GENERATION = new AtomicLong();
   private static final DiagnosticsClient DIAGNOSTICS =
       new DiagnosticsClient(HTTP, PairingClient::readSettings, PairingClient::diagnosticVersions);
 
   private PairingClient() {}
+
+  record CaptureSettings(
+      boolean enabled,
+      boolean fullHeight,
+      ClientSettings.AfkOptions options,
+      Path directory,
+      String api,
+      String identity,
+      boolean paired,
+      long generation) {}
+
+  static CaptureSettings captureSettings() {
+    Properties value = readSettings();
+    return new CaptureSettings(
+        ClientSettings.afkSnapshots(value),
+        ClientSettings.fullHeightCapture(value),
+        ClientSettings.afkOptions(value),
+        ClientSettings.exportDirectory(value, home()),
+        apiUrl(value),
+        ClientSettings.diagnosticsBinding(value, System.getenv("MINEMORIES_API_URL")),
+        !value.getProperty("deviceToken", "").isBlank(),
+        ACCOUNT_GENERATION.get());
+  }
 
   static boolean isUploading() {
     return UPLOADING.get();
@@ -185,7 +209,22 @@ final class PairingClient {
             });
   }
 
+  static void cancelAfkUpload() {
+    AFK_CANCELLED.set(true);
+  }
+
+  static CompletableFuture<String> uploadAfkCapture(Path file, CaptureSettings expected) {
+    if (!expected.paired() || !expected.equals(captureSettings()))
+      return CompletableFuture.failedFuture(
+          new IllegalStateException("Contexte AFK modifié. Capture conservée localement."));
+    return uploadCapture(file, expected);
+  }
+
   static CompletableFuture<String> uploadCapture(Path file) {
+    return uploadCapture(file, null);
+  }
+
+  private static CompletableFuture<String> uploadCapture(Path file, CaptureSettings expected) {
     Properties settings = readSettings();
     String token = settings.getProperty("deviceToken");
     if (token == null || token.isBlank()) {
@@ -201,12 +240,19 @@ final class PairingClient {
       return CompletableFuture.failedFuture(
           new IllegalStateException("An upload is already running."));
     }
+    AFK_CANCELLED.set(false);
     var diagnostics = DIAGNOSTICS.begin(DiagnosticReport.Phase.UPLOAD, file);
+    UploadPacer pacer =
+        expected == null
+            ? null
+            : new UploadPacer(
+                UploadPacer.AFK_BYTES_PER_SECOND,
+                () -> !AFK_CANCELLED.get() && expected.equals(captureSettings()));
     return CompletableFuture.supplyAsync(
         () -> {
           try {
             JsonObject metadata = CaptureHistory.metadata(file);
-            new ChunkedUploader(HTTP, 1000, diagnostics::headers)
+            new ChunkedUploader(HTTP, 1000, diagnostics::headers, pacer)
                 .upload(
                     apiUrl(settings),
                     token,
@@ -285,6 +331,7 @@ final class PairingClient {
     settings.setProperty("apiUrl", apiUrl(settings));
     try {
       ClientSettings.save(settingsPath(), settings);
+      Minecraft.getInstance().execute(Minemories::clientSettingsChanged);
     } catch (IOException error) {
       throw new CompletionException(error);
     }
