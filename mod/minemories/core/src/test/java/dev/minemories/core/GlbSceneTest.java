@@ -38,6 +38,7 @@ final class GlbSceneTest {
         new float[] {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0},
         new float[] {0, 0, 1, 0, 1, 1, 0, 1});
     scene.addPointLight(0.5f, 0.5f, 0.5f, 0xFFF0D0, 14);
+    assertTrue(scene.hasGeometry());
 
     Path output = tempDir.resolve("capture.glb");
     scene.write(output);
@@ -83,6 +84,24 @@ final class GlbSceneTest {
         new float[] {0, 0, Float.POSITIVE_INFINITY, 0, 1, 1, 0, 1});
 
     assertEquals(0, scene.materialCount());
+    assertFalse(scene.hasGeometry());
+  }
+
+  @Test
+  void emptyAndLightOnlyScenesCannotReplaceAnExistingCapture() throws IOException {
+    Path output = tempDir.resolve("capture.glb");
+    byte[] previous = new byte[] {1, 2, 3, 4};
+    Files.write(output, previous);
+    GlbScene scene = new GlbScene();
+    assertThrows(IOException.class, () -> scene.write(output));
+    org.junit.jupiter.api.Assertions.assertArrayEquals(previous, Files.readAllBytes(output));
+    scene.addPointLight(0.5f, 1, 0.5f, 0xFFFFFF, 15);
+    assertFalse(scene.hasGeometry());
+    assertThrows(IOException.class, () -> scene.write(output));
+    org.junit.jupiter.api.Assertions.assertArrayEquals(previous, Files.readAllBytes(output));
+    Path missing = tempDir.resolve("not-created/capture.glb");
+    assertThrows(IOException.class, () -> scene.write(missing));
+    assertFalse(Files.exists(tempDir.resolve("not-created")));
   }
 
   @Test
@@ -138,5 +157,15 @@ final class GlbSceneTest {
     assertTrue(json.contains("\"alphaMode\":\"BLEND\""));
     assertFalse(json.contains("NaN"));
     assertFalse(json.contains("Infinity"));
+    // JSON bounds can be finite while the binary NORMAL accessor contains NaN.
+    assertTrue(json.contains("\"NORMAL\":1"));
+    assertTrue(json.contains("\"byteOffset\":48,\"byteLength\":48"));
+    int binaryStart = 20 + header.getInt(12) + 8;
+    for (int vertex = 0; vertex < 4; vertex++) {
+      int normal = binaryStart + 48 + vertex * 12;
+      assertEquals(0f, header.getFloat(normal));
+      assertEquals(0f, header.getFloat(normal + 4));
+      assertEquals(1f, header.getFloat(normal + 8));
+    }
   }
 }

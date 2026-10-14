@@ -1,4 +1,4 @@
-# État des tâches — 13 octobre 2026
+# État des tâches — 14 octobre 2026
 
 Cet audit retire uniquement les critères exercés ; les critères restants restent dans `TASKS.md`.
 
@@ -30,9 +30,11 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 - Historique local : captures datées distinctes, migration du dernier export existant, copies de compatibilité `capture.glb`/`capture.json`, pagination et envoi de la capture sélectionnée avec ses propres métadonnées. Tests de collision, panne d’écriture, JSON borné/illisible, chemins, réponse tardive et envoi pendant un nouvel export. Minecraft 1.21.1 / NeoForge 21.1.248 exercé sur une copie isolée : six captures réelles lors du premier essai, persistance après redémarrage, puis import d’une ancienne capture de 57 016 octets et cinq nouvelles captures de terrain de 61 300 octets. Les accès simple/avancé, pages de quatre puis deux entrées, retour, envoi des anciens octets/métadonnées vers une API HTTP de test et refus sans appairage ont été vérifiés ; les écrans ont été inspectés visuellement. Cela ne prouve pas l’envoi de production ni le JAR distribué. Voir [l’historique et ses limites](local-capture-history.md).
 
+- Refus des captures vides : contrôle des vrais chunks reçus, absence de publication sans géométrie, conservation du dernier GLB/JSON/référence et messages d’aide dans les deux modes. Tests core/historique et scénario Minecraft 1.21.1 / NeoForge 21.1.248 isolé : chunk absent, sélection d’air, absence d’upload et de profondeur provisoire, puis exports d’eau seule BLEND et de terrain chargé. Les messages ont été inspectés visuellement. Le buffer NORMAL est aussi testé pour les coordonnées finies extrêmes, après correction des soustractions en float. Voir [le scénario et ses limites](local-capture-history.md#vérification-du-refus-des-captures-vides).
+
 ## Travaux encore ouverts
 
-Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Un essai lancé avant la réception des chunks a aussi produit un GLB sans géométrie : son refus explicite reste suivi. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
+Les tâches mod/API restantes sont conservées : sélection des zones fréquentées, optimisation GLB, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises et du JAR exact restent requises. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
 
 La profondeur visitée est implémentée avec tests de persistance/isolation et captures réelles importées dans Blender ; sa validation comparative surface/grotte reste suivie tant que le scénario n’est pas documenté complètement. Les faces de coupe terre/pierre sont implémentées, avec tests des limites et des plans, et rendus Blender de surface et de profondeur. La scène de contrôle eau/verre/feuilles/escalier exportée en pause confirme les faces d’eau sur la coupe et les matériaux MASK/BLEND, avec un rendu Blender inspecté. La tâche #8 est terminée.
 
