@@ -35,6 +35,7 @@ final class CapturePixels {
   private final Map<String, Source> sources = new LinkedHashMap<>();
   private long pixels;
   private int rendererTextures;
+  private long readNanos;
 
   CapturePixels(Minecraft minecraft) {
     this.minecraft = minecraft;
@@ -69,7 +70,7 @@ final class CapturePixels {
     long amount = (long) source.width() * source.height();
     if (sources.size() == 1024 || amount > 64L * 1024 * 1024 - pixels)
       throw new IOException("Le budget de pixels de la capture est dépassé.");
-    sources.put(source.key(), source);
+    sources.put(source.key(), new TimedSource(source));
     pixels += amount;
   }
 
@@ -77,6 +78,39 @@ final class CapturePixels {
     Source source = sources.get(key);
     if (source == null) throw new IOException("Source de texture absente de la capture.");
     return source;
+  }
+
+  long readNanos() {
+    return readNanos;
+  }
+
+  private final class TimedSource implements Source {
+    private final Source source;
+
+    private TimedSource(Source source) {
+      this.source = source;
+    }
+
+    public String key() {
+      return source.key();
+    }
+
+    public int width() {
+      return source.width();
+    }
+
+    public int height() {
+      return source.height();
+    }
+
+    public int[] readBand(int row, int rows) throws IOException {
+      long started = System.nanoTime();
+      try {
+        return source.readBand(row, rows);
+      } finally {
+        readNanos += System.nanoTime() - started;
+      }
+    }
   }
 
   private static void validateBand(Source source, int row, int rows) throws IOException {

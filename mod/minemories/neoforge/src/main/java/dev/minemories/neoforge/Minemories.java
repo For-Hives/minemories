@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -174,12 +173,8 @@ public class Minemories {
       metadata.addProperty("serverName", (String) null);
       try {
         var screenshot = localServer.getWorldScreenshotFile();
-        if (screenshot.isPresent() && Files.isRegularFile(screenshot.get())) {
-          metadata.addProperty(
-              "thumbnail",
-              "data:image/png;base64,"
-                  + Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot.get())));
-        }
+        if (screenshot.isPresent())
+          metadata.addProperty("thumbnail", CaptureIcon.read(screenshot.get()));
       } catch (IOException ignored) {
         metadata.addProperty("thumbnail", (String) null);
       }
@@ -190,11 +185,7 @@ public class Minemories {
           "serverName",
           serverName == null || serverName.isBlank() ? mc.getCurrentServer().ip : serverName);
       byte[] icon = mc.getCurrentServer().getIconBytes();
-      metadata.addProperty(
-          "thumbnail",
-          icon == null
-              ? null
-              : "data:image/png;base64," + Base64.getEncoder().encodeToString(icon));
+      metadata.addProperty("thumbnail", CaptureIcon.encode(icon));
     } else {
       metadata.addProperty("worldName", (String) null);
       metadata.addProperty("serverName", (String) null);
@@ -378,6 +369,10 @@ public class Minemories {
     }
     try {
       var result = completed.result();
+      LOGGER.info(
+          "AFK capture phase timings (ns): client={}, preparation={}",
+          completed.phases(),
+          result.preparation());
       if (!completed.valid(PairingClient.captureSettings(), resourceEpoch)) {
         afkDiagnostics.success();
         LOGGER.info("Completed AFK file preserved locally after context change");
