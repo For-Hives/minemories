@@ -60,3 +60,13 @@ La profondeur visitée est implémentée avec tests de persistance/isolation et 
 - Issue #5 : créer/configurer les projets et identifiants de distribution Modrinth/CurseForge. La CI est préparée, la publication reste désactivée par défaut.
 - Issue #6 : contrôler/redéployer le front et confirmer l’ouverture authentifiée de la galerie. Les sujets auparavant regroupés sont séparés : infrastructure API [issue #66](https://github.com/For-Hives/minemories/issues/66), réconciliation [issue #65](https://github.com/For-Hives/minemories/issues/65), routage Nginx [issue #67](https://github.com/For-Hives/minemories/issues/67) et diagnostics [issue #82](https://github.com/For-Hives/minemories/issues/82).
 - Logo et direction artistique : [issue #76](https://github.com/For-Hives/minemories/issues/76) ; maquettes du mod : [issue #62](https://github.com/For-Hives/minemories/issues/62). Ces travaux restent exclus de l’implémentation mod/API prioritaire.
+
+
+## Envoi natif à la limite de 200 Mio
+
+Le scénario de #81 est validé avec le JAR exact et l’API réelle locale : appairage,
+arrêt API après trois morceaux, nouveaux processus API/Minecraft, reprise à 12 Mio,
+50 morceaux au total, même UUID et SHA-256, métadonnées intactes et aucun doublon.
+Les allocations JFR restent par morceau ; le dépassement et le quota sont refusés.
+Voir [les preuves, le fixture et leur portée](native-upload-resume-validation.md).
+Les validations sur les profils/déploiements de production restent dans #83.
