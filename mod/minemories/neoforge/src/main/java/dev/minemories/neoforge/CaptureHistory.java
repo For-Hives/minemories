@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 final class CaptureHistory {
@@ -52,11 +53,35 @@ final class CaptureHistory {
       throws IOException {
     byte[] json = metadata.getBytes(StandardCharsets.UTF_8);
     if (json.length > MAX_METADATA_BYTES) throw new IOException("Métadonnées trop volumineuses.");
+    return saveWritten(directory, capturedAt, writer, file -> Files.write(file, json));
+  }
+
+  /**
+   * Preparation finishes before metadata is evaluated, so the recorded end includes GLB writing.
+   */
+  static synchronized Path savePrepared(
+      Path directory, Instant capturedAt, Supplier<String> metadata, Writer writer)
+      throws IOException {
+    return saveWritten(
+        directory,
+        capturedAt,
+        writer,
+        file -> {
+          byte[] json = metadata.get().getBytes(StandardCharsets.UTF_8);
+          if (json.length > MAX_METADATA_BYTES)
+            throw new IOException("Métadonnées trop volumineuses.");
+          Files.write(file, json);
+        });
+  }
+
+  private static Path saveWritten(
+      Path directory, Instant capturedAt, Writer writer, Writer metadata) throws IOException {
+    interrupted();
     Path history = directory.resolve("history");
     Files.createDirectories(history);
     requireDirectory(history);
     preserveLegacy(directory, history);
-    Path saved = commit(history, capturedAt, writer, file -> Files.write(file, json));
+    Path saved = commit(history, capturedAt, writer, metadata);
     replaceAlias(saved.resolve("capture.json"), directory.resolve("capture.json"));
     replaceAlias(saved.resolve("capture.glb"), directory.resolve("capture.glb"));
     writePointer(directory, filename(saved));
@@ -65,12 +90,15 @@ final class CaptureHistory {
 
   private static Path commit(Path history, Instant time, Writer glb, Writer metadata)
       throws IOException {
+    interrupted();
     String id = "capture-" + TIMESTAMP.format(time) + "-" + UUID.randomUUID();
     if (!ID.matcher(id).matches()) throw new IOException("Date de capture invalide.");
     Path staging = Files.createTempDirectory(history, ".pending-");
     try {
       glb.write(staging.resolve("capture.glb"));
+      interrupted();
       metadata.write(staging.resolve("capture.json"));
+      interrupted();
       if (!Files.isRegularFile(staging.resolve("capture.glb"), LinkOption.NOFOLLOW_LINKS)
           || Files.size(staging.resolve("capture.glb")) == 0) {
         throw new IOException("Capture vide ou incomplète.");
@@ -83,6 +111,11 @@ final class CaptureHistory {
       Files.deleteIfExists(staging.resolve("capture.json"));
       Files.deleteIfExists(staging);
     }
+  }
+
+  private static void interrupted() throws java.io.InterruptedIOException {
+    if (Thread.currentThread().isInterrupted())
+      throw new java.io.InterruptedIOException("Capture publication interrupted");
   }
 
   private static void preserveLegacy(Path directory, Path history) throws IOException {
@@ -124,14 +157,24 @@ final class CaptureHistory {
     return file;
   }
 
-  private static synchronized void migrateLegacy(Path directory) throws IOException {
+  private static void migrateLegacy(Path directory) throws IOException {
+    // Existing pointers (and fresh folders) need no migration. Readers must not wait for
+    // a background GLB writer just to discover that their already published history is ready.
+    if (!needsLegacyMigration(directory)) return;
+    synchronized (CaptureHistory.class) {
+      if (!needsLegacyMigration(directory)) return;
+      Path history = directory.resolve("history");
+      Files.createDirectories(history);
+      requireDirectory(history);
+      preserveLegacy(directory, history);
+    }
+  }
+
+  private static boolean needsLegacyMigration(Path directory) {
     if (Files.exists(directory.resolve(POINTER), LinkOption.NOFOLLOW_LINKS)
         || !Files.isRegularFile(directory.resolve("capture.glb"), LinkOption.NOFOLLOW_LINKS))
-      return;
-    Path history = directory.resolve("history");
-    Files.createDirectories(history);
-    requireDirectory(history);
-    preserveLegacy(directory, history);
+      return false;
+    return true;
   }
 
   private static void writePointer(Path directory, String id) throws IOException {

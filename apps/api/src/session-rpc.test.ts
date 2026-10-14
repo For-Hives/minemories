@@ -209,7 +209,11 @@ test('authenticated readers recover a resumable mod capture across the 4 MiB chu
 			id,
 			size: bytes.length,
 			sha256: createHash('sha256').update(bytes).digest('hex'),
-			metadata: { worldName: 'Chunk test' },
+			metadata: {
+				worldName: 'Chunk test',
+				captureStartedAt: '2026-10-14T12:00:00Z',
+				captureFinishedAt: '2026-10-14T12:00:30Z',
+			},
 		}),
 	})
 	expect(initialized.status).toBe(201)
@@ -233,6 +237,9 @@ test('authenticated readers recover a resumable mod capture across the 4 MiB chu
 	})
 	expect(completed.status).toBe(201)
 	const { id: memoryId } = (await completed.json()) as { id: string }
+	const listedCapture = (await owner.memories.list()).find(memory => memory.id === memoryId)
+	expect(listedCapture?.metadata.captureStartedAt).toBe('2026-10-14T12:00:00Z')
+	expect(listedCapture?.metadata.captureFinishedAt).toBe('2026-10-14T12:00:30Z')
 	const file = await app.request(`/api/memories/${memoryId}/file`, { headers: { cookie } })
 	expect(file.status).toBe(200)
 	expect(Buffer.from(await file.arrayBuffer()).equals(bytes)).toBe(true)

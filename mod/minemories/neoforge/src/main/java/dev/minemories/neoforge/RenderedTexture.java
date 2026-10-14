@@ -18,7 +18,11 @@ final class RenderedTexture {
   }
 
   static void checkDimensions(int width, int height) throws IOException {
-    if (width < 1 || height < 1 || (long) width * height > MAX_PIXELS)
+    if (width < 1
+        || height < 1
+        || width > 16384
+        || height > 16384
+        || (long) width * height > MAX_PIXELS)
       throw new IOException("La texture du modèle dépasse la limite de pixels.");
   }
 
@@ -26,19 +30,50 @@ final class RenderedTexture {
     checkDimensions(width, height);
     if (rgba.length != (long) width * height)
       throw new IllegalArgumentException("Invalid rendered texture pixel count");
-    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    boolean transparent = false, translucent = false;
-    for (int index = 0; index < rgba.length; index++) {
-      int pixel = rgba[index], alpha = pixel >>> 24;
-      transparent |= alpha == 0;
-      translucent |= alpha != 0 && alpha != 255;
-      int argb =
-          (alpha << 24) | ((pixel & 255) << 16) | (pixel & 0x0000FF00) | ((pixel >>> 16) & 255);
-      image.setRGB(index % width, index / width, argb);
+    Rows rows = new Rows(width, height);
+    rows.append(0, rgba);
+    return rows.finish();
+  }
+
+  /** Worker-owned encoder: consume small copied bands, never a second full RGBA texture array. */
+  static final class Rows {
+    private final BufferedImage image;
+    private int nextRow;
+    private boolean transparent, translucent, sealed;
+
+    Rows(int width, int height) throws IOException {
+      checkDimensions(width, height);
+      image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     }
-    BoundedPng bytes = new BoundedPng();
-    if (!ImageIO.write(image, "png", bytes)) throw new IOException("PNG encoder unavailable");
-    return new RenderedTexture(bytes.toByteArray(), translucent ? 2 : transparent ? 1 : 0);
+
+    void append(int row, int[] rgba) throws IOException {
+      if (sealed) throw new IOException("Texture encoder sealed");
+      if (row != nextRow
+          || rgba.length == 0
+          || rgba.length % image.getWidth() != 0
+          || rgba.length / image.getWidth() > image.getHeight() - nextRow)
+        throw new IOException("Out-of-order or invalid texture band");
+      for (int index = 0; index < rgba.length; index++) {
+        if ((index & 4095) == 0 && Thread.currentThread().isInterrupted())
+          throw new java.io.InterruptedIOException("Texture copy interrupted");
+        int pixel = rgba[index], alpha = pixel >>> 24;
+        transparent |= alpha == 0;
+        translucent |= alpha != 0 && alpha != 255;
+        int argb =
+            (alpha << 24) | ((pixel & 255) << 16) | (pixel & 0x0000FF00) | ((pixel >>> 16) & 255);
+        image.setRGB(index % image.getWidth(), row + index / image.getWidth(), argb);
+      }
+      nextRow += rgba.length / image.getWidth();
+    }
+
+    RenderedTexture finish() throws IOException {
+      if (sealed || nextRow != image.getHeight())
+        throw new IOException("Texture is incomplete or sealed");
+      sealed = true;
+      BoundedPng bytes = new BoundedPng();
+      if (!ImageIO.write(image, "png", bytes)) throw new IOException("PNG encoder unavailable");
+      return new RenderedTexture(bytes.toByteArray(), translucent ? 2 : transparent ? 1 : 0);
+    }
   }
 
   int alphaMode() {
@@ -52,6 +87,8 @@ final class RenderedTexture {
   private static final class BoundedPng extends ByteArrayOutputStream {
     @Override
     public synchronized void write(int value) {
+      if (Thread.currentThread().isInterrupted())
+        throw new IllegalStateException("PNG encoding interrupted");
       if (count == MAX_PNG_BYTES)
         throw new IllegalStateException("Rendered texture PNG is too large");
       super.write(value);
@@ -59,6 +96,8 @@ final class RenderedTexture {
 
     @Override
     public synchronized void write(byte[] bytes, int offset, int length) {
+      if (Thread.currentThread().isInterrupted())
+        throw new IllegalStateException("PNG encoding interrupted");
       if (length > MAX_PNG_BYTES - count)
         throw new IllegalStateException("Rendered texture PNG is too large");
       super.write(bytes, offset, length);

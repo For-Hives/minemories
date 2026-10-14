@@ -31,6 +31,8 @@ const memorySchema = z.object({
 		thumbnail: z.string().nullable(),
 		icon: z.string().nullable(),
 		capturedAt: z.string().datetime().nullable(),
+		captureStartedAt: z.string().max(64).datetime().nullable().optional(),
+		captureFinishedAt: z.string().max(64).datetime().nullable().optional(),
 	}),
 })
 

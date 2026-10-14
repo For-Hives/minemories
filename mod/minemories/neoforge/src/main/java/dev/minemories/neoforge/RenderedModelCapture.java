@@ -5,7 +5,6 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
-import dev.minemories.core.GlbScene;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
@@ -25,8 +24,9 @@ final class RenderedModelCapture {
   private static final int MAX_TEXTURES = 256;
   private static final long MAX_TEXTURE_BYTES = 64L * 1024 * 1024;
   private static final long MAX_QUADS = 500_000;
-  private final GlbScene scene;
+  private final CaptureSink scene;
   private final Minecraft minecraft;
+  private final CapturePixels pixelCopies;
   private final Map<ResourceLocation, Texture> textures = new LinkedHashMap<>();
   private final VertexConsumer ignored =
       new RenderedVertexConsumer(VertexFormat.Mode.QUADS, vertices -> {});
@@ -46,9 +46,14 @@ final class RenderedModelCapture {
     }
   }
 
-  RenderedModelCapture(GlbScene scene, Minecraft minecraft) {
+  RenderedModelCapture(CaptureSink scene, Minecraft minecraft) {
+    this(scene, minecraft, null);
+  }
+
+  RenderedModelCapture(CaptureSink scene, Minecraft minecraft, CapturePixels pixelCopies) {
     this.scene = scene;
     this.minecraft = minecraft;
+    this.pixelCopies = pixelCopies;
   }
 
   final class Buffers implements MultiBufferSource {
@@ -78,7 +83,7 @@ final class RenderedModelCapture {
                     || type.toString().startsWith("RenderType[entity_translucent_emissive:")
                 ? 1f
                 : emission;
-        int layer = texture.alphaMode == 0 ? 0 : consumers.size();
+        int layer = consumers.size();
         return new RenderedVertexConsumer(
             type.mode(), vertices -> add(model, texture, vertices, light, layer));
       } catch (IOException error) {
@@ -116,6 +121,13 @@ final class RenderedModelCapture {
         location.orElseThrow(() -> new IOException("Texture du renderer absente."));
     Texture existing = textures.get(id);
     if (existing != null) return existing;
+    if (pixelCopies != null) {
+      String key = "rendered/" + id;
+      pixelCopies.texture(key, id);
+      Texture deferred = new Texture(key, new byte[0], 0);
+      textures.put(id, deferred);
+      return deferred;
+    }
     if (textures.size() >= MAX_TEXTURES)
       throw new IOException("Trop de textures d’entités dans cette capture.");
     byte[] png;
@@ -187,7 +199,6 @@ final class RenderedModelCapture {
       alpha += vertex.alpha();
     }
     int tint = ((red / 4) << 16) | ((green / 4) << 8) | (blue / 4);
-    RenderedLayer.separate(xyz, layer);
     float opacity = alpha / (4f * 255f);
     int alphaMode = opacity < 1 ? 2 : texture.alphaMode;
     String key =
@@ -201,16 +212,21 @@ final class RenderedModelCapture {
             + Float.floatToIntBits(opacity)
             + "#"
             + Float.floatToIntBits(emission);
-    scene.addQuad(
-        key,
-        model + " / " + texture.key,
-        texture.key,
-        texture.png,
-        tint,
-        alphaMode,
-        emission,
-        opacity,
-        xyz,
-        uv);
+    try {
+      scene.addRenderedQuad(
+          key,
+          model + " / " + texture.key,
+          texture.key,
+          texture.png,
+          tint,
+          alphaMode,
+          emission,
+          opacity,
+          xyz,
+          uv,
+          layer);
+    } catch (IOException error) {
+      throw new UncheckedIOException(error);
+    }
   }
 }

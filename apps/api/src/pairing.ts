@@ -268,6 +268,8 @@ export interface MemoryMetadata {
 	thumbnail: string | null
 	icon: string | null
 	capturedAt: string | null
+	captureStartedAt?: string | null
+	captureFinishedAt?: string | null
 }
 
 function emptyMetadata(): MemoryMetadata {
@@ -286,6 +288,8 @@ function emptyMetadata(): MemoryMetadata {
 		thumbnail: null,
 		icon: null,
 		capturedAt: null,
+		captureStartedAt: null,
+		captureFinishedAt: null,
 	}
 }
 
