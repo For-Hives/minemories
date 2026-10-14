@@ -11,6 +11,7 @@ import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits
 import { database } from './database'
 import { diagnosticsRouter } from './diagnostics-routes'
 import { diagnostics } from './diagnostics-state'
+import { PublicDiscovery } from './discovery'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
 import { ObjectDeletionQueue } from './object-deletions'
@@ -56,7 +57,43 @@ const os = implement(apiContract).$context<ApiContext>()
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
 	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
 )
+const discovery = new PublicDiscovery(
+	database,
+	new Set(
+		(process.env.PUBLIC_MODERATOR_IDS ?? '')
+			.split(',')
+			.map(id => id.trim())
+			.filter(Boolean)
+	)
+)
+function authenticated(context: ApiContext) {
+	if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+	return context.userId
+}
 const router = os.router({
+	discovery: {
+		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),
+		review: os.discovery.review.handler(({ context, input }) => discovery.review(input.id, context.userId)),
+		get: os.discovery.get.handler(({ context, input }) => discovery.get(input.id, context.userId)),
+		publish: os.discovery.publish.handler(({ context, input }) => discovery.publish(authenticated(context), input)),
+		status: os.discovery.status.handler(({ context, input }) =>
+			discovery.status(authenticated(context), input.memoryId)
+		),
+		revoke: os.discovery.revoke.handler(({ context, input }) =>
+			discovery.revoke(authenticated(context), input.memoryId)
+		),
+		vote: os.discovery.vote.handler(({ context, input }) =>
+			discovery.vote(authenticated(context), input.id, input.voted)
+		),
+		report: os.discovery.report.handler(({ context, input }) =>
+			discovery.report(authenticated(context), input.id, input.reason)
+		),
+		moderator: os.discovery.moderator.handler(({ context }) => ({ allowed: discovery.isModerator(context.userId) })),
+		queue: os.discovery.queue.handler(({ context, input }) => discovery.queue(context.userId, input)),
+		moderate: os.discovery.moderate.handler(({ context, input }) =>
+			discovery.moderate(context.userId, input.id, input.decision, input.reason)
+		),
+	},
 	account: {
 		storage: os.account.storage.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
@@ -226,6 +263,38 @@ app.get('/api/mod/status', context => {
 		device: { id: device.id, name: device.name },
 		storage: accountStorageSummary(database, device.userId),
 	})
+})
+
+app.use('/api/public/*', (context, next) => {
+	context.header('Cache-Control', 'private, no-store')
+	context.header('X-Content-Type-Options', 'nosniff')
+	return next()
+})
+app.get('/api/public/:id/file', async context => {
+	const session = await auth.api.getSession({ headers: context.req.raw.headers })
+	const id = context.req.param('id')
+	let key: string
+	try {
+		key = discovery.file(id, session?.user.id ?? null).object_key
+	} catch {
+		return context.json({ error: 'memory_not_found' }, 404)
+	}
+	try {
+		const contents = await readMemoryStream(key)
+		// Opening storage can yield: a revocation committed meanwhile must win before response headers.
+		try {
+			discovery.file(id, session?.user.id ?? null)
+		} catch {
+			contents.destroy()
+			return context.json({ error: 'memory_not_found' }, 404)
+		}
+		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
+			'Content-Type': 'model/gltf-binary',
+		})
+	} catch {
+		logApiFailure('public_download_failed', context.get('correlationId'))
+		return context.json({ error: 'memory_storage_unavailable' }, 503)
+	}
 })
 
 app.get('/api/shared/:token/file', async context => {
