@@ -31,11 +31,9 @@ final class ProgressiveCapturePump {
   private final Instant started;
   private final String metadata;
   private final Set<String> copied = new HashSet<>();
-  private CaptureElement.Snapshot pending;
-  private List<String> images = List.of();
-  private int imageIndex, quadIndex, lightIndex, row;
-  private Pixels pixels;
-  private boolean textureBegun, finished;
+  private CaptureTransfer pending;
+  private boolean finished;
+  private final CaptureTransfer.Output output;
 
   ProgressiveCapturePump(
       Producer producer, QueuedGlbCapture writer, Instant started, String metadata) {
@@ -43,6 +41,26 @@ final class ProgressiveCapturePump {
     this.writer = writer;
     this.started = started;
     this.metadata = metadata;
+    output =
+        new CaptureTransfer.Output() {
+          public boolean begin(String key, int width, int height) throws IOException {
+            return writer.offerTexture(key, width, height);
+          }
+
+          public boolean rows(String key, int row, int[] data) throws IOException {
+            return writer.offerRows(key, row, data);
+          }
+
+          public boolean end(String key) throws IOException {
+            return writer.offerTextureEnd(key);
+          }
+
+          public boolean geometry(
+              List<CaptureElement.Quad> quads, List<CaptureElement.Light> lights)
+              throws IOException {
+            return writer.offerGeometry(quads, lights);
+          }
+        };
   }
 
   boolean finished() {
@@ -56,54 +74,12 @@ final class ProgressiveCapturePump {
           finished = writer.finish(started, metadata);
           return;
         }
-        pending = producer.next();
-        if (pending == null) continue;
-        if (pending.quads().isEmpty() && pending.lights().isEmpty()) {
-          pending = null;
-          continue;
-        }
-        images = pending.quads().stream().map(q -> q.material().image()).distinct().toList();
-        imageIndex = quadIndex = lightIndex = 0;
-      } else if (imageIndex < images.size()) {
-        if (!copyTexture()) return;
+        var copiedElement = producer.next();
+        if (copiedElement != null) pending = new CaptureTransfer(copiedElement, copied);
       } else {
-        int quads = Math.min(quadIndex + QueuedGlbCapture.MAX_BATCH_QUADS, pending.quads().size());
-        int lights = Math.min(lightIndex + 128, pending.lights().size());
-        if (!writer.offerGeometry(
-            pending.quads().subList(quadIndex, quads),
-            pending.lights().subList(lightIndex, lights))) return;
-        quadIndex = quads;
-        lightIndex = lights;
-        if (quadIndex == pending.quads().size() && lightIndex == pending.lights().size())
-          pending = null;
+        if (!pending.step(producer::pixels, output)) return;
+        if (pending.done()) pending = null;
       }
     }
-  }
-
-  private boolean copyTexture() throws IOException {
-    String key = images.get(imageIndex);
-    if (copied.contains(key)) {
-      imageIndex++;
-      return true;
-    }
-    if (pixels == null) pixels = producer.pixels(key);
-    if (!textureBegun) {
-      if (!writer.offerTexture(key, pixels.width(), pixels.height())) return false;
-      textureBegun = true;
-    } else if (row < pixels.height()) {
-      // Small bands reduce indivisible GPU/atlas work; a single very wide row remains bounded.
-      int rows = Math.min(Math.max(1, 16384 / pixels.width()), pixels.height() - row);
-      int[] band = pixels.readBand(row, rows);
-      if (!writer.offerRows(key, row, band)) return false;
-      row += rows;
-    } else {
-      if (!writer.offerTextureEnd(key)) return false;
-      copied.add(key);
-      imageIndex++;
-      pixels = null;
-      row = 0;
-      textureBegun = false;
-    }
-    return true;
   }
 }

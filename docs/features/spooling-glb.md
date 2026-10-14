@@ -22,7 +22,10 @@ d’au plus 16 384 pixels. Le framebuffer de lecture temporaire restaure framebu
 buffer de lecture, texture et réglages PACK/PBO, même en erreur.
 
 La file contient au plus seize paquets ; un paquet géométrique contient au plus
-64 quads et 128 lumières. Le worker ne reçoit que des tableaux copiés et des
+64 quads et 128 lumières. Le worker accepte au total 4 095 lumières,
+avec un nœud de mesh pour rester dans les 4 096 nœuds du validateur commun.
+Les scènes riches en torches ne sont donc pas limitées aux 128 lumières du
+writer legacy ; le viewer garde son propre plafond de lumières actives. Le worker ne reçoit que des tableaux copiés et des
 descripteurs immuables. Il assemble/encode un PNG à la fois, conserve les sources
 sur disque et utilise `SpoolingGlbScene`. Alpha, teintes, couches secondaires et
 lumières restent conservés. Aucun monde, modèle ou renderer n’est utilisé par le
@@ -56,10 +59,10 @@ préparation d’un autre GLB.
 
 ## Validation du raccordement
 
-Le 14 octobre 2026, le JAR `0.1.1-dev.1` seul a été chargé dans Minecraft 1.21.1 /
+Les 14 et 15 octobre 2026, le JAR `0.1.1-dev.1` seul a été chargé dans Minecraft 1.21.1 /
 NeoForge 21.1.248, sur une copie isolée. SHA-256 du JAR final :
-`dac14c31caac92b8c24b27a7d2735415741d08c36341c71eb7651a3854f242c7`
-(249 664 octets). Le test exerce pause, focus client désactivé, suspension/reprise,
+`4d10773982896e19920fea0aa2b49bbe7406bbb3e12b76900eb1d95209fbe3bf`
+(254 048 octets). Le test exerce pause, focus client désactivé, suspension/reprise,
 réglage AFK désactivé, vrai reload de ressources, chunk déchargé et déconnexion
 avec conservation de l’historique. Les états PACK/PBO/framebuffer/buffer de lecture
 sont contrôlés pendant la capture ; les écrans simple/avancé sont inspectés.
@@ -69,20 +72,25 @@ Deux scènes sont mesurées sur Mesa llvmpipe, avec textures standards et entit�
 | Scène | Export synchrone | Plus longue étape AFK | Capture progressive |
 | --- | --- | --- | --- |
 | Rayon 32, 77 744 quads, 74 textures | 765 ms | 3,83 ms (13 dépassements du budget) | 187,6 s avec suspension et focus désactivé |
-| Rayon 8, 6 141 quads, 22 textures, JAR final | 93 ms | 4,00 ms (2 dépassements) | 26,3 s ; environ 3 s supplémentaires pour l’envoi |
+| Rayon 8, 6 141 quads, 22 textures, avant consolidation | 93 ms | 4,00 ms (2 dépassements) | 26,3 s ; environ 3 s supplémentaires pour l’envoi |
 
-La première mesure précède le contrôle final du contexte avant notification ;
-ce contrôle est exercé sur le JAR final dans la seconde scène. Les pas se limitent
+Ces mesures précèdent la consolidation des correctifs distants. Le JAR consolidé
+réexerce tous les scénarios : 225 torches dans la zone, 12 194 quads, 23 textures
+et 225 lumières conservées. L’export synchrone prend 105 ms, la plus longue étape
+AFK 3,44 ms (5 dépassements), pour 83,3 s de capture et environ 4 s d’envoi.
+Le validateur commun et l’API réelle acceptent ce fichier de 2 288 976 octets.
+Le contrôle du contexte avant notification est aussi exercé. Les pas se limitent
 à la capture, pas au temps complet d’une frame : rendu logiciel, limitation FPS,
 menus, GC et autres mods restent visibles dans les latences totales. Ces résultats
 ne garantissent pas les mêmes performances sur tous les matériels/modpacks.
 
-Les sept GLB de la grande scène et les six de l’essai final passent le validateur
+Les sept GLB de la grande scène, les six de l’essai avec contrôle de contexte
+et les six de l’essai consolidé à 225 lumières passent le validateur
 commun API/viewer. Blender importe les rendus avant/après : même géométrie, même
 nombre de matériaux et de textures. Sur la grande scène, les accessors de géométrie
 sont identiques octet pour octet ; 73 images sont identiques après décodage, l’atlas
-animé de blocs change pendant la période de capture. Le GLB final de 1 329 204 octets
-est envoyé à une API loopback réelle via appareil appairé, avec SHA-256 identique
+animé de blocs change pendant la période de capture. Le GLB de 1 329 204 octets et le GLB consolidé de 2 288 976 octets
+sont envoyés à une API loopback réelle via appareil appairé, avec SHA-256 identique
 côté stockage et dates conservées via oRPC. Aucun diagnostic n’est collecté sans
 accord. Cette validation locale ne prouve pas le déploiement de l’API en production
 ni la compatibilité de tous les renderers de modpacks.

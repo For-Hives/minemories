@@ -28,6 +28,12 @@ import java.util.function.UnaryOperator;
 final class ChunkedUploader {
   static final long MAX_BYTES = 200L * 1024 * 1024;
   static final int CHUNK_BYTES = 4 * 1024 * 1024;
+
+  interface BeforeRequest {
+    void check(HttpRequest request) throws IOException, InterruptedException;
+  }
+
+  private final BeforeRequest beforeRequest;
   private final HttpClient http;
   private final UploadPacer pacer;
   private final long retryDelayMillis;
@@ -41,7 +47,7 @@ final class ChunkedUploader {
       HttpClient http,
       long retryDelayMillis,
       UnaryOperator<HttpRequest.Builder> diagnosticHeaders) {
-    this(http, retryDelayMillis, diagnosticHeaders, null);
+    this(http, retryDelayMillis, diagnosticHeaders, (UploadPacer) null);
   }
 
   ChunkedUploader(
@@ -49,6 +55,24 @@ final class ChunkedUploader {
       long retryDelayMillis,
       UnaryOperator<HttpRequest.Builder> diagnosticHeaders,
       UploadPacer pacer) {
+    this(http, retryDelayMillis, diagnosticHeaders, pacer, request -> {});
+  }
+
+  ChunkedUploader(
+      HttpClient http,
+      long retryDelayMillis,
+      UnaryOperator<HttpRequest.Builder> diagnosticHeaders,
+      BeforeRequest beforeRequest) {
+    this(http, retryDelayMillis, diagnosticHeaders, null, beforeRequest);
+  }
+
+  private ChunkedUploader(
+      HttpClient http,
+      long retryDelayMillis,
+      UnaryOperator<HttpRequest.Builder> diagnosticHeaders,
+      UploadPacer pacer,
+      BeforeRequest beforeRequest) {
+    this.beforeRequest = beforeRequest;
     this.pacer = pacer;
     this.http = http;
     this.retryDelayMillis = retryDelayMillis;
@@ -150,6 +174,7 @@ final class ChunkedUploader {
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
+        beforeRequest.check(request);
         if (pacer != null) pacer.check();
         HttpRequest current =
             diagnosticHeaders
