@@ -72,7 +72,7 @@ peuvent être complétés après revue de l’inventaire avec la
 et leur taille exacte sont récupérables.
 Les objets historiques sans métadonnées et les anciennes versions d’un bucket
 versionné restent également hors de cet inventaire. Ces suites restent dans
-`docs/AI/TASKS.md` ; aucun scan ou effacement d’objets de production n’est effectué.
+[issue #65](https://github.com/For-Hives/minemories/issues/65) ; aucun scan ou effacement d’objets de production n’est effectué.
 
 Le déploiement cible un seul processus API, comme les sessions reprenables.
 Conserver SQLite et le staging sur leurs volumes persistants, et autoriser les

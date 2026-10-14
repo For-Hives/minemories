@@ -57,5 +57,5 @@ if needed, you can find more context in diferent files (look inside ./docs/AI ):
 - README.md for an overview of the project (the summery)
 - BESOIN.md for the initial need and idea that started this project (the vision)
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
-- TASKS.md for the current tasks todo (delete the line when the task is done, add one it todo later/out of scope)
+- GitHub Issues are the source of truth for tasks: https://github.com/For-Hives/minemories/issues. Check existing issues before creating a separate issue for each new task; record what is implemented, remaining acceptance criteria and validation evidence. Use the existing labels (`mod`, `api`, `front`, `autonomous`, `needs-human`, etc.). Close an issue only when its full scope and required validations are complete. `docs/AI/TASKS.md` is intentionally empty after migration; do not repopulate it.
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)

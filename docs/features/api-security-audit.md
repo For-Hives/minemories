@@ -72,7 +72,7 @@ plusieurs pages. Les tests couvrent les octets et les signatures des parts,
 la pagination, les refus et les régions. Les huit scénarios Garage réels passent,
 dont panne et reprise après redémarrage. Voir [la migration S3](storage-s3.md).
 
-Autres observations à traiter, suivies dans [TASKS.md](../AI/TASKS.md) :
+Observations et suites : les protections applicatives ci-dessous sont implémentées ; la réconciliation de production reste dans [issue #65](https://github.com/For-Hives/minemories/issues/65) et l’audit de l’infrastructure dans [issue #66](https://github.com/For-Hives/minemories/issues/66).
 
 - Correction du 11 octobre : la suppression et la purge inscrivent maintenant les
   objets à effacer dans une file SQLite transactionnelle, avec retries et reprise
