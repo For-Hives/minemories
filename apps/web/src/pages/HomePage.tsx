@@ -2,10 +2,11 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
+import { discoveryPages } from '../content/discovery'
 import { T, useI18n } from '../i18n/I18n'
 
 export function HomePage() {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const { session } = useAppContext()
 
@@ -119,6 +120,22 @@ export function HomePage() {
 				</StepCard>
 			</section>
 
+			<section className="mm-home-discovery" aria-label={t('Discover')}>
+				<div className="mm-section-heading">
+					<h2>{t('A world worth keeping.')}</h2>
+					<Link className={buttonOutline} to="/explorer">
+						{t('Try the demo')}
+					</Link>
+				</div>
+				<div className="mm-home-paths">
+					{discoveryPages.map(page => (
+						<Link to={page.path} key={page.path}>
+							<span>{page.label[locale]}</span>
+							<span aria-hidden="true">↗</span>
+						</Link>
+					))}
+				</div>
+			</section>
 			<section className="relative mb-[62px] flex min-h-[230px] items-center justify-between gap-5 overflow-hidden rounded-lg bg-forest px-[7%] py-9 max-phone:mb-[37px] max-phone:min-h-[205px] max-phone:flex-col max-phone:items-start max-phone:justify-center max-phone:gap-5 max-phone:p-6">
 				<div className="relative z-[1]">
 					<Eyebrow tone="text-[#bed096]">

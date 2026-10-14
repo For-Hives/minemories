@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { OrbitMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
-import { articles, legalContent, pricingPlans } from '../content/site-content'
+import { articles, legalContent } from '../content/site-content'
 import { useI18n } from '../i18n/I18n'
 
 export function ContentLayout({
@@ -81,48 +81,6 @@ export function ArticlePage() {
 			</Link>
 			<p>
 				<Link to="/blog">{locale === 'fr' ? '← Retour au journal' : '← Back to the journal'}</Link>
-			</p>
-		</ContentLayout>
-	)
-}
-export function PricingPage() {
-	const { locale } = useI18n()
-	const experimentalLabel = locale === 'fr' ? 'Version expérimentale' : 'Experimental version'
-	return (
-		<ContentLayout
-			eyebrow="MINEMORIES"
-			title={locale === 'fr' ? 'Une place pour tes souvenirs' : 'A place for your memories'}
-			lead={
-				locale === 'fr'
-					? 'Le projet est expérimental. Aucun abonnement ni tarif commercial n’est annoncé pour le moment.'
-					: 'The project is experimental. No subscription or commercial price is announced yet.'
-			}
-		>
-			<div className="mm-content-grid">
-				{pricingPlans.map(plan => (
-					<section className="mm-editorial-card" key={plan.id}>
-						<h2>{plan.title[locale]}</h2>
-						<p>{plan.description[locale]}</p>
-						<p className="mm-price">
-							{plan.price === null
-								? experimentalLabel
-								: new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(plan.price)}
-						</p>
-						<ul>
-							{plan.features[locale].map(feature => (
-								<li key={feature}>{feature}</li>
-							))}
-						</ul>
-						<Link className={buttonLime} to="/installation">
-							{locale === 'fr' ? 'Installer le mod' : 'Install the mod'}
-						</Link>
-					</section>
-				))}
-			</div>
-			<p className="mm-note">
-				{locale === 'fr'
-					? 'La capture 3D complète ta sauvegarde Minecraft. Garde aussi les fichiers locaux : aucune conservation en ligne à vie n’est promise.'
-					: 'A 3D capture complements your Minecraft backup. Keep your local files too: lifetime online storage is not promised.'}
 			</p>
 		</ContentLayout>
 	)
