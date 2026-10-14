@@ -23,3 +23,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Les captures AFK font partie de l’expérience simplifiée attendue : actives par défaut, même en pause ou en arrière-plan ; ne pas imposer une activation avancée. Les délais et la taille restent des réglages avancés.
 
 - Le développeur attend un suivi concret de ses remarques : rendre visible le chargement réel du viewer et garder des tâches précises pour la profondeur visitée et les bordures des captures.
+
+- Pour accueillir une personne non technique, livrer un parcours d’installation concret jusqu’au premier souvenir, avec téléchargement du JAR sur le site, personnalisation et illustrations légères ; vérifier le fichier réellement servi en production, pas seulement le bouton dans le code.
