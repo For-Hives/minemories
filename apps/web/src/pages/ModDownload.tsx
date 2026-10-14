@@ -1,56 +1,70 @@
 import { useEffect, useState } from 'react'
 
+const repository = 'For-Hives/minemories'
+const releasesUrl = `https://github.com/${repository}/releases`
+const apiUrl = `https://api.github.com/repos/${repository}/releases?per_page=30`
+const jarName = 'minemories-neoforge-mc1.21.1.jar'
+const versionPattern = /^mod-v(\d+\.\d+\.\d+(?:[-+][\w.-]+)?)$/
+const digestPattern = /^sha256:([a-f0-9]{64})$/
 interface Download {
 	version: string
-	sha256: string
+	url: string
 	bytes: number
+	sha256: string | null
+	checksumUrl: string | null
+	prerelease: boolean
+	published: number
 }
-const jarPath = '/downloads/minemories-neoforge-mc1.21.1.jar'
 
-const checksumPattern = /^[a-f0-9]{64}$/
-const versionPattern = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/
-const jarTypes = [
-	'application/java-archive',
-	'application/x-java-archive',
-	'application/octet-stream',
-	'application/zip',
-]
-function parseManifest(data: unknown): Download | null {
-	if (typeof data !== 'object' || data === null) return null
-	const value = data as Record<string, unknown>
+function parseRelease(value: unknown): Download | null {
+	if (typeof value !== 'object' || value === null) return null
+	const release = value as Record<string, unknown>
 	if (
-		value.file !== jarPath ||
-		value.minecraft !== '1.21.1' ||
-		value.loader !== 'NeoForge' ||
-		value.loaderVersion !== '21.1.248' ||
-		typeof value.version !== 'string' ||
-		!versionPattern.test(value.version) ||
-		!Number.isSafeInteger(value.bytes) ||
-		Number(value.bytes) < 4 ||
-		typeof value.sha256 !== 'string' ||
-		!checksumPattern.test(value.sha256)
+		release.draft !== false ||
+		typeof release.tag_name !== 'string' ||
+		typeof release.published_at !== 'string' ||
+		!Array.isArray(release.assets)
 	)
 		return null
-	return { version: value.version, sha256: value.sha256, bytes: Number(value.bytes) }
+	const version = versionPattern.exec(release.tag_name)?.[1]
+	const published = Date.parse(release.published_at)
+	if (!(version && Number.isFinite(published))) return null
+	const prefix = `${releasesUrl}/download/${encodeURIComponent(release.tag_name)}/`
+	const asset = release.assets.find(
+		item => item?.name === jarName && item.browser_download_url === `${prefix}${jarName}`
+	)
+	if (!(asset && Number.isSafeInteger(asset.size)) || asset.size < 4) return null
+	const checksum = release.assets.find(
+		item => item?.name === `${jarName}.sha256` && item.browser_download_url === `${prefix}${jarName}.sha256`
+	)
+	return {
+		version,
+		url: asset.browser_download_url,
+		bytes: asset.size,
+		sha256: typeof asset.digest === 'string' ? (digestPattern.exec(asset.digest)?.[1] ?? null) : null,
+		checksumUrl: checksum?.browser_download_url ?? null,
+		prerelease: release.prerelease === true,
+		published,
+	}
 }
-
-async function fetchDownload(signal: AbortSignal): Promise<Download | null> {
+export function selectLatestRelease(data: unknown): Download | null {
+	if (!Array.isArray(data)) return null
+	return (
+		data
+			.map(parseRelease)
+			.filter((release): release is Download => release !== null)
+			.sort((a, b) => b.published - a.published)[0] ?? null
+	)
+}
+async function fetchDownload(signal: AbortSignal) {
 	try {
-		const response = await fetch('/downloads/manifest.json', { signal, cache: 'no-store' })
+		const response = await fetch(apiUrl, { signal, headers: { Accept: 'application/vnd.github+json' } })
 		if (!response.ok) return null
-		const download = parseManifest(await response.json())
-		if (!download) return null
-		const jar = await fetch(`${jarPath}?sha256=${download.sha256}`, { method: 'HEAD', signal, cache: 'no-store' })
-		const type = jar.headers.get('content-type')?.split(';')[0]?.trim()
-		const length = jar.headers.get('content-length')
-		if (!(jar.ok && type && jarTypes.includes(type)) || (length !== null && Number(length) !== download.bytes))
-			return null
-		return download
+		return selectLatestRelease(await response.json())
 	} catch {
 		return null
 	}
 }
-
 export function ModDownload() {
 	const [download, setDownload] = useState<Download | null>(null)
 	const [pending, setPending] = useState(true)
@@ -75,41 +89,53 @@ export function ModDownload() {
 		}
 	}, [attempt])
 	if (pending) return <p role="status">Vérification du téléchargement…</p>
-	if (!download)
-		return (
-			<div className="install-note">
-				<p role="status">
-					Le téléchargement est momentanément indisponible. Réessaie ; si le problème persiste, demande le JAR au
-					responsable du projet avant de poursuivre.
-				</p>
-				<button type="button" className="install-secondary" onClick={() => setAttempt(value => value + 1)}>
-					Réessayer le téléchargement
-				</button>
-			</div>
-		)
 	return (
 		<div className="install-download">
+			{download ? (
+				<>
+					<p>
+						<a className="install-primary" href={download.url}>
+							Télécharger Minemories {download.version} (.jar)
+						</a>
+					</p>
+					<p>
+						Minecraft Java 1.21.1 · NeoForge 21.1.248 ·{' '}
+						{download.prerelease ? 'Préversion expérimentale.' : 'Version publiée.'}
+					</p>
+					<p className="install-caption">
+						{(download.bytes / 1048576).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Mo · Téléchargement
+						depuis GitHub Releases.
+					</p>
+					<p>
+						Place ce fichier directement dans le dossier <code>mods</code> du profil. Ne le décompresse pas et ne le
+						lance pas par double-clic.
+					</p>
+					{(download.sha256 || download.checksumUrl) && (
+						<details>
+							<summary>Vérifier le fichier téléchargé (avancé)</summary>
+							{download.sha256 && (
+								<p>
+									Empreinte SHA-256 : <code>{download.sha256}</code>
+								</p>
+							)}
+							{download.checksumUrl && <a href={download.checksumUrl}>Télécharger l’empreinte</a>}
+						</details>
+					)}
+				</>
+			) : (
+				<>
+					<p role="status">
+						Aucune release compatible n’est disponible pour le moment, ou GitHub ne répond pas. Consulte les versions du
+						projet ou réessaie dans un instant.
+					</p>
+					<button type="button" className="install-secondary" onClick={() => setAttempt(value => value + 1)}>
+						Réessayer le téléchargement
+					</button>
+				</>
+			)}
 			<p>
-				<a className="install-primary" href={`${jarPath}?sha256=${download.sha256}`} download>
-					Télécharger Minemories {download.version} (.jar)
-				</a>
+				<a href={releasesUrl}>Toutes les versions sur GitHub</a>
 			</p>
-			<p>Minecraft Java 1.21.1 · NeoForge 21.1.248 · Version expérimentale.</p>
-			<p className="install-caption">
-				{(download.bytes / 1048576).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Mo · Fichier inclus dans
-				cette version du site.
-			</p>
-			<p>
-				Place ce fichier directement dans le dossier <code>mods</code> du profil. Ne le décompresse pas et ne le lance
-				pas par double-clic.
-			</p>
-			<details>
-				<summary>Vérifier le fichier téléchargé (avancé)</summary>
-				<p>
-					Empreinte SHA-256 : <code>{download.sha256}</code>
-				</p>
-				<a href={`${jarPath}.sha256?sha256=${download.sha256}`}>Télécharger l’empreinte</a>
-			</details>
 		</div>
 	)
 }
