@@ -48,6 +48,10 @@ public final class GlbScene {
     return parts.size();
   }
 
+  public boolean hasGeometry() {
+    return !parts.isEmpty();
+  }
+
   public void addPointLight(float x, float y, float z, int color, int level) {
     if (level < 4
         || pointLights.size() >= 128
@@ -59,6 +63,7 @@ public final class GlbScene {
   }
 
   public void write(Path output) throws IOException {
+    if (!hasGeometry()) throw new IOException("The capture contains no renderable geometry.");
     ByteArrayOutputStream binary = new ByteArrayOutputStream();
     List<String> views = new ArrayList<>(),
         accessors = new ArrayList<>(),
@@ -341,11 +346,11 @@ public final class GlbScene {
 
     void addQuad(float[] p, float[] uv) {
       double ax = (double) p[3] - p[0],
-          ay = p[4] - p[1],
-          az = p[5] - p[2],
-          bx = p[6] - p[0],
-          by = p[7] - p[1],
-          bz = p[8] - p[2];
+          ay = (double) p[4] - p[1],
+          az = (double) p[5] - p[2],
+          bx = (double) p[6] - p[0],
+          by = (double) p[7] - p[1],
+          bz = (double) p[8] - p[2];
       double nx = ay * bz - az * by,
           ny = az * bx - ax * bz,
           nz = ax * by - ay * bx,

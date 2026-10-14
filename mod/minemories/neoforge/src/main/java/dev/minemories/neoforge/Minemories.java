@@ -50,6 +50,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelResource;
@@ -106,6 +107,11 @@ public class Minemories {
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
+  private static String captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+
+  static String captureFailure() {
+    return captureFailure;
+  }
 
   private static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
     Minecraft mc = Minecraft.getInstance();
@@ -315,7 +321,9 @@ public class Minemories {
   }
 
   private static void trackExploration(Minecraft mc, long now) {
-    if (mc.level == null || mc.player == null) return;
+    if (mc.level == null
+        || mc.player == null
+        || !chunkLoaded(mc, mc.player.getBlockX(), mc.player.getBlockZ())) return;
     String world;
     if (mc.getSingleplayerServer() != null) {
       world =
@@ -360,6 +368,15 @@ public class Minemories {
       EXPLORATION.lastSaveMs = now;
       saveExploration();
     }
+  }
+
+  private static boolean chunkLoaded(Minecraft mc, int x, int z) {
+    // ClientLevel.hasChunkAt always returns true. Requesting without a fallback
+    // distinguishes received terrain from the empty chunk without loading anything.
+    return mc.level
+            .getChunkSource()
+            .getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), ChunkStatus.FULL, false)
+        != null;
   }
 
   private static void saveExploration() {
@@ -549,6 +566,7 @@ public class Minemories {
   }
 
   static int exportSelection() {
+    captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null
         || selectionFirst == null
@@ -571,6 +589,7 @@ public class Minemories {
   }
 
   static int export(int radius) {
+    captureFailure = "Capture impossible. Vérifie le monde et la zone.";
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     BlockPos center = mc.player.blockPosition();
@@ -587,7 +606,7 @@ public class Minemories {
       int surfaceFloor = Math.min(center.getY(), bounds.maxY());
       for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
         for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
-          if (!mc.level.hasChunkAt(new BlockPos(x, bottom, z))) continue;
+          if (!chunkLoaded(mc, x, z)) continue;
           int surface = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
           // Empty/void columns must not force an otherwise shallow island down to dimension bottom.
           if (surface > bottom) surfaceFloor = Math.min(surfaceFloor, surface);
@@ -613,6 +632,7 @@ public class Minemories {
         sy = (long) max.getY() - min.getY() + 1,
         sz = (long) max.getZ() - min.getZ() + 1;
     if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
+      captureFailure = "Zone trop grande. Réduis la sélection ou le rayon de capture.";
       tell("Area too large. Maximum: 257 blocks wide, 1024 blocks tall.");
       return 0;
     }
@@ -630,10 +650,9 @@ public class Minemories {
             "Block atlas unavailable during export");
     List<TextureAtlasSprite> atlasSprites = new ArrayList<>(blockAtlas.getTextures().values());
     Path output = capturePath();
-    // capturePath always resolves ~/export/capture.glb, so a null parent is a bug, not input.
+    // capturePath resolves a file inside the configured export folder.
     Path outputDirectory = Objects.requireNonNull(output.getParent(), "Capture path has no parent");
     try {
-      Files.createDirectories(outputDirectory);
       BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
       beRenderer.prepare(mc.level, mc.gameRenderer.getMainCamera(), mc.hitResult);
       var fluidView =
@@ -644,7 +663,7 @@ public class Minemories {
       int blockCount = 0;
       for (int z = min.getZ(); z <= max.getZ(); z++) {
         for (int x = min.getX(); x <= max.getX(); x++) {
-          if (!mc.level.hasChunkAt(new BlockPos(x, min.getY(), z))) continue;
+          if (!chunkLoaded(mc, x, z)) continue;
           int columnTop =
               Math.min(max.getY(), mc.level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
           int terrainTop = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
@@ -689,7 +708,7 @@ public class Minemories {
                 boolean outside = outsideCapture(neighborPos, min, max);
                 if (outside && capped && direction != Direction.UP) continue;
                 if (!outside
-                    && mc.level.hasChunkAt(neighborPos)
+                    && chunkLoaded(mc, neighborPos.getX(), neighborPos.getZ())
                     && !Block.shouldRenderFace(state, mc.level, pos, direction, neighborPos))
                   continue;
                 RandomSource random = RandomSource.create(state.getSeed(pos));
@@ -740,6 +759,12 @@ public class Minemories {
           }
         }
       }
+      if (!scene.hasGeometry()) {
+        captureFailure =
+            "Aucun bloc visible dans la zone. Attends le chargement du terrain ou choisis une autre zone, puis réessaie.";
+        tell(captureFailure);
+        return 0;
+      }
       Path saved =
           CaptureHistory.save(
               outputDirectory,
@@ -756,6 +781,7 @@ public class Minemories {
                   + saved),
           false);
     } catch (Exception e) {
+      captureFailure = "Capture impossible : " + e.getMessage();
       mc.player.displayClientMessage(
           Component.literal("Minemories: export failed: " + e.getMessage()), false);
       LOGGER.error("Capture export failed", e);

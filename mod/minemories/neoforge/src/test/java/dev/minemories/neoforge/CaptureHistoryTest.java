@@ -91,6 +91,26 @@ class CaptureHistoryTest {
   }
 
   @Test
+  void sceneWithoutGeometryKeepsTheLatestModelMetadataAndReference() throws IOException {
+    Path previous = save(TIME, "previous model", "Previous world");
+    String json = Files.readString(directory.resolve("capture.json"));
+    var scene = new dev.minemories.core.GlbScene();
+    scene.addPointLight(0, 0, 0, 0xFFFFFF, 15);
+    assertThrows(
+        IOException.class,
+        () ->
+            CaptureHistory.save(
+                directory, TIME.plusSeconds(1), "{\"worldName\":\"Empty world\"}", scene::write));
+    assertEquals(previous, CaptureHistory.latest(directory));
+    assertEquals("previous model", Files.readString(directory.resolve("capture.glb")));
+    assertEquals(json, Files.readString(directory.resolve("capture.json")));
+    assertEquals(1, CaptureHistory.list(directory, null, 4).entries().size());
+    try (var files = Files.list(directory.resolve("history"))) {
+      assertEquals(List.of(previous.getParent()), files.toList());
+    }
+  }
+
+  @Test
   void failedAndEmptyWritersLeaveThePreviousCaptureIntactAndNoPendingDirectories()
       throws IOException {
     Path first = save(TIME, "previous valid model", "Previous world");
