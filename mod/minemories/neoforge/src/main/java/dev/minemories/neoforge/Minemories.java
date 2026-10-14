@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.minemories.core.GlbScene;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -669,8 +668,8 @@ public class Minemories {
             (min.getY() + max.getY()) / 2,
             (min.getZ() + max.getZ()) / 2);
     com.google.gson.JsonObject metadata = currentCaptureMetadata(center);
-    GlbScene scene = new GlbScene();
-    Map<String, SpriteAsset> sprites = new LinkedHashMap<>();
+    CaptureSink scene = new CaptureSink.Legacy();
+    SpriteAssets sprites = new SpriteAssets(null);
     RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);
     Path output = capturePath();
     // capturePath resolves a file inside the configured export folder.
@@ -694,90 +693,19 @@ public class Minemories {
           while (terrainTop >= min.getY()
               && !mc.level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
           for (int y = min.getY(); y <= columnTop; y++) {
-            BlockPos pos = new BlockPos(x, y, z);
-            BlockState state = mc.level.getBlockState(pos);
-            boolean capped =
-                captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
-            if (state.isAir()) continue;
-            int lightEmission = state.getLightEmission();
-            if (lightEmission >= 4) {
-              // Map colors describe the block's minimap swatch and are
-              // often dark brown/black for lamps. Use a useful light tint.
-              String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-              int lightColor =
-                  blockName.contains("soul")
-                      ? 0xA8DFFF
-                      : (blockName.contains("lava")
-                              || blockName.contains("fire")
-                              || blockName.contains("blaze"))
-                          ? 0xFFFFD8
-                          : 0xFFF0D0;
-              scene.addPointLight(
-                  x - center.getX() + 0.5f,
-                  y - center.getY() + 0.5f,
-                  z - center.getZ() + 0.5f,
-                  lightColor,
-                  lightEmission);
-            }
-            BlockEntity blockEntity = mc.level.getBlockEntity(pos);
-            if (state.getRenderShape() == RenderShape.MODEL) {
-              String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-              BakedModel model = mc.getModelManager().getBlockModelShaper().getBlockModel(state);
-              ModelData initialData =
-                  blockEntity == null ? ModelData.EMPTY : blockEntity.getModelData();
-              ModelData modelData = model.getModelData(mc.level, pos, state, initialData);
-              for (Direction direction : Direction.values()) {
-                BlockPos neighborPos = pos.relative(direction);
-                boolean outside = outsideCapture(neighborPos, min, max);
-                if (outside && capped && direction != Direction.UP) continue;
-                if (!outside
-                    && chunkLoaded(mc, neighborPos.getX(), neighborPos.getZ())
-                    && !Block.shouldRenderFace(state, mc.level, pos, direction, neighborPos))
-                  continue;
-                RandomSource random = RandomSource.create(state.getSeed(pos));
-                for (BakedQuad quad : model.getQuads(state, direction, random, modelData, null))
-                  addQuad(
-                      scene,
-                      sprites,
-                      mc,
-                      state,
-                      pos,
-                      id,
-                      quad,
-                      x - center.getX(),
-                      y - center.getY(),
-                      z - center.getZ());
-              }
-              RandomSource random = RandomSource.create(state.getSeed(pos));
-              for (BakedQuad quad : model.getQuads(state, null, random, modelData, null)) {
-                if (capped && isCutQuad(quad, pos, min, max)) continue;
-                addQuad(
+            blockCount +=
+                captureCell(
                     scene,
                     sprites,
+                    renderedModels,
                     mc,
-                    state,
-                    pos,
-                    id,
-                    quad,
-                    x - center.getX(),
-                    y - center.getY(),
-                    z - center.getZ());
-              }
-              blockCount++;
-            }
-            if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
-              captureBlockEntityRenderer(
-                  renderedModels,
-                  beRenderer,
-                  blockEntity,
-                  x - center.getX(),
-                  y - center.getY(),
-                  z - center.getZ());
-              if (state.getRenderShape() != RenderShape.MODEL) blockCount++;
-            }
-            FluidState fluid = state.getFluidState();
-            if (!fluid.isEmpty())
-              captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+                    beRenderer,
+                    fluidView,
+                    new BlockPos(x, y, z),
+                    min,
+                    max,
+                    center,
+                    terrainTop);
           }
         }
       }
@@ -816,6 +744,102 @@ public class Minemories {
     return 1;
   }
 
+  static int captureCell(
+      CaptureSink scene,
+      SpriteAssets sprites,
+      RenderedModelCapture renderedModels,
+      Minecraft mc,
+      BlockEntityRenderDispatcher beRenderer,
+      CaptureLevelView fluidView,
+      BlockPos pos,
+      BlockPos min,
+      BlockPos max,
+      BlockPos center,
+      int terrainTop)
+      throws IOException {
+    int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
+    BlockState state = mc.level.getBlockState(pos);
+    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
+    if (state.isAir()) return 0;
+    int lightEmission = state.getLightEmission();
+    if (lightEmission >= 4) {
+      // Map colors describe the block's minimap swatch and are
+      // often dark brown/black for lamps. Use a useful light tint.
+      String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+      int lightColor =
+          blockName.contains("soul")
+              ? 0xA8DFFF
+              : (blockName.contains("lava")
+                      || blockName.contains("fire")
+                      || blockName.contains("blaze"))
+                  ? 0xFFFFD8
+                  : 0xFFF0D0;
+      scene.addPointLight(
+          x - center.getX() + 0.5f,
+          y - center.getY() + 0.5f,
+          z - center.getZ() + 0.5f,
+          lightColor,
+          lightEmission);
+    }
+    BlockEntity blockEntity = mc.level.getBlockEntity(pos);
+    if (state.getRenderShape() == RenderShape.MODEL) {
+      String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+      BakedModel model = mc.getModelManager().getBlockModelShaper().getBlockModel(state);
+      ModelData initialData = blockEntity == null ? ModelData.EMPTY : blockEntity.getModelData();
+      ModelData modelData = model.getModelData(mc.level, pos, state, initialData);
+      for (Direction direction : Direction.values()) {
+        BlockPos neighborPos = pos.relative(direction);
+        boolean outside = outsideCapture(neighborPos, min, max);
+        if (outside && capped && direction != Direction.UP) continue;
+        if (!outside
+            && chunkLoaded(mc, neighborPos.getX(), neighborPos.getZ())
+            && !Block.shouldRenderFace(state, mc.level, pos, direction, neighborPos)) continue;
+        RandomSource random = RandomSource.create(state.getSeed(pos));
+        for (BakedQuad quad : model.getQuads(state, direction, random, modelData, null))
+          addQuad(
+              scene,
+              sprites,
+              mc,
+              state,
+              pos,
+              id,
+              quad,
+              x - center.getX(),
+              y - center.getY(),
+              z - center.getZ());
+      }
+      RandomSource random = RandomSource.create(state.getSeed(pos));
+      for (BakedQuad quad : model.getQuads(state, null, random, modelData, null)) {
+        if (capped && isCutQuad(quad, pos, min, max)) continue;
+        addQuad(
+            scene,
+            sprites,
+            mc,
+            state,
+            pos,
+            id,
+            quad,
+            x - center.getX(),
+            y - center.getY(),
+            z - center.getZ());
+      }
+      count++;
+    }
+    if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
+      captureBlockEntityRenderer(
+          renderedModels,
+          beRenderer,
+          blockEntity,
+          x - center.getX(),
+          y - center.getY(),
+          z - center.getZ());
+      if (state.getRenderShape() != RenderShape.MODEL) count++;
+    }
+    FluidState fluid = state.getFluidState();
+    if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    return count;
+  }
+
   private static boolean outsideCapture(BlockPos pos, BlockPos min, BlockPos max) {
     return CutBoundary.outside(
         new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
@@ -841,8 +865,8 @@ public class Minemories {
   }
 
   private static boolean captureCutFaces(
-      GlbScene scene,
-      Map<String, SpriteAsset> sprites,
+      CaptureSink scene,
+      SpriteAssets sprites,
       Minecraft mc,
       BlockState state,
       BlockPos pos,
@@ -888,8 +912,8 @@ public class Minemories {
   }
 
   private static void addQuad(
-      GlbScene scene,
-      Map<String, SpriteAsset> sprites,
+      CaptureSink scene,
+      SpriteAssets sprites,
       Minecraft mc,
       BlockState state,
       BlockPos pos,
@@ -901,11 +925,7 @@ public class Minemories {
       throws IOException {
     TextureAtlasSprite sprite = quad.getSprite();
     String imageKey = sprite.contents().name().toString();
-    SpriteAsset asset = sprites.get(imageKey);
-    if (asset == null) {
-      asset = new SpriteAsset(sprite);
-      sprites.put(imageKey, asset);
-    }
+    SpriteAsset asset = sprites.asset(sprite);
     int tint =
         quad.isTinted()
             ? mc.getBlockColors().getColor(state, mc.level, pos, quad.getTintIndex())
@@ -941,8 +961,8 @@ public class Minemories {
   }
 
   private static void captureFluid(
-      GlbScene scene,
-      Map<String, SpriteAsset> sprites,
+      CaptureSink scene,
+      SpriteAssets sprites,
       Minecraft mc,
       BlockPos pos,
       BlockState block,
@@ -971,11 +991,7 @@ public class Minemories {
       TextureAtlasSprite sprite = selectFluidSprite(fluidSprites, quad);
       if (sprite == null) sprite = fluidSprites[0];
       String imageKey = sprite.contents().name().toString();
-      SpriteAsset asset = sprites.get(imageKey);
-      if (asset == null) {
-        asset = new SpriteAsset(sprite);
-        sprites.put(imageKey, asset);
-      }
+      SpriteAsset asset = sprites.asset(sprite);
       float[] xyz = new float[12], uv = new float[8];
       float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
       for (int v = 0; v < 4; v++) {
@@ -1126,11 +1142,35 @@ public class Minemories {
     }
   }
 
+  static final class SpriteAssets {
+    private final Map<String, SpriteAsset> values = new LinkedHashMap<>();
+    private final CapturePixels pixelCopies;
+
+    SpriteAssets(CapturePixels pixelCopies) {
+      this.pixelCopies = pixelCopies;
+    }
+
+    SpriteAsset asset(TextureAtlasSprite sprite) throws IOException {
+      String key = sprite.contents().name().toString();
+      SpriteAsset existing = values.get(key);
+      if (existing != null) return existing;
+      SpriteAsset result = new SpriteAsset(sprite, pixelCopies);
+      values.put(key, result);
+      return result;
+    }
+  }
+
   private static final class SpriteAsset {
     final byte[] png;
     final int alphaMode;
 
-    SpriteAsset(TextureAtlasSprite sprite) throws IOException {
+    SpriteAsset(TextureAtlasSprite sprite, CapturePixels pixelCopies) throws IOException {
+      if (pixelCopies != null) {
+        pixelCopies.sprite(sprite);
+        png = new byte[0];
+        alphaMode = 0;
+        return;
+      }
       BufferedImage image =
           new BufferedImage(
               sprite.contents().width(), sprite.contents().height(), BufferedImage.TYPE_INT_ARGB);

@@ -5,6 +5,41 @@ Il prépare le passage des captures AFK à un parcours progressif. Il ne remplac
 pas encore le parcours du mod : la lecture des blocs et des modèles, la queue
 bornée, le coordinateur, la suspension et le débit réseau restent à raccorder.
 
+## Raccordement en cours
+
+La branche de travail prépare le raccordement avec `CaptureElement` (copie bornée
+d'un bloc/renderer, sans référence au monde), `CaptureCursor` (une cellule reste
+en attente tant que son résultat n'est pas admis) et `CaptureFrameBudget` (arrêt
+des nouvelles opérations à la limite de temps ou d'items). Le parcours manuel
+utilise un `CaptureSink.Legacy` dont les octets sont comparés au writer précédent.
+
+`QueuedGlbCapture` possède son worker et une file de seize paquets. Les bandes
+copiées contiennent au plus 65 536 pixels ; un paquet géométrique au plus 64
+quads. Le worker assemble/encode un PNG à la fois, conserve les sources sur
+disque et utilise `SpoolingGlbScene`. La transparence et les couches secondaires
+sont résolues après la copie des pixels. Aucun objet Minecraft n'est admis par
+ses tâches. Annulation, texture incomplète, image absente et publication après
+écriture sont testées ; un GLB produit en arrière-plan est identique au writer
+legacy, et une texture 2 048 × 2 048 est transportée par bandes.
+
+`CaptureWorkspace` verrouille les espaces de travail entre processus et ne
+nettoie que des noms de fichiers temporaires connus. Un vrai processus de test
+arrêté par `Runtime.halt` laisse des spools binaires, ensuite supprimés. Un
+travail actif, un lien, une entrée inconnue ou un GLB complet sont préservés.
+La lecture d'un historique déjà publié ne bloque pas derrière la préparation
+d'un autre GLB. La publication peut calculer ses métadonnées après l'écriture ;
+les dates optionnelles `captureStartedAt`/`captureFinishedAt` sont admises par le
+contrat et l'API, avec validation d'ordre et compatibilité des anciennes captures.
+
+Les sources `CapturePixels` restent exclusivement sur le thread du client :
+sprites par bandes et framebuffer de lecture temporaire pour les textures de
+renderers. Ce parcours GPU exige encore la validation réelle de l'état OpenGL
+et des images. **Le coordinateur AFK n'utilise pas encore ces composants** :
+raccordement des phases, suspension/annulation sur activité ou sortie de monde,
+rechargement des ressources, limitation réseau et mesures en jeu restent requis.
+Les tests des composants ne prouvent pas une réduction des freezes. La beta
+publiée reste inchangée ; cette branche prépare une version `0.1.1-dev.1`.
+
 ## Propriété des données et publication
 
 Le constructeur crée un dossier temporaire privé sous le parent choisi. Le
