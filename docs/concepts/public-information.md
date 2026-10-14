@@ -4,7 +4,7 @@
 
 Les pages `/concept`, `/fonctionnement`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/features/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
 
-Le contenu est en français et reprend les libellés anglais des boutons existants. Pas de refonte graphique. Les guides sont publics, accessibles depuis toutes les pages, y compris sur mobile.
+Le contenu est en français et reprend les libellés anglais des boutons existants. La page d’installation possède désormais un guide interactif : système et launcher, prénom facultatif, étapes mémorisées localement, navigation libre et illustration SVG animée avec réduction des animations. Les guides sont publics, accessibles depuis toutes les pages, y compris sur mobile.
 
 ## Personas de travail et revue de clarté
 
@@ -47,3 +47,13 @@ Faire lire les pages à une personne représentative de chaque public et lui dem
 - Partie API de `bun check` : typecheck et 35 tests réussis.
 - `bun web:build` : réussi.
 - Validation complète après configuration du JDK 21 local et correction des dépendances de test Java : `bun run build` réussi (inclut `bun check`, le bundle web et le JAR du mod). Le test Garage réel reste ignoré sans environnement dédié ; aucune validation en jeu supplémentaire effectuée.
+
+## Guide d’installation interactif (14 octobre 2026)
+
+Le parcours par défaut utilise Minecraft Launcher et l’installateur officiel NeoForge 21.1.248. Windows, macOS et Linux disposent de chemins adaptés ; CurseForge, Modrinth App et les autres launchers utilisent le même JAR local, sans prétendre à une publication catalogue. Le premier essai exporte une petite zone via `/minemories export 16`, puis ouvre le GLB sans compte. Le lien à une galerie reste facultatif et explique les envois AFK après appairage. Les libellés des menus du mod ont été recoupés avec `MinemoriesScreen.java`.
+
+La progression est déclarative : cliquer « C’est fait » n’atteste pas de l’état du jeu. Les choix, le prénom facultatif et les étapes sont conservés uniquement dans localStorage, peuvent être effacés et ne sont pas envoyés au serveur. Le parcours reste utilisable si le stockage ou le presse-papiers sont bloqués. Les animations respectent `prefers-reduced-motion` et le choix dans le guide. Les changements d’étape placent le focus sur leur titre pour la navigation clavier.
+
+Le 14 octobre, l’URL publique du manifeste renvoyait un HTTP 200 avec le HTML de la SPA. La présence du bouton dans le dépôt ne prouvait donc pas la disponibilité du mod. Le build web contrôle maintenant manifeste, taille, en-tête JAR et SHA-256 avant et après Vite ; le client contrôle aussi les headers du fichier servi avant d’afficher le lien, avec délai maximal et bouton de réessai. Le déploiement du front et la vérification des URL publiques restent nécessaires.
+
+Le parcours Windows / Minecraft Launcher réserve dix captures légendées : version du jeu, Java 21, installateur NeoForge, dossier du profil, JAR téléchargé, dossier mods, liste Mods, menu M, export local et viewer. Les fichiers attendus et leur contenu sont décrits dans `apps/web/src/assets/tutorial/windows/README.md`. Les vraies images remplacent les zones au prochain build ; aucune requête vers une image manquante n’est faite, et une image chargée peut être agrandie. Ces zones sont propres au parcours manuel Windows.

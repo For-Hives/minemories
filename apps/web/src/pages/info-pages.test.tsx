@@ -33,17 +33,9 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 	fireEvent.click(screen.getByRole('link', { name: 'Installe le mod' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer le mod Minemories')
-	for (const [name, target] of [
-		['Avec CurseForge', 'curseforge'],
-		['Avec Modrinth', 'modrinth'],
-		['Manuellement', 'manuel'],
-	] as const) {
-		const link = screen.getByRole('link', { name })
-		expect(link.getAttribute('href')).toBe(`#${target}`)
-		expect(document.getElementById(target)?.tagName).toBe('H2')
-	}
-	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'Télécharger le mod' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Minecraft Launcher' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: /Télécharger le mod/ })).toBeTruthy()
+	expect(screen.getByText('0 / 6 étapes cochées')).toBeTruthy()
 	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
