@@ -132,6 +132,11 @@ class ProgressiveCapturePumpTest {
     try (var writer = new QueuedGlbCapture(folder)) {
       var pump = new ProgressiveCapturePump(producer, writer, Instant.now(), "{}");
       assertThrows(IOException.class, () -> pump.step(new CaptureFrameBudget(() -> 0, 1, 10)));
+      // close is deliberately nonblocking in game. Await cleanup before JUnit deletes TempDir.
+      writer.close();
+      assertThrows(
+          java.util.concurrent.ExecutionException.class,
+          () -> writer.completion().toCompletableFuture().get(10, TimeUnit.SECONDS));
     }
     assertEquals(previous, CaptureHistory.latest(folder));
     assertEquals("previous", java.nio.file.Files.readString(previous));
