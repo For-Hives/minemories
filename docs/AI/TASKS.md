@@ -1,7 +1,7 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
 - mettre i18n dans le site web pour avoir des translations dans toute les langues les plus populaire de joueur minecraft
 - diallow index/google/crawl for now (dev mode)
-- faire en sorte de pouvoir DL le last JAR depuis le site
+- déployer le front avec `railpack.web.json`, puis vérifier en production `/downloads/manifest.json`, le JAR et son SHA-256 : le 14 octobre 2026, le site renvoyait le HTML de la SPA à la place du manifeste ; le build web refuse désormais un téléchargement absent ou incohérent
 - avoir une page avec la liste des Jar (historique de version) + une page changelog automatique 
 - verifier l'alignement du marketing avec besoin.md
 - faire des maquette pour l'ui du mod, et creer reelement une ui cool pour le mode baser sur la DA, en s'inspirant des meilleurs ui de mod (iris, Distant horizon, etc... )
@@ -33,3 +33,5 @@
 - valider les parcours d’installation CurseForge, Modrinth et manuel ainsi que l’appairage/upload de production en jeu ; faire une revue de compréhension avec les six publics de docs/concepts/public-information.md
 - créer les projets Modrinth/CurseForge, configurer leurs identifiants et secrets dans GitHub, puis lancer la distribution après validation en jeu du JAR exact
 - suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
+- faire réaliser à Mae le guide interactif `/installation` sans assistance orale avec le JAR du site : Java/NeoForge, bon dossier mods, menu M, export local 16, ouverture GLB, puis appairage et envoi ; noter système/launcher/version/empreinte et les hésitations, sans déclarer ce parcours validé avant cet essai
+- ajouter les dix vraies captures du tuto manuel Windows dans `apps/web/src/assets/tutorial/windows/` selon son README ; les zones légendées, le remplacement automatique et l’agrandissement sont prêts

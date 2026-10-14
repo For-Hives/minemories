@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ModDownload } from './ModDownload'
+
+export { InstallationPage } from './InstallationPage'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'Le concept' },
@@ -167,139 +168,6 @@ export function HowItWorksPage() {
 				Avant de partager, vérifie la capture et les informations associées : des coordonnées, le nom du serveur ou du
 				monde, et la graine du monde solo peuvent être enregistrés. Évite les lieux ou textes contenant des informations
 				personnelles et demande l’accord des autres constructeurs.
-			</p>
-		</InfoPage>
-	)
-}
-
-export function InstallationPage() {
-	return (
-		<InfoPage title="Installer le mod Minemories">
-			<p>
-				Tu veux seulement regarder un souvenir partagé ? Ouvre son lien : tu n’as rien à installer. Le mod sert à créer
-				une capture depuis Minecraft sur un ordinateur.
-			</p>
-			<h2>Avant de commencer</h2>
-			<p>
-				La seule combinaison testée est <strong>Minecraft Java Edition 1.21.1 + NeoForge 21.1.248</strong>. Bedrock,
-				consoles et mobiles ne sont pas pris en charge pour capturer. Fabric, Quilt et Forge ne sont pas encore
-				supportés.
-			</p>
-			<p>
-				Un launcher (CurseForge, Modrinth ou Minecraft Launcher) lance le jeu. Un profil, aussi appelé instance,
-				contient une version du jeu et ses mods. NeoForge est le loader qui permet à Minecraft de charger Minemories.
-				Forge et NeoForge sont différents.
-			</p>
-			<p>
-				Fais une copie de ton monde et de ton profil avant toute modification. Ne convertis pas un vieux monde ou un
-				modpack Fabric pour suivre ce tuto : demande une version compatible à son responsable.
-			</p>
-			<h2>Télécharger le mod</h2>
-			<ModDownload />
-			<p>
-				Le JAR est le fichier du mod. Un ZIP ajouterait une étape d’extraction inutile. Les publications dans les
-				catalogues CurseForge et Modrinth sont en préparation.
-			</p>
-			<p>
-				Tu utilises Prism Launcher, ATLauncher, GDLauncher ou MultiMC ? Ouvre le dossier de l’instance compatible et
-				place le même JAR dans <code>mods</code>. Les launchers qui proposent Modrinth ou CurseForge pourront utiliser
-				ces catalogues après publication. Leur parcours Minemories reste à valider en jeu.
-			</p>
-			<nav aria-label="Méthodes d’installation" className="flex flex-wrap gap-5">
-				<a href="#curseforge">Avec CurseForge</a>
-				<a href="#modrinth">Avec Modrinth</a>
-				<a href="#manuel">Manuellement</a>
-			</nav>
-			<h2 id="curseforge">Avec CurseForge</h2>
-			<ol>
-				<li>Installe et ouvre l’application CurseForge depuis son site officiel, puis choisis Minecraft.</li>
-				<li>
-					Pour un nouveau monde, crée un profil personnalisé en Minecraft 1.21.1 avec NeoForge 21.1.248. Pour un serveur
-					ou un monde existant, utilise une copie de son profil compatible avec ces versions et tous ses mods.
-				</li>
-				<li>
-					Dans le menu du profil, ouvre son dossier (« Open Folder » ou « Ouvrir le dossier »). Si le pack est
-					verrouillé, autorise sa modification dans les options du profil copié.
-				</li>
-				<li>
-					Ferme Minecraft. Place le JAR Minemories dans le sous-dossier <code>mods</code> de ce profil. Crée ce
-					sous-dossier s’il manque. Ne le place pas dans <code>saves</code> ni dans un autre profil.
-				</li>
-				<li>Relance le jeu depuis ce profil CurseForge et suis la vérification ci-dessous.</li>
-			</ol>
-			<p>
-				<a href="https://support.curseforge.com/support/solutions/articles/9000218572-getting-started">
-					Guide officiel CurseForge
-				</a>
-			</p>
-			<h2 id="modrinth">Avec Modrinth</h2>
-			<ol>
-				<li>
-					Installe et ouvre Modrinth App depuis son site officiel, puis connecte ton compte Minecraft dans
-					l’application.
-				</li>
-				<li>
-					Crée une instance Minecraft 1.21.1 avec NeoForge, puis sélectionne la version 21.1.248 du loader dans ses
-					paramètres. Pour un monde ou serveur existant, conserve une copie de son instance compatible et ses mods.
-				</li>
-				<li>
-					Depuis cette instance, ouvre son dossier avec le bouton de dossier ou son menu. Les noms des boutons peuvent
-					changer suivant la langue et la version de l’application.
-				</li>
-				<li>
-					Ferme Minecraft et copie le JAR Minemories dans le sous-dossier <code>mods</code> de cette instance, à créer
-					s’il manque. Garde une seule version de Minemories dans ce dossier.
-				</li>
-				<li>
-					Lance cette instance. Ce parcours utilise un JAR local ; il ne signifie pas que Minemories est publié sur
-					Modrinth. Le parcours Modrinth reste à essayer en jeu.
-				</li>
-			</ol>
-			<p>
-				<a href="https://support.modrinth.com/en/collections/7804910-modrinth-app">Aide officielle Modrinth App</a>
-			</p>
-			<h2 id="manuel">Manuellement avec Minecraft Launcher</h2>
-			<ol>
-				<li>Installe Minecraft Java Edition et lance une fois la version 1.21.1, puis ferme le jeu.</li>
-				<li>
-					Installe Java 21 en 64 bits si nécessaire, en suivant le guide NeoForge lié ci-dessous. Java est le programme
-					nécessaire pour exécuter son installateur.
-				</li>
-				<li>
-					Ferme aussi Minecraft Launcher. Depuis le site officiel NeoForge, choisis exactement l’installateur 21.1.248
-					pour Minecraft 1.21.1. Ouvre-le avec Java, sélectionne « Install client » et termine l’installation.
-				</li>
-				<li>
-					Dans Minecraft Launcher, sélectionne l’installation NeoForge créée. Dans « Installations », édite ce profil et
-					choisis un dossier de jeu distinct pour éviter de mélanger tes mods et tes mondes.
-				</li>
-				<li>
-					Lance ce profil une fois, ferme le jeu, puis ouvre son dossier de jeu. Copie le JAR Minemories dans son
-					sous-dossier <code>mods</code>. Pour un monde existant, utilise une copie de sa sauvegarde et ses mods
-					compatibles.
-				</li>
-				<li>Relance le profil NeoForge, pas le profil vanilla. Ce parcours manuel reste à essayer en jeu.</li>
-			</ol>
-			<p>
-				<a href="https://neoforged.net/">Site officiel NeoForge</a> ·{' '}
-				<a href="https://docs.neoforged.net/user/docs/">Java et installation NeoForge</a>
-			</p>
-			<h2>Vérifier que c’est installé</h2>
-			<p>
-				Dans le menu « Mods » du jeu, cherche Minemories. Ouvre un monde de test, appuie sur M ou saisis
-				<code> /minemories export 16</code>. Tu dois obtenir un message de fin d’export et un fichier
-				<code> ~/export/capture.glb</code>.{' '}
-				<Link to="/fonctionnement">Ouvre ensuite ton premier souvenir sur le site</Link>.
-			</p>
-			<h2>Si ça bloque</h2>
-			<p>
-				Mod absent ou commande inconnue : vérifie le profil lancé et son dossier mods. Crash au démarrage : vérifie les
-				deux versions exactes et retire les doublons ; retire le JAR Minemories pour revenir au profil précédent. Si
-				21.1.248 n’est pas disponible dans ton launcher, ne choisis pas une autre version au hasard.
-			</p>
-			<p>
-				Tu administres un serveur ? Ce mod s’installe côté joueur, pas comme plugin Paper/Spigot. Vérifie les règles du
-				serveur avant de capturer ; cette page ne garantit pas la compatibilité avec chaque serveur ou modpack.
 			</p>
 		</InfoPage>
 	)
