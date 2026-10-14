@@ -22,7 +22,11 @@ const InstallationPage = lazy(() =>
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
 const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
-const PricingPage = lazy(() => ContentPages().then(module => ({ default: module.PricingPage })))
+const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
+const DiscoveryPages = () => import('./pages/DiscoveryPages')
+const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
+const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
+const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
 const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
 const NotFoundPage = lazy(() => ContentPages().then(module => ({ default: module.NotFoundPage })))
 
@@ -86,6 +90,33 @@ export function App() {
 					<RouteMetadata />
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
+							<Route
+								path="/decouvrir"
+								element={
+									<Page>
+										<DiscoveryPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/explorer"
+								element={
+									<Page>
+										<ExplorerPage />
+									</Page>
+								}
+							/>
+							{['/open-source', '/nostalgie', '/partager', '/classement'].map(path => (
+								<Route
+									key={path}
+									path={path}
+									element={
+										<Page>
+											<MarketingPage />
+										</Page>
+									}
+								/>
+							))}
 							<Route
 								index
 								element={

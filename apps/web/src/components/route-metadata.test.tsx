@@ -21,6 +21,7 @@ test('route changes retain article schema and remove public metadata on a privat
 	)
 	fireEvent.click(screen.getByRole('link', { name: 'Article' }))
 	expect(document.title).toContain('Un premier souvenir')
+	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
 	const schema = document.querySelector('script[data-page-schema]')?.textContent
 	expect(JSON.parse(schema ?? '{}')['@type']).toBe('Article')
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/blog/premier-souvenir')

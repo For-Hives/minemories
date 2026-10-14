@@ -4,10 +4,12 @@ import { Route, Routes, StaticRouter } from 'react-router'
 import { AppContext } from './app-context'
 import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
-import { ArticlePage, BlogPage, LegalPage, NotFoundPage, PricingPage } from './pages/ContentPages'
+import { ArticlePage, BlogPage, LegalPage, NotFoundPage } from './pages/ContentPages'
+import { DiscoveryPage, ExplorerPage, MarketingPage } from './pages/DiscoveryPages'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
+import { PricingPage } from './pages/PricingPage'
 import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
 
 export { publicMetadata, siteOrigin, structuredDataFor }
@@ -40,6 +42,18 @@ export function renderPage(path: string) {
 			break
 		case '/blog':
 			content = <BlogPage />
+			break
+		case '/decouvrir':
+			content = <DiscoveryPage />
+			break
+		case '/explorer':
+			content = <ExplorerPage />
+			break
+		case '/open-source':
+		case '/nostalgie':
+		case '/partager':
+		case '/classement':
+			content = <MarketingPage />
 			break
 		case '/pricing':
 			content = <PricingPage />

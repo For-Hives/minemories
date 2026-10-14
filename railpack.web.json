@@ -28,7 +28,7 @@
 				}
 			],
 			"commands": [
-				"bun run --filter @minemories/web build"
+				"VITE_INDEXABLE=false bun run --filter @minemories/web build"
 			]
 		}
 	}
