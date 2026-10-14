@@ -11,6 +11,7 @@ const sourceFile =
 type ErrorEvent =
 	| 'rpc_failed'
 	| 'shared_download_failed'
+	| 'public_download_failed'
 	| 'memory_download_failed'
 	| 'memory_upload_failed'
 	| 'chunk_upload_failed'
