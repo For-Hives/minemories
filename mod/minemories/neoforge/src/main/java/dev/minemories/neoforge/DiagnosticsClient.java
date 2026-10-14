@@ -1,0 +1,400 @@
+package dev.minemories.neoforge;
+
+import com.google.gson.JsonParser;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+/** No disk queue: consent and the current paired identity govern every retained diagnostic. */
+final class DiagnosticsClient {
+  private static final int MAX_OPERATIONS = 8;
+  private static final int MAX_REPORTS_PER_HOUR = 5;
+  private final HttpClient http;
+  private final Supplier<Properties> settings;
+  private final Supplier<DiagnosticReport.Versions> versions;
+  private final ArrayDeque<Operation> operations = new ArrayDeque<>();
+  private Identity identity;
+  private String permit;
+  private long generation;
+  private long windowStarted;
+  private int reports;
+  private CachedCapture capture;
+  private CompletableFuture<HttpResponse<String>> authorization;
+  private CompletableFuture<HttpResponse<String>> submission;
+  private CompletableFuture<HttpResponse<String>> deletion;
+  private boolean refused;
+  private boolean withdrawn;
+
+  DiagnosticsClient(
+      HttpClient http,
+      Supplier<Properties> settings,
+      Supplier<DiagnosticReport.Versions> versions) {
+    this.http = http;
+    this.settings = settings;
+    this.versions = versions;
+  }
+
+  private record Identity(String api, String token, String device) {}
+
+  private record CachedCapture(
+      Path path, UUID correlation, long started, List<DiagnosticReport.Breadcrumb> breadcrumbs) {}
+
+  static final class Operation {
+    private final DiagnosticsClient owner;
+    private final DiagnosticReport.Phase phase;
+    private final UUID correlation;
+    private final long generation;
+    private final long started;
+    private final ArrayDeque<DiagnosticReport.Breadcrumb> breadcrumbs = new ArrayDeque<>();
+    private boolean finished;
+
+    private Operation(
+        DiagnosticsClient owner,
+        DiagnosticReport.Phase phase,
+        UUID correlation,
+        long generation,
+        long started) {
+      this.owner = owner;
+      this.phase = phase;
+      this.correlation = correlation;
+      this.generation = generation;
+      this.started = started;
+    }
+
+    void step(DiagnosticReport.Step step) {
+      owner.step(this, step);
+    }
+
+    void success() {
+      owner.finish(this, null, null);
+    }
+
+    void captured(Path file) {
+      owner.finish(this, Objects.requireNonNull(file), null);
+    }
+
+    void failed(Throwable error) {
+      owner.finish(this, null, Objects.requireNonNull(error));
+    }
+
+    void revoked() {
+      owner.revoke(this);
+    }
+
+    HttpRequest.Builder headers(HttpRequest.Builder request) {
+      return owner.headers(this, request);
+    }
+  }
+
+  private Identity configuredIdentity() {
+    if (withdrawn) return null;
+    try {
+      Properties current = settings.get();
+      if (!ClientSettings.diagnosticsConsentForIdentity(
+          current, System.getenv("MINEMORIES_API_URL"))) return null;
+      String token = current.getProperty("deviceToken", "");
+      String device = current.getProperty("deviceId", "");
+      if (token.isBlank() || !UUID.fromString(device).toString().equals(device)) return null;
+      return new Identity(
+          ClientSettings.apiUrl(current, System.getenv("MINEMORIES_API_URL")), token, device);
+    } catch (RuntimeException ignored) {
+      return null;
+    }
+  }
+
+  private void refresh() {
+    Identity configured = configuredIdentity();
+    if (!Objects.equals(configured, identity)) {
+      Identity previous = identity;
+      clear();
+      identity = configured;
+      refused = false;
+      if (previous != null) purge(previous);
+    }
+    if (identity != null && permit == null && authorization == null && !refused) authorize();
+  }
+
+  private void clear() {
+    generation++;
+    for (Operation operation : operations) {
+      operation.breadcrumbs.clear();
+      operation.finished = true;
+    }
+    operations.clear();
+    capture = null;
+    permit = null;
+    reports = 0;
+    windowStarted = 0;
+    if (authorization != null) authorization.cancel(true);
+    if (submission != null) submission.cancel(true);
+    authorization = null;
+    submission = null;
+  }
+
+  private void authorize() {
+    Identity requested = identity;
+    long requestedGeneration = generation;
+    if (deletion != null && !deletion.isDone()) {
+      var waiting = deletion.handle((response, error) -> (HttpResponse<String>) null);
+      authorization = waiting;
+      waiting.whenComplete(
+          (response, error) -> {
+            synchronized (this) {
+              if (requestedGeneration != generation || !requested.equals(configuredIdentity()))
+                return;
+              authorization = null;
+              authorize();
+            }
+          });
+      return;
+    }
+    HttpRequest request =
+        HttpRequest.newBuilder(URI.create(requested.api + "/api/mod/diagnostics/consent"))
+            .timeout(Duration.ofSeconds(10))
+            .header("Authorization", "Bearer " + requested.token)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString("{\"enabled\":true}"))
+            .build();
+    CompletableFuture<HttpResponse<String>> pending;
+    try {
+      pending = http.sendAsync(request, ApiResponseBody.bounded());
+    } catch (RuntimeException ignored) {
+      refused = true;
+      return;
+    }
+    authorization = pending;
+    pending.whenComplete(
+        (response, error) -> {
+          synchronized (this) {
+            if (requestedGeneration != generation || !requested.equals(configuredIdentity()))
+              return;
+            authorization = null;
+            refused = true;
+            if (error != null || response.statusCode() != 200) return;
+            try {
+              String value =
+                  JsonParser.parseString(response.body())
+                      .getAsJsonObject()
+                      .get("permit")
+                      .getAsString();
+              String canonical = UUID.fromString(value).toString();
+              if (!canonical.equals(value)) return;
+              permit = canonical;
+              refused = false;
+            } catch (RuntimeException ignored) {
+              // An unsupported or malformed API never enables collection.
+            }
+          }
+        });
+  }
+
+  synchronized String status() {
+    refresh();
+    if (identity == null) return "Désactivés : aucune collecte ni aucun envoi.";
+    if (permit != null) return "Activés pour ce compte et cette API.";
+    return authorization != null
+        ? "Vérification du compte et de l’accord…"
+        : "API indisponible ou compte refusé : aucune collecte.";
+  }
+
+  synchronized boolean isSending() {
+    return submission != null && !submission.isDone();
+  }
+
+  synchronized boolean consentAllowed() {
+    return !withdrawn;
+  }
+
+  /** Withdrawal fails closed in memory even if saving the preference fails. */
+  synchronized void changeConsent(boolean enabled, Runnable mutation) {
+    if (enabled) {
+      mutation.run();
+      withdrawn = false;
+      refresh();
+      return;
+    }
+    Identity previous = identity != null ? identity : configuredIdentity();
+    withdrawn = true;
+    clear();
+    identity = null;
+    try {
+      mutation.run();
+    } finally {
+      if (previous != null) purge(previous);
+    }
+  }
+
+  /** Changes are serialized with request starts; old callbacks cannot revive consent. */
+  synchronized void settingsChanged(Runnable mutation) {
+    Identity previous = configuredIdentity();
+    mutation.run();
+    Identity current = configuredIdentity();
+    if (!Objects.equals(previous, current)) {
+      clear();
+      identity = null;
+      if (previous != null) purge(previous);
+    }
+    refresh();
+  }
+
+  private void purge(Identity previous) {
+    if (deletion != null) deletion.cancel(true);
+    // A single best-effort deletion is allowed after opting out; it contains no diagnostic data.
+    try {
+      deletion =
+          http.sendAsync(
+              HttpRequest.newBuilder(URI.create(previous.api + "/api/mod/diagnostics"))
+                  .timeout(Duration.ofSeconds(10))
+                  .header("Authorization", "Bearer " + previous.token)
+                  .DELETE()
+                  .build(),
+              ApiResponseBody.bounded());
+    } catch (RuntimeException ignored) {
+      deletion = null;
+    }
+  }
+
+  synchronized Operation begin(DiagnosticReport.Phase phase, Path file) {
+    refresh();
+    UUID correlation = permit == null ? null : UUID.randomUUID();
+    long started = System.nanoTime();
+    if (correlation != null && capture != null && Objects.equals(file, capture.path)) {
+      correlation = capture.correlation;
+      started = capture.started;
+    }
+    Operation operation = new Operation(this, phase, correlation, generation, started);
+    if (correlation != null) {
+      if (operations.size() == MAX_OPERATIONS) {
+        Operation old = operations.removeFirst();
+        old.breadcrumbs.clear();
+        old.finished = true;
+      }
+      if (capture != null && capture.correlation.equals(correlation))
+        operation.breadcrumbs.addAll(capture.breadcrumbs);
+      operations.add(operation);
+      step(
+          operation,
+          phase == DiagnosticReport.Phase.CAPTURE
+              ? DiagnosticReport.Step.CAPTURE_STARTED
+              : DiagnosticReport.Step.UPLOAD_STARTED);
+    }
+    return operation;
+  }
+
+  private boolean eligible(Operation operation) {
+    refresh();
+    return !operation.finished
+        && operation.correlation != null
+        && operation.generation == generation
+        && permit != null;
+  }
+
+  private synchronized void step(Operation operation, DiagnosticReport.Step step) {
+    if (!eligible(operation)) return;
+    if (operation.breadcrumbs.size() == 8) operation.breadcrumbs.removeFirst();
+    long elapsed = Math.max(0, (System.nanoTime() - operation.started) / 1_000_000);
+    operation.breadcrumbs.addLast(new DiagnosticReport.Breadcrumb(step, elapsed));
+  }
+
+  private synchronized void revoke(Operation operation) {
+    if (!eligible(operation)) return;
+    clear();
+    refused = true;
+  }
+
+  private synchronized HttpRequest.Builder headers(
+      Operation operation, HttpRequest.Builder request) {
+    if (eligible(operation)) {
+      request.header("X-Minemories-Correlation", operation.correlation.toString());
+      request.header("X-Minemories-Diagnostics-Consent", "true");
+      request.header("X-Minemories-Diagnostics-Permit", permit);
+    }
+    return request;
+  }
+
+  private synchronized void finish(Operation operation, Path file, Throwable error) {
+    if (eligible(operation)) {
+      step(
+          operation,
+          error != null
+              ? (operation.phase == DiagnosticReport.Phase.CAPTURE
+                  ? DiagnosticReport.Step.CAPTURE_FAILED
+                  : DiagnosticReport.Step.UPLOAD_FAILED)
+              : (operation.phase == DiagnosticReport.Phase.CAPTURE
+                  ? DiagnosticReport.Step.CAPTURE_WRITTEN
+                  : DiagnosticReport.Step.UPLOAD_COMPLETED));
+      if (file != null)
+        capture =
+            new CachedCapture(
+                file, operation.correlation, operation.started, List.copyOf(operation.breadcrumbs));
+      if (error != null) submit(operation, error);
+    }
+    operations.remove(operation);
+    operation.breadcrumbs.clear();
+    operation.finished = true;
+  }
+
+  private void submit(Operation operation, Throwable error) {
+    long now = System.currentTimeMillis();
+    if (now - windowStarted >= Duration.ofHours(1).toMillis()) {
+      windowStarted = now;
+      reports = 0;
+    }
+    if (reports >= MAX_REPORTS_PER_HOUR || (submission != null && !submission.isDone())) return;
+    DiagnosticReport report;
+    try {
+      report =
+          DiagnosticReport.create(
+              operation.phase,
+              versions.get(),
+              operation.correlation,
+              error,
+              new ArrayList<>(operation.breadcrumbs));
+    } catch (RuntimeException ignored) {
+      return;
+    }
+    // Reread consent/API/account/device after sanitization and immediately before sending.
+    if (!eligible(operation)) return;
+    Identity requested = identity;
+    long requestedGeneration = generation;
+    HttpRequest.Builder request =
+        HttpRequest.newBuilder(URI.create(requested.api + "/api/mod/diagnostics"))
+            .timeout(Duration.ofSeconds(10))
+            .header("Authorization", "Bearer " + requested.token)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(report.payload().toString()));
+    headers(operation, request);
+    reports++;
+    CompletableFuture<HttpResponse<String>> pending;
+    try {
+      pending = http.sendAsync(request.build(), ApiResponseBody.bounded());
+    } catch (RuntimeException ignored) {
+      return;
+    }
+    submission = pending;
+    pending.whenComplete(
+        (response, failure) -> {
+          synchronized (this) {
+            if (requestedGeneration != generation || !requested.equals(configuredIdentity()))
+              return;
+            if (failure == null && (response.statusCode() == 401 || response.statusCode() == 403)) {
+              clear();
+              refused = true;
+            }
+            // No retry, response payload cache, or queue survives the request.
+            submission = null;
+          }
+        });
+  }
+}

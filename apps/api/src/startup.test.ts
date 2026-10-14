@@ -31,6 +31,7 @@ function start(env: Record<string, string>) {
 
 test('invalid production configuration exits before creating the database or exposing secrets', async () => {
 	const cases: Array<{ field: string; overrides: Record<string, string> }> = [
+		{ field: 'Diagnostics', overrides: { DIAGNOSTICS_PER_HOUR: 'invalid-private-fixture-limit' } },
 		{ field: 'ACCOUNT_STORAGE_BYTES', overrides: { ACCOUNT_STORAGE_BYTES: 'invalid-private-fixture-quota' } },
 		{ field: 'PAIRING_PEPPER', overrides: { PAIRING_PEPPER: 'short-private-fixture-value' } },
 		{ field: 'WEB_ORIGIN', overrides: { WEB_ORIGIN: 'http://example.test' } },

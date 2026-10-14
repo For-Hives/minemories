@@ -3,12 +3,14 @@ package dev.minemories.neoforge;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -105,6 +107,33 @@ final class ClientSettings {
     return Boolean.parseBoolean(settings.getProperty("captureFullHeight", "false"));
   }
 
+  static boolean diagnosticsConsent(Properties settings) {
+    return "true".equals(settings.getProperty("diagnosticsConsent", "false"));
+  }
+
+  static String diagnosticsBinding(Properties settings, String environmentApi) {
+    String value =
+        apiUrl(settings, environmentApi)
+            + "\n"
+            + settings.getProperty("deviceId", "")
+            + "\n"
+            + settings.getProperty("deviceToken", "");
+    try {
+      return HexFormat.of()
+          .formatHex(
+              java.security.MessageDigest.getInstance("SHA-256")
+                  .digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException error) {
+      throw new IllegalStateException("SHA-256 unavailable", error);
+    }
+  }
+
+  static boolean diagnosticsConsentForIdentity(Properties settings, String environmentApi) {
+    return diagnosticsConsent(settings)
+        && diagnosticsBinding(settings, environmentApi)
+            .equals(settings.getProperty("diagnosticsIdentity"));
+  }
+
   record AfkOptions(int idleMinutes, int intervalMinutes, int radius) {
     AfkOptions {
       if (idleMinutes < 1
@@ -146,6 +175,8 @@ final class ClientSettings {
     if (changedApi) {
       settings.remove("deviceToken");
       settings.remove("deviceId");
+      settings.remove("diagnosticsConsent");
+      settings.remove("diagnosticsIdentity");
     }
     settings.setProperty("apiUrl", normalizedApi);
     settings.setProperty("exportDirectory", normalizedDirectory.toString());

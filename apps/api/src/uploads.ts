@@ -7,6 +7,7 @@ import { requestBodyLimit, UPLOAD_INIT_BODY_BYTES } from './body-limits'
 import { database } from './database'
 import { parseMetadata } from './memory-metadata'
 import { addMemory, getDeviceFromToken } from './pairing'
+import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, storeMemoryFile } from './storage'
 import { accountStorageFits } from './storage-quota'
 import { MAX_UPLOAD_BYTES, readUploadChunk, UPLOAD_CHUNK_BYTES, validateUploadFile } from './upload-files'
@@ -41,7 +42,11 @@ database.exec(`CREATE TABLE IF NOT EXISTS mod_uploads (
 export const uploadRouter = new Hono<{ Variables: { device: Device } }>()
 uploadRouter.onError((error, context) => {
 	if (error instanceof HTTPException) return context.json({ error: error.message }, error.status)
-	console.error('[chunk-upload]', error)
+	recordApiFailure(context.req.raw, error)
+	logApiFailure(
+		'chunk_upload_failed',
+		context.res.headers.get('X-Minemories-Correlation') ?? requestCorrelation(context.req.raw)
+	)
 	return context.json({ error: 'upload_storage_unavailable' }, 503)
 })
 uploadRouter.use('*', async (context, next) => {
@@ -262,6 +267,6 @@ export async function cleanupUploads() {
 			if (!upload.completed && upload.storage_started) await discardMemoryUpload(`${upload.user_id}/${id}.glb`)
 			await rm(join(root, id), { force: true })
 			database.query('DELETE FROM mod_uploads WHERE id = ?').run(id)
-		}).catch(error => console.error('[upload-cleanup]', error))
+		}).catch(() => logApiFailure('upload_cleanup_failed'))
 	}
 }

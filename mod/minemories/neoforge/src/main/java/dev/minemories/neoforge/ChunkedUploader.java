@@ -22,6 +22,7 @@ import java.util.HexFormat;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.LongConsumer;
+import java.util.function.UnaryOperator;
 
 /** Sequential, resumable upload; only one 4 MiB chunk is retained at a time. */
 final class ChunkedUploader {
@@ -29,10 +30,19 @@ final class ChunkedUploader {
   static final int CHUNK_BYTES = 4 * 1024 * 1024;
   private final HttpClient http;
   private final long retryDelayMillis;
+  private final UnaryOperator<HttpRequest.Builder> diagnosticHeaders;
 
   ChunkedUploader(HttpClient http, long retryDelayMillis) {
+    this(http, retryDelayMillis, UnaryOperator.identity());
+  }
+
+  ChunkedUploader(
+      HttpClient http,
+      long retryDelayMillis,
+      UnaryOperator<HttpRequest.Builder> diagnosticHeaders) {
     this.http = http;
     this.retryDelayMillis = retryDelayMillis;
+    this.diagnosticHeaders = diagnosticHeaders;
   }
 
   void upload(String apiUrl, String token, Path file, JsonObject metadata, LongConsumer progress)
@@ -127,7 +137,15 @@ final class ChunkedUploader {
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
-        HttpResponse<String> response = http.send(request, ApiResponseBody.bounded());
+        HttpRequest current =
+            diagnosticHeaders
+                .apply(
+                    HttpRequest.newBuilder(
+                        request,
+                        (name, value) ->
+                            !name.toLowerCase(java.util.Locale.ROOT).startsWith("x-minemories-")))
+                .build();
+        HttpResponse<String> response = http.send(current, ApiResponseBody.bounded());
         int status = response.statusCode();
         if (status >= 200 && status < 300) {
           try {
@@ -231,5 +249,10 @@ final class ChunkedUploader {
       }
       return "Envoi refusé (HTTP " + status + "). Réessaie /minemories upload pour reprendre.";
     }
+  }
+
+  static boolean isAuthorizationFailure(IOException error) {
+    return error instanceof UploadException failure
+        && (failure.status == 401 || failure.status == 403);
   }
 }

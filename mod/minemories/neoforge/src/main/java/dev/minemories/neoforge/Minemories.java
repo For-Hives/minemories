@@ -567,6 +567,19 @@ public class Minemories {
 
   static int exportSelection() {
     captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
+    var diagnostics = PairingClient.beginCaptureDiagnostics();
+    try {
+      int result = exportSelection(diagnostics);
+      if (result == 1) diagnostics.captured(latestCapturePath());
+      else diagnostics.success();
+      return result;
+    } catch (RuntimeException error) {
+      diagnostics.failed(error);
+      throw error;
+    }
+  }
+
+  private static int exportSelection(DiagnosticsClient.Operation diagnostics) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null
         || selectionFirst == null
@@ -585,11 +598,24 @@ public class Minemories {
             Math.max(selectionFirst.getX(), selectionSecond.getX()),
             Math.max(selectionFirst.getY(), selectionSecond.getY()),
             Math.max(selectionFirst.getZ(), selectionSecond.getZ()));
-    return exportBox(min, max);
+    return exportBox(min, max, diagnostics);
   }
 
   static int export(int radius) {
     captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+    var diagnostics = PairingClient.beginCaptureDiagnostics();
+    try {
+      int result = export(radius, diagnostics);
+      if (result == 1) diagnostics.captured(latestCapturePath());
+      else diagnostics.success();
+      return result;
+    } catch (RuntimeException error) {
+      diagnostics.failed(error);
+      throw error;
+    }
+  }
+
+  private static int export(int radius, DiagnosticsClient.Operation diagnostics) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     BlockPos center = mc.player.blockPosition();
@@ -622,10 +648,12 @@ public class Minemories {
             bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
     return exportBox(
         new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
-        new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()));
+        new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()),
+        diagnostics);
   }
 
-  private static int exportBox(BlockPos min, BlockPos max) {
+  private static int exportBox(
+      BlockPos min, BlockPos max, DiagnosticsClient.Operation diagnostics) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     long sx = (long) max.getX() - min.getX() + 1,
@@ -782,6 +810,7 @@ public class Minemories {
           false);
     } catch (Exception e) {
       captureFailure = "Capture impossible : " + e.getMessage();
+      diagnostics.failed(e);
       mc.player.displayClientMessage(
           Component.literal("Minemories: export failed: " + e.getMessage()), false);
       LOGGER.error("Capture export failed", e);

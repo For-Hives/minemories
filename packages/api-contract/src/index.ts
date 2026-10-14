@@ -1,6 +1,8 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
 
+export { DIAGNOSTIC_BODY_BYTES, diagnosticSubmission, type ModDiagnostic } from './diagnostics'
+
 export const thumbnailDataUrl = z
 	.string()
 	.max(96_000)

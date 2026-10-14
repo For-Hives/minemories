@@ -45,6 +45,8 @@ Les captures AFK sont actives par défaut après **5 minutes d’inactivité**, 
 
 Chaque export conserve un GLB et ses métadonnées dans un dossier daté sous `~/export/history/` par défaut. `capture.glb` et `capture.json` restent des copies du dernier export. **Captures locales** permet de parcourir et d’envoyer les captures conservées ; prévoir de l’espace et des sauvegardes, aucune suppression locale automatique n’est effectuée. Voir [l’historique local](docs/features/local-capture-history.md). Les erreurs restent dans le log Minecraft et fermer le menu ramène à l’écran précédent.
 
+Dans **Mode avancé → Diagnostics**, une option désactivée par défaut permet d’aider au diagnostic des erreurs de capture/envoi. Elle exige l’appairage et un accord explicite ; changer de compte ou d’API retire cet accord. Les rapports techniques excluent messages libres, URL, jetons, chemins, coordonnées, graine, noms de monde/joueur et captures. Ils sont reliés au compte/appareil et consultables uniquement par l’opérateur de l’API. Voir [le consentement, les limites et le retrait](docs/features/consented-diagnostics.md).
+
 Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et `bun mod:dev`, règle l’API du mod sur `http://localhost:3001` dans le mode avancé, crée un monde de test, capture, crée le code dans le web, puis lie le mod et envoie le fichier. Le fichier `mod/minemories/run/config/minemories.properties` conserve le jeton local.
 
 ## Commandes

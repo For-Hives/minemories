@@ -56,6 +56,7 @@ class ClientSettingsTest {
   @Test
   void changingApiRemovesCredentialsButPreservesLocalAfk() {
     Properties settings = paired();
+    settings.setProperty("diagnosticsConsent", "true");
     assertTrue(
         ClientSettings.configure(
             settings,
@@ -65,6 +66,7 @@ class ClientSettingsTest {
             temporary));
     assertNull(settings.getProperty("deviceToken"));
     assertNull(settings.getProperty("deviceId"));
+    assertFalse(ClientSettings.diagnosticsConsent(settings));
     assertTrue(ClientSettings.afkSnapshots(settings));
     assertEquals("https://private.example", settings.getProperty("apiUrl"));
   }
@@ -72,6 +74,7 @@ class ClientSettingsTest {
   @Test
   void changingOnlyTheLocalFolderPreservesTheAccount() {
     Properties settings = paired();
+    settings.setProperty("diagnosticsConsent", "true");
     assertFalse(
         ClientSettings.configure(
             settings,
@@ -80,6 +83,7 @@ class ClientSettingsTest {
             "~/souvenirs",
             temporary));
     assertEquals("private-token", settings.getProperty("deviceToken"));
+    assertTrue(ClientSettings.diagnosticsConsent(settings));
     assertTrue(ClientSettings.afkSnapshots(settings));
     assertEquals(
         temporary.resolve("souvenirs"), ClientSettings.exportDirectory(settings, temporary));
@@ -154,5 +158,39 @@ class ClientSettingsTest {
     assertFalse(ClientSettings.fullHeightCapture(settings));
     settings.setProperty("captureFullHeight", "true");
     assertTrue(ClientSettings.fullHeightCapture(settings));
+  }
+
+  @Test
+  void diagnosticsRequireAnExplicitStoredTrueAndPersistAcrossRestart() throws IOException {
+    Properties settings = new Properties();
+    assertFalse(ClientSettings.diagnosticsConsent(settings));
+    for (String invalid : new String[] {"yes", "TRUE", "1", "false", ""}) {
+      settings.setProperty("diagnosticsConsent", invalid);
+      assertFalse(ClientSettings.diagnosticsConsent(settings));
+    }
+    settings.setProperty("diagnosticsConsent", "true");
+    Path path = temporary.resolve("config/minemories.properties");
+    ClientSettings.save(path, settings);
+    assertTrue(ClientSettings.diagnosticsConsent(ClientSettings.read(path)));
+    settings.setProperty("diagnosticsConsent", "false");
+    ClientSettings.save(path, settings);
+    assertFalse(ClientSettings.diagnosticsConsent(ClientSettings.read(path)));
+  }
+
+  @Test
+  void diagnosticsConsentIsBoundToApiDeviceAndTokenWithoutPersistingASecondToken() {
+    Properties settings = paired();
+    settings.setProperty("diagnosticsConsent", "true");
+    assertFalse(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    String binding = ClientSettings.diagnosticsBinding(settings, null);
+    assertTrue(binding.matches("[0-9a-f]{64}"));
+    settings.setProperty("diagnosticsIdentity", binding);
+    assertTrue(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    for (String field : new String[] {"apiUrl", "deviceId", "deviceToken"}) {
+      Properties changed = new Properties();
+      changed.putAll(settings);
+      changed.setProperty(field, field.equals("apiUrl") ? "https://other.example" : "changed");
+      assertFalse(ClientSettings.diagnosticsConsentForIdentity(changed, null));
+    }
   }
 }
