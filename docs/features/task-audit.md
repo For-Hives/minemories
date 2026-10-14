@@ -34,6 +34,13 @@ Cet audit retire uniquement les critères exercés ; les critères restants rest
 
 ## Travaux encore ouverts
 
+Les entités, lits et coffres standards sont maintenant capturés avec leur pose
+et leurs vraies textures. Le JAR beta a été chargé seul dans Minecraft
+1.21.1 / NeoForge 21.1.248 : animaux, mobs équipés, joueur, lit et coffres
+simple/double fermés puis ouverts ; capture d'un animal seul et AFK en menu
+pause. Les rendus Blender et les contrôles API/viewer passent. Les renderers
+particuliers des modpacks restent à exercer. Voir [la validation](frozen-entities.md).
+
 Le writer core `SpoolingGlbScene` prépare la mémoire bornée : géométrie/textures/JSON sur disque, cache de fichiers ouverts borné et publication atomique, avec refus des dépassements, interruptions et fichiers remplacés. Les tests vérifient l’équivalence binaire avec `GlbScene`, y compris les normales extrêmes ; un vrai processus à heap limitée à 32 Mio produit un GLB de 91 201 408 octets. Les fixtures legacy/spoolées sont identiques et leurs rendus Blender ont été inspectés. Le mod utilise encore son parcours synchrone : lecture et copie progressive, worker/queue, suspension, débit réseau, mesures en jeu et nettoyage après crash restent suivis, sans déclarer la capture AFK progressive terminée.
 
 Les diagnostics privés consentis sont implémentés : consentement explicite lié à l’API/appareil/jeton, permis révocable, traces et étapes bornées, corrélation capture/upload, limites persistantes, rétention et consultation/groupement CLI en lecture seule. Les tests HTTP/Java couvrent les refus, changements d’identité, retries et réponses tardives ; deux lancements Minecraft isolés avec API loopback réelle ont exercé appairage, NON/OUI, upload, panne, persistance, retrait/effacement et déconnexion. Les rapports privés ont été contrôlés. Leur déploiement et validation de production restent suivis ; voir [le parcours et les limites](consented-diagnostics.md).

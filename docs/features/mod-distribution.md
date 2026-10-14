@@ -39,7 +39,7 @@ Il génère dans `apps/web/public/downloads/` (gitignored) :
 
 Ces fichiers restent les artefacts de packaging CI du mod ; ils ne sont plus un prérequis du build web. La page `/installation` propose le JAR directement depuis GitHub Releases. Aucun ZIP n’est nécessaire : le joueur dépose le JAR dans `mods` sans extraction ni exécution par double-clic. Le JAR reste expérimental.
 
-Le build web Railpack inclut désormais Java 21 et Node 24 pour construire ce même artefact ; il nécessite donc l’accès aux dépôts Gradle/Maven/Minecraft. Un build web lancé isolément exige d’abord `bun mod:build` et `bun run package:mod` pour inclure le téléchargement. En cas de JARs anciens multiples, nettoyer `neoforge/build/libs` avant reconstruction.
+Le déploiement web utilise `railpack.web.json` sans Java et ne reconstruit pas le mod. Le build aggregate et la CI produisent les artefacts séparément. En cas de JARs anciens multiples, nettoyer `neoforge/build/libs` avant reconstruction.
 
 ## CI et publications
 
