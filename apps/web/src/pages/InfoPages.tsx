@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
-export { InstallationPage } from './InstallationPage'
-
 export const infoLinks = [
 	{ to: '/concept', label: 'Le concept' },
 	{ to: '/fonctionnement', label: 'Comment ça marche' },
@@ -123,14 +121,14 @@ export function HowItWorksPage() {
 				ancien souvenir. Garde tes propres sauvegardes : l’historique utilise de la place sur ton ordinateur.
 			</p>
 			<p>
-				Sur le site, utilise « Open a local GLB » et choisis ce fichier. Aucun compte n’est nécessaire pour l’ouvrir
-				localement. Cette ouverture ne l’ajoute pas à la galerie en ligne.
+				Sur le site, utilise « Ouvrir un GLB local / Open a local GLB » et choisis ce fichier. Aucun compte n’est
+				nécessaire pour l’ouvrir localement. Cette ouverture ne l’ajoute pas à la galerie en ligne.
 			</p>
 			<h2>4. Envoyer dans ta galerie, si tu le souhaites</h2>
 			<ol>
 				<li>
 					<Link to="/register">Crée ton compte</Link> ou <Link to="/login">connecte-toi</Link>, puis ouvre{' '}
-					<Link to="/gallery">My gallery</Link>.
+					<Link to="/gallery">Ma galerie / My gallery</Link>.
 				</li>
 				<li>Génère un code d’appairage dans la galerie. L’appairage relie ce Minecraft à ton compte Minemories.</li>
 				<li>

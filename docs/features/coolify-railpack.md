@@ -28,3 +28,5 @@ La page d’installation interroge l’API publique GitHub Releases de `For-Hive
 ## Déploiement
 
 Dans chaque application, ajouter `RAILPACK_CONFIG_FILE` comme variable de build pour sélectionner le fichier correspondant. Ne pas y mettre de secrets dans les fichiers Railpack. Déployer d’abord l’API, puis le front ; les origines `WEB_ORIGIN`, `BETTER_AUTH_URL` et `VITE_API_URL` doivent correspondre aux domaines HTTPS publics configurés dans Coolify.
+
+Le front pré-rend ses pages publiques sans serveur Node à l’exécution. Configurer `VITE_SITE_URL` pour le domaine public, et appliquer le routage de `deploy/nginx.web.conf` (ou ses locations dans le Nginx existant) : pages publiques via `$uri/index.html`, routes privées via `/app.html` avec `X-Robots-Tag: noindex,nofollow`, URL inconnues en 404. `VITE_INDEXABLE=false` permet de désactiver l’indexation sur une preview. Voir [les fondations web](web-foundations.md).

@@ -1,8 +1,11 @@
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { App } from './App'
 import './theme.css'
+import './pages/installation.css'
 
 const container = document.getElementById('app')
 if (!container) throw new Error('Application root not found.')
 
-createRoot(container).render(<App />)
+const initialPath = window.location.pathname.replace(/\/$/, '') || '/'
+if (container.dataset.prerendered === 'true' && container.dataset.route === initialPath) hydrateRoot(container, <App />)
+else createRoot(container).render(<App />)

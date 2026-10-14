@@ -622,3 +622,22 @@
 		order: 2;
 	}
 }
+.install-panel,
+.install-step-nav,
+.install-screenshot-placeholder {
+	min-width: 0;
+}
+.install-step-nav button > span:last-child {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+	.install-workspace {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+@media (max-width: 580px) {
+	.install-step-nav {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}

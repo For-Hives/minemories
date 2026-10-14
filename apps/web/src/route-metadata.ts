@@ -1,0 +1,128 @@
+import { articles } from './content/site-content.ts'
+export interface PageMetadata {
+	path: string
+	title: string
+	description: string
+	indexable: boolean
+	language: 'fr'
+	articleDate?: string
+}
+export const publicMetadata: PageMetadata[] = [
+	{
+		path: '/',
+		title: 'Minemories — Les mondes construits ensemble',
+		description:
+			'Capture une zone Minecraft en souvenir 3D et revisite-la dans ton navigateur. Installation, galerie privée et partage choisi.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/concept',
+		title: 'Le concept — Minemories',
+		description:
+			'Garder les lieux construits ensemble : un souvenir 3D à revisiter, en complément de ta sauvegarde Minecraft.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/fonctionnement',
+		title: 'Comment ça marche — Minemories',
+		description: 'Du monde Minecraft au souvenir 3D : capture locale, appairage, galerie privée et partage.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/installation',
+		title: 'Installer le mod — Minemories',
+		description:
+			'Guide pas à pas pour Minecraft Java 1.21.1 et NeoForge 21.1.248. Télécharge le JAR, installe-le et crée ton premier souvenir.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/faq',
+		title: 'Questions fréquentes — Minemories',
+		description:
+			'Compatibilité du mod, fichiers GLB, captures AFK, confidentialité et partage : les réponses pour commencer.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/blog',
+		title: 'Le journal des souvenirs — Minemories',
+		description: 'Des guides et des repères pour garder et revisiter tes souvenirs Minecraft.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/pricing',
+		title: 'Tarifs et version expérimentale — Minemories',
+		description:
+			'Les fonctions disponibles dans la version expérimentale Minemories. Aucun abonnement commercial annoncé actuellement.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/privacy',
+		title: 'Confidentialité — Minemories',
+		description: 'Ouverture locale, compte, galerie privée, liens de partage et conservation des captures.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/terms',
+		title: 'Conditions d’utilisation — Minemories',
+		description: 'Repères pour utiliser cette version expérimentale, capturer et partager en respectant les autres.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/legal',
+		title: 'À propos du service — Minemories',
+		description: 'Projet indépendant, dépôt public et état des informations juridiques à compléter.',
+		indexable: true,
+		language: 'fr',
+	},
+	...articles.map(article => ({
+		path: `/blog/${article.slug}`,
+		title: `${article.title.fr} — Minemories`,
+		description: article.summary.fr,
+		indexable: true,
+		language: 'fr' as const,
+		articleDate: article.published,
+	})),
+]
+const trailingSlash = /\/$/
+export function metadataFor(pathname: string): PageMetadata {
+	const path = pathname.replace(trailingSlash, '') || '/'
+	return (
+		publicMetadata.find(page => page.path === path) ?? {
+			path,
+			title: 'Minemories — Espace personnel',
+			description: 'Ton espace Minemories.',
+			indexable: false,
+			language: 'fr',
+		}
+	)
+}
+export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.xenos.lightin.io'
+
+export function structuredDataFor(page: PageMetadata) {
+	const canonical = new URL(page.path, siteOrigin).href
+	if (page.articleDate)
+		return {
+			'@context': 'https://schema.org',
+			'@type': 'Article',
+			headline: page.title,
+			description: page.description,
+			datePublished: page.articleDate,
+			mainEntityOfPage: canonical,
+		}
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'WebPage',
+		name: page.title,
+		description: page.description,
+		url: canonical,
+	}
+}

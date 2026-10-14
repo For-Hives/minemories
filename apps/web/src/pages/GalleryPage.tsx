@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { buttonDark, buttonLime, buttonOutline, Eyebrow, useAppContext } from '../App'
 import { apiClient } from '../api-client'
+import { useAppContext } from '../app-context'
+import { LoadingSkeleton } from '../components/Loading'
+import { buttonDark, buttonLime, buttonOutline, Eyebrow } from '../components/ui'
+import { T, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
@@ -16,34 +19,45 @@ type MemoryMetadata = Memories[number]['metadata']
 type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
 function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
+	const { t } = useI18n()
+
 	if (!storage) {
 		return (
 			<p aria-live="polite">
 				{failed
-					? 'Storage information is unavailable. Your captures remain accessible.'
-					: 'Checking available storage…'}
+					? t('Storage information is unavailable. Your captures remain accessible.')
+					: t('Checking available storage…')}
 			</p>
 		)
 	}
 	return (
-		<section aria-label="Gallery storage" aria-live="polite" className="my-4 text-xs">
+		<section aria-label={t('Gallery storage')} aria-live="polite" className="my-4 text-xs">
 			<p>
-				{formatFileSize(storage.availableBytes)} available of {formatFileSize(storage.limitBytes)} ·{' '}
-				{formatFileSize(storage.usedBytes)} used or reserved.
+				{formatFileSize(storage.availableBytes)} <T message={'available of'} /> {formatFileSize(storage.limitBytes)} ·{' '}
+				{formatFileSize(storage.usedBytes)} <T message={'used or reserved.'} />{' '}
 			</p>
 			{storage.availableBytes === 0 && (
-				<p>Your gallery has no space available. Refused uploads keep their local GLB file on your computer.</p>
+				<p>
+					<T
+						message={'Your gallery has no space available. Refused uploads keep their local GLB file on your computer.'}
+					/>
+				</p>
 			)}
-			<p>To free space, use Delete forever in Trash. Moving a capture to Trash keeps its space used.</p>
+			<p>
+				<T message={'To free space, use Delete forever in Trash. Moving a capture to Trash keeps its space used.'} />
+			</p>
 			{storage.pendingDeletionBytes > 0 && (
 				<p>
-					Deletion is still in progress for {formatFileSize(storage.pendingDeletionBytes)}. That space becomes available
-					when deletion finishes.
+					{' '}
+					<T message={'Deletion is still in progress for'} /> {formatFileSize(storage.pendingDeletionBytes)}
+					<T message={'. That space becomes available when deletion finishes.'} />{' '}
 				</p>
 			)}
 			{storage.reservedBytes > 0 && (
 				<p>
-					Uploads are reserving {formatFileSize(storage.reservedBytes)} until they finish or their cleanup completes.
+					{' '}
+					<T message={'Uploads are reserving'} /> {formatFileSize(storage.reservedBytes)}{' '}
+					<T message={'until they finish or their cleanup completes.'} />{' '}
 				</p>
 			)}
 		</section>
@@ -77,6 +91,8 @@ function useStorageStatus() {
 }
 
 function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
+	const { t } = useI18n()
+
 	return (
 		<>
 			{metadata.biome && <p className="mb-0 mt-1 text-[9px] text-[#b4c1ad]">{metadata.biome.replaceAll('_', ' ')}</p>}
@@ -85,12 +101,16 @@ function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
 					{metadata.dimension}
 				</p>
 			)}
-			{metadata.seed && <p className="mb-0 mt-1 break-all text-[9px] text-[#b4c1ad]">Seed {metadata.seed}</p>}
+			{metadata.seed && (
+				<p className="mb-0 mt-1 break-all text-[9px] text-[#b4c1ad]">
+					<T message={'Seed'} /> {metadata.seed}
+				</p>
+			)}
 			{metadata.dayTime !== null || metadata.raining || metadata.thundering ? (
 				<p className="mb-0 mt-1 text-[9px] text-[#b4c1ad]">
 					{metadata.dayTime !== null && `World time ${metadata.dayTime}`}
-					{metadata.raining && ' · Rain'}
-					{metadata.thundering && ' · Thunder'}
+					{metadata.raining && t(' · Rain')}
+					{metadata.thundering && t(' · Thunder')}
 				</p>
 			) : null}
 		</>
@@ -135,6 +155,8 @@ const tilePalettes: TilePalette[] = [
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: existing gallery coordinates polling, navigation and two UI states; separate component extraction needs interaction coverage.
 export function GalleryPage() {
+	const { t } = useI18n()
+
 	const { session, notify, setViewerFile } = useAppContext()
 	const navigate = useNavigate()
 	const [memories, setMemories] = useState<Memories>([])
@@ -274,14 +296,19 @@ export function GalleryPage() {
 		<div className="mx-auto min-h-[670px] w-[min(100%-88px,1180px)] px-0 py-[62px] pb-[79px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-10 max-phone:pb-[53px]">
 			<div className="flex items-end justify-between gap-5 max-phone:flex-col max-phone:items-start">
 				<div>
-					<Eyebrow>THE SERVER ALBUM</Eyebrow>
+					<Eyebrow>
+						<T message={'THE SERVER ALBUM'} />
+					</Eyebrow>
 					<h1 className="mb-[9px] mt-[13px] font-sans text-[clamp(36px,4vw,53px)] font-semibold leading-[1.1] tracking-[-2.8px] max-phone:text-[36px] max-phone:tracking-[-2px]">
-						{session?.user.name.split(' ')[0] ?? 'Your'} gallery.
+						{session?.user.name.split(' ')[0] ?? t('Your')} <T message={'gallery.'} />{' '}
 					</h1>
-					<p className="m-0 text-[13px] text-[#b4c1ad]">Every capture keeps a place here, ready to revisit.</p>
+					<p className="m-0 text-[13px] text-[#b4c1ad]">
+						<T message={'Every capture keeps a place here, ready to revisit.'} />
+					</p>
 				</div>
 				<Link className={buttonDark} to="/viewer">
-					Open a local GLB <span>↗</span>
+					{' '}
+					<T message={'Open a local GLB'} /> <span>↗</span>
 				</Link>
 			</div>
 
@@ -296,50 +323,56 @@ export function GalleryPage() {
 					{pairedFresh ? '✓' : '⌘'}
 				</div>
 				<div className="flex-1">
-					<Eyebrow>{pairedFresh ? 'LINKED' : 'CAPTURE FROM THE SERVER'}</Eyebrow>
+					<Eyebrow>{pairedFresh ? t('LINKED') : t('CAPTURE FROM THE SERVER')}</Eyebrow>
 					<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
-						{pairedFresh ? 'Your mod is paired.' : 'Link Minecraft to your gallery.'}
+						{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}
 					</h2>
 					<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
-						{pairingMessage(pairedFresh, pairStatus)}
+						{t(pairingMessage(pairedFresh, pairStatus))}
 					</p>
 					{pairStatus === 'pending' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
 							<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
-							Waiting for Minecraft…
+							<T message={'Waiting for Minecraft…'} />{' '}
 						</div>
 					)}
 					{pairStatus === 'expired' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-							This code expired. Generate a new one.
+							{' '}
+							<T message={'This code expired. Generate a new one.'} />{' '}
 						</div>
 					)}
 					{pairStatus === 'error' && (
 						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-							Verification failed. Check that the API is running.
+							{' '}
+							<T message={'Verification failed. Check that the API is running.'} />{' '}
 						</div>
 					)}
 					{pairStatus !== 'pending' && (
-						<p className="mt-[10px] text-[10px] text-[#8e978a]">{pairingHint(pairedFresh)}</p>
+						<p className="mt-[10px] text-[10px] text-[#8e978a]">{t(pairingHint(pairedFresh))}</p>
 					)}
 				</div>
 				{pairStatus === 'pending' && (
 					<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
-						<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">CODE FOR THE GAME</span>
+						<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">
+							<T message={'CODE FOR THE GAME'} />
+						</span>
 						<button
 							type="button"
 							onClick={copyCode}
-							aria-label="Copy the pairing code"
+							aria-label={t('Copy the pairing code')}
 							className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#e6eee1] max-phone:text-[26px]"
 						>
 							{pairCode.slice(0, 3)} {pairCode.slice(3)}
 						</button>
-						<small className="text-[9px] text-[#b4c1ad]">Expires at {pairExpires}</small>
+						<small className="text-[9px] text-[#b4c1ad]">
+							<T message={'Expires at'} /> {pairExpires}
+						</small>
 					</div>
 				)}
 				{pairedFresh && (
 					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
-						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> Linked client
+						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> <T message={'Linked client'} />{' '}
 					</span>
 				)}
 				{pairStatus !== 'pending' && (
@@ -349,7 +382,7 @@ export function GalleryPage() {
 						onClick={() => void createPairing()}
 						disabled={pairBusy}
 					>
-						{pairingButtonLabel(pairBusy, pairedFresh)} <span>↗</span>
+						{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
 					</button>
 				)}
 			</section>
@@ -357,16 +390,21 @@ export function GalleryPage() {
 			<section>
 				<div className="mb-[17px] flex items-end justify-between">
 					<div>
-						<Eyebrow>YOUR CAPTURES</Eyebrow>
-						<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">To revisit</h2>
+						<Eyebrow>
+							<T message={'YOUR CAPTURES'} />
+						</Eyebrow>
+						<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">
+							<T message={'To revisit'} />
+						</h2>
 					</div>
 					<button
 						className="cursor-pointer border-0 bg-transparent px-[9px] py-[7px] text-[11px] text-[#b4c1ad] hover:text-[#e6eee1]"
 						type="button"
 						onClick={() => void refreshAll()}
-						title="Refresh the gallery"
+						title={t('Refresh the gallery')}
 					>
-						↻ Refresh
+						{' '}
+						<T message={'↻ Refresh'} />{' '}
 					</button>
 				</div>
 				{loadError && (
@@ -377,12 +415,7 @@ export function GalleryPage() {
 						{loadError}
 					</div>
 				)}
-				{loading && (
-					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#354238] bg-[#1c2720] p-[25px] text-center text-[#b4c1ad]">
-						<span className="h-[21px] w-[21px] animate-loading-orbit rounded-full border-2 border-[#354238] border-t-[#75885e]" />
-						<p className="mb-0 mt-[6px] text-xs">Gathering your memories…</p>
-					</div>
-				)}
+				{loading && <LoadingSkeleton kind="gallery" label="Gathering your memories…" />}
 				{!loading && memories.length > 0 && (
 					<div className="space-y-4">
 						{groupCaptures(memories).map(group => {
@@ -446,10 +479,12 @@ export function GalleryPage() {
 							▧
 						</span>
 						<h3 className="mb-0 mt-[14px] font-sans text-[17px] font-bold text-[#e6eee1]">
-							The first memory is still to come.
+							{' '}
+							<T message={'The first memory is still to come.'} />{' '}
 						</h3>
 						<p className="mb-0 mt-[6px] text-xs">
-							Link your mod to send a capture, or open a GLB file from your device.
+							{' '}
+							<T message={'Link your mod to send a capture, or open a GLB file from your device.'} />{' '}
 						</p>
 						<div className="mt-[22px] flex flex-wrap gap-[10px]">
 							<button
@@ -457,25 +492,31 @@ export function GalleryPage() {
 								type="button"
 								onClick={() => document.getElementById('global-file-input')?.click()}
 							>
-								Choose a local file
+								{' '}
+								<T message={'Choose a local file'} />{' '}
 							</button>
 							<button
 								className={`${buttonDark} min-h-[40px] text-[10px]`}
 								type="button"
 								onClick={() => void createPairing()}
 							>
-								{pairedFresh ? 'New code' : 'Link my server'}
+								{pairedFresh ? t('New code') : t('Link my server')}
 							</button>
 						</div>
 					</div>
 				)}
 				{!loading && trash.length > 0 && (
-					<section className="mt-12" aria-label="Trash">
+					<section className="mt-12" aria-label={t('Trash')}>
 						<div className="mb-[17px]">
-							<Eyebrow>RECYCLE BIN</Eyebrow>
-							<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">Trash · {trash.length}</h2>
+							<Eyebrow>
+								<T message={'RECYCLE BIN'} />
+							</Eyebrow>
+							<h2 className="mb-0 mt-[6px] font-sans text-2xl font-bold tracking-[-1px]">
+								<T message={'Trash ·'} /> {trash.length}
+							</h2>
 							<p className="mb-0 mt-[6px] text-[11px] text-[#8e978a]">
-								Snapshots disappear forever 30 days after deletion.
+								{' '}
+								<T message={'Snapshots disappear forever 30 days after deletion.'} />{' '}
 							</p>
 						</div>
 						<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
@@ -614,6 +655,8 @@ function StackBundle({
 	onChanged: () => void
 	onTrashed: (id: string) => void
 }) {
+	const { t } = useI18n()
+
 	const [custom, setCustom] = useState(() => getStackName(groupKey, stack.key))
 	const [editing, setEditing] = useState(false)
 	const [draft, setDraft] = useState('')
@@ -659,8 +702,8 @@ function StackBundle({
 							<input
 								value={draft}
 								maxLength={80}
-								placeholder="Name this area…"
-								aria-label="Stack name"
+								placeholder={t('Name this area…')}
+								aria-label={t('Stack name')}
 								onChange={event => setDraft(event.currentTarget.value)}
 								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#1c2720] px-2 text-xs text-ink outline-0"
 							/>
@@ -669,12 +712,13 @@ function StackBundle({
 								onClick={saveStackName}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
 							>
-								Save
+								{' '}
+								<T message={'Save'} />{' '}
 							</button>
 							<button
 								type="button"
 								onClick={() => setEditing(false)}
-								aria-label="Cancel"
+								aria-label={t('Cancel')}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border-0 bg-transparent px-2 text-[11px] text-[#b4c1ad]"
 							>
 								✕
@@ -687,7 +731,8 @@ function StackBundle({
 							</p>
 							{stack.x !== null && stack.z !== null && (
 								<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">
-									Near {Math.floor(stack.x)}, {Math.floor(stack.y ?? 0)}, {Math.floor(stack.z)}
+									{' '}
+									<T message={'Near'} /> {Math.floor(stack.x)}, {Math.floor(stack.y ?? 0)}, {Math.floor(stack.z)}
 								</p>
 							)}
 						</>
@@ -697,8 +742,8 @@ function StackBundle({
 					<button
 						type="button"
 						onClick={startEditing}
-						title="Rename this area"
-						aria-label="Rename this area"
+						title={t('Rename this area')}
+						aria-label={t('Rename this area')}
 						className="h-8 w-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent text-xs text-[#b4c1ad]"
 					>
 						✎
@@ -727,6 +772,8 @@ function SnapshotCard({
 	onChanged: () => void
 	onTrashed: (id: string) => void
 }) {
+	const { t } = useI18n()
+
 	const { notify } = useAppContext()
 	const [editing, setEditing] = useState(false)
 	const [draft, setDraft] = useState(memory.name)
@@ -780,7 +827,7 @@ function SnapshotCard({
 							<input
 								value={draft}
 								maxLength={80}
-								aria-label="Snapshot name"
+								aria-label={t('Snapshot name')}
 								onChange={event => setDraft(event.currentTarget.value)}
 								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#10150f] px-2 text-xs text-ink outline-0"
 							/>
@@ -790,7 +837,7 @@ function SnapshotCard({
 								disabled={saving}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] disabled:opacity-60"
 							>
-								{saving ? '…' : 'Save'}
+								{saving ? '…' : t('Save')}
 							</button>
 							<button
 								type="button"
@@ -798,7 +845,7 @@ function SnapshotCard({
 									setEditing(false)
 									setDraft(memory.name)
 								}}
-								aria-label="Cancel"
+								aria-label={t('Cancel')}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border-0 bg-transparent px-1 text-[11px] text-[#b4c1ad]"
 							>
 								✕
@@ -812,7 +859,7 @@ function SnapshotCard({
 							<button
 								type="button"
 								onClick={startEditing}
-								title="Rename this snapshot"
+								title={t('Rename this snapshot')}
 								aria-label={`Rename ${memory.name}`}
 								className="h-7 w-7 flex-none cursor-pointer rounded-[4px] border border-transparent bg-transparent text-[11px] text-[#8e978a] hover:border-[#354238] hover:text-[#b4c1ad]"
 							>
@@ -837,21 +884,22 @@ function SnapshotCard({
 						disabled={opening}
 						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] hover:bg-[#242e26] disabled:opacity-60"
 					>
-						{opening ? '…' : '↗ Revisit'}
+						{opening ? '…' : t('↗ Revisit')}
 					</button>
 					<button
 						type="button"
 						onClick={() => setShareOpen(open => !open)}
 						aria-expanded={shareOpen}
-						title="Share this snapshot"
+						title={t('Share this snapshot')}
 						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:border-[#354238] hover:text-[#b4c1ad]"
 					>
-						🔗 Share
+						{' '}
+						<T message={'🔗 Share'} />{' '}
 					</button>
 					<button
 						type="button"
 						onClick={() => onTrashed(memory.id)}
-						title="Move to trash"
+						title={t('Move to trash')}
 						aria-label={`Move ${memory.name} to trash`}
 						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:border-[#5a3535] hover:text-[#e8a0a0]"
 					>
@@ -865,6 +913,8 @@ function SnapshotCard({
 }
 
 function SharePanel({ memoryId }: { memoryId: string }) {
+	const { t } = useI18n()
+
 	const { notify } = useAppContext()
 	const [status, setStatus] = useState<'checking' | 'off' | 'on'>('checking')
 	const [url, setUrl] = useState('')
@@ -922,17 +972,23 @@ function SharePanel({ memoryId }: { memoryId: string }) {
 
 	return (
 		<div className="mt-3 rounded-[4px] border border-[#2a332d] bg-[#10150f] p-2" aria-live="polite">
-			{status === 'checking' && <p className="m-0 text-[10px] text-[#8e978a]">Checking the link…</p>}
+			{status === 'checking' && (
+				<p className="m-0 text-[10px] text-[#8e978a]">
+					<T message={'Checking the link…'} />
+				</p>
+			)}
 			{status === 'off' && (
 				<>
-					<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">Friends open the world without an account.</p>
+					<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
+						<T message={'Friends open the world without an account.'} />
+					</p>
 					<button
 						type="button"
 						onClick={() => void create()}
 						disabled={busy}
 						className="mt-2 inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] disabled:opacity-60"
 					>
-						{busy ? '…' : 'Create a link'}
+						{busy ? '…' : t('Create a link')}
 					</button>
 				</>
 			)}
@@ -943,7 +999,7 @@ function SharePanel({ memoryId }: { memoryId: string }) {
 							<input
 								value={url}
 								readOnly
-								aria-label="Share link"
+								aria-label={t('Share link')}
 								onFocus={event => event.currentTarget.select()}
 								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#1c2720] px-2 font-mono text-[10px] text-ink outline-0"
 							/>
@@ -952,21 +1008,25 @@ function SharePanel({ memoryId }: { memoryId: string }) {
 								onClick={() => void copy()}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
 							>
-								Copy
+								{' '}
+								<T message={'Copy'} />{' '}
 							</button>
 						</span>
 					) : (
-						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">A link is active for this snapshot.</p>
+						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
+							<T message={'A link is active for this snapshot.'} />
+						</p>
 					)}
 					<span className="mt-2 flex items-center gap-2">
 						<button
 							type="button"
 							onClick={() => void create()}
 							disabled={busy}
-							title="Replace the active link with a new one"
+							title={t('Replace the active link with a new one')}
 							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#b4c1ad] disabled:opacity-60"
 						>
-							New link
+							{' '}
+							<T message={'New link'} />{' '}
 						</button>
 						<button
 							type="button"
@@ -974,7 +1034,8 @@ function SharePanel({ memoryId }: { memoryId: string }) {
 							disabled={busy}
 							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#e8a0a0] disabled:opacity-60"
 						>
-							Stop sharing
+							{' '}
+							<T message={'Stop sharing'} />{' '}
 						</button>
 					</span>
 				</>
@@ -1013,7 +1074,8 @@ function TrashCard({
 					{item.name}
 				</h3>
 				<p className="mb-0 mt-[6px] text-[9px] text-[#8e8585]">
-					Deleted {formatRelativeDate(item.deletedAt)}
+					{' '}
+					<T message={'Deleted'} /> {formatRelativeDate(item.deletedAt)}
 					{remaining !== null ? ` · gone in ${remaining}d` : ''}
 				</p>
 				<div className="mt-3 flex items-center gap-2">
@@ -1022,14 +1084,16 @@ function TrashCard({
 						onClick={onRestore}
 						className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
 					>
-						↩ Restore
+						{' '}
+						<T message={'↩ Restore'} />{' '}
 					</button>
 					<button
 						type="button"
 						onClick={onDelete}
 						className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e8585] hover:text-[#e8a0a0]"
 					>
-						Delete forever
+						{' '}
+						<T message={'Delete forever'} />{' '}
 					</button>
 				</div>
 			</div>

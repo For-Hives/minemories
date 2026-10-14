@@ -10,7 +10,7 @@ export interface GuideState {
 }
 
 export const guideStorageKey = 'minemories-installation-v1'
-const defaults: GuideState = {
+export const defaults: GuideState = {
 	system: 'windows',
 	launcher: 'manuel',
 	name: '',

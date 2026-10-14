@@ -2,7 +2,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation, InstallationPage } from './InfoPages'
+import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
+import { InstallationPage } from './InstallationPage'
 
 beforeEach(() => vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false })))
 afterEach(() => {

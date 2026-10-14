@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { act, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { I18nProvider } from '../i18n/I18n'
 import { UnsupportedGlbError } from '../lib/glb'
 import { AuthPage } from './AuthPage'
 import { GalleryPage } from './GalleryPage'
@@ -34,7 +35,8 @@ const mocks = vi.hoisted(() => ({
 	resetView: vi.fn(),
 	setCaptureContext: vi.fn(),
 }))
-vi.mock('../App', () => ({
+vi.mock('../app-context', () => ({ useAppContext: () => mocks.context }))
+vi.mock('../components/ui', () => ({
 	buttonDark: '',
 	buttonLime: '',
 	buttonOutline: '',
@@ -404,4 +406,23 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 		finish?.()
 	})
 	expect(screen.queryByRole('status')).toBeNull()
+})
+
+test('French translation does not change pairing state identifiers or hide the pending code', async () => {
+	localStorage.clear()
+	mocks.check.mockResolvedValue({ status: 'pending' })
+	const view = mount(
+		<I18nProvider initialLocale="fr">
+			<GalleryPage />
+		</I18nProvider>
+	)
+	await act(async () => {})
+	const button = screen.getAllByRole('button', { name: 'Relier mon Minecraft' })[0]
+	if (!button) throw new Error('Pairing action missing')
+	fireEvent.click(button)
+	await act(async () => {})
+	expect(screen.getByRole('button', { name: 'Copier le code d’appairage' }).textContent).toBe('123 456')
+	expect(screen.getByText('En attente de Minecraft…')).toBeTruthy()
+	view.unmount()
+	localStorage.clear()
 })
