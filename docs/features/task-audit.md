@@ -70,3 +70,12 @@ arrêt API après trois morceaux, nouveaux processus API/Minecraft, reprise à 1
 Les allocations JFR restent par morceau ; le dépassement et le quota sont refusés.
 Voir [les preuves, le fixture et leur portée](native-upload-resume-validation.md).
 Les validations sur les profils/déploiements de production restent dans #83.
+
+## Suggestions de zones fréquentées
+
+L’issue #72 ajoute un score de temps actif local, agrégé en cases de 64 × 64 blocs,
+avec cinq propositions dans M et `/minemories suggestions`. L’historique borné est
+séparé par monde/dimension/joueur ; consulter la liste ne change ni sélection ni
+capture/envoi. Les tests couvrent notamment la cadence réelle des ticks, et le
+JAR est exercé en jeu sur deux séjours, pause, chunk absent, dimension, redémarrage,
+autre monde et autre joueur. Voir [le fonctionnement et les preuves](visited-zones.md).
