@@ -10,6 +10,10 @@ La cible reste Minecraft Java 1.21.1 avec NeoForge 21.1.248. Aucun support Fabri
 
 Le bouton « API Minemories » remplit l’adresse officielle, mais elle ne change qu’après « Enregistrer ». Les modifications non enregistrées sont abandonnées en quittant le mode avancé. Changer d’API retire le jeton et l’identifiant du compte, puis nécessite un nouveau code provenant de la galerie de cette API. Ne jamais partager `config/minemories.properties`.
 
+**Zones suggérées**, dans le mode simple ou via `/minemories suggestions`, classe
+les zones de 64 × 64 blocs par temps actif local. La liste reste séparée de la
+sélection et des envois ; voir [le score et ses limites](visited-zones.md).
+
 Sur une nouvelle installation, l’AFK est actif : 5 minutes d’inactivité, une capture au plus toutes les 4 heures, rayon 32 blocs. Une désactivation explicite existante est conservée. Le mode simple permet de l’activer/désactiver. Le sous-écran avancé « Réglages AFK » règle l’inactivité (1–1440 min), l’intervalle (1–10080 min) et le rayon (2–128 blocs), persistés dans les propriétés. Les captures restent locales sans compte, puis sont envoyées à la galerie du compte lié. Le contrôle utilise le temps réel depuis un événement de rendu NeoForge, qui continue en pause et en arrière-plan ; aucun menu n’est bloquant. Les touches, clics et mouvements du joueur réinitialisent l’inactivité. Les captures AFK sont préparées progressivement entre les frames, puis écrites sur worker et envoyées à débit limité ; voir [le parcours, ses limites et les mesures](spooling-glb.md). Le retour du joueur suspend la lecture ; les changements de contexte annulent une capture incomplète.
 
 ## Configuration locale
