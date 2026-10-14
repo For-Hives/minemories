@@ -29,11 +29,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.commands.Commands;
@@ -44,6 +42,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -672,11 +671,7 @@ public class Minemories {
     com.google.gson.JsonObject metadata = currentCaptureMetadata(center);
     GlbScene scene = new GlbScene();
     Map<String, SpriteAsset> sprites = new LinkedHashMap<>();
-    TextureAtlas blockAtlas =
-        Objects.requireNonNull(
-            mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS),
-            "Block atlas unavailable during export");
-    List<TextureAtlasSprite> atlasSprites = new ArrayList<>(blockAtlas.getTextures().values());
+    RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);
     Path output = capturePath();
     // capturePath resolves a file inside the configured export folder.
     Path outputDirectory = Objects.requireNonNull(output.getParent(), "Capture path has no parent");
@@ -724,10 +719,10 @@ public class Minemories {
                   lightColor,
                   lightEmission);
             }
-            if (state.getRenderShape() != RenderShape.INVISIBLE) {
+            BlockEntity blockEntity = mc.level.getBlockEntity(pos);
+            if (state.getRenderShape() == RenderShape.MODEL) {
               String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
               BakedModel model = mc.getModelManager().getBlockModelShaper().getBlockModel(state);
-              BlockEntity blockEntity = mc.level.getBlockEntity(pos);
               ModelData initialData =
                   blockEntity == null ? ModelData.EMPTY : blockEntity.getModelData();
               ModelData modelData = model.getModelData(mc.level, pos, state, initialData);
@@ -768,18 +763,17 @@ public class Minemories {
                     y - center.getY(),
                     z - center.getZ());
               }
-              if (blockEntity != null)
-                captureBlockEntityRenderer(
-                    scene,
-                    sprites,
-                    atlasSprites,
-                    mc,
-                    beRenderer,
-                    blockEntity,
-                    x - center.getX(),
-                    y - center.getY(),
-                    z - center.getZ());
               blockCount++;
+            }
+            if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
+              captureBlockEntityRenderer(
+                  renderedModels,
+                  beRenderer,
+                  blockEntity,
+                  x - center.getX(),
+                  y - center.getY(),
+                  z - center.getZ());
+              if (state.getRenderShape() != RenderShape.MODEL) blockCount++;
             }
             FluidState fluid = state.getFluidState();
             if (!fluid.isEmpty())
@@ -787,6 +781,7 @@ public class Minemories {
           }
         }
       }
+      int entityCount = captureEntities(renderedModels, mc, min, max, center);
       if (!scene.hasGeometry()) {
         captureFailure =
             "Aucun bloc visible dans la zone. Attends le chargement du terrain ou choisis une autre zone, puis réessaie.";
@@ -804,6 +799,8 @@ public class Minemories {
               "Minemories: "
                   + blockCount
                   + " blocks / "
+                  + entityCount
+                  + " entities / "
                   + scene.materialCount()
                   + " textured materials exported to "
                   + saved),
@@ -1024,99 +1021,54 @@ public class Minemories {
     return null;
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   private static void captureBlockEntityRenderer(
-      GlbScene scene,
-      Map<String, SpriteAsset> sprites,
-      List<TextureAtlasSprite> atlasSprites,
-      Minecraft mc,
+      RenderedModelCapture capture,
       BlockEntityRenderDispatcher dispatcher,
       BlockEntity blockEntity,
       int x,
       int y,
-      int z)
-      throws IOException {
-    Map<RenderType, FluidVertexConsumer> consumers = new LinkedHashMap<>();
-    MultiBufferSource buffers =
-        renderType -> consumers.computeIfAbsent(renderType, key -> new FluidVertexConsumer());
+      int z) {
+    var buffers =
+        capture.buffers(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()).toString(),
+            blockEntity.getBlockState().getLightEmission() / 15f);
     PoseStack pose = new PoseStack();
     pose.translate(x, y, z);
-    dispatcher.render(blockEntity, 0f, pose, buffers);
-    for (FluidVertexConsumer finished : consumers.values()) {
-      for (int offset = 0; offset + 3 < finished.vertices.size(); offset += 4) {
-        FluidVertex[] quad = {
-          finished.vertices.get(offset),
-          finished.vertices.get(offset + 1),
-          finished.vertices.get(offset + 2),
-          finished.vertices.get(offset + 3)
-        };
-        TextureAtlasSprite sprite = findAtlasSprite(atlasSprites, quad);
-        if (sprite == null) continue;
-        String imageKey = sprite.contents().name().toString();
-        SpriteAsset asset = sprites.get(imageKey);
-        if (asset == null) {
-          asset = new SpriteAsset(sprite);
-          sprites.put(imageKey, asset);
-        }
-        float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
-        float[] xyz = new float[12], uv = new float[8];
-        int r = 0, g = 0, b = 0, a = 0;
-        for (int i = 0; i < 4; i++) {
-          FluidVertex vertex = quad[i];
-          xyz[i * 3] = vertex.x;
-          xyz[i * 3 + 1] = vertex.y;
-          xyz[i * 3 + 2] = vertex.z;
-          uv[i * 2] = ur == 0 ? 0 : (vertex.u - sprite.getU0()) / ur;
-          uv[i * 2 + 1] = vr == 0 ? 0 : (vertex.v - sprite.getV0()) / vr;
-          r += vertex.r;
-          g += vertex.g;
-          b += vertex.b;
-          a += vertex.a;
-        }
-        int tint = ((r / 4) << 16) | ((g / 4) << 8) | (b / 4);
-        float opacity = Math.max(0f, Math.min(1f, a / (4f * 255f)));
-        int alphaMode = opacity < 1f ? 2 : asset.alphaMode;
-        int emission = blockEntity.getBlockState().getLightEmission();
-        String key = "be#" + imageKey + "#" + Integer.toHexString(tint);
-        scene.addQuad(
-            key,
-            BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()) + " / " + imageKey,
-            imageKey,
-            asset.png,
-            tint,
-            alphaMode,
-            emission / 15f,
-            opacity,
-            xyz,
-            uv);
-      }
-    }
+    dispatcher.render(blockEntity, 1f, pose, buffers);
+    buffers.finish();
   }
 
-  private static TextureAtlasSprite findAtlasSprite(
-      List<TextureAtlasSprite> sprites, FluidVertex[] quad) {
-    TextureAtlasSprite best = null;
-    float bestArea = Float.MAX_VALUE;
-    for (TextureAtlasSprite sprite : sprites) {
-      boolean inside = true;
-      for (FluidVertex vertex : quad) {
-        if (vertex.u < sprite.getU0() - 0.0001f
-            || vertex.u > sprite.getU1() + 0.0001f
-            || vertex.v < sprite.getV0() - 0.0001f
-            || vertex.v > sprite.getV1() + 0.0001f) {
-          inside = false;
-          break;
-        }
-      }
-      if (inside) {
-        float area = (sprite.getU1() - sprite.getU0()) * (sprite.getV1() - sprite.getV0());
-        if (area < bestArea) {
-          best = sprite;
-          bestArea = area;
-        }
-      }
+  private static int captureEntities(
+      RenderedModelCapture capture, Minecraft mc, BlockPos min, BlockPos max, BlockPos center)
+      throws IOException {
+    var dispatcher = mc.getEntityRenderDispatcher();
+    dispatcher.prepare(mc.level, mc.gameRenderer.getMainCamera(), mc.getCameraEntity());
+    CaptureBounds bounds =
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
+    int count = 0;
+    for (Entity entity : mc.level.entitiesForRendering()) {
+      if (entity.isRemoved()
+          || entity.isInvisible()
+          || !bounds.containsEntity(entity.getX(), entity.getY(), entity.getZ())
+          || !chunkLoaded(mc, entity.getBlockX(), entity.getBlockZ())) continue;
+      if (++count > 2048)
+        throw new IOException("Trop d’entités dans cette capture. Réduis la zone.");
+      var renderer = dispatcher.getRenderer(entity);
+      var buffers =
+          capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
+      Vec3 offset = renderer.getRenderOffset(entity, 1f);
+      PoseStack pose = new PoseStack();
+      pose.translate(
+          entity.getX() - center.getX() + offset.x,
+          entity.getY() - center.getY() + offset.y,
+          entity.getZ() - center.getZ() + offset.z);
+      // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
+      // flames, hitboxes and nameplate text are not part of the souvenir geometry.
+      renderer.render(
+          entity, entity.getYRot(), 1f, pose, buffers, dispatcher.getPackedLightCoords(entity, 1f));
+      buffers.finish();
     }
-    return best;
+    return count;
   }
 
   private static class FluidVertexConsumer implements VertexConsumer {
@@ -1132,10 +1084,6 @@ public class Minemories {
 
     @Override
     public VertexConsumer setColor(int r, int g, int b, int a) {
-      current.r = r;
-      current.g = g;
-      current.b = b;
-      current.a = a;
       return this;
     }
 
@@ -1170,7 +1118,6 @@ public class Minemories {
   private static final class FluidVertex {
     final float x, y, z;
     float u, v;
-    int r = 255, g = 255, b = 255, a = 255;
 
     FluidVertex(float x, float y, float z) {
       this.x = x;
