@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { buttonLime, Eyebrow } from '../App'
 import { apiBase } from '../api-client'
+import { buttonLime, Eyebrow } from '../components/ui'
+import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
 import { TimePresets, ticksToMinutes } from './ViewerPage'
@@ -20,11 +21,11 @@ interface SharedCapture {
 	}
 }
 
-async function fetchSharedCapture(token: string): Promise<{ capture: SharedCapture; file: File }> {
-	const metaResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}`)
+async function fetchSharedCapture(token: string, signal: AbortSignal): Promise<{ capture: SharedCapture; file: File }> {
+	const metaResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}`, { signal })
 	if (!metaResponse.ok) throw new Error('This link is invalid or was revoked.')
 	const capture = (await metaResponse.json()) as SharedCapture
-	const fileResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}/file`)
+	const fileResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}/file`, { signal })
 	if (!fileResponse.ok) throw new Error('Could not download this world.')
 	return { capture, file: new File([await fileResponse.blob()], 'shared.glb', { type: 'model/gltf-binary' }) }
 }
@@ -44,6 +45,8 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 }
 
 export function SharePage() {
+	const { t } = useI18n()
+
 	const { token } = useParams()
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
@@ -79,6 +82,7 @@ export function SharePage() {
 			return
 		}
 		let cancelled = false
+		const controller = new AbortController()
 		function reportError(cause: unknown) {
 			if (cancelled) return
 			setError(cause instanceof Error ? cause.message : 'Could not load this world.')
@@ -88,7 +92,7 @@ export function SharePage() {
 			const scene = sceneRef.current
 			if (!(scene && token)) return
 			try {
-				const { capture, file } = await fetchSharedCapture(token)
+				const { capture, file } = await fetchSharedCapture(token, controller.signal)
 				if (cancelled) return
 				applySharedCapture(scene, capture, setTitle)
 				await scene.loadFile(file)
@@ -99,6 +103,7 @@ export function SharePage() {
 		void loadShared()
 		return () => {
 			cancelled = true
+			controller.abort()
 		}
 	}, [token])
 
@@ -106,23 +111,29 @@ export function SharePage() {
 		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
-					<Eyebrow>SHARED MEMORY</Eyebrow>
+					<Eyebrow>
+						<T message={'SHARED MEMORY'} />
+					</Eyebrow>
 					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
 						{title}
 					</h1>
 				</div>
 				<Link className={`${buttonLime} min-h-[40px] text-[10px]`} to="/">
-					Keep my own worlds <span>↗</span>
+					{' '}
+					<T message={'Keep my own worlds'} /> <span>↗</span>
 				</Link>
 			</div>
 			<div className="relative h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#354238] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]">
-				<canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-label="Shared 3D scene" />
+				<canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-label={t('Shared 3D scene')} />
 				{(status ?? error) && (
-					<div className="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 whitespace-nowrap rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]">
+					<div
+						role={status ? 'status' : 'alert'}
+						className="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 max-w-[calc(100%_-_32px)] whitespace-normal rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]"
+					>
 						{status && (
 							<span className="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep" />
 						)}
-						<span>{status ?? error}</span>
+						<span>{t(status ?? error)}</span>
 					</div>
 				)}
 				{fileInfo && (
@@ -134,7 +145,8 @@ export function SharePage() {
 				{!empty && <TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
 			</div>
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad]">
-				Shared link · no account needed to revisit this world.
+				{' '}
+				<T message={'Shared link · no account needed to revisit this world.'} />{' '}
 			</p>
 		</section>
 	)

@@ -1,6 +1,5 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
-- mettre i18n dans le site web pour avoir des translations dans toute les langues les plus populaire de joueur minecraft
-- diallow index/google/crawl for now (dev mode)
+- compléter les traductions des guides, erreurs API/moteur et dates/métadonnées à partir du catalogue FR/EN ; définir les URL et hreflang lors de la publication d’autres langues
 - redéployer le front avec `railpack.web.json` sans Java ; publier le premier JAR validé sur GitHub Releases (dépôt public), puis vérifier le téléchargement depuis `/installation`
 - avoir une page avec la liste des Jar (historique de version) + une page changelog automatique 
 - verifier l'alignement du marketing avec besoin.md
@@ -10,7 +9,7 @@
 - create few ads (video format)
 - exécuter la réconciliation du stockage historique en production après revue du plan, arrêt de l’API et sauvegarde ; l’inventaire, les backfills récupérables et la file durable sont implémentés et testés sur Garage (docs/features/storage-reconciliation.md) ; accès/configuration et cas ambigus : issue #6
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
-- SEO audit of the website
+- appliquer le routage statique Nginx de `deploy/nginx.web.conf` dans Coolify et auditer après déploiement : HTML public sans JS, canonical, sitemap, robots, X-Robots-Tag privé et vraies 404
 - add umami/sentry/etc.. to web 
 - ability to make a snapshot "public" -> create a gallerie of best/trending snapshot on the website
 - decision LLM to manage username validity (jev like)
@@ -35,3 +34,4 @@
 - suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
 - faire réaliser à Mae le guide interactif `/installation` sans assistance orale avec le JAR du site : Java/NeoForge, bon dossier mods, menu M, export local 16, ouverture GLB, puis appairage et envoi ; noter système/launcher/version/empreinte et les hésitations, sans déclarer ce parcours validé avant cet essai
 - ajouter les dix vraies captures du tuto manuel Windows dans `apps/web/src/assets/tutorial/windows/` selon son README ; les zones légendées, le remplacement automatique et l’agrandissement sont prêts
+- compléter les coordonnées éditeur/hébergeur/contact et faire relire les pages légales ; définir une offre et ses tarifs avant tout checkout commercial
