@@ -68,6 +68,60 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void pacedPublisherPreservesLengthBytesAndStopsBeforeCompletionWhenContextChanges()
+      throws Exception {
+    var allowed = new java.util.concurrent.atomic.AtomicBoolean(true);
+    var cancel = new java.util.concurrent.atomic.AtomicBoolean(false);
+    var completions = new AtomicInteger();
+    byte[] expected = new byte[65536];
+    Arrays.fill(expected, (byte) 42);
+    String url =
+        start(
+            exchange -> {
+              if (exchange.getRequestMethod().equals("PUT")) {
+                assertEquals("65536", exchange.getRequestHeaders().getFirst("Content-Length"));
+                if (cancel.get()) {
+                  assertTrue(exchange.getRequestBody().read(new byte[8192]) > 0);
+                  allowed.set(false);
+                  exchange.close();
+                } else {
+                  assertArrayEquals(expected, exchange.getRequestBody().readAllBytes());
+                  respond(exchange, 200, session(expected.length, false));
+                }
+              } else if (exchange.getRequestURI().getPath().endsWith("/complete")) {
+                completions.incrementAndGet();
+                respond(exchange, 201, "{}");
+              } else respond(exchange, 200, session(0, false));
+            });
+    Path file = capture(expected.length);
+    var paced =
+        new ChunkedUploader(
+            HttpClient.newHttpClient(),
+            0,
+            java.util.function.UnaryOperator.identity(),
+            new UploadPacer(UploadPacer.AFK_BYTES_PER_SECOND, allowed::get));
+    long start = System.nanoTime();
+    paced.upload(url, "token", file, new JsonObject(), offset -> {});
+    assertTrue(
+        System.nanoTime() - start >= 100_000_000L,
+        "64 KiB cannot bypass the actual HTTP publisher rate");
+    assertEquals(1, completions.get());
+    cancel.set(true);
+    var stopped =
+        new ChunkedUploader(
+            HttpClient.newHttpClient(),
+            0,
+            java.util.function.UnaryOperator.identity(),
+            new UploadPacer(UploadPacer.AFK_BYTES_PER_SECOND, allowed::get));
+    assertThrows(
+        IOException.class,
+        () -> stopped.upload(url, "token", file, new JsonObject(), offset -> {}));
+    assertEquals(1, completions.get());
+    assertTrue(Files.exists(file.resolveSibling("capture.glb.upload.properties")));
+    assertArrayEquals(expected, Files.readAllBytes(file));
+  }
+
+  @Test
   void historyUploadKeepsOriginalBytesAndMetadataWhileANewerCaptureIsWritten() throws Exception {
     var time = java.time.Instant.parse("2026-10-12T12:00:00Z");
     byte[] bytes = new byte[64];

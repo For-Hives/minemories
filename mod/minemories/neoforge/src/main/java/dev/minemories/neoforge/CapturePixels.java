@@ -21,7 +21,7 @@ import org.lwjgl.system.MemoryUtil;
  * Client-owned sources. Only the int[] returned by readBand can be sent to the preparation worker.
  */
 final class CapturePixels {
-  interface Source {
+  interface Source extends ProgressiveCapturePump.Pixels {
     String key();
 
     int width();

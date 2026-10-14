@@ -94,6 +94,40 @@ public class Minemories {
 
   private static long lastAfkCheckMs;
   private static boolean afkUploadPending;
+  private static net.minecraft.client.multiplayer.ClientLevel afkUploadWorld;
+  // Client-thread ownership, like exploration: no lazy publication of static jobs/settings.
+  private static final CaptureState CAPTURES = new CaptureState();
+
+  private static final class CaptureState {
+    private ProgressiveGameCapture job;
+    private PairingClient.CaptureSettings settings;
+  }
+
+  private static DiagnosticsClient.Operation afkDiagnostics;
+  private static long resourceEpoch;
+
+  static void clientSettingsChanged() {
+    CAPTURES.settings = null;
+  }
+
+  static String afkCaptureStatus() {
+    if (CAPTURES.job == null) return "";
+    if (CAPTURES.job.cancelled()) return "Arrêt de la capture AFK…";
+    return CAPTURES.job.suspended()
+        ? "Capture AFK en pause pendant ton activité."
+        : "Capture AFK en cours, en arrière-plan…";
+  }
+
+  private static boolean manualCaptureAllowed() {
+    if (CAPTURES.job == null) return true;
+    CAPTURES.job.cancel("Capture manuelle demandée.");
+    lastActivityMs = System.currentTimeMillis();
+    captureFailure =
+        "Arrêt de la capture AFK en cours. Réessaie la capture manuelle dans un instant.";
+    tell(captureFailure);
+    return false;
+  }
+
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
   private static long lastActivityMs = System.currentTimeMillis();
   private static double lastPlayerX;
@@ -111,7 +145,7 @@ public class Minemories {
     return captureFailure;
   }
 
-  private static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
+  static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
     Minecraft mc = Minecraft.getInstance();
     com.google.gson.JsonObject metadata = new com.google.gson.JsonObject();
     metadata.addProperty("capturedAt", Instant.now().toString());
@@ -205,6 +239,17 @@ public class Minemories {
       value = net.neoforged.api.distmarker.Dist.CLIENT)
   public static final class ClientKeys {
     @SubscribeEvent
+    public static void reloadResources(
+        net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+      event.registerReloadListener(
+          (net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+              resources -> {
+                resourceEpoch++;
+                if (CAPTURES.job != null) CAPTURES.job.cancel("Ressources rechargées.");
+              });
+    }
+
+    @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
       event.register(OPEN_SCREEN);
     }
@@ -272,48 +317,101 @@ public class Minemories {
   public static void trackAfkSnapshot(RenderFrameEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
-    if (mc.level == null || mc.player == null) {
-      if (EXPLORATION.path != null) {
-        saveExploration();
-        EXPLORATION.path = null;
-        EXPLORATION.depth = new ExplorationDepth();
+    if (mc.level != null && mc.player != null && playerMoved(mc.player)) lastActivityMs = now;
+    try {
+      if (afkUploadPending && mc.level != afkUploadWorld) PairingClient.cancelAfkUpload();
+      boolean checked = CAPTURES.settings == null || now - lastAfkCheckMs >= 1000;
+      if (checked) {
+        lastAfkCheckMs = now;
+        CAPTURES.settings = PairingClient.captureSettings();
+        trackExploration(mc, now);
       }
-      playerPositionKnown = false;
+      if (CAPTURES.job != null) {
+        if (!CAPTURES.job.valid(CAPTURES.settings, resourceEpoch))
+          CAPTURES.job.cancel("Monde, ressources ou réglages modifiés.");
+        if (!CAPTURES.job.done())
+          CAPTURES.job.step(
+              mc.getOverlay() == null
+                  && now - lastActivityMs >= CAPTURES.settings.options().idleMinutes() * 60_000L);
+        if (CAPTURES.job.done()) finishAfk(mc, now);
+        return;
+      }
+      if (mc.level == null || mc.player == null) {
+        if (EXPLORATION.path != null) {
+          saveExploration();
+          EXPLORATION.path = null;
+          EXPLORATION.depth = new ExplorationDepth();
+        }
+        playerPositionKnown = false;
+        lastActivityMs = now;
+        return;
+      }
+      if (!checked) return;
+      if (!CAPTURES.settings.enabled() || afkUploadPending || PairingClient.isUploading()) return;
+      if (AfkTiming.remainingSeconds(
+              now, lastActivityMs, lastSnapshotAt(), CAPTURES.settings.options())
+          > 0) return;
+      afkDiagnostics = PairingClient.beginCaptureDiagnostics();
+      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch);
+      LOGGER.info(
+          "AFK progressive capture started (paused={}, radius={})",
+          mc.isPaused(),
+          CAPTURES.settings.options().radius());
+    } catch (Exception error) {
       lastActivityMs = now;
+      if (CAPTURES.job != null) CAPTURES.job.cancel("Échec de la capture.");
+      if (afkDiagnostics != null) afkDiagnostics.failed(error);
+      LOGGER.error("AFK progressive capture failed", error);
+      tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static void finishAfk(Minecraft mc, long now) {
+    ProgressiveGameCapture completed = CAPTURES.job;
+    CAPTURES.job = null;
+    lastActivityMs = now; // Also rate-limit refused/cancelled exports.
+    if (completed.cancelled()) {
+      afkDiagnostics.success();
+      LOGGER.info("AFK capture cancelled: {}", completed.cancellation());
       return;
     }
-    if (playerMoved(mc.player)) lastActivityMs = now;
-    // Render events also run while paused/unfocused. Read settings at most once a second.
-    if (now - lastAfkCheckMs < 1000) return;
-    lastAfkCheckMs = now;
-    trackExploration(mc, now);
-    if (!PairingClient.isAfkSnapshots() || afkUploadPending || PairingClient.isUploading()) return;
-    var options = PairingClient.afkOptions();
-    if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt(), options) > 0) return;
-    // Rate-limit failed exports too; avoid retrying every frame.
-    lastActivityMs = now;
     try {
-      LOGGER.info("AFK capture started (paused={}, radius={})", mc.isPaused(), options.radius());
-      if (export(options.radius()) != 1) return;
-      PairingClient.setLastSnapshotAt(System.currentTimeMillis());
-      if (!PairingClient.isPaired()) return;
+      var result = completed.result();
+      if (!completed.valid(PairingClient.captureSettings(), resourceEpoch)) {
+        afkDiagnostics.success();
+        LOGGER.info("Completed AFK file preserved locally after context change");
+        return;
+      }
+      afkDiagnostics.captured(result.file());
+      PairingClient.setLastSnapshotAt(now);
+      LOGGER.info(
+          "AFK capture finished: frames={}, maxStepMs={}, overruns={}, blocks={}, entities={}, quads={}, textures={}",
+          completed.frames(),
+          completed.maximumStepNanos() / 1_000_000.0,
+          completed.overruns(),
+          completed.blocks(),
+          completed.entities(),
+          result.quads(),
+          result.textures());
+      tell("Souvenir AFK enregistré localement.");
+      if (!completed.settings().paired()
+          || !completed.settings().equals(PairingClient.captureSettings())) return;
       afkUploadPending = true;
-      PairingClient.uploadCapture(latestCapturePath())
+      afkUploadWorld = mc.level;
+      PairingClient.uploadAfkCapture(result.file(), completed.settings())
           .whenComplete(
               (message, error) ->
                   mc.execute(
                       () -> {
                         afkUploadPending = false;
                         if (error != null) {
-                          LOGGER.error("AFK snapshot upload failed", error);
+                          LOGGER.error("AFK upload failed", error);
                           tell("Envoi AFK impossible : " + pairingError(error));
-                        } else {
-                          tell("Souvenir AFK envoyé dans ta galerie.");
-                        }
+                        } else tell("Souvenir AFK envoyé dans ta galerie.");
                       }));
     } catch (RuntimeException error) {
-      afkUploadPending = false;
-      LOGGER.error("AFK snapshot failed", error);
+      afkDiagnostics.failed(error);
+      LOGGER.error("AFK capture completion failed", error);
       tell("Capture AFK impossible : " + pairingError(error));
     }
   }
@@ -368,13 +466,19 @@ public class Minemories {
     }
   }
 
-  private static boolean chunkLoaded(Minecraft mc, int x, int z) {
+  static boolean chunkLoaded(Minecraft mc, int x, int z) {
     // ClientLevel.hasChunkAt always returns true. Requesting without a fallback
     // distinguishes received terrain from the empty chunk without loading anything.
     return mc.level
             .getChunkSource()
             .getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), ChunkStatus.FULL, false)
         != null;
+  }
+
+  static int captureBottom(CaptureBounds bounds, int surfaceFloor) {
+    saveExploration();
+    return EXPLORATION.depth.captureBottom(
+        bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bounds.minY());
   }
 
   private static void saveExploration() {
@@ -564,6 +668,7 @@ public class Minemories {
   }
 
   static int exportSelection() {
+    if (!manualCaptureAllowed()) return 0;
     captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
@@ -600,6 +705,7 @@ public class Minemories {
   }
 
   static int export(int radius) {
+    if (!manualCaptureAllowed()) return 0;
     captureFailure = "Capture impossible. Vérifie le monde et la zone.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
@@ -1054,7 +1160,7 @@ public class Minemories {
     buffers.finish();
   }
 
-  private static int captureEntities(
+  static int captureEntities(
       RenderedModelCapture capture, Minecraft mc, BlockPos min, BlockPos max, BlockPos center)
       throws IOException {
     var dispatcher = mc.getEntityRenderDispatcher();
@@ -1069,22 +1175,29 @@ public class Minemories {
           || !chunkLoaded(mc, entity.getBlockX(), entity.getBlockZ())) continue;
       if (++count > 2048)
         throw new IOException("Trop d’entités dans cette capture. Réduis la zone.");
-      var renderer = dispatcher.getRenderer(entity);
-      var buffers =
-          capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
-      Vec3 offset = renderer.getRenderOffset(entity, 1f);
-      PoseStack pose = new PoseStack();
-      pose.translate(
-          entity.getX() - center.getX() + offset.x,
-          entity.getY() - center.getY() + offset.y,
-          entity.getZ() - center.getZ() + offset.z);
-      // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
-      // flames, hitboxes and nameplate text are not part of the souvenir geometry.
-      renderer.render(
-          entity, entity.getYRot(), 1f, pose, buffers, dispatcher.getPackedLightCoords(entity, 1f));
-      buffers.finish();
+      captureEntity(capture, mc, entity, center);
     }
     return count;
+  }
+
+  static void captureEntity(
+      RenderedModelCapture capture, Minecraft mc, Entity entity, BlockPos center) {
+    var dispatcher = mc.getEntityRenderDispatcher();
+    dispatcher.prepare(mc.level, mc.gameRenderer.getMainCamera(), mc.getCameraEntity());
+    var renderer = dispatcher.getRenderer(entity);
+    var buffers =
+        capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
+    Vec3 offset = renderer.getRenderOffset(entity, 1f);
+    PoseStack pose = new PoseStack();
+    pose.translate(
+        entity.getX() - center.getX() + offset.x,
+        entity.getY() - center.getY() + offset.y,
+        entity.getZ() - center.getZ() + offset.z);
+    // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
+    // flames, hitboxes and nameplate text are not part of the souvenir geometry.
+    renderer.render(
+        entity, entity.getYRot(), 1f, pose, buffers, dispatcher.getPackedLightCoords(entity, 1f));
+    buffers.finish();
   }
 
   private static class FluidVertexConsumer implements VertexConsumer {

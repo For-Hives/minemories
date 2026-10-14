@@ -132,7 +132,7 @@ final class QueuedGlbCapture implements AutoCloseable {
       throw new IOException("Texture key limit exceeded");
   }
 
-  private boolean ready() {
+  boolean ready() {
     return !sealing && !cancelled.get() && !completion.isDone() && queue.remainingCapacity() > 0;
   }
 

@@ -29,6 +29,7 @@ final class ChunkedUploader {
   static final long MAX_BYTES = 200L * 1024 * 1024;
   static final int CHUNK_BYTES = 4 * 1024 * 1024;
   private final HttpClient http;
+  private final UploadPacer pacer;
   private final long retryDelayMillis;
   private final UnaryOperator<HttpRequest.Builder> diagnosticHeaders;
 
@@ -40,6 +41,15 @@ final class ChunkedUploader {
       HttpClient http,
       long retryDelayMillis,
       UnaryOperator<HttpRequest.Builder> diagnosticHeaders) {
+    this(http, retryDelayMillis, diagnosticHeaders, null);
+  }
+
+  ChunkedUploader(
+      HttpClient http,
+      long retryDelayMillis,
+      UnaryOperator<HttpRequest.Builder> diagnosticHeaders,
+      UploadPacer pacer) {
+    this.pacer = pacer;
     this.http = http;
     this.retryDelayMillis = retryDelayMillis;
     this.diagnosticHeaders = diagnosticHeaders;
@@ -123,7 +133,10 @@ final class ChunkedUploader {
                     .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/octet-stream")
                     .header("Upload-Offset", Long.toString(offset))
-                    .PUT(HttpRequest.BodyPublishers.ofByteArray(bytes))
+                    .PUT(
+                        pacer == null
+                            ? HttpRequest.BodyPublishers.ofByteArray(bytes)
+                            : pacer.body(bytes))
                     .build());
         long acknowledged = response.get("offset").getAsLong();
         if (acknowledged != offset + bytes.length)
@@ -137,6 +150,7 @@ final class ChunkedUploader {
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
+        if (pacer != null) pacer.check();
         HttpRequest current =
             diagnosticHeaders
                 .apply(
@@ -202,12 +216,15 @@ final class ChunkedUploader {
     Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING);
   }
 
-  private static String checksum(Path path) throws IOException {
+  private String checksum(Path path) throws IOException {
     MessageDigest digest = digest();
     try (InputStream input = Files.newInputStream(path)) {
       byte[] bytes = new byte[64 * 1024];
       int read;
-      while ((read = input.read(bytes)) != -1) digest.update(bytes, 0, read);
+      while ((read = input.read(bytes)) != -1) {
+        if (pacer != null) pacer.check();
+        digest.update(bytes, 0, read);
+      }
     }
     return HexFormat.of().formatHex(digest.digest());
   }
