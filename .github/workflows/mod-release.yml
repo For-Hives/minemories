@@ -131,6 +131,11 @@ jobs:
           game-versions: 1.21.1
           java: 21
           fail-mode: fail
+      - name: Publish checksum and compatibility manifest on GitHub
+        if: ${{ inputs.publish_github }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "mod-v${{ needs.build.outputs.version }}" downloads/manifest.json downloads/minemories-neoforge-mc1.21.1.jar.sha256
       - name: Publish on Modrinth
         if: ${{ inputs.publish_modrinth }}
         uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3

@@ -21,7 +21,9 @@ Railpack installe le workspace, vérifie les types de l’API puis démarre `NOD
 - Activer **Is it a static site?** et définir le **Publish Directory** à `apps/web/dist`.
 - Définir `VITE_API_URL=https://<domaine-api>` comme variable de **build**, puis reconstruire le front après toute modification de cette URL. Vite l’intègre aux fichiers statiques.
 
-Le build installe aussi Node 24 et Java 21, vérifie et construit le mod, copie le JAR et son manifeste SHA-256 dans `apps/web/public/downloads`, puis exécute le contrôle TypeScript et génère le site Vite. Les fichiers `downloads/` sont ainsi servis avec le site, sans dépendre d’une publication catalogue. Le build web vérifie le JAR et son empreinte avant et après Vite ; il échoue si le téléchargement manque. Le serveur statique Coolify/Nginx sert ensuite le contenu de `apps/web/dist`. Après déploiement, vérifier que `/downloads/manifest.json` renvoie du JSON et que le JAR renvoie une archive avec la taille et le SHA-256 annoncés, pas le HTML de repli de la SPA.
+Le build web installe uniquement Bun et Node : contrôle TypeScript puis bundle Vite. Aucun JDK, aucune compilation Minecraft, aucun test Gradle et aucune release ne sont requis pour déployer le front. Le serveur statique Coolify/Nginx sert `apps/web/dist`.
+
+La page d’installation interroge l’API publique GitHub Releases de `For-Hives/minemories` et propose le JAR de la release compatible la plus récemment publiée, préversions incluses. Un dépôt sans release, une limite API GitHub ou une panne affiche un réessai et un lien vers les releases ; cela ne fait pas échouer le déploiement web. La publication du mod reste dans le workflow Java dédié.
 
 ## Déploiement
 
