@@ -142,13 +142,20 @@ final class MinemoriesScreen extends Screen {
     selectionButton.setTooltip(
         Tooltip.create(
             Component.literal("Définis les deux coins avec /minemories select first et second.")));
+    int third = (panelWidth - 40) / 3;
     button(
         "Réglages AFK",
         14,
         170,
-        half,
+        third,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
-    storageButton = button("Stockage galerie", 20 + half, 170, half, this::openStorage);
+    storageButton = button("Stockage", 20 + third, 170, third, this::openStorage);
+    button(
+        "Diagnostics",
+        26 + third * 2,
+        170,
+        third,
+        () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
   }
 
   private void openStorage() {

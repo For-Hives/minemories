@@ -25,6 +25,7 @@
 		"web:build": "bun run --filter @minemories/web bundle",
 		"api:dev": "bun run --filter @minemories/api dev",
 		"api:reconcile": "bun run --filter @minemories/api reconcile",
+		"api:diagnostics": "bun run --cwd apps/api diagnostics",
 		"api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
 		"format": "biome check --write apps scripts package.json biome.json",
 		"lint": "biome check apps scripts package.json biome.json",

@@ -1,5 +1,6 @@
 import { isIP } from 'node:net'
 import { isAbsolute } from 'node:path'
+import { diagnosticsPolicy } from './diagnostics-policy'
 
 type Environment = Readonly<Record<string, string | undefined>>
 
@@ -94,6 +95,7 @@ function validateS3(environment: Environment): void {
 
 export function validateProductionConfiguration(environment: Environment): void {
 	if (environment.NODE_ENV !== 'production') return
+	diagnosticsPolicy(environment)
 	accountStorageBytes(environment)
 	authSecret(environment)
 	pairingPepper(environment)
