@@ -24,7 +24,7 @@ Le contrôle utilise le cache des chunks effectivement reçus, sans charger ni g
 
 La liste est lue en arrière-plan, avec quatre souvenirs par page et une mémoire bornée pendant le tri. Les JSON sont lus uniquement pour les souvenirs affichés ou envoyés, avec une limite de 2 MiB. Les liens symboliques dans l’historique et les références sortant du dossier ne sont pas suivis. Une réponse arrivée après fermeture ou actualisation de l’écran ne remplace pas la page courante.
 
-Cette conservation locale prépare les snapshots réguliers et la timelapse ; elle ne fournit pas encore de planificateur supplémentaire, de déduplication entre captures ni de lecture animée. Ces tâches restent suivies dans `docs/AI/TASKS.md`.
+Cette conservation locale prépare les snapshots réguliers et la timelapse ; elle ne fournit pas encore de planificateur supplémentaire, de déduplication entre captures ni de lecture animée. La lecture temporelle et la déduplication restent suivies dans [issue #75](https://github.com/For-Hives/minemories/issues/75) ; la capture progressive dans [issue #84](https://github.com/For-Hives/minemories/issues/84).
 
 ## Vérification du refus des captures vides
 

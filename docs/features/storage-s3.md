@@ -58,4 +58,4 @@ et le comportement des checksums dans la
 - `bun run build` conserve les seuils de couverture et construit le web et le mod.
 
 Le format GLB et le code Minecraft ne changent pas. La validation en jeu du JAR
-distribué et les essais réseau de production restent suivis dans TASKS.md.
+distribué et les essais réseau de production restent suivis dans [issue #81](https://github.com/For-Hives/minemories/issues/81) et [issue #83](https://github.com/For-Hives/minemories/issues/83).

@@ -52,7 +52,7 @@ restent inconnues.
 
 La [réconciliation historique](storage-reconciliation.md) inventorie les clés
 oubliées, complète les claims récupérables et prépare les intentions manquantes.
-Son exécution sur le stockage réel reste suivie dans TASKS.md. Les versions
+Son exécution sur le stockage réel reste suivie dans [issue #65](https://github.com/For-Hives/minemories/issues/65). Les versions
 anciennes d’un bucket versionné dépendent de la politique de cycle de vie du provider.
 
 Les nouvelles mises en corbeille expirent après trente jours. Les anciennes
