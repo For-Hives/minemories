@@ -135,3 +135,31 @@ du verre transparent et une lampe. Les GLB legacy/spoolés sont identiques octet
 pour octet. Blender 5.2.2 importe chaque fichier avec un mesh, quatre matériaux,
 quatre images 2 × 2 et une lumière ; les deux rendus ont été inspectés visuellement.
 Cette validation du format ne constitue pas une validation AFK en jeu.
+
+## Raccordement AFK en cours — issue #84
+
+Le coordinateur AFK utilise maintenant le curseur et le worker borné. Chaque frame
+admet au plus 128 opérations avec un budget indicatif de 2 ms ; un appel de renderer
+ou une lecture GPU reste indivisible et peut dépasser ce budget. Le calcul de la
+profondeur parcourt également les colonnes progressivement. Les textures précèdent
+les lots de primitives ; une bande refusée reste en attente et n'est pas relue.
+
+Le retour du joueur suspend la production jusqu'au prochain délai d'inactivité.
+Une désactivation AFK, une sortie/changement de monde ou un reload des ressources
+annule le travail ; les chunks reçus au début doivent rester chargés. Les captures
+manuelles sont refusées pendant ce travail, y compris la préparation finale. Aucun
+nouveau travail AFK ne démarre avant la terminaison du worker.
+
+Un envoi automatique conserve l'identité appairée au début de la capture et vérifie
+cette identité avant chaque requête. Son débit moyen est limité à 1 Mio/s, avec
+morceaux indivisibles de 4 Mio et retries également soumis à cette limite. Changement
+d'appairage ou désactivation AFK interrompent l'envoi et gardent le fichier local et
+son état de reprise. Une capture commencée sans appairage reste locale.
+
+Le build complet `bun run build` a passé le 14 octobre 2026 avec Bun 1.4.3 :
+175 tests API, 98 tests web et contrôles Java (tests, Spotless, SpotBugs et seuils
+core). La comparaison en jeu/Blender, les scénarios d'annulation et les mesures sur
+le JAR exact restent nécessaires avant fusion. Le premier lancement du client de
+validation isolé a échoué à créer le contexte GLX ; Mesa/llvmpipe permet un contexte
+OpenGL 4.6 et un nouvel essai de développement est en cours. Ces mesures de rendu
+logiciel ne prouvent pas les performances de la carte graphique du joueur.

@@ -185,9 +185,29 @@ final class PairingClient {
             });
   }
 
-  static CompletableFuture<String> uploadCapture(Path file) {
+  record UploadIdentity(String api, String token) {}
+
+  static UploadIdentity uploadIdentity() {
     Properties settings = readSettings();
     String token = settings.getProperty("deviceToken");
+    return token == null || token.isBlank() ? null : new UploadIdentity(apiUrl(settings), token);
+  }
+
+  static CompletableFuture<String> uploadCapture(Path file) {
+    return uploadCapture(file, null);
+  }
+
+  static CompletableFuture<String> uploadAfkCapture(Path file, UploadIdentity expected) {
+    return uploadCapture(file, expected);
+  }
+
+  private static CompletableFuture<String> uploadCapture(Path file, UploadIdentity expected) {
+    Properties settings = readSettings();
+    String token = settings.getProperty("deviceToken");
+    if (expected != null && !expected.equals(uploadIdentity())) {
+      return CompletableFuture.failedFuture(
+          new IllegalStateException("L’appairage a changé ; la capture reste locale."));
+    }
     if (token == null || token.isBlank()) {
       return CompletableFuture.failedFuture(
           new IllegalStateException("The mod is not paired. Use /minemories pair CODE."));
@@ -206,7 +226,21 @@ final class PairingClient {
         () -> {
           try {
             JsonObject metadata = CaptureHistory.metadata(file);
-            new ChunkedUploader(HTTP, 1000, diagnostics::headers)
+            var pacing = new UploadPacing(1024 * 1024, System::nanoTime, Thread::sleep);
+            new ChunkedUploader(
+                    HTTP,
+                    1000,
+                    diagnostics::headers,
+                    request -> {
+                      if (expected != null) {
+                        if (!expected.equals(uploadIdentity()) || !isAfkSnapshots())
+                          throw new IOException("Envoi AFK interrompu ; la capture reste locale.");
+                        if (request.method().equals("PUT"))
+                          pacing.await(request.bodyPublisher().orElseThrow().contentLength());
+                        if (!expected.equals(uploadIdentity()) || !isAfkSnapshots())
+                          throw new IOException("Envoi AFK interrompu ; la capture reste locale.");
+                      }
+                    })
                 .upload(
                     apiUrl(settings),
                     token,

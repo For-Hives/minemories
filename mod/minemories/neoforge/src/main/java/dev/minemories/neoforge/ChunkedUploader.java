@@ -28,6 +28,12 @@ import java.util.function.UnaryOperator;
 final class ChunkedUploader {
   static final long MAX_BYTES = 200L * 1024 * 1024;
   static final int CHUNK_BYTES = 4 * 1024 * 1024;
+
+  interface BeforeRequest {
+    void check(HttpRequest request) throws IOException, InterruptedException;
+  }
+
+  private final BeforeRequest beforeRequest;
   private final HttpClient http;
   private final long retryDelayMillis;
   private final UnaryOperator<HttpRequest.Builder> diagnosticHeaders;
@@ -40,6 +46,15 @@ final class ChunkedUploader {
       HttpClient http,
       long retryDelayMillis,
       UnaryOperator<HttpRequest.Builder> diagnosticHeaders) {
+    this(http, retryDelayMillis, diagnosticHeaders, request -> {});
+  }
+
+  ChunkedUploader(
+      HttpClient http,
+      long retryDelayMillis,
+      UnaryOperator<HttpRequest.Builder> diagnosticHeaders,
+      BeforeRequest beforeRequest) {
+    this.beforeRequest = beforeRequest;
     this.http = http;
     this.retryDelayMillis = retryDelayMillis;
     this.diagnosticHeaders = diagnosticHeaders;
@@ -137,6 +152,7 @@ final class ChunkedUploader {
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
+        beforeRequest.check(request);
         HttpRequest current =
             diagnosticHeaders
                 .apply(

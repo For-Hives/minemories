@@ -94,6 +94,14 @@ public class Minemories {
 
   private static long lastAfkCheckMs;
   private static boolean afkUploadPending;
+  // Render callbacks own this state on the Minecraft client thread.
+  private static final AfkCaptureState AFK_CAPTURE = new AfkCaptureState();
+
+  private static final class AfkCaptureState {
+    private ProgressiveCapture job;
+  }
+
+  private static long resourceGeneration;
   static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
   private static long lastActivityMs = System.currentTimeMillis();
   private static double lastPlayerX;
@@ -205,6 +213,14 @@ public class Minemories {
       value = net.neoforged.api.distmarker.Dist.CLIENT)
   public static final class ClientKeys {
     @SubscribeEvent
+    public static void registerReload(
+        net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+      event.registerReloadListener(
+          (net.minecraft.server.packs.resources.ResourceManagerReloadListener)
+              manager -> resourceGeneration++);
+    }
+
+    @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
       event.register(OPEN_SCREEN);
     }
@@ -272,6 +288,14 @@ public class Minemories {
   public static void trackAfkSnapshot(RenderFrameEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
+    if (mc.player != null && playerMoved(mc.player)) lastActivityMs = now;
+    if (AFK_CAPTURE.job != null) {
+      AFK_CAPTURE.job.frame(mc, now);
+      if (AFK_CAPTURE.job.worker.done()) {
+        AFK_CAPTURE.job.complete(mc);
+        AFK_CAPTURE.job = null;
+      }
+    }
     if (mc.level == null || mc.player == null) {
       if (EXPLORATION.path != null) {
         saveExploration();
@@ -282,39 +306,283 @@ public class Minemories {
       lastActivityMs = now;
       return;
     }
-    if (playerMoved(mc.player)) lastActivityMs = now;
-    // Render events also run while paused/unfocused. Read settings at most once a second.
     if (now - lastAfkCheckMs < 1000) return;
     lastAfkCheckMs = now;
     trackExploration(mc, now);
-    if (!PairingClient.isAfkSnapshots() || afkUploadPending || PairingClient.isUploading()) return;
+    if (!PairingClient.isAfkSnapshots()
+        || AFK_CAPTURE.job != null
+        || afkUploadPending
+        || PairingClient.isUploading()) return;
     var options = PairingClient.afkOptions();
     if (AfkTiming.remainingSeconds(now, lastActivityMs, lastSnapshotAt(), options) > 0) return;
-    // Rate-limit failed exports too; avoid retrying every frame.
     lastActivityMs = now;
     try {
-      LOGGER.info("AFK capture started (paused={}, radius={})", mc.isPaused(), options.radius());
-      if (export(options.radius()) != 1) return;
-      PairingClient.setLastSnapshotAt(System.currentTimeMillis());
-      if (!PairingClient.isPaired()) return;
-      afkUploadPending = true;
-      PairingClient.uploadCapture(latestCapturePath())
-          .whenComplete(
-              (message, error) ->
-                  mc.execute(
-                      () -> {
-                        afkUploadPending = false;
-                        if (error != null) {
-                          LOGGER.error("AFK snapshot upload failed", error);
-                          tell("Envoi AFK impossible : " + pairingError(error));
-                        } else {
-                          tell("Souvenir AFK envoyé dans ta galerie.");
-                        }
-                      }));
+      LOGGER.info(
+          "Progressive AFK capture started (paused={}, radius={})",
+          mc.isPaused(),
+          options.radius());
+      AFK_CAPTURE.job = new ProgressiveCapture(mc, options.radius());
     } catch (RuntimeException error) {
-      afkUploadPending = false;
       LOGGER.error("AFK snapshot failed", error);
       tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static final class ProgressiveCapture {
+    private final net.minecraft.client.multiplayer.ClientLevel level;
+    private final LocalPlayer player;
+    private final long resources = resourceGeneration;
+    private final Instant started = Instant.now();
+    private final long initialActivity = lastActivityMs;
+    private final com.google.gson.JsonObject metadata;
+    private final PairingClient.UploadIdentity identity;
+    private final boolean fullHeight;
+    private final CapturePixels pixels;
+    private final SpriteAssets sprites;
+    private final QueuedGlbCapture worker;
+    private final DiagnosticsClient.Operation diagnostics;
+    private final java.util.Set<String> transferred = new java.util.HashSet<>();
+    private final java.util.Set<Long> chunks = new java.util.HashSet<>();
+    private CaptureBounds bounds;
+    private CaptureCursor cursor;
+    private CaptureTransfer transfer;
+    private int scanX, scanZ, surfaceFloor;
+    private boolean floorDone, sealed, cancelled;
+    private int blocks, entityCount;
+    private long quads;
+    private java.util.Iterator<Entity> entities;
+    private final CaptureTransfer.Output transferOutput = output();
+
+    private ProgressiveCapture(Minecraft mc, int radius) {
+      level = mc.level;
+      player = mc.player;
+      BlockPos position = player.blockPosition();
+      bounds =
+          CaptureBounds.around(
+              position.getX(),
+              position.getZ(),
+              level.getMinBuildHeight(),
+              level.getMaxBuildHeight(),
+              radius);
+      scanX = bounds.minX();
+      scanZ = bounds.minZ();
+      surfaceFloor = Math.min(position.getY(), bounds.maxY());
+      fullHeight = PairingClient.isFullHeightCapture();
+      metadata = currentCaptureMetadata(position);
+      metadata.addProperty("capturedAt", started.toString());
+      identity = PairingClient.uploadIdentity();
+      pixels = new CapturePixels(mc);
+      sprites = new SpriteAssets(pixels);
+      diagnostics = PairingClient.beginCaptureDiagnostics();
+      worker = new QueuedGlbCapture(PairingClient.exportDirectory());
+    }
+
+    private void frame(Minecraft mc, long now) {
+      if (cancelled || worker.done()) return;
+      try {
+        if (mc.level != level
+            || mc.player != player
+            || resources != resourceGeneration
+            || !PairingClient.isAfkSnapshots())
+          throw new IOException(
+              "Capture AFK interrompue : monde, ressources ou réglages modifiés.");
+        for (long chunk : chunks) {
+          if (!chunkLoaded(mc, (int) (chunk >> 32) * 16, (int) chunk * 16))
+            throw new IOException("Un chunk de la capture a été déchargé.");
+        }
+        if (sealed
+            || (lastActivityMs != initialActivity
+                && now - lastActivityMs < PairingClient.afkOptions().idleMinutes() * 60_000L))
+          return;
+        var budget = new CaptureFrameBudget(System::nanoTime, 2_000_000, 128);
+        while (budget.admit() && !sealed) {
+          if (!floorDone) scanFloor(mc);
+          else if (transfer != null) {
+            if (!transfer.step(pixels::source, transferOutput)) break;
+            if (transfer.done()) transfer = null;
+          } else if (!cursor.done()) captureBlock(mc);
+          else if (entities == null) entities = level.entitiesForRendering().iterator();
+          else if (entities.hasNext()) captureEntity(mc, entities.next());
+          else sealed = worker.finish(started, metadata.toString());
+        }
+      } catch (Exception error) {
+        cancelled = true;
+        diagnostics.failed(error);
+        worker.close();
+        LOGGER.error("Progressive AFK capture failed", error);
+        tell("Capture AFK impossible : " + pairingError(error));
+      }
+    }
+
+    private void scanFloor(Minecraft mc) {
+      if (chunkLoaded(mc, scanX, scanZ)) {
+        chunks.add(
+            ((long) Math.floorDiv(scanX, 16) << 32) | (Math.floorDiv(scanZ, 16) & 0xffffffffL));
+        int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, scanX, scanZ);
+        if (surface > bounds.minY()) surfaceFloor = Math.min(surfaceFloor, surface);
+      }
+      if (scanX < bounds.maxX()) {
+        scanX++;
+        return;
+      }
+      scanX = bounds.minX();
+      if (scanZ < bounds.maxZ()) {
+        scanZ++;
+        return;
+      }
+      int bottom =
+          fullHeight
+              ? bounds.minY()
+              : EXPLORATION.depth.captureBottom(
+                  bounds.minX(),
+                  bounds.maxX(),
+                  bounds.minZ(),
+                  bounds.maxZ(),
+                  surfaceFloor,
+                  bounds.minY());
+      bounds =
+          new CaptureBounds(
+              bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
+      cursor = new CaptureCursor(bounds);
+      floorDone = true;
+    }
+
+    private BlockPos min() {
+      return new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ());
+    }
+
+    private BlockPos max() {
+      return new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ());
+    }
+
+    private BlockPos center() {
+      return new BlockPos(
+          (bounds.minX() + bounds.maxX()) / 2,
+          (bounds.minY() + bounds.maxY()) / 2,
+          (bounds.minZ() + bounds.maxZ()) / 2);
+    }
+
+    private void captureBlock(Minecraft mc) throws IOException {
+      var cell =
+          cursor.peek(
+              (x, z) -> {
+                if (!chunks.contains(
+                    ((long) Math.floorDiv(x, 16) << 32) | (Math.floorDiv(z, 16) & 0xffffffffL)))
+                  return null;
+                int top =
+                    Math.min(
+                        bounds.maxY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+                int terrain = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                while (terrain >= bounds.minY()
+                    && !level.getFluidState(new BlockPos(x, terrain, z)).isEmpty()) terrain--;
+                return new CaptureCursor.Column(top, terrain);
+              });
+      if (cell == null) return;
+      var element = new CaptureElement();
+      var rendered = new RenderedModelCapture(element, mc, pixels);
+      var dispatcher = mc.getBlockEntityRenderDispatcher();
+      dispatcher.prepare(level, mc.gameRenderer.getMainCamera(), mc.hitResult);
+      blocks +=
+          captureCell(
+              element,
+              sprites,
+              rendered,
+              mc,
+              dispatcher,
+              new CaptureLevelView(level, bounds),
+              new BlockPos(cell.x(), cell.y(), cell.z()),
+              min(),
+              max(),
+              center(),
+              cell.terrainTop());
+      admit(element);
+      cursor.advance();
+    }
+
+    private void captureEntity(Minecraft mc, Entity entity) throws IOException {
+      if (entity.isRemoved()
+          || entity.isInvisible()
+          || !bounds.containsEntity(entity.getX(), entity.getY(), entity.getZ())
+          || !chunkLoaded(mc, entity.getBlockX(), entity.getBlockZ())) return;
+      if (++entityCount > 2048) throw new IOException("Trop d’entités dans cette capture.");
+      var element = new CaptureElement();
+      var capture = new RenderedModelCapture(element, mc, pixels);
+      var dispatcher = mc.getEntityRenderDispatcher();
+      dispatcher.prepare(level, mc.gameRenderer.getMainCamera(), mc.getCameraEntity());
+      var renderer = dispatcher.getRenderer(entity);
+      var buffers =
+          capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
+      Vec3 offset = renderer.getRenderOffset(entity, 1f);
+      BlockPos center = center();
+      PoseStack pose = new PoseStack();
+      pose.translate(
+          entity.getX() - center.getX() + offset.x,
+          entity.getY() - center.getY() + offset.y,
+          entity.getZ() - center.getZ() + offset.z);
+      renderer.render(
+          entity, entity.getYRot(), 1f, pose, buffers, dispatcher.getPackedLightCoords(entity, 1f));
+      buffers.finish();
+      admit(element);
+    }
+
+    private void admit(CaptureElement element) throws IOException {
+      var copied = element.seal();
+      quads += copied.quads().size();
+      if (quads > 5_000_000) throw new IOException("La géométrie dépasse le budget de capture.");
+      transfer = new CaptureTransfer(copied, transferred);
+    }
+
+    private CaptureTransfer.Output output() {
+      return new CaptureTransfer.Output() {
+        public boolean begin(String key, int width, int height) throws IOException {
+          return worker.offerTexture(key, width, height);
+        }
+
+        public boolean rows(String key, int row, int[] pixels) throws IOException {
+          return worker.offerRows(key, row, pixels);
+        }
+
+        public boolean end(String key) throws IOException {
+          return worker.offerTextureEnd(key);
+        }
+
+        public boolean geometry(List<CaptureElement.Quad> quads, List<CaptureElement.Light> lights)
+            throws IOException {
+          return worker.offerGeometry(quads, lights);
+        }
+      };
+    }
+
+    private void complete(Minecraft mc) {
+      if (cancelled) return;
+      try {
+        var result = worker.completion().toCompletableFuture().join();
+        diagnostics.captured(result.file());
+        PairingClient.setLastSnapshotAt(result.finishedAt().toEpochMilli());
+        tell("Souvenir AFK enregistré : " + blocks + " blocs / " + entityCount + " entités.");
+        if (identity == null
+            || !identity.equals(PairingClient.uploadIdentity())
+            || mc.level != level
+            || mc.player != player
+            || resourceGeneration != resources
+            || !PairingClient.isAfkSnapshots()) return;
+        afkUploadPending = true;
+        PairingClient.uploadAfkCapture(result.file(), identity)
+            .whenComplete(
+                (message, error) ->
+                    mc.execute(
+                        () -> {
+                          afkUploadPending = false;
+                          if (error != null) {
+                            LOGGER.error("AFK snapshot upload failed", error);
+                            tell("Envoi AFK impossible : " + pairingError(error));
+                          } else tell("Souvenir AFK envoyé dans ta galerie.");
+                        }));
+      } catch (RuntimeException error) {
+        diagnostics.failed(error);
+        LOGGER.error("AFK snapshot failed", error);
+        tell("Capture AFK impossible : " + pairingError(error));
+      }
     }
   }
 
@@ -564,6 +832,10 @@ public class Minemories {
   }
 
   static int exportSelection() {
+    if (AFK_CAPTURE.job != null) {
+      tell("Une capture AFK est encore en cours.");
+      return 0;
+    }
     captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
@@ -600,6 +872,10 @@ public class Minemories {
   }
 
   static int export(int radius) {
+    if (AFK_CAPTURE.job != null) {
+      tell("Une capture AFK est encore en cours.");
+      return 0;
+    }
     captureFailure = "Capture impossible. Vérifie le monde et la zone.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {

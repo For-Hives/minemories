@@ -68,6 +68,32 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void changedIdentityStopsBeforeNetworkAndKeepsResumableState() throws Exception {
+    Path file = capture(64);
+    AtomicInteger requests = new AtomicInteger();
+    String url =
+        start(
+            exchange -> {
+              requests.incrementAndGet();
+              respond(exchange, 200, session(0, false));
+            });
+    var guarded =
+        new ChunkedUploader(
+            HttpClient.newHttpClient(),
+            0,
+            java.util.function.UnaryOperator.identity(),
+            request -> {
+              throw new InterruptedException("Identity changed");
+            });
+    assertThrows(
+        InterruptedException.class,
+        () -> guarded.upload(url, "token", file, new JsonObject(), offset -> {}));
+    assertEquals(0, requests.get());
+    assertTrue(Files.isRegularFile(file.resolveSibling("capture.glb.upload.properties")));
+    assertEquals(64, Files.size(file));
+  }
+
+  @Test
   void historyUploadKeepsOriginalBytesAndMetadataWhileANewerCaptureIsWritten() throws Exception {
     var time = java.time.Instant.parse("2026-10-12T12:00:00Z");
     byte[] bytes = new byte[64];
