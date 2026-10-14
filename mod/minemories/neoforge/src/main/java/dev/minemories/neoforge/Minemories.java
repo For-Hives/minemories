@@ -86,6 +86,8 @@ public class Minemories {
 
   private static final class ExplorationState {
     private ExplorationDepth depth = new ExplorationDepth();
+    private VisitedZones zones = new VisitedZones();
+    private boolean zonesWritable;
     private Path path;
     private boolean writable;
     private long lastSaveMs;
@@ -222,7 +224,14 @@ public class Minemories {
                         .then(
                             Commands.argument("code", StringArgumentType.word())
                                 .executes(ctx -> pair(StringArgumentType.getString(ctx, "code")))))
-                .then(Commands.literal("upload").executes(ctx -> uploadCapture())));
+                .then(Commands.literal("upload").executes(ctx -> uploadCapture()))
+                .then(
+                    Commands.literal("suggestions")
+                        .executes(
+                            ctx -> {
+                              Minecraft.getInstance().setScreen(new SuggestedZonesScreen(null));
+                              return 1;
+                            })));
   }
 
   @EventBusSubscriber(
@@ -333,6 +342,7 @@ public class Minemories {
           saveExploration();
           EXPLORATION.path = null;
           EXPLORATION.depth = new ExplorationDepth();
+          EXPLORATION.zones = new VisitedZones();
         }
         playerPositionKnown = false;
         lastActivityMs = now;
@@ -413,9 +423,7 @@ public class Minemories {
   }
 
   private static void trackExploration(Minecraft mc, long now) {
-    if (mc.level == null
-        || mc.player == null
-        || !chunkLoaded(mc, mc.player.getBlockX(), mc.player.getBlockZ())) return;
+    if (mc.level == null || mc.player == null) return;
     String world;
     if (mc.getSingleplayerServer() != null) {
       world =
@@ -431,6 +439,7 @@ public class Minemories {
       saveExploration();
       EXPLORATION.path = null;
       EXPLORATION.depth = new ExplorationDepth();
+      EXPLORATION.zones = new VisitedZones();
       EXPLORATION.writable = false;
       return;
     }
@@ -444,6 +453,14 @@ public class Minemories {
       saveExploration();
       EXPLORATION.path = path;
       try {
+        EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
+        EXPLORATION.zonesWritable = true;
+      } catch (IOException | IllegalArgumentException error) {
+        EXPLORATION.zones = new VisitedZones();
+        EXPLORATION.zonesWritable = false;
+        LOGGER.warn("Cannot read local zone history; preserving the original file", error);
+      }
+      try {
         EXPLORATION.depth = ExplorationDepth.read(path);
         EXPLORATION.writable = true;
       } catch (IOException | IllegalArgumentException error) {
@@ -455,7 +472,14 @@ public class Minemories {
       }
     }
     BlockPos position = mc.player.blockPosition();
-    EXPLORATION.depth.record(position.getX(), position.getY(), position.getZ());
+    boolean loaded = chunkLoaded(mc, position.getX(), position.getZ());
+    EXPLORATION.zones.sample(
+        position.getX(),
+        position.getZ(),
+        now,
+        !mc.isPaused() && mc.isWindowActive() && now - lastActivityMs < 60_000,
+        loaded);
+    if (loaded) EXPLORATION.depth.record(position.getX(), position.getY(), position.getZ());
     if (now - EXPLORATION.lastSaveMs >= 10_000) {
       EXPLORATION.lastSaveMs = now;
       saveExploration();
@@ -477,8 +501,27 @@ public class Minemories {
         bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bounds.minY());
   }
 
+  private static Path zoneHistoryPath() {
+    return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".zones");
+  }
+
+  static java.util.List<VisitedZones.Zone> suggestedZones() {
+    Minecraft mc = Minecraft.getInstance();
+    trackExploration(mc, System.currentTimeMillis());
+    if (mc.level == null || mc.player == null) return java.util.List.of();
+    return EXPLORATION.zones.suggestions();
+  }
+
   private static void saveExploration() {
-    if (EXPLORATION.path == null || !EXPLORATION.writable) return;
+    if (EXPLORATION.path == null) return;
+    if (EXPLORATION.zonesWritable) {
+      try {
+        EXPLORATION.zones.save(zoneHistoryPath());
+      } catch (IOException error) {
+        LOGGER.warn("Cannot persist local zone history", error);
+      }
+    }
+    if (!EXPLORATION.writable) return;
     try {
       EXPLORATION.depth.save(EXPLORATION.path);
     } catch (IOException error) {

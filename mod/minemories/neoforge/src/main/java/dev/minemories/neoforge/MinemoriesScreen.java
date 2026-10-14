@@ -101,7 +101,14 @@ final class MinemoriesScreen extends Screen {
     unlinkButton = button("Déconnecter ce compte", 14, 70, panelWidth - 28, this::unlink);
     snapshotButton = button("Capturer et envoyer", 14, 97, panelWidth - 28, this::snapshotNow);
     afkButton = button("Captures AFK", 14, 123, panelWidth - 28, this::toggleAfk);
-    storageButton = button("Espace : chargement…", 14, 176, panelWidth - 28, this::openStorage);
+    int half = (panelWidth - 34) / 2;
+    storageButton = button("Espace : chargement…", 14, 176, half, this::openStorage);
+    button(
+        "Zones suggérées",
+        20 + half,
+        176,
+        half,
+        () -> Minecraft.getInstance().setScreen(new SuggestedZonesScreen(this)));
     storageButton.setTooltip(
         Tooltip.create(Component.literal("Voir l’espace et comment libérer ta galerie.")));
     codeInput.setResponder(value -> updateButtons());
