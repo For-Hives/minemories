@@ -1,3 +1,4 @@
+import { discoveryPages } from './content/discovery.ts'
 import { articles } from './content/site-content.ts'
 export interface PageMetadata {
 	path: string
@@ -8,6 +9,27 @@ export interface PageMetadata {
 	articleDate?: string
 }
 export const publicMetadata: PageMetadata[] = [
+	{
+		path: '/decouvrir',
+		title: 'Découvrir Minemories — Un monde, plusieurs souvenirs',
+		description: 'Code public, nostalgie, partage et classement : découvre les usages de Minemories.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/explorer',
+		title: 'Galerie de démonstration — Minemories',
+		description: 'Une galerie illustrée pour essayer recherche, favoris, classement et partage sans compte.',
+		indexable: true,
+		language: 'fr',
+	},
+	...discoveryPages.map(page => ({
+		path: page.path,
+		title: `${page.label.fr} — Minemories`,
+		description: page.lead.fr,
+		indexable: true,
+		language: 'fr' as const,
+	})),
 	{
 		path: '/',
 		title: 'Minemories — Les mondes construits ensemble',
@@ -56,9 +78,8 @@ export const publicMetadata: PageMetadata[] = [
 	},
 	{
 		path: '/pricing',
-		title: 'Tarifs et version expérimentale — Minemories',
-		description:
-			'Les fonctions disponibles dans la version expérimentale Minemories. Aucun abonnement commercial annoncé actuellement.',
+		title: 'Snapshots et cloud longue durée — Minemories',
+		description: 'Tarifs en préparation : 2 € par snapshot et 6 à 3 €/an de cloud. Simule ta collection sans paiement.',
 		indexable: true,
 		language: 'fr',
 	},

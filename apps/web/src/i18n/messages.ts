@@ -1,4 +1,7 @@
 export const frenchMessages: Record<string, string> = {
+	Discover: 'Découvrir',
+	'A world worth keeping.': 'Un monde qu’on a envie de garder.',
+	'Try the demo': 'Essayer la démo',
 	Home: 'Accueil',
 	'My gallery': 'Ma galerie',
 	'Sign in': 'Se connecter',

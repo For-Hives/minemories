@@ -37,7 +37,7 @@ export function RouteMetadata() {
 		const page = metadataFor(pathname)
 		document.title = page.title
 		meta('description', page.description)
-		meta('robots', page.indexable && import.meta.env.VITE_INDEXABLE !== 'false' ? 'index,follow' : 'noindex,nofollow')
+		meta('robots', page.indexable && import.meta.env.VITE_INDEXABLE === 'true' ? 'index,follow' : 'noindex,nofollow')
 		document.querySelector('[data-page-schema]')?.remove()
 		if (page.indexable) publicHead(page)
 		else {

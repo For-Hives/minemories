@@ -11,4 +11,5 @@ test('the Coolify web deploy has no Java toolchain or mod artifact dependency', 
 		for (const command of step.commands ?? []) assert.doesNotMatch(command, javaCommands)
 	}
 	assert.ok(config.steps.build.commands.some(command => command.includes('@minemories/web build')))
+	assert.ok(config.steps.build.commands.every(command => command.startsWith('VITE_INDEXABLE=false ')))
 })

@@ -48,8 +48,8 @@ export const legalContent = {
 			{
 				heading: { fr: 'Ouverture locale', en: 'Local viewing' },
 				body: {
-					fr: 'Ouvrir un GLB depuis ton ordinateur ne l’ajoute pas à la galerie en ligne. Le tutoriel mémorise tes choix et ton prénom facultatif dans ton navigateur ; tu peux les effacer. Le choix de langue est également enregistré sur cet appareil.',
-					en: 'Opening a GLB from your computer does not add it to your online gallery. The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference is also stored on this device.',
+					fr: 'Ouvrir un GLB depuis ton ordinateur ne l’ajoute pas à la galerie en ligne. Le tutoriel mémorise tes choix et ton prénom facultatif dans ton navigateur ; tu peux les effacer. Le choix de langue, les favoris/votes de démonstration et les estimations de prix gardées volontairement sont également enregistrés sur cet appareil. Réinitialiser la démo efface ses favoris et votes ; tu peux effacer les autres préférences dans les données du site de ton navigateur.',
+					en: 'Opening a GLB from your computer does not add it to your online gallery. The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference, demo favorites/votes and estimates you choose to save are also stored on this device. Reset demo clears its favorites and votes; clear other preferences in your browser’s site data.',
 				},
 			},
 			{
@@ -107,35 +107,3 @@ export const legalContent = {
 		],
 	},
 }
-export interface PricingPlan {
-	id: string
-	title: Localized<string>
-	description: Localized<string>
-	features: Localized<string[]>
-	price: number | null
-}
-export const pricingPlans: PricingPlan[] = [
-	{
-		id: 'experimental',
-		title: { fr: 'Découvrir Minemories', en: 'Discover Minemories' },
-		description: {
-			fr: 'L’expérience disponible aujourd’hui, dans sa version expérimentale.',
-			en: 'The experience available today, in its experimental version.',
-		},
-		features: {
-			fr: [
-				'Créer un souvenir avec le mod compatible',
-				'Ouvrir un GLB local sans compte',
-				'Envoyer dans une galerie privée après appairage',
-				'Choisir de créer un lien de partage',
-			],
-			en: [
-				'Capture with the compatible mod',
-				'Open a local GLB without an account',
-				'Upload to a private gallery after pairing',
-				'Choose to create a shared link',
-			],
-		},
-		price: null,
-	},
-]

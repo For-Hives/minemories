@@ -2,12 +2,14 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
+import { discoveryPages } from '../content/discovery'
 import { useI18n } from '../i18n/I18n'
 import { avatarUrl } from '../lib/avatar'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
 
 const navigation = [
+	{ to: '/decouvrir', label: 'Discover' },
 	{ to: '/installation', label: 'Guides' },
 	{ to: '/blog', label: 'Blog' },
 	{ to: '/pricing', label: 'Pricing' },
@@ -94,7 +96,7 @@ function LanguageControl() {
 }
 export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
 	const { session } = useAppContext()
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	const { pathname } = useLocation()
 	const mobile = useRef<HTMLDetailsElement>(null)
 	useEffect(() => {
@@ -168,6 +170,13 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
+					{[...discoveryPages, { path: '/explorer', label: { fr: 'Galerie de démo', en: 'Demo gallery' } }].map(
+						page => (
+							<Link key={page.path} to={page.path}>
+								{page.label[locale]}
+							</Link>
+						)
+					)}
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
 				</nav>
 				<nav aria-label={t('Legal')}>

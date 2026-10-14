@@ -25,7 +25,8 @@ function staticRouting(): Plugin {
 					.then(html => {
 						response.statusCode = privatePage || publicPage ? 200 : 404
 						response.setHeader('Content-Type', 'text/html; charset=utf-8')
-						if (!publicPage) response.setHeader('X-Robots-Tag', privatePage ? 'noindex,nofollow' : 'noindex,follow')
+						if (!(publicPage && html.includes('name="robots" content="index,follow"')))
+							response.setHeader('X-Robots-Tag', 'noindex,nofollow')
 						response.end(html)
 					})
 					.catch(next)

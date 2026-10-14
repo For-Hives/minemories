@@ -1,21 +1,20 @@
 - compléter les tests d’interaction de la galerie (corbeille, renommage, partage et ouverture des captures) et du viewer distant
 - compléter les traductions des guides, erreurs API/moteur et dates/métadonnées à partir du catalogue FR/EN ; définir les URL et hreflang lors de la publication d’autres langues
 - redéployer le front avec `railpack.web.json` sans Java ; publier le premier JAR validé sur GitHub Releases (dépôt public), puis vérifier le téléchargement depuis `/installation`
-- avoir une page avec la liste des Jar (historique de version) + une page changelog automatique 
-- verifier l'alignement du marketing avec besoin.md
+- avoir une page avec la liste des Jar (historique de version) + une page changelog automatique
 - faire des maquette pour l'ui du mod, et creer reelement une ui cool pour le mode baser sur la DA, en s'inspirant des meilleurs ui de mod (iris, Distant horizon, etc... )
 - enregistré les entité dans leurs position au moment de la snapshot (animaux, monstre, joueurs a coté, etc... ) pour faire une "photocopie" figé d'un instant de vie
 - setup polar.sh accout to prepare for D DAY
 - create few ads (video format)
 - exécuter la réconciliation du stockage historique en production après revue du plan, arrêt de l’API et sauvegarde ; l’inventaire, les backfills récupérables et la file durable sont implémentés et testés sur Garage (docs/features/storage-reconciliation.md) ; accès/configuration et cas ambigus : issue #6
 - vérifier les protections et la configuration de l’infrastructure API réelle : démarrage en production, volumes persistants, proxy de confiance, accès direct, bucket privé, sauvegardes et rotation des secrets
-- appliquer le routage statique Nginx de `deploy/nginx.web.conf` dans Coolify et auditer après déploiement : HTML public sans JS, canonical, sitemap, robots, X-Robots-Tag privé et vraies 404
-- add umami/sentry/etc.. to web 
-- ability to make a snapshot "public" -> create a gallerie of best/trending snapshot on the website
+- appliquer le routage statique Nginx de `deploy/nginx.web.conf` dans Coolify et auditer après déploiement : HTML public sans JS, canonical, sitemap vide, robots Disallow, X-Robots-Tag global noindex et vraies 404 ; conserver `VITE_INDEXABLE=false` jusqu’à l’ouverture publique
+- add umami/sentry/etc.. to web
+- relier la galerie publique et le classement à l’API : publication volontaire, modération, votes uniques et anti-abus ; les filtres/favoris/partages d’aperçus sont utilisables en démo sur `/explorer` et `/classement`, sans exposer de captures privées
 - decision LLM to manage username validity (jev like)
-- section on the website for documention about the functionment, like to github opensource repo, how to selfhost ? 
-- mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export 
-- optimization maximum du fichier gltf 
+- compléter la documentation de self-hosting et choisir une licence de redistribution ; `/open-source` pointe déjà vers le dépôt public et son README
+- mod enregistre les zone ou le joueurs joue le plus pour faire une detection automatique des zone interessante a l'export
+- optimization maximum du fichier gltf
 - profiler et réduire la première compilation des shaders du viewer sur les captures riches en matériaux et lumières ; mesurer avant/après sans retirer l’état de chargement ni masquer un rendu en erreur (docs/concepts/development-workflow.md)
 - possiblité davoir une timelapse de l'evolution du mod grace au snapshot reguliere
 - creation d'un logo / DA
@@ -34,4 +33,5 @@
 - suivre localement la profondeur visitée par monde/dimension et par zone afin de limiter le sous-sol des captures automatiques ; tests de persistance et validation visuelle surface/grotte : issue #7
 - faire réaliser à Mae le guide interactif `/installation` sans assistance orale avec le JAR du site : Java/NeoForge, bon dossier mods, menu M, export local 16, ouverture GLB, puis appairage et envoi ; noter système/launcher/version/empreinte et les hésitations, sans déclarer ce parcours validé avant cet essai
 - ajouter les dix vraies captures du tuto manuel Windows dans `apps/web/src/assets/tutorial/windows/` selon son README ; les zones légendées, le remplacement automatique et l’agrandissement sont prêts
-- compléter les coordonnées éditeur/hébergeur/contact et faire relire les pages légales ; définir une offre et ses tarifs avant tout checkout commercial
+- compléter les coordonnées éditeur/hébergeur/contact et faire relire les pages légales ; confirmer le périmètre de facturation (par snapshot ou compte), les taxes, quotas, continuité/résiliation et garanties de stockage des tarifs préparés (snapshot 2 €, cloud 6/5/4/3 €/an) avant tout checkout commercial
+- développer l’archivage et la restauration des sauvegardes de mondes complètes si l’offre snapshot doit porter sur un monde jouable ; les exports actuels restent des captures GLB de zones
