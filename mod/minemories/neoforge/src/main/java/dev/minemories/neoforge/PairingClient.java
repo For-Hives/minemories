@@ -14,6 +14,8 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 
 final class PairingClient {
@@ -21,6 +23,9 @@ final class PairingClient {
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
   private static final AtomicBoolean UPLOADING = new AtomicBoolean();
+  private static final AtomicLong ACCOUNT_GENERATION = new AtomicLong();
+  private static final DiagnosticsClient DIAGNOSTICS =
+      new DiagnosticsClient(HTTP, PairingClient::readSettings, PairingClient::diagnosticVersions);
 
   private PairingClient() {}
 
@@ -50,10 +55,58 @@ final class PairingClient {
   }
 
   static void unlink() {
-    Properties settings = readSettings();
-    settings.remove("deviceToken");
-    settings.remove("deviceId");
-    saveSettings(settings);
+    ACCOUNT_GENERATION.incrementAndGet();
+    updateSettings(
+        settings -> {
+          settings.remove("deviceToken");
+          settings.remove("deviceId");
+          settings.remove("diagnosticsConsent");
+          settings.remove("diagnosticsIdentity");
+        });
+  }
+
+  static boolean diagnosticsConsent() {
+    return ClientSettings.diagnosticsConsentForIdentity(
+            readSettings(), System.getenv("MINEMORIES_API_URL"))
+        && DIAGNOSTICS.consentAllowed();
+  }
+
+  static void setDiagnosticsConsent(boolean enabled) {
+    DIAGNOSTICS.changeConsent(
+        enabled,
+        () -> {
+          Properties settings = readSettings();
+          if (enabled && settings.getProperty("deviceToken", "").isBlank())
+            throw new IllegalStateException("Connecte ton compte avant d’activer les diagnostics.");
+          settings.setProperty("diagnosticsConsent", Boolean.toString(enabled));
+          if (enabled)
+            settings.setProperty(
+                "diagnosticsIdentity",
+                ClientSettings.diagnosticsBinding(settings, System.getenv("MINEMORIES_API_URL")));
+          else settings.remove("diagnosticsIdentity");
+          saveSettings(settings);
+        });
+  }
+
+  static String diagnosticsStatus() {
+    return DIAGNOSTICS.status();
+  }
+
+  static DiagnosticsClient.Operation beginCaptureDiagnostics() {
+    return DIAGNOSTICS.begin(DiagnosticReport.Phase.CAPTURE, null);
+  }
+
+  private static DiagnosticReport.Versions diagnosticVersions() {
+    String mod =
+        net.neoforged.fml.ModList.get()
+            .getModContainerById("minemories")
+            .map(container -> container.getModInfo().getVersion().toString())
+            .orElse("unknown");
+    return new DiagnosticReport.Versions(
+        mod,
+        net.minecraft.SharedConstants.getCurrentVersion().getName(),
+        "neoforge-"
+            + net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion.getVersion());
   }
 
   static boolean isAfkSnapshots() {
@@ -61,9 +114,7 @@ final class PairingClient {
   }
 
   static void setAfkSnapshots(boolean enabled) {
-    Properties settings = readSettings();
-    settings.setProperty("afkSnapshots", Boolean.toString(enabled));
-    saveSettings(settings);
+    updateSettings(settings -> settings.setProperty("afkSnapshots", Boolean.toString(enabled)));
   }
 
   static boolean isFullHeightCapture() {
@@ -71,9 +122,8 @@ final class PairingClient {
   }
 
   static void setFullHeightCapture(boolean enabled) {
-    Properties settings = readSettings();
-    settings.setProperty("captureFullHeight", Boolean.toString(enabled));
-    saveSettings(settings);
+    updateSettings(
+        settings -> settings.setProperty("captureFullHeight", Boolean.toString(enabled)));
   }
 
   static ClientSettings.AfkOptions afkOptions() {
@@ -81,9 +131,7 @@ final class PairingClient {
   }
 
   static void configureAfk(ClientSettings.AfkOptions options) {
-    Properties settings = readSettings();
-    ClientSettings.configureAfk(settings, options);
-    saveSettings(settings);
+    updateSettings(settings -> ClientSettings.configureAfk(settings, options));
   }
 
   static long lastSnapshotAt() {
@@ -95,12 +143,11 @@ final class PairingClient {
   }
 
   static void setLastSnapshotAt(long timestamp) {
-    Properties settings = readSettings();
-    settings.setProperty("lastSnapshotAt", Long.toString(timestamp));
-    saveSettings(settings);
+    updateSettings(settings -> settings.setProperty("lastSnapshotAt", Long.toString(timestamp)));
   }
 
   static CompletableFuture<String> pair(String code) {
+    long generation = ACCOUNT_GENERATION.incrementAndGet();
     Properties settings = readSettings();
     JsonObject payload = new JsonObject();
     payload.addProperty("code", code);
@@ -121,14 +168,19 @@ final class PairingClient {
                     new IllegalStateException("API refused (HTTP " + response.statusCode() + ")"));
               }
               JsonObject result = JsonParser.parseString(response.body()).getAsJsonObject();
-              Properties current = readSettings();
-              if (!apiUrl(current).equals(apiUrl(settings))) {
-                throw new CompletionException(
-                    new IllegalStateException("API changed. Generate a new code."));
-              }
-              current.setProperty("deviceToken", result.get("deviceToken").getAsString());
-              current.setProperty("deviceId", result.get("deviceId").getAsString());
-              saveSettings(current);
+              updateSettings(
+                  current -> {
+                    if (generation != ACCOUNT_GENERATION.get()
+                        || !apiUrl(current).equals(apiUrl(settings))) {
+                      throw new CompletionException(
+                          new IllegalStateException(
+                              "Compte ou API changé. Génère un nouveau code."));
+                    }
+                    current.setProperty("deviceToken", result.get("deviceToken").getAsString());
+                    current.setProperty("deviceId", result.get("deviceId").getAsString());
+                    current.remove("diagnosticsConsent");
+                    current.remove("diagnosticsIdentity");
+                  });
               return "Mod paired. You can now use /minemories upload.";
             });
   }
@@ -149,18 +201,31 @@ final class PairingClient {
       return CompletableFuture.failedFuture(
           new IllegalStateException("An upload is already running."));
     }
+    var diagnostics = DIAGNOSTICS.begin(DiagnosticReport.Phase.UPLOAD, file);
     return CompletableFuture.supplyAsync(
         () -> {
           try {
             JsonObject metadata = CaptureHistory.metadata(file);
-            new ChunkedUploader(HTTP, 1000)
-                .upload(apiUrl(settings), token, file, metadata, offset -> {});
+            new ChunkedUploader(HTTP, 1000, diagnostics::headers)
+                .upload(
+                    apiUrl(settings),
+                    token,
+                    file,
+                    metadata,
+                    offset -> diagnostics.step(DiagnosticReport.Step.UPLOAD_CHUNK));
+            diagnostics.success();
             return "Your memory is saved. Find it in your gallery.";
           } catch (InterruptedException error) {
+            diagnostics.failed(error);
             Thread.currentThread().interrupt();
             throw new CompletionException(error);
           } catch (IOException error) {
+            if (ChunkedUploader.isAuthorizationFailure(error)) diagnostics.revoked();
+            diagnostics.failed(error);
             throw new CompletionException(error);
+          } catch (RuntimeException error) {
+            diagnostics.failed(error);
+            throw error;
           } finally {
             UPLOADING.set(false);
           }
@@ -197,16 +262,19 @@ final class PairingClient {
 
   static boolean configure(String api, String directory) {
     if (isUploading()) throw new IllegalStateException("Attends la fin de l’envoi.");
-    Properties settings = readSettings();
-    String previousApi;
-    try {
-      previousApi = apiUrl(settings);
-    } catch (IllegalArgumentException error) {
-      previousApi = "invalid";
-    }
-    boolean changed = ClientSettings.configure(settings, previousApi, api, directory, home());
-    saveSettings(settings);
-    return changed;
+    AtomicBoolean changed = new AtomicBoolean();
+    updateSettings(
+        settings -> {
+          String previousApi;
+          try {
+            previousApi = apiUrl(settings);
+          } catch (IllegalArgumentException error) {
+            previousApi = "invalid";
+          }
+          changed.set(ClientSettings.configure(settings, previousApi, api, directory, home()));
+          if (changed.get()) ACCOUNT_GENERATION.incrementAndGet();
+        });
+    return changed.get();
   }
 
   private static Path home() {
@@ -220,5 +288,14 @@ final class PairingClient {
     } catch (IOException error) {
       throw new CompletionException(error);
     }
+  }
+
+  private static void updateSettings(Consumer<Properties> mutation) {
+    DIAGNOSTICS.settingsChanged(
+        () -> {
+          Properties settings = readSettings();
+          mutation.accept(settings);
+          saveSettings(settings);
+        });
   }
 }

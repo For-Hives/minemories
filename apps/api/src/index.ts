@@ -9,6 +9,8 @@ import * as z from 'zod'
 import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { database } from './database'
+import { diagnosticsRouter } from './diagnostics-routes'
+import { diagnostics } from './diagnostics-state'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
 import { ObjectDeletionQueue } from './object-deletions'
@@ -35,6 +37,7 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
+import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { cleanupUploads, uploadRouter } from './uploads'
@@ -46,6 +49,7 @@ const pairingCodePattern = /^\d{6}$/
 
 interface ApiContext {
 	userId: string | null
+	correlationId: string
 }
 
 const os = implement(apiContract).$context<ApiContext>()
@@ -129,9 +133,19 @@ const router = os.router({
 })
 
 const rpcHandler = new RPCHandler(router, {
-	interceptors: [onError(error => console.error('[oRPC]', error))],
+	interceptors: [onError((_error, options) => logApiFailure('rpc_failed', options.context.correlationId))],
 })
-export const app = new Hono<{ Bindings: { peerAddress: string | undefined } }>()
+export const app = new Hono<{ Bindings: { peerAddress: string | undefined }; Variables: { correlationId: string } }>()
+app.use('*', (context, next) => {
+	const correlationId = requestCorrelation(context.req.raw)
+	context.set('correlationId', correlationId)
+	context.header('X-Minemories-Correlation', correlationId)
+	return next()
+})
+app.onError((_error, context) => {
+	logApiFailure('request_failed', context.get('correlationId'))
+	return context.json({ error: 'request_failed' }, 500)
+})
 
 app.use(
 	'*',
@@ -139,7 +153,17 @@ app.use(
 		origin: webOrigins,
 		credentials: true,
 		allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-		allowHeaders: ['Content-Type', 'Authorization', 'X-Memory-Name', 'X-Memory-Metadata', 'Upload-Offset'],
+		allowHeaders: [
+			'Content-Type',
+			'Authorization',
+			'X-Memory-Name',
+			'X-Memory-Metadata',
+			'Upload-Offset',
+			'X-Minemories-Correlation',
+			'X-Minemories-Diagnostics-Consent',
+			'X-Minemories-Diagnostics-Permit',
+		],
+		exposeHeaders: ['X-Minemories-Correlation'],
 	})
 )
 
@@ -153,7 +177,7 @@ app.use('/rpc/*', async (context, next) => {
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const { matched, response } = await rpcHandler.handle(context.req.raw, {
 		prefix: '/rpc',
-		context: { userId: session?.user.id ?? null },
+		context: { userId: session?.user.id ?? null, correlationId: context.get('correlationId') },
 	})
 	if (matched) return context.newResponse(response.body, response)
 	return next()
@@ -214,8 +238,8 @@ app.get('/api/shared/:token/file', async context => {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 		})
-	} catch (error) {
-		console.error('[shared-download] failed to read memory', error)
+	} catch {
+		logApiFailure('shared_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
 })
@@ -241,8 +265,8 @@ app.get('/api/memories/:id/file', async context => {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 		})
-	} catch (error) {
-		console.error('[memory-download] failed to read memory', error)
+	} catch {
+		logApiFailure('memory_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
 })
@@ -255,6 +279,7 @@ function splitModImages(metadata: MemoryMetadata): void {
 }
 
 app.route('/api/mod/uploads', uploadRouter)
+app.route('/api/mod/diagnostics', diagnosticsRouter)
 
 function reserveLegacyStorage(objectKey: string, userId: string, size: number): boolean {
 	return database
@@ -328,7 +353,8 @@ app.post('/api/mod/memories', async context => {
 	} catch (error) {
 		release()
 		await objectDeletions.drain(objectKey).catch(() => undefined)
-		console.error('[memory-upload] failed to save memory', error)
+		recordApiFailure(context.req.raw, error)
+		logApiFailure('memory_upload_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	} finally {
 		release()
@@ -363,6 +389,7 @@ if (import.meta.main) {
 		setInterval(() => void cleanupUploads(), 3_600_000),
 		setInterval(() => void objectDeletions.maintain(), 60_000),
 		setInterval(() => purgeDeletedMemories(), 3_600_000),
+		setInterval(() => diagnostics.cleanup(), 3_600_000),
 	]
 	const shutdown = async () => {
 		for (const interval of intervals) clearInterval(interval)
