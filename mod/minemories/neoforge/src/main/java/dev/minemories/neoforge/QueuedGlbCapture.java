@@ -28,6 +28,7 @@ final class QueuedGlbCapture implements AutoCloseable {
   static final int QUEUE_PACKETS = 16;
   static final int MAX_BAND_PIXELS = 65536;
   static final int MAX_BATCH_QUADS = 64;
+  static final int MAX_LIGHTS = 4096;
   private static final int MAX_TEXTURES = 1024;
   private static final long MAX_TEXTURE_PIXELS = 64L * 1024 * 1024;
   private static final long MAX_TEXTURE_BYTES = 64L * 1024 * 1024;
@@ -146,7 +147,7 @@ final class QueuedGlbCapture implements AutoCloseable {
       CaptureWorkspace.cleanupAbandoned(scratch, 32);
       Result result;
       try (var workspace = new CaptureWorkspace(scratch);
-          var scene = new SpoolingGlbScene(workspace.directory())) {
+          var scene = new SpoolingGlbScene(workspace.directory(), captureLimits())) {
         result = new ConsumerState(workspace.directory(), scene).consume();
       }
       completion.complete(result);
@@ -155,6 +156,19 @@ final class QueuedGlbCapture implements AutoCloseable {
     } finally {
       queue.clear();
     }
+  }
+
+  private static SpoolingGlbScene.Limits captureLimits() {
+    var defaults = SpoolingGlbScene.Limits.defaults();
+    return new SpoolingGlbScene.Limits(
+        defaults.materials(),
+        defaults.textures(),
+        MAX_LIGHTS,
+        defaults.stringBytes(),
+        defaults.jsonBytes(),
+        defaults.spoolBytes(),
+        defaults.fileBytes(),
+        defaults.openFiles());
   }
 
   private final class ConsumerState {

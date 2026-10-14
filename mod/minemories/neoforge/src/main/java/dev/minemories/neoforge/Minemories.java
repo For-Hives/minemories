@@ -140,13 +140,14 @@ public class Minemories {
     metadata.addProperty("dayTime", mc.level == null ? null : mc.level.getDayTime());
     metadata.addProperty("raining", mc.level == null ? null : mc.level.isRaining());
     metadata.addProperty("thundering", mc.level == null ? null : mc.level.isThundering());
-    if (mc.isLocalServer()) {
-      var worldData = mc.getSingleplayerServer().getWorldData();
+    var localServer = mc.getSingleplayerServer();
+    if (localServer != null) {
+      var worldData = localServer.getWorldData();
       metadata.addProperty("worldName", worldData.getLevelName());
       metadata.addProperty("seed", Long.toString(worldData.worldGenOptions().seed()));
       metadata.addProperty("serverName", (String) null);
       try {
-        var screenshot = mc.getSingleplayerServer().getWorldScreenshotFile();
+        var screenshot = localServer.getWorldScreenshotFile();
         if (screenshot.isPresent() && Files.isRegularFile(screenshot.get())) {
           metadata.addProperty(
               "thumbnail",
@@ -407,6 +408,7 @@ public class Minemories {
         }
       } catch (Exception error) {
         cancelled = true;
+        lastActivityMs = now;
         diagnostics.failed(error);
         worker.close();
         LOGGER.error("Progressive AFK capture failed", error);
@@ -580,6 +582,7 @@ public class Minemories {
                         }));
       } catch (RuntimeException error) {
         diagnostics.failed(error);
+        lastActivityMs = System.currentTimeMillis();
         LOGGER.error("AFK snapshot failed", error);
         tell("Capture AFK impossible : " + pairingError(error));
       }

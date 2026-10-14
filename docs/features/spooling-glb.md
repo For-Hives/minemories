@@ -85,9 +85,12 @@ worker, dans les limites décrites plus haut.
 
 `Limits` permet de régler séparément matériaux, textures, lumières, octets UTF-8
 par chaîne, octets JSON, octets du spool, octets du GLB final et fichiers ouverts.
-Les valeurs par défaut sont 4 096 matériaux, 1 024 textures, 128 lumières,
+Les valeurs par défaut du core sont 4 096 matériaux, 1 024 textures, 128 lumières,
 4 096 octets par chaîne, 4 Mio de JSON, 256 Mio de spool, 200 Mio de GLB et
-8 fichiers ouverts. Au moins deux fichiers ouverts sont nécessaires à la copie.
+8 fichiers ouverts. Le worker AFK porte explicitement le budget de lumières à
+4 096 pour conserver les scènes riches en torches au lieu de refuser le 129e
+point lumineux ; les autres plafonds restent identiques. Au moins deux fichiers
+ouverts sont nécessaires à la copie.
 Le spool inclut la taille non paddée du JSON ; la limite du fichier final inclut
 headers, alignements, géométrie, JSON et textures. Le pic disque peut atteindre
 spool + fichier final, puis les copies de compatibilité réalisées par l’historique.
@@ -162,5 +165,23 @@ Le build complet `bun run build` a passé le 14 octobre 2026 avec Bun 1.4.3 :
 core). La comparaison en jeu/Blender, les scénarios d'annulation et les mesures sur
 le JAR exact restent nécessaires avant fusion. Le premier lancement du client de
 validation isolé a échoué à créer le contexte GLX ; Mesa/llvmpipe permet un contexte
-OpenGL 4.6 et un nouvel essai de développement est en cours. Ces mesures de rendu
-logiciel ne prouvent pas les performances de la carte graphique du joueur.
+OpenGL 4.6. Un essai de développement isolé a terminé en pause sur une zone
+17 × 17 × 5 : 755 blocs, 2 entités (cochon/joueur), 70 matériaux et 17 images
+importées dans Blender 5.2.2 ; terrain/neige/végétation/entités sont visibles.
+Positions, normales, UV, indices, paramètres des matériaux et nodes correspondent
+au parcours manuel. Les PNG hors atlas de blocs ont les mêmes pixels ; l’atlas
+animé lu à quelques secondes d’intervalle présente 6 100 pixels différents sur
+524 288. L’équivalence complète des textures n’est donc pas démontrée.
+
+Sur cet essai llvmpipe, l’export manuel a occupé environ 395 ms ; la capture
+progressive a traversé 44 frames en environ 5,7 s (écriture terminée après 5,27 s),
+avec une frame totale maximale de 311 ms. Cette dernière inclut le rendu logiciel,
+pas seulement la capture. Ces mesures ne prouvent pas les performances de la
+carte graphique du joueur et ne remplacent pas la matrice petite/grande scène,
+textures GPU/packing/PBO, annulations et essais sur le JAR exact.
+
+L’essai initial au rayon 32 a révélé un dépassement du plafond core de 128
+lumières ; le worker utilise désormais un plafond explicite de 4 096, testé avec
+129 lumières conservées. Un échec actualise aussi le délai d’activité pour éviter
+un retry immédiat, et le départ du serveur solo n’est plus supposé impossible
+pendant la lecture des métadonnées.

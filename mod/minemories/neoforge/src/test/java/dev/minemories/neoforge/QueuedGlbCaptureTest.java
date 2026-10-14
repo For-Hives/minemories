@@ -21,6 +21,38 @@ class QueuedGlbCaptureTest {
   private static final float[] UV = {0, 0, 1, 0, 1, 1, 0, 1};
 
   @Test
+  void ordinaryTorchRichCapturesKeepMoreThanTheLegacyLightCap() throws Exception {
+    var element = new CaptureElement();
+    element.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
+    for (int i = 0; i < 129; i++) element.addPointLight(i, 2, 0, 0xffffff, 15);
+    var copied = element.seal();
+    try (var worker = new QueuedGlbCapture(directory)) {
+      awaitOffer(() -> call(() -> worker.offerTexture("image", 1, 1)));
+      awaitOffer(() -> call(() -> worker.offerRows("image", 0, new int[] {0xffffffff})));
+      awaitOffer(() -> call(() -> worker.offerTextureEnd("image")));
+      awaitOffer(
+          () -> call(() -> worker.offerGeometry(copied.quads(), copied.lights().subList(0, 128))));
+      awaitOffer(
+          () -> call(() -> worker.offerGeometry(List.of(), copied.lights().subList(128, 129))));
+      awaitOffer(() -> call(() -> worker.finish(TIME, "{}")));
+      Path file = worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS).file();
+      var bytes =
+          java.nio.ByteBuffer.wrap(Files.readAllBytes(file))
+              .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+      int length = bytes.getInt(12);
+      String json = new String(bytes.array(), 20, length, java.nio.charset.StandardCharsets.UTF_8);
+      assertEquals(
+          129,
+          com.google.gson.JsonParser.parseString(json)
+              .getAsJsonObject()
+              .getAsJsonObject("extensions")
+              .getAsJsonObject("KHR_lights_punctual")
+              .getAsJsonArray("lights")
+              .size());
+    }
+  }
+
+  @Test
   void copiedBandsAndPrimitivesProduceACompleteLegacyEquivalentGlbOffTheCallerThread()
       throws Exception {
     int[] rgba = {0xff0000ff, 0xff00ff00, 0xffff0000, 0x00ffffff};
