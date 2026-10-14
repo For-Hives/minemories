@@ -83,6 +83,10 @@ Par défaut, les captures autour du joueur, manuelles ou AFK, coupent le sous-so
 
 Cet historique est local, séparé par monde/serveur, dimension et joueur. Il est enregistré dans `config/minemories/exploration/` toutes les dix secondes, avant une capture et au changement de monde. Il conserve au maximum 100 000 chunks par historique ; les plus anciens peuvent être évincés. Les visites antérieures à cette version ne sont pas récupérées. Le seuil est commun à la zone capturée : des cavités non visitées au-dessus de cette profondeur peuvent encore apparaître. Ce n’est pas une reconstruction des seuls blocs vus par le joueur.
 
+La validation comparative complète (surface/grotte/retour/autre zone, dimensions,
+redémarrage et autre joueur) est documentée dans
+[Validation de la profondeur visitée](exploration-depth-validation.md).
+
 Le bouton **Profondeur** des réglages avancés permet de revenir à toute la hauteur de la dimension. Une sélection explicite conserve toujours ses deux coins. Le suivi ne modifie aucun bloc du monde et ne charge aucun chunk absent. Les côtés et le dessous de la coupe reçoivent une section esthétique : terre dans les trois blocs sous la surface, puis pierre. Les ouvertures de grottes rencontrant le bord sont fermées à ce plan, sans remplir la grotte à l’intérieur. Les fluides au-dessus du fond d’un lac gardent leur surface et leurs faces de coupe transparentes, même si l’eau continue hors de la capture ; les fluides souterrains peuvent rencontrer la section de pierre. Les blocs transparents et non cubiques gardent leur modèle. Aucune paroi n’est ajoutée au-dessus du terrain et aucun bloc du monde n’est modifié.
 
 ## Distribution depuis le dépôt public

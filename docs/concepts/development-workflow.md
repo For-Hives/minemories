@@ -111,7 +111,7 @@ dans les nuages, avec vérification de l’événement de libération. Le bundle
 mesure environ 656 kB minifiés / 166 kB gzip : le léger dépassement de
 l’avertissement de 650 kB reste visible, sans modification du seuil.
 
-Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée, la fermeture des bordures est implémentée et validée ci-dessous.
+Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée et [validée par un parcours comparatif](../features/exploration-depth-validation.md), la fermeture des bordures est implémentée et validée ci-dessous.
 
 
 Validation locale des coupes du 10 octobre 2026 : exports NeoForge sur une copie isolée
