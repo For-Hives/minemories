@@ -17,6 +17,8 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL21;
 
 /** Captures the renderer's transformed primitives and the texture actually used by that pass. */
 final class RenderedModelCapture {
@@ -118,18 +120,26 @@ final class RenderedModelCapture {
       throw new IOException("Trop de textures d’entités dans cette capture.");
     byte[] png;
     int alphaMode;
-    var texture = minecraft.getTextureManager().getTexture(id);
     int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
     int alignment = GL11.glGetInteger(GL11.GL_PACK_ALIGNMENT);
     int rowLength = GL11.glGetInteger(GL11.GL_PACK_ROW_LENGTH);
     int skipRows = GL11.glGetInteger(GL11.GL_PACK_SKIP_ROWS);
     int skipPixels = GL11.glGetInteger(GL11.GL_PACK_SKIP_PIXELS);
+    int packBuffer = GL11.glGetInteger(GL21.GL_PIXEL_PACK_BUFFER_BINDING);
     try {
+      // Loading a previously unseen texture can bind it too; include that step in the restore
+      // scope.
+      var texture = minecraft.getTextureManager().getTexture(id);
       texture.bind();
       int width = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
       int height = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
       RenderedTexture.checkDimensions(width, height);
       try (NativeImage image = new NativeImage(width, height, false)) {
+        // NativeImage only sets alignment. A mod's packing offsets/PBO must not redirect this read.
+        GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
+        GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
         image.downloadTexture(0, false);
         int[] rgba = new int[width * height];
         for (int y = 0; y < height; y++)
@@ -144,6 +154,7 @@ final class RenderedModelCapture {
       GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, rowLength);
       GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, skipRows);
       GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, skipPixels);
+      GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, packBuffer);
     }
     if (png.length > MAX_TEXTURE_BYTES - textureBytes)
       throw new IOException("Les textures d’entités dépassent la limite de capture.");

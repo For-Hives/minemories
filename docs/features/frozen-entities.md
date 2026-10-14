@@ -67,8 +67,8 @@ vérifient les canaux, l'alpha, l'ordre des lignes et les limites avant allocati
 Validation du 14 octobre 2026 : Minecraft 1.21.1 / NeoForge 21.1.248 a chargé
 le JAR `0.1.0-beta` seul, accompagné d'un mod de test distinct dans un profil
 jetable. Empreinte :
-`4c0754285444f068c73df5d9a6c37a9db500e29aea7589fc9b7c9c286557a882`
-(181 650 octets). La scène exportée comprend loup apprivoisé assis avec collier,
+`249fa27d83b00a78beef6bca300a94b60a8e1297c2948ffde6e645c61cd70b20`
+(181 754 octets). La scène exportée comprend loup apprivoisé assis avec collier,
 chat assis, mouton magenta, zombie casqué, squelette avec arc, poulet,
 porte-armure équipé et joueur, lit complet et coffres simple/double. Les exports
 fermés/ouverts et les exports loup seul, lit seul et coffre seul ont été importés
@@ -87,3 +87,8 @@ Cette fixture n'annonce pas la compatibilité de tous les renderers de tous les
 mods. Les pipelines procéduraux et GPU propres à des modpacks doivent être
 exercés séparément. L'envoi vers l'API de production n'a pas été déclenché par
 ce test sans appairage.
+
+Le scénario exerce aussi une texture déchargée juste avant l’export et un état
+de lecture OpenGL non standard (packing et pixel-pack buffer). La copie remet
+la lecture à zéro puis restaure binding, offsets, alignement et buffer ; les
+assertions en jeu vérifient ces six valeurs après chaque export.
