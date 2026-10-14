@@ -139,10 +139,13 @@ export function renameMemory(userId: string, id: string, name: string): boolean 
 
 export function trashMemory(userId: string, id: string): boolean {
 	const now = Date.now()
-	const result = database
-		.query('UPDATE memories SET deleted_at = ?, purge_after = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
-		.run(now, now + TRASH_RETENTION_MS, id, userId)
-	return result.changes === 1
+	// Bun includes trigger changes in run().changes; RETURNING identifies the owned memory itself.
+	const row = database
+		.query(
+			'UPDATE memories SET deleted_at = ?, purge_after = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL RETURNING id'
+		)
+		.get(now, now + TRASH_RETENTION_MS, id, userId)
+	return row !== null
 }
 
 export function restoreMemory(userId: string, id: string): boolean {

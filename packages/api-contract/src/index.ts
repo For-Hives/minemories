@@ -1,5 +1,6 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
+import { discoveryContract } from './discovery'
 
 export { DIAGNOSTIC_BODY_BYTES, diagnosticSubmission, type ModDiagnostic } from './diagnostics'
 
@@ -37,6 +38,7 @@ const memorySchema = z.object({
 })
 
 export const apiContract = {
+	discovery: discoveryContract,
 	account: {
 		storage: oc.output(
 			z.object({

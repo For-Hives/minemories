@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import './configuration'
+import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateTrashRetention } from './trash-retention'
 
@@ -74,3 +75,5 @@ database.exec(`
   CREATE INDEX IF NOT EXISTS share_links_memory_id_idx
     ON share_links(memory_id, created_at DESC);
 `)
+
+migrateDiscovery(database)
