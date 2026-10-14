@@ -100,9 +100,9 @@ pour maintenir l’ancien endpoint ; les nouveaux morceaux restent limités à 4
 - `bun run build` vérifie et construit le web, l’API et le JAR NeoForge avec JDK 21.
 - `bun run api:garage` valide le stockage réel, sa panne et sa reprise, ainsi que
   la reprise après redémarrage du processus API, sans doublon.
-- La validation manuelle du client Minecraft reste à faire : envoyer 200 MiB,
-  couper/rétablir le réseau, redémarrer l’API, relancer l’upload et vérifier
-  qu’une seule capture complète apparaît dans la galerie.
+- Le parcours natif Minecraft à 200 Mio, coupure après 12 Mio et reprise après
+  redémarrage client/API est [validé et documenté](native-upload-resume-validation.md) :
+  une seule mémoire complète est stockée, avec checksum et métadonnées identiques.
 
 ## Captures AFK
 
