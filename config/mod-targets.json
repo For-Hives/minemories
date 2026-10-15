@@ -16,18 +16,19 @@
 			"loader": "fabric",
 			"name": "Fabric",
 			"minecraft": "1.21.1",
-			"loaderVersion": null,
+			"loaderVersion": "0.19.5",
 			"java": "21",
 			"project": "fabric",
 			"enabled": false,
-			"validatedInGame": false
+			"validatedInGame": false,
+			"fabricApi": "0.116.17+1.21.1"
 		},
 		{
 			"id": "forge-mc1.21.1",
 			"loader": "forge",
 			"name": "Forge",
 			"minecraft": "1.21.1",
-			"loaderVersion": null,
+			"loaderVersion": "52.1.19",
 			"java": "21",
 			"project": "forge",
 			"enabled": false,

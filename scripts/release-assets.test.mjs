@@ -7,7 +7,7 @@ import { basename, resolve } from 'node:path'
 import { test } from 'node:test'
 import { collectReleaseAssets } from './collect-release-assets.mjs'
 import { downloadReleaseTarget } from './download-release-target.mjs'
-import { packageMod } from './package-mod.mjs'
+import { modArtifact, packageMod } from './package-mod.mjs'
 import { publishRelease } from './publish-release.mjs'
 import { filenameFor, repositoryRoot } from './release-utils.mjs'
 
@@ -15,8 +15,11 @@ async function fixture(t, multiple = false) {
 	const root = await mkdtemp(resolve(tmpdir(), 'minemories-assets-'))
 	t.after(() => rm(root, { recursive: true, force: true }))
 	const configuration = JSON.parse(await readFile(resolve(repositoryRoot, 'config/mod-targets.json'), 'utf8'))
-	if (multiple)
-		Object.assign(configuration.targets[1], { enabled: true, validatedInGame: true, loaderVersion: 'test-fixture' })
+	for (const target of configuration.targets) {
+		target.enabled = target.loader === 'neoforge' || (multiple && target.loader === 'fabric')
+		if (target.enabled) target.validatedInGame = true
+	}
+	if (multiple) configuration.targets.find(target => target.loader === 'fabric').loaderVersion = 'test-fixture'
 	const targets = configuration.targets.filter(target => target.enabled)
 	await mkdir(resolve(root, 'config'))
 	await writeFile(resolve(root, 'config/mod-targets.json'), JSON.stringify(configuration))
@@ -30,7 +33,14 @@ async function fixture(t, multiple = false) {
 	}
 	const source = resolve(root, 'libs')
 	await mkdir(source)
-	await writeFile(resolve(source, `minemories-${plan.version}.jar`), Buffer.from([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]))
+	await Promise.all(
+		targets.map(target =>
+			writeFile(
+				resolve(source, `${modArtifact(target.loader).prefix}${plan.version}.jar`),
+				Buffer.from([0x50, 0x4b, 0x03, 0x04, 1, 2, 3])
+			)
+		)
+	)
 	const inputs = resolve(root, 'work/release-inputs')
 	await Promise.all(
 		targets.map(async target => {

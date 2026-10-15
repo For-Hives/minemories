@@ -3,8 +3,8 @@ import { createReadStream } from 'node:fs'
 import { open, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { downloadFilename } from './package-mod.mjs'
-import { filenameFor, readTargets } from './release-utils.mjs'
+import { modArtifact } from './package-mod.mjs'
+import { filenameFor } from './release-utils.mjs'
 
 const sha256Pattern = /^[a-f0-9]{64}$/
 const versionPattern = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/
@@ -29,8 +29,8 @@ async function hashJar(path) {
 }
 
 export async function verifyModArtifact(directory, expectedSha256, options = {}) {
-	const target = options.target ?? (await readTargets()).find(item => filenameFor(item) === downloadFilename)
-	if (!target) throw new Error('Missing legacy download target.')
+	if (typeof options === 'string') options = { loader: options }
+	const target = options.target ?? modArtifact(options.loader)
 	const filename = filenameFor(target)
 	if (typeof expectedSha256 !== 'string' || !sha256Pattern.test(expectedSha256))
 		throw new Error('The original build SHA-256 is required.')
@@ -44,6 +44,7 @@ export async function verifyModArtifact(directory, expectedSha256, options = {})
 		manifest.minecraft !== target.minecraft ||
 		manifest.loader !== target.name ||
 		manifest.loaderVersion !== target.loaderVersion ||
+		manifest.fabricApi !== target.fabricApi ||
 		manifest.file !== `/downloads/${filename}` ||
 		(options.version && manifest.version !== options.version) ||
 		(options.sourceCommit && manifest.sourceCommit !== options.sourceCommit) ||
@@ -62,7 +63,7 @@ export async function verifyModArtifact(directory, expectedSha256, options = {})
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-	const [directory, expectedSha256] = process.argv.slice(2)
-	if (!directory) throw new Error('Usage: verify-mod-artifact.mjs <directory> <build-sha256>')
-	await verifyModArtifact(directory, expectedSha256)
+	const [directory, expectedSha256, loader] = process.argv.slice(2)
+	if (!directory) throw new Error('Usage: verify-mod-artifact.mjs <directory> <build-sha256> [loader]')
+	await verifyModArtifact(directory, expectedSha256, { loader })
 }

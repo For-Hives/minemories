@@ -18,6 +18,7 @@ export async function buildReleaseTarget(id, version, sourceCommit) {
 			'scripts/gradle.mjs',
 			'clean',
 			':core:check',
+			':common:check',
 			`:${target.project}:check`,
 			`:${target.project}:build`,
 			`-PmodVersion=${version}`,
