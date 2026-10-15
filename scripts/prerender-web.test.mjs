@@ -41,6 +41,8 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	assert.ok(!sitemap.includes('/gallery'))
 	const robots = await readFile(join(directory, 'robots.txt'), 'utf8')
 	assert.ok(robots.includes('Disallow: /share/'))
+	assert.ok(robots.includes('Disallow: /public/'))
+	assert.ok(robots.includes('Disallow: /moderation'))
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
 	assert.ok((await readFile(join(directory, 'app.html'), 'utf8')).includes('noindex,nofollow'))
 })

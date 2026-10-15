@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { apiBase } from '../api-client'
+import { Link, useParams, useSearchParams } from 'react-router'
+import { apiBase, apiClient } from '../api-client'
 import { buttonLime, Eyebrow } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
@@ -30,6 +30,29 @@ async function fetchSharedCapture(token: string, signal: AbortSignal): Promise<{
 	return { capture, file: new File([await fileResponse.blob()], 'shared.glb', { type: 'model/gltf-binary' }) }
 }
 
+async function fetchPublicCapture(
+	id: string,
+	review: boolean,
+	signal: AbortSignal
+): Promise<{ capture: SharedCapture; file: File }> {
+	const procedure = review ? apiClient.discovery.review : apiClient.discovery.get
+	const entry = await procedure({ id }, { signal })
+	const response = await fetch(`${apiBase}/api/public/${encodeURIComponent(id)}/file`, {
+		signal,
+		credentials: 'include',
+	})
+	if (!response.ok) throw new Error('This publication is unavailable or was withdrawn.')
+	const file = new File([await response.blob()], 'public.glb', { type: 'model/gltf-binary' })
+	return {
+		file,
+		capture: {
+			name: entry.title,
+			size: file.size,
+			metadata: { x: null, y: null, z: null, dayTime: null, dimension: null, seed: null, biome: null },
+		},
+	}
+}
+
 function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle: (name: string) => void): void {
 	scene.setCaptureContext({
 		x: capture.metadata.x,
@@ -44,10 +67,13 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 	onTitle(capture.name)
 }
 
-export function SharePage() {
+export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const { t } = useI18n()
 
-	const { token } = useParams()
+	const { token, id } = useParams()
+	const [params] = useSearchParams()
+	const review = isPublic && params.get('review') === '1'
+	const reference = isPublic ? id : token
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
 	const [minutes, setMinutes] = useState(570)
@@ -76,7 +102,7 @@ export function SharePage() {
 	}, [])
 
 	useEffect(() => {
-		if (!token) {
+		if (!reference) {
 			setError('This link is incomplete.')
 			setStatus(null)
 			return
@@ -90,9 +116,11 @@ export function SharePage() {
 		}
 		async function loadShared() {
 			const scene = sceneRef.current
-			if (!(scene && token)) return
+			if (!(scene && reference)) return
 			try {
-				const { capture, file } = await fetchSharedCapture(token, controller.signal)
+				const { capture, file } = await (isPublic
+					? fetchPublicCapture(reference, review, controller.signal)
+					: fetchSharedCapture(reference, controller.signal))
 				if (cancelled) return
 				applySharedCapture(scene, capture, setTitle)
 				await scene.loadFile(file)
@@ -105,15 +133,13 @@ export function SharePage() {
 			cancelled = true
 			controller.abort()
 		}
-	}, [token])
+	}, [reference, isPublic, review])
 
 	return (
 		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
-					<Eyebrow>
-						<T message={'SHARED MEMORY'} />
-					</Eyebrow>
+					<Eyebrow>{isPublic ? t('PUBLIC MEMORY') : <T message={'SHARED MEMORY'} />}</Eyebrow>
 					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
 						{title}
 					</h1>
@@ -146,7 +172,13 @@ export function SharePage() {
 			</div>
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad]">
 				{' '}
-				<T message={'Shared link · no account needed to revisit this world.'} />{' '}
+				{isPublic ? (
+					<Link to={review ? '/moderation' : '/explorer'}>
+						{t(review ? 'Back to moderation' : 'Back to public gallery')}
+					</Link>
+				) : (
+					<T message={'Shared link · no account needed to revisit this world.'} />
+				)}{' '}
 			</p>
 		</section>
 	)

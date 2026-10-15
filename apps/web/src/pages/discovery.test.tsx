@@ -84,7 +84,7 @@ test('nostalgia timeline updates its illustration and new journeys can be read i
 	localStorage.setItem('minemories-locale', 'en')
 	render(
 		<I18nProvider>
-			<MemoryRouter>
+			<MemoryRouter initialEntries={['/explorer?demo=1']}>
 				<ExplorerPage />
 			</MemoryRouter>
 		</I18nProvider>

@@ -6,6 +6,7 @@ import { useDemoPreferences } from '../content/demo-preferences'
 import { demoMemories, discoveryPages } from '../content/discovery'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { ContentLayout, NotFoundPage } from './ContentPages'
+import { PublicGallery } from './PublicDiscovery'
 
 const trailingSlash = /\/$/
 export function DiscoveryPage() {
@@ -37,13 +38,13 @@ export function DiscoveryPage() {
 					<h2>{copy('Commence par une visite.', 'Start with a visit.')}</h2>
 					<p>
 						{copy(
-							'Une galerie illustrée pour essayer les filtres, les favoris et le partage.',
-							'An illustrated gallery to try filters, favorites and sharing.'
+							'Des souvenirs publics à visiter, et une démonstration séparée pour essayer.',
+							'Public memories to visit, with a separate demo to try.'
 						)}
 					</p>
 				</div>
 				<Link className={buttonLime} to="/explorer">
-					{copy('Explorer la démo', 'Explore the demo')}
+					{copy('Explorer la galerie', 'Explore the gallery')}
 				</Link>
 			</section>
 		</ContentLayout>
@@ -108,7 +109,7 @@ export function MarketingPage() {
 						</p>
 					</div>
 					<div className="mm-actions">
-						<Link className={buttonOutline} to="/explorer">
+						<Link className={buttonOutline} to="/explorer?demo=1">
 							{copy('Voir la démo', 'View the demo')}
 						</Link>
 						<Link className={buttonLime} to="/gallery">
@@ -165,32 +166,41 @@ function TimelinePreview() {
 		</section>
 	)
 }
-export function ExplorerPage() {
+export function ExplorerPage({ ranking = false }: { ranking?: boolean }) {
 	const { copy } = useLocalizedCopy()
+	const [params] = useSearchParams()
+	const demo = params.get('demo') === '1'
+	const base = ranking ? '/classement' : '/explorer'
+	let title = copy('Souvenirs à explorer', 'Memories to explore')
+	if (ranking) title = copy('Les coups de cœur', 'Most loved memories')
+	if (demo) title = copy('Une petite visite, pour voir.', 'A little visit, just to see.')
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES / PLAYGROUND"
-			title={copy('Une petite visite, pour voir.', 'A little visit, just to see.')}
-			lead={copy(
-				'Galerie de démonstration illustrée. Recherche, favoris et partage fonctionnent ; ils ne publient aucune capture réelle.',
-				'An illustrated demo gallery. Search, favorites and sharing work; they do not publish real captures.'
-			)}
+			eyebrow="MINEMORIES"
+			title={title}
+			lead={
+				demo
+					? copy(
+							'Démonstration illustrée : favoris et votes restent locaux.',
+							'Illustrated demo: favorites and votes stay local.'
+						)
+					: copy(
+							'Des souvenirs publiés volontairement et examinés avant leur mise en ligne.',
+							'Memories voluntarily published and reviewed before appearing here.'
+						)
+			}
 		>
-			<GalleryPreview />
-			<section className="mm-callout">
-				<div>
-					<h2>{copy('Et si le prochain lieu était le tien ?', 'What if the next place was yours?')}</h2>
-					<p>
-						{copy(
-							'Installe le mod, capture une petite zone et ouvre ton vrai GLB dans le viewer.',
-							'Install the mod, capture a small area and open your real GLB in the viewer.'
-						)}
-					</p>
-				</div>
-				<Link to="/installation" className={buttonLime}>
-					{copy('Commencer le tuto', 'Start the tutorial')}
+			<div className="mm-actions">
+				<Link className={buttonOutline} to={demo ? base : `${base}?demo=1`}>
+					{demo
+						? copy('Voir les souvenirs publics', 'View public memories')
+						: copy('Essayer la démonstration', 'Try the demo')}
 				</Link>
-			</section>
+				<Link className={buttonLime} to="/gallery">
+					{copy('Ma galerie privée', 'My private gallery')}
+				</Link>
+			</div>
+			{demo ? <GalleryPreview ranking={ranking} /> : <PublicGallery ranking={ranking} />}
 		</ContentLayout>
 	)
 }

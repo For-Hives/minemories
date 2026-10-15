@@ -24,6 +24,8 @@ test('private data, shared links and account routes are excluded from indexing a
 		'/viewer',
 		'/viewer?memory=private-id',
 		'/share/private-token',
+		'/public/publication-id',
+		'/moderation',
 		'/login',
 		'/register',
 	]) {
@@ -31,4 +33,11 @@ test('private data, shared links and account routes are excluded from indexing a
 		expect(publicMetadata.some(page => page.path === path)).toBe(false)
 	}
 	expect(metadataFor('/blog/')).toEqual(metadataFor('/blog'))
+})
+
+test('public ranking prerenders the real catalogue shell and keeps demo opt-in', () => {
+	const html = renderPage('/classement')
+	expect(html).toContain('Les coups de cœur')
+	expect(html).toContain('/classement?demo=1')
+	expect(html).not.toContain('Les coups de cœur, pour essayer')
 })
