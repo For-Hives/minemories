@@ -18,3 +18,5 @@ type="required"
 versionRange="[1.21.1,1.22)"
 ordering="NONE"
 side="CLIENT"
+[[mixins]]
+config="minemories.compat.mixins.json"

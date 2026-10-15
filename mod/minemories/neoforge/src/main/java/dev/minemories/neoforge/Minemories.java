@@ -1281,8 +1281,12 @@ public class Minemories {
             blockEntity.getBlockState().getLightEmission() / 15f);
     PoseStack pose = new PoseStack();
     pose.translate(x, y, z);
-    dispatcher.render(blockEntity, 1f, pose, buffers);
-    buffers.finish();
+    CaptureRenderScope.render(
+        () -> {
+          FlywheelCaptureBridge.verify(blockEntity.getLevel());
+          dispatcher.render(blockEntity, 1f, pose, buffers);
+          buffers.finish();
+        });
   }
 
   static int captureEntities(
@@ -1320,9 +1324,18 @@ public class Minemories {
         entity.getZ() - center.getZ() + offset.z);
     // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
     // flames, hitboxes and nameplate text are not part of the souvenir geometry.
-    renderer.render(
-        entity, entity.getYRot(), 1f, pose, buffers, dispatcher.getPackedLightCoords(entity, 1f));
-    buffers.finish();
+    CaptureRenderScope.render(
+        () -> {
+          FlywheelCaptureBridge.verify(mc.level);
+          renderer.render(
+              entity,
+              entity.getYRot(),
+              1f,
+              pose,
+              buffers,
+              dispatcher.getPackedLightCoords(entity, 1f));
+          buffers.finish();
+        });
   }
 
   private static class FluidVertexConsumer implements VertexConsumer {
