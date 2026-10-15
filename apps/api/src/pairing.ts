@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
-import { TRASH_RETENTION_MS } from '@minemories/api-contract'
+import { type CaptureIdentity, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
 
@@ -256,7 +256,9 @@ export function getSharedMemory(token: string) {
 	}
 }
 
-export interface MemoryMetadata {
+type OptionalCaptureIdentity = { [Key in keyof CaptureIdentity]?: CaptureIdentity[Key] | undefined }
+
+export interface MemoryMetadata extends OptionalCaptureIdentity {
 	seed: string | null
 	x: number | null
 	y: number | null

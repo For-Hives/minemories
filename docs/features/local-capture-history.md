@@ -35,3 +35,6 @@ Le scénario Minecraft 1.21.1 / NeoForge 21.1.248 du 13 octobre 2026 utilise une
 Les deux GLB ont aussi été importés et rendus dans Blender 5.2.2 : un mesh avec 22 triangles pour l’eau, puis un mesh avec 394 triangles pour le terrain. Les images ont été inspectées : transparence et texture d’eau, végétation, textures de terrain et faces de coupe sont présentes.
 
 Envoyer à nouveau un souvenir dont l’envoi a déjà réussi peut créer une autre entrée dans la galerie. L’interface ne présente pas de statut « déjà envoyé » : les comptes et API peuvent changer et la copie distante peut avoir été supprimée.
+
+Les identités des futurs états et les limites actuelles sont détaillées dans
+[Timelapse : fondations et travail restant](timelapse.md).
