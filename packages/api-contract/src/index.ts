@@ -1,5 +1,6 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
+import { adminContract } from './admin'
 import { captureIdentityFields } from './capture-identity'
 import { captureStorageContract } from './capture-storage'
 import { captureTime } from './capture-time'
@@ -59,7 +60,10 @@ const memorySchema = z.object({
 	}),
 })
 
+export type { AdminSummary, AdminUser } from './admin'
+
 export const apiContract = {
+	admin: adminContract,
 	captureStorage: captureStorageContract,
 	diagnostics: diagnosticsContract,
 	discovery: discoveryContract,

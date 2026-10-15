@@ -112,3 +112,13 @@
 	outline: 2px solid var(--color-lime);
 	outline-offset: 3px;
 }
+
+.mm-admin-entry {
+	display: inline-block;
+	margin: 12px 0;
+	padding: 12px 18px;
+	border: 1px solid #789455;
+	border-radius: 7px;
+	color: var(--color-lime);
+	text-decoration: none;
+}

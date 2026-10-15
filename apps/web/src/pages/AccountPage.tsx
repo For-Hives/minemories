@@ -2,6 +2,7 @@ import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
+import { AdminAccessLink } from '../components/AdminAccessLink'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { credentialChangeComplete } from './account-navigation'
 import './account.css'
@@ -89,6 +90,7 @@ export function AccountPage() {
 					{error}
 				</p>
 			)}
+			<AdminAccessLink />
 			<div className="mm-account-grid">
 				<form
 					className="mm-account-card"

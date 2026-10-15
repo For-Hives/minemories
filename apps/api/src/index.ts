@@ -7,6 +7,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
+import { AdminMetrics } from './admin-metrics'
+import { AdminRoles } from './admin-roles'
 import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { recordCaptureOpening } from './capture-access'
@@ -71,6 +73,8 @@ interface ApiContext {
 
 const os = implement(apiContract).$context<ApiContext>()
 const accountSecurity = new AccountSecurity(database, (await auth.$context).password)
+const adminRoles = new AdminRoles(database)
+const adminMetrics = new AdminMetrics(database, adminRoles)
 const diagnosticsReview = new DiagnosticsReview(
 	diagnostics,
 	new Set(
@@ -134,6 +138,18 @@ function archivedAvailability(error: unknown, lookup: () => string | null) {
 	}
 }
 const router = os.router({
+	admin: {
+		access: os.admin.access.handler(({ context }) => ({ allowed: adminRoles.allowed(context.userId) })),
+		summary: os.admin.summary.handler(({ context, input }) => adminMetrics.summary(context.userId, input.hours)),
+		users: os.admin.users.handler(({ context, input }) => adminRoles.users(context.userId, input)),
+		audit: os.admin.audit.handler(({ context }) => adminRoles.audit(context.userId)),
+		setRole: os.admin.setRole.handler(({ context, input }) => {
+			const actorId = adminRoles.require(context.userId)
+			return accountSecurity.confirmed(accountIdentity(context), input.currentPassword, () =>
+				adminRoles.setRole(actorId, input)
+			)
+		}),
+	},
 	captureStorage: {
 		status: os.captureStorage.status.handler(({ context, input }) =>
 			captureStorage.status(() => captureObjectKey(input, context))

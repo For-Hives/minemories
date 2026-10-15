@@ -61,7 +61,7 @@ export async function prerenderWeb(directory, entry) {
 	await writeFile(
 		resolve(directory, 'robots.txt'),
 		indexable
-			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
+			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
 			: 'User-agent: *\nDisallow: /\n'
 	)
 	const fallback = template

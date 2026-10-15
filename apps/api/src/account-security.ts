@@ -55,6 +55,15 @@ export class AccountSecurity {
 			.immediate()
 		return { ok: true as const }
 	}
+	async confirmed<T>(identity: Identity, password: string, operation: () => T, now = Date.now()): Promise<T> {
+		const credential = await this.confirm(identity, password, now)
+		return this.database
+			.transaction(() => {
+				this.current(identity, credential, now)
+				return operation()
+			})
+			.immediate()
+	}
 	private async confirm(identity: Identity, password: string, now: number): Promise<Credential> {
 		const credential = this.current(identity, null, now)
 		const attempts = this.database
@@ -70,7 +79,7 @@ export class AccountSecurity {
 	private current(identity: Identity, previous: Credential | null, now: number): Credential {
 		const credential = this.database
 			.query(`SELECT a.id,a.password FROM account a JOIN session s ON s.userId=a.userId
-		 WHERE a.userId=? AND a.providerId='credential' AND s.id=? AND s.expiresAt>?`)
+		 WHERE a.userId=? AND a.providerId='credential' AND s.id=? AND (CASE WHEN typeof(s.expiresAt)='text' THEN unixepoch(s.expiresAt)*1000 ELSE s.expiresAt END)>?`)
 			.get(identity.userId, identity.sessionId, now) as Credential | null
 		if (!credential?.password || (previous && credential.password !== previous.password))
 			throw new ORPCError('UNAUTHORIZED')
