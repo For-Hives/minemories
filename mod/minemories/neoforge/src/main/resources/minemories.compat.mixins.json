@@ -3,5 +3,5 @@
 	"minVersion": "0.8",
 	"package": "dev.minemories.neoforge.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"client": ["FlywheelCaptureMixin"]
+	"client": ["FlywheelCaptureMixin", "ClientCrashMixin"]
 }

@@ -2,6 +2,7 @@ package dev.minemories.neoforge;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,8 @@ final class DiagnosticReport {
   enum Phase {
     CAPTURE("capture"),
     UPLOAD("upload"),
-    PAIRING("pairing");
+    PAIRING("pairing"),
+    CRASH("crash");
 
     private final String value;
 
@@ -56,7 +58,8 @@ final class DiagnosticReport {
     UPLOAD_FAILED("upload_failed"),
     PAIRING_STARTED("pairing_started"),
     PAIRING_COMPLETED("pairing_completed"),
-    PAIRING_FAILED("pairing_failed");
+    PAIRING_FAILED("pairing_failed"),
+    CLIENT_CRASHED("client_crashed");
 
     private final String value;
 
@@ -118,7 +121,80 @@ final class DiagnosticReport {
       Throwable error,
       List<Breadcrumb> breadcrumbs) {
     return new DiagnosticReport(
-        phase, versions, correlationId, sanitizeException(error), recentBreadcrumbs(breadcrumbs));
+        phase,
+        versions,
+        correlationId,
+        sanitizeException(rootCause(error)),
+        recentBreadcrumbs(breadcrumbs));
+  }
+
+  /** Restore only typed fields; a modified local queue must never turn into a free-form upload. */
+  static JsonObject restore(JsonObject payload, Instant now) {
+    if (!payload.get("consent").getAsBoolean()) throw new IllegalArgumentException("consent");
+    JsonObject report = payload.getAsJsonObject("report");
+    UUID id = UUID.fromString(report.get("id").getAsString());
+    Instant occurred = Instant.parse(report.get("occurredAt").getAsString());
+    if (occurred.isBefore(now.minus(Duration.ofDays(7))) || occurred.isAfter(now.plusSeconds(300)))
+      throw new IllegalArgumentException("expired");
+    if (!"mod".equals(report.get("source").getAsString()))
+      throw new IllegalArgumentException("source");
+    Phase phase =
+        Phase.valueOf(report.get("phase").getAsString().toUpperCase(java.util.Locale.ROOT));
+    UUID correlation = UUID.fromString(report.get("correlationId").getAsString());
+    JsonObject version = report.getAsJsonObject("versions");
+    Versions versions =
+        new Versions(
+            version.get("mod").getAsString(),
+            version.get("minecraft").getAsString(),
+            version.get("loader").getAsString());
+    JsonObject exception = report.getAsJsonObject("exception");
+    String type = exception.get("type").getAsString();
+    if (!safeClassName(type)) throw new IllegalArgumentException("exception");
+    List<Frame> frames = new ArrayList<>();
+    for (var value : exception.getAsJsonArray("frames")) {
+      if (frames.size() == MAX_FRAMES) break;
+      JsonObject frame = value.getAsJsonObject();
+      Frame safe =
+          sanitizeFrame(
+              new StackTraceElement(
+                  frame.get("className").getAsString(),
+                  frame.get("methodName").getAsString(),
+                  frame.has("fileName") ? frame.get("fileName").getAsString() : null,
+                  frame.has("lineNumber") ? frame.get("lineNumber").getAsInt() : -1));
+      if (safe != null) frames.add(safe);
+    }
+    List<Breadcrumb> breadcrumbs = new ArrayList<>();
+    for (var value : report.getAsJsonArray("breadcrumbs")) {
+      if (breadcrumbs.size() == MAX_BREADCRUMBS) break;
+      JsonObject step = value.getAsJsonObject();
+      breadcrumbs.add(
+          new Breadcrumb(
+              Step.valueOf(step.get("step").getAsString().toUpperCase(java.util.Locale.ROOT)),
+              step.get("elapsedMs").getAsLong()));
+    }
+    JsonObject restored =
+        new DiagnosticReport(
+                phase, versions, correlation, new ExceptionData(type, frames), breadcrumbs)
+            .payload();
+    restored.getAsJsonObject("report").addProperty("id", id.toString());
+    restored.getAsJsonObject("report").addProperty("occurredAt", occurred.toString());
+    return restored;
+  }
+
+  private static Throwable rootCause(Throwable error) {
+    Throwable current = error;
+    var seen =
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable, Boolean>());
+    for (int index = 0; current != null && index < 8 && seen.add(current); index++) {
+      try {
+        Throwable cause = current.getCause();
+        if (cause == null || seen.contains(cause)) break;
+        current = cause;
+      } catch (Throwable ignored) {
+        break;
+      }
+    }
+    return current;
   }
 
   /** Returns a fresh JSON tree; neither the error nor a caller-owned collection is retained. */

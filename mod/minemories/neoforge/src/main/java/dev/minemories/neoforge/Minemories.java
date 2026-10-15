@@ -94,6 +94,7 @@ public class Minemories {
   }
 
   private static long lastAfkCheckMs;
+  private static long lastDiagnosticsCheckMs;
   private static boolean afkUploadPending;
   private static net.minecraft.client.multiplayer.ClientLevel afkUploadWorld;
   // Client-thread ownership, like exploration: no lazy publication of static jobs/settings.
@@ -320,6 +321,14 @@ public class Minemories {
   public static void trackAfkSnapshot(RenderFrameEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
+    if (now - lastDiagnosticsCheckMs >= 1000) {
+      lastDiagnosticsCheckMs = now;
+      try {
+        PairingClient.diagnosticsTick();
+      } catch (RuntimeException ignored) {
+        /* Diagnostics never block play. */
+      }
+    }
     if (REMOTE_CAPTURE_SESSION.connection() instanceof net.minecraft.network.Connection connection
         && !connection.isConnected()) {
       REMOTE_CAPTURE_SESSION.clear();

@@ -68,7 +68,7 @@ class DiagnosticReportTest {
   }
 
   @Test
-  void neverReadsThrowableMessagesCausesSuppressedExceptionsOrRawPaths() {
+  void neverReadsThrowableMessagesSuppressedExceptionsOrRawPathsAndSurvivesHostileCauses() {
     Throwable error = new PrivateFailure();
     error.setStackTrace(
         new StackTraceElement[] {
@@ -283,7 +283,8 @@ class DiagnosticReportTest {
             "upload_failed",
             "pairing_started",
             "pairing_completed",
-            "pairing_failed");
+            "pairing_failed",
+            "client_crashed");
     DiagnosticReport.Step[] steps = DiagnosticReport.Step.values();
     assertEquals(expected.size(), steps.length);
     for (int index = 0; index < steps.length; index++) {

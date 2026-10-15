@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { version } from '../package.json'
 import { diagnostics } from './diagnostics-state'
 import type { ApiDiagnostic } from './diagnostics-store'
 import { getDeviceFromToken } from './pairing'
@@ -26,7 +27,7 @@ export function requestCorrelation(request: Request): string {
 export function logApiFailure(event: ErrorEvent, correlationId: string = randomUUID()): void {
 	console.error(JSON.stringify({ level: 'error', event, correlationId }))
 }
-function exceptionType(error: unknown): string {
+function exceptionType(error: unknown): ApiDiagnostic['exception']['type'] {
 	if (error instanceof TypeError) return 'TypeError'
 	if (error instanceof RangeError) return 'RangeError'
 	if (error instanceof SyntaxError) return 'SyntaxError'
@@ -77,7 +78,7 @@ export function recordApiFailure(request: Request, error: unknown): void {
 				occurredAt: new Date().toISOString(),
 				source: 'api',
 				phase: 'upload',
-				versions: { api: '0.1.0' },
+				versions: { api: version },
 				correlationId: correlationId.toLowerCase(),
 				exception: safeApiException(error),
 				breadcrumbs: [],

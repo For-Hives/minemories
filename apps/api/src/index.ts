@@ -10,6 +10,7 @@ import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { openAuthorizedCapture } from './capture-downloads'
 import { database } from './database'
+import { DiagnosticsReview } from './diagnostics-review'
 import { diagnosticsRouter } from './diagnostics-routes'
 import { diagnostics } from './diagnostics-state'
 import { PublicDiscovery } from './discovery'
@@ -58,6 +59,15 @@ interface ApiContext {
 }
 
 const os = implement(apiContract).$context<ApiContext>()
+const diagnosticsReview = new DiagnosticsReview(
+	diagnostics,
+	new Set(
+		(process.env.DIAGNOSTICS_OPERATOR_IDS ?? '')
+			.split(',')
+			.map(id => id.trim())
+			.filter(Boolean)
+	)
+)
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
 	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
 )
@@ -78,6 +88,14 @@ function authenticated(context: ApiContext) {
 	return context.userId
 }
 const router = os.router({
+	diagnostics: {
+		access: os.diagnostics.access.handler(({ context }) => ({ allowed: diagnosticsReview.allowed(context.userId) })),
+		list: os.diagnostics.list.handler(({ context, input }) => diagnosticsReview.list(context.userId, input)),
+		detail: os.diagnostics.detail.handler(({ context, input }) =>
+			diagnosticsReview.detail(context.userId, input.fingerprint, input.page)
+		),
+		update: os.diagnostics.update.handler(({ context, input }) => diagnosticsReview.update(context.userId, input)),
+	},
 	timelapse: {
 		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
 	},

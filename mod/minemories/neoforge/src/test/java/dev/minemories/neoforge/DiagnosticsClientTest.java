@@ -39,6 +39,8 @@ class DiagnosticsClientTest {
   private final AtomicInteger deletions = new AtomicInteger();
   private final AtomicInteger reports = new AtomicInteger();
   private volatile int reportStatus = 201;
+  private volatile int authorizationStatus = 200;
+  private volatile String retryAfter;
   private volatile CountDownLatch authorizationRelease;
   private volatile CountDownLatch reportRelease;
   private String api;
@@ -72,7 +74,7 @@ class DiagnosticsClientTest {
     if (request.getRequestURI().getPath().endsWith("/consent")) {
       authorizations.incrementAndGet();
       waitFor(authorizationRelease);
-      send(request, 200, "{\"permit\":\"" + UUID.randomUUID() + "\"}");
+      send(request, authorizationStatus, "{\"permit\":\"" + UUID.randomUUID() + "\"}");
       return;
     }
     tokens.add(request.getRequestHeaders().getFirst("Authorization"));
@@ -83,6 +85,7 @@ class DiagnosticsClientTest {
             .getAsJsonObject());
     reports.incrementAndGet();
     waitFor(reportRelease);
+    if (retryAfter != null) request.getResponseHeaders().add("Retry-After", retryAfter);
     send(request, reportStatus, "{}");
   }
 
@@ -399,5 +402,183 @@ class DiagnosticsClientTest {
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(new PrivateError());
     await(() -> reports.get() == 1 && !client.isSending());
     assertEquals("Bearer replacement-private-token", tokens.getFirst());
+  }
+
+  private DiagnosticsClient durable(java.util.concurrent.atomic.AtomicLong clock) {
+    return new DiagnosticsClient(
+        HttpClient.newHttpClient(),
+        settings::get,
+        () -> new DiagnosticReport.Versions("0.2.1-beta.1", "1.21.1", "neoforge-21.1.248"),
+        temporary.resolve("diagnostics.properties"),
+        clock::get);
+  }
+
+  @Test
+  void retriesTheSameReportAfterNetworkFailureAndRestart() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    enable(client);
+    reportStatus = 503;
+    client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(new IOException("private-path"));
+    await(() -> reports.get() == 1 && !client.isSending());
+    String id = bodies.getFirst().getAsJsonObject("report").get("id").getAsString();
+    var restarted = durable(clock);
+    reportStatus = 201;
+    await(() -> restarted.status().startsWith("Activés"));
+    assertEquals(1, reports.get());
+    clock.addAndGet(30001);
+    restarted.tick();
+    await(() -> reports.get() == 2 && !restarted.isSending());
+    assertEquals(id, bodies.getLast().getAsJsonObject("report").get("id").getAsString());
+    assertFalse(
+        Files.readString(temporary.resolve("diagnostics.properties"))
+            .contains("private-test-token"));
+  }
+
+  @Test
+  void crashIsDurableBeforeExitAndSentByTheNextClientLaunch() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    enable(client);
+    client.crash(new IllegalStateException("private-world /home/player token"));
+    assertEquals(0, reports.get());
+    assertTrue(Files.exists(temporary.resolve("diagnostics.properties")));
+    var restarted = durable(clock);
+    await(
+        () -> {
+          restarted.tick();
+          return reports.get() == 1 && !restarted.isSending();
+        });
+    JsonObject report = bodies.getFirst().getAsJsonObject("report");
+    assertEquals("crash", report.get("phase").getAsString());
+    assertEquals(
+        "client_crashed",
+        report.getAsJsonArray("breadcrumbs").get(0).getAsJsonObject().get("step").getAsString());
+    assertFalse(report.toString().contains("private-world"));
+  }
+
+  @Test
+  void offlineStartupCanRecordAnOptedInCrashButAWithdrawnSpoolIsNeverSent() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var first = durable(clock);
+    enable(first);
+    var restarted = durable(clock);
+    authorizationRelease = new CountDownLatch(1);
+    restarted.crash(new IllegalStateException("private-world"));
+    assertTrue(
+        Files.readString(temporary.resolve("diagnostics.properties")).contains("client_crashed"));
+    restarted.changeConsent(false, () -> settings.get().setProperty("diagnosticsConsent", "false"));
+    assertFalse(Files.exists(temporary.resolve("diagnostics.properties")));
+    authorizationRelease.countDown();
+    await(() -> deletions.get() == 1);
+    restarted.tick();
+    assertEquals(0, reports.get());
+  }
+
+  @Test
+  void reportedRootCauseIsUsefulWithoutReadingMessages() {
+    var inner = new IOException("private-path");
+    var payload =
+        DiagnosticReport.create(
+                DiagnosticReport.Phase.CAPTURE,
+                new DiagnosticReport.Versions("0.2.1-beta.1", "1.21.1", "neoforge-21.1.248"),
+                UUID.randomUUID(),
+                new java.util.concurrent.CompletionException(inner),
+                List.of())
+            .payload();
+    assertEquals(
+        "java.io.IOException",
+        payload.getAsJsonObject("report").getAsJsonObject("exception").get("type").getAsString());
+    assertFalse(payload.toString().contains("private-path"));
+  }
+
+  @Test
+  void serverRetryAfterIsRespectedWithoutDroppingSubsequentFailures() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    enable(client);
+    reportStatus = 429;
+    retryAfter = "120";
+    client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(new IOException("first"));
+    await(() -> reports.get() == 1 && !client.isSending());
+    client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(new IOException("second"));
+    clock.addAndGet(30001);
+    client.tick();
+    assertEquals(1, reports.get());
+    reportStatus = 201;
+    clock.addAndGet(90000);
+    client.tick();
+    await(() -> reports.get() == 3 && !client.isSending());
+    assertEquals(
+        bodies.getFirst().getAsJsonObject("report").get("id"),
+        bodies.get(1).getAsJsonObject("report").get("id"));
+    assertNotEquals(
+        bodies.get(1).getAsJsonObject("report").get("id"),
+        bodies.getLast().getAsJsonObject("report").get("id"));
+  }
+
+  @Test
+  void unavailableFirstAuthorizationNeverCollectsButCanRecoverOnHeartbeat() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    settings.set(paired(true, "private-test-token"));
+    authorizationStatus = 503;
+    client.tick();
+    await(() -> authorizations.get() == 1 && client.status().contains("indisponible"));
+    PrivateError ignored = new PrivateError();
+    client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(ignored);
+    assertEquals(0, ignored.stackReads);
+    assertFalse(Files.exists(temporary.resolve("diagnostics.properties")));
+    authorizationStatus = 200;
+    clock.addAndGet(30001);
+    client.tick();
+    await(() -> client.status().startsWith("Activés"));
+    client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(new IOException("private"));
+    await(() -> reports.get() == 1 && !client.isSending());
+  }
+
+  @Test
+  void newConsentEpochCannotRestoreAPreviousConsentQueue() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    enable(client);
+    client.crash(new IllegalStateException("private"));
+    byte[] old = Files.readAllBytes(temporary.resolve("diagnostics.properties"));
+    client.changeConsent(false, () -> settings.get().setProperty("diagnosticsConsent", "false"));
+    Files.write(temporary.resolve("diagnostics.properties"), old);
+    var next = durable(clock);
+    settings.get().setProperty("diagnosticsEpoch", UUID.randomUUID().toString());
+    settings.get().setProperty("diagnosticsConsent", "true");
+    await(() -> next.status().startsWith("Activés"));
+    next.tick();
+    assertEquals(0, reports.get());
+  }
+
+  @Test
+  void crashIsRetriedWhenTheApiStillUsesThePreviousContract() throws Exception {
+    start();
+    var clock = new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis());
+    var client = durable(clock);
+    enable(client);
+    client.crash(new IllegalStateException("private"));
+    reportStatus = 400;
+    client.tick();
+    await(() -> reports.get() == 1 && !client.isSending());
+    clock.addAndGet(30001);
+    client.tick();
+    assertEquals(1, reports.get());
+    reportStatus = 201;
+    clock.addAndGet(300000);
+    client.tick();
+    await(() -> reports.get() == 2 && !client.isSending());
+    assertEquals(
+        bodies.getFirst().getAsJsonObject("report").get("id"),
+        bodies.getLast().getAsJsonObject("report").get("id"));
   }
 }

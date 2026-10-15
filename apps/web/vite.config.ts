@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
 import { publicMetadata } from './src/route-metadata.ts'
 
-const privatePath = /^\/(?:gallery|viewer|share|public|moderation|login|register)(?:\/|$)/
+const privatePath = /^\/(?:gallery|viewer|share|public|moderation|admin|login|register)(?:\/|$)/
 const trailingSlash = /\/$/
 function publicFile(path: string) {
 	return path === '/' ? 'index.html' : `.${path}/index.html`
