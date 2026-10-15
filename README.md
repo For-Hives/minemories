@@ -6,7 +6,7 @@ Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome
 
 | Chemin | Rôle |
 | --- | --- |
-| `mod/minemories/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:neoforge` contient le client et les hooks propres au loader. |
+| `mod/minemories/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:common` contient le client partagé ; `:neoforge`, `:fabric` et `:forge` isolent les hooks des loaders. Voir la [matrice de validation](docs/features/loader-support.md). |
 | `apps/web/` | Viewer React / Three.js. |
 | `apps/api/` | API Bun / Hono, Better Auth, SQLite et stockage objet S3. |
 | `packages/api-contract/` | Contrat oRPC partagé entre API et web ; ce dossier est une bibliothèque, pas une application. |

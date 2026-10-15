@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"id": "minemories",
+	"version": "${version}",
+	"name": "Minemories",
+	"description": "Capture private Minecraft memories as self-contained GLB files.",
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": { "client": ["dev.minemories.fabric.MinemoriesFabric"] },
+	"mixins": ["minemories.fabric.mixins.json"],
+	"accessWidener": "minemories.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "1.21.1",
+		"java": ">=21",
+		"fabric-api": ">=0.116.17+1.21.1"
+	}
+}

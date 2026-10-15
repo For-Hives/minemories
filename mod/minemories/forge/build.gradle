@@ -1,0 +1,39 @@
+plugins {
+    id 'dev.architectury.loom-remap' version '1.17.487'
+    id 'com.diffplug.spotless'
+    id 'com.github.spotbugs'
+}
+
+evaluationDependsOn(':common')
+base { archivesName = 'minemories-forge' }
+loom {
+    accessWidenerPath = project(':common').file('src/main/resources/minemories.accesswidener')
+    forge {
+        convertAccessWideners = true
+        extraAccessWideners.add('minemories.accesswidener')
+        mixinConfig('minemories.forge.mixins.json')
+    }
+}
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.1'
+    mappings loom.officialMojangMappings()
+    forge 'net.minecraftforge:forge:1.21.1-52.1.19'
+    implementation project(':core')
+    implementation project(path: ':common', configuration: 'namedElements')
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+spotless { java { googleJavaFormat('1.36.0') } }
+spotbugs { toolVersion = '4.10.5'; ignoreFailures = false }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add('-Xlint:all')
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('META-INF/mods.toml') { expand version: project.version }
+}
+tasks.named('jar') {
+    from project(':core').sourceSets.main.output
+    from project(':common').sourceSets.main.output
+    manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json')
+}

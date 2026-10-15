@@ -4,6 +4,8 @@ plugins {
     id 'com.github.spotbugs' version '6.5.13' apply false
 }
 
+project(':forge') { ext.set('loom.platform', 'forge') }
+
 allprojects {
     version = rootProject.providers.gradleProperty('modVersion').getOrElse(rootProject.property('mod_version'))
     group = 'dev.minemories'
@@ -13,9 +15,9 @@ allprojects {
 }
 
 tasks.named('check') {
-    dependsOn ':core:check', ':neoforge:check'
+    dependsOn ':core:check', ':common:check', ':neoforge:check', ':fabric:check', ':forge:check'
 }
 
 tasks.named('build') {
-    dependsOn ':core:build', ':neoforge:build'
+    dependsOn ':core:build', ':common:build', ':neoforge:build', ':fabric:build', ':forge:build'
 }
