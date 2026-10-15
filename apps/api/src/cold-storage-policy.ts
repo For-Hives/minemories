@@ -26,7 +26,8 @@ export function coldStorageCandidates(
 	database: Database,
 	days: number,
 	now = Date.now(),
-	limit = 100
+	limit = 100,
+	objectKey: string | null = null
 ): ColdCandidate[] {
 	coldStorageInactiveDays(String(days))
 	if (!Number.isSafeInteger(now) || now < 0) throw new Error('Invalid archive policy time.')
@@ -50,6 +51,8 @@ export function coldStorageCandidates(
 		 AND MIN(activity)>=0 AND MAX(activity)<=?
 		 ) SELECT object_key AS objectKey,userId,size,"references",lastActivityAt FROM candidates c
 		 WHERE NOT EXISTS(SELECT 1 FROM object_deletions d WHERE d.object_key=c.object_key)
+		 AND (? IS NULL OR c.object_key=?)
+		 AND NOT EXISTS(SELECT 1 FROM object_tiers t WHERE t.object_key=c.object_key AND (t.state!='hot' OR t.hot_until>?))
 		 AND NOT EXISTS(SELECT 1 FROM capture_readers r WHERE r.object_key=c.object_key AND r.expires_at>?)
 		 AND NOT EXISTS(SELECT 1 FROM timelapse_leases l WHERE l.original_key=c.object_key AND l.expires_at>?)
 		 AND NOT EXISTS(SELECT 1 FROM timelapse_pending_refs p JOIN timelapse_leases l ON l.id=p.lease_id
@@ -57,6 +60,6 @@ export function coldStorageCandidates(
 		 AND NOT EXISTS(SELECT 1 FROM timelapse_reader_refs r JOIN timelapse_readers v ON v.id=r.reader_id
 		 WHERE r.object_key=c.object_key AND v.expires_at>?)
 		 ORDER BY lastActivityAt,object_key LIMIT ?`)
-		.all(now - days * DAY_MS, now, now, now, now, limit) as ColdCandidate[]
+		.all(now - days * DAY_MS, objectKey, objectKey, now, now, now, now, now, limit) as ColdCandidate[]
 	return rows.filter(row => managedMemoryKey(row.objectKey)?.owner === row.userId)
 }
