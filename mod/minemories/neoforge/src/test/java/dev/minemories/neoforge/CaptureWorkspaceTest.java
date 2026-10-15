@@ -31,7 +31,7 @@ class CaptureWorkspaceTest {
                 classpath,
                 CaptureWorkspaceCrashProbe.class.getName(),
                 parent.toString())
-            .redirectErrorStream(true)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start();
     try {
       assertTrue(process.waitFor(30, TimeUnit.SECONDS), "The controlled child must terminate");
