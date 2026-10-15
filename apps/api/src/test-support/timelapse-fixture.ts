@@ -5,6 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Readable } from 'node:stream'
+import { migrateCaptureReaders } from '../capture-readers'
 import { ObjectDeletionQueue } from '../object-deletions'
 import { migrateTimelapse, TimelapseCatalog } from '../timelapse-catalog'
 import { TimelapseFiles, type TimelapseObjects } from '../timelapse-files'
@@ -28,6 +29,7 @@ export async function temporalFixture() {
 	 CREATE TABLE object_deletions(object_key TEXT PRIMARY KEY,created_at INTEGER,attempts INTEGER DEFAULT 0,
 	 next_attempt_at INTEGER DEFAULT 0,user_id TEXT,size INTEGER,discard_upload INTEGER DEFAULT 0);`)
 	migrateTimelapse(db)
+	migrateCaptureReaders(db)
 	migrateTimelapseIndex(db)
 	const local = (key: string) => join(dir, key.replaceAll('/', '_'))
 	const objects: TimelapseObjects = {
