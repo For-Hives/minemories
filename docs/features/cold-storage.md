@@ -133,7 +133,19 @@ vérifient aussi que le quota et le nettoyage des références restent cohérent
 
 ## Contraintes pour la suite
 
-Le worker devra utiliser le catalogue et ses réservations durables. Les
+`ColdStorageWorker` utilise le catalogue et ses réservations durables, traite
+une opération par passage et regroupe les appels concurrents. Il renouvelle
+son bail pendant les appels distants, transmet un signal d’annulation et attend
+la fin de l’opération lors de l’arrêt. Un fournisseur doit confirmer la disponibilité
+de la source avant la copie, puis vérifier la taille et la classe de la destination
+avant de rendre la main. Une restauration encore en attente reprend avec le délai
+de réessai durable. Une copie dont la réponse est perdue reste isolée dans sa
+génération et son nettoyage attend le délai de grâce des orphelins.
+Les tests couvrent ces cas avec de vrais fichiers, ainsi que la perte du bail et
+les acquittements périmés. Aucun fournisseur concret ni ordonnanceur n’est encore
+branché sur ce worker : cette étape n’active pas l’archivage.
+
+Les
 métadonnées et miniatures restent accessibles.
 Une restauration doit rendre tous les blocs nécessaires
 lisibles avant d’ouvrir le flux GLB ; le viewer doit afficher l’état et la progression.
