@@ -2,6 +2,7 @@ import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { type CaptureIdentity, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
+import { TimelapseIndex } from './timelapse-index'
 
 const pepper = pairingPepper(process.env)
 
@@ -351,17 +352,22 @@ export function addMemory(input: {
 	metadata?: MemoryMetadata
 }) {
 	database
-		.query(
-			'INSERT INTO memories (id, user_id, device_id, name, object_key, size, created_at, metadata_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-		)
-		.run(
-			input.id,
-			input.userId,
-			input.deviceId,
-			input.name,
-			input.objectKey,
-			input.size,
-			Date.now(),
-			JSON.stringify(input.metadata ?? emptyMetadata())
-		)
+		.transaction(() => {
+			database
+				.query(
+					'INSERT INTO memories (id, user_id, device_id, name, object_key, size, created_at, metadata_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+				)
+				.run(
+					input.id,
+					input.userId,
+					input.deviceId,
+					input.name,
+					input.objectKey,
+					input.size,
+					Date.now(),
+					JSON.stringify(input.metadata ?? emptyMetadata())
+				)
+			new TimelapseIndex(database).put(input.id)
+		})
+		.immediate()
 }

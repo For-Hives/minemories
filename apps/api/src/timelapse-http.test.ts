@@ -81,6 +81,15 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	const { id } = (await uploaded.json()) as { id: string }
 	const original = (database.query('SELECT object_key FROM memories WHERE id=?').get(id) as { object_key: string })
 		.object_key
+	const timeline = await client.timelapse.frames({ memoryId: id })
+	expect(timeline).toMatchObject({
+		totalFrames: 1,
+		mode: 'around',
+		dimension: 'minecraft:overworld',
+		frames: [{ id, timeSource: 'upload', origin: { x: 1, y: 1, z: 1 } }],
+	})
+	await expect(rpc(other.cookie).timelapse.frames({ memoryId: id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+	await expect(rpc('').timelapse.frames({ memoryId: id })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
 	const shared = await client.memories.createShare({ id })
 	const published = await client.discovery.publish({
 		memoryId: id,
@@ -120,10 +129,13 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	expect((await app.request(`/api/shared/${shared.token}/file`)).status).toBe(404)
 	expect((await app.request(`/api/public/${published.id}/file`)).status).toBe(404)
 	await client.memories.trash({ id })
+	await expect(client.timelapse.frames({ memoryId: id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
 	await client.memories.restore({ id })
+	expect((await client.timelapse.frames({ memoryId: id })).totalFrames).toBe(1)
 	const restored = await app.request(`/api/memories/${id}/file`, { headers: { cookie: owner.cookie } })
 	expect(Buffer.from(await restored.arrayBuffer()).equals(data)).toBe(true)
 	await client.memories.delete({ id })
+	await expect(client.timelapse.frames({ memoryId: id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
 	await timelapseMaintenance.maintain()
 	expect((await client.account.storage()).usedBytes).toBe(0)
 	expect(await Array.fromAsync(storageInventory().objects(`${owner.id}/`))).toEqual([])

@@ -8,6 +8,7 @@ import type { Readable } from 'node:stream'
 import { ObjectDeletionQueue } from '../object-deletions'
 import { migrateTimelapse, TimelapseCatalog } from '../timelapse-catalog'
 import { TimelapseFiles, type TimelapseObjects } from '../timelapse-files'
+import { migrateTimelapseIndex } from '../timelapse-index'
 import { minimalGlb } from './glb-fixture'
 
 export const frameMetadata = {
@@ -23,10 +24,11 @@ export async function temporalFixture() {
 		dbPath = join(dir, 'db.sqlite')
 	let db = new Database(dbPath)
 	db.exec(`PRAGMA foreign_keys=ON;PRAGMA journal_mode=WAL;
-	 CREATE TABLE memories(id TEXT PRIMARY KEY,user_id TEXT,object_key TEXT UNIQUE,size INTEGER,deleted_at INTEGER,metadata_json TEXT,created_at INTEGER DEFAULT 0);
+	 CREATE TABLE memories(id TEXT PRIMARY KEY,user_id TEXT,object_key TEXT UNIQUE,size INTEGER,deleted_at INTEGER,metadata_json TEXT,name TEXT DEFAULT 'Capture',created_at INTEGER DEFAULT 0);
 	 CREATE TABLE object_deletions(object_key TEXT PRIMARY KEY,created_at INTEGER,attempts INTEGER DEFAULT 0,
 	 next_attempt_at INTEGER DEFAULT 0,user_id TEXT,size INTEGER,discard_upload INTEGER DEFAULT 0);`)
 	migrateTimelapse(db)
+	migrateTimelapseIndex(db)
 	const local = (key: string) => join(dir, key.replaceAll('/', '_'))
 	const objects: TimelapseObjects = {
 		read: async (key, signal) => createReadStream(local(key), { signal }),
@@ -68,6 +70,7 @@ export async function temporalFixture() {
 			db = new Database(dbPath)
 			db.exec('PRAGMA foreign_keys=ON')
 			migrateTimelapse(db)
+			migrateTimelapseIndex(db)
 		},
 		async close() {
 			db.close()
