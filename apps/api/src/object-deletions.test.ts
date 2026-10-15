@@ -112,10 +112,12 @@ test('a running pass cannot overlap another pass and leaves newly queued work fo
 	})
 	const running = queue.drain(undefined, 0)
 	enqueue('owner/second.glb')
-	await queue.drain('owner/second.glb', 0)
+	const waiting = queue.drain('owner/second.glb', 0)
+	expect(waiting).toBe(running)
 	expect(calls).toBe(1)
 	release?.()
 	await running
+	await waiting
 	expect(database.query('SELECT object_key FROM object_deletions').all()).toEqual([{ object_key: 'owner/second.glb' }])
 	const second = queue.drain(undefined, 0)
 	release?.()
@@ -194,3 +196,66 @@ test.each([false, true])(
 		expect(database.query('SELECT 1 FROM object_deletions WHERE object_key=?').get(key)).toBeNull()
 	}
 )
+
+test('concurrent drains await one provider acknowledgement and shutdown leaves unstarted cleanup durable', async () => {
+	const first = 'owner/shutdown-first.glb',
+		second = 'owner/shutdown-second.glb'
+	enqueue(first)
+	enqueue(second)
+	database.query('UPDATE object_deletions SET created_at=1 WHERE object_key=?').run(second)
+	const entered = Promise.withResolvers<void>(),
+		release = Promise.withResolvers<void>(),
+		removed: string[] = []
+	const queue = new ObjectDeletionQueue(database, async key => {
+		removed.push(key)
+		entered.resolve()
+		await release.promise
+	})
+	const pass = queue.drain(undefined, 0)
+	await entered.promise
+	expect(queue.drain(second, 0)).toBe(pass)
+	let stopped = false
+	const stop = queue.stop().then(() => {
+		stopped = true
+	})
+	await Promise.resolve()
+	expect(stopped).toBe(false)
+	expect(database.query('SELECT object_key FROM object_deletions WHERE object_key=?').get(first)).not.toBeNull()
+	release.resolve()
+	await stop
+	await pass
+	expect(removed).toHaveLength(1)
+	expect(database.query('SELECT object_key FROM object_deletions WHERE object_key=?').get(second)).not.toBeNull()
+	await queue.maintain(0)
+	expect(removed).toHaveLength(1)
+	await new ObjectDeletionQueue(database, async key => {
+		removed.push(key)
+	}).drain(second, 0)
+	expect(removed).toHaveLength(2)
+})
+
+test('shutdown waits for failed provider cleanup to persist its retry, then permits SQLite to close', async () => {
+	const db = new Database(':memory:')
+	db.exec(`CREATE TABLE memories(object_key TEXT); CREATE TABLE object_deletions(object_key TEXT PRIMARY KEY,created_at INTEGER,attempts INTEGER DEFAULT 0,next_attempt_at INTEGER DEFAULT 0);
+	 INSERT INTO object_deletions(object_key,created_at) VALUES ('owner/failed-stop.glb',0)`)
+	const entered = Promise.withResolvers<void>(),
+		release = Promise.withResolvers<void>()
+	const queue = new ObjectDeletionQueue(db, async () => {
+		entered.resolve()
+		await release.promise
+		throw new Error('Storage offline')
+	})
+	const pass = queue.maintain(0)
+	await entered.promise
+	const stop = queue.stop()
+	release.resolve()
+	await stop
+	await pass
+	expect(db.query('SELECT attempts,next_attempt_at FROM object_deletions').get()).toEqual({
+		attempts: 1,
+		next_attempt_at: 60_000,
+	})
+	db.close()
+	await queue.stop()
+	await queue.drain()
+})

@@ -120,3 +120,78 @@ test('a configured production API starts with a private filesystem fixture and a
 		expect(code).toBe(0)
 	}
 })
+
+test.each(['deletion', 'upload'] as const)(
+	'real API shutdown waits for remote %s cleanup and repeated termination signals',
+	async mode => {
+		const entered = Promise.withResolvers<void>(),
+			release = Promise.withResolvers<void>()
+		const storage = Bun.serve({
+			port: 0,
+			hostname: '127.0.0.1',
+			async fetch(request) {
+				if (request.method === 'HEAD') return new Response(null)
+				if (new URL(request.url).searchParams.has('uploads'))
+					return new Response('<ListMultipartUploadsResult/>', { headers: { 'content-type': 'application/xml' } })
+				if (request.method !== 'DELETE') return new Response(null, { status: 400 })
+				entered.resolve()
+				await release.promise
+				return new Response(null, { status: 204 })
+			},
+		})
+		const reservation = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response() })
+		const port = reservation.port
+		reservation.stop(true)
+		const env = {
+			...environment(`shutdown-${mode}`),
+			API_PORT: String(port),
+			STORAGE_DRIVER: 's3',
+			S3_ENDPOINT: storage.url.toString(),
+			S3_BUCKET: 'private-fixture',
+			S3_REGION: 'auto',
+			S3_ACCESS_KEY: 'startup-fixture-key',
+			S3_SECRET_KEY: 'startup-fixture-secret',
+			COLD_STORAGE_PROVIDER: 'off',
+		}
+		const seed =
+			mode === 'deletion'
+				? `database.query("INSERT INTO object_deletions(object_key,created_at,user_id,size) VALUES ('owner/11111111-1111-4111-8111-111111111111.glb',0,'owner',123)").run()`
+				: `await import(${JSON.stringify(join(import.meta.dir, 'uploads.ts'))}); database.exec("INSERT INTO devices(id,user_id,name,token_hash,created_at) VALUES ('fixture-device','owner','Fixture','fixture-hash',0); INSERT INTO mod_uploads(id,device_id,user_id,size,sha256,name,metadata_json,expires_at,storage_started) VALUES ('11111111-1111-4111-8111-111111111111','fixture-device','owner',123,'fixture-digest','Fixture','{}',0,1)")`
+		const source = `const { database } = await import(${JSON.stringify(join(import.meta.dir, 'database.ts'))}); ${seed}; database.close()`
+		const table = mode === 'deletion' ? 'object_deletions' : 'mod_uploads'
+		const initialize = Bun.spawn([process.execPath, '--no-env-file', '--eval', source], {
+			env,
+			stdout: 'pipe',
+			stderr: 'pipe',
+		})
+		expect(await initialize.exited).toBe(0)
+		const child = start(env)
+		let watchdog: ReturnType<typeof setTimeout> | undefined
+		try {
+			watchdog = setTimeout(() => {
+				release.resolve()
+				child.kill('SIGKILL')
+			}, 4000)
+			await entered.promise
+			child.kill('SIGTERM')
+			child.kill('SIGINT')
+			const db = new Database(env.DATABASE_PATH, { readonly: true })
+			try {
+				expect(db.query(`SELECT size FROM ${table}`).get()).toEqual({ size: 123 })
+				release.resolve()
+				const [code, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+				expect(code).toBe(0)
+				expect(stderr).not.toContain('closed')
+				expect(db.query(`SELECT * FROM ${table}`).all()).toEqual([])
+			} finally {
+				db.close()
+			}
+		} finally {
+			clearTimeout(watchdog)
+			release.resolve()
+			child.kill('SIGKILL')
+			await child.exited
+			storage.stop(true)
+		}
+	}
+)
