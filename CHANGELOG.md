@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.3.1-beta.1...mod-v0.4.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **web:** add adaptive viewer lighting and memory studio controls ([5f2919f](https://github.com/For-Hives/minemories/commit/5f2919f03c3955393b5e2d4b79a7f5e3ca2183f7))
+
 ## [0.3.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.3.0-beta.1...mod-v0.3.1-beta.1) (2026-10-15)
 
 ### Maintenance
