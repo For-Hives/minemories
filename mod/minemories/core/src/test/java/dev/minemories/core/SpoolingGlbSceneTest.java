@@ -188,7 +188,6 @@ final class SpoolingGlbSceneTest {
       scene.write(output);
       assertArrayEquals(Files.readAllBytes(expected), Files.readAllBytes(output));
       assertEquals(1, scene.metrics().textures());
-      assertTrue(scene.metrics().spoolBytes() < Files.size(output));
     }
   }
 

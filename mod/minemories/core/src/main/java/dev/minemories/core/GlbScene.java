@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,14 +111,21 @@ public final class GlbScene {
               "VEC2",
               null,
               null);
+      byte[] packedIndices = part.indices.toByteArray();
+      int indexWidth = GlbIndices.width(part.vertices);
+      if (indexWidth < 4) {
+        packedIndices =
+            Arrays.copyOf(
+                packedIndices, GlbIndices.compact(packedIndices, packedIndices.length, indexWidth));
+      }
       int indices =
           accessor(
               binary,
               views,
               accessors,
-              part.indices.toByteArray(),
+              packedIndices,
               34963,
-              5125,
+              GlbIndices.componentType(part.vertices),
               part.indexCount,
               "SCALAR",
               null,

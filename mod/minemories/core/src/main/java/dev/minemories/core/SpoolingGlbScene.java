@@ -235,8 +235,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
         long cursor = 0;
         for (Segment segment : layout.segments) {
           padding(out, segment.offset - cursor, 0);
-          copy(segment.file, out);
-          cursor = segment.offset + segment.file.bytes;
+          copy(segment.file, out, segment.kind == 3 ? GlbIndices.width(segment.part.vertices) : 4);
+          cursor = segment.offset + segment.bytes();
         }
         padding(out, binaryLength - cursor, 0);
       }
@@ -414,6 +414,10 @@ public final class SpoolingGlbScene implements AutoCloseable {
   }
 
   private void copy(StoredFile file, OutputStream output) throws IOException {
+    copy(file, output, 4);
+  }
+
+  private void copy(StoredFile file, OutputStream output, int indexWidth) throws IOException {
     verify(file, true);
     // Final output and one input are the only open files after the append cache is closed.
     peakOpenFiles = Math.max(peakOpenFiles, 2);
@@ -421,9 +425,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
       long remaining = file.bytes;
       while (remaining > 0) {
         interrupted();
-        int read = input.read(copyBuffer, 0, (int) Math.min(copyBuffer.length, remaining));
-        if (read < 0) throw new IOException("Truncated GLB spool");
-        output.write(copyBuffer, 0, read);
+        int requested = (int) Math.min(copyBuffer.length, remaining);
+        int read = input.readNBytes(copyBuffer, 0, requested);
+        if (read != requested) throw new IOException("Truncated GLB spool");
+        int written = indexWidth < 4 ? GlbIndices.compact(copyBuffer, read, indexWidth) : read;
+        output.write(copyBuffer, 0, written);
         remaining -= read;
       }
       if (input.read() != -1) throw new IOException("GLB spool grew during write");
@@ -527,8 +533,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
               default -> part.indices;
             };
         offset = align4(offset);
-        segments.add(new Segment(file, offset, segments.size(), accessor++, index, part));
-        offset += file.bytes;
+        Segment segment = new Segment(file, offset, segments.size(), accessor++, index, part);
+        segments.add(segment);
+        offset += segment.bytes();
       }
       if (!imageViews.containsKey(part.image)) {
         offset = align4(offset);
@@ -645,7 +652,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
           "{\"bufferView\":"
               + segment.view
               + ",\"componentType\":"
-              + (indices ? 5125 : 5126)
+              + (indices ? GlbIndices.componentType(segment.part.vertices) : 5126)
               + ",\"count\":"
               + (indices ? segment.part.indexCount : segment.part.vertices)
               + ",\"type\":\""
@@ -661,10 +668,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
     for (Segment segment : layout.segments) {
       if (index++ > 0) sink.text(",");
       sink.text(
-          "{\"buffer\":0,\"byteOffset\":"
-              + segment.offset
-              + ",\"byteLength\":"
-              + segment.file.bytes);
+          "{\"buffer\":0,\"byteOffset\":" + segment.offset + ",\"byteLength\":" + segment.bytes());
       if (segment.kind >= 0) sink.text(",\"target\":" + (segment.kind == 3 ? 34963 : 34962));
       sink.text("}");
     }
@@ -741,7 +745,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private record Light(float x, float y, float z, int color, int level) {}
 
   private record Segment(
-      StoredFile file, long offset, int view, int accessor, int kind, Part part) {}
+      StoredFile file, long offset, int view, int accessor, int kind, Part part) {
+    long bytes() {
+      return kind == 3 ? file.bytes / 4 * GlbIndices.width(part.vertices) : file.bytes;
+    }
+  }
 
   private record Layout(List<Segment> segments, Map<Image, Integer> imageViews, long bytes) {}
 
