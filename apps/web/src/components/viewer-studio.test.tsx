@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import type { ViewerScene } from '../viewer-scene'
+import { LoadingSkeleton } from './Loading'
 import { ViewerStudio } from './ViewerStudio'
 
 afterEach(cleanup)
@@ -84,4 +85,15 @@ test('Escape restores the interface and closes the atmosphere panel', () => {
 	fireEvent.keyDown(window, { key: 'Escape' })
 	expect(screen.queryByRole('combobox')).toBeNull()
 	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
+})
+
+test('the lazy viewer opens with a full-screen loading surface rather than gallery cards', () => {
+	render(
+		<I18nProvider initialLocale="en">
+			<LoadingSkeleton kind="viewer" label="Loading the page…" />
+		</I18nProvider>
+	)
+	expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true')
+	expect(screen.getByRole('status').textContent).toContain('Loading')
+	expect(document.querySelector('.mm-skeleton-card')).toBeNull()
 })

@@ -8,6 +8,17 @@ export function LoadingSkeleton({
 	label?: string
 }) {
 	const { t } = useI18n()
+	if (kind === 'viewer')
+		return (
+			<div role="status" aria-busy="true" className="grid min-h-svh place-items-center bg-[#15221b] text-[#e6c68e]">
+				<div className="text-center">
+					<span aria-hidden="true" className="block text-4xl motion-safe:animate-pulse">
+						✧
+					</span>
+					<p className="mt-6 text-xs tracking-widest">{t(label)}</p>
+				</div>
+			</div>
+		)
 	return (
 		<div className={`mm-loading mm-loading-${kind}`} role="status" aria-busy="true">
 			<span className="sr-only">{t(label)}</span>
