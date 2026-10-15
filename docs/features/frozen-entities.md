@@ -22,6 +22,12 @@ skins et textures d'animaux sont intégrés en PNG dans le GLB. Les couleurs des
 couches (laine, collier…), leur transparence et les passes lumineuses usuelles
 sont conservées. Le lecteur n'a pas besoin du modpack d'origine.
 
+Pour les atlas dépassant la limite de pixels par image, le collecteur recherche
+le sprite contenant tous les UV de la primitive dans l’index de l’atlas chargé.
+Il copie seulement cette région GPU et remappe les UV sur l’image extraite ; il
+ne copie pas l’atlas complet. Une primitive traversant plusieurs sprites est
+refusée explicitement. Les limites de textures et de pixels restent applicables.
+
 Les couches secondaires transparentes reçoivent un très léger écart le long de
 la normale (2 mm pour la première, 16 mm maximum). Cela évite qu'un collier
 exactement superposé au corps fasse disparaître ce corps dans un moteur à rayons
@@ -34,7 +40,7 @@ seconde liste complète de sommets du renderer. La capture AFK utilise désormai
 le parcours progressif et le writer sur disque décrits dans le flux de capture.
 
 Le chemin CPU de Create/Flywheel est réactivé uniquement pendant la collecte du
-modèle ; le backend du jeu reste actif ensuite. Les versions, preuves avant/après
+modèle ; le backend du jeu retrouve son état initial ensuite. Les versions, preuves avant/après
 et validations encore nécessaires sont suivies dans la
 [validation des renderers de modpacks](modpack-renderer-validation.md).
 
@@ -46,6 +52,13 @@ sans texture accessible et les pipelines GPU propres à certains mods ne sont
 pas annoncés comme supportés. Une passe géométrique texturée impossible à copier
 fait échouer la capture avant l'enregistrement ; le dernier souvenir complet
 reste disponible.
+
+La couche secondaire de Pikachu dans Cobblemon 1.7.3 est copiée avec sa texture,
+mais son auto-éclairage spécifique reste une limite connue : elle ne reçoit pas
+de facteur d’émission glTF. La présence d’une texture nommée « emissive » ne suffit
+pas à conclure que son effet lumineux a été conservé. Les passes Minecraft
+standard `eyes` et `entity_translucent_emissive` restent reconnues ; le contrôle
+natif des yeux d’Enderman confirme le facteur et la texture d’émission dans le GLB.
 
 ## Limites
 

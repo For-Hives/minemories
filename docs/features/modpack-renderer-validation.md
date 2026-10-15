@@ -1,8 +1,17 @@
 # Validation des renderers de modpacks
 
-L’issue #91 reste ouverte : les résultats ci-dessous concernent un banc isolé
-construit à partir des JAR d’ATMons, pas une validation de tous les mods du profil.
-Les sauvegardes et configurations personnelles ne sont pas utilisées ni modifiées.
+Le périmètre ci-dessous couvre des renderers ciblés, puis des copies isolées avec
+les listes complètes de JAR des profils. La compatibilité de chaque renderer tiers
+et de chaque configuration du joueur reste à évaluer séparément.
+Les sauvegardes personnelles ne sont pas utilisées ni modifiées. Les bancs ont leurs
+propres réglages ; les essais des profils complets reproduisent aussi les réglages
+de compatibilité du pack explicitement indiqués ci-dessous.
+
+Le périmètre de cette validation est Minecraft 1.21.1, avec les listes de JAR
+NeoForge des profils `mc breval` et `All the Mons - ATMons`. Le profil local
+DeceasedCraft est en Minecraft 1.20.1 / Forge 47.4.0 : il ne reçoit pas ce JAR
+NeoForge et n’est pas validé par ces essais. Les autres loaders sont suivis par
+[l’issue de portage et la matrice de loaders](loader-support.md).
 
 ## Premier banc, 15 octobre 2026
 
@@ -21,13 +30,13 @@ additionnel ni shader pack activé. Le client charge ces versions exactes :
 
 Le banc place arbres de transmission, roue dentée, grande roue à eau et presse
 Create, réservoirs Create/Mekanism, infuseur Mekanism, feuillage teinté, verre rouge,
-eau courante et Pikachu avec sa passe lumineuse. Le mod reste non appairé et
+eau courante et Pikachu avec sa texture secondaire marquée émissive. Le mod reste non appairé et
 les captures AFK sont explicitement désactivées pendant ce premier essai manuel.
 Les réglages et la sauvegarde sont propres au banc.
 
 Avec le JAR précédent, Flywheel contourne le renderer CPU des composants animés.
 L’export aboutit mais omet la géométrie de plusieurs composants visibles en jeu.
-Pikachu, ses textures et sa passe lumineuse sont déjà présents. Le correctif donne
+Pikachu et ses deux textures sont déjà présents. Le correctif donne
 accès au renderer CPU uniquement pendant la collecte d’un modèle :
 
 - une portée locale au thread entoure les renderers de block entities et d’entités ;
@@ -105,8 +114,8 @@ au moteur ; le pilote a été corrigé et les vitesses non nulles sont ensuite
 vérifiées sur le client, sans présenter cet échec de fixture comme un défaut du mod.
 
 `bun run build` passe sur ce code, incluant `bun check`, les tests unitaires,
-Spotless, SpotBugs et JaCoCo. Les essais complémentaires sont suivis ci-dessous ; les profils complets
-restent nécessaires avant fermeture de l’issue.
+Spotless, SpotBugs et JaCoCo. Les essais complémentaires et les profils complets
+sont décrits ci-dessous.
 
 ## AFK, annulation et combinaisons de rendu
 
@@ -140,10 +149,134 @@ qui conserve la géométrie et les textures de base autonomes.
 
 Preuves : sous-dossiers `afk/`, `vanilla/`, `sodium/`, `iris/`,
 `api-validation.json` et rapports/rendus Blender associés. Ces combinaisons
-emploient encore le sous-ensemble ciblé des mods ; les copies avec la liste
-complète des profils sont en cours d’essai.
+emploient le sous-ensemble ciblé des mods ; les essais avec les listes complètes
+sont décrits dans les sections suivantes.
 
-## Validation encore nécessaire pour #91
+## Atlas des profils complets
 
-- Scénarios sur les profils ciblés et documentation du périmètre réellement testé,
-  puis contrôles globaux et CI avant fusion et fermeture.
+La copie de `mc breval` charge la liste de 483 JAR tiers du profil avec NeoForge
+21.1.248 et le candidat `972533a8…`. Le chargement du monde requiert le réglage
+existant `disable_chisel_modern=true` de JustDynaThings et les données KubeJS du
+pack. Avec ces données, les mécanismes et fluides du banc sont visibles, mais
+l’export échoue : l’atlas de blocs fait 8 192 × 8 192 pixels, au-delà de la limite
+de quatre millions de pixels par image. Aucun GLB incomplet n’est publié et les
+états GL surveillés sont restaurés.
+
+Le correctif en validation identifie le sprite de chaque primitive du renderer
+sur les grands atlas et lit uniquement sa région GPU, par bandes. Les UV sont
+ramenés à cette image ; l’image correspond à la texture réellement affichée,
+y compris la frame courante d’une texture animée. Les limites par image, de pixels
+cumulés et de textures restent identiques. La recherche retient au plus 256 sprites utilisés, parcourt au plus un million
+d’entrées par recherche et partage un budget de 32 millions d’entrées examinées
+entre tous les atlas de la capture ; une primitive traversant plusieurs sprites
+échoue explicitement plutôt que d’utiliser une image erronée. Les UV non finis
+sont éliminés. Les tests couvrent le changement de coordonnées, les petits sprites,
+les bords, les primitives traversantes et les budgets de recherche.
+
+Le premier essai de la copie ATMons sans ses réglages de compatibilité échoue
+avant toute capture dans le mixin Sodium de Mekanism Covers. Le profil original
+définit `disableAdvancedCoverRendering=true` ; le banc reproduit désormais ce
+réglage, sans retirer de mod. Ce premier échec ne prouve donc pas une
+incompatibilité du profil configuré.
+
+Le candidat intermédiaire `0590b85a…` réussit l’export manuel du pack complet
+avec l’atlas de 8 192 × 8 192 : 1 347 424 octets, 17 104 triangles et 42 images
+intégrées. Les neuf états GL surveillés sont identiques après capture. La copie
+d’un sprite de pierre de 16 × 16 est comparée à ses 256 pixels d’origine ; elle
+préserve les états GL. Le GLB et ses métadonnées passent les validateurs réels
+de l’API. L’écran Minecraft et le rendu Blender sont inspectés : mécanismes,
+réservoirs, mouton coloré, verre, feuilles et eau sont présents. Le shader MakeUp
+est activé ; son éclairage reste propre au jeu.
+
+La première lecture rencontrait aussi une erreur GL déjà en attente (`1281`)
+avant toute copie. Le candidat suivant journalise et consomme les erreurs
+antérieures, avec une boucle bornée, puis contrôle séparément les erreurs de sa
+propre lecture. Le pilote injecte une erreur préalable pour vérifier ce cas ; il
+ne contourne pas les erreurs de lecture du collecteur. Le candidat `7a01ab0c…`
+passe cette injection avant la lecture du sprite puis avant l’export manuel, avec restauration des neuf états GL surveillés.
+
+Le même JAR termine une capture AFK **avant tout export manuel de cette session**
+dans la copie de mc breval, en pause, rayon 12/hauteur complète. Elle contient
+59 854 blocs, huit entités, 78 764 triangles et 98 images intégrées pour
+6 081 860 octets. Les composants animés et les deux fluides sont présents ; les
+positions/UV sont finis et les validateurs API acceptent GLB et métadonnées.
+L’intervalle est `04:37:38.921451715Z`–`04:40:10.365172822Z`, le 15 octobre 2026.
+La portée est désactivée entre les 813 étapes et l’état Flywheel reste identique
+à celui d’avant capture (désactivé par Iris). Les 54 dépassements du budget souple,
+avec un maximum de 35,57 ms, sont conservés dans les mesures ; le temps total du
+banc logiciel n’est pas une promesse de performance. Le rendu Blender a été
+inspecté. Le cycle suivant est annulé : historique inchangé, dernier fichier
+complet préservé et spool nettoyé. L’export manuel qui suit réussit également,
+avec 21 506 triangles et 42 images ; ses métadonnées et son GLB passent l’API.
+
+Le candidat intermédiaire `5388c08c3563ebc1e5c99c14f4d0d67d83a27ea6f676407b59dfc1edfad85831`
+ajoute un garde-fou : les descripteurs d’atlas comptent dans le budget de textures
+avant leur construction, y compris si le renderer n’émet aucun sommet. Les tests
+unitaires, Spotless, SpotBugs et `bun run build` passent (140 tests web, 235 tests
+API exécutés, 33 core et 154 NeoForge). Le premier essai ATMons avec shader manque de tas Java (5 Gio) pendant
+l’initialisation JEI/Ars Nouveau, avant le scénario Minemories. Il est conservé
+comme échec du banc, pas comme validation du produit. Le nouvel essai conserve
+les 396 JAR tiers, avec un tas de 7 Gio et les shaders désactivés ; les parcours
+avec shader de mc breval et du banc ciblé sont conservés séparément.
+Preuves : `full-breval/crop-clean/`, `full-breval/cold-afk/`, fichiers JAR et
+empreintes conservés avec chaque parcours ; `full-atmons/heap5g-attempt/`, `full-atmons/client-sync-attempt/` et
+`full-atmons/atlas-no-shader-afk/` pour la suite.
+
+L’essai ATMons suivant confirme vitesses et fluides synchronisés, puis reproduit
+la limite du premier index : plus de 65 536 entrées dans l’atlas. Le candidat
+suivant conserve une vue paresseuse de l’atlas et ne met en cache que les sprites
+trouvés pour les primitives. Il ne matérialise plus un index complet ; les limites
+d’images/pixels sont identiques et le travail de recherche reste borné. Les tests
+exercent un atlas de plus de 80 000 entrées sans allocation d’un index complet,
+le cache des recherches répétées, le budget partagé entre atlas et la limite
+des sprites retenus. Une course du pilote, qui lisait les blocs client avant
+réception des chunks après téléportation, a aussi été corrigée dans le banc ;
+elle n’est pas présentée comme un défaut Minemories.
+
+## Candidat final et périmètre validé
+
+Le JAR `6b6c10b93c29e1daa3b45dd57b7690c5e12212e24355d43c9fce29cbad71c318`
+passe `bun run build`, incluant les contrôles globaux et 156 tests NeoForge.
+Il est exercé dans ATMons avec ses 396 JAR tiers et 434 identifiants de mods
+chargés, NeoForge 21.1.249, Sodium 0.8.13 et Iris présent avec shaders désactivés.
+Le réglage Mekanism Covers du pack est reproduit ; le tas Java est de 7 Gio et
+le processus de validation limité à 12 Gio, sans swap. L’atlas expose 71 641
+entrées. La comparaison des 256 pixels du sprite GPU et la restauration des
+neuf états GL surveillés passent, y compris après injection d’une erreur GL
+antérieure. Flywheel est actif après l’export manuel.
+
+L’export manuel contient 1 186 344 octets, 15 172 triangles et 42 images intégrées.
+L’AFK en pause produit 5 298 968 octets, 71 890 triangles et 94 images, avec
+59 917 blocs et cinq entités. Le producteur compte 836 étapes (837 callbacks
+observés par le pilote), 19 dépassements du budget souple et un maximum de
+19,85 ms. L’intervalle est `05:07:13.713390313Z`–`05:08:05.780712909Z`, le
+15 octobre 2026. Portée désactivée et Flywheel actif entre les étapes ; second
+cycle annulé avec historique et dernier fichier complet préservés, spool nettoyé.
+Les mécanismes, fluides et textures de Pikachu sont présents, les positions/UV
+sont finis. Les GLB et métadonnées passent l’API ; écrans Minecraft et rendus
+Blender manuel/AFK inspectés.
+
+La vérification des couches précise une limite : les deux textures de Pikachu,
+dont `pikachu_emissive.png`, sont intégrées, mais l’auto-éclairage spécifique de
+cette couche Cobblemon n’est pas traduit en émission glTF. Il ne faut pas lire
+les observations précédentes de « passe lumineuse » comme une validation de cet
+effet. Les effets GPU arbitraires, glint, texte et autres exclusions restent
+suivis dans [les limites de capture](frozen-entities.md).
+
+Le même JAR passe la régression NeoForge 21.1.248 sans Flywheel : coffre, mouton
+coloré, feuillage, verre, eau et Enderman. Le pilote impose un PBO de lecture de
+16 octets et des réglages de packing non standards (alignement 8, longueur de
+ligne 23, offsets 3/2) ; les onze états GL comparés sont restaurés. Le GLB de
+1 008 triangles contient neuf images intégrées, avec positions/UV finis et
+métadonnées acceptées par l’API. Les yeux d’Enderman portent bien
+`emissiveFactor=[0.65,0.65,0.65]` et leur texture d’émission. Les écrans
+Minecraft et le rendu Blender sont inspectés, avec le mouton coloré et les yeux
+lumineux présents. Le premier contrôle Blender avait révélé deux moutons
+exactement superposés dans la fixture (triangles dupliqués) ; le pilote nettoie
+désormais ces entités avant placement. Le parcours est rejoué avec un seul
+mouton, sans modification du produit.
+
+Preuves finales : `full-atmons/atlas-no-shader-afk/` et `vanilla/atlas-final/`,
+avec JAR exact, inventaire, réglages, résultats GL, géométrie, couches spéciales,
+validation API et rendus. Ces essais valident ce périmètre ; ils ne garantissent
+pas tous les renderers et réglages des modpacks. CI encore nécessaire avant fusion.
