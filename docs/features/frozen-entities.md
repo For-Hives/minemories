@@ -30,9 +30,13 @@ passes opaques ne sont pas déplacées.
 
 Les quads et les triangles, strips et fans sont collectés avec leur orientation.
 Une seule primitive reste en attente par passe : le collecteur ne garde pas une
-seconde liste complète de sommets du renderer. Le writer historique reste en
-mémoire ; son remplacement par le writer sur disque et la capture progressive
-AFK restent suivis séparément.
+seconde liste complète de sommets du renderer. La capture AFK utilise désormais
+le parcours progressif et le writer sur disque décrits dans le flux de capture.
+
+Le chemin CPU de Create/Flywheel est réactivé uniquement pendant la collecte du
+modèle ; le backend du jeu reste actif ensuite. Les versions, preuves avant/après
+et validations encore nécessaires sont suivies dans la
+[validation des renderers de modpacks](modpack-renderer-validation.md).
 
 Les noms affichés au-dessus des entités et le texte des panneaux ne sont pas
 exportés. Les passes de texte sans normales, lignes/laisses, ombres au sol,
