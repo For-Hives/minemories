@@ -98,3 +98,17 @@
 		padding: 22px;
 	}
 }
+.mm-account-card .mm-button {
+	min-height: 46px;
+	padding: 12px 18px;
+	border: 1px solid var(--color-lime);
+	border-radius: 7px;
+	background: var(--color-lime);
+	color: var(--color-night);
+	font-weight: 600;
+	cursor: pointer;
+}
+.mm-account-card .mm-button:focus-visible {
+	outline: 2px solid var(--color-lime);
+	outline-offset: 3px;
+}
