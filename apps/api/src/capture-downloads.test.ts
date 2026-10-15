@@ -3,6 +3,47 @@ import { Readable } from 'node:stream'
 import { openAuthorizedCapture } from './capture-downloads'
 import { readAll } from './test-support/timelapse-fixture'
 
+test('opening callback counts first delivered bytes once, never empty, failed or abandoned streams', async () => {
+	let count = 0
+	const signal = new AbortController().signal
+	const open = async (source: Readable, selectedSignal = signal) => {
+		const result = await openAuthorizedCapture(
+			{ read: async () => source },
+			() => 'key',
+			selectedSignal,
+			() => count++
+		)
+		if (!result) throw new Error('Missing capture')
+		return result
+	}
+	const body = await open(Readable.from([Buffer.alloc(0), Buffer.from('gl'), Buffer.from('TF')]))
+	expect(count).toBe(0)
+	expect((await readAll(body)).toString()).toBe('glTF')
+	expect(count).toBe(1)
+	await readAll(await open(Readable.from([])))
+	expect(count).toBe(1)
+	const abandoned = Readable.from([Buffer.from('secret')])
+	const unused = await open(abandoned)
+	unused.destroy()
+	await new Promise(resolve => unused.once('close', resolve))
+	expect(abandoned.destroyed).toBe(true)
+	expect(count).toBe(1)
+	const failed = await open(
+		new Readable({
+			read() {
+				this.destroy(new Error('storage offline'))
+			},
+		})
+	)
+	await expect(readAll(failed)).rejects.toThrow('storage offline')
+	expect(count).toBe(1)
+	const controller = new AbortController()
+	const cancelled = await open(Readable.from([Buffer.from('secret')]), controller.signal)
+	controller.abort()
+	await expect(readAll(cancelled)).rejects.toThrow()
+	expect(count).toBe(1)
+})
+
 test('downloads open only authorized captures and recheck after asynchronous storage', async () => {
 	let key: string | null = null,
 		opens = 0
