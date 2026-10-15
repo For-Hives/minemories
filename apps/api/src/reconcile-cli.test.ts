@@ -3,13 +3,44 @@ import { afterAll, expect, spyOn, test } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { verifyColdStorageTarget } from './cold-storage-target'
+import { migrateObjectTiers } from './object-tiers'
 import { executeReconciliationCli, runReconciliationCli } from './reconcile-cli'
 import { FilesystemInventory } from './storage-inventory'
 import { ORPHAN_GRACE_MS } from './storage-reconciliation'
-import { reconciliationDatabase, reconciliationKey } from './test-support/reconciliation-fixture'
+import {
+	ReconciliationInventory,
+	reconciliationDatabase,
+	reconciliationKey,
+} from './test-support/reconciliation-fixture'
 
 const root = await mkdtemp(join(tmpdir(), 'minemories-cli-'))
 afterAll(() => rm(root, { recursive: true, force: true }))
+
+test('CLI rejects a changed cold-storage target before inventory access or plan creation', async () => {
+	const path = join(root, 'bound-cold.sqlite')
+	const database = reconciliationDatabase(path)
+	try {
+		migrateObjectTiers(database)
+		verifyColdStorageTarget(database, {
+			COLD_STORAGE_PROVIDER: 'aws',
+			COLD_STORAGE_CLASS: 'GLACIER',
+			S3_ENDPOINT: 'https://cold-target-do-not-use.invalid',
+			S3_BUCKET: 'private',
+			S3_REGION: 'eu-west-3',
+		})
+	} finally {
+		database.close()
+	}
+	const inventory = new ReconciliationInventory()
+	const identity = spyOn(inventory, 'identity')
+	const plan = join(root, 'wrong-target-plan.json')
+	await expect(runReconciliationCli(['--plan', plan], { databasePath: path, inventory })).rejects.toThrow(
+		'target changed'
+	)
+	expect(identity).not.toHaveBeenCalled()
+	await expect(stat(plan)).rejects.toThrow()
+})
 
 test('CLI inventories an existing database readonly, then applies reviewed claims with a restorable backup', async () => {
 	const path = join(root, 'existing.sqlite')

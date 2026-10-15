@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path'
 import './configuration'
 import { migrateCaptureAccess } from './capture-access'
 import { migrateCaptureReaders } from './capture-readers'
+import { verifyColdStorageTarget } from './cold-storage-target'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateTimelapse } from './timelapse-catalog'
@@ -87,3 +88,4 @@ migrateDiscovery(database)
 migrateTimelapse(database)
 
 migrateTimelapseIndex(database)
+verifyColdStorageTarget(database, process.env)
