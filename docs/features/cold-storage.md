@@ -157,8 +157,32 @@ avant de rendre la main. Une restauration encore en attente reprend avec le dél
 de réessai durable. Une copie dont la réponse est perdue reste isolée dans sa
 génération et son nettoyage attend le délai de grâce des orphelins.
 Les tests couvrent ces cas avec de vrais fichiers, ainsi que la perte du bail et
-les acquittements périmés. Aucun fournisseur concret ni ordonnanceur n’est encore
-branché sur ce worker : cette étape n’active pas l’archivage.
+les acquittements périmés. L’adaptateur `S3ColdStorageProvider` est maintenant testé
+avec le vrai SDK contre un serveur HTTP local. Il ne s’exécute pas au démarrage ;
+aucun ordonnanceur n’est encore branché et cette étape n’active pas l’archivage.
+
+L’adaptateur copie côté stockage, sans télécharger le GLB dans l’API. Il contrôle
+la taille (au plus 200 MiB), le propriétaire, les clés réservées, la classe et
+l’ETag de la source, transmet `CopySourceIfMatch`, puis exige un résultat SDK et
+un `HEAD` destination concordants avant la publication. Les métadonnées sont
+conservées et aucune ACL publique n’est ajoutée. Les classes hot/cold sont
+`STANDARD` et la classe explicitement choisie. Sur AWS, chaque préparation/copie
+refuse un bucket versionné ou dont le versioning a été suspendu : les suppressions
+ordinaires ne garantiraient pas l’effacement des anciennes versions privées.
+R2 n’implémente pas `GetBucketVersioning` ; cette opération ne lui est pas envoyée.
+
+Pour Glacier/Deep Archive, `RestoreObject` demande une copie temporaire d’un jour,
+en mode Standard. Un retour accepté ou un conflit « déjà en cours » ne rend pas
+le GLB lisible : le worker attend un `HEAD` confirmant la restauration, avec au
+moins quinze minutes avant expiration, puis copie vers une nouvelle génération
+`STANDARD` permanente. R2 et `STANDARD_IA` utilisent directement `CopyObject`.
+Ce mode de restauration et ses coûts devront être validés sur le compte choisi.
+
+Les tests HTTP couvrent aussi l’erreur XML dans une réponse 200, la réponse perdue
+après écriture distante, la précondition refusée, les métadonnées incohérentes,
+l’annulation du SDK et une copie distante finissant après l’arrêt du worker.
+Cette dernière reste dans sa génération non publiée ; une reprise publie une
+autre clé. Ces tests ne remplacent pas une validation sur le fournisseur réel.
 
 Les
 métadonnées et miniatures restent accessibles.
@@ -179,11 +203,17 @@ Références officielles consultées le 15 octobre 2026 :
 - [Copie AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html) :
   valider la réponse complète via le SDK ; un statut HTTP 200 peut contenir une
   erreur de copie et ne suffit pas à autoriser la publication d’une génération.
+- [Suppression AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) :
+  un marqueur de suppression ne détruit pas les versions privées précédentes ;
+  le premier adaptateur refuse les buckets versionnés ou suspendus.
 - [Contraintes d’archivage AWS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/archival-storage.html) :
   tenir compte des durées minimales et des frais de suppression anticipée.
 - [Classes R2](https://developers.cloudflare.com/r2/buckets/storage-classes/) et
   [tarifs R2](https://developers.cloudflare.com/r2/pricing/) : Infrequent Access
   applique des frais de récupération et une durée minimale facturée.
+- [Compatibilité de l’API S3 R2](https://developers.cloudflare.com/r2/api/s3/api/) :
+  opérations de copie conditionnelle et classes `STANDARD`/`STANDARD_IA` ;
+  `GetBucketVersioning` n’est pas implémenté.
 
 Aucun tarif régional ni coût d’exploitation n’est supposé. Le choix final doit
 chiffrer stockage, transitions, requêtes, restauration, durée minimale et latence
