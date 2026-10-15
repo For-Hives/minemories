@@ -1,0 +1,1467 @@
+package dev.minemories.client;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import javax.imageio.ImageIO;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import org.lwjgl.glfw.GLFW;
+
+public final class ClientRuntime {
+  private static final int VERTEX_STRIDE = 8;
+  private static final KeyMapping OPEN_SCREEN =
+      new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
+  private static WeakReference<Button> pauseButton = new WeakReference<>(null);
+  private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+  // All exploration state is owned by the Minecraft client thread, including pause rendering.
+  private static final ExplorationState EXPLORATION = new ExplorationState();
+
+  private static final class ExplorationState {
+    private ExplorationDepth depth = new ExplorationDepth();
+    private VisitedZones zones = new VisitedZones();
+    private boolean zonesWritable;
+    private Path path;
+    private boolean writable;
+    private long lastSaveMs;
+  }
+
+  private static long lastAfkCheckMs;
+  private static long lastDiagnosticsCheckMs;
+  private static boolean afkUploadPending;
+  private static net.minecraft.client.multiplayer.ClientLevel afkUploadWorld;
+  // Client-thread ownership, like exploration: no lazy publication of static jobs/settings.
+  private static final CaptureState CAPTURES = new CaptureState();
+
+  private static final class CaptureState {
+    private ProgressiveGameCapture job;
+    private PairingClient.CaptureSettings settings;
+  }
+
+  private static DiagnosticsClient.Operation afkDiagnostics;
+  private static long resourceEpoch;
+  private static final RemoteCaptureSession REMOTE_CAPTURE_SESSION = new RemoteCaptureSession();
+
+  static void clientSettingsChanged() {
+    CAPTURES.settings = null;
+    REMOTE_CAPTURE_SESSION.settingsChanged();
+  }
+
+  static String afkCaptureStatus() {
+    if (CAPTURES.job == null) return "";
+    if (CAPTURES.job.cancelled()) return "Arrêt de la capture AFK…";
+    return CAPTURES.job.suspended()
+        ? "Capture AFK en pause pendant ton activité."
+        : "Capture AFK en cours, en arrière-plan…";
+  }
+
+  private static boolean manualCaptureAllowed() {
+    if (CAPTURES.job == null) return true;
+    CAPTURES.job.cancel("Capture manuelle demandée.");
+    lastActivityMs = System.currentTimeMillis();
+    captureFailure =
+        "Arrêt de la capture AFK en cours. Réessaie la capture manuelle dans un instant.";
+    tell(captureFailure);
+    return false;
+  }
+
+  static final int DEFAULT_CAPTURE_RADIUS = CaptureBounds.DEFAULT_RADIUS;
+  private static long lastActivityMs = System.currentTimeMillis();
+  private static double lastPlayerX;
+  private static double lastPlayerY;
+  private static double lastPlayerZ;
+  private static float lastPlayerYaw;
+  private static float lastPlayerPitch;
+  private static boolean playerPositionKnown;
+  private static BlockPos selectionFirst;
+  private static BlockPos selectionSecond;
+  private static ResourceKey<Level> selectionDimension;
+  private static String captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+
+  static String captureFailure() {
+    return captureFailure;
+  }
+
+  static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
+    Minecraft mc = Minecraft.getInstance();
+    var level = mc.level;
+    var currentServer = mc.getCurrentServer();
+    com.google.gson.JsonObject metadata = new com.google.gson.JsonObject();
+    metadata.addProperty("capturedAt", Instant.now().toString());
+    metadata.addProperty("x", position == null ? null : position.getX() + 0.5);
+    metadata.addProperty("y", position == null ? null : position.getY() + 0.5);
+    metadata.addProperty("z", position == null ? null : position.getZ() + 0.5);
+    metadata.addProperty(
+        "dimension", level == null ? null : level.dimension().location().toString());
+    metadata.addProperty(
+        "biome",
+        level == null || position == null
+            ? null
+            : level
+                .getBiome(position)
+                .unwrapKey()
+                .map(key -> key.location().toString())
+                .orElse(null));
+    metadata.addProperty("dayTime", level == null ? null : level.getDayTime());
+    metadata.addProperty("raining", level == null ? null : level.isRaining());
+    metadata.addProperty("thundering", level == null ? null : level.isThundering());
+    var localServer = mc.getSingleplayerServer();
+    if (localServer != null) {
+      var worldData = localServer.getWorldData();
+      metadata.addProperty("worldName", worldData.getLevelName());
+      metadata.addProperty("seed", Long.toString(worldData.worldGenOptions().seed()));
+      metadata.addProperty("serverName", (String) null);
+      try {
+        var screenshot = localServer.getWorldScreenshotFile();
+        if (screenshot.isPresent())
+          metadata.addProperty("thumbnail", CaptureIcon.read(screenshot.get()));
+      } catch (IOException ignored) {
+        metadata.addProperty("thumbnail", (String) null);
+      }
+    } else if (currentServer != null) {
+      metadata.addProperty("worldName", (String) null);
+      String serverName = currentServer.name;
+      metadata.addProperty(
+          "serverName", serverName == null || serverName.isBlank() ? currentServer.ip : serverName);
+      byte[] icon = currentServer.getIconBytes();
+      metadata.addProperty("thumbnail", CaptureIcon.encode(icon));
+    } else {
+      metadata.addProperty("worldName", (String) null);
+      metadata.addProperty("serverName", (String) null);
+    }
+    if (!metadata.has("thumbnail")) metadata.addProperty("thumbnail", (String) null);
+    if (!metadata.has("seed")) metadata.addProperty("seed", (String) null);
+    return metadata;
+  }
+
+  public static <S> void registerCommands(com.mojang.brigadier.CommandDispatcher<S> dispatcher) {
+    dispatcher.register(
+        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("minemories")
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("select")
+                    .then(
+                        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("first")
+                            .executes(ctx -> selectCorner(true)))
+                    .then(
+                        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("second")
+                            .executes(ctx -> selectCorner(false)))
+                    .then(
+                        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("clear")
+                            .executes(ctx -> clearSelection()))
+                    .then(
+                        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("status")
+                            .executes(ctx -> selectionStatus())))
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("export")
+                    .executes(ctx -> export(DEFAULT_CAPTURE_RADIUS))
+                    .then(
+                        com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("selection")
+                            .executes(ctx -> exportSelection()))
+                    .then(
+                        com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, Integer>argument(
+                                "radius", IntegerArgumentType.integer(2, DEFAULT_CAPTURE_RADIUS))
+                            .executes(
+                                ctx -> export(IntegerArgumentType.getInteger(ctx, "radius")))))
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("pair")
+                    .then(
+                        com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, String>argument(
+                                "code", StringArgumentType.word())
+                            .executes(ctx -> pair(StringArgumentType.getString(ctx, "code")))))
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("upload")
+                    .executes(ctx -> uploadCapture()))
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("suggestions")
+                    .executes(
+                        ctx -> {
+                          Minecraft.getInstance().setScreen(new SuggestedZonesScreen(null));
+                          return 1;
+                        })));
+  }
+
+  public static void initialize(ClientPlatform platform) {
+    ClientPlatforms.install(platform);
+  }
+
+  public static void registerOpenScreenKey(java.util.function.Consumer<KeyMapping> register) {
+    register.accept(OPEN_SCREEN);
+  }
+
+  public static void resourcesReloaded() {
+    resourceEpoch++;
+    if (CAPTURES.job != null) CAPTURES.job.cancel("Ressources rechargées.");
+  }
+
+  public static void addPauseMenuButton(
+      Screen value,
+      java.util.function.Consumer<Button> add,
+      List<? extends GuiEventListener> listeners) {
+    if (!(value instanceof PauseScreen screen)) return;
+    Button button =
+        Button.builder(
+                Component.literal("Minemories"),
+                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
+            .build();
+    add.accept(button);
+    pauseButton = new WeakReference<>(button);
+    placeMenuButton(screen, button, listeners);
+  }
+
+  public static void repositionPauseMenuButton(Screen value) {
+    if (!(value instanceof PauseScreen screen)) return;
+    Button button = pauseButton.get();
+    if (button != null && screen.children().contains(button)) {
+      placeMenuButton(screen, button, screen.children());
+    }
+  }
+
+  public static void addOptionsButton(
+      Screen value,
+      java.util.function.Consumer<Button> add,
+      List<? extends GuiEventListener> listeners) {
+    if (!(value instanceof OptionsScreen screen)) return;
+    Button button =
+        Button.builder(
+                Component.literal("Minemories"),
+                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
+            .build();
+    add.accept(button);
+    placeMenuButton(screen, button, listeners);
+  }
+
+  public static void openFromShortcut() {
+    // Record short descents during active play; the wall-clock render check remains for pause.
+    trackExploration(Minecraft.getInstance(), System.currentTimeMillis());
+    while (OPEN_SCREEN.consumeClick()) {
+      Minecraft mc = Minecraft.getInstance();
+      if (!(mc.screen instanceof MinemoriesScreen)) {
+        mc.setScreen(new MinemoriesScreen(mc.screen));
+      }
+    }
+  }
+
+  public static void trackAfkKeyboard(int action) {
+    if (action != GLFW.GLFW_RELEASE) lastActivityMs = System.currentTimeMillis();
+  }
+
+  public static void trackAfkMouse(int action) {
+    if (action != GLFW.GLFW_RELEASE) lastActivityMs = System.currentTimeMillis();
+  }
+
+  public static void trackAfkSnapshot() {
+    Minecraft mc = Minecraft.getInstance();
+    long now = System.currentTimeMillis();
+    if (now - lastDiagnosticsCheckMs >= 1000) {
+      lastDiagnosticsCheckMs = now;
+      try {
+        PairingClient.diagnosticsTick();
+      } catch (RuntimeException ignored) {
+        /* Diagnostics never block play. */
+      }
+    }
+    if (REMOTE_CAPTURE_SESSION.connection() instanceof net.minecraft.network.Connection connection
+        && !connection.isConnected()) {
+      REMOTE_CAPTURE_SESSION.clear();
+    }
+    if (mc.level != null && mc.player != null && playerMoved(mc.player)) lastActivityMs = now;
+    try {
+      if (afkUploadPending && mc.level != afkUploadWorld) PairingClient.cancelAfkUpload();
+      boolean checked = CAPTURES.settings == null || now - lastAfkCheckMs >= 1000;
+      if (checked) {
+        lastAfkCheckMs = now;
+        CAPTURES.settings = PairingClient.captureSettings();
+        trackExploration(mc, now);
+      }
+      if (CAPTURES.job != null) {
+        if (!CAPTURES.job.valid(CAPTURES.settings, resourceEpoch))
+          CAPTURES.job.cancel("Monde, ressources ou réglages modifiés.");
+        if (!CAPTURES.job.done())
+          CAPTURES.job.step(
+              mc.getOverlay() == null
+                  && now - lastActivityMs >= CAPTURES.settings.options().idleMinutes() * 60_000L);
+        if (CAPTURES.job.done()) finishAfk(mc, now);
+        return;
+      }
+      if (mc.level == null || mc.player == null) {
+        if (EXPLORATION.path != null) {
+          saveExploration();
+          EXPLORATION.path = null;
+          EXPLORATION.depth = new ExplorationDepth();
+          EXPLORATION.zones = new VisitedZones();
+        }
+        playerPositionKnown = false;
+        lastActivityMs = now;
+        return;
+      }
+      if (!checked) return;
+      if (!CAPTURES.settings.enabled() || afkUploadPending || PairingClient.isUploading()) return;
+      if (AfkTiming.remainingSeconds(
+              now, lastActivityMs, lastSnapshotAt(), CAPTURES.settings.options())
+          > 0) return;
+      afkDiagnostics = PairingClient.beginCaptureDiagnostics();
+      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch);
+      LOGGER.info(
+          "AFK progressive capture started (paused={}, radius={})",
+          mc.isPaused(),
+          CAPTURES.settings.options().radius());
+    } catch (Exception error) {
+      lastActivityMs = now;
+      if (CAPTURES.job != null) CAPTURES.job.cancel("Échec de la capture.");
+      if (afkDiagnostics != null) afkDiagnostics.failed(error);
+      LOGGER.error("AFK progressive capture failed", error);
+      tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static void finishAfk(Minecraft mc, long now) {
+    ProgressiveGameCapture completed = CAPTURES.job;
+    CAPTURES.job = null;
+    lastActivityMs = now; // Also rate-limit refused/cancelled exports.
+    if (completed.cancelled()) {
+      afkDiagnostics.success();
+      LOGGER.info("AFK capture cancelled: {}", completed.cancellation());
+      return;
+    }
+    try {
+      var result = completed.result();
+      LOGGER.info(
+          "AFK capture phase timings (ns): client={}, preparation={}",
+          completed.phases(),
+          result.preparation());
+      if (!completed.valid(PairingClient.captureSettings(), resourceEpoch)) {
+        afkDiagnostics.success();
+        LOGGER.info("Completed AFK file preserved locally after context change");
+        return;
+      }
+      afkDiagnostics.captured(result.file());
+      PairingClient.setLastSnapshotAt(now);
+      LOGGER.info(
+          "AFK capture finished: frames={}, maxStepMs={}, overruns={}, blocks={}, entities={}, quads={}, textures={}",
+          completed.frames(),
+          completed.maximumStepNanos() / 1_000_000.0,
+          completed.overruns(),
+          completed.blocks(),
+          completed.entities(),
+          result.quads(),
+          result.textures());
+      tell("Souvenir AFK enregistré localement.");
+      if (!completed.settings().paired()
+          || !completed.settings().equals(PairingClient.captureSettings())) return;
+      afkUploadPending = true;
+      afkUploadWorld = mc.level;
+      PairingClient.uploadAfkCapture(result.file(), completed.settings())
+          .whenComplete(
+              (message, error) ->
+                  mc.execute(
+                      () -> {
+                        afkUploadPending = false;
+                        if (error != null) {
+                          LOGGER.error("AFK upload failed", error);
+                          tell("Envoi AFK impossible : " + pairingError(error));
+                        } else tell("Souvenir AFK envoyé dans ta galerie.");
+                      }));
+    } catch (RuntimeException error) {
+      afkDiagnostics.failed(error);
+      LOGGER.error("AFK capture completion failed", error);
+      tell("Capture AFK impossible : " + pairingError(error));
+    }
+  }
+
+  private static String currentWorldIdentity(Minecraft mc) {
+    var localServer = mc.getSingleplayerServer();
+    var currentServer = mc.getCurrentServer();
+    var connection = mc.getConnection();
+    if (localServer != null)
+      return "solo:" + localServer.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
+    if (currentServer == null || connection == null || !connection.getConnection().isConnected())
+      return null;
+    var binding = remoteWorldBinding(mc);
+    return "remote:"
+        + CaptureIdentity.remote(
+            currentServer.ip, "", "", binding.namespace(), binding.configured());
+  }
+
+  private static String capturePlayerIdentity(Minecraft mc) {
+    var connection = mc.getConnection();
+    return connection != null
+        ? connection.getLocalGameProfile().getId().toString()
+        : Objects.requireNonNull(mc.player, "No capture player").getUUID().toString();
+  }
+
+  private static RemoteCaptureSession.Binding remoteWorldBinding(Minecraft mc) {
+    String server = Objects.requireNonNull(mc.getCurrentServer(), "No remote server").ip;
+    var connection = Objects.requireNonNull(mc.getConnection(), "No remote connection");
+    return REMOTE_CAPTURE_SESSION.binding(
+        connection.getConnection(),
+        server,
+        () -> {
+          try {
+            return PairingClient.remoteWorldNamespace(server);
+          } catch (RuntimeException error) {
+            LOGGER.warn(
+                "Invalid remote world identifier; keeping captures separated by connection.");
+            return "";
+          }
+        });
+  }
+
+  static void identifyCapture(
+      com.google.gson.JsonObject metadata, CaptureBounds bounds, boolean selection) {
+    Minecraft mc = Minecraft.getInstance();
+    String world = currentWorldIdentity(mc);
+    if (world == null || mc.level == null || mc.player == null) return;
+    String seed =
+        metadata.has("seed") && !metadata.get("seed").isJsonNull()
+            ? metadata.get("seed").getAsString()
+            : null;
+    String dimension = mc.level.dimension().location().toString();
+    String player = capturePlayerIdentity(mc);
+    String id;
+    if (mc.getSingleplayerServer() != null) {
+      id = CaptureIdentity.world(world, seed, dimension, player);
+      metadata.addProperty("worldScope", "world");
+    } else {
+      if (mc.getConnection() == null) return;
+      var currentServer = mc.getCurrentServer();
+      if (currentServer == null) return;
+      String server = currentServer.ip;
+      var binding = remoteWorldBinding(mc);
+      boolean persistent = binding.configured();
+      String namespace = binding.namespace();
+      id = CaptureIdentity.remote(server, dimension, player, namespace, persistent);
+      metadata.addProperty("worldScope", persistent ? "namespace" : "session");
+    }
+    metadata.addProperty("worldId", id);
+    metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));
+    metadata.addProperty("captureMode", selection ? "selection" : "around");
+    CaptureIdentity.geometry(metadata, bounds);
+  }
+
+  private static void trackExploration(Minecraft mc, long now) {
+    var level = mc.level;
+    var player = mc.player;
+    if (level == null || player == null) return;
+    String world = currentWorldIdentity(mc);
+    if (world == null) {
+      saveExploration();
+      EXPLORATION.path = null;
+      EXPLORATION.depth = new ExplorationDepth();
+      EXPLORATION.zones = new VisitedZones();
+      EXPLORATION.writable = false;
+      return;
+    }
+    Path path =
+        ExplorationDepth.historyPath(
+            mc.gameDirectory.toPath().resolve("config/minemories/exploration"),
+            world,
+            level.dimension().location().toString(),
+            capturePlayerIdentity(mc));
+    if (!path.equals(EXPLORATION.path)) {
+      saveExploration();
+      EXPLORATION.path = path;
+      boolean persistent =
+          mc.getSingleplayerServer() != null || remoteWorldBinding(mc).configured();
+      if (!persistent) {
+        var memory = REMOTE_CAPTURE_SESSION.exploration(path);
+        EXPLORATION.depth = memory.depth();
+        EXPLORATION.zones = memory.zones();
+        EXPLORATION.writable = false;
+        EXPLORATION.zonesWritable = false;
+      } else {
+        try {
+          EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
+          EXPLORATION.zonesWritable = true;
+        } catch (IOException | IllegalArgumentException error) {
+          EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.zonesWritable = false;
+          LOGGER.warn("Cannot read local zone history; preserving the original file", error);
+        }
+        try {
+          EXPLORATION.depth = ExplorationDepth.read(path);
+          EXPLORATION.writable = true;
+        } catch (IOException | IllegalArgumentException error) {
+          EXPLORATION.depth = new ExplorationDepth();
+          EXPLORATION.writable = false;
+          LOGGER.warn(
+              "Cannot read exploration history; preserving the original file and tracking this session in memory",
+              error);
+        }
+      }
+    }
+    BlockPos position = player.blockPosition();
+    boolean loaded = chunkLoaded(mc, position.getX(), position.getZ());
+    EXPLORATION.zones.sample(
+        position.getX(),
+        position.getZ(),
+        now,
+        !mc.isPaused() && mc.isWindowActive() && now - lastActivityMs < 60_000,
+        loaded);
+    if (loaded) EXPLORATION.depth.record(position.getX(), position.getY(), position.getZ());
+    if (now - EXPLORATION.lastSaveMs >= 10_000) {
+      EXPLORATION.lastSaveMs = now;
+      saveExploration();
+    }
+  }
+
+  static boolean chunkLoaded(Minecraft mc, int x, int z) {
+    var level = mc.level;
+    if (level == null) return false;
+    // ClientLevel.hasChunkAt always returns true. Requesting without a fallback
+    // distinguishes received terrain from the empty chunk without loading anything.
+    return level
+            .getChunkSource()
+            .getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16), ChunkStatus.FULL, false)
+        != null;
+  }
+
+  static int captureBottom(CaptureBounds bounds, int surfaceFloor) {
+    saveExploration();
+    return EXPLORATION.depth.captureBottom(
+        bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bounds.minY());
+  }
+
+  private static Path zoneHistoryPath() {
+    return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".zones");
+  }
+
+  static java.util.List<VisitedZones.Zone> suggestedZones() {
+    Minecraft mc = Minecraft.getInstance();
+    trackExploration(mc, System.currentTimeMillis());
+    if (mc.level == null || mc.player == null) return java.util.List.of();
+    return EXPLORATION.zones.suggestions();
+  }
+
+  private static void saveExploration() {
+    if (EXPLORATION.path == null) return;
+    if (EXPLORATION.zonesWritable) {
+      try {
+        EXPLORATION.zones.save(zoneHistoryPath());
+      } catch (IOException error) {
+        LOGGER.warn("Cannot persist local zone history", error);
+      }
+    }
+    if (!EXPLORATION.writable) return;
+    try {
+      EXPLORATION.depth.save(EXPLORATION.path);
+    } catch (IOException error) {
+      LOGGER.warn("Cannot persist local exploration history", error);
+    }
+  }
+
+  private static boolean playerMoved(LocalPlayer player) {
+    boolean moved =
+        !playerPositionKnown
+            || player.getX() != lastPlayerX
+            || player.getY() != lastPlayerY
+            || player.getZ() != lastPlayerZ
+            || player.getYRot() != lastPlayerYaw
+            || player.getXRot() != lastPlayerPitch;
+    lastPlayerX = player.getX();
+    lastPlayerY = player.getY();
+    lastPlayerZ = player.getZ();
+    lastPlayerYaw = player.getYRot();
+    lastPlayerPitch = player.getXRot();
+    playerPositionKnown = true;
+    return moved;
+  }
+
+  private static long lastSnapshotAt() {
+    long stored = PairingClient.lastSnapshotAt();
+    try {
+      return Math.max(stored, Files.getLastModifiedTime(capturePath()).toMillis());
+    } catch (IOException ignored) {
+      return stored;
+    }
+  }
+
+  private static void placeMenuButton(
+      Screen screen, Button button, List<? extends GuiEventListener> listeners) {
+    List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
+    for (GuiEventListener listener : listeners) {
+      if (listener instanceof AbstractWidget widget && widget != button && widget.visible) {
+        occupied.add(
+            new PauseMenuPlacement.Rect(
+                widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+      }
+    }
+    PauseMenuPlacement.Rect spot = PauseMenuPlacement.find(screen.width, screen.height, occupied);
+    button.visible = spot != null;
+    if (spot != null) {
+      button.setX(spot.x());
+      button.setY(spot.y());
+      button.setWidth(spot.width());
+    }
+  }
+
+  static boolean hasSelection() {
+    Minecraft mc = Minecraft.getInstance();
+    return mc.level != null
+        && selectionFirst != null
+        && selectionSecond != null
+        && selectionDimension == mc.level.dimension();
+  }
+
+  static Path capturePath() {
+    return PairingClient.exportDirectory().resolve("capture.glb");
+  }
+
+  static Path latestCapturePath() {
+    try {
+      return CaptureHistory.latest(PairingClient.exportDirectory());
+    } catch (IOException error) {
+      throw new java.io.UncheckedIOException(error);
+    }
+  }
+
+  private static int pair(String code) {
+    if (!code.matches("\\d{6}")) {
+      tell("Enter the 6-digit code shown in the web interface.");
+      return 0;
+    }
+    tell("Pairing…");
+    PairingClient.pair(code)
+        .whenComplete(
+            (message, error) ->
+                Minecraft.getInstance()
+                    .execute(() -> tell(error == null ? message : pairingError(error))));
+    return 1;
+  }
+
+  private static int uploadCapture() {
+    Path capture = latestCapturePath();
+    tell("Sending " + capture + "…");
+    PairingClient.uploadCapture(capture)
+        .whenComplete(
+            (message, error) ->
+                Minecraft.getInstance()
+                    .execute(() -> tell(error == null ? message : pairingError(error))));
+    return 1;
+  }
+
+  static String pairingError(Throwable error) {
+    Throwable cause = error;
+    while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) {
+      cause = cause.getCause();
+    }
+    return "Échec : " + cause.getMessage();
+  }
+
+  public static void renderSelection(PoseStack pose, Vec3 camera) {
+    if (selectionFirst == null || selectionSecond == null) return;
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.level == null || selectionDimension != mc.level.dimension()) return;
+    double x1 = Math.min(selectionFirst.getX(), selectionSecond.getX());
+    double y1 = Math.min(selectionFirst.getY(), selectionSecond.getY());
+    double z1 = Math.min(selectionFirst.getZ(), selectionSecond.getZ());
+    double x2 = Math.max(selectionFirst.getX(), selectionSecond.getX()) + 1;
+    double y2 = Math.max(selectionFirst.getY(), selectionSecond.getY()) + 1;
+    double z2 = Math.max(selectionFirst.getZ(), selectionSecond.getZ()) + 1;
+    pose.pushPose();
+    pose.translate(-camera.x, -camera.y, -camera.z);
+    var buffers = mc.renderBuffers().bufferSource();
+    VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+    LevelRenderer.renderLineBox(
+        pose, lines, new AABB(x1, y1, z1, x2, y2, z2), 0.2f, 1f, 0.45f, 0.95f);
+    pose.popPose();
+    buffers.endBatch(RenderType.lines());
+  }
+
+  private static int selectCorner(boolean first) {
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.level == null
+        || mc.player == null
+        || !(mc.hitResult instanceof BlockHitResult hit)
+        || hit.getType() == HitResult.Type.MISS) {
+      tell("Look at a block then run /minemories select " + (first ? "first" : "second"));
+      return 0;
+    }
+    if (selectionDimension != null && selectionDimension != mc.level.dimension()) {
+      selectionFirst = null;
+      selectionSecond = null;
+    }
+    selectionDimension = mc.level.dimension();
+    if (first) selectionFirst = hit.getBlockPos().immutable();
+    else selectionSecond = hit.getBlockPos().immutable();
+    tell((first ? "Corner A" : "Corner B") + " set: " + hit.getBlockPos().toShortString());
+    if (selectionFirst != null && selectionSecond != null) {
+      long sizeX = Math.abs(selectionFirst.getX() - selectionSecond.getX()) + 1L;
+      long sizeY = Math.abs(selectionFirst.getY() - selectionSecond.getY()) + 1L;
+      long sizeZ = Math.abs(selectionFirst.getZ() - selectionSecond.getZ()) + 1L;
+      tell(
+          "Area: "
+              + sizeX
+              + " × "
+              + sizeY
+              + " × "
+              + sizeZ
+              + " blocks. /minemories export to generate.");
+    }
+    return 1;
+  }
+
+  private static int clearSelection() {
+    selectionFirst = null;
+    selectionSecond = null;
+    selectionDimension = null;
+    tell("Selection cleared.");
+    return 1;
+  }
+
+  private static int selectionStatus() {
+    if (selectionFirst == null || selectionSecond == null)
+      tell("Incomplete selection. Aim at a block then use /minemories select first and second.");
+    else tell("A " + selectionFirst.toShortString() + " · B " + selectionSecond.toShortString());
+    return 1;
+  }
+
+  private static void tell(String message) {
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.player != null)
+      mc.player.displayClientMessage(Component.literal("Minemories: " + message), false);
+  }
+
+  static int exportSelection() {
+    if (!manualCaptureAllowed()) return 0;
+    captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
+    var diagnostics = PairingClient.beginCaptureDiagnostics();
+    try {
+      int result = exportSelection(diagnostics);
+      if (result == 1) diagnostics.captured(latestCapturePath());
+      else diagnostics.success();
+      return result;
+    } catch (RuntimeException error) {
+      diagnostics.failed(error);
+      throw error;
+    }
+  }
+
+  private static int exportSelection(DiagnosticsClient.Operation diagnostics) {
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.level == null
+        || selectionFirst == null
+        || selectionSecond == null
+        || selectionDimension != mc.level.dimension()) {
+      tell("Select the corners with /minemories select first then second.");
+      return 0;
+    }
+    BlockPos min =
+        new BlockPos(
+            Math.min(selectionFirst.getX(), selectionSecond.getX()),
+            Math.min(selectionFirst.getY(), selectionSecond.getY()),
+            Math.min(selectionFirst.getZ(), selectionSecond.getZ()));
+    BlockPos max =
+        new BlockPos(
+            Math.max(selectionFirst.getX(), selectionSecond.getX()),
+            Math.max(selectionFirst.getY(), selectionSecond.getY()),
+            Math.max(selectionFirst.getZ(), selectionSecond.getZ()));
+    return exportBox(min, max, diagnostics, true);
+  }
+
+  static int export(int radius) {
+    if (!manualCaptureAllowed()) return 0;
+    captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+    var diagnostics = PairingClient.beginCaptureDiagnostics();
+    try {
+      int result = export(radius, diagnostics);
+      if (result == 1) diagnostics.captured(latestCapturePath());
+      else diagnostics.success();
+      return result;
+    } catch (RuntimeException error) {
+      diagnostics.failed(error);
+      throw error;
+    }
+  }
+
+  private static int export(int radius, DiagnosticsClient.Operation diagnostics) {
+    Minecraft mc = Minecraft.getInstance();
+    var level = mc.level;
+    var player = mc.player;
+    if (level == null || player == null) return 0;
+    BlockPos center = player.blockPosition();
+    var bounds =
+        CaptureBounds.around(
+            center.getX(),
+            center.getZ(),
+            level.getMinBuildHeight(),
+            level.getMaxBuildHeight(),
+            radius);
+    trackExploration(mc, System.currentTimeMillis());
+    int bottom = bounds.minY();
+    if (!PairingClient.isFullHeightCapture()) {
+      int surfaceFloor = Math.min(center.getY(), bounds.maxY());
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+          if (!chunkLoaded(mc, x, z)) continue;
+          int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+          // Empty/void columns must not force an otherwise shallow island down to dimension bottom.
+          if (surface > bottom) surfaceFloor = Math.min(surfaceFloor, surface);
+        }
+      }
+      bottom =
+          EXPLORATION.depth.captureBottom(
+              bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bottom);
+    }
+    saveExploration();
+    bounds =
+        new CaptureBounds(
+            bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
+    return exportBox(
+        new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
+        new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()),
+        diagnostics,
+        false);
+  }
+
+  private static int exportBox(
+      BlockPos min, BlockPos max, DiagnosticsClient.Operation diagnostics, boolean selection) {
+    Minecraft mc = Minecraft.getInstance();
+    var level = mc.level;
+    var player = mc.player;
+    if (level == null || player == null) return 0;
+    long sx = (long) max.getX() - min.getX() + 1,
+        sy = (long) max.getY() - min.getY() + 1,
+        sz = (long) max.getZ() - min.getZ() + 1;
+    if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
+      captureFailure = "Zone trop grande. Réduis la sélection ou le rayon de capture.";
+      tell("Area too large. Maximum: 257 blocks wide, 1024 blocks tall.");
+      return 0;
+    }
+    BlockPos center =
+        new BlockPos(
+            (min.getX() + max.getX()) / 2,
+            (min.getY() + max.getY()) / 2,
+            (min.getZ() + max.getZ()) / 2);
+    com.google.gson.JsonObject metadata = currentCaptureMetadata(center);
+    identifyCapture(
+        metadata,
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+        selection);
+    CaptureSink scene = new CaptureSink.Legacy();
+    SpriteAssets sprites = new SpriteAssets(null);
+    RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);
+    Path output = capturePath();
+    // capturePath resolves a file inside the configured export folder.
+    Path outputDirectory = Objects.requireNonNull(output.getParent(), "Capture path has no parent");
+    try {
+      BlockEntityRenderDispatcher beRenderer = mc.getBlockEntityRenderDispatcher();
+      beRenderer.prepare(level, mc.gameRenderer.getMainCamera(), captureHitResult(mc));
+      var fluidView =
+          new CaptureLevelView(
+              level,
+              new CaptureBounds(
+                  min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
+      int blockCount = 0;
+      for (int z = min.getZ(); z <= max.getZ(); z++) {
+        for (int x = min.getX(); x <= max.getX(); x++) {
+          if (!chunkLoaded(mc, x, z)) continue;
+          int columnTop =
+              Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+          int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+          // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
+          while (terrainTop >= min.getY()
+              && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
+          for (int y = min.getY(); y <= columnTop; y++) {
+            blockCount +=
+                captureCell(
+                    scene,
+                    sprites,
+                    renderedModels,
+                    mc,
+                    beRenderer,
+                    fluidView,
+                    new BlockPos(x, y, z),
+                    min,
+                    max,
+                    center,
+                    terrainTop);
+          }
+        }
+      }
+      int entityCount = captureEntities(renderedModels, mc, min, max, center);
+      if (!scene.hasGeometry()) {
+        captureFailure =
+            "Aucun bloc visible dans la zone. Attends le chargement du terrain ou choisis une autre zone, puis réessaie.";
+        tell(captureFailure);
+        return 0;
+      }
+      Path saved =
+          CaptureHistory.save(
+              outputDirectory,
+              Instant.parse(metadata.get("capturedAt").getAsString()),
+              metadata.toString(),
+              scene::write);
+      player.displayClientMessage(
+          Component.literal(
+              "Minemories: "
+                  + blockCount
+                  + " blocks / "
+                  + entityCount
+                  + " entities / "
+                  + scene.materialCount()
+                  + " textured materials exported to "
+                  + saved),
+          false);
+    } catch (Exception e) {
+      captureFailure = "Capture impossible : " + e.getMessage();
+      diagnostics.failed(e);
+      player.displayClientMessage(
+          Component.literal("Minemories: export failed: " + e.getMessage()), false);
+      LOGGER.error("Capture export failed", e);
+      return 0;
+    }
+    return 1;
+  }
+
+  static int captureCell(
+      CaptureSink scene,
+      SpriteAssets sprites,
+      RenderedModelCapture renderedModels,
+      Minecraft mc,
+      BlockEntityRenderDispatcher beRenderer,
+      CaptureLevelView fluidView,
+      BlockPos pos,
+      BlockPos min,
+      BlockPos max,
+      BlockPos center,
+      int terrainTop)
+      throws IOException {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
+    BlockState state = level.getBlockState(pos);
+    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
+    if (state.isAir()) return 0;
+    int lightEmission = state.getLightEmission();
+    if (lightEmission >= 4) {
+      // Map colors describe the block's minimap swatch and are
+      // often dark brown/black for lamps. Use a useful light tint.
+      String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+      int lightColor =
+          blockName.contains("soul")
+              ? 0xA8DFFF
+              : (blockName.contains("lava")
+                      || blockName.contains("fire")
+                      || blockName.contains("blaze"))
+                  ? 0xFFFFD8
+                  : 0xFFF0D0;
+      scene.addPointLight(
+          x - center.getX() + 0.5f,
+          y - center.getY() + 0.5f,
+          z - center.getZ() + 0.5f,
+          lightColor,
+          lightEmission);
+    }
+    BlockEntity blockEntity = level.getBlockEntity(pos);
+    if (state.getRenderShape() == RenderShape.MODEL) {
+      String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+      ClientPlatforms.current()
+          .emitBlockModel(
+              mc,
+              state,
+              blockEntity,
+              new ClientPlatform.ModelRequest(pos, state.getSeed(pos), false),
+              direction -> {
+                if (direction == null) return true;
+                BlockPos neighborPos = pos.relative(direction);
+                boolean outside = outsideCapture(neighborPos, min, max);
+                if (outside && capped && direction != Direction.UP) return false;
+                return outside
+                    || !chunkLoaded(mc, neighborPos.getX(), neighborPos.getZ())
+                    || Block.shouldRenderFace(state, level, pos, direction, neighborPos);
+              },
+              captured -> {
+                var quad = captured.baked();
+                var direction = captured.cullFace();
+                if (direction == null && capped && isCutQuad(quad, pos, min, max)) return;
+                addQuad(
+                    scene,
+                    sprites,
+                    mc,
+                    state,
+                    pos,
+                    id,
+                    captured,
+                    x - center.getX(),
+                    y - center.getY(),
+                    z - center.getZ());
+              });
+      count++;
+    }
+    if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
+      captureBlockEntityRenderer(
+          renderedModels,
+          beRenderer,
+          blockEntity,
+          x - center.getX(),
+          y - center.getY(),
+          z - center.getZ());
+      if (state.getRenderShape() != RenderShape.MODEL) count++;
+    }
+    FluidState fluid = state.getFluidState();
+    if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    return count;
+  }
+
+  private static boolean outsideCapture(BlockPos pos, BlockPos min, BlockPos max) {
+    return CutBoundary.outside(
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+        pos.getX(),
+        pos.getY(),
+        pos.getZ());
+  }
+
+  private static boolean isCutQuad(BakedQuad quad, BlockPos pos, BlockPos min, BlockPos max) {
+    float[] vertices = new float[12];
+    int[] packed = quad.getVertices();
+    for (int i = 0; i < 4; i++) {
+      for (int axis = 0; axis < 3; axis++)
+        vertices[i * 3 + axis] = Float.intBitsToFloat(packed[i * VERTEX_STRIDE + axis]);
+    }
+    for (Direction direction : Direction.values()) {
+      if (direction == Direction.UP || !outsideCapture(pos.relative(direction), min, max)) continue;
+      int axis = direction.getStepX() != 0 ? 0 : direction.getStepY() != 0 ? 1 : 2;
+      float plane = direction.getStepX() + direction.getStepY() + direction.getStepZ() > 0 ? 1 : 0;
+      if (CutBoundary.onPlane(vertices, axis, plane)) return true;
+    }
+    return false;
+  }
+
+  private static boolean captureCutFaces(
+      CaptureSink scene,
+      SpriteAssets sprites,
+      Minecraft mc,
+      BlockState state,
+      BlockPos pos,
+      BlockPos min,
+      BlockPos max,
+      BlockPos center,
+      int terrainTop)
+      throws IOException {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    if (pos.getX() != min.getX()
+        && pos.getX() != max.getX()
+        && pos.getZ() != min.getZ()
+        && pos.getZ() != max.getZ()
+        && pos.getY() != min.getY()) return false;
+    var material =
+        CutBoundary.material(
+            pos.getY(),
+            terrainTop,
+            state.isAir(),
+            !state.getFluidState().isEmpty(),
+            state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
+    if (material == CutBoundary.Material.NONE) return false;
+    BlockState cut =
+        (material == CutBoundary.Material.DIRT ? Blocks.DIRT : Blocks.STONE).defaultBlockState();
+    ClientPlatforms.current()
+        .emitBlockModel(
+            mc,
+            cut,
+            null,
+            new ClientPlatform.ModelRequest(pos, 0, true),
+            direction ->
+                direction != null
+                    && direction != Direction.UP
+                    && outsideCapture(pos.relative(direction), min, max),
+            captured -> {
+              var quad = captured.baked();
+              var direction = captured.cullFace();
+              if (direction == null
+                  || direction == Direction.UP
+                  || !outsideCapture(pos.relative(direction), min, max)) return;
+              addQuad(
+                  scene,
+                  sprites,
+                  mc,
+                  cut,
+                  pos,
+                  "minemories:cut",
+                  captured,
+                  pos.getX() - center.getX(),
+                  pos.getY() - center.getY(),
+                  pos.getZ() - center.getZ());
+            });
+    return true;
+  }
+
+  private static void addQuad(
+      CaptureSink scene,
+      SpriteAssets sprites,
+      Minecraft mc,
+      BlockState state,
+      BlockPos pos,
+      String blockId,
+      ClientPlatform.ModelQuad captured,
+      int x,
+      int y,
+      int z)
+      throws IOException {
+    BakedQuad quad = captured.baked();
+    TextureAtlasSprite sprite = quad.getSprite();
+    String imageKey = sprite.contents().name().toString();
+    SpriteAsset asset = sprites.asset(sprite);
+    int tint =
+        quad.isTinted()
+            ? mc.getBlockColors().getColor(state, mc.level, pos, quad.getTintIndex())
+            : 0xFFFFFF;
+    if (tint < 0) tint = 0xFFFFFF;
+    tint = VertexColors.multiplyTint(tint, captured.argb());
+    float opacity = (captured.argb() >>> 24) / 255f;
+    int alphaMode = captured.translucent() || opacity < 1 ? 2 : asset.alphaMode;
+    int blockLight = 0;
+    int[] packed = quad.getVertices();
+    float[] xyz = new float[12], uv = new float[8];
+    float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
+    for (int vertex = 0; vertex < 4; vertex++) {
+      int base = vertex * VERTEX_STRIDE;
+      xyz[vertex * 3] = Float.intBitsToFloat(packed[base]) + x;
+      xyz[vertex * 3 + 1] = Float.intBitsToFloat(packed[base + 1]) + y;
+      xyz[vertex * 3 + 2] = Float.intBitsToFloat(packed[base + 2]) + z;
+      float u = Float.intBitsToFloat(packed[base + 4]), v = Float.intBitsToFloat(packed[base + 5]);
+      uv[vertex * 2] = ur == 0 ? 0 : (u - sprite.getU0()) / ur;
+      uv[vertex * 2 + 1] = vr == 0 ? 0 : (v - sprite.getV0()) / vr;
+      blockLight = Math.max(blockLight, (packed[base + 6] >>> 4) & 15);
+    }
+    float emission = captured.emissive() ? 1 : Math.max(state.getLightEmission(), blockLight) / 15f;
+    String key =
+        imageKey
+            + "#"
+            + String.format("%06x", tint & 0xFFFFFF)
+            + "#"
+            + emission
+            + "#"
+            + alphaMode
+            + "#"
+            + opacity;
+    scene.addQuad(
+        key,
+        blockId + " / " + imageKey,
+        imageKey,
+        asset.png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        xyz,
+        uv);
+  }
+
+  private static void captureFluid(
+      CaptureSink scene,
+      SpriteAssets sprites,
+      Minecraft mc,
+      BlockPos pos,
+      BlockState block,
+      FluidState fluid,
+      BlockPos center,
+      CaptureLevelView fluidView)
+      throws IOException {
+    TextureAtlasSprite[] fluidSprites = ClientPlatforms.current().fluidSprites(mc, pos, fluid);
+    if (fluidSprites == null || fluidSprites.length == 0 || fluidSprites[0] == null) return;
+    FluidVertexConsumer consumer = new FluidVertexConsumer();
+    mc.getBlockRenderer().renderLiquid(pos, fluidView, consumer, block, fluid);
+    int tint = ClientPlatforms.current().fluidTint(mc, pos, fluid);
+    if ((tint & 0xFFFFFF) == 0) tint = 0xFFFFFFFF;
+    float opacity =
+        fluid.is(FluidTags.WATER) ? 0.72f : Math.max(0.65f, ((tint >>> 24) & 255) / 255f);
+    float emission = block.getLightEmission() / 15f;
+    String fluidId = BuiltInRegistries.FLUID.getKey(fluid.getType()).toString();
+    int sectionX = pos.getX() & ~15, sectionY = pos.getY() & ~15, sectionZ = pos.getZ() & ~15;
+    for (int q = 0; q + 3 < consumer.vertices.size(); q += 4) {
+      FluidVertex[] quad = {
+        consumer.vertices.get(q),
+        consumer.vertices.get(q + 1),
+        consumer.vertices.get(q + 2),
+        consumer.vertices.get(q + 3)
+      };
+      TextureAtlasSprite sprite = selectFluidSprite(fluidSprites, quad);
+      if (sprite == null) sprite = fluidSprites[0];
+      String imageKey = sprite.contents().name().toString();
+      SpriteAsset asset = sprites.asset(sprite);
+      float[] xyz = new float[12], uv = new float[8];
+      float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
+      for (int v = 0; v < 4; v++) {
+        FluidVertex vertex = quad[v];
+        xyz[v * 3] = sectionX + vertex.x - center.getX();
+        xyz[v * 3 + 1] = sectionY + vertex.y - center.getY();
+        xyz[v * 3 + 2] = sectionZ + vertex.z - center.getZ();
+        uv[v * 2] = ur == 0 ? 0 : (vertex.u - sprite.getU0()) / ur;
+        uv[v * 2 + 1] = vr == 0 ? 0 : (vertex.v - sprite.getV0()) / vr;
+      }
+      String key =
+          "fluid#" + fluidId + "#" + imageKey + "#" + String.format("%06x", tint & 0xFFFFFF);
+      scene.addQuad(
+          key,
+          fluidId + " / " + imageKey,
+          imageKey,
+          asset.png,
+          tint & 0xFFFFFF,
+          2,
+          emission,
+          opacity,
+          xyz,
+          uv);
+    }
+  }
+
+  private static TextureAtlasSprite selectFluidSprite(
+      TextureAtlasSprite[] sprites, FluidVertex[] vertices) {
+    for (TextureAtlasSprite sprite : sprites) {
+      if (sprite == null) continue;
+      boolean inside = true;
+      for (FluidVertex vertex : vertices) {
+        if (vertex.u < sprite.getU0() - 0.0001f
+            || vertex.u > sprite.getU1() + 0.0001f
+            || vertex.v < sprite.getV0() - 0.0001f
+            || vertex.v > sprite.getV1() + 0.0001f) {
+          inside = false;
+          break;
+        }
+      }
+      if (inside) return sprite;
+    }
+    return null;
+  }
+
+  private static void captureBlockEntityRenderer(
+      RenderedModelCapture capture,
+      BlockEntityRenderDispatcher dispatcher,
+      BlockEntity blockEntity,
+      int x,
+      int y,
+      int z) {
+    var typeId = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType());
+    if (typeId == null) throw new IllegalStateException("Unregistered block entity type");
+    var buffers =
+        capture.buffers(typeId.toString(), blockEntity.getBlockState().getLightEmission() / 15f);
+    PoseStack pose = new PoseStack();
+    pose.translate(x, y, z);
+    CaptureRenderScope.render(
+        () -> {
+          FlywheelCaptureBridge.verify(blockEntity.getLevel());
+          dispatcher.render(blockEntity, 1f, pose, buffers);
+          buffers.finish();
+        });
+  }
+
+  static net.minecraft.world.phys.HitResult captureHitResult(Minecraft mc) {
+    var result = mc.hitResult;
+    if (result != null) return result;
+    var position = mc.gameRenderer.getMainCamera().getPosition();
+    return net.minecraft.world.phys.BlockHitResult.miss(
+        position, Direction.UP, BlockPos.containing(position));
+  }
+
+  static int captureEntities(
+      RenderedModelCapture capture, Minecraft mc, BlockPos min, BlockPos max, BlockPos center)
+      throws IOException {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    var dispatcher = mc.getEntityRenderDispatcher();
+    dispatcher.prepare(
+        level,
+        mc.gameRenderer.getMainCamera(),
+        Objects.requireNonNull(mc.getCameraEntity(), "No capture camera entity"));
+    CaptureBounds bounds =
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
+    int count = 0;
+    for (Entity entity : level.entitiesForRendering()) {
+      if (entity.isRemoved()
+          || entity.isInvisible()
+          || !bounds.containsEntity(entity.getX(), entity.getY(), entity.getZ())
+          || !chunkLoaded(mc, entity.getBlockX(), entity.getBlockZ())) continue;
+      if (++count > 2048)
+        throw new IOException("Trop d’entités dans cette capture. Réduis la zone.");
+      captureEntity(capture, mc, entity, center);
+    }
+    return count;
+  }
+
+  static void captureEntity(
+      RenderedModelCapture capture, Minecraft mc, Entity entity, BlockPos center) {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    var dispatcher = mc.getEntityRenderDispatcher();
+    dispatcher.prepare(
+        level,
+        mc.gameRenderer.getMainCamera(),
+        Objects.requireNonNull(mc.getCameraEntity(), "No capture camera entity"));
+    var renderer = dispatcher.getRenderer(entity);
+    var buffers =
+        capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
+    Vec3 offset = renderer.getRenderOffset(entity, 1f);
+    PoseStack pose = new PoseStack();
+    pose.translate(
+        entity.getX() - center.getX() + offset.x,
+        entity.getY() - center.getY() + offset.y,
+        entity.getZ() - center.getZ() + offset.z);
+    // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
+    // flames, hitboxes and nameplate text are not part of the souvenir geometry.
+    CaptureRenderScope.render(
+        () -> {
+          FlywheelCaptureBridge.verify(level);
+          renderer.render(
+              entity,
+              entity.getYRot(),
+              1f,
+              pose,
+              buffers,
+              dispatcher.getPackedLightCoords(entity, 1f));
+          buffers.finish();
+        });
+  }
+
+  private static class FluidVertexConsumer implements VertexConsumer {
+    final java.util.ArrayList<FluidVertex> vertices = new java.util.ArrayList<>();
+    private FluidVertex current;
+
+    @Override
+    public VertexConsumer addVertex(float x, float y, float z) {
+      current = new FluidVertex(x, y, z);
+      vertices.add(current);
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setColor(int r, int g, int b, int a) {
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setUv(float u, float v) {
+      current.u = u;
+      current.v = v;
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setUv1(int u, int v) {
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setUv2(int u, int v) {
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setLight(int light) {
+      return this;
+    }
+
+    @Override
+    public VertexConsumer setNormal(float x, float y, float z) {
+      return this;
+    }
+  }
+
+  private static final class FluidVertex {
+    final float x, y, z;
+    float u, v;
+
+    FluidVertex(float x, float y, float z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+    }
+  }
+
+  static final class SpriteAssets {
+    private final Map<String, SpriteAsset> values = new LinkedHashMap<>();
+    private final CapturePixels pixelCopies;
+
+    SpriteAssets(CapturePixels pixelCopies) {
+      this.pixelCopies = pixelCopies;
+    }
+
+    SpriteAsset asset(TextureAtlasSprite sprite) throws IOException {
+      String key = sprite.contents().name().toString();
+      SpriteAsset existing = values.get(key);
+      if (existing != null) return existing;
+      SpriteAsset result = new SpriteAsset(sprite, pixelCopies);
+      values.put(key, result);
+      return result;
+    }
+  }
+
+  private static final class SpriteAsset {
+    final byte[] png;
+    final int alphaMode;
+
+    SpriteAsset(TextureAtlasSprite sprite, CapturePixels pixelCopies) throws IOException {
+      if (pixelCopies != null) {
+        pixelCopies.sprite(sprite);
+        png = new byte[0];
+        alphaMode = 0;
+        return;
+      }
+      BufferedImage image =
+          new BufferedImage(
+              sprite.contents().width(), sprite.contents().height(), BufferedImage.TYPE_INT_ARGB);
+      boolean transparent = false, translucent = false;
+      for (int py = 0; py < image.getHeight(); py++)
+        for (int px = 0; px < image.getWidth(); px++) {
+          int pixel = ClientPlatforms.current().spritePixel(sprite, px, py), alpha = pixel >>> 24;
+          transparent |= alpha == 0;
+          translucent |= alpha != 0 && alpha != 255;
+          image.setRGB(
+              px,
+              py,
+              (alpha << 24)
+                  | ((pixel & 255) << 16)
+                  | (pixel & 0x0000FF00)
+                  | ((pixel >>> 16) & 255));
+        }
+      alphaMode = translucent ? 2 : transparent ? 1 : 0;
+      ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+      ImageIO.write(image, "png", bytes);
+      png = bytes.toByteArray();
+    }
+  }
+}

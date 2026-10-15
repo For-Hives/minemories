@@ -1,0 +1,33 @@
+plugins {
+    id 'dev.architectury.loom-remap' version '1.17.487'
+    id 'com.diffplug.spotless'
+    id 'com.github.spotbugs'
+}
+
+evaluationDependsOn(':common')
+base { archivesName = 'minemories-fabric' }
+loom { accessWidenerPath = project(':common').file('src/main/resources/minemories.accesswidener') }
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.1'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.19.5'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.17+1.21.1'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+    implementation project(':core')
+    implementation project(path: ':common', configuration: 'namedElements')
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+spotless { java { googleJavaFormat('1.36.0') } }
+spotbugs { toolVersion = '4.10.5'; ignoreFailures = false }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add('-Xlint:all')
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+tasks.named('jar') {
+    from project(':core').sourceSets.main.output
+    from project(':common').sourceSets.main.output
+}

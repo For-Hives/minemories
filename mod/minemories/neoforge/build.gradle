@@ -4,10 +4,13 @@ plugins {
     id 'com.github.spotbugs'
 }
 
+evaluationDependsOn(':common')
+
 base { archivesName = 'minemories' }
 
 dependencies {
     implementation project(':core')
+    implementation project(path: ':common', configuration: 'namedElements')
     testImplementation platform('org.junit:junit-bom:6.1.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     // Test-only Gson; Minecraft provides the client runtime version.
@@ -50,6 +53,7 @@ neoForge {
         minemories {
             sourceSet(sourceSets.main)
             sourceSet(project(':core').sourceSets.main)
+            sourceSet(project(':common').sourceSets.main)
         }
     }
 }
@@ -62,4 +66,5 @@ tasks.withType(ProcessResources).configureEach {
 
 tasks.named('jar') {
     from project(':core').sourceSets.main.output
+    from project(':common').sourceSets.main.output
 }
