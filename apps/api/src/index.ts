@@ -11,7 +11,10 @@ import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits
 import { recordCaptureOpening } from './capture-access'
 import { openAuthorizedCapture } from './capture-downloads'
 import { CaptureStorage } from './capture-storage'
-import { database } from './database'
+import { ColdStorageMaintenance } from './cold-storage-maintenance'
+import { coldStorageInactiveDays } from './cold-storage-policy'
+import { S3ColdStorageProvider } from './cold-storage-s3'
+import { coldStorageConfiguration, database } from './database'
 import { DiagnosticsReview } from './diagnostics-review'
 import { diagnosticsRouter } from './diagnostics-routes'
 import { diagnostics } from './diagnostics-state'
@@ -46,6 +49,7 @@ import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairin
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
+import { s3Target } from './storage-s3'
 import { TieredObjects } from './tiered-objects'
 import { TimelapseFiles } from './timelapse-files'
 import { TimelapseIndex } from './timelapse-index'
@@ -78,8 +82,15 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 )
 const temporalIndex = new TimelapseIndex(database)
 const captureFiles = new TimelapseFiles(database, tieredObjects)
-// Enabled when the provider worker is wired; status remains available while cold operations are disabled.
-const captureStorage = new CaptureStorage(database)
+export const coldStorageMaintenance = coldStorageConfiguration
+	? new ColdStorageMaintenance(
+			database,
+			new S3ColdStorageProvider(s3Target().client, coldStorageConfiguration),
+			removeMemory,
+			coldStorageInactiveDays(process.env.COLD_STORAGE_INACTIVE_DAYS)
+		)
+	: null
+const captureStorage = new CaptureStorage(database, coldStorageMaintenance !== null)
 export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
 const discovery = new PublicDiscovery(
 	database,
@@ -539,8 +550,10 @@ if (import.meta.main) {
 	purgeDeletedMemories()
 	void objectDeletions.maintain()
 	void timelapseMaintenance.maintain()
+	void coldStorageMaintenance?.maintain()
 	const intervals = [
 		setInterval(() => void timelapseMaintenance.maintain(), 5000),
+		setInterval(() => void coldStorageMaintenance?.maintain(), 60_000),
 		setInterval(() => void cleanupUploads(), 3_600_000),
 		setInterval(() => void objectDeletions.maintain(), 60_000),
 		setInterval(() => purgeDeletedMemories(), 3_600_000),
@@ -548,7 +561,7 @@ if (import.meta.main) {
 	]
 	const shutdown = async () => {
 		for (const interval of intervals) clearInterval(interval)
-		await timelapseMaintenance.stop()
+		await Promise.all([timelapseMaintenance.stop(), coldStorageMaintenance?.stop()])
 		await server.stop()
 		database.close()
 	}
