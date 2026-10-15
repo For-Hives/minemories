@@ -135,6 +135,25 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 		.query<{ object_key: string }, [string]>('SELECT object_key FROM memories WHERE id = ?')
 		.get(id)
 	if (!stored) throw new Error('Missing fixture memory')
+	const lastOpening = database.query('SELECT last_opened_at FROM memories WHERE id=?').get(id)
+	database
+		.query(`INSERT INTO object_tiers(object_key,state,operation_id,updated_at,user_id,size)
+	 VALUES (?,'cold','original-http-fixture',0,'owner',?)`)
+		.run(stored.object_key, glb.length)
+	expect(await owner.captureStorage.status({ kind: 'owner', id })).toMatchObject({
+		state: 'cold',
+		readyObjects: 0,
+		totalObjects: 1,
+	})
+	const waiting = await app.request(`/api/memories/${id}/file`, { headers: { cookie } })
+	expect(waiting.status).toBe(202)
+	expect(waiting.headers.get('cache-control')).toBe('private, no-store')
+	expect(await waiting.json()).toMatchObject({
+		error: 'memory_restoration_required',
+		availability: { state: 'cold', totalObjects: 1 },
+	})
+	expect(database.query('SELECT last_opened_at FROM memories WHERE id=?').get(id)).toEqual(lastOpening)
+	database.query('DELETE FROM object_tiers WHERE object_key=?').run(stored.object_key)
 	await removeMemory(stored.object_key)
 	const unavailable = await app.request(`/api/memories/${id}/file`, { headers: { cookie } })
 	expect(unavailable.status).toBe(503)
