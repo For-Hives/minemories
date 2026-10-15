@@ -4,8 +4,8 @@ L’issue #75 est en cours. Les captures disposent désormais d’une identité 
 monde et d’empreinte, ainsi que de leur origine géométrique exacte. Le codec de
 découpage, le catalogue SQLite et le service de conversion/relecture en flux sont
 raccordés aux routes API et validés sur filesystem et Garage. Les téléchargements
-reconstruisent les GLB ; aucune navigation ou animation temporelle réelle n’est
-encore livrée à ce stade. La timeline de démonstration reste illustrative.
+reconstruisent les GLB ; l’index temporel privé est disponible côté API. La navigation et l’animation
+dans le viewer restent à livrer. La timeline de démonstration reste illustrative.
 
 ## Identifier les futurs états
 
@@ -165,6 +165,53 @@ Les tests Java couvrent aussi la séparation par dimension/seed, les champs nuls
 les limites entières et la finalisation différée des métadonnées. Les tests API
 couvrent les identités partielles/incohérentes et les propriétés du codec.
 
+## Index temporel privé
+
+`timelapse.frames` reçoit l’UUID d’un souvenir appartenant à la session web
+connectée, une ancre facultative et une direction `around`, `before` ou `after`.
+Les liens partagés, publications publiques et tokens de mod ne donnent pas accès
+à l’index du propriétaire. Les souvenirs sans identité complète restent accessibles
+par leurs chemins habituels ; l’index ne les affecte pas à une série par leur nom.
+
+La clé de série est dérivée côté serveur du propriétaire, `worldId`, `zoneId`,
+dimension, mode et limites horizontales exactes. Pour une sélection, les limites
+verticales font aussi partie de cette clé. Réutiliser un même hash de zone avec
+d’autres coordonnées ou une autre dimension ne suffit donc pas à mélanger des
+captures. Autour du joueur, l’extension verticale liée à l’exploration conserve la
+série ; chaque frame garde ses bornes et son origine propres.
+
+L’ordre utilise le début de capture, puis `capturedAt` s’il manque, puis la date
+d’envoi enregistrée par l’API. Le champ `timeSource` distingue explicitement cette
+dernière provenance. Les dates UTC, limitées à 64 caractères, sont ordonnées par
+secondes et fraction complétée à longueur fixe, sans arrondi à la milliseconde ;
+les égalités sont départagées par UUID. Un intervalle terminé avant son début,
+y compris d’une seule nanoseconde, est refusé par le parseur de métadonnées.
+
+Une réponse contient au plus 128 états réels, sans images ni contenu GLB. La
+fenêtre initiale inclut au plus 64 états jusqu’à l’ancre et 64 après. Les fenêtres
+`before` et `after` excluent l’ancre et fournissent au plus 128 états contigus.
+`hasPrevious`, `hasNext`, le nombre total et les octets logiques de la série
+permettent de naviguer sans supprimer silencieusement les états hors fenêtre.
+Les fichiers restent limités à 200 Mio ; le quota propriétaire existant reste
+2 Gio par défaut, corbeille et dettes de suppression incluses. Les morceaux
+partagés évitent de conserver une copie complète supplémentaire par état.
+
+L’index est écrit dans la même transaction que le nouveau souvenir. Un rattrapage
+traite au plus vingt souvenirs identifiés par passage de maintenance ; les imports
+invalides sont marqués pour ne pas bloquer les suivants. Les renommages sont lus
+dans le souvenir courant, la corbeille est exclue des requêtes et une restauration
+réutilise les mêmes entrées. La purge supprime la projection par clé étrangère.
+
+Huit tests dédiés couvrent les comparaisons temporelles, 300 états et les fenêtres
+bidirectionnelles, les empreintes incompatibles, les propriétaires, les noms,
+corbeille/restauration/purge, imports invalides et réouverture de SQLite. Le test
+HTTP/oRPC vérifie aussi accès anonyme/autre propriétaire et restauration, sur
+filesystem et Garage. Les 14 captures natives déjà validées donnent sept séries,
+dont six états de l’empreinte principale. Les écarts d’origine Y de −21 blocs en
+grotte et −67 blocs en hauteur complète sont conservés pour la future relecture.
+Preuve locale : `native-index-report.json`. `bun check` et `bun run build`
+passent, avec 233 tests API actifs et six tests Garage ignorés sans service dédié.
+
 ## Essai en flux à la limite de 200 Mio
 
 Un GLB réellement capturé avec le JAR ci-dessus a été étendu à 209 715 200 octets
@@ -186,8 +233,8 @@ Preuves locales : `large-stream/report.json`, `fixture.json`, `blender.json` et
 
 ## Critères encore ouverts avant livraison
 
-- Index temporel propriétaire, ordre déterministe des captures et vérification de
-  cohérence de l’empreinte ; exclusion des anciennes captures non identifiées.
+- Raccorder l’index privé, son ordre déterministe et ses fenêtres bornées au
+  viewer ; conserver l’exclusion des captures anciennes non identifiées.
 - Coupler les manifestes, les baux et le nettoyage déjà validés aux séries de
   l’index temporel ; conserver quotas, corbeille et réconciliation lors de cette
   intégration.

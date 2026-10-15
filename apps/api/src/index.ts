@@ -43,6 +43,7 @@ import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-erro
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { TimelapseFiles } from './timelapse-files'
+import { TimelapseIndex } from './timelapse-index'
 import { TimelapseMaintenance } from './timelapse-maintenance'
 import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
@@ -60,6 +61,7 @@ const os = implement(apiContract).$context<ApiContext>()
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
 	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
 )
+const temporalIndex = new TimelapseIndex(database)
 const captureFiles = new TimelapseFiles(database, { read: readMemoryStream, write: storeMemory })
 export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
 const discovery = new PublicDiscovery(
@@ -76,6 +78,9 @@ function authenticated(context: ApiContext) {
 	return context.userId
 }
 const router = os.router({
+	timelapse: {
+		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
+	},
 	discovery: {
 		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),
 		review: os.discovery.review.handler(({ context, input }) => discovery.review(input.id, context.userId)),

@@ -1,7 +1,9 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
 import { captureIdentityFields } from './capture-identity'
+import { captureTime } from './capture-time'
 import { discoveryContract } from './discovery'
+import { timelapseContract } from './timelapse'
 
 export {
 	type CaptureIdentity,
@@ -9,7 +11,9 @@ export {
 	completeCaptureIdentity,
 	validCaptureIdentity,
 } from './capture-identity'
+export { captureTime, captureTimeKey } from './capture-time'
 export { DIAGNOSTIC_BODY_BYTES, diagnosticSubmission, type ModDiagnostic } from './diagnostics'
+export { type TemporalFrame, type TemporalWindow, TIMELAPSE_PAGE_FRAMES } from './timelapse'
 
 export const thumbnailDataUrl = z
 	.string()
@@ -39,14 +43,15 @@ const memorySchema = z.object({
 		thundering: z.boolean().nullable(),
 		thumbnail: z.string().nullable(),
 		icon: z.string().nullable(),
-		capturedAt: z.string().datetime().nullable(),
-		captureStartedAt: z.string().max(64).datetime().nullable().optional(),
-		captureFinishedAt: z.string().max(64).datetime().nullable().optional(),
+		capturedAt: captureTime.nullable(),
+		captureStartedAt: captureTime.nullable().optional(),
+		captureFinishedAt: captureTime.nullable().optional(),
 	}),
 })
 
 export const apiContract = {
 	discovery: discoveryContract,
+	timelapse: timelapseContract,
 	account: {
 		storage: oc.output(
 			z.object({
