@@ -18,6 +18,18 @@ test('the manual tutorial includes a complete no-JavaScript path, not only its f
 	expect(html).toContain('Install client')
 	expect(html).toContain('capture.glb')
 })
+test('release history and changelog render headings, navigation and a direct GitHub fallback without JavaScript', () => {
+	for (const path of ['/versions', '/changelog']) {
+		const html = renderPage(path)
+		expect(html).toContain('href="/versions"')
+		expect(html).toContain('href="/changelog"')
+		expect(html).toContain('https://github.com/For-Hives/minemories/releases')
+		expect(html).toContain('<noscript>')
+		expect(html).not.toContain('Minemories 0.2.')
+	}
+	expect(renderPage('/versions')).toContain('Versions du mod')
+	expect(renderPage('/changelog')).toContain('Les nouveautés')
+})
 test('private data, shared links and account routes are excluded from indexing and static rendering', () => {
 	for (const path of [
 		'/gallery',

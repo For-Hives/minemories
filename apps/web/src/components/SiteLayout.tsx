@@ -160,6 +160,8 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<Link to="/concept">Le concept</Link>
 					<Link to="/fonctionnement">Comment ça marche</Link>
 					<Link to="/installation">Installer le mod</Link>
+					<Link to="/versions">{t('Mod versions')}</Link>
+					<Link to="/changelog">{t('What’s new')}</Link>
 					<Link to="/faq">FAQ</Link>
 				</nav>
 				<nav aria-label="Minemories">

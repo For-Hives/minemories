@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { ModDownload, selectLatestRelease } from './ModDownload'
 
@@ -25,7 +26,11 @@ afterEach(() => {
 test('downloads the most recently published compatible JAR directly from public GitHub Releases', async () => {
 	const fetchMock = vi.fn().mockResolvedValue(Response.json([release()]))
 	vi.stubGlobal('fetch', fetchMock)
-	render(<ModDownload />)
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.1.0 (.jar)' })
 	expect(link.getAttribute('href')).toBe(release().assets[0]?.browser_download_url)
 	expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -56,7 +61,11 @@ test('selects by publication date, includes alpha releases and ignores invalid o
 test('a release without a digest or checksum still has a download, without an invented checksum', async () => {
 	const published = { ...release(), prerelease: false, assets: [{ ...release().assets[0], digest: null }] }
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
-	render(<ModDownload />)
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
 	await screen.findByRole('link', { name: /Télécharger Minemories/ })
 	expect(screen.queryByText('Vérifier le fichier téléchargé (avancé)')).toBeNull()
 	expect(screen.getByText(/Version publiée/)).toBeTruthy()
@@ -65,7 +74,11 @@ test.each([[], { message: 'API rate limit exceeded' }, null])(
 	'missing releases or an API failure offer the public releases page and retry',
 	async data => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(data)))
-		render(<ModDownload />)
+		render(
+			<MemoryRouter>
+				<ModDownload />
+			</MemoryRouter>
+		)
 		await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 		expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
 		expect(screen.getByRole('link', { name: 'Toutes les versions sur GitHub' }).getAttribute('href')).toBe(
@@ -79,7 +92,11 @@ test('retry recovers from a GitHub error and leaving cancels the request', async
 		.mockResolvedValueOnce(new Response(null, { status: 403 }))
 		.mockResolvedValueOnce(Response.json([release()]))
 	vi.stubGlobal('fetch', fetchMock)
-	const view = render(<ModDownload />)
+	const view = render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
 	fireEvent.click(await screen.findByRole('button', { name: 'Réessayer le téléchargement' }))
 	await screen.findByRole('link', { name: /Télécharger Minemories/ })
 	view.unmount()
@@ -87,7 +104,11 @@ test('retry recovers from a GitHub error and leaving cancels the request', async
 })
 test('network failure and timeout both allow retry', async () => {
 	vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-	const view = render(<ModDownload />)
+	const view = render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 	view.unmount()
 	vi.useFakeTimers()
@@ -95,7 +116,11 @@ test('network failure and timeout both allow retry', async () => {
 		'fetch',
 		vi.fn().mockImplementation(() => new Promise(() => {}))
 	)
-	render(<ModDownload />)
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(15000)
 	})

@@ -93,6 +93,8 @@ Le bouton **Profondeur** des réglages avancés permet de revenir à toute la ha
 
 ## Distribution depuis le dépôt public
 
+Les pages `/versions` et `/changelog` présentent l’historique des JAR et les notes officielles des releases, avec pagination et accès depuis le tutoriel. Voir [les sources, états et limites](release-history.md).
+
 Le front ne compile plus Java au déploiement. `/installation` choisit la release publiée la plus récente parmi les trente dernières releases de `For-Hives/minemories`, avec tag `mod-v<version>` et asset `minemories-neoforge-mc1.21.1.jar`. Les brouillons, tags non conformes, assets étrangers et builds pour d’autres versions sont exclus. Les préversions restent marquées expérimentales. Le JAR est téléchargé directement depuis GitHub ; le digest SHA-256 de GitHub est affiché lorsqu’il existe, ainsi que le fichier d’empreinte lorsqu’il est publié. Le workflow ajoute le manifeste de compatibilité et l’empreinte à la release.
 
 La [préversion `0.1.0-beta`](https://github.com/For-Hives/minemories/releases/tag/mod-v0.1.0-beta) a été publiée le 14 octobre 2026 depuis le commit `5c14000a541db812ce6ccc0734d95b645a7c87a5` (PR #56). Elle contient le JAR exact testé dans Minecraft/Blender, le manifeste et l’empreinte. Publication avec `gh release create --prerelease` après les deux jobs CI réussis sur le commit de la PR, sans reconstruction de l’archive testée. Le workflow dédié reste disponible pour les publications suivantes et les catalogues.
