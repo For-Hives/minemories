@@ -62,6 +62,22 @@ export const publicMetadata: PageMetadata[] = [
 		language: 'fr',
 	},
 	{
+		path: '/versions',
+		title: 'Versions du mod — Minemories',
+		description:
+			'Télécharge les JAR Minemories pour Minecraft Java 1.21.1 avec NeoForge et retrouve les versions précédentes.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
+		path: '/changelog',
+		title: 'Nouveautés du mod — Minemories',
+		description:
+			'Les notes officielles des releases Minemories : nouveautés, corrections et téléchargements depuis GitHub.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
 		path: '/faq',
 		title: 'Questions fréquentes — Minemories',
 		description:

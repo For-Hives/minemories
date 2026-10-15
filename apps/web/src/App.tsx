@@ -22,6 +22,7 @@ const FaqPage = lazy(() => InfoPages().then(module => ({ default: module.FaqPage
 const InstallationPage = lazy(() =>
 	import('./pages/InstallationPage').then(module => ({ default: module.InstallationPage }))
 )
+const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
 const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
@@ -157,6 +158,22 @@ export function App() {
 								element={
 									<Page>
 										<InstallationPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/versions"
+								element={
+									<Page>
+										<ReleasesPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/changelog"
+								element={
+									<Page>
+										<ReleasesPage changelog />
 									</Page>
 								}
 							/>
