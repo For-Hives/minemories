@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.4.0-beta.1...mod-v0.5.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **mod:** enable validated Fabric and Forge release targets ([6e46ebe](https://github.com/For-Hives/minemories/commit/6e46ebee5f90782bce638b522bd659065b10622b))
+* **mod:** share client across Fabric and Forge adapters ([eed3186](https://github.com/For-Hives/minemories/commit/eed31869f8384d2c60d85c24c3b88321bde76501))
+
+### Corrections
+
+* **web:** preserve imported normals to prevent Firefox bloom corruption ([f20b8e2](https://github.com/For-Hives/minemories/commit/f20b8e230861fe9671dfb236e9a83bd83bc3b199))
+
+### Build
+
+* **mod:** verify all loader distributions in CI ([bcf30fd](https://github.com/For-Hives/minemories/commit/bcf30fd457e1967c93c2490402bf9f4e64a1813d))
+
 ## [0.4.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.3.1-beta.1...mod-v0.4.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
