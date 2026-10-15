@@ -55,6 +55,7 @@ export class ObjectDeletionQueue {
 		if (this.running) return
 		this.running = true
 		try {
+			this.references.collectExpiredReaders(now)
 			const rows =
 				objectKey === undefined
 					? this.database

@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
+import { CaptureReaders } from './capture-readers'
 import { parseMetadata } from './memory-metadata'
 import { type FramePart, TIMELAPSE_LEASE_MS, TimelapseCatalog } from './timelapse-catalog'
 import { MAX_TIMELAPSE_CHUNK, splitTimelapseCapture } from './timelapse-chunks'
@@ -62,12 +63,14 @@ async function readPart(objects: TimelapseObjects, part: FramePart, signal: Abor
 /** Original uploads stay readable until a complete, verified chunk manifest commits. */
 export class TimelapseFiles {
 	private readonly catalog: TimelapseCatalog
+	private readonly readers: CaptureReaders
 	constructor(
 		private readonly database: Database,
 		private readonly objects: TimelapseObjects,
 		private readonly options = runtime
 	) {
 		this.catalog = new TimelapseCatalog(database)
+		this.readers = new CaptureReaders(database)
 	}
 
 	async convert(memoryId: string, parent?: AbortSignal): Promise<boolean> {
@@ -117,7 +120,7 @@ export class TimelapseFiles {
 	async read(objectKey: string, signal = new AbortController().signal): Promise<Readable> {
 		signal.throwIfAborted()
 		const opened = this.catalog.open(objectKey, this.options.now())
-		if (!opened) return await this.objects.read(objectKey, signal)
+		if (!opened) return await this.readOriginal(objectKey, signal)
 		const controller = new AbortController()
 		const beat = heartbeat(controller, () => this.catalog.renewReader(opened.id, this.options.now()), this.options)
 		const body = Readable.from(this.replay(opened.manifest, controller.signal, beat.progress), { objectMode: false })
@@ -139,6 +142,36 @@ export class TimelapseFiles {
 		return body
 	}
 
+	private async readOriginal(objectKey: string, parent: AbortSignal): Promise<Readable> {
+		const id = this.readers.open(objectKey, this.options.now()),
+			controller = new AbortController(),
+			signal = AbortSignal.any([parent, controller.signal]),
+			beat = heartbeat(controller, () => this.readers.renew(id, this.options.now()), this.options)
+		let source: Readable | undefined, body: Readable | undefined
+		const close = () => {
+			beat.close()
+			signal.removeEventListener('abort', abort)
+			source?.destroy()
+			this.readers.close(id)
+			controller.abort()
+		}
+		const abort = () =>
+			body?.destroy(signal.reason instanceof Error ? signal.reason : new Error('Capture read aborted'))
+		signal.addEventListener('abort', abort, { once: true })
+		try {
+			source = await this.objects.read(objectKey, signal)
+			signal.throwIfAborted()
+			body = Readable.from(originalChunks(source, beat.progress), { objectMode: false })
+			const result = body
+			source.once('error', error => result.destroy(error))
+			body.once('close', close)
+			return body
+		} catch (error) {
+			close()
+			throw error
+		}
+	}
+
 	private async *replay(
 		manifest: { parts: FramePart[]; size: number; sha256: string },
 		signal: AbortSignal,
@@ -157,5 +190,12 @@ export class TimelapseFiles {
 			yield payload
 		}
 		signal.throwIfAborted()
+	}
+}
+
+async function* originalChunks(source: Readable, progress: () => void) {
+	for await (const chunk of source) {
+		progress()
+		yield chunk
 	}
 }

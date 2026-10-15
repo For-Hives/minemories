@@ -12,6 +12,8 @@ export class ObjectReferences {
 	private readonly memories: Statement | null
 	private readonly uploads: Statement | null
 	private readonly chunks: Statement | null
+	private readonly readers: Statement | null
+	private readonly expireReaders: Statement | null
 	private readonly owners: Statement[]
 	constructor(database: Database) {
 		const tables = new Set(
@@ -28,8 +30,17 @@ export class ObjectReferences {
 		this.chunks = tables.has('timelapse_chunks')
 			? database.query("SELECT 1 FROM timelapse_chunks WHERE object_key = ? AND state != 'deleting' LIMIT 1")
 			: null
+		this.readers = tables.has('capture_readers')
+			? database.query('SELECT 1 FROM capture_readers WHERE object_key=? LIMIT 1')
+			: null
+		this.expireReaders = tables.has('capture_readers')
+			? database.query('DELETE FROM capture_readers WHERE expires_at<=?')
+			: null
 		this.unreferencedSql =
 			[
+				tables.has('capture_readers')
+					? 'NOT EXISTS (SELECT 1 FROM capture_readers WHERE object_key=object_deletions.object_key)'
+					: '',
 				tables.has('memories')
 					? 'NOT EXISTS (SELECT 1 FROM memories WHERE object_key = object_deletions.object_key)'
 					: '',
@@ -58,8 +69,11 @@ export class ObjectReferences {
 	knownOwner(owner: string): boolean {
 		return this.owners.some(statement => Boolean(statement.get(owner)))
 	}
+	collectExpiredReaders(now: number): void {
+		this.expireReaders?.run(now)
+	}
 	isReferenced(key: string): boolean {
-		if (this.memories?.get(key) || this.chunks?.get(key)) return true
+		if (this.memories?.get(key) || this.chunks?.get(key) || this.readers?.get(key)) return true
 		const slash = key.lastIndexOf('/')
 		if (slash < 1 || !key.endsWith('.glb')) return false
 		return Boolean(this.uploads?.get(key.slice(slash + 1, -4), key.slice(0, slash)))

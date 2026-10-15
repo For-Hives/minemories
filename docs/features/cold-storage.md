@@ -45,13 +45,26 @@ pas des objets physiques. Un bloc dédupliqué n’est compté qu’une fois, m�
 apparaît plusieurs fois dans un même souvenir. Les souvenirs dans la corbeille
 protègent leurs blocs ; les conversions, lectures timelapse en cours et intentions
 de suppression excluent les objets concernés. La prévisualisation ne modifie pas
-les dates d’ouverture. Les accès directs aux GLB originaux devront aussi obtenir
-un lease avant qu’un worker d’archivage soit activé.
+les dates d’ouverture.
+
+Les lectures de GLB originaux obtiennent un lease dans `capture_readers`, visible
+par les autres connexions SQLite. Il est renouvelé pendant le transfert et libéré
+à la fermeture, à l’annulation ou en cas d’échec d’ouverture du stockage. Un flux
+sans progrès pendant 15 minutes est interrompu ; un lease expiré ne peut pas être
+renouvelé. Le budget est de 8 lecteurs par propriétaire et 64 au total pour les
+originaux, en complément des limites des lecteurs timelapse.
+
+La file de suppression et la réconciliation reconnaissent aussi ces lecteurs :
+une conversion peut remplacer la clé logique pendant qu’un téléchargement garde
+l’original ouvert, sans supprimer ce fichier avant la fermeture du flux. Les
+leases périmés après une interruption sont collectés ; les suppressions restent
+dans la file durable jusque-là.
 
 ## Contraintes pour la suite
 
 Le worker devra appliquer le seuil et les protections de la prévisualisation sous
-réservation durable. Les métadonnées et miniatures restent accessibles.
+réservation durable, et les nouveaux lecteurs devront vérifier atomiquement qu’un
+objet n’est pas déjà en transition. Les métadonnées et miniatures restent accessibles.
 Une restauration doit rendre tous les blocs nécessaires
 lisibles avant d’ouvrir le flux GLB ; le viewer doit afficher l’état et la progression.
 Les transitions doivent pouvoir reprendre après interruption et se réconcilier
