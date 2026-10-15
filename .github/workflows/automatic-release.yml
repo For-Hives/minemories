@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: automatic-mod-release-main
+  group: automatic-mod-release-${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'preview' || 'main' }}
   cancel-in-progress: false
 
 jobs:
