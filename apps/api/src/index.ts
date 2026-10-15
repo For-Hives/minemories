@@ -8,6 +8,7 @@ import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
+import { recordCaptureOpening } from './capture-access'
 import { openAuthorizedCapture } from './capture-downloads'
 import { database } from './database'
 import { DiagnosticsReview } from './diagnostics-review'
@@ -310,7 +311,9 @@ app.get('/api/public/:id/file', async context => {
 	}
 	if (!lookup()) return context.json({ error: 'memory_not_found' }, 404)
 	try {
-		const contents = await openAuthorizedCapture(captureFiles, lookup, context.req.raw.signal)
+		const contents = await openAuthorizedCapture(captureFiles, lookup, context.req.raw.signal, () =>
+			recordCaptureOpening(database, lookup())
+		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
@@ -329,7 +332,8 @@ app.get('/api/shared/:token/file', async context => {
 		const contents = await openAuthorizedCapture(
 			captureFiles,
 			() => getSharedMemory(context.req.param('token'))?.objectKey ?? null,
-			context.req.raw.signal
+			context.req.raw.signal,
+			() => recordCaptureOpening(database, getSharedMemory(context.req.param('token'))?.objectKey ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
@@ -361,7 +365,8 @@ app.get('/api/memories/:id/file', async context => {
 		const contents = await openAuthorizedCapture(
 			captureFiles,
 			() => getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null,
-			context.req.raw.signal
+			context.req.raw.signal,
+			() => recordCaptureOpening(database, getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
