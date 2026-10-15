@@ -1,4 +1,10 @@
-import { captureIdentityFields, thumbnailDataUrl, validCaptureIdentity } from '@minemories/api-contract'
+import {
+	captureIdentityFields,
+	captureTime,
+	captureTimeKey,
+	thumbnailDataUrl,
+	validCaptureIdentity,
+} from '@minemories/api-contract'
 import * as z from 'zod'
 import type { MemoryMetadata } from './pairing'
 
@@ -18,15 +24,15 @@ const metadataSchema = z
 		thundering: z.boolean().nullable().default(null),
 		thumbnail: thumbnailDataUrl.nullable().default(null),
 		icon: thumbnailDataUrl.nullable().default(null),
-		capturedAt: z.string().datetime().nullable().default(null),
-		captureStartedAt: z.string().max(64).datetime().nullable().default(null),
-		captureFinishedAt: z.string().max(64).datetime().nullable().default(null),
+		capturedAt: captureTime.nullable().default(null),
+		captureStartedAt: captureTime.nullable().default(null),
+		captureFinishedAt: captureTime.nullable().default(null),
 	})
 	.refine(validCaptureIdentity, 'Incomplete or inconsistent capture identity')
 	.refine(
 		value =>
 			!(value.captureStartedAt && value.captureFinishedAt) ||
-			Date.parse(value.captureFinishedAt) >= Date.parse(value.captureStartedAt),
+			(captureTimeKey(value.captureFinishedAt) ?? '') >= (captureTimeKey(value.captureStartedAt) ?? ''),
 		'Capture finishes before it starts'
 	)
 

@@ -2,6 +2,7 @@ import type { Database } from 'bun:sqlite'
 import type { ObjectDeletionQueue } from './object-deletions'
 import { TimelapseCatalog } from './timelapse-catalog'
 import type { TimelapseFiles } from './timelapse-files'
+import { TimelapseIndex } from './timelapse-index'
 
 /** One candidate per pass, one global conversion lease, and durable retry times across restarts. */
 export class TimelapseMaintenance {
@@ -30,6 +31,7 @@ export class TimelapseMaintenance {
 	}
 	private async run() {
 		try {
+			new TimelapseIndex(this.database).backfill()
 			this.catalog.collect(this.now())
 			await this.deletions.maintain(this.now())
 			if (this.shutdown.signal.aborted) return
