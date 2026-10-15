@@ -1,0 +1,48 @@
+{
+	"targets": [
+		{
+			"id": "neoforge-mc1.21.1",
+			"loader": "neoforge",
+			"name": "NeoForge",
+			"minecraft": "1.21.1",
+			"loaderVersion": "21.1.248",
+			"java": "21",
+			"project": "neoforge",
+			"enabled": true,
+			"validatedInGame": true
+		},
+		{
+			"id": "fabric-mc1.21.1",
+			"loader": "fabric",
+			"name": "Fabric",
+			"minecraft": "1.21.1",
+			"loaderVersion": null,
+			"java": "21",
+			"project": "fabric",
+			"enabled": false,
+			"validatedInGame": false
+		},
+		{
+			"id": "forge-mc1.21.1",
+			"loader": "forge",
+			"name": "Forge",
+			"minecraft": "1.21.1",
+			"loaderVersion": null,
+			"java": "21",
+			"project": "forge",
+			"enabled": false,
+			"validatedInGame": false
+		},
+		{
+			"id": "quilt-mc1.21.1",
+			"loader": "quilt",
+			"name": "Quilt",
+			"minecraft": "1.21.1",
+			"loaderVersion": null,
+			"java": "21",
+			"project": "quilt",
+			"enabled": false,
+			"validatedInGame": false
+		}
+	]
+}

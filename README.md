@@ -81,3 +81,8 @@ Le mod utilise l’API `https://api.minemories.xenos.lightin.io` par défaut. Le
 `bun run build` vérifie et construit le dépôt complet, y compris le mod et son packaging CI. Le front se construit indépendamment avec `bun run --filter @minemories/web build`, sans Java ni JAR local. La page `/installation` télécharge le dernier JAR compatible directement depuis les releases publiques GitHub : déposer le fichier dans `mods`, sans extraction de ZIP. La compilation et la publication du mod sont réservées au workflow Java dédié.
 
 Le workflow manuel **Build and distribute mod** produit un artefact par défaut ; les publications GitHub Releases, Modrinth et CurseForge sont optionnelles. Voir [la distribution et les réglages](docs/features/mod-distribution.md) pour la configuration des projets/secrets et les vérifications en jeu.
+
+
+## Releases automatiques
+
+Chaque merge dans `main` lance les contrôles, puis une release bêta automatique du mod : version des packages/Gradle synchronisée, build en matrice des loaders activés, JAR et SHA-256 sur GitHub Releases, changelog généré depuis les Conventional Commits. NeoForge est la seule cible activée ; les autres loaders restent à porter. [Pipeline, versions et reprise](docs/features/automatic-releases.md).

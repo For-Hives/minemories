@@ -47,22 +47,20 @@ Le déploiement web utilise `railpack.web.json` sans Java et ne reconstruit pas 
 
 ## CI et publications
 
-Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours). Un second job télécharge cet artefact avec `download-artifact` et vérifie l’en-tête JAR, les octets, le manifeste de compatibilité et le fichier d’empreinte contre le SHA-256 émis par le job de build. Un JAR modifié, tronqué ou accompagné de métadonnées incohérentes fait échouer la CI, même si une nouvelle empreinte a été inscrite dans l’artefact téléchargé.
+Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours). Un second job télécharge cet artefact et vérifie les octets contre le SHA-256 émis par le build.
 
-Le workflow manuel **Build and distribute mod** (`.github/workflows/mod-release.yml`) exécute `bun run build` et conserve les fichiers pendant 30 jours. Par défaut, il ne publie rien. Il permet de sélectionner séparément GitHub Releases, Modrinth et CurseForge, avec un canal alpha (défaut), beta ou release.
+Le workflow **Automatic mod releases** (`.github/workflows/automatic-release.yml`) démarre après le succès de Quality gates sur le dernier commit poussé dans `main`. Release-it et Conventional Changelog calculent une version bêta, puis la matrice de `config/mod-targets.json` construit et teste chaque cible activée. Toutes doivent réussir avant publication. La version est synchronisée dans les packages Bun, le lockfile et Gradle ; le changelog, le commit de version et le tag `mod-v<version>` sont générés automatiquement. La release GitHub contient les JAR vérifiés, leurs SHA-256 et les manifestes. Le front continue à télécharger ces fichiers depuis GitHub, sans compiler Java.
 
-Pour publier, choisir `main` et confirmer dans l’entrée `tested_in_game` que **la version exacte construite a été validée en jeu**. Le job `publish` utilise l’environnement GitHub `mod-releases`, configurable avec des reviewers si souhaité ; aucune règle d’approbation n’est créée par ce dépôt. Les étapes utilisent la même archive téléchargée depuis le job de build, pas une reconstruction indépendante. Le même contrôle du JAR et des métadonnées s’exécute avant toute destination de publication. GitHub utilise le tag `mod-v<version>` et le commit testé.
+Les releases automatiques sont des **préversions** : les tests CI ne valent pas validation en jeu du JAR exact. NeoForge est la seule cible activée actuellement ; Fabric, Forge et Quilt ont des entrées désactivées jusqu’à leur portage et leur validation. Voir [le fonctionnement et la reprise](automatic-releases.md).
 
-Avant la première publication catalogue, une personne responsable des comptes doit :
+Le workflow manuel **Distribute a validated mod release** (`.github/workflows/mod-release.yml`) sert uniquement aux catalogues. Choisir `main`, renseigner le tag GitHub existant et confirmer `tested_in_game` pour les JAR exacts de cette release. Il les télécharge, vérifie leur digest GitHub, leur manifeste et leur empreinte, puis publie sur les plateformes sélectionnées **sans reconstruire** les archives.
 
-1. Créer les fiches officielles du projet sur Modrinth et CurseForge et préparer leurs descriptions, licence et illustrations.
+Avant une publication catalogue :
+
+1. Créer les fiches officielles sur Modrinth et CurseForge et préparer descriptions, licence et illustrations.
 2. Ajouter les variables GitHub `MODRINTH_PROJECT_ID` et `CURSEFORGE_PROJECT_ID`.
-3. Ajouter les secrets GitHub `MODRINTH_TOKEN` et `CURSEFORGE_TOKEN` avec les droits de publication nécessaires (ne pas les mettre dans le dépôt ou le chat).
-4. Valider le JAR exact en jeu et contrôler sa version, puis lancer le workflow avec les plateformes voulues.
-
-Les plateformes manquantes ne bloquent pas un build sans publication. Si une destination sélectionnée manque de projet/token, le job échoue avant tout upload. Aucun projet catalogue ni token n’a été trouvé dans les variables/secrets GitHub lors de cette préparation.
-
-La version du mod est définie dans `mod/minemories/build.gradle`. L’incrémenter pour une nouvelle publication. Ne pas tenter de remplacer une version catalogue existante silencieusement. Les étapes de publication indépendantes peuvent produire un succès partiel : vérifier les plateformes avant une nouvelle tentative, afin d’éviter les doublons.
+3. Ajouter les secrets GitHub `MODRINTH_TOKEN` et `CURSEFORGE_TOKEN` avec les droits nécessaires.
+4. Valider en jeu le JAR de chaque cible sélectionnée, puis lancer le workflow manuel sur son tag. L’environnement `mod-releases` existant est conservé pour les catalogues ; les releases GitHub automatiques ne demandent aucune approbation manuelle.
 
 ## Autres launchers
 
