@@ -12,12 +12,17 @@ export async function collectReleaseAssets(plan, inputs, output, root = reposito
 		throw new Error('Release targets differ from the source configuration.')
 	const directories = await readdir(inputs)
 	const expected = targets.map(target => `release-target-${target.id}`)
-	if (!isDeepStrictEqual(directories.toSorted(), expected.toSorted()))
+	const flatFiles =
+		targets.length === 1
+			? ['build-receipt.json', 'manifest.json', filenameFor(targets[0]), `${filenameFor(targets[0])}.sha256`]
+			: []
+	const flat = targets.length === 1 && isDeepStrictEqual(directories.toSorted(), flatFiles.toSorted())
+	if (!(flat || isDeepStrictEqual(directories.toSorted(), expected.toSorted())))
 		throw new Error('Missing or unexpected matrix artifact.')
 	await mkdir(output, { recursive: true })
 	const artifacts = await Promise.all(
 		targets.map(async target => {
-			const directory = resolve(inputs, `release-target-${target.id}`)
+			const directory = flat ? inputs : resolve(inputs, `release-target-${target.id}`)
 			const receipt = JSON.parse(await readFile(resolve(directory, 'build-receipt.json'), 'utf8'))
 			if (
 				receipt.version !== plan.version ||
