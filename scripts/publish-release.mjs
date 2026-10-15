@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { validatePlan } from './plan-release.mjs'
 import { isMain, repositoryRoot, requireCommit, run } from './release-utils.mjs'
@@ -15,7 +15,7 @@ function uploadAsset({ release, plan, directory, repository, execute }, { file, 
 		execute('gh', ['release', 'upload', plan.tag, resolve(directory, file), '--repo', repository])
 	}
 }
-function ensureDraft({ plan, commit, repository, root, execute }) {
+async function ensureDraft({ plan, commit, repository, root, execute }) {
 	function lookup() {
 		const output = execute('gh', [
 			'api',
@@ -26,25 +26,22 @@ function ensureDraft({ plan, commit, repository, root, execute }) {
 		])
 		return output ? JSON.parse(output) : null
 	}
-	let release = lookup()
+	const release = lookup()
 	if (!release) {
-		execute('gh', [
-			'release',
-			'create',
-			plan.tag,
-			'--repo',
-			repository,
-			'--target',
-			commit,
-			'--verify-tag',
-			'--prerelease',
-			'--draft',
-			'--title',
-			`Minemories ${plan.version} · bêta automatique`,
-			'--notes-file',
-			resolve(root, 'work/release-notes.md'),
-		])
-		release = lookup()
+		const request = resolve(root, 'work/release-request.json')
+		await writeFile(
+			request,
+			JSON.stringify({
+				tag_name: plan.tag,
+				target_commitish: commit,
+				name: `Minemories ${plan.version} · bêta automatique`,
+				body: await readFile(resolve(root, 'work/release-notes.md'), 'utf8'),
+				draft: true,
+				prerelease: true,
+				make_latest: 'false',
+			})
+		)
+		return JSON.parse(execute('gh', ['api', '--method', 'POST', `repos/${repository}/releases`, '--input', request]))
 	}
 	return release
 }
@@ -59,7 +56,7 @@ export async function publishRelease({ plan, commit, repository, root = reposito
 	const files = (await readdir(directory)).sort()
 	if (!(files.includes('release-manifest.json') && files.some(file => file.endsWith('.jar'))))
 		throw new Error('Missing release artifacts.')
-	const release = ensureDraft({ plan, commit, repository, root, execute })
+	const release = await ensureDraft({ plan, commit, repository, root, execute })
 	if (!release || release.tag_name !== plan.tag || release.prerelease !== true)
 		throw new Error('Existing GitHub release belongs to another build or channel.')
 	if (release.assets.some(asset => !files.includes(asset.name)))

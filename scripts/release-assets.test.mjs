@@ -52,6 +52,7 @@ async function fixture(t, multiple = false) {
 		})
 	)
 	const output = resolve(root, 'work/release-assets')
+	await writeFile(resolve(root, 'work/release-notes.md'), '# Release fixture\n\nGenerated notes.\n')
 	return { root, source, plan, inputs, output }
 }
 test('matrix artifacts retain distinct loader files and checksums in one verified release', async t => {
@@ -102,9 +103,23 @@ test('missing matrix targets, wrong source/version, altered bytes and mismatched
 	await assert.rejects(packageMod(data.source, data.output, { target: data.plan.targets[0], version: '0.3.0-beta.1' }))
 })
 
-function fakeGitHub({ data, commit }) {
+function fakeGitHub({ data, commit, staleList = false }) {
 	let release = null
 	const calls = []
+	function api(args) {
+		if (args.includes('POST')) {
+			const request = JSON.parse(readFileSyncForMock(args[args.indexOf('--input') + 1], 'utf8'))
+			assert.equal(request.tag_name, data.plan.tag)
+			assert.equal(request.target_commitish, commit)
+			assert.equal(request.body, '# Release fixture\n\nGenerated notes.\n')
+			assert.equal(request.draft, true)
+			assert.equal(request.prerelease, true)
+			release = { ...request, assets: [] }
+			return JSON.stringify(release)
+		}
+		if (staleList) return ''
+		return release ? JSON.stringify(release) : ''
+	}
 	const execute = (command, args) => {
 		if (command === 'git') {
 			assert.deepEqual(args, ['rev-parse', `refs/tags/${data.plan.tag}^{commit}`])
@@ -112,12 +127,7 @@ function fakeGitHub({ data, commit }) {
 		}
 		assert.equal(command, 'gh')
 		calls.push(args)
-		if (args[0] === 'api') {
-			if (release) return JSON.stringify(release)
-			return ''
-		}
-		if (args[1] === 'create')
-			release = { tag_name: data.plan.tag, target_commitish: commit, prerelease: true, draft: true, assets: [] }
+		if (args[0] === 'api') return api(args)
 		if (args[1] === 'upload') {
 			const file = args[3]
 			const bytes = readFileSyncForMock(file)
@@ -167,6 +177,21 @@ test('GitHub publication stays a draft until complete, resumes safely and never 
 	await assert.rejects(publishRelease(input))
 	await assert.rejects(publishRelease({ ...input, plan: { ...data.plan, dryRun: true } }))
 	assert.ok(mock.calls.filter(args => args[1] === 'upload').every(args => !args.includes('--clobber')))
+})
+test('publishes using the creation response even while GitHub release listings remain stale', async t => {
+	const data = await fixture(t)
+	await collectReleaseAssets(data.plan, data.inputs, data.output, data.root)
+	const commit = 'c'.repeat(40)
+	const mock = fakeGitHub({ data, commit, staleList: true })
+	await publishRelease({
+		plan: data.plan,
+		commit,
+		repository: 'For-Hives/minemories',
+		root: data.root,
+		execute: mock.execute,
+	})
+	assert.equal(mock.release.draft, false)
+	assert.equal(mock.release.assets.length, 5)
 })
 test('catalogue distribution downloads the existing JAR and verifies the GitHub digest without rebuilding', async t => {
 	const data = await fixture(t)
