@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.6.0-beta.1...mod-v0.7.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **account:** change email and password from account settings ([749ce6b](https://github.com/For-Hives/minemories/commit/749ce6b8650a1aa63474b846e5c521fed4392fc4))
+
+### Corrections
+
+* **front:** keep account settings accessible with avatar fallback ([52e8054](https://github.com/For-Hives/minemories/commit/52e805425bc5f266c36b31a48047b16ab397109c))
+
 ## [0.6.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.1-beta.1...mod-v0.6.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
