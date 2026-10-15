@@ -124,6 +124,50 @@ test('real API routes serve deduplicated captures privately, by share and after 
 		expect(Buffer.from(await response.arrayBuffer()).equals(data)).toBe(true)
 		expect(opening()).toEqual({ last_opened_at: expect.any(Number) })
 	}
+	const accesses = [
+		{ kind: 'owner' as const, id },
+		{ kind: 'shared' as const, token: shared.token },
+		{ kind: 'public' as const, id: published.id },
+	]
+	await expect(rpc('').captureStorage.status({ kind: 'owner', id })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+	await expect(rpc(other.cookie).captureStorage.restore({ kind: 'owner', id })).rejects.toMatchObject({
+		code: 'NOT_FOUND',
+	})
+	const chunk = database
+		.query(
+			`SELECT c.object_key,c.size FROM timelapse_refs r JOIN timelapse_chunks c USING(object_key) WHERE r.memory_id=? LIMIT 1`
+		)
+		.get(id) as { object_key: string; size: number }
+	database
+		.query(
+			`INSERT INTO object_tiers(object_key,state,operation_id,updated_at,user_id,size) VALUES (?,'cold','http-fixture',0,?,?)`
+		)
+		.run(chunk.object_key, owner.id, chunk.size)
+	await Promise.all(
+		accesses.map(async access => {
+			const viewer = access.kind === 'owner' ? client : rpc('')
+			const status = await viewer.captureStorage.status(access)
+			expect(status).toMatchObject({ state: 'cold', restorationAvailable: false, retryAfterSeconds: null })
+			expect(status.readyObjects).toBe(status.totalObjects - 1)
+			await expect(viewer.captureStorage.restore(access)).rejects.toMatchObject({ code: 'SERVICE_UNAVAILABLE' })
+		})
+	)
+	await Promise.all(
+		[`/api/memories/${id}/file`, `/api/shared/${shared.token}/file`, `/api/public/${published.id}/file`].map(
+			async path => {
+				const response = await app.request(path, { headers: { cookie: owner.cookie } })
+				expect(response.status).toBe(202)
+				expect(response.headers.get('cache-control')).toBe('private, no-store')
+				expect(await response.json()).toMatchObject({
+					error: 'memory_restoration_required',
+					availability: { state: 'cold', restorationAvailable: false },
+				})
+			}
+		)
+	)
+	expect(opening()).toEqual({ last_opened_at: null })
+	expect(database.query('SELECT * FROM timelapse_readers').all()).toEqual([])
+	database.query("UPDATE object_tiers SET state='hot' WHERE object_key=?").run(chunk.object_key)
 	await checkDownload(`/api/memories/${id}/file`)
 	await checkDownload(`/api/shared/${shared.token}/file`)
 	await checkDownload(`/api/public/${published.id}/file`)
@@ -132,6 +176,12 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	expect((await client.account.storage()).usedBytes).toBe(data.length)
 	await client.memories.revokeShare({ id })
 	await client.discovery.revoke({ memoryId: id })
+	await expect(client.captureStorage.status({ kind: 'shared', token: shared.token })).rejects.toMatchObject({
+		code: 'NOT_FOUND',
+	})
+	await expect(rpc('').captureStorage.restore({ kind: 'public', id: published.id })).rejects.toMatchObject({
+		code: 'NOT_FOUND',
+	})
 	expect((await app.request(`/api/shared/${shared.token}/file`)).status).toBe(404)
 	expect((await app.request(`/api/public/${published.id}/file`)).status).toBe(404)
 	await client.memories.trash({ id })

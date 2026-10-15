@@ -1,6 +1,7 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
 import { captureIdentityFields } from './capture-identity'
+import { captureStorageContract } from './capture-storage'
 import { captureTime } from './capture-time'
 import { diagnosticsContract } from './diagnostics'
 import { discoveryContract } from './discovery'
@@ -13,6 +14,7 @@ export {
 	temporalIdentity,
 	validCaptureIdentity,
 } from './capture-identity'
+export { type CaptureAvailability, type CaptureStorageAccess, captureAvailability } from './capture-storage'
 export { captureTime, captureTimeKey } from './capture-time'
 export {
 	type ApiDiagnostic,
@@ -58,6 +60,7 @@ const memorySchema = z.object({
 })
 
 export const apiContract = {
+	captureStorage: captureStorageContract,
 	diagnostics: diagnosticsContract,
 	discovery: discoveryContract,
 	timelapse: timelapseContract,
