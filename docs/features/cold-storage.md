@@ -3,8 +3,9 @@
 Suivi de l’issue [#85](https://github.com/For-Hives/minemories/issues/85).
 Le suivi des ouvertures, la prévisualisation, les transitions et les API sont
 implémentés avec un worker optionnel et le parcours viewer de restauration.
-L’archivage reste désactivé par défaut ; la validation du fournisseur réel reste
-à terminer avant de clôturer l’issue.
+L’archivage reste désactivé par défaut. Les classes, délais et coûts publics sont
+comparés dans [la politique et le chiffrage](cold-storage-costs.md) ; l’activation
+sur un compte réel relève du déploiement.
 
 ## Dernière ouverture réelle
 
@@ -247,7 +248,7 @@ en mode Standard. Un retour accepté ou un conflit « déjà en cours » ne rend
 le GLB lisible : le worker attend un `HEAD` confirmant la restauration, avec au
 moins quinze minutes avant expiration, puis copie vers une nouvelle génération
 `STANDARD` permanente. R2 et `STANDARD_IA` utilisent directement `CopyObject`.
-Ce mode de restauration et ses coûts devront être validés sur le compte choisi.
+Les frais et délais de ce mode sont détaillés dans [le chiffrage](cold-storage-costs.md).
 
 Les tests HTTP couvrent aussi l’erreur XML dans une réponse 200, la réponse perdue
 après écriture distante, la précondition refusée, les métadonnées incohérentes,
