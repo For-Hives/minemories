@@ -1,8 +1,9 @@
-import { type SyntheticEvent, useState } from 'react'
+import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { LoadingSkeleton } from '../components/Loading'
+import { PasswordField } from '../components/PasswordField'
 import { Brand } from '../components/SiteLayout'
 import { buttonDark, Eyebrow } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
@@ -22,6 +23,10 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const { session, isPending, refreshSession } = useAppContext()
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
+	const errorRef = useRef<HTMLParagraphElement>(null)
+	useEffect(() => {
+		if (error) errorRef.current?.focus()
+	}, [error])
 	const navigate = useNavigate()
 	const location = useLocation()
 	const creating = mode === 'register'
@@ -101,7 +106,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						{creating ? t('Gather your worlds in a single gallery.') : t('Find your worlds gallery again.')}
 					</p>
 					{!creating && <CredentialsNotice />}
-					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit}>
+					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit} aria-busy={busy}>
 						{creating && (
 							<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
 								{' '}
@@ -122,27 +127,18 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							<input
 								name="email"
 								type="email"
+								inputMode="email"
+								autoCapitalize="none"
+								spellCheck={false}
 								autoComplete="email"
 								required
 								placeholder={t('you@example.com')}
 								className={inputField}
 							/>
 						</label>
-						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-							{' '}
-							<T message={'Password'} />{' '}
-							<input
-								name="password"
-								type="password"
-								autoComplete={creating ? 'new-password' : 'current-password'}
-								minLength={creating ? 12 : undefined}
-								required
-								placeholder={t(creating ? '12 characters minimum' : 'Your password')}
-								className={inputField}
-							/>
-						</label>
+						<PasswordField key={mode} creating={creating} className={inputField} />
 						{error && (
-							<p className="m-0 -mt-1 text-xs text-[#f0a49a]" role="alert">
+							<p ref={errorRef} tabIndex={-1} className="m-0 -mt-1 text-xs text-[#f0a49a]" role="alert">
 								{error}
 							</p>
 						)}
@@ -155,6 +151,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						<Link
 							className="font-bold text-[#b4c1ad] underline underline-offset-[3px]"
 							to={creating ? '/login' : '/register'}
+							state={{ from }}
 						>
 							{creating ? t('Sign in') : t('Create a space')}
 						</Link>
