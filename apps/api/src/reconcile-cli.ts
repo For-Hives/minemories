@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite'
 import { realpath } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { assertColdStorageIdentity } from './cold-storage-target'
 import { applyReconciliationPlan } from './reconciliation-apply'
 import { readReconciliationPlan, writeReconciliationPlan } from './reconciliation-files'
 import { type StorageInventory, storageInventory } from './storage-inventory'
@@ -52,6 +53,7 @@ export async function runReconciliationCli(args: string[], context: CommandConte
 		values.apply ? { readwrite: true, create: false } : { readonly: true, create: false }
 	)
 	try {
+		assertColdStorageIdentity(database, process.env)
 		const planPath = resolve(values.plan as string)
 		if (values.apply) {
 			const plan = await readReconciliationPlan(planPath)

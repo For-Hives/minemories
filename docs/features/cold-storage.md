@@ -133,6 +133,21 @@ vérifient aussi que le quota et le nettoyage des références restent cohérent
 
 ## Contraintes pour la suite
 
+La configuration reste désactivée par défaut (`COLD_STORAGE_PROVIDER=off`). Une
+future utilisation exige un choix explicite `aws` ou `r2`, `COLD_STORAGE_CLASS`
+(`GLACIER`, `DEEP_ARCHIVE` ou `STANDARD_IA` ; R2 accepte uniquement cette dernière),
+et un endpoint HTTPS, un bucket et une région explicitement renseignés. Cette
+configuration ne lance encore aucune copie. Garage et le stockage local ne
+reçoivent pas automatiquement une politique froide.
+
+À la première configuration, SQLite lie le catalogue au driver, à l’URL complète,
+au bucket, à la région et à la politique choisie. Un catalogue préexistant sans
+identité doit être réconcilié avant cette liaison. La rotation des identifiants
+n’impose pas de migration. Changer de destination ou de politique exige une
+migration explicite ; même après désactivation du worker, une autre destination
+bloque le démarrage de l’API et la réconciliation avant l’accès à l’inventaire.
+Cela protège les générations publiées et les nettoyages encore en attente.
+
 `ColdStorageWorker` utilise le catalogue et ses réservations durables, traite
 une opération par passage et regroupe les appels concurrents. Il renouvelle
 son bail pendant les appels distants, transmet un signal d’annulation et attend
