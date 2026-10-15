@@ -12,8 +12,8 @@ import type { ColdStorageProvider } from './cold-storage-worker'
 import { assertUnversionedBucket } from './s3-deletion-policy'
 import { managedMemoryKey } from './storage-references'
 import type { TierCopy } from './tier-locations'
+import { MAX_UPLOAD_BYTES } from './upload-files'
 
-const MAX_COPY_BYTES = 200 * 1024 * 1024
 const RESTORE_MARGIN_MS = 15 * 60_000
 const restoreExpiryPattern = /expiry-date="([^"]+)"/
 
@@ -21,7 +21,7 @@ function assertCopy(work: ColdStorageWork, copy: TierCopy): void {
 	if (
 		!Number.isSafeInteger(copy.size) ||
 		copy.size < 1 ||
-		copy.size > MAX_COPY_BYTES ||
+		copy.size > MAX_UPLOAD_BYTES ||
 		managedMemoryKey(work.objectKey)?.owner !== copy.userId ||
 		managedMemoryKey(copy.sourceKey)?.owner !== copy.userId ||
 		managedMemoryKey(copy.physicalKey)?.owner !== copy.userId ||
