@@ -18,8 +18,8 @@ export const publicMetadata: PageMetadata[] = [
 	},
 	{
 		path: '/explorer',
-		title: 'Galerie de démonstration — Minemories',
-		description: 'Une galerie illustrée pour essayer recherche, favoris, classement et partage sans compte.',
+		title: 'Galerie publique — Minemories',
+		description: 'Explore les souvenirs Minecraft publiés volontairement après modération et leur classement.',
 		indexable: true,
 		language: 'fr',
 	},

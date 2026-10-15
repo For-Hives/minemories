@@ -129,7 +129,9 @@ test('reports are unique, bounded and can be reviewed or reject a live publicati
 	for (let i = 0; i < 10; i++) f.service.report('reporter', id, `reason ${i}`)
 	expect(() => f.service.report('reporter', id, 'spam')).toThrow('Too Many Requests')
 	const queue = f.service.queue('moderator', { state: 'reported', page: 0 })
-	expect(queue.items[0]?.reports).toEqual([{ reason: 'reason 9', createdAt: '2027-01-15T08:00:00.000Z' }])
+	expect(queue.items[0]?.reports).toEqual([
+		{ id: expect.any(Number), reason: 'reason 9', createdAt: '2027-01-15T08:00:00.000Z' },
+	])
 	f.service.moderate('moderator', id, 'approved', 'Reviewed')
 	expect(f.service.queue('moderator', { state: 'reported', page: 0 }).items).toHaveLength(0)
 	f.advance()

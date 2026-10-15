@@ -247,10 +247,14 @@ export class PublicDiscovery {
 				reason: row.reason,
 				reports: (
 					this.db
-						.query(`SELECT reason,created_at FROM public_reports
+						.query(`SELECT rowid AS id,reason,created_at FROM public_reports
  WHERE publication_id=? ORDER BY created_at DESC,user_id LIMIT 20`)
-						.all(row.id) as { reason: string; created_at: number }[]
-				).map(report => ({ reason: report.reason, createdAt: new Date(report.created_at).toISOString() })),
+						.all(row.id) as { id: number; reason: string; created_at: number }[]
+				).map(report => ({
+					id: report.id,
+					reason: report.reason,
+					createdAt: new Date(report.created_at).toISOString(),
+				})),
 			})),
 			hasMore: rows.length > PAGE_SIZE,
 		}

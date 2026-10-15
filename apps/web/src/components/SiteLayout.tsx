@@ -170,7 +170,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
-					{[...discoveryPages, { path: '/explorer', label: { fr: 'Galerie de démo', en: 'Demo gallery' } }].map(
+					{[...discoveryPages, { path: '/explorer', label: { fr: 'Galerie publique', en: 'Public gallery' } }].map(
 						page => (
 							<Link key={page.path} to={page.path}>
 								{page.label[locale]}

@@ -123,7 +123,7 @@ export function HomePage() {
 			<section className="mm-home-discovery" aria-label={t('Discover')}>
 				<div className="mm-section-heading">
 					<h2>{t('A world worth keeping.')}</h2>
-					<Link className={buttonOutline} to="/explorer">
+					<Link className={buttonOutline} to="/explorer?demo=1">
 						{t('Try the demo')}
 					</Link>
 				</div>

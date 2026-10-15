@@ -36,7 +36,7 @@ candidat et les signalements sont effacés après sa décision.
 Les votes et signalements nécessitent une session réelle. Une clé primaire
 publication/compte impose un seul vote, et voter pour son propre souvenir est
 refusé. L’état désiré `voted` rend les retries idempotents. Les compteurs SQLite
-limitent, par compte et heure civile, cinq soumissions, trente changements de vote
+limitent, par compte et tranche fixe d’une heure UTC, cinq soumissions, trente changements de vote
 et dix signalements. Ils survivent au redémarrage ; les vieux compteurs sont
 nettoyés par lots bornés. Cela limite les rafales et doublons par compte, sans
 prétendre identifier les personnes derrière plusieurs comptes.
@@ -49,7 +49,7 @@ l’ouverture asynchrone du stockage, avant d’envoyer la réponse : une révoc
 commise pendant cette attente l’emporte. Un fichier déjà reçu par un visiteur
 ne peut pas être retiré de sa machine.
 
-## Validation et travail restant pour #69
+## Validation
 
 Les tests du service couvrent propriété, séparation des DTO, revue indépendante,
 révocation/réédition, corbeille/restauration/suppression, seuils persistés,
@@ -62,6 +62,43 @@ autorisations, fichier réservé à la revue, catalogue après approbation, vote
 parallèles, absence des champs privés, panne de stockage et révocation pendant
 l’ouverture du flux. La couverture de `discovery.ts` est de 100 % lignes/fonctions.
 
-Le raccordement des pages `/explorer` et `/classement`, le contrôle de publication
-propriétaire, l’interface de modération et leurs interactions restent à terminer
-avant de fermer #69. Les démonstrations restent distinctes des captures réelles.
+## Interfaces et preuve locale
+
+`/explorer` et `/classement` affichent le catalogue réel, ses filtres et ses votes
+serveur. Le choix « Essayer la démonstration » ouvre `?demo=1` : favoris, votes et
+partages de ces exemples restent distincts et ne publient aucune capture privée.
+La carte d’une capture privée propose « Publication publique », avec titre,
+description, catégorie, consentement décoché et retrait. Les états et motifs
+proviennent de l’API. Le rôle modérateur donne accès au lien **Modération**, aux
+files et à la revue du GLB via `/public/:id?review=1` ; le serveur contrôle ce mode,
+le paramètre URL ne confère aucun rôle.
+
+Les motifs de signalement et de décision sont saisis dans la page. Les tests
+couvrent filtres/pagination, vote sans doublon inventé localement, signalement,
+refus/retry, consentement obligatoire, retrait, rôle et décisions, chargement
+public et revue, refus de revue et lien privé existant. Les routes dynamiques
+`/public/` et `/moderation` utilisent le fallback SPA dans Vite preview/Nginx,
+restent `noindex` et sont exclues des robots/sitemap.
+
+Le 15 octobre 2026, une API/filesystem et un site isolés ont exercé dans le
+navigateur : connexion propriétaire, soumission du souvenir privé avec consentement,
+connexion d’un autre compte modérateur, approbation, apparition dans le catalogue,
+vote, signalement, examen du motif, refus et retrait explicite par le propriétaire.
+La recherche serveur et les champs/actions sur fond sombre sont inspectés.
+Les comptes, clés de stockage et GLB sont des fixtures locales, sans production.
+
+Le navigateur intégré disponible désactive WebGL : la construction du renderer
+échoue avant lecture du fichier. Le rendu Three.js n’est donc pas prétendu validé
+visuellement dans cet environnement. Les tests vérifient le branchement du viewer
+et le GLB téléchargé anonymement depuis la route publique est identique au fichier
+Minecraft original (63 096 octets, SHA-256
+`dd4cc0ca5112be59255ccf7d7080ab046bbad10bf8212438f0c2e0738fbcaa51`).
+Son import/rendu dans Blender 5.2.2 est inspecté : tour et terrain texturés,
+1 mesh, 12 images, dimensions 5 × 5 × 11. Le renderer et le format GLB existants
+ne sont pas modifiés par cette fonctionnalité.
+
+Artefacts hors Git :
+`~/.local/state/minemories-validation/public-discovery-20261015/` (API/SQLite
+isolées, captures de soumission/catalogue/modération/retrait, GLB téléchargé,
+checksum et rendu/log Blender). `bun check` et `bun run build` passent ; la CI
+vérifie également le cycle Garage réel avant fusion.
