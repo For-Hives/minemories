@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import './configuration'
+import { migrateCaptureAccess } from './capture-access'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateTimelapse } from './timelapse-catalog'
@@ -65,6 +66,7 @@ if (!memoryColumns.some(column => column.name === 'deleted_at')) {
 	database.exec('ALTER TABLE memories ADD COLUMN deleted_at INTEGER')
 }
 migrateTrashRetention(database)
+migrateCaptureAccess(database)
 database.exec(`
   CREATE TABLE IF NOT EXISTS share_links (
     token_hash TEXT PRIMARY KEY,

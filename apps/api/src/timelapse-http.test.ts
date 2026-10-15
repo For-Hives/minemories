@@ -112,15 +112,21 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	})
 	expect(plan.entries.length).toBeGreaterThan(0)
 	expect(plan.entries.every(entry => entry.proposal.action === 'protected')).toBe(true)
-	const paths = [`/api/memories/${id}/file`, `/api/shared/${shared.token}/file`, `/api/public/${published.id}/file`]
-	await Promise.all(
-		paths.map(async path => {
-			const response = await app.request(path, { headers: { cookie: owner.cookie } })
-			expect(response.status).toBe(200)
-			expect(response.headers.get('cache-control')).toBe('private, no-store')
-			expect(Buffer.from(await response.arrayBuffer()).equals(data)).toBe(true)
-		})
-	)
+	const opening = () => database.query('SELECT last_opened_at FROM memories WHERE id=?').get(id)
+	expect(opening()).toEqual({ last_opened_at: null })
+	expect((await app.request(`/api/shared/${shared.token}`)).status).toBe(200)
+	expect(opening()).toEqual({ last_opened_at: null })
+	async function checkDownload(path: string) {
+		database.query('UPDATE memories SET last_opened_at=NULL WHERE id=?').run(id)
+		const response = await app.request(path, { headers: { cookie: owner.cookie } })
+		expect(response.status).toBe(200)
+		expect(response.headers.get('cache-control')).toBe('private, no-store')
+		expect(Buffer.from(await response.arrayBuffer()).equals(data)).toBe(true)
+		expect(opening()).toEqual({ last_opened_at: expect.any(Number) })
+	}
+	await checkDownload(`/api/memories/${id}/file`)
+	await checkDownload(`/api/shared/${shared.token}/file`)
+	await checkDownload(`/api/public/${published.id}/file`)
 	expect((await app.request(`/api/memories/${id}/file`, { headers: { cookie: other.cookie } })).status).toBe(404)
 	expect((await app.request(`/api/memories/${id}/file`)).status).toBe(401)
 	expect((await client.account.storage()).usedBytes).toBe(data.length)
