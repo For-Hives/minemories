@@ -1,9 +1,11 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
+import { assertObjectsHot, migrateObjectTiers } from './object-tiers'
 
 export const CAPTURE_READER_LEASE_MS = 15 * 60_000
 
 export function migrateCaptureReaders(database: Database): void {
+	migrateObjectTiers(database)
 	database.exec(`CREATE TABLE IF NOT EXISTS capture_readers (
 	 id TEXT PRIMARY KEY,object_key TEXT NOT NULL,user_id TEXT NOT NULL,expires_at INTEGER NOT NULL
 	 );
@@ -23,6 +25,7 @@ export class CaptureReaders {
 					user_id: string
 				} | null
 				if (!memory) throw new Error('Capture reader key is no longer referenced')
+				assertObjectsHot(this.database, [objectKey])
 				this.database.query('DELETE FROM capture_readers WHERE expires_at<=?').run(now)
 				const count = this.database
 					.query('SELECT COUNT(*) AS total,COALESCE(SUM(user_id=?),0) AS owned FROM capture_readers')
