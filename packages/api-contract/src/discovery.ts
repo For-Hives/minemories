@@ -71,7 +71,9 @@ export const discoveryContract = {
 						memoryId: id,
 						state: publicationState,
 						reason: z.string().nullable(),
-						reports: z.array(z.object({ reason: z.string(), createdAt: z.string().datetime() })),
+						reports: z.array(
+							z.object({ id: z.number().int().positive(), reason: z.string(), createdAt: z.string().datetime() })
+						),
 					})
 				),
 				hasMore: z.boolean(),

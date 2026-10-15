@@ -79,3 +79,12 @@ séparé par monde/dimension/joueur ; consulter la liste ne change ni sélection
 capture/envoi. Les tests couvrent notamment la cadence réelle des ticks, et le
 JAR est exercé en jeu sur deux séjours, pause, chunk absent, dimension, redémarrage,
 autre monde et autre joueur. Voir [le fonctionnement et les preuves](visited-zones.md).
+
+
+## Galerie publique et classement réels
+
+L’issue #69 relie `/explorer` et `/classement` à une publication volontaire,
+révocable et modérée, distincte des exemples `?demo=1`. Les votes sont uniques
+par compte et les limites persistées ; corbeille/restauration, concurrence et
+révocation avant réponse du flux sont testées. Le propriétaire et les modérateurs
+disposent de leurs contrôles ; voir [les contrats, limites et preuves](public-discovery.md).

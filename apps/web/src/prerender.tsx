@@ -49,10 +49,12 @@ export function renderPage(path: string) {
 		case '/explorer':
 			content = <ExplorerPage />
 			break
+		case '/classement':
+			content = <ExplorerPage ranking />
+			break
 		case '/open-source':
 		case '/nostalgie':
 		case '/partager':
-		case '/classement':
 			content = <MarketingPage />
 			break
 		case '/pricing':

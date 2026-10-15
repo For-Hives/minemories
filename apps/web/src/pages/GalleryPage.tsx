@@ -11,6 +11,7 @@ import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
+import { PublicationPanel } from './PublicDiscovery'
 
 type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
@@ -779,6 +780,7 @@ function SnapshotCard({
 	const [draft, setDraft] = useState(memory.name)
 	const [saving, setSaving] = useState(false)
 	const [shareOpen, setShareOpen] = useState(false)
+	const [publicationOpen, setPublicationOpen] = useState(false)
 
 	function startEditing() {
 		setDraft(memory.name)
@@ -906,6 +908,15 @@ function SnapshotCard({
 						🗑
 					</button>
 				</div>
+				<button
+					type="button"
+					aria-expanded={publicationOpen}
+					onClick={() => setPublicationOpen(open => !open)}
+					className="mt-3 text-xs underline"
+				>
+					{t('Public publication')}
+				</button>
+				{publicationOpen && <PublicationPanel memory={memory} />}
 				{shareOpen && <SharePanel memoryId={memory.id} />}
 			</div>
 		</article>

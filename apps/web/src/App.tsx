@@ -12,6 +12,9 @@ const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })))
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
+const ModerationPage = lazy(() =>
+	import('./pages/PublicDiscovery').then(module => ({ default: module.ModerationPage }))
+)
 const InfoPages = () => import('./pages/InfoPages')
 const ConceptPage = lazy(() => InfoPages().then(module => ({ default: module.ConceptPage })))
 const HowItWorksPage = lazy(() => InfoPages().then(module => ({ default: module.HowItWorksPage })))
@@ -106,7 +109,15 @@ export function App() {
 									</Page>
 								}
 							/>
-							{['/open-source', '/nostalgie', '/partager', '/classement'].map(path => (
+							<Route
+								path="/classement"
+								element={
+									<Page>
+										<ExplorerPage ranking />
+									</Page>
+								}
+							/>
+							{['/open-source', '/nostalgie', '/partager'].map(path => (
 								<Route
 									key={path}
 									path={path}
@@ -223,6 +234,14 @@ export function App() {
 							/>
 							<Route element={<RequireSession />}>
 								<Route
+									path="/moderation"
+									element={
+										<Page>
+											<ModerationPage />
+										</Page>
+									}
+								/>
+								<Route
 									path="/gallery"
 									element={
 										<Page kind="gallery">
@@ -236,6 +255,14 @@ export function App() {
 								element={
 									<Page kind="viewer">
 										<ViewerPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/public/:id"
+								element={
+									<Page kind="viewer">
+										<SharePage isPublic />
 									</Page>
 								}
 							/>

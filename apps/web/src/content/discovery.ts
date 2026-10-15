@@ -81,8 +81,8 @@ export const discoveryPages = [
 		label: { fr: 'Des constructions à découvrir', en: 'Builds to discover' },
 		title: { fr: 'Les petits mondes méritent aussi leur moment.', en: 'Small worlds deserve their moment too.' },
 		lead: {
-			fr: 'Une cabane peut raconter autant qu’une mégabase. Imagine un classement où l’on découvre des lieux, leurs détails et les histoires qu’ils gardent.',
-			en: 'A cabin can tell as much as a megabase. Imagine a ranking where you discover places, their details and the stories they keep.',
+			fr: 'Une cabane peut raconter autant qu’une mégabase. Découvre les souvenirs publiés volontairement et les coups de cœur des visiteurs.',
+			en: 'A cabin can tell as much as a megabase. Discover voluntarily published memories and the places visitors love.',
 		},
 		accent: 'lilac',
 		points: [
@@ -91,12 +91,12 @@ export const discoveryPages = [
 			{ fr: 'Tester le classement', en: 'Try the ranking' },
 		],
 		story: {
-			fr: 'Essaie le classement de démonstration : recherche un lieu et donne-lui un coup de cœur. Les votes et favoris restent sur cet appareil. La publication volontaire, les votes partagés et la modération seront reliés à l’API avant ouverture.',
-			en: 'Try the demo ranking: search for a place and give it a heart. Votes and favorites stay on this device. Opt-in publishing, shared votes and moderation will connect to the API before opening.',
+			fr: 'Le classement présente les souvenirs approuvés par la modération. Connecte-toi pour donner ou retirer ton coup de cœur. Une démonstration distincte reste disponible pour essayer les favoris et les votes locaux.',
+			en: 'The ranking shows memories approved by moderation. Sign in to add or remove your vote. A separate demo remains available to try favorites and local votes.',
 		},
 		note: {
-			fr: 'Les scores ci-dessous sont des exemples, pas une activité réelle de la communauté. Chaque vote local peut être retiré.',
-			en: 'The scores below are examples, not real community activity. Each local vote can be removed.',
+			fr: 'Les souvenirs restent privés sans soumission explicite ; la publication et les votes peuvent être retirés.',
+			en: 'Memories stay private without an explicit submission; publications and votes can be withdrawn.',
 		},
 	},
 ] satisfies Array<{
