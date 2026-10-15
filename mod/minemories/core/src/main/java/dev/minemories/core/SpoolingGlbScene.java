@@ -160,6 +160,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (part.indexCount > Integer.MAX_VALUE - 6)
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
+      part.image.usage.include(uv);
       encode(part, xyz, uv);
       append(part.positions, quad.array(), 0, 48);
       append(part.normals, quad.array(), 48, 48);
@@ -204,6 +205,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (!sealed) {
         sealed = true;
         closeStreams();
+        optimizeAtlases();
         layout = layout();
         json = create("scene-json");
         try (JsonSink sink = new JsonSink()) {
@@ -265,9 +267,36 @@ public final class SpoolingGlbScene implements AutoCloseable {
     reserve(png.length);
     StoredFile file = create("image-" + images.size());
     append(file, png, 0, png.length);
-    Image image = new Image(key, file, images.size(), digest(png));
+    Image image = new Image(key, file, images.size(), digest(png), new AtlasTexture.Usage(key));
     images.put(key, image);
     return image;
+  }
+
+  private void optimizeAtlases() throws IOException {
+    for (Image image : images.values()) {
+      interrupted();
+      if (!image.usage.candidate() || image.file.bytes > AtlasTexture.MAX_BYTES) continue;
+      verify(image.file, true);
+      byte[] original;
+      try (var input = Files.newInputStream(image.file.path, LinkOption.NOFOLLOW_LINKS)) {
+        original = input.readNBytes((int) image.file.bytes + 1);
+      }
+      if (original.length != image.file.bytes)
+        throw new IOException("GLB texture changed during optimization");
+      byte[] optimized = image.usage.optimize(original);
+      if (optimized == original) continue;
+      verify(image.file, true);
+      try (var out =
+          Files.newOutputStream(
+              image.file.path,
+              StandardOpenOption.WRITE,
+              StandardOpenOption.TRUNCATE_EXISTING,
+              LinkOption.NOFOLLOW_LINKS)) {
+        out.write(optimized);
+      }
+      spoolBytes -= image.file.bytes - optimized.length;
+      image.file.bytes = optimized.length;
+    }
   }
 
   private static String digest(byte[] bytes) {
@@ -740,7 +769,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
     }
   }
 
-  private record Image(String name, StoredFile file, int index, String digest) {}
+  private record Image(
+      String name, StoredFile file, int index, String digest, AtlasTexture.Usage usage) {}
 
   private record Light(float x, float y, float z, int color, int level) {}
 
