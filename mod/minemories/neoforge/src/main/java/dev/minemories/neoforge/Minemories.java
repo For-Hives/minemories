@@ -422,8 +422,7 @@ public class Minemories {
     }
   }
 
-  private static void trackExploration(Minecraft mc, long now) {
-    if (mc.level == null || mc.player == null) return;
+  private static String currentWorldIdentity(Minecraft mc) {
     String world;
     if (mc.getSingleplayerServer() != null) {
       world =
@@ -434,8 +433,35 @@ public class Minemories {
                   .normalize();
     } else if (mc.getCurrentServer() != null) {
       world = "server:" + mc.getCurrentServer().ip;
-    } else {
-      // Transient connections without a server identity must never reuse another world's history.
+    } else return null;
+    return world;
+  }
+
+  static void identifyCapture(
+      com.google.gson.JsonObject metadata, CaptureBounds bounds, boolean selection) {
+    Minecraft mc = Minecraft.getInstance();
+    String world = currentWorldIdentity(mc);
+    if (world == null || mc.level == null || mc.player == null) return;
+    String seed =
+        metadata.has("seed") && !metadata.get("seed").isJsonNull()
+            ? metadata.get("seed").getAsString()
+            : null;
+    String id =
+        CaptureIdentity.world(
+            world,
+            seed,
+            mc.level.dimension().location().toString(),
+            mc.player.getUUID().toString());
+    metadata.addProperty("worldId", id);
+    metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));
+    metadata.addProperty("captureMode", selection ? "selection" : "around");
+    CaptureIdentity.geometry(metadata, bounds);
+  }
+
+  private static void trackExploration(Minecraft mc, long now) {
+    if (mc.level == null || mc.player == null) return;
+    String world = currentWorldIdentity(mc);
+    if (world == null) {
       saveExploration();
       EXPLORATION.path = null;
       EXPLORATION.depth = new ExplorationDepth();
@@ -740,7 +766,7 @@ public class Minemories {
             Math.max(selectionFirst.getX(), selectionSecond.getX()),
             Math.max(selectionFirst.getY(), selectionSecond.getY()),
             Math.max(selectionFirst.getZ(), selectionSecond.getZ()));
-    return exportBox(min, max, diagnostics);
+    return exportBox(min, max, diagnostics, true);
   }
 
   static int export(int radius) {
@@ -792,11 +818,12 @@ public class Minemories {
     return exportBox(
         new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
         new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()),
-        diagnostics);
+        diagnostics,
+        false);
   }
 
   private static int exportBox(
-      BlockPos min, BlockPos max, DiagnosticsClient.Operation diagnostics) {
+      BlockPos min, BlockPos max, DiagnosticsClient.Operation diagnostics, boolean selection) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return 0;
     long sx = (long) max.getX() - min.getX() + 1,
@@ -813,6 +840,10 @@ public class Minemories {
             (min.getY() + max.getY()) / 2,
             (min.getZ() + max.getZ()) / 2);
     com.google.gson.JsonObject metadata = currentCaptureMetadata(center);
+    identifyCapture(
+        metadata,
+        new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+        selection);
     CaptureSink scene = new CaptureSink.Legacy();
     SpriteAssets sprites = new SpriteAssets(null);
     RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);
