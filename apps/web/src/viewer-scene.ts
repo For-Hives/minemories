@@ -5,6 +5,48 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 
+export interface ViewerLoadOptions {
+	signal?: AbortSignal
+	originDelta?: { x: number; y: number; z: number }
+	preserveView?: boolean
+}
+
+/** Imported assets belong to one capture; release shared resources exactly once. */
+export function disposeImportedObject(root: THREE.Object3D): void {
+	const geometries = new Set<THREE.BufferGeometry>()
+	const materials = new Set<THREE.Material>()
+	const textures = new Set<THREE.Texture>()
+	const skeletons = new Set<THREE.Skeleton>()
+	root.traverse(object => {
+		if (!(object instanceof THREE.Mesh)) return
+		geometries.add(object.geometry)
+		const meshMaterials = Array.isArray(object.material) ? object.material : [object.material]
+		for (const material of meshMaterials) materials.add(material)
+		if (object instanceof THREE.SkinnedMesh) skeletons.add(object.skeleton)
+	})
+	for (const material of materials) {
+		for (const value of Object.values(material)) {
+			if (value instanceof THREE.Texture) textures.add(value)
+		}
+		material.dispose()
+	}
+	for (const skeleton of skeletons) {
+		if (skeleton.boneTexture) textures.add(skeleton.boneTexture)
+		// The texture is disposed below with all other shared textures.
+		skeleton.boneTexture = null
+		skeleton.dispose()
+	}
+	const images = new Set<ImageBitmap>()
+	for (const texture of textures) {
+		texture.dispose()
+		// GLTFLoader uses ImageBitmap when available; GPU disposal does not release its CPU pixels.
+		const image: unknown = texture.source.data
+		if (typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap) images.add(image)
+	}
+	for (const image of images) image.close()
+	for (const geometry of geometries) geometry.dispose()
+}
+
 export interface ViewerCycle {
 	minutes: number
 	glyph: string
@@ -64,6 +106,7 @@ export class ViewerScene {
 	private previousFrame = 0
 	private disposed = false
 	private preparingWorld = false
+	private loadingFile = false
 
 	constructor(canvas: HTMLCanvasElement, events: ViewerSceneEvents) {
 		this.canvas = canvas
@@ -195,41 +238,64 @@ export class ViewerScene {
 		this.updateDayCycle()
 	}
 
-	async loadFile(file: File): Promise<void> {
+	async loadFile(file: File, options: ViewerLoadOptions = {}): Promise<void> {
 		if (!isGlbFileName(file.name)) throw new Error('Choose a .glb file')
+		if (this.loadingFile) throw new Error('A model is already loading')
+		this.loadingFile = true
+		let imported: THREE.Group | undefined
+		let attached = false
 		this.events.onLoading('Lecture du fichier…')
 		try {
+			this.ensureLoadActive(options.signal)
 			const buffer = await file.arrayBuffer()
+			this.ensureLoadActive(options.signal)
 			this.events.onLoading('Chargement du modèle et des textures…')
 			const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
-			if (this.disposed) return
+			imported = gltf.scene
+			this.ensureLoadActive(options.signal)
+			const delta = options.originDelta
+			if (delta) imported.position.add(new THREE.Vector3(delta.x, delta.y, delta.z))
 			this.preparingWorld = true
-			for (const child of [...this.modelRoot.children]) {
-				this.modelRoot.remove(child)
-				child.traverse(object => {
-					const mesh = object as THREE.Mesh
-					if (mesh.geometry) mesh.geometry.dispose()
-					if (Array.isArray(mesh.material)) {
-						for (const material of mesh.material) material.dispose()
-					} else if (mesh.material) mesh.material.dispose()
-				})
-			}
-			this.modelRoot.add(gltf.scene)
-			this.prepareWorldLighting(gltf.scene)
-			this.frameModel(gltf.scene)
+			// Keep the previous capture until compilation succeeds. RAF is paused during this transaction.
+			const previous = [...this.modelRoot.children]
+			for (const child of previous) child.visible = false
+			this.modelRoot.add(imported)
+			attached = true
+			this.prepareWorldLighting(imported)
 			this.events.onLoading('Préparation de l’affichage 3D…')
 			await this.renderer.compileAsync(this.scene, this.camera)
-			if (this.disposed) return
-			this.renderer.render(this.scene, this.camera)
+			this.ensureLoadActive(options.signal)
+			this.frameModel(imported, options.preserveView)
+			this.renderScene()
+			for (const child of previous) {
+				child.removeFromParent()
+				disposeImportedObject(child)
+			}
+			imported = undefined
 			this.events.onFileInfo(file.name, file.size)
 			this.events.onEmptyChange(false)
-			this.events.onLoading(null)
 		} catch (error) {
-			this.events.onLoading(null)
-			if (error instanceof UnsupportedGlbError) throw error
+			this.rollbackImport(imported, attached)
+			if (error instanceof UnsupportedGlbError || (error instanceof Error && error.name === 'AbortError')) throw error
 			throw new Error('Could not read this GLB')
 		} finally {
+			this.events.onLoading(null)
 			this.preparingWorld = false
+			this.loadingFile = false
+		}
+	}
+
+	private ensureLoadActive(signal?: AbortSignal): void {
+		if (this.disposed || signal?.aborted) throw new DOMException('Loading cancelled', 'AbortError')
+	}
+
+	private rollbackImport(imported: THREE.Group | undefined, attached: boolean): void {
+		if (imported) {
+			imported.removeFromParent()
+			if (!(attached && this.disposed)) disposeImportedObject(imported)
+		}
+		if (attached) {
+			for (const child of this.modelRoot.children) child.visible = true
 		}
 	}
 
@@ -247,7 +313,7 @@ export class ViewerScene {
 	snapshot(targetWidth = 400, targetHeight = 250): string | null {
 		if (this.modelRoot.children.length === 0) return null
 		this.controls.update()
-		this.renderer.render(this.scene, this.camera)
+		this.renderScene()
 		const sourceWidth = this.canvas.width
 		const sourceHeight = this.canvas.height
 		if (sourceWidth < 2 || sourceHeight < 2) return null
@@ -284,10 +350,8 @@ export class ViewerScene {
 		this.resizeObserver.disconnect()
 		this.controls.dispose()
 		this.clouds.dispose()
-		this.scene.traverse(object => {
-			const mesh = object as THREE.Mesh
-			if (mesh.geometry) mesh.geometry.dispose()
-		})
+		this.clouds.removeFromParent()
+		disposeImportedObject(this.scene)
 		this.renderer.dispose()
 	}
 
@@ -296,10 +360,15 @@ export class ViewerScene {
 		const deltaSeconds = this.previousFrame === 0 ? 0 : Math.min((timestamp - this.previousFrame) / 1000, 0.1)
 		this.previousFrame = timestamp
 
-		this.sky.position.copy(this.camera.position)
-		this.sky.scale.setScalar(Math.max(this.camera.far * 0.88, this.camera.near * 2))
 		this.clouds.update(this.camera.position, deltaSeconds)
 		this.controls.update()
+		this.renderScene()
+	}
+
+	private renderScene(): void {
+		// Camera framing can change before the next RAF, including thumbnail generation.
+		this.sky.position.copy(this.camera.position)
+		this.sky.scale.setScalar(Math.max(this.camera.far * 0.88, this.camera.near * 2))
 		this.renderer.render(this.scene, this.camera)
 	}
 
@@ -311,18 +380,19 @@ export class ViewerScene {
 		this.camera.updateProjectionMatrix()
 	}
 
-	private frameModel(root: THREE.Object3D): void {
+	private frameModel(root: THREE.Object3D, preserveView = false): void {
 		const bounds = new THREE.Box3().setFromObject(root)
 		if (bounds.isEmpty()) return
 		const center = bounds.getCenter(new THREE.Vector3())
 		const size = bounds.getSize(new THREE.Vector3())
 		const largest = Math.max(size.x, size.y, size.z, 1)
-		this.controls.target.copy(center)
+		if (!preserveView) this.controls.target.copy(center)
 		this.shadowCenter.copy(center)
 		this.shadowExtent = Math.max(8, size.length() * 0.65)
 		this.clouds.setBaseHeight(bounds.max.y + 24)
 		this.updateSunShadow(true)
-		this.camera.position.copy(center).add(new THREE.Vector3(largest * 1.25, largest * 0.9, largest * 1.25))
+		if (!preserveView)
+			this.camera.position.copy(center).add(new THREE.Vector3(largest * 1.25, largest * 0.9, largest * 1.25))
 		this.camera.near = Math.max(0.01, largest / 1000)
 		this.camera.far = Math.max(4000, largest * 30)
 		this.camera.updateProjectionMatrix()
@@ -433,8 +503,8 @@ export class ViewerScene {
 				Math.min(Math.max(imported.distance, 1), 10),
 				2
 			)
-			light.position.copy(imported.position)
-			this.modelRoot.add(light)
+			light.position.copy(root.worldToLocal(imported.position.clone()))
+			root.add(light)
 		}
 	}
 
