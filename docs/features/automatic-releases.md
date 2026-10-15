@@ -65,7 +65,7 @@ Le nom `minemories-neoforge-mc1.21.1.jar` et le format des tags restent compatib
 - **Nouveau merge pendant un build** : un commit dépassé est ignoré avant publication ; un push concurrent est refusé sans force. Le run du nouveau main prendra les changements en compte.
 - **Artefacts expirés ou suppression manuelle d’un tag/asset** : ne pas réécrire un tag déjà distribué. Inspecter le run et publier une nouvelle version depuis un main vérifié.
 
-Le workflow peut être lancé manuellement sur `main` avec `dry_run=true` (défaut). Il calcule et construit la matrice sans commit, tag ni publication. Il exige tout de même une CI verte sur cette source. Un main qui pointe déjà sur un commit de version n’a rien à publier.
+Le workflow peut être lancé manuellement sur `main` avec `dry_run=true` (défaut). Il calcule et construit la matrice sans commit, tag ni publication. Sa file de concurrence est séparée pour ne pas remplacer une release automatique en attente. Il exige tout de même une CI verte sur cette source. Un main qui pointe déjà sur un commit de version n’a rien à publier.
 
 ## Catalogues
 
