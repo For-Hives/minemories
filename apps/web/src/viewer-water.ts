@@ -6,11 +6,11 @@ const waterMaterialName = /(?:minecraft:water\b|block\/water_(?:still|flow))/
 /** Recognize exported Minecraft water, never infer glass/water from transparency alone. */
 export function prepareWater(material: THREE.MeshStandardMaterial, time: THREE.IUniform<number>): boolean {
 	if (!waterMaterialName.test(material.name)) return false
+	material.roughness = 0.12
+	material.envMapIntensity = 1.15
 	if (preparedWater.has(material)) return true
 	preparedWater.add(material)
 	const cacheKey = `${material.customProgramCacheKey()}:minemories-water-v1`
-	material.roughness = 0.12
-	material.envMapIntensity = 1.15
 	const previousCompile = material.onBeforeCompile
 	material.onBeforeCompile = (shader, renderer) => {
 		previousCompile.call(material, shader, renderer)
