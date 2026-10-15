@@ -96,6 +96,15 @@ function fixture(key = sourceKey, bytes: Buffer = Buffer.from([0, 1, 128, 255]))
 			state.copyMode === 'versioned' ? { 'x-amz-version-id': 'unexpected-version' } : {}
 		)
 	}
+	function getObject(path: string) {
+		const object = objects.get(path)
+		return object ? new Response(Uint8Array.from(object.bytes)) : new Response(null, { status: 404 })
+	}
+	function versioning() {
+		return xml(
+			`<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${state.versioning ? `<Status>${state.versioning}</Status>` : ''}</VersioningConfiguration>`
+		)
+	}
 	const server = Bun.serve({
 		port: 0,
 		hostname: '127.0.0.1',
@@ -103,12 +112,14 @@ function fixture(key = sourceKey, bytes: Buffer = Buffer.from([0, 1, 128, 255]))
 			const url = new URL(request.url),
 				path = decodeURIComponent(url.pathname.slice('/private/'.length))
 			requests.push({ method: request.method, path, headers: request.headers, body: await request.text() })
-			if (url.searchParams.has('versioning'))
-				return xml(
-					`<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">${state.versioning ? `<Status>${state.versioning}</Status>` : ''}</VersioningConfiguration>`
-				)
+			if (url.searchParams.has('versioning')) return versioning()
 			if (request.method === 'POST' && url.searchParams.has('restore')) return restore()
 			if (request.method === 'HEAD') return head(path)
+			if (request.method === 'DELETE') {
+				objects.delete(path)
+				return new Response(null, { status: 204 })
+			}
+			if (request.method === 'GET') return getObject(path)
 			if (request.method === 'PUT') return copyRequest(request, path)
 			return xml('<Error><Code>UnexpectedRequest</Code></Error>', 400)
 		},
@@ -137,6 +148,7 @@ function fixture(key = sourceKey, bytes: Buffer = Buffer.from([0, 1, 128, 255]))
 		client,
 		target,
 		copy,
+		url: server.url,
 		provider: () => new S3ColdStorageProvider(client, target, () => NOW),
 		close: () => {
 			client.destroy()
@@ -381,3 +393,110 @@ test.each(['GLACIER', 'DEEP_ARCHIVE', 'STANDARD_IA'] as const)(
 		}
 	}
 )
+
+test('configured API restores an anonymous shared capture through real RPC, scheduled SDK copies and an authorized GLB stream', async () => {
+	const { mkdtemp, rm } = await import('node:fs/promises'),
+		{ tmpdir } = await import('node:os'),
+		{ join } = await import('node:path')
+	const { createORPCClient } = await import('@orpc/client'),
+		{ RPCLink } = await import('@orpc/client/fetch')
+	const { minimalGlb } = await import('./test-support/glb-fixture')
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-cold-api-')),
+		bytes = minimalGlb(),
+		f = fixture(sourceKey, bytes)
+	process.env.DATABASE_PATH = join(directory, 'db.sqlite')
+	process.env.STORAGE_DRIVER = 's3'
+	process.env.S3_ENDPOINT = 'https://cold-fixture.invalid'
+	process.env.S3_BUCKET = 'private'
+	process.env.S3_REGION = 'auto'
+	process.env.S3_ACCESS_KEY = 'fixture-access'
+	process.env.S3_SECRET_KEY = 'fixture-secret'
+	process.env.COLD_STORAGE_PROVIDER = 'r2'
+	process.env.COLD_STORAGE_CLASS = 'STANDARD_IA'
+	process.env.COLD_STORAGE_INACTIVE_DAYS = '90'
+	process.env.BETTER_AUTH_SECRET = 'cold-api-test-auth-secret-at-least-32-characters'
+	process.env.PAIRING_PEPPER = 'cold-api-test-pairing-pepper-at-least-32-characters'
+	const { s3Target } = await import('./storage-s3')
+	const client = s3Target().client
+	// Only this isolated test redirects the SDK transport. Production keeps the pinned HTTPS destination.
+	client.middlewareStack.add(
+		next => async args => {
+			const request = args.request as { protocol: string; hostname: string; port: number }
+			request.protocol = 'http:'
+			request.hostname = '127.0.0.1'
+			request.port = Number(f.url.port)
+			return next(args)
+		},
+		{ step: 'build', name: 'coldApiLocalTransport' }
+	)
+	const { app, coldStorageMaintenance, timelapseMaintenance } = await import('./index')
+	const { database } = await import('./database')
+	try {
+		if (!coldStorageMaintenance) throw new Error('Configured runtime was not enabled')
+		const pairing = await import('./pairing')
+		const { code } = pairing.createPairingCode('owner')
+		const paired = pairing.exchangePairingCode(code, 'Fixture')
+		if (!paired) throw new Error('Missing device')
+		const device = pairing.getDeviceFromToken(paired.deviceToken)
+		if (!device) throw new Error('Missing device token')
+		const id = '11111111-1111-4111-8111-111111111111'
+		pairing.addMemory({
+			id,
+			userId: 'owner',
+			deviceId: device.id,
+			name: 'Cold capture',
+			objectKey: sourceKey,
+			size: bytes.length,
+		})
+		database.query('UPDATE memories SET created_at=1 WHERE id=?').run(id)
+		const shared = pairing.createShareLink('owner', id)
+		if (!shared) throw new Error('Missing share')
+		const rpc = createORPCClient<
+			import('@orpc/contract').ContractRouterClient<typeof import('@minemories/api-contract').apiContract>
+		>(
+			new RPCLink({
+				url: 'http://localhost:3001/rpc',
+				fetch: async (request, init) => app.fetch(new Request(request, init)),
+			})
+		)
+		const access = { kind: 'shared' as const, token: shared.token }
+		await coldStorageMaintenance.maintain()
+		expect(await rpc.captureStorage.status(access)).toMatchObject({
+			state: 'cold',
+			restorationAvailable: true,
+			readyObjects: 0,
+			totalObjects: 1,
+			retryAfterSeconds: 5,
+		})
+		const waiting = await app.request(`/api/shared/${shared.token}/file`)
+		expect(waiting.status).toBe(202)
+		expect(waiting.headers.get('cache-control')).toBe('private, no-store')
+		expect(await waiting.json()).toMatchObject({ availability: { state: 'cold', restorationAvailable: true } })
+		expect(database.query('SELECT last_opened_at FROM memories').get()).toEqual({ last_opened_at: null })
+		expect(await rpc.captureStorage.restore(access)).toMatchObject({ state: 'restoring' })
+		expect(await rpc.captureStorage.restore(access)).toMatchObject({ state: 'restoring' })
+		await coldStorageMaintenance.maintain()
+		expect(await rpc.captureStorage.status(access)).toMatchObject({
+			state: 'ready',
+			readyObjects: 1,
+			retryAfterSeconds: null,
+		})
+		const ready = await app.request(`/api/shared/${shared.token}/file`)
+		expect(ready.status).toBe(200)
+		expect(Buffer.from(await ready.arrayBuffer()).equals(bytes)).toBe(true)
+		expect(database.query('SELECT last_opened_at FROM memories').get()).toEqual({ last_opened_at: expect.any(Number) })
+		pairing.revokeShareLink('owner', id)
+		await expect(rpc.captureStorage.restore(access)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+		await pairing.deleteMemory('owner', id)
+		await timelapseMaintenance.maintain()
+		await coldStorageMaintenance.maintain()
+		expect(f.objects.size).toBe(0)
+		expect(database.query('SELECT * FROM object_tier_locations').all()).toEqual([])
+	} finally {
+		await Promise.all([coldStorageMaintenance?.stop(), timelapseMaintenance.stop()])
+		database.close()
+		client.destroy()
+		f.close()
+		await rm(directory, { recursive: true, force: true })
+	}
+})

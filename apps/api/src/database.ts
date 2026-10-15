@@ -4,9 +4,10 @@ import { dirname, resolve } from 'node:path'
 import './configuration'
 import { migrateCaptureAccess } from './capture-access'
 import { migrateCaptureReaders } from './capture-readers'
-import { verifyColdStorageTarget } from './cold-storage-target'
+import { boundColdStorageProvider, verifyColdStorageTarget } from './cold-storage-target'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
+import { configureS3DeletionProvider } from './storage-s3'
 import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTimelapseIndex } from './timelapse-index'
 import { migrateTrashRetention } from './trash-retention'
@@ -88,4 +89,5 @@ migrateDiscovery(database)
 migrateTimelapse(database)
 
 migrateTimelapseIndex(database)
-verifyColdStorageTarget(database, process.env)
+export const coldStorageConfiguration = verifyColdStorageTarget(database, process.env)
+configureS3DeletionProvider(boundColdStorageProvider(database))

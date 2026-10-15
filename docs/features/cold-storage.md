@@ -1,8 +1,9 @@
 # Archivage des captures inactives
 
 Suivi de l’issue [#85](https://github.com/For-Hives/minemories/issues/85).
-Le suivi des ouvertures et la prévisualisation des candidats sont implémentés ;
-aucune transition vers une classe froide n’est encore activée.
+Le suivi des ouvertures, la prévisualisation, les transitions et les API sont
+implémentés avec un worker optionnel. L’archivage reste désactivé par défaut ;
+le viewer et la validation du fournisseur réel restent à terminer.
 
 ## Dernière ouverture réelle
 
@@ -88,11 +89,10 @@ immédiat avant que le viewer récupère le fichier. Cette fenêtre ne compte pa
 comme une ouverture réelle et ne modifie pas `last_opened_at`. Une suppression
 confirmée retire les métadonnées de tier devenues inutiles avec sa tâche durable.
 
-Ces garanties portent sur les réservations SQLite. Un worker de stockage n’est
-pas encore activé : son adaptateur devra confirmer/réconcilier les résultats
-distants, y compris les requêtes dont la réponse a été perdue, avant de publier
+Les réservations SQLite sont reliées au worker optionnel. Son adaptateur confirme
+les résultats distants, y compris après une réponse perdue, avant de publier
 un état lisible. Les leases SQLite ne peuvent pas annuler une copie déjà reçue
-par le provider. Les API d’état/restauration et leur affichage restent à relier.
+par le provider. Les API d’état/restauration sont reliées au worker ; leur affichage reste à intégrer au viewer.
 
 ## Générations physiques et nettoyage
 
@@ -123,8 +123,8 @@ retiré de cette file.
 
 Le nettoyeur traite au plus une génération par passage, conserve les échecs et
 leurs délais de reprise dans SQLite, puis attend le transfert en cours lors de
-son arrêt. Son ordonnanceur sera relié au worker du provider ; aucun archivage
-ni nettoyage physique de tier n’est activé automatiquement à cette étape.
+son arrêt. Son ordonnanceur est relié au worker du provider ; aucun archivage
+ni nettoyage physique de tier n’est activé sans configuration explicite.
 
 Les tests utilisent de vrais fichiers : archivage/restauration avec changement de
 clé, suppression de l’original, lecture via la nouvelle génération, reprise après
@@ -154,19 +154,22 @@ Les trois routes GLB répondent `202` avec `memory_restoration_required` et
 `Cache-Control: private, no-store`. Consulter cet état ou recevoir ce JSON ne
 compte pas comme une ouverture du GLB. Les tests HTTP/oRPC couvrent propriétaires,
 partages sans compte, publications approuvées, révocation, fichiers originaux et
-captures dédupliquées. L’assemblage API/provider n’étant pas encore branché,
-`restorationAvailable` vaut actuellement `false` dans l’API, une demande autorisée
-renvoie `503` et aucun délai de polling n’est annoncé. Le service transactionnel
-de demande/progression est testé avec la restauration activée sur des fixtures.
+captures dédupliquées. Lorsque le fournisseur est configuré, `restorationAvailable`
+vaut `true` et une demande autorisée ajoute le travail durable ; le polling proposé
+est de cinq secondes tant que la capture n’est pas prête. Sinon, cette valeur
+reste `false`, une demande autorisée renvoie `503` et aucun polling n’est annoncé.
+Un test de l’API configurée parcourt aussi le vrai RPC anonyme d’un lien partagé,
+les copies du SDK sur HTTP local, le téléchargement GLB exact et la suppression
+finale. Seul son transport de test est redirigé ; aucun compte cloud n’est utilisé.
 
 ### Configuration et traitement distant
 
 La configuration reste désactivée par défaut (`COLD_STORAGE_PROVIDER=off`). Une
-future utilisation exige un choix explicite `aws` ou `r2`, `COLD_STORAGE_CLASS`
+activation exige un choix explicite `aws` ou `r2`, `COLD_STORAGE_CLASS`
 (`GLACIER`, `DEEP_ARCHIVE` ou `STANDARD_IA` ; R2 accepte uniquement cette dernière),
 et un endpoint HTTPS, un bucket et une région explicitement renseignés. Cette
-configuration ne lance encore aucune copie. Garage et le stockage local ne
-reçoivent pas automatiquement une politique froide.
+configuration active un passage au démarrage de l’API puis chaque minute. Garage
+et le stockage local ne reçoivent pas automatiquement une politique froide.
 
 À la première configuration, SQLite lie le catalogue au driver, à l’URL complète,
 au bucket, à la région et à la politique choisie. Un catalogue préexistant sans
@@ -186,8 +189,12 @@ de réessai durable. Une copie dont la réponse est perdue reste isolée dans sa
 génération et son nettoyage attend le délai de grâce des orphelins.
 Les tests couvrent ces cas avec de vrais fichiers, ainsi que la perte du bail et
 les acquittements périmés. L’adaptateur `S3ColdStorageProvider` est maintenant testé
-avec le vrai SDK contre un serveur HTTP local. Il ne s’exécute pas au démarrage ;
-aucun ordonnanceur n’est encore branché et cette étape n’active pas l’archivage.
+avec le vrai SDK contre un serveur HTTP local. `ColdStorageMaintenance` relie la
+sélection, les copies et le nettoyage physique : un objet au plus est traité par
+passage et les travaux en attente passent avant un nouvel archivage. Si une
+ancienne génération attend encore sa suppression, aucun nouvel archivage n’est
+sélectionné ; les restaurations explicites continuent. L’arrêt annule le worker
+et attend aussi le nettoyage en cours avant de fermer SQLite.
 
 L’adaptateur copie côté stockage, sans télécharger le GLB dans l’API. Il contrôle
 la taille (au plus 200 MiB), le propriétaire, les clés réservées, la classe et
@@ -197,6 +204,13 @@ conservées et aucune ACL publique n’est ajoutée. Les classes hot/cold sont
 `STANDARD` et la classe explicitement choisie. Sur AWS, chaque préparation/copie
 refuse un bucket versionné ou dont le versioning a été suspendu : les suppressions
 ordinaires ne garantiraient pas l’effacement des anciennes versions privées.
+La même vérification précède chaque suppression AWS, y compris les uploads
+abandonnés et les générations retirées. La politique de suppression vient de
+l’identité persistée même après désactivation de l’archivage. Un marqueur de
+suppression ou un identifiant de version dans la réponse empêche de confirmer
+le nettoyage : la tâche persiste et une suppression de souvenir conserve son
+quota réservé jusqu’à résolution. Cela
+couvre aussi une activation concurrente du versioning entre contrôle et DELETE.
 R2 n’implémente pas `GetBucketVersioning` ; cette opération ne lui est pas envoyée.
 
 Pour Glacier/Deep Archive, `RestoreObject` demande une copie temporaire d’un jour,

@@ -1,6 +1,5 @@
 import {
 	CopyObjectCommand,
-	GetBucketVersioningCommand,
 	HeadObjectCommand,
 	type HeadObjectCommandOutput,
 	RestoreObjectCommand,
@@ -10,6 +9,7 @@ import {
 import type { ColdStorageWork } from './cold-storage-catalog'
 import type { ColdStorageTarget } from './cold-storage-target'
 import type { ColdStorageProvider } from './cold-storage-worker'
+import { assertUnversionedBucket } from './s3-deletion-policy'
 import { managedMemoryKey } from './storage-references'
 import type { TierCopy } from './tier-locations'
 
@@ -107,10 +107,7 @@ export class S3ColdStorageProvider implements ColdStorageProvider {
 		assertCopy(work, copy)
 		if (this.target.provider === 'aws') {
 			// Versioned/suspended buckets can retain private data after ordinary DELETE. Never silently opt into that.
-			const versioning = await this.client.send(new GetBucketVersioningCommand({ Bucket: this.target.bucket }), {
-				abortSignal: signal,
-			})
-			if (versioning.Status) throw new Error('Cold storage requires a bucket that has never enabled versioning.')
+			await assertUnversionedBucket(this.client, this.target.bucket, signal)
 		}
 		const source = await this.client.send(new HeadObjectCommand({ Bucket: this.target.bucket, Key: copy.sourceKey }), {
 			abortSignal: signal,

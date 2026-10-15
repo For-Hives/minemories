@@ -3,7 +3,6 @@ import {
 	AbortMultipartUploadCommand,
 	type BucketLocationConstraint,
 	CreateBucketCommand,
-	DeleteObjectCommand,
 	GetObjectCommand,
 	HeadBucketCommand,
 	ListMultipartUploadsCommand,
@@ -12,6 +11,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 import { DEV_S3_ACCESS_KEY, DEV_S3_SECRET_KEY } from './configuration'
+import { deleteS3Object } from './s3-deletion-policy'
 
 const bucket = process.env.S3_BUCKET ?? 'minemories'
 const region = process.env.S3_REGION ?? 'garage'
@@ -31,6 +31,13 @@ const client = new S3Client({
 	responseChecksumValidation: 'WHEN_REQUIRED',
 })
 let bucketReady: Promise<void> | undefined
+let deletionProvider: 'aws' | 'r2' | null = null
+
+/** Set from the bound SQLite catalog at boot, including when archiving is disabled. */
+export function configureS3DeletionProvider(provider: 'aws' | 'r2' | null): void {
+	if (deletionProvider && deletionProvider !== provider) throw new Error('Cannot change the bound S3 deletion policy.')
+	deletionProvider = provider
+}
 
 export function s3Target() {
 	return { client, bucket, endpoint }
@@ -86,7 +93,7 @@ export async function uploadS3Memory(
 }
 
 export async function removeS3Memory(objectKey: string) {
-	await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }))
+	await deleteS3Object(client, bucket, objectKey, deletionProvider)
 }
 
 export async function readS3MemoryStream(objectKey: string, signal?: AbortSignal): Promise<Readable> {

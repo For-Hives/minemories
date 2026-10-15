@@ -1,5 +1,6 @@
 import { isIP } from 'node:net'
 import { isAbsolute } from 'node:path'
+import { coldStorageInactiveDays } from './cold-storage-policy'
 import { coldStorageTarget } from './cold-storage-target'
 import { diagnosticsPolicy } from './diagnostics-policy'
 
@@ -96,7 +97,7 @@ function validateS3(environment: Environment): void {
 
 export function validateProductionConfiguration(environment: Environment): void {
 	if (environment.NODE_ENV !== 'production') return
-	coldStorageTarget(environment)
+	if (coldStorageTarget(environment)) coldStorageInactiveDays(environment.COLD_STORAGE_INACTIVE_DAYS)
 	diagnosticsPolicy(environment)
 	accountStorageBytes(environment)
 	authSecret(environment)
