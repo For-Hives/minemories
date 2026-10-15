@@ -25,7 +25,7 @@ Le quota temporaire global de staging reste indépendant.
 Les deux endpoints refusent une allocation supplémentaire qui dépasserait le
 plafond avec HTTP 413 et `{"error":"storage_quota_exceeded"}`. Atteindre
 exactement le plafond reste autorisé. Les plafonds par fichier ne changent pas :
-100 MiB legacy, 200 MiB reprenable et morceaux de 4 MiB.
+100 MiB legacy, 450 MiB reprenable et morceaux de 4 MiB.
 
 Une initialisation reprenable vérifie le budget avant création du staging, puis
 le revérifie dans une transaction SQLite `IMMEDIATE` au moment de l’inscription

@@ -76,3 +76,7 @@ Sur serveur distant, la séparation par connexion et l’identifiant de monde
 configurable sont décrits dans [Timelapse](timelapse.md). Sans identifiant explicite,
 l’historique est en mémoire (huit dimensions au plus) ; avec un identifiant, il
 est conservé entre connexions. Les historiques solo existants restent inchangés.
+
+## Marge basse de cinq blocs
+
+Les captures autour du joueur conservent désormais cinq blocs sous la plus basse position des pieds visitée dans les chunks concernés, sans descendre sous le fond de la dimension. Cette marge s’applique aussi à l’historique déjà enregistré. Les sélections explicites conservent leurs coins.

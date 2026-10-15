@@ -30,7 +30,7 @@ Ces règles suivent la structure et les ressources intégrées de la
 [spécification glTF 2.0](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html),
 avec une politique Minemories qui exige l’autonomie du fichier.
 
-Les plafonds binaires restent 100 MiB pour l’ancien upload et 200 MiB pour l’upload
+Les plafonds binaires restent 100 MiB pour l’ancien upload et 450 MiB pour l’upload
 reprenable en morceaux de 4 MiB. La validation de ce dernier lit le JSON, les
 en-têtes de textures et les fenêtres d’accessors, puis calcule le checksum en
 stream ; elle ne charge pas le BIN entier. Les fichiers refusés ne créent ni

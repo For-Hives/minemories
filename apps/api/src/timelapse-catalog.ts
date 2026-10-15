@@ -35,6 +35,7 @@ export interface FrameManifest {
 
 export function migrateTimelapse(database: Database) {
 	migrateObjectDeletionClaims(database)
+	migrateCaptureLimits(database)
 	database.exec(`
 	 CREATE TABLE IF NOT EXISTS timelapse_leases (
 	  id TEXT PRIMARY KEY, slot INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK(slot = 1),
@@ -77,6 +78,26 @@ export function migrateTimelapse(database: Database) {
 	  attempts INTEGER NOT NULL DEFAULT 0,next_attempt_at INTEGER NOT NULL
 	 );
 	`)
+}
+
+/** Rebuild bounded tables together so existing databases accept the new file/ref ceiling. */
+function migrateCaptureLimits(database: Database) {
+	const schema = database.query("SELECT sql FROM sqlite_master WHERE name = 'timelapse_leases'").get() as {
+		sql: string
+	} | null
+	if (!schema || schema.sql.includes(`size <= ${MAX_UPLOAD_BYTES}`)) return
+	database
+		.transaction(() => {
+			const tables = ['timelapse_leases', 'timelapse_pending_refs', 'timelapse_refs']
+			for (const table of tables) database.exec(`CREATE TEMP TABLE capture_limit_${table} AS SELECT * FROM ${table}`)
+			database.exec('DROP TABLE timelapse_pending_refs; DROP TABLE timelapse_refs; DROP TABLE timelapse_leases;')
+			// The old lease table is gone, so recursive migration only creates the current schema.
+			migrateTimelapse(database)
+			for (const table of tables) {
+				database.exec(`INSERT INTO ${table} SELECT * FROM capture_limit_${table}; DROP TABLE capture_limit_${table}`)
+			}
+		})
+		.immediate()
 }
 
 /** SQLite publication and ownership only; the caller must acknowledge durable chunk writes before publishing. */

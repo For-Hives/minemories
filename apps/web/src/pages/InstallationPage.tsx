@@ -126,7 +126,7 @@ function InstallationHelp() {
 					Attends que le terrain soit chargé, rapproche-toi de la construction et recommence avec le rayon 16. Certains
 					blocs moddés ne sont pas reproduits fidèlement. Si l’envoi échoue, conserve capture.glb et regarde-le
 					localement. Vérifie ta connexion, génère un nouveau code si les cinq minutes sont écoulées et réessaie ; la
-					limite d’envoi du mod est 200 MiB.
+					limite d’envoi du mod est 450 MiB.
 				</p>
 			</details>
 		</section>
