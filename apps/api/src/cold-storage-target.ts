@@ -112,3 +112,24 @@ function unidentifiedObjects(database: Database): boolean {
 			.get()
 	)
 }
+
+export function boundColdStorageProvider(database: Database): ColdStorageTarget['provider'] | null {
+	const row = database.query('SELECT policy_identity FROM object_tier_target WHERE id=1').get() as {
+		policy_identity: string
+	} | null
+	if (!row) return null
+	let policy: unknown
+	try {
+		policy = JSON.parse(row.policy_identity)
+	} catch {
+		throw new Error('Invalid bound cold storage policy.')
+	}
+	if (
+		typeof policy !== 'object' ||
+		policy === null ||
+		!('provider' in policy) ||
+		(policy.provider !== 'aws' && policy.provider !== 'r2')
+	)
+		throw new Error('Invalid bound cold storage policy.')
+	return policy.provider
+}

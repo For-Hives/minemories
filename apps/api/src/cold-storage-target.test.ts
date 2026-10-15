@@ -1,6 +1,11 @@
 import { Database } from 'bun:sqlite'
 import { expect, test } from 'bun:test'
-import { assertColdStorageIdentity, coldStorageTarget, verifyColdStorageTarget } from './cold-storage-target'
+import {
+	assertColdStorageIdentity,
+	boundColdStorageProvider,
+	coldStorageTarget,
+	verifyColdStorageTarget,
+} from './cold-storage-target'
 import { migrateObjectTiers } from './object-tiers'
 
 const configured = {
@@ -50,8 +55,10 @@ test('binding survives a new SQLite connection, permits disabling and credential
 		assertColdStorageIdentity(db, {})
 		migrateObjectTiers(db)
 		expect(verifyColdStorageTarget(db, {})).toBeNull()
+		expect(boundColdStorageProvider(db)).toBeNull()
 		expect(db.query('SELECT * FROM object_tier_target').all()).toEqual([])
 		expect(verifyColdStorageTarget(db, configured)?.provider).toBe('aws')
+		expect(boundColdStorageProvider(db)).toBe('aws')
 		assertColdStorageIdentity(db, configured)
 		expect(() => assertColdStorageIdentity(db, { S3_ENDPOINT: 'private-invalid-url' })).toThrow(
 			'Invalid cold storage target URL.'
@@ -62,6 +69,7 @@ test('binding survives a new SQLite connection, permits disabling and credential
 		try {
 			expect(verifyColdStorageTarget(restarted, { ...configured, S3_ACCESS_KEY: 'rotated' })?.provider).toBe('aws')
 			expect(verifyColdStorageTarget(restarted, { ...configured, COLD_STORAGE_PROVIDER: 'off' })).toBeNull()
+			expect(boundColdStorageProvider(restarted)).toBe('aws')
 			expect(verifyColdStorageTarget(restarted, { ...configured, COLD_STORAGE_PROVIDER: undefined })).toBeNull()
 			for (const changes of [
 				{ S3_ENDPOINT: 'https://s3.eu-west-3.amazonaws.com/prefix', COLD_STORAGE_PROVIDER: 'off' },
@@ -95,6 +103,21 @@ test('existing unbound operations cannot be silently assigned to a newly configu
 		expect(() => verifyColdStorageTarget(db, configured)).toThrow('unidentified')
 		expect(() => verifyColdStorageTarget(db, {})).toThrow('unidentified')
 		expect(db.query('SELECT * FROM object_tier_target').all()).toEqual([])
+	} finally {
+		db.close()
+	}
+})
+
+test('bound deletion policy rejects malformed persisted provider identities', () => {
+	const db = new Database(':memory:')
+	try {
+		migrateObjectTiers(db)
+		verifyColdStorageTarget(db, { ...configured, COLD_STORAGE_PROVIDER: 'r2', COLD_STORAGE_CLASS: 'STANDARD_IA' })
+		expect(boundColdStorageProvider(db)).toBe('r2')
+		for (const value of ['invalid-json', 'null', '42', '{}', '{"provider":"unknown"}']) {
+			db.query('UPDATE object_tier_target SET policy_identity=?').run(value)
+			expect(() => boundColdStorageProvider(db)).toThrow('Invalid bound')
+		}
 	} finally {
 		db.close()
 	}
