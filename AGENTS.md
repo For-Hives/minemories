@@ -47,7 +47,7 @@
 
 ## Loader Claims
 
-- Only `Minecraft 1.21.1 + NeoForge 21.1.248` (CurseForge profile `mc breval`) is tested. Fabric/Quilt/Forge validation is tracked in `docs/features/loader-support.md`; intermediate native captures do not establish full support. Never describe a loader as supported until it builds and has been exercised in game with standard blocks, alpha/tinted textures, and modded content.
+- Validated Minecraft 1.21.1 targets are NeoForge 21.1.248, Fabric Loader 0.19.5 + Fabric API 0.116.17+1.21.1, and Forge 52.1.19. The Fabric JAR is also tested under Quilt 0.30.1. Exact scenarios and limits are in `docs/features/loader-support.md`; this does not imply compatibility with every mod. Never describe a loader as supported until it builds and has been exercised in game with standard blocks, alpha/tinted textures, and modded content.
 
 ## PRs
 

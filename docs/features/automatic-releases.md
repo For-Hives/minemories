@@ -46,7 +46,7 @@ La première bêta manuelle `mod-v0.1.0-beta` est conservée comme référence h
 
 ## Cibles et fichiers
 
-NeoForge 21.1.248 / Minecraft 1.21.1 / Java 21 est actuellement la seule cible activée. Fabric, Forge et Quilt ont des lignes désactivées. Leur activation exige un adaptateur Gradle compilable, une version de loader renseignée et une validation en jeu. `validatedInGame` signifie que la combinaison est prise en charge ; cela n’atteste pas que chaque nouvelle archive automatique a été exercée en jeu.
+Les cibles activées pour Minecraft 1.21.1 / Java 21 sont NeoForge 21.1.248, Fabric Loader 0.19.5 (Fabric API 0.116.17+1.21.1 requise) et Forge 52.1.19. Le JAR Fabric a aussi été exercé sous Quilt 0.30.1 ; aucune quatrième archive Quilt n’est construite. Toute nouvelle cible exige un adaptateur Gradle compilable, une version de loader renseignée et une validation en jeu. `validatedInGame` signifie que la combinaison est prise en charge ; cela n’atteste pas que chaque nouvelle archive automatique a été exercée en jeu.
 
 La release contient :
 

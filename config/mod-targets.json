@@ -19,8 +19,8 @@
 			"loaderVersion": "0.19.5",
 			"java": "21",
 			"project": "fabric",
-			"enabled": false,
-			"validatedInGame": false,
+			"enabled": true,
+			"validatedInGame": true,
 			"fabricApi": "0.116.17+1.21.1"
 		},
 		{
@@ -31,8 +31,8 @@
 			"loaderVersion": "52.1.19",
 			"java": "21",
 			"project": "forge",
-			"enabled": false,
-			"validatedInGame": false
+			"enabled": true,
+			"validatedInGame": true
 		},
 		{
 			"id": "quilt-mc1.21.1",

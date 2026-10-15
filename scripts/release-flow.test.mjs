@@ -17,7 +17,10 @@ for (const [message, expected] of [
 		const fixture = await releaseFixture(t, message)
 		const plan = await planRelease(fixture)
 		assert.equal(plan.version, expected)
-		assert.equal(plan.targets.length, 1)
+		assert.deepEqual(
+			plan.targets.map(target => target.loader),
+			['neoforge', 'fabric', 'forge']
+		)
 		assert.equal(fixture.git(['status', '--porcelain']), '')
 		assert.equal(fixture.git(['rev-parse', 'HEAD']), fixture.sourceCommit)
 		assert.equal(fixture.git(['tag', '--list', plan.tag]), '')

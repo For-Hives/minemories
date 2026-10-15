@@ -1,6 +1,6 @@
 # Minemories
 
-Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome, de l'ouvrir dans un viewer web et, après appairage explicite, de l'envoyer dans une galerie privée. Le mod est pour l'instant un POC client **Minecraft 1.21.1 / NeoForge 21.1.248**. Fabric, Quilt et Forge ne sont pas encore supportés.
+Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome, de l'ouvrir dans un viewer web et, après appairage explicite, de l'envoyer dans une galerie privée. Le mod client cible **Minecraft 1.21.1** : NeoForge 21.1.248, Fabric Loader 0.19.5 avec Fabric API 0.116.17+1.21.1, et Forge 52.1.19. Le JAR Fabric a également été testé sous Quilt 0.30.1. Voir la [matrice et les limites des validations](docs/features/loader-support.md).
 
 ## Structure
 
@@ -85,4 +85,4 @@ Le workflow manuel **Build and distribute mod** produit un artefact par défaut 
 
 ## Releases automatiques
 
-Chaque merge dans `main` lance les contrôles, puis une release bêta automatique du mod : version des packages/Gradle synchronisée, build en matrice des loaders activés, JAR et SHA-256 sur GitHub Releases, changelog généré depuis les Conventional Commits. NeoForge est la seule cible activée ; les autres loaders restent à porter. [Pipeline, versions et reprise](docs/features/automatic-releases.md).
+Chaque merge dans `main` lance les contrôles, puis une release bêta automatique du mod : version des packages/Gradle synchronisée, build en matrice des loaders activés, JAR et SHA-256 sur GitHub Releases, changelog généré depuis les Conventional Commits. NeoForge, Fabric et Forge ont des artefacts distincts ; Quilt utilise le JAR Fabric. [Pipeline, versions et reprise](docs/features/automatic-releases.md).
