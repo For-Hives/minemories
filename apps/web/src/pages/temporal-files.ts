@@ -1,5 +1,6 @@
 import type { TemporalFrame } from '@minemories/api-contract'
 import { apiBase } from '../api-client'
+import { requireCaptureReady } from '../lib/capture-file'
 
 const maximumSize = 450 * 1024 * 1024
 
@@ -9,6 +10,7 @@ export async function fetchTemporalFile(frame: TemporalFrame, signal: AbortSigna
 		credentials: 'include',
 		signal,
 	})
+	await requireCaptureReady(response)
 	if (!(response.ok && response.body)) throw new Error('Capture unavailable')
 	const reader = response.body.getReader()
 	const chunks: BlobPart[] = []

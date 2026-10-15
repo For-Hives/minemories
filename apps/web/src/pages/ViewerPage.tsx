@@ -2,12 +2,14 @@ import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
+import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { useAppContext } from '../app-context'
 import { fileInputHidden } from '../components/ui'
 import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
 import { TimelapsePage } from './TimelapsePage'
@@ -35,6 +37,8 @@ function SingleViewerPage() {
 	const [loadError, setLoadError] = useState('')
 	const [dragOver, setDragOver] = useState(false)
 	const memoryId = search.get('memory')
+	const restoration = useCaptureRestoration()
+	const restoreLoad = restoration.load
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -97,7 +101,11 @@ function SingleViewerPage() {
 		setLoading('Téléchargement du souvenir…')
 		async function loadMemory(id: string) {
 			try {
-				const capture = await fetchCapture(id, controller.signal)
+				const capture = await restoreLoad(
+					() => fetchCapture(id, controller.signal),
+					{ kind: 'owner', id },
+					controller.signal
+				)
 				if (cancelled) return
 				applyCaptureMetadata(capture.metadata)
 				const ready = await openFile(capture.file)
@@ -114,7 +122,7 @@ function SingleViewerPage() {
 			cancelled = true
 			controller.abort()
 		}
-	}, [memoryId, openFile])
+	}, [memoryId, openFile, restoreLoad])
 
 	function applyCaptureMetadata(metadata: Awaited<ReturnType<typeof fetchCapture>>['metadata']) {
 		const scene = sceneRef.current
@@ -201,16 +209,17 @@ function SingleViewerPage() {
 					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
 					aria-label={t('Interactive 3D scene')}
 				/>
-				{empty && !loading && !loadError && <ViewerEmptyState />}
+				<CaptureRestorationPanel view={restoration.view} onRestore={restoration.resume} />
+				{empty && !loading && !loadError && !restoration.view && <ViewerEmptyState />}
 				{dragOver && (
 					<div className="cinema-drop">
 						<T message={'Drop your world here'} />
 					</div>
 				)}
-				<ViewerLoadState loading={loading} error={loadError} />
+				{!restoration.view && <ViewerLoadState loading={loading} error={loadError} />}
 			</div>
 			{!empty && (
-				<ViewerStudio sceneRef={sceneRef} ready={!loading} memoryId={memoryId} minutes={minutes} fileInfo={fileInfo} />
+				<ViewerStudio sceneRef={sceneRef} ready={!(loading || restoration.view)} memoryId={memoryId} minutes={minutes} fileInfo={fileInfo} />
 			)}
 		</section>
 	)
@@ -244,11 +253,6 @@ function loadErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : 'Could not load this memory.'
 }
 
-async function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<File> {
-	const response = await fetch(`${apiBase}/api/memories/${encodeURIComponent(memoryId)}/file`, {
-		credentials: 'include',
-		signal,
-	})
-	if (!response.ok) throw new Error('Could not load this memory.')
-	return new File([await response.blob()], 'memory.glb', { type: 'model/gltf-binary' })
+function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<File> {
+	return downloadCapture(`${apiBase}/api/memories/${encodeURIComponent(memoryId)}/file`, 'memory.glb', signal)
 }

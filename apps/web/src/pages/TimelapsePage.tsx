@@ -2,6 +2,7 @@ import type { TemporalFrame, TemporalWindow } from '@minemories/api-contract'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
+import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { buttonDark, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
@@ -11,6 +12,8 @@ import { TemporalLoader } from './temporal-loader'
 import { rememberFrame, resumedFrame } from './temporal-resume'
 
 function useTimelapse(memoryId: string) {
+	const restoration = useCaptureRestoration()
+	const restoreLoad = restoration.load
 	const canvas = useRef<HTMLCanvasElement>(null)
 	const scene = useRef<ViewerScene | null>(null)
 	const loader = useRef<TemporalLoader | null>(null)
@@ -48,7 +51,7 @@ function useTimelapse(memoryId: string) {
 		scene.current = viewer
 		const queue = new TemporalLoader(
 			async (frame, signal) => {
-				const file = await fetchTemporalFile(frame, signal)
+				const file = await restoreLoad(() => fetchTemporalFile(frame, signal), { kind: 'owner', id: frame.id }, signal)
 				if (signal.aborted) return
 				origin.current ??= frame.origin
 				const base = origin.current
@@ -90,7 +93,7 @@ function useTimelapse(memoryId: string) {
 			scene.current = null
 			loader.current = null
 		}
-	}, [])
+	}, [restoreLoad])
 
 	const dimension = useRef<string | null>(null)
 	useEffect(() => {
@@ -213,6 +216,7 @@ function useTimelapse(memoryId: string) {
 		setRetry,
 		setPlaying,
 		setDelay,
+		restoration,
 	}
 }
 
@@ -241,8 +245,9 @@ export function TimelapsePage({ memoryId }: { memoryId: string }) {
 				</p>
 			)}
 			<div className="relative h-[65vh] min-h-[360px] overflow-hidden rounded-lg bg-night">
+				<CaptureRestorationPanel view={state.restoration.view} onRestore={state.restoration.resume} />
 				<canvas ref={canvas} className="h-full w-full" aria-label={t('Interactive 3D scene')} />
-				{(busy || paging) && (
+				{!state.restoration.view && (busy || paging) && (
 					<p role="status" className="absolute left-4 top-4 rounded bg-night px-3 py-2 text-white">
 						{t('Loading capture…')}
 					</p>

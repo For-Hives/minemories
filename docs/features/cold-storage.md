@@ -2,8 +2,9 @@
 
 Suivi de l’issue [#85](https://github.com/For-Hives/minemories/issues/85).
 Le suivi des ouvertures, la prévisualisation, les transitions et les API sont
-implémentés avec un worker optionnel. L’archivage reste désactivé par défaut ;
-le viewer et la validation du fournisseur réel restent à terminer.
+implémentés avec un worker optionnel et le parcours viewer de restauration.
+L’archivage reste désactivé par défaut ; la validation du fournisseur réel reste
+à terminer avant de clôturer l’issue.
 
 ## Dernière ouverture réelle
 
@@ -92,7 +93,7 @@ confirmée retire les métadonnées de tier devenues inutiles avec sa tâche dur
 Les réservations SQLite sont reliées au worker optionnel. Son adaptateur confirme
 les résultats distants, y compris après une réponse perdue, avant de publier
 un état lisible. Les leases SQLite ne peuvent pas annuler une copie déjà reçue
-par le provider. Les API d’état/restauration sont reliées au worker ; leur affichage reste à intégrer au viewer.
+par le provider. Les API d’état/restauration et leur affichage sont reliés au worker.
 
 ## Générations physiques et nettoyage
 
@@ -161,6 +162,24 @@ reste `false`, une demande autorisée renvoie `503` et aucun polling n’est ann
 Un test de l’API configurée parcourt aussi le vrai RPC anonyme d’un lien partagé,
 les copies du SDK sur HTTP local, le téléchargement GLB exact et la suppression
 finale. Seul son transport de test est redirigé ; aucun compte cloud n’est utilisé.
+
+### Parcours viewer
+
+Les vues propriétaire, partagée, publique et timeline reconnaissent la réponse
+202 avant de créer un fichier GLB. Un panneau traduit en français/anglais affiche
+l’état et le nombre d’éléments prêts. Le bouton de restauration est explicite ;
+consulter une capture froide ne lance pas de demande payante automatiquement.
+Une restauration déjà en cours est suivie automatiquement au délai annoncé.
+La progression compte les objets prêts et ne prétend pas mesurer un pourcentage
+d’octets ni annoncer un délai fournisseur non vérifié.
+
+Les erreurs transitoires permettent une nouvelle demande idempotente. Un accès
+révoqué termine le suivi. Naviguer ou sélectionner une autre capture annule les
+requêtes, l’attente d’action et les timers locaux ; le travail déjà accepté par
+le serveur continue. Sans fournisseur actif, le panneau propose une vérification
+manuelle, sans polling ni demande de restauration. La timeline garde son lecteur
+borné et vérifie toujours la taille exacte du GLB. Les tests couvrent la logique
+à 100 %, les interactions, les traductions, les liens publics et l’annulation.
 
 ### Configuration et traitement distant
 

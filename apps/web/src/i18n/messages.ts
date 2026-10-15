@@ -262,4 +262,21 @@ Object.assign(frenchMessages, {
 		'Un code temporaire relie ton compte à Minecraft. Une seule fois suffit.',
 	'Already linked? Generate a fresh code for another device.':
 		'Déjà connecté ? Génère un nouveau code pour un autre appareil.',
+	'Memory ready.': 'Souvenir prêt.',
+	'Archiving this memory…': 'Archivage de ce souvenir…',
+	'This memory is archived.': 'Ce souvenir est archivé.',
+	'Restoring this memory…': 'Restauration de ce souvenir…',
+	'You can leave this page and return later while restoration continues.':
+		'Tu peux quitter cette page et revenir plus tard pendant la restauration.',
+	'Restoration is temporarily unavailable. Please try again later.':
+		'La restauration est temporairement indisponible. Réessaie plus tard.',
+	'Restoration progress': 'Progression de la restauration',
+	'parts ready': 'éléments prêts',
+	'Restoration could not be checked. Try again.': 'Impossible de vérifier la restauration. Réessaie.',
+	'Restore memory': 'Restaurer le souvenir',
+	'Restoration information could not be loaded. Try again.': 'Impossible de charger l’état de restauration. Réessaie.',
+	'Restore this memory to open it. Restoration may take a while.':
+		'Restaure ce souvenir pour l’ouvrir. Cette opération peut prendre du temps.',
+	'Check again': 'Vérifier à nouveau',
+	'This memory is unavailable or access was revoked.': 'Ce souvenir est indisponible ou son accès a été révoqué.',
 })
