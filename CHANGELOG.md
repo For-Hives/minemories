@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.0-beta.1...mod-v0.2.1-beta.1) (2026-10-15)
+
+### Corrections
+
+* **ci:** publish from the authoritative draft creation response ([87bccca](https://github.com/For-Hives/minemories/commit/87bccca62a0b11fc7f4f4d127f0fa9770aca3bc1))
+
 ## [0.2.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.1.0-beta...mod-v0.2.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
