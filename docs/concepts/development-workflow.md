@@ -226,3 +226,6 @@ immersion et restauration des commandes. Lecture GPU des buffers HDR : aucune co
 NaN/Infinity dans les trois qualités. Tests de cadrage sans beacon, priorité des lumières
 de surface, matériaux d’eau partagés, branchement de profondeur et interactions du studio.
 La comparaison multi-GPU et la validation esthétique finale restent suivies dans #74/#93.
+La même capture a été exercée dans Chromium (desktop et mobile) puis importée et rendue
+dans Blender 5.2.2. Le squelette de chargement initial du module viewer utilise aussi une
+surface plein écran, sans réafficher temporairement les anciennes cartes de page.

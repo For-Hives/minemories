@@ -35,3 +35,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Avant de faire tester le parcours par Mae, le développeur priorise l’observabilité distante : erreurs d’export et crashs doivent être remontés à l’API et exploitables dans une page d’administration privée, avec groupes, détails et statut de traitement. Les diagnostics doivent survivre aux coupures et à une relance sans activer le consentement d’un joueur à sa place.
 
 - Pour le viewer, le développeur attend une refonte autonome et créative du parcours entier, avec une atmosphère de souvenir agréable inspirée des shaders Minecraft. La fluidité, les ambiances et le partage font partie du rendu premium ; valider sur des captures réelles et ne pas se limiter à ajouter des réglages graphiques.
+
+- Une « vraie refonte » du viewer doit être immédiatement visible dans la composition de la page, pas seulement dans ses paramètres graphiques. Après validation technique, intégrer effectivement sur main et préciser où voir le résultat ; tester Firefox sur une vraie capture, y compris les modes avec post-traitement, avant de demander au développeur de réessayer.
