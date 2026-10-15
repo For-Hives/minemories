@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.8.0-beta.1...mod-v0.9.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **admin:** add protected dashboard and administrator management ([2f50c9d](https://github.com/For-Hives/minemories/commit/2f50c9dbe3b85c92f981f8385db17dd56a988ba5))
+* **admin:** bootstrap requested owner once with cleanup reminder ([94f04c7](https://github.com/For-Hives/minemories/commit/94f04c7e84fddfe8910ce243b65ca53b7c997533))
+* **web:** make sign-in easier to enter and navigate ([8d6e89b](https://github.com/For-Hives/minemories/commit/8d6e89b366079cbc19f8923c9a7910edc65cc97e))
+
 ## [0.8.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.7.0-beta.1...mod-v0.8.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
