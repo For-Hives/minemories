@@ -170,3 +170,16 @@ palettes couvertes à 100 %. Inspection Chromium des captures réelles de la fix
 NeoForge (entités, coffres, lit, sol) et import/rendu Blender 5.2.2 de la capture AFK.
 La refonte est suivie dans l’issue #93. La mesure comparative GPU sur matériels identifiés reste à faire dans l’issue #74 ;
 le rendu logiciel de Chromium ne constitue pas une preuve de 60 FPS sur mobile.
+
+Régression Firefox (15 octobre 2026) : conserver le choix de normales/shading du
+GLTFLoader. Forcer `flatShading` sur tous les matériaux PBR produisait des valeurs
+NaN dans le rendu HDR sur Firefox/NVIDIA GTX 980 ; les flous successifs du bloom
+les propageaient à toute l’image en Auto/Cinéma. Le mode Économie masquait le problème.
+Le correctif conserve les normales importées, donc les arêtes des blocs exportés,
+et laisse le bloom actif. Test unitaire de préparation des matériaux, reproduction
+avant/après dans Firefox 153 avec une capture réelle de 14,9 Mio : 2 286 composantes
+non finies dans la passe lumineuse avant, zéro après dans celle-ci et les cinq niveaux
+de flou. Vérifier Auto → Économie → Cinéma, puis les heures et les atmosphères lors
+des prochaines validations navigateur ; un simple chargement sans erreur JS ne suffit pas.
+La même capture a également été importée et rendue dans Blender 5.2.2 ; aucun
+changement de géométrie, de texture ou de format d’export n’est nécessaire.

@@ -539,7 +539,8 @@ export class ViewerScene {
 				pbrMaterial.roughness = pbrMaterial.transparent ? 0.18 : 0.92
 				pbrMaterial.envMapIntensity = 0.18 + Number(pbrMaterial.transparent) * 0.62
 				pbrMaterial.metalness = 0
-				pbrMaterial.flatShading = true
+				// Keep GLTFLoader’s normals/shading choice. Derivative-based flat normals can
+				// produce NaNs on Firefox/NVIDIA and spread across the HDR bloom buffers.
 				pbrMaterial.emissiveIntensity = Math.min(pbrMaterial.emissiveIntensity, 1.6)
 			}
 			hasOpaqueSurface ||= !material.transparent || material.alphaTest > 0
