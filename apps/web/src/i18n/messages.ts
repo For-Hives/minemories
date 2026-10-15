@@ -1,4 +1,6 @@
 export const frenchMessages: Record<string, string> = {
+	'Mod versions': 'Versions du mod',
+	'What’s new': 'Nouveautés',
 	Timeline: 'Évolution',
 	'CAPTURE TIMELINE': 'ÉVOLUTION DU MONDE',
 	'Your world through time': 'Ton monde au fil du temps',
