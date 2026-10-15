@@ -121,3 +121,9 @@ appairé, un compte non appairé, AFK OFF, le retour du mouvement, la pause et u
 API indisponible. Le fonctionnement en pause et les réglages ont été validés sur
 le client de développement ; le JAR distribué et la reprise d’upload après panne
 restent à exercer en jeu.
+
+## Plafond de 450 Mio
+
+Le 16 octobre 2026, le test API finalise un GLB de 471 859 200 octets envoyé en 113 requêtes de 4 Mio au maximum ; le dernier morceau contient 2 Mio. Un octet au-delà du plafond est refusé dès l’initialisation. Les lectures de validation restent en flux. La suite complète inclut les quotas, la reprise et les erreurs de stockage.
+
+Les anciennes bases SQLite sont migrées dans une transaction : réservations, références en préparation et références publiées sont conservées, leurs contraintes de taille et de nombre de morceaux sont relevées. Le test exerce aussi une seconde migration sans changement et les clés étrangères. Le lecteur temporel du viewer accepte le même plafond. Les preuves historiques à 200 Mio ci-dessus restent celles de leurs versions respectives.

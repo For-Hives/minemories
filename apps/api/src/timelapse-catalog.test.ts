@@ -344,12 +344,16 @@ test('existing 200 MiB catalogs preserve leases and references while raising lim
 		db.exec(row.sql.replaceAll('471859200', '209715200').replaceAll('28800', '12800'))
 	}
 	memory(db, 'large', 'owner', 450 * 1024 * 1024)
+	memory(db, 'published', 'owner', 20)
 	db.exec("INSERT INTO timelapse_leases VALUES ('lease',1,'small','owner','owner/small.glb',20,100);")
 	db.exec(`INSERT INTO timelapse_chunks VALUES ('owner/chunk.glb','owner','${a}',20,'ready',NULL);
- INSERT INTO timelapse_pending_refs VALUES ('lease',0,'owner/chunk.glb');`)
+ INSERT INTO timelapse_pending_refs VALUES ('lease',0,'owner/chunk.glb');
+ INSERT INTO timelapse_frames VALUES ('published','owner/published.glb',20,'${frameHash}');
+ INSERT INTO timelapse_refs VALUES ('published',0,'owner/chunk.glb');`)
 	migrateTimelapse(db)
 	migrateTimelapse(db)
 	expect(db.query('SELECT object_key FROM timelapse_pending_refs').get()).toEqual({ object_key: 'owner/chunk.glb' })
+	expect(db.query('SELECT object_key FROM timelapse_refs').get()).toEqual({ object_key: 'owner/chunk.glb' })
 	db.exec(
 		"INSERT INTO timelapse_pending_refs VALUES ('lease',28799,'owner/chunk.glb'); DELETE FROM timelapse_pending_refs; DELETE FROM timelapse_leases;"
 	)
