@@ -169,7 +169,9 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	const trashEntry = trashed[0]
 	if (!trashEntry?.purgeAt) throw new Error('Missing trash deadline from RPC contract')
 	expect(Date.parse(trashEntry.purgeAt) - Date.parse(trashEntry.deletedAt)).toBe(2_592_000_000)
-	expect((await app.request(`/api/memories/${id}/file`, { headers: { cookie } })).status).toBe(200)
+	const trashedFile = await app.request(`/api/memories/${id}/file`, { headers: { cookie } })
+	expect(trashedFile.status).toBe(200)
+	expect(Buffer.from(await trashedFile.arrayBuffer()).equals(glb)).toBe(true)
 	await owner.memories.restore(input)
 	expect(await owner.memories.listTrash()).toEqual([])
 	await owner.memories.delete(input)

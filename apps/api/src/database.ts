@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import './configuration'
 import { migrateCaptureAccess } from './capture-access'
+import { migrateCaptureReaders } from './capture-readers'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateTimelapse } from './timelapse-catalog'
@@ -67,6 +68,7 @@ if (!memoryColumns.some(column => column.name === 'deleted_at')) {
 }
 migrateTrashRetention(database)
 migrateCaptureAccess(database)
+migrateCaptureReaders(database)
 database.exec(`
   CREATE TABLE IF NOT EXISTS share_links (
     token_hash TEXT PRIMARY KEY,
