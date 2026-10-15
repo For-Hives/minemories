@@ -80,3 +80,5 @@ est conservé entre connexions. Les historiques solo existants restent inchangé
 ## Marge basse de cinq blocs
 
 Les captures autour du joueur conservent désormais cinq blocs sous la plus basse position des pieds visitée dans les chunks concernés, sans descendre sous le fond de la dimension. Cette marge s’applique aussi à l’historique déjà enregistré. Les sélections explicites conservent leurs coins.
+
+Vérification du 16 octobre 2026 : Minecraft 1.21.1 / NeoForge 21.1.248, JAR de distribution `0.5.1-beta.1` (SHA-256 `4c34794280d40fb8fb2ab0921e69d84de54442772aaa61e351eb7d371146d331`). Une visite à Y=30 produit un GLB dont le bas est Y=25 ; le retour en surface et le changement de dimension conservent ce bas. Le mode pleine hauteur et les coins explicites restent vérifiés. Le GLB a été importé dans Blender 5.2.2 et son rendu inspecté. Client isolé avec volume maître à zéro ; aucun monde personnel modifié. Preuves locales : `~/.local/state/minemories-validation/depth-margin-five-20261015/`.
