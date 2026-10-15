@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path'
 import './configuration'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
+import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTrashRetention } from './trash-retention'
 
 const databasePath = resolve(process.env.DATABASE_PATH ?? './data/minemories.sqlite')
@@ -77,3 +78,5 @@ database.exec(`
 `)
 
 migrateDiscovery(database)
+
+migrateTimelapse(database)

@@ -2,8 +2,8 @@
 
 L’issue #75 est en cours. Les captures disposent désormais d’une identité de
 monde et d’empreinte, ainsi que de leur origine géométrique exacte. Le codec de
-découpage pour la déduplication est testé isolément. Il n’est pas encore relié au
-stockage : les fichiers restent des GLB complets et aucune lecture temporelle
+découpage et le catalogue SQLite de déduplication sont testés. Ils ne sont pas
+encore reliés aux lectures/écritures de fichiers : les fichiers restent des GLB complets et aucune lecture temporelle
 réelle n’est livrée à ce stade. La timeline de démonstration reste illustrative.
 
 ## Identifier les futurs états
@@ -52,6 +52,40 @@ annoncée invalide ou différente des octets reçus. Le consommateur devra égal
 annuler les E/S bloquées à la source. Le test avec insertion dans 4 Mio de données
 déterministes conserve plus de 80 % des octets dans des morceaux inchangés ; ce
 résultat synthétique n’est pas une mesure de gain sur des captures Minecraft.
+
+## Catalogue transactionnel, non encore relié aux fichiers
+
+Les migrations ajoutent un catalogue de morceaux et de manifestes, sans convertir
+les souvenirs existants. Un seul bail de conversion peut être actif dans la base,
+y compris avec plusieurs processus ; il expire après quinze minutes sans
+renouvellement. Les morceaux sont isolés par propriétaire et empreinte SHA-256.
+Leurs références provisoires protègent les écritures en cours.
+
+La publication exige l’accusé d’écriture de chaque morceau, les tailles exactes
+et la présence du souvenir original, encore actif et inchangé. Une transaction
+remplace sa clé logique, publie le manifeste ordonné et programme la suppression
+de l’ancien GLB. Une erreur annule toute cette publication. Le catalogue ne fait
+pas lui-même d’E/S : l’accusé devra venir du futur service de stockage, après
+écriture durable ; les tests du catalogue seuls ne prouvent pas cette écriture.
+
+Un morceau partagé reste conservé tant qu’un souvenir, une conversion ou une
+lecture le référence. Les lecteurs possèdent leurs propres références temporaires,
+indépendantes de la corbeille et de la suppression du souvenir : au maximum huit
+lecteurs par propriétaire et soixante-quatre dans la base, avec des baux de quinze
+minutes renouvelables. Le futur lecteur en flux devra fermer ou renouveler ces
+baux. La collecte retire les baux expirés et marque au plus cent morceaux sans
+référence comme `deleting` avant de programmer leur suppression. Une nouvelle
+conversion ne peut jamais réutiliser la clé d’un morceau ainsi marqué. Les
+références et la réconciliation protègent les morceaux `pending` et `ready`.
+
+Huit tests SQLite couvrent publication/rollback, deux propriétaires, partage,
+corbeille/purge, baux expirés, état de suppression, manifestes incomplets, limites
+de lecteurs, deux connexions et réouverture de la base. La suite API compte
+200 tests actifs passés et six tests Garage ignorés sans serveur dédié. Avant
+activation restent notamment le lecteur en flux, la conversion réelle, la
+récupération des écritures tardives après expiration d’un bail et la purge bornée
+des entrées `deleting` après nettoyage physique. Aucun manifeste n’est produit
+par les routes d’upload actuelles.
 
 ## Validation des fondations, 15 octobre 2026
 
