@@ -32,6 +32,7 @@ test('migration preserves old deletion jobs, their retries and new claim metadat
 			user_id: null,
 			size: null,
 			discard_upload: 0,
+			generation: '',
 		})
 		old.query('UPDATE object_deletions SET user_id = ?, size = ?, discard_upload = 1').run('old', 1234)
 		migrateObjectDeletionClaims(old)
@@ -163,3 +164,33 @@ test('a failed SQLite pass does not stop later maintenance', async () => {
 	await queue.maintain(0)
 	expect(database.query('SELECT COUNT(*) AS count FROM object_deletions').get()).toEqual({ count: 0 })
 })
+
+test.each([false, true])(
+	'a refreshed deletion intent survives completion of an older request (failed=%s)',
+	async failed => {
+		const key = `owner/generation-${failed}.glb`
+		database.query("INSERT INTO object_deletions(object_key,created_at,generation) VALUES (?,0,'old')").run(key)
+		let finish: (() => void) | undefined
+		const queue = new ObjectDeletionQueue(
+			database,
+			() =>
+				new Promise<void>((resolve, reject) => {
+					finish = () => {
+						if (failed) reject(new Error('old request failed'))
+						else resolve()
+					}
+				})
+		)
+		const pending = queue.drain(key, 0)
+		// Simulate another process consuming the old job, then a late PUT recreating its cleanup intent.
+		database.query('DELETE FROM object_deletions WHERE object_key=?').run(key)
+		database.query("INSERT INTO object_deletions(object_key,created_at,generation) VALUES (?,1,'fresh')").run(key)
+		finish?.()
+		await pending
+		expect(
+			database.query('SELECT generation,attempts,next_attempt_at FROM object_deletions WHERE object_key=?').get(key)
+		).toEqual({ generation: 'fresh', attempts: 0, next_attempt_at: 0 })
+		await new ObjectDeletionQueue(database, () => Promise.resolve()).drain(key, 1)
+		expect(database.query('SELECT 1 FROM object_deletions WHERE object_key=?').get(key)).toBeNull()
+	}
+)

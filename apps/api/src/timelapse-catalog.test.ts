@@ -284,3 +284,50 @@ test('reader reservations enforce both per-owner and global bounds', () => {
 		db.close()
 	}
 })
+
+test('late writes keep a fresh cleanup job during an in-flight deletion and after tombstone collection', async () => {
+	const { db, catalog } = fixture()
+	try {
+		memory(db, 'first')
+		const lease = required(catalog.begin('first', 0)),
+			claim = catalog.claim(lease.id, b, 7, 0)
+		expect(catalog.discardWrite(claim.objectKey, 'owner', 7, 0)).toBe(false)
+		for (const [key, owner, bytes] of [
+			['../bad', 'owner', 7],
+			[claim.objectKey, 'other', 7],
+			[claim.objectKey, 'owner', 0],
+		] as const)
+			expect(() => catalog.discardWrite(key, owner, bytes, 0)).toThrow('cleanup claim')
+		catalog.abandon(lease.id)
+		catalog.collect(1)
+		let finish: (() => void) | undefined
+		const objects = new Set([claim.objectKey])
+		const deleting = new ObjectDeletionQueue(db, key => {
+			objects.delete(key)
+			return new Promise<void>(resolve => {
+				finish = resolve
+			})
+		})
+		const pending = deleting.drain(claim.objectKey, 1)
+		objects.add(claim.objectKey)
+		expect(catalog.discardWrite(claim.objectKey, 'owner', 7, 2)).toBe(true)
+		finish?.()
+		await pending
+		expect(db.query('SELECT 1 FROM object_deletions WHERE object_key=?').get(claim.objectKey)).not.toBeNull()
+		await new ObjectDeletionQueue(db, key => {
+			objects.delete(key)
+			return Promise.resolve()
+		}).drain(claim.objectKey, 2)
+		catalog.collect(3)
+		expect(db.query('SELECT 1 FROM timelapse_chunks WHERE object_key=?').get(claim.objectKey)).toBeNull()
+		objects.add(claim.objectKey)
+		expect(catalog.discardWrite(claim.objectKey, 'owner', 7, 4)).toBe(true)
+		await new ObjectDeletionQueue(db, key => {
+			objects.delete(key)
+			return Promise.resolve()
+		}).drain(claim.objectKey, 4)
+		expect(objects.size).toBe(0)
+	} finally {
+		db.close()
+	}
+})

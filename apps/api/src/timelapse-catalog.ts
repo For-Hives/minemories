@@ -1,5 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
+import { migrateObjectDeletionClaims } from './object-deletions'
+import { managedMemoryKey } from './storage-references'
 import { MAX_TIMELAPSE_CHUNK, MIN_TIMELAPSE_CHUNK } from './timelapse-chunks'
 import { MAX_UPLOAD_BYTES } from './upload-files'
 
@@ -32,6 +34,7 @@ export interface FrameManifest {
 }
 
 export function migrateTimelapse(database: Database) {
+	migrateObjectDeletionClaims(database)
 	database.exec(`
 	 CREATE TABLE IF NOT EXISTS timelapse_leases (
 	  id TEXT PRIMARY KEY, slot INTEGER NOT NULL DEFAULT 1 UNIQUE CHECK(slot = 1),
@@ -259,6 +262,11 @@ export class TimelapseCatalog {
 			.transaction(() => {
 				this.database.query('DELETE FROM timelapse_leases WHERE expires_at <= ?').run(now)
 				this.database.query('DELETE FROM timelapse_readers WHERE expires_at <= ?').run(now)
+				this.database
+					.query(`DELETE FROM timelapse_chunks WHERE object_key IN (
+			 SELECT object_key FROM timelapse_chunks c WHERE state='deleting'
+			 AND NOT EXISTS (SELECT 1 FROM object_deletions d WHERE d.object_key=c.object_key) LIMIT 100)`)
+					.run()
 				const rows = this.database
 					.query(`SELECT object_key,user_id,size FROM timelapse_chunks c WHERE state != 'deleting'
 			 AND NOT EXISTS (SELECT 1 FROM timelapse_refs r WHERE r.object_key = c.object_key)
@@ -274,11 +282,38 @@ export class TimelapseCatalog {
 			.immediate()
 	}
 
+	/** A late PUT gets a fresh durable intent even if an earlier deletion already consumed its old job. */
+	discardWrite(objectKey: string, userId: string, size: number, now = Date.now()): boolean {
+		if (
+			managedMemoryKey(objectKey)?.owner !== userId ||
+			!Number.isInteger(size) ||
+			size < 1 ||
+			size > MAX_TIMELAPSE_CHUNK
+		)
+			throw new Error('Invalid timelapse cleanup claim')
+		return this.database
+			.transaction(() => {
+				const referenced = this.database
+					.query(`SELECT 1 FROM timelapse_refs WHERE object_key=?
+			 UNION ALL SELECT 1 FROM timelapse_pending_refs WHERE object_key=?
+			 UNION ALL SELECT 1 FROM timelapse_reader_refs WHERE object_key=? LIMIT 1`)
+					.get(objectKey, objectKey, objectKey)
+				if (referenced) return false
+				this.database.query("UPDATE timelapse_chunks SET state='deleting' WHERE object_key=?").run(objectKey)
+				this.enqueue(objectKey, userId, size, now)
+				return true
+			})
+			.immediate()
+	}
+
 	private enqueue(key: string, userId: string, size: number, now: number) {
 		this.database
-			.query(`INSERT INTO object_deletions (object_key,created_at,user_id,size,discard_upload)
-		 VALUES (?,?,?,?,1) ON CONFLICT(object_key) DO NOTHING`)
-			.run(key, now, userId, size)
+			.query(`INSERT INTO object_deletions (object_key,created_at,user_id,size,discard_upload,generation)
+		 VALUES (?,?,?,?,1,?) ON CONFLICT(object_key) DO UPDATE SET generation=excluded.generation,
+		 next_attempt_at=0,attempts=0,discard_upload=1,
+		 user_id=COALESCE(object_deletions.user_id,excluded.user_id),
+		 size=COALESCE(object_deletions.size,excluded.size)`)
+			.run(key, now, userId, size, randomUUID())
 	}
 }
 
