@@ -1,11 +1,10 @@
-# Timelapse : fondations et travail restant
+# Timelapse à partir des captures régulières
 
-L’issue #75 est en cours. Les captures disposent désormais d’une identité de
-monde et d’empreinte, ainsi que de leur origine géométrique exacte. Le codec de
-découpage, le catalogue SQLite et le service de conversion/relecture en flux sont
-raccordés aux routes API et validés sur filesystem et Garage. Les téléchargements
-reconstruisent les GLB ; l’index temporel privé est disponible côté API. La navigation et l’animation
-dans le viewer restent à livrer. La timeline de démonstration reste illustrative.
+La galerie propose **Évolution** pour les captures identifiées. Le viewer affiche
+les états réellement enregistrés, avec navigation, lecture à cadence réglable,
+pagination et reprise locale. L’index privé et le stockage dédupliqué sont raccordés
+aux téléchargements existants. La timeline de démonstration du site reste illustrative.
+Le fonctionnement et les validations de #75 sont décrits ci-dessous.
 
 ## Identifier les futurs états
 
@@ -169,7 +168,7 @@ réclamation finale de tous les objets du propriétaire. Un inventaire vieilli d
 48 heures classe tous les morceaux vivants comme protégés, sur filesystem et
 Garage. La fixture Docker dédiée et ses volumes sont retirés après l’essai.
 
-La navigation temporelle reste à implémenter.
+Le raccordement du viewer est décrit dans la validation intégrée ci-dessous.
 
 ## Validation des fondations, 15 octobre 2026
 
@@ -291,7 +290,7 @@ Le contrôleur `TemporalLoader` borne les demandes à un chargement actif et une
 sélection suivante remplaçable. Un défilement rapide annule la demande active,
 attend que son parseur termine et charge uniquement la dernière sélection. Aucun
 modèle ne se télécharge ou ne se décode en parallèle ; une erreur demande une
-nouvelle sélection explicite. Ce contrôleur doit encore être raccordé à l’interface.
+nouvelle sélection explicite. Ce contrôleur est désormais utilisé par le lecteur décrit ci-dessous.
 
 Onze tests ciblés vérifient remplacement, annulation avant lecture/pendant
 compilation, fermeture pendant parsing, erreur GPU/reprise, libération des ressources
@@ -314,7 +313,7 @@ Git : `~/.local/state/minemories-validation/timelapse-viewer-20261015/`,
 `report.json`, quatre rendus Chromium, `blender-report.json` et quatre rendus Blender.
 Le premier cadrage du banc Blender visait le zéro plutôt que la géométrie ; le
 cadrage corrigé vise les limites de la première capture et les rendus finaux ont
-été inspectés. Aucun contrôle de lecture temporelle n’est encore exposé à l’utilisateur.
+été inspectés. Cette étape du moteur précède la validation de l’interface décrite ci-dessous.
 
 ## Essai en flux à la limite de 200 Mio
 
@@ -335,22 +334,77 @@ morceaux uniques et ne constitue pas un benchmark de compression de scènes.
 Preuves locales : `large-stream/report.json`, `fixture.json`, `blender.json` et
 `replayed.png` dans le dossier de validation des fondations.
 
-## Critères encore ouverts avant livraison
+## Lecteur intégré et limites
 
-- Raccorder l’index privé, son ordre déterministe et ses fenêtres bornées au
-  viewer ; conserver l’exclusion des captures anciennes non identifiées.
-- Coupler les manifestes, les baux et le nettoyage déjà validés aux séries de
-  l’index temporel ; conserver quotas, corbeille et réconciliation lors de cette
-  intégration.
-- Bornes explicites sur les séries et leur stockage, comportement documenté
-  lorsque ces bornes sont atteintes, sans suppression silencieuse des souvenirs.
-- Navigation et lecture des seuls états réellement disponibles, alignement des
-  origines, annulation des chargements, reprise et validation d’interaction.
-- Mesures sur plusieurs captures réelles et relecture du GLB reconstruit après
-  redémarrage ; validation complète avant fusion et fermeture de #75.
+Ouvrir **Galerie → dossier du monde → Évolution** sur une capture compatible.
+La date affichée correspond au dernier modèle rendu avec succès, et sa source
+(capture ou envoi) est explicite. Les horodatages exacts restent consultables sur
+la date ; les intervalles de capture sont affichés lorsqu’ils sont connus.
 
-La cadence AFK existante reste cinq minutes d’inactivité, au plus une capture
-toutes les quatre heures par défaut. Une future animation représentera les
-snapshots présents, avec leurs intervalles réels ; elle ne pourra pas reconstruire
-les modifications antérieures à la première capture ni inventer les états entre
-deux souvenirs.
+**Lire / Pause** parcourt les seuls états présents, à raison de 1, 2, 5 ou 10 secondes
+par capture. Cette cadence d’affichage ne change pas la cadence AFK : cinq minutes
+d’inactivité et au plus une capture toutes les quatre heures par défaut. Le lecteur
+s’arrête au dernier état, sur erreur ou quand l’onglet devient masqué. Pause reste
+disponible pendant un chargement ; la capture en cours peut finir de s’afficher,
+puis aucun état suivant ne démarre. Aucune transition ne reconstruit des changements
+antérieurs à la première capture ou entre deux souvenirs.
+
+La caméra reste fixe entre captures, avec compensation des origines géométriques.
+**Recentrer la caméra** permet de cadrer une profondeur devenue plus grande.
+Le curseur ne concerne que la page courante ; les boutons **Captures plus anciennes**
+et **Captures plus récentes** remplacent la fenêtre, limitée à 128 métadonnées.
+Les GLB voisins ne sont pas préchargés : un seul téléchargement/décodage est actif,
+avec une seule sélection suivante remplaçable. Chaque fichier est lu en flux dans
+une limite de 200 Mio et doit correspondre exactement à sa taille annoncée. Le
+remplacement GPU garde temporairement l’ancien et le nouveau modèle, puis libère
+l’ancien ; il ne conserve aucun cache des scènes précédentes. La mémoire des pixels
+décodés dépend des textures du fichier, pas seulement de sa taille compressée.
+
+La reprise conserve au plus 32 séries dans le stockage local du navigateur et
+n’écrit qu’après affichage réussi. Les séries sont liées au propriétaire côté API ;
+une préférence locale n’accorde aucun accès. Une capture de reprise supprimée ou
+indisponible entraîne un retour expliqué à la capture sélectionnée. Les préférences
+ne sont pas synchronisées entre navigateurs. Les fichiers anciens sans identité
+complète, et les anciens tags distants ambigus, ne proposent pas Évolution.
+
+Le quota logique existant borne les captures conservées par compte, y compris
+lorsque les morceaux sont dédupliqués. Un quota plein refuse les nouveaux envois ;
+le système ne supprime pas silencieusement de souvenirs pour créer de la place.
+La corbeille/restauration, les délais de purge et la réconciliation restent applicables.
+L’historique n’a pas de coupure temporelle supplémentaire : les pages parcourent les
+captures actives disponibles dans ce quota, sans charger toute la série en mémoire.
+
+## Validation de l’interface réelle, 15 octobre 2026
+
+Les tests d’interaction couvrent navigation, pause/cadence, passage de page,
+annulation lors d’un déplacement rapide du curseur ou d’une fermeture, erreurs
+réseau, autorisation refusée, reprise manquante et démarrage WebGL impossible.
+Les préférences sont validées et bornées à 32 séries. Le lecteur de fichier arrête
+un flux trop grand avant d’en collecter la suite ; les fichiers tronqués sont refusés.
+
+Chromium avec WebGL/SwiftShader ouvre l’application complète contre une vraie API
+Bun/SQLite/filesystem locale et un compte de test temporaire. Trois cents entrées
+de test sont dérivées de quatre GLB natifs validés, avec dates espacées pour la
+pagination : ce ne sont pas trois cents acquisitions Minecraft distinctes. Le parcours
+vérifie affichage initial sans préchargement des voisins, profondeur modifiée,
+erreur réseau bloquée puis reprise, lecture à une seconde puis pause, passage
+avant/après au-delà de 128 métadonnées, rechargement du navigateur avec reprise,
+liens de galerie et affichage mobile 390 px sans débordement. Aucune exception
+JavaScript n’est relevée. Les rendus desktop/mobile ont été inspectés.
+
+Preuves hors Git : `~/.local/state/minemories-validation/timelapse-ui-20261015/`,
+`browser-report.json`, captures d’écran et journaux des contrôles. La première passe
+du pilote cherchait les cartes dans un dossier de galerie fermé ; le pilote corrigé
+ouvre ce dossier avant de vérifier les liens, et le parcours complet passe.
+
+Le même viewer a aussi chargé, depuis le stockage dédupliqué de l’API, le GLB natif
+étendu à 200 Mio décrit plus haut. Un seul fichier est demandé, le modèle s’affiche
+environ 3,3 secondes après navigation dans ce banc SwiftShader et aucune exception
+JavaScript n’est relevée. Le rendu a été inspecté (`native-200m.png`,
+`large-browser-report.json`). Le remplissage BIN reste artificiel ; cette durée
+n’est pas une promesse de performance sur une scène détaillée de 200 Mio.
+
+Le contrôle global final `bun run build` passe sous Bun 1.4.3 / JDK 21, avec
+`bun check`, 140 tests web, 235 tests API actifs et les contrôles Java. Les six
+tests Garage nécessitent le service dédié ; leur validation réelle est décrite
+aux checkpoints backend ci-dessus. Les seuils de couverture sont inchangés.

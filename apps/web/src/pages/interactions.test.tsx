@@ -426,3 +426,43 @@ test('French translation does not change pairing state identifiers or hide the p
 	view.unmount()
 	localStorage.clear()
 })
+
+test('gallery offers timelines only for complete identities and excludes ambiguous old remote captures', async () => {
+	const identity = {
+		worldId: 'a'.repeat(64),
+		zoneId: 'b'.repeat(64),
+		captureMode: 'around',
+		captureBounds: { minX: 0, minY: 0, minZ: 0, maxX: 2, maxY: 2, maxZ: 2 },
+		captureOrigin: { x: 1, y: 1, z: 1 },
+	}
+	mocks.list.mockResolvedValue([
+		{
+			id: 'known',
+			name: 'Known',
+			size: 100,
+			createdAt: '2026-10-01T12:00:00Z',
+			metadata: { ...identity, worldName: 'Local', serverName: null, seed: '1', x: 1, y: 1, z: 1 },
+		},
+		{
+			id: 'ambiguous',
+			name: 'Old remote',
+			size: 100,
+			createdAt: '2026-10-01T12:00:00Z',
+			metadata: { ...identity, worldName: null, serverName: 'Remote', seed: null, x: 1, y: 1, z: 1 },
+		},
+		{
+			id: 'legacy',
+			name: 'Legacy',
+			size: 100,
+			createdAt: '2026-10-01T12:00:00Z',
+			metadata: { worldName: 'Legacy', serverName: null, seed: '1', x: null, y: null, z: null },
+		},
+	])
+	mount(<GalleryPage />)
+	fireEvent.click(await screen.findByRole('button', { name: /^Local/ }))
+	fireEvent.click(screen.getByRole('button', { name: /^Remote/ }))
+	fireEvent.click(screen.getByRole('button', { name: /^Legacy/ }))
+	const links = screen.getAllByRole('link', { name: 'Timeline' })
+	expect(links).toHaveLength(1)
+	expect(links[0]?.getAttribute('href')).toBe('/viewer?memory=known&timelapse=1')
+})
