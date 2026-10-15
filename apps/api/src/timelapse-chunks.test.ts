@@ -50,7 +50,7 @@ test('bounds repeated data, exact final chunks, invalid declarations and changed
 	expect(result).toHaveLength(2)
 	expect(result[0]?.sha256).toBe(result[1]?.sha256)
 	await Promise.all(
-		[0, -1, 0.5, 201 * 1024 * 1024].map(size =>
+		[0, -1, 0.5, 450 * 1024 * 1024 + 1].map(size =>
 			expect(Array.fromAsync(splitTimelapseCapture(bands(data), size))).rejects.toThrow('Invalid timelapse frame size')
 		)
 	)
