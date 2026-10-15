@@ -1,7 +1,7 @@
 import type { TemporalFrame } from '@minemories/api-contract'
 import { apiBase } from '../api-client'
 
-const maximumSize = 200 * 1024 * 1024
+const maximumSize = 450 * 1024 * 1024
 
 export async function fetchTemporalFile(frame: TemporalFrame, signal: AbortSignal): Promise<File> {
 	if (frame.size <= 0 || frame.size > maximumSize) throw new Error('Unsupported capture size')

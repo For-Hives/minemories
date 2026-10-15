@@ -204,7 +204,7 @@ test('checks chunk sizes, content types, offsets and the full-file checksum', as
 	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(200)
 })
 
-test('a 200 MiB GLB uploads in 50 bounded chunks and finalizes without a full-file buffer', async () => {
+test('a 450 MiB GLB uploads in 113 bounded chunks and finalizes without a full-file buffer', async () => {
 	const { owner, token } = device()
 	const path = join(root, 'large.glb')
 	const small = minimalGlb()

@@ -1,7 +1,6 @@
 # Upload des captures volumineuses
 
-Le mod utilise un upload séquentiel et reprenable jusqu’à **200 MiB** (209 715 200 octets,
-donc aussi un fichier de 200 Mo). Chaque requête contient au maximum **4 MiB**.
+Le mod utilise un upload séquentiel et reprenable jusqu’à **450 MiB** (471 859 200 octets). Chaque requête contient au maximum **4 MiB**.
 L’ancien `POST /api/mod/memories` reste disponible pour les anciens clients, avec sa
 limite de 100 MiB. Déployer l’API avant le nouveau mod.
 

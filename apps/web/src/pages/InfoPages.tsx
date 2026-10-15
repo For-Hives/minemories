@@ -137,7 +137,7 @@ export function HowItWorksPage() {
 				</li>
 				<li>
 					Saisis <code>/minemories upload</code> pour envoyer la capture, puis vérifie son apparition dans la galerie.
-					Le mod accepte un fichier jusqu’à 200 MiB (environ 210 Mo). En cas de dépassement, capture une zone plus
+					Le mod accepte un fichier jusqu’à 450 MiB (environ 472 Mo). En cas de dépassement, capture une zone plus
 					petite.
 				</li>
 			</ol>
@@ -214,7 +214,7 @@ const questions = [
 	],
 	[
 		'Le code ne marche pas ou l’envoi échoue : que faire ?',
-		'Le code à six chiffres expire après cinq minutes et ne fonctionne qu’une fois : génère-en un nouveau dans la galerie. Vérifie ensuite ta connexion et la taille du GLB (200 MiB maximum depuis le mod). Conserve le fichier local et réessaie l’envoi.',
+		'Le code à six chiffres expire après cinq minutes et ne fonctionne qu’une fois : génère-en un nouveau dans la galerie. Vérifie ensuite ta connexion et la taille du GLB (450 MiB maximum depuis le mod). Conserve le fichier local et réessaie l’envoi.',
 	],
 	[
 		'Y a-t-il un timelapse, une impression 3D ou un abonnement ?',

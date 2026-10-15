@@ -26,7 +26,7 @@ import java.util.function.UnaryOperator;
 
 /** Sequential, resumable upload; only one 4 MiB chunk is retained at a time. */
 final class ChunkedUploader {
-  static final long MAX_BYTES = 200L * 1024 * 1024;
+  static final long MAX_BYTES = 450L * 1024 * 1024;
   static final int CHUNK_BYTES = 4 * 1024 * 1024;
 
   interface BeforeRequest {
@@ -83,7 +83,7 @@ final class ChunkedUploader {
       throws IOException, InterruptedException {
     long size = Files.size(file);
     if (size < 20 || size > MAX_BYTES) {
-      throw new IOException("The GLB must be between 20 bytes and 200 MiB.");
+      throw new IOException("The GLB must be between 20 bytes and 450 MiB.");
     }
     String checksum = checksum(file);
     String identity = hash((apiUrl + "\n" + token).getBytes(StandardCharsets.UTF_8));

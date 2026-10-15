@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { glbChunk, glbJsonLength, validEmbeddedGltfValues } from '@minemories/api-contract/glb'
 
-export const MAX_UPLOAD_BYTES = 200 * 1024 * 1024
+export const MAX_UPLOAD_BYTES = 450 * 1024 * 1024
 export const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024
 
 /** Validate container, image headers and accessor values without loading the whole BIN. */

@@ -42,7 +42,7 @@ Le PNG de test contient un chunk texte avec CRC valide ; son décodage a aussi
 été vérifié avec Pillow.
 
 Les uploads legacy restent limités à 100 MiB. Les uploads reprenables restent
-limités à 200 MiB, avec des morceaux de 4 MiB : le nouveau middleware n’est
+limités à 450 MiB, avec des morceaux de 4 MiB : le nouveau middleware n’est
 appliqué ni aux fichiers legacy ni aux morceaux. La validation GLB et le calcul
 du SHA-256 des fichiers reprenables restent en streaming.
 

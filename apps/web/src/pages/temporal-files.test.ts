@@ -44,7 +44,7 @@ test('truncation, denied files, and unsupported sizes never reach the renderer',
 	await expect(fetchTemporalFile(frame, new AbortController().signal)).rejects.toThrow('Capture size changed')
 	vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 403 }))
 	await expect(fetchTemporalFile(frame, new AbortController().signal)).rejects.toThrow('Capture unavailable')
-	await expect(fetchTemporalFile({ ...frame, size: 201 * 1024 * 1024 }, new AbortController().signal)).rejects.toThrow(
-		'Unsupported capture size'
-	)
+	await expect(
+		fetchTemporalFile({ ...frame, size: 450 * 1024 * 1024 + 1 }, new AbortController().signal)
+	).rejects.toThrow('Unsupported capture size')
 })
