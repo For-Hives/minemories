@@ -33,6 +33,7 @@ test('release history and changelog render headings, navigation and a direct Git
 test('private data, shared links and account routes are excluded from indexing and static rendering', () => {
 	for (const path of [
 		'/gallery',
+		'/account',
 		'/viewer',
 		'/viewer?memory=private-id',
 		'/share/private-token',

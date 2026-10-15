@@ -6,6 +6,7 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
+import { AccountSecurity } from './account-security'
 import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { recordCaptureOpening } from './capture-access'
@@ -64,9 +65,12 @@ const pairingCodePattern = /^\d{6}$/
 interface ApiContext {
 	userId: string | null
 	correlationId: string
+	sessionId: string | null
+	headers: Headers
 }
 
 const os = implement(apiContract).$context<ApiContext>()
+const accountSecurity = new AccountSecurity(database, (await auth.$context).password)
 const diagnosticsReview = new DiagnosticsReview(
 	diagnostics,
 	new Set(
@@ -104,6 +108,13 @@ const discovery = new PublicDiscovery(
 function authenticated(context: ApiContext) {
 	if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 	return context.userId
+}
+function accountIdentity(context: ApiContext) {
+	const userId = authenticated(context)
+	if (!context.sessionId) throw new ORPCError('UNAUTHORIZED')
+	const origin = context.headers.get('origin')
+	if (origin && !webOrigins.includes(origin)) throw new ORPCError('FORBIDDEN')
+	return { userId, sessionId: context.sessionId }
 }
 function captureObjectKey(access: CaptureStorageAccess, context: ApiContext): string | null {
 	if (access.kind === 'owner') return getMemoryFile(authenticated(context), access.id)?.object_key ?? null
@@ -166,6 +177,12 @@ const router = os.router({
 		),
 	},
 	account: {
+		changeEmail: os.account.changeEmail.handler(({ context, input }) =>
+			accountSecurity.changeEmail(accountIdentity(context), input)
+		),
+		changePassword: os.account.changePassword.handler(({ context, input }) =>
+			accountSecurity.changePassword(accountIdentity(context), input)
+		),
 		storage: os.account.storage.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 			return accountStorageSummary(database, context.userId)
@@ -285,7 +302,12 @@ app.use('/rpc/*', async (context, next) => {
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const { matched, response } = await rpcHandler.handle(context.req.raw, {
 		prefix: '/rpc',
-		context: { userId: session?.user.id ?? null, correlationId: context.get('correlationId') },
+		context: {
+			userId: session?.user.id ?? null,
+			correlationId: context.get('correlationId'),
+			sessionId: session?.session.id ?? null,
+			headers: context.req.raw.headers,
+		},
 	})
 	if (matched) return context.newResponse(response.body, response)
 	return next()
