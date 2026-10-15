@@ -8,6 +8,7 @@ export function migrateObjectDeletionClaims(database: Database): void {
 			['user_id', 'user_id TEXT'],
 			['size', 'size INTEGER'],
 			['discard_upload', 'discard_upload INTEGER NOT NULL DEFAULT 0'],
+			['generation', "generation TEXT NOT NULL DEFAULT ''"],
 		]) {
 			if (!columns.some(column => column.name === name)) {
 				database.exec(`ALTER TABLE object_deletions ADD COLUMN ${definition}`)
@@ -21,6 +22,7 @@ interface Deletion {
 	object_key: string
 	attempts: number
 	discard_upload: number
+	generation: string
 }
 
 export class ObjectDeletionQueue {
@@ -32,6 +34,7 @@ export class ObjectDeletionQueue {
 		private readonly database: Database,
 		private readonly remove: (key: string, discardUpload: boolean) => Promise<void>
 	) {
+		migrateObjectDeletionClaims(database)
 		this.references = new ObjectReferences(database)
 	}
 
@@ -74,18 +77,22 @@ export class ObjectDeletionQueue {
 		if (this.held.has(objectKey) || this.references.isReferenced(objectKey)) return
 		const row = this.database
 			.query(
-				'SELECT object_key, attempts, discard_upload FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?'
+				'SELECT object_key, attempts, discard_upload, generation FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?'
 			)
 			.get(objectKey, now) as Deletion | null
 		if (!row) return
 		try {
 			await this.remove(row.object_key, row.discard_upload === 1)
-			this.database.query('DELETE FROM object_deletions WHERE object_key = ?').run(row.object_key)
+			this.database
+				.query('DELETE FROM object_deletions WHERE object_key = ? AND generation = ?')
+				.run(row.object_key, row.generation)
 		} catch {
 			const delay = Math.min(3_600_000, 60_000 * 2 ** Math.min(row.attempts, 6))
 			this.database
-				.query('UPDATE object_deletions SET attempts = attempts + 1, next_attempt_at = ? WHERE object_key = ?')
-				.run(now + delay, row.object_key)
+				.query(
+					'UPDATE object_deletions SET attempts = attempts + 1, next_attempt_at = ? WHERE object_key = ? AND generation = ?'
+				)
+				.run(now + delay, row.object_key, row.generation)
 		}
 	}
 }

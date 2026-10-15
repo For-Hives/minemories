@@ -2,8 +2,8 @@
 
 L’issue #75 est en cours. Les captures disposent désormais d’une identité de
 monde et d’empreinte, ainsi que de leur origine géométrique exacte. Le codec de
-découpage et le catalogue SQLite de déduplication sont testés. Ils ne sont pas
-encore reliés aux lectures/écritures de fichiers : les fichiers restent des GLB complets et aucune lecture temporelle
+découpage, le catalogue SQLite et le service de conversion/relecture en flux sont
+testés sur des fichiers locaux. Ils ne sont pas encore reliés aux routes API : les fichiers restent des GLB complets et aucune lecture temporelle
 réelle n’est livrée à ce stade. La timeline de démonstration reste illustrative.
 
 ## Identifier les futurs états
@@ -65,27 +65,58 @@ La publication exige l’accusé d’écriture de chaque morceau, les tailles ex
 et la présence du souvenir original, encore actif et inchangé. Une transaction
 remplace sa clé logique, publie le manifeste ordonné et programme la suppression
 de l’ancien GLB. Une erreur annule toute cette publication. Le catalogue ne fait
-pas lui-même d’E/S : l’accusé devra venir du futur service de stockage, après
-écriture durable ; les tests du catalogue seuls ne prouvent pas cette écriture.
+pas lui-même d’E/S : le service de conversion accuse chaque écriture après la
+réponse du fournisseur. Les tests du catalogue seuls ne prouvent pas cette écriture.
 
 Un morceau partagé reste conservé tant qu’un souvenir, une conversion ou une
 lecture le référence. Les lecteurs possèdent leurs propres références temporaires,
 indépendantes de la corbeille et de la suppression du souvenir : au maximum huit
 lecteurs par propriétaire et soixante-quatre dans la base, avec des baux de quinze
-minutes renouvelables. Le futur lecteur en flux devra fermer ou renouveler ces
+minutes renouvelables. Le lecteur en flux ferme ou renouvelle ces
 baux. La collecte retire les baux expirés et marque au plus cent morceaux sans
 référence comme `deleting` avant de programmer leur suppression. Une nouvelle
 conversion ne peut jamais réutiliser la clé d’un morceau ainsi marqué. Les
 références et la réconciliation protègent les morceaux `pending` et `ready`.
 
-Huit tests SQLite couvrent publication/rollback, deux propriétaires, partage,
-corbeille/purge, baux expirés, état de suppression, manifestes incomplets, limites
-de lecteurs, deux connexions et réouverture de la base. La suite API compte
-200 tests actifs passés et six tests Garage ignorés sans serveur dédié. Avant
-activation restent notamment le lecteur en flux, la conversion réelle, la
-récupération des écritures tardives après expiration d’un bail et la purge bornée
-des entrées `deleting` après nettoyage physique. Aucun manifeste n’est produit
-par les routes d’upload actuelles.
+Huit tests SQLite initiaux couvrent publication/rollback, deux propriétaires,
+partage, corbeille/purge, baux expirés, état de suppression, manifestes incomplets,
+limites de lecteurs, deux connexions et réouverture de la base. Un neuvième test
+vérifie le nettoyage des écritures tardives. Les entrées `deleting` sont retirées
+par lots de cent après consommation de leur demande de suppression physique.
+
+## Conversion et relecture des fichiers, routes API encore à brancher
+
+`TimelapseFiles` convertit un souvenir identifié en parcourant son GLB d’origine.
+Il écrit les morceaux nouveaux un par un et vérifie taille et SHA-256 des morceaux
+réutilisés avant publication. Une erreur conserve le souvenir original et
+programme le nettoyage des morceaux tentés, y compris lorsque le fournisseur a
+écrit les octets avant de perdre son accusé. Une dette de nettoyage versionnée
+empêche de commencer une autre conversion et d’accumuler les copies temporaires.
+
+Chaque nouvelle intention de nettoyage issue du catalogue porte une génération
+aléatoire. La file ne retire ou ne reporte que la génération effectivement
+traitée : une écriture tardive qui redemande un nettoyage pendant un DELETE
+asynchrone ne perd donc pas sa demande. Elle peut recréer cette intention même
+après collecte de l’entrée de catalogue. Les anciens jobs et leurs tentatives
+restent conservés à la migration.
+
+Le lecteur reconstruit le GLB à partir du manifeste ordonné. Il vérifie chaque
+morceau borné à 256 Kio avant émission et le hash global avant d’émettre le dernier
+morceau. Les références de lecture restent protégées si le souvenir est purgé en
+cours de téléchargement. La fermeture ou l’annulation du flux libère les baux,
+y compris avant la première lecture. Un heartbeat renouvelle les baux et annule
+l’opération après quinze minutes sans progrès ; le fournisseur doit honorer le
+signal d’annulation pour interrompre ses E/S.
+
+Neuf tests du service utilisent de vrais fichiers locaux et une base SQLite sur
+disque : suppression des GLB originaux, réouverture de la base, comparaison exacte
+des fichiers reconstruits, réutilisation des morceaux, limites d’écriture,
+erreurs/corruption, purge pendant lecture, annulation et renouvellement/expiration
+des baux. La suite API compte 212 tests actifs passés et six tests Garage ignorés
+sans serveur dédié. Les adaptateurs S3/filesystem de production, les routes de
+fichiers et la maintenance ne sont pas encore raccordés à ce service ; aucun
+manifeste n’est produit par les routes d’upload actuelles. La navigation temporelle
+reste à implémenter.
 
 ## Validation des fondations, 15 octobre 2026
 
