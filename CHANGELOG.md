@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.3.0-beta.1...mod-v0.3.1-beta.1) (2026-10-15)
+
+### Maintenance
+
+* **deps:** update vitest monorepo to v5.0.5 ([aba7d70](https://github.com/For-Hives/minemories/commit/aba7d702fa6be498ea2aa1b5680d825d14bc4b08))
+
 ## [0.3.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.1-beta.1...mod-v0.3.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
