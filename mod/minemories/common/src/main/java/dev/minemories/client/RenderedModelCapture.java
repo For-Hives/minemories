@@ -56,7 +56,8 @@ final class RenderedModelCapture {
     }
   }
 
-  private record AtlasSource(ResourceLocation location, AtlasUvIndex<TextureAtlasSprite> index) {}
+  private record AtlasSource(
+      ResourceLocation location, AtlasUvIndex<TextureAtlasSprite> index, int width, int height) {}
 
   RenderedModelCapture(CaptureSink scene, Minecraft minecraft) {
     this(scene, minecraft, null);
@@ -220,7 +221,7 @@ final class RenderedModelCapture {
           "rendered/" + location,
           new byte[0],
           0,
-          new AtlasSource(location, new AtlasUvIndex<>(regions, atlasSearchBudget)));
+          new AtlasSource(location, new AtlasUvIndex<>(regions, atlasSearchBudget), width, height));
     } finally {
       GlStateManager._bindTexture(previous);
     }
@@ -228,31 +229,51 @@ final class RenderedModelCapture {
 
   private Texture resolve(Texture texture, float[] uv) throws IOException {
     if (texture.atlas == null) return texture;
-    var region = texture.atlas.index().find(uv);
+    var atlas = texture.atlas;
+    var crop = AtlasUvCrop.of(uv, atlas.width(), atlas.height());
+    if (crop == null) return null;
+    String cropKey = "rendered/" + atlas.location() + "/" + crop.suffix();
+    Texture fallback = atlasTextures.get(cropKey);
+    if (fallback != null) {
+      crop.remap(uv);
+      return fallback;
+    }
+    AtlasUvIndex.Region<TextureAtlasSprite> region;
+    try {
+      region = atlas.index().find(uv);
+    } catch (AtlasUvIndex.NoMatchingSpriteException missing) {
+      Texture copied =
+          copyRegion(cropKey, atlas.location(), crop.x(), crop.y(), crop.width(), crop.height());
+      atlasTextures.put(cropKey, copied);
+      crop.remap(uv);
+      return copied;
+    }
     if (region == null) return null;
     var sprite = region.value();
     String key = "rendered/" + texture.atlas.location() + "/" + sprite.contents().name();
     Texture copied = atlasTextures.get(key);
     if (copied == null) {
-      copied = copySprite(key, texture.atlas.location(), sprite);
+      copied =
+          copyRegion(
+              key,
+              atlas.location(),
+              sprite.getX(),
+              sprite.getY(),
+              sprite.contents().width(),
+              sprite.contents().height());
       atlasTextures.put(key, copied);
     }
     region.remap(uv);
     return copied;
   }
 
-  private Texture copySprite(String key, ResourceLocation location, TextureAtlasSprite sprite)
+  private Texture copyRegion(
+      String key, ResourceLocation location, int x, int y, int width, int height)
       throws IOException {
     if (textures.size() + atlasTextures.size() >= MAX_TEXTURES)
       throw new IOException("Trop de textures d’entités dans cette capture.");
     CapturePixels copies = pixelCopies == null ? new CapturePixels(minecraft) : pixelCopies;
-    copies.textureRegion(
-        key,
-        location,
-        sprite.getX(),
-        sprite.getY(),
-        sprite.contents().width(),
-        sprite.contents().height());
+    copies.textureRegion(key, location, x, y, width, height);
     if (pixelCopies != null) return new Texture(key, new byte[0], 0);
     var source = copies.source(key);
     var encoder = new RenderedTexture.Rows(source.width(), source.height());

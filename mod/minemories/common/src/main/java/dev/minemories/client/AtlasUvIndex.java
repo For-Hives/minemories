@@ -14,6 +14,14 @@ final class AtlasUvIndex<T> {
   private final List<Region<T>> matches = new ArrayList<>();
   private final SearchBudget budget;
 
+  static final class NoMatchingSpriteException extends IOException {
+    @java.io.Serial private static final long serialVersionUID = 1L;
+
+    NoMatchingSpriteException() {
+      super("Les UV du renderer ne correspondent pas à un seul sprite exportable.");
+    }
+  }
+
   static final class SearchBudget {
     private long scanned;
 
@@ -82,6 +90,6 @@ final class AtlasUvIndex<T> {
         return region;
       }
     }
-    throw new IOException("Les UV du renderer ne correspondent pas à un sprite exportable.");
+    throw new NoMatchingSpriteException();
   }
 }

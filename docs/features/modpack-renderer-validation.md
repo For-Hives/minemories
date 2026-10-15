@@ -13,6 +13,56 @@ DeceasedCraft est en Minecraft 1.20.1 / Forge 47.4.0 : il ne reçoit pas ce JAR
 NeoForge et n’est pas validé par ces essais. Les autres loaders sont suivis par
 [l’issue de portage et la matrice de loaders](loader-support.md).
 
+## UV débordants des lunettes Create
+
+Le journal d’un joueur a révélé un cas supplémentaire, suivi dans
+[#115](https://github.com/For-Hives/minemories/issues/115) : le renderer Curios des
+lunettes Create 6.0.10 utilise `assets/create/models/block/goggles.json`, dont deux
+faces du verre ont les UV `[11, 0, 17, 0.2]`. Elles dépassent donc le bord droit
+d’un sprite dont les coordonnées nominales vont de 0 à 16.
+
+Sur un grand atlas, ces faces ne correspondent pas à un seul sprite. Le collecteur
+copie désormais le rectangle de pixels effectivement échantillonné, avec un texel
+de voisinage pour le filtrage, puis remappe les UV vers ce rectangle. Il conserve
+le découpage par sprite pour les autres faces et partage les crops déjà copiés.
+Il ne supprime pas la géométrie du joueur ou de l’accessoire et ne borne pas les UV
+au sprite d’origine, ce qui changerait les pixels du modèle.
+
+Les limites de pixels, PNG, textures et recherche restent inchangées. Un crop trop
+grand ou des UV hors de l’atlas restent des erreurs ; les primitives aux UV non
+finis sont écartées. Seule l’absence d’un sprite contenant les UV autorise ce
+chemin : une limite de recherche dépassée ne le déclenche pas.
+
+Les tests unitaires reproduisent les coordonnées du verre et vérifient la
+conservation des positions des texels, les bords/dégénérescences et les rejets.
+Le banc isolé reproduit l’échec avec le JAR installé précédemment (SHA-256
+`13a05b64cf1c8ff7b9055b1b68d099739f2fc89d932a83a6c88a54073ac3a021`).
+Il utilise Minecraft 1.21.1 / NeoForge 21.1.248, Create 6.0.10, Curios 9.5.1,
+Sodium 0.8.13 et Irregular Implements 1.12.0, avec leurs dépendances. Une texture
+inutilisée agrandit l’atlas à 4 096 × 4 096 ; le joueur porte réellement les lunettes
+dans le slot Curios `head`. Les sauvegardes personnelles ne sont pas utilisées.
+
+Le JAR local corrigé, version embarquée 0.5.0-beta.1, a le SHA-256
+`7f108a5234b51381d278d13ea8ea10491fb27f79a2d0caea7119d2e1400b8d46`.
+Ce nom de version local ne remplace pas un artefact déjà publié ; la publication
+suivra le workflow habituel après fusion du correctif.
+
+- L’export manuel aboutit : 914 triangles, 10 images, 89 264 octets.
+- La capture progressive AFK, poursuivie pendant la pause, aboutit : 22 812
+  triangles, 52 images, 1 721 840 octets. La portée de capture ne reste pas active
+  entre les étapes.
+- Les deux GLB embarquent le joueur, le verre et la sangle des lunettes. Le crop
+  problématique est partagé et mesure 8 × 3 pixels. Ses 24 pixels encodés ont été
+  comparés en jeu à une nouvelle lecture du rectangle GPU : ils sont identiques.
+- Onze états OpenGL sont restaurés, avec PBO de 16 octets et packing non standard.
+  Les positions/normales/UV sont finis ; aucune image de l’atlas complet n’est
+  embarquée. Les validateurs API et les contrôles de métadonnées passent.
+- L’écran Minecraft et les imports/rendus Blender sont inspectés. `bun mod:check`
+  et `VITEST_MAX_WORKERS=2 bun run build` passent, sans modifier les seuils de qualité.
+
+Preuves locales : `goggles-atlas-20261015/evidence.json`, `baseline/`, `fixed/`,
+`full-build.log` et `mod-check.log` sous le répertoire privé de validation.
+
 ## Premier banc, 15 octobre 2026
 
 Minecraft 1.21.1 / NeoForge 21.1.249, Mesa llvmpipe OpenGL 4.6, sans resource pack
