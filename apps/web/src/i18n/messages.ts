@@ -1,4 +1,44 @@
 export const frenchMessages: Record<string, string> = {
+	Timeline: 'Évolution',
+	'CAPTURE TIMELINE': 'ÉVOLUTION DU MONDE',
+	'Your world through time': 'Ton monde au fil du temps',
+	'Only recorded captures are shown. No states between captures are reconstructed.':
+		'Seules les captures enregistrées sont affichées. Aucun état entre deux captures n’est reconstruit.',
+	'Local world': 'Monde local',
+	'Remote session — reconnecting starts a separate timeline':
+		'Session distante — une reconnexion ouvre un historique distinct',
+	'Configured remote world — set in M → Advanced → World':
+		'Monde distant configuré — réglage dans M → Mode avancé → Monde',
+	captures: 'captures',
+	'Loading capture…': 'Chargement de la capture…',
+	Retry: 'Réessayer',
+	'Capture time': 'Date de capture',
+	'Upload time (capture time unknown)': 'Date d’envoi (date de capture inconnue)',
+	'Capture interval': 'Période de capture',
+	'Previous capture': 'Capture précédente',
+	'Next capture': 'Capture suivante',
+	Play: 'Lire',
+	Pause: 'Pause',
+	'Seconds per capture': 'Secondes par capture',
+	'Capture in this page': 'Capture dans cette page',
+	'Earlier captures': 'Captures plus anciennes',
+	'Later captures': 'Captures plus récentes',
+	'captures in this page': 'captures dans cette page',
+	'Reload timeline': 'Actualiser l’historique',
+	'The 3D viewer could not start. Enable WebGL and reload this page.':
+		'Le viewer 3D n’a pas pu démarrer. Active WebGL et recharge cette page.',
+	'This capture could not be loaded. Retry or select another capture.':
+		'Cette capture n’a pas pu être chargée. Réessaie ou sélectionne une autre capture.',
+	'This timeline is unavailable. Sign in as its owner, or return to your gallery.':
+		'Cet historique est indisponible. Connecte-toi avec le compte propriétaire ou retourne à ta galerie.',
+	'The next captures could not be loaded. Try the page controls again.':
+		'Les captures suivantes n’ont pas pu être chargées. Réessaie avec les boutons de pagination.',
+	'No further capture is available. Reload to refresh the timeline.':
+		'Aucune autre capture n’est disponible. Actualise l’historique pour le mettre à jour.',
+	'Resumed at your last displayed capture.': 'Reprise à la dernière capture affichée.',
+	'Your saved capture is unavailable. Opened the selected capture instead.':
+		'La capture mémorisée est indisponible. La capture sélectionnée a été ouverte.',
+
 	Discover: 'Découvrir',
 	'A world worth keeping.': 'Un monde qu’on a envie de garder.',
 	'Try the demo': 'Essayer la démo',

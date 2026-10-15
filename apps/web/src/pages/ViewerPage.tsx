@@ -7,8 +7,16 @@ import { buttonDark, buttonOutline, Eyebrow, fileInputHidden } from '../componen
 import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { formatClock, ViewerScene } from '../viewer-scene'
+import { TimelapsePage } from './TimelapsePage'
 
 export function ViewerPage() {
+	const [search] = useSearchParams()
+	const id = search.get('memory')
+	if (search.get('timelapse') === '1' && id) return <TimelapsePage key={id} memoryId={id} />
+	return <SingleViewerPage />
+}
+
+function SingleViewerPage() {
 	const { t } = useI18n()
 
 	const { viewerFile, setViewerFile } = useAppContext()
