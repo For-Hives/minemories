@@ -94,6 +94,43 @@ distants, y compris les requêtes dont la réponse a été perdue, avant de publ
 un état lisible. Les leases SQLite ne peuvent pas annuler une copie déjà reçue
 par le provider. Les API d’état/restauration et leur affichage restent à relier.
 
+## Générations physiques et nettoyage
+
+Les clés logiques des souvenirs et des blocs timelapse restent stables. Une copie
+réserve une nouvelle clé physique dans `<propriétaire>/tiers/<uuid>.glb`, distincte
+des clés d’upload. La réservation est persistée avant l’écriture. Après confirmation
+du provider, la publication du pointeur physique et du nouvel état se fait dans
+la même transaction. Un worker expiré reçoit une autre clé à sa reprise et ne peut
+pas publier l’ancienne réservation.
+
+Cette séparation protège aussi contre une requête distante déjà reçue dont la
+réponse a été perdue : si elle finit après une restauration, elle écrit son ancienne
+génération, jamais le fichier redevenu lisible. Les lectures et suppressions de
+l’API résolvent le pointeur ; le flux GLB reste streaming et les URL, permissions,
+métadonnées et miniatures ne changent pas. Le quota logique ne compte pas deux fois
+un souvenir pendant une copie technique. Le catalogue n’accorde qu’un lease de
+copie actif à la fois ; les coûts physiques transitoires restent à inclure dans le
+dimensionnement de l’opérateur.
+
+L’ancienne copie est conservée jusqu’à publication de la nouvelle. Elle rejoint
+ensuite une file de nettoyage physique distincte de la suppression du souvenir.
+Cette distinction permet de libérer l’ancien objet même si sa clé logique est
+encore utilisée. Une génération publiée ou réservée reste protégée contre le
+nettoyage et l’inventaire de réconciliation. Les copies abandonnées après perte de
+lease passent par le délai de grâce des orphelins (24 heures). Le namespace `tiers`
+est reconnu par la réconciliation si une écriture tardive recrée un objet déjà
+retiré de cette file.
+
+Le nettoyeur traite au plus une génération par passage, conserve les échecs et
+leurs délais de reprise dans SQLite, puis attend le transfert en cours lors de
+son arrêt. Son ordonnanceur sera relié au worker du provider ; aucun archivage
+ni nettoyage physique de tier n’est activé automatiquement à cette étape.
+
+Les tests utilisent de vrais fichiers : archivage/restauration avec changement de
+clé, suppression de l’original, lecture via la nouvelle génération, reprise après
+interruption, panne de suppression et écriture ancienne terminée en retard. Ils
+vérifient aussi que le quota et le nettoyage des références restent cohérents.
+
 ## Contraintes pour la suite
 
 Le worker devra utiliser le catalogue et ses réservations durables. Les
@@ -112,6 +149,9 @@ Références officielles consultées le 15 octobre 2026 :
 - [Restauration AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects.html) :
   Glacier Flexible Retrieval/Deep Archive nécessitent une copie restaurée temporaire ;
   le maintien à chaud nécessite une transition distincte.
+- [Copie AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html) :
+  valider la réponse complète via le SDK ; un statut HTTP 200 peut contenir une
+  erreur de copie et ne suffit pas à autoriser la publication d’une génération.
 - [Contraintes d’archivage AWS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/archival-storage.html) :
   tenir compte des durées minimales et des frais de suppression anticipée.
 - [Classes R2](https://developers.cloudflare.com/r2/buckets/storage-classes/) et

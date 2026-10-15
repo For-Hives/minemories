@@ -14,11 +14,23 @@ import { coldStorageCandidates } from './cold-storage-policy'
 import { ObjectDeletionQueue } from './object-deletions'
 import { CaptureArchivedError } from './object-tiers'
 import { readAll, temporalFixture } from './test-support/timelapse-fixture'
+import { TieredObjects } from './tiered-objects'
 
 const NOW = 100 * 86_400_000
 function required(work: ColdStorageWork | null): ColdStorageWork {
 	if (!work) throw new Error('Missing work')
 	return work
+}
+
+async function publish(
+	f: Awaited<ReturnType<typeof temporalFixture>>,
+	catalog: ColdStorageCatalog,
+	work: ColdStorageWork,
+	now: number
+) {
+	const target = catalog.reserveCopy(work, now)
+	await f.objects.write(target.physicalKey, await f.raw(target.sourceKey), new AbortController().signal)
+	return catalog.finish(work, target.physicalKey, now)
 }
 
 test('archive claims recheck the exact object and atomically exclude readers from another SQLite connection', async () => {
@@ -56,13 +68,13 @@ test('archive claims recheck the exact object and atomically exclude readers fro
 		expect(catalog.requestRestore([capture.key], NOW + 2)).toBe(1)
 		expect(catalog.requestRestore([capture.key], NOW + 3)).toBe(0)
 		expect(catalog.claimNext(NOW + 3)).toBeNull()
-		expect(catalog.finish(work, NOW + 3)).toBe(true)
-		expect(catalog.finish(work, NOW + 4)).toBe(false)
+		expect(await publish(f, catalog, work, NOW + 3)).toBe(true)
+		expect(catalog.finish(work, 'stale-copy', NOW + 4)).toBe(false)
 		const restore = required(catalog.claimNext(NOW + 4))
 		expect(restore.state).toBe('restoring')
 		expect(restore.operationId).not.toBe(work.operationId)
 		await expect(f.files().read(capture.key)).rejects.toThrow(CaptureArchivedError)
-		expect(catalog.finish(restore, NOW + 5)).toBe(true)
+		expect(await publish(f, catalog, restore, NOW + 5)).toBe(true)
 		expect(await readAll(await f.files().read(capture.key))).toEqual(f.data)
 		expect(catalog.beginArchive(capture.key, 90, NOW + 5)).toBe(false)
 		expect(catalog.beginArchive(capture.key, 90, NOW + 5 + RESTORE_READ_GRACE_MS)).toBe(true)
@@ -90,11 +102,11 @@ test('uncertain operations survive restart and worker expiry; stale acknowledgem
 		expect(retry.attempts).toBe(1)
 		expect(replacement.operationId).toBe(initial.operationId)
 		expect(replacement.workerId).not.toBe(retry.workerId)
-		expect(catalog.finish(retry, later)).toBe(false)
+		expect(catalog.finish(retry, 'stale-copy', later)).toBe(false)
 		expect(catalog.fail(retry, later)).toBe(false)
 		expect(() => catalog.renew(retry, later)).toThrow('expired')
 		await expect(f.files().read(capture.key)).rejects.toThrow(CaptureArchivedError)
-		expect(catalog.finish(replacement, later)).toBe(true)
+		expect(await publish(f, catalog, replacement, later)).toBe(true)
 		expect(f.db.query('SELECT state FROM object_tiers WHERE object_key=?').get(capture.key)).toEqual({ state: 'cold' })
 		expect(catalog.requestRestore([capture.key], later)).toBe(1)
 		let now = later
@@ -106,7 +118,7 @@ test('uncertain operations survive restart and worker expiry; stale acknowledgem
 			now = row.next_attempt_at
 		}
 		expect(catalog.requestRestore([capture.key], now)).toBe(0)
-		expect(catalog.finish(required(catalog.claimNext(now)), now)).toBe(true)
+		expect(await publish(f, catalog, required(catalog.claimNext(now)), now)).toBe(true)
 		expect(catalog.requestRestore([capture.key, 'unknown'], now)).toBe(0)
 	} finally {
 		await f.close()
@@ -159,14 +171,14 @@ test('deletion waits for uncertain tier work and removes tier metadata only afte
 		f.db.query('DELETE FROM memories WHERE id=?').run(capture.id)
 		f.db.query('INSERT INTO object_deletions(object_key,created_at) VALUES (?,?)').run(capture.key, NOW)
 		const queue = new ObjectDeletionQueue(f.db, async key => {
-			await rm(f.local(key), { force: true })
+			await new TieredObjects(f.db, f.objects, k => rm(f.local(k), { force: true })).remove(key)
 			removed.push(key)
 		})
 		await queue.drain(capture.key, NOW)
 		await queue.drain(undefined, NOW)
 		expect(removed).toEqual([])
 		expect(await f.raw(capture.key)).toEqual(f.data)
-		expect(catalog.finish(work, NOW)).toBe(true)
+		expect(await publish(f, catalog, work, NOW)).toBe(true)
 		await queue.drain(undefined, NOW)
 		expect(removed).toEqual([capture.key])
 		await expect(f.raw(capture.key)).rejects.toThrow()
@@ -184,17 +196,18 @@ test('restoration work takes priority over another archive and hot objects do no
 			second = await f.add({}),
 			catalog = new ColdStorageCatalog(f.db)
 		expect(catalog.beginArchive(first.key, 90, NOW)).toBe(true)
-		expect(catalog.finish(required(catalog.claimNext(NOW)), NOW)).toBe(true)
+		expect(await publish(f, catalog, required(catalog.claimNext(NOW)), NOW)).toBe(true)
 		expect(catalog.beginArchive(second.key, 90, NOW)).toBe(true)
 		expect(catalog.requestRestore([first.key], NOW + 1)).toBe(1)
 		const restore = required(catalog.claimNext(NOW + 1))
 		expect(restore.objectKey).toBe(first.key)
 		expect(restore.state).toBe('restoring')
-		expect(catalog.finish(restore, NOW + 1)).toBe(true)
+		expect(catalog.claimNext(NOW + 1)).toBeNull()
+		expect(await publish(f, catalog, restore, NOW + 1)).toBe(true)
 		expect(catalog.requestRestore([first.key], NOW + 2)).toBe(0)
 		const archive = required(catalog.claimNext(NOW + 2))
 		expect(archive.objectKey).toBe(second.key)
-		expect(catalog.finish(archive, NOW + 2)).toBe(true)
+		expect(await publish(f, catalog, archive, NOW + 2)).toBe(true)
 		expect(catalog.claimNext(NOW + 3)).toBeNull()
 	} finally {
 		await f.close()

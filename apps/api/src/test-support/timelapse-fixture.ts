@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import type { Readable } from 'node:stream'
 import { migrateCaptureReaders } from '../capture-readers'
 import { ObjectDeletionQueue } from '../object-deletions'
+import { TieredObjects } from '../tiered-objects'
 import { migrateTimelapse, TimelapseCatalog } from '../timelapse-catalog'
 import { TimelapseFiles, type TimelapseObjects } from '../timelapse-files'
 import { migrateTimelapseIndex } from '../timelapse-index'
@@ -36,6 +37,7 @@ export async function temporalFixture() {
 		read: async (key, signal) => createReadStream(local(key), { signal }),
 		write: async (key, data, signal) => writeFile(local(key), data, { flag: 'wx', signal }),
 	}
+	const tiered = () => new TieredObjects(db, objects, key => rm(local(key), { force: true }))
 	const binary = Buffer.alloc(768 * 1024, 42),
 		data = minimalGlb(binary, { asset: { version: '2.0' }, buffers: [{ byteLength: binary.length }] })
 	return {
@@ -46,7 +48,7 @@ export async function temporalFixture() {
 		data,
 		objects,
 		local,
-		files: (options = { now: () => 0, heartbeatMs: 30_000 }) => new TimelapseFiles(db, objects, options),
+		files: (options = { now: () => 0, heartbeatMs: 30_000 }) => new TimelapseFiles(db, tiered(), options),
 		catalog: () => new TimelapseCatalog(db),
 		async add(metadata: unknown = frameMetadata, payload = data) {
 			const id = randomUUID(),
@@ -64,8 +66,7 @@ export async function temporalFixture() {
 		key(id: string) {
 			return (db.query('SELECT object_key FROM memories WHERE id=?').get(id) as { object_key: string }).object_key
 		},
-		drain: async (now = 0) =>
-			new ObjectDeletionQueue(db, async key => rm(local(key), { force: true })).drain(undefined, now),
+		drain: async (now = 0) => new ObjectDeletionQueue(db, key => tiered().remove(key)).drain(undefined, now),
 		raw: async (key: string): Promise<Buffer> => readFile(local(key)),
 		restart() {
 			db.close()
