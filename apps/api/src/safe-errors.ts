@@ -10,6 +10,7 @@ const stackFunction = /^\s*at (?:async )?([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/
 const sourceFile =
 	/(?:^|\/)(index|uploads|upload-files|storage|storage-s3|storage-stream|object-deletions)\.ts:(\d+):\d+\)?$/
 type ErrorEvent =
+	| 'billing_auth_failed'
 	| 'rpc_failed'
 	| 'shared_download_failed'
 	| 'public_download_failed'
