@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFileSync as readFileSyncForMock, writeFileSync as writeFileSyncForMock } from 'node:fs'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, resolve } from 'node:path'
 import { test } from 'node:test'
@@ -68,6 +68,21 @@ test('matrix artifacts retain distinct loader files and checksums in one verifie
 		JSON.parse(await readFile(resolve(data.output, 'release-manifest.json'), 'utf8')).sourceCommit,
 		data.plan.sourceCommit
 	)
+})
+test('a single artifact extracted flat by download-artifact keeps the same provenance and integrity checks', async t => {
+	const data = await fixture(t)
+	const directory = resolve(data.inputs, 'release-target-neoforge-mc1.21.1')
+	const files = await readdir(directory)
+	await Promise.all(files.map(file => rename(resolve(directory, file), resolve(data.inputs, file))))
+	await rm(directory, { recursive: true })
+	const artifacts = await collectReleaseAssets(data.plan, data.inputs, data.output, data.root)
+	assert.equal(artifacts.length, 1)
+	assert.equal(artifacts[0].target, 'neoforge-mc1.21.1')
+	await writeFile(resolve(data.inputs, 'unexpected.jar'), 'foreign artifact')
+	await assert.rejects(collectReleaseAssets(data.plan, data.inputs, data.output, data.root))
+	await rm(resolve(data.inputs, 'unexpected.jar'))
+	await writeFile(resolve(data.inputs, 'minemories-neoforge-mc1.21.1.jar'), 'altered archive')
+	await assert.rejects(collectReleaseAssets(data.plan, data.inputs, data.output, data.root))
 })
 test('missing matrix targets, wrong source/version, altered bytes and mismatched receipts stop publication', async t => {
 	await Promise.all(
