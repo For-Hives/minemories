@@ -11,6 +11,7 @@ export class ObjectReferences {
 	readonly unreferencedSql: string
 	private readonly memories: Statement | null
 	private readonly uploads: Statement | null
+	private readonly chunks: Statement | null
 	private readonly owners: Statement[]
 	constructor(database: Database) {
 		const tables = new Set(
@@ -24,6 +25,9 @@ export class ObjectReferences {
 		this.uploads = tables.has('mod_uploads')
 			? database.query('SELECT 1 FROM mod_uploads WHERE id = ? AND user_id = ? AND completed = 0 LIMIT 1')
 			: null
+		this.chunks = tables.has('timelapse_chunks')
+			? database.query("SELECT 1 FROM timelapse_chunks WHERE object_key = ? AND state != 'deleting' LIMIT 1")
+			: null
 		this.unreferencedSql =
 			[
 				tables.has('memories')
@@ -35,6 +39,9 @@ export class ObjectReferences {
 							length(object_deletions.object_key) - instr(object_deletions.object_key, '/') - 4)
 						AND user_id = substr(object_deletions.object_key, 1, instr(object_deletions.object_key, '/') - 1))`
 					: '',
+				tables.has('timelapse_chunks')
+					? "NOT EXISTS (SELECT 1 FROM timelapse_chunks WHERE object_key = object_deletions.object_key AND state != 'deleting')"
+					: '',
 			]
 				.filter(Boolean)
 				.join(' AND ') || '1'
@@ -43,6 +50,7 @@ export class ObjectReferences {
 			['devices', 'user_id'],
 			['memories', 'user_id'],
 			['mod_uploads', 'user_id'],
+			['timelapse_chunks', 'user_id'],
 		]
 			.filter(([table]) => tables.has(table as string))
 			.map(([table, column]) => database.query(`SELECT 1 FROM "${table}" WHERE "${column}" = ? LIMIT 1`))
@@ -51,7 +59,7 @@ export class ObjectReferences {
 		return this.owners.some(statement => Boolean(statement.get(owner)))
 	}
 	isReferenced(key: string): boolean {
-		if (this.memories?.get(key)) return true
+		if (this.memories?.get(key) || this.chunks?.get(key)) return true
 		const slash = key.lastIndexOf('/')
 		if (slash < 1 || !key.endsWith('.glb')) return false
 		return Boolean(this.uploads?.get(key.slice(slash + 1, -4), key.slice(0, slash)))
