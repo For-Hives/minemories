@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.0-beta.1...mod-v0.5.1-beta.1) (2026-10-15)
+
+### Corrections
+
+* **mod:** preserve atlas sampling across sprite boundaries ([4b879bb](https://github.com/For-Hives/minemories/commit/4b879bbe70b5c0d343d0ab8287b8e9ee9b920342))
+
 ## [0.5.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.4.0-beta.1...mod-v0.5.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
