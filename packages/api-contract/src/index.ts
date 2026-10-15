@@ -65,6 +65,12 @@ export const apiContract = {
 	discovery: discoveryContract,
 	timelapse: timelapseContract,
 	account: {
+		changeEmail: oc
+			.input(z.object({ email: z.email().trim().toLowerCase().max(254), currentPassword: z.string().min(1).max(128) }))
+			.output(z.object({ ok: z.literal(true) })),
+		changePassword: oc
+			.input(z.object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(12).max(128) }))
+			.output(z.object({ ok: z.literal(true) })),
 		storage: oc.output(
 			z.object({
 				usedBytes: z.number().int().nonnegative(),

@@ -1,0 +1,100 @@
+.mm-account-page {
+	max-width: 1100px;
+}
+.mm-account-heading h1 {
+	margin: 12px 0;
+	font-size: clamp(30px, 4vw, 46px);
+	letter-spacing: -1.5px;
+}
+.mm-account-heading p {
+	color: var(--color-muted-ink);
+	overflow-wrap: anywhere;
+}
+.mm-account-heading a {
+	display: inline-block;
+	margin: 12px 0;
+	color: var(--color-lime);
+}
+.mm-account-note {
+	max-width: 800px;
+	padding: 18px 22px;
+	border-left: 3px solid var(--color-lime);
+	background: var(--color-paper-light);
+	line-height: 1.7;
+}
+.mm-account-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 24px;
+	margin-top: 28px;
+}
+.mm-account-card {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 16px;
+	padding: 30px;
+	border: 1px solid #354238;
+	border-radius: 14px;
+	background: var(--color-paper-light);
+}
+.mm-account-symbol {
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: #293d2f;
+	color: var(--color-lime);
+	font-size: 26px;
+}
+.mm-account-card h2 {
+	margin: 0;
+	font-size: 24px;
+}
+.mm-account-card p {
+	margin: 0;
+	color: var(--color-muted-ink);
+	line-height: 1.6;
+}
+.mm-account-card label {
+	display: grid;
+	width: 100%;
+	gap: 8px;
+	font-size: 13px;
+}
+.mm-account-card input {
+	width: 100%;
+	min-height: 46px;
+	border: 1px solid #53654c;
+	border-radius: 7px;
+	background: var(--color-paper);
+	padding: 10px 12px;
+	color: var(--color-ink);
+}
+.mm-account-card input:focus-visible {
+	outline: 2px solid var(--color-lime);
+	outline-offset: 2px;
+}
+.mm-account-card button {
+	margin-top: auto;
+}
+.mm-account-card button:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+.mm-account-error {
+	border: 1px solid #b76856;
+	border-radius: 8px;
+	padding: 14px;
+	background: #3a211c;
+	color: #ffc8b8;
+}
+@media (max-width: 700px) {
+	.mm-account-grid {
+		grid-template-columns: 1fr;
+	}
+	.mm-account-card {
+		padding: 22px;
+	}
+}

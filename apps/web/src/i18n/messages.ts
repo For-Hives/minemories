@@ -48,6 +48,7 @@ export const frenchMessages: Record<string, string> = {
 	'My gallery': 'Ma galerie',
 	'Sign in': 'Se connecter',
 	'Sign out': 'Se déconnecter',
+	'My account': 'Mon compte',
 	'Open a local GLB': 'Ouvrir un GLB local',
 	Guides: 'Guides',
 	Blog: 'Journal',

@@ -5,6 +5,7 @@ import { authClient } from '../auth-client'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonDark, Eyebrow } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
+import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 
 const inputField =
 	'h-[45px] w-full rounded-[5px] border border-[#354238] bg-[#1c2720] px-[13px] text-xs font-normal text-ink outline-0 placeholder:text-[#b4c1ad] focus:border-[#354238] focus:shadow-[0_0_0_3px_#8b9e6320]'
@@ -107,6 +108,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					<p className="m-0 text-[13px] text-[#b4c1ad]">
 						{creating ? t('Gather your worlds in a single gallery.') : t('Find your worlds gallery again.')}
 					</p>
+					{!creating && <CredentialsNotice />}
 					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit}>
 						{creating && (
 							<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
@@ -176,5 +178,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 				</div>
 			</div>
 		</section>
+	)
+}
+
+function CredentialsNotice() {
+	const { copy } = useLocalizedCopy(),
+		location = useLocation()
+	const updated = new URLSearchParams(location.search).get('updated')
+	if (updated !== 'email' && updated !== 'password') return null
+	return (
+		<p role="status" className="mt-5 rounded-md border border-lime-deep p-3 text-sm">
+			{copy('Identifiants modifiés. Reconnecte-toi pour continuer.', 'Credentials updated. Sign in again to continue.')}
+		</p>
 	)
 }

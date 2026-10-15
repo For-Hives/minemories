@@ -9,6 +9,7 @@ import { I18nProvider } from './i18n/I18n'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })))
+const AccountPage = lazy(() => import('./pages/AccountPage').then(module => ({ default: module.AccountPage })))
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })))
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
@@ -253,6 +254,14 @@ export function App() {
 								}
 							/>
 							<Route element={<RequireSession />}>
+								<Route
+									path="/account"
+									element={
+										<Page>
+											<AccountPage />
+										</Page>
+									}
+								/>
 								<Route
 									path="/admin/diagnostics"
 									element={
