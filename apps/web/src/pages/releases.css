@@ -44,7 +44,7 @@
 }
 .mm-release-recommended {
 	border-color: #789455;
-	background: radial-gradient(ellipse at top right, #d9f36c0c, transparent 65%), var(--color-paper-light);
+	background: radial-gradient(ellipse at top right, #e9c5830c, transparent 65%), var(--color-paper-light);
 }
 .mm-release-meta,
 .mm-release-actions {
@@ -66,7 +66,7 @@
 	font-weight: 600;
 }
 .mm-release-channel {
-	background: #d9f36c14;
+	background: #e9c58314;
 	color: var(--color-lime);
 }
 .mm-release-card h2 {

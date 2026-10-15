@@ -39,3 +39,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Une « vraie refonte » du viewer doit être immédiatement visible dans la composition de la page, pas seulement dans ses paramètres graphiques. Après validation technique, intégrer effectivement sur main et préciser où voir le résultat ; tester Firefox sur une vraie capture, y compris les modes avec post-traitement, avant de demander au développeur de réessayer.
 
 - Le viewer doit privilégier la position vécue par le joueur et les visites d'intérieurs : un cadrage mathématique du volume, même correctement rendu, ne suffit pas. Ne pas confondre les anciennes coordonnées de capture (parfois le centre du volume) avec une position joueur réellement enregistrée.
+
+- Pour la continuité du viewer, l’utilisateur donne carte blanche sur la direction artistique du reste du site et demande une proposition. La rendre concrète et navigable sur les vraies pages, avec une identité cohérente, afin qu’il puisse juger le layout, la typographie et les interactions ensemble.

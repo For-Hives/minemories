@@ -15,7 +15,7 @@
 	letter-spacing: -0.7px;
 }
 .installation a:not(.install-primary) {
-	color: #d9f36c;
+	color: var(--color-lime);
 	text-decoration: underline;
 	text-underline-offset: 4px;
 }
@@ -26,10 +26,10 @@
 	outline-offset: 5px;
 }
 .installation :focus-visible {
-	outline: 2px solid #d9f36c;
+	outline: 2px solid var(--color-lime);
 }
 .install-eyebrow {
-	color: #c3d6a6;
+	color: #d9cba7;
 	font-family: var(--font-mono);
 	font-size: 11px;
 	letter-spacing: 1.8px;
@@ -78,8 +78,8 @@
 }
 .install-primary {
 	color: #233021;
-	background: #d9f36c;
-	border: 1px solid #d9f36c;
+	background: var(--color-lime);
+	border: 1px solid var(--color-lime);
 }
 .install-primary:hover {
 	background: #e4ff85;
@@ -193,7 +193,7 @@
 	color: #b4c1ad;
 }
 .install-motion input {
-	accent-color: #d9f36c;
+	accent-color: var(--color-lime);
 	width: 18px;
 	height: 18px;
 }
@@ -230,11 +230,11 @@
 	background: #2a382e;
 }
 .install-journey progress::-webkit-progress-value {
-	background: #d9f36c;
+	background: var(--color-lime);
 	transition: width 0.3s;
 }
 .install-journey progress::-moz-progress-bar {
-	background: #d9f36c;
+	background: var(--color-lime);
 }
 .install-workspace {
 	display: grid;
@@ -316,7 +316,7 @@
 }
 .installation code,
 .installation kbd {
-	color: #d9f36c;
+	color: var(--color-lime);
 	font-family: var(--font-mono);
 	overflow-wrap: anywhere;
 	font-size: 0.9em;
@@ -379,7 +379,7 @@
 	border-radius: 8px;
 }
 .install-folder strong {
-	color: #d9f36c;
+	color: var(--color-lime);
 	font-weight: 400;
 }
 .installation details {
@@ -446,7 +446,7 @@
 }
 .install-success > span {
 	font-size: 34px;
-	color: #d9f36c;
+	color: var(--color-lime);
 }
 .installation .install-success p {
 	color: #b4c1ad;
@@ -510,7 +510,7 @@
 }
 .install-screenshot figcaption > span {
 	font: 10px var(--font-mono);
-	color: #c3d6a6;
+	color: #d9cba7;
 	letter-spacing: 0.7px;
 }
 .install-screenshot figcaption small {
