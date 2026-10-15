@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.1-beta.1...mod-v0.3.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* recover mod crash diagnostics and add private operator triage ([a05a3a1](https://github.com/For-Hives/minemories/commit/a05a3a1dd8863db636d75c94d6be146959882ed0))
+* **web:** expose mod release history and automatic changelog ([a45957a](https://github.com/For-Hives/minemories/commit/a45957a0d13b3d2698f4390b46161ecab5539bd7))
+
+### Maintenance
+
+* **deps:** update dependency basic-ftp to v6.2.3 ([bf1c8c6](https://github.com/For-Hives/minemories/commit/bf1c8c6c8b757217d7f5129f2633d9eb8a5fdbcb))
+
 ## [0.2.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.0-beta.1...mod-v0.2.1-beta.1) (2026-10-15)
 
 ### Corrections
