@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
+import { bootstrapTemporaryAdministrator } from './admin-bootstrap'
 import { AdminMetrics } from './admin-metrics'
 import { AdminRoles } from './admin-roles'
 import { auth } from './auth'
@@ -74,6 +75,7 @@ interface ApiContext {
 const os = implement(apiContract).$context<ApiContext>()
 const accountSecurity = new AccountSecurity(database, (await auth.$context).password)
 const adminRoles = new AdminRoles(database)
+bootstrapTemporaryAdministrator(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
 const diagnosticsReview = new DiagnosticsReview(
 	diagnostics,
