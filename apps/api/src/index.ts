@@ -544,7 +544,16 @@ if (import.meta.main) {
 		fetch: fetchApi,
 		maxRequestBodySize: MAX_MEMORY_BYTES,
 	})
-	void cleanupUploads()
+	let uploadCleanup: Promise<void> | null = null
+	function maintainUploads(): Promise<void> {
+		uploadCleanup ??= cleanupUploads()
+			.catch(() => logApiFailure('upload_cleanup_failed'))
+			.finally(() => {
+				uploadCleanup = null
+			})
+		return uploadCleanup
+	}
+	void maintainUploads()
 	console.warn(`Minemories API ready at ${server.url}`)
 
 	purgeDeletedMemories()
@@ -554,16 +563,26 @@ if (import.meta.main) {
 	const intervals = [
 		setInterval(() => void timelapseMaintenance.maintain(), 5000),
 		setInterval(() => void coldStorageMaintenance?.maintain(), 60_000),
-		setInterval(() => void cleanupUploads(), 3_600_000),
+		setInterval(() => void maintainUploads(), 3_600_000),
 		setInterval(() => void objectDeletions.maintain(), 60_000),
 		setInterval(() => purgeDeletedMemories(), 3_600_000),
 		setInterval(() => diagnostics.cleanup(), 3_600_000),
 	]
-	const shutdown = async () => {
+	let shutdownPromise: Promise<void> | null = null
+	const stopApi = async () => {
 		for (const interval of intervals) clearInterval(interval)
-		await Promise.all([timelapseMaintenance.stop(), coldStorageMaintenance?.stop()])
-		await server.stop()
+		await Promise.all([
+			server.stop(),
+			timelapseMaintenance.stop(),
+			coldStorageMaintenance?.stop(),
+			objectDeletions.stop(),
+			uploadCleanup,
+		])
 		database.close()
+	}
+	const shutdown = () => {
+		shutdownPromise ??= stopApi()
+		return shutdownPromise
 	}
 	process.on('SIGINT', shutdown)
 	process.on('SIGTERM', shutdown)
