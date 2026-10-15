@@ -2,7 +2,7 @@
 
 ## Parcours joueur
 
-La cible reste Minecraft Java 1.21.1 avec NeoForge 21.1.248. Aucun support Fabric/Quilt/Forge n’est annoncé par le workflow. Le mod s’installe uniquement côté client.
+La cible reste Minecraft Java 1.21.1. La matrice de release contient NeoForge 21.1.248, Fabric Loader 0.19.5 avec Fabric API 0.116.17+1.21.1, et Forge 52.1.19. Quilt 0.30.1 utilise le JAR Fabric ; voir les [essais et leurs limites](loader-support.md). Le mod s’installe uniquement côté client.
 
 **Mode simple (par défaut)** : ouvrir avec M, prendre le code à six chiffres dans la galerie, connecter le compte, puis utiliser « Capturer et envoyer ». Ce bouton nécessite un compte lié et un monde ouvert. Le service utilisé est indiqué : Minemories ou API personnalisée. « Déconnecter ce compte » retire les identifiants locaux et arrête les envois automatiques ; les captures AFK locales restent actives, sans supprimer les souvenirs en ligne.
 
@@ -103,4 +103,4 @@ La page publique `https://minemories.xenos.lightin.io/installation/` affiche la 
 
 Les anciens fichiers `public/downloads` décrivent le packaging CI local ; ils restent indépendants du déploiement front Coolify. Aucun ZIP n'est requis.
 
-Le build prépare également les JAR Fabric et Forge avec manifestes et empreintes séparés dans `build/mod-loaders/`, vérifiés par la matrice CI. Cela ne modifie pas le loader du téléchargement public ou du workflow de publication : voir la [matrice des loaders](loader-support.md) et ses validations.
+Le build prépare également les JAR Fabric et Forge avec manifestes et empreintes séparés dans `build/mod-loaders/`, vérifiés par la matrice CI. Le téléchargement public par défaut reste NeoForge ; la publication et les autres téléchargements utilisent les cibles activées dans `config/mod-targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.
