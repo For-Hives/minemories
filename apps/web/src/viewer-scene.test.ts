@@ -233,3 +233,26 @@ test('a deep capture opens near the surface while preserving the full shadow bou
 	expect(camera.position.y).toBeGreaterThan(target.y)
 	expect(setBaseHeight.mock.calls[0]?.[0]).toBeGreaterThan(camera.position.y)
 })
+
+test('lighting preparation preserves imported face normals instead of forcing derivative normals', () => {
+	const scene = Object.create(ViewerScene.prototype) as {
+		prepareMesh(mesh: THREE.Mesh): void
+	}
+	const geometry = new THREE.BoxGeometry()
+	const normals = geometry.getAttribute('normal')
+	const material = new THREE.MeshStandardMaterial()
+	const mesh = new THREE.Mesh(geometry, material)
+
+	scene.prepareMesh(mesh)
+
+	expect(material.flatShading).toBe(false)
+	expect(geometry.getAttribute('normal')).toBe(normals)
+	expect(mesh.castShadow).toBe(true)
+	expect(mesh.receiveShadow).toBe(true)
+	// GLTFLoader intentionally uses flat shading for assets with no authored normals.
+	material.flatShading = true
+	scene.prepareMesh(mesh)
+	expect(material.flatShading).toBe(true)
+	geometry.dispose()
+	material.dispose()
+})
