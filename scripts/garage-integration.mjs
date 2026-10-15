@@ -44,6 +44,7 @@ try {
 	await waitForGarage()
 	const bun = process.env.MINEMORIES_TEST_BUN ?? 'bun'
 	await run(bun, ['test', 'apps/api/src/session-rpc.test.ts'])
+	await run(bun, ['test', 'apps/api/src/timelapse-http.test.ts'])
 	await run(bun, ['test', 'apps/api/src/storage-garage.test.ts'])
 } finally {
 	// Only this disposable fixture project is removed; development Garage/MinIO volumes are untouched.
