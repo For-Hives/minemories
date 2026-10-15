@@ -71,8 +71,9 @@ final class ExplorationDepth {
         if (visited != null) deepest = Math.min(deepest, visited);
       }
     }
-    // Keep two foundation blocks below the player's feet, without overflowing corrupt/extreme data.
-    return (int) Math.max(dimensionBottom, (long) deepest - 2);
+    // Keep five foundation blocks below the player's feet, without overflowing corrupt/extreme
+    // data.
+    return (int) Math.max(dimensionBottom, (long) deepest - 5);
   }
 
   void save(Path path) throws IOException {

@@ -81,7 +81,7 @@ Validation locale du 10 octobre 2026 : le client de développement NeoForge 21.1
 
 ## Profondeur des captures
 
-Par défaut, les captures autour du joueur, manuelles ou AFK, coupent le sous-sol deux blocs sous la profondeur la plus basse visitée dans les chunks concernés. À la première capture, le terrain de surface sert aussi de référence pour éviter une capture vide si le joueur vole. Les passages en profondeur étendent ensuite les captures de cette zone. Le suivi fonctionne aussi lorsque les captures AFK sont désactivées.
+Par défaut, les captures autour du joueur, manuelles ou AFK, coupent le sous-sol cinq blocs sous la profondeur la plus basse visitée dans les chunks concernés. À la première capture, le terrain de surface sert aussi de référence pour éviter une capture vide si le joueur vole. Les passages en profondeur étendent ensuite les captures de cette zone. Le suivi fonctionne aussi lorsque les captures AFK sont désactivées.
 
 Cet historique est local, séparé par monde/serveur, dimension et joueur. Il est enregistré dans `config/minemories/exploration/` toutes les dix secondes, avant une capture et au changement de monde. Il conserve au maximum 100 000 chunks par historique ; les plus anciens peuvent être évincés. Les visites antérieures à cette version ne sont pas récupérées. Le seuil est commun à la zone capturée : des cavités non visitées au-dessus de cette profondeur peuvent encore apparaître. Ce n’est pas une reconstruction des seuls blocs vus par le joueur.
 

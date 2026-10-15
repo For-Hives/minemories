@@ -38,7 +38,7 @@ un partage nécessite une action du propriétaire. La revue ne change pas ce par
   limitées malgré des headers IP différents.
 - Stockage : contrôle des clés filesystem contre la traversée de chemins,
   accès propriétaire, téléchargement en stream, réponse 503 générique en cas de panne.
-- Upload : tailles 100 MiB legacy / 200 MiB reprenable, morceaux de 4 MiB, SHA-256,
+- Upload : tailles 100 MiB legacy / 450 MiB reprenable, morceaux de 4 MiB, SHA-256,
   isolation par device, rejeu, offsets, expiration et quotas de staging. Un échec
   SQL après stockage legacy retire l’objet provisoire et ne publie pas de souvenir.
 - La couverture reste contrôlée par fichier à 90 % des lignes et 80 % des fonctions,

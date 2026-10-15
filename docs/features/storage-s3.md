@@ -27,7 +27,7 @@ HTTPS, ses droits de bucket et ses volumes restent à vérifier séparément.
 
 Le transfert fichier → S3 utilise un stream, des parts de **8 MiB** et un seul
 worker. Il ne charge pas la capture entière en mémoire. Les morceaux du mod vers
-l’API restent de **4 MiB**, pour un fichier maximal de **200 MiB**. Les téléchargements
+l’API restent de **4 MiB**, pour un fichier maximal de **450 MiB**. Les téléchargements
 HTTP restent des streams privés ou partagés explicitement, avec `private, no-store`.
 
 Le SDK dispose de trois tentatives maximales, d’un délai de connexion de quinze
