@@ -16,7 +16,20 @@ const target = {
 }
 test('only implemented and validated loader targets enter the matrix', async () => {
 	const configuration = JSON.parse(await readFile(`${repositoryRoot}/config/mod-targets.json`, 'utf8'))
-	assert.deepEqual(enabledTargets(configuration), [target])
+	const active = enabledTargets(configuration)
+	assert.deepEqual(
+		active.map(item => [item.loader, item.loaderVersion, item.project]),
+		[
+			['neoforge', '21.1.248', 'neoforge'],
+			['fabric', '0.19.5', 'fabric'],
+			['forge', '52.1.19', 'forge'],
+		]
+	)
+	assert.ok(
+		active.every(item => item.enabled && item.validatedInGame && item.minecraft === '1.21.1' && item.java === '21')
+	)
+	assert.equal(active.find(item => item.loader === 'fabric').fabricApi, '0.116.17+1.21.1')
+	assert.equal(configuration.targets.find(item => item.loader === 'quilt').enabled, false)
 	assert.equal(filenameFor(target), 'minemories-neoforge-mc1.21.1.jar')
 	assert.equal(configuration.targets.length, 4)
 	for (const broken of [
