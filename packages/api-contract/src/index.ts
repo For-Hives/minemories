@@ -1,7 +1,14 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
+import { captureIdentityFields } from './capture-identity'
 import { discoveryContract } from './discovery'
 
+export {
+	type CaptureIdentity,
+	captureIdentityFields,
+	completeCaptureIdentity,
+	validCaptureIdentity,
+} from './capture-identity'
 export { DIAGNOSTIC_BODY_BYTES, diagnosticSubmission, type ModDiagnostic } from './diagnostics'
 
 export const thumbnailDataUrl = z
@@ -18,6 +25,7 @@ const memorySchema = z.object({
 	size: z.number().int().nonnegative(),
 	createdAt: z.string().datetime(),
 	metadata: z.object({
+		...captureIdentityFields,
 		seed: z.string().nullable(),
 		x: z.number().nullable(),
 		y: z.number().nullable(),

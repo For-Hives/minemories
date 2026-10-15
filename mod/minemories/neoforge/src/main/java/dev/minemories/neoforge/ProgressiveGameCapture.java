@@ -79,9 +79,18 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     pixels = new CapturePixels(mc);
     sprites = new Minemories.SpriteAssets(pixels);
     models = new RenderedModelCapture(sink, mc, pixels);
-    String metadata = Minemories.currentCaptureMetadata(position).toString();
+    var metadata = Minemories.currentCaptureMetadata(position);
+    Minemories.identifyCapture(metadata, bounds, false);
     writer = new QueuedGlbCapture(settings.directory());
-    pump = new ProgressiveCapturePump(this, writer, started, metadata);
+    pump =
+        new ProgressiveCapturePump(
+            this,
+            writer,
+            started,
+            () -> {
+              if (metadata.has("worldId")) CaptureIdentity.geometry(metadata, bounds);
+              return metadata.toString();
+            });
   }
 
   boolean valid(PairingClient.CaptureSettings current, long epoch) {

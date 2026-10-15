@@ -1,9 +1,10 @@
-import { thumbnailDataUrl } from '@minemories/api-contract'
+import { captureIdentityFields, thumbnailDataUrl, validCaptureIdentity } from '@minemories/api-contract'
 import * as z from 'zod'
 import type { MemoryMetadata } from './pairing'
 
 const metadataSchema = z
 	.object({
+		...captureIdentityFields,
 		seed: z.string().max(64).nullable().default(null),
 		x: z.number().finite().nullable().default(null),
 		y: z.number().finite().nullable().default(null),
@@ -21,6 +22,7 @@ const metadataSchema = z
 		captureStartedAt: z.string().max(64).datetime().nullable().default(null),
 		captureFinishedAt: z.string().max(64).datetime().nullable().default(null),
 	})
+	.refine(validCaptureIdentity, 'Incomplete or inconsistent capture identity')
 	.refine(
 		value =>
 			!(value.captureStartedAt && value.captureFinishedAt) ||

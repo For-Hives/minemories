@@ -34,3 +34,34 @@ describe('capture metadata interval', () => {
 		).toBeNull()
 	})
 })
+
+const frameIdentity = {
+	worldId: 'a'.repeat(64),
+	zoneId: 'b'.repeat(64),
+	captureMode: 'around',
+	captureBounds: { minX: -2, minY: -64, minZ: -2, maxX: 2, maxY: 319, maxZ: 2 },
+	captureOrigin: { x: 0, y: 127, z: 0 },
+}
+test('retains a complete timeline identity and leaves legacy uploads untagged', () => {
+	expect(parseMetadata('{}')).not.toHaveProperty('worldId')
+	expect(parseMetadata(JSON.stringify(frameIdentity))).toMatchObject(frameIdentity)
+})
+test('refuses partial, malformed, oversized or misaligned frame identities', () => {
+	for (const key of Object.keys(frameIdentity)) {
+		const partial: Record<string, unknown> = { ...frameIdentity }
+		delete partial[key]
+		expect(parseMetadata(JSON.stringify(partial))).toBeNull()
+	}
+	for (const worldId of ['', 'a'.repeat(63), 'A'.repeat(64), null])
+		expect(parseMetadata(JSON.stringify({ ...frameIdentity, worldId }))).toBeNull()
+	for (const captureBounds of [
+		{ ...frameIdentity.captureBounds, minX: 3 },
+		{ ...frameIdentity.captureBounds, maxY: 10000 },
+		{ ...frameIdentity.captureBounds, maxX: 300 },
+		{ ...frameIdentity.captureBounds, maxZ: 300 },
+		{ minX: 0, minY: 0, minZ: 0, maxX: 256, maxY: 1023, maxZ: 256 },
+	])
+		expect(parseMetadata(JSON.stringify({ ...frameIdentity, captureBounds }))).toBeNull()
+	expect(parseMetadata(JSON.stringify({ ...frameIdentity, captureOrigin: { x: 1, y: 127, z: 0 } }))).toBeNull()
+	expect(parseMetadata(JSON.stringify({ ...frameIdentity, captureMode: 'inferred' }))).toBeNull()
+})

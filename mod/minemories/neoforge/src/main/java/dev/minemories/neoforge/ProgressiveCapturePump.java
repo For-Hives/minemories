@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /** Client producer: never waits for the writer or advances copied data before queue admission. */
 final class ProgressiveCapturePump {
@@ -29,7 +30,7 @@ final class ProgressiveCapturePump {
   private final Producer producer;
   private final QueuedGlbCapture writer;
   private final Instant started;
-  private final String metadata;
+  private final Supplier<String> metadata;
   private final Set<String> copied = new HashSet<>();
   private CaptureTransfer pending;
   private boolean finished;
@@ -38,6 +39,11 @@ final class ProgressiveCapturePump {
 
   ProgressiveCapturePump(
       Producer producer, QueuedGlbCapture writer, Instant started, String metadata) {
+    this(producer, writer, started, () -> metadata);
+  }
+
+  ProgressiveCapturePump(
+      Producer producer, QueuedGlbCapture writer, Instant started, Supplier<String> metadata) {
     this.producer = producer;
     this.writer = writer;
     this.started = started;
@@ -76,7 +82,7 @@ final class ProgressiveCapturePump {
     while (!finished && !writer.done() && writer.ready() && budget.admit()) {
       if (pending == null) {
         if (producer.exhausted()) {
-          finished = writer.finish(started, metadata);
+          finished = writer.finish(started, metadata.get());
           return;
         }
         var copiedElement = producer.next();

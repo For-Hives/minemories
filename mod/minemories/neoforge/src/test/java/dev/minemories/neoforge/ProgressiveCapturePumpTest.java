@@ -74,7 +74,16 @@ class ProgressiveCapturePumpTest {
           }
         };
     try (var writer = new QueuedGlbCapture(folder)) {
-      var pump = new ProgressiveCapturePump(producer, writer, Instant.now(), "{}");
+      var pump =
+          new ProgressiveCapturePump(
+              producer,
+              writer,
+              Instant.now(),
+              () -> {
+                assertEquals(3, produced.get());
+                assertEquals(16, bands.get());
+                return "{\"worldName\":\"final-" + produced.get() + "\"}";
+              });
       long timeout = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
       int frames = 0;
       while (!pump.finished() && !writer.done()) {
@@ -92,6 +101,8 @@ class ProgressiveCapturePumpTest {
       assertTrue(frames > 20);
       assertEquals(3, produced.get());
       assertNotNull(CaptureHistory.metadata(result.file()).get("captureFinishedAt"));
+      assertEquals(
+          "final-3", CaptureHistory.metadata(result.file()).get("worldName").getAsString());
     }
   }
 
