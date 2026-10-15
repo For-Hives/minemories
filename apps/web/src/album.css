@@ -931,3 +931,53 @@
 .mm-site .mm-main [id] {
 	scroll-margin-top: 110px;
 }
+
+.auth-password {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-width: 0;
+	display: grid;
+	gap: 8px;
+}
+.auth-password label {
+	font-size: 11px;
+	font-weight: 700;
+	color: #e6eee1;
+}
+.auth-password-control {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.mm-site .auth-password-control input {
+	min-width: 0;
+	flex: 1;
+}
+.mm-site .auth-password-control button {
+	min-height: 48px;
+	min-width: 76px;
+	padding: 10px;
+	border: 1px solid var(--album-line);
+	border-radius: 10px;
+	color: var(--album-gold);
+	cursor: pointer;
+	font-size: 13px;
+}
+.auth-field-hint {
+	margin: 0;
+	color: #b2bcb0;
+	font-size: 12px;
+	line-height: 1.6;
+}
+.auth-caps-warning {
+	margin: 0;
+	color: var(--album-gold);
+	font-size: 12px;
+}
+.auth-caps-warning:empty {
+	display: none;
+}
+.mm-site .album-auth input {
+	font-size: 16px;
+}
