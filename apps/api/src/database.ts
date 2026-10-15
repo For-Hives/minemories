@@ -7,7 +7,7 @@ import { migrateCaptureReaders } from './capture-readers'
 import { boundColdStorageProvider, verifyColdStorageTarget } from './cold-storage-target'
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
-import { configureS3DeletionProvider } from './storage-s3'
+import { configureS3StorageProvider } from './storage-s3'
 import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTimelapseIndex } from './timelapse-index'
 import { migrateTrashRetention } from './trash-retention'
@@ -90,4 +90,4 @@ migrateTimelapse(database)
 
 migrateTimelapseIndex(database)
 export const coldStorageConfiguration = verifyColdStorageTarget(database, process.env)
-configureS3DeletionProvider(boundColdStorageProvider(database))
+configureS3StorageProvider(boundColdStorageProvider(database))
