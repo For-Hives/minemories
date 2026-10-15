@@ -21,6 +21,8 @@ import org.lwjgl.system.MemoryUtil;
  * Client-owned sources. Only the int[] returned by readBand can be sent to the preparation worker.
  */
 final class CapturePixels {
+  private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+
   interface Source extends ProgressiveCapturePump.Pixels {
     String key();
 
@@ -48,17 +50,34 @@ final class CapturePixels {
   }
 
   void texture(String key, ResourceLocation location) throws IOException {
+    textureRegion(key, location, 0, 0, 0, 0);
+  }
+
+  void textureRegion(String key, ResourceLocation location, int x, int y, int width, int height)
+      throws IOException {
     if (sources.containsKey(key)) return;
     if (rendererTextures == 256)
       throw new IOException("Trop de textures de renderers dans la capture.");
-    // Loading a texture can bind it; preserve the binding around that operation too.
     int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
     try {
       AbstractTexture texture = minecraft.getTextureManager().getTexture(location);
       texture.bind();
-      int width = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
-      int height = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
-      add(new TextureSource(key, texture, texture.getId(), width, height));
+      int textureWidth = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
+      int textureHeight =
+          GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
+      if (width == 0 && height == 0) {
+        width = textureWidth;
+        height = textureHeight;
+      }
+      if (x < 0
+          || y < 0
+          || width < 1
+          || height < 1
+          || x > textureWidth - width
+          || y > textureHeight - height) throw new IOException("Région de texture hors limites.");
+      add(
+          new TextureSource(
+              key, texture, texture.getId(), textureWidth, textureHeight, x, y, width, height));
       rendererTextures++;
     } finally {
       GlStateManager._bindTexture(previous);
@@ -121,6 +140,21 @@ final class CapturePixels {
       throw new IOException("Bande de texture hors limites.");
   }
 
+  private static void startGraphicsRead() throws IOException {
+    // GL errors belong to the shared context and remain queued after unrelated renderers return.
+    // Report earlier errors separately so the post-read check diagnoses only this copy's work.
+    int first = GL11.glGetError();
+    if (first == GL11.GL_NO_ERROR) return;
+    for (int count = 1; count <= 32; count++) {
+      if (GL11.glGetError() == GL11.GL_NO_ERROR) {
+        LOGGER.warn(
+            "OpenGL errors already pending before texture copy: first={}, count={}", first, count);
+        return;
+      }
+    }
+    throw new IOException("L’état graphique reste en erreur avant la copie de texture.");
+  }
+
   private record SpriteSource(String key, TextureAtlasSprite sprite) implements Source {
     @Override
     public int width() {
@@ -144,13 +178,23 @@ final class CapturePixels {
     }
   }
 
-  private record TextureSource(String key, AbstractTexture texture, int id, int width, int height)
+  private record TextureSource(
+      String key,
+      AbstractTexture texture,
+      int id,
+      int textureWidth,
+      int textureHeight,
+      int x,
+      int y,
+      int width,
+      int height)
       implements Source {
     @Override
     public int[] readBand(int row, int rows) throws IOException {
       RenderSystem.assertOnRenderThread();
       validateBand(this, row, rows);
       if (texture.getId() != id) throw new IOException("Texture remplacée pendant la capture.");
+      startGraphicsRead();
       int previousTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
       int previousFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
       int previousReadBuffer = GL11.glGetInteger(GL11.GL_READ_BUFFER);
@@ -165,9 +209,10 @@ final class CapturePixels {
         framebuffer = GL30.glGenFramebuffers();
         if (framebuffer == 0) throw new IOException("Framebuffer de copie indisponible.");
         texture.bind();
-        if (GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH) != width
+        if (GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH)
+                != textureWidth
             || GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT)
-                != height)
+                != textureHeight)
           throw new IOException("Dimensions de texture modifiées pendant la capture.");
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer);
         GL30.glFramebufferTexture2D(
@@ -181,7 +226,7 @@ final class CapturePixels {
         GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, 0);
         GL11.glPixelStorei(GL11.GL_PACK_SKIP_ROWS, 0);
         GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
-        GL11.glReadPixels(0, row, width, rows, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
+        GL11.glReadPixels(x, y + row, width, rows, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
         if (GL11.glGetError() != GL11.GL_NO_ERROR)
           throw new IOException("La lecture graphique de la texture a échoué.");
         int[] rgba = new int[width * rows];
