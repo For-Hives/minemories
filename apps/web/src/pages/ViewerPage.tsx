@@ -4,7 +4,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { buttonDark, buttonOutline, Eyebrow, fileInputHidden } from '../components/ui'
+import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
+import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { formatFileSize } from '../lib/glb'
 import { formatClock, ViewerScene } from '../viewer-scene'
 import { TimelapsePage } from './TimelapsePage'
@@ -35,14 +37,21 @@ function SingleViewerPage() {
 	useEffect(() => {
 		const canvas = canvasRef.current
 		if (!canvas) return
-		const scene = new ViewerScene(canvas, {
-			onCycle: cycle => {
-				setMinutes(cycle.minutes)
-			},
-			onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
-			onEmptyChange: setEmpty,
-			onLoading: setLoading,
-		})
+		let scene: ViewerScene
+		try {
+			scene = new ViewerScene(canvas, {
+				onCycle: cycle => {
+					setMinutes(cycle.minutes)
+				},
+				onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
+				onEmptyChange: setEmpty,
+				onLoading: setLoading,
+			})
+		} catch {
+			setLoadError('WebGL is unavailable. Try another browser or enable hardware acceleration.')
+			return
+		}
+
 		sceneRef.current = scene
 		return () => {
 			scene.dispose()
@@ -79,7 +88,7 @@ function SingleViewerPage() {
 	}, [viewerFile, memoryId, openFile])
 
 	useEffect(() => {
-		if (!memoryId) return
+		if (!(memoryId && sceneRef.current)) return
 		let cancelled = false
 		const controller = new AbortController()
 		setLoadError('')
@@ -145,11 +154,14 @@ function SingleViewerPage() {
 		event.preventDefault()
 		setDragOver(false)
 		const file = event.dataTransfer.files?.[0]
-		if (file) void openFile(file)
+		if (file) {
+			setViewerFile(file)
+			navigate('/viewer', { replace: true })
+		}
 	}
 
 	return (
-		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
+		<section className="viewer-page">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
 					<Eyebrow>
@@ -181,7 +193,7 @@ function SingleViewerPage() {
 			</div>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: dropping files is a bonus; the Choose button stays keyboard accessible. */}
 			<div
-				className="relative h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#354238] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]"
+				className="viewer-stage"
 				onDragEnter={event => {
 					event.preventDefault()
 					setDragOver(true)
@@ -196,7 +208,7 @@ function SingleViewerPage() {
 				<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(#283024_1px,transparent_1px),linear-gradient(90deg,#283024_1px,transparent_1px)] bg-[length:42px_42px] opacity-[0.22] [mask-image:radial-gradient(ellipse_at_center,#000_0%,transparent_73%)]" />
 				<canvas
 					ref={canvasRef}
-					className="absolute inset-0 block h-full w-full"
+					className={`absolute inset-0 block h-full w-full transition-opacity duration-700 motion-reduce:transition-none ${empty ? 'opacity-0' : 'opacity-100'}`}
 					aria-label={t('Interactive 3D scene')}
 				/>
 				{empty && !loading && <EmptyState />}
@@ -252,8 +264,9 @@ function SingleViewerPage() {
 						</button>
 					</div>
 				)}
-				<TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />
+				{!empty && <TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
 			</div>
+			<ViewerStudio sceneRef={sceneRef} ready={!(empty || loading)} memoryId={memoryId} />
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
 				<span className="text-[15px] text-[#b4c1ad]">⌖</span> <T message={'Drag to orbit'} />{' '}
 				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> <T message={'Scroll to zoom'} />{' '}
@@ -301,6 +314,7 @@ async function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<F
 }
 
 function EmptyState() {
+	const { copy } = useLocalizedCopy()
 	return (
 		<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
 			<div className="mb-[29px] grid h-12 w-12 place-items-center rounded-[14px] border border-[#454d3d] bg-[#171c13] text-2xl text-lime-deep shadow-[0_0_42px_#c9f36a0b]">
@@ -317,6 +331,15 @@ function EmptyState() {
 				</b>{' '}
 				<T message={'file here, or open one from your computer.'} />{' '}
 			</p>
+			<label
+				htmlFor="local-file-input"
+				className="pointer-events-auto cursor-pointer rounded-lg bg-lime px-5 py-3 text-xs font-bold text-[#18261c]"
+			>
+				{copy('Ouvrir un souvenir', 'Open a memory')}
+			</label>
+			<p className="mt-5 text-xs text-[#aabbae]">
+				{copy('Votre fichier reste sur cet appareil.', 'Your file stays on this device.')}
+			</p>
 		</div>
 	)
 }
@@ -327,7 +350,7 @@ export function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: 
 	const presets = [
 		{ label: 'Morning', minutes: 570, icon: '☀' },
 		{ label: 'Noon', minutes: 720, icon: '☼' },
-		{ label: 'Sunset', minutes: 1080, icon: '◒' },
+		{ label: 'Sunset', minutes: 1035, icon: '◒' },
 		{ label: 'Night', minutes: 0, icon: '☾' },
 	]
 	let active = presets[0]

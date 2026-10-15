@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { buttonLime, Eyebrow } from '../components/ui'
+import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
@@ -86,14 +87,22 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	useEffect(() => {
 		const canvas = canvasRef.current
 		if (!canvas) return
-		const scene = new ViewerScene(canvas, {
-			onCycle: cycle => {
-				setMinutes(cycle.minutes)
-			},
-			onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
-			onEmptyChange: setEmpty,
-			onLoading: setStatus,
-		})
+		let scene: ViewerScene
+		try {
+			scene = new ViewerScene(canvas, {
+				onCycle: cycle => {
+					setMinutes(cycle.minutes)
+				},
+				onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
+				onEmptyChange: setEmpty,
+				onLoading: setStatus,
+			})
+		} catch {
+			setError('WebGL is unavailable. Try another browser or enable hardware acceleration.')
+			setStatus(null)
+			return
+		}
+
 		sceneRef.current = scene
 		return () => {
 			scene.dispose()
@@ -136,7 +145,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	}, [reference, isPublic, review])
 
 	return (
-		<section className="mx-auto w-[min(100%-88px,1360px)] px-0 py-[37px] pb-[27px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-[25px] max-phone:pb-[19px]">
+		<section className="viewer-page">
 			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
 				<div>
 					<Eyebrow>{isPublic ? t('PUBLIC MEMORY') : <T message={'SHARED MEMORY'} />}</Eyebrow>
@@ -149,19 +158,13 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					<T message={'Keep my own worlds'} /> <span>↗</span>
 				</Link>
 			</div>
-			<div className="relative h-[min(68vw,690px)] min-h-[420px] overflow-hidden rounded-lg border border-[#354238] bg-night shadow-[0_16px_45px_#26312316] max-phone:h-[68vh] max-phone:min-h-[370px]">
-				<canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-label={t('Shared 3D scene')} />
-				{(status ?? error) && (
-					<div
-						role={status ? 'status' : 'alert'}
-						className="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 max-w-[calc(100%_-_32px)] whitespace-normal rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]"
-					>
-						{status && (
-							<span className="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep" />
-						)}
-						<span>{t(status ?? error)}</span>
-					</div>
-				)}
+			<div className="viewer-stage">
+				<canvas
+					ref={canvasRef}
+					className={`absolute inset-0 block h-full w-full ${empty ? 'opacity-0' : 'opacity-100'}`}
+					aria-label={t('Shared 3D scene')}
+				/>
+				<SharedLoadStatus status={status} error={error} />
 				{fileInfo && (
 					<div className="absolute top-[18px] left-[18px] z-[1] flex max-w-[min(60%,420px)] items-center gap-[9px] overflow-hidden rounded-md border border-[#33392e] bg-[#141811d9] px-[11px] py-[9px] font-mono text-[10px] text-[#e1e5d8]">
 						<span className="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]" />
@@ -170,6 +173,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				)}
 				{!empty && <TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
 			</div>
+			<ViewerStudio sceneRef={sceneRef} ready={!(empty || status)} />
 			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad]">
 				{' '}
 				{isPublic ? (
@@ -181,5 +185,25 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				)}{' '}
 			</p>
 		</section>
+	)
+}
+
+function SharedLoadStatus({ status, error }: { status: string | null; error: string }) {
+	const { t } = useI18n()
+	return (
+		<>
+			{' '}
+			{(status ?? error) && (
+				<div
+					role={status ? 'status' : 'alert'}
+					className="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 max-w-[calc(100%_-_32px)] whitespace-normal rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]"
+				>
+					{status && (
+						<span className="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep" />
+					)}
+					<span>{t(status ?? error)}</span>
+				</div>
+			)}
+		</>
 	)
 }
