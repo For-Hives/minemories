@@ -8,6 +8,7 @@
 		"start": "bun src/index.ts",
 		"reconcile": "bun --env-file=../../.env src/reconcile-cli.ts",
 		"diagnostics": "bun --env-file=../../.env src/diagnostics-cli.ts",
+		"admin": "bun --env-file=../../.env src/admin-cli.ts",
 		"archive:plan": "bun --env-file=../../.env src/cold-storage-cli.ts",
 		"test": "bun test src --parallel --coverage && node ../../scripts/check-api-coverage.mjs",
 		"typecheck": "tsc --noEmit -p tsconfig.json"
