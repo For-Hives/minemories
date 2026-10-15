@@ -78,6 +78,9 @@ function sceneFixture() {
 		events: { onLoading: vi.fn(), onFileInfo: vi.fn(), onEmptyChange: vi.fn() },
 		renderer: { compileAsync: vi.fn(() => compile.promise), render: vi.fn() },
 		prepareWorldLighting: vi.fn(),
+		updateEnvironment: vi.fn(),
+		clouds: { update: vi.fn() },
+		effects: { renderFrame: vi.fn() },
 		frameModel: vi.fn(),
 	}
 	Object.assign(scene, fields)
@@ -205,4 +208,28 @@ test('CPU ImageBitmap pixels shared by multiple texture sources close once when 
 	} finally {
 		vi.unstubAllGlobals()
 	}
+})
+
+test('a deep capture opens near the surface while preserving the full shadow bounds', async () => {
+	const THREE = await import('three')
+	const modelRoot = new THREE.Group()
+	modelRoot.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32)))
+	const camera = new THREE.PerspectiveCamera(45, 1.5, 0.1, 4000)
+	const target = new THREE.Vector3()
+	const shadowCenter = new THREE.Vector3()
+	const setBaseHeight = vi.fn()
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	Object.assign(scene, {
+		modelRoot,
+		camera,
+		shadowCenter,
+		controls: { target, update: vi.fn() },
+		clouds: { setBaseHeight },
+		updateSunShadow: vi.fn(),
+	})
+	scene.resetView()
+	expect(target.y).toBeCloseTo(75.2)
+	expect(shadowCenter.y).toBe(0)
+	expect(camera.position.y).toBeGreaterThan(target.y)
+	expect(setBaseHeight.mock.calls[0]?.[0]).toBeGreaterThan(camera.position.y)
 })

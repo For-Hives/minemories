@@ -29,3 +29,12 @@ it('darkens the deep dark even in the overworld', () => {
 	expect(atmosphere.fixedDaylight).toBe(0)
 	expect(atmosphere.starAlpha).toBe(0.4)
 })
+
+it.each(['desert', 'snowy_plains', 'mangrove_swamp'])(
+	'adapts the atmosphere to %s without changing the day cycle',
+	biome => {
+		const result = getAtmosphere('minecraft:overworld', `minecraft:${biome}`)
+		expect(result.dayHorizon).not.toEqual(getAtmosphere(null, null).dayHorizon)
+		expect(result.fixedDaylight).toBeNull()
+	}
+)
