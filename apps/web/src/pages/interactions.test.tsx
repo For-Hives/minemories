@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { act, type ReactNode } from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { UnsupportedGlbError } from '../lib/glb'
@@ -204,6 +204,7 @@ test('registration submits the display name and exposes server errors', async ()
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: '  Builder  ' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Email already used')
+	expect(document.activeElement).toBe(screen.getByRole('alert'))
 	expect(mocks.signUp).toHaveBeenCalledWith({
 		name: 'Builder',
 		email: 'test@example.com',
@@ -491,4 +492,64 @@ test('private viewer reports disabled restoration instead of parsing HTTP 202 an
 	view.unmount()
 	expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
 	vi.unstubAllGlobals()
+})
+
+test('password visibility preserves the value, never submits, and resets outside the field', () => {
+	mount(<AuthPage mode="login" />)
+	const input = screen.getByLabelText('Password') as HTMLInputElement
+	fireEvent.change(input, { target: { value: 'a private test phrase' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+	expect(input.type).toBe('text')
+	expect(input.value).toBe('a private test phrase')
+	expect(mocks.signIn).not.toHaveBeenCalled()
+	const hide = screen.getByRole('button', { name: 'Hide password' })
+	fireEvent.blur(input, { relatedTarget: hide })
+	expect(input.type).toBe('text')
+	fireEvent.click(hide)
+	expect(input.type).toBe('password')
+	fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+	fireEvent.blur(input, { relatedTarget: screen.getByLabelText('Email address') })
+	expect(input.type).toBe('password')
+	expect(input.autocomplete).toBe('current-password')
+})
+
+test('registration keeps password guidance accessible and announces Caps Lock', () => {
+	mount(<AuthPage mode="register" />)
+	const input = screen.getByLabelText('Password') as HTMLInputElement
+	expect(input.minLength).toBe(12)
+	expect(input.autocomplete).toBe('new-password')
+	const described = input
+		.getAttribute('aria-describedby')
+		?.split(' ')
+		.map(id => document.getElementById(id)?.textContent)
+		.join(' ')
+	expect(described).toContain('At least 12 characters')
+	const event = new KeyboardEvent('keydown', { bubbles: true, key: 'A' })
+	Object.defineProperty(event, 'getModifierState', { value: () => true })
+	fireEvent(input, event)
+	expect(screen.getByRole('status').textContent).toBe('Caps Lock is on.')
+	fireEvent.keyUp(input, { key: 'CapsLock' })
+	expect(screen.getByRole('status').textContent).toBe('')
+	expect(screen.getByText(/At least 12 characters/)).toBeTruthy()
+})
+
+test('switching auth modes keeps the intended destination through successful registration', async () => {
+	function AuthRoute() {
+		const location = useLocation()
+		return <AuthPage mode={location.pathname === '/register' ? 'register' : 'login'} />
+	}
+	render(
+		<MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/account' } }]}>
+			<AuthRoute />
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
+	expect(screen.getByLabelText('Display name')).toBeTruthy()
+	fireEvent.click(screen.getByRole('link', { name: 'Sign in' }))
+	expect(screen.queryByLabelText('Display name')).toBeNull()
+	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
+	credentials()
+	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
+	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/account', { replace: true }))
 })
