@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
+import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
+import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
 import { ticksToMinutes } from './ViewerPage'
@@ -26,9 +28,8 @@ async function fetchSharedCapture(token: string, signal: AbortSignal): Promise<{
 	const metaResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}`, { signal })
 	if (!metaResponse.ok) throw new Error('This link is invalid or was revoked.')
 	const capture = (await metaResponse.json()) as SharedCapture
-	const fileResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}/file`, { signal })
-	if (!fileResponse.ok) throw new Error('Could not download this world.')
-	return { capture, file: new File([await fileResponse.blob()], 'shared.glb', { type: 'model/gltf-binary' }) }
+	const file = await downloadCapture(`${apiBase}/api/shared/${encodeURIComponent(token)}/file`, 'shared.glb', signal)
+	return { capture, file }
 }
 
 async function fetchPublicCapture(
@@ -38,12 +39,7 @@ async function fetchPublicCapture(
 ): Promise<{ capture: SharedCapture; file: File }> {
 	const procedure = review ? apiClient.discovery.review : apiClient.discovery.get
 	const entry = await procedure({ id }, { signal })
-	const response = await fetch(`${apiBase}/api/public/${encodeURIComponent(id)}/file`, {
-		signal,
-		credentials: 'include',
-	})
-	if (!response.ok) throw new Error('This publication is unavailable or was withdrawn.')
-	const file = new File([await response.blob()], 'public.glb', { type: 'model/gltf-binary' })
+	const file = await downloadCapture(`${apiBase}/api/public/${encodeURIComponent(id)}/file`, 'public.glb', signal)
 	return {
 		file,
 		capture: {
@@ -83,6 +79,8 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const [empty, setEmpty] = useState(true)
 	const [status, setStatus] = useState<string | null>('Loading the shared world…')
 	const [error, setError] = useState('')
+	const restoration = useCaptureRestoration()
+	const restoreLoad = restoration.load
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -127,9 +125,14 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 			const scene = sceneRef.current
 			if (!(scene && reference)) return
 			try {
-				const { capture, file } = await (isPublic
-					? fetchPublicCapture(reference, review, controller.signal)
-					: fetchSharedCapture(reference, controller.signal))
+				const { capture, file } = await restoreLoad(
+					() =>
+						isPublic
+							? fetchPublicCapture(reference, review, controller.signal)
+							: fetchSharedCapture(reference, controller.signal),
+					isPublic ? { kind: 'public', id: reference } : { kind: 'shared', token: reference },
+					controller.signal
+				)
 				if (cancelled) return
 				applySharedCapture(scene, capture, setTitle)
 				await scene.loadFile(file)
@@ -142,7 +145,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 			cancelled = true
 			controller.abort()
 		}
-	}, [reference, isPublic, review])
+	}, [reference, isPublic, review, restoreLoad])
 
 	const publicBack = review ? '/moderation' : '/explorer'
 	return (
@@ -163,9 +166,10 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
 					aria-label={t('Shared 3D scene')}
 				/>
-				<ViewerLoadState loading={status} error={error} />
+				<CaptureRestorationPanel view={restoration.view} onRestore={restoration.resume} />
+				{!restoration.view && <ViewerLoadState loading={status} error={error} />}
 			</div>
-			{!empty && <ViewerStudio sceneRef={sceneRef} ready={!status} minutes={minutes} fileInfo={fileInfo} />}
+			{!empty && <ViewerStudio sceneRef={sceneRef} ready={!(status || restoration.view)} minutes={minutes} fileInfo={fileInfo} />}
 		</section>
 	)
 }

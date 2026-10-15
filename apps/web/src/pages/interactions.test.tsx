@@ -356,7 +356,7 @@ test('failed memory downloads replace the progress indicator with an error', asy
 			<ViewerPage />
 		</MemoryRouter>
 	)
-	expect(await screen.findByText('Could not load this memory.')).toBeTruthy()
+	expect(await screen.findByText('This memory is unavailable or access was revoked.')).toBeTruthy()
 	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	vi.unstubAllGlobals()
@@ -467,4 +467,28 @@ test('gallery offers timelines only for complete identities and excludes ambiguo
 	const links = screen.getAllByRole('link', { name: 'Timeline' })
 	expect(links).toHaveLength(1)
 	expect(links[0]?.getAttribute('href')).toBe('/viewer?memory=known&timelapse=1')
+})
+
+test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {
+	const availability = {
+		state: 'cold',
+		readyObjects: 0,
+		totalObjects: 2,
+		restorationAvailable: false,
+		retryAfterSeconds: null,
+	}
+	const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json({ availability }, { status: 202 }))
+	vi.stubGlobal('fetch', fetch)
+	const view = render(
+		<MemoryRouter initialEntries={['/viewer?memory=cold-capture']}>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	await screen.findByRole('heading', { name: 'This memory is archived.' })
+	expect(screen.getByRole('button', { name: 'Check again' })).toBeTruthy()
+	expect(mocks.loadFile).not.toHaveBeenCalled()
+	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
+	view.unmount()
+	expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
+	vi.unstubAllGlobals()
 })
