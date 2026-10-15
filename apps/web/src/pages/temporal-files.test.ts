@@ -48,3 +48,17 @@ test('truncation, denied files, and unsupported sizes never reach the renderer',
 		fetchTemporalFile({ ...frame, size: 450 * 1024 * 1024 + 1 }, new AbortController().signal)
 	).rejects.toThrow('Unsupported capture size')
 })
+
+test('a cold timeline frame reports restoration before starting its bounded GLB reader', async () => {
+	const availability = {
+		state: 'restoring',
+		readyObjects: 1,
+		totalObjects: 3,
+		restorationAvailable: true,
+		retryAfterSeconds: 5,
+	}
+	const response = Response.json({ availability }, { status: 202 })
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
+	await expect(fetchTemporalFile(frame, new AbortController().signal)).rejects.toMatchObject({ availability })
+	expect(response.bodyUsed).toBe(true)
+})
