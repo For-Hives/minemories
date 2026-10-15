@@ -105,14 +105,45 @@ au moteur ; le pilote a été corrigé et les vitesses non nulles sont ensuite
 vérifiées sur le client, sans présenter cet échec de fixture comme un défaut du mod.
 
 `bun run build` passe sur ce code, incluant `bun check`, les tests unitaires,
-Spotless, SpotBugs et JaCoCo. Les essais AFK, Sodium/Iris et profils complets
+Spotless, SpotBugs et JaCoCo. Les essais complémentaires sont suivis ci-dessous ; les profils complets
 restent nécessaires avant fermeture de l’issue.
+
+## AFK, annulation et combinaisons de rendu
+
+Le même JAR `972533a8…` a terminé une capture AFK progressive pendant la pause,
+avec un rayon de 12 et la hauteur complète activée dans le banc. Le producteur
+rapporte 909 étapes, 59 917 blocs, cinq entités et 39 622 quads. Le GLB de
+6 888 448 octets contient 79 images intégrées et 79 244 triangles ; les composants
+Create, les fluides des réservoirs et Pikachu sont présents. Les positions/UV sont
+finis et les deux horodatages de l’intervalle sont enregistrés. Le rendu Blender
+a été inspecté. Le producteur reste soumis à des opérations indivisibles : sept
+dépassements du budget souple ont été mesurés, avec une étape maximale de 16,98 ms ;
+aucun budget dur de deux millisecondes n’est revendiqué pour un renderer tiers.
+
+La portée de collecte est désactivée entre les étapes AFK et Flywheel reste actif.
+Un deuxième cycle est annulé : aucun souvenir supplémentaire n’est publié, le
+hash du dernier GLB complet reste identique et le spool est nettoyé. Aucun
+appairage ou envoi réseau Minemories n’est utilisé dans ce parcours.
+
+| Combinaison exercée | Résultat |
+| --- | --- |
+| NeoForge 21.1.248, sans Flywheel | Démarrage et capture de coffre, mouton coloré, feuillage, verre et eau ; portée restaurée. |
+| NeoForge 21.1.249 + Sodium 0.8.13 | Capture des mécanismes alimentés et fluides ; neuf états GL surveillés identiques, Flywheel actif après capture. |
+| Même banc + Iris 1.8.14-beta.1 + MakeUp UltraFast 9.5e | API Iris confirmant le shader activé ; capture réussie, neuf états GL surveillés identiques. Dans cette combinaison Iris désactive déjà Flywheel hors capture. |
+
+Les sept GLB de la matrice, AFK et régression compris, passent les validateurs API
+réels. Les rendus Blender de la régression, de Sodium et d’Iris ont également été
+inspectés. Sodium signale que le collecteur utilise le chemin de sommets générique ;
+ce diagnostic n’est pas masqué et aucune accélération Sodium du collecteur n’est
+annoncée. Les effets visuels propres au shader ne sont pas reproduits dans le GLB,
+qui conserve la géométrie et les textures de base autonomes.
+
+Preuves : sous-dossiers `afk/`, `vanilla/`, `sodium/`, `iris/`,
+`api-validation.json` et rapports/rendus Blender associés. Ces combinaisons
+emploient encore le sous-ensemble ciblé des mods ; les copies avec la liste
+complète des profils sont en cours d’essai.
 
 ## Validation encore nécessaire pour #91
 
-- Rendu Sodium/Iris et shader packs retenus, ou limites constatées avec leurs
-  versions exactes ; aucun shader n’est annoncé validé par sa seule présence.
-- Captures AFK progressives avec les mêmes renderers et retour à une capture
-  sans Flywheel ; vérifier annulation, derniers fichiers valides et état du jeu.
 - Scénarios sur les profils ciblés et documentation du périmètre réellement testé,
   puis contrôles globaux et CI avant fusion et fermeture.
