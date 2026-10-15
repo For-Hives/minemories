@@ -45,6 +45,7 @@ function AccountControl() {
 				<img src={avatarUrl(session.user)} alt="" width={32} height={32} loading="lazy" />
 				<span>{session.user.name}</span>
 			</Link>
+			<Link to="/account">{t('My account')}</Link>
 			<button
 				type="button"
 				onClick={async () => {
