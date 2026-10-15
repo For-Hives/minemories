@@ -9,6 +9,7 @@ import { ORPHAN_GRACE_MS } from './storage-reconciliation'
 import { temporalFixture } from './test-support/timelapse-fixture'
 import type { TierCopy } from './tier-locations'
 import { TierLocations } from './tier-locations'
+import { MAX_UPLOAD_BYTES } from './upload-files'
 
 const copySourcePrefix = /^\/?private\//
 const NOW = 100 * 86_400_000
@@ -225,7 +226,7 @@ test('invalid reservations, mismatched source metadata, versioning and cancellat
 	try {
 		for (const changes of [
 			{ size: 0 },
-			{ size: 200 * 1024 * 1024 + 1 },
+			{ size: MAX_UPLOAD_BYTES + 1 },
 			{ size: NaN },
 			{ userId: 'other' },
 			{ sourceKey: 'other/key.glb' },
@@ -498,5 +499,20 @@ test('configured API restores an anonymous shared capture through real RPC, sche
 		client.destroy()
 		f.close()
 		await rm(directory, { recursive: true, force: true })
+	}
+})
+
+test('server-side copy accepts the upload ceiling using HEAD metadata without buffering the object', async () => {
+	const f = fixture()
+	try {
+		f.state.sourceHeaders = { 'content-length': String(MAX_UPLOAD_BYTES) }
+		f.state.targetHeaders = { 'content-length': String(MAX_UPLOAD_BYTES) }
+		const reservation = { ...f.copy, size: MAX_UPLOAD_BYTES }
+		expect(await f.provider().prepare(work, reservation, signal)).toBe(true)
+		await f.provider().copy(work, reservation, signal)
+		expect(f.requests.filter(r => r.method === 'PUT')).toHaveLength(1)
+		expect(f.requests.some(r => r.method === 'GET')).toBe(false)
+	} finally {
+		f.close()
 	}
 })

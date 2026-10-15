@@ -227,7 +227,7 @@ la confirmation SQLite après deux signaux d’arrêt. Les objets non démarrés
 à traiter au prochain lancement.
 
 L’adaptateur copie côté stockage, sans télécharger le GLB dans l’API. Il contrôle
-la taille (au plus 200 MiB), le propriétaire, les clés réservées, la classe et
+la taille (bornée au même plafond que les uploads reprenables), le propriétaire, les clés réservées, la classe et
 l’ETag de la source, transmet `CopySourceIfMatch`, puis exige un résultat SDK et
 un `HEAD` destination concordants avant la publication. Les métadonnées sont
 conservées et aucune ACL publique n’est ajoutée. Les classes hot/cold sont
