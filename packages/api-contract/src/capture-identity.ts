@@ -17,9 +17,11 @@ export const captureBounds = z
 		return x > 0 && y > 0 && z > 0 && x <= 257 && y <= 1024 && z <= 257 && x * y * z <= 70_000_000
 	}, 'Invalid capture volume')
 export const captureOrigin = z.object({ x: coordinate, y: coordinate, z: coordinate })
+export const captureWorldScope = z.enum(['world', 'session', 'namespace'])
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
 export const captureIdentityFields = {
 	worldId: hash.optional(),
+	worldScope: captureWorldScope.optional(),
 	zoneId: hash.optional(),
 	captureMode: z.enum(['around', 'selection']).optional(),
 	captureBounds: captureBounds.optional(),
@@ -29,6 +31,7 @@ export type CaptureIdentity = z.infer<typeof completeCaptureIdentity>
 export const completeCaptureIdentity = z
 	.object({
 		worldId: hash,
+		worldScope: captureWorldScope.default('world'),
 		zoneId: hash,
 		captureMode: z.enum(['around', 'selection']),
 		captureBounds,
@@ -49,4 +52,13 @@ export function validCaptureIdentity(value: Record<string, unknown>): boolean {
 		!Object.keys(captureIdentityFields).some(key => value[key] !== undefined) ||
 		completeCaptureIdentity.safeParse(value).success
 	)
+}
+
+/** Older remote tags with neither seed nor declared scope cannot identify a world across reconnects. */
+export function temporalIdentity(value: unknown): CaptureIdentity | null {
+	const parsed = completeCaptureIdentity.safeParse(value)
+	if (!parsed.success) return null
+	const raw = value as Record<string, unknown>
+	if (raw.worldScope === undefined && typeof raw.serverName === 'string' && !raw.seed) return null
+	return parsed.data
 }

@@ -103,6 +103,29 @@ final class ClientSettings {
     return Boolean.parseBoolean(settings.getProperty("afkSnapshots", "true"));
   }
 
+  static String remoteWorldNamespace(Properties settings, String server) {
+    return normalizeRemoteWorldNamespace(
+        settings.getProperty(CaptureIdentity.remoteSettingsKey(server), ""));
+  }
+
+  static boolean configureRemoteWorld(Properties settings, String server, String namespace) {
+    String value = normalizeRemoteWorldNamespace(namespace);
+    String key = CaptureIdentity.remoteSettingsKey(server);
+    String previous = settings.getProperty(key, "").strip().toLowerCase(java.util.Locale.ROOT);
+    if (value.isEmpty()) settings.remove(key);
+    else settings.setProperty(key, value);
+    return !value.equals(previous);
+  }
+
+  private static String normalizeRemoteWorldNamespace(String namespace) {
+    String value = namespace.strip().toLowerCase(java.util.Locale.ROOT);
+    if (!value.isEmpty()
+        && !value.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")) {
+      throw new IllegalArgumentException("Utilise un UUID complet ou laisse le champ vide.");
+    }
+    return value;
+  }
+
   static boolean fullHeightCapture(Properties settings) {
     return Boolean.parseBoolean(settings.getProperty("captureFullHeight", "false"));
   }

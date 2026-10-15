@@ -3,10 +3,10 @@ import { createHash } from 'node:crypto'
 import {
 	type CaptureIdentity,
 	captureTimeKey,
-	completeCaptureIdentity,
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
+	temporalIdentity,
 } from '@minemories/api-contract'
 import { ORPCError } from '@orpc/server'
 import { parseMetadata } from './memory-metadata'
@@ -37,7 +37,10 @@ interface FrameInput {
 }
 
 export function migrateTimelapseIndex(database: Database) {
-	database.exec(`CREATE TABLE IF NOT EXISTS timelapse_index (
+	database
+		.transaction(() => {
+			database.exec(`CREATE TABLE IF NOT EXISTS timelapse_index_version (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL);
+	 CREATE TABLE IF NOT EXISTS timelapse_index (
 	 memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE,
 	 user_id TEXT NOT NULL,series_key TEXT NOT NULL,time_key TEXT NOT NULL,capture_json TEXT NOT NULL
 	);
@@ -45,6 +48,15 @@ export function migrateTimelapseIndex(database: Database) {
 	CREATE TABLE IF NOT EXISTS timelapse_index_rejected (
 	 memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE
 	);`)
+			const version = database.query('SELECT version FROM timelapse_index_version WHERE id=1').get() as {
+				version: number
+			} | null
+			if (version?.version !== 2) {
+				database.exec('DELETE FROM timelapse_index;DELETE FROM timelapse_index_rejected')
+				database.query('INSERT INTO timelapse_index_version VALUES (1,2) ON CONFLICT(id) DO UPDATE SET version=2').run()
+			}
+		})
+		.immediate()
 }
 
 function seriesKey(owner: string, identity: CaptureIdentity, dimension: string | null) {
@@ -55,6 +67,7 @@ function seriesKey(owner: string, identity: CaptureIdentity, dimension: string |
 				'timelapse-series-v1',
 				owner,
 				identity.worldId,
+				identity.worldScope,
 				identity.zoneId,
 				dimension,
 				identity.captureMode,
@@ -77,9 +90,8 @@ function describe(source: Source) {
 	if (!Number.isSafeInteger(source.size) || source.size < 1 || source.size > MAX_UPLOAD_BYTES) return null
 	const metadata = parseMetadata(source.metadata_json ?? undefined)
 	if (!metadata) return null
-	const parsed = completeCaptureIdentity.safeParse(metadata)
-	if (!parsed.success) return null
-	const identity = parsed.data
+	const identity = temporalIdentity(metadata)
+	if (!identity) return null
 	const captured = metadata.captureStartedAt ?? metadata.capturedAt
 	const at = captured ?? uploadTime(source.created_at)
 	if (!at) return null
@@ -101,6 +113,7 @@ function describe(source: Source) {
 			seriesName: metadata.worldName || metadata.serverName || 'Minecraft',
 			dimension: metadata.dimension,
 			mode: identity.captureMode,
+			scope: identity.worldScope,
 		},
 	}
 }
@@ -166,6 +179,7 @@ export class TimelapseIndex {
 					name: stored.seriesName,
 					dimension: stored.dimension,
 					mode: stored.mode,
+					scope: stored.scope,
 					totalFrames: totals.frames,
 					totalBytes: totals.bytes,
 					frames: parts.map(row => this.frame(row)),
@@ -209,7 +223,13 @@ export class TimelapseIndex {
 		)
 	}
 	private frame(row: Selected): TemporalFrame {
-		const { seriesName: _name, dimension: _dimension, mode: _mode, ...frame } = JSON.parse(row.capture_json) as Stored
+		const {
+			seriesName: _name,
+			dimension: _dimension,
+			mode: _mode,
+			scope: _scope,
+			...frame
+		} = JSON.parse(row.capture_json) as Stored
 		return { id: row.memory_id, name: row.name, size: row.size, ...frame }
 	}
 }

@@ -71,3 +71,8 @@ Artefacts locaux : `~/.local/state/minemories-validation/depth-zones-20261015/`
 (programme, empreinte du JAR, événements, rapports des bornes, GLB, rendus et journaux
 des quatre processus). Le monde original, les profils personnels et leurs
 préférences n’ont pas été modifiés. Aucun monde, GLB ou historique privé n’est committé.
+
+Sur serveur distant, la séparation par connexion et l’identifiant de monde
+configurable sont décrits dans [Timelapse](timelapse.md). Sans identifiant explicite,
+l’historique est en mémoire (huit dimensions au plus) ; avec un identifiant, il
+est conservé entre connexions. Les historiques solo existants restent inchangés.

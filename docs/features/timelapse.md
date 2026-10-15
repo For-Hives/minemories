@@ -9,21 +9,53 @@ dans le viewer restent à livrer. La timeline de démonstration reste illustrati
 
 ## Identifier les futurs états
 
-Le mod écrit `worldId`, `zoneId`, `captureMode`, `captureBounds` et
+Le mod écrit `worldId`, `worldScope`, `zoneId`, `captureMode`, `captureBounds` et
 `captureOrigin` ensemble dans les métadonnées. L’API accepte toujours les anciens
 souvenirs sans ces champs ; elle refuse une identité partielle, un volume
 invalide ou une origine différente du centre entier des bornes inclusives.
 Les coordonnées restent dans les métadonnées privées du souvenir.
 
 `worldId` est un SHA-256 avec domaine versionné, marqueurs de présence et champs
-UTF-8 préfixés par leur longueur : chemin normalisé de la sauvegarde locale ou
-adresse du serveur, seed connue, dimension et UUID du joueur. Aucun nom visible
-ni rapprochement géographique ne suffit à fusionner des mondes. Copier ou
-renommer une sauvegarde peut produire une nouvelle identité. Sur un serveur dont
-la seed est inconnue, remplacer le monde derrière la même adresse reste
-indétectable avec ces seules informations ; une future identité fournie par le
-serveur sera nécessaire pour distinguer automatiquement ce cas. Le hash n’est
-pas une preuve de propriété ni un mécanisme d’anonymisation des coordonnées.
+UTF-8 préfixés par leur longueur. En solo (`worldScope: world`), il associe chemin
+normalisé de la sauvegarde, seed connue, dimension et UUID du profil de connexion.
+Aucun nom visible ni rapprochement géographique ne suffit à fusionner des mondes.
+Copier ou renommer une sauvegarde peut produire une nouvelle identité. Le hash
+n’est pas une preuve de propriété ni une anonymisation des coordonnées.
+
+Sur un serveur distant, une adresse ne constitue pas un UUID de monde. Le mode
+par défaut (`worldScope: session`) utilise un identifiant aléatoire de connexion,
+avec adresse, dimension et profil de connexion. Une reconnexion crée une autre
+série, même si le serveur conserve sa carte. Les changements de dimension puis
+retours au monde initial conservent la session. Cela évite d’affecter implicitement
+les captures de deux connexions à un même monde dont la seed est inconnue.
+
+Pour une continuité voulue entre connexions, ouvrir **M → Mode avancé → Monde**,
+générer un identifiant puis enregistrer. Ce choix local donne
+`worldScope: namespace` : à adresse, identifiant, dimension et profil identiques,
+les futurs états restent dans la même série après reconnexion et redémarrage.
+Si le serveur remplace sa carte, générer et enregistrer un autre identifiant.
+Effacer puis enregistrer revient au mode par connexion. Ce choix ne réaffecte pas
+les anciens souvenirs. Aucun UUID universel fourni par le serveur n’est revendiqué.
+
+Les UUID configurés sont conservés par adresse dans `config/minemories.properties`
+(clés `remoteWorld.<empreinte>`). L’écran valide un UUID complet ; une valeur de
+configuration invalide entraîne un repli par connexion et peut être effacée depuis
+cet écran. Une édition manuelle de ces clés demande un redémarrage du client.
+L’identifiant de réglage n’est pas transmis au serveur Minecraft : les captures
+contiennent la portée déclarée et les empreintes calculées. L’envoi à l’API reste
+subordonné à l’appairage. Modifier réellement un identifiant invalide le contexte
+des captures/envois AFK en cours ; enregistrer la même valeur n’invalide pas ce
+contexte. Les préférences AFK, l’API et le token de l’appareil sont conservés.
+
+L’exploration suit ces mêmes frontières distantes. En mode par connexion, les
+profondeurs et zones restent en mémoire pour au plus huit dimensions, avec
+éviction des moins récemment utilisées ; aucun fichier n’est créé par session.
+Le retour d’une dimension retrouve son état tant qu’il est dans cette fenêtre.
+En mode configuré, les historiques sont persistés sous l’identité choisie et
+retrouvés après redémarrage. Les historiques locaux existants gardent leurs clés.
+Les anciens historiques distants ne sont pas réaffectés automatiquement à un
+nouveau monde identifié. Le réglage configuré est mis en cache : pas de lecture
+supplémentaire du fichier de propriétés à chaque tick d’exploration.
 
 `zoneId` associe ce monde au mode et aux limites horizontales exactes. Le mode
 `selection` inclut également les limites verticales explicites. En mode `around`,
@@ -212,6 +244,39 @@ grotte et −67 blocs en hauteur complète sont conservés pour la future relect
 Preuve locale : `native-index-report.json`. `bun check` et `bun run build`
 passent, avec 233 tests API actifs et six tests Garage ignorés sans service dédié.
 
+## Validation de la portée distante, 15 octobre 2026
+
+Le JAR `4104f3cd139857846593db52b61a47c84590a0c75a3e2f43ca2460a8d464113a`
+passe neuf processus Minecraft 1.21.1 / NeoForge 21.1.248 : hôte intégré écoutant
+uniquement sur boucle locale, deux processus clients distants, cinq parcours de
+régression locaux et un parcours de mise à jour de l’ancienne sauvegarde de test.
+La fixture distante utilise l’authentification hors ligne, sans publication LAN.
+
+Les douze GLB distants et leurs métadonnées passent les validateurs réels de l’API
+et donnent six séries. Le retour du Nether conserve la même identité et la
+profondeur de grotte en mémoire. La reconnexion par défaut repart d’une autre
+identité et n’hérite pas de cette profondeur. Le monde configuré conserve cinq
+états dans la même série, dont après reconnexion et redémarrage du client ; son
+historique persistant retrouve la grotte à Y=28. Changer d’UUID puis l’effacer
+sépare les nouveaux états et ne réutilise pas cette profondeur. La préférence AFK
+désactivée reste conservée. Les écrans réel vide/configuré ont été capturés et
+inspectés, avec génération, effacement et enregistrement via leurs boutons.
+
+Les parcours locaux conservent dix captures de profondeur/sélection et quatre du
+parcours AFK, y compris annulations, reprise, états OpenGL et rayons 8/32. L’essai
+sur l’ancien dossier du JAR précédent retrouve exactement les mêmes `worldId`,
+`zoneId` et profondeur Y=28 : aucune migration des historiques solo n’est imposée.
+Preuves hors Git : `~/.local/state/minemories-validation/timelapse-remote-20261015/`
+(`report.json`, captures et screenshots) et `timelapse-world-scope-20261015/`
+(`identities-verified.json`, `upgrade/report.json`).
+
+L’API expose `TemporalWindow.scope` pour distinguer monde connu, session distante
+et monde déclaré. Les tags distants anciens sans seed ni portée déclarée sont
+exclus des séries mais restent téléchargeables. La migration de cache d’index
+reconstruit seulement la projection et conserve souvenirs, manifestes et fichiers.
+Les tests couvrent cette migration et les trois portées ; le helper partagé
+`temporalIdentity` permettra au viewer de proposer seulement les captures compatibles.
+
 ## Essai en flux à la limite de 200 Mio
 
 Un GLB réellement capturé avec le JAR ci-dessus a été étendu à 209 715 200 octets
@@ -238,8 +303,6 @@ Preuves locales : `large-stream/report.json`, `fixture.json`, `blender.json` et
 - Coupler les manifestes, les baux et le nettoyage déjà validés aux séries de
   l’index temporel ; conserver quotas, corbeille et réconciliation lors de cette
   intégration.
-- Identité conservatrice pour les serveurs distants dont la seed est inconnue,
-  afin de ne pas réunir deux mondes remplacés derrière une même adresse.
 - Bornes explicites sur les séries et leur stockage, comportement documenté
   lorsque ces bornes sont atteintes, sans suppression silencieuse des souvenirs.
 - Navigation et lecture des seuls états réellement disponibles, alignement des

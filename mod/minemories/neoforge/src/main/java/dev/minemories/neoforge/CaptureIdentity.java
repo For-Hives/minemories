@@ -21,6 +21,21 @@ final class CaptureIdentity {
         Objects.requireNonNull(player));
   }
 
+  static String remote(
+      String server, String dimension, String player, String namespace, boolean configured) {
+    return hash(
+        "minemories-remote-world-v1",
+        Objects.requireNonNull(server),
+        configured ? "namespace" : "session",
+        Objects.requireNonNull(namespace),
+        Objects.requireNonNull(dimension),
+        Objects.requireNonNull(player));
+  }
+
+  static String remoteSettingsKey(String server) {
+    return "remoteWorld." + hash("minemories-remote-settings-v1", Objects.requireNonNull(server));
+  }
+
   static String zone(String worldId, CaptureBounds bounds, boolean selection) {
     return hash(
         "minemories-zone-v1",
