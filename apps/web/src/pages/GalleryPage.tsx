@@ -1,3 +1,4 @@
+import { temporalIdentity } from '@minemories/api-contract'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
@@ -879,7 +880,7 @@ function SnapshotCard({
 					{formatFileSize(memory.size)}
 				</p>
 				<CaptureMetadata metadata={memory.metadata} />
-				<div className="mt-3 flex items-center gap-2">
+				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={onOpen}
@@ -888,6 +889,14 @@ function SnapshotCard({
 					>
 						{opening ? '…' : t('↗ Revisit')}
 					</button>
+					{temporalIdentity(memory.metadata) && (
+						<Link
+							to={`/viewer?memory=${encodeURIComponent(memory.id)}&timelapse=1`}
+							className="inline-flex h-8 items-center rounded border border-[#354238] px-2 text-[11px] text-[#b4c1ad]"
+						>
+							{t('Timeline')}
+						</Link>
+					)}
 					<button
 						type="button"
 						onClick={() => setShareOpen(open => !open)}
@@ -1089,7 +1098,7 @@ function TrashCard({
 					<T message={'Deleted'} /> {formatRelativeDate(item.deletedAt)}
 					{remaining !== null ? ` · gone in ${remaining}d` : ''}
 				</p>
-				<div className="mt-3 flex items-center gap-2">
+				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={onRestore}
