@@ -169,7 +169,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				<CaptureRestorationPanel view={restoration.view} onRestore={restoration.resume} />
 				{!restoration.view && <ViewerLoadState loading={status} error={error} />}
 			</div>
-			{!empty && <ViewerStudio sceneRef={sceneRef} ready={!(status || restoration.view)} minutes={minutes} fileInfo={fileInfo} />}
+			{!empty && (
+				<ViewerStudio sceneRef={sceneRef} ready={!(status || restoration.view)} minutes={minutes} fileInfo={fileInfo} />
+			)}
 		</section>
 	)
 }

@@ -2,8 +2,8 @@ import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
-import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { useAppContext } from '../app-context'
+import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { fileInputHidden } from '../components/ui'
 import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
@@ -219,7 +219,13 @@ function SingleViewerPage() {
 				{!restoration.view && <ViewerLoadState loading={loading} error={loadError} />}
 			</div>
 			{!empty && (
-				<ViewerStudio sceneRef={sceneRef} ready={!(loading || restoration.view)} memoryId={memoryId} minutes={minutes} fileInfo={fileInfo} />
+				<ViewerStudio
+					sceneRef={sceneRef}
+					ready={!(loading || restoration.view)}
+					memoryId={memoryId}
+					minutes={minutes}
+					fileInfo={fileInfo}
+				/>
 			)}
 		</section>
 	)
