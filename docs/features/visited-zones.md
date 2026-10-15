@@ -72,3 +72,8 @@ et l’isolation. Les artefacts restent hors Git dans
 pilote, JAR/empreinte, logs, rapports d’assertions et capture d’écran. `bun check`
 et `bun run build` passent avec les 140 tests NeoForge, SpotBugs et les seuils de
 couverture inchangés.
+
+Sur serveur distant, la séparation par connexion et l’identifiant de monde
+configurable sont décrits dans [Timelapse](timelapse.md). Sans identifiant explicite,
+l’historique est en mémoire (huit dimensions au plus) ; avec un identifiant, il
+est conservé entre connexions. Les historiques solo existants restent inchangés.

@@ -193,4 +193,34 @@ class ClientSettingsTest {
       assertFalse(ClientSettings.diagnosticsConsentForIdentity(changed, null));
     }
   }
+
+  @Test
+  void remoteWorldNamespacesAreExplicitEndpointScopedAndPreservePrivatePreferences()
+      throws IOException {
+    Properties settings = paired();
+    assertEquals("", ClientSettings.remoteWorldNamespace(settings, "a:25565"));
+    String id = "abcdef12-3456-4789-8abc-def012345678";
+    ClientSettings.configureRemoteWorld(
+        settings, "a:25565", " " + id.toUpperCase(java.util.Locale.ROOT) + " ");
+    assertEquals(id, ClientSettings.remoteWorldNamespace(settings, "a:25565"));
+    assertEquals("", ClientSettings.remoteWorldNamespace(settings, "b:25565"));
+    assertEquals("private-token", settings.getProperty("deviceToken"));
+    assertTrue(ClientSettings.afkSnapshots(settings));
+    Path path = temporary.resolve("config/minemories.properties");
+    ClientSettings.save(path, settings);
+    assertEquals(id, ClientSettings.remoteWorldNamespace(ClientSettings.read(path), "a:25565"));
+    assertFalse(ClientSettings.configureRemoteWorld(settings, "a:25565", id));
+    assertTrue(ClientSettings.configureRemoteWorld(settings, "a:25565", ""));
+    assertEquals("", ClientSettings.remoteWorldNamespace(settings, "a:25565"));
+    assertEquals("private-token", settings.getProperty("deviceToken"));
+    for (String invalid : new String[] {"world", "1-1-1-1-1", id + "x"})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> ClientSettings.configureRemoteWorld(settings, "a", invalid));
+    settings.setProperty(CaptureIdentity.remoteSettingsKey("a"), "invalid");
+    assertThrows(
+        IllegalArgumentException.class, () -> ClientSettings.remoteWorldNamespace(settings, "a"));
+    assertTrue(ClientSettings.configureRemoteWorld(settings, "a", ""));
+    assertEquals("", ClientSettings.remoteWorldNamespace(settings, "a"));
+  }
 }

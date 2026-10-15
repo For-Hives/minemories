@@ -9,6 +9,7 @@ export {
 	type CaptureIdentity,
 	captureIdentityFields,
 	completeCaptureIdentity,
+	temporalIdentity,
 	validCaptureIdentity,
 } from './capture-identity'
 export { captureTime, captureTimeKey } from './capture-time'
