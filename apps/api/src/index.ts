@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { apiContract } from '@minemories/api-contract'
+import { apiContract, type CaptureStorageAccess } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
@@ -10,6 +10,7 @@ import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { recordCaptureOpening } from './capture-access'
 import { openAuthorizedCapture } from './capture-downloads'
+import { CaptureStorage } from './capture-storage'
 import { database } from './database'
 import { DiagnosticsReview } from './diagnostics-review'
 import { diagnosticsRouter } from './diagnostics-routes'
@@ -18,6 +19,7 @@ import { PublicDiscovery } from './discovery'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
 import { ObjectDeletionQueue } from './object-deletions'
+import { CaptureArchivedError } from './object-tiers'
 import type { MemoryMetadata } from './pairing'
 import {
 	addMemory,
@@ -76,6 +78,8 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 )
 const temporalIndex = new TimelapseIndex(database)
 const captureFiles = new TimelapseFiles(database, tieredObjects)
+// Enabled when the provider worker is wired; status remains available while cold operations are disabled.
+const captureStorage = new CaptureStorage(database)
 export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
 const discovery = new PublicDiscovery(
 	database,
@@ -90,7 +94,32 @@ function authenticated(context: ApiContext) {
 	if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 	return context.userId
 }
+function captureObjectKey(access: CaptureStorageAccess, context: ApiContext): string | null {
+	if (access.kind === 'owner') return getMemoryFile(authenticated(context), access.id)?.object_key ?? null
+	if (access.kind === 'shared') return getSharedMemory(access.token)?.objectKey ?? null
+	try {
+		return discovery.file(access.id, context.userId).object_key
+	} catch {
+		return null
+	}
+}
+function archivedAvailability(error: unknown, lookup: () => string | null) {
+	if (!(error instanceof CaptureArchivedError)) return null
+	try {
+		return captureStorage.status(lookup)
+	} catch {
+		return null
+	}
+}
 const router = os.router({
+	captureStorage: {
+		status: os.captureStorage.status.handler(({ context, input }) =>
+			captureStorage.status(() => captureObjectKey(input, context))
+		),
+		restore: os.captureStorage.restore.handler(({ context, input }) =>
+			captureStorage.status(() => captureObjectKey(input, context), true)
+		),
+	},
 	diagnostics: {
 		access: os.diagnostics.access.handler(({ context }) => ({ allowed: diagnosticsReview.allowed(context.userId) })),
 		list: os.diagnostics.list.handler(({ context, input }) => diagnosticsReview.list(context.userId, input)),
@@ -320,13 +349,16 @@ app.get('/api/public/:id/file', async context => {
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 		})
-	} catch {
+	} catch (error) {
+		const availability = archivedAvailability(error, lookup)
+		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('public_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
 })
 
 app.get('/api/shared/:token/file', async context => {
+	context.header('Cache-Control', 'private, no-store')
 	const shared = getSharedMemory(context.req.param('token'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 
@@ -342,7 +374,12 @@ app.get('/api/shared/:token/file', async context => {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 		})
-	} catch {
+	} catch (error) {
+		const availability = archivedAvailability(
+			error,
+			() => getSharedMemory(context.req.param('token'))?.objectKey ?? null
+		)
+		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('shared_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
@@ -357,6 +394,7 @@ app.get('/api/shared/:token', context => {
 })
 
 app.get('/api/memories/:id/file', async context => {
+	context.header('Cache-Control', 'private, no-store')
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	if (!session) return context.json({ error: 'unauthorized' }, 401)
 
@@ -375,7 +413,12 @@ app.get('/api/memories/:id/file', async context => {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 		})
-	} catch {
+	} catch (error) {
+		const availability = archivedAvailability(
+			error,
+			() => getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null
+		)
+		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('memory_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}

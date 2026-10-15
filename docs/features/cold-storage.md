@@ -133,6 +133,34 @@ vérifient aussi que le quota et le nettoyage des références restent cohérent
 
 ## Contraintes pour la suite
 
+### Disponibilité et demande de restauration
+
+Le contrat partagé expose `captureStorage.status` et `captureStorage.restore`,
+avec un accès propriétaire (ID du souvenir), un lien partagé (token) ou une
+publication publique (ID public). L’autorisation est réévaluée dans la même
+transaction que le manifeste et la demande de restauration. Les accès révoqués
+ou supprimés ne peuvent ni lire l’état ni ajouter du travail.
+
+La réponse contient l’état `ready`, `archiving`, `cold` ou `restoring`, le nombre
+d’objets physiques distincts prêts et leur nombre total, sans clé ni détail du
+fournisseur. Un bloc dédupliqué ne compte qu’une fois. La demande porte sur tous
+les blocs du manifeste ; les répétitions restent idempotentes et ne modifient pas
+la dernière ouverture. Aucun lecteur ne commence tant qu’un bloc reste froid.
+La disponibilité décrit le catalogue ; une panne du stockage demeure une erreur
+distincte lors de la lecture.
+
+Les trois routes GLB répondent `202` avec `memory_restoration_required` et
+`availability` lorsque la restauration est nécessaire, en conservant
+`Cache-Control: private, no-store`. Consulter cet état ou recevoir ce JSON ne
+compte pas comme une ouverture du GLB. Les tests HTTP/oRPC couvrent propriétaires,
+partages sans compte, publications approuvées, révocation, fichiers originaux et
+captures dédupliquées. L’assemblage API/provider n’étant pas encore branché,
+`restorationAvailable` vaut actuellement `false` dans l’API, une demande autorisée
+renvoie `503` et aucun délai de polling n’est annoncé. Le service transactionnel
+de demande/progression est testé avec la restauration activée sur des fixtures.
+
+### Configuration et traitement distant
+
 La configuration reste désactivée par défaut (`COLD_STORAGE_PROVIDER=off`). Une
 future utilisation exige un choix explicite `aws` ou `r2`, `COLD_STORAGE_CLASS`
 (`GLACIER`, `DEEP_ARCHIVE` ou `STANDARD_IA` ; R2 accepte uniquement cette dernière),
