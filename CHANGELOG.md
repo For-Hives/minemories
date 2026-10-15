@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.7.0-beta.1...mod-v0.8.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **web:** propose a living-album art direction across the site ([16e0684](https://github.com/For-Hives/minemories/commit/16e068426c3ed91cd1c461ce88edef3fd5e9be00))
+
 ## [0.7.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.6.0-beta.1...mod-v0.7.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
