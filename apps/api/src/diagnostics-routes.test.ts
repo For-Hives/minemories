@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { version } from '../package.json'
 import { minimalGlb } from './test-support/glb-fixture'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-diagnostics-http-'))
@@ -285,7 +286,7 @@ test('server errors strip messages, paths and unknown stack frames and require a
 	const stored = database.query('SELECT report_json FROM diagnostic_reports WHERE device_id = ?').get(deviceId) as {
 		report_json: string
 	}
-	expect(JSON.parse(stored.report_json)).toMatchObject({ source: 'api', correlationId, versions: { api: '0.1.0' } })
+	expect(JSON.parse(stored.report_json)).toMatchObject({ source: 'api', correlationId, versions: { api: version } })
 	expect(stored.report_json).not.toContain('secret')
 	expect(stored.report_json).not.toContain('/home')
 	diagnostics.purge(deviceId)

@@ -1,21 +1,9 @@
 import type { Database } from 'bun:sqlite'
 import { createHash, randomUUID } from 'node:crypto'
-import type { ModDiagnostic } from '@minemories/api-contract'
+import type { ApiDiagnostic, ModDiagnostic } from '@minemories/api-contract'
 import type { DiagnosticsPolicy } from './diagnostics-policy'
 
-export interface ApiDiagnostic {
-	id: string
-	occurredAt: string
-	source: 'api'
-	phase: 'upload'
-	versions: { api: '0.1.0' }
-	correlationId: string
-	exception: {
-		type: string
-		frames: Array<{ className: string; methodName: string; fileName?: string; lineNumber?: number }>
-	}
-	breadcrumbs: []
-}
+export type { ApiDiagnostic } from '@minemories/api-contract'
 export type Diagnostic = ModDiagnostic | ApiDiagnostic
 export type IngestionResult =
 	| 'accepted'
@@ -45,7 +33,13 @@ export class DiagnosticsStore {
 		 device_id TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE, permit TEXT NOT NULL);
 		 CREATE TABLE IF NOT EXISTS diagnostic_consent_rates (
 		 device_id TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
-		 window_at INTEGER NOT NULL, count INTEGER NOT NULL);`)
+		 window_at INTEGER NOT NULL, count INTEGER NOT NULL);
+		 CREATE TABLE IF NOT EXISTS diagnostic_issues (
+		 fingerprint TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT 'open',
+		 revision INTEGER NOT NULL DEFAULT 1, updated_at INTEGER, updated_by TEXT);
+		 CREATE INDEX IF NOT EXISTS diagnostic_reports_fingerprint ON diagnostic_reports(fingerprint, received_at);`)
+		database.exec(`INSERT OR IGNORE INTO diagnostic_issues(fingerprint)
+		 SELECT DISTINCT fingerprint FROM diagnostic_reports`)
 	}
 	cleanup(now = Date.now()): void {
 		this.database
@@ -72,6 +66,13 @@ export class DiagnosticsStore {
 		 PARTITION BY device_id ORDER BY received_at DESC, rowid DESC) AS rank FROM diagnostic_reports)
 		 WHERE rank > ?)`)
 			.run(this.policy.perDevice)
+		this.pruneIssues()
+	}
+	private pruneIssues(): void {
+		this.database
+			.query(`DELETE FROM diagnostic_issues WHERE NOT EXISTS
+		 (SELECT 1 FROM diagnostic_reports WHERE diagnostic_reports.fingerprint = diagnostic_issues.fingerprint)`)
+			.run()
 	}
 	private trim(query: string, parameters: Array<string | number>): void {
 		this.database.query(`DELETE FROM diagnostic_reports WHERE rowid IN (${query})`).run(...parameters)
@@ -80,7 +81,9 @@ export class DiagnosticsStore {
 		return this.database
 			.transaction(() => {
 				this.database.query('DELETE FROM diagnostic_consents WHERE device_id = ?').run(deviceId)
-				return this.database.query('DELETE FROM diagnostic_reports WHERE device_id = ?').run(deviceId).changes
+				const deleted = this.database.query('DELETE FROM diagnostic_reports WHERE device_id = ?').run(deviceId).changes
+				this.pruneIssues()
+				return deleted
 			})
 			.immediate()
 	}
@@ -161,6 +164,11 @@ export class DiagnosticsStore {
 			.query(`INSERT INTO diagnostic_reports(device_id, id, user_id, received_at, fingerprint, report_json)
 		 VALUES (?, ?, ?, ?, ?, ?)`)
 			.run(device.id, report.id, device.userId, now, fingerprint, json)
+		this.database
+			.query(`INSERT INTO diagnostic_issues(fingerprint) VALUES (?)
+		 ON CONFLICT(fingerprint) DO UPDATE SET revision = revision + 1,
+		 state = CASE WHEN state = 'resolved' THEN 'open' ELSE state END`)
+			.run(fingerprint)
 		this.cleanup(now)
 		return 'accepted'
 	}

@@ -15,6 +15,9 @@ const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ defau
 const ModerationPage = lazy(() =>
 	import('./pages/PublicDiscovery').then(module => ({ default: module.ModerationPage }))
 )
+const DiagnosticsPage = lazy(() =>
+	import('./pages/DiagnosticsPage').then(module => ({ default: module.DiagnosticsPage }))
+)
 const InfoPages = () => import('./pages/InfoPages')
 const ConceptPage = lazy(() => InfoPages().then(module => ({ default: module.ConceptPage })))
 const HowItWorksPage = lazy(() => InfoPages().then(module => ({ default: module.HowItWorksPage })))
@@ -250,6 +253,14 @@ export function App() {
 								}
 							/>
 							<Route element={<RequireSession />}>
+								<Route
+									path="/admin/diagnostics"
+									element={
+										<Page>
+											<DiagnosticsPage />
+										</Page>
+									}
+								/>
 								<Route
 									path="/moderation"
 									element={
