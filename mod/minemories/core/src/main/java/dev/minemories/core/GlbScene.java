@@ -16,6 +16,7 @@ import java.util.Map;
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
   private final Map<String, Part> parts = new LinkedHashMap<>();
+  private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
   public void addQuad(
@@ -42,6 +43,7 @@ public final class GlbScene {
             key,
             ignored ->
                 new Part(materialName, imageKey, png, tint, alphaMode, safeEmission, safeOpacity));
+    atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
     part.addQuad(xyz, uv);
   }
 
@@ -146,10 +148,10 @@ public final class GlbScene {
       if (texture == null) {
         align(binary);
         int offset = binary.size();
-        binary.write(part.png);
+        byte[] png = atlasUsage.get(part.imageKey).optimize(part.png);
+        binary.write(png);
         int view = views.size();
-        views.add(
-            "{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + part.png.length + "}");
+        views.add("{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + png.length + "}");
         int image = images.size();
         images.add(
             "{\"name\":\""

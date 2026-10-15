@@ -88,3 +88,11 @@ révocable et modérée, distincte des exemples `?demo=1`. Les votes sont unique
 par compte et les limites persistées ; corbeille/restauration, concurrence et
 révocation avant réponse du flux sont testées. Le propriétaire et les modérateurs
 disposent de leurs contrôles ; voir [les contrats, limites et preuves](public-discovery.md).
+
+## Taille des GLB
+
+L’issue #73 ajoute des indices adaptatifs et le masquage des zones inutilisées
+d’atlas, sans extension ni modification des attributs visibles. Le corpus réel
+mesure 5,86–55,87 % de réduction, avec coûts de préparation explicités ; les cinq
+paires de rendus Blender sont identiques pixel pour pixel. Les validateurs,
+frontières, annulations et le JAR natif sont exercés. Voir [mesures et preuves](glb-size.md).

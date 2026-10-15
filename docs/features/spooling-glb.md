@@ -207,3 +207,11 @@ worker, sans modifier le budget de 2 ms / 4 096 admissions ni le pacing 512 Kio/
 Le corpus, le JAR mesuré et les limites d’interprétation sont décrits dans
 [Mesures des captures AFK](afk-performance.md). La lecture des icônes de métadonnées
 est bornée à 128 Kio, aux en-têtes PNG ≤512×512, et refuse les liens symboliques.
+
+## Taille du livrable
+
+Les indices du fichier final utilisent désormais 8/16/32 bits selon la primitive,
+et les texels inutilisés des atlas de renderers peuvent être uniformisés sans
+modifier UV, dimensions ou pixels échantillonnés. Le spool d’indices reste 32 bits ;
+les limites et la publication atomique restent appliquées. Voir [mesures, coûts,
+frontières et validations avant/après](glb-size.md).
