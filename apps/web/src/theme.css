@@ -169,6 +169,23 @@ body {
 	gap: 8px;
 	text-decoration: none;
 }
+.mm-account-avatar {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	flex: none;
+	border: 1px solid #789455;
+	border-radius: 50%;
+	background: var(--color-forest);
+	color: var(--color-lime);
+	font-size: 14px;
+}
+.mm-account-avatar img {
+	position: absolute;
+	inset: 0;
+}
 .mm-account img {
 	border-radius: 50%;
 }
