@@ -279,6 +279,8 @@ test('viewer loads a local file, handles errors and disposes its scene', async (
 	const view = mount(<ViewerPage />)
 	expect(await screen.findByText('Invalid GLB')).toBeTruthy()
 	expect(mocks.loadFile).toHaveBeenCalledWith(file)
+	expect(screen.queryByRole('button', { name: /Night/ })).toBeNull()
+	act(() => mocks.viewerEvents?.onEmptyChange(false))
 	fireEvent.click(screen.getByRole('button', { name: /Night/ }))
 	expect(mocks.setMinutes).toHaveBeenCalledWith(0)
 	view.unmount()

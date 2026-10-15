@@ -54,7 +54,7 @@ Le mod affiche encore des avertissements de dépréciation provenant des APIs Mi
 
 Le site utilise un thème sombre. La galerie affiche chaque monde/serveur comme un dossier replié par défaut façon liste de serveurs Minecraft : icône 64 px (miniature de la capture la plus récente), nom et MOTD (`N captures · Seed … · last visit …`). Les captures solo sont regroupées par nom de monde et seed, les multijoueur par nom de serveur. Les anciennes captures sans ces informations restent dans « Other captures ». Deux serveurs enregistrés sous le même nom sont regroupés ensemble tant qu'aucun identifiant de serveur n'est disponible. Dans un même monde, les captures distantes de moins de 64 blocs horizontalement sont empilées visuellement (« Same area · N captures · Near x, y, z ») pour montrer qu'il s'agit de la même zone. Chaque carte affiche un aperçu du modèle 3D lui-même : à la première ouverture d'une capture sans miniature, le viewer rend la scène (400×250 JPEG, recadrage cover sans étirement, downscale haute qualité) et la persiste via `memories.setThumbnail`. L'icône du monde/serveur envoyée par le mod reste affichée sur le dossier (`metadata.icon`) : l'upload range l'image du mod dans `icon` et laisse `thumbnail` vide, et les anciennes captures voient leur image promue en `icon` à leur prochaine ouverture. Les avatars utilisent les images de compte quand elles existent, sinon des pixel-art générés via DiceBear avec une seed hachée (aucun e-mail envoyé au CDN). Le bandeau « Your mod is paired » reste affiché tant qu'une snapshot date de moins de deux mois ; au-delà, la galerie propose de ré-appairer.
 
-Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit). L'éclairage initial reprend l'heure capturée (`dayTime` en ticks converti en minutes) et le preset le plus proche est surligné. La skybox s'adapte à la dimension et au biome (`getAtmosphere`) : halo de braise fixe sans soleil ni étoiles dans le Nether, nuit étoilée violette fixe dans l'End, obscurité atténuée dans le deep dark, cycle jour/nuit classique ailleurs ; les teintes hémisphériques suivent la dimension. Les ombres sont filtrées en PCF doux, sur une carte de 4096 pixels. Les nuages continuent à avancer à 0,6 bloc/seconde vers +X pendant que l'éclairage reste fixe. La couche utilise le motif `assets/minecraft/textures/environment/clouds.png` de Minecraft Java 1.21.1 (copie locale dans `apps/web/public/textures/minecraft-clouds.png`), avec des cellules de 12 × 12 blocs et une épaisseur de 4 blocs. Le rendu place la couche au-dessus du modèle (`bounds.max.y + 24`) avec un matériau non éclairé opaque façon « fast graphics », teinté par la lumière du jour ; l'opaque évite que les nuages se dessinent devant le feuillage transparent. Les coordonnées de la capture, la position caméra et un décalage déduit de la seed (hachage 0-255) décalent le motif ; l'heure enregistrée sert de point de départ reproductible au mouvement (`ticks * 0,03`). Le Minecraft vanilla utilise un motif indépendant de la seed et une horloge de rendu locale : le décalage par seed distingue les mondes sans prétendre à une synchronisation image par image. Les nuages sont masqués pour les dimensions autres que l'Overworld. Un GLB local sans métadonnées utilise une origine de secours (0,64,0).
+Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit). L'éclairage initial reprend l'heure capturée (`dayTime` en ticks converti en minutes) et le preset le plus proche est surligné. La skybox s'adapte à la dimension et au biome (`getAtmosphere`) : halo de braise fixe sans soleil ni étoiles dans le Nether, nuit étoilée violette fixe dans l'End, obscurité atténuée dans le deep dark, cycle jour/nuit classique ailleurs ; les teintes hémisphériques suivent la dimension. Les ombres sont filtrées en PCF doux, sur une carte de 2048 pixels. Les nuages continuent à avancer à 0,6 bloc/seconde vers +X pendant que l'éclairage reste fixe. La couche utilise le motif `assets/minecraft/textures/environment/clouds.png` de Minecraft Java 1.21.1 (copie locale dans `apps/web/public/textures/minecraft-clouds.png`), avec des cellules de 12 × 12 blocs et une épaisseur de 4 blocs. Le rendu place la couche au-dessus du modèle (`bounds.max.y + max(32, empreinteHorizontale × 1,6)`) avec un matériau non éclairé opaque façon « fast graphics », teinté par la lumière du jour ; l'opaque évite que les nuages se dessinent devant le feuillage transparent. Les coordonnées de la capture, la position caméra et un décalage déduit de la seed (hachage 0-255) décalent le motif ; l'heure enregistrée sert de point de départ reproductible au mouvement (`ticks * 0,03`). Le Minecraft vanilla utilise un motif indépendant de la seed et une horloge de rendu locale : le décalage par seed distingue les mondes sans prétendre à une synchronisation image par image. Les nuages sont masqués pour les dimensions autres que l'Overworld. Un GLB local sans métadonnées utilise une origine de secours (0,64,0).
 
 `/minemories export` sans argument utilise un rayon horizontal de 128 blocs (8 chunks). Les boutons du menu utilisent le rayon configuré dans les réglages avancés, 32 blocs par défaut, avec une profondeur limitée aux visites locales par défaut (voir [réglages](../features/mod-distribution.md)). `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. Le nouveau client envoie les captures jusqu’à 200 MiB en morceaux reprenables de 4 MiB ; l’ancien endpoint conserve sa limite de 100 MiB. Voir [le protocole d’upload](../features/resumable-uploads.md).
 
@@ -129,3 +129,44 @@ MASK (verre/feuilles), BLEND (eau) et le modèle non cubique de l’escalier. Si
 sont présents sur la coupe est malgré l’eau voisine hors capture. Le rendu Blender de
 cette capture de 17 × 17 × 5 blocs a été inspecté : pas de paroi opaque au-dessus du
 fond du bassin, section terre/pierre fermée, transparence conservée.
+
+### Studio du viewer — octobre 2026
+
+Le viewer local, celui de la galerie et les liens partagés utilisent désormais la
+même chaîne de rendu HDR : ACES, bloom modéré sur pyramide de résolutions, sortie
+sRGB et FXAA. L’environnement de réflexion est généré localement depuis le ciel
+(PMREM) et recalculé uniquement aux changements d’ambiance, jamais à chaque image.
+Les surfaces transparentes reçoivent une rugosité plus faible ; ce sont des reflets
+d’environnement, pas des reflets des objets voisins ni du ray tracing. Les textures
+restent pixelisées de près, avec mipmaps interpolées et anisotropie plafonnée à 4.
+Les lumières ponctuelles sont regroupées par cellules puis plafonnées à 12 ; les
+ombres solaires de 2048 pixels sont mises à jour au changement d’éclairage/capture.
+Aucun format GLB ni export Minecraft n’est modifié.
+
+Les palettes désert/badlands/savane, neige/glace et jungle/marais complètent les
+ambiances Nether, End et deep dark. Les réglages Limpide, Brume et Couvert sont des
+variantes artistiques locales, sans pluie simulée ni modification du souvenir.
+Le coucher du soleil vise 17 h 15 pour garder des ombres rasantes. L’ouverture des
+captures très profondes vise leur surface, avec possibilité d’explorer les sous-sols
+par déplacement de la caméra. Les nuages sont placés au-dessus du cadrage initial.
+
+La qualité Auto démarre avec un DPR plafonné à 1,5 et diminue par paliers de 0,25
+(jusqu’à 0,75) si plus de 100 des 180 images mesurées dépassent 26 ms. Le bloom est
+coupé à DPR <= 1 dans ce cas. Le mode Cinéma autorise DPR 2 ; Économie force DPR 1
+sans bloom. Le rendu s’arrête dans un onglet masqué et avant ouverture d’un modèle.
+La préférence de mouvement réduit immobilise les nuages ; la contemplation ne
+démarre que sur demande. Le chargement reste affiché jusqu’au premier rendu composé.
+Les chargements annulés sont écartés et leurs ressources libérées ; le remplacement conserve la capture précédente jusqu’à la compilation réussie, comme le lecteur de timelapse.
+
+Les commandes communes offrent rotation contemplative, plein écran et carte postale
+JPEG locale. La carte postale est recadrée en 1920 × 1080 depuis la résolution de
+rendu disponible. Depuis une capture de galerie, le panneau de partage explique
+l’accès par lien, puis exige une action explicite pour créer ce lien et permet sa
+révocation. Un fichier local n’est jamais publié par ces commandes.
+
+Validation : tests d’interaction des ambiances/qualité/contemplation/carte postale,
+non-régression des chargements obsolètes et de la libération des textures partagées,
+palettes couvertes à 100 %. Inspection Chromium des captures réelles de la fixture
+NeoForge (entités, coffres, lit, sol) et import/rendu Blender 5.2.2 de la capture AFK.
+La refonte est suivie dans l’issue #93. La mesure comparative GPU sur matériels identifiés reste à faire dans l’issue #74 ;
+le rendu logiciel de Chromium ne constitue pas une preuve de 60 FPS sur mobile.

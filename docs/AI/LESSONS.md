@@ -33,3 +33,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Les releases GitHub du mod doivent devenir automatiques après merge sur main : versions des packages et de Gradle synchronisées, matrice par loader réellement disponible et changelog généré. Éviter une deuxième PR de release à fusionner ; conserver la distinction entre bêta CI et validation en jeu du JAR exact.
 
 - Avant de faire tester le parcours par Mae, le développeur priorise l’observabilité distante : erreurs d’export et crashs doivent être remontés à l’API et exploitables dans une page d’administration privée, avec groupes, détails et statut de traitement. Les diagnostics doivent survivre aux coupures et à une relance sans activer le consentement d’un joueur à sa place.
+
+- Pour le viewer, le développeur attend une refonte autonome et créative du parcours entier, avec une atmosphère de souvenir agréable inspirée des shaders Minecraft. La fluidité, les ambiances et le partage font partie du rendu premium ; valider sur des captures réelles et ne pas se limiter à ajouter des réglages graphiques.
