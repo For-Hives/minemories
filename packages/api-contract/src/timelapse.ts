@@ -1,6 +1,6 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
-import { captureBounds, captureOrigin } from './capture-identity'
+import { captureBounds, captureOrigin, captureWorldScope } from './capture-identity'
 import { captureTime } from './capture-time'
 
 export const TIMELAPSE_PAGE_FRAMES = 128
@@ -23,6 +23,7 @@ export const temporalWindow = z.object({
 	name: z.string(),
 	dimension: z.string().nullable(),
 	mode: z.enum(['around', 'selection']),
+	scope: captureWorldScope,
 	totalFrames: z.number().int().positive(),
 	totalBytes: z.number().int().positive(),
 	frames: z.array(temporalFrame).max(TIMELAPSE_PAGE_FRAMES),

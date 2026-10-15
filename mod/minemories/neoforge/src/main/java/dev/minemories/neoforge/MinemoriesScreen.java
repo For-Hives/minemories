@@ -149,19 +149,28 @@ final class MinemoriesScreen extends Screen {
     selectionButton.setTooltip(
         Tooltip.create(
             Component.literal("Définis les deux coins avec /minemories select first et second.")));
-    int third = (panelWidth - 40) / 3;
+    int quarter = (panelWidth - 46) / 4;
     button(
-        "Réglages AFK",
+        "AFK",
         14,
         170,
-        third,
+        quarter,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
-    storageButton = button("Stockage", 20 + third, 170, third, this::openStorage);
+    storageButton = button("Stockage", 20 + quarter, 170, quarter, this::openStorage);
+    Button worldButton =
+        button(
+            "Monde",
+            26 + quarter * 2,
+            170,
+            quarter,
+            () -> Minecraft.getInstance().setScreen(new TemporalWorldScreen(this)));
+    worldButton.setTooltip(
+        Tooltip.create(Component.literal("Identité du monde distant pour la timelapse.")));
     button(
         "Diagnostics",
-        26 + third * 2,
+        32 + quarter * 3,
         170,
-        third,
+        quarter,
         () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
   }
 

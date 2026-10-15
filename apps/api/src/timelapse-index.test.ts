@@ -222,3 +222,51 @@ test('invalid size, unsupported dates and malformed JSON are rejected rather tha
 		await f.close()
 	}
 })
+
+test('ambiguous legacy remote identities stay out of series while explicit session and namespace scopes remain distinct', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db),
+			remote = { ...frameMetadata, serverName: 'Remote', seed: null }
+		const old = await f.add(remote, payload)
+		expect(parseMetadata(JSON.stringify(remote))).not.toBeNull()
+		expect(index.put(old.id)).toBe(false)
+		await expect(Promise.resolve().then(() => index.frames('owner', options(old.id)))).rejects.toThrow(
+			'no temporal identity'
+		)
+		const session = await f.add({ ...remote, worldScope: 'session' }, payload),
+			persistent = await f.add({ ...remote, worldScope: 'namespace' }, payload)
+		index.backfill()
+		const a = index.frames('owner', options(session.id)),
+			b = index.frames('owner', options(persistent.id))
+		expect(a.scope).toBe('session')
+		expect(b.scope).toBe('namespace')
+		expect(a.seriesId).not.toBe(b.seriesId)
+		expect(parseMetadata(JSON.stringify({ ...remote, worldScope: 'invalid' }))).toBeNull()
+		expect(parseMetadata(JSON.stringify({ worldScope: 'session' }))).toBeNull()
+		expect(await f.files().convert(old.id)).toBe(true)
+	} finally {
+		await f.close()
+	}
+})
+
+test('the scope migration rebuilds derived caches once and never removes original memories', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db),
+			local = await f.add(frameMetadata, payload),
+			remote = await f.add({ ...frameMetadata, serverName: 'Old remote' }, payload)
+		index.put(local.id)
+		f.db.query('INSERT INTO timelapse_index VALUES (?,?,?,?,?)').run(remote.id, 'owner', 'old', 'old', '{}')
+		f.db.exec('UPDATE timelapse_index_version SET version=1')
+		migrateTimelapseIndex(f.db)
+		expect(f.db.query('SELECT COUNT(*) AS count FROM memories').get()).toEqual({ count: 2 })
+		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 0 })
+		expect(index.frames('owner', options(local.id)).scope).toBe('world')
+		expect(() => index.frames('owner', options(remote.id))).toThrow('no temporal identity')
+		migrateTimelapseIndex(f.db)
+		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 1 })
+	} finally {
+		await f.close()
+	}
+})

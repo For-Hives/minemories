@@ -141,6 +141,19 @@ final class PairingClient {
     updateSettings(settings -> settings.setProperty("afkSnapshots", Boolean.toString(enabled)));
   }
 
+  static String remoteWorldNamespace(String server) {
+    return ClientSettings.remoteWorldNamespace(readSettings(), server);
+  }
+
+  static void configureRemoteWorld(String server, String namespace) {
+    // Namespace changes fence off in-flight captures/uploads, just like account rebinding.
+    updateSettings(
+        settings -> {
+          if (ClientSettings.configureRemoteWorld(settings, server, namespace))
+            ACCOUNT_GENERATION.incrementAndGet();
+        });
+  }
+
   static boolean isFullHeightCapture() {
     return ClientSettings.fullHeightCapture(readSettings());
   }

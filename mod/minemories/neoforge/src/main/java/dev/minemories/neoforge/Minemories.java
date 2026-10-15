@@ -106,9 +106,11 @@ public class Minemories {
 
   private static DiagnosticsClient.Operation afkDiagnostics;
   private static long resourceEpoch;
+  private static final RemoteCaptureSession REMOTE_CAPTURE_SESSION = new RemoteCaptureSession();
 
   static void clientSettingsChanged() {
     CAPTURES.settings = null;
+    REMOTE_CAPTURE_SESSION.settingsChanged();
   }
 
   static String afkCaptureStatus() {
@@ -318,6 +320,10 @@ public class Minemories {
   public static void trackAfkSnapshot(RenderFrameEvent.Post event) {
     Minecraft mc = Minecraft.getInstance();
     long now = System.currentTimeMillis();
+    if (REMOTE_CAPTURE_SESSION.connection() instanceof net.minecraft.network.Connection connection
+        && !connection.isConnected()) {
+      REMOTE_CAPTURE_SESSION.clear();
+    }
     if (mc.level != null && mc.player != null && playerMoved(mc.player)) lastActivityMs = now;
     try {
       if (afkUploadPending && mc.level != afkUploadWorld) PairingClient.cancelAfkUpload();
@@ -431,10 +437,40 @@ public class Minemories {
                   .getWorldPath(LevelResource.ROOT)
                   .toAbsolutePath()
                   .normalize();
-    } else if (mc.getCurrentServer() != null) {
-      world = "server:" + mc.getCurrentServer().ip;
+    } else if (mc.getCurrentServer() != null
+        && mc.getConnection() != null
+        && mc.getConnection().getConnection().isConnected()) {
+      var binding = remoteWorldBinding(mc);
+      world =
+          "remote:"
+              + CaptureIdentity.remote(
+                  mc.getCurrentServer().ip, "", "", binding.namespace(), binding.configured());
     } else return null;
     return world;
+  }
+
+  private static String capturePlayerIdentity(Minecraft mc) {
+    // The login profile remains stable through respawns; a LocalPlayer entity may receive a new
+    // UUID.
+    return mc.getConnection() != null
+        ? mc.getConnection().getLocalGameProfile().getId().toString()
+        : mc.player.getUUID().toString();
+  }
+
+  private static RemoteCaptureSession.Binding remoteWorldBinding(Minecraft mc) {
+    String server = mc.getCurrentServer().ip;
+    return REMOTE_CAPTURE_SESSION.binding(
+        mc.getConnection().getConnection(),
+        server,
+        () -> {
+          try {
+            return PairingClient.remoteWorldNamespace(server);
+          } catch (RuntimeException error) {
+            LOGGER.warn(
+                "Invalid remote world identifier; keeping captures separated by connection.");
+            return "";
+          }
+        });
   }
 
   static void identifyCapture(
@@ -446,12 +482,21 @@ public class Minemories {
         metadata.has("seed") && !metadata.get("seed").isJsonNull()
             ? metadata.get("seed").getAsString()
             : null;
-    String id =
-        CaptureIdentity.world(
-            world,
-            seed,
-            mc.level.dimension().location().toString(),
-            mc.player.getUUID().toString());
+    String dimension = mc.level.dimension().location().toString();
+    String player = capturePlayerIdentity(mc);
+    String id;
+    if (mc.getSingleplayerServer() != null) {
+      id = CaptureIdentity.world(world, seed, dimension, player);
+      metadata.addProperty("worldScope", "world");
+    } else {
+      if (mc.getConnection() == null) return;
+      String server = mc.getCurrentServer().ip;
+      var binding = remoteWorldBinding(mc);
+      boolean persistent = binding.configured();
+      String namespace = binding.namespace();
+      id = CaptureIdentity.remote(server, dimension, player, namespace, persistent);
+      metadata.addProperty("worldScope", persistent ? "namespace" : "session");
+    }
     metadata.addProperty("worldId", id);
     metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));
     metadata.addProperty("captureMode", selection ? "selection" : "around");
@@ -474,27 +519,37 @@ public class Minemories {
             mc.gameDirectory.toPath().resolve("config/minemories/exploration"),
             world,
             mc.level.dimension().location().toString(),
-            mc.player.getUUID().toString());
+            capturePlayerIdentity(mc));
     if (!path.equals(EXPLORATION.path)) {
       saveExploration();
       EXPLORATION.path = path;
-      try {
-        EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
-        EXPLORATION.zonesWritable = true;
-      } catch (IOException | IllegalArgumentException error) {
-        EXPLORATION.zones = new VisitedZones();
-        EXPLORATION.zonesWritable = false;
-        LOGGER.warn("Cannot read local zone history; preserving the original file", error);
-      }
-      try {
-        EXPLORATION.depth = ExplorationDepth.read(path);
-        EXPLORATION.writable = true;
-      } catch (IOException | IllegalArgumentException error) {
-        EXPLORATION.depth = new ExplorationDepth();
+      boolean persistent =
+          mc.getSingleplayerServer() != null || remoteWorldBinding(mc).configured();
+      if (!persistent) {
+        var memory = REMOTE_CAPTURE_SESSION.exploration(path);
+        EXPLORATION.depth = memory.depth();
+        EXPLORATION.zones = memory.zones();
         EXPLORATION.writable = false;
-        LOGGER.warn(
-            "Cannot read exploration history; preserving the original file and tracking this session in memory",
-            error);
+        EXPLORATION.zonesWritable = false;
+      } else {
+        try {
+          EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
+          EXPLORATION.zonesWritable = true;
+        } catch (IOException | IllegalArgumentException error) {
+          EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.zonesWritable = false;
+          LOGGER.warn("Cannot read local zone history; preserving the original file", error);
+        }
+        try {
+          EXPLORATION.depth = ExplorationDepth.read(path);
+          EXPLORATION.writable = true;
+        } catch (IOException | IllegalArgumentException error) {
+          EXPLORATION.depth = new ExplorationDepth();
+          EXPLORATION.writable = false;
+          LOGGER.warn(
+              "Cannot read exploration history; preserving the original file and tracking this session in memory",
+              error);
+        }
       }
     }
     BlockPos position = mc.player.blockPosition();
