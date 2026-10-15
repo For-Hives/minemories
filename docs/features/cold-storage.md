@@ -1,8 +1,8 @@
 # Archivage des captures inactives
 
 Suivi de l’issue [#85](https://github.com/For-Hives/minemories/issues/85).
-Le suivi des ouvertures est implémenté ; aucune transition vers une classe froide
-n’est encore activée.
+Le suivi des ouvertures et la prévisualisation des candidats sont implémentés ;
+aucune transition vers une classe froide n’est encore activée.
 
 ## Dernière ouverture réelle
 
@@ -23,12 +23,36 @@ et suit la ligne du souvenir après conversion de sa clé physique. Une capture
 supprimée ne reçoit plus de nouvelle date. En l’absence d’ouverture, la politique
 d’inactivité devra utiliser `created_at` ; aucun historique antérieur n’est inventé.
 
+## Prévisualiser l’éligibilité
+
+Depuis la racine du dépôt :
+
+```bash
+bun api:archive:plan --idle-days 90 --limit 100
+```
+
+La commande ouvre une base existante et migrée en lecture seule. `--idle-days`
+accepte un entier de 60 à 90 ; à défaut, `COLD_STORAGE_INACTIVE_DAYS` s’applique,
+puis la valeur 90. `--limit` borne le résultat entre 1 et 1 000 objets (100 par
+défaut). Le JSON contient des clés et identifiants privés : conserver sa sortie
+dans un emplacement privé. Aucun accès au provider, archivage ni suppression
+n’est effectué. Ce résultat n’est pas une réservation : un worker devra vérifier
+l’éligibilité à nouveau atomiquement avant toute transition.
+
+La sélection prend la plus récente des dates de création/ouverture de **tous**
+les souvenirs qui référencent un objet. Les clés de manifestes virtuels ne sont
+pas des objets physiques. Un bloc dédupliqué n’est compté qu’une fois, même s’il
+apparaît plusieurs fois dans un même souvenir. Les souvenirs dans la corbeille
+protègent leurs blocs ; les conversions, lectures timelapse en cours et intentions
+de suppression excluent les objets concernés. La prévisualisation ne modifie pas
+les dates d’ouverture. Les accès directs aux GLB originaux devront aussi obtenir
+un lease avant qu’un worker d’archivage soit activé.
+
 ## Contraintes pour la suite
 
-Le seuil devra être configurable entre 60 et 90 jours. L’éligibilité d’un bloc
-timelapse partagé doit dépendre de **tous** les souvenirs qui le référencent,
-ainsi que des conversions et lectures en cours. Les métadonnées et miniatures
-restent accessibles. Une restauration doit rendre tous les blocs nécessaires
+Le worker devra appliquer le seuil et les protections de la prévisualisation sous
+réservation durable. Les métadonnées et miniatures restent accessibles.
+Une restauration doit rendre tous les blocs nécessaires
 lisibles avant d’ouvrir le flux GLB ; le viewer doit afficher l’état et la progression.
 Les transitions doivent pouvoir reprendre après interruption et se réconcilier
 avec le provider, sans contourner les claims de suppression.
