@@ -86,10 +86,10 @@ final class DiagnosticsSettingsScreen extends Screen {
     int y = top + 34;
     for (String paragraph :
         List.of(
-            "Désactivés par défaut. Ton accord après appairage aide à corriger les erreurs de capture/envoi.",
-            "Versions, type d’erreur, étapes et lignes de code, reliés à ton compte/appareil.",
+            "Désactivés par défaut. Ton accord après appairage aide à corriger les exports et les crashs.",
+            "Versions, erreur et lignes de code. Huit rapports privés gardés 7 jours au plus, renvoyés après relance.",
             "Exclus : messages, URLs, jetons, coordonnées, graine, noms monde/joueur et captures.",
-            "Désactiver vide le cache et demande l’effacement. API hors ligne : sa rétention s’applique.")) {
+            "NON efface la file locale et demande l’effacement serveur. Hors ligne : sa rétention s’applique.")) {
       var lines = font.split(Component.literal(paragraph), panelWidth - 28);
       for (var line : lines) {
         if (y < top + 178) graphics.drawString(font, line, left + 14, y, 0xFFECE8DC);

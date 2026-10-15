@@ -25,7 +25,7 @@ test('private CLI reads existing database, groups and lists bounded reports with
 		phase: 'upload' as const,
 		versions: { api: '0.1.0' as const },
 		correlationId: randomUUID(),
-		exception: { type: 'Error', frames: [] },
+		exception: { type: 'Error' as const, frames: [] },
 		breadcrumbs: [] as [],
 	}
 	store.accept({ id: deviceId, userId: 'owner' }, report, permit)

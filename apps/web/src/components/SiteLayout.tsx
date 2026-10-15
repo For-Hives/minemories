@@ -5,6 +5,7 @@ import { authClient } from '../auth-client'
 import { discoveryPages } from '../content/discovery'
 import { useI18n } from '../i18n/I18n'
 import { avatarUrl } from '../lib/avatar'
+import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
 
@@ -178,6 +179,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						)
 					)}
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
+					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>
 				<nav aria-label={t('Legal')}>
 					{legalLinks.map(link => (

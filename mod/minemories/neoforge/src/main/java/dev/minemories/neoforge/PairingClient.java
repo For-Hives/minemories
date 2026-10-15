@@ -26,7 +26,11 @@ final class PairingClient {
   private static final AtomicBoolean AFK_CANCELLED = new AtomicBoolean();
   private static final AtomicLong ACCOUNT_GENERATION = new AtomicLong();
   private static final DiagnosticsClient DIAGNOSTICS =
-      new DiagnosticsClient(HTTP, PairingClient::readSettings, PairingClient::diagnosticVersions);
+      new DiagnosticsClient(
+          HTTP,
+          PairingClient::readSettings,
+          PairingClient::diagnosticVersions,
+          settingsPath().resolveSibling("minemories-diagnostics.properties"));
 
   private PairingClient() {}
 
@@ -104,12 +108,23 @@ final class PairingClient {
             throw new IllegalStateException("Connecte ton compte avant d’activer les diagnostics.");
           settings.setProperty("diagnosticsConsent", Boolean.toString(enabled));
           if (enabled)
+            settings.setProperty("diagnosticsEpoch", java.util.UUID.randomUUID().toString());
+          else settings.remove("diagnosticsEpoch");
+          if (enabled)
             settings.setProperty(
                 "diagnosticsIdentity",
                 ClientSettings.diagnosticsBinding(settings, System.getenv("MINEMORIES_API_URL")));
           else settings.remove("diagnosticsIdentity");
           saveSettings(settings);
         });
+  }
+
+  static void diagnosticsTick() {
+    DIAGNOSTICS.tick();
+  }
+
+  static void reportCrash(Throwable error) {
+    DIAGNOSTICS.crash(error);
   }
 
   static String diagnosticsStatus() {

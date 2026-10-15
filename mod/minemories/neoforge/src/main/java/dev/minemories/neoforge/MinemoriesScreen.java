@@ -93,6 +93,12 @@ final class MinemoriesScreen extends Screen {
   }
 
   private void initBasic() {
+    button(
+        "Diagnostics",
+        panelWidth - 134,
+        10,
+        94,
+        () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
     codeInput = input("Code d’appairage à six chiffres", 70, panelWidth - 110);
     codeInput.setMaxLength(6);
     codeInput.setHint(Component.literal("Code à 6 chiffres"));

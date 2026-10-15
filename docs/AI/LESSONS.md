@@ -31,3 +31,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Préparer les fonctionnalités web avec des démonstrations réellement interactives et plusieurs angles marketing (code public, nostalgie, partage, classement). L’indexation doit désormais rester bloquée jusqu’au lancement ; les nouveaux tarifs explicitement donnés remplacent l’ancien besoin sans inventer un paiement déjà connecté.
 
 - Les releases GitHub du mod doivent devenir automatiques après merge sur main : versions des packages et de Gradle synchronisées, matrice par loader réellement disponible et changelog généré. Éviter une deuxième PR de release à fusionner ; conserver la distinction entre bêta CI et validation en jeu du JAR exact.
+
+- Avant de faire tester le parcours par Mae, le développeur priorise l’observabilité distante : erreurs d’export et crashs doivent être remontés à l’API et exploitables dans une page d’administration privée, avec groupes, détails et statut de traitement. Les diagnostics doivent survivre aux coupures et à une relance sans activer le consentement d’un joueur à sa place.

@@ -26,6 +26,7 @@ test('private data, shared links and account routes are excluded from indexing a
 		'/share/private-token',
 		'/public/publication-id',
 		'/moderation',
+		'/admin/diagnostics',
 		'/login',
 		'/register',
 	]) {

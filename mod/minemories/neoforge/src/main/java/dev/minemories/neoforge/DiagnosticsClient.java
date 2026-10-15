@@ -14,12 +14,15 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
-/** No disk queue: consent and the current paired identity govern every retained diagnostic. */
+/** Consent governs a bounded durable outbox; all network work remains asynchronous. */
 final class DiagnosticsClient {
   private static final int MAX_OPERATIONS = 8;
-  private static final int MAX_REPORTS_PER_HOUR = 5;
+  private final DiagnosticOutbox outbox;
+  private final LongSupplier clock;
+  private long authorizationRetryAt;
   private final HttpClient http;
   private final Supplier<Properties> settings;
   private final Supplier<DiagnosticReport.Versions> versions;
@@ -27,8 +30,6 @@ final class DiagnosticsClient {
   private Identity identity;
   private String permit;
   private long generation;
-  private long windowStarted;
-  private int reports;
   private CachedCapture capture;
   private CompletableFuture<HttpResponse<String>> authorization;
   private CompletableFuture<HttpResponse<String>> submission;
@@ -40,12 +41,31 @@ final class DiagnosticsClient {
       HttpClient http,
       Supplier<Properties> settings,
       Supplier<DiagnosticReport.Versions> versions) {
+    this(http, settings, versions, null, System::currentTimeMillis);
+  }
+
+  DiagnosticsClient(
+      HttpClient http,
+      Supplier<Properties> settings,
+      Supplier<DiagnosticReport.Versions> versions,
+      Path queue) {
+    this(http, settings, versions, queue, System::currentTimeMillis);
+  }
+
+  DiagnosticsClient(
+      HttpClient http,
+      Supplier<Properties> settings,
+      Supplier<DiagnosticReport.Versions> versions,
+      Path queue,
+      LongSupplier clock) {
     this.http = http;
     this.settings = settings;
     this.versions = versions;
+    this.outbox = new DiagnosticOutbox(queue);
+    this.clock = clock;
   }
 
-  private record Identity(String api, String token, String device) {}
+  private record Identity(String api, String token, String device, String binding) {}
 
   private record CachedCapture(
       Path path, UUID correlation, long started, List<DiagnosticReport.Breadcrumb> breadcrumbs) {}
@@ -107,7 +127,12 @@ final class DiagnosticsClient {
       String device = current.getProperty("deviceId", "");
       if (token.isBlank() || !UUID.fromString(device).toString().equals(device)) return null;
       return new Identity(
-          ClientSettings.apiUrl(current, System.getenv("MINEMORIES_API_URL")), token, device);
+          ClientSettings.apiUrl(current, System.getenv("MINEMORIES_API_URL")),
+          token,
+          device,
+          current.getProperty("diagnosticsIdentity")
+              + ":"
+              + current.getProperty("diagnosticsEpoch", "legacy"));
     } catch (RuntimeException ignored) {
       return null;
     }
@@ -120,9 +145,15 @@ final class DiagnosticsClient {
       clear();
       identity = configured;
       refused = false;
+      authorizationRetryAt = 0;
       if (previous != null) purge(previous);
     }
-    if (identity != null && permit == null && authorization == null && !refused) authorize();
+    outbox.bind(identity == null ? null : identity.binding, clock.getAsLong());
+    if (identity != null
+        && permit == null
+        && authorization == null
+        && !refused
+        && clock.getAsLong() >= authorizationRetryAt) authorize();
   }
 
   private void clear() {
@@ -134,8 +165,6 @@ final class DiagnosticsClient {
     operations.clear();
     capture = null;
     permit = null;
-    reports = 0;
-    windowStarted = 0;
     if (authorization != null) authorization.cancel(true);
     if (submission != null) submission.cancel(true);
     authorization = null;
@@ -170,7 +199,7 @@ final class DiagnosticsClient {
     try {
       pending = http.sendAsync(request, ApiResponseBody.bounded());
     } catch (RuntimeException ignored) {
-      refused = true;
+      authorizationRetryAt = clock.getAsLong() + 30000;
       return;
     }
     authorization = pending;
@@ -180,8 +209,17 @@ final class DiagnosticsClient {
             if (requestedGeneration != generation || !requested.equals(configuredIdentity()))
               return;
             authorization = null;
-            refused = true;
-            if (error != null || response.statusCode() != 200) return;
+            authorizationRetryAt = clock.getAsLong() + 30000;
+            if (error != null) return;
+            if (response.statusCode() == 401 || response.statusCode() == 403) {
+              refused = true;
+              outbox.purge();
+              return;
+            }
+            if (response.statusCode() != 200) {
+              authorizationRetryAt = clock.getAsLong() + retryDelay(response);
+              return;
+            }
             try {
               String value =
                   JsonParser.parseString(response.body())
@@ -192,6 +230,8 @@ final class DiagnosticsClient {
               if (!canonical.equals(value)) return;
               permit = canonical;
               refused = false;
+              outbox.authorize();
+              flush();
             } catch (RuntimeException ignored) {
               // An unsupported or malformed API never enables collection.
             }
@@ -202,14 +242,16 @@ final class DiagnosticsClient {
   synchronized String status() {
     refresh();
     if (identity == null) return "Désactivés : aucune collecte ni aucun envoi.";
-    if (permit != null) return "Activés pour ce compte et cette API.";
+    if (permit != null) return "Activés. Rapports en attente : " + outbox.size() + ".";
+    if (!refused && outbox.authorized())
+      return "Hors ligne : rapports conservés pour le prochain envoi.";
     return authorization != null
         ? "Vérification du compte et de l’accord…"
         : "API indisponible ou compte refusé : aucune collecte.";
   }
 
   synchronized boolean isSending() {
-    return submission != null && !submission.isDone();
+    return submission != null;
   }
 
   synchronized boolean consentAllowed() {
@@ -227,6 +269,7 @@ final class DiagnosticsClient {
     Identity previous = identity != null ? identity : configuredIdentity();
     withdrawn = true;
     clear();
+    outbox.bind(null, clock.getAsLong());
     identity = null;
     try {
       mutation.run();
@@ -267,7 +310,7 @@ final class DiagnosticsClient {
 
   synchronized Operation begin(DiagnosticReport.Phase phase, Path file) {
     refresh();
-    UUID correlation = permit == null ? null : UUID.randomUUID();
+    UUID correlation = collectingAllowed() ? UUID.randomUUID() : null;
     long started = System.nanoTime();
     if (correlation != null && capture != null && Objects.equals(file, capture.path)) {
       correlation = capture.correlation;
@@ -297,7 +340,41 @@ final class DiagnosticsClient {
     return !operation.finished
         && operation.correlation != null
         && operation.generation == generation
-        && permit != null;
+        && collectingAllowed();
+  }
+
+  private boolean collectingAllowed() {
+    return identity != null && !refused && (permit != null || outbox.authorized());
+  }
+
+  synchronized void tick() {
+    refresh();
+    outbox.expire(clock.getAsLong());
+    flush();
+  }
+
+  synchronized void crash(Throwable error) {
+    refresh();
+    if (!collectingAllowed()) return;
+    List<DiagnosticReport.Breadcrumb> steps = new ArrayList<>();
+    for (Operation active : operations) steps.addAll(active.breadcrumbs);
+    var active = operations.peekLast();
+    long elapsed =
+        active == null ? 0 : Math.max(0, (System.nanoTime() - active.started) / 1_000_000);
+    steps.add(new DiagnosticReport.Breadcrumb(DiagnosticReport.Step.CLIENT_CRASHED, elapsed));
+    try {
+      var report =
+          DiagnosticReport.create(
+              DiagnosticReport.Phase.CRASH,
+              versions.get(),
+              active == null ? UUID.randomUUID() : active.correlation,
+              error,
+              steps);
+      outbox.add(report.payload());
+      // The durable write happens before returning to Minecraft's original crash/exit path.
+    } catch (RuntimeException ignored) {
+      // The original Minecraft crash handler remains authoritative.
+    }
   }
 
   private synchronized void step(Operation operation, DiagnosticReport.Step step) {
@@ -310,12 +387,13 @@ final class DiagnosticsClient {
   private synchronized void revoke(Operation operation) {
     if (!eligible(operation)) return;
     clear();
+    outbox.purge();
     refused = true;
   }
 
   private synchronized HttpRequest.Builder headers(
       Operation operation, HttpRequest.Builder request) {
-    if (eligible(operation)) {
+    if (eligible(operation) && permit != null) {
       request.header("X-Minemories-Correlation", operation.correlation.toString());
       request.header("X-Minemories-Diagnostics-Consent", "true");
       request.header("X-Minemories-Diagnostics-Permit", permit);
@@ -346,12 +424,6 @@ final class DiagnosticsClient {
   }
 
   private void submit(Operation operation, Throwable error) {
-    long now = System.currentTimeMillis();
-    if (now - windowStarted >= Duration.ofHours(1).toMillis()) {
-      windowStarted = now;
-      reports = 0;
-    }
-    if (reports >= MAX_REPORTS_PER_HOUR || (submission != null && !submission.isDone())) return;
     DiagnosticReport report;
     try {
       report =
@@ -364,21 +436,35 @@ final class DiagnosticsClient {
     } catch (RuntimeException ignored) {
       return;
     }
-    // Reread consent/API/account/device after sanitization and immediately before sending.
     if (!eligible(operation)) return;
+    outbox.add(report.payload());
+    flush();
+  }
+
+  private void flush() {
+    if (permit == null
+        || refused
+        || submission != null
+        || !Objects.equals(identity, configuredIdentity())) return;
+    long now = clock.getAsLong();
+    var payload = outbox.next(now);
+    if (payload == null) return;
     Identity requested = identity;
     long requestedGeneration = generation;
-    HttpRequest.Builder request =
+    String id = payload.getAsJsonObject("report").get("id").getAsString();
+    var request =
         HttpRequest.newBuilder(URI.create(requested.api + "/api/mod/diagnostics"))
             .timeout(Duration.ofSeconds(10))
             .header("Authorization", "Bearer " + requested.token)
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(report.payload().toString()));
-    headers(operation, request);
-    reports++;
+            .header("X-Minemories-Diagnostics-Permit", permit)
+            .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+            .build();
+    outbox.attempted();
+    outbox.retry(now, 30000);
     CompletableFuture<HttpResponse<String>> pending;
     try {
-      pending = http.sendAsync(request.build(), ApiResponseBody.bounded());
+      pending = http.sendAsync(request, ApiResponseBody.bounded());
     } catch (RuntimeException ignored) {
       return;
     }
@@ -388,13 +474,40 @@ final class DiagnosticsClient {
           synchronized (this) {
             if (requestedGeneration != generation || !requested.equals(configuredIdentity()))
               return;
-            if (failure == null && (response.statusCode() == 401 || response.statusCode() == 403)) {
-              clear();
-              refused = true;
-            }
-            // No retry, response payload cache, or queue survives the request.
             submission = null;
+            if (failure != null) return;
+            int status = response.statusCode();
+            if (status == 401 || status == 403) {
+              clear();
+              outbox.purge();
+              refused = true;
+            } else if (status == 400
+                && "crash".equals(payload.getAsJsonObject("report").get("phase").getAsString())) {
+              // A rolling deployment may still serve the previous API contract without crash.
+              // Retain this sanitized report until the API catches up, within the same bounds.
+              outbox.retry(clock.getAsLong(), 300000);
+            } else if (status == 200
+                || status == 201
+                || status == 400
+                || status == 409
+                || status == 413
+                || status == 422) {
+              outbox.remove(id);
+              outbox.retry(clock.getAsLong(), 0);
+              flush();
+            } else {
+              outbox.retry(clock.getAsLong(), retryDelay(response));
+            }
           }
         });
+  }
+
+  private static long retryDelay(HttpResponse<?> response) {
+    try {
+      long seconds = Long.parseLong(response.headers().firstValue("Retry-After").orElse("30"));
+      return Math.max(30000, Math.min(3600, seconds) * 1000);
+    } catch (NumberFormatException ignored) {
+      return 30000;
+    }
   }
 }
