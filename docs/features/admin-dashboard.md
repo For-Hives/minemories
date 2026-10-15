@@ -10,7 +10,7 @@ Sur le serveur de l’API, avec sa base et son environnement réels, exécuter :
 bun api:admin --email adresse-du-compte-existant@example.com
 ```
 
-`DATABASE_PATH` doit désigner la base existante. La commande refuse une base absente et un compte inconnu ; elle ne crée ni compte ni mot de passe. Elle est idempotente et journalise la première attribution. Aucun e-mail personnel ni compte privilégié automatique n’est codé dans l’application. Cette commande locale n’est pas exposée sur HTTP. Lancer cette commande sur une base de test ne modifie pas les droits du site déployé.
+`DATABASE_PATH` doit désigner la base existante. La commande refuse une base absente et un compte inconnu ; elle ne crée ni compte ni mot de passe. Elle est idempotente et journalise la première attribution. À la demande du propriétaire, un bootstrap temporaire contient son adresse côté serveur (TODO #125). Au démarrage, il promeut le compte existant une seule fois et conserve une marque persistante : aucune création de compte, aucun hook d’inscription et aucune réattribution après rétrogradation ou recréation du compte. Si le compte est absent, il ne crée rien ; un redémarrage ultérieur pourra initialiser le compte une fois créé. Cette exception temporaire doit être retirée après confirmation de l’accès opérateur. Cette commande locale n’est pas exposée sur HTTP. Lancer cette commande sur une base de test ne modifie pas les droits du site déployé.
 
 ## Permissions
 
