@@ -10,7 +10,8 @@ import { AccountSecurity } from './account-security'
 import { bootstrapTemporaryAdministrator } from './admin-bootstrap'
 import { AdminMetrics } from './admin-metrics'
 import { AdminRoles } from './admin-roles'
-import { auth } from './auth'
+import { auth, billing, handleAuthRequest } from './auth'
+import { BILLING_WEBHOOK_BODY_BYTES } from './billing'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
 import { recordCaptureOpening } from './capture-access'
 import { openAuthorizedCapture } from './capture-downloads'
@@ -311,8 +312,12 @@ app.use(
 )
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
-app.use('/api/auth/*', requestBodyLimit(AUTH_BODY_BYTES))
-app.all('/api/auth/*', context => auth.handler(context.req.raw))
+app.use('/api/auth/*', (context, next) =>
+	requestBodyLimit(
+		billing.config && context.req.path === '/api/auth/polar/webhooks' ? BILLING_WEBHOOK_BODY_BYTES : AUTH_BODY_BYTES
+	)(context, next)
+)
+app.all('/api/auth/*', context => handleAuthRequest(context.req.raw))
 
 app.use('/rpc/*', requestBodyLimit(RPC_BODY_BYTES))
 app.use('/rpc/*', async (context, next) => {
