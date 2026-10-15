@@ -1,0 +1,153 @@
+name: Automatic mod releases
+
+on:
+  workflow_run:
+    workflows: [Quality gates]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build the planned version without committing, tagging or publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automatic-mod-release-main
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_sha == github.sha &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      ready: ${{ steps.plan.outputs.ready }}
+      version: ${{ steps.plan.outputs.version }}
+      source: ${{ steps.plan.outputs.source }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Set the local branch to the quality-tested commit
+        env:
+          RELEASE_SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          git checkout -B main "$RELEASE_SOURCE_SHA"
+          git branch --set-upstream-to=origin/main main
+      - name: Plan the next version and supported loader matrix
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RELEASE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: node scripts/plan-release.mjs
+      - uses: actions/upload-artifact@v7
+        if: steps.plan.outputs.ready == 'true'
+        with:
+          name: mod-release-plan
+          path: work/release-plan/plan.json
+          if-no-files-found: error
+          retention-days: 30
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            ${{ matrix.java }}
+            25
+          cache: gradle
+      - name: Build, test and package the exact release target
+        env:
+          RELEASE_TARGET: ${{ matrix.id }}
+          RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+          RELEASE_SOURCE_SHA: ${{ needs.plan.outputs.source }}
+        run: node scripts/build-release-target.mjs "$RELEASE_TARGET" "$RELEASE_VERSION" "$RELEASE_SOURCE_SHA"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-target-${{ matrix.id }}
+          path: work/mod-release/${{ matrix.id }}/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [plan, build]
+    if: needs.plan.outputs.ready == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Configure the release author and tested branch
+        env:
+          RELEASE_SOURCE_SHA: ${{ needs.plan.outputs.source }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B main "$RELEASE_SOURCE_SHA"
+          git branch --set-upstream-to=origin/main main
+      - uses: actions/download-artifact@v8
+        with:
+          name: mod-release-plan
+          path: work/release-plan
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-target-*
+          path: work/release-inputs
+      - name: Verify all matrix artifacts against the release plan
+        run: node scripts/collect-release-assets.mjs
+      - name: Synchronize package and mod versions, write changelog, commit and tag
+        id: prepare
+        run: node scripts/prepare-release.mjs
+      - name: Publish the complete GitHub prerelease
+        if: steps.prepare.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ steps.prepare.outputs.commit }}
+        run: node scripts/publish-release.mjs

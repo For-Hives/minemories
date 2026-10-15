@@ -4,6 +4,7 @@ import { open, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { downloadFilename } from './package-mod.mjs'
+import { filenameFor, readTargets } from './release-utils.mjs'
 
 const sha256Pattern = /^[a-f0-9]{64}$/
 const versionPattern = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/
@@ -27,7 +28,10 @@ async function hashJar(path) {
 	return { bytes, sha256: hash.digest('hex') }
 }
 
-export async function verifyModArtifact(directory, expectedSha256) {
+export async function verifyModArtifact(directory, expectedSha256, options = {}) {
+	const target = options.target ?? (await readTargets()).find(item => filenameFor(item) === downloadFilename)
+	if (!target) throw new Error('Missing legacy download target.')
+	const filename = filenameFor(target)
 	if (typeof expectedSha256 !== 'string' || !sha256Pattern.test(expectedSha256))
 		throw new Error('The original build SHA-256 is required.')
 	const manifest = JSON.parse(await readFile(resolve(directory, 'manifest.json'), 'utf8'))
@@ -37,19 +41,21 @@ export async function verifyModArtifact(directory, expectedSha256) {
 		Array.isArray(manifest) ||
 		typeof manifest.version !== 'string' ||
 		!versionPattern.test(manifest.version) ||
-		manifest.minecraft !== '1.21.1' ||
-		manifest.loader !== 'NeoForge' ||
-		manifest.loaderVersion !== '21.1.248' ||
-		manifest.file !== `/downloads/${downloadFilename}` ||
+		manifest.minecraft !== target.minecraft ||
+		manifest.loader !== target.name ||
+		manifest.loaderVersion !== target.loaderVersion ||
+		manifest.file !== `/downloads/${filename}` ||
+		(options.version && manifest.version !== options.version) ||
+		(options.sourceCommit && manifest.sourceCommit !== options.sourceCommit) ||
 		!Number.isSafeInteger(manifest.bytes) ||
 		manifest.bytes < 4 ||
 		manifest.sha256 !== expectedSha256
 	)
 		throw new Error('The downloaded manifest does not match the tested mod build.')
-	const checksum = await readFile(resolve(directory, `${downloadFilename}.sha256`), 'utf8')
-	if (checksum !== `${expectedSha256}  ${downloadFilename}\n`)
+	const checksum = await readFile(resolve(directory, `${filename}.sha256`), 'utf8')
+	if (checksum !== `${expectedSha256}  ${filename}\n`)
 		throw new Error('The downloaded checksum file does not match the tested mod build.')
-	const actual = await hashJar(resolve(directory, downloadFilename))
+	const actual = await hashJar(resolve(directory, filename))
 	if (actual.bytes !== manifest.bytes || actual.sha256 !== expectedSha256)
 		throw new Error('The downloaded JAR differs from the tested mod build.')
 	return manifest

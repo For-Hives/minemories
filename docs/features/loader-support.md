@@ -21,3 +21,10 @@ Le dépôt a déjà Gradle, Spotless et `:core`, une bibliothèque Java sans cla
 4. Valider les deux clients séparément en jeu, puis seulement évaluer Quilt et Forge. Une matrice CI peut compiler chaque artefact, mais ne remplace pas les essais graphiques et les mods tiers.
 
 Cette migration est volontairement séparée du POC NeoForge existant : un module qui compile n'est pas une preuve que les exports sont équivalents en jeu.
+
+
+## Matrice de release
+
+`config/mod-targets.json` déclare Minecraft, loader, version du loader, projet Gradle et Java pour chaque cible. La CI de release génère sa matrice à partir des entrées `enabled: true`, qui doivent aussi avoir `validatedInGame: true`. Actuellement : NeoForge 21.1.248 / Minecraft 1.21.1 / Java 21. Les lignes Fabric, Forge et Quilt sont des réservations désactivées, pas des JAR compatibles déjà disponibles.
+
+Pour activer un nouveau loader : ajouter son adaptateur et son projet dans Gradle, vérifier que son JAR distribue les classes communes, le tester en jeu, renseigner `loaderVersion`, puis activer sa ligne. La CI construit séparément les archives et les publie dans la même release avec des noms et manifestes distincts. Ajouter une ligne ne porte pas le code NeoForge vers ce loader.
