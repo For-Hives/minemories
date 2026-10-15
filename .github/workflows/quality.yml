@@ -16,7 +16,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     outputs:
-      mod_sha256: ${{ steps.metadata.outputs.sha256 }}
+      mod_checksums: ${{ steps.metadata.outputs.checksums }}
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -43,26 +43,49 @@ jobs:
       - name: Verify real Garage lifecycle and recovery
         run: bun run api:garage
 
-      - name: Read original mod checksum
+      - name: Read original loader checksums
         id: metadata
         run: |
           node --input-type=module -e '
             import { readFileSync, appendFileSync } from "node:fs";
-            const manifest = JSON.parse(readFileSync("apps/web/public/downloads/manifest.json", "utf8"));
-            appendFileSync(process.env.GITHUB_OUTPUT, `sha256=${manifest.sha256}\n`);
+            const checksums = Object.fromEntries(["neoforge", "fabric", "forge"].map(loader => {
+              const manifest = JSON.parse(readFileSync(`build/mod-loaders/${loader}/manifest.json`, "utf8"));
+              return [loader, manifest.sha256];
+            }));
+            appendFileSync(process.env.GITHUB_OUTPUT, `checksums=${JSON.stringify(checksums)}\n`);
           '
 
       - name: Keep the installable mod artifact
         uses: actions/upload-artifact@v7
         with:
           name: minemories-neoforge-mc1.21.1
-          path: apps/web/public/downloads/*
+          path: build/mod-loaders/neoforge/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep the Fabric artifact (also tested under Quilt)
+        uses: actions/upload-artifact@v7
+        with:
+          name: minemories-fabric-mc1.21.1
+          path: build/mod-loaders/fabric/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep the Forge artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: minemories-forge-mc1.21.1
+          path: build/mod-loaders/forge/*
           if-no-files-found: error
           retention-days: 14
 
   mod-artifact:
     needs: quality
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [neoforge, fabric, forge]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -71,9 +94,9 @@ jobs:
       - name: Download the built mod in a separate job
         uses: actions/download-artifact@v8
         with:
-          name: minemories-neoforge-mc1.21.1
+          name: minemories-${{ matrix.loader }}-mc1.21.1
           path: downloads
       - name: Verify the downloaded JAR and metadata
         env:
-          BUILD_SHA256: ${{ needs.quality.outputs.mod_sha256 }}
-        run: node scripts/verify-mod-artifact.mjs downloads "$BUILD_SHA256"
+          BUILD_SHA256: ${{ fromJSON(needs.quality.outputs.mod_checksums)[matrix.loader] }}
+        run: node scripts/verify-mod-artifact.mjs downloads "$BUILD_SHA256" "${{ matrix.loader }}"

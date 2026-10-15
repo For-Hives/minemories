@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { downloadFilename, packageMod } from './package-mod.mjs'
+import { downloadFilename, modArtifact, packageMod } from './package-mod.mjs'
 import { verifyModArtifact } from './verify-mod-artifact.mjs'
 
 const manifestError = /manifest does not match/
@@ -13,15 +13,15 @@ const jarError = /JAR differs/
 const archiveError = /not a JAR archive/
 const expectedHashError = /original build SHA-256 is required/
 
-async function fixture(t) {
+async function fixture(t, loader = 'neoforge') {
 	const root = await mkdtemp(join(tmpdir(), 'minemories-artifact-'))
 	t.after(() => rm(root, { recursive: true, force: true }))
 	const source = join(root, 'libs')
 	const directory = join(root, 'downloaded')
 	await mkdir(source)
 	const bytes = Buffer.from([0x50, 0x4b, 0x03, 0x04, 1, 2, 3])
-	await writeFile(join(source, 'minemories-0.2.0-beta.1.jar'), bytes)
-	const manifest = await packageMod(source, directory)
+	await writeFile(join(source, `${modArtifact(loader).prefix}0.2.0-beta.1.jar`), bytes)
+	const manifest = await packageMod(source, directory, loader)
 	return { directory, bytes, manifest }
 }
 
@@ -29,6 +29,23 @@ test('accepts the packaged JAR, manifest and checksum against the original build
 	const { directory, bytes, manifest } = await fixture(t)
 	assert.deepEqual(await verifyModArtifact(directory, manifest.sha256), manifest)
 	assert.deepEqual(await readFile(join(directory, downloadFilename)), bytes)
+})
+
+test('verifies each loader against its original hash and rejects relabeled artifacts', async t => {
+	await Promise.all(
+		['fabric', 'forge'].map(async loader => {
+			const { directory, manifest } = await fixture(t, loader)
+			assert.deepEqual(await verifyModArtifact(directory, manifest.sha256, loader), manifest)
+			await assert.rejects(verifyModArtifact(directory, manifest.sha256), manifestError)
+			await assert.rejects(verifyModArtifact(directory, '0'.repeat(64), loader), manifestError)
+			await writeFile(join(directory, 'manifest.json'), JSON.stringify({ ...manifest, loader: 'NeoForge' }))
+			await assert.rejects(verifyModArtifact(directory, manifest.sha256, loader), manifestError)
+		})
+	)
+	const { directory, manifest } = await fixture(t, 'fabric')
+	await writeFile(join(directory, 'manifest.json'), JSON.stringify({ ...manifest, fabricApi: 'another-version' }))
+	await assert.rejects(verifyModArtifact(directory, manifest.sha256, 'fabric'), manifestError)
+	await assert.rejects(verifyModArtifact(directory, manifest.sha256, '../fabric'), { message: 'Unknown mod loader.' })
 })
 
 test('rejects altered, truncated and absent downloaded JARs', async t => {

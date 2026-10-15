@@ -40,3 +40,11 @@ Ces contrôles intermédiaires ne suffisent pas encore à annoncer les nouveaux 
 Le scénario Fabric complémentaire utilise un bloc de validation enregistré par un mod compagnon, avec un modèle Renderer API non vanilla : fallback cubique transformé, teinte personnalisée, alpha et émission, puis un mesh supplémentaire cyan. Ce test natif a détecté une hypothèse interne d'Indigo dans `Mesh.outputTo` ; le collecteur parcourt désormais les quads par l'API publique avant de les envoyer à son émetteur borné. L'export corrigé contient 1 018 triangles, les deux matériaux personnalisés et le mesh visible dans Blender. Le test porte sur cette interface contrôlée ; il ne certifie pas tous les mods Fabric.
 
 Sous Fabric puis Quilt, le scénario interactif a également vérifié le raccourci M, le bouton Minemories du menu pause, le respect de `afkSnapshots=false`, puis une capture progressive complète pendant la pause après activation explicite. Le scope de capture est inactif entre les frames. Le GLB progressif contient le bloc de test, le mesh, les entités et leurs matériaux ; il passe les validateurs API. Les délais et répertoires de ce scénario sont propres au profil isolé, sans toucher les préférences ou sauvegardes personnelles.
+
+## Artefacts de compilation
+
+`bun run build` prépare les trois distributions dans `build/mod-loaders/{neoforge,fabric,forge}/`. Chaque répertoire contient son JAR, une empreinte `.sha256` et un `manifest.json` avec version du mod, Minecraft, loader, version du loader, taille et empreinte. Le manifeste Fabric indique aussi la version de Fabric API à installer. `bun run package:mod:all` refait uniquement ce conditionnement à partir des JAR déjà construits.
+
+La CI conserve les trois paquets, puis les télécharge dans trois jobs distincts. Chaque job vérifie le loader attendu, ses métadonnées et les octets du JAR contre l’empreinte du job de compilation. Les tests de conditionnement refusent les builds absents/ambigus, les manifestes réétiquetés et les empreintes altérées. Quilt utilise le JAR Fabric, sans quatrième paquet.
+
+Le téléchargement du site et le workflow de publication existant restent explicitement NeoForge. Les artefacts Fabric/Forge sont disponibles par la CI ; leur publication sur les plateformes demande une configuration et une validation de version adaptées à chaque loader.
