@@ -60,11 +60,44 @@ l’original ouvert, sans supprimer ce fichier avant la fermeture du flux. Les
 leases périmés après une interruption sont collectés ; les suppressions restent
 dans la file durable jusque-là.
 
+## États durables et exclusion des lectures
+
+`object_tiers` conserve l’état de chaque objet : `hot`, `archiving`, `cold` ou
+`restoring`. L’absence de ligne signifie que l’objet est à chaud. Le catalogue
+réserve un objet dans une transaction SQLite immédiate, en vérifiant à nouveau
+son éligibilité exacte, toutes ses références et les lecteurs/conversions actifs.
+La limite de prévisualisation ne limite pas cette vérification à un premier lot.
+
+Les leases de lecture vérifient dans leur propre transaction que les objets sont
+à chaud. Un souvenir timelapse vérifie **tous** ses blocs avant d’ouvrir un flux ;
+un seul bloc indisponible empêche l’ouverture complète, sans lecteur partiellement
+créé. Une conversion ne peut ni lire un original en transition ni réutiliser un
+bloc froid. Les opérations d’archivage/restauration en cours protègent aussi leurs
+objets contre la suppression et la réconciliation.
+
+Les travaux ont une génération d’opération et un lease de worker de 15 minutes.
+La reprise d’un lease expiré ne remet pas l’objet à chaud : une ancienne
+confirmation ne peut pas modifier la nouvelle réservation. Un échec garde l’état
+indisponible et une date de nouvelle tentative en base, avec un délai exponentiel
+de 1 minute à 1 heure. Une demande de restauration pendant l’archivage attend sa
+confirmation ; les demandes répétées sont idempotentes. La restauration est
+prioritaire sur un nouvel archivage.
+
+Après restauration confirmée, une fenêtre de 15 minutes empêche un réarchivage
+immédiat avant que le viewer récupère le fichier. Cette fenêtre ne compte pas
+comme une ouverture réelle et ne modifie pas `last_opened_at`. Une suppression
+confirmée retire les métadonnées de tier devenues inutiles avec sa tâche durable.
+
+Ces garanties portent sur les réservations SQLite. Un worker de stockage n’est
+pas encore activé : son adaptateur devra confirmer/réconcilier les résultats
+distants, y compris les requêtes dont la réponse a été perdue, avant de publier
+un état lisible. Les leases SQLite ne peuvent pas annuler une copie déjà reçue
+par le provider. Les API d’état/restauration et leur affichage restent à relier.
+
 ## Contraintes pour la suite
 
-Le worker devra appliquer le seuil et les protections de la prévisualisation sous
-réservation durable, et les nouveaux lecteurs devront vérifier atomiquement qu’un
-objet n’est pas déjà en transition. Les métadonnées et miniatures restent accessibles.
+Le worker devra utiliser le catalogue et ses réservations durables. Les
+métadonnées et miniatures restent accessibles.
 Une restauration doit rendre tous les blocs nécessaires
 lisibles avant d’ouvrir le flux GLB ; le viewer doit afficher l’état et la progression.
 Les transitions doivent pouvoir reprendre après interruption et se réconcilier

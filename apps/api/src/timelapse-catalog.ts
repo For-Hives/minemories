@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
 import { migrateObjectDeletionClaims } from './object-deletions'
+import { assertObjectsHot, migrateObjectTiers } from './object-tiers'
 import { managedMemoryKey } from './storage-references'
 import { MAX_TIMELAPSE_CHUNK, MIN_TIMELAPSE_CHUNK } from './timelapse-chunks'
 import { MAX_UPLOAD_BYTES } from './upload-files'
@@ -35,6 +36,7 @@ export interface FrameManifest {
 
 export function migrateTimelapse(database: Database) {
 	migrateObjectDeletionClaims(database)
+	migrateObjectTiers(database)
 	migrateCaptureLimits(database)
 	database.exec(`
 	 CREATE TABLE IF NOT EXISTS timelapse_leases (
@@ -113,6 +115,7 @@ export class TimelapseCatalog {
 				 AND NOT EXISTS (SELECT 1 FROM timelapse_frames WHERE memory_id = memories.id)`)
 					.get(memoryId) as { id: string; user_id: string; object_key: string; size: number } | null
 				if (!source) return null
+				assertObjectsHot(this.database, [source.object_key])
 				const lease: Lease = {
 					id: randomUUID(),
 					memory_id: source.id,
@@ -164,6 +167,7 @@ export class TimelapseCatalog {
 						.query('INSERT INTO timelapse_chunks VALUES (?,?,?,?,?,?)')
 						.run(chunk.object_key, lease.user_id, sha256, size, chunk.state, id)
 				}
+				assertObjectsHot(this.database, [chunk.object_key])
 				const { ordinal } = this.database
 					.query('SELECT COUNT(*) AS ordinal FROM timelapse_pending_refs WHERE lease_id = ?')
 					.get(id) as { ordinal: number }
@@ -245,6 +249,10 @@ export class TimelapseCatalog {
 			.transaction(() => {
 				const manifest = this.manifest(objectKey)
 				if (!manifest) return null
+				assertObjectsHot(
+					this.database,
+					manifest.parts.map(part => part.objectKey)
+				)
 				const frame = this.database
 					.query(`SELECT f.memory_id,m.user_id FROM timelapse_frames f
 			 JOIN memories m ON m.id=f.memory_id WHERE f.object_key=?`)

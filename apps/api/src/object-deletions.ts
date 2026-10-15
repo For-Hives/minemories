@@ -84,9 +84,12 @@ export class ObjectDeletionQueue {
 		if (!row) return
 		try {
 			await this.remove(row.object_key, row.discard_upload === 1)
-			this.database
-				.query('DELETE FROM object_deletions WHERE object_key = ? AND generation = ?')
-				.run(row.object_key, row.generation)
+			this.database.transaction(() => {
+				const deleted = this.database
+					.query('DELETE FROM object_deletions WHERE object_key = ? AND generation = ?')
+					.run(row.object_key, row.generation)
+				if (deleted.changes) this.references.forgetDeletedTier(row.object_key)
+			})()
 		} catch {
 			const delay = Math.min(3_600_000, 60_000 * 2 ** Math.min(row.attempts, 6))
 			this.database

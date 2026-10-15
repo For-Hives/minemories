@@ -14,6 +14,8 @@ export class ObjectReferences {
 	private readonly chunks: Statement | null
 	private readonly readers: Statement | null
 	private readonly expireReaders: Statement | null
+	private readonly tierWork: Statement | null
+	private readonly deleteTier: Statement | null
 	private readonly owners: Statement[]
 	constructor(database: Database) {
 		const tables = new Set(
@@ -36,8 +38,17 @@ export class ObjectReferences {
 		this.expireReaders = tables.has('capture_readers')
 			? database.query('DELETE FROM capture_readers WHERE expires_at<=?')
 			: null
+		this.tierWork = tables.has('object_tiers')
+			? database.query("SELECT 1 FROM object_tiers WHERE object_key=? AND state IN ('archiving','restoring')")
+			: null
+		this.deleteTier = tables.has('object_tiers')
+			? database.query("DELETE FROM object_tiers WHERE object_key=? AND state IN ('hot','cold')")
+			: null
 		this.unreferencedSql =
 			[
+				tables.has('object_tiers')
+					? "NOT EXISTS (SELECT 1 FROM object_tiers WHERE object_key=object_deletions.object_key AND state IN ('archiving','restoring'))"
+					: '',
 				tables.has('capture_readers')
 					? 'NOT EXISTS (SELECT 1 FROM capture_readers WHERE object_key=object_deletions.object_key)'
 					: '',
@@ -72,8 +83,12 @@ export class ObjectReferences {
 	collectExpiredReaders(now: number): void {
 		this.expireReaders?.run(now)
 	}
+	forgetDeletedTier(key: string): void {
+		this.deleteTier?.run(key)
+	}
 	isReferenced(key: string): boolean {
-		if (this.memories?.get(key) || this.chunks?.get(key) || this.readers?.get(key)) return true
+		if (this.memories?.get(key) || this.chunks?.get(key) || this.readers?.get(key) || this.tierWork?.get(key))
+			return true
 		const slash = key.lastIndexOf('/')
 		if (slash < 1 || !key.endsWith('.glb')) return false
 		return Boolean(this.uploads?.get(key.slice(slash + 1, -4), key.slice(0, slash)))
