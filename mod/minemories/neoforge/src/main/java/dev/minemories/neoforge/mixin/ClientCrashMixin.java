@@ -1,6 +1,6 @@
 package dev.minemories.neoforge.mixin;
 
-import dev.minemories.neoforge.DiagnosticCrashHook;
+import dev.minemories.client.DiagnosticCrashHook;
 import java.io.File;
 import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;

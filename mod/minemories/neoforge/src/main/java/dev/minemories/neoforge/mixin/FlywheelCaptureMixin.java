@@ -1,6 +1,6 @@
 package dev.minemories.neoforge.mixin;
 
-import dev.minemories.neoforge.CaptureRenderScope;
+import dev.minemories.client.CaptureRenderScope;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
