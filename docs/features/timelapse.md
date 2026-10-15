@@ -277,6 +277,45 @@ reconstruit seulement la projection et conserve souvenirs, manifestes et fichier
 Les tests couvrent cette migration et les trois portées ; le helper partagé
 `temporalIdentity` permettra au viewer de proposer seulement les captures compatibles.
 
+## Préparation du lecteur temporel, 15 octobre 2026
+
+Le moteur Three.js accepte une translation d’origine et conserve la caméra entre
+captures. Il garde le modèle précédent jusqu’à la compilation réussie du suivant ;
+une annulation ou une erreur libère le modèle rejeté et réaffiche le précédent.
+Les géométries, matériaux, textures et pixels ImageBitmap partagés sont libérés une
+seule fois par capture. Le ciel est repositionné avant les rendus immédiats, y compris
+les miniatures. Les lumières importées appartiennent au modèle remplacé et gardent
+leur position après translation.
+
+Le contrôleur `TemporalLoader` borne les demandes à un chargement actif et une
+sélection suivante remplaçable. Un défilement rapide annule la demande active,
+attend que son parseur termine et charge uniquement la dernière sélection. Aucun
+modèle ne se télécharge ou ne se décode en parallèle ; une erreur demande une
+nouvelle sélection explicite. Ce contrôleur doit encore être raccordé à l’interface.
+
+Onze tests ciblés vérifient remplacement, annulation avant lecture/pendant
+compilation, fermeture pendant parsing, erreur GPU/reprise, libération des ressources
+et 300 sélections rapides. `bun web:check` passe avec les seuils de couverture inchangés.
+Le contrôle global `bun run build`, incluant `bun check`, passe à cette étape.
+
+Validation graphique : Chromium headless avec WebGL/SwiftShader charge réellement
+24 captures successives (surface, grotte, pleine hauteur, retour surface), avec
+position et cible de caméra inchangées et un seul modèle courant. Les compteurs
+GPU restent exactement constants pour chacun des quatre états sur six cycles :
+30/14, 34/17, 44/19 et 34/17 géométries/textures respectivement. Cela vérifie ce
+parcours borné, sans prétendre mesurer toute la mémoire du navigateur. Le journal
+ne contient aucune exception JavaScript ; son unique erreur réseau concerne le
+favicon absent du banc de validation. Les rendus ont été inspectés.
+
+Blender 5.2.2 importe et rend les quatre GLB natifs avec une caméra commune et la
+même correction d’origine (axes glTF convertis en axes Blender). La surface et la
+colonne témoin restent alignées malgré les différences de profondeur. Preuves hors
+Git : `~/.local/state/minemories-validation/timelapse-viewer-20261015/`,
+`report.json`, quatre rendus Chromium, `blender-report.json` et quatre rendus Blender.
+Le premier cadrage du banc Blender visait le zéro plutôt que la géométrie ; le
+cadrage corrigé vise les limites de la première capture et les rendus finaux ont
+été inspectés. Aucun contrôle de lecture temporelle n’est encore exposé à l’utilisateur.
+
 ## Essai en flux à la limite de 200 Mio
 
 Un GLB réellement capturé avec le JAR ci-dessus a été étendu à 209 715 200 octets
