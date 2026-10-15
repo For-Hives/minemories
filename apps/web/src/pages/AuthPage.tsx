@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { LoadingSkeleton } from '../components/Loading'
+import { Brand } from '../components/SiteLayout'
 import { buttonDark, Eyebrow } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 
@@ -54,18 +55,9 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	}
 
 	return (
-		<section className="mx-auto my-[46px] mb-[58px] grid min-h-[660px] w-[min(100%-88px,1120px)] grid-cols-[0.92fr_1fr] overflow-hidden rounded-[9px] border border-[#354238] bg-paper-light shadow-[0_16px_45px_#373c2810] max-tablet:w-[min(100%-48px,760px)] max-phone:mx-auto max-phone:mb-7 max-phone:mt-[13px] max-phone:min-h-0 max-phone:w-[calc(100%-24px)] max-phone:grid-cols-1">
+		<section className="album-auth mx-auto my-[46px] mb-[58px] grid min-h-[660px] w-[min(100%-88px,1120px)] grid-cols-[0.92fr_1fr] overflow-hidden rounded-[9px] border border-[#354238] bg-paper-light shadow-[0_16px_45px_#373c2810] max-tablet:w-[min(100%-48px,760px)] max-phone:mx-auto max-phone:mb-7 max-phone:mt-[13px] max-phone:min-h-0 max-phone:w-[calc(100%-24px)] max-phone:grid-cols-1">
 			<div className="relative flex flex-col overflow-hidden bg-[#293d2f] px-[39px] py-9 text-[#f2f2e7] max-phone:min-h-[205px] max-phone:p-[22px]">
-				<Link
-					className="inline-flex items-center gap-[11px] font-sans text-[19px] font-extrabold tracking-[-1.1px] text-[#f2f2e7] no-underline max-phone:gap-2 max-phone:text-[15px]"
-					to="/"
-				>
-					<span className="grid h-[31px] w-[31px] -rotate-5 place-items-center rounded-[10px_10px_10px_4px] bg-lime font-sans text-[20px] font-extrabold text-forest-dark">
-						{' '}
-						<T message={'m'} />{' '}
-					</span>{' '}
-					<T message={'minemories'} />{' '}
-				</Link>
+				<Brand />
 				<div className="relative z-[1] my-auto pb-[70px] max-phone:m-[27px_0_0] max-phone:p-0 max-phone:pb-[2px]">
 					<Eyebrow tone="text-[#d4e4a1]">
 						<T message={'A PLACE TO COME BACK TO'} />

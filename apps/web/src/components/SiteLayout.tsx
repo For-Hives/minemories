@@ -23,7 +23,17 @@ const legalLinks = [
 export function Brand() {
 	return (
 		<Link className="mm-brand" to="/" aria-label="Minemories">
-			<span aria-hidden="true">m</span>minemories
+			<span aria-hidden="true">
+				<svg viewBox="0 0 32 32" width="26" height="26">
+					<path
+						d="m16 3 12 7v13l-12 7-12-7V10Zm0 0v13m12-6-12 6-12-6m12 6v14"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="1.3"
+					/>
+				</svg>
+			</span>
+			minemories
 		</Link>
 	)
 }
@@ -162,6 +172,14 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				<div className="mm-page-transition">{children ?? <Outlet />}</div>
 			</main>
 			<footer className="mm-footer">
+				<div className="album-footer-heading">
+					<span>
+						{locale === 'fr' ? 'Les mondes changent.' : 'Worlds change.'}
+						<br />
+						<em>{locale === 'fr' ? 'Ce qu’ils nous laissent, reste.' : 'What they leave us stays.'}</em>
+					</span>
+					<Link to="/viewer">{locale === 'fr' ? 'Ouvrir un souvenir' : 'Open a memory'} ↗</Link>
+				</div>
 				<div>
 					<Brand />
 					<p>{t('Your worlds stay yours.')}</p>

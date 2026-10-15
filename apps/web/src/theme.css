@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-	--color-paper: #101612;
-	--color-paper-light: #19221b;
-	--color-ink: #e8eee5;
-	--color-muted-ink: #a5b19f;
+	--color-paper: #101e1c;
+	--color-paper-light: #1a2b27;
+	--color-ink: #f2efdf;
+	--color-muted-ink: #b2bcb0;
 	--color-forest: #263b2d;
 	--color-forest-dark: #1d2e23;
-	--color-lime: #d9f36c;
-	--color-lime-deep: #c9f36a;
+	--color-lime: #e9c583;
+	--color-lime-deep: #e3b96f;
 	--color-night: #10120f;
 	--color-night-soft: #171b14;
 	--color-night-line: #2a2e27;
@@ -57,7 +57,7 @@ html {
 
 ::selection {
 	color: var(--color-forest-dark);
-	background: #d9f36c99;
+	background: #e9c58399;
 }
 
 /* Utilities lose against the `hidden` attribute without this. */
@@ -1013,7 +1013,7 @@ a.mm-editorial-card:hover {
 	display: block;
 	height: 6px;
 	border-radius: 4px;
-	background: #b4ce70;
+	background: var(--color-lime);
 	transition: width 320ms var(--motion-spring);
 }
 .mm-simulator-note {
