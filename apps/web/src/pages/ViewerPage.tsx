@@ -1,14 +1,15 @@
 import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
-import { buttonDark, buttonOutline, Eyebrow, fileInputHidden } from '../components/ui'
+import { fileInputHidden } from '../components/ui'
+import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { formatFileSize } from '../lib/glb'
-import { formatClock, ViewerScene } from '../viewer-scene'
+import { ViewerScene } from '../viewer-scene'
 import { TimelapsePage } from './TimelapsePage'
 
 export function ViewerPage() {
@@ -19,6 +20,7 @@ export function ViewerPage() {
 }
 
 function SingleViewerPage() {
+	const { copy } = useLocalizedCopy()
 	const { t } = useI18n()
 
 	const { viewerFile, setViewerFile } = useAppContext()
@@ -161,37 +163,29 @@ function SingleViewerPage() {
 	}
 
 	return (
-		<section className="viewer-page">
-			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
-				<div>
-					<Eyebrow>
-						<T message={'3D EXPLORATION'} />
-					</Eyebrow>
-					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
-						{memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('A world to revisit.'))}
-					</h1>
-				</div>
-				<div className="flex gap-[9px]">
-					<label
-						className={`${buttonOutline} relative min-h-[40px] text-[10px] focus-within:outline-2 focus-within:outline-[#607a4a] focus-within:outline-offset-[3px]`}
-					>
-						{' '}
-						<T message={'Choose a GLB'} />{' '}
-						<input
-							id="local-file-input"
-							type="file"
-							accept=".glb,model/gltf-binary"
-							className={fileInputHidden}
-							onChange={chooseLocalFile}
-						/>
-					</label>
-					<Link className={`${buttonDark} min-h-[40px] text-[10px]`} to="/gallery">
-						{' '}
-						<T message={'My gallery'} /> <span>↗</span>
-					</Link>
-				</div>
-			</div>
-			{/* biome-ignore lint/a11y/noStaticElementInteractions: dropping files is a bonus; the Choose button stays keyboard accessible. */}
+		<section className="viewer-page cinema-page">
+			<ViewerHeader
+				title={
+					memoryId
+						? t('A world to find again.')
+						: (viewerFile?.name ?? copy('Le studio des souvenirs', 'The memory studio'))
+				}
+				subtitle="STUDIO"
+			>
+				<label className="cinema-open">
+					<T message={'Choose a GLB'} />
+					<span>＋</span>
+					<input
+						id="local-file-input"
+						aria-label={t('Choose a GLB')}
+						type="file"
+						accept=".glb,model/gltf-binary"
+						className={fileInputHidden}
+						onChange={chooseLocalFile}
+					/>
+				</label>
+			</ViewerHeader>
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop supplements the keyboard-accessible file picker. */}
 			<div
 				className="viewer-stage"
 				onDragEnter={event => {
@@ -199,79 +193,25 @@ function SingleViewerPage() {
 					setDragOver(true)
 				}}
 				onDragOver={event => event.preventDefault()}
-				onDragLeave={event => {
-					event.preventDefault()
-					setDragOver(false)
-				}}
+				onDragLeave={() => setDragOver(false)}
 				onDrop={handleDrop}
 			>
-				<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(#283024_1px,transparent_1px),linear-gradient(90deg,#283024_1px,transparent_1px)] bg-[length:42px_42px] opacity-[0.22] [mask-image:radial-gradient(ellipse_at_center,#000_0%,transparent_73%)]" />
 				<canvas
 					ref={canvasRef}
-					className={`absolute inset-0 block h-full w-full transition-opacity duration-700 motion-reduce:transition-none ${empty ? 'opacity-0' : 'opacity-100'}`}
+					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
 					aria-label={t('Interactive 3D scene')}
 				/>
-				{empty && !loading && <EmptyState />}
-				<div
-					className={`drop-overlay absolute inset-[12px] z-[3] hidden place-items-center rounded-lg border border-dashed border-lime-deep bg-[#13180ee8] font-mono text-sm text-lime-deep ${dragOver ? 'visible' : ''}`}
-				>
-					{' '}
-					<T message={'Drop your world here'} />{' '}
-				</div>
-				{(loading ?? loadError) && (
-					<div
-						role="status"
-						aria-live="polite"
-						className="absolute top-1/2 left-1/2 z-[4] flex max-w-[calc(100%_-_32px)] -translate-x-1/2 -translate-y-1/2 items-center gap-3 whitespace-normal rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]"
-					>
-						{loading && (
-							<span className="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep" />
-						)}
-						<span>{loading ?? loadError}</span>
+				{empty && !loading && !loadError && <ViewerEmptyState />}
+				{dragOver && (
+					<div className="cinema-drop">
+						<T message={'Drop your world here'} />
 					</div>
 				)}
-				{fileInfo && (
-					<div className="absolute top-[18px] left-[18px] z-[1] flex max-w-[min(60%,420px)] items-center gap-[9px] overflow-hidden rounded-md border border-[#33392e] bg-[#141811d9] px-[11px] py-[9px] font-mono text-[10px] text-[#e1e5d8]">
-						<span className="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]" />
-						<span className="overflow-hidden text-ellipsis whitespace-nowrap">{fileInfo}</span>
-					</div>
-				)}
-				{!empty && (
-					<div className="absolute bottom-[17px] left-1/2 z-[1] -translate-x-1/2 whitespace-nowrap rounded-md border border-[#33392e] bg-[#141811d9] px-3 py-2 font-mono text-[9px] text-[#b4c1ad] max-phone:hidden">
-						<span className="text-[#e0e5d7]">
-							<T message={'Drag'} />
-						</span>{' '}
-						<T message={'to orbit'} /> <i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
-						<span className="text-[#e0e5d7]">
-							<T message={'Scroll'} />
-						</span>{' '}
-						<T message={'to zoom'} /> <i className="px-2 text-[#b4c1ad] not-italic max-phone:px-[3px]">·</i>{' '}
-						<span className="text-[#e0e5d7]">
-							<T message={'Right-click'} />
-						</span>{' '}
-						<T message={'to pan'} />{' '}
-					</div>
-				)}
-				{!empty && (
-					<div className="absolute bottom-[17px] right-[17px]">
-						<button
-							className="h-[34px] w-[34px] cursor-pointer rounded-md border border-[#3b4334] bg-[#171b14d9] font-sans text-xl text-lime-deep"
-							type="button"
-							title={t('Recenter the camera')}
-							onClick={() => sceneRef.current?.resetView()}
-						>
-							◎
-						</button>
-					</div>
-				)}
-				{!empty && <TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
+				<ViewerLoadState loading={loading} error={loadError} />
 			</div>
-			<ViewerStudio sceneRef={sceneRef} ready={!(empty || loading)} memoryId={memoryId} />
-			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad] max-phone:flex-wrap max-phone:gap-[7px] max-phone:text-[8px]">
-				<span className="text-[15px] text-[#b4c1ad]">⌖</span> <T message={'Drag to orbit'} />{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> <T message={'Scroll to zoom'} />{' '}
-				<i className="h-[3px] w-[3px] rounded-full bg-[#3a4a3e] not-italic" /> <T message={'Right-click to pan'} />{' '}
-			</p>
+			{!empty && (
+				<ViewerStudio sceneRef={sceneRef} ready={!loading} memoryId={memoryId} minutes={minutes} fileInfo={fileInfo} />
+			)}
 		</section>
 	)
 }
@@ -311,75 +251,4 @@ async function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<F
 	})
 	if (!response.ok) throw new Error('Could not load this memory.')
 	return new File([await response.blob()], 'memory.glb', { type: 'model/gltf-binary' })
-}
-
-function EmptyState() {
-	const { copy } = useLocalizedCopy()
-	return (
-		<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-			<div className="mb-[29px] grid h-12 w-12 place-items-center rounded-[14px] border border-[#454d3d] bg-[#171c13] text-2xl text-lime-deep shadow-[0_0_42px_#c9f36a0b]">
-				<span>◈</span>
-			</div>
-			<p className="m-0 mb-[13px] font-mono text-[10px] tracking-[1.8px] text-lime-deep">
-				<T message={'YOUR MEMORY, IN 3D'} />
-			</p>
-			<p className="mx-0 my-5 mb-[18px] max-w-[300px] text-[13px] leading-[1.6] text-[#b4c1ad]">
-				{' '}
-				<T message={'Drag a'} />{' '}
-				<b className="rounded-[3px] bg-[#262a22] px-[5px] py-[3px] font-mono text-[11px] text-[#e9ebdf]">
-					<T message={'.glb'} />
-				</b>{' '}
-				<T message={'file here, or open one from your computer.'} />{' '}
-			</p>
-			<label
-				htmlFor="local-file-input"
-				className="pointer-events-auto cursor-pointer rounded-lg bg-lime px-5 py-3 text-xs font-bold text-[#18261c]"
-			>
-				{copy('Ouvrir un souvenir', 'Open a memory')}
-			</label>
-			<p className="mt-5 text-xs text-[#aabbae]">
-				{copy('Votre fichier reste sur cet appareil.', 'Your file stays on this device.')}
-			</p>
-		</div>
-	)
-}
-
-export function TimePresets({ minutes, onSelect }: { minutes: number; onSelect: (value: number) => void }) {
-	const { t } = useI18n()
-
-	const presets = [
-		{ label: 'Morning', minutes: 570, icon: '☀' },
-		{ label: 'Noon', minutes: 720, icon: '☼' },
-		{ label: 'Sunset', minutes: 1035, icon: '◒' },
-		{ label: 'Night', minutes: 0, icon: '☾' },
-	]
-	let active = presets[0]
-	let best = Number.POSITIVE_INFINITY
-	for (const preset of presets) {
-		const distance = Math.min(Math.abs(minutes - preset.minutes), 1_440 - Math.abs(minutes - preset.minutes))
-		if (distance < best) {
-			best = distance
-			active = preset
-		}
-	}
-	return (
-		<fieldset
-			className="absolute top-4 right-4 z-[2] flex gap-1 rounded-lg border border-[#44513d] bg-[#101714ed] p-1 max-phone:top-14"
-			aria-label={t('Time of day')}
-		>
-			{presets.map(preset => (
-				<button
-					type="button"
-					key={preset.label}
-					title={`${t(preset.label)} · ${formatClock(preset.minutes)}`}
-					aria-pressed={active?.label === preset.label}
-					aria-label={`${t(preset.label)} (${formatClock(preset.minutes)})`}
-					onClick={() => onSelect(preset.minutes)}
-					className={`cursor-pointer rounded-md px-3 py-2 text-xs transition-colors ${active?.label === preset.label ? 'bg-lime text-[#253121]' : 'text-[#d3dfce] hover:bg-[#2b392e]'}`}
-				>
-					<span aria-hidden="true">{preset.icon}</span> <span className="max-phone:sr-only">{t(preset.label)}</span>
-				</button>
-			))}
-		</fieldset>
-	)
 }

@@ -183,3 +183,46 @@ de flou. Vérifier Auto → Économie → Cinéma, puis les heures et les atmosp
 des prochaines validations navigateur ; un simple chargement sans erreur JS ne suffit pas.
 La même capture a également été importée et rendue dans Blender 5.2.2 ; aucun
 changement de géométrie, de texture ou de format d’export n’est nécessaire.
+
+### Studio immersif — deuxième passe
+
+Le viewer local, privé et public occupe désormais le viewport entier, hors navigation
+marketing. L’ouverture et le chargement ont leurs propres écrans ; l’image est entourée
+d’un bandeau de retour/ouverture, d’une barre d’actions latérale et d’une réglette horaire
+continue (aube, matin, midi, heure dorée, nuit). Le panneau Ambiance reste fermé au départ.
+Immersion masque les commandes ; Échap les rétablit et ferme les panneaux. Sur mobile,
+les actions deviennent des icônes nommées pour les lecteurs d’écran. Le partage privé
+reste explicite, révocable et absent des fichiers locaux. Le lecteur timelapse conserve
+son interface spécifique et utilise le même moteur de rendu.
+
+La chaîne devient : scène HDR + profondeur → atmosphère → bloom → ACES/sRGB → FXAA.
+L’atmosphère reconstruit les positions depuis la profondeur existante : occlusion de
+contact à 12 échantillons, brume selon distance/hauteur, diffusion solaire à 12 échantillons
+seulement lorsque le soleil est visible, étalonnage léger et vignette. Pas de second rendu
+de la géométrie, de calcul de normales par matériau ni de tampon historique. Le produit
+vectoriel utilisé pour l’occlusion est normalisé avec un dénominateur borné, pour éviter
+les NaN sur les surfaces dégénérées. Les deux cibles HDR portent une texture de profondeur ;
+les passes plein écran ne modifient pas la profondeur. Économie coupe occlusion, diffusion
+solaire et bloom, en conservant brume/étalonnage/FXAA. Les rayons sont une approximation
+en espace écran, pas un volume physique ni un effet visible hors champ.
+
+L’éclairage oppose désormais soleil chaud et ambiance froide moins intense. Les ombres
+2048 sont concentrées autour de la surface cadrée plutôt que sur toute la profondeur des
+sous-sols. Les faisceaux `beacon_beam` restent visibles mais ne déplacent plus le cadrage
+et ne projettent pas d’ombre. Les 12 lumières ponctuelles sont classées par intensité et
+proximité de cette surface : la lave profonde ne doit pas évincer toutes les torches.
+Leur intensité est rééquilibrée et reste plafonnée, sans ombres ponctuelles supplémentaires.
+
+Les matériaux explicitement identifiés comme eau Minecraft reçoivent des normales
+légèrement ondulées et des reflets du ciel plus présents. Le patch est idempotent pour
+les matériaux partagés ; le mouvement s’arrête avec `prefers-reduced-motion`. Le verre
+n’est pas assimilé à l’eau. Il s’agit toujours de reflets PMREM du ciel, sans SSR ni reflet
+dynamique des bâtiments. Les palettes de biomes restent fondées sur les métadonnées
+connues ; aucun biome n’est inventé pour un GLB local sans contexte.
+
+Validation : capture mod réelle figée de 25,9 Mio (mangrove, base, eau, beacon et sources
+émissives), Firefox 153/NVIDIA GTX 980, desktop et 390 × 844, trois qualités, nuit/brume,
+immersion et restauration des commandes. Lecture GPU des buffers HDR : aucune composante
+NaN/Infinity dans les trois qualités. Tests de cadrage sans beacon, priorité des lumières
+de surface, matériaux d’eau partagés, branchement de profondeur et interactions du studio.
+La comparaison multi-GPU et la validation esthétique finale restent suivies dans #74/#93.

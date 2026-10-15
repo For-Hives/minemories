@@ -5,6 +5,8 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
+import { framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
+import { prepareWater } from './viewer-water'
 
 export interface ViewerLoadOptions {
 	signal?: AbortSignal
@@ -83,8 +85,8 @@ export class ViewerScene {
 		uWeather: { value: 0 },
 		uDay: { value: 9.5 / 24 },
 		uMoonPhase: { value: 0 },
-		uDayZenith: { value: new THREE.Vector3(0.2, 0.53, 0.88) },
-		uDayHorizon: { value: new THREE.Vector3(0.64, 0.8, 0.94) },
+		uDayZenith: { value: new THREE.Vector3(0.055, 0.24, 0.52) },
+		uDayHorizon: { value: new THREE.Vector3(0.36, 0.57, 0.7) },
 		uNightZenith: { value: new THREE.Vector3(0.018, 0.028, 0.075) },
 		uNightHorizon: { value: new THREE.Vector3(0.1, 0.12, 0.2) },
 		uStars: { value: 1 },
@@ -107,6 +109,7 @@ export class ViewerScene {
 	private shadowExtent = 32
 	private hasShadowDirection = false
 	private previousFrame = 0
+	private readonly waterTime = { value: 0 }
 	private disposed = false
 	private preparingWorld = false
 	private loadingFile = false
@@ -127,7 +130,7 @@ export class ViewerScene {
 		this.renderer.setPixelRatio(this.pixelRatio)
 		this.renderer.outputColorSpace = THREE.SRGBColorSpace
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping
-		this.renderer.toneMappingExposure = 1.05
+		this.renderer.toneMappingExposure = 0.92
 		this.renderer.shadowMap.enabled = true
 		this.renderer.shadowMap.type = THREE.PCFShadowMap
 		this.renderer.shadowMap.autoUpdate = false
@@ -165,7 +168,7 @@ export class ViewerScene {
         float horizon = smoothstep(-0.30, 0.85, direction.y);
         vec3 skyColor = mix(mix(nightHorizon, nightZenith, horizon), mix(dayHorizon, dayZenith, horizon), daylight);
         float sunset = (1.0 - smoothstep(0.0, 0.5, abs(elevation))) * uCelestial;
-        skyColor = mix(skyColor, vec3(0.95, 0.39, 0.17), sunset * (1.0 - horizon) * 0.48);
+        skyColor = mix(skyColor, vec3(0.92, 0.47, 0.15), sunset * (1.0 - horizon) * 0.72);
         skyColor = mix(skyColor, vec3(0.42, 0.49, 0.54) * (0.12 + daylight * 0.88), uWeather * 0.72);
         vec3 sunDirection = normalize(vec3(cos(angle), elevation, 0.30));
         float sunDot = dot(direction, sunDirection);
@@ -204,7 +207,7 @@ export class ViewerScene {
 		this.keyLight.castShadow = true
 		this.keyLight.shadow.mapSize.set(2048, 2048)
 		this.keyLight.shadow.bias = -0.00015
-		this.keyLight.shadow.normalBias = 0.025
+		this.keyLight.shadow.normalBias = 0.035
 		this.keyLight.shadow.autoUpdate = false
 		this.keyLight.shadow.camera.left = -32
 		this.keyLight.shadow.camera.right = 32
@@ -388,6 +391,9 @@ export class ViewerScene {
 			.lerp(new THREE.Color().setRGB(...this.atmosphere.dayHorizon), daylight)
 		const density = this.weather === 'mist' ? 0.006 : 0.0004
 		this.scene.fog = new THREE.FogExp2(horizon, density / Math.max(1, this.shadowExtent / 32))
+		const angle = (this.dayTime - 0.25) * Math.PI * 2
+		const sun = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0.3).normalize()
+		this.effects.setAtmosphere(sun, daylight, this.weather, this.shadowCenter.y, horizon, this.atmosphere.celestial)
 	}
 
 	resetView(): void {
@@ -452,6 +458,7 @@ export class ViewerScene {
 		const deltaSeconds = this.previousFrame === 0 ? 0 : Math.min((timestamp - this.previousFrame) / 1000, 0.1)
 		this.previousFrame = timestamp
 		this.adaptQuality(deltaSeconds)
+		if (!this.reducedMotion) this.waterTime.value += deltaSeconds
 
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
 		this.controls.update(deltaSeconds)
@@ -475,21 +482,20 @@ export class ViewerScene {
 	}
 
 	private frameModel(root: THREE.Object3D, preserveView = false): void {
-		const bounds = new THREE.Box3().setFromObject(root)
+		const bounds = framingBounds(root)
 		if (bounds.isEmpty()) return
-		const center = bounds.getCenter(new THREE.Vector3())
 		const size = bounds.getSize(new THREE.Vector3())
 		const largest = Math.max(size.x, size.y, size.z, 1)
 		const footprint = Math.max(size.x, size.z, 1)
-		const focus = center.clone()
-		if (size.y > footprint * 1.5) focus.y = bounds.max.y - footprint * 0.15
+		const focus = surfaceFocus(bounds)
 		if (!preserveView) this.controls.target.copy(focus)
-		this.shadowCenter.copy(center)
-		this.shadowExtent = Math.max(8, size.length() * 0.65)
+		this.shadowCenter.copy(focus)
+		this.shadowExtent = Math.max(12, footprint * 0.85)
 		this.clouds.setBaseHeight(bounds.max.y + Math.max(32, footprint * 1.6))
 		this.updateSunShadow(true)
-		const distance = footprint * Math.max(1, 1 / this.camera.aspect)
-		if (!preserveView) this.camera.position.copy(focus).add(new THREE.Vector3(distance, distance * 0.72, distance))
+		const distance = footprint * 0.78 * Math.max(1, 1 / this.camera.aspect)
+		if (!preserveView)
+			this.camera.position.copy(focus).add(new THREE.Vector3(distance, distance * 0.46, distance * 0.85))
 		this.camera.near = Math.max(0.01, largest / 1000)
 		this.camera.far = Math.max(4000, largest * 30)
 		this.camera.updateProjectionMatrix()
@@ -537,13 +543,14 @@ export class ViewerScene {
 			const pbrMaterial = material as THREE.MeshStandardMaterial
 			if (pbrMaterial.isMeshStandardMaterial) {
 				pbrMaterial.roughness = pbrMaterial.transparent ? 0.18 : 0.92
-				pbrMaterial.envMapIntensity = 0.18 + Number(pbrMaterial.transparent) * 0.62
+				pbrMaterial.envMapIntensity = 0.09 + Number(pbrMaterial.transparent) * 0.7
 				pbrMaterial.metalness = 0
 				// Keep GLTFLoader’s normals/shading choice. Derivative-based flat normals can
 				// produce NaNs on Firefox/NVIDIA and spread across the HDR bloom buffers.
 				pbrMaterial.emissiveIntensity = Math.min(pbrMaterial.emissiveIntensity, 1.6)
+				prepareWater(pbrMaterial, this.waterTime)
 			}
-			hasOpaqueSurface ||= !material.transparent || material.alphaTest > 0
+			hasOpaqueSurface ||= !isLightBeam(material) && (!material.transparent || material.alphaTest > 0)
 			for (const texture of [
 				pbrMaterial.map,
 				pbrMaterial.emissiveMap,
@@ -594,11 +601,16 @@ export class ViewerScene {
 			if (!current || light.intensity > current.intensity) lightCells.set(cell, light)
 		}
 
-		const selectedLights = [...lightCells.values()].sort((left, right) => right.intensity - left.intensity).slice(0, 12)
+		const focus = surfaceFocus(framingBounds(root))
+		// Strong lava far underground must not consume the entire visible lighting budget.
+		const relevance = (light: ImportedLight) => light.intensity / (1 + light.position.distanceToSquared(focus) / 400)
+		const selectedLights = [...lightCells.values()]
+			.sort((left, right) => relevance(right) - relevance(left))
+			.slice(0, 12)
 		for (const imported of selectedLights) {
 			const light = new THREE.PointLight(
-				imported.color,
-				Math.min(imported.intensity * 0.002, 2),
+				imported.color.clone().multiply(new THREE.Color(1, 0.82, 0.65)),
+				Math.min(imported.intensity * 0.01, 12),
 				Math.min(Math.max(imported.distance, 1), 10),
 				2
 			)
@@ -620,19 +632,19 @@ export class ViewerScene {
 		)
 		this.skyUniforms.uDay.value = this.dayTime
 		this.skyUniforms.uMoonPhase.value = this.lunarAge
-		this.keyLight.intensity = (0.015 + daylight * 2.4) * (this.weather === 'overcast' ? 0.35 : 1)
+		this.keyLight.intensity = (0.025 + daylight * 4.8) * (this.weather === 'overcast' ? 0.35 : 1)
 		const shouldCastShadow = daylight > 0.08
 		if (this.keyLight.castShadow !== shouldCastShadow) {
 			this.keyLight.castShadow = shouldCastShadow
 			this.keyLight.shadow.needsUpdate = true
 			this.renderer.shadowMap.needsUpdate = true
 		}
-		this.keyLight.color.set(sunHeight < 0.18 ? 0xff9a62 : 0xffedc2)
+		this.keyLight.color.set(sunHeight < 0.35 ? 0xffa344 : 0xffe4b5)
 		if (this.atmosphere.fixedDaylight !== null && !this.atmosphere.celestial) {
 			this.keyLight.color.set(0xff8a5c)
 		}
-		this.hemisphere.intensity = 0.16 + daylight * 0.48
-		this.nightFill.intensity = 0.02 + (1 - daylight) * 0.4
+		this.hemisphere.intensity = 0.1 + daylight * 0.18
+		this.nightFill.intensity = 0.02 + (1 - daylight) * 0.2
 		this.updateSunShadow()
 		this.clouds.material.color.setRGB(0.22 + daylight * 0.72, 0.26 + daylight * 0.7, 0.38 + daylight * 0.58)
 		if (minutes !== this.lastMinutes) {

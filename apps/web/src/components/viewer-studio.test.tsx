@@ -7,7 +7,14 @@ import { ViewerStudio } from './ViewerStudio'
 
 afterEach(cleanup)
 function mount(ready = true) {
-	const scene = { setWeather: vi.fn(), setQuality: vi.fn(), setTour: vi.fn(), snapshot: vi.fn() }
+	const scene = {
+		setWeather: vi.fn(),
+		setQuality: vi.fn(),
+		setTour: vi.fn(),
+		setMinutes: vi.fn(),
+		resetView: vi.fn(),
+		snapshot: vi.fn(),
+	}
 	render(
 		<I18nProvider initialLocale="en">
 			<ViewerStudio sceneRef={{ current: scene as unknown as ViewerScene }} ready={ready} />
@@ -18,6 +25,7 @@ function mount(ready = true) {
 
 test('weather, quality and contemplation controls update the active scene', () => {
 	const scene = mount()
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
 	fireEvent.click(screen.getByRole('button', { name: /Mist/ }))
 	expect(scene.setWeather).toHaveBeenCalledWith('mist')
 	expect(screen.getByRole('button', { name: /Mist/ }).getAttribute('aria-pressed')).toBe('true')
@@ -43,4 +51,37 @@ test('a loading viewer disables capture actions and does not offer public sharin
 	mount(false)
 	expect((screen.getByRole('button', { name: /Postcard/ }) as HTMLButtonElement).disabled).toBe(true)
 	expect(screen.queryByRole('button', { name: /Share/ })).toBeNull()
+})
+
+test('the studio reveals settings on request and restores controls after immersion', () => {
+	const scene = mount()
+	expect(screen.queryByRole('combobox')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	expect(screen.getByRole('combobox')).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: /Close settings/ }))
+	expect(screen.queryByRole('combobox')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: /Golden hour/ }))
+	expect(scene.setMinutes).toHaveBeenCalledWith(1035)
+	fireEvent.change(screen.getByRole('slider'), { target: { value: '600' } })
+	expect(scene.setMinutes).toHaveBeenCalledWith(600)
+	fireEvent.click(screen.getByRole('button', { name: /Recenter/ }))
+	expect(scene.resetView).toHaveBeenCalledOnce()
+	fireEvent.click(screen.getByRole('button', { name: /Immerse/ }))
+	expect(
+		screen
+			.getByRole('button', { name: /Show controls/ })
+			.closest('.viewer-studio')
+			?.classList.contains('is-immersed')
+	).toBe(true)
+	fireEvent.click(screen.getByRole('button', { name: /Show controls/ }))
+	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
+})
+
+test('Escape restores the interface and closes the atmosphere panel', () => {
+	mount()
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Immerse/ }))
+	fireEvent.keyDown(window, { key: 'Escape' })
+	expect(screen.queryByRole('combobox')).toBeNull()
+	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
 })

@@ -378,7 +378,7 @@ test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error
 			</MemoryRouter>
 		)
 		expect(await screen.findByText(message)).toBeTruthy()
-		expect(screen.getByRole('status').querySelector('.animate-viewer-spin')).toBeNull()
+		expect(screen.getByRole('alert').querySelector('.cinema-loading-line')).toBeNull()
 		expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	} finally {
 		vi.unstubAllGlobals()
@@ -397,7 +397,7 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 	)
 	mount(<ViewerPage />)
 	expect(screen.getByRole('status').textContent).toContain('Chargement du modèle')
-	expect(screen.getByRole('status').querySelector('.animate-viewer-spin')).toBeTruthy()
+	expect(screen.getByRole('status').querySelector('.cinema-loading-line')).toBeTruthy()
 	await act(async () => {
 		mocks.viewerEvents?.onLoading('Préparation de l’affichage 3D…')
 	})
