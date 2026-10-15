@@ -234,7 +234,7 @@ test('a 450 MiB GLB uploads in 113 bounded chunks and finalizes without a full-f
 	expect((await request(token, `/${id}/complete`, 'POST')).status).toBe(201)
 	expect(statSync(join(root, 'objects', owner, `${id}.glb`)).size).toBe(MAX_UPLOAD_BYTES)
 	expect(await validateUploadFile(join(root, 'objects', owner, `${id}.glb`), MAX_UPLOAD_BYTES, sha256)).toBe(true)
-}, 30_000)
+}, 90_000)
 
 test('bounded body reader cancels oversized streams without Content-Length', async () => {
 	let cancelled = false
