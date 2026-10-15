@@ -31,12 +31,12 @@ const client = new S3Client({
 	responseChecksumValidation: 'WHEN_REQUIRED',
 })
 let bucketReady: Promise<void> | undefined
-let deletionProvider: 'aws' | 'r2' | null = null
+let boundProvider: 'aws' | 'r2' | null = null
 
-/** Set from the bound SQLite catalog at boot, including when archiving is disabled. */
-export function configureS3DeletionProvider(provider: 'aws' | 'r2' | null): void {
-	if (deletionProvider && deletionProvider !== provider) throw new Error('Cannot change the bound S3 deletion policy.')
-	deletionProvider = provider
+/** Pin hot writes and deletion checks to the bound catalog, including while archiving is disabled. */
+export function configureS3StorageProvider(provider: 'aws' | 'r2' | null): void {
+	if (boundProvider && boundProvider !== provider) throw new Error('Cannot change the bound S3 deletion policy.')
+	boundProvider = provider
 }
 
 export function s3Target() {
@@ -81,7 +81,14 @@ export async function uploadS3Memory(
 		await new Upload({
 			abortController,
 			client,
-			params: { Bucket: bucket, Key: objectKey, Body: contents, ContentLength: size, ContentType: 'model/gltf-binary' },
+			params: {
+				Bucket: bucket,
+				Key: objectKey,
+				Body: contents,
+				ContentLength: size,
+				ContentType: 'model/gltf-binary',
+				StorageClass: boundProvider ? 'STANDARD' : undefined,
+			},
 			partSize: 8 * 1024 * 1024,
 			queueSize: 1,
 			// The durable SQLite deletion job cleans up parts after errors and process crashes.
@@ -93,7 +100,7 @@ export async function uploadS3Memory(
 }
 
 export async function removeS3Memory(objectKey: string) {
-	await deleteS3Object(client, bucket, objectKey, deletionProvider)
+	await deleteS3Object(client, bucket, objectKey, boundProvider)
 }
 
 export async function readS3MemoryStream(objectKey: string, signal?: AbortSignal): Promise<Readable> {
