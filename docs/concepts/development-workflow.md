@@ -229,3 +229,36 @@ La comparaison multi-GPU et la validation esthétique finale restent suivies dan
 La même capture a été exercée dans Chromium (desktop et mobile) puis importée et rendue
 dans Blender 5.2.2. Le squelette de chargement initial du module viewer utilise aussi une
 surface plein écran, sans réafficher temporairement les anciennes cartes de page.
+
+### Cadrage du joueur et exploration intérieure — 16 octobre 2026
+
+Les nouvelles captures manuelles et progressives écrivent
+`scenes[0].extras.minemoriesPlayerPosition: [x, y, z]` : position des pieds du joueur
+au début de la capture, relative au `captureOrigin` de la géométrie. Aucun nom,
+identifiant de joueur ou coordonnée absolue n'est ajouté au GLB. Les deux sérialiseurs
+rejettent les coordonnées non finies. Le viewer applique la transformation du modèle
+(notamment le décalage des séquences) avant de centrer son orbite sur ce point.
+Les anciens champs de métadonnées `x/y/z` ne sont pas utilisés à cette fin : certains
+exports y plaçaient le centre du volume. Pour un ancien fichier sans cette donnée,
+le cadrage conserve le repli sur la surface, sans faisceau de beacon. Il faut une
+nouvelle capture avec le mod mis à jour pour retrouver exactement le joueur.
+
+Le bouton Première personne ouvre une caméra libre à 1,62 bloc au-dessus du point
+capturé. Glisser tourne la caméra ; WASD/ZQSD (touches physiques) ou les flèches
+la déplacent à 3 blocs/s. E/Espace monte, Q QWERTY/A AZERTY descend, Maj accélère
+(12 blocs/s), Alt ralentit (0,7 bloc/s). Des boutons maintenus offrent aussi les
+translations sur écran tactile. La caméra peut traverser les murs ; aucune physique
+ou collision lourde n'est ajoutée. Le plan proche est à 0,02 bloc. Perte de focus,
+masquage de l'onglet et Échap arrêtent les déplacements clavier. Recentrer revient
+à l'orbite ; quitter le mode conserve la position de visite.
+
+Validation : tests de coordonnées locales transformées/invalides, sérialiseurs
+legacy et spool, publication asynchrone, déplacements, relâchement des touches et
+interactions de la barre. Firefox GPU : cible [4,-70,5], yeux [4,-68.38,5], déplacement
+0,15 bloc en 50 ms, retour orbite sans saut et zéro valeur HDR non finie. Cette position
+est une donnée de test ajoutée à une copie de la capture réelle de 25,9 Mio, pas une
+position joueur prétendument récupérée de l'ancien fichier. Interface contrôlée à
+1200×850 et 390×844, sans erreur JS ni débordement. Cette copie enrichie s'importe et
+se rend dans Blender 5.2.2. La nouvelle extraction de position depuis Minecraft doit
+encore être exercée en jeu avec le JAR mis à jour ; ce contrôle n'est pas remplacé par
+les tests Java ni le rendu Blender.

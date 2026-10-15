@@ -484,6 +484,15 @@ public final class ClientRuntime {
     metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));
     metadata.addProperty("captureMode", selection ? "selection" : "around");
     CaptureIdentity.geometry(metadata, bounds);
+    var capturedPlayer = Minecraft.getInstance().player;
+    if (capturedPlayer != null) {
+      var origin = metadata.getAsJsonObject("captureOrigin");
+      var position = new com.google.gson.JsonArray();
+      position.add(capturedPlayer.getX() - origin.get("x").getAsDouble());
+      position.add(capturedPlayer.getY() - origin.get("y").getAsDouble());
+      position.add(capturedPlayer.getZ() - origin.get("z").getAsDouble());
+      metadata.add("minemoriesPlayerPosition", position);
+    }
   }
 
   private static void trackExploration(Minecraft mc, long now) {
@@ -885,7 +894,14 @@ public final class ClientRuntime {
         metadata,
         new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
         selection);
-    CaptureSink scene = new CaptureSink.Legacy();
+    var scene = new CaptureSink.Legacy();
+    if (metadata.has("minemoriesPlayerPosition")) {
+      var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
+      scene.setPlayerPosition(
+          position.get(0).getAsDouble(),
+          position.get(1).getAsDouble(),
+          position.get(2).getAsDouble());
+    }
     SpriteAssets sprites = new SpriteAssets(null);
     RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);
     Path output = capturePath();

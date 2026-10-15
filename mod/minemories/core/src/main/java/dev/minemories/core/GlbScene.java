@@ -15,6 +15,14 @@ import java.util.Map;
 
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
+  private String playerExtras = "";
+
+  /** Local player feet, relative to the exported origin. No world coordinates are embedded. */
+  public void setPlayerPosition(double x, double y, double z) {
+    if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) return;
+    playerExtras = ",\"extras\":{\"minemoriesPlayerPosition\":[" + x + "," + y + "," + z + "]}";
+  }
+
   private final Map<String, Part> parts = new LinkedHashMap<>();
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
@@ -245,7 +253,9 @@ public final class GlbScene {
     String json =
         "{\"asset\":{\"version\":\"2.0\",\"generator\":\"Minemories\"},\"scene\":0,\"scenes\":[{\"nodes\":["
             + indices(nodes.size())
-            + "]}],\"nodes\":["
+            + "]"
+            + playerExtras
+            + "}],\"nodes\":["
             + String.join(",", nodes)
             + "],\"meshes\":[{\"primitives\":["
             + String.join(",", primitives)

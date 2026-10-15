@@ -26,6 +26,32 @@ final class SpoolingGlbSceneTest {
   static final float[] UV = {0, 0, 1, 0, 1, 1, 0, 1};
   @TempDir Path temporary;
 
+  @Test
+  void embedsOnlyFiniteLocalPlayerCoordinatesInBothSerializers() throws Exception {
+    try (var scene = scene()) {
+      add(scene, "player");
+      scene.setPlayerPosition(1.25, 64.5, -3.75);
+      scene.setPlayerPosition(Double.NaN, 0, 0);
+      scene.setPlayerPosition(0, Double.POSITIVE_INFINITY, 0);
+      scene.setPlayerPosition(0, 0, Double.NEGATIVE_INFINITY);
+      Path output = temporary.resolve("player.glb");
+      scene.write(output);
+      String json = new String(Files.readAllBytes(output), StandardCharsets.ISO_8859_1);
+      assertTrue(json.contains("\"extras\":{\"minemoriesPlayerPosition\":[1.25,64.5,-3.75]}"));
+    }
+    var legacy = new GlbScene();
+    legacy.addQuad("player", "material player", "sprite", PNG, 0x70ff98, 0, 0, 1, XYZ, UV);
+    legacy.setPlayerPosition(1.25, 64.5, -3.75);
+    legacy.setPlayerPosition(Double.NaN, 0, 0);
+    legacy.setPlayerPosition(0, Double.POSITIVE_INFINITY, 0);
+    legacy.setPlayerPosition(0, 0, Double.NEGATIVE_INFINITY);
+    Path output = temporary.resolve("legacy-player.glb");
+    legacy.write(output);
+    assertTrue(
+        new String(Files.readAllBytes(output), StandardCharsets.ISO_8859_1)
+            .contains("\"minemoriesPlayerPosition\":[1.25,64.5,-3.75]"));
+  }
+
   private static SpoolingGlbScene.Limits limits(
       int materials,
       int textures,

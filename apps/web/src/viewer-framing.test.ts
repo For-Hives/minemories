@@ -26,3 +26,15 @@ test('a beam-only GLB still has a finite usable frame', () => {
 	mesh.geometry.dispose()
 	mesh.material.dispose()
 })
+
+test('explicit player coordinates are transformed from capture space; malformed extras are ignored', async () => {
+	const { capturePosition } = await import('./viewer-framing')
+	const root = new THREE.Group()
+	root.position.set(10, -20, 30)
+	for (const value of [undefined, [], [0, 1], ['1', 2, 3], [NaN, 2, 3], [Infinity, 2, 3], [1e12, 2, 3]]) {
+		root.userData.minemoriesPlayerPosition = value
+		expect(capturePosition(root)).toBeNull()
+	}
+	root.userData.minemoriesPlayerPosition = [2, 4, 6]
+	expect(capturePosition(root)?.toArray()).toEqual([12, -16, 36])
+})

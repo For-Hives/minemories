@@ -23,6 +23,7 @@ export function ViewerStudio({
 	const [weather, setWeather] = useState<ViewerWeather>('clear')
 	const [quality, setQuality] = useState<ViewerQuality>('auto')
 	const [tour, setTour] = useState(false)
+	const [firstPerson, setFirstPerson] = useState(false)
 	const [sharing, setSharing] = useState(false)
 	const [message, setMessage] = useState('')
 	const [settings, setSettings] = useState(false)
@@ -75,6 +76,8 @@ export function ViewerStudio({
 					aria-pressed={tour}
 					aria-label={copy('Contempler', 'Take a moment')}
 					onClick={() => {
+						setFirstPerson(false)
+						sceneRef.current?.setFirstPerson(false)
 						setTour(!tour)
 						sceneRef.current?.setTour(!tour)
 					}}
@@ -86,9 +89,27 @@ export function ViewerStudio({
 					type="button"
 					disabled={!ready}
 					aria-label={copy('Recentrer', 'Recenter')}
-					onClick={() => sceneRef.current?.resetView()}
+					onClick={() => {
+						setFirstPerson(false)
+						sceneRef.current?.setFirstPerson(false)
+						sceneRef.current?.resetView()
+						setTour(false)
+					}}
 				>
 					◎ <span>{copy('Recentrer', 'Recenter')}</span>
+				</button>
+				<button
+					type="button"
+					disabled={!ready}
+					aria-pressed={firstPerson}
+					aria-label={copy('Première personne', 'First person')}
+					onClick={() => {
+						setFirstPerson(!firstPerson)
+						setTour(false)
+						sceneRef.current?.setFirstPerson(!firstPerson)
+					}}
+				>
+					⌖ <span>{copy('Première personne', 'First person')}</span>
 				</button>
 				<button type="button" disabled={!ready} aria-label={copy('Carte postale', 'Postcard')} onClick={postcard}>
 					▧ <span>{copy('Carte postale', 'Postcard')}</span>
@@ -108,6 +129,41 @@ export function ViewerStudio({
 					⛶ <span>{copy('Plein écran', 'Fullscreen')}</span>
 				</button>
 			</div>
+			{firstPerson && (
+				<section className="cinema-navigation" aria-label={copy('Exploration', 'Explore')}>
+					<strong>{copy('À hauteur de souvenir', 'Step inside the memory')}</strong>
+					<p>
+						{copy(
+							'Glisser pour regarder · ZQSD / WASD ou flèches · E / Espace : monter · A (AZERTY) / Q (QWERTY) : descendre · Maj : rapide · Alt : précis',
+							'Drag to look · WASD or arrows · E / Space: up · Q: down · Shift: fast · Alt: precise'
+						)}
+					</p>
+					<div>
+						{(['forward', 'back', 'up', 'down'] as const).map((direction, index) => (
+							<button
+								key={direction}
+								type="button"
+								onPointerDown={event => {
+									event.currentTarget.setPointerCapture(event.pointerId)
+									sceneRef.current?.moveFirstPerson(direction, true)
+								}}
+								onPointerUp={() => sceneRef.current?.moveFirstPerson(direction, false)}
+								onPointerCancel={() => sceneRef.current?.moveFirstPerson(direction, false)}
+								onBlur={() => sceneRef.current?.moveFirstPerson(direction, false)}
+								onKeyDown={event => {
+									if (event.key === ' ' || event.key === 'Enter') {
+										event.preventDefault()
+										sceneRef.current?.moveFirstPerson(direction, true)
+									}
+								}}
+								onKeyUp={() => sceneRef.current?.moveFirstPerson(direction, false)}
+							>
+								{copy(['Avancer', 'Reculer', 'Monter', 'Descendre'], ['Forward', 'Back', 'Up', 'Down'])[index]}
+							</button>
+						))}
+					</div>
+				</section>
+			)}
 			{settings && (
 				<section id="cinema-settings" className="cinema-settings">
 					<div className="cinema-panel-heading">
@@ -168,7 +224,9 @@ export function ViewerStudio({
 				<span className="cinema-live-dot" />
 				{fileInfo || copy('Un monde à retrouver', 'A world to revisit')}
 				<span className="cinema-gesture">
-					{copy('Glisser pour explorer · Molette pour s’approcher', 'Drag to explore · Scroll to move closer')}
+					{firstPerson
+						? copy('Glisser pour regarder · Clavier pour avancer', 'Drag to look · Keyboard to move')
+						: copy('Glisser pour explorer · Molette pour s’approcher', 'Drag to explore · Scroll to move closer')}
 				</span>
 			</div>
 			<button className="cinema-immerse" type="button" aria-pressed={immersed} onClick={() => setImmersed(!immersed)}>

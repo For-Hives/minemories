@@ -34,13 +34,16 @@ class QueuedGlbCaptureTest {
           () -> call(() -> worker.offerGeometry(copied.quads(), copied.lights().subList(0, 128))));
       awaitOffer(
           () -> call(() -> worker.offerGeometry(List.of(), copied.lights().subList(128, 129))));
-      awaitOffer(() -> call(() -> worker.finish(TIME, "{}")));
+      awaitOffer(
+          () ->
+              call(() -> worker.finish(TIME, "{\"minemoriesPlayerPosition\":[1.25,64.5,-3.75]}")));
       Path file = worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS).file();
       var bytes =
           java.nio.ByteBuffer.wrap(Files.readAllBytes(file))
               .order(java.nio.ByteOrder.LITTLE_ENDIAN);
       int length = bytes.getInt(12);
       String json = new String(bytes.array(), 20, length, java.nio.charset.StandardCharsets.UTF_8);
+      assertTrue(json.contains("\"minemoriesPlayerPosition\":[1.25,64.5,-3.75]"));
       assertEquals(
           129,
           com.google.gson.JsonParser.parseString(json)

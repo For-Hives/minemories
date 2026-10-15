@@ -311,6 +311,13 @@ final class QueuedGlbCapture implements AutoCloseable {
       if (!scene.hasGeometry()) throw new IOException("Capture has no visible geometry");
       JsonObject metadata = JsonParser.parseString(finish.metadata).getAsJsonObject();
       metadata.addProperty("captureStartedAt", finish.capturedAt.toString());
+      if (metadata.has("minemoriesPlayerPosition")) {
+        var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
+        scene.setPlayerPosition(
+            position.get(0).getAsDouble(),
+            position.get(1).getAsDouble(),
+            position.get(2).getAsDouble());
+      }
       Instant[] ended = {null};
       Path saved =
           CaptureHistory.savePrepared(

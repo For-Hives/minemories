@@ -5,7 +5,8 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
-import { framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
+import { capturePosition, framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
+import { ViewerNavigation } from './viewer-navigation'
 import { prepareWater } from './viewer-water'
 
 export interface ViewerLoadOptions {
@@ -93,6 +94,8 @@ export class ViewerScene {
 		uCelestial: { value: 1 },
 		uFixed: { value: -1 },
 	}
+	private captureFocus: THREE.Vector3 | null = null
+	private readonly navigation: ViewerNavigation
 	private atmosphere: Atmosphere = getAtmosphere(null, null)
 	private readonly sky: THREE.Mesh
 	private readonly clouds = new MinecraftClouds()
@@ -220,6 +223,7 @@ export class ViewerScene {
 		this.scene.add(this.nightFill)
 
 		this.camera = new THREE.PerspectiveCamera(45, 1, 0.01, 10000)
+		this.navigation = new ViewerNavigation(this.camera, canvas)
 		this.camera.position.set(8, 7, 8)
 		this.controls = new OrbitControls(this.camera, this.canvas)
 		this.controls.enableDamping = true
@@ -353,6 +357,29 @@ export class ViewerScene {
 		this.updateEnvironment()
 	}
 
+	setFirstPerson(enabled: boolean): void {
+		this.controls.autoRotate = false
+		this.controls.enabled = !enabled
+		if (enabled) {
+			this.camera.position.copy(this.captureFocus ?? this.controls.target).add(new THREE.Vector3(0, 1.62, 0))
+			const rotation = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ')
+			rotation.x = 0
+			rotation.z = 0
+			this.camera.quaternion.setFromEuler(rotation)
+		}
+		if (!enabled && this.navigation.active) {
+			const direction = this.camera.getWorldDirection(new THREE.Vector3())
+			this.controls.target.copy(this.camera.position).addScaledVector(direction, Math.max(3, this.controls.minDistance))
+		}
+		this.camera.near = 0.02
+		this.camera.updateProjectionMatrix()
+		this.navigation.setActive(enabled)
+	}
+
+	moveFirstPerson(direction: 'forward' | 'back' | 'up' | 'down', pressed: boolean): void {
+		this.navigation.move(direction, pressed)
+	}
+
 	setTour(enabled: boolean): void {
 		this.controls.autoRotate = enabled
 	}
@@ -403,7 +430,7 @@ export class ViewerScene {
 
 	snapshot(targetWidth = 400, targetHeight = 250): string | null {
 		if (this.modelRoot.children.length === 0) return null
-		this.controls.update()
+		if (!this.navigation.active) this.controls.update()
 		this.renderScene()
 		const sourceWidth = this.canvas.width
 		const sourceHeight = this.canvas.height
@@ -439,6 +466,7 @@ export class ViewerScene {
 		this.renderer.setAnimationLoop(null)
 		window.removeEventListener('resize', this.onWindowResize)
 		this.resizeObserver.disconnect()
+		this.navigation.dispose()
 		this.controls.dispose()
 		this.clouds.dispose()
 		this.clouds.removeFromParent()
@@ -461,7 +489,8 @@ export class ViewerScene {
 		if (!this.reducedMotion) this.waterTime.value += deltaSeconds
 
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
-		this.controls.update(deltaSeconds)
+		if (this.navigation.active) this.navigation.update(deltaSeconds)
+		else this.controls.update(deltaSeconds)
 		this.renderScene()
 	}
 
@@ -487,7 +516,8 @@ export class ViewerScene {
 		const size = bounds.getSize(new THREE.Vector3())
 		const largest = Math.max(size.x, size.y, size.z, 1)
 		const footprint = Math.max(size.x, size.z, 1)
-		const focus = surfaceFocus(bounds)
+		this.captureFocus = capturePosition(root)
+		const focus = this.captureFocus?.clone() ?? surfaceFocus(bounds)
 		if (!preserveView) this.controls.target.copy(focus)
 		this.shadowCenter.copy(focus)
 		this.shadowExtent = Math.max(12, footprint * 0.85)
@@ -496,12 +526,13 @@ export class ViewerScene {
 		const distance = footprint * 0.78 * Math.max(1, 1 / this.camera.aspect)
 		if (!preserveView)
 			this.camera.position.copy(focus).add(new THREE.Vector3(distance, distance * 0.46, distance * 0.85))
-		this.camera.near = Math.max(0.01, largest / 1000)
+		if (!preserveView && this.navigation.active) this.camera.position.copy(focus).add(new THREE.Vector3(0, 1.62, 0))
+		this.camera.near = 0.02
 		this.camera.far = Math.max(4000, largest * 30)
 		this.camera.updateProjectionMatrix()
 		this.controls.minDistance = Math.max(0.1, largest * 0.015)
 		this.controls.maxDistance = largest * 12
-		this.controls.update()
+		if (!this.navigation.active) this.controls.update()
 	}
 
 	private updateSunShadow(force = false): void {
