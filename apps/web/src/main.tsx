@@ -2,6 +2,7 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import { App } from './App'
 import './theme.css'
 import './pages/installation.css'
+import './album.css'
 
 const container = document.getElementById('app')
 if (!container) throw new Error('Application root not found.')

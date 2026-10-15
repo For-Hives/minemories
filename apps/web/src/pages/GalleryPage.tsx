@@ -158,7 +158,7 @@ const tilePalettes: TilePalette[] = [
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: existing gallery coordinates polling, navigation and two UI states; separate component extraction needs interaction coverage.
 export function GalleryPage() {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const { session, notify, setViewerFile } = useAppContext()
 	const navigate = useNavigate()
@@ -296,14 +296,15 @@ export function GalleryPage() {
 	}
 
 	return (
-		<div className="mx-auto min-h-[670px] w-[min(100%-88px,1180px)] px-0 py-[62px] pb-[79px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-10 max-phone:pb-[53px]">
-			<div className="flex items-end justify-between gap-5 max-phone:flex-col max-phone:items-start">
+		<div className="album-gallery mx-auto min-h-[670px] w-[min(100%-88px,1180px)] px-0 py-[62px] pb-[79px] max-tablet:w-[min(100%-48px,760px)] max-phone:w-[calc(100%-36px)] max-phone:py-10 max-phone:pb-[53px]">
+			<div className="album-gallery-heading flex items-end justify-between gap-5 max-phone:flex-col max-phone:items-start">
 				<div>
 					<Eyebrow>
 						<T message={'THE SERVER ALBUM'} />
 					</Eyebrow>
 					<h1 className="mb-[9px] mt-[13px] font-sans text-[clamp(36px,4vw,53px)] font-semibold leading-[1.1] tracking-[-2.8px] max-phone:text-[36px] max-phone:tracking-[-2px]">
-						{session?.user.name.split(' ')[0] ?? t('Your')} <T message={'gallery.'} />{' '}
+						{locale === 'fr' ? 'Tes souvenirs' : 'Your memories'}
+						{session?.user.name && `, ${session.user.name.split(' ')[0]}`}.
 					</h1>
 					<p className="m-0 text-[13px] text-[#b4c1ad]">
 						<T message={'Every capture keeps a place here, ready to revisit.'} />
@@ -315,82 +316,85 @@ export function GalleryPage() {
 				</Link>
 			</div>
 
-			<StorageSummary storage={storage} failed={storageError} />
-			<section
-				className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
-					pairedFresh ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
-				}`}
-				aria-live="polite"
-			>
-				<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#1c2720] text-[22px] text-[#b4c1ad] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
-					{pairedFresh ? '✓' : '⌘'}
-				</div>
-				<div className="flex-1">
-					<Eyebrow>{pairedFresh ? t('LINKED') : t('CAPTURE FROM THE SERVER')}</Eyebrow>
-					<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
-						{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}
-					</h2>
-					<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
-						{t(pairingMessage(pairedFresh, pairStatus))}
-					</p>
+			<aside className="album-gallery-sidebar">
+				<section
+					className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
+						pairedFresh ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
+					}`}
+					aria-live="polite"
+				>
+					<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#1c2720] text-[22px] text-[#b4c1ad] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
+						{pairedFresh ? '✓' : '⌘'}
+					</div>
+					<div className="flex-1">
+						<Eyebrow>{pairedFresh ? t('LINKED') : t('CAPTURE FROM THE SERVER')}</Eyebrow>
+						<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
+							{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}
+						</h2>
+						<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
+							{t(pairingMessage(pairedFresh, pairStatus))}
+						</p>
+						{pairStatus === 'pending' && (
+							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
+								<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
+								<T message={'Waiting for Minecraft…'} />{' '}
+							</div>
+						)}
+						{pairStatus === 'expired' && (
+							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
+								{' '}
+								<T message={'This code expired. Generate a new one.'} />{' '}
+							</div>
+						)}
+						{pairStatus === 'error' && (
+							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
+								{' '}
+								<T message={'Verification failed. Check that the API is running.'} />{' '}
+							</div>
+						)}
+						{pairStatus !== 'pending' && pairedFresh && (
+							<p className="mt-[10px] text-[10px] text-[#8e978a]">{t(pairingHint(pairedFresh))}</p>
+						)}
+					</div>
 					{pairStatus === 'pending' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-							<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
-							<T message={'Waiting for Minecraft…'} />{' '}
+						<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
+							<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">
+								<T message={'CODE FOR THE GAME'} />
+							</span>
+							<button
+								type="button"
+								onClick={copyCode}
+								aria-label={t('Copy the pairing code')}
+								className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#e6eee1] max-phone:text-[26px]"
+							>
+								{pairCode.slice(0, 3)} {pairCode.slice(3)}
+							</button>
+							<small className="text-[9px] text-[#b4c1ad]">
+								<T message={'Expires at'} /> {pairExpires}
+							</small>
 						</div>
 					)}
-					{pairStatus === 'expired' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-							{' '}
-							<T message={'This code expired. Generate a new one.'} />{' '}
-						</div>
-					)}
-					{pairStatus === 'error' && (
-						<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-							{' '}
-							<T message={'Verification failed. Check that the API is running.'} />{' '}
-						</div>
+					{pairedFresh && (
+						<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
+							<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> <T
+								message={'Linked client'}
+							/>{' '}
+						</span>
 					)}
 					{pairStatus !== 'pending' && (
-						<p className="mt-[10px] text-[10px] text-[#8e978a]">{t(pairingHint(pairedFresh))}</p>
-					)}
-				</div>
-				{pairStatus === 'pending' && (
-					<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
-						<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">
-							<T message={'CODE FOR THE GAME'} />
-						</span>
 						<button
+							className={`${buttonLime} min-w-[156px] max-phone:col-2 max-phone:min-h-[38px] max-phone:justify-self-start`}
 							type="button"
-							onClick={copyCode}
-							aria-label={t('Copy the pairing code')}
-							className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#e6eee1] max-phone:text-[26px]"
+							onClick={() => void createPairing()}
+							disabled={pairBusy}
 						>
-							{pairCode.slice(0, 3)} {pairCode.slice(3)}
+							{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
 						</button>
-						<small className="text-[9px] text-[#b4c1ad]">
-							<T message={'Expires at'} /> {pairExpires}
-						</small>
-					</div>
-				)}
-				{pairedFresh && (
-					<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
-						<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> <T message={'Linked client'} />{' '}
-					</span>
-				)}
-				{pairStatus !== 'pending' && (
-					<button
-						className={`${buttonLime} min-w-[156px] max-phone:col-2 max-phone:min-h-[38px] max-phone:justify-self-start`}
-						type="button"
-						onClick={() => void createPairing()}
-						disabled={pairBusy}
-					>
-						{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
-					</button>
-				)}
-			</section>
-
-			<section>
+					)}
+				</section>
+				<StorageSummary storage={storage} failed={storageError} />
+			</aside>
+			<section className="album-gallery-collection">
 				<div className="mb-[17px] flex items-end justify-between">
 					<div>
 						<Eyebrow>
@@ -457,7 +461,7 @@ export function GalleryPage() {
 										</span>
 									</button>
 									{open && (
-										<div className="space-y-6 border-t border-[#2a332d] p-4">
+										<div className="album-stacks border-t border-[#2a332d] p-4">
 											{stacks.map(stack => (
 												<StackBundle
 													key={stack.key}
@@ -687,14 +691,10 @@ function StackBundle({
 		/>
 	))
 	if (stack.captures.length <= 1) {
-		return (
-			<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
-				{cards}
-			</div>
-		)
+		return <div className="album-single-stack">{cards}</div>
 	}
 	return (
-		<div className="rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
+		<div className="album-stack rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
 			<div className="mb-3 flex items-center gap-3">
 				<StackThumbs
 					captures={stack.captures.slice(0, 3).map(item => ({ id: item.id, thumbnail: item.metadata.thumbnail }))}
@@ -809,7 +809,7 @@ function SnapshotCard({
 	}
 
 	return (
-		<article className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]">
+		<article className="album-capture overflow-hidden rounded-[7px] border border-[#354238] bg-[#1c2720] transition hover:-translate-y-[3px] hover:shadow-[0_13px_30px_#333d2514]">
 			<div
 				className={`relative grid h-[190px] place-items-center overflow-hidden max-tablet:h-40 max-phone:h-[190px] ${artTones[index % artTones.length]}`}
 			>

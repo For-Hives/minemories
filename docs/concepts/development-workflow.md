@@ -262,3 +262,35 @@ position joueur prétendument récupérée de l'ancien fichier. Interface contr�
 se rend dans Blender 5.2.2. La nouvelle extraction de position depuis Minecraft doit
 encore être exercée en jeu avec le JAR mis à jour ; ce contrôle n'est pas remplacé par
 les tests Java ni le rendu Blender.
+
+### Proposition de direction artistique « L’album vivant » — 16 octobre 2026
+
+La proposition étend l'ambiance du viewer au site : forêt profonde `#101e1c`,
+ivoire `#f0ebdc`, or doux `#e9c583`, surfaces vert sauge et filets discrets. Les grands
+titres utilisent une pile serif système (Iowan/Palatino/Georgia), les commandes gardent
+la sans-serif et les repères utilisent la monospace existante. Aucune police distante
+ni bibliothèque d'animation n'est ajoutée. Le petit cube filaire est un signe de marque
+proposé, pas une identité de marque validée pour les catalogues ou le mod.
+
+L'accueil est recomposé autour d'un récit, d'un paysage SVG illustratif à trois lumières,
+d'une section ivoire, d'un parcours et de collections. Le paysage est explicitement une
+illustration : il ne prétend pas montrer une capture réelle. Les formes réutilisent les
+illustrations vectorielles du dépôt ; aucune capture privée n'entre dans les assets publics.
+Le changement matin/heure dorée/nuit est accessible par boutons natifs avec état annoncé.
+Aucun contexte WebGL n'est créé hors du viewer. Les animations décoratives respectent
+`prefers-reduced-motion`.
+
+La navigation devient une capsule persistante ; le pied de page reprend la typographie
+éditoriale. Connexion/inscription, contenus, tarifs, guides et collections utilisent la même
+palette. La galerie place les outils de liaison/stockage dans une colonne dédiée sur grand
+écran et conserve les groupes/renommages/partages existants ; les captures isolées se rangent
+en grille sans colonnes vides par zone. Les petits écrans retrouvent un flux unique.
+
+Validation visuelle Chromium : accueil, tarifs, connexion, installation, découverte,
+journal, confidentialité et démonstration publique ; galerie avec données de test interceptées
+uniquement dans Playwright. Contrôle desktop/mobile, aucun débordement ni erreur JavaScript.
+Firefox : changements de lumière, réduction du mouvement, disponibilité de la navigation
+à 360/390/730/740/930/1440 px et fermeture du menu après navigation. Les tests d'interaction
+couvrent les lumières et les destinations visiteur/connecté en FR/EN. La validation esthétique
+par le propriétaire reste ouverte dans l'issue #76 ; la proposition ne vaut pas validation
+finale de la marque.
