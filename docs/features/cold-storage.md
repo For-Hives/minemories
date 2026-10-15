@@ -215,6 +215,16 @@ ancienne génération attend encore sa suppression, aucun nouvel archivage n’e
 sélectionné ; les restaurations explicites continuent. L’arrêt annule le worker
 et attend aussi le nettoyage en cours avant de fermer SQLite.
 
+L’arrêt de l’API ferme également l’écoute HTTP, attend les requêtes et le
+nettoyage périodique des uploads, puis ferme SQLite une seule fois même si plusieurs
+signaux arrivent. Les appels concurrents à la file de suppression attendent le
+même passage borné ; après son arrêt, aucun nouvel objet n’est supprimé. La
+requête distante déjà envoyée termine son acquittement ou conserve son retry
+durable avant fermeture. Les tests lancent le vrai processus Bun avec une
+suppression HTTP suspendue, pour un souvenir puis un upload expiré, et vérifient
+la confirmation SQLite après deux signaux d’arrêt. Les objets non démarrés restent
+à traiter au prochain lancement.
+
 L’adaptateur copie côté stockage, sans télécharger le GLB dans l’API. Il contrôle
 la taille (au plus 200 MiB), le propriétaire, les clés réservées, la classe et
 l’ETag de la source, transmet `CopySourceIfMatch`, puis exige un résultat SDK et

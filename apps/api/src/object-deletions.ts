@@ -26,7 +26,8 @@ interface Deletion {
 }
 
 export class ObjectDeletionQueue {
-	private running = false
+	private active: Promise<void> | null = null
+	private stopped = false
 	private readonly held = new Set<string>()
 	private readonly references: ObjectReferences
 
@@ -51,26 +52,34 @@ export class ObjectDeletionQueue {
 		}
 	}
 
-	async drain(objectKey?: string, now = Date.now()): Promise<void> {
-		if (this.running) return
-		this.running = true
-		try {
-			this.references.collectExpiredReaders(now)
-			const rows =
-				objectKey === undefined
-					? this.database
-							.query(`SELECT object_key FROM object_deletions WHERE next_attempt_at <= ?
+	drain(objectKey?: string, now = Date.now()): Promise<void> {
+		if (this.stopped) return Promise.resolve()
+		this.active ??= this.run(objectKey, now).finally(() => {
+			this.active = null
+		})
+		return this.active
+	}
+
+	async stop(): Promise<void> {
+		this.stopped = true
+		await this.active?.catch(() => undefined)
+	}
+
+	private async run(objectKey: string | undefined, now: number): Promise<void> {
+		this.references.collectExpiredReaders(now)
+		const rows =
+			objectKey === undefined
+				? this.database
+						.query(`SELECT object_key FROM object_deletions WHERE next_attempt_at <= ?
 								AND (${this.references.unreferencedSql}) ORDER BY created_at LIMIT 100`)
-							.all(now)
-					: this.database
-							.query('SELECT object_key FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?')
-							.all(objectKey, now)
-			for (const row of rows as Array<{ object_key: string }>) {
-				// biome-ignore lint/performance/noAwaitInLoops: one bounded batch avoids flooding an unavailable object store.
-				await this.attempt(row.object_key, now)
-			}
-		} finally {
-			this.running = false
+						.all(now)
+				: this.database
+						.query('SELECT object_key FROM object_deletions WHERE object_key = ? AND next_attempt_at <= ?')
+						.all(objectKey, now)
+		for (const row of rows as Array<{ object_key: string }>) {
+			if (this.stopped) break
+			// biome-ignore lint/performance/noAwaitInLoops: one bounded batch avoids flooding an unavailable object store.
+			await this.attempt(row.object_key, now)
 		}
 	}
 
