@@ -91,6 +91,10 @@ function fakeGitHub({ data, commit }) {
 	let release = null
 	const calls = []
 	const execute = (command, args) => {
+		if (command === 'git') {
+			assert.deepEqual(args, ['rev-parse', `refs/tags/${data.plan.tag}^{commit}`])
+			return commit
+		}
 		assert.equal(command, 'gh')
 		calls.push(args)
 		if (args[0] === 'api') {
@@ -139,9 +143,11 @@ test('GitHub publication stays a draft until complete, resumes safely and never 
 	assert.equal(mock.release.draft, true)
 	await publishRelease(input)
 	assert.equal(mock.release.draft, false)
+	mock.release.target_commitish = 'main'
 	const writes = mock.calls.filter(args => args[0] === 'release').length
 	await publishRelease(input)
 	assert.equal(mock.calls.filter(args => args[0] === 'release').length, writes)
+	await assert.rejects(publishRelease({ ...input, commit: 'd'.repeat(40) }))
 	mock.release.assets[0].digest = `sha256:${'0'.repeat(64)}`
 	await assert.rejects(publishRelease(input))
 	await assert.rejects(publishRelease({ ...input, plan: { ...data.plan, dryRun: true } }))
