@@ -100,3 +100,18 @@ test('confirmation attempts are limited per account and reset after a minute', a
 		f.db.close()
 	}
 })
+
+test('ISO timestamps from Better Auth expire just like numeric fixture timestamps', async () => {
+	const f = fixture()
+	try {
+		f.db.query('UPDATE session SET expiresAt=? WHERE id=?').run('2026-01-01T00:00:00.000Z', 'current')
+		await expect(
+			f.security.confirmed(f.identity, 'old-password', () => true, Date.parse('2026-01-02T00:00:00.000Z'))
+		).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+		expect(
+			await f.security.confirmed(f.identity, 'old-password', () => true, Date.parse('2025-12-31T00:00:00.000Z'))
+		).toBe(true)
+	} finally {
+		f.db.close()
+	}
+})

@@ -1155,3 +1155,38 @@ a.mm-editorial-card:hover {
 		grid-template-columns: 1fr;
 	}
 }
+
+@media (min-width: 731px) and (max-width: 900px) {
+	.mm-desktop-nav {
+		display: none;
+	}
+	.mm-mobile-menu {
+		display: block;
+	}
+	.mm-mobile-menu summary {
+		display: grid;
+		place-items: center;
+		width: 40px;
+		height: 44px;
+		cursor: pointer;
+		list-style: none;
+	}
+	.mm-mobile-menu summary::-webkit-details-marker {
+		display: none;
+	}
+	.mm-mobile-menu nav {
+		position: absolute;
+		top: 70px;
+		left: 0;
+		right: 0;
+		display: grid;
+		padding: 20px;
+		background: #1c2720;
+		border: 1px solid #405142;
+		border-radius: 12px;
+		box-shadow: 0 16px 32px #0006;
+	}
+	.mm-mobile-menu nav a {
+		padding: 12px;
+	}
+}
