@@ -13,8 +13,8 @@ export interface Atmosphere {
 }
 
 const OVERWORLD: Atmosphere = {
-	dayZenith: [0.2, 0.53, 0.88],
-	dayHorizon: [0.64, 0.8, 0.94],
+	dayZenith: [0.055, 0.24, 0.52],
+	dayHorizon: [0.36, 0.57, 0.7],
 	nightZenith: [0.018, 0.028, 0.075],
 	nightHorizon: [0.1, 0.12, 0.2],
 	starAlpha: 1,

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
-import { buttonLime, Eyebrow } from '../components/ui'
+import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { T, useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
-import { TimePresets, ticksToMinutes } from './ViewerPage'
+import { ticksToMinutes } from './ViewerPage'
 
 interface SharedCapture {
 	name: string
@@ -144,66 +144,28 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 		}
 	}, [reference, isPublic, review])
 
+	const publicBack = review ? '/moderation' : '/explorer'
 	return (
-		<section className="viewer-page">
-			<div className="flex items-center justify-between gap-5 pb-[19px] max-phone:flex-col max-phone:items-start max-phone:gap-[13px]">
-				<div>
-					<Eyebrow>{isPublic ? t('PUBLIC MEMORY') : <T message={'SHARED MEMORY'} />}</Eyebrow>
-					<h1 className="mb-0 mt-[6px] max-w-[640px] overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[21px] font-bold tracking-[-0.8px] max-phone:max-w-[calc(100vw-40px)] max-phone:text-lg">
-						{title}
-					</h1>
-				</div>
-				<Link className={`${buttonLime} min-h-[40px] text-[10px]`} to="/">
-					{' '}
-					<T message={'Keep my own worlds'} /> <span>↗</span>
+		<section className="viewer-page cinema-page">
+			<ViewerHeader
+				title={t(title)}
+				subtitle={isPublic ? t('PUBLIC MEMORY') : t('SHARED MEMORY')}
+				back={isPublic ? publicBack : '/'}
+				backLabel={isPublic ? t(review ? 'Back to moderation' : 'Back to public gallery') : 'Minemories'}
+			>
+				<Link className="cinema-open" to="/">
+					<T message={'Keep my own worlds'} /> ↗
 				</Link>
-			</div>
+			</ViewerHeader>
 			<div className="viewer-stage">
 				<canvas
 					ref={canvasRef}
-					className={`absolute inset-0 block h-full w-full ${empty ? 'opacity-0' : 'opacity-100'}`}
+					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
 					aria-label={t('Shared 3D scene')}
 				/>
-				<SharedLoadStatus status={status} error={error} />
-				{fileInfo && (
-					<div className="absolute top-[18px] left-[18px] z-[1] flex max-w-[min(60%,420px)] items-center gap-[9px] overflow-hidden rounded-md border border-[#33392e] bg-[#141811d9] px-[11px] py-[9px] font-mono text-[10px] text-[#e1e5d8]">
-						<span className="inline-block h-[7px] w-[7px] flex-none rounded-full bg-lime-deep shadow-[0_0_12px_#c9f36a66]" />
-						<span className="overflow-hidden text-ellipsis whitespace-nowrap">{fileInfo}</span>
-					</div>
-				)}
-				{!empty && <TimePresets minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
+				<ViewerLoadState loading={status} error={error} />
 			</div>
-			<ViewerStudio sceneRef={sceneRef} ready={!(empty || status)} />
-			<p className="mb-0 mt-[14px] flex items-center justify-center gap-[10px] text-[10px] text-[#b4c1ad]">
-				{' '}
-				{isPublic ? (
-					<Link to={review ? '/moderation' : '/explorer'}>
-						{t(review ? 'Back to moderation' : 'Back to public gallery')}
-					</Link>
-				) : (
-					<T message={'Shared link · no account needed to revisit this world.'} />
-				)}{' '}
-			</p>
+			{!empty && <ViewerStudio sceneRef={sceneRef} ready={!status} minutes={minutes} fileInfo={fileInfo} />}
 		</section>
-	)
-}
-
-function SharedLoadStatus({ status, error }: { status: string | null; error: string }) {
-	const { t } = useI18n()
-	return (
-		<>
-			{' '}
-			{(status ?? error) && (
-				<div
-					role={status ? 'status' : 'alert'}
-					className="absolute top-1/2 left-1/2 z-[4] flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 max-w-[calc(100%_-_32px)] whitespace-normal rounded-lg border border-[#3b4334] bg-night-soft px-[18px] py-[14px] font-mono text-xs text-[#e6eadc]"
-				>
-					{status && (
-						<span className="h-[15px] w-[15px] animate-viewer-spin rounded-full border-2 border-[#4a553c] border-t-lime-deep" />
-					)}
-					<span>{t(status ?? error)}</span>
-				</div>
-			)}
-		</>
 	)
 }
