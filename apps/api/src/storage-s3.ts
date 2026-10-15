@@ -58,25 +58,50 @@ async function ensureBucket() {
 	await bucketReady
 }
 
-export async function uploadS3Memory(objectKey: string, contents: Buffer | Readable, size: number) {
+export async function uploadS3Memory(
+	objectKey: string,
+	contents: Buffer | Readable,
+	size: number,
+	signal?: AbortSignal
+) {
+	signal?.throwIfAborted()
 	await ensureBucket()
-	await new Upload({
-		client,
-		params: { Bucket: bucket, Key: objectKey, Body: contents, ContentLength: size, ContentType: 'model/gltf-binary' },
-		partSize: 8 * 1024 * 1024,
-		queueSize: 1,
-		// The durable SQLite deletion job cleans up parts after errors and process crashes.
-		leavePartsOnError: true,
-	}).done()
+	signal?.throwIfAborted()
+	const abortController = new AbortController(),
+		abort = () => abortController.abort()
+	signal?.addEventListener('abort', abort, { once: true })
+	try {
+		await new Upload({
+			abortController,
+			client,
+			params: { Bucket: bucket, Key: objectKey, Body: contents, ContentLength: size, ContentType: 'model/gltf-binary' },
+			partSize: 8 * 1024 * 1024,
+			queueSize: 1,
+			// The durable SQLite deletion job cleans up parts after errors and process crashes.
+			leavePartsOnError: true,
+		}).done()
+	} finally {
+		signal?.removeEventListener('abort', abort)
+	}
 }
 
 export async function removeS3Memory(objectKey: string) {
 	await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }))
 }
 
-export async function readS3MemoryStream(objectKey: string): Promise<Readable> {
-	const { Body } = await client.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }))
+export async function readS3MemoryStream(objectKey: string, signal?: AbortSignal): Promise<Readable> {
+	signal?.throwIfAborted()
+	const { Body } = await client.send(
+		new GetObjectCommand({ Bucket: bucket, Key: objectKey }),
+		signal ? { abortSignal: signal } : {}
+	)
 	if (!(Body instanceof Readable)) throw new Error('Invalid S3 object stream.')
+	if (signal) {
+		const abort = () => Body.destroy(signal.reason instanceof Error ? signal.reason : new Error('Storage read aborted'))
+		signal.addEventListener('abort', abort, { once: true })
+		Body.once('close', () => signal.removeEventListener('abort', abort))
+		if (signal.aborted) abort()
+	}
 	return Body
 }
 

@@ -72,6 +72,10 @@ export function migrateTimelapse(database: Database) {
 	  PRIMARY KEY(reader_id,ordinal)
 	 );
 	 CREATE INDEX IF NOT EXISTS timelapse_reader_objects ON timelapse_reader_refs(object_key);
+	 CREATE TABLE IF NOT EXISTS timelapse_work (
+	  memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE,
+	  attempts INTEGER NOT NULL DEFAULT 0,next_attempt_at INTEGER NOT NULL
+	 );
 	`)
 }
 

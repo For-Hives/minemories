@@ -3,8 +3,9 @@
 L’issue #75 est en cours. Les captures disposent désormais d’une identité de
 monde et d’empreinte, ainsi que de leur origine géométrique exacte. Le codec de
 découpage, le catalogue SQLite et le service de conversion/relecture en flux sont
-testés sur des fichiers locaux. Ils ne sont pas encore reliés aux routes API : les fichiers restent des GLB complets et aucune lecture temporelle
-réelle n’est livrée à ce stade. La timeline de démonstration reste illustrative.
+raccordés aux routes API et validés sur filesystem et Garage. Les téléchargements
+reconstruisent les GLB ; aucune navigation ou animation temporelle réelle n’est
+encore livrée à ce stade. La timeline de démonstration reste illustrative.
 
 ## Identifier les futurs états
 
@@ -36,7 +37,7 @@ profondeur, juste avant la finalisation des métadonnées. Les données du monde
 restent prises sur le thread client. Cela permettra de translater correctement
 les scènes successives si leur centre vertical change.
 
-## Codec de morceaux, non encore intégré
+## Découpage des morceaux
 
 Le codec API parcourt un flux sans charger un GLB entier. Une fenêtre glissante
 de 63 octets produit des frontières dépendantes du contenu : morceaux de
@@ -53,7 +54,7 @@ annuler les E/S bloquées à la source. Le test avec insertion dans 4 Mio de don
 déterministes conserve plus de 80 % des octets dans des morceaux inchangés ; ce
 résultat synthétique n’est pas une mesure de gain sur des captures Minecraft.
 
-## Catalogue transactionnel, non encore relié aux fichiers
+## Catalogue transactionnel et baux
 
 Les migrations ajoutent un catalogue de morceaux et de manifestes, sans convertir
 les souvenirs existants. Un seul bail de conversion peut être actif dans la base,
@@ -84,7 +85,7 @@ limites de lecteurs, deux connexions et réouverture de la base. Un neuvième te
 vérifie le nettoyage des écritures tardives. Les entrées `deleting` sont retirées
 par lots de cent après consommation de leur demande de suppression physique.
 
-## Conversion et relecture des fichiers, routes API encore à brancher
+## Conversion et relecture des fichiers dans l’API
 
 `TimelapseFiles` convertit un souvenir identifié en parcourant son GLB d’origine.
 Il écrit les morceaux nouveaux un par un et vérifie taille et SHA-256 des morceaux
@@ -112,11 +113,31 @@ Neuf tests du service utilisent de vrais fichiers locaux et une base SQLite sur
 disque : suppression des GLB originaux, réouverture de la base, comparaison exacte
 des fichiers reconstruits, réutilisation des morceaux, limites d’écriture,
 erreurs/corruption, purge pendant lecture, annulation et renouvellement/expiration
-des baux. La suite API compte 212 tests actifs passés et six tests Garage ignorés
-sans serveur dédié. Les adaptateurs S3/filesystem de production, les routes de
-fichiers et la maintenance ne sont pas encore raccordés à ce service ; aucun
-manifeste n’est produit par les routes d’upload actuelles. La navigation temporelle
-reste à implémenter.
+des baux. La maintenance de production passe toutes les cinq secondes et convertit au plus
+un candidat identifié par passage, avec un seul bail de conversion dans la base.
+Les erreurs disposent de délais persistants, de une minute à une heure ; une
+métadonnée invalide ne bloque pas les candidats suivants. Les souvenirs anciens
+non identifiés sont exclus. À l’arrêt, la maintenance annule ses E/S et attend la
+persistance du nettoyage avant fermeture de SQLite.
+
+Les chemins de téléchargement privé, partagé et public utilisent ce lecteur. Ils
+réévaluent l’accès après ouverture asynchrone ; une révocation gagne avant émission
+des en-têtes. Si une conversion a remplacé une clé entre recherche et ouverture,
+le lecteur réessaie une fois la nouvelle clé. Les URL, droits, quotas logiques et
+l’en-tête `Cache-Control: private, no-store` restent ceux des souvenirs existants.
+Les adaptateurs filesystem et SDK S3 propagent les signaux d’annulation aux
+écritures et aux flux ouverts.
+
+La suite API compte 225 tests actifs passés et six tests Garage ignorés sans
+serveur dédié. `bun api:garage` passe les trois tests HTTP/session existants, le
+nouveau parcours de conversion, puis les six tests Garage réels avec pannes et
+redémarrages. Le parcours temporel vérifie téléchargement privé/partagé/public,
+modération par un autre compte, révocation, corbeille/restauration, quotas et
+réclamation finale de tous les objets du propriétaire. Un inventaire vieilli de
+48 heures classe tous les morceaux vivants comme protégés, sur filesystem et
+Garage. La fixture Docker dédiée et ses volumes sont retirés après l’essai.
+
+La navigation temporelle reste à implémenter.
 
 ## Validation des fondations, 15 octobre 2026
 
@@ -144,13 +165,34 @@ Les tests Java couvrent aussi la séparation par dimension/seed, les champs nuls
 les limites entières et la finalisation différée des métadonnées. Les tests API
 couvrent les identités partielles/incohérentes et les propriétés du codec.
 
+## Essai en flux à la limite de 200 Mio
+
+Un GLB réellement capturé avec le JAR ci-dessus a été étendu à 209 715 200 octets
+par ajout de zéros inutilisés dans son BIN, sans changer géométrie ou textures.
+Ce fichier passe le validateur API en flux. Le moteur de production filesystem
+le convertit, supprime l’original puis, dans un nouveau processus, le sert par la
+route HTTP privée : taille et SHA-256 restent identiques
+(`9083bafe3aa58c4306c8253ff7a3d4355d47d7773851b0857b2efee288d5c3ab`).
+Blender 5.2.2 importe et rend le fichier reconstruit : un mesh, 2 766 polygones,
+terrain, végétation et entités visibles.
+
+Le pic RSS observé passe de 84 416 à 164 700 Kio pour la conversion, et de
+83 892 à 152 716 Kio pour la relecture HTTP dans le nouveau processus. Les
+chemins de production conservent des tampons par morceau ; ces mesures incluent
+le runtime et ses allocations temporaires. Ce remplissage artificiel produit six
+morceaux uniques et ne constitue pas un benchmark de compression de scènes.
+Preuves locales : `large-stream/report.json`, `fixture.json`, `blender.json` et
+`replayed.png` dans le dossier de validation des fondations.
+
 ## Critères encore ouverts avant livraison
 
 - Index temporel propriétaire, ordre déterministe des captures et vérification de
   cohérence de l’empreinte ; exclusion des anciennes captures non identifiées.
-- Manifestes et morceaux adressés par contenu, publication transactionnelle,
-  reprise après panne, nettoyage sans supprimer de données référencées et
-  compatibilité avec quotas, corbeille et réconciliation.
+- Coupler les manifestes, les baux et le nettoyage déjà validés aux séries de
+  l’index temporel ; conserver quotas, corbeille et réconciliation lors de cette
+  intégration.
+- Identité conservatrice pour les serveurs distants dont la seed est inconnue,
+  afin de ne pas réunir deux mondes remplacés derrière une même adresse.
 - Bornes explicites sur les séries et leur stockage, comportement documenté
   lorsque ces bornes sont atteintes, sans suppression silencieuse des souvenirs.
 - Navigation et lecture des seuls états réellement disponibles, alignement des

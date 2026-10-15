@@ -8,6 +8,7 @@ import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { auth } from './auth'
 import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits'
+import { openAuthorizedCapture } from './capture-downloads'
 import { database } from './database'
 import { diagnosticsRouter } from './diagnostics-routes'
 import { diagnostics } from './diagnostics-state'
@@ -41,6 +42,8 @@ import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairin
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
+import { TimelapseFiles } from './timelapse-files'
+import { TimelapseMaintenance } from './timelapse-maintenance'
 import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
 
@@ -57,6 +60,8 @@ const os = implement(apiContract).$context<ApiContext>()
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
 	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
 )
+const captureFiles = new TimelapseFiles(database, { read: readMemoryStream, write: storeMemory })
+export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
 const discovery = new PublicDiscovery(
 	database,
 	new Set(
@@ -273,21 +278,17 @@ app.use('/api/public/*', (context, next) => {
 app.get('/api/public/:id/file', async context => {
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const id = context.req.param('id')
-	let key: string
-	try {
-		key = discovery.file(id, session?.user.id ?? null).object_key
-	} catch {
-		return context.json({ error: 'memory_not_found' }, 404)
-	}
-	try {
-		const contents = await readMemoryStream(key)
-		// Opening storage can yield: a revocation committed meanwhile must win before response headers.
+	const lookup = () => {
 		try {
-			discovery.file(id, session?.user.id ?? null)
+			return discovery.file(id, session?.user.id ?? null).object_key
 		} catch {
-			contents.destroy()
-			return context.json({ error: 'memory_not_found' }, 404)
+			return null
 		}
+	}
+	if (!lookup()) return context.json({ error: 'memory_not_found' }, 404)
+	try {
+		const contents = await openAuthorizedCapture(captureFiles, lookup, context.req.raw.signal)
+		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 		})
@@ -302,7 +303,12 @@ app.get('/api/shared/:token/file', async context => {
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 
 	try {
-		const contents = await readMemoryStream(shared.objectKey)
+		const contents = await openAuthorizedCapture(
+			captureFiles,
+			() => getSharedMemory(context.req.param('token'))?.objectKey ?? null,
+			context.req.raw.signal
+		)
+		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
@@ -329,7 +335,12 @@ app.get('/api/memories/:id/file', async context => {
 	if (!memory) return context.json({ error: 'memory_not_found' }, 404)
 
 	try {
-		const contents = await readMemoryStream(memory.object_key)
+		const contents = await openAuthorizedCapture(
+			captureFiles,
+			() => getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null,
+			context.req.raw.signal
+		)
+		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
@@ -454,7 +465,9 @@ if (import.meta.main) {
 
 	purgeDeletedMemories()
 	void objectDeletions.maintain()
+	void timelapseMaintenance.maintain()
 	const intervals = [
+		setInterval(() => void timelapseMaintenance.maintain(), 5000),
 		setInterval(() => void cleanupUploads(), 3_600_000),
 		setInterval(() => void objectDeletions.maintain(), 60_000),
 		setInterval(() => purgeDeletedMemories(), 3_600_000),
@@ -462,6 +475,7 @@ if (import.meta.main) {
 	]
 	const shutdown = async () => {
 		for (const interval of intervals) clearInterval(interval)
+		await timelapseMaintenance.stop()
 		await server.stop()
 		database.close()
 	}
