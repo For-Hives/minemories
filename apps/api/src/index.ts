@@ -44,6 +44,7 @@ import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairin
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
+import { TieredObjects } from './tiered-objects'
 import { TimelapseFiles } from './timelapse-files'
 import { TimelapseIndex } from './timelapse-index'
 import { TimelapseMaintenance } from './timelapse-maintenance'
@@ -69,11 +70,12 @@ const diagnosticsReview = new DiagnosticsReview(
 			.filter(Boolean)
 	)
 )
+const tieredObjects = new TieredObjects(database, { read: readMemoryStream, write: storeMemory }, removeMemory)
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
-	discardUpload ? discardMemoryUpload(key) : removeMemory(key)
+	tieredObjects.remove(key, discardUpload ? discardMemoryUpload : removeMemory)
 )
 const temporalIndex = new TimelapseIndex(database)
-const captureFiles = new TimelapseFiles(database, { read: readMemoryStream, write: storeMemory })
+const captureFiles = new TimelapseFiles(database, tieredObjects)
 export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
 const discovery = new PublicDiscovery(
 	database,

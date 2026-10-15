@@ -1,10 +1,15 @@
 import type { Database, Statement } from 'bun:sqlite'
 
-const managedKey = /^([a-z0-9_-]{1,128})\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.glb$/i
+const managedKey =
+	/^([a-z0-9_-]{1,128})\/(?:tiers\/)?([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.glb$/i
 
 export function managedMemoryKey(key: string): { owner: string; id: string } | null {
 	const parts = managedKey.exec(key)
 	return parts ? { owner: parts[1] as string, id: parts[2] as string } : null
+}
+
+function hasTierLocations(tables: Set<string>): boolean {
+	return tables.has('object_tier_locations') && tables.has('object_tier_copies')
 }
 
 export class ObjectReferences {
@@ -16,6 +21,7 @@ export class ObjectReferences {
 	private readonly expireReaders: Statement | null
 	private readonly tierWork: Statement | null
 	private readonly deleteTier: Statement | null
+	private readonly physical: Statement | null
 	private readonly owners: Statement[]
 	constructor(database: Database) {
 		const tables = new Set(
@@ -44,8 +50,16 @@ export class ObjectReferences {
 		this.deleteTier = tables.has('object_tiers')
 			? database.query("DELETE FROM object_tiers WHERE object_key=? AND state IN ('hot','cold')")
 			: null
+		this.physical = hasTierLocations(tables)
+			? database.query(`SELECT 1 FROM object_tier_locations WHERE physical_key=? AND object_key!=physical_key
+			 UNION ALL SELECT 1 FROM object_tier_copies WHERE physical_key=? LIMIT 1`)
+			: null
 		this.unreferencedSql =
 			[
+				hasTierLocations(tables)
+					? `NOT EXISTS (SELECT 1 FROM object_tier_locations WHERE physical_key=object_deletions.object_key AND object_key!=physical_key)
+					 AND NOT EXISTS (SELECT 1 FROM object_tier_copies WHERE physical_key=object_deletions.object_key)`
+					: '',
 				tables.has('object_tiers')
 					? "NOT EXISTS (SELECT 1 FROM object_tiers WHERE object_key=object_deletions.object_key AND state IN ('archiving','restoring'))"
 					: '',
@@ -87,7 +101,13 @@ export class ObjectReferences {
 		this.deleteTier?.run(key)
 	}
 	isReferenced(key: string): boolean {
-		if (this.memories?.get(key) || this.chunks?.get(key) || this.readers?.get(key) || this.tierWork?.get(key))
+		if (
+			this.memories?.get(key) ||
+			this.chunks?.get(key) ||
+			this.readers?.get(key) ||
+			this.tierWork?.get(key) ||
+			this.physical?.get(key, key)
+		)
 			return true
 		const slash = key.lastIndexOf('/')
 		if (slash < 1 || !key.endsWith('.glb')) return false
