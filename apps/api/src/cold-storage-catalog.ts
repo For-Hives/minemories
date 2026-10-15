@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { randomUUID } from 'node:crypto'
 import { coldStorageCandidates } from './cold-storage-policy'
+import { type TierCopy, TierLocations } from './tier-locations'
 
 export const COLD_WORKER_LEASE_MS = 15 * 60_000
 export const RESTORE_READ_GRACE_MS = 15 * 60_000
@@ -15,17 +16,22 @@ export interface ColdStorageWork {
 
 /** Database intent and fencing only. A provider acknowledgement/reconciliation must precede finish(). */
 export class ColdStorageCatalog {
-	constructor(private readonly database: Database) {}
+	private readonly locations: TierLocations
+	constructor(private readonly database: Database) {
+		this.locations = new TierLocations(database)
+	}
 
 	beginArchive(objectKey: string, inactiveDays: number, now = Date.now()): boolean {
 		return this.database
 			.transaction(() => {
-				if (!coldStorageCandidates(this.database, inactiveDays, now, 1, objectKey).length) return false
+				const candidate = coldStorageCandidates(this.database, inactiveDays, now, 1, objectKey)[0]
+				if (!candidate) return false
 				this.database
-					.query(`INSERT INTO object_tiers(object_key,state,operation_id,updated_at) VALUES (?,'archiving',?,?)
+					.query(`INSERT INTO object_tiers(object_key,state,operation_id,updated_at,user_id,size) VALUES (?,'archiving',?,?,?,?)
 				 ON CONFLICT(object_key) DO UPDATE SET state='archiving',operation_id=excluded.operation_id,
+				 user_id=excluded.user_id,size=excluded.size,
 				 restore_requested=0,worker_id=NULL,worker_expires_at=0,attempts=0,next_attempt_at=0,hot_until=0,updated_at=excluded.updated_at`)
-					.run(objectKey, randomUUID(), now)
+					.run(objectKey, randomUUID(), now, candidate.userId, candidate.size)
 				return true
 			})
 			.immediate()
@@ -47,11 +53,13 @@ export class ColdStorageCatalog {
 	claimNext(now = Date.now()): ColdStorageWork | null {
 		return this.database
 			.transaction(() => {
+				this.locations.collectExpired(now)
 				const row = this.database
 					.query(`SELECT object_key AS objectKey,operation_id AS operationId,state,attempts FROM object_tiers
 				 WHERE state IN ('archiving','restoring') AND next_attempt_at<=? AND worker_expires_at<=?
+				 AND NOT EXISTS(SELECT 1 FROM object_tiers busy WHERE busy.state IN ('archiving','restoring') AND busy.worker_expires_at>?)
 				 ORDER BY state='restoring' DESC,next_attempt_at,updated_at,object_key LIMIT 1`)
-					.get(now, now) as Omit<ColdStorageWork, 'workerId'> | null
+					.get(now, now, now) as Omit<ColdStorageWork, 'workerId'> | null
 				if (!row) return null
 				const workerId = randomUUID()
 				this.database
@@ -60,6 +68,14 @@ export class ColdStorageCatalog {
 				return { ...row, workerId }
 			})
 			.immediate()
+	}
+
+	reserveCopy(work: ColdStorageWork, now = Date.now()): TierCopy {
+		return this.locations.reserve(work, now)
+	}
+
+	discardCopy(work: ColdStorageWork, physicalKey: string, now = Date.now(), uncertain = false): boolean {
+		return this.locations.discard(work, physicalKey, now, uncertain)
 	}
 
 	renew(work: ColdStorageWork, now = Date.now()): void {
@@ -81,24 +97,30 @@ export class ColdStorageCatalog {
 		)
 	}
 
-	finish(work: ColdStorageWork, now = Date.now()): boolean {
-		return Boolean(
-			this.database
-				.query(`UPDATE object_tiers SET
+	finish(work: ColdStorageWork, physicalKey: string, now = Date.now()): boolean {
+		return this.database
+			.transaction(() => {
+				if (!this.locations.canPublish(work, physicalKey, now)) return false
+				const updated = this.database
+					.query(`UPDATE object_tiers SET
 		 state=CASE WHEN state='restoring' THEN 'hot' WHEN restore_requested=1 THEN 'restoring' ELSE 'cold' END,
 		 hot_until=CASE WHEN state='restoring' THEN ? ELSE hot_until END,
 		 operation_id=?,restore_requested=0,worker_id=NULL,worker_expires_at=0,attempts=0,next_attempt_at=0,updated_at=?
 		 WHERE object_key=? AND operation_id=? AND worker_id=? AND state=? AND worker_expires_at>?`)
-				.run(
-					now + RESTORE_READ_GRACE_MS,
-					randomUUID(),
-					now,
-					work.objectKey,
-					work.operationId,
-					work.workerId,
-					work.state,
-					now
-				).changes
-		)
+					.run(
+						now + RESTORE_READ_GRACE_MS,
+						randomUUID(),
+						now,
+						work.objectKey,
+						work.operationId,
+						work.workerId,
+						work.state,
+						now
+					).changes
+				if (!updated) return false
+				this.locations.publish(work, physicalKey, now)
+				return true
+			})
+			.immediate()
 	}
 }
