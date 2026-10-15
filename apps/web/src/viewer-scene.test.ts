@@ -210,7 +210,7 @@ test('CPU ImageBitmap pixels shared by multiple texture sources close once when 
 	}
 })
 
-test('a deep capture opens near the surface while preserving the full shadow bounds', async () => {
+test('a deep capture opens near the surface and concentrates shadow texels on the surface', async () => {
 	const THREE = await import('three')
 	const modelRoot = new THREE.Group()
 	modelRoot.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32)))
@@ -229,7 +229,7 @@ test('a deep capture opens near the surface while preserving the full shadow bou
 	})
 	scene.resetView()
 	expect(target.y).toBeCloseTo(75.2)
-	expect(shadowCenter.y).toBe(0)
+	expect(shadowCenter.y).toBeCloseTo(target.y)
 	expect(camera.position.y).toBeGreaterThan(target.y)
 	expect(setBaseHeight.mock.calls[0]?.[0]).toBeGreaterThan(camera.position.y)
 })
@@ -255,4 +255,23 @@ test('lighting preparation preserves imported face normals instead of forcing de
 	expect(material.flatShading).toBe(true)
 	geometry.dispose()
 	material.dispose()
+})
+
+test('surface lights remain in the bounded lighting budget even when deeper lava is brighter', () => {
+	const root = new THREE.Group()
+	root.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32), new THREE.MeshStandardMaterial()))
+	const surfaceLight = new THREE.PointLight(0xff6600, 900, 14)
+	surfaceLight.position.set(0, 72, 0)
+	root.add(surfaceLight)
+	for (let i = 0; i < 16; i++) {
+		const light = new THREE.PointLight(0xffffff, 1400, 20)
+		light.position.set(i * 7, -70, 0)
+		root.add(light)
+	}
+	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
+	scene.prepareWorldLighting(root)
+	const lights = root.children.filter(child => child instanceof THREE.PointLight)
+	expect(lights).toHaveLength(12)
+	expect(lights.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
+	disposeImportedObject(root)
 })
