@@ -19,15 +19,16 @@ function localPath(objectKey: string) {
 	return path
 }
 
-export async function storeMemory(objectKey: string, contents: Buffer) {
+export async function storeMemory(objectKey: string, contents: Buffer, signal?: AbortSignal) {
+	signal?.throwIfAborted()
 	if (storageDriver === 'filesystem') {
 		const path = localPath(objectKey)
 		await mkdir(dirname(path), { recursive: true })
-		await writeFile(path, contents, { flag: 'wx' })
+		await writeFile(path, contents, { flag: 'wx', signal })
 		return
 	}
 
-	await uploadS3Memory(objectKey, contents, contents.byteLength)
+	await uploadS3Memory(objectKey, contents, contents.byteLength, signal)
 }
 
 export async function removeMemory(objectKey: string) {
@@ -68,12 +69,19 @@ export async function storeMemoryFile(objectKey: string, path: string, size: num
 	}
 }
 
-export async function readMemoryStream(objectKey: string) {
+export async function readMemoryStream(objectKey: string, signal?: AbortSignal) {
+	signal?.throwIfAborted()
 	if (storageDriver === 'filesystem') {
 		const file = await open(localPath(objectKey), 'r')
-		return file.createReadStream()
+		try {
+			signal?.throwIfAborted()
+			return file.createReadStream({ signal })
+		} catch (error) {
+			await file.close()
+			throw error
+		}
 	}
-	return readS3MemoryStream(objectKey)
+	return readS3MemoryStream(objectKey, signal)
 }
 
 /** Remove an abandoned session's object and unfinished S3 multipart upload. */

@@ -70,7 +70,8 @@ export class TimelapseFiles {
 		this.catalog = new TimelapseCatalog(database)
 	}
 
-	async convert(memoryId: string): Promise<boolean> {
+	async convert(memoryId: string, parent?: AbortSignal): Promise<boolean> {
+		parent?.throwIfAborted()
 		this.catalog.collect(this.options.now())
 		if (this.database.query("SELECT 1 FROM object_deletions WHERE generation != '' LIMIT 1").get()) return false
 		const source = this.database.query('SELECT metadata_json FROM memories WHERE id=?').get(memoryId) as {
@@ -80,7 +81,7 @@ export class TimelapseFiles {
 		const lease = this.catalog.begin(memoryId, this.options.now())
 		if (!lease) return false
 		const controller = new AbortController(),
-			signal = controller.signal
+			signal = parent ? AbortSignal.any([parent, controller.signal]) : controller.signal
 		const beat = heartbeat(controller, () => this.catalog.renew(lease.id, this.options.now()), this.options)
 		const attempted: Array<{ objectKey: string; size: number }> = []
 		let committed = false
