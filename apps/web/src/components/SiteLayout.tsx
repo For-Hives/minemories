@@ -40,12 +40,14 @@ function AccountControl() {
 		)
 	return (
 		<div className="mm-account">
-			<Link to="/gallery" title={session.user.name}>
-				{/* biome-ignore lint/performance/noImgElement: lazy external avatar in a static React app. */}
-				<img src={avatarUrl(session.user)} alt="" width={32} height={32} loading="lazy" />
+			<Link to="/account" title={`${session.user.name} — ${t('My account')}`} aria-label={t('My account')}>
+				<b className="mm-account-avatar" aria-hidden="true">
+					{session.user.name.slice(0, 1).toUpperCase()}
+					{/* biome-ignore lint/performance/noImgElement: optional avatar overlays the local initial fallback. */}
+					<img src={avatarUrl(session.user)} alt="" width={32} height={32} loading="lazy" />
+				</b>
 				<span>{session.user.name}</span>
 			</Link>
-			<Link to="/account">{t('My account')}</Link>
 			<button
 				type="button"
 				onClick={async () => {
