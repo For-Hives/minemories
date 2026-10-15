@@ -1,6 +1,6 @@
 # Socle de facturation Polar
 
-Le code prépare l’intégration Better Auth/Polar ; il ne constitue pas une offre commerciale activée. Par défaut, `POLAR_ENVIRONMENT` est absent ou `off` : aucun plugin, checkout ou appel fournisseur n’est ajouté. Aucun client Polar n’est créé à l’inscription Minemories.
+Le code prépare l’intégration Better Auth/Polar ; il ne constitue pas une offre commerciale activée. Décision du propriétaire le 16 octobre 2026 : garder les paiements désactivés pour le moment. Le fichier d’exemple conserve explicitement `POLAR_ENVIRONMENT=off`. Par défaut, `POLAR_ENVIRONMENT` est absent ou `off` : aucun plugin, checkout ou appel fournisseur n’est ajouté. Aucun client Polar n’est créé à l’inscription Minemories.
 
 ## Configuration explicite
 
