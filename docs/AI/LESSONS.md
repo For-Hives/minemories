@@ -37,3 +37,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Pour le viewer, le développeur attend une refonte autonome et créative du parcours entier, avec une atmosphère de souvenir agréable inspirée des shaders Minecraft. La fluidité, les ambiances et le partage font partie du rendu premium ; valider sur des captures réelles et ne pas se limiter à ajouter des réglages graphiques.
 
 - Une « vraie refonte » du viewer doit être immédiatement visible dans la composition de la page, pas seulement dans ses paramètres graphiques. Après validation technique, intégrer effectivement sur main et préciser où voir le résultat ; tester Firefox sur une vraie capture, y compris les modes avec post-traitement, avant de demander au développeur de réessayer.
+
+- Le viewer doit privilégier la position vécue par le joueur et les visites d'intérieurs : un cadrage mathématique du volume, même correctement rendu, ne suffit pas. Ne pas confondre les anciennes coordonnées de capture (parfois le centre du volume) avec une position joueur réellement enregistrée.

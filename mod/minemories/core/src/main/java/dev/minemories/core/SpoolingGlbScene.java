@@ -24,6 +24,14 @@ import java.util.Objects;
 
 /** Single-owner scene builder. Input arrays are consumed before return; geometry lives on disk. */
 public final class SpoolingGlbScene implements AutoCloseable {
+  private String playerExtras = "";
+
+  /** Local player feet, relative to the exported origin. No world coordinates are embedded. */
+  public void setPlayerPosition(double x, double y, double z) {
+    if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) return;
+    playerExtras = ",\"extras\":{\"minemoriesPlayerPosition\":[" + x + "," + y + "," + z + "]}";
+  }
+
   private static final int QUAD_BYTES = 152;
   private static final int STREAM_BUFFER_BYTES = 8192;
   private static final int COPY_BUFFER_BYTES = 64 * 1024;
@@ -583,7 +591,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (index > 0) sink.text(",");
       sink.text(Integer.toString(index));
     }
-    sink.text("]}],\"nodes\":[{\"mesh\":0}");
+    sink.text("]" + playerExtras + "}],\"nodes\":[{\"mesh\":0}");
     int index = 0;
     for (Light light : lights.values()) {
       sink.text(

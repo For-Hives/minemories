@@ -223,6 +223,7 @@ test('a deep capture opens near the surface and concentrates shadow texels on th
 		modelRoot,
 		camera,
 		shadowCenter,
+		navigation: { active: false },
 		controls: { target, update: vi.fn() },
 		clouds: { setBaseHeight },
 		updateSunShadow: vi.fn(),
