@@ -80,6 +80,10 @@ interface CaptureSink {
       return scene.materialCount();
     }
 
+    public void setPlayerPosition(double x, double y, double z) {
+      scene.setPlayerPosition(x, y, z);
+    }
+
     @Override
     public void write(Path output) throws IOException {
       scene.write(output);

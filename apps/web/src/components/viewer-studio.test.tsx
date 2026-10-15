@@ -12,6 +12,8 @@ function mount(ready = true) {
 		setWeather: vi.fn(),
 		setQuality: vi.fn(),
 		setTour: vi.fn(),
+		setFirstPerson: vi.fn(),
+		moveFirstPerson: vi.fn(),
 		setMinutes: vi.fn(),
 		resetView: vi.fn(),
 		snapshot: vi.fn(),
@@ -96,4 +98,19 @@ test('the lazy viewer opens with a full-screen loading surface rather than galle
 	expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true')
 	expect(screen.getByRole('status').textContent).toContain('Loading')
 	expect(document.querySelector('.mm-skeleton-card')).toBeNull()
+})
+
+test('first person stops contemplation, offers movement controls and returns to orbit', () => {
+	const scene = mount()
+	fireEvent.click(screen.getByRole('button', { name: 'First person' }))
+	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(true)
+	expect(screen.getByRole('button', { name: 'Take a moment' }).getAttribute('aria-pressed')).toBe('false')
+	const forward = screen.getByRole('button', { name: 'Forward' })
+	fireEvent.keyDown(forward, { key: 'Enter' })
+	expect(scene.moveFirstPerson).toHaveBeenLastCalledWith('forward', true)
+	fireEvent.keyUp(forward, { key: 'Enter' })
+	expect(scene.moveFirstPerson).toHaveBeenLastCalledWith('forward', false)
+	fireEvent.click(screen.getByRole('button', { name: 'Recenter' }))
+	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(false)
+	expect(screen.queryByRole('button', { name: 'Forward' })).toBeNull()
 })

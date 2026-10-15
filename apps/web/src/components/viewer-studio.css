@@ -675,3 +675,37 @@
 		width: 100%;
 	}
 }
+
+.cinema-navigation {
+	position: absolute;
+	left: 24px;
+	top: 92px;
+	width: min(330px, calc(100vw - 100px));
+	padding: 16px;
+	border: 1px solid #ffffff24;
+	border-radius: 16px;
+	background: #15201deb;
+	color: #eee8d7;
+	pointer-events: auto;
+}
+.cinema-navigation p {
+	font-size: 12px;
+	line-height: 1.6;
+	opacity: 0.7;
+}
+.cinema-navigation div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.cinema-page .cinema-navigation button {
+	touch-action: none;
+	padding: 8px;
+	border: 1px solid #ffffff30;
+	border-radius: 8px;
+	background: #ffffff10;
+	color: inherit;
+}
+.is-immersed .cinema-navigation {
+	display: none;
+}

@@ -25,3 +25,15 @@ export function surfaceFocus(bounds: THREE.Box3): THREE.Vector3 {
 	if (size.y > footprint * 1.5) focus.y = bounds.max.y - footprint * 0.15
 	return focus
 }
+
+/** Only explicit local coordinates are trustworthy; legacy x/y/z were volume centres. */
+export function capturePosition(root: THREE.Object3D): THREE.Vector3 | null {
+	const value: unknown = root.userData.minemoriesPlayerPosition
+	if (
+		!Array.isArray(value) ||
+		value.length !== 3 ||
+		!value.every(v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 60000000)
+	)
+		return null
+	return root.localToWorld(new THREE.Vector3(value[0], value[1], value[2]))
+}
