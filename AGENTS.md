@@ -10,7 +10,7 @@
 
 ## Commands (run from repo root)
 
-- Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.3, Node >=22.12, JDK 21.
+- Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.3, Node 24.15+ recommended (or 22.22.2+), JDK 21.
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
 - `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the distributable JAR.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
@@ -59,3 +59,5 @@ if needed, you can find more context in diferent files (look inside ./docs/AI ):
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
 - GitHub Issues are the source of truth for tasks: https://github.com/For-Hives/minemories/issues. Check existing issues before creating a separate issue for each new task; record what is implemented, remaining acceptance criteria and validation evidence. Use the existing labels (`mod`, `api`, `front`, `autonomous`, `needs-human`, etc.). Close an issue only when its full scope and required validations are complete. `docs/AI/TASKS.md` is intentionally empty after migration; do not repopulate it.
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)
+
+- Release automation: `config/mod-targets.json` owns the enabled loader matrix; `mod/minemories/gradle.properties` owns `mod_version`. Release-it synchronizes the private Bun workspace versions and Gradle after main quality gates; automatic GitHub releases are betas, not assertions of exact-JAR in-game validation. Run `bun release:test` for release orchestration changes.

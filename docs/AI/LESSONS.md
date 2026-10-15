@@ -29,3 +29,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Le déploiement web doit rester indépendant du build Minecraft/Java : distribuer le mod depuis les releases GitHub publiques et réserver Gradle à la CI du mod. Pour le web, préparer les contenus et l’i18n sans inventer d’offres commerciales, et pré-rendre les pages publiques pour les robots.
 
 - Préparer les fonctionnalités web avec des démonstrations réellement interactives et plusieurs angles marketing (code public, nostalgie, partage, classement). L’indexation doit désormais rester bloquée jusqu’au lancement ; les nouveaux tarifs explicitement donnés remplacent l’ancien besoin sans inventer un paiement déjà connecté.
+
+- Les releases GitHub du mod doivent devenir automatiques après merge sur main : versions des packages et de Gradle synchronisées, matrice par loader réellement disponible et changelog généré. Éviter une deuxième PR de release à fusionner ; conserver la distinction entre bêta CI et validation en jeu du JAR exact.

@@ -1,12 +1,12 @@
-name: Build and distribute mod
+name: Distribute a validated mod release
 
 on:
   workflow_dispatch:
     inputs:
-      publish_github:
-        description: Publish the JAR on GitHub Releases
-        type: boolean
-        default: false
+      release_tag:
+        description: Existing GitHub release containing the exact JAR validated in game
+        type: string
+        required: true
       publish_modrinth:
         description: Publish on Modrinth (project and secret required)
         type: boolean
@@ -16,74 +16,63 @@ on:
         type: boolean
         default: false
       tested_in_game:
-        description: This exact version has been validated in Minecraft
+        description: The exact JAR from this GitHub release has been validated in Minecraft
         type: boolean
         default: false
       release_type:
-        description: Release channel
+        description: Catalogue release channel
         type: choice
         options: [alpha, beta, release]
-        default: alpha
+        default: beta
 
 permissions:
   contents: read
 
 concurrency:
-  group: mod-release-${{ github.ref }}
+  group: catalogue-release-${{ inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  targets:
+    if: github.ref == 'refs/heads/main' && (inputs.publish_modrinth || inputs.publish_curseforge)
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.metadata.outputs.version }}
-      sha256: ${{ steps.metadata.outputs.sha256 }}
+      matrix: ${{ steps.targets.outputs.matrix }}
     steps:
       - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: .bun-version
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          # Java 21 compiles/tests the mod; Java 25 runs Gradle.
-          java-version: |
-            21
-            25
-          cache: gradle
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - name: Read artifact version
-        id: metadata
-        run: |
-          node --input-type=module -e '
-            import { readFileSync, appendFileSync } from "node:fs";
-            const manifest = JSON.parse(readFileSync("apps/web/public/downloads/manifest.json", "utf8"));
-            appendFileSync(process.env.GITHUB_OUTPUT, `version=${manifest.version}\n`);
-            appendFileSync(process.env.GITHUB_OUTPUT, `sha256=${manifest.sha256}\n`);
-          '
-      - uses: actions/upload-artifact@v7
-        with:
-          name: minemories-neoforge-mc1.21.1
-          path: apps/web/public/downloads/*
-          if-no-files-found: error
-          retention-days: 30
-
-  publish:
-    if: ${{ inputs.publish_github || inputs.publish_modrinth || inputs.publish_curseforge }}
-    needs: build
-    runs-on: ubuntu-latest
-    environment: mod-releases
-    permissions:
-      contents: write
-    steps:
-      - name: Check publication prerequisites
+      - name: Read the enabled catalogue targets
+        id: targets
         env:
           IN_GAME_VALIDATED: ${{ inputs.tested_in_game }}
-          RELEASE_REF: ${{ github.ref }}
+        run: |
+          node --input-type=module -e '
+            import { appendFileSync } from "node:fs";
+            import { readTargets } from "./scripts/release-utils.mjs";
+            if (process.env.IN_GAME_VALIDATED !== "true") throw new Error("Catalogue publication requires in-game validation of this exact release JAR.");
+            appendFileSync(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify({include: await readTargets()})}\n`);
+          '
+
+  publish:
+    needs: targets
+    runs-on: ubuntu-latest
+    environment: mod-releases
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.targets.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Check catalogue configuration
+        env:
           PUBLISH_MODRINTH: ${{ inputs.publish_modrinth }}
           MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
@@ -92,9 +81,6 @@ jobs:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
         run: |
           node -e '
-            if (process.env.RELEASE_REF !== "refs/heads/main" || process.env.IN_GAME_VALIDATED !== "true") {
-              throw new Error("Publish only a version validated in Minecraft, from main.");
-            }
             for (const platform of ["MODRINTH", "CURSEFORGE"]) {
               if (process.env[`PUBLISH_${platform}`] === "true" &&
                   (!process.env[`${platform}_PROJECT_ID`] || !process.env[`${platform}_TOKEN`])) {
@@ -102,67 +88,42 @@ jobs:
               }
             }
           '
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - uses: actions/download-artifact@v8
-        with:
-          name: minemories-neoforge-mc1.21.1
-          path: downloads
-      - name: Verify the downloaded JAR and metadata before publication
+      - name: Download the published JAR and verify GitHub digest, checksum and compatibility
+        id: metadata
         env:
-          BUILD_SHA256: ${{ needs.build.outputs.sha256 }}
-        run: node scripts/verify-mod-artifact.mjs downloads "$BUILD_SHA256"
-      - name: Publish on GitHub Releases
-        if: ${{ inputs.publish_github }}
-        uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-tag: mod-v${{ needs.build.outputs.version }}
-          github-commitish: ${{ github.sha }}
-          github-prerelease: ${{ inputs.release_type != 'release' }}
-          files: downloads/minemories-neoforge-mc1.21.1.jar
-          name: Minemories ${{ needs.build.outputs.version }} · Minecraft 1.21.1
-          version: ${{ needs.build.outputs.version }}
-          version-type: ${{ inputs.release_type }}
-          environment: client
-          loaders: neoforge
-          game-versions: 1.21.1
-          java: 21
-          fail-mode: fail
-      - name: Publish checksum and compatibility manifest on GitHub
-        if: ${{ inputs.publish_github }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "mod-v${{ needs.build.outputs.version }}" downloads/manifest.json downloads/minemories-neoforge-mc1.21.1.jar.sha256
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TARGET: ${{ matrix.id }}
+        run: node scripts/download-release-target.mjs
       - name: Publish on Modrinth
-        if: ${{ inputs.publish_modrinth }}
+        if: inputs.publish_modrinth
         uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
         with:
           modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          files: downloads/minemories-neoforge-mc1.21.1.jar
-          name: Minemories ${{ needs.build.outputs.version }} · Minecraft 1.21.1
-          version: ${{ needs.build.outputs.version }}
+          files: downloads/minemories-${{ matrix.id }}.jar
+          name: Minemories ${{ steps.metadata.outputs.version }} · ${{ matrix.name }} · Minecraft ${{ matrix.minecraft }}
+          version: ${{ steps.metadata.outputs.version }}
           version-type: ${{ inputs.release_type }}
+          changelog-file: downloads/CHANGELOG.md
           environment: client
-          loaders: neoforge
-          game-versions: 1.21.1
-          java: 21
+          loaders: ${{ matrix.loader }}
+          game-versions: ${{ matrix.minecraft }}
+          java: ${{ matrix.java }}
           fail-mode: fail
       - name: Publish on CurseForge
-        if: ${{ inputs.publish_curseforge }}
+        if: inputs.publish_curseforge
         uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: downloads/minemories-neoforge-mc1.21.1.jar
-          name: Minemories ${{ needs.build.outputs.version }} · Minecraft 1.21.1
-          version: ${{ needs.build.outputs.version }}
+          files: downloads/minemories-${{ matrix.id }}.jar
+          name: Minemories ${{ steps.metadata.outputs.version }} · ${{ matrix.name }} · Minecraft ${{ matrix.minecraft }}
+          version: ${{ steps.metadata.outputs.version }}
           version-type: ${{ inputs.release_type }}
+          changelog-file: downloads/CHANGELOG.md
           environment: client
-          loaders: neoforge
-          game-versions: 1.21.1
-          java: 21
+          loaders: ${{ matrix.loader }}
+          game-versions: ${{ matrix.minecraft }}
+          java: ${{ matrix.java }}
           fail-mode: fail
