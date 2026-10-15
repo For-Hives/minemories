@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.6.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.1-beta.1...mod-v0.6.0-beta.1) (2026-10-15)
+
+### Fonctionnalités
+
+* **api:** bind cold storage catalogs to an explicit provider target ([7029f7f](https://github.com/For-Hives/minemories/commit/7029f7feef418513d304fac4ef3e5dd2d8314b70))
+* **api:** coordinate cancellable cold storage copy workers ([a4ebb2c](https://github.com/For-Hives/minemories/commit/a4ebb2c89926f65f57263b343c5afbfc09c8086a))
+* **api:** coordinate durable cold storage transitions and readers ([c818b78](https://github.com/For-Hives/minemories/commit/c818b787bb9bd0c1a6a53aba360161787e814646))
+* **api:** expose authorized capture availability and restoration intent ([7999df3](https://github.com/For-Hives/minemories/commit/7999df319a5b2b24e76b205d5b4ed80aa0dca01f))
+* **api:** isolate immutable storage generations and durable cleanup ([6ad55f0](https://github.com/For-Hives/minemories/commit/6ad55f00a04993ba51550228d4f18cccadc035e2))
+* **api:** lease original capture streams across storage transitions ([b3ad52c](https://github.com/For-Hives/minemories/commit/b3ad52cccafc28454d89fd19889afb2cd2e5e7e3))
+* **api:** preview cold storage eligibility across shared captures ([4f97a8c](https://github.com/For-Hives/minemories/commit/4f97a8c239f7052cf0be19c1ea185182b6daeb49))
+* **api:** schedule cold storage transitions and guard physical deletion ([bc5b281](https://github.com/For-Hives/minemories/commit/bc5b2814e7c9f42bf49e25a58e42835bb6153cea))
+* **api:** track actual capture openings for cold storage ([f829b50](https://github.com/For-Hives/minemories/commit/f829b50e7a07647ed6e3be1f94e59d4c777842af))
+* **api:** verify conditional S3 cold copies and asynchronous restores ([9d9b608](https://github.com/For-Hives/minemories/commit/9d9b60863f3ea590702a1168a213c2702ef4f7b6))
+* **front:** restore archived captures across viewers and timelines ([19170df](https://github.com/For-Hives/minemories/commit/19170df9c47439826d1d9efc3378228a8d8a62b5))
+* **mod:** retain five foundation blocks and allow 450 MiB uploads ([d851d74](https://github.com/For-Hives/minemories/commit/d851d74c17f20ffa8a6e18887acc28d7dcb8a873))
+* **viewer:** center captured players and add first-person exploration ([dd1bba3](https://github.com/For-Hives/minemories/commit/dd1bba3b8bdff008706f8dae985664558d438441))
+* **web:** rebuild viewer as an immersive cinematic studio ([6a9f424](https://github.com/For-Hives/minemories/commit/6a9f4242345040d383c57b9717e77054eded75b2))
+
+### Corrections
+
+* **api:** await durable cleanup before closing SQLite on shutdown ([7d64e89](https://github.com/For-Hives/minemories/commit/7d64e89bc5789330d4e70cb59f8872facb42a1b6))
+* **api:** keep bound S3 uploads in STANDARD storage ([2d4b546](https://github.com/For-Hives/minemories/commit/2d4b546db425aaa216d222956c6c220bfbebd986))
+* **api:** share the upload ceiling with cold storage copies ([f6fa877](https://github.com/For-Hives/minemories/commit/f6fa87739c22cd534d53082eca68c74cb634648e))
+* **web:** keep viewer loading inside the immersive surface ([13dfd3a](https://github.com/For-Hives/minemories/commit/13dfd3a5e502e5821760e9793227dc13f4e8c1f5))
+* **web:** retain reflection settings on shared water materials ([3c4e65a](https://github.com/For-Hives/minemories/commit/3c4e65af3699fb88b3999241ae26dab176c6ad74))
+
+### Documentation
+
+* **api:** compare cold classes and verified provider costs ([eda841a](https://github.com/For-Hives/minemories/commit/eda841a8d2fc5cb10bdeeea0577db23deb393f64))
+
+### Tests
+
+* **api:** verify raised upload boundaries under parallel coverage ([28e3b62](https://github.com/For-Hives/minemories/commit/28e3b620d3cf44d9de9b08cee37b271aadb684e7))
+* **mod:** record five-block native capture validation ([35a2533](https://github.com/For-Hives/minemories/commit/35a253337c73b4981588401a45d8ca2855cee496))
+
 ## [0.5.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.0-beta.1...mod-v0.5.1-beta.1) (2026-10-15)
 
 ### Corrections
