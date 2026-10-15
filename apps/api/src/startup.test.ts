@@ -1,7 +1,10 @@
+import { Database } from 'bun:sqlite'
 import { afterAll, expect, test } from 'bun:test'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { verifyColdStorageTarget } from './cold-storage-target'
+import { migrateObjectTiers } from './object-tiers'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-startup-'))
 afterAll(() => rmSync(directory, { recursive: true, force: true }))
@@ -29,8 +32,37 @@ function start(env: Record<string, string>) {
 	})
 }
 
+test('a bound cold catalog prevents starting HTTP against another storage driver even with archiving off', async () => {
+	const env = { ...environment('wrong-cold-target'), COLD_STORAGE_PROVIDER: 'off' }
+	mkdirSync(dirname(env.DATABASE_PATH), { recursive: true })
+	const database = new Database(env.DATABASE_PATH)
+	try {
+		migrateObjectTiers(database)
+		verifyColdStorageTarget(database, {
+			COLD_STORAGE_PROVIDER: 'aws',
+			COLD_STORAGE_CLASS: 'GLACIER',
+			S3_ENDPOINT: 'https://cold-target-do-not-use.invalid',
+			S3_BUCKET: 'private',
+			S3_REGION: 'eu-west-3',
+		})
+	} finally {
+		database.close()
+	}
+	const child = start(env)
+	const [code, stdout, stderr] = await Promise.all([
+		child.exited,
+		new Response(child.stdout).text(),
+		new Response(child.stderr).text(),
+	])
+	expect(code).not.toBe(0)
+	expect(stdout).not.toContain('API ready')
+	expect(stderr).toContain('Cold storage target changed')
+	expect(stderr).not.toContain(env.BETTER_AUTH_SECRET)
+})
+
 test('invalid production configuration exits before creating the database or exposing secrets', async () => {
 	const cases: Array<{ field: string; overrides: Record<string, string> }> = [
+		{ field: 'COLD_STORAGE_PROVIDER', overrides: { COLD_STORAGE_PROVIDER: 'invalid-private-fixture-provider' } },
 		{ field: 'Diagnostics', overrides: { DIAGNOSTICS_PER_HOUR: 'invalid-private-fixture-limit' } },
 		{ field: 'ACCOUNT_STORAGE_BYTES', overrides: { ACCOUNT_STORAGE_BYTES: 'invalid-private-fixture-quota' } },
 		{ field: 'PAIRING_PEPPER', overrides: { PAIRING_PEPPER: 'short-private-fixture-value' } },
