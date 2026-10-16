@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.10.0-beta.1...mod-v0.11.0-beta.1) (2026-10-16)
+
+### Fonctionnalités
+
+* **web:** redesign sign-in around focused and guest journeys ([4dc3076](https://github.com/For-Hives/minemories/commit/4dc3076d1661091cdbbf457e6ae548f2f78d80a6))
+
+### Corrections
+
+* **front:** cover gallery lifecycle and ignore obsolete responses ([dcf75ee](https://github.com/For-Hives/minemories/commit/dcf75ee993303e6c760411a2f9b6e68b60c57db0))
+* **web:** reserve local GLB loading for development ([516fdf2](https://github.com/For-Hives/minemories/commit/516fdf26cade4f57c4714d3316c13e70183b49e8))
+
+### Refactorisation
+
+* **front:** isolate gallery state and cancellable pairing polling ([05a2cc7](https://github.com/For-Hives/minemories/commit/05a2cc74d10a54937b20d975981e7a6f3320acce))
+
 ## [0.10.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.9.0-beta.1...mod-v0.10.0-beta.1) (2026-10-16)
 
 ### Fonctionnalités
