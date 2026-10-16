@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.9.0-beta.1...mod-v0.10.0-beta.1) (2026-10-16)
+
+### Fonctionnalités
+
+* **api:** prepare opt-in Polar billing with verified webhook ledger ([f4d3278](https://github.com/For-Hives/minemories/commit/f4d327822a78737d14fde4385c45a707dcfa0823))
+
+### Documentation
+
+* **billing:** retain explicit payment-off configuration per owner decision ([b01644d](https://github.com/For-Hives/minemories/commit/b01644d5a49c00804e0d467dc1af5f35a6906b50))
+
 ## [0.9.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.8.0-beta.1...mod-v0.9.0-beta.1) (2026-10-15)
 
 ### Fonctionnalités
