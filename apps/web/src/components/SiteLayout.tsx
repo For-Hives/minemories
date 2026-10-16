@@ -192,9 +192,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<p className="mm-fineprint">{t('Not affiliated with Mojang or Microsoft.')}</p>
 				</div>
 				<nav aria-label={t('Guides')}>
-					<Link to="/concept">Le concept</Link>
-					<Link to="/fonctionnement">Comment ça marche</Link>
-					<Link to="/installation">Installer le mod</Link>
+					<Link to="/concept">{t('The concept')}</Link>
+					<Link to="/fonctionnement">{t('How it works')}</Link>
+					<Link to="/installation">{t('Install the mod')}</Link>
 					<Link to="/versions">{t('Mod versions')}</Link>
 					<Link to="/changelog">{t('What’s new')}</Link>
 					<Link to="/faq">FAQ</Link>
@@ -227,7 +227,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			</footer>
 			{notice && (
 				<div className="mm-toast" role="status">
-					{notice}
+					{t(notice)}
 				</div>
 			)}
 		</div>

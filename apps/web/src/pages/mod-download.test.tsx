@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
+import { I18nProvider } from '../i18n/I18n'
 import { ModDownload, selectLatestRelease } from './ModDownload'
+
+function render(ui: Parameters<typeof renderUi>[0]) {
+	return renderUi(ui, { wrapper: I18nProvider })
+}
 
 const filename = 'minemories-neoforge-mc1.21.1.jar'
 function release(version = '0.1.0', published = '2026-10-10T12:00:00Z') {

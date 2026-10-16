@@ -216,3 +216,8 @@ it('refuses oversized textures and repeated texture allocation before the loader
 	await expect(parseEmbeddedGlb(fixture(document, image), parse)).rejects.toBeInstanceOf(UnsupportedGlbError)
 	expect(calls).toBe(1)
 })
+
+it('file size display follows the selected locale while keeping binary unit names', () => {
+	expect(formatFileSize(1536, 'fr')).toBe('1,5 KiB')
+	expect(formatFileSize(1536, 'en')).toBe('1.5 KiB')
+})

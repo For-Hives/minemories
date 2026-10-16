@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
+import { useI18n } from '../i18n/I18n'
 export type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
 export function useGalleryPairing(notify: (message: string) => void, onError: (message: string) => void) {
+	const { locale } = useI18n()
 	const [pairCode, setPairCode] = useState(''),
 		[pairStatus, setPairStatus] = useState<PairingStatus>('idle'),
-		[pairExpires, setPairExpires] = useState(''),
+		[pairExpiresAt, setPairExpiresAt] = useState<string | null>(null),
 		[pairBusy, setPairBusy] = useState(false)
 	const revision = useRef(0),
 		creation = useRef<AbortController | null>(null)
@@ -43,7 +45,7 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 			const pairing = await apiClient.pairing.create(undefined, { signal: controller.signal })
 			if (version !== revision.current) return
 			setPairCode(pairing.code)
-			setPairExpires(new Date(pairing.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+			setPairExpiresAt(pairing.expiresAt)
 			setPairStatus('pending')
 		} catch (error) {
 			if (version !== revision.current) return
@@ -62,6 +64,9 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 			if (version === revision.current) notify('Could not copy this code.')
 		}
 	}
+	const pairExpires = pairExpiresAt
+		? new Date(pairExpiresAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+		: ''
 	return { pairCode, pairStatus, pairExpires, pairBusy, createPairing, copyCode }
 }
 

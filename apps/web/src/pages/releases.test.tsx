@@ -66,7 +66,7 @@ test('lists real compatible releases by date with downloads, beta status, date, 
 	expect(screen.getByRole('link', { name: 'Télécharger le JAR 0.2.1-beta.1' }).getAttribute('href')).toBe(
 		release().assets[0]?.browser_download_url
 	)
-	expect(screen.getAllByText('0,29 Mo')).toHaveLength(2)
+	expect(screen.getAllByText('0,29 MiB')).toHaveLength(2)
 	expect(screen.getAllByText('a'.repeat(64))).toHaveLength(2)
 	expect(screen.getAllByRole('link', { name: 'Télécharger l’empreinte' })).toHaveLength(2)
 	expect(screen.queryByRole('button', { name: 'Charger les versions précédentes' })).toBeNull()

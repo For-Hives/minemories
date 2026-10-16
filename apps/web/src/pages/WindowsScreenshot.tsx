@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { T, useI18n } from '../i18n/I18n'
 
 const screenshots = {
 	minecraftVersion: {
@@ -63,18 +64,24 @@ const images = import.meta.glob<string>('../assets/tutorial/windows/*.{png,jpg,w
 })
 
 export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: string | undefined }) {
+	const { t } = useI18n()
 	const [failed, setFailed] = useState(false)
 	const screenshot = screenshots[id]
 	return (
 		<figure className="install-screenshot" data-screenshot={screenshot.file}>
 			{src && !failed ? (
-				<a href={src} target="_blank" rel="noreferrer" aria-label={`Agrandir : ${screenshot.title}`}>
+				<a
+					href={src}
+					target="_blank"
+					rel="noreferrer"
+					aria-label={t('Enlarge: {title}', { title: t(screenshot.title) })}
+				>
 					{/* biome-ignore lint/performance/noImgElement: static Vite tutorial asset; lazy loading avoids downloading off-screen screenshots. */}
 					<img
 						src={src}
 						width={1600}
 						height={900}
-						alt={screenshot.caption}
+						alt={t(screenshot.caption)}
 						loading="lazy"
 						onError={() => setFailed(true)}
 					/>
@@ -86,14 +93,22 @@ export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: st
 						<circle cx="31" cy="10" r="3" stroke="currentColor" />
 						<path d="m5 29 11-13 10 11 5-6 8 8" stroke="currentColor" />
 					</svg>
-					<strong>{screenshot.title}</strong>
-					<span>Capture d’écran à venir</span>
+					<strong>{t(screenshot.title)}</strong>
+					<span>
+						<T message={'Capture d’écran à venir'} />
+					</span>
 				</div>
 			)}
 			<figcaption>
-				<span>Repère visuel · Windows</span>
-				{screenshot.caption}
-				{src && !failed && <small>Clique sur l’image pour l’agrandir.</small>}
+				<span>
+					<T message={'Repère visuel · Windows'} />
+				</span>
+				{t(screenshot.caption)}
+				{src && !failed && (
+					<small>
+						<T message={'Clique sur l’image pour l’agrandir.'} />
+					</small>
+				)}
 			</figcaption>
 		</figure>
 	)

@@ -118,7 +118,7 @@ test('role changes require confirmation, show safe errors and refresh after succ
 	})
 	fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement' }))
 	await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-	expect(mocks.summary).toHaveBeenCalledTimes(2)
+	await waitFor(() => expect(mocks.summary).toHaveBeenCalledTimes(2))
 })
 test('network failures can be retried and revoked permissions hide private data', async () => {
 	mocks.summary.mockRejectedValueOnce(new Error('network'))

@@ -1,11 +1,13 @@
 import { discoveryPages } from './content/discovery.ts'
 import { articles } from './content/site-content.ts'
+import type { Locale } from './i18n/I18n.tsx'
+import { englishMetadata } from './i18n/metadata-en.ts'
 export interface PageMetadata {
 	path: string
 	title: string
 	description: string
 	indexable: boolean
-	language: 'fr'
+	language: Locale
 	articleDate?: string
 }
 export const publicMetadata: PageMetadata[] = [
@@ -65,7 +67,7 @@ export const publicMetadata: PageMetadata[] = [
 		path: '/versions',
 		title: 'Versions du mod — Minemories',
 		description:
-			'Télécharge les JAR Minemories pour Minecraft Java 1.21.1 avec NeoForge et retrouve les versions précédentes.',
+			'Télécharge les JAR Minemories pour Minecraft Java 1.21.1 avec NeoForge, Fabric ou Forge et retrouve les versions précédentes.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -95,7 +97,7 @@ export const publicMetadata: PageMetadata[] = [
 	{
 		path: '/pricing',
 		title: 'Snapshots et cloud longue durée — Minemories',
-		description: 'Tarifs en préparation : 2 € par snapshot et 6 à 3 €/an de cloud. Simule ta collection sans paiement.',
+		description: 'Estime le stockage de tes captures. Paiements désactivés ; offre commerciale à confirmer.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -130,17 +132,24 @@ export const publicMetadata: PageMetadata[] = [
 	})),
 ]
 const trailingSlash = /\/$/
-export function metadataFor(pathname: string): PageMetadata {
+export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetadata {
 	const path = pathname.replace(trailingSlash, '') || '/'
-	return (
-		publicMetadata.find(page => page.path === path) ?? {
-			path,
-			title: 'Minemories — Espace personnel',
-			description: 'Ton espace Minemories.',
-			indexable: false,
-			language: 'fr',
-		}
-	)
+	const page: PageMetadata = publicMetadata.find(page => page.path === path) ?? {
+		path,
+		title: 'Minemories — Espace personnel',
+		description: 'Ton espace Minemories.',
+		indexable: false,
+		language: 'fr',
+	}
+	if (locale === 'fr') return page
+	if (!page.indexable)
+		return { ...page, title: 'Minemories — Your space', description: 'Your Minemories space.', language: 'en' }
+	const discovery = discoveryPages.find(item => item.path === path)
+	const article = articles.find(item => `/blog/${item.slug}` === path)
+	let translated = englishMetadata[path]
+	if (discovery) translated = { title: `${discovery.label.en} — Minemories`, description: discovery.lead.en }
+	if (article) translated = { title: `${article.title.en} — Minemories`, description: article.summary.en }
+	return translated ? { ...page, ...translated, language: 'en' } : page
 }
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.xenos.lightin.io'
 
@@ -150,6 +159,7 @@ export function structuredDataFor(page: PageMetadata) {
 		return {
 			'@context': 'https://schema.org',
 			'@type': 'Article',
+			inLanguage: page.language,
 			headline: page.title,
 			description: page.description,
 			datePublished: page.articleDate,
@@ -158,6 +168,7 @@ export function structuredDataFor(page: PageMetadata) {
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'WebPage',
+		inLanguage: page.language,
 		name: page.title,
 		description: page.description,
 		url: canonical,
