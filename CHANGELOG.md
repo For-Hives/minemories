@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.13.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.12.0-beta.1...mod-v0.13.0-beta.1) (2026-10-16)
+
+### Fonctionnalités
+
+* **front:** complete French and English guides and display formats ([980c59f](https://github.com/For-Hives/minemories/commit/980c59f80f465cbba450df36166b01b07ace257a))
+
+### Corrections
+
+* **deps:** resolve Minecraft runtime dependencies from their official sources ([c8c9044](https://github.com/For-Hives/minemories/commit/c8c9044a27b8e949c5dbb88043cef59739e7eda8))
+
+### Maintenance
+
+* **deps:** update plugin dev.architectury.loom-remap to v1.17.493 ([3465e50](https://github.com/For-Hives/minemories/commit/3465e50201800ab1969c92f62d0b9b8bcaf99eec))
+
 ## [0.12.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.11.0-beta.1...mod-v0.12.0-beta.1) (2026-10-16)
 
 ### Fonctionnalités
