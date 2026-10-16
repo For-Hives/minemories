@@ -68,7 +68,11 @@ export function ArticlePage() {
 	if (!article) return <NotFoundPage />
 	return (
 		<ContentLayout eyebrow="JOURNAL" title={article.title[locale]} lead={article.summary[locale]}>
-			<time dateTime={article.published}>{article.published}</time>
+			<time dateTime={article.published}>
+				{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+					new Date(`${article.published}T12:00:00Z`)
+				)}
+			</time>
 			<div className="mm-prose">
 				{article.sections.map(section => (
 					<section key={section.heading.en}>

@@ -5,7 +5,7 @@ import { authClient } from './auth-client'
 import { LoadingSkeleton } from './components/Loading'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
-import { I18nProvider } from './i18n/I18n'
+import { I18nProvider, T } from './i18n/I18n'
 import { reportWebFailure, WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
@@ -52,10 +52,14 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
 		if (this.state.failed)
 			return (
 				<div className="mm-content" role="alert">
-					<h1>Chargement interrompu</h1>
-					<p>La page n’a pas pu être chargée. Recharge-la pour réessayer.</p>
+					<h1>
+						<T message="Page loading interrupted" />
+					</h1>
+					<p>
+						<T message="The page could not be loaded. Reload it to try again." />
+					</p>
 					<button className="mm-button" type="button" onClick={() => window.location.reload()}>
-						Recharger la page
+						<T message="Reload the page" />
 					</button>
 				</div>
 			)

@@ -1,9 +1,14 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { I18nProvider } from '../i18n/I18n'
 import { InstallationPage } from './InstallationPage'
 import { ScreenshotFrame } from './WindowsScreenshot'
+
+function render(ui: Parameters<typeof renderUi>[0]) {
+	return renderUi(ui, { wrapper: I18nProvider })
+}
 
 beforeEach(() => {
 	localStorage.clear()

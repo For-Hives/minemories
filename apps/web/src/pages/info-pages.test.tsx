@@ -1,9 +1,14 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { I18nProvider } from '../i18n/I18n'
 import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
+
+function render(ui: Parameters<typeof renderUi>[0]) {
+	return renderUi(ui, { wrapper: I18nProvider })
+}
 
 beforeEach(() => vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false })))
 afterEach(() => {

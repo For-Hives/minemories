@@ -240,11 +240,11 @@ test('trash displays the server recovery deadline for a migrated capture', async
 	])
 	try {
 		mount(<GalleryPage />)
-		expect(await screen.findByText(/gone in 59d/)).toBeTruthy()
+		expect(await screen.findByText(/Gone in 59 days/)).toBeTruthy()
 		mocks.listTrash.mockResolvedValue([])
 		fireEvent.click(screen.getByRole('button', { name: /Restore/ }))
 		await waitFor(() => expect(mocks.restore).toHaveBeenCalledWith({ id: 'protected-capture' }))
-		await waitFor(() => expect(screen.queryByText(/gone in 59d/)).toBeNull())
+		await waitFor(() => expect(screen.queryByText(/Gone in 59 days/)).toBeNull())
 	} finally {
 		vi.restoreAllMocks()
 	}
@@ -342,7 +342,7 @@ test('gallery memory takes precedence over a previous local file and shows downl
 			<ViewerPage />
 		</MemoryRouter>
 	)
-	expect(screen.getByText('Téléchargement du souvenir…')).toBeTruthy()
+	expect(screen.getByText('Downloading the memory…')).toBeTruthy()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	await act(async () => {
 		finish?.(new Response(new Blob(['glTF'])))
@@ -383,7 +383,11 @@ test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error
 				<ViewerPage />
 			</MemoryRouter>
 		)
-		expect(await screen.findByText(message)).toBeTruthy()
+		expect(
+			await screen.findByText(
+				'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
+			)
+		).toBeTruthy()
 		expect(screen.getByRole('alert').querySelector('.cinema-loading-line')).toBeNull()
 		expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	} finally {
@@ -402,12 +406,12 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 			})
 	)
 	mount(<ViewerPage />)
-	expect(screen.getByRole('status').textContent).toContain('Chargement du modèle')
+	expect(screen.getByRole('status').textContent).toContain('Loading the model')
 	expect(screen.getByRole('status').querySelector('.cinema-loading-line')).toBeTruthy()
 	await act(async () => {
 		mocks.viewerEvents?.onLoading('Préparation de l’affichage 3D…')
 	})
-	expect(screen.getByRole('status').textContent).toContain('Préparation')
+	expect(screen.getByRole('status').textContent).toContain('Preparing the 3D display')
 	await act(async () => {
 		mocks.viewerEvents?.onEmptyChange(false)
 		mocks.viewerEvents?.onLoading(null)

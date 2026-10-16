@@ -7,6 +7,7 @@ import { CaptureRestorationPanel, useCaptureRestoration } from '../components/Ca
 import { fileInputHidden } from '../components/ui'
 import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
+import { errorMessageKey } from '../i18n/error-messages'
 import { T, useI18n } from '../i18n/I18n'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { downloadCapture } from '../lib/capture-file'
@@ -24,7 +25,7 @@ export function ViewerPage() {
 
 function SingleViewerPage() {
 	const { copy } = useLocalizedCopy()
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const { viewerFile, setViewerFile } = useAppContext()
 	const [search] = useSearchParams()
@@ -32,7 +33,7 @@ function SingleViewerPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
 	const [minutes, setMinutes] = useState(570)
-	const [fileInfo, setFileInfo] = useState('')
+	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
 	const [empty, setEmpty] = useState(true)
 	const [loading, setLoading] = useState<string | null>(null)
 	const [loadError, setLoadError] = useState('')
@@ -50,7 +51,7 @@ function SingleViewerPage() {
 				onCycle: cycle => {
 					setMinutes(cycle.minutes)
 				},
-				onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
+				onFileInfo: (name, size) => setFileInfo({ name, size }),
 				onEmptyChange: setEmpty,
 				onLoading: setLoading,
 			})
@@ -74,7 +75,7 @@ function SingleViewerPage() {
 			await scene.loadFile(file)
 			return true
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'Could not read this GLB')
+			setLoadError(errorMessageKey(error, 'Could not read this GLB'))
 			return false
 		}
 	}, [])
@@ -229,7 +230,7 @@ function SingleViewerPage() {
 					ready={!(loading || restoration.view)}
 					memoryId={memoryId}
 					minutes={minutes}
-					fileInfo={fileInfo}
+					fileInfo={fileInfo ? `${fileInfo.name} · ${formatFileSize(fileInfo.size, locale)}` : ''}
 				/>
 			)}
 		</section>
@@ -261,7 +262,7 @@ export function ticksToMinutes(ticks: number): number {
 }
 
 function loadErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : 'Could not load this memory.'
+	return errorMessageKey(error, 'Could not load this memory.')
 }
 
 function fetchMemoryFile(memoryId: string, signal: AbortSignal): Promise<File> {

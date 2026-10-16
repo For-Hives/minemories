@@ -282,3 +282,77 @@ Object.assign(frenchMessages, {
 	'Check again': 'Vérifier à nouveau',
 	'This memory is unavailable or access was revoked.': 'Ce souvenir est indisponible ou son accès a été révoqué.',
 })
+
+Object.assign(frenchMessages, {
+	'Your turn, {name}': 'À toi de jouer, {name}',
+	'Your first memory, {name}.': 'Ton premier souvenir, {name}.',
+	Enlarge: 'Agrandir',
+	'Last visit {date}': 'Dernière visite {date}',
+	'Seed {seed}': 'Graine {seed}',
+	'Same area · {count} captures': 'Même zone · {count} captures',
+	'Gone in {days} days': 'Suppression dans {days} jours',
+	'Rename {name}': 'Renommer {name}',
+	'Move {name} to trash': 'Mettre {name} à la corbeille',
+	'Page loading interrupted': 'Chargement interrompu',
+	'The page could not be loaded. Reload it to try again.':
+		'La page n’a pas pu être chargée. Recharge-la pour réessayer.',
+	'Reload the page': 'Recharger la page',
+})
+
+Object.assign(frenchMessages, {
+	'The concept': 'Le concept',
+	'How it works': 'Comment ça marche',
+	'Install the mod': 'Installer le mod',
+})
+
+Object.assign(frenchMessages, {
+	'Sign in again to continue.': 'Reconnecte-toi pour continuer.',
+	'You do not have permission for this action.': 'Tu n’as pas les droits pour cette action.',
+	'This item is unavailable or was removed.': 'Cet élément est indisponible ou a été supprimé.',
+	'Too many attempts. Wait a moment and try again.': 'Trop de tentatives. Attends un instant et réessaie.',
+	'Check the entered information and try again.': 'Vérifie les informations saisies et réessaie.',
+	'This item changed. Refresh the page and try again.': 'Cet élément a changé. Actualise la page et réessaie.',
+	'The service is temporarily unavailable. Try again.': 'Le service est temporairement indisponible. Réessaie.',
+	'Invalid email or password.': 'Adresse e-mail ou mot de passe incorrect.',
+	'Invalid email or password': 'Adresse e-mail ou mot de passe incorrect.',
+	'Email already used': 'Cette adresse e-mail est déjà utilisée.',
+	'Verify your email address before signing in.': 'Vérifie ton adresse e-mail avant de te connecter.',
+	'The password does not meet the requirements.': 'Le mot de passe ne respecte pas les exigences.',
+	'Choose a .glb file': 'Choisis un fichier .glb',
+	'A model is already loading': 'Un modèle est déjà en cours de chargement',
+	'Could not read this GLB': 'Impossible de lire ce GLB',
+	'Invalid GLB': 'GLB invalide',
+	'Storage unavailable': 'Stockage indisponible',
+	'This link is invalid or was revoked.': 'Ce lien est invalide ou a été révoqué.',
+	'WebGL is unavailable. Try another browser or enable hardware acceleration.':
+		'WebGL est indisponible. Essaie un autre navigateur ou active l’accélération matérielle.',
+	'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.':
+		'GLB invalide ou trop complexe : réexporte une zone plus petite avec ses textures et sa géométrie intégrées.',
+	'The gallery is unavailable.': 'La galerie est indisponible.',
+	'Could not trash this snapshot.': 'Impossible de mettre cette capture à la corbeille.',
+	'Could not restore this snapshot.': 'Impossible de restaurer cette capture.',
+	'Could not delete this snapshot.': 'Impossible de supprimer cette capture.',
+	'Could not load this memory.': 'Impossible de charger ce souvenir.',
+	'Could not load this world.': 'Impossible de charger ce monde.',
+	'Snapshot moved to trash. It disappears forever after 30 days.':
+		'Capture mise à la corbeille. Elle sera supprimée définitivement après 30 jours.',
+	'Snapshot deleted forever.': 'Capture supprimée définitivement.',
+	'Snapshot renamed.': 'Capture renommée.',
+})
+
+Object.assign(frenchMessages, {
+	'Enlarge: {title}': 'Agrandir : {title}',
+	'Could not save this name.': 'Impossible d’enregistrer ce nom.',
+})
+
+Object.assign(frenchMessages, {
+	'This link is incomplete.': 'Ce lien est incomplet.',
+	'The mod is linked to your account. Send a capture from Minecraft.':
+		'Le mod est relié à ton compte. Envoie une capture depuis Minecraft.',
+	'Code copied to the clipboard.': 'Code copié dans le presse-papiers.',
+	'Could not copy this code.': 'Impossible de copier ce code.',
+	'Could not create this link.': 'Impossible de créer ce lien.',
+	'Could not stop sharing.': 'Impossible d’arrêter le partage.',
+	'Link copied to the clipboard.': 'Lien copié dans le presse-papiers.',
+	'Could not copy this link.': 'Impossible de copier ce lien.',
+})

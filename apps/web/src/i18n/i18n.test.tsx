@@ -56,3 +56,8 @@ test('the selector works when local storage is unavailable', () => {
 	fireEvent.click(screen.getByRole('button', { name: 'Switch' }))
 	expect(screen.getByText('Sign in')).toBeTruthy()
 })
+
+test('catalog fallback rejects inherited object keys', () => {
+	for (const locale of ['fr', 'en'] as const)
+		for (const key of ['constructor', '__proto__', 'toString']) expect(translate(locale, key)).toBe(key)
+})

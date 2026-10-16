@@ -4,6 +4,7 @@ import { apiBase, apiClient } from '../api-client'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
+import { errorMessageKey } from '../i18n/error-messages'
 import { T, useI18n } from '../i18n/I18n'
 import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
@@ -65,7 +66,7 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 }
 
 export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const { token, id } = useParams()
 	const [params] = useSearchParams()
@@ -75,7 +76,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const sceneRef = useRef<ViewerScene | null>(null)
 	const [minutes, setMinutes] = useState(570)
 	const [title, setTitle] = useState('A shared world.')
-	const [fileInfo, setFileInfo] = useState('')
+	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
 	const [empty, setEmpty] = useState(true)
 	const [status, setStatus] = useState<string | null>('Loading the shared world…')
 	const [error, setError] = useState('')
@@ -91,7 +92,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				onCycle: cycle => {
 					setMinutes(cycle.minutes)
 				},
-				onFileInfo: (name, size) => setFileInfo(`${name} · ${formatFileSize(size)}`),
+				onFileInfo: (name, size) => setFileInfo({ name, size }),
 				onEmptyChange: setEmpty,
 				onLoading: setStatus,
 			})
@@ -118,7 +119,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 		const controller = new AbortController()
 		function reportError(cause: unknown) {
 			if (cancelled) return
-			setError(cause instanceof Error ? cause.message : 'Could not load this world.')
+			setError(errorMessageKey(cause, 'Could not load this world.'))
 			setStatus(null)
 		}
 		async function loadShared() {
@@ -170,7 +171,12 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				{!restoration.view && <ViewerLoadState loading={status} error={error} />}
 			</div>
 			{!empty && (
-				<ViewerStudio sceneRef={sceneRef} ready={!(status || restoration.view)} minutes={minutes} fileInfo={fileInfo} />
+				<ViewerStudio
+					sceneRef={sceneRef}
+					ready={!(status || restoration.view)}
+					minutes={minutes}
+					fileInfo={fileInfo ? `${fileInfo.name} · ${formatFileSize(fileInfo.size, locale)}` : ''}
+				/>
 			)}
 		</section>
 	)

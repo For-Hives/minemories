@@ -58,7 +58,7 @@ export function ReleaseCard({
 					<span aria-hidden="true">↓</span>
 				</a>
 				<span className="mm-release-muted">
-					{(release.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} {copy('Mo', 'MB')}
+					{(release.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} MiB
 				</span>
 				{!changelog && <Link to={`/changelog#${id}`}>{copy('Voir les nouveautés →', 'What’s new →')}</Link>}
 			</div>

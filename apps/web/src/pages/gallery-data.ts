@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
+import { errorMessageKey } from '../i18n/error-messages'
 export type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 export type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
 export type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
@@ -50,8 +51,7 @@ function useGalleryLists() {
 			const result = await apiClient.memories.list()
 			if (version === memoriesVersion.current) setMemories(result)
 		} catch (error) {
-			if (version === memoriesVersion.current)
-				setLoadError(error instanceof Error ? error.message : 'The gallery is unavailable.')
+			if (version === memoriesVersion.current) setLoadError(errorMessageKey(error, 'The gallery is unavailable.'))
 		} finally {
 			if (version === memoriesVersion.current) setLoading(false)
 		}
@@ -94,7 +94,7 @@ function useTrashActions(
 			notify('Snapshot moved to trash. It disappears forever after 30 days.')
 			await refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not trash this snapshot.')
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not trash this snapshot.'))
 		}
 	}
 
@@ -104,7 +104,7 @@ function useTrashActions(
 			if (!active.current) return
 			await refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not restore this snapshot.')
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not restore this snapshot.'))
 		}
 	}
 
@@ -116,7 +116,7 @@ function useTrashActions(
 			notify('Snapshot deleted forever.')
 			await refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not delete this snapshot.')
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not delete this snapshot.'))
 		}
 	}
 

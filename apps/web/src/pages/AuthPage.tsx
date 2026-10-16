@@ -6,6 +6,7 @@ import { LoadingSkeleton } from '../components/Loading'
 import { MemoryScene } from '../components/MemoryScene'
 import { PasswordField } from '../components/PasswordField'
 import { fileInputHidden } from '../components/ui'
+import { errorMessageKey } from '../i18n/error-messages'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 
 const inputField = 'auth-input'
@@ -58,11 +59,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 		try {
 			const result = await authenticate(form, creating)
 			if (!active.current) return
-			if (result.error) throw new Error(result.error.message)
+			if (result.error) throw result.error
 			await refreshSession()
 			if (active.current) navigate(from, { replace: true })
 		} catch (cause) {
-			setError(cause instanceof Error ? cause.message : 'Could not connect right now.')
+			setError(errorMessageKey(cause, 'Could not connect right now.'))
 		} finally {
 			setBusy(false)
 		}
@@ -133,7 +134,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						<PasswordField key={mode} creating={creating} className={inputField} />
 						{error && (
 							<p ref={errorRef} tabIndex={-1} className="auth-error" role="alert">
-								{error}
+								{t(error)}
 							</p>
 						)}
 						<button className="auth-submit" type="submit" disabled={busy}>
