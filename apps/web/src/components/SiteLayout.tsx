@@ -116,6 +116,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 	useEffect(() => {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
+	if (pathname === '/login' || pathname === '/register') return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
 	const cinema =
 		(pathname === '/viewer' && !search.includes('timelapse=1')) ||
 		pathname.startsWith('/share/') ||
@@ -227,6 +228,37 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					{notice}
 				</div>
 			)}
+		</div>
+	)
+}
+
+function AuthLayout({ children }: { children: ReactNode }) {
+	const { t, locale } = useI18n()
+	return (
+		<div className="mm-site auth-shell">
+			<a className="mm-skip" href="#main-content">
+				{t('Skip to content')}
+			</a>
+			<header className="auth-topbar">
+				<Brand />
+				<div>
+					<Link to="/faq">{locale === 'fr' ? 'Besoin d’aide ?' : 'Need help?'}</Link>
+					<LanguageControl />
+				</div>
+			</header>
+			<main id="main-content" tabIndex={-1}>
+				{children}
+			</main>
+			<footer className="auth-footer">
+				<span>© Minemories</span>
+				<nav aria-label={t('Legal')}>
+					{legalLinks.map(link => (
+						<Link key={link.to} to={link.to}>
+							{t(link.label)}
+						</Link>
+					))}
+				</nav>
+			</footer>
 		</div>
 	)
 }
