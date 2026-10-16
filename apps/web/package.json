@@ -16,6 +16,7 @@
 		"@minemories/api-contract": "workspace:*",
 		"@orpc/client": "^1.14.0",
 		"@orpc/contract": "^1.14.0",
+		"@sentry/browser": "^11.8.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"better-auth": "^1.6.0",
 		"react": "^19.3.0",
