@@ -42,4 +42,6 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 
 - Pour la continuité du viewer, l’utilisateur donne carte blanche sur la direction artistique du reste du site et demande une proposition. La rendre concrète et navigable sur les vraies pages, avec une identité cohérente, afin qu’il puisse juger le layout, la typographie et les interactions ensemble.
 
-- Après « fait mieux » sur une amélioration UX, ne pas empiler des micro-ajustements : revoir la hiérarchie et les actions du parcours. Pour la connexion, le formulaire doit être immédiatement utile sur mobile et l'accès sans compte doit être une vraie action, pas une note discrète.
+- Après « fait mieux » sur une amélioration UX, ne pas empiler des micro-ajustements : revoir la hiérarchie et les actions du parcours. Pour la connexion, le formulaire doit être immédiatement utile sur mobile et l'accès sans compte doit proposer la galerie publique, pas une note discrète.
+
+- Le chargement d'un GLB local dans le viewer web sert uniquement aux tests de développement. Le retirer du build de production et des parcours publics ; garder les captures du mod, la galerie et les liens partagés comme parcours produit.

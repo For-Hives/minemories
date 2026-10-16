@@ -34,8 +34,8 @@ export const articles: Article[] = [
 			{
 				heading: { fr: 'Garder le fichier, choisir le partage', en: 'Keep the file, choose whether to share' },
 				body: {
-					fr: 'Le fichier capture.glb se trouve par défaut dans le dossier export de ton dossier utilisateur. Son ouverture locale ne demande aucun compte. Pour l’envoyer dans ta galerie privée, relie le mod à ton compte. Les captures AFK sont actives par défaut et sont envoyées automatiquement après appairage ; tu peux les désactiver dans le menu M.',
-					en: 'By default, capture.glb is in the export folder of your user directory. Opening it locally needs no account. Pair the mod with your account to send captures to your private gallery. AFK captures are enabled by default and upload automatically after pairing; you can disable them in the M menu.',
+					fr: 'Le fichier capture.glb se trouve par défaut dans le dossier export de ton dossier utilisateur. Pour l’envoyer dans ta galerie privée, relie le mod à ton compte. Les captures AFK sont actives par défaut et sont envoyées automatiquement après appairage ; tu peux les désactiver dans le menu M.',
+					en: 'By default, capture.glb is in the export folder of your user directory. Pair the mod with your account to send captures to your private gallery. AFK captures are enabled by default and upload automatically after pairing; you can disable them in the M menu.',
 				},
 			},
 		],
@@ -46,10 +46,10 @@ export const legalContent = {
 		title: { fr: 'Tes souvenirs, tes choix', en: 'Your memories, your choices' },
 		sections: [
 			{
-				heading: { fr: 'Ouverture locale', en: 'Local viewing' },
+				heading: { fr: 'Préférences sur cet appareil', en: 'Preferences on this device' },
 				body: {
-					fr: 'Ouvrir un GLB depuis ton ordinateur ne l’ajoute pas à la galerie en ligne. Le tutoriel mémorise tes choix et ton prénom facultatif dans ton navigateur ; tu peux les effacer. Le choix de langue, les favoris/votes de démonstration et les estimations de prix gardées volontairement sont également enregistrés sur cet appareil. Réinitialiser la démo efface ses favoris et votes ; tu peux effacer les autres préférences dans les données du site de ton navigateur.',
-					en: 'Opening a GLB from your computer does not add it to your online gallery. The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference, demo favorites/votes and estimates you choose to save are also stored on this device. Reset demo clears its favorites and votes; clear other preferences in your browser’s site data.',
+					fr: 'Le tutoriel mémorise tes choix et ton prénom facultatif dans ton navigateur ; tu peux les effacer. Le choix de langue, les favoris/votes de démonstration et les estimations de prix gardées volontairement sont également enregistrés sur cet appareil. Réinitialiser la démo efface ses favoris et votes ; tu peux effacer les autres préférences dans les données du site de ton navigateur.',
+					en: 'The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference, demo favorites/votes and estimates you choose to save are also stored on this device. Reset demo clears its favorites and votes; clear other preferences in your browser’s site data.',
 				},
 			},
 			{

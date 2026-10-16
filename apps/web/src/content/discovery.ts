@@ -19,8 +19,8 @@ export const discoveryPages = [
 			{ fr: 'Des fichiers qui restent à toi', en: 'Files that stay yours' },
 		],
 		story: {
-			fr: 'Le dépôt contient le mod, le viewer et l’API. Les versions distribuées passent par GitHub Releases. Le GLB s’ouvre localement, sans compte : le cloud reste un choix.',
-			en: 'The repository contains the mod, viewer and API. Distributed versions use GitHub Releases. Open a GLB locally without an account: the cloud remains a choice.',
+			fr: 'Le dépôt contient le mod, le viewer et l’API. Les versions distribuées passent par GitHub Releases. Les captures se retrouvent dans la galerie privée après appairage du mod. Les liens partagés se consultent sans compte.',
+			en: 'The repository contains the mod, viewer and API. Distributed versions use GitHub Releases. Captures appear in your private gallery after pairing the mod. Shared links can be viewed without an account.',
 		},
 		note: {
 			fr: 'L’ambition est open source. Le dépôt est public, mais une licence de redistribution reste à choisir ; sa visibilité seule n’accorde pas ces droits.',

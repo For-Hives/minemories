@@ -36,7 +36,9 @@ test('the illustrated memory changes lighting without starting a viewer or navig
 		expect(scene.querySelectorAll('[aria-pressed="true"]').length).toBe(1)
 	}
 	expect(screen.getByRole('link', { name: /Commencer mon album/ }).getAttribute('href')).toBe('/register')
-	expect(screen.getByRole('link', { name: /Ou ouvrir un souvenir local/ }).getAttribute('href')).toBe('/viewer')
+	expect(screen.getByRole('link', { name: /Explorer les souvenirs de la communauté/ }).getAttribute('href')).toBe(
+		'/explorer'
+	)
 	expect(document.querySelector('canvas')).toBeNull()
 })
 test('signed-in visitors return to their gallery and the complete proposal is localized', () => {

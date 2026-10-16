@@ -45,7 +45,7 @@ test('guides a beginner from exact loader versions through a local first capture
 	step('Créer un souvenir')
 	expect(screen.getByText('/minemories export 16')).toBeTruthy()
 	expect(screen.getByText('%USERPROFILE%\\export')).toBeTruthy()
-	expect(screen.getByText(/Cette ouverture reste locale/)).toBeTruthy()
+	expect(screen.getByText(/relie Minecraft à ta galerie privée/)).toBeTruthy()
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 })
 
