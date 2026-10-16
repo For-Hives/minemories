@@ -1,11 +1,11 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { LoadingSkeleton } from '../components/Loading'
 import { SharePanel } from '../components/SharePanel'
-import { buttonDark, buttonLime, buttonOutline, Eyebrow } from '../components/ui'
+import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
@@ -13,13 +13,12 @@ import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
+import { GalleryPairingCard } from './GalleryPairingCard'
+import { type Memories, type Storage, type TrashMemories, useGalleryData, useLivePage } from './gallery-data'
+import { useGalleryPairing } from './gallery-pairing'
 import { PublicationPanel } from './PublicDiscovery'
 
-type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
-type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
-type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
 type MemoryMetadata = Memories[number]['metadata']
-type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
 function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
 	const { t } = useI18n()
@@ -65,32 +64,6 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 			)}
 		</section>
 	)
-}
-
-function useStorageStatus() {
-	const [storage, setStorage] = useState<Storage | null>(null)
-	const [storageError, setStorageError] = useState(false)
-	const requestVersion = useRef(0)
-	useEffect(
-		() => () => {
-			requestVersion.current += 1
-		},
-		[]
-	)
-	const refreshStorage = useCallback(async () => {
-		const version = ++requestVersion.current
-		try {
-			const result = await apiClient.account.storage()
-			if (version !== requestVersion.current) return
-			setStorage(result)
-			setStorageError(false)
-		} catch {
-			if (version !== requestVersion.current) return
-			setStorage(null)
-			setStorageError(true)
-		}
-	}, [])
-	return { storage, storageError, refreshStorage }
 }
 
 function CaptureMetadata({ metadata }: { metadata: MemoryMetadata }) {
@@ -156,140 +129,28 @@ const tilePalettes: TilePalette[] = [
 	},
 ]
 
-function useGalleryLists() {
-	const [memories, setMemories] = useState<Memories>([])
-	const [loading, setLoading] = useState(true)
-	const [loadError, setLoadError] = useState('')
-	const [trash, setTrash] = useState<TrashMemories>([])
-	const memoriesVersion = useRef(0),
-		trashVersion = useRef(0)
-	useEffect(
-		() => () => {
-			memoriesVersion.current += 1
-			trashVersion.current += 1
-		},
-		[]
-	)
-	const refreshMemories = useCallback(async () => {
-		const version = ++memoriesVersion.current
-		setLoadError('')
-		try {
-			const result = await apiClient.memories.list()
-			if (version === memoriesVersion.current) setMemories(result)
-		} catch (error) {
-			if (version === memoriesVersion.current)
-				setLoadError(error instanceof Error ? error.message : 'The gallery is unavailable.')
-		} finally {
-			if (version === memoriesVersion.current) setLoading(false)
-		}
-	}, [])
-
-	const refreshTrash = useCallback(async () => {
-		const version = ++trashVersion.current
-		try {
-			const result = await apiClient.memories.listTrash()
-			if (version === trashVersion.current) setTrash(result)
-		} catch {
-			// The trash section stays empty when its refresh fails; captures remain visible.
-		}
-	}, [])
-
-	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash }
-}
-
-function useLivePage() {
-	const active = useRef(true)
-	useEffect(() => {
-		active.current = true
-		return () => {
-			active.current = false
-		}
-	}, [])
-	return active
-}
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: existing gallery coordinates polling, navigation and two UI states; separate component extraction needs interaction coverage.
 export function GalleryPage() {
 	const { t, locale } = useI18n()
 
 	const { session, notify, setViewerFile } = useAppContext()
-	const { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash } = useGalleryLists()
+	const {
+		memories,
+		trash,
+		loading,
+		loadError,
+		setLoadError,
+		refreshAll,
+		storage,
+		storageError,
+		trashSnapshot,
+		restoreSnapshot,
+		deleteSnapshot,
+	} = useGalleryData(notify)
+	const pairing = useGalleryPairing(notify, setLoadError)
+	const { createPairing } = pairing
+	const pairedFresh = shouldShowPaired(pairing.pairStatus === 'paired', memories)
 	const navigate = useNavigate()
-	const [pairCode, setPairCode] = useState('')
-	const [pairStatus, setPairStatus] = useState<PairingStatus>('idle')
-	const [pairExpires, setPairExpires] = useState('')
-	const [pairBusy, setPairBusy] = useState(false)
 	const [openingId, setOpeningId] = useState('')
-	const [expanded, setExpanded] = useState<Set<string>>(new Set())
-	const { storage, storageError, refreshStorage } = useStorageStatus()
-	const pairedFresh = shouldShowPaired(pairStatus === 'paired', memories)
-
-	const refreshAll = useCallback(async () => {
-		await Promise.all([refreshMemories(), refreshTrash(), refreshStorage()])
-	}, [refreshMemories, refreshTrash, refreshStorage])
-	const trashActions = useTrashActions(notify, setLoadError, refreshAll)
-
-	useEffect(() => {
-		void refreshAll()
-		apiClient.pairing
-			.status()
-			.then(result => {
-				if (result.paired) setPairStatus('paired')
-			})
-			.catch(() => {
-				// Stay on the manual pairing card when the status check fails.
-			})
-		const refreshTimer = window.setInterval(() => void refreshAll(), 12_000)
-		return () => window.clearInterval(refreshTimer)
-	}, [refreshAll])
-
-	useEffect(() => {
-		if (!pairCode || pairStatus !== 'pending') return
-		let timer = 0
-		let stopped = false
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: keep async polling transitions together until a browser interaction test covers cancellation.
-		const poll = async () => {
-			try {
-				const result = await apiClient.pairing.check({ code: pairCode })
-				if (stopped) return
-				if (result.status === 'paired') {
-					setPairStatus('paired')
-					notify('The mod is linked to your account. Send a capture from Minecraft.')
-					return
-				}
-				if (result.status === 'expired') {
-					setPairStatus('expired')
-					return
-				}
-			} catch {
-				if (!stopped) setPairStatus('error')
-				return
-			}
-			if (!stopped) timer = window.setTimeout(() => void poll(), 1600)
-		}
-		timer = window.setTimeout(() => void poll(), 1100)
-		return () => {
-			stopped = true
-			window.clearTimeout(timer)
-		}
-	}, [pairCode, pairStatus, notify])
-
-	async function createPairing() {
-		setPairBusy(true)
-		setPairStatus('idle')
-		setPairCode('')
-		try {
-			const pairing = await apiClient.pairing.create()
-			setPairCode(pairing.code)
-			setPairExpires(new Date(pairing.expiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
-			setPairStatus('pending')
-		} catch (error) {
-			setPairStatus('error')
-			setLoadError(error instanceof Error ? error.message : 'Could not create the code.')
-		} finally {
-			setPairBusy(false)
-		}
-	}
 
 	function openMemory(id: string) {
 		setOpeningId(id)
@@ -297,32 +158,6 @@ export function GalleryPage() {
 		setViewerFile(null)
 		navigate(`/viewer?memory=${encodeURIComponent(id)}`)
 		setOpeningId('')
-	}
-
-	function toggleGroup(key: string) {
-		setExpanded(previous => {
-			const next = new Set(previous)
-			if (next.has(key)) next.delete(key)
-			else next.add(key)
-			return next
-		})
-	}
-
-	async function trashSnapshot(id: string) {
-		await trashActions.trashSnapshot(id)
-	}
-
-	async function restoreSnapshot(id: string) {
-		await trashActions.restoreSnapshot(id)
-	}
-
-	async function deleteSnapshot(id: string) {
-		await trashActions.deleteSnapshot(id)
-	}
-
-	async function copyCode() {
-		await navigator.clipboard.writeText(pairCode)
-		notify('Code copied to the clipboard.')
 	}
 
 	return (
@@ -344,81 +179,7 @@ export function GalleryPage() {
 			</div>
 
 			<aside className="album-gallery-sidebar">
-				<section
-					className={`my-[31px] mb-12 flex items-center gap-[18px] rounded-lg border bg-[#1c2720] px-[23px] py-[22px] max-phone:m-[24px_0_35px] max-phone:grid max-phone:grid-cols-[42px_1fr] max-phone:gap-[10px_12px] max-phone:p-[15px] ${
-						pairedFresh ? 'border-[#354238] bg-[#1c2720]' : 'border-[#354238]'
-					}`}
-					aria-live="polite"
-				>
-					<div className="grid h-[47px] w-[47px] flex-none place-items-center rounded-xl bg-[#1c2720] text-[22px] text-[#b4c1ad] max-phone:h-10 max-phone:w-10 max-phone:rounded-[10px] max-phone:text-lg">
-						{pairedFresh ? '✓' : '⌘'}
-					</div>
-					<div className="flex-1">
-						<Eyebrow>{pairedFresh ? t('LINKED') : t('CAPTURE FROM THE SERVER')}</Eyebrow>
-						<h2 className="mb-1 mt-[5px] font-sans text-base font-bold tracking-[-0.35px] max-phone:text-sm">
-							{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}
-						</h2>
-						<p className="m-0 text-[11px] leading-[1.55] text-[#b4c1ad] max-phone:text-[10px]">
-							{t(pairingMessage(pairedFresh, pairStatus))}
-						</p>
-						{pairStatus === 'pending' && (
-							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-								<span className="h-[7px] w-[7px] animate-pulse-dot rounded-full bg-[#85a555] shadow-[0_0_0_0_#85a55599]" />{' '}
-								<T message={'Waiting for Minecraft…'} />{' '}
-							</div>
-						)}
-						{pairStatus === 'expired' && (
-							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-								{' '}
-								<T message={'This code expired. Generate a new one.'} />{' '}
-							</div>
-						)}
-						{pairStatus === 'error' && (
-							<div className="mt-[10px] flex items-center gap-2 text-[10px] font-semibold text-[#b4c1ad]">
-								{' '}
-								<T message={'Verification failed. Check that the API is running.'} />{' '}
-							</div>
-						)}
-						{pairStatus !== 'pending' && pairedFresh && (
-							<p className="mt-[10px] text-[10px] text-[#8e978a]">{t(pairingHint(pairedFresh))}</p>
-						)}
-					</div>
-					{pairStatus === 'pending' && (
-						<div className="flex min-w-[181px] flex-col items-center border-l border-[#354238] px-[11px] py-[3px] max-phone:col-2 max-phone:mt-[5px] max-phone:items-start max-phone:justify-self-start max-phone:border-0 max-phone:p-[3px_0]">
-							<span className="font-mono text-[8px] tracking-[0.4px] text-[#b4c1ad]">
-								<T message={'CODE FOR THE GAME'} />
-							</span>
-							<button
-								type="button"
-								onClick={copyCode}
-								aria-label={t('Copy the pairing code')}
-								className="cursor-pointer border-0 bg-transparent px-0 py-[4px] pb-[2px] font-mono text-[28px] font-bold tracking-[2px] text-[#e6eee1] max-phone:text-[26px]"
-							>
-								{pairCode.slice(0, 3)} {pairCode.slice(3)}
-							</button>
-							<small className="text-[9px] text-[#b4c1ad]">
-								<T message={'Expires at'} /> {pairExpires}
-							</small>
-						</div>
-					)}
-					{pairedFresh && (
-						<span className="flex items-center gap-[7px] rounded-[20px] border border-[#354238] px-[11px] py-2 text-[10px] font-bold text-[#b4c1ad] max-phone:col-2 max-phone:justify-self-start">
-							<i className="h-[7px] w-[7px] rounded-full bg-[#78a355] not-italic" /> <T
-								message={'Linked client'}
-							/>{' '}
-						</span>
-					)}
-					{pairStatus !== 'pending' && (
-						<button
-							className={`${buttonLime} min-w-[156px] max-phone:col-2 max-phone:min-h-[38px] max-phone:justify-self-start`}
-							type="button"
-							onClick={() => void createPairing()}
-							disabled={pairBusy}
-						>
-							{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
-						</button>
-					)}
-				</section>
+				<GalleryPairingCard pairing={pairing} pairedFresh={pairedFresh} />
 				<StorageSummary storage={storage} failed={storageError} />
 			</aside>
 			<section className="album-gallery-collection">
@@ -450,63 +211,13 @@ export function GalleryPage() {
 					</div>
 				)}
 				{loading && <LoadingSkeleton kind="gallery" label="Gathering your memories…" />}
-				{!loading && memories.length > 0 && (
-					<div className="space-y-4">
-						{groupCaptures(memories).map(group => {
-							const open = expanded.has(group.key)
-							const stacks = open ? stackCaptures(group.captures) : []
-							return (
-								<section
-									key={group.key}
-									aria-label={group.name}
-									className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#151c17]"
-								>
-									<button
-										type="button"
-										onClick={() => toggleGroup(group.key)}
-										aria-expanded={open}
-										className="flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent p-4 text-left hover:bg-[#1a231c]"
-									>
-										<FolderIcon
-											thumbnail={group.captures[0]?.metadata.icon ?? group.captures[0]?.metadata.thumbnail ?? null}
-										/>
-										<span className="min-w-0 flex-1">
-											<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm font-bold text-[#eef3ea]">
-												{group.name}
-											</span>
-											<span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#8e978a]">
-												{folderMotd(group.captures)}
-											</span>
-										</span>
-										<span className="flex flex-none items-center gap-3">
-											<span className="rounded-full border border-[#354238] px-2 py-1 font-mono text-[10px] text-[#b4c1ad]">
-												{group.captures.length}
-											</span>
-											<span aria-hidden="true" className="text-[#b4c1ad]">
-												{open ? '▾' : '▸'}
-											</span>
-										</span>
-									</button>
-									{open && (
-										<div className="album-stacks border-t border-[#2a332d] p-4">
-											{stacks.map(stack => (
-												<StackBundle
-													key={stack.key}
-													groupKey={group.key}
-													stack={stack}
-													openingId={openingId}
-													onOpenMemory={openMemory}
-													onChanged={() => void refreshAll()}
-													onTrashed={id => void trashSnapshot(id)}
-												/>
-											))}
-										</div>
-									)}
-								</section>
-							)
-						})}
-					</div>
-				)}
+				<CaptureFolders
+					memories={memories}
+					openingId={openingId}
+					onOpenMemory={openMemory}
+					onChanged={() => void refreshAll()}
+					onTrashed={id => void trashSnapshot(id)}
+				/>
 				{!loading && memories.length === 0 && (
 					<div className="flex min-h-[270px] flex-col items-center justify-center rounded-[7px] border border-dashed border-[#354238] bg-[#1c2720] p-[25px] text-center text-[#b4c1ad]">
 						<span className="grid h-[45px] w-[45px] place-items-center rounded-[13px] bg-[#1c2720] text-[22px] text-[#b4c1ad]">
@@ -572,62 +283,88 @@ export function GalleryPage() {
 	)
 }
 
-function useTrashActions(
-	notify: (message: string) => void,
-	setLoadError: (message: string) => void,
-	refreshAll: () => Promise<void>
-) {
-	const active = useLivePage()
-	async function trashSnapshot(id: string) {
-		try {
-			await apiClient.memories.trash({ id })
-			if (!active.current) return
-			notify('Snapshot moved to trash. It disappears forever after 30 days.')
-			await refreshAll()
-		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not trash this snapshot.')
-		}
+function CaptureFolders({
+	memories,
+	openingId,
+	onOpenMemory,
+	onChanged,
+	onTrashed,
+}: {
+	memories: Memories
+	openingId: string
+	onOpenMemory(id: string): void
+	onChanged(): void
+	onTrashed(id: string): void
+}) {
+	const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+	function toggleGroup(key: string) {
+		setExpanded(previous => {
+			const next = new Set(previous)
+			if (next.has(key)) next.delete(key)
+			else next.add(key)
+			return next
+		})
 	}
 
-	async function restoreSnapshot(id: string) {
-		try {
-			await apiClient.memories.restore({ id })
-			if (!active.current) return
-			await refreshAll()
-		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not restore this snapshot.')
-		}
-	}
-
-	async function deleteSnapshot(id: string) {
-		if (!window.confirm('Delete this snapshot forever? This cannot be undone.')) return
-		try {
-			await apiClient.memories.delete({ id })
-			if (!active.current) return
-			notify('Snapshot deleted forever.')
-			await refreshAll()
-		} catch (error) {
-			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not delete this snapshot.')
-		}
-	}
-
-	return { trashSnapshot, restoreSnapshot, deleteSnapshot }
-}
-
-function pairingButtonLabel(busy: boolean, pairedFresh: boolean): string {
-	if (busy) return 'Creating…'
-	return pairedFresh ? 'New code' : 'Link my server'
-}
-
-function pairingMessage(pairedFresh: boolean, pairStatus: PairingStatus): string {
-	if (pairedFresh) return 'Run /minemories upload after a capture. The gallery updates itself.'
-	if (pairStatus === 'paired') return 'No snapshot for two months. Link the mod again to resume auto-upload.'
-	return 'A temporary code links your profile to the game client. Once, and you are set.'
-}
-
-function pairingHint(pairedFresh: boolean): string {
-	if (pairedFresh) return 'Already linked? Generate a fresh code for another device.'
-	return 'A temporary code links your profile to the game client. Once, and you are set.'
+	if (memories.length === 0) return null
+	return (
+		<div className="space-y-4">
+			{groupCaptures(memories).map(group => {
+				const open = expanded.has(group.key)
+				const stacks = open ? stackCaptures(group.captures) : []
+				return (
+					<section
+						key={group.key}
+						aria-label={group.name}
+						className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#151c17]"
+					>
+						<button
+							type="button"
+							onClick={() => toggleGroup(group.key)}
+							aria-expanded={open}
+							className="flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent p-4 text-left hover:bg-[#1a231c]"
+						>
+							<FolderIcon
+								thumbnail={group.captures[0]?.metadata.icon ?? group.captures[0]?.metadata.thumbnail ?? null}
+							/>
+							<span className="min-w-0 flex-1">
+								<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-sans text-sm font-bold text-[#eef3ea]">
+									{group.name}
+								</span>
+								<span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#8e978a]">
+									{folderMotd(group.captures)}
+								</span>
+							</span>
+							<span className="flex flex-none items-center gap-3">
+								<span className="rounded-full border border-[#354238] px-2 py-1 font-mono text-[10px] text-[#b4c1ad]">
+									{group.captures.length}
+								</span>
+								<span aria-hidden="true" className="text-[#b4c1ad]">
+									{open ? '▾' : '▸'}
+								</span>
+							</span>
+						</button>
+						{open && (
+							<div className="album-stacks border-t border-[#2a332d] p-4">
+								{stacks.map(stack => (
+									<StackBundle
+										key={stack.key}
+										groupKey={group.key}
+										stack={stack}
+										openingId={openingId}
+										onOpenMemory={onOpenMemory}
+										onChanged={onChanged}
+										onTrashed={onTrashed}
+									/>
+								))}
+							</div>
+						)}
+					</section>
+				)
+			})}
+		</div>
+	)
 }
 
 function folderMotd(captures: Memories): string {
