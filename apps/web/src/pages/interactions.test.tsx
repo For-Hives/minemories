@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { act, type ReactNode } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { SiteLayout } from '../components/SiteLayout'
 import { I18nProvider } from '../i18n/I18n'
 import { UnsupportedGlbError } from '../lib/glb'
 import { AuthPage } from './AuthPage'
@@ -536,15 +537,18 @@ test('registration keeps password guidance accessible and announces Caps Lock', 
 test('switching auth modes keeps the intended destination through successful registration', async () => {
 	function AuthRoute() {
 		const location = useLocation()
-		return <AuthPage mode={location.pathname === '/register' ? 'register' : 'login'} />
+		return <AuthPage key={location.pathname} mode={location.pathname === '/register' ? 'register' : 'login'} />
 	}
 	render(
 		<MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/account' } }]}>
 			<AuthRoute />
 		</MemoryRouter>
 	)
+	credentials()
 	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
 	expect(screen.getByLabelText('Display name')).toBeTruthy()
+	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
+	expect(screen.getByLabelText('Password')).toHaveProperty('value', '')
 	fireEvent.click(screen.getByRole('link', { name: 'Sign in' }))
 	expect(screen.queryByLabelText('Display name')).toBeNull()
 	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
@@ -552,4 +556,59 @@ test('switching auth modes keeps the intended destination through successful reg
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/account', { replace: true }))
+})
+
+test('guests can open a local capture directly without authentication', () => {
+	mount(<AuthPage mode="login" />)
+	const input = screen.getByLabelText('Open my capture')
+	fireEvent.change(input, { target: { files: [] } })
+	expect(mocks.navigate).not.toHaveBeenCalled()
+	const file = new File(['glb fixture'], 'cabin.glb', { type: 'model/gltf-binary' })
+	fireEvent.change(input, { target: { files: [file] } })
+	expect(mocks.context.setViewerFile).toHaveBeenCalledWith(file)
+	expect(mocks.navigate).toHaveBeenCalledWith('/viewer')
+	expect(mocks.signIn).not.toHaveBeenCalled()
+	expect(screen.getByRole('link', { name: /explore the public gallery/ }).getAttribute('href')).toBe('/explorer')
+})
+
+test('authentication uses a focused shell with help, language and legal links', () => {
+	render(
+		<MemoryRouter initialEntries={['/login']}>
+			<SiteLayout>
+				<AuthPage mode="login" />
+			</SiteLayout>
+		</MemoryRouter>
+	)
+	expect(screen.getByRole('main')).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'Need help?' }).getAttribute('href')).toBe('/faq')
+	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
+	expect(screen.getByRole('navigation', { name: 'Legal' })).toBeTruthy()
+	expect(screen.queryByRole('navigation', { name: 'Main navigation' })).toBeNull()
+	expect(screen.getByRole('link', { name: 'Sign in' }).getAttribute('aria-current')).toBe('page')
+})
+
+test('pending authentication prevents duplicate submission and lets the user retry after failure', async () => {
+	let finish: ((result: { error: { message: string } }) => void) | undefined
+	mocks.signIn.mockReturnValueOnce(
+		new Promise(resolve => {
+			finish = resolve
+		})
+	)
+	mount(<AuthPage mode="login" />)
+	credentials()
+	const button = screen.getByRole('button', { name: /Sign in/ })
+	fireEvent.click(button)
+	expect(button).toHaveProperty('disabled', true)
+	expect(button.closest('form')?.getAttribute('aria-busy')).toBe('true')
+	fireEvent.submit(button.closest('form') as HTMLFormElement)
+	expect(mocks.signIn).toHaveBeenCalledOnce()
+	await act(async () => {
+		finish?.({ error: { message: 'Please retry' } })
+	})
+	expect(document.activeElement).toBe(screen.getByRole('alert'))
+	expect(button).toHaveProperty('disabled', false)
+	expect(button.closest('form')?.getAttribute('aria-busy')).toBe('false')
+	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
+	fireEvent.click(button)
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))
 })
