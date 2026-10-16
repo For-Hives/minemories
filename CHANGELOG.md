@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.11.0-beta.1...mod-v0.12.0-beta.1) (2026-10-16)
+
+### Fonctionnalités
+
+* **front:** prepare consented public-page error diagnostics ([6e986f7](https://github.com/For-Hives/minemories/commit/6e986f7e6c29aacaa7499d94160264349a8e77fb))
+
 ## [0.11.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.10.0-beta.1...mod-v0.11.0-beta.1) (2026-10-16)
 
 ### Fonctionnalités
