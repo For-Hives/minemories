@@ -156,43 +156,73 @@ const tilePalettes: TilePalette[] = [
 	},
 ]
 
+function useGalleryLists() {
+	const [memories, setMemories] = useState<Memories>([])
+	const [loading, setLoading] = useState(true)
+	const [loadError, setLoadError] = useState('')
+	const [trash, setTrash] = useState<TrashMemories>([])
+	const memoriesVersion = useRef(0),
+		trashVersion = useRef(0)
+	useEffect(
+		() => () => {
+			memoriesVersion.current += 1
+			trashVersion.current += 1
+		},
+		[]
+	)
+	const refreshMemories = useCallback(async () => {
+		const version = ++memoriesVersion.current
+		setLoadError('')
+		try {
+			const result = await apiClient.memories.list()
+			if (version === memoriesVersion.current) setMemories(result)
+		} catch (error) {
+			if (version === memoriesVersion.current)
+				setLoadError(error instanceof Error ? error.message : 'The gallery is unavailable.')
+		} finally {
+			if (version === memoriesVersion.current) setLoading(false)
+		}
+	}, [])
+
+	const refreshTrash = useCallback(async () => {
+		const version = ++trashVersion.current
+		try {
+			const result = await apiClient.memories.listTrash()
+			if (version === trashVersion.current) setTrash(result)
+		} catch {
+			// The trash section stays empty when its refresh fails; captures remain visible.
+		}
+	}, [])
+
+	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash }
+}
+
+function useLivePage() {
+	const active = useRef(true)
+	useEffect(() => {
+		active.current = true
+		return () => {
+			active.current = false
+		}
+	}, [])
+	return active
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: existing gallery coordinates polling, navigation and two UI states; separate component extraction needs interaction coverage.
 export function GalleryPage() {
 	const { t, locale } = useI18n()
 
 	const { session, notify, setViewerFile } = useAppContext()
+	const { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash } = useGalleryLists()
 	const navigate = useNavigate()
-	const [memories, setMemories] = useState<Memories>([])
-	const [loading, setLoading] = useState(true)
-	const [loadError, setLoadError] = useState('')
 	const [pairCode, setPairCode] = useState('')
 	const [pairStatus, setPairStatus] = useState<PairingStatus>('idle')
 	const [pairExpires, setPairExpires] = useState('')
 	const [pairBusy, setPairBusy] = useState(false)
 	const [openingId, setOpeningId] = useState('')
 	const [expanded, setExpanded] = useState<Set<string>>(new Set())
-	const [trash, setTrash] = useState<TrashMemories>([])
 	const { storage, storageError, refreshStorage } = useStorageStatus()
 	const pairedFresh = shouldShowPaired(pairStatus === 'paired', memories)
-
-	const refreshMemories = useCallback(async () => {
-		setLoadError('')
-		try {
-			setMemories(await apiClient.memories.list())
-		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'The gallery is unavailable.')
-		} finally {
-			setLoading(false)
-		}
-	}, [])
-
-	const refreshTrash = useCallback(async () => {
-		try {
-			setTrash(await apiClient.memories.listTrash())
-		} catch {
-			// The trash section stays empty when its refresh fails; captures remain visible.
-		}
-	}, [])
 
 	const refreshAll = useCallback(async () => {
 		await Promise.all([refreshMemories(), refreshTrash(), refreshStorage()])
@@ -547,22 +577,25 @@ function useTrashActions(
 	setLoadError: (message: string) => void,
 	refreshAll: () => Promise<void>
 ) {
+	const active = useLivePage()
 	async function trashSnapshot(id: string) {
 		try {
 			await apiClient.memories.trash({ id })
+			if (!active.current) return
 			notify('Snapshot moved to trash. It disappears forever after 30 days.')
 			await refreshAll()
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'Could not trash this snapshot.')
+			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not trash this snapshot.')
 		}
 	}
 
 	async function restoreSnapshot(id: string) {
 		try {
 			await apiClient.memories.restore({ id })
+			if (!active.current) return
 			await refreshAll()
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'Could not restore this snapshot.')
+			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not restore this snapshot.')
 		}
 	}
 
@@ -570,10 +603,11 @@ function useTrashActions(
 		if (!window.confirm('Delete this snapshot forever? This cannot be undone.')) return
 		try {
 			await apiClient.memories.delete({ id })
+			if (!active.current) return
 			notify('Snapshot deleted forever.')
 			await refreshAll()
 		} catch (error) {
-			setLoadError(error instanceof Error ? error.message : 'Could not delete this snapshot.')
+			if (active.current) setLoadError(error instanceof Error ? error.message : 'Could not delete this snapshot.')
 		}
 	}
 
@@ -777,6 +811,7 @@ function SnapshotCard({
 	const { t } = useI18n()
 
 	const { notify } = useAppContext()
+	const active = useLivePage()
 	const [editing, setEditing] = useState(false)
 	const [draft, setDraft] = useState(memory.name)
 	const [saving, setSaving] = useState(false)
@@ -798,12 +833,13 @@ function SnapshotCard({
 		setSaving(true)
 		try {
 			await apiClient.memories.rename({ id: memory.id, name: name.slice(0, 80) })
+			if (!active.current) return
 			setEditing(false)
 			onChanged()
 		} catch {
-			notify('Could not save this name.')
+			if (active.current) notify('Could not save this name.')
 		} finally {
-			setSaving(false)
+			if (active.current) setSaving(false)
 		}
 	}
 
