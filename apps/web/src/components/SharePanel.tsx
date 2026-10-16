@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
@@ -7,57 +7,66 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
 
 	const { notify } = useAppContext()
+	const revision = useRef(0)
 	const [status, setStatus] = useState<'checking' | 'off' | 'on'>('checking')
 	const [url, setUrl] = useState('')
 	const [busy, setBusy] = useState(false)
 
 	useEffect(() => {
-		let live = true
+		const version = ++revision.current
+		setStatus('checking')
+		setUrl('')
+		setBusy(false)
 		apiClient.memories
 			.shareStatus({ id: memoryId })
 			.then(result => {
-				if (live) setStatus(result.shared ? 'on' : 'off')
+				if (version === revision.current) setStatus(result.shared ? 'on' : 'off')
 			})
 			.catch(() => {
-				if (live) setStatus('off')
+				if (version === revision.current) setStatus('off')
 			})
 		return () => {
-			live = false
+			revision.current += 1
 		}
 	}, [memoryId])
 
 	async function create() {
+		const version = revision.current
 		setBusy(true)
 		try {
 			const link = await apiClient.memories.createShare({ id: memoryId })
+			if (version !== revision.current) return
 			setUrl(`${window.location.origin}${link.urlPath}`)
 			setStatus('on')
 		} catch {
-			notify('Could not create this link.')
+			if (version === revision.current) notify('Could not create this link.')
 		} finally {
-			setBusy(false)
+			if (version === revision.current) setBusy(false)
 		}
 	}
 
 	async function revoke() {
+		const version = revision.current
 		setBusy(true)
 		try {
 			await apiClient.memories.revokeShare({ id: memoryId })
+			if (version !== revision.current) return
 			setStatus('off')
 			setUrl('')
 		} catch {
-			notify('Could not stop sharing.')
+			if (version === revision.current) notify('Could not stop sharing.')
 		} finally {
-			setBusy(false)
+			if (version === revision.current) setBusy(false)
 		}
 	}
 
 	async function copy() {
+		const version = revision.current
 		try {
 			await navigator.clipboard.writeText(url)
-			notify('Link copied to the clipboard.')
+			if (version === revision.current) notify('Link copied to the clipboard.')
 		} catch {
-			notify('Could not copy this link.')
+			if (version === revision.current) notify('Could not copy this link.')
 		}
 	}
 
