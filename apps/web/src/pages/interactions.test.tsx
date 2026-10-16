@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { act, type ReactNode } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
+import { Link, MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { SiteLayout } from '../components/SiteLayout'
 import { I18nProvider } from '../i18n/I18n'
@@ -702,4 +702,58 @@ test('production empty gallery guides pairing without offering local imports', a
 	expect(screen.queryByRole('link', { name: /Open a local GLB/ })).toBeNull()
 	expect(screen.queryByRole('button', { name: /Choose a local file/ })).toBeNull()
 	expect(screen.getByText('Link your mod to send your first capture.')).toBeTruthy()
+})
+
+test('leaving the private viewer aborts a pending download and never loads its late response', async () => {
+	let finish: ((response: Response) => void) | undefined
+	const fetcher = vi.fn(
+		(_url: string, _init?: RequestInit) =>
+			new Promise<Response>(resolve => {
+				finish = resolve
+			})
+	)
+	vi.stubGlobal('fetch', fetcher)
+	const view = render(
+		<MemoryRouter initialEntries={['/viewer?memory=abandoned']}>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	await waitFor(() => expect(fetcher).toHaveBeenCalled())
+	const signal = fetcher.mock.calls[0]?.[1]?.signal
+	view.unmount()
+	expect(signal?.aborted).toBe(true)
+	await act(async () => {
+		finish?.(new Response(new Blob(['glTF'])))
+	})
+	expect(mocks.loadFile).not.toHaveBeenCalled()
+	expect(mocks.dispose).toHaveBeenCalledTimes(1)
+})
+
+test('changing the remote capture aborts its old request and ignores the late file', async () => {
+	let finishOld: ((response: Response) => void) | undefined
+	const fetcher = vi
+		.fn()
+		.mockImplementationOnce(
+			() =>
+				new Promise<Response>(resolve => {
+					finishOld = resolve
+				})
+		)
+		.mockResolvedValueOnce(new Response('next'))
+	vi.stubGlobal('fetch', fetcher)
+	render(
+		<MemoryRouter initialEntries={['/viewer?memory=old']}>
+			<Link to="/viewer?memory=next">Next capture</Link>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1))
+	const signal = fetcher.mock.calls[0]?.[1]?.signal as AbortSignal
+	fireEvent.click(screen.getByRole('link', { name: 'Next capture' }))
+	await waitFor(() => expect(mocks.loadFile).toHaveBeenCalledTimes(1))
+	expect(signal.aborted).toBe(true)
+	expect(fetcher.mock.calls[1]?.[0]).toContain('/api/memories/next/file')
+	expect(mocks.loadFile.mock.calls[0]?.[0].name).toBe('memory.glb')
+	await act(async () => finishOld?.(new Response(new Blob(['obsolete capture']))))
+	expect(mocks.loadFile).toHaveBeenCalledTimes(1)
 })
