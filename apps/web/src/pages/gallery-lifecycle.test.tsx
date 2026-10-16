@@ -354,3 +354,24 @@ test('changing the shared capture discards the old link even if creation finishe
 	await screen.findByLabelText('Share link')
 	expect(mocks.createShare).toHaveBeenLastCalledWith({ id: 'two' })
 })
+
+test('a slow automatic refresh is not duplicated and its timer stops on exit', async () => {
+	vi.useFakeTimers()
+	const request = deferred<ReturnType<typeof capture>[]>()
+	mocks.list.mockReturnValueOnce(request.promise)
+	const view = page()
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(25000)
+	})
+	expect(mocks.list).toHaveBeenCalledTimes(1)
+	await act(async () => request.resolve([capture()]))
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(12000)
+	})
+	expect(mocks.list).toHaveBeenCalledTimes(2)
+	view.unmount()
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(24000)
+	})
+	expect(mocks.list).toHaveBeenCalledTimes(2)
+})

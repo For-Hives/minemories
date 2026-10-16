@@ -182,7 +182,7 @@ test.each([false, true])(
 		)
 		mount(<GalleryPage />)
 		await act(async () => {
-			await vi.advanceTimersByTimeAsync(12_000)
+			fireEvent.click(screen.getByRole('button', { name: '↻ Refresh' }))
 		})
 		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
 		if (!finish) throw new Error('Missing pending request')
@@ -756,4 +756,51 @@ test('changing the remote capture aborts its old request and ignores the late fi
 	expect(mocks.loadFile.mock.calls[0]?.[0].name).toBe('memory.glb')
 	await act(async () => finishOld?.(new Response(new Blob(['obsolete capture']))))
 	expect(mocks.loadFile).toHaveBeenCalledTimes(1)
+})
+
+test('a delayed previous pairing status cannot hide a newly requested code', async () => {
+	let finish: ((status: { paired: boolean }) => void) | undefined
+	mocks.status.mockReturnValueOnce(
+		new Promise(resolve => {
+			finish = resolve
+		})
+	)
+	mount(<GalleryPage />)
+	fireEvent.click(await screen.findByRole('button', { name: 'Link my server ↗' }))
+	await screen.findByText('123 456')
+	await act(async () => finish?.({ paired: true }))
+	expect(screen.getByText('123 456')).toBeTruthy()
+	expect(screen.getByText('Waiting for Minecraft…')).toBeTruthy()
+})
+
+test('leaving while a code is being created aborts both requests and never starts polling', async () => {
+	vi.useFakeTimers()
+	let finish: ((pairing: { code: string; expiresAt: string }) => void) | undefined
+	mocks.create.mockReturnValueOnce(
+		new Promise(resolve => {
+			finish = resolve
+		})
+	)
+	const view = mount(<GalleryPage />)
+	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	const statusSignal = mocks.status.mock.calls[0]?.[1]?.signal as AbortSignal
+	const createSignal = mocks.create.mock.calls[0]?.[1]?.signal as AbortSignal
+	view.unmount()
+	expect(statusSignal.aborted).toBe(true)
+	expect(createSignal.aborted).toBe(true)
+	await act(async () => {
+		finish?.({ code: '654321', expiresAt: '2026-10-16T20:00:00Z' })
+		await vi.advanceTimersByTimeAsync(5000)
+	})
+	expect(mocks.check).not.toHaveBeenCalled()
+	expect(mocks.context.notify).not.toHaveBeenCalled()
+})
+test('code creation failure remains recoverable and releases the busy control', async () => {
+	mocks.create.mockRejectedValueOnce(new Error('Pairing unavailable'))
+	mount(<GalleryPage />)
+	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	await screen.findByRole('alert')
+	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	await screen.findByText('123 456')
+	expect(mocks.create).toHaveBeenCalledTimes(2)
 })
