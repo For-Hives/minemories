@@ -53,6 +53,13 @@ export const legalContent = {
 				},
 			},
 			{
+				heading: { fr: 'Diagnostics web facultatifs', en: 'Optional web diagnostics' },
+				body: {
+					fr: 'Les diagnostics web sont désactivés par défaut. Si le déploiement configure Sentry, tu peux les autoriser puis retirer ton accord sur cette page, pour cet appareil. Seules des catégories fixes d’erreurs et les routes des pages éditoriales publiques sont transmises, sans messages bruts, compte, captures, codes ou URL privées. Les pages de connexion, galerie, viewer et partage sont exclues. Le serveur de réception voit l’adresse IP de la connexion ; sa région et sa conservation doivent être documentées avant activation du service.',
+					en: 'Web diagnostics are off by default. If this deployment configures Sentry, you can allow them and withdraw consent on this page for this device. Only fixed error categories and public editorial page routes are transmitted, without raw messages, account details, captures, codes or private URLs. Sign-in, gallery, viewer and sharing pages are excluded. The receiving server sees the connection IP address; its region and retention must be documented before activating the service.',
+				},
+			},
+			{
 				heading: { fr: 'Compte et galerie', en: 'Account and gallery' },
 				body: {
 					fr: 'La connexion utilise un cookie de session. Les captures envoyées et leurs métadonnées sont associées à ton compte ; ta galerie est privée par défaut. Les avatars peuvent être chargés depuis un service externe. Après appairage, les captures AFK peuvent être envoyées automatiquement.',

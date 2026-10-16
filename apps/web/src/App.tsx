@@ -6,6 +6,7 @@ import { LoadingSkeleton } from './components/Loading'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
+import { reportWebFailure, WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })))
@@ -43,6 +44,9 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
 	state = { failed: false }
 	static getDerivedStateFromError() {
 		return { failed: true }
+	}
+	componentDidCatch() {
+		reportWebFailure('page-render')
 	}
 	render() {
 		if (this.state.failed)
@@ -97,6 +101,7 @@ export function App() {
 			<AppContext.Provider value={context}>
 				<BrowserRouter>
 					<RouteMetadata />
+					<WebObservability />
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
 							<Route

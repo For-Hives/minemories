@@ -4,6 +4,7 @@ import { OrbitMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
 import { articles, legalContent } from '../content/site-content'
 import { useI18n } from '../i18n/I18n'
+import { WebDiagnosticsPreference } from '../observability/WebObservability'
 
 export function ContentLayout({
 	eyebrow,
@@ -95,6 +96,7 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 					<section key={section.heading.en}>
 						<h2>{section.heading[locale]}</h2>
 						<p>{section.body[locale]}</p>
+						{kind === 'privacy' && section.heading.en === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
 					</section>
 				))}
 			</div>
