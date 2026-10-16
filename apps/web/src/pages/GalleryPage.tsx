@@ -6,7 +6,7 @@ import { useAppContext } from '../app-context'
 import { LoadingSkeleton } from '../components/Loading'
 import { SharePanel } from '../components/SharePanel'
 import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
-import { T, useI18n } from '../i18n/I18n'
+import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
@@ -21,7 +21,7 @@ import { PublicationPanel } from './PublicDiscovery'
 type MemoryMetadata = Memories[number]['metadata']
 
 function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	if (!storage) {
 		return (
@@ -35,8 +35,9 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 	return (
 		<section aria-label={t('Gallery storage')} aria-live="polite" className="my-4 text-xs">
 			<p>
-				{formatFileSize(storage.availableBytes)} <T message={'available of'} /> {formatFileSize(storage.limitBytes)} ·{' '}
-				{formatFileSize(storage.usedBytes)} <T message={'used or reserved.'} />{' '}
+				{formatFileSize(storage.availableBytes, locale)} <T message={'available of'} />{' '}
+				{formatFileSize(storage.limitBytes, locale)} · {formatFileSize(storage.usedBytes, locale)}{' '}
+				<T message={'used or reserved.'} />{' '}
 			</p>
 			{storage.availableBytes === 0 && (
 				<p>
@@ -51,14 +52,14 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 			{storage.pendingDeletionBytes > 0 && (
 				<p>
 					{' '}
-					<T message={'Deletion is still in progress for'} /> {formatFileSize(storage.pendingDeletionBytes)}
+					<T message={'Deletion is still in progress for'} /> {formatFileSize(storage.pendingDeletionBytes, locale)}
 					<T message={'. That space becomes available when deletion finishes.'} />{' '}
 				</p>
 			)}
 			{storage.reservedBytes > 0 && (
 				<p>
 					{' '}
-					<T message={'Uploads are reserving'} /> {formatFileSize(storage.reservedBytes)}{' '}
+					<T message={'Uploads are reserving'} /> {formatFileSize(storage.reservedBytes, locale)}{' '}
 					<T message={'until they finish or their cleanup completes.'} />{' '}
 				</p>
 			)}
@@ -207,7 +208,7 @@ export function GalleryPage() {
 						className="mb-[15px] rounded-[5px] border border-[#354238] bg-[#1c2720] px-[14px] py-[11px] text-xs text-[#b4c1ad]"
 						role="alert"
 					>
-						{loadError}
+						{t(loadError)}
 					</div>
 				)}
 				{loading && <LoadingSkeleton kind="gallery" label="Gathering your memories…" />}
@@ -296,6 +297,7 @@ function CaptureFolders({
 	onChanged(): void
 	onTrashed(id: string): void
 }) {
+	const { locale } = useI18n()
 	const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
 	function toggleGroup(key: string) {
@@ -333,7 +335,7 @@ function CaptureFolders({
 									{group.name}
 								</span>
 								<span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#8e978a]">
-									{folderMotd(group.captures)}
+									{folderMotd(group.captures, locale)}
 								</span>
 							</span>
 							<span className="flex flex-none items-center gap-3">
@@ -367,13 +369,18 @@ function CaptureFolders({
 	)
 }
 
-function folderMotd(captures: Memories): string {
+function folderMotd(captures: Memories, locale: Locale): string {
 	const count = captures.length
 	const newest = captures[0]
 	const seed = captures.find(item => item.metadata.seed)?.metadata.seed
 	const parts = [`${count} capture${count > 1 ? 's' : ''}`]
-	if (seed) parts.push(`Seed ${seed}`)
-	if (newest) parts.push(`last visit ${formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt)}`)
+	if (seed) parts.push(translate(locale, 'Seed {seed}', { seed }))
+	if (newest)
+		parts.push(
+			translate(locale, 'Last visit {date}', {
+				date: formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale),
+			})
+		)
 	return parts.join(' · ')
 }
 
@@ -500,7 +507,7 @@ function StackBundle({
 					) : (
 						<>
 							<p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold text-[#dfe7da]">
-								{custom ?? `Same area · ${stack.captures.length} captures`}
+								{custom ?? t('Same area · {count} captures', { count: stack.captures.length })}
 							</p>
 							{stack.x !== null && stack.z !== null && (
 								<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">
@@ -545,7 +552,7 @@ function SnapshotCard({
 	onChanged: () => void
 	onTrashed: (id: string) => void
 }) {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const { notify } = useAppContext()
 	const active = useLivePage()
@@ -636,7 +643,7 @@ function SnapshotCard({
 								type="button"
 								onClick={startEditing}
 								title={t('Rename this snapshot')}
-								aria-label={`Rename ${memory.name}`}
+								aria-label={t('Rename {name}', { name: memory.name })}
 								className="h-7 w-7 flex-none cursor-pointer rounded-[4px] border border-transparent bg-transparent text-[11px] text-[#8e978a] hover:border-[#354238] hover:text-[#b4c1ad]"
 							>
 								✎
@@ -645,12 +652,12 @@ function SnapshotCard({
 					)}
 				</div>
 				<p className="mb-0 mt-[6px] flex items-center gap-[7px] text-[9px] text-[#b4c1ad]">
-					{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt)}{' '}
+					{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt, Date.now(), locale)}{' '}
 					<i className="h-[3px] w-[3px] rounded-full bg-[#a5aa9b] not-italic" />{' '}
 					{memory.metadata.x !== null && memory.metadata.x !== undefined
 						? `${Math.floor(memory.metadata.x)}, ${Math.floor(memory.metadata.y ?? 0)}, ${Math.floor(memory.metadata.z ?? 0)} · `
 						: ''}
-					{formatFileSize(memory.size)}
+					{formatFileSize(memory.size, locale)}
 				</p>
 				<CaptureMetadata metadata={memory.metadata} />
 				<div className="mt-3 flex flex-wrap items-center gap-2">
@@ -684,7 +691,7 @@ function SnapshotCard({
 						type="button"
 						onClick={() => onTrashed(memory.id)}
 						title={t('Move to trash')}
-						aria-label={`Move ${memory.name} to trash`}
+						aria-label={t('Move {name} to trash', { name: memory.name })}
 						className="inline-flex h-8 flex-none cursor-pointer items-center gap-1 rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:border-[#5a3535] hover:text-[#e8a0a0]"
 					>
 						🗑
@@ -714,6 +721,7 @@ function TrashCard({
 	onRestore: () => void
 	onDelete: () => void
 }) {
+	const { t, locale } = useI18n()
 	const remaining = daysUntilPurge(item.deletedAt, item.purgeAt)
 	return (
 		<article className="overflow-hidden rounded-[7px] border border-[#3a2f2f] bg-[#1c1a1a]">
@@ -736,8 +744,8 @@ function TrashCard({
 				</h3>
 				<p className="mb-0 mt-[6px] text-[9px] text-[#8e8585]">
 					{' '}
-					<T message={'Deleted'} /> {formatRelativeDate(item.deletedAt)}
-					{remaining !== null ? ` · gone in ${remaining}d` : ''}
+					<T message={'Deleted'} /> {formatRelativeDate(item.deletedAt, Date.now(), locale)}
+					{remaining !== null ? ` · ${t('Gone in {days} days', { days: remaining })}` : ''}
 				</p>
 				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<button

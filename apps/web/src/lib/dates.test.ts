@@ -42,3 +42,16 @@ describe('formatRelativeDate', () => {
 		expect(() => formatRelativeDate('', NOW)).toThrow(RangeError)
 	})
 })
+
+it('formats every relative unit in French without changing protocol dates', () => {
+	expect(formatRelativeDate(iso(NOW), NOW, 'fr')).toBe('À l’instant')
+	for (const [duration, text] of [
+		[60_000, 'il y a 1 minute'],
+		[120_000, 'il y a 2 minutes'],
+		[3_600_000, 'il y a 1 heure'],
+		[86_400_000, 'il y a 1 jour'],
+		[30 * 86_400_000, 'il y a 1 mois'],
+		[365 * 86_400_000, 'il y a 1 an'],
+	] as const)
+		expect(formatRelativeDate(iso(NOW - duration), NOW, 'fr')).toBe(text)
+})
