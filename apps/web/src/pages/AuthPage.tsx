@@ -3,14 +3,12 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { LoadingSkeleton } from '../components/Loading'
+import { MemoryScene } from '../components/MemoryScene'
 import { PasswordField } from '../components/PasswordField'
-import { Brand } from '../components/SiteLayout'
-import { buttonDark, Eyebrow } from '../components/ui'
-import { T, useI18n } from '../i18n/I18n'
+import { fileInputHidden } from '../components/ui'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 
-const inputField =
-	'h-[45px] w-full rounded-[5px] border border-[#354238] bg-[#1c2720] px-[13px] text-xs font-normal text-ink outline-0 placeholder:text-[#b4c1ad] focus:border-[#354238] focus:shadow-[0_0_0_3px_#8b9e6320]'
+const inputField = 'auth-input'
 
 function submitText(creating: boolean, busy: boolean) {
 	if (busy) return 'One moment…'
@@ -18,7 +16,7 @@ function submitText(creating: boolean, busy: boolean) {
 }
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
-	const { t } = useI18n()
+	const { t, copy } = useLocalizedCopy()
 
 	const { session, isPending, refreshSession } = useAppContext()
 	const [error, setError] = useState('')
@@ -30,13 +28,15 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const creating = mode === 'register'
+	const [email, setEmail] = useState((location.state as { email?: string } | null)?.email ?? '')
 	const from = (location.state as { from?: string } | null)?.from ?? '/gallery'
 
 	if (isPending) return <LoadingSkeleton label="One moment…" />
-	if (session) return <Navigate to="/gallery" replace />
+	if (session) return <Navigate to={from} replace />
 
 	async function submit(event: SyntheticEvent<HTMLFormElement>) {
 		event.preventDefault()
+		if (busy) return
 		setBusy(true)
 		setError('')
 		const form = new FormData(event.currentTarget)
@@ -61,69 +61,53 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	}
 
 	return (
-		<section className="album-auth mx-auto my-[46px] mb-[58px] grid min-h-[660px] w-[min(100%-88px,1120px)] grid-cols-[0.92fr_1fr] overflow-hidden rounded-[9px] border border-[#354238] bg-paper-light shadow-[0_16px_45px_#373c2810] max-tablet:w-[min(100%-48px,760px)] max-phone:mx-auto max-phone:mb-7 max-phone:mt-[13px] max-phone:min-h-0 max-phone:w-[calc(100%-24px)] max-phone:grid-cols-1">
-			<div className="relative flex flex-col overflow-hidden bg-[#293d2f] px-[39px] py-9 text-[#f2f2e7] max-phone:min-h-[205px] max-phone:p-[22px]">
-				<Brand />
-				<div className="relative z-[1] my-auto pb-[70px] max-phone:m-[27px_0_0] max-phone:p-0 max-phone:pb-[2px]">
-					<Eyebrow tone="text-[#d4e4a1]">
-						<T message={'A PLACE TO COME BACK TO'} />
-					</Eyebrow>
-					<blockquote className="mb-[14px] mt-[21px] max-w-[385px] font-sans text-[36px] font-semibold leading-[1.2] tracking-[-1.8px] max-phone:mb-1 max-phone:mt-[10px] max-phone:max-w-[260px] max-phone:text-[23px]">
-						{' '}
-						<T message={'“Remember the cabin above the ravine?”'} />{' '}
-					</blockquote>
-					<span className="text-xs text-[#b5c0b0] max-phone:text-[10px]">
-						<T message={'That is often how it starts.'} />
-					</span>
-				</div>
-				<div
-					aria-hidden="true"
-					className="absolute bottom-[-62px] right-[34px] h-[211px] w-[244px] rotate-[-28deg] opacity-[0.54] max-phone:bottom-[-94px] max-phone:right-[3px] max-phone:origin-bottom-right max-phone:scale-[0.72]"
-				>
-					<span className="absolute top-0 left-[64px] grid h-[90px] w-[90px] place-items-center border border-[#354238] bg-[#405944] text-[36px] text-lime shadow-[20px_20px_0_#1c302588]">
-						▧
-					</span>
-					<i className="absolute bottom-5 left-[7px] h-[74px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
-					<i className="absolute bottom-5 left-[54px] h-[106px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
-					<i className="absolute bottom-5 left-[102px] h-[60px] w-[37px] border border-[#354238] bg-[#80926d] not-italic" />
-					<b className="absolute bottom-[33px] right-[10px] font-mono text-[9px] font-normal text-[#d9e6ca]">
-						{' '}
-						<T message={'SEASON 04'} />{' '}
-					</b>
-				</div>
-				<span className="relative z-[1] text-[11px] text-[#bdc5b7] max-phone:hidden">
-					{' '}
-					<T message={'A small archive of great adventures.'} />{' '}
-				</span>
-			</div>
-			<div className="grid place-items-center px-[42px] py-[50px] max-phone:px-[21px] max-phone:py-9 max-phone:pb-[33px]">
-				<div className="w-[min(100%,380px)]">
-					<Eyebrow>{creating ? t('YOUR STORY CONTINUES') : t('GOOD TO SEE YOU AGAIN')}</Eyebrow>
-					<h1 className="mb-2 mt-[13px] font-sans text-[34px] font-semibold tracking-[-1.6px] max-phone:text-[28px]">
-						{creating ? t('Create a space') : t('Welcome back.')}
-					</h1>
-					<p className="m-0 text-[13px] text-[#b4c1ad]">
-						{creating ? t('Gather your worlds in a single gallery.') : t('Find your worlds gallery again.')}
-					</p>
+		<section className="auth-entry">
+			<div className="auth-workspace">
+				<div className="auth-form-wrap">
+					<nav className="auth-modes" aria-label={copy('Accès à ton espace', 'Access your space')}>
+						<Link to="/login" state={{ from, email }} aria-current={!creating ? 'page' : undefined}>
+							{t('Sign in')}
+						</Link>
+						<Link to="/register" state={{ from, email }} aria-current={creating ? 'page' : undefined}>
+							{t('Create a space')}
+						</Link>
+					</nav>
+					<header className="auth-heading">
+						<span className="auth-eyebrow">{copy('TES MONDES T’ATTENDENT', 'YOUR WORLDS ARE WAITING')}</span>
+						<h1>
+							{creating
+								? copy('Le début de ton album.', 'Your album starts here.')
+								: copy('De retour chez toi.', 'Welcome home.')}
+						</h1>
+						<p>
+							{creating
+								? copy(
+										'Un espace pour garder tes captures et choisir avec qui les partager.',
+										'A space to keep your captures and choose who to share them with.'
+									)
+								: copy(
+										'Retrouve tes captures, tes constructions et les moments qui comptent.',
+										'Find your captures, your builds and the moments that matter.'
+									)}
+						</p>
+					</header>
 					{!creating && <CredentialsNotice />}
-					<form className="mt-[31px] grid gap-[18px]" onSubmit={submit} aria-busy={busy}>
+					<form className="auth-form" onSubmit={submit} aria-busy={busy}>
 						{creating && (
-							<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-								{' '}
-								<T message={'Display name'} />{' '}
+							<label className="auth-label">
+								{t('Display name')}
 								<input
 									name="name"
-									autoComplete="name"
+									autoComplete="nickname"
 									required
 									maxLength={80}
-									placeholder={t('What do your friends call you?')}
+									placeholder={copy('Ton pseudo Minecraft, par exemple', 'Your Minecraft name, for example')}
 									className={inputField}
 								/>
 							</label>
 						)}
-						<label className="grid gap-2 text-[11px] font-bold text-[#e6eee1]">
-							{' '}
-							<T message={'Email address'} />{' '}
+						<label className="auth-label">
+							{t('Email address')}
 							<input
 								name="email"
 								type="email"
@@ -134,39 +118,114 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								required
 								placeholder={t('you@example.com')}
 								className={inputField}
+								value={email}
+								onChange={event => setEmail(event.target.value)}
 							/>
 						</label>
 						<PasswordField key={mode} creating={creating} className={inputField} />
 						{error && (
-							<p ref={errorRef} tabIndex={-1} className="m-0 -mt-1 text-xs text-[#f0a49a]" role="alert">
+							<p ref={errorRef} tabIndex={-1} className="auth-error" role="alert">
 								{error}
 							</p>
 						)}
-						<button className={`${buttonDark} mt-[2px] w-full`} type="submit" disabled={busy}>
-							{t(submitText(creating, busy))} <span>↗</span>
+						<button className="auth-submit" type="submit" disabled={busy}>
+							{busy && <span className="auth-spinner" aria-hidden="true" />}
+							{t(submitText(creating, busy))}
+							<span aria-hidden="true">↗</span>
 						</button>
+						<p className="auth-private">
+							<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true">
+								<rect x="4" y="8" width="12" height="9" rx="2" />
+								<path d="M7 8V5a3 3 0 0 1 6 0v3" />
+							</svg>
+							{copy('Tes captures sont privées par défaut.', 'Your captures are private by default.')}
+						</p>
 					</form>
-					<p className="mb-0 mt-[22px] text-center text-[11px] text-[#b4c1ad]">
-						{creating ? t('Already have an account?') : t('No account yet?')}{' '}
-						<Link
-							className="font-bold text-[#b4c1ad] underline underline-offset-[3px]"
-							to={creating ? '/login' : '/register'}
-							state={{ from }}
-						>
-							{creating ? t('Sign in') : t('Create a space')}
-						</Link>
-					</p>
-					<p className="mb-0 mt-8 text-center text-[11px] text-[#b4c1ad]">
-						{' '}
-						<T message={'Just want to open a file?'} />{' '}
-						<Link className="font-bold text-[#b4c1ad] underline underline-offset-[3px]" to="/viewer">
-							{' '}
-							<T message={'Try without an account'} />{' '}
-						</Link>
-					</p>
+					<GuestEntry />
 				</div>
 			</div>
+			<AuthAtmosphere />
 		</section>
+	)
+}
+
+function GuestEntry() {
+	const { copy } = useLocalizedCopy()
+	const { setViewerFile } = useAppContext()
+	const navigate = useNavigate()
+	return (
+		<aside className="auth-guest" aria-label={copy('Visiter sans compte', 'Visit without an account')}>
+			<div className="auth-guest-title">
+				<span aria-hidden="true">↗</span>
+				<h2>{copy('Juste de passage ?', 'Just visiting?')}</h2>
+				<span>{copy('SANS COMPTE', 'NO ACCOUNT')}</span>
+			</div>
+			<p>
+				{copy(
+					'Ouvre une capture sur ton appareil. Le fichier reste local.',
+					'Open a capture on your device. The file stays local.'
+				)}
+			</p>
+			<label className="auth-file">
+				{copy('Ouvrir ma capture', 'Open my capture')}
+				<span aria-hidden="true">＋</span>
+				<input
+					type="file"
+					className={fileInputHidden}
+					accept=".glb,model/gltf-binary"
+					aria-label={copy('Ouvrir ma capture', 'Open my capture')}
+					onChange={event => {
+						const file = event.currentTarget.files?.[0]
+						if (file) {
+							setViewerFile(file)
+							navigate('/viewer')
+						}
+						event.currentTarget.value = ''
+					}}
+				/>
+			</label>
+			<Link className="auth-explore" to="/explorer">
+				{copy('Ou explorer la galerie publique', 'Or explore the public gallery')} <span aria-hidden="true">→</span>
+			</Link>
+		</aside>
+	)
+}
+
+function AuthAtmosphere() {
+	const { copy } = useLocalizedCopy()
+	return (
+		<aside className="auth-atmosphere" aria-label={copy('L’esprit Minemories', 'The spirit of Minemories')}>
+			<div className="auth-art-sky" aria-hidden="true">
+				<span className="auth-art-sun" />
+				<i />
+				<i />
+			</div>
+			<div className="auth-art-label">
+				<span>MINEMORIES</span>
+				<span>{copy('LES LIEUX RESTENT.', 'THE PLACES REMAIN.')}</span>
+			</div>
+			<div className="auth-art-copy">
+				<p>{copy('Une maison. Un serveur. Une époque.', 'A home. A server. An era.')}</p>
+				<h2>
+					{copy('On a tous', 'We all have')}
+					<br />
+					{copy('un endroit', 'somewhere')}
+					<br />
+					<em>{copy('à retrouver.', 'to return to.')}</em>
+				</h2>
+			</div>
+			<div className="auth-art-world">
+				<MemoryScene
+					theme="village"
+					label={copy('Illustration d’un village sur une île', 'Illustration of a village on an island')}
+				/>
+			</div>
+			<div className="auth-art-caption">
+				<span>01 / {copy('LE SOUVENIR', 'THE MEMORY')}</span>
+				<p>{copy('La partie s’arrête. L’histoire continue.', 'The game ends. The story continues.')}</p>
+				<span>{copy('Illustration', 'Illustration')} · Minemories</span>
+			</div>
+		</aside>
 	)
 }
 
@@ -176,7 +235,7 @@ function CredentialsNotice() {
 	const updated = new URLSearchParams(location.search).get('updated')
 	if (updated !== 'email' && updated !== 'password') return null
 	return (
-		<p role="status" className="mt-5 rounded-md border border-lime-deep p-3 text-sm">
+		<p role="status" className="auth-notice">
 			{copy('Identifiants modifiés. Reconnecte-toi pour continuer.', 'Credentials updated. Sign in again to continue.')}
 		</p>
 	)
