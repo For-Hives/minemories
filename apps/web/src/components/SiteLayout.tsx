@@ -75,11 +75,13 @@ function FileControl() {
 	const { setViewerFile } = useAppContext()
 	const { t } = useI18n()
 	const navigate = useNavigate()
+	if (!import.meta.env.DEV) return null
 	return (
 		<label className={`${buttonQuiet} mm-file-control`}>
 			<span>{t('Open a local GLB')}</span>
 			<span aria-hidden="true">＋</span>
 			<input
+				id="global-file-input"
 				type="file"
 				aria-label={t('Open a local GLB')}
 				accept=".glb,model/gltf-binary"
@@ -182,7 +184,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						<br />
 						<em>{locale === 'fr' ? 'Ce qu’ils nous laissent, reste.' : 'What they leave us stays.'}</em>
 					</span>
-					<Link to="/viewer">{locale === 'fr' ? 'Ouvrir un souvenir' : 'Open a memory'} ↗</Link>
+					<Link to="/explorer">{locale === 'fr' ? 'Explorer les souvenirs' : 'Explore memories'} ↗</Link>
 				</div>
 				<div>
 					<Brand />

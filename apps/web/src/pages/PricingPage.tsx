@@ -76,8 +76,8 @@ export function PricingPage() {
 				<h2>{copy('Ce que tu peux faire aujourd’hui', 'What you can do today')}</h2>
 				<p>
 					{copy(
-						'Installer le mod, exporter un souvenir 3D en GLB, l’ouvrir localement et utiliser la galerie privée après appairage. Le service commercial de snapshot et sa conservation longue durée sont en préparation. Une capture 3D ne remplace pas une sauvegarde jouable du monde ; l’archivage des sauvegardes complètes reste à développer.',
-						'Install the mod, export a 3D memory as a GLB, open it locally and use the private gallery after pairing. Commercial snapshots and long-term storage are in preparation. A 3D capture does not replace a playable world backup; full-save archiving still needs development.'
+						'Installer le mod, exporter un souvenir 3D en GLB, le retrouver dans la galerie privée après appairage. Le service commercial de snapshot et sa conservation longue durée sont en préparation. Une capture 3D ne remplace pas une sauvegarde jouable du monde ; l’archivage des sauvegardes complètes reste à développer.',
+						'Install the mod, export a 3D memory as a GLB, find it in your private gallery after pairing. Commercial snapshots and long-term storage are in preparation. A 3D capture does not replace a playable world backup; full-save archiving still needs development.'
 					)}
 				</p>
 				<h2>{copy('Comment fonctionne la dégressivité ?', 'How does the decreasing price work?')}</h2>

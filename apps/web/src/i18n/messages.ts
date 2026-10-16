@@ -238,6 +238,7 @@ Object.assign(frenchMessages, {
 	'YOUR MEMORY, IN 3D': 'TON SOUVENIR EN 3D',
 	'Drag a': 'Dépose un fichier',
 	'file here, or open one from your computer.': 'ici ou ouvre-le depuis ton ordinateur.',
+	'Link your mod to send your first capture.': 'Relie ton mod pour envoyer ta première capture.',
 	'Choose a local file': 'Choisir un fichier local',
 	'Time of day': 'Heure du jour',
 	on: 'activé',

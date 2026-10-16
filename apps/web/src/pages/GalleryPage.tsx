@@ -310,10 +310,7 @@ export function GalleryPage() {
 						<T message={'Every capture keeps a place here, ready to revisit.'} />
 					</p>
 				</div>
-				<Link className={buttonDark} to="/viewer">
-					{' '}
-					<T message={'Open a local GLB'} /> <span>↗</span>
-				</Link>
+				<LocalGalleryLink />
 			</div>
 
 			<aside className="album-gallery-sidebar">
@@ -491,17 +488,19 @@ export function GalleryPage() {
 						</h3>
 						<p className="mb-0 mt-[6px] text-xs">
 							{' '}
-							<T message={'Link your mod to send a capture, or open a GLB file from your device.'} />{' '}
+							<T message={'Link your mod to send your first capture.'} />{' '}
 						</p>
 						<div className="mt-[22px] flex flex-wrap gap-[10px]">
-							<button
-								className={`${buttonOutline} min-h-[40px] text-[10px]`}
-								type="button"
-								onClick={() => document.getElementById('global-file-input')?.click()}
-							>
-								{' '}
-								<T message={'Choose a local file'} />{' '}
-							</button>
+							{import.meta.env.DEV && (
+								<button
+									className={`${buttonOutline} min-h-[40px] text-[10px]`}
+									type="button"
+									onClick={() => document.getElementById('global-file-input')?.click()}
+								>
+									{' '}
+									<T message={'Choose a local file'} />{' '}
+								</button>
+							)}
 							<button
 								className={`${buttonDark} min-h-[40px] text-[10px]`}
 								type="button"
@@ -1006,5 +1005,15 @@ function MemoryTile({ variant }: { variant: number }) {
 			<span className={`absolute top-[31px] left-[43px] h-[21px] w-6 ${palette.blocks[3]}`} />
 			<b className={`absolute top-[33px] left-[74px] h-[29px] w-[22px] ${palette.trunk}`} />
 		</div>
+	)
+}
+
+function LocalGalleryLink() {
+	if (!import.meta.env.DEV) return null
+	return (
+		<Link className={buttonDark} to="/viewer">
+			<T message={'Open a local GLB'} />
+			<span>↗</span>
+		</Link>
 	)
 }

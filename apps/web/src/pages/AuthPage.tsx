@@ -15,6 +15,14 @@ function submitText(creating: boolean, busy: boolean) {
 	return creating ? 'Create my space' : 'Sign in'
 }
 
+function authenticate(form: FormData, creating: boolean) {
+	const email = String(form.get('email') ?? '').trim()
+	const password = String(form.get('password') ?? '')
+	return creating
+		? authClient.signUp.email({ email, password, name: String(form.get('name') ?? '').trim() })
+		: authClient.signIn.email({ email, password })
+}
+
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const { t, copy } = useLocalizedCopy()
 
@@ -22,6 +30,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
 	const errorRef = useRef<HTMLParagraphElement>(null)
+	const active = useRef(true)
+	useEffect(() => {
+		active.current = true
+		return () => {
+			active.current = false
+		}
+	}, [])
 	useEffect(() => {
 		if (error) errorRef.current?.focus()
 	}, [error])
@@ -40,19 +55,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 		setBusy(true)
 		setError('')
 		const form = new FormData(event.currentTarget)
-		const email = String(form.get('email') ?? '').trim()
-		const password = String(form.get('password') ?? '')
 		try {
-			const result = creating
-				? await authClient.signUp.email({
-						email,
-						password,
-						name: String(form.get('name') ?? '').trim(),
-					})
-				: await authClient.signIn.email({ email, password })
+			const result = await authenticate(form, creating)
+			if (!active.current) return
 			if (result.error) throw new Error(result.error.message)
 			await refreshSession()
-			navigate(from, { replace: true })
+			if (active.current) navigate(from, { replace: true })
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : 'Could not connect right now.')
 		} finally {
@@ -160,32 +168,43 @@ function GuestEntry() {
 				<h2>{copy('Juste de passage ?', 'Just visiting?')}</h2>
 				<span>{copy('SANS COMPTE', 'NO ACCOUNT')}</span>
 			</div>
-			<p>
-				{copy(
-					'Ouvre une capture sur ton appareil. Le fichier reste local.',
-					'Open a capture on your device. The file stays local.'
-				)}
-			</p>
-			<label className="auth-file">
-				{copy('Ouvrir ma capture', 'Open my capture')}
-				<span aria-hidden="true">＋</span>
-				<input
-					type="file"
-					className={fileInputHidden}
-					accept=".glb,model/gltf-binary"
-					aria-label={copy('Ouvrir ma capture', 'Open my capture')}
-					onChange={event => {
-						const file = event.currentTarget.files?.[0]
-						if (file) {
-							setViewerFile(file)
-							navigate('/viewer')
-						}
-						event.currentTarget.value = ''
-					}}
-				/>
-			</label>
-			<Link className="auth-explore" to="/explorer">
-				{copy('Ou explorer la galerie publique', 'Or explore the public gallery')} <span aria-hidden="true">→</span>
+			{import.meta.env.DEV ? (
+				<>
+					<p>
+						{copy(
+							'Ouvre une capture sur ton appareil. Le fichier reste local.',
+							'Open a capture on your device. The file stays local.'
+						)}
+					</p>
+					<label className="auth-file">
+						{copy('Ouvrir ma capture', 'Open my capture')}
+						<span aria-hidden="true">＋</span>
+						<input
+							type="file"
+							className={fileInputHidden}
+							accept=".glb,model/gltf-binary"
+							aria-label={copy('Ouvrir ma capture', 'Open my capture')}
+							onChange={event => {
+								const file = event.currentTarget.files?.[0]
+								if (file) {
+									setViewerFile(file)
+									navigate('/viewer')
+								}
+								event.currentTarget.value = ''
+							}}
+						/>
+					</label>
+				</>
+			) : (
+				<p>
+					{copy(
+						'Explore les souvenirs partagés par la communauté, sans créer de compte.',
+						'Explore memories shared by the community, without creating an account.'
+					)}
+				</p>
+			)}
+			<Link className={import.meta.env.DEV ? 'auth-explore' : 'auth-file'} to="/explorer">
+				{copy('Explorer la galerie publique', 'Explore the public gallery')} <span aria-hidden="true">→</span>
 			</Link>
 		</aside>
 	)

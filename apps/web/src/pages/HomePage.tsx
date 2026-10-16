@@ -45,8 +45,8 @@ export function HomePage() {
 							)}{' '}
 							<span aria-hidden="true">↗</span>
 						</Link>
-						<Link className="album-text-link" to="/viewer">
-							{copy('Ou ouvrir un souvenir local', 'Or open a local memory')} →
+						<Link className="album-text-link" to="/explorer">
+							{copy('Explorer les souvenirs de la communauté', 'Explore community memories')} →
 						</Link>
 					</div>
 				</div>

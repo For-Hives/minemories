@@ -51,7 +51,7 @@ const screenshots = {
 	viewer: {
 		file: '10-souvenir-dans-viewer',
 		title: 'Revoir le premier souvenir en 3D',
-		caption: 'Après Open a local GLB et le choix de capture.glb, la construction apparaît dans le navigateur.',
+		caption: 'Après envoi depuis le mod, ouvre la capture de ta galerie privée pour la revoir en 3D.',
 	},
 }
 

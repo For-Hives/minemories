@@ -1,6 +1,6 @@
 import type { ChangeEvent, DragEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
@@ -17,6 +17,7 @@ import { TimelapsePage } from './TimelapsePage'
 export function ViewerPage() {
 	const [search] = useSearchParams()
 	const id = search.get('memory')
+	if (!(import.meta.env.DEV || id)) return <Navigate to="/explorer" replace />
 	if (search.get('timelapse') === '1' && id) return <TimelapsePage key={id} memoryId={id} />
 	return <SingleViewerPage />
 }
@@ -79,7 +80,7 @@ function SingleViewerPage() {
 	}, [])
 
 	useEffect(() => {
-		if (viewerFile && !memoryId) {
+		if (import.meta.env.DEV && viewerFile && !memoryId) {
 			sceneRef.current?.setCaptureContext({
 				x: null,
 				y: null,
@@ -152,6 +153,7 @@ function SingleViewerPage() {
 	}
 
 	function chooseLocalFile(event: ChangeEvent<HTMLInputElement>) {
+		if (!import.meta.env.DEV) return
 		const file = event.currentTarget.files?.[0]
 		if (file) {
 			setViewerFile(file)
@@ -163,6 +165,7 @@ function SingleViewerPage() {
 	function handleDrop(event: DragEvent) {
 		event.preventDefault()
 		setDragOver(false)
+		if (!import.meta.env.DEV) return
 		const file = event.dataTransfer.files?.[0]
 		if (file) {
 			setViewerFile(file)
@@ -180,25 +183,27 @@ function SingleViewerPage() {
 				}
 				subtitle="STUDIO"
 			>
-				<label className="cinema-open">
-					<T message={'Choose a GLB'} />
-					<span>＋</span>
-					<input
-						id="local-file-input"
-						aria-label={t('Choose a GLB')}
-						type="file"
-						accept=".glb,model/gltf-binary"
-						className={fileInputHidden}
-						onChange={chooseLocalFile}
-					/>
-				</label>
+				{import.meta.env.DEV && (
+					<label className="cinema-open">
+						<T message={'Choose a GLB'} />
+						<span>＋</span>
+						<input
+							id="local-file-input"
+							aria-label={t('Choose a GLB')}
+							type="file"
+							accept=".glb,model/gltf-binary"
+							className={fileInputHidden}
+							onChange={chooseLocalFile}
+						/>
+					</label>
+				)}
 			</ViewerHeader>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop supplements the keyboard-accessible file picker. */}
 			<div
 				className="viewer-stage"
 				onDragEnter={event => {
 					event.preventDefault()
-					setDragOver(true)
+					if (import.meta.env.DEV) setDragOver(true)
 				}}
 				onDragOver={event => event.preventDefault()}
 				onDragLeave={() => setDragOver(false)}

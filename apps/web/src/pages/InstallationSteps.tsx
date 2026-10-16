@@ -63,13 +63,13 @@ function PrepareStep() {
 			<div className="install-note">
 				<strong>Minecraft Java Edition 1.21.1 + NeoForge 21.1.248</strong>
 				<p>
-					C’est la seule combinaison testée. NeoForge permet au jeu de charger le mod ; Forge, Fabric et Quilt sont
-					différents et ne sont pas supportés.
+					Ce parcours détaille NeoForge, qui permet au jeu de charger le mod. Les autres versions validées sont
+					indiquées dans <Link to="/versions">Versions du mod</Link>.
 				</p>
 			</div>
 			<p>
-				Pour découvrir Minemories, commence dans un <strong>nouveau monde de test</strong>. Tu n’as pas besoin de compte
-				Minemories pour créer et regarder un souvenir local.
+				Pour découvrir Minemories, commence dans un <strong>nouveau monde de test</strong>. Tu peux exporter une capture
+				sans compte ; pour la consulter sur le site, relie le mod à ta galerie privée.
 			</p>
 			<details>
 				<summary>Je veux utiliser mon monde ou mon serveur habituel</summary>
@@ -310,13 +310,12 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 			</p>
 			<CopyText text={exports[system]} label="Copier le dossier du premier souvenir" />
 			<p>
-				Sur le site, clique sur <strong>Ouvrir un GLB local / Open a local GLB</strong> en haut de la page, puis choisis{' '}
-				<strong>capture.glb</strong>. Sur mobile, ce bouton est représenté par un +. Ton souvenir doit apparaître en 3D.
-				Cette ouverture reste locale et ne demande aucun compte.
+				Pour revoir le souvenir dans le navigateur, relie Minecraft à ta galerie privée puis envoie la capture depuis le
+				mod.
 			</p>
 			{screenshots && <WindowsScreenshot id="viewer" />}
-			<details>
-				<summary>Je veux aussi le retrouver dans ma galerie privée</summary>
+			<div>
+				<h4>Retrouver le souvenir dans ma galerie privée</h4>
 				<ol>
 					<li>
 						<Link to="/register" target="_blank">
@@ -346,7 +345,7 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 					le compte lié, elles sont envoyées automatiquement dans ta galerie privée. Tu peux les désactiver dans M. Sans
 					compte lié, elles restent sur ton ordinateur.
 				</p>
-			</details>
+			</div>
 			<p className="install-caption">
 				Le dossier d’export peut être changé dans les réglages avancés du mod.{' '}
 				<Link to="/fonctionnement">En savoir plus sur les captures et le partage</Link>.

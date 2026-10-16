@@ -62,17 +62,24 @@ Le parcours Windows / Minecraft Launcher réserve dix captures légendées : ver
 
 Le champ de mot de passe propose Afficher/Masquer, conserve la valeur et se masque à nouveau quand le focus quitte son groupe. La consigne de création (12 caractères minimum) reste visible ; Verr. Maj est signalé. Les erreurs serveur reçoivent le focus et le formulaire annonce son attente. Le passage connexion/inscription conserve la destination initiale.
 
-Cette amélioration répond aux hypothèses des six personas : Camille et Jules disposent d'une aide persistante pour vérifier leur saisie ; Alex bénéficie de commandes tactiles de 48 px minimum et de champs de 16 px ; Léo et Morgan conservent les attributs d'autocomplétion et le parcours clavier ; Sarah retrouve toujours l'accès au viewer sans compte. Les textes supplémentaires existent en français et en anglais. Aucun mot de passe n'est stocké par cette interface.
+Cette amélioration répond aux hypothèses des six personas : Camille et Jules disposent d'une aide persistante pour vérifier leur saisie ; Alex bénéficie de commandes tactiles de 48 px minimum et de champs de 16 px ; Léo et Morgan conservent les attributs d'autocomplétion et le parcours clavier ; Sarah retrouve toujours l'accès aux souvenirs partagés sans compte. Les textes supplémentaires existent en français et en anglais. Aucun mot de passe n'est stocké par cette interface.
 
 Validation : tests React de visibilité, conservation de valeur, masquage au départ, Verr. Maj, attributs de saisie, focus des erreurs et destination après changement de mode. Contrôle navigateur Chromium et Firefox au clavier et à 390 px, avec inspection des captures desktop/mobile. Ce contrôle technique ne constitue pas un entretien utilisateur ni un essai sur un téléphone physique.
 
 ### Entrée dédiée après revue du parcours
 
-Les routes connexion/inscription utilisent désormais une structure dédiée : marque, aide et langue en tête, navigation entre les deux modes, formulaire, accès invité puis liens légaux. Le grand pied de page et le panneau décoratif avant le formulaire sont retirés de ces routes. Sur mobile, l'illustration est masquée et le bouton de connexion apparaît dans le premier écran à 390 × 844 px.
+Les routes connexion/inscription utilisent désormais une structure dédiée : marque, aide et langue en tête, navigation entre les deux modes, formulaire, accès à la galerie publique puis liens légaux. Le grand pied de page et le panneau décoratif avant le formulaire sont retirés de ces routes. Sur mobile, l'illustration est masquée et le bouton de connexion apparaît dans le premier écran à 390 × 844 px.
 
 - Camille/Jules : confidentialité par défaut près de l'action, aide disponible, formulaire lisible sans introduction décorative à franchir.
 - Alex : saisie mobile adaptée et e-mail conservé en changeant de mode ; le mot de passe n'est pas transmis dans l'état de navigation.
 - Léo/Morgan : autocomplétion et clavier conservés, double soumission bloquée pendant l'attente, destination respectée.
-- Sarah : ouverture directe d'un GLB local et galerie publique accessibles sans compte ; le fichier n'est pas envoyé au serveur.
+- Sarah : galerie publique et liens de partage accessibles sans compte. L'ouverture d'un GLB local est un outil de développement, absent de la production.
 
 L'illustration SVG existante est réutilisée, sans téléchargement de scène 3D ni animation de décor. Les interactions du formulaire et les liens d'aide/langue/légal sont testés. Chromium/Firefox ont été vérifiés à 1440 px et aux largeurs 360/390/768 px ; la conservation de l'e-mail a été exercée sur un vrai changement de route. Le contrôle de l'onglet intégré a été refusé par sa politique d'URL ; les vérifications ont été réalisées dans des navigateurs de test avant ce refus.
+
+
+### Ouverture locale réservée au développement
+
+Les sélecteurs de GLB et le glisser-déposer sont conditionnés par `import.meta.env.DEV`. Le build de production ne propose aucun chargement de fichier local dans l'en-tête, l'authentification, la galerie ou le viewer. Une visite directe de `/viewer` sans identifiant mène à `/explorer`. Les captures distantes (`/viewer?memory=…`), timelapses et liens de partage conservent leur chargement existant. Les guides et le contenu public orientent vers l'appairage et l'envoi depuis Minecraft.
+
+Les tests exécutent les deux modes : import local en développement ; absence des contrôles, redirection sans identifiant et rejet d'un dépôt en production, avec chargement distant toujours fonctionnel. Les exports locaux du mod et les téléchargements de sauvegarde ne sont pas supprimés.

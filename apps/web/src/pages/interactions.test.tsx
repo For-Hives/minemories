@@ -69,6 +69,7 @@ vi.mock('../viewer-scene', () => ({
 		setMinutes = mocks.setMinutes
 		resetView = mocks.resetView
 		setCaptureContext = mocks.setCaptureContext
+		snapshot = () => null
 	},
 }))
 beforeEach(() => {
@@ -97,6 +98,7 @@ afterEach(() => {
 	cleanup()
 	vi.useRealTimers()
 	vi.unstubAllGlobals()
+	vi.unstubAllEnvs()
 })
 function mount(children: ReactNode) {
 	return render(<MemoryRouter>{children}</MemoryRouter>)
@@ -205,7 +207,7 @@ test('registration submits the display name and exposes server errors', async ()
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: '  Builder  ' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Email already used')
-	expect(document.activeElement).toBe(screen.getByRole('alert'))
+	await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
 	expect(mocks.signUp).toHaveBeenCalledWith({
 		name: 'Builder',
 		email: 'test@example.com',
@@ -349,6 +351,7 @@ test('gallery memory takes precedence over a previous local file and shows downl
 	expect(mocks.loadFile.mock.calls[0]?.[0].name).toBe('memory.glb')
 	view.unmount()
 	vi.unstubAllGlobals()
+	vi.unstubAllEnvs()
 })
 
 test('failed memory downloads replace the progress indicator with an error', async () => {
@@ -362,6 +365,7 @@ test('failed memory downloads replace the progress indicator with an error', asy
 	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	vi.unstubAllGlobals()
+	vi.unstubAllEnvs()
 })
 
 test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error and clears loading', async source => {
@@ -493,6 +497,7 @@ test('private viewer reports disabled restoration instead of parsing HTTP 202 an
 	view.unmount()
 	expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
 	vi.unstubAllGlobals()
+	vi.unstubAllEnvs()
 })
 
 test('password visibility preserves the value, never submits, and resets outside the field', () => {
@@ -568,7 +573,7 @@ test('guests can open a local capture directly without authentication', () => {
 	expect(mocks.context.setViewerFile).toHaveBeenCalledWith(file)
 	expect(mocks.navigate).toHaveBeenCalledWith('/viewer')
 	expect(mocks.signIn).not.toHaveBeenCalled()
-	expect(screen.getByRole('link', { name: /explore the public gallery/ }).getAttribute('href')).toBe('/explorer')
+	expect(screen.getByRole('link', { name: /Explore the public gallery/ }).getAttribute('href')).toBe('/explorer')
 })
 
 test('authentication uses a focused shell with help, language and legal links', () => {
@@ -605,10 +610,96 @@ test('pending authentication prevents duplicate submission and lets the user ret
 	await act(async () => {
 		finish?.({ error: { message: 'Please retry' } })
 	})
-	expect(document.activeElement).toBe(screen.getByRole('alert'))
+	await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
 	expect(button).toHaveProperty('disabled', false)
 	expect(button.closest('form')?.getAttribute('aria-busy')).toBe('false')
 	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
 	fireEvent.click(button)
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))
+})
+
+test('a late sign-in response cannot redirect a visitor who has left the form', async () => {
+	let finish: ((result: { error: null }) => void) | undefined
+	mocks.signIn.mockReturnValueOnce(
+		new Promise(resolve => {
+			finish = resolve
+		})
+	)
+	const view = mount(<AuthPage mode="login" />)
+	credentials()
+	fireEvent.click(screen.getByRole('button', { name: /Sign in/ }))
+	view.unmount()
+	await act(async () => {
+		finish?.({ error: null })
+	})
+	expect(mocks.navigate).not.toHaveBeenCalled()
+	expect(mocks.context.refreshSession).not.toHaveBeenCalled()
+})
+
+test('production auth and site navigation offer discovery without local file inputs', () => {
+	vi.stubEnv('DEV', false)
+	const view = render(
+		<MemoryRouter initialEntries={['/login']}>
+			<SiteLayout>
+				<AuthPage mode="login" />
+			</SiteLayout>
+		</MemoryRouter>
+	)
+	expect(screen.queryByLabelText('Open my capture')).toBeNull()
+	expect(screen.getByRole('link', { name: /Explore the public gallery/ }).getAttribute('href')).toBe('/explorer')
+	expect(view.container.querySelector('input[type=file]')).toBeNull()
+	view.unmount()
+	const site = mount(
+		<SiteLayout>
+			<p>Public page</p>
+		</SiteLayout>
+	)
+	expect(screen.queryByLabelText('Open a local GLB')).toBeNull()
+	expect(site.container.querySelector('input[type=file]')).toBeNull()
+})
+
+test('production viewer without a memory opens discovery and ignores a stored local file', () => {
+	vi.stubEnv('DEV', false)
+	mocks.context.viewerFile = new File(['old'], 'previous.glb')
+	function Location() {
+		return <output>{useLocation().pathname}</output>
+	}
+	const view = render(
+		<MemoryRouter initialEntries={['/viewer']}>
+			<ViewerPage />
+			<Location />
+		</MemoryRouter>
+	)
+	expect(screen.getByText('/explorer')).toBeTruthy()
+	expect(mocks.loadFile).not.toHaveBeenCalled()
+	expect(view.container.querySelector('input[type=file]')).toBeNull()
+})
+
+test('production gallery still loads remote captures and rejects local drops', async () => {
+	vi.stubEnv('DEV', false)
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Blob(['glTF']))))
+	const view = render(
+		<MemoryRouter initialEntries={['/viewer?memory=remote-id']}>
+			<ViewerPage />
+		</MemoryRouter>
+	)
+	await waitFor(() => expect(mocks.loadFile).toHaveBeenCalledOnce())
+	expect(view.container.querySelector('input[type=file]')).toBeNull()
+	const stage = screen.getByLabelText('Interactive 3D scene').parentElement
+	if (!stage) throw new Error('Missing viewer stage')
+	const file = new File(['test'], 'dropped.glb')
+	fireEvent.dragEnter(stage, { dataTransfer: { files: [file] } })
+	fireEvent.drop(stage, { dataTransfer: { files: [file] } })
+	expect(mocks.context.setViewerFile).not.toHaveBeenCalled()
+	expect(mocks.loadFile).toHaveBeenCalledOnce()
+	expect(screen.queryByText('Drop your world here')).toBeNull()
+})
+
+test('production empty gallery guides pairing without offering local imports', async () => {
+	vi.stubEnv('DEV', false)
+	mount(<GalleryPage />)
+	await screen.findByText('The first memory is still to come.')
+	expect(screen.queryByRole('link', { name: /Open a local GLB/ })).toBeNull()
+	expect(screen.queryByRole('button', { name: /Choose a local file/ })).toBeNull()
+	expect(screen.getByText('Link your mod to send your first capture.')).toBeTruthy()
 })

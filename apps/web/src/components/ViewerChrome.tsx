@@ -72,15 +72,24 @@ export function ViewerEmptyState() {
 					'Find the morning light, your first home, the paths you know by heart.'
 				)}
 			</p>
-			<label className="cinema-open-primary" htmlFor="local-file-input">
-				{copy('Ouvrir un souvenir', 'Open a memory')} <span>↗</span>
-			</label>
-			<small>
-				{copy(
-					'Glissez un fichier .glb ici · Il reste sur votre appareil',
-					'Drop a .glb here · It stays on your device'
-				)}
-			</small>
+			{import.meta.env.DEV ? (
+				<>
+					{' '}
+					<label className="cinema-open-primary" htmlFor="local-file-input">
+						{copy('Ouvrir un souvenir', 'Open a memory')} <span>↗</span>
+					</label>
+					<small>
+						{copy(
+							'Glissez un fichier .glb ici · Il reste sur votre appareil',
+							'Drop a .glb here · It stays on your device'
+						)}
+					</small>
+				</>
+			) : (
+				<Link className="cinema-open-primary" to="/explorer">
+					{copy('Explorer les souvenirs', 'Explore memories')} ↗
+				</Link>
+			)}
 		</div>
 	)
 }

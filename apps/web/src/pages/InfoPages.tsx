@@ -59,9 +59,8 @@ export function ConceptPage() {
 			</p>
 			<h2>Ce que tu peux faire aujourd’hui</h2>
 			<p>
-				Capturer depuis le mod expérimental, ouvrir le fichier local, envoyer une capture dans une galerie privée et
-				créer volontairement un lien de partage. Une personne qui reçoit ce lien peut regarder la capture sans compte ni
-				mod.
+				Capturer depuis le mod, envoyer une capture dans une galerie privée et créer volontairement un lien de partage.
+				Une personne qui reçoit ce lien peut regarder la capture sans compte ni mod.
 			</p>
 			<p>
 				Le timelapse, la récupération directe d’anciens dossiers de monde, l’impression 3D et le support de tous les
@@ -121,8 +120,8 @@ export function HowItWorksPage() {
 				ancien souvenir. Garde tes propres sauvegardes : l’historique utilise de la place sur ton ordinateur.
 			</p>
 			<p>
-				Sur le site, utilise « Ouvrir un GLB local / Open a local GLB » et choisis ce fichier. Aucun compte n’est
-				nécessaire pour l’ouvrir localement. Cette ouverture ne l’ajoute pas à la galerie en ligne.
+				Pour le revoir sur le site, envoie ce souvenir depuis le menu M → Captures locales, puis ouvre-le dans ta
+				galerie privée.
 			</p>
 			<h2>4. Envoyer dans ta galerie, si tu le souhaites</h2>
 			<ol>
@@ -178,7 +177,7 @@ const questions = [
 	],
 	[
 		'Faut-il un compte ou un mod pour regarder ?',
-		'Un lien partagé s’ouvre sans compte et sans mod. Un fichier GLB local s’ouvre aussi sans compte. Un compte Minemories est nécessaire pour envoyer dans ta galerie privée.',
+		'Un lien partagé s’ouvre sans compte et sans mod. Un compte Minemories est nécessaire pour envoyer dans ta galerie privée.',
 	],
 	[
 		'Puis-je garder une construction vanilla ?',
