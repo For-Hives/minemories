@@ -91,3 +91,7 @@ migrateTimelapse(database)
 migrateTimelapseIndex(database)
 export const coldStorageConfiguration = verifyColdStorageTarget(database, process.env)
 configureS3StorageProvider(boundColdStorageProvider(database))
+
+const shareLinkColumns = database.query('PRAGMA table_info(share_links)').all() as Array<{ name: string }>
+if (!shareLinkColumns.some(column => column.name === 'token_ciphertext'))
+	database.exec('ALTER TABLE share_links ADD COLUMN token_ciphertext TEXT')

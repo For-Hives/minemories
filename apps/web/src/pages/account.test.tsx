@@ -2,15 +2,29 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { authClient } from '../auth-client'
 import { I18nProvider } from '../i18n/I18n'
 import { AccountPage } from './AccountPage'
 
-const mocks = vi.hoisted(() => ({ email: vi.fn(), password: vi.fn(), complete: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+	name: vi.fn(),
+	refresh: vi.fn(),
+	email: vi.fn(),
+	password: vi.fn(),
+	complete: vi.fn(),
+}))
 vi.mock('../api-client', () => ({
-	apiClient: { account: { changeEmail: mocks.email, changePassword: mocks.password } },
+	apiBase: 'http://localhost:3001',
+	apiClient: { account: { changeName: mocks.name, changeEmail: mocks.email, changePassword: mocks.password } },
 }))
 vi.mock('../app-context', () => ({
-	useAppContext: () => ({ session: { user: { name: 'Tester', email: 'tester@example.com' } } }),
+	useAppContext: () => ({
+		refreshSession: mocks.refresh,
+		session: { user: { name: 'Tester', email: 'tester@example.com' } },
+	}),
+}))
+vi.mock('../auth-client', () => ({
+	authClient: { listAccounts: vi.fn().mockResolvedValue({ data: [{ providerId: 'credential' }] }) },
 }))
 vi.mock('./account-navigation', () => ({ credentialChangeComplete: mocks.complete }))
 beforeEach(() => {
@@ -108,4 +122,23 @@ test('an obsolete mutation response does not navigate after leaving the account 
 	resolve?.({ ok: true })
 	await Promise.resolve()
 	expect(mocks.complete).not.toHaveBeenCalled()
+})
+
+test('display name is trimmed, saved and refreshes the visible session without signing out', async () => {
+	page()
+	const form = screen.getByRole('form', { name: 'Profil' })
+	fill(form, 'Pseudo', '  Nouveau pseudo  ')
+	fireEvent.submit(form)
+	await waitFor(() => expect(mocks.name).toHaveBeenCalledWith({ name: 'Nouveau pseudo' }))
+	await screen.findByText('Pseudo enregistré.')
+	expect(mocks.refresh).toHaveBeenCalledOnce()
+	expect(mocks.complete).not.toHaveBeenCalled()
+})
+
+test('social accounts manage credentials at their provider and retain display-name editing', async () => {
+	vi.mocked(authClient.listAccounts).mockResolvedValueOnce({ data: [{ providerId: 'google' }] } as never)
+	page()
+	await screen.findByText('Ton e-mail et ton mot de passe se gèrent auprès de ton fournisseur de connexion.')
+	expect(screen.queryByRole('form', { name: 'Mot de passe' })).toBeNull()
+	expect(screen.getByRole('form', { name: 'Profil' })).toBeTruthy()
 })

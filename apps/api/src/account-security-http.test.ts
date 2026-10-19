@@ -96,3 +96,34 @@ test('real HTTP and oRPC credentials change only the owner and invalidate all ol
 		(await authRequest('sign-in/email', { email: 'new-owner@example.com', password: 'my-updated-password' })).status
 	).toBe(200)
 }, 15000)
+
+test('profile name changes require the current owner session and reject empty or oversized names', async () => {
+	const owner = await account('profile-name@example.com')
+	await expect(rpc().account.changeName({ name: 'New name' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+	await expect(
+		rpc(owner.cookie, 'https://evil.example').account.changeName({ name: 'New name' })
+	).rejects.toMatchObject({ code: 'FORBIDDEN' })
+	await expect(rpc(owner.cookie).account.changeName({ name: ' '.repeat(3) })).rejects.toMatchObject({
+		code: 'BAD_REQUEST',
+	})
+	await expect(rpc(owner.cookie).account.changeName({ name: 'x'.repeat(81) })).rejects.toMatchObject({
+		code: 'BAD_REQUEST',
+	})
+	expect(await rpc(owner.cookie).account.changeName({ name: '  New name  ' })).toEqual({ ok: true })
+	const response = await app.request('/api/auth/get-session', { headers: { cookie: owner.cookie } })
+	expect((await response.json()).user.name).toBe('New name')
+})
+
+test('OAuth discovery exposes provider names without credentials', async () => {
+	const response = await app.request('/api/auth-providers')
+	expect(response.status).toBe(200)
+	expect(await response.json()).toEqual([])
+})
+
+test('linking an external provider requires an authenticated session', async () => {
+	const response = await authRequest('link-social', {
+		provider: 'google',
+		callbackURL: 'http://localhost:5173/account',
+	})
+	expect(response.status).toBe(401)
+})

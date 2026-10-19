@@ -9,11 +9,11 @@ import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import { AtmospherePass } from './viewer-atmosphere-pass'
 
 export type ViewerQuality = 'auto' | 'cinematic' | 'eco'
-export type ViewerWeather = 'clear' | 'mist' | 'overcast'
+export type ViewerWeather = 'clear' | 'mist' | 'overcast' | 'rain' | 'snow'
 
 export class ViewerEffects {
 	private readonly composer: EffectComposer
-	private readonly bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.24, 0.6, 1.1)
+	private readonly bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.12, 0.6, 1.1)
 	private readonly output = new OutputPass()
 	private readonly antialias = new ShaderPass(FXAAShader)
 	private readonly render: RenderPass
@@ -66,7 +66,7 @@ export class ViewerEffects {
 	): void {
 		this.sunDirection.copy(sun)
 		this.daylight = daylight
-		this.cloudiness = weather === 'overcast' || !celestial ? 1 : 0
+		this.cloudiness = ['overcast', 'rain', 'snow'].includes(weather) || !celestial ? 1 : 0
 		this.atmosphere.uniforms.daylight.value = daylight
 		this.atmosphere.uniforms.fogHeight.value = height
 		this.atmosphere.uniforms.fogColor.value.copy(color)

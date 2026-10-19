@@ -69,6 +69,9 @@ export const apiContract = {
 	discovery: discoveryContract,
 	timelapse: timelapseContract,
 	account: {
+		changeName: oc
+			.input(z.object({ name: z.string().trim().min(1).max(80) }))
+			.output(z.object({ ok: z.literal(true) })),
 		changeEmail: oc
 			.input(z.object({ email: z.email().trim().toLowerCase().max(254), currentPassword: z.string().min(1).max(128) }))
 			.output(z.object({ ok: z.literal(true) })),
@@ -120,6 +123,8 @@ export const apiContract = {
 			.input(z.object({ id: z.string().uuid() }))
 			.output(z.object({ token: z.string().min(20), urlPath: z.string().min(1) })),
 		revokeShare: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
-		shareStatus: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ shared: z.boolean() })),
+		shareStatus: oc
+			.input(z.object({ id: z.string().uuid() }))
+			.output(z.object({ shared: z.boolean(), urlPath: z.string().optional() })),
 	},
 }

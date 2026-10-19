@@ -196,6 +196,11 @@ const router = os.router({
 		),
 	},
 	account: {
+		changeName: os.account.changeName.handler(({ context, input }) => {
+			const identity = accountIdentity(context)
+			database.query('UPDATE user SET name=?,updatedAt=? WHERE id=?').run(input.name, Date.now(), identity.userId)
+			return { ok: true as const }
+		}),
 		changeEmail: os.account.changeEmail.handler(({ context, input }) =>
 			accountSecurity.changeEmail(accountIdentity(context), input)
 		),
@@ -310,6 +315,8 @@ app.use(
 		exposeHeaders: ['X-Minemories-Correlation'],
 	})
 )
+
+app.get('/api/auth-providers', context => context.json(Object.keys(auth.options.socialProviders ?? {})))
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
 app.use('/api/auth/*', (context, next) =>

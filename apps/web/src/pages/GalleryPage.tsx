@@ -560,7 +560,9 @@ function SnapshotCard({
 	const [draft, setDraft] = useState(memory.name)
 	const [saving, setSaving] = useState(false)
 	const [shareOpen, setShareOpen] = useState(false)
-	const [publicationOpen, setPublicationOpen] = useState(false)
+	const [publicationOpen, setPublicationOpen] = useState(
+		() => new URLSearchParams(window.location.search).get('publish') === memory.id
+	)
 
 	function startEditing() {
 		setDraft(memory.name)
@@ -701,7 +703,7 @@ function SnapshotCard({
 					type="button"
 					aria-expanded={publicationOpen}
 					onClick={() => setPublicationOpen(open => !open)}
-					className="mt-3 text-xs underline"
+					className="mt-3 min-h-11 rounded-md border border-[#354238] px-4 text-sm text-ink"
 				>
 					{t('Public publication')}
 				</button>

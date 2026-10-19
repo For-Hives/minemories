@@ -490,3 +490,14 @@
 		transition: none;
 	}
 }
+
+.auth-social {
+	display: grid;
+	gap: 12px;
+	margin: 24px 0;
+}
+.auth-social p {
+	text-align: center;
+	color: var(--color-muted, #9ca896);
+	font-size: 13px;
+}

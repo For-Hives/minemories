@@ -3,12 +3,15 @@ import { getMigrations } from 'better-auth/db/migration'
 import { createBilling } from './billing'
 import { authSecret } from './configuration'
 import { database } from './database'
+import { oauthProviders } from './oauth-config'
 import { logApiFailure } from './safe-errors'
 import { webOrigins } from './web-origins'
 
 export const billing = createBilling(database, process.env)
 export const auth = betterAuth({
 	plugins: billing.plugins,
+	socialProviders: oauthProviders(process.env),
+	account: { accountLinking: { enabled: true, disableImplicitLinking: true } },
 	...(billing.config
 		? {
 				logger: {
