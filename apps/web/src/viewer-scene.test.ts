@@ -276,3 +276,26 @@ test('surface lights remain in the bounded lighting budget even when deeper lava
 	expect(lights.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
 	disposeImportedObject(root)
 })
+
+test('orbit remains centered on the captured player when switching captures with a preserved view', () => {
+	const root = new THREE.Group()
+	root.userData.minemoriesPlayerPosition = [4, 20, -3]
+	root.add(new THREE.Mesh(new THREE.BoxGeometry(64, 100, 64)))
+	const camera = new THREE.PerspectiveCamera()
+	camera.position.set(12, 14, 16)
+	const controls = { target: new THREE.Vector3(2, 3, 4), update: vi.fn() }
+	const scene = Object.create(ViewerScene.prototype) as { frameModel(root: THREE.Object3D, preserve: boolean): void }
+	Object.assign(scene, {
+		camera,
+		controls,
+		shadowCenter: new THREE.Vector3(),
+		navigation: { active: false },
+		clouds: { setBaseHeight: vi.fn() },
+		updateSunShadow: vi.fn(),
+	})
+	const offset = camera.position.clone().sub(controls.target)
+	scene.frameModel(root, true)
+	expect(controls.target.toArray()).toEqual([4, 20, -3])
+	expect(camera.position.clone().sub(controls.target).toArray()).toEqual(offset.toArray())
+	disposeImportedObject(root)
+})

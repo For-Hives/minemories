@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
+import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 
 export function SharePanel({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
+	const { copy: localized } = useLocalizedCopy()
 
 	const { notify } = useAppContext()
 	const revision = useRef(0)
-	const [status, setStatus] = useState<'checking' | 'off' | 'on'>('checking')
+	const [status, setStatus] = useState<'checking' | 'off' | 'on' | 'error'>('checking')
 	const [url, setUrl] = useState('')
 	const [busy, setBusy] = useState(false)
 
@@ -20,10 +22,13 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 		apiClient.memories
 			.shareStatus({ id: memoryId })
 			.then(result => {
-				if (version === revision.current) setStatus(result.shared ? 'on' : 'off')
+				if (version === revision.current) {
+					setStatus(result.shared ? 'on' : 'off')
+					if (result.urlPath) setUrl(`${window.location.origin}${result.urlPath}`)
+				}
 			})
 			.catch(() => {
-				if (version === revision.current) setStatus('off')
+				if (version === revision.current) setStatus('error')
 			})
 		return () => {
 			revision.current += 1
@@ -31,6 +36,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 	}, [memoryId])
 
 	async function create() {
+		if (busy) return
 		const version = revision.current
 		setBusy(true)
 		try {
@@ -46,6 +52,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 	}
 
 	async function revoke() {
+		if (busy) return
 		const version = revision.current
 		setBusy(true)
 		try {
@@ -71,7 +78,22 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 	}
 
 	return (
-		<div className="mt-3 rounded-[4px] border border-[#2a332d] bg-[#10150f] p-2" aria-live="polite">
+		<div className="memory-share-panel" aria-live="polite">
+			<h3>{localized('Partager par lien', 'Share by link')}</h3>
+			<p>
+				{localized(
+					'Accessible sans compte à toute personne possédant le lien. Ce souvenir reste absent de la galerie publique.',
+					'Anyone with the link can visit without an account. This memory stays out of the public gallery.'
+				)}
+			</p>
+			{status === 'error' && (
+				<p role="alert">
+					{localized(
+						'Impossible de vérifier le partage. Ferme puis rouvre ce panneau pour réessayer.',
+						'Could not check sharing. Close and reopen this panel to retry.'
+					)}
+				</p>
+			)}
 			{status === 'checking' && (
 				<p className="m-0 text-[10px] text-[#8e978a]">
 					<T message={'Checking the link…'} />
@@ -114,8 +136,16 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 						</span>
 					) : (
 						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
-							<T message={'A link is active for this snapshot.'} />
+							{localized(
+								'Un lien est actif. Pour le retrouver, utilise la copie que tu as conservée. Créer un nouveau lien désactivera le précédent.',
+								'A link is active. Use your saved copy to retrieve it. Creating a new link will disable the previous one.'
+							)}
 						</p>
+					)}
+					{url && (
+						<a href={url} target="_blank" rel="noreferrer">
+							{localized('Ouvrir le lien ↗', 'Open link ↗')}
+						</a>
 					)}
 					<span className="mt-2 flex items-center gap-2">
 						<button
@@ -126,7 +156,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#b4c1ad] disabled:opacity-60"
 						>
 							{' '}
-							<T message={'New link'} />{' '}
+							{localized('Remplacer le lien actif', 'Replace active link')}{' '}
 						</button>
 						<button
 							type="button"

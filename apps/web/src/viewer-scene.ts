@@ -7,6 +7,7 @@ import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
 import { capturePosition, framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
+import { ViewerPrecipitation } from './viewer-precipitation'
 import { prepareWater } from './viewer-water'
 
 export interface ViewerLoadOptions {
@@ -94,6 +95,7 @@ export class ViewerScene {
 		uCelestial: { value: 1 },
 		uFixed: { value: -1 },
 	}
+	private readonly precipitation = new ViewerPrecipitation()
 	private captureFocus: THREE.Vector3 | null = null
 	private readonly navigation: ViewerNavigation
 	private atmosphere: Atmosphere = getAtmosphere(null, null)
@@ -226,9 +228,10 @@ export class ViewerScene {
 		this.navigation = new ViewerNavigation(this.camera, canvas)
 		this.camera.position.set(8, 7, 8)
 		this.controls = new OrbitControls(this.camera, this.canvas)
+		this.controls.enablePan = false
 		this.controls.enableDamping = true
 		this.controls.dampingFactor = 0.08
-		this.scene.add(this.modelRoot)
+		this.scene.add(this.modelRoot, this.precipitation.points)
 		this.effects = new ViewerEffects(this.renderer, this.scene, this.camera)
 		this.environmentGenerator = new THREE.PMREMGenerator(this.renderer)
 		this.controls.autoRotateSpeed = 0.35
@@ -352,7 +355,7 @@ export class ViewerScene {
 
 	setWeather(weather: ViewerWeather): void {
 		this.weather = weather
-		this.skyUniforms.uWeather.value = weather === 'overcast' ? 1 : 0
+		this.skyUniforms.uWeather.value = ['overcast', 'rain', 'snow'].includes(weather) ? 1 : 0
 		this.updateDayCycle()
 		this.updateEnvironment()
 	}
@@ -368,8 +371,8 @@ export class ViewerScene {
 			this.camera.quaternion.setFromEuler(rotation)
 		}
 		if (!enabled && this.navigation.active) {
-			const direction = this.camera.getWorldDirection(new THREE.Vector3())
-			this.controls.target.copy(this.camera.position).addScaledVector(direction, Math.max(3, this.controls.minDistance))
+			this.navigation.setActive(false)
+			this.resetView()
 		}
 		this.camera.near = 0.02
 		this.camera.updateProjectionMatrix()
@@ -469,6 +472,8 @@ export class ViewerScene {
 		this.navigation.dispose()
 		this.controls.dispose()
 		this.clouds.dispose()
+		this.scene.remove(this.precipitation.points)
+		this.precipitation.dispose()
 		this.clouds.removeFromParent()
 		disposeImportedObject(this.scene)
 		this.keyLight.shadow.dispose()
@@ -491,6 +496,12 @@ export class ViewerScene {
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
 		if (this.navigation.active) this.navigation.update(deltaSeconds)
 		else this.controls.update(deltaSeconds)
+		this.precipitation.update(
+			deltaSeconds,
+			this.weather,
+			this.captureFocus ?? this.controls.target,
+			this.quality !== 'eco' && !this.reducedMotion && this.atmosphere.celestial
+		)
 		this.renderScene()
 	}
 
@@ -518,7 +529,11 @@ export class ViewerScene {
 		const footprint = Math.max(size.x, size.z, 1)
 		this.captureFocus = capturePosition(root)
 		const focus = this.captureFocus?.clone() ?? surfaceFocus(bounds)
-		if (!preserveView) this.controls.target.copy(focus)
+		if (!(preserveView && this.navigation.active)) {
+			const offset = focus.clone().sub(this.controls.target)
+			if (preserveView) this.camera.position.add(offset)
+			this.controls.target.copy(focus)
+		}
 		this.shadowCenter.copy(focus)
 		this.shadowExtent = Math.max(12, footprint * 0.85)
 		this.clouds.setBaseHeight(bounds.max.y + Math.max(32, footprint * 1.6))
@@ -663,7 +678,8 @@ export class ViewerScene {
 		)
 		this.skyUniforms.uDay.value = this.dayTime
 		this.skyUniforms.uMoonPhase.value = this.lunarAge
-		this.keyLight.intensity = (0.025 + daylight * 4.8) * (this.weather === 'overcast' ? 0.35 : 1)
+		this.keyLight.intensity =
+			(0.025 + daylight * 4.8) * (['overcast', 'rain', 'snow'].includes(this.weather) ? 0.35 : 1)
 		const shouldCastShadow = daylight > 0.08
 		if (this.keyLight.castShadow !== shouldCastShadow) {
 			this.keyLight.castShadow = shouldCastShadow

@@ -54,6 +54,7 @@ test('the composer retains depth through resize and eco disables the expensive p
 	effects.resize(320, 240, 1.5)
 	expect(composer.renderTarget1.width).toBe(480)
 	expect(composer.renderTarget2.depthTexture).not.toBe(composer.renderTarget1.depthTexture)
+	expect((bloom as InstanceType<typeof UnrealBloomPass>).strength).toBe(0.12)
 	effects.setQuality('eco')
 	expect(bloom?.enabled).toBe(false)
 	expect(atmosphere?.uniforms.strength.value).toBe(0)

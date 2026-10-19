@@ -1190,3 +1190,40 @@ a.mm-editorial-card:hover {
 		padding: 12px;
 	}
 }
+
+.memory-share-panel {
+	display: grid;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 16px;
+	border: 1px solid #354238;
+	border-radius: 8px;
+	background: #10150f;
+}
+.memory-share-panel h3 {
+	margin: 0;
+	font-size: 16px;
+}
+.memory-share-panel p {
+	font-size: 14px;
+	line-height: 1.6;
+	color: #b4c1ad;
+}
+.memory-share-panel button,
+.memory-share-panel input {
+	min-height: 44px;
+	font-size: 14px;
+}
+.memory-share-panel a {
+	color: #c9e6b0;
+	text-decoration: underline;
+}
+.viewer-weather {
+	flex-wrap: wrap;
+}
+.cinema-weather-swatch.rain {
+	background: #5d839d;
+}
+.cinema-weather-swatch.snow {
+	background: #e4edf3;
+}

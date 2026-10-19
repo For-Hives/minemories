@@ -5,6 +5,7 @@ import { authClient } from '../auth-client'
 import { LoadingSkeleton } from '../components/Loading'
 import { MemoryScene } from '../components/MemoryScene'
 import { PasswordField } from '../components/PasswordField'
+import { SocialSignIn } from '../components/SocialSignIn'
 import { fileInputHidden } from '../components/ui'
 import { errorMessageKey } from '../i18n/error-messages'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
@@ -100,6 +101,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 									)}
 						</p>
 					</header>
+					<SocialSignIn destination={from} />
 					{!creating && <CredentialsNotice />}
 					<form className="auth-form" onSubmit={submit} aria-busy={busy}>
 						{creating && (

@@ -2,6 +2,7 @@ import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { type CaptureIdentity, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
+import { openShareToken, sealShareToken } from './share-token'
 import { TimelapseIndex } from './timelapse-index'
 
 const pepper = pairingPepper(process.env)
@@ -200,9 +201,9 @@ export function createShareLink(userId: string, memoryId: string): { token: stri
 			.run(now, memoryId, userId)
 		database
 			.query(
-				'INSERT INTO share_links (token_hash, memory_id, user_id, created_at, revoked_at) VALUES (?, ?, ?, ?, NULL)'
+				'INSERT INTO share_links (token_hash, memory_id, user_id, created_at, revoked_at, token_ciphertext) VALUES (?, ?, ?, ?, NULL, ?)'
 			)
-			.run(codeHash(token), memoryId, userId, now)
+			.run(codeHash(token), memoryId, userId, now, sealShareToken(token, pepper, `${userId}:${memoryId}`))
 	})()
 	return { token }
 }
@@ -215,9 +216,12 @@ export function revokeShareLink(userId: string, memoryId: string): void {
 
 export function shareStatus(userId: string, memoryId: string) {
 	const row = database
-		.query('SELECT 1 AS shared FROM share_links WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL LIMIT 1')
-		.get(memoryId, userId) as { shared: number } | null
-	return { shared: row !== null }
+		.query(
+			'SELECT token_ciphertext FROM share_links WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 1'
+		)
+		.get(memoryId, userId) as { token_ciphertext: string | null } | null
+	const token = openShareToken(row?.token_ciphertext ?? null, pepper, `${userId}:${memoryId}`)
+	return { shared: row !== null, ...(token ? { urlPath: `/share/${token}` } : {}) }
 }
 
 export function getSharedMemory(token: string) {

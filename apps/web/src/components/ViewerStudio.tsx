@@ -1,4 +1,5 @@
 import { type RefObject, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
@@ -180,7 +181,7 @@ export function ViewerStudio({
 					<p>{copy('La même histoire, une nouvelle atmosphère.', 'The same story, a new atmosphere.')}</p>
 					<fieldset disabled={!ready} className="viewer-weather">
 						<legend>{copy('Le ciel', 'The sky')}</legend>
-						{(['clear', 'mist', 'overcast'] as const).map((value, index) => (
+						{(['clear', 'mist', 'overcast', 'rain', 'snow'] as const).map((value, index) => (
 							<button
 								type="button"
 								key={value}
@@ -191,7 +192,12 @@ export function ViewerStudio({
 								}}
 							>
 								<span className={`cinema-weather-swatch ${value}`} aria-hidden="true" />
-								{copy(['Limpide', 'Brume', 'Couvert'], ['Clear', 'Mist', 'Overcast'])[index]}
+								{
+									copy(
+										['Limpide', 'Brume', 'Couvert', 'Pluie', 'Neige'],
+										['Clear', 'Mist', 'Overcast', 'Rain', 'Snow']
+									)[index]
+								}
 							</button>
 						))}
 					</fieldset>
@@ -252,6 +258,9 @@ export function ViewerStudio({
 						)}
 					</p>
 					<SharePanel key={memoryId} memoryId={memoryId} />
+					<Link className="mm-button" to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
+						{copy('Publier dans la galerie publique', 'Publish in the public gallery')}
+					</Link>
 				</section>
 			)}
 			{message && (

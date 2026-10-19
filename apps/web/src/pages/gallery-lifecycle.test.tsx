@@ -231,7 +231,7 @@ test('share panel creates, copies, replaces and revokes an explicit link', async
 	fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
 	await waitFor(() => expect(copy).toHaveBeenCalledWith(`${window.location.origin}/share/fixture-token`))
 	mocks.createShare.mockResolvedValueOnce({ urlPath: '/share/replaced-token' })
-	fireEvent.click(screen.getByRole('button', { name: 'New link' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Replace active link' }))
 	await waitFor(() =>
 		expect(screen.getByLabelText('Share link')).toHaveProperty(
 			'value',

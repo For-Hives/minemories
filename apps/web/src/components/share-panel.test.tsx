@@ -31,3 +31,17 @@ test('opening sharing does not publish; an explicit action creates the link and 
 	expect(api.revokeShare).toHaveBeenCalledWith({ id: 'private-memory' })
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
 })
+
+test('reopening sharing retrieves the same active link without rotating it', async () => {
+	api.shareStatus.mockResolvedValueOnce({ shared: true, urlPath: '/shared/preserved' })
+	api.createShare.mockClear()
+	render(
+		<I18nProvider initialLocale="en">
+			<SharePanel memoryId="private-memory" />
+		</I18nProvider>
+	)
+	const link = await screen.findByRole('textbox', { name: 'Share link' })
+	expect(link).toHaveProperty('value', `${window.location.origin}/shared/preserved`)
+	expect(api.createShare).not.toHaveBeenCalled()
+	expect(screen.getByRole('link', { name: 'Open link ↗' }).getAttribute('href')).toContain('/shared/preserved')
+})

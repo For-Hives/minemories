@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { AppContext } from '../app-context'
@@ -267,6 +267,11 @@ export function PublicationPanel({
 }) {
 	const { copy } = useLocalizedCopy()
 	const labels = useCategoryLabels()
+	const panel = useRef<HTMLElement>(null)
+	useEffect(() => {
+		panel.current?.focus({ preventScroll: true })
+		panel.current?.scrollIntoView?.({ block: 'nearest' })
+	}, [])
 	const [status, setStatus] = useState<Publication | null>(null)
 	const [title, setTitle] = useState(memory.name.slice(0, 80))
 	const [description, setDescription] = useState('')
@@ -325,6 +330,8 @@ export function PublicationPanel({
 	}
 	return (
 		<section
+			ref={panel}
+			tabIndex={-1}
 			aria-label={copy('Publication publique', 'Public publication')}
 			className="mt-4 grid gap-3 border-t border-[#354238] pt-3"
 		>
