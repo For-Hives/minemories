@@ -2,48 +2,47 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
-import { localize } from '../i18n/catalog'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { translate } from '../i18n/catalog'
+import { useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
 import { DiagnosticDetails } from './DiagnosticDetails'
 import { type DiagnosticIssue, type IssueFilters, issueStates, phaseLabels, stateLabels } from './diagnostics-data'
 import './diagnostics.css'
 
 function IssueCard({ issue, onOpen }: { issue: DiagnosticIssue; onOpen: () => void }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const report = issue.lastReport
 	const version = report.source === 'mod' ? report.versions.mod : report.versions.api
 	return (
 		<article className="mm-diagnostic-card" aria-label={report.exception.type}>
 			<div className="mm-diagnostic-toolbar">
 				<span>
-					{localize(phaseLabels[report.phase], locale)} · {report.source}
+					{translate(locale, phaseLabels[report.phase])} · {report.source}
 				</span>
 				<span className={`mm-diagnostic-state mm-diagnostic-${issue.state}`}>
-					{localize(stateLabels[issue.state], locale)}
+					{translate(locale, stateLabels[issue.state])}
 				</span>
 			</div>
 			<h2>{report.exception.type}</h2>
 			<p>
 				{report.exception.frames[0]
 					? `${report.exception.frames[0].className}.${report.exception.frames[0].methodName}`
-					: copy('Trace indisponible', 'Stack unavailable')}
+					: t('Stack unavailable')}
 			</p>
 			<p>
-				{copy('Version', 'Version')} {version} · {issue.count} {copy('occurrences', 'occurrences')} · {issue.devices}{' '}
-				{copy('appareils', 'devices')}
+				{t('Version')} {version} · {issue.count} {t('occurrences')} · {issue.devices} {t('devices')}
 			</p>
 			<time dateTime={new Date(issue.lastReceivedAt).toISOString()}>
 				{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(issue.lastReceivedAt)}
 			</time>
 			<button type="button" className={buttonOutline} onClick={onOpen}>
-				{copy('Examiner l’erreur', 'Inspect error')} <span className="sr-only">{issue.fingerprint}</span>
+				{t('Inspect error')} <span className="sr-only">{issue.fingerprint}</span>
 			</button>
 		</article>
 	)
 }
 export function DiagnosticsPage() {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const [filters, setFilters] = useState<IssueFilters>({ state: 'open', page: 0 })
 	const [version, setVersion] = useState('')
 	const [items, setItems] = useState<DiagnosticIssue[]>([])
@@ -75,12 +74,7 @@ export function DiagnosticsPage() {
 				if (current) {
 					setAllowed(false)
 					setSelected(null)
-					setError(
-						copy(
-							'Diagnostics indisponibles ou accès opérateur refusé.',
-							'Diagnostics unavailable or operator access denied.'
-						)
-					)
+					setError(t('Diagnostics unavailable or operator access denied.'))
 				}
 			})
 			.finally(() => {
@@ -89,23 +83,19 @@ export function DiagnosticsPage() {
 		return () => {
 			current = false
 		}
-	}, [filters, refresh, copy])
+	}, [filters, refresh, t])
 	function close() {
 		setSelected(null)
 		trigger.current?.focus()
 	}
 	return (
 		<ContentLayout
-			eyebrow={copy('ESPACE OPÉRATEUR · PRIVÉ', 'OPERATOR AREA · PRIVATE')}
-			title={copy('Diagnostics du mod', 'Mod diagnostics')}
-			lead={copy(
-				'Comprendre les exports échoués, les envois interrompus et les crashs signalés avec accord.',
-				'Investigate failed exports, interrupted uploads and crashes reported with consent.'
-			)}
+			eyebrow={t('OPERATOR AREA · PRIVATE')}
+			title={t('Mod diagnostics')}
+			lead={t('Investigate failed exports, interrupted uploads and crashes reported with consent.')}
 		>
 			<p className="mm-note">
-				{copy(
-					'Rapports techniques privés et limités dans le temps. Aucun rapport sans appairage et accord du joueur. Les crashs peuvent arriver après le prochain lancement du jeu.',
+				{t(
 					'Private technical reports with limited retention. No reports without pairing and player consent. Crash reports may arrive after the next game launch.'
 				)}
 			</p>
@@ -119,9 +109,9 @@ export function DiagnosticsPage() {
 					setRefresh(value => value + 1)
 				}}
 			>
-				{copy('Actualiser', 'Refresh')}
+				{t('Refresh')}
 			</button>
-			{pending && <LoadingSkeleton label={copy('Chargement des diagnostics…', 'Loading diagnostics…')} />}
+			{pending && <LoadingSkeleton label={t('Loading diagnostics…')} />}
 			{allowed && (
 				<>
 					<form
@@ -133,27 +123,27 @@ export function DiagnosticsPage() {
 						}}
 					>
 						<label>
-							{copy('Statut', 'Status')}
+							{t('Status')}
 							<select
-								aria-label={copy('Statut', 'Status')}
+								aria-label={t('Status')}
 								value={filters.state}
 								onChange={event => {
 									close()
 									setFilters(value => ({ ...value, state: event.target.value as IssueFilters['state'], page: 0 }))
 								}}
 							>
-								<option value="all">{copy('Tous', 'All')}</option>
+								<option value="all">{t('filters.allStates')}</option>
 								{issueStates.map(value => (
 									<option value={value} key={value}>
-										{localize(stateLabels[value], locale)}
+										{translate(locale, stateLabels[value])}
 									</option>
 								))}
 							</select>
 						</label>
 						<label>
-							{copy('Étape', 'Phase')}
+							{t('Phase')}
 							<select
-								aria-label={copy('Étape', 'Phase')}
+								aria-label={t('Phase')}
 								value={filters.phase ?? ''}
 								onChange={event => {
 									close()
@@ -164,18 +154,18 @@ export function DiagnosticsPage() {
 									}))
 								}}
 							>
-								<option value="">{copy('Toutes', 'All')}</option>
+								<option value="">{t('All')}</option>
 								{Object.entries(phaseLabels).map(([value, label]) => (
 									<option key={value} value={value}>
-										{localize(label, locale)}
+										{translate(locale, label)}
 									</option>
 								))}
 							</select>
 						</label>
 						<label>
-							{copy('Source', 'Source')}
+							{t('Source')}
 							<select
-								aria-label={copy('Source', 'Source')}
+								aria-label={t('Source')}
 								value={filters.source ?? ''}
 								onChange={event => {
 									close()
@@ -186,13 +176,13 @@ export function DiagnosticsPage() {
 									}))
 								}}
 							>
-								<option value="">{copy('Toutes', 'All')}</option>
+								<option value="">{t('All')}</option>
 								<option value="mod">Mod</option>
 								<option value="api">API</option>
 							</select>
 						</label>
 						<label>
-							{copy('Version du mod / API', 'Mod / API version')}
+							{t('Mod / API version')}
 							<input
 								value={version}
 								onChange={event => setVersion(event.target.value)}
@@ -202,15 +192,13 @@ export function DiagnosticsPage() {
 							/>
 						</label>
 						<button className={buttonOutline} type="submit">
-							{copy('Filtrer', 'Filter')}
+							{t('Filter')}
 						</button>
 					</form>
 					<p role="status">
-						{items.length} {copy('groupes sur cette page', 'groups on this page')}
+						{items.length} {t('groups on this page')}
 					</p>
-					{!(pending || items.length) && (
-						<p>{copy('Aucune erreur correspondant à ces filtres.', 'No errors match these filters.')}</p>
-					)}
+					{!(pending || items.length) && <p>{t('No errors match these filters.')}</p>}
 					<div className="mm-diagnostic-grid">
 						{items.map(issue => (
 							<IssueCard
@@ -223,7 +211,7 @@ export function DiagnosticsPage() {
 							/>
 						))}
 					</div>
-					<nav className="mm-diagnostic-toolbar" aria-label={copy('Pages des diagnostics', 'Diagnostic pages')}>
+					<nav className="mm-diagnostic-toolbar" aria-label={t('Diagnostic pages')}>
 						<button
 							className={buttonOutline}
 							type="button"
@@ -233,10 +221,10 @@ export function DiagnosticsPage() {
 								setFilters(value => ({ ...value, page: (value.page ?? 0) - 1 }))
 							}}
 						>
-							{copy('Page précédente', 'Previous page')}
+							{t('Previous page')}
 						</button>
 						<span>
-							{copy('Page', 'Page')} {(filters.page ?? 0) + 1}
+							{t('Page')} {(filters.page ?? 0) + 1}
 						</span>
 						<button
 							className={buttonOutline}
@@ -247,7 +235,7 @@ export function DiagnosticsPage() {
 								setFilters(value => ({ ...value, page: (value.page ?? 0) + 1 }))
 							}}
 						>
-							{copy('Page suivante', 'Next page')}
+							{t('Next page')}
 						</button>
 					</nav>
 				</>

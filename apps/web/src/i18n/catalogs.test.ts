@@ -1,10 +1,11 @@
 import { expect, test } from 'vitest'
-import { loadLocale, localize, translate, translateCopy } from './catalog'
+import { loadLocale, translate } from './catalog'
 import { formatCaptureCount } from './counts'
 import { isLocale, localeOptions, localeTag, preferredLocale, resolveLocale } from './locales'
-import sourceMessages from './source-messages.json'
+import english from './locales/en.json'
 
-const extraLocales = ['ru', 'de', 'ko', 'pt-BR', 'pl', 'ja'] as const
+const sourceMessages = Object.keys(english)
+const extraLocales = ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja'] as const
 const catalogs = import.meta.glob<Record<string, string>>('./locales/*.json', { import: 'default' })
 const parameters = (message: string) => [...message.matchAll(/\{\w+\}/g)].map(match => match[0]).sort()
 const protocolPattern =
@@ -40,29 +41,22 @@ for (const locale of extraLocales) {
 		for (const key of sourceMessages) {
 			const translated = catalog[key]
 			expect(translated?.trim(), key).toBeTruthy()
-			expect(parameters(translated ?? ''), key).toEqual(parameters(key))
-			for (const token of protocol(key)) expect(protocol(translated ?? ''), key).toContain(token)
+			expect(parameters(translated ?? ''), key).toEqual(parameters(english[key as keyof typeof english]))
+			for (const token of protocol(english[key as keyof typeof english]))
+				expect(protocol(translated ?? ''), key).toContain(token)
 			expect(translated, key).not.toMatch(/ZXQ\d+QXZ|918273\d{3}918273|\[\[\d+\]\]/)
 		}
 	})
 }
 
-test('catalogues support French guide keys, English keys, nested editorial copy and safe interpolation', async () => {
+test('catalogues support canonical English keys and safe interpolation', async () => {
 	await loadLocale('ja')
 	expect(translate('ja', 'Sign in')).toBe('ログイン')
-	expect(translate('ja', 'Se connecter')).toBe('ログイン')
+
 	expect(translate('ja', 'Your first memory, {name}.', { name: 'Alex' })).toContain('Alex')
 	expect(translate('ja', 'Same area · {count} captures', { count: 0 })).toContain('0')
 	expect(translate('ja', 'Unknown {missing}')).toBe('Unknown {missing}')
 	expect(translate('ja', '__proto__')).toBe('__proto__')
-	expect(translateCopy('ja', { title: 'Sign in', count: 0, choices: ['Rain', 'Snow'], enabled: true })).toEqual({
-		title: 'ログイン',
-		count: 0,
-		choices: ['雨', '雪'],
-		enabled: true,
-	})
-	expect(localize({ fr: 'Texte français', en: 'Sign in' }, 'fr')).toBe('Texte français')
-	expect(localize({ fr: 'Texte français', en: 'Sign in' }, 'ja')).toBe('ログイン')
 })
 
 test('regional variants preserve previous preferences and use country-appropriate terms', async () => {
@@ -76,7 +70,8 @@ test('regional variants preserve previous preferences and use country-appropriat
 	expect(translate('fr', 'Email address')).toBe('Adresse e-mail')
 })
 
-test('Russian and Polish capture counters follow CLDR rather than an English singular/plural rule', () => {
+test('Russian and Polish capture counters follow CLDR rather than an English singular/plural rule', async () => {
+	await Promise.all((['ru', 'pl', 'ja', 'ko', 'de'] as const).map(loadLocale))
 	expect([1, 2, 5, 21].map(count => formatCaptureCount('ru', count))).toEqual([
 		'1 снимок',
 		'2 снимка',
@@ -91,10 +86,18 @@ test('Russian and Polish capture counters follow CLDR rather than an English sin
 })
 
 test('concurrent requests share one catalogue download and unknown interpolation keys stay readable', async () => {
-	const first = loadLocale('ru')
-	const second = loadLocale('ru')
+	const first = loadLocale('pt-BR')
+	const second = loadLocale('pt-BR')
 	expect(second).toBe(first)
 	await first
-	expect(translate('ru', 'Sign in')).toBe('Войти')
+	expect(translate('pt-BR', 'Sign in')).toBe('Entrar')
 	expect(translate('ru', 'Unknown {constructor}')).toBe('Unknown {constructor}')
+})
+
+const applicationSources = import.meta.glob('../**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true })
+test('production pages have one localization path and no bilingual copy helper', () => {
+	for (const [path, source] of Object.entries(applicationSources)) {
+		if (path.includes('.test.')) continue
+		expect(source, path).not.toMatch(/useLocalizedCopy|translateCopy|\blocalize\(/)
+	}
 })

@@ -8,7 +8,7 @@ import { PasswordField } from '../components/PasswordField'
 import { SocialSignIn } from '../components/SocialSignIn'
 import { fileInputHidden } from '../components/ui'
 import { errorMessageKey } from '../i18n/error-messages'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
 const inputField = 'auth-input'
 
@@ -26,7 +26,7 @@ function authenticate(form: FormData, creating: boolean) {
 }
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
-	const { t, copy } = useLocalizedCopy()
+	const { t } = useI18n()
 
 	const { session, isPending, refreshSession } = useAppContext()
 	const [error, setError] = useState('')
@@ -74,7 +74,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 		<section className="auth-entry">
 			<div className="auth-workspace">
 				<div className="auth-form-wrap">
-					<nav className="auth-modes" aria-label={copy('Accès à ton espace', 'Access your space')}>
+					<nav className="auth-modes" aria-label={t('Access your space')}>
 						<Link to="/login" state={{ from, email }} aria-current={!creating ? 'page' : undefined}>
 							{t('Sign in')}
 						</Link>
@@ -83,22 +83,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						</Link>
 					</nav>
 					<header className="auth-heading">
-						<span className="auth-eyebrow">{copy('TES MONDES T’ATTENDENT', 'YOUR WORLDS ARE WAITING')}</span>
-						<h1>
-							{creating
-								? copy('Le début de ton album.', 'Your album starts here.')
-								: copy('De retour chez toi.', 'Welcome home.')}
-						</h1>
+						<span className="auth-eyebrow">{t('YOUR WORLDS ARE WAITING')}</span>
+						<h1>{creating ? t('Your album starts here.') : t('Welcome home.')}</h1>
 						<p>
 							{creating
-								? copy(
-										'Un espace pour garder tes captures et choisir avec qui les partager.',
-										'A space to keep your captures and choose who to share them with.'
-									)
-								: copy(
-										'Retrouve tes captures, tes constructions et les moments qui comptent.',
-										'Find your captures, your builds and the moments that matter.'
-									)}
+								? t('A space to keep your captures and choose who to share them with.')
+								: t('Find your captures, your builds and the moments that matter.')}
 						</p>
 					</header>
 					<SocialSignIn destination={from} />
@@ -112,7 +102,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 									autoComplete="nickname"
 									required
 									maxLength={80}
-									placeholder={copy('Ton pseudo Minecraft, par exemple', 'Your Minecraft name, for example')}
+									placeholder={t('Your Minecraft name, for example')}
 									className={inputField}
 								/>
 							</label>
@@ -149,7 +139,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								<rect x="4" y="8" width="12" height="9" rx="2" />
 								<path d="M7 8V5a3 3 0 0 1 6 0v3" />
 							</svg>
-							{copy('Tes captures sont privées par défaut.', 'Your captures are private by default.')}
+							{t('Your captures are private by default.')}
 						</p>
 					</form>
 					<GuestEntry />
@@ -161,32 +151,27 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 }
 
 function GuestEntry() {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const { setViewerFile } = useAppContext()
 	const navigate = useNavigate()
 	return (
-		<aside className="auth-guest" aria-label={copy('Visiter sans compte', 'Visit without an account')}>
+		<aside className="auth-guest" aria-label={t('Visit without an account')}>
 			<div className="auth-guest-title">
 				<span aria-hidden="true">↗</span>
-				<h2>{copy('Juste de passage ?', 'Just visiting?')}</h2>
-				<span>{copy('SANS COMPTE', 'NO ACCOUNT')}</span>
+				<h2>{t('Just visiting?')}</h2>
+				<span>{t('NO ACCOUNT')}</span>
 			</div>
 			{import.meta.env.DEV ? (
 				<>
-					<p>
-						{copy(
-							'Ouvre une capture sur ton appareil. Le fichier reste local.',
-							'Open a capture on your device. The file stays local.'
-						)}
-					</p>
+					<p>{t('Open a capture on your device. The file stays local.')}</p>
 					<label className="auth-file">
-						{copy('Ouvrir ma capture', 'Open my capture')}
+						{t('Open my capture')}
 						<span aria-hidden="true">＋</span>
 						<input
 							type="file"
 							className={fileInputHidden}
 							accept=".glb,model/gltf-binary"
-							aria-label={copy('Ouvrir ma capture', 'Open my capture')}
+							aria-label={t('Open my capture')}
 							onChange={event => {
 								const file = event.currentTarget.files?.[0]
 								if (file) {
@@ -199,24 +184,19 @@ function GuestEntry() {
 					</label>
 				</>
 			) : (
-				<p>
-					{copy(
-						'Explore les souvenirs partagés par la communauté, sans créer de compte.',
-						'Explore memories shared by the community, without creating an account.'
-					)}
-				</p>
+				<p>{t('Explore memories shared by the community, without creating an account.')}</p>
 			)}
 			<Link className={import.meta.env.DEV ? 'auth-explore' : 'auth-file'} to="/explorer">
-				{copy('Explorer la galerie publique', 'Explore the public gallery')} <span aria-hidden="true">→</span>
+				{t('Explore the public gallery')} <span aria-hidden="true">→</span>
 			</Link>
 		</aside>
 	)
 }
 
 function AuthAtmosphere() {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	return (
-		<aside className="auth-atmosphere" aria-label={copy('L’esprit Minemories', 'The spirit of Minemories')}>
+		<aside className="auth-atmosphere" aria-label={t('The spirit of Minemories')}>
 			<div className="auth-art-sky" aria-hidden="true">
 				<span className="auth-art-sun" />
 				<i />
@@ -224,41 +204,38 @@ function AuthAtmosphere() {
 			</div>
 			<div className="auth-art-label">
 				<span>MINEMORIES</span>
-				<span>{copy('LES LIEUX RESTENT.', 'THE PLACES REMAIN.')}</span>
+				<span>{t('THE PLACES REMAIN.')}</span>
 			</div>
 			<div className="auth-art-copy">
-				<p>{copy('Une maison. Un serveur. Une époque.', 'A home. A server. An era.')}</p>
+				<p>{t('A home. A server. An era.')}</p>
 				<h2>
-					{copy('On a tous', 'We all have')}
+					{t('We all have')}
 					<br />
-					{copy('un endroit', 'somewhere')}
+					{t('somewhere')}
 					<br />
-					<em>{copy('à retrouver.', 'to return to.')}</em>
+					<em>{t('to return to.')}</em>
 				</h2>
 			</div>
 			<div className="auth-art-world">
-				<MemoryScene
-					theme="village"
-					label={copy('Illustration d’un village sur une île', 'Illustration of a village on an island')}
-				/>
+				<MemoryScene theme="village" label={t('Illustration of a village on an island')} />
 			</div>
 			<div className="auth-art-caption">
-				<span>01 / {copy('LE SOUVENIR', 'THE MEMORY')}</span>
-				<p>{copy('La partie s’arrête. L’histoire continue.', 'The game ends. The story continues.')}</p>
-				<span>{copy('Illustration', 'Illustration')} · Minemories</span>
+				<span>01 / {t('THE MEMORY')}</span>
+				<p>{t('The game ends. The story continues.')}</p>
+				<span>{t('Illustration')} · Minemories</span>
 			</div>
 		</aside>
 	)
 }
 
 function CredentialsNotice() {
-	const { copy } = useLocalizedCopy(),
+	const { t } = useI18n(),
 		location = useLocation()
 	const updated = new URLSearchParams(location.search).get('updated')
 	if (updated !== 'email' && updated !== 'password') return null
 	return (
 		<p role="status" className="auth-notice">
-			{copy('Identifiants modifiés. Reconnecte-toi pour continuer.', 'Credentials updated. Sign in again to continue.')}
+			{t('Credentials updated. Sign in again to continue.')}
 		</p>
 	)
 }

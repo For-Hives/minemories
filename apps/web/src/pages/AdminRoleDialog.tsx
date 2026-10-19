@@ -1,16 +1,12 @@
 import type { AdminUser } from '@minemories/api-contract'
 import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
-function roleError(cause: unknown, copy: ReturnType<typeof useLocalizedCopy>['copy']): string {
+function roleError(cause: unknown, t: ReturnType<typeof useI18n>['t']): string {
 	const message = cause instanceof Error ? cause.message : ''
-	if (message === 'LAST_ADMIN')
-		return copy('Le dernier administrateur doit conserver son rôle.', 'The last administrator must keep their role.')
-	return copy(
-		'Action refusée. Vérifie ton mot de passe et tes droits, puis réessaie.',
-		'Action denied. Check your password and permissions, then try again.'
-	)
+	if (message === 'LAST_ADMIN') return t('The last administrator must keep their role.')
+	return t('Action denied. Check your password and permissions, then try again.')
 }
 export function AdminRoleDialog({
 	target,
@@ -21,7 +17,7 @@ export function AdminRoleDialog({
 	onClose(): void
 	onSuccess(): void
 }) {
-	const { copy } = useLocalizedCopy(),
+	const { t } = useI18n(),
 		dialog = useRef<HTMLDialogElement>(null),
 		[busy, setBusy] = useState(false),
 		[error, setError] = useState(''),
@@ -49,7 +45,7 @@ export function AdminRoleDialog({
 			if (active.current) onSuccess()
 		} catch (cause) {
 			if (!active.current) return
-			setError(roleError(cause, copy))
+			setError(roleError(cause, t))
 		} finally {
 			if (active.current) setBusy(false)
 		}
@@ -65,11 +61,9 @@ export function AdminRoleDialog({
 			}}
 		>
 			<form onSubmit={event => void submit(event)}>
-				<span className="mm-kicker">{copy('GESTION DES ACCÈS', 'ACCESS MANAGEMENT')}</span>
+				<span className="mm-kicker">{t('ACCESS MANAGEMENT')}</span>
 				<h2 id="role-dialog-title">
-					{role === 'admin'
-						? copy('Promouvoir ce compte ?', 'Promote this account?')
-						: copy('Retirer le rôle administrateur ?', 'Remove administrator access?')}
+					{role === 'admin' ? t('Promote this account?') : t('Remove administrator access?')}
 				</h2>
 				<p>
 					<strong>{target.name}</strong>
@@ -78,17 +72,11 @@ export function AdminRoleDialog({
 				</p>
 				<p>
 					{role === 'admin'
-						? copy(
-								'Ce compte pourra consulter les statistiques et gérer les administrateurs.',
-								'This account will be able to view statistics and manage administrators.'
-							)
-						: copy(
-								'Ce compte conserve ses souvenirs et perd l’accès à ce panneau.',
-								'This account keeps its memories and loses access to this panel.'
-							)}
+						? t('This account will be able to view statistics and manage administrators.')
+						: t('This account keeps its memories and loses access to this panel.')}
 				</p>
 				<label>
-					{copy('Ton mot de passe actuel', 'Your current password')}
+					{t('Your current password')}
 					<input
 						name="currentPassword"
 						type="password"
@@ -105,10 +93,10 @@ export function AdminRoleDialog({
 				)}
 				<div className="mm-admin-dialog-actions">
 					<button type="button" className="mm-admin-secondary" onClick={onClose} disabled={busy}>
-						{copy('Annuler', 'Cancel')}
+						{t('Cancel')}
 					</button>
 					<button type="submit" className="mm-admin-primary" disabled={busy}>
-						{busy ? copy('Enregistrement…', 'Saving…') : copy('Confirmer le changement', 'Confirm change')}
+						{busy ? t('Saving…') : t('Confirm change')}
 					</button>
 				</div>
 			</form>

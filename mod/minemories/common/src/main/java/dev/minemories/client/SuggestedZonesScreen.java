@@ -4,6 +4,7 @@ import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 /** Suggestions only: viewing this screen never selects, captures or sends a zone. */
@@ -15,7 +16,7 @@ final class SuggestedZonesScreen extends Screen {
   private int panelWidth;
 
   SuggestedZonesScreen(Screen parent) {
-    super(Component.literal("Zones suggérées"));
+    super(Component.translatable("minemories.ui.zones_suggerees"));
     this.parent = parent;
   }
 
@@ -26,7 +27,7 @@ final class SuggestedZonesScreen extends Screen {
     top = Math.max(4, (height - 236) / 2);
     zones = ClientRuntime.suggestedZones();
     addRenderableWidget(
-        Button.builder(Component.literal("Retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
             .bounds(left + 14, top + 202, panelWidth - 28, 20)
             .build());
   }
@@ -36,16 +37,28 @@ final class SuggestedZonesScreen extends Screen {
     super.render(graphics, mouseX, mouseY, partialTick);
     graphics.drawString(font, title, left + 14, top + 14, 0xFFECE8DC);
     graphics.drawString(
-        font, "Temps actif local · zones de 64 × 64 blocs", left + 14, top + 35, 0xFFB2B6AA);
+        font,
+        I18n.get("minemories.ui.temps_actif_local_zones_de_64_64_blocs"),
+        left + 14,
+        top + 35,
+        0xFFB2B6AA);
     if (zones.isEmpty()) {
       graphics.drawString(
-          font, "Joue au moins une minute dans une zone.", left + 14, top + 65, 0xFFECE8DC);
+          font,
+          I18n.get("minemories.ui.joue_au_moins_une_minute_dans_une_zone"),
+          left + 14,
+          top + 65,
+          0xFFECE8DC);
     }
     for (int i = 0; i < zones.size(); i++) {
       graphics.drawString(font, zones.get(i).label(), left + 14, top + 65 + i * 22, 0xFFECE8DC);
     }
     graphics.drawString(
-        font, "Rejoins une zone puis choisis ton export.", left + 14, top + 180, 0xFFB2B6AA);
+        font,
+        I18n.get("minemories.ui.rejoins_une_zone_puis_choisis_ton_export"),
+        left + 14,
+        top + 180,
+        0xFFB2B6AA);
   }
 
   @Override

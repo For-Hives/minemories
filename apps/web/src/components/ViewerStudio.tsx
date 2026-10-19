@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
@@ -20,7 +20,7 @@ export function ViewerStudio({
 	minutes?: number
 	fileInfo?: string
 }) {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const [weather, setWeather] = useState<ViewerWeather>('clear')
 	const [quality, setQuality] = useState<ViewerQuality>('auto')
 	const [tour, setTour] = useState(false)
@@ -45,9 +45,7 @@ export function ViewerStudio({
 			if (document.fullscreenElement) await document.exitFullscreen()
 			else await element?.requestFullscreen()
 		} catch {
-			setMessage(
-				copy('Le plein écran est indisponible dans ce navigateur.', 'Fullscreen is unavailable in this browser.')
-			)
+			setMessage(t('Fullscreen is unavailable in this browser.'))
 		}
 	}
 	function postcard() {
@@ -57,7 +55,7 @@ export function ViewerStudio({
 		link.href = image
 		link.download = 'minemories-postcard.jpg'
 		link.click()
-		setMessage(copy('Votre carte postale est prête.', 'Your postcard is ready.'))
+		setMessage(t('Your postcard is ready.'))
 	}
 	return (
 		<div className={`viewer-studio ${immersed ? 'is-immersed' : ''}`}>
@@ -66,16 +64,16 @@ export function ViewerStudio({
 					type="button"
 					aria-expanded={settings}
 					aria-controls="cinema-settings"
-					aria-label={copy('Ambiance', 'Atmosphere')}
+					aria-label={t('Atmosphere')}
 					onClick={() => setSettings(!settings)}
 				>
-					☷ <span>{copy('Ambiance', 'Atmosphere')}</span>
+					☷ <span>{t('Atmosphere')}</span>
 				</button>
 				<button
 					type="button"
 					disabled={!ready}
 					aria-pressed={tour}
-					aria-label={copy('Contempler', 'Take a moment')}
+					aria-label={t('Take a moment')}
 					onClick={() => {
 						setFirstPerson(false)
 						sceneRef.current?.setFirstPerson(false)
@@ -84,12 +82,12 @@ export function ViewerStudio({
 					}}
 				>
 					{' '}
-					{tour ? 'Ⅱ' : '▷'} <span>{copy('Contempler', 'Take a moment')}</span>
+					{tour ? 'Ⅱ' : '▷'} <span>{t('Take a moment')}</span>
 				</button>
 				<button
 					type="button"
 					disabled={!ready}
-					aria-label={copy('Recentrer', 'Recenter')}
+					aria-label={t('Recenter')}
 					onClick={() => {
 						setFirstPerson(false)
 						sceneRef.current?.setFirstPerson(false)
@@ -97,48 +95,43 @@ export function ViewerStudio({
 						setTour(false)
 					}}
 				>
-					◎ <span>{copy('Recentrer', 'Recenter')}</span>
+					◎ <span>{t('Recenter')}</span>
 				</button>
 				<button
 					type="button"
 					disabled={!ready}
 					aria-pressed={firstPerson}
-					aria-label={copy('Première personne', 'First person')}
+					aria-label={t('First person')}
 					onClick={() => {
 						setFirstPerson(!firstPerson)
 						setTour(false)
 						sceneRef.current?.setFirstPerson(!firstPerson)
 					}}
 				>
-					⌖ <span>{copy('Première personne', 'First person')}</span>
+					⌖ <span>{t('First person')}</span>
 				</button>
-				<button type="button" disabled={!ready} aria-label={copy('Carte postale', 'Postcard')} onClick={postcard}>
-					▧ <span>{copy('Carte postale', 'Postcard')}</span>
+				<button type="button" disabled={!ready} aria-label={t('Postcard')} onClick={postcard}>
+					▧ <span>{t('Postcard')}</span>
 				</button>
 				{memoryId && (
 					<button
 						type="button"
 						disabled={!ready}
-						aria-label={copy('Partager', 'Share')}
+						aria-label={t('Share')}
 						aria-expanded={sharing}
 						onClick={() => setSharing(!sharing)}
 					>
-						↗ <span>{copy('Partager', 'Share')}</span>
+						↗ <span>{t('Share')}</span>
 					</button>
 				)}
-				<button type="button" aria-label={copy('Plein écran', 'Fullscreen')} onClick={() => void fullscreen()}>
-					⛶ <span>{copy('Plein écran', 'Fullscreen')}</span>
+				<button type="button" aria-label={t('Fullscreen')} onClick={() => void fullscreen()}>
+					⛶ <span>{t('Fullscreen')}</span>
 				</button>
 			</div>
 			{firstPerson && (
-				<section className="cinema-navigation" aria-label={copy('Exploration', 'Explore')}>
-					<strong>{copy('À hauteur de souvenir', 'Step inside the memory')}</strong>
-					<p>
-						{copy(
-							'Glisser pour regarder · ZQSD / WASD ou flèches · E / Espace : monter · A (AZERTY) / Q (QWERTY) : descendre · Maj : rapide · Alt : précis',
-							'Drag to look · WASD or arrows · E / Space: up · Q: down · Shift: fast · Alt: precise'
-						)}
-					</p>
+				<section className="cinema-navigation" aria-label={t('Explore')}>
+					<strong>{t('Step inside the memory')}</strong>
+					<p>{t('Drag to look · WASD or arrows · E / Space: up · Q: down · Shift: fast · Alt: precise')}</p>
 					<div>
 						{(['forward', 'back', 'up', 'down'] as const).map((direction, index) => (
 							<button
@@ -159,7 +152,7 @@ export function ViewerStudio({
 								}}
 								onKeyUp={() => sceneRef.current?.moveFirstPerson(direction, false)}
 							>
-								{copy(['Avancer', 'Reculer', 'Monter', 'Descendre'], ['Forward', 'Back', 'Up', 'Down'])[index]}
+								{[t('Forward'), t('Back'), t('Up'), t('Down')][index]}
 							</button>
 						))}
 					</div>
@@ -168,19 +161,15 @@ export function ViewerStudio({
 			{settings && (
 				<section id="cinema-settings" className="cinema-settings">
 					<div className="cinema-panel-heading">
-						<span className="cinema-kicker">{copy('FAÇONNER L’INSTANT', 'SHAPE THE MOMENT')}</span>
-						<button
-							type="button"
-							aria-label={copy('Fermer les réglages', 'Close settings')}
-							onClick={() => setSettings(false)}
-						>
+						<span className="cinema-kicker">{t('SHAPE THE MOMENT')}</span>
+						<button type="button" aria-label={t('Close settings')} onClick={() => setSettings(false)}>
 							×
 						</button>
 					</div>
-					<h2>{copy('Une autre lumière.', 'A different light.')}</h2>
-					<p>{copy('La même histoire, une nouvelle atmosphère.', 'The same story, a new atmosphere.')}</p>
+					<h2>{t('A different light.')}</h2>
+					<p>{t('The same story, a new atmosphere.')}</p>
 					<fieldset disabled={!ready} className="viewer-weather">
-						<legend>{copy('Le ciel', 'The sky')}</legend>
+						<legend>{t('The sky')}</legend>
 						{(['clear', 'mist', 'overcast', 'rain', 'snow'] as const).map((value, index) => (
 							<button
 								type="button"
@@ -192,17 +181,12 @@ export function ViewerStudio({
 								}}
 							>
 								<span className={`cinema-weather-swatch ${value}`} aria-hidden="true" />
-								{
-									copy(
-										['Limpide', 'Brume', 'Couvert', 'Pluie', 'Neige'],
-										['Clear', 'Mist', 'Overcast', 'Rain', 'Snow']
-									)[index]
-								}
+								{[t('Clear'), t('Mist'), t('Overcast'), t('Rain'), t('Snow')][index]}
 							</button>
 						))}
 					</fieldset>
 					<label className="viewer-quality">
-						{copy('Finesse du rendu', 'Rendering quality')}
+						{t('Rendering quality')}
 						<select
 							disabled={!ready}
 							value={quality}
@@ -212,54 +196,37 @@ export function ViewerStudio({
 								sceneRef.current?.setQuality(value)
 							}}
 						>
-							<option value="auto">{copy('Auto · équilibré', 'Auto · balanced')}</option>
-							<option value="cinematic">{copy('Cinéma · tous les détails', 'Cinematic · every detail')}</option>
-							<option value="eco">{copy('Économie · léger', 'Eco · lightweight')}</option>
+							<option value="auto">{t('Auto · balanced')}</option>
+							<option value="cinematic">{t('Cinematic · every detail')}</option>
+							<option value="eco">{t('Eco · lightweight')}</option>
 						</select>
 					</label>
-					<small>
-						{copy(
-							'Les couleurs du ciel s’accordent au biome du souvenir lorsqu’il est connu.',
-							'Sky colors follow the memory’s biome when available.'
-						)}
-					</small>
+					<small>{t('Sky colors follow the memory’s biome when available.')}</small>
 				</section>
 			)}
 			{ready && <ViewerTime minutes={minutes} onSelect={value => sceneRef.current?.setMinutes(value)} />}
 			<div className="cinema-caption">
 				<span className="cinema-live-dot" />
-				{fileInfo || copy('Un monde à retrouver', 'A world to revisit')}
+				{fileInfo || t('A world to revisit')}
 				<span className="cinema-gesture">
-					{firstPerson
-						? copy('Glisser pour regarder · Clavier pour avancer', 'Drag to look · Keyboard to move')
-						: copy('Glisser pour explorer · Molette pour s’approcher', 'Drag to explore · Scroll to move closer')}
+					{firstPerson ? t('Drag to look · Keyboard to move') : t('Drag to explore · Scroll to move closer')}
 				</span>
 			</div>
 			<button className="cinema-immerse" type="button" aria-pressed={immersed} onClick={() => setImmersed(!immersed)}>
-				{immersed ? '◉' : '◌'}{' '}
-				{copy(immersed ? 'Afficher les commandes' : 'Immersion', immersed ? 'Show controls' : 'Immerse')}
+				{immersed ? '◉' : '◌'} {t(immersed ? 'Show controls' : 'Immerse')}
 			</button>
 			{sharing && memoryId && (
 				<section className="viewer-sharing">
 					<div className="cinema-panel-heading">
-						<h2>{copy('Inviter à se souvenir.', 'Invite someone back.')}</h2>
-						<button
-							type="button"
-							aria-label={copy('Fermer le partage', 'Close sharing')}
-							onClick={() => setSharing(false)}
-						>
+						<h2>{t('Invite someone back.')}</h2>
+						<button type="button" aria-label={t('Close sharing')} onClick={() => setSharing(false)}>
 							×
 						</button>
 					</div>
-					<p>
-						{copy(
-							'Toute personne avec le lien pourra explorer ce souvenir. Vous pouvez révoquer cet accès à tout moment.',
-							'Anyone with the link can explore this memory. You can revoke access at any time.'
-						)}
-					</p>
+					<p>{t('Anyone with the link can explore this memory. You can revoke access at any time.')}</p>
 					<SharePanel key={memoryId} memoryId={memoryId} />
 					<Link className="mm-button" to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
-						{copy('Publier dans la galerie publique', 'Publish in the public gallery')}
+						{t('Publish in the public gallery')}
 					</Link>
 				</section>
 			)}

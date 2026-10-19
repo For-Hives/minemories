@@ -277,12 +277,12 @@ export class ViewerScene {
 		this.loadingFile = true
 		let imported: THREE.Group | undefined
 		let attached = false
-		this.events.onLoading('Lecture du fichier…')
+		this.events.onLoading('Reading the file…')
 		try {
 			this.ensureLoadActive(options.signal)
 			const buffer = await file.arrayBuffer()
 			this.ensureLoadActive(options.signal)
-			this.events.onLoading('Chargement du modèle et des textures…')
+			this.events.onLoading('Loading the model and textures…')
 			const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
 			imported = gltf.scene
 			this.ensureLoadActive(options.signal)
@@ -295,7 +295,7 @@ export class ViewerScene {
 			this.modelRoot.add(imported)
 			attached = true
 			this.prepareWorldLighting(imported)
-			this.events.onLoading('Préparation de l’affichage 3D…')
+			this.events.onLoading('Preparing the 3D display…')
 			await this.renderer.compileAsync(this.scene, this.camera)
 			this.ensureLoadActive(options.signal)
 			this.frameModel(imported, options.preserveView)

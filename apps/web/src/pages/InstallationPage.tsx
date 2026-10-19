@@ -22,19 +22,19 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 		<section className="install-preferences" aria-labelledby="preferences-title">
 			<div>
 				<span className="install-eyebrow">
-					<T message={'À ta façon'} />
+					<T message={'Your way'} />
 				</span>
 				<h2 id="preferences-title">
-					<T message={'Ton ordinateur. Ton parcours.'} />
+					<T message={'Your computer. Your journey.'} />
 				</h2>
 				<p>
-					<T message={'Les étapes s’adaptent à tes choix. Tu peux les changer à tout moment.'} />
+					<T message={'The steps adapt to your choices. You can change them at any time.'} />
 				</p>
 			</div>
 			<div className="install-fields">
 				<fieldset>
 					<legend>
-						<T message={'Tu joues sur…'} />
+						<T message={'You play on…'} />
 					</legend>
 					<div className="install-choices">
 						{(
@@ -57,7 +57,7 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 				</fieldset>
 				<fieldset>
 					<legend>
-						<T message={'Tu lances Minecraft avec…'} />
+						<T message={'You launch Minecraft with…'} />
 					</legend>
 					<div className="install-choices">
 						{Object.entries(launcherNames).map(([value, label]) => (
@@ -73,13 +73,13 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 					</div>
 				</fieldset>
 				<label className="install-name">
-					<T message={'Ton prénom (facultatif)'} />
+					<T message={'Your first name (optional)'} />
 					<input
 						type="text"
 						maxLength={40}
 						autoComplete="off"
 						value={guide.name}
-						placeholder={t('Pour un guide un peu plus à toi')}
+						placeholder={t('For a guide that feels a little more yours')}
 						onChange={event => update({ name: event.target.value })}
 					/>
 				</label>
@@ -89,7 +89,7 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 						checked={guide.reduceMotion}
 						onChange={event => update({ reduceMotion: event.target.checked })}
 					/>
-					<T message={'Réduire les animations'} />
+					<T message={'Reduce animations'} />
 				</label>
 			</div>
 		</section>
@@ -100,77 +100,73 @@ function InstallationHelp() {
 	return (
 		<section className="install-help" aria-labelledby="help-title">
 			<span className="install-eyebrow">
-				<T message={'Un petit coup de main'} />
+				<T message={'A little help'} />
 			</span>
 			<h2 id="help-title">
-				<T message={'Si une étape coince'} />
+				<T message={'If a step gets stuck'} />
 			</h2>
 			<details>
 				<summary>
-					<T message={'L’installateur NeoForge ne s’ouvre pas'} />
+					<T message={'The NeoForge installer will not open'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'Il faut Java 21 pour ouvrir l’installateur. Sous Windows, essaie clic droit → Ouvrir avec → Java. S’il manque, installe Temurin 21 depuis le lien de l’étape 2. Sous macOS ou Linux, suis'
+							'You need Java 21 to open the installer. On Windows, try right-click → Open with → Java. If it is missing, install Temurin 21 using the link in step 2. On macOS or Linux, follow'
 						}
 					/>{' '}
 					<a href="https://docs.neoforged.net/user/docs/">
-						<T message={'le guide officiel NeoForge'} />
+						<T message={'the official NeoForge guide'} />
 					</a>{' '}
-					<T message={'pour lancer l’installateur. Ne change pas les réglages de sécurité au hasard.'} />
+					<T message={'to run the installer. Do not change security settings at random.'} />
 				</p>
 			</details>
 			<details>
 				<summary>
-					<T message={'Je ne trouve pas le dossier mods ou le mod n’apparaît pas'} />
+					<T message={'I cannot find the mods folder or the mod does not appear'} />
 				</summary>
 				<p>
-					<T
-						message={
-							'Ouvre le dossier depuis le profil que tu lances, plutôt qu’un dossier Minecraft trouvé ailleurs. Crée'
-						}
-					/>{' '}
+					<T message={'Open the folder from the profile you launch, rather than another Minecraft folder. Create'} />{' '}
 					<code>mods</code>{' '}
 					<T
 						message={
-							's’il manque. Vérifie que le fichier a bien l’extension .jar, et non .jar.zip, puis ferme complètement le jeu et relance le profil NeoForge 21.1.248. Les mondes sont dans saves ; le mod est dans mods.'
+							'if it is missing. Check that the file ends in .jar, not .jar.zip, then fully close the game and restart the NeoForge 21.1.248 profile. Worlds belong in saves; the mod belongs in mods.'
 						}
 					/>
 				</p>
 			</details>
 			<details>
 				<summary>
-					<T message={'M ouvre un autre menu, ou la commande est inconnue'} />
+					<T message={'M opens another menu, or the command is unknown'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'Change la touche Minemories dans Options → Contrôles → Attribution des touches. Une commande inconnue indique souvent que le mod n’est pas chargé : vérifie sa présence dans Mods, les versions et le dossier du profil.'
+							'Change the Minemories key in Options → Controls → Key Binds. An unknown command often means the mod is not loaded: check its entry in Mods, the versions and the profile folder.'
 						}
 					/>
 				</p>
 			</details>
 			<details>
 				<summary>
-					<T message={'Minecraft plante au démarrage'} />
+					<T message={'Minecraft crashes at startup'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'Vérifie Minecraft 1.21.1, NeoForge 21.1.248 et l’absence de doublon Minemories. Retire le JAR Minemories pour revenir au profil précédent. Demande de l’aide avec le message d’erreur et les versions utilisées ; ne supprime pas ton monde.'
+							'Check Minecraft 1.21.1, NeoForge 21.1.248 and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
 						}
 					/>
 				</p>
 			</details>
 			<details>
 				<summary>
-					<T message={'La capture est vide, incomplète ou l’envoi échoue'} />
+					<T message={'The capture is empty, incomplete or uploading fails'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'Attends que le terrain soit chargé, rapproche-toi de la construction et recommence avec le rayon 16. Certains blocs moddés ne sont pas reproduits fidèlement. Si l’envoi échoue, conserve capture.glb et regarde-le localement. Vérifie ta connexion, génère un nouveau code si les cinq minutes sont écoulées et réessaie ; la limite d’envoi du mod est 450 MiB.'
+							'Wait for terrain to load, move closer to the build and try again with radius 16. Some modded blocks are not reproduced faithfully. If uploading fails, keep capture.glb and view it locally. Check your connection, generate another code if five minutes have passed and retry; the mod upload limit is 450 MiB.'
 						}
 					/>
 				</p>
@@ -217,58 +213,58 @@ export function InstallationPage() {
 			<header className="install-hero">
 				<div>
 					<span className="install-eyebrow">
-						<T message={'Le premier souvenir commence ici'} />
+						<T message={'Your first memory starts here'} />
 					</span>
 					<h1>
-						<T message={'Installer le mod Minemories'} />
+						<T message={'Install the Minemories mod'} />
 					</h1>
 					<p className="install-lead">
-						<T message={'Un petit fichier.'} />
+						<T message={'One small file.'} />
 						<br />
-						<T message={'Une nouvelle façon de garder tes mondes.'} />
+						<T message={'A new way to keep your worlds.'} />
 					</p>
 					<p>
 						<T
 							message={
-								'On avance ensemble, une étape à la fois. Pas besoin de savoir coder : choisis ton ordinateur, suis le guide et garde ton premier souvenir en 3D.'
+								'We will take this one step at a time. No coding required: choose your computer, follow the guide and keep your first memory in 3D.'
 							}
 						/>
 					</p>
 					<a className="install-primary" href="#parcours">
-						<T message={'Commencer l’installation'} /> <span aria-hidden="true">↓</span>
+						<T message={'Start installing'} /> <span aria-hidden="true">↓</span>
 					</a>
 					<p className="install-caption">
-						<T message={'Minecraft Java 1.21.1 · NeoForge 21.1.248 · Mod expérimental'} />
+						<T message={'Minecraft Java 1.21.1 · NeoForge 21.1.248 · Experimental mod'} />
 					</p>
 				</div>
 				<div className="install-hero-art">
 					<InstallationScene step={guide.step} />
 					<span>
-						<T message={'Construire. Capturer. Revenir.'} />
+						<T message={'Build. Capture. Return.'} />
 					</span>
 				</div>
 			</header>
 			<p className="install-view-only">
-				<T message={'Tu viens juste regarder un souvenir partagé ? Ouvre son lien : tu n’as rien à installer.'} />
+				<T message={'Just here to view a shared memory? Open its link: there is nothing to install.'} />
 			</p>
 			<GuidePreferences guide={guide} update={update} />
-			<section id="parcours" className="install-journey" aria-label={t('Guide pas à pas')}>
+			<section id="parcours" className="install-journey" aria-label={t('Step-by-step guide')}>
 				<div className="install-progress-heading">
 					<div>
 						<span className="install-eyebrow">
-							{guide.name.trim() ? t('Your turn, {name}', { name: guide.name.trim() }) : t('À toi de jouer')}
+							{guide.name.trim() ? t('Your turn, {name}', { name: guide.name.trim() }) : t('Your turn')}
 						</span>
 						<h2>
-							<T message={'Du téléchargement au premier souvenir.'} />
+							<T message={'From download to first memory.'} />
 						</h2>
 					</div>
 					<span role="status">
-						{guide.done.length} <T message={'/ 6 étapes cochées'} />
+						{guide.done.length} <T message={'/ 6 steps checked'} />
 					</span>
 				</div>
-				<progress value={guide.done.length} max={6} aria-label={t('Progression de l’installation')} />
+				<progress value={guide.done.length} max={6} aria-label={t('Installation progress')} />
 				<div className="install-workspace">
-					<nav className="install-step-nav" aria-label={t('Étapes d’installation')}>
+					<nav className="install-step-nav" aria-label={t('Installation steps')}>
 						{stepNames.map((name, index) => (
 							<button
 								key={name}
@@ -283,7 +279,7 @@ export function InstallationPage() {
 									{t(name)}
 									{guide.done.includes(index) && (
 										<small>
-											<T message={'Étape cochée'} />
+											<T message={'Step checked'} />
 										</small>
 									)}
 								</span>
@@ -293,7 +289,7 @@ export function InstallationPage() {
 					<div className="install-panel" key={`${guide.launcher}-${guide.step}`}>
 						<div className="install-panel-meta">
 							<span>
-								<T message={'Étape 0'} />
+								<T message={'Step 0'} />
 								{guide.step + 1}
 							</span>
 							<span>{t(launcherNames[guide.launcher])}</span>
@@ -309,17 +305,15 @@ export function InstallationPage() {
 								disabled={guide.step === 0}
 								onClick={() => goTo(guide.step - 1)}
 							>
-								<T message={'← Précédent'} />
+								<T message={'← Previous'} />
 							</button>
 							<button className="install-primary" type="button" onClick={completeStep}>
-								{guide.step === 5 ? t('Mon souvenir s’ouvre en 3D') : t('C’est fait, on continue')}{' '}
+								{guide.step === 5 ? t('My memory opens in 3D') : t("Done, let's continue")}{' '}
 								<span aria-hidden="true">✓</span>
 							</button>
 						</div>
 						<p className="install-caption">
-							<T
-								message={'Coche une étape quand tu l’as réalisée. Tu peux aussi naviguer librement entre les étapes.'}
-							/>
+							<T message={'Check a step when you have completed it. You can also move freely between steps.'} />
 						</p>
 					</div>
 				</div>
@@ -330,17 +324,17 @@ export function InstallationPage() {
 							<h2>
 								{guide.name.trim()
 									? t('Your first memory, {name}.', { name: guide.name.trim() })
-									: t('Ton premier souvenir est là.')}
+									: t('Your first memory is here.')}
 							</h2>
 							<p>
 								<T
 									message={
-										'Si la capture s’ouvre correctement, tu as terminé ce premier essai. Garde aussi une sauvegarde du monde : un souvenir 3D ne permet pas de reprendre la partie.'
+										'If the capture opens correctly, you have completed this first trial. Keep a world backup too: a 3D memory cannot resume your game.'
 									}
 								/>
 							</p>
 							<Link to="/fonctionnement">
-								<T message={'Explorer les captures, la galerie et le partage →'} />
+								<T message={'Explore captures, the gallery and sharing →'} />
 							</Link>
 						</div>
 					</div>
@@ -349,7 +343,7 @@ export function InstallationPage() {
 					<p>
 						<T
 							message={
-								'Ton prénom, tes choix et ta progression restent dans ce navigateur, sur cet appareil. Tu peux fermer cette page et revenir.'
+								'Your first name, choices and progress stay in this browser on this device. You can close this page and return.'
 							}
 						/>
 					</p>
@@ -360,7 +354,7 @@ export function InstallationPage() {
 							setGuide(resetGuide())
 						}}
 					>
-						<T message={'Recommencer et effacer mes choix'} />
+						<T message={'Start again and clear my choices'} />
 					</button>
 				</div>
 			</section>
@@ -368,7 +362,7 @@ export function InstallationPage() {
 			<p className="install-caption install-final-note">
 				<T
 					message={
-						'Minemories est expérimental : commence par un monde de test et garde tes fichiers locaux. Les étapes cochées servent de repères ; elles ne vérifient pas le jeu à ta place.'
+						'Minemories is experimental: start with a test world and keep your local files. Checked steps are reminders; they do not verify the game for you.'
 					}
 				/>
 			</p>
@@ -376,12 +370,12 @@ export function InstallationPage() {
 			<noscript>
 				<section className="install-help">
 					<h2>
-						<T message={'Guide manuel Windows sans JavaScript'} />
+						<T message={'Manual Windows guide without JavaScript'} />
 					</h2>
 					<p>
-						<T message={'Télécharge le mod depuis'} />{' '}
+						<T message={'Download the mod from'} />{' '}
 						<a href="https://github.com/For-Hives/minemories/releases">GitHub Releases</a>
-						<T message={'. Voici toutes les étapes du parcours Minecraft Launcher :'} />
+						<T message={'. Here are all the steps for Minecraft Launcher:'} />
 					</p>
 					{stepNames.map((name, index) => (
 						<section key={name}>

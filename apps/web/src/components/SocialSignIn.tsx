@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiBase } from '../api-client'
 import { authClient } from '../auth-client'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
 type Provider = 'google' | 'discord'
 export function SocialSignIn({
@@ -13,7 +13,7 @@ export function SocialSignIn({
 	link?: boolean
 	linkedProviders?: string[]
 }) {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const [providers, setProviders] = useState<Provider[]>([])
 	const [busy, setBusy] = useState(false)
 	const [error, setError] = useState('')
@@ -45,9 +45,7 @@ export function SocialSignIn({
 			})
 			if (result.error) throw result.error
 		} catch {
-			setError(
-				copy('Connexion impossible. Réessaie ou utilise ton e-mail.', 'Could not sign in. Try again or use your email.')
-			)
+			setError(t('Could not sign in. Try again or use your email.'))
 			setBusy(false)
 		}
 	}
@@ -63,8 +61,7 @@ export function SocialSignIn({
 					disabled={busy}
 					onClick={() => void signIn(provider)}
 				>
-					{link ? copy('Associer', 'Link') : copy('Continuer avec', 'Continue with')}{' '}
-					{provider === 'google' ? 'Google' : 'Discord'}
+					{link ? t('Link') : t('Continue with')} {provider === 'google' ? 'Google' : 'Discord'}
 				</button>
 			))}
 			{error && (
@@ -72,7 +69,7 @@ export function SocialSignIn({
 					{error}
 				</p>
 			)}
-			{!link && <p>{copy('ou avec ton adresse e-mail', 'or with your email address')}</p>}
+			{!link && <p>{t('or with your email address')}</p>}
 		</div>
 	)
 }

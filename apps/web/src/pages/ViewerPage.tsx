@@ -9,7 +9,6 @@ import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/V
 import { ViewerStudio } from '../components/ViewerStudio'
 import { errorMessageKey } from '../i18n/error-messages'
 import { T, useI18n } from '../i18n/I18n'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
@@ -24,7 +23,6 @@ export function ViewerPage() {
 }
 
 function SingleViewerPage() {
-	const { copy } = useLocalizedCopy()
 	const { t, locale } = useI18n()
 
 	const { viewerFile, setViewerFile } = useAppContext()
@@ -100,7 +98,7 @@ function SingleViewerPage() {
 		let cancelled = false
 		const controller = new AbortController()
 		setLoadError('')
-		setLoading('Téléchargement du souvenir…')
+		setLoading('Downloading the memory…')
 		async function loadMemory(id: string) {
 			try {
 				const capture = await restoreLoad(
@@ -177,11 +175,7 @@ function SingleViewerPage() {
 	return (
 		<section className="viewer-page cinema-page">
 			<ViewerHeader
-				title={
-					memoryId
-						? t('A world to find again.')
-						: (viewerFile?.name ?? copy('Le studio des souvenirs', 'The memory studio'))
-				}
+				title={memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('The memory studio'))}
 				subtitle="STUDIO"
 			>
 				{import.meta.env.DEV && (

@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 /** Timing and capture size stay out of the simple interface. */
@@ -12,13 +13,13 @@ final class AfkSettingsScreen extends Screen {
   private EditBox idle;
   private EditBox interval;
   private EditBox radius;
-  private String status = "Actif aussi en pause et en arrière-plan.";
+  private String status = I18n.get("minemories.ui.actif_aussi_en_pause_et_en_arriere_plan");
   private int left;
   private int top;
   private int panelWidth;
 
   AfkSettingsScreen(Screen parent) {
-    super(Component.literal("Réglages AFK"));
+    super(Component.translatable("minemories.ui.reglages_afk"));
     this.parent = parent;
   }
 
@@ -28,15 +29,21 @@ final class AfkSettingsScreen extends Screen {
     left = (width - panelWidth) / 2;
     top = Math.max(4, (height - 230) / 2);
     var options = PairingClient.afkOptions();
-    idle = field("Inactivité avant capture (minutes)", 44, options.idleMinutes());
-    interval = field("Intervalle entre captures (minutes)", 87, options.intervalMinutes());
-    radius = field("Rayon autour du joueur (blocs)", 130, options.radius());
+    idle =
+        field(
+            I18n.get("minemories.ui.inactivite_avant_capture_minutes"), 44, options.idleMinutes());
+    interval =
+        field(
+            I18n.get("minemories.ui.intervalle_entre_captures_minutes"),
+            87,
+            options.intervalMinutes());
+    radius = field(I18n.get("minemories.ui.rayon_autour_du_joueur_blocs"), 130, options.radius());
     addRenderableWidget(
-        Button.builder(Component.literal("Enregistrer"), ignored -> save())
+        Button.builder(Component.translatable("minemories.ui.enregistrer"), ignored -> save())
             .bounds(left + 14, top + 160, (panelWidth - 34) / 2, 20)
             .build());
     addRenderableWidget(
-        Button.builder(Component.literal("Retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
             .bounds(left + 20 + (panelWidth - 34) / 2, top + 160, (panelWidth - 34) / 2, 20)
             .build());
     addRenderableWidget(
@@ -51,9 +58,12 @@ final class AfkSettingsScreen extends Screen {
   }
 
   private Component depthLabel() {
-    return Component.literal(
-        "Profondeur : "
-            + (PairingClient.isFullHeightCapture() ? "toute la dimension" : "zones visitées"));
+    return Component.translatable(
+        "minemories.options.depth",
+        Component.translatable(
+            PairingClient.isFullHeightCapture()
+                ? "minemories.ui.toute_la_dimension"
+                : "minemories.ui.zones_visitees"));
   }
 
   private EditBox field(String label, int y, int value) {
@@ -73,9 +83,9 @@ final class AfkSettingsScreen extends Screen {
               Integer.parseInt(idle.getValue()),
               Integer.parseInt(interval.getValue()),
               Integer.parseInt(radius.getValue())));
-      status = "Réglages enregistrés. Plus petit = capture plus légère.";
+      status = I18n.get("minemories.ui.reglages_enregistres_plus_petit_capture_plus_legere");
     } catch (NumberFormatException error) {
-      status = "Remplis les trois champs avec des nombres entiers.";
+      status = I18n.get("minemories.ui.remplis_les_trois_champs_avec_des_nombres_entiers");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -85,13 +95,30 @@ final class AfkSettingsScreen extends Screen {
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
     graphics.fill(left, top, left + panelWidth, top + 230, 0xFF182019);
-    graphics.drawString(font, "Réglages avancés : captures AFK", left + 14, top + 12, 0xFFE3E9DD);
     graphics.drawString(
-        font, "Inactivité avant capture (1–1440 min)", left + 14, top + 31, 0xFFE3E9DD);
+        font,
+        I18n.get("minemories.ui.reglages_avances_captures_afk"),
+        left + 14,
+        top + 12,
+        0xFFE3E9DD);
     graphics.drawString(
-        font, "Intervalle entre captures (1–10080 min)", left + 14, top + 74, 0xFFE3E9DD);
+        font,
+        I18n.get("minemories.ui.inactivite_avant_capture_11440_min"),
+        left + 14,
+        top + 31,
+        0xFFE3E9DD);
     graphics.drawString(
-        font, "Rayon autour du joueur (2–128 blocs)", left + 14, top + 117, 0xFFE3E9DD);
+        font,
+        I18n.get("minemories.ui.intervalle_entre_captures_110080_min"),
+        left + 14,
+        top + 74,
+        0xFFE3E9DD);
+    graphics.drawString(
+        font,
+        I18n.get("minemories.ui.rayon_autour_du_joueur_2128_blocs"),
+        left + 14,
+        top + 117,
+        0xFFE3E9DD);
   }
 
   @Override

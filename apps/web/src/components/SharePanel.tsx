@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 
 export function SharePanel({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
-	const { copy: localized } = useLocalizedCopy()
 
 	const { notify } = useAppContext()
 	const revision = useRef(0)
@@ -67,7 +65,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 		}
 	}
 
-	async function copy() {
+	async function copyLink() {
 		const version = revision.current
 		try {
 			await navigator.clipboard.writeText(url)
@@ -79,21 +77,9 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 
 	return (
 		<div className="memory-share-panel" aria-live="polite">
-			<h3>{localized('Partager par lien', 'Share by link')}</h3>
-			<p>
-				{localized(
-					'Accessible sans compte à toute personne possédant le lien. Ce souvenir reste absent de la galerie publique.',
-					'Anyone with the link can visit without an account. This memory stays out of the public gallery.'
-				)}
-			</p>
-			{status === 'error' && (
-				<p role="alert">
-					{localized(
-						'Impossible de vérifier le partage. Ferme puis rouvre ce panneau pour réessayer.',
-						'Could not check sharing. Close and reopen this panel to retry.'
-					)}
-				</p>
-			)}
+			<h3>{t('Share by link')}</h3>
+			<p>{t('Anyone with the link can visit without an account. This memory stays out of the public gallery.')}</p>
+			{status === 'error' && <p role="alert">{t('Could not check sharing. Close and reopen this panel to retry.')}</p>}
 			{status === 'checking' && (
 				<p className="m-0 text-[10px] text-[#8e978a]">
 					<T message={'Checking the link…'} />
@@ -127,7 +113,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 							/>
 							<button
 								type="button"
-								onClick={() => void copy()}
+								onClick={() => void copyLink()}
 								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
 							>
 								{' '}
@@ -136,15 +122,14 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 						</span>
 					) : (
 						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
-							{localized(
-								'Un lien est actif. Pour le retrouver, utilise la copie que tu as conservée. Créer un nouveau lien désactivera le précédent.',
+							{t(
 								'A link is active. Use your saved copy to retrieve it. Creating a new link will disable the previous one.'
 							)}
 						</p>
 					)}
 					{url && (
 						<a href={url} target="_blank" rel="noreferrer">
-							{localized('Ouvrir le lien ↗', 'Open link ↗')}
+							{t('Open link ↗')}
 						</a>
 					)}
 					<span className="mt-2 flex items-center gap-2">
@@ -156,7 +141,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#b4c1ad] disabled:opacity-60"
 						>
 							{' '}
-							{localized('Remplacer le lien actif', 'Replace active link')}{' '}
+							{t('Replace active link')}{' '}
 						</button>
 						<button
 							type="button"

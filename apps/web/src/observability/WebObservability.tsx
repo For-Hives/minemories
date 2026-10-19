@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 import { diagnosticDsn, preferenceKey, publicDiagnosticRoute, type WebFailure } from './policy'
 
 const preferenceEvent = 'minemories-web-diagnostics-change'
@@ -63,7 +63,7 @@ export function WebObservability() {
 	return null
 }
 export function WebDiagnosticsPreference() {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const enabled = useConsent()
 	const [failed, setFailed] = useState(false)
 	if (!diagnosticDsn(import.meta.env.VITE_WEB_DIAGNOSTICS_DSN)) return null
@@ -86,16 +86,9 @@ export function WebDiagnosticsPreference() {
 						}
 					}}
 				/>
-				{copy('Autoriser les diagnostics des pages publiques', 'Allow public-page diagnostics')}
+				{t('Allow public-page diagnostics')}
 			</label>
-			{failed && (
-				<p role="alert">
-					{copy(
-						'Préférence non enregistrée. Les diagnostics sont interrompus dans cet onglet.',
-						'Preference not saved. Diagnostics are stopped in this tab.'
-					)}
-				</p>
-			)}
+			{failed && <p role="alert">{t('Preference not saved. Diagnostics are stopped in this tab.')}</p>}
 		</div>
 	)
 }

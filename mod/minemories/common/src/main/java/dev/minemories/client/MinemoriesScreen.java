@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 final class MinemoriesScreen extends Screen {
@@ -29,8 +30,8 @@ final class MinemoriesScreen extends Screen {
   private Button storageButton;
   private Button historyButton;
   private final StorageStatusView storage = new StorageStatusView();
-  private String status = "Aucun envoi sans ton accord.";
-  private String service = "Service Minemories";
+  private String status = I18n.get("minemories.ui.aucun_envoi_sans_ton_accord");
+  private String service = I18n.get("minemories.ui.service_minemories");
   private boolean paired;
   private boolean afk;
   private boolean busy;
@@ -54,7 +55,9 @@ final class MinemoriesScreen extends Screen {
     top = Math.max(4, (this.height - panelHeight) / 2);
     modeButton =
         button(
-            advanced ? "Mode simple" : "Mode avancé",
+            advanced
+                ? I18n.get("minemories.ui.mode_simple")
+                : I18n.get("minemories.ui.mode_avance"),
             14,
             advanced ? 10 : 149,
             (panelWidth - (advanced ? 60 : 34)) / 2,
@@ -65,7 +68,7 @@ final class MinemoriesScreen extends Screen {
     int historyWidth = (panelWidth - (advanced ? 60 : 34)) / 2;
     historyButton =
         button(
-            "Captures locales",
+            I18n.get("minemories.ui.captures_locales"),
             20 + historyWidth,
             advanced ? 10 : 149,
             historyWidth,
@@ -94,44 +97,59 @@ final class MinemoriesScreen extends Screen {
 
   private void initBasic() {
     button(
-        "Diagnostics",
+        I18n.get("minemories.ui.diagnostics"),
         panelWidth - 134,
         10,
         94,
         () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
-    codeInput = input("Code d’appairage à six chiffres", 70, panelWidth - 110);
+    codeInput =
+        input(I18n.get("minemories.ui.code_dappairage_a_six_chiffres"), 70, panelWidth - 110);
     codeInput.setMaxLength(6);
-    codeInput.setHint(Component.literal("Code à 6 chiffres"));
+    codeInput.setHint(Component.translatable("minemories.ui.code_a_6_chiffres"));
     codeInput.setFilter(value -> value.matches("\\d{0,6}"));
-    pairButton = button("Connecter", panelWidth - 90, 70, 76, this::pair);
-    unlinkButton = button("Déconnecter ce compte", 14, 70, panelWidth - 28, this::unlink);
-    snapshotButton = button("Capturer et envoyer", 14, 97, panelWidth - 28, this::snapshotNow);
-    afkButton = button("Captures AFK", 14, 123, panelWidth - 28, this::toggleAfk);
+    pairButton = button(I18n.get("minemories.ui.connecter"), panelWidth - 90, 70, 76, this::pair);
+    unlinkButton =
+        button(
+            I18n.get("minemories.ui.deconnecter_ce_compte"), 14, 70, panelWidth - 28, this::unlink);
+    snapshotButton =
+        button(
+            I18n.get("minemories.ui.capturer_et_envoyer"),
+            14,
+            97,
+            panelWidth - 28,
+            this::snapshotNow);
+    afkButton =
+        button(I18n.get("minemories.ui.captures_afk"), 14, 123, panelWidth - 28, this::toggleAfk);
     int half = (panelWidth - 34) / 2;
-    storageButton = button("Espace : chargement…", 14, 176, half, this::openStorage);
+    storageButton =
+        button(I18n.get("minemories.ui.espace_chargement"), 14, 176, half, this::openStorage);
     button(
-        "Zones suggérées",
+        I18n.get("minemories.ui.zones_suggerees"),
         20 + half,
         176,
         half,
         () -> Minecraft.getInstance().setScreen(new SuggestedZonesScreen(this)));
     storageButton.setTooltip(
-        Tooltip.create(Component.literal("Voir l’espace et comment libérer ta galerie.")));
+        Tooltip.create(
+            Component.translatable("minemories.ui.voir_lespace_et_comment_liberer_ta_galerie")));
     codeInput.setResponder(value -> updateButtons());
     snapshotButton.setTooltip(
         Tooltip.create(
             Component.literal(
-                "Capture les blocs chargés autour de toi et envoie le souvenir dans ta galerie privée.")));
+                I18n.get(
+                    "minemories.ui.capture_les_blocs_charges_autour_de_toi_et_envoie_le_souvenir_dans_ta_galerie_privee"))));
   }
 
   private void initAdvanced() {
     int half = (panelWidth - 34) / 2;
-    apiInput = input("Adresse de l’API", 48, panelWidth - 28);
-    directoryInput = input("Dossier des exports locaux", 92, panelWidth - 28);
+    apiInput = input(I18n.get("minemories.ui.adresse_de_lapi"), 48, panelWidth - 28);
+    directoryInput =
+        input(I18n.get("minemories.ui.dossier_des_exports_locaux"), 92, panelWidth - 28);
     directoryInput.setTooltip(
         Tooltip.create(
             Component.literal(
-                "Chemin absolu ou ~/export. Les captures datées restent dans history ; capture.glb donne le dernier export.")));
+                I18n.get(
+                    "minemories.ui.chemin_absolu_ou_export_les_captures_datees_restent_dans_history_capture_glb_donne_le_dernier_export"))));
     try {
       apiInput.setValue(PairingClient.apiUrl());
       directoryInput.setValue(PairingClient.exportDirectory().toString());
@@ -139,7 +157,8 @@ final class MinemoriesScreen extends Screen {
       apiInput.setValue(ClientSettings.DEFAULT_API_URL);
       status = ClientRuntime.pairingError(error);
     }
-    saveButton = button("Enregistrer", 14, 118, half, this::saveConfiguration);
+    saveButton =
+        button(I18n.get("minemories.ui.enregistrer"), 14, 118, half, this::saveConfiguration);
     defaultsButton =
         button(
             "API Minemories",
@@ -149,12 +168,21 @@ final class MinemoriesScreen extends Screen {
             () -> apiInput.setValue(ClientSettings.DEFAULT_API_URL));
     defaultsButton.setTooltip(
         Tooltip.create(
-            Component.literal("Rétablit l’adresse officielle. Clique ensuite sur Enregistrer.")));
-    localButton = button("Exporter en local", 14, 144, half, () -> capture(false));
-    selectionButton = button("Exporter la sélection", 20 + half, 144, half, () -> capture(true));
+            Component.translatable(
+                "minemories.ui.retablit_ladresse_officielle_clique_ensuite_sur_enregistrer")));
+    localButton =
+        button(I18n.get("minemories.ui.exporter_en_local"), 14, 144, half, () -> capture(false));
+    selectionButton =
+        button(
+            I18n.get("minemories.ui.exporter_la_selection"),
+            20 + half,
+            144,
+            half,
+            () -> capture(true));
     selectionButton.setTooltip(
         Tooltip.create(
-            Component.literal("Définis les deux coins avec /minemories select first et second.")));
+            Component.translatable(
+                "minemories.ui.definis_les_deux_coins_avec_minemories_select_first_et_second")));
     int quarter = (panelWidth - 46) / 4;
     button(
         "AFK",
@@ -162,18 +190,20 @@ final class MinemoriesScreen extends Screen {
         170,
         quarter,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
-    storageButton = button("Stockage", 20 + quarter, 170, quarter, this::openStorage);
+    storageButton =
+        button(I18n.get("minemories.ui.stockage"), 20 + quarter, 170, quarter, this::openStorage);
     Button worldButton =
         button(
-            "Monde",
+            I18n.get("minemories.ui.monde"),
             26 + quarter * 2,
             170,
             quarter,
             () -> Minecraft.getInstance().setScreen(new TemporalWorldScreen(this)));
     worldButton.setTooltip(
-        Tooltip.create(Component.literal("Identité du monde distant pour la timelapse.")));
+        Tooltip.create(
+            Component.translatable("minemories.ui.identite_du_monde_distant_pour_la_timelapse")));
     button(
-        "Diagnostics",
+        I18n.get("minemories.ui.diagnostics"),
         32 + quarter * 3,
         170,
         quarter,
@@ -190,12 +220,13 @@ final class MinemoriesScreen extends Screen {
       afk = PairingClient.isAfkSnapshots();
       service =
           ClientSettings.DEFAULT_API_URL.equals(PairingClient.apiUrl())
-              ? "Service Minemories"
-              : "API personnalisée";
+              ? I18n.get("minemories.ui.service_minemories")
+              : I18n.get("minemories.ui.api_personnalisee");
     } catch (RuntimeException error) {
       paired = false;
       afk = false;
-      status = "Configuration illisible : " + ClientRuntime.pairingError(error);
+      status =
+          I18n.get("minemories.ui.configuration_illisible") + ClientRuntime.pairingError(error);
     }
     storage.reset(paired);
   }
@@ -218,7 +249,8 @@ final class MinemoriesScreen extends Screen {
     } else {
       afkButton.active = !waiting;
       afkButton.setMessage(
-          Component.literal("Captures AFK : " + (afk ? "activées" : "désactivées")));
+          Component.translatable(
+              afk ? "minemories.options.afk.enabled" : "minemories.options.afk.disabled"));
       codeInput.visible = !paired;
       pairButton.visible = !paired;
       unlinkButton.visible = paired;
@@ -254,8 +286,8 @@ final class MinemoriesScreen extends Screen {
       directoryInput.setValue(PairingClient.exportDirectory().toString());
       status =
           changedApi
-              ? "Réglages enregistrés. Reconnecte ton compte à cette API."
-              : "Réglages enregistrés.";
+              ? I18n.get("minemories.ui.reglages_enregistres_reconnecte_ton_compte_a_cette_api")
+              : I18n.get("minemories.ui.reglages_enregistres");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -269,7 +301,9 @@ final class MinemoriesScreen extends Screen {
               ? ClientRuntime.exportSelection()
               : ClientRuntime.export(PairingClient.afkOptions().radius());
       status =
-          result == 1 ? "Fichier local enregistré. Aucun envoi." : ClientRuntime.captureFailure();
+          result == 1
+              ? I18n.get("minemories.ui.fichier_local_enregistre_aucun_envoi")
+              : ClientRuntime.captureFailure();
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -278,12 +312,12 @@ final class MinemoriesScreen extends Screen {
 
   private void snapshotNow() {
     busy = true;
-    status = "Capture en cours…";
+    status = I18n.get("minemories.ui.capture_en_cours");
     updateButtons();
     try {
       if (!paired) {
         busy = false;
-        status = "Connecte ton compte avant d’envoyer un souvenir.";
+        status = I18n.get("minemories.ui.connecte_ton_compte_avant_denvoyer_un_souvenir");
         updateButtons();
         return;
       }
@@ -293,10 +327,10 @@ final class MinemoriesScreen extends Screen {
         updateButtons();
         return;
       }
-      status = "Envoi en cours…";
+      status = I18n.get("minemories.ui.envoi_en_cours");
       complete(
           PairingClient.uploadCapture(ClientRuntime.latestCapturePath()),
-          "Souvenir envoyé dans ta galerie.");
+          I18n.get("minemories.ui.souvenir_envoye_dans_ta_galerie"));
     } catch (RuntimeException error) {
       busy = false;
       status = ClientRuntime.pairingError(error);
@@ -308,7 +342,10 @@ final class MinemoriesScreen extends Screen {
     try {
       PairingClient.setAfkSnapshots(!afk);
       refreshSettings();
-      status = afk ? "Captures AFK activées, même en pause." : "Captures automatiques désactivées.";
+      status =
+          afk
+              ? I18n.get("minemories.ui.captures_afk_activees_meme_en_pause")
+              : I18n.get("minemories.ui.captures_automatiques_desactivees");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -317,12 +354,12 @@ final class MinemoriesScreen extends Screen {
 
   private void pair() {
     busy = true;
-    status = "Connexion du compte…";
+    status = I18n.get("minemories.ui.connexion_du_compte");
     updateButtons();
     try {
       complete(
           PairingClient.pair(codeInput.getValue()),
-          "Compte connecté. Tu peux capturer et envoyer.");
+          I18n.get("minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer"));
     } catch (RuntimeException error) {
       busy = false;
       status = ClientRuntime.pairingError(error);
@@ -347,7 +384,7 @@ final class MinemoriesScreen extends Screen {
     try {
       PairingClient.unlink();
       refreshSettings();
-      status = "Compte déconnecté. Tes souvenirs en ligne sont conservés.";
+      status = I18n.get("minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -373,14 +410,22 @@ final class MinemoriesScreen extends Screen {
     graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + panelHeight + 1, 0xFF667063);
     graphics.fill(left, top, left + panelWidth, top + panelHeight, COLOR_PANEL);
     if (advanced) {
-      graphics.drawString(font, "Adresse de l’API (HTTPS)", left + 14, top + 35, COLOR_TEXT);
       graphics.drawString(
-          font, "Dossier local (historique conservé)", left + 14, top + 79, COLOR_TEXT);
+          font, I18n.get("minemories.ui.adresse_de_lapi_https"), left + 14, top + 35, COLOR_TEXT);
+      graphics.drawString(
+          font,
+          I18n.get("minemories.ui.dossier_local_historique_conserve"),
+          left + 14,
+          top + 79,
+          COLOR_TEXT);
     } else {
       graphics.drawString(font, "MINEMORIES", left + 14, top + 14, COLOR_TEXT);
       graphics.drawString(
           font,
-          service + (paired ? " · compte connecté" : " · non connecté"),
+          service
+              + (paired
+                  ? I18n.get("minemories.ui.compte_connecte")
+                  : I18n.get("minemories.ui.non_connecte")),
           left + 14,
           top + 36,
           COLOR_MUTED);
@@ -388,11 +433,11 @@ final class MinemoriesScreen extends Screen {
           font,
           paired
               ? (afk
-                  ? "Souvenirs AFK automatiques, même en pause."
-                  : "Envoi uniquement avec le bouton ci-dessous.")
+                  ? I18n.get("minemories.ui.souvenirs_afk_automatiques_meme_en_pause")
+                  : I18n.get("minemories.ui.envoi_uniquement_avec_le_bouton_ci_dessous"))
               : afk
-                  ? "AFK local actif. Connecte ta galerie pour l’envoi."
-                  : "Entre le code généré dans ta galerie web.",
+                  ? I18n.get("minemories.ui.afk_local_actif_connecte_ta_galerie_pour_lenvoi")
+                  : I18n.get("minemories.ui.entre_le_code_genere_dans_ta_galerie_web"),
           left + 14,
           top + 53,
           COLOR_MUTED);
