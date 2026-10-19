@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
+import { localize } from '../i18n/catalog'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { ContentLayout } from './ContentPages'
 import { DiagnosticDetails } from './DiagnosticDetails'
@@ -16,9 +17,11 @@ function IssueCard({ issue, onOpen }: { issue: DiagnosticIssue; onOpen: () => vo
 		<article className="mm-diagnostic-card" aria-label={report.exception.type}>
 			<div className="mm-diagnostic-toolbar">
 				<span>
-					{phaseLabels[report.phase][locale]} · {report.source}
+					{localize(phaseLabels[report.phase], locale)} · {report.source}
 				</span>
-				<span className={`mm-diagnostic-state mm-diagnostic-${issue.state}`}>{stateLabels[issue.state][locale]}</span>
+				<span className={`mm-diagnostic-state mm-diagnostic-${issue.state}`}>
+					{localize(stateLabels[issue.state], locale)}
+				</span>
 			</div>
 			<h2>{report.exception.type}</h2>
 			<p>
@@ -142,7 +145,7 @@ export function DiagnosticsPage() {
 								<option value="all">{copy('Tous', 'All')}</option>
 								{issueStates.map(value => (
 									<option value={value} key={value}>
-										{stateLabels[value][locale]}
+										{localize(stateLabels[value], locale)}
 									</option>
 								))}
 							</select>
@@ -164,7 +167,7 @@ export function DiagnosticsPage() {
 								<option value="">{copy('Toutes', 'All')}</option>
 								{Object.entries(phaseLabels).map(([value, label]) => (
 									<option key={value} value={value}>
-										{label[locale]}
+										{localize(label, locale)}
 									</option>
 								))}
 							</select>

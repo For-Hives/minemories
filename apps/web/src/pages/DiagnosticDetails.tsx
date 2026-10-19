@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { buttonDark, buttonOutline } from '../components/ui'
+import { localize } from '../i18n/catalog'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import {
 	type DiagnosticDetail,
@@ -167,7 +168,7 @@ export function DiagnosticDetails({
 							>
 								{issueStates.map(value => (
 									<option value={value} key={value}>
-										{stateLabels[value][locale]}
+										{localize(stateLabels[value], locale)}
 									</option>
 								))}
 							</select>

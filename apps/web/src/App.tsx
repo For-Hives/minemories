@@ -101,7 +101,7 @@ export function App() {
 		return () => window.clearTimeout(timeout)
 	}, [notice])
 	return (
-		<I18nProvider>
+		<I18nProvider detectLocale>
 			<AppContext.Provider value={context}>
 				<BrowserRouter>
 					<RouteMetadata />

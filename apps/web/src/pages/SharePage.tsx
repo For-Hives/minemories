@@ -75,7 +75,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
 	const [minutes, setMinutes] = useState(570)
-	const [title, setTitle] = useState('A shared world.')
+	const [title, setTitle] = useState<string | null>(null)
 	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
 	const [empty, setEmpty] = useState(true)
 	const [status, setStatus] = useState<string | null>('Loading the shared world…')
@@ -152,7 +152,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	return (
 		<section className="viewer-page cinema-page">
 			<ViewerHeader
-				title={t(title)}
+				title={title ?? t('A shared world.')}
 				subtitle={isPublic ? t('PUBLIC MEMORY') : t('SHARED MEMORY')}
 				back={isPublic ? publicBack : '/'}
 				backLabel={isPublic ? t(review ? 'Back to moderation' : 'Back to public gallery') : 'Minemories'}

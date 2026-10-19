@@ -1227,3 +1227,35 @@ a.mm-editorial-card:hover {
 .cinema-weather-swatch.snow {
 	background: #e4edf3;
 }
+
+.mm-language {
+	position: relative;
+}
+.mm-language select {
+	max-width: min(132px, 25vw);
+	text-overflow: ellipsis;
+}
+.mm-language-error {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	z-index: 40;
+	width: min(260px, 80vw);
+	padding: 12px;
+	background: #18241c;
+	color: #f4d8d1;
+	font-size: 13px;
+	line-height: 1.5;
+}
+:lang(ja),
+:lang(ko) {
+	word-break: normal;
+	overflow-wrap: anywhere;
+}
+:lang(ko) {
+	word-break: keep-all;
+	overflow-wrap: break-word;
+}
+:lang(ja) {
+	line-break: strict;
+}

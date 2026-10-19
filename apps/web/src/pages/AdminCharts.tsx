@@ -40,7 +40,7 @@ function Bars({
 					<g key={row.at}>
 						<title>
 							{hourLabel(row.at, locale)} UTC ·{' '}
-							{field === 'uploadedBytes' ? `${gigabytes(row[field], locale)} Go` : row[field]}
+							{field === 'uploadedBytes' ? `${gigabytes(row[field], locale)} ${copy('Go', 'GB')}` : row[field]}
 						</title>
 						{row.coverage === 'none' ? (
 							<rect
@@ -75,7 +75,9 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 				<section className="mm-admin-card">
 					<div className="mm-admin-card-title">
 						<h2>{copy('Volume finalisé par heure', 'Completed volume per hour')}</h2>
-						<b>{gigabytes(summary.period.uploadedBytes, locale)} Go</b>
+						<b>
+							{gigabytes(summary.period.uploadedBytes, locale)} {copy('Go', 'GB')}
+						</b>
 					</div>
 					<p>
 						{copy(
@@ -129,7 +131,7 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 								<th>{copy('Heure UTC', 'UTC hour')}</th>
 								<th>{copy('Inscriptions', 'Registrations')}</th>
 								<th>{copy('Captures', 'Captures')}</th>
-								<th>Go</th>
+								<th>{copy('Go', 'GB')}</th>
 								<th>{copy('Suivi', 'Coverage')}</th>
 							</tr>
 						</thead>

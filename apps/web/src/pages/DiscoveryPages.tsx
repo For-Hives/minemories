@@ -4,6 +4,7 @@ import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useDemoPreferences } from '../content/demo-preferences'
 import { demoMemories, discoveryPages } from '../content/discovery'
+import { localize } from '../i18n/catalog'
 import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
 import { ContentLayout, NotFoundPage } from './ContentPages'
 import { PublicGallery } from './PublicDiscovery'
@@ -24,11 +25,11 @@ export function DiscoveryPage() {
 				{discoveryPages.map((page, index) => (
 					<Link key={page.path} to={page.path} className={`mm-angle-card mm-accent-${page.accent}`}>
 						<span className="mm-kicker">
-							0{index + 1} / {page.label[locale]}
+							0{index + 1} / {localize(page.label, locale)}
 						</span>
-						<MemoryScene theme={index % 2 ? 'home' : 'village'} label={page.label[locale]} />
-						<h2>{page.title[locale]}</h2>
-						<p>{page.lead[locale]}</p>
+						<MemoryScene theme={index % 2 ? 'home' : 'village'} label={localize(page.label, locale)} />
+						<h2>{localize(page.title, locale)}</h2>
+						<p>{localize(page.lead, locale)}</p>
 						<span>{copy('Découvrir ce parcours ↗', 'Explore this path ↗')}</span>
 					</Link>
 				))}
@@ -56,7 +57,11 @@ export function MarketingPage() {
 	const page = discoveryPages.find(item => item.path === pathname.replace(trailingSlash, ''))
 	if (!page) return <NotFoundPage />
 	return (
-		<ContentLayout eyebrow={`MINEMORIES / ${page.label[locale]}`} title={page.title[locale]} lead={page.lead[locale]}>
+		<ContentLayout
+			eyebrow={`MINEMORIES / ${localize(page.label, locale)}`}
+			title={localize(page.title, locale)}
+			lead={localize(page.lead, locale)}
+		>
 			<div className={`mm-story-hero mm-accent-${page.accent}`}>
 				<MemoryScene
 					theme={page.path === '/nostalgie' ? 'home' : 'village'}
@@ -66,10 +71,10 @@ export function MarketingPage() {
 					<span className="mm-kicker">{copy('Ce qu’on veut garder', 'What we want to keep')}</span>
 					<ul className="mm-feature-list">
 						{page.points.map(point => (
-							<li key={point.en}>{point[locale]}</li>
+							<li key={point.en}>{localize(point, locale)}</li>
 						))}
 					</ul>
-					<p>{page.story[locale]}</p>
+					<p>{localize(page.story, locale)}</p>
 					<Link className={buttonLime} to="/installation">
 						{copy('Créer mon premier souvenir', 'Create my first memory')}
 					</Link>
@@ -119,7 +124,7 @@ export function MarketingPage() {
 				</section>
 			)}
 			{page.path === '/classement' && <GalleryPreview ranking />}
-			<p className="mm-note">{page.note[locale]}</p>
+			<p className="mm-note">{localize(page.note, locale)}</p>
 			<div className="mm-actions">
 				<Link to="/decouvrir" className={buttonOutline}>
 					{copy('Tous les parcours', 'All paths')}
@@ -214,11 +219,13 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 	const [params, setParams] = useSearchParams()
 	const trigger = useRef<HTMLButtonElement | null>(null)
 	const selected = demoMemories.find(memory => memory.id === params.get('souvenir'))
-	const categories = [...new Map(demoMemories.map(memory => [memory.theme, memory.category[locale]])).entries()]
+	const categories = [
+		...new Map(demoMemories.map(memory => [memory.theme, localize(memory.category, locale)])).entries(),
+	]
 	const visible = demoMemories
 		.filter(
 			memory =>
-				`${memory.title[locale]} ${memory.story[locale]}`
+				`${localize(memory.title, locale)} ${localize(memory.story, locale)}`
 					.toLocaleLowerCase(locale)
 					.includes(query.trim().toLocaleLowerCase(locale)) &&
 				(category === 'all' || memory.theme === category) &&
@@ -227,7 +234,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 		.sort((a, b) =>
 			sort === 'hearts'
 				? b.hearts + Number(preferences.votes.includes(b.id)) - a.hearts - Number(preferences.votes.includes(a.id))
-				: a.title[locale].localeCompare(b.title[locale], locale)
+				: localize(a.title, locale).localeCompare(localize(b.title, locale), locale)
 		)
 	return (
 		<section className="mm-demo-gallery" aria-label={copy('Galerie de démonstration', 'Demo gallery')}>
@@ -305,7 +312,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 						<button
 							type="button"
 							className="mm-scene-button"
-							aria-label={`${copy('Visiter', 'Visit')} ${memory.title[locale]}`}
+							aria-label={`${copy('Visiter', 'Visit')} ${localize(memory.title, locale)}`}
 							onClick={event => {
 								trigger.current = event.currentTarget
 								setParams({ souvenir: memory.id })
@@ -315,15 +322,15 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 							{sort === 'hearts' && <span className="mm-rank">#{index + 1}</span>}
 						</button>
 						<div className="mm-memory-card-body">
-							<span className="mm-kicker">{memory.category[locale]}</span>
-							<h3>{memory.title[locale]}</h3>
-							<p>{memory.story[locale]}</p>
+							<span className="mm-kicker">{localize(memory.category, locale)}</span>
+							<h3>{localize(memory.title, locale)}</h3>
+							<p>{localize(memory.story, locale)}</p>
 							<div className="mm-memory-actions">
 								<button
 									className="mm-text-button"
 									type="button"
 									aria-pressed={preferences.favorites.includes(memory.id)}
-									aria-label={`${copy('Favori', 'Favorite')} : ${memory.title[locale]}`}
+									aria-label={`${copy('Favori', 'Favorite')} : ${localize(memory.title, locale)}`}
 									onClick={() => toggle('favorites', memory.id)}
 								>
 									{preferences.favorites.includes(memory.id) ? '★' : '☆'} {copy('Garder', 'Keep')}
@@ -332,7 +339,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 									className="mm-text-button"
 									type="button"
 									aria-pressed={preferences.votes.includes(memory.id)}
-									aria-label={`${copy('Coup de cœur', 'Heart')} : ${memory.title[locale]}`}
+									aria-label={`${copy('Coup de cœur', 'Heart')} : ${localize(memory.title, locale)}`}
 									onClick={() => toggle('votes', memory.id)}
 								>
 									♡ {memory.hearts + Number(preferences.votes.includes(memory.id))}
@@ -393,9 +400,9 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 					{copy('Illustration · aperçu partageable', 'Illustration · shareable preview')}
 				</span>
 				<h2 ref={heading} tabIndex={-1}>
-					{memory.title[locale]}
+					{localize(memory.title, locale)}
 				</h2>
-				<p>{memory.story[locale]}</p>
+				<p>{localize(memory.story, locale)}</p>
 				<p>
 					{copy(
 						'Ce lien ouvre cette illustration. Tes vrais souvenirs se partagent depuis ta galerie privée.',
@@ -427,7 +434,7 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 					</label>
 				)}
 			</div>
-			<MemoryScene theme={memory.theme} label={memory.title[locale]} />
+			<MemoryScene theme={memory.theme} label={localize(memory.title, locale)} />
 		</section>
 	)
 }

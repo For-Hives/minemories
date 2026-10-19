@@ -1,5 +1,4 @@
-import type { Locale } from '../i18n/I18n.tsx'
-export type Localized<T> = Record<Locale, T>
+export type Localized<T> = Record<'fr' | 'en', T>
 export interface Article {
 	slug: string
 	published: string

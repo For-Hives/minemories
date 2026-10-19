@@ -3,7 +3,9 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { discoveryPages } from '../content/discovery'
+import { localize } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
+import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
@@ -99,14 +101,28 @@ function FileControl() {
 	)
 }
 function LanguageControl() {
-	const { locale, setLocale, t } = useI18n()
+	const { locale, setLocale, pendingLocale, localeError, t } = useI18n()
 	return (
 		<label className="mm-language">
 			<span className="sr-only">{t('Language')}</span>
-			<select value={locale} onChange={event => setLocale(event.target.value === 'en' ? 'en' : 'fr')}>
-				<option value="fr">FR</option>
-				<option value="en">EN</option>
+			<select
+				value={pendingLocale ?? locale}
+				aria-busy={pendingLocale !== null}
+				onChange={event => {
+					if (isLocale(event.target.value)) setLocale(event.target.value)
+				}}
+			>
+				{localeOptions.map(option => (
+					<option key={option.id} value={option.id} lang={option.tag}>
+						{option.label}
+					</option>
+				))}
 			</select>
+			{localeError && (
+				<span role="alert" className="mm-language-error">
+					{t('Could not load this language. Select it again to retry.')}
+				</span>
+			)}
 		</label>
 	)
 }
@@ -180,11 +196,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			<footer className="mm-footer">
 				<div className="album-footer-heading">
 					<span>
-						{locale === 'fr' ? 'Les mondes changent.' : 'Worlds change.'}
+						{t('Worlds change.')}
 						<br />
-						<em>{locale === 'fr' ? 'Ce qu’ils nous laissent, reste.' : 'What they leave us stays.'}</em>
+						<em>{t('What they leave us stays.')}</em>
 					</span>
-					<Link to="/explorer">{locale === 'fr' ? 'Explorer les souvenirs' : 'Explore memories'} ↗</Link>
+					<Link to="/explorer">{t('Explore memories')} ↗</Link>
 				</div>
 				<div>
 					<Brand />
@@ -197,7 +213,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<Link to="/installation">{t('Install the mod')}</Link>
 					<Link to="/versions">{t('Mod versions')}</Link>
 					<Link to="/changelog">{t('What’s new')}</Link>
-					<Link to="/faq">FAQ</Link>
+					<Link to="/faq">{t('FAQ')}</Link>
 				</nav>
 				<nav aria-label="Minemories">
 					{navigation
@@ -210,7 +226,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					{[...discoveryPages, { path: '/explorer', label: { fr: 'Galerie publique', en: 'Public gallery' } }].map(
 						page => (
 							<Link key={page.path} to={page.path}>
-								{page.label[locale]}
+								{localize(page.label, locale)}
 							</Link>
 						)
 					)}
@@ -235,7 +251,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 }
 
 function AuthLayout({ children }: { children: ReactNode }) {
-	const { t, locale } = useI18n()
+	const { t } = useI18n()
 	return (
 		<div className="mm-site auth-shell">
 			<a className="mm-skip" href="#main-content">
@@ -244,7 +260,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			<header className="auth-topbar">
 				<Brand />
 				<div>
-					<Link to="/faq">{locale === 'fr' ? 'Besoin d’aide ?' : 'Need help?'}</Link>
+					<Link to="/faq">{t('Need help?')}</Link>
 					<LanguageControl />
 				</div>
 			</header>

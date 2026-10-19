@@ -1,13 +1,15 @@
 import { discoveryPages } from './content/discovery.ts'
 import { articles } from './content/site-content.ts'
+import { localize, translate } from './i18n/catalog.ts'
 import type { Locale } from './i18n/I18n.tsx'
+import { isFrench, localeTag } from './i18n/locales.ts'
 import { englishMetadata } from './i18n/metadata-en.ts'
 export interface PageMetadata {
 	path: string
 	title: string
 	description: string
 	indexable: boolean
-	language: Locale
+	language: string
 	articleDate?: string
 }
 export const publicMetadata: PageMetadata[] = [
@@ -141,15 +143,35 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 		indexable: false,
 		language: 'fr',
 	}
-	if (locale === 'fr') return page
+	if (isFrench(locale)) return { ...page, language: locale === 'fr' ? 'fr' : localeTag(locale) }
 	if (!page.indexable)
-		return { ...page, title: 'Minemories — Your space', description: 'Your Minemories space.', language: 'en' }
+		return {
+			...page,
+			title: translate(locale, 'Minemories — Your space'),
+			description: translate(locale, 'Your Minemories space.'),
+			language: locale === 'en' ? 'en' : localeTag(locale),
+		}
 	const discovery = discoveryPages.find(item => item.path === path)
 	const article = articles.find(item => `/blog/${item.slug}` === path)
 	let translated = englishMetadata[path]
-	if (discovery) translated = { title: `${discovery.label.en} — Minemories`, description: discovery.lead.en }
-	if (article) translated = { title: `${article.title.en} — Minemories`, description: article.summary.en }
-	return translated ? { ...page, ...translated, language: 'en' } : page
+	if (discovery)
+		translated = {
+			title: `${localize(discovery.label, locale)} — Minemories`,
+			description: localize(discovery.lead, locale),
+		}
+	if (article)
+		translated = {
+			title: `${localize(article.title, locale)} — Minemories`,
+			description: localize(article.summary, locale),
+		}
+	return translated
+		? {
+				...page,
+				title: translate(locale, translated.title),
+				description: translate(locale, translated.description),
+				language: locale === 'en' ? 'en' : localeTag(locale),
+			}
+		: { ...page, language: localeTag(locale) }
 }
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.xenos.lightin.io'
 
