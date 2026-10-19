@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.13.0-beta.1...mod-v0.14.0-beta.1) (2026-10-19)
+
+### Fonctionnalités
+
+* **i18n:** localize the website for ten countries ([94808d8](https://github.com/For-Hives/minemories/commit/94808d87aafec0519d243495931aebe294e244fd))
+* improve viewer, sharing and account settings ([c320b92](https://github.com/For-Hives/minemories/commit/c320b92b7e142449ef2763793861527f6c640d0e))
+
+### Refactorisation
+
+* **i18n:** unify web catalogs and localize mod options ([139271e](https://github.com/For-Hives/minemories/commit/139271ef10df199786ea8cc76d2450c5a8bf1626))
+
 ## [0.13.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.12.0-beta.1...mod-v0.13.0-beta.1) (2026-10-16)
 
 ### Fonctionnalités
