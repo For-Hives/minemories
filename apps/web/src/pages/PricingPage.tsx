@@ -206,7 +206,10 @@ export function PriceSimulator() {
 				</output>
 				<p>
 					{cloud
-						? copy(`Projection sur ${years} an(s), création incluse`, `${years}-year projection, including creation`)
+						? copy(
+								'Projection sur {years} an(s), création incluse',
+								'{years}-year projection, including creation'
+							).replace('{years}', String(years))
 						: copy('Création seule, sans cloud', 'Creation only, without cloud')}
 				</p>
 				{quote && (

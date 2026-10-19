@@ -137,3 +137,10 @@ test('public viewer displays a cold capture in French and restores only after th
 	)
 	expect(screen.queryByRole('heading', { name: 'Ce souvenir est archivé.' })).toBeNull()
 })
+
+test('an owner-chosen capture title is displayed verbatim even when it matches a translated UI key', async () => {
+	mocks.get.mockResolvedValueOnce({ title: 'Sign in' })
+	mount()
+	await screen.findByRole('heading', { name: 'Sign in' })
+	expect(screen.queryByRole('heading', { name: 'Se connecter' })).toBeNull()
+})

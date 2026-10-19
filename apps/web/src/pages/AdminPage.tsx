@@ -23,12 +23,12 @@ function Totals({ data }: { data: AdminSummary }) {
 		},
 		{
 			label: copy('Volume finalisé', 'Completed volume'),
-			value: `${gigabytes(data.period.uploadedBytes, locale)} Go`,
+			value: `${gigabytes(data.period.uploadedBytes, locale)} ${copy('Go', 'GB')}`,
 			note: copy('sur la période', 'during the period'),
 		},
 		{
 			label: copy('Stockage logique', 'Logical storage'),
-			value: `${gigabytes(data.totals.storedBytes, locale)} Go`,
+			value: `${gigabytes(data.totals.storedBytes, locale)} ${copy('Go', 'GB')}`,
 			note: copy('captures et corbeille', 'captures and trash'),
 		},
 	]
@@ -51,9 +51,12 @@ function Operations({ data }: { data: AdminSummary['totals'] }) {
 		[copy('Sessions valides', 'Valid sessions'), data.sessions.toLocaleString(locale)],
 		[copy('Appareils associés', 'Paired devices'), data.devices.toLocaleString(locale)],
 		[copy('Publications approuvées', 'Approved publications'), data.publicCaptures.toLocaleString(locale)],
-		[copy('Corbeille', 'Trash'), `${gigabytes(data.trashBytes, locale)} Go`],
-		[copy('Effacement en attente', 'Pending deletion'), `${gigabytes(data.pendingDeletionBytes, locale)} Go`],
-		[copy('Uploads réservés', 'Reserved uploads'), `${gigabytes(data.reservedBytes, locale)} Go`],
+		[copy('Corbeille', 'Trash'), `${gigabytes(data.trashBytes, locale)} ${copy('Go', 'GB')}`],
+		[
+			copy('Effacement en attente', 'Pending deletion'),
+			`${gigabytes(data.pendingDeletionBytes, locale)} ${copy('Go', 'GB')}`,
+		],
+		[copy('Uploads réservés', 'Reserved uploads'), `${gigabytes(data.reservedBytes, locale)} ${copy('Go', 'GB')}`],
 		[copy('Objets archivés', 'Archived objects'), data.coldObjects.toLocaleString(locale)],
 		[copy('Objets en restauration', 'Objects restoring'), data.restoringObjects.toLocaleString(locale)],
 	]
@@ -148,7 +151,9 @@ function Directory({
 								</td>
 								<td>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
 								<td>{user.captures.toLocaleString(locale)}</td>
-								<td>{gigabytes(user.storedBytes, locale)} Go</td>
+								<td>
+									{gigabytes(user.storedBytes, locale)} {copy('Go', 'GB')}
+								</td>
 								<td>
 									<button
 										type="button"

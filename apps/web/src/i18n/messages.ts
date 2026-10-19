@@ -1,4 +1,10 @@
 export const frenchMessages: Record<string, string> = {
+	Diagnostics: 'Diagnostics',
+	FAQ: 'FAQ',
+	GB: 'Go',
+	'Same area': 'Même zone',
+	'Could not load this language. Select it again to retry.':
+		'Impossible de charger cette langue. Sélectionne-la à nouveau pour réessayer.',
 	'Mod versions': 'Versions du mod',
 	'What’s new': 'Nouveautés',
 	Timeline: 'Évolution',

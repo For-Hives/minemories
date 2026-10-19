@@ -1,4 +1,5 @@
 import { validateSelfContainedGlb } from '@minemories/api-contract/glb'
+import type { Locale } from '../i18n/locales'
 
 const GLB_EXTENSION = /\.glb$/i
 
@@ -17,7 +18,7 @@ export function isGlbFileName(fileName: string): boolean {
 	return GLB_EXTENSION.test(fileName)
 }
 
-export function formatFileSize(byteLength: number, locale: 'fr' | 'en' = 'en'): string {
+export function formatFileSize(byteLength: number, locale: Locale = 'en'): string {
 	if (!Number.isFinite(byteLength) || byteLength < 0) {
 		throw new RangeError('File size must be a finite, non-negative number')
 	}

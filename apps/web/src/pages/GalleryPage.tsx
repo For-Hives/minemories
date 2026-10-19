@@ -6,6 +6,7 @@ import { useAppContext } from '../app-context'
 import { LoadingSkeleton } from '../components/Loading'
 import { SharePanel } from '../components/SharePanel'
 import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
+import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
@@ -131,7 +132,7 @@ const tilePalettes: TilePalette[] = [
 ]
 
 export function GalleryPage() {
-	const { t, locale } = useI18n()
+	const { t } = useI18n()
 
 	const { session, notify, setViewerFile } = useAppContext()
 	const {
@@ -169,7 +170,7 @@ export function GalleryPage() {
 						<T message={'THE SERVER ALBUM'} />
 					</Eyebrow>
 					<h1 className="mb-[9px] mt-[13px] font-sans text-[clamp(36px,4vw,53px)] font-semibold leading-[1.1] tracking-[-2.8px] max-phone:text-[36px] max-phone:tracking-[-2px]">
-						{locale === 'fr' ? 'Tes souvenirs' : 'Your memories'}
+						{t('Your memories')}
 						{session?.user.name && `, ${session.user.name.split(' ')[0]}`}.
 					</h1>
 					<p className="m-0 text-[13px] text-[#b4c1ad]">
@@ -373,7 +374,7 @@ function folderMotd(captures: Memories, locale: Locale): string {
 	const count = captures.length
 	const newest = captures[0]
 	const seed = captures.find(item => item.metadata.seed)?.metadata.seed
-	const parts = [`${count} capture${count > 1 ? 's' : ''}`]
+	const parts = [formatCaptureCount(locale, count)]
 	if (seed) parts.push(translate(locale, 'Seed {seed}', { seed }))
 	if (newest)
 		parts.push(
@@ -439,7 +440,7 @@ function StackBundle({
 	onChanged: () => void
 	onTrashed: (id: string) => void
 }) {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	const [custom, setCustom] = useState(() => getStackName(groupKey, stack.key))
 	const [editing, setEditing] = useState(false)
@@ -507,7 +508,7 @@ function StackBundle({
 					) : (
 						<>
 							<p className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold text-[#dfe7da]">
-								{custom ?? t('Same area · {count} captures', { count: stack.captures.length })}
+								{custom ?? `${t('Same area')} · ${formatCaptureCount(locale, stack.captures.length)}`}
 							</p>
 							{stack.x !== null && stack.z !== null && (
 								<p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">

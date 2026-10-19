@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { OrbitMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
 import { articles, legalContent } from '../content/site-content'
+import { localize } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
 
@@ -32,16 +33,12 @@ export function ContentLayout({
 	)
 }
 export function BlogPage() {
-	const { locale } = useI18n()
+	const { locale, t } = useI18n()
 	return (
 		<ContentLayout
 			eyebrow="MINEMORIES"
-			title={locale === 'fr' ? 'Le journal des souvenirs' : 'The memory journal'}
-			lead={
-				locale === 'fr'
-					? 'Des repères pour capturer, garder et revisiter les lieux construits ensemble.'
-					: 'Ideas for capturing, keeping and revisiting the places built together.'
-			}
+			title={t('The memory journal')}
+			lead={t('Ideas for capturing, keeping and revisiting the places built together.')}
 		>
 			<div className="mm-content-grid">
 				{articles.map(article => (
@@ -52,9 +49,9 @@ export function BlogPage() {
 								new Date(`${article.published}T12:00:00Z`)
 							)}
 						</time>
-						<h2>{article.title[locale]}</h2>
-						<p>{article.summary[locale]}</p>
-						<span>{locale === 'fr' ? 'Lire l’article →' : 'Read article →'}</span>
+						<h2>{localize(article.title, locale)}</h2>
+						<p>{localize(article.summary, locale)}</p>
+						<span>{t('Read article →')}</span>
 					</Link>
 				))}
 			</div>
@@ -62,12 +59,12 @@ export function BlogPage() {
 	)
 }
 export function ArticlePage() {
-	const { locale } = useI18n()
+	const { locale, t } = useI18n()
 	const { slug } = useParams()
 	const article = articles.find(item => item.slug === slug)
 	if (!article) return <NotFoundPage />
 	return (
-		<ContentLayout eyebrow="JOURNAL" title={article.title[locale]} lead={article.summary[locale]}>
+		<ContentLayout eyebrow="JOURNAL" title={localize(article.title, locale)} lead={localize(article.summary, locale)}>
 			<time dateTime={article.published}>
 				{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
 					new Date(`${article.published}T12:00:00Z`)
@@ -76,38 +73,36 @@ export function ArticlePage() {
 			<div className="mm-prose">
 				{article.sections.map(section => (
 					<section key={section.heading.en}>
-						<h2>{section.heading[locale]}</h2>
-						<p>{section.body[locale]}</p>
+						<h2>{localize(section.heading, locale)}</h2>
+						<p>{localize(section.body, locale)}</p>
 					</section>
 				))}
 			</div>
 			<Link className={buttonLime} to="/installation">
-				{locale === 'fr' ? 'Créer mon premier souvenir' : 'Create my first memory'}
+				{t('Create my first memory')}
 			</Link>
 			<p>
-				<Link to="/blog">{locale === 'fr' ? '← Retour au journal' : '← Back to the journal'}</Link>
+				<Link to="/blog">{t('← Back to the journal')}</Link>
 			</p>
 		</ContentLayout>
 	)
 }
 export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
-	const { locale } = useI18n()
+	const { locale, t } = useI18n()
 	const content = legalContent[kind]
 	return (
-		<ContentLayout eyebrow="MINEMORIES" title={content.title[locale]}>
+		<ContentLayout eyebrow="MINEMORIES" title={localize(content.title, locale)}>
 			<div className="mm-prose">
 				{content.sections.map(section => (
 					<section key={section.heading.en}>
-						<h2>{section.heading[locale]}</h2>
-						<p>{section.body[locale]}</p>
+						<h2>{localize(section.heading, locale)}</h2>
+						<p>{localize(section.body, locale)}</p>
 						{kind === 'privacy' && section.heading.en === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
 					</section>
 				))}
 			</div>
 			<p>
-				<a href="https://github.com/For-Hives/minemories">
-					{locale === 'fr' ? 'Dépôt du projet' : 'Project repository'}
-				</a>
+				<a href="https://github.com/For-Hives/minemories">{t('Project repository')}</a>
 			</p>
 		</ContentLayout>
 	)
