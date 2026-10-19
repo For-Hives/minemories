@@ -6,18 +6,18 @@ import { ModDownload } from './ModDownload'
 import { WindowsScreenshot } from './WindowsScreenshot'
 
 export const stepNames = [
-	'Préparer',
-	'Installer NeoForge',
-	'Télécharger le mod',
-	'Ranger le fichier',
-	'Vérifier en jeu',
-	'Créer un souvenir',
+	'Prepare',
+	'Install NeoForge',
+	'Download the mod',
+	'Place the file',
+	'Check in game',
+	'Create a memory',
 ]
 export const launcherNames: Record<Launcher, string> = {
 	manuel: 'Minecraft Launcher',
 	curseforge: 'CurseForge',
 	modrinth: 'Modrinth App',
-	autre: 'Un autre launcher',
+	autre: 'Another launcher',
 }
 const folders: Record<System, string> = {
 	windows: '%APPDATA%\\.minecraft-minemories',
@@ -42,13 +42,13 @@ export function CopyText({ text, label }: { text: string; label: string }) {
 				onClick={async () => {
 					try {
 						await navigator.clipboard.writeText(text)
-						setMessage('Copié !')
+						setMessage('Copied!')
 					} catch {
-						setMessage('Sélectionne le texte ci-dessus pour le copier.')
+						setMessage('Select the text above to copy it.')
 					}
 				}}
 			>
-				<T message={'Copier'} />
+				<T message={'Copy'} />
 			</button>
 			{message && <span role="status">{t(message)}</span>}
 		</div>
@@ -59,52 +59,52 @@ function PrepareStep() {
 	return (
 		<>
 			<p>
-				<T message={'Il te faut'} />{' '}
+				<T message={'You need'} />{' '}
 				<strong>
-					<T message={'Minecraft Java Edition sur ordinateur'} />
+					<T message={'Minecraft Java Edition on a computer'} />
 				</strong>
-				<T message={'. Le mod n’est pas disponible pour Bedrock, les consoles ou les mobiles.'} />
+				<T message={'. The mod is not available for Bedrock, consoles or mobile devices.'} />
 			</p>
 			<div className="install-note">
 				<strong>Minecraft Java Edition 1.21.1 + NeoForge 21.1.248</strong>
 				<p>
 					<T
 						message={
-							'Ce parcours détaille NeoForge, qui permet au jeu de charger le mod. Les autres versions validées sont indiquées dans'
+							'This guide covers NeoForge, which lets the game load the mod. Other validated versions are listed under'
 						}
 					/>{' '}
 					<Link to="/versions">
-						<T message={'Versions du mod'} />
+						<T message={'Mod versions'} />
 					</Link>
 					.
 				</p>
 			</div>
 			<p>
-				<T message={'Pour découvrir Minemories, commence dans un'} />{' '}
+				<T message={'To discover Minemories, start in a'} />{' '}
 				<strong>
-					<T message={'nouveau monde de test'} />
+					<T message={'new test world'} />
 				</strong>
 				<T
 					message={
-						'. Tu peux exporter une capture sans compte ; pour la consulter sur le site, relie le mod à ta galerie privée.'
+						'. You can export a capture without an account; to view it on the site, link the mod to your private gallery.'
 					}
 				/>
 			</p>
 			<details>
 				<summary>
-					<T message={'Je veux utiliser mon monde ou mon serveur habituel'} />
+					<T message={'I want to use my usual world or server'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'Fais une copie du monde et du profil avant toute modification. Un profil (ou une instance) regroupe le jeu, ses mods et ses réglages. Garde tous les mods attendus par ton monde ou ton serveur. Ne change pas sa version ou son loader pour ce tuto : s’il n’utilise pas déjà Java 1.21.1 et NeoForge 21.1.248, demande de l’aide à son responsable.'
+							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: if it does not already use Java 1.21.1 and NeoForge 21.1.248, ask its administrator for help.'
 						}
 					/>
 				</p>
 				<p>
 					<T
 						message={
-							'Minemories s’installe sur ton ordinateur, pas sur le serveur. Vérifie les règles du serveur avant de capturer.'
+							'Minemories installs on your computer, not on the server. Check the server rules before capturing.'
 						}
 					/>
 				</p>
@@ -120,85 +120,85 @@ function ManualLoader({ system }: { system: System }) {
 		<>
 			<ol>
 				<li>
-					<T message={'Dans Minecraft Launcher, ouvre'} />{' '}
+					<T message={'In Minecraft Launcher, open'} />{' '}
 					<strong>
-						<T message={'Installations → Nouvelle installation'} />
+						<T message={'Installations → New installation'} />
 					</strong>
-					<T message={', choisis la version'} /> <strong>release 1.21.1</strong>{' '}
-					<T message={'et lance-la une fois. Ferme le jeu et le launcher.'} />
+					<T message={', choose version'} /> <strong>release 1.21.1</strong>{' '}
+					<T message={'and launch it once. Close the game and launcher.'} />
 					{system === 'windows' && <WindowsScreenshot id="minecraftVersion" />}
 				</li>
 				<li>
-					<T message={'Installe'} />{' '}
+					<T message={'Install'} />{' '}
 					<a href="https://adoptium.net/temurin/releases/?version=21">
-						<T message={'Java 21 (Temurin, site officiel)'} />
+						<T message={'Java 21 (Temurin, official site)'} />
 					</a>{' '}
 					<T
 						message={
-							'si tu ne l’as pas. Choisis ton système, le JDK 21 et l’architecture de ton ordinateur : x64 pour Intel/AMD, aarch64 pour Apple Silicon. Le Java fourni à Minecraft n’est pas toujours disponible pour ouvrir un installateur.'
+							"if you do not have it. Choose your system, JDK 21 and your computer's architecture: x64 for Intel/AMD, aarch64 for Apple Silicon. The Java bundled with Minecraft is not always available to open an installer."
 						}
 					/>
 					{system === 'windows' && <WindowsScreenshot id="java21" />}
 				</li>
 				<li>
-					<T message={'Télécharge'} />{' '}
+					<T message={'Download'} />{' '}
 					<a href="https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-installer.jar">
-						<T message={'l’installateur NeoForge 21.1.248'} />
+						<T message={'the NeoForge 21.1.248 installer'} />
 					</a>
-					<T message={'. Ouvre'} />{' '}
+					<T message={'. Open'} />{' '}
 					<em>
-						<T message={'ce'} />
+						<T message={'this'} />
 					</em>{' '}
-					<T message={'fichier avec Java, coche'} /> <strong>Install client</strong>
-					<T message={', puis valide. Attends le message de réussite.'} />
+					<T message={'file with Java, select'} /> <strong>Install client</strong>
+					<T message={', then confirm. Wait for the success message.'} />
 					{system === 'windows' && <WindowsScreenshot id="neoforge" />}
 				</li>
 				<li>
-					<T message={'Rouvre Minecraft Launcher. Dans'} /> <strong>Installations</strong>
-					<T message={', coche l’affichage des versions'} />{' '}
+					<T message={'Reopen Minecraft Launcher. Under'} /> <strong>Installations</strong>
+					<T message={', enable display of'} />{' '}
 					<strong>
-						<T message={'Modifiées / Modded'} />
+						<T message={'Modded'} />
 					</strong>{' '}
-					<T message={'si besoin. Édite l’installation NeoForge créée avec'} />{' '}
+					<T message={'versions if necessary. Edit the NeoForge installation created using'} />{' '}
 					<strong>
-						<T message={'… → Modifier → Plus d’options'} />
+						<T message={'… → Edit → More options'} />
 					</strong>
-					<T message={'. Vérifie que sa version contient'} /> <strong>21.1.248</strong>.
+					<T message={'. Check that its version contains'} /> <strong>21.1.248</strong>.
 				</li>
 				<li>
-					<T message={'Dans'} />{' '}
+					<T message={'Under'} />{' '}
 					<strong>
-						<T message={'Dossier du jeu / Game Directory'} />
+						<T message={'Game Directory'} />
 					</strong>
-					<T message={', choisis un nouveau dossier dédié à Minemories avec'} />{' '}
+					<T message={', choose a new folder dedicated to Minemories using'} />{' '}
 					<strong>
-						<T message={'Parcourir'} />
+						<T message={'Browse'} />
 					</strong>
-					<T message={'. Par exemple :'} />
+					<T message={'. For example:'} />
 				</li>
 			</ol>
-			<CopyText text={folders[system]} label="Copier le dossier de jeu proposé" />
+			<CopyText text={folders[system]} label="Copy the suggested game folder" />
 			<p className="install-caption">
 				{system === 'windows'
-					? t('Colle %APPDATA% dans la barre d’adresse de l’Explorateur, puis crée le dossier .minecraft-minemories.')
+					? t("Paste %APPDATA% into File Explorer's address bar, then create the .minecraft-minemories folder.")
 					: t(
-							'Le signe ~ désigne ton dossier utilisateur. Crée le dossier proposé avec ton gestionnaire de fichiers, puis sélectionne-le dans le launcher.'
+							'The ~ symbol means your user directory. Create the suggested folder in your file manager, then select it in the launcher.'
 						)}
 			</p>
 			{system === 'windows' && <WindowsScreenshot id="gameDirectory" />}
 			<p>
-				<T message={'Enregistre, lance une fois'} />{' '}
+				<T message={'Save, launch'} />{' '}
 				<strong>
-					<T message={'cette installation NeoForge'} />
+					<T message={'this NeoForge installation'} />
 				</strong>
-				<T message={', puis ferme Minecraft. Cela crée le dossier'} /> <code>mods</code>
-				<T message={'. Si Java ou NeoForge bloque, ouvre l’aide en bas de la page avant de continuer.'} />
+				<T message={'once, then close Minecraft. This creates the folder'} /> <code>mods</code>
+				<T message={'. If Java or NeoForge gets stuck, open the help at the bottom of this page before continuing.'} />
 			</p>
 			<p className="install-caption">
 				<a href="https://docs.neoforged.net/user/docs/">
-					<T message={'Guide officiel Java et NeoForge'} />
+					<T message={'Official Java and NeoForge guide'} />
 				</a>
-				<T message={'. Le parcours Minecraft Launcher reste à valider en jeu avec le JAR distribué.'} />
+				<T message={'. The Minecraft Launcher walkthrough still needs in-game validation with the distributed JAR.'} />
 			</p>
 		</>
 	)
@@ -209,19 +209,21 @@ function LauncherLoader({ launcher }: { launcher: Exclude<Launcher, 'manuel'> })
 		return (
 			<>
 				<p>
-					<T message={'Dans Prism Launcher, ATLauncher, GDLauncher ou MultiMC, crée une instance'} />{' '}
-					<strong>Minecraft 1.21.1</strong> <T message={'et ajoute le loader'} /> <strong>NeoForge 21.1.248</strong>
-					<T message={'. Les boutons diffèrent selon l’application.'} />
+					<T message={'In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a'} />{' '}
+					<strong>Minecraft 1.21.1</strong> <T message={'instance and add loader'} /> <strong>NeoForge 21.1.248</strong>
+					<T message={'. Buttons vary between applications.'} />
 				</p>
 				<p>
 					<T
 						message={
-							'Pour un monde existant, copie son instance compatible et conserve ses mods. Si ton launcher ne propose pas exactement ces versions, ne choisis pas une autre version au hasard : utilise le parcours Minecraft Launcher ou demande de l’aide.'
+							'For an existing world, copy its compatible instance and keep its mods. If your launcher does not offer these exact versions, do not choose a random alternative: use the Minecraft Launcher walkthrough or ask for help.'
 						}
 					/>
 				</p>
 				<p>
-					<T message={'Lance cette instance une fois, puis ferme le jeu. Ce parcours reste à valider en jeu.'} />
+					<T
+						message={'Launch this instance once, then close the game. This walkthrough still needs in-game validation.'}
+					/>
 				</p>
 			</>
 		)
@@ -229,23 +231,22 @@ function LauncherLoader({ launcher }: { launcher: Exclude<Launcher, 'manuel'> })
 		return (
 			<ol>
 				<li>
-					<T message={'Ouvre'} /> <a href="https://www.curseforge.com/download/app">CurseForge</a>
-					<T message={', choisis Minecraft, puis'} />{' '}
+					<T message={'Open'} /> <a href="https://www.curseforge.com/download/app">CurseForge</a>
+					<T message={', choose Minecraft, then'} />{' '}
 					<strong>
-						<T message={'Create Custom Profile / Créer un profil personnalisé'} />
+						<T message={'Create Custom Profile'} />
 					</strong>
 					.
 				</li>
 				<li>
-					<T message={'Nomme-le Minemories, choisis'} /> <strong>Minecraft 1.21.1</strong>
-					<T message={', le type'} /> <strong>NeoForge</strong> <T message={'et sa version'} />{' '}
-					<strong>21.1.248</strong>
-					<T message={'. Pour un modpack existant compatible, duplique plutôt son profil et garde ses mods.'} />
+					<T message={'Name it Minemories, choose'} /> <strong>Minecraft 1.21.1</strong>
+					<T message={', type'} /> <strong>NeoForge</strong> <T message={'and version'} /> <strong>21.1.248</strong>
+					<T message={'. For an existing compatible modpack, duplicate its profile instead and keep its mods.'} />
 				</li>
 				<li>
 					<T
 						message={
-							'Lance le profil une fois, puis ferme le jeu. Si le profil copié est verrouillé, autorise sa modification dans ses options.'
+							'Launch the profile once, then close the game. If the copied profile is locked, allow editing in its options.'
 						}
 					/>
 				</li>
@@ -255,23 +256,23 @@ function LauncherLoader({ launcher }: { launcher: Exclude<Launcher, 'manuel'> })
 		<>
 			<ol>
 				<li>
-					<T message={'Ouvre'} /> <a href="https://modrinth.com/app">Modrinth App</a>{' '}
-					<T message={'et connecte ton compte Minecraft.'} />
+					<T message={'Open'} /> <a href="https://modrinth.com/app">Modrinth App</a>{' '}
+					<T message={'and sign in to your Minecraft account.'} />
 				</li>
 				<li>
-					<T message={'Crée une instance'} /> <strong>Minecraft 1.21.1</strong> <T message={'avec'} />{' '}
+					<T message={'Create an instance running'} /> <strong>Minecraft 1.21.1</strong> <T message={'with'} />{' '}
 					<strong>NeoForge</strong>
-					<T message={'. Dans ses réglages, sélectionne le loader'} /> <strong>21.1.248</strong>
-					<T message={'. Pour un modpack existant compatible, duplique son instance et garde ses mods.'} />
+					<T message={'. In its settings, select loader'} /> <strong>21.1.248</strong>
+					<T message={'. For an existing compatible modpack, duplicate its instance and keep its mods.'} />
 				</li>
 				<li>
-					<T message={'Lance cette instance une fois, puis ferme le jeu.'} />
+					<T message={'Launch this instance once, then close the game.'} />
 				</li>
 			</ol>
 			<p className="install-caption">
-				<T message={'Ce parcours avec un fichier local reste à valider en jeu.'} />{' '}
+				<T message={'This local-file walkthrough still needs in-game validation.'} />{' '}
 				<a href="https://support.modrinth.com/en/collections/7804910-modrinth-app">
-					<T message={'Aide officielle Modrinth App'} />
+					<T message={'Official Modrinth App help'} />
 				</a>
 				.
 			</p>
@@ -285,22 +286,21 @@ function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: 
 	let instruction = (
 		<>
 			<T
-				message={
-					'Dans Minecraft Launcher → Installations, retrouve le profil NeoForge configuré à l’étape 2 et clique sur son'
-				}
+				message={'In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its'}
 			/>{' '}
 			<strong>
-				<T message={'icône de dossier'} />
+				<T message={'folder icon'} />
 			</strong>
-			<T message={'. Vérifie que c’est le dossier de jeu dédié que tu as choisi.'} />
+			<T message={'. Check that this is the dedicated game directory you chose.'} />
 		</>
 	)
 	if (launcher === 'curseforge')
 		instruction = (
 			<>
-				<T message={'Dans CurseForge, ouvre le menu'} /> <strong>…</strong> <T message={'du profil Minemories, puis'} />{' '}
+				<T message={'In CurseForge, open the'} /> <strong>…</strong>{' '}
+				<T message={'menu of the Minemories profile, then'} />{' '}
 				<strong>
-					<T message={'Open Folder / Ouvrir le dossier'} />
+					<T message={'Open Folder'} />
 				</strong>
 				.
 			</>
@@ -308,59 +308,59 @@ function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: 
 	if (launcher === 'modrinth')
 		instruction = (
 			<>
-				<T message={'Dans Modrinth App, ouvre le dossier de l’instance Minemories avec son'} />{' '}
+				<T message={'In Modrinth App, open the Minemories instance folder using its'} />{' '}
 				<strong>
-					<T message={'icône de dossier'} />
+					<T message={'folder icon'} />
 				</strong>{' '}
-				<T message={'ou son menu.'} />
+				<T message={'or its menu.'} />
 			</>
 		)
 	if (launcher === 'autre')
 		instruction = (
 			<>
-				<T message={'Dans ton launcher, ouvre le'} />{' '}
+				<T message={'In your launcher, open the'} />{' '}
 				<strong>
-					<T message={'dossier de l’instance'} />
+					<T message={'instance folder'} />
 				</strong>{' '}
-				<T message={'NeoForge 21.1.248 choisie. Utilise le bouton de dossier ou le menu de cette instance.'} />
+				<T message={"of your chosen NeoForge 21.1.248 instance. Use that instance's folder button or menu."} />
 			</>
 		)
 	return (
 		<>
 			<p>
 				<strong>
-					<T message={'Ferme Minecraft complètement'} />
+					<T message={'Close Minecraft completely'} />
 				</strong>{' '}
-				<T message={'avant de copier le fichier.'} />
+				<T message={'before copying the file.'} />
 			</p>
 			<ol>
 				<li>{instruction}</li>
 				<li>
-					<T message={'Ouvre le sous-dossier'} /> <code>mods</code>
-					<T message={'. S’il manque, crée un dossier nommé exactement'} /> <code>mods</code>
-					<T message={', en minuscules.'} />
+					<T message={'Open the subfolder'} /> <code>mods</code>
+					<T message={'. If it is missing, create a folder named exactly'} /> <code>mods</code>
+					<T message={', in lowercase.'} />
 				</li>
 				<li>
-					<T message={'Depuis tes'} />{' '}
+					<T message={'From your'} />{' '}
 					<strong>
-						<T message={'Téléchargements'} />
+						<T message={'Downloads'} />
 					</strong>
-					<T message={', copie le JAR Minemories dans'} /> <code>mods</code>
-					<T message={'. Garde une seule version de Minemories : retire son ancien JAR si tu mets à jour.'} />
+					<T message={', copy the Minemories JAR into'} /> <code>mods</code>
+					<T message={'. Keep only one Minemories version: remove its old JAR when updating.'} />
 				</li>
 			</ol>
-			<fieldset className="install-folder" aria-label={t('Emplacement du fichier')}>
+			<fieldset className="install-folder" aria-label={t('File location')}>
 				<span>
-					<T message={'Dossier du profil NeoForge'} />
+					<T message={'NeoForge profile folder'} />
 				</span>
 				<span>└─ mods</span>
 				<strong>　 └─ minemories-neoforge-mc1.21.1.jar</strong>
 			</fieldset>
 			{screenshots && <WindowsScreenshot id="modsFolder" />}
 			<p>
-				<T message={'Le fichier reste un'} /> <code>.jar</code>{' '}
-				<T message={': ne le décompresse pas, ne le lance pas et ne le place pas dans'} /> <code>saves</code>
-				<T message={'. Il n’y a rien à installer côté serveur.'} />
+				<T message={'The file stays a'} /> <code>.jar</code> <T message={': do not extract it, run it or put it in'} />{' '}
+				<code>saves</code>
+				<T message={'. There is nothing to install on the server.'} />
 			</p>
 		</>
 	)
@@ -372,26 +372,24 @@ function VerifyStep({ launcher, screenshots }: { launcher: Launcher; screenshots
 		<>
 			<ol>
 				<li>
-					<T message={'Relance Minecraft depuis'} /> <strong>{t(launcherNames[launcher])}</strong>
-					<T message={', avec le profil'} /> <strong>NeoForge 21.1.248</strong>{' '}
-					<T message={'que tu viens de préparer.'} />
+					<T message={'Restart Minecraft from'} /> <strong>{t(launcherNames[launcher])}</strong>
+					<T message={', using the'} /> <strong>NeoForge 21.1.248</strong> <T message={'profile you just prepared.'} />
 				</li>
 				<li>
-					<T message={'Dans le menu du jeu, ouvre'} /> <strong>Mods</strong> <T message={'et cherche'} />{' '}
+					<T message={'In the game menu, open'} /> <strong>Mods</strong> <T message={'and look for'} />{' '}
 					<strong>Minemories</strong>.
 				</li>
 				<li>
-					<T message={'Crée un petit monde de test, attends que le terrain soit chargé, puis appuie sur'} />{' '}
-					<kbd>M</kbd>
-					<T message={'. Le menu Minemories doit s’ouvrir.'} />
+					<T message={'Create a small test world, wait for terrain to load, then press'} /> <kbd>M</kbd>
+					<T message={'. The Minemories menu should open.'} />
 				</li>
 			</ol>
 			<div className="install-note">
 				<strong>
-					<T message={'Tu vois le menu Minemories ? L’installation est reconnue.'} />
+					<T message={'Can you see the Minemories menu? The installation is recognized.'} />
 				</strong>
 				<p>
-					<T message={'La prochaine étape vérifie aussi qu’une capture fonctionne.'} />
+					<T message={'The next step also checks that capturing works.'} />
 				</p>
 			</div>
 			{screenshots && (
@@ -401,14 +399,12 @@ function VerifyStep({ launcher, screenshots }: { launcher: Launcher; screenshots
 				</>
 			)}
 			<p>
-				<T message={'Si M ouvre autre chose, va dans'} />{' '}
+				<T message={'If M opens something else, go to'} />{' '}
 				<strong>
-					<T message={'Options → Contrôles → Attribution des touches → Minemories'} />
+					<T message={'Options → Controls → Key Binds → Minemories'} />
 				</strong>{' '}
 				<T
-					message={
-						'et choisis une touche libre. Tu peux aussi chercher le bouton Minemories dans le menu pause ou les options.'
-					}
+					message={'and choose an unused key. You can also find the Minemories button in the pause menu or options.'}
 				/>
 			</p>
 		</>
@@ -421,87 +417,81 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 	return (
 		<>
 			<p>
-				<T
-					message={
-						'Pour ton premier essai, approche-toi d’une petite construction et attends que le terrain soit chargé. Ouvre le chat avec'
-					}
-				/>{' '}
+				<T message={'For your first attempt, approach a small build and wait for terrain to load. Open chat with'} />{' '}
 				<kbd>T</kbd>
-				<T message={', colle cette commande, puis appuie sur Entrée :'} />
+				<T message={', paste this command, then press Enter:'} />
 			</p>
-			<CopyText text="/minemories export 16" label="Copier la commande de première capture" />
+			<CopyText text="/minemories export 16" label="Copy the first capture command" />
 			<p>
 				<T
 					message={
-						'Attends le message de fin d’export. Le nombre 16 désigne un rayon de 16 blocs : cette petite capture permet de vérifier le résultat avant de capturer une grande zone.'
+						'Wait for the export completion message. The number 16 means a radius of 16 blocks: this small capture lets you check the result before capturing a large area.'
 					}
 				/>
 			</p>
 			{screenshots && <WindowsScreenshot id="localCapture" />}
 			<p>
-				<T message={'Ouvre le dossier ci-dessous'} />{' '}
+				<T message={'Open the folder below'} />{' '}
 				{system === 'windows'
-					? t('en collant ce chemin dans la barre d’adresse de l’Explorateur')
-					: t('avec ton gestionnaire de fichiers (~ désigne ton dossier utilisateur)')}
-				<T message={', puis retrouve'} /> <strong>capture.glb</strong> :
+					? t("by pasting this path into File Explorer's address bar")
+					: t('using your file manager (~ means your user directory)')}
+				<T message={', then find'} /> <strong>capture.glb</strong> :
 			</p>
-			<CopyText text={exports[system]} label="Copier le dossier du premier souvenir" />
+			<CopyText text={exports[system]} label="Copy the first memory folder" />
 			<p>
 				<T
 					message={
-						'Pour revoir le souvenir dans le navigateur, relie Minecraft à ta galerie privée puis envoie la capture depuis le mod.'
+						'To revisit the memory in your browser, link Minecraft to your private gallery, then upload the capture from the mod.'
 					}
 				/>
 			</p>
 			{screenshots && <WindowsScreenshot id="viewer" />}
 			<div>
 				<h4>
-					<T message={'Retrouver le souvenir dans ma galerie privée'} />
+					<T message={'Find the memory in my private gallery'} />
 				</h4>
 				<ol>
 					<li>
 						<Link to="/register" target="_blank">
-							<T message={'Crée ton compte'} />
+							<T message={'Create your account'} />
 						</Link>{' '}
-						<T message={'ou'} />{' '}
+						<T message={'or'} />{' '}
 						<Link to="/login" target="_blank">
-							<T message={'connecte-toi'} />
+							<T message={'sign in'} />
 						</Link>
-						<T message={', puis ouvre'} />{' '}
+						<T message={', then open'} />{' '}
 						<Link to="/gallery" target="_blank">
-							<T message={'Ma galerie / My gallery'} />
+							<T message={'My gallery'} />
 						</Link>
 						.
 					</li>
 					<li>
 						<T
 							message={
-								'Génère le code d’appairage à six chiffres. Dans Minecraft, appuie sur M, entre ce code et connecte ton compte. Le code expire après cinq minutes : génère-en un nouveau si nécessaire.'
+								'Generate the six-digit pairing code. In Minecraft, press M, enter the code and connect your account. The code expires after five minutes: generate another if needed.'
 							}
 						/>
 					</li>
 					<li>
-						<T message={'Clique sur'} />{' '}
+						<T message={'Click'} />{' '}
 						<strong>
-							<T message={'Capturer et envoyer / Capture and upload'} />
+							<T message={'Capture and upload'} />
 						</strong>{' '}
-						<T
-							message={'dans le menu M. Attends la confirmation, puis vérifie que la capture apparaît dans la galerie.'}
-						/>
+						<T message={'in the M menu. Wait for confirmation, then check that the capture appears in the gallery.'} />
 					</li>
 				</ol>
 				<p>
 					<T
 						message={
-							'Les captures AFK sont actives par défaut après 5 minutes d’inactivité, au plus toutes les 4 heures. Une fois le compte lié, elles sont envoyées automatiquement dans ta galerie privée. Tu peux les désactiver dans M. Sans compte lié, elles restent sur ton ordinateur.'
+							'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can disable them in M. Without a linked account, they stay on your computer.'
 						}
 					/>
 				</p>
 			</div>
 			<p className="install-caption">
-				<T message={'Le dossier d’export peut être changé dans les réglages avancés du mod.'} />{' '}
+				<T message={"The export folder can be changed in the mod's advanced settings."} />{' '}
 				<Link to="/fonctionnement">
-					<T message={'En savoir plus sur les captures et le partage'} />
+					<T message={'Learn more about captures and sharing'} />
 				</Link>
 				.
 			</p>
@@ -522,7 +512,7 @@ export function InstallationStep({ step, system, launcher }: { step: number; sys
 					<p>
 						<T
 							message={
-								'Le JAR est le fichier du mod. Télécharge-le ici, depuis le site ; il n’est pas encore publié dans les catalogues CurseForge et Modrinth. Même avec ces applications, on ajoute donc le fichier à la main.'
+								'The JAR is the mod file. Download it here, from the site; it is not yet published in the CurseForge and Modrinth catalogs. Even with these applications, you add the file manually.'
 							}
 						/>
 					</p>
@@ -531,7 +521,7 @@ export function InstallationStep({ step, system, launcher }: { step: number; sys
 					<p>
 						<T
 							message={
-								'Le JAR Minemories se copie dans le jeu. Seul l’installateur NeoForge de l’étape précédente s’exécute avec Java.'
+								'The Minemories JAR is copied into the game. Only the NeoForge installer from the previous step runs with Java.'
 							}
 						/>
 					</p>

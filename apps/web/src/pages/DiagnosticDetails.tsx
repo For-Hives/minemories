@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { buttonDark, buttonOutline } from '../components/ui'
-import { localize } from '../i18n/catalog'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { translate } from '../i18n/catalog'
+import { useI18n } from '../i18n/I18n'
 import {
 	type DiagnosticDetail,
 	type DiagnosticIssue,
@@ -15,25 +15,25 @@ function date(value: number | string, locale: string) {
 	return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 function Report({ item }: { item: DiagnosticDetail['items'][number] }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const { report } = item
 	return (
 		<article className="mm-diagnostic-report" aria-label={report.id}>
 			<h3>
-				{copy('Occurrence', 'Occurrence')} · {date(report.occurredAt, locale)}
+				{t('Occurrence')} · {date(report.occurredAt, locale)}
 			</h3>
 			<dl className="mm-diagnostic-metadata">
-				<dt>{copy('Reçu le', 'Received')}</dt>
+				<dt>{t('Received')}</dt>
 				<dd>{date(item.receivedAt, locale)}</dd>
-				<dt>{copy('Appareil', 'Device')}</dt>
+				<dt>{t('Device')}</dt>
 				<dd>
 					<code>{item.deviceId}</code>
 				</dd>
-				<dt>{copy('Corrélation', 'Correlation')}</dt>
+				<dt>{t('Correlation')}</dt>
 				<dd>
 					<code>{report.correlationId}</code>
 				</dd>
-				<dt>{copy('Version', 'Version')}</dt>
+				<dt>{t('Version')}</dt>
 				<dd>{JSON.stringify(report.versions)}</dd>
 			</dl>
 			<h4>{report.exception.type}</h4>
@@ -46,14 +46,14 @@ function Report({ item }: { item: DiagnosticDetail['items'][number] }) {
 						.join('\n')}
 				</pre>
 			) : (
-				<p>{copy('Aucune frame autorisée disponible.', 'No permitted stack frame available.')}</p>
+				<p>{t('No permitted stack frame available.')}</p>
 			)}
 			<details>
-				<summary>{copy('Étapes avant l’erreur', 'Steps before the error')}</summary>
+				<summary>{t('Steps before the error')}</summary>
 				{report.breadcrumbs.length ? (
 					<pre>{report.breadcrumbs.map(step => `${step.elapsedMs} ms — ${step.step}`).join('\n')}</pre>
 				) : (
-					<p>{copy('Aucune étape conservée.', 'No recorded steps.')}</p>
+					<p>{t('No recorded steps.')}</p>
 				)}
 			</details>
 		</article>
@@ -68,7 +68,7 @@ export function DiagnosticDetails({
 	onClose: () => void
 	onUpdated: () => void
 }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const [detail, setDetail] = useState<DiagnosticDetail | null>(null)
 	const [page, setPage] = useState(0)
 	const [refresh, setRefresh] = useState(0)
@@ -100,7 +100,7 @@ export function DiagnosticDetails({
 			.catch(() => {
 				if (current) {
 					setDetail(null)
-					setError(copy('Détails indisponibles ou accès retiré.', 'Details unavailable or access revoked.'))
+					setError(t('Details unavailable or access revoked.'))
 				}
 			})
 			.finally(() => {
@@ -109,7 +109,7 @@ export function DiagnosticDetails({
 		return () => {
 			current = false
 		}
-	}, [issue.fingerprint, page, refresh, copy])
+	}, [issue.fingerprint, page, refresh, t])
 	async function update() {
 		if (!detail) return
 		setBusy(true)
@@ -122,11 +122,8 @@ export function DiagnosticDetails({
 			const conflict = (error as { code?: string } | null)?.code === 'CONFLICT'
 			setError(
 				conflict
-					? copy(
-							'De nouvelles données sont arrivées. Actualise avant de modifier le statut.',
-							'New data arrived. Refresh before changing the status.'
-						)
-					: copy('Statut non enregistré. Réessaie après actualisation.', 'Status not saved. Refresh and try again.')
+					? t('New data arrived. Refresh before changing the status.')
+					: t('Status not saved. Refresh and try again.')
 			)
 		} finally {
 			if (live.current) setBusy(false)
@@ -136,16 +133,16 @@ export function DiagnosticDetails({
 		<section className="mm-diagnostic-detail" aria-labelledby="diagnostic-detail-title">
 			<div className="mm-diagnostic-toolbar">
 				<h2 ref={heading} tabIndex={-1} id="diagnostic-detail-title">
-					{copy('Détail de l’erreur', 'Error details')}
+					{t('Error details')}
 				</h2>
 				<button className={buttonOutline} type="button" onClick={onClose}>
-					{copy('Fermer les détails', 'Close details')}
+					{t('Close details')}
 				</button>
 			</div>
 			<p>
 				<code>{issue.fingerprint}</code>
 			</p>
-			{pending && <p role="status">{copy('Chargement des occurrences…', 'Loading occurrences…')}</p>}
+			{pending && <p role="status">{t('Loading occurrences…')}</p>}
 			{error && <p role="alert">{error}</p>}
 			<button
 				type="button"
@@ -153,36 +150,31 @@ export function DiagnosticDetails({
 				disabled={pending || busy}
 				onClick={() => setRefresh(value => value + 1)}
 			>
-				{copy('Actualiser les détails', 'Refresh details')}
+				{t('Refresh details')}
 			</button>
 			{detail && !pending && (
 				<>
 					<div className="mm-diagnostic-toolbar">
 						<label>
-							{copy('Statut de traitement', 'Triage status')}
+							{t('Triage status')}
 							<select
-								aria-label={copy('Statut de traitement', 'Triage status')}
+								aria-label={t('Triage status')}
 								value={state}
 								disabled={busy}
 								onChange={event => setState(event.target.value as IssueState)}
 							>
 								{issueStates.map(value => (
 									<option value={value} key={value}>
-										{localize(stateLabels[value], locale)}
+										{translate(locale, stateLabels[value])}
 									</option>
 								))}
 							</select>
 						</label>
 						<button type="button" className={buttonDark} disabled={busy} onClick={() => void update()}>
-							{busy ? copy('Enregistrement…', 'Saving…') : copy('Enregistrer le statut', 'Save status')}
+							{busy ? t('Saving…') : t('Save status')}
 						</button>
 					</div>
-					<p>
-						{copy(
-							'Une nouvelle occurrence rouvre automatiquement une erreur résolue. Les erreurs ignorées restent ignorées.',
-							'A new occurrence automatically reopens a resolved issue. Ignored issues remain ignored.'
-						)}
-					</p>
+					<p>{t('A new occurrence automatically reopens a resolved issue. Ignored issues remain ignored.')}</p>
 					{detail.items.map(item => (
 						<Report key={`${item.deviceId}-${item.report.id}`} item={item} />
 					))}
@@ -193,10 +185,10 @@ export function DiagnosticDetails({
 							disabled={page === 0 || busy}
 							onClick={() => setPage(value => value - 1)}
 						>
-							{copy('Occurrences précédentes', 'Previous occurrences')}
+							{t('Previous occurrences')}
 						</button>
 						<span>
-							{copy('Page', 'Page')} {page + 1}
+							{t('Page')} {page + 1}
 						</span>
 						<button
 							type="button"
@@ -204,7 +196,7 @@ export function DiagnosticDetails({
 							disabled={!detail.hasMore || busy}
 							onClick={() => setPage(value => value + 1)}
 						>
-							{copy('Occurrences suivantes', 'Next occurrences')}
+							{t('Next occurrences')}
 						</button>
 					</div>
 				</>

@@ -1,5 +1,5 @@
 import type { AdminSummary } from '@minemories/api-contract'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
 export function hourLabel(at: number, locale: string): string {
 	return new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'short', day: 'numeric', hour: '2-digit' }).format(
@@ -18,18 +18,15 @@ function Bars({
 	field: 'uploadedBytes' | 'signups'
 	label: string
 }) {
-	const { locale, copy } = useLocalizedCopy(),
+	const { locale, t } = useI18n(),
 		maximum = Math.max(1, ...series.map(row => row[field])),
 		width = 960,
 		height = 180
 	return (
 		<svg viewBox={`0 0 ${width} ${height + 20}`} role="img" aria-label={label} className="mm-admin-chart">
 			<desc>
-				{copy(
-					'Valeurs horaires en UTC ; les zones grises précèdent le début du suivi.',
-					'Hourly UTC values; grey areas predate tracking.'
-				)}{' '}
-				{copy('Maximum', 'Maximum')}: {field === 'uploadedBytes' ? gigabytes(maximum, locale) : maximum}
+				{t('Hourly UTC values; grey areas predate tracking.')} {t('Maximum')}:{' '}
+				{field === 'uploadedBytes' ? gigabytes(maximum, locale) : maximum}
 			</desc>
 			{[0, 0.25, 0.5, 0.75, 1].map(part => (
 				<line key={part} x1={0} x2={width} y1={part * height} y2={part * height} stroke="#354238" />
@@ -40,7 +37,7 @@ function Bars({
 					<g key={row.at}>
 						<title>
 							{hourLabel(row.at, locale)} UTC ·{' '}
-							{field === 'uploadedBytes' ? `${gigabytes(row[field], locale)} ${copy('Go', 'GB')}` : row[field]}
+							{field === 'uploadedBytes' ? `${gigabytes(row[field], locale)} ${t('GB')}` : row[field]}
 						</title>
 						{row.coverage === 'none' ? (
 							<rect
@@ -68,28 +65,19 @@ function Bars({
 	)
 }
 export function AdminCharts({ summary }: { summary: AdminSummary }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	return (
 		<>
 			<div className="mm-admin-charts">
 				<section className="mm-admin-card">
 					<div className="mm-admin-card-title">
-						<h2>{copy('Volume finalisé par heure', 'Completed volume per hour')}</h2>
+						<h2>{t('Completed volume per hour')}</h2>
 						<b>
-							{gigabytes(summary.period.uploadedBytes, locale)} {copy('Go', 'GB')}
+							{gigabytes(summary.period.uploadedBytes, locale)} {t('GB')}
 						</b>
 					</div>
-					<p>
-						{copy(
-							'Captures reçues avec succès · reprises non comptées deux fois',
-							'Successfully received captures · retries counted once'
-						)}
-					</p>
-					<Bars
-						series={summary.series}
-						field="uploadedBytes"
-						label={copy('Go uploadés par heure', 'Uploaded GB per hour')}
-					/>
+					<p>{t('Successfully received captures · retries counted once')}</p>
+					<Bars series={summary.series} field="uploadedBytes" label={t('Uploaded GB per hour')} />
 					<div className="mm-admin-axis">
 						<span>{hourLabel(summary.from, locale)}</span>
 						<span>UTC</span>
@@ -98,15 +86,11 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 				</section>
 				<section className="mm-admin-card">
 					<div className="mm-admin-card-title">
-						<h2>{copy('Inscriptions par heure', 'Registrations per hour')}</h2>
+						<h2>{t('Registrations per hour')}</h2>
 						<b>{summary.period.signups.toLocaleString(locale)}</b>
 					</div>
-					<p>{copy('Nouveaux comptes créés sur la période', 'New accounts created during the period')}</p>
-					<Bars
-						series={summary.series}
-						field="signups"
-						label={copy('Inscriptions par heure', 'Registrations per hour')}
-					/>
+					<p>{t('New accounts created during the period')}</p>
+					<Bars series={summary.series} field="signups" label={t('Registrations per hour')} />
 					<div className="mm-admin-axis">
 						<span>{hourLabel(summary.from, locale)}</span>
 						<span>UTC</span>
@@ -115,24 +99,21 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 				</section>
 			</div>
 			<p className="mm-admin-note">
-				{copy('Suivi des inscriptions et uploads depuis le', 'Registration and upload tracking since')}{' '}
+				{t('Registration and upload tracking since')}{' '}
 				{new Date(summary.trackingStartedAt).toLocaleString(locale, { timeZone: 'UTC' })} UTC.{' '}
-				{copy(
-					'Les heures antérieures sont indisponibles ; les heures en cours ou au démarrage sont partielles.',
-					'Earlier hours are unavailable; the current and initial hours are partial.'
-				)}
+				{t('Earlier hours are unavailable; the current and initial hours are partial.')}
 			</p>
 			<details className="mm-admin-values">
-				<summary>{copy('Afficher les valeurs horaires', 'Show hourly values')}</summary>
+				<summary>{t('Show hourly values')}</summary>
 				<div className="mm-admin-table-wrap">
 					<table>
 						<thead>
 							<tr>
-								<th>{copy('Heure UTC', 'UTC hour')}</th>
-								<th>{copy('Inscriptions', 'Registrations')}</th>
-								<th>{copy('Captures', 'Captures')}</th>
-								<th>{copy('Go', 'GB')}</th>
-								<th>{copy('Suivi', 'Coverage')}</th>
+								<th>{t('UTC hour')}</th>
+								<th>{t('Registrations')}</th>
+								<th>{t('Captures')}</th>
+								<th>{t('GB')}</th>
+								<th>{t('Coverage')}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -142,11 +123,7 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 									<td>{row.coverage === 'none' ? '—' : row.signups}</td>
 									<td>{row.coverage === 'none' ? '—' : row.uploads}</td>
 									<td>{row.coverage === 'none' ? '—' : gigabytes(row.uploadedBytes, locale)}</td>
-									<td>
-										{row.coverage === 'full'
-											? copy('Complet', 'Full')
-											: copy('Partiel / indisponible', 'Partial / unavailable')}
-									</td>
+									<td>{row.coverage === 'full' ? t('Full') : t('Partial / unavailable')}</td>
 								</tr>
 							))}
 						</tbody>

@@ -3,9 +3,9 @@ import { Link } from 'react-router'
 import { T, useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
-	{ to: '/concept', label: 'Le concept' },
-	{ to: '/fonctionnement', label: 'Comment ça marche' },
-	{ to: '/installation', label: 'Installer le mod' },
+	{ to: '/concept', label: 'The concept' },
+	{ to: '/fonctionnement', label: 'How it works' },
+	{ to: '/installation', label: 'Install the mod' },
 	{ to: '/faq', label: 'FAQ' },
 ]
 
@@ -13,7 +13,7 @@ export function InfoNavigation() {
 	const { t } = useI18n()
 
 	return (
-		<nav aria-label={t('Guides Minemories')} className="flex flex-wrap gap-x-5 gap-y-3 py-5 text-sm">
+		<nav aria-label={t('Minemories guides')} className="flex flex-wrap gap-x-5 gap-y-3 py-5 text-sm">
 			{infoLinks.map(link => (
 				<Link key={link.to} to={link.to} className="underline">
 					{t(link.label)}
@@ -40,61 +40,61 @@ function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 
 export function ConceptPage() {
 	return (
-		<InfoPage title="Les constructions restent, même quand la saison se termine">
+		<InfoPage title="The builds remain, even when the season ends">
 			<p>
 				<T
 					message={
-						'Une base construite entre amis, un château avec son enfant, un premier village : ce sont aussi des souvenirs. Quand le serveur ferme, retrouver les bonnes versions et tous les mods pour les revoir peut devenir compliqué.'
+						'A base built with friends, a castle with your child, a first village: these are memories too. When the server closes, finding the right versions and all the mods to revisit them can be difficult.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Minemories transforme une zone de Minecraft en souvenir 3D que tu peux ouvrir dans ton navigateur. Une fois la capture créée, tu peux la revisiter sans relancer Minecraft ni réinstaller le modpack.'
-					}
-				/>
-			</p>
-			<h2>
-				<T message={'Un souvenir à regarder, une sauvegarde à garder'} />
-			</h2>
-			<p>
-				<T
-					message={
-						'La capture est une image en trois dimensions d’un lieu à un moment donné. Tu peux regarder autour, mais pas reprendre ta partie, casser des blocs ou récupérer ton inventaire. Garde aussi une sauvegarde du monde pour continuer à jouer : le souvenir 3D ne la remplace pas.'
+						'Minemories turns an area of Minecraft into a 3D memory you can open in your browser. Once captured, you can revisit it without starting Minecraft or reinstalling the modpack.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'Pour toi et les personnes avec qui tu joues'} />
+				<T message={'A memory to explore, a backup to keep'} />
 			</h2>
 			<p>
 				<T
 					message={
-						'À la fin d’une saison, l’admin peut capturer les lieux du groupe avant de fermer le serveur. Un parent peut garder une construction faite avec son enfant. Un joueur occasionnel peut revoir sa maison, et un créateur de modpack peut conserver une trace de ses constructions modifiées.'
+						'The capture is a three-dimensional snapshot of a place at a moment in time. You can look around, but cannot resume the game, break blocks or recover your inventory. Keep a world backup too if you want to keep playing: the 3D memory does not replace it.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'Ce que tu peux faire aujourd’hui'} />
+				<T message={'For you and the people you play with'} />
 			</h2>
 			<p>
 				<T
 					message={
-						'Capturer depuis le mod, envoyer une capture dans une galerie privée et créer volontairement un lien de partage. Une personne qui reçoit ce lien peut regarder la capture sans compte ni mod.'
+						"At the end of a season, an admin can capture the group's places before closing the server. A parent can keep a build made with their child. An occasional player can revisit their house, and a modpack creator can keep a record of their modded builds."
+					}
+				/>
+			</p>
+			<h2>
+				<T message={'What you can do today'} />
+			</h2>
+			<p>
+				<T
+					message={
+						'Capture from the mod, upload to a private gallery and deliberately create a sharing link. Anyone receiving that link can view the capture without an account or mod.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Le timelapse permet de parcourir les captures datées d’une même zone. La récupération directe d’anciens dossiers de monde, l’impression 3D et d’autres versions de Minecraft restent des pistes du projet. La conservation en ligne à vie n’est pas garantie : garde tes fichiers locaux.'
+						'Timelapse lets you browse dated captures of the same area. Direct recovery of old world folders, 3D printing and other Minecraft versions remain future ideas. Lifetime online storage is not guaranteed: keep your local files.'
 					}
 				/>
 			</p>
 			<p>
 				<Link to="/fonctionnement">
-					<T message={'Créer mon premier souvenir, étape par étape'} />
+					<T message={'Create my first memory, step by step'} />
 				</Link>
 			</p>
 		</InfoPage>
@@ -103,126 +103,123 @@ export function ConceptPage() {
 
 export function HowItWorksPage() {
 	return (
-		<InfoPage title="Du monde Minecraft au souvenir 3D">
+		<InfoPage title="From Minecraft world to 3D memory">
 			<h2>
-				<T message={'1. Installer et ouvrir le monde'} />
+				<T message={'1. Install and open the world'} />
 			</h2>
 			<p>
 				<Link to="/installation">
-					<T message={'Installe le mod'} />
+					<T message={'guides.install.action'} />
 				</Link>{' '}
 				<T
 					message={
-						'sur ton ordinateur, puis ouvre ton monde ou rejoins ton serveur avec son profil habituel compatible. Le serveur doit encore être accessible pour capturer ses constructions.'
+						'on your computer, then open your world or join your server using its usual compatible profile. The server must still be accessible to capture its builds.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'2. Choisir une petite zone et capturer'} />
+				<T message={'2. Choose a small area and capture it'} />
 			</h2>
 			<p>
-				<T message={'Pour un premier essai, place-toi près de la construction et écris'} />{' '}
-				<code>/minemories export 16</code>{' '}
+				<T message={'For your first attempt, stand near the build and type'} /> <code>/minemories export 16</code>{' '}
 				<T
 					message={
-						'dans le chat. 16 est le rayon en blocs autour de toi ; les valeurs acceptées vont de 2 à 128. Commence petit : une grande zone peut ralentir le jeu. Le mod capture ce que le client a chargé, pas tout le serveur.'
+						'in chat. 16 is the radius in blocks around you; accepted values range from 2 to 128. Start small: a large area can slow the game. The mod captures what the client has loaded, not the entire server.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Le sous-sol est limité par défaut à la profondeur visitée dans cette zone, avec au moins cinq blocs de marge sous la position visitée. Descendre dans une grotte étend les prochaines captures de la zone. Le suivi commence avec cette version du mod et reste enregistré sur ton ordinateur. Des cavités au-dessus de cette limite peuvent encore apparaître. Le mode avancé permet de capturer toute la hauteur ; une sélection précise garde la hauteur de ses deux coins.'
+						'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. Advanced mode can capture the full height; an explicit selection keeps the height of its two corners.'
 					}
 				/>
 			</p>
 			<p>
-				<T message={'Pour une zone précise, place-toi au premier coin et saisis'} />{' '}
-				<code>/minemories select first</code>
-				<T message={', puis au coin opposé avec'} /> <code>/minemories select second</code>
-				<T message={'. Ces deux positions définissent aussi la hauteur. Vérifie avec'} />{' '}
-				<code>/minemories select status</code>
-				<T message={', puis lance'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
-				<T message={'efface la sélection.'} />
+				<T message={'For a precise area, stand at the first corner and enter'} /> <code>/minemories select first</code>
+				<T message={', then at the opposite corner with'} /> <code>/minemories select second</code>
+				<T message={'. These positions also define the height. Check with'} /> <code>/minemories select status</code>
+				<T message={', then run'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
+				<T message={'clears the selection.'} />
 			</p>
 			<p>
 				<T
 					message={
-						'La touche M ouvre le menu Minemories. En mode simple, entre le code de ta galerie puis clique sur « Capturer et envoyer ». Le bouton devient disponible quand ton compte est connecté et qu’un monde est ouvert. Si M est déjà utilisée, change son raccourci dans les contrôles de Minecraft.'
+						'The M key opens the Minemories menu. In simple mode, enter your gallery code, then click “Capture and upload”. The button becomes available when your account is connected and a world is open. If M is already assigned, change its shortcut in Minecraft controls.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Les côtés et le dessous de la capture sont refermés avec un aspect terre/pierre, comme une portion de monde extraite. Ce sont des faces ajoutées au souvenir 3D : aucun bloc n’est changé dans Minecraft.'
+						'The sides and bottom of the capture are closed with a dirt/stone appearance, like an extracted piece of world. These faces are added to the 3D memory: no blocks are changed in Minecraft.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'3. Revoir le fichier sur ton ordinateur'} />
+				<T message={'3. Find the file on your computer'} />
 			</h2>
 			<p>
-				<T message={'Le résultat est un fichier'} /> <code>capture.glb</code> <T message={'dans le dossier'} />{' '}
-				<code>export</code> <T message={'de ton dossier utilisateur ('} />
+				<T message={'The result is a file named'} /> <code>capture.glb</code> <T message={'in the folder'} />{' '}
+				<code>export</code> <T message={'under your user directory ('} />
 				<code>~/export/capture.glb</code>
 				<T
 					message={
-						') par défaut, pas dans le dossier du monde. En mode avancé, tu peux choisir un autre dossier et cliquer sur « Exporter en local » sans connecter de compte. GLB signifie ici un fichier 3D contenant les formes et les textures. Avec la version actuelle du mod, chaque capture datée est aussi conservée avec ses informations dans le sous-dossier'
+						') by default, not in the world folder. In advanced mode, you can choose another folder and click “Export locally” without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
 					}
 				/>{' '}
 				<code>history</code>. <code>capture.glb</code>
 				<T
 					message={
-						'permet de retrouver le dernier export. Dans le menu M, « Captures locales » permet de choisir et d’envoyer un ancien souvenir. Garde tes propres sauvegardes : l’historique utilise de la place sur ton ordinateur.'
+						'points to the latest export. In the M menu, “Local captures” lets you choose and upload an older memory. Keep your own backups: the history takes up space on your computer.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Pour le revoir sur le site, envoie ce souvenir depuis le menu M → Captures locales, puis ouvre-le dans ta galerie privée.'
+						'To revisit it on the site, upload this memory from M → Local captures, then open it in your private gallery.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'4. Envoyer dans ta galerie, si tu le souhaites'} />
+				<T message={'4. Upload to your gallery, if you choose'} />
 			</h2>
 			<ol>
 				<li>
 					<Link to="/register">
-						<T message={'Crée ton compte'} />
+						<T message={'Create your account'} />
 					</Link>{' '}
-					<T message={'ou'} />{' '}
+					<T message={'or'} />{' '}
 					<Link to="/login">
-						<T message={'connecte-toi'} />
+						<T message={'sign in'} />
 					</Link>
-					<T message={', puis ouvre'} />{' '}
+					<T message={', then open'} />{' '}
 					<Link to="/gallery">
-						<T message={'Ma galerie / My gallery'} />
+						<T message={'My gallery'} />
 					</Link>
 					.
 				</li>
 				<li>
 					<T
 						message={
-							'Génère un code d’appairage dans la galerie. L’appairage relie ce Minecraft à ton compte Minemories.'
+							'Generate a pairing code in the gallery. Pairing links this Minecraft installation to your Minemories account.'
 						}
 					/>
 				</li>
 				<li>
-					<T message={'Dans le chat de Minecraft, saisis'} /> <code>/minemories pair CODE</code>{' '}
+					<T message={'In Minecraft chat, enter'} /> <code>/minemories pair CODE</code>{' '}
 					<T
 						message={
-							'en remplaçant CODE par les six chiffres. Le code expire après cinq minutes et ne sert qu’une fois. Aucun mot de passe n’est à écrire dans Minecraft.'
+							'replacing CODE with the six digits. The code expires after five minutes and can only be used once. Never type your password in Minecraft.'
 						}
 					/>
 				</li>
 				<li>
-					<T message={'Saisis'} /> <code>/minemories upload</code>{' '}
+					<T message={'Enter'} /> <code>/minemories upload</code>{' '}
 					<T
 						message={
-							'pour envoyer la capture, puis vérifie son apparition dans la galerie. Le mod accepte un fichier jusqu’à 450 MiB (environ 472 Mo). En cas de dépassement, capture une zone plus petite.'
+							'to upload the capture, then check that it appears in the gallery. The mod accepts files up to 450 MiB (about 472 MB). If the limit is exceeded, capture a smaller area.'
 						}
 					/>
 				</li>
@@ -230,35 +227,35 @@ export function HowItWorksPage() {
 			<p>
 				<T
 					message={
-						'Les captures AFK sont actives par défaut : après 5 minutes d’inactivité, au plus une fois toutes les 4 heures, même dans le menu pause ou quand Minecraft est en arrière-plan. Sans compte connecté, elles restent dans ton dossier local. Avec un compte connecté, elles sont aussi envoyées dans ta galerie privée. Tu peux les désactiver en mode simple ; le mode avancé permet de régler les délais et le rayon de capture (32 blocs par défaut). Une préférence de désactivation déjà enregistrée est conservée.'
+						'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. You can disable them in simple mode; advanced mode lets you adjust the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'Utiliser sa propre API (avancé)'} />
+				<T message={'Use your own API (advanced)'} />
 			</h2>
 			<p>
-				<T message={'Le mod utilise'} /> <code>https://api.minemories.xenos.lightin.io</code>{' '}
+				<T message={'The mod uses'} /> <code>https://api.minemories.xenos.lightin.io</code>{' '}
 				<T
 					message={
-						'par défaut. Dans « Mode avancé », tu peux renseigner l’adresse HTTPS d’une API Minemories auto-hébergée compatible et un chemin absolu pour le dossier local, puis cliquer sur « Enregistrer ». HTTP est accepté uniquement pour une API sur localhost. Changer d’API déconnecte le compte : génère ensuite le code dans la galerie correspondant à cette nouvelle API. Le bouton « API Minemories » restaure l’adresse officielle ; enregistre pour l’appliquer.'
+						'by default. In “Advanced mode”, you can enter the HTTPS address of a compatible self-hosted Minemories API and an absolute path for the local folder, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Minemories API” button restores the official address; save to apply it.'
 					}
 				/>
 			</p>
 			<h2>
-				<T message={'5. Partager seulement ce que tu choisis'} />
+				<T message={'5. Share only what you choose'} />
 			</h2>
 			<p>
 				<T
 					message={
-						'La galerie est privée par défaut. Sur une capture, « Share » puis « Create a link » crée un lien accessible à toute personne qui le possède ; elle peut le transmettre à son tour. Tu peux révoquer le lien depuis ce panneau, mais cela ne supprime pas les copies déjà enregistrées par quelqu’un.'
+						'The gallery is private by default. On a capture, “Share” then “Create a link” creates a link accessible to anyone who has it; they can forward it too. You can revoke the link from this panel, but this does not delete copies someone has already saved.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'Avant de partager, vérifie la capture et les informations associées : des coordonnées, le nom du serveur ou du monde, et la graine du monde solo peuvent être enregistrés. Évite les lieux ou textes contenant des informations personnelles et demande l’accord des autres constructeurs.'
+						'Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.'
 					}
 				/>
 			</p>
@@ -268,69 +265,69 @@ export function HowItWorksPage() {
 
 const questions = [
 	[
-		'Est-ce une sauvegarde de mon monde ?',
-		'Non. C’est un modèle 3D figé d’une zone chargée dans le jeu. Il ne permet pas de reprendre la partie. Conserve ta sauvegarde Minecraft à côté.',
+		'Is this a backup of my world?',
+		'No. It is a static 3D model of an area loaded in the game. It cannot resume your game. Keep your Minecraft backup separately.',
 	],
 	[
-		'Faut-il un compte ou un mod pour regarder ?',
-		'Un lien partagé s’ouvre sans compte et sans mod. Un compte Minemories est nécessaire pour envoyer dans ta galerie privée.',
+		'Do I need an account or mod to view a memory?',
+		'A shared link opens without an account or mod. You need a Minemories account to upload to your private gallery.',
 	],
 	[
-		'Puis-je garder une construction vanilla ?',
-		'Oui, si tu peux ouvrir une copie du monde Java 1.21.1 avec NeoForge 21.1.248 et Minemories. Vanilla signifie sans mods : le profil utilisé pour capturer doit néanmoins charger le mod. Bedrock et les consoles ne sont pas supportés.',
+		'Can I keep a vanilla build?',
+		'Yes, if you can open a copy of the Java 1.21.1 world with NeoForge 21.1.248 and Minemories. Vanilla means without mods: the profile used for capturing must still load the mod. Bedrock and consoles are not supported.',
 	],
 	[
-		'Est-ce compatible avec tous les mods ?',
-		'Non, ce n’est pas garanti. Les cibles Java 1.21.1 validées sont détaillées sur la page Versions du mod : NeoForge, Fabric, Forge et Quilt avec le JAR Fabric. Les blocs avec un rendu particulier peuvent être incomplets. Fais une petite capture et regarde le résultat avant de capturer toute ta base.',
+		'Is it compatible with every mod?',
+		'This is not guaranteed. Validated Java 1.21.1 targets are detailed on the Mod versions page: NeoForge, Fabric, Forge and Quilt using the Fabric JAR. Blocks with custom rendering may be incomplete. Try a small capture and inspect it before capturing your whole base.',
 	],
 	[
-		'Dois-je installer quelque chose sur le serveur ?',
-		'Minemories est un mod client, sur l’ordinateur du joueur. Ce n’est pas un plugin serveur. Demande l’accord de l’admin, garde le profil attendu par le serveur et capture seulement les zones autorisées et chargées.',
+		'Do I need to install anything on the server?',
+		"Minemories is a client mod on the player's computer, not a server plugin. Ask the admin for permission, keep the profile expected by the server and capture only permitted, loaded areas.",
 	],
 	[
-		'Qui peut voir les souvenirs de mon enfant ?',
-		'La galerie est privée par défaut. Un lien créé avec Share donne accès à la capture à toute personne qui le possède, qui peut aussi le retransmettre. Vérifie le souvenir et ses informations avec ton enfant avant de partager. Révoquer le lien empêche les futurs accès par ce lien, pas les copies déjà faites.',
+		"Who can see my child's memories?",
+		'The gallery is private by default. A link created with Share gives access to anyone who has it, and they can forward it. Check the memory and its information with your child before sharing. Revoking the link stops future access through it, not copies already made.',
 	],
 	[
-		'Est-ce que le mod envoie tout automatiquement ?',
-		'Les captures AFK sont actives par défaut après 5 minutes d’inactivité, au plus une fois toutes les 4 heures, même en pause ou en arrière-plan. Sans compte lié, elles restent locales ; avec un compte lié, elles sont envoyées dans ta galerie privée. Le mode simple permet de les désactiver, le mode avancé de régler délai, fréquence et rayon (32 blocs par défaut). Une désactivation déjà enregistrée est conservée. Déconnecter le compte arrête les envois, mais conserve les captures locales. Le bouton Exporter en local n’envoie rien.',
+		'Does the mod upload everything automatically?',
+		'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours, even while paused or in the background. Without a linked account they stay local; with one they upload to your private gallery. Simple mode can disable them; advanced mode adjusts delay, frequency and radius (32 blocks by default). A saved disable preference is preserved. Disconnecting the account stops uploads but keeps local captures. Export locally does not upload anything.',
 	],
 	[
-		'Comment retrouver une ancienne capture ?',
-		'Dans la version actuelle du mod, M → Captures locales affiche les captures datées conservées dans le sous-dossier history de ton dossier d’export. Tu peux choisir un souvenir et l’envoyer si ton compte est connecté. capture.glb reste le dernier export. Les anciennes versions du mod écrasaient ce fichier : la mise à jour conserve celui encore présent, mais ne récupère pas les fichiers déjà écrasés. Les captures locales ne sont pas supprimées automatiquement ; prévois de la place et tes propres sauvegardes. Aucune conservation en ligne à vie n’est promise.',
+		'How can I find an older capture?',
+		'In the current mod version, M → Local captures lists dated captures kept in the history subfolder of your export directory. You can choose a memory and upload it if your account is connected. capture.glb remains the latest export. Older versions overwrote that file: updating preserves the remaining file but cannot recover files already overwritten. Local captures are not automatically deleted; allow enough space and keep your own backups. Lifetime online storage is not promised.',
 	],
 	[
-		'Puis-je récupérer un serveur déjà fermé ou importer un ZIP ?',
-		'Pas directement aujourd’hui. Il faut pouvoir rouvrir le monde dans un environnement compatible pour capturer. L’import d’une sauvegarde ZIP et la récupération automatique d’anciens modpacks ne sont pas disponibles.',
+		'Can I recover a closed server or import a ZIP?',
+		'Not directly today. You must be able to reopen the world in a compatible environment to capture it. ZIP world imports and automatic recovery of old modpacks are not available.',
 	],
 	[
-		'Pourquoi une partie de la construction manque ?',
-		'Le mod capture une zone et les éléments chargés par le client. Rapproche-toi du lieu, vérifie les coins et la hauteur de ta sélection, réduis la zone et recommence. Certains rendus moddés peuvent ne pas être reproduits.',
+		'Why is part of the build missing?',
+		"The mod captures an area and the elements loaded by the client. Move closer, check your selection's corners and height, reduce the area and try again. Some modded rendering may not be reproduced.",
 	],
 	[
-		'Le code ne marche pas ou l’envoi échoue : que faire ?',
-		'Le code à six chiffres expire après cinq minutes et ne fonctionne qu’une fois : génère-en un nouveau dans la galerie. Vérifie ensuite ta connexion et la taille du GLB (450 MiB maximum depuis le mod). Conserve le fichier local et réessaie l’envoi.',
+		'The code does not work or uploading fails: what should I do?',
+		'The six-digit code expires after five minutes and only works once: generate another in the gallery. Then check your connection and GLB size (450 MiB maximum from the mod). Keep the local file and retry the upload.',
 	],
 	[
-		'Y a-t-il un timelapse, une impression 3D ou un abonnement ?',
-		'Le timelapse relie les captures datées d’une même zone ; l’impression 3D reste une piste. Cette version expérimentale ne présente pas d’offre commerciale ni de tarif confirmé. Ne te base pas sur les anciens scénarios de prix du projet.',
+		'Is there timelapse, 3D printing or a subscription?',
+		"Timelapse links dated captures of the same area; 3D printing remains a future idea. This experimental version has no confirmed commercial offer or price. Do not rely on the project's old pricing scenarios.",
 	],
 ]
 
 export function FaqPage() {
 	const { t } = useI18n()
 	return (
-		<InfoPage title="Questions fréquentes">
+		<InfoPage title="Frequently asked questions">
 			<p>
-				<T message={'Tu débutes ? Commence par'} />{' '}
+				<T message={'New here? Start with'} />{' '}
 				<Link to="/concept">
-					<T message={'le concept'} />
+					<T message={'the concept'} />
 				</Link>
-				<T message={', puis le'} />{' '}
+				<T message={', then the'} />{' '}
 				<Link to="/installation">
-					<T message={'guide d’installation'} />
+					<T message={'installation guide'} />
 				</Link>
-				<T message={'. Les commandes Minecraft et les noms de fichiers restent identiques dans les deux langues.'} />
+				<T message={'. Minecraft commands and filenames stay the same in both languages.'} />
 			</p>
 			{questions.map(([question, answer]) => (
 				<section key={question}>
@@ -340,13 +337,13 @@ export function FaqPage() {
 			))}
 			<p>
 				<Link to="/fonctionnement">
-					<T message={'Toutes les étapes pour capturer, envoyer et partager'} />
+					<T message={'All the steps to capture, upload and share'} />
 				</Link>
 			</p>
 			<p>
 				<T
 					message={
-						'Minemories est un projet indépendant, non officiel, ni approuvé par ni associé à Mojang ou Microsoft.'
+						'Minemories is an independent, unofficial project, neither approved by nor associated with Mojang or Microsoft.'
 					}
 				/>
 			</p>

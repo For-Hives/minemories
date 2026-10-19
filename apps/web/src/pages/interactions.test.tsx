@@ -401,7 +401,7 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 	mocks.loadFile.mockImplementation(
 		() =>
 			new Promise<void>(resolve => {
-				mocks.viewerEvents?.onLoading('Chargement du modèle et des textures…')
+				mocks.viewerEvents?.onLoading('Loading the model and textures…')
 				finish = resolve
 			})
 	)
@@ -409,7 +409,7 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 	expect(screen.getByRole('status').textContent).toContain('Loading the model')
 	expect(screen.getByRole('status').querySelector('.cinema-loading-line')).toBeTruthy()
 	await act(async () => {
-		mocks.viewerEvents?.onLoading('Préparation de l’affichage 3D…')
+		mocks.viewerEvents?.onLoading('Preparing the 3D display…')
 	})
 	expect(screen.getByRole('status').textContent).toContain('Preparing the 3D display')
 	await act(async () => {

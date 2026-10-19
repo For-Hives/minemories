@@ -1,19 +1,19 @@
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 import { formatClock } from '../viewer-scene'
 
 export function ViewerTime({ minutes, onSelect }: { minutes: number; onSelect: (minutes: number) => void }) {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const presets = [
-		{ label: copy('Aube', 'Dawn'), minutes: 390, icon: '◔' },
-		{ label: copy('Matin', 'Morning'), minutes: 570, icon: '☀' },
-		{ label: copy('Midi', 'Noon'), minutes: 720, icon: '☼' },
-		{ label: copy('Heure dorée', 'Golden hour'), minutes: 1035, icon: '◒' },
-		{ label: copy('Nuit', 'Night'), minutes: 0, icon: '☾' },
+		{ label: t('Dawn'), minutes: 390, icon: '◔' },
+		{ label: t('Morning'), minutes: 570, icon: '☀' },
+		{ label: t('Noon'), minutes: 720, icon: '☼' },
+		{ label: t('Golden hour'), minutes: 1035, icon: '◒' },
+		{ label: t('Night'), minutes: 0, icon: '☾' },
 	]
 	return (
 		<div className="cinema-time">
 			<div className="cinema-clock">
-				<span>{copy('LA LUMIÈRE', 'THE LIGHT')}</span>
+				<span>{t('THE LIGHT')}</span>
 				<span className="cinema-clock-value">{formatClock(minutes)}</span>
 			</div>
 			<div className="cinema-time-controls">
@@ -36,7 +36,7 @@ export function ViewerTime({ minutes, onSelect }: { minutes: number; onSelect: (
 					max="1439"
 					step="5"
 					value={minutes}
-					aria-label={copy('Heure de la journée', 'Time of day')}
+					aria-label={t('Time of day')}
 					aria-valuetext={formatClock(minutes)}
 					onChange={event => onSelect(Number(event.target.value))}
 				/>

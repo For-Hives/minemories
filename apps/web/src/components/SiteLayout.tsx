@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { discoveryPages } from '../content/discovery'
-import { localize } from '../i18n/catalog'
+import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
@@ -223,13 +223,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
-					{[...discoveryPages, { path: '/explorer', label: { fr: 'Galerie publique', en: 'Public gallery' } }].map(
-						page => (
-							<Link key={page.path} to={page.path}>
-								{localize(page.label, locale)}
-							</Link>
-						)
-					)}
+					{[...discoveryPages, { path: '/explorer', label: 'Public gallery' }].map(page => (
+						<Link key={page.path} to={page.path}>
+							{translate(locale, page.label)}
+						</Link>
+					))}
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
 					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>

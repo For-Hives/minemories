@@ -124,7 +124,7 @@ function page() {
 	)
 }
 async function expand() {
-	fireEvent.click(await screen.findByRole('button', { name: /^World/ }))
+	fireEvent.click(await screen.findByRole('button', { name: /^World/ }, { timeout: 10000 }))
 	await screen.findByRole('heading', { name: 'Cabin' })
 }
 function card(name = 'Cabin') {

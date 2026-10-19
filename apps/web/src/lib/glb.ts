@@ -8,7 +8,7 @@ export class UnsupportedGlbError extends Error {}
 export async function parseEmbeddedGlb<T>(buffer: ArrayBuffer, parse: (buffer: ArrayBuffer) => Promise<T>): Promise<T> {
 	if (!(await validateSelfContainedGlb(new Uint8Array(buffer)))) {
 		throw new UnsupportedGlbError(
-			'GLB invalide ou trop complexe : réexporte une zone plus petite avec ses textures et sa géométrie intégrées.'
+			'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
 		)
 	}
 	return await parse(buffer)

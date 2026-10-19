@@ -1,7 +1,7 @@
 import type { AdminSummary, AdminUser } from '@minemories/api-contract'
 import { type SyntheticEvent, useState } from 'react'
 import { Link } from 'react-router'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 import { AdminCharts, gigabytes } from './AdminCharts'
 import { AdminRoleDialog } from './AdminRoleDialog'
 import { type AdminDataset, useAdminData } from './admin-data'
@@ -9,27 +9,27 @@ import './admin.css'
 
 type RoleFilter = 'all' | 'user' | 'admin'
 function Totals({ data }: { data: AdminSummary }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const cards = [
 		{
-			label: copy('Comptes actuels', 'Current accounts'),
+			label: t('Current accounts'),
 			value: data.totals.users.toLocaleString(locale),
-			note: copy('sur le service', 'on the service'),
+			note: t('on the service'),
 		},
 		{
-			label: copy('Captures finalisées', 'Completed captures'),
+			label: t('Completed captures'),
 			value: data.period.uploads.toLocaleString(locale),
-			note: copy('sur la période', 'during the period'),
+			note: t('during the period'),
 		},
 		{
-			label: copy('Volume finalisé', 'Completed volume'),
-			value: `${gigabytes(data.period.uploadedBytes, locale)} ${copy('Go', 'GB')}`,
-			note: copy('sur la période', 'during the period'),
+			label: t('Completed volume'),
+			value: `${gigabytes(data.period.uploadedBytes, locale)} ${t('GB')}`,
+			note: t('during the period'),
 		},
 		{
-			label: copy('Stockage logique', 'Logical storage'),
-			value: `${gigabytes(data.totals.storedBytes, locale)} ${copy('Go', 'GB')}`,
-			note: copy('captures et corbeille', 'captures and trash'),
+			label: t('Logical storage'),
+			value: `${gigabytes(data.totals.storedBytes, locale)} ${t('GB')}`,
+			note: t('captures and trash'),
 		},
 	]
 	return (
@@ -45,24 +45,21 @@ function Totals({ data }: { data: AdminSummary }) {
 	)
 }
 function Operations({ data }: { data: AdminSummary['totals'] }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	const rows = [
-		[copy('Administrateurs', 'Administrators'), data.admins.toLocaleString(locale)],
-		[copy('Sessions valides', 'Valid sessions'), data.sessions.toLocaleString(locale)],
-		[copy('Appareils associés', 'Paired devices'), data.devices.toLocaleString(locale)],
-		[copy('Publications approuvées', 'Approved publications'), data.publicCaptures.toLocaleString(locale)],
-		[copy('Corbeille', 'Trash'), `${gigabytes(data.trashBytes, locale)} ${copy('Go', 'GB')}`],
-		[
-			copy('Effacement en attente', 'Pending deletion'),
-			`${gigabytes(data.pendingDeletionBytes, locale)} ${copy('Go', 'GB')}`,
-		],
-		[copy('Uploads réservés', 'Reserved uploads'), `${gigabytes(data.reservedBytes, locale)} ${copy('Go', 'GB')}`],
-		[copy('Objets archivés', 'Archived objects'), data.coldObjects.toLocaleString(locale)],
-		[copy('Objets en restauration', 'Objects restoring'), data.restoringObjects.toLocaleString(locale)],
+		[t('Administrators'), data.admins.toLocaleString(locale)],
+		[t('Valid sessions'), data.sessions.toLocaleString(locale)],
+		[t('Paired devices'), data.devices.toLocaleString(locale)],
+		[t('Approved publications'), data.publicCaptures.toLocaleString(locale)],
+		[t('Trash'), `${gigabytes(data.trashBytes, locale)} ${t('GB')}`],
+		[t('Pending deletion'), `${gigabytes(data.pendingDeletionBytes, locale)} ${t('GB')}`],
+		[t('Reserved uploads'), `${gigabytes(data.reservedBytes, locale)} ${t('GB')}`],
+		[t('Archived objects'), data.coldObjects.toLocaleString(locale)],
+		[t('Objects restoring'), data.restoringObjects.toLocaleString(locale)],
 	]
 	return (
 		<section className="mm-admin-card">
-			<h2>{copy('État du service', 'Service overview')}</h2>
+			<h2>{t('Service overview')}</h2>
 			<dl className="mm-admin-operations">
 				{rows.map(([label, value]) => (
 					<div key={label}>
@@ -89,7 +86,7 @@ function Directory({
 	onPage(page: number): void
 	onSelect(user: AdminUser): void
 }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	function search(event: SyntheticEvent<HTMLFormElement>) {
 		event.preventDefault()
 		const data = new FormData(event.currentTarget)
@@ -98,43 +95,38 @@ function Directory({
 	return (
 		<section className="mm-admin-card mm-admin-directory">
 			<div className="mm-admin-card-title">
-				<h2>{copy('Utilisateurs et accès', 'Users and access')}</h2>
+				<h2>{t('Users and access')}</h2>
 				<span>
-					{directory.total.toLocaleString(locale)} {copy('comptes', 'accounts')}
+					{directory.total.toLocaleString(locale)} {t('accounts')}
 				</span>
 			</div>
 			<form className="mm-admin-search" onSubmit={search}>
 				<label>
-					{copy('Rechercher un compte', 'Find an account')}
-					<input
-						name="query"
-						defaultValue={filters.query}
-						placeholder={copy('Nom, e-mail ou identifiant', 'Name, email or ID')}
-						maxLength={100}
-					/>
+					{t('Find an account')}
+					<input name="query" defaultValue={filters.query} placeholder={t('Name, email or ID')} maxLength={100} />
 				</label>
 				<label>
-					{copy('Rôle', 'Role')}
+					{t('Role')}
 					<select name="role" defaultValue={filters.role}>
-						<option value="all">{copy('Tous', 'All')}</option>
-						<option value="admin">{copy('Administrateurs', 'Administrators')}</option>
-						<option value="user">{copy('Utilisateurs', 'Users')}</option>
+						<option value="all">{t('filters.allStates')}</option>
+						<option value="admin">{t('Administrators')}</option>
+						<option value="user">{t('Users')}</option>
 					</select>
 				</label>
 				<button type="submit" className="mm-admin-secondary">
-					{copy('Rechercher', 'Search')}
+					{t('Search')}
 				</button>
 			</form>
 			<div className="mm-admin-table-wrap">
 				<table>
 					<thead>
 						<tr>
-							<th>{copy('Compte', 'Account')}</th>
-							<th>{copy('Rôle', 'Role')}</th>
-							<th>{copy('Inscription', 'Registered')}</th>
-							<th>{copy('Captures', 'Captures')}</th>
-							<th>{copy('Stockage', 'Storage')}</th>
-							<th>{copy('Actions', 'Actions')}</th>
+							<th>{t('Account')}</th>
+							<th>{t('Role')}</th>
+							<th>{t('Registered')}</th>
+							<th>{t('Captures')}</th>
+							<th>{t('Storage')}</th>
+							<th>{t('Actions')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -146,13 +138,13 @@ function Directory({
 								</td>
 								<td>
 									<span className={`mm-admin-role ${user.role === 'admin' ? 'is-admin' : ''}`}>
-										{user.role === 'admin' ? copy('Admin', 'Admin') : copy('Utilisateur', 'User')}
+										{user.role === 'admin' ? t('Admin') : t('User')}
 									</span>
 								</td>
 								<td>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
 								<td>{user.captures.toLocaleString(locale)}</td>
 								<td>
-									{gigabytes(user.storedBytes, locale)} {copy('Go', 'GB')}
+									{gigabytes(user.storedBytes, locale)} {t('GB')}
 								</td>
 								<td>
 									<button
@@ -161,9 +153,7 @@ function Directory({
 										disabled={user.role === 'admin' && admins <= 1}
 										onClick={() => onSelect(user)}
 									>
-										{user.role === 'admin'
-											? copy('Retirer le rôle admin', 'Remove admin role')
-											: copy('Promouvoir admin', 'Promote to admin')}
+										{user.role === 'admin' ? t('Remove admin role') : t('Promote to admin')}
 									</button>
 								</td>
 							</tr>
@@ -171,11 +161,7 @@ function Directory({
 					</tbody>
 				</table>
 			</div>
-			{directory.users.length === 0 && (
-				<p className="mm-admin-note">
-					{copy('Aucun compte ne correspond à cette recherche.', 'No accounts match this search.')}
-				</p>
-			)}
+			{directory.users.length === 0 && <p className="mm-admin-note">{t('No accounts match this search.')}</p>}
 			<div className="mm-admin-pagination">
 				<button
 					type="button"
@@ -183,10 +169,10 @@ function Directory({
 					disabled={filters.page === 1}
 					onClick={() => onPage(filters.page - 1)}
 				>
-					{copy('Précédent', 'Previous')}
+					{t('Previous')}
 				</button>
 				<span>
-					{copy('Page', 'Page')} {filters.page} / {Math.max(1, Math.ceil(directory.total / directory.pageSize))}
+					{t('Page')} {filters.page} / {Math.max(1, Math.ceil(directory.total / directory.pageSize))}
 				</span>
 				<button
 					type="button"
@@ -194,12 +180,11 @@ function Directory({
 					disabled={filters.page * directory.pageSize >= directory.total}
 					onClick={() => onPage(filters.page + 1)}
 				>
-					{copy('Suivant', 'Next')}
+					{t('Next')}
 				</button>
 			</div>
 			<p className="mm-admin-note">
-				{copy(
-					'Chaque changement de rôle exige ton mot de passe et laisse une trace. Le dernier administrateur ne peut pas être rétrogradé. Les fichiers privés restent protégés par leur propriétaire.',
+				{t(
 					'Every role change requires your password and is audited. The last administrator cannot be demoted. Private files remain protected by their owner.'
 				)}
 			</p>
@@ -207,25 +192,23 @@ function Directory({
 	)
 }
 function Audit({ rows }: { rows: AdminDataset['audit'] }) {
-	const { copy, locale } = useLocalizedCopy()
+	const { t, locale } = useI18n()
 	return (
 		<section className="mm-admin-card">
-			<h2>{copy('Journal des accès', 'Access audit')}</h2>
-			<p>{copy('Les 50 derniers changements de rôle.', 'The latest 50 role changes.')}</p>
+			<h2>{t('Access audit')}</h2>
+			<p>{t('The latest 50 role changes.')}</p>
 			{rows.length === 0 ? (
-				<p>{copy('Aucun changement enregistré.', 'No changes recorded.')}</p>
+				<p>{t('No changes recorded.')}</p>
 			) : (
 				<ol className="mm-admin-audit">
 					{rows.map(row => (
 						<li key={row.id}>
 							<span className="mm-admin-audit-dot" />
 							<div>
-								<strong>{row.targetName ?? copy('Compte supprimé', 'Deleted account')}</strong>
+								<strong>{row.targetName ?? t('Deleted account')}</strong>
 								<p>
-									{row.role === 'admin'
-										? copy('Accès administrateur accordé', 'Administrator access granted')
-										: copy('Accès administrateur retiré', 'Administrator access removed')}{' '}
-									· {row.actorName ?? copy('Console serveur', 'Server console')}
+									{row.role === 'admin' ? t('Administrator access granted') : t('Administrator access removed')} ·{' '}
+									{row.actorName ?? t('Server console')}
 								</p>
 								<time dateTime={new Date(row.at).toISOString()}>{new Date(row.at).toLocaleString(locale)}</time>
 							</div>
@@ -237,7 +220,7 @@ function Audit({ rows }: { rows: AdminDataset['audit'] }) {
 	)
 }
 export function AdminPage() {
-	const { copy } = useLocalizedCopy()
+	const { t } = useI18n()
 	const [filters, setFilters] = useState({ hours: 24 as 24 | 168 | 720, query: '', role: 'all' as RoleFilter, page: 1 })
 	const [target, setTarget] = useState<AdminUser | null>(null)
 	const load = useAdminData(filters)
@@ -245,53 +228,45 @@ export function AdminPage() {
 		<section className="mm-content mm-admin-page">
 			<header className="mm-admin-heading">
 				<div>
-					<span className="mm-kicker">MINEMORIES / {copy('ADMINISTRATION', 'ADMINISTRATION')}</span>
-					<h1>{copy('La vue d’ensemble.', 'The bigger picture.')}</h1>
-					<p>
-						{copy(
-							'Le service, ses comptes et ses captures, au même endroit.',
-							'The service, its accounts and its captures, in one place.'
-						)}
-					</p>
-					<Link to="/account">← {copy('Mon compte', 'My account')}</Link>
+					<span className="mm-kicker">MINEMORIES / {t('ADMINISTRATION')}</span>
+					<h1>{t('The bigger picture.')}</h1>
+					<p>{t('The service, its accounts and its captures, in one place.')}</p>
+					<Link to="/account">← {t('My account')}</Link>
 				</div>
 				<div className="mm-admin-controls">
 					<label>
-						{copy('Période', 'Period')}
+						{t('Period')}
 						<select
-							aria-label={copy('Période', 'Period')}
+							aria-label={t('Period')}
 							value={filters.hours}
 							onChange={event =>
 								setFilters(previous => ({ ...previous, hours: Number(event.target.value) as 24 | 168 | 720 }))
 							}
 						>
-							<option value={24}>{copy('24 heures', '24 hours')}</option>
-							<option value={168}>{copy('7 jours', '7 days')}</option>
-							<option value={720}>{copy('30 jours', '30 days')}</option>
+							<option value={24}>{t('24 hours')}</option>
+							<option value={168}>{t('7 days')}</option>
+							<option value={720}>{t('30 days')}</option>
 						</select>
 					</label>
 					<button type="button" className="mm-admin-primary" onClick={load.reload} disabled={load.kind === 'loading'}>
-						{copy('Actualiser', 'Refresh')}
+						{t('Refresh')}
 					</button>
 				</div>
 			</header>
 			{load.kind === 'loading' && (
 				<p role="status" className="mm-admin-note">
-					{copy('Chargement du tableau de bord…', 'Loading the dashboard…')}
+					{t('Loading the dashboard…')}
 				</p>
 			)}
 			{load.kind === 'denied' && (
 				<section role="alert" className="mm-admin-card">
-					<h2>{copy('Accès réservé aux administrateurs', 'Administrator access required')}</h2>
-					<p>{copy('Ton compte ne dispose pas de ces droits.', 'Your account does not have these permissions.')}</p>
+					<h2>{t('Administrator access required')}</h2>
+					<p>{t('Your account does not have these permissions.')}</p>
 				</section>
 			)}
 			{load.kind === 'error' && (
 				<p role="alert" className="mm-admin-error">
-					{copy(
-						'Impossible de charger le tableau de bord. Réessaie avec Actualiser.',
-						'Could not load the dashboard. Try Refresh again.'
-					)}
+					{t('Could not load the dashboard. Try Refresh again.')}
 				</p>
 			)}
 			{load.kind === 'ready' && (

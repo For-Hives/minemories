@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 final class StorageQuotaScreen extends Screen {
@@ -16,7 +17,7 @@ final class StorageQuotaScreen extends Screen {
   private int top;
 
   StorageQuotaScreen(Screen parent) {
-    super(Component.literal("Stockage de la galerie"));
+    super(Component.translatable("minemories.ui.stockage_de_la_galerie"));
     this.parent = parent;
   }
 
@@ -34,12 +35,14 @@ final class StorageQuotaScreen extends Screen {
     int half = (panelWidth - 34) / 2;
     Button refresh =
         addRenderableWidget(
-            Button.builder(Component.literal("Actualiser"), ignored -> storage.reset(paired))
+            Button.builder(
+                    Component.translatable("minemories.ui.actualiser"),
+                    ignored -> storage.reset(paired))
                 .bounds(left + 14, top + 176, half, 20)
                 .build());
     refresh.active = paired;
     addRenderableWidget(
-        Button.builder(Component.literal("Retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
             .bounds(left + 20 + half, top + 176, half, 20)
             .build());
   }
@@ -81,9 +84,11 @@ final class StorageQuotaScreen extends Screen {
       List<String> details =
           List.of(
               quota.availableLabel(),
-              "Utilisé : " + StorageQuota.formatBytes(quota.usedBytes()),
-              "Envois réservés : " + StorageQuota.formatBytes(quota.reservedBytes()),
-              "Effacement en attente : " + StorageQuota.formatBytes(quota.pendingDeletionBytes()));
+              I18n.get("minemories.ui.utilise") + StorageQuota.formatBytes(quota.usedBytes()),
+              I18n.get("minemories.ui.envois_reserves")
+                  + StorageQuota.formatBytes(quota.reservedBytes()),
+              I18n.get("minemories.ui.effacement_en_attente")
+                  + StorageQuota.formatBytes(quota.pendingDeletionBytes()));
       for (int i = 0; i < details.size(); i++) {
         graphics.drawString(font, details.get(i), left + 14, top + 34 + i * 13, 0xFFECE8DC);
       }

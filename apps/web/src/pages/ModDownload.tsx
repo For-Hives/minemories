@@ -13,7 +13,7 @@ export function ModDownload() {
 	if (status === 'loading')
 		return (
 			<p role="status">
-				<T message={'Vérification du téléchargement…'} />
+				<T message={'Checking the download…'} />
 			</p>
 		)
 	return (
@@ -22,34 +22,34 @@ export function ModDownload() {
 				<>
 					<p>
 						<a className="install-primary" href={download.url}>
-							<T message={'Télécharger Minemories'} /> {download.version} (.jar)
+							<T message={'Download Minemories'} /> {download.version} (.jar)
 						</a>
 					</p>
 					<p>
 						Minecraft Java 1.21.1 · NeoForge 21.1.248 ·{' '}
-						{download.prerelease ? t('Préversion expérimentale.') : t('Version publiée.')}
+						{download.prerelease ? t('Experimental prerelease.') : t('Published release.')}
 					</p>
 					<p className="install-caption">
 						{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })}{' '}
-						<T message={'MiB · Téléchargement depuis GitHub Releases.'} />
+						<T message={'MiB · Download from GitHub Releases.'} />
 					</p>
 					<p>
-						<T message={'Place ce fichier directement dans le dossier'} /> <code>mods</code>{' '}
-						<T message={'du profil. Ne le décompresse pas et ne le lance pas par double-clic.'} />
+						<T message={"Place this file directly in the profile's folder"} /> <code>mods</code>{' '}
+						<T message={'. Do not extract it or run it by double-clicking.'} />
 					</p>
 					{(download.sha256 || download.checksumUrl) && (
 						<details>
 							<summary>
-								<T message={'Vérifier le fichier téléchargé (avancé)'} />
+								<T message={'Verify the downloaded file (advanced)'} />
 							</summary>
 							{download.sha256 && (
 								<p>
-									<T message={'Empreinte SHA-256 :'} /> <code>{download.sha256}</code>
+									<T message={'SHA-256 checksum:'} /> <code>{download.sha256}</code>
 								</p>
 							)}
 							{download.checksumUrl && (
 								<a href={download.checksumUrl}>
-									<T message={'Télécharger l’empreinte'} />
+									<T message={'Download checksum'} />
 								</a>
 							)}
 						</details>
@@ -60,23 +60,23 @@ export function ModDownload() {
 					<p role="status">
 						<T
 							message={
-								'Aucune release compatible n’est disponible pour le moment, ou GitHub ne répond pas. Consulte les versions du projet ou réessaie dans un instant.'
+								"No compatible release is available right now, or GitHub is not responding. Check the project's releases or try again shortly."
 							}
 						/>
 					</p>
 					<button type="button" className="install-secondary" onClick={retry}>
-						<T message={'Réessayer le téléchargement'} />
+						<T message={'Retry download'} />
 					</button>
 				</>
 			)}
 			<p>
 				<Link to="/versions">
-					<T message={'Versions précédentes et nouveautés'} />
+					<T message={"Previous versions and what's new"} />
 				</Link>
 			</p>
 			<p>
 				<a href={releasesUrl}>
-					<T message={'Toutes les versions sur GitHub'} />
+					<T message={'All releases on GitHub'} />
 				</a>
 			</p>
 		</div>

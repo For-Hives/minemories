@@ -4,55 +4,54 @@ import { T, useI18n } from '../i18n/I18n'
 const screenshots = {
 	minecraftVersion: {
 		file: '01-minecraft-1.21.1',
-		title: 'Choisir Minecraft 1.21.1',
-		caption: 'Minecraft Launcher → Installations → Nouvelle installation : sélectionner release 1.21.1.',
+		title: 'Choose Minecraft 1.21.1',
+		caption: 'Minecraft Launcher → Installations → New installation: select release 1.21.1.',
 	},
 	java21: {
 		file: '02-java-21',
-		title: 'Installer Java 21 sur Windows',
-		caption: 'Temurin : choisir Windows, Java 21 et l’architecture du PC, puis terminer l’installation.',
+		title: 'Install Java 21 on Windows',
+		caption: 'Temurin: choose Windows, Java 21 and your PC architecture, then finish installation.',
 	},
 	neoforge: {
 		file: '03-neoforge-install-client',
-		title: 'Installer NeoForge côté joueur',
-		caption: 'Dans l’installateur NeoForge 21.1.248, cocher Install client, puis valider.',
+		title: 'Install NeoForge on the client',
+		caption: 'In the NeoForge 21.1.248 installer, select Install client, then confirm.',
 	},
 	gameDirectory: {
 		file: '04-profil-dossier-jeu',
-		title: 'Choisir le dossier du profil NeoForge',
-		caption:
-			'Modifier le profil : vérifier 21.1.248 et sélectionner le dossier .minecraft-minemories dans Dossier du jeu.',
+		title: 'Choose the NeoForge profile folder',
+		caption: 'Edit the profile: check 21.1.248 and select the .minecraft-minemories folder under Game Directory.',
 	},
 	jarDownload: {
 		file: '05-jar-telecharge',
-		title: 'Retrouver le JAR téléchargé',
-		caption:
-			'Dans Téléchargements, retrouver minemories-neoforge-mc1.21.1.jar. Ce fichier se copie ; il ne s’ouvre pas.',
+		title: 'Find the downloaded JAR',
+		caption: 'In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.',
 	},
 	modsFolder: {
 		file: '06-dossier-mods',
-		title: 'Déposer le JAR dans mods',
-		caption: 'Dans l’Explorateur Windows, le dossier mods du bon profil contient une seule version du JAR Minemories.',
+		title: 'Place the JAR in mods',
+		caption:
+			"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.",
 	},
 	modsList: {
 		file: '07-liste-mods',
-		title: 'Vérifier que Minecraft reconnaît Minemories',
-		caption: 'Dans le menu Mods du jeu, Minemories apparaît dans la liste.',
+		title: 'Check that Minecraft recognizes Minemories',
+		caption: "In the game's Mods menu, Minemories appears in the list.",
 	},
 	minemoriesMenu: {
 		file: '08-menu-minemories',
-		title: 'Ouvrir le menu avec M',
-		caption: 'Dans un monde de test, la touche M ouvre le menu Minemories.',
+		title: 'Open the menu with M',
+		caption: 'In a test world, the M key opens the Minemories menu.',
 	},
 	localCapture: {
 		file: '09-premiere-capture',
-		title: 'Créer une petite capture locale',
-		caption: 'Dans le chat, /minemories export 16 se termine par un message confirmant l’export.',
+		title: 'Create a small local capture',
+		caption: 'In chat, /minemories export 16 ends with an export confirmation message.',
 	},
 	viewer: {
 		file: '10-souvenir-dans-viewer',
-		title: 'Revoir le premier souvenir en 3D',
-		caption: 'Après envoi depuis le mod, ouvre la capture de ta galerie privée pour la revoir en 3D.',
+		title: 'Revisit the first memory in 3D',
+		caption: 'After uploading from the mod, open the capture in your private gallery to revisit it in 3D.',
 	},
 }
 
@@ -95,18 +94,18 @@ export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: st
 					</svg>
 					<strong>{t(screenshot.title)}</strong>
 					<span>
-						<T message={'Capture d’écran à venir'} />
+						<T message={'Screenshot coming soon'} />
 					</span>
 				</div>
 			)}
 			<figcaption>
 				<span>
-					<T message={'Repère visuel · Windows'} />
+					<T message={'Visual reference · Windows'} />
 				</span>
 				{t(screenshot.caption)}
 				{src && !failed && (
 					<small>
-						<T message={'Clique sur l’image pour l’agrandir.'} />
+						<T message={'Click the image to enlarge it.'} />
 					</small>
 				)}
 			</figcaption>

@@ -88,6 +88,11 @@ export function I18nProvider({
 	useEffect(() => {
 		document.documentElement.lang = localeTag(locale)
 	}, [locale])
+	const t = useCallback(
+		(message: string, values?: Record<string, string | number>) => translate(locale, message, values),
+		[locale]
+	)
+
 	return (
 		<I18nContext.Provider
 			value={{
@@ -95,7 +100,7 @@ export function I18nProvider({
 				pendingLocale,
 				localeError,
 				setLocale: value => activate(value, true),
-				t: (message, values) => translate(locale, message, values),
+				t,
 			}}
 		>
 			{children}

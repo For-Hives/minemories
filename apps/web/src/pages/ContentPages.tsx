@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { OrbitMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
 import { articles, legalContent } from '../content/site-content'
-import { localize } from '../i18n/catalog'
+import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
 
@@ -49,8 +49,8 @@ export function BlogPage() {
 								new Date(`${article.published}T12:00:00Z`)
 							)}
 						</time>
-						<h2>{localize(article.title, locale)}</h2>
-						<p>{localize(article.summary, locale)}</p>
+						<h2>{translate(locale, article.title)}</h2>
+						<p>{translate(locale, article.summary)}</p>
 						<span>{t('Read article →')}</span>
 					</Link>
 				))}
@@ -64,7 +64,7 @@ export function ArticlePage() {
 	const article = articles.find(item => item.slug === slug)
 	if (!article) return <NotFoundPage />
 	return (
-		<ContentLayout eyebrow="JOURNAL" title={localize(article.title, locale)} lead={localize(article.summary, locale)}>
+		<ContentLayout eyebrow="JOURNAL" title={translate(locale, article.title)} lead={translate(locale, article.summary)}>
 			<time dateTime={article.published}>
 				{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
 					new Date(`${article.published}T12:00:00Z`)
@@ -72,9 +72,9 @@ export function ArticlePage() {
 			</time>
 			<div className="mm-prose">
 				{article.sections.map(section => (
-					<section key={section.heading.en}>
-						<h2>{localize(section.heading, locale)}</h2>
-						<p>{localize(section.body, locale)}</p>
+					<section key={section.heading}>
+						<h2>{translate(locale, section.heading)}</h2>
+						<p>{translate(locale, section.body)}</p>
 					</section>
 				))}
 			</div>
@@ -91,13 +91,13 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 	const { locale, t } = useI18n()
 	const content = legalContent[kind]
 	return (
-		<ContentLayout eyebrow="MINEMORIES" title={localize(content.title, locale)}>
+		<ContentLayout eyebrow="MINEMORIES" title={translate(locale, content.title)}>
 			<div className="mm-prose">
 				{content.sections.map(section => (
-					<section key={section.heading.en}>
-						<h2>{localize(section.heading, locale)}</h2>
-						<p>{localize(section.body, locale)}</p>
-						{kind === 'privacy' && section.heading.en === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
+					<section key={section.heading}>
+						<h2>{translate(locale, section.heading)}</h2>
+						<p>{translate(locale, section.body)}</p>
+						{kind === 'privacy' && section.heading === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
 					</section>
 				))}
 			</div>

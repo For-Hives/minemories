@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
 export function AdminAccessLink() {
 	const { session } = useAppContext(),
-		{ copy } = useLocalizedCopy(),
+		{ t } = useI18n(),
 		[allowed, setAllowed] = useState(false),
 		userId = session?.user.id
 	useEffect(() => {
@@ -23,7 +23,7 @@ export function AdminAccessLink() {
 	}, [userId])
 	return allowed ? (
 		<Link className="mm-admin-entry" to="/admin">
-			{copy('Ouvrir le panneau d’administration', 'Open administration dashboard')} →
+			{t('Open administration dashboard')} →
 		</Link>
 	) : null
 }

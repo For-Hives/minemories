@@ -19,9 +19,11 @@ Les identifiants historiques `en` et `fr` restent valables dans la préférence 
 
 ## Catalogues et périmètre
 
-`i18n/source-messages.json` contient les 1 184 messages sources. Les catalogues russe, allemand, coréen, portugais brésilien, polonais et japonais contiennent chacun toutes ces clés. Les variantes anglaises et canadienne française héritent de leur langue principale, avec des adaptations comme favourites/colours et courriel. Le français et l’anglais existants restent disponibles immédiatement.
+Le site utilise un seul moteur : `translate(locale, key, values)` dans `i18n/catalog.ts`. Le hook `useI18n().t()` et le composant JSX `T` appellent ce même moteur. Les textes sont uniquement dans `i18n/locales/*.json` : `en.json` est la source canonique, `fr.json` et les six autres langues sont des catalogues complets. Les variantes régionales ne contiennent que leurs différences et héritent du catalogue de leur langue principale.
 
-Les messages communs, la copie éditoriale, les tableaux d’options, les contenus du journal, les pages publiques, les réglages du compte, le partage et les métadonnées passent par la même résolution. Les identifiants d’API, chemins, noms de fichiers, commandes Minecraft et paramètres `{name}`, `{count}`, etc. gardent leur forme technique. Les devises commerciales ne sont pas converties automatiquement lors d’un changement de langue.
+Les anciens couples `copy(fr, en)`, objets éditoriaux `{ fr, en }`, dictionnaires de guides inversés et tables de métadonnées séparées ont été supprimés. Les composants, contenus éditoriaux, guides, libellés de diagnostics, métadonnées, dates relatives immédiates et compteurs utilisent les mêmes clés. Les pluriels sont sélectionnés par `Intl.PluralRules`, puis résolus dans les catalogues ; les nombres sont formatés par `Intl.NumberFormat`.
+
+Les identifiants d’API, chemins, noms de fichiers, commandes Minecraft et paramètres `{name}`, `{count}`, etc. gardent leur forme technique. Les contenus saisis par les utilisateurs restent littéraux. Les devises commerciales ne sont pas converties automatiquement lors d’un changement de langue.
 
 Les nouveaux catalogues sont importés à la demande et fournis avec le site : aucun service de traduction n’est appelé par l’application. Pendant un chargement, la langue précédente reste active ; une erreur permet de réessayer. Une réponse tardive ne remplace pas un choix plus récent et une réponse après démontage ne modifie pas la préférence. Le rendu statique initial conserve les routes françaises existantes ; les métadonnées et le contenu sont actualisés après le choix du navigateur. Aucune URL de traduction ou balise hreflang ne désigne une page inexistante.
 
@@ -29,10 +31,22 @@ Les six nouveaux catalogues partent d’une prétraduction des textes publics av
 
 ## Maintenance et validation
 
-Pour ajouter un message, conserver une clé anglaise stable, compléter le français et les six catalogues complets, puis mettre à jour `source-messages.json`. Les préférences des utilisateurs et les valeurs de protocole ne doivent pas devenir des clés à traduire. Les variantes ne contiennent que leurs différences régionales. Les noms techniques et les paramètres sont vérifiés par `catalogs.test.ts`, ainsi que la parité des clés, les compteurs et le repli lisible. Les tests d’interaction exercent le vrai sélecteur, la restauration d’une préférence, la détection du navigateur, les stockages bloqués, les réponses concurrentes et les échecs de chargement.
+Pour ajouter un message, choisir une clé stable dans `locales/en.json`, compléter tous les catalogues complets. Dans un composant, utiliser `t(key, values)` ou `T` ; dans les données éditoriales, stocker la clé seule et la traduire à l’affichage. Ne jamais recréer de couples de textes par langue dans les composants. Les variantes ne contiennent que leurs différences régionales.
 
-Validation locale : 308 tests web réussis sur 54 fichiers ; couverture des utilitaires à 100 % (lignes, branches, fonctions, instructions). Exécution avec deux workers et un délai de test de 120 secondes adapté à cette machine ; les attentes d’import asynchrone des catalogues disposent de 10 secondes. Les seuils de couverture du dépôt restent inchangés. Typecheck web et build de production réussis, avec pré-rendu des 19 pages publiques.
+Les tests contrôlent la parité des clés, les paramètres, les commandes et fichiers, les pluriels, le repli anglais et l’absence de l’ancien système dans les sources. Les tests d’interaction couvrent le vrai sélecteur, les préférences, les stockages bloqués, les chargements concurrents et leurs échecs, les guides et leurs étapes cochées, les métadonnées et les titres saisis par les propriétaires.
 
-Chromium a exercé les onze choix sur le serveur de développement et sur le build de production : changement de texte, balises de langue, courriel canadien et restauration après rechargement. Contrôle mobile à 390 × 844 en japonais, coréen, allemand, russe et portugais brésilien : aucun débordement horizontal ni erreur JavaScript. Les titres de captures choisis par leur propriétaire sont conservés littéralement, même lorsqu’ils correspondent à un libellé de l’interface.
+## Options du mod : langue de Minecraft
 
-Après la dernière revue des libellés (FAQ, diagnostics, unités de stockage), 53 tests ciblés supplémentaires passent, ainsi que le typecheck et le build web relancés. Les vérifications du sélecteur et des catalogues sont incluses dans cette relance.
+Le mod utilise exclusivement le système natif de Minecraft : `Component.translatable` pour les composants et `I18n.get` lorsque une API de dessin ou de champ exige une chaîne. Les ressources sont dans `assets/minemories/lang/` : anglais américain/britannique/canadien, français de France/du Canada, russe, allemand, coréen, portugais brésilien, polonais et japonais. Minecraft assure le repli vers `en_us` pour les langues ou clés absentes.
+
+Il n’y a aucun sélecteur de langue propre au mod, aucune préférence de langue dans sa configuration, aucun appel au site pour choisir ou traduire les options. Changer la langue du site ne change pas celle des options en jeu. Les options simples/avancées, AFK, dossier local, API, diagnostic, monde distant et les écrans associés suivent la langue choisie dans Minecraft. Les messages techniques provenant des services et du moteur de capture ne sont pas retraduits à partir de leur texte libre.
+
+Les tests Java vérifient les catalogues, les commandes et les chemins. Un même composant d’option est résolu successivement sous les onze langues injectées dans le moteur de Minecraft, afin de vérifier qu’il ne fige pas une traduction indépendante.
+
+## Validation de la migration
+
+Biome, typecheck et build web réussis ; 19 pages publiques pré-rendues. La suite avec couverture a exécuté 303 tests réussis et couvert les utilitaires à 100 % (lignes, branches, fonctions et instructions). Le worker de `temporal-files.test.ts` a expiré ; sa relance isolée a réussi ses quatre tests et terminé normalement. Les 54 fichiers, soit 307 tests, ont ainsi été vérifiés sans modifier les seuils de couverture ni l’isolation des tests.
+
+Chromium a parcouru les onze choix en développement et en production à 390 × 844 : libellés traduits, balises régionales correctes et aucun débordement horizontal. Les imports JSON différés n’utilisent pas d’attribut de type JSON : Vite les sert comme modules JavaScript, que le navigateur refuserait avec cet attribut. Les imports statiques des catalogues de base gardent l’attribut nécessaire au chargement de la configuration par Node.
+
+Le contrôle Gradle du module commun réussit : compilation, formatage, SpotBugs principal/tests et 176 tests Java, dont les deux tests de localisation. Le moteur natif est vérifié automatiquement sous les onze langues ; aucun essai visuel en jeu n’a été réalisé pour cette migration.

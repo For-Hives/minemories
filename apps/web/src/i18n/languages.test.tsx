@@ -10,7 +10,6 @@ import { metadataFor, publicMetadata } from '../route-metadata'
 import { loadLocale } from './catalog'
 import { I18nProvider, useI18n } from './I18n'
 import { localeOptions, localeTag } from './locales'
-import { useLocalizedCopy } from './useLocalizedCopy'
 
 afterEach(() => {
 	cleanup()
@@ -27,12 +26,11 @@ const context = {
 }
 function Example() {
 	const { t, locale, setLocale } = useI18n()
-	const { copy } = useLocalizedCopy()
 	return (
 		<>
 			<p>{t('Sign in')}</p>
-			<p>{copy('Partager par lien', 'Share by link')}</p>
-			<p>{copy(['Pluie', 'Neige'], ['Rain', 'Snow']).join(' / ')}</p>
+			<p>{t('Share by link')}</p>
+			<p>{[t('Rain'), t('Snow')].join(' / ')}</p>
 			<output>{locale}</output>
 			<button type="button" onClick={() => setLocale('fr')}>
 				Reset

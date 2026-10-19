@@ -4,6 +4,7 @@ import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 /** Optional diagnostics are explained before the player explicitly enables them. */
@@ -18,7 +19,7 @@ final class DiagnosticsSettingsScreen extends Screen {
   private int panelWidth;
 
   DiagnosticsSettingsScreen(Screen parent) {
-    super(Component.literal("Diagnostics techniques"));
+    super(Component.translatable("minemories.ui.diagnostics_techniques"));
     this.parent = parent;
   }
 
@@ -30,11 +31,13 @@ final class DiagnosticsSettingsScreen extends Screen {
     int half = (panelWidth - 34) / 2;
     toggle =
         addRenderableWidget(
-            Button.builder(Component.literal("Diagnostics : NON"), ignored -> changeConsent())
+            Button.builder(
+                    Component.translatable("minemories.ui.diagnostics_non"),
+                    ignored -> changeConsent())
                 .bounds(left + 14, top + 204, half, 20)
                 .build());
     addRenderableWidget(
-        Button.builder(Component.literal("Retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
             .bounds(left + 20 + half, top + 204, half, 20)
             .build());
     refresh();
@@ -44,11 +47,15 @@ final class DiagnosticsSettingsScreen extends Screen {
     try {
       enabled = PairingClient.diagnosticsConsent();
       toggle.active = enabled || PairingClient.isPaired();
-      toggle.setMessage(Component.literal("Diagnostics : " + (enabled ? "OUI" : "NON")));
+      toggle.setMessage(
+          Component.translatable(
+              enabled
+                  ? "minemories.options.diagnostics.enabled"
+                  : "minemories.ui.diagnostics_non"));
       status = saveError != null ? saveError : PairingClient.diagnosticsStatus();
     } catch (RuntimeException ignored) {
       toggle.active = false;
-      status = "Configuration illisible : aucune collecte.";
+      status = I18n.get("minemories.ui.configuration_illisible_aucune_collecte");
     }
   }
 
@@ -60,8 +67,9 @@ final class DiagnosticsSettingsScreen extends Screen {
     } catch (RuntimeException ignored) {
       saveError =
           enabled
-              ? "Retrait actif ici, mais non enregistré. Répare les droits avant de relancer."
-              : "Réglage non enregistré. Réessaie.";
+              ? I18n.get(
+                  "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer")
+              : I18n.get("minemories.ui.reglage_non_enregistre_reessaie");
       refresh();
     }
   }
@@ -86,10 +94,14 @@ final class DiagnosticsSettingsScreen extends Screen {
     int y = top + 34;
     for (String paragraph :
         List.of(
-            "Désactivés par défaut. Ton accord après appairage aide à corriger les exports et les crashs.",
-            "Versions, erreur et lignes de code. Huit rapports privés gardés 7 jours au plus, renvoyés après relance.",
-            "Exclus : messages, URLs, jetons, coordonnées, graine, noms monde/joueur et captures.",
-            "NON efface la file locale et demande l’effacement serveur. Hors ligne : sa rétention s’applique.")) {
+            I18n.get(
+                "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs"),
+            I18n.get(
+                "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance"),
+            I18n.get(
+                "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures"),
+            I18n.get(
+                "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique"))) {
       var lines = font.split(Component.literal(paragraph), panelWidth - 28);
       for (var line : lines) {
         if (y < top + 178) graphics.drawString(font, line, left + 14, y, 0xFFECE8DC);

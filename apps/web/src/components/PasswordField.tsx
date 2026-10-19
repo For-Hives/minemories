@@ -1,8 +1,8 @@
 import { useId, useState } from 'react'
-import { useLocalizedCopy } from '../i18n/useLocalizedCopy'
+import { useI18n } from '../i18n/I18n'
 
 export function PasswordField({ creating, className }: { creating: boolean; className: string }) {
-	const { copy, t } = useLocalizedCopy()
+	const { t } = useI18n()
 	const id = useId()
 	const [visible, setVisible] = useState(false)
 	const [capsLock, setCapsLock] = useState(false)
@@ -35,25 +35,17 @@ export function PasswordField({ creating, className }: { creating: boolean; clas
 				<button
 					type="button"
 					aria-controls={id}
-					aria-label={copy(
-						visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
-						visible ? 'Hide password' : 'Show password'
-					)}
+					aria-label={t(visible ? 'Hide password' : 'Show password')}
 					onClick={() => setVisible(!visible)}
 				>
-					{copy(visible ? 'Masquer' : 'Afficher', visible ? 'Hide' : 'Show')}
+					{t(visible ? 'Hide' : 'Show')}
 				</button>
 			</div>
 			<p id={`${id}-hint`} className="auth-field-hint">
-				{copy(
-					creating
-						? '12 caractères minimum. Une phrase facile à retenir peut aider.'
-						: 'Utilise le mot de passe de ton compte Minemories.',
-					creating ? 'At least 12 characters. A memorable phrase can help.' : 'Use your Minemories account password.'
-				)}
+				{t(creating ? 'At least 12 characters. A memorable phrase can help.' : 'Use your Minemories account password.')}
 			</p>
 			<p id={`${id}-caps`} role="status" className="auth-caps-warning">
-				{capsLock ? copy('Verr. Maj est activé.', 'Caps Lock is on.') : ''}
+				{capsLock ? t('Caps Lock is on.') : ''}
 			</p>
 		</fieldset>
 	)
