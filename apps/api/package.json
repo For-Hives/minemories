@@ -14,8 +14,8 @@
 		"typecheck": "tsc --noEmit -p tsconfig.json"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "3.1152.0",
-		"@aws-sdk/lib-storage": "3.1152.0",
+		"@aws-sdk/client-s3": "3.1156.0",
+		"@aws-sdk/lib-storage": "3.1156.0",
 		"@minemories/api-contract": "workspace:*",
 		"@orpc/server": "^1.14.0",
 		"@polar-sh/better-auth": "2.1.0",
