@@ -22,7 +22,10 @@ const mocks = vi.hoisted(() => ({
 	setTile: vi.fn(),
 	removeTile: vi.fn(),
 	frameTiles: vi.fn(),
+	exportFrameGlb: vi.fn(),
+	saveBlob: vi.fn(),
 }))
+vi.mock('./temporal-export', () => ({ exportFrameGlb: mocks.exportFrameGlb, saveBlob: mocks.saveBlob }))
 vi.mock('../api-client', () => ({
 	apiBase: 'http://example.test',
 	apiClient: { timelapse: { frames: mocks.frames, tiles: mocks.tileList } },
@@ -90,6 +93,13 @@ function mount() {
 async function ready() {
 	await screen.findByText(/Capture 1 ·/)
 	await waitFor(() => expect(screen.queryByText('Loading capture…')).toBeNull())
+}
+function deferredValue<T>() {
+	let resolve!: (value: T) => void
+	const promise = new Promise<T>(done => {
+		resolve = done
+	})
+	return { promise, resolve }
 }
 function deferred() {
 	let resolve!: () => void
@@ -456,4 +466,75 @@ test('a failing tile reports the capture error, and Retry fetches only the tiles
 	expect(screen.queryByRole('alert')).toBeNull()
 	expect(tileRequests('/tiles/0/0')).toBe(1)
 	expect(tileRequests('/tiles/1/0')).toBe(2)
+})
+
+test('the export button waits for a displayed capture and is disabled while the next one loads', async () => {
+	mount()
+	await ready()
+	const exportButton = screen.getByRole('button', { name: 'Export this capture as GLB' }) as HTMLButtonElement
+	expect(exportButton.disabled).toBe(false)
+	const pending = deferred()
+	mocks.load.mockReturnValueOnce(pending.promise)
+	fireEvent.click(screen.getByRole('button', { name: 'Next capture' }))
+	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(2))
+	expect((screen.getByRole('button', { name: 'Export this capture as GLB' }) as HTMLButtonElement).disabled).toBe(true)
+	await act(async () => pending.resolve())
+	await screen.findByText(/Capture 2 ·/)
+	expect((screen.getByRole('button', { name: 'Export this capture as GLB' }) as HTMLButtonElement).disabled).toBe(false)
+})
+
+test('exporting the displayed capture reports progress and saves the merged file under its dated name', async () => {
+	mount()
+	await ready()
+	const pending = deferredValue<{ blob: Blob; fileName: string }>()
+	let progress!: (done: number, total: number) => void
+	mocks.exportFrameGlb.mockImplementationOnce(options => {
+		progress = options.onProgress
+		return pending.promise
+	})
+	const blob = new Blob([new Uint8Array([1])], { type: 'model/gltf-binary' })
+	fireEvent.click(screen.getByRole('button', { name: 'Export this capture as GLB' }))
+	await screen.findByText('Exporting…')
+	expect(mocks.exportFrameGlb).toHaveBeenCalledWith(
+		expect.objectContaining({
+			frame: expect.objectContaining({ id: frame(1).id }),
+			signal: expect.any(AbortSignal),
+			restore: expect.any(Function),
+		})
+	)
+	await act(async () => progress(1, 3))
+	expect(screen.getByText('Exporting… 1/3')).toBeTruthy()
+	await act(async () => pending.resolve({ blob, fileName: 'my-village-20261001-120000.glb' }))
+	await waitFor(() => expect(mocks.saveBlob).toHaveBeenCalledWith(blob, 'my-village-20261001-120000.glb'))
+	expect(screen.queryByText(/Exporting…/)).toBeNull()
+	expect(screen.queryByRole('alert')).toBeNull()
+})
+
+test('a failing export shows its message while playback controls stay usable', async () => {
+	mount()
+	await ready()
+	mocks.exportFrameGlb.mockRejectedValueOnce(new Error('Storage offline'))
+	fireEvent.click(screen.getByRole('button', { name: 'Export this capture as GLB' }))
+	await screen.findByText('The export failed. Try again.')
+	expect(mocks.saveBlob).not.toHaveBeenCalled()
+	expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+	expect((screen.getByRole('button', { name: 'Play' }) as HTMLButtonElement).disabled).toBe(false)
+	expect((screen.getByRole('button', { name: 'Next capture' }) as HTMLButtonElement).disabled).toBe(false)
+	expect((screen.getByRole('button', { name: 'Export this capture as GLB' }) as HTMLButtonElement).disabled).toBe(false)
+	fireEvent.click(screen.getByRole('button', { name: 'Next capture' }))
+	await screen.findByText(/Capture 2 ·/)
+	expect(screen.queryByRole('alert')).toBeNull()
+})
+
+test('a double click starts only one export', async () => {
+	mount()
+	await ready()
+	const pending = deferredValue<{ blob: Blob; fileName: string }>()
+	mocks.exportFrameGlb.mockReturnValueOnce(pending.promise)
+	const exportButton = screen.getByRole('button', { name: 'Export this capture as GLB' })
+	fireEvent.click(exportButton)
+	fireEvent.click(exportButton)
+	expect(mocks.exportFrameGlb).toHaveBeenCalledOnce()
+	await act(async () => pending.resolve({ blob: new Blob([]), fileName: 'capture.glb' }))
+	await waitFor(() => expect(mocks.saveBlob).toHaveBeenCalledOnce())
 })

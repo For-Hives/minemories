@@ -64,7 +64,7 @@ function listTiles(memoryId: string, signal: AbortSignal): Promise<TileList> {
 }
 
 // The first tile goes through the restoration flow alone; the others start only once it has succeeded.
-function firstTileGate(frame: TemporalFrame, fetchTile: TileFetch, restore: TiledFrameOptions['restore']) {
+export function firstTileGate(frame: TemporalFrame, fetchTile: TileFetch, restore: TiledFrameOptions['restore']) {
 	const ready = deferred()
 	let first: TileSummary | null = null
 	return (tile: TileSummary, signal: AbortSignal): Promise<ArrayBuffer> => {
