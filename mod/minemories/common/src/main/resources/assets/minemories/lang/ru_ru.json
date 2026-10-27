@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Воспоминание сохранено и отправлено!",
   "minemories.hub.saved_local": "Воспоминание сохранено на этом компьютере.",
   "minemories.hub.failed": "Что-то пошло не так. Попробуй ещё раз.",
-  "minemories.advanced.title": "Расширенные настройки"
+  "minemories.advanced.title": "Расширенные настройки",
+  "minemories.advanced.tab.account": "Аккаунт",
+  "minemories.advanced.tab.captures": "Снимки",
+  "minemories.advanced.tab.world": "Мир",
+  "minemories.advanced.tab.privacy": "Приватность"
 }

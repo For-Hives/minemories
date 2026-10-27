@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Memory saved and sent!",
   "minemories.hub.saved_local": "Memory saved on this computer.",
   "minemories.hub.failed": "Something went wrong. Try again.",
-  "minemories.advanced.title": "Advanced settings"
+  "minemories.advanced.title": "Advanced settings",
+  "minemories.advanced.tab.account": "Account",
+  "minemories.advanced.tab.captures": "Captures",
+  "minemories.advanced.tab.world": "World",
+  "minemories.advanced.tab.privacy": "Privacy"
 }

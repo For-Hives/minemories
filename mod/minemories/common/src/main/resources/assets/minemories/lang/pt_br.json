@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Memória guardada e enviada!",
   "minemories.hub.saved_local": "Memória guardada neste computador.",
   "minemories.hub.failed": "Algo deu errado. Tente de novo.",
-  "minemories.advanced.title": "Configurações avançadas"
+  "minemories.advanced.title": "Configurações avançadas",
+  "minemories.advanced.tab.account": "Conta",
+  "minemories.advanced.tab.captures": "Capturas",
+  "minemories.advanced.tab.world": "Mundo",
+  "minemories.advanced.tab.privacy": "Privacidade"
 }
