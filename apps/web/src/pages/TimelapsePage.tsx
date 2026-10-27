@@ -10,6 +10,7 @@ import { ViewerScene } from '../viewer-scene'
 import { fetchTemporalFile } from './temporal-files'
 import { TemporalLoader } from './temporal-loader'
 import { rememberFrame, resumedFrame } from './temporal-resume'
+import { showTiledFrame } from './temporal-tiled'
 
 function useTimelapse(memoryId: string) {
 	const restoration = useCaptureRestoration()
@@ -20,6 +21,7 @@ function useTimelapse(memoryId: string) {
 	const series = useRef<string | null>(null)
 	const rendered = useRef(false)
 	const origin = useRef<TemporalFrame['origin'] | null>(null)
+	const displayed = useRef(new Map<string, string>())
 	const pageRequest = useRef<AbortController | null>(null)
 	const [window, setWindow] = useState<TemporalWindow | null>(null)
 	const [current, setCurrent] = useState<TemporalFrame | null>(null)
@@ -31,6 +33,7 @@ function useTimelapse(memoryId: string) {
 	const [error, setError] = useState('')
 	const [notice, setNotice] = useState('')
 	const [retry, setRetry] = useState(0)
+	const [tileProgress, setTileProgress] = useState<{ done: number; total: number } | null>(null)
 
 	useEffect(() => {
 		let disposed = false
@@ -51,16 +54,39 @@ function useTimelapse(memoryId: string) {
 		scene.current = viewer
 		const queue = new TemporalLoader(
 			async (frame, signal) => {
-				const file = await restoreLoad(() => fetchTemporalFile(frame, signal), { kind: 'owner', id: frame.id }, signal)
+				if (frame.tileCount) {
+					origin.current ??= frame.origin
+					try {
+						await showTiledFrame({
+							frame,
+							viewer,
+							displayed: displayed.current,
+							base: origin.current,
+							signal,
+							restore: run => restoreLoad(run, { kind: 'owner', id: frame.id }, signal),
+							onProgress: (done, total) => setTileProgress({ done, total }),
+						})
+					} finally {
+						setTileProgress(null)
+					}
+				} else {
+					const file = await restoreLoad(
+						() => fetchTemporalFile(frame, signal),
+						{ kind: 'owner', id: frame.id },
+						signal
+					)
+					if (signal.aborted) return
+					origin.current ??= frame.origin
+					const base = origin.current
+					await viewer.loadFile(file, {
+						signal,
+						preserveView: rendered.current,
+						originDelta: { x: frame.origin.x - base.x, y: frame.origin.y - base.y, z: frame.origin.z - base.z },
+					})
+					displayed.current.clear()
+				}
 				if (signal.aborted) return
-				origin.current ??= frame.origin
-				const base = origin.current
-				await viewer.loadFile(file, {
-					signal,
-					preserveView: rendered.current,
-					originDelta: { x: frame.origin.x - base.x, y: frame.origin.y - base.y, z: frame.origin.z - base.z },
-				})
-				if (signal.aborted) return
+				const base = origin.current ?? frame.origin
 				viewer.setCaptureContext({
 					x: base.x,
 					y: base.y,
@@ -100,6 +126,7 @@ function useTimelapse(memoryId: string) {
 		if (!scene.current) return
 		const controller = new AbortController()
 		pageRequest.current = controller
+		displayed.current.clear()
 		setPaging(true)
 		setError('')
 		void initialWindow(memoryId, controller.signal)
@@ -209,6 +236,7 @@ function useTimelapse(memoryId: string) {
 		delay,
 		error,
 		notice,
+		tileProgress,
 		index,
 		select,
 		changePage,
@@ -224,7 +252,7 @@ type Timeline = ReturnType<typeof useTimelapse>
 
 export function TimelapsePage({ memoryId }: { memoryId: string }) {
 	const state = useTimelapse(memoryId)
-	const { canvas, scene, window, current, busy, paging, error, notice } = state
+	const { canvas, scene, window, current, busy, paging, error, notice, tileProgress } = state
 	const { t, locale } = useI18n()
 
 	return (
@@ -249,7 +277,9 @@ export function TimelapsePage({ memoryId }: { memoryId: string }) {
 				<canvas ref={canvas} className="h-full w-full" aria-label={t('Interactive 3D scene')} />
 				{!state.restoration.view && (busy || paging) && (
 					<p role="status" className="absolute left-4 top-4 rounded bg-night px-3 py-2 text-white">
-						{t('Loading capture…')}
+						{tileProgress && busy
+							? `${t('Loading tiles')} ${tileProgress.done}/${tileProgress.total}`
+							: t('Loading capture…')}
 					</p>
 				)}
 				<button
