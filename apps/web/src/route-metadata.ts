@@ -153,7 +153,7 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 		language: locale === 'fr' || locale === 'en' ? locale : localeTag(locale),
 	}
 }
-export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.xenos.lightin.io'
+export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.net'
 
 export function structuredDataFor(page: PageMetadata) {
 	const canonical = new URL(page.path, siteOrigin).href

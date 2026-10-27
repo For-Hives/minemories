@@ -78,7 +78,7 @@ Les captures du mod peuvent être envoyées en morceaux de 4 MiB, jusqu’à 200
 
 ## Installation et distribution du mod
 
-Le mod utilise l’API `https://api.minemories.xenos.lightin.io` par défaut. Le menu M démarre sur un écran d'accueil minimal : connexion par code de galerie, souvenir à la demande, photos automatiques. Les réglages avancés permettent de choisir le dossier local, une API personnalisée compatible et les délais, la fréquence et la taille des captures AFK (actives par défaut). Une préférence AFK déjà enregistrée est conservée. Un changement d’API retire les identifiants du compte précédent.
+Le mod utilise l’API `https://api.minemories.net` par défaut. Le menu M démarre sur un écran d'accueil minimal : connexion par code de galerie, souvenir à la demande, photos automatiques. Les réglages avancés permettent de choisir le dossier local, une API personnalisée compatible et les délais, la fréquence et la taille des captures AFK (actives par défaut). Une préférence AFK déjà enregistrée est conservée. Un changement d’API retire les identifiants du compte précédent.
 
 `bun run build` vérifie et construit le dépôt complet, y compris le mod et son packaging CI. Le front se construit indépendamment avec `bun run --filter @minemories/web build`, sans Java ni JAR local. La page `/installation` télécharge le dernier JAR compatible directement depuis les releases publiques GitHub : déposer le fichier dans `mods`, sans extraction de ZIP. La compilation et la publication du mod sont réservées au workflow Java dédié.
 

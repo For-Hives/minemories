@@ -25,7 +25,7 @@ Sur une nouvelle installation, l’AFK est actif : 5 minutes d’inactivité, un
 | `afkSnapshots` | `true` par défaut ; une désactivation enregistrée reste respectée. |
 | `captureFullHeight` | `false` ; le mode avancé permet de capturer toute la hauteur de la dimension. |
 | `afkIdleMinutes` / `afkIntervalMinutes` / `captureRadius` | `5` / `240` / `32` ; réglages avancés pour les captures AFK et le rayon des captures du menu. |
-| `apiUrl` | `https://api.minemories.xenos.lightin.io` ; une valeur existante est conservée. À défaut de valeur enregistrée, `MINEMORIES_API_URL` reste utilisable pour le développement. HTTPS requis, HTTP accepté uniquement pour localhost, 127.0.0.1 ou ::1. Pas d’identifiants, query ni fragment dans l’URL. |
+| `apiUrl` | `https://api.minemories.net` ; une valeur existante est conservée. À défaut de valeur enregistrée, `MINEMORIES_API_URL` reste utilisable pour le développement. HTTPS requis, HTTP accepté uniquement pour localhost, 127.0.0.1 ou ::1. Pas d’identifiants, query ni fragment dans l’URL. |
 | `exportDirectory` | `~/export` ; chemin absolu ou expansion de `~/`, normalisé avant enregistrement. Le dossier est créé lors d’un export. |
 | `deviceToken`, `deviceId` | Créés lors de l’appairage ; retirés lors d’une déconnexion ou d’un changement d’API. |
 

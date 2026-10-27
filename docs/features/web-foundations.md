@@ -28,7 +28,7 @@ Ni la galerie, ni le viewer local, ni les liens `/share/`, ni l’authentificati
 
 Variables de build :
 
-- `VITE_SITE_URL` : origine publique, défaut `https://minemories.xenos.lightin.io` ; configure-la pour un autre domaine.
+- `VITE_SITE_URL` : origine publique, défaut `https://minemories.net` ; configure-la pour un autre domaine.
 - `VITE_INDEXABLE` : seules les valeurs exactement `true` autorisent l’indexation dans le build. Par défaut, y compris variable absente : `noindex,nofollow` partout, sitemap vide et `robots.txt` avec `Disallow: /`. Le HTML source et les changements de route client restent aussi en noindex. La commande de `railpack.web.json` force aussi `false` pour neutraliser une ancienne variable Coolify à `true`.
 - `VITE_API_URL` : origine API, déjà utilisée par Better Auth/oRPC.
 
