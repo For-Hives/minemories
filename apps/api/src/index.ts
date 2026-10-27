@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { apiContract, type CaptureStorageAccess } from '@minemories/api-contract'
+import { apiContract, type CaptureStorageAccess, MAX_TILE_INDEX } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
@@ -56,6 +56,8 @@ import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { s3Target } from './storage-s3'
 import { TieredObjects } from './tiered-objects'
+import { readAuthorizedTile, TILE_INTEGRITY_ERROR } from './tile-downloads'
+import { TileIndex } from './tile-index'
 import { TimelapseFiles } from './timelapse-files'
 import { TimelapseIndex } from './timelapse-index'
 import { TimelapseMaintenance } from './timelapse-maintenance'
@@ -92,6 +94,7 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 	tieredObjects.remove(key, discardUpload ? discardMemoryUpload : removeMemory)
 )
 const temporalIndex = new TimelapseIndex(database)
+const tileIndex = new TileIndex(database)
 const captureFiles = new TimelapseFiles(database, tieredObjects)
 export const coldStorageMaintenance = coldStorageConfiguration
 	? new ColdStorageMaintenance(
@@ -171,6 +174,11 @@ const router = os.router({
 	},
 	timelapse: {
 		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
+		tiles: os.timelapse.tiles.handler(({ context, input }) => {
+			const tiles = tileIndex.list(authenticated(context), input.memoryId)
+			if (!tiles) throw new ORPCError('NOT_FOUND')
+			return tiles
+		}),
 	},
 	discovery: {
 		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),
@@ -483,6 +491,47 @@ app.get('/api/memories/:id/file', async context => {
 		)
 		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('memory_download_failed', context.get('correlationId'))
+		return context.json({ error: 'memory_storage_unavailable' }, 503)
+	}
+})
+
+const tileCoordinatePattern = /^-?\d{1,7}$/
+function tileCoordinate(raw: string): number | null {
+	if (!tileCoordinatePattern.test(raw)) return null
+	const value = Number(raw)
+	return Math.abs(value) <= MAX_TILE_INDEX ? value : null
+}
+
+app.get('/api/memories/:id/tiles/:x/:z', async context => {
+	context.header('Cache-Control', 'private, no-store')
+	const session = await auth.api.getSession({ headers: context.req.raw.headers })
+	if (!session) return context.json({ error: 'unauthorized' }, 401)
+
+	const x = tileCoordinate(context.req.param('x'))
+	const z = tileCoordinate(context.req.param('z'))
+	if (x === null || z === null) return context.json({ error: 'tile_not_found' }, 404)
+	const id = context.req.param('id')
+	const userId = session.user.id
+	const locate = () => tileIndex.locate(userId, id, x, z)
+	const lookup = () => locate()?.objectKey ?? null
+	if (!locate()) return context.json({ error: 'tile_not_found' }, 404)
+
+	try {
+		const bytes = await readAuthorizedTile(captureFiles, locate, context.req.raw.signal)
+		if (!bytes) return context.json({ error: 'tile_not_found' }, 404)
+		return context.body(new Uint8Array(bytes), 200, {
+			'Content-Type': 'model/gltf-binary',
+			'Cache-Control': 'private, no-store',
+			'X-Content-Type-Options': 'nosniff',
+		})
+	} catch (error) {
+		const availability = archivedAvailability(error, lookup)
+		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
+		if (error instanceof Error && error.message === TILE_INTEGRITY_ERROR) {
+			logApiFailure('tile_integrity_failed', context.get('correlationId'))
+			return context.json({ error: 'tile_integrity_failed' }, 502)
+		}
+		logApiFailure('tile_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
 })

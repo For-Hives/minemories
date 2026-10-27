@@ -10,6 +10,8 @@ import { addMemory, getDeviceFromToken } from './pairing'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, storeMemoryFile } from './storage'
 import { accountStorageFits } from './storage-quota'
+import { isTileBundle, type TileBundleLayout, validateTileBundle } from './tile-bundle'
+import { TileIndex } from './tile-index'
 import { MAX_UPLOAD_BYTES, readUploadChunk, UPLOAD_CHUNK_BYTES, validateUploadFile } from './upload-files'
 
 const root = resolve(
@@ -224,8 +226,8 @@ uploadRouter.post('/:id/complete', context => {
 		if (upload.completed) return context.json({ id, name: upload.name, size: upload.size })
 		if (upload.received !== upload.size) throw new HTTPException(409, { message: 'upload_incomplete' })
 		const path = join(root, id)
-		if (!(await validateUploadFile(path, upload.size, upload.sha256)))
-			throw new HTTPException(400, { message: 'invalid_glb_or_checksum' })
+		const staged = await validateStaged(path, upload)
+		if (!staged) throw new HTTPException(400, { message: 'invalid_glb_or_checksum' })
 		requireAccountSpace(upload.user_id, 0)
 		const objectKey = `${upload.user_id}/${id}.glb`
 		// The reserved UUID makes replacement of a previous uncommitted attempt safe.
@@ -241,12 +243,31 @@ uploadRouter.post('/:id/complete', context => {
 				size: upload.size,
 				metadata: JSON.parse(upload.metadata_json),
 			})
+			if (staged.layout) new TileIndex(database).put(id, staged.layout)
 			database.query('UPDATE mod_uploads SET completed = 1 WHERE id = ?').run(id)
 		})()
 		await rm(path, { force: true }).catch(() => undefined)
 		return context.json({ id, name: upload.name, size: upload.size }, 201)
 	})
 })
+async function readHead(path: string): Promise<Buffer> {
+	const file = await open(path, 'r')
+	try {
+		const head = Buffer.alloc(12)
+		const { bytesRead } = await file.read(head, 0, head.length, 0)
+		return head.subarray(0, bytesRead)
+	} finally {
+		await file.close()
+	}
+}
+/** Tiled bundles are recognised by magic; every other staged file must be one valid GLB. */
+async function validateStaged(path: string, upload: Upload): Promise<{ layout: TileBundleLayout | null } | null> {
+	if (isTileBundle(await readHead(path))) {
+		const layout = await validateTileBundle(path, upload.size, upload.sha256)
+		return layout ? { layout } : null
+	}
+	return (await validateUploadFile(path, upload.size, upload.sha256)) ? { layout: null } : null
+}
 uploadRouter.delete('/:id', context => {
 	const id = context.req.param('id')
 	return locked(id, async () => {
