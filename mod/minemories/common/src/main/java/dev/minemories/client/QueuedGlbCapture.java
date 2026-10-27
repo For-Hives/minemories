@@ -2,10 +2,7 @@ package dev.minemories.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import dev.minemories.core.CaptureScene;
 import dev.minemories.core.SpoolingGlbScene;
-import dev.minemories.core.TileGrid;
-import dev.minemories.core.TiledSpoolingScene;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.file.Files;
@@ -37,7 +34,6 @@ final class QueuedGlbCapture implements AutoCloseable {
   private static final long MAX_TEXTURE_PIXELS = 64L * 1024 * 1024;
   private static final long MAX_TEXTURE_BYTES = 64L * 1024 * 1024;
   private final Path exports;
-  private final int tileChunks;
   private final ArrayBlockingQueue<Task> queue = new ArrayBlockingQueue<>(QUEUE_PACKETS);
   private final AtomicBoolean cancelled = new AtomicBoolean();
   private final CompletableFuture<Result> completion = new CompletableFuture<>();
@@ -71,8 +67,6 @@ final class QueuedGlbCapture implements AutoCloseable {
 
   private record Finish(Instant capturedAt, String metadata) implements Task {}
 
-  private record Origin(int x, int y, int z) implements Task {}
-
   private static final class Band implements Task {
     private final String key;
     private final int row;
@@ -88,14 +82,7 @@ final class QueuedGlbCapture implements AutoCloseable {
   private record TextureFile(Path path, Object identity, int bytes, int alpha) {}
 
   QueuedGlbCapture(Path exports) {
-    this(exports, 0);
-  }
-
-  QueuedGlbCapture(Path exports, int tileChunks) {
     this.exports = Objects.requireNonNull(exports).toAbsolutePath().normalize();
-    if (tileChunks < 0 || tileChunks > TileGrid.MAX_TILE_CHUNKS)
-      throw new IllegalArgumentException("Tile size must be between 0 and 16 chunks");
-    this.tileChunks = tileChunks;
     worker = new Thread(this::run, "Minemories GLB preparation");
     worker.setDaemon(true);
     worker.start();
@@ -137,11 +124,6 @@ final class QueuedGlbCapture implements AutoCloseable {
     return offer(new Batch(quads, lights));
   }
 
-  boolean offerOrigin(int x, int y, int z) {
-    if (tileChunks == 0) return true;
-    return offer(new Origin(x, y, z));
-  }
-
   boolean finish(Instant capturedAt, String metadata) throws IOException {
     Objects.requireNonNull(capturedAt);
     Objects.requireNonNull(metadata);
@@ -174,7 +156,7 @@ final class QueuedGlbCapture implements AutoCloseable {
       CaptureWorkspace.cleanupAbandoned(scratch, 32);
       Result result;
       try (var workspace = new CaptureWorkspace(scratch);
-          CaptureScene scene = newScene(workspace.directory())) {
+          var scene = new SpoolingGlbScene(workspace.directory(), captureLimits())) {
         result = new ConsumerState(workspace.directory(), scene).consume();
       }
       completion.complete(result);
@@ -183,12 +165,6 @@ final class QueuedGlbCapture implements AutoCloseable {
     } finally {
       queue.clear();
     }
-  }
-
-  private CaptureScene newScene(Path directory) throws IOException {
-    if (tileChunks > 0)
-      return new TiledSpoolingScene(directory, captureLimits(), new TileGrid(tileChunks));
-    return new SpoolingGlbScene(directory, captureLimits());
   }
 
   private static SpoolingGlbScene.Limits captureLimits() {
@@ -206,7 +182,7 @@ final class QueuedGlbCapture implements AutoCloseable {
 
   private final class ConsumerState {
     private final Path directory;
-    private final CaptureScene scene;
+    private final SpoolingGlbScene scene;
     private final Map<String, TextureFile> textures = new LinkedHashMap<>();
     private RenderedTexture.Rows active;
     private String activeKey;
@@ -215,7 +191,7 @@ final class QueuedGlbCapture implements AutoCloseable {
     private String cachedKey;
     private byte[] cachedPng;
 
-    private ConsumerState(Path directory, CaptureScene scene) {
+    private ConsumerState(Path directory, SpoolingGlbScene scene) {
       this.directory = directory;
       this.scene = scene;
     }
@@ -228,7 +204,6 @@ final class QueuedGlbCapture implements AutoCloseable {
         if (task instanceof Begin begin) startTexture(begin);
         else if (task instanceof Band band) copyBand(band);
         else if (task instanceof End end) endTexture(end);
-        else if (task instanceof Origin origin) scene.setOrigin(origin.x, origin.y, origin.z);
         else if (task instanceof Batch batch) geometry(batch);
         else if (task instanceof Finish finish) return publish(finish);
         else throw new IOException("Unknown capture packet");
@@ -364,7 +339,7 @@ final class QueuedGlbCapture implements AutoCloseable {
           saved,
           scene.materialCount(),
           textures.size(),
-          scene.quadCount(),
+          scene.metrics().quads(),
           Objects.requireNonNull(ended[0]),
           new Preparation(textureNanos, geometryNanos, System.nanoTime() - started));
     }

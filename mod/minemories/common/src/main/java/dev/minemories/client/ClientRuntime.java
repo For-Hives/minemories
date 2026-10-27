@@ -870,7 +870,7 @@ public final class ClientRuntime {
             Math.max(selectionFirst.getX(), selectionSecond.getX()),
             Math.max(selectionFirst.getY(), selectionSecond.getY()),
             Math.max(selectionFirst.getZ(), selectionSecond.getZ()));
-    return exportBox(min, max, diagnostics, true, 0);
+    return exportBox(min, max, diagnostics, true);
   }
 
   static int export(int radius) {
@@ -901,9 +901,6 @@ public final class ClientRuntime {
             level.getMinBuildHeight(),
             level.getMaxBuildHeight(),
             radius);
-    int tileChunks = PairingClient.manualTileChunks();
-    // Whole tile columns, so a later capture can replace a tile without losing part of it.
-    if (tileChunks > 0) bounds = bounds.alignedToTiles(16 * tileChunks);
     trackExploration(mc, System.currentTimeMillis());
     int bottom = bounds.minY();
     if (!PairingClient.isFullHeightCapture()) {
@@ -928,16 +925,11 @@ public final class ClientRuntime {
         new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()),
         new BlockPos(bounds.maxX(), bounds.maxY(), bounds.maxZ()),
         diagnostics,
-        false,
-        tileChunks);
+        false);
   }
 
   private static int exportBox(
-      BlockPos min,
-      BlockPos max,
-      DiagnosticsClient.Operation diagnostics,
-      boolean selection,
-      int tileChunks) {
+      BlockPos min, BlockPos max, DiagnosticsClient.Operation diagnostics, boolean selection) {
     Minecraft mc = Minecraft.getInstance();
     var level = mc.level;
     var player = mc.player;
@@ -960,19 +952,13 @@ public final class ClientRuntime {
         metadata,
         new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
         selection);
-    CaptureSink scene;
-    if (tileChunks > 0) {
-      scene = new CaptureSink.Tiled(tileChunks, center.getX(), center.getY(), center.getZ());
-    } else {
-      var legacy = new CaptureSink.Legacy();
-      if (metadata.has("minemoriesPlayerPosition")) {
-        var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
-        legacy.setPlayerPosition(
-            position.get(0).getAsDouble(),
-            position.get(1).getAsDouble(),
-            position.get(2).getAsDouble());
-      }
-      scene = legacy;
+    var scene = new CaptureSink.Legacy();
+    if (metadata.has("minemoriesPlayerPosition")) {
+      var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
+      scene.setPlayerPosition(
+          position.get(0).getAsDouble(),
+          position.get(1).getAsDouble(),
+          position.get(2).getAsDouble());
     }
     SpriteAssets sprites = new SpriteAssets(null);
     RenderedModelCapture renderedModels = new RenderedModelCapture(scene, mc);

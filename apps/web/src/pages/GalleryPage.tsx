@@ -1,3 +1,4 @@
+import { temporalIdentity } from '@minemories/api-contract'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
@@ -8,7 +9,7 @@ import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureStack, collapseTimelines, groupCaptures, stackCaptures } from '../lib/gallery'
+import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -312,7 +313,7 @@ function CaptureFolders({
 	if (memories.length === 0) return null
 	return (
 		<div className="space-y-4">
-			{groupCaptures(collapseTimelines(memories)).map(group => {
+			{groupCaptures(memories).map(group => {
 				const open = expanded.has(group.key)
 				const stacks = open ? stackCaptures(group.captures) : []
 				return (
@@ -661,11 +662,6 @@ function SnapshotCard({
 						: ''}
 					{formatFileSize(memory.size, locale)}
 				</p>
-				{memory.timeline && memory.timeline.frames > 1 && (
-					<p className="mb-0 mt-[6px] text-[10px] font-bold text-[#9ab88a]">
-						{memory.timeline.frames} {t('captures')} · {t('Evolution')}
-					</p>
-				)}
 				<CaptureMetadata metadata={memory.metadata} />
 				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<button
@@ -676,6 +672,14 @@ function SnapshotCard({
 					>
 						{opening ? '…' : t('↗ Revisit')}
 					</button>
+					{temporalIdentity(memory.metadata) && (
+						<Link
+							to={`/viewer?memory=${encodeURIComponent(memory.id)}&timelapse=1`}
+							className="inline-flex h-8 items-center rounded border border-[#354238] px-2 text-[11px] text-[#b4c1ad]"
+						>
+							{t('Timeline')}
+						</Link>
+					)}
 					<button
 						type="button"
 						onClick={() => setShareOpen(open => !open)}

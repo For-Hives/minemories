@@ -5,8 +5,7 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
-		"./glb": "./src/glb.ts",
-		"./glb-merge": "./src/glb-merge.ts"
+		"./glb": "./src/glb.ts"
 	},
 	"dependencies": {
 		"@orpc/contract": "^1.14.0",

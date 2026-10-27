@@ -151,10 +151,7 @@ export class PublicDiscovery {
 
 	file(id: string, userId: string | null) {
 		const row = this.publication(id, userId, true)
-		return this.db
-			.query('SELECT id AS memory_id, object_key FROM memories WHERE id=? AND deleted_at IS NULL')
-			.get(row.memory_id) as {
-			memory_id: string
+		return this.db.query('SELECT object_key FROM memories WHERE id=? AND deleted_at IS NULL').get(row.memory_id) as {
 			object_key: string
 		}
 	}

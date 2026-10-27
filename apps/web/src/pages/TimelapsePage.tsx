@@ -1,93 +1,25 @@
 import type { TemporalFrame, TemporalWindow } from '@minemories/api-contract'
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { buttonDark, buttonOutline } from '../components/ui'
-import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
-import { ViewerStudio } from '../components/ViewerStudio'
 import { useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
-import { exportFrameGlb, saveBlob } from './temporal-export'
 import { fetchTemporalFile } from './temporal-files'
 import { TemporalLoader } from './temporal-loader'
-import { showTiledFrame } from './temporal-tiled'
+import { rememberFrame, resumedFrame } from './temporal-resume'
 
-const exportFailure = 'The export failed. Try again.'
-
-function useFrameExport(
-	memoryId: string,
-	current: TemporalFrame | null,
-	restoreLoad: ReturnType<typeof useCaptureRestoration>['load'],
-	setNotice: (message: string) => void
-) {
-	const exportRequest = useRef<AbortController | null>(null)
-	const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null)
-
-	useEffect(
-		() => () => {
-			exportRequest.current?.abort()
-			exportRequest.current = null
-			setExporting(null)
-		},
-		[memoryId]
-	)
-
-	async function exportCurrent() {
-		if (!current || exporting || exportRequest.current) return
-		const controller = new AbortController()
-		exportRequest.current = controller
-		setExporting({ done: 0, total: 0 })
-		setNotice('')
-		try {
-			const { blob, fileName } = await exportFrameGlb({
-				frame: current,
-				signal: controller.signal,
-				restore: run => restoreLoad(run, { kind: 'owner', id: current.id }, controller.signal),
-				onProgress: (done, total) => setExporting({ done, total }),
-			})
-			if (!controller.signal.aborted) saveBlob(blob, fileName)
-		} catch {
-			if (!controller.signal.aborted) setNotice(exportFailure)
-		} finally {
-			if (exportRequest.current === controller) {
-				exportRequest.current = null
-				setExporting(null)
-			}
-		}
-	}
-
-	return { exporting, exportCurrent }
-}
-
-function usePauseWhenHidden(setPlaying: (playing: boolean) => void) {
-	useEffect(() => {
-		const pause = () => {
-			if (document.hidden) setPlaying(false)
-		}
-		document.addEventListener('visibilitychange', pause)
-		return () => document.removeEventListener('visibilitychange', pause)
-	}, [setPlaying])
-}
-
-type SceneHooks = {
-	onCycle: (minutes: number) => void
-	onFileInfo: (name: string, size: number) => void
-	onEmptyChange: (empty: boolean) => void
-}
-
-function useTimelapse(memoryId: string, hooks: SceneHooks) {
+function useTimelapse(memoryId: string) {
 	const restoration = useCaptureRestoration()
 	const restoreLoad = restoration.load
-	const sceneHooks = useRef(hooks)
-	sceneHooks.current = hooks
 	const canvas = useRef<HTMLCanvasElement>(null)
 	const scene = useRef<ViewerScene | null>(null)
 	const loader = useRef<TemporalLoader | null>(null)
 	const series = useRef<string | null>(null)
 	const rendered = useRef(false)
 	const origin = useRef<TemporalFrame['origin'] | null>(null)
-	const displayed = useRef(new Map<string, string>())
 	const pageRequest = useRef<AbortController | null>(null)
 	const [window, setWindow] = useState<TemporalWindow | null>(null)
 	const [current, setCurrent] = useState<TemporalFrame | null>(null)
@@ -99,8 +31,6 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 	const [error, setError] = useState('')
 	const [notice, setNotice] = useState('')
 	const [retry, setRetry] = useState(0)
-	const [tileProgress, setTileProgress] = useState<{ done: number; total: number } | null>(null)
-	const { exporting, exportCurrent } = useFrameExport(memoryId, current, restoreLoad, setNotice)
 
 	useEffect(() => {
 		let disposed = false
@@ -108,9 +38,9 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 		if (!canvas.current) return
 		try {
 			viewer = new ViewerScene(canvas.current, {
-				onCycle: cycle => sceneHooks.current.onCycle(cycle.minutes),
-				onFileInfo: (name, size) => sceneHooks.current.onFileInfo(name, size),
-				onEmptyChange: value => sceneHooks.current.onEmptyChange(value),
+				onCycle: () => undefined,
+				onFileInfo: () => undefined,
+				onEmptyChange: () => undefined,
 				onLoading: () => undefined,
 			})
 		} catch {
@@ -121,39 +51,16 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 		scene.current = viewer
 		const queue = new TemporalLoader(
 			async (frame, signal) => {
-				if (frame.tileCount) {
-					origin.current ??= frame.origin
-					try {
-						await showTiledFrame({
-							frame,
-							viewer,
-							displayed: displayed.current,
-							base: origin.current,
-							signal,
-							restore: run => restoreLoad(run, { kind: 'owner', id: frame.id }, signal),
-							onProgress: (done, total) => setTileProgress({ done, total }),
-						})
-					} finally {
-						setTileProgress(null)
-					}
-				} else {
-					const file = await restoreLoad(
-						() => fetchTemporalFile(frame, signal),
-						{ kind: 'owner', id: frame.id },
-						signal
-					)
-					if (signal.aborted) return
-					origin.current ??= frame.origin
-					const base = origin.current
-					await viewer.loadFile(file, {
-						signal,
-						preserveView: rendered.current,
-						originDelta: { x: frame.origin.x - base.x, y: frame.origin.y - base.y, z: frame.origin.z - base.z },
-					})
-					displayed.current.clear()
-				}
+				const file = await restoreLoad(() => fetchTemporalFile(frame, signal), { kind: 'owner', id: frame.id }, signal)
 				if (signal.aborted) return
-				const base = origin.current ?? frame.origin
+				origin.current ??= frame.origin
+				const base = origin.current
+				await viewer.loadFile(file, {
+					signal,
+					preserveView: rendered.current,
+					originDelta: { x: frame.origin.x - base.x, y: frame.origin.y - base.y, z: frame.origin.z - base.z },
+				})
+				if (signal.aborted) return
 				viewer.setCaptureContext({
 					x: base.x,
 					y: base.y,
@@ -169,6 +76,7 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 				if (disposed) return
 				rendered.current = true
 				setCurrent(frame)
+				if (series.current) rememberFrame(series.current, frame.id)
 			},
 			() => {
 				setError('This capture could not be loaded. Retry or select another capture.')
@@ -192,7 +100,6 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 		if (!scene.current) return
 		const controller = new AbortController()
 		pageRequest.current = controller
-		displayed.current.clear()
 		setPaging(true)
 		setError('')
 		void initialWindow(memoryId, controller.signal)
@@ -263,7 +170,13 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 		}, delay * 1000)
 		return () => globalThis.clearTimeout(timer)
 	})
-	usePauseWhenHidden(setPlaying)
+	useEffect(() => {
+		const pause = () => {
+			if (document.hidden) setPlaying(false)
+		}
+		document.addEventListener('visibilitychange', pause)
+		return () => document.removeEventListener('visibilitychange', pause)
+	}, [])
 
 	function move(offset: number) {
 		setPlaying(false)
@@ -296,9 +209,6 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 		delay,
 		error,
 		notice,
-		tileProgress,
-		exporting,
-		exportCurrent,
 		index,
 		select,
 		changePage,
@@ -313,64 +223,46 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 type Timeline = ReturnType<typeof useTimelapse>
 
 export function TimelapsePage({ memoryId }: { memoryId: string }) {
+	const state = useTimelapse(memoryId)
+	const { canvas, scene, window, current, busy, paging, error, notice } = state
 	const { t, locale } = useI18n()
-	const [minutes, setMinutes] = useState(570)
-	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
-	const [empty, setEmpty] = useState(true)
-	const state = useTimelapse(memoryId, {
-		onCycle: setMinutes,
-		onFileInfo: (name, size) => setFileInfo({ name, size }),
-		onEmptyChange: setEmpty,
-	})
-	const { canvas, scene, window, current, busy, paging, error, notice, tileProgress } = state
-	const evolving = window !== null && window.totalFrames > 1
 
 	return (
-		<section className="viewer-page cinema-page">
-			<ViewerHeader title={window?.name ?? t('A world to find again.')} subtitle="STUDIO" />
-			<div className="viewer-stage">
-				<canvas
-					ref={canvas}
-					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
-					aria-label={t('Interactive 3D scene')}
-				/>
+		<section className="mx-auto max-w-[1360px] px-5 py-8">
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+				<div>
+					<p className="font-mono text-xs text-[#607a4a]">{t('CAPTURE TIMELINE')}</p>
+					<h1 className="text-2xl font-bold">{window?.name ?? t('Your world through time')}</h1>
+				</div>
+				<Link className={buttonOutline} to="/gallery">
+					{t('My gallery')}
+				</Link>
+			</div>
+			<p>{t('Only recorded captures are shown. No states between captures are reconstructed.')}</p>
+			{window && (
+				<p className="text-sm">
+					{t(scopeLabels[window.scope])} · {window.totalFrames} {t('captures')} · {formatFileSize(window.totalBytes)}
+				</p>
+			)}
+			<div className="relative h-[65vh] min-h-[360px] overflow-hidden rounded-lg bg-night">
 				<CaptureRestorationPanel view={state.restoration.view} onRestore={state.restoration.resume} />
+				<canvas ref={canvas} className="h-full w-full" aria-label={t('Interactive 3D scene')} />
 				{!state.restoration.view && (busy || paging) && (
 					<p role="status" className="absolute left-4 top-4 rounded bg-night px-3 py-2 text-white">
-						{tileProgress && busy
-							? `${t('Loading tiles')} ${tileProgress.done}/${tileProgress.total}`
-							: t('Loading capture…')}
+						{t('Loading capture…')}
 					</p>
 				)}
-				{!state.restoration.view && <ViewerLoadState loading={null} error="" />}
+				<button
+					type="button"
+					className={`${buttonOutline} absolute bottom-4 right-4`}
+					onClick={() => scene.current?.resetView()}
+					disabled={!current || busy}
+				>
+					{t('Recenter the camera')}
+				</button>
 			</div>
-			{!empty && (
-				<ViewerStudio
-					sceneRef={scene}
-					ready={!(busy || paging || state.restoration.view)}
-					memoryId={current?.id ?? memoryId}
-					minutes={minutes}
-					fileInfo={fileInfo ? `${fileInfo.name} · ${formatFileSize(fileInfo.size, locale)}` : ''}
-				/>
-			)}
-			<div className="mx-auto max-w-[1100px] px-5 pb-8 text-[#d6dccf]">
-				{error && <TimelineError state={state} />}
-				{notice && <p role="status">{t(notice)}</p>}
-				{evolving && window && <EvolutionPanel state={state} window={window} />}
-			</div>
-		</section>
-	)
-}
-
-function EvolutionPanel({ state, window }: { state: Timeline; window: TemporalWindow }) {
-	const { t, locale } = useI18n()
-	const { current } = state
-	return (
-		<>
-			<p className="font-mono text-xs text-[#9ab88a]">
-				{t('CAPTURE TIMELINE')} · {t(scopeLabels[window.scope])} · {window.totalFrames} {t('captures')} ·{' '}
-				{formatFileSize(window.totalBytes)}
-			</p>
+			{error && <TimelineError state={state} />}
+			{notice && <p role="status">{t(notice)}</p>}
 			{current && (
 				<p aria-live="polite">
 					{current.name} ·{' '}
@@ -378,10 +270,16 @@ function EvolutionPanel({ state, window }: { state: Timeline; window: TemporalWi
 						{new Date(current.at).toLocaleString(locale)}
 					</time>{' '}
 					· {t(current.timeSource === 'capture' ? 'Capture time' : 'Upload time (capture time unknown)')}
+					{current.captureFinishedAt && current.captureStartedAt && (
+						<span className="mt-1 block break-all font-mono text-xs">
+							{' '}
+							· {t('Capture interval')}: {current.captureStartedAt} → {current.captureFinishedAt}
+						</span>
+					)}
 				</p>
 			)}
-			<TimelineControls state={state} window={window} />
-		</>
+			{window && <TimelineControls state={state} window={window} />}
+		</section>
 	)
 }
 
@@ -426,8 +324,6 @@ function TimelineControls({ state, window }: { state: Timeline; window: Temporal
 		select,
 		changePage,
 		setRetry,
-		exporting,
-		exportCurrent,
 	} = state
 	return (
 		<div className="my-5 flex flex-wrap items-center gap-3">
@@ -528,26 +424,23 @@ function TimelineControls({ state, window }: { state: Timeline; window: Temporal
 			>
 				{t('Reload timeline')}
 			</button>
-			<button
-				type="button"
-				className={buttonOutline}
-				disabled={!current || busy || paging || exporting !== null}
-				onClick={() => void exportCurrent()}
-			>
-				{t('Export this capture as GLB')}
-			</button>
-			{exporting && (
-				<p role="status">
-					{t('Exporting…')}
-					{exporting.total > 0 && ` ${exporting.done}/${exporting.total}`}
-				</p>
-			)}
 		</div>
 	)
 }
 
 async function initialWindow(memoryId: string, signal: AbortSignal) {
 	const page = await apiClient.timelapse.frames({ memoryId, direction: 'around' }, { signal })
+	const saved = resumedFrame(page.seriesId)
+	if (saved && saved !== memoryId) {
+		try {
+			const resumed = await nextWindow(memoryId, saved, 'around', page.seriesId, signal)
+			const first = resumed.frames.find(frame => frame.id === saved)
+			if (!first) throw new Error('Saved capture unavailable')
+			return { page: resumed, first, notice: 'Resumed at your last displayed capture.' }
+		} catch {
+			return initialSelection(page, memoryId, 'Your saved capture is unavailable. Opened the selected capture instead.')
+		}
+	}
 	return initialSelection(page, memoryId, '')
 }
 

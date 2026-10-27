@@ -16,7 +16,7 @@ final class AdvancedScreen extends Screen {
   private static final int COLOR_PANEL = 0xFF252926;
   private static final int COLOR_TEXT = 0xFFECE8DC;
   private static final int COLOR_MUTED = 0xFFB2B6AA;
-  private static final int PANEL_HEIGHT = 252;
+  private static final int PANEL_HEIGHT = 236;
   private static final int CONTENT_Y = 64;
   private final Screen parent;
   private final List<List<AbstractWidget>> tabWidgets = new ArrayList<>();
@@ -25,7 +25,6 @@ final class AdvancedScreen extends Screen {
   private EditBox apiInput;
   private EditBox directoryInput;
   private Button historyButton;
-  private Button manualTilesButton;
   private Button unlinkButton;
   private Button localButton;
   private Button selectionButton;
@@ -216,35 +215,6 @@ final class AdvancedScreen extends Screen {
             y + 26,
             half,
             () -> Minecraft.getInstance().setScreen(new CaptureHistoryScreen(this)));
-    manualTilesButton =
-        button(
-            AdvancedTab.CAPTURES,
-            manualTilesLabel(),
-            14,
-            y + 52,
-            panelWidth - 28,
-            this::toggleManualTiles);
-    manualTilesButton.setTooltip(
-        Tooltip.create(Component.translatable("minemories.advanced.manual_tiles.tooltip")));
-  }
-
-  private String manualTilesLabel() {
-    boolean on;
-    try {
-      on = PairingClient.isManualCaptureTiles();
-    } catch (RuntimeException error) {
-      on = false;
-    }
-    return I18n.get("minemories.advanced.manual_tiles." + (on ? "on" : "off"));
-  }
-
-  private void toggleManualTiles() {
-    try {
-      PairingClient.setManualCaptureTiles(!PairingClient.isManualCaptureTiles());
-      manualTilesButton.setMessage(Component.literal(manualTilesLabel()));
-    } catch (RuntimeException error) {
-      status = ClientRuntime.pairingError(error);
-    }
   }
 
   private void initWorld() {

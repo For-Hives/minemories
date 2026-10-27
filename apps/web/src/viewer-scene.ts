@@ -16,18 +16,6 @@ export interface ViewerLoadOptions {
 	preserveView?: boolean
 }
 
-export interface ViewerTileOptions {
-	signal?: AbortSignal
-	translation: { x: number; y: number; z: number }
-}
-
-interface TileTransaction {
-	imported: THREE.Group | null
-	attached: boolean
-	createdRoot: THREE.Group | null
-	previous: THREE.Object3D[]
-}
-
 /** Imported assets belong to one capture; release shared resources exactly once. */
 export function disposeImportedObject(root: THREE.Object3D): void {
 	const geometries = new Set<THREE.BufferGeometry>()
@@ -130,8 +118,6 @@ export class ViewerScene {
 	private disposed = false
 	private preparingWorld = false
 	private loadingFile = false
-	private tileRoot: THREE.Group | null = null
-	private readonly tiles = new Map<string, THREE.Group>()
 	private readonly effects: ViewerEffects
 	private readonly environmentGenerator: THREE.PMREMGenerator
 	private environment: THREE.WebGLRenderTarget | null = null
@@ -320,7 +306,6 @@ export class ViewerScene {
 				child.removeFromParent()
 				disposeImportedObject(child)
 			}
-			if (this.tileRoot && previous.includes(this.tileRoot)) this.forgetTiles()
 			imported = undefined
 			this.events.onFileInfo(file.name, file.size)
 			this.events.onEmptyChange(false)
@@ -335,136 +320,15 @@ export class ViewerScene {
 		}
 	}
 
-	/**
-	 * Adds or replaces one self-contained tile. Its vertices are relative to the tile origin, so the
-	 * caller supplies the translation that places it. Other tiles stay visible and untouched until the
-	 * replacement has compiled.
-	 */
-	async setTile(id: string, data: ArrayBuffer, options: ViewerTileOptions): Promise<void> {
-		if (this.loadingFile) throw new Error('A model is already loading')
-		this.loadingFile = true
-		const transaction: TileTransaction = { imported: null, attached: false, createdRoot: null, previous: [] }
-		try {
-			this.ensureLoadActive(options.signal)
-			this.events.onLoading('Loading the model and textures…')
-			const gltf = await parseEmbeddedGlb(data, buffer => this.loader.parseAsync(buffer, ''))
-			transaction.imported = gltf.scene
-			this.ensureLoadActive(options.signal)
-			this.preparingWorld = true
-			const root = this.attachTile(id, gltf.scene, options.translation, transaction)
-			this.prepareWorldLighting(gltf.scene)
-			this.events.onLoading('Preparing the 3D display…')
-			await this.renderer.compileAsync(gltf.scene, this.camera, this.scene)
-			this.ensureLoadActive(options.signal)
-			this.commitTile(id, root, gltf.scene, transaction)
-		} catch (error) {
-			this.rollbackImport(transaction.imported ?? undefined, transaction.attached, transaction.createdRoot ?? undefined)
-			if (error instanceof UnsupportedGlbError || (error instanceof Error && error.name === 'AbortError')) throw error
-			throw new Error('Could not read this GLB')
-		} finally {
-			this.events.onLoading(null)
-			this.preparingWorld = false
-			this.loadingFile = false
-		}
-	}
-
-	removeTile(id: string): void {
-		const tile = this.tiles.get(id)
-		if (!tile) return
-		if (this.loadingFile) throw new Error('A model is already loading')
-		this.tiles.delete(id)
-		tile.removeFromParent()
-		disposeImportedObject(tile)
-		if (this.tiles.size > 0) return
-		this.releaseTileRoot()
-		this.events.onEmptyChange(true)
-	}
-
-	tileIds(): string[] {
-		return [...this.tiles.keys()]
-	}
-
-	frameTiles(options: { preserveView?: boolean; player?: { x: number; y: number; z: number } } = {}): void {
-		const root = this.tileRoot
-		if (!root) return
-		const player = options.player
-		if (player) root.userData.minemoriesPlayerPosition = [player.x, player.y, player.z]
-		this.frameModel(root, options.preserveView)
-		this.updateEnvironment()
-		this.clouds.update(this.camera.position, 0)
-		this.renderScene()
-	}
-
-	/** Returns the root that holds the tile; a root created by this transaction is recorded for rollback. */
-	private attachTile(
-		id: string,
-		imported: THREE.Group,
-		translation: ViewerTileOptions['translation'],
-		transaction: TileTransaction
-	): THREE.Group {
-		imported.userData.tileId = id
-		imported.position.set(translation.x, translation.y, translation.z)
-		let root = this.tileRoot
-		if (!root) {
-			root = new THREE.Group()
-			transaction.createdRoot = root
-			transaction.previous = [...this.modelRoot.children]
-			for (const child of transaction.previous) child.visible = false
-			this.modelRoot.add(root)
-		}
-		transaction.attached = true
-		root.add(imported)
-		return root
-	}
-
-	private commitTile(id: string, root: THREE.Group, imported: THREE.Group, transaction: TileTransaction): void {
-		const first = this.tiles.size === 0
-		const replaced = this.tiles.get(id)
-		this.tileRoot = root
-		// Map.set keeps the original position of a replaced id, so tile order is stable.
-		this.tiles.set(id, imported)
-		if (replaced) {
-			replaced.removeFromParent()
-			disposeImportedObject(replaced)
-		}
-		for (const child of transaction.previous) {
-			child.removeFromParent()
-			disposeImportedObject(child)
-		}
-		// The transaction is complete: a later failure must not detach a tile that is now tracked.
-		transaction.imported = null
-		transaction.createdRoot = null
-		transaction.attached = false
-		transaction.previous = []
-		// The environment is expensive; it only needs to exist once, for the first visible tile.
-		if (first) this.updateEnvironment()
-		this.renderScene()
-		if (first) this.events.onEmptyChange(false)
-	}
-
-	private releaseTileRoot(): void {
-		const root = this.tileRoot
-		this.tileRoot = null
-		if (!root) return
-		root.removeFromParent()
-		disposeImportedObject(root)
-	}
-
-	private forgetTiles(): void {
-		this.tiles.clear()
-		this.tileRoot = null
-	}
-
 	private ensureLoadActive(signal?: AbortSignal): void {
 		if (this.disposed || signal?.aborted) throw new DOMException('Loading cancelled', 'AbortError')
 	}
 
-	private rollbackImport(imported: THREE.Group | undefined, attached: boolean, createdRoot?: THREE.Object3D): void {
+	private rollbackImport(imported: THREE.Group | undefined, attached: boolean): void {
 		if (imported) {
 			imported.removeFromParent()
 			if (!(attached && this.disposed)) disposeImportedObject(imported)
 		}
-		createdRoot?.removeFromParent()
 		if (attached) {
 			for (const child of this.modelRoot.children) child.visible = true
 		}
@@ -612,7 +476,6 @@ export class ViewerScene {
 		this.precipitation.dispose()
 		this.clouds.removeFromParent()
 		disposeImportedObject(this.scene)
-		this.forgetTiles()
 		this.keyLight.shadow.dispose()
 		this.effects.dispose()
 		this.environment?.dispose()

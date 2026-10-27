@@ -18,25 +18,8 @@ export function ViewerPage() {
 	const [search] = useSearchParams()
 	const id = search.get('memory')
 	if (!(import.meta.env.DEV || id)) return <Navigate to="/explorer" replace />
-	return id ? <WorldViewer key={id} memoryId={id} /> : <SingleViewerPage />
-}
-
-/** A capture opens as its world's evolution; captures without a world identity use the plain viewer. */
-function WorldViewer({ memoryId }: { memoryId: string }) {
-	const [kind, setKind] = useState<'probing' | 'world' | 'plain'>('probing')
-	useEffect(() => {
-		const controller = new AbortController()
-		apiClient.timelapse
-			.frames({ memoryId, direction: 'around' }, { signal: controller.signal })
-			.then(() => setKind('world'))
-			// Any failure (no identity, not the owner…) is reported by the plain viewer's own download.
-			.catch(() => {
-				if (!controller.signal.aborted) setKind('plain')
-			})
-		return () => controller.abort()
-	}, [memoryId])
-	if (kind === 'probing') return <section className="viewer-page cinema-page" aria-busy="true" />
-	return kind === 'world' ? <TimelapsePage memoryId={memoryId} /> : <SingleViewerPage />
+	if (search.get('timelapse') === '1' && id) return <TimelapsePage key={id} memoryId={id} />
+	return <SingleViewerPage />
 }
 
 function SingleViewerPage() {

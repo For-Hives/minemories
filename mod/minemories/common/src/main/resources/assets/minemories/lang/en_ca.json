@@ -136,9 +136,6 @@
   "minemories.advanced.title": "Advanced settings",
   "minemories.advanced.tab.account": "Account",
   "minemories.advanced.tab.captures": "Captures",
-  "minemories.advanced.manual_tiles.on": "Manual captures as tiles: on",
-  "minemories.advanced.manual_tiles.off": "Manual captures as tiles: off",
-  "minemories.advanced.manual_tiles.tooltip": "Manual captures join the world timeline on the website. The local file can no longer be opened in Blender.",
   "minemories.advanced.tab.world": "World",
   "minemories.advanced.tab.privacy": "Privacy"
 }

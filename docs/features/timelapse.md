@@ -5,7 +5,6 @@ les états réellement enregistrés, avec navigation, lecture à cadence réglab
 pagination et reprise locale. L’index privé et le stockage dédupliqué sont raccordés
 aux téléchargements existants. La timeline de démonstration du site reste illustrative.
 Le fonctionnement et les validations de #75 sont décrits ci-dessous.
-Une capture découpée en tuiles (`.mmtiles`) est décrite dans [tiles.md](tiles.md) ; les captures tuilées d'un monde y forment une seule série, avec des zones qui évoluent indépendamment.
 
 ## Identifier les futurs états
 
@@ -62,13 +61,6 @@ supplémentaire du fichier de propriétés à chaque tick d’exploration.
 la profondeur explorée peut s’étendre sans changer la zone ; changer le centre
 horizontal ou le rayon produit une autre zone. Les anciens souvenirs ne seront
 pas affectés rétroactivement à une série sur la seule base de leur nom ou seed.
-
-L’historique d’exploration (profondeur par chunk et temps par zone de 64 blocs) reste
-local et ne sert qu’à choisir le fond du volume capturé et à suggérer des zones. Il
-n’ajoute aucun champ aux métadonnées : une capture se rattache à sa zone par `zoneId`,
-et une tuile par sa position absolue dans la grille (voir [tiles.md](tiles.md)). Un
-ancien historique, sans fichier de zones, se lit toujours et approfondit le volume sans
-changer le `zoneId` en mode `around` (test `CaptureIdentityTest`).
 
 L’origine correspond au centre des bornes effectivement exportées, et non à la
 position du joueur. En AFK progressif elle est calculée après la recherche de
@@ -416,12 +408,3 @@ Le contrôle global final `bun run build` passe sous Bun 1.4.3 / JDK 21, avec
 `bun check`, 140 tests web, 235 tests API actifs et les contrôles Java. Les six
 tests Garage nécessitent le service dédié ; leur validation réelle est décrite
 aux checkpoints backend ci-dessus. Les seuils de couverture sont inchangés.
-
-## Un seul visualiseur
-
-Ouvrir un souvenir dans le viewer ouvre directement l'évolution de son monde : le même
-visualiseur (studio, ambiance, partage) et, dès qu'il y a plusieurs captures, la barre de
-lecture temporelle. Il n'y a plus de mode « Timeline » séparé. Un souvenir sans identité de
-monde (ancien, import) s'ouvre dans le visualiseur simple. Les anciennes captures en GLB
-unique restent une série par zone exacte ; seules les captures tuilées (défaut depuis
-0.22) se rejoignent dans une même série par monde.
