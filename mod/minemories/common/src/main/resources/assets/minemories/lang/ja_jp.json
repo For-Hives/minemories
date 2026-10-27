@@ -132,5 +132,6 @@
   "minemories.hub.busy": "処理中…",
   "minemories.hub.sent": "思い出を保存して送信したよ！",
   "minemories.hub.saved_local": "思い出をこのコンピューターに保存したよ。",
-  "minemories.hub.failed": "問題が起きたよ。もう一度ためしてね。"
+  "minemories.hub.failed": "問題が起きたよ。もう一度ためしてね。",
+  "minemories.advanced.title": "詳細設定"
 }
