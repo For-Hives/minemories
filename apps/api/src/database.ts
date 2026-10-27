@@ -8,6 +8,7 @@ import { boundColdStorageProvider, verifyColdStorageTarget } from './cold-storag
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { configureS3StorageProvider } from './storage-s3'
+import { migrateTileIndex } from './tile-index'
 import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTimelapseIndex } from './timelapse-index'
 import { migrateTrashRetention } from './trash-retention'
@@ -89,6 +90,7 @@ migrateDiscovery(database)
 migrateTimelapse(database)
 
 migrateTimelapseIndex(database)
+migrateTileIndex(database)
 export const coldStorageConfiguration = verifyColdStorageTarget(database, process.env)
 configureS3StorageProvider(boundColdStorageProvider(database))
 
