@@ -50,7 +50,15 @@ export const thumbnailDataUrl = z
 export const DAY_MS = 24 * 60 * 60 * 1000
 export const TRASH_RETENTION_MS = 30 * DAY_MS
 
+// Present when the capture belongs to a timeline: the gallery shows one card per timeline, at its latest capture.
+const memoryTimeline = z.object({
+	seriesId: z.string().regex(/^[a-f0-9]{64}$/),
+	frames: z.number().int().positive(),
+	latestId: z.string().uuid(),
+})
+
 const memorySchema = z.object({
+	timeline: memoryTimeline.optional(),
 	id: z.string().uuid(),
 	name: z.string(),
 	size: z.number().int().nonnegative(),

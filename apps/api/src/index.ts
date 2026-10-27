@@ -51,6 +51,7 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
+import { encodeBuffered } from './response-encoding'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
@@ -179,10 +180,12 @@ async function assembledCapture(
 		const objectKey = access()
 		if (!objectKey) return context.json({ error: 'memory_not_found' }, 404)
 		recordCaptureOpening(database, objectKey)
-		return context.body(new Uint8Array(glb), 200, {
+		const encoded = await encodeBuffered(context.req.header('Accept-Encoding'), new Uint8Array(glb))
+		return context.body(encoded.body, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 			'X-Content-Type-Options': 'nosniff',
+			...encoded.headers,
 		})
 	} catch (error) {
 		return assembledFailure(context, error, access)
@@ -285,7 +288,11 @@ const router = os.router({
 	memories: {
 		list: os.memories.list.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			return listMemories(context.userId)
+			const timelines = temporalIndex.timelines(context.userId)
+			return listMemories(context.userId).map(memory => {
+				const timeline = timelines.get(memory.id)
+				return timeline ? { ...memory, timeline } : memory
+			})
 		}),
 		listTrash: os.memories.listTrash.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
@@ -582,10 +589,12 @@ app.get('/api/memories/:id/tiles/:x/:z', async context => {
 	try {
 		const bytes = await readAuthorizedTile(captureFiles, locate, context.req.raw.signal)
 		if (!bytes) return context.json({ error: 'tile_not_found' }, 404)
-		return context.body(new Uint8Array(bytes), 200, {
+		const encoded = await encodeBuffered(context.req.header('Accept-Encoding'), new Uint8Array(bytes))
+		return context.body(encoded.body, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
 			'X-Content-Type-Options': 'nosniff',
+			...encoded.headers,
 		})
 	} catch (error) {
 		const availability = archivedAvailability(error, lookup)

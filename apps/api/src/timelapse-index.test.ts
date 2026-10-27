@@ -349,3 +349,37 @@ test('cumulative tiles keep each zone at its last known state, replace updated c
 		await f.close()
 	}
 })
+
+test('timelines groups tiled captures per world, indexing pending ones, and keeps other captures apart', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db),
+			at = (minute: number, minX: number) => ({
+				...frameMetadata,
+				captureStartedAt: `2026-10-15T01:0${minute}:00Z`,
+				captureBounds: { minX, minY: 0, minZ: 0, maxX: minX + 128, maxY: 2, maxZ: 128 },
+				captureOrigin: { x: minX + 64, y: 1, z: 64 },
+			}),
+			first = await f.add(at(1, 0), payload),
+			second = await f.add(at(2, 128), payload),
+			plain = await f.add({ ...frameMetadata, zoneId: 'f'.repeat(64) }, payload),
+			legacy = await f.add({ dimension: 'minecraft:overworld' }, payload)
+		putTiles(f, first.id, [[0, 0, 1]])
+		putTiles(f, second.id, [[1, 0, 2]])
+		const timelines = index.timelines('owner')
+		expect(timelines.get(first.id)).toEqual({
+			seriesId: timelines.get(second.id)?.seriesId ?? '',
+			frames: 2,
+			latestId: second.id,
+		})
+		expect(timelines.get(second.id)?.latestId).toBe(second.id)
+		expect(timelines.get(plain.id)?.frames).toBe(1)
+		expect(timelines.get(plain.id)?.seriesId).not.toBe(timelines.get(first.id)?.seriesId)
+		expect(timelines.has(legacy.id)).toBe(false)
+		expect(index.timelines('other').size).toBe(0)
+		f.db.query('UPDATE memories SET deleted_at=1 WHERE id=?').run(second.id)
+		expect(index.timelines('owner').get(first.id)?.latestId).toBe(first.id)
+	} finally {
+		await f.close()
+	}
+})

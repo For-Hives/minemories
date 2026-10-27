@@ -8,7 +8,7 @@ import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
+import { type CaptureStack, collapseTimelines, groupCaptures, stackCaptures } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -312,7 +312,7 @@ function CaptureFolders({
 	if (memories.length === 0) return null
 	return (
 		<div className="space-y-4">
-			{groupCaptures(memories).map(group => {
+			{groupCaptures(collapseTimelines(memories)).map(group => {
 				const open = expanded.has(group.key)
 				const stacks = open ? stackCaptures(group.captures) : []
 				return (
@@ -661,6 +661,11 @@ function SnapshotCard({
 						: ''}
 					{formatFileSize(memory.size, locale)}
 				</p>
+				{memory.timeline && memory.timeline.frames > 1 && (
+					<p className="mb-0 mt-[6px] text-[10px] font-bold text-[#9ab88a]">
+						{memory.timeline.frames} {t('captures')} · {t('Evolution')}
+					</p>
+				)}
 				<CaptureMetadata metadata={memory.metadata} />
 				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<button

@@ -9,7 +9,7 @@ fixe le format commun au mod, à l'API et au viewer. Le comportement historique
 
 - Une tuile fait `tileChunks` × `tileChunks` chunks, soit `tileBlocks = 16 × tileChunks`
   blocs de côté. `tileChunks` est compris entre 1 et 16 ; la valeur par défaut de la grille est 8
-  (128 blocs) ; le mod utilise 4 (64 blocs). Une capture mesure au plus 257 blocs : 16 chunks reste donc la limite.
+  (128 blocs) ; le mod utilise 2 (32 blocs). Une capture mesure au plus 257 blocs : 16 chunks reste donc la limite.
 - Les indices de tuile sont **absolus** : `tx = floor(x / tileBlocks)`,
   `tz = floor(z / tileBlocks)`, arrondi vers le bas aussi pour les coordonnées négatives.
   La grille ne dépend ni de l'origine de la capture ni de la position du joueur.
@@ -91,8 +91,8 @@ streaming) et #148 (export à une date et exploration).
 La découpe est active par défaut et se règle dans `config/minemories.properties` :
 
 - `captureTiles` active la découpe (défaut : `true`, `false` pour un `.glb` unique) ;
-- `captureTileChunks` règle la taille de tuile, de 1 à 16 chunks (défaut : 4). Une valeur
-  invalide ou hors bornes revient à 4.
+- `captureTileChunks` règle la taille de tuile, de 1 à 16 chunks (défaut : 2). Une valeur
+  invalide ou hors bornes revient à 2.
 
 Il n'y a pas encore de bouton dans l'interface M.
 
@@ -172,3 +172,12 @@ Au-delà de 1024 cellules, les plus proches de la capture sont conservées.
 
 Limite : une capture non alignée (empreinte de plus de 257 blocs une fois alignée, ou
 anciennes captures) qui ne couvre qu'une partie d'une tuile remplace toute la tuile.
+
+## Poids et transfert
+
+Une tuile de 64 blocs de côté pèse environ 7 Mio non compressés (≈ 150 octets par quad), mais
+le GLB se compresse environ 8 fois : l'API répond en gzip (`Content-Encoding`) aux routes de tuile
+et de GLB assemblé quand le navigateur l'accepte. Les empreintes et tailles du manifeste restent
+celles des octets décodés. Le mod utilise des tuiles de 32 blocs pour limiter le débordement de la
+zone alignée et charger progressivement ; les captures faites avec une autre taille de tuile ne
+sont pas combinées dans la vue monde.

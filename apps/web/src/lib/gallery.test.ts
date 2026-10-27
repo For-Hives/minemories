@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { groupCaptures, stackCaptures } from './gallery'
+import { collapseTimelines, groupCaptures, stackCaptures } from './gallery'
 
 it('groups worlds by name and seed, servers by name, and preserves newest-first order', () => {
 	const capture = (id: string, worldName: string | null, serverName: string | null, seed: string | null = null) => ({
@@ -47,4 +47,10 @@ it('stacks nearby captures and isolates unknown locations', () => {
 	expect(
 		stackCaptures([capture('e', null, null, null), capture('f', null, null, null)]).map(stack => stack.captures.length)
 	).toEqual([2])
+})
+
+it('collapseTimelines keeps the latest capture of each timeline and untouched captures', () => {
+	const timeline = (latestId: string) => ({ seriesId: 'a'.repeat(64), frames: 2, latestId })
+	const captures = [{ id: 'old', timeline: timeline('new') }, { id: 'new', timeline: timeline('new') }, { id: 'alone' }]
+	expect(collapseTimelines(captures).map(capture => capture.id)).toEqual(['new', 'alone'])
 })

@@ -16,8 +16,11 @@ import java.util.Objects;
 import java.util.Properties;
 
 final class ClientSettings {
-  /** Small tiles keep AFK captures light: aligned to the grid they span at most 128 blocks. */
-  static final int DEFAULT_TILE_CHUNKS = 4;
+  /**
+   * Small tiles keep captures light: aligned to the grid, a radius-32 capture spans at most 96
+   * blocks.
+   */
+  static final int DEFAULT_TILE_CHUNKS = 2;
 
   static final String DEFAULT_API_URL = "https://api.minemories.net";
   static final String DEFAULT_SITE_URL = "https://minemories.net";

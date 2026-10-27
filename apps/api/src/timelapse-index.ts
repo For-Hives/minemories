@@ -278,6 +278,40 @@ export class TimelapseIndex {
 		}
 	}
 
+	/** Indexes a user's captures that carry a world identity but are not indexed yet, a bounded batch at a time. */
+	indexPending(userId: string, limit = 200): void {
+		const rows = this.database
+			.query(`SELECT id FROM memories m WHERE user_id=? AND deleted_at IS NULL
+		 AND CASE WHEN json_valid(metadata_json) THEN json_type(metadata_json,'$.worldId')='text' ELSE 0 END
+		 AND NOT EXISTS(SELECT 1 FROM timelapse_index i WHERE i.memory_id=m.id)
+		 AND NOT EXISTS(SELECT 1 FROM timelapse_index_rejected r WHERE r.memory_id=m.id) ORDER BY created_at,id LIMIT ?`)
+			.all(userId, limit) as { id: string }[]
+		for (const row of rows) {
+			if (!this.put(row.id))
+				this.database
+					.query('INSERT OR IGNORE INTO timelapse_index_rejected SELECT id FROM memories WHERE id=?')
+					.run(row.id)
+		}
+	}
+
+	/** Timeline of each indexed capture: its series, the number of captures and the latest one. */
+	timelines(userId: string): Map<string, { seriesId: string; frames: number; latestId: string }> {
+		this.indexPending(userId)
+		const rows = this.database
+			.query(`SELECT i.memory_id,i.series_key FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
+		 WHERE i.user_id=? AND m.deleted_at IS NULL ORDER BY i.series_key,i.time_key,i.memory_id`)
+			.all(userId) as Array<{ memory_id: string; series_key: string }>
+		const bySeries = new Map<string, string[]>()
+		for (const row of rows) bySeries.set(row.series_key, [...(bySeries.get(row.series_key) ?? []), row.memory_id])
+		const result = new Map<string, { seriesId: string; frames: number; latestId: string }>()
+		for (const [seriesId, ids] of bySeries) {
+			const latestId = ids.at(-1)
+			if (!latestId) continue
+			for (const id of ids) result.set(id, { seriesId, frames: ids.length, latestId })
+		}
+		return result
+	}
+
 	private entry(userId: string, id: string): Entry {
 		if (!this.database.query('SELECT 1 FROM memories WHERE id=? AND user_id=? AND deleted_at IS NULL').get(id, userId))
 			throw new ORPCError('NOT_FOUND')
