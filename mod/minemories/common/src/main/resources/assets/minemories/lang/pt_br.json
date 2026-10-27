@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "Não foi possível ler as opções: nenhuma coleta.",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "Consentimento revogado aqui, mas não salvo. Corrija as permissões antes de reiniciar.",
   "minemories.ui.reglage_non_enregistre_reessaie": "Opção não salva. Tente novamente.",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "Desativado por padrão. Seu consentimento após vincular a conta ajuda a corrigir exportações e falhas.",
+  "minemories.ui.diagnostics_intro": "Ativado por padrão depois que você conecta. Ajuda a corrigir problemas de exportação e falhas. Você pode desativar aqui a qualquer momento.",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "Versões, erro e linhas de código. Até oito relatórios privados por no máximo 7 dias, reenviados após reiniciar.",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "Excluídos: mensagens, URLs, tokens, coordenadas, semente, nomes de mundo/jogador e capturas.",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "NÃO limpa a fila local e solicita exclusão no servidor. Sem conexão, vale o prazo de retenção do servidor.",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "Nada é enviado sem seu consentimento.",
+  "minemories.ui.pret": "Pronto.",
   "minemories.ui.service_minemories": "Serviço Minemories",
   "minemories.ui.mode_simple": "Modo simples",
   "minemories.ui.mode_avance": "Modo avançado",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "Capturas AFK ativadas, mesmo em pausa.",
   "minemories.ui.captures_automatiques_desactivees": "Capturas automáticas desativadas.",
   "minemories.ui.connexion_du_compte": "Conectando conta…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Conta conectada. Você pode capturar e enviar.",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Conta conectada. Você pode capturar e enviar. Os diagnósticos técnicos estão ativados para ajudar a corrigir erros (sem dados pessoais). Você pode desativá-los nas configurações do Minemories.",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "Conta desconectada. Suas memórias online foram preservadas.",
   "minemories.ui.adresse_de_lapi_https": "Endereço da API (HTTPS)",
   "minemories.ui.dossier_local_historique_conserve": "Pasta local (histórico preservado)",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "Profundidade: %s",
   "minemories.options.afk.enabled": "Capturas AFK: ativadas",
   "minemories.options.afk.disabled": "Capturas AFK: desativadas",
-  "minemories.options.diagnostics.enabled": "Diagnóstico: SIM"
+  "minemories.options.diagnostics.enabled": "Diagnóstico: SIM",
+  "minemories.chat.pair_reminder": "Você ainda não está conectado ao Minemories: suas memórias ficam neste computador. Clique aqui para conectar.",
+  "minemories.chat.pair_reminder_hover": "Abrir as configurações do Minemories",
+  "minemories.chat.pair_diagnostics_notice": "Os diagnósticos técnicos estão ativados para ajudar a corrigir erros (sem dados pessoais). Você pode desativá-los nas configurações do Minemories."
 }

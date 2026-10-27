@@ -709,7 +709,7 @@
 	"Privacy": "개인 정보 보호",
 	"Privacy — Minemories": "개인정보 보호 — Minemories",
 	"Private": "비공개",
-	"Private technical reports with limited retention. No reports without pairing and player consent. Crash reports may arrive after the next game launch.": "보존이 제한된 비공개 기술 보고서입니다. 페어링 및 플레이어 동의 없이는 신고할 수 없습니다. 충돌 보고서는 다음 게임 출시 이후에 도착할 수 있습니다.",
+	"Private technical reports with limited retention. No reports before pairing; players can turn diagnostics off in the game. Crash reports may arrive after the next game launch.": "보존이 제한된 비공개 기술 보고서입니다. 페어링 전에는 보고서가 전송되지 않으며, 플레이어는 게임에서 진단을 끌 수 있습니다. 충돌 보고서는 다음 게임 실행 후에 도착할 수 있습니다.",
 	"Profile": "프로필",
 	"Project repository": "프로젝트 저장소",
 	"Project terms": "프로젝트 조건",

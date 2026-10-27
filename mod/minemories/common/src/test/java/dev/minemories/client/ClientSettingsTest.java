@@ -66,7 +66,8 @@ class ClientSettingsTest {
             temporary));
     assertNull(settings.getProperty("deviceToken"));
     assertNull(settings.getProperty("deviceId"));
-    assertFalse(ClientSettings.diagnosticsConsent(settings));
+    assertFalse(settings.containsKey("diagnosticsConsent"));
+    assertFalse(ClientSettings.diagnosticsRefused(settings));
     assertTrue(ClientSettings.afkSnapshots(settings));
     assertEquals("https://private.example", settings.getProperty("apiUrl"));
   }
@@ -182,20 +183,114 @@ class ClientSettingsTest {
   }
 
   @Test
-  void diagnosticsRequireAnExplicitStoredTrueAndPersistAcrossRestart() throws IOException {
-    Properties settings = new Properties();
-    assertFalse(ClientSettings.diagnosticsConsent(settings));
-    for (String invalid : new String[] {"yes", "TRUE", "1", "false", ""}) {
-      settings.setProperty("diagnosticsConsent", invalid);
-      assertFalse(ClientSettings.diagnosticsConsent(settings));
-    }
+  void diagnosticsDefaultToOnForAnAbsentKeyAndPersistExplicitChoices() throws IOException {
+    Properties settings = paired();
+    assertTrue(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    assertFalse(ClientSettings.diagnosticsRefused(settings));
+    assertEquals(
+        ClientSettings.diagnosticsBinding(settings, null),
+        ClientSettings.diagnosticsIdentityKey(settings, null));
     settings.setProperty("diagnosticsConsent", "true");
+    settings.setProperty("diagnosticsIdentity", ClientSettings.diagnosticsBinding(settings, null));
     Path path = temporary.resolve("config/minemories.properties");
     ClientSettings.save(path, settings);
-    assertTrue(ClientSettings.diagnosticsConsent(ClientSettings.read(path)));
+    assertTrue(ClientSettings.diagnosticsConsentForIdentity(ClientSettings.read(path), null));
     settings.setProperty("diagnosticsConsent", "false");
     ClientSettings.save(path, settings);
-    assertFalse(ClientSettings.diagnosticsConsent(ClientSettings.read(path)));
+    assertFalse(ClientSettings.diagnosticsConsentForIdentity(ClientSettings.read(path), null));
+  }
+
+  @Test
+  void anyValueOtherThanExactTrueIsRefused() {
+    Properties settings = paired();
+    for (String refused : new String[] {"false", "FALSE", "yes", "1", ""}) {
+      settings.setProperty("diagnosticsConsent", refused);
+      assertTrue(ClientSettings.diagnosticsRefused(settings), refused);
+      assertFalse(ClientSettings.diagnosticsConsentForIdentity(settings, null), refused);
+      assertFalse(ClientSettings.diagnosticsConsent(settings), refused);
+    }
+    settings.setProperty("diagnosticsConsent", "TRUE");
+    assertTrue(ClientSettings.diagnosticsRefused(settings));
+    settings.remove("diagnosticsConsent");
+    assertFalse(ClientSettings.diagnosticsRefused(settings));
+  }
+
+  @Test
+  void defaultIdentityChangesWithTheTokenSoThePreviousOutboxIsPurged() {
+    Properties settings = paired();
+    String before = ClientSettings.diagnosticsIdentityKey(settings, null);
+    settings.setProperty("deviceToken", "rotated-token");
+    assertNotEquals(before, ClientSettings.diagnosticsIdentityKey(settings, null));
+  }
+
+  @Test
+  void diagnosticsEpochDependsOnWhetherConsentIsExplicit() {
+    Properties settings = paired();
+    assertEquals("default", ClientSettings.diagnosticsEpoch(settings));
+    settings.setProperty("diagnosticsConsent", "true");
+    assertEquals("legacy", ClientSettings.diagnosticsEpoch(settings));
+    settings.setProperty("diagnosticsEpoch", "epoch-1");
+    assertEquals("epoch-1", ClientSettings.diagnosticsEpoch(settings));
+  }
+
+  @Test
+  void explicitIdentityKeyIsTheStoredIdentity() {
+    Properties settings = paired();
+    settings.setProperty("diagnosticsConsent", "true");
+    settings.setProperty("diagnosticsIdentity", "stored");
+    assertEquals("stored", ClientSettings.diagnosticsIdentityKey(settings, null));
+  }
+
+  @Test
+  void forgetBoundDiagnosticsKeepsAnExplicitRefusal() {
+    Properties refused = paired();
+    refused.setProperty("diagnosticsConsent", "false");
+    refused.setProperty("diagnosticsIdentity", "old");
+    refused.setProperty("diagnosticsEpoch", "epoch");
+    ClientSettings.forgetBoundDiagnostics(refused);
+    assertEquals("false", refused.getProperty("diagnosticsConsent"));
+    assertNull(refused.getProperty("diagnosticsIdentity"));
+    assertNull(refused.getProperty("diagnosticsEpoch"));
+    assertTrue(ClientSettings.diagnosticsRefused(refused));
+
+    Properties explicit = paired();
+    explicit.setProperty("diagnosticsConsent", "true");
+    explicit.setProperty("diagnosticsIdentity", "old");
+    ClientSettings.forgetBoundDiagnostics(explicit);
+    assertFalse(explicit.containsKey("diagnosticsConsent"));
+    assertFalse(explicit.containsKey("diagnosticsIdentity"));
+  }
+
+  @Test
+  void changingApiKeepsAnExplicitRefusalButDropsAnExplicitConsent() {
+    Properties refused = paired();
+    refused.setProperty("diagnosticsConsent", "false");
+    ClientSettings.configure(
+        refused, ClientSettings.DEFAULT_API_URL, "https://other.example", temporary.toString(), temporary);
+    assertEquals("false", refused.getProperty("diagnosticsConsent"));
+    assertTrue(ClientSettings.diagnosticsRefused(refused));
+
+    Properties accepted = paired();
+    accepted.setProperty("diagnosticsConsent", "true");
+    accepted.setProperty("diagnosticsIdentity", "old");
+    ClientSettings.configure(
+        accepted, ClientSettings.DEFAULT_API_URL, "https://other.example", temporary.toString(), temporary);
+    assertFalse(accepted.containsKey("diagnosticsConsent"));
+    assertFalse(accepted.containsKey("diagnosticsIdentity"));
+  }
+
+  @Test
+  void pairingReminderIsOnUnlessExplicitlyDisabled() {
+    Properties settings = new Properties();
+    assertTrue(ClientSettings.pairingReminder(settings));
+    settings.setProperty("pairingReminder", "false");
+    assertFalse(ClientSettings.pairingReminder(settings));
+    settings.setProperty("pairingReminder", "FALSE");
+    assertFalse(ClientSettings.pairingReminder(settings));
+    for (String enabled : new String[] {"true", "no", ""}) {
+      settings.setProperty("pairingReminder", enabled);
+      assertTrue(ClientSettings.pairingReminder(settings), enabled);
+    }
   }
 
   @Test

@@ -130,9 +130,9 @@ final class DiagnosticsClient {
           ClientSettings.apiUrl(current, System.getenv("MINEMORIES_API_URL")),
           token,
           device,
-          current.getProperty("diagnosticsIdentity")
+          ClientSettings.diagnosticsIdentityKey(current, System.getenv("MINEMORIES_API_URL"))
               + ":"
-              + current.getProperty("diagnosticsEpoch", "legacy"));
+              + ClientSettings.diagnosticsEpoch(current));
     } catch (RuntimeException ignored) {
       return null;
     }

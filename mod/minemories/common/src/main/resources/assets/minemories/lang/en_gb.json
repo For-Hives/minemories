@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "Unreadable settings: no data is collected.",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "Consent withdrawn here, but not saved. Fix file permissions before restarting.",
   "minemories.ui.reglage_non_enregistre_reessaie": "Setting not saved. Try again.",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "Disabled by default. Your consent after pairing helps fix exports and crashes.",
+  "minemories.ui.diagnostics_intro": "On by default once you are connected. Helps fix export and crash problems. You can turn it off here at any time.",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "Versions, error and code lines. Up to eight private reports kept for at most 7 days, retried after restarting.",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "Excluded: messages, URLs, tokens, coordinates, seed, world/player names and captures.",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "OFF clears the local queue and requests server deletion. While offline, server retention applies.",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "Nothing is sent without your consent.",
+  "minemories.ui.pret": "Ready.",
   "minemories.ui.service_minemories": "Minemories service",
   "minemories.ui.mode_simple": "Simple mode",
   "minemories.ui.mode_avance": "Advanced mode",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "AFK captures enabled, even while paused.",
   "minemories.ui.captures_automatiques_desactivees": "Automatic captures disabled.",
   "minemories.ui.connexion_du_compte": "Connecting account…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Account connected. You can capture and send.",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Account connected. You can capture and send. Technical diagnostics are on to help fix bugs (no personal data). You can turn them off in the Minemories settings.",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "Account disconnected. Your online memories are preserved.",
   "minemories.ui.adresse_de_lapi_https": "API address (HTTPS)",
   "minemories.ui.dossier_local_historique_conserve": "Local folder (history preserved)",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "Depth: %s",
   "minemories.options.afk.enabled": "AFK captures: enabled",
   "minemories.options.afk.disabled": "AFK captures: disabled",
-  "minemories.options.diagnostics.enabled": "Diagnostics: ON"
+  "minemories.options.diagnostics.enabled": "Diagnostics: ON",
+  "minemories.chat.pair_reminder": "You are not connected to Minemories yet: your memories stay on this computer. Click here to connect.",
+  "minemories.chat.pair_reminder_hover": "Open the Minemories settings",
+  "minemories.chat.pair_diagnostics_notice": "Technical diagnostics are on to help fix bugs (no personal data). You can turn them off in the Minemories settings."
 }

@@ -30,7 +30,7 @@ final class MinemoriesScreen extends Screen {
   private Button storageButton;
   private Button historyButton;
   private final StorageStatusView storage = new StorageStatusView();
-  private String status = I18n.get("minemories.ui.aucun_envoi_sans_ton_accord");
+  private String status = I18n.get("minemories.ui.pret");
   private String service = I18n.get("minemories.ui.service_minemories");
   private boolean paired;
   private boolean afk;

@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "設定を読み取れないため、収集しません。",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "ここでは同意を取り消しましたが、保存できませんでした。再起動前にファイルの権限を確認してください。",
   "minemories.ui.reglage_non_enregistre_reessaie": "設定を保存できませんでした。再試行してください。",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "初期状態では無効です。連携後に同意すると、書き出しの不具合やクラッシュの修正に役立ちます。",
+  "minemories.ui.diagnostics_intro": "連携後は初期状態で有効です。書き出しやクラッシュの問題の修正に役立ちます。ここでいつでもオフにできます。",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "バージョン、エラー、コード行を含みます。非公開レポートは最大8件、7日間まで保持し、再起動後に再送します。",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "メッセージ、URLs、トークン、座標、シード、ワールド名・プレイヤー名、撮影は含みません。",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "オフにするとローカルの待機列を消去し、サーバーに削除を依頼します。オフライン時はサーバーの保存期限が適用されます。",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "同意なしには送信しません。",
+  "minemories.ui.pret": "準備完了です。",
   "minemories.ui.service_minemories": "Minemoriesサービス",
   "minemories.ui.mode_simple": "シンプルモード",
   "minemories.ui.mode_avance": "詳細モード",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "一時停止中もAFK撮影を行います。",
   "minemories.ui.captures_automatiques_desactivees": "自動撮影を無効にしました。",
   "minemories.ui.connexion_du_compte": "アカウントを接続中…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "接続しました。撮影して送信できます。",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "接続しました。撮影して送信できます。 不具合の修正に役立つよう、技術的な診断情報が有効になっています（個人情報は含みません）。Minemoriesの設定でオフにできます。",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "アカウントを切断しました。オンラインの思い出は保持されます。",
   "minemories.ui.adresse_de_lapi_https": "APIアドレス（HTTPS）",
   "minemories.ui.dossier_local_historique_conserve": "ローカルフォルダー（履歴を保持）",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "深度：%s",
   "minemories.options.afk.enabled": "AFK撮影：有効",
   "minemories.options.afk.disabled": "AFK撮影：無効",
-  "minemories.options.diagnostics.enabled": "診断：オン"
+  "minemories.options.diagnostics.enabled": "診断：オン",
+  "minemories.chat.pair_reminder": "まだMinemoriesに接続していません。思い出はこのパソコンに残ります。ここをクリックして接続できます。",
+  "minemories.chat.pair_reminder_hover": "Minemoriesの設定を開く",
+  "minemories.chat.pair_diagnostics_notice": "不具合の修正に役立つよう、技術的な診断情報が有効になっています（個人情報は含みません）。Minemoriesの設定でオフにできます。"
 }

@@ -164,9 +164,39 @@ final class ClientSettings {
   }
 
   static boolean diagnosticsConsentForIdentity(Properties settings, String environmentApi) {
+    if (!settings.containsKey("diagnosticsConsent")) return true;
     return diagnosticsConsent(settings)
         && diagnosticsBinding(settings, environmentApi)
             .equals(settings.getProperty("diagnosticsIdentity"));
+  }
+
+  static boolean diagnosticsRefused(Properties settings) {
+    return settings.containsKey("diagnosticsConsent")
+        && !"true".equals(settings.getProperty("diagnosticsConsent"));
+  }
+
+  static String diagnosticsIdentityKey(Properties settings, String environmentApi) {
+    if (!settings.containsKey("diagnosticsConsent"))
+      return diagnosticsBinding(settings, environmentApi);
+    return settings.getProperty("diagnosticsIdentity");
+  }
+
+  static String diagnosticsEpoch(Properties settings) {
+    String stored = settings.getProperty("diagnosticsEpoch");
+    if (stored != null) return stored;
+    return settings.containsKey("diagnosticsConsent") ? "legacy" : "default";
+  }
+
+  static void forgetBoundDiagnostics(Properties settings) {
+    settings.remove("diagnosticsIdentity");
+    settings.remove("diagnosticsEpoch");
+    if ("true".equals(settings.getProperty("diagnosticsConsent"))) {
+      settings.remove("diagnosticsConsent");
+    }
+  }
+
+  static boolean pairingReminder(Properties settings) {
+    return !"false".equalsIgnoreCase(settings.getProperty("pairingReminder", "true"));
   }
 
   record AfkOptions(int idleMinutes, int intervalMinutes, int radius) {
@@ -210,8 +240,7 @@ final class ClientSettings {
     if (changedApi) {
       settings.remove("deviceToken");
       settings.remove("deviceId");
-      settings.remove("diagnosticsConsent");
-      settings.remove("diagnosticsIdentity");
+      forgetBoundDiagnostics(settings);
     }
     settings.setProperty("apiUrl", normalizedApi);
     settings.setProperty("exportDirectory", normalizedDirectory.toString());

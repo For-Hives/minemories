@@ -709,7 +709,7 @@
 	"Privacy": "Privacidade",
 	"Privacy — Minemories": "Privacidade – Minemories",
 	"Private": "Privado",
-	"Private technical reports with limited retention. No reports without pairing and player consent. Crash reports may arrive after the next game launch.": "Relatórios técnicos privados com retenção limitada. Nenhum relatório sem emparelhamento e consentimento do jogador. Relatórios de falhas podem chegar após o próximo lançamento do jogo.",
+	"Private technical reports with limited retention. No reports before pairing; players can turn diagnostics off in the game. Crash reports may arrive after the next game launch.": "Relatórios técnicos privados com retenção limitada. Nenhum relatório antes do emparelhamento; os jogadores podem desativar os diagnósticos no jogo. Relatórios de falhas podem chegar após o próximo lançamento do jogo.",
 	"Profile": "Perfil",
 	"Project repository": "Repositório de projetos",
 	"Project terms": "Termos do projeto",

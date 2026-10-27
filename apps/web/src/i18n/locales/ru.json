@@ -709,7 +709,7 @@
 	"Privacy": "Конфиденциальность",
 	"Privacy — Minemories": "Конфиденциальность — Minemories",
 	"Private": "Частный",
-	"Private technical reports with limited retention. No reports without pairing and player consent. Crash reports may arrive after the next game launch.": "Частные технические отчеты с ограниченным сроком хранения. Никаких отчетов без сопряжения и согласия игрока. Отчеты о сбоях могут появиться после следующего запуска игры.",
+	"Private technical reports with limited retention. No reports before pairing; players can turn diagnostics off in the game. Crash reports may arrive after the next game launch.": "Частные технические отчеты с ограниченным сроком хранения. До сопряжения отчеты не отправляются; игроки могут отключить диагностику в игре. Отчеты о сбоях могут прийти после следующего запуска игры.",
 	"Profile": "Профиль",
 	"Project repository": "Репозиторий проекта",
 	"Project terms": "Условия проекта",
