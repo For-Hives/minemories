@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.20.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.1-beta.1...mod-v0.20.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **mod:** écran d'accueil simple à icônes et réglages avancés séparés ([9fb18f3](https://github.com/For-Hives/minemories/commit/9fb18f3d29c969f6c05235156a3e2ff3941df76f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** modèle de vue et textes de l'écran d'accueil simple ([e18219e](https://github.com/For-Hives/minemories/commit/e18219ec03e67ba1720fa87da9ac5c94a2f6a718)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** tout activé par défaut et rappel de connexion cliquable dans le chat ([e37123b](https://github.com/For-Hives/minemories/commit/e37123ba0144c809314955fcea20d4eeba868911)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+
+### Corrections
+
+* **mod:** corriger le formatage des tests et le champ volatile de ClientRuntime ([d7a3083](https://github.com/For-Hives/minemories/commit/d7a3083d0545d24c689f965867955f4681b292e9)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+
+### Documentation
+
+* décrire l'écran d'accueil simple et les diagnostics activés par défaut ([ab01f48](https://github.com/For-Hives/minemories/commit/ab01f4891bdcf133ef8fb543bf7d2ad85b32523f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+
 ## [0.19.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.0-beta.1...mod-v0.19.1-beta.1) (2026-10-27)
 
 ### Corrections
