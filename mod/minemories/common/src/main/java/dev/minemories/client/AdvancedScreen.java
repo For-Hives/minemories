@@ -18,11 +18,10 @@ final class AdvancedScreen extends Screen {
   private static final int COLOR_MUTED = 0xFFB2B6AA;
   private static final int PANEL_HEIGHT = 236;
   private static final int CONTENT_Y = 64;
-  private static AdvancedTab rememberedTab = AdvancedTab.ACCOUNT;
   private final Screen parent;
   private final List<List<AbstractWidget>> tabWidgets = new ArrayList<>();
   private final List<Button> tabButtons = new ArrayList<>();
-  private AdvancedTab tab = rememberedTab;
+  private AdvancedTab tab = AdvancedTab.ACCOUNT;
   private EditBox apiInput;
   private EditBox directoryInput;
   private Button historyButton;
@@ -90,7 +89,6 @@ final class AdvancedScreen extends Screen {
 
   private void selectTab(AdvancedTab selected) {
     tab = selected;
-    rememberedTab = selected;
     for (int i = 0; i < tabWidgets.size(); i++) {
       boolean shown = i == selected.ordinal();
       for (AbstractWidget widget : tabWidgets.get(i)) widget.visible = shown;
