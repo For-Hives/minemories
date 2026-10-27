@@ -31,4 +31,4 @@ La logique (consentement par défaut, conservation d'un refus explicite, cadence
 
 ## Réglages avancés par onglets
 
-Le bouton « Réglages » de l'écran simple ouvre l'écran avancé, organisé en quatre onglets : **Compte** (adresse de l'API, stockage, déconnexion), **Captures** (dossier local, exports, AFK, historique), **Monde** (identité du monde distant, zones suggérées) et **Confidentialité** (diagnostics). Le bouton Enregistrer reste visible sous tous les onglets et l'onglet choisi est retenu pendant la session. Mise en page non validée en jeu.
+Le bouton « Réglages » de l'écran simple ouvre l'écran avancé, organisé en quatre onglets : **Compte** (adresse de l'API, stockage, déconnexion), **Captures** (dossier local, exports, AFK, historique), **Monde** (identité du monde distant, zones suggérées) et **Confidentialité** (diagnostics). Le bouton Enregistrer reste visible sous tous les onglets. Mise en page non validée en jeu.
