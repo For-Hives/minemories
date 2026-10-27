@@ -34,13 +34,16 @@ class SimpleHubModelTest {
 
   @Test
   void codeFieldAndHelpFollowPairingAndOfficialApi() {
-    var unpairedOfficial = SimpleHubModel.actions(new SimpleHubModel.Input(false, false, false, true, 0, true));
+    var unpairedOfficial =
+        SimpleHubModel.actions(new SimpleHubModel.Input(false, false, false, true, 0, true));
     assertTrue(unpairedOfficial.showCodeField());
     assertTrue(unpairedOfficial.showCodeHelp());
-    var unpairedCustom = SimpleHubModel.actions(new SimpleHubModel.Input(false, false, false, true, 0, false));
+    var unpairedCustom =
+        SimpleHubModel.actions(new SimpleHubModel.Input(false, false, false, true, 0, false));
     assertTrue(unpairedCustom.showCodeField());
     assertFalse(unpairedCustom.showCodeHelp());
-    var paired = SimpleHubModel.actions(new SimpleHubModel.Input(true, false, false, true, 0, true));
+    var paired =
+        SimpleHubModel.actions(new SimpleHubModel.Input(true, false, false, true, 0, true));
     assertFalse(paired.showCodeField());
     assertFalse(paired.showCodeHelp());
   }
@@ -51,7 +54,8 @@ class SimpleHubModelTest {
       for (boolean inWorld : new boolean[] {false, true}) {
         for (boolean busy : new boolean[] {false, true}) {
           var actions = SimpleHubModel.actions(input(paired, inWorld, busy));
-          assertEquals(inWorld && !busy, actions.captureEnabled(), "capture " + paired + inWorld + busy);
+          assertEquals(
+              inWorld && !busy, actions.captureEnabled(), "capture " + paired + inWorld + busy);
           assertEquals(!busy, actions.autoEnabled(), "auto " + paired + inWorld + busy);
           assertTrue(actions.memoriesEnabled());
         }
@@ -61,13 +65,15 @@ class SimpleHubModelTest {
 
   @Test
   void statusKeysFollowPairing() {
-    assertEquals("minemories.hub.connected", SimpleHubModel.statusTitleKey(input(true, false, false)));
+    assertEquals(
+        "minemories.hub.connected", SimpleHubModel.statusTitleKey(input(true, false, false)));
     assertEquals(
         "minemories.hub.not_connected", SimpleHubModel.statusTitleKey(input(false, true, true)));
     assertEquals(
         "minemories.hub.connected_hint", SimpleHubModel.statusHintKey(input(true, true, false)));
     assertEquals(
-        "minemories.hub.not_connected_hint", SimpleHubModel.statusHintKey(input(false, false, false)));
+        "minemories.hub.not_connected_hint",
+        SimpleHubModel.statusHintKey(input(false, false, false)));
   }
 
   @Test

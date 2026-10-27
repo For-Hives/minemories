@@ -132,5 +132,6 @@
   "minemories.hub.busy": "Trabalhando…",
   "minemories.hub.sent": "Memória guardada e enviada!",
   "minemories.hub.saved_local": "Memória guardada neste computador.",
-  "minemories.hub.failed": "Algo deu errado. Tente de novo."
+  "minemories.hub.failed": "Algo deu errado. Tente de novo.",
+  "minemories.advanced.title": "Configurações avançadas"
 }

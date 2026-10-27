@@ -227,7 +227,7 @@ public final class ClientRuntime {
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("settings")
                     .executes(
                         ctx -> {
-                          openLater(() -> new MinemoriesScreen(null));
+                          openLater(() -> new SimpleHubScreen(null));
                           return 1;
                         }))
             .then(
@@ -265,7 +265,7 @@ public final class ClientRuntime {
     Button button =
         Button.builder(
                 Component.literal("Minemories"),
-                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+                pressed -> Minecraft.getInstance().setScreen(new SimpleHubScreen(screen)))
             .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
             .build();
     add.accept(button);
@@ -289,7 +289,7 @@ public final class ClientRuntime {
     Button button =
         Button.builder(
                 Component.literal("Minemories"),
-                pressed -> Minecraft.getInstance().setScreen(new MinemoriesScreen(screen)))
+                pressed -> Minecraft.getInstance().setScreen(new SimpleHubScreen(screen)))
             .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
             .build();
     add.accept(button);
@@ -301,8 +301,8 @@ public final class ClientRuntime {
     trackExploration(Minecraft.getInstance(), System.currentTimeMillis());
     while (OPEN_SCREEN.consumeClick()) {
       Minecraft mc = Minecraft.getInstance();
-      if (!(mc.screen instanceof MinemoriesScreen)) {
-        mc.setScreen(new MinemoriesScreen(mc.screen));
+      if (!(mc.screen instanceof SimpleHubScreen || mc.screen instanceof AdvancedScreen)) {
+        mc.setScreen(new SimpleHubScreen(mc.screen));
       }
     }
     java.util.function.Supplier<Screen> later = pendingScreen;
