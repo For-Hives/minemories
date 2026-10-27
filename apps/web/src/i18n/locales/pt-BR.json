@@ -1198,5 +1198,21 @@
 	"diagnostics.state.open": "Em aberto",
 	"publication.state.rejected": "Recusado",
 	"guides.install.action": "Instale o mod",
-	"filters.allStates": "Todos"
+	"filters.allStates": "Todos",
+	"EVOLVING WORLD": "MUNDO EM EVOLUÇÃO",
+	"{ready} of {total} captures loaded": "{ready} de {total} capturas carregadas",
+	"Only the most recent captures are loaded to keep the viewer fast.": "Apenas as capturas mais recentes são carregadas para manter o visualizador rápido.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "Este mundo não está disponível. Entre com a conta proprietária ou volte para sua galeria.",
+	"Waiting": "Aguardando",
+	"Loaded": "Carregada",
+	"Archived — open it alone to restore it": "Arquivada — abra sozinha para restaurá-la",
+	"Could not load": "Não foi possível carregar",
+	"Not loaded": "Não carregada",
+	"Captures of this world": "Capturas deste mundo",
+	"{count} captures, oldest first": "{count} capturas, da mais antiga",
+	"{count} chunks": "{count} chunks",
+	"Open alone": "Abrir sozinha",
+	"Moment of the world": "Momento do mundo",
+	"▶ Open the world": "▶ Abrir o mundo",
+	"Evolving world": "Mundo em evolução"
 }

@@ -1,5 +1,9 @@
 # Timelapse à partir des captures régulières
 
+> Depuis le 27 octobre 2026, le viewer n'affiche plus une évolution par zone : voir
+> [`world-evolution.md`](world-evolution.md) (un seul monde composé chunk par chunk). Les sections ci-dessous
+> décrivent les fondations toujours utilisées (identité, index, stockage) et l'ancien lecteur par zone.
+
 La galerie propose **Évolution** pour les captures identifiées. Le viewer affiche
 les états réellement enregistrés, avec navigation, lecture à cadence réglable,
 pagination et reprise locale. L’index privé et le stockage dédupliqué sont raccordés

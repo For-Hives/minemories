@@ -86,3 +86,35 @@ function findNearbyStack<T>(
 	}
 	return null
 }
+
+interface IdentifiedCapture {
+	id: string
+	metadata: { worldId?: string | null | undefined; worldScope?: string | null | undefined; dimension: string | null }
+}
+
+export interface WorldBundle<T> {
+	key: string
+	dimension: string | null
+	captures: T[]
+}
+
+/** Identified captures of one world and dimension form a single evolving world, whatever their zone. */
+export function bundleWorlds<T extends IdentifiedCapture>(
+	captures: T[],
+	identified: (capture: T) => boolean
+): { worlds: WorldBundle<T>[]; others: T[] } {
+	const worlds = new Map<string, WorldBundle<T>>()
+	const others: T[] = []
+	for (const capture of captures) {
+		if (!identified(capture)) {
+			others.push(capture)
+			continue
+		}
+		const { worldId, worldScope, dimension } = capture.metadata
+		const key = JSON.stringify([worldId, worldScope ?? 'world', dimension])
+		const world = worlds.get(key) ?? { key, dimension, captures: [] }
+		world.captures.push(capture)
+		worlds.set(key, world)
+	}
+	return { worlds: [...worlds.values()], others }
+}

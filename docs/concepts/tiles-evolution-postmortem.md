@@ -9,6 +9,9 @@ Statut : **abandonné en l'état.** Les tests automatiques passaient, mais le r�
 (jeu, API de production, navigateur) était insatisfaisant. Rien de ce qui est décrit ici n'a été validé
 complètement en jeu avant d'être poussé.
 
+La reprise retenue (composition côté navigateur, sans changement du mod) est décrite dans
+`docs/features/world-evolution.md`.
+
 ## Objectif de départ
 
 Un joueur joue, le mod prend des snapshots (AFK ou manuels) ; dans le viewer il voit **un seul monde qui

@@ -299,3 +299,63 @@ test('orbit remains centered on the captured player when switching captures with
 	expect(camera.position.clone().sub(controls.target).toArray()).toEqual(offset.toArray())
 	disposeImportedObject(root)
 })
+
+function worldFixture() {
+	const f = sceneFixture()
+	f.modelRoot.clear()
+	const light = new THREE.PointLight(0xffffff, 300, 6)
+	f.next.add(light)
+	Object.assign(f.scene, {
+		disposed: false,
+		prepareMesh: vi.fn(),
+		worldLights: Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2)),
+		controls: { target: new THREE.Vector3() },
+		captureFocus: null,
+		keyLight: { shadow: { needsUpdate: false } },
+	})
+	const shadowMap = { needsUpdate: false }
+	Object.assign(f.fields.renderer, { shadowMap })
+	f.compile.resolve()
+	return { ...f, shadowMap }
+}
+
+const capture = {
+	origin: { x: 10, y: 64, z: 0 },
+	bounds: { minX: 2, minY: 40, minZ: -8, maxX: 18, maxY: 88, maxZ: 8 },
+	offset: { x: 5, y: 0, z: -2 },
+}
+
+test('world layers stack without replacing each other and only the first one frames the camera', async () => {
+	const f = worldFixture()
+	const layer = await f.scene.addLayer(f.file, capture)
+	expect(layer.root).toBe(f.next)
+	expect(f.next.parent).toBe(f.modelRoot)
+	expect(f.next.position.toArray()).toEqual([5, 0, -2])
+	expect(layer.lights[0]?.position.toArray()).toEqual([5, 0, -2])
+	expect(f.fields.frameModel).toHaveBeenCalledOnce()
+	expect(f.fields.events.onEmptyChange).toHaveBeenCalledWith(false)
+	const second = new THREE.Group()
+	f.fields.loader.parseAsync.mockResolvedValueOnce({ scene: second })
+	await f.scene.addLayer(f.file, capture)
+	expect(f.modelRoot.children).toEqual([f.next, second])
+	expect(f.fields.frameModel).toHaveBeenCalledOnce()
+	f.scene.showWorld(layer.lights)
+	const lights = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
+	expect(lights[0]?.intensity).toBe(3)
+	expect(lights[0]?.position.toArray()).toEqual([5, 0, -2])
+	expect(lights[1]?.intensity).toBe(0)
+	expect(f.shadowMap.needsUpdate).toBe(true)
+	f.scene.focusLayer(second)
+	expect(f.fields.frameModel).toHaveBeenLastCalledWith(second, false)
+})
+
+test('a cancelled world layer is detached and released', async () => {
+	const f = worldFixture()
+	const dispose = vi.spyOn((f.next.children[0] as THREE.Mesh).geometry, 'dispose')
+	const controller = new AbortController()
+	f.fields.renderer.compileAsync.mockImplementationOnce(async () => controller.abort())
+	await expect(f.scene.addLayer(f.file, capture, controller.signal)).rejects.toMatchObject({ name: 'AbortError' })
+	expect(f.next.parent).toBeNull()
+	expect(dispose).toHaveBeenCalled()
+	await expect(f.scene.addLayer(f.file, capture, AbortSignal.abort())).rejects.toMatchObject({ name: 'AbortError' })
+})

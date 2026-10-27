@@ -12,13 +12,13 @@ import { T, useI18n } from '../i18n/I18n'
 import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
-import { TimelapsePage } from './TimelapsePage'
+import { WorldPage } from './WorldPage'
 
 export function ViewerPage() {
 	const [search] = useSearchParams()
 	const id = search.get('memory')
 	if (!(import.meta.env.DEV || id)) return <Navigate to="/explorer" replace />
-	if (search.get('timelapse') === '1' && id) return <TimelapsePage key={id} memoryId={id} />
+	if (search.get('timelapse') === '1' && id) return <WorldPage key={id} memoryId={id} />
 	return <SingleViewerPage />
 }
 

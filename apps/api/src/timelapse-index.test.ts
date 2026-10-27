@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { captureTimeKey } from '@minemories/api-contract'
+import { captureTimeKey, WORLD_EVOLUTION_FRAMES } from '@minemories/api-contract'
 import { parseMetadata } from './memory-metadata'
 import { minimalGlb } from './test-support/glb-fixture'
 import { frameMetadata, temporalFixture } from './test-support/timelapse-fixture'
@@ -257,7 +257,9 @@ test('the scope migration rebuilds derived caches once and never removes origina
 			local = await f.add(frameMetadata, payload),
 			remote = await f.add({ ...frameMetadata, serverName: 'Old remote' }, payload)
 		index.put(local.id)
-		f.db.query('INSERT INTO timelapse_index VALUES (?,?,?,?,?)').run(remote.id, 'owner', 'old', 'old', '{}')
+		f.db
+			.query('INSERT INTO timelapse_index (memory_id,user_id,series_key,time_key,capture_json) VALUES (?,?,?,?,?)')
+			.run(remote.id, 'owner', 'old', 'old', '{}')
 		f.db.exec('UPDATE timelapse_index_version SET version=1')
 		migrateTimelapseIndex(f.db)
 		expect(f.db.query('SELECT COUNT(*) AS count FROM memories').get()).toEqual({ count: 2 })
@@ -266,6 +268,83 @@ test('the scope migration rebuilds derived caches once and never removes origina
 		expect(() => index.frames('owner', options(remote.id))).toThrow('no temporal identity')
 		migrateTimelapseIndex(f.db)
 		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 1 })
+	} finally {
+		await f.close()
+	}
+})
+
+test('one world gathers every zone and mode of a world and dimension, oldest first, without other owners or worlds', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db)
+		const at = (second: number) => ({
+			captureStartedAt: `${base}.${second}Z`,
+			captureFinishedAt: `${base}.9Z`,
+		})
+		const newest = await f.add({ ...frameMetadata, ...at(5) }, payload)
+		const other = await f.add(
+			{
+				...frameMetadata,
+				...at(3),
+				zoneId: 'd'.repeat(64),
+				captureBounds: { ...frameMetadata.captureBounds, minX: 2, maxX: 4 },
+				captureOrigin: { x: 3, y: 1, z: 1 },
+			},
+			payload
+		)
+		const selection = await f.add({ ...frameMetadata, ...at(1), captureMode: 'selection' }, payload)
+		await f.add({ ...frameMetadata, ...at(2), dimension: 'minecraft:the_nether' }, payload)
+		await f.add({ ...frameMetadata, ...at(2), worldId: 'c'.repeat(64) }, payload)
+		await f.add({ ...frameMetadata, ...at(2), worldScope: 'session' }, payload)
+		const foreign = await f.add({ ...frameMetadata, ...at(4) }, payload)
+		f.db.query("UPDATE memories SET user_id='other' WHERE id=?").run(foreign.id)
+		const rejected = await f.add({ ...frameMetadata, ...at(4), captureOrigin: { x: 9, y: 9, z: 9 } }, payload)
+		const world = index.world('owner', newest.id)
+		expect(world.frames.map(frame => frame.id)).toEqual([selection.id, other.id, newest.id])
+		expect(world).toMatchObject({ totalFrames: 3, truncated: false, scope: 'world', dimension: 'minecraft:overworld' })
+		expect(world.totalBytes).toBe(payload.length * 3)
+		expect(index.world('owner', selection.id).worldKey).toBe(world.worldKey)
+		expect(f.db.query('SELECT 1 FROM timelapse_index_rejected WHERE memory_id=?').get(rejected.id)).not.toBeNull()
+		expect(() => index.world('owner', foreign.id)).toThrow()
+		expect(index.world('other', foreign.id).worldKey).not.toBe(world.worldKey)
+	} finally {
+		await f.close()
+	}
+})
+
+test('a large world returns its most recent frames and reports the truncation', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db)
+		const ids: string[] = []
+		for (let second = 0; second < WORLD_EVOLUTION_FRAMES + 2; second++) {
+			const captureStartedAt = new Date(Date.UTC(2026, 9, 15, 1, 0, second)).toISOString()
+			// biome-ignore lint/performance/noAwaitInLoops: frames are inserted in a deterministic order.
+			ids.push((await f.add({ ...frameMetadata, captureStartedAt }, payload)).id)
+		}
+		const world = index.world('owner', ids[0] as string)
+		expect(world.totalFrames).toBe(WORLD_EVOLUTION_FRAMES + 2)
+		expect(world.truncated).toBe(true)
+		expect(world.frames.map(frame => frame.id)).toEqual(ids.slice(2))
+	} finally {
+		await f.close()
+	}
+})
+
+test('an index created before world keys gains the column and is rebuilt', async () => {
+	const f = await temporalFixture()
+	try {
+		const memory = await f.add(frameMetadata, payload)
+		f.db.exec(`DROP TABLE timelapse_index;CREATE TABLE timelapse_index (
+		 memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE,
+		 user_id TEXT NOT NULL,series_key TEXT NOT NULL,time_key TEXT NOT NULL,capture_json TEXT NOT NULL);
+		 UPDATE timelapse_index_version SET version=2`)
+		f.db
+			.query('INSERT INTO timelapse_index (memory_id,user_id,series_key,time_key,capture_json) VALUES (?,?,?,?,?)')
+			.run(memory.id, 'owner', 'old', 'old', '{}')
+		migrateTimelapseIndex(f.db)
+		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 0 })
+		expect(new TimelapseIndex(f.db).world('owner', memory.id).frames.map(frame => frame.id)).toEqual([memory.id])
 	} finally {
 		await f.close()
 	}

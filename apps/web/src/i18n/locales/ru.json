@@ -1198,5 +1198,21 @@
 	"diagnostics.state.open": "Открыто",
 	"publication.state.rejected": "Отклонено",
 	"guides.install.action": "Установите мод",
-	"filters.allStates": "Все"
+	"filters.allStates": "Все",
+	"EVOLVING WORLD": "РАЗВИВАЮЩИЙСЯ МИР",
+	"{ready} of {total} captures loaded": "Загружено снимков: {ready} из {total}",
+	"Only the most recent captures are loaded to keep the viewer fast.": "Загружаются только самые свежие снимки, чтобы просмотр оставался плавным.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "Этот мир недоступен. Войдите в аккаунт владельца или вернитесь в галерею.",
+	"Waiting": "Ожидание",
+	"Loaded": "Загружено",
+	"Archived — open it alone to restore it": "В архиве — откройте отдельно, чтобы восстановить",
+	"Could not load": "Не удалось загрузить",
+	"Not loaded": "Не загружено",
+	"Captures of this world": "Снимки этого мира",
+	"{count} captures, oldest first": "Снимков: {count}, сначала старые",
+	"{count} chunks": "Чанков: {count}",
+	"Open alone": "Открыть отдельно",
+	"Moment of the world": "Момент мира",
+	"▶ Open the world": "▶ Открыть мир",
+	"Evolving world": "Развивающийся мир"
 }

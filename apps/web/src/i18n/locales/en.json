@@ -1198,5 +1198,21 @@
 	"diagnostics.state.open": "Open",
 	"publication.state.rejected": "Rejected",
 	"guides.install.action": "Install the mod",
-	"filters.allStates": "All"
+	"filters.allStates": "All",
+	"EVOLVING WORLD": "EVOLVING WORLD",
+	"{ready} of {total} captures loaded": "{ready} of {total} captures loaded",
+	"Only the most recent captures are loaded to keep the viewer fast.": "Only the most recent captures are loaded to keep the viewer fast.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "This world is unavailable. Sign in as its owner, or return to your gallery.",
+	"Waiting": "Waiting",
+	"Loaded": "Loaded",
+	"Archived — open it alone to restore it": "Archived — open it alone to restore it",
+	"Could not load": "Could not load",
+	"Not loaded": "Not loaded",
+	"Captures of this world": "Captures of this world",
+	"{count} captures, oldest first": "{count} captures, oldest first",
+	"{count} chunks": "{count} chunks",
+	"Open alone": "Open alone",
+	"Moment of the world": "Moment of the world",
+	"▶ Open the world": "▶ Open the world",
+	"Evolving world": "Evolving world"
 }

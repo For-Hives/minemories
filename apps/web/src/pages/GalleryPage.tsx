@@ -9,7 +9,7 @@ import { buttonDark, buttonOutline, Eyebrow } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureStack, groupCaptures, stackCaptures } from '../lib/gallery'
+import { bundleWorlds, type CaptureStack, groupCaptures, stackCaptures, type WorldBundle } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -315,13 +315,21 @@ function CaptureFolders({
 		<div className="space-y-4">
 			{groupCaptures(memories).map(group => {
 				const open = expanded.has(group.key)
-				const stacks = open ? stackCaptures(group.captures) : []
+				const { worlds, others } = bundleWorlds(group.captures, capture => temporalIdentity(capture.metadata) !== null)
+				const stacks = open ? stackCaptures(others) : []
+				const newestWorld = worlds[0]?.captures[0]
 				return (
 					<section
 						key={group.key}
 						aria-label={group.name}
-						className="overflow-hidden rounded-[7px] border border-[#354238] bg-[#151c17]"
+						className="relative overflow-hidden rounded-[7px] border border-[#354238] bg-[#151c17]"
 					>
+						{newestWorld && (
+							<WorldLink
+								memoryId={newestWorld.id}
+								className="absolute top-4 right-20 z-10 max-phone:static max-phone:mx-4 max-phone:mt-4"
+							/>
+						)}
 						<button
 							type="button"
 							onClick={() => toggleGroup(group.key)}
@@ -350,6 +358,16 @@ function CaptureFolders({
 						</button>
 						{open && (
 							<div className="album-stacks border-t border-[#2a332d] p-4">
+								{worlds.map(world => (
+									<WorldCaptures
+										key={world.key}
+										world={world}
+										openingId={openingId}
+										onOpenMemory={onOpenMemory}
+										onChanged={onChanged}
+										onTrashed={onTrashed}
+									/>
+								))}
 								{stacks.map(stack => (
 									<StackBundle
 										key={stack.key}
@@ -366,6 +384,64 @@ function CaptureFolders({
 					</section>
 				)
 			})}
+		</div>
+	)
+}
+
+function WorldLink({ memoryId, className = '' }: { memoryId: string; className?: string }) {
+	const { t } = useI18n()
+	return (
+		<Link
+			to={`/viewer?memory=${encodeURIComponent(memoryId)}&timelapse=1`}
+			className={`${buttonDark} min-h-[38px] px-4 text-[11px] ${className}`}
+		>
+			{t('▶ Open the world')}
+		</Link>
+	)
+}
+
+function WorldCaptures({
+	world,
+	openingId,
+	onOpenMemory,
+	onChanged,
+	onTrashed,
+}: {
+	world: WorldBundle<Memories[number]>
+	openingId: string
+	onOpenMemory: (id: string) => void
+	onChanged: () => void
+	onTrashed: (id: string) => void
+}) {
+	const { t, locale } = useI18n()
+	const newest = world.captures[0] as Memories[number]
+	return (
+		<div className="album-stack mb-4 rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
+			<div className="mb-3 flex flex-wrap items-center gap-3">
+				<StackThumbs
+					captures={world.captures.slice(0, 3).map(item => ({ id: item.id, thumbnail: item.metadata.thumbnail }))}
+				/>
+				<div className="min-w-0 flex-1">
+					<p className="m-0 text-[11px] font-bold text-[#dfe7da]">
+						{t('Evolving world')} · {formatCaptureCount(locale, world.captures.length)}
+					</p>
+					{world.dimension && <p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">{world.dimension}</p>}
+				</div>
+				<WorldLink memoryId={newest.id} />
+			</div>
+			<div className="grid grid-cols-3 gap-[17px] max-tablet:grid-cols-2 max-phone:grid-cols-1 max-phone:gap-3">
+				{world.captures.map((memory, index) => (
+					<SnapshotCard
+						key={memory.id}
+						memory={memory}
+						index={index}
+						opening={openingId === memory.id}
+						onOpen={() => onOpenMemory(memory.id)}
+						onChanged={onChanged}
+						onTrashed={onTrashed}
+					/>
+				))}
+			</div>
 		</div>
 	)
 }
@@ -672,14 +748,6 @@ function SnapshotCard({
 					>
 						{opening ? '…' : t('↗ Revisit')}
 					</button>
-					{temporalIdentity(memory.metadata) && (
-						<Link
-							to={`/viewer?memory=${encodeURIComponent(memory.id)}&timelapse=1`}
-							className="inline-flex h-8 items-center rounded border border-[#354238] px-2 text-[11px] text-[#b4c1ad]"
-						>
-							{t('Timeline')}
-						</Link>
-					)}
 					<button
 						type="button"
 						onClick={() => setShareOpen(open => !open)}

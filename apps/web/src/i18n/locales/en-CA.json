@@ -9,5 +9,21 @@
 	"Try another word or remove the favorites filter.": "Try another word or remove the favourites filter.",
 	"Try the favorites ranking": "Try the favourites ranking",
 	"place(s) · favorites and votes saved on this device only": "place(s) · favourites and votes saved on this device only",
-	"Recenter": "Recentre"
+	"Recenter": "Recentre",
+	"EVOLVING WORLD": "EVOLVING WORLD",
+	"{ready} of {total} captures loaded": "{ready} of {total} captures loaded",
+	"Only the most recent captures are loaded to keep the viewer fast.": "Only the most recent captures are loaded to keep the viewer fast.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "This world is unavailable. Sign in as its owner, or return to your gallery.",
+	"Waiting": "Waiting",
+	"Loaded": "Loaded",
+	"Archived — open it alone to restore it": "Archived — open it alone to restore it",
+	"Could not load": "Could not load",
+	"Not loaded": "Not loaded",
+	"Captures of this world": "Captures of this world",
+	"{count} captures, oldest first": "{count} captures, oldest first",
+	"{count} chunks": "{count} chunks",
+	"Open alone": "Open alone",
+	"Moment of the world": "Moment of the world",
+	"▶ Open the world": "▶ Open the world",
+	"Evolving world": "Evolving world"
 }
