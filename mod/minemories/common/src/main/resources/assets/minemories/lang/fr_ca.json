@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Souvenir gardé et envoyé !",
   "minemories.hub.saved_local": "Souvenir gardé sur cet ordinateur.",
   "minemories.hub.failed": "Un problème est survenu. Réessaie.",
-  "minemories.advanced.title": "Réglages avancés"
+  "minemories.advanced.title": "Réglages avancés",
+  "minemories.advanced.tab.account": "Compte",
+  "minemories.advanced.tab.captures": "Captures",
+  "minemories.advanced.tab.world": "Monde",
+  "minemories.advanced.tab.privacy": "Confidentialité"
 }

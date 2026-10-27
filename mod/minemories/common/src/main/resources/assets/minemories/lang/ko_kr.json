@@ -133,5 +133,9 @@
   "minemories.hub.sent": "추억을 저장하고 보냈어요!",
   "minemories.hub.saved_local": "추억을 이 컴퓨터에 저장했어요.",
   "minemories.hub.failed": "문제가 생겼어요. 다시 시도해 주세요.",
-  "minemories.advanced.title": "고급 설정"
+  "minemories.advanced.title": "고급 설정",
+  "minemories.advanced.tab.account": "계정",
+  "minemories.advanced.tab.captures": "캡처",
+  "minemories.advanced.tab.world": "월드",
+  "minemories.advanced.tab.privacy": "개인정보"
 }
