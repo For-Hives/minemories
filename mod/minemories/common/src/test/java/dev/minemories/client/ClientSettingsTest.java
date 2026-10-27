@@ -161,6 +161,27 @@ class ClientSettingsTest {
   }
 
   @Test
+  void captureTilesAreAnAdvancedOptInWithBoundedChunkSize() {
+    Properties settings = new Properties();
+    assertEquals(0, ClientSettings.captureTileChunks(settings));
+    settings.setProperty("captureTiles", "true");
+    assertEquals(8, ClientSettings.captureTileChunks(settings));
+    settings.setProperty("captureTiles", "TRUE");
+    assertEquals(8, ClientSettings.captureTileChunks(settings));
+    settings.setProperty("captureTileChunks", "4");
+    assertEquals(4, ClientSettings.captureTileChunks(settings));
+    settings.setProperty("captureTileChunks", "16");
+    assertEquals(16, ClientSettings.captureTileChunks(settings));
+    for (String invalid : new String[] {"0", "17", "-1", "broken", ""}) {
+      settings.setProperty("captureTileChunks", invalid);
+      assertEquals(8, ClientSettings.captureTileChunks(settings));
+    }
+    settings.setProperty("captureTiles", "yes");
+    settings.setProperty("captureTileChunks", "4");
+    assertEquals(0, ClientSettings.captureTileChunks(settings));
+  }
+
+  @Test
   void diagnosticsRequireAnExplicitStoredTrueAndPersistAcrossRestart() throws IOException {
     Properties settings = new Properties();
     assertFalse(ClientSettings.diagnosticsConsent(settings));

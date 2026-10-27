@@ -1,5 +1,6 @@
 package dev.minemories.client;
 
+import dev.minemories.core.TileGrid;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
@@ -128,6 +129,17 @@ final class ClientSettings {
 
   static boolean fullHeightCapture(Properties settings) {
     return Boolean.parseBoolean(settings.getProperty("captureFullHeight", "false"));
+  }
+
+  static int captureTileChunks(Properties settings) {
+    if (!"true".equalsIgnoreCase(settings.getProperty("captureTiles", "false"))) return 0;
+    try {
+      int value = Integer.parseInt(settings.getProperty("captureTileChunks", "").strip());
+      if (value >= 1 && value <= TileGrid.MAX_TILE_CHUNKS) return value;
+    } catch (NumberFormatException ignored) {
+      // Invalid advanced values fall back to the default tile size.
+    }
+    return TileGrid.DEFAULT_TILE_CHUNKS;
   }
 
   static boolean diagnosticsConsent(Properties settings) {

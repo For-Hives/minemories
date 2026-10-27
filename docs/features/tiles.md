@@ -30,8 +30,13 @@ moins l'origine de la capture de référence.
 
 Deux captures qui voient les mêmes blocs doivent produire les mêmes octets de tuile :
 
-- les quads et les lumières sont triés avant l'écriture (clé de matériau, puis
-  coordonnées, puis UV), indépendamment de l'ordre d'insertion ;
+- dans la scène en mémoire (`TiledGlbScene`), les quads et les lumières sont triés avant
+  l'écriture (clé de matériau, puis coordonnées, puis UV), indépendamment de l'ordre
+  d'insertion ;
+- le chemin en flux (`TiledSpoolingScene`, utilisé par les captures AFK) conserve l'ordre
+  d'arrivée. Pour le terrain, cet ordre est déterministe : colonnes parcourues en z puis en x,
+  et y croissant. Il ne l'est pas pour les entités, dont l'ordre dépend du parcours
+  de la liste d'entités du client ;
 - chaque tuile calcule son propre atlas : une texture ajoutée dans une tuile voisine
   ne change pas les UV d'une autre ;
 - l'empreinte d'une tuile est le SHA-256 de ses octets `.glb`.
@@ -80,6 +85,29 @@ il recalcule chaque SHA-256, borne les indices et les tailles et valide chaque `
 
 Voir les issues #145 (découpe côté mod), #146 (stockage et index API), #147 (lecture en
 streaming) et #148 (export à une date et exploration).
+
+## Côté mod
+
+La découpe est une option avancée, désactivée par défaut, dans `config/minemories.properties` :
+
+- `captureTiles=true` active la découpe (défaut : `false`) ;
+- `captureTileChunks` règle la taille de tuile, de 1 à 16 chunks (défaut : 8). Une valeur
+  invalide ou hors bornes revient à 8.
+
+Il n'y a pas encore de bouton dans l'interface M.
+
+Seules les captures AFK et progressives sont découpées. `/minemories export` produit toujours
+un `.glb` unique. Le bundle est enregistré sous le nom d'historique habituel `capture.glb`,
+mais ce n'est **pas** un `.glb` ordinaire : il ne s'ouvre pas directement dans Blender. Il faut
+passer par la chronologie ou l'export de Minemories. L'API le reconnaît grâce à son
+en-tête `MMTB`.
+
+Chaque tuile a son propre spool sur disque. Les limites de spool et le nombre de descripteurs
+de fichiers croissent donc avec le nombre de tuiles occupées.
+
+La capture commence par un paquet d'origine (centre de la zone capturée). Les coordonnées des
+quads sont relatives à cette origine, ce qui permet de calculer les indices de tuile. Une
+géométrie reçue avant ce paquet fait échouer la capture.
 
 ## Côté API
 

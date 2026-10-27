@@ -197,6 +197,88 @@ class QueuedGlbCaptureTest {
         () -> worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS));
   }
 
+  @Test
+  void tiledWriterProducesABundleWithOneEntryPerOccupiedTile() throws Exception {
+    float[] east = {200, 0, 0, 201, 0, 0, 201, 1, 0, 200, 1, 0};
+    var element = new CaptureElement();
+    element.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
+    element.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, east, UV);
+    var snapshot = element.seal();
+    try (var worker = new QueuedGlbCapture(directory, 8)) {
+      awaitOffer(() -> call(() -> worker.offerOrigin(0, 0, 0)));
+      awaitOffer(() -> call(() -> worker.offerTexture("image", 1, 1)));
+      awaitOffer(() -> call(() -> worker.offerRows("image", 0, new int[] {0xffffffff})));
+      awaitOffer(() -> call(() -> worker.offerTextureEnd("image")));
+      awaitOffer(() -> call(() -> worker.offerGeometry(snapshot.quads(), List.of())));
+      awaitOffer(() -> call(() -> worker.finish(TIME, "{}")));
+      var result = worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS);
+      assertEquals(2, result.quads());
+      var bytes =
+          java.nio.ByteBuffer.wrap(Files.readAllBytes(result.file()))
+              .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+      assertEquals(
+          "MMTB", new String(bytes.array(), 0, 4, java.nio.charset.StandardCharsets.US_ASCII));
+      int length = bytes.getInt(8);
+      String manifest =
+          new String(bytes.array(), 12, length, java.nio.charset.StandardCharsets.UTF_8);
+      var tiles =
+          com.google.gson.JsonParser.parseString(manifest)
+              .getAsJsonObject()
+              .getAsJsonArray("tiles");
+      assertEquals(2, tiles.size());
+      assertEquals(0, tiles.get(0).getAsJsonObject().get("x").getAsInt());
+      assertEquals(0, tiles.get(0).getAsJsonObject().get("z").getAsInt());
+      assertEquals(1, tiles.get(1).getAsJsonObject().get("x").getAsInt());
+      assertEquals(0, tiles.get(1).getAsJsonObject().get("z").getAsInt());
+    }
+  }
+
+  @Test
+  void tiledGeometryWithoutAnOriginFailsTheCapture() throws Exception {
+    var element = new CaptureElement();
+    element.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
+    var snapshot = element.seal();
+    try (var worker = new QueuedGlbCapture(directory, 8)) {
+      awaitOffer(() -> call(() -> worker.offerTexture("image", 1, 1)));
+      awaitOffer(() -> call(() -> worker.offerRows("image", 0, new int[] {0xffffffff})));
+      awaitOffer(() -> call(() -> worker.offerTextureEnd("image")));
+      awaitOffer(() -> call(() -> worker.offerGeometry(snapshot.quads(), List.of())));
+      var failure =
+          assertThrows(
+              ExecutionException.class,
+              () -> worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS));
+      assertInstanceOf(IllegalStateException.class, failure.getCause());
+      assertEquals("Capture origin not set", failure.getCause().getMessage());
+    }
+  }
+
+  @Test
+  void originIsANoOpForSingleGlbWritersAndRefusedAfterClose() throws Exception {
+    var element = new CaptureElement();
+    element.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
+    var snapshot = element.seal();
+    try (var worker = new QueuedGlbCapture(directory)) {
+      assertTrue(worker.offerOrigin(500, 64, 500));
+      awaitOffer(() -> call(() -> worker.offerTexture("image", 1, 1)));
+      awaitOffer(() -> call(() -> worker.offerRows("image", 0, new int[] {0xffffffff})));
+      awaitOffer(() -> call(() -> worker.offerTextureEnd("image")));
+      awaitOffer(() -> call(() -> worker.offerGeometry(snapshot.quads(), List.of())));
+      awaitOffer(() -> call(() -> worker.finish(TIME, "{}")));
+      var result = worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS);
+      byte[] glb = Files.readAllBytes(result.file());
+      assertEquals("glTF", new String(glb, 0, 4, java.nio.charset.StandardCharsets.US_ASCII));
+    }
+    var closed = new QueuedGlbCapture(directory, 8);
+    closed.close();
+    assertFalse(closed.offerOrigin(0, 0, 0));
+  }
+
+  @Test
+  void tileSizeIsBoundedByTheCoreGrid() {
+    assertThrows(IllegalArgumentException.class, () -> new QueuedGlbCapture(directory, 17));
+    assertThrows(IllegalArgumentException.class, () -> new QueuedGlbCapture(directory, -1));
+  }
+
   private interface Offer {
     boolean get() throws IOException;
   }

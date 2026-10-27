@@ -81,7 +81,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     models = new RenderedModelCapture(sink, mc, pixels);
     var metadata = ClientRuntime.currentCaptureMetadata(position);
     ClientRuntime.identifyCapture(metadata, bounds, false);
-    writer = new QueuedGlbCapture(settings.directory());
+    writer = new QueuedGlbCapture(settings.directory(), settings.tileChunks());
     pump =
         new ProgressiveCapturePump(
             this,
@@ -278,6 +278,8 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
               (min.getX() + max.getX()) / 2,
               (min.getY() + max.getY()) / 2,
               (min.getZ() + max.getZ()) / 2);
+      if (!writer.offerOrigin(center.getX(), center.getY(), center.getZ()))
+        throw new IOException("Capture annulée avant l’origine.");
       cursor = new CaptureCursor(bounds);
       fluidView = new CaptureLevelView(level, bounds);
       surfaceDone = true;
