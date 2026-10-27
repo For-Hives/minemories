@@ -479,7 +479,7 @@ test('gallery offers one evolving world only for complete identities and exclude
 	const links = screen.getAllByRole('link', { name: '▶ Open the world' })
 	expect(links).toHaveLength(2)
 	expect(new Set(links.map(link => link.getAttribute('href')))).toEqual(new Set(['/viewer?memory=known&timelapse=1']))
-	expect(screen.getByText(/Evolving world · 1/)).toBeTruthy()
+	expect(screen.queryByText(/Evolving/)).toBeNull()
 	expect(screen.getByText('Old remote')).toBeTruthy()
 })
 

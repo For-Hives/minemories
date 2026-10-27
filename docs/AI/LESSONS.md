@@ -45,3 +45,5 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Après « fait mieux » sur une amélioration UX, ne pas empiler des micro-ajustements : revoir la hiérarchie et les actions du parcours. Pour la connexion, le formulaire doit être immédiatement utile sur mobile et l'accès sans compte doit proposer la galerie publique, pas une note discrète.
 
 - Le chargement d'un GLB local dans le viewer web sert uniquement aux tests de développement. Le retirer du build de production et des parcours publics ; garder les captures du mod, la galerie et les liens partagés comme parcours produit.
+
+- Le viewer d’un monde est la vue normale, composée de toutes ses captures : ne pas l’étiqueter « monde évolutif » ni créer de mode à part dans l’interface. L’UI de cette vue sera refaite ; privilégier le moteur et la stratégie.
