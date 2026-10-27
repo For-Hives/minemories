@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.imageio.ImageIO;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -31,10 +32,13 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
@@ -85,6 +89,8 @@ public final class ClientRuntime {
   }
 
   private static DiagnosticsClient.Operation afkDiagnostics;
+  private static final PairingReminder PAIRING_REMINDER = new PairingReminder();
+  private static volatile java.util.function.Supplier<Screen> pendingScreen;
   private static long resourceEpoch;
   private static final RemoteCaptureSession REMOTE_CAPTURE_SESSION = new RemoteCaptureSession();
 
@@ -218,12 +224,24 @@ public final class ClientRuntime {
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("upload")
                     .executes(ctx -> uploadCapture()))
             .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("settings")
+                    .executes(
+                        ctx -> {
+                          openLater(() -> new MinemoriesScreen(null));
+                          return 1;
+                        }))
+            .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("suggestions")
                     .executes(
                         ctx -> {
-                          Minecraft.getInstance().setScreen(new SuggestedZonesScreen(null));
+                          openLater(() -> new SuggestedZonesScreen(null));
                           return 1;
                         })));
+  }
+
+  // Chat closes after a command runs, so a screen opened inside the command would be replaced.
+  static void openLater(java.util.function.Supplier<Screen> screen) {
+    pendingScreen = screen;
   }
 
   public static void initialize(ClientPlatform platform) {
@@ -287,6 +305,38 @@ public final class ClientRuntime {
         mc.setScreen(new MinemoriesScreen(mc.screen));
       }
     }
+    java.util.function.Supplier<Screen> later = pendingScreen;
+    if (later != null) {
+      pendingScreen = null;
+      Minecraft.getInstance().setScreen(later.get());
+    }
+    tickPairingReminder(Minecraft.getInstance());
+  }
+
+  private static void tickPairingReminder(Minecraft mc) {
+    // The cache is cleared after each settings save; skip the tick instead of guessing.
+    PairingClient.CaptureSettings settings = CAPTURES.settings;
+    if (settings == null) return;
+    boolean inWorld = mc.level != null && mc.player != null;
+    if (PAIRING_REMINDER.tick(inWorld, settings.paired(), settings.pairingReminder()))
+      sendPairingReminder(mc);
+  }
+
+  private static void sendPairingReminder(Minecraft mc) {
+    if (mc.player == null) return;
+    Component message =
+        Component.translatable("minemories.chat.pair_reminder")
+            .withStyle(
+                style ->
+                    style
+                        .withColor(ChatFormatting.GOLD)
+                        .withClickEvent(
+                            new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/minemories settings"))
+                        .withHoverEvent(
+                            new HoverEvent(
+                                HoverEvent.Action.SHOW_TEXT,
+                                Component.translatable("minemories.chat.pair_reminder_hover"))));
+    mc.player.displayClientMessage(message, false);
   }
 
   public static void trackAfkKeyboard(int action) {
@@ -681,7 +731,15 @@ public final class ClientRuntime {
         .whenComplete(
             (message, error) ->
                 Minecraft.getInstance()
-                    .execute(() -> tell(error == null ? message : pairingError(error))));
+                    .execute(
+                        () -> {
+                          if (error != null) {
+                            tell(pairingError(error));
+                            return;
+                          }
+                          tell(message);
+                          tell(I18n.get("minemories.chat.pair_diagnostics_notice"));
+                        }));
     return 1;
   }
 
