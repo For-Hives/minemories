@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 import { CaptureReaders } from './capture-readers'
 import { parseMetadata } from './memory-metadata'
-import { type FramePart, TIMELAPSE_LEASE_MS, TimelapseCatalog } from './timelapse-catalog'
+import { type FrameManifest, type FramePart, TIMELAPSE_LEASE_MS, TimelapseCatalog } from './timelapse-catalog'
 import { MAX_TIMELAPSE_CHUNK, splitTimelapseCapture } from './timelapse-chunks'
 
 /** Providers must abort pending requests and streams when the signal fires. */
@@ -58,6 +58,70 @@ async function readPart(objects: TimelapseObjects, part: FramePart, signal: Abor
 	} finally {
 		stream.destroy()
 	}
+}
+
+const MAX_RANGE_BYTES = 64 * 1024 * 1024
+
+/** Only parts overlapping the requested window are fetched; each fetched part is still integrity-checked. */
+async function convertedRange(
+	objects: TimelapseObjects,
+	manifest: FrameManifest,
+	start: number,
+	length: number,
+	signal: AbortSignal,
+	progress: () => void
+): Promise<Buffer> {
+	const end = start + length
+	if (end > manifest.size) throw new Error('Timelapse range exceeds frame')
+	const output = Buffer.allocUnsafe(length)
+	let partStart = 0
+	for (const part of manifest.parts) {
+		const partEnd = partStart + part.size
+		if (partEnd > start && partStart < end) {
+			signal.throwIfAborted()
+			// biome-ignore lint/performance/noAwaitInLoops: fetch overlapping parts one at a time to keep memory bounded.
+			const payload = await readPart(objects, part, signal)
+			const from = Math.max(start, partStart),
+				to = Math.min(end, partEnd)
+			payload.copy(output, from - start, from - partStart, to - partStart)
+			progress()
+		}
+		if (partEnd >= end) break
+		partStart = partEnd
+	}
+	return output
+}
+
+/** Streams a raw object and keeps only the requested window; the caller destroys the stream. */
+async function rawRange(
+	source: Readable,
+	start: number,
+	length: number,
+	signal: AbortSignal,
+	progress: () => void
+): Promise<Buffer> {
+	const end = start + length,
+		output = Buffer.allocUnsafe(length)
+	const abort = () =>
+		source.destroy(signal.reason instanceof Error ? signal.reason : new Error('Capture range read aborted'))
+	signal.addEventListener('abort', abort, { once: true })
+	let position = 0
+	try {
+		for await (const chunk of source) {
+			signal.throwIfAborted()
+			if (!(chunk instanceof Uint8Array)) throw new Error('Invalid capture chunk')
+			progress()
+			const from = Math.max(start, position),
+				to = Math.min(end, position + chunk.byteLength)
+			if (from < to) output.set(chunk.subarray(from - position, to - position), from - start)
+			position += chunk.byteLength
+			if (position >= end) break
+		}
+	} finally {
+		signal.removeEventListener('abort', abort)
+	}
+	if (position < end) throw new Error('Capture range exceeds object')
+	return output
 }
 
 /** Original uploads stay readable until a complete, verified chunk manifest commits. */
@@ -140,6 +204,64 @@ export class TimelapseFiles {
 		})
 		if (signal.aborted) abort()
 		return body
+	}
+
+	/** Bounded byte-range read of the stored object; converted objects fetch only the parts that overlap. */
+	async readRange(
+		objectKey: string,
+		start: number,
+		length: number,
+		signal = new AbortController().signal
+	): Promise<Buffer> {
+		if (
+			!Number.isSafeInteger(start) ||
+			start < 0 ||
+			!Number.isSafeInteger(length) ||
+			length < 1 ||
+			length > MAX_RANGE_BYTES
+		)
+			throw new RangeError('Invalid timelapse range')
+		signal.throwIfAborted()
+		const opened = this.catalog.open(objectKey, this.options.now())
+		if (!opened) return await this.readOriginalRange(objectKey, start, length, signal)
+		const controller = new AbortController(),
+			beat = heartbeat(controller, () => this.catalog.renewReader(opened.id, this.options.now()), this.options)
+		try {
+			return await convertedRange(
+				this.objects,
+				opened.manifest,
+				start,
+				length,
+				AbortSignal.any([signal, controller.signal]),
+				beat.progress
+			)
+		} finally {
+			beat.close()
+			controller.abort()
+			this.catalog.closeReader(opened.id)
+		}
+	}
+
+	private async readOriginalRange(
+		objectKey: string,
+		start: number,
+		length: number,
+		parent: AbortSignal
+	): Promise<Buffer> {
+		const id = this.readers.open(objectKey, this.options.now()),
+			controller = new AbortController(),
+			signal = AbortSignal.any([parent, controller.signal]),
+			beat = heartbeat(controller, () => this.readers.renew(id, this.options.now()), this.options)
+		let source: Readable | undefined
+		try {
+			source = await this.objects.read(objectKey, signal)
+			return await rawRange(source, start, length, signal, beat.progress)
+		} finally {
+			beat.close()
+			source?.destroy()
+			controller.abort()
+			this.readers.close(id)
+		}
 	}
 
 	private async readOriginal(objectKey: string, parent: AbortSignal): Promise<Readable> {
