@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "Не удалось прочитать настройки: данные не собираются.",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "Согласие отозвано здесь, но не сохранено. Исправь права доступа перед перезапуском.",
   "minemories.ui.reglage_non_enregistre_reessaie": "Настройка не сохранена. Попробуй снова.",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "По умолчанию отключено. Согласие после привязки помогает исправлять экспорт и сбои.",
+  "minemories.ui.diagnostics_intro": "По умолчанию включено после подключения. Помогает исправлять проблемы с экспортом и сбоями. Отключить можно здесь в любой момент.",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "Версии, ошибка и строки кода. До восьми личных отчётов хранятся не более 7 дней; повторная отправка после перезапуска.",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "Исключены: сообщения, URLs, токены, координаты, сид, имена миров и игроков, снимки.",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "ВЫКЛ очищает локальную очередь и запрашивает удаление на сервере. Без сети действует срок хранения сервера.",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "Без твоего согласия ничего не отправляется.",
+  "minemories.ui.pret": "Готово.",
   "minemories.ui.service_minemories": "Сервис Minemories",
   "minemories.ui.mode_simple": "Простой режим",
   "minemories.ui.mode_avance": "Расширенный режим",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "Снимки AFK включены, даже на паузе.",
   "minemories.ui.captures_automatiques_desactivees": "Автоматические снимки отключены.",
   "minemories.ui.connexion_du_compte": "Подключение аккаунта…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Аккаунт подключён. Можно снимать и отправлять.",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Аккаунт подключён. Можно снимать и отправлять. Технические диагностики включены, чтобы помочь исправлять ошибки (без личных данных). Их можно отключить в настройках Minemories.",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "Аккаунт отключён. Воспоминания в сети сохранены.",
   "minemories.ui.adresse_de_lapi_https": "Адрес API (HTTPS)",
   "minemories.ui.dossier_local_historique_conserve": "Локальная папка (история сохраняется)",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "Глубина: %s",
   "minemories.options.afk.enabled": "Снимки AFK: включены",
   "minemories.options.afk.disabled": "Снимки AFK: отключены",
-  "minemories.options.diagnostics.enabled": "Диагностика: ВКЛ"
+  "minemories.options.diagnostics.enabled": "Диагностика: ВКЛ",
+  "minemories.chat.pair_reminder": "Ты ещё не подключён к Minemories: твои воспоминания остаются на этом компьютере. Нажми здесь, чтобы подключиться.",
+  "minemories.chat.pair_reminder_hover": "Открыть настройки Minemories",
+  "minemories.chat.pair_diagnostics_notice": "Технические диагностики включены, чтобы помочь исправлять ошибки (без личных данных). Их можно отключить в настройках Minemories."
 }

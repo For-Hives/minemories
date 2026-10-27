@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "설정을 읽을 수 없어 데이터를 수집하지 않아요.",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "여기서는 동의를 철회했지만 저장하지 못했어요. 다시 시작하기 전에 파일 권한을 확인하세요.",
   "minemories.ui.reglage_non_enregistre_reessaie": "설정을 저장하지 못했어요. 다시 시도하세요.",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "기본적으로 꺼져 있어요. 계정 연결 후 동의하면 내보내기 오류와 충돌을 해결하는 데 도움이 돼요.",
+  "minemories.ui.diagnostics_intro": "계정을 연결하면 기본적으로 켜져 있어요. 내보내기와 충돌 문제를 고치는 데 도움이 돼요. 여기서 언제든지 끌 수 있어요.",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "버전, 오류, 코드 줄을 포함해요. 비공개 보고서를 최대 8개, 7일 동안 보관하며 다시 시작하면 재전송해요.",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "메시지, URLs, 토큰, 좌표, 시드, 월드/플레이어 이름과 캡처는 제외해요.",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "끄면 로컬 대기열을 비우고 서버에 삭제를 요청해요. 오프라인일 때는 서버 보관 기간이 적용돼요.",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "동의 없이 보내지 않아요.",
+  "minemories.ui.pret": "준비됐어요.",
   "minemories.ui.service_minemories": "Minemories 서비스",
   "minemories.ui.mode_simple": "간단 모드",
   "minemories.ui.mode_avance": "고급 모드",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "일시 정지 중에도 AFK 캡처를 사용해요.",
   "minemories.ui.captures_automatiques_desactivees": "자동 캡처를 껐어요.",
   "minemories.ui.connexion_du_compte": "계정 연결 중…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "계정을 연결했어요. 이제 캡처하고 보낼 수 있어요.",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "계정을 연결했어요. 이제 캡처하고 보낼 수 있어요. 버그 수정을 돕기 위해 기술 진단 정보가 켜져 있어요 (개인 정보는 없어요). Minemories 설정에서 끌 수 있어요.",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "계정 연결을 해제했어요. 온라인 추억은 보존돼요.",
   "minemories.ui.adresse_de_lapi_https": "API 주소(HTTPS)",
   "minemories.ui.dossier_local_historique_conserve": "로컬 폴더(기록 보존)",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "깊이: %s",
   "minemories.options.afk.enabled": "AFK 캡처: 켜짐",
   "minemories.options.afk.disabled": "AFK 캡처: 꺼짐",
-  "minemories.options.diagnostics.enabled": "진단: 켜짐"
+  "minemories.options.diagnostics.enabled": "진단: 켜짐",
+  "minemories.chat.pair_reminder": "아직 Minemories에 연결되지 않았어요. 추억은 이 컴퓨터에 그대로 남아 있어요. 여기를 클릭해서 연결하세요.",
+  "minemories.chat.pair_reminder_hover": "Minemories 설정 열기",
+  "minemories.chat.pair_diagnostics_notice": "버그 수정을 돕기 위해 기술 진단 정보가 켜져 있어요 (개인 정보는 없어요). Minemories 설정에서 끌 수 있어요."
 }

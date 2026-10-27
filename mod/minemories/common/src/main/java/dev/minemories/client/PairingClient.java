@@ -38,6 +38,7 @@ final class PairingClient {
       boolean enabled,
       boolean fullHeight,
       int tileChunks,
+      boolean pairingReminder,
       ClientSettings.AfkOptions options,
       Path directory,
       String api,
@@ -51,6 +52,7 @@ final class PairingClient {
         ClientSettings.afkSnapshots(value),
         ClientSettings.fullHeightCapture(value),
         ClientSettings.captureTileChunks(value),
+        ClientSettings.pairingReminder(value),
         ClientSettings.afkOptions(value),
         ClientSettings.exportDirectory(value, home()),
         apiUrl(value),
@@ -90,13 +92,13 @@ final class PairingClient {
         settings -> {
           settings.remove("deviceToken");
           settings.remove("deviceId");
-          settings.remove("diagnosticsConsent");
-          settings.remove("diagnosticsIdentity");
+          ClientSettings.forgetBoundDiagnostics(settings);
         });
   }
 
   static boolean diagnosticsConsent() {
-    return ClientSettings.diagnosticsConsentForIdentity(
+    return isPaired()
+        && ClientSettings.diagnosticsConsentForIdentity(
             readSettings(), System.getenv("MINEMORIES_API_URL"))
         && DIAGNOSTICS.consentAllowed();
   }
@@ -226,8 +228,7 @@ final class PairingClient {
                     }
                     current.setProperty("deviceToken", result.get("deviceToken").getAsString());
                     current.setProperty("deviceId", result.get("deviceId").getAsString());
-                    current.remove("diagnosticsConsent");
-                    current.remove("diagnosticsIdentity");
+                    ClientSettings.forgetBoundDiagnostics(current);
                   });
               return "Mod paired. You can now use /minemories upload.";
             });

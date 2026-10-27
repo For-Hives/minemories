@@ -33,11 +33,11 @@
   "minemories.ui.configuration_illisible_aucune_collecte": "Einstellungen unlesbar: keine Datenerhebung.",
   "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer": "Einwilligung hier widerrufen, aber nicht gespeichert. Prüfe vor dem Neustart die Dateirechte.",
   "minemories.ui.reglage_non_enregistre_reessaie": "Einstellung nicht gespeichert. Versuche es erneut.",
-  "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs": "Standardmäßig deaktiviert. Deine Zustimmung nach dem Koppeln hilft bei Exportfehlern und Abstürzen.",
+  "minemories.ui.diagnostics_intro": "Standardmäßig an, sobald du verbunden bist. Hilft, Probleme bei Exporten und Abstürzen zu beheben. Du kannst sie hier jederzeit ausschalten.",
   "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance": "Versionen, Fehler und Codezeilen. Höchstens acht private Berichte für maximal 7 Tage; erneuter Versand nach Neustart.",
   "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures": "Ausgeschlossen: Nachrichten, URLs, Tokens, Koordinaten, Seed, Welt-/Spielernamen und Aufnahmen.",
   "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique": "AUS leert die lokale Warteschlange und fordert die Löschung auf dem Server an. Offline gilt dessen Aufbewahrungsfrist.",
-  "minemories.ui.aucun_envoi_sans_ton_accord": "Ohne deine Zustimmung wird nichts gesendet.",
+  "minemories.ui.pret": "Bereit.",
   "minemories.ui.service_minemories": "Minemories-Dienst",
   "minemories.ui.mode_simple": "Einfacher Modus",
   "minemories.ui.mode_avance": "Erweiterter Modus",
@@ -73,7 +73,7 @@
   "minemories.ui.captures_afk_activees_meme_en_pause": "AFK-Aufnahmen aktiviert, auch im Pausenmenü.",
   "minemories.ui.captures_automatiques_desactivees": "Automatische Aufnahmen deaktiviert.",
   "minemories.ui.connexion_du_compte": "Konto wird verbunden…",
-  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Konto verbunden. Du kannst aufnehmen und senden.",
+  "minemories.ui.compte_connecte_tu_peux_capturer_et_envoyer": "Konto verbunden. Du kannst aufnehmen und senden. Technische Diagnosen sind aktiviert, um Fehler zu beheben (keine persönlichen Daten). Du kannst sie in den Minemories-Einstellungen ausschalten.",
   "minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves": "Konto getrennt. Deine Online-Erinnerungen bleiben erhalten.",
   "minemories.ui.adresse_de_lapi_https": "API-Adresse (HTTPS)",
   "minemories.ui.dossier_local_historique_conserve": "Lokaler Ordner (Verlauf bleibt erhalten)",
@@ -104,5 +104,8 @@
   "minemories.options.depth": "Tiefe: %s",
   "minemories.options.afk.enabled": "AFK-Aufnahmen: aktiviert",
   "minemories.options.afk.disabled": "AFK-Aufnahmen: deaktiviert",
-  "minemories.options.diagnostics.enabled": "Diagnose: AN"
+  "minemories.options.diagnostics.enabled": "Diagnose: AN",
+  "minemories.chat.pair_reminder": "Du bist noch nicht mit Minemories verbunden: Deine Erinnerungen bleiben auf diesem Computer. Klicke hier, um dich zu verbinden.",
+  "minemories.chat.pair_reminder_hover": "Minemories-Einstellungen öffnen",
+  "minemories.chat.pair_diagnostics_notice": "Technische Diagnosen sind aktiviert, um Fehler zu beheben (keine persönlichen Daten). Du kannst sie in den Minemories-Einstellungen ausschalten."
 }

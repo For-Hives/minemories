@@ -180,6 +180,49 @@ class DiagnosticsClientTest {
   }
 
   @Test
+  void anAbsentConsentKeyMeansOnOnceButOnlyAfterPairing() throws Exception {
+    DiagnosticsClient client = start();
+    Properties unpaired = new Properties();
+    unpaired.setProperty("apiUrl", api);
+    settings.set(unpaired);
+    var early = client.begin(DiagnosticReport.Phase.CAPTURE, null);
+    early.failed(new PrivateError());
+    Thread.sleep(150);
+    assertEquals(0, authorizations.get());
+    assertEquals(0, reports.get());
+
+    Properties implicit = paired(true, "private-test-token");
+    implicit.remove("diagnosticsConsent");
+    implicit.remove("diagnosticsIdentity");
+    settings.set(implicit);
+    await(() -> client.status().startsWith("Activés"));
+    var operation = client.begin(DiagnosticReport.Phase.CAPTURE, null);
+    operation.step(DiagnosticReport.Step.CAPTURE_STARTED);
+    operation.failed(new PrivateError());
+    await(() -> reports.get() == 1 && !client.isSending());
+    assertEquals(1, authorizations.get());
+  }
+
+  @Test
+  void anExplicitRefusalStaysRefusedAfterTheDeviceTokenChanges() throws Exception {
+    DiagnosticsClient client = start();
+    Properties refused = paired(false, "first-token");
+    settings.set(refused);
+    Thread.sleep(150);
+    Properties repaired = paired(false, "second-token");
+    ClientSettings.forgetBoundDiagnostics(repaired);
+    settings.set(repaired);
+    var operation = client.begin(DiagnosticReport.Phase.CAPTURE, null);
+    PrivateError error = new PrivateError();
+    operation.failed(error);
+    Thread.sleep(150);
+    assertEquals("false", repaired.getProperty("diagnosticsConsent"));
+    assertEquals(0, error.stackReads);
+    assertEquals(0, authorizations.get());
+    assertEquals(0, reports.get());
+  }
+
+  @Test
   void captureAndUploadShareCorrelationAndOnlySanitizedBoundedData() throws Exception {
     DiagnosticsClient client = start();
     enable(client);

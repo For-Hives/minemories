@@ -709,7 +709,7 @@
 	"Privacy": "プライバシー",
 	"Privacy — Minemories": "プライバシー — Minemories",
 	"Private": "プライベート",
-	"Private technical reports with limited retention. No reports without pairing and player consent. Crash reports may arrive after the next game launch.": "保持期間が限られている非公開の技術レポート。ペアリングとプレイヤーの同意がなければ報告はできません。クラッシュレポートは、次のゲームの起動後に届く可能性があります。",
+	"Private technical reports with limited retention. No reports before pairing; players can turn diagnostics off in the game. Crash reports may arrive after the next game launch.": "保持期間が限られている非公開の技術レポート。ペアリング前にレポートは送信されません。プレイヤーはゲーム内で診断をオフにできます。クラッシュレポートは、次のゲームの起動後に届く可能性があります。",
 	"Profile": "プロフィール",
 	"Project repository": "プロジェクトリポジトリ",
 	"Project terms": "プロジェクト規約",

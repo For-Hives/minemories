@@ -94,8 +94,7 @@ final class DiagnosticsSettingsScreen extends Screen {
     int y = top + 34;
     for (String paragraph :
         List.of(
-            I18n.get(
-                "minemories.ui.desactives_par_defaut_ton_accord_apres_appairage_aide_a_corriger_les_exports_et_les_crashs"),
+            I18n.get("minemories.ui.diagnostics_intro"),
             I18n.get(
                 "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance"),
             I18n.get(
