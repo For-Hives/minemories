@@ -1,9 +1,10 @@
 import type { TemporalFrame, TemporalWindow } from '@minemories/api-contract'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { buttonDark, buttonOutline } from '../components/ui'
+import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
+import { ViewerStudio } from '../components/ViewerStudio'
 import { useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
@@ -60,9 +61,27 @@ function useFrameExport(
 	return { exporting, exportCurrent }
 }
 
-function useTimelapse(memoryId: string) {
+function usePauseWhenHidden(setPlaying: (playing: boolean) => void) {
+	useEffect(() => {
+		const pause = () => {
+			if (document.hidden) setPlaying(false)
+		}
+		document.addEventListener('visibilitychange', pause)
+		return () => document.removeEventListener('visibilitychange', pause)
+	}, [setPlaying])
+}
+
+type SceneHooks = {
+	onCycle: (minutes: number) => void
+	onFileInfo: (name: string, size: number) => void
+	onEmptyChange: (empty: boolean) => void
+}
+
+function useTimelapse(memoryId: string, hooks: SceneHooks) {
 	const restoration = useCaptureRestoration()
 	const restoreLoad = restoration.load
+	const sceneHooks = useRef(hooks)
+	sceneHooks.current = hooks
 	const canvas = useRef<HTMLCanvasElement>(null)
 	const scene = useRef<ViewerScene | null>(null)
 	const loader = useRef<TemporalLoader | null>(null)
@@ -90,9 +109,9 @@ function useTimelapse(memoryId: string) {
 		if (!canvas.current) return
 		try {
 			viewer = new ViewerScene(canvas.current, {
-				onCycle: () => undefined,
-				onFileInfo: () => undefined,
-				onEmptyChange: () => undefined,
+				onCycle: cycle => sceneHooks.current.onCycle(cycle.minutes),
+				onFileInfo: (name, size) => sceneHooks.current.onFileInfo(name, size),
+				onEmptyChange: value => sceneHooks.current.onEmptyChange(value),
 				onLoading: () => undefined,
 			})
 		} catch {
@@ -246,13 +265,7 @@ function useTimelapse(memoryId: string) {
 		}, delay * 1000)
 		return () => globalThis.clearTimeout(timer)
 	})
-	useEffect(() => {
-		const pause = () => {
-			if (document.hidden) setPlaying(false)
-		}
-		document.addEventListener('visibilitychange', pause)
-		return () => document.removeEventListener('visibilitychange', pause)
-	}, [])
+	usePauseWhenHidden(setPlaying)
 
 	function move(offset: number) {
 		setPlaying(false)
@@ -302,30 +315,28 @@ function useTimelapse(memoryId: string) {
 type Timeline = ReturnType<typeof useTimelapse>
 
 export function TimelapsePage({ memoryId }: { memoryId: string }) {
-	const state = useTimelapse(memoryId)
-	const { canvas, scene, window, current, busy, paging, error, notice, tileProgress } = state
 	const { t, locale } = useI18n()
+	const [minutes, setMinutes] = useState(570)
+	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
+	const [empty, setEmpty] = useState(true)
+	const state = useTimelapse(memoryId, {
+		onCycle: setMinutes,
+		onFileInfo: (name, size) => setFileInfo({ name, size }),
+		onEmptyChange: setEmpty,
+	})
+	const { canvas, scene, window, current, busy, paging, error, notice, tileProgress } = state
+	const evolving = window !== null && window.totalFrames > 1
 
 	return (
-		<section className="mx-auto max-w-[1360px] px-5 py-8">
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<div>
-					<p className="font-mono text-xs text-[#607a4a]">{t('CAPTURE TIMELINE')}</p>
-					<h1 className="text-2xl font-bold">{window?.name ?? t('Your world through time')}</h1>
-				</div>
-				<Link className={buttonOutline} to="/gallery">
-					{t('My gallery')}
-				</Link>
-			</div>
-			<p>{t('Only recorded captures are shown. No states between captures are reconstructed.')}</p>
-			{window && (
-				<p className="text-sm">
-					{t(scopeLabels[window.scope])} · {window.totalFrames} {t('captures')} · {formatFileSize(window.totalBytes)}
-				</p>
-			)}
-			<div className="relative h-[65vh] min-h-[360px] overflow-hidden rounded-lg bg-night">
+		<section className="viewer-page cinema-page">
+			<ViewerHeader title={window?.name ?? t('A world to find again.')} subtitle="STUDIO" />
+			<div className="viewer-stage">
+				<canvas
+					ref={canvas}
+					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
+					aria-label={t('Interactive 3D scene')}
+				/>
 				<CaptureRestorationPanel view={state.restoration.view} onRestore={state.restoration.resume} />
-				<canvas ref={canvas} className="h-full w-full" aria-label={t('Interactive 3D scene')} />
 				{!state.restoration.view && (busy || paging) && (
 					<p role="status" className="absolute left-4 top-4 rounded bg-night px-3 py-2 text-white">
 						{tileProgress && busy
@@ -333,17 +344,35 @@ export function TimelapsePage({ memoryId }: { memoryId: string }) {
 							: t('Loading capture…')}
 					</p>
 				)}
-				<button
-					type="button"
-					className={`${buttonOutline} absolute bottom-4 right-4`}
-					onClick={() => scene.current?.resetView()}
-					disabled={!current || busy}
-				>
-					{t('Recenter the camera')}
-				</button>
+				{!state.restoration.view && <ViewerLoadState loading={null} error="" />}
 			</div>
-			{error && <TimelineError state={state} />}
-			{notice && <p role="status">{t(notice)}</p>}
+			{!empty && (
+				<ViewerStudio
+					sceneRef={scene}
+					ready={!(busy || paging || state.restoration.view)}
+					memoryId={current?.id ?? memoryId}
+					minutes={minutes}
+					fileInfo={fileInfo ? `${fileInfo.name} · ${formatFileSize(fileInfo.size, locale)}` : ''}
+				/>
+			)}
+			<div className="mx-auto max-w-[1100px] px-5 pb-8 text-[#d6dccf]">
+				{error && <TimelineError state={state} />}
+				{notice && <p role="status">{t(notice)}</p>}
+				{evolving && window && <EvolutionPanel state={state} window={window} />}
+			</div>
+		</section>
+	)
+}
+
+function EvolutionPanel({ state, window }: { state: Timeline; window: TemporalWindow }) {
+	const { t, locale } = useI18n()
+	const { current } = state
+	return (
+		<>
+			<p className="font-mono text-xs text-[#9ab88a]">
+				{t('CAPTURE TIMELINE')} · {t(scopeLabels[window.scope])} · {window.totalFrames} {t('captures')} ·{' '}
+				{formatFileSize(window.totalBytes)}
+			</p>
 			{current && (
 				<p aria-live="polite">
 					{current.name} ·{' '}
@@ -351,16 +380,10 @@ export function TimelapsePage({ memoryId }: { memoryId: string }) {
 						{new Date(current.at).toLocaleString(locale)}
 					</time>{' '}
 					· {t(current.timeSource === 'capture' ? 'Capture time' : 'Upload time (capture time unknown)')}
-					{current.captureFinishedAt && current.captureStartedAt && (
-						<span className="mt-1 block break-all font-mono text-xs">
-							{' '}
-							· {t('Capture interval')}: {current.captureStartedAt} → {current.captureFinishedAt}
-						</span>
-					)}
 				</p>
 			)}
-			{window && <TimelineControls state={state} window={window} />}
-		</section>
+			<TimelineControls state={state} window={window} />
+		</>
 	)
 }
 

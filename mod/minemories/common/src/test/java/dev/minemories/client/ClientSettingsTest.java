@@ -185,12 +185,13 @@ class ClientSettingsTest {
   }
 
   @Test
-  void manualCapturesAreTiledOnlyWhenTheyOptIn() {
+  void manualCapturesAreTiledByDefaultAndCanOptOut() {
     Properties settings = new Properties();
-    assertFalse(ClientSettings.manualCaptureTiles(settings));
+    assertTrue(ClientSettings.manualCaptureTiles(settings));
+    assertEquals(4, ClientSettings.manualTileChunks(settings));
+    settings.setProperty("manualCaptureTiles", "false");
     assertEquals(0, ClientSettings.manualTileChunks(settings));
     settings.setProperty("manualCaptureTiles", "true");
-    assertEquals(4, ClientSettings.manualTileChunks(settings));
     settings.setProperty("captureTileChunks", "8");
     assertEquals(8, ClientSettings.manualTileChunks(settings));
     // The manual choice does not depend on the AFK tile switch.

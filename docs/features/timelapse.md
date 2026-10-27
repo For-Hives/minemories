@@ -416,3 +416,12 @@ Le contrôle global final `bun run build` passe sous Bun 1.4.3 / JDK 21, avec
 `bun check`, 140 tests web, 235 tests API actifs et les contrôles Java. Les six
 tests Garage nécessitent le service dédié ; leur validation réelle est décrite
 aux checkpoints backend ci-dessus. Les seuils de couverture sont inchangés.
+
+## Un seul visualiseur
+
+Ouvrir un souvenir dans le viewer ouvre directement l'évolution de son monde : le même
+visualiseur (studio, ambiance, partage) et, dès qu'il y a plusieurs captures, la barre de
+lecture temporelle. Il n'y a plus de mode « Timeline » séparé. Un souvenir sans identité de
+monde (ancien, import) s'ouvre dans le visualiseur simple. Les anciennes captures en GLB
+unique restent une série par zone exacte ; seules les captures tuilées (défaut depuis
+0.22) se rejoignent dans une même série par monde.

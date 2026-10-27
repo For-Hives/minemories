@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
 	signUp: vi.fn(),
 	navigate: vi.fn(),
 	list: vi.fn(),
+	frames: vi.fn(),
 	storage: vi.fn(),
 	listTrash: vi.fn(),
 	restore: vi.fn(),
@@ -52,6 +53,7 @@ vi.mock('../api-client', () => ({
 		account: { storage: mocks.storage },
 		memories: { list: mocks.list, listTrash: mocks.listTrash, restore: mocks.restore },
 		pairing: { status: mocks.status, create: mocks.create, check: mocks.check },
+		timelapse: { frames: mocks.frames },
 	},
 }))
 vi.mock('react-router', async importOriginal => ({
@@ -73,6 +75,8 @@ vi.mock('../viewer-scene', () => ({
 	},
 }))
 beforeEach(() => {
+	// Captures without a world identity fall back to the plain viewer.
+	mocks.frames.mockRejectedValue({ code: 'NOT_FOUND' })
 	vi.clearAllMocks()
 	mocks.context.session = null
 	mocks.context.isPending = false
@@ -342,7 +346,7 @@ test('gallery memory takes precedence over a previous local file and shows downl
 			<ViewerPage />
 		</MemoryRouter>
 	)
-	expect(screen.getByText('Downloading the memory…')).toBeTruthy()
+	expect(await screen.findByText('Downloading the memory…')).toBeTruthy()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	await act(async () => {
 		finish?.(new Response(new Blob(['glTF'])))
@@ -439,7 +443,7 @@ test('French translation does not change pairing state identifiers or hide the p
 	localStorage.clear()
 })
 
-test('gallery offers timelines only for complete identities and excludes ambiguous old remote captures', async () => {
+test('gallery no longer offers a separate timeline mode', async () => {
 	const identity = {
 		worldId: 'a'.repeat(64),
 		zoneId: 'b'.repeat(64),
@@ -474,9 +478,7 @@ test('gallery offers timelines only for complete identities and excludes ambiguo
 	fireEvent.click(await screen.findByRole('button', { name: /^Local/ }))
 	fireEvent.click(screen.getByRole('button', { name: /^Remote/ }))
 	fireEvent.click(screen.getByRole('button', { name: /^Legacy/ }))
-	const links = screen.getAllByRole('link', { name: 'Timeline' })
-	expect(links).toHaveLength(1)
-	expect(links[0]?.getAttribute('href')).toBe('/viewer?memory=known&timelapse=1')
+	expect(screen.queryByRole('link', { name: 'Timeline' })).toBeNull()
 })
 
 test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {
