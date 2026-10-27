@@ -16,6 +16,9 @@ import java.util.Objects;
 import java.util.Properties;
 
 final class ClientSettings {
+  /** Small tiles keep AFK captures light: aligned to the grid they span at most 128 blocks. */
+  static final int DEFAULT_TILE_CHUNKS = 4;
+
   static final String DEFAULT_API_URL = "https://api.minemories.net";
   static final String DEFAULT_SITE_URL = "https://minemories.net";
 
@@ -133,14 +136,14 @@ final class ClientSettings {
   }
 
   static int captureTileChunks(Properties settings) {
-    if (!"true".equalsIgnoreCase(settings.getProperty("captureTiles", "false"))) return 0;
+    if (!"true".equalsIgnoreCase(settings.getProperty("captureTiles", "true"))) return 0;
     try {
       int value = Integer.parseInt(settings.getProperty("captureTileChunks", "").strip());
       if (value >= 1 && value <= TileGrid.MAX_TILE_CHUNKS) return value;
     } catch (NumberFormatException ignored) {
       // Invalid advanced values fall back to the default tile size.
     }
-    return TileGrid.DEFAULT_TILE_CHUNKS;
+    return DEFAULT_TILE_CHUNKS;
   }
 
   static boolean diagnosticsConsent(Properties settings) {

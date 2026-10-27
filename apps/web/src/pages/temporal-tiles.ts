@@ -8,10 +8,13 @@ export async function fetchTemporalTile(
 	tile: TileSummary,
 	signal: AbortSignal
 ): Promise<ArrayBuffer> {
-	const response = await fetch(`${apiBase}/api/memories/${encodeURIComponent(frame.id)}/tiles/${tile.x}/${tile.z}`, {
-		credentials: 'include',
-		signal,
-	})
+	const response = await fetch(
+		`${apiBase}/api/memories/${encodeURIComponent(tile.memoryId ?? frame.id)}/tiles/${tile.x}/${tile.z}`,
+		{
+			credentials: 'include',
+			signal,
+		}
+	)
 	await requireCaptureReady(response)
 	if (response.status === 429 || response.status === 503) throw new RetryableTileError('Tile temporarily unavailable')
 	if (!(response.ok && response.body)) throw new Error('Tile unavailable')

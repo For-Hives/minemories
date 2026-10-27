@@ -3,9 +3,11 @@ import { createHash } from 'node:crypto'
 import {
 	type CaptureIdentity,
 	captureTimeKey,
+	MAX_TILES,
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
+	type TileList,
 	temporalIdentity,
 } from '@minemories/api-contract'
 import { ORPCError } from '@orpc/server'
@@ -30,6 +32,15 @@ interface Selected extends Entry {
 	name: string
 	size: number
 }
+interface TileRow {
+	memory_id: string
+	x: number
+	z: number
+	size: number
+	sha256: string
+	quads: number
+	tile_chunks: number
+}
 interface FrameInput {
 	memoryId: string
 	anchorId?: string | undefined
@@ -51,15 +62,20 @@ export function migrateTimelapseIndex(database: Database) {
 			const version = database.query('SELECT version FROM timelapse_index_version WHERE id=1').get() as {
 				version: number
 			} | null
-			if (version?.version !== 2) {
+			if (version?.version !== 3) {
 				database.exec('DELETE FROM timelapse_index;DELETE FROM timelapse_index_rejected')
-				database.query('INSERT INTO timelapse_index_version VALUES (1,2) ON CONFLICT(id) DO UPDATE SET version=2').run()
+				database.query('INSERT INTO timelapse_index_version VALUES (1,3) ON CONFLICT(id) DO UPDATE SET version=3').run()
 			}
 		})
 		.immediate()
 }
 
-function seriesKey(owner: string, identity: CaptureIdentity, dimension: string | null) {
+function seriesKey(owner: string, identity: CaptureIdentity, dimension: string | null, tiled: boolean) {
+	// Tiled captures share one series per world: tiles sit on an absolute grid, so zones can be combined over time.
+	if (tiled)
+		return createHash('sha256')
+			.update(JSON.stringify(['timelapse-series-world-v1', owner, identity.worldId, identity.worldScope, dimension]))
+			.digest('hex')
 	const b = identity.captureBounds
 	return createHash('sha256')
 		.update(
@@ -86,7 +102,7 @@ function uploadTime(value: number): string | null {
 	return new Date(value).toISOString()
 }
 
-function describe(source: Source) {
+function describe(source: Source, tiled: boolean) {
 	if (!Number.isSafeInteger(source.size) || source.size < 1 || source.size > MAX_UPLOAD_BYTES) return null
 	const metadata = parseMetadata(source.metadata_json ?? undefined)
 	if (!metadata) return null
@@ -98,7 +114,7 @@ function describe(source: Source) {
 	const key = captureTimeKey(at)
 	if (!key) return null
 	return {
-		seriesKey: seriesKey(source.user_id, identity, metadata.dimension),
+		seriesKey: seriesKey(source.user_id, identity, metadata.dimension, tiled),
 		key,
 		frame: {
 			at,
@@ -118,6 +134,25 @@ function describe(source: Source) {
 	}
 }
 
+function composeWorld(
+	captures: Array<{ memory_id: string; capture_json: string }>,
+	byCapture: Map<string, TileRow[]>,
+	tileBlocks: number
+): Map<string, TileRow> {
+	const world = new Map<string, TileRow>()
+	for (const capture of captures) {
+		const tiles = byCapture.get(capture.memory_id)
+		if (!tiles) continue
+		const { bounds } = JSON.parse(capture.capture_json) as Stored
+		// Only cells that the capture contains entirely can be emptied by it.
+		for (let x = Math.ceil(bounds.minX / tileBlocks); (x + 1) * tileBlocks - 1 <= bounds.maxX; x++)
+			for (let z = Math.ceil(bounds.minZ / tileBlocks); (z + 1) * tileBlocks - 1 <= bounds.maxZ; z++)
+				world.delete(`${x}:${z}`)
+		for (const tile of tiles) world.set(`${tile.x}:${tile.z}`, tile)
+	}
+	return world
+}
+
 type Stored = NonNullable<ReturnType<typeof describe>>['frame']
 
 /** Owner-scoped projection of actual captures, independent of the physical GLB/chunk representation. */
@@ -133,7 +168,8 @@ export class TimelapseIndex {
 					.query('SELECT id,user_id,created_at,size,metadata_json FROM memories WHERE id=?')
 					.get(memoryId) as Source | null
 				if (!source) return false
-				const capture = describe(source)
+				const tiled = this.database.query('SELECT 1 FROM memory_tiles WHERE memory_id=? LIMIT 1').get(memoryId) !== null
+				const capture = describe(source, tiled)
 				if (!capture) return false
 				this.database
 					.query('INSERT INTO timelapse_index VALUES (?,?,?,?,?)')
@@ -189,6 +225,57 @@ export class TimelapseIndex {
 				}
 			})
 			.immediate()
+	}
+
+	/**
+	 * Tiles of the whole world as of this capture: for each grid cell, the latest tile written at or before it.
+	 * A newer capture that fully contains a cell without a tile row has emptied it. Zones never captured again
+	 * keep their last known state.
+	 */
+	cumulativeTiles(userId: string, memoryId: string): TileList | null {
+		const anchor = this.entry(userId, memoryId)
+		const captures = this.database
+			.query(`SELECT i.memory_id,i.capture_json FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
+		 WHERE i.user_id=? AND i.series_key=? AND m.deleted_at IS NULL AND (i.time_key,i.memory_id) <= (?,?)
+		 ORDER BY i.time_key,i.memory_id`)
+			.all(userId, anchor.series_key, anchor.time_key, anchor.memory_id) as Array<{
+			memory_id: string
+			capture_json: string
+		}>
+		const rows = this.database
+			.query(`SELECT t.memory_id,t.x,t.z,t.size,t.sha256,t.quads,t.tile_chunks FROM memory_tiles t
+		 JOIN timelapse_index i ON i.memory_id=t.memory_id JOIN memories m ON m.id=t.memory_id
+		 WHERE i.user_id=? AND i.series_key=? AND m.deleted_at IS NULL AND (i.time_key,i.memory_id) <= (?,?)`)
+			.all(userId, anchor.series_key, anchor.time_key, anchor.memory_id) as Array<TileRow>
+		const tileChunks = rows.find(row => row.memory_id === anchor.memory_id)?.tile_chunks
+		if (tileChunks === undefined) return null
+		const byCapture = new Map<string, TileRow[]>()
+		for (const row of rows) {
+			if (row.tile_chunks !== tileChunks) continue
+			byCapture.set(row.memory_id, [...(byCapture.get(row.memory_id) ?? []), row])
+		}
+		const tileBlocks = 16 * tileChunks
+		const world = composeWorld(captures, byCapture, tileBlocks)
+		const { origin } = JSON.parse(anchor.capture_json) as Stored
+		const distance = (tile: TileRow) =>
+			((tile.x + 0.5) * tileBlocks - origin.x) ** 2 + ((tile.z + 0.5) * tileBlocks - origin.z) ** 2
+		const kept = [...world.values()]
+			.sort((a, b) => distance(a) - distance(b) || a.x - b.x || a.z - b.z)
+			.slice(0, MAX_TILES)
+			.sort((a, b) => a.x - b.x || a.z - b.z)
+		if (kept.length === 0) return null
+		return {
+			memoryId: anchor.memory_id,
+			tileChunks,
+			tiles: kept.map(({ memory_id, x, z, size, sha256, quads }) => ({
+				memoryId: memory_id,
+				x,
+				z,
+				size,
+				sha256,
+				quads,
+			})),
+		}
 	}
 
 	private entry(userId: string, id: string): Entry {

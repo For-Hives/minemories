@@ -40,6 +40,16 @@ test('requests the tile with cookies and cancellation, then returns exactly its 
 	expect([...new Uint8Array(data)]).toEqual([1, 2, 3])
 })
 
+test('a cumulative tile is requested from the capture that last wrote it', async () => {
+	const fetchMock = vi.fn(async () => new Response(payload))
+	vi.stubGlobal('fetch', fetchMock)
+	await fetchTemporalTile(frame, tile({ memoryId: '0f9c6c3e-0000-4000-8000-000000000001' }), signal())
+	expect(fetchMock).toHaveBeenCalledWith(
+		'http://example.test/api/memories/0f9c6c3e-0000-4000-8000-000000000001/tiles/-1/2',
+		expect.anything()
+	)
+})
+
 test('a cold storage tile reports restoration before any bytes are read', async () => {
 	const response = Response.json({ availability }, { status: 202 })
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))

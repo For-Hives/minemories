@@ -44,5 +44,5 @@ export const timelapseContract = {
 			})
 		)
 		.output(temporalWindow),
-	tiles: oc.input(z.object({ memoryId: z.string().uuid() })).output(tileList),
+	tiles: oc.input(z.object({ memoryId: z.string().uuid(), cumulative: z.boolean().optional() })).output(tileList),
 }
