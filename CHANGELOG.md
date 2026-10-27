@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.16.0-beta.1...mod-v0.17.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **front:** ajouter le planificateur de tuiles et l'API par tuile du viewer ([e9dc2eb](https://github.com/For-Hives/minemories/commit/e9dc2ebb8c245041b5565b53dd01a60e8bb21b05)), references [#147](https://github.com/For-Hives/minemories/issues/147)
+* **front:** lire une série tuilée tuile par tuile dans le lecteur temporel ([f92829a](https://github.com/For-Hives/minemories/commit/f92829a8a3a8d57eccbe0b7221d92e2dc7a6cc97)), references [#147](https://github.com/For-Hives/minemories/issues/147)
+
 ## [0.16.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.15.0-beta.1...mod-v0.16.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
