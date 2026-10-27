@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.14.0-beta.1...mod-v0.15.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **mod:** découper les captures en tuiles Minemories dans le cœur ([b04f474](https://github.com/For-Hives/minemories/commit/b04f474161a95ee25a5b12c58c7889b88f2341e7)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+
+### Corrections
+
+* **deps:** résoudre les avis de sécurité signalés par bun audit ([5b1fd1b](https://github.com/For-Hives/minemories/commit/5b1fd1b7c7522e3b63436a640e0176515b050bfb))
+
+### Maintenance
+
+* **deps:** update gradle to v9.8.2 ([864226b](https://github.com/For-Hives/minemories/commit/864226b0a8f395b6c83462ee482061b2ad2cb12e))
+
 ## [0.14.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.13.0-beta.1...mod-v0.14.0-beta.1) (2026-10-19)
 
 ### Fonctionnalités
