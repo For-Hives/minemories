@@ -266,7 +266,11 @@ class ClientSettingsTest {
     Properties refused = paired();
     refused.setProperty("diagnosticsConsent", "false");
     ClientSettings.configure(
-        refused, ClientSettings.DEFAULT_API_URL, "https://other.example", temporary.toString(), temporary);
+        refused,
+        ClientSettings.DEFAULT_API_URL,
+        "https://other.example",
+        temporary.toString(),
+        temporary);
     assertEquals("false", refused.getProperty("diagnosticsConsent"));
     assertTrue(ClientSettings.diagnosticsRefused(refused));
 
@@ -274,7 +278,11 @@ class ClientSettingsTest {
     accepted.setProperty("diagnosticsConsent", "true");
     accepted.setProperty("diagnosticsIdentity", "old");
     ClientSettings.configure(
-        accepted, ClientSettings.DEFAULT_API_URL, "https://other.example", temporary.toString(), temporary);
+        accepted,
+        ClientSettings.DEFAULT_API_URL,
+        "https://other.example",
+        temporary.toString(),
+        temporary);
     assertFalse(accepted.containsKey("diagnosticsConsent"));
     assertFalse(accepted.containsKey("diagnosticsIdentity"));
   }

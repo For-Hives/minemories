@@ -80,7 +80,8 @@ class PairingReminderTest {
     assertEquals(1, countReminders(reminder, 5000));
   }
 
-  private static int countWith(PairingReminder reminder, boolean paired, boolean enabled, int ticks) {
+  private static int countWith(
+      PairingReminder reminder, boolean paired, boolean enabled, int ticks) {
     int count = 0;
     for (int i = 0; i < ticks; i++) {
       if (reminder.tick(true, paired, enabled)) count++;
