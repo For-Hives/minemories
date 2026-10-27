@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.15.0-beta.1...mod-v0.16.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **api:** accepter les bundles de tuiles et servir leurs tuiles au propriétaire ([735ed1f](https://github.com/For-Hives/minemories/commit/735ed1fecea6c644ec1ef6365de201bde4662cbe)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** indexer les tuiles d'un bundle et lire un intervalle d'octets ([f192555](https://github.com/For-Hives/minemories/commit/f192555daba57a3277cc25cd3e51cdebf5f19e3c)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** valider les bundles de tuiles et déclarer leur contrat ([509718f](https://github.com/For-Hives/minemories/commit/509718ffa2f1959ba0c216f28f4a8e6aefdf339a)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+
+### Tests
+
+* **api:** justifier la boucle séquentielle des tests de tuiles ([9e3eb90](https://github.com/For-Hives/minemories/commit/9e3eb90300985f0b72762ecddeae6551497cb631))
+
 ## [0.15.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.14.0-beta.1...mod-v0.15.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
