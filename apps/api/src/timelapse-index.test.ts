@@ -2,7 +2,9 @@ import { expect, test } from 'bun:test'
 import { captureTimeKey } from '@minemories/api-contract'
 import { parseMetadata } from './memory-metadata'
 import { minimalGlb } from './test-support/glb-fixture'
+import { buildTileBundle, tileGlb } from './test-support/tile-bundle-fixture'
 import { frameMetadata, temporalFixture } from './test-support/timelapse-fixture'
+import { TileIndex } from './tile-index'
 import { migrateTimelapseIndex, TimelapseIndex } from './timelapse-index'
 
 const payload = minimalGlb(),
@@ -266,6 +268,29 @@ test('the scope migration rebuilds derived caches once and never removes origina
 		expect(() => index.frames('owner', options(remote.id))).toThrow('no temporal identity')
 		migrateTimelapseIndex(f.db)
 		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 1 })
+	} finally {
+		await f.close()
+	}
+})
+
+test('frames expose tileCount only for memories with tile rows', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db),
+			tiled = await f.add(frameMetadata, payload),
+			plain = await f.add(frameMetadata, payload),
+			{ bytes, manifest } = buildTileBundle([
+				{ x: 0, z: 0, glb: tileGlb(1) },
+				{ x: 1, z: 0, glb: tileGlb(2) },
+				{ x: 0, z: 1, glb: tileGlb(3) },
+			])
+		new TileIndex(f.db).put(tiled.id, { manifest, dataOffset: 12 + bytes.readUInt32LE(8) })
+		expect(index.backfill()).toBe(2)
+		const series = index.frames('owner', options(plain.id))
+		const counts = new Map(series.frames.map(frame => [frame.id, frame]))
+		expect(counts.get(tiled.id)?.tileCount).toBe(3)
+		expect(counts.get(plain.id)).not.toHaveProperty('tileCount')
+		expect(series.frames.every(frame => !('tileCount' in frame) || frame.tileCount === 3)).toBe(true)
 	} finally {
 		await f.close()
 	}

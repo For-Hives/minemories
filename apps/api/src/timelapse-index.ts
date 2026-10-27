@@ -169,6 +169,7 @@ export class TimelapseIndex {
 				const anchor = input.anchorId ? this.entry(userId, input.anchorId) : seed
 				if (anchor.series_key !== seed.series_key) throw new ORPCError('NOT_FOUND')
 				const parts = this.window(anchor, input.direction)
+				const tiles = this.tileCounts(parts.map(row => row.memory_id))
 				const stored = JSON.parse(seed.capture_json) as Stored
 				const totals = this.database
 					.query(`SELECT COUNT(*) AS frames,SUM(m.size) AS bytes FROM timelapse_index i
@@ -182,7 +183,7 @@ export class TimelapseIndex {
 					scope: stored.scope,
 					totalFrames: totals.frames,
 					totalBytes: totals.bytes,
-					frames: parts.map(row => this.frame(row)),
+					frames: parts.map(row => this.frame(row, tiles)),
 					hasPrevious: parts.length > 0 && this.more(anchor, parts[0] ?? anchor, '<'),
 					hasNext: parts.length > 0 && this.more(anchor, parts.at(-1) ?? anchor, '>'),
 				}
@@ -222,7 +223,17 @@ export class TimelapseIndex {
 			this.select({ ...series, time_key: boundary.time_key, memory_id: boundary.memory_id }, comparison, 1).length > 0
 		)
 	}
-	private frame(row: Selected): TemporalFrame {
+	/** One grouped query per page; memories without tile rows are absent from the map. */
+	private tileCounts(ids: string[]): Map<string, number> {
+		if (ids.length === 0) return new Map()
+		const rows = this.database
+			.query(
+				`SELECT memory_id,COUNT(*) AS count FROM memory_tiles WHERE memory_id IN (${ids.map(() => '?').join(',')}) GROUP BY memory_id`
+			)
+			.all(...ids) as Array<{ memory_id: string; count: number }>
+		return new Map(rows.map(row => [row.memory_id, row.count]))
+	}
+	private frame(row: Selected, tiles: Map<string, number>): TemporalFrame {
 		const {
 			seriesName: _name,
 			dimension: _dimension,
@@ -230,6 +241,7 @@ export class TimelapseIndex {
 			scope: _scope,
 			...frame
 		} = JSON.parse(row.capture_json) as Stored
-		return { id: row.memory_id, name: row.name, size: row.size, ...frame }
+		const tileCount = tiles.get(row.memory_id)
+		return { id: row.memory_id, name: row.name, size: row.size, ...frame, ...(tileCount ? { tileCount } : {}) }
 	}
 }

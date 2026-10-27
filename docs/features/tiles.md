@@ -80,3 +80,46 @@ il recalcule chaque SHA-256, borne les indices et les tailles et valide chaque `
 
 Voir les issues #145 (découpe côté mod), #146 (stockage et index API), #147 (lecture en
 streaming) et #148 (export à une date et exploration).
+
+## Côté API
+
+**Détection.** Un envoi resumable (`/api/mod/uploads`) dont les 4 premiers octets valent
+`MMTB` est traité comme un bundle ; les autres envois restent des `.glb` uniques. L'endpoint
+historique `POST /api/mod/memories` n'accepte que des `.glb`.
+
+**Validation.** À la finalisation, le serveur contrôle l'en-tête, le manifeste (strict : format,
+`tileChunks`, noms de fichiers, ordre `(x, z)`, décalages contigus), chaque `.glb` de tuile
+(autonomie, alignement, contrat GLB) et deux SHA-256 : celui de chaque tuile et celui du
+fichier entier, déclaré dans l'envoi. Un échec répond `400 invalid_glb_or_checksum`, comme
+pour un `.glb` invalide, et ne crée aucune capture.
+
+**Stockage.** Le bundle est stocké tel quel sous la clé habituelle `<utilisateur>/<id>.glb`.
+Les quotas, la suppression et la conversion en chunks ne changent pas.
+
+**Index.** La table `memory_tiles` garde pour chaque tuile `(x, z)`, la taille, le SHA-256,
+le nombre de quads et l'**offset absolu** dans l'objet stocké (décalage de données du bundle
+plus décalage du manifeste). Une capture sans tuile n'a aucune ligne.
+
+**Routes privées.**
+
+- `GET /api/memories/:id/tiles/:x/:z` renvoie les octets du `.glb` de la tuile en
+  `model/gltf-binary`, avec `Cache-Control: private, no-store` et `X-Content-Type-Options: nosniff`.
+  Elle exige la session du propriétaire. Une coordonnée hors de `±2 000 000` ou non numérique,
+  une tuile inconnue, celle d'un autre compte ou d'une capture dans la corbeille répondent
+  `404 tile_not_found`. Les erreurs de stockage froid suivent la route de fichier (`202
+  memory_restoration_required`). Une tuile dont l'empreinte ne correspond pas répond
+  `502 tile_integrity_failed`. Les autres échecs répondent `503 memory_storage_unavailable`.
+  La lecture est un intervalle d'octets borné. Si la lecture échoue parce que l'objet a changé
+  de clé pendant la conversion, elle est reprise une fois à l'emplacement courant ; l'empreinte
+  est toujours vérifiée sur l'emplacement effectivement lu.
+- oRPC `timelapse.tiles({ memoryId })` renvoie la liste `{ memoryId, tileChunks, tiles: [{ x, z,
+  size, sha256, quads }] }` triée par `(x, z)`, ou `NOT_FOUND`.
+- `timelapse.frames` ajoute `tileCount` aux trames qui ont des tuiles. Sans tuile, la clé est
+  absente, comme avant.
+
+**Limites.** 1024 tuiles au plus par bundle, 64 MiB par tuile, 450 MiB par envoi. Au plus 8 lecteurs
+simultanés par propriétaire : un client garde au plus 4 requêtes de tuiles en vol et réessaie avec
+un délai croissant en cas de `503`.
+
+**Partage.** Les liens partagés et publics ne servent pas encore de tuiles ; seule la route
+propriétaire est ouverte dans cette étape.
