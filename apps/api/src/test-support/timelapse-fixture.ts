@@ -8,6 +8,7 @@ import type { Readable } from 'node:stream'
 import { migrateCaptureReaders } from '../capture-readers'
 import { ObjectDeletionQueue } from '../object-deletions'
 import { TieredObjects } from '../tiered-objects'
+import { migrateTileIndex } from '../tile-index'
 import { migrateTimelapse, TimelapseCatalog } from '../timelapse-catalog'
 import { TimelapseFiles, type TimelapseObjects } from '../timelapse-files'
 import { migrateTimelapseIndex } from '../timelapse-index'
@@ -32,6 +33,7 @@ export async function temporalFixture() {
 	migrateTimelapse(db)
 	migrateCaptureReaders(db)
 	migrateTimelapseIndex(db)
+	migrateTileIndex(db)
 	const local = (key: string) => join(dir, key.replaceAll('/', '_'))
 	const objects: TimelapseObjects = {
 		read: async (key, signal) => createReadStream(local(key), { signal }),
@@ -74,6 +76,7 @@ export async function temporalFixture() {
 			db.exec('PRAGMA foreign_keys=ON')
 			migrateTimelapse(db)
 			migrateTimelapseIndex(db)
+			migrateTileIndex(db)
 		},
 		async close() {
 			db.close()

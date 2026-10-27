@@ -4,9 +4,25 @@ import { minimalGlb } from './glb-fixture'
 
 type TileInput = { x: number; z: number; glb?: Buffer; quads?: number }
 
-export function tileGlb(seed: number): Buffer {
-	const binary = Buffer.from(Array.from({ length: 64 }, (_, index) => (seed * 31 + index * 7) & 0xff))
+export function tileGlb(seed: number, binaryBytes?: number): Buffer {
+	const binary =
+		binaryBytes === undefined
+			? Buffer.from(Array.from({ length: 64 }, (_, index) => (seed * 31 + index * 7) & 0xff))
+			: seededBytes(seed, binaryBytes)
 	return minimalGlb(binary, { asset: { version: '2.0' }, buffers: [{ byteLength: binary.length }] })
+}
+
+/** Pseudo-random payloads give content-defined chunking realistic boundaries. */
+function seededBytes(seed: number, length: number): Buffer {
+	const bytes = Buffer.alloc(length)
+	let state = ((seed + 1) * 0x9e3779b9) >>> 0 || 1
+	for (let index = 0; index < length; index++) {
+		state ^= state << 13
+		state ^= state >>> 17
+		state ^= state << 5
+		bytes[index] = state & 0xff
+	}
+	return bytes
 }
 
 export function sha256Hex(bytes: Buffer): string {
