@@ -73,6 +73,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
             level.getMinBuildHeight(),
             level.getMaxBuildHeight(),
             settings.options().radius());
+    if (settings.tileChunks() > 0) bounds = bounds.alignedToTiles(16 * settings.tileChunks());
     surfaceX = bounds.minX();
     surfaceZ = bounds.minZ();
     surfaceFloor = Math.min(position.getY(), bounds.maxY());

@@ -28,7 +28,10 @@ export const tileEntry = tileEntryBase
 	})
 	.refine(tile => tile.size % 4 === 0, { message: 'Tile size must be a multiple of 4', path: ['size'] })
 
-export const tileSummary = tileEntryBase.pick({ x: true, z: true, size: true, sha256: true, quads: true })
+// `memoryId` is set only on cumulative lists, where each tile comes from the capture that last wrote it.
+export const tileSummary = tileEntryBase
+	.pick({ x: true, z: true, size: true, sha256: true, quads: true })
+	.extend({ memoryId: z.string().uuid().optional() })
 
 function orderedContiguous(tiles: TileEntry[]): boolean {
 	let offset = 0

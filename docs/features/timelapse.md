@@ -5,7 +5,7 @@ les états réellement enregistrés, avec navigation, lecture à cadence réglab
 pagination et reprise locale. L’index privé et le stockage dédupliqué sont raccordés
 aux téléchargements existants. La timeline de démonstration du site reste illustrative.
 Le fonctionnement et les validations de #75 sont décrits ci-dessous.
-Une capture découpée en tuiles (`.mmtiles`) est décrite dans [tiles.md](tiles.md).
+Une capture découpée en tuiles (`.mmtiles`) est décrite dans [tiles.md](tiles.md) ; les captures tuilées d'un monde y forment une seule série, avec des zones qui évoluent indépendamment.
 
 ## Identifier les futurs états
 

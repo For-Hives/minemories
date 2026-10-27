@@ -70,5 +70,5 @@ export function saveBlob(blob: Blob, fileName: string): void {
 }
 
 function listTiles(memoryId: string, signal: AbortSignal): Promise<TileList> {
-	return apiClient.timelapse.tiles({ memoryId }, { signal })
+	return apiClient.timelapse.tiles({ memoryId, cumulative: true }, { signal })
 }

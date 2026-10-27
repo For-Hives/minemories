@@ -8,8 +8,8 @@ fixe le format commun au mod, à l'API et au viewer. Le comportement historique
 ## Grille
 
 - Une tuile fait `tileChunks` × `tileChunks` chunks, soit `tileBlocks = 16 × tileChunks`
-  blocs de côté. `tileChunks` est compris entre 1 et 16 ; la valeur par défaut est 8
-  (128 blocs). Une capture mesure au plus 257 blocs : 16 chunks reste donc la limite.
+  blocs de côté. `tileChunks` est compris entre 1 et 16 ; la valeur par défaut de la grille est 8
+  (128 blocs) ; le mod utilise 4 (64 blocs). Une capture mesure au plus 257 blocs : 16 chunks reste donc la limite.
 - Les indices de tuile sont **absolus** : `tx = floor(x / tileBlocks)`,
   `tz = floor(z / tileBlocks)`, arrondi vers le bas aussi pour les coordonnées négatives.
   La grille ne dépend ni de l'origine de la capture ni de la position du joueur.
@@ -88,13 +88,15 @@ streaming) et #148 (export à une date et exploration).
 
 ## Côté mod
 
-La découpe est une option avancée, désactivée par défaut, dans `config/minemories.properties` :
+La découpe est active par défaut et se règle dans `config/minemories.properties` :
 
-- `captureTiles=true` active la découpe (défaut : `false`) ;
-- `captureTileChunks` règle la taille de tuile, de 1 à 16 chunks (défaut : 8). Une valeur
-  invalide ou hors bornes revient à 8.
+- `captureTiles` active la découpe (défaut : `true`, `false` pour un `.glb` unique) ;
+- `captureTileChunks` règle la taille de tuile, de 1 à 16 chunks (défaut : 4). Une valeur
+  invalide ou hors bornes revient à 4.
 
 Il n'y a pas encore de bouton dans l'interface M.
+
+**Alignement.** Quand la découpe est active, l'empreinte horizontale d'une capture AFK est agrandie aux tuiles entières qu'elle touche (sauf si le résultat dépasserait 257 blocs). Chaque tuile d'une capture est donc complète et peut remplacer la précédente sans perdre le reste de la tuile ; deux captures dans les mêmes tuiles ont aussi le même `zoneId`.
 
 Seules les captures AFK et progressives sont découpées. `/minemories export` produit toujours
 un `.glb` unique. Le bundle est enregistré sous le nom d'historique habituel `capture.glb`,
@@ -156,3 +158,18 @@ par un `.glb` unique assemblé à partir de ses tuiles : chaque tuile est lue pu
 GLB autonome. Le lien partagé et la publication publique sont inclus ; une capture dont
 l'assemblage dépasse 128 Mio de tuiles répond `413 capture_too_large_to_assemble`. La route de
 tuile reste réservée au propriétaire.
+
+## Vue « monde » dans le temps
+
+Les captures tuilées d'un même monde, d'une même dimension et d'un même compte forment
+**une seule série** dans l'index temporel, quelle que soit leur zone ; les captures en
+GLB unique gardent une série par zone. À une date donnée, la liste cumulative
+(`timelapse.tiles` avec `cumulative: true`) donne pour chaque cellule de la grille la tuile
+la plus récente écrite à cette date ou avant. Une capture plus récente qui contient entièrement
+une cellule sans y avoir de tuile l'a vidée : elle disparaît. Une zone qui n'est plus capturée
+reste donc figée dans son dernier état, pendant que l'autre évolue. Chaque tuile de la liste
+porte le `memoryId` de la capture qui l'a écrite ; le viewer la télécharge depuis celle-ci.
+Au-delà de 1024 cellules, les plus proches de la capture sont conservées.
+
+Limite : une capture non alignée (empreinte de plus de 257 blocs une fois alignée, ou
+anciennes captures) qui ne couvre qu'une partie d'une tuile remplace toute la tuile.

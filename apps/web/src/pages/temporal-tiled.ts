@@ -60,7 +60,8 @@ export async function showTiledFrame(options: TiledFrameOptions): Promise<void> 
 }
 
 function listTiles(memoryId: string, signal: AbortSignal): Promise<TileList> {
-	return apiClient.timelapse.tiles({ memoryId }, { signal })
+	// Cumulative: tiles of zones captured earlier stay as they were last recorded.
+	return apiClient.timelapse.tiles({ memoryId, cumulative: true }, { signal })
 }
 
 // The first tile goes through the restoration flow alone; the others start only once it has succeeded.

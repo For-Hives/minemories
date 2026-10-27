@@ -220,7 +220,10 @@ const router = os.router({
 	timelapse: {
 		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
 		tiles: os.timelapse.tiles.handler(({ context, input }) => {
-			const tiles = tileIndex.list(authenticated(context), input.memoryId)
+			const user = authenticated(context)
+			const tiles = input.cumulative
+				? temporalIndex.cumulativeTiles(user, input.memoryId)
+				: tileIndex.list(user, input.memoryId)
 			if (!tiles) throw new ORPCError('NOT_FOUND')
 			return tiles
 		}),
