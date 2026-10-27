@@ -24,6 +24,22 @@ export {
 	type ModDiagnostic,
 	storedDiagnostic,
 } from './diagnostics'
+export {
+	MAX_TILE_BYTES,
+	MAX_TILE_INDEX,
+	MAX_TILE_MANIFEST_BYTES,
+	MAX_TILES,
+	TILE_BUNDLE_MAGIC,
+	TILE_BUNDLE_VERSION,
+	TILE_FORMAT,
+	type TileEntry,
+	type TileList,
+	type TileManifest,
+	tileEntry,
+	tileList,
+	tileManifest,
+	tileSummary,
+} from './tiles'
 export { type TemporalFrame, type TemporalWindow, TIMELAPSE_PAGE_FRAMES } from './timelapse'
 
 export const thumbnailDataUrl = z
