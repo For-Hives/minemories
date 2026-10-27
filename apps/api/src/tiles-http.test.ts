@@ -107,6 +107,7 @@ test('an owner reads each tile of an uploaded bundle while other accounts and an
 	const client = rpc(owner.cookie)
 
 	for (const tile of ordered) {
+		// biome-ignore lint/performance/noAwaitInLoops: requests stay sequential so assertions name the failing tile.
 		const response = await tileRequest(id, tile.x, tile.z, owner.cookie)
 		expect(response.status).toBe(200)
 		expect(response.headers.get('cache-control')).toBe('private, no-store')
@@ -198,6 +199,7 @@ test('tiles remain byte-identical after timelapse conversion of their stored bun
 	const original = database.query('SELECT object_key FROM memories WHERE id = ?').get(id) as { object_key: string }
 	expect(original.object_key).toBeString()
 	for (const tile of ordered) {
+		// biome-ignore lint/performance/noAwaitInLoops: requests stay sequential so assertions name the failing tile.
 		const response = await tileRequest(id, tile.x, tile.z, owner.cookie)
 		expect(response.status).toBe(200)
 		expect(Buffer.from(await response.arrayBuffer()).equals(tile.glb)).toBe(true)
