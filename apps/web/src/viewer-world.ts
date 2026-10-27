@@ -20,18 +20,33 @@ export interface WorldLayer {
 	readonly capture: EvolutionCapture
 	readonly meshes: readonly { mesh: THREE.Mesh; primitive: EvolutionPrimitive }[]
 	readonly lights: readonly WorldLight[]
+	readonly textures: readonly THREE.Texture[]
+	resident: boolean
 }
 
-function localPositions(mesh: THREE.Mesh, root: THREE.Object3D): Float32Array {
+function localPositions(mesh: THREE.Mesh, root: THREE.Object3D): ArrayLike<number> {
 	const attribute = mesh.geometry.getAttribute('position')
 	const relative = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(mesh.matrixWorld)
+	// Minemories GLB nodes carry no transform: read the uploaded positions without copying them.
+	if (relative.equals(new THREE.Matrix4()) && attribute instanceof THREE.BufferAttribute && !attribute.normalized)
+		return attribute.array
 	const point = new THREE.Vector3(),
 		positions = new Float32Array(attribute.count * 3)
 	for (let vertex = 0; vertex < attribute.count; vertex++) {
 		point.fromBufferAttribute(attribute, vertex).applyMatrix4(relative)
-		positions.set([point.x, point.y, point.z], vertex * 3)
+		positions[vertex * 3] = point.x
+		positions[vertex * 3 + 1] = point.y
+		positions[vertex * 3 + 2] = point.z
 	}
 	return positions
+}
+
+function layerTextures(meshes: readonly { mesh: THREE.Mesh }[]): THREE.Texture[] {
+	const textures = new Set<THREE.Texture>()
+	for (const { mesh } of meshes)
+		for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
+			for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value)
+	return [...textures]
 }
 
 /**
@@ -64,19 +79,21 @@ export function prepareLayer(root: THREE.Object3D, origin: BlockPoint, bounds: B
 		meshes.push({ mesh: object, primitive })
 	})
 	for (const light of detached) light.removeFromParent()
-	return {
-		root,
-		meshes,
-		lights,
-		capture: createCapture(
-			bounds,
-			meshes.map(entry => entry.primitive)
-		),
-	}
+	const capture = createCapture(
+		bounds,
+		meshes.map(entry => entry.primitive)
+	)
+	return { root, meshes, lights, capture, textures: layerTextures(meshes), resident: true }
 }
 
-/** Uploads the composed index ranges; empty meshes cost no draw call. */
+/**
+ * Uploads the composed index ranges; empty meshes cost no draw call. A capture entirely covered by newer ones
+ * releases its GPU textures; Three.js uploads them again from the kept images if the capture reappears.
+ */
 export function applyLayer(layer: WorldLayer): void {
+	const visible = layer.meshes.some(({ primitive }) => primitive.count > 0)
+	if (!visible && layer.resident) for (const texture of layer.textures) texture.dispose()
+	layer.resident = visible
 	for (const { mesh, primitive } of layer.meshes) {
 		const index = mesh.geometry.index as THREE.BufferAttribute
 		mesh.geometry.setDrawRange(0, primitive.count)

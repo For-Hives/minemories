@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { WorldComposition } from './lib/world-evolution'
 import { applyLayer, chooseLights, prepareLayer } from './viewer-world'
 
@@ -7,9 +7,10 @@ function quadMesh(x: number) {
 	const geometry = new THREE.BufferGeometry()
 	geometry.setAttribute('position', new THREE.Float32BufferAttribute([x, 1, 0, x, 1, 1, x + 1, 1, 1, x + 1, 1, 0], 3))
 	geometry.setIndex([0, 1, 2, 0, 2, 3])
-	return new THREE.Mesh(geometry, new THREE.MeshStandardMaterial())
+	return new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: x === 0 ? atlas : null }))
 }
 
+const atlas = new THREE.Texture()
 const bounds = { minX: -8, minY: 0, minZ: -8, maxX: 40, maxY: 100, maxZ: 8 }
 
 test('layers detach lights, share rewritable index buffers and draw only composed triangles', () => {
@@ -37,6 +38,18 @@ test('layers detach lights, share rewritable index buffers and draw only compose
 	if (first) first.primitive.count = 0
 	applyLayer(layer)
 	expect(first?.mesh.visible).toBe(false)
+	expect(layer.resident).toBe(true)
+	for (const entry of layer.meshes) entry.primitive.count = 0
+	const disposed = vi.fn()
+	for (const texture of layer.textures) texture.addEventListener('dispose', disposed)
+	applyLayer(layer)
+	applyLayer(layer)
+	expect(layer.resident).toBe(false)
+	expect(disposed).toHaveBeenCalledTimes(1)
+	if (second) second.primitive.count = 6
+	applyLayer(layer)
+	expect(layer.resident).toBe(true)
+	expect(disposed).toHaveBeenCalledTimes(1)
 })
 
 test('one light per cell, strongest and nearest first, within the limit', () => {

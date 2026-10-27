@@ -40,6 +40,7 @@ réellement de la géométrie dans sa colonne de chunk (16 × 16, coordonnées a
 | Budget | 256 captures et 768 Mio décompressés au plus ; au-delà, les plus récentes sont gardées (l'état actuel du monde compte le plus) et la page le signale. L'API renvoie au plus 512 métadonnées par monde. |
 | Composition | Triangles triés une fois par chunk au chargement ; chaque étape recopie des plages contiguës d'indices (test par triangle seulement dans les chunks partiellement recouverts). Une capture n'est recalculée que si l'ensemble de ses captures plus récentes visibles change. |
 | GPU | Un seul tampon d'indices par primitive, réécrit sur la plage utile (`addUpdateRange`) ; une primitive vide est masquée (aucun draw call). Les captures entièrement recouvertes ne coûtent donc rien au rendu. |
+| Textures | Une capture entièrement recouverte à l'étape affichée libère ses textures GPU ; Three.js les renvoie depuis les images conservées si elle redevient visible (vérifié dans Chromium en revenant à la première capture). Les positions déjà chargées sont lues sans copie. |
 | Lumières | 12 lumières fixes partagées par toute la scène, mises à jour à chaque étape : pas de recompilation de shaders. |
 
 ## Mesures (27 octobre 2026)
@@ -65,8 +66,8 @@ archivée est signalée dans la liste et peut être restaurée en l'ouvrant seul
 
 ## Limites connues et étapes suivantes
 
-- Toutes les captures chargées restent en mémoire GPU (géométrie et textures), même entièrement recouvertes.
-  Libérer les textures des captures invisibles est la prochaine économie si les mesures réelles l'exigent.
+- La géométrie de toutes les captures chargées reste en mémoire GPU, même entièrement recouverte (les textures,
+  elles, sont libérées).
 - La taille brute de la géométrie domine (≈ 150 octets par quad). Pistes à mesurer avant tout changement de
   format : quantification (`KHR_mesh_quantization`, lisible par Blender), `EXT_meshopt_compression`, et un
   stockage des chunks inchangés par empreinte pour ne télécharger que ce qui a changé.
