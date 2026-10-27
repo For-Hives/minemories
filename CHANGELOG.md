@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.0-beta.1...mod-v0.19.1-beta.1) (2026-10-27)
+
+### Corrections
+
+* **api:** servir un GLB assemblé pour les captures tuilées sur les routes de fichier ([71950ee](https://github.com/For-Hives/minemories/commit/71950eec3e1f015956482d15d7fe221c3bd24598)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+
+### Refactorisation
+
+* **front:** déplacer la fusion de GLB de tuiles dans le package de contrat ([b73b976](https://github.com/For-Hives/minemories/commit/b73b9763a498bdf09c29e97b23aa7bbd449d6253)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+
 ## [0.19.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.18.0-beta.1...mod-v0.19.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
