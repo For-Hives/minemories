@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.23.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.22.0-beta.1...mod-v0.23.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* monde évolutif unique, composé chunk par chunk dans le viewer ([91e0ba5](https://github.com/For-Hives/minemories/commit/91e0ba531b16d866198d38a873a8c818e7717527))
+
+### Corrections
+
+* **web:** ne plus étiqueter la vue du monde comme « monde évolutif » ([6199ec2](https://github.com/For-Hives/minemories/commit/6199ec209a6d226f9ea495a077018cd117183dc1))
+
+### Performances
+
+* **web:** libérer les textures des captures recouvertes et lire les positions sans copie ([5300110](https://github.com/For-Hives/minemories/commit/5300110e98af576527e5760661f9224481991523))
+
 ## [0.22.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.21.0-beta.1...mod-v0.22.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
