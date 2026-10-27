@@ -90,7 +90,7 @@ public final class ClientRuntime {
 
   private static DiagnosticsClient.Operation afkDiagnostics;
   private static final PairingReminder PAIRING_REMINDER = new PairingReminder();
-  private static volatile java.util.function.Supplier<Screen> pendingScreen;
+  private static java.util.function.Supplier<Screen> pendingScreen;
   private static long resourceEpoch;
   private static final RemoteCaptureSession REMOTE_CAPTURE_SESSION = new RemoteCaptureSession();
 
