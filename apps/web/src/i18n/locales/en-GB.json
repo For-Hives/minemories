@@ -10,7 +10,6 @@
 	"Try the favorites ranking": "Try the favourites ranking",
 	"place(s) · favorites and votes saved on this device only": "place(s) · favourites and votes saved on this device only",
 	"Recenter": "Recentre",
-	"EVOLVING WORLD": "EVOLVING WORLD",
 	"{ready} of {total} captures loaded": "{ready} of {total} captures loaded",
 	"Only the most recent captures are loaded to keep the viewer fast.": "Only the most recent captures are loaded to keep the viewer fast.",
 	"This world is unavailable. Sign in as its owner, or return to your gallery.": "This world is unavailable. Sign in as its owner, or return to your gallery.",
@@ -24,6 +23,5 @@
 	"{count} chunks": "{count} chunks",
 	"Open alone": "Open alone",
 	"Moment of the world": "Moment of the world",
-	"▶ Open the world": "▶ Open the world",
-	"Evolving world": "Evolving world"
+	"▶ Open the world": "▶ Open the world"
 }

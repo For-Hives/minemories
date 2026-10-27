@@ -1199,7 +1199,6 @@
 	"publication.state.rejected": "Odrzucono",
 	"guides.install.action": "Zainstaluj moda",
 	"filters.allStates": "Wszystko",
-	"EVOLVING WORLD": "ZMIENIAJĄCY SIĘ ŚWIAT",
 	"{ready} of {total} captures loaded": "Wczytano {ready} z {total} zrzutów",
 	"Only the most recent captures are loaded to keep the viewer fast.": "Wczytywane są tylko najnowsze zrzuty, aby przeglądarka działała płynnie.",
 	"This world is unavailable. Sign in as its owner, or return to your gallery.": "Ten świat jest niedostępny. Zaloguj się na konto właściciela lub wróć do galerii.",
@@ -1213,6 +1212,5 @@
 	"{count} chunks": "Chunki: {count}",
 	"Open alone": "Otwórz osobno",
 	"Moment of the world": "Chwila świata",
-	"▶ Open the world": "▶ Otwórz świat",
-	"Evolving world": "Zmieniający się świat"
+	"▶ Open the world": "▶ Otwórz świat"
 }

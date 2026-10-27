@@ -68,7 +68,6 @@ function useWorldEvolution(memoryId: string) {
 	const [error, setError] = useState('')
 	const [retry, setRetry] = useState(0)
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: `retry` restarts the whole world on demand.
 	useEffect(() => {
 		if (!canvas.current) return
 		let scene: ViewerScene
@@ -213,7 +212,6 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 		<section className="mx-auto max-w-[1480px] px-5 py-8">
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<div>
-					<p className="font-mono text-xs text-[#607a4a]">{t('EVOLVING WORLD')}</p>
 					<h1 className="text-2xl font-bold">{world?.name ?? t('Your world through time')}</h1>
 					{world && (
 						<p className="text-sm text-[#b4c1ad]">

@@ -1,7 +1,8 @@
-# Monde évolutif : une seule vue par monde, composée chunk par chunk
+# Vue d’un monde : toutes ses captures composées chunk par chunk
 
 Remplace le lecteur « Évolution » par zone (une série par `zoneId`) et la tentative de tuiles du 27 octobre
-(voir `docs/concepts/tiles-evolution-postmortem.md`). Chaque monde n'a plus qu'**une vue** : toutes ses
+(voir `docs/concepts/tiles-evolution-postmortem.md`). C'est le viewer normal d'un monde, pas un mode à part : l'interface ne parle donc pas de « monde évolutif ».
+Chaque monde n'a plus qu'**une vue** : toutes ses
 captures identifiées sont chargées dans la même scène, la liste chronologique est à gauche, et le curseur fait
 évoluer le monde de la plus ancienne capture à la plus récente.
 
@@ -58,7 +59,7 @@ Ces mesures ne remplacent pas une validation en jeu avec de vraies captures AFK 
 ## Galerie
 
 Chaque dossier serveur/monde affiche directement **▶ Ouvrir le monde** (dernière capture identifiée). Dépliée,
-la section **Monde évolutif** liste ses captures avec leurs actions habituelles (partage, publication,
+la section du monde liste ses captures avec leurs actions habituelles (partage, publication,
 corbeille). Les captures sans identité complète restent groupées par proximité comme avant. Une capture
 archivée est signalée dans la liste et peut être restaurée en l'ouvrant seule.
 

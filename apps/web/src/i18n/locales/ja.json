@@ -1199,7 +1199,6 @@
 	"publication.state.rejected": "却下済み",
 	"guides.install.action": "MODをインストールする",
 	"filters.allStates": "すべて",
-	"EVOLVING WORLD": "変化するワールド",
 	"{ready} of {total} captures loaded": "{total} 件中 {ready} 件のキャプチャを読み込みました",
 	"Only the most recent captures are loaded to keep the viewer fast.": "ビューアを軽快に保つため、最新のキャプチャのみを読み込みます。",
 	"This world is unavailable. Sign in as its owner, or return to your gallery.": "このワールドは利用できません。所有者のアカウントでログインするか、ギャラリーに戻ってください。",
@@ -1213,6 +1212,5 @@
 	"{count} chunks": "{count} チャンク",
 	"Open alone": "単独で開く",
 	"Moment of the world": "ワールドの瞬間",
-	"▶ Open the world": "▶ ワールドを開く",
-	"Evolving world": "変化するワールド"
+	"▶ Open the world": "▶ ワールドを開く"
 }

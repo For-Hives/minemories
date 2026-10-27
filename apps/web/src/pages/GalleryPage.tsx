@@ -413,7 +413,7 @@ function WorldCaptures({
 	onChanged: () => void
 	onTrashed: (id: string) => void
 }) {
-	const { t, locale } = useI18n()
+	const { locale } = useI18n()
 	const newest = world.captures[0] as Memories[number]
 	return (
 		<div className="album-stack mb-4 rounded-[6px] border border-[#2a332d] bg-[#10150f] p-3">
@@ -423,7 +423,7 @@ function WorldCaptures({
 				/>
 				<div className="min-w-0 flex-1">
 					<p className="m-0 text-[11px] font-bold text-[#dfe7da]">
-						{t('Evolving world')} · {formatCaptureCount(locale, world.captures.length)}
+						{formatCaptureCount(locale, world.captures.length)}
 					</p>
 					{world.dimension && <p className="m-0 mt-[2px] font-mono text-[10px] text-[#8e978a]">{world.dimension}</p>}
 				</div>
