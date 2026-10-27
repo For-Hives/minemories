@@ -100,3 +100,63 @@ test('tile rows survive a database restart', async () => {
 		await f.close()
 	}
 })
+
+test('assembly lists every tile in (x, z) order without an owner and with the stored object', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TileIndex(f.db),
+			{ layout } = threeTiles(),
+			memory = await f.add({}, Buffer.alloc(4))
+		index.put(memory.id, layout)
+		const assembly = index.assembly(memory.id)
+		expect(assembly).toEqual({
+			memoryId: memory.id,
+			tileChunks: 8,
+			tiles: layout.manifest.tiles.map(tile => ({
+				x: tile.x,
+				z: tile.z,
+				offset: layout.dataOffset + tile.offset,
+				size: tile.size,
+				sha256: tile.sha256,
+			})),
+			objectKey: f.key(memory.id),
+			metadataJson: expect.any(String),
+		})
+		expect(assembly?.tiles.map(tile => [tile.x, tile.z])).toEqual([
+			[-1, 0],
+			[0, -2],
+			[0, 0],
+		])
+		expect(index.assembly('missing')).toBeNull()
+		const bare = await f.add({}, Buffer.alloc(4))
+		expect(index.assembly(bare.id)).toBeNull()
+		f.db.query('UPDATE memories SET deleted_at=1 WHERE id=?').run(memory.id)
+		expect(index.assembly(memory.id)).toBeNull()
+	} finally {
+		await f.close()
+	}
+})
+
+test('locateTile resolves a tile without an owner but never a trashed capture', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TileIndex(f.db),
+			{ layout } = threeTiles(),
+			memory = await f.add({}, Buffer.alloc(4))
+		index.put(memory.id, layout)
+		const tile = layout.manifest.tiles.find(candidate => candidate.x === 0 && candidate.z === 0)
+		if (!tile) throw new Error('Missing fixture tile')
+		expect(index.locateTile(memory.id, 0, 0)).toEqual({
+			objectKey: f.key(memory.id),
+			offset: layout.dataOffset + tile.offset,
+			size: tile.size,
+			sha256: tile.sha256,
+		})
+		expect(index.locateTile(memory.id, 9, 9)).toBeNull()
+		expect(index.locateTile('missing', 0, 0)).toBeNull()
+		f.db.query('UPDATE memories SET deleted_at=1 WHERE id=?').run(memory.id)
+		expect(index.locateTile(memory.id, 0, 0)).toBeNull()
+	} finally {
+		await f.close()
+	}
+})
