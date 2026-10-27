@@ -129,16 +129,13 @@ function LanguageControl() {
 export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
 	const { session } = useAppContext()
 	const { t, locale } = useI18n()
-	const { pathname, search } = useLocation()
+	const { pathname } = useLocation()
 	const mobile = useRef<HTMLDetailsElement>(null)
 	useEffect(() => {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
 	if (pathname === '/login' || pathname === '/register') return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
-	const cinema =
-		(pathname === '/viewer' && !search.includes('timelapse=1')) ||
-		pathname.startsWith('/share/') ||
-		pathname.startsWith('/public/')
+	const cinema = pathname === '/viewer' || pathname.startsWith('/share/') || pathname.startsWith('/public/')
 	if (cinema)
 		return (
 			<main id="main-content" className="cinema-layout" tabIndex={-1}>

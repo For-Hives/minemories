@@ -140,9 +140,9 @@ final class ClientSettings {
     return tileChunksSetting(settings);
   }
 
-  /** Manual around-player captures are saved as tiles only when the player opted in. */
+  /** Manual around-player captures join the world timeline unless the player turned tiles off. */
   static boolean manualCaptureTiles(Properties settings) {
-    return Boolean.parseBoolean(settings.getProperty("manualCaptureTiles", "false"));
+    return Boolean.parseBoolean(settings.getProperty("manualCaptureTiles", "true"));
   }
 
   static int manualTileChunks(Properties settings) {

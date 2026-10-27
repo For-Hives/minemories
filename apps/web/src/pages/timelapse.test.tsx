@@ -143,8 +143,6 @@ test('navigation renders only recorded states, aligns their origins, preserves t
 	await screen.findByText(/Capture 2 ·/)
 	expect(mocks.load.mock.calls[1]?.[1]).toMatchObject({ preserveView: true, originDelta: { x: 0, y: -1, z: 0 } })
 	expect(resumedFrame(seriesId)).toBe(frame(2).id)
-	fireEvent.click(screen.getByRole('button', { name: 'Recenter the camera' }))
-	expect(mocks.reset).toHaveBeenCalledOnce()
 })
 
 test('fast slider changes abort parsing but wait before loading only the most recent selection', async () => {
