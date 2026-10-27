@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.20.0-beta.1...mod-v0.21.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **mod:** réglages avancés organisés en onglets ([efc4a6e](https://github.com/For-Hives/minemories/commit/efc4a6ef79f26cbb15f6568357305a202e8c0a88))
+
+### Corrections
+
+* **mod:** retirer l'écriture statique de l'onglet avancé signalée par SpotBugs ([7c60436](https://github.com/For-Hives/minemories/commit/7c60436393b8924e12c127d7f9b834149c5a71fa))
+
 ## [0.20.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.1-beta.1...mod-v0.20.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
