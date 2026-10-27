@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.17.0-beta.1...mod-v0.18.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **front:** exporter la capture affichée en un seul GLB depuis le lecteur ([e292557](https://github.com/For-Hives/minemories/commit/e292557c8e0cccb2c75f3b3bc6d8b162335ed607)), references [#148](https://github.com/For-Hives/minemories/issues/148)
+* **front:** fusionner les GLB de tuiles en un seul GLB autonome ([6421a5f](https://github.com/For-Hives/minemories/commit/6421a5fae7b75364599c675c985e9a86e73f5091)), references [#148](https://github.com/For-Hives/minemories/issues/148)
+
 ## [0.17.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.16.0-beta.1...mod-v0.17.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
