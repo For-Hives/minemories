@@ -164,20 +164,20 @@ class ClientSettingsTest {
   @Test
   void captureTilesAreOnByDefaultWithBoundedChunkSize() {
     Properties settings = new Properties();
-    assertEquals(4, ClientSettings.captureTileChunks(settings));
+    assertEquals(2, ClientSettings.captureTileChunks(settings));
     settings.setProperty("captureTiles", "false");
     assertEquals(0, ClientSettings.captureTileChunks(settings));
     settings.setProperty("captureTiles", "true");
-    assertEquals(4, ClientSettings.captureTileChunks(settings));
+    assertEquals(2, ClientSettings.captureTileChunks(settings));
     settings.setProperty("captureTiles", "TRUE");
-    assertEquals(4, ClientSettings.captureTileChunks(settings));
+    assertEquals(2, ClientSettings.captureTileChunks(settings));
     settings.setProperty("captureTileChunks", "8");
     assertEquals(8, ClientSettings.captureTileChunks(settings));
     settings.setProperty("captureTileChunks", "16");
     assertEquals(16, ClientSettings.captureTileChunks(settings));
     for (String invalid : new String[] {"0", "17", "-1", "broken", ""}) {
       settings.setProperty("captureTileChunks", invalid);
-      assertEquals(4, ClientSettings.captureTileChunks(settings));
+      assertEquals(2, ClientSettings.captureTileChunks(settings));
     }
     settings.setProperty("captureTiles", "yes");
     settings.setProperty("captureTileChunks", "4");
@@ -188,7 +188,7 @@ class ClientSettingsTest {
   void manualCapturesAreTiledByDefaultAndCanOptOut() {
     Properties settings = new Properties();
     assertTrue(ClientSettings.manualCaptureTiles(settings));
-    assertEquals(4, ClientSettings.manualTileChunks(settings));
+    assertEquals(2, ClientSettings.manualTileChunks(settings));
     settings.setProperty("manualCaptureTiles", "false");
     assertEquals(0, ClientSettings.manualTileChunks(settings));
     settings.setProperty("manualCaptureTiles", "true");

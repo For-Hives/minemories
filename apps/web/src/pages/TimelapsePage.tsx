@@ -11,7 +11,6 @@ import { ViewerScene } from '../viewer-scene'
 import { exportFrameGlb, saveBlob } from './temporal-export'
 import { fetchTemporalFile } from './temporal-files'
 import { TemporalLoader } from './temporal-loader'
-import { rememberFrame, resumedFrame } from './temporal-resume'
 import { showTiledFrame } from './temporal-tiled'
 
 const exportFailure = 'The export failed. Try again.'
@@ -170,7 +169,6 @@ function useTimelapse(memoryId: string, hooks: SceneHooks) {
 				if (disposed) return
 				rendered.current = true
 				setCurrent(frame)
-				if (series.current) rememberFrame(series.current, frame.id)
 			},
 			() => {
 				setError('This capture could not be loaded. Retry or select another capture.')
@@ -550,17 +548,6 @@ function TimelineControls({ state, window }: { state: Timeline; window: Temporal
 
 async function initialWindow(memoryId: string, signal: AbortSignal) {
 	const page = await apiClient.timelapse.frames({ memoryId, direction: 'around' }, { signal })
-	const saved = resumedFrame(page.seriesId)
-	if (saved && saved !== memoryId) {
-		try {
-			const resumed = await nextWindow(memoryId, saved, 'around', page.seriesId, signal)
-			const first = resumed.frames.find(frame => frame.id === saved)
-			if (!first) throw new Error('Saved capture unavailable')
-			return { page: resumed, first, notice: 'Resumed at your last displayed capture.' }
-		} catch {
-			return initialSelection(page, memoryId, 'Your saved capture is unavailable. Opened the selected capture instead.')
-		}
-	}
 	return initialSelection(page, memoryId, '')
 }
 

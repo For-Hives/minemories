@@ -3,6 +3,13 @@ interface Capture {
 	metadata: { worldName: string | null; serverName: string | null; seed: string | null }
 }
 
+/** One entry per timeline (its latest capture); captures outside any timeline are kept as they are. */
+export function collapseTimelines<T extends { id: string; timeline?: { latestId: string } | undefined }>(
+	captures: T[]
+): T[] {
+	return captures.filter(capture => !capture.timeline || capture.timeline.latestId === capture.id)
+}
+
 export function groupCaptures<T extends Capture>(captures: T[]) {
 	const groups = new Map<string, { key: string; name: string; captures: T[] }>()
 	for (const capture of captures) {

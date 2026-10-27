@@ -7,7 +7,6 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import type { TileSummary } from '../lib/tiles'
 import { TimelapsePage } from './TimelapsePage'
-import { rememberFrame, resumedFrame } from './temporal-resume'
 
 const mocks = vi.hoisted(() => ({
 	frames: vi.fn(),
@@ -131,18 +130,15 @@ test('navigation renders only recorded states, aligns their origins, preserves t
 		{ memoryId: frame(1).id, direction: 'around' },
 		{ signal: expect.any(AbortSignal) }
 	)
-	expect(resumedFrame(seriesId)).toBe(frame(1).id)
 	const pending = deferred()
 	mocks.load.mockReturnValueOnce(pending.promise)
 	fireEvent.click(screen.getByRole('button', { name: 'Next capture' }))
 	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(2))
 	expect(screen.getByText(/Capture 1 ·/)).toBeTruthy()
-	expect(resumedFrame(seriesId)).toBe(frame(1).id)
 	expect(mocks.context).toHaveBeenCalledTimes(1)
 	await act(async () => pending.resolve())
 	await screen.findByText(/Capture 2 ·/)
 	expect(mocks.load.mock.calls[1]?.[1]).toMatchObject({ preserveView: true, originDelta: { x: 0, y: -1, z: 0 } })
-	expect(resumedFrame(seriesId)).toBe(frame(2).id)
 })
 
 test('fast slider changes abort parsing but wait before loading only the most recent selection', async () => {
@@ -170,29 +166,9 @@ test('download errors stop playback and retain the last valid date; retry loads 
 	fireEvent.click(screen.getByRole('button', { name: 'Next capture' }))
 	await screen.findByRole('alert')
 	expect(screen.getByText(/Capture 1 ·/)).toBeTruthy()
-	expect(resumedFrame(seriesId)).toBe(frame(1).id)
 	fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
 	await screen.findByText(/Capture 2 ·/)
 	expect(screen.queryByRole('alert')).toBeNull()
-})
-
-test('resume fetches an owner-checked anchor page without preloading GLBs from its manifest', async () => {
-	rememberFrame(seriesId, frame(8).id)
-	mocks.frames.mockResolvedValueOnce(page()).mockResolvedValueOnce(page([frame(8), frame(9)]))
-	mount()
-	await screen.findByText(/Capture 8 ·/)
-	expect(mocks.frames.mock.calls[1]?.[0]).toEqual({ memoryId: frame(1).id, anchorId: frame(8).id, direction: 'around' })
-	expect(fetch).toHaveBeenCalledOnce()
-	expect(screen.getByText('Resumed at your last displayed capture.')).toBeTruthy()
-})
-
-test('an unavailable resume anchor falls back to the selected capture and explains the fallback', async () => {
-	rememberFrame(seriesId, frame(8).id)
-	mocks.frames.mockResolvedValueOnce(page()).mockRejectedValueOnce(new Error('404'))
-	mount()
-	await ready()
-	expect(screen.getByText('Your saved capture is unavailable. Opened the selected capture instead.')).toBeTruthy()
-	expect(fetch).toHaveBeenCalledOnce()
 })
 
 test('page navigation uses the strict edge anchor, replaces the bounded manifest and cannot join a different series', async () => {
@@ -288,7 +264,6 @@ test('closing during parsing aborts the load and cannot save the pending capture
 	mounted.unmount()
 	expect(mocks.load.mock.calls[1]?.[1].signal.aborted).toBe(true)
 	await act(async () => pending.resolve())
-	expect(resumedFrame(seriesId)).toBe(frame(1).id)
 	expect(mocks.context).toHaveBeenCalledOnce()
 })
 
