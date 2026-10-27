@@ -37,6 +37,7 @@ final class PairingClient {
   record CaptureSettings(
       boolean enabled,
       boolean fullHeight,
+      int tileChunks,
       ClientSettings.AfkOptions options,
       Path directory,
       String api,
@@ -49,6 +50,7 @@ final class PairingClient {
     return new CaptureSettings(
         ClientSettings.afkSnapshots(value),
         ClientSettings.fullHeightCapture(value),
+        ClientSettings.captureTileChunks(value),
         ClientSettings.afkOptions(value),
         ClientSettings.exportDirectory(value, home()),
         apiUrl(value),
