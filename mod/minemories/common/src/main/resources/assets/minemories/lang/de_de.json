@@ -136,6 +136,9 @@
   "minemories.advanced.title": "Erweiterte Einstellungen",
   "minemories.advanced.tab.account": "Konto",
   "minemories.advanced.tab.captures": "Aufnahmen",
+  "minemories.advanced.manual_tiles.on": "Manuelle Aufnahmen als Kacheln: an",
+  "minemories.advanced.manual_tiles.off": "Manuelle Aufnahmen als Kacheln: aus",
+  "minemories.advanced.manual_tiles.tooltip": "Manuelle Aufnahmen werden Teil der Welt-Zeitleiste auf der Website. Die lokale Datei lässt sich nicht mehr in Blender öffnen.",
   "minemories.advanced.tab.world": "Welt",
   "minemories.advanced.tab.privacy": "Datenschutz"
 }

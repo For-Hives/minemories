@@ -136,6 +136,9 @@
   "minemories.advanced.title": "Ustawienia zaawansowane",
   "minemories.advanced.tab.account": "Konto",
   "minemories.advanced.tab.captures": "Zrzuty",
+  "minemories.advanced.manual_tiles.on": "Ręczne zapisy jako kafelki: włączone",
+  "minemories.advanced.manual_tiles.off": "Ręczne zapisy jako kafelki: wyłączone",
+  "minemories.advanced.manual_tiles.tooltip": "Ręczne zapisy dołączają do osi czasu świata na stronie. Lokalnego pliku nie da się już otworzyć w Blenderze.",
   "minemories.advanced.tab.world": "Świat",
   "minemories.advanced.tab.privacy": "Prywatność"
 }

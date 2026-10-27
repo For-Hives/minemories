@@ -136,6 +136,9 @@
   "minemories.advanced.title": "고급 설정",
   "minemories.advanced.tab.account": "계정",
   "minemories.advanced.tab.captures": "캡처",
+  "minemories.advanced.manual_tiles.on": "수동 캡처를 타일로 저장: 켜짐",
+  "minemories.advanced.manual_tiles.off": "수동 캡처를 타일로 저장: 꺼짐",
+  "minemories.advanced.manual_tiles.tooltip": "수동 캡처가 웹사이트의 월드 타임라인에 합쳐집니다. 로컬 파일은 더 이상 Blender에서 열 수 없습니다.",
   "minemories.advanced.tab.world": "월드",
   "minemories.advanced.tab.privacy": "개인정보"
 }

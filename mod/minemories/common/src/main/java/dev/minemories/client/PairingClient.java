@@ -150,6 +150,19 @@ final class PairingClient {
     return ClientSettings.afkSnapshots(readSettings());
   }
 
+  static boolean isManualCaptureTiles() {
+    return ClientSettings.manualCaptureTiles(readSettings());
+  }
+
+  static int manualTileChunks() {
+    return ClientSettings.manualTileChunks(readSettings());
+  }
+
+  static void setManualCaptureTiles(boolean enabled) {
+    updateSettings(
+        settings -> settings.setProperty("manualCaptureTiles", Boolean.toString(enabled)));
+  }
+
   static void setAfkSnapshots(boolean enabled) {
     updateSettings(settings -> settings.setProperty("afkSnapshots", Boolean.toString(enabled)));
   }

@@ -137,6 +137,19 @@ final class ClientSettings {
 
   static int captureTileChunks(Properties settings) {
     if (!"true".equalsIgnoreCase(settings.getProperty("captureTiles", "true"))) return 0;
+    return tileChunksSetting(settings);
+  }
+
+  /** Manual around-player captures are saved as tiles only when the player opted in. */
+  static boolean manualCaptureTiles(Properties settings) {
+    return Boolean.parseBoolean(settings.getProperty("manualCaptureTiles", "false"));
+  }
+
+  static int manualTileChunks(Properties settings) {
+    return manualCaptureTiles(settings) ? tileChunksSetting(settings) : 0;
+  }
+
+  private static int tileChunksSetting(Properties settings) {
     try {
       int value = Integer.parseInt(settings.getProperty("captureTileChunks", "").strip());
       if (value >= 1 && value <= TileGrid.MAX_TILE_CHUNKS) return value;
