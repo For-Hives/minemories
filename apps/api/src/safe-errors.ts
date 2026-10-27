@@ -20,8 +20,6 @@ type ErrorEvent =
 	| 'upload_cleanup_failed'
 	| 'request_failed'
 	| 'diagnostics_failed'
-	| 'tile_integrity_failed'
-	| 'tile_download_failed'
 
 export function requestCorrelation(request: Request): string {
 	const supplied = request.headers.get('x-minemories-correlation') ?? ''

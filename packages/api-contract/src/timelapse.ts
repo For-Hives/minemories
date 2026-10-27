@@ -2,7 +2,6 @@ import { oc } from '@orpc/contract'
 import * as z from 'zod'
 import { captureBounds, captureOrigin, captureWorldScope } from './capture-identity'
 import { captureTime } from './capture-time'
-import { tileList } from './tiles'
 
 export const TIMELAPSE_PAGE_FRAMES = 128
 export const temporalFrame = z.object({
@@ -18,7 +17,6 @@ export const temporalFrame = z.object({
 	dayTime: z.number().int().nullable(),
 	seed: z.string().nullable(),
 	biome: z.string().nullable(),
-	tileCount: z.number().int().min(0).optional(),
 })
 export const temporalWindow = z.object({
 	seriesId: z.string().regex(/^[a-f0-9]{64}$/),
@@ -44,5 +42,4 @@ export const timelapseContract = {
 			})
 		)
 		.output(temporalWindow),
-	tiles: oc.input(z.object({ memoryId: z.string().uuid(), cumulative: z.boolean().optional() })).output(tileList),
 }

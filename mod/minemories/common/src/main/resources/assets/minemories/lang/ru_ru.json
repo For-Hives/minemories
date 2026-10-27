@@ -136,9 +136,6 @@
   "minemories.advanced.title": "Расширенные настройки",
   "minemories.advanced.tab.account": "Аккаунт",
   "minemories.advanced.tab.captures": "Снимки",
-  "minemories.advanced.manual_tiles.on": "Ручные снимки плитками: вкл.",
-  "minemories.advanced.manual_tiles.off": "Ручные снимки плитками: выкл.",
-  "minemories.advanced.manual_tiles.tooltip": "Ручные снимки попадают в хронологию мира на сайте. Локальный файл больше не открывается в Blender.",
   "minemories.advanced.tab.world": "Мир",
   "minemories.advanced.tab.privacy": "Приватность"
 }

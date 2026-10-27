@@ -136,9 +136,6 @@
   "minemories.advanced.title": "詳細設定",
   "minemories.advanced.tab.account": "アカウント",
   "minemories.advanced.tab.captures": "キャプチャ",
-  "minemories.advanced.manual_tiles.on": "手動キャプチャをタイルで保存：オン",
-  "minemories.advanced.manual_tiles.off": "手動キャプチャをタイルで保存：オフ",
-  "minemories.advanced.manual_tiles.tooltip": "手動キャプチャがウェブサイトのワールドのタイムラインに加わります。ローカルファイルは Blender で開けなくなります。",
   "minemories.advanced.tab.world": "ワールド",
   "minemories.advanced.tab.privacy": "プライバシー"
 }

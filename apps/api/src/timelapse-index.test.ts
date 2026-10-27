@@ -2,9 +2,7 @@ import { expect, test } from 'bun:test'
 import { captureTimeKey } from '@minemories/api-contract'
 import { parseMetadata } from './memory-metadata'
 import { minimalGlb } from './test-support/glb-fixture'
-import { buildTileBundle, tileGlb } from './test-support/tile-bundle-fixture'
 import { frameMetadata, temporalFixture } from './test-support/timelapse-fixture'
-import { TileIndex } from './tile-index'
 import { migrateTimelapseIndex, TimelapseIndex } from './timelapse-index'
 
 const payload = minimalGlb(),
@@ -268,117 +266,6 @@ test('the scope migration rebuilds derived caches once and never removes origina
 		expect(() => index.frames('owner', options(remote.id))).toThrow('no temporal identity')
 		migrateTimelapseIndex(f.db)
 		expect(f.db.query('SELECT COUNT(*) AS count FROM timelapse_index').get()).toEqual({ count: 1 })
-	} finally {
-		await f.close()
-	}
-})
-
-function putTiles(f: Awaited<ReturnType<typeof temporalFixture>>, id: string, tiles: Array<[number, number, number]>) {
-	const { bytes, manifest } = buildTileBundle(tiles.map(([x, z, seed]) => ({ x, z, glb: tileGlb(seed) })))
-	new TileIndex(f.db).put(id, { manifest, dataOffset: 12 + bytes.readUInt32LE(8) })
-	return manifest.tiles
-}
-
-test('tiled captures form one world series while untiled captures keep their zone series', async () => {
-	const f = await temporalFixture()
-	try {
-		const index = new TimelapseIndex(f.db),
-			tiled = await f.add(frameMetadata, payload),
-			elsewhere = await f.add(
-				{
-					...frameMetadata,
-					zoneId: 'e'.repeat(64),
-					captureBounds: { minX: 1000, minY: 0, minZ: 0, maxX: 1002, maxY: 2, maxZ: 2 },
-					captureOrigin: { x: 1001, y: 1, z: 1 },
-				},
-				payload
-			),
-			plain = await f.add(frameMetadata, payload)
-		putTiles(f, tiled.id, [
-			[0, 0, 1],
-			[1, 0, 2],
-			[0, 1, 3],
-		])
-		putTiles(f, elsewhere.id, [[7, 0, 4]])
-		expect(index.backfill()).toBe(3)
-		const series = index.frames('owner', options(tiled.id))
-		const frames = new Map(series.frames.map(frame => [frame.id, frame]))
-		expect(frames.get(tiled.id)?.tileCount).toBe(3)
-		expect(frames.get(elsewhere.id)?.tileCount).toBe(1)
-		expect(frames.has(plain.id)).toBe(false)
-		expect(index.frames('owner', options(plain.id)).frames.map(frame => frame.id)).toEqual([plain.id])
-		expect(index.frames('owner', options(plain.id)).frames[0]).not.toHaveProperty('tileCount')
-	} finally {
-		await f.close()
-	}
-})
-
-test('cumulative tiles keep each zone at its last known state, replace updated cells and drop emptied ones', async () => {
-	const f = await temporalFixture()
-	try {
-		const index = new TimelapseIndex(f.db),
-			at = (minute: number, minX: number) => ({
-				...frameMetadata,
-				captureStartedAt: `2026-10-15T01:0${minute}:00Z`,
-				// Cells of 128 blocks: this capture contains cell x = minX / 128 entirely.
-				captureBounds: { minX, minY: 0, minZ: 0, maxX: minX + 128, maxY: 2, maxZ: 128 },
-				captureOrigin: { x: minX + 64, y: 1, z: 64 },
-			}),
-			first = await f.add(at(1, 0), payload),
-			second = await f.add(at(2, 128), payload),
-			third = await f.add(at(3, 0), payload)
-		const firstTiles = putTiles(f, first.id, [[0, 0, 1]])
-		const secondTiles = putTiles(f, second.id, [[1, 0, 2]])
-		// The third capture contains cell (0,0) again but has no tile there: the cell became empty.
-		putTiles(f, third.id, [[0, 1, 5]])
-		const list = (id: string) => index.cumulativeTiles('owner', id)
-		expect(list(first.id)?.tiles.map(tile => [tile.memoryId, tile.x, tile.z])).toEqual([[first.id, 0, 0]])
-		expect(list(second.id)?.tiles.map(tile => [tile.memoryId, tile.x, tile.z, tile.sha256])).toEqual([
-			[first.id, 0, 0, firstTiles[0]?.sha256],
-			[second.id, 1, 0, secondTiles[0]?.sha256],
-		])
-		expect(list(second.id)?.tileChunks).toBe(8)
-		expect(list(third.id)?.tiles.map(tile => [tile.memoryId, tile.x, tile.z])).toEqual([
-			[third.id, 0, 1],
-			[second.id, 1, 0],
-		])
-		expect(() => index.cumulativeTiles('other', first.id)).toThrow()
-		const plain = await f.add(frameMetadata, payload)
-		expect(index.cumulativeTiles('owner', plain.id)).toBeNull()
-	} finally {
-		await f.close()
-	}
-})
-
-test('timelines groups tiled captures per world, indexing pending ones, and keeps other captures apart', async () => {
-	const f = await temporalFixture()
-	try {
-		const index = new TimelapseIndex(f.db),
-			at = (minute: number, minX: number) => ({
-				...frameMetadata,
-				captureStartedAt: `2026-10-15T01:0${minute}:00Z`,
-				captureBounds: { minX, minY: 0, minZ: 0, maxX: minX + 128, maxY: 2, maxZ: 128 },
-				captureOrigin: { x: minX + 64, y: 1, z: 64 },
-			}),
-			first = await f.add(at(1, 0), payload),
-			second = await f.add(at(2, 128), payload),
-			plain = await f.add({ ...frameMetadata, zoneId: 'f'.repeat(64) }, payload),
-			legacy = await f.add({ dimension: 'minecraft:overworld' }, payload)
-		putTiles(f, first.id, [[0, 0, 1]])
-		putTiles(f, second.id, [[1, 0, 2]])
-		const timelines = index.timelines('owner')
-		expect(timelines.get(first.id)).toEqual({
-			seriesId: timelines.get(second.id)?.seriesId ?? '',
-			frames: 2,
-			latestId: second.id,
-		})
-		expect(timelines.get(second.id)?.latestId).toBe(second.id)
-		expect(timelines.get(plain.id)?.frames).toBe(1)
-		expect(timelines.get(plain.id)?.seriesId).not.toBe(timelines.get(first.id)?.seriesId)
-		expect(timelines.has(legacy.id)).toBe(false)
-		expect(index.timelines('other').size).toBe(0)
-		f.db.query('UPDATE memories SET deleted_at=1 WHERE id=?').run(second.id)
-		expect(index.timelines('owner').get(first.id)?.latestId).toBe(first.id)
 	} finally {
 		await f.close()
 	}

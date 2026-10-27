@@ -23,24 +23,4 @@ record CaptureBounds(int minX, int minY, int minZ, int maxX, int maxY, int maxZ)
     return new CaptureBounds(
         x - radius, bottom, z - radius, x + radius, topExclusive - 1, z + radius);
   }
-
-  /**
-   * Grow the horizontal footprint to whole tile columns so that every tile of the capture is
-   * complete: a later capture can then replace a tile without losing the rest of it. Footprints
-   * that would exceed the 257-block capture limit are kept as they are.
-   */
-  CaptureBounds alignedToTiles(int tileBlocks) {
-    long alignedMinX = Math.floorDiv((long) minX, tileBlocks) * tileBlocks;
-    long alignedMinZ = Math.floorDiv((long) minZ, tileBlocks) * tileBlocks;
-    long alignedMaxX = Math.floorDiv((long) maxX, tileBlocks) * tileBlocks + tileBlocks - 1;
-    long alignedMaxZ = Math.floorDiv((long) maxZ, tileBlocks) * tileBlocks + tileBlocks - 1;
-    if (alignedMaxX - alignedMinX > 256
-        || alignedMaxZ - alignedMinZ > 256
-        || alignedMinX < Integer.MIN_VALUE
-        || alignedMinZ < Integer.MIN_VALUE
-        || alignedMaxX > Integer.MAX_VALUE
-        || alignedMaxZ > Integer.MAX_VALUE) return this;
-    return new CaptureBounds(
-        (int) alignedMinX, minY, (int) alignedMinZ, (int) alignedMaxX, maxY, (int) alignedMaxZ);
-  }
 }

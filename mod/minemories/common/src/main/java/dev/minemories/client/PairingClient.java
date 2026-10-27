@@ -37,7 +37,6 @@ final class PairingClient {
   record CaptureSettings(
       boolean enabled,
       boolean fullHeight,
-      int tileChunks,
       boolean pairingReminder,
       ClientSettings.AfkOptions options,
       Path directory,
@@ -51,7 +50,6 @@ final class PairingClient {
     return new CaptureSettings(
         ClientSettings.afkSnapshots(value),
         ClientSettings.fullHeightCapture(value),
-        ClientSettings.captureTileChunks(value),
         ClientSettings.pairingReminder(value),
         ClientSettings.afkOptions(value),
         ClientSettings.exportDirectory(value, home()),
@@ -148,19 +146,6 @@ final class PairingClient {
 
   static boolean isAfkSnapshots() {
     return ClientSettings.afkSnapshots(readSettings());
-  }
-
-  static boolean isManualCaptureTiles() {
-    return ClientSettings.manualCaptureTiles(readSettings());
-  }
-
-  static int manualTileChunks() {
-    return ClientSettings.manualTileChunks(readSettings());
-  }
-
-  static void setManualCaptureTiles(boolean enabled) {
-    updateSettings(
-        settings -> settings.setProperty("manualCaptureTiles", Boolean.toString(enabled)));
   }
 
   static void setAfkSnapshots(boolean enabled) {

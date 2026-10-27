@@ -3,12 +3,7 @@ package dev.minemories.client;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.gson.JsonObject;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 final class CaptureIdentityTest {
   @Test
@@ -58,28 +53,5 @@ final class CaptureIdentityTest {
         metadata, new CaptureBounds(Integer.MAX_VALUE - 2, 0, 0, Integer.MAX_VALUE, 2, 2));
     assertEquals(
         Integer.MAX_VALUE - 1, metadata.getAsJsonObject("captureOrigin").get("x").getAsInt());
-  }
-
-  @Test
-  void legacyExplorationHistoryDeepensTheVolumeWithoutChangingTheZone(@TempDir Path directory)
-      throws IOException {
-    // History written before zones existed: only chunk -> lowest feet Y, no ".zones" sibling.
-    Path legacy = directory.resolve("legacy.properties");
-    Files.writeString(legacy, "0=64\n-4294967296=12\nnot-a-chunk=3\n");
-    var history = ExplorationDepth.read(legacy);
-    assertTrue(
-        VisitedZones.read(directory.resolve("legacy.properties.zones")).suggestions().isEmpty());
-
-    int bottom = history.captureBottom(-8, 8, -8, 8, 70, -64);
-    assertEquals(7, bottom);
-    var shallow = new CaptureBounds(-8, 65, -8, 8, 319, 8);
-    var explored = new CaptureBounds(-8, bottom, -8, 8, 319, 8);
-    String id = CaptureIdentity.world("solo:/old/world", "42", "overworld", "player");
-    String zone = CaptureIdentity.zone(id, shallow, false);
-    assertEquals(zone, CaptureIdentity.zone(id, explored, false));
-
-    var metadata = new JsonObject();
-    CaptureIdentity.geometry(metadata, explored);
-    assertEquals(Set.of("captureBounds", "captureOrigin"), metadata.keySet());
   }
 }

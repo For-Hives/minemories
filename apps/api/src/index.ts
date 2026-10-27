@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { apiContract, type CaptureStorageAccess, MAX_TILE_INDEX } from '@minemories/api-contract'
+import { apiContract, type CaptureStorageAccess } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
-import { type Context, Hono } from 'hono'
+import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
@@ -51,15 +51,11 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
-import { encodeBuffered } from './response-encoding'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { s3Target } from './storage-s3'
 import { TieredObjects } from './tiered-objects'
-import { readAuthorizedTile, TILE_INTEGRITY_ERROR } from './tile-downloads'
-import { TileIndex, type TileLocation } from './tile-index'
-import { AssemblyTooLarge, assembleTiledCapture, captureOriginOf } from './tiled-capture'
 import { TimelapseFiles } from './timelapse-files'
 import { TimelapseIndex } from './timelapse-index'
 import { TimelapseMaintenance } from './timelapse-maintenance'
@@ -96,7 +92,6 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 	tieredObjects.remove(key, discardUpload ? discardMemoryUpload : removeMemory)
 )
 const temporalIndex = new TimelapseIndex(database)
-const tileIndex = new TileIndex(database)
 const captureFiles = new TimelapseFiles(database, tieredObjects)
 export const coldStorageMaintenance = coldStorageConfiguration
 	? new ColdStorageMaintenance(
@@ -145,52 +140,6 @@ function archivedAvailability(error: unknown, lookup: () => string | null) {
 		return null
 	}
 }
-type AppContext = Context<{ Bindings: { peerAddress: string | undefined }; Variables: { correlationId: string } }>
-function assembledFailure(context: AppContext, error: unknown, lookup: () => string | null): Response {
-	if (error instanceof AssemblyTooLarge) return context.json({ error: 'capture_too_large_to_assemble' }, 413)
-	const availability = archivedAvailability(error, lookup)
-	if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
-	if (error instanceof Error && error.message === TILE_INTEGRITY_ERROR) {
-		logApiFailure('tile_integrity_failed', context.get('correlationId'))
-		return context.json({ error: 'tile_integrity_failed' }, 502)
-	}
-	logApiFailure('tile_download_failed', context.get('correlationId'))
-	return context.json({ error: 'memory_storage_unavailable' }, 503)
-}
-/** Serves a tiled capture as one assembled GLB; `null` leaves captures without tiles on the streaming path. */
-async function assembledCapture(
-	context: AppContext,
-	memoryId: string,
-	access: () => string | null,
-	includeTrashed = false
-): Promise<Response | null> {
-	const assembly = tileIndex.assembly(memoryId, includeTrashed)
-	if (!assembly) return null
-	if (!access()) return context.json({ error: 'memory_not_found' }, 404)
-	const locate = (x: number, z: number): TileLocation | null =>
-		access() ? tileIndex.locateTile(memoryId, x, z, includeTrashed) : null
-	try {
-		const glb = await assembleTiledCapture({
-			files: captureFiles,
-			locate,
-			assembly,
-			origin: captureOriginOf(assembly.metadataJson),
-			signal: context.req.raw.signal,
-		})
-		const objectKey = access()
-		if (!objectKey) return context.json({ error: 'memory_not_found' }, 404)
-		recordCaptureOpening(database, objectKey)
-		const encoded = await encodeBuffered(context.req.header('Accept-Encoding'), new Uint8Array(glb))
-		return context.body(encoded.body, 200, {
-			'Content-Type': 'model/gltf-binary',
-			'Cache-Control': 'private, no-store',
-			'X-Content-Type-Options': 'nosniff',
-			...encoded.headers,
-		})
-	} catch (error) {
-		return assembledFailure(context, error, access)
-	}
-}
 const router = os.router({
 	admin: {
 		access: os.admin.access.handler(({ context }) => ({ allowed: adminRoles.allowed(context.userId) })),
@@ -222,14 +171,6 @@ const router = os.router({
 	},
 	timelapse: {
 		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
-		tiles: os.timelapse.tiles.handler(({ context, input }) => {
-			const user = authenticated(context)
-			const tiles = input.cumulative
-				? temporalIndex.cumulativeTiles(user, input.memoryId)
-				: tileIndex.list(user, input.memoryId)
-			if (!tiles) throw new ORPCError('NOT_FOUND')
-			return tiles
-		}),
 	},
 	discovery: {
 		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),
@@ -288,11 +229,7 @@ const router = os.router({
 	memories: {
 		list: os.memories.list.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			const timelines = temporalIndex.timelines(context.userId)
-			return listMemories(context.userId).map(memory => {
-				const timeline = timelines.get(memory.id)
-				return timeline ? { ...memory, timeline } : memory
-			})
+			return listMemories(context.userId)
 		}),
 		listTrash: os.memories.listTrash.handler(({ context }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
@@ -459,18 +396,14 @@ app.use('/api/public/*', (context, next) => {
 app.get('/api/public/:id/file', async context => {
 	const session = await auth.api.getSession({ headers: context.req.raw.headers })
 	const id = context.req.param('id')
-	const current = () => {
+	const lookup = () => {
 		try {
-			return discovery.file(id, session?.user.id ?? null)
+			return discovery.file(id, session?.user.id ?? null).object_key
 		} catch {
 			return null
 		}
 	}
-	const lookup = () => current()?.object_key ?? null
-	const file = current()
-	if (!file) return context.json({ error: 'memory_not_found' }, 404)
-	const assembled = await assembledCapture(context, file.memory_id, lookup)
-	if (assembled) return assembled
+	if (!lookup()) return context.json({ error: 'memory_not_found' }, 404)
 	try {
 		const contents = await openAuthorizedCapture(captureFiles, lookup, context.req.raw.signal, () =>
 			recordCaptureOpening(database, lookup())
@@ -489,11 +422,8 @@ app.get('/api/public/:id/file', async context => {
 
 app.get('/api/shared/:token/file', async context => {
 	context.header('Cache-Control', 'private, no-store')
-	const token = context.req.param('token')
-	const shared = getSharedMemory(token)
+	const shared = getSharedMemory(context.req.param('token'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
-	const assembled = await assembledCapture(context, shared.id, () => getSharedMemory(token)?.objectKey ?? null)
-	if (assembled) return assembled
 
 	try {
 		const contents = await openAuthorizedCapture(
@@ -533,14 +463,6 @@ app.get('/api/memories/:id/file', async context => {
 
 	const memory = getMemoryFile(session.user.id, context.req.param('id'))
 	if (!memory) return context.json({ error: 'memory_not_found' }, 404)
-	const id = context.req.param('id')
-	const assembled = await assembledCapture(
-		context,
-		id,
-		() => getMemoryFile(session.user.id, id)?.object_key ?? null,
-		true
-	)
-	if (assembled) return assembled
 
 	try {
 		const contents = await openAuthorizedCapture(
@@ -561,49 +483,6 @@ app.get('/api/memories/:id/file', async context => {
 		)
 		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('memory_download_failed', context.get('correlationId'))
-		return context.json({ error: 'memory_storage_unavailable' }, 503)
-	}
-})
-
-const tileCoordinatePattern = /^-?\d{1,7}$/
-function tileCoordinate(raw: string): number | null {
-	if (!tileCoordinatePattern.test(raw)) return null
-	const value = Number(raw)
-	return Math.abs(value) <= MAX_TILE_INDEX ? value : null
-}
-
-app.get('/api/memories/:id/tiles/:x/:z', async context => {
-	context.header('Cache-Control', 'private, no-store')
-	const session = await auth.api.getSession({ headers: context.req.raw.headers })
-	if (!session) return context.json({ error: 'unauthorized' }, 401)
-
-	const x = tileCoordinate(context.req.param('x'))
-	const z = tileCoordinate(context.req.param('z'))
-	if (x === null || z === null) return context.json({ error: 'tile_not_found' }, 404)
-	const id = context.req.param('id')
-	const userId = session.user.id
-	const locate = () => tileIndex.locate(userId, id, x, z)
-	const lookup = () => locate()?.objectKey ?? null
-	if (!locate()) return context.json({ error: 'tile_not_found' }, 404)
-
-	try {
-		const bytes = await readAuthorizedTile(captureFiles, locate, context.req.raw.signal)
-		if (!bytes) return context.json({ error: 'tile_not_found' }, 404)
-		const encoded = await encodeBuffered(context.req.header('Accept-Encoding'), new Uint8Array(bytes))
-		return context.body(encoded.body, 200, {
-			'Content-Type': 'model/gltf-binary',
-			'Cache-Control': 'private, no-store',
-			'X-Content-Type-Options': 'nosniff',
-			...encoded.headers,
-		})
-	} catch (error) {
-		const availability = archivedAvailability(error, lookup)
-		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
-		if (error instanceof Error && error.message === TILE_INTEGRITY_ERROR) {
-			logApiFailure('tile_integrity_failed', context.get('correlationId'))
-			return context.json({ error: 'tile_integrity_failed' }, 502)
-		}
-		logApiFailure('tile_download_failed', context.get('correlationId'))
 		return context.json({ error: 'memory_storage_unavailable' }, 503)
 	}
 })

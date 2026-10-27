@@ -136,9 +136,6 @@
   "minemories.advanced.title": "Réglages avancés",
   "minemories.advanced.tab.account": "Compte",
   "minemories.advanced.tab.captures": "Captures",
-  "minemories.advanced.manual_tiles.on": "Captures manuelles en tuiles : oui",
-  "minemories.advanced.manual_tiles.off": "Captures manuelles en tuiles : non",
-  "minemories.advanced.manual_tiles.tooltip": "Les captures manuelles rejoignent la chronologie du monde sur le site. Le fichier local n’est plus lisible dans Blender.",
   "minemories.advanced.tab.world": "Monde",
   "minemories.advanced.tab.privacy": "Confidentialité"
 }

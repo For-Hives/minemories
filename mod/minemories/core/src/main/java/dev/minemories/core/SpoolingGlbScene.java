@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Single-owner scene builder. Input arrays are consumed before return; geometry lives on disk. */
-public final class SpoolingGlbScene implements CaptureScene {
+public final class SpoolingGlbScene implements AutoCloseable {
   private String playerExtras = "";
 
   /** Local player feet, relative to the exported origin. No world coordinates are embedded. */
@@ -116,11 +116,6 @@ public final class SpoolingGlbScene implements CaptureScene {
 
   public int materialCount() {
     return parts.size();
-  }
-
-  @Override
-  public long quadCount() {
-    return metrics().quads();
   }
 
   public Metrics metrics() {

@@ -73,7 +73,6 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
             level.getMinBuildHeight(),
             level.getMaxBuildHeight(),
             settings.options().radius());
-    if (settings.tileChunks() > 0) bounds = bounds.alignedToTiles(16 * settings.tileChunks());
     surfaceX = bounds.minX();
     surfaceZ = bounds.minZ();
     surfaceFloor = Math.min(position.getY(), bounds.maxY());
@@ -82,7 +81,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     models = new RenderedModelCapture(sink, mc, pixels);
     var metadata = ClientRuntime.currentCaptureMetadata(position);
     ClientRuntime.identifyCapture(metadata, bounds, false);
-    writer = new QueuedGlbCapture(settings.directory(), settings.tileChunks());
+    writer = new QueuedGlbCapture(settings.directory());
     pump =
         new ProgressiveCapturePump(
             this,
@@ -279,8 +278,6 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
               (min.getX() + max.getX()) / 2,
               (min.getY() + max.getY()) / 2,
               (min.getZ() + max.getZ()) / 2);
-      if (!writer.offerOrigin(center.getX(), center.getY(), center.getZ()))
-        throw new IOException("Capture annulée avant l’origine.");
       cursor = new CaptureCursor(bounds);
       fluidView = new CaptureLevelView(level, bounds);
       surfaceDone = true;
