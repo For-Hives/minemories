@@ -98,8 +98,7 @@ Il n'y a pas encore de bouton dans l'interface M.
 
 **Alignement.** Quand la découpe est active, l'empreinte horizontale d'une capture AFK est agrandie aux tuiles entières qu'elle touche (sauf si le résultat dépasserait 257 blocs). Chaque tuile d'une capture est donc complète et peut remplacer la précédente sans perdre le reste de la tuile ; deux captures dans les mêmes tuiles ont aussi le même `zoneId`.
 
-Seules les captures AFK et progressives sont découpées. `/minemories export` produit toujours
-un `.glb` unique. Le bundle est enregistré sous le nom d'historique habituel `capture.glb`,
+Les captures AFK et progressives sont découpées. Les captures manuelles autour du joueur le sont si `manualCaptureTiles=true` (interrupteur de l'onglet Captures) ; les sélections et `captureTiles=false` donnent un `.glb` unique. Le bundle est enregistré sous le nom d'historique habituel `capture.glb`,
 mais ce n'est **pas** un `.glb` ordinaire : il ne s'ouvre pas directement dans Blender. Il faut
 passer par la chronologie ou l'export de Minemories. L'API le reconnaît grâce à son
 en-tête `MMTB`.

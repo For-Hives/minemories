@@ -185,6 +185,21 @@ class ClientSettingsTest {
   }
 
   @Test
+  void manualCapturesAreTiledOnlyWhenTheyOptIn() {
+    Properties settings = new Properties();
+    assertFalse(ClientSettings.manualCaptureTiles(settings));
+    assertEquals(0, ClientSettings.manualTileChunks(settings));
+    settings.setProperty("manualCaptureTiles", "true");
+    assertEquals(4, ClientSettings.manualTileChunks(settings));
+    settings.setProperty("captureTileChunks", "8");
+    assertEquals(8, ClientSettings.manualTileChunks(settings));
+    // The manual choice does not depend on the AFK tile switch.
+    settings.setProperty("captureTiles", "false");
+    assertEquals(8, ClientSettings.manualTileChunks(settings));
+    assertEquals(0, ClientSettings.captureTileChunks(settings));
+  }
+
+  @Test
   void diagnosticsDefaultToOnForAnAbsentKeyAndPersistExplicitChoices() throws IOException {
     Properties settings = paired();
     assertTrue(ClientSettings.diagnosticsConsentForIdentity(settings, null));

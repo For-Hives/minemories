@@ -136,6 +136,9 @@
   "minemories.advanced.title": "Configurações avançadas",
   "minemories.advanced.tab.account": "Conta",
   "minemories.advanced.tab.captures": "Capturas",
+  "minemories.advanced.manual_tiles.on": "Capturas manuais em blocos: ligado",
+  "minemories.advanced.manual_tiles.off": "Capturas manuais em blocos: desligado",
+  "minemories.advanced.manual_tiles.tooltip": "As capturas manuais entram na linha do tempo do mundo no site. O arquivo local não abre mais no Blender.",
   "minemories.advanced.tab.world": "Mundo",
   "minemories.advanced.tab.privacy": "Privacidade"
 }
