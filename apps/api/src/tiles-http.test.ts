@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { apiContract } from '@minemories/api-contract'
+import { validateSelfContainedGlb } from '@minemories/api-contract/glb'
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import type { ContractRouterClient } from '@orpc/contract'
@@ -32,7 +33,9 @@ async function register(email: string) {
 	return { id: data.user.id, cookie: response.headers.get('set-cookie')?.split(';')[0] ?? '' }
 }
 const owner = await register('tiles-owner@example.com'),
-	other = await register('tiles-other@example.com')
+	other = await register('tiles-other@example.com'),
+	moderator = await register('tiles-moderator@example.com')
+process.env.PUBLIC_MODERATOR_IDS = moderator.id
 const { app, timelapseMaintenance } = await import('./index')
 const { database } = await import('./database')
 afterAll(async () => {
@@ -223,4 +226,132 @@ test('a stored tile whose bytes no longer match its digest answers 502 without s
 	expect(response.status).toBe(502)
 	expect(await response.json()).toEqual({ error: 'tile_integrity_failed' })
 	expect(response.headers.get('cache-control')).toBe('private, no-store')
+})
+
+/** Tile GLB with a scene and one named node: the assembled capture then carries real node content. */
+function sceneGlb(seed: number): Buffer {
+	return minimalGlb(Buffer.alloc(64, seed), {
+		asset: { version: '2.0' },
+		buffers: [{ byteLength: 64 }],
+		scene: 0,
+		scenes: [{ nodes: [0] }],
+		nodes: [{ name: `part-${seed}` }],
+	})
+}
+const sceneTiles = [
+	{ x: 0, z: 0, glb: sceneGlb(1) },
+	{ x: -1, z: 0, glb: sceneGlb(2) },
+	{ x: 0, z: -2, glb: sceneGlb(3) },
+]
+function jsonOf(glb: Buffer): { nodes: Array<{ name?: string; translation?: number[] }> } {
+	const length = glb.readUInt32LE(12)
+	return JSON.parse(glb.subarray(20, 20 + length).toString('utf8'))
+}
+function fileRequest(path: string, cookie?: string) {
+	return app.request(path, { headers: cookie ? { cookie } : {} })
+}
+
+test('the owner file of a tiled capture is one assembled GLB, stable across conversion', async () => {
+	const built = buildTileBundle(sceneTiles)
+	const id = await memoryIdFor(await upload(built.bytes))
+	const response = await fileRequest(`/api/memories/${id}/file`, owner.cookie)
+	expect(response.status).toBe(200)
+	expect(response.headers.get('content-type')).toBe('model/gltf-binary')
+	expect(response.headers.get('cache-control')).toBe('private, no-store')
+	expect(response.headers.get('x-content-type-options')).toBe('nosniff')
+	const glb = Buffer.from(await response.arrayBuffer())
+	expect(await validateSelfContainedGlb(glb)).toBe(true)
+	const nodes = jsonOf(glb).nodes
+	expect(nodes).toHaveLength(sceneTiles.length + sceneTiles.length)
+	expect(nodes.filter(node => node.name?.startsWith('part-'))).toHaveLength(sceneTiles.length)
+	// Capture origin (1, 1, 1) from frameMetadata: tile (x, z) sits at (x * 128 - 1, -1, z * 128 - 1).
+	expect(nodes.filter(node => node.name?.startsWith('tile-')).map(node => node.translation)).toEqual([
+		[-128 - 1, -1, 0 - 1],
+		[-1, -1, -256 - 1],
+		[-1, -1, -1],
+	])
+
+	await timelapseMaintenance.maintain()
+	await timelapseMaintenance.maintain()
+	const converted = await fileRequest(`/api/memories/${id}/file`, owner.cookie)
+	expect(converted.status).toBe(200)
+	expect(Buffer.from(await converted.arrayBuffer()).equals(glb)).toBe(true)
+})
+
+test('a trashed tiled capture is still served to its owner as an assembled GLB, never as the raw bundle', async () => {
+	const id = await memoryIdFor(await upload(buildTileBundle(sceneTiles).bytes))
+	await rpc(owner.cookie).memories.trash({ id })
+	const response = await fileRequest(`/api/memories/${id}/file`, owner.cookie)
+	expect(response.status).toBe(200)
+	const glb = Buffer.from(await response.arrayBuffer())
+	expect(glb.subarray(0, 4).toString('ascii')).toBe('glTF')
+	expect(await validateSelfContainedGlb(glb)).toBe(true)
+	expect((await fileRequest(`/api/memories/${id}/file`, other.cookie)).status).toBe(404)
+})
+
+test('the owner file route hides tiled captures from other accounts and anonymous callers', async () => {
+	const id = await memoryIdFor(await upload(buildTileBundle(sceneTiles).bytes))
+	expect((await fileRequest(`/api/memories/${id}/file`, other.cookie)).status).toBe(404)
+	expect((await fileRequest(`/api/memories/${id}/file`)).status).toBe(401)
+})
+
+test('a tampered tiled capture answers 502 on the file route without serving bytes', async () => {
+	const built = buildTileBundle(sceneTiles)
+	const id = await memoryIdFor(await upload(built.bytes))
+	const { object_key: key } = database.query('SELECT object_key FROM memories WHERE id = ?').get(id) as {
+		object_key: string
+	}
+	const stored = join(dir, 'objects', key)
+	const bytes = Buffer.from(await Bun.file(stored).arrayBuffer())
+	const firstTile = built.manifest.tiles[0]
+	if (!firstTile) throw new Error('Missing fixture tile')
+	const tampered = 12 + built.bytes.readUInt32LE(8) + firstTile.offset + firstTile.size - 1
+	bytes[tampered] = (bytes[tampered] ?? 0) ^ 0xff
+	await Bun.write(stored, bytes)
+	const response = await fileRequest(`/api/memories/${id}/file`, owner.cookie)
+	expect(response.status).toBe(502)
+	expect(await response.json()).toEqual({ error: 'tile_integrity_failed' })
+})
+
+test('a shared link serves the assembled capture until it is revoked', async () => {
+	const id = await memoryIdFor(await upload(buildTileBundle(sceneTiles).bytes))
+	const client = rpc(owner.cookie)
+	const owned = Buffer.from(await (await fileRequest(`/api/memories/${id}/file`, owner.cookie)).arrayBuffer())
+	const { token } = await client.memories.createShare({ id })
+	const shared = await app.request(`/api/shared/${token}/file`)
+	expect(shared.status).toBe(200)
+	expect(shared.headers.get('cache-control')).toBe('private, no-store')
+	expect(Buffer.from(await shared.arrayBuffer()).equals(owned)).toBe(true)
+	await client.memories.revokeShare({ id })
+	expect((await app.request(`/api/shared/${token}/file`)).status).toBe(404)
+})
+
+test('a publicly approved tiled capture serves the assembled GLB on the public route', async () => {
+	const id = await memoryIdFor(await upload(buildTileBundle(sceneTiles).bytes))
+	const publication = await rpc(owner.cookie).discovery.publish({
+		memoryId: id,
+		title: 'Tiled village',
+		description: 'Built from tiles',
+		category: 'build',
+		thumbnail: null,
+		consent: true,
+	})
+	const publicId = publication.id as string
+	expect((await app.request(`/api/public/${publicId}/file`)).status).toBe(404)
+	await rpc(moderator.cookie).discovery.moderate({ id: publicId, decision: 'approved' })
+	const response = await app.request(`/api/public/${publicId}/file`)
+	expect(response.status).toBe(200)
+	expect(response.headers.get('cache-control')).toBe('private, no-store')
+	const glb = Buffer.from(await response.arrayBuffer())
+	expect(await validateSelfContainedGlb(glb)).toBe(true)
+	expect(jsonOf(glb).nodes.filter(node => node.name?.startsWith('part-'))).toHaveLength(sceneTiles.length)
+})
+
+test('a plain GLB capture still streams its stored bytes unchanged on the file route', async () => {
+	const bin = Buffer.alloc(16 * 1024, 5)
+	const glb = minimalGlb(bin, { asset: { version: '2.0' }, buffers: [{ byteLength: bin.length }] })
+	const id = await memoryIdFor(await upload(glb, { worldName: 'Streamed world' }))
+	const response = await fileRequest(`/api/memories/${id}/file`, owner.cookie)
+	expect(response.status).toBe(200)
+	expect(Buffer.from(await response.arrayBuffer()).equals(glb)).toBe(true)
 })

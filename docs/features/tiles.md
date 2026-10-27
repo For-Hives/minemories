@@ -149,5 +149,10 @@ plus décalage du manifeste). Une capture sans tuile n'a aucune ligne.
 simultanés par propriétaire : un client garde au plus 4 requêtes de tuiles en vol et réessaie avec
 un délai croissant en cas de `503`.
 
-**Partage.** Les liens partagés et publics ne servent pas encore de tuiles ; seule la route
-propriétaire est ouverte dans cette étape.
+**Partage.** Les trois routes de fichier (`GET /api/memories/:id/file`,
+`GET /api/shared/:token/file` et `GET /api/public/:id/file`) répondent pour une capture tuilée
+par un `.glb` unique assemblé à partir de ses tuiles : chaque tuile est lue puis vérifiée
+(SHA-256), placée selon sa position et le centre de capture, puis fusionnée avec la validation
+GLB autonome. Le lien partagé et la publication publique sont inclus ; une capture dont
+l'assemblage dépasse 128 Mio de tuiles répond `413 capture_too_large_to_assemble`. La route de
+tuile reste réservée au propriétaire.
