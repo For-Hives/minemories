@@ -11,7 +11,7 @@ Après installation, le mod doit fonctionner **sans aucune action** du joueur, y
 | `captureFullHeight` | `false` | Les captures autour du joueur gardent la profondeur réellement visitée plus cinq blocs. |
 | `captureTiles`, `captureTileChunks` | `false`, 8 | **Volontairement désactivé.** Le bundle de tuiles remplace le fichier local `capture.glb` par un fichier illisible dans Blender et n'a pas été validé en jeu (voir #145). À n'activer qu'en connaissance de cause. |
 | `exportDirectory` | `~/export` | Dossier des souvenirs locaux. |
-| `apiUrl` | `https://api.minemories.xenos.lightin.io` | Service officiel ; changer d'API déconnecte le compte. |
+| `apiUrl` | `https://api.minemories.net` | Service officiel ; changer d'API déconnecte le compte. |
 | `deviceToken`, `deviceId` | absents | **Seule action nécessaire : connecter son compte** (code à 6 chiffres). Tant que le joueur n'est pas connecté, un message cliquable du chat le lui rappelle à chaque entrée dans un monde, et ouvre les réglages. Les captures restent locales jusqu'à la connexion ; après la connexion, elles partent automatiquement. |
 | `diagnosticsConsent` | activé | Diagnostics techniques assainis, jamais envoyés avant l'appairage. Un `false` explicite est conservé après appairage, déconnexion ou changement d'API. Détails : [diagnostics](consented-diagnostics.md). |
 | `pairingReminder` | `true` | Rappel de connexion dans le chat ; `false` le désactive. |

@@ -235,7 +235,7 @@ export function HowItWorksPage() {
 				<T message={'Use your own API (advanced)'} />
 			</h2>
 			<p>
-				<T message={'The mod uses'} /> <code>https://api.minemories.xenos.lightin.io</code>{' '}
+				<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
 				<T
 					message={
 						'by default. In “Advanced mode”, you can enter the HTTPS address of a compatible self-hosted Minemories API and an absolute path for the local folder, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Minemories API” button restores the official address; save to apply it.'

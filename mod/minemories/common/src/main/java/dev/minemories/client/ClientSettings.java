@@ -16,8 +16,8 @@ import java.util.Objects;
 import java.util.Properties;
 
 final class ClientSettings {
-  static final String DEFAULT_API_URL = "https://api.minemories.xenos.lightin.io";
-  static final String DEFAULT_SITE_URL = "https://minemories.xenos.lightin.io";
+  static final String DEFAULT_API_URL = "https://api.minemories.net";
+  static final String DEFAULT_SITE_URL = "https://minemories.net";
 
   private ClientSettings() {}
 
