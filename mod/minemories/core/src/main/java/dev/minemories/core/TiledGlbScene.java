@@ -1,5 +1,6 @@
 package dev.minemories.core;
 
+import dev.minemories.core.TileMath.Tile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,8 +13,8 @@ import java.util.TreeMap;
 
 /** Routes capture quads and lights into world-anchored tiles, each written as its own GLB. */
 public final class TiledGlbScene {
-  private static final Comparator<TileKey> TILE_ORDER =
-      Comparator.comparingInt(TileKey::x).thenComparingInt(TileKey::z);
+  private static final Comparator<Tile> TILE_ORDER =
+      Comparator.comparingInt(Tile::x).thenComparingInt(Tile::z);
   private static final Comparator<StoredQuad> QUAD_ORDER =
       Comparator.<StoredQuad, String>comparing(quad -> quad.key)
           .thenComparing(quad -> quad.materialName)
@@ -60,23 +61,13 @@ public final class TiledGlbScene {
       throw new IllegalArgumentException("Expected 4 xyz and uv vertices");
     for (float value : xyz) if (!Float.isFinite(value)) return;
     for (float value : uv) if (!Float.isFinite(value)) return;
-    TileKey tile;
+    Tile tile;
     try {
-      tile =
-          tileOf(
-              originX + ((double) xyz[0] + xyz[3] + xyz[6] + xyz[9]) / 4.0,
-              originZ + ((double) xyz[2] + xyz[5] + xyz[8] + xyz[11]) / 4.0);
+      tile = TileMath.quadTile(grid, originX, originZ, xyz);
     } catch (IllegalArgumentException outOfRange) {
       return;
     }
-    int minX = grid.minBlock(tile.x());
-    int minZ = grid.minBlock(tile.z());
-    float[] local = new float[12];
-    for (int i = 0; i < 4; i++) {
-      local[i * 3] = (float) ((double) originX + xyz[i * 3] - minX);
-      local[i * 3 + 1] = (float) ((double) originY + xyz[i * 3 + 1]);
-      local[i * 3 + 2] = (float) ((double) originZ + xyz[i * 3 + 2] - minZ);
-    }
+    float[] local = TileMath.localQuad(grid, originX, originY, originZ, tile, xyz);
     quads.add(
         new StoredQuad(
             tile,
@@ -94,20 +85,14 @@ public final class TiledGlbScene {
 
   public void addPointLight(float x, float y, float z, int color, int level) {
     if (level < 4 || !Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return;
-    TileKey tile;
+    Tile tile;
     try {
-      tile = tileOf(originX + (double) x, originZ + (double) z);
+      tile = TileMath.tileAt(grid, originX + (double) x, originZ + (double) z);
     } catch (IllegalArgumentException outOfRange) {
       return;
     }
-    lights.add(
-        new StoredLight(
-            tile,
-            (float) ((double) originX + x - grid.minBlock(tile.x())),
-            (float) ((double) originY + y),
-            (float) ((double) originZ + z - grid.minBlock(tile.z())),
-            color,
-            level));
+    float[] local = TileMath.localPoint(grid, originX, originY, originZ, tile, x, y, z);
+    lights.add(new StoredLight(tile, local[0], local[1], local[2], color, level));
   }
 
   public boolean hasGeometry() {
@@ -121,16 +106,16 @@ public final class TiledGlbScene {
   public TileManifest write(Path directory) throws IOException {
     if (!hasGeometry()) throw new IOException("The capture contains no renderable geometry.");
     Files.createDirectories(directory);
-    Map<TileKey, List<StoredQuad>> quadsByTile = new TreeMap<>(TILE_ORDER);
+    Map<Tile, List<StoredQuad>> quadsByTile = new TreeMap<>(TILE_ORDER);
     for (StoredQuad quad : quads)
       quadsByTile.computeIfAbsent(quad.tile, ignored -> new ArrayList<>()).add(quad);
-    Map<TileKey, List<StoredLight>> lightsByTile = new TreeMap<>(TILE_ORDER);
+    Map<Tile, List<StoredLight>> lightsByTile = new TreeMap<>(TILE_ORDER);
     for (StoredLight light : lights)
       lightsByTile.computeIfAbsent(light.tile(), ignored -> new ArrayList<>()).add(light);
     List<TileManifest.Entry> entries = new ArrayList<>();
     long offset = 0;
-    for (Map.Entry<TileKey, List<StoredQuad>> tile : quadsByTile.entrySet()) {
-      TileKey key = tile.getKey();
+    for (Map.Entry<Tile, List<StoredQuad>> tile : quadsByTile.entrySet()) {
+      Tile key = tile.getKey();
       List<StoredQuad> tileQuads = tile.getValue();
       tileQuads.sort(QUAD_ORDER);
       List<StoredLight> tileLights = new ArrayList<>(lightsByTile.getOrDefault(key, List.of()));
@@ -168,16 +153,10 @@ public final class TiledGlbScene {
     return new TileManifest(TileManifest.FORMAT, grid.tileChunks(), entries);
   }
 
-  private TileKey tileOf(double worldX, double worldZ) {
-    return new TileKey(grid.indexOf(worldX), grid.indexOf(worldZ));
-  }
-
-  private record TileKey(int x, int z) {}
-
-  private record StoredLight(TileKey tile, float x, float y, float z, int color, int level) {}
+  private record StoredLight(Tile tile, float x, float y, float z, int color, int level) {}
 
   private static final class StoredQuad {
-    final TileKey tile;
+    final Tile tile;
     final String key;
     final String materialName;
     final String imageKey;
@@ -190,7 +169,7 @@ public final class TiledGlbScene {
     final float[] uv;
 
     StoredQuad(
-        TileKey tile,
+        Tile tile,
         String key,
         String materialName,
         String imageKey,
