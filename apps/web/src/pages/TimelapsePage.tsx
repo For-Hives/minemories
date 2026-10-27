@@ -7,10 +7,58 @@ import { buttonDark, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
+import { exportFrameGlb, saveBlob } from './temporal-export'
 import { fetchTemporalFile } from './temporal-files'
 import { TemporalLoader } from './temporal-loader'
 import { rememberFrame, resumedFrame } from './temporal-resume'
 import { showTiledFrame } from './temporal-tiled'
+
+const exportFailure = 'The export failed. Try again.'
+
+function useFrameExport(
+	memoryId: string,
+	current: TemporalFrame | null,
+	restoreLoad: ReturnType<typeof useCaptureRestoration>['load'],
+	setNotice: (message: string) => void
+) {
+	const exportRequest = useRef<AbortController | null>(null)
+	const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null)
+
+	useEffect(
+		() => () => {
+			exportRequest.current?.abort()
+			exportRequest.current = null
+			setExporting(null)
+		},
+		[memoryId]
+	)
+
+	async function exportCurrent() {
+		if (!current || exporting || exportRequest.current) return
+		const controller = new AbortController()
+		exportRequest.current = controller
+		setExporting({ done: 0, total: 0 })
+		setNotice('')
+		try {
+			const { blob, fileName } = await exportFrameGlb({
+				frame: current,
+				signal: controller.signal,
+				restore: run => restoreLoad(run, { kind: 'owner', id: current.id }, controller.signal),
+				onProgress: (done, total) => setExporting({ done, total }),
+			})
+			if (!controller.signal.aborted) saveBlob(blob, fileName)
+		} catch {
+			if (!controller.signal.aborted) setNotice(exportFailure)
+		} finally {
+			if (exportRequest.current === controller) {
+				exportRequest.current = null
+				setExporting(null)
+			}
+		}
+	}
+
+	return { exporting, exportCurrent }
+}
 
 function useTimelapse(memoryId: string) {
 	const restoration = useCaptureRestoration()
@@ -34,6 +82,7 @@ function useTimelapse(memoryId: string) {
 	const [notice, setNotice] = useState('')
 	const [retry, setRetry] = useState(0)
 	const [tileProgress, setTileProgress] = useState<{ done: number; total: number } | null>(null)
+	const { exporting, exportCurrent } = useFrameExport(memoryId, current, restoreLoad, setNotice)
 
 	useEffect(() => {
 		let disposed = false
@@ -237,6 +286,8 @@ function useTimelapse(memoryId: string) {
 		error,
 		notice,
 		tileProgress,
+		exporting,
+		exportCurrent,
 		index,
 		select,
 		changePage,
@@ -354,6 +405,8 @@ function TimelineControls({ state, window }: { state: Timeline; window: Temporal
 		select,
 		changePage,
 		setRetry,
+		exporting,
+		exportCurrent,
 	} = state
 	return (
 		<div className="my-5 flex flex-wrap items-center gap-3">
@@ -454,6 +507,20 @@ function TimelineControls({ state, window }: { state: Timeline; window: Temporal
 			>
 				{t('Reload timeline')}
 			</button>
+			<button
+				type="button"
+				className={buttonOutline}
+				disabled={!current || busy || paging || exporting !== null}
+				onClick={() => void exportCurrent()}
+			>
+				{t('Export this capture as GLB')}
+			</button>
+			{exporting && (
+				<p role="status">
+					{t('Exporting…')}
+					{exporting.total > 0 && ` ${exporting.done}/${exporting.total}`}
+				</p>
+			)}
 		</div>
 	)
 }
