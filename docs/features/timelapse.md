@@ -5,6 +5,7 @@ les états réellement enregistrés, avec navigation, lecture à cadence réglab
 pagination et reprise locale. L’index privé et le stockage dédupliqué sont raccordés
 aux téléchargements existants. La timeline de démonstration du site reste illustrative.
 Le fonctionnement et les validations de #75 sont décrits ci-dessous.
+Une capture découpée en tuiles (`.mmtiles`) est décrite dans [tiles.md](tiles.md).
 
 ## Identifier les futurs états
 
