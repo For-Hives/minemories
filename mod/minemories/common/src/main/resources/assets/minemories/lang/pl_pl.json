@@ -132,5 +132,6 @@
   "minemories.hub.busy": "Trwa praca…",
   "minemories.hub.sent": "Wspomnienie zapisane i wysłane!",
   "minemories.hub.saved_local": "Wspomnienie zapisane na tym komputerze.",
-  "minemories.hub.failed": "Coś poszło nie tak. Spróbuj ponownie."
+  "minemories.hub.failed": "Coś poszło nie tak. Spróbuj ponownie.",
+  "minemories.advanced.title": "Ustawienia zaawansowane"
 }

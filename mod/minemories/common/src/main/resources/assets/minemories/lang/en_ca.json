@@ -132,5 +132,6 @@
   "minemories.hub.busy": "Working…",
   "minemories.hub.sent": "Memory saved and sent!",
   "minemories.hub.saved_local": "Memory saved on this computer.",
-  "minemories.hub.failed": "Something went wrong. Try again."
+  "minemories.hub.failed": "Something went wrong. Try again.",
+  "minemories.advanced.title": "Advanced settings"
 }
