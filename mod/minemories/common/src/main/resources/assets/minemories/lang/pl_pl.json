@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Wspomnienie zapisane i wysłane!",
   "minemories.hub.saved_local": "Wspomnienie zapisane na tym komputerze.",
   "minemories.hub.failed": "Coś poszło nie tak. Spróbuj ponownie.",
-  "minemories.advanced.title": "Ustawienia zaawansowane"
+  "minemories.advanced.title": "Ustawienia zaawansowane",
+  "minemories.advanced.tab.account": "Konto",
+  "minemories.advanced.tab.captures": "Zrzuty",
+  "minemories.advanced.tab.world": "Świat",
+  "minemories.advanced.tab.privacy": "Prywatność"
 }

@@ -133,5 +133,9 @@
   "minemories.hub.sent": "思い出を保存して送信したよ！",
   "minemories.hub.saved_local": "思い出をこのコンピューターに保存したよ。",
   "minemories.hub.failed": "問題が起きたよ。もう一度ためしてね。",
-  "minemories.advanced.title": "詳細設定"
+  "minemories.advanced.title": "詳細設定",
+  "minemories.advanced.tab.account": "アカウント",
+  "minemories.advanced.tab.captures": "キャプチャ",
+  "minemories.advanced.tab.world": "ワールド",
+  "minemories.advanced.tab.privacy": "プライバシー"
 }

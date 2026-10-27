@@ -1,7 +1,10 @@
 package dev.minemories.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -12,8 +15,14 @@ import net.minecraft.network.chat.Component;
 final class AdvancedScreen extends Screen {
   private static final int COLOR_PANEL = 0xFF252926;
   private static final int COLOR_TEXT = 0xFFECE8DC;
-  private static final int PANEL_HEIGHT = 282;
+  private static final int COLOR_MUTED = 0xFFB2B6AA;
+  private static final int PANEL_HEIGHT = 236;
+  private static final int CONTENT_Y = 64;
+  private static AdvancedTab rememberedTab = AdvancedTab.ACCOUNT;
   private final Screen parent;
+  private final List<List<AbstractWidget>> tabWidgets = new ArrayList<>();
+  private final List<Button> tabButtons = new ArrayList<>();
+  private AdvancedTab tab = rememberedTab;
   private EditBox apiInput;
   private EditBox directoryInput;
   private Button historyButton;
@@ -37,42 +46,92 @@ final class AdvancedScreen extends Screen {
   @Override
   protected void init() {
     super.init();
+    tabWidgets.clear();
+    tabButtons.clear();
+    for (int i = 0; i < AdvancedTab.values().length; i++) tabWidgets.add(new ArrayList<>());
     panelWidth = Math.min(390, this.width - 12);
     left = (this.width - panelWidth) / 2;
     top = Math.max(4, (this.height - PANEL_HEIGHT) / 2);
-    historyButton =
-        button(
-            I18n.get("minemories.ui.captures_locales"),
-            14,
-            10,
-            panelWidth - 92,
-            () -> Minecraft.getInstance().setScreen(new CaptureHistoryScreen(this)));
-    button(I18n.get("minemories.ui.retour"), panelWidth - 72, 10, 58, this::onClose);
+    initTabBar();
     initFields();
-    initButtons();
+    initAccount();
+    initCaptures();
+    initWorld();
+    initPrivacy();
+    saveButton =
+        button(
+            null,
+            I18n.get("minemories.ui.enregistrer"),
+            14,
+            PANEL_HEIGHT - 66,
+            panelWidth - 28,
+            this::saveConfiguration);
     refreshSettings();
+    selectTab(tab);
+  }
+
+  private void initTabBar() {
+    int count = AdvancedTab.values().length;
+    int back = 58;
+    int width = (panelWidth - 28 - back - 4 * count) / count;
+    for (AdvancedTab each : AdvancedTab.values()) {
+      Button tabButton =
+          button(
+              null,
+              I18n.get(each.labelKey()),
+              14 + each.ordinal() * (width + 4),
+              34,
+              width,
+              () -> selectTab(each));
+      tabButtons.add(tabButton);
+    }
+    button(null, I18n.get("minemories.ui.retour"), panelWidth - 14 - back, 34, back, this::onClose);
+  }
+
+  private void selectTab(AdvancedTab selected) {
+    tab = selected;
+    rememberedTab = selected;
+    for (int i = 0; i < tabWidgets.size(); i++) {
+      boolean shown = i == selected.ordinal();
+      for (AbstractWidget widget : tabWidgets.get(i)) widget.visible = shown;
+      tabButtons.get(i).active = !shown;
+    }
     updateButtons();
   }
 
-  private Button button(String label, int x, int y, int width, Runnable action) {
-    return addRenderableWidget(
+  private <T extends AbstractWidget> T register(AdvancedTab owner, T widget) {
+    if (owner != null) tabWidgets.get(owner.ordinal()).add(widget);
+    return addRenderableWidget(widget);
+  }
+
+  private Button button(AdvancedTab owner, String label, int x, int y, int width, Runnable action) {
+    return register(
+        owner,
         Button.builder(Component.literal(label), ignored -> action.run())
             .bounds(left + x, top + y, width, 20)
             .build());
   }
 
-  private EditBox input(String label, int y, int width) {
+  private EditBox input(AdvancedTab owner, String label, int y, int width) {
     EditBox field =
-        addRenderableWidget(
-            new EditBox(font, left + 14, top + y, width, 20, Component.literal(label)));
+        register(owner, new EditBox(font, left + 14, top + y, width, 20, Component.literal(label)));
     field.setMaxLength(2048);
     return field;
   }
 
   private void initFields() {
-    apiInput = input(I18n.get("minemories.ui.adresse_de_lapi"), 66, panelWidth - 28);
+    apiInput =
+        input(
+            AdvancedTab.ACCOUNT,
+            I18n.get("minemories.ui.adresse_de_lapi"),
+            CONTENT_Y + 14,
+            panelWidth - 28);
     directoryInput =
-        input(I18n.get("minemories.ui.dossier_des_exports_locaux"), 108, panelWidth - 28);
+        input(
+            AdvancedTab.CAPTURES,
+            I18n.get("minemories.ui.dossier_des_exports_locaux"),
+            CONTENT_Y + 14,
+            panelWidth - 28);
     directoryInput.setTooltip(
         Tooltip.create(
             Component.literal(
@@ -87,29 +146,56 @@ final class AdvancedScreen extends Screen {
     }
   }
 
-  private void initButtons() {
+  private void initAccount() {
     int half = (panelWidth - 34) / 2;
-    int quarter = (panelWidth - 46) / 4;
-    saveButton =
-        button(I18n.get("minemories.ui.enregistrer"), 14, 134, half, this::saveConfiguration);
+    int y = CONTENT_Y + 40;
     defaultsButton =
         button(
+            AdvancedTab.ACCOUNT,
             "API Minemories",
-            20 + half,
-            134,
+            14,
+            y,
             half,
             () -> apiInput.setValue(ClientSettings.DEFAULT_API_URL));
     defaultsButton.setTooltip(
         Tooltip.create(
             Component.translatable(
                 "minemories.ui.retablit_ladresse_officielle_clique_ensuite_sur_enregistrer")));
+    storageButton =
+        button(
+            AdvancedTab.ACCOUNT,
+            I18n.get("minemories.ui.stockage"),
+            20 + half,
+            y,
+            half,
+            this::openStorage);
+    unlinkButton =
+        button(
+            AdvancedTab.ACCOUNT,
+            I18n.get("minemories.ui.deconnecter_ce_compte"),
+            14,
+            y + 26,
+            panelWidth - 28,
+            this::unlink);
+  }
+
+  private void initCaptures() {
+    int half = (panelWidth - 34) / 2;
+    int y = CONTENT_Y + 40;
     localButton =
-        button(I18n.get("minemories.ui.exporter_en_local"), 14, 160, half, () -> capture(false));
+        button(
+            AdvancedTab.CAPTURES,
+            I18n.get("minemories.ui.exporter_en_local"),
+            14,
+            y,
+            half,
+            () -> capture(false));
     selectionButton =
         button(
+            AdvancedTab.CAPTURES,
             I18n.get("minemories.ui.exporter_la_selection"),
             20 + half,
-            160,
+            y,
             half,
             () -> capture(true));
     selectionButton.setTooltip(
@@ -117,37 +203,52 @@ final class AdvancedScreen extends Screen {
             Component.translatable(
                 "minemories.ui.definis_les_deux_coins_avec_minemories_select_first_et_second")));
     button(
+        AdvancedTab.CAPTURES,
         "AFK",
         14,
-        186,
-        quarter,
+        y + 26,
+        half,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
-    storageButton =
-        button(I18n.get("minemories.ui.stockage"), 20 + quarter, 186, quarter, this::openStorage);
+    historyButton =
+        button(
+            AdvancedTab.CAPTURES,
+            I18n.get("minemories.ui.captures_locales"),
+            20 + half,
+            y + 26,
+            half,
+            () -> Minecraft.getInstance().setScreen(new CaptureHistoryScreen(this)));
+  }
+
+  private void initWorld() {
+    int y = CONTENT_Y + 14;
     Button worldButton =
         button(
+            AdvancedTab.WORLD,
             I18n.get("minemories.ui.monde"),
-            26 + quarter * 2,
-            186,
-            quarter,
+            14,
+            y,
+            panelWidth - 28,
             () -> Minecraft.getInstance().setScreen(new TemporalWorldScreen(this)));
     worldButton.setTooltip(
         Tooltip.create(
             Component.translatable("minemories.ui.identite_du_monde_distant_pour_la_timelapse")));
     button(
-        I18n.get("minemories.ui.diagnostics"),
-        32 + quarter * 3,
-        186,
-        quarter,
-        () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
-    button(
+        AdvancedTab.WORLD,
         I18n.get("minemories.ui.zones_suggerees"),
         14,
-        212,
-        half,
+        y + 26,
+        panelWidth - 28,
         () -> Minecraft.getInstance().setScreen(new SuggestedZonesScreen(this)));
-    unlinkButton =
-        button(I18n.get("minemories.ui.deconnecter_ce_compte"), 20 + half, 212, half, this::unlink);
+  }
+
+  private void initPrivacy() {
+    button(
+        AdvancedTab.PRIVACY,
+        I18n.get("minemories.ui.diagnostics"),
+        14,
+        CONTENT_Y + 14,
+        panelWidth - 28,
+        () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
   }
 
   private void openStorage() {
@@ -175,7 +276,7 @@ final class AdvancedScreen extends Screen {
     localButton.active = !waiting && mc.level != null;
     selectionButton.active = !waiting && ClientRuntime.hasSelection();
     storageButton.active = paired;
-    unlinkButton.visible = paired;
+    unlinkButton.visible = paired && tab == AdvancedTab.ACCOUNT;
     unlinkButton.active = !waiting;
   }
 
@@ -236,7 +337,8 @@ final class AdvancedScreen extends Screen {
         this.font.split(
             Component.literal(captureStatus.isEmpty() ? status : captureStatus), panelWidth - 28);
     for (int i = 0; i < Math.min(3, lines.size()); i++) {
-      graphics.drawString(this.font, lines.get(i), left + 14, top + 240 + i * 10, COLOR_TEXT);
+      graphics.drawString(
+          this.font, lines.get(i), left + 14, top + PANEL_HEIGHT - 38 + i * 10, COLOR_TEXT);
     }
   }
 
@@ -246,15 +348,14 @@ final class AdvancedScreen extends Screen {
     graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + PANEL_HEIGHT + 1, 0xFF667063);
     graphics.fill(left, top, left + panelWidth, top + PANEL_HEIGHT, COLOR_PANEL);
     graphics.drawString(
-        font, I18n.get("minemories.advanced.title"), left + 14, top + 38, COLOR_TEXT);
-    graphics.drawString(
-        font, I18n.get("minemories.ui.adresse_de_lapi_https"), left + 14, top + 53, COLOR_TEXT);
-    graphics.drawString(
-        font,
-        I18n.get("minemories.ui.dossier_local_historique_conserve"),
-        left + 14,
-        top + 95,
-        COLOR_TEXT);
+        font, I18n.get("minemories.advanced.title"), left + 14, top + 14, COLOR_TEXT);
+    String hint =
+        switch (tab) {
+          case ACCOUNT -> I18n.get("minemories.ui.adresse_de_lapi_https");
+          case CAPTURES -> I18n.get("minemories.ui.dossier_local_historique_conserve");
+          case WORLD, PRIVACY -> "";
+        };
+    graphics.drawString(font, hint, left + 14, top + CONTENT_Y, COLOR_MUTED);
   }
 
   @Override

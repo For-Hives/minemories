@@ -28,3 +28,7 @@ L'historique d'exploration et les zones suggérées sont toujours actifs, locaux
 ## Ce qui n'est pas validé
 
 La logique (consentement par défaut, conservation d'un refus explicite, cadence du rappel) est testée en unitaire. Le rendu, le clic dans le chat sur NeoForge, Fabric et Forge (solo et serveur distant) et la compréhension par des joueurs réels (#87) restent à valider en jeu.
+
+## Réglages avancés par onglets
+
+Le bouton « Réglages » de l'écran simple ouvre l'écran avancé, organisé en quatre onglets : **Compte** (adresse de l'API, stockage, déconnexion), **Captures** (dossier local, exports, AFK, historique), **Monde** (identité du monde distant, zones suggérées) et **Confidentialité** (diagnostics). Le bouton Enregistrer reste visible sous tous les onglets et l'onglet choisi est retenu pendant la session. Mise en page non validée en jeu.

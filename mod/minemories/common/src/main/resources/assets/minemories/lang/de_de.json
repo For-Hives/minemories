@@ -133,5 +133,9 @@
   "minemories.hub.sent": "Erinnerung gespeichert und gesendet!",
   "minemories.hub.saved_local": "Erinnerung auf diesem Computer gespeichert.",
   "minemories.hub.failed": "Etwas ist schiefgelaufen. Versuch es noch einmal.",
-  "minemories.advanced.title": "Erweiterte Einstellungen"
+  "minemories.advanced.title": "Erweiterte Einstellungen",
+  "minemories.advanced.tab.account": "Konto",
+  "minemories.advanced.tab.captures": "Aufnahmen",
+  "minemories.advanced.tab.world": "Welt",
+  "minemories.advanced.tab.privacy": "Datenschutz"
 }
