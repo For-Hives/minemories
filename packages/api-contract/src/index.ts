@@ -24,7 +24,13 @@ export {
 	type ModDiagnostic,
 	storedDiagnostic,
 } from './diagnostics'
-export { type TemporalFrame, type TemporalWindow, TIMELAPSE_PAGE_FRAMES } from './timelapse'
+export {
+	type TemporalFrame,
+	type TemporalWindow,
+	TIMELAPSE_PAGE_FRAMES,
+	WORLD_EVOLUTION_FRAMES,
+	type WorldEvolution,
+} from './timelapse'
 
 export const thumbnailDataUrl = z
 	.string()

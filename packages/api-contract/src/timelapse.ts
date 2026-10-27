@@ -30,6 +30,18 @@ export const temporalWindow = z.object({
 	hasPrevious: z.boolean(),
 	hasNext: z.boolean(),
 })
+export const WORLD_EVOLUTION_FRAMES = 512
+export const worldEvolution = z.object({
+	worldKey: z.string().regex(/^[a-f0-9]{64}$/),
+	name: z.string(),
+	dimension: z.string().nullable(),
+	scope: captureWorldScope,
+	totalFrames: z.number().int().positive(),
+	totalBytes: z.number().int().positive(),
+	frames: z.array(temporalFrame).max(WORLD_EVOLUTION_FRAMES),
+	truncated: z.boolean(),
+})
+export type WorldEvolution = z.infer<typeof worldEvolution>
 export type TemporalFrame = z.infer<typeof temporalFrame>
 export type TemporalWindow = z.infer<typeof temporalWindow>
 export const timelapseContract = {
@@ -42,4 +54,5 @@ export const timelapseContract = {
 			})
 		)
 		.output(temporalWindow),
+	world: oc.input(z.object({ memoryId: z.string().uuid() })).output(worldEvolution),
 }

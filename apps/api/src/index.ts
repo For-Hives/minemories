@@ -51,6 +51,7 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
+import { encodedCapture } from './response-encoding'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
@@ -171,6 +172,9 @@ const router = os.router({
 	},
 	timelapse: {
 		frames: os.timelapse.frames.handler(({ context, input }) => temporalIndex.frames(authenticated(context), input)),
+		world: os.timelapse.world.handler(({ context, input }) =>
+			temporalIndex.world(authenticated(context), input.memoryId)
+		),
 	},
 	discovery: {
 		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),
@@ -409,8 +413,10 @@ app.get('/api/public/:id/file', async context => {
 			recordCaptureOpening(database, lookup())
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
+			...encoded.headers,
 		})
 	} catch (error) {
 		const availability = archivedAvailability(error, lookup)
@@ -433,9 +439,11 @@ app.get('/api/shared/:token/file', async context => {
 			() => recordCaptureOpening(database, getSharedMemory(context.req.param('token'))?.objectKey ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
+			...encoded.headers,
 		})
 	} catch (error) {
 		const availability = archivedAvailability(
@@ -472,9 +480,11 @@ app.get('/api/memories/:id/file', async context => {
 			() => recordCaptureOpening(database, getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		return context.body(Readable.toWeb(contents) as unknown as ReadableStream, 200, {
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
 			'Cache-Control': 'private, no-store',
+			...encoded.headers,
 		})
 	} catch (error) {
 		const availability = archivedAvailability(

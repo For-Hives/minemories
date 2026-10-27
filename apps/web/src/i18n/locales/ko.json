@@ -1198,5 +1198,21 @@
 	"diagnostics.state.open": "미해결",
 	"publication.state.rejected": "거부됨",
 	"guides.install.action": "모드를 설치하세요",
-	"filters.allStates": "모두"
+	"filters.allStates": "모두",
+	"EVOLVING WORLD": "변화하는 월드",
+	"{ready} of {total} captures loaded": "캡처 {total}개 중 {ready}개 로드됨",
+	"Only the most recent captures are loaded to keep the viewer fast.": "뷰어를 빠르게 유지하기 위해 가장 최근 캡처만 로드합니다.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "이 월드를 사용할 수 없습니다. 소유자 계정으로 로그인하거나 갤러리로 돌아가세요.",
+	"Waiting": "대기 중",
+	"Loaded": "로드됨",
+	"Archived — open it alone to restore it": "보관됨 — 복원하려면 따로 여세요",
+	"Could not load": "로드할 수 없음",
+	"Not loaded": "로드 안 됨",
+	"Captures of this world": "이 월드의 캡처",
+	"{count} captures, oldest first": "캡처 {count}개, 오래된 순",
+	"{count} chunks": "청크 {count}개",
+	"Open alone": "따로 열기",
+	"Moment of the world": "월드의 순간",
+	"▶ Open the world": "▶ 월드 열기",
+	"Evolving world": "변화하는 월드"
 }

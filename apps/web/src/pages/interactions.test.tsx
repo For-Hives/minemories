@@ -439,7 +439,7 @@ test('French translation does not change pairing state identifiers or hide the p
 	localStorage.clear()
 })
 
-test('gallery offers timelines only for complete identities and excludes ambiguous old remote captures', async () => {
+test('gallery offers one evolving world only for complete identities and excludes ambiguous old remote captures', async () => {
 	const identity = {
 		worldId: 'a'.repeat(64),
 		zoneId: 'b'.repeat(64),
@@ -471,12 +471,16 @@ test('gallery offers timelines only for complete identities and excludes ambiguo
 		},
 	])
 	mount(<GalleryPage />)
+	const header = await screen.findAllByRole('link', { name: '▶ Open the world' })
+	expect(header.map(link => link.getAttribute('href'))).toEqual(['/viewer?memory=known&timelapse=1'])
 	fireEvent.click(await screen.findByRole('button', { name: /^Local/ }))
 	fireEvent.click(screen.getByRole('button', { name: /^Remote/ }))
 	fireEvent.click(screen.getByRole('button', { name: /^Legacy/ }))
-	const links = screen.getAllByRole('link', { name: 'Timeline' })
-	expect(links).toHaveLength(1)
-	expect(links[0]?.getAttribute('href')).toBe('/viewer?memory=known&timelapse=1')
+	const links = screen.getAllByRole('link', { name: '▶ Open the world' })
+	expect(links).toHaveLength(2)
+	expect(new Set(links.map(link => link.getAttribute('href')))).toEqual(new Set(['/viewer?memory=known&timelapse=1']))
+	expect(screen.getByText(/Evolving world · 1/)).toBeTruthy()
+	expect(screen.getByText('Old remote')).toBeTruthy()
 })
 
 test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {

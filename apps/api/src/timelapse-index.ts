@@ -7,6 +7,8 @@ import {
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
 	temporalIdentity,
+	WORLD_EVOLUTION_FRAMES,
+	type WorldEvolution,
 } from '@minemories/api-contract'
 import { ORPCError } from '@orpc/server'
 import { parseMetadata } from './memory-metadata'
@@ -25,6 +27,7 @@ interface Entry {
 	series_key: string
 	time_key: string
 	capture_json: string
+	world_key: string
 }
 interface Selected extends Entry {
 	name: string
@@ -42,18 +45,24 @@ export function migrateTimelapseIndex(database: Database) {
 			database.exec(`CREATE TABLE IF NOT EXISTS timelapse_index_version (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL);
 	 CREATE TABLE IF NOT EXISTS timelapse_index (
 	 memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE,
-	 user_id TEXT NOT NULL,series_key TEXT NOT NULL,time_key TEXT NOT NULL,capture_json TEXT NOT NULL
+	 user_id TEXT NOT NULL,series_key TEXT NOT NULL,time_key TEXT NOT NULL,capture_json TEXT NOT NULL,world_key TEXT
 	);
 	CREATE INDEX IF NOT EXISTS timelapse_order ON timelapse_index(user_id,series_key,time_key,memory_id);
 	CREATE TABLE IF NOT EXISTS timelapse_index_rejected (
 	 memory_id TEXT PRIMARY KEY REFERENCES memories(id) ON DELETE CASCADE
 	);`)
+			const columns = database.query('PRAGMA table_info(timelapse_index)').all() as { name: string }[]
+			if (!columns.some(column => column.name === 'world_key'))
+				database.exec('ALTER TABLE timelapse_index ADD COLUMN world_key TEXT')
+			database.exec(
+				'CREATE INDEX IF NOT EXISTS timelapse_world_order ON timelapse_index(user_id,world_key,time_key,memory_id)'
+			)
 			const version = database.query('SELECT version FROM timelapse_index_version WHERE id=1').get() as {
 				version: number
 			} | null
-			if (version?.version !== 2) {
+			if (version?.version !== 3) {
 				database.exec('DELETE FROM timelapse_index;DELETE FROM timelapse_index_rejected')
-				database.query('INSERT INTO timelapse_index_version VALUES (1,2) ON CONFLICT(id) DO UPDATE SET version=2').run()
+				database.query('INSERT INTO timelapse_index_version VALUES (1,3) ON CONFLICT(id) DO UPDATE SET version=3').run()
 			}
 		})
 		.immediate()
@@ -81,6 +90,13 @@ function seriesKey(owner: string, identity: CaptureIdentity, dimension: string |
 		.digest('hex')
 }
 
+/** Every identified capture of one world and dimension, whatever its zone, composes a single evolving world. */
+function worldKey(owner: string, identity: CaptureIdentity, dimension: string | null) {
+	return createHash('sha256')
+		.update(JSON.stringify(['timelapse-world-v1', owner, identity.worldId, identity.worldScope, dimension]))
+		.digest('hex')
+}
+
 function uploadTime(value: number): string | null {
 	if (!Number.isSafeInteger(value) || value < 0 || value > 8_640_000_000_000_000) return null
 	return new Date(value).toISOString()
@@ -99,6 +115,7 @@ function describe(source: Source) {
 	if (!key) return null
 	return {
 		seriesKey: seriesKey(source.user_id, identity, metadata.dimension),
+		worldKey: worldKey(source.user_id, identity, metadata.dimension),
 		key,
 		frame: {
 			at,
@@ -136,8 +153,17 @@ export class TimelapseIndex {
 				const capture = describe(source)
 				if (!capture) return false
 				this.database
-					.query('INSERT INTO timelapse_index VALUES (?,?,?,?,?)')
-					.run(source.id, source.user_id, capture.seriesKey, capture.key, JSON.stringify(capture.frame))
+					.query(
+						'INSERT INTO timelapse_index (memory_id,user_id,series_key,time_key,capture_json,world_key) VALUES (?,?,?,?,?,?)'
+					)
+					.run(
+						source.id,
+						source.user_id,
+						capture.seriesKey,
+						capture.key,
+						JSON.stringify(capture.frame),
+						capture.worldKey
+					)
 				return true
 			})
 			.immediate()
@@ -145,12 +171,16 @@ export class TimelapseIndex {
 
 	/** A bounded migration pass; rejected tagged imports never starve later valid snapshots. */
 	backfill(): number {
+		return this.pass(null).added
+	}
+
+	private pass(userId: string | null) {
 		const rows = this.database
-			.query(`SELECT id FROM memories m WHERE deleted_at IS NULL
+			.query(`SELECT id FROM memories m WHERE deleted_at IS NULL AND (?1 IS NULL OR m.user_id=?1)
 		 AND CASE WHEN json_valid(metadata_json) THEN json_type(metadata_json,'$.worldId')='text' ELSE 0 END
 		 AND NOT EXISTS(SELECT 1 FROM timelapse_index i WHERE i.memory_id=m.id)
 		 AND NOT EXISTS(SELECT 1 FROM timelapse_index_rejected r WHERE r.memory_id=m.id) ORDER BY created_at,id LIMIT 20`)
-			.all() as { id: string }[]
+			.all(userId) as { id: string }[]
 		let added = 0
 		for (const row of rows) {
 			if (this.put(row.id)) added++
@@ -159,7 +189,7 @@ export class TimelapseIndex {
 					.query('INSERT OR IGNORE INTO timelapse_index_rejected SELECT id FROM memories WHERE id=?')
 					.run(row.id)
 		}
-		return added
+		return { added, processed: rows.length }
 	}
 
 	frames(userId: string, input: FrameInput): TemporalWindow {
@@ -185,6 +215,36 @@ export class TimelapseIndex {
 					frames: parts.map(row => this.frame(row)),
 					hasPrevious: parts.length > 0 && this.more(anchor, parts[0] ?? anchor, '<'),
 					hasNext: parts.length > 0 && this.more(anchor, parts.at(-1) ?? anchor, '>'),
+				}
+			})
+			.immediate()
+	}
+
+	/** Most recent frames of the whole world, oldest first, after indexing this owner's pending captures. */
+	world(userId: string, memoryId: string): WorldEvolution {
+		const seed = this.entry(userId, memoryId)
+		while (this.pass(userId).processed > 0);
+		return this.database
+			.transaction(() => {
+				const stored = JSON.parse(seed.capture_json) as Stored
+				const totals = this.database
+					.query(`SELECT COUNT(*) AS frames,SUM(m.size) AS bytes FROM timelapse_index i
+			 JOIN memories m ON m.id=i.memory_id WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL`)
+					.get(userId, seed.world_key) as { frames: number; bytes: number }
+				const rows = this.database
+					.query(`SELECT i.*,m.name,m.size FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
+			 WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL
+			 ORDER BY i.time_key DESC,i.memory_id DESC LIMIT ?`)
+					.all(userId, seed.world_key, WORLD_EVOLUTION_FRAMES) as Selected[]
+				return {
+					worldKey: seed.world_key,
+					name: stored.seriesName,
+					dimension: stored.dimension,
+					scope: stored.scope,
+					totalFrames: totals.frames,
+					totalBytes: totals.bytes,
+					frames: rows.reverse().map(row => this.frame(row)),
+					truncated: totals.frames > rows.length,
 				}
 			})
 			.immediate()

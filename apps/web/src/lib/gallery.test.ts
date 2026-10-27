@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { groupCaptures, stackCaptures } from './gallery'
+import { bundleWorlds, groupCaptures, stackCaptures } from './gallery'
 
 it('groups worlds by name and seed, servers by name, and preserves newest-first order', () => {
 	const capture = (id: string, worldName: string | null, serverName: string | null, seed: string | null = null) => ({
@@ -47,4 +47,25 @@ it('stacks nearby captures and isolates unknown locations', () => {
 	expect(
 		stackCaptures([capture('e', null, null, null), capture('f', null, null, null)]).map(stack => stack.captures.length)
 	).toEqual([2])
+})
+
+it('bundles identified captures per world, scope and dimension and keeps the others apart', () => {
+	const capture = (id: string, worldId: string | null, dimension: string | null, worldScope?: string) => ({
+		id,
+		metadata: { worldId, dimension, ...(worldScope ? { worldScope } : {}) },
+	})
+	const captures = [
+		capture('1', 'a', 'minecraft:overworld'),
+		capture('2', 'a', 'minecraft:the_nether'),
+		capture('3', null, null),
+		capture('4', 'a', 'minecraft:overworld', 'world'),
+		capture('5', 'a', 'minecraft:overworld', 'namespace'),
+	]
+	const { worlds, others } = bundleWorlds(captures, item => item.metadata.worldId !== null)
+	expect(worlds.map(world => [world.dimension, world.captures.map(item => item.id)])).toEqual([
+		['minecraft:overworld', ['1', '4']],
+		['minecraft:the_nether', ['2']],
+		['minecraft:overworld', ['5']],
+	])
+	expect(others.map(item => item.id)).toEqual(['3'])
 })

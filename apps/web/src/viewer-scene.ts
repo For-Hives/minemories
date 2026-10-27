@@ -3,12 +3,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
+import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
 import { capturePosition, framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPrecipitation } from './viewer-precipitation'
 import { prepareWater } from './viewer-water'
+import { chooseLights, prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
 
 export interface ViewerLoadOptions {
 	signal?: AbortSignal
@@ -96,6 +98,7 @@ export class ViewerScene {
 		uFixed: { value: -1 },
 	}
 	private readonly precipitation = new ViewerPrecipitation()
+	private readonly worldLights = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
 	private captureFocus: THREE.Vector3 | null = null
 	private readonly navigation: ViewerNavigation
 	private atmosphere: Atmosphere = getAtmosphere(null, null)
@@ -318,6 +321,65 @@ export class ViewerScene {
 			this.preparingWorld = false
 			this.loadingFile = false
 		}
+	}
+
+	/** Adds one capture of an evolving world next to the others; it draws nothing until composed. */
+	async addLayer(
+		file: File,
+		capture: { origin: BlockPoint; bounds: BlockBounds; offset: BlockPoint },
+		signal?: AbortSignal
+	): Promise<WorldLayer> {
+		const buffer = await file.arrayBuffer()
+		this.ensureLoadActive(signal)
+		const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
+		const root = gltf.scene
+		try {
+			this.ensureLoadActive(signal)
+			const layer = prepareLayer(root, capture.origin, capture.bounds)
+			const offset = new THREE.Vector3(capture.offset.x, capture.offset.y, capture.offset.z)
+			root.position.copy(offset)
+			for (const light of layer.lights) light.position.add(offset)
+			root.traverse(object => {
+				if (object instanceof THREE.Mesh) this.prepareMesh(object)
+			})
+			const first = this.modelRoot.children.length === 0
+			this.modelRoot.add(root)
+			await this.renderer.compileAsync(root, this.camera, this.scene)
+			this.ensureLoadActive(signal)
+			if (first) {
+				this.frameModel(root)
+				this.updateEnvironment()
+				this.events.onEmptyChange(false)
+			}
+			return layer
+		} catch (error) {
+			root.removeFromParent()
+			if (!this.disposed) disposeImportedObject(root)
+			throw error
+		}
+	}
+
+	/** Shows the composed world: constant light count (no shader recompilation) and refreshed shadows. */
+	showWorld(lights: readonly WorldLight[]): void {
+		const focus = this.captureFocus ?? this.controls.target
+		const selected = chooseLights(lights, focus)
+		for (const [position, light] of this.worldLights.entries()) {
+			if (!light.parent) this.modelRoot.add(light)
+			const source = selected[position]
+			light.intensity = source ? Math.min(source.intensity * 0.01, 12) : 0
+			if (!source) continue
+			light.color.copy(source.color).multiply(new THREE.Color(1, 0.82, 0.65))
+			light.distance = Math.min(Math.max(source.distance, 1), 10)
+			light.position.copy(source.position)
+		}
+		this.keyLight.shadow.needsUpdate = true
+		this.renderer.shadowMap.needsUpdate = true
+	}
+
+	/** Frames one capture of the world, keeping the others in place. */
+	focusLayer(root: THREE.Object3D, preserveView = false): void {
+		this.frameModel(root, preserveView)
+		this.updateEnvironment()
 	}
 
 	private ensureLoadActive(signal?: AbortSignal): void {
@@ -637,22 +699,8 @@ export class ViewerScene {
 			this.prepareMesh(object)
 		})
 
-		const cellSize = 6
-		const lightCells = new Map<string, ImportedLight>()
-		for (const light of importedLights) {
-			light.light.removeFromParent()
-			const { x, y, z } = light.position
-			const cell = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)},${Math.floor(z / cellSize)}`
-			const current = lightCells.get(cell)
-			if (!current || light.intensity > current.intensity) lightCells.set(cell, light)
-		}
-
-		const focus = surfaceFocus(framingBounds(root))
-		// Strong lava far underground must not consume the entire visible lighting budget.
-		const relevance = (light: ImportedLight) => light.intensity / (1 + light.position.distanceToSquared(focus) / 400)
-		const selectedLights = [...lightCells.values()]
-			.sort((left, right) => relevance(right) - relevance(left))
-			.slice(0, 12)
+		for (const light of importedLights) light.light.removeFromParent()
+		const selectedLights = chooseLights(importedLights, surfaceFocus(framingBounds(root)))
 		for (const imported of selectedLights) {
 			const light = new THREE.PointLight(
 				imported.color.clone().multiply(new THREE.Color(1, 0.82, 0.65)),

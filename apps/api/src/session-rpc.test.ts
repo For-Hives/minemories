@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { gunzipSync } from 'node:zlib'
 import type { apiContract } from '@minemories/api-contract'
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
@@ -130,6 +131,9 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	expect(file.status).toBe(200)
 	expect(file.headers.get('cache-control')).toBe('private, no-store')
 	expect(Buffer.from(await file.arrayBuffer()).toString('hex')).toBe(glb.toString('hex'))
+	const compressed = await app.request(`/api/memories/${id}/file`, { headers: { cookie, 'accept-encoding': 'gzip' } })
+	expect(compressed.headers.get('content-encoding')).toBe('gzip')
+	expect(gunzipSync(Buffer.from(await compressed.arrayBuffer())).equals(glb)).toBe(true)
 	const share = await owner.memories.createShare(input)
 	const stored = database
 		.query<{ object_key: string }, [string]>('SELECT object_key FROM memories WHERE id = ?')

@@ -2,5 +2,21 @@
 	"Email address": "Adresse courriel",
 	"New email address": "Nouvelle adresse courriel",
 	"Change my email": "Modifier mon courriel",
-	"you@example.com": "toi@example.com"
+	"you@example.com": "toi@example.com",
+	"EVOLVING WORLD": "MONDE ÉVOLUTIF",
+	"{ready} of {total} captures loaded": "{ready} captures chargées sur {total}",
+	"Only the most recent captures are loaded to keep the viewer fast.": "Seules les captures les plus récentes sont chargées pour garder le viewer fluide.",
+	"This world is unavailable. Sign in as its owner, or return to your gallery.": "Ce monde est indisponible. Connectez-vous avec le compte propriétaire ou revenez à votre galerie.",
+	"Waiting": "En attente",
+	"Loaded": "Chargée",
+	"Archived — open it alone to restore it": "Archivée — ouvrez-la seule pour la restaurer",
+	"Could not load": "Chargement impossible",
+	"Not loaded": "Non chargée",
+	"Captures of this world": "Captures de ce monde",
+	"{count} captures, oldest first": "{count} captures, de la plus ancienne à la plus récente",
+	"{count} chunks": "{count} chunks",
+	"Open alone": "Ouvrir seule",
+	"Moment of the world": "Moment du monde",
+	"▶ Open the world": "▶ Ouvrir le monde",
+	"Evolving world": "Monde évolutif"
 }
