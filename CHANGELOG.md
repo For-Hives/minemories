@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.22.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.21.0-beta.1...mod-v0.22.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* adopter minemories.net et api.minemories.net comme domaines officiels ([690b6a5](https://github.com/For-Hives/minemories/commit/690b6a573fcac267db8d5ca23dd7c90bb18f461b))
+* **mod:** option pour enregistrer les captures manuelles en tuiles ([0bf0a39](https://github.com/For-Hives/minemories/commit/0bf0a3949ca458f21195cdaf87297b8120d4fe1a))
+* timelapse monde cumulatif à partir des captures tuilées ([43832af](https://github.com/For-Hives/minemories/commit/43832af2525b6127efb1aa36274a08be1a596f6b))
+* un seul visualiseur avec l'évolution intégrée, captures manuelles tuilées par défaut ([76c0b20](https://github.com/For-Hives/minemories/commit/76c0b200976a5deeddeda24d4ed1fdd857cddcac))
+* une carte par évolution, ouverture sur la dernière capture, réponses GZIP, tuiles de 32 blocs ([7aaadeb](https://github.com/For-Hives/minemories/commit/7aaadeb6d062a31cd35f84e33166bf4627cbcf3b))
+
+### Corrections
+
+* **deps:** mettre à jour better-auth en 1.7.7 (bun audit) ([3e5eac2](https://github.com/For-Hives/minemories/commit/3e5eac25084ad64c09cf84f0e2575b7d78327f5f))
+
+### Documentation
+
+* bilan de la tentative de tuiles et du mode évolution ([8714847](https://github.com/For-Hives/minemories/commit/8714847fc95ceb61cc9ebd5ccacdd3846ff34510))
+
+### Tests
+
+* **mod:** couvrir l'ancien historique d'exploration et le zoneId ([#148](https://github.com/For-Hives/minemories/issues/148)) ([9bd26e1](https://github.com/For-Hives/minemories/commit/9bd26e16b96158427ab967838da8555315d4a794))
+
 ## [0.21.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.20.0-beta.1...mod-v0.21.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
