@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.18.0-beta.1...mod-v0.19.0-beta.1) (2026-10-27)
+
+### Fonctionnalités
+
+* **mod:** écrire les tuiles par spool pour les captures AFK ([2bd39f0](https://github.com/For-Hives/minemories/commit/2bd39f08a901e3ea050ff02100083508c4fe2965)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+* **mod:** écrire un bundle de tuiles pour les captures AFK (option avancée) ([baaaea5](https://github.com/For-Hives/minemories/commit/baaaea57ec2d67d5866af5217f7a37ae71aa22b5)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+
 ## [0.18.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.17.0-beta.1...mod-v0.18.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
