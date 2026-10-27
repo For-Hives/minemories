@@ -63,6 +63,13 @@ la profondeur explorée peut s’étendre sans changer la zone ; changer le cent
 horizontal ou le rayon produit une autre zone. Les anciens souvenirs ne seront
 pas affectés rétroactivement à une série sur la seule base de leur nom ou seed.
 
+L’historique d’exploration (profondeur par chunk et temps par zone de 64 blocs) reste
+local et ne sert qu’à choisir le fond du volume capturé et à suggérer des zones. Il
+n’ajoute aucun champ aux métadonnées : une capture se rattache à sa zone par `zoneId`,
+et une tuile par sa position absolue dans la grille (voir [tiles.md](tiles.md)). Un
+ancien historique, sans fichier de zones, se lit toujours et approfondit le volume sans
+changer le `zoneId` en mode `around` (test `CaptureIdentityTest`).
+
 L’origine correspond au centre des bornes effectivement exportées, et non à la
 position du joueur. En AFK progressif elle est calculée après la recherche de
 profondeur, juste avant la finalisation des métadonnées. Les données du monde
