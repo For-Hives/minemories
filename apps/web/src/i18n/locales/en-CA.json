@@ -23,5 +23,7 @@
 	"{count} chunks": "{count} chunks",
 	"Open alone": "Open alone",
 	"Moment of the world": "Moment of the world",
-	"▶ Open the world": "▶ Open the world"
+	"▶ Open the world": "▶ Open the world",
+	"{name} joined the game": "{name} has joined the game",
+	"{name} left the game": "{name} has left the game"
 }

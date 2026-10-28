@@ -42,7 +42,7 @@ function page(detectLocale = false) {
 	return render(
 		<I18nProvider detectLocale={detectLocale}>
 			<AppContext.Provider value={context}>
-				<MemoryRouter>
+				<MemoryRouter initialEntries={['/faq']}>
 					<SiteLayout>
 						<Example />
 					</SiteLayout>

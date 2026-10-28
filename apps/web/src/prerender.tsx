@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { renderToString } from 'react-dom/server'
 import { Route, Routes, StaticRouter } from 'react-router'
 import { AppContext } from './app-context'
+import { firstPaintScript } from './components/HeroFilm'
 import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
 import { ArticlePage, BlogPage, LegalPage, NotFoundPage } from './pages/ContentPages'
@@ -14,6 +15,8 @@ import { ReleasesPage } from './pages/ReleasesPage'
 import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
 
 export { publicMetadata, siteOrigin, structuredDataFor }
+/** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
+export const firstPaintScripts: Record<string, string> = { '/': firstPaintScript }
 
 const context = {
 	session: null,

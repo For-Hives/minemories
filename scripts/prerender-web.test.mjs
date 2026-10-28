@@ -69,3 +69,16 @@ test('indexing is blocked by default without disabling readable HTML', async t =
 	assert.ok(!(await readFile(join(directory, 'sitemap.xml'), 'utf8')).includes('<url>'))
 	await assert.rejects(prerenderWeb(directory, { ...entry, siteOrigin: 'file:///tmp' }), invalidOriginPattern)
 })
+test('a route can ask for an inline first-paint script, written before the app markup and only on that route', async t => {
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-first-paint-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	await writeFile(join(directory, 'index.html'), template)
+	await prerenderWeb(directory, { ...entry, firstPaintScripts: { '/': 'document.documentElement.dataset.film = "1"' } })
+	const homepage = await readFile(join(directory, 'index.html'), 'utf8')
+	const script = '<script>document.documentElement.dataset.film = "1"</script>'
+	assert.ok(homepage.includes(script))
+	assert.ok(homepage.indexOf(script) < homepage.indexOf('<div id="app"'))
+	const article = await readFile(join(directory, 'blog/story/index.html'), 'utf8')
+	assert.ok(!article.includes('dataset.film'))
+	assert.ok(!(await readFile(join(directory, '404.html'), 'utf8')).includes('dataset.film'))
+})

@@ -145,6 +145,18 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				{children ?? <Outlet />}
 			</main>
 		)
+	// The home page is the film (HeroFilm): a full-screen page with its own compact header, skip link and full-width footer, which carry the site's navigation.
+	if (pathname === '/')
+		return (
+			<>
+				{children ?? <Outlet />}
+				{notice && (
+					<div className="mm-toast" role="status">
+						{t(notice)}
+					</div>
+				)}
+			</>
+		)
 	return (
 		<div className="mm-site">
 			<a className="mm-skip" href="#main-content">

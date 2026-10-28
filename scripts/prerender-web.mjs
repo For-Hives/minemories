@@ -8,7 +8,7 @@ const titlePattern = /<title>[^<]*<\/title>/
 const descriptionPattern = /<meta name="description"[^>]*>/
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
-	const { publicMetadata, renderPage, siteOrigin } = entry
+	const { publicMetadata, renderPage, siteOrigin, firstPaintScripts = {} } = entry
 	const origin = new URL(siteOrigin)
 	if (!['https:', 'http:'].includes(origin.protocol) || origin.pathname !== '/' || origin.search || origin.hash)
 		throw new Error('VITE_SITE_URL must be an HTTP(S) origin.')
@@ -40,7 +40,7 @@ export async function prerenderWeb(directory, entry) {
 				.replace('</head>', `${tags}</head>`)
 				.replace(
 					'<div id="app"></div>',
-					`<div id="app" data-prerendered="true" data-route="${escapeHtml(page.path)}">${renderPage(page.path)}</div>`
+					`${firstPaintScripts[page.path] ? `<script>${firstPaintScripts[page.path]}</script>` : ''}<div id="app" data-prerendered="true" data-route="${escapeHtml(page.path)}">${renderPage(page.path)}</div>`
 				)
 			const folder = page.path === '/' ? directory : resolve(directory, `.${page.path}`)
 			await mkdir(folder, { recursive: true })

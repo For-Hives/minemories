@@ -1,0 +1,284 @@
+/* ==========================================================================================================================================================
+   CHARTE GRAPHIQUE MINEMORIES : composants partagés de la landing (sous le film). Référence : docs/features/design-system.md
+   Chargé après film.css (le kit : boutons, panneaux, FAQ...) ; lit uniquement les jetons de tokens.css. Rien ici ne touche au canvas du film ni à son HUD (.hud8, .film-bar) :
+   tout est sous `.site` (le contenu), `.footer`, ou limité par un sélecteur de composant.
+   Pour étendre la charte à une autre page : la page porte `.site` ou `.ds-page` sur sa racine, utilise les classes mc-* ci-dessous, ne définit aucune taille en dur.
+   ========================================================================================================================================================== */
+
+/* --- 1. Échelle typographique (police du jeu et Unifont) ------------------------------------------------------------------------------------------------ */
+
+.site .mc-hero__title,
+.ds-page .mc-hero__title {
+	font-size: var(--ds-fs-h1);
+	line-height: var(--ds-lh-h1);
+	text-shadow: var(--ds-text-shadow-3);
+}
+
+.site .mc-section__title,
+.ds-page .mc-section__title {
+	font-size: var(--ds-fs-h2);
+	line-height: var(--ds-lh-h2);
+	text-shadow: var(--ds-text-shadow-3);
+}
+
+.site .mc-step__title,
+.ds-page .mc-step__title {
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.site .mc-hero__lead {
+	font-size: var(--ds-fs-lead);
+	line-height: var(--ds-lh-lead);
+}
+
+.site .mc-section__text,
+.site .mc-step__body,
+.site .mc-step__help,
+.site .mc-step__more p,
+.site .mc-faq__a,
+.site .mc-limits li,
+.site .mc-hero__compat,
+.ds-page .mc-section__text {
+	font-size: var(--ds-fs-md);
+	line-height: var(--ds-lh-md);
+	max-width: var(--ds-measure);
+}
+
+.site .mc-hero__lead {
+	max-width: var(--ds-measure);
+}
+
+@media (min-width: 1000px) {
+	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
+		text-shadow: 3px 3px 0 var(--text-2-shadow);
+	}
+}
+
+.site .mc-hero__compat,
+.site .mc-step__help {
+	font-size: var(--ds-fs-xs);
+}
+
+/* Coréen et japonais (Unifont, 1 px par texel) : seules les tailles multiples de 16 restent nettes. */
+html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__title,
+html.mm-cjk:not([data-mc-font='read']) .site .mc-section__title {
+	font-size: 32px;
+	line-height: 40px;
+}
+
+html.mm-cjk:not([data-mc-font='read']) .site .mc-step__title {
+	font-size: 16px;
+	line-height: 24px;
+	font-weight: 700;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+/* Police lisible : les titres suivent l'échelle (plus de 48 px), le corps garde ses tailles propres (17 à 18 px). */
+html[data-mc-font='read'] .site .mc-hero__title {
+	font-size: var(--ds-fs-h1);
+	line-height: var(--ds-lh-h1);
+}
+
+html[data-mc-font='read'] .site .mc-section__title {
+	font-size: var(--ds-fs-h2);
+	line-height: var(--ds-lh-h2);
+}
+
+html[data-mc-font='read'] .site .mc-step__title {
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+}
+
+/* --- 2. Rythme vertical ---------------------------------------------------------------------------------------------------------------------------- */
+
+.site .mc-section,
+.ds-page .mc-section {
+	padding-block: var(--ds-section-y);
+	gap: var(--ds-gap);
+}
+
+.site .mc-steps {
+	gap: var(--ds-sp-4);
+}
+
+.site .mc-hero__actions {
+	gap: var(--ds-sp-3);
+}
+
+/* --- 3. Boutons : 44 px, relief du jeu, survol, pression, focus ------------------------------------------------------------------------------------------ */
+
+.site .mc-btn,
+.site-account {
+	--_h: var(--ds-hit);
+	min-height: var(--ds-hit);
+	transition:
+		border-color var(--ds-dur-1) var(--ds-ease),
+		background-color var(--ds-dur-1) var(--ds-ease),
+		transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.site .mc-btn:hover:not([disabled]),
+.site-account:hover {
+	transform: translateY(-1px);
+}
+
+.site .mc-btn:active,
+.site-account:active {
+	transform: translateY(0);
+}
+
+.site .mc-btn:focus-visible,
+.site-account:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+/* --- 4. Liens : cible de 44 px, soulignement qui s'épaissit au survol -------------------------------------------------------------------------------------- */
+
+.site a.mc-link,
+.footer a.mc-link {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	transition:
+		color var(--ds-dur-1) var(--ds-ease),
+		text-decoration-color var(--ds-dur-1) var(--ds-ease);
+}
+
+.site a.mc-link:hover,
+.footer a.mc-link:hover {
+	text-decoration-thickness: 2px;
+}
+
+.site a.mc-link:focus-visible,
+.footer a.mc-link:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.site-links {
+	gap: 0 var(--ds-sp-6);
+	margin-block: var(--ds-sp-3) var(--ds-sp-4);
+}
+
+/* --- 5. Cartes et panneaux « interface Minecraft » : étapes, limites, FAQ --------------------------------------------------------------------------------- */
+
+.site .mc-step,
+.site .mc-faq__item,
+.site .mc-tip {
+	transition: box-shadow var(--ds-dur-2) var(--ds-ease);
+}
+
+.site .mc-faq__q {
+	transition: color var(--ds-dur-1) var(--ds-ease);
+}
+
+.site .mc-faq__q::after {
+	transition: transform var(--ds-dur-2) var(--ds-ease-std);
+}
+
+.site .mc-faq__q:focus-visible,
+.site .mc-step__more > summary:focus-visible {
+	outline: var(--ds-focus);
+}
+
+.site .mc-faq__item[open] > .mc-faq__q {
+	color: var(--ember);
+}
+
+.site .mc-step__more > summary {
+	min-height: var(--ds-hit);
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+}
+
+/* --- 6. Pied de page : deux colonnes lisibles, liens en grille ------------------------------------------------------------------------------------------- */
+
+.footer .mc-footer__inner {
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--ds-sp-6);
+}
+
+@media (min-width: 900px) {
+	.footer .mc-footer__inner {
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	}
+}
+
+.footer .mc-footer__right {
+	justify-self: stretch;
+	width: 100%;
+	text-align: left;
+}
+
+.footer .mc-footer__nav {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+	gap: 0 var(--ds-sp-5);
+}
+
+.footer .mc-footer__nav a {
+	min-height: var(--ds-hit);
+}
+
+.footer .mc-disclaimer,
+.footer .mc-footer__meta {
+	font-size: var(--ds-fs-xs);
+	line-height: var(--ds-lh-xs);
+}
+
+.footer .mc-footer__summary {
+	min-height: var(--ds-hit);
+	display: flex;
+	align-items: center;
+}
+
+/* --- 7. Mouvement : entrée des blocs au défilement (réglé par src/lib/reveal.ts) ------------------------------------------------------------------------------ */
+/* Le contenu est visible par défaut (sans JavaScript, sans WebGL, en mouvement réduit) : le masquage n'existe que si #site porte data-reveal="on". */
+
+#site[data-reveal='on'] .ds-reveal:not(.is-in) {
+	opacity: 0;
+	transform: translateY(var(--ds-reveal-y));
+}
+
+#site[data-reveal='on'] .ds-reveal {
+	transition:
+		opacity var(--ds-dur-3) var(--ds-ease) calc(var(--ds-i, 0) * var(--ds-stagger)),
+		transform var(--ds-dur-3) var(--ds-ease) calc(var(--ds-i, 0) * var(--ds-stagger));
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#site .ds-reveal,
+	.site .mc-btn,
+	.site-account,
+	.site a.mc-link,
+	.site .mc-faq__q::after {
+		transition: none;
+		transform: none;
+	}
+
+	#site[data-reveal='on'] .ds-reveal:not(.is-in) {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+html[data-mc-motion='reduced'] #site .ds-reveal,
+html[data-mc-motion='reduced'] .site .mc-btn,
+html[data-mc-motion='reduced'] .site a.mc-link {
+	transition: none;
+	transform: none;
+}
+
+html[data-mc-motion='reduced'] #site[data-reveal='on'] .ds-reveal:not(.is-in) {
+	opacity: 1;
+	transform: none;
+}

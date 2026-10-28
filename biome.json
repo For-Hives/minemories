@@ -127,6 +127,51 @@
 	},
 	"overrides": [
 		{
+			"includes": ["apps/web/src/hero/**", "apps/web/public/hero/**"],
+			"formatter": { "enabled": false },
+			"assist": { "enabled": false },
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off",
+						"noExcessiveLinesPerFunction": "off",
+						"noForEach": "off",
+						"useOptionalChain": "off",
+						"useSimplifiedLogicExpression": "off",
+						"noCommaOperator": "off",
+						"useLiteralKeys": "off",
+						"noUselessLoneBlockStatements": "off"
+					},
+					"style": {
+						"noNestedTernary": "off",
+						"noExcessiveLinesPerFile": "off",
+						"useConst": "off",
+						"noDescendingSpecificity": "off"
+					},
+					"suspicious": {
+						"noEmptyBlockStatements": "off",
+						"noDuplicateProperties": "off",
+						"noConsole": "off",
+						"noAssignInExpressions": "off",
+						"useIterableCallbackReturn": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off",
+						"noUnusedFunctionParameters": "off",
+						"noUnusedImports": "off"
+					},
+					"performance": {
+						"useTopLevelRegex": "off",
+						"noAwaitInLoops": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["apps/web/src/hero/hero.js", "apps/web/src/hero/first-paint.js"],
+			"formatter": { "enabled": true }
+		},
+		{
 			"includes": ["**/test/**", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
 			"linter": {
 				"rules": {
