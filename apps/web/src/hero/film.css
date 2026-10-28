@@ -2633,35 +2633,7 @@ html[data-dock='side'] .footer .mc-footer__inner {
 	line-height: 24px;
 }
 
-/* v11b (item 5): on a desktop (>= 1280 px) the running text is the game font at 24 px (texel 3 px) on lines of 32 px, in the full text colour (#f4efe6: 15:1 on the night, the v11 grey was
-   10:1 and read as dim), with the 3 px shadow of that size. The measure: the column holds 46 to 50 characters at 1 280 to 1 440 px (the panel keeps its 38 %), 56 to 64 from about 1 760 px
-   (the column grows with the screen, site.js textMaxOf). Korean and Japanese stay at 16 px (a Unifont pixel is 1 px; 24 px would blur it, 32 px would give 20 characters per line). */
-@media (min-width: 1280px) {
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-section__text,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-step__body,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-step__help,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-step__more p,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-faq__a,
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-limits li {
-		font-size: 24px;
-		line-height: 32px;
-		color: var(--text);
-		text-shadow: 3px 3px 0 var(--text-shadow);
-		max-width: 64ch;
-	}
-
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-section__text,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-step__body,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-step__help,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-step__more p,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-faq__a,
-	html.mm-cjk:not([data-mc-font='read']) .site .mc-limits li {
-		color: var(--text);
-		text-shadow: 2px 2px 0 var(--text-shadow);
-	}
-}
+/* Charte (charter.css): the running text stays at 16 px on desktop too; the former 24 px desktop rules of v11b are retired. */
 
 /* v11b (item 5): the h1 of the hero takes the focus (tabindex -1) when the page jumps to it; a programmatic focus on a heading is not an interactive control and must not draw a white frame
    that reads like an input field. Keyboard users keep the ring on every real control (links, buttons, the panel). */
@@ -2683,29 +2655,7 @@ h1[tabindex='-1']:focus-visible {
 	}
 }
 
-@media (min-width: 1280px) {
-	.site .mc-hero__lead {
-		font-size: 24px;
-		line-height: 30px;
-		text-shadow: 3px 3px 0 var(--text-2-shadow);
-	}
-
-	.site .mc-section__title {
-		font-size: 48px;
-		line-height: 56px;
-		text-shadow: 6px 6px 0 var(--text-shadow);
-	}
-
-	.site .mc-step__title {
-		font-size: 32px;
-		line-height: 40px;
-		text-shadow: 4px 4px 0 var(--text-shadow);
-	}
-
-	.mc-section {
-		padding-block: 64px;
-	}
-}
+/* Charte (charter.css): sizes of the hero lead, section and step titles and section padding come from the tokens. */
 
 /* Readable font option (the sizes of v10: 17 / 18 px body, 18 / 20 / 22 px lead, 1.55 / 1.6 lines, bold titles; mcui.css has the component rules). */
 [data-mc-font='read'] .site .mc-section__text,

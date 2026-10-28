@@ -1,12 +1,17 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react'
+import charterCss from '../hero/charter.css?raw'
 import filmCss from '../hero/film.css?raw'
 import { prepareRoot } from '../hero/first-paint.js'
+import tokensCss from '../hero/tokens.css?raw'
 import { useI18n } from '../i18n/I18n'
 import { createHeroI18n } from '../lib/hero-i18n'
+import { observeReveal } from '../lib/reveal'
 import { reportWebFailure } from '../observability/WebObservability'
 import { HeroMarkup } from './HeroMarkup'
 
 /** Folder of the GLB captures (static files, apps/web/public/hero/captures). */
+/** Jetons de la charte, kit du jeu, composants de la charte : dans cet ordre (docs/features/design-system.md). */
+const styles = [tokensCss, filmCss, charterCss].join('\n')
 export const capturesUrl = '/hero/captures/'
 /** Inline script of the prerendered `/` (scripts/prerender-web.mjs puts it before the app's markup): the phase, the layout variables and the film class are on <html> before the page is drawn. */
 export const firstPaintScript = `(${prepareRoot.toString()})(document.documentElement, location)`
@@ -33,10 +38,18 @@ export function HeroFilm() {
 			dispose?.()
 		}
 	}, [i18n])
+	useEffect(() => {
+		const site = document.getElementById('site')
+		if (!site) return
+		const reduced =
+			Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) ||
+			document.documentElement.dataset.mcMotion === 'reduced'
+		return observeReveal(site, { reduced })
+	}, [])
 	useEffect(() => i18n.set(locale), [i18n, locale])
 	return (
 		<>
-			<style dangerouslySetInnerHTML={{ __html: filmCss }} />
+			<style dangerouslySetInnerHTML={{ __html: styles }} />
 			<HeroMarkup />
 		</>
 	)

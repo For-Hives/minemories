@@ -1,0 +1,75 @@
+/* ==========================================================================================================================================================
+   CHARTE GRAPHIQUE MINEMORIES : jetons (source unique). Référence : docs/features/design-system.md
+   Les couleurs, matières et le pixel du jeu (--gp, --night, --text, --copper, --ember...) sont ceux du kit (film.css :root) : ils ne sont pas redéfinis ici.
+   Ce fichier ajoute ce qui manquait au kit : l'échelle typographique, l'espacement, les cibles, les durées et courbes de mouvement, le focus, la mesure du texte.
+   Règle : un composant n'écrit jamais une taille, une durée ou une distance en dur ; il lit un jeton --ds-*.
+   ========================================================================================================================================================== */
+
+:root {
+	/* Typographie : la police du jeu est un pixel de 8 texels, donc des tailles multiples de 8 px (16, 24, 32, 40) restent nettes. Quatre marches, rien au-dessus de 40 px
+	   hors du film. Interligne : 1,5 pour le texte, 1,25 à 1,2 pour les titres. Corps : 16 px partout (le 24 px du bureau est retiré). */
+	--ds-fs-xs: 16px;      /* étiquettes, méta, pied de page, boutons */
+	--ds-lh-xs: 24px;
+	--ds-fs-md: 16px;      /* corps du texte (une seule taille de lecture) */
+	--ds-lh-md: 24px;
+	--ds-fs-lead: 16px;    /* chapeau : 16 px sur petit écran, 24 px à partir de 1 000 px (hero seulement) */
+	--ds-lh-lead: 24px;
+	--ds-fs-h3: 24px;      /* titre de carte, d'étape */
+	--ds-lh-h3: 32px;
+	--ds-fs-h2: 32px;      /* titre de section */
+	--ds-lh-h2: 40px;
+	--ds-fs-h1: 32px;      /* titre du hero : 32 px, 40 px à partir de 640 px */
+	--ds-lh-h1: 40px;
+	--ds-measure: 58ch;    /* longueur de ligne : le « ch » de la police du jeu vaut 12 px à 16 px, soit environ 58 caractères */
+
+	/* Espacement (pas de 4 px) */
+	--ds-sp-1: 4px;
+	--ds-sp-2: 8px;
+	--ds-sp-3: 12px;
+	--ds-sp-4: 16px;
+	--ds-sp-5: 24px;
+	--ds-sp-6: 32px;
+	--ds-sp-7: 48px;
+	--ds-sp-8: 64px;
+	--ds-section-y: var(--ds-sp-6);  /* respiration verticale d'une section : 32 px, 48 px à partir de 640 px */
+	--ds-gap: var(--ds-sp-4);
+
+	/* Cibles et pixel : tout ce qui se touche fait au moins 44 px de haut */
+	--ds-hit: 44px;
+	--ds-px: var(--gp);              /* l'épaisseur de bordure « pixel » du jeu : 2 px */
+
+	/* Ombres du texte (une ombre = un texel de la taille du texte) et du relief des panneaux */
+	--ds-text-shadow-1: 2px 2px 0 var(--text-shadow);   /* 16 px */
+	--ds-text-shadow-2: 3px 3px 0 var(--text-shadow);   /* 24 px */
+	--ds-text-shadow-3: 4px 4px 0 var(--text-shadow);   /* 32 px */
+	--ds-text-shadow-4: 5px 5px 0 var(--text-shadow);   /* 40 px */
+	--ds-panel-bevel: inset 4px 4px 0 #3a322b, inset -4px -4px 0 #0f0c0a;  /* relief des cartes « interface Minecraft » */
+
+	/* Focus : un anneau clair de 2 px, décalé de 2 px, sur tout ce qui se commande */
+	--ds-focus: var(--ds-px) solid var(--hover);
+	--ds-focus-offset: var(--ds-px);
+
+	/* Mouvement : trois durées, deux courbes, une distance d'entrée. Tout est coupé par prefers-reduced-motion et par l'option « Mouvement réduit ». */
+	--ds-dur-1: 120ms;               /* survol, pression, focus */
+	--ds-dur-2: 200ms;               /* changement d'état (ouverture, couleur) */
+	--ds-dur-3: 360ms;               /* entrée d'un bloc au défilement */
+	--ds-ease: cubic-bezier(0.2, 0.8, 0.2, 1);        /* arrivée douce */
+	--ds-ease-std: cubic-bezier(0.4, 0, 0.2, 1);      /* aller-retour */
+	--ds-reveal-y: 12px;             /* décalage d'entrée : court, sans saut de mise en page (transform et opacité seulement) */
+	--ds-stagger: 60ms;              /* décalage entre frères qui entrent ensemble */
+}
+
+@media (min-width: 640px) {
+	:root {
+		--ds-fs-h1: 40px;
+		--ds-lh-h1: 48px;
+		--ds-section-y: var(--ds-sp-7);
+	}
+}
+
+@media (min-width: 1000px) {
+	:root {
+		--ds-fs-lead: 24px;
+		--ds-lh-lead: 32px;
+	}
+}
