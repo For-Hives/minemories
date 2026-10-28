@@ -119,3 +119,19 @@ Machine : Chromium de bureau, GPU réel (`--use-angle=gl`), un seul navigateur �
 La ligne du chat à 10,5 s, qui disait « Minemories: Souvenir AFK enregistré localement. », dit maintenant **« Minemories: world capture done. »** (fr : « capture du monde faite. », de : « Weltaufnahme erstellt. », ru : « снимок мира сделан. », ko : « 월드 캡처 완료. », ja : « ワールドをキャプチャしました。 », pl : « zrzut świata wykonany. », pt-BR : « captura do mundo feita. »). Même durée et même position : les gels et la chronologie ne bougent pas.
 
 **Le film et le mod divergent maintenant.** Le mod écrit aujourd'hui, en français seulement, « Souvenir AFK enregistré localement. » (`ClientRuntime.java`, `tell(...)`, aucune clé de langue), et « Souvenir AFK envoyé dans ta galerie. » après un envoi. La note « À propos du film » le dit : la ligne « s'inspire d'un message du mod, formulé autrement aujourd'hui (en français seulement) ». **À Bréval de décider** s'il aligne le mod sur la nouvelle formulation (et la met dans `lang/*.json`, 11 langues). L'infobulle d'aide de la ligne (« AFK : … Localement : … ») explique le jargon de l'étape 2 et ne cite pas la ligne : inchangée.
+
+## Charte graphique et cohérence de la landing (29/10/2026)
+
+Audit, charte (jetons + composants), règles de mouvement, avant/après et plan d'extension aux autres pages : [`design-system.md`](design-system.md). Résumé : échelle de texte unique 16 / 24 / 32 / 40 px (le 24 px de corps et le 48 px des titres du bureau sont retirés), cibles de 44 px, pied de page réparé (la colonne des mentions faisait 108 px de large), entrées au défilement sobres (`src/lib/reveal.ts`), tout lu dans `src/hero/tokens.css` et `charter.css`.
+
+Journal des vérifications de cette passe (Chromium, GPU réel, build prérendu) :
+
+| Vérification | Résultat |
+|---|---|
+| App contre prototype, 13 instants, 390 et 1440 px | canvas **identique** (1 à 5 px au plus à t = 1 s : bruit du GPU) ; les 3 gels 10,6/51,8 · 10,75/51,95 · 10,89/52,09 **identiques à 0 px** ; image complète sous l'en-tête identique à 17,5 · 30,8 · 46,8 · 51,8 s. À 10,6 s elle diffère de 7 000 à 9 000 px : c'est la nouvelle ligne de chat (le prototype dit encore l'ancienne). |
+| Batterie G1 du prototype | 40/42 (les 2 échecs : l'appel de session vers l'API absente) |
+| À froid (JS coupé, sans WebGL, mouvement réduit, `/installation` et retour, `/viewer`) | 19/19 (un avertissement WebGL `glTexStorage2D: Texture is immutable` apparu une seule fois au remontage du film sous forte charge, non reproduit sur 2 relances ; à surveiller) |
+| Défilement, clavier, balayage, passage au site et retour | 19/19 |
+| Mesures à 360 / 390 / 820 / 1440 / 1920 px, en, de, ru, ko, ja | aucun débordement horizontal, 0 erreur console, aucun élément hors écran ; cibles < 44 px : 3 à 6 (cases à cocher et résumé masqué) |
+| Tab (390 et 1440 px) | 59 arrêts, tous avec un anneau de focus visible, ordre = ordre du DOM |
+| `bun run lint`, `bun run web:check` | verts (65 fichiers, 370 tests, 100 % de couverture sur `src/lib/**`) |
