@@ -246,9 +246,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						className="mc-chat__line mc-chat__line--mod"
 						data-hud="chat"
 						data-chapter="mod"
-						data-i18n="Minemories: AFK memory stored locally."
+						data-i18n="Minemories: world capture done."
 					>
-						{t('Minemories: AFK memory stored locally.')}
+						{t('Minemories: world capture done.')}
 					</p>
 					<p className="mc-chat__line mc-chat__line--player is-fadeout--slow" data-hud="chat" data-chapter="say">
 						<span className="mc-chat__text" data-say-text>
@@ -595,14 +595,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</summary>
 								<p
 									className="mc-footer__meta"
-									data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: AFK memory stored locally.” reuses a message of the mod (AFK: away from the keyboard)."
+									data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in French only)."
 								>
 									{t(
-										'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: AFK memory stored locally.” reuses a message of the mod (AFK: away from the keyboard).'
+										'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in French only).'
 									)}
-								</p>
-								<p className="mc-footer__meta not-french" data-i18n="Today the mod shows that line in French only.">
-									{t('Today the mod shows that line in French only.')}
 								</p>
 							</details>
 						</div>

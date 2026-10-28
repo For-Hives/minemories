@@ -214,7 +214,7 @@ test('reading budgets recomputed per language (0.7 s + chars / 12; window = on -
 		const texts = {
 			join: { n: len(t('{name} joined the game')), avail: lineOf('join').off - lineOf('join').on - 0.1 + heldIn(0.2, 3.5) },
 			quit: { n: len(t('{name} left the game')), avail: lineOf('quit').off - lineOf('quit').on - 0.1 },
-			mod: { n: len(t('Minemories: AFK memory stored locally.')), avail: lineOf('mod').off - lineOf('mod').on - 0.1 + heldIn(10.5, 14.55) },
+			mod: { n: len(t('Minemories: world capture done.')), avail: lineOf('mod').off - lineOf('mod').on - 0.1 + heldIn(10.5, 14.55) },
 		}
 		for (const x of plan.titles) {
 			const lines = HUD.TITLE_LINES[x.id]

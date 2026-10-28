@@ -22,7 +22,7 @@ export const KEY = Object.freeze({
 	quit: '{name} left the game',
 	chat: '<{name}> {message}',
 	typed: "stay, I'll be back soon...",
-	mod: 'Minemories: AFK memory stored locally.',
+	mod: 'Minemories: world capture done.',
 	afkHelp: 'AFK: you have not touched the game for 5 minutes. Locally: on your computer.',
 	speech: '{name}: {message}',
 	gaze: 'The dog turns to you, sad, then lies down.',
@@ -772,7 +772,7 @@ export function createHud(ctx) {
 		})
 	}
 
-	// v9d: help on the game's mod line ("AFK memory stored locally": two words of jargon). The film layer is aria-hidden and takes no pointer, so the help is a separate button laid over the line
+	// v9d: help on the game's mod line (its help explains the AFK jargon of step 2). The film layer is aria-hidden and takes no pointer, so the help is a separate button laid over the line
 	// while it is on (index.html `#mod-help`): hover, keyboard focus or a tap open the tooltip (the same words as step 2 of the site), Escape closes it first (capture: it never leaves the film),
 	// leaving or blurring closes it. The tooltip is placed next to the line at the first of five places that touches no head and no ember (`protect`), else the one that touches least.
 	const helpBox = root.ownerDocument.getElementById('mod-help')

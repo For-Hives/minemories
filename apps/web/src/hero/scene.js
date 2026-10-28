@@ -4749,7 +4749,7 @@ export function mount(target, opts = {}) {
 		// sky: { meteors, meteorsWithEmber, ... } (options of createSky), scene: { dogWarm } (v5: gain of the warm fallback
 		// glow on the dog, TIMELINE.dogWarm.gain; 0 = off) }.
 		tune: null,
-		// v8: the line of the mod ("Minemories: AFK memory stored locally.", cue `mod`) is displayed by default;
+		// v8: the line of the mod ("Minemories: world capture done.", cue `mod`) is displayed by default;
 		// `modchat: false` removes it from the cues (cuesAt, `cue` events).
 		modchat: true,
 		// v6: "marked" ember (bigger and whiter core, wider halo) so that it stands out from the neighbouring

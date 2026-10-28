@@ -1185,7 +1185,7 @@ html[data-phase='glide'] .hud8 {
 	display: none; /* v10: the HUD is empty for g > 0 (decisions-v10 2.8) */
 }
 
-/* v9d: the help on the game's "AFK memory stored locally" line. The container takes no pointer; the transparent button laid over the line does (and is in the tab order only while the line is
+/* v9d: the help on the game's "world capture done" line. The container takes no pointer; the transparent button laid over the line does (and is in the tab order only while the line is
    on), the tooltip is the game's item card (.mc-tip) and shows on hover, focus or a tap. It sits next to the line, never over a head or the ember (hud.js placeModHelp). */
 .mod-help {
 	position: fixed;
