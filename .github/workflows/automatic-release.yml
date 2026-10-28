@@ -98,6 +98,8 @@ jobs:
           RELEASE_TARGET: ${{ matrix.id }}
           RELEASE_VERSION: ${{ needs.plan.outputs.version }}
           RELEASE_SOURCE_SHA: ${{ needs.plan.outputs.source }}
+          # Only the workflow_run path proves Quality gates passed for this exact commit.
+          RELEASE_SHARED_CHECKS_DONE: ${{ github.event_name == 'workflow_run' }}
         run: node scripts/build-release-target.mjs "$RELEASE_TARGET" "$RELEASE_VERSION" "$RELEASE_SOURCE_SHA"
       - uses: actions/upload-artifact@v7
         with:

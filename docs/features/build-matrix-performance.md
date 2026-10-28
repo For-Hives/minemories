@@ -116,6 +116,13 @@ Le gain est surtout local : un rebuild sans changement passe de 20 s à 0,6 s, e
 - Séparer les tâches : `check` global (un job) et `assemble`/`build` par cellule. Adapter `build-release-target.mjs` (plus de `:core:check` ni `:common:check` par cellule ; ils restent dans le job de qualité, avec une vérification que ce job a réussi pour la même révision).
 - **Acceptation** : une cellule n'exécute ni JaCoCo ni SpotBugs de `core` ; la couverture publiée est identique.
 
+**Phase 2 réalisée (28 octobre 2026).**
+- `:core` compile avec `options.release = 17` (classes en version 61). Aucun appel à une API Java 21 n'était présent ; `check` de `:core` passe, couverture comprise.
+- `scripts/build-release-target.mjs` expose `releaseGradleTasks`. Quand `RELEASE_SHARED_CHECKS_DONE=true`, une cellule exécute `clean :<loader>:check :<loader>:build` sans `:core:check` ni `:common:check`. Le workflow ne positionne cette variable que sur l'événement `workflow_run` : c'est le seul chemin qui prouve que *Quality gates* a réussi pour ce commit exact (`head_sha == github.sha`). Un lancement manuel (`workflow_dispatch`) garde la vérification complète.
+- `scripts/build-release-target.test.mjs` couvre les deux chemins ; il est ajouté à `release:test`.
+
+Mesure : une cellule Fabric à chaud avec `--no-build-cache` passe de 26–27 s à 12,6–12,8 s (environ 14 s économisées par cellule : tests de `core` et `common`, JaCoCo, SpotBugs). À froid, SpotBugs de `core`/`common` ajoutait plus, mais je ne l'ai pas isolé. Limite : chaque job de CI recompile quand même `:core` (environ 1 s). Le partager entre jobs demanderait un artefact intermédiaire ; le cache distant de la phase 3 le fera plus simplement, donc je ne l'ai pas ajouté ici.
+
 ### Phase 3 : cache Gradle partagé
 - `gradle/actions/setup-gradle` en CI (écriture seulement sur `main`).
 - Nœud de cache privé, authentifié (D4/D5) ; configuration `buildCache { remote(HttpBuildCache) }` avec `push` conditionné à la CI sur `main`.

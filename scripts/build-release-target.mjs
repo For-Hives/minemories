@@ -4,7 +4,18 @@ import { packageMod } from './package-mod.mjs'
 import { isMain, readTargets, repositoryRoot, requireCommit, requireReleaseVersion, run } from './release-utils.mjs'
 import { verifyModArtifact } from './verify-mod-artifact.mjs'
 
-export async function buildReleaseTarget(id, version, sourceCommit) {
+// :core and :common do not depend on the loader. When the Quality gates workflow already passed for this exact
+// commit, each matrix cell only checks and builds its own adapter instead of repeating their tests and analyses.
+export function releaseGradleTasks(target, version, { sharedChecksDone = false } = {}) {
+	return [
+		'clean',
+		...(sharedChecksDone ? [] : [':core:check', ':common:check']),
+		`:${target.project}:check`,
+		`:${target.project}:build`,
+		`-PmodVersion=${version}`,
+	]
+}
+export async function buildReleaseTarget(id, version, sourceCommit, { sharedChecksDone = false } = {}) {
 	requireReleaseVersion(version)
 	requireCommit(sourceCommit)
 	if (run('git', ['rev-parse', 'HEAD']) !== sourceCommit)
@@ -12,19 +23,9 @@ export async function buildReleaseTarget(id, version, sourceCommit) {
 	if (run('git', ['status', '--porcelain'])) throw new Error('Release builds require a clean checkout.')
 	const target = (await readTargets()).find(item => item.id === id)
 	if (!target) throw new Error('Unknown or disabled mod target.')
-	run(
-		'node',
-		[
-			'scripts/gradle.mjs',
-			'clean',
-			':core:check',
-			':common:check',
-			`:${target.project}:check`,
-			`:${target.project}:build`,
-			`-PmodVersion=${version}`,
-		],
-		{ stdio: 'inherit' }
-	)
+	run('node', ['scripts/gradle.mjs', ...releaseGradleTasks(target, version, { sharedChecksDone })], {
+		stdio: 'inherit',
+	})
 	const directory = resolve(repositoryRoot, 'work/mod-release', target.id)
 	await mkdir(directory, { recursive: true })
 	const manifest = await packageMod(resolve(repositoryRoot, `mod/minemories/${target.project}/build/libs`), directory, {
@@ -39,4 +40,7 @@ export async function buildReleaseTarget(id, version, sourceCommit) {
 	)
 	return manifest
 }
-if (isMain(import.meta.url)) await buildReleaseTarget(...process.argv.slice(2))
+if (isMain(import.meta.url))
+	await buildReleaseTarget(...process.argv.slice(2), {
+		sharedChecksDone: process.env.RELEASE_SHARED_CHECKS_DONE === 'true',
+	})

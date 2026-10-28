@@ -21,6 +21,8 @@ spotbugs {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.compilerArgs.addAll(['-Xlint:all', '-Werror'])
+    // :core is loader- and version-independent; Java 17 keeps it consumable by Minecraft 1.20.x targets.
+    options.release = 17
 }
 
 dependencies {
