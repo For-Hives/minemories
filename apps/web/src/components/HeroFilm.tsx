@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react'
-import filmCss from '../hero/film.css?inline'
+import filmCss from '../hero/film.css?raw'
 import { prepareRoot } from '../hero/first-paint.js'
 import { useI18n } from '../i18n/I18n'
 import { createHeroI18n } from '../lib/hero-i18n'
