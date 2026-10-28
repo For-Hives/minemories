@@ -1,0 +1,874 @@
+{
+	"_note": "Everything under web/assets/mc/ except MANIFEST.json and README.md is listed here. Replace or delete the files (and the strings/fonts sections as needed) before publication.",
+	"generatedBy": "web/mcui/extract-mc-assets.mjs (files), web/i18n/src/build.mjs (strings), web/mcui/gen-unifont.mjs (fonts section), web/mcui/gen-mcfont.mjs (fonts/ files)",
+	"jar": {
+		"path": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+		"bytes": 9361844,
+		"sha256": "8e9cf6f4b6eafb1c6bf745a67a61dd1736f31865cad409e5b2bec918667dab5e"
+	},
+	"files": [
+		{
+			"file": "items/bone.png",
+			"role": "hotbar item: the bone (he tamed the dog)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "mcui/icons/bone.svg (drawn, 16x16, in the kit)",
+			"width": 16,
+			"height": 16,
+			"sha256": "f5f2a37e7466f2983c00550874a2a94d2d006eae52b0e73acb722fadeb9bdb3b",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/bone.png",
+				"sha256": "f5f2a37e7466f2983c00550874a2a94d2d006eae52b0e73acb722fadeb9bdb3b"
+			}
+		},
+		{
+			"file": "items/steak.png",
+			"role": "hotbar item: steak (for the dog)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "07d08a99d1b51230aa7edf4e6a890130cce02a6a5fa64407850354192bfdbea3",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/cooked_beef.png",
+				"sha256": "07d08a99d1b51230aa7edf4e6a890130cce02a6a5fa64407850354192bfdbea3"
+			}
+		},
+		{
+			"file": "items/lead.png",
+			"role": "hotbar item: lead",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "8970ef231b71a4aec68b56d77d4bab27d69fdeb59e4a5faa6c837c3ccc9f87a5",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/lead.png",
+				"sha256": "8970ef231b71a4aec68b56d77d4bab27d69fdeb59e4a5faa6c837c3ccc9f87a5"
+			}
+		},
+		{
+			"file": "items/campfire.png",
+			"role": "hotbar item: campfire (the evening fire)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "mcui/icons/ember-spark.svg (drawn, 16x16, in the kit)",
+			"width": 16,
+			"height": 16,
+			"sha256": "9283c0e731db15be1095278b75a5d68b08bb39cd22d86ed02ab425219622b986",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/campfire.png",
+				"sha256": "9283c0e731db15be1095278b75a5d68b08bb39cd22d86ed02ab425219622b986"
+			}
+		},
+		{
+			"file": "items/torch.png",
+			"role": "hotbar item: torch (the item model reads the block texture)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "329db8f31720564ca9c6eeb3bafb98bb30a4d277e958e55806720cc01dbf296d",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/block/torch.png",
+				"sha256": "329db8f31720564ca9c6eeb3bafb98bb30a4d277e958e55806720cc01dbf296d"
+			}
+		},
+		{
+			"file": "items/bread.png",
+			"role": "hotbar item: bread",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "7e0e4a9fcb8bd4b85820ee3aa7ea83b66f08687cd907a8d38cc98281b41fac1d",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/bread.png",
+				"sha256": "7e0e4a9fcb8bd4b85820ee3aa7ea83b66f08687cd907a8d38cc98281b41fac1d"
+			}
+		},
+		{
+			"file": "items/compass.png",
+			"role": "hotbar item: compass (home); frame 16 of the animated texture, the default item image",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "0b14eabd82b84a1273057baac58cff50279329e15260b16b711e5a49ffdc56a4",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/compass_16.png",
+				"sha256": "0b14eabd82b84a1273057baac58cff50279329e15260b16b711e5a49ffdc56a4"
+			}
+		},
+		{
+			"file": "items/map.png",
+			"role": "hotbar item: map (the \"memory\" object)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "mcui/icons/ember.svg is the nearest kit icon; a dedicated \"memory\" icon is to draw",
+			"width": 16,
+			"height": 16,
+			"sha256": "e66deab0b2c7441698363ba819bbfb7793c406d65d49ee24a5a4e516ea010758",
+			"derived": {
+				"from": [
+					{
+						"entry": "assets/minecraft/textures/item/filled_map.png",
+						"sha256": "22e0f1856b995aa6a3f71525bba330ec31e739506d5565f52c05a0c60f93db42"
+					},
+					{
+						"entry": "assets/minecraft/textures/item/filled_map_markings.png",
+						"sha256": "7e01cc208da72f12dc8b1cc30548874d3e984e8ca813e38f893ad092140ca3b0"
+					}
+				],
+				"how": "layer 0 as is, layer 1 (markings) multiplied by the default map tint #46402E, alpha-composited (the filled_map item model)"
+			}
+		},
+		{
+			"file": "items/book-and-quill.png",
+			"role": "hotbar item: book and quill (he writes)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (no kit icon yet)",
+			"width": 16,
+			"height": 16,
+			"sha256": "181b670aafb03287849957ee882863c3924a2aaa826f3f44ab94bea906c54228",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/item/writable_book.png",
+				"sha256": "181b670aafb03287849957ee882863c3924a2aaa826f3f44ab94bea906c54228"
+			}
+		},
+		{
+			"file": "gui/hotbar.png",
+			"role": "hotbar background (9 slots, 20 px pitch, items at x = 3 + 20 i, y = 3)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "the drawn bar of the kit (.mc-hotbar--film)",
+			"width": 182,
+			"height": 22,
+			"sha256": "57aad603aafc75cea079d8db04b3029c1b1b5501eb0799971ccaf858876f52a7",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/gui/sprites/hud/hotbar.png",
+				"sha256": "57aad603aafc75cea079d8db04b3029c1b1b5501eb0799971ccaf858876f52a7"
+			}
+		},
+		{
+			"file": "gui/hotbar_selection.png",
+			"role": "selected slot frame, drawn at (-1, -1) over the slot",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "the drawn selection of the kit (.mc-hotbar__slot.is-selected)",
+			"width": 24,
+			"height": 23,
+			"sha256": "8c1e1cd977cce0c3a2aaf04036af4904426dafd1a6f4db9665b0d8be1468e80a",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png",
+				"sha256": "8c1e1cd977cce0c3a2aaf04036af4904426dafd1a6f4db9665b0d8be1468e80a"
+			}
+		},
+		{
+			"file": "particle/heart.png",
+			"role": "the game's heart particle: affection, over the dog when Efe is back (hud.js hearts)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "to draw (a 9 x 9 pixel heart)",
+			"width": 8,
+			"height": 8,
+			"sha256": "351e76662421bfd9285429847568b93046cd26100acc3f53550c663234bbde7b",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/particle/heart.png",
+				"sha256": "351e76662421bfd9285429847568b93046cd26100acc3f53550c663234bbde7b"
+			}
+		},
+		{
+			"file": "entities/wolf_tame.png",
+			"role": "the tamed wolf skin (the dog), read by scene.js and characters.js",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "a dog skin of our own (64 x 32, same UV layout)",
+			"sha256": "5392bbf297df4acf930d84d3d7c8c4a85277971c3ed6b61df6d889287630c914",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/entity/wolf/wolf_tame.png",
+				"sha256": "d56a902771a9cb21b432205a98237d41c5be4870c4298c0d7d5ad4af8ba3540b"
+			},
+			"width": 64,
+			"height": 32,
+			"identicalToJar": "pixels (the file was re-encoded by an earlier tool; the pixels are the jar entry's)"
+		},
+		{
+			"file": "entities/wolf_collar.png",
+			"role": "the wolf collar layer (red), kept apart so that it keeps its colour during the forgetting",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "a collar of our own (64 x 32, same UV layout)",
+			"sha256": "b1311dce18557b2c6bd4f1552c50bf646c8a98e49ac43e6638657ae2dc9c457d",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/entity/wolf/wolf_collar.png",
+				"sha256": "a5791b414c8217f7568bff652a745ea3ff1f6ba26058214733865c8d56fe3572"
+			},
+			"width": 64,
+			"height": 32,
+			"identicalToJar": "pixels (the file was re-encoded by an earlier tool; the pixels are the jar entry's)"
+		},
+		{
+			"file": "entities/player_efe.png",
+			"role": "the default player skin \"Efe\" (slim) worn by Efe",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "a skin of our own (64 x 64, slim layout)",
+			"sha256": "fece7017b1bb13926d1158864b283b8b930271f80a90482f174cca6a17e88236",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/entity/player/slim/efe.png",
+				"sha256": "fa3569f027caadcc17efbb1b46f8d0f2830c408cafc774e1f3bf573f4bb7c419"
+			},
+			"width": 64,
+			"height": 64,
+			"identicalToJar": "pixels (the file was re-encoded by an earlier tool; the pixels are the jar entry's)"
+		},
+		{
+			"file": "blocks/campfire_fire.png",
+			"role": "the campfire flame strip (8 frames), read by life.js",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "a flame strip of our own (16 x 128)",
+			"sha256": "35d5e013ec297d0ff2e09cac67a35d5228d6c36a8e9b70209f89e86db0a06542",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/block/campfire_fire.png",
+				"sha256": "35d5e013ec297d0ff2e09cac67a35d5228d6c36a8e9b70209f89e86db0a06542"
+			},
+			"width": 16,
+			"height": 128,
+			"identicalToJar": "bytes"
+		},
+		{
+			"file": "blocks/campfire_fire.png.mcmeta",
+			"role": "animation data of the flame strip (not loaded by the page: the timing is in life.js)",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "delete with the strip",
+			"sha256": "e9b8025fde1b09b0a4d2a38427b04f98f28a593045be6d177eb2b29164c872b0",
+			"source": {
+				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"entry": "assets/minecraft/textures/block/campfire_fire.png.mcmeta",
+				"sha256": "e9b8025fde1b09b0a4d2a38427b04f98f28a593045be6d177eb2b29164c872b0"
+			},
+			"identicalToJar": "bytes"
+		},
+		{
+			"file": "renders/end-diorama.jpg",
+			"role": "still of the model for the browsers without WebGL 2 and while the scene loads (a render of the captured corner)",
+			"owner": "Minemories (a render made of Mojang textures)",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "a render of a world made of our own textures",
+			"sha256": "f484733a39891f0def7a9b4fd62e24c697503801540ebfd5f89226c7772c4586",
+			"kind": "render"
+		},
+		{
+			"file": "renders/end-diorama-raw.png",
+			"role": "uncompressed source of the still above (not loaded by the page)",
+			"owner": "Minemories (a render made of Mojang textures)",
+			"reserve": "Mojang Studios property. Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "delete with the still",
+			"sha256": "3123e97cf9405b46b920577484926d347b3542afdfcc55239cfb9f759159dda3",
+			"kind": "render"
+		},
+		{
+			"file": "fonts/mm-minecraft-regular.woff2",
+			"role": "the game's own font (\"MM Minecraft\", regular), bitmap atlases rebuilt as WOFF2 with the game's metrics: every text of the prototype",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property (the glyph drawings of the game font). Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "Plan A (chosen): draw our own font on the same grid, with the same advances (the advances are the contract, so replacing the file moves no layout); Latin extended and Cyrillic first, about 400 glyphs. Plan B (stop-gap): Pixel Operator 8 (CC0, web/mcui/fonts/), with the sizes of decisions-typo-v11 section 4.2 and T7/T8 run again.",
+			"kind": "font",
+			"generatedFrom": [
+				{
+					"entry": "assets/minecraft/font/include/default.json",
+					"sha256": "e17f8a4289db15bf662df3ab623ad4dd9bda9d2b2e3e9e9e743234ff186bd0c4"
+				},
+				{
+					"entry": "assets/minecraft/font/include/space.json",
+					"sha256": "f87f46eca8c1731f0452ca539035ebdfbc52be3024fc74a910721832496d1ee1"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/nonlatin_european.png",
+					"sha256": "d9f7367c97aef7146a08d14398e7431d214eea813b8a52f3c27bc87677d33eb5"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/accented.png",
+					"sha256": "b9088c6e0496eba5df8733848a9d034381e5a656da08a6f70b9a77d178a0d0ba"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/ascii.png",
+					"sha256": "e8646f1ed1f4bfd597d262cca3d8fac88ceaaa62807bbd5e607b2e3fe41c928a"
+				}
+			],
+			"generatedBy": "web/mcui/gen-mcfont.mjs",
+			"glyphs": 199,
+			"bytes": 3452,
+			"sha256": "d38c2996f7a749f43a080e60049cbf90a04658cfd829ed513ebf2e7541806b26",
+			"format": "woff2"
+		},
+		{
+			"file": "fonts/mm-minecraft-regular.ttf",
+			"role": "the game's own font (\"MM Minecraft\", regular), bitmap atlases rebuilt as TrueType with the game's metrics: every text of the prototype",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property (the glyph drawings of the game font). Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "Plan A (chosen): draw our own font on the same grid, with the same advances (the advances are the contract, so replacing the file moves no layout); Latin extended and Cyrillic first, about 400 glyphs. Plan B (stop-gap): Pixel Operator 8 (CC0, web/mcui/fonts/), with the sizes of decisions-typo-v11 section 4.2 and T7/T8 run again.",
+			"kind": "font",
+			"generatedFrom": [
+				{
+					"entry": "assets/minecraft/font/include/default.json",
+					"sha256": "e17f8a4289db15bf662df3ab623ad4dd9bda9d2b2e3e9e9e743234ff186bd0c4"
+				},
+				{
+					"entry": "assets/minecraft/font/include/space.json",
+					"sha256": "f87f46eca8c1731f0452ca539035ebdfbc52be3024fc74a910721832496d1ee1"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/nonlatin_european.png",
+					"sha256": "d9f7367c97aef7146a08d14398e7431d214eea813b8a52f3c27bc87677d33eb5"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/accented.png",
+					"sha256": "b9088c6e0496eba5df8733848a9d034381e5a656da08a6f70b9a77d178a0d0ba"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/ascii.png",
+					"sha256": "e8646f1ed1f4bfd597d262cca3d8fac88ceaaa62807bbd5e607b2e3fe41c928a"
+				}
+			],
+			"generatedBy": "web/mcui/gen-mcfont.mjs",
+			"glyphs": 199,
+			"bytes": 29400,
+			"sha256": "831d4ef3775938c4bb7ba09e67ce50d7a73671b36f270b999f82933f933d2605",
+			"format": "ttf"
+		},
+		{
+			"file": "fonts/mm-minecraft-bold.woff2",
+			"role": "the game's own font (\"MM Minecraft\", bold: the game's emboldening, glyph drawn again one texel to the right), bitmap atlases rebuilt as WOFF2 with the game's metrics: every text of the prototype",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property (the glyph drawings of the game font). Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "Plan A (chosen): draw our own font on the same grid, with the same advances (the advances are the contract, so replacing the file moves no layout); Latin extended and Cyrillic first, about 400 glyphs. Plan B (stop-gap): Pixel Operator 8 (CC0, web/mcui/fonts/), with the sizes of decisions-typo-v11 section 4.2 and T7/T8 run again.",
+			"kind": "font",
+			"generatedFrom": [
+				{
+					"entry": "assets/minecraft/font/include/default.json",
+					"sha256": "e17f8a4289db15bf662df3ab623ad4dd9bda9d2b2e3e9e9e743234ff186bd0c4"
+				},
+				{
+					"entry": "assets/minecraft/font/include/space.json",
+					"sha256": "f87f46eca8c1731f0452ca539035ebdfbc52be3024fc74a910721832496d1ee1"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/nonlatin_european.png",
+					"sha256": "d9f7367c97aef7146a08d14398e7431d214eea813b8a52f3c27bc87677d33eb5"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/accented.png",
+					"sha256": "b9088c6e0496eba5df8733848a9d034381e5a656da08a6f70b9a77d178a0d0ba"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/ascii.png",
+					"sha256": "e8646f1ed1f4bfd597d262cca3d8fac88ceaaa62807bbd5e607b2e3fe41c928a"
+				}
+			],
+			"generatedBy": "web/mcui/gen-mcfont.mjs",
+			"glyphs": 199,
+			"bytes": 3256,
+			"sha256": "2d3df68afbe0c3b7aa4bd77fbaa286dcf111ddca97680a3ff149f1e24cfbd3fc",
+			"format": "woff2"
+		},
+		{
+			"file": "fonts/mm-minecraft-bold.ttf",
+			"role": "the game's own font (\"MM Minecraft\", bold: the game's emboldening, glyph drawn again one texel to the right), bitmap atlases rebuilt as TrueType with the game's metrics: every text of the prototype",
+			"owner": "Mojang Studios",
+			"reserve": "Mojang Studios property (the glyph drawings of the game font). Internal prototype only, not publishable as is: replace before any publication.",
+			"replaceable": true,
+			"replacement": "Plan A (chosen): draw our own font on the same grid, with the same advances (the advances are the contract, so replacing the file moves no layout); Latin extended and Cyrillic first, about 400 glyphs. Plan B (stop-gap): Pixel Operator 8 (CC0, web/mcui/fonts/), with the sizes of decisions-typo-v11 section 4.2 and T7/T8 run again.",
+			"kind": "font",
+			"generatedFrom": [
+				{
+					"entry": "assets/minecraft/font/include/default.json",
+					"sha256": "e17f8a4289db15bf662df3ab623ad4dd9bda9d2b2e3e9e9e743234ff186bd0c4"
+				},
+				{
+					"entry": "assets/minecraft/font/include/space.json",
+					"sha256": "f87f46eca8c1731f0452ca539035ebdfbc52be3024fc74a910721832496d1ee1"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/nonlatin_european.png",
+					"sha256": "d9f7367c97aef7146a08d14398e7431d214eea813b8a52f3c27bc87677d33eb5"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/accented.png",
+					"sha256": "b9088c6e0496eba5df8733848a9d034381e5a656da08a6f70b9a77d178a0d0ba"
+				},
+				{
+					"entry": "assets/minecraft/textures/font/ascii.png",
+					"sha256": "e8646f1ed1f4bfd597d262cca3d8fac88ceaaa62807bbd5e607b2e3fe41c928a"
+				}
+			],
+			"generatedBy": "web/mcui/gen-mcfont.mjs",
+			"glyphs": 199,
+			"bytes": 27888,
+			"sha256": "599ba78126895eaf3d9d4b1824e98126b411fed8cd15c19692ce38f83e22fb01",
+			"format": "ttf"
+		}
+	],
+	"strings": {
+		"_note": "Texts of the game used verbatim by the hero, by i18n key (the English text). Read from the local language files; `%s` became {name} / {message}.",
+		"sources": {
+			"en": {
+				"file": "assets/minecraft/lang/en_us.json",
+				"from": "client resources jar"
+			},
+			"fr": {
+				"file": "minecraft/lang/fr_fr.json",
+				"from": "assets index 17",
+				"hash": "342131fd71813e80c7f29ac8d23304599b3c5fe6"
+			},
+			"de": {
+				"file": "minecraft/lang/de_de.json",
+				"from": "assets index 17",
+				"hash": "b29f0ba4b2ce28b1b91a540d50455ecc632bfb41"
+			},
+			"ru": {
+				"file": "minecraft/lang/ru_ru.json",
+				"from": "assets index 17",
+				"hash": "8a57cfb9eba6a0030253e1065e74f7c63da43a8b"
+			},
+			"ko": {
+				"file": "minecraft/lang/ko_kr.json",
+				"from": "assets index 17",
+				"hash": "10dd563534860e65b71a510272202fe03dbd00f5"
+			},
+			"pt-BR": {
+				"file": "minecraft/lang/pt_br.json",
+				"from": "assets index 17",
+				"hash": "5b028d60db5ec8acb89eda878db0f9f81467828a"
+			},
+			"pl": {
+				"file": "minecraft/lang/pl_pl.json",
+				"from": "assets index 17",
+				"hash": "49380bcad8dc16055477c4cd1c5514e9b96c2b2e"
+			},
+			"ja": {
+				"file": "minecraft/lang/ja_jp.json",
+				"from": "assets index 17",
+				"hash": "447f8690c55c5aa1f2c61b99395c4162b1655a4d"
+			},
+			"en-GB": {
+				"file": "minecraft/lang/en_gb.json",
+				"from": "assets index 17",
+				"hash": "95b6a8d39b6a9100c650fd26f318fc4b63f7d85b"
+			},
+			"en-CA": {
+				"file": "minecraft/lang/en_ca.json",
+				"from": "assets index 17",
+				"hash": "d30fa8b907e861d1c191830bb9234788e52017d7"
+			},
+			"fr-CA": {
+				"file": "minecraft/lang/fr_ca.json",
+				"from": "assets index 17",
+				"hash": "862f11438929adf122f89dc9b77ef83caccb4717"
+			}
+		},
+		"entries": {
+			"{name} joined the game": {
+				"vanillaKey": "multiplayer.player.joined",
+				"values": {
+					"en": "{name} joined the game",
+					"fr": "{name} a rejoint la partie",
+					"de": "{name} hat das Spiel betreten",
+					"ru": "{name} присоединился к игре",
+					"ko": "{name}이(가) 게임에 참여했습니다",
+					"pt-BR": "{name} entrou no jogo",
+					"pl": "Gracz {name} dołączył do gry",
+					"ja": "{name}がゲームに参加しました",
+					"en-GB": "{name} joined the game",
+					"en-CA": "{name} has joined the game",
+					"fr-CA": "{name} a rejoint la partie"
+				}
+			},
+			"{name} left the game": {
+				"vanillaKey": "multiplayer.player.left",
+				"values": {
+					"en": "{name} left the game",
+					"fr": "{name} a quitté la partie",
+					"de": "{name} hat das Spiel verlassen",
+					"ru": "{name} покинул игру",
+					"ko": "{name}이(가) 게임을 떠났습니다",
+					"pt-BR": "{name} saiu do jogo",
+					"pl": "Gracz {name} opuścił grę",
+					"ja": "{name}がゲームを退出しました",
+					"en-GB": "{name} left the game",
+					"en-CA": "{name} has left the game",
+					"fr-CA": "{name} a quitté la partie"
+				}
+			},
+			"<{name}> {message}": {
+				"vanillaKey": "chat.type.text",
+				"values": {
+					"en": "<{name}> {message}",
+					"fr": "<{name}> {message}",
+					"de": "<{name}> {message}",
+					"ru": "<{name}> {message}",
+					"ko": "<{name}> {message}",
+					"pt-BR": "<{name}> {message}",
+					"pl": "<{name}> {message}",
+					"ja": "<{name}> {message}",
+					"en-GB": "<{name}> {message}",
+					"en-CA": "<{name}> {message}",
+					"fr-CA": "<{name}> {message}"
+				}
+			},
+			"Back to Game": {
+				"vanillaKey": "menu.returnToGame",
+				"values": {
+					"en": "Back to Game",
+					"fr": "Reprendre la partie",
+					"de": "Zurück zum Spiel",
+					"ru": "Вернуться к игре",
+					"ko": "게임으로",
+					"pt-BR": "Voltar ao jogo",
+					"pl": "Powrót do gry",
+					"ja": "ゲームに戻る",
+					"en-GB": "Back to Game",
+					"en-CA": "Back to Game",
+					"fr-CA": "Reprendre la partie"
+				}
+			},
+			"Options...": {
+				"vanillaKey": "menu.options",
+				"values": {
+					"en": "Options...",
+					"fr": "Options...",
+					"de": "Optionen …",
+					"ru": "Настройки...",
+					"ko": "설정...",
+					"pt-BR": "Opções...",
+					"pl": "Ustawienia…",
+					"ja": "設定…",
+					"en-GB": "Options...",
+					"en-CA": "Options...",
+					"fr-CA": "Options..."
+				}
+			},
+			"Save and Quit to Title": {
+				"vanillaKey": "menu.returnToMenu",
+				"values": {
+					"en": "Save and Quit to Title",
+					"fr": "Sauvegarder et quitter la partie",
+					"de": "Speichern und zurück zum Hauptmenü",
+					"ru": "Сохранить и выйти",
+					"ko": "저장하고 나가기",
+					"pt-BR": "Salvar e voltar ao menu principal",
+					"pl": "Zapisz i wyjdź do menu",
+					"ja": "セーブしてタイトルへ戻る",
+					"en-GB": "Save and Quit to Title",
+					"en-CA": "Save and Quit to Title",
+					"fr-CA": "Sauvegarder et quitter"
+				}
+			},
+			"Bone": {
+				"vanillaKey": "item.minecraft.bone",
+				"values": {
+					"en": "Bone",
+					"fr": "Os",
+					"de": "Knochen",
+					"ru": "Кость",
+					"ko": "뼈다귀",
+					"pt-BR": "Osso",
+					"pl": "Kość",
+					"ja": "骨",
+					"en-GB": "Bone",
+					"en-CA": "Bone",
+					"fr-CA": "Os"
+				}
+			},
+			"Steak": {
+				"vanillaKey": "item.minecraft.cooked_beef",
+				"values": {
+					"en": "Steak",
+					"fr": "Steak",
+					"de": "Steak",
+					"ru": "Стейк",
+					"ko": "스테이크",
+					"pt-BR": "Filé",
+					"pl": "Pieczona wołowina",
+					"ja": "ステーキ",
+					"en-GB": "Steak",
+					"en-CA": "Steak",
+					"fr-CA": "Steak cuit"
+				}
+			},
+			"Lead": {
+				"vanillaKey": "item.minecraft.lead",
+				"values": {
+					"en": "Lead",
+					"fr": "Laisse",
+					"de": "Leine",
+					"ru": "Поводок",
+					"ko": "끈",
+					"pt-BR": "Laço",
+					"pl": "Lina",
+					"ja": "リード",
+					"en-GB": "Lead",
+					"en-CA": "Lead",
+					"fr-CA": "Laisse"
+				}
+			},
+			"Campfire": {
+				"vanillaKey": "block.minecraft.campfire",
+				"values": {
+					"en": "Campfire",
+					"fr": "Feu de camp",
+					"de": "Lagerfeuer",
+					"ru": "Костёр",
+					"ko": "모닥불",
+					"pt-BR": "Fogueira",
+					"pl": "Ognisko",
+					"ja": "焚き火",
+					"en-GB": "Campfire",
+					"en-CA": "Campfire",
+					"fr-CA": "Feu de camp"
+				}
+			},
+			"Torch": {
+				"vanillaKey": "block.minecraft.torch",
+				"values": {
+					"en": "Torch",
+					"fr": "Torche",
+					"de": "Fackel",
+					"ru": "Факел",
+					"ko": "횃불",
+					"pt-BR": "Tocha",
+					"pl": "Pochodnia",
+					"ja": "松明",
+					"en-GB": "Torch",
+					"en-CA": "Torch",
+					"fr-CA": "Torche"
+				}
+			},
+			"Bread": {
+				"vanillaKey": "item.minecraft.bread",
+				"values": {
+					"en": "Bread",
+					"fr": "Pain",
+					"de": "Brot",
+					"ru": "Хлеб",
+					"ko": "빵",
+					"pt-BR": "Pão",
+					"pl": "Chleb",
+					"ja": "パン",
+					"en-GB": "Bread",
+					"en-CA": "Bread",
+					"fr-CA": "Pain"
+				}
+			},
+			"Compass": {
+				"vanillaKey": "item.minecraft.compass",
+				"values": {
+					"en": "Compass",
+					"fr": "Boussole",
+					"de": "Kompass",
+					"ru": "Компас",
+					"ko": "나침반",
+					"pt-BR": "Bússola",
+					"pl": "Kompas",
+					"ja": "コンパス",
+					"en-GB": "Compass",
+					"en-CA": "Compass",
+					"fr-CA": "Boussole"
+				}
+			},
+			"Map": {
+				"vanillaKey": "item.minecraft.filled_map",
+				"values": {
+					"en": "Map",
+					"fr": "Carte",
+					"de": "Karte",
+					"ru": "Карта",
+					"ko": "지도",
+					"pt-BR": "Mapa",
+					"pl": "Mapa",
+					"ja": "地図",
+					"en-GB": "Map",
+					"en-CA": "Map",
+					"fr-CA": "Carte"
+				}
+			},
+			"Book and Quill": {
+				"vanillaKey": "item.minecraft.writable_book",
+				"values": {
+					"en": "Book and Quill",
+					"fr": "Livre et plume",
+					"de": "Buch und Feder",
+					"ru": "Книга и перо",
+					"ko": "책과 깃펜",
+					"pt-BR": "Livro e Pena",
+					"pl": "Książka z piórem",
+					"ja": "本と羽根ペン",
+					"en-GB": "Book and Quill",
+					"en-CA": "Book and Quill",
+					"fr-CA": "Livre et plume"
+				}
+			}
+		}
+	},
+	"fonts": {
+		"_note": "NOT a Mojang glyph file: GNU Unifont is a free font (SIL OFL 1.1, and GPL with the font embedding exception). Publishable; the license text is copied next to the fonts. Only the spacing NUMBERS are the game's (trimmed columns, advance = floor(width / 2) + 1, size_overrides). The Mojang-derived font \"MM Minecraft\" is listed under files (fonts/) and in mcFont.",
+		"family": "MM Unifont Game (served as faces of the family \"MM Minecraft\", unicode-range = the code points the atlases lack)",
+		"files": [
+			"web/mcui/fonts/mm-unifont-game.woff2",
+			"web/mcui/fonts/mm-unifont-game.ttf",
+			"web/mcui/fonts/mm-unifont-game-bold.woff2",
+			"web/mcui/fonts/mm-unifont-game-bold.ttf"
+		],
+		"licenseFile": "web/mcui/fonts/mm-unifont-game-LICENSE.txt",
+		"license": "SIL OFL 1.1 (and GPL v2+ with the GNU font embedding exception)",
+		"version": "GNU Unifont 15.1.05",
+		"provenance": {
+			"archive": "minecraft/font/unifont.zip",
+			"assetsIndex": 17,
+			"object": "666999116c467f10622db1527a06ddc0a6efad2a",
+			"entry": "unifont_all_no_pua-15.1.05.hex",
+			"sizeOverrides": {
+				"object": "f40266672fa6cd5c678cbfd5a7fdcfe06e30c629",
+				"what": "minecraft/font/include/unifont.json of the assets index 17 (column counts only)"
+			},
+			"japanesePatch": {
+				"archive": "minecraft/font/unifont_jp.zip",
+				"object": "92ab1f42958051008cf66c9f551adf12139f89ab",
+				"entry": "unifont_jp_patch-15.1.05.hex",
+				"appliedTo": "CJK ideograph ranges only (U+3200 to U+9FFF, U+F900 to U+FAFF)"
+			}
+		},
+		"locales": [
+			"ko",
+			"ja"
+		],
+		"glyphs": 669,
+		"japaneseFormGlyphs": 215,
+		"unicodeRange": "U+3001-3002, U+300C-300D, U+301C, U+3042, U+3044, U+3046, U+3048, U+304A-3051, U+3053, U+3055-305B, U+305D, U+305F-3061, U+3063-3064, U+3066-306B, U+306E-3070, U+3072-3073, U+3076, U+3078-3079, U+307C-307F, U+3081-3084, U+3087-308C, U+3092-3093, U+30A1-30A4, U+30A6, U+30A9, U+30AB, U+30AD-30B0, U+30B2-30B3, U+30B5-30B9, U+30BB, U+30BD, U+30BF-30C1, U+30C3-30C4, U+30C6, U+30C8-30C9, U+30CB, U+30CF-30D1, U+30D3-30D7, U+30D9-30DC, U+30E0-30E1, U+30E3-30E5, U+30E7, U+30E9-30ED, U+30EF, U+30F3, U+30FC, U+4E00, U+4E09-4E0A, U+4E0D, U+4E16, U+4E21, U+4E2D, U+4ED5, U+4F0F, U+4F1D, U+4F55, U+4F5C, U+4F7F, U+4FC2, U+4FDD, U+4FE1, U+505C, U+5074, U+50B7, U+50CF, U+5143, U+5148, U+5165, U+516C, U+5171, U+5185, U+518D, U+51FA, U+5206-5207, U+521D, U+5229, U+524D, U+529B, U+52A0, U+52B9, U+52D5, U+5316, U+5341, U+5370, U+53C2, U+53D7, U+53F3, U+5411, U+5439, U+5468, U+54C1, U+5546, U+554F, U+559C, U+55B6, U+56DE, U+56F2-56F3, U+56FA, U+5728, U+5730, U+578B, U+5834, U+591C, U+5927, U+5B58, U+5B63, U+5B99-5B9A, U+5B9F, U+5BA4, U+5BB6, U+5BFE, U+5C0F, U+5C4A, U+5C71, U+5DE6, U+5DEE, U+5E30, U+5E74, U+5E83, U+5EA6-5EA7, U+5F0F, U+5F37, U+5F85, U+5FC5, U+5FDC, U+601D, U+60B2, U+614B, U+623B, U+6240, U+624B, U+627F, U+62BC, U+6301, U+643A, U+64CD, U+6570, U+6587, U+65C5, U+65E5, U+660E, U+6620, U+6642, U+66C7, U+66FF, U+6708-6709, U+671D, U+671F, U+672A, U+672C, U+677E, U+6839, U+6841, U+68EE, U+696D, U+6A19, U+6A21, U+6B21, U+6B62, U+6B8B, U+6CD5, U+6CE2, U+6CE8, U+6D41, U+6D6E, U+6D88, U+6E1B, U+6E29, U+6F14, U+706B, U+711A, U+7121, U+71C3, U+7248, U+7269, U+72AC, U+72B6, U+73FE, U+751F, U+7528, U+753B, U+754C, U+767A, U+7684, U+771F, U+7740, U+77E2, U+77E5, U+77ED, U+78BA, U+793A, U+793E, U+7A7A, U+7ACB, U+7AE0, U+7B2C, U+7BC0, U+7BC4, U+7C89, U+7D30, U+7D44, U+7D61, U+7D9A, U+7FBD, U+8005, U+81EA, U+8272, U+8358, U+85AA, U+884C, U+8868, U+88FD, U+892A, U+8981, U+898B, U+89D2, U+8A00, U+8A18, U+8A2D, U+8A31, U+8A66, U+8A73, U+8A8D, U+8A9E, U+8AAD, U+8AFE, U+8CEA, U+8DB3, U+8EE2, U+8F1D, U+8FBC, U+8FCE, U+8FD1, U+8FD4, U+9000-9001, U+9023, U+9032, U+904A-904B, U+904E, U+9078, U+9084, U+958B, U+9593, U+95A2, U+9650, U+969B, U+96E2, U+96EA, U+9759, U+975E, U+9762, U+982D, U+9AA8, U+AC00, U+AC04, U+AC12, U+AC15, U+AC1C, U+AC24, U+AC70, U+AC74, U+AC83, U+AC8C, U+ACA8, U+ACB0, U+ACC4, U+ACE0, U+ACE7, U+ACF3, U+ACF5, U+ACFC, U+AD00, U+AD50, U+AD6C-AD6D, U+AD74, U+ADC0, U+ADF8, U+ADFC, U+AE00, U+AE30, U+AE41, U+AE43, U+AE4C, U+AED8, U+AF34, U+B048, U+B04C, U+B098, U+B0A0-B0A1, U+B0A8-B0A9, U+B0AC, U+B0B4, U+B108, U+B141, U+B204, U+B208, U+B20C, U+B215, U+B274, U+B290, U+B294, U+B2A5, U+B2C8, U+B2D9, U+B2E4-B2E5, U+B2E8, U+B2EC, U+B2F4, U+B2F9, U+B300, U+B354, U+B358, U+B3C4, U+B3CC, U+B3D9, U+B418, U+B41C, U+B429, U+B450, U+B4A4, U+B4DC, U+B4E0, U+B4E4, U+B530, U+B54C, U+B5A0-B5A1, U+B5A4, U+B625, U+B6F0, U+B728, U+B739, U+B73B, U+B77C-B77D, U+B78C, U+B791, U+B798, U+B7A9, U+B7EC, U+B7FC, U+B808, U+B824-B825, U+B828, U+B85C-B85D, U+B864, U+B974, U+B978, U+B97C, U+B985, U+B9AC, U+B9B0, U+B9BC-B9BD, U+B9C1, U+B9C9, U+B9CC, U+B9D0, U+B9E8, U+BA48, U+BA54, U+BA70, U+BA74, U+BA87, U+BAA8-BAA9, U+BABB, U+BB34, U+BB38, U+BB3B-BB3C, U+BC00, U+BC0F, U+BC14, U+BC18, U+BC1B-BC1C, U+BC24, U+BC29, U+BC31, U+BC84, U+BC88, U+BC8C, U+BC94-BC95, U+BCA0, U+BCA4, U+BCC0, U+BCF4, U+BCF8, U+BCFC, U+BD80, U+BD84, U+BD88, U+BE0C, U+BE14, U+BE44, U+BE48, U+BE5B, U+BE75, U+BED0, U+BF08, U+BFD0, U+C0AC, U+C0B4, U+C0C1, U+C0C9, U+C0DD, U+C0EC, U+C11C, U+C120, U+C124, U+C131, U+C138-C139, U+C158, U+C18D, U+C190, U+C1A1, U+C218, U+C232, U+C26C, U+C2A4, U+C2AC, U+C2B5, U+C2B9, U+C2DC-C2DD, U+C2E0, U+C2E4, U+C2F1, U+C2F6, U+C4F0, U+C528, U+C544, U+C548-C54A, U+C54C, U+C558, U+C55E, U+C57C, U+C5B4-C5B5, U+C5B8, U+C5BC, U+C5C5-C5C6, U+C5C8, U+C5D0, U+C5EC, U+C5F0, U+C5F4, U+C601, U+C624, U+C628, U+C62C, U+C634-C635, U+C640, U+C654, U+C67C, U+C694, U+C6A9, U+C6B0, U+C6B4, U+C6C0, U+C6C5, U+C6CC, U+C6D0, U+C6D4, U+C704, U+C720, U+C73C, U+C740, U+C744, U+C74C, U+C758, U+C774, U+C778, U+C77C-C77D, U+C784-C785, U+C788, U+C790-C791, U+C7A0, U+C7A5, U+C7AC, U+C800-C801, U+C804, U+C808, U+C811, U+C815, U+C81C, U+C838, U+C870, U+C8FC, U+C904, U+C90D, U+C911, U+C9C0-C9C1, U+C9C8, U+C9D1, U+C9E7, U+CABD, U+CC29, U+CC38, U+CC44-CC45, U+CC55, U+CC98, U+CCB4, U+CD5C, U+CD94, U+CD9C, U+CDA9, U+CDB0, U+CE20, U+CE58, U+CE68, U+CEA1, U+CEEC, U+CEF4, U+CF54, U+CF58, U+D06C, U+D0A4, U+D0C0, U+D0D5, U+D0DC-D0DD, U+D0ED, U+D130, U+D14C-D14D, U+D150, U+D15C, U+D1F4, U+D241, U+D2B8, U+D2F0, U+D305, U+D30C, U+D398, U+D39C, U+D3F4, U+D45C, U+D488, U+D48D, U+D4E8, U+D504, U+D508, U+D50C, U+D53C, U+D544, U+D558, U+D55C, U+D560, U+D568-D569, U+D56B, U+D56D, U+D574, U+D588, U+D5A5, U+D5C8, U+D604, U+D615, U+D638, U+D654-D655, U+D658, U+D683, U+D68C, U+D6A8, U+D750, U+D788, U+FF08-FF09, U+FF1A, U+FF1F",
+		"bytes": {
+			"mm-unifont-game.ttf": 236244,
+			"mm-unifont-game.woff2": 23076,
+			"mm-unifont-game-bold.ttf": 229792,
+			"mm-unifont-game-bold.woff2": 23108
+		},
+		"sha256": {
+			"mm-unifont-game.ttf": "f5e8187b0c42b80c3c15f3bf6e76d113068c6ab2ca58b8978a8797f4ac9e082b",
+			"mm-unifont-game.woff2": "aebc47af778add5ff224600d3af6e7f1c3a13428c3454783c5f1dc0b1a096927",
+			"mm-unifont-game-bold.ttf": "67963d59a717af7313f66f230203643968f75af261607a6d39890ec3e6ed78b4",
+			"mm-unifont-game-bold.woff2": "baa7df2d20bd1a952c0d3b25bff0c29b3e1811b6e93ed97319a9aac4721de217"
+		}
+	},
+	"servedElsewhere": [
+		{
+			"path": "../captures-v2-light/S0.glb ... S4.glb (the five captures of the film, scene.js)",
+			"what": "binary glTF scenes of a real world; each embeds about 120 to 134 textures: about 71 to 74 of Minecraft (Mojang), about 21 \"handcrafted\", 6 to 8 \"twigs\", and a few \"farmersdelight\", \"supplementaries\", \"mcw*\", \"sootychimneys\" (third-party mods, licences to check one by one)",
+			"replacement": "captures of a world built with our own textures and licensed mods"
+		},
+		{
+			"path": "../captures-v2-light/personnages.glb (characters)",
+			"what": "the player and dog models read for their rig; no Mojang texture is drawn from it (the skins above are)",
+			"replacement": "models of our own"
+		},
+		{
+			"path": "../renders-v7/hero/poster-wide.jpg, poster-tablet.jpg, poster-phone.jpg",
+			"what": "first frame of the film (renders of the capture), also the og:image",
+			"replacement": "renders of the replacement captures"
+		}
+	],
+	"mcFont": {
+		"_note": "The game font as a web font. MOJANG-DERIVED: not publishable as is. The advances (texels) are the contract: a replacement font must keep them.",
+		"family": "MM Minecraft",
+		"files": [
+			"fonts/mm-minecraft-regular.woff2",
+			"fonts/mm-minecraft-regular.ttf",
+			"fonts/mm-minecraft-bold.woff2",
+			"fonts/mm-minecraft-bold.ttf"
+		],
+		"glyphsPerFile": 199,
+		"unicodeRange": "U+20-7E, U+A0, U+AB, U+B7, U+BB, U+C9, U+D7, U+DF-E4, U+E7-EA, U+ED-EE, U+F3-F6, U+F9-FA, U+FC, U+105, U+107, U+119, U+141-142, U+144, U+153, U+15B, U+17A-17C, U+411-415, U+417-418, U+41A-425, U+427-428, U+42D, U+42F-449, U+44B-44F, U+451, U+2013-2014, U+2018-2019, U+201C-201E, U+2022, U+2026, U+2190, U+2192, U+2212, U+2265",
+		"metrics": {
+			"unitsPerEm": 1024,
+			"texel": 128,
+			"ascent": 7,
+			"descent": 1,
+			"lineHeightTexels": 9,
+			"spaceAdvance": 4,
+			"advance": "drawn width + 1",
+			"bold": "drawn again one texel to the right, advance + 1",
+			"italic": "none",
+			"shadow": "1 texel, colour x 0.25"
+		},
+		"jarSha256": "8e9cf6f4b6eafb1c6bf745a67a61dd1736f31865cad409e5b2bec918667dab5e",
+		"additions": [
+			"U+00A0 (no-break space, French typography) takes the advance of the space (4); the game has no such glyph in its bitmap providers."
+		],
+		"fallbackForOtherCodePoints": "GNU Unifont with the game metrics (family \"MM Unifont Game\", fonts section): Korean and Japanese"
+	},
+	"fontsCjk": {
+		"_note": "v11b: the same Unifont (OFL) with the game metrics, for every wanted code point; used for the whole page in Korean and Japanese (family \"MM Unifont CJK\", token --f-mc under html.mm-cjk). Not a Mojang glyph file. Loaded only on ko/ja pages.",
+		"family": "MM Unifont CJK",
+		"files": [
+			"web/mcui/fonts/mm-unifont-cjk.woff2",
+			"web/mcui/fonts/mm-unifont-cjk.ttf",
+			"web/mcui/fonts/mm-unifont-cjk-bold.woff2",
+			"web/mcui/fonts/mm-unifont-cjk-bold.ttf"
+		],
+		"glyphs": 868,
+		"bytes": {
+			"mm-unifont-cjk.woff2": 25956,
+			"mm-unifont-cjk-bold.woff2": 26048
+		},
+		"sha256": {
+			"mm-unifont-cjk.ttf": "b538dcf1c50f6a5b45b0a8948b2f2b05f5b185c7c63b3e74e9a1a321ef333b41",
+			"mm-unifont-cjk.woff2": "21265c6029c75b96a6cb6c03b14ac88e1444b21416f9cf5b8d4e33ccd1531c92",
+			"mm-unifont-cjk-bold.ttf": "545c1588fce0ab8daf8456919b22e4172c52a58da99998f681f9a384c2f2652c",
+			"mm-unifont-cjk-bold.woff2": "3a88c11587b464db68a1944e8373d4ea233d85383e4d34a5ad500279df04fe4c"
+		}
+	}
+}
