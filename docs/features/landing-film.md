@@ -23,7 +23,7 @@ Le prototype (rapports, décisions, tests de contrôle) vit dans `docs/marketing
 | En-tête / pied de page de l'app sur `/` | **Retirés** (`SiteLayout`, branche `pathname === '/'`). Le film a son en-tête compact (marque, sections, compte, langue, « Installer le mod », menu) et un pied de page pleine largeur. Garder les deux aurait superposé deux barres fixes et cassé les calculs de mise en page. |
 | Navigation du pied de page | Toutes les pages de l'app (installation, concept, fonctionnement, FAQ, versions, nouveautés, découvrir, galerie publique, blog, tarifs, confidentialité, conditions, mentions légales, GitHub) + « Se connecter » / « Ma galerie ». |
 | Liens du prototype | Les trois liens racine du prototype (`/installation`, `/privacy`, `/legal`) sont de vrais `Link` vers les vraies routes ; aucun lien vers un fichier voisin. |
-| Contenu de l'ancienne `HomePage` | Conservé : « Chaque monde a une histoire » (manifeste, pages de découverte, « L'histoire derrière Minemories », galerie de la communauté) et l'appel « Garder mon premier souvenir » / « Retrouver mes souvenirs » sont dans la section `#more`. Les trois étapes génériques sont remplacées par celles du film (plus justes sur le produit). Le composant `LivingLandscape` (illustration aux trois lumières), seulement utilisé par l'ancienne page, est supprimé. |
+| Contenu de l'ancienne `HomePage` | **Tous les liens de l'ancienne page sont conservés** (section `#more` : pages de découverte, « L'histoire derrière Minemories », galerie de la communauté, souvenirs de démonstration `/explorer?demo=1`, « Garder mon premier souvenir » / « Retrouver mes souvenirs » ; en-tête : « Installer le mod » ; pied de page : le reste). Le texte du manifeste (« Les saisons se terminent… ») est repris dans `#more`. **Retirés volontairement** : le titre « C'était juste quelques blocs. C'était tout notre monde. » (remplacé par celui du film), le bandeau « Plus qu'une sauvegarde » et l'appel « La prochaine fois, garde un petit bout » (leur rôle est tenu par le film et par `#more`), les trois étapes génériques (remplacées par celles du film, plus justes sur le produit) et l'illustration aux trois lumières `LivingLandscape` (seulement utilisée par l'ancienne page : composant supprimé ; `MemoryScene` reste utilisé ailleurs). |
 | Textes de pied de page « prototype » | « Notes du prototype », « éditeur et contact à confirmer », et la mention « prototype interne, à remplacer avant publication » **ne sont pas affichés** (le premier devient « À propos du film » ; les deux autres vivent dans ce document). Le film et la mention « ligne du mod en français seulement » restent. |
 | Police lisible (Atkinson Hyperlegible Next) | Auto-hébergée (latin et latin-ext, 400 et 700) au lieu du CDN jsDelivr. |
 | Couverture | `src/lib/**` reste à 100 %. `src/hero/**` (code vendorisé, 20 000 lignes) est **hors du périmètre de couverture** : il est validé par ses tests portés (`src/hero/*.test.js`), par le test d'interaction du composant et par les vérifications navigateur ci-dessous. |
@@ -82,6 +82,7 @@ Le jar est celui du cache de développement : `mod/minemories/neoforge/build/mod
 
 - **Vitest** : `src/hero/*.test.js` (tests Node du prototype portés : `phase`, `hotbar`, HUD, scrub S1 à S16 ; courbes ; la mise en page de première peinture est comparée à `site.js` à 9 tailles), `src/pages/home-film.test.tsx` (composant sans WebGL, langue unique, démontage et remontage, touches, menu, options), `src/prerender-home.test.tsx`, `src/lib/hero-i18n.test.ts`, `scripts/prerender-web.test.mjs`.
 - **Navigateur** (Playwright-core + Chromium, GPU réel, un navigateur à la fois) : voir le journal ci-dessous.
+- Le test « flash ≤ 2 par seconde » du prototype n'a **pas** été rejoué sur l'app : il découle de l'identité au pixel avec le prototype (mêmes images aux mêmes instants) et de `scrub.js`, dont les tests (S1 à S16) sont portés.
 
 ## Poids
 
@@ -95,3 +96,20 @@ Le jar est celui du cache de développement : `mod/minemories/neoforge/build/mod
 - Appareils réels (iOS Safari, Android) non testés ; Chromium de bureau uniquement (390 et 1440 px).
 - Le film dépend de WebGL 2 ; sinon le site est affiché avec l'image fixe du modèle.
 - Les tests du prototype qui pilotent un navigateur (batteries `renders-v10`, `renders-v12`) ne sont pas rejoués en CI : seuls leurs équivalents purs le sont.
+
+## Journal de l'intégration (28/10/2026)
+
+Machine : Chromium de bureau, GPU réel (`--use-angle=gl`), un seul navigateur à la fois ; serveur d'aperçu Vite sur le build prérendu ; session API simulée (« pas de session »), l'API n'étant pas lancée.
+
+| Vérification | Résultat |
+|---|---|
+| Batterie G1 du prototype (`renders-v10/tests/g1-g4.cjs --only G1`) sur l'app : les trois gels du cadre-témoin 10,6 / 51,8, 10,75 / 51,95, 10,89 / 52,09 sous les quatre pilotes (avance, recul, saut, lecture), à 390 et 1440 px | **40 réussites sur 42** : les trois paires sont identiques à 0 px sous chaque pilote. Les 2 échecs sont « pas d'erreur console » : `ERR_CONNECTION_REFUSED` de l'appel de session vers l'API absente (`localhost:3001`), propre à cet environnement. |
+| App contre prototype (`:8765`), un seul lancement de Chromium, 13 instants, 390 et 1440 px, graine aléatoire fixe | Canvas **identique** à tous les instants (écart de 1 à 2 px à t = 1 s : bruit du GPU, tolérance déjà admise par la batterie du prototype). Image complète sous l'en-tête (chat, titres, barre d'objets) : **identique** à 6 instants et aux deux largeurs, une fois le CSS importé en `?raw` (avec `?inline`, 3 à 5 % des pixels différaient d'un ou deux niveaux : le minifieur réécrit les dégradés). |
+| Navigation à froid sur le build prérendu (`cold.cjs`) : film monté, hydratation sans erreur, `/installation` puis retour (`<html>` propre, la page défile, le film se rejoue), JavaScript désactivé (site lisible, texte français du prérendu), `?nowebgl=1` (repli sur le site + image fixe), mouvement réduit (13 stations, flèche droite), `/viewer` inchangé | **19 sur 19**, 0 erreur ou avertissement console |
+| Défilement et clavier (`scroll.cjs`), 390 et 1440 px : molette ou balayage = film, retour en arrière, touche 3 = chapitre 3, K = pause, défilement jusqu'au site et retour, Échap, liens du pied de page, `/privacy` et retour | **19 sur 19** |
+| Serveur de développement (`bun web:dev`) | film monté, navigation et retour : réussis ; le prérendu n'existe pas en développement |
+
+### Portes de qualité (ce qui passe, ce qui ne passe pas ici)
+
+- Passent : `bun run lint` ; `bun run web:check` (Biome, `tsc`, Vitest : 63 fichiers, 361 tests, **couverture 100 %** de `src/lib/**`) ; `package:mod:test` ; `release:test` ; `api:coverage:test` ; `bun run --filter @minemories/web build` (typage, bundle, **prérendu de 19 pages**).
+- Ne passent pas, hors de cette modification : `api:check` (14 tests de l'API échouent dès l'état initial, avant tout changement : `Cannot access 'app' before initialization`, Bun 1.3.14 local au lieu de 1.4.3) ; `mod:check:ci` et donc `bun run build` racine (pas de JDK sur la machine). Le mod n'est pas touché.

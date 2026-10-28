@@ -123,6 +123,11 @@ export function HeroExtras() {
 						{t('Explore community memories')}
 					</Link>
 				</li>
+				<li>
+					<Link className="mc-link" to="/explorer?demo=1">
+						{t('Explore the demo memories')}
+					</Link>
+				</li>
 			</ul>
 			<div className="mc-hero__actions">
 				<Link className="mc-btn" to={session ? '/gallery' : '/register'}>

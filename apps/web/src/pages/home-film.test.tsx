@@ -69,6 +69,18 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 		'/login',
 	])
 		expect(hrefs, route).toContain(route)
+	// every target of the former home page is still linked (the demo memories, the community, the concept, the discovery pages, the album)
+	for (const target of [
+		'/explorer?demo=1',
+		'/explorer',
+		'/concept',
+		'/open-source',
+		'/nostalgie',
+		'/partager',
+		'/classement',
+		'/register',
+	])
+		expect(hrefs, target).toContain(target)
 	// the prototype's three dead root links are real routes now; nothing points at a file next to the page
 	expect(hrefs.filter(h => /\.html?$/.test(String(h)))).toEqual([])
 	expect(errors).toEqual([])
