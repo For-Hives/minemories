@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.24.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.23.0-beta.1...mod-v0.24.0-beta.1) (2026-10-28)
+
+### Fonctionnalités
+
+* **web:** le film d'accueil devient la page d'accueil ([#162](https://github.com/For-Hives/minemories/issues/162)) ([05ca999](https://github.com/For-Hives/minemories/commit/05ca999dc9e0bc1aff8d10e75084c3c6a7067c1f))
+
 ## [0.23.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.22.0-beta.1...mod-v0.23.0-beta.1) (2026-10-27)
 
 ### Fonctionnalités
