@@ -167,6 +167,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</li>
 						</ul>
 					</nav>
+					<HeroAccount menu />
 					<div className="site-menu__lang">
 						<label className="mc-formlabel" htmlFor="lang-menu" data-i18n="Language">
 							{t('Language')}

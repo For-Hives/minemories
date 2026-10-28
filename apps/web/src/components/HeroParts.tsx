@@ -34,12 +34,15 @@ export function HeroLanguage({ id, className = '' }: { id?: string; className?: 
 	)
 }
 
-/** The way into the private space, in the header (wide screens). */
-export function HeroAccount() {
+/** The way into the private space: a button in the header (wide screens), a row of the menu on small ones. */
+export function HeroAccount({ menu = false }: { menu?: boolean }) {
 	const { session } = useAppContext()
 	const { t } = useI18n()
 	return (
-		<Link className="mc-btn mc-btn--auto site-account" to={session ? '/gallery' : '/login'}>
+		<Link
+			className={menu ? 'site-menu__account' : 'mc-btn mc-btn--auto site-account'}
+			to={session ? '/gallery' : '/login'}
+		>
 			{t(session ? 'My gallery' : 'Sign in')}
 		</Link>
 	)
