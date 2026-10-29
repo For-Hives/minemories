@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
       - name: Read the enabled catalogue targets
         id: targets
         env:
@@ -70,7 +70,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
       - name: Check catalogue configuration
         env:
           PUBLISH_MODRINTH: ${{ inputs.publish_modrinth }}
