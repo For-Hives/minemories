@@ -23,6 +23,9 @@
 		"web:dev": "bun run --filter @minemories/web dev",
 		"web:check": "biome check apps/web && bun run --filter @minemories/web typecheck && bun run --filter @minemories/web test:coverage",
 		"web:build": "bun run --filter @minemories/web bundle",
+		"hero:assets": "node scripts/hero-assets/cli.mjs",
+		"hero:test": "node --test scripts/hero-assets/equivalence.test.mjs scripts/hero-assets/pipeline.test.mjs scripts/hero-assets/cli.test.mjs",
+		"hero:check": "bun run hero:test && node scripts/hero-assets/cli.mjs --check",
 		"api:dev": "bun run --filter @minemories/api dev",
 		"api:reconcile": "bun run --filter @minemories/api reconcile",
 		"api:diagnostics": "bun run --cwd apps/api diagnostics",
@@ -31,8 +34,8 @@
 		"api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
 		"format": "biome check --write apps scripts package.json biome.json",
 		"lint": "biome check apps scripts package.json biome.json",
-		"check": "bun run lint && bun run package:mod:test && bun run release:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
-		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run web:build",
+		"check": "bun run lint && bun run hero:check && bun run package:mod:test && bun run release:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
+		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run hero:assets && bun run web:build",
 		"package:mod": "node scripts/package-mod.mjs",
 		"package:mod:test": "node --test scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
 		"api:garage": "node scripts/garage-integration.mjs",
@@ -42,7 +45,10 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.15",
+		"@jsquash/oxipng": "2.3.0",
 		"@release-it/conventional-changelog": "12.0.2",
+		"meshoptimizer": "1.1.1",
+		"pngjs": "7.0.0",
 		"release-it": "21.1.1"
 	},
 	"overrides": {

@@ -1,0 +1,10 @@
+{
+	"marginPercent": 3,
+	"baseline": {
+		"baseBrotli": 138060,
+		"deltasBrotli": 182568,
+		"stagesBrotli": 320628,
+		"stagesGzip": 375231,
+		"charactersBrotli": 15926
+	}
+}
