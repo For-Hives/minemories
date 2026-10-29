@@ -52,11 +52,14 @@ export class CaptureFetchError extends Error {
 	}
 }
 
+/** First byte of every delta: the format below. A change of format bumps it, and old clients fall back to the full GLB. */
+export const DELTA_VERSION = 1
+
 type Op = readonly [add: number, copy: number, from: number]
 
-/** Reads the operation table at the head of a delta; `end` is where the literal bytes start. */
-function readOps(baseLength: number, patch: Uint8Array): { ops: Op[]; end: number; literals: number; total: number } {
-	let at = 0
+/** Reads LEB128-style numbers (7 bits per byte, low first) from `patch`, from `start`; `at()` is the read position. */
+function numberReader(patch: Uint8Array, start: number): { varint: () => number; at: () => number } {
+	let at = start
 	const varint = (): number => {
 		let value = 0
 		let scale = 1
@@ -69,38 +72,56 @@ function readOps(baseLength: number, patch: Uint8Array): { ops: Op[]; end: numbe
 		}
 		throw new Error('delta: varint too long')
 	}
+	return { varint, at: () => at }
+}
+
+const unzigzag = (value: number): number => (value % 2 === 1 ? -(value + 1) / 2 : value / 2)
+
+/** One operation: literal length, copy length and, for a copy, where it starts in the base (validated). */
+function readOp(varint: () => number, previousEnd: number, baseLength: number, last: boolean): Op {
+	const add = varint()
+	const copy = varint()
+	if (add === 0 && copy === 0 && !last) throw new Error('delta: empty operation')
+	if (copy === 0) return [add, 0, 0]
+	const from = previousEnd + unzigzag(varint())
+	if (from < 0 || from + copy > baseLength) throw new Error('delta: copy outside the base')
+	return [add, copy, from]
+}
+
+/** Reads the operation table at the head of a delta; `end` is where the literal bytes start. */
+function readOps(baseLength: number, patch: Uint8Array): { ops: Op[]; end: number; literals: number; total: number } {
+	if (patch[0] !== DELTA_VERSION) throw new Error('delta: unsupported version')
+	const { varint, at } = numberReader(patch, 1)
 	const count = varint()
+	// every operation takes at least two bytes of table: a bigger count cannot be true, whatever it announces
+	if (count > (patch.length - at()) / 2) throw new Error('delta: too many operations')
 	const ops: Op[] = []
 	let previousEnd = 0
 	let total = 0
 	let literals = 0
 	for (let index = 0; index < count; index++) {
-		const add = varint()
-		const copy = varint()
-		let from = 0
-		if (copy > 0) {
-			const zigzag = varint()
-			from = previousEnd + (zigzag % 2 === 1 ? -(zigzag + 1) / 2 : zigzag / 2)
-			if (from < 0 || from + copy > baseLength) throw new Error('delta: copy outside the base')
-			previousEnd = from + copy
-		}
-		ops.push([add, copy, from])
-		literals += add
-		total += add + copy
+		const op = readOp(varint, previousEnd, baseLength, index === count - 1)
+		if (op[1] > 0) previousEnd = op[2] + op[1]
+		ops.push(op)
+		literals += op[0]
+		total += op[0] + op[1]
 		if (total > MAX_GLB_BYTES) throw new Error('delta: result too large')
 	}
-	return { ops, end: at, literals, total }
+	return { ops, end: at(), literals, total }
 }
 
 /**
- * Rebuilds a GLB from its base and a delta. Format: varint `n`, then `n` pairs `[addLen, copyLen]` (and, when `copyLen`
- * is not zero, a zigzag varint = copy offset minus the end of the previous copy), then the literal bytes of every pair
- * in order. Each pair means: `addLen` literal bytes, then `copyLen` bytes copied from the base. Throws on any
- * inconsistency (truncated delta, copy outside the base, size above `MAX_GLB_BYTES`).
+ * Rebuilds a GLB from its base and a delta. Format: one version byte (`DELTA_VERSION`), a varint `n`, then `n` pairs
+ * `[addLen, copyLen]` (and, when `copyLen` is not zero, a zigzag varint = copy offset minus the end of the previous
+ * copy), then the literal bytes of every pair in order. Each pair means: `addLen` literal bytes, then `copyLen` bytes
+ * copied from the base. Only the last pair may be empty. Throws on any inconsistency (unknown version, truncated delta,
+ * copy outside the base, size above `MAX_GLB_BYTES` or different from `expectedSize`, which is checked before the
+ * output is allocated).
  */
-export function applyDelta(base: Uint8Array, patch: Uint8Array): Uint8Array {
+export function applyDelta(base: Uint8Array, patch: Uint8Array, expectedSize?: number): Uint8Array {
 	const { ops, end, literals, total } = readOps(base.length, patch)
 	if (end + literals !== patch.length) throw new Error('delta: wrong length')
+	if (expectedSize !== undefined && total !== expectedSize) throw new Error('delta: unexpected size')
 	const out = new Uint8Array(total)
 	let at = end
 	let to = 0
@@ -117,7 +138,7 @@ export function applyDelta(base: Uint8Array, patch: Uint8Array): Uint8Array {
 const KINDS: readonly string[] = ['base', 'delta']
 const PRIORITIES: readonly string[] = ['critical', 'high', 'low']
 const SHA256 = /^[0-9a-f]{64}$/
-const SAFE_FILE = /^[\w.-]+$/
+const SAFE_FILE = /^[\w-]+\.[0-9a-f]{10}\.(glb|patch)$/
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -140,7 +161,8 @@ function parseEntry(value: unknown): CaptureEntry | null {
 /** Validates a manifest read from the network; anything unexpected gives `null` (the film then uses the raw captures). */
 export function parseCaptureManifest(value: unknown): CaptureManifest | null {
 	if (!isRecord(value) || value.version !== 1 || !isRecord(value.files)) return null
-	const files: Record<string, CaptureEntry> = {}
+	// no prototype: a capture called `constructor` or `__proto__` is just a name
+	const files: Record<string, CaptureEntry> = Object.create(null)
 	for (const [name, raw] of Object.entries(value.files)) {
 		const entry = parseEntry(raw)
 		if (!entry) return null
@@ -181,19 +203,33 @@ export interface GlbFetcherOptions {
 	subtle?: SubtleCrypto | undefined
 }
 
+/** What the film exposes (`window.__hero.captureFallbacks`) so a test can tell "optimised" from "silently the full files". */
+export interface FallbackStats {
+	count: number
+	last: string | null
+}
+
 /**
  * Builds the film's `fetchGlb`. The base (`S0`) is downloaded once; a stage is rebuilt from its delta. A stage whose
  * delta is missing, corrupt or of the wrong size or hash, or whose base is unavailable, is fetched in full from the raw
- * captures folder instead, exactly as the film did before the pipeline.
+ * captures folder instead, exactly as the film did before the pipeline. Every such fallback is warned about in the
+ * console and counted in `stats`.
  */
-export function createGlbFetcher(options: GlbFetcherOptions): GlbFetcher {
+export function createGlbFetcher(options: GlbFetcherOptions): GlbFetcher & { stats: FallbackStats } {
 	const request: FetchLike = options.fetch ?? ((input, init) => fetch(input, init))
-	let baseDownload: Promise<Uint8Array> | undefined
+	const stats: FallbackStats = { count: 0, last: null }
+	// one download per base file, failures included: a base that failed is not asked for again during the session
+	const bases = new Map<string, Promise<Uint8Array>>()
 
-	const download = async (url: URL, priority: CapturePriority): Promise<Uint8Array> => {
-		const response = await request(url, priority === 'low' ? { priority: 'low' } : undefined)
+	// `limit`: a base is exactly `entry.size`; a delta is never bigger than its target plus its few bytes of table
+	const download = async (url: URL, entry: CaptureEntry, limit: number): Promise<Uint8Array> => {
+		const response = await request(url, entry.priority === 'low' ? { priority: 'low' } : undefined)
 		if (!response.ok) throw new Error(`HTTP ${response.status}`)
-		return new Uint8Array(await response.arrayBuffer())
+		const announced = Number(response.headers.get('content-length'))
+		if (announced > limit) throw new Error('response too large')
+		const bytes = new Uint8Array(await response.arrayBuffer())
+		if (bytes.length > limit) throw new Error('response too large')
+		return bytes
 	}
 	const verify = async (bytes: Uint8Array, entry: CaptureEntry): Promise<Uint8Array> => {
 		if (bytes.length !== entry.size) throw new Error('size mismatch')
@@ -202,13 +238,12 @@ export function createGlbFetcher(options: GlbFetcherOptions): GlbFetcher {
 		return bytes
 	}
 	const optimisedBase = (entry: CaptureEntry): Promise<Uint8Array> => {
-		baseDownload ??= download(new URL(entry.file, options.assets), entry.priority)
-			.then(bytes => verify(bytes, entry))
-			.catch((error: unknown) => {
-				baseDownload = undefined
-				throw error
-			})
-		return baseDownload
+		let pending = bases.get(entry.file)
+		if (!pending) {
+			pending = download(new URL(entry.file, options.assets), entry, entry.size).then(bytes => verify(bytes, entry))
+			bases.set(entry.file, pending)
+		}
+		return pending
 	}
 	const full = async (base: URL, name: string): Promise<LoadedGlb> => {
 		const url = new URL(`${name}.glb`, base)
@@ -230,20 +265,29 @@ export function createGlbFetcher(options: GlbFetcherOptions): GlbFetcher {
 		if (baseEntry?.kind !== 'base') throw new Error('unknown base')
 		const [reference, patch] = await Promise.all([
 			optimisedBase(baseEntry),
-			download(new URL(entry.file, options.assets), entry.priority),
+			download(new URL(entry.file, options.assets), entry, entry.size + 64),
 		])
-		return { buffer: (await verify(applyDelta(reference, patch), entry)).buffer as ArrayBuffer, url: target }
+		return {
+			buffer: (await verify(applyDelta(reference, patch, entry.size), entry)).buffer as ArrayBuffer,
+			url: target,
+		}
+	}
+	const fallback = (name: string, reason: string): void => {
+		stats.count++
+		stats.last = reason
+		console.warn('[hero-assets] fallback', name, reason)
 	}
 
-	return async (base, name) => {
+	const fetcher = async (base: URL, name: string): Promise<LoadedGlb> => {
 		const manifest = await options.manifest
 		if (manifest) {
 			try {
 				return await optimised(base, name, manifest)
-			} catch {
-				// any failure of the optimised path: the full file below
+			} catch (error) {
+				fallback(name, (error as Error).message)
 			}
-		}
+		} else fallback(name, 'manifest unavailable')
 		return full(base, name)
 	}
+	return Object.assign(fetcher, { stats })
 }

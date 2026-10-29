@@ -43,7 +43,11 @@ export function HeroFilm() {
 		})
 		import('../hero/hero.js')
 			.then(({ mountHero }) => {
-				if (!cancelled) dispose = mountHero({ i18n, capturesUrl, fetchGlb })
+				if (cancelled) return
+				dispose = mountHero({ i18n, capturesUrl, fetchGlb })
+				// test hook: how many captures fell back to the full GLB files (the identity harness expects 0)
+				const hero = (window as { __hero?: Record<string, unknown> }).__hero
+				if (hero) hero.captureFallbacks = fetchGlb.stats
 			})
 			.catch(() => reportWebFailure('page-render'))
 		return () => {
