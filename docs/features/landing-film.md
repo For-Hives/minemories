@@ -14,7 +14,7 @@ Le prototype (rapports, décisions, tests de contrôle) vit dans `docs/marketing
 6. Le **CSS du film est global** (il stylise `html`, `body`, `main`, `ul`, `button`…, et `html.is-scrub` verrouille le défilement du document). Il est donc dans un `<style>` rendu par `HeroFilm` : il n'existe que tant que la page d'accueil existe. Il est importé en `?raw` (texte brut, pas `?inline`) : le minifieur CSS de Vite réécrit certains dégradés (`linear-gradient(0deg, …)` devient un dégradé inversé équivalent) et la quantification de l'écran change alors de quelques niveaux sur des rangées entières ; en brut, les images du film sont identiques au pixel à celles du prototype. `first-paint.js` (`prepareRoot`) pose sur `<html>` la phase, les variables de mise en page et la classe du film **avant la première peinture** et renvoie `restore()`, qui rend à `<html>` sa classe, son style et ses `data-*` d'avant. Pour le prérendu, `scripts/prerender-web.mjs` injecte ce même code en script inline avant le balisage de `/` (`firstPaintScripts` exporté par `prerender.tsx`) ; React ne rend aucun `<script>`.
 7. Sans JavaScript, `.site` est visible (le masquage est `html.scene-on .site`, classe posée seulement par la première peinture).
 8. Le pont i18n (`src/lib/hero-i18n.ts`, couvert à 100 %) donne au film `t`, `apply`, `onChange` au-dessus de `translate()` de l'app : mêmes clés (le texte anglais), mêmes catalogues, **un seul sélecteur de langue** (celui de l'app, `HeroLanguage`, dans l'en-tête ; une copie dans le menu des petits écrans, cachée au-dessus de 560 px). `<title>`, description et balises sociales restent à `RouteMetadata`. Le joueur s'appelle toujours « Efe ».
-9. Assets : `apps/web/public/hero/` (captures GLB, polices, icônes, images de repli, servis tels quels sous `/hero/`) ; seuls les 4 PNG de la scène (`src/hero/assets/mc/`) passent par Vite (`new URL(…, import.meta.url)`, hachés). `scene.js` reçoit `capturesUrl: '/hero/captures/'` et `captures: 'v2light'`.
+9. Assets : `apps/web/public/hero/` (captures GLB, polices, icônes, images de repli, servis tels quels sous `/hero/`) ; seuls les 4 PNG de la scène (`src/hero/assets/mc/`) passent par Vite (`new URL(…, import.meta.url)`, hachés). `scene.js` reçoit `capturesUrl: '/hero/captures/'` et `captures: 'v2light'`, plus `fetchGlb` (livraison optimisée des captures depuis `/hero/captures-opt/`, générée par `bun run hero:assets`, voir [film-assets-pipeline.md](film-assets-pipeline.md)).
 
 ### Décisions
 
@@ -46,6 +46,7 @@ apps/web/src/lib/hero-i18n.ts      pont de traduction (100 % couvert)
 Le prototype est la source (`docs/marketing/v0/web/`). Pour reprendre une nouvelle version : recopier `hero.js hud.js phase.js scrub.js site.js scene.js characters.js look.js life.js sky.js backdrop.js anim/ mcui/hotbar.js`, puis **réappliquer les adaptations** :
 
 - `hero.js` : tout le corps dans `export function mountHero(host)` (états du module devenus locaux) ; `on(target, …)` avec `signal` pour chaque écouteur de `window`/`document` ; `loop` s'arrête si `disposed` ; `dispose()` ; `i18n = host.i18n` (plus de `createI18n`, plus de sélecteurs de langue) ; `capturesUrl` et `captures: 'v2light'` ; `console.info` pour le repli WebGL attendu.
+- `scene.js` : le crochet de livraison des captures (`fetchGlb` du film, `glbFetcher`, trois lignes repérées « hero-assets anchor » : voir [le pipeline d'assets du film](film-assets-pipeline.md)) ; `hero.js` transmet `host.fetchGlb`. `scene-anchor.test.js` échoue si une recopie du prototype les efface (le film retomberait en silence sur les GLB pleins).
 - `hud.js` : `ctx.signal` sur les deux écouteurs de `document`.
 - `film.css` : concaténation de `mcui.css`, `hero.css`, `site.css` ; chemins `url('mcui/…')` et `url('assets/mc/…')` réécrits en `/hero/…` ; polices `.ttf` de repli retirées ; `.site` visible par défaut et masqué par `html.scene-on .site` ; section d'ajouts de l'app en fin de fichier.
 - `HeroMarkup.tsx` : regénéré du `hero.html` (balises `data-i18n` conservées, textes en JSX) puis les parties dynamiques remplacées par `HeroParts`.
@@ -87,8 +88,8 @@ Le jar est celui du cache de développement : `mod/minemories/neoforge/build/mod
 ## Poids
 
 - Dépôt : `public/hero` 8,5 Mo (captures GLB 8 Mo) + `src/hero` 1,2 Mo.
-- À la première visite de `/` : code du film ~ 185 Ko gzip (en plus de `GLTFLoader`, partagé avec le viewer), puis `S0.glb` (1,3 Mo) et `personnages.glb` (1,3 Mo) ; `S1` à `S4` en arrière-plan.
-- Cache (`deploy/nginx.web.conf`) : `/assets/` immuable un an (noms hachés) ; `/hero/` un jour puis revalidation (non haché ; versionner le dossier pour un cache plus long).
+- À la première visite de `/` : code du film ~ 185 Ko gzip (en plus de `GLTFLoader`, partagé avec le viewer), puis la base `S0` (138 Ko en brotli, 162 Ko en gzip) ; `S1` à `S4` en arrière-plan sous forme de deltas contre `S0` (183 Ko en brotli au total). Les captures brutes (`public/hero/captures/*.glb`, 1,3 Mo chacune) ne sont plus téléchargées que si la voie optimisée échoue. Détail et mesures : [pipeline d'assets du film](film-assets-pipeline.md).
+- Cache (`deploy/nginx.web.conf`) : `/assets/` et `/hero/captures-opt/*.glb|*.patch` immuables un an (noms hachés) ; `manifest.json` revalidé à chaque visite ; `/hero/` un jour puis revalidation (non haché ; versionner le dossier pour un cache plus long). **Ce fichier n'est pas appliqué par la production actuelle** (voir le pipeline d'assets, section « Serveur »).
 
 ## Limites connues
 
