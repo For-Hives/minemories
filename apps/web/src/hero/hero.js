@@ -314,6 +314,7 @@ export function mountHero(host) {
 			autoplay: false,
 			background: '#14110e',
 			capturesUrl: host.capturesUrl,
+			fetchGlb: host.fetchGlb ?? null, // how the captures are downloaded (lib/capture-delta.ts); null = plain files
 			captures: 'v2light', // the meshopt-compressed captures served from /hero/captures/
 			anchorsTarget: anchorLayer,
 			subjectOffset: layout.base,
