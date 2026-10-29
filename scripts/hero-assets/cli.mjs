@@ -7,6 +7,7 @@
 //   --update-budget  rewrite the baselines of budget.json from this run (a deliberate act, reviewed in the PR)
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { brotliDecompressSync, gunzipSync } from 'node:zlib'
 import { budgetMetrics, checkBudget } from './budget.mjs'
 import { sha256 } from './equivalence.mjs'
 import { inventoryOfAll } from './inventory.mjs'
@@ -28,6 +29,19 @@ async function readSources(config, directory) {
 	return Object.fromEntries(entries)
 }
 
+const DECOMPRESSORS = { '.br': brotliDecompressSync, '.gz': gunzipSync }
+
+/** A `.gz` or `.br` copy is right when it decompresses to the payload (other levels and zlib versions give other bytes); anything else must match byte for byte. */
+function same(name, onDisk, outputs) {
+	const decompress = DECOMPRESSORS[name.slice(-3)]
+	if (!decompress) return sha256(onDisk) === sha256(outputs.get(name))
+	try {
+		return sha256(decompress(onDisk)) === sha256(outputs.get(name.slice(0, -3)))
+	} catch {
+		return false
+	}
+}
+
 /** Differences between what the pipeline produces and what is on disk. */
 export async function diffOutputs(outputs, directory) {
 	let present
@@ -40,7 +54,7 @@ export async function diffOutputs(outputs, directory) {
 		[...outputs].map(async ([name, bytes]) => {
 			try {
 				const onDisk = await readFile(join(directory, name))
-				return sha256(onDisk) === sha256(bytes) ? null : `${name}: differs from the regenerated file`
+				return same(name, onDisk, outputs) ? null : `${name}: differs from the regenerated file`
 			} catch {
 				return `${name}: missing`
 			}

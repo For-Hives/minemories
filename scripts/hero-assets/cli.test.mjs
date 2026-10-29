@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
+import { brotliCompressSync, constants, gzipSync } from 'node:zlib'
 import { MeshoptEncoder } from 'meshoptimizer'
 import { diffOutputs, main } from './cli.mjs'
 import { syntheticGlb } from './synthetic.mjs'
@@ -57,6 +58,28 @@ test('generate, check, detect a stale or tampered output, and enforce the budget
 			baseline: { baseBrotli: 1, deltasBrotli: 1, stagesBrotli: 1, stagesGzip: 1, charactersBrotli: 1 },
 		})
 	)
+	assert.equal(await main([...args, '--check']), 1)
+})
+
+test('precompressed copies are checked by what they decompress to, not by their bytes', async t => {
+	t.mock.method(console, 'log', () => undefined)
+	const { src, out, budget } = await workspace(t)
+	const args = ['--src', src, '--out', out, '--budget', budget]
+	await main([...args, '--update-budget'])
+	await main([...args])
+	const manifest = JSON.parse(await readFile(join(out, 'manifest.json'), 'utf8'))
+	const file = manifest.files.S1.file
+	const payload = await readFile(join(out, file))
+	await writeFile(
+		join(out, `${file}.br`),
+		brotliCompressSync(payload, { params: { [constants.BROTLI_PARAM_QUALITY]: 1 } })
+	)
+	await writeFile(join(out, `${file}.gz`), gzipSync(payload, { level: 1 }))
+	assert.equal(await main([...args, '--check']), 0, 'other compression levels of the same payload are fine')
+	await writeFile(join(out, `${file}.gz`), gzipSync(Buffer.from('another payload')))
+	assert.equal(await main([...args, '--check']), 1)
+	await writeFile(join(out, `${file}.gz`), gzipSync(payload))
+	await writeFile(join(out, `${file}.br`), Buffer.from('not brotli at all'))
 	assert.equal(await main([...args, '--check']), 1)
 })
 

@@ -80,6 +80,15 @@ test('configuration mistakes fail loudly', async () => {
 		),
 		{ message: 'the base capture cannot be a delta' }
 	)
+	// only the base may be a full file: two bases would make the delta target ambiguous
+	await assert.rejects(
+		runPipeline(
+			{ base: 'S0', captures: [config.captures[0], { name: 'S1', role: 'stage', priority: 'low' }] },
+			sources,
+			tools
+		),
+		{ message: 'only S0 may be shipped as a full file (set "delta": true on S1)' }
+	)
 	// an "optimiser" that changes the pixels must be caught by the proof, never shipped
 	const lossy = { ...tools.rebuildTools, optimisePng: async () => pngOf(8, 8, () => [1, 2, 3, 255]) }
 	await assert.rejects(runPipeline(config, sources, { ...tools, rebuildTools: lossy }), {

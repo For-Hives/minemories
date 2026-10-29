@@ -20,20 +20,23 @@ const same = (a, b) => a.length === b.length && Buffer.compare(a, b) === 0
 function pngChunks(bytes) {
 	if (Buffer.from(bytes.subarray(0, 8)).toString('hex') !== PNG_SIGNATURE) return null
 	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-	const names = []
+	const chunks = new Map() // name -> content (hex), colour chunks only
 	for (let at = 8; at + 8 <= bytes.length; ) {
-		names.push(Buffer.from(bytes.subarray(at + 4, at + 8)).toString('latin1'))
-		at += 12 + view.getUint32(at, false)
+		const name = Buffer.from(bytes.subarray(at + 4, at + 8)).toString('latin1')
+		const length = view.getUint32(at, false)
+		if (COLOUR_CHUNKS.includes(name))
+			chunks.set(name, Buffer.from(bytes.subarray(at + 8, at + 8 + length)).toString('hex'))
+		at += 12 + length
 	}
-	return names
+	return chunks
 }
 
-/** Same RGBA pixels, same size, same colour-space chunks. Returns the reason it differs, or null. */
+/** Same RGBA pixels, same size, same colour-space chunks (presence and content). Returns the reason it differs, or null. */
 export function pngDifference(a, b) {
 	const namesA = pngChunks(a)
 	const namesB = pngChunks(b)
 	if (!(namesA && namesB)) return 'not a PNG'
-	for (const chunk of COLOUR_CHUNKS) if (namesA.includes(chunk) !== namesB.includes(chunk)) return `chunk ${chunk}`
+	for (const chunk of COLOUR_CHUNKS) if (namesA.get(chunk) !== namesB.get(chunk)) return `chunk ${chunk}`
 	const x = PNG.sync.read(Buffer.from(a))
 	const y = PNG.sync.read(Buffer.from(b))
 	if (x.width !== y.width || x.height !== y.height) return 'size'

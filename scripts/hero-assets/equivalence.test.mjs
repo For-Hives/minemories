@@ -129,6 +129,20 @@ test('PNG comparison: identical pixels pass, colour-space chunks and sizes are e
 	assert.equal(pngDifference(plain, withGamma), 'chunk gAMA')
 })
 
+test('colour-space chunks must keep their content, not only their presence', () => {
+	const plain = pngOf(8, 8, (x, y) => [x * 10, y * 10, 3, 255])
+	const withGamma = value => {
+		const out = new Uint8Array(plain.length + 16)
+		out.set(plain.subarray(0, 33))
+		new DataView(out.buffer).setUint32(33, 4, false)
+		out.set(Buffer.from('gAMA'), 37)
+		out.set(value, 41)
+		out.set(plain.subarray(33), 49)
+		return out
+	}
+	assert.equal(pngDifference(withGamma([0, 1, 134, 160]), withGamma([0, 2, 0, 0])), 'chunk gAMA')
+})
+
 test('a stream the encoder cannot make smaller is kept, and an unsupported filter is refused', async () => {
 	const stubborn = {
 		...tools.rebuildTools,

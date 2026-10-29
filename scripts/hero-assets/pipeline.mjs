@@ -40,7 +40,6 @@ async function rebuildProven(capture, source, tools, log) {
 /** What is shipped for one capture: the payload (GLB or delta), its compressed copies and its manifest rows. */
 function shipCapture(capture, { glb, proof }, source, config, base) {
 	const isDelta = capture.delta === true
-	if (isDelta && capture.name === config.base) throw new Error('the base capture cannot be a delta')
 	const payload = isDelta ? makeVerifiedDelta(base, glb) : glb
 	const file = hashedName(capture.name, payload, isDelta ? 'patch' : 'glb')
 	const compressed = { br: brotli(payload), gz: gzip(payload) }
@@ -78,6 +77,15 @@ function shipCapture(capture, { glb, proof }, source, config, base) {
  * @param {(line: string) => void} [log]
  */
 export async function runPipeline(config, sources, tools, log = () => undefined) {
+	const baseCapture = config.captures.find(capture => capture.name === config.base)
+	if (!baseCapture) throw new Error(`base capture ${config.base} is not configured`)
+	if (baseCapture.delta) throw new Error('the base capture cannot be a delta')
+	// the browser caches one download per base file, and every delta is computed against `config.base`: no second full file
+	const others = config.captures.filter(capture => capture.name !== config.base && !capture.delta)
+	if (others.length > 0)
+		throw new Error(
+			`only ${config.base} may be shipped as a full file (set "delta": true on ${others.map(capture => capture.name).join(', ')})`
+		)
 	const rebuilt = {}
 	for (const capture of config.captures) {
 		const source = sources[capture.name]
@@ -85,8 +93,7 @@ export async function runPipeline(config, sources, tools, log = () => undefined)
 		// biome-ignore lint/performance/noAwaitInLoops: one WASM optimiser, one capture at a time, in config order
 		rebuilt[capture.name] = await rebuildProven(capture, source, tools, log)
 	}
-	const base = rebuilt[config.base]?.glb
-	if (!base) throw new Error(`base capture ${config.base} is not configured`)
+	const base = rebuilt[config.base].glb
 	const outputs = new Map()
 	const files = {}
 	const details = {}

@@ -1,7 +1,7 @@
 // Byte-exact binary delta of a target against a base (COPY from base / ADD literal bytes). The browser side is
 // `applyDelta` in apps/web/src/lib/capture-delta.ts (documented there); this file is the encoder and imports that very
 // applier so that every delta is proven to rebuild the exact bytes with the code that ships.
-import { applyDelta } from '../../apps/web/src/lib/capture-delta.ts'
+import { applyDelta, DELTA_VERSION } from '../../apps/web/src/lib/capture-delta.ts'
 
 const WINDOW = 12 // bytes hashed to find a match
 const MIN_MATCH = 16 // shorter matches are cheaper as literals
@@ -89,7 +89,7 @@ export function makeDelta(base, target) {
 		}
 		for (let k = 0; k < add; k++) literals.push(target[start + k])
 	}
-	return Uint8Array.from([...meta, ...literals])
+	return Uint8Array.from([DELTA_VERSION, ...meta, ...literals])
 }
 
 /** Delta of `target` against `base`, rebuilt with the shipped applier and compared byte for byte. */

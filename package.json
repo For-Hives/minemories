@@ -35,7 +35,7 @@
 		"format": "biome check --write apps scripts package.json biome.json",
 		"lint": "biome check apps scripts package.json biome.json",
 		"check": "bun run lint && bun run hero:check && bun run package:mod:test && bun run release:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
-		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run hero:assets && bun run web:build",
+		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run hero:assets && node scripts/hero-assets/cli.mjs --check && bun run web:build",
 		"package:mod": "node scripts/package-mod.mjs",
 		"package:mod:test": "node --test scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
 		"api:garage": "node scripts/garage-integration.mjs",
