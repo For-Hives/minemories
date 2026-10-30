@@ -5040,6 +5040,7 @@ export function mount(target, opts = {}) {
 		fitSubject: () => null,
 		// v9 site phase (inert until the scene is ready; the stub is what a host gets when WebGL is not available)
 		frameSubject: () => Promise.resolve(null),
+		setPanel: () => {},
 		nextFrame: () => Promise.resolve(false),
 		setTime: () => {},
 		setSiteBlend: () => {},
@@ -6834,6 +6835,21 @@ export function mount(target, opts = {}) {
 			frameAnim = null
 			frameFrom = { ...filmSubject }
 			evalFrame(EASES.glide(gg))
+			dirty = true
+		},
+		/**
+		 * v12 (Andy: "it teleports"): moves the panel the model is framed in WITHOUT a tween, for a host that follows something continuous (the room the text leaves, read on every scroll step):
+		 * each call is one step of a glide the host computes. The framing is the pure function of the panel (evalFrame at its end), so a series of small steps is a smooth path and there is no
+		 * animation to restart. Nothing happens outside the site phase.
+		 */
+		setPanel(rect, { margin, fit, fill, centre } = {}) {
+			if (disposed || !sitePhase || !rect) return
+			const f = siteFrame ?? {}
+			siteFrame = { rect: { l: rect.l, t: rect.t, r: rect.r, b: rect.b }, margin: Number.isFinite(margin) ? margin : (f.margin ?? 16), fit: fit ?? f.fit ?? 'tight', fill: Number(fill) > 0 ? Number(fill) : (f.fill ?? 1), centre: centre ?? f.centre ?? 'live' }
+			sitePanelPx = { ...siteFrame.rect }
+			frameAnim?.resolve(null)
+			frameAnim = null
+			evalFrame(1)
 			dirty = true
 		},
 		/** v10: translates the model on screen by (dx, dy) CSS px, after the framing and without animation (the panel rising with the page when the footer arrives). */

@@ -634,7 +634,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 }
 
 /* --- 11. La barre du film : une frise verticale au bord droit, pour savoir où l'on en est et remonter dans l'histoire ------------------------------------------------ */
-/* Le remplissage et la poignée suivent le temps du film (`--rail-p`, 0 à 1, posé par hero.js) ; sur le site la barre est pleine. Les cinq chapitres sont des repères cliquables. Un glissement ne
+/* Le remplissage et la poignée suivent le temps du film (`--rail-p`, 0 à 1, posé par hero.js) ; la barre disparaît à la fin du film. Les cinq chapitres sont des repères cliquables. Un glissement ne
    fait que déplacer la poignée : le film saute UNE fois au relâchement (voir `railSeek`), ce qui garde les garde-fous contre les flashs. */
 
 .film-rail {
@@ -651,20 +651,13 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	touch-action: none;
 }
 
+/* La barre n'existe que pendant le film : elle disparaît au glissement vers le site (Andy). */
+html[data-phase='glide'] .film-rail,
 html[data-phase='site'] .film-rail {
 	--rail-p: 1;
-	opacity: 0.55;
-}
-
-html[data-phase='site'] .film-rail:hover,
-html[data-phase='site'] .film-rail:focus-within {
-	opacity: 1;
-}
-
-@media (max-width: 999px) {
-	html[data-phase='site'] .film-rail {
-		display: none;
-	}
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
 }
 
 .film-rail__track {

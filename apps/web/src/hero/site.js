@@ -26,6 +26,9 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x))
 
 /** Air (CSS px) kept between the model's silhouette and the panel at every angle of the turn (the contract asks 12; the extra 4 px absorb the antialiasing, the halo of the rim and the fireflies). */
 export const MODEL_MARGIN = 16
+/** v12: the panel's left edge is `contentRight - overlap + gap`: the model may go a little UNDER the text (the page is above the canvas), and the panel moves by 1 px steps (continuous). */
+export const REACH = Object.freeze({ gap: 24, step: 1 })
+export const REACH_OVERLAP = 28
 
 /** Tallest text column (px), and the longest line of a paragraph (characters): 45 to 75 is comfortable, 68 is the target. */
 export const TEXT_MAX = 760
@@ -255,9 +258,12 @@ export function createSite(ctx) {
 	const measure = () => {
 		const { W, H } = sizeNow()
 		const d = dockOf(W, H, { small })
-		if (d.layout === 'side' && reach != null) return { ...d, rect: widenedRect(d.rect, { W, contentRight: reach }) }
-		return d
+		if (d.layout !== 'side') return d
+		if (reach == null) reach = contentRightNow() // the first measure, before the hand-over: the model is framed in its final panel from the start
+		return reach == null ? d : { ...d, rect: widenedRect(d.rect, { W, contentRight: reach, ...REACH }) }
 	}
+	// The rectangle the model is framed in: the panel, extended to the left by REACH_OVERLAP in landscape (under the text); the panel itself (pointer area, hint) is not.
+	const framingRect = (d) => (d.layout === 'side' ? { ...d.rect, l: d.rect.l - REACH_OVERLAP } : d.rect)
 	const REACH_TEXT = '.mc-hero__kicker, .mc-hero__title, .mc-hero__lead, .mc-hero__compat, .mc-section__title, .mc-section__text, .site-links, .mc-hero__actions'
 	const REACH_BOX = '.mc-step, .mc-faq__item'
 	// The right edge of what the visitor reads right now: text by the extent of its lines, cards by their box; only what is on screen counts.
@@ -278,20 +284,39 @@ export function createSite(ctx) {
 		}
 		return right
 	}
-	let reachTimer = 0
-	// Called on scroll: when the room the text leaves has changed (by a step), the panel is placed again and the model framed in it, eased.
+	// v12 (Andy: "it teleports"): the room the text leaves is followed CONTINUOUSLY. The measure is made on every scroll, the value that frames the model eases towards it (an exponential glide,
+	// 0.18 s time constant) and the model is framed again at every step with `setPanel` (no tween to restart, so nothing to jump). The first measure is taken BEFORE the hand-over
+	// (`measure`), so the model glides straight to its final place instead of arriving at the grid's panel and moving again.
+	let reachGoal = null
+	let reachRaf = 0
+	let reachAt = 0
+	function applyReach() {
+		const d = place()
+		lastRect = d.rect
+		scene()?.setPanel?.(framingRect(d), { margin: MODEL_MARGIN, fit: 'tight', fill, centre: 'live' })
+		updateShift()
+	}
+	function stepReach(now) {
+		reachRaf = 0
+		if (reachGoal == null || reach == null) return
+		const dt = Math.min(0.1, Math.max(0.001, (now - reachAt) / 1000))
+		reachAt = now
+		const diff = reachGoal - reach
+		if (Math.abs(diff) < 0.5 || ctx.reduced()) reach = reachGoal
+		else reach += diff * (1 - Math.exp(-dt / 0.18))
+		applyReach()
+		if (reach !== reachGoal) reachRaf = requestAnimationFrame(stepReach)
+	}
 	function syncReach() {
 		if (!entered || ctx.phase() !== 'site' || root.dataset.dock !== 'side') return
-		const { W } = sizeNow()
 		const next = contentRightNow()
-		const before = widenedRect({ l: 1e9, t: 0, r: 0, b: 0 }, { W, contentRight: reach }).l
-		const after = widenedRect({ l: 1e9, t: 0, r: 0, b: 0 }, { W, contentRight: next }).l
-		if (before === after) return
-		clearTimeout(reachTimer)
-		reachTimer = setTimeout(() => {
-			reach = next
-			layout({ duration: 1.1, ease: 'glide' }) // slow and symmetric: the panel gaining or losing room is a drift, not a move
-		}, 140)
+		if (next == null) return
+		reachGoal = next
+		if (reach == null) reach = next
+		if (!reachRaf && reach !== reachGoal) {
+			reachAt = performance.now()
+			reachRaf = requestAnimationFrame(stepReach)
+		}
 	}
 
 	// Places the panel (CSS custom properties read by site.css) and returns its geometry. The model's rectangle is the panel itself.
@@ -325,8 +350,9 @@ export function createSite(ctx) {
 	function frame({ duration = 0.8, ease = 'standard' } = {}) {
 		const s = scene()
 		if (!s) return Promise.resolve(null)
-		lastRect = place().rect
-		return s.frameSubject(lastRect, { duration: ctx.reduced() ? 0 : duration, margin: MODEL_MARGIN, fit: 'tight', fill, ease, centre: 'live' })
+		const d = place()
+		lastRect = d.rect
+		return s.frameSubject(framingRect(d), { duration: ctx.reduced() ? 0 : duration, margin: MODEL_MARGIN, fit: 'tight', fill, ease, centre: 'live' })
 	}
 
 	// v10: the hand-over is a position g set by the page at every frame; the scene blends the camera and the framing as a pure function of it.
@@ -334,8 +360,8 @@ export function createSite(ctx) {
 		const s = scene()
 		if (!s) return null
 		blendG = g
-		if (!lastRect) place()
-		s.setSiteBlend?.(g, { rect: lastRect, margin: MODEL_MARGIN, fit: 'tight', fill, centre: 'live' })
+		const d = place()
+		s.setSiteBlend?.(g, { rect: framingRect(d), margin: MODEL_MARGIN, fit: 'tight', fill, centre: 'live' })
 		if (g >= 1) updateShift()
 		return lastRect
 	}

@@ -107,7 +107,8 @@ test('the film rail (section 11) moves only when motion is allowed, and the thum
 	const [still, animated] = rail.split('@media (prefers-reduced-motion: no-preference) {')
 	expect(still).not.toMatch(/transition|animation/)
 	expect(animated).toContain(":root:not([data-mc-motion='reduced'])")
-	expect(still).toContain("html[data-phase='site'] .film-rail {\n\t--rail-p: 1;") // on the site the bar is full
+	expect(still).toContain("html[data-phase='site'] .film-rail {") // gone once the film has ended
+	expect(still).toMatch(/data-phase='glide'\] \.film-rail,[\s\S]*?visibility: hidden/)
 	const markup = readFileSync(new URL('../components/HeroMarkup.tsx', import.meta.url), 'utf8')
 	expect(markup).toContain('role="slider"')
 	expect(markup).toContain('aria-orientation="vertical"')
