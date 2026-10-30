@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""Génère l'écran de chargement (SVG + CSS + script) et l'écrit dans apps/web/index.html.
+
+Un joueur du jeu (peau « Steve ») casse un bloc de minerai à la pioche ; le bloc se fissure (textures `destroy_stage_*`), éclate et laisse tomber un diamant.
+Les images sont les textures du JEU (fichiers Mojang) lues dans le client local, jamais téléchargées, puis incrustées en data: URI (aucune requête de plus).
+Ce sont des fichiers de la marque : voir docs/features/charte-graphique.md, section 12, avant toute mise en ligne publique.
+
+Usage : python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
+Le bloc est entre les marqueurs <!-- boot:begin --> et <!-- boot:end --> (style, balisage, script) ; relancer remplace tout le bloc.
+"""
+import base64, re, subprocess, sys
+
+jar = sys.argv[1]
+target = sys.argv[2] if len(sys.argv) > 2 else 'apps/web/index.html'
+T = 4.8
+OY = 10
+
+
+def tex(path):
+	data = subprocess.run(['unzip', '-p', jar, 'assets/minecraft/textures/' + path], check=True, capture_output=True).stdout
+	return 'data:image/png;base64,' + base64.b64encode(data).decode()
+
+
+def p(t):
+	return round(t / T * 100, 2)
+
+
+def y(v):
+	return v + OY
+
+
+# --- bloc isométrique 2:1 : 16 texels = 32 px de côté, 32 px de haut ---
+Nx, Ny = 100, y(44)
+TOP = f'matrix(2 1 -2 1 {Nx} {Ny})'
+LEFT = f'matrix(2 1 0 2 {Nx - 32} {Ny + 16})'
+RIGHT = f'matrix(2 -1 0 2 {Nx} {Ny + 32})'
+poly = lambda *a: ' '.join(f'{px},{py}' for px, py in a)
+Np, Ep, Sp, Wp = (Nx, Ny), (Nx + 32, Ny + 16), (Nx, Ny + 32), (Nx - 32, Ny + 16)
+Wb, Sb, Eb = (Nx - 32, Ny + 48), (Nx, Ny + 64), (Nx + 32, Ny + 48)
+top_poly, left_poly, right_poly = poly(Np, Ep, Sp, Wp), poly(Wp, Sp, Sb, Wb), poly(Sp, Ep, Eb, Sb)
+
+# --- joueur (vue de côté, face à droite), 1 texel = 2 px : tête 16, torse 24, jambes 24 ---
+gy = y(106)          # sol sous les pieds
+leg_y = gy - 24
+torso_y = leg_y - 24
+head_y = torso_y - 16
+x0 = 40
+sx, sy = x0 + 4, torso_y + 3   # épaule
+
+
+def part(sx_, sy_, sw, sh, dx, dy, dw, dh, extra=''):
+	return f'<svg x="{dx}" y="{dy}" width="{dw}" height="{dh}" viewBox="{sx_} {sy_} {sw} {sh}" preserveAspectRatio="none"{extra}><use href="#skin"/></svg>'
+
+
+body = ''.join([
+	part(16, 52, 4, 12, x0 + 3, leg_y, 8, 24, ' opacity=".75"'),   # jambe gauche (derrière, assombrie)
+	part(0, 20, 4, 12, x0 - 1, leg_y, 8, 24),                      # jambe droite, côté
+	part(16, 20, 4, 12, x0, torso_y, 8, 24),                       # torse, côté
+	part(0, 8, 8, 8, x0 - 4, head_y, 16, 16),                      # tête, côté droit (le visage est à droite)
+	part(32, 8, 8, 8, x0 - 4, head_y, 16, 16),                     # calque de la tête
+])
+arm = part(40, 20, 4, 12, sx - 4, sy, 8, 24) + f'<g transform="translate({sx} {sy + 24}) rotate(135)"><use href="#pick" x="-6" y="-26"/></g>'
+
+# --- images partagées (une seule fois en data: URI) ---
+defs = (f'<defs><image id="skin" width="64" height="64" href="{tex("entity/player/wide/steve.png")}"/>'
+	f'<image id="ore" width="16" height="16" href="{tex("block/diamond_ore.png")}"/>'
+	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/>'
+	f'<image id="gem" width="32" height="32" href="{tex("item/diamond.png")}"/>'
+	+ ''.join(f'<image id="d{n}" width="16" height="16" href="{tex(f"block/destroy_stage_{n}.png")}"/>' for n in (2, 5, 8)) + '</defs>')
+
+
+def faces(ref):
+	return (f'<use href="#{ref}" transform="{TOP}"/><use href="#{ref}" transform="{LEFT}"/><use href="#{ref}" transform="{RIGHT}"/>')
+
+
+block = (faces('ore')
+	+ f'<polygon points="{left_poly}" fill="#000" opacity=".22"/><polygon points="{right_poly}" fill="#000" opacity=".42"/>'
+	+ ''.join(f'<g class="bk-c{i}">{faces(f"d{n}")}</g>' for i, n in enumerate((2, 5, 8)))
+	+ f'<polygon points="{poly(Wp, Wb, Sb, Eb, Ep, Np)}" fill="none" stroke="#0a0806" stroke-width="2"/><polyline points="{poly(Wp, Sp, Ep)} {poly(Sp, Sb)}" fill="none" stroke="#0a0806" stroke-width="2"/>')
+
+ix, iy = Nx - 26, y(76)   # point d'impact sur la face gauche
+hits = [0.5 + 0.8 * k for k in range(4)]
+Wd, Sd, Rd = -150, -71, -30
+arm_kf = []
+for k in range(4):
+	s = 0.8 * k
+	arm_kf += [(s, Wd, 'cubic-bezier(.55,0,1,.55)'), (s + 0.5, Sd, 'cubic-bezier(0,.4,.4,1)')]
+arm_kf += [(3.4, Rd, 'linear'), (4.3, Rd, 'ease-in-out'), (4.8, Wd, '')]
+
+
+def kf(name, items, prop):
+	out = f'@keyframes {name}{{'
+	for tt, val, ease in items:
+		out += f'{p(tt)}%{{{prop}:{val};' + (f'animation-timing-function:{ease};' if ease else '') + '}'
+	return out + '}'
+
+
+css = [kf('b-arm', [(a, f'rotate({b}deg)', c) for a, b, c in arm_kf], 'transform')]
+lg = [(0, 'translateX(0)', '')]
+for h in hits:
+	lg += [(h - 0.08, 'translateX(0)', 'ease-out'), (h, 'translateX(2px)', 'ease-in'), (h + 0.2, 'translateX(0)', '')]
+css.append(kf('b-lunge', lg + [(4.8, 'translateX(0)', '')], 'transform'))
+bk = [(0, 'translateY(0) scale(1)', '')]
+for h in hits[:3]:
+	bk += [(h - 0.02, 'translateY(0) scale(1)', 'ease-out'), (h, 'translateY(2px) scale(1)', 'ease-in'), (h + 0.18, 'translateY(0) scale(1)', '')]
+bk += [(hits[3] - 0.02, 'translateY(0) scale(1)', 'steps(3,end)'), (hits[3] + 0.3, 'translateY(4px) scale(.7)', ''), (4.8, 'translateY(4px) scale(.7)', '')]
+css.append(kf('b-block', bk, 'transform'))
+css.append(kf('b-blockfade', [(0, '1', ''), (hits[3] - 0.01, '1', 'steps(3,end)'), (hits[3] + 0.3, '0', ''), (4.6, '0', ''), (4.75, '1', ''), (4.8, '1', '')], 'opacity'))
+for k in range(3):
+	t0 = hits[k]
+	css.append(kf(f'b-c{k}', [(0, '0', ''), (t0 - 0.001, '0', ''), (t0, '1', ''), (4.6, '1', ''), (4.7, '0', ''), (4.8, '0', '')], 'opacity'))
+vec = [(-12, -16), (8, -20), (-20, -4)]
+pcol = ['#7f7f7f', '#4aedd9', '#5a5a5a']
+for i, (dx, dy) in enumerate(vec):
+	its, fade = [(0, 'translate(0,0)', '')], [(0, '0', '')]
+	for h in hits:
+		its += [(h - 0.001, 'translate(0,0)', ''), (h + 0.3, f'translate({dx}px,{dy + 10}px)', 'ease-out')]
+		fade += [(h - 0.001, '0', ''), (h, '1', 'ease-in'), (h + 0.3, '0', '')]
+	css.append(kf(f'b-p{i}', its + [(4.8, 'translate(0,0)', '')], 'transform'))
+	css.append(kf(f'b-p{i}o', fade + [(4.8, '0', '')], 'opacity'))
+sh = [(-26, -14, '#8b8b8b'), (-8, -26, '#6b6b6b'), (14, -22, '#7f7f7f'), (30, -8, '#4aedd9'), (2, -12, '#5a5a5a')]
+tb = hits[3]
+for i, (dx, dy, _) in enumerate(sh):
+	css.append(kf(f'b-s{i}', [(0, 'translate(0,0)', ''), (tb, 'translate(0,0)', 'ease-out'), (tb + 0.35, f'translate({dx}px,{dy}px)', 'ease-in'), (tb + 0.9, f'translate({dx * 1.3}px,{dy + 40}px)', ''), (4.8, f'translate({dx * 1.3}px,{dy + 40}px)', '')], 'transform'))
+	css.append(kf(f'b-s{i}o', [(0, '0', ''), (tb - 0.001, '0', ''), (tb, '1', ''), (tb + 0.8, '1', ''), (tb + 0.9, '0', ''), (4.8, '0', '')], 'opacity'))
+ti = hits[3] + 0.2
+css.append(kf('b-item', [(0, 'translateY(0) scale(0)', ''), (ti, 'translateY(0) scale(0)', 'steps(3,end)'), (ti + 0.25, 'translateY(-14px) scale(1)', 'steps(4,end)'), (ti + 0.6, 'translateY(-16px) scale(1)', 'steps(2,end)'), (ti + 0.85, 'translateY(-14px) scale(1)', 'steps(2,end)'), (ti + 1.1, 'translateY(-16px) scale(1)', ''), (4.55, 'translateY(-16px) scale(1)', ''), (4.72, 'translateY(-16px) scale(0)', ''), (4.8, 'translateY(0) scale(0)', '')], 'transform'))
+
+cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#14110e;opacity:0;animation:b-in .2s ease-out .25s forwards,b-max .3s ease-in 12s forwards}}'
+	'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}'
+	'#boot>svg{width:min(62vw,300px);height:auto;overflow:visible}#boot image{image-rendering:pixelated}'
+	'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}'
+	'html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}'
+	'@keyframes b-in{to{opacity:1}}@keyframes b-max{to{opacity:0;visibility:hidden}}#boot svg *{transform-box:view-box}'
+	f'#boot .bk-arm{{transform-origin:{sx}px {sy}px;animation:b-arm {T}s linear infinite}}#boot .bk-chr{{animation:b-lunge {T}s linear infinite}}'
+	f'#boot .bk-blk{{transform-origin:{Nx}px {Sb[1]}px;animation:b-block {T}s linear infinite}}#boot .bk-fade{{animation:b-blockfade {T}s linear infinite}}')
+for i in range(3):
+	cls += f'#boot .bk-c{i}{{animation:b-c{i} {T}s linear infinite}}#boot .bk-p{i}{{animation:b-p{i} {T}s linear infinite}}#boot .bk-p{i}o{{animation:b-p{i}o {T}s linear infinite}}'
+for i in range(5):
+	cls += f'#boot .bk-s{i}{{animation:b-s{i} {T}s linear infinite}}#boot .bk-s{i}o{{animation:b-s{i}o {T}s linear infinite}}'
+cls += f'#boot .bk-item{{transform-origin:{Nx}px {y(84)}px;animation:b-item {T}s linear infinite}}'
+cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-71deg)}#boot .bk-c0,#boot .bk-c1{opacity:1}'
+	'#boot .bk-c2,#boot .bk-p0o,#boot .bk-p1o,#boot .bk-p2o,#boot .bk-s0o,#boot .bk-s1o,#boot .bk-s2o,#boot .bk-s3o,#boot .bk-s4o,#boot .bk-item{opacity:0}}')
+style = f'<style>{cls}{"".join(css)}</style>'
+
+parts = ''.join(f'<g class="bk-p{i}"><g class="bk-p{i}o"><rect x="{ix}" y="{iy}" width="3" height="3" fill="{pcol[i]}"/></g></g>' for i in range(3))
+shards = ''.join(f'<g class="bk-s{i}"><g class="bk-s{i}o"><rect x="{Nx - 2 + (i - 2) * 2}" y="{y(70)}" width="4" height="4" fill="{col}"/></g></g>' for i, (_, _, col) in enumerate(sh))
+svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<polygon points="{poly((Nx, y(88)), (150, y(108)), (Nx, y(128)), (50, y(108)))}" fill="#000" opacity=".4"/>'
+	f'<g class="bk-fade"><g class="bk-blk">{block}</g></g>{parts}{shards}'
+	f'<g class="bk-item"><use href="#gem" x="{Nx - 16}" y="{y(70)}"/></g>'
+	f'<g class="bk-chr">{body}<g class="bk-arm">{arm}</g></g></svg>')
+markup = f'<div id="boot" role="status"><span class="boot-t boot-en">Loading…</span><span class="boot-t boot-fr">Chargement…</span>{svg}</div>'
+script = ("<script>!function(){var b=document.getElementById('boot');if(!b)return;var t=performance.now(),d=0;function h(){if(d)return;d=1;var e=performance.now()-t,"
+	"w=e>250&&e<1150?1150-e:0;setTimeout(function(){b.classList.add('is-done');setTimeout(function(){b.remove()},300)},w)}"
+	"document.readyState==='complete'?h():addEventListener('load',h);setTimeout(h,12000)}()</script>")
+
+html = open(target).read()
+html = re.sub(r'\s*<!-- boot:begin -->.*?<!-- boot:end -->', '', html, flags=re.S)
+html = re.sub(r'\s*<style>#boot\{.*?</style>', '', html, flags=re.S)
+html = re.sub(r'\s*<div id="boot".*?</div>(?=\s*<div id="app">)', '', html, flags=re.S)
+html = re.sub(r'\s*<script>!function\(\)\{var b=document.getElementById\(\'boot\'\).*?</script>', '', html, flags=re.S)
+html = html.replace('</head>', f'    <!-- boot:begin -->{style}<!-- boot:end -->\n  </head>', 1)
+html = html.replace('<div id="app"></div>', f'<!-- boot:begin -->{markup}<!-- boot:end -->\n    <div id="app"></div>', 1)
+html = html.replace('<script type="module" src="/src/main.tsx"></script>', f'<!-- boot:begin -->{script}<!-- boot:end -->\n    <script type="module" src="/src/main.tsx"></script>', 1)
+open(target, 'w').write(html)
+print('ok', len(html), 'octets')
