@@ -22,6 +22,14 @@
 	--ds-lh-h1: 40px;
 	--ds-measure: 58ch;    /* longueur de ligne : le « ch » de la police du jeu vaut 12 px à 16 px, soit environ 58 caractères */
 
+	/* Police de lecture « moderne » : le texte courant (chapeau, paragraphes, FAQ, pied de page) est en sans-serif (Atkinson Hyperlegible Next, déjà hébergée) ; la police du jeu
+	   garde les titres, les boutons et le HUD. Un seul jeton pour changer de police de lecture. Le coréen et le japonais restent en Unifont (pas de glyphes CJK en Atkinson). */
+	--ds-f-text: var(--f-legible);
+	--ds-fs-text: 18px;    /* paragraphes de section, chapeau de page */
+	--ds-lh-text: 1.6;
+	--ds-fs-text-sm: 16px; /* cartes, FAQ, listes, pied de page */
+	--ds-lh-text-sm: 1.5;
+
 	/* Espacement (pas de 4 px) */
 	--ds-sp-1: 4px;
 	--ds-sp-2: 8px;
@@ -40,9 +48,9 @@
 
 	/* Ombres du texte (une ombre = un texel de la taille du texte) et du relief des panneaux */
 	--ds-text-shadow-1: 2px 2px 0 var(--text-shadow);   /* 16 px */
-	--ds-text-shadow-2: 3px 3px 0 var(--text-shadow);   /* 24 px */
-	--ds-text-shadow-3: 4px 4px 0 var(--text-shadow);   /* 32 px */
-	--ds-text-shadow-4: 5px 5px 0 var(--text-shadow);   /* 40 px */
+	--ds-text-shadow-2: 2px 2px 0 var(--text-shadow);   /* 24 px */
+	--ds-text-shadow-3: 3px 3px 0 var(--text-shadow);   /* 32 px */
+	--ds-text-shadow-4: 4px 4px 0 var(--text-shadow);   /* 40 px */
 	--ds-panel-bevel: inset 4px 4px 0 #3a322b, inset -4px -4px 0 #0f0c0a;  /* relief des cartes « interface Minecraft » */
 
 	/* Focus : un anneau clair de 2 px, décalé de 2 px, sur tout ce qui se commande */

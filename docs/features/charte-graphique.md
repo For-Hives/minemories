@@ -32,9 +32,9 @@ La charte vise le niveau 2 partout : un joueur reconnaît la famille, personne n
 
 | Domaine | Appliqué | Où |
 |---|---|---|
-| Police | « MM Minecraft » (police du jeu), Unifont pour le coréen et le japonais ; option « Police lisible » (Atkinson Hyperlegible Next) | `film.css` |
+| Police | « MM Minecraft » pour titres et commandes ; Atkinson Hyperlegible Next pour le texte de lecture ; Unifont pour le coréen et le japonais ; option « Police lisible » | `film.css`, `charter.css` |
 | Pixel | `--gp` = 2 px (3 px pour le HUD du film au-delà de 960 × 720) | `film.css`, `tokens.css` |
-| Échelle de texte | 16 / 24 / 32 / 40 px (multiples de 8) | `tokens.css` |
+| Échelle de texte | titres 24 / 32 / 40 px, lecture 16 / 18 / 20 px | `tokens.css` |
 | Couleurs | Nuit chaude `#14110e`, texte `#f4efe6`, pierre, cuivre, braise `#ffb347` | `film.css :root` |
 | Relief | Bordure noire de 1 gp, lumière en haut à gauche, ombre en bas à droite, ombre de texte d'un texel | `.mc-btn`, `.mc-panel` |
 | Composants | Bouton, panneau, case, barre d'objets, infobulle, notification, chat, onglets, champ, FAQ, étapes, pied de page | `film.css`, `charter.css` |
@@ -59,7 +59,7 @@ Le jeu (Java 1.21.1, mesuré sur le client) sert de référence. La direction ar
 | Infobulle | fond `#100010` à 94 %, liseré violet `#5000FF` → `#28007F`, décalée de 12 gp | liseré braise | **garder la braise.** Le liseré violet est le signe le plus reconnaissable du jeu : l'abandonner sépare l'hommage de l'imitation. |
 | Notification (toast) | face `#212121`, anneau `#555555`, titre jaune `#FFFF00`, 600 ms d'entrée, 5 s de tenue | face `#221D18`, titre or `#FFD25A` | garder l'or ; reprendre les durées du jeu (600 ms / 5 s) |
 | Champ de texte | fond noir, contour `#A0A0A0`, contour blanc au focus | `--field`, `--field-edge` | identique en pratique |
-| Texte | blanc, ombre = texte × 0,25 par canal | `--text #F4EFE6`, ombre `#3D3B39` | identique (même règle) |
+| Texte | blanc, ombre = texte × 0,25 par canal | titres : même règle ; texte de lecture sans ombre, en sans-serif | écart voulu (« moderne ») |
 | Titre | `/title` : ×4, centré, ombre portée | h1 40 px avec ombre de 5 px | identique en esprit |
 | Codes de couleur | 16 couleurs du chat (§0 à §f) | `--c-name`, `--c-lore`, `--c-blue`, `--c-green`, `--c-gold` | reprendre les 16 couleurs **telles quelles** pour les noms de joueurs et de mondes, avec la vérification de contraste (§ 4.3) |
 
@@ -116,26 +116,39 @@ Règle de contraste : sur fond sombre, seules les couleurs claires (§7, §a à 
 
 ---
 
-## 5. Typographie
+## 5. Typographie : deux voix, une moderne et une du jeu
 
-| Rôle | Police | Détail |
+Depuis la v1.1 (30/10/2026), le site n'est plus tout en police du jeu : en 16 px sur de longs paragraphes, elle fatigue et fait « jouet ». On garde le jeu pour ce qui **titre et se commande**, et une sans-serif moderne pour ce qui **se lit**.
+
+| Rôle | Police | Où |
 |---|---|---|
-| Tout le site | **MM Minecraft** (la police du jeu), gras pour les titres | une seule famille, trois alias `--f-ui`, `--f-title`, `--f-read` |
-| Logo | MM Wordmark | uniquement le « M » et le « m » du logo |
-| Coréen, japonais | Unifont (OFL) sous le même nom de famille | tailles multiples de 16 seulement |
-| Option accessibilité | Atkinson Hyperlegible Next | active `[data-mc-font='read']`, remplace les trois alias |
+| Voix du jeu | **MM Minecraft** (la police du jeu), gras pour les titres | logo, H1 à H3, boutons, étiquettes de la barre, HUD et texte du film, nombres |
+| Voix de lecture | **Atkinson Hyperlegible Next** (OFL, hébergée, déjà dans le dépôt) | chapeau, paragraphes, cartes d'étape, FAQ, listes, pied de page, textes d'aide et d'erreur |
+| Étiquettes | Atkinson gras, 13 px, capitales, interlettrage 0,08 em | pastille « Minecraft Java mod · beta » |
+| Coréen, japonais | Unifont (OFL) partout, comme avant | pas de glyphes CJK en Atkinson |
+| Option « Police lisible » | Atkinson pour tout, film compris | inchangée |
 
-Échelle (la police est un pixel de 8 texels : seuls les multiples de 8 sont nets) :
+Un seul jeton change la police de lecture : `--ds-f-text` (`tokens.css`). Candidate de remplacement plus moderne si on veut aller plus loin : Inter ou Geist (OFL), à héberger ; non fait ici, il faut ajouter un fichier de police.
+
+Échelle de la voix du jeu (la police est un pixel de 8 texels : seuls les multiples de 8 sont nets) :
 
 | Niveau | Taille / interligne | Ombre de texte | Usage |
 |---|---|---|---|
-| H1 | 32/40, 40/48 dès 640 px | 4 px, 5 px | titre de page |
-| H2 | 32/40 | 4 px | titre de section |
-| H3 | 24/32 | 3 px | titre de carte ou d'étape |
-| Corps | 16/24 | 2 px | tout le texte de lecture |
-| Chapeau | 16/24, 24/32 dès 1 000 px | | seulement le hero |
+| H1 | 32/40, 40/48 dès 640 px | 3 px, 4 px | titre de page |
+| H2 | 32/40 | 3 px | titre de section |
+| H3 | 24/32 | 2 px | titre de carte ou d'étape |
+| Bouton, étiquette | 16/18 | 2 px | commandes |
 
-Règles : rien au-dessus de 40 px hors du film ; mesure de 58 caractères ; jamais de gras ou d'italique fabriqué (`font-synthesis: none`, le jeu n'a pas d'italique) ; pas de lettres espacées ni de capitales décoratives ; l'ombre de texte vaut toujours la couleur du texte × 0,25 par canal.
+Échelle de la voix de lecture :
+
+| Niveau | Taille / interligne | Usage |
+|---|---|---|
+| Chapeau | 18/1,6, 20 px dès 1 000 px | sous le H1 |
+| Texte de section | 18/1,6 | paragraphes |
+| Texte courant | 16/1,5 | cartes, FAQ (réponse), listes, pied de page |
+| Question de FAQ | 18 gras, 1,35 | |
+
+Règles : rien au-dessus de 40 px (voix du jeu) hors du film ; mesure de 58 caractères ; **pas d'ombre pixel sur le texte de lecture** ; jamais de gras ou d'italique fabriqué pour la voix du jeu (le jeu n'a pas d'italique) ; ombre des titres = couleur du texte × 0,25 par canal, adoucie (2 à 4 px au lieu de 3 à 5) ; pas de capitales décoratives hors étiquettes.
 
 ---
 

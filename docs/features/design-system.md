@@ -15,7 +15,7 @@ Les trois feuilles sont concaténées dans cet ordre par `HeroFilm.tsx` (`tokens
 
 ## Principes
 
-1. **Une police, quatre tailles.** La police du jeu est un pixel de 8 texels : seules les tailles multiples de 8 px sont nettes (16, 24, 32, 40). Rien au-dessus de 40 px hors du film. Le coréen et le japonais (Unifont, 1 px par texel) restent sur des multiples de 16.
+1. **Deux voix.** La police du jeu (pixel de 8 texels : tailles 16, 24, 32, 40 nettes) titre et commande ; le texte de lecture est en Atkinson Hyperlegible Next (jeton `--ds-f-text`, section 8 de `charter.css`). Rien au-dessus de 40 px hors du film. Le coréen et le japonais (Unifont) gardent la police du jeu partout et des multiples de 16.
 2. **Un corps de texte.** 16 px sur 24 px partout (le 24 px de bureau est retiré), mesure de 58 caractères (`--ds-measure`).
 3. **Tout ce qui se touche fait 44 px de haut** (`--ds-hit`) : boutons, liens, lignes de FAQ, résumés, cases à cocher (la ligne, pas la case).
 4. **Relief du jeu, pas d'ombres floues.** Bordure de 2 px (`--gp`), biseau intérieur, ombre de texte d'un texel (2 px à 16, 3 à 24, 4 à 32, 5 à 40).
