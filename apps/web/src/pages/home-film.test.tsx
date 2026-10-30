@@ -44,6 +44,17 @@ async function started() {
 	await waitFor(() => expect((window as { __hero?: { fallback: string | null } }).__hero?.fallback).toBe('webgl'))
 }
 
+test('the film exposes how many captures fell back to the full GLB files (none before any download)', async () => {
+	mount()
+	await started()
+	await waitFor(() =>
+		expect((window as { __hero?: { captureFallbacks?: unknown } }).__hero?.captureFallbacks).toEqual({
+			count: 0,
+			last: null,
+		})
+	)
+})
+
 test('without WebGL the film falls back to the site: the story in words, the site sections and real links, no error', async () => {
 	mount()
 	await started()
