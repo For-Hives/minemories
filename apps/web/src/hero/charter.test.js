@@ -19,6 +19,16 @@ test('the type scale only uses the pixel font\'s multiples of 8 px, and nothing 
 	expect(Math.min(...token('--ds-fs-md'))).toBe(16)
 })
 
+test('the reading voice (sans-serif) has its own small scale, 16 to 20 px, set apart from the pixel scale', () => {
+	const sizes = [...tokens.matchAll(/--ds-rd-fs(?:-[a-z]+)?:\s*(\d+)px/g)].map(m => Number(m[1]))
+	expect(sizes.length).toBeGreaterThanOrEqual(5)
+	for (const size of sizes) expect(size).toBeLessThanOrEqual(20)
+	expect(Math.min(...token('--ds-rd-fs-sm'))).toBe(16)
+	expect(tokens).toContain('--ds-f-text: var(--f-legible)')
+	// the Unifont pages keep the pixel font for running text
+	expect(charter).toContain(':not(.mm-cjk):not([data-mc-font=\'read\'])')
+})
+
 test('line heights stay on the 8 px grid and above 1.2', () => {
 	const pairs = [...tokens.matchAll(/--ds-fs-([a-z0-9]+):\s*(\d+)px;[^\n]*\n\s*--ds-lh-\1:\s*(\d+)px/g)]
 	expect(pairs.length).toBeGreaterThanOrEqual(5)

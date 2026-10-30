@@ -25,10 +25,13 @@
 	/* Police de lecture « moderne » : le texte courant (chapeau, paragraphes, FAQ, pied de page) est en sans-serif (Atkinson Hyperlegible Next, déjà hébergée) ; la police du jeu
 	   garde les titres, les boutons et le HUD. Un seul jeton pour changer de police de lecture. Le coréen et le japonais restent en Unifont (pas de glyphes CJK en Atkinson). */
 	--ds-f-text: var(--f-legible);
-	--ds-fs-text: 18px;    /* paragraphes de section, chapeau de page */
-	--ds-lh-text: 1.6;
-	--ds-fs-text-sm: 16px; /* cartes, FAQ, listes, pied de page */
-	--ds-lh-text-sm: 1.5;
+	--ds-rd-fs: 18px;    /* paragraphes de section, chapeau de page */
+	--ds-rd-lh: 1.6;
+	--ds-rd-fs-lg: 18px; /* chapeau de page (20 px dès 1 000 px, voir plus bas) */
+	--ds-rd-fs-sm: 16px; /* cartes, FAQ, listes, pied de page */
+	--ds-rd-fs-label: 13px;   /* étiquette en capitales */
+	--ds-rd-fs-q: 18px;       /* question de FAQ */
+	--ds-rd-lh-sm: 1.5;
 
 	/* Espacement (pas de 4 px) */
 	--ds-sp-1: 4px;
@@ -77,6 +80,7 @@
 
 @media (min-width: 1000px) {
 	:root {
+		--ds-rd-fs-lg: 20px;
 		--ds-fs-lead: 24px;
 		--ds-lh-lead: 32px;
 	}

@@ -289,34 +289,32 @@ html[data-mc-motion='reduced'] #site[data-reveal='on'] .ds-reveal:not(.is-in) {
    (qui met déjà tout en Atkinson). Le film et son HUD ne sont pas touchés. */
 
 html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-hero__lead, .mc-section__text, .mc-prose, .mc-lead) {
-	font: 400 var(--ds-fs-text) / var(--ds-lh-text) var(--ds-f-text);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
 	text-shadow: none;
 	color: var(--text-2);
 	max-width: var(--ds-measure);
 }
 
 html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-limits li, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
-	font: 400 var(--ds-fs-text-sm) / var(--ds-lh-text-sm) var(--ds-f-text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	text-shadow: none;
 }
 
 html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-faq__q {
-	font: 700 18px / 1.35 var(--ds-f-text);
+	font: 700 var(--ds-rd-fs-q) / 1.35 var(--ds-f-text);
 	text-shadow: none;
 }
 
 html:not(.mm-cjk):not([data-mc-font='read']) .mc-footer {
-	font: 400 var(--ds-fs-text-sm) / var(--ds-lh-text-sm) var(--ds-f-text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
 html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__kicker {
-	font: 700 13px / 18px var(--ds-f-text);
+	font: 700 var(--ds-rd-fs-label) / 18px var(--ds-f-text);
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 }
 
-@media (min-width: 1000px) {
-	html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
-		font-size: 20px;
-	}
+html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
+	font-size: var(--ds-rd-fs-lg);
 }
