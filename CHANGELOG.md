@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.26.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.25.0-beta.1...mod-v0.26.0-beta.1) (2026-10-30)
+
+### Fonctionnalités
+
+* **web:** charte graphique, motion design, chargement, barre du film et carte dynamique ([#164](https://github.com/For-Hives/minemories/issues/164) à [#170](https://github.com/For-Hives/minemories/issues/170)) ([e443e7d](https://github.com/For-Hives/minemories/commit/e443e7d5bee35f151198793841a4698ed4688db2))
+
 ## [0.25.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.24.0-beta.1...mod-v0.25.0-beta.1) (2026-10-30)
 
 ### Fonctionnalités
