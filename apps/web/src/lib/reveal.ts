@@ -3,7 +3,6 @@ export const revealSelector = [
 	'.mc-section__title',
 	'.mc-section__text',
 	'.mc-steps > .mc-step',
-	'.mc-limits',
 	'.site-links',
 	'.mc-faq__item',
 	'.mc-section .mc-hero__actions',

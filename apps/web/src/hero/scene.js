@@ -4685,6 +4685,20 @@ export function createSiteView({ basePitch = elevationOf(TIMELINE.world.shots.di
 }
 
 /**
+ * v12 (Andy: "a zoom then a dezoom"): the path of the model on screen while it is framed from (c0, s0) to (c1, s1) (c = centre in screen fractions, s = scale). The size moves by a constant
+ * RATIO (a zoom is read as a ratio) and the centre follows the zoom about the one fixed point that lands it on c1 at k = 1, so that the model is pulled back (or pushed in) towards
+ * the panel as a camera would, instead of sliding and shrinking as two independent things. k = 0 gives (c0, s0) and k = 1 gives (c1, s1) exactly. A pure function of k.
+ */
+export function framePath(c0, c1, s0, s1, k) {
+	if (!(s0 > 0) || !(s1 > 0)) return { cx: lerp(c0[0], c1[0], k), cy: lerp(c0[1], c1[1], k), scale: lerp(s0, s1, k) }
+	const q = s1 / s0
+	const r = q ** k
+	if (Math.abs(1 - q) < 1e-3) return { cx: lerp(c0[0], c1[0], k), cy: lerp(c0[1], c1[1], k), scale: s0 * r }
+	const fixed = [0, 1].map((i) => (c1[i] - c0[i] * q) / (1 - q))
+	return { cx: fixed[0] + (c0[0] - fixed[0]) * r, cy: fixed[1] + (c0[1] - fixed[1]) * r, scale: s0 * r }
+}
+
+/**
  * Mounts the scene in a canvas (or creates a canvas in a container). Creates no other DOM element.
  * Returns a controller at once; `controller.ready` resolves when the first frame is ready.
  * See HOST-API.md for the options, the methods and the events.
@@ -5026,6 +5040,7 @@ export function mount(target, opts = {}) {
 		fitSubject: () => null,
 		// v9 site phase (inert until the scene is ready; the stub is what a host gets when WebGL is not available)
 		frameSubject: () => Promise.resolve(null),
+		setPanel: () => {},
 		nextFrame: () => Promise.resolve(false),
 		setTime: () => {},
 		setSiteBlend: () => {},
@@ -5842,7 +5857,8 @@ export function mount(target, opts = {}) {
 		if (!T) return false
 		const from = siteCenterOf(T.U, frameFrom)
 		const k = clamp(e, 0, 1)
-		applySiteFrame(T.U, { cx: lerp(from[0], T.cx, k), cy: lerp(from[1], T.cy, k), scale: lerp(frameFrom.scale, T.scale, k) })
+		// v12 (Andy: the hand-over and the reframings looked like a zoom then a dezoom): see framePath (constant ratio, centre carried by the zoom). The ends are unchanged.
+		applySiteFrame(T.U, framePath(from, [T.cx, T.cy], frameFrom.scale, T.scale, k))
 		return true
 	}
 	/**
@@ -6819,6 +6835,21 @@ export function mount(target, opts = {}) {
 			frameAnim = null
 			frameFrom = { ...filmSubject }
 			evalFrame(EASES.glide(gg))
+			dirty = true
+		},
+		/**
+		 * v12 (Andy: "it teleports"): moves the panel the model is framed in WITHOUT a tween, for a host that follows something continuous (the room the text leaves, read on every scroll step):
+		 * each call is one step of a glide the host computes. The framing is the pure function of the panel (evalFrame at its end), so a series of small steps is a smooth path and there is no
+		 * animation to restart. Nothing happens outside the site phase.
+		 */
+		setPanel(rect, { margin, fit, fill, centre } = {}) {
+			if (disposed || !sitePhase || !rect) return
+			const f = siteFrame ?? {}
+			siteFrame = { rect: { l: rect.l, t: rect.t, r: rect.r, b: rect.b }, margin: Number.isFinite(margin) ? margin : (f.margin ?? 16), fit: fit ?? f.fit ?? 'tight', fill: Number(fill) > 0 ? Number(fill) : (f.fill ?? 1), centre: centre ?? f.centre ?? 'live' }
+			sitePanelPx = { ...siteFrame.rect }
+			frameAnim?.resolve(null)
+			frameAnim = null
+			evalFrame(1)
 			dirty = true
 		},
 		/** v10: translates the model on screen by (dx, dy) CSS px, after the framing and without animation (the panel rising with the page when the footer arrives). */

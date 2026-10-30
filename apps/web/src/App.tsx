@@ -66,11 +66,25 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
 		return this.props.children
 	}
 }
-function Page({ children, kind = 'page' }: { children: ReactNode; kind?: 'page' | 'gallery' | 'viewer' }) {
+/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing is left out: its film says so itself (hero.js `signalReady`), once it can play. */
+function PageReady() {
+	useEffect(() => {
+		document.documentElement.dataset.mmReady = '1'
+		window.dispatchEvent(new Event('mm:ready'))
+	}, [])
+	return null
+}
+function Page({ children, kind = 'page' }: { children: ReactNode; kind?: 'page' | 'gallery' | 'viewer' | 'home' }) {
 	const { pathname } = useLocation()
+	// The landing never shows a grey skeleton: while its chunk arrives the page is the night colour (index.html's loading screen covers the first load).
+	const fallback =
+		kind === 'home' ? <div className="landing-pending" aria-hidden="true" /> : <LoadingSkeleton kind={kind} />
 	return (
 		<PageBoundary key={pathname}>
-			<Suspense fallback={<LoadingSkeleton kind={kind} />}>{children}</Suspense>
+			<Suspense fallback={fallback}>
+				{children}
+				{kind !== 'home' && <PageReady />}
+			</Suspense>
 		</PageBoundary>
 	)
 }
@@ -146,7 +160,7 @@ export function App() {
 							<Route
 								index
 								element={
-									<Page>
+									<Page kind="home">
 										<HomePage />
 									</Page>
 								}
