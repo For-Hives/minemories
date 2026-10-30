@@ -81,6 +81,9 @@ export function mountHero(host) {
 	const filmBar = $('.film-bar')
 	const stepButtons = $$('[data-step]')
 	const ticks = $$('.tick')
+	const rail = $('#film-rail') // v12 (Andy): the timeline on the right edge: where the film is, and a way back up
+	const railTrack = $('[data-rail-track]')
+	const railThumb = $('.film-rail__thumb')
 	const posterImg = $('.poster img')
 
 	const reducedQuery = matchMedia('(prefers-reduced-motion: reduce)')
@@ -91,7 +94,7 @@ export function mountHero(host) {
 	// Scale of the model in its panel. 1 keeps the whole turn inside the panel with 12 px (the contract); above 1 the model is larger and its corners may leave the panel.
 	// The hand-over glide (final pass; decisions-v9 section 11.3 asked for 0.8 s on the standard curve, which put 78 % of the path in the first half: it read as a jump).
 	// 1.2 s on the symmetric curve, so that the start and the arrival are both seen. CSS (site.css) uses the same numbers.
-	const GLIDE = Object.freeze({ duration: 1.2, ease: 'glide' })
+	const GLIDE = Object.freeze({ duration: 1.8, ease: 'glide' })
 	const FILL =
 		Number.isFinite(Number(params.get('fill'))) && Number(params.get('fill')) > 0 ? Number(params.get('fill')) : 1
 
@@ -385,6 +388,7 @@ export function mountHero(host) {
 		root.style.setProperty('--g', '1')
 		header.classList.add('is-solid')
 		site?.place()
+		signalReady()
 	}
 
 	// With the scene, "The film, in words" is only the description of the canvas (visually hidden): its summary leaves the tab order (an invisible focus stop,
@@ -394,6 +398,13 @@ export function mountHero(host) {
 		if (sceneOn) summary?.setAttribute('tabindex', '-1')
 		else summary?.removeAttribute('tabindex')
 		$('#words')?.setAttribute('aria-labelledby', sceneOn ? 'words-summary' : 'words-note')
+	}
+
+	// v12 (Andy): the loading screen of index.html stays until the film is ready to play: the scene and its captures are loaded and the first image is drawn, so the film starts at once and smooth.
+	// (Also when there is no film: no WebGL, an error, a link straight to the site.)
+	function signalReady() {
+		root.dataset.mmReady = '1'
+		window.dispatchEvent(new Event('mm:ready'))
 	}
 
 	function onReady() {
@@ -419,6 +430,7 @@ export function mountHero(host) {
 		updateStepsUI()
 		lastFrame = performance.now()
 		requestAnimationFrame(loop)
+		requestAnimationFrame(() => requestAnimationFrame(signalReady)) // after the first image has been drawn
 		if (phase() === 'site') {
 			// An anchor started the page on the site: the model is placed at once, nothing is played.
 			void placeModelOnSite({ cause: 'start' })
@@ -559,6 +571,7 @@ export function mountHero(host) {
 		for (const tick of ticks)
 			tick.addEventListener('click', () => jumpTo(HUD.chapterList()[Number(tick.dataset.chapterIndex)]?.t ?? 0))
 		for (const button of stepButtons) button.addEventListener('click', () => step(Number(button.dataset.step)))
+		wireRail()
 
 		// Accessibility options (same keys as the kit): the font is applied at once, motion reloads the page.
 		const optFont = $('#opt-font')
@@ -1148,6 +1161,80 @@ export function mountHero(host) {
 		handOver(phases.event({ type: 'time', t, playing: guided && scene.playing }), 'end')
 	}
 
+	// ---- v12 (Andy): the rail. A vertical timeline on the right edge: the fill and the thumb follow the film time (the site is 100 %), the five chapters are marked, and a click or a drag goes back
+	// (or forward) in the film. A drag only moves the thumb; the film jumps ONCE, on release, through the limited chapter jump (2.5 per second): the flash guards of the scrub model hold, and
+	// a visitor who scrubs across the hard cuts and the day / night passage does not strobe the page. From the site, a jump replays the film and goes to that instant.
+	function railFraction(event) {
+		const box = railTrack.getBoundingClientRect()
+		return box.height > 0 ? clamp((event.clientY - box.top) / box.height, 0, 1) : 0
+	}
+	function setRail(f) {
+		rail.style.setProperty('--rail-p', f.toFixed(4))
+		railThumb.setAttribute('aria-valuenow', String(Math.round(f * 100)))
+	}
+	function updateRail(t, chapterIndex) {
+		if (!rail || rail.dataset.drag) return
+		setRail(clamp(t / siteStart, 0, 1))
+		rail.dataset.chapter = String(chapterIndex)
+	}
+	function railSeek(t) {
+		if (!scene || !live) return
+		const chapters = HUD.chapterList()
+		const to = clamp(t, 0, siteStart - 0.1)
+		const near = chapters.find(c => Math.abs(c.t - to) < 1.2) // close to a chapter: its start, which is the instant the story is written for
+		const target = near ? near.t : to
+		if (phase() === 'site') {
+			if (SCRUB_ON) replayScrub()
+			else replay()
+		}
+		if (target > 0.05) jumpTo(target)
+	}
+	function wireRail() {
+		if (!rail || !railTrack || !railThumb) return
+		const chapters = HUD.chapterList()
+		rail.querySelectorAll('[data-rail-chapter]').forEach(node => {
+			const c = chapters[Number(node.dataset.railChapter)]
+			node.style.setProperty('--n', String(clamp((c?.t ?? 0) / siteStart, 0, 1)))
+			node.addEventListener('click', () => railSeek(c?.t ?? 0))
+		})
+		let pointerId = null
+		railTrack.addEventListener('pointerdown', event => {
+			if ((event.button ?? 0) !== 0 || event.target.closest('[data-rail-chapter]')) return
+			event.preventDefault()
+			pointerId = event.pointerId
+			railTrack.setPointerCapture?.(pointerId)
+			rail.dataset.drag = '1'
+			setRail(railFraction(event))
+		})
+		railTrack.addEventListener('pointermove', event => {
+			if (pointerId === event.pointerId && rail.dataset.drag) setRail(railFraction(event))
+		})
+		const end = (event, commit) => {
+			if (pointerId !== event.pointerId) return
+			pointerId = null
+			const f = railFraction(event)
+			delete rail.dataset.drag
+			if (commit) railSeek(f * siteStart)
+			else if (Number.isFinite(lastT)) setRail(clamp(lastT / siteStart, 0, 1))
+		}
+		railTrack.addEventListener('pointerup', event => end(event, true))
+		railTrack.addEventListener('pointercancel', event => end(event, false))
+		// The thumb is a slider: up and down go to the previous and next chapter, Home to the start, End to the site. The page's own keys (film scroll) stay out of it.
+		railThumb.addEventListener('keydown', event => {
+			const key = event.key
+			if (!['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(key)) return
+			event.preventDefault()
+			event.stopPropagation()
+			const list = HUD.chapterList()
+			const now = phase() === 'site' ? list.length : Number(rail.dataset.chapter ?? 0)
+			if (key === 'Home') railSeek(0)
+			else if (key === 'End') void jumpToSite('key')
+			else if (key === 'ArrowUp' || key === 'PageUp') railSeek(list[Math.max(0, now - 1)].t)
+			else if (now + 1 < list.length) railSeek(list[now + 1].t)
+			else void jumpToSite('key')
+		})
+	}
+
 	// Chapters of the film (the ticks follow the film time) and the HUD.
 	function updateHud(t, o = {}) {
 		if (!hud || phase() !== 'film') return
@@ -1161,6 +1248,7 @@ export function mountHero(host) {
 			if (i === current) tick.setAttribute('aria-current', 'step')
 			else tick.removeAttribute('aria-current')
 		})
+		updateRail(t, current)
 	}
 
 	// Region for screen readers (the only one): emptied first, then written on the next frame (otherwise the old text stays and is read again).

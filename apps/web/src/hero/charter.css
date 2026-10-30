@@ -38,7 +38,6 @@
 .site .mc-step__help,
 .site .mc-step__more p,
 .site .mc-faq__a,
-.site .mc-limits li,
 .site .mc-hero__compat,
 .ds-page .mc-section__text {
 	font-size: var(--ds-fs-md);
@@ -105,7 +104,15 @@ html[data-mc-font='read'] .site .mc-step__title {
 }
 
 .site .mc-steps {
-	gap: var(--ds-sp-4);
+	gap: var(--ds-gap);
+}
+
+.site .mc-faq {
+	gap: var(--ds-sp-3);
+}
+
+.site .mc-hero {
+	gap: var(--ds-gap);
 }
 
 .site .mc-hero__actions {
@@ -165,7 +172,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 .site-links {
 	gap: 0 var(--ds-sp-6);
-	margin-block: var(--ds-sp-3) var(--ds-sp-4);
+	margin-block: 0;
 }
 
 /* --- 5. Cartes et panneaux « interface Minecraft » : étapes, limites, FAQ --------------------------------------------------------------------------------- */
@@ -258,7 +265,9 @@ html[data-mc-font='read'] .site .mc-step__title {
 @media (prefers-reduced-motion: reduce) {
 	#site .ds-reveal,
 	.site .mc-btn,
+	.site .mc-btn:hover:not([disabled]),
 	.site-account,
+	.site-account:hover,
 	.site a.mc-link,
 	.site .mc-faq__q::after {
 		transition: none;
@@ -273,6 +282,8 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 html[data-mc-motion='reduced'] #site .ds-reveal,
 html[data-mc-motion='reduced'] .site .mc-btn,
+html[data-mc-motion='reduced'] .site .mc-btn:hover:not([disabled]),
+html[data-mc-motion='reduced'] .site-account:hover,
 html[data-mc-motion='reduced'] .site a.mc-link {
 	transition: none;
 	transform: none;
@@ -281,4 +292,493 @@ html[data-mc-motion='reduced'] .site a.mc-link {
 html[data-mc-motion='reduced'] #site[data-reveal='on'] .ds-reveal:not(.is-in) {
 	opacity: 1;
 	transform: none;
+}
+
+/* --- 8. Lecture moderne : texte courant en sans-serif, titres et commandes dans la police du jeu ------------------------------------------------------------ */
+/* La police du jeu en 16 px sur de longs paragraphes fatigue et fait « jouet » : on la garde pour ce qui se commande et ce qui titre (logo, h1 à h3, boutons, étiquettes, HUD du film),
+   et le texte qui se lit passe en sans-serif, sans ombre pixel, sur un interligne de 1,5 à 1,6. Inactif pour le coréen et le japonais (Unifont) et pour l'option « Police lisible »
+   (qui met déjà tout en Atkinson). Le film et son HUD ne sont pas touchés. */
+
+html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-hero__lead, .mc-section__text, .mc-prose, .mc-lead) {
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	text-shadow: none;
+	color: var(--text-2);
+	max-width: var(--ds-measure);
+}
+
+html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-shadow: none;
+}
+
+html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-faq__q {
+	font: 700 var(--ds-rd-fs-q) / 1.35 var(--ds-f-text);
+	text-shadow: none;
+}
+
+html:not(.mm-cjk):not([data-mc-font='read']) .mc-footer {
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__kicker {
+	font: 700 var(--ds-rd-fs-label) / 18px var(--ds-f-text);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
+	font-size: var(--ds-rd-fs-lg);
+}
+
+/* --- 9. Motion design : tout ce qui est interactif ou qui arrive à l'écran ------------------------------------------------------------------------------------ */
+/* Règles : transform et opacité seulement (aucun saut de mise en page), jamais de variation de luminosité (pas plus de 2 flashs par seconde), jamais sur le canvas ni le HUD du film.
+   Tout est derrière `prefers-reduced-motion: no-preference` ET l'option « Mouvement réduit » du pied de page : le mouvement est l'exception, le contenu est la règle.
+   Les ouvertures de panneaux (`::details-content`, `display` discret) sont une amélioration progressive : un navigateur qui ne les connaît pas ouvre et ferme sans animation. */
+
+@media (prefers-reduced-motion: no-preference) {
+	:root:not([data-mc-motion='reduced']) {
+		interpolate-size: allow-keywords;
+	}
+
+	/* 9.1 Entrée du hero au chargement : kicker, titre, chapeau, boutons, compatibilité arrivent l'un après l'autre. Terminé en moins d'une seconde, une seule fois. */
+	@keyframes ds-rise {
+		from {
+			opacity: 0;
+			transform: translateY(var(--ds-reveal-y));
+		}
+
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > * {
+		animation: ds-rise var(--ds-dur-4) var(--ds-ease) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(2) {
+		animation-delay: calc(var(--ds-stagger) * 1);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(3) {
+		animation-delay: calc(var(--ds-stagger) * 2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(4) {
+		animation-delay: calc(var(--ds-stagger) * 3);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(5) {
+		animation-delay: calc(var(--ds-stagger) * 4);
+	}
+
+	/* 9.2 Titres de section : balayage par pas (un « pixel » à la fois, comme un texte qui se tape) en plus du fondu de reveal.ts. */
+	@keyframes ds-wipe {
+		from {
+			clip-path: inset(0 100% 0 0);
+		}
+
+		to {
+			clip-path: inset(0 0 0 0);
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-section__title.is-in {
+		animation: ds-wipe var(--ds-dur-3) steps(12, end) both;
+	}
+
+	/* 9.3 Boutons : soulèvement, pression, icône qui répond. Le principal garde son cuivre ; seules la position et l'icône bougent. */
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]),
+	:root:not([data-mc-motion='reduced']) .site-account:hover {
+		transform: translateY(calc(-1 * var(--ds-lift)));
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:active:not([disabled]) {
+		transform: translateY(1px);
+		transition-duration: calc(var(--ds-dur-1) / 2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn .mc-icon {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember,
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember-spark {
+		transform: translateY(-1px) scale(1.2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--arrow-r,
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--chevron {
+		transform: translateX(3px);
+	}
+
+	/* 9.4 Liens : le soulignement s'écarte du texte au survol ; la navigation du bandeau a une barre qui entre depuis la gauche. */
+	:root:not([data-mc-motion='reduced']) .site a.mc-link,
+	:root:not([data-mc-motion='reduced']) .footer a.mc-link {
+		text-underline-offset: 3px;
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			text-decoration-color var(--ds-dur-1) var(--ds-ease),
+			text-underline-offset var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover,
+	:root:not([data-mc-motion='reduced']) .footer a.mc-link:hover {
+		text-underline-offset: 6px;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a {
+		position: relative;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a::after {
+		content: '';
+		position: absolute;
+		inset: auto 4px 6px 4px;
+		height: var(--gp);
+		background: var(--ember);
+		transform: scaleX(0);
+		transform-origin: left center;
+		transition: transform var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:hover::after,
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:focus-visible::after {
+		transform: scaleX(1);
+	}
+
+	/* 9.5 Cartes d'étape : le numéro de case « tombe » en place à l'entrée (rebond de 6 %) et répond au survol de la carte. */
+	@keyframes ds-pop {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
+
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-step.is-in .mc-step__num {
+		animation: ds-pop var(--ds-dur-3) var(--ds-ease-pop) calc(var(--ds-i, 0) * var(--ds-stagger) + var(--ds-dur-1)) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-step__num {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-step:hover .mc-step__num,
+	:root:not([data-mc-motion='reduced']) .site .mc-step:focus-within .mc-step__num {
+		transform: scale(1.08);
+	}
+
+	/* 9.6 Panneaux qui s'ouvrent (FAQ, détails d'étape, pied de page) : la hauteur s'anime, le contenu se fond ; le chevron rebondit. */
+	:root:not([data-mc-motion='reduced']) .mc-faq__item::details-content,
+	:root:not([data-mc-motion='reduced']) .mc-step__more::details-content,
+	:root:not([data-mc-motion='reduced']) .footer details::details-content {
+		block-size: 0;
+		overflow: clip;
+		opacity: 0;
+		transition:
+			block-size var(--ds-dur-3) var(--ds-ease),
+			opacity var(--ds-dur-2) var(--ds-ease-std),
+			content-visibility var(--ds-dur-3) allow-discrete;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-faq__item[open]::details-content,
+	:root:not([data-mc-motion='reduced']) .mc-step__more[open]::details-content,
+	:root:not([data-mc-motion='reduced']) .footer details[open]::details-content {
+		block-size: auto;
+		opacity: 1;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q::after,
+	:root:not([data-mc-motion='reduced']) .site .mc-step__more summary::after {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	/* 9.7 Menu du bandeau (petits écrans) : il descend en se fondant ; la croix et les trois barres s'échangent par rebond. */
+	:root:not([data-mc-motion='reduced']) .site-menu {
+		transition:
+			opacity var(--ds-dur-2) var(--ds-ease),
+			transform var(--ds-dur-2) var(--ds-ease),
+			display var(--ds-dur-2) allow-discrete;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu[hidden] {
+		display: none;
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--ds-sp-2)));
+	}
+
+	@starting-style {
+		:root:not([data-mc-motion='reduced']) .site-menu:not([hidden]) {
+			opacity: 0;
+			transform: translateY(calc(-1 * var(--ds-sp-2)));
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu__btn .mc-icon {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu__btn[aria-expanded='true'] .i-close {
+		animation: ds-pop var(--ds-dur-2) var(--ds-ease-pop) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu a {
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			transform var(--ds-dur-1) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu a:hover {
+		transform: translateX(var(--ds-sp-1));
+	}
+}
+
+/* --- 10. Listes déroulantes : le sélecteur de langue ouvre un panneau du jeu qui descend en se fondant ---------------------------------------------------- */
+/* `appearance: base-select` (Chrome 135 et suivants) rend la liste stylable tout en gardant le <select> natif : clavier, lecteurs d'écran et mobile restent ceux du navigateur.
+   Ailleurs, la liste native s'ouvre comme avant (amélioration progressive, rien ne casse). */
+
+@supports (appearance: base-select) {
+	.mc-select__control,
+	.mc-select__control::picker(select) {
+		appearance: base-select;
+	}
+
+	.mc-select__control {
+		display: flex;
+		align-items: center;
+	}
+
+	.mc-select__control::picker-icon {
+		display: none; /* le chevron du kit (.mc-select::after) reste le seul */
+	}
+
+	.mc-select__control::picker(select) {
+		margin-top: var(--ds-sp-1);
+		padding: var(--ds-sp-1);
+		min-width: anchor-size(width);
+		max-height: min(60vh, 28rem);
+		background: var(--night);
+		border: var(--ds-px) solid var(--outline);
+		border-radius: 0;
+		box-shadow: var(--ds-panel-bevel), 0 var(--gp) 0 #3a322b;
+		color: var(--text);
+	}
+
+	.mc-select__control option {
+		display: flex;
+		align-items: center;
+		min-height: var(--ds-hit);
+		padding: 0 var(--ds-sp-3);
+		font: 400 16px / 1 var(--f-ui);
+		color: var(--text);
+		cursor: pointer;
+	}
+
+	.mc-select__control option::checkmark {
+		display: none;
+	}
+
+	.mc-select__control option:hover,
+	.mc-select__control option:focus-visible {
+		background: var(--night-3);
+		color: var(--ember);
+		outline: none;
+	}
+
+	.mc-select__control option:checked {
+		box-shadow: inset var(--ds-sp-1) 0 0 var(--ember);
+		background: var(--night-2);
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@supports (appearance: base-select) {
+		:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select) {
+			opacity: 0;
+			transform: translateY(calc(-1 * var(--ds-sp-2)));
+			transition:
+				opacity var(--ds-dur-2) var(--ds-ease),
+				transform var(--ds-dur-2) var(--ds-ease),
+				overlay var(--ds-dur-2) allow-discrete,
+				display var(--ds-dur-2) allow-discrete;
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select):popover-open {
+			opacity: 1;
+			transform: none;
+		}
+
+		@starting-style {
+			:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select):popover-open {
+				opacity: 0;
+				transform: translateY(calc(-1 * var(--ds-sp-2)));
+			}
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select__control option {
+			transition:
+				background-color var(--ds-dur-1) var(--ds-ease),
+				color var(--ds-dur-1) var(--ds-ease);
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select:has(.mc-select__control:open)::after {
+			transform: rotate(180deg);
+		}
+	}
+}
+
+/* --- 11. La barre du film : une frise verticale au bord droit, pour savoir où l'on en est et remonter dans l'histoire ------------------------------------------------ */
+/* Le remplissage et la poignée suivent le temps du film (`--rail-p`, 0 à 1, posé par hero.js) ; la barre disparaît à la fin du film. Les cinq chapitres sont des repères cliquables. Un glissement ne
+   fait que déplacer la poignée : le film saute UNE fois au relâchement (voir `railSeek`), ce qui garde les garde-fous contre les flashs. */
+
+.film-rail {
+	--rail-p: 0;
+	position: fixed;
+	z-index: 40;
+	top: 50%;
+	right: max(var(--ds-sp-2), env(safe-area-inset-right));
+	width: 28px;
+	height: min(46vh, 360px);
+	transform: translateY(-50%);
+	display: flex;
+	justify-content: center;
+	touch-action: none;
+}
+
+/* La barre n'existe que pendant le film : elle disparaît au glissement vers le site (Andy). */
+html[data-phase='glide'] .film-rail,
+html[data-phase='site'] .film-rail {
+	--rail-p: 1;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.film-rail__track {
+	position: relative;
+	width: 8px;
+	height: 100%;
+	background: var(--night-3);
+	border: var(--gp) solid var(--outline);
+	box-shadow: var(--ds-panel-bevel);
+	cursor: pointer;
+}
+
+.film-rail__track::before {
+	content: '';
+	position: absolute;
+	inset: 0 -11px; /* zone de saisie de 30 px de large autour d'un trait de 8 px */
+}
+
+.film-rail__fill {
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: calc(var(--rail-p) * 100%);
+	background: var(--ember);
+}
+
+.film-rail__thumb {
+	position: absolute;
+	left: 50%;
+	top: calc(var(--rail-p) * 100%);
+	width: 20px;
+	height: 12px;
+	margin: -6px 0 0 -10px;
+	background: var(--stone);
+	border: var(--gp) solid var(--outline);
+	box-shadow: inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--stone-lo);
+	cursor: grab;
+}
+
+.film-rail[data-drag] .film-rail__thumb {
+	cursor: grabbing;
+	border-color: var(--hover);
+}
+
+.film-rail__thumb:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.film-rail__node {
+	position: absolute;
+	left: 50%;
+	top: calc(var(--n, 0) * 100%);
+	width: 12px;
+	height: 12px;
+	margin: -6px 0 0 -6px;
+	padding: 0;
+	background: var(--night-2);
+	border: var(--gp) solid var(--text-3);
+	cursor: pointer;
+}
+
+.film-rail__node::before {
+	content: '';
+	position: absolute;
+	inset: -16px; /* cible de 44 px */
+}
+
+.film-rail__node:hover,
+.film-rail__node:focus-visible {
+	border-color: var(--ember);
+	background: var(--ember);
+}
+
+.film-rail__node:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.film-rail__node::after {
+	content: attr(aria-label);
+	position: absolute;
+	right: calc(100% + var(--ds-sp-3));
+	top: 50%;
+	padding: var(--ds-sp-1) var(--ds-sp-2);
+	background: var(--tip-bg);
+	border: var(--gp) solid var(--tip-b);
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text);
+	white-space: nowrap;
+	transform: translateY(-50%);
+	opacity: 0;
+	pointer-events: none;
+}
+
+.film-rail__node:hover::after,
+.film-rail__node:focus-visible::after {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	:root:not([data-mc-motion='reduced']) .film-rail {
+		transition: opacity var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail__fill,
+	:root:not([data-mc-motion='reduced']) .film-rail__thumb {
+		transition:
+			height var(--ds-dur-2) var(--ds-ease),
+			top var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail[data-drag] .film-rail__fill,
+	:root:not([data-mc-motion='reduced']) .film-rail[data-drag] .film-rail__thumb {
+		transition: none;
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail__node,
+	:root:not([data-mc-motion='reduced']) .film-rail__node::after {
+		transition:
+			background-color var(--ds-dur-1) var(--ds-ease),
+			border-color var(--ds-dur-1) var(--ds-ease),
+			opacity var(--ds-dur-1) var(--ds-ease);
+	}
 }

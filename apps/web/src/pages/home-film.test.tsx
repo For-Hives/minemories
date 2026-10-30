@@ -62,7 +62,7 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 	expect(html.classList.contains('scene-off')).toBe(true)
 	expect(html.classList.contains('scene-on')).toBe(false)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Il y a des soirs qu’on aimerait garder.')
-	for (const id of ['hero', 'steps', 'share', 'limits', 'more', 'faq', 'words'])
+	for (const id of ['hero', 'steps', 'share', 'more', 'faq', 'words'])
 		expect(document.getElementById(id)).not.toBeNull()
 	// the story is readable as text for people who cannot see the canvas
 	expect(document.getElementById('w1')?.textContent?.length).toBeGreaterThan(40)

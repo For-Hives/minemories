@@ -55,12 +55,12 @@
 	--outline: #0a0806; --hover: #fff4e0;
 
 	/* materials */
-	--stone-hi: #aba59c; --stone: #6e6862; --stone-lo: #524c46;
+	--stone-hi: #aaaaaa; --stone: #6f6f6f; --stone-lo: #565656; /* the game's button greys (widget/button.png) */
 	--copper-hi: #c98b55; --copper: #8a5a2b; --copper-lo: #5e3a1a;
-	--panel-hi: #fbf7ee; --panel: #cfc8bc; --panel-lo: #6e675d; --panel-ink: #3a342c;
-	--slot-lo: #3e3832; --slot: #958e84; --slot-hi: #f4efe6;
-	--off: #2e2b28; --off-ink: #a39c92; /* disabled */
-	--field: #000; --field-edge: #a39c92; --field-ink: #e6e0d6;
+	--panel-hi: #ffffff; --panel: #c6c6c6; --panel-lo: #555555; --panel-ink: #404040; /* the game's container greys (container/inventory.png), title #404040 */
+	--slot-lo: #373737; --slot: #8b8b8b; --slot-hi: #ffffff; /* the game's slot (container/slot.png) */
+	--off: #2c2c2c; --off-ink: #a0a0a0; /* disabled: the game's #2C2C2C / #A0A0A0 */
+	--field: #000; --field-edge: #a0a0a0; --field-ink: #e6e0d6;
 
 	/* tooltip, toast, ember */
 	--tip-bg: #170f0c; --tip-a: #ffb347; --tip-b: #8a3f12;
@@ -201,7 +201,7 @@ html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead { font-size: 16px; l
 	margin: 0; padding: 0 calc(8 * var(--gp)) var(--gp);
 	background: var(--_face); color: #fff;
 	border: var(--gp) solid var(--outline); border-radius: 0;
-	font: 16px/18px var(--f-ui); text-align: center; text-decoration: none; text-shadow: var(--gp) var(--gp) 0 #2a2623;
+	font: 16px/18px var(--f-ui); text-align: center; text-decoration: none; text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
 	box-shadow: var(--mc-bevel), var(--mc-ring, 0 0 #0000);
 	cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -678,7 +678,7 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 	display: flex; align-items: center; justify-content: center; box-sizing: border-box; margin: calc(3 * var(--mc-wgp)) 0; padding: 0 calc(6 * var(--mc-wgp));
 	background: var(--stone); color: #fff; text-align: center; text-wrap: balance; overflow-wrap: anywhere;
 	box-shadow: inset var(--mc-wgp) var(--mc-wgp) 0 var(--_hi), inset calc(-1 * var(--mc-wgp)) calc(-2 * var(--mc-wgp)) 0 var(--_lo), 0 0 0 var(--mc-wgp) var(--outline);
-	font: var(--mc-w-font); text-shadow: var(--mc-w-sh) var(--mc-w-sh) 0 #2a2623;
+	font: var(--mc-w-font); text-shadow: var(--mc-w-sh) var(--mc-w-sh) 0 #3f3f3f;
 }
 .mc-guiscreen__btn.is-hover { box-shadow: inset var(--mc-wgp) var(--mc-wgp) 0 var(--_hi), inset calc(-1 * var(--mc-wgp)) calc(-2 * var(--mc-wgp)) 0 var(--_lo), 0 0 0 var(--mc-wgp) var(--hover); }
 .mc-guiscreen__btn.is-active { box-shadow: inset var(--mc-wgp) var(--mc-wgp) 0 var(--_lo), 0 0 0 var(--mc-wgp) var(--hover); padding-top: var(--mc-wgp); } /* press: inverted bevel */
@@ -1625,8 +1625,8 @@ html:not(.scene-on) .film-bar {
 	--dock-h-large: 321px; /* 38 % of 844; site.js and the first-paint script write the real value (largeBandOf) */
 	--dock-h-small: 203px;
 	--ease-std: cubic-bezier(0.4, 0, 0.2, 1);
-	--ease-glide: cubic-bezier(0.65, 0, 0.35, 1); /* the hand-over glide: symmetric, 1.2 s (GLIDE in hero.js, scene.js GLIDE_EASE) */
-	--glide: 1.2s;
+	--ease-glide: cubic-bezier(0.65, 0, 0.35, 1); /* the hand-over glide: symmetric, 1.8 s (GLIDE in hero.js, scene.js GLIDE_EASE) */
+	--glide: 1.8s;
 }
 
 /* --- header ----------------------------------------------------------------------------------------------------- */

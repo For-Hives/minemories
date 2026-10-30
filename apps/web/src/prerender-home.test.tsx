@@ -8,8 +8,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// the site, in French (the prerender language), readable without JavaScript
 	expect(html).toContain('<h1')
 	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
-	for (const id of ['id="steps"', 'id="share"', 'id="limits"', 'id="more"', 'id="faq"', 'id="words"'])
-		expect(html, id).toContain(id)
+	for (const id of ['id="steps"', 'id="share"', 'id="more"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)
 	// the story in words, which is also the description of the canvas for screen readers
 	expect(html).toContain('id="w1"')
 	// the film's markup and its stylesheet are there for the first paint; the canvas is empty until the film mounts

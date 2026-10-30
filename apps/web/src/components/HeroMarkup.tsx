@@ -12,6 +12,63 @@ import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage } from './HeroPa
  */
 const t = (key: string, values?: TranslateValues) => translate('fr', key, { name: 'Efe', ...values })
 
+/** The timeline on the right edge of the film (charter.css section 11; wired by hero.js `wireRail`): the five chapters are marks, the thumb is a vertical slider. */
+function FilmRail() {
+	return (
+		<div className="film-rail" id="film-rail">
+			<div className="film-rail__track" data-rail-track>
+				<span className="film-rail__fill" aria-hidden="true" />
+				<button
+					className="film-rail__node"
+					type="button"
+					data-rail-chapter="0"
+					data-i18n-attr="aria-label:The evening"
+					aria-label={t('The evening')}
+				/>
+				<button
+					className="film-rail__node"
+					type="button"
+					data-rail-chapter="1"
+					data-i18n-attr="aria-label:Leaving"
+					aria-label={t('Leaving')}
+				/>
+				<button
+					className="film-rail__node"
+					type="button"
+					data-rail-chapter="2"
+					data-i18n-attr="aria-label:The wait"
+					aria-label={t('The wait')}
+				/>
+				<button
+					className="film-rail__node"
+					type="button"
+					data-rail-chapter="3"
+					data-i18n-attr="aria-label:The kept memory"
+					aria-label={t('The kept memory')}
+				/>
+				<button
+					className="film-rail__node"
+					type="button"
+					data-rail-chapter="4"
+					data-i18n-attr="aria-label:The return"
+					aria-label={t('The return')}
+				/>
+				<span
+					className="film-rail__thumb"
+					role="slider"
+					tabIndex={0}
+					aria-orientation="vertical"
+					aria-valuemin={0}
+					aria-valuemax={100}
+					aria-valuenow={0}
+					data-i18n-attr="aria-label:Film chapters (keys 1 to 5)"
+					aria-label={t('Film chapters (keys 1 to 5)')}
+				/>
+			</div>
+		</div>
+	)
+}
+
 export const HeroMarkup = memo(function HeroMarkup() {
 	return (
 		<>
@@ -176,6 +233,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 					</div>
 				</div>
 			</header>
+			<FilmRail />
 			<div className="stage" id="stage">
 				<picture className="poster">
 					<source media="(max-aspect-ratio: 85/100) and (max-width: 639px)" srcSet="/hero/posters/poster-phone.jpg" />
@@ -438,27 +496,6 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								'Send a memory’s link: whoever opens it needs no account, no mod and no Minecraft. Your own gallery stays private, and needs an account.'
 							)}
 						</p>
-					</section>
-					<section className="mc-section" id="limits" aria-labelledby="limits-name">
-						<aside className="mc-tip mc-limits">
-							<h2 className="mc-tip__name" id="limits-name" data-i18n="What Minemories doesn’t do">
-								{t('What Minemories doesn’t do')}
-							</h2>
-							<ul>
-								<li data-i18n="It isn’t a backup of your world: a memory is a frozen 3D copy. You can turn around it, not play in it.">
-									{t(
-										'It isn’t a backup of your world: a memory is a frozen 3D copy. You can turn around it, not play in it.'
-									)}
-								</li>
-								<li data-i18n="Nothing is kept before you install the mod.">
-									{t('Nothing is kept before you install the mod.')}
-								</li>
-								<li data-i18n="At most one AFK memory every 4 hours, by default.">
-									{t('At most one AFK memory every 4 hours, by default.')}
-								</li>
-								<li data-i18n="Java 1.21.1 only, in beta.">{t('Java 1.21.1 only, in beta.')}</li>
-							</ul>
-						</aside>
 					</section>
 					<HeroExtras />
 					<section className="mc-section" id="faq" aria-labelledby="faq-title">

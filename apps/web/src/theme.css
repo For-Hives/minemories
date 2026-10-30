@@ -1259,3 +1259,9 @@ a.mm-editorial-card:hover {
 :lang(ja) {
 	line-break: strict;
 }
+
+/* The landing never shows a skeleton: while its chunk arrives, the page is the night colour of the film (the loading screen of index.html covers the first load). */
+.landing-pending {
+	min-height: 100svh;
+	background: #14110e;
+}
