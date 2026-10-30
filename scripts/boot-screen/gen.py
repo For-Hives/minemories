@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Génère l'écran de chargement (SVG + CSS + script) et l'écrit dans apps/web/index.html.
 
-Un joueur du jeu (peau « Steve ») casse un bloc de minerai à la pioche ; le bloc se fissure (textures `destroy_stage_*`), éclate et laisse tomber un diamant.
-Les images sont les textures du JEU (fichiers Mojang) lues dans le client local, jamais téléchargées, puis incrustées en data: URI (aucune requête de plus).
-Ce sont des fichiers de la marque : voir docs/features/charte-graphique.md, section 12, avant toute mise en ligne publique.
+Un joueur du jeu (peau « Steve ») casse un bloc de minerai à la pioche ; le bloc se fissure, éclate et laisse tomber un diamant.
+Le joueur et la pioche sont les textures du JEU (fichiers Mojang) lues dans le client local, jamais téléchargées, puis incrustées en data: URI (aucune requête de plus).
+Le bloc, ses fissures et le diamant sont des dessins VECTORIELS à nous (nets à toute taille), pas des textures du jeu.
+Ce qui vient du jeu est de la marque : voir docs/features/charte-graphique.md, section 12, avant toute mise en ligne publique.
 
 Usage : python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
 Le bloc est entre les marqueurs <!-- boot:begin --> et <!-- boot:end --> (style, balisage, script) ; relancer remplace tout le bloc.
@@ -29,22 +30,49 @@ def y(v):
 	return v + OY
 
 
-# --- bloc isométrique 2:1 : 16 texels = 32 px de côté, 32 px de haut ---
-Nx, Ny = 100, y(44)
-TOP = f'matrix(2 1 -2 1 {Nx} {Ny})'
-LEFT = f'matrix(2 1 0 2 {Nx - 32} {Ny + 16})'
-RIGHT = f'matrix(2 -1 0 2 {Nx} {Ny + 32})'
-poly = lambda *a: ' '.join(f'{px},{py}' for px, py in a)
-Np, Ep, Sp, Wp = (Nx, Ny), (Nx + 32, Ny + 16), (Nx, Ny + 32), (Nx - 32, Ny + 16)
-Wb, Sb, Eb = (Nx - 32, Ny + 48), (Nx, Ny + 64), (Nx + 32, Ny + 48)
+# --- bloc isométrique 2:1, dessiné en vectoriel : 24 px de demi-largeur, 24 px de haut (plus petit que le joueur, plus mignon) ---
+BW, BH = 24, 24
+Nx, Ny = 100, y(60)
+poly = lambda *a: ' '.join(f'{px:g},{py:g}' for px, py in a)
+Np, Ep, Sp, Wp = (Nx, Ny), (Nx + BW, Ny + BW // 2), (Nx, Ny + BW), (Nx - BW, Ny + BW // 2)
+Wb, Sb, Eb = (Nx - BW, Ny + BW // 2 + BH), (Nx, Ny + BW + BH), (Nx + BW, Ny + BW // 2 + BH)
 top_poly, left_poly, right_poly = poly(Np, Ep, Sp, Wp), poly(Wp, Sp, Sb, Wb), poly(Sp, Ep, Eb, Sb)
 
+
+def uv(face, u, v):
+	"""Point d'une face (u, v dans [0,1]) ; haut, gauche, droite."""
+	if face == 't':
+		return (Nx + u * BW - v * BW, Ny + u * BW / 2 + v * BW / 2)
+	if face == 'l':
+		return (Wp[0] + u * BW, Wp[1] + u * BW / 2 + v * BH)
+	return (Sp[0] + u * BW, Sp[1] - u * BW / 2 + v * BH)
+
+
+def quad(face, u, v, du, dv, fill, op=1):
+	pts = [uv(face, u, v), uv(face, u + du, v), uv(face, u + du, v + dv), uv(face, u, v + dv)]
+	return f'<polygon points="{poly(*pts)}" fill="{fill}"' + (f' opacity="{op}"' if op != 1 else '') + '/>'
+
+
+import random
+rnd = random.Random(7)
+FACE = {'t': ('#a3a3a3', '#bcbcbc', '#8a8a8a'), 'l': ('#7d7d7d', '#939393', '#686868'), 'r': ('#646464', '#777777', '#515151')}
+ORE = {'t': 1, 'l': 2, 'r': 2}
+vec_faces = ''
+for f, (base, hi, lo) in FACE.items():
+	poly_f = {'t': top_poly, 'l': left_poly, 'r': right_poly}[f]
+	vec_faces += f'<polygon points="{poly_f}" fill="{base}"/>'
+	for _ in range(9):   # taches de pierre, claires et sombres
+		u, v = rnd.random() * 0.8, rnd.random() * 0.8
+		vec_faces += quad(f, u, v, 0.12 + rnd.random() * 0.14, 0.1 + rnd.random() * 0.12, hi if rnd.random() < 0.5 else lo, 0.85)
+	for _ in range(ORE[f]):   # filons de diamant : un losange cyan avec un reflet
+		u, v = 0.12 + rnd.random() * 0.55, 0.12 + rnd.random() * 0.55
+		vec_faces += quad(f, u, v, 0.26, 0.2, '#2bb8aa') + quad(f, u + 0.03, v + 0.03, 0.17, 0.12, '#58f0dd') + quad(f, u + 0.05, v + 0.04, 0.06, 0.04, '#e9fffb')
 # --- joueur (vue de côté, face à droite), 1 texel = 2 px : tête 16, torse 24, jambes 24 ---
 gy = y(106)          # sol sous les pieds
 leg_y = gy - 24
 torso_y = leg_y - 24
 head_y = torso_y - 16
-x0 = 40
+x0 = 42
 sx, sy = x0 + 4, torso_y + 3   # épaule
 
 
@@ -53,34 +81,45 @@ def part(sx_, sy_, sw, sh, dx, dy, dw, dh, extra=''):
 
 
 body = ''.join([
-	part(16, 52, 4, 12, x0 + 3, leg_y, 8, 24, ' opacity=".75"'),   # jambe gauche (derrière, assombrie)
-	part(0, 20, 4, 12, x0 - 1, leg_y, 8, 24),                      # jambe droite, côté
+	part(16, 52, 4, 12, x0 + 2, leg_y, 8, 24, ' opacity=".7"'),    # jambe gauche (derrière, assombrie, décalée de 2 px)
+	part(0, 20, 4, 12, x0, leg_y, 8, 24),                          # jambe droite, côté (aussi large que le torse)
 	part(16, 20, 4, 12, x0, torso_y, 8, 24),                       # torse, côté
 	part(0, 8, 8, 8, x0 - 4, head_y, 16, 16),                      # tête, côté droit (le visage est à droite)
 	part(32, 8, 8, 8, x0 - 4, head_y, 16, 16),                     # calque de la tête
 ])
-arm = part(40, 20, 4, 12, sx - 4, sy, 8, 24) + f'<g transform="translate({sx} {sy + 24}) rotate(135)"><use href="#pick" x="-6" y="-26"/></g>'
+# la pioche est DERRIÈRE le bras : elle est dessinée avant, la main passe devant le manche
+arm = f'<g transform="translate({sx} {sy + 22}) rotate(135)"><use href="#pick" x="-8" y="-24"/></g>' + part(40, 20, 4, 12, sx - 4, sy, 8, 24)
 
-# --- images partagées (une seule fois en data: URI) ---
+# --- images du jeu (data: URI, une seule fois) : le joueur et la pioche ; tout le reste est vectoriel ---
 defs = (f'<defs><image id="skin" width="64" height="64" href="{tex("entity/player/wide/steve.png")}"/>'
-	f'<image id="ore" width="16" height="16" href="{tex("block/diamond_ore.png")}"/>'
-	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/>'
-	f'<image id="gem" width="32" height="32" href="{tex("item/diamond.png")}"/>'
-	+ ''.join(f'<image id="d{n}" width="16" height="16" href="{tex(f"block/destroy_stage_{n}.png")}"/>' for n in (2, 5, 8)) + '</defs>')
+	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/></defs>')
 
 
-def faces(ref):
-	return (f'<use href="#{ref}" transform="{TOP}"/><use href="#{ref}" transform="{LEFT}"/><use href="#{ref}" transform="{RIGHT}"/>')
+def crack(face, *pts_uv):
+	pts = [uv(face, u, v) for u, v in pts_uv]
+	return f'<polyline points="{poly(*pts)}" fill="none" stroke="#17140f" stroke-width="1.2" stroke-linejoin="miter" stroke-linecap="square"/>'
 
 
-block = (faces('ore')
-	+ f'<polygon points="{left_poly}" fill="#000" opacity=".22"/><polygon points="{right_poly}" fill="#000" opacity=".42"/>'
-	+ ''.join(f'<g class="bk-c{i}">{faces(f"d{n}")}</g>' for i, n in enumerate((2, 5, 8)))
-	+ f'<polygon points="{poly(Wp, Wb, Sb, Eb, Ep, Np)}" fill="none" stroke="#0a0806" stroke-width="2"/><polyline points="{poly(Wp, Sp, Ep)} {poly(Sp, Sb)}" fill="none" stroke="#0a0806" stroke-width="2"/>')
+# fissures en trois étapes (vectorielles), sur les faces gauche, droite et haute
+cracks = [
+	crack('l', (0.3, 0.2), (0.45, 0.42), (0.4, 0.6)) + crack('t', (0.3, 0.35), (0.45, 0.5)),
+	crack('l', (0.55, 0.35), (0.72, 0.5), (0.68, 0.78)) + crack('l', (0.45, 0.42), (0.25, 0.7)) + crack('r', (0.25, 0.2), (0.45, 0.4), (0.4, 0.55)),
+	crack('l', (0.15, 0.5), (0.35, 0.62), (0.3, 0.85)) + crack('r', (0.6, 0.3), (0.78, 0.5), (0.7, 0.75)) + crack('t', (0.6, 0.2), (0.7, 0.45), (0.5, 0.62)),
+]
+block = (vec_faces
+	+ f'<polygon points="{left_poly}" fill="#000" opacity=".12"/><polygon points="{right_poly}" fill="#000" opacity=".2"/>'
+	+ ''.join(f'<g class="bk-c{i}">{c}</g>' for i, c in enumerate(cracks))
+	+ f'<polygon points="{poly(Wp, Wb, Sb, Eb, Ep, Np)}" fill="none" stroke="#0a0806" stroke-width="1.6" stroke-linejoin="round"/><polyline points="{poly(Wp, Sp, Ep)} {poly(Sp, Sb)}" fill="none" stroke="#0a0806" stroke-width="1.2" stroke-linejoin="round"/>')
 
-ix, iy = Nx - 26, y(76)   # point d'impact sur la face gauche
+# diamant vectoriel (facettes), 18 x 20 px
+GEM = ('<polygon points="3,6 7,1 13,1 17,6 10,19" fill="#2bb8aa"/><polygon points="3,6 7,1 13,1 17,6" fill="#7df3e4"/>'
+	'<polygon points="3,6 10,6 10,19" fill="#27a79b"/><polygon points="10,6 17,6 10,19" fill="#1c8c82"/><polygon points="7,1 10,6 3,6" fill="#aaf9ef"/>'
+	'<polygon points="13,1 17,6 10,6" fill="#58e6d6"/><polygon points="6,2.5 8,2.5 6.5,5 5,5" fill="#fff" opacity=".85"/>'
+	'<polygon points="3,6 7,1 13,1 17,6 10,19" fill="none" stroke="#0e4f49" stroke-width="1" stroke-linejoin="round"/>')
+
+ix, iy = Nx - 14, y(84)   # point d'impact sur la face gauche
 hits = [0.5 + 0.8 * k for k in range(4)]
-Wd, Sd, Rd = -150, -71, -30
+Wd, Sd, Rd = -150, -55, -30
 arm_kf = []
 for k in range(4):
 	s = 0.8 * k
@@ -138,16 +177,16 @@ for i in range(3):
 	cls += f'#boot .bk-c{i}{{animation:b-c{i} {T}s linear infinite}}#boot .bk-p{i}{{animation:b-p{i} {T}s linear infinite}}#boot .bk-p{i}o{{animation:b-p{i}o {T}s linear infinite}}'
 for i in range(5):
 	cls += f'#boot .bk-s{i}{{animation:b-s{i} {T}s linear infinite}}#boot .bk-s{i}o{{animation:b-s{i}o {T}s linear infinite}}'
-cls += f'#boot .bk-item{{transform-origin:{Nx}px {y(84)}px;animation:b-item {T}s linear infinite}}'
-cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-71deg)}#boot .bk-c0,#boot .bk-c1{opacity:1}'
+cls += f'#boot .bk-item{{transform-origin:{Nx}px {y(76)}px;animation:b-item {T}s linear infinite}}'
+cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-55deg)}#boot .bk-c0,#boot .bk-c1{opacity:1}'
 	'#boot .bk-c2,#boot .bk-p0o,#boot .bk-p1o,#boot .bk-p2o,#boot .bk-s0o,#boot .bk-s1o,#boot .bk-s2o,#boot .bk-s3o,#boot .bk-s4o,#boot .bk-item{opacity:0}}')
 style = f'<style>{cls}{"".join(css)}</style>'
 
 parts = ''.join(f'<g class="bk-p{i}"><g class="bk-p{i}o"><rect x="{ix}" y="{iy}" width="3" height="3" fill="{pcol[i]}"/></g></g>' for i in range(3))
-shards = ''.join(f'<g class="bk-s{i}"><g class="bk-s{i}o"><rect x="{Nx - 2 + (i - 2) * 2}" y="{y(70)}" width="4" height="4" fill="{col}"/></g></g>' for i, (_, _, col) in enumerate(sh))
-svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<polygon points="{poly((Nx, y(88)), (150, y(108)), (Nx, y(128)), (50, y(108)))}" fill="#000" opacity=".4"/>'
+shards = ''.join(f'<g class="bk-s{i}"><g class="bk-s{i}o"><rect x="{Nx - 2 + (i - 2) * 2}" y="{y(66)}" width="4" height="4" fill="{col}"/></g></g>' for i, (_, _, col) in enumerate(sh))
+svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<polygon points="{poly((Nx, y(86)), (146, y(106)), (Nx, y(126)), (54, y(106)))}" fill="#000" opacity=".4"/>'
 	f'<g class="bk-fade"><g class="bk-blk">{block}</g></g>{parts}{shards}'
-	f'<g class="bk-item"><use href="#gem" x="{Nx - 16}" y="{y(70)}"/></g>'
+	f'<g class="bk-item"><g transform="translate({Nx - 9} {y(66)})">{GEM}</g></g>'
 	f'<g class="bk-chr">{body}<g class="bk-arm">{arm}</g></g></svg>')
 markup = f'<div id="boot" role="status"><span class="boot-t boot-en">Loading…</span><span class="boot-t boot-fr">Chargement…</span>{svg}</div>'
 script = ("<script>!function(){var b=document.getElementById('boot');if(!b)return;var t=performance.now(),d=0;function h(){if(d)return;d=1;var e=performance.now()-t,"
