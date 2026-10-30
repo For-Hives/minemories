@@ -258,7 +258,9 @@ html[data-mc-font='read'] .site .mc-step__title {
 @media (prefers-reduced-motion: reduce) {
 	#site .ds-reveal,
 	.site .mc-btn,
+	.site .mc-btn:hover:not([disabled]),
 	.site-account,
+	.site-account:hover,
 	.site a.mc-link,
 	.site .mc-faq__q::after {
 		transition: none;
@@ -273,6 +275,8 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 html[data-mc-motion='reduced'] #site .ds-reveal,
 html[data-mc-motion='reduced'] .site .mc-btn,
+html[data-mc-motion='reduced'] .site .mc-btn:hover:not([disabled]),
+html[data-mc-motion='reduced'] .site-account:hover,
 html[data-mc-motion='reduced'] .site a.mc-link {
 	transition: none;
 	transform: none;
@@ -317,4 +321,213 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__kicker {
 
 html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	font-size: var(--ds-rd-fs-lg);
+}
+
+/* --- 9. Motion design : tout ce qui est interactif ou qui arrive à l'écran ------------------------------------------------------------------------------------ */
+/* Règles : transform et opacité seulement (aucun saut de mise en page), jamais de variation de luminosité (pas plus de 2 flashs par seconde), jamais sur le canvas ni le HUD du film.
+   Tout est derrière `prefers-reduced-motion: no-preference` ET l'option « Mouvement réduit » du pied de page : le mouvement est l'exception, le contenu est la règle.
+   Les ouvertures de panneaux (`::details-content`, `display` discret) sont une amélioration progressive : un navigateur qui ne les connaît pas ouvre et ferme sans animation. */
+
+@media (prefers-reduced-motion: no-preference) {
+	:root:not([data-mc-motion='reduced']) {
+		interpolate-size: allow-keywords;
+	}
+
+	/* 9.1 Entrée du hero au chargement : kicker, titre, chapeau, boutons, compatibilité arrivent l'un après l'autre. Terminé en moins d'une seconde, une seule fois. */
+	@keyframes ds-rise {
+		from {
+			opacity: 0;
+			transform: translateY(var(--ds-reveal-y));
+		}
+
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > * {
+		animation: ds-rise var(--ds-dur-4) var(--ds-ease) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(2) {
+		animation-delay: calc(var(--ds-stagger) * 1);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(3) {
+		animation-delay: calc(var(--ds-stagger) * 2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(4) {
+		animation-delay: calc(var(--ds-stagger) * 3);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-hero > :nth-child(5) {
+		animation-delay: calc(var(--ds-stagger) * 4);
+	}
+
+	/* 9.2 Titres de section : balayage par pas (un « pixel » à la fois, comme un texte qui se tape) en plus du fondu de reveal.ts. */
+	@keyframes ds-wipe {
+		from {
+			clip-path: inset(0 100% 0 0);
+		}
+
+		to {
+			clip-path: inset(0 0 0 0);
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-section__title.is-in {
+		animation: ds-wipe var(--ds-dur-3) steps(12, end) both;
+	}
+
+	/* 9.3 Boutons : soulèvement, pression, icône qui répond. Le principal garde son cuivre ; seules la position et l'icône bougent. */
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]),
+	:root:not([data-mc-motion='reduced']) .site-account:hover {
+		transform: translateY(calc(-1 * var(--ds-lift)));
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:active:not([disabled]) {
+		transform: translateY(1px);
+		transition-duration: calc(var(--ds-dur-1) / 2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn .mc-icon {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember,
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember-spark {
+		transform: translateY(-1px) scale(1.2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--arrow-r,
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--chevron {
+		transform: translateX(3px);
+	}
+
+	/* 9.4 Liens : le soulignement s'écarte du texte au survol ; la navigation du bandeau a une barre qui entre depuis la gauche. */
+	:root:not([data-mc-motion='reduced']) .site a.mc-link,
+	:root:not([data-mc-motion='reduced']) .footer a.mc-link {
+		text-underline-offset: 3px;
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			text-decoration-color var(--ds-dur-1) var(--ds-ease),
+			text-underline-offset var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover,
+	:root:not([data-mc-motion='reduced']) .footer a.mc-link:hover {
+		text-underline-offset: 6px;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a {
+		position: relative;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a::after {
+		content: '';
+		position: absolute;
+		inset: auto 4px 6px 4px;
+		height: var(--gp);
+		background: var(--ember);
+		transform: scaleX(0);
+		transform-origin: left center;
+		transition: transform var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:hover::after,
+	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:focus-visible::after {
+		transform: scaleX(1);
+	}
+
+	/* 9.5 Cartes d'étape : le numéro de case « tombe » en place à l'entrée (rebond de 6 %) et répond au survol de la carte. */
+	@keyframes ds-pop {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
+
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-step.is-in .mc-step__num {
+		animation: ds-pop var(--ds-dur-3) var(--ds-ease-pop) calc(var(--ds-i, 0) * var(--ds-stagger) + var(--ds-dur-1)) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-step__num {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-step:hover .mc-step__num,
+	:root:not([data-mc-motion='reduced']) .site .mc-step:focus-within .mc-step__num {
+		transform: scale(1.08);
+	}
+
+	/* 9.6 Panneaux qui s'ouvrent (FAQ, détails d'étape, pied de page) : la hauteur s'anime, le contenu se fond ; le chevron rebondit. */
+	:root:not([data-mc-motion='reduced']) .mc-faq__item::details-content,
+	:root:not([data-mc-motion='reduced']) .mc-step__more::details-content,
+	:root:not([data-mc-motion='reduced']) .footer details::details-content {
+		block-size: 0;
+		overflow: clip;
+		opacity: 0;
+		transition:
+			block-size var(--ds-dur-3) var(--ds-ease),
+			opacity var(--ds-dur-2) var(--ds-ease-std),
+			content-visibility var(--ds-dur-3) allow-discrete;
+	}
+
+	:root:not([data-mc-motion='reduced']) .mc-faq__item[open]::details-content,
+	:root:not([data-mc-motion='reduced']) .mc-step__more[open]::details-content,
+	:root:not([data-mc-motion='reduced']) .footer details[open]::details-content {
+		block-size: auto;
+		opacity: 1;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q::after,
+	:root:not([data-mc-motion='reduced']) .site .mc-step__more summary::after {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	/* 9.7 Menu du bandeau (petits écrans) : il descend en se fondant ; la croix et les trois barres s'échangent par rebond. */
+	:root:not([data-mc-motion='reduced']) .site-menu {
+		transition:
+			opacity var(--ds-dur-2) var(--ds-ease),
+			transform var(--ds-dur-2) var(--ds-ease),
+			display var(--ds-dur-2) allow-discrete;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu[hidden] {
+		display: none;
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--ds-sp-2)));
+	}
+
+	@starting-style {
+		:root:not([data-mc-motion='reduced']) .site-menu:not([hidden]) {
+			opacity: 0;
+			transform: translateY(calc(-1 * var(--ds-sp-2)));
+		}
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu__btn .mc-icon {
+		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu__btn[aria-expanded='true'] .i-close {
+		animation: ds-pop var(--ds-dur-2) var(--ds-ease-pop) both;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu a {
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			transform var(--ds-dur-1) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site-menu a:hover {
+		transform: translateX(var(--ds-sp-1));
+	}
 }

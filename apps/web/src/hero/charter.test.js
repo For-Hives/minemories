@@ -38,11 +38,11 @@ test('line heights stay on the 8 px grid and above 1.2', () => {
 	}
 })
 
-test('touch targets are 44 px and the motion tokens are the three durations and two curves', () => {
+test('touch targets are 44 px and the motion tokens are the four durations and three curves', () => {
 	expect(token('--ds-hit')).toEqual([44])
 	expect(token('--ds-dur-1')).toEqual([]) // durations are written in ms, not px
-	expect([...tokens.matchAll(/--ds-dur-\d:\s*(\d+)ms/g)].map(m => Number(m[1]))).toEqual([120, 200, 360])
-	expect([...tokens.matchAll(/--ds-ease[a-z-]*:/g)]).toHaveLength(2)
+	expect([...tokens.matchAll(/--ds-dur-\d:\s*(\d+)ms/g)].map(m => Number(m[1]))).toEqual([120, 200, 360, 560])
+	expect([...tokens.matchAll(/--ds-ease[a-z-]*:/g)]).toHaveLength(3)
 })
 
 test('the shared components read tokens: no hard-coded font size, duration or easing in charter.css, except the Unifont steps', () => {
@@ -65,5 +65,25 @@ test('reduced motion switches the entries, the transitions and the displacement 
 	expect(charter).toContain("html[data-mc-motion='reduced']")
 	expect(charter).toMatch(/#site\[data-reveal='on'\] \.ds-reveal:not\(\.is-in\) \{\s*opacity: 0;/)
 	// the hiding rule exists only behind the attribute that reveal.ts sets: nothing else hides .ds-reveal
-	expect(charter.replace(/#site\[data-reveal='on'\][^{]*\{[^}]*\}/g, '')).not.toMatch(/opacity:\s*0\b/)
+	const [base, motion] = charter.split('/* --- 9. Motion design')
+	expect(base.replace(/#site\[data-reveal='on'\][^{]*\{[^}]*\}/g, '')).not.toMatch(/opacity:\s*0\b/)
+	expect(motion).toBeDefined()
+})
+
+test('the motion design layer (section 9) only exists when motion is allowed, and never touches layout or brightness', () => {
+	const afterHeading = charter.split('/* --- 9. Motion design')[1].replace(/^[\s\S]*?\*\//, '') // drop the rest of the heading comment
+	const motion = afterHeading.replace(/\/\*[\s\S]*?\*\//g, '')
+	// everything sits inside the no-preference query and is cancelled by the footer option
+	expect(motion.trimStart().startsWith('@media (prefers-reduced-motion: no-preference) {')).toBe(true)
+	for (const rule of motion.match(/[^{}]+\{[^{}]*\}/g) ?? []) {
+		const selector = rule.split('{')[0].trim()
+		if (/^(from|to)$/.test(selector) || selector.includes('@')) continue
+		expect(rule, selector).toMatch(/:root:not\(\[data-mc-motion='reduced'\]\)/)
+	}
+	// no layout property, no brightness or filter animation: transform, opacity, clip-path and the text and panel properties below only
+	expect(motion).not.toMatch(/\b(brightness|filter)\b/)
+	const allowed = /^(opacity|transform|color|text-decoration-color|text-underline-offset|block-size|content-visibility|display)$/
+	for (const [, list] of motion.matchAll(/transition:\s*([^;]+);/g)) {
+		for (const part of list.split(',')) expect(part.trim().split(/\s+/)[0], part).toMatch(allowed)
+	}
 })

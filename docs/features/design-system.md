@@ -39,8 +39,8 @@ Les trois feuilles sont concaténées dans cet ordre par `HeroFilm.tsx` (`tokens
 | `--ds-focus`, `--ds-focus-offset` | 2 px clair, décalé de 2 px | anneau de focus de tout ce qui se commande |
 | `--ds-text-shadow-1` à `-4` | 2, 3, 4, 5 px | ombre de texte par taille |
 | `--ds-panel-bevel` | biseau 4 px | panneau « interface Minecraft » |
-| `--ds-dur-1`, `-2`, `-3` | 120, 200, 360 ms | survol/pression, changement d'état, entrée au défilement |
-| `--ds-ease`, `--ds-ease-std` | `cubic-bezier(.2,.8,.2,1)`, `(.4,0,.2,1)` | arrivée douce, aller-retour |
+| `--ds-dur-1` à `-4` | 120, 200, 360, 560 ms | survol/pression, changement d'état, entrée au défilement et ouverture de panneau, entrée du hero |
+| `--ds-ease`, `--ds-ease-std`, `--ds-ease-pop` | `cubic-bezier(.2,.8,.2,1)`, `(.4,0,.2,1)`, `(.34,1.56,.64,1)` | arrivée douce, aller-retour, petit rebond |
 | `--ds-reveal-y`, `--ds-stagger` | 12 px, 60 ms | décalage d'entrée, écart entre frères |
 
 Couleurs (kit) : fond `--night` `#14110e`, panneaux `--night-2`, texte `--text` `#f4efe6` (≥ 15:1), texte secondaire `--text-2` (≥ 9,6:1), action `--copper` (bouton primaire, 5,9:1), braise `--ember` (survol, état ouvert), focus `--hover`.
@@ -67,7 +67,7 @@ Captures (après) :
 
 ## Règles de mouvement
 
-- Trois durées (120, 200, 360 ms), deux courbes ; rien de plus long, rien qui boucle sous le film.
+- Quatre durées (120, 200, 360 ms, plus 560 ms pour l'entrée du hero) et trois courbes (dont un rebond de 6 % réservé aux pastilles, icônes et numéros) ; rien de plus long, rien qui boucle sous le film. Catalogue complet : [charte-graphique.md](charte-graphique.md), section 9.
 - **Entrée au défilement** (`reveal.ts`) : décalage de 12 px + fondu, **transform et opacité seulement** (aucun saut de mise en page), une fois par bloc, frères décalés de 60 ms (jusqu'à 4). Sélection : titres et textes de section, étapes, panneau « limites », liste de liens, lignes de FAQ, appel final, pied de page.
 - Survol, pression, focus et ouverture de FAQ : transitions de 120 à 200 ms sur couleur, contour, transform et chevron.
 - **Mouvement réduit** : `prefers-reduced-motion`, ou l'option « Mouvement réduit » du pied de page : aucune entrée, aucune transition, aucun déplacement ; le contenu est là.

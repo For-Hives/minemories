@@ -195,12 +195,40 @@ Tout composant nouveau doit répondre à : quel élément du jeu ressemble-t-il 
 
 ## 9. Mouvement et son
 
-- Trois durées : **120 ms** (survol, pression), **200 ms** (changement d'état), **360 ms** (entrée au défilement). Deux courbes (`--ds-ease`, `--ds-ease-std`). Rien de plus long.
-- **Par pas** pour la géométrie (`steps(n)`, n = distance en pixels de GUI) : un objet avance d'un pixel à la fois, comme dans le jeu. L'opacité reste continue.
-- Entrées au défilement : 12 px et fondu, une fois par bloc, frères décalés de 60 ms.
-- Notifications : entrée et sortie de 600 ms, tenue de 5 s (valeurs du jeu).
-- **Pas plus de 2 flashs par seconde.** Aucune animation de luminosité.
-- **Mouvement réduit** (système ou option du pied de page) : aucune entrée, aucune transition. Le contenu est là tout de suite.
+Le mouvement sert à **confirmer** (j'ai cliqué, ça répond), **orienter** (ça arrive d'ici) et **donner du poids** (un pixel à la fois). Il ne décore pas.
+
+### Jetons
+| Jeton | Valeur | Usage |
+|---|---|---|
+| `--ds-dur-1` | 120 ms | survol, pression (la pression va deux fois plus vite : 60 ms) |
+| `--ds-dur-2` | 200 ms | changement d'état : ouverture, couleur, icône |
+| `--ds-dur-3` | 360 ms | entrée d'un bloc au défilement, ouverture d'un panneau |
+| `--ds-dur-4` | 560 ms | entrée du hero au chargement (une seule fois) |
+| `--ds-ease` | `cubic-bezier(.2,.8,.2,1)` | arrivée douce (par défaut) |
+| `--ds-ease-std` | `cubic-bezier(.4,0,.2,1)` | aller-retour |
+| `--ds-ease-pop` | `cubic-bezier(.34,1.56,.64,1)` | rebond de 6 % : pastilles, icônes, numéros, **jamais** un bloc de texte |
+| `--ds-lift` | 2 px | soulèvement d'un bouton |
+
+### Catalogue (chaque élément interactif ou qui apparaît)
+| Élément | Mouvement |
+|---|---|
+| Hero au chargement | kicker, titre, chapeau, boutons, mention arrivent l'un après l'autre (12 px + fondu, décalage de 60 ms) |
+| Titres de section | balayage par pas de gauche à droite (12 pas, comme un texte qui se tape) en entrant à l'écran |
+| Blocs de contenu | 12 px + fondu au défilement, une fois, frères décalés de 60 ms |
+| Bouton | survol : monte de 2 px + contour clair ; pression : descend de 1 px, 60 ms ; l'icône braise grossit de 20 %, les flèches avancent de 3 px |
+| Lien | le soulignement s'écarte du texte (3 px → 6 px) ; navigation du bandeau : barre braise qui entre depuis la gauche |
+| Carte d'étape | le numéro « tombe » en place avec un rebond à l'entrée, puis grossit de 8 % quand la carte est survolée ou focalisée |
+| FAQ, détails d'étape, pied de page | la hauteur s'anime (360 ms) et le contenu se fond ; le chevron tourne avec un rebond |
+| Menu du bandeau (petits écrans) | descend de 8 px en se fondant ; la croix arrive en rebond |
+| Notifications | entrée et sortie de 600 ms, tenue de 5 s (valeurs du jeu) |
+
+### Règles
+- **Transform et opacité seulement** (plus `clip-path` pour le balayage, et `block-size` pour les panneaux) : jamais de largeur, de marge ni de position qui saute.
+- **Jamais de variation de luminosité** : pas plus de 2 flashs par seconde. Rien ne boucle sous le film.
+- **Par pas** pour ce qui avance en distance (`steps(n)`) : un objet progresse d'un pixel à la fois. L'opacité reste continue.
+- Le canvas du film et son HUD ne sont jamais animés par la charte.
+- **Mouvement réduit** (système ou option du pied de page) : aucune animation, aucun déplacement, même au survol ; le contenu est là tout de suite. Le code du mouvement n'existe que derrière `prefers-reduced-motion: no-preference` et l'option, et un test de charte le vérifie.
+- **Amélioration progressive** : l'animation d'ouverture des panneaux (`::details-content`) et du menu (`display` discret) demande un Chrome récent ; ailleurs ça s'ouvre sans animation, sans rien casser.
 - **Son** : aucun son par défaut, jamais d'autoplay, les sons du jeu ne sont pas réutilisés.
 
 ---

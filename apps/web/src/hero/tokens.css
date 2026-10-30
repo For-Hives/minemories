@@ -63,9 +63,12 @@
 	/* Mouvement : trois durées, deux courbes, une distance d'entrée. Tout est coupé par prefers-reduced-motion et par l'option « Mouvement réduit ». */
 	--ds-dur-1: 120ms;               /* survol, pression, focus */
 	--ds-dur-2: 200ms;               /* changement d'état (ouverture, couleur) */
-	--ds-dur-3: 360ms;               /* entrée d'un bloc au défilement */
+	--ds-dur-3: 360ms;               /* entrée d'un bloc au défilement, ouverture d'un panneau */
+	--ds-dur-4: 560ms;               /* entrée du hero au chargement (une seule fois) */
 	--ds-ease: cubic-bezier(0.2, 0.8, 0.2, 1);        /* arrivée douce */
 	--ds-ease-std: cubic-bezier(0.4, 0, 0.2, 1);      /* aller-retour */
+	--ds-ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* petit rebond (6 %) pour les pastilles, icônes et numéros : jamais sur un bloc de texte */
+	--ds-lift: 2px;                  /* soulèvement d'un bouton au survol */
 	--ds-reveal-y: 12px;             /* décalage d'entrée : court, sans saut de mise en page (transform et opacité seulement) */
 	--ds-stagger: 60ms;              /* décalage entre frères qui entrent ensemble */
 }
