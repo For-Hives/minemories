@@ -280,7 +280,7 @@ export function createSite(ctx) {
 		for (const el of doc.querySelectorAll(REACH_TEXT.split(',').map((x) => `.site ${x.trim()}`).join(', '))) {
 			const range = doc.createRange()
 			range.selectNodeContents(el)
-			take(el, range.getBoundingClientRect().right)
+			take(el, (typeof range.getBoundingClientRect === 'function' ? range.getBoundingClientRect() : el.getBoundingClientRect()).right) // jsdom has no Range rectangles
 		}
 		return right
 	}
