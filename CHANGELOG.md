@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.25.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.24.0-beta.1...mod-v0.25.0-beta.1) (2026-10-30)
+
+### Fonctionnalités
+
+* **web:** pipeline d'optimisation du film d'accueil (hero:assets) ([#163](https://github.com/For-Hives/minemories/issues/163)) ([685a513](https://github.com/For-Hives/minemories/commit/685a513c829112ce8bbd967ef5f84f7db29c0920))
+
 ## [0.24.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.23.0-beta.1...mod-v0.24.0-beta.1) (2026-10-28)
 
 ### Fonctionnalités
