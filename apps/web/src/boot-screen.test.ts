@@ -12,7 +12,8 @@ test('the loading screen is self-contained, labelled and cannot trap the visitor
 	expect(html.indexOf('id="boot"')).toBeLessThan(html.indexOf('<div id="app"></div>')) // outside #app: hydration is untouched
 	expect(html).toMatch(/b-max \.3s ease-in 12s forwards/) // hard stop: hidden after 12 s whatever happens
 	expect(html).toContain('setTimeout(h,12000)')
-	expect(html).toContain("addEventListener('load',h)")
+	expect(html).toContain("addEventListener('load',function(){l=1;g()})") // gone once the page has loaded AND the app says it is on screen
+	expect(html).toContain("addEventListener('mm:ready'")
 	expect(html.length).toBeLessThan(26_000)
 })
 
