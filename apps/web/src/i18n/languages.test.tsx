@@ -2,10 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
-import { AppContext } from '../app-context'
-import { SiteLayout } from '../components/SiteLayout'
-import { formatRelativeDate } from '../lib/dates'
-import { formatFileSize } from '../lib/glb'
+import { HeroLanguage } from '../components/HeroParts'
 import { metadataFor, publicMetadata } from '../route-metadata'
 import { loadLocale } from './catalog'
 import { I18nProvider, useI18n } from './I18n'
@@ -16,14 +13,6 @@ afterEach(() => {
 	localStorage.clear()
 	vi.restoreAllMocks()
 })
-const context = {
-	session: null,
-	isPending: false,
-	refreshSession: async () => undefined,
-	viewerFile: null,
-	setViewerFile: () => undefined,
-	notify: () => undefined,
-}
 function Example() {
 	const { t, locale, setLocale } = useI18n()
 	return (
@@ -41,13 +30,10 @@ function Example() {
 function page(detectLocale = false) {
 	return render(
 		<I18nProvider detectLocale={detectLocale}>
-			<AppContext.Provider value={context}>
-				<MemoryRouter initialEntries={['/faq']}>
-					<SiteLayout>
-						<Example />
-					</SiteLayout>
-				</MemoryRouter>
-			</AppContext.Provider>
+			<MemoryRouter>
+				<HeroLanguage />
+				<Example />
+			</MemoryRouter>
 		</I18nProvider>
 	)
 }
@@ -76,12 +62,9 @@ test('browser preference respects priority while a saved choice always takes pre
 	expect(screen.getByText('Partager par lien')).toBeTruthy()
 })
 
-test('switching countries preserves numeric/date formatting, metadata language and known technical strings', async () => {
+test('switching countries preserves the metadata language and known technical strings', async () => {
 	await Promise.all(localeOptions.map(option => loadLocale(option.id)))
 	for (const { id } of localeOptions) {
-		const dayAgo = formatRelativeDate('2026-10-18T12:00:00Z', Date.parse('2026-10-19T12:00:00Z'), id)
-		expect(dayAgo).toBe(new Intl.RelativeTimeFormat(id, { numeric: 'always' }).format(-1, 'day'))
-		expect(formatFileSize(1536, id)).toBe(`${new Intl.NumberFormat(id, { maximumFractionDigits: 1 }).format(1.5)} KiB`)
 		for (const page of publicMetadata) {
 			const metadata = metadataFor(page.path, id)
 			expect(metadata.title).toBeTruthy()

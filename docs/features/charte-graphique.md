@@ -218,7 +218,9 @@ Le mouvement sert à **confirmer** (j'ai cliqué, ça répond), **orienter** (ç
 | Bouton | survol : monte de 2 px + contour clair ; pression : descend de 1 px, 60 ms ; l'icône braise grossit de 20 %, les flèches avancent de 3 px |
 | Lien | le soulignement s'écarte du texte (3 px → 6 px) ; navigation du bandeau : barre braise qui entre depuis la gauche |
 | Carte d'étape | le numéro « tombe » en place avec un rebond à l'entrée, puis grossit de 8 % quand la carte est survolée ou focalisée |
-| FAQ, détails d'étape, pied de page | la hauteur s'anime (360 ms) et le contenu se fond ; le chevron tourne avec un rebond |
+| FAQ, détails d'étape, pied de page, « Le film, en mots » | la hauteur s'anime (360 ms) et le contenu se fond ; le chevron tourne avec un rebond |
+| FAQ (en plus) | une seule question ouverte à la fois (attribut `name`) ; un liseré cuivre se déploie sur la carte ouverte ; la réponse monte après l'ouverture ; la question avance de 4 px au survol et s'enfonce d'un pixel à la pression ; le chevron s'abaisse au survol avant de se retourner |
+| Sommaires de dépliants | couleur cuivre et décalage de 4 px au survol, pression d'un pixel |
 | Liste de langue (sélecteur) | le panneau s'ouvre en descendant de 8 px en se fondant (200 ms), style du jeu (fond nuit, relief), option survolée en braise, option courante repérée par une barre braise ; le chevron se retourne. Chrome 135+ (`appearance: base-select`), liste native ailleurs |
 | Menu du bandeau (petits écrans) | descend de 8 px en se fondant ; la croix arrive en rebond |
 | Barre du film (bord droit) | pendant le film seulement (elle disparaît au glissement vers le site) ; frise verticale : remplissage braise et poignée qui suivent le temps du film (pleine sur le site) ; cinq repères de chapitre avec infobulle ; un glissement déplace la poignée et le film saute **une seule fois**, au relâchement (garde-fous anti-flash) ; clavier : haut / bas = chapitre précédent / suivant, Début, Fin |
@@ -286,6 +288,8 @@ Conséquences pour la charte :
 ---
 
 ## 13. Appliquer la charte page par page
+
+Depuis le 30/10/2026, seule la landing `/` (et une page 404) est en ligne : toutes les autres pages sont archivées (tag `archive/pages-v1-2026-10-30`) et auditées dans `docs/features/pages-archive-et-audit.md`, qui propose le plan de site à reconstruire (8 pages) et l'ordre de reconstruction. Le tableau ci-dessous décrit la cible.
 
 Une page adopte la charte en : (1) portant `.ds-page` sur sa racine ; (2) utilisant uniquement les classes `mc-*` ; (3) chargeant `tokens.css` + `film.css` + `charter.css` (aujourd'hui injectés par `HeroFilm`, à déplacer dans un `DesignSystemStyles` partagé à la deuxième page migrée) ; (4) ne définissant aucune taille en dur.
 
