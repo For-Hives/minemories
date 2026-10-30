@@ -90,6 +90,8 @@ body = ''.join([
 # la pioche est DERRIÈRE le bras : elle est dessinée avant, la main passe devant le manche
 arm = f'<g transform="translate({sx} {sy + 22}) rotate(135)"><use href="#pick" x="-8" y="-24"/></g>' + part(40, 20, 4, 12, sx - 4, sy, 8, 24)
 
+# Les images du jeu sont affichées à un multiple ENTIER de leur taille (viewBox de 160 : 240 px = x1,5 soit 3 px par texel ; 320 px = x2 soit 4 px par texel) avec `image-rendering: pixelated` :
+# un texel a toujours la même taille à l'écran, rien n'est lissé.
 # --- images du jeu (data: URI, une seule fois) : le joueur et la pioche ; tout le reste est vectoriel ---
 defs = (f'<defs><image id="skin" width="64" height="64" href="{tex("entity/player/wide/steve.png")}"/>'
 	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/></defs>')
@@ -212,7 +214,7 @@ for i in range(3):
 
 cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#14110e;opacity:0;animation:b-in .2s ease-out .25s forwards,b-max .3s ease-in 20s forwards}}'
 	'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}'
-	'#boot>svg{width:min(62vw,300px);height:auto;overflow:visible}#boot image{image-rendering:pixelated}'
+	'#boot>svg{width:240px;height:auto;overflow:visible}@media (min-width:420px){#boot>svg{width:320px}}#boot svg,#boot image,#boot use{image-rendering:pixelated}'
 	'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}'
 	'html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}'
 	'@keyframes b-in{to{opacity:1}}@keyframes b-max{to{opacity:0;visibility:hidden}}#boot svg *{transform-box:view-box}'
