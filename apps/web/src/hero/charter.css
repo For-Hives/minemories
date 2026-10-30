@@ -632,3 +632,160 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		}
 	}
 }
+
+/* --- 11. La barre du film : une frise verticale au bord droit, pour savoir où l'on en est et remonter dans l'histoire ------------------------------------------------ */
+/* Le remplissage et la poignée suivent le temps du film (`--rail-p`, 0 à 1, posé par hero.js) ; sur le site la barre est pleine. Les cinq chapitres sont des repères cliquables. Un glissement ne
+   fait que déplacer la poignée : le film saute UNE fois au relâchement (voir `railSeek`), ce qui garde les garde-fous contre les flashs. */
+
+.film-rail {
+	--rail-p: 0;
+	position: fixed;
+	z-index: 40;
+	top: 50%;
+	right: max(var(--ds-sp-2), env(safe-area-inset-right));
+	width: 28px;
+	height: min(46vh, 360px);
+	transform: translateY(-50%);
+	display: flex;
+	justify-content: center;
+	touch-action: none;
+}
+
+html[data-phase='site'] .film-rail {
+	--rail-p: 1;
+	opacity: 0.55;
+}
+
+html[data-phase='site'] .film-rail:hover,
+html[data-phase='site'] .film-rail:focus-within {
+	opacity: 1;
+}
+
+@media (max-width: 999px) {
+	html[data-phase='site'] .film-rail {
+		display: none;
+	}
+}
+
+.film-rail__track {
+	position: relative;
+	width: 8px;
+	height: 100%;
+	background: var(--night-3);
+	border: var(--gp) solid var(--outline);
+	box-shadow: var(--ds-panel-bevel);
+	cursor: pointer;
+}
+
+.film-rail__track::before {
+	content: '';
+	position: absolute;
+	inset: 0 -11px; /* zone de saisie de 30 px de large autour d'un trait de 8 px */
+}
+
+.film-rail__fill {
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: calc(var(--rail-p) * 100%);
+	background: var(--ember);
+}
+
+.film-rail__thumb {
+	position: absolute;
+	left: 50%;
+	top: calc(var(--rail-p) * 100%);
+	width: 20px;
+	height: 12px;
+	margin: -6px 0 0 -10px;
+	background: var(--stone);
+	border: var(--gp) solid var(--outline);
+	box-shadow: inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--stone-lo);
+	cursor: grab;
+}
+
+.film-rail[data-drag] .film-rail__thumb {
+	cursor: grabbing;
+	border-color: var(--hover);
+}
+
+.film-rail__thumb:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.film-rail__node {
+	position: absolute;
+	left: 50%;
+	top: calc(var(--n, 0) * 100%);
+	width: 12px;
+	height: 12px;
+	margin: -6px 0 0 -6px;
+	padding: 0;
+	background: var(--night-2);
+	border: var(--gp) solid var(--text-3);
+	cursor: pointer;
+}
+
+.film-rail__node::before {
+	content: '';
+	position: absolute;
+	inset: -16px; /* cible de 44 px */
+}
+
+.film-rail__node:hover,
+.film-rail__node:focus-visible {
+	border-color: var(--ember);
+	background: var(--ember);
+}
+
+.film-rail__node:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.film-rail__node::after {
+	content: attr(aria-label);
+	position: absolute;
+	right: calc(100% + var(--ds-sp-3));
+	top: 50%;
+	padding: var(--ds-sp-1) var(--ds-sp-2);
+	background: var(--tip-bg);
+	border: var(--gp) solid var(--tip-b);
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text);
+	white-space: nowrap;
+	transform: translateY(-50%);
+	opacity: 0;
+	pointer-events: none;
+}
+
+.film-rail__node:hover::after,
+.film-rail__node:focus-visible::after {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	:root:not([data-mc-motion='reduced']) .film-rail {
+		transition: opacity var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail__fill,
+	:root:not([data-mc-motion='reduced']) .film-rail__thumb {
+		transition:
+			height var(--ds-dur-2) var(--ds-ease),
+			top var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail[data-drag] .film-rail__fill,
+	:root:not([data-mc-motion='reduced']) .film-rail[data-drag] .film-rail__thumb {
+		transition: none;
+	}
+
+	:root:not([data-mc-motion='reduced']) .film-rail__node,
+	:root:not([data-mc-motion='reduced']) .film-rail__node::after {
+		transition:
+			background-color var(--ds-dur-1) var(--ds-ease),
+			border-color var(--ds-dur-1) var(--ds-ease),
+			opacity var(--ds-dur-1) var(--ds-ease);
+	}
+}

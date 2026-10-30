@@ -29,7 +29,7 @@ export const SCRUB = Object.freeze({
 	idleMs: 1600, // without input, the film starts again after this
 	rampMs: 600, // linear ramp of the automatic speed, 0 -> nominal
 	nominal: 1,
-	glideSec: 1.2, // the automatic glide to the site
+	glideSec: 1.8, // the automatic glide to the site (v12: 1.2 s was read as a zoom then a dezoom; Andy asked for a smoother hand-over)
 	glidePx: (H) => Math.min(640, Math.max(360, 0.5 * H)), // the glide under the scroll, in input px
 	glideMaxRate: 2.5, // g per second
 	topDetentPx: Object.freeze({ wheel: 120, key: 120, touch: 60 }), // at the top of the site: input absorbed before the film rewinds

@@ -89,7 +89,7 @@ test('the motion design layer (section 9) only exists when motion is allowed, an
 })
 
 test('the dropdown list (section 10) is a progressive enhancement of the native select, animated only when motion is allowed', () => {
-	const dropdown = charter.split('/* --- 10.')[1].replace(/^[\s\S]*?\*\//, '').replace(/\/\*[\s\S]*?\*\//g, '')
+	const dropdown = charter.split('/* --- 10.')[1].split('/* --- 11.')[0].replace(/^[\s\S]*?\*\//, '').replace(/\/\*[\s\S]*?\*\//g, '')
 	expect(dropdown.trimStart().startsWith('@supports (appearance: base-select) {')).toBe(true)
 	const [styling, animated] = dropdown.split('@media (prefers-reduced-motion: no-preference) {')
 	expect(styling).not.toMatch(/transition|animation/)
@@ -100,4 +100,16 @@ test('the dropdown list (section 10) is a progressive enhancement of the native 
 		expect(rule, selector).toMatch(/:root:not\(\[data-mc-motion='reduced'\]\)/)
 	}
 	expect(styling).toContain('option::checkmark')
+})
+
+test('the film rail (section 11) moves only when motion is allowed, and the thumb is a labelled slider', () => {
+	const rail = charter.split('/* --- 11.')[1].replace(/^[\s\S]*?\*\//, '').replace(/\/\*[\s\S]*?\*\//g, '')
+	const [still, animated] = rail.split('@media (prefers-reduced-motion: no-preference) {')
+	expect(still).not.toMatch(/transition|animation/)
+	expect(animated).toContain(":root:not([data-mc-motion='reduced'])")
+	expect(still).toContain("html[data-phase='site'] .film-rail {\n\t--rail-p: 1;") // on the site the bar is full
+	const markup = readFileSync(new URL('../components/HeroMarkup.tsx', import.meta.url), 'utf8')
+	expect(markup).toContain('role="slider"')
+	expect(markup).toContain('aria-orientation="vertical"')
+	expect((markup.match(/data-rail-chapter=/g) ?? []).length).toBe(5)
 })

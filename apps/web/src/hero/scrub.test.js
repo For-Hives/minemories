@@ -80,7 +80,7 @@ const placed = (t, o = {}) => {
 	check('S1', 't is constant during a stop', heldT.every((s) => s.t === 10.6), `${heldT.length} samples`)
 	const reach = samples.find((s) => s.t >= SITE - 1e-9)
 	const site = samples.find((s) => s.g >= 1)
-	check('S1', 'the automatic glide lasts 1.20 (+-0.02)', reach && site && near((site.w - reach.w) / 1000, 1.2, 0.02), reach && site ? ((site.w - reach.w) / 1000).toFixed(3) : 'no site')
+	check('S1', 'the automatic glide lasts 1.80 (+-0.02) (v12: was 1.20, Andy asked for a smoother hand-over)', reach && site && near((site.w - reach.w) / 1000, 1.8, 0.02), reach && site ? ((site.w - reach.w) / 1000).toFixed(3) : 'no site')
 	const after = at(samples, 12000)
 	const c = at(samples, 20000)
 	check('S1', 'nominal speed between the stops', near((c.t - after.t) / ((c.w - after.w) / 1000), 1, 0.001))

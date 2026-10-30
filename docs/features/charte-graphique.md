@@ -221,6 +221,8 @@ Le mouvement sert à **confirmer** (j'ai cliqué, ça répond), **orienter** (ç
 | FAQ, détails d'étape, pied de page | la hauteur s'anime (360 ms) et le contenu se fond ; le chevron tourne avec un rebond |
 | Liste de langue (sélecteur) | le panneau s'ouvre en descendant de 8 px en se fondant (200 ms), style du jeu (fond nuit, relief), option survolée en braise, option courante repérée par une barre braise ; le chevron se retourne. Chrome 135+ (`appearance: base-select`), liste native ailleurs |
 | Menu du bandeau (petits écrans) | descend de 8 px en se fondant ; la croix arrive en rebond |
+| Barre du film (bord droit) | frise verticale : remplissage braise et poignée qui suivent le temps du film (pleine sur le site) ; cinq repères de chapitre avec infobulle ; un glissement déplace la poignée et le film saute **une seule fois**, au relâchement (garde-fous anti-flash) ; clavier : haut / bas = chapitre précédent / suivant, Début, Fin |
+| Fin du film → site | la carte rétrécit à rythme constant (rapport de taille constant) et se rapproche du panneau comme un recul de caméra autour d'un point fixe ; 1,8 s au lieu de 1,2 s ; recadrage de la carte quand le texte change de largeur : 1,1 s, courbe symétrique |
 | Notifications | entrée et sortie de 600 ms, tenue de 5 s (valeurs du jeu) |
 
 ### Règles

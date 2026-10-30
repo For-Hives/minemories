@@ -3,6 +3,7 @@
 // This test is that step: the CSS variables written before the first paint equal the ones the film's own functions return, at the sizes that matter.
 import { expect, test } from 'vitest'
 import { prepareRoot } from './first-paint.js'
+import { framePath } from './scene.js'
 import { dockOf, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf, widenedRect } from './site.js'
 
 const SIZES = [
@@ -120,4 +121,27 @@ test('the panel takes the room the text leaves, never less than the grid gives i
 	expect(widenedRect(rect, { W: 1440, contentRight: 100 }).l).toBe(Math.round(1440 * 0.36)) // very narrow text: the floor
 	// quantised: two measures a few pixels apart give the same panel (no re-framing while scrolling)
 	expect(widenedRect(rect, { W: 1440, contentRight: 611 }).l).toBe(widenedRect(rect, { W: 1440, contentRight: 615 }).l)
+})
+
+test('framePath: the size moves by a constant ratio and the centre follows the zoom about one fixed point', () => {
+	const c0 = [0.48, 0.78]
+	const c1 = [0.78, 0.53]
+	const a = framePath(c0, c1, 2.7, 1, 0)
+	const b = framePath(c0, c1, 2.7, 1, 1)
+	expect([a.cx, a.cy, a.scale]).toEqual([0.48, 0.78, 2.7]) // the ends are exact
+	expect(b.cx).toBeCloseTo(0.78, 9)
+	expect(b.cy).toBeCloseTo(0.53, 9)
+	expect(b.scale).toBeCloseTo(1, 9)
+	const mid = framePath(c0, c1, 2.7, 1, 0.5)
+	expect(mid.scale).toBeCloseTo(Math.sqrt(2.7), 9) // geometric mean: the same ratio on each half
+	// the zoom is about a fixed point: the distance to it is proportional to the scale, at every k
+	const fixed = [(c1[0] - c0[0] / 2.7) / (1 - 1 / 2.7), (c1[1] - c0[1] / 2.7) / (1 - 1 / 2.7)]
+	for (const k of [0.1, 0.3, 0.5, 0.8]) {
+		const p = framePath(c0, c1, 2.7, 1, k)
+		expect((p.cx - fixed[0]) / p.scale).toBeCloseTo((c0[0] - fixed[0]) / 2.7, 9)
+		expect((p.cy - fixed[1]) / p.scale).toBeCloseTo((c0[1] - fixed[1]) / 2.7, 9)
+	}
+	// no scale change: a plain slide; a degenerate scale: linear
+	expect(framePath([0, 0], [1, 1], 1, 1, 0.5)).toEqual({ cx: 0.5, cy: 0.5, scale: 1 })
+	expect(framePath([0, 0], [1, 1], 0, 2, 0.5)).toEqual({ cx: 0.5, cy: 0.5, scale: 1 })
 })

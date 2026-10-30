@@ -290,7 +290,7 @@ export function createSite(ctx) {
 		clearTimeout(reachTimer)
 		reachTimer = setTimeout(() => {
 			reach = next
-			layout({ duration: 0.7 })
+			layout({ duration: 1.1, ease: 'glide' }) // slow and symmetric: the panel gaining or losing room is a drift, not a move
 		}, 140)
 	}
 

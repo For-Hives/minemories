@@ -1625,8 +1625,8 @@ html:not(.scene-on) .film-bar {
 	--dock-h-large: 321px; /* 38 % of 844; site.js and the first-paint script write the real value (largeBandOf) */
 	--dock-h-small: 203px;
 	--ease-std: cubic-bezier(0.4, 0, 0.2, 1);
-	--ease-glide: cubic-bezier(0.65, 0, 0.35, 1); /* the hand-over glide: symmetric, 1.2 s (GLIDE in hero.js, scene.js GLIDE_EASE) */
-	--glide: 1.2s;
+	--ease-glide: cubic-bezier(0.65, 0, 0.35, 1); /* the hand-over glide: symmetric, 1.8 s (GLIDE in hero.js, scene.js GLIDE_EASE) */
+	--glide: 1.8s;
 }
 
 /* --- header ----------------------------------------------------------------------------------------------------- */
