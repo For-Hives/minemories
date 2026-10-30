@@ -1,0 +1,13 @@
+{
+	"sourceDir": "apps/web/public/hero/captures",
+	"outputDir": "apps/web/public/hero/captures-opt",
+	"base": "S0",
+	"captures": [
+		{ "name": "S0", "role": "stage", "priority": "critical" },
+		{ "name": "S1", "role": "stage", "priority": "low", "delta": true },
+		{ "name": "S2", "role": "stage", "priority": "low", "delta": true },
+		{ "name": "S3", "role": "stage", "priority": "low", "delta": true },
+		{ "name": "S4", "role": "stage", "priority": "low", "delta": true },
+		{ "name": "personnages", "role": "characters", "priority": "low", "delta": true }
+	]
+}

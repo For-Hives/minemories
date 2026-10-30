@@ -4206,8 +4206,14 @@ class AssetError extends Error {
 	}
 }
 
+// hero-assets anchor (apps/web/src/lib/capture-delta.ts, docs/features/film-assets-pipeline.md): the host may supply the
+// download of the captures (`fetchGlb` option of mount(): rebuilt from deltas, with the full GLB as fallback). Only this
+// function and the two lines marked "hero-assets anchor" below know about it; scene-anchor.test.js keeps them in place.
+let glbFetcher = null
+
 // Download only (off the main thread): allows fetching a GLB early and preparing it later.
 async function fetchGlb(base, name) {
+	if (glbFetcher) return glbFetcher(base, name)
 	const url = new URL(`${name}.glb`, base)
 	let response
 	try {
@@ -4769,8 +4775,10 @@ export function mount(target, opts = {}) {
 		damping: 0.25, // seconds: damping of the time toward the target of the scroll
 		pauseOffscreen: true,
 		maxPixelRatio: 2, // number, or function (width, height) -> ceiling, re-evaluated at every resize
+		fetchGlb: null, // (base URL, name) -> Promise<{ buffer, url }>: how the captures are downloaded (default: `<name>.glb` next to `capturesUrl`)
 		...opts,
 	}
+	glbFetcher = o.fetchGlb ?? null // hero-assets anchor
 	let variant = Object.fromEntries(VARIANT_KEYS.map((key) => [key, typeof o[key] === 'boolean' ? o[key] : VARIANT_DEFAULTS[key]]))
 	const tune = { look: { ...(o.tune?.look ?? {}) }, life: { ...(o.tune?.life ?? {}) }, sky: { ...(o.tune?.sky ?? {}) }, scene: { ...(o.tune?.scene ?? {}) } }
 	if (o.emberCore) tune.life.emberLook = { ...EMBER_CORE, ...(tune.life.emberLook ?? {}) }
@@ -6870,6 +6878,7 @@ export function mount(target, opts = {}) {
 			frameAnim?.resolve(null)
 			frameAnim = null
 			disposed = true
+			glbFetcher = null // hero-assets anchor
 			cancelAnimationFrame(raf)
 			resizeObserver?.disconnect()
 			intersection?.disconnect()
