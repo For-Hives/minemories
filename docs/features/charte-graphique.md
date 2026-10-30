@@ -1,0 +1,294 @@
+# Charte graphique Minemories : l'interface de Minecraft, appliquée à tout le site
+
+Document de référence pour Andy (front, landing), Bréval (produit) et toute personne qui ajoute une page. Il complète [design-system.md](design-system.md) (jetons, composants, audit de la landing) : ce document-ci dit **quoi** appliquer et **pourquoi**, l'autre dit **comment** c'est codé.
+
+Statut : version 1 (30/10/2026). Les gris du jeu (boutons, panneaux, cases, désactivé) sont appliqués dans `film.css :root` (section 3). Les passages marqués **[à valider]** restent des propositions non tranchées.
+
+---
+
+## 1. Le principe : le souvenir est un objet
+
+Minemories garde des souvenirs de mondes Minecraft. Le site parle donc la langue du jeu : ses menus, ses cases, ses infobulles, ses messages de chat. Le visiteur doit penser « c'est fait pour le jeu » avant d'avoir lu un mot.
+
+Trois règles gouvernent tout le reste :
+
+1. **On reprend la grammaire du jeu, pas ses fichiers.** Biseaux, cases, infobulles, notifications, échelle de pixels, ombre du texte : oui. Textures, sprites, sons, logo : jamais (voir § 12).
+2. **Le jeu est la référence.** En cas de doute entre deux solutions, on choisit celle qui ressemble le plus à ce qu'un joueur voit dans le jeu, tant qu'elle reste lisible (§ 11).
+3. **Sobre.** Pas de dégradé, de pilule arrondie, d'ombre floue, de carte à trois colonnes, d'emoji, d'icône générique. Une matière (la pierre), un accent (la braise).
+
+### Le curseur de proximité
+
+| Niveau | Ce que ça veut dire | Où on est |
+|---|---|---|
+| 1. Évocateur | On sent le thème (pixels, police carrée) | dépassé |
+| **2. Fidèle à la grammaire** | Mêmes formes, mêmes proportions, mêmes états, couleurs voisines | **cible de la charte** |
+| 3. Copie des écrans | On refait l'écran titre, l'inventaire, le chargement de Mojang | **interdit** (droits, § 12) |
+
+La charte vise le niveau 2 partout : un joueur reconnaît la famille, personne ne prend la page pour un écran de Mojang.
+
+---
+
+## 2. Ce qu'on applique aujourd'hui (landing, en production)
+
+| Domaine | Appliqué | Où |
+|---|---|---|
+| Police | « MM Minecraft » (police du jeu), Unifont pour le coréen et le japonais ; option « Police lisible » (Atkinson Hyperlegible Next) | `film.css` |
+| Pixel | `--gp` = 2 px (3 px pour le HUD du film au-delà de 960 × 720) | `film.css`, `tokens.css` |
+| Échelle de texte | 16 / 24 / 32 / 40 px (multiples de 8) | `tokens.css` |
+| Couleurs | Nuit chaude `#14110e`, texte `#f4efe6`, pierre, cuivre, braise `#ffb347` | `film.css :root` |
+| Relief | Bordure noire de 1 gp, lumière en haut à gauche, ombre en bas à droite, ombre de texte d'un texel | `.mc-btn`, `.mc-panel` |
+| Composants | Bouton, panneau, case, barre d'objets, infobulle, notification, chat, onglets, champ, FAQ, étapes, pied de page | `film.css`, `charter.css` |
+| Mouvement | 120 / 200 / 360 ms, entrée au défilement de 12 px, arrêt en « mouvement réduit » | `tokens.css`, `reveal.ts` |
+| Accessibilité | Contraste ≥ 4,5:1, cibles de 44 px, focus visible, ordre de Tab = ordre du DOM | `charter.css` |
+
+---
+
+## 3. Où on colle au jeu, où on s'en écarte, et ce qu'on propose
+
+Le jeu (Java 1.21.1, mesuré sur le client) sert de référence. La direction artistique v7 avait décalé volontairement plusieurs tons pour ne pas ressembler à un écran de Mojang. Comme tu veux te rapprocher, voici le détail.
+
+| Élément | Jeu (vanilla) | Minemories aujourd'hui | Proposition |
+|---|---|---|---|
+| Bouton, repos | face `#6F6F6F`, lumière `#AAAAAA`, ombre `#565656`, contour noir | gris du jeu `#6F6F6F` / `#AAAAAA` / `#565656` (appliqué) | **Fait.** Avant : pierre chaude `#6E6862`. Texte blanc 5,0:1. |
+| Bouton, survol | contour blanc `#FFFFFF`, face un cran plus clair | contour `--hover` `#FFF4E0` | garder (quasi identique) |
+| Bouton, désactivé | face `#2C2C2C`, texte `#A0A0A0` | `--off #2C2C2C`, `--off-ink #A0A0A0` (appliqué) | **Fait.** Texte 5,3:1. |
+| Bouton principal | aucun : tous les boutons sont gris | cuivre `#8A5A2B` | **garder le cuivre, mais un seul par zone.** Écart volontaire : il évite de singer le jeu et guide l'œil. |
+| Panneau (conteneur) | face `#C6C6C6`, lumière blanche, ombre `#555555`, coins crantés, titre `#404040` | gris du jeu `#C6C6C6` / `#FFFFFF` / `#555555`, titre `#404040` (appliqué) | **Fait.** Avant : papier chaud `#CFC8BC`. Texte 6,1:1. |
+| Fond des pages | depuis la 1.20.5 : voile noir 25 % sur un panorama flou | nuit chaude `#14110E` | garder : le site est de nuit. Mettre un voile sombre sur les images de fond. |
+| Case d'objet | creux `#373737`, face `#8B8B8B`, bord clair `#FFFFFF` | `#373737` / `#8B8B8B` / `#FFFFFF` (appliqué) | **Fait.** Texte blanc sur la case : 3,4:1, sous 4,5:1 (c'était ~3:1 avant) : ne mettre sur une case que des icônes et des chiffres de grande taille. |
+| Infobulle | fond `#100010` à 94 %, liseré violet `#5000FF` → `#28007F`, décalée de 12 gp | liseré braise | **garder la braise.** Le liseré violet est le signe le plus reconnaissable du jeu : l'abandonner sépare l'hommage de l'imitation. |
+| Notification (toast) | face `#212121`, anneau `#555555`, titre jaune `#FFFF00`, 600 ms d'entrée, 5 s de tenue | face `#221D18`, titre or `#FFD25A` | garder l'or ; reprendre les durées du jeu (600 ms / 5 s) |
+| Champ de texte | fond noir, contour `#A0A0A0`, contour blanc au focus | `--field`, `--field-edge` | identique en pratique |
+| Texte | blanc, ombre = texte × 0,25 par canal | `--text #F4EFE6`, ombre `#3D3B39` | identique (même règle) |
+| Titre | `/title` : ×4, centré, ombre portée | h1 40 px avec ombre de 5 px | identique en esprit |
+| Codes de couleur | 16 couleurs du chat (§0 à §f) | `--c-name`, `--c-lore`, `--c-blue`, `--c-green`, `--c-gold` | reprendre les 16 couleurs **telles quelles** pour les noms de joueurs et de mondes, avec la vérification de contraste (§ 4.3) |
+
+Les deux écarts qu'on garde ont chacun une raison :
+- **Cuivre pour l'action principale** (le jeu n'en a pas) : lisibilité et guidage du regard.
+- **Braise au lieu du violet** dans les infobulles : on évite de copier le signe le plus caractéristique.
+
+La bascule s'est faite dans `film.css :root` (sept variables, plus l'ombre de texte des boutons gris `#3F3F3F`, blanc × 0,25) et se propage à tous les composants.
+
+---
+
+## 4. Couleurs
+
+### 4.1 Palette de base (nuit, en production)
+
+| Jeton | Valeur | Rôle |
+|---|---|---|
+| `--night` | `#14110E` | fond de page |
+| `--night-2` | `#1F1A15` | fond de panneau sombre |
+| `--night-3` | `#2E2822` | fond de carte, séparateurs |
+| `--text` | `#F4EFE6` | texte principal (≥ 15:1) |
+| `--text-2` | `#C9C1B4` | texte secondaire (≥ 9,6:1) |
+| `--text-3` | `#9D958A` | méta, aide |
+| `--outline` | `#0A0806` | contour de 1 gp |
+| `--hover` | `#FFF4E0` | contour de survol, anneau de focus |
+
+### 4.2 Matières
+
+| Matière | Jetons | Usage |
+|---|---|---|
+| Pierre | `--stone-hi/stone/stone-lo` | boutons, cases |
+| Cuivre | `--copper-hi/copper/copper-lo` | bouton principal (un par zone) |
+| Panneau clair | `--panel-hi/panel/panel-lo`, `--panel-ink` | conteneurs de type inventaire |
+| Braise | `--ember #FFB347`, `--ember-deep #E07B24`, `--gold #FFD25A` | accent : survol, état ouvert, titres de notification |
+
+### 4.3 Couleurs du jeu pour le contenu
+
+Les noms de joueurs, de mondes, d'objets et les messages de chat utilisent les couleurs du jeu :
+
+| Code | Valeur | Code | Valeur |
+|---|---|---|---|
+| §0 noir | `#000000` | §8 gris foncé | `#555555` |
+| §1 bleu foncé | `#0000AA` | §9 bleu | `#5555FF` |
+| §2 vert foncé | `#00AA00` | §a vert | `#55FF55` |
+| §3 cyan foncé | `#00AAAA` | §b cyan | `#55FFFF` |
+| §4 rouge foncé | `#AA0000` | §c rouge | `#FF5555` |
+| §5 violet foncé | `#AA00AA` | §d violet clair | `#FF55FF` |
+| §6 or | `#FFAA00` | §e jaune | `#FFFF55` |
+| §7 gris | `#AAAAAA` | §f blanc | `#FFFFFF` |
+
+Règle de contraste : sur fond sombre, seules les couleurs claires (§7, §a à §f ; vérifier §9, plus faible) passent 4,5:1. Les sombres (§0 à §6, §8) ne servent qu'en décor ou doublées d'une icône ou d'un libellé. Sur panneau clair, le blanc et le jaune sont interdits (1,6 à 1,7:1).
+
+États : erreur `--bad #FF9A8C` (8,9:1), succès `--c-green`, avertissement `--gold`, information `--c-blue`. Jamais de couleur seule pour porter un sens : toujours une icône ou un mot.
+
+---
+
+## 5. Typographie
+
+| Rôle | Police | Détail |
+|---|---|---|
+| Tout le site | **MM Minecraft** (la police du jeu), gras pour les titres | une seule famille, trois alias `--f-ui`, `--f-title`, `--f-read` |
+| Logo | MM Wordmark | uniquement le « M » et le « m » du logo |
+| Coréen, japonais | Unifont (OFL) sous le même nom de famille | tailles multiples de 16 seulement |
+| Option accessibilité | Atkinson Hyperlegible Next | active `[data-mc-font='read']`, remplace les trois alias |
+
+Échelle (la police est un pixel de 8 texels : seuls les multiples de 8 sont nets) :
+
+| Niveau | Taille / interligne | Ombre de texte | Usage |
+|---|---|---|---|
+| H1 | 32/40, 40/48 dès 640 px | 4 px, 5 px | titre de page |
+| H2 | 32/40 | 4 px | titre de section |
+| H3 | 24/32 | 3 px | titre de carte ou d'étape |
+| Corps | 16/24 | 2 px | tout le texte de lecture |
+| Chapeau | 16/24, 24/32 dès 1 000 px | | seulement le hero |
+
+Règles : rien au-dessus de 40 px hors du film ; mesure de 58 caractères ; jamais de gras ou d'italique fabriqué (`font-synthesis: none`, le jeu n'a pas d'italique) ; pas de lettres espacées ni de capitales décoratives ; l'ombre de texte vaut toujours la couleur du texte × 0,25 par canal.
+
+---
+
+## 6. Grille, espacement, échelle
+
+- **Pixel de GUI** `--gp` = 2 px. Toute bordure, tout biseau, tout décalage est un multiple de `--gp`. Aucun arrondi, aucun flou.
+- **Espacement** : pas de 4 px (`--ds-sp-1` à `-8` : 4, 8, 12, 16, 24, 32, 48, 64). Une section respire de 32 px (48 px dès 640 px).
+- **Cibles** : tout ce qui se touche fait au moins 44 px de haut (`--ds-hit`).
+- **Largeur** : texte à 58 caractères ; contenu centré, jamais pleine largeur sur les grands écrans.
+- **Points de rupture** : 640, 900, 1 000 px ; mobile d'abord (390 px de référence).
+- **Pas de coins arrondis.** Les coins sont droits ou crantés (anneau sans coins, comme dans le code du jeu).
+
+---
+
+## 7. Composants : du jeu vers le site
+
+| Composant du jeu | Notre composant | Classe | Règles |
+|---|---|---|---|
+| Bouton gris | Bouton | `mc-btn` | 44 px, relief, survol = contour clair + 1 px vers le haut, pression = relief enfoncé |
+| Bouton « fait » | Bouton principal | `mc-btn--primary` | cuivre ; un par zone |
+| Panneau d'inventaire | Panneau | `mc-panel`, `mc-panel--dark` | coins crantés, titre en `--panel-ink` |
+| Barre d'objets | Barre d'objets | `mc-hotbar` | neuf cases ; sélection par cadre blanc ; numéro de touche |
+| Infobulle | Infobulle | `mc-tip`, `mc-hovertip` | nom en cyan, description en violet clair, faits en gris ; liseré braise |
+| Message de chat | Chat | `mc-chat` | une ligne par événement, texte du jeu |
+| Étiquette de nom | Étiquette | `mc-nametag` | fond noir 25 % |
+| Champ de texte | Champ | `mc-field` | fond noir, contour gris, contour blanc au focus |
+| Case à cocher, option | Option | `mc-check`, `mc-check--radio` | ligne de 44 px |
+| Recette (grille 3×3) | Étapes | `mc-recipe`, `mc-step` | pour expliquer un fonctionnement |
+| Barre de progression | Barre | `mc-bar` | remplissage vert comme l'XP |
+
+Tout composant nouveau doit répondre à : quel élément du jeu ressemble-t-il ? S'il n'en a pas, c'est probablement du décor qu'on peut supprimer.
+
+---
+
+## 8. Images, icônes, illustrations
+
+- **Icônes** : SVG en pixel (`public/hero/mcui/icons/`), `image-rendering: pixelated`, `shape-rendering: crispEdges`. Grille de 16 ou 8 pixels, un seul trait de 2 px. Pas d'icônes de bibliothèque générique.
+- **Objets du jeu** (os, braise, journal) : dessinés par nous dans l'esprit des items, jamais copiés.
+- **Captures de monde** : c'est le contenu. Toujours en pixel net (`image-rendering: pixelated` quand on agrandit), sans filtre, sans bord arrondi. Légende dans l'esprit d'une infobulle.
+- **Fond** : voile noir 25 % sur capture floue, comme le menu du jeu depuis la 1.20.5.
+- **Interdit** : photos de stock, illustrations vectorielles lisses, 3D qui ne vient pas d'une capture, captures d'écran réelles de Mojang.
+
+---
+
+## 9. Mouvement et son
+
+- Trois durées : **120 ms** (survol, pression), **200 ms** (changement d'état), **360 ms** (entrée au défilement). Deux courbes (`--ds-ease`, `--ds-ease-std`). Rien de plus long.
+- **Par pas** pour la géométrie (`steps(n)`, n = distance en pixels de GUI) : un objet avance d'un pixel à la fois, comme dans le jeu. L'opacité reste continue.
+- Entrées au défilement : 12 px et fondu, une fois par bloc, frères décalés de 60 ms.
+- Notifications : entrée et sortie de 600 ms, tenue de 5 s (valeurs du jeu).
+- **Pas plus de 2 flashs par seconde.** Aucune animation de luminosité.
+- **Mouvement réduit** (système ou option du pied de page) : aucune entrée, aucune transition. Le contenu est là tout de suite.
+- **Son** : aucun son par défaut, jamais d'autoplay, les sons du jeu ne sont pas réutilisés.
+
+---
+
+## 10. Ton des textes
+
+Le site parle comme le jeu : court, concret, au présent.
+
+- **Chat du jeu** : les lignes de la landing viennent du chat réel (« Minemories: world capture done. »). Quand une ligne existe dans le mod, le site la reprend à l'identique. *À décider avec Bréval : le mod affiche encore « Souvenir AFK enregistré localement ».*
+- **Boutons** : un verbe (« Installer », « Capturer », « Partager »), pas de point.
+- **Titres** : 6 mots au plus par ligne ; naturels à l'oral ; pas de tournure littéraire.
+- **Erreurs** : dire ce qui s'est passé et quoi faire, sans jargon ni majuscules.
+- **Tutoiement**, comme le jeu ; formulations neutres pour le genre.
+- **11 langues** : traduit par une personne qui parle, pas mot à mot. Noms propres et paramètres préservés.
+
+---
+
+## 11. Accessibilité (non négociable, même si le jeu ne le fait pas)
+
+Le jeu n'est pas une référence d'accessibilité : plusieurs de ses couleurs ne passent pas 4,5:1. On garde l'esprit, on corrige le contraste.
+
+- Texte ≥ 4,5:1 (le plus faible aujourd'hui : bouton principal, 5,87:1) ; texte large ≥ 3:1.
+- Focus visible partout : anneau de 2 px clair, décalé de 2 px.
+- Tab suit l'ordre du DOM ; lien d'évitement en premier.
+- Cibles de 44 px.
+- Option « Police lisible » ; option « Mouvement réduit » ; `<html lang>` à jour.
+- Aucune information portée par la couleur seule.
+- Tout ce qui se fait à la souris se fait au clavier (le viewer 3D compris).
+
+---
+
+## 12. Droits et mentions (à respecter ; ce n'est pas du conseil juridique)
+
+Les règles d'usage de Minecraft (lues le 23/10/2026) disent en substance :
+
+- la marque couvre « logos, fonts, textures, and any other distinctive characteristics » ;
+- on ne doit rien faire qui laisse croire que c'est officiel, approuvé, soutenu ou associé ;
+- le nom Minecraft ne doit jamais dominer, et aucun élément de la marque n'entre dans un logo ;
+- il faut dire **qui est responsable** et **comment le contacter** ;
+- une mention « similaire » doit être affichée bien en vue : **« NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT »**, sur le site et les supports.
+
+Conséquences pour la charte :
+
+1. Jamais de texture, de sprite, de son, de logo, d'écran titre, de panorama ni d'inventaire reproduit en entier.
+2. **Police** : « MM Minecraft » est dérivée de celle du jeu (extraite des atlas). Elle a été acceptée « en l'état » pour le prototype, mais c'est un fichier Mojang : **à remplacer ou à faire valider avant tout lancement public**. Le plan de remplacement existe (`assets/mc/MANIFEST.json`, clé `mcFont`) : les chasses sont le contrat, donc le remplacer ne bouge aucune mise en page. Alternatives indépendantes : Pixel Operator (CC0), Departure Mono et Pixelify Sans (OFL). Monocraft est exclue.
+3. Logo : Pixel Operator gras avec une braise à nous. Pas de lettres de pierre biseautées.
+4. La mention « not official » apparaît dans le pied de page de toutes les pages, pas seulement la landing.
+5. La ressemblance du nom « Minemories » avec « Minecraft » est une question pour Andy et Bréval (les règles visent les noms « confusingly similar ») ; elle n'est pas traitée ici.
+
+---
+
+## 13. Appliquer la charte page par page
+
+Une page adopte la charte en : (1) portant `.ds-page` sur sa racine ; (2) utilisant uniquement les classes `mc-*` ; (3) chargeant `tokens.css` + `film.css` + `charter.css` (aujourd'hui injectés par `HeroFilm`, à déplacer dans un `DesignSystemStyles` partagé à la deuxième page migrée) ; (4) ne définissant aucune taille en dur.
+
+| Page | Écran du jeu évoqué | Composants |
+|---|---|---|
+| Landing `/` | écran titre + cinématique | déjà en production |
+| Guides (`/installation`, `/fonctionnement`, `/faq`…) | livre, écran d'aide | `mc-step`, `mc-faq`, `mc-recipe`, `mc-section` |
+| Découverte (`/decouvrir`, `/classement`, `/explorer`) | sélection de monde | ligne de monde : miniature carrée, nom en blanc, détail en gris, bouton à droite |
+| Textes longs (`/blog`, `/privacy`, `/terms`) | livre signé | `mc-prose`, mesure de 58 caractères |
+| Connexion, inscription, compte | écran de réglages | `mc-form`, `mc-field`, `mc-check`, `mc-select`, un seul bouton principal |
+| Galerie, partage | album de captures | grille de cases, légende en infobulle au survol et au focus |
+| Visualiseur 3D | le jeu lui-même | garde son interface propre : `mc-hotbar`, `mc-dock`, `mc-panel`, `mc-btn--icon` |
+| Administration, modération | écran de commandes | `mc-panel--dark`, tableau dense en 16/24, pas d'animation |
+
+Pour toute nouvelle page, répondre dans l'ordre : quel écran du jeu cette page évoque-t-elle ? quels composants du § 7 ? quel est le seul bouton principal ? qu'est-ce qui est visible sans JavaScript ?
+
+---
+
+## 14. À faire / à ne pas faire
+
+**À faire**
+- Mesurer en multiples de `--gp`.
+- Mettre une ombre de texte (texte × 0,25) sous tout texte clair sur fond sombre.
+- N'utiliser qu'un bouton principal par zone.
+- Écrire dans le ton du chat du jeu.
+- Vérifier le contraste de chaque nouvelle couleur.
+- Tester à 390, 820 et 1440 px, et avec « mouvement réduit ».
+
+**À ne pas faire**
+- Coins arrondis, ombres floues, dégradés, verre dépoli, cartes à trois colonnes, emoji, icônes de bibliothèque, photos de stock.
+- Taille de police hors de l'échelle (16, 24, 32, 40) ou gras / italique synthétique.
+- Couleur seule pour un sens ; texte blanc ou jaune sur panneau clair.
+- Reproduire l'écran titre, l'inventaire, l'écran de chargement ou le logo de Minecraft.
+- Texte d'accroche jaune qui pulse (trop reconnaissable), son ou musique par défaut.
+- Animation plus longue que 360 ms, ou qui bouge dans un bloc de texte déjà affiché.
+
+---
+
+## 15. Décisions à trancher
+
+1. ~~Rapprochement des gris~~ : fait (boutons, panneaux, cases, désactivé).
+2. **Police du jeu** : garder « MM Minecraft » en production publique, ou la remplacer (Pixel Operator) avant le lancement ? Décision de droit, pas de design.
+3. **Bouton principal** : cuivre conservé (recommandé) ou gris comme dans le jeu ?
+4. **Ligne de chat du mod** : aligner « Souvenir AFK enregistré localement » sur celle du film (avec Bréval).
+5. **Page `/design`** : créer la page de démonstration des composants lors de la première migration (recommandé).
+6. **Corps de texte à 16 px sur grand écran** : lisible mais petit à 1 920 px ; l'alternative nette avec la police pixel est 24 px, mais pas 20 px.
+
+## 16. Sources
+
+- Mesures de l'interface vanilla et droits : `docs/marketing/v0/hero/direction-da-v7.md` (local, hors dépôt public).
+- Jetons et composants : `apps/web/src/hero/tokens.css`, `film.css`, `charter.css` ; audit et captures : [design-system.md](design-system.md).
+- Règles d'usage de Minecraft : https://www.minecraft.net/en-us/usage-guidelines
