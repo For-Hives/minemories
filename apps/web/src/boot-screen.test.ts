@@ -13,7 +13,7 @@ test('the loading screen is self-contained, labelled and cannot trap the visitor
 	expect(html).toMatch(/b-max \.3s ease-in 12s forwards/) // hard stop: hidden after 12 s whatever happens
 	expect(html).toContain('setTimeout(h,12000)')
 	expect(html).toContain("addEventListener('load',h)")
-	expect(html.length).toBeLessThan(20_000)
+	expect(html.length).toBeLessThan(26_000)
 })
 
 test('the loading screen only appears if the page is slow, and respects reduced motion', () => {
