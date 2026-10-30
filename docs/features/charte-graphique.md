@@ -155,7 +155,7 @@ Règles : rien au-dessus de 40 px (voix du jeu) hors du film ; mesure de 58 cara
 ## 6. Grille, espacement, échelle
 
 - **Pixel de GUI** `--gp` = 2 px. Toute bordure, tout biseau, tout décalage est un multiple de `--gp`. Aucun arrondi, aucun flou.
-- **Espacement** : pas de 4 px (`--ds-sp-1` à `-8` : 4, 8, 12, 16, 24, 32, 48, 64). Une section respire de 32 px (48 px dès 640 px).
+- **Espacement** : pas de 4 px (`--ds-sp-1` à `-8` : 4, 8, 12, 16, 24, 32, 48, 64). **Rythme vertical** : 24 px (`--ds-gap`) entre un titre et son contenu et entre deux blocs ; 12 px entre deux lignes de FAQ ; une section a 32 px de marge haute et basse (40 px dès 640 px), donc 64 px (80 px dès 640 px) entre deux sections. Rien d'autre : pas de marge propre à un composant.
 - **Cibles** : tout ce qui se touche fait au moins 44 px de haut (`--ds-hit`).
 - **Largeur** : texte à 58 caractères ; contenu centré, jamais pleine largeur sur les grands écrans.
 - **Points de rupture** : 640, 900, 1 000 px ; mobile d'abord (390 px de référence).
@@ -219,6 +219,7 @@ Le mouvement sert à **confirmer** (j'ai cliqué, ça répond), **orienter** (ç
 | Lien | le soulignement s'écarte du texte (3 px → 6 px) ; navigation du bandeau : barre braise qui entre depuis la gauche |
 | Carte d'étape | le numéro « tombe » en place avec un rebond à l'entrée, puis grossit de 8 % quand la carte est survolée ou focalisée |
 | FAQ, détails d'étape, pied de page | la hauteur s'anime (360 ms) et le contenu se fond ; le chevron tourne avec un rebond |
+| Liste de langue (sélecteur) | le panneau s'ouvre en descendant de 8 px en se fondant (200 ms), style du jeu (fond nuit, relief), option survolée en braise, option courante repérée par une barre braise ; le chevron se retourne. Chrome 135+ (`appearance: base-select`), liste native ailleurs |
 | Menu du bandeau (petits écrans) | descend de 8 px en se fondant ; la croix arrive en rebond |
 | Notifications | entrée et sortie de 600 ms, tenue de 5 s (valeurs du jeu) |
 
@@ -287,7 +288,7 @@ Une page adopte la charte en : (1) portant `.ds-page` sur sa racine ; (2) utilis
 
 | Page | Écran du jeu évoqué | Composants |
 |---|---|---|
-| Landing `/` | écran titre + cinématique | déjà en production |
+| Landing `/` | écran titre + cinématique | déjà en production. La section « Ce que Minemories ne fait pas » (cadre doré) a été retirée ; ses quatre limites (pas une sauvegarde, rien avant le mod, une capture AFK toutes les 4 h, Java 1.21.1 en bêta) restent à dire ailleurs si besoin (FAQ, page installation) |
 | Guides (`/installation`, `/fonctionnement`, `/faq`…) | livre, écran d'aide | `mc-step`, `mc-faq`, `mc-recipe`, `mc-section` |
 | Découverte (`/decouvrir`, `/classement`, `/explorer`) | sélection de monde | ligne de monde : miniature carrée, nom en blanc, détail en gris, bouton à droite |
 | Textes longs (`/blog`, `/privacy`, `/terms`) | livre signé | `mc-prose`, mesure de 58 caractères |

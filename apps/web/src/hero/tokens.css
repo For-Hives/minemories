@@ -42,8 +42,8 @@
 	--ds-sp-6: 32px;
 	--ds-sp-7: 48px;
 	--ds-sp-8: 64px;
-	--ds-section-y: var(--ds-sp-6);  /* respiration verticale d'une section : 32 px, 48 px à partir de 640 px */
-	--ds-gap: var(--ds-sp-4);
+	--ds-section-y: var(--ds-sp-6);  /* respiration verticale d'une section : 32 px, 40 px à partir de 640 px (64 / 80 px entre deux sections) */
+	--ds-gap: var(--ds-sp-5);        /* entre le titre d'une section et son contenu, et entre deux blocs : 24 px */
 
 	/* Cibles et pixel : tout ce qui se touche fait au moins 44 px de haut */
 	--ds-hit: 44px;
@@ -77,7 +77,7 @@
 	:root {
 		--ds-fs-h1: 40px;
 		--ds-lh-h1: 48px;
-		--ds-section-y: var(--ds-sp-7);
+		--ds-section-y: 40px;
 	}
 }
 

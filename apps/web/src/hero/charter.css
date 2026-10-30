@@ -38,7 +38,6 @@
 .site .mc-step__help,
 .site .mc-step__more p,
 .site .mc-faq__a,
-.site .mc-limits li,
 .site .mc-hero__compat,
 .ds-page .mc-section__text {
 	font-size: var(--ds-fs-md);
@@ -105,7 +104,15 @@ html[data-mc-font='read'] .site .mc-step__title {
 }
 
 .site .mc-steps {
-	gap: var(--ds-sp-4);
+	gap: var(--ds-gap);
+}
+
+.site .mc-faq {
+	gap: var(--ds-sp-3);
+}
+
+.site .mc-hero {
+	gap: var(--ds-gap);
 }
 
 .site .mc-hero__actions {
@@ -165,7 +172,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 .site-links {
 	gap: 0 var(--ds-sp-6);
-	margin-block: var(--ds-sp-3) var(--ds-sp-4);
+	margin-block: 0;
 }
 
 /* --- 5. Cartes et panneaux « interface Minecraft » : étapes, limites, FAQ --------------------------------------------------------------------------------- */
@@ -299,7 +306,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :i
 	max-width: var(--ds-measure);
 }
 
-html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-limits li, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
+html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	text-shadow: none;
 }
@@ -529,5 +536,99 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 
 	:root:not([data-mc-motion='reduced']) .site-menu a:hover {
 		transform: translateX(var(--ds-sp-1));
+	}
+}
+
+/* --- 10. Listes déroulantes : le sélecteur de langue ouvre un panneau du jeu qui descend en se fondant ---------------------------------------------------- */
+/* `appearance: base-select` (Chrome 135 et suivants) rend la liste stylable tout en gardant le <select> natif : clavier, lecteurs d'écran et mobile restent ceux du navigateur.
+   Ailleurs, la liste native s'ouvre comme avant (amélioration progressive, rien ne casse). */
+
+@supports (appearance: base-select) {
+	.mc-select__control,
+	.mc-select__control::picker(select) {
+		appearance: base-select;
+	}
+
+	.mc-select__control {
+		display: flex;
+		align-items: center;
+	}
+
+	.mc-select__control::picker-icon {
+		display: none; /* le chevron du kit (.mc-select::after) reste le seul */
+	}
+
+	.mc-select__control::picker(select) {
+		margin-top: var(--ds-sp-1);
+		padding: var(--ds-sp-1);
+		min-width: anchor-size(width);
+		max-height: min(60vh, 28rem);
+		background: var(--night);
+		border: var(--ds-px) solid var(--outline);
+		border-radius: 0;
+		box-shadow: var(--ds-panel-bevel), 0 var(--gp) 0 #3a322b;
+		color: var(--text);
+	}
+
+	.mc-select__control option {
+		display: flex;
+		align-items: center;
+		min-height: var(--ds-hit);
+		padding: 0 var(--ds-sp-3);
+		font: 400 16px / 1 var(--f-ui);
+		color: var(--text);
+		cursor: pointer;
+	}
+
+	.mc-select__control option::checkmark {
+		display: none;
+	}
+
+	.mc-select__control option:hover,
+	.mc-select__control option:focus-visible {
+		background: var(--night-3);
+		color: var(--ember);
+		outline: none;
+	}
+
+	.mc-select__control option:checked {
+		box-shadow: inset var(--ds-sp-1) 0 0 var(--ember);
+		background: var(--night-2);
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@supports (appearance: base-select) {
+		:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select) {
+			opacity: 0;
+			transform: translateY(calc(-1 * var(--ds-sp-2)));
+			transition:
+				opacity var(--ds-dur-2) var(--ds-ease),
+				transform var(--ds-dur-2) var(--ds-ease),
+				overlay var(--ds-dur-2) allow-discrete,
+				display var(--ds-dur-2) allow-discrete;
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select):popover-open {
+			opacity: 1;
+			transform: none;
+		}
+
+		@starting-style {
+			:root:not([data-mc-motion='reduced']) .mc-select__control::picker(select):popover-open {
+				opacity: 0;
+				transform: translateY(calc(-1 * var(--ds-sp-2)));
+			}
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select__control option {
+			transition:
+				background-color var(--ds-dur-1) var(--ds-ease),
+				color var(--ds-dur-1) var(--ds-ease);
+		}
+
+		:root:not([data-mc-motion='reduced']) .mc-select:has(.mc-select__control:open)::after {
+			transform: rotate(180deg);
+		}
 	}
 }

@@ -3,7 +3,7 @@
 // This test is that step: the CSS variables written before the first paint equal the ones the film's own functions return, at the sizes that matter.
 import { expect, test } from 'vitest'
 import { prepareRoot } from './first-paint.js'
-import { dockOf, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf } from './site.js'
+import { dockOf, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf, widenedRect } from './site.js'
 
 const SIZES = [
 	[390, 844],
@@ -101,4 +101,23 @@ test('the stored accessibility options are applied before the first paint', () =
 	restore()
 	expect(root.getAttribute('data-mc-font')).toBeNull()
 	localStorage.clear()
+})
+
+test('the panel takes the room the text leaves, never less than the grid gives it', () => {
+	const rect = dockOf(1440, 900).rect
+	expect(widenedRect(rect, { W: 1440 })).toBe(rect) // nothing measured: untouched
+	expect(widenedRect(rect, { W: 1440, contentRight: Number.NaN })).toBe(rect)
+	const narrow = widenedRect(rect, { W: 1440, contentRight: 610 }) // a short hero lead
+	expect(narrow.l).toBeLessThan(rect.l)
+	expect(narrow.l).toBeGreaterThanOrEqual(Math.round(1440 * 0.36)) // never past 36 % of the screen
+	expect(narrow.r).toBe(rect.r)
+	expect(narrow.t).toBe(rect.t)
+	expect(narrow.b).toBe(rect.b)
+	expect(widenedRect(rect, { W: 1440, contentRight: 793 }).l).toBe(832) // text as wide as its column: almost the grid's panel (842), 39 px of air
+	expect(widenedRect(rect, { W: 1440, contentRight: 830 })).toBe(rect) // no room to gain: the grid's panel
+	for (const right of [300, 500, 610, 700, 793]) expect(widenedRect(rect, { W: 1440, contentRight: right }).l - right).toBeGreaterThanOrEqual(24) // always 24 px of air
+	expect(widenedRect(rect, { W: 1440, contentRight: 2000 })).toBe(rect)
+	expect(widenedRect(rect, { W: 1440, contentRight: 100 }).l).toBe(Math.round(1440 * 0.36)) // very narrow text: the floor
+	// quantised: two measures a few pixels apart give the same panel (no re-framing while scrolling)
+	expect(widenedRect(rect, { W: 1440, contentRight: 611 }).l).toBe(widenedRect(rect, { W: 1440, contentRight: 615 }).l)
 })

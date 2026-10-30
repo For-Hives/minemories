@@ -439,27 +439,6 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							)}
 						</p>
 					</section>
-					<section className="mc-section" id="limits" aria-labelledby="limits-name">
-						<aside className="mc-tip mc-limits">
-							<h2 className="mc-tip__name" id="limits-name" data-i18n="What Minemories doesn’t do">
-								{t('What Minemories doesn’t do')}
-							</h2>
-							<ul>
-								<li data-i18n="It isn’t a backup of your world: a memory is a frozen 3D copy. You can turn around it, not play in it.">
-									{t(
-										'It isn’t a backup of your world: a memory is a frozen 3D copy. You can turn around it, not play in it.'
-									)}
-								</li>
-								<li data-i18n="Nothing is kept before you install the mod.">
-									{t('Nothing is kept before you install the mod.')}
-								</li>
-								<li data-i18n="At most one AFK memory every 4 hours, by default.">
-									{t('At most one AFK memory every 4 hours, by default.')}
-								</li>
-								<li data-i18n="Java 1.21.1 only, in beta.">{t('Java 1.21.1 only, in beta.')}</li>
-							</ul>
-						</aside>
-					</section>
 					<HeroExtras />
 					<section className="mc-section" id="faq" aria-labelledby="faq-title">
 						<h2 className="mc-section__title" id="faq-title" data-i18n="FAQ">

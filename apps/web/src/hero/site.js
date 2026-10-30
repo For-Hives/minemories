@@ -87,6 +87,19 @@ export function textColumnOf(W, H) {
  */
 export const footerOverlap = (dockRect, bandTop) => Math.max(0, dockRect.b - bandTop + 16)
 
+/**
+ * v12 (Andy): the panel takes the room the text leaves. `rect` is the grid's panel (the narrowest it ever is: the text may be as wide as its column); `contentRight` is the right edge of the
+ * text actually on screen (a short section, a hero lead, a FAQ). The left edge moves left to `contentRight + gap`, never past `minShare` of the screen, so the model is framed larger when the text
+ * is narrow and falls back to the grid's panel when it is wide. Quantised in `step` px so that scrolling does not re-frame the model for a few pixels. `null` leaves the panel as it is.
+ */
+export function widenedRect(rect, { W, contentRight = null, gap = 24, minShare = 0.36, step = 32 }) {
+	if (contentRight == null || !Number.isFinite(contentRight)) return rect
+	const floor = Math.round(W * minShare)
+	const wanted = Math.ceil((contentRight + gap) / step) * step // rounded up: the air between the text and the panel is never less than `gap`
+	const l = Math.min(rect.l, Math.max(floor, wanted))
+	return l >= rect.l ? rect : { ...rect, l }
+}
+
 /** The area the model is framed in. v10: the whole panel (the buttons are gone). Kept for the tests. */
 export const modelRectOf = (rect, controlsH = 0) => ({ l: rect.l, t: rect.t, r: rect.r, b: rect.b - controlsH })
 
@@ -238,9 +251,47 @@ export function createSite(ctx) {
 
 	// W is the LAYOUT width: with a reserved scrollbar gutter `clientWidth` can still report the whole window (headless Chromium: 1440 for a 1425 px layout).
 	const sizeNow = () => ({ W: Math.round(root.getBoundingClientRect().width) || root.clientWidth || innerWidth, H: root.clientHeight || innerHeight })
+	let reach = null // right edge (px) of the text on screen, measured while the site is read; null before, and in portrait
 	const measure = () => {
 		const { W, H } = sizeNow()
-		return dockOf(W, H, { small })
+		const d = dockOf(W, H, { small })
+		if (d.layout === 'side' && reach != null) return { ...d, rect: widenedRect(d.rect, { W, contentRight: reach }) }
+		return d
+	}
+	const REACH_TEXT = '.mc-hero__kicker, .mc-hero__title, .mc-hero__lead, .mc-hero__compat, .mc-section__title, .mc-section__text, .site-links, .mc-hero__actions'
+	const REACH_BOX = '.mc-step, .mc-faq__item'
+	// The right edge of what the visitor reads right now: text by the extent of its lines, cards by their box; only what is on screen counts.
+	function contentRightNow() {
+		const { H } = sizeNow()
+		const top = dockOf(sizeNow().W, H).header
+		let right = null
+		const take = (el, value) => {
+			const r = el.getBoundingClientRect()
+			if (r.bottom <= top || r.top >= H || !(value > 0)) return
+			right = right == null ? value : Math.max(right, value)
+		}
+		for (const el of doc.querySelectorAll(`.site ${REACH_BOX.split(',').join(', .site ')}`)) take(el, el.getBoundingClientRect().right)
+		for (const el of doc.querySelectorAll(REACH_TEXT.split(',').map((x) => `.site ${x.trim()}`).join(', '))) {
+			const range = doc.createRange()
+			range.selectNodeContents(el)
+			take(el, range.getBoundingClientRect().right)
+		}
+		return right
+	}
+	let reachTimer = 0
+	// Called on scroll: when the room the text leaves has changed (by a step), the panel is placed again and the model framed in it, eased.
+	function syncReach() {
+		if (!entered || ctx.phase() !== 'site' || root.dataset.dock !== 'side') return
+		const { W } = sizeNow()
+		const next = contentRightNow()
+		const before = widenedRect({ l: 1e9, t: 0, r: 0, b: 0 }, { W, contentRight: reach }).l
+		const after = widenedRect({ l: 1e9, t: 0, r: 0, b: 0 }, { W, contentRight: next }).l
+		if (before === after) return
+		clearTimeout(reachTimer)
+		reachTimer = setTimeout(() => {
+			reach = next
+			layout({ duration: 0.7 })
+		}, 140)
 	}
 
 	// Places the panel (CSS custom properties read by site.css) and returns its geometry. The model's rectangle is the panel itself.
@@ -422,6 +473,7 @@ export function createSite(ctx) {
 				layout({ duration: 0.3 })
 			}
 		}
+		syncReach()
 		updateShift()
 	}
 	const scheduleSync = () => {

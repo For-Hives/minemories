@@ -71,7 +71,7 @@ test('reduced motion switches the entries, the transitions and the displacement 
 })
 
 test('the motion design layer (section 9) only exists when motion is allowed, and never touches layout or brightness', () => {
-	const afterHeading = charter.split('/* --- 9. Motion design')[1].replace(/^[\s\S]*?\*\//, '') // drop the rest of the heading comment
+	const afterHeading = charter.split('/* --- 9. Motion design')[1].split('/* --- 10.')[0].replace(/^[\s\S]*?\*\//, '') // drop the rest of the heading comment, stop at section 10
 	const motion = afterHeading.replace(/\/\*[\s\S]*?\*\//g, '')
 	// everything sits inside the no-preference query and is cancelled by the footer option
 	expect(motion.trimStart().startsWith('@media (prefers-reduced-motion: no-preference) {')).toBe(true)
@@ -86,4 +86,18 @@ test('the motion design layer (section 9) only exists when motion is allowed, an
 	for (const [, list] of motion.matchAll(/transition:\s*([^;]+);/g)) {
 		for (const part of list.split(',')) expect(part.trim().split(/\s+/)[0], part).toMatch(allowed)
 	}
+})
+
+test('the dropdown list (section 10) is a progressive enhancement of the native select, animated only when motion is allowed', () => {
+	const dropdown = charter.split('/* --- 10.')[1].replace(/^[\s\S]*?\*\//, '').replace(/\/\*[\s\S]*?\*\//g, '')
+	expect(dropdown.trimStart().startsWith('@supports (appearance: base-select) {')).toBe(true)
+	const [styling, animated] = dropdown.split('@media (prefers-reduced-motion: no-preference) {')
+	expect(styling).not.toMatch(/transition|animation/)
+	expect(animated).toBeDefined()
+	for (const rule of animated.match(/[^{}]+\{[^{}]*\}/g) ?? []) {
+		const selector = rule.split('{')[0].trim()
+		if (selector.includes('@')) continue
+		expect(rule, selector).toMatch(/:root:not\(\[data-mc-motion='reduced'\]\)/)
+	}
+	expect(styling).toContain('option::checkmark')
 })
