@@ -66,7 +66,7 @@ class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean 
 		return this.props.children
 	}
 }
-/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. */
+/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing is left out: its film says so itself (hero.js `signalReady`), once it can play. */
 function PageReady() {
 	useEffect(() => {
 		document.documentElement.dataset.mmReady = '1'
@@ -83,7 +83,7 @@ function Page({ children, kind = 'page' }: { children: ReactNode; kind?: 'page' 
 		<PageBoundary key={pathname}>
 			<Suspense fallback={fallback}>
 				{children}
-				<PageReady />
+				{kind !== 'home' && <PageReady />}
 			</Suspense>
 		</PageBoundary>
 	)

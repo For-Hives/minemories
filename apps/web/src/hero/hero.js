@@ -388,6 +388,7 @@ export function mountHero(host) {
 		root.style.setProperty('--g', '1')
 		header.classList.add('is-solid')
 		site?.place()
+		signalReady()
 	}
 
 	// With the scene, "The film, in words" is only the description of the canvas (visually hidden): its summary leaves the tab order (an invisible focus stop,
@@ -397,6 +398,13 @@ export function mountHero(host) {
 		if (sceneOn) summary?.setAttribute('tabindex', '-1')
 		else summary?.removeAttribute('tabindex')
 		$('#words')?.setAttribute('aria-labelledby', sceneOn ? 'words-summary' : 'words-note')
+	}
+
+	// v12 (Andy): the loading screen of index.html stays until the film is ready to play: the scene and its captures are loaded and the first image is drawn, so the film starts at once and smooth.
+	// (Also when there is no film: no WebGL, an error, a link straight to the site.)
+	function signalReady() {
+		root.dataset.mmReady = '1'
+		window.dispatchEvent(new Event('mm:ready'))
 	}
 
 	function onReady() {
@@ -422,6 +430,7 @@ export function mountHero(host) {
 		updateStepsUI()
 		lastFrame = performance.now()
 		requestAnimationFrame(loop)
+		requestAnimationFrame(() => requestAnimationFrame(signalReady)) // after the first image has been drawn
 		if (phase() === 'site') {
 			// An anchor started the page on the site: the model is placed at once, nothing is played.
 			void placeModelOnSite({ cause: 'start' })

@@ -165,7 +165,7 @@ for i, (dx, dy, _) in enumerate(sh):
 ti = hits[3] + 0.2
 css.append(kf('b-item', [(0, 'translateY(0) scale(0)', ''), (ti, 'translateY(0) scale(0)', 'steps(3,end)'), (ti + 0.25, 'translateY(-14px) scale(1)', 'steps(4,end)'), (ti + 0.6, 'translateY(-16px) scale(1)', 'steps(2,end)'), (ti + 0.85, 'translateY(-14px) scale(1)', 'steps(2,end)'), (ti + 1.1, 'translateY(-16px) scale(1)', ''), (4.55, 'translateY(-16px) scale(1)', ''), (4.72, 'translateY(-16px) scale(0)', ''), (4.8, 'translateY(0) scale(0)', '')], 'transform'))
 
-cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#14110e;opacity:0;animation:b-in .2s ease-out .25s forwards,b-max .3s ease-in 12s forwards}}'
+cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#14110e;opacity:0;animation:b-in .2s ease-out .25s forwards,b-max .3s ease-in 20s forwards}}'
 	'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}'
 	'#boot>svg{width:min(62vw,300px);height:auto;overflow:visible}#boot image{image-rendering:pixelated}'
 	'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}'
@@ -193,7 +193,7 @@ script = ("<script>!function(){var b=document.getElementById('boot');if(!b)retur
 	"w=e>250&&e<1150?1150-e:0;setTimeout(function(){b.classList.add('is-done');setTimeout(function(){b.remove()},300)},w)}"
 	"function g(){if(l&&r)h()}"
 	"if(document.readyState==='complete')l=1;if(document.documentElement.dataset.mmReady==='1')r=1;"
-	"addEventListener('load',function(){l=1;g()});addEventListener('mm:ready',function(){r=1;g()});g();setTimeout(h,12000)}()</script>")
+	"addEventListener('load',function(){l=1;g()});addEventListener('mm:ready',function(){r=1;g()});g();setTimeout(h,20000)}()</script>")
 
 html = open(target).read()
 html = re.sub(r'\s*<!-- boot:begin -->.*?<!-- boot:end -->', '', html, flags=re.S)
