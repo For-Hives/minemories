@@ -3,7 +3,7 @@
 
 Un joueur du jeu (peau « Steve ») casse un bloc de minerai à la pioche ; le bloc se fissure, éclate et laisse tomber un diamant.
 Le joueur et la pioche sont les textures du JEU (fichiers Mojang) lues dans le client local, jamais téléchargées, puis incrustées en data: URI (aucune requête de plus).
-Le bloc, ses fissures et le diamant sont des dessins VECTORIELS à nous (nets à toute taille), pas des textures du jeu.
+Le bloc et ses fissures sont des dessins VECTORIELS à nous ; le diamant est la vraie texture du jeu convertie en vecteur (net à toute taille).
 Ce qui vient du jeu est de la marque : voir docs/features/charte-graphique.md, section 12, avant toute mise en ligne publique.
 
 Usage : python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
@@ -111,20 +111,40 @@ block = (vec_faces
 	+ ''.join(f'<g class="bk-c{i}">{c}</g>' for i, c in enumerate(cracks))
 	+ f'<polygon points="{poly(Wp, Wb, Sb, Eb, Ep, Np)}" fill="none" stroke="#0a0806" stroke-width="1.6" stroke-linejoin="round"/><polyline points="{poly(Wp, Sp, Ep)} {poly(Sp, Sb)}" fill="none" stroke="#0a0806" stroke-width="1.2" stroke-linejoin="round"/>')
 
-# diamant vectoriel (facettes), 18 x 20 px
-GEM = ('<polygon points="3,6 7,1 13,1 17,6 10,19" fill="#2bb8aa"/><polygon points="3,6 7,1 13,1 17,6" fill="#7df3e4"/>'
-	'<polygon points="3,6 10,6 10,19" fill="#27a79b"/><polygon points="10,6 17,6 10,19" fill="#1c8c82"/><polygon points="7,1 10,6 3,6" fill="#aaf9ef"/>'
-	'<polygon points="13,1 17,6 10,6" fill="#58e6d6"/><polygon points="6,2.5 8,2.5 6.5,5 5,5" fill="#fff" opacity=".85"/>'
-	'<polygon points="3,6 7,1 13,1 17,6 10,19" fill="none" stroke="#0e4f49" stroke-width="1" stroke-linejoin="round"/>')
+# diamant : la VRAIE texture du jeu (item/diamond.png), convertie en vecteur (un carré par pixel, regroupés en un tracé par couleur) : exactement le dessin du jeu, net à toute taille
+def vector_texture(path):
+	from PIL import Image
+	import io
+	data = subprocess.run(['unzip', '-p', jar, 'assets/minecraft/textures/' + path], check=True, capture_output=True).stdout
+	im = Image.open(io.BytesIO(data)).convert('RGBA')
+	runs = {}
+	for yy in range(im.height):
+		xx = 0
+		while xx < im.width:
+			r, gg, bb, aa = im.getpixel((xx, yy))
+			if aa < 8:
+				xx += 1
+				continue
+			x1 = xx
+			while x1 + 1 < im.width and im.getpixel((x1 + 1, yy)) == (r, gg, bb, aa):
+				x1 += 1
+			runs.setdefault(f'#{r:02x}{gg:02x}{bb:02x}', []).append((xx, yy, x1 - xx + 1))
+			xx = x1 + 1
+	return ''.join(f'<path fill="{c}" d="' + ''.join(f'M{x} {yy}h{w}v1h-{w}z' for x, yy, w in rs) + '"/>' for c, rs in runs.items())
+
+
+GEM = f'<g transform="scale(1.3)">{vector_texture("item/diamond.png")}</g>'   # 21 x 21 px
+GEM_W = 21
 
 ix, iy = Nx - 14, y(84)   # point d'impact sur la face gauche
-hits = [0.5 + 0.8 * k for k in range(4)]
+HIT0, STEP = 0.44, 0.8
+hits = [HIT0 + STEP * k for k in range(4)]
 Wd, Sd, Rd = -150, -55, -30
 arm_kf = []
 for k in range(4):
-	s = 0.8 * k
-	arm_kf += [(s, Wd, 'cubic-bezier(.55,0,1,.55)'), (s + 0.5, Sd, 'cubic-bezier(0,.4,.4,1)')]
-arm_kf += [(3.4, Rd, 'linear'), (4.3, Rd, 'ease-in-out'), (4.8, Wd, '')]
+	s = STEP * k
+	arm_kf += [(s, Wd, 'cubic-bezier(.3,0,.6,1)'), (s + 0.12, Wd - 12, 'cubic-bezier(.6,0,.9,.4)'), (s + HIT0, Sd, 'linear'), (s + 0.62, Sd, 'cubic-bezier(.3,.6,.4,1)')]
+arm_kf = [(t, a_, e) for (t, a_, e) in arm_kf if t < 3.0] + [(3.0, Sd, 'cubic-bezier(.3,.6,.4,1)'), (3.5, Rd, 'linear'), (4.2, Rd, 'ease-in-out'), (4.8, Wd, '')]
 
 
 def kf(name, items, prop):
@@ -134,36 +154,52 @@ def kf(name, items, prop):
 	return out + '}'
 
 
-css = [kf('b-arm', [(a, f'rotate({b}deg)', c) for a, b, c in arm_kf], 'transform')]
-lg = [(0, 'translateX(0)', '')]
+css = [kf('b-arm', [(a_, f'rotate({b_}deg)', c_) for a_, b_, c_ in arm_kf], 'transform')]
+# le joueur se fend vers le bloc à chaque coup (un peu de corps derrière la pioche)
+lg = [(0, 'translateX(0) rotate(0)', '')]
 for h in hits:
-	lg += [(h - 0.08, 'translateX(0)', 'ease-out'), (h, 'translateX(2px)', 'ease-in'), (h + 0.2, 'translateX(0)', '')]
-css.append(kf('b-lunge', lg + [(4.8, 'translateX(0)', '')], 'transform'))
-bk = [(0, 'translateY(0) scale(1)', '')]
+	lg += [(h - 0.14, 'translateX(-1px) rotate(-1deg)', 'cubic-bezier(.6,0,.9,.4)'), (h, 'translateX(3px) rotate(2.5deg)', 'ease-out'), (h + 0.25, 'translateX(0) rotate(0)', '')]
+css.append(kf('b-lunge', lg + [(4.8, 'translateX(0) rotate(0)', '')], 'transform'))
+# tremblement de l'ensemble à l'impact, plus fort à l'éclatement
+sk = [(0, 'translate(0,0)', '')]
+for i_, h in enumerate(hits):
+	amp = 3.2 if i_ == 3 else 1.5
+	sk += [(h - 0.001, 'translate(0,0)', ''), (h + 0.04, f'translate({-amp}px,{amp * .6}px)', ''), (h + 0.09, f'translate({amp * .8}px,{-amp * .5}px)', ''), (h + 0.14, f'translate({-amp * .4}px,{amp * .3}px)', ''), (h + 0.2, 'translate(0,0)', '')]
+css.append(kf('b-shake', sk + [(4.8, 'translate(0,0)', '')], 'transform'))
+# le bloc s'écrase à chaque coup puis rebondit ; au dernier il gonfle et éclate
+bk = [(0, 'translateY(0) scale(1,1)', '')]
 for h in hits[:3]:
-	bk += [(h - 0.02, 'translateY(0) scale(1)', 'ease-out'), (h, 'translateY(2px) scale(1)', 'ease-in'), (h + 0.18, 'translateY(0) scale(1)', '')]
-bk += [(hits[3] - 0.02, 'translateY(0) scale(1)', 'steps(3,end)'), (hits[3] + 0.3, 'translateY(4px) scale(.7)', ''), (4.8, 'translateY(4px) scale(.7)', '')]
+	bk += [(h - 0.001, 'translateY(0) scale(1,1)', 'ease-out'), (h + 0.05, 'translateY(3px) scale(1.07,.92)', 'ease-out'), (h + 0.13, 'translateY(0) scale(.98,1.03)', 'ease-out'), (h + 0.22, 'translateY(0) scale(1,1)', '')]
+bk += [(hits[3] - 0.001, 'translateY(0) scale(1,1)', 'ease-out'), (hits[3] + 0.07, 'translateY(0) scale(1.18,1.18)', 'ease-in'), (hits[3] + 0.26, 'translateY(4px) scale(.3,.3)', ''), (4.8, 'translateY(4px) scale(.3,.3)', '')]
 css.append(kf('b-block', bk, 'transform'))
-css.append(kf('b-blockfade', [(0, '1', ''), (hits[3] - 0.01, '1', 'steps(3,end)'), (hits[3] + 0.3, '0', ''), (4.6, '0', ''), (4.75, '1', ''), (4.8, '1', '')], 'opacity'))
+css.append(kf('b-blockfade', [(0, '1', ''), (hits[3] + 0.07, '1', 'ease-in'), (hits[3] + 0.26, '0', ''), (4.6, '0', ''), (4.75, '1', ''), (4.8, '1', '')], 'opacity'))
 for k in range(3):
 	t0 = hits[k]
 	css.append(kf(f'b-c{k}', [(0, '0', ''), (t0 - 0.001, '0', ''), (t0, '1', ''), (4.6, '1', ''), (4.7, '0', ''), (4.8, '0', '')], 'opacity'))
-vec = [(-12, -16), (8, -20), (-20, -4)]
-pcol = ['#7f7f7f', '#4aedd9', '#5a5a5a']
-for i, (dx, dy) in enumerate(vec):
+# éclats de pierre à chaque coup : 6 particules en arc (montée rapide, chute avec la gravité)
+vec = [(-14, -20, 3, '#9a9a9a'), (-6, -26, 2, '#4aedd9'), (4, -24, 3, '#6b6b6b'), (12, -18, 2, '#c9c9c9'), (-22, -10, 2, '#5a5a5a'), (-10, -14, 3, '#2bb8aa')]
+for i, (dx, dy, sz, col) in enumerate(vec):
 	its, fade = [(0, 'translate(0,0)', '')], [(0, '0', '')]
 	for h in hits:
-		its += [(h - 0.001, 'translate(0,0)', ''), (h + 0.3, f'translate({dx}px,{dy + 10}px)', 'ease-out')]
-		fade += [(h - 0.001, '0', ''), (h, '1', 'ease-in'), (h + 0.3, '0', '')]
+		its += [(h - 0.001, 'translate(0,0)', 'cubic-bezier(.2,.7,.4,1)'), (h + 0.16, f'translate({dx}px,{dy}px)', 'cubic-bezier(.5,0,.9,.5)'), (h + 0.42, f'translate({dx * 1.5:g}px,{dy + 26}px)', '')]
+		fade += [(h - 0.001, '0', ''), (h, '1', ''), (h + 0.3, '1', 'ease-in'), (h + 0.42, '0', '')]
 	css.append(kf(f'b-p{i}', its + [(4.8, 'translate(0,0)', '')], 'transform'))
 	css.append(kf(f'b-p{i}o', fade + [(4.8, '0', '')], 'opacity'))
-sh = [(-26, -14, '#8b8b8b'), (-8, -26, '#6b6b6b'), (14, -22, '#7f7f7f'), (30, -8, '#4aedd9'), (2, -12, '#5a5a5a')]
+# éclatement : 9 morceaux, une bouffée de poussière
+sh = [(-30, -18, 5, '#8b8b8b'), (-12, -30, 4, '#6b6b6b'), (14, -28, 5, '#7f7f7f'), (32, -12, 4, '#4aedd9'), (4, -16, 6, '#5a5a5a'), (-22, -6, 4, '#9a9a9a'), (22, -20, 3, '#2bb8aa'), (-4, -34, 3, '#c9c9c9'), (36, -2, 4, '#6b6b6b')]
 tb = hits[3]
-for i, (dx, dy, _) in enumerate(sh):
-	css.append(kf(f'b-s{i}', [(0, 'translate(0,0)', ''), (tb, 'translate(0,0)', 'ease-out'), (tb + 0.35, f'translate({dx}px,{dy}px)', 'ease-in'), (tb + 0.9, f'translate({dx * 1.3}px,{dy + 40}px)', ''), (4.8, f'translate({dx * 1.3}px,{dy + 40}px)', '')], 'transform'))
-	css.append(kf(f'b-s{i}o', [(0, '0', ''), (tb - 0.001, '0', ''), (tb, '1', ''), (tb + 0.8, '1', ''), (tb + 0.9, '0', ''), (4.8, '0', '')], 'opacity'))
-ti = hits[3] + 0.2
-css.append(kf('b-item', [(0, 'translateY(0) scale(0)', ''), (ti, 'translateY(0) scale(0)', 'steps(3,end)'), (ti + 0.25, 'translateY(-14px) scale(1)', 'steps(4,end)'), (ti + 0.6, 'translateY(-16px) scale(1)', 'steps(2,end)'), (ti + 0.85, 'translateY(-14px) scale(1)', 'steps(2,end)'), (ti + 1.1, 'translateY(-16px) scale(1)', ''), (4.55, 'translateY(-16px) scale(1)', ''), (4.72, 'translateY(-16px) scale(0)', ''), (4.8, 'translateY(0) scale(0)', '')], 'transform'))
+for i, (dx, dy, sz, col) in enumerate(sh):
+	css.append(kf(f'b-s{i}', [(0, 'translate(0,0) rotate(0)', ''), (tb, 'translate(0,0) rotate(0)', 'cubic-bezier(.2,.7,.4,1)'), (tb + 0.28, f'translate({dx}px,{dy}px) rotate({dx * 6}deg)', 'cubic-bezier(.5,0,.9,.5)'), (tb + 0.8, f'translate({dx * 1.4:g}px,{dy + 46}px) rotate({dx * 12}deg)', ''), (4.8, f'translate({dx * 1.4:g}px,{dy + 46}px) rotate({dx * 12}deg)', '')], 'transform'))
+	css.append(kf(f'b-s{i}o', [(0, '0', ''), (tb - 0.001, '0', ''), (tb, '1', ''), (tb + 0.6, '1', 'ease-in'), (tb + 0.8, '0', ''), (4.8, '0', '')], 'opacity'))
+for i, (dx, dy) in enumerate([(-10, 2), (10, 0), (0, -6)]):
+	css.append(kf(f'b-d{i}', [(0, 'translate(0,0) scale(.3)', ''), (tb, 'translate(0,0) scale(.3)', 'ease-out'), (tb + 0.45, f'translate({dx}px,{dy}px) scale(1.6)', ''), (4.8, f'translate({dx}px,{dy}px) scale(1.6)', '')], 'transform'))
+	css.append(kf(f'b-d{i}o', [(0, '0', ''), (tb, '.55', 'ease-out'), (tb + 0.45, '0', ''), (4.8, '0', '')], 'opacity'))
+# le diamant jaillit du bloc, rebondit deux fois, flotte, puis s'efface ; trois éclats de lumière brillent à tour de rôle
+ti = tb + 0.12
+css.append(kf('b-item', [(0, 'translateY(0) scale(0)', ''), (ti, 'translateY(0) scale(0)', 'cubic-bezier(.2,.8,.2,1)'), (ti + 0.3, 'translateY(-30px) scale(1.3)', 'cubic-bezier(.5,0,.9,.5)'), (ti + 0.55, 'translateY(-10px) scale(1)', 'cubic-bezier(.2,.8,.4,1)'), (ti + 0.7, 'translateY(-18px) scale(1)', 'cubic-bezier(.5,0,.9,.5)'), (ti + 0.85, 'translateY(-11px) scale(1)', 'steps(3,end)'), (ti + 1.2, 'translateY(-14px) scale(1)', 'steps(3,end)'), (ti + 1.55, 'translateY(-11px) scale(1)', ''), (4.5, 'translateY(-12px) scale(1)', ''), (4.7, 'translateY(-12px) scale(0)', ''), (4.8, 'translateY(0) scale(0)', '')], 'transform'))
+for i in range(3):
+	t_on = ti + 0.55 + i * 0.28
+	css.append(kf(f'b-g{i}', [(0, 'scale(0) rotate(0)', ''), (t_on, 'scale(0) rotate(0)', 'ease-out'), (t_on + 0.14, 'scale(1) rotate(45deg)', 'ease-in'), (t_on + 0.34, 'scale(0) rotate(90deg)', ''), (4.8, 'scale(0) rotate(90deg)', '')], 'transform'))
 
 cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#14110e;opacity:0;animation:b-in .2s ease-out .25s forwards,b-max .3s ease-in 20s forwards}}'
 	'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}'
@@ -171,23 +207,34 @@ cls = (f'#boot{{position:fixed;inset:0;z-index:2147483000;display:grid;place-ite
 	'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}'
 	'html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}'
 	'@keyframes b-in{to{opacity:1}}@keyframes b-max{to{opacity:0;visibility:hidden}}#boot svg *{transform-box:view-box}'
-	f'#boot .bk-arm{{transform-origin:{sx}px {sy}px;animation:b-arm {T}s linear infinite}}#boot .bk-chr{{animation:b-lunge {T}s linear infinite}}'
+	f'#boot .bk-shake{{animation:b-shake {T}s linear infinite}}'
+	f'#boot .bk-arm{{transform-origin:{sx}px {sy}px;animation:b-arm {T}s linear infinite}}#boot .bk-chr{{transform-origin:{x0 + 4}px {gy}px;animation:b-lunge {T}s linear infinite}}'
 	f'#boot .bk-blk{{transform-origin:{Nx}px {Sb[1]}px;animation:b-block {T}s linear infinite}}#boot .bk-fade{{animation:b-blockfade {T}s linear infinite}}')
 for i in range(3):
-	cls += f'#boot .bk-c{i}{{animation:b-c{i} {T}s linear infinite}}#boot .bk-p{i}{{animation:b-p{i} {T}s linear infinite}}#boot .bk-p{i}o{{animation:b-p{i}o {T}s linear infinite}}'
-for i in range(5):
-	cls += f'#boot .bk-s{i}{{animation:b-s{i} {T}s linear infinite}}#boot .bk-s{i}o{{animation:b-s{i}o {T}s linear infinite}}'
+	cls += f'#boot .bk-c{i}{{animation:b-c{i} {T}s linear infinite}}'
+for i in range(len(vec)):
+	cls += f'#boot .bk-p{i}{{animation:b-p{i} {T}s linear infinite}}#boot .bk-p{i}o{{animation:b-p{i}o {T}s linear infinite}}'
+for i in range(len(sh)):
+	cls += f'#boot .bk-s{i}{{transform-origin:{Nx}px {y(70)}px;animation:b-s{i} {T}s linear infinite}}#boot .bk-s{i}o{{animation:b-s{i}o {T}s linear infinite}}'
+for i in range(3):
+	cls += f'#boot .bk-d{i}{{transform-origin:{Nx}px {y(86)}px;animation:b-d{i} {T}s linear infinite}}#boot .bk-d{i}o{{animation:b-d{i}o {T}s linear infinite}}'
+	cls += f'#boot .bk-g{i}{{animation:b-g{i} {T}s linear infinite}}'
 cls += f'#boot .bk-item{{transform-origin:{Nx}px {y(76)}px;animation:b-item {T}s linear infinite}}'
+static_hidden = ','.join([f'#boot .bk-p{i}o' for i in range(len(vec))] + [f'#boot .bk-s{i}o' for i in range(len(sh))] + [f'#boot .bk-d{i}o' for i in range(3)] + ['#boot .bk-item', '#boot .bk-c2'])
 cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-55deg)}#boot .bk-c0,#boot .bk-c1{opacity:1}'
-	'#boot .bk-c2,#boot .bk-p0o,#boot .bk-p1o,#boot .bk-p2o,#boot .bk-s0o,#boot .bk-s1o,#boot .bk-s2o,#boot .bk-s3o,#boot .bk-s4o,#boot .bk-item{opacity:0}}')
+	f'{static_hidden}{{opacity:0}}#boot .bk-g0,#boot .bk-g1,#boot .bk-g2{{transform:scale(0)}}}}')
 style = f'<style>{cls}{"".join(css)}</style>'
 
-parts = ''.join(f'<g class="bk-p{i}"><g class="bk-p{i}o"><rect x="{ix}" y="{iy}" width="3" height="3" fill="{pcol[i]}"/></g></g>' for i in range(3))
-shards = ''.join(f'<g class="bk-s{i}"><g class="bk-s{i}o"><rect x="{Nx - 2 + (i - 2) * 2}" y="{y(66)}" width="4" height="4" fill="{col}"/></g></g>' for i, (_, _, col) in enumerate(sh))
-svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<polygon points="{poly((Nx, y(86)), (146, y(106)), (Nx, y(126)), (54, y(106)))}" fill="#000" opacity=".4"/>'
-	f'<g class="bk-fade"><g class="bk-blk">{block}</g></g>{parts}{shards}'
-	f'<g class="bk-item"><g transform="translate({Nx - 9} {y(66)})">{GEM}</g></g>'
-	f'<g class="bk-chr">{body}<g class="bk-arm">{arm}</g></g></svg>')
+parts = ''.join(f'<g class="bk-p{i}"><g class="bk-p{i}o"><rect x="{ix}" y="{iy}" width="{sz}" height="{sz}" fill="{col}"/></g></g>' for i, (_, _, sz, col) in enumerate(vec))
+shards = ''.join(f'<g class="bk-s{i}"><g class="bk-s{i}o"><rect x="{Nx - sz // 2}" y="{y(66)}" width="{sz}" height="{sz}" fill="{col}"/></g></g>' for i, (_, _, sz, col) in enumerate(sh))
+dust = ''.join(f'<g class="bk-d{i}"><g class="bk-d{i}o"><circle cx="{Nx + (i - 1) * 6}" cy="{y(86)}" r="9" fill="#b8b4ac"/></g></g>' for i in range(3))
+GX, GY = Nx - GEM_W // 2, y(62)
+star = lambda cx, cy, r: f'<polygon points="{cx},{cy - r} {cx + r * .28:g},{cy - r * .28:g} {cx + r},{cy} {cx + r * .28:g},{cy + r * .28:g} {cx},{cy + r} {cx - r * .28:g},{cy + r * .28:g} {cx - r},{cy} {cx - r * .28:g},{cy - r * .28:g}" fill="#eafffb"/>'
+sparkles = ''.join(f'<g transform="translate({cx} {cy})"><g class="bk-g{i}">{star(0, 0, r)}</g></g>' for i, (cx, cy, r) in enumerate([(GX + 2, GY + 3, 5), (GX + GEM_W - 1, GY + 8, 4), (GX + 9, GY - 4, 3.5)]))
+svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<g class="bk-shake"><polygon points="{poly((Nx, y(86)), (146, y(106)), (Nx, y(126)), (54, y(106)))}" fill="#000" opacity=".4"/>'
+	f'<g class="bk-fade"><g class="bk-blk">{block}</g></g>{dust}{parts}{shards}'
+	f'<g class="bk-item"><g transform="translate({GX} {GY})">{GEM}</g>{sparkles}</g>'
+	f'<g class="bk-chr">{body}<g class="bk-arm">{arm}</g></g></g></svg>')
 markup = f'<div id="boot" role="status"><span class="boot-t boot-en">Loading…</span><span class="boot-t boot-fr">Chargement…</span>{svg}</div>'
 script = ("<script>!function(){var b=document.getElementById('boot');if(!b)return;var t=performance.now(),d=0,l=0,r=0;function h(){if(d)return;d=1;var e=performance.now()-t,"
 	"w=e>250&&e<1150?1150-e:0;setTimeout(function(){b.classList.add('is-done');setTimeout(function(){b.remove()},300)},w)}"

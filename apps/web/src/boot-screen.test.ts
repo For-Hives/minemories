@@ -14,7 +14,7 @@ test('the loading screen is self-contained, labelled and cannot trap the visitor
 	expect(html).toContain('setTimeout(h,20000)')
 	expect(html).toContain("addEventListener('load',function(){l=1;g()})") // gone once the page has loaded AND the app says it is on screen
 	expect(html).toContain("addEventListener('mm:ready'")
-	expect(html.length).toBeLessThan(26_000)
+	expect(html.length).toBeLessThan(45_000)
 })
 
 test('the loading screen only appears if the page is slow, and respects reduced motion', () => {
