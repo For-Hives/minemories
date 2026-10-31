@@ -51,7 +51,7 @@ export async function diffOutputs(outputs, directory) {
 		return null
 	}
 	const results = await Promise.all(
-		[...outputs].map(async ([name, bytes]) => {
+		[...outputs].map(async ([name]) => {
 			try {
 				const onDisk = await readFile(join(directory, name))
 				return same(name, onDisk, outputs) ? null : `${name}: differs from the regenerated file`

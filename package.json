@@ -18,6 +18,7 @@
 	"scripts": {
 		"mod:dev": "node scripts/gradle.mjs :neoforge:runClient",
 		"mod:build": "node scripts/gradle.mjs build",
+		"mod:build:1.20.1": "cd mod/minemories-1.20.1 && ./gradlew build",
 		"mod:check": "node scripts/gradle.mjs spotlessApply check",
 		"mod:check:ci": "node scripts/gradle.mjs check",
 		"web:dev": "bun run --filter @minemories/web dev",

@@ -127,6 +127,10 @@
 	},
 	"overrides": [
 		{
+			"includes": ["apps/web/index.html"],
+			"linter": { "rules": { "complexity": { "useArrowFunction": "off" } } }
+		},
+		{
 			"includes": ["apps/web/src/hero/**", "apps/web/public/hero/**"],
 			"formatter": { "enabled": false },
 			"assist": { "enabled": false },

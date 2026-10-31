@@ -84,6 +84,7 @@
 	opacity: 0;
 }
 .cinema-header {
+	transition: opacity 400ms ease-out;
 	position: absolute;
 	inset: 24px 28px auto;
 	display: flex;
@@ -768,8 +769,7 @@
 	display: none;
 }
 
-.viewer-studio > :is(.cinema-toolbar, .cinema-time, .cinema-caption, .cinema-immerse),
-.cinema-header {
+.viewer-studio > :is(.cinema-toolbar, .cinema-time, .cinema-caption, .cinema-immerse) {
 	transition: opacity 400ms ease-out;
 }
 .viewer-studio.is-idle:not(:focus-within) > :is(.cinema-toolbar, .cinema-time, .cinema-caption, .cinema-immerse) {
