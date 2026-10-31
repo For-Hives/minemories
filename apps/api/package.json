@@ -11,7 +11,8 @@
 		"admin": "bun --env-file=../../.env src/admin-cli.ts",
 		"archive:plan": "bun --env-file=../../.env src/cold-storage-cli.ts",
 		"test": "bun test src --parallel --coverage && node ../../scripts/check-api-coverage.mjs",
-		"typecheck": "tsc --noEmit -p tsconfig.json"
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"seed": "bun --env-file=../../.env scripts/seed-dev.ts"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "3.1152.0",
