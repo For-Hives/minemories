@@ -5,9 +5,6 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { HomePage } from './HomePage'
 
-const context = vi.hoisted(() => ({ session: null as null | { user: { name: string } } }))
-vi.mock('../app-context', () => ({ useAppContext: () => context }))
-
 const errors: unknown[][] = []
 beforeEach(() => {
 	errors.length = 0
@@ -26,7 +23,6 @@ beforeEach(() => {
 })
 afterEach(() => {
 	cleanup()
-	context.session = null
 	vi.restoreAllMocks()
 	vi.unstubAllGlobals()
 })
@@ -66,32 +62,13 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 		expect(document.getElementById(id)).not.toBeNull()
 	// the story is readable as text for people who cannot see the canvas
 	expect(document.getElementById('w1')?.textContent?.length).toBeGreaterThan(40)
-	const hrefs = [...document.querySelectorAll('a[href^="/"]')].map(a => a.getAttribute('href'))
-	for (const route of [
-		'/installation',
-		'/privacy',
-		'/terms',
-		'/legal',
-		'/concept',
-		'/fonctionnement',
-		'/faq',
-		'/blog',
-		'/pricing',
-		'/login',
-	])
-		expect(hrefs, route).toContain(route)
-	// every target of the former home page is still linked (the demo memories, the community, the concept, the discovery pages, the album)
-	for (const target of [
-		'/explorer?demo=1',
-		'/explorer',
-		'/concept',
-		'/open-source',
-		'/nostalgie',
-		'/partager',
-		'/classement',
-		'/register',
-	])
-		expect(hrefs, target).toContain(target)
+	// the other pages are archived: every in-site link is an anchor of the landing, the install button goes to the releases
+	const paths = [...document.querySelectorAll('a[href^="/"]')].map(a => a.getAttribute('href'))
+	expect(paths).toEqual([])
+	expect(document.getElementById('hero-install')?.getAttribute('href')).toBe(
+		'https://github.com/For-Hives/minemories/releases'
+	)
+	const hrefs = paths
 	// the prototype's three dead root links are real routes now; nothing points at a file next to the page
 	expect(hrefs.filter(h => /\.html?$/.test(String(h)))).toEqual([])
 	expect(errors).toEqual([])
@@ -110,7 +87,6 @@ test('one language selector is visible, it is the app one, and the whole page fo
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('There are evenings we wish we could keep.')
 	)
 	expect(html.lang).toBe('en-US')
-	expect(screen.getAllByRole('link', { name: 'Sign in' })[0]?.getAttribute('href')).toBe('/login')
 	expect(localStorage.getItem('minemories-locale')).toBe('en')
 	act(() => {
 		fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ja' } })
@@ -118,15 +94,6 @@ test('one language selector is visible, it is the app one, and the whole page fo
 	await waitFor(() => expect(html.classList.contains('mm-cjk')).toBe(true))
 	expect(html.lang).toBe('ja-JP')
 	expect(errors).toEqual([])
-})
-
-test('signed-in visitors see their gallery link instead of sign-in', async () => {
-	context.session = { user: { name: 'Alex' } }
-	mount()
-	await started()
-	expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull()
-	expect(screen.getAllByRole('link', { name: 'Ma galerie' })[0]?.getAttribute('href')).toBe('/gallery')
-	expect(screen.getByRole('link', { name: 'Retrouver mes souvenirs' }).getAttribute('href')).toBe('/gallery')
 })
 
 test('the film leaves nothing behind: <html> is restored, listeners and test hooks are gone, and it can mount again', async () => {

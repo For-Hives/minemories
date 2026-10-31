@@ -1,0 +1,47 @@
+/* Charte : ardoise, voix de lecture, un seul bouton cuivre. Les valeurs reprennent hero/film.css (cette page ne charge pas le kit du film). */
+.not-found {
+	min-height: 100svh;
+	display: grid;
+	align-content: center;
+	justify-items: start;
+	gap: 16px;
+	padding: 32px max(16px, 8vw);
+	background: #14110e;
+	color: #e8e2d6;
+	font:
+		400 18px / 1.6 "Atkinson Hyperlegible",
+		system-ui,
+		sans-serif;
+}
+.not-found h1 {
+	margin: 0;
+	font:
+		700 32px / 1.2 system-ui,
+		sans-serif;
+}
+.not-found p {
+	margin: 0;
+	color: #b9b1a2;
+}
+.not-found__code {
+	font: 700 16px / 1 monospace;
+	letter-spacing: 0.2em;
+	color: #d98a4e;
+}
+.not-found__back {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 0 20px;
+	background: #d98a4e;
+	color: #14110e;
+	font-weight: 700;
+	text-decoration: none;
+}
+.not-found__back:hover {
+	background: #e7a064;
+}
+.not-found__back:focus-visible {
+	outline: 3px solid #e8e2d6;
+	outline-offset: 3px;
+}
