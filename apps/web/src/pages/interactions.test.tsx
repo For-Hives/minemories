@@ -479,13 +479,31 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 			z: null,
 		}),
 	])
+	localStorage.clear()
 	mount(<GalleryPage />)
-	const view = async (name: string) => (await screen.findByRole('link', { name })).getAttribute('href')
-	expect(await view('View New base')).toBe('/viewer?memory=new&timelapse=1')
-	expect(await view('View Solo')).toBe('/viewer?memory=solo')
-	expect(await view('View Remote two')).toBe('/viewer?memory=remote-2')
-	expect(await view('View Legacy')).toBe('/viewer?memory=legacy')
+	const view = async (server: string, name: string) => {
+		fireEvent.click(await screen.findByRole('button', { name: server }))
+		expect(screen.getByRole('button', { name: server }).getAttribute('aria-pressed')).toBe('true')
+		return (await screen.findByRole('link', { name })).getAttribute('href')
+	}
+	expect(await view('Local', 'View New base')).toBe('/viewer?memory=new&timelapse=1')
+	expect(screen.queryByRole('link', { name: 'View Solo' })).toBeNull()
+	expect(await view('Alone', 'View Solo')).toBe('/viewer?memory=solo')
+	expect(await view('Remote', 'View Remote two')).toBe('/viewer?memory=remote-2')
+	expect(await view('Legacy', 'View Legacy')).toBe('/viewer?memory=legacy')
 	expect(screen.queryByRole('link', { name: 'Timeline' })).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Remote' }))
+	fireEvent.change(screen.getByLabelText('Server name'), { target: { value: 'Friends SMP' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+	expect(screen.getByRole('heading', { level: 3, name: 'Friends SMP' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Friends SMP' })).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Friends SMP' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Friends SMP' }))
+	fireEvent.change(screen.getByLabelText('Server name'), { target: { value: 'Remote' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+	expect(screen.getByRole('button', { name: 'Remote' })).toBeTruthy()
+	expect(localStorage.getItem('minemories-stack-names')).not.toContain('Remote')
 })
 
 test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {

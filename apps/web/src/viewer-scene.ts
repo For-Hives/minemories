@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
+import { dayDelta, Glide } from './lib/transitions'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
@@ -101,6 +102,12 @@ export class ViewerScene {
 	private readonly precipitation = new ViewerPrecipitation()
 	private readonly worldLights = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
 	private readonly pivot = new ViewerPivot()
+	private readonly groundRay = new THREE.Raycaster()
+	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
+	private ground: number | null = null
+	private lastProbe = 0
+	private cameraGlide: { glide: Glide; from: THREE.Vector3; to: THREE.Vector3; camera: THREE.Vector3 } | null = null
+	private timeGlide: { glide: Glide; from: number; delta: number } | null = null
 	private daylight = 1
 	private captureFocus: THREE.Vector3 | null = null
 	private readonly navigation: ViewerNavigation
@@ -135,6 +142,7 @@ export class ViewerScene {
 	private interactionTimer = 0
 	private readonly onInteractionStart = () => {
 		window.clearTimeout(this.interactionTimer)
+		this.cameraGlide = null
 		this.pivot.show()
 		// Drop resolution while the camera moves so orbiting stays fluid, then restore it.
 		if (this.quality === 'cinematic' || this.pixelRatio <= 1) return
@@ -257,7 +265,8 @@ export class ViewerScene {
 		this.controls = new OrbitControls(this.camera, this.canvas)
 		this.controls.enablePan = true
 		this.controls.screenSpacePanning = true
-		this.controls.zoomToCursor = true
+		// Zooming toward the cursor would drag the orbit pivot along; keep the pivot where the user put it.
+		this.controls.zoomToCursor = false
 		this.controls.enableDamping = true
 		this.controls.dampingFactor = 0.08
 		this.scene.add(this.modelRoot, this.precipitation.object, this.pivot.object)
@@ -425,11 +434,90 @@ export class ViewerScene {
 		}
 	}
 
-	setMinutes(minutes: number): void {
-		this.dayTime = minutes / 1440
+	/** `smooth` turns the sun the short way to the new time instead of jumping there. */
+	setMinutes(minutes: number, smooth = false): void {
+		const target = minutes / 1440
+		this.timeGlide = null
+		if (smooth && !this.reducedMotion) {
+			const delta = dayDelta(this.dayTime, target)
+			if (Math.abs(delta) > 0.001) {
+				this.timeGlide = { glide: new Glide(1.6), from: this.dayTime, delta }
+				return
+			}
+		}
+		this.dayTime = target
 		this.updateDayCycle()
 		this.updateSunShadow(true)
 		this.updateEnvironment()
+	}
+
+	/** Moves the orbit pivot to a capture, carrying the camera along so the viewing angle and distance stay. */
+	glideToLayer(root: THREE.Object3D): void {
+		const bounds = framingBounds(root)
+		if (bounds.isEmpty()) return
+		const focus = capturePosition(root) ?? surfaceFocus(bounds)
+		this.cameraGlide = null
+		if (this.navigation.active) return
+		if (this.reducedMotion) {
+			this.camera.position.add(focus.clone().sub(this.controls.target))
+			this.controls.target.copy(focus)
+			this.settleFocus(focus)
+			return
+		}
+		this.cameraGlide = {
+			glide: new Glide(1.1),
+			from: this.controls.target.clone(),
+			to: focus,
+			camera: this.camera.position.clone(),
+		}
+	}
+
+	private settleFocus(focus: THREE.Vector3): void {
+		this.captureFocus = focus.clone()
+		this.shadowCenter.copy(focus)
+		this.updateSunShadow(true)
+	}
+
+	private advanceGlides(delta: number): void {
+		const camera = this.cameraGlide
+		if (camera) {
+			const offset = camera.to.clone().sub(camera.from).multiplyScalar(camera.glide.advance(delta))
+			this.controls.target.copy(camera.from).add(offset)
+			this.camera.position.copy(camera.camera).add(offset)
+			if (camera.glide.done) {
+				this.cameraGlide = null
+				this.settleFocus(camera.to)
+			}
+		}
+		const time = this.timeGlide
+		if (!time) return
+		this.dayTime = time.from + time.delta * time.glide.advance(delta)
+		this.updateDayCycle()
+		this.updateSunShadow()
+		if (!time.glide.done) return
+		this.timeGlide = null
+		this.updateSunShadow(true)
+		this.updateEnvironment()
+	}
+
+	/** Height of the visible surface right below the orbit pivot, measured only while its gizmo is shown. */
+	private probeGround(timestamp: number): void {
+		const target = this.controls.target
+		if (!this.pivot.wanted || this.navigation.active) return
+		if (target.distanceToSquared(this.probedTarget) < 0.0025 || timestamp - this.lastProbe < 120) return
+		this.lastProbe = timestamp
+		this.probedTarget.copy(target)
+		const meshes: THREE.Object3D[] = []
+		this.modelRoot.traverseVisible(object => {
+			if (object instanceof THREE.Mesh && !isLightBeam(object.material as THREE.Material)) meshes.push(object)
+		})
+		// A framed pivot often sits inside the terrain: take the surface vertically closest to it, above or below.
+		this.groundRay.set(new THREE.Vector3(target.x, target.y + 256, target.z), new THREE.Vector3(0, -1, 0))
+		this.groundRay.far = 768
+		let nearest: number | null = null
+		for (const hit of this.groundRay.intersectObjects(meshes, false))
+			if (nearest === null || Math.abs(hit.point.y - target.y) < Math.abs(nearest - target.y)) nearest = hit.point.y
+		this.ground = nearest
 	}
 
 	setQuality(quality: ViewerQuality): void {
@@ -588,6 +676,7 @@ export class ViewerScene {
 		if (!this.reducedMotion) this.waterTime.value += deltaSeconds
 
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
+		this.advanceGlides(deltaSeconds)
 		if (this.navigation.active) this.navigation.update(deltaSeconds)
 		else this.controls.update(deltaSeconds)
 		this.precipitation.update(
@@ -597,7 +686,8 @@ export class ViewerScene {
 			this.quality !== 'eco' && !this.reducedMotion && this.atmosphere.celestial,
 			this.daylight
 		)
-		this.pivot.update(deltaSeconds, this.camera, this.controls.target, !this.navigation.active)
+		this.probeGround(timestamp)
+		this.pivot.update(deltaSeconds, this.camera, this.controls.target, !this.navigation.active, this.ground)
 		this.renderScene()
 	}
 

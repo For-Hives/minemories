@@ -1,5 +1,14 @@
 import { expect, it } from 'vitest'
-import { bundleWorlds, captureAreas, groupCaptures, latestCapture, stackCaptures, viewPath } from './gallery'
+import {
+	biomeLabel,
+	blockCoordinates,
+	bundleWorlds,
+	captureAreas,
+	groupCaptures,
+	latestCapture,
+	stackCaptures,
+	viewPath,
+} from './gallery'
 
 it('groups worlds by name and seed, servers by name, and preserves newest-first order', () => {
 	const capture = (id: string, worldName: string | null, serverName: string | null, seed: string | null = null) => ({
@@ -116,4 +125,13 @@ it('turns identified captures into one evolving area per world and keeps the oth
 		[false, ['c', 'd']],
 	])
 	expect(areas[0]?.stack.key).toContain('w1')
+})
+
+it('labels biomes and block coordinates for display', () => {
+	expect(biomeLabel('minecraft:snowy_taiga')).toBe('Snowy taiga')
+	expect(biomeLabel('terralith:moonlight_grove')).toBe('Moonlight grove')
+	expect(biomeLabel('plains')).toBe('Plains')
+	expect(blockCoordinates({ x: 12.7, y: 64.2, z: -40.5 })).toEqual({ x: 12, y: 64, z: -41 })
+	expect(blockCoordinates({ x: 1, y: null, z: 2 })).toEqual({ x: 1, y: null, z: 2 })
+	expect(blockCoordinates({ x: null, y: 3, z: 2 })).toBeNull()
 })

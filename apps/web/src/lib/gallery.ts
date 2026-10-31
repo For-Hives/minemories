@@ -171,3 +171,18 @@ export function captureAreas<T extends IdentifiedCapture & LocatedCapture>(
 		...stackCaptures(others).map(stack => ({ stack, evolving: false })),
 	]
 }
+
+/** `minecraft:snowy_taiga` → `Snowy taiga`; modded namespaces are dropped the same way. */
+export function biomeLabel(biome: string): string {
+	const words = biome
+		.slice(biome.lastIndexOf(':') + 1)
+		.replaceAll('_', ' ')
+		.trim()
+	return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+export function blockCoordinates(metadata: { x: number | null; y: number | null; z: number | null }) {
+	const { x, y, z } = metadata
+	if (x === null || z === null) return null
+	return { x: Math.floor(x), y: y === null ? null : Math.floor(y), z: Math.floor(z) }
+}

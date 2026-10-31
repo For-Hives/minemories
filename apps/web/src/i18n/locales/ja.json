@@ -1303,5 +1303,14 @@
 	"{name} joined the game": "{name}がゲームに参加しました",
 	"{name} left the game": "{name}がゲームを退出しました",
 	"{name}: {message}": "{name}：{message}",
-	"About this film": "映像について"
+	"About this film": "映像について",
+	"Rename this server": "このサーバーの名前を変更",
+	"Server name": "サーバー名",
+	"Servers": "サーバー",
+	"Size": "サイズ",
+	"Snapshots": "キャプチャ",
+	"Overworld": "オーバーワールド",
+	"Nether": "ネザー",
+	"The End": "エンド",
+	"Thunder": "雷雨"
 }

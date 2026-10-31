@@ -33,6 +33,14 @@ const paths = {
 			<circle cx="12" cy="10" r="2.3" />
 		</>
 	),
+	leaf: <path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15zM5 19l7-7" />,
+	cloud: <path d="M7 17h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 10.5 3.5 3.5 0 0 0 7 17zM9 20l-1 2M13 20l-1 2M17 20l-1 2" />,
+	disk: (
+		<>
+			<ellipse cx="12" cy="6" rx="8" ry="3" />
+			<path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
+		</>
+	),
 	cube: <path d="m12 3 8.5 4.7v8.6L12 21l-8.5-4.7V7.7zM12 12l8.5-4.3M12 12v9M12 12 3.5 7.7" />,
 } satisfies Record<string, ReactNode>
 

@@ -1303,5 +1303,14 @@
 	"{name} joined the game": "Gracz {name} dołączył do gry",
 	"{name} left the game": "Gracz {name} opuścił grę",
 	"{name}: {message}": "{name}: {message}",
-	"About this film": "O filmie"
+	"About this film": "O filmie",
+	"Rename this server": "Zmień nazwę serwera",
+	"Server name": "Nazwa serwera",
+	"Servers": "Serwery",
+	"Size": "Rozmiar",
+	"Snapshots": "Zrzuty",
+	"Overworld": "Overworld",
+	"Nether": "Nether",
+	"The End": "Kres",
+	"Thunder": "Burza"
 }
