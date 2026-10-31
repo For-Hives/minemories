@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useState } from 'react'
+import { type ReactNode, type RefObject, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useI18n } from '../i18n/I18n'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
@@ -23,6 +23,7 @@ export function ViewerStudio({
 	captureMinutes = null,
 	fileInfo = '',
 	onRecenter,
+	children,
 }: {
 	sceneRef: RefObject<ViewerScene | null>
 	memoryId?: string | null
@@ -32,6 +33,8 @@ export function ViewerStudio({
 	fileInfo?: string
 	/** A page that frames its own content (a composed world) supplies how to recenter. */
 	onRecenter?: () => void
+	/** Extra chrome (the capture film of a world) that rests and hides with the rest of the controls. */
+	children?: ReactNode
 }) {
 	const { t } = useI18n()
 	const [weather, setWeather] = useState<ViewerWeather>('clear')
@@ -291,6 +294,7 @@ export function ViewerStudio({
 					{message}
 				</p>
 			)}
+			{children}
 		</div>
 	)
 }

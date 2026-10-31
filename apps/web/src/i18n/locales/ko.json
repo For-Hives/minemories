@@ -1312,5 +1312,14 @@
 	"Overworld": "오버월드",
 	"Nether": "네더",
 	"The End": "엔드",
-	"Thunder": "뇌우"
+	"Thunder": "뇌우",
+	"Areas": "구역",
+	"Biome": "바이옴",
+	"Captured": "캡처",
+	"Dimension": "차원",
+	"First capture": "첫 캡처",
+	"Position": "위치",
+	"Restore “{name}”": "“{name}”(으)로 되돌리기",
+	"This name stays in this browser.": "이 이름은 이 브라우저에만 저장됩니다.",
+	"Weather": "날씨"
 }

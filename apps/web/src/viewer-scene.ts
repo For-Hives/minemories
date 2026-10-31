@@ -2,12 +2,13 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
+import { CeilingGrid } from './lib/ceiling'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { dayDelta, Glide } from './lib/transitions'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
-import { capturePosition, framingBounds, isLightBeam, surfaceFocus } from './viewer-framing'
+import { framingBounds, isLightBeam, orbitFocus, surfaceFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
 import { ViewerPrecipitation } from './viewer-precipitation'
@@ -106,6 +107,8 @@ export class ViewerScene {
 	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
 	private ground: number | null = null
 	private lastProbe = 0
+	private focusRoot: THREE.Object3D | null = null
+	private ceilingDirty = true
 	private cameraGlide: { glide: Glide; from: THREE.Vector3; to: THREE.Vector3; camera: THREE.Vector3 } | null = null
 	private timeGlide: { glide: Glide; from: number; delta: number } | null = null
 	private daylight = 1
@@ -336,6 +339,7 @@ export class ViewerScene {
 			this.modelRoot.add(imported)
 			attached = true
 			this.prepareWorldLighting(imported)
+			this.ceilingDirty = true
 			this.events.onLoading('Preparing the 3D display…')
 			await this.renderer.compileAsync(this.scene, this.camera)
 			this.ensureLoadActive(options.signal)
@@ -412,10 +416,12 @@ export class ViewerScene {
 		}
 		this.keyLight.shadow.needsUpdate = true
 		this.renderer.shadowMap.needsUpdate = true
+		this.ceilingDirty = true
 	}
 
 	/** Frames one capture of the world, keeping the others in place. */
 	focusLayer(root: THREE.Object3D, preserveView = false): void {
+		this.focusRoot = root
 		this.frameModel(root, preserveView)
 		this.updateEnvironment()
 	}
@@ -453,9 +459,9 @@ export class ViewerScene {
 
 	/** Moves the orbit pivot to a capture, carrying the camera along so the viewing angle and distance stay. */
 	glideToLayer(root: THREE.Object3D): void {
-		const bounds = framingBounds(root)
-		if (bounds.isEmpty()) return
-		const focus = capturePosition(root) ?? surfaceFocus(bounds)
+		if (framingBounds(root).isEmpty()) return
+		const focus = orbitFocus(root)
+		this.focusRoot = root
 		this.cameraGlide = null
 		if (this.navigation.active) return
 		if (this.reducedMotion) {
@@ -498,6 +504,35 @@ export class ViewerScene {
 		this.timeGlide = null
 		this.updateSunShadow(true)
 		this.updateEnvironment()
+	}
+
+	/** Weather stops at the highest visible surface of each column, recomputed when the shown geometry changes. */
+	private refreshCeiling(): void {
+		this.modelRoot.updateMatrixWorld(true)
+		const bounds = framingBounds(this.modelRoot)
+		if (bounds.isEmpty()) {
+			this.precipitation.setCeiling(null)
+			return
+		}
+		const grid = new CeilingGrid(bounds.min.x, bounds.min.z, bounds.max.x, bounds.max.z)
+		const a = new THREE.Vector3(),
+			b = new THREE.Vector3(),
+			c = new THREE.Vector3()
+		this.modelRoot.traverseVisible(object => {
+			if (!(object instanceof THREE.Mesh) || isLightBeam(object.material as THREE.Material)) return
+			const geometry = object.geometry as THREE.BufferGeometry
+			const position = geometry.getAttribute('position')
+			const index = geometry.index
+			const end = Math.min(index ? index.count : position.count, geometry.drawRange.start + geometry.drawRange.count)
+			const vertex = (corner: number) => (index ? index.getX(corner) : corner)
+			for (let corner = geometry.drawRange.start; corner + 2 < end; corner += 3) {
+				a.fromBufferAttribute(position, vertex(corner)).applyMatrix4(object.matrixWorld)
+				b.fromBufferAttribute(position, vertex(corner + 1)).applyMatrix4(object.matrixWorld)
+				c.fromBufferAttribute(position, vertex(corner + 2)).applyMatrix4(object.matrixWorld)
+				grid.addTriangle(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z)
+			}
+		})
+		this.precipitation.setCeiling(grid.value)
 	}
 
 	/** Height of the visible surface right below the orbit pivot, measured only while its gizmo is shown. */
@@ -605,8 +640,9 @@ export class ViewerScene {
 		this.effects.setAtmosphere(sun, daylight, this.weather, this.shadowCenter.y, horizon, this.atmosphere.celestial)
 	}
 
+	/** Frames the capture last focused (the one shown in a world), else the first one. */
 	resetView(): void {
-		const model = this.modelRoot.children[0]
+		const model = this.focusRoot?.parent ? this.focusRoot : this.modelRoot.children[0]
 		if (model) this.frameModel(model)
 	}
 
@@ -679,6 +715,10 @@ export class ViewerScene {
 		this.advanceGlides(deltaSeconds)
 		if (this.navigation.active) this.navigation.update(deltaSeconds)
 		else this.controls.update(deltaSeconds)
+		if (this.ceilingDirty && (this.weather === 'rain' || this.weather === 'snow')) {
+			this.ceilingDirty = false
+			this.refreshCeiling()
+		}
 		this.precipitation.update(
 			deltaSeconds,
 			this.weather,
@@ -719,8 +759,8 @@ export class ViewerScene {
 		const size = bounds.getSize(new THREE.Vector3())
 		const largest = Math.max(size.x, size.y, size.z, 1)
 		const footprint = Math.max(size.x, size.z, 1)
-		this.captureFocus = capturePosition(root)
-		const focus = this.captureFocus?.clone() ?? surfaceFocus(bounds)
+		const focus = orbitFocus(root)
+		this.captureFocus = focus.clone()
 		if (!(preserveView && this.navigation.active)) {
 			const offset = focus.clone().sub(this.controls.target)
 			if (preserveView) this.camera.position.add(offset)

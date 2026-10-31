@@ -1,8 +1,6 @@
-/* World view: a film of the captures on the left; the 3D stage keeps the rest of the screen. */
-.timeline-studio > * {
-	position: absolute;
-}
+/* World view: a film of the captures, the left-hand twin of the toolbar; it rests and hides with the controls. */
 .timeline-error {
+	position: absolute;
 	left: 50%;
 	top: 92px;
 	transform: translateX(-50%);
@@ -26,34 +24,46 @@
 }
 
 .film {
-	--film-thumb: 52px;
+	--film-thumb: 44px;
+	position: absolute;
 	left: 24px;
-	top: 96px;
-	bottom: 24px;
-	width: 156px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 128px;
+	max-height: min(640px, calc(100% - 220px));
 	display: flex;
 	flex-direction: column;
-	border: 1px solid #e4dbbd26;
+	padding: 6px;
+	border: 1px solid #d6e2d226;
 	border-radius: 20px;
-	background: #14211bcc;
+	background: #14211bd9;
 	backdrop-filter: blur(14px) saturate(1.2);
-	box-shadow: 0 18px 50px #0004;
-	overflow: hidden;
+	box-shadow: 0 16px 50px #0003;
+	transition: opacity 400ms ease-out;
+}
+.is-immersed > .film {
+	display: none;
+}
+.viewer-studio.is-idle:not(:focus-within) > .film {
+	opacity: 0;
+	pointer-events: none;
 }
 .film-head {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 12px 12px 10px;
+	gap: 8px;
+	padding: 2px 2px 6px;
+	border-bottom: 1px solid #ffffff14;
+	margin-bottom: 4px;
 }
 .cinema-page .film-play {
 	display: grid;
 	place-items: center;
-	width: 34px;
-	height: 34px;
+	width: 44px;
+	height: 44px;
 	flex: none;
 	padding: 0;
-	border-radius: 50%;
+	border-radius: 14px;
 	background: var(--cinema-gold);
 	color: #1d2a22;
 }
@@ -71,7 +81,8 @@
 	line-height: 1.25;
 }
 .film-title strong {
-	font-size: 12px;
+	white-space: nowrap;
+	font-size: 11px;
 	font-weight: 600;
 }
 .film-title span {
@@ -83,7 +94,7 @@
 }
 .film-progress {
 	height: 2px;
-	margin: 0 12px 6px;
+	margin: 0 4px 6px;
 	border-radius: 2px;
 	background: #ffffff1a;
 	overflow: hidden;
@@ -98,7 +109,7 @@
 	flex: 1;
 	min-height: 0;
 	margin: 0;
-	padding: 4px 0 14px;
+	padding: 2px 0 4px;
 	overflow-y: auto;
 	list-style: none;
 	scrollbar-width: thin;
@@ -106,13 +117,13 @@
 }
 .film-item {
 	position: relative;
-	padding: 0 12px;
+	padding: 0 2px;
 }
 /* The thread joining the frames: what is shown is lit, the future stays faint. */
 .film-item::before {
 	content: "";
 	position: absolute;
-	left: calc(12px + var(--film-thumb) / 2);
+	left: calc(2px + var(--film-thumb) / 2);
 	top: 0;
 	bottom: 0;
 	width: 2px;
@@ -125,20 +136,20 @@
 	opacity: 0.12;
 }
 .film-item:first-child::before {
-	top: 30px;
+	top: 50%;
 }
 .film-item:last-child::before {
-	bottom: calc(100% - 30px);
+	bottom: 50%;
 }
 .film-day {
 	position: relative;
 	display: block;
 	width: fit-content;
-	margin: 10px 0 6px;
-	padding: 2px 7px;
-	border-radius: 8px;
-	background: #1d2c24;
-	font: 600 9px / 1.4 var(--font-mono, monospace);
+	margin: 6px 0 2px;
+	padding: 1px 6px;
+	border-radius: 6px;
+	background: #14211b;
+	font: 600 8.5px / 1.4 var(--font-mono, monospace);
 	letter-spacing: 0.04em;
 	color: var(--cinema-muted);
 	text-transform: uppercase;
@@ -147,13 +158,12 @@
 	position: relative;
 	display: flex;
 	align-items: center;
-	gap: 4px;
 	padding: 3px 0;
 }
 .cinema-page .film-frame {
 	display: flex;
 	align-items: center;
-	gap: 9px;
+	gap: 8px;
 	min-width: 0;
 	flex: 1;
 	padding: 0;
@@ -192,7 +202,7 @@
 }
 .film-frame time {
 	white-space: nowrap;
-	font-size: 11px;
+	font-size: 10px;
 	font-variant-numeric: tabular-nums;
 	color: var(--cinema-muted);
 }
@@ -233,22 +243,25 @@
 	opacity: 0.5;
 }
 .cinema-page .film-side {
+	position: absolute;
+	left: calc(var(--film-thumb) - 14px);
+	top: -2px;
 	display: grid;
 	place-items: center;
-	width: 26px;
-	height: 26px;
+	width: 20px;
+	height: 20px;
 	flex: none;
 	padding: 0;
 	border: 0;
-	border-radius: 8px;
-	background: transparent;
+	border-radius: 50%;
+	background: #0d1612f2;
 	color: var(--cinema-muted);
 	opacity: 0;
 	transition: opacity 160ms;
 }
 .film-side svg {
-	width: 13px;
-	height: 13px;
+	width: 11px;
+	height: 11px;
 }
 .film-row:hover .film-side,
 .film-side:focus-visible,
@@ -256,12 +269,12 @@
 	opacity: 1;
 }
 .film-side:hover {
-	background: #ffffff14;
-	color: var(--cinema-ink);
+	background: var(--cinema-gold);
+	color: #1d2a22;
 }
 .film-note {
 	margin: 0;
-	padding: 8px 12px 12px;
+	padding: 6px 4px 2px;
 	font-size: 9px;
 	line-height: 1.4;
 	color: var(--cinema-muted);
@@ -275,17 +288,21 @@
 /* Phones: the film becomes a horizontal strip above the day clock. */
 @media (max-width: 800px) {
 	.film {
-		--film-thumb: 46px;
+		--film-thumb: 42px;
 		left: 12px;
 		right: 12px;
 		top: auto;
 		bottom: 150px;
+		transform: none;
 		width: auto;
+		max-height: none;
 		flex-direction: row;
 		align-items: center;
 	}
 	.film-head {
-		padding: 8px;
+		padding: 0 6px 0 0;
+		margin: 0;
+		border-bottom: 0;
 	}
 	.film-title,
 	.film-progress,
@@ -299,7 +316,7 @@
 	.film-list {
 		display: flex;
 		gap: 8px;
-		padding: 8px 10px 8px 0;
+		padding: 2px 4px;
 		overflow-x: auto;
 		overflow-y: hidden;
 	}

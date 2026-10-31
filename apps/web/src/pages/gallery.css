@@ -1,6 +1,7 @@
 /* Gallery: server sections, one card per area, a single View action and a side sheet to manage snapshots. */
 .gallery-page,
-.gallery-backdrop {
+.gallery-backdrop,
+.context-menu {
 	--g-card: #1a251e;
 	--g-line: #354238;
 	--g-ink: #e6eee1;
@@ -910,4 +911,161 @@
 	.gallery-link-wait i {
 		animation: none;
 	}
+}
+
+/* Right-click menu: the card's own actions, at the pointer. */
+.context-menu {
+	position: fixed;
+	z-index: 60;
+	display: grid;
+	min-width: 196px;
+	padding: 5px;
+	border: 1px solid var(--g-line);
+	border-radius: 12px;
+	background: #121a14f5;
+	backdrop-filter: blur(12px);
+	box-shadow: 0 18px 50px #000a;
+	animation: context-menu-in 0.12s ease-out;
+}
+.context-menu button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--g-ink);
+	font: 500 12px var(--font-sans);
+	text-align: left;
+	cursor: pointer;
+}
+.context-menu button[role="menuitem"] > svg {
+	width: 15px;
+	height: 15px;
+	color: var(--g-muted);
+}
+.context-menu button:is(:hover, :focus-visible) {
+	outline: 0;
+	background: #ffffff12;
+}
+.context-menu button[data-danger="true"] {
+	color: var(--g-danger);
+}
+.context-menu button[data-danger="true"] > svg {
+	color: var(--g-danger);
+}
+@keyframes context-menu-in {
+	from {
+		opacity: 0;
+		transform: scale(0.97);
+	}
+}
+
+/* Facts: what the mod recorded, as a glanceable grid inside the side sheets. */
+.gallery-facts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin: 0 0 22px;
+}
+.gallery-fact {
+	display: grid;
+	gap: 4px;
+	padding: 10px 12px;
+	border: 1px solid #ffffff10;
+	border-radius: 12px;
+	background: #ffffff07;
+}
+.gallery-fact[data-wide="true"] {
+	grid-column: 1 / -1;
+}
+.gallery-fact dt {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font: 600 10px var(--font-mono);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--g-muted);
+}
+.gallery-facts .gallery-fact dt > svg {
+	width: 13px;
+	height: 13px;
+	color: var(--g-gold);
+}
+.gallery-fact dd {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+	margin: 0;
+	font: 600 15px var(--font-sans);
+	color: var(--g-ink);
+	overflow-wrap: anywhere;
+}
+.gallery-fact small {
+	font: 400 11px var(--font-sans);
+	color: var(--g-muted);
+}
+.gallery-fact code {
+	font: 500 13px var(--font-mono);
+}
+.gallery-fact-axes {
+	display: flex;
+	gap: 16px;
+	font: 600 15px var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+.gallery-fact-axes b {
+	margin-right: 4px;
+	color: var(--g-muted);
+	font-weight: 500;
+}
+.gallery-fact-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.gallery-fact-dimension {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+}
+.gallery-fact-dimension::before {
+	content: "";
+	width: 9px;
+	height: 9px;
+	border-radius: 2px;
+	background: #6fa456;
+}
+.gallery-fact-dimension[data-dimension="Nether"]::before {
+	background: #c8503c;
+}
+.gallery-fact-dimension[data-dimension="The End"]::before {
+	background: #b49ae0;
+}
+.gallery-fact-dimension[data-dimension="modded"]::before {
+	background: var(--g-muted);
+}
+.gallery-sheet-name {
+	display: grid;
+	gap: 6px;
+	margin-bottom: 20px;
+}
+.gallery-sheet-name > div {
+	display: flex;
+	gap: 8px;
+}
+.gallery-sheet-name small {
+	font-size: 10px;
+	color: var(--g-muted);
+}
+.gallery-dialog-body .gallery-sheet-reset {
+	justify-self: start;
+	min-height: 28px;
+	padding: 0;
+	border: 0;
+	color: var(--g-gold);
+	font-weight: 500;
 }

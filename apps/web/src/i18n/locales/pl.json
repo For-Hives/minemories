@@ -1312,5 +1312,14 @@
 	"Overworld": "Overworld",
 	"Nether": "Nether",
 	"The End": "Kres",
-	"Thunder": "Burza"
+	"Thunder": "Burza",
+	"Areas": "Obszary",
+	"Biome": "Biom",
+	"Captured": "Zrobiono",
+	"Dimension": "Wymiar",
+	"First capture": "Pierwszy zrzut",
+	"Position": "Pozycja",
+	"Restore “{name}”": "Przywróć „{name}”",
+	"This name stays in this browser.": "Ta nazwa zostaje w tej przeglądarce.",
+	"Weather": "Pogoda"
 }

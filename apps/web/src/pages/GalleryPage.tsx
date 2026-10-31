@@ -2,6 +2,7 @@ import { temporalIdentity } from '@minemories/api-contract'
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
+import { type MenuItem, useContextMenu } from '../components/ContextMenu'
 import { GalleryIcon } from '../components/GalleryIcons'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonDark, Eyebrow } from '../components/ui'
@@ -17,6 +18,7 @@ import { AreaCard, TrashCard } from './GalleryCards'
 import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
+import { ServerSheet } from './ServerSheet'
 
 function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
 	if (storage.availableBytes === 0) return 'full'
@@ -305,63 +307,35 @@ function ServerTile({
 	onRenamed(): void
 }) {
 	const { t, locale } = useI18n()
-	const [draft, setDraft] = useState<string | null>(null)
+	const [sheet, setSheet] = useState(false)
+	const menu = useContextMenu()
 	const newest = latestCapture(server.captures)
 	const seed = server.captures.find(item => item.metadata.seed)?.metadata.seed
 	const bytes = server.captures.reduce((total, capture) => total + capture.size, 0)
-	function save() {
-		setStackName(server.key, SERVER_NAME, draft === server.name ? '' : (draft ?? ''))
-		setDraft(null)
-		onRenamed()
-	}
+	const actions: MenuItem[] = [
+		{ label: t('Open'), icon: 'view', onSelect },
+		{ label: t('Details'), icon: 'cube', onSelect: () => setSheet(true) },
+		{ label: t('Rename this server'), icon: 'pencil', onSelect: () => setSheet(true) },
+	]
 	return (
-		<li className="gallery-server" data-selected={selected}>
+		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
 			<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
 				<ServerCovers captures={server.captures} />
 				<span className="gallery-sr-only">{name}</span>
 			</button>
 			<div className="gallery-server-body">
-				{draft === null ? (
-					<div className="gallery-title">
-						<h3>{name}</h3>
-						<button
-							type="button"
-							className="gallery-icon-button"
-							title={t('Rename this server')}
-							aria-label={t('Rename {name}', { name })}
-							onClick={() => setDraft(name)}
-						>
-							<GalleryIcon name="pencil" />
-						</button>
-					</div>
-				) : (
-					<form
-						className="gallery-rename"
-						onSubmit={event => {
-							event.preventDefault()
-							save()
-						}}
+				<div className="gallery-title">
+					<h3>{name}</h3>
+					<button
+						type="button"
+						className="gallery-icon-button"
+						title={t('Rename this server')}
+						aria-label={t('Rename {name}', { name })}
+						onClick={() => setSheet(true)}
 					>
-						<input
-							value={draft}
-							maxLength={80}
-							aria-label={t('Server name')}
-							placeholder={server.name}
-							onChange={event => setDraft(event.currentTarget.value)}
-						/>
-						<button type="submit" className="gallery-field-button">
-							{t('Save')}
-						</button>
-						<button
-							type="button"
-							className="gallery-field-button"
-							aria-label={t('Cancel')}
-							onClick={() => setDraft(null)}
-						>
-							<GalleryIcon name="close" />
-						</button>
-					</form>
-				)}
+						<GalleryIcon name="pencil" />
+					</button>
+				</div>
 				<dl className="gallery-server-stats">
 					<div>
 						<dt>
@@ -389,6 +363,18 @@ function ServerTile({
 				</dl>
 				{seed && <p className="gallery-seed">{translate(locale, 'Seed {seed}', { seed })}</p>}
 			</div>
+			{menu.element}
+			{sheet && (
+				<ServerSheet
+					server={server}
+					name={name}
+					onClose={() => setSheet(false)}
+					onRename={next => {
+						setStackName(server.key, SERVER_NAME, next)
+						onRenamed()
+					}}
+				/>
+			)}
 		</li>
 	)
 }
