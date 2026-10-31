@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.30.2-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.1-beta.1...mod-v0.30.2-beta.1) (2026-10-31)
+
 ## [0.30.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.0-beta.1...mod-v0.30.1-beta.1) (2026-10-31)
 
 ## [0.30.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.29.0-beta.1...mod-v0.30.0-beta.1) (2026-10-31)
