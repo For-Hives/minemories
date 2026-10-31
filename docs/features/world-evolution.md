@@ -121,7 +121,7 @@ statique de `/gallery` (1440, 768 et 390 px) :
 | | Avant | Après |
 | --- | --- | --- |
 | Échecs | 4 (dégradé, ombre lourde, texte < 11 px, image externe) | 1 (avatar externe bloqué par le réseau du conteneur) |
-| Alertes | 7 | 4, défendues ci-dessous |
+| Alertes | 7 | 3, défendues ci-dessous |
 | Titre | 52 px, accueil « Your memories, Alex. » sous un surtitre | 28 px, nom de l'écran et constat (captures, mondes, dernière visite) |
 
 - Relief par paliers de luminosité, sans bordure ni ombre au repos ; la tuile choisie prend le motif du style
@@ -129,6 +129,8 @@ statique de `/gallery` (1440, 768 et 390 px) :
 - L'or ne sert qu'aux données et à la sélection ; une seule action principale inversée par écran, les autres
   actions sont des pilules discrètes ; chaque tuile ouvre son monde en un clic (« Open »).
 - Plus de dégradés, de flou de verre, de surtitres ni de monospace hors code ; texte à 12–13 px minimum.
+- Le nombre de colonnes des tuiles suit le nombre de serveurs (`gridColumns` : 4 au plus sur grand écran,
+  3 sous 1 200 px, 2 sur téléphone avec la dernière tuile seule en pleine largeur) : aucune tuile orpheline.
 - Exceptions déclarées (`taste-skill-ignore`) : les pastilles de ciel et la piste de l'heure, qui montrent le
   ciel qu'elles sélectionnent.
 - Alertes laissées : ombres des éléments qui flottent sur la 3D (barres, panneaux, menu, feuille) ; bordure de

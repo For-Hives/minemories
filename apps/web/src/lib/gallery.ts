@@ -186,3 +186,14 @@ export function blockCoordinates(metadata: { x: number | null; y: number | null;
 	if (x === null || z === null) return null
 	return { x: Math.floor(x), y: y === null ? null : Math.floor(y), z: Math.floor(z) }
 }
+
+/**
+ * Column count for `count` peer tiles, at most `max` per row: an even split first, so no tile is left alone on
+ * its last row; otherwise the widest grid whose last row is at least half full.
+ */
+export function gridColumns(count: number, max: number): number {
+	if (count <= max) return Math.max(1, count)
+	for (let columns = max; columns >= 2; columns--) if (count % columns === 0) return columns
+	for (let columns = max; columns >= 3; columns--) if (count % columns >= columns / 2) return columns
+	return max
+}

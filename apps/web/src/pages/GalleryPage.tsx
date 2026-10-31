@@ -1,5 +1,5 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
@@ -9,7 +9,7 @@ import { buttonDark } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureArea, captureAreas, groupCaptures, latestCapture, viewPath } from '../lib/gallery'
+import { type CaptureArea, captureAreas, gridColumns, groupCaptures, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -243,7 +243,16 @@ function WorldSections({
 	const name = (server: Server) => getStackName(server.key, SERVER_NAME) ?? server.name
 	return (
 		<div className="gallery-worlds">
-			<ul className="gallery-servers" aria-label={t('Servers')}>
+			<ul
+				className="gallery-servers"
+				aria-label={t('Servers')}
+				style={
+					{
+						'--columns': gridColumns(servers.length, 4),
+						'--columns-narrow': gridColumns(servers.length, 3),
+					} as CSSProperties
+				}
+			>
 				{servers.map(server => (
 					<ServerTile
 						key={server.key}
