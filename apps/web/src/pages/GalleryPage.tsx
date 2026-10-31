@@ -5,11 +5,11 @@ import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
 import { GalleryIcon } from '../components/GalleryIcons'
 import { LoadingSkeleton } from '../components/Loading'
-import { buttonDark, Eyebrow } from '../components/ui'
+import { buttonDark } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
-import { T, translate, useI18n } from '../i18n/I18n'
+import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureArea, captureAreas, groupCaptures, latestCapture } from '../lib/gallery'
+import { type CaptureArea, captureAreas, groupCaptures, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -85,10 +85,27 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 	)
 }
 
-export function GalleryPage() {
-	const { t } = useI18n()
+/** The title row's one finding: how much is kept, across how many worlds, and when the last capture arrived. */
+function gallerySummary(memories: Memories, locale: Locale): string {
+	if (memories.length === 0) return translate(locale, 'Every capture keeps a place here, ready to revisit.')
+	const newest = latestCapture(memories)
+	const parts = [
+		formatCaptureCount(locale, memories.length),
+		translate(locale, '{count} worlds', { count: groupCaptures(memories).length }),
+	]
+	if (newest)
+		parts.push(
+			translate(locale, 'Last visit {date}', {
+				date: formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale),
+			})
+		)
+	return parts.join(' · ')
+}
 
-	const { session, notify } = useAppContext()
+export function GalleryPage() {
+	const { t, locale } = useI18n()
+
+	const { notify } = useAppContext()
 	const {
 		memories,
 		trash,
@@ -110,16 +127,8 @@ export function GalleryPage() {
 		<div className="album-gallery gallery-page">
 			<div className="album-gallery-heading gallery-heading">
 				<div>
-					<Eyebrow>
-						<T message={'THE SERVER ALBUM'} />
-					</Eyebrow>
-					<h1>
-						{t('Your memories')}
-						{session?.user.name && `, ${session.user.name.split(' ')[0]}`}.
-					</h1>
-					<p>
-						<T message={'Every capture keeps a place here, ready to revisit.'} />
-					</p>
+					<h1>{t('Your memories')}</h1>
+					<p>{gallerySummary(memories, locale)}</p>
 				</div>
 				<div className="gallery-heading-actions">
 					<button
@@ -178,9 +187,6 @@ export function GalleryPage() {
 				{!loading && trash.length > 0 && (
 					<section className="gallery-trash" aria-label={t('Trash')}>
 						<div>
-							<Eyebrow>
-								<T message={'RECYCLE BIN'} />
-							</Eyebrow>
 							<h2>
 								<T message={'Trash ·'} /> {trash.length}
 							</h2>
@@ -310,8 +316,9 @@ function ServerTile({
 	const [sheet, setSheet] = useState(false)
 	const menu = useContextMenu()
 	const newest = latestCapture(server.captures)
-	const seed = server.captures.find(item => item.metadata.seed)?.metadata.seed
 	const bytes = server.captures.reduce((total, capture) => total + capture.size, 0)
+	const newestArea = newest && server.areas.find(area => area.stack.captures.includes(newest))
+	const openPath = newest && viewPath(newest.id, Boolean(newestArea?.evolving && newestArea.stack.captures.length > 1))
 	const actions: MenuItem[] = [
 		{ label: t('Open'), icon: 'view', onSelect },
 		{ label: t('Details'), icon: 'cube', onSelect: () => setSheet(true) },
@@ -351,17 +358,19 @@ function ServerTile({
 						</dt>
 						<dd>{formatFileSize(bytes, locale)}</dd>
 					</div>
-					{newest && (
-						<div>
-							<dt>
-								<GalleryIcon name="clock" />
-								<span className="gallery-sr-only">{t('Last visit {date}', { date: '' })}</span>
-							</dt>
-							<dd>{formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale)}</dd>
-						</div>
-					)}
 				</dl>
-				{seed && <p className="gallery-seed">{translate(locale, 'Seed {seed}', { seed })}</p>}
+				<div className="gallery-server-foot">
+					<span className="gallery-seed" title={t('Last visit {date}', { date: '' }).trim()}>
+						<GalleryIcon name="clock" />
+						{newest ? formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale) : '—'}
+					</span>
+					{openPath && (
+						<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
+							{t('Open')}
+							<GalleryIcon name="view" />
+						</Link>
+					)}
+				</div>
 			</div>
 			{menu.element}
 			{sheet && (

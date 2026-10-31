@@ -212,7 +212,7 @@ export function ViewerStudio({
 			{settings && (
 				<section id="cinema-settings" className="cinema-settings">
 					<div className="cinema-panel-heading">
-						<span className="cinema-kicker">{t('SHAPE THE MOMENT')}</span>
+						<h2 className="cinema-panel-title">{t('Atmosphere')}</h2>
 						<button type="button" aria-label={t('Close settings')} onClick={() => setSettings(false)}>
 							×
 						</button>

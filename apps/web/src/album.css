@@ -796,8 +796,6 @@
 }
 .mm-site .album-gallery-heading {
 	grid-column: 1 / -1;
-	padding-bottom: 30px;
-	border-bottom: 1px solid var(--album-line);
 }
 .mm-site .album-gallery-sidebar {
 	grid-column: 2;
@@ -809,9 +807,8 @@
 .mm-site .album-gallery-sidebar > section {
 	margin: 0;
 	padding: 24px;
-	border: 1px solid var(--album-line);
-	border-radius: 20px;
-	background: #1a2c25;
+	border-radius: 16px;
+	background: #1a251e;
 }
 .mm-site .album-gallery-sidebar > section[aria-live="polite"] {
 	display: flex;

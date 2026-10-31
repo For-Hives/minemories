@@ -1321,5 +1321,6 @@
 	"Position": "Pozycja",
 	"Restore “{name}”": "Przywróć „{name}”",
 	"This name stays in this browser.": "Ta nazwa zostaje w tej przeglądarce.",
-	"Weather": "Pogoda"
+	"Weather": "Pogoda",
+	"{count} worlds": "Światy: {count}"
 }

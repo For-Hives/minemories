@@ -203,7 +203,7 @@ function AreaActions({
 		<div className="gallery-actions">
 			<Link
 				to={href}
-				className="gallery-view"
+				className="gallery-view is-quiet"
 				aria-label={t('View {name}', { name })}
 				onClick={() => setViewerFile(null)}
 			>
