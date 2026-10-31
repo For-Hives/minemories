@@ -3,8 +3,8 @@
 Remplace le lecteur « Évolution » par zone (une série par `zoneId`) et la tentative de tuiles du 27 octobre
 (voir `docs/concepts/tiles-evolution-postmortem.md`). C'est le viewer normal d'un monde, pas un mode à part : l'interface ne parle donc pas de « monde évolutif ».
 Chaque monde n'a plus qu'**une vue** : toutes ses
-captures identifiées sont chargées dans la même scène, la liste chronologique est à gauche, et le curseur fait
-évoluer le monde de la plus ancienne capture à la plus récente.
+captures identifiées sont chargées dans la même scène et la pellicule de gauche fait évoluer le monde de la plus
+ancienne capture à la plus récente.
 
 ## Principe : rien ne change dans le mod ni dans le format
 
@@ -57,12 +57,33 @@ servis par une API locale (Bun/SQLite/filesystem) et ouverts dans Chromium headl
 
 Ces mesures ne remplacent pas une validation en jeu avec de vraies captures AFK et un GPU réel.
 
+## Interface du viewer
+
+- **Pellicule** à gauche : vignette de chaque capture (image envoyée par le mod), heure, séparateur par jour,
+  fil doré jusqu'à la capture affichée et captures futures grisées. L'état de chargement est une pastille sur la
+  vignette (rotation pendant le chargement, rouge en échec avec bouton de nouvel essai, bleue si archivée ou
+  hors budget) et une fine barre de progression tant que des captures arrivent. Un bouton lecture/pause en tête
+  (1,8 s par capture, repart du début à la fin) ; ← → ou ↑ ↓ passent d'une capture à l'autre. Sur téléphone,
+  la pellicule devient une bande horizontale. L'ancienne barre de transport est retirée.
+- **Transitions** : en changeant de capture, le pivot de la caméra glisse vers le centre de la capture affichée
+  (1,1 s, l'angle et la distance sont conservés ; une interaction de l'utilisateur interrompt le glissement) et le
+  soleil tourne par le chemin le plus court jusqu'à l'heure de la capture (1,6 s). `prefers-reduced-motion`
+  rend les deux instantanés.
+- **Zoom** : la molette ne déplace plus le pivot vers le curseur (`zoomToCursor` désactivé) ; seul le
+  déplacement (pan) le déplace.
+- **Pivot** : pendant une interaction, une ombre douce est posée sur la surface visible juste sous le pivot,
+  reliée par un fil vertical ; elle s'élargit et pâlit avec la hauteur. La surface est mesurée par un lancer de
+  rayon vers le bas sur les maillages visibles, au plus toutes les 120 ms et seulement quand le pivot bouge.
+
 ## Galerie
 
-Chaque dossier serveur/monde affiche directement **▶ Ouvrir le monde** (dernière capture identifiée). Dépliée,
-la section du monde liste ses captures avec leurs actions habituelles (partage, publication,
-corbeille). Les captures sans identité complète restent groupées par proximité comme avant. Une capture
-archivée est signalée dans la liste et peut être restaurée en l'ouvrant seule.
+Les serveurs/mondes forment une **grille de tuiles** (mosaïque des dernières vignettes, nombre de captures,
+taille, dernière visite, seed). La tuile choisie affiche ses zones en dessous ; la plus récente est choisie par
+défaut. Le crayon d'une tuile renomme le serveur : comme les noms de zone, ce nom est gardé dans ce navigateur
+(`localStorage`), et revenir au nom d'origine efface la surcharge. Les cartes de zone affichent dimension
+(pastille de couleur), biome lisible (`Snowy taiga`), coordonnées X/Y/Z, météo et taille sous forme de puces.
+Les captures sans identité complète restent groupées par proximité. Une capture archivée est signalée dans la
+pellicule et peut être restaurée en l'ouvrant seule.
 
 ## Limites connues et étapes suivantes
 

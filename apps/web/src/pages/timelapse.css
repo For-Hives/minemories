@@ -1,236 +1,323 @@
-/* Timeline studio: reuses the cinema surface of the single viewer. */
+/* World view: a film of the captures on the left; the 3D stage keeps the rest of the screen. */
 .timeline-studio > * {
 	position: absolute;
 }
-.timeline-card {
-	left: 24px;
+.timeline-error {
+	left: 50%;
 	top: 92px;
-	width: min(360px, calc(100% - 100px));
-	padding: 14px 16px;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 16px;
 	border: 1px solid #e4dbbd30;
-	border-radius: 16px;
-	background: #15221bd9;
-	backdrop-filter: blur(14px) saturate(1.2);
+	border-radius: 14px;
+	background: #15221bf0;
 	font-size: 12px;
-	line-height: 1.6;
 }
-.timeline-card p {
+.timeline-error p {
 	margin: 0;
-}
-.timeline-card p + p {
-	margin-top: 6px;
-}
-.timeline-scope {
-	color: #b9c5bc;
-	font-size: 11px;
-}
-.timeline-meta {
-	color: #dcc493;
-	font-size: 10px;
-	letter-spacing: 0.4px;
-}
-.timeline-current {
-	font-size: 13px;
-}
-.timeline-interval {
-	display: block;
-	color: #98aa9e;
-	font: 10px monospace;
-	overflow-wrap: anywhere;
 }
 .timeline-error button {
 	border: 1px solid #ffffff30;
 	border-radius: 10px;
-}
-.timeline-loading {
-	left: 50%;
-	top: 92px;
-	transform: translateX(-50%);
-	margin: 0;
-	padding: 8px 18px;
-	border-radius: 30px;
-	background: #15221bf0;
-	border: 1px solid #e4dbbd30;
-	font-size: 12px;
-}
-.timeline-dock {
-	left: 24px;
-	right: 200px;
-	bottom: 24px;
-	max-width: 860px;
-	display: grid;
-	gap: 10px;
-	padding: 14px 20px 12px;
-	border: 1px solid #e4dbbd30;
-	border-radius: 20px;
-	background: #15221bd9;
-	backdrop-filter: blur(14px) saturate(1.2);
-	box-shadow: 0 18px 50px #0004;
-}
-.timeline-scrub input {
-	display: block;
-	width: 100%;
-	height: 4px;
-	appearance: none;
-	border-radius: 3px;
-	background: linear-gradient(90deg, #e6c68e var(--progress, 0%), #ffffff25 var(--progress, 0%));
-	cursor: pointer;
-}
-.timeline-scrub input::-webkit-slider-thumb {
-	appearance: none;
-	width: 16px;
-	height: 16px;
-	border: 2px solid #fff1ce;
-	border-radius: 50%;
-	background: #bea476;
-}
-.timeline-scrub input::-moz-range-thumb {
-	width: 12px;
-	height: 12px;
-	border: 2px solid #fff1ce;
-	border-radius: 50%;
-	background: #bea476;
-}
-.timeline-ends {
-	display: flex;
-	justify-content: space-between;
-	margin-top: 8px;
-	font-size: 10px;
-	color: #b9c5bc;
-	font-variant-numeric: tabular-nums;
-}
-.timeline-transport,
-.timeline-pages {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 6px;
-}
-.timeline-pages {
-	justify-content: space-between;
-	font-size: 10px;
-	color: #98aa9e;
-}
-.timeline-pages button {
-	min-height: 32px;
-	font-size: 11px;
-}
-.timeline-play {
-	min-width: 84px;
-	background: #e6c68e22;
-	border-color: #e6c68e40;
-}
-.timeline-speed {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-left: auto;
-	font-size: 11px;
-	color: #b9c5bc;
-}
-.timeline-speed select {
-	background: #1d2d24;
-	border: 1px solid #ffffff25;
-	padding: 4px 8px;
-	min-height: 34px;
-}
-@media (max-width: 800px) {
-	.timeline-card {
-		top: 76px;
-		left: 12px;
-		width: calc(100% - 24px);
-	}
-	.timeline-dock {
-		left: 12px;
-		right: 12px;
-		bottom: 56px;
-		padding: 12px;
-	}
-	.timeline-pages span {
-		display: none;
-	}
-}
-
-/* The timeline owns the bottom edge; the day clock floats just above it and the capture caption steps aside. */
-.timelapse-page .cinema-time {
-	bottom: 168px;
-}
-.timelapse-page .cinema-caption {
-	display: none;
-}
-@media (max-width: 800px) {
-	.timelapse-page .cinema-time {
-		left: 12px;
-		bottom: 214px;
-	}
-	.timeline-speed {
-		display: none;
-	}
-}
-
-/* Captures of the world: a compact list inside the card, the current one highlighted. */
-.timeline-list {
-	margin-top: 10px;
-	border-top: 1px solid #ffffff1a;
-	padding-top: 8px;
-}
-.timeline-list h2 {
-	margin: 0 0 6px;
-	font: 600 10px var(--font-mono, monospace);
-	letter-spacing: 0.08em;
-	color: #b9c5bc;
-}
-.timeline-list ol {
-	max-height: 34vh;
-	margin: 0;
-	padding: 0;
-	overflow-y: auto;
-	list-style: none;
-}
-.timeline-list li[data-later="true"] {
-	opacity: 0.55;
-}
-.timeline-list li > button {
-	display: grid;
-	width: 100%;
-	gap: 1px;
-	padding: 6px 8px;
-	border: 1px solid transparent;
-	border-radius: 8px;
 	background: transparent;
 	color: inherit;
-	text-align: left;
-	cursor: pointer;
 }
-.timeline-list li > button[aria-current="step"] {
-	border-color: #e6c68e55;
-	background: #e6c68e1f;
+
+.film {
+	--film-thumb: 52px;
+	left: 24px;
+	top: 96px;
+	bottom: 24px;
+	width: 156px;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #e4dbbd26;
+	border-radius: 20px;
+	background: #14211bcc;
+	backdrop-filter: blur(14px) saturate(1.2);
+	box-shadow: 0 18px 50px #0004;
+	overflow: hidden;
 }
-.timeline-list li > button:hover {
-	background: #ffffff12;
+.film-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 12px 10px;
 }
-.timeline-list li strong {
-	font-size: 11px;
+.cinema-page .film-play {
+	display: grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	flex: none;
+	padding: 0;
+	border-radius: 50%;
+	background: var(--cinema-gold);
+	color: #1d2a22;
 }
-.timeline-list li span,
-.timeline-list li small {
+.film-play svg {
+	width: 15px;
+	height: 15px;
+	fill: currentColor;
+}
+.cinema-page .film-play[aria-pressed="true"] {
+	background: #f3ecdc;
+}
+.film-title {
+	display: grid;
+	min-width: 0;
+	line-height: 1.25;
+}
+.film-title strong {
+	font-size: 12px;
+	font-weight: 600;
+}
+.film-title span {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 10px;
-	color: #b9c5bc;
+	font-size: 9px;
+	color: var(--cinema-muted);
 }
-.timeline-item-actions {
+.film-progress {
+	height: 2px;
+	margin: 0 12px 6px;
+	border-radius: 2px;
+	background: #ffffff1a;
+	overflow: hidden;
+}
+.film-progress span {
+	display: block;
+	height: 100%;
+	background: var(--cinema-gold);
+	transition: width 300ms ease-out;
+}
+.film-list {
+	flex: 1;
+	min-height: 0;
+	margin: 0;
+	padding: 4px 0 14px;
+	overflow-y: auto;
+	list-style: none;
+	scrollbar-width: thin;
+	scrollbar-color: #ffffff30 transparent;
+}
+.film-item {
+	position: relative;
+	padding: 0 12px;
+}
+/* The thread joining the frames: what is shown is lit, the future stays faint. */
+.film-item::before {
+	content: "";
+	position: absolute;
+	left: calc(12px + var(--film-thumb) / 2);
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	transform: translateX(-50%);
+	background: var(--cinema-gold);
+	opacity: 0.55;
+}
+.film-item[data-future="true"]::before {
+	background: #ffffff;
+	opacity: 0.12;
+}
+.film-item:first-child::before {
+	top: 30px;
+}
+.film-item:last-child::before {
+	bottom: calc(100% - 30px);
+}
+.film-day {
+	position: relative;
+	display: block;
+	width: fit-content;
+	margin: 10px 0 6px;
+	padding: 2px 7px;
+	border-radius: 8px;
+	background: #1d2c24;
+	font: 600 9px / 1.4 var(--font-mono, monospace);
+	letter-spacing: 0.04em;
+	color: var(--cinema-muted);
+	text-transform: uppercase;
+}
+.film-row {
+	position: relative;
 	display: flex;
-	gap: 12px;
-	padding: 0 8px 4px;
-	font-size: 10px;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 0;
 }
-.timeline-item-action {
+.cinema-page .film-frame {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	min-width: 0;
+	flex: 1;
 	padding: 0;
 	border: 0;
 	background: transparent;
-	color: #98aa9e;
-	font-size: 10px;
-	cursor: pointer;
+	color: inherit;
+	text-align: left;
+}
+.film-thumb {
+	position: relative;
+	width: var(--film-thumb);
+	height: var(--film-thumb);
+	flex: none;
+	border-radius: 12px;
+	border: 2px solid #ffffff22;
+	background: linear-gradient(150deg, #3a5040, #1e2d25) center / cover;
+	transition:
+		transform 200ms ease-out,
+		border-color 200ms,
+		box-shadow 200ms,
+		filter 200ms;
+}
+.film-frame:hover .film-thumb {
+	transform: scale(1.05);
+	border-color: #ffffff55;
+}
+.film-frame[aria-current="step"] .film-thumb {
+	border-color: var(--cinema-gold);
+	box-shadow:
+		0 0 0 3px #e6c68e33,
+		0 8px 20px #0006;
+	transform: scale(1.08);
+}
+.film-item[data-future="true"] .film-thumb {
+	filter: grayscale(0.7) brightness(0.65);
+}
+.film-frame time {
+	white-space: nowrap;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+	color: var(--cinema-muted);
+}
+.film-frame[aria-current="step"] time {
+	color: var(--cinema-ink);
+	font-weight: 600;
+}
+.film-status {
+	position: absolute;
+	right: -4px;
+	bottom: -4px;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	border: 2px solid #14211b;
+	display: none;
+}
+.film-item:is([data-status="loading"], [data-status="waiting"]) .film-status {
+	display: block;
+	border-color: #ffffff30;
+	border-top-color: var(--cinema-gold);
+	background: #14211b;
+	animation: film-spin 900ms linear infinite;
+}
+.film-item[data-status="waiting"] .film-status {
+	animation: none;
+	border-top-color: #ffffff30;
+}
+.film-item[data-status="failed"] .film-status {
+	display: block;
+	background: #e07a6a;
+}
+.film-item:is([data-status="archived"], [data-status="skipped"]) .film-status {
+	display: block;
+	background: #8fa8c8;
+}
+.film-item:is([data-status="archived"], [data-status="skipped"], [data-status="failed"]) .film-thumb {
+	opacity: 0.5;
+}
+.cinema-page .film-side {
+	display: grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	flex: none;
+	padding: 0;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--cinema-muted);
+	opacity: 0;
+	transition: opacity 160ms;
+}
+.film-side svg {
+	width: 13px;
+	height: 13px;
+}
+.film-row:hover .film-side,
+.film-side:focus-visible,
+.film-item[data-status="failed"] .film-side {
+	opacity: 1;
+}
+.film-side:hover {
+	background: #ffffff14;
+	color: var(--cinema-ink);
+}
+.film-note {
+	margin: 0;
+	padding: 8px 12px 12px;
+	font-size: 9px;
+	line-height: 1.4;
+	color: var(--cinema-muted);
+}
+@keyframes film-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Phones: the film becomes a horizontal strip above the day clock. */
+@media (max-width: 800px) {
+	.film {
+		--film-thumb: 46px;
+		left: 12px;
+		right: 12px;
+		top: auto;
+		bottom: 150px;
+		width: auto;
+		flex-direction: row;
+		align-items: center;
+	}
+	.film-head {
+		padding: 8px;
+	}
+	.film-title,
+	.film-progress,
+	.film-note,
+	.film-day,
+	.film-side,
+	.film-frame time,
+	.film-item::before {
+		display: none;
+	}
+	.film-list {
+		display: flex;
+		gap: 8px;
+		padding: 8px 10px 8px 0;
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+	.film-item {
+		padding: 0;
+	}
+}
+
+/* The film owns the left edge; the capture caption steps aside. */
+.timelapse-page .cinema-caption {
+	display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.film-thumb,
+	.film-progress span {
+		transition: none;
+	}
+	.film-item[data-status="loading"] .film-status {
+		animation: none;
+	}
 }

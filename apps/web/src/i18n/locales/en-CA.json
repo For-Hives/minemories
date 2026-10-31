@@ -25,5 +25,14 @@
 	"Moment of the world": "Moment of the world",
 	"▶ Open the world": "▶ Open the world",
 	"{name} joined the game": "{name} has joined the game",
-	"{name} left the game": "{name} has left the game"
+	"{name} left the game": "{name} has left the game",
+	"Rename this server": "Rename this server",
+	"Server name": "Server name",
+	"Servers": "Servers",
+	"Size": "Size",
+	"Snapshots": "Snapshots",
+	"Overworld": "Overworld",
+	"Nether": "Nether",
+	"The End": "The End",
+	"Thunder": "Thunder"
 }

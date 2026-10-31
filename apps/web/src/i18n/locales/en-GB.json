@@ -23,5 +23,14 @@
 	"{count} chunks": "{count} chunks",
 	"Open alone": "Open alone",
 	"Moment of the world": "Moment of the world",
-	"▶ Open the world": "▶ Open the world"
+	"▶ Open the world": "▶ Open the world",
+	"Rename this server": "Rename this server",
+	"Server name": "Server name",
+	"Servers": "Servers",
+	"Size": "Size",
+	"Snapshots": "Snapshots",
+	"Overworld": "Overworld",
+	"Nether": "Nether",
+	"The End": "The End",
+	"Thunder": "Thunder"
 }

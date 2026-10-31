@@ -1303,5 +1303,14 @@
 	"{name} joined the game": "{name}이(가) 게임에 참여했습니다",
 	"{name} left the game": "{name}이(가) 게임을 떠났습니다",
 	"{name}: {message}": "{name}: {message}",
-	"About this film": "영상 소개"
+	"About this film": "영상 소개",
+	"Rename this server": "이 서버 이름 바꾸기",
+	"Server name": "서버 이름",
+	"Servers": "서버",
+	"Size": "크기",
+	"Snapshots": "캡처",
+	"Overworld": "오버월드",
+	"Nether": "네더",
+	"The End": "엔드",
+	"Thunder": "뇌우"
 }

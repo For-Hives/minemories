@@ -1303,5 +1303,14 @@
 	"{name} joined the game": "{name} присоединился к игре",
 	"{name} left the game": "{name} покинул игру",
 	"{name}: {message}": "{name}: {message}",
-	"About this film": "О фильме"
+	"About this film": "О фильме",
+	"Rename this server": "Переименовать сервер",
+	"Server name": "Название сервера",
+	"Servers": "Серверы",
+	"Size": "Размер",
+	"Snapshots": "Снимки",
+	"Overworld": "Верхний мир",
+	"Nether": "Незер",
+	"The End": "Энд",
+	"Thunder": "Гроза"
 }
