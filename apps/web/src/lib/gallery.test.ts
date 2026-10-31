@@ -4,6 +4,7 @@ import {
 	blockCoordinates,
 	bundleWorlds,
 	captureAreas,
+	gridColumns,
 	groupCaptures,
 	latestCapture,
 	stackCaptures,
@@ -134,4 +135,14 @@ it('labels biomes and block coordinates for display', () => {
 	expect(blockCoordinates({ x: 12.7, y: 64.2, z: -40.5 })).toEqual({ x: 12, y: 64, z: -41 })
 	expect(blockCoordinates({ x: 1, y: null, z: 2 })).toEqual({ x: 1, y: null, z: 2 })
 	expect(blockCoordinates({ x: null, y: 3, z: 2 })).toBeNull()
+})
+
+it('chooses tile columns from the count so no tile is orphaned', () => {
+	expect(gridColumns(0, 4)).toBe(1)
+	expect(gridColumns(3, 4)).toBe(3)
+	expect(gridColumns(4, 3)).toBe(2)
+	expect(gridColumns(6, 4)).toBe(3)
+	expect(gridColumns(7, 4)).toBe(4)
+	expect(gridColumns(5, 4)).toBe(3)
+	expect(gridColumns(13, 4)).toBe(4)
 })

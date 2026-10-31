@@ -59,6 +59,7 @@
 	background: transparent;
 	color: var(--g-muted);
 	font: 600 12px / 1 var(--font-sans);
+	white-space: nowrap;
 	text-decoration: none;
 	cursor: pointer;
 	transition:
@@ -214,7 +215,8 @@
 }
 .gallery-servers {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+	/* Columns follow the number of servers (gridColumns), so no tile is left alone on its row. */
+	grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
 	gap: 14px;
 	margin: 0;
 	padding: 0;
@@ -908,6 +910,9 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 10px;
 	}
+	.gallery-server:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+	}
 	.gallery-server-covers {
 		height: 76px;
 	}
@@ -1091,6 +1096,12 @@
 	border: 0;
 	color: var(--g-gold);
 	font-weight: 500;
+}
+
+@media (max-width: 1199px) and (min-width: 651px) {
+	.gallery-servers {
+		grid-template-columns: repeat(var(--columns-narrow, 3), minmax(0, 1fr));
+	}
 }
 
 /* The gallery is an app screen: one flat ground, no decorative light. */
