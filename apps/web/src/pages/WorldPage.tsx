@@ -299,11 +299,10 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 				minutes={state.minutes}
 				captureMinutes={current?.dayTime == null ? null : captureClock(current.dayTime)}
 				onRecenter={state.recenter}
-			/>
-			<div className="viewer-studio timeline-studio">
+			>
 				{error && <WorldError error={error} onRetry={state.retryAll} />}
 				{world && <CaptureFilm state={state} world={world} />}
-			</div>
+			</ViewerStudio>
 		</section>
 	)
 }
@@ -426,7 +425,7 @@ function FilmItem({
 }) {
 	const { t, locale } = useI18n()
 	const image = state.images.get(frame.id)
-	const time = new Date(frame.at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+	const time = new Date(frame.at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 	const current = position === state.step
 	return (
 		<li className="film-item" data-status={status} data-future={position > state.step}>

@@ -59,13 +59,19 @@ Ces mesures ne remplacent pas une validation en jeu avec de vraies captures AFK 
 
 ## Interface du viewer
 
-- **Pellicule** à gauche : vignette de chaque capture (image envoyée par le mod), heure, séparateur par jour,
+- **Pellicule** à gauche, jumelle de la barre d'outils de droite (même verre, centrée verticalement, hauteur
+  ajustée au contenu) ; elle fait partie du studio : elle s'efface au repos et disparaît en immersion (H) comme
+  les autres contrôles. Contenu : vignette de chaque capture (image envoyée par le mod), heure, séparateur par jour,
   fil doré jusqu'à la capture affichée et captures futures grisées. L'état de chargement est une pastille sur la
   vignette (rotation pendant le chargement, rouge en échec avec bouton de nouvel essai, bleue si archivée ou
   hors budget) et une fine barre de progression tant que des captures arrivent. Un bouton lecture/pause en tête
   (1,8 s par capture, repart du début à la fin) ; ← → ou ↑ ↓ passent d'une capture à l'autre. Sur téléphone,
   la pellicule devient une bande horizontale. L'ancienne barre de transport est retirée.
-- **Transitions** : en changeant de capture, le pivot de la caméra glisse vers le centre de la capture affichée
+- **Centrage** : le pivot de la caméra va sur le joueur enregistré dans la capture (`minemoriesPlayerPosition`),
+  s'il se trouvait dans la capture ; sinon (anciennes captures, sélection faite à distance) sur la surface la plus
+  haute au centre de la capture, jamais au milieu du volume ni dans le vide. « Recentrer » et le double-clic
+  visent la capture affichée.
+- **Transitions** : en changeant de capture, le pivot de la caméra glisse vers ce point de la capture affichée
   (1,1 s, l'angle et la distance sont conservés ; une interaction de l'utilisateur interrompt le glissement) et le
   soleil tourne par le chemin le plus court jusqu'à l'heure de la capture (1,6 s). `prefers-reduced-motion`
   rend les deux instantanés.
@@ -75,12 +81,22 @@ Ces mesures ne remplacent pas une validation en jeu avec de vraies captures AFK 
   reliée par un fil vertical ; elle s'élargit et pâlit avec la hauteur. La surface est mesurée par un lancer de
   rayon vers le bas sur les maillages visibles, au plus toutes les 120 ms et seulement quand le pivot bouge.
 
+- **Pluie et neige** s'arrêtent au bloc le plus haut de chaque colonne, comme dans Minecraft : rien ne tombe sous
+  un toit, un arbre ou un surplomb. La carte des hauteurs est calculée sur les triangles visibles, seulement
+  quand la météo est active et après un changement de géométrie (nouvelle capture ou étape) ; le shader masque
+  les gouttes et flocons sous cette hauteur.
+
 ## Galerie
 
 Les serveurs/mondes forment une **grille de tuiles** (mosaïque des dernières vignettes, nombre de captures,
 taille, dernière visite, seed). La tuile choisie affiche ses zones en dessous ; la plus récente est choisie par
-défaut. Le crayon d'une tuile renomme le serveur : comme les noms de zone, ce nom est gardé dans ce navigateur
-(`localStorage`), et revenir au nom d'origine efface la surcharge. Les cartes de zone affichent dimension
+défaut. Le crayon d'une tuile ouvre la **fiche du serveur** (feuille latérale) : nom modifiable, gardé dans ce
+navigateur (`localStorage`) comme les noms de zone, avec un lien pour revenir au nom d'origine ; captures, taille,
+première capture, dernière visite, dimensions, seed et liste des zones. Les zones ont un onglet **Détails**
+(date, dimension, biome, position X/Y/Z, heure du jeu, météo, taille, seed) à côté de Partage, Publication et
+Captures. Le **clic droit** (ou la touche menu du clavier) ouvre les actions d'une zone (voir, détails, partage,
+publication, captures, renommer, corbeille) ou d'un serveur (ouvrir, détails, renommer), au pointeur, navigable
+au clavier. Les cartes de zone affichent dimension
 (pastille de couleur), biome lisible (`Snowy taiga`), coordonnées X/Y/Z, météo et taille sous forme de puces.
 Les captures sans identité complète restent groupées par proximité. Une capture archivée est signalée dans la
 pellicule et peut être restaurée en l'ouvrant seule.

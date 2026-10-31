@@ -37,3 +37,25 @@ export function capturePosition(root: THREE.Object3D): THREE.Vector3 | null {
 		return null
 	return root.localToWorld(new THREE.Vector3(value[0], value[1], value[2]))
 }
+
+/**
+ * Orbit focus of a capture: the recorded player when they stood inside it, else the topmost visible surface at
+ * its centre. A selection made from afar, or a deep volume, must never leave the pivot floating in empty air.
+ */
+export function orbitFocus(root: THREE.Object3D): THREE.Vector3 {
+	const bounds = framingBounds(root)
+	const player = capturePosition(root)
+	if (player && bounds.clone().expandByScalar(2).containsPoint(player)) return player
+	const center = bounds.getCenter(new THREE.Vector3())
+	const meshes: THREE.Object3D[] = []
+	root.traverseVisible(object => {
+		if (object instanceof THREE.Mesh && !isLightBeam(object.material as THREE.Material)) meshes.push(object)
+	})
+	const ray = new THREE.Raycaster(
+		new THREE.Vector3(center.x, bounds.max.y + 1, center.z),
+		new THREE.Vector3(0, -1, 0),
+		0,
+		bounds.max.y - bounds.min.y + 2
+	)
+	return ray.intersectObjects(meshes, false)[0]?.point.clone() ?? surfaceFocus(bounds)
+}

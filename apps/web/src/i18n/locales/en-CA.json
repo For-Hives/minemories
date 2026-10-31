@@ -34,5 +34,14 @@
 	"Overworld": "Overworld",
 	"Nether": "Nether",
 	"The End": "The End",
-	"Thunder": "Thunder"
+	"Thunder": "Thunder",
+	"Areas": "Areas",
+	"Biome": "Biome",
+	"Captured": "Captured",
+	"Dimension": "Dimension",
+	"First capture": "First capture",
+	"Position": "Position",
+	"Restore “{name}”": "Restore “{name}”",
+	"This name stays in this browser.": "This name stays in this browser.",
+	"Weather": "Weather"
 }

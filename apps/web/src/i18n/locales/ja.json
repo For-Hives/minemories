@@ -1312,5 +1312,14 @@
 	"Overworld": "オーバーワールド",
 	"Nether": "ネザー",
 	"The End": "エンド",
-	"Thunder": "雷雨"
+	"Thunder": "雷雨",
+	"Areas": "エリア",
+	"Biome": "バイオーム",
+	"Captured": "撮影日時",
+	"Dimension": "ディメンション",
+	"First capture": "最初のキャプチャ",
+	"Position": "位置",
+	"Restore “{name}”": "「{name}」に戻す",
+	"This name stays in this browser.": "この名前はこのブラウザにのみ保存されます。",
+	"Weather": "天気"
 }

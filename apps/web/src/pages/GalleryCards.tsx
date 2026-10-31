@@ -1,7 +1,8 @@
 import { type ReactNode, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
+import { type MenuItem, useContextMenu } from '../components/ContextMenu'
 import { GalleryIcon, type GalleryIconName } from '../components/GalleryIcons'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
@@ -11,15 +12,10 @@ import { formatFileSize } from '../lib/glb'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
 import { type DialogTab, type DialogTarget, GalleryDialog } from './GalleryDialog'
+import { dimensionLabels } from './GalleryFacts'
 import { type Memories, type TrashMemories, useLivePage } from './gallery-data'
 
 type Memory = Memories[number]
-
-export const dimensionLabels: Record<string, string> = {
-	'minecraft:overworld': 'Overworld',
-	'minecraft:the_nether': 'Nether',
-	'minecraft:the_end': 'The End',
-}
 
 function Chip({ icon, kind, children }: { icon?: GalleryIconName; kind: string; children: ReactNode }) {
 	return (
@@ -272,8 +268,10 @@ export function AreaCard({
 	onTrashed: (id: string) => void
 	publishId: string | null
 }) {
-	const { locale } = useI18n()
+	const { t, locale } = useI18n()
 	const { setViewerFile } = useAppContext()
+	const navigate = useNavigate()
+	const menu = useContextMenu()
 	const latest = latestCapture(stack.captures)
 	const rename = useAreaName(groupKey, stack, latest, onChanged)
 	const [dialog, setDialog] = useState<DialogTarget | null>(() => {
@@ -286,8 +284,37 @@ export function AreaCard({
 	const thumbnail = latest.metadata.thumbnail ?? latest.metadata.icon
 	const ordered = [...stack.captures].sort((a, b) => stampOf(b) - stampOf(a))
 	const href = viewPath(latest.id, timeline)
+	const open = (tab: DialogTab) => setDialog({ tab, id: latest.id })
+	const actions: MenuItem[] = [
+		{
+			label: t('View'),
+			icon: 'view',
+			onSelect: () => {
+				setViewerFile(null)
+				navigate(href)
+			},
+		},
+		{ label: t('Details'), icon: 'cube', onSelect: () => open('details') },
+		{ label: t('Share'), icon: 'link', onSelect: () => open('share') },
+		{ label: t('Public publication'), icon: 'globe', onSelect: () => open('publish') },
+		...(snapshots > 1
+			? [{ label: t('Snapshots'), icon: 'layers', onSelect: () => open('snapshots') } as MenuItem]
+			: []),
+		{
+			label: rename.single ? t('Rename this snapshot') : t('Rename this area'),
+			icon: 'pencil',
+			onSelect: rename.start,
+		},
+		...(snapshots > 1
+			? []
+			: [{ label: t('Move to trash'), icon: 'trash', danger: true, onSelect: () => onTrashed(latest.id) } as MenuItem]),
+	]
 	return (
-		<article className="gallery-card" aria-label={rename.name}>
+		<article
+			className="gallery-card"
+			aria-label={rename.name}
+			onContextMenu={event => menu.open(event, rename.name, actions)}
+		>
 			<Link to={href} className="gallery-cover" tabIndex={-1} aria-hidden="true" onClick={() => setViewerFile(null)}>
 				{thumbnail ? (
 					<span className="gallery-cover-image" style={{ backgroundImage: `url("${thumbnail}")` }} />
@@ -313,9 +340,10 @@ export function AreaCard({
 				href={href}
 				snapshots={snapshots}
 				latestId={latest.id}
-				onOpen={tab => setDialog({ tab, id: latest.id })}
+				onOpen={open}
 				onTrashed={onTrashed}
 			/>
+			{menu.element}
 			{dialog && (
 				<GalleryDialog
 					title={rename.name}

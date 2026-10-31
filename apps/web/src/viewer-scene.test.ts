@@ -229,7 +229,8 @@ test('a deep capture opens near the surface and concentrates shadow texels on th
 		updateSunShadow: vi.fn(),
 	})
 	scene.resetView()
-	expect(target.y).toBeCloseTo(75.2)
+	// The pivot rests on the top surface at the centre, not in the middle of the volume.
+	expect(target.y).toBeCloseTo(80)
 	expect(shadowCenter.y).toBeCloseTo(target.y)
 	expect(camera.position.y).toBeGreaterThan(target.y)
 	expect(setBaseHeight.mock.calls[0]?.[0]).toBeGreaterThan(camera.position.y)
@@ -403,8 +404,8 @@ test('switching captures glides the pivot and camera together, never while walki
 	expect(f.fields.controls.target.x).toBeCloseTo(10)
 	expect(f.fields.camera.position.x).toBeCloseTo(20)
 	f.internals.advanceGlides(1)
-	expect(f.fields.controls.target.x).toBeCloseTo(20)
-	expect(f.fields.camera.position.toArray()).toEqual([30, 10, 10])
+	expect(f.fields.controls.target.toArray()).toEqual([20, 2, 0])
+	expect(f.fields.camera.position.toArray()).toEqual([30, 12, 10])
 	expect(f.fields.shadowCenter.x).toBeCloseTo(20)
 	expect(f.fields.updateSunShadow).toHaveBeenCalledWith(true)
 	f.scene.glideToLayer(new THREE.Group())
@@ -488,4 +489,26 @@ test('the ground below the pivot is measured on visible surfaces only, throttled
 	pivot.wanted = false
 	internals.probeGround(2000)
 	expect(internals.ground).toBeNull()
+})
+
+test('the weather ceiling covers visible drawn triangles only, in scene coordinates', () => {
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const modelRoot = new THREE.Group()
+	const roof = new THREE.Mesh(new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2))
+	roof.position.set(2, 10, 2)
+	const hidden = new THREE.Mesh(new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2))
+	hidden.position.set(2, 50, 2)
+	hidden.visible = false
+	const loose = new THREE.Mesh(new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2).toNonIndexed())
+	loose.position.set(-3, 4, -3)
+	modelRoot.add(roof, hidden, loose)
+	const setCeiling = vi.fn()
+	Object.assign(scene, { modelRoot, precipitation: { setCeiling } })
+	;(scene as unknown as { refreshCeiling(): void }).refreshCeiling()
+	const ceiling = setCeiling.mock.lastCall?.[0]
+	expect(Math.max(...ceiling.data)).toBe(10)
+	expect(ceiling.data).toContain(4)
+	modelRoot.clear()
+	;(scene as unknown as { refreshCeiling(): void }).refreshCeiling()
+	expect(setCeiling).toHaveBeenLastCalledWith(null)
 })
