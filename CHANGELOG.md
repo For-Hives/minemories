@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.27.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.26.0-beta.1...mod-v0.27.0-beta.1) (2026-10-31)
+
+### Fonctionnalités
+
+* **web:** motion des dépliants, landing seule, audit des pages archivées ([#171](https://github.com/For-Hives/minemories/issues/171)) ([275ba36](https://github.com/For-Hives/minemories/commit/275ba36ba141670505d2f153243a9d3ea916fbfa))
+
 ## [0.26.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.25.0-beta.1...mod-v0.26.0-beta.1) (2026-10-30)
 
 ### Fonctionnalités
