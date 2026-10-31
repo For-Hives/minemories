@@ -1,0 +1,236 @@
+/* Timeline studio: reuses the cinema surface of the single viewer. */
+.timeline-studio > * {
+	position: absolute;
+}
+.timeline-card {
+	left: 24px;
+	top: 92px;
+	width: min(360px, calc(100% - 100px));
+	padding: 14px 16px;
+	border: 1px solid #e4dbbd30;
+	border-radius: 16px;
+	background: #15221bd9;
+	backdrop-filter: blur(14px) saturate(1.2);
+	font-size: 12px;
+	line-height: 1.6;
+}
+.timeline-card p {
+	margin: 0;
+}
+.timeline-card p + p {
+	margin-top: 6px;
+}
+.timeline-scope {
+	color: #b9c5bc;
+	font-size: 11px;
+}
+.timeline-meta {
+	color: #dcc493;
+	font-size: 10px;
+	letter-spacing: 0.4px;
+}
+.timeline-current {
+	font-size: 13px;
+}
+.timeline-interval {
+	display: block;
+	color: #98aa9e;
+	font: 10px monospace;
+	overflow-wrap: anywhere;
+}
+.timeline-error button {
+	border: 1px solid #ffffff30;
+	border-radius: 10px;
+}
+.timeline-loading {
+	left: 50%;
+	top: 92px;
+	transform: translateX(-50%);
+	margin: 0;
+	padding: 8px 18px;
+	border-radius: 30px;
+	background: #15221bf0;
+	border: 1px solid #e4dbbd30;
+	font-size: 12px;
+}
+.timeline-dock {
+	left: 24px;
+	right: 200px;
+	bottom: 24px;
+	max-width: 860px;
+	display: grid;
+	gap: 10px;
+	padding: 14px 20px 12px;
+	border: 1px solid #e4dbbd30;
+	border-radius: 20px;
+	background: #15221bd9;
+	backdrop-filter: blur(14px) saturate(1.2);
+	box-shadow: 0 18px 50px #0004;
+}
+.timeline-scrub input {
+	display: block;
+	width: 100%;
+	height: 4px;
+	appearance: none;
+	border-radius: 3px;
+	background: linear-gradient(90deg, #e6c68e var(--progress, 0%), #ffffff25 var(--progress, 0%));
+	cursor: pointer;
+}
+.timeline-scrub input::-webkit-slider-thumb {
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #fff1ce;
+	border-radius: 50%;
+	background: #bea476;
+}
+.timeline-scrub input::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	border: 2px solid #fff1ce;
+	border-radius: 50%;
+	background: #bea476;
+}
+.timeline-ends {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 8px;
+	font-size: 10px;
+	color: #b9c5bc;
+	font-variant-numeric: tabular-nums;
+}
+.timeline-transport,
+.timeline-pages {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+.timeline-pages {
+	justify-content: space-between;
+	font-size: 10px;
+	color: #98aa9e;
+}
+.timeline-pages button {
+	min-height: 32px;
+	font-size: 11px;
+}
+.timeline-play {
+	min-width: 84px;
+	background: #e6c68e22;
+	border-color: #e6c68e40;
+}
+.timeline-speed {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+	font-size: 11px;
+	color: #b9c5bc;
+}
+.timeline-speed select {
+	background: #1d2d24;
+	border: 1px solid #ffffff25;
+	padding: 4px 8px;
+	min-height: 34px;
+}
+@media (max-width: 800px) {
+	.timeline-card {
+		top: 76px;
+		left: 12px;
+		width: calc(100% - 24px);
+	}
+	.timeline-dock {
+		left: 12px;
+		right: 12px;
+		bottom: 56px;
+		padding: 12px;
+	}
+	.timeline-pages span {
+		display: none;
+	}
+}
+
+/* The timeline owns the bottom edge; the day clock floats just above it and the capture caption steps aside. */
+.timelapse-page .cinema-time {
+	bottom: 168px;
+}
+.timelapse-page .cinema-caption {
+	display: none;
+}
+@media (max-width: 800px) {
+	.timelapse-page .cinema-time {
+		left: 12px;
+		bottom: 214px;
+	}
+	.timeline-speed {
+		display: none;
+	}
+}
+
+/* Captures of the world: a compact list inside the card, the current one highlighted. */
+.timeline-list {
+	margin-top: 10px;
+	border-top: 1px solid #ffffff1a;
+	padding-top: 8px;
+}
+.timeline-list h2 {
+	margin: 0 0 6px;
+	font: 600 10px var(--font-mono, monospace);
+	letter-spacing: 0.08em;
+	color: #b9c5bc;
+}
+.timeline-list ol {
+	max-height: 34vh;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+}
+.timeline-list li[data-later="true"] {
+	opacity: 0.55;
+}
+.timeline-list li > button {
+	display: grid;
+	width: 100%;
+	gap: 1px;
+	padding: 6px 8px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.timeline-list li > button[aria-current="step"] {
+	border-color: #e6c68e55;
+	background: #e6c68e1f;
+}
+.timeline-list li > button:hover {
+	background: #ffffff12;
+}
+.timeline-list li strong {
+	font-size: 11px;
+}
+.timeline-list li span,
+.timeline-list li small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 10px;
+	color: #b9c5bc;
+}
+.timeline-item-actions {
+	display: flex;
+	gap: 12px;
+	padding: 0 8px 4px;
+	font-size: 10px;
+}
+.timeline-item-action {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #98aa9e;
+	font-size: 10px;
+	cursor: pointer;
+}
