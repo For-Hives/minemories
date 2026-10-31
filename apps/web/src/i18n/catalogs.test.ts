@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest'
 import { loadLocale, translate } from './catalog'
-import { formatCaptureCount } from './counts'
 import { isLocale, localeOptions, localeTag, preferredLocale, resolveLocale } from './locales'
 import english from './locales/en.json'
 
@@ -68,21 +67,6 @@ test('regional variants preserve previous preferences and use country-appropriat
 	expect(translate('en-CA', 'My favorites')).toBe('My favourites')
 	expect(translate('fr-CA', 'Email address')).toBe('Adresse courriel')
 	expect(translate('fr', 'Email address')).toBe('Adresse e-mail')
-})
-
-test('Russian and Polish capture counters follow CLDR rather than an English singular/plural rule', async () => {
-	await Promise.all((['ru', 'pl', 'ja', 'ko', 'de'] as const).map(loadLocale))
-	expect([1, 2, 5, 21].map(count => formatCaptureCount('ru', count))).toEqual([
-		'1 снимок',
-		'2 снимка',
-		'5 снимков',
-		'21 снимок',
-	])
-	expect([1, 2, 5].map(count => formatCaptureCount('pl', count))).toEqual(['1 zrzut', '2 zrzuty', '5 zrzutów'])
-	expect(formatCaptureCount('ja', 2)).toBe('キャプチャ2件')
-	expect(formatCaptureCount('ko', 2)).toBe('캡처 2개')
-	expect(formatCaptureCount('de', 1)).toBe('1 Aufnahme')
-	expect(formatCaptureCount('de', 2)).toBe('2 Aufnahmen')
 })
 
 test('concurrent requests share one catalogue download and unknown interpolation keys stay readable', async () => {

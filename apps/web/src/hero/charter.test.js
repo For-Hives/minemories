@@ -82,7 +82,7 @@ test('the motion design layer (section 9) only exists when motion is allowed, an
 	}
 	// no layout property, no brightness or filter animation: transform, opacity, clip-path and the text and panel properties below only
 	expect(motion).not.toMatch(/\b(brightness|filter)\b/)
-	const allowed = /^(opacity|transform|color|text-decoration-color|text-underline-offset|block-size|content-visibility|display)$/
+	const allowed = /^(opacity|transform|color|text-decoration-color|text-underline-offset|block-size|content-visibility|display|translate)$/
 	for (const [, list] of motion.matchAll(/transition:\s*([^;]+);/g)) {
 		for (const part of list.split(',')) expect(part.trim().split(/\s+/)[0], part).toMatch(allowed)
 	}

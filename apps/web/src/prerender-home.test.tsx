@@ -14,20 +14,22 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// the film's markup and its stylesheet are there for the first paint; the canvas is empty until the film mounts
 	expect(html).toContain('id="mm-scene"')
 	expect(html).toContain('<style>')
-	// real routes, no file next to the page, one language selector, the app's navigation in the footer
+	// the other pages are archived: the landing links out to the releases and the code, never to a route that no longer exists
 	for (const route of [
 		'/installation',
 		'/privacy',
 		'/terms',
 		'/legal',
 		'/concept',
-		'/fonctionnement',
 		'/faq',
 		'/blog',
 		'/pricing',
 		'/login',
+		'/register',
+		'/explorer',
 	])
-		expect(html, route).toContain(`href="${route}"`)
+		expect(html, route).not.toContain(`href="${route}"`)
+	expect(html).toContain('href="https://github.com/For-Hives/minemories/releases"')
 	expect(html).not.toMatch(/href="[^"]*\.html"/)
 	expect(html.match(/<select/g)).toHaveLength(2) // the header one and the one of the menu of the small screens, which is hidden above 560 px
 	// no app header over the film's own one

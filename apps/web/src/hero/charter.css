@@ -476,6 +476,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 
 	/* 9.6 Panneaux qui s'ouvrent (FAQ, détails d'étape, pied de page) : la hauteur s'anime, le contenu se fond ; le chevron rebondit. */
 	:root:not([data-mc-motion='reduced']) .mc-faq__item::details-content,
+	:root:not([data-mc-motion='reduced']) .words-fold::details-content,
 	:root:not([data-mc-motion='reduced']) .mc-step__more::details-content,
 	:root:not([data-mc-motion='reduced']) .footer details::details-content {
 		block-size: 0;
@@ -488,6 +489,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	:root:not([data-mc-motion='reduced']) .mc-faq__item[open]::details-content,
+	:root:not([data-mc-motion='reduced']) .words-fold[open]::details-content,
 	:root:not([data-mc-motion='reduced']) .mc-step__more[open]::details-content,
 	:root:not([data-mc-motion='reduced']) .footer details[open]::details-content {
 		block-size: auto;
@@ -536,6 +538,88 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 
 	:root:not([data-mc-motion='reduced']) .site-menu a:hover {
 		transform: translateX(var(--ds-sp-1));
+	}
+
+	/* 9.8 FAQ : un seul panneau ouvert à la fois (attribut `name`), un liseré cuivre qui se déploie sur la carte ouverte, la réponse qui monte après l'ouverture,
+	   la question qui avance au survol, la pression qui l'enfonce d'un pixel, le chevron qui s'abaisse avant de se retourner. */
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__item {
+		position: relative;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__item::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto 0 0;
+		inline-size: var(--ds-sp-1);
+		background: var(--ember);
+		transform: scaleY(0);
+		transform-origin: top center;
+		transition: transform var(--ds-dur-3) var(--ds-ease);
+		pointer-events: none;
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__item[open]::before {
+		transform: scaleY(1);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q {
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			transform var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q:hover {
+		transform: translateX(var(--ds-sp-1));
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q:active {
+		transform: translateY(1px);
+		transition-duration: calc(var(--ds-dur-1) / 2);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__q::after {
+		transition:
+			transform var(--ds-dur-3) var(--ds-ease-pop),
+			translate var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__item:not([open]) > .mc-faq__q:hover::after {
+		translate: 0 var(--ds-sp-1);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__a {
+		transition:
+			opacity var(--ds-dur-2) var(--ds-ease-std) var(--ds-dur-1),
+			transform var(--ds-dur-3) var(--ds-ease) var(--ds-dur-1);
+	}
+
+	:root:not([data-mc-motion='reduced']) .site .mc-faq__item:not([open]) .mc-faq__a {
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--ds-sp-2)));
+		transition-delay: 0s;
+	}
+
+	/* 9.9 Autres dépliants (repli « Le film, en mots », notes du pied de page, détails d'étape) : le sommaire répond au survol et à la pression comme une question de FAQ. */
+	:root:not([data-mc-motion='reduced']) .words-fold summary,
+	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary,
+	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary {
+		transition:
+			color var(--ds-dur-1) var(--ds-ease),
+			transform var(--ds-dur-2) var(--ds-ease);
+	}
+
+	:root:not([data-mc-motion='reduced']) .words-fold summary:hover,
+	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary:hover,
+	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary:hover {
+		color: var(--ember);
+		transform: translateX(var(--ds-sp-1));
+	}
+
+	:root:not([data-mc-motion='reduced']) .words-fold summary:active,
+	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary:active,
+	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary:active {
+		transform: translateY(1px);
+		transition-duration: calc(var(--ds-dur-1) / 2);
 	}
 }
 

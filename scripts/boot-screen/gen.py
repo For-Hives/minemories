@@ -94,20 +94,43 @@ arm = f'<g transform="translate({sx} {sy + 22}) rotate(135)"><use href="#pick" x
 # un texel a toujours la même taille à l'écran, rien n'est lissé.
 # --- images du jeu (data: URI, une seule fois) : le joueur et la pioche ; tout le reste est vectoriel ---
 defs = (f'<defs><image id="skin" width="64" height="64" href="{tex("entity/player/wide/steve.png")}"/>'
-	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/></defs>')
+	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/>')
 
 
-def crack(face, *pts_uv):
-	pts = [uv(face, u, v) for u, v in pts_uv]
-	return f'<polyline points="{poly(*pts)}" fill="none" stroke="#17140f" stroke-width="1.2" stroke-linejoin="miter" stroke-linecap="square"/>'
+def destroy_stage(n):
+	"""Une VRAIE texture de casse du jeu (block/destroy_stage_N.png) en vecteur : les pixels sombres (61) creusent la fissure, les clairs (155) l'éclaircissent.
+	Le jeu mélange la texture avec le bloc en multipliant (résultat = 2 x texture x bloc) : ici, du noir à demi transparent pour les sombres, du blanc très léger pour les clairs."""
+	from PIL import Image
+	import io
+	data = subprocess.run(['unzip', '-p', jar, f'assets/minecraft/textures/block/destroy_stage_{n}.png'], check=True, capture_output=True).stdout
+	im = Image.open(io.BytesIO(data)).convert('RGBA')
+	runs = {61: [], 155: []}
+	for yy in range(im.height):
+		xx = 0
+		while xx < im.width:
+			r, _, _, aa = im.getpixel((xx, yy))
+			if aa < 128 or r not in runs:
+				xx += 1
+				continue
+			x1 = xx
+			while x1 + 1 < im.width and im.getpixel((x1 + 1, yy))[:1] == (r,) and im.getpixel((x1 + 1, yy))[3] >= 128:
+				x1 += 1
+			runs[r].append((xx, yy, x1 - xx + 1))
+			xx = x1 + 1
+	path = lambda rs: ''.join(f'M{x} {yy}h{w}v1h-{w}z' for x, yy, w in rs)
+	return f'<g id="ds{n}" shape-rendering="crispEdges"><path fill="#fff" opacity=".13" d="{path(runs[155])}"/><path fill="#000" opacity=".55" d="{path(runs[61])}"/></g>'
 
 
-# fissures en trois étapes (vectorielles), sur les faces gauche, droite et haute
-cracks = [
-	crack('l', (0.3, 0.2), (0.45, 0.42), (0.4, 0.6)) + crack('t', (0.3, 0.35), (0.45, 0.5)),
-	crack('l', (0.55, 0.35), (0.72, 0.5), (0.68, 0.78)) + crack('l', (0.45, 0.42), (0.25, 0.7)) + crack('r', (0.25, 0.2), (0.45, 0.4), (0.4, 0.55)),
-	crack('l', (0.15, 0.5), (0.35, 0.62), (0.3, 0.85)) + crack('r', (0.6, 0.3), (0.78, 0.5), (0.7, 0.75)) + crack('t', (0.6, 0.2), (0.7, 0.45), (0.5, 0.62)),
-]
+# comme dans le jeu : la même texture sur CHAQUE face, qui change à chaque coup (stades 2, 5 puis 8 sur 10) ; le 4e coup casse le bloc
+STAGES = [2, 5, 8]
+# matrice SVG d'une face : texture 16 x 16 -> parallélogramme de la face (haut, gauche, droite)
+FACE_MATRIX = {
+	't': (BW / 16, BW / 32, -BW / 16, BW / 32, Nx, Ny),
+	'l': (BW / 16, BW / 32, 0, BH / 16, Wp[0], Wp[1]),
+	'r': (BW / 16, -BW / 32, 0, BH / 16, Sp[0], Sp[1]),
+}
+cracks = [''.join(f'<use href="#ds{n}" transform="matrix({" ".join(f"{v:g}" for v in m)})"/>' for m in FACE_MATRIX.values()) for n in STAGES]
+stage_defs = ''.join(destroy_stage(n) for n in STAGES)
 block = (vec_faces
 	+ f'<polygon points="{left_poly}" fill="#000" opacity=".12"/><polygon points="{right_poly}" fill="#000" opacity=".2"/>'
 	+ ''.join(f'<g class="bk-c{i}">{c}</g>' for i, c in enumerate(cracks))
@@ -177,7 +200,8 @@ css.append(kf('b-block', bk, 'transform'))
 css.append(kf('b-blockfade', [(0, '1', ''), (hits[3] + 0.07, '1', 'ease-in'), (hits[3] + 0.26, '0', ''), (T - 0.2, '0', ''), (T - 0.05, '1', ''), (T, '1', '')], 'opacity'))
 for k in range(3):
 	t0 = hits[k]
-	css.append(kf(f'b-c{k}', [(0, '0', ''), (t0 - 0.001, '0', ''), (t0, '1', ''), (T - 0.2, '1', ''), (T - 0.1, '0', ''), (T, '0', '')], 'opacity'))
+	off = [(hits[k + 1] - 0.001, '1', ''), (hits[k + 1], '0', '')] if k < 2 else [(T - 0.2, '1', ''), (T - 0.1, '0', '')]
+	css.append(kf(f'b-c{k}', [(0, '0', ''), (t0 - 0.001, '0', ''), (t0, '1', '')] + off + [(T, '0', '')], 'opacity'))
 # éclats de pierre à chaque coup : 6 particules en arc (montée rapide, chute avec la gravité), DIFFÉRENTES à chaque coup (origine et vecteurs tirés au hasard, graine fixe)
 rnd2 = random.Random(21)
 origins = [(0, 0), (9, -7), (-5, 5), (13, 3)]
@@ -231,8 +255,8 @@ for i in range(3):
 	cls += f'#boot .bk-d{i}{{transform-origin:{Nx}px {y(86)}px;animation:b-d{i} {T}s linear infinite}}#boot .bk-d{i}o{{animation:b-d{i}o {T}s linear infinite}}'
 	cls += f'#boot .bk-g{i}{{animation:b-g{i} {T}s linear infinite}}'
 cls += f'#boot .bk-item{{transform-origin:{Nx}px {y(76)}px;animation:b-item {T}s linear infinite}}#boot .bk-gs{{transform-origin:{Nx}px {y(98)}px;animation:b-gs {T}s linear infinite}}'
-static_hidden = ','.join([f'#boot .bk-p{i}o' for i in range(len(vec))] + [f'#boot .bk-s{i}o' for i in range(len(sh))] + [f'#boot .bk-d{i}o' for i in range(3)] + ['#boot .bk-item', '#boot .bk-gs', '#boot .bk-c2'])
-cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-55deg)}#boot .bk-c0,#boot .bk-c1{opacity:1}'
+static_hidden = ','.join([f'#boot .bk-p{i}o' for i in range(len(vec))] + [f'#boot .bk-s{i}o' for i in range(len(sh))] + [f'#boot .bk-d{i}o' for i in range(3)] + ['#boot .bk-item', '#boot .bk-gs', '#boot .bk-c0', '#boot .bk-c2'])
+cls += ('@media (prefers-reduced-motion:reduce){#boot *{animation:none!important}#boot .bk-arm{transform:rotate(-55deg)}#boot .bk-c1{opacity:1}'
 	f'{static_hidden}{{opacity:0}}#boot .bk-g0,#boot .bk-g1,#boot .bk-g2{{transform:scale(0)}}}}')
 style = f'<style>{cls}{"".join(css)}</style>'
 
@@ -242,7 +266,7 @@ dust = ''.join(f'<g class="bk-d{i}"><g class="bk-d{i}o"><circle cx="{Nx + (i - 1
 GX, GY = Nx - GEM_W // 2, y(62)
 star = lambda cx, cy, r: f'<polygon points="{cx},{cy - r} {cx + r * .28:g},{cy - r * .28:g} {cx + r},{cy} {cx + r * .28:g},{cy + r * .28:g} {cx},{cy + r} {cx - r * .28:g},{cy + r * .28:g} {cx - r},{cy} {cx - r * .28:g},{cy - r * .28:g}" fill="#eafffb"/>'
 sparkles = ''.join(f'<g transform="translate({cx} {cy})"><g class="bk-g{i}">{star(0, 0, r)}</g></g>' for i, (cx, cy, r) in enumerate([(GX + 2, GY + 3, 5), (GX + GEM_W - 1, GY + 8, 4), (GX + 9, GY - 4, 3.5)]))
-svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}<g class="bk-shake"><polygon points="{poly((Nx, y(86)), (146, y(106)), (Nx, y(126)), (54, y(106)))}" fill="#000" opacity=".4"/>'
+svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}{stage_defs}</defs><g class="bk-shake"><polygon points="{poly((Nx, y(86)), (146, y(106)), (Nx, y(126)), (54, y(106)))}" fill="#000" opacity=".4"/>'
 	f'<g class="bk-fade"><g class="bk-blk">{block}</g></g>{dust}{parts}{shards}'
 	f'<g class="bk-gs"><ellipse cx="{Nx}" cy="{y(98)}" rx="9" ry="3.2" fill="#000" opacity=".5"/></g>'
 	f'<g class="bk-item"><g transform="translate({GX} {GY})">{GEM}</g>{sparkles}</g>'
