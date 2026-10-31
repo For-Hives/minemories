@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.29.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.28.0-beta.1...mod-v0.29.0-beta.1) (2026-10-31)
+
+### Fonctionnalités
+
+* **web:** pellicule du monde, transitions douces, pivot ombré et galerie en grille ([bb9881b](https://github.com/For-Hives/minemories/commit/bb9881b5f460fd1a0fe7ef161f36bced5eb5733a))
+
 ## [0.28.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.27.0-beta.1...mod-v0.28.0-beta.1) (2026-10-31)
 
 ### Fonctionnalités
