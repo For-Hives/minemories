@@ -1321,5 +1321,6 @@
 	"Position": "Позиция",
 	"Restore “{name}”": "Вернуть «{name}»",
 	"This name stays in this browser.": "Это название хранится в этом браузере.",
-	"Weather": "Погода"
+	"Weather": "Погода",
+	"{count} worlds": "Миров: {count}"
 }

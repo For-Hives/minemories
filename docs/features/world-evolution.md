@@ -110,3 +110,27 @@ pellicule et peut être restaurée en l'ouvrant seule.
   stockage des chunks inchangés par empreinte pour ne télécharger que ce qui a changé.
 - Une capture plus récente peut garder ses parois de coupe (`CutBoundary`) face à une grotte plus ancienne voisine.
 - Le contrat `timelapse.frames` (série par zone) reste servi par l'API mais n'est plus utilisé par le viewer.
+
+## Passe « taste-skill » (31 octobre 2026)
+
+La galerie et le viewer ont été revus avec le skill [taste-skill](https://github.com/Leonxlnx/taste-skill) en
+mode écran d'application (`references/app-screens.md`), style `true-black-flat` tiré avec la palette et la
+typographie de la marque conservées (`--keep palette,type`). Mesures de l'inspecteur du skill sur un instantané
+statique de `/gallery` (1440, 768 et 390 px) :
+
+| | Avant | Après |
+| --- | --- | --- |
+| Échecs | 4 (dégradé, ombre lourde, texte < 11 px, image externe) | 1 (avatar externe bloqué par le réseau du conteneur) |
+| Alertes | 7 | 4, défendues ci-dessous |
+| Titre | 52 px, accueil « Your memories, Alex. » sous un surtitre | 28 px, nom de l'écran et constat (captures, mondes, dernière visite) |
+
+- Relief par paliers de luminosité, sans bordure ni ombre au repos ; la tuile choisie prend le motif du style
+  (bordure 1,5 px de l'accent et teinte pâle).
+- L'or ne sert qu'aux données et à la sélection ; une seule action principale inversée par écran, les autres
+  actions sont des pilules discrètes ; chaque tuile ouvre son monde en un clic (« Open »).
+- Plus de dégradés, de flou de verre, de surtitres ni de monospace hors code ; texte à 12–13 px minimum.
+- Exceptions déclarées (`taste-skill-ignore`) : les pastilles de ciel et la piste de l'heure, qui montrent le
+  ciel qu'elles sélectionnent.
+- Alertes laissées : ombres des éléments qui flottent sur la 3D (barres, panneaux, menu, feuille) ; bordure de
+  la barre de navigation du site (hors galerie) ; colonne secondaire d'appairage/stockage plus courte que la
+  rangée de tuiles ; « crème » détecté sur l'encre de la marque (`#f2efdf`, une couleur de texte).

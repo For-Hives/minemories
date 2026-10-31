@@ -36,8 +36,7 @@
 	padding: 6px;
 	border: 1px solid #d6e2d226;
 	border-radius: 20px;
-	background: #14211bd9;
-	backdrop-filter: blur(14px) saturate(1.2);
+	background: #14211bf5;
 	box-shadow: 0 16px 50px #0003;
 	transition: opacity 400ms ease-out;
 }
@@ -64,7 +63,7 @@
 	flex: none;
 	padding: 0;
 	border-radius: 14px;
-	background: var(--cinema-gold);
+	background: var(--cinema-ink);
 	color: #1d2a22;
 }
 .film-play svg {
@@ -73,7 +72,8 @@
 	fill: currentColor;
 }
 .cinema-page .film-play[aria-pressed="true"] {
-	background: #f3ecdc;
+	background: #2a3a30;
+	color: var(--cinema-ink);
 }
 .film-title {
 	display: grid;
@@ -149,10 +149,8 @@
 	padding: 1px 6px;
 	border-radius: 6px;
 	background: #14211b;
-	font: 600 8.5px / 1.4 var(--font-mono, monospace);
-	letter-spacing: 0.04em;
+	font: 600 11px / 1.4 var(--font-sans, inherit);
 	color: var(--cinema-muted);
-	text-transform: uppercase;
 }
 .film-row {
 	position: relative;
@@ -179,11 +177,10 @@
 	flex: none;
 	border-radius: 12px;
 	border: 2px solid #ffffff22;
-	background: linear-gradient(150deg, #3a5040, #1e2d25) center / cover;
+	background: #2a3a30 center / cover;
 	transition:
 		transform 200ms ease-out,
 		border-color 200ms,
-		box-shadow 200ms,
 		filter 200ms;
 }
 .film-frame:hover .film-thumb {
@@ -192,9 +189,6 @@
 }
 .film-frame[aria-current="step"] .film-thumb {
 	border-color: var(--cinema-gold);
-	box-shadow:
-		0 0 0 3px #e6c68e33,
-		0 8px 20px #0006;
 	transform: scale(1.08);
 }
 .film-item[data-future="true"] .film-thumb {

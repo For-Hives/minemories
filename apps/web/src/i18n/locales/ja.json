@@ -1321,5 +1321,6 @@
 	"Position": "位置",
 	"Restore “{name}”": "「{name}」に戻す",
 	"This name stays in this browser.": "この名前はこのブラウザにのみ保存されます。",
-	"Weather": "天気"
+	"Weather": "天気",
+	"{count} worlds": "{count} ワールド"
 }

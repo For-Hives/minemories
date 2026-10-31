@@ -487,6 +487,8 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 		return (await screen.findByRole('link', { name })).getAttribute('href')
 	}
 	expect(await view('Local', 'View New base')).toBe('/viewer?memory=new&timelapse=1')
+	expect(screen.getByRole('link', { name: 'Open · Local' }).getAttribute('href')).toBe('/viewer?memory=new&timelapse=1')
+	expect(screen.getByRole('link', { name: 'Open · Alone' }).getAttribute('href')).toBe('/viewer?memory=solo')
 	expect(screen.queryByRole('link', { name: 'View Solo' })).toBeNull()
 	expect(await view('Alone', 'View Solo')).toBe('/viewer?memory=solo')
 	expect(await view('Remote', 'View Remote two')).toBe('/viewer?memory=remote-2')

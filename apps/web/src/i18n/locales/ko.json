@@ -1321,5 +1321,6 @@
 	"Position": "위치",
 	"Restore “{name}”": "“{name}”(으)로 되돌리기",
 	"This name stays in this browser.": "이 이름은 이 브라우저에만 저장됩니다.",
-	"Weather": "날씨"
+	"Weather": "날씨",
+	"{count} worlds": "월드 {count}개"
 }
