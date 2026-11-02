@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
+import { compressedSample } from '../testing/quads-glb'
 import { CaptureRestorationRequired, capturePollDelay, downloadCapture, requireCaptureReady } from './capture-file'
 
 const availability = {
@@ -18,7 +19,7 @@ test('a GLB download keeps credentials and its abort signal, and returns a real 
 	vi.stubGlobal('fetch', fetch)
 	const signal = new AbortController().signal
 	const file = await downloadCapture('/private', 'memory.glb', signal)
-	expect(fetch).toHaveBeenCalledWith('/private', { credentials: 'include', signal })
+	expect(fetch).toHaveBeenCalledWith('/private?variant=meshopt', { credentials: 'include', signal })
 	expect(await file.text()).toBe('glTF')
 	expect(file.name).toBe('memory.glb')
 })
@@ -76,4 +77,26 @@ test('polling waits the advertised delay, defaults to five seconds and removes p
 	await rejected
 	expect(vi.getTimerCount()).toBe(0)
 	expect(() => capturePollDelay(1, controller.signal)).toThrow('cancelled')
+})
+
+test('a Meshopt variant is expanded to an ordinary GLB before it reaches the viewer', async () => {
+	const { compressed } = await compressedSample(120)
+	const headers = { 'X-Minemories-Variant': 'meshopt' }
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(compressed as BlobPart, { headers })))
+	const signal = new AbortController().signal
+	const file = await downloadCapture('/private', 'memory.glb', signal)
+	const bytes = new Uint8Array(await file.arrayBuffer())
+	expect(new TextDecoder().decode(bytes.subarray(20, 600))).not.toContain('EXT_meshopt_compression')
+	expect(bytes.byteLength).toBeGreaterThan(compressed.byteLength)
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Uint8Array(40), { headers })))
+	await expect(downloadCapture('/broken', 'f.glb', signal)).rejects.toThrow('could not be decoded')
+	const controller = new AbortController()
+	vi.stubGlobal(
+		'fetch',
+		vi.fn().mockImplementation(async () => {
+			queueMicrotask(() => controller.abort(new Error('stopped late')))
+			return new Response(compressed as BlobPart, { headers })
+		})
+	)
+	await expect(downloadCapture('/late', 'f.glb', controller.signal)).rejects.toThrow('stopped late')
 })

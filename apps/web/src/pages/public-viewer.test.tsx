@@ -117,7 +117,11 @@ test('private shared links retain their existing metadata and file route', async
 	mount('/share/private-token', false)
 	await screen.findByRole('heading', { name: 'Partage privé' })
 	await waitFor(() => expect(mocks.load).toHaveBeenCalled())
-	expect(fetch).toHaveBeenNthCalledWith(2, 'http://example.test/api/shared/private-token/file', expect.anything())
+	expect(fetch).toHaveBeenNthCalledWith(
+		2,
+		'http://example.test/api/shared/private-token/file?variant=meshopt',
+		expect.anything()
+	)
 	expect(mocks.get).not.toHaveBeenCalled()
 })
 

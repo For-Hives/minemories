@@ -256,6 +256,11 @@ test('shared snapshots open without an account until revoked', async () => {
 	expect(file.status).toBe(200)
 	expect(file.headers.get('content-type')).toBe('model/gltf-binary')
 	expect((await file.arrayBuffer()).byteLength).toBe(glb.length)
+	// The transport variant is optional: a file with nothing to compress comes back as stored.
+	const variant = await app.request(`/api/shared/${missing.token}/file?variant=meshopt`)
+	expect(variant.status).toBe(200)
+	expect(variant.headers.get('x-minemories-variant')).toBeNull()
+	expect((await variant.arrayBuffer()).byteLength).toBe(glb.length)
 })
 
 test('pairing rejects oversized JSON even with a forged small Content-Length', async () => {
