@@ -16,6 +16,9 @@ import java.util.Map;
 
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
+  /** Marks quads whose chunk is unknown: the primitive then publishes no chunk ranges. */
+  public static final int NO_CHUNK = ChunkRuns.NONE;
+
   private String playerExtras = "";
 
   /** Local player feet, relative to the exported origin. No world coordinates are embedded. */

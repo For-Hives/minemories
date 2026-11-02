@@ -59,6 +59,10 @@ final class RenderedModelCapture {
   private record AtlasSource(
       ResourceLocation location, AtlasUvIndex<TextureAtlasSprite> index, int width, int height) {}
 
+  void classify(dev.minemories.core.GlbCategory category, int chunkX, int chunkZ) {
+    scene.classify(category, chunkX, chunkZ);
+  }
+
   RenderedModelCapture(CaptureSink scene, Minecraft minecraft) {
     this(scene, minecraft, null);
   }
