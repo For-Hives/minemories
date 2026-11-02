@@ -10,10 +10,11 @@ import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
+import { CaptureFacts } from './GalleryFacts'
 import { type Memories, useLivePage } from './gallery-data'
 import { PublicationPanel } from './PublicDiscovery'
 
-export type DialogTab = 'share' | 'publish' | 'snapshots'
+export type DialogTab = 'details' | 'share' | 'publish' | 'snapshots'
 export interface DialogTarget {
 	tab: DialogTab
 	id: string
@@ -36,7 +37,7 @@ function trapFocus(event: KeyboardEvent, dialog: HTMLElement) {
 	;(leavingStart ? last : first)?.focus()
 }
 
-function useModal(onClose: () => void) {
+export function useModal(onClose: () => void) {
 	const dialog = useRef<HTMLDivElement>(null)
 	useEffect(() => {
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -78,6 +79,7 @@ export function GalleryDialog({
 	const dialog = useModal(onClose)
 	const selected = memories.find(memory => memory.id === target.id) ?? memories[0]
 	const tabs: Array<[DialogTab, string]> = [
+		['details', t('Details')],
 		['share', t('Share')],
 		['publish', t('Public publication')],
 		...(memories.length > 1 ? [['snapshots', t('Snapshots')] as [DialogTab, string]] : []),
@@ -123,6 +125,7 @@ export function GalleryDialog({
 					))}
 				</div>
 				<div className="gallery-dialog-body" role="tabpanel">
+					{target.tab === 'details' && <CaptureFacts memory={selected} />}
 					{target.tab === 'share' && <SharePanel key={selected.id} memoryId={selected.id} />}
 					{target.tab === 'publish' && <PublicationPanel key={selected.id} memory={selected} />}
 					{target.tab === 'snapshots' && (

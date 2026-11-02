@@ -28,3 +28,22 @@ test('weather animates a bounded Minecraft-style particle field and releases GPU
 	weather.dispose()
 	for (const spy of disposals) expect(spy).toHaveBeenCalledOnce()
 })
+
+test('weather is sheltered below the highest surface of each column', () => {
+	const weather = new ViewerPrecipitation()
+	const rain = weather.object.children[0] as THREE.LineSegments
+	const material = rain.material as THREE.ShaderMaterial
+	expect(material.uniforms.hasCeiling?.value).toBe(0)
+	expect(material.vertexShader).toContain('vSheltered')
+	expect(material.fragmentShader).toContain('discard')
+	weather.setCeiling({ data: new Float32Array([1, 2, 3, 4]), width: 2, depth: 2, minX: -1, minZ: 5, cell: 3 })
+	expect(material.uniforms.hasCeiling?.value).toBe(1)
+	expect((material.uniforms.ceilingRect as { value: THREE.Vector4 }).value.toArray()).toEqual([-1, 5, 6, 6])
+	const texture = material.uniforms.ceilingMap?.value as THREE.DataTexture
+	const dispose = vi.spyOn(texture, 'dispose')
+	weather.setCeiling(null)
+	expect(dispose).toHaveBeenCalledOnce()
+	expect(material.uniforms.ceilingMap?.value).toBeNull()
+	weather.setCeiling({ data: new Float32Array([1]), width: 1, depth: 1, minX: 0, minZ: 0, cell: 1 })
+	weather.dispose()
+})

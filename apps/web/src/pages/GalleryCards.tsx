@@ -1,54 +1,81 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { type ReactNode, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
-import { GalleryIcon } from '../components/GalleryIcons'
+import { type MenuItem, useContextMenu } from '../components/ContextMenu'
+import { GalleryIcon, type GalleryIconName } from '../components/GalleryIcons'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { type CaptureStack, latestCapture, viewPath } from '../lib/gallery'
+import { biomeLabel, blockCoordinates, type CaptureStack, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
 import { type DialogTab, type DialogTarget, GalleryDialog } from './GalleryDialog'
+import { dimensionLabels } from './GalleryFacts'
 import { type Memories, type TrashMemories, useLivePage } from './gallery-data'
 
 type Memory = Memories[number]
 
-const dimensionLabels: Record<string, string> = {
-	'minecraft:overworld': 'Overworld',
-	'minecraft:the_nether': 'Nether',
-	'minecraft:the_end': 'The End',
-}
-
-function Chip({ icon, children }: { icon: 'pin' | 'cube' | 'clock'; children: string }) {
+function Chip({ icon, kind, children }: { icon?: GalleryIconName; kind: string; children: ReactNode }) {
 	return (
-		<li>
-			<GalleryIcon name={icon} />
+		<li data-kind={kind}>
+			{icon && <GalleryIcon name={icon} />}
 			<span className="gallery-chip-text">{children}</span>
 		</li>
 	)
 }
 
-function formatPlace({ x, y, z }: Memory['metadata']): string {
-	if (x === null || x === undefined) return ''
-	return `${Math.floor(x)}, ${Math.floor(y ?? 0)}, ${Math.floor(z ?? 0)}`
+function Coordinates({ metadata }: { metadata: Memory['metadata'] }) {
+	const place = blockCoordinates(metadata)
+	if (!place) return null
+	const axes: [string, number | null][] = [
+		['X', place.x],
+		['Y', place.y],
+		['Z', place.z],
+	]
+	return (
+		<Chip icon="pin" kind="place">
+			{axes
+				.filter(([, value]) => value !== null)
+				.map(([axis, value]) => (
+					<span key={axis} className="gallery-axis">
+						<b>{axis}</b>
+						{value}
+					</span>
+				))}
+		</Chip>
+	)
 }
 
 function CaptureChips({ memory, bytes }: { memory: Memory; bytes: number }) {
 	const { t, locale } = useI18n()
 	const { metadata } = memory
 	const weather = [metadata.raining && t('Rain'), metadata.thundering && t('Thunder')].filter(Boolean).join(' · ')
-	const place = formatPlace(metadata)
 	const dimension = metadata.dimension
 	const dimensionKey = dimension ? dimensionLabels[dimension] : undefined
 	return (
 		<ul className="gallery-chips">
-			{dimension && <Chip icon="cube">{dimensionKey ? t(dimensionKey) : dimension}</Chip>}
-			{metadata.biome && <Chip icon="cube">{metadata.biome.replaceAll('_', ' ')}</Chip>}
-			{place && <Chip icon="pin">{place}</Chip>}
-			{weather && <Chip icon="clock">{weather}</Chip>}
-			<Chip icon="cube">{formatFileSize(bytes, locale)}</Chip>
+			{dimension && (
+				<li data-kind="dimension" data-dimension={dimensionKey ?? 'modded'}>
+					<span className="gallery-dimension-dot" aria-hidden="true" />
+					<span className="gallery-chip-text">{dimensionKey ? t(dimensionKey) : dimension}</span>
+				</li>
+			)}
+			{metadata.biome && (
+				<Chip icon="leaf" kind="biome">
+					{biomeLabel(metadata.biome)}
+				</Chip>
+			)}
+			<Coordinates metadata={metadata} />
+			{weather && (
+				<Chip icon="cloud" kind="weather">
+					{weather}
+				</Chip>
+			)}
+			<Chip icon="disk" kind="size">
+				{formatFileSize(bytes, locale)}
+			</Chip>
 		</ul>
 	)
 }
@@ -176,7 +203,7 @@ function AreaActions({
 		<div className="gallery-actions">
 			<Link
 				to={href}
-				className="gallery-view"
+				className="gallery-view is-quiet"
 				aria-label={t('View {name}', { name })}
 				onClick={() => setViewerFile(null)}
 			>
@@ -241,8 +268,10 @@ export function AreaCard({
 	onTrashed: (id: string) => void
 	publishId: string | null
 }) {
-	const { locale } = useI18n()
+	const { t, locale } = useI18n()
 	const { setViewerFile } = useAppContext()
+	const navigate = useNavigate()
+	const menu = useContextMenu()
 	const latest = latestCapture(stack.captures)
 	const rename = useAreaName(groupKey, stack, latest, onChanged)
 	const [dialog, setDialog] = useState<DialogTarget | null>(() => {
@@ -255,8 +284,37 @@ export function AreaCard({
 	const thumbnail = latest.metadata.thumbnail ?? latest.metadata.icon
 	const ordered = [...stack.captures].sort((a, b) => stampOf(b) - stampOf(a))
 	const href = viewPath(latest.id, timeline)
+	const open = (tab: DialogTab) => setDialog({ tab, id: latest.id })
+	const actions: MenuItem[] = [
+		{
+			label: t('View'),
+			icon: 'view',
+			onSelect: () => {
+				setViewerFile(null)
+				navigate(href)
+			},
+		},
+		{ label: t('Details'), icon: 'cube', onSelect: () => open('details') },
+		{ label: t('Share'), icon: 'link', onSelect: () => open('share') },
+		{ label: t('Public publication'), icon: 'globe', onSelect: () => open('publish') },
+		...(snapshots > 1
+			? [{ label: t('Snapshots'), icon: 'layers', onSelect: () => open('snapshots') } as MenuItem]
+			: []),
+		{
+			label: rename.single ? t('Rename this snapshot') : t('Rename this area'),
+			icon: 'pencil',
+			onSelect: rename.start,
+		},
+		...(snapshots > 1
+			? []
+			: [{ label: t('Move to trash'), icon: 'trash', danger: true, onSelect: () => onTrashed(latest.id) } as MenuItem]),
+	]
 	return (
-		<article className="gallery-card" aria-label={rename.name}>
+		<article
+			className="gallery-card"
+			aria-label={rename.name}
+			onContextMenu={event => menu.open(event, rename.name, actions)}
+		>
 			<Link to={href} className="gallery-cover" tabIndex={-1} aria-hidden="true" onClick={() => setViewerFile(null)}>
 				{thumbnail ? (
 					<span className="gallery-cover-image" style={{ backgroundImage: `url("${thumbnail}")` }} />
@@ -282,9 +340,10 @@ export function AreaCard({
 				href={href}
 				snapshots={snapshots}
 				latestId={latest.id}
-				onOpen={tab => setDialog({ tab, id: latest.id })}
+				onOpen={open}
 				onTrashed={onTrashed}
 			/>
+			{menu.element}
 			{dialog && (
 				<GalleryDialog
 					title={rename.name}

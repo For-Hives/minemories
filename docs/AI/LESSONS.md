@@ -47,3 +47,9 @@ Pour les pages d’information Minemories, le développeur veut d’abord du con
 - Le chargement d'un GLB local dans le viewer web sert uniquement aux tests de développement. Le retirer du build de production et des parcours publics ; garder les captures du mod, la galerie et les liens partagés comme parcours produit.
 
 - Le viewer d’un monde est la vue normale, composée de toutes ses captures : ne pas l’étiqueter « monde évolutif » ni créer de mode à part dans l’interface. L’UI de cette vue sera refaite ; privilégier le moteur et la stratégie.
+
+- Pour le viewer d’un monde, le développeur préfère une interface visuelle et peu verbeuse : pellicule de vignettes plutôt que barre de transport, transitions douces de caméra et d’heure entre captures, pivot de caméra localisable (ombre au sol). Les noms de serveurs doivent pouvoir être surchargés depuis la galerie.
+
+- Le développeur autorise le push direct sur main quand tests, lint, format et contrôles passent : ne plus attendre de confirmation dans ce cas.
+
+- Pour les écrans web, le développeur veut le skill taste-skill (https://github.com/Leonxlnx/taste-skill) : galerie et viewer en mode écran d’application, style true-black-flat avec la palette et la typographie de la marque gardées ; mesurer avant/après avec son inspecteur.

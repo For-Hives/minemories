@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { act, type ReactNode } from 'react'
 import { Link, MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -479,13 +479,64 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 			z: null,
 		}),
 	])
+	localStorage.clear()
 	mount(<GalleryPage />)
-	const view = async (name: string) => (await screen.findByRole('link', { name })).getAttribute('href')
-	expect(await view('View New base')).toBe('/viewer?memory=new&timelapse=1')
-	expect(await view('View Solo')).toBe('/viewer?memory=solo')
-	expect(await view('View Remote two')).toBe('/viewer?memory=remote-2')
-	expect(await view('View Legacy')).toBe('/viewer?memory=legacy')
+	const view = async (server: string, name: string) => {
+		fireEvent.click(await screen.findByRole('button', { name: server }))
+		expect(screen.getByRole('button', { name: server }).getAttribute('aria-pressed')).toBe('true')
+		return (await screen.findByRole('link', { name })).getAttribute('href')
+	}
+	expect(await view('Local', 'View New base')).toBe('/viewer?memory=new&timelapse=1')
+	expect(screen.getByRole('link', { name: 'Open · Local' }).getAttribute('href')).toBe('/viewer?memory=new&timelapse=1')
+	expect(screen.getByRole('link', { name: 'Open · Alone' }).getAttribute('href')).toBe('/viewer?memory=solo')
+	expect(screen.queryByRole('link', { name: 'View Solo' })).toBeNull()
+	expect(await view('Alone', 'View Solo')).toBe('/viewer?memory=solo')
+	expect(await view('Remote', 'View Remote two')).toBe('/viewer?memory=remote-2')
+	expect(await view('Legacy', 'View Legacy')).toBe('/viewer?memory=legacy')
 	expect(screen.queryByRole('link', { name: 'Timeline' })).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Remote' }))
+	const sheet = screen.getByRole('dialog', { name: 'Remote' })
+	expect(within(sheet).getByText('Remote two')).toBeTruthy()
+	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends SMP' } })
+	fireEvent.click(within(sheet).getByRole('button', { name: 'Save' }))
+	expect(screen.getByRole('dialog', { name: 'Friends SMP' })).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+	expect(screen.getByRole('heading', { level: 3, name: 'Friends SMP' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Friends SMP' })).toBeTruthy()
+	fireEvent.contextMenu(screen.getByRole('button', { name: 'Friends SMP' }), { clientX: 40, clientY: 50 })
+	const menu = screen.getByRole('menu', { name: 'Friends SMP' })
+	expect(
+		within(menu)
+			.getAllByRole('menuitem')
+			.map(item => item.textContent)
+	).toEqual(['Open', 'Details', 'Rename this server'])
+	fireEvent.keyDown(menu, { key: 'ArrowDown' })
+	fireEvent.keyDown(menu, { key: 'ArrowUp' })
+	fireEvent.click(within(menu).getByRole('menuitem', { name: 'Rename this server' }))
+	expect(screen.queryByRole('menu')).toBeNull()
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore “Remote”' }))
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.getByRole('button', { name: 'Remote' })).toBeTruthy()
+	fireEvent.contextMenu(screen.getByRole('button', { name: 'Remote' }))
+	fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+	expect(screen.queryByRole('menu')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Remote' }))
+	fireEvent.contextMenu(screen.getByRole('article', { name: 'Remote two' }), { clientX: 10, clientY: 10 })
+	const card = screen.getByRole('menu', { name: 'Remote two' })
+	expect(
+		within(card)
+			.getAllByRole('menuitem')
+			.map(item => item.textContent)
+	).toEqual(['View', 'Details', 'Share', 'Public publication', 'Snapshots', 'Rename this area'])
+	fireEvent.click(within(card).getByRole('menuitem', { name: 'Details' }))
+	const details = screen.getByRole('dialog', { name: 'Remote two' })
+	expect(within(details).getByRole('tab', { name: 'Details' }).getAttribute('aria-selected')).toBe('true')
+	expect(within(details).getByText('X')).toBeTruthy()
+	fireEvent.click(within(details).getByRole('button', { name: 'Close' }))
+	fireEvent.contextMenu(screen.getByRole('article', { name: 'Remote two' }))
+	fireEvent.pointerDown(document.body)
+	expect(screen.queryByRole('menu')).toBeNull()
+	expect(localStorage.getItem('minemories-stack-names')).not.toContain('Remote')
 })
 
 test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {
