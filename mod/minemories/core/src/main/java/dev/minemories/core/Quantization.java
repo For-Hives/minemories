@@ -52,14 +52,14 @@ final class Quantization {
   /**
    * Converts whole float32 elements read from a spool; returns the bytes written to {@code out}.
    */
-  static int convert(int kind, byte[] in, int length, byte[] out, Plan plan) {
+  static int convert(int kind, byte[] in, int length, byte[] out, Plan plan, double[] uvTransform) {
     ByteBuffer source = ByteBuffer.wrap(in, 0, length).order(ByteOrder.LITTLE_ENDIAN);
     ByteBuffer target = ByteBuffer.wrap(out).order(ByteOrder.LITTLE_ENDIAN);
     while (source.remaining() > 0) {
       switch (kind) {
         case 0 -> position(target, source.getFloat(), source.getFloat(), source.getFloat(), plan);
         case 1 -> normal(target, source.getFloat(), source.getFloat(), source.getFloat());
-        default -> uv(target, source.getFloat(), source.getFloat());
+        default -> uv(target, source.getFloat(), source.getFloat(), uvTransform);
       }
     }
     return target.position();
@@ -76,8 +76,11 @@ final class Quantization {
     out.put(unit(x)).put(unit(y)).put(unit(z)).put((byte) 0);
   }
 
-  static void uv(ByteBuffer out, float u, float v) {
-    out.putShort((short) Math.round(u * 65535f)).putShort((short) Math.round(v * 65535f));
+  /** {@code transform} is {scaleU, offsetU, scaleV, offsetV} from an atlas repack, or null. */
+  static void uv(ByteBuffer out, float u, float v, double[] transform) {
+    double mapped = transform == null ? u : u * transform[0] + transform[1];
+    double other = transform == null ? v : v * transform[2] + transform[3];
+    out.putShort((short) Math.round(mapped * 65535d)).putShort((short) Math.round(other * 65535d));
   }
 
   private static byte unit(float value) {

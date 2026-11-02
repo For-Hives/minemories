@@ -189,12 +189,35 @@ plantes. Ce n'est plus pixel pour pixel ; la cause n'a pas été isolée entre n
 modèles tournés. Le viewer (Chromium headless, SwiftShader) affiche la scène sans différence visible. Validation en
 jeu : non faite.
 
-Textures : mesure faite, aucune modification. Sur le corpus et la capture réelle, 0 image dupliquée (83 images
-uniques), tous les PNG ont moins de 256 couleurs et pèsent 3 à 76 Kio au total : déduplication et PNG indexé
-n'apportent rien d'utile. Le coût est la VRAM : un atlas de blocs de 1 024 × 512 (2 Mio en RGBA 8 bits) dont seules
-2 à 27 cellules de 16 × 16 sur 2 048 servent dans le corpus (221 sur la capture modée, 11 %). Un repack des seuls
-sprites utilisés réduirait la VRAM à quelques centaines de Kio par capture ; il remappe les UV et touche
-l'échantillonnage NEAREST et le recadrage des atlas de #73 : il reste à faire (suivi dans l'issue).
+## Repack des atlas (issue #173, phase 3 suite)
+
+Mesure préalable : sur le corpus et la capture réelle, **0 image dupliquée** (83 images uniques) et tous les PNG ont
+moins de 256 couleurs pour 3 à 76 Kio au total : la **déduplication d'images** et le **PNG indexé** n'apportent rien
+d'utile et ne sont pas implémentés. Le coût est la VRAM : l'atlas de blocs de 1 024 × 512 (2 Mio en RGBA 8 bits)
+n'est utilisé que sur 2 à 27 cellules de 16 × 16 sur 2 048 (221 sur la capture modée, 11 %).
+
+`AtlasRepack` reconstruit donc, pour chaque atlas `rendered/…/textures/atlas/…` dont les UV sont tous dans [0, 1[ et
+sans répétition, une image ne contenant que les texels que les primitives peuvent échantillonner (rectangle UV de
+chaque primitive, marge d'un texel comme en #73, rectangles qui se recouvrent fusionnés, rangement par étagères,
+largeur en puissance de deux la plus compacte). Chaque primitive reçoit une transformation affine
+`u' = u × (W/W') + décalage` appliquée à l'écriture, avec les UV 16 bits de la phase 3. Les échantillonneurs NEAREST
+sans mipmaps rendent le remappage exact aux arêtes de texel près. Le repack n'est gardé que si l'image obtenue a au
+plus la moitié des texels ; sinon le masquage de #73 reste en vigueur. Dans le writer spoolé le spool garde les UV
+d'origine : la transformation est appliquée à la copie finale, sans mémoire supplémentaire ; les deux writers
+restent identiques octet pour octet.
+
+| Capture | VRAM avant (RGBA 8 bits) | VRAM après | Octets avant → après |
+| --- | ---: | ---: | ---: |
+| AFK rayon 32 | 2 177 024 | 81 168 (−96 %) | 1 085 060 → 1 082 984 |
+| AFK rayon 8 | 2 136 064 | 40 208 (−98 %) | 182 588 → 180 516 |
+| Modèles, alpha et lumières | 3 244 032 | 150 436 (−95 %) | 306 856 → 302 216 |
+| Capture réelle (modpack) | 2 246 656 | 205 472 (−91 %) | 10 651 588 → 10 614 852 |
+
+Rendu Blender 5.2.2 (Cycles, 560 × 480, graine 42) : identique pixel pour pixel à la version quantifiée sur le rayon 32
+(écart 0) et à moins de 0,0001/255 en moyenne sur la scène modèles/lumières (7/255 au plus, quelques pixels). Les six
+fichiers passent les validateurs du viewer et de l'API ; le viewer (Chromium headless, SwiftShader) affiche la scène
+sans différence visible. Validation en jeu : non faite (les atlas des entités, lits, coffres et panneaux sont traités
+de la même façon, à vérifier avec le prochain JAR sur des textures modées).
 
 ## Coût de préparation
 

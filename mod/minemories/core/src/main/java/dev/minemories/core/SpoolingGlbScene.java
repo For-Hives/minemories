@@ -336,7 +336,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       }
       if (original.length != image.file.bytes)
         throw new IOException("GLB texture changed during optimization");
-      byte[] optimized = image.usage.optimize(original);
+      byte[] optimized = repack(image, original);
+      if (optimized == null) optimized = image.usage.optimize(original);
       if (optimized == original) continue;
       verify(image.file, true);
       try (var out =
@@ -350,6 +351,23 @@ public final class SpoolingGlbScene implements AutoCloseable {
       spoolBytes -= image.file.bytes - optimized.length;
       image.file.bytes = optimized.length;
     }
+  }
+
+  /** Smaller replacement atlas with the users' UV remaps stored on them, or null. */
+  private byte[] repack(Image image, byte[] original) throws IOException {
+    int[] size = AtlasTexture.dimensions(original);
+    if (size == null) return null;
+    List<Part> users = new ArrayList<>();
+    for (Part part : parts.values()) if (part.image == image) users.add(part);
+    AtlasRepack.Plan plan =
+        AtlasRepack.plan(
+            original, size[0], size[1], users.stream().map(part -> part.uvBounds).toList());
+    if (plan == null) return null;
+    for (int index = 0; index < users.size(); index++) {
+      users.get(index).uvTransform =
+          new double[] {plan.scaleU(), plan.offsetU()[index], plan.scaleV(), plan.offsetV()[index]};
+    }
+    return plan.png();
   }
 
   private static String digest(byte[] bytes) {
@@ -388,6 +406,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         append(part.normals, vertexBytes.array(), 12, 12);
         append(part.uvs, vertexBytes.array(), 24, 8);
         part.uvFits = part.uvFits && Quantization.uvFits(key[6], key[7]);
+        part.uvBounds.include(key[6], key[7]);
       }
       corners[corner] = known;
     }
@@ -524,7 +543,13 @@ public final class SpoolingGlbScene implements AutoCloseable {
         if (read != requested) throw new IOException("Truncated GLB spool");
         if (convert) {
           int written =
-              Quantization.convert(segment.kind, copyBuffer, read, convertedBuffer, segment.plan);
+              Quantization.convert(
+                  segment.kind,
+                  copyBuffer,
+                  read,
+                  convertedBuffer,
+                  segment.plan,
+                  segment.part.uvTransform);
           output.write(convertedBuffer, 0, written);
         } else {
           int written = indexWidth < 4 ? GlbIndices.compact(copyBuffer, read, indexWidth) : read;
@@ -992,6 +1017,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
     final ChunkRuns runs;
     final int[] corners = new int[4];
     boolean uvFits = true;
+    final UvBounds uvBounds = new UvBounds();
+    double[] uvTransform;
     final String name;
     final Image image;
     final int tint, alphaMode;
