@@ -23,9 +23,7 @@ import org.lwjgl.opengl.GL21;
 
 /** Captures the renderer's transformed primitives and the texture actually used by that pass. */
 final class RenderedModelCapture {
-  private static final int MAX_TEXTURES = 256;
-  private static final long MAX_TEXTURE_BYTES = 64L * 1024 * 1024;
-  private static final long MAX_QUADS = 500_000;
+  private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   private final CaptureSink scene;
   private final Minecraft minecraft;
   private final CapturePixels pixelCopies;
@@ -34,8 +32,8 @@ final class RenderedModelCapture {
       new RenderedVertexConsumer(VertexFormat.Mode.QUADS, vertices -> {});
   private final Map<String, Texture> atlasTextures = new LinkedHashMap<>();
   private final AtlasUvIndex.SearchBudget atlasSearchBudget = new AtlasUvIndex.SearchBudget();
-  private long textureBytes;
-  private long quads;
+  private final java.util.Set<String> refused = new java.util.HashSet<>();
+  private final RenderedBudget budget;
 
   // Private ownership keeps the cached PNG inside the capture; no renderer can mutate it.
   private static final class Texture {
@@ -68,9 +66,21 @@ final class RenderedModelCapture {
   }
 
   RenderedModelCapture(CaptureSink scene, Minecraft minecraft, CapturePixels pixelCopies) {
+    this(scene, minecraft, pixelCopies, new RenderedBudget());
+  }
+
+  RenderedModelCapture(
+      CaptureSink scene, Minecraft minecraft, CapturePixels pixelCopies, RenderedBudget budget) {
     this.scene = scene;
     this.minecraft = minecraft;
     this.pixelCopies = pixelCopies;
+    this.budget = budget;
+  }
+
+  /** Logs what the limits dropped from this capture (counts only), once the capture is done. */
+  void reportSkipped() {
+    if (budget.anySkipped())
+      LOGGER.warn("Entity renderers over capture limits: {}", budget.summary());
   }
 
   final class Buffers implements MultiBufferSource {
@@ -87,14 +97,20 @@ final class RenderedModelCapture {
     public VertexConsumer getBuffer(RenderType type) {
       if (!type.format().getElements().contains(VertexFormatElement.NORMAL)
           || !supported(type.mode())) return ignored;
-      return consumers.computeIfAbsent(type, this::consumer);
+      RenderedVertexConsumer existing = consumers.get(type);
+      if (existing != null) return existing;
+      // A refused pass or texture is dropped for this model only; the capture goes on without it.
+      if (!budget.admitPass(consumers.size())) return ignored;
+      RenderedVertexConsumer created = consumer(type);
+      if (created == null) return ignored;
+      consumers.put(type, created);
+      return created;
     }
 
     private RenderedVertexConsumer consumer(RenderType type) {
-      if (consumers.size() >= 128)
-        throw new IllegalStateException("Trop de passes de rendu dans le modèle.");
       try {
         Texture texture = texture(type);
+        if (texture == null) return null;
         float light =
             type.toString().startsWith("RenderType[eyes:")
                     || type.toString().startsWith("RenderType[entity_translucent_emissive:")
@@ -138,8 +154,12 @@ final class RenderedModelCapture {
         location.orElseThrow(() -> new IOException("Texture du renderer absente."));
     Texture existing = textures.get(id);
     if (existing != null) return existing;
-    if (textures.size() + atlasTextures.size() >= MAX_TEXTURES)
-      throw new IOException("Trop de textures d’entités dans cette capture.");
+    String refusal = "rendered/" + id;
+    if (refused.contains(refusal)) return null;
+    if (!budget.admitTexture(textures.size() + atlasTextures.size())) {
+      refused.add(refusal);
+      return null;
+    }
     Texture atlas = largeAtlas(id);
     if (atlas != null) {
       textures.put(id, atlas);
@@ -190,9 +210,10 @@ final class RenderedModelCapture {
       GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, skipPixels);
       GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, packBuffer);
     }
-    if (png.length > MAX_TEXTURE_BYTES - textureBytes)
-      throw new IOException("Les textures d’entités dépassent la limite de capture.");
-    textureBytes += png.length;
+    if (!budget.admitBytes(png.length)) {
+      refused.add(refusal);
+      return null;
+    }
     Texture copied = new Texture("rendered/" + id, png, alphaMode);
     textures.put(id, copied);
     return copied;
@@ -248,6 +269,7 @@ final class RenderedModelCapture {
     } catch (AtlasUvIndex.NoMatchingSpriteException missing) {
       Texture copied =
           copyRegion(cropKey, atlas.location(), crop.x(), crop.y(), crop.width(), crop.height());
+      if (copied == null) return null;
       atlasTextures.put(cropKey, copied);
       crop.remap(uv);
       return copied;
@@ -265,6 +287,7 @@ final class RenderedModelCapture {
               sprite.getY(),
               sprite.contents().width(),
               sprite.contents().height());
+      if (copied == null) return null;
       atlasTextures.put(key, copied);
     }
     region.remap(uv);
@@ -274,8 +297,11 @@ final class RenderedModelCapture {
   private Texture copyRegion(
       String key, ResourceLocation location, int x, int y, int width, int height)
       throws IOException {
-    if (textures.size() + atlasTextures.size() >= MAX_TEXTURES)
-      throw new IOException("Trop de textures d’entités dans cette capture.");
+    if (refused.contains(key)) return null;
+    if (!budget.admitTexture(textures.size() + atlasTextures.size())) {
+      refused.add(key);
+      return null;
+    }
     CapturePixels copies = pixelCopies == null ? new CapturePixels(minecraft) : pixelCopies;
     copies.textureRegion(key, location, x, y, width, height);
     if (pixelCopies != null) return new Texture(key, new byte[0], 0);
@@ -286,9 +312,10 @@ final class RenderedModelCapture {
       encoder.append(row, source.readBand(row, Math.min(band, source.height() - row)));
     RenderedTexture encoded = encoder.finish();
     byte[] png = encoded.png();
-    if (png.length > MAX_TEXTURE_BYTES - textureBytes)
-      throw new IOException("Les textures d’entités dépassent la limite de capture.");
-    textureBytes += png.length;
+    if (!budget.admitBytes(png.length)) {
+      refused.add(key);
+      return null;
+    }
     return new Texture(key, png, encoded.alphaMode());
   }
 
@@ -298,8 +325,7 @@ final class RenderedModelCapture {
       RenderedVertices.Vertex[] vertices,
       float emission,
       int layer) {
-    if (++quads > MAX_QUADS)
-      throw new IllegalStateException("La géométrie des entités est trop grande.");
+    if (!budget.admitQuad()) return;
     float[] xyz = new float[12], uv = new float[8];
     int red = 0, green = 0, blue = 0, alpha = 0;
     for (int index = 0; index < 4; index++) {
