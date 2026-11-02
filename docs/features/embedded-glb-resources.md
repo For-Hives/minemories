@@ -54,6 +54,13 @@ de 10 488 752 octets passe les deux validations ; son import et son rendu Blende
 ont été inspectés, avec un mesh et 55 images PNG intégrées. Aucun fichier privé n’est
 ajouté au dépôt ou envoyé en production pour ces tests.
 
+## Format 2 (issue #173)
+
+Les GLB produits depuis le format 2 contiennent un nœud et un mesh par catégorie (`terrain`, `decor`, `fluids`,
+`block_entities`, `entities`) et des `extras` (`asset.extras.minemories`, `minemoriesChunks` par primitive). Aucun
+nouveau type d'accessor ni extension : les validateurs n'ont pas changé et les anciens fichiers (un seul mesh) restent
+acceptés. Voir `docs/features/glb-size.md`.
+
 ## Disposition et budgets de géométrie
 
 Le même contrôle commun vérifie la disposition JSON avant stockage et avant

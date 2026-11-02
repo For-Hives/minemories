@@ -100,6 +100,42 @@ modèles/lumières : **identique pixel pour pixel** (écart maximal 0). Le gain 
 la vraie réduction vient de la quantification (phase 3). Les mesures sont celles du writer rejoué hors jeu ; la
 validation en jeu des captures progressives reste à faire avec le prochain JAR.
 
+## Format 2 : catégories, métadonnées et plages par chunk (issue #173, phase 2)
+
+Le glTF reste autonome et sans extension nouvelle ; seuls la structure et `extras` changent.
+
+- **Nœuds nommés par catégorie** : `terrain` (cubes pleins), `decor` (modèles de bloc non pleins : plantes, neige,
+  tapis, dalles), `fluids`, `block_entities` (coffres, lits, panneaux…), `entities`, plus un nœud par lumière
+  ponctuelle. Chaque nœud porte un mesh du même nom ; seules les catégories présentes sont écrites. Une primitive par
+  (catégorie, matériau) : le nombre d'appels de dessin reste celui d'avant, à une primitive près par catégorie et
+  matériau partagés. Pas de nœud par entité : `MAX_GLB_NODES`/`MAX_GLB_PRIMITIVES` valent 4096 et une ferme
+  d'entités les dépasserait. Dans Blender, chaque catégorie devient un objet que l'on peut supprimer ou masquer.
+- **`asset.extras.minemories`** : `format: 2`, versions Minecraft / loader / mod, identifiant de dimension, `chunkSize`
+  et nombre de quads par catégorie. Champs fermés et validés (`GlbMetadata`) : aucune donnée personnelle, aucun
+  nom de monde, de serveur ou de joueur, aucune graine, aucun chemin, aucun texte de panneau ou de livre, et **aucune
+  coordonnée absolue**. Les bornes et l'origine de capture restent dans le fichier de métadonnées déjà envoyé à l'API.
+  `scenes[0].extras.minemoriesPlayerPosition` est conservé.
+- **Plages par chunk** : chaque primitive peut porter `extras.minemoriesChunks = [x, z, premierTriangle, nombre, …]`,
+  `x`/`z` étant relatifs au chunk qui contient l'origine de capture. Le parcours de capture est désormais **chunk par
+  chunk** (`CaptureCursor` et export manuel), le propriétaire est la cellule source (entité : son chunk). Une primitive
+  sans chunk connu ou qui dépasserait le budget de 40 000 plages par scène n'en publie pas : le JSON reste borné
+  (limite de 4 Mio) et un lecteur retombe sur son propre tri.
+- Les anciens GLB (un seul mesh, aucun `extras`) restent lus par le viewer et les deux validateurs : le viewer
+  ne dépend pas de ces champs. **Le viewer n'utilise pas encore les plages** : sa composition a besoin du bloc de
+  chaque triangle (couverture partielle d'un chunk) et son tri ne coûte que ≈ 4,5 ms par capture (mesure de
+  `world-evolution.md`) ; elles servent aux outils tiers et à la suite (dérivé, LOD).
+
+Mesures sur les cinq captures rejouées avec catégories (heuristique sur les noms de matériaux, hors jeu, plages dans
+l'ordre d'origine donc plus nombreuses qu'avec le parcours chunk-major) : rayon 32 1 835 420 → 1 859 984 octets
+(+1,3 %, dont ≈ 24 Kio de JSON), hauteur complète 393 540 → 396 848. Le coût est celui du JSON ; la vraie réduction
+vient de la phase 3.
+
+Validation : les cinq GLB passent le validateur du viewer et celui de l'API (5/5). Blender 5.2.2 importe un objet par
+catégorie (ex. `terrain` 1 400 faces, `decor` 1 748, `fluids` 336, `block_entities` 132, `entities` 800) ; rendu Cycles
+identique pixel pour pixel sur le rayon 32, et 49 pixels différents (6 avec écart > 8, écart max 18 sur 268 800) sur
+la scène modèles/lumières, imputés à l'ordre de rendu des matériaux translucides entre objets. Le viewer charge le
+fichier (Chromium headless, SwiftShader) et affiche la scène complète. Validation en jeu : non faite.
+
 ## Coût de préparation
 
 Mesures locales sur Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, heap 512 Mio :
