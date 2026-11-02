@@ -64,7 +64,7 @@ final class AtlasTexture {
     }
   }
 
-  private static int[] dimensions(byte[] png) {
+  static int[] dimensions(byte[] png) {
     if (png.length < 33 || png.length > MAX_BYTES) return null;
     ByteBuffer header = ByteBuffer.wrap(png).order(ByteOrder.BIG_ENDIAN);
     if (header.getLong() != PNG_SIGNATURE || header.getInt() != 13 || header.getInt() != 0x49484452)

@@ -147,13 +147,23 @@ final class AtlasTextureTest {
       assertTrue(json.contains("\"alphaMode\":\"BLEND\""));
       assertTrue(json.contains("emissiveTexture"));
       assertTrue(json.contains("KHR_lights_punctual"));
-      // The first UV payload is unchanged (normalized 16-bit after the 8-byte quantized
-      // positions and 4-byte normals of 4 vertices); masking only replaces the PNG resource.
+      // The sparse atlas is repacked: the first UV payload is the oracle plan's remap of UV[],
+      // after the 8-byte quantized positions and 4-byte normals of 4 vertices.
+      UvBounds area = new UvBounds(), area2 = new UvBounds();
+      for (int i = 0; i < UV.length; i += 2) area.include(UV[i], UV[i + 1]);
+      float[] other = {.6f, .6f, .65f, .6f, .65f, .65f, .6f, .65f};
+      for (int i = 0; i < other.length; i += 2) area2.include(other[i], other[i + 1]);
+      var plan = AtlasRepack.plan(texture, 128, 128, java.util.List.of(area, area2));
+      assertNotNull(plan);
       ByteBuffer binary = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN);
       int offset = 28 + jsonBytes + 4 * 8 + 4 * 4;
-      for (int i = 0; i < UV.length; i++)
+      for (int i = 0; i < UV.length; i++) {
+        double scale = i % 2 == 0 ? plan.scaleU() : plan.scaleV();
+        double shift = i % 2 == 0 ? plan.offsetU()[0] : plan.offsetV()[0];
         assertEquals(
-            Math.round(UV[i] * 65535f), Short.toUnsignedInt(binary.getShort(offset + i * 2)));
+            Math.round((UV[i] * scale + shift) * 65535d),
+            Short.toUnsignedInt(binary.getShort(offset + i * 2)));
+      }
     }
   }
 }

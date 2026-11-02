@@ -147,19 +147,29 @@ public final class GlbScene {
     Map<String, Integer> imageIndices = new LinkedHashMap<>();
     int materialIndex = 0;
     Map<GlbCategory, Quantization.Plan> plans = quantizationPlans();
+    Map<String, byte[]> repacked = repackAtlases();
     for (Part part : parts.values()) {
       Quantization.Plan plan = plans.get(part.category);
       byte[] positionBytes =
           plan == null
               ? part.positions.toByteArray()
               : quantize(
-                  0, part.positions.toByteArray(), part.vertices * Quantization.POSITION, plan);
+                  0,
+                  part.positions.toByteArray(),
+                  part.vertices * Quantization.POSITION,
+                  plan,
+                  null);
       byte[] normalBytes =
-          quantize(1, part.normals.toByteArray(), part.vertices * Quantization.NORMAL, null);
+          quantize(1, part.normals.toByteArray(), part.vertices * Quantization.NORMAL, null, null);
       boolean packedUv = part.uvFits;
       byte[] uvBytes =
           packedUv
-              ? quantize(2, part.uvs.toByteArray(), part.vertices * Quantization.UV, null)
+              ? quantize(
+                  2,
+                  part.uvs.toByteArray(),
+                  part.vertices * Quantization.UV,
+                  null,
+                  part.uvTransform)
               : part.uvs.toByteArray();
       int pos =
           accessor(
@@ -239,7 +249,10 @@ public final class GlbScene {
       if (texture == null) {
         align(binary);
         int offset = binary.size();
-        byte[] png = atlasUsage.get(part.imageKey).optimize(part.png);
+        byte[] png =
+            repacked.containsKey(part.imageKey)
+                ? repacked.get(part.imageKey)
+                : atlasUsage.get(part.imageKey).optimize(part.png);
         binary.write(png);
         int view = views.size();
         views.add("{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + png.length + "}");
@@ -458,10 +471,38 @@ public final class GlbScene {
     return plans;
   }
 
-  private static byte[] quantize(int kind, byte[] floats, int size, Quantization.Plan plan) {
+  private static byte[] quantize(
+      int kind, byte[] floats, int size, Quantization.Plan plan, double[] uvTransform) {
     byte[] out = new byte[size];
-    Quantization.convert(kind, floats, floats.length, out, plan);
+    Quantization.convert(kind, floats, floats.length, out, plan, uvTransform);
     return out;
+  }
+
+  /** Repacks mostly unused atlases and remaps the UVs of their primitives; keyed by image. */
+  private Map<String, byte[]> repackAtlases() throws IOException {
+    Map<String, byte[]> result = new LinkedHashMap<>();
+    for (Map.Entry<String, AtlasTexture.Usage> entry : atlasUsage.entrySet()) {
+      String imageKey = entry.getKey();
+      AtlasTexture.Usage usage = entry.getValue();
+      if (!usage.candidate()) continue;
+      List<Part> users = new ArrayList<>();
+      for (Part part : parts.values()) if (part.imageKey.equals(imageKey)) users.add(part);
+      byte[] png = users.get(0).png;
+      int[] size = AtlasTexture.dimensions(png);
+      if (size == null) continue;
+      AtlasRepack.Plan plan =
+          AtlasRepack.plan(
+              png, size[0], size[1], users.stream().map(part -> part.uvBounds).toList());
+      if (plan == null) continue;
+      for (int index = 0; index < users.size(); index++) {
+        users.get(index).uvTransform =
+            new double[] {
+              plan.scaleU(), plan.offsetU()[index], plan.scaleV(), plan.offsetV()[index]
+            };
+      }
+      result.put(imageKey, plan.png());
+    }
+    return result;
   }
 
   private static String ints(float[] bound, Quantization.Plan plan) {
@@ -491,6 +532,8 @@ public final class GlbScene {
     private final float[] key = new float[8];
     private final int[] corners = new int[4];
     boolean uvFits = true;
+    final UvBounds uvBounds = new UvBounds();
+    double[] uvTransform;
     int vertices, indexCount;
 
     Part(
@@ -531,6 +574,7 @@ public final class GlbScene {
           f(uvs, key[6]);
           f(uvs, key[7]);
           uvFits = uvFits && Quantization.uvFits(key[6], key[7]);
+          uvBounds.include(key[6], key[7]);
         }
         corners[corner] = known;
       }
