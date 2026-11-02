@@ -66,6 +66,6 @@ reste négligeable devant le transfert et la préparation de la scène.
 
 ## Limites
 
-- La vue d'un monde (`fetchTemporalFile`) contrôle la taille exacte de l'original et ne demande pas encore la variante.
+- La vue d'un monde (`fetchTemporalFile`) demande aussi la variante : elle ne contrôle plus la taille exacte mais borne le flux par la taille déclarée de l'original (une variante n'est jamais plus grande).
 - Le cache est par processus : plusieurs instances API recalculent chacune.
 - Pas de validation en jeu (le mod n'est pas modifié par cette phase).

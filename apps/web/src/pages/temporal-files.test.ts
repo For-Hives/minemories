@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import type { TemporalFrame } from '@minemories/api-contract'
 import { afterEach, expect, test, vi } from 'vitest'
+import { compressedSample } from '../testing/quads-glb'
 import { fetchTemporalFile } from './temporal-files'
 
 vi.mock('../api-client', () => ({ apiBase: 'http://example.test' }))
@@ -13,7 +14,7 @@ test('private file requests carry cookies and cancellation and require the exact
 	)
 	const signal = new AbortController().signal
 	const file = await fetchTemporalFile(frame, signal)
-	expect(fetch).toHaveBeenCalledWith('http://example.test/api/memories/capture/file', {
+	expect(fetch).toHaveBeenCalledWith('http://example.test/api/memories/capture/file?variant=meshopt', {
 		credentials: 'include',
 		signal,
 	})
@@ -61,4 +62,33 @@ test('a cold timeline frame reports restoration before starting its bounded GLB 
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
 	await expect(fetchTemporalFile(frame, new AbortController().signal)).rejects.toMatchObject({ availability })
 	expect(response.bodyUsed).toBe(true)
+})
+
+test('a Meshopt variant is expanded, bounded by the declared size, and refused when corrupted', async () => {
+	const { compressed } = await compressedSample(150)
+	const headers = { 'X-Minemories-Variant': 'meshopt' }
+	const declared = { ...frame, size: compressed.byteLength + 500 } as TemporalFrame
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async () => new Response(compressed as BlobPart, { headers }))
+	)
+	const file = await fetchTemporalFile(declared, new AbortController().signal)
+	expect(file.name).toBe('World.glb')
+	expect(file.size).toBeGreaterThan(compressed.byteLength)
+	expect(new TextDecoder().decode(new Uint8Array(await file.arrayBuffer()).subarray(20, 600))).not.toContain(
+		'EXT_meshopt'
+	)
+	await expect(
+		fetchTemporalFile({ ...frame, size: compressed.byteLength - 1 } as TemporalFrame, new AbortController().signal)
+	).rejects.toThrow('Capture size changed')
+	vi.mocked(fetch).mockResolvedValueOnce(new Response(new Uint8Array(40), { headers }))
+	await expect(
+		fetchTemporalFile({ ...frame, size: 40 } as TemporalFrame, new AbortController().signal)
+	).rejects.toThrow('Capture unavailable')
+	const controller = new AbortController()
+	vi.mocked(fetch).mockImplementationOnce(async () => {
+		queueMicrotask(() => controller.abort(new Error('stopped')))
+		return new Response(compressed as BlobPart, { headers })
+	})
+	await expect(fetchTemporalFile(declared, controller.signal)).rejects.toThrow('stopped')
 })
