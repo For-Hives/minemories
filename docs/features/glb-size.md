@@ -70,6 +70,36 @@ avant calcul du layout final ; elle ne touche que le fichier temporaire posséd�
 après contrôle de son identité et de sa taille. La publication atomique reste en
 vigueur. Les limites de spool, de capture et d’upload ne sont pas relevées.
 
+## Fusion exacte des sommets (issue #173, phase 1)
+
+Les deux writers partagent `VertexCache` et `QuadGeometry` : un sommet n'est écrit qu'une fois par primitive quand
+position, normale et UV sont **identiques bit à bit** ; les indices des quads suivants le réutilisent. La table est à
+adressage direct de 65 536 entrées (≈ 2,6 Mio d'entiers, taille constante quelle que soit la capture) : une collision
+évince l'ancienne entrée, ce qui ne fait manquer qu'une fusion et ne change jamais le rendu. Le writer spoolé garde
+donc sa borne de heap (test à 32 Mio inchangé) ; les fichiers temporaires ne contiennent que les sommets uniques.
+Les arêtes voisines se partagent surtout entre quads proches dans le temps (médiane 35 quads, 90e centile 66 sur le
+rayon 32), ce qui rend une fenêtre bornée presque aussi efficace qu'une fusion globale.
+
+Un quad dont aucun des deux triangles n'a de surface (`0,1,2` puis `0,2,3`) est supprimé au lieu d'être écrit avec une
+normale nulle ; la normale d'un quad « triangle » (coin répété) vient du premier triangle non dégénéré. Un triangle
+dont deux indices deviennent égaux après fusion n'est pas émis. Les overlays volontaires (`RenderedLayer`) sont
+séparés par un décalage de position : ils ne sont ni fusionnés ni supprimés.
+
+Mesures sur les cinq captures de référence rejouées (même quads, PNG et matériaux, `Replay` hors Git) :
+
+| Capture | Avant (octets) | Après (octets) | Sommets | Doublons exacts restants |
+| --- | ---: | ---: | ---: | ---: |
+| AFK progressif rayon 32 | 2 012 360 | 1 835 420 (−8,8 %) | 54 440 → 48 911 | 5 536 → 7 |
+| AFK progressif rayon 8 | 267 072 | 255 300 (−4,4 %) | 5 532 → 5 165 | 368 → 1 |
+| Hauteur complète | 446 728 | 393 540 (−11,9 %) | 11 432 → 9 770 | 1 669 → 7 |
+| Tour et surface | 59 396 | 58 788 (−1,0 %) | 824 → 805 | 19 → 0 |
+| Modèles, alpha et lumières | 438 740 | 432 084 (−1,5 %) | 8 832 → 8 624 | 209 → 1 |
+
+Rendu Blender 5.2.2 (Cycles CPU, 16 échantillons, graine 42, 560 × 480) avant/après sur le rayon 32 et la scène
+modèles/lumières : **identique pixel pour pixel** (écart maximal 0). Le gain reste modeste, comme prévu par la phase 0 :
+la vraie réduction vient de la quantification (phase 3). Les mesures sont celles du writer rejoué hors jeu ; la
+validation en jeu des captures progressives reste à faire avec le prochain JAR.
+
 ## Coût de préparation
 
 Mesures locales sur Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, heap 512 Mio :
