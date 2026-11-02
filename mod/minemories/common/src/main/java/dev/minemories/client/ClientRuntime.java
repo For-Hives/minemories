@@ -1133,6 +1133,7 @@ public final class ClientRuntime {
         }
       }
       int entityCount = captureEntities(renderedModels, mc, min, max, center);
+      renderedModels.reportSkipped();
       if (!scene.hasGeometry()) {
         captureFailure =
             "Aucun bloc visible dans la zone. Attends le chargement du terrain ou choisis une autre zone, puis réessaie.";

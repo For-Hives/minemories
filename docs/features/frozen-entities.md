@@ -62,12 +62,35 @@ natif des yeux d’Enderman confirme le facteur et la texture d’émission dans
 
 ## Limites
 
-Par capture : 2 048 entités, 500 000 primitives de renderers, 256 textures de
-renderers et 64 MiB de PNG pour ces textures. Un modèle peut utiliser au plus
-128 passes ; une texture au plus 4 194 304 pixels et 16 MiB de PNG. Ces limites
-s'ajoutent aux limites de sélection, de GLB et d'upload. Le dépassement demande
-de réduire la zone, sans sauvegarder un fichier incomplet. Aucun chunk absent
-n'est chargé pour retrouver un animal.
+Par capture : 2 048 entités (au-delà, la capture demande de réduire la zone et rien n'est
+sauvegardé), puis, pour les renderers (`RenderedBudget`) : 512 textures distinctes, 64 MiB de PNG
+pour ces textures, 128 passes de rendu par modèle et 500 000 primitives. Une texture fait au plus
+4 194 304 pixels et 16 MiB de PNG. Ces limites s'ajoutent aux limites de sélection, de GLB et
+d'upload.
+
+**Une limite de renderer ne fait plus échouer la capture** (modpack aux centaines de textures
+d'entités distinctes, par exemple Cobblemon) : la texture, la passe ou la primitive refusée est
+ignorée, le terrain et les autres entités sont conservés, et le journal local indique une ligne
+`Entity renderers over capture limits: skippedTextures=…, skippedPasses=…, skippedQuads=…`
+(comptes seuls, aucun identifiant, nom ou chemin). Une texture refusée l'est une fois pour toute
+la capture. La capture manuelle et la capture AFK passent par le même code.
+
+Valeur de 512 : le writer spoolé de l'AFK accepte 1 024 textures au total, partagées avec le
+terrain et les blocs-entités ; la capture réelle d'un modpack en compte 83 (38 Kio de PNG au total,
+après recadrage des atlas), 67 pour la plus grande capture native. 512 textures d'entités laissent
+donc au moins 512 emplacements au reste, et le budget de 64 MiB de PNG, qui reste le vrai plafond
+mémoire, n'est pas atteint par 512 textures de 256 × 256 (quelques dizaines de Kio chacune).
+
+Validation en jeu (NeoForge 21.1.248, 14 types de créatures, 31 entités, essai natif du chemin
+manuel avec des limites réduites injectées par le pilote QA) : sans limite, 17 textures ; avec 3
+textures, 14 refusées et 3 conservées ; avec 1 passe, 7 passes ignorées ; avec 2 000 octets de
+PNG, 15 textures refusées ; avec 50 primitives, 1 569 ignorées. Aucune capture n'échoue, les cinq
+GLB passent le validateur viewer et API et s'importent dans Blender 5.2.2 (rendu des entités
+conservées). Un modpack réel n'a pas été exercé.
+
+Limite restante : le writer spoolé échoue encore si le **total** des textures dépasse 1 024
+(terrain et blocs-entités compris) ; avec 512 textures d'entités au plus, cela exigerait plus de
+512 textures hors entités.
 
 La lecture des modèles et textures reste sur le thread du jeu, avec restauration
 de l'état de lecture OpenGL. Aucune modification de blocs, de pose d'entité ou

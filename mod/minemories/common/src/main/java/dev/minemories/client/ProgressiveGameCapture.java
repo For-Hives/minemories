@@ -40,6 +40,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private boolean surfaceDone, entitiesScanned, cancelled, suspended;
   private String cancellation;
   private int blocks, entityCount;
+  private boolean skippedReported;
   private long frames, maximumStepNanos, overruns;
   private final long[] phaseNanos = new long[3];
 
@@ -255,7 +256,11 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
       scanEntities();
       return null;
     }
-    if (entityIndex >= entities.size()) return null;
+    if (entityIndex >= entities.size()) {
+      if (!skippedReported) models.reportSkipped();
+      skippedReported = true;
+      return null;
+    }
     Entity entity = level.getEntity(entities.get(entityIndex++));
     if (!eligible(entity)) return null;
     if (!chunk(entity.getBlockX(), entity.getBlockZ()))
