@@ -2,8 +2,8 @@
 
 Objectif : savoir **quelles zones comptent** pour le joueur, sans rien envoyer et sans toucher à ses préférences. Cette
 phase ne change **ni le déclenchement AFK, ni le rayon, ni l'envoi** : elle classe les suggestions de zones et conserve
-localement ce que chaque capture a montré. Le prototype est validé sur des captures réelles hors jeu ; **rien n'est
-validé en jeu** (le jeu n'est pas pilotable dans cet environnement).
+localement ce que chaque capture a montré. Le prototype est validé sur des captures réelles et **en jeu** (essai natif du
+2 novembre 2026 : voir `glb-size.md`, « Validation en jeu »). Les changements de comportement (voir « Reste ») ne sont pas faits.
 
 ## Signaux et score (`ZoneScore`, module `core`, testé sans Minecraft)
 
@@ -56,10 +56,17 @@ writer avec les catégories déduites des noms de matériaux :
   bloc, **106 chunks sur 134 (79 %) sont reconnus identiques** ; les autres paires comparées ont des portées différentes
   (profondeur, origines différentes) et diffèrent presque partout, comme attendu.
 
+## Validation en jeu
+
+Essai natif NeoForge 1.21.1 sur profil isolé : `*.insights` écrit et relu, journal `Chunks seen by this capture`, et sur deux
+captures AFK de même portée séparées par la modification de deux blocs : `changed=2, new=0` sur 9 chunks. L'AFK désactivé est
+respecté (aucune capture en 600 images) et rien n'est envoyé sans appairage.
+
 ## Reste (suivi dans #173)
 
-- Validation en jeu du classement, du stockage `*.insights` et des journaux de changement.
 - Compter les modifications du joueur (poser/casser) : nécessite un point d'entrée client propre à chaque loader.
 - Utiliser `InhabitedTime` en solo (serveur intégré) une fois la lecture vérifiée en jeu.
-- Éviter de recapturer/téléverser les chunks inchangés et ajuster le rayon automatiquement : changements de comportement
-  à valider en jeu, en respectant AFK désactivé et réglages explicites.
+- Éviter de téléverser une capture sans chunk modifié et ajuster le rayon automatiquement : non faits volontairement. Ne pas
+  téléverser change la sémantique de l'historique d'un monde (une capture sans changement mais avec des créatures qui
+  bougent disparaîtrait, l'empreinte excluant les entités) et le rayon automatique contourne un réglage explicite : ce sont des
+  décisions produit à prendre, et le flux d'envoi (appairage, API) n'a pas pu être exercé dans l'essai isolé.

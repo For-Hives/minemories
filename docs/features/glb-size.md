@@ -295,3 +295,51 @@ Le fichier local reste lisible par Blender 5.2.2 (une échelle de 0,0078 par cat
 < 1/255 sur la quantification) ; les catégories permettent d'y supprimer plantes, fluides ou entités. Limites : tout est
 mesuré hors jeu, sans GPU réel ; le temps de chargement complet du viewer n'est pas mesuré ; la vue d'un monde n'utilise
 pas encore la variante ; le viewer n'exploite pas les plages par chunk.
+
+## Validation en jeu du JAR de la pile #174–#180 (2 novembre 2026)
+
+Essai natif sur un profil isolé (méthode de #73) : Minecraft 1.21.1 / NeoForge 21.1.248, rendu logiciel Mesa llvmpipe,
+JAR `minemories-0.30.2-beta.1.jar` (SHA-256 `75435739a2cfdeb9bea5fcf1c0d3a6ab7ea6a38509eeb07303271a816d5e8dae`) chargé depuis
+`mods/` avec son cœur embarqué, pilote QA séparé hors JAR distribué (`ChunkValidation`), aucun profil CurseForge touché,
+aucun identifiant réel, appairage absent. Artefacts hors Git :
+`~/.local/state/minemories-validation/glb-v2-20261102/native/` (pilote, `run.init.gradle`, journaux, GLB, `*.insights`).
+
+Scénario : maison en planches (coffre, four, lit, panneau, lanterne, verre), plantes, eau, feuilles et quatre mobs figés,
+posés autour du joueur au sol ; export manuel rayon 16 en pause, capture AFK progressive, modification de deux blocs puis
+seconde capture AFK, AFK désactivé 600 images.
+
+| Contrôle | Résultat |
+| --- | --- |
+| Export manuel et deux captures AFK | passent, GLB format 2, versions MC/loader/mod et dimension dans `extras`, `KHR_mesh_quantization` + lumières |
+| Validateurs viewer et API | 3/3 |
+| Classement | `terrain` : planches, four, pierre, terre ; `decor` : verre, lanterne, feuilles, fleurs, herbe, neige, porte ; `fluids` : eau (manuel) ; `block_entities` : coffre, lit, panneau ; `entities` : joueur, chat, loup, mouton, zombie, ours polaire, objet |
+| Chunks par primitive | plages `minemoriesChunks` présentes sur 105/105 primitives ; entités rattachées à leur chunk (une primitive peut en couvrir plusieurs) |
+| Blender 5.2.2 | import réussi (5 objets : terrain, decor, fluids, block_entities, entities), maison et terrain reconnaissables |
+| Viewer (Chromium headless) | affiche la capture AFK ; bascules « Plants and decor » et « Creatures » opérationnelles |
+| Empreintes de chunks | 1re capture : `new=9` ; AFK suivante (portée différente de l'export manuel) : `changed=6, new=3` ; 2e AFK après modification de deux blocs : **`changed=2`, `new=0` sur 9 chunks** |
+| `*.insights` | écrit, 12 chunks absolus, chunk de la maison : 19 % de blocs construits, 2 blocs-entités, 1 lumière |
+| AFK désactivé | aucune capture démarrée en 600 images, historique inchangé |
+| Réseau | aucun envoi ni tentative avant appairage (journal) |
+
+Limites de l'essai : un premier lancement a posé la maquette en altitude (joueur en chute) et a révélé un défaut du pilote
+(réentrance de `disconnect`), pas du produit ; le second est valide. La sortie du monde n'a pas pu être exercée : le rendu
+logiciel du fond flouté a bloqué le fil de rendu après les captures, le processus a été arrêté (les fichiers étaient déjà écrits).
+Les atlas modés (lits, coffres, panneaux vanilla seulement), un modpack et un GPU réel n'ont pas été exercés.
+
+### Écart de rendu Blender après quantification : cause isolée
+
+Rendus Cycles (16 échantillons, graine 42) de la scène modèles/lumières, écart moyen sur 255 par rapport à l'original :
+
+| Variante | Écart moyen |
+| --- | ---: |
+| UV 16 bits seuls | 0,0001 |
+| Normales int8 seules | 0,035 |
+| Positions décalées de 10⁻⁶ bloc (plancher de bruit) | 0,34 |
+| Positions arrondies à 1/4096 | 0,70 |
+| Positions arrondies à 1/128 (échelle de la quantification) | 0,83 |
+| Positions arrondies à 1/16 | 1,07 |
+| Quantification complète | 0,85 |
+
+L'écart est dominé par le **bruit de Monte-Carlo** : une perturbation de 10⁻⁶ bloc modifie déjà les chemins de rayons à
+16 échantillons (0,34/255). Normales et UV sont sous ce plancher ; l'arrondi des positions n'ajoute que ≈ 0,5/255 sur les
+géométries hors grille (plantes à 45°, modèles tournés). Il n'y a rien à corriger.
