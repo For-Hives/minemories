@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.31.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.2-beta.1...mod-v0.31.0-beta.1) (2026-11-02)
+
+### Fonctionnalités
+
+* **api:** variante de transport Meshopt à la demande et décodage dans le viewer ([1d83bd3](https://github.com/For-Hives/minemories/commit/1d83bd354950724557075f1342d36cdabcf6ac0f))
+* **mod:** catégories en nœuds nommés, métadonnées format 2 et plages de triangles par chunk dans les writers GLB ([ee8b8e4](https://github.com/For-Hives/minemories/commit/ee8b8e45e812a3a331569c2a9b8ac8b1c2bc2666))
+* **mod:** catégories, chunk propriétaire et parcours chunk-major dans la capture GLB ([f0f0ca2](https://github.com/For-Hives/minemories/commit/f0f0ca21183d9ba0be52c0c79ff2724d5c10775f))
+* **mod:** quantification KHR_mesh_quantization des positions, normales et UV dans les writers GLB ([14db2a6](https://github.com/For-Hives/minemories/commit/14db2a6effae457d0783bb275b7949ea2a4bcbbf))
+* **mod:** rayon AFK adaptatif, envoi évité des captures identiques, signaux de modification et InhabitedTime ([909b696](https://github.com/For-Hives/minemories/commit/909b69692e93d9b0d411f49c163034a0ff7817a2))
+* **mod:** score de zone, empreintes par chunk et stockage local des signaux de capture ([591caae](https://github.com/For-Hives/minemories/commit/591caaeabfc6e251f108cbb15c421a2fb6730e9b))
+* **web:** bascules d'affichage par catégorie dans le studio ([b13ebd6](https://github.com/For-Hives/minemories/commit/b13ebd6545481727f7513e63425ce12bd436c6bc))
+* **web:** la vue d'un monde demande la variante Meshopt ; docs de la validation en jeu ([ed2427c](https://github.com/For-Hives/minemories/commit/ed2427c26b2e5c7a78b289f0e33cf82801097684))
+
+### Performances
+
+* **mod:** core en Java 17 et contrôles partagés hors des cellules de release ([46411a5](https://github.com/For-Hives/minemories/commit/46411a5aa28b091e53b59103ac5ee734616d65bd))
+* **mod:** daemon, parallélisme et cache de configuration Gradle, spec de la matrice de build ([351b5e3](https://github.com/For-Hives/minemories/commit/351b5e3ddeb1d1ec9f8bb74dae1d54cdca8fcd27))
+* **mod:** fusion exacte des sommets bornée en mémoire dans les deux writers GLB ([ef3023b](https://github.com/For-Hives/minemories/commit/ef3023bb9161d2acdf0ed217a8e2d9d5eb5a369c))
+* **mod:** repack des atlas aux seuls texels échantillonnés avec remappage des UV ([7fdddec](https://github.com/For-Hives/minemories/commit/7fdddecf5ea7d919681574017eb8504db3c9bfb9))
+
+### Build
+
+* **mod:** JaCoCo 0.8.16, Gson 2.15.0, correctif processResources avec le cache de configuration ([24a62ec](https://github.com/For-Hives/minemories/commit/24a62ec10e7eaa76cf1033358dde49a4655089d4))
+
+### Documentation
+
+* **glb:** format 2, catégories, métadonnées et plages par chunk ([#173](https://github.com/For-Hives/minemories/issues/173) phase 2) ([bc19f05](https://github.com/For-Hives/minemories/commit/bc19f051a955f9856edc39337ea3b2a57675cc6e))
+* **glb:** le tri du viewer pèse moins de 9 % de la préparation d'une capture, plages par chunk non exploitées ([1c61d36](https://github.com/For-Hives/minemories/commit/1c61d36a35507ce0f46a9cf5f7e477011e3e4f22))
+* **glb:** mesures de la fusion exacte des sommets ([#173](https://github.com/For-Hives/minemories/issues/173) phase 1) ([317e3fe](https://github.com/For-Hives/minemories/commit/317e3fe0899c1df83c7f568af2c5c4960ada3b84))
+* **glb:** mesures de la phase 0 et décisions du format GLB v2 ([#173](https://github.com/For-Hives/minemories/issues/173)) ([4ebef96](https://github.com/For-Hives/minemories/commit/4ebef965f665f0aedc5de90e693ac31c66bf0328))
+
+### Tests
+
+* **mod:** le nœud de catégorie porte la transformation de quantification ([483d37f](https://github.com/For-Hives/minemories/commit/483d37f9dac1df9541b276e11f0bf6df141e276d))
+
+### Maintenance
+
+* **glb:** outil de rapport de mesure des GLB ([#173](https://github.com/For-Hives/minemories/issues/173)) ([352fe20](https://github.com/For-Hives/minemories/commit/352fe206ab58234d3eb314034d03050f7d8f5129))
+
 ## [0.30.2-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.1-beta.1...mod-v0.30.2-beta.1) (2026-10-31)
 
 ## [0.30.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.0-beta.1...mod-v0.30.1-beta.1) (2026-10-31)
