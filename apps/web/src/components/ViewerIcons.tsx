@@ -28,6 +28,7 @@ const paths = {
 		</>
 	),
 	share: <path d="M7 17 17 7M9 7h8v8" />,
+	refresh: <path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5" />,
 	expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
 	eye: (
 		<>

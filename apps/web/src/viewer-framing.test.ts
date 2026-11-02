@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { expect, test } from 'vitest'
-import { framingBounds } from './viewer-framing'
+import { framingBounds, orbitFocus } from './viewer-framing'
 
 test('a distant beacon does not displace the initial framing of the actual world', () => {
 	const root = new THREE.Group()
@@ -37,4 +37,27 @@ test('explicit player coordinates are transformed from capture space; malformed 
 	}
 	root.userData.minemoriesPlayerPosition = [2, 4, 6]
 	expect(capturePosition(root)?.toArray()).toEqual([12, -16, 36])
+})
+
+test('the orbit focus is the recorded player inside the capture, else the topmost surface at its centre', () => {
+	const root = new THREE.Group()
+	const ground = new THREE.Mesh(new THREE.BoxGeometry(32, 1, 32))
+	ground.position.y = -40
+	const tower = new THREE.Mesh(new THREE.BoxGeometry(2, 80, 2))
+	tower.position.set(12, 0, 12)
+	root.add(ground, tower)
+	root.position.set(100, 0, 0)
+	root.updateMatrixWorld(true)
+	expect(orbitFocus(root).toArray()).toEqual([100, -39.5, 0])
+	root.userData.minemoriesPlayerPosition = [3, -39.5, 4]
+	expect(orbitFocus(root).toArray()).toEqual([103, -39.5, 4])
+	root.userData.minemoriesPlayerPosition = [300, 0, 0]
+	expect(orbitFocus(root).toArray()).toEqual([100, -39.5, 0])
+	const hollow = new THREE.Group()
+	hollow.add(
+		new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2)).translateX(10),
+		new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2)).translateX(-10)
+	)
+	hollow.updateMatrixWorld(true)
+	expect(orbitFocus(hollow).toArray()).toEqual([0, 0, 0])
 })

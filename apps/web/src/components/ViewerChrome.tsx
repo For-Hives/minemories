@@ -38,7 +38,6 @@ export function ViewerLoadState({ loading, error }: { loading: string | null; er
 	return (
 		<div className="cinema-loading" role={error ? 'alert' : 'status'} aria-live="polite">
 			<div className="cinema-loading-card">
-				<span className="cinema-kicker">{t('A MOMENT OUTSIDE OF TIME')}</span>
 				<h2>{error ? t('This memory will have to wait.') : t('The light returns.')}</h2>
 				{loading && <div className="cinema-loading-line" />}
 				<p>{t(error || loading || '')}</p>
@@ -54,7 +53,6 @@ export function ViewerEmptyState() {
 			<div className="cinema-orbit" aria-hidden="true">
 				<span>✧</span>
 			</div>
-			<span className="cinema-kicker">{t('YOUR WORLDS. YOUR STORY.')}</span>
 			<h2>
 				{t('Some places')}
 				<br />

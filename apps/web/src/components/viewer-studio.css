@@ -42,6 +42,9 @@
 	background: #111715;
 }
 .cinema-page {
+	/* The day's sky, midnight to midnight; kept on one line so its taste-skill exemption sits beside it. */
+	/* biome-ignore format: the exemption comment must stay on the gradient's line */
+	--day-sky: linear-gradient(90deg, #424767, #ebb08c 25%, #f7e9b4, #cd8c6a 75%, #424767); /* taste-skill-ignore */
 	--cinema-ink: #f3ecdc;
 	--cinema-muted: #b9c5bc;
 	--cinema-gold: #e6c68e;
@@ -62,9 +65,7 @@
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	background:
-		radial-gradient(ellipse at 60% 45%, #58706055, transparent 55%),
-		linear-gradient(165deg, #152422, #24332c 50%, #101816);
+	background: #172420;
 }
 .cinema-page .viewer-stage::after {
 	box-shadow:
@@ -198,8 +199,7 @@
 	padding: 6px;
 	border: 1px solid #d6e2d226;
 	border-radius: 20px;
-	background: #14211bd9;
-	backdrop-filter: blur(14px) saturate(1.2);
+	background: #14211bf5;
 	box-shadow: 0 16px 50px #0003;
 }
 .cinema-toolbar hr {
@@ -269,11 +269,10 @@
 	background: #15221bf2;
 	box-shadow: 0 20px 60px #0004;
 }
-.cinema-kicker {
-	color: #dcc493;
-	font-size: 9px;
-	letter-spacing: 2.3px;
-	font-weight: 500;
+.cinema-panel-title {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
 }
 .cinema-panel-heading {
 	display: flex;
@@ -315,18 +314,20 @@
 	padding: 5px 5px 9px;
 	font-size: 10px;
 }
+/* taste-skill-ignore: each swatch is a small picture of the sky it selects, not decoration. */
 .cinema-weather-swatch {
 	display: block;
 	height: 48px;
 	margin-bottom: 8px;
 	border-radius: 6px;
-	background: radial-gradient(circle at 70% 30%, #ffe0a8 0 4%, transparent 18%), linear-gradient(#5084a1, #dfcaa2);
+	background:
+		radial-gradient(circle at 70% 30%, #ffe0a8 0 4%, transparent 18%), linear-gradient(#5084a1, #dfcaa2); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-weather-swatch.mist {
-	background: linear-gradient(#6c8684, #b7c6ba 65%, #8c9b85);
+	background: linear-gradient(#6c8684, #b7c6ba 65%, #8c9b85); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-weather-swatch.overcast {
-	background: linear-gradient(150deg, #56676f, #a1a9aa 60%, #63777b);
+	background: linear-gradient(150deg, #56676f, #a1a9aa 60%, #63777b); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-page .viewer-quality {
 	margin-top: 24px;
@@ -357,8 +358,7 @@
 	gap: 8px 14px;
 	padding: 10px 16px;
 	border-radius: 16px;
-	background: #15221bd9;
-	backdrop-filter: blur(14px) saturate(1.2);
+	background: #15221bf5;
 	border: 1px solid #e4dbbd30;
 	box-shadow: 0 18px 50px #0004;
 }
@@ -384,19 +384,19 @@
 	border-radius: 50%;
 }
 .cinema-time-presets button:nth-child(1) {
-	background: linear-gradient(#424767, #ebb08c);
+	background: linear-gradient(#424767, #ebb08c); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-time-presets button:nth-child(2) {
-	background: linear-gradient(#7fb0d0, #f7e9b4);
+	background: linear-gradient(#7fb0d0, #f7e9b4); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-time-presets button:nth-child(3) {
-	background: linear-gradient(#5aa0d8, #fff6d0);
+	background: linear-gradient(#5aa0d8, #fff6d0); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-time-presets button:nth-child(4) {
-	background: linear-gradient(#cd8c6a, #f2b45c);
+	background: linear-gradient(#cd8c6a, #f2b45c); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-time-presets button:nth-child(5) {
-	background: linear-gradient(#0b1030, #424767);
+	background: linear-gradient(#0b1030, #424767); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-page .cinema-time-presets button[aria-pressed="true"] {
 	border-color: #fff1ce;
@@ -422,7 +422,8 @@
 	height: 4px;
 	appearance: none;
 	border-radius: 3px;
-	background: linear-gradient(90deg, #424767, #ebb08c 25%, #f7e9b4 50%, #cd8c6a 75%, #424767);
+	/* The slider track is the day's sky from midnight to midnight. */
+	background: var(--day-sky); /* taste-skill-ignore: the sky at this hour */
 	cursor: pointer;
 	accent-color: #f4e1b9;
 }
@@ -533,7 +534,6 @@
 	justify-content: center;
 	padding: 90px 24px 40px;
 	text-align: center;
-	background: radial-gradient(ellipse at 50% 75%, #b5ac7740, transparent 50%);
 }
 .cinema-orbit {
 	width: 90px;
@@ -591,8 +591,7 @@
 	z-index: 6;
 	display: grid;
 	place-items: center;
-	background: #122019bd;
-	backdrop-filter: blur(10px);
+	background: #122019f0;
 }
 .cinema-loading-card {
 	width: min(420px, calc(100% - 48px));

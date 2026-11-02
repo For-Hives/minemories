@@ -229,7 +229,8 @@ test('a deep capture opens near the surface and concentrates shadow texels on th
 		updateSunShadow: vi.fn(),
 	})
 	scene.resetView()
-	expect(target.y).toBeCloseTo(75.2)
+	// The pivot rests on the top surface at the centre, not in the middle of the volume.
+	expect(target.y).toBeCloseTo(80)
 	expect(shadowCenter.y).toBeCloseTo(target.y)
 	expect(camera.position.y).toBeGreaterThan(target.y)
 	expect(setBaseHeight.mock.calls[0]?.[0]).toBeGreaterThan(camera.position.y)
@@ -358,4 +359,156 @@ test('a cancelled world layer is detached and released', async () => {
 	expect(f.next.parent).toBeNull()
 	expect(dispose).toHaveBeenCalled()
 	await expect(f.scene.addLayer(f.file, capture, AbortSignal.abort())).rejects.toMatchObject({ name: 'AbortError' })
+})
+
+interface GlideInternals {
+	advanceGlides(delta: number): void
+	probeGround(timestamp: number): void
+	ground: number | null
+	dayTime: number
+}
+
+function glideFixture(reducedMotion = false) {
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const camera = new THREE.PerspectiveCamera()
+	camera.position.set(10, 10, 10)
+	const fields = {
+		camera,
+		controls: { target: new THREE.Vector3() },
+		navigation: { active: false },
+		reducedMotion,
+		cameraGlide: null,
+		timeGlide: null,
+		dayTime: 0.9,
+		shadowCenter: new THREE.Vector3(),
+		updateDayCycle: vi.fn(),
+		updateSunShadow: vi.fn(),
+		updateEnvironment: vi.fn(),
+	}
+	Object.assign(scene, fields)
+	return { scene, fields, internals: scene as unknown as GlideInternals }
+}
+
+function captureRoot(x: number) {
+	const root = new THREE.Group()
+	const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4))
+	mesh.position.set(x, 0, 0)
+	root.add(mesh)
+	return root
+}
+
+test('switching captures glides the pivot and camera together, never while walking in first person', () => {
+	const f = glideFixture()
+	f.scene.glideToLayer(captureRoot(20))
+	f.internals.advanceGlides(0.55)
+	expect(f.fields.controls.target.x).toBeCloseTo(10)
+	expect(f.fields.camera.position.x).toBeCloseTo(20)
+	f.internals.advanceGlides(1)
+	expect(f.fields.controls.target.toArray()).toEqual([20, 2, 0])
+	expect(f.fields.camera.position.toArray()).toEqual([30, 12, 10])
+	expect(f.fields.shadowCenter.x).toBeCloseTo(20)
+	expect(f.fields.updateSunShadow).toHaveBeenCalledWith(true)
+	f.scene.glideToLayer(new THREE.Group())
+	f.scene.glideToLayer(captureRoot(0))
+	f.internals.advanceGlides(2)
+	expect(f.fields.controls.target.x).toBeCloseTo(0)
+	f.fields.navigation.active = true
+	f.scene.glideToLayer(captureRoot(20))
+	f.internals.advanceGlides(1)
+	expect(f.fields.controls.target.x).toBeCloseTo(0)
+})
+
+test('reduced motion jumps straight to the capture and the hour', () => {
+	const f = glideFixture(true)
+	f.scene.glideToLayer(captureRoot(20))
+	expect(f.fields.controls.target.x).toBeCloseTo(20)
+	expect(f.fields.camera.position.x).toBeCloseTo(30)
+	f.scene.setMinutes(360, true)
+	expect(f.internals.dayTime).toBe(0.25)
+	expect(f.fields.updateEnvironment).toHaveBeenCalledOnce()
+})
+
+test('the sun turns the short way to the next capture hour, then refreshes the environment once', () => {
+	const f = glideFixture()
+	f.scene.setMinutes(144, true)
+	expect(f.internals.dayTime).toBe(0.9)
+	f.internals.advanceGlides(0.8)
+	expect(f.internals.dayTime).toBeCloseTo(1)
+	expect(f.fields.updateEnvironment).not.toHaveBeenCalled()
+	f.internals.advanceGlides(1)
+	expect(f.internals.dayTime).toBeCloseTo(1.1)
+	expect(f.fields.updateEnvironment).toHaveBeenCalledOnce()
+	f.scene.setMinutes(1584 % 1440, true)
+	expect(f.fields.updateEnvironment).toHaveBeenCalledTimes(2)
+})
+
+test('the ground below the pivot is measured on visible surfaces only, throttled and only while shown', () => {
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const modelRoot = new THREE.Group()
+	const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10))
+	floor.position.y = -5
+	const hidden = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10))
+	hidden.position.y = -2
+	hidden.visible = false
+	const beam = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ name: 'beacon_beam' }))
+	beam.position.y = -1
+	modelRoot.add(floor, hidden, beam)
+	modelRoot.updateMatrixWorld(true)
+	const pivot = { wanted: true }
+	const target = new THREE.Vector3(0, 0, 0)
+	Object.assign(scene, {
+		modelRoot,
+		pivot,
+		navigation: { active: false },
+		controls: { target },
+		groundRay: new THREE.Raycaster(),
+		probedTarget: new THREE.Vector3(Number.NaN, 0, 0),
+		ground: null,
+		lastProbe: 0,
+	})
+	const internals = scene as unknown as GlideInternals
+	internals.probeGround(1000)
+	expect(internals.ground).toBeCloseTo(-4.5)
+	const roof = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10))
+	roof.position.y = 2
+	modelRoot.add(roof)
+	modelRoot.updateMatrixWorld(true)
+	target.set(0, 0.1, 0)
+	internals.probeGround(1150)
+	expect(internals.ground).toBeCloseTo(2.5)
+	roof.removeFromParent()
+	target.set(0, 0, 0)
+	internals.probeGround(1300)
+	expect(internals.ground).toBeCloseTo(-4.5)
+	target.set(50, 0, 0)
+	internals.probeGround(1350)
+	expect(internals.ground).toBeCloseTo(-4.5)
+	internals.probeGround(1500)
+	expect(internals.ground).toBeNull()
+	target.set(0, 0, 0)
+	pivot.wanted = false
+	internals.probeGround(2000)
+	expect(internals.ground).toBeNull()
+})
+
+test('the weather ceiling covers visible drawn triangles only, in scene coordinates', () => {
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const modelRoot = new THREE.Group()
+	const roof = new THREE.Mesh(new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2))
+	roof.position.set(2, 10, 2)
+	const hidden = new THREE.Mesh(new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2))
+	hidden.position.set(2, 50, 2)
+	hidden.visible = false
+	const loose = new THREE.Mesh(new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2).toNonIndexed())
+	loose.position.set(-3, 4, -3)
+	modelRoot.add(roof, hidden, loose)
+	const setCeiling = vi.fn()
+	Object.assign(scene, { modelRoot, precipitation: { setCeiling } })
+	;(scene as unknown as { refreshCeiling(): void }).refreshCeiling()
+	const ceiling = setCeiling.mock.lastCall?.[0]
+	expect(Math.max(...ceiling.data)).toBe(10)
+	expect(ceiling.data).toContain(4)
+	modelRoot.clear()
+	;(scene as unknown as { refreshCeiling(): void }).refreshCeiling()
+	expect(setCeiling).toHaveBeenLastCalledWith(null)
 })

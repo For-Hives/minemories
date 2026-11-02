@@ -796,8 +796,6 @@
 }
 .mm-site .album-gallery-heading {
 	grid-column: 1 / -1;
-	padding-bottom: 30px;
-	border-bottom: 1px solid var(--album-line);
 }
 .mm-site .album-gallery-sidebar {
 	grid-column: 2;
@@ -809,17 +807,16 @@
 .mm-site .album-gallery-sidebar > section {
 	margin: 0;
 	padding: 24px;
-	border: 1px solid var(--album-line);
-	border-radius: 20px;
-	background: #1a2c25;
+	border-radius: 16px;
+	background: #1a251e;
 }
 .mm-site .album-gallery-sidebar > section[aria-live="polite"] {
 	display: flex;
 	flex-wrap: wrap;
 }
 .mm-site .album-gallery-sidebar p {
-	font-size: 11px;
-	line-height: 1.8;
+	font-size: 13px;
+	line-height: 1.5;
 	color: #b2bcb0;
 }
 .mm-site .album-gallery-sidebar h2 {

@@ -1,21 +1,24 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { useMemo, useState } from 'react'
+import { type CSSProperties, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
+import { type MenuItem, useContextMenu } from '../components/ContextMenu'
 import { GalleryIcon } from '../components/GalleryIcons'
 import { LoadingSkeleton } from '../components/Loading'
-import { buttonDark, Eyebrow } from '../components/ui'
+import { buttonDark } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
-import { captureAreas, groupCaptures, latestCapture } from '../lib/gallery'
+import { type CaptureArea, captureAreas, gridColumns, groupCaptures, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
+import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
 import { AreaCard, TrashCard } from './GalleryCards'
 import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
+import { ServerSheet } from './ServerSheet'
 
 function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
 	if (storage.availableBytes === 0) return 'full'
@@ -82,10 +85,27 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 	)
 }
 
-export function GalleryPage() {
-	const { t } = useI18n()
+/** The title row's one finding: how much is kept, across how many worlds, and when the last capture arrived. */
+function gallerySummary(memories: Memories, locale: Locale): string {
+	if (memories.length === 0) return translate(locale, 'Every capture keeps a place here, ready to revisit.')
+	const newest = latestCapture(memories)
+	const parts = [
+		formatCaptureCount(locale, memories.length),
+		translate(locale, '{count} worlds', { count: groupCaptures(memories).length }),
+	]
+	if (newest)
+		parts.push(
+			translate(locale, 'Last visit {date}', {
+				date: formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale),
+			})
+		)
+	return parts.join(' · ')
+}
 
-	const { session, notify } = useAppContext()
+export function GalleryPage() {
+	const { t, locale } = useI18n()
+
+	const { notify } = useAppContext()
 	const {
 		memories,
 		trash,
@@ -107,16 +127,8 @@ export function GalleryPage() {
 		<div className="album-gallery gallery-page">
 			<div className="album-gallery-heading gallery-heading">
 				<div>
-					<Eyebrow>
-						<T message={'THE SERVER ALBUM'} />
-					</Eyebrow>
-					<h1>
-						{t('Your memories')}
-						{session?.user.name && `, ${session.user.name.split(' ')[0]}`}.
-					</h1>
-					<p>
-						<T message={'Every capture keeps a place here, ready to revisit.'} />
-					</p>
+					<h1>{t('Your memories')}</h1>
+					<p>{gallerySummary(memories, locale)}</p>
 				</div>
 				<div className="gallery-heading-actions">
 					<button
@@ -175,9 +187,6 @@ export function GalleryPage() {
 				{!loading && trash.length > 0 && (
 					<section className="gallery-trash" aria-label={t('Trash')}>
 						<div>
-							<Eyebrow>
-								<T message={'RECYCLE BIN'} />
-							</Eyebrow>
 							<h2>
 								<T message={'Trash ·'} /> {trash.length}
 							</h2>
@@ -202,6 +211,10 @@ export function GalleryPage() {
 	)
 }
 
+const SERVER_NAME = '#server'
+
+type Server = ReturnType<typeof groupCaptures<Memories[number]>>[number] & { areas: CaptureArea<Memories[number]>[] }
+
 function WorldSections({
 	memories,
 	onChanged,
@@ -211,9 +224,8 @@ function WorldSections({
 	onChanged(): void
 	onTrashed(id: string): void
 }) {
-	const { locale } = useI18n()
-	const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-	const worlds = useMemo(
+	const { t } = useI18n()
+	const servers = useMemo(
 		() =>
 			groupCaptures(memories).map(group => ({
 				...group,
@@ -221,80 +233,168 @@ function WorldSections({
 			})),
 		[memories]
 	)
+	const [selectedKey, setSelectedKey] = useState<string | null>(null)
+	const [, setRenamed] = useState(0)
+	const areas = useRef<HTMLElement>(null)
+	const selected = servers.find(server => server.key === selectedKey) ?? servers[0]
 	const publishId = new URLSearchParams(window.location.search).get('publish')
-
-	function toggle(key: string) {
-		setCollapsed(previous => {
-			const next = new Set(previous)
-			if (next.has(key)) next.delete(key)
-			else next.add(key)
-			return next
-		})
-	}
-
+	if (!selected) return null
+	// Server names live in this browser, like area names; a rename re-reads them.
+	const name = (server: Server) => getStackName(server.key, SERVER_NAME) ?? server.name
 	return (
 		<div className="gallery-worlds">
-			{worlds.map(world => {
-				const open = !collapsed.has(world.key)
-				return (
-					<section key={world.key} aria-label={world.name} className="gallery-world">
-						<button
-							type="button"
-							className="gallery-world-header"
-							aria-expanded={open}
-							onClick={() => toggle(world.key)}
-						>
-							<span
-								aria-hidden="true"
-								className="gallery-world-icon"
-								style={
-									(world.captures[0]?.metadata.icon ?? world.captures[0]?.metadata.thumbnail)
-										? {
-												backgroundImage: `url("${world.captures[0]?.metadata.icon ?? world.captures[0]?.metadata.thumbnail}")`,
-											}
-										: undefined
-								}
-							/>
-							<span className="gallery-world-text">
-								<strong>{world.name}</strong>
-								<span className="gallery-world-meta">{worldSummary(world.captures, locale)}</span>
-							</span>
-							<span aria-hidden="true" className="gallery-chevron" data-open={open} />
-						</button>
-						{open && (
-							<div className="gallery-areas">
-								{world.areas.map(area => (
-									<AreaCard
-										key={area.stack.key}
-										groupKey={world.key}
-										stack={area.stack}
-										evolving={area.evolving}
-										publishId={publishId}
-										onChanged={onChanged}
-										onTrashed={onTrashed}
-									/>
-								))}
-							</div>
-						)}
-					</section>
-				)
-			})}
+			<ul
+				className="gallery-servers"
+				aria-label={t('Servers')}
+				style={
+					{
+						'--columns': gridColumns(servers.length, 4),
+						'--columns-narrow': gridColumns(servers.length, 3),
+					} as CSSProperties
+				}
+			>
+				{servers.map(server => (
+					<ServerTile
+						key={server.key}
+						server={server}
+						name={name(server)}
+						selected={server === selected}
+						onSelect={() => {
+							setSelectedKey(server.key)
+							// On a narrow screen the areas sit below every tile: bring them into view.
+							const top = areas.current?.getBoundingClientRect().top ?? 0
+							if (top > window.innerHeight * 0.8)
+								areas.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+						}}
+						onRenamed={() => setRenamed(value => value + 1)}
+					/>
+				))}
+			</ul>
+			<section ref={areas} aria-label={name(selected)} className="gallery-world">
+				<h2 className="gallery-world-heading">{name(selected)}</h2>
+				<div className="gallery-areas">
+					{selected.areas.map(area => (
+						<AreaCard
+							key={area.stack.key}
+							groupKey={selected.key}
+							stack={area.stack}
+							evolving={area.evolving}
+							publishId={publishId}
+							onChanged={onChanged}
+							onTrashed={onTrashed}
+						/>
+					))}
+				</div>
+			</section>
 		</div>
 	)
 }
 
-function worldSummary(captures: Memories, locale: Locale): string {
-	const seed = captures.find(item => item.metadata.seed)?.metadata.seed
-	const newest = latestCapture(captures)
-	const parts = [formatCaptureCount(locale, captures.length)]
-	if (seed) parts.push(translate(locale, 'Seed {seed}', { seed }))
-	if (newest)
-		parts.push(
-			translate(locale, 'Last visit {date}', {
-				date: formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale),
-			})
-		)
-	return parts.join(' · ')
+function ServerCovers({ captures }: { captures: Memories }) {
+	const images = captures
+		.map(capture => capture.metadata.thumbnail ?? capture.metadata.icon)
+		.filter((image): image is string => typeof image === 'string')
+		.slice(0, 3)
+	return (
+		<span className="gallery-server-covers" data-count={images.length} aria-hidden="true">
+			{images.length === 0 ? (
+				<span className="gallery-server-placeholder">
+					<GalleryIcon name="cube" />
+				</span>
+			) : (
+				images.map(image => <span key={image.slice(-48)} style={{ backgroundImage: `url("${image}")` }} />)
+			)}
+		</span>
+	)
+}
+
+function ServerTile({
+	server,
+	name,
+	selected,
+	onSelect,
+	onRenamed,
+}: {
+	server: Server
+	name: string
+	selected: boolean
+	onSelect(): void
+	onRenamed(): void
+}) {
+	const { t, locale } = useI18n()
+	const [sheet, setSheet] = useState(false)
+	const menu = useContextMenu()
+	const newest = latestCapture(server.captures)
+	const bytes = server.captures.reduce((total, capture) => total + capture.size, 0)
+	const newestArea = newest && server.areas.find(area => area.stack.captures.includes(newest))
+	const openPath = newest && viewPath(newest.id, Boolean(newestArea?.evolving && newestArea.stack.captures.length > 1))
+	const actions: MenuItem[] = [
+		{ label: t('Open'), icon: 'view', onSelect },
+		{ label: t('Details'), icon: 'cube', onSelect: () => setSheet(true) },
+		{ label: t('Rename this server'), icon: 'pencil', onSelect: () => setSheet(true) },
+	]
+	return (
+		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
+			<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
+				<ServerCovers captures={server.captures} />
+				<span className="gallery-sr-only">{name}</span>
+			</button>
+			<div className="gallery-server-body">
+				<div className="gallery-title">
+					<h3>{name}</h3>
+					<button
+						type="button"
+						className="gallery-icon-button"
+						title={t('Rename this server')}
+						aria-label={t('Rename {name}', { name })}
+						onClick={() => setSheet(true)}
+					>
+						<GalleryIcon name="pencil" />
+					</button>
+				</div>
+				<dl className="gallery-server-stats">
+					<div>
+						<dt>
+							<GalleryIcon name="layers" />
+							<span className="gallery-sr-only">{t('Snapshots')}</span>
+						</dt>
+						<dd>{formatCaptureCount(locale, server.captures.length)}</dd>
+					</div>
+					<div>
+						<dt>
+							<GalleryIcon name="disk" />
+							<span className="gallery-sr-only">{t('Size')}</span>
+						</dt>
+						<dd>{formatFileSize(bytes, locale)}</dd>
+					</div>
+				</dl>
+				<div className="gallery-server-foot">
+					<span className="gallery-seed" title={t('Last visit {date}', { date: '' }).trim()}>
+						<GalleryIcon name="clock" />
+						{newest ? formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale) : '—'}
+					</span>
+					{openPath && (
+						<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
+							{t('Open')}
+							<GalleryIcon name="view" />
+						</Link>
+					)}
+				</div>
+			</div>
+			{menu.element}
+			{sheet && (
+				<ServerSheet
+					server={server}
+					name={name}
+					onClose={() => setSheet(false)}
+					onRename={next => {
+						setStackName(server.key, SERVER_NAME, next)
+						onRenamed()
+					}}
+				/>
+			)}
+		</li>
+	)
 }
 
 function LocalGalleryLink() {

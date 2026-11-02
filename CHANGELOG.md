@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.30.2-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.1-beta.1...mod-v0.30.2-beta.1) (2026-10-31)
+
+## [0.30.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.0-beta.1...mod-v0.30.1-beta.1) (2026-10-31)
+
+## [0.30.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.29.0-beta.1...mod-v0.30.0-beta.1) (2026-10-31)
+
+### Fonctionnalités
+
+* **web:** centrage sur le joueur, météo abritée, pellicule intégrée, menus et fiches de galerie ([f082f7c](https://github.com/For-Hives/minemories/commit/f082f7cc6a6861022d059b9295f7de0ce31b04fc))
+
+### Documentation
+
+* noter l'autorisation de push direct sur main après contrôles verts ([91f2893](https://github.com/For-Hives/minemories/commit/91f289314c650ef7c8bf13ff41f7f768417ba6c7))
+
+## [0.29.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.28.0-beta.1...mod-v0.29.0-beta.1) (2026-10-31)
+
+### Fonctionnalités
+
+* **web:** pellicule du monde, transitions douces, pivot ombré et galerie en grille ([bb9881b](https://github.com/For-Hives/minemories/commit/bb9881b5f460fd1a0fe7ef161f36bced5eb5733a))
+
+## [0.28.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.27.0-beta.1...mod-v0.28.0-beta.1) (2026-10-31)
+
+### Fonctionnalités
+
+* **web:** rétablir la galerie, le viewer et la page du monde, refondus ([6593207](https://github.com/For-Hives/minemories/commit/659320788a579740dc8bb579b2695fb679770e86))
+
+### Maintenance
+
+* retirer le script mod:build:1.20.1 ajouté par erreur (le dossier n'est pas suivi) ([405f38f](https://github.com/For-Hives/minemories/commit/405f38ff0f923f3564d6e5030857eddf510fc89f))
+* **web:** zéro avertissement Biome (spécificité CSS, paramètre inutilisé, script de chargement généré) ([684f418](https://github.com/For-Hives/minemories/commit/684f418a14a0148dd8d628f780bb756841f9e2df))
+
 ## [0.27.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.26.0-beta.1...mod-v0.27.0-beta.1) (2026-10-31)
 
 ### Fonctionnalités
