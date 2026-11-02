@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.0-beta.1...mod-v0.31.1-beta.1) (2026-11-02)
+
+### Corrections
+
+* **deps:** update aws-sdk-js-v3 monorepo to v3.1161.0 ([7d08a81](https://github.com/For-Hives/minemories/commit/7d08a816e7e58467f8e8d8dfdef6e3ccee0ff9b7))
+* **mod:** une limite de textures, de passes ou de primitives d'entités ne fait plus échouer la capture ([615fcca](https://github.com/For-Hives/minemories/commit/615fcca686b015bcd88aed9f5ace1e71117ad477))
+
+### Maintenance
+
+* **deps:** update dependency basic-ftp to v6.2.5 ([e227ebd](https://github.com/For-Hives/minemories/commit/e227ebdec6e5a9e31528001d806be19571025d81))
+* **deps:** update dependency node to v26 ([d9a9554](https://github.com/For-Hives/minemories/commit/d9a9554b8cf2f53b755b5cdf59206f1306f0f5d0))
+* **deps:** update dependency release-it to v21.1.2 ([13c9699](https://github.com/For-Hives/minemories/commit/13c969901363dc43ca8a97381e2024bcdb1eeb39))
+* **deps:** update dependency undici to v8 ([11689a0](https://github.com/For-Hives/minemories/commit/11689a0cf2b01c212d61a2b698b7dbd82ecd06f0))
+* **deps:** update dependency vite to v8.3.5 ([b0e1ecf](https://github.com/For-Hives/minemories/commit/b0e1ecf151908788f4ee8d39df2fd75f99de2d6a))
+
 ## [0.31.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.2-beta.1...mod-v0.31.0-beta.1) (2026-11-02)
 
 ### Fonctionnalités
