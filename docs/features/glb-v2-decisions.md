@@ -83,3 +83,8 @@ recherche web n'a pas fourni de source primaire. Seule la mesure locale fait foi
 
 Les points de format détaillés (échelle de quantification, normales, nœuds par catégorie, plages de chunks) sont
 fixés dans `docs/features/glb-size.md` au moment où chaque phase les implémente.
+
+## Suite (phase 4)
+
+La variante Meshopt est implémentée comme **variante de transport à la demande**, sans stockage durable : voir
+`docs/features/glb-derivative.md` (stockage, quota, durée de vie, mesures, limites).

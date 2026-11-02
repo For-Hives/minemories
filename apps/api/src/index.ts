@@ -16,6 +16,7 @@ import { AUTH_BODY_BYTES, RPC_BODY_BYTES, requestBodyLimit } from './body-limits
 import { recordCaptureOpening } from './capture-access'
 import { openAuthorizedCapture } from './capture-downloads'
 import { CaptureStorage } from './capture-storage'
+import { variantCapture } from './capture-variants'
 import { ColdStorageMaintenance } from './cold-storage-maintenance'
 import { coldStorageInactiveDays } from './cold-storage-policy'
 import { S3ColdStorageProvider } from './cold-storage-s3'
@@ -316,7 +317,7 @@ app.use(
 			'X-Minemories-Diagnostics-Consent',
 			'X-Minemories-Diagnostics-Permit',
 		],
-		exposeHeaders: ['X-Minemories-Correlation'],
+		exposeHeaders: ['X-Minemories-Correlation', 'X-Minemories-Variant'],
 	})
 )
 
@@ -413,9 +414,11 @@ app.get('/api/public/:id/file', async context => {
 			recordCaptureOpening(database, lookup())
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		const variant = await variantCapture(context.req.query('variant'), contents)
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), variant.body)
 		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
+			...variant.headers,
 			...encoded.headers,
 		})
 	} catch (error) {
@@ -439,9 +442,11 @@ app.get('/api/shared/:token/file', async context => {
 			() => recordCaptureOpening(database, getSharedMemory(context.req.param('token'))?.objectKey ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		const variant = await variantCapture(context.req.query('variant'), contents)
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), variant.body)
 		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
+			...variant.headers,
 			'Cache-Control': 'private, no-store',
 			...encoded.headers,
 		})
@@ -480,9 +485,11 @@ app.get('/api/memories/:id/file', async context => {
 			() => recordCaptureOpening(database, getMemoryFile(session.user.id, context.req.param('id'))?.object_key ?? null)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
-		const encoded = encodedCapture(context.req.header('Accept-Encoding'), contents)
+		const variant = await variantCapture(context.req.query('variant'), contents)
+		const encoded = encodedCapture(context.req.header('Accept-Encoding'), variant.body)
 		return context.body(Readable.toWeb(encoded.body) as unknown as ReadableStream, 200, {
 			'Content-Type': 'model/gltf-binary',
+			...variant.headers,
 			'Cache-Control': 'private, no-store',
 			...encoded.headers,
 		})
