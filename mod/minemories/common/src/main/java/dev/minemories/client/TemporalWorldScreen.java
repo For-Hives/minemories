@@ -111,8 +111,8 @@ final class TemporalWorldScreen extends Screen {
   @Override
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
-    graphics.fill(left, top, left + panelWidth, top + 236, 0xFF182019);
-    graphics.drawString(font, title, left + 14, top + 12, 0xFFE3E9DD);
+    UiTheme.panel(graphics, left, top, panelWidth, 236);
+    graphics.drawString(font, title, left + 14, top + 12, UiTheme.TEXT);
     graphics.drawString(
         font,
         font.plainSubstrByWidth(
@@ -120,7 +120,7 @@ final class TemporalWorldScreen extends Screen {
             panelWidth - 28),
         left + 14,
         top + 30,
-        0xFFB2B6AA);
+        UiTheme.MUTED);
     var explanation =
         font.split(
             Component.literal(
@@ -128,13 +128,13 @@ final class TemporalWorldScreen extends Screen {
                     "minemories.ui.sans_identifiant_chaque_connexion_reste_separee_pour_retrouver_la_meme_serie_apres_reconnexion_conserve_lidentifiant_de_ce_monde_change_le_si_la_carte_du_serveur_est_remplacee")),
             panelWidth - 28);
     for (int i = 0; i < Math.min(5, explanation.size()); i++)
-      graphics.drawString(font, explanation.get(i), left + 14, top + 48 + i * 10, 0xFFE3E9DD);
+      graphics.drawString(font, explanation.get(i), left + 14, top + 48 + i * 10, UiTheme.TEXT);
     graphics.drawString(
         font,
         I18n.get("minemories.ui.identifiant_du_monde_uuid_facultatif"),
         left + 14,
         top + 104,
-        0xFFE3E9DD);
+        UiTheme.TEXT);
   }
 
   @Override
@@ -142,7 +142,7 @@ final class TemporalWorldScreen extends Screen {
     super.render(graphics, mouseX, mouseY, partialTick);
     var lines = font.split(Component.literal(status), panelWidth - 28);
     for (int i = 0; i < Math.min(3, lines.size()); i++)
-      graphics.drawString(font, lines.get(i), left + 14, top + 202 + i * 10, 0xFFE3E9DD);
+      graphics.drawString(font, lines.get(i), left + 14, top + 202 + i * 10, UiTheme.TEXT);
   }
 
   @Override

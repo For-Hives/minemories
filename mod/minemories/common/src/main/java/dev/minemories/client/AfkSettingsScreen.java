@@ -94,31 +94,31 @@ final class AfkSettingsScreen extends Screen {
   @Override
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
-    graphics.fill(left, top, left + panelWidth, top + 230, 0xFF182019);
+    UiTheme.panel(graphics, left, top, panelWidth, 230);
     graphics.drawString(
         font,
         I18n.get("minemories.ui.reglages_avances_captures_afk"),
         left + 14,
         top + 12,
-        0xFFE3E9DD);
+        UiTheme.TEXT);
     graphics.drawString(
         font,
         I18n.get("minemories.ui.inactivite_avant_capture_11440_min"),
         left + 14,
         top + 31,
-        0xFFE3E9DD);
+        UiTheme.TEXT);
     graphics.drawString(
         font,
         I18n.get("minemories.ui.intervalle_entre_captures_110080_min"),
         left + 14,
         top + 74,
-        0xFFE3E9DD);
+        UiTheme.TEXT);
     graphics.drawString(
         font,
         I18n.get("minemories.ui.rayon_autour_du_joueur_2128_blocs"),
         left + 14,
         top + 117,
-        0xFFE3E9DD);
+        UiTheme.TEXT);
   }
 
   @Override
@@ -126,7 +126,7 @@ final class AfkSettingsScreen extends Screen {
     super.render(graphics, mouseX, mouseY, partialTick);
     var lines = font.split(Component.literal(status), panelWidth - 28);
     for (int i = 0; i < Math.min(2, lines.size()); i++) {
-      graphics.drawString(font, lines.get(i), left + 14, top + 208 + i * 10, 0xFFE3E9DD);
+      graphics.drawString(font, lines.get(i), left + 14, top + 208 + i * 10, UiTheme.TEXT);
     }
   }
 

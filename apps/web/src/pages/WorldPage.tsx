@@ -40,10 +40,10 @@ interface WorldRuntime {
 	loader: WorldLoader<TemporalFrame>
 }
 
-function visibleLights(runtime: WorldRuntime, step: number): WorldLight[] {
+function visibleLights(runtime: WorldRuntime, step: number, floor: number): WorldLight[] {
 	const lights: WorldLight[] = []
 	for (const [position, layer] of runtime.layers) {
-		if (position > step) continue
+		if (position > step || position < floor) continue
 		for (const light of layer.lights) {
 			const block = light.position.clone().add(runtime.base)
 			if (!runtime.composition.covered(position, step, block)) lights.push(light)
@@ -52,12 +52,14 @@ function visibleLights(runtime: WorldRuntime, step: number): WorldLight[] {
 	return lights
 }
 
-function show(runtime: WorldRuntime, step: number) {
-	for (const position of runtime.composition.compose(step)) {
+/** With `onlyCurrent`, captures older than the one shown are not drawn: far fewer triangles on slow machines. */
+function show(runtime: WorldRuntime, step: number, onlyCurrent: boolean) {
+	const floor = onlyCurrent ? step : 0
+	for (const position of runtime.composition.compose(step, floor)) {
 		const layer = runtime.layers.get(position)
 		if (layer) applyLayer(layer)
 	}
-	runtime.scene.showWorld(visibleLights(runtime, step))
+	runtime.scene.showWorld(visibleLights(runtime, step, floor))
 }
 
 const PLAY_SECONDS = 1.8
@@ -101,11 +103,13 @@ function useWorldEvolution(memoryId: string) {
 	const runtime = useRef<WorldRuntime | null>(null)
 	const scene = useRef<ViewerScene | null>(null)
 	const stepRef = useRef(0)
+	const onlyCurrentRef = useRef(false)
 	const shown = useRef(-1)
 	const [world, setWorld] = useState<WorldEvolution | null>(null)
 	const [statuses, setStatuses] = useState<FrameStatus[]>([])
 	const [step, setStep] = useState(0)
 	const [playing, setPlaying] = useState(false)
+	const [onlyCurrent, setOnlyCurrentState] = useState(false)
 	const [error, setError] = useState('')
 	const [retry, setRetry] = useState(0)
 	const [minutes, setMinutes] = useState(570)
@@ -134,7 +138,7 @@ function useWorldEvolution(memoryId: string) {
 			.world({ memoryId }, { signal: request.signal })
 			.then(evolution => {
 				if (request.signal.aborted) return
-				runtime.current = startWorld(viewer, evolution, setStatuses, stepRef)
+				runtime.current = startWorld(viewer, evolution, setStatuses, { step: stepRef, onlyCurrent: onlyCurrentRef })
 				const first = Math.max(0, plannedFrames(evolution.frames.map(frame => frame.size)).indexOf(true))
 				const dayTime = evolution.frames[first]?.dayTime
 				if (dayTime != null) viewer.setMinutes(captureClock(dayTime))
@@ -160,7 +164,7 @@ function useWorldEvolution(memoryId: string) {
 		stepRef.current = step
 		const current = runtime.current
 		if (!current) return
-		show(current, step)
+		show(current, step, onlyCurrentRef.current)
 		const previous = shown.current
 		shown.current = step
 		if (previous < 0 || previous === step) return
@@ -208,6 +212,12 @@ function useWorldEvolution(memoryId: string) {
 		return () => window.removeEventListener('keydown', onKey)
 	}, [world, select])
 
+	const setOnlyCurrent = useCallback((value: boolean) => {
+		onlyCurrentRef.current = value
+		setOnlyCurrentState(value)
+		if (runtime.current) show(runtime.current, stepRef.current, value)
+	}, [])
+
 	const recenter = useCallback(() => {
 		const current = runtime.current
 		if (!current) return
@@ -224,6 +234,8 @@ function useWorldEvolution(memoryId: string) {
 		statuses,
 		step,
 		playing,
+		onlyCurrent,
+		setOnlyCurrent,
 		error,
 		images,
 		select,
@@ -241,7 +253,7 @@ function startWorld(
 	scene: ViewerScene,
 	evolution: WorldEvolution,
 	setStatuses: (update: (current: FrameStatus[]) => FrameStatus[]) => void,
-	stepRef: { current: number }
+	view: { step: { current: number }; onlyCurrent: { current: boolean } }
 ): WorldRuntime {
 	const frames = evolution.frames
 	const newest = frames.at(-1) as TemporalFrame
@@ -255,6 +267,7 @@ function startWorld(
 	})
 	const composition = new WorldComposition(frames.length)
 	const layers = new Map<number, WorldLayer>()
+	let centered = false
 	setStatuses(() => frames.map(() => 'waiting'))
 	const loader = new WorldLoader(frames, plannedFrames(frames.map(frame => frame.size)), {
 		concurrency: 3,
@@ -264,7 +277,12 @@ function startWorld(
 			const layer = await scene.addLayer(file, { origin: frame.origin, bounds: frame.bounds, offset }, signal)
 			composition.set(position, layer.capture)
 			layers.set(position, layer)
-			show(world, stepRef.current)
+			show(world, view.step.current, view.onlyCurrent.current)
+			// The first layer was framed while it drew nothing: once the shown capture is composed, centre on the player.
+			if (position === view.step.current && !centered) {
+				centered = true
+				scene.focusLayer(layer.root)
+			}
 		},
 		onStatus: (position, status) =>
 			setStatuses(current => current.map((value, index) => (index === position ? status : value))),
@@ -386,6 +404,35 @@ function CaptureFilm({ state, world }: { state: WorldState; world: WorldEvolutio
 					)}
 				</div>
 			</header>
+			<div className="film-steps">
+				<button
+					type="button"
+					aria-label={t('Previous capture')}
+					title={t('Previous capture')}
+					disabled={step <= 0}
+					onClick={() => state.select(step - 1)}
+				>
+					<ViewerIcon name="chevronUp" />
+				</button>
+				<button
+					type="button"
+					aria-label={t('Next capture')}
+					title={t('Next capture')}
+					disabled={step >= world.frames.length - 1}
+					onClick={() => state.select(step + 1)}
+				>
+					<ViewerIcon name="chevronDown" />
+				</button>
+				<button
+					type="button"
+					aria-pressed={!state.onlyCurrent}
+					aria-label={t('Older captures')}
+					title={t('Older captures')}
+					onClick={() => state.setOnlyCurrent(!state.onlyCurrent)}
+				>
+					<ViewerIcon name="layers" />
+				</button>
+			</div>
 			<LoadProgress statuses={statuses} />
 			<ol ref={list} className="film-list">
 				{world.frames.map((frame, position) => {

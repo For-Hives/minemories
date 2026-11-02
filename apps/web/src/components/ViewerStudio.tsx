@@ -119,7 +119,10 @@ export function ViewerStudio({
 					aria-expanded={settings}
 					aria-controls="cinema-settings"
 					aria-label={t('Atmosphere')}
-					onClick={() => setSettings(!settings)}
+					onClick={() => {
+						setSharing(false)
+						setSettings(!settings)
+					}}
 				>
 					<ViewerIcon name="atmosphere" />
 					<span>{t('Atmosphere')}</span>
@@ -167,7 +170,10 @@ export function ViewerStudio({
 						disabled={!ready}
 						aria-label={t('Share')}
 						aria-expanded={sharing}
-						onClick={() => setSharing(!sharing)}
+						onClick={() => {
+							setSettings(false)
+							setSharing(!sharing)
+						}}
 					>
 						<ViewerIcon name="share" />
 						<span>{t('Share')}</span>

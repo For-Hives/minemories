@@ -27,6 +27,9 @@ const paths = {
 			<circle cx="12" cy="13" r="3.5" />
 		</>
 	),
+	chevronUp: <path d="m6 15 6-6 6 6" />,
+	chevronDown: <path d="m6 9 6 6 6-6" />,
+	layers: <path d="m12 4 9 5-9 5-9-5zM3 14l9 5 9-5" />,
 	share: <path d="M7 17 17 7M9 7h8v8" />,
 	refresh: <path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5" />,
 	expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,

@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 /** Button showing a vanilla item: big puts the item above the label, compact puts it beside. */
 final class IconButton extends Button {
   private static final int COLOR_LABEL = 0xFFECE8DC;
-  private static final int COLOR_LABEL_OFF = 0xFF8C9086;
+  private static final int COLOR_LABEL_OFF = 0xFFA3A79B;
   private static final int COLOR_BACK = 0xFF3A3F3B;
   private static final int COLOR_BACK_HOVER = 0xFF4B5A47;
   private static final int COLOR_BACK_OFF = 0xFF2B2E2C;
@@ -20,6 +20,7 @@ final class IconButton extends Button {
   private static final int COLOR_FOCUS = 0xFFB2D8A0;
   private final ItemStack icon;
   private final boolean big;
+  private boolean status;
 
   IconButton(
       int x,
@@ -35,6 +36,11 @@ final class IconButton extends Button {
     this.big = big;
   }
 
+  /** Marks a toggle as on with a green bar along its top edge. */
+  void setStatus(boolean on) {
+    status = on;
+  }
+
   @Override
   public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     int right = getX() + width;
@@ -44,7 +50,7 @@ final class IconButton extends Button {
     Font font = Minecraft.getInstance().font;
     if (big) drawBig(graphics, font);
     else drawCompact(graphics, font);
-    if (!active) graphics.fill(getX() + 1, getY() + 1, right - 1, bottom - 1, 0x88000000);
+    if (status) graphics.fill(getX() + 1, getY() + 1, right - 1, getY() + 4, 0xFF8FD694);
   }
 
   private int background() {

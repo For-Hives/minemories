@@ -105,6 +105,13 @@ it('replaces only the newer bounds inside chunks where the newer capture really 
 	expect(composition.covered(1, 1, { x: 9, y: 64, z: 0 })).toBe(false)
 	expect(composition.compose(0)).toEqual([0, 1])
 	expect(newerPrimitive.count).toBe(0)
+	// A floor hides the older capture entirely, and lifting it brings the capture back.
+	expect(composition.compose(1)).toEqual([0, 1])
+	expect(composition.compose(1, 1)).toEqual([0])
+	expect(oldPrimitive.count).toBe(0)
+	expect(visibleBlocks(newerPrimitive)).toEqual(row(8, 15).map(([x]) => x))
+	expect(composition.compose(1)).toEqual([0])
+	expect(oldPrimitive.count).toBeGreaterThan(0)
 })
 
 it('keeps older content outside the newer vertical range and drops whole chunks contained by it', () => {

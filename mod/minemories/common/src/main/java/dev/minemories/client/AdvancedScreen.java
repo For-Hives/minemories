@@ -2,6 +2,7 @@ package dev.minemories.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -13,14 +14,13 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 final class AdvancedScreen extends Screen {
-  private static final int COLOR_PANEL = 0xFF252926;
-  private static final int COLOR_TEXT = 0xFFECE8DC;
-  private static final int COLOR_MUTED = 0xFFB2B6AA;
+  private static final int COLOR_TEXT = UiTheme.TEXT;
+  private static final int COLOR_MUTED = UiTheme.MUTED;
   private static final int PANEL_HEIGHT = 236;
   private static final int CONTENT_Y = 64;
   private final Screen parent;
   private final List<List<AbstractWidget>> tabWidgets = new ArrayList<>();
-  private final List<Button> tabButtons = new ArrayList<>();
+  private final List<TabButton> tabButtons = new ArrayList<>();
   private AdvancedTab tab = AdvancedTab.ACCOUNT;
   private EditBox apiInput;
   private EditBox directoryInput;
@@ -74,14 +74,15 @@ final class AdvancedScreen extends Screen {
     int back = 58;
     int width = (panelWidth - 28 - back - 4 * count) / count;
     for (AdvancedTab each : AdvancedTab.values()) {
-      Button tabButton =
-          button(
-              null,
-              I18n.get(each.labelKey()),
-              14 + each.ordinal() * (width + 4),
-              34,
-              width,
-              () -> selectTab(each));
+      TabButton tabButton =
+          addRenderableWidget(
+              new TabButton(
+                  left + 14 + each.ordinal() * (width + 4),
+                  top + 34,
+                  width,
+                  20,
+                  Component.translatable(each.labelKey()),
+                  ignored -> selectTab(each)));
       tabButtons.add(tabButton);
     }
     button(null, I18n.get("minemories.ui.retour"), panelWidth - 14 - back, 34, back, this::onClose);
@@ -92,7 +93,7 @@ final class AdvancedScreen extends Screen {
     for (int i = 0; i < tabWidgets.size(); i++) {
       boolean shown = i == selected.ordinal();
       for (AbstractWidget widget : tabWidgets.get(i)) widget.visible = shown;
-      tabButtons.get(i).active = !shown;
+      tabButtons.get(i).setSelected(shown);
     }
     updateButtons();
   }
@@ -150,7 +151,7 @@ final class AdvancedScreen extends Screen {
     defaultsButton =
         button(
             AdvancedTab.ACCOUNT,
-            "API Minemories",
+            I18n.get("minemories.ui.adresse_officielle"),
             14,
             y,
             half,
@@ -202,7 +203,7 @@ final class AdvancedScreen extends Screen {
                 "minemories.ui.definis_les_deux_coins_avec_minemories_select_first_et_second")));
     button(
         AdvancedTab.CAPTURES,
-        "AFK",
+        I18n.get("minemories.ui.captures_auto"),
         14,
         y + 26,
         half,
@@ -343,10 +344,13 @@ final class AdvancedScreen extends Screen {
   @Override
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
-    graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + PANEL_HEIGHT + 1, 0xFF667063);
-    graphics.fill(left, top, left + panelWidth, top + PANEL_HEIGHT, COLOR_PANEL);
+    UiTheme.panel(graphics, left, top, panelWidth, PANEL_HEIGHT);
     graphics.drawString(
-        font, I18n.get("minemories.advanced.title"), left + 14, top + 14, COLOR_TEXT);
+        font,
+        Component.translatable("minemories.advanced.title").withStyle(ChatFormatting.BOLD),
+        left + 14,
+        top + 14,
+        COLOR_TEXT);
     String hint =
         switch (tab) {
           case ACCOUNT -> I18n.get("minemories.ui.adresse_de_lapi_https");

@@ -15,13 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 final class SimpleHubScreen extends Screen {
-  private static final int COLOR_PANEL = 0xFF252926;
-  private static final int COLOR_BORDER = 0xFF667063;
-  private static final int COLOR_CARD = 0xFF30352F;
-  private static final int COLOR_TEXT = 0xFFECE8DC;
-  private static final int COLOR_MUTED = 0xFFB2B6AA;
-  private static final int COLOR_CONNECTED = 0xFF8FD694;
-  private static final int COLOR_WAITING = 0xFFE8B84A;
   private static final int ACTIONS_HEIGHT = 58;
   private final Screen parent;
   private SimpleHubModel.Input input;
@@ -171,6 +164,7 @@ final class SimpleHubScreen extends Screen {
     takeButton.active = actions.captureEnabled();
     autoButton.active = actions.autoEnabled();
     autoButton.setMessage(Component.translatable(SimpleHubModel.autoLabelKey(input)));
+    autoButton.setStatus(input.autoPhotos());
     memoriesButton.active = actions.memoriesEnabled();
   }
 
@@ -257,9 +251,8 @@ final class SimpleHubScreen extends Screen {
   @Override
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
-    graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + panelHeight + 1, COLOR_BORDER);
-    graphics.fill(left, top, left + panelWidth, top + panelHeight, COLOR_PANEL);
-    graphics.fill(left + 10, top + 34, left + panelWidth - 10, top + 88, COLOR_CARD);
+    UiTheme.panel(graphics, left, top, panelWidth, panelHeight);
+    graphics.fill(left + 10, top + 34, left + panelWidth - 10, top + 88, UiTheme.CARD);
   }
 
   @Override
@@ -273,7 +266,7 @@ final class SimpleHubScreen extends Screen {
         top + 14,
         panelWidth - 160,
         1,
-        COLOR_TEXT);
+        UiTheme.TEXT);
     boolean paired = input.paired();
     IconButton.drawScaled(
         graphics, new ItemStack(paired ? Items.EMERALD : Items.BARRIER), left + 18, top + 42);
@@ -284,7 +277,7 @@ final class SimpleHubScreen extends Screen {
         top + 40,
         panelWidth - 70,
         1,
-        paired ? COLOR_CONNECTED : COLOR_WAITING);
+        paired ? UiTheme.OK : UiTheme.WARN);
     drawLines(
         graphics,
         Component.translatable(SimpleHubModel.statusHintKey(input)),
@@ -292,7 +285,7 @@ final class SimpleHubScreen extends Screen {
         top + 52,
         panelWidth - 70,
         3,
-        COLOR_MUTED);
+        UiTheme.MUTED);
     drawLines(
         graphics,
         footer(),
@@ -300,7 +293,7 @@ final class SimpleHubScreen extends Screen {
         top + footerY,
         panelWidth - 28,
         2,
-        result == null ? COLOR_MUTED : COLOR_TEXT);
+        result == null ? UiTheme.MUTED : UiTheme.TEXT);
   }
 
   private Component footer() {
