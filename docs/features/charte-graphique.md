@@ -268,7 +268,7 @@ Le jeu n'est pas une référence d'accessibilité : plusieurs de ses couleurs ne
 
 ## 12. Droits et mentions (à respecter ; ce n'est pas du conseil juridique)
 
-Les règles d'usage de Minecraft (lues le 23/10/2026) disent en substance :
+Les règles d'usage de Minecraft (lues le 23/10/2026) disent en substance (relevé détaillé et sources : [`docs/concepts/regles-usage-minecraft.md`](../concepts/regles-usage-minecraft.md)) :
 
 - la marque couvre « logos, fonts, textures, and any other distinctive characteristics » ;
 - on ne doit rien faire qui laisse croire que c'est officiel, approuvé, soutenu ou associé ;
