@@ -332,3 +332,43 @@
 		animation: none;
 	}
 }
+
+/* Previous / next capture and the switch that hides captures older than the one shown. */
+.film-steps {
+	display: flex;
+	justify-content: center;
+	gap: 2px;
+	padding: 2px 0 6px;
+}
+.cinema-page .film-steps button {
+	display: grid;
+	place-items: center;
+	width: 34px;
+	min-height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 10px;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+.cinema-page .film-steps button:hover:not(:disabled) {
+	background: #ffffff14;
+}
+.cinema-page .film-steps button:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+.cinema-page .film-steps button[aria-pressed="false"] {
+	color: #dcc493;
+	background: #e6c68e22;
+}
+.film-steps .cinema-icon {
+	width: 16px;
+	height: 16px;
+}
+@media (max-width: 800px) {
+	.film-steps {
+		padding: 0 4px;
+	}
+}

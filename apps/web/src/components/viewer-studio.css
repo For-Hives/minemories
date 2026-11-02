@@ -259,7 +259,7 @@
 .cinema-settings {
 	position: absolute;
 	top: 110px;
-	left: 28px;
+	right: 96px;
 	width: 300px;
 	max-height: calc(100% - 270px);
 	overflow: auto;
@@ -495,7 +495,7 @@
 .cinema-page .viewer-sharing {
 	position: absolute;
 	top: 105px;
-	right: 200px;
+	right: 96px;
 	width: min(400px, calc(100% - 48px));
 	margin: 0;
 	padding: 24px;
@@ -681,7 +681,7 @@
 		font-size: 17px;
 	}
 	.cinema-settings {
-		left: 12px;
+		right: 68px;
 		top: 90px;
 		width: min(290px, calc(100% - 84px));
 		max-height: calc(100% - 250px);

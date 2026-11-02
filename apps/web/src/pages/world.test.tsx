@@ -131,6 +131,8 @@ test('loads every capture of the world oldest first, then glides camera and sun 
 	)
 	expect(mocks.showWorld.mock.lastCall?.[0]).toHaveLength(1)
 	expect(mocks.glide).not.toHaveBeenCalled()
+	// Once the shown capture is composed, the camera goes to the player without pressing Recenter.
+	expect(mocks.focusLayer).toHaveBeenCalledTimes(1)
 	key('ArrowRight')
 	expect(current()).toBe(1)
 	expect(mocks.showWorld.mock.lastCall?.[0]).toHaveLength(2)
@@ -147,7 +149,7 @@ test('loads every capture of the world oldest first, then glides camera and sun 
 	fireEvent.keyDown(window, { key: 'ArrowRight', ctrlKey: true })
 	expect(current()).toBe(0)
 	fireEvent.click(screen.getByRole('button', { name: 'Recenter' }))
-	expect(mocks.focusLayer).toHaveBeenCalledTimes(1)
+	expect(mocks.focusLayer).toHaveBeenCalledTimes(2)
 	expect(screen.getAllByRole('link', { name: /^Open alone/ })[1]?.getAttribute('href')).toBe(
 		`/viewer?memory=${frame(2).id}`
 	)
@@ -261,4 +263,26 @@ test('leaving the page cancels pending loads', async () => {
 	resolveWorld(evolution())
 	await flush()
 	expect(mocks.addLayer).not.toHaveBeenCalled()
+})
+
+test('previous and next buttons step through captures and older captures can be hidden', async () => {
+	mount()
+	await waitFor(() => expect(loaded()).toBe(3))
+	const previous = screen.getByRole('button', { name: 'Previous capture' }) as HTMLButtonElement
+	const next = screen.getByRole('button', { name: 'Next capture' }) as HTMLButtonElement
+	expect(previous.disabled).toBe(true)
+	fireEvent.click(next)
+	fireEvent.click(next)
+	expect(current()).toBe(2)
+	expect(next.disabled).toBe(true)
+	fireEvent.click(previous)
+	expect(current()).toBe(1)
+	const older = screen.getByRole('button', { name: 'Older captures' })
+	expect(older.getAttribute('aria-pressed')).toBe('true')
+	mocks.showWorld.mockClear()
+	fireEvent.click(older)
+	expect(older.getAttribute('aria-pressed')).toBe('false')
+	expect(mocks.showWorld.mock.lastCall?.[0]).toHaveLength(1)
+	fireEvent.click(older)
+	expect(mocks.showWorld.mock.lastCall?.[0]).toHaveLength(2)
 })

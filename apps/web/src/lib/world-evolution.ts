@@ -208,22 +208,25 @@ export class WorldComposition {
 		)
 	}
 
-	/** Recomputes visible index buffers; returns the capture positions whose buffers changed. */
-	compose(step: number): number[] {
+	/**
+	 * Recomputes visible index buffers; returns the capture positions whose buffers changed. Captures before
+	 * `floor` stay hidden, which keeps only the recent ones on screen when a world holds many.
+	 */
+	compose(step: number, floor = 0): number[] {
 		const changed: number[] = []
 		for (const [position, capture] of this.captures.entries()) {
 			if (!capture) continue
-			const signature = this.signature(capture, position, step)
+			const signature = this.signature(capture, position, step, floor)
 			if (signature === this.signatures[position]) continue
 			this.signatures[position] = signature
-			for (const primitive of capture.primitives) this.fill(primitive, position, step)
+			for (const primitive of capture.primitives) this.fill(primitive, position, step, floor)
 			changed.push(position)
 		}
 		return changed
 	}
 
-	private signature(capture: EvolutionCapture, position: number, step: number): string {
-		if (position > step) return 'hidden'
+	private signature(capture: EvolutionCapture, position: number, step: number, floor: number): string {
+		if (position > step || position < floor) return 'hidden'
 		const newer = new Set<number>()
 		for (const key of capture.cells)
 			for (const owner of this.owners.get(key) as number[]) if (owner > position && owner <= step) newer.add(owner)
@@ -238,9 +241,9 @@ export class WorldComposition {
 		return bounds
 	}
 
-	private fill(primitive: EvolutionPrimitive, position: number, step: number): void {
+	private fill(primitive: EvolutionPrimitive, position: number, step: number, floor: number): void {
 		primitive.count = 0
-		if (position > step) return
+		if (position > step || position < floor) return
 		for (const cell of primitive.cells) {
 			const covering = this.coveringBounds(position, step, cell.key).filter(bounds => intersects(bounds, cell.box))
 			if (covering.some(bounds => containsBox(bounds, cell.box))) continue
