@@ -7,7 +7,7 @@ import { LoadingSkeleton } from './Loading'
 import { ViewerStudio } from './ViewerStudio'
 
 afterEach(cleanup)
-function mount(ready = true) {
+function mount(ready = true, layers: string[] = [], hidden: string[] = []) {
 	const scene = {
 		setWeather: vi.fn(),
 		setQuality: vi.fn(),
@@ -17,6 +17,9 @@ function mount(ready = true) {
 		setMinutes: vi.fn(),
 		resetView: vi.fn(),
 		snapshot: vi.fn(),
+		categories: vi.fn(() => layers),
+		isCategoryVisible: vi.fn((category: string) => !hidden.includes(category)),
+		setCategoryVisible: vi.fn(),
 	}
 	render(
 		<I18nProvider initialLocale="en">
@@ -172,4 +175,30 @@ test('the capture time button returns the light to the moment the memory was rec
 	expect(capture.getAttribute('aria-pressed')).toBe('false')
 	fireEvent.click(capture)
 	expect(scene.setMinutes).toHaveBeenCalledWith(1035)
+})
+
+test('a model with several layers can hide and restore each of them from the atmosphere panel', () => {
+	const scene = mount(true, ['terrain', 'decor', 'entities'])
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	const decor = screen.getByRole('button', { name: 'Plants and decor' })
+	expect(decor.getAttribute('aria-pressed')).toBe('true')
+	fireEvent.click(decor)
+	expect(scene.setCategoryVisible).toHaveBeenLastCalledWith('decor', false)
+	expect(decor.getAttribute('aria-pressed')).toBe('false')
+	fireEvent.click(decor)
+	expect(scene.setCategoryVisible).toHaveBeenLastCalledWith('decor', true)
+	expect(screen.getByRole('button', { name: 'Creatures' })).toBeTruthy()
+	expect(screen.queryByRole('button', { name: 'Water and lava' })).toBeNull()
+})
+
+test('a single-layer or older model shows no layer switches, and loading models stay locked', () => {
+	mount(true, ['terrain'])
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	expect(screen.queryByText('Layers')).toBeNull()
+})
+
+test('layers hidden earlier stay unchecked when the panel is mounted again', () => {
+	mount(true, ['terrain', 'fluids'], ['fluids'])
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	expect(screen.getByRole('button', { name: 'Water and lava' }).getAttribute('aria-pressed')).toBe('false')
 })

@@ -797,3 +797,24 @@
 		transition: none;
 	}
 }
+.viewer-layers {
+	margin: 24px 0 0;
+	padding: 0;
+	border: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.viewer-layers legend {
+	color: #f3ecdc;
+	font-size: 11px;
+	margin-bottom: 12px;
+}
+.viewer-layers button {
+	padding: 6px 10px;
+	font-size: 11px;
+}
+.viewer-layers button[aria-pressed="false"] {
+	opacity: 0.5;
+	text-decoration: line-through;
+}
