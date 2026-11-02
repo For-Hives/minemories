@@ -71,6 +71,7 @@ public final class ClientRuntime {
   private static final class ExplorationState {
     private ExplorationDepth depth = new ExplorationDepth();
     private VisitedZones zones = new VisitedZones();
+    private ZoneInsights insights = new ZoneInsights();
     private boolean zonesWritable;
     private Path path;
     private boolean writable;
@@ -408,6 +409,7 @@ public final class ClientRuntime {
           EXPLORATION.path = null;
           EXPLORATION.depth = new ExplorationDepth();
           EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.insights = new ZoneInsights();
         }
         playerPositionKnown = false;
         lastActivityMs = now;
@@ -454,6 +456,7 @@ public final class ClientRuntime {
         return;
       }
       afkDiagnostics.captured(result.file());
+      rememberChunks(result.origin(), result.chunks());
       PairingClient.setLastSnapshotAt(now);
       LOGGER.info(
           "AFK capture finished: frames={}, maxStepMs={}, overruns={}, blocks={}, entities={}, quads={}, textures={}",
@@ -576,6 +579,7 @@ public final class ClientRuntime {
       EXPLORATION.path = null;
       EXPLORATION.depth = new ExplorationDepth();
       EXPLORATION.zones = new VisitedZones();
+      EXPLORATION.insights = new ZoneInsights();
       EXPLORATION.writable = false;
       return;
     }
@@ -594,14 +598,17 @@ public final class ClientRuntime {
         var memory = REMOTE_CAPTURE_SESSION.exploration(path);
         EXPLORATION.depth = memory.depth();
         EXPLORATION.zones = memory.zones();
+        EXPLORATION.insights = new ZoneInsights();
         EXPLORATION.writable = false;
         EXPLORATION.zonesWritable = false;
       } else {
         try {
           EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
+          EXPLORATION.insights = readInsights();
           EXPLORATION.zonesWritable = true;
         } catch (IOException | IllegalArgumentException error) {
           EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.insights = new ZoneInsights();
           EXPLORATION.zonesWritable = false;
           LOGGER.warn("Cannot read local zone history; preserving the original file", error);
         }
@@ -653,11 +660,39 @@ public final class ClientRuntime {
     return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".zones");
   }
 
-  static java.util.List<VisitedZones.Zone> suggestedZones() {
+  static java.util.List<ZoneRanking.Suggestion> suggestedZones() {
     Minecraft mc = Minecraft.getInstance();
     trackExploration(mc, System.currentTimeMillis());
     if (mc.level == null || mc.player == null) return java.util.List.of();
-    return EXPLORATION.zones.suggestions();
+    return ZoneRanking.rank(EXPLORATION.zones.all(), EXPLORATION.insights, 5);
+  }
+
+  private static Path insightsPath() {
+    return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".insights");
+  }
+
+  private static ZoneInsights readInsights() {
+    try {
+      return ZoneInsights.read(insightsPath());
+    } catch (IOException | IllegalArgumentException error) {
+      LOGGER.warn("Cannot read local zone insights; starting empty", error);
+      return new ZoneInsights();
+    }
+  }
+
+  /**
+   * Keeps what a finished capture showed about each chunk, locally, and reports how much of it
+   * changed.
+   */
+  private static void rememberChunks(
+      int[] origin, java.util.List<dev.minemories.core.ChunkStats.Chunk> chunks) {
+    if (EXPLORATION.path == null) return;
+    var merge = EXPLORATION.insights.merge(origin[0], origin[2], chunks);
+    LOGGER.info(
+        "Chunks seen by this capture: total={}, changed={}, new={}",
+        merge.total(),
+        merge.changed(),
+        merge.fresh());
   }
 
   private static void saveExploration() {
@@ -665,6 +700,7 @@ public final class ClientRuntime {
     if (EXPLORATION.zonesWritable) {
       try {
         EXPLORATION.zones.save(zoneHistoryPath());
+        EXPLORATION.insights.save(insightsPath());
       } catch (IOException error) {
         LOGGER.warn("Cannot persist local zone history", error);
       }
@@ -1043,6 +1079,9 @@ public final class ClientRuntime {
               Instant.parse(metadata.get("capturedAt").getAsString()),
               metadata.toString(),
               scene::write);
+      rememberChunks(
+          new int[] {center.getX(), center.getY(), center.getZ()},
+          scene.chunkStats().snapshot(center.getX(), center.getY(), center.getZ()));
       player.displayClientMessage(
           Component.literal(
               "Minemories: "

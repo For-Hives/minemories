@@ -102,6 +102,10 @@ interface CaptureSink {
       return scene.materialCount();
     }
 
+    public dev.minemories.core.ChunkStats chunkStats() {
+      return scene.chunkStats();
+    }
+
     public void setSource(String minecraft, String loader, String mod, String dimension) {
       scene.setSource(minecraft, loader, mod, dimension);
     }

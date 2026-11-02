@@ -86,6 +86,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private final ByteBuffer vertexBytes = ByteBuffer.allocate(32).order(ByteOrder.LITTLE_ENDIAN);
   private final ByteBuffer indexBytes = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
   private final VertexCache cache = new VertexCache();
+  private final ChunkStats stats = new ChunkStats();
   private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
   private final GlbMetadata metadata = new GlbMetadata();
   private final int[] quadsByCategory = new int[GlbCategory.values().length];
@@ -119,6 +120,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
       throw new IOException("Spool filesystem must provide file identities");
     }
     directoryIdentity = identity;
+  }
+
+  /** Per-chunk facts of everything added so far. */
+  public ChunkStats chunkStats() {
+    return stats;
   }
 
   public boolean hasGeometry() {
@@ -223,6 +229,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
       part.image.usage.include(uv);
+      stats.quad(category, chunkX, chunkZ, materialName, xyz);
       int before = part.indexCount / 3;
       encode(part, xyz, uv);
       part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
@@ -234,6 +241,12 @@ public final class SpoolingGlbScene implements AutoCloseable {
   }
 
   public void addPointLight(float x, float y, float z, int color, int level) throws IOException {
+    addPointLight(x, y, z, color, level, ChunkRuns.NONE, ChunkRuns.NONE);
+  }
+
+  /** The chunk, relative to the capture origin, is only used for per-chunk statistics. */
+  public void addPointLight(float x, float y, float z, int color, int level, int chunkX, int chunkZ)
+      throws IOException {
     try {
       writable();
       if (level < 4 || !Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return;
@@ -241,6 +254,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (lights.containsKey(key)) return;
       if (lights.size() >= limits.lights()) throw new IOException("GLB light limit exceeded");
       lights.put(key, new Light(x, y, z, color, level));
+      stats.light(chunkX, chunkZ);
     } catch (IOException error) {
       throw invalidate(error);
     }

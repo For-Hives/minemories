@@ -19,7 +19,7 @@ final class CaptureElement implements CaptureSink {
   record Material(
       String key, String name, String image, int tint, int alpha, float emission, float opacity) {}
 
-  record Light(float x, float y, float z, int color, int level) {}
+  record Light(float x, float y, float z, int color, int level, int chunkX, int chunkZ) {}
 
   static final class Quad {
     private final Material material;
@@ -172,7 +172,7 @@ final class CaptureElement implements CaptureSink {
     writable();
     if (level < 4 || !Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return;
     reserve(64);
-    lights.add(new Light(x, y, z, color, level));
+    lights.add(new Light(x, y, z, color, level, chunkX, chunkZ));
   }
 
   private static int textBytes(String value) throws IOException {
