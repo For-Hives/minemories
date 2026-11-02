@@ -24,6 +24,7 @@ public final class GlbScene {
   }
 
   private final Map<String, Part> parts = new LinkedHashMap<>();
+  private final VertexCache cache = new VertexCache();
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
@@ -44,15 +45,27 @@ public final class GlbScene {
     // unsupported/partially initialized models. Never serialize those into glTF.
     for (float value : xyz) if (!Float.isFinite(value)) return;
     for (float value : uv) if (!Float.isFinite(value)) return;
+    float[] normal = new float[3];
+    // A quad without any area renders nothing: it is dropped rather than written with a zero
+    // normal.
+    if (!QuadGeometry.normal(xyz, normal)) return;
     float safeEmission = Float.isFinite(emission) ? emission : 0;
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
     Part part =
         parts.computeIfAbsent(
             key,
             ignored ->
-                new Part(materialName, imageKey, png, tint, alphaMode, safeEmission, safeOpacity));
+                new Part(
+                    parts.size(),
+                    materialName,
+                    imageKey,
+                    png,
+                    tint,
+                    alphaMode,
+                    safeEmission,
+                    safeOpacity));
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
-    part.addQuad(xyz, uv);
+    part.addQuad(cache, xyz, uv, normal);
   }
 
   public int materialCount() {
@@ -335,6 +348,7 @@ public final class GlbScene {
   }
 
   private static final class Part {
+    final int id;
     final String name, imageKey;
     final byte[] png;
     final int tint, alphaMode;
@@ -345,9 +359,12 @@ public final class GlbScene {
         indices = new ByteArrayOutputStream();
     final float[] min = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
         max = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
+    private final float[] key = new float[8];
+    private final int[] corners = new int[4];
     int vertices, indexCount;
 
     Part(
+        int id,
         String name,
         String imageKey,
         byte[] png,
@@ -355,6 +372,7 @@ public final class GlbScene {
         int alphaMode,
         float emission,
         float opacity) {
+      this.id = id;
       this.name = name;
       this.imageKey = imageKey;
       this.png = png;
@@ -364,48 +382,34 @@ public final class GlbScene {
       this.opacity = opacity;
     }
 
-    void addQuad(float[] p, float[] uv) {
-      double ax = (double) p[3] - p[0],
-          ay = (double) p[4] - p[1],
-          az = (double) p[5] - p[2],
-          bx = (double) p[6] - p[0],
-          by = (double) p[7] - p[1],
-          bz = (double) p[8] - p[2];
-      double nx = ay * bz - az * by,
-          ny = az * bx - ax * bz,
-          nz = ax * by - ay * bx,
-          len = Math.sqrt(nx * nx + ny * ny + nz * nz);
-      if (len > 0) {
-        nx /= len;
-        ny /= len;
-        nz /= len;
+    void addQuad(VertexCache cache, float[] p, float[] uv, float[] normal) {
+      for (int corner = 0; corner < 4; corner++) {
+        QuadGeometry.corner(key, p, normal, uv, corner);
+        int known = cache.intern(id, key, vertices);
+        if (known < 0) {
+          known = vertices++;
+          for (int axis = 0; axis < 3; axis++) {
+            f(positions, key[axis]);
+            f(normals, key[3 + axis]);
+            min[axis] = Math.min(min[axis], key[axis]);
+            max[axis] = Math.max(max[axis], key[axis]);
+          }
+          f(uvs, key[6]);
+          f(uvs, key[7]);
+        }
+        corners[corner] = known;
       }
-      for (int i = 0; i < 4; i++) {
-        float x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
-        f(positions, x);
-        f(positions, y);
-        f(positions, z);
-        f(normals, (float) nx);
-        f(normals, (float) ny);
-        f(normals, (float) nz);
-        f(uvs, uv[i * 2]);
-        f(uvs, uv[i * 2 + 1]);
-        min[0] = Math.min(min[0], x);
-        min[1] = Math.min(min[1], y);
-        min[2] = Math.min(min[2], z);
-        max[0] = Math.max(max[0], x);
-        max[1] = Math.max(max[1], y);
-        max[2] = Math.max(max[2], z);
-      }
-      int base = vertices;
-      i(indices, base);
-      i(indices, base + 1);
-      i(indices, base + 2);
-      i(indices, base);
-      i(indices, base + 2);
-      i(indices, base + 3);
-      vertices += 4;
-      indexCount += 6;
+      triangle(corners[0], corners[1], corners[2]);
+      triangle(corners[0], corners[2], corners[3]);
+    }
+
+    private void triangle(int a, int b, int c) {
+      // Welding can collapse a triangle of a quad that already had a repeated corner.
+      if (a == b || b == c || a == c) return;
+      i(indices, a);
+      i(indices, b);
+      i(indices, c);
+      indexCount += 3;
     }
   }
 
