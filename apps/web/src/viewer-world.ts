@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { meshVisible } from './lib/glb-categories'
 import {
 	type BlockBounds,
 	type BlockPoint,
@@ -97,7 +98,7 @@ export function applyLayer(layer: WorldLayer): void {
 	for (const { mesh, primitive } of layer.meshes) {
 		const index = mesh.geometry.index as THREE.BufferAttribute
 		mesh.geometry.setDrawRange(0, primitive.count)
-		mesh.visible = primitive.count > 0
+		mesh.visible = meshVisible(primitive.count, mesh.userData.categoryHidden === true)
 		if (primitive.count === 0) continue
 		index.clearUpdateRanges()
 		index.addUpdateRange(0, primitive.count)

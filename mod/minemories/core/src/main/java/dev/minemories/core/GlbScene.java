@@ -9,12 +9,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
+  /** Marks quads whose chunk is unknown: the primitive then publishes no chunk ranges. */
+  public static final int NO_CHUNK = ChunkRuns.NONE;
+
   private String playerExtras = "";
 
   /** Local player feet, relative to the exported origin. No world coordinates are embedded. */
@@ -24,10 +28,51 @@ public final class GlbScene {
   }
 
   private final Map<String, Part> parts = new LinkedHashMap<>();
+  private final VertexCache cache = new VertexCache();
+  private final ChunkStats stats = new ChunkStats();
+  private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
+  private final GlbMetadata metadata = new GlbMetadata();
+  private final int[] quadsByCategory = new int[GlbCategory.values().length];
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
+  /** Non-personal technical description written into {@code asset.extras.minemories}. */
+  public void setSource(String minecraft, String loader, String mod, String dimension) {
+    metadata.setSource(minecraft, loader, mod, dimension);
+  }
+
   public void addQuad(
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      float[] xyz,
+      float[] uv) {
+    addQuad(
+        GlbCategory.TERRAIN,
+        ChunkRuns.NONE,
+        ChunkRuns.NONE,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        xyz,
+        uv);
+  }
+
+  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
       String key,
       String materialName,
       String imageKey,
@@ -44,15 +89,38 @@ public final class GlbScene {
     // unsupported/partially initialized models. Never serialize those into glTF.
     for (float value : xyz) if (!Float.isFinite(value)) return;
     for (float value : uv) if (!Float.isFinite(value)) return;
+    float[] normal = new float[3];
+    // A quad without any area renders nothing: it is dropped rather than written with a zero
+    // normal.
+    if (!QuadGeometry.normal(xyz, normal)) return;
     float safeEmission = Float.isFinite(emission) ? emission : 0;
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
     Part part =
         parts.computeIfAbsent(
-            key,
+            category.ordinal() + ":" + key,
             ignored ->
-                new Part(materialName, imageKey, png, tint, alphaMode, safeEmission, safeOpacity));
+                new Part(
+                    parts.size(),
+                    category,
+                    new ChunkRuns(runBudget),
+                    materialName,
+                    imageKey,
+                    png,
+                    tint,
+                    alphaMode,
+                    safeEmission,
+                    safeOpacity));
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
-    part.addQuad(xyz, uv);
+    stats.quad(category, chunkX, chunkZ, materialName, xyz);
+    int before = part.indexCount / 3;
+    part.addQuad(cache, xyz, uv, normal);
+    part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
+    quadsByCategory[category.ordinal()]++;
+  }
+
+  /** Per-chunk facts of everything added so far. */
+  public ChunkStats chunkStats() {
+    return stats;
   }
 
   public int materialCount() {
@@ -64,13 +132,21 @@ public final class GlbScene {
   }
 
   public void addPointLight(float x, float y, float z, int color, int level) {
+    addPointLight(x, y, z, color, level, NO_CHUNK, NO_CHUNK);
+  }
+
+  /** The chunk, relative to the capture origin, is only used for per-chunk statistics. */
+  public void addPointLight(
+      float x, float y, float z, int color, int level, int chunkX, int chunkZ) {
     if (level < 4
         || pointLights.size() >= 128
         || !Float.isFinite(x)
         || !Float.isFinite(y)
         || !Float.isFinite(z)) return;
     String key = Math.round(x * 2) + ":" + Math.round(y * 2) + ":" + Math.round(z * 2);
-    pointLights.putIfAbsent(key, new PointLight(x, y, z, color, level));
+    if (pointLights.putIfAbsent(key, new PointLight(x, y, z, color, level)) == null) {
+      stats.light(chunkX, chunkZ);
+    }
   }
 
   public void write(Path output) throws IOException {
@@ -78,49 +154,76 @@ public final class GlbScene {
     ByteArrayOutputStream binary = new ByteArrayOutputStream();
     List<String> views = new ArrayList<>(),
         accessors = new ArrayList<>(),
-        primitives = new ArrayList<>();
+        meshes = new ArrayList<>();
+    Map<GlbCategory, List<String>> byCategory = new EnumMap<>(GlbCategory.class);
     List<String> materials = new ArrayList<>(),
         images = new ArrayList<>(),
         textures = new ArrayList<>();
     Map<String, Integer> imageIndices = new LinkedHashMap<>();
     int materialIndex = 0;
+    Map<GlbCategory, Quantization.Plan> plans = quantizationPlans();
+    Map<String, byte[]> repacked = repackAtlases();
     for (Part part : parts.values()) {
+      Quantization.Plan plan = plans.get(part.category);
+      byte[] positionBytes =
+          plan == null
+              ? part.positions.toByteArray()
+              : quantize(
+                  0,
+                  part.positions.toByteArray(),
+                  part.vertices * Quantization.POSITION,
+                  plan,
+                  null);
+      byte[] normalBytes =
+          quantize(1, part.normals.toByteArray(), part.vertices * Quantization.NORMAL, null, null);
+      boolean packedUv = part.uvFits;
+      byte[] uvBytes =
+          packedUv
+              ? quantize(
+                  2,
+                  part.uvs.toByteArray(),
+                  part.vertices * Quantization.UV,
+                  null,
+                  part.uvTransform)
+              : part.uvs.toByteArray();
       int pos =
           accessor(
               binary,
               views,
               accessors,
-              part.positions.toByteArray(),
+              positionBytes,
               34962,
-              5126,
+              plan == null ? 5126 : 5122,
               part.vertices,
               "VEC3",
-              part.min,
-              part.max);
+              plan == null
+                  ? ",\"min\":" + vec(part.min) + ",\"max\":" + vec(part.max)
+                  : ",\"min\":" + ints(part.min, plan) + ",\"max\":" + ints(part.max, plan),
+              plan == null ? 0 : Quantization.POSITION);
       int normal =
           accessor(
               binary,
               views,
               accessors,
-              part.normals.toByteArray(),
+              normalBytes,
               34962,
-              5126,
+              5120,
               part.vertices,
               "VEC3",
-              null,
-              null);
+              ",\"normalized\":true",
+              Quantization.NORMAL);
       int uv =
           accessor(
               binary,
               views,
               accessors,
-              part.uvs.toByteArray(),
+              uvBytes,
               34962,
-              5126,
+              packedUv ? 5123 : 5126,
               part.vertices,
               "VEC2",
-              null,
-              null);
+              packedUv ? ",\"normalized\":true" : "",
+              packedUv ? Quantization.UV : 0);
       byte[] packedIndices = part.indices.toByteArray();
       int indexWidth = GlbIndices.width(part.vertices);
       if (indexWidth < 4) {
@@ -138,25 +241,33 @@ public final class GlbScene {
               GlbIndices.componentType(part.vertices),
               part.indexCount,
               "SCALAR",
-              null,
-              null);
-      primitives.add(
-          "{\"attributes\":{\"POSITION\":"
-              + pos
-              + ",\"NORMAL\":"
-              + normal
-              + ",\"TEXCOORD_0\":"
-              + uv
-              + "},\"indices\":"
-              + indices
-              + ",\"material\":"
-              + materialIndex
-              + ",\"mode\":4}");
+              "",
+              0);
+      String ranges = part.runs.json();
+      byCategory
+          .computeIfAbsent(part.category, ignored -> new ArrayList<>())
+          .add(
+              "{\"attributes\":{\"POSITION\":"
+                  + pos
+                  + ",\"NORMAL\":"
+                  + normal
+                  + ",\"TEXCOORD_0\":"
+                  + uv
+                  + "},\"indices\":"
+                  + indices
+                  + ",\"material\":"
+                  + materialIndex
+                  + ",\"mode\":4"
+                  + (ranges == null ? "" : ",\"extras\":{\"minemoriesChunks\":" + ranges + "}")
+                  + "}");
       Integer texture = imageIndices.get(part.imageKey);
       if (texture == null) {
         align(binary);
         int offset = binary.size();
-        byte[] png = atlasUsage.get(part.imageKey).optimize(part.png);
+        byte[] png =
+            repacked.containsKey(part.imageKey)
+                ? repacked.get(part.imageKey)
+                : atlasUsage.get(part.imageKey).optimize(part.png);
         binary.write(png);
         int view = views.size();
         views.add("{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + png.length + "}");
@@ -212,7 +323,20 @@ public final class GlbScene {
       materialIndex++;
     }
     List<String> nodes = new ArrayList<>();
-    nodes.add("{\"mesh\":0}");
+    for (GlbCategory category : GlbCategory.values()) {
+      List<String> group = byCategory.get(category);
+      if (group == null) continue;
+      nodes.add(
+          "{\"name\":\""
+              + category.id()
+              + "\""
+              + Quantization.transform(plans.get(category))
+              + ",\"mesh\":"
+              + meshes.size()
+              + "}");
+      meshes.add(
+          "{\"name\":\"" + category.id() + "\",\"primitives\":[" + String.join(",", group) + "]}");
+    }
     List<String> lights = new ArrayList<>();
     for (PointLight light : pointLights.values()) {
       int id = lights.size();
@@ -245,21 +369,24 @@ public final class GlbScene {
               + "}}}");
     }
     String lightExtension =
-        lights.isEmpty()
-            ? ""
-            : ",\"extensionsUsed\":[\"KHR_lights_punctual\"],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
-                + String.join(",", lights)
-                + "]}}";
+        Quantization.extensions(!lights.isEmpty())
+            + (lights.isEmpty()
+                ? ""
+                : ",\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
+                    + String.join(",", lights)
+                    + "]}}");
     String json =
-        "{\"asset\":{\"version\":\"2.0\",\"generator\":\"Minemories\"},\"scene\":0,\"scenes\":[{\"nodes\":["
+        "{\"asset\":"
+            + metadata.assetJson(quadsByCategory)
+            + ",\"scene\":0,\"scenes\":[{\"nodes\":["
             + indices(nodes.size())
             + "]"
             + playerExtras
             + "}],\"nodes\":["
             + String.join(",", nodes)
-            + "],\"meshes\":[{\"primitives\":["
-            + String.join(",", primitives)
-            + "]}],\"materials\":["
+            + "],\"meshes\":["
+            + String.join(",", meshes)
+            + "],\"materials\":["
             + String.join(",", materials)
             + "],\"textures\":["
             + String.join(",", textures)
@@ -302,8 +429,8 @@ public final class GlbScene {
       int component,
       int count,
       String type,
-      float[] min,
-      float[] max)
+      String extra,
+      int stride)
       throws IOException {
     align(binary);
     int offset = binary.size();
@@ -314,10 +441,10 @@ public final class GlbScene {
             + offset
             + ",\"byteLength\":"
             + data.length
+            + (stride == 0 ? "" : ",\"byteStride\":" + stride)
             + ",\"target\":"
             + target
             + "}");
-    String bounds = min == null ? "" : ",\"min\":" + vec(min) + ",\"max\":" + vec(max);
     int result = accessors.size();
     accessors.add(
         "{\"bufferView\":"
@@ -329,12 +456,84 @@ public final class GlbScene {
             + ",\"type\":\""
             + type
             + "\""
-            + bounds
+            + extra
             + "}");
     return result;
   }
 
+  private Map<GlbCategory, Quantization.Plan> quantizationPlans() {
+    Map<GlbCategory, float[][]> extents = new EnumMap<>(GlbCategory.class);
+    for (Part part : parts.values()) {
+      float[][] extent =
+          extents.computeIfAbsent(
+              part.category,
+              ignored ->
+                  new float[][] {
+                    {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
+                    {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY}
+                  });
+      for (int axis = 0; axis < 3; axis++) {
+        extent[0][axis] = Math.min(extent[0][axis], part.min[axis]);
+        extent[1][axis] = Math.max(extent[1][axis], part.max[axis]);
+      }
+    }
+    Map<GlbCategory, Quantization.Plan> plans = new EnumMap<>(GlbCategory.class);
+    extents.forEach(
+        (category, extent) -> {
+          Quantization.Plan plan = Quantization.plan(extent[0], extent[1]);
+          if (plan != null) plans.put(category, plan);
+        });
+    return plans;
+  }
+
+  private static byte[] quantize(
+      int kind, byte[] floats, int size, Quantization.Plan plan, double[] uvTransform) {
+    byte[] out = new byte[size];
+    Quantization.convert(kind, floats, floats.length, out, plan, uvTransform);
+    return out;
+  }
+
+  /** Repacks mostly unused atlases and remaps the UVs of their primitives; keyed by image. */
+  private Map<String, byte[]> repackAtlases() throws IOException {
+    Map<String, byte[]> result = new LinkedHashMap<>();
+    for (Map.Entry<String, AtlasTexture.Usage> entry : atlasUsage.entrySet()) {
+      String imageKey = entry.getKey();
+      AtlasTexture.Usage usage = entry.getValue();
+      if (!usage.candidate()) continue;
+      List<Part> users = new ArrayList<>();
+      for (Part part : parts.values()) if (part.imageKey.equals(imageKey)) users.add(part);
+      byte[] png = users.get(0).png;
+      int[] size = AtlasTexture.dimensions(png);
+      if (size == null) continue;
+      AtlasRepack.Plan plan =
+          AtlasRepack.plan(
+              png, size[0], size[1], users.stream().map(part -> part.uvBounds).toList());
+      if (plan == null) continue;
+      for (int index = 0; index < users.size(); index++) {
+        users.get(index).uvTransform =
+            new double[] {
+              plan.scaleU(), plan.offsetU()[index], plan.scaleV(), plan.offsetV()[index]
+            };
+      }
+      result.put(imageKey, plan.png());
+    }
+    return result;
+  }
+
+  private static String ints(float[] bound, Quantization.Plan plan) {
+    return "["
+        + plan.quantize(bound[0], plan.x())
+        + ","
+        + plan.quantize(bound[1], plan.y())
+        + ","
+        + plan.quantize(bound[2], plan.z())
+        + "]";
+  }
+
   private static final class Part {
+    final int id;
+    final GlbCategory category;
+    final ChunkRuns runs;
     final String name, imageKey;
     final byte[] png;
     final int tint, alphaMode;
@@ -345,9 +544,17 @@ public final class GlbScene {
         indices = new ByteArrayOutputStream();
     final float[] min = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
         max = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
+    private final float[] key = new float[8];
+    private final int[] corners = new int[4];
+    boolean uvFits = true;
+    final UvBounds uvBounds = new UvBounds();
+    double[] uvTransform;
     int vertices, indexCount;
 
     Part(
+        int id,
+        GlbCategory category,
+        ChunkRuns runs,
         String name,
         String imageKey,
         byte[] png,
@@ -355,6 +562,9 @@ public final class GlbScene {
         int alphaMode,
         float emission,
         float opacity) {
+      this.id = id;
+      this.category = category;
+      this.runs = runs;
       this.name = name;
       this.imageKey = imageKey;
       this.png = png;
@@ -364,48 +574,36 @@ public final class GlbScene {
       this.opacity = opacity;
     }
 
-    void addQuad(float[] p, float[] uv) {
-      double ax = (double) p[3] - p[0],
-          ay = (double) p[4] - p[1],
-          az = (double) p[5] - p[2],
-          bx = (double) p[6] - p[0],
-          by = (double) p[7] - p[1],
-          bz = (double) p[8] - p[2];
-      double nx = ay * bz - az * by,
-          ny = az * bx - ax * bz,
-          nz = ax * by - ay * bx,
-          len = Math.sqrt(nx * nx + ny * ny + nz * nz);
-      if (len > 0) {
-        nx /= len;
-        ny /= len;
-        nz /= len;
+    void addQuad(VertexCache cache, float[] p, float[] uv, float[] normal) {
+      for (int corner = 0; corner < 4; corner++) {
+        QuadGeometry.corner(key, p, normal, uv, corner);
+        int known = cache.intern(id, key, vertices);
+        if (known < 0) {
+          known = vertices++;
+          for (int axis = 0; axis < 3; axis++) {
+            f(positions, key[axis]);
+            f(normals, key[3 + axis]);
+            min[axis] = Math.min(min[axis], key[axis]);
+            max[axis] = Math.max(max[axis], key[axis]);
+          }
+          f(uvs, key[6]);
+          f(uvs, key[7]);
+          uvFits = uvFits && Quantization.uvFits(key[6], key[7]);
+          uvBounds.include(key[6], key[7]);
+        }
+        corners[corner] = known;
       }
-      for (int i = 0; i < 4; i++) {
-        float x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
-        f(positions, x);
-        f(positions, y);
-        f(positions, z);
-        f(normals, (float) nx);
-        f(normals, (float) ny);
-        f(normals, (float) nz);
-        f(uvs, uv[i * 2]);
-        f(uvs, uv[i * 2 + 1]);
-        min[0] = Math.min(min[0], x);
-        min[1] = Math.min(min[1], y);
-        min[2] = Math.min(min[2], z);
-        max[0] = Math.max(max[0], x);
-        max[1] = Math.max(max[1], y);
-        max[2] = Math.max(max[2], z);
-      }
-      int base = vertices;
-      i(indices, base);
-      i(indices, base + 1);
-      i(indices, base + 2);
-      i(indices, base);
-      i(indices, base + 2);
-      i(indices, base + 3);
-      vertices += 4;
-      indexCount += 6;
+      triangle(corners[0], corners[1], corners[2]);
+      triangle(corners[0], corners[2], corners[3]);
+    }
+
+    private void triangle(int a, int b, int c) {
+      // Welding can collapse a triangle of a quad that already had a repeated corner.
+      if (a == b || b == c || a == c) return;
+      i(indices, a);
+      i(indices, b);
+      i(indices, c);
+      indexCount += 3;
     }
   }
 

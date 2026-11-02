@@ -1,5 +1,7 @@
 package dev.minemories.client;
 
+import dev.minemories.core.GlbCategory;
+import dev.minemories.core.GlbScene;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -17,15 +19,26 @@ final class CaptureElement implements CaptureSink {
   record Material(
       String key, String name, String image, int tint, int alpha, float emission, float opacity) {}
 
-  record Light(float x, float y, float z, int color, int level) {}
+  record Light(float x, float y, float z, int color, int level, int chunkX, int chunkZ) {}
 
   static final class Quad {
     private final Material material;
     private final float[] positions;
     private final float[] uvs;
-    private final int layer;
+    private final int layer, chunkX, chunkZ;
+    private final GlbCategory category;
 
-    private Quad(Material material, float[] positions, float[] uvs, int layer) {
+    private Quad(
+        Material material,
+        float[] positions,
+        float[] uvs,
+        int layer,
+        GlbCategory category,
+        int chunkX,
+        int chunkZ) {
+      this.category = category;
+      this.chunkX = chunkX;
+      this.chunkZ = chunkZ;
       this.material = material;
       this.positions = positions.clone();
       this.uvs = uvs.clone();
@@ -47,6 +60,18 @@ final class CaptureElement implements CaptureSink {
     int layer() {
       return layer;
     }
+
+    GlbCategory category() {
+      return category;
+    }
+
+    int chunkX() {
+      return chunkX;
+    }
+
+    int chunkZ() {
+      return chunkZ;
+    }
   }
 
   record Snapshot(List<Quad> quads, List<Light> lights, long chargedBytes) {
@@ -59,6 +84,8 @@ final class CaptureElement implements CaptureSink {
   private final List<Quad> quads = new ArrayList<>();
   private final List<Light> lights = new ArrayList<>();
   private final Map<String, Material> materials = new LinkedHashMap<>();
+  private GlbCategory category = GlbCategory.TERRAIN;
+  private int chunkX = GlbScene.NO_CHUNK, chunkZ = GlbScene.NO_CHUNK;
   private long bytes;
   private int attempted;
   private boolean sealed;
@@ -130,7 +157,14 @@ final class CaptureElement implements CaptureSink {
     }
     // Charge object/array/list overhead conservatively, independently of GC or array compression.
     reserve(256);
-    quads.add(new Quad(material, xyz, uv, layer));
+    quads.add(new Quad(material, xyz, uv, layer, category, chunkX, chunkZ));
+  }
+
+  @Override
+  public void classify(GlbCategory category, int chunkX, int chunkZ) {
+    this.category = Objects.requireNonNull(category);
+    this.chunkX = chunkX;
+    this.chunkZ = chunkZ;
   }
 
   @Override
@@ -138,7 +172,7 @@ final class CaptureElement implements CaptureSink {
     writable();
     if (level < 4 || !Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return;
     reserve(64);
-    lights.add(new Light(x, y, z, color, level));
+    lights.add(new Light(x, y, z, color, level, chunkX, chunkZ));
   }
 
   private static int textBytes(String value) throws IOException {

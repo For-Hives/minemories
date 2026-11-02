@@ -5,6 +5,7 @@ import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
 import { ViewerIcon } from './ViewerIcons'
+import { ViewerLayers } from './ViewerLayers'
 import { ViewerTime } from './ViewerTime'
 import './viewer-studio.css'
 
@@ -252,6 +253,7 @@ export function ViewerStudio({
 							<option value="eco">{t('Eco · lightweight')}</option>
 						</select>
 					</label>
+					<ViewerLayers sceneRef={sceneRef} ready={ready} />
 					<small>{t('Sky colors follow the memory’s biome when available.')}</small>
 				</section>
 			)}

@@ -40,7 +40,7 @@
 		"package:mod:test": "node --test scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
 		"api:garage": "node scripts/garage-integration.mjs",
 		"api:coverage:test": "node --test scripts/check-api-coverage.test.mjs",
-		"release:test": "node --test scripts/release-utils.test.mjs scripts/sync-release-versions.test.mjs scripts/release-flow.test.mjs scripts/release-assets.test.mjs",
+		"release:test": "node --test scripts/release-utils.test.mjs scripts/sync-release-versions.test.mjs scripts/release-flow.test.mjs scripts/release-assets.test.mjs scripts/build-release-target.test.mjs",
 		"package:mod:all": "node scripts/package-mod.mjs --all"
 	},
 	"devDependencies": {

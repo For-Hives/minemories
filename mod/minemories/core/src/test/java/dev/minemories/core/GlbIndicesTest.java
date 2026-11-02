@@ -68,6 +68,14 @@ final class GlbIndicesTest {
           second = directory.resolve("spool-" + quads + ".glb");
       try (SpoolingGlbScene spool = new SpoolingGlbScene(directory)) {
         for (int i = 0; i < quads; i++) {
+          // Distinct positions: identical quads would be welded into shared vertices.
+          float[] xyz = SpoolingGlbSceneTest.XYZ.clone();
+          // A 256 × n grid keeps the extent quantizable: 8 + 4 + 4 bytes per vertex.
+          int column = i % 256, row = i / 256;
+          for (int corner = 0; corner < 4; corner++) {
+            xyz[corner * 3] += column * 2f;
+            xyz[corner * 3 + 2] += row * 2f;
+          }
           memory.addQuad(
               "part",
               "part",
@@ -77,9 +85,19 @@ final class GlbIndicesTest {
               1,
               0,
               1,
-              SpoolingGlbSceneTest.XYZ,
+              xyz,
               SpoolingGlbSceneTest.UV);
-          SpoolingGlbSceneTest.add(spool, "part");
+          spool.addQuad(
+              "part",
+              "material part",
+              "sprite",
+              SpoolingGlbSceneTest.PNG,
+              0xffffff,
+              1,
+              0,
+              1,
+              xyz,
+              SpoolingGlbSceneTest.UV);
         }
         memory.write(first);
         spool.write(second);
@@ -91,7 +109,7 @@ final class GlbIndicesTest {
         int vertices = quads * 4, width = GlbIndices.width(vertices);
         assertTrue(json.contains("\"componentType\":" + GlbIndices.componentType(vertices)));
         int bin = 28 + jsonBytes;
-        int last = bin + vertices * 32 + (quads * 6 - 1) * width;
+        int last = bin + vertices * 16 + (quads * 6 - 1) * width;
         int value =
             switch (width) {
               case 1 -> Byte.toUnsignedInt(parsed.get(last));

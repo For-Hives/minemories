@@ -72,6 +72,7 @@ function sceneFixture() {
 	const scene = Object.create(ViewerScene.prototype) as ViewerScene
 	const fields = {
 		modelRoot,
+		hiddenCategories: new Set(),
 		camera: new THREE.PerspectiveCamera(),
 		sky: new THREE.Mesh(),
 		loader: { parseAsync: vi.fn(async () => ({ scene: next })) },
@@ -511,4 +512,41 @@ test('the weather ceiling covers visible drawn triangles only, in scene coordina
 	modelRoot.clear()
 	;(scene as unknown as { refreshCeiling(): void }).refreshCeiling()
 	expect(setCeiling).toHaveBeenLastCalledWith(null)
+})
+
+test('categories of a format 2 capture can be hidden and restored, including on later captures', async () => {
+	const THREE = await import('three')
+	const modelRoot = new THREE.Group()
+	const terrain = new THREE.Mesh(new THREE.BoxGeometry())
+	terrain.name = 'terrain'
+	const decor = new THREE.Group()
+	decor.name = 'decor'
+	const composed = new THREE.Mesh(new THREE.BoxGeometry())
+	composed.name = 'fluids'
+	composed.geometry.setDrawRange(0, 0)
+	modelRoot.add(terrain, decor, composed, new THREE.Object3D())
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	Object.assign(scene, {
+		modelRoot,
+		hiddenCategories: new Set(),
+		keyLight: { shadow: { needsUpdate: false } },
+		renderer: { shadowMap: { needsUpdate: false } },
+	})
+	expect(scene.categories()).toEqual(['terrain', 'decor', 'fluids'])
+	scene.setCategoryVisible('terrain', false)
+	scene.setCategoryVisible('decor', false)
+	scene.setCategoryVisible('fluids', true)
+	expect(terrain.visible).toBe(false)
+	expect(decor.visible).toBe(false)
+	// A mesh a composed world does not draw stays hidden even when its category is on.
+	expect(composed.visible).toBe(false)
+	expect(scene.isCategoryVisible('terrain')).toBe(false)
+	expect(scene.isCategoryVisible('fluids')).toBe(true)
+	scene.setCategoryVisible('terrain', true)
+	expect(terrain.visible).toBe(true)
+	expect(terrain.userData.categoryHidden).toBe(false)
+	const later = new THREE.Group()
+	later.name = 'decor'
+	;(scene as unknown as { applyCategories(root: THREE.Object3D): void }).applyCategories(later)
+	expect(later.visible).toBe(false)
 })

@@ -62,12 +62,29 @@ final class CaptureCursor {
     else y++;
   }
 
+  /**
+   * Chunk-major order: every column of a 16 × 16 chunk before the next chunk, so each primitive of
+   * the exported GLB is written chunk by chunk and its triangle ranges stay few.
+   */
   private void nextColumn() {
     column = null;
-    if (x == bounds.maxX()) {
+    long chunkMinX = Math.floorDiv((long) x, 16L) * 16L,
+        chunkMinZ = Math.floorDiv((long) z, 16L) * 16L;
+    long rowEnd = Math.min(chunkMinX + 15, bounds.maxX()),
+        colEnd = Math.min(chunkMinZ + 15, bounds.maxZ());
+    if (x < rowEnd) {
+      x++;
+    } else if (z < colEnd) {
+      x = (int) Math.max(chunkMinX, bounds.minX());
+      z++;
+    } else if (chunkMinX + 16 <= bounds.maxX()) {
+      x = (int) (chunkMinX + 16);
+      z = (int) Math.max(chunkMinZ, bounds.minZ());
+    } else if (chunkMinZ + 16 <= bounds.maxZ()) {
       x = bounds.minX();
-      if (z == bounds.maxZ()) done = true;
-      else z++;
-    } else x++;
+      z = (int) (chunkMinZ + 16);
+    } else {
+      done = true;
+    }
   }
 }

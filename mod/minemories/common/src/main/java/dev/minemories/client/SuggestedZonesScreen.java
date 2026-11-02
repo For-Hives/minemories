@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 /** Suggestions only: viewing this screen never selects, captures or sends a zone. */
 final class SuggestedZonesScreen extends Screen {
   private final Screen parent;
-  private List<VisitedZones.Zone> zones = List.of();
+  private List<ZoneRanking.Suggestion> zones = List.of();
   private int left;
   private int top;
   private int panelWidth;

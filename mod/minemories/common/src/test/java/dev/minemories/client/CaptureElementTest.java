@@ -79,4 +79,18 @@ class CaptureElementTest {
   private static void add(CaptureElement capture) throws IOException {
     capture.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
   }
+
+  @Test
+  void quadsRememberTheCategoryAndChunkInForceWhenTheyWereCopied() throws Exception {
+    var capture = new CaptureElement();
+    add(capture);
+    capture.classify(dev.minemories.core.GlbCategory.DECOR, 3, -4);
+    add(capture);
+    var quads = capture.seal().quads();
+    assertEquals(dev.minemories.core.GlbCategory.TERRAIN, quads.get(0).category());
+    assertEquals(dev.minemories.core.GlbScene.NO_CHUNK, quads.get(0).chunkX());
+    assertEquals(dev.minemories.core.GlbCategory.DECOR, quads.get(1).category());
+    assertEquals(3, quads.get(1).chunkX());
+    assertEquals(-4, quads.get(1).chunkZ());
+  }
 }

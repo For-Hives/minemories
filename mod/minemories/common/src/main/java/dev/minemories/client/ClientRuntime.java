@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import dev.minemories.core.GlbCategory;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -70,6 +71,7 @@ public final class ClientRuntime {
   private static final class ExplorationState {
     private ExplorationDepth depth = new ExplorationDepth();
     private VisitedZones zones = new VisitedZones();
+    private ZoneInsights insights = new ZoneInsights();
     private boolean zonesWritable;
     private Path path;
     private boolean writable;
@@ -132,6 +134,26 @@ public final class ClientRuntime {
 
   static String captureFailure() {
     return captureFailure;
+  }
+
+  /** Technical, non-personal fields written into the GLB: Minecraft, loader, mod and dimension. */
+  static String[] glbSource(com.google.gson.JsonObject metadata) {
+    var dimension = metadata.get("dimension");
+    String minecraft = "", loader = "", mod = "";
+    // Best effort: the description is optional and must never fail a capture.
+    try {
+      minecraft = net.minecraft.SharedConstants.getCurrentVersion().getName();
+      loader = ClientPlatforms.current().loaderVersion();
+      mod = ClientPlatforms.current().modVersion();
+    } catch (RuntimeException unavailable) {
+      LOGGER.debug("GLB source description unavailable", unavailable);
+    }
+    return new String[] {
+      minecraft,
+      loader,
+      mod,
+      dimension != null && dimension.isJsonPrimitive() ? dimension.getAsString() : ""
+    };
   }
 
   static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
@@ -387,6 +409,7 @@ public final class ClientRuntime {
           EXPLORATION.path = null;
           EXPLORATION.depth = new ExplorationDepth();
           EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.insights = new ZoneInsights();
         }
         playerPositionKnown = false;
         lastActivityMs = now;
@@ -398,11 +421,13 @@ public final class ClientRuntime {
               now, lastActivityMs, lastSnapshotAt(), CAPTURES.settings.options())
           > 0) return;
       afkDiagnostics = PairingClient.beginCaptureDiagnostics();
-      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch);
+      int radius = afkRadius(mc, CAPTURES.settings);
+      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch, radius);
       LOGGER.info(
-          "AFK progressive capture started (paused={}, radius={})",
+          "AFK progressive capture started (paused={}, radius={}, stored={})",
           mc.isPaused(),
-          CAPTURES.settings.options().radius());
+          radius,
+          PairingClient.storedCaptureRadius());
     } catch (Exception error) {
       lastActivityMs = now;
       if (CAPTURES.job != null) CAPTURES.job.cancel("Échec de la capture.");
@@ -433,6 +458,7 @@ public final class ClientRuntime {
         return;
       }
       afkDiagnostics.captured(result.file());
+      var merge = rememberChunks(result.origin(), result.chunks());
       PairingClient.setLastSnapshotAt(now);
       LOGGER.info(
           "AFK capture finished: frames={}, maxStepMs={}, overruns={}, blocks={}, entities={}, quads={}, textures={}",
@@ -444,6 +470,12 @@ public final class ClientRuntime {
           result.quads(),
           result.textures());
       tell("Souvenir AFK enregistré localement.");
+      if (merge.identical()) {
+        // Nothing was added, moved or changed since the previous capture of these chunks: keep it
+        // local only.
+        LOGGER.info("AFK capture identical to the previous one: upload skipped, file kept locally");
+        return;
+      }
       if (!completed.settings().paired()
           || !completed.settings().equals(PairingClient.captureSettings())) return;
       afkUploadPending = true;
@@ -555,6 +587,7 @@ public final class ClientRuntime {
       EXPLORATION.path = null;
       EXPLORATION.depth = new ExplorationDepth();
       EXPLORATION.zones = new VisitedZones();
+      EXPLORATION.insights = new ZoneInsights();
       EXPLORATION.writable = false;
       return;
     }
@@ -573,14 +606,17 @@ public final class ClientRuntime {
         var memory = REMOTE_CAPTURE_SESSION.exploration(path);
         EXPLORATION.depth = memory.depth();
         EXPLORATION.zones = memory.zones();
+        EXPLORATION.insights = new ZoneInsights();
         EXPLORATION.writable = false;
         EXPLORATION.zonesWritable = false;
       } else {
         try {
           EXPLORATION.zones = VisitedZones.read(zoneHistoryPath());
+          EXPLORATION.insights = readInsights();
           EXPLORATION.zonesWritable = true;
         } catch (IOException | IllegalArgumentException error) {
           EXPLORATION.zones = new VisitedZones();
+          EXPLORATION.insights = new ZoneInsights();
           EXPLORATION.zonesWritable = false;
           LOGGER.warn("Cannot read local zone history; preserving the original file", error);
         }
@@ -632,11 +668,97 @@ public final class ClientRuntime {
     return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".zones");
   }
 
-  static java.util.List<VisitedZones.Zone> suggestedZones() {
+  static java.util.List<ZoneRanking.Suggestion> suggestedZones() {
     Minecraft mc = Minecraft.getInstance();
     trackExploration(mc, System.currentTimeMillis());
     if (mc.level == null || mc.player == null) return java.util.List.of();
-    return EXPLORATION.zones.suggestions();
+    return ZoneRanking.rank(EXPLORATION.zones.all(), EXPLORATION.insights, 5);
+  }
+
+  /**
+   * The stored radius when the player chose one; otherwise the zone's advisory radius once captures
+   * described it.
+   */
+  private static int afkRadius(Minecraft mc, PairingClient.CaptureSettings settings) {
+    int configured = settings.options().radius();
+    boolean explicit = PairingClient.storedCaptureRadius();
+    var player = mc.player;
+    if (explicit || player == null || EXPLORATION.path == null) return configured;
+    int x = player.blockPosition().getX(), z = player.blockPosition().getZ();
+    var zone =
+        new VisitedZones.Zone(
+            Math.floorDiv(x, 64) * 64,
+            Math.floorDiv(z, 64) * 64,
+            EXPLORATION.zones.secondsAt(x, z));
+    boolean informed = ZoneRanking.informed(zone, EXPLORATION.insights);
+    double score = ZoneRanking.score(zone, EXPLORATION.insights);
+    int radius = ZoneRanking.adaptiveRadius(configured, false, informed, score);
+    LOGGER.info(
+        "AFK radius from the zone: informed={}, score={}, radius={}", informed, score, radius);
+    return radius;
+  }
+
+  private static Path insightsPath() {
+    return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".insights");
+  }
+
+  private static ZoneInsights readInsights() {
+    try {
+      return ZoneInsights.read(insightsPath());
+    } catch (IOException | IllegalArgumentException error) {
+      LOGGER.warn("Cannot read local zone insights; starting empty", error);
+      return new ZoneInsights();
+    }
+  }
+
+  /**
+   * Keeps what a finished capture showed about each chunk, locally, and reports how much of it
+   * changed.
+   */
+  private static ZoneInsights.Merge rememberChunks(
+      int[] origin, java.util.List<dev.minemories.core.ChunkStats.Chunk> chunks) {
+    if (EXPLORATION.path == null) return new ZoneInsights.Merge(0, 0, 0, 0);
+    var merge = EXPLORATION.insights.merge(origin[0], origin[2], chunks);
+    LOGGER.info(
+        "Chunks seen by this capture: total={}, changed={}, new={}, creaturesMoved={}",
+        merge.total(),
+        merge.changed(),
+        merge.fresh(),
+        merge.creaturesMoved());
+    sampleInhabitedTime(Minecraft.getInstance(), origin, chunks);
+    return merge;
+  }
+
+  /**
+   * In single player the integrated server knows how long each chunk was inhabited. It is read on
+   * the server thread and only stored for chunks a capture just described; a remote server gives
+   * nothing, and the signal stays unknown.
+   */
+  private static void sampleInhabitedTime(
+      Minecraft mc, int[] origin, java.util.List<dev.minemories.core.ChunkStats.Chunk> chunks) {
+    var server = mc.getSingleplayerServer();
+    var level = mc.level;
+    if (server == null || level == null || EXPLORATION.path == null) return;
+    var insights = EXPLORATION.insights;
+    var dimension = level.dimension();
+    int baseX = Math.floorDiv(origin[0], 16), baseZ = Math.floorDiv(origin[2], 16);
+    server.execute(
+        () -> {
+          var serverLevel = server.getLevel(dimension);
+          if (serverLevel == null) return;
+          java.util.List<long[]> found = new java.util.ArrayList<>();
+          for (var chunk : chunks) {
+            int x = baseX + chunk.chunkX(), z = baseZ + chunk.chunkZ();
+            var loaded = serverLevel.getChunkSource().getChunkNow(x, z);
+            if (loaded != null) found.add(new long[] {x, z, loaded.getInhabitedTime()});
+          }
+          mc.execute(
+              () -> {
+                if (insights != EXPLORATION.insights) return;
+                for (long[] entry : found)
+                  insights.inhabited((int) entry[0], (int) entry[1], entry[2]);
+              });
+        });
   }
 
   private static void saveExploration() {
@@ -644,6 +766,7 @@ public final class ClientRuntime {
     if (EXPLORATION.zonesWritable) {
       try {
         EXPLORATION.zones.save(zoneHistoryPath());
+        EXPLORATION.insights.save(insightsPath());
       } catch (IOException error) {
         LOGGER.warn("Cannot persist local zone history", error);
       }
@@ -953,6 +1076,8 @@ public final class ClientRuntime {
         new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
         selection);
     var scene = new CaptureSink.Legacy();
+    var source = glbSource(metadata);
+    scene.setSource(source[0], source[1], source[2], source[3]);
     if (metadata.has("minemoriesPlayerPosition")) {
       var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
       scene.setPlayerPosition(
@@ -974,29 +1099,36 @@ public final class ClientRuntime {
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
       int blockCount = 0;
-      for (int z = min.getZ(); z <= max.getZ(); z++) {
-        for (int x = min.getX(); x <= max.getX(); x++) {
-          if (!chunkLoaded(mc, x, z)) continue;
-          int columnTop =
-              Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-          int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-          // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
-          while (terrainTop >= min.getY()
-              && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
-          for (int y = min.getY(); y <= columnTop; y++) {
-            blockCount +=
-                captureCell(
-                    scene,
-                    sprites,
-                    renderedModels,
-                    mc,
-                    beRenderer,
-                    fluidView,
-                    new BlockPos(x, y, z),
-                    min,
-                    max,
-                    center,
-                    terrainTop);
+      // Chunk-major, like the progressive cursor, so each primitive keeps few chunk ranges.
+      for (int chunkZ = Math.floorDiv(min.getZ(), 16) * 16; chunkZ <= max.getZ(); chunkZ += 16) {
+        for (int chunkX = Math.floorDiv(min.getX(), 16) * 16; chunkX <= max.getX(); chunkX += 16) {
+          for (int z = Math.max(chunkZ, min.getZ()); z <= Math.min(chunkZ + 15, max.getZ()); z++) {
+            for (int x = Math.max(chunkX, min.getX());
+                x <= Math.min(chunkX + 15, max.getX());
+                x++) {
+              if (!chunkLoaded(mc, x, z)) continue;
+              int columnTop =
+                  Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+              int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+              // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
+              while (terrainTop >= min.getY()
+                  && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
+              for (int y = min.getY(); y <= columnTop; y++) {
+                blockCount +=
+                    captureCell(
+                        scene,
+                        sprites,
+                        renderedModels,
+                        mc,
+                        beRenderer,
+                        fluidView,
+                        new BlockPos(x, y, z),
+                        min,
+                        max,
+                        center,
+                        terrainTop);
+              }
+            }
           }
         }
       }
@@ -1013,6 +1145,9 @@ public final class ClientRuntime {
               Instant.parse(metadata.get("capturedAt").getAsString()),
               metadata.toString(),
               scene::write);
+      rememberChunks(
+          new int[] {center.getX(), center.getY(), center.getZ()},
+          scene.chunkStats().snapshot(center.getX(), center.getY(), center.getZ()));
       player.displayClientMessage(
           Component.literal(
               "Minemories: "
@@ -1050,7 +1185,10 @@ public final class ClientRuntime {
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
+    int chunkX = CaptureSink.relativeChunk(x, center.getX()),
+        chunkZ = CaptureSink.relativeChunk(z, center.getZ());
     BlockState state = level.getBlockState(pos);
+    scene.classify(GlbCategory.TERRAIN, chunkX, chunkZ);
     boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
     if (state.isAir()) return 0;
     int lightEmission = state.getLightEmission();
@@ -1075,6 +1213,8 @@ public final class ClientRuntime {
     }
     BlockEntity blockEntity = level.getBlockEntity(pos);
     if (state.getRenderShape() == RenderShape.MODEL) {
+      boolean full = state.canOcclude() && state.isCollisionShapeFullBlock(level, pos);
+      scene.classify(full ? GlbCategory.TERRAIN : GlbCategory.DECOR, chunkX, chunkZ);
       String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
       ClientPlatforms.current()
           .emitBlockModel(
@@ -1110,6 +1250,7 @@ public final class ClientRuntime {
       count++;
     }
     if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
+      scene.classify(GlbCategory.BLOCK_ENTITIES, chunkX, chunkZ);
       captureBlockEntityRenderer(
           renderedModels,
           beRenderer,
@@ -1120,7 +1261,10 @@ public final class ClientRuntime {
       if (state.getRenderShape() != RenderShape.MODEL) count++;
     }
     FluidState fluid = state.getFluidState();
-    if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    if (!fluid.isEmpty()) {
+      scene.classify(GlbCategory.FLUIDS, chunkX, chunkZ);
+      captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    }
     return count;
   }
 
@@ -1407,6 +1551,10 @@ public final class ClientRuntime {
         mc.gameRenderer.getMainCamera(),
         Objects.requireNonNull(mc.getCameraEntity(), "No capture camera entity"));
     var renderer = dispatcher.getRenderer(entity);
+    capture.classify(
+        GlbCategory.ENTITIES,
+        CaptureSink.relativeChunk(entity.getBlockX(), center.getX()),
+        CaptureSink.relativeChunk(entity.getBlockZ(), center.getZ()));
     var buffers =
         capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
     Vec3 offset = renderer.getRenderOffset(entity, 1f);

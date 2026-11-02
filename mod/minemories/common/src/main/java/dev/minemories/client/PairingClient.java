@@ -309,6 +309,11 @@ final class PairingClient {
         .resolve("minemories.properties");
   }
 
+  /** True when the player saved an AFK radius, which is then never adapted. */
+  static boolean storedCaptureRadius() {
+    return ClientSettings.explicitRadius(readSettings());
+  }
+
   private static Properties readSettings() {
     try {
       return ClientSettings.read(settingsPath());
