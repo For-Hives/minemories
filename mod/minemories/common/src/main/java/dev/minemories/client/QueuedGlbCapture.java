@@ -260,6 +260,9 @@ final class QueuedGlbCapture implements AutoCloseable {
         float[] positions = quad.positions();
         if (alpha != 0) RenderedLayer.separate(positions, quad.layer());
         scene.addQuad(
+            quad.category(),
+            quad.chunkX(),
+            quad.chunkZ(),
             material.key() + "#resolved-alpha-" + alpha,
             material.name(),
             material.image(),
@@ -311,6 +314,8 @@ final class QueuedGlbCapture implements AutoCloseable {
       if (!scene.hasGeometry()) throw new IOException("Capture has no visible geometry");
       JsonObject metadata = JsonParser.parseString(finish.metadata).getAsJsonObject();
       metadata.addProperty("captureStartedAt", finish.capturedAt.toString());
+      var source = ClientRuntime.glbSource(metadata);
+      scene.setSource(source[0], source[1], source[2], source[3]);
       if (metadata.has("minemoriesPlayerPosition")) {
         var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
         scene.setPlayerPosition(

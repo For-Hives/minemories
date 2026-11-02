@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import dev.minemories.core.GlbCategory;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -132,6 +133,26 @@ public final class ClientRuntime {
 
   static String captureFailure() {
     return captureFailure;
+  }
+
+  /** Technical, non-personal fields written into the GLB: Minecraft, loader, mod and dimension. */
+  static String[] glbSource(com.google.gson.JsonObject metadata) {
+    var dimension = metadata.get("dimension");
+    String minecraft = "", loader = "", mod = "";
+    // Best effort: the description is optional and must never fail a capture.
+    try {
+      minecraft = net.minecraft.SharedConstants.getCurrentVersion().getName();
+      loader = ClientPlatforms.current().loaderVersion();
+      mod = ClientPlatforms.current().modVersion();
+    } catch (RuntimeException unavailable) {
+      LOGGER.debug("GLB source description unavailable", unavailable);
+    }
+    return new String[] {
+      minecraft,
+      loader,
+      mod,
+      dimension != null && dimension.isJsonPrimitive() ? dimension.getAsString() : ""
+    };
   }
 
   static com.google.gson.JsonObject currentCaptureMetadata(BlockPos position) {
@@ -953,6 +974,8 @@ public final class ClientRuntime {
         new CaptureBounds(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
         selection);
     var scene = new CaptureSink.Legacy();
+    var source = glbSource(metadata);
+    scene.setSource(source[0], source[1], source[2], source[3]);
     if (metadata.has("minemoriesPlayerPosition")) {
       var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
       scene.setPlayerPosition(
@@ -974,29 +997,36 @@ public final class ClientRuntime {
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
       int blockCount = 0;
-      for (int z = min.getZ(); z <= max.getZ(); z++) {
-        for (int x = min.getX(); x <= max.getX(); x++) {
-          if (!chunkLoaded(mc, x, z)) continue;
-          int columnTop =
-              Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-          int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-          // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
-          while (terrainTop >= min.getY()
-              && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
-          for (int y = min.getY(); y <= columnTop; y++) {
-            blockCount +=
-                captureCell(
-                    scene,
-                    sprites,
-                    renderedModels,
-                    mc,
-                    beRenderer,
-                    fluidView,
-                    new BlockPos(x, y, z),
-                    min,
-                    max,
-                    center,
-                    terrainTop);
+      // Chunk-major, like the progressive cursor, so each primitive keeps few chunk ranges.
+      for (int chunkZ = Math.floorDiv(min.getZ(), 16) * 16; chunkZ <= max.getZ(); chunkZ += 16) {
+        for (int chunkX = Math.floorDiv(min.getX(), 16) * 16; chunkX <= max.getX(); chunkX += 16) {
+          for (int z = Math.max(chunkZ, min.getZ()); z <= Math.min(chunkZ + 15, max.getZ()); z++) {
+            for (int x = Math.max(chunkX, min.getX());
+                x <= Math.min(chunkX + 15, max.getX());
+                x++) {
+              if (!chunkLoaded(mc, x, z)) continue;
+              int columnTop =
+                  Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+              int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+              // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
+              while (terrainTop >= min.getY()
+                  && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
+              for (int y = min.getY(); y <= columnTop; y++) {
+                blockCount +=
+                    captureCell(
+                        scene,
+                        sprites,
+                        renderedModels,
+                        mc,
+                        beRenderer,
+                        fluidView,
+                        new BlockPos(x, y, z),
+                        min,
+                        max,
+                        center,
+                        terrainTop);
+              }
+            }
           }
         }
       }
@@ -1050,7 +1080,10 @@ public final class ClientRuntime {
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
+    int chunkX = CaptureSink.relativeChunk(x, center.getX()),
+        chunkZ = CaptureSink.relativeChunk(z, center.getZ());
     BlockState state = level.getBlockState(pos);
+    scene.classify(GlbCategory.TERRAIN, chunkX, chunkZ);
     boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
     if (state.isAir()) return 0;
     int lightEmission = state.getLightEmission();
@@ -1075,6 +1108,8 @@ public final class ClientRuntime {
     }
     BlockEntity blockEntity = level.getBlockEntity(pos);
     if (state.getRenderShape() == RenderShape.MODEL) {
+      boolean full = state.canOcclude() && state.isCollisionShapeFullBlock(level, pos);
+      scene.classify(full ? GlbCategory.TERRAIN : GlbCategory.DECOR, chunkX, chunkZ);
       String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
       ClientPlatforms.current()
           .emitBlockModel(
@@ -1110,6 +1145,7 @@ public final class ClientRuntime {
       count++;
     }
     if (blockEntity != null && beRenderer.getRenderer(blockEntity) != null) {
+      scene.classify(GlbCategory.BLOCK_ENTITIES, chunkX, chunkZ);
       captureBlockEntityRenderer(
           renderedModels,
           beRenderer,
@@ -1120,7 +1156,10 @@ public final class ClientRuntime {
       if (state.getRenderShape() != RenderShape.MODEL) count++;
     }
     FluidState fluid = state.getFluidState();
-    if (!fluid.isEmpty()) captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    if (!fluid.isEmpty()) {
+      scene.classify(GlbCategory.FLUIDS, chunkX, chunkZ);
+      captureFluid(scene, sprites, mc, pos, state, fluid, center, fluidView);
+    }
     return count;
   }
 
@@ -1407,6 +1446,10 @@ public final class ClientRuntime {
         mc.gameRenderer.getMainCamera(),
         Objects.requireNonNull(mc.getCameraEntity(), "No capture camera entity"));
     var renderer = dispatcher.getRenderer(entity);
+    capture.classify(
+        GlbCategory.ENTITIES,
+        CaptureSink.relativeChunk(entity.getBlockX(), center.getX()),
+        CaptureSink.relativeChunk(entity.getBlockZ(), center.getZ()));
     var buffers =
         capture.buffers(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(), 0f);
     Vec3 offset = renderer.getRenderOffset(entity, 1f);

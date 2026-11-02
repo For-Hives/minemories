@@ -362,6 +362,11 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     }
 
     @Override
+    public void classify(dev.minemories.core.GlbCategory category, int chunkX, int chunkZ) {
+      element.classify(category, chunkX, chunkZ);
+    }
+
+    @Override
     public boolean hasGeometry() {
       return element.hasGeometry();
     }
