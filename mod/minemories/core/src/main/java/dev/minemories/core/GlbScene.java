@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +26,49 @@ public final class GlbScene {
 
   private final Map<String, Part> parts = new LinkedHashMap<>();
   private final VertexCache cache = new VertexCache();
+  private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
+  private final GlbMetadata metadata = new GlbMetadata();
+  private final int[] quadsByCategory = new int[GlbCategory.values().length];
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
+  /** Non-personal technical description written into {@code asset.extras.minemories}. */
+  public void setSource(String minecraft, String loader, String mod, String dimension) {
+    metadata.setSource(minecraft, loader, mod, dimension);
+  }
+
   public void addQuad(
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      float[] xyz,
+      float[] uv) {
+    addQuad(
+        GlbCategory.TERRAIN,
+        ChunkRuns.NONE,
+        ChunkRuns.NONE,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        xyz,
+        uv);
+  }
+
+  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
       String key,
       String materialName,
       String imageKey,
@@ -53,10 +93,12 @@ public final class GlbScene {
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
     Part part =
         parts.computeIfAbsent(
-            key,
+            category.ordinal() + ":" + key,
             ignored ->
                 new Part(
                     parts.size(),
+                    category,
+                    new ChunkRuns(runBudget),
                     materialName,
                     imageKey,
                     png,
@@ -65,7 +107,10 @@ public final class GlbScene {
                     safeEmission,
                     safeOpacity));
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
+    int before = part.indexCount / 3;
     part.addQuad(cache, xyz, uv, normal);
+    part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
+    quadsByCategory[category.ordinal()]++;
   }
 
   public int materialCount() {
@@ -91,7 +136,8 @@ public final class GlbScene {
     ByteArrayOutputStream binary = new ByteArrayOutputStream();
     List<String> views = new ArrayList<>(),
         accessors = new ArrayList<>(),
-        primitives = new ArrayList<>();
+        meshes = new ArrayList<>();
+    Map<GlbCategory, List<String>> byCategory = new EnumMap<>(GlbCategory.class);
     List<String> materials = new ArrayList<>(),
         images = new ArrayList<>(),
         textures = new ArrayList<>();
@@ -153,18 +199,23 @@ public final class GlbScene {
               "SCALAR",
               null,
               null);
-      primitives.add(
-          "{\"attributes\":{\"POSITION\":"
-              + pos
-              + ",\"NORMAL\":"
-              + normal
-              + ",\"TEXCOORD_0\":"
-              + uv
-              + "},\"indices\":"
-              + indices
-              + ",\"material\":"
-              + materialIndex
-              + ",\"mode\":4}");
+      String ranges = part.runs.json();
+      byCategory
+          .computeIfAbsent(part.category, ignored -> new ArrayList<>())
+          .add(
+              "{\"attributes\":{\"POSITION\":"
+                  + pos
+                  + ",\"NORMAL\":"
+                  + normal
+                  + ",\"TEXCOORD_0\":"
+                  + uv
+                  + "},\"indices\":"
+                  + indices
+                  + ",\"material\":"
+                  + materialIndex
+                  + ",\"mode\":4"
+                  + (ranges == null ? "" : ",\"extras\":{\"minemoriesChunks\":" + ranges + "}")
+                  + "}");
       Integer texture = imageIndices.get(part.imageKey);
       if (texture == null) {
         align(binary);
@@ -225,7 +276,13 @@ public final class GlbScene {
       materialIndex++;
     }
     List<String> nodes = new ArrayList<>();
-    nodes.add("{\"mesh\":0}");
+    for (GlbCategory category : GlbCategory.values()) {
+      List<String> group = byCategory.get(category);
+      if (group == null) continue;
+      nodes.add("{\"name\":\"" + category.id() + "\",\"mesh\":" + meshes.size() + "}");
+      meshes.add(
+          "{\"name\":\"" + category.id() + "\",\"primitives\":[" + String.join(",", group) + "]}");
+    }
     List<String> lights = new ArrayList<>();
     for (PointLight light : pointLights.values()) {
       int id = lights.size();
@@ -264,15 +321,17 @@ public final class GlbScene {
                 + String.join(",", lights)
                 + "]}}";
     String json =
-        "{\"asset\":{\"version\":\"2.0\",\"generator\":\"Minemories\"},\"scene\":0,\"scenes\":[{\"nodes\":["
+        "{\"asset\":"
+            + metadata.assetJson(quadsByCategory)
+            + ",\"scene\":0,\"scenes\":[{\"nodes\":["
             + indices(nodes.size())
             + "]"
             + playerExtras
             + "}],\"nodes\":["
             + String.join(",", nodes)
-            + "],\"meshes\":[{\"primitives\":["
-            + String.join(",", primitives)
-            + "]}],\"materials\":["
+            + "],\"meshes\":["
+            + String.join(",", meshes)
+            + "],\"materials\":["
             + String.join(",", materials)
             + "],\"textures\":["
             + String.join(",", textures)
@@ -349,6 +408,8 @@ public final class GlbScene {
 
   private static final class Part {
     final int id;
+    final GlbCategory category;
+    final ChunkRuns runs;
     final String name, imageKey;
     final byte[] png;
     final int tint, alphaMode;
@@ -365,6 +426,8 @@ public final class GlbScene {
 
     Part(
         int id,
+        GlbCategory category,
+        ChunkRuns runs,
         String name,
         String imageKey,
         byte[] png,
@@ -373,6 +436,8 @@ public final class GlbScene {
         float emission,
         float opacity) {
       this.id = id;
+      this.category = category;
+      this.runs = runs;
       this.name = name;
       this.imageKey = imageKey;
       this.png = png;

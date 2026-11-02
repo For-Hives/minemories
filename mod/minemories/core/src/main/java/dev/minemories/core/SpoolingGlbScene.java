@@ -86,6 +86,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private final ByteBuffer vertexBytes = ByteBuffer.allocate(32).order(ByteOrder.LITTLE_ENDIAN);
   private final ByteBuffer indexBytes = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
   private final VertexCache cache = new VertexCache();
+  private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
+  private final GlbMetadata metadata = new GlbMetadata();
+  private final int[] quadsByCategory = new int[GlbCategory.values().length];
   private final float[] normal = new float[3];
   private final float[] key = new float[8];
   private final byte[] copyBuffer = new byte[COPY_BUFFER_BYTES];
@@ -128,7 +131,44 @@ public final class SpoolingGlbScene implements AutoCloseable {
     return new Metrics(spoolBytes, quads, parts.size(), images.size(), peakOpenFiles);
   }
 
+  /** Non-personal technical description written into {@code asset.extras.minemories}. */
+  public void setSource(String minecraft, String loader, String mod, String dimension) {
+    metadata.setSource(minecraft, loader, mod, dimension);
+  }
+
   public void addQuad(
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      float[] xyz,
+      float[] uv)
+      throws IOException {
+    addQuad(
+        GlbCategory.TERRAIN,
+        ChunkRuns.NONE,
+        ChunkRuns.NONE,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        xyz,
+        uv);
+  }
+
+  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
       String key,
       String materialName,
       String imageKey,
@@ -150,7 +190,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       // A quad without any area renders nothing: drop it instead of writing a zero normal.
       if (!QuadGeometry.normal(xyz, normal)) return;
       checkedString(key);
-      Part part = parts.get(key);
+      String partKey = category.ordinal() + ":" + key;
+      Part part = parts.get(partKey);
       if (part == null) {
         if (parts.size() >= limits.materials())
           throw new IOException("GLB material limit exceeded");
@@ -161,6 +202,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
         part =
             new Part(
                 id,
+                category,
+                new ChunkRuns(runBudget),
                 materialName,
                 image,
                 tint,
@@ -171,14 +214,17 @@ public final class SpoolingGlbScene implements AutoCloseable {
                 create("p" + id + "-normals"),
                 create("p" + id + "-uvs"),
                 create("p" + id + "-indices"));
-        parts.put(key, part);
+        parts.put(partKey, part);
       }
       if (part.vertices > Integer.MAX_VALUE - 4) throw new IOException("GLB vertex limit exceeded");
       if (part.indexCount > Integer.MAX_VALUE - 6)
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
       part.image.usage.include(uv);
+      int before = part.indexCount / 3;
       encode(part, xyz, uv);
+      part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
+      quadsByCategory[category.ordinal()]++;
       quads++;
     } catch (IOException error) {
       throw invalidate(error);
@@ -591,44 +637,68 @@ public final class SpoolingGlbScene implements AutoCloseable {
 
   private void writeJson(JsonSink sink) throws IOException {
     sink.text(
-        "{\"asset\":{\"version\":\"2.0\",\"generator\":\"Minemories\"},\"scene\":0,\"scenes\":[{\"nodes\":[");
-    for (int index = 0; index <= lights.size(); index++) {
+        "{\"asset\":"
+            + metadata.assetJson(quadsByCategory)
+            + ",\"scene\":0,\"scenes\":[{\"nodes\":[");
+    List<GlbCategory> present = new ArrayList<>();
+    for (GlbCategory category : GlbCategory.values()) {
+      if (quadsByCategory[category.ordinal()] > 0) present.add(category);
+    }
+    for (int index = 0; index < present.size() + lights.size(); index++) {
       if (index > 0) sink.text(",");
       sink.text(Integer.toString(index));
     }
-    sink.text("]" + playerExtras + "}],\"nodes\":[{\"mesh\":0}");
+    sink.text("]" + playerExtras + "}],\"nodes\":[");
     int index = 0;
-    for (Light light : lights.values()) {
+    for (GlbCategory category : present) {
       sink.text(
-          ",{\"translation\":["
-              + light.x
+          (index > 0 ? "," : "") + "{\"name\":\"" + category.id() + "\",\"mesh\":" + index++ + "}");
+    }
+    int lightId = 0;
+    for (Light entry : lights.values()) {
+      sink.text(
+          (index++ > 0 ? "," : "")
+              + "{\"translation\":["
+              + entry.x
               + ","
-              + light.y
+              + entry.y
               + ","
-              + light.z
+              + entry.z
               + "],\"extensions\":{\"KHR_lights_punctual\":{\"light\":"
-              + index++
+              + lightId++
               + "}}}");
     }
-    sink.text("],\"meshes\":[{\"primitives\":[");
-    index = 0;
-    for (Part part : parts.values()) {
-      if (index > 0) sink.text(",");
-      int first = index * 4;
-      sink.text(
-          "{\"attributes\":{\"POSITION\":"
-              + first
-              + ",\"NORMAL\":"
-              + (first + 1)
-              + ",\"TEXCOORD_0\":"
-              + (first + 2)
-              + "},\"indices\":"
-              + (first + 3)
-              + ",\"material\":"
-              + index++
-              + ",\"mode\":4}");
+    sink.text("],\"meshes\":[");
+    int mesh = 0;
+    for (GlbCategory category : present) {
+      sink.text((mesh++ > 0 ? "," : "") + "{\"name\":\"" + category.id() + "\",\"primitives\":[");
+      boolean first = true;
+      int partIndex = 0;
+      for (Part part : parts.values()) {
+        int current = partIndex++;
+        if (part.category != category) continue;
+        int accessor = current * 4;
+        String ranges = part.runs.json();
+        sink.text(
+            (first ? "" : ",")
+                + "{\"attributes\":{\"POSITION\":"
+                + accessor
+                + ",\"NORMAL\":"
+                + (accessor + 1)
+                + ",\"TEXCOORD_0\":"
+                + (accessor + 2)
+                + "},\"indices\":"
+                + (accessor + 3)
+                + ",\"material\":"
+                + current
+                + ",\"mode\":4"
+                + (ranges == null ? "" : ",\"extras\":{\"minemoriesChunks\":" + ranges + "}")
+                + "}");
+        first = false;
+      }
+      sink.text("]}");
     }
-    sink.text("]}],\"materials\":[");
+    sink.text("],\"materials\":[");
     index = 0;
     for (Part part : parts.values()) {
       if (index++ > 0) sink.text(",");
@@ -798,6 +868,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
 
   private static final class Part {
     final int id;
+    final GlbCategory category;
+    final ChunkRuns runs;
     final int[] corners = new int[4];
     final String name;
     final Image image;
@@ -810,6 +882,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
 
     Part(
         int id,
+        GlbCategory category,
+        ChunkRuns runs,
         String name,
         Image image,
         int tint,
@@ -821,6 +895,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
         StoredFile uvs,
         StoredFile indices) {
       this.id = id;
+      this.category = category;
+      this.runs = runs;
       this.name = name;
       this.image = image;
       this.tint = tint;
