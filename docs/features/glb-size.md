@@ -344,3 +344,6 @@ Rendus Cycles (16 échantillons, graine 42) de la scène modèles/lumières, éc
 L'écart est dominé par le **bruit de Monte-Carlo** : une perturbation de 10⁻⁶ bloc modifie déjà les chemins de rayons à
 16 échantillons (0,34/255). Normales et UV sont sous ce plancher ; l'arrondi des positions n'ajoute que ≈ 0,5/255 sur les
 géométries hors grille (plantes à 45°, modèles tournés). Il n'y a rien à corriger.
+
+Les comportements de la phase 5 (rayon adaptatif, envoi évité d'une capture identique, `InhabitedTime`) sont validés en jeu par le
+même type d'essai : voir `docs/features/chunk-score.md`.

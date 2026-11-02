@@ -62,11 +62,49 @@ Essai natif NeoForge 1.21.1 sur profil isolé : `*.insights` écrit et relu, jou
 captures AFK de même portée séparées par la modification de deux blocs : `changed=2, new=0` sur 9 chunks. L'AFK désactivé est
 respecté (aucune capture en 600 images) et rien n'est envoyé sans appairage.
 
+## Comportements (suite de la phase 5)
+
+Validés en jeu (voir plus bas), tous **locaux** : aucun envoi supplémentaire et aucune lecture de réglage nouveau hors
+`captureRadius`.
+
+- **Rayon adaptatif de l'AFK.** Si le joueur n'a **jamais enregistré** de rayon (clé `captureRadius` absente de
+  `minemories.properties`), l'AFK utilise le rayon conseillé de la zone (16, 32, 48 ou 64 selon le score) **une fois que des
+  captures ont décrit cette zone** ; sinon, et dès qu'un rayon est enregistré (l'écran AFK l'écrit), le réglage est utilisé tel quel. Le
+  contexte AFK (`CaptureSettings`) n'est pas modifié : seule la capture reçoit le rayon choisi, le journal indique
+  `radius=…, stored=…` et le score.
+- **Envoi évité pour une capture sans rien de nouveau.** Une capture AFK dont **aucun chunk n'a changé, aucun n'est nouveau
+  et où le nombre de quads de créatures n'a pas bougé** reste enregistrée localement mais n'est pas téléversée
+  (`upload skipped`). Les créatures entrent donc dans la décision par leur nombre de quads par chunk, pas par l'empreinte :
+  un monde où des créatures se déplacent n'est jamais écarté. Un ancien fichier `*.insights` (sans ces comptes) compte comme
+  « créatures déplacées » : rien n'est écarté sur une supposition. `/minemories upload` et les captures manuelles ne sont pas
+  concernés ; sans appairage, rien n'est envoyé de toute façon.
+- **Modifications du joueur.** Aucun point d'entrée client commun aux loaders (pose et casse sont des événements propres à chaque
+  loader ou des mixins), donc la phase s'appuie sur le signal mesurable : le **nombre de captures qui ont trouvé le chunk
+  différent** de la précédente (compteur `changes`, jusqu'à 1000), compté comme 16 modifications par changement observé
+  (plafond du score à 64). Un chunk jamais vu changer reste « inconnu », pas « jamais modifié ».
+- **`InhabitedTime`.** `ChunkAccess.getInhabitedTime()` est lu **dans le serveur intégré** (thread serveur, chunks que la capture
+  vient de décrire), uniquement en solo ; sur un serveur distant le signal reste inconnu. API vanilla commune aux loaders,
+  validée en jeu sur NeoForge seulement.
+
+### Validation en jeu des comportements (2 novembre 2026)
+
+Même méthode que `glb-size.md` (NeoForge 21.1.248, profil isolé, JAR `minemories-0.30.2-beta.1.jar` SHA-256
+`2ecec8eb2697d532d674fcf13324ead29b8fea41e365bc221e5a59efebcac131`, pilote QA hors JAR, serveur HTTP local qui compte les requêtes) :
+
+| Contrôle | Résultat |
+| --- | --- |
+| Avant appairage | 0 requête après deux captures AFK |
+| 1re capture sans rayon enregistré, zone inconnue | rayon 32 (largeur de capture 64), score 0,26 |
+| 2e capture, zone décrite, temps actif fixé à 2 h (fixture du pilote) | score 0,79 → **rayon 48** (largeur 96), 49 chunks |
+| Rayon 16 enregistré | rayon 16 utilisé tel quel (`stored=true`, largeur 32) |
+| Appairé, capture modifiée | tentative d'envoi (3 requêtes : refus 503 volontaire du serveur local, avec reprises) |
+| Capture suivante identique | `upload skipped`, **0 requête de plus**, aucun envoi en attente |
+| `InhabitedTime` | 25 chunks relevés, 4 850 à 8 692 ticks, 0 inconnu |
+| Changements | 9 chunks vus changés après modification de blocs ; 2 chunks sur 25 pour deux blocs édités entre deux captures de même portée |
+| AFK désactivé | aucune capture en 600 images, historique inchangé |
+
 ## Reste (suivi dans #173)
 
-- Compter les modifications du joueur (poser/casser) : nécessite un point d'entrée client propre à chaque loader.
-- Utiliser `InhabitedTime` en solo (serveur intégré) une fois la lecture vérifiée en jeu.
-- Éviter de téléverser une capture sans chunk modifié et ajuster le rayon automatiquement : non faits volontairement. Ne pas
-  téléverser change la sémantique de l'historique d'un monde (une capture sans changement mais avec des créatures qui
-  bougent disparaîtrait, l'empreinte excluant les entités) et le rayon automatique contourne un réglage explicite : ce sont des
-  décisions produit à prendre, et le flux d'envoi (appairage, API) n'a pas pu être exercé dans l'essai isolé.
+- Validation des comportements de cette phase sur Fabric et Forge (le code est commun et compile sur les trois loaders ; l'essai
+  natif ne couvre que NeoForge) et sur un serveur distant (`InhabitedTime` inconnu par construction).
+- Compter les vraies poses/casses de blocs : nécessite des événements par loader.

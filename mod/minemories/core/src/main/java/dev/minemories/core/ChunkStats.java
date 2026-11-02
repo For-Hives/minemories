@@ -28,14 +28,15 @@ public final class ChunkStats {
       int builtQuads,
       int blockEntityQuads,
       int lights,
-      long fingerprint) {
+      long fingerprint,
+      int entityQuads) {
     public double builtShare() {
       return quads == 0 ? 0 : (double) builtQuads / quads;
     }
   }
 
   private static final class Counters {
-    int quads, built, blockEntities, lights, fixed;
+    int quads, built, blockEntities, lights, fixed, entities;
     long shapes;
     final long[] sum = new long[3], square = new long[3];
   }
@@ -67,8 +68,12 @@ public final class ChunkStats {
         builtCache.computeIfAbsent(
             materialName, name -> NaturalBlocks.builtByPlayers(NaturalBlocks.blockId(name)));
     if (built) counters.built++;
-    // Moving creatures would make every chunk look changed.
-    if (category == GlbCategory.ENTITIES) return;
+    // Moving creatures would make every chunk look changed: they are only counted, not
+    // fingerprinted.
+    if (category == GlbCategory.ENTITIES) {
+      counters.entities++;
+      return;
+    }
     counters.fixed++;
     long shape = mix(materialName.hashCode() * 31L + category.ordinal());
     // Shape: the corner offsets from the first corner, so it does not depend on where the quad
@@ -141,7 +146,8 @@ public final class ChunkStats {
               counters.built,
               counters.blockEntities,
               counters.lights,
-              fingerprint(counters, chunkX, chunkZ, origin)));
+              fingerprint(counters, chunkX, chunkZ, origin),
+              counters.entities));
     }
     return List.copyOf(result);
   }
