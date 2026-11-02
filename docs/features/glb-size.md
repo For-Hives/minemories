@@ -136,6 +136,66 @@ identique pixel pour pixel sur le rayon 32, et 49 pixels différents (6 avec éc
 la scène modèles/lumières, imputés à l'ordre de rendu des matériaux translucides entre objets. Le viewer charge le
 fichier (Chromium headless, SwiftShader) et affiche la scène complète. Validation en jeu : non faite.
 
+## Quantification `KHR_mesh_quantization` (issue #173, phase 3)
+
+Les deux writers quantifient la géométrie ; le fichier reste du glTF 2.0 autonome, lisible par Blender 5.2.2 (mesuré,
+voir `docs/features/glb-v2-decisions.md`), `extensionsUsed`/`extensionsRequired` déclarent `KHR_mesh_quantization`.
+
+| Attribut | Avant | Après |
+| --- | --- | --- |
+| POSITION | 3 × float32 (12 o) | 3 × int16 + 2 o de remplissage (8 o), échelle `1/2^k` et translation entière portées par le nœud de catégorie |
+| NORMAL | 3 × float32 (12 o) | 3 × int8 normalisé + 1 o (4 o) |
+| TEXCOORD_0 | 2 × float32 (8 o) | 2 × uint16 normalisé (4 o) |
+
+- Les attributs sont écrits avec `byteStride` (8/4/4), exigé par glTF pour les éléments non multiples de 4 octets.
+- **Échelle** : choisie à l'écriture, par catégorie, d'après l'étendue réelle des positions : la plus fine des grilles
+  `1/128`…`1/16` de bloc dont l'étendue tient dans ±32 766. La grille de Minecraft (1/16) est donc **exacte** ; les
+  modèles tournés et les fluides sont arrondis au plus à 1/256 de bloc sur les petites captures et 1/32 sur les très
+  grandes, au plus près du seuil de 1/64 de bloc du viewer. Une catégorie plus étendue que ±1 024 blocs garde des
+  positions float32.
+- **UV** : uint16 seulement si tous les UV d'une primitive sont dans [0, 1] ; sinon float32 (UV répétés). Erreur
+  maximale 1/65 535 de l'image, soit 0,016 texel sur l'atlas 1024.
+- **Normales** : conservées (int8) plutôt que supprimées : sans normales, `GLTFLoader` active `flatShading`, que le
+  viewer évite (NaN signalés sur Firefox/NVIDIA, voir `viewer-scene.ts`), et recalculer les normales après fusion
+  lisserait les arêtes.
+- Dans le writer spoolé, le spool temporaire reste en float32 ; la conversion se fait à la copie finale, dans un
+  tampon de 64 Kio (plus un tampon de sortie de même taille) : la borne de heap et les limites de spool/fichier ne
+  changent pas. Les deux writers produisent toujours des fichiers identiques octet pour octet.
+- Dans Blender, chaque catégorie importée porte une **échelle de 0,0078** (1/128, ou plus sur les grandes captures) :
+  appliquer l'échelle (*Object → Apply → Scale*) avant de modéliser. Les positions de lumière restent en float32.
+- Le validateur de `@minemories/api-contract/glb` acceptait déjà ces types (quantification, `byteStride`) ; le viewer
+  lit les positions via la matrice du nœud (`localPositions`), donc sans changement.
+
+Mesures (écriture rejouée, hors jeu ; « avant » = fin de la phase 2) :
+
+| Capture | Avant (octets) | Après (octets) | Gain | gzip avant → après |
+| --- | ---: | ---: | ---: | ---: |
+| AFK rayon 32 | 1 859 984 | 1 085 060 | −41,7 % | 280 279 → 259 366 |
+| AFK rayon 8 | 260 368 | 182 588 | −29,9 % | 38 927 → 34 435 |
+| Hauteur complète | 396 848 | 243 820 | −38,6 % | 60 637 → 58 676 |
+| Tour et surface | 60 616 | 49 884 | −17,7 % | 9 762 → 9 468 |
+| Modèles, alpha et lumières | 438 832 | 306 856 | −30,1 % | 71 932 → 62 322 |
+| Capture réelle (modpack) | 20 299 828 (original) | 10 651 588 | −47,5 % | 2 599 432 → 2 408 324 |
+
+Le gain après compression de transfert est faible (gzip −7 %, brotli de la capture réelle 1 492 397 → 1 578 659,
+légèrement pire) car les entiers quantifiés se compressent moins bien que des floats très répétitifs : la réduction
+du transfert viendra du dérivé Meshopt (phase 4). La quantification réduit surtout la mémoire de chargement et le
+stockage non compressé.
+
+Validation : les six fichiers passent le validateur du viewer et celui de l'API ; Blender 5.2.2 les importe, rendu
+Cycles (560 × 480, 16 échantillons, graine 42) : écart moyen 0,85/255 sur la scène modèles/lumières et 0,35/255 sur
+le rayon 32 (0,24/255 en moyenne par bloc de 8 × 8 pixels), jusqu'à 18/255 en moyenne de bloc de 8 × 8 sur les
+plantes. Ce n'est plus pixel pour pixel ; la cause n'a pas été isolée entre normales int8, UV 16 bits et positions des
+modèles tournés. Le viewer (Chromium headless, SwiftShader) affiche la scène sans différence visible. Validation en
+jeu : non faite.
+
+Textures : mesure faite, aucune modification. Sur le corpus et la capture réelle, 0 image dupliquée (83 images
+uniques), tous les PNG ont moins de 256 couleurs et pèsent 3 à 76 Kio au total : déduplication et PNG indexé
+n'apportent rien d'utile. Le coût est la VRAM : un atlas de blocs de 1 024 × 512 (2 Mio en RGBA 8 bits) dont seules
+2 à 27 cellules de 16 × 16 sur 2 048 servent dans le corpus (221 sur la capture modée, 11 %). Un repack des seuls
+sprites utilisés réduirait la VRAM à quelques centaines de Kio par capture ; il remappe les UV et touche
+l'échantillonnage NEAREST et le recadrage des atlas de #73 : il reste à faire (suivi dans l'issue).
+
 ## Coût de préparation
 
 Mesures locales sur Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, heap 512 Mio :

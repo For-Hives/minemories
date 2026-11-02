@@ -184,11 +184,10 @@ final class SpoolingGlbSceneTest {
       int normalStart = binaryStart + 48;
       // main now fixes extreme float subtraction too; the complete GLB must stay equivalent.
       assertArrayEquals(expected, actual);
-      ByteBuffer normals = ByteBuffer.wrap(actual).order(ByteOrder.LITTLE_ENDIAN);
       for (int vertex = 0; vertex < 4; vertex++) {
-        assertEquals(0f, normals.getFloat(normalStart + vertex * 12));
-        assertEquals(0f, normals.getFloat(normalStart + vertex * 12 + 4));
-        assertEquals(1f, normals.getFloat(normalStart + vertex * 12 + 8));
+        assertEquals(0, actual[normalStart + vertex * 4]);
+        assertEquals(0, actual[normalStart + vertex * 4 + 1]);
+        assertEquals(127, actual[normalStart + vertex * 4 + 2]);
       }
       String json = json(output);
       assertFalse(json.contains("Infinity"));
@@ -551,7 +550,7 @@ final class SpoolingGlbSceneTest {
                 classpath,
                 SpoolingGlbProbe.class.getName(),
                 output.toString(),
-                "600000")
+                "1200000")
             .redirectErrorStream(true)
             .redirectOutput(log.toFile())
             .start();

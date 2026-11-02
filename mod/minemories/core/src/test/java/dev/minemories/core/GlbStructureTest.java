@@ -98,7 +98,7 @@ final class GlbStructureTest {
     assertTrue(text.contains("\"fluids\":{\"quads\":1}"));
     assertFalse(text.contains("block_entities\":{"));
     for (String name : new String[] {"terrain", "decor", "fluids", "entities"}) {
-      assertTrue(text.contains("{\"name\":\"" + name + "\",\"mesh\":"), name);
+      assertTrue(text.contains("{\"name\":\"" + name + "\",\"translation\":"), name);
       assertTrue(text.contains("{\"name\":\"" + name + "\",\"primitives\":["), name);
     }
     // x/z chunk, first triangle, triangle count: the two chunk-0 runs are separate because the
