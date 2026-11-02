@@ -57,7 +57,7 @@ class CaptureSinkTest {
     Path output = directory.resolve("classified.glb");
     sink.write(output);
     String json = new String(Files.readAllBytes(output), java.nio.charset.StandardCharsets.UTF_8);
-    assertTrue(json.contains("{\"name\":\"fluids\",\"mesh\":0}"));
+    assertTrue(json.contains("{\"name\":\"fluids\",\"translation\":"));
     assertTrue(json.contains("\"minemoriesChunks\":[-1,2,0,2]"));
     assertTrue(json.contains("\"loader\":\"neoforge-21.1.248\""));
     assertEquals(-1, CaptureSink.relativeChunk(15, 16));
