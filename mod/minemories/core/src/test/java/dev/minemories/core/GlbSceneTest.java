@@ -159,13 +159,14 @@ final class GlbSceneTest {
     assertFalse(json.contains("Infinity"));
     // JSON bounds can be finite while the binary NORMAL accessor contains NaN.
     assertTrue(json.contains("\"NORMAL\":1"));
-    assertTrue(json.contains("\"byteOffset\":48,\"byteLength\":48"));
+    // The extent needs float32 positions, but normals are always normalized 8-bit.
+    assertTrue(json.contains("\"byteOffset\":48,\"byteLength\":16,\"byteStride\":4"));
     int binaryStart = 20 + header.getInt(12) + 8;
     for (int vertex = 0; vertex < 4; vertex++) {
-      int normal = binaryStart + 48 + vertex * 12;
-      assertEquals(0f, header.getFloat(normal));
-      assertEquals(0f, header.getFloat(normal + 4));
-      assertEquals(1f, header.getFloat(normal + 8));
+      int normal = binaryStart + 48 + vertex * 4;
+      assertEquals(0, glb[normal]);
+      assertEquals(0, glb[normal + 1]);
+      assertEquals(127, glb[normal + 2]);
     }
   }
 }

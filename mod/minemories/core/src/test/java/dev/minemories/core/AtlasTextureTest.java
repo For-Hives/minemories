@@ -147,11 +147,13 @@ final class AtlasTextureTest {
       assertTrue(json.contains("\"alphaMode\":\"BLEND\""));
       assertTrue(json.contains("emissiveTexture"));
       assertTrue(json.contains("KHR_lights_punctual"));
-      // The first position/normal/UV payload is unchanged; masking only replaces the PNG resource.
+      // The first UV payload is unchanged (normalized 16-bit after the 8-byte quantized
+      // positions and 4-byte normals of 4 vertices); masking only replaces the PNG resource.
       ByteBuffer binary = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-      int offset = 28 + jsonBytes + 96;
+      int offset = 28 + jsonBytes + 4 * 8 + 4 * 4;
       for (int i = 0; i < UV.length; i++)
-        assertEquals(Float.floatToIntBits(UV[i]), binary.getInt(offset + i * 4));
+        assertEquals(
+            Math.round(UV[i] * 65535f), Short.toUnsignedInt(binary.getShort(offset + i * 2)));
     }
   }
 }

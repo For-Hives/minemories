@@ -146,43 +146,59 @@ public final class GlbScene {
         textures = new ArrayList<>();
     Map<String, Integer> imageIndices = new LinkedHashMap<>();
     int materialIndex = 0;
+    Map<GlbCategory, Quantization.Plan> plans = quantizationPlans();
     for (Part part : parts.values()) {
+      Quantization.Plan plan = plans.get(part.category);
+      byte[] positionBytes =
+          plan == null
+              ? part.positions.toByteArray()
+              : quantize(
+                  0, part.positions.toByteArray(), part.vertices * Quantization.POSITION, plan);
+      byte[] normalBytes =
+          quantize(1, part.normals.toByteArray(), part.vertices * Quantization.NORMAL, null);
+      boolean packedUv = part.uvFits;
+      byte[] uvBytes =
+          packedUv
+              ? quantize(2, part.uvs.toByteArray(), part.vertices * Quantization.UV, null)
+              : part.uvs.toByteArray();
       int pos =
           accessor(
               binary,
               views,
               accessors,
-              part.positions.toByteArray(),
+              positionBytes,
               34962,
-              5126,
+              plan == null ? 5126 : 5122,
               part.vertices,
               "VEC3",
-              part.min,
-              part.max);
+              plan == null
+                  ? ",\"min\":" + vec(part.min) + ",\"max\":" + vec(part.max)
+                  : ",\"min\":" + ints(part.min, plan) + ",\"max\":" + ints(part.max, plan),
+              plan == null ? 0 : Quantization.POSITION);
       int normal =
           accessor(
               binary,
               views,
               accessors,
-              part.normals.toByteArray(),
+              normalBytes,
               34962,
-              5126,
+              5120,
               part.vertices,
               "VEC3",
-              null,
-              null);
+              ",\"normalized\":true",
+              Quantization.NORMAL);
       int uv =
           accessor(
               binary,
               views,
               accessors,
-              part.uvs.toByteArray(),
+              uvBytes,
               34962,
-              5126,
+              packedUv ? 5123 : 5126,
               part.vertices,
               "VEC2",
-              null,
-              null);
+              packedUv ? ",\"normalized\":true" : "",
+              packedUv ? Quantization.UV : 0);
       byte[] packedIndices = part.indices.toByteArray();
       int indexWidth = GlbIndices.width(part.vertices);
       if (indexWidth < 4) {
@@ -200,8 +216,8 @@ public final class GlbScene {
               GlbIndices.componentType(part.vertices),
               part.indexCount,
               "SCALAR",
-              null,
-              null);
+              "",
+              0);
       String ranges = part.runs.json();
       byCategory
           .computeIfAbsent(part.category, ignored -> new ArrayList<>())
@@ -282,7 +298,14 @@ public final class GlbScene {
     for (GlbCategory category : GlbCategory.values()) {
       List<String> group = byCategory.get(category);
       if (group == null) continue;
-      nodes.add("{\"name\":\"" + category.id() + "\",\"mesh\":" + meshes.size() + "}");
+      nodes.add(
+          "{\"name\":\""
+              + category.id()
+              + "\""
+              + Quantization.transform(plans.get(category))
+              + ",\"mesh\":"
+              + meshes.size()
+              + "}");
       meshes.add(
           "{\"name\":\"" + category.id() + "\",\"primitives\":[" + String.join(",", group) + "]}");
     }
@@ -318,11 +341,12 @@ public final class GlbScene {
               + "}}}");
     }
     String lightExtension =
-        lights.isEmpty()
-            ? ""
-            : ",\"extensionsUsed\":[\"KHR_lights_punctual\"],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
-                + String.join(",", lights)
-                + "]}}";
+        Quantization.extensions(!lights.isEmpty())
+            + (lights.isEmpty()
+                ? ""
+                : ",\"extensions\":{\"KHR_lights_punctual\":{\"lights\":["
+                    + String.join(",", lights)
+                    + "]}}");
     String json =
         "{\"asset\":"
             + metadata.assetJson(quadsByCategory)
@@ -377,8 +401,8 @@ public final class GlbScene {
       int component,
       int count,
       String type,
-      float[] min,
-      float[] max)
+      String extra,
+      int stride)
       throws IOException {
     align(binary);
     int offset = binary.size();
@@ -389,10 +413,10 @@ public final class GlbScene {
             + offset
             + ",\"byteLength\":"
             + data.length
+            + (stride == 0 ? "" : ",\"byteStride\":" + stride)
             + ",\"target\":"
             + target
             + "}");
-    String bounds = min == null ? "" : ",\"min\":" + vec(min) + ",\"max\":" + vec(max);
     int result = accessors.size();
     accessors.add(
         "{\"bufferView\":"
@@ -404,9 +428,50 @@ public final class GlbScene {
             + ",\"type\":\""
             + type
             + "\""
-            + bounds
+            + extra
             + "}");
     return result;
+  }
+
+  private Map<GlbCategory, Quantization.Plan> quantizationPlans() {
+    Map<GlbCategory, float[][]> extents = new EnumMap<>(GlbCategory.class);
+    for (Part part : parts.values()) {
+      float[][] extent =
+          extents.computeIfAbsent(
+              part.category,
+              ignored ->
+                  new float[][] {
+                    {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
+                    {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY}
+                  });
+      for (int axis = 0; axis < 3; axis++) {
+        extent[0][axis] = Math.min(extent[0][axis], part.min[axis]);
+        extent[1][axis] = Math.max(extent[1][axis], part.max[axis]);
+      }
+    }
+    Map<GlbCategory, Quantization.Plan> plans = new EnumMap<>(GlbCategory.class);
+    extents.forEach(
+        (category, extent) -> {
+          Quantization.Plan plan = Quantization.plan(extent[0], extent[1]);
+          if (plan != null) plans.put(category, plan);
+        });
+    return plans;
+  }
+
+  private static byte[] quantize(int kind, byte[] floats, int size, Quantization.Plan plan) {
+    byte[] out = new byte[size];
+    Quantization.convert(kind, floats, floats.length, out, plan);
+    return out;
+  }
+
+  private static String ints(float[] bound, Quantization.Plan plan) {
+    return "["
+        + plan.quantize(bound[0], plan.x())
+        + ","
+        + plan.quantize(bound[1], plan.y())
+        + ","
+        + plan.quantize(bound[2], plan.z())
+        + "]";
   }
 
   private static final class Part {
@@ -425,6 +490,7 @@ public final class GlbScene {
         max = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
     private final float[] key = new float[8];
     private final int[] corners = new int[4];
+    boolean uvFits = true;
     int vertices, indexCount;
 
     Part(
@@ -464,6 +530,7 @@ public final class GlbScene {
           }
           f(uvs, key[6]);
           f(uvs, key[7]);
+          uvFits = uvFits && Quantization.uvFits(key[6], key[7]);
         }
         corners[corner] = known;
       }

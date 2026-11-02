@@ -61,6 +61,9 @@ Les GLB produits depuis le format 2 contiennent un nœud et un mesh par catégor
 nouveau type d'accessor ni extension : les validateurs n'ont pas changé et les anciens fichiers (un seul mesh) restent
 acceptés. Voir `docs/features/glb-size.md`.
 
+Depuis la phase 3, les attributs sont quantifiés (`KHR_mesh_quantization`, déjà accepté par le validateur) : POSITION en int16
+non normalisé avec échelle de nœud, NORMAL en int8 normalisé, TEXCOORD_0 en uint16 normalisé, tous avec `byteStride`.
+
 ## Disposition et budgets de géométrie
 
 Le même contrôle commun vérifie la disposition JSON avant stockage et avant
