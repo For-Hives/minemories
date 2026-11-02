@@ -1,4 +1,5 @@
 import { type CaptureAvailability, captureAvailability } from '@minemories/api-contract'
+import { expandMeshoptGlb, VARIANT_HEADER, withMeshoptVariant } from './glb-meshopt'
 
 export class CaptureRestorationRequired extends Error {
 	constructor(readonly availability: CaptureAvailability) {
@@ -6,14 +7,19 @@ export class CaptureRestorationRequired extends Error {
 	}
 }
 
+/** Asks for the smaller Meshopt transport variant and hands back an ordinary GLB either way. */
 export async function downloadCapture(url: string, name: string, signal: AbortSignal): Promise<File> {
-	const response = await fetch(url, { credentials: 'include', signal })
+	const response = await fetch(withMeshoptVariant(url), { credentials: 'include', signal })
 	signal.throwIfAborted()
 	await requireCaptureReady(response)
 	if (!response.ok) throw new Error('This memory is unavailable or access was revoked.')
 	const blob = await response.blob()
 	signal.throwIfAborted()
-	return new File([blob], name, { type: 'model/gltf-binary' })
+	if (response.headers.get(VARIANT_HEADER) !== 'meshopt') return new File([blob], name, { type: 'model/gltf-binary' })
+	const expanded = await expandMeshoptGlb(new Uint8Array(await blob.arrayBuffer()))
+	signal.throwIfAborted()
+	if (!expanded) throw new Error('This memory could not be decoded.')
+	return new File([expanded as BlobPart], name, { type: 'model/gltf-binary' })
 }
 
 export function capturePollDelay(seconds: number | null, signal: AbortSignal): Promise<void> {

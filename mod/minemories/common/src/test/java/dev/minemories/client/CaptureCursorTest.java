@@ -70,4 +70,22 @@ class CaptureCursorTest {
         IllegalArgumentException.class,
         () -> new CaptureCursor(new CaptureBounds(1, 0, 0, 0, 1, 1)));
   }
+
+  @Test
+  void columnsAreVisitedChunkByChunkAndNeverTwice() {
+    var cursor = new CaptureCursor(new CaptureBounds(-2, 0, 14, 17, 0, 17));
+    List<String> visited = new ArrayList<>();
+    while (!cursor.done()) {
+      var cell = cursor.peek((x, z) -> new CaptureCursor.Column(0, 0));
+      if (cell == null) continue;
+      visited.add(Math.floorDiv(cell.x(), 16) + "," + Math.floorDiv(cell.z(), 16));
+      cursor.advance();
+    }
+    assertEquals(20 * 4, visited.size());
+    // Columns of one chunk are contiguous: the chunk key only ever changes forward.
+    List<String> order = new ArrayList<>();
+    for (String chunk : visited)
+      if (order.isEmpty() || !order.getLast().equals(chunk)) order.add(chunk);
+    assertEquals(List.of("-1,0", "0,0", "1,0", "-1,1", "0,1", "1,1"), order);
+  }
 }

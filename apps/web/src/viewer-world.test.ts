@@ -47,6 +47,10 @@ test('layers detach lights, share rewritable index buffers and draw only compose
 	expect(layer.resident).toBe(false)
 	expect(disposed).toHaveBeenCalledTimes(1)
 	if (second) second.primitive.count = 6
+	if (second) second.mesh.userData.categoryHidden = true
+	applyLayer(layer)
+	expect(second?.mesh.visible).toBe(false)
+	if (second) second.mesh.userData.categoryHidden = false
 	applyLayer(layer)
 	expect(layer.resident).toBe(true)
 	expect(disposed).toHaveBeenCalledTimes(1)

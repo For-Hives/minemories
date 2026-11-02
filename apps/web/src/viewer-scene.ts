@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
+import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { dayDelta, Glide } from './lib/transitions'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
@@ -87,6 +88,7 @@ export class ViewerScene {
 	private readonly camera: THREE.PerspectiveCamera
 	private readonly controls: OrbitControls
 	private readonly modelRoot = new THREE.Group()
+	private readonly hiddenCategories = new Set<GlbCategory>()
 	private readonly loader = new GLTFLoader()
 	private readonly skyUniforms = {
 		uWeather: { value: 0 },
@@ -338,6 +340,7 @@ export class ViewerScene {
 			for (const child of previous) child.visible = false
 			this.modelRoot.add(imported)
 			attached = true
+			this.applyCategories(imported)
 			this.prepareWorldLighting(imported)
 			this.ceilingDirty = true
 			this.events.onLoading('Preparing the 3D display…')
@@ -365,6 +368,39 @@ export class ViewerScene {
 		}
 	}
 
+	/** Categories (GLB format 2 nodes) present in the loaded model; empty for older files. */
+	categories(): GlbCategory[] {
+		const names: string[] = []
+		this.modelRoot.traverse(object => names.push(object.name))
+		return presentCategories(names)
+	}
+
+	isCategoryVisible(category: GlbCategory): boolean {
+		return !this.hiddenCategories.has(category)
+	}
+
+	/** Shows or hides one category in every loaded capture, composed world included. */
+	setCategoryVisible(category: GlbCategory, visible: boolean): void {
+		if (visible) this.hiddenCategories.delete(category)
+		else this.hiddenCategories.add(category)
+		this.applyCategories(this.modelRoot)
+		this.ceilingDirty = true
+		this.keyLight.shadow.needsUpdate = true
+		this.renderer.shadowMap.needsUpdate = true
+	}
+
+	/** Also applied to every newly attached capture so a choice survives navigation between captures. */
+	private applyCategories(root: THREE.Object3D): void {
+		root.traverse(object => {
+			if (!isGlbCategory(object.name)) return
+			const hidden = this.hiddenCategories.has(object.name)
+			object.userData.categoryHidden = hidden
+			if (object instanceof THREE.Mesh) {
+				object.visible = meshVisible(object.geometry.drawRange.count, hidden)
+			} else object.visible = !hidden
+		})
+	}
+
 	/** Adds one capture of an evolving world next to the others; it draws nothing until composed. */
 	async addLayer(
 		file: File,
@@ -386,6 +422,7 @@ export class ViewerScene {
 			})
 			const first = this.modelRoot.children.length === 0
 			this.modelRoot.add(root)
+			this.applyCategories(root)
 			await this.renderer.compileAsync(root, this.camera, this.scene)
 			this.ensureLoadActive(signal)
 			if (first) {

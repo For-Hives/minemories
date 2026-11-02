@@ -58,7 +58,14 @@ final class VisitedZones {
     dirty = true;
   }
 
-  List<Zone> suggestions() {
+  /** Active seconds in the 64-block zone containing the block, 0 when never visited. */
+  long secondsAt(int x, int z) {
+    long key = ((long) Math.floorDiv(x, 64) << 32) | (Math.floorDiv(z, 64) & 0xffffffffL);
+    return seconds.getOrDefault(key, 0L);
+  }
+
+  /** Every zone with at least a minute of active time, most visited first. */
+  List<Zone> all() {
     return seconds.entrySet().stream()
         .filter(entry -> entry.getValue() >= 60)
         .map(
@@ -72,8 +79,12 @@ final class VisitedZones {
                 .reversed()
                 .thenComparingInt(Zone::minX)
                 .thenComparingInt(Zone::minZ))
-        .limit(5)
         .toList();
+  }
+
+  List<Zone> suggestions() {
+    List<Zone> zones = all();
+    return zones.size() > 5 ? zones.subList(0, 5) : zones;
   }
 
   static VisitedZones read(Path path) throws IOException {

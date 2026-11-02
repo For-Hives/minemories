@@ -24,8 +24,10 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add('-Xlint:all')
 }
 tasks.withType(ProcessResources).configureEach {
-    inputs.property('version', project.version)
-    filesMatching('fabric.mod.json') { expand version: project.version }
+    // Read the version at configuration time: closures cannot touch `project` under the configuration cache.
+    var props = [version: project.version]
+    inputs.properties props
+    filesMatching('fabric.mod.json') { expand props }
 }
 tasks.named('jar') {
     from project(':core').sourceSets.main.output

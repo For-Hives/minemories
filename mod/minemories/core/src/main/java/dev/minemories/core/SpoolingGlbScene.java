@@ -32,7 +32,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
     playerExtras = ",\"extras\":{\"minemoriesPlayerPosition\":[" + x + "," + y + "," + z + "]}";
   }
 
+  /** Worst case when no vertex is shared: 4 × (12 + 12 + 8) bytes plus 6 indices. */
   private static final int QUAD_BYTES = 152;
+
   private static final int STREAM_BUFFER_BYTES = 8192;
   private static final int COPY_BUFFER_BYTES = 64 * 1024;
 
@@ -81,8 +83,17 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private final Map<String, Light> lights = new LinkedHashMap<>();
   private final List<StoredFile> files = new ArrayList<>();
   private final Map<Path, OutputStream> streams = new LinkedHashMap<>(16, 0.75f, true);
-  private final ByteBuffer quad = ByteBuffer.allocate(QUAD_BYTES).order(ByteOrder.LITTLE_ENDIAN);
+  private final ByteBuffer vertexBytes = ByteBuffer.allocate(32).order(ByteOrder.LITTLE_ENDIAN);
+  private final ByteBuffer indexBytes = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
+  private final VertexCache cache = new VertexCache();
+  private final ChunkStats stats = new ChunkStats();
+  private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
+  private final GlbMetadata metadata = new GlbMetadata();
+  private final int[] quadsByCategory = new int[GlbCategory.values().length];
+  private final float[] normal = new float[3];
+  private final float[] key = new float[8];
   private final byte[] copyBuffer = new byte[COPY_BUFFER_BYTES];
+  private final byte[] convertedBuffer = new byte[COPY_BUFFER_BYTES];
   private long spoolBytes;
   private long quads;
   private int peakOpenFiles;
@@ -90,6 +101,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private boolean failed;
   private boolean sealed;
   private Layout layout;
+  private Map<GlbCategory, Quantization.Plan> plans = new java.util.EnumMap<>(GlbCategory.class);
   private StoredFile json;
 
   public SpoolingGlbScene(Path temporaryParent) throws IOException {
@@ -110,6 +122,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
     directoryIdentity = identity;
   }
 
+  /** Per-chunk facts of everything added so far. */
+  public ChunkStats chunkStats() {
+    return stats;
+  }
+
   public boolean hasGeometry() {
     return !closed && !failed && quads > 0;
   }
@@ -122,7 +139,44 @@ public final class SpoolingGlbScene implements AutoCloseable {
     return new Metrics(spoolBytes, quads, parts.size(), images.size(), peakOpenFiles);
   }
 
+  /** Non-personal technical description written into {@code asset.extras.minemories}. */
+  public void setSource(String minecraft, String loader, String mod, String dimension) {
+    metadata.setSource(minecraft, loader, mod, dimension);
+  }
+
   public void addQuad(
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      float[] xyz,
+      float[] uv)
+      throws IOException {
+    addQuad(
+        GlbCategory.TERRAIN,
+        ChunkRuns.NONE,
+        ChunkRuns.NONE,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        xyz,
+        uv);
+  }
+
+  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
       String key,
       String materialName,
       String imageKey,
@@ -141,8 +195,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
       }
       for (float value : xyz) if (!Float.isFinite(value)) return;
       for (float value : uv) if (!Float.isFinite(value)) return;
+      // A quad without any area renders nothing: drop it instead of writing a zero normal.
+      if (!QuadGeometry.normal(xyz, normal)) return;
       checkedString(key);
-      Part part = parts.get(key);
+      String partKey = category.ordinal() + ":" + key;
+      Part part = parts.get(partKey);
       if (part == null) {
         if (parts.size() >= limits.materials())
           throw new IOException("GLB material limit exceeded");
@@ -152,6 +209,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
         int id = parts.size();
         part =
             new Part(
+                id,
+                category,
+                new ChunkRuns(runBudget),
                 materialName,
                 image,
                 tint,
@@ -162,27 +222,18 @@ public final class SpoolingGlbScene implements AutoCloseable {
                 create("p" + id + "-normals"),
                 create("p" + id + "-uvs"),
                 create("p" + id + "-indices"));
-        parts.put(key, part);
+        parts.put(partKey, part);
       }
       if (part.vertices > Integer.MAX_VALUE - 4) throw new IOException("GLB vertex limit exceeded");
       if (part.indexCount > Integer.MAX_VALUE - 6)
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
       part.image.usage.include(uv);
+      stats.quad(category, chunkX, chunkZ, materialName, xyz);
+      int before = part.indexCount / 3;
       encode(part, xyz, uv);
-      append(part.positions, quad.array(), 0, 48);
-      append(part.normals, quad.array(), 48, 48);
-      append(part.uvs, quad.array(), 96, 32);
-      append(part.indices, quad.array(), 128, 24);
-      for (int vertex = 0; vertex < 4; vertex++) {
-        for (int axis = 0; axis < 3; axis++) {
-          float value = xyz[vertex * 3 + axis];
-          part.min[axis] = Math.min(part.min[axis], value);
-          part.max[axis] = Math.max(part.max[axis], value);
-        }
-      }
-      part.vertices += 4;
-      part.indexCount += 6;
+      part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
+      quadsByCategory[category.ordinal()]++;
       quads++;
     } catch (IOException error) {
       throw invalidate(error);
@@ -190,6 +241,12 @@ public final class SpoolingGlbScene implements AutoCloseable {
   }
 
   public void addPointLight(float x, float y, float z, int color, int level) throws IOException {
+    addPointLight(x, y, z, color, level, ChunkRuns.NONE, ChunkRuns.NONE);
+  }
+
+  /** The chunk, relative to the capture origin, is only used for per-chunk statistics. */
+  public void addPointLight(float x, float y, float z, int color, int level, int chunkX, int chunkZ)
+      throws IOException {
     try {
       writable();
       if (level < 4 || !Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(z)) return;
@@ -197,6 +254,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (lights.containsKey(key)) return;
       if (lights.size() >= limits.lights()) throw new IOException("GLB light limit exceeded");
       lights.put(key, new Light(x, y, z, color, level));
+      stats.light(chunkX, chunkZ);
     } catch (IOException error) {
       throw invalidate(error);
     }
@@ -214,6 +272,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         sealed = true;
         closeStreams();
         optimizeAtlases();
+        plans = quantizationPlans();
         layout = layout();
         json = create("scene-json");
         try (JsonSink sink = new JsonSink()) {
@@ -245,7 +304,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         long cursor = 0;
         for (Segment segment : layout.segments) {
           padding(out, segment.offset - cursor, 0);
-          copy(segment.file, out, segment.kind == 3 ? GlbIndices.width(segment.part.vertices) : 4);
+          copy(segment, out);
           cursor = segment.offset + segment.bytes();
         }
         padding(out, binaryLength - cursor, 0);
@@ -291,7 +350,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       }
       if (original.length != image.file.bytes)
         throw new IOException("GLB texture changed during optimization");
-      byte[] optimized = image.usage.optimize(original);
+      byte[] optimized = repack(image, original);
+      if (optimized == null) optimized = image.usage.optimize(original);
       if (optimized == original) continue;
       verify(image.file, true);
       try (var out =
@@ -305,6 +365,23 @@ public final class SpoolingGlbScene implements AutoCloseable {
       spoolBytes -= image.file.bytes - optimized.length;
       image.file.bytes = optimized.length;
     }
+  }
+
+  /** Smaller replacement atlas with the users' UV remaps stored on them, or null. */
+  private byte[] repack(Image image, byte[] original) throws IOException {
+    int[] size = AtlasTexture.dimensions(original);
+    if (size == null) return null;
+    List<Part> users = new ArrayList<>();
+    for (Part part : parts.values()) if (part.image == image) users.add(part);
+    AtlasRepack.Plan plan =
+        AtlasRepack.plan(
+            original, size[0], size[1], users.stream().map(part -> part.uvBounds).toList());
+    if (plan == null) return null;
+    for (int index = 0; index < users.size(); index++) {
+      users.get(index).uvTransform =
+          new double[] {plan.scaleU(), plan.offsetU()[index], plan.scaleV(), plan.offsetV()[index]};
+    }
+    return plan.png();
   }
 
   private static String digest(byte[] bytes) {
@@ -323,33 +400,44 @@ public final class SpoolingGlbScene implements AutoCloseable {
     }
   }
 
-  private void encode(Part part, float[] xyz, float[] uv) {
-    double ax = (double) xyz[3] - xyz[0],
-        ay = (double) xyz[4] - xyz[1],
-        az = (double) xyz[5] - xyz[2];
-    double bx = (double) xyz[6] - xyz[0],
-        by = (double) xyz[7] - xyz[1],
-        bz = (double) xyz[8] - xyz[2];
-    double nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
-    double length = Math.sqrt(nx * nx + ny * ny + nz * nz);
-    if (length > 0) {
-      nx /= length;
-      ny /= length;
-      nz /= length;
+  /** Appends only the vertices this primitive has not already emitted, then the triangles. */
+  private void encode(Part part, float[] xyz, float[] uv) throws IOException {
+    int[] corners = part.corners;
+    for (int corner = 0; corner < 4; corner++) {
+      QuadGeometry.corner(key, xyz, normal, uv, corner);
+      int known = cache.intern(part.id, key, part.vertices);
+      if (known < 0) {
+        known = part.vertices++;
+        vertexBytes.clear();
+        for (int axis = 0; axis < 3; axis++) {
+          vertexBytes.putFloat(key[axis]);
+          part.min[axis] = Math.min(part.min[axis], key[axis]);
+          part.max[axis] = Math.max(part.max[axis], key[axis]);
+        }
+        for (int axis = 3; axis < 6; axis++) vertexBytes.putFloat(key[axis]);
+        vertexBytes.putFloat(key[6]).putFloat(key[7]);
+        append(part.positions, vertexBytes.array(), 0, 12);
+        append(part.normals, vertexBytes.array(), 12, 12);
+        append(part.uvs, vertexBytes.array(), 24, 8);
+        part.uvFits = part.uvFits && Quantization.uvFits(key[6], key[7]);
+        part.uvBounds.include(key[6], key[7]);
+      }
+      corners[corner] = known;
     }
-    quad.clear();
-    for (float value : xyz) quad.putFloat(value);
-    for (int vertex = 0; vertex < 4; vertex++) {
-      quad.putFloat((float) nx).putFloat((float) ny).putFloat((float) nz);
+    indexBytes.clear();
+    int emitted = triangle(corners[0], corners[1], corners[2]);
+    emitted += triangle(corners[0], corners[2], corners[3]);
+    if (emitted > 0) {
+      append(part.indices, indexBytes.array(), 0, emitted * 12);
+      part.indexCount += emitted * 3;
     }
-    for (float value : uv) quad.putFloat(value);
-    int base = part.vertices;
-    quad.putInt(base)
-        .putInt(base + 1)
-        .putInt(base + 2)
-        .putInt(base)
-        .putInt(base + 2)
-        .putInt(base + 3);
+  }
+
+  private int triangle(int a, int b, int c) {
+    // Welding can collapse a triangle of a quad that already had a repeated corner.
+    if (a == b || b == c || a == c) return 0;
+    indexBytes.putInt(a).putInt(b).putInt(c);
+    return 1;
   }
 
   private StoredFile create(String name) throws IOException {
@@ -450,27 +538,83 @@ public final class SpoolingGlbScene implements AutoCloseable {
     for (StoredFile file : files) verify(file, true);
   }
 
-  private void copy(StoredFile file, OutputStream output) throws IOException {
-    copy(file, output, 4);
-  }
-
-  private void copy(StoredFile file, OutputStream output, int indexWidth) throws IOException {
+  private void copy(Segment segment, OutputStream output) throws IOException {
+    StoredFile file = segment.file;
+    int indexWidth = segment.kind == 3 ? GlbIndices.width(segment.part.vertices) : 4;
+    int input = segment.sourceElement(), converted = segment.element();
+    boolean convert = input > 0 && converted != input;
     verify(file, true);
     // Final output and one input are the only open files after the append cache is closed.
     peakOpenFiles = Math.max(peakOpenFiles, 2);
-    try (var input = Files.newInputStream(file.path, LinkOption.NOFOLLOW_LINKS)) {
+    try (var stream = Files.newInputStream(file.path, LinkOption.NOFOLLOW_LINKS)) {
+      long remaining = file.bytes;
+      // Whole elements only, and the converted block must fit the second buffer.
+      int block = convert ? copyBuffer.length / input * input : copyBuffer.length;
+      while (remaining > 0) {
+        interrupted();
+        int requested = (int) Math.min(block, remaining);
+        int read = stream.readNBytes(copyBuffer, 0, requested);
+        if (read != requested) throw new IOException("Truncated GLB spool");
+        if (convert) {
+          int written =
+              Quantization.convert(
+                  segment.kind,
+                  copyBuffer,
+                  read,
+                  convertedBuffer,
+                  segment.plan,
+                  segment.part.uvTransform);
+          output.write(convertedBuffer, 0, written);
+        } else {
+          int written = indexWidth < 4 ? GlbIndices.compact(copyBuffer, read, indexWidth) : read;
+          output.write(copyBuffer, 0, written);
+        }
+        remaining -= read;
+      }
+      if (stream.read() != -1) throw new IOException("GLB spool grew during write");
+    }
+  }
+
+  private void copy(StoredFile file, OutputStream output) throws IOException {
+    verify(file, true);
+    peakOpenFiles = Math.max(peakOpenFiles, 2);
+    try (var stream = Files.newInputStream(file.path, LinkOption.NOFOLLOW_LINKS)) {
       long remaining = file.bytes;
       while (remaining > 0) {
         interrupted();
         int requested = (int) Math.min(copyBuffer.length, remaining);
-        int read = input.readNBytes(copyBuffer, 0, requested);
+        int read = stream.readNBytes(copyBuffer, 0, requested);
         if (read != requested) throw new IOException("Truncated GLB spool");
-        int written = indexWidth < 4 ? GlbIndices.compact(copyBuffer, read, indexWidth) : read;
-        output.write(copyBuffer, 0, written);
+        output.write(copyBuffer, 0, read);
         remaining -= read;
       }
-      if (input.read() != -1) throw new IOException("GLB spool grew during write");
+      if (stream.read() != -1) throw new IOException("GLB spool grew during write");
     }
+  }
+
+  private Map<GlbCategory, Quantization.Plan> quantizationPlans() {
+    Map<GlbCategory, float[][]> extents = new java.util.EnumMap<>(GlbCategory.class);
+    for (Part part : parts.values()) {
+      float[][] extent =
+          extents.computeIfAbsent(
+              part.category,
+              ignored ->
+                  new float[][] {
+                    {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
+                    {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY}
+                  });
+      for (int axis = 0; axis < 3; axis++) {
+        extent[0][axis] = Math.min(extent[0][axis], part.min[axis]);
+        extent[1][axis] = Math.max(extent[1][axis], part.max[axis]);
+      }
+    }
+    Map<GlbCategory, Quantization.Plan> result = new java.util.EnumMap<>(GlbCategory.class);
+    extents.forEach(
+        (category, extent) -> {
+          Quantization.Plan plan = Quantization.plan(extent[0], extent[1]);
+          if (plan != null) result.put(category, plan);
+        });
+    return result;
   }
 
   private static long align4(long value) {
@@ -570,14 +714,16 @@ public final class SpoolingGlbScene implements AutoCloseable {
               default -> part.indices;
             };
         offset = align4(offset);
-        Segment segment = new Segment(file, offset, segments.size(), accessor++, index, part);
+        Segment segment =
+            new Segment(
+                file, offset, segments.size(), accessor++, index, part, plans.get(part.category));
         segments.add(segment);
         offset += segment.bytes();
       }
       if (!imageViews.containsKey(part.image)) {
         offset = align4(offset);
         imageViews.put(part.image, segments.size());
-        segments.add(new Segment(part.image.file, offset, segments.size(), -1, -1, part));
+        segments.add(new Segment(part.image.file, offset, segments.size(), -1, -1, part, null));
         offset += part.image.file.bytes;
       }
     }
@@ -586,44 +732,75 @@ public final class SpoolingGlbScene implements AutoCloseable {
 
   private void writeJson(JsonSink sink) throws IOException {
     sink.text(
-        "{\"asset\":{\"version\":\"2.0\",\"generator\":\"Minemories\"},\"scene\":0,\"scenes\":[{\"nodes\":[");
-    for (int index = 0; index <= lights.size(); index++) {
+        "{\"asset\":"
+            + metadata.assetJson(quadsByCategory)
+            + ",\"scene\":0,\"scenes\":[{\"nodes\":[");
+    List<GlbCategory> present = new ArrayList<>();
+    for (GlbCategory category : GlbCategory.values()) {
+      if (quadsByCategory[category.ordinal()] > 0) present.add(category);
+    }
+    for (int index = 0; index < present.size() + lights.size(); index++) {
       if (index > 0) sink.text(",");
       sink.text(Integer.toString(index));
     }
-    sink.text("]" + playerExtras + "}],\"nodes\":[{\"mesh\":0}");
+    sink.text("]" + playerExtras + "}],\"nodes\":[");
     int index = 0;
-    for (Light light : lights.values()) {
+    for (GlbCategory category : present) {
       sink.text(
-          ",{\"translation\":["
-              + light.x
-              + ","
-              + light.y
-              + ","
-              + light.z
-              + "],\"extensions\":{\"KHR_lights_punctual\":{\"light\":"
+          (index > 0 ? "," : "")
+              + "{\"name\":\""
+              + category.id()
+              + "\""
+              + Quantization.transform(plans.get(category))
+              + ",\"mesh\":"
               + index++
+              + "}");
+    }
+    int lightId = 0;
+    for (Light entry : lights.values()) {
+      sink.text(
+          (index++ > 0 ? "," : "")
+              + "{\"translation\":["
+              + entry.x
+              + ","
+              + entry.y
+              + ","
+              + entry.z
+              + "],\"extensions\":{\"KHR_lights_punctual\":{\"light\":"
+              + lightId++
               + "}}}");
     }
-    sink.text("],\"meshes\":[{\"primitives\":[");
-    index = 0;
-    for (Part part : parts.values()) {
-      if (index > 0) sink.text(",");
-      int first = index * 4;
-      sink.text(
-          "{\"attributes\":{\"POSITION\":"
-              + first
-              + ",\"NORMAL\":"
-              + (first + 1)
-              + ",\"TEXCOORD_0\":"
-              + (first + 2)
-              + "},\"indices\":"
-              + (first + 3)
-              + ",\"material\":"
-              + index++
-              + ",\"mode\":4}");
+    sink.text("],\"meshes\":[");
+    int mesh = 0;
+    for (GlbCategory category : present) {
+      sink.text((mesh++ > 0 ? "," : "") + "{\"name\":\"" + category.id() + "\",\"primitives\":[");
+      boolean first = true;
+      int partIndex = 0;
+      for (Part part : parts.values()) {
+        int current = partIndex++;
+        if (part.category != category) continue;
+        int accessor = current * 4;
+        String ranges = part.runs.json();
+        sink.text(
+            (first ? "" : ",")
+                + "{\"attributes\":{\"POSITION\":"
+                + accessor
+                + ",\"NORMAL\":"
+                + (accessor + 1)
+                + ",\"TEXCOORD_0\":"
+                + (accessor + 2)
+                + "},\"indices\":"
+                + (accessor + 3)
+                + ",\"material\":"
+                + current
+                + ",\"mode\":4"
+                + (ranges == null ? "" : ",\"extras\":{\"minemoriesChunks\":" + ranges + "}")
+                + "}");
+        first = false;
+      }
+      sink.text("]}");
     }
-    sink.text("]}],\"materials\":[");
+    sink.text("],\"materials\":[");
     index = 0;
     for (Part part : parts.values()) {
       if (index++ > 0) sink.text(",");
@@ -689,14 +866,23 @@ public final class SpoolingGlbScene implements AutoCloseable {
           "{\"bufferView\":"
               + segment.view
               + ",\"componentType\":"
-              + (indices ? GlbIndices.componentType(segment.part.vertices) : 5126)
+              + componentType(segment)
               + ",\"count\":"
               + (indices ? segment.part.indexCount : segment.part.vertices)
               + ",\"type\":\""
               + type
               + "\"");
       if (segment.kind == 0) {
-        sink.text(",\"min\":" + vector(segment.part.min) + ",\"max\":" + vector(segment.part.max));
+        Quantization.Plan plan = segment.plan;
+        sink.text(
+            plan == null
+                ? ",\"min\":" + vector(segment.part.min) + ",\"max\":" + vector(segment.part.max)
+                : ",\"min\":"
+                    + quantized(segment.part.min, plan)
+                    + ",\"max\":"
+                    + quantized(segment.part.max, plan));
+      } else if (segment.kind == 1 || (segment.kind == 2 && segment.part.uvFits)) {
+        sink.text(",\"normalized\":true");
       }
       sink.text("}");
     }
@@ -706,13 +892,16 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (index++ > 0) sink.text(",");
       sink.text(
           "{\"buffer\":0,\"byteOffset\":" + segment.offset + ",\"byteLength\":" + segment.bytes());
+      if (segment.kind >= 0 && segment.kind < 3 && segment.element() != segment.sourceElement()) {
+        sink.text(",\"byteStride\":" + segment.element());
+      }
       if (segment.kind >= 0) sink.text(",\"target\":" + (segment.kind == 3 ? 34963 : 34962));
       sink.text("}");
     }
     sink.text("],\"buffers\":[{\"byteLength\":" + layout.bytes + "}]");
+    sink.text(Quantization.extensions(!lights.isEmpty()));
     if (!lights.isEmpty()) {
-      sink.text(
-          ",\"extensionsUsed\":[\"KHR_lights_punctual\"],\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[");
+      sink.text(",\"extensions\":{\"KHR_lights_punctual\":{\"lights\":[");
       index = 0;
       for (Light light : lights.values()) {
         if (index++ > 0) sink.text(",");
@@ -735,6 +924,25 @@ public final class SpoolingGlbScene implements AutoCloseable {
       sink.text("]}}");
     }
     sink.text("}");
+  }
+
+  private static int componentType(Segment segment) {
+    return switch (segment.kind) {
+      case 0 -> segment.plan == null ? 5126 : 5122;
+      case 1 -> 5120;
+      case 2 -> segment.part.uvFits ? 5123 : 5126;
+      default -> GlbIndices.componentType(segment.part.vertices);
+    };
+  }
+
+  private static String quantized(float[] values, Quantization.Plan plan) {
+    return "["
+        + plan.quantize(values[0], plan.x())
+        + ","
+        + plan.quantize(values[1], plan.y())
+        + ","
+        + plan.quantize(values[2], plan.z())
+        + "]";
   }
 
   private static String vector(float[] values) {
@@ -783,15 +991,48 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private record Light(float x, float y, float z, int color, int level) {}
 
   private record Segment(
-      StoredFile file, long offset, int view, int accessor, int kind, Part part) {
+      StoredFile file,
+      long offset,
+      int view,
+      int accessor,
+      int kind,
+      Part part,
+      Quantization.Plan plan) {
+    /** Bytes of one float32 element in the spool, or 0 for indices and images. */
+    int sourceElement() {
+      return switch (kind) {
+        case 0, 1 -> 12;
+        case 2 -> 8;
+        default -> 0;
+      };
+    }
+
+    /** Bytes of one element in the published file. */
+    int element() {
+      return switch (kind) {
+        case 0 -> plan == null ? Quantization.FLOAT_POSITION : Quantization.POSITION;
+        case 1 -> Quantization.NORMAL;
+        case 2 -> part.uvFits ? Quantization.UV : Quantization.FLOAT_UV;
+        default -> 0;
+      };
+    }
+
     long bytes() {
-      return kind == 3 ? file.bytes / 4 * GlbIndices.width(part.vertices) : file.bytes;
+      if (kind == 3) return file.bytes / 4 * GlbIndices.width(part.vertices);
+      return kind < 0 ? file.bytes : (long) part.vertices * element();
     }
   }
 
   private record Layout(List<Segment> segments, Map<Image, Integer> imageViews, long bytes) {}
 
   private static final class Part {
+    final int id;
+    final GlbCategory category;
+    final ChunkRuns runs;
+    final int[] corners = new int[4];
+    boolean uvFits = true;
+    final UvBounds uvBounds = new UvBounds();
+    double[] uvTransform;
     final String name;
     final Image image;
     final int tint, alphaMode;
@@ -802,6 +1043,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
     int vertices, indexCount;
 
     Part(
+        int id,
+        GlbCategory category,
+        ChunkRuns runs,
         String name,
         Image image,
         int tint,
@@ -812,6 +1056,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
         StoredFile normals,
         StoredFile uvs,
         StoredFile indices) {
+      this.id = id;
+      this.category = category;
+      this.runs = runs;
       this.name = name;
       this.image = image;
       this.tint = tint;

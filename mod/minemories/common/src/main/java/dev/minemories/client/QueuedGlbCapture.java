@@ -2,6 +2,7 @@ package dev.minemories.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.minemories.core.ChunkStats;
 import dev.minemories.core.SpoolingGlbScene;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -49,7 +50,9 @@ final class QueuedGlbCapture implements AutoCloseable {
       int textures,
       long quads,
       Instant finishedAt,
-      Preparation preparation) {}
+      Preparation preparation,
+      List<ChunkStats.Chunk> chunks,
+      int[] origin) {}
 
   private interface Task {}
 
@@ -260,6 +263,9 @@ final class QueuedGlbCapture implements AutoCloseable {
         float[] positions = quad.positions();
         if (alpha != 0) RenderedLayer.separate(positions, quad.layer());
         scene.addQuad(
+            quad.category(),
+            quad.chunkX(),
+            quad.chunkZ(),
             material.key() + "#resolved-alpha-" + alpha,
             material.name(),
             material.image(),
@@ -273,7 +279,14 @@ final class QueuedGlbCapture implements AutoCloseable {
       }
       for (var light : batch.lights) {
         checkCancelled();
-        scene.addPointLight(light.x(), light.y(), light.z(), light.color(), light.level());
+        scene.addPointLight(
+            light.x(),
+            light.y(),
+            light.z(),
+            light.color(),
+            light.level(),
+            light.chunkX(),
+            light.chunkZ());
       }
     }
 
@@ -311,6 +324,9 @@ final class QueuedGlbCapture implements AutoCloseable {
       if (!scene.hasGeometry()) throw new IOException("Capture has no visible geometry");
       JsonObject metadata = JsonParser.parseString(finish.metadata).getAsJsonObject();
       metadata.addProperty("captureStartedAt", finish.capturedAt.toString());
+      int[] origin = captureOrigin(metadata);
+      var source = ClientRuntime.glbSource(metadata);
+      scene.setSource(source[0], source[1], source[2], source[3]);
       if (metadata.has("minemoriesPlayerPosition")) {
         var position = metadata.getAsJsonArray("minemoriesPlayerPosition");
         scene.setPlayerPosition(
@@ -341,8 +357,27 @@ final class QueuedGlbCapture implements AutoCloseable {
           textures.size(),
           scene.metrics().quads(),
           Objects.requireNonNull(ended[0]),
-          new Preparation(textureNanos, geometryNanos, System.nanoTime() - started));
+          new Preparation(textureNanos, geometryNanos, System.nanoTime() - started),
+          scene.chunkStats().snapshot(origin[0], origin[1], origin[2]),
+          origin);
     }
+  }
+
+  /**
+   * Block position the capture's coordinates are relative to; (0, 0, 0) when the metadata has none.
+   */
+  static int[] captureOrigin(JsonObject metadata) {
+    var origin = metadata.get("captureOrigin");
+    if (origin == null || !origin.isJsonObject()) return new int[3];
+    var object = origin.getAsJsonObject();
+    return new int[] {intOf(object, "x"), intOf(object, "y"), intOf(object, "z")};
+  }
+
+  private static int intOf(JsonObject object, String name) {
+    var value = object.get(name);
+    return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber()
+        ? value.getAsInt()
+        : 0;
   }
 
   private void checkCancelled() throws InterruptedIOException {

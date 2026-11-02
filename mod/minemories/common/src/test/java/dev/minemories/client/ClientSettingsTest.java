@@ -141,9 +141,11 @@ class ClientSettingsTest {
   void afkOptionsHaveProductionDefaultsAndPersistValidatedOverrides() {
     Properties settings = new Properties();
     assertEquals(new ClientSettings.AfkOptions(5, 240, 32), ClientSettings.afkOptions(settings));
+    assertFalse(ClientSettings.explicitRadius(settings));
     var custom = new ClientSettings.AfkOptions(1, 10, 64);
     ClientSettings.configureAfk(settings, custom);
     assertEquals(custom, ClientSettings.afkOptions(settings));
+    assertTrue(ClientSettings.explicitRadius(settings));
     settings.setProperty("afkIdleMinutes", "broken");
     assertEquals(new ClientSettings.AfkOptions(5, 240, 32), ClientSettings.afkOptions(settings));
     assertThrows(IllegalArgumentException.class, () -> new ClientSettings.AfkOptions(0, 10, 32));
