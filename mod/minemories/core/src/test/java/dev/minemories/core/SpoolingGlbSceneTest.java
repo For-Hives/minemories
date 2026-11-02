@@ -180,14 +180,15 @@ final class SpoolingGlbSceneTest {
       scene.write(output);
       byte[] expected = Files.readAllBytes(old), actual = Files.readAllBytes(output);
       int binaryStart = 28 + ByteBuffer.wrap(actual).order(ByteOrder.LITTLE_ENDIAN).getInt(12);
-      int normalStart = binaryStart + 96;
+      // The all-zero quad has no area and is dropped; only the extreme quad is written.
+      int normalStart = binaryStart + 48;
       // main now fixes extreme float subtraction too; the complete GLB must stay equivalent.
       assertArrayEquals(expected, actual);
       ByteBuffer normals = ByteBuffer.wrap(actual).order(ByteOrder.LITTLE_ENDIAN);
-      for (int vertex = 0; vertex < 8; vertex++) {
+      for (int vertex = 0; vertex < 4; vertex++) {
         assertEquals(0f, normals.getFloat(normalStart + vertex * 12));
         assertEquals(0f, normals.getFloat(normalStart + vertex * 12 + 4));
-        assertEquals(vertex < 4 ? 0f : 1f, normals.getFloat(normalStart + vertex * 12 + 8));
+        assertEquals(1f, normals.getFloat(normalStart + vertex * 12 + 8));
       }
       String json = json(output);
       assertFalse(json.contains("Infinity"));

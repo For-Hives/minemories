@@ -68,6 +68,9 @@ final class GlbIndicesTest {
           second = directory.resolve("spool-" + quads + ".glb");
       try (SpoolingGlbScene spool = new SpoolingGlbScene(directory)) {
         for (int i = 0; i < quads; i++) {
+          // Distinct positions: identical quads would be welded into shared vertices.
+          float[] xyz = SpoolingGlbSceneTest.XYZ.clone();
+          for (int corner = 0; corner < 4; corner++) xyz[corner * 3] += i * 2f;
           memory.addQuad(
               "part",
               "part",
@@ -77,9 +80,19 @@ final class GlbIndicesTest {
               1,
               0,
               1,
-              SpoolingGlbSceneTest.XYZ,
+              xyz,
               SpoolingGlbSceneTest.UV);
-          SpoolingGlbSceneTest.add(spool, "part");
+          spool.addQuad(
+              "part",
+              "material part",
+              "sprite",
+              SpoolingGlbSceneTest.PNG,
+              0xffffff,
+              1,
+              0,
+              1,
+              xyz,
+              SpoolingGlbSceneTest.UV);
         }
         memory.write(first);
         spool.write(second);

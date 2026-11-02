@@ -32,7 +32,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
     playerExtras = ",\"extras\":{\"minemoriesPlayerPosition\":[" + x + "," + y + "," + z + "]}";
   }
 
+  /** Worst case when no vertex is shared: 4 × (12 + 12 + 8) bytes plus 6 indices. */
   private static final int QUAD_BYTES = 152;
+
   private static final int STREAM_BUFFER_BYTES = 8192;
   private static final int COPY_BUFFER_BYTES = 64 * 1024;
 
@@ -81,7 +83,11 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private final Map<String, Light> lights = new LinkedHashMap<>();
   private final List<StoredFile> files = new ArrayList<>();
   private final Map<Path, OutputStream> streams = new LinkedHashMap<>(16, 0.75f, true);
-  private final ByteBuffer quad = ByteBuffer.allocate(QUAD_BYTES).order(ByteOrder.LITTLE_ENDIAN);
+  private final ByteBuffer vertexBytes = ByteBuffer.allocate(32).order(ByteOrder.LITTLE_ENDIAN);
+  private final ByteBuffer indexBytes = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN);
+  private final VertexCache cache = new VertexCache();
+  private final float[] normal = new float[3];
+  private final float[] key = new float[8];
   private final byte[] copyBuffer = new byte[COPY_BUFFER_BYTES];
   private long spoolBytes;
   private long quads;
@@ -141,6 +147,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       }
       for (float value : xyz) if (!Float.isFinite(value)) return;
       for (float value : uv) if (!Float.isFinite(value)) return;
+      // A quad without any area renders nothing: drop it instead of writing a zero normal.
+      if (!QuadGeometry.normal(xyz, normal)) return;
       checkedString(key);
       Part part = parts.get(key);
       if (part == null) {
@@ -152,6 +160,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         int id = parts.size();
         part =
             new Part(
+                id,
                 materialName,
                 image,
                 tint,
@@ -170,19 +179,6 @@ public final class SpoolingGlbScene implements AutoCloseable {
       reserve(QUAD_BYTES);
       part.image.usage.include(uv);
       encode(part, xyz, uv);
-      append(part.positions, quad.array(), 0, 48);
-      append(part.normals, quad.array(), 48, 48);
-      append(part.uvs, quad.array(), 96, 32);
-      append(part.indices, quad.array(), 128, 24);
-      for (int vertex = 0; vertex < 4; vertex++) {
-        for (int axis = 0; axis < 3; axis++) {
-          float value = xyz[vertex * 3 + axis];
-          part.min[axis] = Math.min(part.min[axis], value);
-          part.max[axis] = Math.max(part.max[axis], value);
-        }
-      }
-      part.vertices += 4;
-      part.indexCount += 6;
       quads++;
     } catch (IOException error) {
       throw invalidate(error);
@@ -323,33 +319,42 @@ public final class SpoolingGlbScene implements AutoCloseable {
     }
   }
 
-  private void encode(Part part, float[] xyz, float[] uv) {
-    double ax = (double) xyz[3] - xyz[0],
-        ay = (double) xyz[4] - xyz[1],
-        az = (double) xyz[5] - xyz[2];
-    double bx = (double) xyz[6] - xyz[0],
-        by = (double) xyz[7] - xyz[1],
-        bz = (double) xyz[8] - xyz[2];
-    double nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
-    double length = Math.sqrt(nx * nx + ny * ny + nz * nz);
-    if (length > 0) {
-      nx /= length;
-      ny /= length;
-      nz /= length;
+  /** Appends only the vertices this primitive has not already emitted, then the triangles. */
+  private void encode(Part part, float[] xyz, float[] uv) throws IOException {
+    int[] corners = part.corners;
+    for (int corner = 0; corner < 4; corner++) {
+      QuadGeometry.corner(key, xyz, normal, uv, corner);
+      int known = cache.intern(part.id, key, part.vertices);
+      if (known < 0) {
+        known = part.vertices++;
+        vertexBytes.clear();
+        for (int axis = 0; axis < 3; axis++) {
+          vertexBytes.putFloat(key[axis]);
+          part.min[axis] = Math.min(part.min[axis], key[axis]);
+          part.max[axis] = Math.max(part.max[axis], key[axis]);
+        }
+        for (int axis = 3; axis < 6; axis++) vertexBytes.putFloat(key[axis]);
+        vertexBytes.putFloat(key[6]).putFloat(key[7]);
+        append(part.positions, vertexBytes.array(), 0, 12);
+        append(part.normals, vertexBytes.array(), 12, 12);
+        append(part.uvs, vertexBytes.array(), 24, 8);
+      }
+      corners[corner] = known;
     }
-    quad.clear();
-    for (float value : xyz) quad.putFloat(value);
-    for (int vertex = 0; vertex < 4; vertex++) {
-      quad.putFloat((float) nx).putFloat((float) ny).putFloat((float) nz);
+    indexBytes.clear();
+    int emitted = triangle(corners[0], corners[1], corners[2]);
+    emitted += triangle(corners[0], corners[2], corners[3]);
+    if (emitted > 0) {
+      append(part.indices, indexBytes.array(), 0, emitted * 12);
+      part.indexCount += emitted * 3;
     }
-    for (float value : uv) quad.putFloat(value);
-    int base = part.vertices;
-    quad.putInt(base)
-        .putInt(base + 1)
-        .putInt(base + 2)
-        .putInt(base)
-        .putInt(base + 2)
-        .putInt(base + 3);
+  }
+
+  private int triangle(int a, int b, int c) {
+    // Welding can collapse a triangle of a quad that already had a repeated corner.
+    if (a == b || b == c || a == c) return 0;
+    indexBytes.putInt(a).putInt(b).putInt(c);
+    return 1;
   }
 
   private StoredFile create(String name) throws IOException {
@@ -792,6 +797,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private record Layout(List<Segment> segments, Map<Image, Integer> imageViews, long bytes) {}
 
   private static final class Part {
+    final int id;
+    final int[] corners = new int[4];
     final String name;
     final Image image;
     final int tint, alphaMode;
@@ -802,6 +809,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
     int vertices, indexCount;
 
     Part(
+        int id,
         String name,
         Image image,
         int tint,
@@ -812,6 +820,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         StoredFile normals,
         StoredFile uvs,
         StoredFile indices) {
+      this.id = id;
       this.name = name;
       this.image = image;
       this.tint = tint;
