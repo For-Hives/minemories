@@ -29,6 +29,7 @@ public final class GlbScene {
 
   private final Map<String, Part> parts = new LinkedHashMap<>();
   private final VertexCache cache = new VertexCache();
+  private final ChunkStats stats = new ChunkStats();
   private final ChunkRuns.Budget runBudget = new ChunkRuns.Budget();
   private final GlbMetadata metadata = new GlbMetadata();
   private final int[] quadsByCategory = new int[GlbCategory.values().length];
@@ -110,10 +111,16 @@ public final class GlbScene {
                     safeEmission,
                     safeOpacity));
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
+    stats.quad(category, chunkX, chunkZ, materialName, xyz);
     int before = part.indexCount / 3;
     part.addQuad(cache, xyz, uv, normal);
     part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
     quadsByCategory[category.ordinal()]++;
+  }
+
+  /** Per-chunk facts of everything added so far. */
+  public ChunkStats chunkStats() {
+    return stats;
   }
 
   public int materialCount() {
@@ -125,13 +132,21 @@ public final class GlbScene {
   }
 
   public void addPointLight(float x, float y, float z, int color, int level) {
+    addPointLight(x, y, z, color, level, NO_CHUNK, NO_CHUNK);
+  }
+
+  /** The chunk, relative to the capture origin, is only used for per-chunk statistics. */
+  public void addPointLight(
+      float x, float y, float z, int color, int level, int chunkX, int chunkZ) {
     if (level < 4
         || pointLights.size() >= 128
         || !Float.isFinite(x)
         || !Float.isFinite(y)
         || !Float.isFinite(z)) return;
     String key = Math.round(x * 2) + ":" + Math.round(y * 2) + ":" + Math.round(z * 2);
-    pointLights.putIfAbsent(key, new PointLight(x, y, z, color, level));
+    if (pointLights.putIfAbsent(key, new PointLight(x, y, z, color, level)) == null) {
+      stats.light(chunkX, chunkZ);
+    }
   }
 
   public void write(Path output) throws IOException {

@@ -58,7 +58,8 @@ final class VisitedZones {
     dirty = true;
   }
 
-  List<Zone> suggestions() {
+  /** Every zone with at least a minute of active time, most visited first. */
+  List<Zone> all() {
     return seconds.entrySet().stream()
         .filter(entry -> entry.getValue() >= 60)
         .map(
@@ -72,8 +73,12 @@ final class VisitedZones {
                 .reversed()
                 .thenComparingInt(Zone::minX)
                 .thenComparingInt(Zone::minZ))
-        .limit(5)
         .toList();
+  }
+
+  List<Zone> suggestions() {
+    List<Zone> zones = all();
+    return zones.size() > 5 ? zones.subList(0, 5) : zones;
   }
 
   static VisitedZones read(Path path) throws IOException {

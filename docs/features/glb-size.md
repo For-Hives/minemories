@@ -275,3 +275,23 @@ Artefacts hors Git : `~/.local/state/minemories-validation/glb-size-20261015/`
 (corpus/empreintes, replay Java, mesures, vérification indépendante, validateurs,
 rendus avant/après et comparaison, pilote/logs/scénarios natifs). `bun check` et
 `bun run build` passent ; la CI complète reste requise avant fusion.
+
+## Bilan global de l'issue #173 (hors jeu)
+
+« Avant » : GLB de #73 (indices compacts + atlas masqués), « après » : fusion exacte, catégories, quantification et repack
+d'atlas ; « transfert » : gzip niveau 4 de la variante Meshopt servie au viewer (voir `glb-derivative.md`). La capture réelle est
+une capture personnelle (modpack), mesurée en lecture seule, non publiée.
+
+| Capture | Brut avant → après | gzip avant → transfert variante | VRAM textures avant → après |
+| --- | ---: | ---: | ---: |
+| AFK rayon 32 | 2 012 360 → 1 082 984 (−46 %) | 278 144 → 94 826 (−66 %) | 2 177 024 → 81 168 (−96 %) |
+| AFK rayon 8 | 267 072 → 180 516 (−32 %) | 36 890 → 27 237 (−26 %) | 2 136 064 → 40 208 (−98 %) |
+| Hauteur complète | 446 728 → 243 820 (−45 %) | 62 375 → 28 944 (−54 %) | 25 600 → 25 600 |
+| Tour et surface | 59 396 → 49 884 (−16 %) | 9 209 → 9 468 (variante non applicable) | 12 288 → 12 288 |
+| Modèles, alpha et lumières | 438 740 → 302 216 (−31 %) | 69 446 → 50 923 (−27 %) | 3 244 032 → 150 436 (−95 %) |
+| Capture réelle (modpack) | 20 299 828 → 10 614 852 (−48 %) | 2 599 432 → 743 867 (−71 %) | 2 246 656 → 205 472 (−91 %) |
+
+Le fichier local reste lisible par Blender 5.2.2 (une échelle de 0,0078 par catégorie à appliquer, rendus écart moyen
+< 1/255 sur la quantification) ; les catégories permettent d'y supprimer plantes, fluides ou entités. Limites : tout est
+mesuré hors jeu, sans GPU réel ; le temps de chargement complet du viewer n'est pas mesuré ; la vue d'un monde n'utilise
+pas encore la variante ; le viewer n'exploite pas les plages par chunk.
