@@ -121,9 +121,10 @@ Le glTF reste autonome et sans extension nouvelle ; seuls la structure et `extra
   sans chunk connu ou qui dépasserait le budget de 40 000 plages par scène n'en publie pas : le JSON reste borné
   (limite de 4 Mio) et un lecteur retombe sur son propre tri.
 - Les anciens GLB (un seul mesh, aucun `extras`) restent lus par le viewer et les deux validateurs : le viewer
-  ne dépend pas de ces champs. **Le viewer n'utilise pas encore les plages** : sa composition a besoin du bloc de
-  chaque triangle (couverture partielle d'un chunk) et son tri ne coûte que ≈ 4,5 ms par capture (mesure de
-  `world-evolution.md`) ; elles servent aux outils tiers et à la suite (dérivé, LOD).
+  ne dépend pas de ces champs. **Le viewer n'utilise pas les plages, par mesure** : sa composition a besoin du bloc de
+  chaque triangle (couverture partielle d'un chunk), calculé depuis les positions. Sur 98 000 triangles en ordre chunk par
+  chunk, `buildPrimitive` prend 22,2 ms dont **1,9 ms pour le tri** (moins de 9 %) : les plages ne feraient gagner que ce tri. Elles
+  restent disponibles pour les outils tiers.
 
 Mesures sur les cinq captures rejouées avec catégories (heuristique sur les noms de matériaux, hors jeu, plages dans
 l'ordre d'origine donc plus nombreuses qu'avec le parcours chunk-major) : rayon 32 1 835 420 → 1 859 984 octets
