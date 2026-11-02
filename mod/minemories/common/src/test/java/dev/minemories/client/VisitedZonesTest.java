@@ -28,6 +28,9 @@ class VisitedZonesTest {
     assertEquals(new VisitedZones.Zone(-64, -64, 120), zones.suggestions().getFirst());
     assertEquals(new VisitedZones.Zone(0, 0, 120), zones.suggestions().get(1));
     assertTrue(zones.suggestions().getFirst().label().contains("2 min"));
+    assertEquals(120, zones.secondsAt(-1, -1));
+    assertEquals(120, zones.secondsAt(0, 5));
+    assertEquals(0, zones.secondsAt(500, 500));
   }
 
   @Test

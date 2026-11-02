@@ -58,6 +58,12 @@ final class VisitedZones {
     dirty = true;
   }
 
+  /** Active seconds in the 64-block zone containing the block, 0 when never visited. */
+  long secondsAt(int x, int z) {
+    long key = ((long) Math.floorDiv(x, 64) << 32) | (Math.floorDiv(z, 64) & 0xffffffffL);
+    return seconds.getOrDefault(key, 0L);
+  }
+
   /** Every zone with at least a minute of active time, most visited first. */
   List<Zone> all() {
     return seconds.entrySet().stream()

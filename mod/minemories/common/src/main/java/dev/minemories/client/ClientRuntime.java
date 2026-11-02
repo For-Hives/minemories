@@ -421,11 +421,13 @@ public final class ClientRuntime {
               now, lastActivityMs, lastSnapshotAt(), CAPTURES.settings.options())
           > 0) return;
       afkDiagnostics = PairingClient.beginCaptureDiagnostics();
-      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch);
+      int radius = afkRadius(mc, CAPTURES.settings);
+      CAPTURES.job = new ProgressiveGameCapture(mc, CAPTURES.settings, resourceEpoch, radius);
       LOGGER.info(
-          "AFK progressive capture started (paused={}, radius={})",
+          "AFK progressive capture started (paused={}, radius={}, stored={})",
           mc.isPaused(),
-          CAPTURES.settings.options().radius());
+          radius,
+          PairingClient.storedCaptureRadius());
     } catch (Exception error) {
       lastActivityMs = now;
       if (CAPTURES.job != null) CAPTURES.job.cancel("Échec de la capture.");
@@ -456,7 +458,7 @@ public final class ClientRuntime {
         return;
       }
       afkDiagnostics.captured(result.file());
-      rememberChunks(result.origin(), result.chunks());
+      var merge = rememberChunks(result.origin(), result.chunks());
       PairingClient.setLastSnapshotAt(now);
       LOGGER.info(
           "AFK capture finished: frames={}, maxStepMs={}, overruns={}, blocks={}, entities={}, quads={}, textures={}",
@@ -468,6 +470,12 @@ public final class ClientRuntime {
           result.quads(),
           result.textures());
       tell("Souvenir AFK enregistré localement.");
+      if (merge.identical()) {
+        // Nothing was added, moved or changed since the previous capture of these chunks: keep it
+        // local only.
+        LOGGER.info("AFK capture identical to the previous one: upload skipped, file kept locally");
+        return;
+      }
       if (!completed.settings().paired()
           || !completed.settings().equals(PairingClient.captureSettings())) return;
       afkUploadPending = true;
@@ -667,6 +675,29 @@ public final class ClientRuntime {
     return ZoneRanking.rank(EXPLORATION.zones.all(), EXPLORATION.insights, 5);
   }
 
+  /**
+   * The stored radius when the player chose one; otherwise the zone's advisory radius once captures
+   * described it.
+   */
+  private static int afkRadius(Minecraft mc, PairingClient.CaptureSettings settings) {
+    int configured = settings.options().radius();
+    boolean explicit = PairingClient.storedCaptureRadius();
+    var player = mc.player;
+    if (explicit || player == null || EXPLORATION.path == null) return configured;
+    int x = player.blockPosition().getX(), z = player.blockPosition().getZ();
+    var zone =
+        new VisitedZones.Zone(
+            Math.floorDiv(x, 64) * 64,
+            Math.floorDiv(z, 64) * 64,
+            EXPLORATION.zones.secondsAt(x, z));
+    boolean informed = ZoneRanking.informed(zone, EXPLORATION.insights);
+    double score = ZoneRanking.score(zone, EXPLORATION.insights);
+    int radius = ZoneRanking.adaptiveRadius(configured, false, informed, score);
+    LOGGER.info(
+        "AFK radius from the zone: informed={}, score={}, radius={}", informed, score, radius);
+    return radius;
+  }
+
   private static Path insightsPath() {
     return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".insights");
   }
@@ -684,15 +715,50 @@ public final class ClientRuntime {
    * Keeps what a finished capture showed about each chunk, locally, and reports how much of it
    * changed.
    */
-  private static void rememberChunks(
+  private static ZoneInsights.Merge rememberChunks(
       int[] origin, java.util.List<dev.minemories.core.ChunkStats.Chunk> chunks) {
-    if (EXPLORATION.path == null) return;
+    if (EXPLORATION.path == null) return new ZoneInsights.Merge(0, 0, 0, 0);
     var merge = EXPLORATION.insights.merge(origin[0], origin[2], chunks);
     LOGGER.info(
-        "Chunks seen by this capture: total={}, changed={}, new={}",
+        "Chunks seen by this capture: total={}, changed={}, new={}, creaturesMoved={}",
         merge.total(),
         merge.changed(),
-        merge.fresh());
+        merge.fresh(),
+        merge.creaturesMoved());
+    sampleInhabitedTime(Minecraft.getInstance(), origin, chunks);
+    return merge;
+  }
+
+  /**
+   * In single player the integrated server knows how long each chunk was inhabited. It is read on
+   * the server thread and only stored for chunks a capture just described; a remote server gives
+   * nothing, and the signal stays unknown.
+   */
+  private static void sampleInhabitedTime(
+      Minecraft mc, int[] origin, java.util.List<dev.minemories.core.ChunkStats.Chunk> chunks) {
+    var server = mc.getSingleplayerServer();
+    var level = mc.level;
+    if (server == null || level == null || EXPLORATION.path == null) return;
+    var insights = EXPLORATION.insights;
+    var dimension = level.dimension();
+    int baseX = Math.floorDiv(origin[0], 16), baseZ = Math.floorDiv(origin[2], 16);
+    server.execute(
+        () -> {
+          var serverLevel = server.getLevel(dimension);
+          if (serverLevel == null) return;
+          java.util.List<long[]> found = new java.util.ArrayList<>();
+          for (var chunk : chunks) {
+            int x = baseX + chunk.chunkX(), z = baseZ + chunk.chunkZ();
+            var loaded = serverLevel.getChunkSource().getChunkNow(x, z);
+            if (loaded != null) found.add(new long[] {x, z, loaded.getInhabitedTime()});
+          }
+          mc.execute(
+              () -> {
+                if (insights != EXPLORATION.insights) return;
+                for (long[] entry : found)
+                  insights.inhabited((int) entry[0], (int) entry[1], entry[2]);
+              });
+        });
   }
 
   private static void saveExploration() {

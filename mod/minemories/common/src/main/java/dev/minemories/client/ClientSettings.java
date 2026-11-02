@@ -202,6 +202,11 @@ final class ClientSettings {
     }
   }
 
+  /** True once the player saved an AFK radius: it is then used exactly, never adapted. */
+  static boolean explicitRadius(Properties settings) {
+    return settings.getProperty("captureRadius") != null;
+  }
+
   static AfkOptions afkOptions(Properties settings) {
     try {
       return new AfkOptions(

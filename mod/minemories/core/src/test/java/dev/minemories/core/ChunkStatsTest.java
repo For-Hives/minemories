@@ -95,7 +95,7 @@ final class ChunkStatsTest {
     var east = chunks.get(1);
     assertEquals(1, east.blockEntityQuads());
     assertEquals(1, east.lights());
-    assertEquals(0, new ChunkStats.Chunk(0, 0, 0, 0, 0, 0, 0).builtShare(), 0);
+    assertEquals(0, new ChunkStats.Chunk(0, 0, 0, 0, 0, 0, 0, 0).builtShare(), 0);
   }
 
   @Test

@@ -60,6 +60,12 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   }
 
   ProgressiveGameCapture(Minecraft mc, PairingClient.CaptureSettings settings, long epoch) {
+    this(mc, settings, epoch, settings.options().radius());
+  }
+
+  /** {@code radius} may differ from the stored one only when the player never stored a radius. */
+  ProgressiveGameCapture(
+      Minecraft mc, PairingClient.CaptureSettings settings, long epoch, int radius) {
     this.mc = mc;
     level = Objects.requireNonNull(mc.level);
     player = Objects.requireNonNull(mc.player);
@@ -72,7 +78,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
             position.getZ(),
             level.getMinBuildHeight(),
             level.getMaxBuildHeight(),
-            settings.options().radius());
+            radius);
     surfaceX = bounds.minX();
     surfaceZ = bounds.minZ();
     surfaceFloor = Math.min(position.getY(), bounds.maxY());
