@@ -137,5 +137,7 @@
   "minemories.advanced.tab.account": "Konto",
   "minemories.advanced.tab.captures": "Zrzuty",
   "minemories.advanced.tab.world": "Świat",
-  "minemories.advanced.tab.privacy": "Prywatność"
+  "minemories.advanced.tab.privacy": "Prywatność",
+  "minemories.ui.adresse_officielle": "Oficjalny adres",
+  "minemories.ui.captures_auto": "Automatyczne zrzuty"
 }

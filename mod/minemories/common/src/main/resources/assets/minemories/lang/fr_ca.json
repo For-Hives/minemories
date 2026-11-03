@@ -137,5 +137,7 @@
   "minemories.advanced.tab.account": "Compte",
   "minemories.advanced.tab.captures": "Captures",
   "minemories.advanced.tab.world": "Monde",
-  "minemories.advanced.tab.privacy": "Confidentialité"
+  "minemories.advanced.tab.privacy": "Confidentialité",
+  "minemories.ui.adresse_officielle": "Adresse officielle",
+  "minemories.ui.captures_auto": "Captures auto"
 }
