@@ -2,12 +2,26 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
+import { discoveryPages } from '../content/discovery'
+import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
+import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
 
+const navigation = [
+	{ to: '/decouvrir', label: 'Discover' },
+	{ to: '/installation', label: 'Guides' },
+	{ to: '/blog', label: 'Blog' },
+	{ to: '/pricing', label: 'Pricing' },
+]
+const legalLinks = [
+	{ to: '/privacy', label: 'Privacy' },
+	{ to: '/terms', label: 'Terms' },
+	{ to: '/legal', label: 'Legal' },
+]
 export function Brand() {
 	return (
 		<Link className="mm-brand" to="/" aria-label="Minemories">
@@ -114,7 +128,7 @@ function LanguageControl() {
 }
 export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
 	const { session } = useAppContext()
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	const { pathname } = useLocation()
 	const mobile = useRef<HTMLDetailsElement>(null)
 	useEffect(() => {
@@ -151,6 +165,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<NavLink to="/" end>
 						{t('Home')}
 					</NavLink>
+					{navigation.map(link => (
+						<NavLink key={link.to} to={link.to}>
+							{t(link.label)}
+						</NavLink>
+					))}
 					{session && <NavLink to="/gallery">{t('My gallery')}</NavLink>}
 				</nav>
 				<div className="mm-header-actions">
@@ -165,7 +184,17 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						</summary>
 						<nav aria-label={t('Main navigation')}>
 							<Link to="/">{t('Home')}</Link>
+							{navigation.map(link => (
+								<Link key={link.to} to={link.to}>
+									{t(link.label)}
+								</Link>
+							))}
 							{session && <Link to="/gallery">{t('My gallery')}</Link>}
+							{legalLinks.map(link => (
+								<Link to={link.to} key={link.to}>
+									{t(link.label)}
+								</Link>
+							))}
 						</nav>
 					</details>
 				</div>
@@ -174,13 +203,49 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				<div className="mm-page-transition">{children ?? <Outlet />}</div>
 			</main>
 			<footer className="mm-footer">
+				<div className="album-footer-heading">
+					<span>
+						{t('Worlds change.')}
+						<br />
+						<em>{t('What they leave us stays.')}</em>
+					</span>
+					<Link to="/explorer">{t('Explore memories')} ↗</Link>
+				</div>
 				<div>
 					<Brand />
 					<p>{t('Your worlds stay yours.')}</p>
 					<p className="mm-fineprint">{t('Not affiliated with Mojang or Microsoft.')}</p>
 				</div>
+				<nav aria-label={t('Guides')}>
+					<Link to="/concept">{t('The concept')}</Link>
+					<Link to="/fonctionnement">{t('How it works')}</Link>
+					<Link to="/installation">{t('Install the mod')}</Link>
+					<Link to="/versions">{t('Mod versions')}</Link>
+					<Link to="/changelog">{t('What’s new')}</Link>
+					<Link to="/faq">{t('FAQ')}</Link>
+				</nav>
 				<nav aria-label="Minemories">
+					{navigation
+						.filter(link => link.to !== '/installation')
+						.map(link => (
+							<Link to={link.to} key={link.to}>
+								{t(link.label)}
+							</Link>
+						))}
+					{[...discoveryPages, { path: '/explorer', label: 'Public gallery' }].map(page => (
+						<Link key={page.path} to={page.path}>
+							{translate(locale, page.label)}
+						</Link>
+					))}
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
+					{session && <DiagnosticsAccessLink key={session.user.id} />}
+				</nav>
+				<nav aria-label={t('Legal')}>
+					{legalLinks.map(link => (
+						<Link to={link.to} key={link.to}>
+							{t(link.label)}
+						</Link>
+					))}
 				</nav>
 			</footer>
 			{notice && (
@@ -202,6 +267,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			<header className="auth-topbar">
 				<Brand />
 				<div>
+					<Link to="/faq">{t('Need help?')}</Link>
 					<LanguageControl />
 				</div>
 			</header>
@@ -210,6 +276,13 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			</main>
 			<footer className="auth-footer">
 				<span>© Minemories</span>
+				<nav aria-label={t('Legal')}>
+					{legalLinks.map(link => (
+						<Link key={link.to} to={link.to}>
+							{t(link.label)}
+						</Link>
+					))}
+				</nav>
 			</footer>
 		</div>
 	)

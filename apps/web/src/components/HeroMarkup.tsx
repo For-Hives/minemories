@@ -1,10 +1,8 @@
 import { memo } from 'react'
+import { Link } from 'react-router'
 import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
-import { HeroExtras, HeroFooterLinks, HeroLanguage } from './HeroParts'
-
-/** The mod's downloads: until the install page is rebuilt, the public releases are the way in. */
-const releasesUrl = 'https://github.com/For-Hives/minemories/releases'
+import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage } from './HeroParts'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
@@ -181,8 +179,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 					</ul>
 				</nav>
 				<div className="mc-sitebar__end">
+					<HeroAccount />
 					<HeroLanguage className="site-lang" />
-					<a className="mc-btn mc-btn--primary mc-btn--auto mc-sitebar__cta" href={releasesUrl}>
+					<Link className="mc-btn mc-btn--primary mc-btn--auto mc-sitebar__cta" to="/installation">
 						<span className="mc-icon mc-icon--ember cta-icon" aria-hidden="true" />
 						<span className="cta-long" data-i18n="Install the mod">
 							{t('Install the mod')}
@@ -190,7 +189,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<span className="cta-short" aria-hidden="true" data-i18n="Install it">
 							{t('Install it')}
 						</span>
-					</a>
+					</Link>
 					<button
 						className="mc-btn mc-btn--tool site-menu__btn"
 						type="button"
@@ -225,6 +224,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</li>
 						</ul>
 					</nav>
+					<HeroAccount menu />
 					<div className="site-menu__lang">
 						<label className="mc-formlabel" htmlFor="lang-menu" data-i18n="Language">
 							{t('Language')}
@@ -393,10 +393,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								)}
 							</p>
 							<div className="mc-hero__actions">
-								<a className="mc-btn mc-btn--primary" id="hero-install" href={releasesUrl}>
+								<Link className="mc-btn mc-btn--primary" id="hero-install" to="/installation">
 									<span className="mc-icon mc-icon--ember" aria-hidden="true" />
 									<span data-i18n="Install the mod">{t('Install the mod')}</span>
-								</a>
+								</Link>
 								<button className="mc-btn" type="button" data-action="replay">
 									<span className="mc-icon mc-icon--replay" aria-hidden="true" />
 									<span data-i18n="Watch the film again">{t('Watch the film again')}</span>

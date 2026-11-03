@@ -10,11 +10,33 @@ import { reportWebFailure, WebObservability } from './observability/WebObservabi
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })))
+const AdminPage = lazy(() => import('./pages/AdminPage').then(module => ({ default: module.AdminPage })))
 const AccountPage = lazy(() => import('./pages/AccountPage').then(module => ({ default: module.AccountPage })))
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })))
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })))
+const ModerationPage = lazy(() => import('./pages/PublicCatalog').then(module => ({ default: module.ModerationPage })))
+const DiagnosticsPage = lazy(() =>
+	import('./pages/DiagnosticsPage').then(module => ({ default: module.DiagnosticsPage }))
+)
+const InfoPages = () => import('./pages/InfoPages')
+const ConceptPage = lazy(() => InfoPages().then(module => ({ default: module.ConceptPage })))
+const HowItWorksPage = lazy(() => InfoPages().then(module => ({ default: module.HowItWorksPage })))
+const FaqPage = lazy(() => InfoPages().then(module => ({ default: module.FaqPage })))
+const InstallationPage = lazy(() =>
+	import('./pages/InstallationPage').then(module => ({ default: module.InstallationPage }))
+)
+const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
+const ContentPages = () => import('./pages/ContentPages')
+const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
+const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
+const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
+const DiscoveryPages = () => import('./pages/DiscoveryPages')
+const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
+const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
+const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
+const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
+const NotFoundPage = lazy(() => ContentPages().then(module => ({ default: module.NotFoundPage })))
 
 class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
 	state = { failed: false }
@@ -99,10 +121,141 @@ export function App() {
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
 							<Route
+								path="/decouvrir"
+								element={
+									<Page>
+										<DiscoveryPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/explorer"
+								element={
+									<Page>
+										<ExplorerPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/classement"
+								element={
+									<Page>
+										<ExplorerPage ranking />
+									</Page>
+								}
+							/>
+							{['/open-source', '/nostalgie', '/partager'].map(path => (
+								<Route
+									key={path}
+									path={path}
+									element={
+										<Page>
+											<MarketingPage />
+										</Page>
+									}
+								/>
+							))}
+							<Route
 								index
 								element={
 									<Page kind="home">
 										<HomePage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/concept"
+								element={
+									<Page>
+										<ConceptPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/fonctionnement"
+								element={
+									<Page>
+										<HowItWorksPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/installation"
+								element={
+									<Page>
+										<InstallationPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/versions"
+								element={
+									<Page>
+										<ReleasesPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/changelog"
+								element={
+									<Page>
+										<ReleasesPage changelog />
+									</Page>
+								}
+							/>
+							<Route
+								path="/faq"
+								element={
+									<Page>
+										<FaqPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/blog"
+								element={
+									<Page>
+										<BlogPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/blog/:slug"
+								element={
+									<Page>
+										<ArticlePage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/pricing"
+								element={
+									<Page>
+										<PricingPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/privacy"
+								element={
+									<Page>
+										<LegalPage kind="privacy" />
+									</Page>
+								}
+							/>
+							<Route
+								path="/terms"
+								element={
+									<Page>
+										<LegalPage kind="terms" />
+									</Page>
+								}
+							/>
+							<Route
+								path="/legal"
+								element={
+									<Page>
+										<LegalPage kind="legal" />
 									</Page>
 								}
 							/>
@@ -124,10 +277,34 @@ export function App() {
 							/>
 							<Route element={<RequireSession />}>
 								<Route
+									path="/admin"
+									element={
+										<Page>
+											<AdminPage />
+										</Page>
+									}
+								/>
+								<Route
 									path="/account"
 									element={
 										<Page>
 											<AccountPage />
+										</Page>
+									}
+								/>
+								<Route
+									path="/admin/diagnostics"
+									element={
+										<Page>
+											<DiagnosticsPage />
+										</Page>
+									}
+								/>
+								<Route
+									path="/moderation"
+									element={
+										<Page>
+											<ModerationPage />
 										</Page>
 									}
 								/>
@@ -145,6 +322,14 @@ export function App() {
 								element={
 									<Page kind="viewer">
 										<ViewerPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/public/:id"
+								element={
+									<Page kind="viewer">
+										<SharePage isPublic />
 									</Page>
 								}
 							/>
