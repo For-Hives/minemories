@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.32.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.1-beta.1...mod-v0.32.0-beta.1) (2026-11-03)
+
+### Fonctionnalités
+
+* **web:** recentrage auto sur le joueur, panneaux sans superposition, navigation et masquage des anciennes captures ([4a8c822](https://github.com/For-Hives/minemories/commit/4a8c822e0691964f860c0ef5e19d88c189b74a0e))
+
+### Corrections
+
+* **mod:** ajouter TabButton et UiTheme oubliés du commit 4a8c822 ([4cf8878](https://github.com/For-Hives/minemories/commit/4cf8878eb7bf567383e20c861ee165d43c0354d3))
+* **mod:** traduire adresse_officielle et captures_auto dans toutes les langues ([d32ec37](https://github.com/For-Hives/minemories/commit/d32ec37baaefe7ff7a25fdf025782b19db8dca70))
+
+### Intégration continue
+
+* lancer les quality gates web, API et Java selon les fichiers modifiés ([7d101c2](https://github.com/For-Hives/minemories/commit/7d101c2dbebecfc21f60fa00c95c9d568891e7b1))
+
+### Maintenance
+
+* **deps:** update kira-nt/mc-publish digest to c233765 ([#141](https://github.com/For-Hives/minemories/issues/141)) ([6455a60](https://github.com/For-Hives/minemories/commit/6455a60e0e7844ca18f15e665f25af107e2eeb65))
+
 ## [0.31.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.0-beta.1...mod-v0.31.1-beta.1) (2026-11-02)
 
 ### Corrections
