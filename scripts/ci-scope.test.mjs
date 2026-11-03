@@ -29,7 +29,14 @@ test('documentation alone runs no gate', () => {
 	only(['docs/features/plan-site-complet.md', 'README.md'])
 })
 test('shared files and the workflow itself run every gate', () => {
-	for (const file of ['bun.lock', 'package.json', 'biome.json', '.github/workflows/quality.yml', '.github/actions/setup/action.yml', 'scripts/ci-scope.mjs'])
+	for (const file of [
+		'bun.lock',
+		'package.json',
+		'biome.json',
+		'.github/workflows/quality.yml',
+		'.github/actions/setup/action.yml',
+		'scripts/ci-scope.mjs',
+	])
 		only([file], 'web', 'api', 'mod')
 })
 test('a mixed change runs the union, and a push runs everything', () => {
