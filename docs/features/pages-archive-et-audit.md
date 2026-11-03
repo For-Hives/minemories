@@ -9,6 +9,8 @@ git show 3894d58:apps/web/src/pages/GalleryPage.tsx
 git diff 3894d58 HEAD --stat
 ```
 
+> **Mise à jour du 03/11/2026** : la galerie (avec jumelage), la connexion, le compte, le viewer, la vue d'un monde et le lien de partage ont été rétablis et refondus le 31/10/2026 (commits `6593207` et suivants). Les « conséquences » ci-dessous sur le jumelage, `/share` et `/gallery` ne sont plus vraies ; le reste (installation, FAQ, blog, pricing, mentions légales, galerie publique, administration) est toujours archivé. L'état à jour est dans `plan-site-complet.md`.
+
 ## 1. Ce qui a été retiré, et ce qui reste
 
 Reste : la landing `/` (film, étapes, partage, FAQ, pied de page), la page 404 minimale, le chargement, la charte et le design system.

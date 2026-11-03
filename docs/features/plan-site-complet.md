@@ -1,6 +1,6 @@
 # Plan complet du site Minemories : pages prévues, fonctionnalités, SEO (03/11/2026)
 
-Ce document sert de dossier d'entrée au comité du QG et de cahier des charges pour reconstruire le site. Il rassemble ce qui existait (28 routes retirées de `main` le 30/10/2026), ce qui était prévu dans les documents, et ce qu'Andy ajoute le 03/11/2026. Les textes intégraux des anciennes pages sont dans `docs/features/pages-archive-et-audit.md` (annexe A) ; le code est au commit `3894d58`.
+Ce document sert de dossier d'entrée au comité du QG et de cahier des charges pour reconstruire le site. Il rassemble ce qui existait (28 routes retirées de `main` le 30/10/2026, dont une partie a été rétablie le 31/10/2026 : voir §2), ce qui était prévu dans les documents, et ce qu'Andy ajoute le 03/11/2026. Les textes intégraux des anciennes pages sont dans `docs/features/pages-archive-et-audit.md` (annexe A) ; le code est au commit `3894d58`.
 
 ```bash
 git show 3894d58:apps/web/src/pages/GalleryPage.tsx
@@ -15,17 +15,19 @@ git show 3894d58:apps/web/src/pages/GalleryPage.tsx
 
 Les rôles du comité (marketplace, conciergerie) ont été écrits pour My Makeup : pour Minemories, lire « marketplace » comme « galerie publique et catalogue de mondes » et « conciergerie » comme « parcours d'un joueur de l'arrivée au premier souvenir ».
 
+> **Correction du 03/11 (soir)** : la première version de ce document, lue par le comité, disait que `main` ne contenait que la landing. C'était faux : j'avais lu une copie locale de `main` en retard. La galerie, le jumelage, le viewer et le partage sont sur `main` depuis le 31/10. Le comité a donc raisonné sur un blocage qui n'existe plus (« plus personne ne peut obtenir le code de jumelage »).
+
 ## 1. Où on en est, en chiffres (source : QG, dossier `minemories`, 03/11/2026)
 
 - Production : `minemories.net` répond 503 (le site n'est pas encore en production, d'après Andy le 01/11). Search Console : 0 clic, 0 impression en octobre. GitHub : 0 étoile ; le 31/10, 0 visiteur et 349 clones par 39 cloneurs (trafic GitHub). Aucune donnée d'usage du site ni du mod (tâche #184).
-- `main` ne contient que la landing `/` et une 404. Le mod, l'API et le contrat sont complets ; l'interface web des autres pages est archivée.
+- `main` contient la landing `/`, une 404 et, rétablies et refondues le 31/10/2026 (commits `6593207` et suivants) : `/login`, `/register`, `/account`, `/gallery` (avec le jumelage), `/viewer` (avec la vue d'un monde), `/share/:token`. Restent archivées : installation, versions, FAQ et pages d'information, blog, pricing, mentions légales, galerie publique (`/explorer`, `/public/:id`), administration, diagnostics, modération. Le mod, l'API et le contrat sont complets.
 - Tâche prioritaire d'Andy (#208) : pages à sortir en premier `/`, `/pricing`, `/gallery`, `/login`, `/gallery-public`, avec Polar et Better Auth (#209).
 - Décision du 16/10 : paiements désactivés (`POLAR_ENVIRONMENT=off`), tarifs non figés.
 - Estimation du marché de `docs/AI/BESOIN.md` (septembre 2026, non revérifiée) : 15 à 35 k€/an à trois ans en l'état. C'est une estimation, pas un chiffre mesuré.
 
 ## 2. Plan du site complet
 
-Légende : **[en ligne]** sur `main` ; **[archivé]** code et contenu au commit `3894d58` ; **[prévu]** décrit dans un document, jamais construit ; **[nouveau]** demandé le 03/11/2026.
+Légende : **[en ligne]** sur `main` ; **[archivé]** code et contenu au commit `3894d58`, absent de `main`;  **[rétabli]** de nouveau sur `main` depuis le 31/10/2026, refondu ; **[prévu]** décrit dans un document, jamais construit ; **[nouveau]** demandé le 03/11/2026.
 
 ### 2.1 Public, à indexer
 
@@ -65,12 +67,12 @@ Un test de build doit échouer si une page de campagne devient indexable (plan �
 
 | Route | Contenu | Statut |
 |---|---|---|
-| `/login`, `/register` | Email et mot de passe, Google, Discord (si configurés), visite sans compte | [archivé] |
-| `/account` | Pseudo, email, mot de passe (12 caractères au moins), fournisseurs liés | [archivé] |
-| `/gallery` | Jauge de stockage (2 Gio par défaut), liste des captures groupées par monde, renommer, partager (créer, récupérer, révoquer), publier, corbeille 30 jours, suppression définitive, jumelage du mod | [archivé] |
-| `/viewer` | Visualiseur 3D et studio (heure, ciel, nuages, météo, eau, caméra libre), fichier local par glisser-déposer | [archivé] |
-| `/viewer?timelapse=1` (vue d'un monde) | Toutes les captures d'un monde composées chunk par chunk, liste chronologique et curseur | [archivé] |
-| `/share/:token` | Visualiseur d'un lien privé, sans compte, révocable | [archivé] |
+| `/login`, `/register` | Email et mot de passe, Google, Discord (si configurés), visite sans compte | [rétabli] |
+| `/account` | Pseudo, email, mot de passe (12 caractères au moins), fournisseurs liés | [rétabli] |
+| `/gallery` | Jauge de stockage (2 Gio par défaut), liste des captures groupées par monde, renommer, partager (créer, récupérer, révoquer), publier, corbeille 30 jours, suppression définitive, jumelage du mod | [rétabli] |
+| `/viewer` | Visualiseur 3D et studio (heure, ciel, nuages, météo, eau, caméra libre), fichier local par glisser-déposer | [rétabli] |
+| `/viewer?timelapse=1` (vue d'un monde) | Toutes les captures d'un monde composées chunk par chunk, liste chronologique et curseur | [rétabli] |
+| `/share/:token` | Visualiseur d'un lien privé, sans compte, révocable | [rétabli] |
 | Aperçu de partage (image 1200×630) | Généré à la création du lien, pour Discord et X | [prévu] |
 
 ### 2.4 Opérateur (hors site public)
@@ -91,7 +93,7 @@ Un test de build doit échouer si une page de campagne devient indexable (plan �
 | Captures AFK (5 min d'inactivité, une toutes les 4 h, rayon 32), activées par défaut, désactivables | en jeu |
 | Profondeur limitée à ce qui a été visité (+5 blocs) | en jeu |
 | Historique local des captures, menu M (jumelage, capture manuelle, envoi, AFK, réglages avancés) | en jeu |
-| Jumelage par code à 6 chiffres (5 min, usage unique), envoi reprenable (450 Mio max), rien n'est envoyé avant le jumelage | en jeu, **sans interface web pour générer le code depuis le 30/10** |
+| Jumelage par code à 6 chiffres (5 min, usage unique), envoi reprenable (450 Mio max), rien n'est envoyé avant le jumelage | en jeu ; le code se génère dans la galerie rétablie le 31/10 |
 | Diagnostics avec consentement (activés par défaut, rien envoyé avant jumelage) | en jeu |
 | Chargeurs : NeoForge 21.1.248, Fabric (et Quilt), Forge, Minecraft 1.21.1 | validés |
 | Installation sans configuration, interface à icônes (#156) | en cours |
@@ -198,8 +200,8 @@ Hypothèse de travail à valider ou rejeter par le comité : **E**, en commença
 
 ### 8.2 Ordre proposé (à valider avec le comité)
 
-0. **Débloquer l'existant** : jumelage, liens `/share`, retrait du consentement aux diagnostics web, bouton « galerie » du mod (voir #172).
-1. **Cœur du produit** (tâche #208) : `/login`, `/gallery`, viewer et partage, `/gallery-public`, `/pricing` (sans paiement actif), mentions légales.
+0. **Déjà fait le 31/10** : connexion, compte, galerie avec jumelage, viewer, vue d'un monde et lien de partage sont rétablis. Reste le retrait du consentement aux diagnostics web (la page de confidentialité n'existe plus) et l'aperçu de partage.
+1. **Cœur du produit** (tâche #208) : il reste `/gallery-public`, `/pricing` (sans paiement actif), mentions légales ; le reste est rétabli, à passer dans la charte.
 2. **Confiance et acquisition de base** : `/installer`, `/versions`, `/securite`, `/aide`.
 3. **Profil et catalogue public** : profils, pages de mondes publiés indexables, aperçus de partage.
 4. **Contenu** : guides par intention, blog, variantes de landing non indexées.
