@@ -137,5 +137,7 @@
   "minemories.advanced.tab.account": "계정",
   "minemories.advanced.tab.captures": "캡처",
   "minemories.advanced.tab.world": "월드",
-  "minemories.advanced.tab.privacy": "개인정보"
+  "minemories.advanced.tab.privacy": "개인정보",
+  "minemories.ui.adresse_officielle": "공식 주소",
+  "minemories.ui.captures_auto": "자동 캡처"
 }

@@ -137,5 +137,7 @@
   "minemories.advanced.tab.account": "アカウント",
   "minemories.advanced.tab.captures": "キャプチャ",
   "minemories.advanced.tab.world": "ワールド",
-  "minemories.advanced.tab.privacy": "プライバシー"
+  "minemories.advanced.tab.privacy": "プライバシー",
+  "minemories.ui.adresse_officielle": "公式アドレス",
+  "minemories.ui.captures_auto": "自動キャプチャ"
 }

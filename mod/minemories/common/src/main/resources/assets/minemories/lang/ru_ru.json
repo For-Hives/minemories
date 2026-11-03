@@ -137,5 +137,7 @@
   "minemories.advanced.tab.account": "Аккаунт",
   "minemories.advanced.tab.captures": "Снимки",
   "minemories.advanced.tab.world": "Мир",
-  "minemories.advanced.tab.privacy": "Приватность"
+  "minemories.advanced.tab.privacy": "Приватность",
+  "minemories.ui.adresse_officielle": "Официальный адрес",
+  "minemories.ui.captures_auto": "Автоматические снимки"
 }
