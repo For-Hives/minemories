@@ -13,35 +13,94 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
+  # Decides which gates a change needs: a front-only pull request never starts the mod or the API (scripts/ci-scope.mjs).
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.scope.outputs.web }}
+      api: ${{ steps.scope.outputs.api }}
+      mod: ${{ steps.scope.outputs.mod }}
+      deps: ${{ steps.scope.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Test the scope rules
+        run: node --test scripts/ci-scope.test.mjs
+      - name: Read the scope of the change
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ci-scope.mjs
+
+  audit:
+    needs: changes
+    if: needs.changes.outputs.deps == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Audit locked dependencies
+        run: bun audit
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Check the film assets and the build scripts
+        run: |
+          bun run hero:check
+          node --test scripts/build-web.test.mjs scripts/prerender-web.test.mjs
+      - name: Lint, typecheck and test the web app
+        run: bun run web:check
+      - name: Build the web app
+        run: |
+          bun run hero:assets
+          node scripts/hero-assets/cli.mjs --check
+          bun run web:build
+
+  api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Lint, typecheck and test the API
+        run: |
+          bun run api:coverage:test
+          bun run api:check
+      - name: Verify real Garage lifecycle and recovery
+        run: bun run api:garage
+
+  mod:
+    needs: changes
+    if: needs.changes.outputs.mod == 'true'
     runs-on: ubuntu-latest
     outputs:
       mod_checksums: ${{ steps.metadata.outputs.checksums }}
     steps:
       - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: ./.github/actions/setup
         with:
-          bun-version-file: .bun-version
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          # Java 21 compiles/tests the mod; Java 25 runs Gradle.
-          java-version: |
-            21
-            25
-          cache: gradle
-      - name: Install locked dependencies
-        run: bun install --frozen-lockfile
-      - name: Audit locked dependencies
-        run: bun audit
-      - name: Run all checks and build applications
-        run: bun run build
-
-      - name: Verify real Garage lifecycle and recovery
-        run: bun run api:garage
+          java: 'true'
+      - name: Lint and test the packaging and release scripts
+        run: |
+          bunx biome check scripts package.json biome.json
+          bun run package:mod:test
+          bun run release:test
+      - name: Check, build and package the mod
+        run: |
+          bun run mod:check:ci
+          bun run mod:build
+          bun run package:mod:all
+          bun run package:mod
 
       - name: Read original loader checksums
         id: metadata
@@ -80,7 +139,7 @@ jobs:
           retention-days: 14
 
   mod-artifact:
-    needs: quality
+    needs: mod
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -98,5 +157,17 @@ jobs:
           path: downloads
       - name: Verify the downloaded JAR and metadata
         env:
-          BUILD_SHA256: ${{ fromJSON(needs.quality.outputs.mod_checksums)[matrix.loader] }}
+          BUILD_SHA256: ${{ fromJSON(needs.mod.outputs.mod_checksums)[matrix.loader] }}
         run: node scripts/verify-mod-artifact.mjs downloads "$BUILD_SHA256" "${{ matrix.loader }}"
+
+  # The one check to read: green when every gate that had to run passed. A gate skipped because the change does not concern it counts as passed.
+  quality:
+    if: always()
+    needs: [changes, audit, web, api, mod, mod-artifact]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail when a gate that had to run failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - name: Every required gate passed
+        run: echo "web=${{ needs.web.result }} api=${{ needs.api.result }} mod=${{ needs.mod.result }} audit=${{ needs.audit.result }}"
