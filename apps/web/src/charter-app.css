@@ -419,7 +419,8 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-@media (max-width: 900px) {
+/* Six links, the language, the account and the file control do not fit beside each other under 1100 px: the menu takes the links. */
+@media (max-width: 1100px) {
 	.mm-desktop-nav {
 		display: none;
 	}
