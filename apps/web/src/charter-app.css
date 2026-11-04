@@ -1,0 +1,902 @@
+/* ==========================================================================================================================================================
+   CHARTE DE LA LANDING POUR TOUTES LES PAGES DE L'APP. Référence : docs/features/design-system.md (section « Les pages de l'app »).
+   Chargée après le kit (hero/kit.css : polices, couleurs, boutons, panneaux, formulaires) et ses jetons (hero/tokens.css). Ici : la base des pages, l'en-tête,
+   le pied de page, les boutons de l'app (.mm-button porte aussi .mc-btn), et les blocs partagés par plusieurs pages (contenu, cartes, notes, chargement).
+   Deux voix : la police du jeu (--f-ui, --f-title) pour titres, étiquettes, boutons et navigation ; la police de lecture (--ds-f-text) pour le texte courant,
+   les champs et les données. Coréen et japonais (html.mm-cjk) : Unifont partout, comme sur la landing.
+   ========================================================================================================================================================== */
+
+/* --- 1. Base ------------------------------------------------------------------------------------------------------------------------------------------ */
+
+html {
+	background: var(--night);
+}
+
+body {
+	margin: 0;
+	background: var(--night);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+html.mm-cjk:not([data-mc-font="read"]) body {
+	font: 400 16px / 24px var(--f-read);
+}
+
+:root {
+	/* The app's former motion names, kept for the page sheets: they read the charter's durations and curves. */
+	--motion-ease: var(--ds-ease);
+	--motion-spring: var(--ds-ease-pop);
+	--motion-fast: var(--ds-dur-2);
+	--motion-medium: var(--ds-dur-3);
+	/* Panel of the app: the landing's night card (bevel of the game, no blur, no rounded corner). */
+	--app-panel: var(--night-2);
+	--app-panel-edge: var(--outline);
+	--app-line: #3a322b;
+}
+
+.mm-site,
+.cinema-layout,
+.auth-shell {
+	color: var(--text);
+	background: var(--night);
+}
+
+.mm-site {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.mm-site :focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.mm-site a {
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+}
+
+/* Titles in the game's font, at the charter's scale (16, 24, 32, 40 px), with a one-texel shadow. */
+.mm-site :is(h1, h2, h3),
+.auth-shell :is(h1, h2, h3) {
+	font-family: var(--f-title);
+	font-weight: 400;
+	letter-spacing: 0;
+	text-wrap: balance;
+}
+
+.mm-site h1,
+.auth-shell h1 {
+	font-size: var(--ds-fs-h1);
+	line-height: var(--ds-lh-h1);
+	text-shadow: var(--ds-text-shadow-3);
+}
+
+.mm-site h2,
+.auth-shell h2 {
+	font-size: var(--ds-fs-h2);
+	line-height: var(--ds-lh-h2);
+	text-shadow: var(--ds-text-shadow-3);
+}
+
+.mm-site h3,
+.auth-shell h3 {
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+html[data-mc-font="read"] :is(.mm-site, .auth-shell) :is(h1, h2, h3) {
+	font-weight: 700;
+	text-shadow: 2px 2px 0 var(--text-shadow);
+}
+
+html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h1,
+html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h2 {
+	font-size: 32px;
+	line-height: 40px;
+}
+
+html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h3 {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+/* Small label in the game's font (Eyebrow): the ember square of the landing in front. */
+.mm-eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-eyebrow-mark {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+/* --- 2. Buttons: the kit's button, plus two quieter ones -------------------------------------------------------------------------------------------- */
+
+.mm-button {
+	transition:
+		border-color var(--ds-dur-1) var(--ds-ease-std),
+		transform var(--ds-dur-1) var(--ds-ease-std);
+}
+
+.mm-button:hover:not(:disabled) {
+	transform: translateY(calc(-1 * var(--ds-lift) / 2));
+}
+
+.mm-button:active:not(:disabled) {
+	transform: none;
+}
+
+.mm-button:disabled {
+	cursor: wait;
+}
+
+/* Outline: the night with a stone frame (a secondary action next to a primary one). */
+.mm-button.mm-button-outline {
+	--_face: var(--night-2);
+	--_hi: #3a322b;
+	--_lo: #0f0c0a;
+	color: var(--text);
+}
+
+/* Quiet: no relief until hovered (toolbar, header). */
+.mm-button.mm-button-quiet {
+	--mc-bevel: 0 0 #0000;
+	background: transparent;
+	border-color: transparent;
+	color: var(--text-2);
+	min-width: 0;
+	padding-inline: calc(4 * var(--gp));
+}
+
+.mm-button.mm-button-quiet:hover:not(:disabled) {
+	border-color: var(--text-3);
+	color: var(--text);
+}
+
+html[data-mc-font="read"] .mc-btn {
+	font: 700 16px / 18px var(--f-ui);
+}
+
+/* --- 3. Header (the landing's bar, mc-sitebar) ---------------------------------------------------------------------------------------------------- */
+
+.mm-header {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-5);
+	min-height: 56px;
+	padding: var(--ds-sp-1) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow:
+		0 var(--gp) 0 var(--outline),
+		0 calc(2 * var(--gp)) 0 #3a322b;
+}
+
+.mm-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: var(--ds-hit);
+	font: 700 16px / 18px var(--f-brand);
+	color: #fff;
+	text-decoration: none;
+	text-shadow: 2px 2px 0 #3f3f3f;
+	white-space: nowrap;
+}
+
+.mm-brand:hover {
+	color: var(--ember);
+}
+
+html[data-mc-font="read"] .mm-brand {
+	font: 700 20px / 24px var(--f-title);
+}
+
+.mm-desktop-nav {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-1) var(--ds-sp-4);
+}
+
+.mm-desktop-nav a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-1);
+	font: 16px / 18px var(--f-ui);
+	color: var(--text);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-desktop-nav a:hover {
+	color: var(--ember);
+}
+
+.mm-desktop-nav a[aria-current="page"] {
+	color: var(--ember);
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
+}
+
+.mm-header-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	margin-left: auto;
+}
+
+.mm-language {
+	position: relative;
+}
+
+.mm-language .mc-select__control {
+	--_h: var(--ds-hit);
+	max-width: min(160px, 32vw);
+	text-overflow: ellipsis;
+}
+
+.mm-language-error {
+	position: absolute;
+	top: calc(100% + var(--ds-sp-2));
+	right: 0;
+	width: max-content;
+	max-width: 240px;
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	background: var(--tip-bg);
+	border: var(--gp) solid var(--tip-b);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+
+.mm-account {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	font: 16px / 18px var(--f-ui);
+}
+
+.mm-account a {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	color: var(--text);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-account a:hover {
+	color: var(--ember);
+}
+
+.mm-account-avatar {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	flex: none;
+	overflow: hidden;
+	background: var(--slot-lo);
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #1d1d1d,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot);
+	color: var(--ember);
+	font: 16px / 1 var(--f-ui);
+	text-shadow: none;
+}
+
+.mm-account-avatar img {
+	position: absolute;
+	inset: var(--gp);
+	width: calc(100% - 2 * var(--gp));
+	height: calc(100% - 2 * var(--gp));
+	image-rendering: pixelated;
+}
+
+.mm-account button {
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-1);
+	background: none;
+	border: 0;
+	color: var(--text-2);
+	font: inherit;
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+	text-underline-offset: 4px;
+	cursor: pointer;
+}
+
+.mm-account button:hover {
+	color: var(--ember);
+}
+
+.mm-account a span {
+	max-width: 140px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mm-file-control {
+	position: relative;
+}
+
+.mm-file-control > span:last-of-type {
+	display: none;
+}
+
+.mm-mobile-menu {
+	display: none;
+}
+
+.mm-mobile-menu summary {
+	list-style: none;
+}
+
+.mm-mobile-menu summary::-webkit-details-marker {
+	display: none;
+}
+
+.mm-mobile-menu:not([open]) nav {
+	display: none;
+}
+
+.mm-mobile-menu nav {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	display: grid;
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--night);
+	box-shadow:
+		0 var(--gp) 0 var(--outline),
+		0 calc(2 * var(--gp)) 0 #3a322b;
+}
+
+.mm-mobile-menu nav a {
+	display: flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	font: 16px / 18px var(--f-ui);
+	color: var(--text);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-mobile-menu nav a:hover {
+	color: var(--ember);
+}
+
+.mm-main {
+	flex: 1;
+	width: 100%;
+	outline: none;
+}
+
+.mm-skip {
+	position: fixed;
+	top: var(--ds-sp-2);
+	left: var(--ds-sp-4);
+	z-index: 100;
+	transform: translateY(-180%);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--copper);
+	color: #fff;
+	font: 16px / 18px var(--f-ui);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-skip:focus {
+	transform: none;
+}
+
+@media (max-width: 1050px) {
+	.mm-file-control > span:first-of-type {
+		display: none;
+	}
+	.mm-file-control > span:last-of-type {
+		display: inline;
+	}
+	.mm-account a span {
+		display: none;
+	}
+}
+
+@media (max-width: 900px) {
+	.mm-desktop-nav {
+		display: none;
+	}
+	.mm-mobile-menu {
+		display: block;
+	}
+}
+
+/* The language moves into the menu on phones (as on the landing). */
+.mm-mobile-menu .mm-language {
+	display: none;
+	margin-top: var(--ds-sp-3);
+}
+
+@media (max-width: 560px) {
+	.mm-header-actions > .mm-language {
+		display: none;
+	}
+	.mm-mobile-menu .mm-language {
+		display: block;
+	}
+	.mm-header-actions > .mm-button {
+		white-space: nowrap;
+	}
+	.mm-header {
+		gap: var(--ds-sp-2);
+		padding-inline: var(--ds-sp-3);
+	}
+	.mm-header-actions {
+		gap: var(--ds-sp-2);
+	}
+	.mm-header-actions > .mm-button {
+		min-width: 0;
+		padding-inline: calc(4 * var(--gp));
+	}
+}
+
+@media (min-width: 1000px) {
+	.mm-header {
+		min-height: 64px;
+		padding: var(--ds-sp-1) var(--ds-sp-5);
+	}
+}
+
+@media (min-width: 1280px) {
+	.mm-brand {
+		--gp: 3px;
+		font-size: 24px;
+		line-height: 27px;
+		text-shadow: 3px 3px 0 #3f3f3f;
+	}
+}
+
+/* --- 4. Footer (the landing's: a dirt band, then the night-2 bar) ---------------------------------------------------------------------------------- */
+
+.mm-footer-band {
+	margin-top: var(--ds-sp-8);
+}
+
+.mm-footer {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--ds-sp-6) var(--ds-sp-7);
+	padding: var(--ds-sp-6) max(var(--ds-sp-4), calc((100% - 1120px) / 2)) var(--ds-sp-7);
+	background: var(--night-2);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		inset 0 var(--gp) 0 var(--outline),
+		inset 0 calc(2 * var(--gp)) 0 #3a322b;
+}
+
+.mm-footer .album-footer-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	justify-content: space-between;
+	gap: var(--ds-sp-4);
+	grid-column: 1 / -1;
+	padding-bottom: var(--ds-sp-5);
+	border-bottom: var(--gp) solid #3a322b;
+}
+
+.mm-footer .album-footer-heading > span {
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.mm-footer .album-footer-heading em {
+	color: var(--ember);
+}
+
+.mm-footer nav {
+	display: grid;
+	align-content: start;
+	gap: 0;
+}
+
+.mm-footer a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+
+.mm-footer a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+.mm-footer .mm-brand {
+	text-decoration: none;
+}
+
+.mm-footer p {
+	margin: var(--ds-sp-3) 0 0;
+	max-width: var(--ds-measure);
+}
+
+.mm-fineprint {
+	color: var(--text-3);
+}
+
+.mm-display-options {
+	align-content: start;
+}
+
+.mm-display-options legend {
+	margin-bottom: var(--ds-sp-2);
+	font: 16px / 18px var(--f-ui);
+	color: var(--text-2);
+}
+
+.mm-display-options .mc-check {
+	min-height: var(--ds-hit);
+}
+
+@media (min-width: 640px) {
+	.mm-footer {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 1000px) {
+	.mm-footer {
+		grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* --- 5. Toast (the kit's notification) ---------------------------------------------------------------------------------------------------------------- */
+
+.mm-toast {
+	position: fixed;
+	right: var(--ds-sp-5);
+	bottom: var(--ds-sp-5);
+	z-index: 30;
+	max-width: min(380px, calc(100% - 48px));
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--toast);
+	color: var(--text);
+	font: 16px / 24px var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--toast-ring);
+	animation: mm-enter var(--ds-dur-3) var(--ds-ease);
+}
+
+/* --- 6. Page transitions: a short fade, nothing more (no loader between pages) ------------------------------------------------------------------- */
+
+.mm-page-transition > :first-child {
+	animation: mm-enter var(--ds-dur-3) var(--ds-ease);
+}
+
+@keyframes mm-enter {
+	from {
+		opacity: 0;
+		transform: translateY(var(--ds-reveal-y));
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+html[data-mc-motion="reduced"] *,
+html[data-mc-motion="reduced"] *::before,
+html[data-mc-motion="reduced"] *::after {
+	animation: none !important;
+	transition: none !important;
+}
+
+/* --- 7. Shared content blocks (pages of text, guides, legal, blog) --------------------------------------------------------------------------------- */
+
+.mm-content {
+	max-width: 1120px;
+	margin: auto;
+	padding: var(--ds-sp-8) var(--ds-sp-5) var(--ds-sp-8);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+.mm-content-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ds-sp-6);
+	margin-bottom: var(--ds-sp-7);
+}
+
+.mm-content-header h1 {
+	margin: var(--ds-sp-4) 0;
+	max-width: 760px;
+}
+
+.mm-content-header p {
+	color: var(--text-2);
+	max-width: var(--ds-measure);
+}
+
+.mm-orbit {
+	width: 120px;
+	height: 120px;
+	color: var(--ember);
+	flex-shrink: 0;
+}
+
+.mm-orbit-ring {
+	transform-origin: center;
+	animation: mm-orbit 20s linear infinite;
+}
+
+.mm-orbit-cube {
+	animation: mm-float 5s ease-in-out infinite;
+}
+
+.mm-content-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+	gap: var(--ds-sp-5);
+}
+
+/* Card: the landing's step card (night-2, bevel of the game, 2 px outline). */
+.mm-editorial-card {
+	display: block;
+	padding: var(--ds-sp-6);
+	background: var(--app-panel);
+	color: var(--text);
+	text-decoration: none;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+	transition:
+		transform var(--ds-dur-2) var(--ds-ease),
+		box-shadow var(--ds-dur-2) var(--ds-ease);
+}
+
+a.mm-editorial-card:hover {
+	transform: translateY(calc(-1 * var(--ds-lift)));
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
+}
+
+.mm-editorial-card h2 {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-3);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.mm-editorial-card p {
+	color: var(--text-2);
+	margin: var(--ds-sp-4) 0;
+}
+
+.mm-editorial-card time {
+	display: block;
+	font: 16px / 18px var(--f-ui);
+	color: var(--text-2);
+}
+
+.mm-editorial-card ul {
+	padding-left: var(--ds-sp-5);
+	list-style: square;
+	margin: var(--ds-sp-5) 0;
+}
+
+.mm-editorial-card li {
+	margin: var(--ds-sp-3) 0;
+}
+
+.mm-editorial-card li::marker {
+	color: var(--ember);
+}
+
+.mm-site .mm-editorial-card > span {
+	color: var(--ember);
+	font: 16px / 18px var(--f-ui);
+}
+
+.mm-editorial-card .mm-price {
+	color: var(--ember);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+}
+
+.mm-prose {
+	max-width: 760px;
+}
+
+.mm-prose h2 {
+	margin: var(--ds-sp-7) 0 var(--ds-sp-3);
+}
+
+.mm-prose p {
+	color: var(--text-2);
+	margin-bottom: var(--ds-sp-5);
+	max-width: var(--ds-measure);
+}
+
+.mm-prose a {
+	color: var(--text);
+	text-decoration-color: var(--text-3);
+}
+
+.mm-prose a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Note: the kit's tooltip colours (a dark ember panel). */
+.mm-note {
+	margin-top: var(--ds-sp-6);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
+}
+
+/* --- 8. Waiting for data (the skeleton of a list, never between pages) --------------------------------------------------------------------------------- */
+
+.mm-loading {
+	width: min(calc(100% - 48px), 1100px);
+	margin: var(--ds-sp-7) auto;
+	min-height: 450px;
+}
+
+.mm-loading-account {
+	width: 76px;
+	min-height: 0;
+	margin: 0;
+}
+
+.mm-skeleton {
+	display: block;
+	background: var(--night-3);
+	animation: mm-pulse 1.6s steps(2, jump-none) infinite;
+}
+
+.mm-skeleton-title {
+	width: 50%;
+	height: 32px;
+	margin-bottom: var(--ds-sp-5);
+}
+
+.mm-skeleton-line {
+	width: 70%;
+	height: 16px;
+	margin: var(--ds-sp-3) 0;
+}
+
+.mm-skeleton-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--ds-sp-5);
+	margin-top: var(--ds-sp-6);
+}
+
+.mm-skeleton-card {
+	padding: var(--ds-sp-4);
+	background: var(--night-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+.mm-skeleton-image {
+	height: 180px;
+	width: 100%;
+}
+
+.mm-skeleton-account {
+	width: 76px;
+	height: 40px;
+}
+
+.mm-loading-viewer .mm-skeleton-grid {
+	grid-template-columns: 1fr;
+}
+
+.mm-loading-viewer .mm-skeleton-card:first-child .mm-skeleton-image {
+	height: 420px;
+}
+
+.mm-loading-viewer .mm-skeleton-card:not(:first-child) {
+	display: none;
+}
+
+.mm-loading-gallery {
+	width: 100%;
+	margin: var(--ds-sp-5) 0;
+	min-height: 280px;
+}
+
+@keyframes mm-pulse {
+	50% {
+		background: #3a322b;
+	}
+}
+
+@keyframes mm-orbit {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes mm-float {
+	50% {
+		transform: translateY(-4px);
+	}
+}
+
+@media (max-width: 730px) {
+	.mm-content {
+		padding: var(--ds-sp-7) var(--ds-sp-4) var(--ds-sp-8);
+	}
+	.mm-content-header {
+		align-items: start;
+		gap: var(--ds-sp-3);
+	}
+	.mm-content-header .mm-orbit {
+		width: 64px;
+		height: 64px;
+	}
+	.mm-editorial-card {
+		padding: var(--ds-sp-5);
+	}
+	.mm-skeleton-grid {
+		grid-template-columns: 1fr;
+	}
+	.mm-skeleton-card:not(:first-child) {
+		display: none;
+	}
+	.mm-toast {
+		right: var(--ds-sp-4);
+		bottom: var(--ds-sp-4);
+	}
+}
+
+/* --- 9. The pages that keep their own light (auth, viewer): only their base -------------------------------------------------------------------------- */
+
+.cinema-layout {
+	min-height: 100svh;
+}
+
+/* Forced colours (Windows): the reliefs disappear, outlines stay. */
+@media (forced-colors: active) {
+	.mm-header,
+	.mm-footer,
+	.mm-editorial-card,
+	.mm-note,
+	.mm-toast {
+		border: 1px solid CanvasText;
+	}
+}

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
@@ -7,6 +7,13 @@ import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
+import {
+	applyDisplay,
+	type DisplayOption,
+	readDisplayOption,
+	setDisplayOption,
+	storeDisplayOption,
+} from '../lib/display-preferences'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
@@ -25,17 +32,8 @@ const legalLinks = [
 export function Brand() {
 	return (
 		<Link className="mm-brand" to="/" aria-label="Minemories">
-			<span aria-hidden="true">
-				<svg viewBox="0 0 32 32" width="26" height="26">
-					<path
-						d="m16 3 12 7v13l-12 7-12-7V10Zm0 0v13m12-6-12 6-12-6m12 6v14"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.3"
-					/>
-				</svg>
-			</span>
-			minemories
+			<i className="mc-icon mc-icon--ember" aria-hidden="true" />
+			<span>Minemories</span>
 		</Link>
 	)
 }
@@ -103,9 +101,10 @@ function FileControl() {
 function LanguageControl() {
 	const { locale, setLocale, pendingLocale, localeError, t } = useI18n()
 	return (
-		<label className="mm-language">
+		<label className="mm-language mc-select mc-select--compact">
 			<span className="sr-only">{t('Language')}</span>
 			<select
+				className="mc-select__control"
 				value={pendingLocale ?? locale}
 				aria-busy={pendingLocale !== null}
 				onChange={event => {
@@ -131,9 +130,15 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 	const { t, locale } = useI18n()
 	const { pathname } = useLocation()
 	const mobile = useRef<HTMLDetailsElement>(null)
+	// The menu's own language picker (phones) only exists while the menu is open: one picker at a time.
+	const [menuOpen, setMenuOpen] = useState(false)
 	useEffect(() => {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
+	// The landing's film resets <html> when it leaves: the stored display options and the Unifont class are put back on every page (lib/display-preferences.ts).
+	useLayoutEffect(() => {
+		if (pathname !== '/') applyDisplay(document.documentElement, safeStorage(), locale)
+	}, [pathname, locale])
 	if (pathname === '/login' || pathname === '/register') return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
 	const cinema = pathname === '/viewer' || pathname.startsWith('/share/') || pathname.startsWith('/public/')
 	if (cinema)
@@ -176,11 +181,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<LanguageControl />
 					<FileControl />
 					<AccountControl />
-					<details ref={mobile} className="mm-mobile-menu">
-						<summary aria-label={t('Open menu')}>
-							<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-								<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.5" />
-							</svg>
+					<details ref={mobile} className="mm-mobile-menu" onToggle={event => setMenuOpen(event.currentTarget.open)}>
+						<summary className="mc-btn mc-btn--tool" aria-label={t('Open menu')}>
+							<span className="mc-icon mc-icon--menu" aria-hidden="true" />
 						</summary>
 						<nav aria-label={t('Main navigation')}>
 							<Link to="/">{t('Home')}</Link>
@@ -195,6 +198,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 									{t(link.label)}
 								</Link>
 							))}
+							{menuOpen && <LanguageControl />}
 						</nav>
 					</details>
 				</div>
@@ -202,6 +206,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			<main id="main-content" tabIndex={-1} className="mm-main">
 				<div className="mm-page-transition">{children ?? <Outlet />}</div>
 			</main>
+			<div className="mm-footer-band mc-band mc-bg-dirt" aria-hidden="true" />
 			<footer className="mm-footer">
 				<div className="album-footer-heading">
 					<span>
@@ -247,6 +252,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						</Link>
 					))}
 				</nav>
+				<DisplayOptions />
 			</footer>
 			{notice && (
 				<div className="mm-toast" role="status">
@@ -254,6 +260,42 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				</div>
 			)}
 		</div>
+	)
+}
+
+function safeStorage() {
+	try {
+		return window.localStorage
+	} catch {
+		return undefined
+	}
+}
+/** The landing's two accessibility options, on every page: the readable font applies at once, reduced motion too (the pages have no film to restart). */
+function DisplayOptions() {
+	const { t } = useI18n()
+	const [options, setOptions] = useState(() => ({
+		font: readDisplayOption(safeStorage(), 'font'),
+		motion: readDisplayOption(safeStorage(), 'motion'),
+	}))
+	const toggle = (option: DisplayOption, on: boolean) => {
+		storeDisplayOption(safeStorage(), option, on)
+		setDisplayOption(document.documentElement, option, on)
+		setOptions(current => ({ ...current, [option]: on }))
+	}
+	return (
+		<fieldset className="mc-fieldset mm-display-options">
+			<legend>{t('Accessibility')}</legend>
+			<label className="mc-check">
+				<input type="checkbox" checked={options.font} onChange={event => toggle('font', event.target.checked)} />
+				<span className="mc-check__box" aria-hidden="true" />
+				<span>{t('Readable font')}</span>
+			</label>
+			<label className="mc-check">
+				<input type="checkbox" checked={options.motion} onChange={event => toggle('motion', event.target.checked)} />
+				<span className="mc-check__box" aria-hidden="true" />
+				<span>{t('Reduced motion')}</span>
+			</label>
+		</fieldset>
 	)
 }
 

@@ -1,120 +1,9 @@
-/* L'album vivant — shared art direction. The immersive viewer owns its own shell. */
+/* Blocs des pages publiques (accueil de l'app, découverte, tarifs). Les couleurs et polices sont celles de la landing (kit.css) : ces noms restent pour les règles ci-dessous. */
 :root {
-	--album-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-	--album-gold: #e9c583;
-	--album-cream: #f0ebdc;
-	--album-line: #b8c6b429;
-}
-.mm-site {
-	background: radial-gradient(ellipse at 90% 0%, #3b51412b, transparent 45%), #101e1c;
-}
-.mm-site h1,
-.mm-site h2 {
-	font-family: var(--album-display);
-	font-weight: 400;
-	letter-spacing: -0.045em;
-	text-wrap: balance;
-}
-.mm-site p {
-	text-wrap: pretty;
-}
-.mm-site .mm-button {
-	border-radius: 100px;
-	min-height: 48px;
-	padding-inline: 24px;
-	font-weight: 500;
-	letter-spacing: 0.01em;
-}
-.mm-site .mm-header {
-	position: sticky;
-	top: 12px;
-	width: min(calc(100% - 48px), 1440px);
-	min-height: 76px;
-	margin: 20px auto 0;
-	padding: 0 24px;
-	gap: 28px;
-	border: 1px solid var(--album-line);
-	border-radius: 100px;
-	background: #172823ed;
-}
-.mm-site .mm-brand {
-	font-family: var(--album-display);
-	font-size: 25px;
-	font-weight: 400;
-	letter-spacing: -0.07em;
-}
-.mm-site .mm-brand > span {
-	background: transparent;
-	color: var(--album-gold);
-	transform: none;
-	width: 30px;
-}
-.mm-site .mm-desktop-nav {
-	gap: 22px;
-	font-size: 12px;
-}
-.mm-site .mm-desktop-nav a {
-	position: relative;
-}
-.mm-site .mm-desktop-nav a[aria-current="page"]::after {
-	content: "";
-	position: absolute;
-	bottom: 3px;
-	left: 50%;
-	height: 3px;
-	width: 3px;
-	border-radius: 50%;
-	background: var(--album-gold);
-}
-.mm-site .mm-file-control {
-	border-left: 1px solid var(--album-line);
-	border-radius: 0;
-	padding-inline: 14px;
-	font-size: 11px;
-}
-.mm-site .mm-header-actions > a.mm-button {
-	background: var(--album-cream);
-	color: #20372f;
-	min-height: 40px;
-}
-.mm-site .mm-content {
-	max-width: 1280px;
-	padding-top: 86px;
-}
-.mm-site .mm-content-header {
-	align-items: end;
-	padding-bottom: 52px;
-	border-bottom: 1px solid var(--album-line);
-}
-.mm-site .mm-content-header h1 {
-	font-size: clamp(44px, 6.8vw, 88px);
-	line-height: 1.05;
-	max-width: 900px;
-}
-.mm-site .mm-content-header p {
-	max-width: 620px;
-	font-size: 16px;
-	line-height: 1.8;
-}
-.mm-site .mm-content-header .mm-orbit {
-	opacity: 0.5;
-	transform: scale(0.75);
-}
-.mm-site .mm-editorial-card,
-.mm-site .mm-plan,
-.mm-site .mm-angle-card,
-.mm-site .mm-memory-card {
-	border: 1px solid var(--album-line);
-	border-radius: 22px;
-	background: #192b25;
-	box-shadow: none;
-}
-.mm-site .mm-editorial-card {
-	padding: 36px;
-}
-.mm-site .mm-editorial-card h2,
-.mm-site .mm-angle-card h2 {
-	font-size: 32px;
+	--album-display: var(--f-title);
+	--album-gold: var(--ember);
+	--album-cream: var(--text);
+	--album-line: #3a322b;
 }
 .mm-site .mm-plan {
 	padding: 38px;
@@ -132,52 +21,6 @@
 	border-radius: 24px;
 	background: #182a24;
 	border-color: var(--album-line);
-}
-.mm-site .mm-prose {
-	max-width: 760px;
-	font-size: 16px;
-	line-height: 1.9;
-}
-.mm-site .mm-prose h2 {
-	margin-top: 48px;
-	font-size: 35px;
-}
-.mm-site .mm-prose p {
-	font-size: inherit;
-}
-.mm-site .mm-note {
-	border-left-color: var(--album-gold);
-	background: #e9c5830b;
-}
-.mm-site .mm-footer {
-	width: min(calc(100% - 96px), 1280px);
-	padding: 52px 0 36px;
-	margin-top: 60px;
-	border-color: var(--album-line);
-	gap: 48px;
-}
-.mm-site .album-footer-heading {
-	grid-column: 1 / -1;
-	display: flex;
-	align-items: end;
-	justify-content: space-between;
-	gap: 32px;
-	border-bottom: 1px solid var(--album-line);
-	padding: 0 0 48px;
-}
-.mm-site .album-footer-heading > span {
-	font: 400 clamp(30px, 4vw, 52px) / 1.2 var(--album-display);
-	letter-spacing: -0.04em;
-	color: var(--album-cream);
-}
-.mm-site .album-footer-heading em {
-	color: #b3bca5;
-}
-.mm-site .album-footer-heading > a {
-	color: var(--album-gold);
-	padding-bottom: 8px;
-	border-bottom: 1px solid #e9c58366;
-	white-space: nowrap;
 }
 .mm-site .album-kicker {
 	font-family: var(--font-mono);
@@ -590,19 +433,6 @@
 	}
 }
 @media (max-width: 1150px) {
-	.mm-site .mm-header {
-		gap: 20px;
-		padding-inline: 20px;
-	}
-	.mm-site .mm-desktop-nav {
-		gap: 14px;
-	}
-	.mm-site .mm-file-control > span:first-of-type {
-		display: none;
-	}
-	.mm-site .mm-file-control > span:last-of-type {
-		display: inline;
-	}
 	.mm-site .album-intro-grid {
 		grid-template-columns: 1.5fr 1fr;
 		gap: 5%;
@@ -624,39 +454,6 @@
 	}
 }
 @media (max-width: 730px) {
-	.mm-site .mm-header {
-		width: calc(100% - 24px);
-		margin-top: 12px;
-		padding-inline: 16px;
-		min-height: 66px;
-		gap: 12px;
-	}
-	.mm-site .mm-brand {
-		font-size: 22px;
-	}
-	.mm-site .mm-desktop-nav {
-		display: none;
-	}
-	.mm-site .mm-header-actions {
-		gap: 6px;
-	}
-	.mm-site .mm-header-actions > a.mm-button {
-		padding-inline: 14px;
-		min-height: 38px;
-		font-size: 11px;
-	}
-	.mm-site .mm-file-control {
-		display: none;
-	}
-	.mm-site .mm-footer {
-		width: calc(100% - 40px);
-		gap: 32px;
-	}
-	.mm-site .album-footer-heading {
-		align-items: start;
-		flex-direction: column;
-		padding-bottom: 32px;
-	}
 	.mm-site .album-home {
 		width: calc(100% - 40px);
 	}
@@ -760,23 +557,6 @@
 	}
 	.mm-site .album-outro {
 		padding: 60px 22px;
-	}
-	.mm-site .mm-content {
-		padding: 48px 22px 50px;
-	}
-	.mm-site .mm-content-header {
-		padding-bottom: 28px;
-		margin-bottom: 32px;
-	}
-	.mm-site .mm-content-header .mm-orbit {
-		display: none;
-	}
-	.mm-site .mm-content-header p {
-		font-size: 14px;
-	}
-	.mm-site .mm-editorial-card,
-	.mm-site .mm-plan {
-		padding: 24px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
