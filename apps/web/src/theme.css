@@ -1265,3 +1265,8 @@ a.mm-editorial-card:hover {
 	min-height: 100svh;
 	background: #14110e;
 }
+
+/* A page whose chunk is still arriving after a navigation from another layout: an empty area (no skeleton, no loader), so the footer does not jump up. */
+.mm-page-pending {
+	min-height: 70svh;
+}
