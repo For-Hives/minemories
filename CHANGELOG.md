@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.32.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.0-beta.1...mod-v0.32.1-beta.1) (2026-11-04)
+
+### Intégration continue
+
+* ne lancer que les portes concernées par la modification ([#192](https://github.com/For-Hives/minemories/issues/192)) ([dab7e93](https://github.com/For-Hives/minemories/commit/dab7e93822e660786e2defdd16a8bcd3e8c54e5c))
+
 ## [0.32.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.1-beta.1...mod-v0.32.0-beta.1) (2026-11-03)
 
 ### Fonctionnalités
