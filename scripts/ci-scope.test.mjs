@@ -21,7 +21,7 @@ test('the shared contract runs the web and the API gates, never the mod', () => 
 })
 test('a mod change runs the mod gate only', () => {
 	only(['mod/minemories/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
-	only(['config/mod-targets.json'], 'mod')
+	only(['config/mod-targets.json'], 'web', 'mod')
 	only(['scripts/package-mod.mjs'], 'mod')
 	only(['.github/workflows/mod-release.yml'], 'mod')
 })

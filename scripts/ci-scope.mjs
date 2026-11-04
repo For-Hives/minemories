@@ -14,7 +14,13 @@ const shared = [
 	/^scripts\/ci-scope/,
 ]
 const rules = {
-	web: [/^apps\/web\//, /^packages\/api-contract\//, /^scripts\/(hero-assets\/|build-web|prerender-web)/],
+	web: [
+		/^apps\/web\//,
+		/^packages\/api-contract\//,
+		// The versions page reads the loader list.
+		/^config\/mod-targets\.json$/,
+		/^scripts\/(hero-assets\/|build-web|prerender-web)/,
+	],
 	api: [
 		/^apps\/api\//,
 		/^packages\/api-contract\//,

@@ -7,6 +7,7 @@ import { SocialSignIn } from '../components/SocialSignIn'
 import { useI18n } from '../i18n/I18n'
 import { credentialChangeComplete } from './account-navigation'
 import './account.css'
+import { AdminAccessLink } from '../components/AdminAccessLink'
 
 type Kind = 'email' | 'password' | 'name'
 function errorCode(error: unknown): string {
@@ -117,6 +118,7 @@ export function AccountPage() {
 				</p>
 			)}
 			{success && <p role="status">{success}</p>}
+			<AdminAccessLink />
 			<div className="mm-account-grid">
 				<section className="mm-account-card">
 					<h2>{t('Sign-in methods')}</h2>

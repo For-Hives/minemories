@@ -1,6 +1,7 @@
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import { App } from './App'
 import './theme.css'
+import './pages/installation.css'
 import './album.css'
 import './pages/auth.css'
 
