@@ -11,6 +11,13 @@ test('all public routes render readable content and navigation without browser A
 	}
 	expect(renderPage('/blog/premier-souvenir')).toContain('Un premier souvenir')
 })
+test('the 404 page is readable, points back home and holds no film', () => {
+	const html = renderPage('/404')
+	expect(html).toContain('<h1')
+	expect(html).toContain('href="/"')
+	expect(html).not.toContain('<!--$!-->')
+	expect(html).not.toContain('id="mm-scene"')
+})
 test('the manual tutorial includes a complete no-JavaScript path, not only its first interactive step', () => {
 	const html = renderPage('/installation')
 	expect(html).toContain('<noscript>')
