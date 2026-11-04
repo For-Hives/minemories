@@ -51,6 +51,8 @@
 
 ## PRs
 
+CI (`.github/workflows/quality.yml`) only runs the gates a change concerns (`scripts/ci-scope.mjs`, tested): a front PR never starts the mod or the API; pushes to `main` run everything. The single check to read is `quality`.
+
 Per `.github/pull_request_template.md`: report `bun check`; add `bun run build` when build/assets/cross-module integration change; add in-game test when mod behavior or GLB format changes. Conventional prefixes. Never commit `.env`, API data, saves, exports, runs, builds or ad-hoc lockfile churn.
 
 ## Interesting context 

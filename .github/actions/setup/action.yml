@@ -1,0 +1,26 @@
+name: Set up the workspace
+description: Bun, Node and the locked dependencies; Java only for the mod.
+inputs:
+  java:
+    description: Install Java 21 (compiles and tests the mod) and Java 25 (runs Gradle).
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: .bun-version
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 26
+    - if: inputs.java == 'true'
+      uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: |
+          21
+          25
+        cache: gradle
+    - name: Install locked dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
