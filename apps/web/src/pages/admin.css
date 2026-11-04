@@ -478,6 +478,11 @@
 	gap: var(--ds-sp-3);
 	margin-top: var(--ds-sp-6);
 }
+/* Unifont (ko/ja) only stays sharp at multiples of 16 px: the 24 px pixel-font titles that are not h1/h2/h3 drop to 16 px. */
+html.mm-cjk:not([data-mc-font="read"]) .mm-admin-card-title > b {
+	font-size: 16px;
+	line-height: 24px;
+}
 html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	font-weight: 700;
 }

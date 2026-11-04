@@ -55,6 +55,10 @@
 	--ds-text-shadow-3: 3px 3px 0 var(--text-shadow);   /* 32 px */
 	--ds-text-shadow-4: 4px 4px 0 var(--text-shadow);   /* 40 px */
 	--ds-panel-bevel: inset 4px 4px 0 #3a322b, inset -4px -4px 0 #0f0c0a;  /* relief des cartes « interface Minecraft » */
+	/* Contour de 2 px aux coins coupés, comme les panneaux du kit (--mc-notch) : quatre ombres décalées, pas un anneau carré */
+	--ds-notch: 0 -2px 0 0 var(--outline), 0 2px 0 0 var(--outline), -2px 0 0 0 var(--outline), 2px 0 0 0 var(--outline);
+	--ds-notch-hover: 0 -2px 0 0 var(--hover), 0 2px 0 0 var(--hover), -2px 0 0 0 var(--hover), 2px 0 0 0 var(--hover);
+	--ds-notch-tip: 0 -2px 0 0 var(--tip-bg), 0 2px 0 0 var(--tip-bg), -2px 0 0 0 var(--tip-bg), 2px 0 0 0 var(--tip-bg);
 
 	/* Focus : un anneau clair de 2 px, décalé de 2 px, sur tout ce qui se commande */
 	--ds-focus: var(--ds-px) solid var(--hover);

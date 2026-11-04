@@ -20,6 +20,14 @@ import { type Memories, type Storage, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
 import { ServerSheet } from './ServerSheet'
 
+/** The system's setting or the site's own "reduced motion" option (html[data-mc-motion='reduced']). */
+function reducedMotion(): boolean {
+	return (
+		window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true ||
+		document.documentElement.dataset.mcMotion === 'reduced'
+	)
+}
+
 function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
 	if (storage.availableBytes === 0) return 'full'
 	return used >= 85 ? 'high' : 'ok'
@@ -264,7 +272,7 @@ function WorldSections({
 							// On a narrow screen the areas sit below every tile: bring them into view.
 							const top = areas.current?.getBoundingClientRect().top ?? 0
 							if (top > window.innerHeight * 0.8)
-								areas.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+								areas.current?.scrollIntoView?.({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
 						}}
 						onRenamed={() => setRenamed(value => value + 1)}
 					/>

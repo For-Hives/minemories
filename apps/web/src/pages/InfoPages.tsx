@@ -326,12 +326,14 @@ export function FaqPage() {
 				</Link>
 				<T message={'. Minecraft commands and filenames stay the same in both languages.'} />
 			</p>
-			{questions.map(([question, answer]) => (
-				<section key={question} className="mm-info-faq">
-					<h2>{t(question ?? '')}</h2>
-					<p>{t(answer ?? '')}</p>
-				</section>
-			))}
+			<div className="mm-info-faqs">
+				{questions.map(([question, answer]) => (
+					<section key={question} className="mm-info-faq">
+						<h2>{t(question ?? '')}</h2>
+						<p>{t(answer ?? '')}</p>
+					</section>
+				))}
+			</div>
 			<p>
 				<Link to="/fonctionnement">
 					<T message={'All the steps to capture, upload and share'} />

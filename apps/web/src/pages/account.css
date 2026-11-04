@@ -171,6 +171,11 @@
 	}
 }
 
+/* Unifont (ko/ja) only stays sharp at multiples of 16 px: the slot's 24 px symbol grows to 32 px (the slot is 48 px). */
+html.mm-cjk:not([data-mc-font="read"]) .mm-account-symbol {
+	font-size: 32px;
+}
+
 @media (forced-colors: active) {
 	.mm-account-card,
 	.mm-account-note,

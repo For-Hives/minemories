@@ -140,7 +140,7 @@ html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h3 {
 }
 
 .mm-button:disabled {
-	cursor: wait;
+	cursor: default;
 }
 
 /* Outline: the night with a stone frame (a secondary action next to a primary one). */
@@ -149,6 +149,15 @@ html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h3 {
 	--_hi: #3a322b;
 	--_lo: #0f0c0a;
 	color: var(--text);
+}
+
+/* Disabled: the game's grey slab, flat, for every variant. */
+.mm-button:disabled,
+.mm-button.mm-button-outline:disabled {
+	--mc-bevel: 0 0 #0000;
+	background: var(--off);
+	color: var(--off-ink);
+	text-shadow: none;
 }
 
 /* Quiet: no relief until hovered (toolbar, header). */
@@ -171,6 +180,17 @@ html[data-mc-font="read"] .mc-btn {
 }
 
 /* --- 3. Header (the landing's bar, mc-sitebar) ---------------------------------------------------------------------------------------------------- */
+
+/* The header is sticky: what gets focus or a #anchor scrolls in below it, never under it (WCAG 2.4.11). Not on the landing (no .mm-header). */
+html:has(.mm-header) {
+	scroll-padding-top: calc(56px + var(--ds-sp-3));
+}
+
+@media (min-width: 1000px) {
+	html:has(.mm-header) {
+		scroll-padding-top: calc(64px + var(--ds-sp-3));
+	}
+}
 
 .mm-header {
 	position: sticky;
@@ -337,6 +357,36 @@ html[data-mc-font="read"] .mm-brand {
 	position: relative;
 }
 
+/* The file input is visually hidden: the ring goes on its label. */
+.mm-file-control:focus-within {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+/* Glyphs the game's font does not have (＋ U+FF0B, ✓ U+2713): the kit's pixel icon replaces the aria-hidden character. */
+.mm-glyph {
+	display: inline-block;
+	flex: none;
+	width: 16px;
+	height: 16px;
+	overflow: hidden;
+	font-size: 0;
+	text-shadow: none;
+	vertical-align: middle;
+	background: currentColor;
+	-webkit-mask: var(--mm-glyph) center / 100% 100% no-repeat;
+	mask: var(--mm-glyph) center / 100% 100% no-repeat;
+	image-rendering: pixelated;
+}
+
+.mm-glyph[data-icon="plus"] {
+	--mm-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 1h2v2h2v2H5v2H3V5H1V3h2z'/%3E%3C/svg%3E");
+}
+
+.mm-glyph[data-icon="check"] {
+	--mm-glyph: url("/hero/mcui/icons/check.svg");
+}
+
 .mm-file-control > span:last-of-type {
 	display: none;
 }
@@ -396,6 +446,9 @@ html[data-mc-font="read"] .mm-brand {
 	left: var(--ds-sp-4);
 	z-index: 100;
 	transform: translateY(-180%);
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
 	padding: var(--ds-sp-3) var(--ds-sp-4);
 	background: var(--copper);
 	color: #fff;
@@ -412,7 +465,20 @@ html[data-mc-font="read"] .mm-brand {
 		display: none;
 	}
 	.mm-file-control > span:last-of-type {
-		display: inline;
+		display: inline-block;
+	}
+	/* Icon only: a square stone button of the kit, never a bare glyph. */
+	.mm-header .mm-button.mm-button-quiet.mm-file-control {
+		--mc-bevel: inset var(--gp) var(--gp) 0 var(--_hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
+		width: var(--ds-hit);
+		min-width: var(--ds-hit);
+		padding-inline: 0;
+		background: var(--_face);
+		border-color: var(--outline);
+		color: #fff;
+	}
+	.mm-header .mm-button.mm-button-quiet.mm-file-control:hover:not(:disabled) {
+		border-color: var(--hover);
 	}
 	.mm-account a span {
 		display: none;
@@ -440,7 +506,13 @@ html[data-mc-font="read"] .mm-brand {
 		display: none;
 	}
 	.mm-mobile-menu .mm-language {
-		display: block;
+		display: inline-block;
+		justify-self: start;
+	}
+	/* The menu has the room: the whole language name, the chevron on the field. */
+	.mm-mobile-menu .mm-language .mc-select__control {
+		min-width: 200px;
+		max-width: 100%;
 	}
 	.mm-header-actions > .mm-button {
 		white-space: nowrap;
@@ -484,7 +556,9 @@ html[data-mc-font="read"] .mm-brand {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ds-sp-6) var(--ds-sp-7);
-	padding: var(--ds-sp-6) max(var(--ds-sp-4), calc((100% - 1120px) / 2)) var(--ds-sp-7);
+	/* Same left edge as .mm-content (1120 px column, 24 px gutter; 16 px under 730 px). */
+	--_gutter: var(--ds-sp-5);
+	padding: var(--ds-sp-6) max(var(--_gutter), calc((100% - 1120px) / 2 + var(--_gutter))) var(--ds-sp-7);
 	background: var(--night-2);
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
@@ -513,7 +587,6 @@ html[data-mc-font="read"] .mm-brand {
 .mm-footer .album-footer-heading em {
 	color: var(--ember);
 }
-
 .mm-footer nav {
 	display: grid;
 	align-content: start;
@@ -563,6 +636,12 @@ html[data-mc-font="read"] .mm-brand {
 	min-height: var(--ds-hit);
 }
 
+/* Two short labels: one line each; if a long translation still wraps, its lines keep a 20 px step. */
+.mm-display-options .mc-check > span:last-child {
+	white-space: nowrap;
+	line-height: 20px;
+}
+
 @media (min-width: 640px) {
 	.mm-footer {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -571,7 +650,8 @@ html[data-mc-font="read"] .mm-brand {
 
 @media (min-width: 1000px) {
 	.mm-footer {
-		grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
+		/* The last column (display options) takes its labels' width, so they stay on one line inside it. */
+		grid-template-columns: 2fr repeat(3, minmax(0, 1fr)) max-content;
 	}
 }
 
@@ -611,9 +691,12 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-html[data-mc-motion="reduced"] *,
-html[data-mc-motion="reduced"] *::before,
-html[data-mc-motion="reduced"] *::after {
+/* The app's pages only: the landing's film and the boot screen keep their own reduced fades (film.css, kit.css, index.html #boot). */
+html[data-mc-motion="reduced"] :is(.mm-site, .cinema-layout),
+html[data-mc-motion="reduced"] :is(.mm-site, .cinema-layout) *,
+html[data-mc-motion="reduced"] :is(.mm-site, .cinema-layout) *::before,
+html[data-mc-motion="reduced"] :is(.mm-site, .cinema-layout) *::after,
+html[data-mc-motion="reduced"] .mm-toast {
 	animation: none !important;
 	transition: none !important;
 }
@@ -674,9 +757,7 @@ html[data-mc-motion="reduced"] *::after {
 	background: var(--app-panel);
 	color: var(--text);
 	text-decoration: none;
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		var(--ds-panel-bevel);
+	box-shadow: var(--ds-panel-bevel), var(--ds-notch);
 	transition:
 		transform var(--ds-dur-2) var(--ds-ease),
 		box-shadow var(--ds-dur-2) var(--ds-ease);
@@ -684,9 +765,7 @@ html[data-mc-motion="reduced"] *::after {
 
 a.mm-editorial-card:hover {
 	transform: translateY(calc(-1 * var(--ds-lift)));
-	box-shadow:
-		0 0 0 var(--gp) var(--hover),
-		var(--ds-panel-bevel);
+	box-shadow: var(--ds-panel-bevel), var(--ds-notch-hover);
 }
 
 .mm-editorial-card h2 {
@@ -755,15 +834,20 @@ a.mm-editorial-card:hover {
 	text-decoration-color: var(--ember);
 }
 
-/* Note: the kit's tooltip colours (a dark ember panel). */
+/* Note: the kit's item card (.mc-tip) — a flat 2 px --tip-b frame and the corners cut in --tip-bg. The app's one implementation; .mm-note-title is its title. */
 .mm-note {
-	margin-top: var(--ds-sp-6);
+	margin: var(--ds-sp-6) var(--gp) 0;
 	padding: var(--ds-sp-4) var(--ds-sp-5);
 	background: var(--tip-bg);
 	color: var(--text-2);
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		inset 0 0 0 var(--gp) var(--tip-b);
+	border: var(--gp) solid var(--tip-b);
+	box-shadow: var(--ds-notch-tip);
+}
+
+.mm-note-title {
+	margin: 0 0 var(--ds-sp-2);
+	color: var(--c-name);
+	font: 400 16px / 20px var(--f-title);
 }
 
 /* --- 8. Waiting for data (the skeleton of a list, never between pages) --------------------------------------------------------------------------------- */
@@ -808,9 +892,7 @@ a.mm-editorial-card:hover {
 .mm-skeleton-card {
 	padding: var(--ds-sp-4);
 	background: var(--night-2);
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		var(--ds-panel-bevel);
+	box-shadow: var(--ds-panel-bevel), var(--ds-notch);
 }
 
 .mm-skeleton-image {
@@ -863,6 +945,9 @@ a.mm-editorial-card:hover {
 	.mm-content {
 		padding: var(--ds-sp-7) var(--ds-sp-4) var(--ds-sp-8);
 	}
+	.mm-footer {
+		--_gutter: var(--ds-sp-4);
+	}
 	.mm-content-header {
 		align-items: start;
 		gap: var(--ds-sp-3);
@@ -890,6 +975,12 @@ a.mm-editorial-card:hover {
 
 .cinema-layout {
 	min-height: 100svh;
+}
+
+/* The footer tagline in Korean and Japanese: Unifont is a 16 px grid, so 32 px rather than 24 (kept last: it outranks the footer rules). */
+html.mm-cjk:not([data-mc-font="read"]) .mm-footer .album-footer-heading > span {
+	font-size: 32px;
+	line-height: 40px;
 }
 
 /* Forced colours (Windows): the reliefs disappear, outlines stay. */

@@ -82,7 +82,9 @@ export function ArticlePage() {
 				{t('Create my first memory')}
 			</Link>
 			<p>
-				<Link to="/blog">{t('← Back to the journal')}</Link>
+				<Link className="mc-link" to="/blog">
+					{t('← Back to the journal')}
+				</Link>
 			</p>
 		</ContentLayout>
 	)
@@ -102,7 +104,9 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 				))}
 			</div>
 			<p>
-				<a href="https://github.com/For-Hives/minemories">{t('Project repository')}</a>
+				<a className="mc-link" href="https://github.com/For-Hives/minemories">
+					{t('Project repository')}
+				</a>
 			</p>
 		</ContentLayout>
 	)

@@ -1,4 +1,3 @@
-import { useId } from 'react'
 import type { DemoTheme } from '../content/discovery'
 
 function House({ x, y, small = false }: { x: number; y: number; small?: boolean }) {
@@ -31,18 +30,10 @@ export function MemoryScene({
 	stage?: number
 	label: string
 }) {
-	const id = useId()
 	return (
 		<svg className={`mm-memory-scene mm-scene-${theme}`} viewBox="0 0 480 320" role="img" aria-label={label}>
-			<defs>
-				<radialGradient id={id}>
-					<stop stopColor={theme === 'garden' ? '#8c716044' : '#80b3a644'} />
-					<stop offset="1" stopColor="#14110e00" />
-				</radialGradient>
-			</defs>
-			<rect width="480" height="320" fill={`url(#${id})`} />
 			<g className="mm-memory-island">
-				<ellipse cx="242" cy="275" rx="154" ry="20" fill="#070d0955" />
+				<ellipse cx="242" cy="275" rx="154" ry="20" fill="#0a080659" />
 				<path d="M67 171 237 256 414 168 414 199 237 288 67 202Z" fill="#534738" />
 				<path d="M67 171 240 86 414 168 237 256Z" fill={theme === 'garden' ? '#809064' : '#718f63'} />
 				<path d="M237 256V288L414 199V168Z" fill="#3d3d2d" />

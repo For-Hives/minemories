@@ -92,7 +92,9 @@
 		inset var(--gp) var(--gp) 0 var(--_hi),
 		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
 	cursor: pointer;
-	transition: border-color var(--ds-dur-1) var(--ds-ease-std);
+	transition:
+		border-color var(--ds-dur-1) var(--ds-ease-std),
+		transform var(--ds-dur-1) var(--ds-ease-std);
 }
 .gallery-text-button:hover,
 .gallery-icon-button:hover,
@@ -102,6 +104,25 @@
 .gallery-dialog-body
 	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover {
 	border-color: var(--hover);
+}
+/* The charter's hover, like the shared button: a light outline and half a lift. */
+.gallery-text-button:hover:not(:disabled),
+.gallery-icon-button:hover:not(:disabled),
+.gallery-view:hover:not(:disabled),
+.gallery-field-button:hover:not(:disabled),
+.gallery-server-go:hover:not(:disabled),
+.gallery-dialog-body
+	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover:not(:disabled) {
+	transform: translateY(calc(-1 * var(--ds-lift) / 2));
+}
+.gallery-text-button:active,
+.gallery-icon-button:active,
+.gallery-view:active,
+.gallery-field-button:active,
+.gallery-server-go:active,
+.gallery-dialog-body
+	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):active {
+	transform: none;
 }
 .gallery-text-button:active,
 .gallery-icon-button:active,
@@ -125,8 +146,8 @@
 	padding: 0 0 var(--gp);
 }
 .gallery-icon-button .gallery-icon {
-	width: 20px;
-	height: 20px;
+	width: 24px;
+	height: 24px;
 }
 .gallery-text-button.is-danger:hover,
 .gallery-icon-button.is-danger:hover {
@@ -1098,7 +1119,26 @@
 		margin-inline: var(--ds-sp-4);
 	}
 }
+/* Reduced motion (the system's or the site's option): the buttons keep still on hover. */
+html[data-mc-motion="reduced"]
+:is(.gallery-text-button, .gallery-icon-button, .gallery-view, .gallery-field-button, .gallery-server-go):hover,
+html[data-mc-motion="reduced"]
+	.gallery-dialog-body
+	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover {
+	transform: none;
+}
 @media (prefers-reduced-motion: reduce) {
+	.gallery-text-button:hover:not(:disabled),
+	.gallery-icon-button:hover:not(:disabled),
+	.gallery-view:hover:not(:disabled),
+	.gallery-field-button:hover:not(:disabled),
+	.gallery-server-go:hover:not(:disabled),
+	.gallery-dialog-body
+		:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover:not(
+			:disabled
+		) {
+		transform: none;
+	}
 	.gallery-card,
 	.gallery-server,
 	.gallery-cover-image::after,

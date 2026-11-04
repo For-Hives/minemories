@@ -113,22 +113,6 @@
 	font-family: var(--f-ui);
 }
 
-.install-island {
-	animation: install-float 6s steps(6, end) infinite;
-}
-
-.install-file {
-	animation: install-file-float 5s steps(5, end) infinite;
-}
-
-.install-trail {
-	animation: install-dash 3s linear infinite;
-}
-
-.install-orbit {
-	animation: install-glow 4s steps(2, jump-none) infinite;
-}
-
 /* "Just here to view?": a permanent tooltip. */
 .install-view-only,
 .install-note {
@@ -222,14 +206,14 @@
 	min-height: var(--ds-hit);
 }
 
-/* The chosen option: the copper face of the primary button, a white frame like a selected slot. */
+/* The chosen option is a state, not an action: the stone face of the kit's button and the white frame of a selected hotbar slot
+   (outline, white, outline), so copper stays for the page's single primary action. */
 .install-choices .mm-button[aria-pressed="true"] {
-	--_face: var(--copper);
-	--_hi: var(--copper-hi);
-	--_lo: var(--copper-lo);
+	--_face: var(--stone);
+	--_hi: var(--stone-hi);
+	--_lo: var(--stone-lo);
+	--mc-ring: 0 0 0 var(--gp) var(--hover), 0 0 0 calc(2 * var(--gp)) var(--outline);
 	color: #fff;
-	border-color: var(--hover);
-	text-shadow: var(--gp) var(--gp) 0 #2b1b0e;
 }
 
 .install-name {
@@ -729,30 +713,6 @@
 .install-screenshot figcaption small {
 	color: var(--text-3);
 	font-size: var(--ds-rd-fs-sm);
-}
-
-@keyframes install-float {
-	50% {
-		transform: translateY(-6px);
-	}
-}
-
-@keyframes install-file-float {
-	50% {
-		translate: 0 -8px;
-	}
-}
-
-@keyframes install-dash {
-	to {
-		stroke-dashoffset: -33;
-	}
-}
-
-@keyframes install-glow {
-	50% {
-		opacity: 0.3;
-	}
 }
 
 @keyframes install-enter {

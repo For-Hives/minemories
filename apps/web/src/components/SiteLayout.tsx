@@ -79,7 +79,9 @@ function FileControl() {
 	return (
 		<label className={`${buttonQuiet} mm-file-control`}>
 			<span>{t('Open a local GLB')}</span>
-			<span aria-hidden="true">＋</span>
+			<span className="mm-glyph" data-icon="plus" aria-hidden="true">
+				＋
+			</span>
 			<input
 				id="global-file-input"
 				type="file"
@@ -273,10 +275,11 @@ function safeStorage() {
 /** The landing's two accessibility options, on every page: the readable font applies at once, reduced motion too (the pages have no film to restart). */
 function DisplayOptions() {
 	const { t } = useI18n()
-	const [options, setOptions] = useState(() => ({
-		font: readDisplayOption(safeStorage(), 'font'),
-		motion: readDisplayOption(safeStorage(), 'motion'),
-	}))
+	// The prerendered HTML has no storage: both boxes start unchecked, as on the server, then take the stored choice once mounted (no hydration mismatch).
+	const [options, setOptions] = useState({ font: false, motion: false })
+	useEffect(() => {
+		setOptions({ font: readDisplayOption(safeStorage(), 'font'), motion: readDisplayOption(safeStorage(), 'motion') })
+	}, [])
 	const toggle = (option: DisplayOption, on: boolean) => {
 		storeDisplayOption(safeStorage(), option, on)
 		setDisplayOption(document.documentElement, option, on)

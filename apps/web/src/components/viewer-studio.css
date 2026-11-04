@@ -70,11 +70,16 @@
 	box-shadow: none;
 	background: var(--night);
 }
-/* A shade along the top and bottom edges, so the controls read over a bright sky (the night's colour). */
+/* A shade along the top and bottom edges, so the controls read over a bright sky (the night's colour):
+   hard-edged steps, like the game's shading, never a blurred shadow. */
 .cinema-page .viewer-stage::after {
 	box-shadow:
-		inset 0 100px 100px -70px rgb(20 17 14 / 0.78),
-		inset 0 -140px 100px -90px rgb(20 17 14 / 0.78);
+		inset 0 32px 0 rgb(20 17 14 / 0.3),
+		inset 0 64px 0 rgb(20 17 14 / 0.2),
+		inset 0 96px 0 rgb(20 17 14 / 0.15),
+		inset 0 -40px 0 rgb(20 17 14 / 0.3),
+		inset 0 -80px 0 rgb(20 17 14 / 0.2),
+		inset 0 -120px 0 rgb(20 17 14 / 0.15);
 }
 .cinema-canvas {
 	position: absolute;
@@ -82,7 +87,7 @@
 	width: 100%;
 	height: 100%;
 	display: block;
-	transition: opacity 800ms ease;
+	transition: opacity var(--ds-dur-3) var(--ds-ease);
 }
 .cinema-canvas.is-empty {
 	opacity: 0;
@@ -488,7 +493,8 @@ h2.cinema-panel-title {
 	padding: 0;
 	border: var(--gp) solid var(--outline);
 	border-radius: 0;
-	box-shadow: inset 0 0 0 var(--gp) rgb(255 255 255 / 0.28);
+	/* The game's slot frame, light enough to show the darkest sky against the night panel. */
+	box-shadow: inset 0 0 0 var(--gp) var(--slot);
 	cursor: pointer;
 }
 .cinema-page .cinema-time-presets button:hover {
@@ -530,30 +536,38 @@ h2.cinema-panel-title {
 		0 0 0 var(--gp) var(--outline);
 }
 .cinema-time-capture .cinema-icon {
-	width: 20px;
-	height: 20px;
+	width: 24px;
+	height: 24px;
 }
-/* The kit's slider: a black-edged rail (here the day's sky) and a stone handle. */
+/* The kit's slider: a black-edged rail (here the day's sky) and a stone handle.
+   The input keeps the 44 px target; the 24 px rail is drawn on its track. */
 .cinema-time input {
 	display: block;
 	width: 100%;
-	height: 24px;
+	height: var(--ds-hit);
 	margin: 0;
 	appearance: none;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.cinema-time input::-webkit-slider-runnable-track {
+	box-sizing: border-box;
+	height: 24px;
 	border: var(--gp) solid var(--outline);
 	border-radius: 0;
 	/* The slider track is the day's sky from midnight to midnight. */
 	background: var(--day-sky); /* taste-skill-ignore: the sky at this hour */
 	box-shadow: inset 0 0 0 var(--gp) rgb(0 0 0 / 0.35);
-	cursor: pointer;
-}
-.cinema-time input::-webkit-slider-runnable-track {
-	height: 100%;
-	background: transparent;
 }
 .cinema-time input::-moz-range-track {
-	height: 100%;
-	background: transparent;
+	box-sizing: border-box;
+	height: 24px;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--day-sky); /* taste-skill-ignore: the sky at this hour */
+	box-shadow: inset 0 0 0 var(--gp) rgb(0 0 0 / 0.35);
 }
 .cinema-time input::-webkit-slider-thumb {
 	appearance: none;
@@ -613,8 +627,8 @@ h2.cinema-panel-title {
 	margin-left: 0;
 }
 .cinema-immerse .cinema-icon {
-	width: 20px;
-	height: 20px;
+	width: 16px;
+	height: 16px;
 }
 .is-immersed .cinema-toolbar,
 .is-immersed .cinema-time,
@@ -885,29 +899,32 @@ h2.cinema-panel-title {
 		inset: var(--ds-sp-4) var(--ds-sp-4) auto;
 		gap: var(--ds-sp-3);
 	}
-	/* The title gives way to the header's action, which may wrap on two lines. */
+	/* The back button and the action share the first row; the title takes its own full row below, whole. */
+	.cinema-header {
+		flex-wrap: wrap;
+	}
 	.cinema-title {
-		flex: 1 1 0;
+		order: 1;
+		flex: 1 1 100%;
 	}
 	.cinema-title h1 {
 		max-width: 100%;
+		overflow: visible;
+		white-space: normal;
 		font-size: 16px;
 		line-height: 24px;
 		text-shadow: var(--ds-text-shadow-1);
 	}
 	.cinema-title > span {
 		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		white-space: normal;
 	}
 	.cinema-header-actions {
 		flex: none;
-		max-width: 45vw;
 	}
 	.cinema-open {
-		padding: var(--ds-sp-1) var(--ds-sp-3);
-		white-space: normal;
-		text-align: center;
+		padding: 0 var(--ds-sp-3) var(--gp);
+		white-space: nowrap;
 	}
 	.cinema-toolbar {
 		right: var(--ds-sp-3);
@@ -919,11 +936,12 @@ h2.cinema-panel-title {
 	.cinema-toolbar button > span {
 		display: none;
 	}
+	/* Panels open below the header, whose title takes its own row on a phone (it ends near 124 px). */
 	.cinema-settings {
 		right: 68px;
-		top: 90px;
+		top: 136px;
 		width: min(300px, calc(100% - 84px));
-		max-height: calc(100% - 250px);
+		max-height: calc(100% - 296px);
 		padding: var(--ds-sp-4);
 	}
 	/* Below the toolbar's column: the strip takes the width, so the six hour slots keep 44 px. */
@@ -953,10 +971,14 @@ h2.cinema-panel-title {
 		bottom: var(--ds-sp-3);
 	}
 	.cinema-page .viewer-sharing {
-		top: 90px;
+		top: 136px;
 		right: 68px;
 		width: calc(100% - 84px);
 		padding: var(--ds-sp-4);
+	}
+	.cinema-page .cinema-navigation,
+	.cinema-page .cinema-toast {
+		top: 136px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {

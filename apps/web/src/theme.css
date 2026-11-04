@@ -507,16 +507,29 @@ select.mc-field.mm-field-fill {
 	outline-offset: calc(-3 * var(--gp));
 }
 
-/* FAQ: each question is the landing's FAQ card (mc-faq__item), always open. */
-.mm-info-faq {
-	margin: var(--ds-sp-4) var(--gp);
-	padding: var(--ds-sp-4) var(--ds-sp-5);
+/* FAQ: one night panel, each question a row of the landing's FAQ (16/24 question, the kit's row separator), always open. */
+.mm-info-faqs {
+	margin: var(--ds-sp-5) var(--gp);
 	background: var(--night-2);
 	box-shadow: var(--mm-card-shadow);
 }
 
+.mm-info-faq {
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-4);
+}
+
+.mm-info-faq + .mm-info-faq {
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+}
+
 .mm-site .mm-info .mm-info-faq h2 {
+	display: flex;
+	align-items: center;
+	min-height: var(--ds-sp-6);
 	margin: 0 0 var(--ds-sp-2);
+	font-size: var(--ds-fs-xs);
+	line-height: var(--ds-lh-xs);
 }
 
 .mm-info .mm-info-faq p {
@@ -642,15 +655,6 @@ select.mc-field.mm-field-fill {
 	height: auto;
 }
 
-.mm-memory-island {
-	animation: mm-float 7s steps(8, end) infinite;
-	transform-origin: center;
-}
-
-.mm-scene-spark {
-	animation: mm-spark 4s steps(2, jump-none) infinite;
-}
-
 /* Call to action at the end of a page: the kit's separator above, a title and the buttons. */
 .mm-callout {
 	display: flex;
@@ -765,6 +769,8 @@ select.mc-field.mm-field-fill {
 }
 
 .mm-memory-card {
+	display: flex;
+	flex-direction: column;
 	min-width: 0;
 	padding: 0;
 	overflow: hidden;
@@ -800,6 +806,9 @@ select.mc-field.mm-field-fill {
 }
 
 .mm-memory-card-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
 	padding: var(--ds-sp-5);
 }
 
@@ -810,16 +819,17 @@ select.mc-field.mm-field-fill {
 
 .mm-memory-card p {
 	min-height: 72px;
-	margin: 0;
+	margin: 0 0 var(--ds-sp-4);
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
+/* The actions stand on the card's floor, whatever the length of the title above. */
 .mm-memory-actions {
 	display: flex;
 	justify-content: space-between;
 	gap: var(--ds-sp-3);
-	margin-top: var(--ds-sp-4);
+	margin-top: auto;
 	padding-top: var(--ds-sp-2);
 	border-top: var(--gp) solid var(--outline);
 	box-shadow: inset 0 var(--gp) 0 #3a322b;
@@ -1116,12 +1126,6 @@ select.mc-field.mm-field-fill {
 	color: var(--text-3);
 }
 
-@keyframes mm-spark {
-	50% {
-		opacity: 0.15;
-	}
-}
-
 /* Korean and Japanese: the Unifont grid is 16 px, so 24 and 40 px snap to 16 and 32 px. */
 html.mm-cjk:not([data-mc-font="read"]) :is(.mm-plan .mm-big-price, .mm-estimate-total) {
 	font-size: 32px;
@@ -1193,15 +1197,32 @@ html[data-mc-font="read"] :is(.mm-plan .mm-big-price, .mm-estimate-total, .mm-pr
 		padding-inline: var(--ds-sp-4);
 	}
 	.mm-info-faq {
-		padding: var(--ds-sp-4);
+		padding-inline: var(--ds-sp-3);
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.mm-memory-island,
-	.mm-scene-spark {
-		animation: none;
+/* Phone: the page title (32 px) stays above the sections of the long pages, which step down to 24 px. */
+@media (max-width: 639px) {
+	.mm-site .mm-content .mm-prose h2 {
+		font-size: var(--ds-fs-h3);
+		line-height: var(--ds-lh-h3);
+		text-shadow: var(--ds-text-shadow-2);
 	}
+	html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-content .mm-prose h2 {
+		font-size: 16px;
+		line-height: 24px;
+	}
+}
+
+/* An article's date: the meta voice of the journal's cards (game font, 16 px). */
+.mm-content > time {
+	display: block;
+	margin-bottom: var(--ds-sp-5);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+@media (prefers-reduced-motion: reduce) {
 	.mm-angle-card:hover,
 	.mm-scene-button:hover svg {
 		transform: none;
@@ -1219,7 +1240,7 @@ html[data-mc-motion="reduced"] :is(.mm-angle-card:hover, .mm-scene-button:hover 
 	.mm-timeline-preview,
 	.mm-demo-detail,
 	.mm-memory-card,
-	.mm-info-faq,
+	.mm-info-faqs,
 	.mm-estimate,
 	.mm-release-label,
 	.mm-empty-demo,

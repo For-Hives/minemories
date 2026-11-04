@@ -132,6 +132,9 @@
 }
 
 .mm-site .mm-release-card h2 a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
 	color: #fff;
 	text-decoration: none;
 }
@@ -206,6 +209,9 @@
 .mm-release-integrity a,
 .mm-release-card > p a {
 	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
 	text-decoration-color: var(--text-3);
 }
 
@@ -288,9 +294,16 @@
 .mm-site .mm-release-markdown :is(h3, h4) {
 	margin: var(--ds-sp-5) 0 var(--ds-sp-3);
 	color: #fff;
+	font-family: var(--f-title);
 	font-size: var(--ds-fs-xs);
 	line-height: var(--ds-lh-xs);
 	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-site .mm-release-markdown :is(h3, h4) a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
 }
 
 .mm-release-markdown p,
