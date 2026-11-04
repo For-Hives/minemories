@@ -1,0 +1,105 @@
+.mm-diagnostic-filters,
+.mm-diagnostic-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin: 24px 0;
+}
+.mm-diagnostic-filters {
+	align-items: end;
+	padding: 24px;
+	border: 1px solid #354238;
+	border-radius: 12px;
+}
+.mm-diagnostic-filters label,
+.mm-diagnostic-toolbar label {
+	display: grid;
+	gap: 6px;
+	font-size: 13px;
+}
+.mm-diagnostic-filters input,
+.mm-diagnostic-filters select,
+.mm-diagnostic-toolbar select {
+	border: 1px solid #789455;
+	border-radius: 7px;
+	padding: 10px;
+	background: var(--color-paper);
+	color: var(--color-ink);
+	min-height: 44px;
+	max-width: 100%;
+}
+.mm-diagnostic-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+	gap: 24px;
+}
+.mm-diagnostic-card,
+.mm-diagnostic-report {
+	min-width: 0;
+	padding: 24px;
+	border: 1px solid #354238;
+	border-radius: 12px;
+	background: var(--color-paper-light);
+	overflow-wrap: anywhere;
+}
+.mm-diagnostic-card h2,
+.mm-diagnostic-detail h2 {
+	font-size: 23px;
+	font-weight: 650;
+}
+.mm-diagnostic-card time {
+	display: block;
+	color: var(--color-muted-ink);
+	font-size: 13px;
+	margin: 14px 0 24px;
+}
+.mm-diagnostic-state {
+	padding: 2px 12px;
+	border-radius: 20px;
+	background: var(--color-forest);
+	font-size: 13px;
+}
+.mm-diagnostic-open {
+	background: #675222;
+}
+.mm-diagnostic-resolved {
+	color: var(--color-lime);
+}
+.mm-diagnostic-detail {
+	border-top: 1px solid #789455;
+	padding-top: 24px;
+	margin-top: 40px;
+	overflow-wrap: anywhere;
+}
+.mm-diagnostic-metadata {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 8px 20px;
+	font-size: 13px;
+	margin: 20px 0;
+}
+.mm-diagnostic-metadata dt {
+	color: var(--color-muted-ink);
+}
+.mm-diagnostic-report {
+	margin-top: 24px;
+}
+.mm-diagnostic-report h3,
+.mm-diagnostic-report h4 {
+	font-weight: 600;
+}
+.mm-diagnostic-report pre {
+	max-width: 100%;
+	white-space: pre-wrap;
+	overflow-x: auto;
+	font-size: 12px;
+	padding: 20px;
+	background: #0004;
+	border-radius: 7px;
+	margin: 20px 0;
+}
+.mm-diagnostic-report summary {
+	cursor: pointer;
+	padding: 12px 0;
+}
