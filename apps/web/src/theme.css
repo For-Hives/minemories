@@ -649,10 +649,14 @@ select.mc-field.mm-field-fill {
 	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
 }
 
+/* A still of the landing's captures (transparent background): it keeps its 4:3 frame and stays sharp at every size. */
 .mm-memory-scene {
 	display: block;
 	width: 100%;
 	height: auto;
+	aspect-ratio: 4 / 3;
+	padding: var(--ds-sp-3);
+	object-fit: contain;
 }
 
 /* Call to action at the end of a page: the kit's separator above, a title and the buttons. */
@@ -797,11 +801,11 @@ select.mc-field.mm-field-fill {
 	outline-offset: calc(-3 * var(--gp));
 }
 
-.mm-scene-button svg {
+.mm-scene-button img {
 	transition: transform var(--ds-dur-3) var(--ds-ease);
 }
 
-.mm-scene-button:hover svg {
+.mm-scene-button:hover img {
 	transform: scale(1.04);
 }
 
@@ -1224,12 +1228,12 @@ html[data-mc-font="read"] :is(.mm-plan .mm-big-price, .mm-estimate-total, .mm-pr
 
 @media (prefers-reduced-motion: reduce) {
 	.mm-angle-card:hover,
-	.mm-scene-button:hover svg {
+	.mm-scene-button:hover img {
 		transform: none;
 	}
 }
 
-html[data-mc-motion="reduced"] :is(.mm-angle-card:hover, .mm-scene-button:hover svg) {
+html[data-mc-motion="reduced"] :is(.mm-angle-card:hover, .mm-scene-button:hover img) {
 	transform: none;
 }
 

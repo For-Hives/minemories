@@ -45,54 +45,17 @@ export function LoadingSkeleton({
 	)
 }
 
-/* The content pages' mark: a still copper block circled by a stepped ring of square texels (no rotation, no loop). */
-const orbitBack = [
-	[8, 60],
-	[8, 52],
-	[20, 44],
-	[32, 40],
-	[48, 40],
-	[68, 40],
-	[84, 40],
-	[96, 44],
-	[112, 60],
-] as const
-const orbitFront = [
-	[108, 68],
-	[96, 76],
-	[84, 80],
-	[68, 80],
-	[48, 80],
-	[32, 80],
-	[20, 76],
-	[8, 68],
-] as const
-
-export function OrbitMark({ className = '' }: { className?: string }) {
+/* The content pages' mark: a grass block of the landing's captures, rendered in the same isometric view as the scenes (public/hero/scenes/). */
+export function BlockMark({ className = '' }: { className?: string }) {
 	return (
-		<svg
-			viewBox="0 0 120 120"
-			fill="none"
+		<img
+			className={`mm-block-mark ${className}`}
+			src="/hero/scenes/bloc-herbe.webp"
+			alt=""
 			aria-hidden="true"
-			shapeRendering="crispEdges"
-			className={`mm-orbit ${className}`}
-		>
-			<g fill="currentColor">
-				{orbitBack.map(([x, y]) => (
-					<rect key={`${x}-${y}`} x={x} y={y} width="4" height="4" />
-				))}
-				<rect x="104" y="48" width="8" height="8" />
-			</g>
-			<g>
-				<path d="m35 45 25-14 25 14-25 14Z" fill="#ffb347" />
-				<path d="m35 45 25 14v29L35 74Z" fill="#c98b55" />
-				<path d="m60 59 25-14v29L60 88Z" fill="#8a5a2b" />
-			</g>
-			<g fill="currentColor">
-				{orbitFront.map(([x, y]) => (
-					<rect key={`${x}-${y}`} x={x} y={y} width="4" height="4" />
-				))}
-			</g>
-		</svg>
+			width="214"
+			height="246"
+			decoding="async"
+		/>
 	)
 }

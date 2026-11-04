@@ -368,51 +368,8 @@
 	inset: 4px;
 	z-index: -1;
 	overflow: hidden;
-	background: var(--night);
-}
-/* The game's sun is a square. */
-.auth-art-sun {
-	position: absolute;
-	width: 64px;
-	height: 64px;
-	right: 10%;
-	top: 14%;
-	background: var(--gold);
-	box-shadow:
-		0 0 0 calc(4 * var(--gp)) var(--ember-deep),
-		0 0 0 calc(5 * var(--gp)) var(--outline);
-	image-rendering: pixelated;
-}
-.auth-art-sky i {
-	position: absolute;
-	inset: 40% -20% -10%;
-	background: var(--night-3);
-	clip-path: polygon(
-		0 55%,
-		17% 36%,
-		25% 36%,
-		25% 26%,
-		32% 26%,
-		32% 20%,
-		38% 20%,
-		38% 35%,
-		50% 48%,
-		62% 40%,
-		62% 32%,
-		69% 32%,
-		69% 19%,
-		74% 19%,
-		74% 26%,
-		82% 26%,
-		100% 50%,
-		100% 100%,
-		0 100%
-	);
-}
-.auth-art-sky i:last-child {
-	inset: 56% -25% -10%;
-	background: var(--night-2);
-	transform: scaleX(-1);
+	/* The low sun of the landing's poster, behind the world. */
+	background: radial-gradient(60% 50% at 70% 70%, rgb(255 179 71 / 18%), transparent 70%), var(--night);
 }
 .auth-art-label {
 	display: flex;
@@ -444,18 +401,16 @@
 }
 .auth-art-world {
 	position: absolute;
-	bottom: 110px;
-	left: 18%;
-	width: 78%;
+	bottom: 130px;
+	right: 4%;
+	width: 66%;
 	pointer-events: none;
 }
-.auth-art-world svg {
+.auth-art-world img {
 	width: 100%;
 	height: auto;
-}
-.auth-art-world .mm-memory-island,
-.auth-art-world .mm-scene-spark {
-	animation: none;
+	padding: 0;
+	filter: drop-shadow(0 18px 24px rgb(0 0 0 / 45%));
 }
 .auth-art-caption {
 	position: relative;
@@ -578,6 +533,7 @@ html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
 	}
 	.auth-art-world {
 		bottom: 130px;
+		right: auto;
 		width: 110%;
 		left: -5%;
 	}

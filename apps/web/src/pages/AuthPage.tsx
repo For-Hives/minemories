@@ -199,11 +199,7 @@ function AuthAtmosphere() {
 	const { t } = useI18n()
 	return (
 		<aside className="auth-atmosphere" aria-label={t('The spirit of Minemories')}>
-			<div className="auth-art-sky" aria-hidden="true">
-				<span className="auth-art-sun" />
-				<i />
-				<i />
-			</div>
+			<div className="auth-art-sky" aria-hidden="true" />
 			<div className="auth-art-label">
 				<span>MINEMORIES</span>
 				<span>{t('THE PLACES REMAIN.')}</span>

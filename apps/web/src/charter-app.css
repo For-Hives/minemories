@@ -728,20 +728,13 @@ html[data-mc-motion="reduced"] .mm-toast {
 	max-width: var(--ds-measure);
 }
 
-.mm-orbit {
-	width: 120px;
-	height: 120px;
-	color: var(--ember);
+/* The grass block of the content headers: drawn texel for texel (nearest), with a ground shadow like the dock's stills. */
+.mm-block-mark {
+	width: 96px;
+	height: auto;
 	flex-shrink: 0;
-}
-
-.mm-orbit-ring {
-	transform-origin: center;
-	animation: mm-orbit 20s linear infinite;
-}
-
-.mm-orbit-cube {
-	animation: mm-float 5s ease-in-out infinite;
+	image-rendering: pixelated;
+	filter: drop-shadow(0 12px 10px rgb(0 0 0 / 45%));
 }
 
 .mm-content-grid {
@@ -929,18 +922,6 @@ a.mm-editorial-card:hover {
 	}
 }
 
-@keyframes mm-orbit {
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-@keyframes mm-float {
-	50% {
-		transform: translateY(-4px);
-	}
-}
-
 @media (max-width: 730px) {
 	.mm-content {
 		padding: var(--ds-sp-7) var(--ds-sp-4) var(--ds-sp-8);
@@ -952,9 +933,8 @@ a.mm-editorial-card:hover {
 		align-items: start;
 		gap: var(--ds-sp-3);
 	}
-	.mm-content-header .mm-orbit {
-		width: 64px;
-		height: 64px;
+	.mm-content-header .mm-block-mark {
+		width: 56px;
 	}
 	.mm-editorial-card {
 		padding: var(--ds-sp-5);

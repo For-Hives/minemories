@@ -104,13 +104,32 @@
 }
 
 .install-scene {
+	position: relative;
 	width: 100%;
 	max-width: 450px;
-	overflow: visible;
+	margin: 0 auto;
 }
 
-.install-file text {
-	font-family: var(--f-ui);
+.install-scene img {
+	display: block;
+	width: 100%;
+	height: auto;
+	filter: drop-shadow(0 18px 24px rgb(0 0 0 / 45%));
+}
+
+/* The file of the step, in the game's item slot at the top right of the world. */
+.install-file {
+	position: absolute;
+	top: 6%;
+	right: 0;
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	background: var(--tip-bg);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
 
 /* "Just here to view?": a permanent tooltip. */
