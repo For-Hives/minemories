@@ -104,7 +104,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/privacy',
 		title: 'Privacy — Minemories',
 		description:
-			'Your account, private gallery, sharing links, capture retention and optional public-page diagnostics.',
+			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and release requests to GitHub.',
 		indexable: true,
 		language: 'fr',
 	},

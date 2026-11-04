@@ -70,7 +70,7 @@ function PrepareStep() {
 				<p>
 					<T
 						message={
-							'This guide covers NeoForge, which lets the game load the mod. Other validated versions are listed under'
+							'This guide details NeoForge, which lets the game load the mod. Fabric and Forge JARs (the Fabric JAR also runs under Quilt) and the validated versions are on'
 						}
 					/>{' '}
 					<Link to="/versions">
@@ -97,7 +97,7 @@ function PrepareStep() {
 				<p>
 					<T
 						message={
-							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: if it does not already use Java 1.21.1 and NeoForge 21.1.248, ask its administrator for help.'
+							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use Java 1.21.1 with NeoForge, Fabric or Forge (Quilt uses the Fabric JAR). This guide details NeoForge; with Fabric or Forge, take the matching JAR from the Mod versions page. Otherwise, ask its administrator for help.'
 						}
 					/>
 				</p>
@@ -468,22 +468,26 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 					<li>
 						<T
 							message={
-								'Generate the six-digit pairing code. In Minecraft, press M, enter the code and connect your account. The code expires after five minutes: generate another if needed.'
+								'Generate the six-digit pairing code. In Minecraft, press M, type the code and click “Connect”. The code expires after five minutes: generate another if needed.'
 							}
 						/>
 					</li>
 					<li>
 						<T message={'Click'} />{' '}
 						<strong>
-							<T message={'Capture and upload'} />
+							<T message={'Take a memory'} />
 						</strong>{' '}
-						<T message={'in the M menu. Wait for confirmation, then check that the capture appears in the gallery.'} />
+						<T
+							message={
+								'in the M menu. Once your account is connected, the memory is also sent: wait for confirmation, then check that it appears in the gallery.'
+							}
+						/>
 					</li>
 				</ol>
 				<p>
 					<T
 						message={
-							'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can disable them in M. Without a linked account, they stay on your computer.'
+							'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can turn them off with “Auto memories” in M. Without a linked account, they stay on your computer.'
 						}
 					/>
 				</p>

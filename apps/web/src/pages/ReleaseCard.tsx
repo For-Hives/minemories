@@ -2,22 +2,63 @@ import Markdown from 'react-markdown'
 import { Link } from 'react-router'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
-import type { ModRelease } from './mod-releases'
+import { type LoaderDownload, type LoaderTarget, type ModRelease, quiltTestedVersion } from './mod-releases'
 
-function Integrity({ release }: { release: ModRelease }) {
+function Integrity({ download }: { download: LoaderDownload }) {
 	const { t } = useI18n()
-	if (!(release.sha256 || release.checksumUrl))
+	if (!(download.sha256 || download.checksumUrl))
 		return <p className="mm-release-muted">{t('SHA-256 checksum not provided.')}</p>
 	return (
 		<details className="mm-release-integrity">
 			<summary>{t('Verify the file (SHA-256)')}</summary>
-			{release.sha256 && (
+			{download.sha256 && (
 				<p>
-					<code>{release.sha256}</code>
+					<code>{download.sha256}</code>
 				</p>
 			)}
-			{release.checksumUrl && <a href={release.checksumUrl}>{t('Download checksum')}</a>}
+			{download.checksumUrl && <a href={download.checksumUrl}>{t('Download checksum')}</a>}
 		</details>
+	)
+}
+function compatibility(target: LoaderTarget) {
+	const loader = target.fabricApi
+		? `${target.name} Loader ${target.loaderVersion} + Fabric API ${target.fabricApi}`
+		: `${target.name} ${target.loaderVersion}`
+	return `Minecraft Java ${target.minecraft} · ${loader} · Java ${target.java}`
+}
+function Download({
+	download,
+	version,
+	recommended,
+}: {
+	download: LoaderDownload
+	version: string
+	recommended: boolean
+}) {
+	const { t, locale } = useI18n()
+	const { target } = download
+	return (
+		<li className="mm-release-download">
+			<h3>{target.name}</h3>
+			<p>{compatibility(target)}</p>
+			{target.fabricApi && (
+				<p className="mm-release-muted">
+					{t('Install Fabric API separately. This same JAR is also tested under Quilt {version}.', {
+						version: quiltTestedVersion,
+					})}
+				</p>
+			)}
+			<div className="mm-release-actions">
+				<a className={recommended ? buttonLime : buttonOutline} href={download.url}>
+					{t('Download {loader} JAR', { loader: target.name })} <span className="sr-only">{version}</span>
+					<span aria-hidden="true">↓</span>
+				</a>
+				<span className="mm-release-muted">
+					{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} MiB
+				</span>
+			</div>
+			<Integrity download={download} />
+		</li>
 	)
 }
 export function ReleaseCard({
@@ -49,18 +90,21 @@ export function ReleaseCard({
 			<h2 id={`${id}-title`}>
 				<a href={`#${id}`}>Minemories {release.version}</a>
 			</h2>
-			<p>Minecraft Java 1.21.1 · NeoForge 21.1.248 · Java 21</p>
-			<div className="mm-release-actions">
-				<a className={recommended ? buttonLime : buttonOutline} href={release.url}>
-					{t('Download JAR')} <span className="sr-only">{release.version}</span>
-					<span aria-hidden="true">↓</span>
-				</a>
-				<span className="mm-release-muted">
-					{(release.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} MiB
-				</span>
-				{!changelog && <Link to={`/changelog#${id}`}>{t('What’s new →')}</Link>}
-			</div>
-			<Integrity release={release} />
+			<ul className="mm-release-downloads" aria-label={t('Files for each loader')}>
+				{release.downloads.map(download => (
+					<Download
+						key={download.target.loader}
+						download={download}
+						version={release.version}
+						recommended={recommended}
+					/>
+				))}
+			</ul>
+			{!changelog && (
+				<p>
+					<Link to={`/changelog#${id}`}>{t('What’s new →')}</Link>
+				</p>
+			)}
 			{changelog && (
 				<details className="mm-release-notes" open={recommended}>
 					<summary>

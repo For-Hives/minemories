@@ -131,7 +131,7 @@ export function HowItWorksPage() {
 			<p>
 				<T
 					message={
-						'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. Advanced mode can capture the full height; an explicit selection keeps the height of its two corners.'
+						'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
 					}
 				/>
 			</p>
@@ -145,7 +145,7 @@ export function HowItWorksPage() {
 			<p>
 				<T
 					message={
-						'The M key opens the Minemories menu. In simple mode, enter your gallery code, then click “Capture and upload”. The button becomes available when your account is connected and a world is open. If M is already assigned, change its shortcut in Minecraft controls.'
+						'The M key opens the Minemories menu. To connect your gallery, type the six-digit code generated in it and click “Connect”. “Take a memory” works as soon as a world is open: without an account, the memory stays on your computer; once connected, it is also sent to your private gallery. If M is already assigned, change its shortcut in Minecraft controls.'
 					}
 				/>
 			</p>
@@ -165,20 +165,20 @@ export function HowItWorksPage() {
 				<code>~/export/capture.glb</code>
 				<T
 					message={
-						') by default, not in the world folder. In advanced mode, you can choose another folder and click “Export locally” without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
+						') by default, not in the world folder. In M → Settings → Memories, you can choose another folder and click “Save”; “Save here” exports without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
 					}
 				/>{' '}
 				<code>history</code>. <code>capture.glb</code>
 				<T
 					message={
-						'points to the latest export. In the M menu, “Local captures” lets you choose and upload an older memory. Keep your own backups: the history takes up space on your computer.'
+						'points to the latest export. In the M menu, “My memories” lets you choose an older memory and send it to your gallery. Keep your own backups: the history takes up space on your computer.'
 					}
 				/>
 			</p>
 			<p>
 				<T
 					message={
-						'To revisit it on the site, upload this memory from M → Local captures, then open it in your private gallery.'
+						'To revisit it on the site, send this memory from M → My memories, then open it in your private gallery.'
 					}
 				/>
 			</p>
@@ -227,7 +227,7 @@ export function HowItWorksPage() {
 			<p>
 				<T
 					message={
-						'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. You can disable them in simple mode; advanced mode lets you adjust the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
+						'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. The “Auto memories” button in M turns them on or off; M → Settings → Memories → Auto captures adjusts the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
 					}
 				/>
 			</p>
@@ -238,7 +238,7 @@ export function HowItWorksPage() {
 				<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
 				<T
 					message={
-						'by default. In “Advanced mode”, you can enter the HTTPS address of a compatible self-hosted Minemories API and an absolute path for the local folder, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Minemories API” button restores the official address; save to apply it.'
+						'by default. In M → Settings → Account, you can enter the HTTPS address of a compatible self-hosted Minemories API, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Official address” button restores the official address; save to apply it.'
 					}
 				/>
 			</p>
@@ -274,7 +274,7 @@ const questions = [
 	],
 	[
 		'Can I keep a vanilla build?',
-		'Yes, if you can open a copy of the Java 1.21.1 world with NeoForge 21.1.248 and Minemories. Vanilla means without mods: the profile used for capturing must still load the mod. Bedrock and consoles are not supported.',
+		'Yes, if you can open a copy of the Java 1.21.1 world with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. Vanilla means without mods: the profile used for capturing must still load one of these loaders and the mod. The exact versions are on the Mod versions page. Bedrock and consoles are not supported.',
 	],
 	[
 		'Is it compatible with every mod?',
@@ -290,11 +290,11 @@ const questions = [
 	],
 	[
 		'Does the mod upload everything automatically?',
-		'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours, even while paused or in the background. Without a linked account they stay local; with one they upload to your private gallery. Simple mode can disable them; advanced mode adjusts delay, frequency and radius (32 blocks by default). A saved disable preference is preserved. Disconnecting the account stops uploads but keeps local captures. Export locally does not upload anything.',
+		'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours, even while paused or in the background. Without a linked account they stay local; with one they upload to your private gallery. The “Auto memories” button in M turns them off; M → Settings → Memories → Auto captures adjusts delay, frequency and radius (32 blocks by default). A saved disable preference is preserved. Disconnecting the account stops uploads but keeps local captures. “Save here” does not upload anything.',
 	],
 	[
 		'How can I find an older capture?',
-		'In the current mod version, M → Local captures lists dated captures kept in the history subfolder of your export directory. You can choose a memory and upload it if your account is connected. capture.glb remains the latest export. Older versions overwrote that file: updating preserves the remaining file but cannot recover files already overwritten. Local captures are not automatically deleted; allow enough space and keep your own backups. Lifetime online storage is not promised.',
+		'In the current mod version, M → My memories lists dated captures kept in the history subfolder of your export directory. You can choose a memory and send it if your account is connected. capture.glb remains the latest export. Older versions overwrote that file: updating preserves the remaining file but cannot recover files already overwritten. Memories on your computer are not automatically deleted; allow enough space and keep your own backups. Lifetime online storage is not promised.',
 	],
 	[
 		'Can I recover a closed server or import a ZIP?',

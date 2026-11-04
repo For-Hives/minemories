@@ -154,7 +154,7 @@ function InstallationHelp() {
 				<p>
 					<T
 						message={
-							'Check Minecraft 1.21.1, NeoForge 21.1.248 and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
+							'Check Minecraft 1.21.1, your loader version (NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API, or Forge 52.1.19), that the JAR matches this loader and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
 						}
 					/>
 				</p>
@@ -234,7 +234,7 @@ export function InstallationPage() {
 						<T message={'Start installing'} /> <span aria-hidden="true">↓</span>
 					</a>
 					<p className="install-caption">
-						<T message={'Minecraft Java 1.21.1 · NeoForge 21.1.248 · Experimental mod'} />
+						<T message={'Minecraft Java 1.21.1 · NeoForge, Fabric or Forge · Experimental mod'} />
 					</p>
 				</div>
 				<div className="install-hero-art">

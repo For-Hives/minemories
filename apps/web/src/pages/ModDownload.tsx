@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { T, useI18n } from '../i18n/I18n'
-import { releasesUrl } from './mod-releases'
+import { downloadFor, releasesUrl } from './mod-releases'
 import { useModReleases } from './useModReleases'
 
 export { selectLatestRelease } from './mod-releases'
@@ -9,7 +9,9 @@ export function ModDownload() {
 	const { t, locale } = useI18n()
 
 	const { releases, status, retry } = useModReleases()
-	const download = releases[0]
+	// The installation guide only covers NeoForge: offer the newest release that ships its JAR.
+	const release = releases.find(item => downloadFor(item, 'neoforge'))
+	const download = release && downloadFor(release, 'neoforge')
 	if (status === 'loading')
 		return (
 			<p role="status">
@@ -18,16 +20,16 @@ export function ModDownload() {
 		)
 	return (
 		<div className="install-download">
-			{download ? (
+			{release && download ? (
 				<>
 					<p>
 						<a className="install-primary" href={download.url}>
-							<T message={'Download Minemories'} /> {download.version} (.jar)
+							<T message={'Download Minemories'} /> {release.version} (.jar)
 						</a>
 					</p>
 					<p>
-						Minecraft Java 1.21.1 · NeoForge 21.1.248 ·{' '}
-						{download.prerelease ? t('Experimental prerelease.') : t('Published release.')}
+						Minecraft Java {download.target.minecraft} · NeoForge {download.target.loaderVersion} ·{' '}
+						{release.prerelease ? t('Experimental prerelease.') : t('Published release.')}
 					</p>
 					<p className="install-caption">
 						{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })}{' '}
@@ -69,6 +71,11 @@ export function ModDownload() {
 					</button>
 				</>
 			)}
+			<p>
+				<Link to="/versions">
+					<T message={'Playing with Fabric, Forge or Quilt? Get the matching JAR on the mod versions page.'} />
+				</Link>
+			</p>
 			<p>
 				<Link to="/versions">
 					<T message={"Previous versions and what's new"} />

@@ -9,18 +9,24 @@ function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
 }
 
-const filename = 'minemories-neoforge-mc1.21.1.jar'
-function release(version = '0.1.0', published = '2026-10-10T12:00:00Z') {
+const jarFor = (loader: string) => `minemories-${loader}-mc1.21.1.jar`
+const filename = jarFor('neoforge')
+function release(version = '0.1.0', published = '2026-10-10T12:00:00Z', loaders = ['neoforge']) {
 	const prefix = `https://github.com/For-Hives/minemories/releases/download/mod-v${version}/`
 	return {
 		tag_name: `mod-v${version}`,
 		draft: false,
 		prerelease: true,
 		published_at: published,
-		assets: [
-			{ name: filename, browser_download_url: prefix + filename, size: 4096, digest: `sha256:${'a'.repeat(64)}` },
-			{ name: `${filename}.sha256`, browser_download_url: `${prefix}${filename}.sha256` },
-		],
+		assets: loaders.flatMap(loader => [
+			{
+				name: jarFor(loader),
+				browser_download_url: prefix + jarFor(loader),
+				size: 4096,
+				digest: `sha256:${(loader === 'neoforge' ? 'a' : 'f').repeat(64)}`,
+			},
+			{ name: `${jarFor(loader)}.sha256`, browser_download_url: `${prefix}${jarFor(loader)}.sha256` },
+		]),
 	}
 }
 afterEach(() => {
@@ -130,4 +136,48 @@ test('network failure and timeout both allow retry', async () => {
 		await vi.advanceTimersByTimeAsync(15000)
 	})
 	expect(screen.getByRole('button', { name: 'Réessayer le téléchargement' })).toBeTruthy()
+})
+test('the NeoForge guide downloads the newest NeoForge JAR and points other loaders to the versions page', async () => {
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValue(
+				Response.json([
+					release('0.3.0', '2026-10-20T12:00:00Z', ['fabric', 'forge']),
+					release('0.2.0', '2026-10-15T12:00:00Z', ['neoforge', 'fabric', 'forge']),
+				])
+			)
+	)
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
+	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.2.0 (.jar)' })
+	expect(link.getAttribute('href')).toBe(
+		`https://github.com/For-Hives/minemories/releases/download/mod-v0.2.0/${filename}`
+	)
+	expect(screen.getByText('a'.repeat(64))).toBeTruthy()
+	expect(screen.queryByText('f'.repeat(64))).toBeNull()
+	expect(screen.getByText(/NeoForge 21\.1\.248/)).toBeTruthy()
+	expect(
+		screen
+			.getByRole('link', {
+				name: 'Tu joues avec Fabric, Forge ou Quilt ? Récupère le JAR qui correspond sur la page des versions du mod.',
+			})
+			.getAttribute('href')
+	).toBe('/versions')
+})
+test('releases without a NeoForge JAR never offer another loader in the NeoForge guide', async () => {
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([release('0.3.0', undefined, ['fabric', 'forge'])])))
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
+	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
+	expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
+	expect(screen.getByRole('link', { name: /Fabric, Forge ou Quilt/ }).getAttribute('href')).toBe('/versions')
+	expect(selectLatestRelease([release('0.3.0', undefined, ['fabric'])])?.downloads[0]?.target.loader).toBe('fabric')
 })
