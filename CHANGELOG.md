@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.33.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.1-beta.1...mod-v0.33.0-beta.1) (2026-11-04)
+
+### Fonctionnalités
+
+* **web:** rétablir toutes les pages et leur accès par le pied de page ([#193](https://github.com/For-Hives/minemories/issues/193)) ([a1e956e](https://github.com/For-Hives/minemories/commit/a1e956eac830a61ee826e8af72641418d4a5ce97))
+
 ## [0.32.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.0-beta.1...mod-v0.32.1-beta.1) (2026-11-04)
 
 ### Intégration continue
