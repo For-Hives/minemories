@@ -1,205 +1,284 @@
-/* Gallery: server sections, one card per area, a single View action and a side sheet to manage snapshots. */
+/* Gallery: the landing's Minecraft interface (docs/features/design-system.md). Server tiles and area cards are inventory slots on night panels,
+   the stack count is a hotbar count, the side sheets are the game's container panels, the facts and the right-click menu are the game's item tooltip.
+   Two voices: the game font (--f-ui, --f-title) for titles, labels, buttons, numbers and badges; the reading font (--ds-f-text) for running text,
+   fields, data and the names players give. The sheets and the menu are portalled out of .mm-site: they set their fonts themselves. */
 .gallery-page,
 .gallery-backdrop,
 .context-menu {
-	/* Elevation by lightness alone: ground, card one step up, nested one more. */
-	--g-raised: #1f2b23;
-	--g-gold-tint: #e9c5831a;
-	--g-card: #1a251e;
-	--g-line: #354238;
-	--g-ink: #e6eee1;
-	--g-muted: #aab8a7;
-	--g-gold: #e9c583;
-	--g-danger: #e8a0a0;
+	--g-raised: var(--night-3);
+	--g-card: var(--night-2);
+	--g-line: #3a322b;
+	--g-ink: var(--text);
+	--g-muted: var(--text-2);
+	--g-gold: var(--ember);
+	--g-danger: var(--bad);
+	/* The game's materials, read by the rules below. */
+	--g-panel: 0 0 0 var(--gp) var(--outline), var(--ds-panel-bevel);
+	--g-recess:
+		inset var(--gp) var(--gp) 0 var(--slot-lo), inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
+	--g-selected:
+		0 0 0 var(--gp) var(--outline), 0 0 0 calc(2 * var(--gp)) var(--hover), 0 0 0 calc(3 * var(--gp)) var(--outline);
 }
 .gallery-page {
 	width: min(100% - 88px, 1180px);
 	min-height: 670px;
 	margin-inline: auto;
-	padding: 62px 0 79px;
+	padding: var(--ds-sp-8) 0 var(--ds-sp-8);
 }
 .gallery-icon {
 	width: 16px;
 	height: 16px;
 	flex: none;
 }
+
+/* Heading: the page title in the game's font at the charter's scale (album.css gives it a fluid size, which blurs the pixel font). */
 .gallery-heading {
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
-	gap: 20px;
+	gap: var(--ds-sp-5);
 }
-.mm-site .gallery-heading h1 {
-	margin: 0 0 6px;
-	font: 600 28px / 1.2 var(--font-sans);
-	letter-spacing: -0.02em;
+.mm-site .gallery-page.album-gallery h1,
+.mm-site .gallery-page .gallery-heading h1 {
+	margin: 0 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-h1) / var(--ds-lh-h1) var(--f-title);
+	letter-spacing: 0;
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-3);
 }
 .gallery-heading p {
 	margin: 0;
-	font-size: 14px;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	font-variant-numeric: tabular-nums;
-	color: var(--g-muted);
+	color: var(--text-2);
 }
 .gallery-heading-actions {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
+	gap: var(--ds-sp-2);
+}
+.gallery-heading-actions .mc-btn {
+	--_h: var(--ds-hit);
 }
 
-/* Shared controls */
+/* --- Buttons: the kit's stone button (copper for the screen's main action), drawn here on the gallery's own classes --- */
 .gallery-text-button,
 .gallery-icon-button,
-.gallery-view {
+.gallery-view,
+.gallery-field-button,
+.gallery-server-go,
+.gallery-dialog-body :where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)) {
+	--_face: var(--stone);
+	--_hi: var(--stone-hi);
+	--_lo: var(--stone-lo);
+	appearance: none;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 7px;
-	border: 1px solid transparent;
-	border-radius: 9px;
-	background: transparent;
-	color: var(--g-muted);
-	font: 600 12px / 1 var(--font-sans);
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-4) var(--gp);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--_face);
+	color: #fff;
+	font: 400 16px / 18px var(--f-ui);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
 	white-space: nowrap;
 	text-decoration: none;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--_hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
 	cursor: pointer;
-	transition:
-		background 0.15s,
-		border-color 0.15s,
-		color 0.15s;
-}
-.gallery-text-button {
-	min-height: 36px;
-	padding: 0 12px;
-}
-.gallery-icon-button {
-	width: 36px;
-	height: 36px;
-	padding: 0;
+	transition: border-color var(--ds-dur-1) var(--ds-ease-std);
 }
 .gallery-text-button:hover,
-.gallery-icon-button:hover {
-	background: #ffffff10;
-	border-color: var(--g-line);
-	color: var(--g-ink);
+.gallery-icon-button:hover,
+.gallery-view:hover,
+.gallery-field-button:hover,
+.gallery-server-go:hover,
+.gallery-dialog-body
+	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover {
+	border-color: var(--hover);
+}
+.gallery-text-button:active,
+.gallery-icon-button:active,
+.gallery-view:active,
+.gallery-field-button:active,
+.gallery-server-go:active {
+	box-shadow: inset var(--gp) var(--gp) 0 var(--_lo);
+	padding-top: var(--gp);
+	padding-bottom: 0;
+}
+/* Secondary actions: the night with a stone frame (charter-app's outline button). */
+.gallery-text-button,
+.gallery-field-button {
+	--_face: var(--night-2);
+	--_hi: #3a322b;
+	--_lo: #0f0c0a;
+	color: var(--text);
+}
+.gallery-icon-button {
+	width: var(--ds-hit);
+	padding: 0 0 var(--gp);
+}
+.gallery-icon-button .gallery-icon {
+	width: 20px;
+	height: 20px;
 }
 .gallery-text-button.is-danger:hover,
 .gallery-icon-button.is-danger:hover {
-	border-color: #5a3535;
-	color: var(--g-danger);
+	border-color: var(--bad);
+	color: var(--bad);
 }
+/* The screen's single main action is copper; a card's own View is stone. */
 .gallery-view {
-	min-height: 36px;
-	padding: 0 16px;
+	--_face: var(--copper);
+	--_hi: var(--copper-hi);
+	--_lo: var(--copper-lo);
 	flex: 1;
-	border-radius: 999px;
-	background: var(--g-ink);
-	color: #16201a;
-	font-weight: 600;
+	text-shadow: var(--gp) var(--gp) 0 #2b1b0e;
 }
-.gallery-view:hover {
-	background: #ffffff;
-}
-/* A card's own View is quiet: the screen keeps a single inverted primary. */
 .gallery-view.is-quiet {
-	background: var(--g-raised);
-	color: var(--g-ink);
+	--_face: var(--stone);
+	--_hi: var(--stone-hi);
+	--_lo: var(--stone-lo);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
 }
-.gallery-view.is-quiet:hover {
-	background: #2a382e;
+.gallery-view:disabled,
+.gallery-text-button:disabled,
+.gallery-field-button:disabled,
+.gallery-dialog-body :where(button:not(.mc-btn, .gallery-icon-button, .gallery-sheet-reset)):disabled {
+	--_face: var(--off);
+	box-shadow: none;
+	color: var(--off-ink);
+	text-shadow: none;
+	cursor: default;
+	border-color: var(--outline);
 }
-.gallery-page :is(button, a):focus-visible,
-.gallery-dialog :is(button, a, input):focus-visible {
-	outline: 2px solid var(--g-gold);
-	outline-offset: 2px;
+.gallery-page :is(button, a, summary):focus-visible,
+.gallery-dialog :is(button, a, input, textarea, select, summary):focus-visible,
+.context-menu button:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
 }
+/* Notice: the kit's tooltip colours (charter-app's note). */
 .gallery-alert {
-	margin-bottom: 15px;
-	padding: 11px 14px;
-	border: 1px solid var(--g-line);
-	border-radius: 10px;
-	background: var(--g-card);
-	font-size: 12px;
-	color: var(--g-muted);
+	margin-bottom: var(--ds-sp-4);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
 
-/* Storage */
+/* Storage: the experience bar of the game (a flat ember fill, notches every 16 px). */
 .gallery-storage {
 	position: relative;
 }
-.gallery-storage p,
+/* album.css lays the live sidebar sections out as wrapping rows: each line of the storage card takes the full width. */
+.gallery-storage > :not(details) {
+	flex: 1 1 100%;
+}
 .gallery-storage-note {
-	margin: 8px 0 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
 .gallery-storage-head {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: baseline;
-	gap: 6px;
-	margin-bottom: 10px;
-	padding-right: 28px;
+	gap: var(--ds-sp-2);
+	width: 100%;
+	margin-bottom: var(--ds-sp-3);
+	padding-right: calc(var(--ds-hit) + var(--ds-sp-2));
 }
 .gallery-storage-head strong {
-	font: 700 20px var(--font-sans);
-	color: var(--g-ink);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .gallery-storage-head span {
-	font-size: 12px;
-	color: var(--g-muted);
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .gallery-storage-head em {
 	margin-left: auto;
-	font: 600 12px var(--font-sans);
+	font: 400 16px / 18px var(--f-ui);
 	font-variant-numeric: tabular-nums;
 	font-style: normal;
-	color: var(--g-gold);
+	color: var(--c-green);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .gallery-storage details {
 	position: absolute;
-	top: 14px;
-	right: 14px;
+	top: var(--ds-sp-4);
+	right: var(--ds-sp-4);
 }
 .gallery-storage summary {
+	--_hi: var(--stone-hi);
+	--_lo: var(--stone-lo);
 	display: grid;
-	width: 20px;
-	height: 20px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
 	place-items: center;
-	border: 1px solid var(--g-line);
-	border-radius: 50%;
-	font: italic 11px serif;
-	color: var(--g-muted);
+	border: var(--gp) solid var(--outline);
+	background: var(--stone);
+	color: #fff;
+	font: 400 16px / 1 var(--f-ui);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--_hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
 	cursor: pointer;
 	list-style: none;
 }
-.gallery-storage details p {
-	position: absolute;
-	right: 0;
-	z-index: 2;
-	width: 230px;
-	padding: 10px 12px;
-	border: 1px solid var(--g-line);
-	border-radius: 10px;
-	background: #151d17;
+.gallery-storage summary::-webkit-details-marker {
+	display: none;
+}
+.gallery-storage summary:hover {
+	border-color: var(--hover);
 }
 .gallery-meter {
-	height: 10px;
-	border-radius: 6px;
-	background: #ffffff1f;
+	position: relative;
+	width: 100%;
+	height: 12px;
+	background: #1a1612;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 var(--gp) 0 rgb(0 0 0 / 0.5);
 	overflow: hidden;
+}
+.gallery-meter::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	/* Notches of the experience bar (hard stops, no shading). */
+	background: repeating-linear-gradient(
+		90deg,
+		transparent 0 14px,
+		rgb(10 8 6 / 0.7) 14px 16px
+	); /* taste-skill-ignore: the game's bar notches */
+	pointer-events: none;
 }
 .gallery-meter-fill {
 	display: block;
 	height: 100%;
-	border-radius: inherit;
-	background: var(--g-gold);
-	transition: width 0.4s;
+	background: var(--c-green);
+	transition: width var(--ds-dur-3) steps(6, end);
 }
 .gallery-meter[data-level="high"] .gallery-meter-fill {
-	background: #e0a35c;
+	background: var(--ember);
 }
 .gallery-meter[data-level="full"] .gallery-meter-fill {
-	background: var(--g-danger);
+	background: var(--bad);
 }
 
-/* Servers: a grid of tiles; the selected one opens its areas below. */
+/* --- Servers: a row of inventory slots; the selected one wears the game's white selection frame and opens its areas below --- */
 .gallery-sr-only {
 	position: absolute;
 	width: 1px;
@@ -211,55 +290,63 @@
 }
 .gallery-worlds {
 	display: grid;
-	gap: 28px;
+	gap: var(--ds-sp-6);
 }
 .gallery-servers {
 	display: grid;
 	/* Columns follow the number of servers (gridColumns), so no tile is left alone on its row. */
 	grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
-	gap: 14px;
+	gap: var(--ds-sp-4);
 	margin: 0;
-	padding: 0;
+	padding: var(--gp);
 	list-style: none;
 }
 .gallery-server {
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
-	border: 1.5px solid transparent;
-	border-radius: 16px;
-	background: var(--g-card);
-	transition:
-		border-color 0.2s,
-		background 0.2s;
+	background: var(--night-2);
+	box-shadow: var(--g-panel);
+	transition: box-shadow var(--ds-dur-1) var(--ds-ease-std);
 }
 .gallery-server:hover {
-	background: var(--g-raised);
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
 }
 .gallery-server[data-selected="true"] {
-	border-color: var(--g-gold);
-	background: var(--g-gold-tint);
+	box-shadow: var(--g-selected), var(--ds-panel-bevel);
 }
 .gallery-server-open {
+	position: relative;
 	display: block;
-	width: 100%;
-	padding: 0;
+	width: calc(100% - 2 * var(--ds-sp-2));
+	margin: var(--ds-sp-2) var(--ds-sp-2) 0;
+	padding: var(--gp);
 	border: 0;
-	background: #10150f;
+	border-radius: 0;
+	background: var(--slot);
 	cursor: pointer;
+}
+.gallery-server-open::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	box-shadow: var(--g-recess);
+	pointer-events: none;
 }
 .gallery-server-covers {
 	display: grid;
 	height: 110px;
 	grid-template-columns: 2fr 1fr;
 	grid-template-rows: 1fr 1fr;
-	gap: 2px;
-	color: var(--g-muted);
+	gap: var(--gp);
+	background: var(--slot-lo);
+	color: var(--text-2);
 }
 .gallery-server-covers > span {
-	background: #1d2a22 center / cover;
-	transition: transform 0.4s;
+	background: var(--night-3) center / cover;
+	image-rendering: pixelated;
 }
 .gallery-server-covers > span:first-child {
 	grid-row: 1 / -1;
@@ -274,45 +361,47 @@
 	display: grid;
 	place-items: center;
 	grid-template: 1fr / 1fr;
-	background: #1d2a22;
+	background: var(--slot-lo);
+}
+.gallery-server-covers[data-count="0"] > span {
+	background: none;
 }
 .gallery-server-placeholder > svg {
-	width: 30px;
-	height: 30px;
-	opacity: 0.6;
-}
-.gallery-server:hover .gallery-server-covers > span {
-	transform: scale(1.03);
+	width: 32px;
+	height: 32px;
+	color: var(--slot);
 }
 .gallery-server-body {
 	display: grid;
 	flex: 1;
 	grid-template-columns: minmax(0, 1fr);
 	grid-template-rows: auto auto 1fr;
-	gap: 8px;
-	padding: 12px 14px 14px;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-4);
 }
 .gallery-server-stats {
 	display: flex;
-	gap: 12px;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-1) var(--ds-sp-4);
 	margin: 0;
 	overflow: hidden;
-	white-space: nowrap;
 }
 .gallery-server-stats div {
 	display: flex;
 	align-items: center;
-	gap: 5px;
-	font-size: 13px;
-	color: var(--g-muted);
+	gap: var(--ds-sp-2);
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+	white-space: nowrap;
 }
 .gallery-server-stats dt {
 	display: flex;
-	color: var(--g-muted);
+	color: var(--text-3);
 }
 .gallery-server-stats dt > svg {
-	width: 13px;
-	height: 13px;
+	width: 16px;
+	height: 16px;
 }
 .gallery-server-stats dd {
 	margin: 0;
@@ -322,137 +411,160 @@
 	display: flex;
 	align-items: end;
 	justify-content: space-between;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 	min-width: 0;
 }
 .gallery-seed {
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	gap: var(--ds-sp-2);
 	min-width: 0;
 	margin: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 13px;
+	font: 400 var(--ds-rd-fs-sm) / 1.25 var(--ds-f-text);
 	font-variant-numeric: tabular-nums;
-	color: var(--g-muted);
+	color: var(--text-2);
+}
+.gallery-seed .gallery-icon {
+	color: var(--text-3);
 }
 .gallery-server-go {
-	display: inline-flex;
 	flex: none;
-	align-items: center;
-	gap: 6px;
-	height: 30px;
-	padding: 0 12px;
-	border-radius: 999px;
-	background: var(--g-raised);
-	color: var(--g-ink);
-	font: 600 12px var(--font-sans);
-	text-decoration: none;
-	transition: background 0.16s;
-}
-.gallery-server-go:hover {
-	background: #2a382e;
+	padding-inline: var(--ds-sp-3);
 }
 .gallery-server-go .gallery-icon {
-	width: 14px;
-	height: 14px;
+	width: 16px;
+	height: 16px;
 }
-.mm-site .gallery-world-heading {
+/* The world's name is the player's: the reading font. */
+.mm-site .gallery-page .gallery-world-heading {
 	margin: 0;
-	font: 600 18px / 1.3 var(--font-sans);
+	font: 700 var(--ds-rd-fs-lg) / 1.3 var(--ds-f-text);
 	letter-spacing: 0;
-	color: var(--g-ink);
+	color: var(--text);
+	text-shadow: none;
+	overflow-wrap: anywhere;
 }
 .gallery-areas {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-	gap: 18px;
-	padding-top: 18px;
+	gap: var(--ds-sp-5);
+	padding: var(--ds-sp-4) var(--gp) var(--gp);
 }
 
-/* Area card */
+/* --- Area card: an item frame. The picture sits in an inventory slot, the stack count is a hotbar count --- */
 .gallery-card {
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
-	border-radius: 16px;
-	background: var(--g-card);
-	transition: background 0.2s;
+	background: var(--night-2);
+	box-shadow: var(--g-panel);
+	transition: box-shadow var(--ds-dur-1) var(--ds-ease-std);
 }
-.gallery-card:hover {
-	background: var(--g-raised);
+.gallery-card:hover,
+.gallery-card:focus-within {
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
 }
 .gallery-cover {
 	position: relative;
 	display: block;
 	aspect-ratio: 16 / 10;
+	margin: var(--ds-sp-2) var(--ds-sp-2) 0;
 	overflow: hidden;
-	background: #10150f;
+	background: var(--slot);
+}
+/* The slot's recess drawn above the picture (an inset shadow under it would be hidden). */
+.gallery-cover::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	box-shadow: var(--g-recess);
+	pointer-events: none;
 }
 .gallery-cover-image,
 .gallery-cover-empty {
 	position: absolute;
-	inset: 0;
+	inset: var(--gp);
 }
 .gallery-cover-image {
 	background: center / cover;
-	transition: transform 0.4s;
+	image-rendering: pixelated;
 }
-.gallery-card:hover .gallery-cover-image {
-	transform: scale(1.04);
+/* Hovering a slot: the game's white veil over the item. */
+.gallery-cover-image::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgb(255 255 255 / 0);
+	transition: background var(--ds-dur-1) linear;
+}
+.gallery-card:hover .gallery-cover-image::after {
+	background: rgb(255 255 255 / 0.12);
 }
 .gallery-cover-empty {
 	display: grid;
 	place-items: center;
-	background: hsl(var(--tone) 18% 16%);
-	color: #ffffff55;
+	background: var(--slot-lo);
+	color: var(--slot);
 }
 .gallery-cover-empty .gallery-icon {
-	width: 38px;
-	height: 38px;
+	width: 40px;
+	height: 40px;
 }
+/* The stack count, at the bottom right like the game's (on a plaque: it must read over any picture). */
 .gallery-badge {
 	position: absolute;
-	left: 10px;
-	bottom: 10px;
+	right: var(--ds-sp-2);
+	bottom: var(--ds-sp-2);
+	z-index: 1;
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	padding: 5px 10px;
-	border-radius: 20px;
-	background: #0d140fc9;
-	font: 600 11px / 1 var(--font-sans);
-	color: var(--g-gold);
+	gap: var(--ds-sp-2);
+	padding: var(--gp) calc(3 * var(--gp));
+	background: rgb(0 0 0 / 0.72);
+	box-shadow:
+		0 calc(-1 * var(--gp)) 0 0 rgb(0 0 0 / 0.72),
+		0 var(--gp) 0 0 rgb(0 0 0 / 0.72);
+	font: 400 16px / 18px var(--f-ui);
+	color: #fff;
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+}
+.gallery-badge .gallery-icon {
+	color: var(--ember);
 }
 .gallery-body {
 	display: grid;
-	gap: 8px;
-	padding: 14px 14px 4px;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-1);
 	flex: 1;
 	align-content: start;
 }
 .gallery-title {
 	display: flex;
 	align-items: center;
-	gap: 4px;
+	gap: var(--ds-sp-1);
 }
-.gallery-title h3 {
+/* Area and server names are the player's: the reading font. */
+.mm-site .gallery-page .gallery-title h3 {
 	margin: 0;
 	min-width: 0;
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font: 700 15px / 1.3 var(--font-sans);
+	font: 700 var(--ds-rd-fs) / 1.3 var(--ds-f-text);
+	letter-spacing: 0;
+	color: var(--text);
+	text-shadow: none;
 }
 .gallery-title .gallery-icon-button {
-	width: 28px;
-	height: 28px;
 	opacity: 0;
 }
 .gallery-card:hover .gallery-title .gallery-icon-button,
+.gallery-server:hover .gallery-title .gallery-icon-button,
 .gallery-title .gallery-icon-button:focus-visible {
 	opacity: 1;
 }
@@ -463,55 +575,55 @@
 }
 .gallery-when {
 	margin: 0;
-	font-size: 11px;
-	color: var(--g-muted);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
+/* Chips: small dark slots of recorded data. */
 .gallery-chips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 5px;
+	gap: var(--ds-sp-2);
 	margin: 0;
-	padding: 0;
+	padding: var(--gp);
 	list-style: none;
 }
 .gallery-chips li {
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	gap: var(--ds-sp-2);
 	max-width: 100%;
-	padding: 4px 9px;
-	border-radius: 20px;
-	background: #ffffff0d;
-	font-size: 12px;
-	color: var(--g-ink);
+	min-height: 28px;
+	padding: 2px var(--ds-sp-2);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--g-line);
+	font: 400 var(--ds-rd-fs-sm) / 1.25 var(--ds-f-text);
+	color: var(--text);
 }
 .gallery-chips li > svg {
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	flex: none;
 }
-.gallery-chips li[data-kind="biome"] {
-	background: #8fb06a1f;
-}
 .gallery-chips li[data-kind="biome"] > svg {
-	color: #a9c985;
+	color: var(--c-green);
 }
 .gallery-chips li[data-kind="place"] > svg,
 .gallery-chips li[data-kind="size"] > svg {
-	color: var(--g-muted);
+	color: var(--text-3);
 }
 .gallery-chips li[data-kind="weather"] > svg {
-	color: #9cb8d8;
+	color: var(--c-blue);
 }
 .gallery-chips li[data-kind="size"] {
-	color: var(--g-muted);
+	color: var(--text-2);
 }
+/* The dimension's colour, as an 8 px block. */
 .gallery-dimension-dot {
 	width: 8px;
 	height: 8px;
 	flex: none;
-	border-radius: 2px;
 	background: #6fa456;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 [data-dimension="Nether"] .gallery-dimension-dot {
 	background: #c8503c;
@@ -520,19 +632,18 @@
 	background: #b49ae0;
 }
 [data-dimension="modded"] .gallery-dimension-dot {
-	background: var(--g-muted);
+	background: var(--text-3);
 }
 .gallery-axis {
-	font: 500 12px var(--font-sans);
 	font-variant-numeric: tabular-nums;
 }
 .gallery-axis + .gallery-axis {
-	margin-left: 6px;
+	margin-left: var(--ds-sp-2);
 }
 .gallery-axis b {
-	margin-right: 2px;
-	font-weight: 600;
-	color: var(--g-muted);
+	margin-right: var(--ds-sp-1);
+	font: 400 16px / 1 var(--f-ui);
+	color: var(--text-2);
 }
 .gallery-chip-text {
 	overflow: hidden;
@@ -542,120 +653,142 @@
 .gallery-actions {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	padding: 12px 14px 14px;
+	gap: var(--ds-sp-1);
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-4);
 }
 .gallery-actions .gallery-view {
-	margin-right: 4px;
+	margin-right: var(--ds-sp-1);
 }
 .gallery-rename,
 .gallery-snapshot-text form {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--ds-sp-1);
 }
+/* Fields: the kit's black field with a light edge; what is typed is in the reading font. */
 .gallery-rename input,
-.gallery-snapshot-text input {
+.gallery-snapshot-text input,
+.gallery-dialog-body
+	:where(input:not([type="checkbox"], [type="radio"], .mc-field), textarea:not(.mc-field), select:not(.mc-field)) {
 	min-width: 0;
 	flex: 1;
-	height: 34px;
-	padding: 0 10px;
-	border: 1px solid var(--g-line);
-	border-radius: 8px;
-	background: #10150f;
-	color: var(--g-ink);
-	font-size: 13px;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	background: var(--field);
+	color: var(--field-ink);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	caret-color: #fff;
+}
+.gallery-rename input:hover,
+.gallery-snapshot-text input:hover,
+.gallery-dialog-body
+	:where(
+		input:not([type="checkbox"], [type="radio"], .mc-field),
+		textarea:not(.mc-field),
+		select:not(.mc-field)
+	):hover {
+	border-color: #d6d0c6;
+}
+.gallery-rename input:focus,
+.gallery-snapshot-text input:focus,
+.gallery-dialog-body
+	:where(
+		input:not([type="checkbox"], [type="radio"], .mc-field),
+		textarea:not(.mc-field),
+		select:not(.mc-field)
+	):focus {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
 }
 .gallery-field-button {
-	height: 34px;
-	padding: 0 10px;
-	border: 1px solid var(--g-line);
-	border-radius: 8px;
-	background: transparent;
-	color: var(--g-muted);
-	font-size: 12px;
-	cursor: pointer;
+	flex: none;
+	padding-inline: var(--ds-sp-3);
 }
 
-/* Empty state */
+/* --- Empty state: a night panel with an empty slot --- */
 .gallery-empty {
 	display: grid;
 	justify-items: center;
-	gap: 6px;
-	padding: 48px 25px;
-	border: 1px dashed var(--g-line);
-	border-radius: 14px;
-	background: var(--g-card);
+	gap: var(--ds-sp-2);
+	margin: var(--gp);
+	padding: var(--ds-sp-7) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--g-panel);
 	text-align: center;
-	color: var(--g-muted);
+	color: var(--text-2);
 }
-.gallery-empty .gallery-icon {
-	width: 34px;
-	height: 34px;
+.gallery-empty > .gallery-icon {
+	box-sizing: content-box;
+	width: 32px;
+	height: 32px;
+	padding: 8px;
+	background: var(--slot);
+	box-shadow: var(--g-recess);
+	color: var(--slot-lo);
 }
-.gallery-empty h3 {
-	margin: 8px 0 0;
-	font: 700 17px var(--font-sans);
-	color: var(--g-ink);
+.mm-site .gallery-page .gallery-empty h3 {
+	margin: var(--ds-sp-3) 0 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .gallery-empty-note {
 	margin: 0;
-	font-size: 12px;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .gallery-empty-actions {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	gap: 10px;
-	margin-top: 16px;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-4);
 }
 .gallery-empty-actions .gallery-view {
 	flex: none;
 }
 
-/* Trash and snapshot rows */
+/* --- Trash and snapshot rows: night slots in a list --- */
 .gallery-trash {
-	margin-top: 48px;
-}
-.gallery-trash h2 {
-	margin: 6px 0 0;
-	font: 700 22px var(--font-sans);
-	letter-spacing: -0.04em;
+	margin-top: var(--ds-sp-7);
 }
 .gallery-trash-note {
-	margin: 6px 0 16px;
-	font-size: 11px;
-	color: #8e978a;
+	margin: var(--ds-sp-1) 0 var(--ds-sp-4);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
 .gallery-trash-list,
 .gallery-snapshots {
 	display: grid;
-	gap: 8px;
+	gap: var(--ds-sp-3);
 	margin: 0;
-	padding: 0;
+	padding: var(--gp);
 	list-style: none;
 }
 .gallery-trash-card,
 .gallery-snapshots li {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 10px 12px;
-	border: 1px solid var(--g-line);
-	border-radius: 12px;
-	background: var(--g-card);
+	gap: var(--ds-sp-3);
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	background: var(--night-2);
+	box-shadow: var(--g-panel);
 }
 .gallery-trash-card {
-	border-color: #3a2f2f;
-	background: #1c1a1a;
+	background: var(--night);
 }
 .gallery-snapshot-thumb {
-	width: 52px;
-	height: 40px;
+	width: 56px;
+	height: 42px;
 	flex: none;
-	border-radius: 7px;
-	background: #10150f center / cover;
-	border: 1px solid var(--g-line);
+	background: var(--slot-lo) center / cover;
+	box-shadow:
+		0 0 0 var(--gp) var(--slot),
+		var(--g-recess);
+	image-rendering: pixelated;
+	margin: var(--gp);
 }
 .gallery-snapshot-text {
 	display: grid;
@@ -663,33 +796,40 @@
 	flex: 1;
 	gap: 2px;
 }
-.gallery-snapshot-text :is(strong, h3) {
+.gallery-snapshot-text :is(strong, h3),
+.mm-site .gallery-page .gallery-snapshot-text h3 {
 	margin: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 13px;
+	font: 700 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	letter-spacing: 0;
+	color: var(--text);
+	text-shadow: none;
 }
 .gallery-snapshot-meta {
-	font-size: 11px;
-	color: var(--g-muted);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
 .gallery-snapshot-actions {
 	display: flex;
 	flex: none;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 2px;
+	gap: var(--ds-sp-1);
 }
 
-/* Extended side sheet: full height, anchored to the right edge. */
+/* --- Side sheet: the game's container panel, full height on the right edge, over the game's 25 % veil (no blur) --- */
 .gallery-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 60;
 	display: flex;
 	justify-content: flex-end;
-	background: #070b08a6;
-	animation: gallery-fade 0.2s ease-out;
+	background: rgb(10 8 6 / 0.72);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	animation: gallery-fade var(--ds-dur-2) linear;
 }
 .gallery-backdrop-hit {
 	position: absolute;
@@ -704,17 +844,23 @@
 	flex-direction: column;
 	width: min(640px, 100%);
 	height: 100%;
-	border-left: 1px solid var(--g-line);
-	border-radius: 20px 0 0 20px;
-	background: #151d17;
-	box-shadow: -30px 0 80px #0008;
-	color: var(--g-ink);
+	border-radius: 0;
+	background: var(--night-2);
+	box-shadow:
+		calc(-1 * var(--gp)) 0 0 var(--outline),
+		inset calc(2 * var(--gp)) calc(2 * var(--gp)) 0 #3a322b,
+		inset calc(-2 * var(--gp)) calc(-2 * var(--gp)) 0 #0f0c0a;
+	color: var(--text);
 	outline: 0;
-	animation: gallery-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+	animation: gallery-slide var(--ds-dur-3) steps(8, end);
+}
+.gallery-dialog:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: calc(-3 * var(--gp));
 }
 @keyframes gallery-slide {
 	from {
-		transform: translateX(40px);
+		transform: translateX(48px);
 		opacity: 0;
 	}
 }
@@ -727,165 +873,186 @@
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
-	gap: 12px;
-	padding: 22px 18px 8px 26px;
+	gap: var(--ds-sp-3);
+	padding: var(--ds-sp-5) var(--ds-sp-4) var(--ds-sp-3) var(--ds-sp-6);
 }
+/* The sheet's title is the name the player gave: the reading font, bold. */
 .gallery-dialog h2 {
 	margin: 0;
-	font: 700 20px var(--font-sans);
+	font: 700 var(--ds-fs-h3) / 1.3 var(--ds-f-text);
+	color: var(--text);
+	overflow-wrap: anywhere;
 }
 .gallery-dialog header p {
-	margin: 4px 0 0;
-	font-size: 11px;
-	color: var(--g-muted);
+	margin: var(--ds-sp-1) 0 0;
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
+/* Tabs: the kit's tab strip. */
 .gallery-tabs {
 	display: flex;
-	gap: 4px;
-	padding: 8px 26px 0;
-	border-bottom: 1px solid var(--g-line);
+	flex-wrap: wrap;
+	margin: 0 var(--ds-sp-6);
+	background: rgb(0 0 0 / 0.75);
+	box-shadow:
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2),
+		0 0 0 var(--gp) var(--outline);
 }
 .gallery-tab {
-	margin-bottom: -1px;
-	padding: 9px 12px;
+	appearance: none;
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-4) var(--gp);
 	border: 0;
-	border-bottom: 2px solid transparent;
+	border-radius: 0;
 	background: transparent;
-	color: var(--g-muted);
-	font: 600 12px var(--font-sans);
+	color: var(--off-ink);
+	font: 400 16px / 1 var(--f-ui);
 	cursor: pointer;
 }
+.gallery-tab:hover {
+	color: #fff;
+}
 .gallery-tab[aria-selected="true"] {
-	border-bottom-color: var(--g-gold);
-	color: var(--g-ink);
+	color: #fff;
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
+}
+.gallery-dialog .gallery-tab:focus-visible {
+	outline-offset: calc(-3 * var(--gp));
 }
 .gallery-dialog-body {
 	flex: 1;
 	overflow-y: auto;
-	padding: 20px 26px 28px;
-	font-size: 12px;
-	line-height: 1.6;
-	color: var(--g-muted);
+	padding: var(--ds-sp-5) var(--ds-sp-6) var(--ds-sp-6);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
-.gallery-dialog-body :is(h3, h4) {
-	margin: 0 0 6px;
-	font: 700 14px var(--font-sans);
-	color: var(--g-ink);
+.gallery-dialog-body :where(h3, h4) {
+	margin: 0 0 var(--ds-sp-2);
+	font: 400 16px / 24px var(--f-title);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
 }
-.gallery-dialog-body label {
-	font-weight: 600;
-	color: var(--g-ink);
+.gallery-dialog-body :where(label) {
+	font: 400 16px / 24px var(--f-ui);
+	color: var(--text);
 }
-.gallery-dialog-body :is(input:not([type="checkbox"]), textarea, select) {
-	width: 100%;
-	padding: 8px 10px;
-	border: 1px solid var(--g-line);
-	border-radius: 8px;
-	background: #10150f;
-	color: var(--g-ink);
+.gallery-dialog-body :where(textarea:not(.mc-field)) {
+	min-height: 120px;
+	padding-block: var(--ds-sp-2);
+	resize: vertical;
 }
-.gallery-dialog-body button:not(.gallery-icon-button) {
-	min-height: 36px;
-	padding: 0 14px;
-	border: 1px solid var(--g-line);
-	border-radius: 9px;
-	background: transparent;
-	color: var(--g-ink);
-	font: 600 12px var(--font-sans);
-	cursor: pointer;
+.gallery-dialog-body :where(input:is([type="checkbox"], [type="radio"])) {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	margin: 2px 0 0;
+	border-radius: 0;
+	accent-color: var(--ember);
 }
-.gallery-dialog-body button.mm-button {
-	border-color: transparent;
-	background: var(--g-gold);
-	color: #2a2415;
+/* A checkbox label carries a long sentence: the reading font. */
+.gallery-dialog-body :where(label:has(> input[type="checkbox"])) {
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
-.gallery-dialog-body button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+.gallery-dialog .mc-btn {
+	--_h: var(--ds-hit);
 }
-.gallery-dialog-body a {
-	color: var(--g-gold);
+.gallery-dialog-body :where(a:not(.mc-btn, .gallery-icon-button)) {
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+.gallery-dialog-body :where(a:not(.mc-btn, .gallery-icon-button)):hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
 }
 .gallery-snapshots li {
 	flex-wrap: wrap;
 }
 
-/* Pairing */
+/* --- Pairing: an ember slot, then the code in the kit's six-digit field --- */
 .gallery-link {
 	display: grid;
 	grid-template-columns: auto 1fr;
 	align-items: center;
-	gap: 12px 14px;
+	gap: var(--ds-sp-3) var(--ds-sp-4);
 }
 .gallery-link-icon {
 	display: grid;
-	width: 40px;
-	height: 40px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
 	place-items: center;
-	border-radius: 12px;
-	background: #ffffff0f;
-	color: var(--g-gold);
+	background: var(--slot-lo);
+	box-shadow: var(--g-recess);
+	color: var(--ember);
 }
 .gallery-link[data-linked="true"] .gallery-link-icon {
-	background: #8fb06a26;
-	color: #a9cf84;
+	color: var(--c-green);
 }
 .gallery-link-icon .gallery-icon {
-	width: 20px;
-	height: 20px;
+	width: 24px;
+	height: 24px;
 }
-.mm-site .album-gallery-sidebar .gallery-link-text h2 {
-	margin: 0;
-	font-size: 15px;
-}
-.mm-site .album-gallery-sidebar .gallery-link-text p {
-	margin: 4px 0 0;
-	font-size: 11px;
-	line-height: 1.5;
+.gallery-link .gallery-link-text p {
+	margin: var(--ds-sp-1) 0 0;
 }
 .gallery-link > .gallery-view,
 .gallery-link-code {
 	grid-column: 1 / -1;
 }
+.gallery-link > .gallery-view {
+	flex: none;
+	width: 100%;
+}
 .gallery-link-code {
 	display: grid;
 	justify-items: center;
-	gap: 4px;
-	padding: 14px;
-	border: 1px dashed #e9c58355;
-	border-radius: 12px;
-	background: #e9c5830d;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-4) var(--ds-sp-3);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .gallery-link-code small {
-	font: 10px var(--font-mono);
-	letter-spacing: 0.1em;
-	color: var(--g-muted);
+	font: 400 16px / 24px var(--f-ui);
+	color: var(--text-2);
+	text-align: center;
 }
 .gallery-link-code button {
-	border: 0;
-	background: transparent;
-	color: var(--g-ink);
-	font: 700 32px var(--font-mono);
-	letter-spacing: 0.12em;
+	min-height: 56px;
+	padding: 0 var(--ds-sp-4);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	background: var(--field);
+	color: #fff;
+	font: 400 32px / 1 var(--f-ui);
+	letter-spacing: 0;
+	text-shadow: var(--gp) var(--gp) 0 #3a352f;
 	cursor: pointer;
+}
+.gallery-link-code button:hover {
+	border-color: var(--hover);
 }
 .gallery-link-wait {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
-	gap: 4px 10px;
+	align-items: center;
+	gap: var(--ds-sp-1) var(--ds-sp-3);
 }
 .gallery-link-wait i {
 	display: inline-block;
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	background: #85a555;
-	animation: gallery-pulse 1.4s infinite;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	animation: gallery-pulse 1.4s steps(2, jump-none) infinite;
 }
 @keyframes gallery-pulse {
 	50% {
-		opacity: 0.25;
+		background: var(--ember-deep);
 	}
 }
 
@@ -896,8 +1063,8 @@
 }
 @media (max-width: 650px) {
 	.gallery-page {
-		width: calc(100% - 36px);
-		padding: 40px 0 53px;
+		width: calc(100% - 32px);
+		padding: var(--ds-sp-7) 0 var(--ds-sp-8);
 	}
 	.gallery-heading {
 		flex-direction: column;
@@ -908,7 +1075,7 @@
 	}
 	.gallery-servers {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 10px;
+		gap: var(--ds-sp-3);
 	}
 	.gallery-server:last-child:nth-child(odd) {
 		grid-column: 1 / -1;
@@ -917,94 +1084,110 @@
 		height: 76px;
 	}
 	.gallery-server-body {
-		padding: 10px;
+		padding: var(--ds-sp-2) var(--ds-sp-3) var(--ds-sp-3);
 	}
 	.gallery-server-stats div:nth-child(n + 2),
 	.gallery-seed {
 		display: none;
 	}
-	.gallery-dialog {
-		border-radius: 0;
+	.gallery-dialog header,
+	.gallery-dialog-body {
+		padding-inline: var(--ds-sp-4);
+	}
+	.gallery-tabs {
+		margin-inline: var(--ds-sp-4);
 	}
 }
 @media (prefers-reduced-motion: reduce) {
 	.gallery-card,
-	.gallery-cover-image,
+	.gallery-server,
+	.gallery-cover-image::after,
 	.gallery-meter-fill {
 		transition: none;
 	}
-	.gallery-card:hover,
-	.gallery-card:hover .gallery-cover-image {
-		transform: none;
-	}
 	.gallery-dialog,
 	.gallery-backdrop,
+	.context-menu,
 	.gallery-link-wait i {
 		animation: none;
 	}
 }
 
-/* Right-click menu: the card's own actions, at the pointer. */
+/* --- Right-click menu: the game's item tooltip holding the card's own actions, at the pointer --- */
 .context-menu {
 	position: fixed;
 	z-index: 60;
 	display: grid;
-	min-width: 196px;
-	padding: 5px;
-	border: 1px solid var(--g-line);
-	border-radius: 12px;
-	background: #121a14f5;
-	box-shadow: 0 18px 50px #000a;
-	animation: context-menu-in 0.12s ease-out;
+	min-width: 220px;
+	padding: var(--ds-sp-1);
+	border: var(--gp) solid;
+	border-image: linear-gradient(var(--tip-a), var(--tip-b)) 1; /* taste-skill-ignore: the game's tooltip outline */
+	background: var(--tip-bg);
+	box-shadow:
+		0 calc(-1 * var(--gp)) 0 0 var(--tip-bg),
+		0 var(--gp) 0 0 var(--tip-bg),
+		calc(-1 * var(--gp)) 0 0 0 var(--tip-bg),
+		var(--gp) 0 0 0 var(--tip-bg);
+	animation: context-menu-in var(--ds-dur-1) steps(3, end);
 }
 .context-menu button {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 8px 10px;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
 	border: 0;
-	border-radius: 8px;
+	border-radius: 0;
 	background: transparent;
-	color: var(--g-ink);
-	font: 500 12px var(--font-sans);
+	color: var(--text);
+	font: 400 16px / 18px var(--f-ui);
 	text-align: left;
+	text-shadow: var(--ds-text-shadow-1);
 	cursor: pointer;
 }
 .context-menu button[role="menuitem"] > svg {
-	width: 15px;
-	height: 15px;
-	color: var(--g-muted);
+	width: 16px;
+	height: 16px;
+	flex: none;
+	color: var(--text-2);
 }
 .context-menu button:is(:hover, :focus-visible) {
-	outline: 0;
-	background: #ffffff12;
+	background: rgb(255 255 255 / 0.12);
+	color: #fff;
 }
-.context-menu button[data-danger="true"] {
-	color: var(--g-danger);
+.context-menu button:focus-visible {
+	outline-offset: calc(-1 * var(--gp));
 }
+.context-menu button[data-danger="true"],
 .context-menu button[data-danger="true"] > svg {
-	color: var(--g-danger);
+	color: var(--bad);
 }
 @keyframes context-menu-in {
 	from {
 		opacity: 0;
-		transform: scale(0.97);
 	}
 }
 
-/* Facts: what the mod recorded, as a glanceable grid inside the side sheets. */
+/* --- Facts: what the mod recorded, as the game's item tooltip (permanent: it carries facts) --- */
 .gallery-facts {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 8px;
-	margin: 0 0 22px;
+	gap: var(--ds-sp-3) var(--ds-sp-4);
+	margin: var(--gp) var(--gp) var(--ds-sp-6);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	border: var(--gp) solid;
+	border-image: linear-gradient(var(--tip-a), var(--tip-b)) 1; /* taste-skill-ignore: the game's tooltip outline */
+	background: var(--tip-bg);
+	box-shadow:
+		0 calc(-1 * var(--gp)) 0 0 var(--tip-bg),
+		0 var(--gp) 0 0 var(--tip-bg),
+		calc(-1 * var(--gp)) 0 0 0 var(--tip-bg),
+		var(--gp) 0 0 0 var(--tip-bg);
 }
 .gallery-fact {
 	display: grid;
-	gap: 4px;
-	padding: 10px 12px;
-	border-radius: 12px;
-	background: var(--g-raised);
+	gap: var(--ds-sp-1);
+	min-width: 0;
 }
 .gallery-fact[data-wide="true"] {
 	grid-column: 1 / -1;
@@ -1012,60 +1195,61 @@
 .gallery-fact dt {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	font: 500 12px var(--font-sans);
-	color: var(--g-muted);
+	gap: var(--ds-sp-2);
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .gallery-facts .gallery-fact dt > svg {
-	width: 13px;
-	height: 13px;
-	color: var(--g-muted);
+	width: 16px;
+	height: 16px;
+	color: var(--c-lore);
 }
 .gallery-fact dd {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	gap: 4px 10px;
+	gap: var(--ds-sp-1) var(--ds-sp-3);
 	margin: 0;
-	font: 600 15px var(--font-sans);
-	color: var(--g-ink);
+	font: 700 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text);
 	overflow-wrap: anywhere;
 }
 .gallery-fact small {
-	font: 400 11px var(--font-sans);
-	color: var(--g-muted);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
 .gallery-fact code {
-	font: 500 14px var(--font-sans);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
 	font-variant-numeric: tabular-nums;
+	color: var(--c-name);
 }
 .gallery-fact-axes {
 	display: flex;
-	gap: 16px;
-	font: 600 15px var(--font-sans);
+	flex-wrap: wrap;
+	gap: var(--ds-sp-1) var(--ds-sp-4);
 	font-variant-numeric: tabular-nums;
 }
 .gallery-fact-axes b {
-	margin-right: 4px;
-	color: var(--g-muted);
-	font-weight: 500;
+	margin-right: var(--ds-sp-1);
+	font: 400 16px / 1 var(--f-ui);
+	color: var(--c-blue);
 }
 .gallery-fact-list {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: var(--ds-sp-3);
 }
 .gallery-fact-dimension {
 	display: inline-flex;
 	align-items: center;
-	gap: 7px;
+	gap: var(--ds-sp-2);
 }
 .gallery-fact-dimension::before {
 	content: "";
-	width: 9px;
-	height: 9px;
-	border-radius: 2px;
+	width: 8px;
+	height: 8px;
 	background: #6fa456;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .gallery-fact-dimension[data-dimension="Nether"]::before {
 	background: #c8503c;
@@ -1074,39 +1258,44 @@
 	background: #b49ae0;
 }
 .gallery-fact-dimension[data-dimension="modded"]::before {
-	background: var(--g-muted);
+	background: var(--text-3);
 }
 .gallery-sheet-name {
 	display: grid;
-	gap: 6px;
-	margin-bottom: 20px;
+	gap: var(--ds-sp-2);
+	margin-bottom: var(--ds-sp-5);
 }
 .gallery-sheet-name > div {
 	display: flex;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 }
 .gallery-sheet-name small {
-	font-size: 10px;
-	color: var(--g-muted);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
 .gallery-dialog-body .gallery-sheet-reset {
 	justify-self: start;
-	min-height: 28px;
+	min-height: var(--ds-hit);
 	padding: 0;
 	border: 0;
-	color: var(--g-gold);
-	font-weight: 500;
+	background: transparent;
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+	cursor: pointer;
+}
+.gallery-dialog-body .gallery-sheet-reset:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
 }
 
 @media (max-width: 1199px) and (min-width: 651px) {
 	.gallery-servers {
 		grid-template-columns: repeat(var(--columns-narrow, 3), minmax(0, 1fr));
 	}
-}
-
-/* The gallery is an app screen: one flat ground, no decorative light. */
-.mm-site:has(.gallery-page) {
-	background: #101e1c;
 }
 
 /* A lone area does not sit beside a void: it lies down, picture and facts side by side. */
@@ -1123,5 +1312,97 @@
 		grid-row: 1 / -1;
 		aspect-ratio: auto;
 		min-height: 260px;
+		margin-bottom: var(--ds-sp-2);
 	}
+}
+
+@media (forced-colors: active) {
+	.gallery-card,
+	.gallery-server,
+	.gallery-dialog,
+	.gallery-facts,
+	.context-menu,
+	.gallery-empty,
+	.gallery-trash-card,
+	.gallery-snapshots li,
+	.gallery-chips li {
+		border: 1px solid CanvasText;
+		border-image: none;
+	}
+}
+
+/* --- Sidebar overrides (album.css lays the sidebar out; these win over it, so they stay last) --- */
+.mm-site .gallery-page .album-gallery-sidebar > section {
+	margin: var(--gp);
+	padding: var(--ds-sp-5);
+	border-radius: 0;
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow: var(--g-panel);
+}
+.mm-site .gallery-page .album-gallery-sidebar h2 {
+	margin: 0;
+	font: 400 16px / 24px var(--f-title);
+	letter-spacing: 0;
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-site .gallery-page .album-gallery-sidebar p {
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+}
+.mm-site .gallery-page .album-gallery-sidebar > .gallery-link {
+	display: grid;
+}
+.mm-site .gallery-page .gallery-trash h2 {
+	margin: 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	letter-spacing: 0;
+	text-shadow: var(--ds-text-shadow-2);
+}
+.mm-site .gallery-page .gallery-storage p,
+.gallery-storage-note {
+	margin: var(--ds-sp-2) 0 0;
+}
+/* The note opens as the game's item tooltip. */
+.mm-site .gallery-page .gallery-storage details p {
+	position: absolute;
+	right: 0;
+	z-index: 2;
+	width: 260px;
+	margin-top: var(--ds-sp-2);
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	border: var(--gp) solid;
+	border-image: linear-gradient(var(--tip-a), var(--tip-b)) 1; /* taste-skill-ignore: the game's tooltip outline */
+	background: var(--tip-bg);
+	color: var(--text-2);
+}
+
+/* Korean and Japanese (Unifont): pixel text in multiples of 16 px only. */
+html.mm-cjk:not([data-mc-font="read"]) .gallery-storage-head strong,
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .gallery-page .gallery-empty h3,
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .gallery-page .gallery-trash h2 {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+/* Readable font: game-font labels and buttons in bold, titles with a 2 px shadow (charter-app's rule). */
+html[data-mc-font="read"]
+:is(
+	.gallery-text-button,
+	.gallery-icon-button,
+	.gallery-view,
+	.gallery-field-button,
+	.gallery-server-go,
+	.gallery-tab,
+	.gallery-badge,
+	.context-menu button,
+	.gallery-storage-head strong,
+	.gallery-link-code button
+) {
+	font-weight: 700;
+}
+html[data-mc-font="read"]
+	:is(.gallery-storage-head strong, .gallery-dialog-body h3, .gallery-dialog-body h4, .gallery-empty h3) {
+	text-shadow: 2px 2px 0 var(--text-shadow);
 }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { buttonLime, buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { downloadFor, releasesUrl } from './mod-releases'
 import { useModReleases } from './useModReleases'
@@ -23,7 +24,7 @@ export function ModDownload() {
 			{release && download ? (
 				<>
 					<p>
-						<a className="install-primary" href={download.url}>
+						<a className={`${buttonLime} install-primary`} href={download.url}>
 							<T message={'Download Minemories'} /> {release.version} (.jar)
 						</a>
 					</p>
@@ -66,7 +67,7 @@ export function ModDownload() {
 							}
 						/>
 					</p>
-					<button type="button" className="install-secondary" onClick={retry}>
+					<button type="button" className={`${buttonOutline} install-secondary`} onClick={retry}>
 						<T message={'Retry download'} />
 					</button>
 				</>

@@ -1,167 +1,383 @@
+/* Mod versions and changelog in the landing's charter: the kit's tab strip, night release cards with the game's bevel, square badges
+   (the game's name tag), downloads in rows split by the kit's separator. Sizes and spacing read the --ds-* tokens. */
+
 .mm-release-tabs {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 12px 28px;
-	padding-bottom: 22px;
-	border-bottom: 1px solid #354238;
+	margin: 0 var(--gp);
+	background: rgb(0 0 0 / 0.75);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
 }
-.mm-release-tabs a {
+
+.mm-site .mm-release-tabs a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-5);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-decoration: none;
-	padding: 8px 0;
-	color: var(--color-muted-ink);
+	text-shadow: var(--ds-text-shadow-1);
 }
-.mm-release-tabs a.active {
-	color: var(--color-lime);
-	box-shadow: 0 2px var(--color-lime);
+
+.mm-site .mm-release-tabs a:hover {
+	color: #fff;
 }
+
+.mm-site .mm-release-tabs a.active {
+	color: #fff;
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
+}
+
+.mm-site .mm-release-tabs a:focus-visible {
+	outline-offset: calc(-3 * var(--gp));
+}
+
+/* The guide above the list: a permanent tooltip (the kit's item card). */
 .mm-release-guide {
-	padding: 30px 0 38px;
 	max-width: 780px;
+	margin: var(--ds-sp-6) var(--gp) var(--ds-sp-6);
+	padding: var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
-.mm-release-guide h2 {
-	font-size: 22px;
-	font-weight: 600;
-	margin-bottom: 10px;
+
+.mm-site .mm-release-guide h2 {
+	margin: 0 0 var(--ds-sp-3);
+	color: var(--c-name);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: 2px 2px 0 #1f3a38;
 }
+
+.mm-release-guide p {
+	margin: 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-release-guide p + p {
+	margin-top: var(--ds-sp-3);
+}
+
 .mm-release-list {
 	display: grid;
-	gap: 28px;
-	margin-bottom: 32px;
+	gap: var(--ds-sp-6);
+	margin-bottom: var(--ds-sp-6);
 }
+
 .mm-release-card {
 	min-width: 0;
-	padding: clamp(22px, 4vw, 40px);
-	border: 1px solid #354238;
-	border-radius: 18px;
-	background: var(--color-paper-light);
+	margin: var(--gp);
+	padding: var(--ds-sp-6);
+	background: var(--night-2);
+	color: var(--text);
 	scroll-margin-top: 110px;
-	transition:
-		border-color var(--motion-fast),
-		transform var(--motion-medium) var(--motion-spring);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+	transition: box-shadow var(--ds-dur-2) var(--ds-ease);
 }
+
 .mm-release-card:target {
-	border-color: var(--color-lime);
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
 }
+
+/* The latest version: the ember frame of the featured panel. */
 .mm-release-recommended {
-	border-color: #789455;
-	background: radial-gradient(ellipse at top right, #e9c5830c, transparent 65%), var(--color-paper-light);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember-deep),
+		0 0 0 calc(3 * var(--gp)) var(--outline),
+		var(--ds-panel-bevel);
 }
+
 .mm-release-meta,
 .mm-release-actions {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 12px 20px;
+	gap: var(--ds-sp-3) var(--ds-sp-5);
 }
+
 .mm-release-meta time {
-	color: var(--color-muted-ink);
-	font-size: 13px;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
+/* Badge: the game's name tag; the latest version in gold, the channel in grey. */
 .mm-release-badge {
-	border-radius: 30px;
-	background: var(--color-lime);
-	color: var(--color-paper);
-	padding: 3px 12px;
-	font-size: 12px;
-	font-weight: 600;
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.7);
+	color: var(--c-gold);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 #3f3416;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
+
 .mm-release-channel {
-	background: #e9c58314;
-	color: var(--color-lime);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
-.mm-release-card h2 {
-	font-size: clamp(23px, 4vw, 32px);
-	letter-spacing: -0.7px;
-	margin: 20px 0 6px;
+
+.mm-site .mm-release-card h2 {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
 	overflow-wrap: anywhere;
 }
-.mm-release-card h2 a {
+
+.mm-site .mm-release-card h2 a {
+	color: #fff;
 	text-decoration: none;
 }
-.mm-release-actions {
-	margin: 24px 0;
+
+.mm-site .mm-release-card h2 a:hover {
+	color: var(--ember);
 }
+
+.mm-release-actions {
+	margin: var(--ds-sp-5) 0;
+}
+
+/* The arrow of a download button: the kit's pixel icon (the game's font has no ↓). */
+.mm-release-actions .mc-btn > span[aria-hidden="true"] {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	overflow: hidden;
+	color: transparent;
+	font-size: 0;
+	text-shadow: none;
+	background: #fff;
+	-webkit-mask: url("/hero/mcui/icons/arrow-d.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/arrow-d.svg") center / 100% 100% no-repeat;
+}
+
 .mm-release-downloads {
 	display: grid;
 	gap: 0;
-	list-style: none;
-	margin: 20px 0;
+	margin: var(--ds-sp-5) 0;
 	padding: 0;
+	list-style: none;
 }
+
 .mm-release-download {
-	border-top: 1px solid #354238;
-	padding: 16px 0;
+	padding: var(--ds-sp-4) 0;
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
-.mm-release-download h3 {
-	font-size: 18px;
-	font-weight: 600;
-	margin: 0 0 4px;
+
+.mm-release-download p {
+	margin: var(--ds-sp-1) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text);
 }
+
+.mm-site .mm-release-download h3 {
+	margin: var(--ds-sp-2) 0 var(--ds-sp-1);
+	color: #fff;
+}
+
 .mm-release-download .mm-release-actions {
-	margin: 12px 0 4px;
+	margin: var(--ds-sp-3) 0 var(--ds-sp-1);
 }
+
 .mm-release-muted,
-.mm-release-source {
-	color: var(--color-muted-ink);
-	font-size: 14px;
+.mm-release-source,
+.mm-site .mm-release-download .mm-release-muted {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
-.mm-release-source {
-	margin-top: 24px;
+
+.mm-release-actions > .mm-release-muted {
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
+.mm-release-source {
+	margin-top: var(--ds-sp-5);
+}
+
+.mm-release-source a,
+.mm-release-integrity a,
+.mm-release-card > p a {
+	color: var(--text);
+	text-decoration-color: var(--text-3);
+}
+
+.mm-release-source a:hover,
+.mm-release-integrity a:hover,
+.mm-release-card > p a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Disclosures: the landing's FAQ row (game font, pixel chevron). */
 .mm-release-integrity summary,
 .mm-release-notes summary {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	list-style: none;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 	cursor: pointer;
-	padding: 10px 0;
 }
-.mm-release-integrity code,
+
+.mm-release-integrity summary::-webkit-details-marker,
+.mm-release-notes summary::-webkit-details-marker {
+	display: none;
+}
+
+.mm-release-integrity summary::after,
+.mm-release-notes summary::after {
+	content: "";
+	flex: none;
+	width: 16px;
+	height: 16px;
+	background: currentColor;
+	-webkit-mask: url("/hero/mcui/icons/chevron.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/chevron.svg") center / 100% 100% no-repeat;
+}
+
+.mm-release-integrity[open] > summary::after,
+.mm-release-notes[open] > summary::after {
+	transform: rotate(180deg);
+}
+
+.mm-release-integrity summary:hover,
+.mm-release-notes summary:hover {
+	color: var(--ember);
+}
+
+/* SHA-256: a chat line of the game (black veil). */
+.mm-release-integrity code {
+	display: inline-block;
+	max-width: 100%;
+	padding: var(--ds-sp-1) var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.6);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	overflow-wrap: anywhere;
+}
+
 .mm-release-markdown {
 	overflow-wrap: anywhere;
 }
+
 .mm-release-notes {
-	border-top: 1px solid #354238;
-	margin-top: 24px;
-	padding-top: 14px;
+	margin-top: var(--ds-sp-5);
+	padding-top: var(--ds-sp-3);
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
+
 .mm-release-markdown {
 	max-width: 780px;
-	color: var(--color-muted-ink);
-	padding-top: 14px;
+	padding-top: var(--ds-sp-3);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
-.mm-release-markdown h3,
-.mm-release-markdown h4 {
-	color: var(--color-ink);
-	font-weight: 600;
-	margin: 24px 0 12px;
+
+.mm-site .mm-release-markdown :is(h3, h4) {
+	margin: var(--ds-sp-5) 0 var(--ds-sp-3);
+	color: #fff;
+	font-size: var(--ds-fs-xs);
+	line-height: var(--ds-lh-xs);
+	text-shadow: var(--ds-text-shadow-1);
 }
+
 .mm-release-markdown p,
 .mm-release-markdown ul,
 .mm-release-markdown ol {
-	margin: 16px 0;
-}
-.mm-release-markdown ul,
-.mm-release-markdown ol {
-	padding-left: 24px;
-	list-style: revert;
-}
-.mm-release-markdown li + li {
-	margin-top: 8px;
-}
-.mm-release-markdown pre {
-	overflow-x: auto;
-	padding: 16px;
-	background: #0003;
-	border-radius: 8px;
-}
-.mm-release-feedback {
-	padding: 24px;
-	border: 1px solid #789455;
-	border-radius: 12px;
-	margin: 24px 0;
-}
-.mm-release-feedback p {
-	margin-bottom: 16px;
+	margin: var(--ds-sp-4) 0;
 }
 
-.mm-release-guide p + p {
-	margin-top: 14px;
+.mm-release-markdown ul,
+.mm-release-markdown ol {
+	padding-left: var(--ds-sp-5);
+	list-style: square;
+}
+
+.mm-release-markdown ol {
+	list-style: decimal;
+}
+
+.mm-release-markdown li::marker {
+	color: var(--ember);
+}
+
+.mm-release-markdown li + li {
+	margin-top: var(--ds-sp-2);
+}
+
+.mm-release-markdown code {
+	padding: 0 var(--ds-sp-1);
+	background: rgb(0 0 0 / 0.6);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-release-markdown pre {
+	overflow-x: auto;
+	padding: var(--ds-sp-4);
+	background: var(--field);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-release-markdown a {
+	color: var(--text);
+	text-decoration-color: var(--text-3);
+}
+
+/* Error: a tooltip in the error colour. */
+.mm-release-feedback {
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
+}
+
+.mm-release-feedback p {
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-release-guide h2 {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+@media (max-width: 480px) {
+	.mm-release-card {
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+	.mm-site .mm-release-tabs a {
+		padding: 0 var(--ds-sp-3);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.mm-release-card {
+		transition: none;
+	}
+}
+
+@media (forced-colors: active) {
+	.mm-release-card,
+	.mm-release-guide,
+	.mm-release-feedback,
+	.mm-release-badge {
+		border: 1px solid CanvasText;
+	}
 }

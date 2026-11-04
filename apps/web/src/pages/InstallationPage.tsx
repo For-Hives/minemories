@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { buttonLime, buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { InfoNavigation } from './InfoPages'
 import { InstallationScene } from './InstallationScene'
@@ -47,6 +48,7 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 							<button
 								key={value}
 								type="button"
+								className={buttonOutline}
 								aria-pressed={guide.system === value}
 								onClick={() => update({ system: value as System })}
 							>
@@ -64,6 +66,7 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 							<button
 								key={value}
 								type="button"
+								className={buttonOutline}
 								aria-pressed={guide.launcher === value}
 								onClick={() => update({ launcher: value as Launcher, done: [], step: 0 })}
 							>
@@ -230,7 +233,7 @@ export function InstallationPage() {
 							}
 						/>
 					</p>
-					<a className="install-primary" href="#parcours">
+					<a className={`${buttonLime} install-primary`} href="#parcours">
 						<T message={'Start installing'} /> <span aria-hidden="true">↓</span>
 					</a>
 					<p className="install-caption">
@@ -272,7 +275,10 @@ export function InstallationPage() {
 								aria-current={guide.step === index ? 'step' : undefined}
 								onClick={() => goTo(index)}
 							>
-								<span className="install-step-number" aria-hidden="true">
+								<span
+									className={`install-step-number${guide.done.includes(index) ? ' is-done' : ''}`}
+									aria-hidden="true"
+								>
 									{guide.done.includes(index) ? '✓' : `0${index + 1}`}
 								</span>
 								<span>
@@ -300,14 +306,14 @@ export function InstallationPage() {
 						<InstallationStep step={guide.step} system={guide.system} launcher={guide.launcher} />
 						<div className="install-panel-actions">
 							<button
-								className="install-secondary"
+								className={`${buttonOutline} install-secondary`}
 								type="button"
 								disabled={guide.step === 0}
 								onClick={() => goTo(guide.step - 1)}
 							>
 								<T message={'← Previous'} />
 							</button>
-							<button className="install-primary" type="button" onClick={completeStep}>
+							<button className={`${buttonLime} install-primary`} type="button" onClick={completeStep}>
 								{guide.step === 5 ? t('My memory opens in 3D') : t("Done, let's continue")}{' '}
 								<span aria-hidden="true">✓</span>
 							</button>

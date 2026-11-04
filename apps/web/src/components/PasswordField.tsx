@@ -34,6 +34,7 @@ export function PasswordField({ creating, className }: { creating: boolean; clas
 				/>
 				<button
 					type="button"
+					className="auth-reveal mc-btn"
 					aria-controls={id}
 					aria-label={t(visible ? 'Hide password' : 'Show password')}
 					onClick={() => setVisible(!visible)}

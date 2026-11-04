@@ -37,7 +37,7 @@ export function MemoryScene({
 			<defs>
 				<radialGradient id={id}>
 					<stop stopColor={theme === 'garden' ? '#8c716044' : '#80b3a644'} />
-					<stop offset="1" stopColor="#1b272000" />
+					<stop offset="1" stopColor="#14110e00" />
 				</radialGradient>
 			</defs>
 			<rect width="480" height="320" fill={`url(#${id})`} />
@@ -63,7 +63,7 @@ export function MemoryScene({
 					))}
 				{stage > 2 && <Tree x={220} y={219} />}
 			</g>
-			<g className="mm-scene-spark" stroke="#d9f36c" opacity=".65">
+			<g className="mm-scene-spark" stroke="#ffb347" opacity=".65">
 				<path d="M387 86v14m-7-7h14M100 101v10m-5-5h10" />
 			</g>
 		</svg>

@@ -1,6 +1,7 @@
 import type { AdminSummary, AdminUser } from '@minemories/api-contract'
 import { type SyntheticEvent, useState } from 'react'
 import { Link } from 'react-router'
+import { buttonDark, buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { AdminCharts, gigabytes } from './AdminCharts'
 import { AdminRoleDialog } from './AdminRoleDialog'
@@ -107,13 +108,15 @@ function Directory({
 				</label>
 				<label>
 					{t('Role')}
-					<select name="role" defaultValue={filters.role}>
-						<option value="all">{t('filters.allStates')}</option>
-						<option value="admin">{t('Administrators')}</option>
-						<option value="user">{t('Users')}</option>
-					</select>
+					<span className="mc-select">
+						<select name="role" defaultValue={filters.role} className="mc-select__control">
+							<option value="all">{t('filters.allStates')}</option>
+							<option value="admin">{t('Administrators')}</option>
+							<option value="user">{t('Users')}</option>
+						</select>
+					</span>
 				</label>
-				<button type="submit" className="mm-admin-secondary">
+				<button type="submit" className={`mm-admin-secondary ${buttonDark}`}>
 					{t('Search')}
 				</button>
 			</form>
@@ -149,7 +152,7 @@ function Directory({
 								<td>
 									<button
 										type="button"
-										className="mm-admin-secondary"
+										className={`mm-admin-secondary ${buttonDark}`}
 										disabled={user.role === 'admin' && admins <= 1}
 										onClick={() => onSelect(user)}
 									>
@@ -165,7 +168,7 @@ function Directory({
 			<div className="mm-admin-pagination">
 				<button
 					type="button"
-					className="mm-admin-secondary"
+					className={`mm-admin-secondary ${buttonDark}`}
 					disabled={filters.page === 1}
 					onClick={() => onPage(filters.page - 1)}
 				>
@@ -176,7 +179,7 @@ function Directory({
 				</span>
 				<button
 					type="button"
-					className="mm-admin-secondary"
+					className={`mm-admin-secondary ${buttonDark}`}
 					disabled={filters.page * directory.pageSize >= directory.total}
 					onClick={() => onPage(filters.page + 1)}
 				>
@@ -236,19 +239,27 @@ export function AdminPage() {
 				<div className="mm-admin-controls">
 					<label>
 						{t('Period')}
-						<select
-							aria-label={t('Period')}
-							value={filters.hours}
-							onChange={event =>
-								setFilters(previous => ({ ...previous, hours: Number(event.target.value) as 24 | 168 | 720 }))
-							}
-						>
-							<option value={24}>{t('24 hours')}</option>
-							<option value={168}>{t('7 days')}</option>
-							<option value={720}>{t('30 days')}</option>
-						</select>
+						<span className="mc-select">
+							<select
+								aria-label={t('Period')}
+								className="mc-select__control"
+								value={filters.hours}
+								onChange={event =>
+									setFilters(previous => ({ ...previous, hours: Number(event.target.value) as 24 | 168 | 720 }))
+								}
+							>
+								<option value={24}>{t('24 hours')}</option>
+								<option value={168}>{t('7 days')}</option>
+								<option value={720}>{t('30 days')}</option>
+							</select>
+						</span>
 					</label>
-					<button type="button" className="mm-admin-primary" onClick={load.reload} disabled={load.kind === 'loading'}>
+					<button
+						type="button"
+						className={`mm-admin-primary ${buttonLime}`}
+						onClick={load.reload}
+						disabled={load.kind === 'loading'}
+					>
 						{t('Refresh')}
 					</button>
 				</div>

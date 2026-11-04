@@ -125,6 +125,7 @@ html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h3 {
 /* --- 2. Buttons: the kit's button, plus two quieter ones -------------------------------------------------------------------------------------------- */
 
 .mm-button {
+	--_h: var(--ds-hit); /* the kit's button is 40 px on a desktop: the app's buttons keep the 44 px target */
 	transition:
 		border-color var(--ds-dur-1) var(--ds-ease-std),
 		transform var(--ds-dur-1) var(--ds-ease-std);

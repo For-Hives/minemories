@@ -1,557 +1,778 @@
+/* Installation guide in the landing's charter (docs/features/design-system.md): night panels with the game's bevel, hotbar slots for the step numbers,
+   tooltips for the notes, the kit's fields, buttons (mc-btn through ui.tsx) and segmented bar. Sizes, spacing and durations read the --ds-* tokens.
+   Links and commands (code) share the guides' rules in theme.css. */
+
 .installation {
 	max-width: 1120px;
 	margin: auto;
-	padding: 40px 28px 88px;
-	color: #e8eee5;
-	line-height: 1.7;
+	padding: var(--ds-sp-6) var(--ds-sp-5) var(--ds-sp-8);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
 }
+
 .installation p {
-	margin: 16px 0;
+	margin: var(--ds-sp-4) 0;
 }
-.installation h2 {
-	font-size: clamp(22px, 3vw, 30px);
-	line-height: 1.25;
-	font-weight: 650;
-	letter-spacing: -0.7px;
+
+.mm-site .installation h2 {
+	margin: var(--ds-sp-3) 0;
+	color: #fff;
 }
-.installation a:not(.install-primary) {
-	color: var(--color-lime);
-	text-decoration: underline;
-	text-underline-offset: 4px;
+
+.installation strong {
+	color: #fff;
 }
-.installation button,
-.installation a,
-.installation input,
-.installation summary {
-	outline-offset: 5px;
-}
-.installation :focus-visible {
-	outline: 2px solid var(--color-lime);
-}
+
+/* Eyebrow: the landing's (game font, ember square in front). */
 .install-eyebrow {
-	color: #d9cba7;
-	font-family: var(--font-mono);
-	font-size: 11px;
-	letter-spacing: 1.8px;
-	text-transform: uppercase;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 }
+
+.install-eyebrow::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+/* An arrow or a tick in a button: the kit's pixel icon (the game's font has neither ↓ nor ✓). */
+.installation .install-primary > span[aria-hidden="true"] {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	overflow: hidden;
+	color: transparent;
+	font-size: 0;
+	text-shadow: none;
+	background: #fff;
+	-webkit-mask: url("/hero/mcui/icons/arrow-d.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/arrow-d.svg") center / 100% 100% no-repeat;
+}
+
+.installation button.install-primary > span[aria-hidden="true"] {
+	-webkit-mask-image: url("/hero/mcui/icons/check.svg");
+	mask-image: url("/hero/mcui/icons/check.svg");
+}
+
+/* --- Hero ------------------------------------------------------------------------------------------------------------------------------------------- */
+
 .install-hero {
 	display: grid;
 	grid-template-columns: 1.2fr 1fr;
 	align-items: center;
-	gap: 32px;
-	padding: 24px 0 40px;
+	gap: var(--ds-sp-6);
+	padding: var(--ds-sp-5) 0 var(--ds-sp-6);
 }
-.install-hero h1 {
-	margin-top: 18px;
-	font-size: 15px;
-	font-weight: 500;
-	color: #b4c1ad;
+
+.mm-site .installation .install-hero h1 {
+	margin: var(--ds-sp-4) 0 0;
+	color: var(--text-2);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
 }
-.install-hero .install-lead {
-	font-size: clamp(32px, 4vw, 48px);
-	font-weight: 650;
-	line-height: 1.18;
-	letter-spacing: -1.7px;
-	margin: 14px 0 22px;
+
+/* The visual headline (the h1 above names the page): the hero title of the landing. */
+.installation .install-lead {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-5);
+	color: #fff;
+	font: 400 var(--ds-fs-h1) / var(--ds-lh-h1) var(--f-title);
+	text-shadow: var(--ds-text-shadow-4);
+	text-wrap: balance;
 }
+
 .install-hero p:not(.install-lead) {
-	max-width: 475px;
-	color: #b4c1ad;
+	max-width: 480px;
+	color: var(--text-2);
 }
-.install-primary,
-.install-secondary {
-	display: inline-flex;
-	min-height: 48px;
-	align-items: center;
-	justify-content: center;
-	gap: 16px;
-	padding: 12px 18px;
-	border-radius: 8px;
-	font-size: 14px;
-	font-weight: 650;
-	cursor: pointer;
-	text-decoration: none;
-	transition:
-		background 0.2s,
-		transform 0.2s;
-}
-.install-primary {
-	color: #233021;
-	background: var(--color-lime);
-	border: 1px solid var(--color-lime);
-}
-.install-primary:hover {
-	background: #e4ff85;
-	transform: translateY(-2px);
-}
-.install-secondary {
-	color: #e8eee5;
-	background: transparent;
-	border: 1px solid #405142;
-}
-.install-secondary:disabled {
-	opacity: 0.4;
-	cursor: default;
-}
+
 .install-hero-art {
 	text-align: center;
-	background: radial-gradient(ellipse, #283e2550, transparent 70%);
 }
+
 .install-hero-art > span {
-	color: #83977d;
-	font-family: var(--font-mono);
-	font-size: 11px;
-	letter-spacing: 1px;
+	color: var(--text-3);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 }
+
 .install-scene {
 	width: 100%;
 	max-width: 450px;
 	overflow: visible;
 }
+
+.install-file text {
+	font-family: var(--f-ui);
+}
+
 .install-island {
-	animation: install-float 6s ease-in-out infinite;
+	animation: install-float 6s steps(6, end) infinite;
 }
+
 .install-file {
-	animation: install-file-float 5s ease-in-out infinite;
+	animation: install-file-float 5s steps(5, end) infinite;
 }
+
 .install-trail {
 	animation: install-dash 3s linear infinite;
 }
+
 .install-orbit {
-	animation: install-glow 4s ease-in-out infinite;
+	animation: install-glow 4s steps(2, jump-none) infinite;
 }
-.install-view-only {
-	border-left: 2px solid #627f47;
-	padding: 8px 20px;
-	font-size: 14px;
-	color: #b4c1ad;
+
+/* "Just here to view?": a permanent tooltip. */
+.install-view-only,
+.install-note {
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+
+.installation .install-view-only {
+	margin: var(--ds-sp-5) var(--gp);
+}
+
+/* The note's title takes the tooltip's name colour. */
+.installation .install-note > strong {
+	display: block;
+	color: var(--c-name);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 #1f3a38;
+}
+
+.installation .install-note p {
+	margin: var(--ds-sp-2) 0 0;
+	color: var(--text-2);
+	font-size: var(--ds-rd-fs-sm);
+}
+
+/* --- Preferences --------------------------------------------------------------------------------------------------------------------------------------- */
+
+.install-preferences,
+.install-panel,
+.install-success,
+.install-download {
+	margin: var(--gp);
+	background: var(--night-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+
 .install-preferences {
 	display: grid;
 	grid-template-columns: 0.85fr 1.4fr;
-	gap: 48px;
-	margin: 60px 0 72px;
-	padding: 36px;
-	background: #19221b;
-	border: 1px solid #344238;
-	border-radius: 14px;
+	gap: var(--ds-sp-7);
+	margin: var(--ds-sp-8) var(--gp) var(--ds-sp-8);
+	padding: var(--ds-sp-6);
 }
-.install-preferences h2 {
-	margin: 12px 0;
-}
+
 .install-preferences p {
-	color: #b4c1ad;
-	font-size: 14px;
+	color: var(--text-2);
+	font-size: var(--ds-rd-fs-sm);
 }
+
 .install-fields {
 	display: grid;
-	gap: 22px;
+	gap: var(--ds-sp-5);
 }
+
+.install-fields fieldset {
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.install-fields legend,
+.install-name,
+.install-motion {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
 .install-fields legend {
-	font-size: 14px;
-	margin-bottom: 10px;
+	margin-bottom: var(--ds-sp-3);
+	padding: 0;
 }
+
 .install-choices {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 }
-.install-choices button {
-	padding: 9px 14px;
-	min-height: 44px;
-	border-radius: 7px;
-	border: 1px solid #405142;
-	cursor: pointer;
-	font-size: 13px;
+
+.install-choices .mc-btn {
+	min-width: 0;
+	min-height: var(--ds-hit);
 }
-.install-choices button[aria-pressed="true"] {
-	color: #e4f9b8;
-	background: #32452a;
-	border-color: #bad16f;
+
+/* The chosen option: the copper face of the primary button, a white frame like a selected slot. */
+.install-choices .mm-button[aria-pressed="true"] {
+	--_face: var(--copper);
+	--_hi: var(--copper-hi);
+	--_lo: var(--copper-lo);
+	color: #fff;
+	border-color: var(--hover);
+	text-shadow: var(--gp) var(--gp) 0 #2b1b0e;
 }
+
 .install-name {
 	display: grid;
-	gap: 8px;
-	font-size: 13px;
+	gap: var(--ds-sp-2);
 }
+
 .install-name input {
-	padding: 12px;
-	border: 1px solid #405142;
-	background: #101612;
-	border-radius: 7px;
 	width: 100%;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	appearance: none;
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	text-shadow: none;
+	caret-color: #fff;
 }
+
 .install-name input::placeholder {
-	color: #90a08b;
+	color: var(--text-3);
+	opacity: 1;
 }
+
+.install-name input:hover {
+	border-color: #d6d0c6;
+}
+
+.mm-site .install-name input:focus-visible {
+	border-color: #fff;
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+
 .install-motion {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	font-size: 13px;
-	color: #b4c1ad;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	cursor: pointer;
 }
-.install-motion input {
-	accent-color: var(--color-lime);
-	width: 18px;
-	height: 18px;
-}
+
+/* --- The journey ----------------------------------------------------------------------------------------------------------------------------------- */
+
 .install-journey {
-	scroll-margin-top: 24px;
+	scroll-margin-top: var(--ds-sp-5);
 }
+
 .install-progress-heading {
 	display: flex;
 	align-items: end;
 	justify-content: space-between;
-	gap: 24px;
+	gap: var(--ds-sp-5);
 }
-.install-progress-heading h2 {
-	max-width: 510px;
-	margin: 14px 0 0;
+
+.mm-site .installation .install-progress-heading h2 {
+	max-width: 560px;
+	margin: var(--ds-sp-3) 0 0;
 }
+
 .install-progress-heading > span {
-	color: #b4c1ad;
-	font-size: 13px;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	white-space: nowrap;
 }
+
+/* Progress: the kit's bar (black rail, ember fill). */
 .install-journey progress {
-	width: 100%;
-	height: 5px;
-	appearance: none;
 	display: block;
-	margin: 26px 0 32px;
+	width: 100%;
+	height: 14px;
+	margin: var(--ds-sp-5) 0 var(--ds-sp-6);
+	padding: 0;
+	appearance: none;
 	border: 0;
-	border-radius: 5px;
+	border-radius: 0;
+	background: #1a1612;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 	overflow: hidden;
-	background: #2a382e;
 }
+
 .install-journey progress::-webkit-progress-bar {
-	background: #2a382e;
+	background: #1a1612;
+	border-radius: 0;
 }
+
 .install-journey progress::-webkit-progress-value {
-	background: var(--color-lime);
-	transition: width 0.3s;
+	background: repeating-linear-gradient(90deg, var(--ember) 0 14px, var(--ember-deep) 14px 16px);
+	border-radius: 0;
+	transition: width var(--ds-dur-3) var(--ds-ease);
 }
+
 .install-journey progress::-moz-progress-bar {
-	background: var(--color-lime);
+	background: repeating-linear-gradient(90deg, var(--ember) 0 14px, var(--ember-deep) 14px 16px);
 }
+
 .install-workspace {
 	display: grid;
-	grid-template-columns: 235px minmax(0, 1fr);
-	gap: 30px;
+	grid-template-columns: 250px minmax(0, 1fr);
+	gap: var(--ds-sp-6);
 	align-items: start;
 }
+
 .install-step-nav {
 	display: grid;
-	gap: 6px;
+	gap: var(--ds-sp-2);
+	min-width: 0;
 }
+
 .install-step-nav button {
 	display: flex;
 	align-items: center;
-	gap: 14px;
-	min-height: 64px;
-	padding: 12px;
+	gap: var(--ds-sp-3);
+	min-height: 56px;
+	margin: var(--gp);
+	padding: var(--ds-sp-2);
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-align: left;
-	border: 1px solid transparent;
-	border-radius: 9px;
-	color: #b4c1ad;
+	text-shadow: var(--ds-text-shadow-1);
 	cursor: pointer;
-	font-size: 13px;
 }
+
 .install-step-nav button:hover {
-	background: #19221b;
+	color: #fff;
+	background: var(--night-2);
 }
+
 .install-step-nav button[aria-current="step"] {
-	background: #263b2d;
-	color: #e4f9b8;
-	border-color: #4c6649;
+	color: #fff;
+	background: var(--night-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
 }
+
+.install-step-nav button > span:last-child {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+/* Step number: a dark hotbar slot holding the number in the game's font. */
 .install-step-number {
 	display: grid;
 	place-items: center;
-	width: 30px;
-	height: 30px;
 	flex-shrink: 0;
-	border: 1px solid #4c6649;
-	border-radius: 50%;
-	font: 11px var(--font-mono);
+	width: 40px;
+	height: 40px;
+	background: var(--slot-lo);
+	color: #fff;
+	font: 400 var(--ds-fs-xs) / 1 var(--f-ui);
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #1d1d1d,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot);
 }
+
+.install-step-nav button[aria-current="step"] .install-step-number {
+	background: var(--copper);
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--copper-hi),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--copper-lo);
+}
+
+/* A checked step: the kit's tick in the slot (the game's font has no ✓). */
+.install-step-number.is-done {
+	font-size: 0;
+}
+
+.install-step-number.is-done::before {
+	content: "";
+	width: 16px;
+	height: 16px;
+	background: var(--c-green);
+	-webkit-mask: url("/hero/mcui/icons/check.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/check.svg") center / 100% 100% no-repeat;
+}
+
 .install-step-nav small {
 	display: block;
-	font-size: 10px;
-	color: #b9d58c;
+	color: var(--c-green);
+	font: 400 var(--ds-rd-fs-sm) / 1.3 var(--ds-f-text);
+	text-shadow: none;
 }
+
 .install-panel {
-	padding: 32px;
-	border: 1px solid #344238;
-	border-radius: 14px;
-	background: #151e17;
-	animation: install-enter 0.25s ease-out;
+	min-width: 0;
+	padding: var(--ds-sp-6);
+	animation: install-enter var(--ds-dur-3) var(--ds-ease);
 }
+
 .install-panel-meta {
 	display: flex;
 	justify-content: space-between;
 	flex-wrap: wrap;
-	gap: 10px;
-	color: #b4c1ad;
-	font: 11px var(--font-mono);
+	gap: var(--ds-sp-3);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 }
-.install-panel h3 {
-	margin: 22px 0;
-	font-size: 26px;
-	line-height: 1.3;
-	font-weight: 650;
+
+.mm-site .install-panel h3 {
+	margin: var(--ds-sp-4) 0;
+	color: #fff;
 }
+
 .install-panel h3:focus {
 	outline: none;
 }
+
 .install-panel ol {
+	padding-left: var(--ds-sp-6);
 	list-style: decimal;
-	padding-left: 22px;
 }
+
 .install-panel li {
-	padding-left: 5px;
-	margin: 16px 0;
+	margin: var(--ds-sp-4) 0;
+	padding-left: var(--ds-sp-2);
 }
-.installation code,
+
+.install-panel li::marker {
+	color: var(--ember);
+	font-family: var(--f-ui);
+}
+
+/* A key: a small stone button of the kit. */
 .installation kbd {
-	color: var(--color-lime);
-	font-family: var(--font-mono);
-	overflow-wrap: anywhere;
-	font-size: 0.9em;
+	display: inline-block;
+	min-width: 24px;
+	padding: 0 var(--ds-sp-2);
+	background: var(--stone);
+	color: #fff;
+	text-align: center;
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 }
-.installation kbd {
-	padding: 3px 8px;
-	border: 1px solid #52614e;
-	border-radius: 5px;
-	box-shadow: 0 2px #344238;
-}
-.install-note {
-	border-left: 3px solid #9bb96a;
-	padding: 18px 20px;
-	margin: 24px 0;
-	background: #263b2d70;
-	border-radius: 0 8px 8px 0;
-}
-.install-note p {
-	font-size: 14px;
-	color: #b4c1ad;
-	margin-bottom: 0;
-}
+
+/* A line to copy: the command in a black recess, the copy button beside it. */
 .install-copy {
 	display: flex;
 	align-items: center;
-	gap: 14px;
 	flex-wrap: wrap;
-	padding: 16px;
-	border-radius: 8px;
-	background: #0e1510;
-	border: 1px solid #344238;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-4) var(--gp);
+	padding: var(--ds-sp-3);
+	background: var(--field);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--field-edge);
 }
-.install-copy code {
+
+.installation .install-copy code {
 	flex: 1;
 	min-width: 0;
+	background: transparent;
 	user-select: all;
 }
-.install-copy button {
-	padding: 8px 12px;
-	border: 1px solid #52614e;
-	border-radius: 6px;
-	cursor: pointer;
-	font-size: 12px;
-	min-height: 44px;
-}
+
 .install-copy [role="status"] {
 	width: 100%;
-	color: #b4c1ad;
-	font-size: 12px;
+	color: var(--c-green);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
 }
+
+/* File location: a tree in the game's font, in a recess. */
 .install-folder {
 	display: grid;
-	gap: 8px;
-	padding: 20px;
-	margin: 24px 0;
-	background: #0e1510;
-	font-family: var(--font-mono);
-	font-size: 12px;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	border: 0;
+	background: var(--night);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	overflow-wrap: anywhere;
-	border-radius: 8px;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset var(--gp) var(--gp) 0 #0f0c0a,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #3a322b;
 }
-.install-folder strong {
-	color: var(--color-lime);
+
+.installation .install-folder strong {
+	color: var(--ember);
 	font-weight: 400;
 }
+
+/* Disclosure: the landing's FAQ row (game font, pixel chevron). */
 .installation details {
-	border-bottom: 1px solid #344238;
-	padding: 18px 0;
+	padding: var(--ds-sp-2) 0;
+	background:
+		repeating-linear-gradient(90deg, var(--night-3) 0 4px, transparent 4px 8px) bottom / 100% var(--gp) no-repeat;
 }
+
 .installation summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	list-style: none;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 	cursor: pointer;
-	font-size: 14px;
-	font-weight: 550;
 }
+
+.installation summary::-webkit-details-marker {
+	display: none;
+}
+
+.installation summary::after {
+	content: "";
+	flex: none;
+	width: 16px;
+	height: 16px;
+	background: currentColor;
+	-webkit-mask: url("/hero/mcui/icons/chevron.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/chevron.svg") center / 100% 100% no-repeat;
+}
+
+.installation details[open] > summary::after {
+	transform: rotate(180deg);
+}
+
+.installation summary:hover {
+	color: var(--ember);
+}
+
 .installation details p {
-	color: #b4c1ad;
-	font-size: 14px;
+	color: var(--text-2);
+	font-size: var(--ds-rd-fs-sm);
 }
+
 .install-panel-actions {
 	display: flex;
 	justify-content: space-between;
 	flex-wrap: wrap;
-	gap: 12px;
-	border-top: 1px solid #344238;
-	padding-top: 24px;
-	margin-top: 32px;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-6);
+	padding-top: var(--ds-sp-5);
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
+
 .installation .install-caption {
-	font-size: 12px;
-	color: #a5b19f;
-	line-height: 1.7;
+	color: var(--text-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
 .install-resume {
 	display: flex;
 	justify-content: space-between;
-	gap: 24px;
 	align-items: center;
-	padding: 22px 0;
-	font-size: 12px;
-	color: #a5b19f;
+	gap: var(--ds-sp-5);
+	padding: var(--ds-sp-5) 0;
+	color: var(--text-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
 .installation .install-resume p {
 	max-width: 600px;
 }
+
 .install-resume button {
-	cursor: pointer;
-	text-decoration: underline;
-	text-underline-offset: 4px;
 	flex-shrink: 0;
-	min-height: 44px;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-1);
+	border: 0;
+	background: transparent;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
 }
+
+.install-resume button:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
 .install-help {
 	max-width: 760px;
-	margin: 60px auto 0;
+	margin: var(--ds-sp-8) auto 0;
 }
-.install-help h2 {
-	margin: 12px 0 20px;
+
+.mm-site .installation .install-help h2 {
+	margin: var(--ds-sp-3) 0 var(--ds-sp-5);
 }
+
+/* First memory done: the featured panel (an ember frame), the landing's ember in place of a star. */
 .install-success {
 	display: flex;
-	gap: 24px;
-	padding: 30px;
-	margin-top: 30px;
-	border: 1px solid #789455;
-	background: #263b2d;
-	border-radius: 12px;
+	gap: var(--ds-sp-5);
+	margin-top: var(--ds-sp-6);
+	padding: var(--ds-sp-6);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember-deep),
+		0 0 0 calc(3 * var(--gp)) var(--outline),
+		var(--ds-panel-bevel);
 }
-.install-success > span {
-	font-size: 34px;
-	color: var(--color-lime);
-}
-.installation .install-success p {
-	color: #b4c1ad;
-}
-.install-final-note {
-	max-width: 760px;
-	margin: 36px auto 0 !important;
-}
-.install-download {
-	padding: 22px;
-	border: 1px solid #4c6649;
-	border-radius: 10px;
-	margin: 22px 0;
-}
-.install-download .install-primary {
-	color: #233021;
-	text-decoration: none;
-}
-.install-screenshot {
-	margin: 24px 0;
+
+.install-success > span[aria-hidden="true"] {
+	flex: none;
+	width: 32px;
+	height: 32px;
 	overflow: hidden;
-	border: 1px solid #405142;
-	border-radius: 10px;
-	background: #101912;
+	color: transparent;
+	font-size: 0;
+	background: url("/hero/mcui/icons/ember.svg") center / 100% 100% no-repeat;
+	image-rendering: pixelated;
 }
+
+.installation .install-success p {
+	color: var(--text-2);
+}
+
+.installation .install-final-note {
+	max-width: 760px;
+	margin: var(--ds-sp-6) auto 0;
+}
+
+.install-download {
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-5);
+}
+
+/* Screenshot: a game window (night frame, the image in a black recess). */
+.install-screenshot {
+	margin: var(--ds-sp-5) var(--gp);
+	overflow: hidden;
+	background: var(--night-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+
 .install-screenshot img {
 	display: block;
 	width: 100%;
 	height: auto;
 	max-height: 480px;
 	object-fit: contain;
+	background: var(--night);
 }
+
 .install-screenshot-placeholder {
 	display: flex;
-	min-height: 180px;
-	aspect-ratio: 16 / 9;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	flex-direction: column;
-	gap: 14px;
-	padding: 24px;
-	color: #a8bd8d;
+	gap: var(--ds-sp-3);
+	min-width: 0;
+	min-height: 180px;
+	aspect-ratio: 16 / 9;
+	padding: var(--ds-sp-5);
+	background: var(--night);
+	color: var(--text-2);
 	text-align: center;
-	background: repeating-linear-gradient(135deg, #ffffff02, #ffffff02 1px, transparent 1px, transparent 14px);
-	border-bottom: 1px dashed #405142;
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--outline);
 }
+
 .install-screenshot-placeholder strong {
-	font-size: 14px;
-	font-weight: 500;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
 .install-screenshot-placeholder span {
-	font-size: 11px;
-	color: #a5b19f;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
 }
+
 .install-screenshot figcaption {
 	display: grid;
-	gap: 6px;
-	padding: 16px 18px;
-	font-size: 12px;
-	color: #b4c1ad;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
 .install-screenshot figcaption > span {
-	font: 10px var(--font-mono);
-	color: #d9cba7;
-	letter-spacing: 0.7px;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
 .install-screenshot figcaption small {
-	color: #a5b19f;
+	color: var(--text-3);
+	font-size: var(--ds-rd-fs-sm);
 }
+
 @keyframes install-float {
 	50% {
-		transform: translateY(-7px);
+		transform: translateY(-6px);
 	}
 }
+
 @keyframes install-file-float {
 	50% {
 		translate: 0 -8px;
 	}
 }
+
 @keyframes install-dash {
 	to {
 		stroke-dashoffset: -33;
 	}
 }
+
 @keyframes install-glow {
 	50% {
 		opacity: 0.3;
 	}
 }
+
 @keyframes install-enter {
 	from {
-		opacity: 0.3;
-		transform: translateY(6px);
+		opacity: 0;
+		transform: translateY(var(--ds-reveal-y));
 	}
 	to {
 		opacity: 1;
-		transform: translateY(0);
+		transform: none;
 	}
 }
+
 .install-still *,
 .install-still *::before,
 .install-still *::after {
 	animation: none !important;
 	transition: none !important;
 }
+
 @media (prefers-reduced-motion: reduce) {
 	.installation *,
 	.installation *::before,
@@ -560,27 +781,41 @@
 		transition: none !important;
 	}
 }
+
+/* Korean and Japanese: the Unifont grid is 16 px, so 24 px titles become 16 px. */
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+html.mm-cjk:not([data-mc-font="read"]) .installation .install-lead {
+	font-size: 32px;
+	line-height: 40px;
+}
+
+html[data-mc-font="read"] .installation .install-lead {
+	font-weight: 700;
+	text-shadow: 2px 2px 0 var(--text-shadow);
+}
+
 @media (max-width: 800px) {
 	.install-preferences {
 		grid-template-columns: 1fr;
-		gap: 24px;
-		padding: 28px;
+		gap: var(--ds-sp-5);
+		padding: var(--ds-sp-5);
 	}
 	.install-workspace {
-		grid-template-columns: 1fr;
-		gap: 20px;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--ds-sp-5);
 	}
 	.install-step-nav {
-		grid-template-columns: repeat(3, 1fr);
-		gap: 6px;
-	}
-	.install-step-nav button {
-		gap: 8px;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
+
 @media (max-width: 580px) {
 	.installation {
-		padding: 20px 20px 60px;
+		padding: var(--ds-sp-5) var(--ds-sp-4) var(--ds-sp-8);
 	}
 	.install-hero {
 		grid-template-columns: 1fr;
@@ -588,32 +823,32 @@
 		padding-top: 0;
 	}
 	.install-hero-art {
-		margin: 0 auto;
 		max-width: 300px;
+		margin: 0 auto;
 	}
 	.install-preferences {
-		margin: 40px 0 48px;
-		padding: 24px;
+		margin: var(--ds-sp-7) var(--gp);
+		padding: var(--ds-sp-4);
 	}
 	.install-panel {
-		padding: 22px;
+		padding: var(--ds-sp-4);
 	}
 	.install-progress-heading {
-		align-items: start;
 		flex-direction: column;
-		gap: 12px;
+		align-items: start;
+		gap: var(--ds-sp-3);
 	}
 	.install-step-nav {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.install-resume {
-		align-items: start;
 		flex-direction: column;
+		align-items: start;
 		gap: 0;
 	}
 	.install-success {
-		padding: 22px;
-		gap: 12px;
+		gap: var(--ds-sp-3);
+		padding: var(--ds-sp-5);
 	}
 	.install-panel-actions .install-primary {
 		width: 100%;
@@ -622,22 +857,18 @@
 		order: 2;
 	}
 }
-.install-panel,
-.install-step-nav,
-.install-screenshot-placeholder {
-	min-width: 0;
-}
-.install-step-nav button > span:last-child {
-	min-width: 0;
-	overflow-wrap: anywhere;
-}
-@media (max-width: 800px) {
-	.install-workspace {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-@media (max-width: 580px) {
-	.install-step-nav {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+
+@media (forced-colors: active) {
+	.install-preferences,
+	.install-panel,
+	.install-success,
+	.install-download,
+	.install-view-only,
+	.install-note,
+	.install-copy,
+	.install-folder,
+	.install-screenshot,
+	.install-step-number {
+		border: 1px solid CanvasText;
 	}
 }

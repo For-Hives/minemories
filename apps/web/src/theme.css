@@ -91,17 +91,442 @@ html {
 	}
 }
 
-.mm-artwork svg {
-	animation: mm-float 8s ease-in-out infinite;
-	transform-origin: center;
-}
-@media (prefers-reduced-motion: reduce) {
-	.mm-artwork svg {
-		animation: none;
-	}
+/* ==========================================================================================================================================================
+   PUBLIC CONTENT PAGES in the landing's charter (docs/features/design-system.md): guides (concept, how it works, FAQ), discovery paths and demo gallery,
+   pricing and its simulator. Everything reads the kit (hero/kit.css) and the tokens (hero/tokens.css): night panels with the game's bevel and a 2 px outline,
+   square corners, no blur, no gradient. The game's font for titles, labels, numbers and buttons; Atkinson (--ds-f-text) for running text and fields.
+   This sheet loads BEFORE the kit and charter-app.css: a rule that must beat `.mm-site h2` is written `.mm-site .block h2`.
+   ========================================================================================================================================================== */
+
+:root {
+	/* A panel of the landing (step card, FAQ question): night-2, 2 px outline, the game's bevel. */
+	--mm-card-shadow: 0 0 0 var(--gp) var(--outline), var(--ds-panel-bevel);
+	/* A recess (slot, preview window): the bevel turned inside out. */
+	--mm-recess-shadow:
+		0 0 0 var(--gp) var(--outline), inset var(--gp) var(--gp) 0 #0f0c0a,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #3a322b;
+	/* Ember text shadow: the game rule (colour x 0.25) applied to --ember. */
+	--mm-ember-shadow: #3f2c11;
 }
 
-/* Discovery playground: illustrations stay light; the real viewer remains lazy. */
+/* --- Shared bits ------------------------------------------------------------------------------------------------------------------------------------ */
+
+/* Small label above a title: the game's font at 16 px, a coloured square in front (the tooltip's colour code). */
+.mm-kicker {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+.mm-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-5);
+}
+
+/* Text action (reset, favourite, heart): a link of the kit, 44 px tall. */
+.mm-text-button {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-1);
+	border: 0;
+	background: transparent;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-align: left;
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+}
+
+.mm-text-button:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+.mm-text-button[aria-pressed="true"] {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Fields of these pages: the kit's black field (mc-field), the reading font inside. */
+.mm-demo-toolbar input,
+.mm-demo-toolbar select,
+.mm-simulator-fields input[type="number"],
+.mm-share-result input,
+.mc-field.mm-field-fill {
+	width: 100%;
+	min-width: 0;
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-3);
+	appearance: none;
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	caret-color: #fff;
+}
+
+textarea.mc-field.mm-field-fill {
+	height: auto;
+	min-height: calc(3 * var(--ds-hit));
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	resize: vertical;
+}
+
+.mm-demo-toolbar select,
+select.mc-field.mm-field-fill {
+	padding-right: calc(var(--ds-sp-3) + 16px + var(--ds-sp-2));
+	background: var(--field) url("/hero/mcui/icons/chevron-light.svg") no-repeat right var(--ds-sp-3) center / 16px 16px;
+	image-rendering: pixelated;
+	cursor: pointer;
+}
+
+:is(
+	.mm-demo-toolbar input,
+	.mm-demo-toolbar select,
+	.mm-simulator-fields input,
+	.mm-share-result input,
+	.mc-field.mm-field-fill
+)::placeholder {
+	color: var(--text-3);
+	opacity: 1;
+}
+
+:is(
+	.mm-demo-toolbar input,
+	.mm-demo-toolbar select,
+	.mm-simulator-fields input[type="number"],
+	.mm-share-result input,
+	.mc-field.mm-field-fill
+):hover {
+	border-color: #d6d0c6;
+}
+
+.mm-site
+	:is(
+		.mm-demo-toolbar input,
+		.mm-demo-toolbar select,
+		.mm-simulator-fields input[type="number"],
+		.mm-share-result input,
+		.mc-field.mm-field-fill
+	):focus-visible {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+
+.mm-simulator-fields input[aria-invalid="true"] {
+	border-color: var(--bad);
+}
+
+/* Checkbox of these pages (existing <input>): the kit's black square recess, a white pixel tick. */
+.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"] {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	appearance: none;
+	background: var(--field);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	cursor: pointer;
+}
+
+.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:hover {
+	border-color: #d6d0c6;
+}
+
+.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:checked {
+	background:
+		var(--field)
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 1h2v1H6zM5 2h2v1H5zM0 3h1v1H0zM4 3h2v1H4zM0 4h2v1H0zM3 4h2v1H3zM1 5h3v1H1zM2 6h1v1H2z'/%3E%3C/svg%3E")
+		center / 12px 12px no-repeat;
+	image-rendering: pixelated;
+}
+
+.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:focus-visible {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+
+/* Any other slider of the site keeps the ember accent of the browser's own control. */
+.mm-site input[type="range"] {
+	accent-color: var(--ember);
+}
+
+/* Slider (timeline, projection length): the kit's black rail and stone handle (mc-range). */
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"] {
+	display: block;
+	width: 100%;
+	height: var(--ds-hit);
+	margin: 0;
+	appearance: none;
+	background: var(--field);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	cursor: pointer;
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]::-webkit-slider-runnable-track {
+	height: 100%;
+	background: transparent;
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]::-moz-range-track {
+	height: 100%;
+	background: transparent;
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]::-webkit-slider-thumb {
+	width: 16px;
+	height: 40px;
+	appearance: none;
+	background: var(--stone);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]::-moz-range-thumb {
+	width: 12px;
+	height: 36px;
+	background: var(--stone);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]:hover {
+	border-color: #d6d0c6;
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]:focus-visible {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]:disabled {
+	background: var(--off);
+	border-color: var(--night-3);
+	cursor: default;
+}
+
+.mm-site :is(.mm-simulator-fields, .mm-timeline-preview) input[type="range"]:disabled::-webkit-slider-thumb {
+	background: var(--off);
+	box-shadow: none;
+}
+
+/* Public publication panel of a capture (PublicDiscovery.tsx): the kit's separator above, labels in the game's font, fields of the kit. */
+.mm-publication {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-4);
+	padding-top: var(--ds-sp-4);
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-publication h4 {
+	margin: 0;
+	color: #fff;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-title);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-publication > label:not(.mm-publication-consent) {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-publication-consent {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ds-sp-3);
+	cursor: pointer;
+}
+
+.mm-site .mm-publication-consent input[type="checkbox"] {
+	margin-top: 2px;
+}
+
+.mm-publication p {
+	margin: 0;
+}
+
+.mm-publication [role="alert"] {
+	color: var(--bad);
+}
+
+/* --- Guides: concept, how it works, FAQ (InfoPages.tsx)------------------------------------------------------------------------------------------------ */
+
+.mm-info {
+	max-width: 800px;
+	margin: 0 auto;
+	padding: var(--ds-sp-6) var(--ds-sp-5) var(--ds-sp-8);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	color: var(--text-2);
+}
+
+.mm-site .mm-info h1 {
+	margin: var(--ds-sp-6) 0 var(--ds-sp-5);
+	color: #fff;
+}
+
+/* Section title: the landing's step title (24 px), the ember square of the eyebrow in front. */
+.mm-site .mm-info h2 {
+	display: flex;
+	align-items: baseline;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-7) 0 var(--ds-sp-3);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.mm-site .mm-info > h2::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	transform: translateY(-4px);
+}
+
+.mm-info p {
+	margin: var(--ds-sp-4) 0;
+	max-width: var(--ds-measure);
+}
+
+.mm-info strong {
+	color: var(--text);
+}
+
+.mm-info ol {
+	margin: var(--ds-sp-4) 0;
+	padding-left: var(--ds-sp-6);
+	list-style: decimal;
+}
+
+.mm-info li {
+	margin: var(--ds-sp-3) 0;
+	padding-left: var(--ds-sp-2);
+}
+
+.mm-info li::marker {
+	color: var(--ember);
+	font-family: var(--f-ui);
+}
+
+.mm-info a,
+.installation a:not(.mc-btn) {
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+
+.mm-info a:hover,
+.installation a:not(.mc-btn):hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* A command or a file name: the game's chat line (black veil, the game's font). */
+.mm-info code,
+.installation code,
+.installation kbd {
+	padding: 0 var(--ds-sp-1);
+	background: rgb(0 0 0 / 0.6);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	overflow-wrap: anywhere;
+	box-decoration-break: clone;
+	-webkit-box-decoration-break: clone;
+}
+
+/* Guides navigation: the kit's tab strip (mc-tabs), links in the game's font. */
+.mm-info-nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0;
+	margin: var(--ds-sp-5) 0;
+	background: rgb(0 0 0 / 0.75);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
+}
+
+.mm-site .mm-info-nav a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-4);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-site .mm-info-nav a:hover {
+	color: #fff;
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
+}
+
+.mm-site .mm-info-nav a:focus-visible {
+	outline-offset: calc(-3 * var(--gp));
+}
+
+/* FAQ: each question is the landing's FAQ card (mc-faq__item), always open. */
+.mm-info-faq {
+	margin: var(--ds-sp-4) var(--gp);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+.mm-site .mm-info .mm-info-faq h2 {
+	margin: 0 0 var(--ds-sp-2);
+}
+
+.mm-info .mm-info-faq p {
+	margin: 0;
+	font-size: var(--ds-rd-fs-sm);
+	line-height: var(--ds-rd-lh-sm);
+}
+
+/* --- Discovery: the paths (DiscoveryPage) ------------------------------------------------------------------------------------------------------------ */
+
 .mm-angle-grid,
 .mm-plan-grid,
 .mm-story-hero,
@@ -110,33 +535,86 @@ html {
 .mm-demo-detail {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 32px;
+	gap: var(--ds-sp-6);
 }
+
+.mm-angle-grid {
+	gap: var(--ds-sp-5);
+}
+
+/* Accent of a path: one of the tooltip's colours, shown as the square before its kicker. */
+.mm-accent-sunset {
+	--mm-accent: var(--ember);
+}
+
+.mm-accent-sky {
+	--mm-accent: var(--c-blue);
+}
+
+.mm-accent-lilac {
+	--mm-accent: var(--c-lore);
+}
+
+.mm-accent-mint {
+	--mm-accent: var(--c-green);
+}
+
+:is(.mm-angle-card, .mm-story-hero) > .mm-kicker::before,
+.mm-story-hero .mm-kicker::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--mm-accent, var(--ember));
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
 .mm-angle-card,
 .mm-plan,
 .mm-price-simulator,
 .mm-timeline-preview,
-.mm-demo-detail {
-	border: 1px solid #354438;
-	border-radius: 24px;
-	background: #19231c;
-	padding: 32px;
+.mm-demo-detail,
+.mm-memory-card {
+	margin: var(--gp);
+	padding: var(--ds-sp-6);
+	background: var(--night-2);
+	color: var(--text);
+	border: 0;
+	border-radius: 0;
+	box-shadow: var(--mm-card-shadow);
 }
+
 .mm-angle-card {
-	display: block;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ds-sp-3);
+	text-decoration: none;
 	transition:
-		transform 320ms var(--motion-spring),
-		border-color 180ms;
+		transform var(--ds-dur-2) var(--ds-ease),
+		box-shadow var(--ds-dur-2) var(--ds-ease);
 }
+
 .mm-angle-card:hover {
-	transform: translateY(-6px);
-	border-color: var(--color-lime);
+	transform: translateY(calc(-1 * var(--ds-lift)));
+	box-shadow:
+		0 0 0 var(--gp) var(--hover),
+		var(--ds-panel-bevel);
 }
-.mm-angle-card h2 {
-	font-size: clamp(24px, 2.5vw, 34px);
-	letter-spacing: -0.04em;
-	line-height: 1.15;
+
+/* The illustration sits in a recess, like an item in a slot. */
+:is(.mm-angle-card, .mm-story-hero, .mm-timeline-preview, .mm-demo-detail) > .mm-memory-scene {
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
 }
+
+.mm-site .mm-angle-card h2 {
+	margin: var(--ds-sp-3) 0 0;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+	color: #fff;
+}
+
 .mm-angle-card p,
 .mm-story-hero p,
 .mm-callout p,
@@ -144,397 +622,530 @@ html {
 .mm-plan p,
 .mm-price-simulator p,
 .mm-demo-detail p {
-	color: var(--color-muted-ink);
-	line-height: 1.7;
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
+
 .mm-angle-card > span:last-child {
 	display: block;
-	color: var(--color-lime);
-	margin-top: 24px;
+	margin-top: auto;
+	padding-top: var(--ds-sp-3);
+	color: var(--ember);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
 }
+
 .mm-memory-scene {
 	display: block;
 	width: 100%;
 	height: auto;
 }
+
 .mm-memory-island {
-	animation: mm-float 7s ease-in-out infinite;
+	animation: mm-float 7s steps(8, end) infinite;
 	transform-origin: center;
 }
+
 .mm-scene-spark {
-	animation: mm-spark 4s ease-in-out infinite;
+	animation: mm-spark 4s steps(2, jump-none) infinite;
 }
-.mm-accent-sunset {
-	background: radial-gradient(ellipse at top, #94684722, #19231c 80%);
-}
-.mm-accent-sky {
-	background: radial-gradient(ellipse at top, #699aae22, #19231c 80%);
-}
-.mm-accent-lilac {
-	background: radial-gradient(ellipse at top, #ac91c722, #19231c 80%);
-}
-.mm-accent-mint {
-	background: radial-gradient(ellipse at top, #75a98b22, #19231c 80%);
-}
-.mm-kicker {
-	display: block;
-	font-family: var(--font-mono);
-	font-size: 11px;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #b1c999;
-}
-.mm-story-hero {
-	align-items: center;
-	padding: 24px;
-	border-radius: 24px;
-}
-.mm-feature-list {
-	padding: 0;
-	list-style: none;
-	font-size: 20px;
-}
-.mm-feature-list li {
-	padding: 14px 0;
-	border-bottom: 1px solid #344538;
-}
-.mm-feature-list li::before {
-	content: "✦";
-	margin-right: 16px;
-	color: var(--color-lime);
-}
+
+/* Call to action at the end of a page: the kit's separator above, a title and the buttons. */
 .mm-callout {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 30px;
-	padding: 40px 0;
-	border-top: 1px solid #354438;
-	margin-top: 48px;
+	gap: var(--ds-sp-6);
+	margin-top: var(--ds-sp-7);
+	padding: var(--ds-sp-6) 0 0;
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #4a4239;
 }
-.mm-callout h2,
-.mm-timeline-preview h2,
-.mm-section-heading h2,
-.mm-price-simulator h2,
-.mm-demo-detail h2 {
-	font-size: clamp(24px, 3vw, 34px);
-	font-weight: 600;
-	line-height: 1.2;
-	margin: 14px 0;
-	letter-spacing: -0.035em;
-}
-.mm-actions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-	margin-top: 24px;
-}
+
 .mm-callout .mm-actions {
 	margin: 0;
 }
+
+.mm-site :is(.mm-callout, .mm-timeline-preview, .mm-section-heading, .mm-price-simulator, .mm-demo-detail) h2 {
+	margin: var(--ds-sp-3) 0;
+	color: #fff;
+}
+
+/* --- Discovery: a path (MarketingPage) ------------------------------------------------------------------------------------------------------------------ */
+
+.mm-story-hero {
+	align-items: center;
+}
+
+.mm-feature-list {
+	margin: var(--ds-sp-4) 0;
+	padding: 0;
+	list-style: none;
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	color: var(--text);
+}
+
+.mm-feature-list li {
+	display: flex;
+	align-items: baseline;
+	gap: var(--ds-sp-4);
+	padding: var(--ds-sp-3) 0;
+	background:
+		repeating-linear-gradient(90deg, var(--night-3) 0 4px, transparent 4px 8px) bottom / 100% var(--gp) no-repeat;
+}
+
+/* The landing's ember (8 x 8 texels) instead of a typographic star the game's font does not have. */
+.mm-feature-list li::before {
+	content: "";
+	flex: none;
+	width: 16px;
+	height: 16px;
+	background: url("/hero/mcui/icons/ember.svg") center / 100% 100% no-repeat;
+	image-rendering: pixelated;
+	transform: translateY(2px);
+}
+
 .mm-timeline-preview {
 	align-items: center;
-	margin-top: 48px;
+	margin-top: var(--ds-sp-7);
 }
+
+.mm-timeline-preview label {
+	display: block;
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
 .mm-timeline-preview output {
 	display: block;
-	color: var(--color-lime);
-	font-size: 14px;
+	margin-top: var(--ds-sp-3);
+	color: var(--ember);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
 }
-.mm-site input[type="range"] {
-	accent-color: var(--color-lime);
-	width: 100%;
-	min-height: 36px;
-	cursor: pointer;
-}
+
+/* --- Demo gallery (GalleryPreview, DemoDetail) ------------------------------------------------------------------------------------------------------- */
+
 .mm-demo-gallery {
-	margin-top: 48px;
+	margin-top: var(--ds-sp-7);
 }
+
 .mm-section-heading {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	gap: 24px;
-	margin-bottom: 28px;
+	gap: var(--ds-sp-5);
+	margin-bottom: var(--ds-sp-5);
 }
-.mm-text-button {
-	color: #d8e9bb;
-	border: 0;
-	background: transparent;
-	padding: 8px 0;
-	min-height: 44px;
-	cursor: pointer;
-	text-align: left;
-}
-.mm-text-button[aria-pressed="true"] {
-	color: var(--color-lime);
-}
+
 .mm-demo-toolbar {
 	display: grid;
 	grid-template-columns: 2fr 1fr 1fr auto;
-	gap: 16px;
+	gap: var(--ds-sp-4);
 	align-items: end;
 }
+
 .mm-demo-toolbar label,
 .mm-simulator-fields label,
 .mm-share-result {
 	display: grid;
-	gap: 8px;
-	font-size: 12px;
-	color: #c3cfba;
+	gap: var(--ds-sp-2);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 }
-.mm-demo-toolbar input,
-.mm-demo-toolbar select,
-.mm-simulator-fields input[type="number"],
-.mm-share-result input {
-	width: 100%;
-	min-width: 0;
-	background: #101a14;
-	color: var(--color-ink);
-	border: 1px solid #465744;
-	border-radius: 10px;
-	padding: 12px;
-}
-.mm-demo-toolbar .mm-button {
-	min-height: 44px;
-}
+
 .mm-demo-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 24px;
-	margin-top: 24px;
+	gap: var(--ds-sp-5);
+	margin-top: var(--ds-sp-5);
 }
+
 .mm-memory-card {
 	min-width: 0;
-	border-radius: 18px;
-	border: 1px solid #344438;
+	padding: 0;
 	overflow: hidden;
-	background: #1b271e;
 }
+
+/* The illustration is a button: a slot that lights up under the pointer (the game's 50 % veil is too strong on an image: a white frame instead). */
 .mm-scene-button {
-	display: block;
-	background: #19231c;
-	border: 0;
-	cursor: pointer;
-	width: 100%;
 	position: relative;
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: var(--night);
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--outline);
+	cursor: pointer;
 }
+
+.mm-scene-button:hover {
+	box-shadow: inset 0 0 0 var(--gp) var(--hover);
+}
+
+.mm-site .mm-scene-button:focus-visible {
+	outline-offset: calc(-3 * var(--gp));
+}
+
 .mm-scene-button svg {
-	transition: transform 320ms var(--motion-spring);
+	transition: transform var(--ds-dur-3) var(--ds-ease);
 }
+
 .mm-scene-button:hover svg {
-	transform: scale(1.05);
+	transform: scale(1.04);
 }
+
 .mm-memory-card-body {
-	padding: 24px;
+	padding: var(--ds-sp-5);
 }
-.mm-memory-card h3 {
-	font-weight: 550;
-	margin: 12px 0;
-	font-size: 20px;
+
+.mm-site .mm-memory-card h3 {
+	margin: var(--ds-sp-2) 0;
+	color: #fff;
 }
+
 .mm-memory-card p {
-	color: var(--color-muted-ink);
-	font-size: 13px;
-	min-height: 66px;
-	line-height: 1.65;
+	min-height: 72px;
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
 .mm-memory-actions {
 	display: flex;
 	justify-content: space-between;
-	border-top: 1px solid #3b4b3d;
-	margin-top: 16px;
-	padding-top: 8px;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-4);
+	padding-top: var(--ds-sp-2);
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
+
+/* Rank: the game's name tag (black veil, game font). */
 .mm-rank {
 	position: absolute;
-	top: 12px;
-	left: 16px;
-	font-family: var(--font-mono);
-	color: var(--color-lime);
+	top: var(--ds-sp-3);
+	left: var(--ds-sp-3);
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.7);
+	color: var(--ember);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
 }
+
 .mm-demo-detail {
-	margin-top: 32px;
+	margin-top: var(--ds-sp-6);
 	align-items: center;
 }
+
 .mm-share-result {
-	margin-top: 20px;
+	margin-top: var(--ds-sp-5);
 }
+
 .mm-empty-demo {
-	padding: 36px;
-	border: 1px dashed #54714b;
-	border-radius: 16px;
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--tip-bg);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+
+.mm-site .mm-empty-demo h3 {
+	margin: 0 0 var(--ds-sp-2);
+	color: var(--c-name);
+}
+
 .mm-empty-demo p {
-	color: var(--color-muted-ink);
+	margin: 0;
+	color: var(--text-2);
 }
+
+/* --- Pricing (PricingPage, PriceSimulator) ------------------------------------------------------------------------------------------------------------ */
+
+/* "Offer in preparation": a permanent tooltip (the item card of the kit). */
 .mm-release-label {
-	font-size: 12px;
-	color: #c4d395;
-	background: #313f2422;
-	border: 1px solid #49533b;
-	padding: 12px 18px;
-	border-radius: 12px;
-	margin-bottom: 32px;
+	display: inline-block;
+	margin: 0 var(--gp) var(--ds-sp-6);
+	padding: var(--ds-sp-2) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--c-gold);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 #3f3416;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+
 .mm-plan {
-	padding: 40px;
-}
-.mm-plan-featured {
-	border-color: #8ca354;
-	background: radial-gradient(ellipse at top right, #c2dc4d19, #1b271e 70%);
-}
-.mm-plan h2 {
-	font-size: 28px;
-	font-weight: 500;
-	margin: 12px 0;
-}
-.mm-plan .mm-big-price {
-	color: var(--color-lime);
-	font-size: clamp(40px, 5vw, 64px);
-	letter-spacing: -0.04em;
-	margin: 16px 0;
-	line-height: 1.15;
-}
-.mm-site .mm-plan .mm-big-price span {
-	font-size: 15px;
-	color: var(--color-muted-ink);
-	letter-spacing: 0;
-}
-.mm-plan ul {
-	padding-left: 18px;
-	color: var(--color-muted-ink);
-	font-size: 14px;
-	line-height: 2;
-	margin: 24px 0;
-}
-.mm-price-steps {
 	display: flex;
-	gap: 10px;
-	list-style: none;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: var(--ds-sp-6);
+}
+
+/* The featured plan: an ember frame between two outlines, like a selected slot. */
+.mm-plan-featured {
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember-deep),
+		0 0 0 calc(3 * var(--gp)) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+.mm-site .mm-plan h2 {
+	margin: var(--ds-sp-3) 0 0;
+	color: #fff;
+}
+
+.mm-plan .mm-big-price {
+	margin: var(--ds-sp-4) 0;
+	color: var(--ember);
+	font: 400 40px / 48px var(--f-title);
+	text-shadow: 4px 4px 0 var(--mm-ember-shadow);
+}
+
+.mm-site .mm-plan .mm-big-price span {
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-plan ul {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-5);
 	padding: 0;
-	margin: 24px 0;
+	list-style: none;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
-.mm-price-steps li {
-	flex: 1;
+
+.mm-plan ul li {
+	display: flex;
+	align-items: baseline;
+	gap: var(--ds-sp-3);
+	padding: var(--ds-sp-1) 0;
+}
+
+.mm-plan ul li::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	transform: translateY(-2px);
+}
+
+.mm-plan > .mc-btn {
+	margin-top: auto;
+}
+
+/* The yearly slots go two by two when the plan is narrow ("Year 4+", "Année 4+" in the game's font need about 100 px). */
+.mm-plan {
+	container-type: inline-size;
+}
+
+/* Yearly prices: four dark hotbar slots, the year above, the price in the game's font. */
+.mm-price-steps {
 	display: grid;
-	padding: 14px 8px;
-	background: #0f1a1366;
-	border: 1px solid #425138;
-	border-radius: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: var(--ds-sp-2);
+	width: 100%;
+	margin: var(--ds-sp-4) 0 var(--ds-sp-5);
+	padding: var(--ds-sp-2);
+	list-style: none;
+	background: rgb(0 0 0 / 0.55);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-price-steps li {
+	display: grid;
+	justify-items: center;
+	gap: var(--ds-sp-1);
+	min-width: 0;
+	padding: var(--ds-sp-2) var(--ds-sp-1);
+	background: var(--slot-lo);
 	text-align: center;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #1d1d1d,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot);
 }
+
 .mm-site .mm-plan .mm-price-steps span {
-	font-size: 11px;
-	color: var(--color-muted-ink);
+	white-space: nowrap;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
+@container (max-width: 520px) {
+	.mm-price-steps {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
 .mm-price-steps strong {
-	font-size: 24px;
-	font-weight: 500;
+	color: #fff;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	text-shadow: var(--ds-text-shadow-2);
+	white-space: nowrap;
 }
+
 .mm-price-simulator {
-	margin: 48px 0;
-	scroll-margin-top: 24px;
+	margin: var(--ds-sp-7) var(--gp);
+	scroll-margin-top: var(--ds-sp-5);
 }
+
 .mm-simulator-fields {
 	display: grid;
-	gap: 16px;
-	margin-top: 28px;
-	max-width: 350px;
+	gap: var(--ds-sp-3);
+	max-width: 360px;
+	margin-top: var(--ds-sp-5);
 }
+
 .mm-simulator-fields input[type="number"] {
-	max-width: 140px;
-	font-size: 20px;
+	max-width: 160px;
+	font: 400 var(--ds-fs-h3) / 1 var(--f-ui);
 }
+
+.mm-simulator-fields [role="alert"] {
+	margin: 0;
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+
 .mm-simulator-fields .mm-checkbox {
 	display: flex;
 	align-items: center;
-	font-size: 14px;
-	gap: 12px;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	cursor: pointer;
 }
-.mm-checkbox input {
-	width: 18px;
-	height: 18px;
-	accent-color: var(--color-lime);
-}
+
+/* The estimate: a recess inside the panel, the total in the game's font. */
 .mm-estimate {
-	background: #101a14;
-	padding: 28px;
-	border-radius: 18px;
 	min-width: 0;
+	padding: var(--ds-sp-5);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
 }
+
+.mm-estimate > p {
+	color: var(--text-2);
+}
+
 .mm-estimate-total {
 	display: block;
-	font-size: clamp(44px, 5vw, 68px);
-	color: var(--color-lime);
-	font-weight: 500;
-	letter-spacing: -0.06em;
-	margin-top: 12px;
+	margin-top: var(--ds-sp-3);
+	color: var(--ember);
+	font: 400 40px / 48px var(--f-title);
+	text-shadow: 4px 4px 0 var(--mm-ember-shadow);
 }
+
 .mm-estimate dl {
-	margin: 24px 0;
+	margin: var(--ds-sp-5) 0;
 }
+
 .mm-estimate dl > div {
 	display: flex;
 	justify-content: space-between;
-	gap: 12px;
-	font-size: 13px;
-	padding: 12px 0;
-	border-top: 1px solid #354438;
+	gap: var(--ds-sp-3);
+	padding: var(--ds-sp-3) 0;
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
+
 .mm-estimate dd {
-	margin: 0;
 	flex-shrink: 0;
+	margin: 0;
+	color: #fff;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
+
 .mm-estimate-years {
-	list-style: none;
-	padding: 0;
 	display: grid;
-	gap: 14px;
-	font-size: 11px;
-	margin: 28px 0;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-5) 0;
+	padding: 0;
+	list-style: none;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text-2);
 }
+
 .mm-estimate-years li {
 	display: grid;
-	grid-template-columns: 58px minmax(0, 1fr) 48px;
-	gap: 10px;
+	grid-template-columns: max-content minmax(0, 1fr) max-content;
+	gap: var(--ds-sp-3);
 	align-items: center;
 }
+
 .mm-estimate-years strong {
+	color: #fff;
+	font-weight: 400;
 	text-align: right;
-	font-weight: 500;
 }
+
+/* Yearly bar: the kit's segmented bar (ember cells cut every 8 px, on the black rail). */
 .mm-price-bar {
 	display: block;
-	height: 6px;
-	border-radius: 4px;
-	background: var(--color-lime);
-	transition: width 320ms var(--motion-spring);
+	height: 10px;
+	background: repeating-linear-gradient(90deg, var(--ember) 0 6px, var(--ember-deep) 6px 8px);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	transition: width var(--ds-dur-3) var(--ds-ease);
 }
+
+.mm-estimate .mm-fineprint {
+	margin: var(--ds-sp-3) 0 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+
 .mm-simulator-note {
 	grid-column: 1 / -1;
-	font-size: 12px;
 	margin: 0;
+	color: var(--text-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
-.mm-button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+
+.mm-site .mm-price-simulator .mm-simulator-note {
+	color: var(--text-3);
 }
+
 @keyframes mm-spark {
 	50% {
 		opacity: 0.15;
 	}
 }
-@media (max-width: 1050px) {
-	.mm-desktop-nav {
-		gap: 12px;
-		font-size: 12px;
-	}
-	.mm-header {
-		gap: 16px;
-	}
+
+/* Korean and Japanese: the Unifont grid is 16 px, so 24 and 40 px snap to 16 and 32 px. */
+html.mm-cjk:not([data-mc-font="read"]) :is(.mm-plan .mm-big-price, .mm-estimate-total) {
+	font-size: 32px;
+	line-height: 40px;
 }
+
+html.mm-cjk:not([data-mc-font="read"])
+	.mm-site
+	:is(.mm-info h2, .mm-angle-card h2, .mm-memory-card h3, .mm-empty-demo h3) {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+html.mm-cjk:not([data-mc-font="read"]) :is(.mm-price-steps strong, .mm-simulator-fields input[type="number"]) {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+/* Readable font: no pixel shadow on the large numbers. */
+html[data-mc-font="read"] :is(.mm-plan .mm-big-price, .mm-estimate-total, .mm-price-steps strong) {
+	font-weight: 700;
+	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
+}
+
 @media (max-width: 800px) {
 	.mm-demo-toolbar {
 		grid-template-columns: 1fr 1fr;
@@ -559,23 +1170,15 @@ html {
 		flex-direction: column;
 		align-items: start;
 	}
-	.mm-plan {
-		padding: 28px;
-	}
-	.mm-estimate {
-		padding: 24px;
-	}
-	.mm-story-hero {
-		padding: 0;
-		background: transparent;
-	}
 }
+
 @media (max-width: 480px) {
 	.mm-angle-card,
+	.mm-plan,
 	.mm-timeline-preview,
 	.mm-price-simulator,
 	.mm-demo-detail {
-		padding: 24px;
+		padding: var(--ds-sp-5);
 	}
 	.mm-memory-card {
 		grid-template-columns: 1fr;
@@ -583,55 +1186,45 @@ html {
 	.mm-demo-toolbar {
 		grid-template-columns: minmax(0, 1fr);
 	}
-	.mm-angle-grid,
-	.mm-plan-grid,
-	.mm-price-simulator {
-		gap: 24px;
-	}
-	.mm-price-simulator {
-		padding: 20px;
-	}
 	.mm-estimate {
-		padding: 20px;
+		padding: var(--ds-sp-4);
+	}
+	.mm-info {
+		padding-inline: var(--ds-sp-4);
+	}
+	.mm-info-faq {
+		padding: var(--ds-sp-4);
 	}
 }
+
 @media (prefers-reduced-motion: reduce) {
 	.mm-memory-island,
 	.mm-scene-spark {
 		animation: none;
 	}
-}
-.mm-home-discovery {
-	padding: 16px 0 64px;
-}
-.mm-home-paths {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 16px;
-}
-.mm-home-paths a {
-	display: flex;
-	justify-content: space-between;
-	gap: 12px;
-	align-items: center;
-	border: 1px solid #3b4b3b;
-	padding: 24px;
-	border-radius: 12px;
-	color: #d4dfc8;
-	font-size: 13px;
-	transition: transform 320ms var(--motion-spring);
-}
-.mm-home-paths a:hover {
-	transform: translateY(-4px);
-}
-@media (max-width: 900px) {
-	.mm-home-paths {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+	.mm-angle-card:hover,
+	.mm-scene-button:hover svg {
+		transform: none;
 	}
 }
-@media (max-width: 480px) {
-	.mm-home-paths {
-		grid-template-columns: 1fr;
+
+html[data-mc-motion="reduced"] :is(.mm-angle-card:hover, .mm-scene-button:hover svg) {
+	transform: none;
+}
+
+@media (forced-colors: active) {
+	.mm-angle-card,
+	.mm-plan,
+	.mm-price-simulator,
+	.mm-timeline-preview,
+	.mm-demo-detail,
+	.mm-memory-card,
+	.mm-info-faq,
+	.mm-estimate,
+	.mm-release-label,
+	.mm-empty-demo,
+	.mm-price-steps li {
+		border: 1px solid CanvasText;
 	}
 }
 

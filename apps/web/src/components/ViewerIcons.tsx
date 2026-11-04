@@ -53,9 +53,9 @@ export function ViewerIcon({ name }: { name: ViewerIconName }) {
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="1.7"
-			strokeLinecap="round"
-			strokeLinejoin="round"
+			strokeWidth="2"
+			strokeLinecap="square"
+			strokeLinejoin="miter"
 			aria-hidden="true"
 		>
 			{paths[name]}

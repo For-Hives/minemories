@@ -10,12 +10,13 @@ export function LoadingSkeleton({
 	const { t } = useI18n()
 	if (kind === 'viewer')
 		return (
-			<div role="status" aria-busy="true" className="grid min-h-svh place-items-center bg-[#15221b] text-[#e6c68e]">
+			<div role="status" aria-busy="true" className="grid min-h-svh place-items-center bg-night text-ink">
 				<div className="text-center">
-					<span aria-hidden="true" className="block text-4xl motion-safe:animate-pulse">
-						✧
-					</span>
-					<p className="mt-6 text-xs tracking-widest">{t(label)}</p>
+					<span
+						aria-hidden="true"
+						className="mx-auto block size-4 bg-lime shadow-[0_0_0_2px_var(--outline)] motion-safe:animate-pulse"
+					/>
+					<p className="mt-6 font-[family-name:var(--f-ui)] text-base leading-6 text-muted-ink">{t(label)}</p>
 				</div>
 			</div>
 		)
@@ -60,9 +61,9 @@ export function OrbitMark({ className = '' }: { className?: string }) {
 				<circle cx="102" cy="32" r="5" fill="currentColor" />
 			</g>
 			<g className="mm-orbit-cube">
-				<path d="m35 45 25-14 25 14-25 14Z" fill="#d9f36c" />
-				<path d="m35 45 25 14v29L35 74Z" fill="#7f9961" />
-				<path d="m60 59 25-14v29L60 88Z" fill="#435c3e" />
+				<path d="m35 45 25-14 25 14-25 14Z" fill="#ffb347" />
+				<path d="m35 45 25 14v29L35 74Z" fill="#c98b55" />
+				<path d="m60 59 25-14v29L60 88Z" fill="#8a5a2b" />
 			</g>
 		</svg>
 	)
