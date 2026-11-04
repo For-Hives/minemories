@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
@@ -13,12 +13,15 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 	const { releases, status, hasMore, retry, loadMore } = useModReleases()
 	const { t } = useI18n()
 	const { hash } = useLocation()
+	// The release named in the URL is opened and scrolled to once: loading older pages must not jump back to it.
+	const shownHash = useRef('')
 	useEffect(() => {
-		if (!(hash && releases.length)) return
+		if (!hash || hash === shownHash.current) return
 		const target = document.getElementById(hash.slice(1))
-		const notes = target?.querySelector('details.mm-release-notes')
-		notes?.setAttribute('open', '')
-		target?.scrollIntoView?.({ block: 'start' })
+		if (!target) return
+		shownHash.current = hash
+		target.querySelector('details.mm-release-notes')?.setAttribute('open', '')
+		target.scrollIntoView?.({ block: 'start' })
 	}, [hash, releases])
 	return (
 		<ContentLayout

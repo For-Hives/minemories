@@ -76,7 +76,7 @@ function PrepareStep() {
 					<Link to="/versions">
 						<T message={'Mod versions'} />
 					</Link>
-					.
+					<T message={'.'} />
 				</p>
 			</div>
 			<p>

@@ -102,6 +102,31 @@ test('version links open the automatic changelog at the selected older release',
 	expect(screen.getAllByRole('link', { name: 'Détails' })[0]?.getAttribute('href')).toContain('/issues/61')
 })
 
+test('the release named in the URL is opened and scrolled to once, not again when older releases load', async () => {
+	const scroll = vi.fn()
+	Element.prototype.scrollIntoView = scroll
+	const first = Array.from({ length: 30 }, (_, index) =>
+		release(`0.${30 - index}.0`, `2026-10-${String(30 - index).padStart(2, '0')}T10:00:00Z`)
+	)
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValueOnce(Response.json(first))
+			.mockResolvedValueOnce(Response.json([release('0.0.1', '2026-09-01T10:00:00Z')]))
+	)
+	mount('/changelog#v0.5.0')
+	await screen.findByRole('article', { name: 'Minemories 0.5.0' })
+	const notes = document.querySelector('#v0\\.5\\.0 details.mm-release-notes')
+	expect(notes?.hasAttribute('open')).toBe(true)
+	expect(scroll).toHaveBeenCalledTimes(1)
+	notes?.removeAttribute('open')
+	fireEvent.click(screen.getByRole('button', { name: 'Charger les versions précédentes' }))
+	await screen.findByRole('article', { name: 'Minemories 0.0.1' })
+	expect(notes?.hasAttribute('open')).toBe(false)
+	expect(scroll).toHaveBeenCalledTimes(1)
+})
+
 test('renders notes safely without HTML, unsafe links or tracking images; keeps original text', async () => {
 	const body =
 		'# Titre\n\n## Sous-titre\n\n### Correctif\n\n<script>alert(1)</script>\n\n<img src="https://tracker.example/pixel">\n\n![Image externe](https://tracker.example/another)\n\n[Piège](javascript:alert%281%29)\n\nTexte officiel **inchangé**.'
