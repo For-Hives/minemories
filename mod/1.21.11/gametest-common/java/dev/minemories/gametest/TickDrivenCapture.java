@@ -2,6 +2,7 @@ package dev.minemories.gametest;
 
 import java.nio.file.Files;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.sounds.SoundSource;
@@ -30,6 +31,11 @@ public final class TickDrivenCapture {
       switch (step) {
         case MENU -> {
           mc.options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
+          // A fresh profile opens the accessibility onboarding before the title screen.
+          if (mc.screen instanceof AccessibilityOnboardingScreen) {
+            mc.options.onboardAccessibility = false;
+            mc.setScreen(new TitleScreen());
+          }
           if (mc.screen instanceof TitleScreen && ticks > 40) {
             CreateWorldScreen.openFresh(mc, () -> {});
             step(Step.CREATING);
@@ -88,5 +94,6 @@ public final class TickDrivenCapture {
   private static void step(Step next) {
     step = next;
     ticks = 0;
+    LOGGER.info("MINEMORIES-GAMETEST step {}", next);
   }
 }
