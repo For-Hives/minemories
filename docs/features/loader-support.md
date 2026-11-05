@@ -79,6 +79,18 @@ Ce que l'essai a révélé :
 
 Limites : aucun GLB n'a été ouvert dans le viewer (pas de WebGL dans le navigateur intégré), et seul ce scénario de capture a été joué (menus, AFK et sélection manuelle non essayés sous Quilt). Quilt 1.21.11 n'est donc pas déclaré pris en charge.
 
+### Forge 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+
+Sous-projet `mod/minemories-1.19.2` (Forge 43.5.2, Java 17, Architectury Loom, mappings Mojang), construit comme `mod/minemories-1.20.1` : les sources partagées sont copiées, adaptées par `adapt.gradle` puis compilées avec les classes de l'adaptateur Forge.
+
+Écart mesuré avant portage : 123 erreurs de symboles dans 15 fichiers, dont 110 pour l'interface (`GuiGraphics`, `Button.builder`, `Tooltip`, `getX`/`getY`, `renderWidget`). Après la couche de compat ci-dessous, il restait 27 erreurs, toutes mécaniques : `sprite.contents()` renommé, `BuiltInRegistries` devenu `Registry`, `worldGenOptions`, `getIconBytes`, `BlockPos.containing`, `setHint`, atlas d'une version sans `getTextureLocations`.
+
+**Couche de compat partagée par les cibles avant 1.20** : `mod/compat-legacy`. Elle contient `GuiGraphics` (dessin sur `PoseStack`, objets via la pile modèle-vue), `Tooltip`/`Tooltips` (info-bulles dessinées par l'écran), `CompatButton` (le `Button.builder(...)` de 1.19.3+), `Clamp`, et `adapt-legacy.gradle` qui réécrit les écrans partagés (signatures `render`, `renderButton`, `x`/`y` des widgets). Le code commun reste celui de 1.21.1 ; chaque version ajoute seulement ses règles dans son `adapt.gradle`. Un motif qui cesse de correspondre fait échouer la compilation. 1.18.2 peut reprendre cette couche.
+
+Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.19.2`). Un mod de test Forge (`src/gametest`) appelle `TickDrivenCapture` à chaque tick client : monde plat, scène, `/minemories export 12` envoyé par l'écran de chat (une commande côté client n'est pas reconnue par `commandUnsigned`), puis vérification du GLB par `GlbReport` (partagé avec 1.21.11). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 556 octets, alpha BLEND et MASK présents. Le son est coupé par le test.
+
+Particularités : l'herbe s'appelle `grass` avant 1.20.3 (`-Dminemories.gametest.grass=grass`) ; pas de champ de saisie avec indication (`setHint`), remplacé par la suggestion grise de `EditBox`. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés. La cible n'est donc pas déclarée prise en charge.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).

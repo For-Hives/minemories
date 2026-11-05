@@ -11,6 +11,9 @@ import java.nio.file.Path;
 
 /** What every loader's in-game capture test checks in the exported GLB, and the world it builds. */
 public final class GlbReport {
+  /** The tall-grass plant block: "grass" before Minecraft 1.20.3 (pass -Dminemories.gametest.grass=grass). */
+  public static final String GRASS = System.getProperty("minemories.gametest.grass", "short_grass");
+
   /** Server commands that build the test scene around the player at (0, -60, 0) in a flat world. */
   public static final String[] SCENE = {
     "tp @p 0 -60 0",
@@ -19,7 +22,7 @@ public final class GlbReport {
     "setblock 3 -60 0 minecraft:red_stained_glass",
     "setblock 4 -60 0 minecraft:oak_leaves",
     "setblock 5 -60 0 minecraft:grass_block",
-    "setblock 5 -59 0 minecraft:short_grass",
+    "setblock 5 -59 0 minecraft:" + GRASS,
     "setblock 6 -60 0 minecraft:chest",
     "setblock 7 -60 0 minecraft:water",
     "setblock -3 -60 0 minecraft:torch",
@@ -57,7 +60,7 @@ public final class GlbReport {
     // Standard blocks, alpha (glass blends, leaves cut out), tint, a block entity, entities, fluid.
     for (String expected :
         new String[] {
-          "minemories:cut / minecraft:block/stone", "red_stained_glass", "oak_leaves", "short_grass",
+          "minemories:cut / minecraft:block/stone", "red_stained_glass", "oak_leaves", GRASS,
           "grass_block_top", "minecraft:chest", "minecraft:cow", "minecraft:armor_stand",
           "minecraft:water", "minecraft:torch"
         })
