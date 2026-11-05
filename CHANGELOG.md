@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.35.0-beta.1...mod-v0.36.0-beta.1) (2026-11-05)
+
+### Fonctionnalités
+
+* **mod:** porter le mod Forge sur Minecraft 1.18.2 en réutilisant la couche de compat (test en jeu passé) ([780f37b](https://github.com/For-Hives/minemories/commit/780f37b0da2e479c9d69a9483feec03d7260fe8e))
+
+### Corrections
+
+* **mod:** dessiner le fond des écrans en 1.20.1 et ajouter un contrôle en jeu ([c9a2aa2](https://github.com/For-Hives/minemories/commit/c9a2aa2ecbb3eec76d4692601f13dc6fa1314ac0))
+
+### Documentation
+
+* **mod:** inventaire chiffré des portages Forge 1.16.5 et 1.12.2 ([c53beec](https://github.com/For-Hives/minemories/commit/c53beec658f2033a909f583aa869f6f7ce0c22a5))
+
 ## [0.35.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.34.0-beta.1...mod-v0.35.0-beta.1) (2026-11-05)
 
 ### Fonctionnalités
