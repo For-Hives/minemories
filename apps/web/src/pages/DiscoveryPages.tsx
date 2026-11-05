@@ -141,7 +141,7 @@ function TimelinePreview() {
 					{labels[stage - 1]}
 				</output>
 			</div>
-			<MemoryScene theme="village" stage={stage} label={labels[stage - 1] ?? ''} />
+			<MemoryScene theme="home" stage={stage} label={labels[stage - 1] ?? ''} />
 		</section>
 	)
 }

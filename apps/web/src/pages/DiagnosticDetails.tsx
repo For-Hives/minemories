@@ -157,18 +157,21 @@ export function DiagnosticDetails({
 					<div className="mm-diagnostic-toolbar">
 						<label>
 							{t('Triage status')}
-							<select
-								aria-label={t('Triage status')}
-								value={state}
-								disabled={busy}
-								onChange={event => setState(event.target.value as IssueState)}
-							>
-								{issueStates.map(value => (
-									<option value={value} key={value}>
-										{translate(locale, stateLabels[value])}
-									</option>
-								))}
-							</select>
+							<span className="mc-select">
+								<select
+									className="mc-select__control"
+									aria-label={t('Triage status')}
+									value={state}
+									disabled={busy}
+									onChange={event => setState(event.target.value as IssueState)}
+								>
+									{issueStates.map(value => (
+										<option value={value} key={value}>
+											{translate(locale, stateLabels[value])}
+										</option>
+									))}
+								</select>
+							</span>
 						</label>
 						<button type="button" className={buttonDark} disabled={busy} onClick={() => void update()}>
 							{busy ? t('Saving…') : t('Save status')}

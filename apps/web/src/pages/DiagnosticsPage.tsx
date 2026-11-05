@@ -124,62 +124,71 @@ export function DiagnosticsPage() {
 					>
 						<label>
 							{t('Status')}
-							<select
-								aria-label={t('Status')}
-								value={filters.state}
-								onChange={event => {
-									close()
-									setFilters(value => ({ ...value, state: event.target.value as IssueFilters['state'], page: 0 }))
-								}}
-							>
-								<option value="all">{t('filters.allStates')}</option>
-								{issueStates.map(value => (
-									<option value={value} key={value}>
-										{translate(locale, stateLabels[value])}
-									</option>
-								))}
-							</select>
+							<span className="mc-select">
+								<select
+									className="mc-select__control"
+									aria-label={t('Status')}
+									value={filters.state}
+									onChange={event => {
+										close()
+										setFilters(value => ({ ...value, state: event.target.value as IssueFilters['state'], page: 0 }))
+									}}
+								>
+									<option value="all">{t('filters.allStates')}</option>
+									{issueStates.map(value => (
+										<option value={value} key={value}>
+											{translate(locale, stateLabels[value])}
+										</option>
+									))}
+								</select>
+							</span>
 						</label>
 						<label>
 							{t('Phase')}
-							<select
-								aria-label={t('Phase')}
-								value={filters.phase ?? ''}
-								onChange={event => {
-									close()
-									setFilters(value => ({
-										...value,
-										phase: (event.target.value || undefined) as IssueFilters['phase'],
-										page: 0,
-									}))
-								}}
-							>
-								<option value="">{t('All')}</option>
-								{Object.entries(phaseLabels).map(([value, label]) => (
-									<option key={value} value={value}>
-										{translate(locale, label)}
-									</option>
-								))}
-							</select>
+							<span className="mc-select">
+								<select
+									className="mc-select__control"
+									aria-label={t('Phase')}
+									value={filters.phase ?? ''}
+									onChange={event => {
+										close()
+										setFilters(value => ({
+											...value,
+											phase: (event.target.value || undefined) as IssueFilters['phase'],
+											page: 0,
+										}))
+									}}
+								>
+									<option value="">{t('All')}</option>
+									{Object.entries(phaseLabels).map(([value, label]) => (
+										<option key={value} value={value}>
+											{translate(locale, label)}
+										</option>
+									))}
+								</select>
+							</span>
 						</label>
 						<label>
 							{t('Source')}
-							<select
-								aria-label={t('Source')}
-								value={filters.source ?? ''}
-								onChange={event => {
-									close()
-									setFilters(value => ({
-										...value,
-										source: (event.target.value || undefined) as IssueFilters['source'],
-										page: 0,
-									}))
-								}}
-							>
-								<option value="">{t('All')}</option>
-								<option value="mod">Mod</option>
-								<option value="api">API</option>
-							</select>
+							<span className="mc-select">
+								<select
+									className="mc-select__control"
+									aria-label={t('Source')}
+									value={filters.source ?? ''}
+									onChange={event => {
+										close()
+										setFilters(value => ({
+											...value,
+											source: (event.target.value || undefined) as IssueFilters['source'],
+											page: 0,
+										}))
+									}}
+								>
+									<option value="">{t('All')}</option>
+									<option value="mod">Mod</option>
+									<option value="api">API</option>
+								</select>
+							</span>
 						</label>
 						<label>
 							{t('Mod / API version')}

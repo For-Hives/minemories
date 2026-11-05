@@ -13,9 +13,9 @@ export function InfoNavigation() {
 	const { t } = useI18n()
 
 	return (
-		<nav aria-label={t('Minemories guides')} className="flex flex-wrap gap-x-5 gap-y-3 py-5 text-sm">
+		<nav aria-label={t('Minemories guides')} className="mm-info-nav">
 			{infoLinks.map(link => (
-				<Link key={link.to} to={link.to} className="underline">
+				<Link key={link.to} to={link.to}>
 					{t(link.label)}
 				</Link>
 			))}
@@ -26,12 +26,9 @@ export function InfoNavigation() {
 function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
-		<article
-			lang={locale}
-			className="mx-auto max-w-3xl px-6 py-10 text-base leading-relaxed [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-6 [&_h3]:font-bold [&_p]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-3 [&_a]:underline [&_code]:break-all"
-		>
+		<article lang={locale} className="mm-info">
 			<InfoNavigation />
-			<h1 className="text-3xl font-bold">{t(title)}</h1>
+			<h1>{t(title)}</h1>
 			{children}
 			<InfoNavigation />
 		</article>
@@ -329,12 +326,14 @@ export function FaqPage() {
 				</Link>
 				<T message={'. Minecraft commands and filenames stay the same in both languages.'} />
 			</p>
-			{questions.map(([question, answer]) => (
-				<section key={question}>
-					<h2>{t(question ?? '')}</h2>
-					<p>{t(answer ?? '')}</p>
-				</section>
-			))}
+			<div className="mm-info-faqs">
+				{questions.map(([question, answer]) => (
+					<section key={question} className="mm-info-faq">
+						<h2>{t(question ?? '')}</h2>
+						<p>{t(answer ?? '')}</p>
+					</section>
+				))}
+			</div>
 			<p>
 				<Link to="/fonctionnement">
 					<T message={'All the steps to capture, upload and share'} />

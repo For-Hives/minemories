@@ -91,12 +91,12 @@ export function ReleaseCard({
 				<a href={`#${id}`}>Minemories {release.version}</a>
 			</h2>
 			<ul className="mm-release-downloads" aria-label={t('Files for each loader')}>
-				{release.downloads.map(download => (
+				{release.downloads.map((download, index) => (
 					<Download
 						key={download.target.loader}
 						download={download}
 						version={release.version}
-						recommended={recommended}
+						recommended={recommended && index === 0}
 					/>
 				))}
 			</ul>

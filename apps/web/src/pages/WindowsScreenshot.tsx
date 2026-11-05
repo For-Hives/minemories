@@ -88,7 +88,7 @@ export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: st
 			) : (
 				<div className="install-screenshot-placeholder">
 					<svg width="44" height="36" viewBox="0 0 44 36" fill="none" aria-hidden="true">
-						<rect x="1" y="1" width="42" height="34" rx="5" stroke="currentColor" />
+						<rect x="1" y="1" width="42" height="34" stroke="currentColor" strokeWidth="2" />
 						<circle cx="31" cy="10" r="3" stroke="currentColor" />
 						<path d="m5 29 11-13 10 11 5-6 8 8" stroke="currentColor" />
 					</svg>

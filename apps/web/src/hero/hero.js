@@ -21,6 +21,11 @@
 // The scene runs in `external` mode (scene.setTime / setSiteBlend / setFrameShift). Every listener on the wheel and the touch is passive, nothing calls preventDefault on them; during the film
 // the document is locked (site.css, `overflow: hidden`) and the page reads the inputs itself. `?scrub=0` brings back the v9d behaviour (film played in time, native scroll hands over to the site).
 //
+// v13 (05/11/2026, Andy): the wheel has momentum (scrub.js `law: 'elan'`; `?law=slew` brings back the v10 law), a finger thrown on lift coasts, and the visitor who just
+// arrived and scrolls down is taken to the site at once: the film rushes forward (the canvas zooms in, the HUD steps aside), the last frame covers the cut and zooms away, the end of the film (the glide) plays, and the position is kept. Coming back up past the top of the site plays the glide back, the end
+// frame dives toward the visitor and the film is where they left it. `?flick=0` turns the arrival flick off. The momentum of the gesture never scrolls the site under the visitor:
+// the document stays locked until the wheel and the finger are quiet (html.is-settling).
+//
 // Test hooks kept: window.__mm (t, probe, scene, mods, debug, seek) and window.__hero (goto, play, audit, layout, guided, chapters, anchors, variant, chaptersAt, hudAt,
 // plan, holds, holding, holdLeft, on, placed, hud, fallback) plus the v9 ones (phase, phaseLog, site, i18n).
 import * as HUD from './hud.js'
@@ -184,6 +189,9 @@ export function mountHero(host) {
 				idleLeft: now.idleLeft,
 				rampK: now.rampK,
 				station: now.station,
+				mode: now.mode,
+				memory: now.memory,
+				armed: now.armed,
 				stats: scrub.stats,
 			}
 		},
@@ -773,7 +781,8 @@ export function mountHero(host) {
 		if (!scene || !live || !filmSnap) return false
 		const ok = await scene.snapshot(filmSnap, { timeout: 1200 })
 		if (!ok) return false
-		filmSnap.classList.remove('is-out')
+		snapToken++
+		filmSnap.classList.remove('is-out', 'is-rush', 'is-dive')
 		filmSnap.classList.add('is-on')
 		root.classList.add('is-crossfade')
 		return true
@@ -781,6 +790,7 @@ export function mountHero(host) {
 
 	async function releaseFilmFrame() {
 		if (!filmSnap || !filmSnap.classList.contains('is-on')) return
+		const token = snapToken
 		filmSnap.classList.add('is-out')
 		// Released when the fade has really ended (the copy is transparent), read from the computed opacity at each frame, not after a fixed delay: a busy main thread starts the
 		// transition late, and a fixed 380 ms removed the copy while it was still 24 to 57 % opaque (technical control P2-1). The cap is only a safety net.
@@ -789,6 +799,7 @@ export function mountHero(host) {
 		await new Promise(resolve => {
 			const check = () => {
 				if (
+					token !== snapToken ||
 					!filmSnap.classList.contains('is-on') ||
 					Number.parseFloat(getComputedStyle(filmSnap).opacity) <= 0.02 ||
 					performance.now() - t0 > cap
@@ -798,11 +809,11 @@ export function mountHero(host) {
 			}
 			requestAnimationFrame(check)
 		})
-		dropFilmFrame()
+		if (token === snapToken) dropFilmFrame()
 	}
 
 	function dropFilmFrame() {
-		filmSnap?.classList.remove('is-on', 'is-out')
+		filmSnap?.classList.remove('is-on', 'is-out', 'is-rush', 'is-dive')
 		root.classList.remove('is-crossfade')
 	}
 
@@ -1324,6 +1335,9 @@ export function mountHero(host) {
 	let armedScrub = false // the first frame of the film is on screen: the clock may run
 	let cutBusy = false // a jump to the site is being covered by the film's last frame: the position is not applied meanwhile
 	let pendingCause = null // the cause of the next phase change (the clock's `jump` events name it)
+	let coverRun = 0 // v13: the cover of a flick or of a return in progress (its token; 0 = none)
+	let lastGestureAt = -Infinity // v13: wall ms of the last wheel or finger motion, whatever phase (the settle lock waits for it to be quiet)
+	let snapToken = 0 // v13: the copy of the film frame on screen (a newer copy makes an older fade-out let go of it)
 	let glideCause = 'end'
 
 	function makeScrub() {
@@ -1341,6 +1355,8 @@ export function mountHero(host) {
 
 	function scrubOptions(onSite) {
 		return {
+			law: params.get('law') === 'slew' ? 'slew' : 'elan',
+			flick: params.get('flick') !== '0' && !onSite && !reduced(),
 			siteStart,
 			holds: HOLD_ON && !reduced() ? HOLDS.map(h => ({ id: h.id, at: h.at, wall: h.wall })) : [],
 			stations: HUD.stationList().map(s => s.t),
@@ -1375,12 +1391,57 @@ export function mountHero(host) {
 			return
 		}
 		syncNow(now)
+		// The document stays locked after a flick until the gesture that made it is over (a trackpad sends its momentum for a second or more).
+		if (root.classList.contains('is-settling') && now - lastGestureAt > SETTLE_QUIET_MS)
+			root.classList.remove('is-settling')
+	}
+
+	const SETTLE_QUIET_MS = 280
+
+	// v13: the cut of a flick (the rush, then the end of the film) or of a return (the glide played back, then the film where the visitor left it) is covered by the frame on screen,
+	// which then zooms away (a flick: the visitor rushes past it) or toward the visitor (a return: they dive back into the film). v13b: a leap over the day/night passage (the
+	// wheel driven fast into it) is covered the same way, with a plain cross-fade. The clock waits in its `cover` mode until released.
+	async function coverCut(kind) {
+		const run = ++coverRun
+		const covered = await coverWithFilmFrame()
+		if (run !== coverRun || scrub?.mode !== 'cover') {
+			if (run === coverRun) coverRun = 0
+			if (covered) dropFilmFrame()
+			return
+		}
+		if (!covered) {
+			veil.classList.add('is-on')
+			await sleep(reduced() ? 150 : 200)
+			if (run !== coverRun || scrub?.mode !== 'cover') {
+				if (run === coverRun) coverRun = 0
+				if (!cutBusy) veil.classList.remove('is-on') // a jump inside the film: nobody else lifts it (a jump to the site covers itself)
+				return
+			}
+		}
+		if (covered && kind !== 'leap') filmSnap?.classList.add(kind === 'return' ? 'is-dive' : 'is-rush')
+		scrub.release(performance.now())
+		syncNow()
+		if (kind === 'return') {
+			// Focus left in the site (now hidden) goes to the film's play button, as after "Watch the film again".
+			if (document.activeElement?.closest?.('.site')) playBtn?.focus({ preventScroll: true })
+			root.classList.add('is-diving')
+			setTimeout(() => root.classList.remove('is-diving'), 700)
+		}
+		await scene.nextFrame()
+		if (!covered) veil.classList.remove('is-on')
+		else await releaseFilmFrame()
+		// Only now: a next cover (a leap right after another) must not take the copy back to full opacity in the middle of this fade.
+		if (run === coverRun) coverRun = 0
 	}
 
 	// Moves the clock to `now`, handles what it reports and shows the position.
 	function syncNow(now = performance.now()) {
 		const r = scrub.tick(now)
 		for (const e of r.events) onScrubEvent(e)
+		// The rush keeps its zoom until the copy of its last frame (at the same zoom) is on top.
+		root.classList.toggle('is-burst', r.mode === 'burst' || (r.mode === 'cover' && r.cover === 'skip'))
+		// Read from the state, not from an event: whoever ticks the clock (a test hook too), a cover that waits is always taken.
+		if (r.mode === 'cover' && !coverRun) void coverCut(r.cover)
 		applyPosition(r)
 		const sig = `${r.state}|${r.intent}`
 		if (sig !== lastClockSig) {
@@ -1407,9 +1468,16 @@ export function mountHero(host) {
 					delete root.dataset.hold
 				}
 				break
+			case 'flick':
+			case 'return':
+				// Nothing is announced while the page rushes or returns; the HUD is emptied on the way (the phases do it).
+				sigSay.textContent = ''
+				if (e.type === 'return' && e.phase === 'glide') pendingCause = 'return'
+				break
 			case 'jump':
-				pendingCause = e.cause
-				if (['home', 'chapter', 'goto', 'replay'].includes(e.cause)) {
+				// A return lands inside the film, whose phase already changed when the glide ended: its cause would label the next, unrelated change.
+				if (e.cause !== 'return' && e.cause !== 'leap') pendingCause = e.cause
+				if (['home', 'chapter', 'goto', 'replay', 'return', 'leap'].includes(e.cause)) {
 					hud?.reset()
 					lastT = Number.NaN
 				}
@@ -1450,7 +1518,8 @@ export function mountHero(host) {
 				scene.setSiteBlend(0)
 				blendOn = false
 			}
-			if (!reduced()) scene.setTime(t)
+			// v13: the scene does not prepare the next stages while the hand drives the film fast (its hitch was only hidden by playback at 1x).
+			if (!reduced()) scene.setTime(t, { fast: Math.abs(rate ?? 0) > 1.5 })
 		} else {
 			if (!blendOn && scene.time !== siteStart) scene.setTime(siteStart)
 			site.blend(g)
@@ -1498,8 +1567,15 @@ export function mountHero(host) {
 			else root.classList.remove('is-entering')
 			site.enter({ blend: true })
 			sigSay.textContent = ''
+			// After a flick the gesture is often still sending its momentum: the site does not scroll under it until it is quiet.
+			if (glideCause === 'flick') {
+				root.classList.add('is-settling')
+				// The film's controls are gone: focus on one of them goes to the page title, as after "Skip the film".
+				if (document.activeElement?.closest?.('.film-bar, #film-rail, #stage'))
+					$('#hero-title')?.focus({ preventScroll: true })
+			}
 		} else {
-			root.classList.remove('is-entering', 'is-direct', 'is-landing')
+			root.classList.remove('is-entering', 'is-direct', 'is-landing', 'is-settling')
 			if (prev !== 'film') site.leave()
 			hud?.reset()
 			lastT = Number.NaN
@@ -1538,8 +1614,9 @@ export function mountHero(host) {
 		applyScene(r)
 		await scene.nextFrame()
 		if (token !== siteToken) return
-		if (!covered) veil.classList.remove('is-on')
-		else await releaseFilmFrame()
+		// The veil may also have been put up by a flick or a return cut short by this jump: lifted in both cases.
+		veil.classList.remove('is-on')
+		if (covered) await releaseFilmFrame()
 		if (cause === 'skip' && token === siteToken) $('#hero-title')?.focus({ preventScroll: true })
 	}
 
@@ -1653,7 +1730,10 @@ export function mountHero(host) {
 	const insideMenu = target => target instanceof Element && Boolean(target.closest('.site-menu'))
 
 	function onWheel(event) {
+		lastGestureAt = performance.now()
 		if (!scrub || !live || event.ctrlKey || insideMenu(event.target)) return
+		// v13: a mostly horizontal gesture is not a scroll of the film (the finger's axis rule; it must not fire the arrival flick).
+		if (Math.abs(Number(event.deltaX) || 0) > Math.abs(Number(event.deltaY) || 0)) return
 		const px = normalizeWheel(event, viewportH())
 		if (px === 0) return
 		// On the site the page scrolls itself; only an overshoot at its very top (upward, scroll position 0) is the clock's.
@@ -1667,7 +1747,7 @@ export function mountHero(host) {
 			return
 		}
 		const t = event.touches[0]
-		touchGesture = { id: t.identifier, x: t.clientX, y: t.clientY, lastY: t.clientY, axis: null }
+		touchGesture = { id: t.identifier, x: t.clientX, y: t.clientY, lastY: t.clientY, axis: null, trail: [] }
 	}
 
 	function onTouchMove(event) {
@@ -1686,15 +1766,27 @@ export function mountHero(host) {
 			g.lastY = g.y
 		}
 		if (g.axis !== 'v') return
-		const px = g.lastY - t.clientY // a finger moving up goes forward, 1:1
+		const px = g.lastY - t.clientY // a finger moving up goes forward (1:1, with the boost of a fast hand, scrub.js)
 		g.lastY = t.clientY
+		lastGestureAt = performance.now()
+		// v13: the last 100 ms of the move give the speed of the throw on lift.
+		g.trail.push({ y: t.clientY, at: event.timeStamp })
+		while (g.trail.length > 2 && event.timeStamp - g.trail[0].at > 100) g.trail.shift()
 		if (px === 0) return
 		if (phase() === 'site' && (scrollY >= 1 || px > 0)) return
 		scrub.input({ px, source: 'touch', at: event.timeStamp })
 	}
 
-	function onTouchEnd() {
+	function onTouchEnd(event) {
+		const g = touchGesture
 		touchGesture = null
+		if (event.type === 'touchcancel') return // the system took the touch: not a lift
+		if (!g || g.axis !== 'v' || !scrub || !live || phase() === 'site' || g.trail.length < 2) return
+		const first = g.trail[0]
+		const last = g.trail.at(-1)
+		// A finger that stopped before lifting does not throw.
+		if (event.timeStamp - last.at > 60 || last.at - first.at < 16) return
+		scrub.fling({ pxPerSec: ((first.y - last.y) * 1000) / (last.at - first.at), at: event.timeStamp })
 	}
 
 	function onKeyScrub(event) {

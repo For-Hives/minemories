@@ -1,12 +1,13 @@
-import { Component, lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
+import { lazy, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { AppContext, type AppContextValue, useAppContext } from './app-context'
 import { authClient } from './auth-client'
 import { LoadingSkeleton } from './components/Loading'
+import { Page, preloadWhenIdle } from './components/PageFrame'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
-import { I18nProvider, T } from './i18n/I18n'
-import { reportWebFailure, WebObservability } from './observability/WebObservability'
+import { I18nProvider } from './i18n/I18n'
+import { WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })))
@@ -37,55 +38,18 @@ const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: mod
 const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
 const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
 const NotFoundPage = lazy(() => ContentPages().then(module => ({ default: module.NotFoundPage })))
+/** The pages reachable from the header and the footer: fetched once the browser is idle, so that a link opens its page without waiting. */
+const publicPageChunks = [
+	() => import('./pages/HomePage'),
+	InfoPages,
+	ContentPages,
+	DiscoveryPages,
+	() => import('./pages/InstallationPage'),
+	() => import('./pages/ReleasesPage'),
+	() => import('./pages/PricingPage'),
+	() => import('./pages/AuthPage'),
+]
 
-class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-	state = { failed: false }
-	static getDerivedStateFromError() {
-		return { failed: true }
-	}
-	componentDidCatch() {
-		reportWebFailure('page-render')
-	}
-	render() {
-		if (this.state.failed)
-			return (
-				<div className="mm-content" role="alert">
-					<h1>
-						<T message="Page loading interrupted" />
-					</h1>
-					<p>
-						<T message="The page could not be loaded. Reload it to try again." />
-					</p>
-					<button className="mm-button" type="button" onClick={() => window.location.reload()}>
-						<T message="Reload the page" />
-					</button>
-				</div>
-			)
-		return this.props.children
-	}
-}
-/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing is left out: its film says so itself (hero.js `signalReady`), once it can play. */
-function PageReady() {
-	useEffect(() => {
-		document.documentElement.dataset.mmReady = '1'
-		window.dispatchEvent(new Event('mm:ready'))
-	}, [])
-	return null
-}
-function Page({ children, kind = 'page' }: { children: ReactNode; kind?: 'page' | 'gallery' | 'viewer' | 'home' }) {
-	const { pathname } = useLocation()
-	// The landing never shows a grey skeleton: while its chunk arrives the page is the night colour (index.html's loading screen covers the first load).
-	const fallback =
-		kind === 'home' ? <div className="landing-pending" aria-hidden="true" /> : <LoadingSkeleton kind={kind} />
-	return (
-		<PageBoundary key={pathname}>
-			<Suspense fallback={fallback}>
-				{children}
-				{kind !== 'home' && <PageReady />}
-			</Suspense>
-		</PageBoundary>
-	)
-}
 function RequireSession() {
 	const { session, isPending } = useAppContext()
 	const location = useLocation()
@@ -107,6 +71,7 @@ export function App() {
 		setViewerFile,
 		notify: setNotice,
 	}
+	useEffect(() => preloadWhenIdle(publicPageChunks), [])
 	useEffect(() => {
 		if (!notice) return
 		const timeout = window.setTimeout(() => setNotice(''), 5200)

@@ -51,7 +51,7 @@ export function ViewerEmptyState() {
 	return (
 		<div className="cinema-empty">
 			<div className="cinema-orbit" aria-hidden="true">
-				<span>✧</span>
+				<span className="mc-icon mc-icon--ember" />
 			</div>
 			<h2>
 				{t('Some places')}

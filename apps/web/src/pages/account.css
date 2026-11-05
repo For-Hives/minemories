@@ -1,124 +1,186 @@
+/* My account: the landing's night cards (2 px outline, the game's bevel), the game's text fields and buttons.
+   Titles, labels and buttons in the game's font; descriptions and field values in Atkinson (--ds-f-text). */
+
 .mm-account-page {
 	max-width: 1100px;
 }
+
+/* Kicker: the landing's eyebrow (ember square, game font). */
+.mm-account-heading .mm-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-account-heading .mm-kicker::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
 .mm-account-heading h1 {
-	margin: 12px 0;
-	font-size: clamp(30px, 4vw, 46px);
-	letter-spacing: -1.5px;
+	margin: var(--ds-sp-3) 0;
 }
 .mm-account-heading p {
-	color: var(--color-muted-ink);
+	margin: 0;
+	color: var(--text-2);
 	overflow-wrap: anywhere;
 }
 .mm-account-heading a {
-	display: inline-block;
-	margin: 12px 0;
-	color: var(--color-lime);
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	margin: var(--ds-sp-2) 0;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
 }
+.mm-account-heading a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Note: the kit's tooltip card. */
 .mm-account-note {
 	max-width: 800px;
-	padding: 18px 22px;
-	border-left: 3px solid var(--color-lime);
-	background: var(--color-paper-light);
-	line-height: 1.7;
+	margin: var(--ds-sp-5) 0;
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+
 .mm-account-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 24px;
-	margin-top: 28px;
+	gap: var(--ds-sp-5);
+	margin-top: var(--ds-sp-6);
 }
+
 .mm-account-card {
 	display: flex;
 	flex-direction: column;
-	align-items: start;
-	gap: 16px;
-	padding: 30px;
-	border: 1px solid #354238;
-	border-radius: 14px;
-	background: var(--color-paper-light);
+	align-items: stretch;
+	gap: var(--ds-sp-4);
+	min-width: 0;
+	padding: var(--ds-sp-6);
+	background: var(--app-panel);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
+
+/* The card's symbol sits in an inventory slot. */
 .mm-account-symbol {
 	display: grid;
 	place-items: center;
-	width: 48px;
-	height: 48px;
-	border-radius: 12px;
-	background: #293d2f;
-	color: var(--color-lime);
-	font-size: 26px;
+	align-self: start;
+	width: calc(24 * var(--gp));
+	height: calc(24 * var(--gp));
+	background: var(--slot);
+	color: #fff;
+	font: 400 var(--ds-fs-h3) / 1 var(--f-ui);
+	text-shadow: 2px 2px 0 #3a352f;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--slot-lo),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
 }
-.mm-account-card h2 {
+
+.mm-site .mm-account-card h2 {
 	margin: 0;
-	font-size: 24px;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .mm-account-card p {
 	margin: 0;
-	color: var(--color-muted-ink);
-	line-height: 1.6;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
+
 .mm-account-card label {
 	display: grid;
 	width: 100%;
-	gap: 8px;
-	font-size: 13px;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
 }
+
+/* The game's text field: black, grey 2 px edge, white on focus (kit .mc-field), the value in Atkinson. */
 .mm-account-card input {
+	--_h: calc(24 * var(--gp));
 	width: 100%;
-	min-height: 46px;
-	border: 1px solid #53654c;
-	border-radius: 7px;
-	background: var(--color-paper);
-	padding: 10px 12px;
-	color: var(--color-ink);
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
 }
-.mm-account-card input:focus-visible {
-	outline: 2px solid var(--color-lime);
-	outline-offset: 2px;
-}
-.mm-account-card button {
+
+.mm-account-card > .mm-button {
+	--_h: calc(24 * var(--gp));
+	align-self: start;
 	margin-top: auto;
 }
-.mm-account-card button:disabled {
-	opacity: 0.6;
-	cursor: wait;
+
+.mm-account-card .auth-social {
+	margin: 0;
 }
+
 .mm-account-error {
-	border: 1px solid #b76856;
-	border-radius: 8px;
-	padding: 14px;
-	background: #3a211c;
-	color: #ffc8b8;
+	margin: var(--ds-sp-4) 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--bad);
 }
+.mm-account-page > p[role="status"] {
+	color: var(--c-green);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+/* Entry to the administration (AdminAccessLink): the kit's stone button. */
+.mm-admin-entry.mc-btn {
+	margin: var(--ds-sp-2) 0;
+}
+
 @media (max-width: 700px) {
 	.mm-account-grid {
 		grid-template-columns: 1fr;
 	}
 	.mm-account-card {
-		padding: 22px;
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+	.mm-account-card > .mm-button {
+		align-self: stretch;
+		width: 100%;
 	}
 }
-.mm-account-card .mm-button {
-	min-height: 46px;
-	padding: 12px 18px;
-	border: 1px solid var(--color-lime);
-	border-radius: 7px;
-	background: var(--color-lime);
-	color: var(--color-night);
-	font-weight: 600;
-	cursor: pointer;
-}
-.mm-account-card .mm-button:focus-visible {
-	outline: 2px solid var(--color-lime);
-	outline-offset: 3px;
+
+/* Unifont (ko/ja) only stays sharp at multiples of 16 px: the slot's 24 px symbol grows to 32 px (the slot is 48 px). */
+html.mm-cjk:not([data-mc-font="read"]) .mm-account-symbol {
+	font-size: 32px;
 }
 
-.mm-admin-entry {
-	display: inline-block;
-	margin: 12px 0;
-	padding: 12px 18px;
-	border: 1px solid #789455;
-	border-radius: 7px;
-	color: var(--color-lime);
-	text-decoration: none;
+@media (forced-colors: active) {
+	.mm-account-card,
+	.mm-account-note,
+	.mm-account-error,
+	.mm-account-symbol {
+		border: 1px solid CanvasText;
+	}
 }

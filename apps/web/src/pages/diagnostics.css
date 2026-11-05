@@ -1,105 +1,271 @@
+/* Mod diagnostics (operators): a data-dense screen in the landing's charter. Labels, statuses, headings and buttons in the game's font; error types,
+   stack frames and metadata in Atkinson (--ds-f-text). Night cards (2 px outline, the game's bevel), statuses as game tags, dotted separators. */
+
 .mm-diagnostic-filters,
 .mm-diagnostic-toolbar {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 14px;
-	margin: 24px 0;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-5) 0;
+}
+.mm-diagnostic-toolbar > span {
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .mm-diagnostic-filters {
 	align-items: end;
-	padding: 24px;
-	border: 1px solid #354238;
-	border-radius: 12px;
+	padding: var(--ds-sp-5);
+	background: var(--app-panel);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
 .mm-diagnostic-filters label,
 .mm-diagnostic-toolbar label {
 	display: grid;
-	gap: 6px;
-	font-size: 13px;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
 }
+
+/* The game's text field and select (black, grey 2 px edge, white on focus), values in Atkinson. */
 .mm-diagnostic-filters input,
-.mm-diagnostic-filters select,
-.mm-diagnostic-toolbar select {
-	border: 1px solid #789455;
-	border-radius: 7px;
-	padding: 10px;
-	background: var(--color-paper);
-	color: var(--color-ink);
-	min-height: 44px;
+.mm-diagnostic-filters .mc-select__control,
+.mm-diagnostic-toolbar .mc-select__control {
+	--_h: var(--ds-hit);
+	width: 100%;
 	max-width: 100%;
+	height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-3);
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
+	caret-color: #fff;
 }
+.mm-diagnostic-filters .mc-select__control,
+.mm-diagnostic-toolbar .mc-select__control {
+	padding-right: calc(12 * var(--gp));
+}
+.mm-diagnostic-filters .mc-select,
+.mm-diagnostic-toolbar .mc-select {
+	width: auto;
+	min-width: 160px;
+}
+.mm-diagnostic-filters input::placeholder {
+	color: var(--text-3);
+	opacity: 1;
+}
+.mm-diagnostic-filters input:hover {
+	border-color: #d6d0c6;
+}
+.mm-diagnostic-filters input:focus {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+.mm-diagnostic-filters input:invalid {
+	border-color: var(--bad);
+}
+
+/* Buttons from ui.tsx (kit .mc-btn) at the 44 px target. */
+.mm-diagnostic-filters .mc-btn,
+.mm-diagnostic-toolbar .mc-btn,
+.mm-diagnostic-card .mc-btn,
+.mm-diagnostic-detail .mc-btn {
+	--_h: var(--ds-hit);
+}
+
 .mm-diagnostic-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-	gap: 24px;
+	gap: var(--ds-sp-5);
 }
 .mm-diagnostic-card,
 .mm-diagnostic-report {
 	min-width: 0;
-	padding: 24px;
-	border: 1px solid #354238;
-	border-radius: 12px;
-	background: var(--color-paper-light);
+	padding: var(--ds-sp-5);
+	background: var(--app-panel);
+	color: var(--text);
 	overflow-wrap: anywhere;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
-.mm-diagnostic-card h2,
-.mm-diagnostic-detail h2 {
-	font-size: 23px;
-	font-weight: 650;
+.mm-diagnostic-card .mm-diagnostic-toolbar {
+	justify-content: space-between;
+	margin: 0 0 var(--ds-sp-4);
+}
+.mm-diagnostic-card p,
+.mm-diagnostic-detail p {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.mm-site .mm-diagnostic-card h2,
+.mm-site .mm-diagnostic-detail h2 {
+	margin: 0;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .mm-diagnostic-card time {
 	display: block;
-	color: var(--color-muted-ink);
-	font-size: 13px;
-	margin: 14px 0 24px;
+	margin: var(--ds-sp-3) 0 var(--ds-sp-5);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
+
+/* Status: a game tag. Open in ember, resolved in green, the others grey. */
 .mm-diagnostic-state {
-	padding: 2px 12px;
-	border-radius: 20px;
-	background: var(--color-forest);
-	font-size: 13px;
+	display: inline-block;
+	padding: 2px var(--ds-sp-2);
+	background: var(--night);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	white-space: nowrap;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .mm-diagnostic-open {
-	background: #675222;
+	color: var(--ember);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
 .mm-diagnostic-resolved {
-	color: var(--color-lime);
+	color: var(--c-green);
 }
+
 .mm-diagnostic-detail {
-	border-top: 1px solid #789455;
-	padding-top: 24px;
-	margin-top: 40px;
+	margin-top: var(--ds-sp-7);
+	padding-top: var(--ds-sp-5);
 	overflow-wrap: anywhere;
+	box-shadow:
+		inset 0 var(--gp) 0 var(--outline),
+		inset 0 calc(2 * var(--gp)) 0 var(--app-line);
 }
+.mm-diagnostic-detail .mm-diagnostic-toolbar:first-child {
+	justify-content: space-between;
+	margin-top: 0;
+}
+
 .mm-diagnostic-metadata {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
-	gap: 8px 20px;
-	font-size: 13px;
-	margin: 20px 0;
+	gap: 0 var(--ds-sp-5);
+	margin: var(--ds-sp-4) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.mm-diagnostic-metadata dt,
+.mm-diagnostic-metadata dd {
+	margin: 0;
+	padding: var(--ds-sp-2) 0;
+	background:
+		repeating-linear-gradient(
+			90deg,
+			var(--night-3) 0 calc(2 * var(--gp)),
+			transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+		)
+		bottom / 100% var(--gp) no-repeat;
 }
 .mm-diagnostic-metadata dt {
-	color: var(--color-muted-ink);
+	font: 400 var(--ds-fs-xs) / var(--ds-rd-lh-sm) var(--f-ui);
+	color: var(--text-2);
 }
+.mm-diagnostic-detail code,
+.mm-diagnostic-metadata code {
+	font-family: var(--ds-f-text);
+	color: var(--c-name);
+}
+
 .mm-diagnostic-report {
-	margin-top: 24px;
+	margin-top: var(--ds-sp-5);
 }
-.mm-diagnostic-report h3,
+.mm-site .mm-diagnostic-report h3 {
+	margin: 0;
+	font-size: var(--ds-fs-xs);
+	line-height: var(--ds-lh-xs);
+	text-shadow: var(--ds-text-shadow-1);
+}
 .mm-diagnostic-report h4 {
-	font-weight: 600;
+	margin: var(--ds-sp-4) 0 0;
+	font: 700 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--bad);
 }
+/* Stack frames: the game's black field, the frames in Atkinson. */
 .mm-diagnostic-report pre {
 	max-width: 100%;
-	white-space: pre-wrap;
+	margin: var(--ds-sp-4) 0;
+	padding: var(--ds-sp-4);
 	overflow-x: auto;
-	font-size: 12px;
-	padding: 20px;
-	background: #0004;
-	border-radius: 7px;
-	margin: 20px 0;
+	white-space: pre-wrap;
+	background: var(--field);
+	color: var(--field-ink);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow: inset 0 0 0 var(--gp) var(--slot-lo);
 }
 .mm-diagnostic-report summary {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
 	cursor: pointer;
-	padding: 12px 0;
+	list-style: none;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--ember);
+}
+.mm-diagnostic-report summary::-webkit-details-marker {
+	display: none;
+}
+.mm-diagnostic-report summary::before {
+	content: "";
+	flex: none;
+	width: 16px;
+	height: 16px;
+	background: currentColor;
+	-webkit-mask: url("/hero/mcui/icons/arrow-r.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/arrow-r.svg") center / 100% 100% no-repeat;
+}
+.mm-diagnostic-report details[open] > summary::before {
+	-webkit-mask-image: url("/hero/mcui/icons/arrow-d.svg");
+	mask-image: url("/hero/mcui/icons/arrow-d.svg");
+}
+.mm-diagnostic-report summary:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+@media (max-width: 650px) {
+	.mm-diagnostic-filters {
+		padding: var(--ds-sp-4);
+	}
+	.mm-diagnostic-filters label,
+	.mm-diagnostic-filters .mc-btn {
+		flex: 1 1 100%;
+	}
+	.mm-diagnostic-card,
+	.mm-diagnostic-report {
+		padding: var(--ds-sp-4);
+	}
+	.mm-diagnostic-metadata {
+		grid-template-columns: 1fr;
+	}
+	.mm-diagnostic-metadata dt {
+		background: none;
+		padding-bottom: 0;
+	}
+}
+
+@media (forced-colors: active) {
+	.mm-diagnostic-filters,
+	.mm-diagnostic-card,
+	.mm-diagnostic-report,
+	.mm-diagnostic-state {
+		border: 1px solid CanvasText;
+	}
 }

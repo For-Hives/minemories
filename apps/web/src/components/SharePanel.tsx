@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
+import { buttonDark, buttonQuiet } from './ui'
+// The panel also opens in the gallery's side sheet: its rules travel with it.
+import './viewer-studio.css'
 
 export function SharePanel({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
@@ -81,21 +84,16 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 			<p>{t('Anyone with the link can visit without an account. This memory stays out of the public gallery.')}</p>
 			{status === 'error' && <p role="alert">{t('Could not check sharing. Close and reopen this panel to retry.')}</p>}
 			{status === 'checking' && (
-				<p className="m-0 text-[10px] text-[#8e978a]">
+				<p>
 					<T message={'Checking the link…'} />
 				</p>
 			)}
 			{status === 'off' && (
 				<>
-					<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
+					<p>
 						<T message={'Friends open the world without an account.'} />
 					</p>
-					<button
-						type="button"
-						onClick={() => void create()}
-						disabled={busy}
-						className="mt-2 inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad] disabled:opacity-60"
-					>
+					<button type="button" onClick={() => void create()} disabled={busy} className={buttonDark}>
 						{busy ? '…' : t('Create a link')}
 					</button>
 				</>
@@ -103,25 +101,21 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 			{status === 'on' && (
 				<>
 					{url ? (
-						<span className="flex items-center gap-2">
+						<span className="memory-share-row">
 							<input
 								value={url}
 								readOnly
 								aria-label={t('Share link')}
 								onFocus={event => event.currentTarget.select()}
-								className="h-8 min-w-0 flex-1 rounded-[4px] border border-[#354238] bg-[#1c2720] px-2 font-mono text-[10px] text-ink outline-0"
+								className="mc-field memory-share-url"
 							/>
-							<button
-								type="button"
-								onClick={() => void copyLink()}
-								className="h-8 flex-none cursor-pointer rounded-[4px] border border-[#354238] bg-transparent px-2 text-[11px] text-[#b4c1ad]"
-							>
+							<button type="button" onClick={() => void copyLink()} className={buttonDark}>
 								{' '}
 								<T message={'Copy'} />{' '}
 							</button>
 						</span>
 					) : (
-						<p className="m-0 text-[10px] leading-[1.5] text-[#8e978a]">
+						<p>
 							{t(
 								'A link is active. Use your saved copy to retrieve it. Creating a new link will disable the previous one.'
 							)}
@@ -132,13 +126,13 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 							{t('Open link ↗')}
 						</a>
 					)}
-					<span className="mt-2 flex items-center gap-2">
+					<span className="memory-share-row">
 						<button
 							type="button"
 							onClick={() => void create()}
 							disabled={busy}
 							title={t('Replace the active link with a new one')}
-							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#b4c1ad] disabled:opacity-60"
+							className={buttonQuiet}
 						>
 							{' '}
 							{t('Replace active link')}{' '}
@@ -147,7 +141,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 							type="button"
 							onClick={() => void revoke()}
 							disabled={busy}
-							className="inline-flex h-8 cursor-pointer items-center rounded-[4px] border border-transparent bg-transparent px-2 text-[11px] text-[#8e978a] hover:text-[#e8a0a0] disabled:opacity-60"
+							className={`${buttonQuiet} memory-share-stop`}
 						>
 							{' '}
 							<T message={'Stop sharing'} />{' '}

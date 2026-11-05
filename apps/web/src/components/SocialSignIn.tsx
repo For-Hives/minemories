@@ -55,7 +55,7 @@ export function SocialSignIn({
 		<div className="auth-social">
 			{available.map(provider => (
 				<button
-					className="auth-submit"
+					className="auth-provider mc-btn mc-btn--block"
 					key={provider}
 					type="button"
 					disabled={busy}

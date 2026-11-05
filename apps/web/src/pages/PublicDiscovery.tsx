@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/I18n'
 type Capture = Awaited<ReturnType<typeof apiClient.discovery.get>>
 type Category = Capture['category']
 type Publication = Awaited<ReturnType<typeof apiClient.discovery.status>>
-const fieldClass = 'min-h-10 w-full rounded-md border border-[#354238] bg-[#141c16] px-3 py-2 text-ink'
+const fieldClass = 'mc-field mm-field-fill'
 const categories: Category[] = ['build', 'landscape', 'adventure', 'other']
 function useCategoryLabels() {
 	const { t } = useI18n()
@@ -83,12 +83,7 @@ export function PublicationPanel({
 		revoked: t('Withdrawn'),
 	}
 	return (
-		<section
-			ref={panel}
-			tabIndex={-1}
-			aria-label={t('Public publication')}
-			className="mt-4 grid gap-3 border-t border-[#354238] pt-3"
-		>
+		<section ref={panel} tabIndex={-1} aria-label={t('Public publication')} className="mm-publication">
 			<h4>{t('Publish in the public gallery')}</h4>
 			{status && (
 				<p role="status">
@@ -121,7 +116,7 @@ export function PublicationPanel({
 					))}
 				</select>
 			</label>
-			<label className="flex gap-2">
+			<label className="mm-publication-consent">
 				<input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />
 				{t(
 					'I want this GLB and its thumbnail to be accessible to everyone after moderation, including captured text and textures.'

@@ -2,13 +2,18 @@ import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { AppContext } from '../app-context'
-import { buttonLime, buttonOutline } from '../components/ui'
+import { buttonDark, buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
 
 type Capture = Awaited<ReturnType<typeof apiClient.discovery.get>>
 type Category = Capture['category']
-const fieldClass = 'min-h-10 w-full rounded-md border border-[#354238] bg-[#141c16] px-3 py-2 text-ink'
+// The game's text field (kit .mc-field): black, grey 2 px edge, white on focus; the value in the reading font, at the 44 px target.
+const fieldClass = 'mc-field w-full! h-11! [font-family:var(--ds-f-text)]!'
+const areaClass = 'mc-textarea w-full! [font-family:var(--ds-f-text)]!'
+const selectClass = 'mc-select__control h-11! [font-family:var(--ds-f-text)]!'
+// Labels in the game's font.
+const labelClass = 'grid gap-2 [font:400_var(--ds-fs-xs)/var(--ds-lh-xs)_var(--f-ui)]'
 const categories: Category[] = ['build', 'landscape', 'adventure', 'other']
 function useCategoryLabels() {
 	const { t } = useI18n()
@@ -105,7 +110,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 				</Link>
 			)}
 			<div className="mb-6 grid gap-4 sm:grid-cols-3">
-				<label className="grid gap-2">
+				<label className={labelClass}>
 					{t('Search')}{' '}
 					<input
 						className={fieldClass}
@@ -118,44 +123,48 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 						maxLength={80}
 					/>
 				</label>
-				<label className="grid gap-2">
+				<label className={labelClass}>
 					{t('Category')}{' '}
-					<select
-						className={fieldClass}
-						value={category}
-						onChange={event => {
-							setCategory(event.target.value as Category | '')
-							setPage(0)
-						}}
-					>
-						<option value="">{t('All')}</option>
-						{categories.map(value => (
-							<option key={value} value={value}>
-								{labels[value]}
-							</option>
-						))}
-					</select>
+					<span className="mc-select w-full!">
+						<select
+							className={selectClass}
+							value={category}
+							onChange={event => {
+								setCategory(event.target.value as Category | '')
+								setPage(0)
+							}}
+						>
+							<option value="">{t('All')}</option>
+							{categories.map(value => (
+								<option key={value} value={value}>
+									{labels[value]}
+								</option>
+							))}
+						</select>
+					</span>
 				</label>
-				<label className="grid gap-2">
+				<label className={labelClass}>
 					{t('Sort')}{' '}
-					<select
-						className={fieldClass}
-						value={sort}
-						onChange={event => {
-							setSort(event.target.value as 'recent' | 'votes')
-							setPage(0)
-						}}
-					>
-						<option value="recent">{t('Recent')}</option>
-						<option value="votes">{t('Most loved')}</option>
-					</select>
+					<span className="mc-select w-full!">
+						<select
+							className={selectClass}
+							value={sort}
+							onChange={event => {
+								setSort(event.target.value as 'recent' | 'votes')
+								setPage(0)
+							}}
+						>
+							<option value="recent">{t('Recent')}</option>
+							<option value="votes">{t('Most loved')}</option>
+						</select>
+					</span>
 				</label>
 			</div>
 			{loading && <p role="status">{t('Loading gallery…')}</p>}
 			{error && (
 				<div role="alert">
 					{error}{' '}
-					<button type="button" onClick={() => setRefresh(n => n + 1)}>
+					<button type="button" className={buttonOutline} onClick={() => setRefresh(n => n + 1)}>
 						{t('Retry')}
 					</button>
 				</div>
@@ -169,7 +178,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 							{item.thumbnail && (
 								<div
 									aria-hidden="true"
-									className="h-48 w-full rounded-md bg-cover bg-center"
+									className="mc-pixel h-48 w-full bg-cover bg-center shadow-[0_0_0_2px_var(--outline)]"
 									style={{ backgroundImage: `url("${item.thumbnail}")` }}
 								/>
 							)}
@@ -193,6 +202,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 										</button>
 										<button
 											type="button"
+											className={buttonOutline}
 											disabled={!!busy}
 											onClick={() => {
 												setReportId(item.id)
@@ -217,10 +227,10 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 									}}
 									className="mt-4 grid gap-3"
 								>
-									<label className="grid gap-2">
+									<label className={labelClass}>
 										{t('Report reason')}
 										<textarea
-											className={fieldClass}
+											className={areaClass}
 											maxLength={500}
 											value={reportReason}
 											onChange={event => setReportReason(event.target.value)}
@@ -230,7 +240,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 									<button className={buttonOutline} disabled={!!busy || !reportReason.trim()} type="submit">
 										{t('Send report')}
 									</button>
-									<button type="button" onClick={() => setReportId('')}>
+									<button type="button" className={buttonOutline} onClick={() => setReportId('')}>
 										{t('Cancel')}
 									</button>
 								</form>
@@ -240,13 +250,23 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 				</div>
 			)}
 			<div className="mm-actions">
-				<button type="button" disabled={page === 0 || loading} onClick={() => setPage(n => n - 1)}>
+				<button
+					type="button"
+					className={buttonOutline}
+					disabled={page === 0 || loading}
+					onClick={() => setPage(n => n - 1)}
+				>
 					{t('Previous')}
 				</button>
-				<span>
+				<span className="[font-family:var(--f-ui)]">
 					{t('Page')} {page + 1}
 				</span>
-				<button type="button" disabled={!result.hasMore || loading || !!error} onClick={() => setPage(n => n + 1)}>
+				<button
+					type="button"
+					className={buttonOutline}
+					disabled={!result.hasMore || loading || !!error}
+					onClick={() => setPage(n => n + 1)}
+				>
 					{t('Next')}
 				</button>
 			</div>
@@ -318,22 +338,24 @@ export function ModerationPage() {
 			{error && <p role="alert">{error}</p>}
 			{allowed && !loading && (
 				<>
-					<label className="grid gap-2">
+					<label className={labelClass}>
 						{t('Queue')}
-						<select
-							className={fieldClass}
-							value={state}
-							onChange={event => {
-								setState(event.target.value as typeof state)
-								setPage(0)
-							}}
-						>
-							{(['pending', 'reported', 'approved', 'rejected'] as const).map(value => (
-								<option key={value} value={value}>
-									{queueLabels[value]}
-								</option>
-							))}
-						</select>
+						<span className="mc-select w-full!">
+							<select
+								className={selectClass}
+								value={state}
+								onChange={event => {
+									setState(event.target.value as typeof state)
+									setPage(0)
+								}}
+							>
+								{(['pending', 'reported', 'approved', 'rejected'] as const).map(value => (
+									<option key={value} value={value}>
+										{queueLabels[value]}
+									</option>
+								))}
+							</select>
+						</span>
 					</label>
 					<div className="mm-angle-grid">
 						{items.map(item => (
@@ -344,7 +366,7 @@ export function ModerationPage() {
 								{item.reports.map(report => (
 									<p key={report.id}>{report.reason}</p>
 								))}
-								<label className="my-3 grid gap-2">
+								<label className={`my-3 ${labelClass}`}>
 									{t('Decision reason (optional)')}
 									<input
 										className={fieldClass}
@@ -353,12 +375,24 @@ export function ModerationPage() {
 										onChange={event => setReasons(previous => ({ ...previous, [item.id]: event.target.value }))}
 									/>
 								</label>
-								<Link to={`/public/${item.id}?review=1`}>{t('Review GLB')}</Link>
+								<Link className="mc-link" to={`/public/${item.id}?review=1`}>
+									{t('Review GLB')}
+								</Link>
 								<div className="mm-actions">
-									<button type="button" disabled={busy} onClick={() => void moderate(item.id, 'approved')}>
+									<button
+										type="button"
+										className={buttonLime}
+										disabled={busy}
+										onClick={() => void moderate(item.id, 'approved')}
+									>
 										{t('Approve')}
 									</button>
-									<button type="button" disabled={busy} onClick={() => void moderate(item.id, 'rejected')}>
+									<button
+										type="button"
+										className={buttonDark}
+										disabled={busy}
+										onClick={() => void moderate(item.id, 'rejected')}
+									>
 										{t('Reject')}
 									</button>
 								</div>
@@ -367,10 +401,20 @@ export function ModerationPage() {
 					</div>
 					{!loading && items.length === 0 && <p>{t('No memories in this queue.')}</p>}
 					<div className="mm-actions">
-						<button type="button" disabled={page === 0 || loading} onClick={() => setPage(n => n - 1)}>
+						<button
+							type="button"
+							className={buttonOutline}
+							disabled={page === 0 || loading}
+							onClick={() => setPage(n => n - 1)}
+						>
 							{t('Previous')}
 						</button>
-						<button type="button" disabled={!more || loading} onClick={() => setPage(n => n + 1)}>
+						<button
+							type="button"
+							className={buttonOutline}
+							disabled={!more || loading}
+							onClick={() => setPage(n => n + 1)}
+						>
 							{t('Next')}
 						</button>
 					</div>

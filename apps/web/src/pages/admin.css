@@ -1,166 +1,279 @@
+/* Administration: a data-dense screen in the landing's charter. Headers, labels, numbers and buttons in the game's font; data and notes in Atkinson
+   (--ds-f-text). Night cards with a 2 px outline and the game's bevel, rows separated by the kit's dotted line, roles as game tags. */
+
 .mm-admin-page {
 	max-width: 1400px;
 }
+
+/* Kicker (also in the role dialog): the landing's eyebrow. */
+.mm-admin-page .mm-kicker,
+.mm-admin-dialog .mm-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-admin-page .mm-kicker::before,
+.mm-admin-dialog .mm-kicker::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
 .mm-admin-heading {
 	display: flex;
 	justify-content: space-between;
 	align-items: end;
-	gap: 24px;
-	margin-bottom: 30px;
+	gap: var(--ds-sp-5);
+	margin-bottom: var(--ds-sp-6);
 }
 .mm-admin-heading h1 {
-	margin: 12px 0;
-	font-size: clamp(32px, 4vw, 48px);
-	letter-spacing: -1.6px;
+	margin: var(--ds-sp-3) 0;
 }
 .mm-admin-heading p,
 .mm-admin-card > p {
-	color: var(--color-muted-ink);
-	line-height: 1.6;
+	margin: var(--ds-sp-2) 0 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
 .mm-admin-heading a {
-	color: var(--color-lime);
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	margin-top: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
 }
+.mm-admin-heading a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
 .mm-admin-controls {
 	display: flex;
 	align-items: end;
-	gap: 12px;
+	gap: var(--ds-sp-3);
 }
+
+/* Labels in the game's font, fields as the game's text fields (black, grey edge, white on focus), values in Atkinson. */
 .mm-admin-controls label,
 .mm-admin-search label,
 .mm-admin-dialog label {
 	display: grid;
-	gap: 8px;
-	font-size: 13px;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .mm-admin-page input,
-.mm-admin-page select,
-.mm-admin-dialog input {
-	border: 1px solid #53654c;
-	border-radius: 7px;
-	background: var(--color-paper);
-	color: var(--color-ink);
-	padding: 11px 12px;
-	min-height: 44px;
+.mm-admin-dialog input,
+.mm-admin-page .mc-select__control {
+	--_h: var(--ds-hit);
+	width: 100%;
 	max-width: 100%;
+	height: var(--ds-hit);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-3);
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
+	caret-color: #fff;
 }
-.mm-admin-primary,
-.mm-admin-secondary {
-	min-height: 44px;
-	border-radius: 7px;
-	padding: 10px 16px;
-	font: inherit;
-	font-size: 13px;
-	cursor: pointer;
+.mm-admin-page .mc-select__control {
+	padding-right: calc(12 * var(--gp));
 }
-.mm-admin-primary {
-	border: 1px solid var(--color-lime);
-	background: var(--color-lime);
-	color: var(--color-night);
-	font-weight: 600;
+.mm-admin-page .mc-select {
+	width: auto;
+	min-width: 160px;
 }
-.mm-admin-secondary {
-	border: 1px solid #53654c;
-	background: #213025;
-	color: var(--color-ink);
+.mm-admin-page input::placeholder,
+.mm-admin-dialog input::placeholder {
+	color: var(--text-3);
+	opacity: 1;
 }
-.mm-admin-page button:disabled,
-.mm-admin-dialog button:disabled {
-	opacity: 0.45;
-	cursor: not-allowed;
+.mm-admin-page input:hover,
+.mm-admin-dialog input:hover {
+	border-color: #d6d0c6;
+}
+.mm-admin-page input:focus,
+.mm-admin-dialog input:focus {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+.mm-admin-page input:disabled,
+.mm-admin-dialog input:disabled {
+	background: var(--off);
+	color: var(--off-ink);
+	border-color: var(--night-3);
+}
+
+/* Buttons: the kit's (stone for secondary, copper for primary), at the 44 px target. */
+.mm-admin-page .mc-btn,
+.mm-admin-dialog .mc-btn {
+	--_h: var(--ds-hit);
+	white-space: nowrap;
 }
 .mm-admin-page :focus-visible,
 .mm-admin-dialog :focus-visible {
-	outline: 2px solid var(--color-lime);
-	outline-offset: 3px;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
 }
+
+/* --- Key figures ------------------------------------------------------------------------------------------------------------------------------- */
 .mm-admin-kpis {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 18px;
-	margin-bottom: 24px;
+	gap: var(--ds-sp-5);
+	margin-bottom: var(--ds-sp-5);
 }
 .mm-admin-kpi,
 .mm-admin-card {
-	padding: 24px;
-	border: 1px solid #354238;
-	border-radius: 12px;
-	background: var(--color-paper-light);
 	min-width: 0;
+	padding: var(--ds-sp-5);
+	background: var(--app-panel);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
 .mm-admin-kpi {
 	display: grid;
-	gap: 12px;
-	border-top: 2px solid #789455;
+	gap: var(--ds-sp-2);
 }
 .mm-admin-kpi > span {
-	color: var(--color-muted-ink);
-	font-size: 12px;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .mm-admin-kpi strong {
-	color: var(--color-lime);
-	font-size: clamp(26px, 3vw, 38px);
-	font-weight: 500;
-	letter-spacing: -1px;
+	font: 400 var(--ds-fs-h2) / var(--ds-lh-h2) var(--f-title);
+	color: var(--ember);
+	text-shadow: var(--ds-text-shadow-3);
 	overflow-wrap: anywhere;
 }
 .mm-admin-kpi small {
-	color: var(--color-muted-ink);
-	font-size: 11px;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
+/* --- Cards and charts ------------------------------------------------------------------------------------------------------------------------- */
 .mm-admin-charts,
 .mm-admin-lower {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 24px;
-	margin: 24px 0;
+	gap: var(--ds-sp-5);
+	margin: var(--ds-sp-5) 0;
 }
-.mm-admin-card h2 {
+.mm-site .mm-admin-card h2 {
 	margin: 0;
-	font-size: 20px;
-	font-weight: 500;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .mm-admin-card-title {
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
-	gap: 12px;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
 }
 .mm-admin-card-title > b {
-	color: var(--color-lime);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: var(--ember);
 	white-space: nowrap;
-	font-size: 22px;
+	text-shadow: var(--ds-text-shadow-2);
 }
 .mm-admin-card-title > span {
-	color: var(--color-muted-ink);
-	font-size: 12px;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .mm-admin-chart {
+	display: block;
 	width: 100%;
 	height: auto;
-	display: block;
-	margin-top: 22px;
+	margin-top: var(--ds-sp-5);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	shape-rendering: crispEdges;
+}
+.mm-admin-chart-grid {
+	stroke: var(--night-3);
+	stroke-width: 2;
+}
+.mm-admin-chart-gap {
+	fill: var(--stone-lo);
+	opacity: 0.45;
+}
+.mm-admin-chart-bar {
+	fill: var(--ember);
+}
+.mm-admin-chart-bar.is-signups {
+	fill: var(--c-name);
+}
+.mm-admin-chart-bar.is-partial {
+	opacity: 0.55;
 }
 .mm-admin-axis {
 	display: flex;
 	justify-content: space-between;
-	gap: 10px;
-	font-size: 10px;
-	color: var(--color-muted-ink);
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .mm-admin-note {
-	color: var(--color-muted-ink);
-	line-height: 1.7;
-	font-size: 12px;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
+
 .mm-admin-values {
-	margin: 20px 0 30px;
+	margin: var(--ds-sp-5) 0 var(--ds-sp-6);
 }
 .mm-admin-values > summary {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
 	cursor: pointer;
-	color: var(--color-lime);
-	padding: 10px 0;
+	list-style: none;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--ember);
+	text-shadow: var(--ds-text-shadow-1);
 }
+.mm-admin-values > summary::-webkit-details-marker {
+	display: none;
+}
+.mm-admin-values > summary::before {
+	content: "";
+	flex: none;
+	width: 16px;
+	height: 16px;
+	background: currentColor;
+	-webkit-mask: url("/hero/mcui/icons/arrow-r.svg") center / 100% 100% no-repeat;
+	mask: url("/hero/mcui/icons/arrow-r.svg") center / 100% 100% no-repeat;
+}
+.mm-admin-values[open] > summary::before {
+	-webkit-mask-image: url("/hero/mcui/icons/arrow-d.svg");
+	mask-image: url("/hero/mcui/icons/arrow-d.svg");
+}
+
+/* --- Tables: headers in the game's font, data in Atkinson, dotted separators ---------------------------------------------------------------------- */
 .mm-admin-table-wrap {
 	width: 100%;
 	overflow: auto;
@@ -170,138 +283,210 @@
 	border-collapse: collapse;
 	white-space: nowrap;
 	text-align: left;
-	font-size: 12px;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .mm-admin-page th {
-	font-weight: 500;
-	color: var(--color-muted-ink);
-	padding: 14px 12px;
-	border-bottom: 1px solid #53654c;
+	padding: var(--ds-sp-3);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow:
+		inset 0 calc(-1 * var(--gp)) 0 var(--app-line),
+		inset 0 calc(-2 * var(--gp)) 0 var(--outline);
 }
 .mm-admin-page td {
-	padding: 16px 12px;
-	border-bottom: 1px solid #354238;
+	padding: var(--ds-sp-3);
+	vertical-align: middle;
+	color: var(--text);
+	background:
+		repeating-linear-gradient(
+			90deg,
+			var(--night-3) 0 calc(2 * var(--gp)),
+			transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+		)
+		bottom / 100% var(--gp) no-repeat;
 }
+.mm-admin-page th:first-child,
 .mm-admin-page td:first-child {
 	padding-left: 0;
+}
+.mm-admin-page tbody tr:hover td {
+	background-color: var(--night-3);
 }
 .mm-admin-page td strong,
 .mm-admin-page td small {
 	display: block;
 }
-.mm-admin-page td small {
-	margin-top: 6px;
-	color: var(--color-muted-ink);
+.mm-admin-page td strong {
+	font-weight: 700;
 }
+.mm-admin-page td small {
+	margin-top: var(--ds-sp-1);
+	color: var(--text-2);
+	font-size: var(--ds-rd-fs-sm);
+}
+
 .mm-admin-search {
 	display: flex;
 	align-items: end;
 	flex-wrap: wrap;
-	gap: 14px;
-	margin: 24px 0 10px;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-5) 0 var(--ds-sp-3);
 }
 .mm-admin-search label:first-child {
 	flex: 1;
 	min-width: 180px;
 }
+
+/* Role: a game tag (night, 2 px outline). Administrators in gold. */
 .mm-admin-role {
 	display: inline-block;
-	padding: 6px 9px;
-	border-radius: 5px;
-	background: #27342b;
+	padding: 2px var(--ds-sp-2);
+	background: var(--night);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .mm-admin-role.is-admin {
-	color: var(--color-lime);
-	background: #334125;
+	color: var(--c-gold);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+
 .mm-admin-pagination {
 	display: flex;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 16px;
-	margin-top: 20px;
-	font-size: 12px;
+	gap: var(--ds-sp-4);
+	margin-top: var(--ds-sp-5);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
+
+/* --- Service overview and audit ------------------------------------------------------------------------------------------------------------------ */
 .mm-admin-operations {
-	margin-bottom: 0;
+	margin: var(--ds-sp-4) 0 0;
 }
 .mm-admin-operations > div {
 	display: flex;
 	justify-content: space-between;
-	gap: 16px;
-	padding: 13px 0;
-	border-bottom: 1px solid #354238;
-	font-size: 13px;
+	align-items: baseline;
+	gap: var(--ds-sp-4);
+	padding: var(--ds-sp-3) 0;
+	background:
+		repeating-linear-gradient(
+			90deg,
+			var(--night-3) 0 calc(2 * var(--gp)),
+			transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+		)
+		bottom / 100% var(--gp) no-repeat;
 }
 .mm-admin-operations dt {
-	color: var(--color-muted-ink);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .mm-admin-operations dd {
 	margin: 0;
-	font-family: var(--font-mono);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+	white-space: nowrap;
 }
+
 .mm-admin-audit {
 	list-style: none;
 	padding: 0;
-	margin: 24px 0 0;
+	margin: var(--ds-sp-5) 0 0;
 	max-height: 470px;
 	overflow: auto;
 }
 .mm-admin-audit li {
 	display: flex;
-	gap: 14px;
-	padding: 0 0 22px;
-	font-size: 13px;
+	gap: var(--ds-sp-3);
+	padding: 0 0 var(--ds-sp-5);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.mm-admin-audit li strong {
+	font-weight: 700;
 }
 .mm-admin-audit p {
-	margin: 6px 0;
-	line-height: 1.5;
-	color: var(--color-muted-ink);
+	margin: var(--ds-sp-1) 0;
+	color: var(--text-2);
 }
 .mm-admin-audit time {
-	font-size: 11px;
-	color: var(--color-muted-ink);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
 }
 .mm-admin-audit-dot {
 	flex: none;
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	background: var(--color-lime);
-	margin-top: 6px;
+	width: 8px;
+	height: 8px;
+	margin-top: var(--ds-sp-2);
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
+
 .mm-admin-error {
-	border: 1px solid #b76856;
-	border-radius: 8px;
-	padding: 14px;
-	background: #3a211c;
-	color: #ffc8b8;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--bad);
 }
+
+/* --- Role dialog: the kit's dark panel over a flat veil -------------------------------------------------------------------------------------------- */
 .mm-admin-dialog {
 	width: min(520px, calc(100% - 32px));
-	border: 1px solid #789455;
-	border-radius: 14px;
-	padding: 30px;
-	background: var(--color-paper-light);
-	color: var(--color-ink);
+	padding: var(--ds-sp-6);
+	border: 0;
+	border-radius: 0;
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
 .mm-admin-dialog::backdrop {
-	background: #050b08bb;
+	background: rgb(10 8 6 / 0.75);
 }
-.mm-admin-dialog h2 {
-	margin: 12px 0;
-	font-size: 27px;
+.mm-site .mm-admin-dialog h2 {
+	margin: var(--ds-sp-3) 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	text-shadow: var(--ds-text-shadow-2);
 }
 .mm-admin-dialog p {
-	line-height: 1.7;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 	overflow-wrap: anywhere;
+}
+.mm-admin-dialog p strong {
+	color: var(--text);
+}
+.mm-admin-dialog label {
+	margin-top: var(--ds-sp-4);
+}
+.mm-admin-dialog .mm-admin-error {
+	margin-top: var(--ds-sp-4);
 }
 .mm-admin-dialog-actions {
 	display: flex;
 	justify-content: flex-end;
-	gap: 12px;
-	margin-top: 26px;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-6);
 }
+/* Unifont (ko/ja) only stays sharp at multiples of 16 px: the 24 px pixel-font titles that are not h1/h2/h3 drop to 16 px. */
+html.mm-cjk:not([data-mc-font="read"]) .mm-admin-card-title > b {
+	font-size: 16px;
+	line-height: 24px;
+}
+html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
+	font-weight: 700;
+}
+
 @media (max-width: 1000px) {
 	.mm-admin-kpis {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -322,15 +507,33 @@
 	.mm-admin-controls label {
 		flex: 1;
 	}
+	.mm-admin-kpis {
+		gap: var(--ds-sp-4);
+	}
 	.mm-admin-kpi,
 	.mm-admin-card {
-		padding: 18px;
+		padding: var(--ds-sp-4);
 	}
 	.mm-admin-pagination {
 		justify-content: space-between;
-		gap: 8px;
+		gap: var(--ds-sp-2);
 	}
 	.mm-admin-dialog {
-		padding: 22px;
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+}
+@media (max-width: 420px) {
+	.mm-admin-kpis {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (forced-colors: active) {
+	.mm-admin-kpi,
+	.mm-admin-card,
+	.mm-admin-dialog,
+	.mm-admin-error,
+	.mm-admin-role {
+		border: 1px solid CanvasText;
 	}
 }

@@ -10,12 +10,13 @@ export function LoadingSkeleton({
 	const { t } = useI18n()
 	if (kind === 'viewer')
 		return (
-			<div role="status" aria-busy="true" className="grid min-h-svh place-items-center bg-[#15221b] text-[#e6c68e]">
+			<div role="status" aria-busy="true" className="grid min-h-svh place-items-center bg-night text-ink">
 				<div className="text-center">
-					<span aria-hidden="true" className="block text-4xl motion-safe:animate-pulse">
-						✧
-					</span>
-					<p className="mt-6 text-xs tracking-widest">{t(label)}</p>
+					<span
+						aria-hidden="true"
+						className="mx-auto block size-4 bg-lime shadow-[0_0_0_2px_var(--outline)] motion-safe:animate-pulse"
+					/>
+					<p className="mt-6 font-[family-name:var(--f-ui)] text-base leading-6 text-muted-ink">{t(label)}</p>
 				</div>
 			</div>
 		)
@@ -44,26 +45,17 @@ export function LoadingSkeleton({
 	)
 }
 
-export function OrbitMark({ className = '' }: { className?: string }) {
+/* The content pages' mark: a grass block of the landing's captures, rendered in the same isometric view as the scenes (public/hero/scenes/). */
+export function BlockMark({ className = '' }: { className?: string }) {
 	return (
-		<svg viewBox="0 0 120 120" fill="none" aria-hidden="true" className={`mm-orbit ${className}`}>
-			<g className="mm-orbit-ring">
-				<ellipse
-					cx="60"
-					cy="60"
-					rx="50"
-					ry="24"
-					transform="rotate(-30 60 60)"
-					stroke="currentColor"
-					strokeDasharray="3 6"
-				/>
-				<circle cx="102" cy="32" r="5" fill="currentColor" />
-			</g>
-			<g className="mm-orbit-cube">
-				<path d="m35 45 25-14 25 14-25 14Z" fill="#d9f36c" />
-				<path d="m35 45 25 14v29L35 74Z" fill="#7f9961" />
-				<path d="m60 59 25-14v29L60 88Z" fill="#435c3e" />
-			</g>
-		</svg>
+		<img
+			className={`mm-block-mark ${className}`}
+			src="/hero/scenes/bloc-herbe.webp"
+			alt=""
+			aria-hidden="true"
+			width="214"
+			height="246"
+			decoding="async"
+		/>
 	)
 }

@@ -4,6 +4,7 @@ import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { SocialSignIn } from '../components/SocialSignIn'
+import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { credentialChangeComplete } from './account-navigation'
 import './account.css'
@@ -133,6 +134,7 @@ export function AccountPage() {
 					<label>
 						{t('Display name')}
 						<input
+							className="mc-field"
 							name="name"
 							autoComplete="nickname"
 							defaultValue={session?.user.name}
@@ -142,7 +144,7 @@ export function AccountPage() {
 							disabled={pending !== null}
 						/>
 					</label>
-					<button className="mm-button" type="submit" disabled={pending !== null}>
+					<button className={buttonLime} type="submit" disabled={pending !== null}>
 						{pending === 'name' ? t('Saving…') : t('Save display name')}
 					</button>
 				</form>
@@ -161,6 +163,7 @@ export function AccountPage() {
 							<label>
 								{t('New email address')}
 								<input
+									className="mc-field"
 									name="email"
 									type="email"
 									autoComplete="email"
@@ -172,6 +175,7 @@ export function AccountPage() {
 							<label>
 								{t('Current password')}
 								<input
+									className="mc-field"
 									name="currentPassword"
 									type="password"
 									autoComplete="current-password"
@@ -180,7 +184,7 @@ export function AccountPage() {
 									disabled={pending !== null}
 								/>
 							</label>
-							<button className="mm-button" type="submit" disabled={pending !== null}>
+							<button className={buttonLime} type="submit" disabled={pending !== null}>
 								{pending === 'email' ? t('Saving…') : t('Change my email')}
 							</button>
 						</form>
@@ -198,6 +202,7 @@ export function AccountPage() {
 							<label>
 								{t('Current password')}
 								<input
+									className="mc-field"
 									name="currentPassword"
 									type="password"
 									autoComplete="current-password"
@@ -209,6 +214,7 @@ export function AccountPage() {
 							<label>
 								{t('New password')}
 								<input
+									className="mc-field"
 									name="newPassword"
 									type="password"
 									autoComplete="new-password"
@@ -221,6 +227,7 @@ export function AccountPage() {
 							<label>
 								{t('Confirm new password')}
 								<input
+									className="mc-field"
 									name="confirmation"
 									type="password"
 									autoComplete="new-password"
@@ -230,7 +237,7 @@ export function AccountPage() {
 									disabled={pending !== null}
 								/>
 							</label>
-							<button className="mm-button" type="submit" disabled={pending !== null}>
+							<button className={buttonLime} type="submit" disabled={pending !== null}>
 								{pending === 'password' ? t('Saving…') : t('Change my password')}
 							</button>
 						</form>

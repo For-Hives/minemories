@@ -272,7 +272,7 @@ svg = (f'<svg viewBox="0 0 160 136" aria-hidden="true" focusable="false">{defs}{
 	f'<g class="bk-item"><g transform="translate({GX} {GY})">{GEM}</g>{sparkles}</g>'
 	f'<g class="bk-chr">{body}<g class="bk-arm">{arm}</g></g></g></svg>')
 markup = f'<div id="boot" role="status"><span class="boot-t boot-en">Loading…</span><span class="boot-t boot-fr">Chargement…</span>{svg}</div>'
-script = ("<script>!function(){var b=document.getElementById('boot');if(!b)return;var t=performance.now(),d=0,l=0,r=0;function h(){if(d)return;d=1;var e=performance.now()-t,"
+script = ("<script>!function(){var b=document.getElementById('boot');if(!b)return;if(location.pathname!=='/'){b.remove();return}var t=performance.now(),d=0,l=0,r=0;function h(){if(d)return;d=1;var e=performance.now()-t,"
 	"w=e>250&&e<1150?1150-e:0;setTimeout(function(){b.classList.add('is-done');setTimeout(function(){b.remove()},300)},w)}"
 	"function g(){if(l&&r)h()}"
 	"if(document.readyState==='complete')l=1;if(document.documentElement.dataset.mmReady==='1')r=1;"

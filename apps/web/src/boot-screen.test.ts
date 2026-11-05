@@ -14,6 +14,7 @@ test('the loading screen is self-contained, labelled and cannot trap the visitor
 	expect(html).toContain('setTimeout(h,20000)')
 	expect(html).toContain("addEventListener('load',function(){l=1;g()})") // gone once the page has loaded AND the app says it is on screen
 	expect(html).toContain("addEventListener('mm:ready'")
+	expect(html).toContain("if(location.pathname!=='/'){b.remove();return}") // the miner is the landing's: any other page drops it before it can show
 	expect(html.length).toBeLessThan(45_000)
 })
 

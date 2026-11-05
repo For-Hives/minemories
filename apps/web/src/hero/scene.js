@@ -4956,6 +4956,8 @@ export function mount(target, opts = {}) {
 	let siteFrame = null // { rect, margin, fit, fill, centre }: the last framing request (frameSubject or setSiteBlend)
 	let frameFrom = { x: 0, y: 0, scale: 1 } // the subject offset the framing is measured from
 	let frameUnion = null // { key, U }: the boxes of a whole turn, kept until the panel, the size or the site view changes
+	const ENDING_SHOW = 50.5 // v13 (app): from the last cut to the site, never a calm moment for loading unless the film is at rest
+	let drivenFastUntil = 0 // v13 (app): performance.now() until which the film counts as driven fast (a step faster than 1.5x of the wall clock)
 	let lastTimeChangeAt = 0 // performance.now() of the last setTime that moved t (the loading of the next stages waits for a film at rest)
 	let siteRectPx = null // on-screen box of the diorama in CSS px (getView().rect), updated at every framing step
 	let sitePanelPx = null // the rectangle given to the last frameSubject (getView().panel)
@@ -6774,16 +6776,19 @@ export function mount(target, opts = {}) {
 		 * v10: the film time, set by the host in `mode: 'external'` (the scene never advances it). |dt| <= 1 s is continuous (the `beat` and `cue` events carry `direction`, `seek: false`),
 		 * anything else is a jump (`seek: true`). A stop (`hold`) is not touched by it. The picture for `t` is rendered on the next frame (probe.renderedT === t).
 		 */
-		setTime(value) {
+		setTime(value, { fast = false } = {}) {
 			if (disposed) return
 			const next = clampT(value)
 			if (next === t) return
 			if (sitePhase) controller.setSiteBlend(0)
 			if (Math.abs(next - t) > 1) seeked = true
 			wrapped = false
+			const now = performance.now()
+			// The host says when the hand drives the film fast (its clock's rate): measuring it here from the spacing of the calls tripped on frame jitter at 1x.
+			if (fast) drivenFastUntil = now + 600
 			t = next
 			tTarget = next
-			lastTimeChangeAt = performance.now()
+			lastTimeChangeAt = now
 			dirty = true
 		},
 		/**
@@ -6823,6 +6828,8 @@ export function mount(target, opts = {}) {
 				ambient = 0
 			}
 			const entering = !blend
+			// v13 (app): the glide is motion too: the next stages are not prepared under it.
+			if (!blend || blend.g !== gg) lastTimeChangeAt = performance.now()
 			blend = { g: gg }
 			if (Number.isFinite(filmT)) blendFilmT = filmT
 			else if (entering) blendFilmT = t
@@ -7123,7 +7130,11 @@ export function mount(target, opts = {}) {
 			const check = () => {
 				const idle = mode === 'external' ? performance.now() - lastTimeChangeAt > 500 : !playing && (mode === 'time' || Math.abs(tTarget - t) < 1e-3)
 				// v5: no more black at the departure; the calm moment is the hard cut of 16.3 s (fixed night shot; 26.1 s in v9).
-				if (disposed || idle || t >= STORY.away[0] || (probe.fps !== undefined && probe.fps < 8)) resolve()
+				// v13 (app): not from the last cut on (50.5 s): the celebration, the crane up to the model and the glide are the showpiece, and a visitor who jumps there before
+				// the stages are ready (the arrival flick lands at 52.3 s) saw every step of their preparation as a hitch of 100 to 170 ms. There, only a film at rest is calm.
+				// Nor while the visitor drives the film fast (the wheel at up to 12x): the hitch was hidden by playback at 1x, not under the hand.
+				const busyEnd = t >= ENDING_SHOW || sitePhase || performance.now() < drivenFastUntil
+				if (disposed || idle || (t >= STORY.away[0] && !busyEnd) || (probe.fps !== undefined && probe.fps < 8)) resolve()
 				else requestAnimationFrame(check)
 			}
 			check()

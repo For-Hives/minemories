@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import { GalleryIcon } from '../components/GalleryIcons'
+import { buttonLime } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
@@ -53,7 +54,7 @@ function NameField({
 					placeholder={server.name}
 					onChange={event => setDraft(event.currentTarget.value)}
 				/>
-				<button type="submit" className="mm-button" disabled={draft.trim() === name}>
+				<button type="submit" className={buttonLime} disabled={draft.trim() === name}>
 					{t('Save')}
 				</button>
 			</div>

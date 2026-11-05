@@ -179,7 +179,7 @@ export class ViewerScene {
 		this.renderer.shadowMap.enabled = true
 		this.renderer.shadowMap.type = THREE.PCFShadowMap
 		this.renderer.shadowMap.autoUpdate = false
-		this.renderer.setClearColor('#11140f')
+		this.renderer.setClearColor('#14110e')
 
 		this.sky = new THREE.Mesh(
 			new THREE.SphereGeometry(1, 32, 20),

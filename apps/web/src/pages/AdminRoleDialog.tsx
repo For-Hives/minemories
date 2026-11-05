@@ -1,6 +1,7 @@
 import type { AdminUser } from '@minemories/api-contract'
 import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
+import { buttonDark, buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 
 function roleError(cause: unknown, t: ReturnType<typeof useI18n>['t']): string {
@@ -92,10 +93,10 @@ export function AdminRoleDialog({
 					</p>
 				)}
 				<div className="mm-admin-dialog-actions">
-					<button type="button" className="mm-admin-secondary" onClick={onClose} disabled={busy}>
+					<button type="button" className={`mm-admin-secondary ${buttonDark}`} onClick={onClose} disabled={busy}>
 						{t('Cancel')}
 					</button>
-					<button type="submit" className="mm-admin-primary" disabled={busy}>
+					<button type="submit" className={`mm-admin-primary ${buttonLime}`} disabled={busy}>
 						{busy ? t('Saving…') : t('Confirm change')}
 					</button>
 				</div>
