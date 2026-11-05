@@ -69,6 +69,16 @@ Le téléchargement public par défaut reste NeoForge ; choisir l'archive corres
 
 Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus.
 
+### Quilt 1.21.11 : le JAR Fabric se charge tel quel (5 novembre 2026)
+
+Aucun projet Quilt n'est créé : le JAR `minemories-fabric-mc1.21.11-*.jar` est lancé sous Quilt Loader 0.30.2 (profil `meta.quiltmc.org` pour 1.21.11, bibliothèques Mojang, Fabric API 0.141.6+1.21.11 en mod). Le test de capture automatisé de Fabric y passe avec les mêmes chiffres : 2507 blocs, 3 entités, 16 matériaux, GLB de 189 628 octets (5 maillages, 15 images). Le mod de test est remappé par la tâche `:fabric:remapGametestJar`, avec le module `fabric-client-gametest-api-v1` 4.3.5.
+
+Ce que l'essai a révélé :
+- Quilt 0.30.2 fournit Fabric Loader 0.19.5. Le `fabric.mod.json` exigeait ≥ 0.20.1, ce qui refusait le chargement ; la borne est maintenant ≥ 0.17.3, le minimum de Fabric API. Les anciens loaders Fabric entre 0.17.3 et 0.20.0 n'ont pas été essayés.
+- Le module de test client de Fabric API 6.0.11 (Java 25) ne tourne pas sous Quilt et JDK 21 ; le 4.3.5 oui.
+
+Limites : aucun GLB n'a été ouvert dans le viewer (pas de WebGL dans le navigateur intégré), et seul ce scénario de capture a été joué (menus, AFK et sélection manuelle non essayés sous Quilt). Quilt 1.21.11 n'est donc pas déclaré pris en charge.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
