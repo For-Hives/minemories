@@ -12,7 +12,23 @@ repositories {
     mavenCentral()
     maven { url = 'https://maven.fabricmc.net/' }
 }
-loom { accessWidenerPath = file('src/main/resources/minemories.accesswidener') }
+// In-game validation: ./gradlew :fabric:runClientGametest (opens a Minecraft window, isolated user.home).
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'minemories-gametest'
+        enableClientGameTests = true
+        eula = true
+        username = 'MinemoriesTest'
+    }
+}
+loom {
+    accessWidenerPath = file('src/main/resources/minemories.accesswidener')
+    runs.configureEach {
+        // The mod reads settings and the export folder under user.home; keep the developer's own untouched.
+        if (name == 'clientGameTest') vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+    }
+}
 
 def adapted = layout.buildDirectory.dir('adapted-sources')
 def adaptedResources = layout.buildDirectory.dir('adapted-resources')
@@ -34,6 +50,18 @@ def adaptSources = tasks.register('adaptSources') {
         }
         apply from: rootProject.file('adapt.gradle')
         adaptDir(out)
+        // An overlay file that replaces a shared class would silently miss later fixes to it, so the
+        // build records which shared version each one was ported from and fails when that changes.
+        def pinned = new Properties()
+        rootProject.file('overlay/shared-sources.properties').withInputStream { pinned.load(it) }
+        rootProject.fileTree('overlay/java').matching { include '**/*.java' }.each { overlay ->
+            def rel = rootProject.file('overlay/java').toPath().relativize(overlay.toPath()).toString()
+            ['core', 'common'].collect { shared.toPath().resolve("${it}/src/main/java/${rel}").toFile() }.findAll { it.exists() }.each { original ->
+                def sha = java.security.MessageDigest.getInstance('SHA-256').digest(original.bytes).encodeHex().toString()
+                if (pinned.getProperty(rel) != sha)
+                    throw new GradleException("overlay/java/${rel} replaces a shared class that changed (sha256 ${sha}). Port the change into the overlay, then update overlay/shared-sources.properties.")
+            }
+        }
         copy { from(rootProject.file('overlay/java')); into out }
         // Shared resources, plus the 1.21.9+ key category translation (key.category.<namespace>.<path>).
         def res = adaptedResources.get().asFile
