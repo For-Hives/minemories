@@ -6,6 +6,7 @@ import { mkdirSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { isMain, repositoryRoot } from './release-utils.mjs'
 
 const minimumGradleJava = 21
@@ -85,54 +86,58 @@ export function cellState(versions, current) {
 	return versions.includes(current) ? 'current' : 'stale'
 }
 
-export function loaderGrid(matrix, cells, loader) {
-	const planned = matrix.planned ?? []
-	const loaderVersions = new Set(
-		[...matrix.builds, ...planned].filter(b => b.loader === loader).map(b => b.loaderVersion)
-	)
+const byVersion = (a, b) => a.localeCompare(b, undefined, { numeric: true })
+const ansi = { current: '32', stale: '33', todo: '31', planned: '36', none: '2', head: '1' }
+const marks = { current: '✓', stale: '⚠', todo: '✗', planned: '○' }
+
+// One entry per loader version known for a (loader, Minecraft) pair, with its build state:
+// current (built for this mod version), stale (only older builds), todo (configured, not built), planned.
+export function matrixEntries(matrix, cells, loader, minecraft) {
+	const versions = new Set()
+	const planned = new Set()
+	for (const b of matrix.builds) if (b.loader === loader && b.minecraft === minecraft) versions.add(b.loaderVersion)
+	for (const p of matrix.planned ?? [])
+		if (p.loader === loader && p.minecraft === minecraft) {
+			versions.add(p.loaderVersion)
+			planned.add(p.loaderVersion)
+		}
 	for (const key of cells.keys()) {
-		const [l, , loaderVersion] = key.split('|')
-		if (l === loader) loaderVersions.add(loaderVersion)
+		const [l, m, loaderVersion] = key.split('|')
+		if (l === loader && m === minecraft) versions.add(loaderVersion)
 	}
-	const columns = [...loaderVersions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-	const rows = matrix.minecraft.map(minecraft => ({
-		minecraft,
-		configured: [...matrix.builds, ...planned].some(b => b.loader === loader && b.minecraft === minecraft),
-		cells: columns.map(loaderVersion => {
-			const versions = cells.get(cellKey(loader, minecraft, loaderVersion)) ?? []
-			const pinned = matrix.builds.some(
-				b => b.loader === loader && b.minecraft === minecraft && b.loaderVersion === loaderVersion
-			)
-			const plan = planned.find(
-				p => p.loader === loader && p.minecraft === minecraft && p.loaderVersion === loaderVersion
-			)
-			return { loaderVersion, versions, pinned, plan, state: cellState(versions, matrix.version) }
+	return [...versions].sort(byVersion).map(loaderVersion => {
+		const built = cells.get(cellKey(loader, minecraft, loaderVersion))
+		const configured = matrix.builds.some(
+			b => b.loader === loader && b.minecraft === minecraft && b.loaderVersion === loaderVersion
+		)
+		let state = 'todo'
+		if (built?.length) state = cellState(built, matrix.version) === 'current' ? 'current' : 'stale'
+		else if (!configured && planned.has(loaderVersion)) state = 'planned'
+		return { loaderVersion, state }
+	})
+}
+
+export function renderMatrix(matrix, cells, { color = false } = {}) {
+	const paint = (code, text) => (color ? `\u001b[${code}m${text}\u001b[0m` : text)
+	const loaders = [...new Set([...matrix.builds, ...(matrix.planned ?? [])].map(b => b.loader))].sort()
+	const minecraft = [...matrix.minecraft].sort(byVersion).reverse()
+	const rows = minecraft.map(mc => [
+		paint(ansi.head, mc),
+		...loaders.map(loader => {
+			const entries = matrixEntries(matrix, cells, loader, mc)
+			if (!entries.length) return paint(ansi.none, '·')
+			return entries.map(e => paint(ansi[e.state], `${marks[e.state]} ${e.loaderVersion}`)).join('  ')
 		}),
-	}))
-	return { loader, columns, rows }
-}
-
-const symbols = { current: '✓', stale: '⚠', missing: '·' }
-
-function cellLabel(cell, configured) {
-	if (cell.versions.length) return `${symbols[cell.state]} ${cell.versions.join(', ')}`
-	if (cell.pinned) return `${symbols.missing} à compiler`
-	if (cell.plan) return `○ prévu P${cell.plan.priority}`
-	return `${symbols.missing} ${configured ? '—' : 'non configuré'}`
-}
-
-export function renderGrid(grid, current) {
-	const header = ['Minecraft \\ loader', ...grid.columns]
-	const body = grid.rows.map(row => [row.minecraft, ...row.cells.map(cell => cellLabel(cell, row.configured))])
-	const widths = header.map((_, i) => Math.max(...[header, ...body].map(line => line[i].length)))
-	const line = cells => `| ${cells.map((c, i) => c.padEnd(widths[i])).join(' | ')} |`
-	const rule = `|${widths.map(w => '-'.repeat(w + 2)).join('|')}|`
-	return [
-		`${grid.loader.toUpperCase()} (version courante du mod : ${current})`,
-		line(header),
-		rule,
-		...body.map(line),
-	].join('\n')
+	])
+	const header = ['Minecraft', ...loaders.map(l => paint(ansi.head, l))]
+	const width = text => stripVTControlCharacters(text).length
+	const widths = header.map((_, i) => Math.max(...[header, ...rows].map(row => width(row[i]))))
+	const line = row =>
+		row
+			.map((cell, i) => cell + ' '.repeat(widths[i] - width(cell)))
+			.join('   ')
+			.trimEnd()
+	return [paint(ansi.head, `Mod ${matrix.version}`), '', line(header), ...rows.map(line)].join('\n')
 }
 
 export function findBuild(matrix, loader, minecraft) {
@@ -254,12 +259,13 @@ function openArchive() {
 }
 
 function listGrids(matrix, cells) {
-	const loaders = [...new Set(matrix.builds.map(b => b.loader))]
-	console.log(loaders.map(l => renderGrid(loaderGrid(matrix, cells, l), matrix.version)).join('\n\n'))
-	console.log(`\nJAR archivés : ${join(repositoryRoot, ...archiveRoot)}  (bun mod:matrix open pour l’ouvrir)`)
+	const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR
+	const paint = (code, text) => (color ? `\u001b[${code}m${text}\u001b[0m` : text)
+	console.log(renderMatrix(matrix, cells, { color }))
 	console.log(
-		'✓ version courante compilée   ⚠ seulement d’anciennes versions   · rien de compilé   ○ prévu (voir planned)'
+		`\n${paint(ansi.current, '✓ à jour')}  ${paint(ansi.stale, '⚠ ancien')}  ${paint(ansi.todo, '✗ à compiler')}  ${paint(ansi.planned, '○ prévu')}  ${paint(ansi.none, '· rien')}`
 	)
+	console.log(paint(ansi.none, `JAR : bun mod:matrix open  (${join(repositoryRoot, ...archiveRoot)})`))
 }
 
 async function buildMissing(matrix, cells) {

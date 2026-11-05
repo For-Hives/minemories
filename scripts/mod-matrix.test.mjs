@@ -6,11 +6,11 @@ import {
 	gradleArgs,
 	issueFor,
 	jarVersion,
-	loaderGrid,
+	matrixEntries,
 	missingTargets,
 	parseArchiveName,
 	pickJdk,
-	renderGrid,
+	renderMatrix,
 	requireBuildable,
 } from './mod-matrix.mjs'
 
@@ -45,15 +45,30 @@ test('classifies a cell against the current mod version', () => {
 	assert.equal(cellState(['0.9.0', '1.0.0'], '1.0.0'), 'current')
 })
 
-test('renders a grid with built, to-build, not-applicable and unconfigured cells', () => {
+test('derives the build state of each loader version', () => {
+	const cells = new Map([
+		['forge|1.20.1|47.4.26', ['1.0.0-beta.1']],
+		['forge|1.21.1|52.1.19', ['0.9.0']],
+	])
+	const planned = [{ loader: 'forge', minecraft: '1.21.4', loaderVersion: '54.0.1', priority: 2 }]
+	const withPlan = { ...matrix, planned }
+	assert.deepEqual(matrixEntries(withPlan, cells, 'forge', '1.20.1'), [{ loaderVersion: '47.4.26', state: 'current' }])
+	assert.deepEqual(matrixEntries(withPlan, cells, 'forge', '1.21.1'), [{ loaderVersion: '52.1.19', state: 'stale' }])
+	assert.deepEqual(matrixEntries(withPlan, cells, 'forge', '1.21.4'), [{ loaderVersion: '54.0.1', state: 'planned' }])
+	assert.deepEqual(matrixEntries(matrix, new Map(), 'forge', '1.20.1'), [{ loaderVersion: '47.4.26', state: 'todo' }])
+})
+
+test('renders one compact table, newest Minecraft first, with colour only on request', () => {
 	const cells = new Map([['forge|1.20.1|47.4.26', ['1.0.0-beta.1']]])
-	const grid = loaderGrid(matrix, cells, 'forge')
-	assert.deepEqual(grid.columns, ['47.4.26', '52.1.19'])
-	const text = renderGrid(grid, matrix.version)
-	assert.ok(text.includes('✓ 1.0.0-beta.1'))
-	assert.ok(text.includes('· à compiler'))
-	assert.ok(text.includes('non configuré'))
-	assert.ok(text.includes('· —'))
+	const plain = renderMatrix(matrix, cells)
+	const lines = plain.split('\n')
+	assert.equal(lines[0], 'Mod 1.0.0-beta.1')
+	assert.ok(lines[2].startsWith('Minecraft'))
+	assert.ok(lines[3].startsWith('1.21.4'))
+	assert.ok(plain.includes('✓ 47.4.26'))
+	assert.ok(plain.includes('✗ 52.1.19'))
+	assert.ok(!plain.includes('\u001b'))
+	assert.ok(renderMatrix(matrix, cells, { color: true }).includes('\u001b[32m'))
 })
 
 test('lists the pinned targets missing the current version', () => {
@@ -104,13 +119,9 @@ test('names archived JARs so loader, Minecraft and loader versions are readable 
 	assert.equal(parseArchiveName('notes.txt'), null)
 })
 
-test('shows planned targets and carries their note into the issue', () => {
+test('carries the planned note into the issue', () => {
 	const planned = [
 		{ loader: 'forge', minecraft: '1.21.4', loaderVersion: '54.0.1', java: '21', priority: 2, note: 'portage' },
 	]
-	const withPlan = { ...matrix, planned }
-	const grid = loaderGrid(withPlan, new Map(), 'forge')
-	assert.ok(grid.columns.includes('54.0.1'))
-	assert.ok(renderGrid(grid, withPlan.version).includes('○ prévu P2'))
-	assert.ok(issueFor(withPlan, 'forge', '1.21.4').body.includes('priorité 2'))
+	assert.ok(issueFor({ ...matrix, planned }, 'forge', '1.21.4').body.includes('priorité 2'))
 })

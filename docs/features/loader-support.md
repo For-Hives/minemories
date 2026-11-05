@@ -61,7 +61,7 @@ Le téléchargement public par défaut reste NeoForge ; choisir l'archive corres
 
 ## Grille locale des versions compilées
 
-`bun mod:matrix` affiche, pour chaque loader, un tableau Minecraft × version du loader dont chaque case liste les versions du mod déjà compilées (✓ version courante, ⚠ anciennes versions seulement, `·` rien). La configuration est dans `config/mod-matrix.json` (indépendante de `config/mod-targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
+`bun mod:matrix` affiche un seul tableau (Minecraft en lignes, loaders en colonnes) où chaque version de loader est colorée selon son état pour la version courante du mod : ✓ à jour, ⚠ seulement d'anciennes versions, ✗ configurée mais non compilée, ○ prévue, `·` rien. Les couleurs sont coupées hors terminal ou avec `NO_COLOR`. La configuration est dans `config/mod-matrix.json` (indépendante de `config/mod-targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
 
 - `bun mod:matrix build <loader> <minecraft> [versionLoader]` compile la cible avec un JDK 21 (celui de `JAVA_HOME` ou `~/.local/tools/jdk-*`) et archive le JAR dans le dossier unique `build/mod-matrix/` sous le nom `minemories-<mod>-<loader>-mc<minecraft>-<versionLoader>.jar` (`bun mod:matrix open` l’ouvre). Une version de loader autre que celle fixée n'est compilable que si l'entrée déclare `loaderProperty` (c'est le cas des projets 1.20.1 : `-PforgeVersion`, `-PfabricLoaderVersion`).
 - `bun mod:matrix build --missing` compile toutes les cases fixées qui n'ont pas la version courante du mod.
