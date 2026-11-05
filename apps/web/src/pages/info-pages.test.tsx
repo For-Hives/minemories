@@ -8,6 +8,7 @@ import { LegalPage } from './ContentPages'
 import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
 import { InstallationStep } from './InstallationSteps'
+import { targetFor } from './installation-state'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
@@ -42,7 +43,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 	fireEvent.click(screen.getByRole('link', { name: 'Installe le mod' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer le mod Minemories')
-	expect(screen.getByRole('button', { name: 'Minecraft Launcher' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: '1.21.1' })).toBeTruthy()
 	expect(screen.getByRole('button', { name: /Télécharger le mod/ })).toBeTruthy()
 	expect(screen.getByText('0 / 6 étapes cochées')).toBeTruthy()
 	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
@@ -83,12 +84,12 @@ test('guides describe the current M screen labels and its advanced settings tabs
 })
 
 test('the first memory step names the in-game button and the loader note points to other JARs', () => {
-	mountEnglish(<InstallationStep step={5} system="linux" launcher="manuel" />)
+	mountEnglish(<InstallationStep step={5} system="linux" target={targetFor('1.21.1', 'neoforge')} />)
 	expect(screen.getByText('Take a memory')).toBeTruthy()
 	expect(document.body.textContent).toContain('You can turn them off with “Auto memories” in M.')
 	cleanup()
-	mountEnglish(<InstallationStep step={0} system="linux" launcher="manuel" />)
-	expect(document.body.textContent).toContain('Fabric and Forge JARs (the Fabric JAR also runs under Quilt)')
+	mountEnglish(<InstallationStep step={0} system="linux" target={targetFor('1.21.1', 'neoforge')} />)
+	expect(document.body.textContent).toContain('Every published version, and the Quilt note, are on')
 	expect(screen.getByRole('link', { name: 'Mod versions' }).getAttribute('href')).toBe('/versions')
 })
 

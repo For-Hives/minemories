@@ -23,6 +23,11 @@ test('a mod change runs the mod gate only', () => {
 	only(['mod/minemories/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
 	only(['config/mod-targets.json'], 'web', 'mod')
 	only(['scripts/package-mod.mjs'], 'mod')
+	only(['config/mod-matrix.json', 'scripts/mod-matrix.mjs'], 'mod')
+	only(
+		['mod/minemories-1.19.2/forge/build.gradle', 'mod/minemories/core/src/main/java/dev/minemories/core/GlbScene.java'],
+		'mod'
+	)
 	only(['.github/workflows/mod-release.yml'], 'mod')
 })
 test('documentation alone runs no gate', () => {

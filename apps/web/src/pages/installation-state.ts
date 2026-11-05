@@ -1,39 +1,48 @@
+import { type LoaderTarget, loaderTargets } from './mod-releases'
+
 export type System = 'windows' | 'mac' | 'linux'
-export type Launcher = 'manuel' | 'curseforge' | 'modrinth' | 'autre'
 export interface GuideState {
 	system: System
-	launcher: Launcher
-	name: string
+	minecraft: string
+	loader: string
 	step: number
 	done: number[]
-	reduceMotion: boolean
 }
 
-export const guideStorageKey = 'minemories-installation-v1'
+export const guideStorageKey = 'minemories-installation-v2'
+// NeoForge 1.21.1 is the combination the written walkthrough and its screenshots were validated on.
 export const defaults: GuideState = {
 	system: 'windows',
-	launcher: 'manuel',
-	name: '',
+	minecraft: '1.21.1',
+	loader: 'neoforge',
 	step: 0,
 	done: [],
-	reduceMotion: false,
+}
+
+/** Loaders published for a Minecraft version, in config/mod-targets.json order. */
+export function loadersFor(minecraft: string): LoaderTarget[] {
+	return loaderTargets.filter(target => target.minecraft === minecraft)
+}
+/** The target a choice points to; a loader missing for that version falls back to the first one published. */
+export function targetFor(minecraft: string, loader: string): LoaderTarget {
+	const candidates = loadersFor(minecraft)
+	const found = candidates.find(target => target.loader === loader) ?? candidates[0]
+	return found ?? (loaderTargets[0] as LoaderTarget)
 }
 
 export function readGuide(): GuideState {
 	try {
 		const data = JSON.parse(localStorage.getItem(guideStorageKey) ?? 'null')
 		if (!data || typeof data !== 'object') return defaults
+		const target = targetFor(String(data.minecraft), String(data.loader))
 		return {
 			system: ['windows', 'mac', 'linux'].includes(data.system) ? data.system : defaults.system,
-			launcher: ['manuel', 'curseforge', 'modrinth', 'autre'].includes(data.launcher)
-				? data.launcher
-				: defaults.launcher,
-			name: typeof data.name === 'string' ? data.name.slice(0, 40) : '',
+			minecraft: target.minecraft,
+			loader: target.loader,
 			step: Number.isInteger(data.step) && data.step >= 0 && data.step < 6 ? data.step : 0,
 			done: Array.isArray(data.done)
 				? [...new Set<number>(data.done.filter((n: unknown) => Number.isInteger(n) && Number(n) >= 0 && Number(n) < 6))]
 				: [],
-			reduceMotion: data.reduceMotion === true,
 		}
 	} catch {
 		return defaults

@@ -1,8 +1,9 @@
 // Local tool: shows which mod JARs exist per loader x Minecraft version x loader version,
 // builds a missing cell, or prepares the GitHub issue for a combination that is not set up yet.
-// Usage: bun mod:matrix [list | open | build <loader> <mc> [loaderVersion] | build --missing | issue <loader> <mc> [loaderVersion] [--create]]
+// Usage: bun mod:matrix [list | open | build <loader> <mc> [loaderVersion] | build --missing | issue <loader> <mc> [loaderVersion] [--create] | ci]
+// `ci` prints the cells to build in the quality workflow.
 import { spawnSync } from 'node:child_process'
-import { mkdirSync } from 'node:fs'
+import { appendFileSync, mkdirSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -138,6 +139,26 @@ export function renderMatrix(matrix, cells, { color = false } = {}) {
 			.join('   ')
 			.trimEnd()
 	return [paint(ansi.head, `Mod ${matrix.version}`), '', line(header), ...rows.map(line)].join('\n')
+}
+
+/** Java that compiles a Minecraft version: 17 before 1.21, 21 from there on. */
+export function javaFor(minecraft) {
+	return Number(minecraft.split('.')[1]) >= 21 ? '21' : '17'
+}
+
+/** Cells the `mod` job does not already build (it builds the 1.21.1 root): one CI job each. */
+export function ciCells(matrix) {
+	return matrix.builds
+		.filter(build => build.dir !== 'mod/minemories')
+		.map(({ loader, minecraft, loaderVersion, dir, project }) => ({
+			id: `${loader}-mc${minecraft}`,
+			loader,
+			minecraft,
+			loaderVersion,
+			dir,
+			project,
+			java: javaFor(minecraft),
+		}))
 }
 
 export function findBuild(matrix, loader, minecraft) {
@@ -281,9 +302,16 @@ function prepareIssue(matrix, [loader, minecraft, requested], create) {
 	else console.log('\n(Ajoute --create pour l’ouvrir sur GitHub.)')
 }
 
+function printCiCells(matrix) {
+	const cells = JSON.stringify({ include: ciCells(matrix) })
+	if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `cells=${cells}\n`)
+	console.log(cells)
+}
+
 export async function main(argv) {
 	const matrix = await readMatrix()
 	const [command = 'list', ...rest] = argv
+	if (command === 'ci') return printCiCells(matrix)
 	const flags = rest.filter(a => a.startsWith('--'))
 	const [loader, minecraft, requested] = rest.filter(a => !a.startsWith('--'))
 	const cells = await scanCells(matrix)

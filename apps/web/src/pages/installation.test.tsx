@@ -33,8 +33,11 @@ function step(name: string) {
 test('guides a beginner from exact loader versions through a local first capture', async () => {
 	mountGuide()
 	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
+	expect(screen.queryByLabelText('Ton prénom (facultatif)')).toBeNull()
+	expect(screen.queryByLabelText('Réduire les animations')).toBeNull()
+	expect(screen.queryByRole('button', { name: 'CurseForge' })).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer NeoForge')
+	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer le loader')
 	expect(document.activeElement).toBe(screen.getByRole('heading', { level: 3 }))
 	expect(screen.getByRole('link', { name: 'l’installateur NeoForge 21.1.248' }).getAttribute('href')).toContain(
 		'/21.1.248/'
@@ -54,43 +57,48 @@ test('guides a beginner from exact loader versions through a local first capture
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 })
 
-test('personalizes, resumes checked steps and resets all choices', () => {
+test('the version and loader choices rewrite every step and resume after a reload', () => {
 	const view = mountGuide()
-	fireEvent.change(screen.getByLabelText('Ton prénom (facultatif)'), { target: { value: 'Mae' } })
 	fireEvent.click(screen.getByRole('button', { name: 'macOS' }))
-	fireEvent.click(screen.getByLabelText('Réduire les animations'))
+	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
+	expect(screen.getByText('Minecraft Java Edition 1.19.2 + Forge 43.5.2')).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Fabric' }))
+	expect(screen.getByText('Minecraft Java Edition 1.19.2 + Fabric 0.20.1')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByText('À toi de jouer, Mae')).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'Java 17 (Temurin, site officiel)' })).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'l’installateur Fabric 0.20.1' }).getAttribute('href')).toBe(
+		'https://fabricmc.net/use/installer/'
+	)
+	expect(screen.getByText(/Fabric Loader 0\.20\.1/)).toBeTruthy()
 	expect(screen.getByText('~/Library/Application Support/minecraft-minemories')).toBeTruthy()
+	expect(screen.getByText(/CurseForge, Modrinth App ou un autre launcher/)).toBeTruthy()
+	step('Télécharger le mod')
+	expect(screen.getByText(/pas encore publié dans les catalogues CurseForge et Modrinth/)).toBeTruthy()
+	expect(screen.getByRole('link', { name: /Fabric API 0\.77\.0\+1\.19\.2/ })).toBeTruthy()
+	step('Ranger le fichier')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.19.2.jar')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('fabric-api-0.77.0+1.19.2.jar')
 	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('1')
 	view.unmount()
 	mountGuide()
-	expect(screen.getByLabelText<HTMLInputElement>('Ton prénom (facultatif)').value).toBe('Mae')
 	expect(screen.getByRole('button', { name: 'macOS' }).getAttribute('aria-pressed')).toBe('true')
-	expect(screen.getByLabelText<HTMLInputElement>('Réduire les animations').checked).toBe(true)
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer NeoForge')
+	expect(screen.getByRole('button', { name: '1.19.2' }).getAttribute('aria-pressed')).toBe('true')
+	expect(screen.getByRole('button', { name: 'Fabric' }).getAttribute('aria-pressed')).toBe('true')
 	fireEvent.click(screen.getByRole('button', { name: 'Recommencer et effacer mes choix' }))
-	expect(screen.getByLabelText<HTMLInputElement>('Ton prénom (facultatif)').value).toBe('')
+	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
 	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
 })
 
-test.each([
-	['CurseForge', /Create Custom Profile/, /Open Folder/],
-	['Modrinth App', /compte Minecraft/, /icône de dossier/],
-	['Un autre launcher', /Prism Launcher/, /dossier de l’instance/],
-] as const)(
-	'adapts local JAR installation to %s without claiming catalogue publication',
-	(launcher, loaderText, folderText) => {
-		mountGuide()
-		fireEvent.click(screen.getByRole('button', { name: launcher }))
-		step('Installer NeoForge')
-		expect(screen.getByText(loaderText)).toBeTruthy()
-		step('Ranger le fichier')
-		expect(screen.getByText(folderText)).toBeTruthy()
-		fireEvent.click(screen.getByRole('button', { name: 'Minecraft Launcher' }))
-		expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
-	}
-)
+test('a Forge guide links its own installer and a loader missing for a version falls back', () => {
+	mountGuide()
+	fireEvent.click(screen.getByRole('button', { name: '1.18.2' }))
+	expect(screen.getByText('Minecraft Java Edition 1.18.2 + Forge 40.3.12')).toBeTruthy()
+	expect(screen.queryByRole('button', { name: 'Fabric' })).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
+	expect(screen.getByRole('link', { name: 'l’installateur Forge 40.3.12' }).getAttribute('href')).toBe(
+		'https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.2-40.3.12/forge-1.18.2-40.3.12-installer.jar'
+	)
+})
 
 test('copies the first capture command and gives a manual fallback when clipboard access fails', async () => {
 	const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'))
@@ -129,23 +137,17 @@ test('ignores malformed stored state and remains usable if storage is blocked', 
 	expect(readGuide().step).toBe(0)
 	localStorage.setItem(
 		guideStorageKey,
-		JSON.stringify({
-			system: 'other',
-			launcher: 'other',
-			step: 90,
-			name: false,
-			done: [0, 0, -1, '1', 5, 6],
-			reduceMotion: true,
-		})
+		JSON.stringify({ system: 'other', minecraft: '1.2.3', loader: 'other', step: 90, done: [0, 0, -1, '1', 5, 6] })
 	)
 	expect(readGuide()).toMatchObject({
 		system: 'windows',
-		launcher: 'manuel',
+		minecraft: '1.21.1',
+		loader: 'neoforge',
 		step: 0,
-		name: '',
 		done: [0, 5],
-		reduceMotion: true,
 	})
+	localStorage.setItem(guideStorageKey, JSON.stringify({ minecraft: '1.18.2', loader: 'fabric' }))
+	expect(readGuide()).toMatchObject({ minecraft: '1.18.2', loader: 'forge' })
 	vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
 		throw new Error('blocked')
 	})

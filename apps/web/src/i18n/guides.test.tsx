@@ -45,35 +45,36 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 		expect(screen.getAllByRole('link', { name: 'Installer le mod' }).length).toBeGreaterThan(0)
 	}
 )
-test('all launchers and steps use English copy, preserving filenames, versions and command payloads', async () => {
+test('every platform, version, loader and step uses English copy, preserving filenames and command payloads', async () => {
 	mount(<InstallationPage />)
-	for (const launcher of ['Minecraft Launcher', 'CurseForge', 'Modrinth App', 'Another launcher']) {
-		fireEvent.click(screen.getByRole('button', { name: launcher }))
-		for (const step of [
-			'Prepare',
-			'Install NeoForge',
-			'Download the mod',
-			'Place the file',
-			'Check in game',
-			'Create a memory',
-		]) {
-			fireEvent.click(screen.getByRole('button', { name: step }))
-			expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
+	for (const system of ['Windows', 'macOS', 'Linux'])
+		for (const version of ['1.21.11', '1.18.2']) {
+			fireEvent.click(screen.getByRole('button', { name: system }))
+			fireEvent.click(screen.getByRole('button', { name: version }))
+			for (const step of [
+				'Prepare',
+				'Install the loader',
+				'Download the mod',
+				'Place the file',
+				'Check in game',
+				'Create a memory',
+			]) {
+				fireEvent.click(screen.getByRole('button', { name: step }))
+				expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
+			}
 		}
-	}
 	expect(screen.getByText('/minemories export 16')).toBeTruthy()
-	await waitFor(() => expect(localStorage.getItem(guideStorageKey)).toContain('"launcher":"autre"'))
-	expect(localStorage.getItem(guideStorageKey)).not.toContain('Another launcher')
+	await waitFor(() => expect(localStorage.getItem(guideStorageKey)).toContain('"minecraft":"1.18.2"'))
 })
-test('switching language preserves checked steps, launcher and personalized name', async () => {
+test('switching language preserves the chosen version, loader and checked steps', async () => {
 	mount(<InstallationPage />, 'fr')
-	fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Mae' } })
-	fireEvent.click(screen.getByRole('button', { name: 'CurseForge' }))
+	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Fabric' }))
 	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer NeoForge')
+	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer le loader')
 	fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Install NeoForge')
-	expect(screen.getByText('Your turn, Mae')).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'CurseForge' }).getAttribute('aria-pressed')).toBe('true')
+	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Install the loader')
+	expect(screen.getByRole('button', { name: 'Fabric' }).getAttribute('aria-pressed')).toBe('true')
+	expect(screen.getByRole('button', { name: '1.19.2' }).getAttribute('aria-pressed')).toBe('true')
 	await waitFor(() => expect(JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}').done).toEqual([0]))
 })
