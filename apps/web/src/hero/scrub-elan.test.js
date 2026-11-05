@@ -342,7 +342,51 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	let worst = 0
 	for (const w of changes) worst = Math.max(worst, changes.filter(x => x >= w && x < w + 1000).length)
 	check('S26', 'cuts and leaps together: at most 2 per second', worst <= 2, `${changes.length} changes, worst window ${worst}`)
-	check('S26', 'never over the cap', Math.max(...r.samples.filter(s => s.mode === null).map(s => Math.abs(s.rate))) <= SCRUB.elan.maxRate + 0.001 || true)
+	let ratePeak = 0
+	r.samples.slice(1).forEach((s, i) => {
+		const prev = r.samples[i]
+		const cut = SCRUB.cuts.some(c => prev.t < c !== s.t < c)
+		if (!cut && s.mode === null && prev.mode === null && !r.events.some(e => e.w === s.w && e.type === 'jump')) ratePeak = Math.max(ratePeak, Math.abs(s.rate))
+	})
+	check('S26', 'never over the cap (leap and cut samples excluded)', ratePeak <= SCRUB.elan.maxRate + 0.001, `peak ${ratePeak.toFixed(3)}x`)
+
+	// A leap, then a fast hand the other way at once: no second leap within 0.5 s (day -> night -> day in a blink), and no slide into the passage either.
+	const back = mk({ intent: 'pause', autoStart: false, t0: 27.5 })
+	const leapsB = []
+	const rb = sim(back, {
+		ms: 4000,
+		step: 4,
+		start: 2000,
+		inputs: stream(100, 40, 2100, 1200),
+		onTick: (w, s) => {
+			if (s.mode === 'cover') {
+				leapsB.push(w)
+				s.release(w)
+				if (leapsB.length === 1) s.fling({ pxPerSec: -2500, at: w })
+			}
+		},
+	})
+	const gapB = leapsB.length > 1 ? leapsB[1] - leapsB[0] : Infinity
+	check('S26', 'a leap back right after a leap waits 0.5 s', gapB >= 490, `${leapsB.length} leaps, gap ${gapB} ms`)
+	const slid = rb.samples.filter(s => s.t > SCRUB.lapse[0] && s.t < SCRUB.lapse[1])
+	check('S26', 'meanwhile the film waits at the edge instead of sliding into the passage', slid.length === 0, `${slid.length} samples inside`)
+
+	// A finger lifted during a leap's cover keeps its throw.
+	const fl = mk({ intent: 'pause', autoStart: false, t0: 25 })
+	let thrown = null
+	sim(fl, {
+		ms: 3000,
+		step: 4,
+		start: 2000,
+		inputs: stream(100, 40, 2100, 900),
+		onTick: (w, s) => {
+			if (s.mode === 'cover' && thrown === null) {
+				thrown = s.fling({ pxPerSec: 1500, at: w })
+				s.release(w + 16)
+			}
+		},
+	})
+	check('S26', 'a finger lifted during a leap keeps its throw', thrown === true)
 
 	// Slowly into the passage: no leap, the v10 guard holds the sky.
 	const slow = placed(27)
@@ -410,8 +454,11 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	const sc = placed(15)
 	const { samples } = sim(sc, { ms: 2000, step: 4, inputs: [{ at: 100, fling: 1400 }] })
 	const dt = samples.at(-1).t - 15
-	const want = Math.min(1400 * k, SCRUB.elan.maxRate) * (SCRUB.elan.flingCoastMs / 1000 / 3)
-	check('S24', 'a finger thrown at 1400 px/s (5x) coasts at its speed over 0.9 s (+-3 %)', near(dt, want, 0.03 * want), `${dt.toFixed(4)} (${want.toFixed(4)})`)
+	const B = SCRUB.elan.boost
+	const x = Math.min(1, Math.max(0, (1400 - B.fromPxS) / (B.toPxS - B.fromPxS)))
+	const boost = 1 + (B.max - 1) * x * x * (3 - 2 * x)
+	const want = Math.min(1400 * k * boost, SCRUB.elan.maxRate) * (SCRUB.elan.flingCoastMs / 1000 / 3)
+	check('S24', 'a finger thrown at 1400 px/s coasts at its boosted speed (the same as its drag) over 0.9 s (+-3 %)', near(dt, want, 0.03 * want), `${dt.toFixed(4)} (${want.toFixed(4)})`)
 	check('S24', 'under the cap', Math.max(...samples.map(s => s.rate)) <= SCRUB.elan.maxRate + 0.001)
 	const slow = placed(15)
 	check('S24', 'a slow lift does not throw', slow.fling({ pxPerSec: 200, at: 10 }) === false)

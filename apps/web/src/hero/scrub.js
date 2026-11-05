@@ -184,6 +184,7 @@ export function createFilmScrub({
 	let barrier = 0
 	let memory = null // { t, intent }: where the visitor left the film
 	let leapTo = 0 // v13b: where a covered leap over the day/night passage lands
+	let lastLeap = null // v13b: { dir, at } of the last leap
 	let recent = [] // v13b: the last inputs of the gesture ({ at, px }), for the boost of a wheel spun fast
 	let quiet = false // after a return: the gesture that asked for it is still sending its momentum
 	let quietAt = -Infinity // wall ms of the last input of that gesture
@@ -270,13 +271,26 @@ export function createFilmScrub({
 			if (elan && lapsePhase && Math.abs(m) / dtS > E.leapMinRate && !inLapse(t)) {
 				const into = m > 0 ? t < C.lapse[0] && t + m >= C.lapse[0] : t > C.lapse[1] && t + m <= C.lapse[1]
 				crossLog = crossLog.filter((x) => now - x < C.cutWindowMs)
-				if (into && crossLog.length < C.cutMax) {
+				// A leap back over the passage right after one the other way would swap day and night twice within a blink: the reversal rule holds for leaps too.
+				const againstLast = lastLeap && Math.sign(m) !== lastLeap.dir && now - lastLeap.at < C.reversalMinMs
+				if (into && crossLog.length < C.cutMax && !againstLast) {
 					leapTo = m > 0 ? C.lapse[1] + E.leapGap : C.lapse[0] - E.leapGap
+					lastLeap = { dir: Math.sign(m), at: now }
 					noteDir(Math.sign(m), now)
 					mode = 'cover'
 					coverFor = 'leap'
 					events.push({ type: 'leap', phase: 'cover', from: t, to: leapTo })
 					return
+				}
+				if (into) {
+					// No leap allowed yet (the window of changes is full, or it would undo the last one): the film waits at the edge of the passage, the excess is
+					// dropped (not banked), and the leap comes as soon as it is allowed. Sliding in instead would cost 7 s at 1 cycle per second under a spinning wheel.
+					const edge = m > 0 ? C.lapse[0] - 1e-3 : C.lapse[1] + 1e-3
+					const kept = m > 0 ? Math.max(0, edge - t) : Math.min(0, edge - t)
+					stats.dropped += Math.abs(m - kept)
+					stats.drops++
+					m = kept
+					if (m === 0) return
 				}
 			}
 			// Sky: at most `lapseMaxCycles` day/night cycles per wall second while driving.
@@ -539,6 +553,7 @@ export function createFilmScrub({
 		mode = null
 		coverFor = null
 		quiet = false
+		lastLeap = null
 		lastDir = 0
 		refusingReversal = false
 		detent = 0
@@ -603,7 +618,8 @@ export function createFilmScrub({
 		/** Elan: a finger thrown on lift at `pxPerSec` (> 0 forward): it coasts. Returns false when it does not throw. */
 		fling({ pxPerSec = 0, at } = {}) {
 			const when = Math.max(Number.isFinite(at) ? at : (lastNow ?? 0), lastNow ?? 0)
-			if (!elan || isReduced || mode || g >= 1 || !Number.isFinite(pxPerSec) || Math.abs(pxPerSec) < E.flingMinPxPerS) return false
+			const leaping = mode === 'cover' && coverFor === 'leap' // a leap does not stop the hand (input() keeps it too)
+			if (!elan || isReduced || (mode && !leaping) || g >= 1 || !Number.isFinite(pxPerSec) || Math.abs(pxPerSec) < E.flingMinPxPerS) return false
 			if (armed) {
 				// A forward throw from the arrival state is the flick (a short fast swipe may not have gathered its 24 px yet); a backward one takes the film in hand.
 				if (pxPerSec > 0 && t < siteStart - F.keepMin) {
@@ -612,7 +628,7 @@ export function createFilmScrub({
 				}
 				armed = false
 			}
-			const rate = clamp(pxPerSec * k, -driveMax, driveMax)
+			const rate = clamp(pxPerSec * k * boostOf(pxPerSec), -driveMax, driveMax) // the same boost as the drag: the film does not drop at the lift
 			addPulse((rate * (E.flingCoastMs / 1000)) / 3, E.flingCoastMs, when) // starts at the finger's speed, covers a third of speed x coast
 			return true
 		},
@@ -848,14 +864,18 @@ export function createFilmScrub({
 			recent = recent.filter((r) => when - r.at <= E.boost.windowMs && Math.sign(r.px) === Math.sign(px))
 			recent.push({ at: when, px })
 			const speed = recent.reduce((a, r) => a + Math.abs(r.px), 0) / (E.boost.windowMs / 1000)
-			const x = clamp((speed - E.boost.fromPxS) / (E.boost.toPxS - E.boost.fromPxS), 0, 1)
-			const boost = 1 + (E.boost.max - 1) * x * x * (3 - 2 * x)
-			addPulse(px * k * boost, coastOf(px, source), when)
+			addPulse(px * k * boostOf(speed), coastOf(px, source), when)
 			lastActive = Math.max(lastActive, when)
 			return
 		}
 		slews.push({ px, start: when, end: when + C.slewMs })
 		lastActive = Math.max(lastActive, when + C.slewMs)
+	}
+
+	// v13b: the gain of a hand moving at `pxPerS` (1 up to fromPxS, E.boost.max from toPxS, smooth in between).
+	function boostOf(pxPerS) {
+		const x = clamp((Math.abs(pxPerS) - E.boost.fromPxS) / (E.boost.toPxS - E.boost.fromPxS), 0, 1)
+		return 1 + (E.boost.max - 1) * x * x * (3 - 2 * x)
 	}
 
 	function startFlick(when) {

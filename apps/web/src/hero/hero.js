@@ -1428,9 +1428,10 @@ export function mountHero(host) {
 			setTimeout(() => root.classList.remove('is-diving'), 700)
 		}
 		await scene.nextFrame()
-		if (run === coverRun) coverRun = 0
 		if (!covered) veil.classList.remove('is-on')
 		else await releaseFilmFrame()
+		// Only now: a next cover (a leap right after another) must not take the copy back to full opacity in the middle of this fade.
+		if (run === coverRun) coverRun = 0
 	}
 
 	// Moves the clock to `now`, handles what it reports and shows the position.
@@ -1517,7 +1518,8 @@ export function mountHero(host) {
 				scene.setSiteBlend(0)
 				blendOn = false
 			}
-			if (!reduced()) scene.setTime(t)
+			// v13: the scene does not prepare the next stages while the hand drives the film fast (its hitch was only hidden by playback at 1x).
+			if (!reduced()) scene.setTime(t, { fast: Math.abs(rate ?? 0) > 1.5 })
 		} else {
 			if (!blendOn && scene.time !== siteStart) scene.setTime(siteStart)
 			site.blend(g)
@@ -1764,7 +1766,7 @@ export function mountHero(host) {
 			g.lastY = g.y
 		}
 		if (g.axis !== 'v') return
-		const px = g.lastY - t.clientY // a finger moving up goes forward, 1:1
+		const px = g.lastY - t.clientY // a finger moving up goes forward (1:1, with the boost of a fast hand, scrub.js)
 		g.lastY = t.clientY
 		lastGestureAt = performance.now()
 		// v13: the last 100 ms of the move give the speed of the throw on lift.

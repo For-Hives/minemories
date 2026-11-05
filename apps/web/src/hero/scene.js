@@ -6776,7 +6776,7 @@ export function mount(target, opts = {}) {
 		 * v10: the film time, set by the host in `mode: 'external'` (the scene never advances it). |dt| <= 1 s is continuous (the `beat` and `cue` events carry `direction`, `seek: false`),
 		 * anything else is a jump (`seek: true`). A stop (`hold`) is not touched by it. The picture for `t` is rendered on the next frame (probe.renderedT === t).
 		 */
-		setTime(value) {
+		setTime(value, { fast = false } = {}) {
 			if (disposed) return
 			const next = clampT(value)
 			if (next === t) return
@@ -6784,8 +6784,8 @@ export function mount(target, opts = {}) {
 			if (Math.abs(next - t) > 1) seeked = true
 			wrapped = false
 			const now = performance.now()
-			const wallS = (now - lastTimeChangeAt) / 1000
-			if (wallS > 0 && wallS < 0.25 && Math.abs(next - t) / wallS > 1.5) drivenFastUntil = now + 600
+			// The host says when the hand drives the film fast (its clock's rate): measuring it here from the spacing of the calls tripped on frame jitter at 1x.
+			if (fast) drivenFastUntil = now + 600
 			t = next
 			tTarget = next
 			lastTimeChangeAt = now
