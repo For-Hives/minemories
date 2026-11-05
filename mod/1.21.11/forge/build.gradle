@@ -12,6 +12,11 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 // `-PforgeVersion=<x>` builds against another Forge version (scripts/mod-matrix.mjs).
 def loaderVersion = findProperty('forgeVersion') ?: '61.2.5'
 
+// In-game validation: ./gradlew :forge:runClient -PgameTest=true (opens a Minecraft window, isolated
+// user.home). FG7 cannot run two mods at once, so the test mod is compiled into this mod's own folder
+// and declared by a second [[mods]] entry in the same mods.toml. Without the property nothing changes.
+def gameTest = findProperty('gameTest') == 'true'
+
 minecraft {
     mappings channel: 'official', version: '1.21.11'
     accessTransformers.from('src/main/resources/META-INF/accesstransformer.cfg')
@@ -19,6 +24,10 @@ minecraft {
         client {
             workingDir.set(layout.buildDirectory.dir('run'))
             mods { minemories { source sourceSets.main } }
+            if (gameTest) {
+                systemProperty 'minemories.gametest', 'true'
+                systemProperty 'user.home', layout.buildDirectory.dir('gametest-home').get().asFile.absolutePath
+            }
         }
     }
 }
@@ -33,6 +42,10 @@ repositories {
 sourceSets.main.java.destinationDirectory = layout.buildDirectory.dir('resources/main')
 sourceSets.main.java.srcDir rootProject.layout.buildDirectory.dir('adapted-sources')
 sourceSets.main.resources.srcDir rootProject.layout.buildDirectory.dir('adapted-resources')
+if (gameTest) {
+    sourceSets.main.java.srcDir 'src/gametest/java'
+    sourceSets.main.java.srcDir '../gametest-common/java'
+}
 tasks.named('compileJava') { dependsOn ':adaptSources' }
 tasks.named('processResources') { dependsOn ':adaptSources' }
 
@@ -47,6 +60,9 @@ tasks.withType(ProcessResources).configureEach {
     var props = [version: project.version]
     inputs.properties props
     filesMatching('META-INF/mods.toml') { expand props }
+    if (gameTest) doLast {
+        file("${destinationDir}/META-INF/mods.toml").append(file('src/gametest/mods-gametest.toml').text)
+    }
 }
 tasks.named('jar') {
     manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json')
