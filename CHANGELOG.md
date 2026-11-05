@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.35.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.34.0-beta.1...mod-v0.35.0-beta.1) (2026-11-05)
+
+### Fonctionnalités
+
+* **mod:** affichage compact et coloré de mod:matrix ([8621459](https://github.com/For-Hives/minemories/commit/8621459ef6607cee14a5b493e905afdd4ff0fadd))
+* **mod:** cibles prévues par priorité dans mod:matrix d'après les versions des modpacks ([140a217](https://github.com/For-Hives/minemories/commit/140a217badcc077b1882a95da4b97f829206f42b))
+* **mod:** porter le mod Fabric sur Minecraft 1.19.2 (API de rendu 0.77, test en jeu passé) ([f820c60](https://github.com/For-Hives/minemories/commit/f820c604cc0d30982a467afa182550947bbcc25c))
+* **mod:** porter le mod Fabric sur Minecraft 1.21.11 (compile, non testé en jeu) ([c75a62c](https://github.com/For-Hives/minemories/commit/c75a62c6eaf5074e2f969e9817e3df3b4d7daf21))
+* **mod:** porter le mod Forge sur Minecraft 1.19.2 avec une couche de compat GUI partagée (test en jeu passé) ([3696a60](https://github.com/For-Hives/minemories/commit/3696a60beb8e444b62b1fd23d90bb9c47057874a))
+* **mod:** porter le mod Forge sur Minecraft 1.21.11 avec ForgeGradle 7 (compile, test auto non fonctionnel) ([262c850](https://github.com/For-Hives/minemories/commit/262c850fb90cba9cfa02b7414d9afcb76c2b859e))
+* **mod:** porter le mod NeoForge sur Minecraft 1.21.11 (compile, test en jeu passé) ([a346285](https://github.com/For-Hives/minemories/commit/a3462850ca305eb7b2c94abc6d3f979c40a3db06))
+
+### Corrections
+
+* **mod:** corriger les mixins et fabric.mod.json de 1.21.11, ajouter un test en jeu de la capture ([8539029](https://github.com/For-Hives/minemories/commit/8539029b98b8dcaeeb65b5f5e030165a1a685439))
+
+### Documentation
+
+* **mod:** documenter le chargement du JAR Fabric 1.21.11 sous Quilt 0.30.2 et abaisser la borne fabricloader à 0.17.3 ([616a242](https://github.com/For-Hives/minemories/commit/616a242677801c1896a07b058dc21dd84c15365b))
+* **mod:** écart mesuré entre les sources 1.21.1 et Minecraft 1.21.11 ([9db0a39](https://github.com/For-Hives/minemories/commit/9db0a3910e044c9426bf4d7b57fb6f55df3eb46a))
+
 ## [0.34.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.33.0-beta.1...mod-v0.34.0-beta.1) (2026-11-05)
 
 ### Fonctionnalités
