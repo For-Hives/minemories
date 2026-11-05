@@ -59,7 +59,7 @@ const footerPages = [
 	{ to: '/decouvrir', label: 'Discover' },
 	{ to: '/explorer', label: 'Public gallery' },
 	{ to: '/blog', label: 'Blog' },
-	{ to: '/pricing', label: 'Pricing' },
+	// { to: '/pricing', label: 'Pricing' }, // TEMPORARILY DISABLED
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
 	{ to: '/legal', label: 'Legal notice' },

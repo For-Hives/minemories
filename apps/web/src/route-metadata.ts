@@ -92,14 +92,15 @@ const metadataMessages: PageMetadata[] = [
 		indexable: true,
 		language: 'fr',
 	},
-	{
-		path: '/pricing',
-		title: 'Snapshots and long-term cloud — Minemories',
-		description:
-			'Estimate storage for your captures. Payments are disabled and the commercial offer remains unconfirmed.',
-		indexable: true,
-		language: 'fr',
-	},
+	// TEMPORARILY DISABLED: pricing page
+	// {
+	// 	path: '/pricing',
+	// 	title: 'Snapshots and long-term cloud — Minemories',
+	// 	description:
+	// 		'Estimate storage for your captures. Payments are disabled and the commercial offer remains unconfirmed.',
+	// 	indexable: true,
+	// 	language: 'fr',
+	// },
 	{
 		path: '/privacy',
 		title: 'Privacy — Minemories',

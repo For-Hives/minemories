@@ -111,9 +111,11 @@ export function MarketingPage() {
 				<Link to="/decouvrir" className={buttonOutline}>
 					{t('All paths')}
 				</Link>
+				{/* TEMPORARILY DISABLED: pricing link
 				<Link to="/pricing" className={buttonOutline}>
 					{t('Plan my budget')}
 				</Link>
+				*/}
 			</div>
 		</ContentLayout>
 	)

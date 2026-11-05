@@ -11,7 +11,7 @@ const publicRoutes = new Set([
 	'/open-source',
 	'/nostalgie',
 	'/partager',
-	'/pricing',
+	// '/pricing', // TEMPORARILY DISABLED
 	'/privacy',
 	'/terms',
 	'/legal',

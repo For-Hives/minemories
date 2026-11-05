@@ -10,7 +10,7 @@ import { DiscoveryPage, ExplorerPage, MarketingPage } from './pages/DiscoveryPag
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
-import { PricingPage } from './pages/PricingPage'
+// import { PricingPage } from './pages/PricingPage' // TEMPORARILY DISABLED
 import { ReleasesPage } from './pages/ReleasesPage'
 import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
 
@@ -67,9 +67,7 @@ export function renderPage(path: string) {
 		case '/partager':
 			content = <MarketingPage />
 			break
-		case '/pricing':
-			content = <PricingPage />
-			break
+		// TEMPORARILY DISABLED: case '/pricing': content = <PricingPage />
 		case '/privacy':
 			content = <LegalPage kind="privacy" />
 			break

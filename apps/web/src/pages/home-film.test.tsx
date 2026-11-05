@@ -76,7 +76,7 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 		'/fonctionnement',
 		'/faq',
 		'/blog',
-		'/pricing',
+		// '/pricing', // TEMPORARILY DISABLED
 		'/login',
 	])
 		expect(hrefs, route).toContain(route)

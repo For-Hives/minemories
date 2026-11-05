@@ -31,7 +31,8 @@ const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
 const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
-const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
+// TEMPORARILY DISABLED: pricing page hidden until the commercial offer is confirmed.
+// const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
 const DiscoveryPages = () => import('./pages/DiscoveryPages')
 const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
 const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
@@ -46,7 +47,7 @@ const publicPageChunks = [
 	DiscoveryPages,
 	() => import('./pages/InstallationPage'),
 	() => import('./pages/ReleasesPage'),
-	() => import('./pages/PricingPage'),
+	// () => import('./pages/PricingPage'),
 	() => import('./pages/AuthPage'),
 ]
 
@@ -192,6 +193,7 @@ export function App() {
 									</Page>
 								}
 							/>
+							{/* TEMPORARILY DISABLED: pricing route
 							<Route
 								path="/pricing"
 								element={
@@ -200,6 +202,7 @@ export function App() {
 									</Page>
 								}
 							/>
+							*/}
 							<Route
 								path="/privacy"
 								element={

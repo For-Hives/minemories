@@ -22,7 +22,7 @@ const navigation = [
 	{ to: '/decouvrir', label: 'Discover' },
 	{ to: '/installation', label: 'Guides' },
 	{ to: '/blog', label: 'Blog' },
-	{ to: '/pricing', label: 'Pricing' },
+	// { to: '/pricing', label: 'Pricing' }, // TEMPORARILY DISABLED
 ]
 const legalLinks = [
 	{ to: '/privacy', label: 'Privacy' },
