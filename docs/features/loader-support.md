@@ -96,7 +96,9 @@ Le gros du travail est donc la capture de géométrie et de textures, qui demand
 
 ### Port Fabric 1.21.11 : compile, non testé en jeu
 
-`mod/minemories-1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé. **Aucun test en jeu n'a été fait** : la cible ne doit pas être présentée comme prise en charge tant qu'une capture (blocs standards, textures alpha et teintées, entités, blocs-entités, puis GLB ouvert dans le viewer) n'a pas été validée.
+`mod/minemories-1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé.
+
+Test en jeu : `./gradlew :fabric:runClientGameTest` (depuis `mod/minemories-1.21.11/`) ouvre Minecraft 1.21.11 (son coupé, `user.home` isolé dans `build/gametest-home`), crée un monde, place pierre, verre teinté, feuilles, herbe, coffre, eau et torche, fait apparaître une vache et un armor stand, lance `/minemories export 12` et vérifie le GLB (matériaux attendus, modes alpha BLEND et MASK). Il passe (5 novembre 2026) et a déjà trouvé les mixins de souris et de clavier cassés ainsi qu'un `fabric.mod.json` qui exigeait encore 1.21.1. Reste à valider : le GLB ouvert dans le viewer, d'autres modpacks et un rendu visuel comparé à Minecraft ; la cible ne doit pas être présentée comme prise en charge avant.
 
 Les sources de `mod/minemories` sont copiées, adaptées par `adapt.gradle` (un motif qui ne correspond plus fait échouer le build) puis recouvertes par `overlay/java`. Par lot :
 
@@ -108,3 +110,5 @@ Les sources de `mod/minemories` sont copiées, adaptées par `adapt.gradle` (un 
 6. Sélection en jeu : `WorldRenderEvents.END_MAIN` et `ShapeRenderer.renderShape` à la place de `renderLineBox`.
 
 Points à vérifier en jeu : l'UV des quads Fabric après `toBakedQuad`, la lecture GPU des atlas, les blocs-entités hors de la distance de rendu (l'extraction saute le test `shouldRender`), et la borne de 4096 quads par modèle, désormais contrôlée après l'émission et non pendant.
+
+Maintenance : le code propre à un loader reste dans `fabric/` derrière l'interface `ClientPlatform` (le cœur et `common` n'importent aucune classe de loader). Les deux classes d'`overlay/java` qui remplacent une classe partagée (`CapturePixels`, `RenderedModelCapture`) sont épinglées par `overlay/shared-sources.properties` : le build échoue si la version partagée change, pour reporter le correctif dans l'overlay puis mettre à jour l'empreinte.

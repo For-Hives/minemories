@@ -267,7 +267,6 @@ final class CapturePixels {
       if (texture.getTexture() != gpu) throw new IOException("Texture remplacée pendant la capture.");
       var device = RenderSystem.getDevice();
       var encoder = device.createCommandEncoder();
-      boolean[] copied = {false};
       try (GpuTexture band =
               device.createTexture(
                   "minemories band",
@@ -283,9 +282,9 @@ final class CapturePixels {
                   GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ,
                   (long) width * rows * TextureFormat.RGBA8.pixelSize())) {
         encoder.copyTextureToTexture(gpu, band, 0, 0, 0, x, y + row, width, rows);
-        encoder.copyTextureToBuffer(band, buffer, 0L, () -> copied[0] = true, 0);
+        // The callback is a fenced task that runs on a later frame; mapping the buffer is what waits.
+        encoder.copyTextureToBuffer(band, buffer, 0L, () -> {}, 0);
         try (GpuBuffer.MappedView view = encoder.mapBuffer(buffer, true, false)) {
-          if (!copied[0]) throw new IOException("La lecture graphique de la texture a échoué.");
           int[] rgba = new int[width * rows];
           // RGBA bytes read as little-endian ints are the ABGR pixels the PNG encoder expects.
           view.data().order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(rgba);
