@@ -1,0 +1,47 @@
+{
+	"minecraft": ["1.20.1", "1.21.1"],
+	"builds": [
+		{
+			"loader": "neoforge",
+			"minecraft": "1.21.1",
+			"loaderVersion": "21.1.248",
+			"dir": "mod/minemories",
+			"project": "neoforge",
+			"jar": "minemories-{version}.jar"
+		},
+		{
+			"loader": "fabric",
+			"minecraft": "1.21.1",
+			"loaderVersion": "0.19.5",
+			"dir": "mod/minemories",
+			"project": "fabric",
+			"jar": "minemories-fabric-{version}.jar"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.21.1",
+			"loaderVersion": "52.1.19",
+			"dir": "mod/minemories",
+			"project": "forge",
+			"jar": "minemories-forge-{version}.jar"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.20.1",
+			"loaderVersion": "47.4.26",
+			"dir": "mod/minemories-1.20.1",
+			"project": "forge",
+			"jar": "minemories-forge-mc1.20.1-{version}.jar",
+			"loaderProperty": "forgeVersion"
+		},
+		{
+			"loader": "fabric",
+			"minecraft": "1.20.1",
+			"loaderVersion": "0.19.5",
+			"dir": "mod/minemories-1.20.1",
+			"project": "fabric",
+			"jar": "minemories-fabric-mc1.20.1-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion"
+		}
+	]
+}
