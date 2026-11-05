@@ -81,7 +81,7 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
-Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric et NeoForge, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
 
 ### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
 
@@ -112,3 +112,11 @@ Les sources de `mod/minemories` sont copiées, adaptées par `adapt.gradle` (un 
 Points à vérifier en jeu : l'UV des quads Fabric après `toBakedQuad`, la lecture GPU des atlas, les blocs-entités hors de la distance de rendu (l'extraction saute le test `shouldRender`), et la borne de 4096 quads par modèle, désormais contrôlée après l'émission et non pendant.
 
 Maintenance : le code propre à un loader reste dans `fabric/` derrière l'interface `ClientPlatform` (le cœur et `common` n'importent aucune classe de loader). Les deux classes d'`overlay/java` qui remplacent une classe partagée (`CapturePixels`, `RenderedModelCapture`) sont épinglées par `overlay/shared-sources.properties` : le build échoue si la version partagée change, pour reporter le correctif dans l'overlay puis mettre à jour l'empreinte.
+
+### NeoForge 1.21.11 : compile, test en jeu passé, non validé dans le viewer
+
+`mod/minemories-1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/minemories-1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod:matrix build neoforge 1.21.11` archive le JAR.
+
+Ce qui change par rapport à NeoForge 1.21.1 : `@EventBusSubscriber` sans `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, géométrie par `BlockStateModel.collectParts` (les données de modèle viennent du niveau), `NeoForgeVersion` déplacé dans `common`, et un access transformer pour `RenderType.state`, `RenderSetup.textures` et `TextureAtlas.texturesByName`.
+
+Test en jeu : `./gradlew :neoforge:runClientGametest` ; NeoForge n'a pas d'API de test client, un petit mod (`src/gametest`) pilote donc le client depuis ses ticks (monde plat, scène, `/minemories export 12`, vérification du GLB). La scène et les vérifications sont partagées avec Fabric dans `gametest-common/`. Résultat identique sur les deux loaders (2507 blocs, 3 entités, 16 matériaux). Comme pour Fabric, le GLB n'a pas été ouvert dans le viewer (WebGL absent du navigateur intégré) : la cible n'est pas déclarée prise en charge.
