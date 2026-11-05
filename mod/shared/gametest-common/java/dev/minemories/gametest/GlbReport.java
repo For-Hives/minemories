@@ -20,7 +20,7 @@ public final class GlbReport {
     "setblock 2 -61 0 minecraft:stone",
     "setblock 2 -60 0 minecraft:stone",
     "setblock 3 -60 0 minecraft:red_stained_glass",
-    "setblock 4 -60 0 minecraft:oak_leaves",
+    "setblock 4 -60 0 minecraft:oak_leaves[persistent=true]", // placed leaves with no log nearby would decay
     "setblock 5 -60 0 minecraft:grass_block",
     "setblock 5 -59 0 minecraft:" + GRASS,
     "setblock 6 -60 0 minecraft:chest",
