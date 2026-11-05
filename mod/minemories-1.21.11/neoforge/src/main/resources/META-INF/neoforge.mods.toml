@@ -1,0 +1,22 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="minemories"
+version="${version}"
+displayName="Minemories"
+description='''Client-side voxel capture proof of concept.'''
+[[dependencies.minemories]]
+modId="neoforge"
+type="required"
+versionRange="[21.11.48,)"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.minemories]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.11,1.22)"
+ordering="NONE"
+side="CLIENT"
+[[mixins]]
+config="minemories.compat.mixins.json"

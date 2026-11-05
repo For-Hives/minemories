@@ -2,16 +2,8 @@ plugins { id 'dev.architectury.loom-remap' version '1.17.493' }
 
 // Minecraft 1.21.11 (Java 21). The shared 1.21.1 sources are copied, adapted mechanically
 // (adapt.gradle) and overlaid with the classes that had to be rewritten (overlay/java).
-def shared = file('../../minemories')
-def modVersion = file('../../minemories/gradle.properties').readLines().find { it.startsWith('mod_version=') }.split('=')[1]
-version = modVersion
-group = 'dev.minemories'
 base { archivesName = 'minemories-fabric-mc1.21.11' }
 
-repositories {
-    mavenCentral()
-    maven { url = 'https://maven.fabricmc.net/' }
-}
 // In-game validation: ./gradlew :fabric:runClientGametest (opens a Minecraft window, isolated user.home).
 fabricApi {
     configureTests {
@@ -30,59 +22,14 @@ loom {
     }
 }
 
-def adapted = layout.buildDirectory.dir('adapted-sources')
-def adaptedResources = layout.buildDirectory.dir('adapted-resources')
-def adaptSources = tasks.register('adaptSources') {
-    inputs.dir(shared.toPath().resolve('core/src/main/java').toFile())
-    inputs.dir(shared.toPath().resolve('common/src/main/java').toFile())
-    inputs.dir(rootProject.file('overlay/java'))
-    inputs.dir(shared.toPath().resolve('common/src/main/resources').toFile())
-    inputs.file(rootProject.file('adapt.gradle'))
-    outputs.dir(adapted)
-    outputs.dir(adaptedResources)
-    doLast {
-        def out = adapted.get().asFile
-        delete out
-        copy {
-            from(shared.toPath().resolve('core/src/main/java').toFile())
-            from(shared.toPath().resolve('common/src/main/java').toFile())
-            into out
-        }
-        apply from: rootProject.file('adapt.gradle')
-        adaptDir(out)
-        // An overlay file that replaces a shared class would silently miss later fixes to it, so the
-        // build records which shared version each one was ported from and fails when that changes.
-        def pinned = new Properties()
-        rootProject.file('overlay/shared-sources.properties').withInputStream { pinned.load(it) }
-        rootProject.fileTree('overlay/java').matching { include '**/*.java' }.each { overlay ->
-            def rel = rootProject.file('overlay/java').toPath().relativize(overlay.toPath()).toString()
-            ['core', 'common'].collect { shared.toPath().resolve("${it}/src/main/java/${rel}").toFile() }.findAll { it.exists() }.each { original ->
-                def sha = java.security.MessageDigest.getInstance('SHA-256').digest(original.bytes).encodeHex().toString()
-                if (pinned.getProperty(rel) != sha)
-                    throw new GradleException("overlay/java/${rel} replaces a shared class that changed (sha256 ${sha}). Port the change into the overlay, then update overlay/shared-sources.properties.")
-            }
-        }
-        copy { from(rootProject.file('overlay/java')); into out }
-        // Shared resources, plus the 1.21.9+ key category translation (key.category.<namespace>.<path>).
-        def res = adaptedResources.get().asFile
-        delete res
-        copy {
-            from(shared.toPath().resolve('common/src/main/resources').toFile())
-            exclude 'minemories.accesswidener'
-            into res
-        }
-        fileTree(res).matching { include 'assets/minemories/lang/*.json' }.each { lang ->
-            def json = new groovy.json.JsonSlurper().parse(lang) as Map
-            if (json['key.categories.minemories'] == null) throw new GradleException("adapt: key.categories.minemories missing in ${lang.name}")
-            json['key.category.minemories.minemories'] = json['key.categories.minemories']
-            lang.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json)), 'UTF-8')
-        }
-    }
-}
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+
+def adapted = rootProject.layout.buildDirectory.dir('adapted-sources')
+def adaptedResources = rootProject.layout.buildDirectory.dir('adapted-resources')
 sourceSets.main.java.srcDir adapted
 sourceSets.main.resources.srcDir adaptedResources
-tasks.named('compileJava') { dependsOn adaptSources }
-tasks.named('processResources') { dependsOn adaptSources }
+tasks.named('compileJava') { dependsOn ':adaptSources' }
+tasks.named('processResources') { dependsOn ':adaptSources' }
 
 dependencies {
     minecraft 'com.mojang:minecraft:1.21.11'
