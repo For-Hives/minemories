@@ -9,6 +9,9 @@ export const commitPattern = /^[a-f0-9]{40}$/
 const componentPattern = /^[a-z][a-z0-9_-]*$/
 const minecraftPattern = /^\d+\.\d+(?:\.\d+)?$/
 const loaderVersionPattern = /^[a-zA-Z0-9.+-]+$/
+const directoryPattern = /^mod\/minemories(?:-\d+\.\d+(?:\.\d+)?)?$/
+const jarPrefixPattern = /^minemories-[a-z0-9.-]+-$/
+const javaVersions = new Set(['17', '21'])
 export function run(command, args, { cwd = repositoryRoot, ...options } = {}) {
 	const output = execFileSync(command, args, {
 		cwd,
@@ -47,16 +50,25 @@ export function enabledTargets(configuration) {
 			target.validatedInGame !== true ||
 			!target.loaderVersion ||
 			!loaderVersionPattern.test(target.loaderVersion) ||
-			target.java !== '21' ||
+			!javaVersions.has(target.java) ||
 			typeof target.name !== 'string'
 		)
 			throw new Error(`Unvalidated mod target: ${target.id}.`)
+		if (
+			(target.dir !== undefined && !directoryPattern.test(target.dir)) ||
+			(target.jarPrefix !== undefined && !jarPrefixPattern.test(target.jarPrefix))
+		)
+			throw new Error(`Invalid Gradle directory or JAR prefix: ${target.id}.`)
 		ids.add(target.id)
 	}
 	return active
 }
 export async function readTargets(root = repositoryRoot) {
 	return enabledTargets(JSON.parse(await readFile(resolve(root, 'config/mod-targets.json'), 'utf8')))
+}
+/** Gradle root of a target: the 1.21.1 root unless the target ports another Minecraft version. */
+export function modDirectory(target) {
+	return target.dir ?? 'mod/minemories'
 }
 export function filenameFor(target) {
 	return `minemories-${target.id}.jar`

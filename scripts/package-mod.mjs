@@ -21,6 +21,7 @@ export const downloadFilename = 'minemories-neoforge-mc1.21.1.jar'
 export async function packageMod(sourceDirectory, targetDirectory, options = {}) {
 	if (typeof options === 'string') options = { loader: options }
 	const artifact = modArtifact(options.target?.loader ?? options.loader)
+	if (options.target?.jarPrefix) artifact.prefix = options.target.jarPrefix
 	const target = options.target ?? artifact
 	const jarPattern = new RegExp(`^${artifact.prefix}${versionPattern}\\.jar$`)
 	const filename = filenameFor(target)

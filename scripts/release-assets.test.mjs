@@ -16,10 +16,11 @@ async function fixture(t, multiple = false) {
 	t.after(() => rm(root, { recursive: true, force: true }))
 	const configuration = JSON.parse(await readFile(resolve(repositoryRoot, 'config/mod-targets.json'), 'utf8'))
 	for (const target of configuration.targets) {
-		target.enabled = target.loader === 'neoforge' || (multiple && target.loader === 'fabric')
+		target.enabled =
+			target.minecraft === '1.21.1' && (target.loader === 'neoforge' || (multiple && target.loader === 'fabric'))
 		if (target.enabled) target.validatedInGame = true
 	}
-	if (multiple) configuration.targets.find(target => target.loader === 'fabric').loaderVersion = 'test-fixture'
+	if (multiple) configuration.targets.find(target => target.id === 'fabric-mc1.21.1').loaderVersion = 'test-fixture'
 	const targets = configuration.targets.filter(target => target.enabled)
 	await mkdir(resolve(root, 'config'))
 	await writeFile(resolve(root, 'config/mod-targets.json'), JSON.stringify(configuration))

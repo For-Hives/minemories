@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import { enabledTargets, filenameFor, repositoryRoot, requireCommit, requireReleaseVersion } from './release-utils.mjs'
+import {
+	enabledTargets,
+	filenameFor,
+	modDirectory,
+	repositoryRoot,
+	requireCommit,
+	requireReleaseVersion,
+} from './release-utils.mjs'
 
 const target = {
 	id: 'neoforge-mc1.21.1',
@@ -18,20 +25,26 @@ test('only implemented and validated loader targets enter the matrix', async () 
 	const configuration = JSON.parse(await readFile(`${repositoryRoot}/config/mod-targets.json`, 'utf8'))
 	const active = enabledTargets(configuration)
 	assert.deepEqual(
-		active.map(item => [item.loader, item.loaderVersion, item.project]),
+		active.map(item => item.id),
 		[
-			['neoforge', '21.1.248', 'neoforge'],
-			['fabric', '0.19.5', 'fabric'],
-			['forge', '52.1.19', 'forge'],
+			'neoforge-mc1.21.1',
+			'fabric-mc1.21.1',
+			'forge-mc1.21.1',
+			'fabric-mc1.21.11',
+			'neoforge-mc1.21.11',
+			'forge-mc1.19.2',
+			'fabric-mc1.19.2',
+			'forge-mc1.18.2',
 		]
 	)
-	assert.ok(
-		active.every(item => item.enabled && item.validatedInGame && item.minecraft === '1.21.1' && item.java === '21')
-	)
-	assert.equal(active.find(item => item.loader === 'fabric').fabricApi, '0.116.17+1.21.1')
+	assert.ok(active.every(item => item.enabled && item.validatedInGame && ['17', '21'].includes(item.java)))
+	assert.ok(active.filter(item => item.minecraft === '1.21.1').every(item => item.dir === undefined))
+	assert.equal(active.find(item => item.id === 'fabric-mc1.21.1').fabricApi, '0.116.17+1.21.1')
+	assert.equal(active.find(item => item.id === 'forge-mc1.19.2').dir, 'mod/minemories-1.19.2')
 	assert.equal(configuration.targets.find(item => item.loader === 'quilt').enabled, false)
 	assert.equal(filenameFor(target), 'minemories-neoforge-mc1.21.1.jar')
-	assert.equal(configuration.targets.length, 4)
+	assert.equal(modDirectory(target), 'mod/minemories')
+	assert.equal(modDirectory({ dir: 'mod/minemories-1.19.2' }), 'mod/minemories-1.19.2')
 	for (const broken of [
 		null,
 		{},
@@ -41,6 +54,9 @@ test('only implemented and validated loader targets enter the matrix', async () 
 		{ targets: [{ ...target, loaderVersion: null }] },
 		{ targets: [{ ...target, project: '../fabric' }] },
 		{ targets: [{ ...target, id: 'foreign' }] },
+		{ targets: [{ ...target, java: '8' }] },
+		{ targets: [{ ...target, dir: '../../etc' }] },
+		{ targets: [{ ...target, jarPrefix: '../x-' }] },
 	])
 		assert.throws(() => enabledTargets(broken))
 })

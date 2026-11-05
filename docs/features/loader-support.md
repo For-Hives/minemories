@@ -57,7 +57,9 @@ La CI conserve les trois paquets puis les télécharge dans trois jobs distincts
 
 `config/mod-targets.json` est la source de la matrice de publication. NeoForge, Fabric et Forge sont activés après ces validations ; la réservation Quilt reste désactivée puisqu'elle réutilise le JAR Fabric. La release automatique construit les trois cibles avec noms, manifestes, checksums et provenance distincts. `validatedInGame` décrit la combinaison prise en charge : il ne prétend pas que chaque nouvelle archive automatique a été jouée. Voir [le pipeline de release](automatic-releases.md).
 
-Le téléchargement public par défaut reste NeoForge ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
+Les cibles des autres versions de Minecraft (1.21.11, 1.19.2, 1.18.2, puis 1.20.1 une fois testée) portent `dir` (racine Gradle `mod/minemories-<version>`) et `jarPrefix` (préfixe du JAR construit) ; Java 17 est accepté pour les versions avant 1.21. Elles n'ont pas de `:core`/`:common` propres : seul l'adaptateur est vérifié. Une cible n'est activée que si son test en jeu automatique est passé ; Forge 1.21.11 et 1.20.1 restent désactivées. La CI n'a pas encore construit ces cibles (à vérifier avec un lancement manuel à blanc de la release automatique). La page d'installation propose une version de Minecraft puis un loader parmi les cibles activées, avec NeoForge 1.21.1 par défaut.
+
+Le téléchargement public par défaut reste NeoForge 1.21.1 ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
 
 ## Grille locale des versions compilées
 

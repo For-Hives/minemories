@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { downloadFor, loaderTargets, parseReleases } from './mod-releases'
+import { downloadFor, loaderTargets, minecraftVersions, parseReleases } from './mod-releases'
 import { ReleasesPage } from './ReleasesPage'
 
 const jarFor = (loader: string) => `minemories-${loader}-mc1.21.1.jar`
@@ -282,8 +282,14 @@ test('release matrix follows the enabled targets of config/mod-targets.json', ()
 		['neoforge', 'minemories-neoforge-mc1.21.1.jar', '21.1.248'],
 		['fabric', 'minemories-fabric-mc1.21.1.jar', '0.19.5'],
 		['forge', 'minemories-forge-mc1.21.1.jar', '52.1.19'],
+		['fabric', 'minemories-fabric-mc1.21.11.jar', '0.20.1'],
+		['neoforge', 'minemories-neoforge-mc1.21.11.jar', '21.11.48'],
+		['forge', 'minemories-forge-mc1.19.2.jar', '43.5.2'],
+		['fabric', 'minemories-fabric-mc1.19.2.jar', '0.20.1'],
+		['forge', 'minemories-forge-mc1.18.2.jar', '40.3.12'],
 	])
 	expect(loaderTargets.find(target => target.loader === 'fabric')?.fabricApi).toBe('0.116.17+1.21.1')
+	expect(minecraftVersions()).toEqual(['1.21.11', '1.21.1', '1.19.2', '1.18.2'])
 	expect(loaderTargets.find(target => target.loader === 'forge')?.fabricApi).toBeNull()
 })
 

@@ -89,3 +89,23 @@ test('rejects a wrong loader build and unknown or unsafe loader names', async t 
 		})
 	)
 })
+
+test('packages the JAR of a ported target by its own file prefix', async t => {
+	const { source, target } = await fixture(t)
+	const bytes = Buffer.from([0x50, 0x4b, 0x03, 0x04, 9])
+	await writeFile(join(source, 'minemories-forge-mc1.19.2-0.2.0-beta.1.jar'), bytes)
+	await writeFile(join(source, 'minemories-forge-0.2.0-beta.1.jar'), 'other Minecraft version')
+	const manifest = await packageMod(source, target, {
+		target: {
+			id: 'forge-mc1.19.2',
+			loader: 'forge',
+			name: 'Forge',
+			minecraft: '1.19.2',
+			loaderVersion: '43.5.2',
+			jarPrefix: 'minemories-forge-mc1.19.2-',
+		},
+		version: '0.2.0-beta.1',
+	})
+	assert.equal(manifest.minecraft, '1.19.2')
+	assert.deepEqual(await readFile(join(target, 'minemories-forge-mc1.19.2.jar')), bytes)
+})

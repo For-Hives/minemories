@@ -91,6 +91,7 @@ jobs:
           distribution: temurin
           java-version: |
             ${{ matrix.java }}
+            21
             25
           cache: gradle
       - name: Build, test and package the exact release target
