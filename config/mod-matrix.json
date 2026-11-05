@@ -68,17 +68,18 @@
 			"project": "neoforge",
 			"jar": "minemories-neoforge-mc1.21.11-{version}.jar",
 			"loaderProperty": "neoForgeVersion"
-		}
-	],
-	"planned": [
+		},
 		{
 			"loader": "forge",
 			"minecraft": "1.21.11",
 			"loaderVersion": "61.2.5",
-			"java": "21",
-			"priority": 2,
-			"note": "même portage de rendu que Fabric 1.21.11"
-		},
+			"dir": "mod/minemories-1.21.11",
+			"project": "forge",
+			"jar": "minemories-forge-mc1.21.11-{version}.jar",
+			"loaderProperty": "forgeVersion"
+		}
+	],
+	"planned": [
 		{
 			"loader": "forge",
 			"minecraft": "1.19.2",

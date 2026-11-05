@@ -81,7 +81,7 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
-Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric et NeoForge, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
 
 ### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
 
@@ -120,3 +120,14 @@ Maintenance : le code propre à un loader reste dans `fabric/` derrière l'inter
 Ce qui change par rapport à NeoForge 1.21.1 : `@EventBusSubscriber` sans `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, géométrie par `BlockStateModel.collectParts` (les données de modèle viennent du niveau), `NeoForgeVersion` déplacé dans `common`, et un access transformer pour `RenderType.state`, `RenderSetup.textures` et `TextureAtlas.texturesByName`.
 
 Test en jeu : `./gradlew :neoforge:runClientGametest` ; NeoForge n'a pas d'API de test client, un petit mod (`src/gametest`) pilote donc le client depuis ses ticks (monde plat, scène, `/minemories export 12`, vérification du GLB). La scène et les vérifications sont partagées avec Fabric dans `gametest-common/`. Résultat identique sur les deux loaders (2507 blocs, 3 entités, 16 matériaux). Comme pour Fabric, le GLB n'a pas été ouvert dans le viewer (WebGL absent du navigateur intégré) : la cible n'est pas déclarée prise en charge.
+
+### Forge 1.21.11 : compile, test en jeu automatisé non fonctionnel
+
+`mod/minemories-1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod:matrix build forge 1.21.11` archive le JAR.
+
+Deux écarts avec les autres loaders, à connaître avant de toucher à ce projet :
+
+- **Plugin Gradle** : Architectury Loom résout Forge 61.2.5 et compile, mais le jeu planterait au démarrage (`NoSuchMethodError` sur `ByteBufCodecs$11`, jar Minecraft patché de façon incohérente). Le projet utilise donc ForgeGradle 7 (`net.minecraftforge.gradle`, mappings `official`). FML 61 ne trouve la classe `@Mod` que si les classes sont compilées à côté de `mods.toml` : `build.gradle` compile dans `build/resources/main`.
+- **EventBus 7** : chaque événement a son `BUS`, les écouteurs sont enregistrés dans `ForgeClient.initialize()` au lieu d'annotations ; `RenderLevelStageEvent` n'existe plus, la sélection est dessinée par une passe `AddFramePassEvent` sur la cible principale. Les accès aux textures passent par un access transformer.
+
+État du test : le jeu démarre avec le mod (`./gradlew :forge:runClient`) et un export manuel dans un monde réel a abouti (60 250 blocs, 11 entités, 82 matériaux dans le journal), mais ce GLB n'a pas été inspecté. Le test automatisé de Fabric et NeoForge n'a pas pu être reproduit : le mod de test supplémentaire n'est pas découvert par FML dans une run ForgeGradle 7, le client reste sur l'écran titre. Cette cible n'est donc pas validée ; la selection dessinée par la passe `AddFramePassEvent` n'a pas non plus été vue à l'écran.

@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[61,)"
+license="MIT"
+[[mods]]
+modId="minemories"
+version="${version}"
+displayName="Minemories"
+description='''Client-side Minecraft memory capture.'''
+[[dependencies.minemories]]
+modId="forge"
+mandatory=true
+versionRange="[61.2.5,62)"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.minemories]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.11,1.21.12)"
+ordering="NONE"
+side="CLIENT"

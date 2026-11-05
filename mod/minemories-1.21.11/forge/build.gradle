@@ -1,0 +1,53 @@
+plugins {
+    id 'java-library'
+    id 'net.minecraftforge.gradle' version '7.0.40'
+}
+
+// Minecraft 1.21.11 (Java 21). Sources come from the root adaptSources task; this project only
+// holds the Forge adapter. Forge 61 cannot be built with Architectury Loom (its Minecraft jar
+// crashes at startup with a NoSuchMethodError), so this project uses ForgeGradle 7.
+base { archivesName = 'minemories-forge-mc1.21.11' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// `-PforgeVersion=<x>` builds against another Forge version (scripts/mod-matrix.mjs).
+def loaderVersion = findProperty('forgeVersion') ?: '61.2.5'
+
+minecraft {
+    mappings channel: 'official', version: '1.21.11'
+    accessTransformers.from('src/main/resources/META-INF/accesstransformer.cfg')
+    runs {
+        client {
+            workingDir.set(layout.buildDirectory.dir('run'))
+            mods { minemories { source sourceSets.main } }
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven { url = 'https://libraries.minecraft.net/' }
+    maven { url = 'https://maven.minecraftforge.net/' }
+}
+
+// FML 61 scans the folder that holds mods.toml, so dev runs need the classes next to the resources.
+sourceSets.main.java.destinationDirectory = layout.buildDirectory.dir('resources/main')
+sourceSets.main.java.srcDir rootProject.layout.buildDirectory.dir('adapted-sources')
+sourceSets.main.resources.srcDir rootProject.layout.buildDirectory.dir('adapted-resources')
+tasks.named('compileJava') { dependsOn ':adaptSources' }
+tasks.named('processResources') { dependsOn ':adaptSources' }
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:1.21.11-${loaderVersion}")
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+tasks.withType(ProcessResources).configureEach {
+    var props = [version: project.version]
+    inputs.properties props
+    filesMatching('META-INF/mods.toml') { expand props }
+}
+tasks.named('jar') {
+    manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json')
+}
