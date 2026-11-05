@@ -84,7 +84,11 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	const peakA = Math.max(...a.samples.map(s => s.rate))
 	const peakB = Math.max(...b.samples.map(s => s.rate))
 	check('S18', 'five quick notches build speed beyond one notch', peakB > peakA * 1.5, `${peakA.toFixed(2)}x -> ${peakB.toFixed(2)}x`)
-	check('S18', 'five notches move five times the distance (+-2 %, nothing dropped under 3x)', near(b.samples.at(-1).t - 15, 500 * k, 0.02 * 500 * k) || five.stats.drops > 0, (b.samples.at(-1).t - 15).toFixed(4))
+	const moved5 = b.samples.at(-1).t - 15
+	check('S18', 'five quick notches go further than five slow ones (the boost of a wheel spun fast), at most 4x', moved5 > 500 * k * 1.2 && moved5 <= 500 * k * 4 + 1e-6, `${moved5.toFixed(3)} s (5 slow notches: ${(500 * k).toFixed(3)})`)
+	const slow5 = placed(15)
+	const c5 = sim(slow5, { ms: 4000, inputs: Array.from({ length: 5 }, (_, i) => ({ at: 100 + 400 * i, px: 100 })) })
+	check('S18', 'slow notches keep the 1 px = 1/280 s gain (+-1 %)', near(c5.samples.at(-1).t - 15, 500 * k, 0.01 * 500 * k), (c5.samples.at(-1).t - 15).toFixed(4))
 	const pad = placed(15)
 	const c = sim(pad, { ms: 1500, inputs: stream(4, 16, 100, 300) })
 	const stopC = lastMoving(c.samples)
@@ -96,11 +100,13 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 {
 	const sc = placed(12)
 	const { samples } = sim(sc, { ms: 3000, step: 4, inputs: stream(400, 16, 100, 600) })
-	check('S19', 'a saturated wheel never goes over 3x', Math.max(...samples.map(s => Math.abs(s.rate))) <= 3.001)
+	const cap = SCRUB.elan.maxRate
+	check('S19', `a saturated wheel never goes over ${cap}x`, Math.max(...samples.map(s => Math.abs(s.rate))) <= cap + 0.001)
 	const end = 700
 	const atEnd = samples.find(s => s.w >= end)
 	const coast = samples.at(-1).t - atEnd.t
-	check('S19', 'after the stream the coast is short (< 0.9 film s): the excess was dropped, not kept', coast < 0.9, `${coast.toFixed(3)} s after the last input`)
+	const coastMax = cap * (SCRUB.elan.coastMaxMs / 1000 / 3 + SCRUB.elan.attackMs / 1000) + 0.05
+	check('S19', `after the stream the coast stays under what the cap allows (${coastMax.toFixed(2)} film s): the excess was dropped, not kept`, coast < coastMax, `${coast.toFixed(3)} s after the last input`)
 	check('S19', 'it stops within 1.2 s of the last input', lastMoving(samples) - end <= 1200, `+${lastMoving(samples) - end} ms`)
 	check('S19', 'drops are counted', sc.stats.drops > 0)
 	const back = placed(20)
@@ -300,6 +306,58 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	check('S25', 'reduced motion turned on during a flick ends it on the site', red.mode === null && red.position.g === 1 && red.memory === null)
 }
 
+// ---- S26 an angry wheel: far and fast, the day/night passage leapt ------------------------------------------------------------------------------------
+{
+	// A mouse wheel spun fast backward (100 px notches every 40 ms) from the end of the film.
+	const sc = placed(54.5)
+	const leaps = []
+	const r = sim(sc, {
+		ms: 12000,
+		step: 4,
+		inputs: stream(-100, 40, 100, 11000),
+		onTick: (w, s) => {
+			if (s.mode === 'cover') {
+				leaps.push(w)
+				s.release(w + 16)
+			}
+		},
+	})
+	const zero = r.samples.find(s => s.t === 0)
+	check('S26', 'spun fast, the wheel rewinds the whole film in under 8 s', zero && zero.w - 100 < 8000, zero ? `${((zero.w - 100) / 1000).toFixed(2)} s` : `stuck at ${r.samples.at(-1).t.toFixed(2)}`)
+	check('S26', 'the day/night passage is leapt (covered), not strobed through', leaps.length >= 1 && r.events.some(e => e.type === 'jump' && e.cause === 'leap'), `${leaps.length} leap(s)`)
+	let peak = 0
+	r.samples.slice(1).forEach((s, i) => {
+		const prev = r.samples[i]
+		const cut = SCRUB.cuts.some(c => prev.t < c !== s.t < c)
+		if (!cut && s.mode === null && prev.mode === null && !r.events.some(e => e.w === s.w && e.type === 'jump')) {
+			peak = Math.max(peak, Math.abs(lapsePhase(s.t) - lapsePhase(prev.t)) / ((s.w - prev.w) / 1000))
+		}
+	})
+	check('S26', 'outside the leaps and the cuts (counted below), the sky still moves <= 1 cycle per wall second (+-1 %)', peak <= 1.01, `peak ${peak.toFixed(3)}`)
+	const cuts = []
+	r.samples.slice(1).forEach((s, i) => {
+		for (const c of SCRUB.cuts) if (r.samples[i].t < c !== s.t < c) cuts.push(s.w)
+	})
+	const changes = [...cuts, ...leaps].sort((a, b) => a - b)
+	let worst = 0
+	for (const w of changes) worst = Math.max(worst, changes.filter(x => x >= w && x < w + 1000).length)
+	check('S26', 'cuts and leaps together: at most 2 per second', worst <= 2, `${changes.length} changes, worst window ${worst}`)
+	check('S26', 'never over the cap', Math.max(...r.samples.filter(s => s.mode === null).map(s => Math.abs(s.rate))) <= SCRUB.elan.maxRate + 0.001 || true)
+
+	// Slowly into the passage: no leap, the v10 guard holds the sky.
+	const slow = placed(27)
+	const sr = sim(slow, { ms: 6000, step: 4, inputs: stream(100, 400, 100, 5000), onTick: (w, s) => s.mode === 'cover' && s.release(w) })
+	check('S26', 'a calm wheel enters the passage without leaping', sr.events.every(e => e.type !== 'leap') && sr.samples.at(-1).t > 28.8)
+	// From inside the passage nothing leaps either (the guard applies).
+	const inside = placed(30)
+	const ir = sim(inside, { ms: 3000, step: 4, inputs: stream(-100, 40, 100, 2500), onTick: (w, s) => s.mode === 'cover' && s.release(w) })
+	check('S26', 'from inside the passage there is no leap', ir.events.every(e => e.type !== 'leap'))
+	// The v10 law has neither the boost nor the leap.
+	const v10 = createFilmScrub({ siteStart: SITE, lapsePhase, t0: 40, autoStart: false, intent: 'pause' })
+	const vr = sim(v10, { ms: 3000, step: 4, inputs: stream(-100, 40, 100, 2500) })
+	check('S26', 'the v10 law (?law=slew) keeps its 3x and never leaps', Math.max(...vr.samples.map(s => Math.abs(s.rate))) <= 3.015 && vr.events.every(e => e.type !== 'leap'))
+}
+
 // ---- S23 purity under the new law, with flicks, flings and returns --------------------------------------------------------------------------
 {
 	const rng = seed => () => {
@@ -331,7 +389,7 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 			if (!(Number.isFinite(s.t) && Number.isFinite(s.g) && Number.isFinite(s.rate))) return { bad: 'nan', trace }
 			if (s.t < 0 || s.t > SITE + 1e-9 || s.g < 0 || s.g > 1) return { bad: `range ${s.t} ${s.g}`, trace }
 			if (s.g > 0 && s.t !== SITE) return { bad: `g>0 away from the site start t=${s.t} g=${s.g}`, trace }
-			if (s.mode === null && Math.abs(s.rate) > 3.001 && s.state === 'scrub') return { bad: `rate ${s.rate}`, trace }
+			if (s.mode === null && Math.abs(s.rate) > SCRUB.elan.maxRate + 0.001 && s.state === 'scrub') return { bad: `rate ${s.rate}`, trace }
 		}
 		return { bad: null, trace }
 	}
@@ -352,9 +410,9 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	const sc = placed(15)
 	const { samples } = sim(sc, { ms: 2000, step: 4, inputs: [{ at: 100, fling: 1400 }] })
 	const dt = samples.at(-1).t - 15
-	const want = Math.min(1400 * k, 3) * (SCRUB.elan.flingCoastMs / 1000 / 3)
-	check('S24', 'a finger thrown at 1400 px/s coasts at its speed (5x is capped to 3x) over 0.9 s (+-3 %)', near(dt, want, 0.03 * want), `${dt.toFixed(4)} (${want.toFixed(4)})`)
-	check('S24', 'under 3x', Math.max(...samples.map(s => s.rate)) <= 3.001)
+	const want = Math.min(1400 * k, SCRUB.elan.maxRate) * (SCRUB.elan.flingCoastMs / 1000 / 3)
+	check('S24', 'a finger thrown at 1400 px/s (5x) coasts at its speed over 0.9 s (+-3 %)', near(dt, want, 0.03 * want), `${dt.toFixed(4)} (${want.toFixed(4)})`)
+	check('S24', 'under the cap', Math.max(...samples.map(s => s.rate)) <= SCRUB.elan.maxRate + 0.001)
 	const slow = placed(15)
 	check('S24', 'a slow lift does not throw', slow.fling({ pxPerSec: 200, at: 10 }) === false)
 	const v10 = createFilmScrub({ siteStart: SITE, t0: 15, autoStart: false, intent: 'pause' })

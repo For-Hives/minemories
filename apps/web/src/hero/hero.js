@@ -1399,7 +1399,8 @@ export function mountHero(host) {
 	const SETTLE_QUIET_MS = 280
 
 	// v13: the cut of a flick (the rush, then the end of the film) or of a return (the glide played back, then the film where the visitor left it) is covered by the frame on screen,
-	// which then zooms away (a flick: the visitor rushes past it) or toward the visitor (a return: they dive back into the film). The clock waits in its `cover` mode until released.
+	// which then zooms away (a flick: the visitor rushes past it) or toward the visitor (a return: they dive back into the film). v13b: a leap over the day/night passage (the
+	// wheel driven fast into it) is covered the same way, with a plain cross-fade. The clock waits in its `cover` mode until released.
 	async function coverCut(kind) {
 		const run = ++coverRun
 		const covered = await coverWithFilmFrame()
@@ -1417,7 +1418,7 @@ export function mountHero(host) {
 				return
 			}
 		}
-		if (covered) filmSnap?.classList.add(kind === 'return' ? 'is-dive' : 'is-rush')
+		if (covered && kind !== 'leap') filmSnap?.classList.add(kind === 'return' ? 'is-dive' : 'is-rush')
 		scrub.release(performance.now())
 		syncNow()
 		if (kind === 'return') {
@@ -1474,8 +1475,8 @@ export function mountHero(host) {
 				break
 			case 'jump':
 				// A return lands inside the film, whose phase already changed when the glide ended: its cause would label the next, unrelated change.
-				if (e.cause !== 'return') pendingCause = e.cause
-				if (['home', 'chapter', 'goto', 'replay', 'return'].includes(e.cause)) {
+				if (e.cause !== 'return' && e.cause !== 'leap') pendingCause = e.cause
+				if (['home', 'chapter', 'goto', 'replay', 'return', 'leap'].includes(e.cause)) {
 					hud?.reset()
 					lastT = Number.NaN
 				}
