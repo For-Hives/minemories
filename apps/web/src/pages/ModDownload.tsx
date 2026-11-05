@@ -1,18 +1,100 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
-import { downloadFor, releasesUrl } from './mod-releases'
+import {
+	downloadFor,
+	type LoaderTarget,
+	loaderTargets,
+	minecraftVersions,
+	quiltTestedVersion,
+	releasesUrl,
+} from './mod-releases'
 import { useModReleases } from './useModReleases'
 
 export { selectLatestRelease } from './mod-releases'
+
+const guideMinecraft = '1.21.1'
+const guideLoader = 'neoforge'
+
+function VersionPicker({
+	minecraft,
+	loader,
+	loaders,
+	onMinecraft,
+	onLoader,
+}: {
+	minecraft: string
+	loader: string
+	loaders: LoaderTarget[]
+	onMinecraft: (value: string) => void
+	onLoader: (value: string) => void
+}) {
+	return (
+		<fieldset className="install-picker">
+			<label>
+				<T message={'Minecraft version'} />
+				<span className="mc-select">
+					<select className="mc-select__control" value={minecraft} onChange={event => onMinecraft(event.target.value)}>
+						{minecraftVersions().map(version => (
+							<option key={version} value={version}>
+								{version}
+							</option>
+						))}
+					</select>
+				</span>
+			</label>
+			<label>
+				<T message={'Mod loader'} />
+				<span className="mc-select">
+					<select className="mc-select__control" value={loader} onChange={event => onLoader(event.target.value)}>
+						{loaders.map(target => (
+							<option key={target.loader} value={target.loader}>
+								{target.name}
+							</option>
+						))}
+					</select>
+				</span>
+			</label>
+		</fieldset>
+	)
+}
+
+function CompatibilityNotes({ target, guideStep }: { target: LoaderTarget; guideStep: boolean }) {
+	const { t } = useI18n()
+	return (
+		<>
+			{target.fabricApi && (
+				<p className="install-caption">
+					{t('Install Fabric API separately. This same JAR is also tested under Quilt {version}.', {
+						version: quiltTestedVersion,
+					})}
+				</p>
+			)}
+			{!guideStep && (
+				<p className="install-caption">
+					<T
+						message={
+							'The steps below detail Minecraft 1.21.1 with NeoForge. For another version, install the matching loader, then place this JAR in the mods folder.'
+						}
+					/>
+				</p>
+			)}
+		</>
+	)
+}
 
 export function ModDownload() {
 	const { t, locale } = useI18n()
 
 	const { releases, status, retry } = useModReleases()
-	// The installation guide only covers NeoForge: offer the newest release that ships its JAR.
-	const release = releases.find(item => downloadFor(item, 'neoforge'))
-	const download = release && downloadFor(release, 'neoforge')
+	// The written steps detail NeoForge 1.21.1, so it is the default choice.
+	const [minecraft, setMinecraft] = useState(guideMinecraft)
+	const [chosenLoader, setLoader] = useState(guideLoader)
+	const loaders = loaderTargets.filter(target => target.minecraft === minecraft)
+	const loader = loaders.some(target => target.loader === chosenLoader) ? chosenLoader : (loaders[0]?.loader ?? '')
+	const release = releases.find(item => downloadFor(item, loader, minecraft))
+	const download = release && downloadFor(release, loader, minecraft)
 	if (status === 'loading')
 		return (
 			<p role="status">
@@ -21,6 +103,13 @@ export function ModDownload() {
 		)
 	return (
 		<div className="install-download">
+			<VersionPicker
+				minecraft={minecraft}
+				loader={loader}
+				loaders={loaders}
+				onMinecraft={setMinecraft}
+				onLoader={setLoader}
+			/>
 			{release && download ? (
 				<>
 					<p>
@@ -29,9 +118,14 @@ export function ModDownload() {
 						</a>
 					</p>
 					<p>
-						Minecraft Java {download.target.minecraft} · NeoForge {download.target.loaderVersion} ·{' '}
+						Minecraft Java {download.target.minecraft} · {download.target.name} {download.target.loaderVersion}
+						{download.target.fabricApi && ` + Fabric API ${download.target.fabricApi}`} · Java {download.target.java} ·{' '}
 						{release.prerelease ? t('Experimental prerelease.') : t('Published release.')}
 					</p>
+					<CompatibilityNotes
+						target={download.target}
+						guideStep={minecraft === guideMinecraft && loader === guideLoader}
+					/>
 					<p className="install-caption">
 						{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })}{' '}
 						<T message={'MiB · Download from GitHub Releases.'} />

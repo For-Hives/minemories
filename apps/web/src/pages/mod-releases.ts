@@ -99,8 +99,21 @@ function parseRelease(value: unknown): ModRelease | null {
 	}
 }
 
-export function downloadFor(release: ModRelease, loader: string): LoaderDownload | null {
-	return release.downloads.find(download => download.target.loader === loader) ?? null
+export function downloadFor(release: ModRelease, loader: string, minecraft?: string): LoaderDownload | null {
+	return (
+		release.downloads.find(
+			download =>
+				download.target.loader === loader && (minecraft === undefined || download.target.minecraft === minecraft)
+		) ?? null
+	)
+}
+/** Minecraft versions with at least one published target, newest first. */
+export function minecraftVersions(targets: LoaderTarget[] = loaderTargets): string[] {
+	const parts = (version: string) => version.split('.').map(Number)
+	return [...new Set(targets.map(target => target.minecraft))].sort((a, b) => {
+		const [x, y] = [parts(a), parts(b)]
+		return (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
+	})
 }
 export function parseReleases(data: unknown): ModRelease[] {
 	if (!Array.isArray(data)) return []

@@ -851,3 +851,18 @@ html[data-mc-font="read"] .installation .install-lead {
 		border: 1px solid CanvasText;
 	}
 }
+
+.install-picker {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-5);
+	margin: 0 0 var(--ds-sp-5);
+	padding: 0;
+	border: 0;
+}
+
+.install-picker label {
+	display: grid;
+	gap: var(--ds-sp-2);
+	min-width: 12rem;
+}

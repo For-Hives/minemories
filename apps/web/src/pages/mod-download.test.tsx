@@ -181,3 +181,29 @@ test('releases without a NeoForge JAR never offer another loader in the NeoForge
 	expect(screen.getByRole('link', { name: /Fabric, Forge ou Quilt/ }).getAttribute('href')).toBe('/versions')
 	expect(selectLatestRelease([release('0.3.0', undefined, ['fabric'])])?.downloads[0]?.target.loader).toBe('fabric')
 })
+test('choosing another Minecraft version and loader offers the matching JAR with its compatibility', async () => {
+	const jar = 'minemories-fabric-mc1.19.2.jar'
+	const prefix = 'https://github.com/For-Hives/minemories/releases/download/mod-v0.4.0/'
+	const published = {
+		...release('0.4.0'),
+		assets: [{ name: jar, browser_download_url: prefix + jar, size: 4096, digest: `sha256:${'c'.repeat(64)}` }],
+	}
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
+	render(
+		<MemoryRouter>
+			<ModDownload />
+		</MemoryRouter>
+	)
+	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
+	fireEvent.change(screen.getByLabelText('Version de Minecraft'), { target: { value: '1.19.2' } })
+	fireEvent.change(screen.getByLabelText('Loader de mods'), { target: { value: 'fabric' } })
+	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.4.0 (.jar)' })
+	expect(link.getAttribute('href')).toBe(prefix + jar)
+	expect(
+		screen.getByText(/Minecraft Java 1\.19\.2 · Fabric 0\.20\.1 \+ Fabric API 0\.77\.0\+1\.19\.2 · Java 17/)
+	).toBeTruthy()
+	expect(screen.getByText(/Quilt 0\.30\.1/)).toBeTruthy()
+	expect(screen.getByText(/détaillent Minecraft 1\.21\.1 avec NeoForge/)).toBeTruthy()
+	fireEvent.change(screen.getByLabelText('Version de Minecraft'), { target: { value: '1.18.2' } })
+	expect((screen.getByLabelText('Loader de mods') as HTMLSelectElement).value).toBe('forge')
+})
