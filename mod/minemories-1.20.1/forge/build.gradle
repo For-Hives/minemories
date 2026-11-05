@@ -1,0 +1,60 @@
+plugins { id 'dev.architectury.loom-remap' version '1.17.493' }
+
+// Minecraft 1.20.1 runs on Java 17 and an older client API. The shared 1.21.1 sources are copied
+// and adapted mechanically here (see adaptSources) instead of being forked.
+def shared = file('../../minemories')
+def modVersion = file('../../minemories/gradle.properties').readLines().find { it.startsWith('mod_version=') }.split('=')[1]
+version = modVersion
+group = 'dev.minemories'
+base { archivesName = 'minemories-forge-mc1.20.1' }
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+loom {
+    forge {
+        mixinConfig('minemories.forge.mixins.json')
+        convertAccessWideners = true
+        extraAccessWideners.add('minemories.accesswidener')
+    }
+    accessWidenerPath = file('src/main/resources/minemories.accesswidener')
+}
+
+def adapted = layout.buildDirectory.dir('adapted-sources')
+def adaptSources = tasks.register('adaptSources') {
+    inputs.dir(shared.toPath().resolve('core/src/main/java').toFile())
+    inputs.dir(shared.toPath().resolve('common/src/main/java').toFile())
+    inputs.file(rootProject.file('adapt.gradle'))
+    outputs.dir(adapted)
+    doLast {
+        def out = adapted.get().asFile
+        delete out
+        copy {
+            from(shared.toPath().resolve('core/src/main/java').toFile())
+            from(shared.toPath().resolve('common/src/main/java').toFile())
+            into out
+        }
+        apply from: rootProject.file('adapt.gradle')
+        adaptDir(out)
+    }
+}
+sourceSets.main.java.srcDir adapted
+tasks.named('compileJava') { dependsOn adaptSources }
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings loom.officialMojangMappings()
+    forge 'net.minecraftforge:forge:1.20.1-47.4.26'
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+    options.compilerArgs.addAll(['-Xmaxerrs', '500'])
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('META-INF/mods.toml') { expand version: project.version }
+}
+tasks.named('jar') { manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json') }
