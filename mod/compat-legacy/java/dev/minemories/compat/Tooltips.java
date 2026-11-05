@@ -27,7 +27,7 @@ public final class Tooltips {
       Tooltip tip = TIPS.get(widget);
       if (tip == null || !widget.isMouseOver(mouseX, mouseY)) continue;
       List<Component> lines = new ArrayList<>();
-      for (String line : tip.text.getString().split("\n")) lines.add(Component.literal(line));
+      for (String line : tip.text.getString().split("\n")) lines.add(Component.nullToEmpty(line));
       screen.renderComponentTooltip(pose, lines, mouseX, mouseY);
       return;
     }
