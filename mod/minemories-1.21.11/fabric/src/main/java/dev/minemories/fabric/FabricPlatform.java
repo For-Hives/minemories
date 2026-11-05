@@ -7,14 +7,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.function.Predicate;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
-import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.material.FluidState;
 
 final class FabricPlatform implements ClientPlatform {
@@ -28,19 +26,7 @@ final class FabricPlatform implements ClientPlatform {
       QuadSink sink)
       throws IOException {
     var model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
-    var fabric = (FabricBakedModel) model;
-    if (!fabric.isVanillaAdapter()) {
-      new FabricModelCapture(minecraft, state, request, visibleFace, sink).capture(fabric);
-      return;
-    }
-    for (Direction face : Direction.values()) {
-      if (!visibleFace.test(face)) continue;
-      for (var quad : model.getQuads(state, face, RandomSource.create(request.seed())))
-        sink.accept(new ModelQuad(quad, face));
-    }
-    if (visibleFace.test(null))
-      for (var quad : model.getQuads(state, null, RandomSource.create(request.seed())))
-        sink.accept(new ModelQuad(quad, null));
+    new FabricModelCapture(minecraft, state, request, visibleFace, sink).capture(model);
   }
 
   @Override
@@ -69,7 +55,7 @@ final class FabricPlatform implements ClientPlatform {
   public int spritePixel(TextureAtlasSprite sprite, int x, int y) {
     if (!(sprite.contents() instanceof SpriteContentsAccess access))
       throw new IllegalStateException("Sprite accessor not installed");
-    return access.minemories$image().getPixelRGBA(x, y);
+    return access.minemories$image().getPixel(x, y);
   }
 
   @Override

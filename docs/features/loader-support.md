@@ -81,7 +81,7 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
-Déjà compilé : 1.20.1 (Forge, Fabric) et 1.21.1 (NeoForge, Fabric, Forge). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. P1 est Minecraft 1.21.11 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
 
 ### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
 
@@ -93,3 +93,18 @@ Compiler les sources 1.21.1 telles quelles contre 1.21.11 (Loom, Mojmap, Fabric 
 - Renommages et API d'interface : `ResourceLocation`→`Identifier`, `getMinBuildHeight`→`getMinY`, `ClickEvent`/`HoverEvent`, `Matrix3x2f` pour la pile GUI, `renderContents` des boutons.
 
 Le gros du travail est donc la capture de géométrie et de textures, qui demande une validation en jeu ; les renommages seuls ne suffisent pas.
+
+### Port Fabric 1.21.11 : compile, non testé en jeu
+
+`mod/minemories-1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé. **Aucun test en jeu n'a été fait** : la cible ne doit pas être présentée comme prise en charge tant qu'une capture (blocs standards, textures alpha et teintées, entités, blocs-entités, puis GLB ouvert dans le viewer) n'a pas été validée.
+
+Les sources de `mod/minemories` sont copiées, adaptées par `adapt.gradle` (un motif qui ne correspond plus fait échouer le build) puis recouvertes par `overlay/java`. Par lot :
+
+1. Renommages : `Identifier`, `getMinY`/`getMaxY`, `identifier()`, `WorldVersion.name()`, `GameProfile.id()`, `Camera.position()`, catégorie de touche `KeyMapping.Category` (la traduction `key.category.minemories.minemories` est ajoutée aux fichiers de langue à la compilation).
+2. GUI : `renderContents` des boutons, `Matrix3x2fStack` (`pushMatrix`/`popMatrix`), `ClickEvent.RunCommand`, `HoverEvent.ShowText`.
+3. Géométrie des blocs : `BakedQuad` est un record, `BakedQuads` (overlay) le remet dans l'ancienne disposition de sommets ; côté Fabric, `FabricModelCapture` collecte `BlockStateModel.emitQuads` dans un `MutableMesh` au lieu de l'ancienne API `RenderContext`.
+4. Textures : `CapturePixels` lit les atlas par copie GPU (`copyTextureToTexture` puis `copyTextureToBuffer`, bande par bande) et relit les textures d'entités depuis leur image source, car elles n'ont pas `USAGE_COPY_SRC` ; `RenderedModelCapture` trouve la texture d'un `RenderType` par l'access widener (`RenderType.state`, `RenderSetup.textures`).
+5. Entités et blocs-entités : `SubmitCapture` extrait l'état de rendu, le soumet à un `SubmitNodeStorage` privé et le vide dans le tampon de la capture avec un `FeatureRenderDispatcher` ; ombres, flammes et contours ne sont pas capturés.
+6. Sélection en jeu : `WorldRenderEvents.END_MAIN` et `ShapeRenderer.renderShape` à la place de `renderLineBox`.
+
+Points à vérifier en jeu : l'UV des quads Fabric après `toBakedQuad`, la lecture GPU des atlas, les blocs-entités hors de la distance de rendu (l'extraction saute le test `shouldRender`), et la borne de 4096 quads par modèle, désormais contrôlée après l'émission et non pendant.

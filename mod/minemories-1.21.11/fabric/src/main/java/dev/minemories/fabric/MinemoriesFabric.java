@@ -5,12 +5,12 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -33,17 +33,19 @@ public final class MinemoriesFabric implements ClientModInitializer {
                   (value, graphics, mouseX, mouseY, delta) ->
                       ClientRuntime.repositionPauseMenuButton(value));
         });
-    WorldRenderEvents.AFTER_TRANSLUCENT.register(
+    WorldRenderEvents.END_MAIN.register(
         context -> {
-          if (context.matrixStack() != null)
-            ClientRuntime.renderSelection(context.matrixStack(), context.camera().getPosition());
+          if (context.matrices() != null)
+            ClientRuntime.renderSelection(
+                context.matrices(),
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().position());
         });
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(
             new SimpleSynchronousResourceReloadListener() {
               @Override
-              public ResourceLocation getFabricId() {
-                return ResourceLocation.fromNamespaceAndPath("minemories", "capture");
+              public Identifier getFabricId() {
+                return Identifier.fromNamespaceAndPath("minemories", "capture");
               }
 
               @Override

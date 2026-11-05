@@ -1,12 +1,103 @@
-// Mechanical 1.21.1 -> 1.21.11 source adaptation. Class rewrites live in overlay/java.
+// Mechanical 1.21.1 -> 1.21.11 source adaptation. A pattern that stops matching fails the build.
+// Class rewrites that are too large for a pattern live in overlay/java.
 ext.adaptDir = { File root ->
+    def rep = { String text, String from, String to, String file ->
+        if (!text.contains(from)) throw new GradleException("adapt: '${from}' not found in ${file}")
+        text.replace(from, to)
+    }
+    def regex = { String text, String pattern, String to, String file ->
+        def r = text.replaceAll(pattern, to)
+        if (r == text) throw new GradleException("adapt: /${pattern}/ not found in ${file}")
+        r
+    }
     root.eachFileRecurse { f ->
         if (!f.name.endsWith('.java')) return
         def t = f.getText('UTF-8')
         def o = t
+        def n = f.name
+        // Lot 1: renames.
         t = t.replace('net.minecraft.resources.ResourceLocation', 'net.minecraft.resources.Identifier')
         t = t.replaceAll(/\bResourceLocation\b/, 'Identifier')
         t = t.replace('getMinBuildHeight()', 'getMinY()').replace('getMaxBuildHeight()', 'getMaxY()')
+        t = t.replace('SharedConstants.getCurrentVersion().getName()', 'SharedConstants.getCurrentVersion().name()')
+        t = t.replace('.dimension().location()', '.dimension().identifier()')
+        t = t.replace('key.location().toString()', 'key.identifier().toString()')
+        // Lot 2: GUI. AbstractButton.renderWidget is final, subclasses draw in renderContents.
+        if (n == 'IconButton.java' || n == 'TabButton.java') {
+            t = rep(t, 'public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', 'public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', n)
+        }
+        if (n == 'IconButton.java') {
+            t = rep(t, 'graphics.pose().pushPose();', 'graphics.pose().pushMatrix();', n)
+            t = rep(t, 'graphics.pose().translate(x, y, 0);', 'graphics.pose().translate((float) x, (float) y);', n)
+            t = rep(t, 'graphics.pose().scale(2f, 2f, 1f);', 'graphics.pose().scale(2f, 2f);', n)
+            t = rep(t, 'graphics.pose().popPose();', 'graphics.pose().popMatrix();', n)
+        }
+        if (n == 'SimpleHubScreen.java') t = rep(t, 'import net.minecraft.Util;', 'import net.minecraft.util.Util;', n)
+        // Lots 3-5: VertexConsumer gained an abstract packed setColor and setLineWidth.
+        if (n == 'RenderedVertexConsumer.java' || n == 'ClientRuntime.java') {
+            t = rep(t, 'implements VertexConsumer {', '''implements VertexConsumer {
+    @Override
+    public VertexConsumer setColor(int argb) {
+      return setColor((argb >> 16) & 255, (argb >> 8) & 255, argb & 255, argb >>> 24);
+    }
+
+    @Override
+    public VertexConsumer setLineWidth(float width) {
+      return this;
+    }
+''', n)
+        }
+        if (n == 'ClientRuntime.java') {
+            t = rep(t, '"key.categories.minemories"', 'KeyMapping.Category.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minemories", "minemories"))', n)
+            t = rep(t, 'connection.getLocalGameProfile().getId()', 'connection.getLocalGameProfile().id()', n)
+            t = rep(t, 'new ClickEvent(ClickEvent.Action.RUN_COMMAND, ', 'new ClickEvent.RunCommand(', n)
+            t = regex(t, /new HoverEvent\(\s*HoverEvent\.Action\.SHOW_TEXT,\s*/, 'new HoverEvent.ShowText(', n)
+            t = rep(t, 'Block.shouldRenderFace(state, level, pos, direction, neighborPos)', 'Block.shouldRenderFace(state, level.getBlockState(neighborPos), direction)', n)
+            // Lot 3: BakedQuad became a record; BakedQuads packs it back into the old vertex layout.
+            t = rep(t, 'int[] packed = quad.getVertices();', 'int[] packed = BakedQuads.vertices(quad);', n)
+            t = rep(t, 'quad.getSprite()', 'quad.sprite()', n)
+            t = rep(t, 'quad.getTintIndex()', 'quad.tintIndex()', n)
+            t = rep(t, 'mc.gameRenderer.getMainCamera().getPosition()', 'mc.gameRenderer.getMainCamera().position()', n)
+            // Lot 6: selection box.
+            t = rep(t, 'import net.minecraft.client.renderer.RenderType;', 'import net.minecraft.client.renderer.ShapeRenderer;\nimport net.minecraft.client.renderer.rendertype.RenderTypes;', n)
+            t = rep(t, 'RenderType.lines()', 'RenderTypes.lines()', n)
+            t = rep(t, '''LevelRenderer.renderLineBox(
+        pose, lines, new AABB(x1, y1, z1, x2, y2, z2), 0.2f, 1f, 0.45f, 0.95f);''', '''ShapeRenderer.renderShape(
+        pose,
+        lines,
+        net.minecraft.world.phys.shapes.Shapes.create(new AABB(x1, y1, z1, x2, y2, z2)),
+        0,
+        0,
+        0,
+        0xF233FF73, // ARGB of the 1.21.1 line box colour (0.2, 1, 0.45, 0.95)
+        2f);''', n)
+            // Lots 4-5: block entities and entities go through the submit pipeline.
+            t = rep(t, 'beRenderer.prepare(level, mc.gameRenderer.getMainCamera(), captureHitResult(mc));', 'beRenderer.prepare(mc.gameRenderer.getMainCamera());', n)
+            t = rep(t, 'dispatcher.render(blockEntity, 1f, pose, buffers);', 'SubmitCapture.blockEntity(dispatcher, blockEntity, pose, buffers);', n)
+            t = rep(t, '''dispatcher.prepare(
+        level,
+        mc.gameRenderer.getMainCamera(),''', '''dispatcher.prepare(
+        mc.gameRenderer.getMainCamera(),''', n)
+            t = rep(t, '''    Vec3 offset = renderer.getRenderOffset(entity, 1f);
+    PoseStack pose = new PoseStack();
+    pose.translate(
+        entity.getX() - center.getX() + offset.x,
+        entity.getY() - center.getY() + offset.y,
+        entity.getZ() - center.getZ() + offset.z);''', '''    PoseStack pose = new PoseStack();
+    pose.translate(
+        entity.getX() - center.getX(), entity.getY() - center.getY(), entity.getZ() - center.getZ());''', n)
+            t = rep(t, '''          renderer.render(
+              entity,
+              entity.getYRot(),
+              1f,
+              pose,
+              buffers,
+              dispatcher.getPackedLightCoords(entity, 1f));''', '''          SubmitCapture.entity(dispatcher, entity, pose, buffers);''', n)
+        }
+        if (n == 'ProgressiveGameCapture.java') {
+            t = rep(t, '''dispatcher.prepare(
+          level, mc.gameRenderer.getMainCamera(), ClientRuntime.captureHitResult(mc));''', 'dispatcher.prepare(mc.gameRenderer.getMainCamera());', n)
+        }
         if (t != o) f.setText(t, 'UTF-8')
     }
 }
