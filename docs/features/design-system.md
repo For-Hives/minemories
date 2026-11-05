@@ -1,17 +1,20 @@
-# Charte graphique Minemories (phase 1 : la landing)
+# Charte graphique Minemories
 
-La landing (`/`) est la **référence** : les autres pages de l'app reprendront cette charte, page par page (plan en fin de document). Direction artistique : l'interface de Minecraft (police pixel du jeu, panneaux biseautés, bordures de 2 px, ombre de texte d'un texel, couleurs chaudes de nuit) avec un mouvement sobre. Le film du hero et son HUD ne sont pas concernés : la charte vit **sous le film** (`.site`, en-tête, pied de page).
+La landing (`/`) est la **référence** ; depuis novembre 2026, toutes les pages de l'app la reprennent (section « Les pages de l'app »). Direction artistique : l'interface de Minecraft (police pixel du jeu, panneaux biseautés, bordures de 2 px, ombre de texte d'un texel, couleurs chaudes de nuit) avec un mouvement sobre. Le film du hero et son HUD ne sont pas concernés : la charte vit **sous le film** (`.site`, en-tête, pied de page).
 
 ## Où est quoi
 
-| Fichier (`apps/web/src/hero/`) | Rôle |
+| Fichier (`apps/web/src/`) | Rôle |
 |---|---|
-| `tokens.css` | **Jetons de la charte (source unique)** : échelle typographique, espacement, cibles, ombres, focus, durées et courbes de mouvement. |
-| `film.css` | Le kit du jeu (`mc-*` : boutons, panneaux, FAQ, étapes, pied de page, HUD) et ses jetons de matière (`--night`, `--text`, `--copper`, `--ember`, `--gp` = le pixel de 2 px). Hérité du prototype ; les anciennes règles de taille de bureau (24 px, 48 px) en ont été retirées. |
-| `charter.css` | **Composants partagés de la charte** : échelle appliquée aux titres et au texte, rythme vertical, boutons, liens, cartes, pied de page, entrées au défilement. Chargé après le kit. |
-| `src/lib/reveal.ts` | Entrée des blocs au défilement (testé, 100 % de couverture). |
+| `hero/tokens.css` | **Jetons de la charte (source unique)** : échelle typographique, espacement, cibles, ombres, focus, durées et courbes de mouvement. Chargé sur toutes les pages (`main.tsx`). |
+| `hero/kit.css` | Le kit du jeu (`mc-*` : polices, couleurs et matières, boutons, panneaux, cases, info-bulles, formulaires, sections, étapes, FAQ, pied de page, option « Police lisible »). Chargé sur toutes les pages. Les `@font-face` entre marqueurs sont écrits par les générateurs du prototype. |
+| `hero/film.css` | Le film de la landing (HUD, phases, en-tête et panneau 3D de `/`). Styles globaux (`html`, `body`) : injecté seulement sur `/` par `HeroFilm.tsx`. |
+| `hero/charter.css` | Composants de la charte sous le film (`.site`), injecté après `film.css` sur `/`. |
+| `charter-app.css` | **La charte sur les pages de l'app** : base, en-tête, pied de page, boutons de l'app, cartes, notes, chargement des listes. Chargé après le kit. |
+| `lib/reveal.ts` | Entrée des blocs au défilement de la landing (testé, 100 % de couverture). |
+| `lib/display-preferences.ts` | Options « Police lisible » et « Mouvement réduit » (clés `mcui-font`, `mcui-motion`) et classe `html.mm-cjk`, sur toutes les pages. |
 
-Les trois feuilles sont concaténées dans cet ordre par `HeroFilm.tsx` (`tokens`, `film`, `charter`) et injectées dans un `<style>` qui n'existe que sur la page d'accueil. **Règle : un composant n'écrit jamais une taille, une durée ou une distance en dur ; il lit un jeton `--ds-*`.**
+**Règle : un composant n'écrit jamais une taille, une durée ou une distance en dur ; il lit un jeton `--ds-*`.**
 
 ## Principes
 
@@ -127,17 +130,16 @@ Captures avant :
 ![Étapes avant, 1440 px](design-system/avant-1440-etapes.jpg)
 ![Pied de page avant, 1440 px](design-system/avant-1440-pied.jpg)
 
-## Étendre la charte aux autres pages (plan, non fait dans cette passe)
+## Les pages de l'app
 
-Une page adopte la charte en : (1) portant `.ds-page` (ou `.site`) sur sa racine ; (2) utilisant les classes `mc-*` ci-dessus ; (3) chargeant `tokens.css` + `charter.css` (aujourd'hui injectés par `HeroFilm`, à déplacer dans un `DesignSystemStyles` partagé quand la 2e page migrera) ; (4) ne définissant aucune taille en dur. Ordre proposé, du plus public au plus privé :
-
-1. `/installation`, `/concept`, `/fonctionnement`, `/faq`, `/versions`, `/changelog` (pages de guides : titres, étapes, FAQ, listes) ;
-2. `/decouvrir`, `/open-source`, `/nostalgie`, `/partager`, `/classement`, `/explorer` (cartes, grilles) ;
-3. `/blog`, `/pricing`, `/privacy`, `/terms`, `/legal` (texte long : `mc-section__text`, mesure) ;
-4. `/login`, `/register`, `/account` (formulaires : `mc-select`, `mc-check`, champs, boutons) ;
-5. `/gallery`, `/share`, `/public`, `/moderation`, `/admin`, `/viewer` (interfaces denses : à décider avec Andy, le viewer garde sa propre interface).
-
-L'en-tête et le pied de page du film (compacts, pleine largeur) sont à extraire en composants de l'app (`SiteHeader`, `SiteFooter`) à la première migration, pour remplacer `SiteLayout` et son thème Tailwind.
+- **Socle** : `tokens.css` et `kit.css` sont chargés partout, puis `charter-app.css`. Les couleurs Tailwind de `theme.css` (`paper`, `ink`, `forest`, `lime`…) pointent sur la nuit de la landing ; `--font-sans` est la police de lecture, `--font-mono` la police du jeu.
+- **En-tête et pied de page** (`SiteLayout.tsx`) : ceux de la landing (barre de nuit à double filet, mot-symbole, liens en police du jeu, sélecteur de langue du kit, bande de terre puis pied de page `night-2`). Le pied de page porte les deux options d'accessibilité.
+- **Boutons** : `buttonDark`, `buttonLime`, `buttonOutline`, `buttonQuiet` (`components/ui.tsx`) sont le bouton de pierre, le bouton de cuivre (un seul par zone), un bouton de nuit et un bouton sans relief.
+- **Illustrations** : plus de dessins plats. `MemoryScene`, l'illustration de l'installation et le panneau de connexion montrent des vues isométriques des captures de la landing (`public/hero/scenes/*.webp` : chalet, clairière et forêt, puis le chalet envahi et oublié pour la frise de `/nostalgie`, rendus de `S0`, `S2` et `S4`, fond transparent). La marque des en-têtes de contenu (`BlockMark`) est un vrai bloc d'herbe aux textures de la capture (`bloc-herbe.webp`). Les rendus sortent d'une page three.js jetable (lumières de la capture retirées, teintes de feuillage corrigées comme `prepareCapture` du film, caméra orthographique à 35,26°) : à refaire si les captures changent.
+- **Titres** h1 à h3 des pages : police du jeu aux tailles 40/32/24 (32/32/16 en coréen et japonais), ombre d'un texel. Le texte courant, les champs et les données restent en police de lecture.
+- **Polices** : « MM Minecraft » et Unifont ont été régénérées avec les caractères des 11 catalogues de l'app (`MM_EXTRA_TEXT` dans `mcatlas.mjs` du prototype : `MM_EXTRA_TEXT=$(ls apps/web/src/i18n/locales/*.json | tr '\n' ':') node gen-mcfont.mjs && node gen-unifont.mjs`, puis copier les woff2 et les blocs `@font-face` dans `kit.css`). Les deux faces du jeu sont préchargées par `index.html`.
+- **Chargement** : le mineur d'`index.html` n'apparaît que sur `/` ; entre deux pages, la page courante reste affichée jusqu'à l'arrivée de la suivante (`components/PageFrame.tsx`), puis un fondu court (`mm-enter`).
+- Le viewer 3D garde sa scène ; seule son interface (barres, panneaux, menus) prend la charte.
 
 ## Décisions à trancher (Andy)
 

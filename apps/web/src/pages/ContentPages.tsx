@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
-import { OrbitMark } from '../components/Loading'
+import { BlockMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
 import { articles, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
@@ -26,7 +26,7 @@ export function ContentLayout({
 					<h1>{title}</h1>
 					{lead && <p>{lead}</p>}
 				</div>
-				<OrbitMark />
+				<BlockMark />
 			</header>
 			{children}
 		</article>
@@ -43,7 +43,7 @@ export function BlogPage() {
 			<div className="mm-content-grid">
 				{articles.map(article => (
 					<Link className="mm-editorial-card" key={article.slug} to={`/blog/${article.slug}`}>
-						<OrbitMark />
+						<BlockMark />
 						<time dateTime={article.published}>
 							{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
 								new Date(`${article.published}T12:00:00Z`)
@@ -82,7 +82,9 @@ export function ArticlePage() {
 				{t('Create my first memory')}
 			</Link>
 			<p>
-				<Link to="/blog">{t('← Back to the journal')}</Link>
+				<Link className="mc-link" to="/blog">
+					{t('← Back to the journal')}
+				</Link>
 			</p>
 		</ContentLayout>
 	)
@@ -102,7 +104,9 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 				))}
 			</div>
 			<p>
-				<a href="https://github.com/For-Hives/minemories">{t('Project repository')}</a>
+				<a className="mc-link" href="https://github.com/For-Hives/minemories">
+					{t('Project repository')}
+				</a>
 			</p>
 		</ContentLayout>
 	)

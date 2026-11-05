@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import type { Launcher, System } from './installation-state'
 import { ModDownload } from './ModDownload'
@@ -38,6 +39,7 @@ export function CopyText({ text, label }: { text: string; label: string }) {
 			<code>{text}</code>
 			<button
 				type="button"
+				className={buttonOutline}
 				aria-label={t(label)}
 				onClick={async () => {
 					try {

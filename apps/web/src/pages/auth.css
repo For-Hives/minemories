@@ -1,102 +1,182 @@
-/* A focused entrance: the form leads; the landscape stays decorative. */
+/* Sign in and sign up: the game's menu screens. A darkened dirt background (the options screens of Minecraft), the landing's bar on top,
+   a centred night panel with the game's text fields and buttons, and a night "window" with the illustration (square sun, stepped hills).
+   Two voices (docs/features/design-system.md): the game's font for titles, labels, tabs and buttons; Atkinson (--ds-f-text) for running text and fields. */
+
 .mm-site.auth-shell {
 	min-height: 100svh;
-	background: #101e1c;
+	background: var(--night);
 }
+
+/* --- Bar (the landing's header) ------------------------------------------------------------------------------------------------------------------ */
 .auth-shell .auth-topbar {
-	width: min(100% - 80px, 1440px);
-	min-height: 92px;
-	margin: 0 auto;
+	position: relative;
+	z-index: 2;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 20px;
+	gap: var(--ds-sp-4);
+	min-height: 64px;
+	padding: var(--ds-sp-1) max(var(--ds-sp-4), calc((100% - 1360px) / 2));
+	background: var(--night);
+	box-shadow:
+		0 var(--gp) 0 var(--outline),
+		0 calc(2 * var(--gp)) 0 var(--app-line);
 }
 .auth-topbar > div {
 	display: flex;
 	align-items: center;
-	gap: 24px;
+	gap: var(--ds-sp-5);
 }
-.auth-topbar a:not(.mm-brand) {
-	font-size: 13px;
-	color: #b2bcb0;
+.auth-shell .auth-topbar a:not(.mm-brand) {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
 }
+.auth-shell .auth-topbar a:not(.mm-brand):hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+.auth-topbar .mm-language {
+	width: auto;
+	min-width: 0;
+}
+.auth-topbar .mm-language .mc-select__control {
+	--_h: var(--ds-hit);
+	max-width: min(180px, 40vw);
+	text-overflow: ellipsis;
+}
+
+/* --- Background: dirt darkened by a flat veil (no gradient) --------------------------------------------------------------------------------------- */
 .auth-shell > main {
+	position: relative;
+	isolation: isolate;
 	flex: 1;
 	display: grid;
 	outline: none;
+	background-color: var(--night-2);
+	background-image: url("/hero/mcui/tiles/dirt.png");
+	background-size: calc(32 * var(--gp)) calc(32 * var(--gp));
+	background-repeat: repeat;
+	image-rendering: pixelated;
+	box-shadow:
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.08),
+		inset 0 calc(-1 * var(--gp)) 0 var(--outline);
 }
+.auth-shell > main::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: rgb(10 8 6 / 0.62);
+	pointer-events: none;
+}
+
 .auth-entry {
 	display: grid;
-	grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-	width: min(100% - 80px, 1360px);
+	grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+	/* Both panels share the row's top and bottom edges (centring two cells of different heights stepped them by ~38 px); the row keeps its
+	   content height and sits in the middle of a tall window instead of stretching over it. */
+	align-items: stretch;
+	align-content: center;
+	width: min(100% - 2 * var(--ds-sp-6), 1360px);
 	margin: 0 auto;
-	gap: clamp(36px, 5vw, 96px);
+	padding: var(--ds-sp-7) 0;
+	gap: var(--ds-sp-7);
 }
 .auth-workspace {
 	display: grid;
-	align-items: center;
-	padding: 28px 0;
+	align-items: stretch;
 }
+
+/* The panel: night-2, 2 px outline, the game's bevel. */
 .auth-form-wrap {
-	width: min(100%, 420px);
-	margin: auto;
+	width: 100%;
+	padding: var(--ds-sp-6);
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
-.auth-modes {
+
+/* --- Tabs (the kit's mc-tabs / mc-tab) ------------------------------------------------------------------------------------------------------------ */
+.auth-shell .auth-modes {
 	display: flex;
-	gap: 4px;
-	border: 1px solid #b8c6b426;
-	border-radius: 12px;
-	padding: 4px;
-	background: #0d1917;
+	flex-wrap: nowrap;
+	background: var(--night);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.08);
 }
-.auth-shell .auth-modes a {
+.auth-shell .auth-modes .mc-tab {
 	flex: 1;
-	padding: 12px 8px;
-	border-radius: 8px;
+	justify-content: center;
+	min-height: var(--ds-hit);
+	padding-inline: var(--ds-sp-3);
 	text-align: center;
-	font-size: 13px;
-	color: #b2bcb0;
+	color: var(--text-2);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
 }
-.auth-shell .auth-modes a[aria-current="page"] {
-	color: #f0ebdc;
-	background: #293d34;
-	box-shadow: 0 2px 8px #0002;
+.auth-shell .auth-modes .mc-tab:hover {
+	color: var(--text);
 }
+/* The current tab keeps the kit's state (white text, 2 px cream underline), as on /versions and in the gallery dialog. */
+.auth-shell .auth-modes .mc-tab[aria-current="page"] {
+	color: var(--text);
+}
+
+/* --- Heading --------------------------------------------------------------------------------------------------------------------------------------- */
 .auth-heading {
-	margin: 32px 0 24px;
+	margin: var(--ds-sp-6) 0 var(--ds-sp-5);
 }
 .auth-eyebrow {
-	font: 10px var(--font-mono);
-	letter-spacing: 1.8px;
-	color: #c5b584;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.auth-eyebrow::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .auth-shell .auth-heading h1 {
-	font-size: clamp(34px, 3.2vw, 46px);
-	line-height: 1.1;
-	margin: 12px 0;
+	margin: var(--ds-sp-3) 0;
+	color: var(--text);
 }
 .auth-heading p {
-	color: #b2bcb0;
-	font-size: 14px;
-	line-height: 1.65;
 	margin: 0;
-	max-width: 360px;
+	max-width: var(--ds-measure);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
+
+/* --- Form: the game's text fields and buttons ------------------------------------------------------------------------------------------------------ */
 .auth-form {
 	display: grid;
-	gap: 18px;
+	gap: var(--ds-sp-4);
 }
 .auth-label,
 .auth-password {
 	display: grid;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 }
 .auth-label,
 .auth-password label {
-	font-size: 13px;
-	font-weight: 500;
-	color: #e3e7db;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .auth-password {
 	border: 0;
@@ -105,399 +185,437 @@
 	min-width: 0;
 }
 .auth-shell .auth-input {
+	--_h: calc(24 * var(--gp));
 	width: 100%;
 	min-width: 0;
-	height: 52px;
-	background: #172923;
-	border: 1px solid #b8c6b435;
-	border-radius: 10px;
-	padding: 0 14px;
-	color: #f0ebdc;
-	font-size: 16px;
-	font-weight: 400;
-	transition: border-color 160ms;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
 }
 .auth-shell .auth-input::placeholder {
-	color: #90a194;
-}
-.auth-shell .auth-input:hover {
-	border-color: #b8c6b46b;
-}
-.auth-shell .auth-input:focus {
-	border-color: #e9c583;
-	outline: 2px solid #e9c58344;
-	outline-offset: 2px;
+	color: var(--text-3);
 }
 .auth-password-control {
 	display: flex;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 }
 .auth-shell .auth-password-control input {
 	flex: 1;
 }
-.auth-shell .auth-password-control button {
-	min-height: 52px;
-	min-width: 76px;
-	padding: 0 12px;
-	border: 1px solid #b8c6b435;
-	border-radius: 10px;
-	font-size: 12px;
-	color: #e9c583;
-	cursor: pointer;
+.auth-shell .auth-password-control .auth-reveal {
+	--_h: calc(24 * var(--gp));
+	flex: none;
+	width: auto;
+	min-width: 88px;
+	padding-inline: var(--ds-sp-3);
 }
 .auth-field-hint {
 	margin: 0;
-	color: #aebcab;
-	font-size: 12px;
-	line-height: 1.5;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .auth-caps-warning {
 	margin: 0;
-	color: #e9c583;
-	font-size: 12px;
+	color: var(--ember);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .auth-caps-warning:empty {
 	display: none;
 }
 .auth-shell .auth-submit {
-	width: 100%;
-	min-height: 52px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 12px;
-	border: 0;
-	border-radius: 10px;
-	background: #e9c583;
-	color: #172923;
-	font-size: 14px;
-	font-weight: 600;
-	cursor: pointer;
-	box-shadow: 0 4px 18px #e9c5830c;
-	transition: background 160ms;
-}
-.auth-shell .auth-submit:hover {
-	background: #f4d8a4;
+	--_h: calc(24 * var(--gp));
+	margin-top: var(--ds-sp-2);
 }
 .auth-shell .auth-submit:disabled {
 	cursor: wait;
-	opacity: 0.7;
 }
 .auth-submit > span:last-child {
-	margin-left: 8px;
+	margin-left: var(--ds-sp-1);
 }
 .auth-private {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
-	margin: -6px 0 0;
-	font-size: 12px;
-	color: #aebcab;
+	gap: var(--ds-sp-2);
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+
+/* Messages: the kit's tooltip card, red for an error, ember for a notice. */
 .auth-error,
 .auth-notice {
 	margin: 0;
-	border: 1px solid #e3a29960;
-	border-radius: 10px;
-	padding: 12px;
-	background: #a2453020;
-	color: #ffc5b8;
-	font-size: 13px;
-	line-height: 1.5;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	overflow-wrap: anywhere;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--bad);
 }
 .auth-notice {
-	margin-bottom: 20px;
-	color: #e9c583;
-	background: #e9c58310;
-	border-color: #e9c58340;
+	margin-bottom: var(--ds-sp-4);
+	color: var(--ember);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
+.auth-error:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+/* --- Guest entry ----------------------------------------------------------------------------------------------------------------------------------- */
 .auth-guest {
-	border-top: 1px solid #b8c6b429;
-	padding-top: 22px;
-	margin-top: 26px;
+	margin-top: var(--ds-sp-6);
+	padding-top: var(--ds-sp-5);
+	background:
+		repeating-linear-gradient(
+			90deg,
+			var(--night-3) 0 calc(2 * var(--gp)),
+			transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+		)
+		top / 100% var(--gp) no-repeat;
 }
 .auth-guest-title {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: var(--ds-sp-3);
 }
 .auth-guest-title > span:first-child {
-	color: #e9c583;
+	color: var(--ember);
+	font: 400 var(--ds-fs-xs) / 1 var(--f-ui);
 }
 .auth-shell .auth-guest h2 {
-	font: 500 14px var(--font-sans);
 	margin: 0;
-	letter-spacing: 0;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-title);
+	text-shadow: var(--ds-text-shadow-1);
 }
+/* "No account": a game tag. */
 .auth-guest-title > span:last-child {
 	margin-left: auto;
-	font: 9px var(--font-mono);
-	color: #b2bcb0;
-	letter-spacing: 0.8px;
+	padding: 2px var(--ds-sp-2);
+	background: var(--night);
+	color: var(--c-name);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	white-space: nowrap;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .auth-guest p {
-	font-size: 12px;
-	line-height: 1.6;
-	color: #aebcab;
-	margin: 10px 0 12px;
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+/* "Open my capture": the stone button of the game, outlined on hover. */
 .auth-file {
-	min-height: 46px;
-	padding: 10px 14px;
+	--mc-bevel:
+		inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	border: 1px solid #b8c6b43d;
-	border-radius: 10px;
+	min-height: calc(24 * var(--gp));
+	padding: 0 var(--ds-sp-4) var(--gp);
+	background: var(--stone);
+	color: #fff;
+	border: var(--gp) solid var(--outline);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
 	cursor: pointer;
-	font-size: 13px;
-	transition: background 160ms;
+	box-shadow: var(--mc-bevel);
+	transition: border-color var(--ds-dur-1) var(--ds-ease-std);
 }
 .auth-file:hover {
-	background: #243a30;
+	border-color: var(--hover);
 }
 .auth-file:focus-within {
-	outline: 2px solid #e9c583;
-	outline-offset: 4px;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow:
+		var(--mc-bevel),
+		0 0 0 calc(4 * var(--gp)) var(--outline);
 }
 .auth-shell .auth-explore {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
-	min-height: 44px;
-	font-size: 12px;
-	color: #b2bcb0;
-	margin-top: 4px;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	margin-top: var(--ds-sp-1);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
 }
 .auth-shell .auth-explore:hover {
-	color: #e9c583;
+	color: var(--ember);
 }
+
+/* --- Illustration: a night window over the world (square sun, stepped hills, no blur) ---------------------------------------------------------------- */
 .auth-atmosphere {
 	position: relative;
-	min-height: 730px;
-	border-radius: 18px;
+	min-height: 720px;
 	overflow: hidden;
 	isolation: isolate;
-	background: #244238;
 	display: flex;
 	flex-direction: column;
-	padding: 36px;
+	padding: var(--ds-sp-6);
+	background: var(--night);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
 }
 .auth-art-sky {
 	position: absolute;
-	inset: 0;
+	inset: 4px;
 	z-index: -1;
 	overflow: hidden;
-	background:
-		radial-gradient(ellipse at 85% 36%, #e8ba6755, transparent 50%),
-		linear-gradient(175deg, #3f6050, #849976 55%, #263f37);
-}
-.auth-art-sun {
-	position: absolute;
-	width: 170px;
-	height: 170px;
-	border-radius: 50%;
-	right: -30px;
-	top: 30%;
-	background: #efce8e;
-	box-shadow: 0 0 90px 30px #eed99744;
-}
-.auth-art-sky i {
-	position: absolute;
-	inset: 35% -20% -10%;
-	background: #355d4f;
-	clip-path: polygon(
-		0 55%,
-		17% 36%,
-		25% 36%,
-		25% 26%,
-		32% 26%,
-		32% 20%,
-		38% 20%,
-		38% 35%,
-		50% 48%,
-		62% 40%,
-		62% 32%,
-		69% 32%,
-		69% 19%,
-		74% 19%,
-		74% 26%,
-		82% 26%,
-		100% 50%,
-		100% 100%,
-		0 100%
-	);
-}
-.auth-art-sky i:last-child {
-	inset: 53% -25% -10%;
-	background: #193c33;
-	transform: scaleX(-1);
+	/* The low sun of the landing's poster, behind the world. */
+	background: radial-gradient(60% 50% at 70% 70%, rgb(255 179 71 / 18%), transparent 70%), var(--night);
 }
 .auth-art-label {
 	display: flex;
 	justify-content: space-between;
-	gap: 10px;
-	font: 9px var(--font-mono);
-	letter-spacing: 1.5px;
-	color: #e9eddb;
+	gap: var(--ds-sp-3);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .auth-art-copy {
-	margin-top: 56px;
 	position: relative;
 	z-index: 1;
+	margin-top: var(--ds-sp-7);
 }
 .auth-art-copy p {
-	margin: 0 0 16px;
-	font-size: 12px;
-	color: #e0e7d3;
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .auth-shell .auth-art-copy h2 {
-	font-size: clamp(44px, 4.5vw, 70px);
-	line-height: 1.04;
 	margin: 0;
-	letter-spacing: -0.05em;
-	text-shadow: 0 2px 16px #173c3320;
+	font-size: 40px;
+	line-height: 48px;
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-4);
 }
 .auth-art-copy em {
-	color: #f5d8a1;
+	color: var(--ember);
 }
 .auth-art-world {
 	position: absolute;
-	bottom: 135px;
-	width: 100%;
-	left: 0;
-	transform: rotate(-7deg);
+	bottom: 130px;
+	right: 4%;
+	width: 66%;
 	pointer-events: none;
 }
-.auth-art-world svg {
+.auth-art-world img {
 	width: 100%;
 	height: auto;
-}
-.auth-art-world .mm-memory-island,
-.auth-art-world .mm-scene-spark {
-	animation: none;
+	padding: 0;
+	filter: drop-shadow(0 18px 24px rgb(0 0 0 / 45%));
 }
 .auth-art-caption {
-	margin-top: auto;
-	padding-top: 300px;
 	position: relative;
+	margin-top: auto;
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--tip-bg);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
 .auth-art-caption > span {
-	font: 9px var(--font-mono);
-	letter-spacing: 1px;
-	color: #bacfc1;
+	display: block;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text-2);
+}
+.auth-art-caption > span:first-child {
+	color: var(--c-name);
 }
 .auth-art-caption p {
-	font: 24px / 1.3 var(--album-display);
-	margin: 12px 0;
-	color: #f0ebdc;
+	margin: var(--ds-sp-2) 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-2);
 }
+
+/* --- Footer (the landing's night-2 bar) ------------------------------------------------------------------------------------------------------------ */
 .auth-shell .auth-footer {
-	width: min(100% - 80px, 1360px);
-	margin: 0 auto;
-	min-height: 74px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 20px;
-	font-size: 11px;
-	color: #9fad9e;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2) var(--ds-sp-5);
+	min-height: 64px;
+	padding: var(--ds-sp-2) max(var(--ds-sp-4), calc((100% - 1360px) / 2));
+	background: var(--night-2);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	box-shadow:
+		inset 0 var(--gp) 0 var(--outline),
+		inset 0 calc(2 * var(--gp)) 0 var(--app-line);
 }
 .auth-footer nav {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 24px;
+	gap: 0 var(--ds-sp-5);
 }
+.auth-shell .auth-footer a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+}
+.auth-shell .auth-footer a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Busy: a blinking block instead of a spinning circle. */
 .auth-spinner {
-	width: 16px;
-	height: 16px;
-	border: 2px solid #17292344;
-	border-top-color: #172923;
-	border-radius: 50%;
-	animation: auth-spin 1s linear infinite;
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: #fff;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	animation: auth-blink 0.8s steps(1, end) infinite;
 }
-@keyframes auth-spin {
-	to {
-		transform: rotate(360deg);
+@keyframes auth-blink {
+	50% {
+		opacity: 0;
 	}
 }
+
+/* --- Social sign-in (also used on the account page) ----------------------------------------------------------------------------------------------- */
+.auth-social {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-5) 0;
+}
+.auth-social .auth-provider {
+	--_h: calc(24 * var(--gp));
+}
+.auth-social p {
+	margin: 0;
+	text-align: center;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.auth-social .auth-error {
+	text-align: left;
+	color: var(--bad);
+}
+
+/* --- Readable font and Korean/Japanese ------------------------------------------------------------------------------------------------------------- */
+html.mm-cjk:not([data-mc-font="read"]) .auth-shell .auth-art-copy h2 {
+	font-size: 32px;
+	line-height: 40px;
+}
+html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+/* --- Layouts --------------------------------------------------------------------------------------------------------------------------------------- */
 @media (max-width: 1000px) {
 	.auth-entry {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
-		gap: 36px;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+		gap: var(--ds-sp-5);
 	}
 	.auth-atmosphere {
-		padding: 24px;
+		padding: var(--ds-sp-5);
 	}
 	.auth-art-label > span:last-child {
 		display: none;
 	}
 	.auth-shell .auth-art-copy h2 {
-		font-size: 46px;
+		font-size: 32px;
+		line-height: 40px;
 	}
 	.auth-art-world {
-		bottom: 150px;
-		width: 140%;
-		left: -20%;
+		bottom: 130px;
+		right: auto;
+		width: 110%;
+		left: -5%;
 	}
 }
 @media (max-width: 760px) {
-	.auth-shell .auth-topbar {
-		min-height: 72px;
-		width: calc(100% - 40px);
-	}
-	.auth-topbar > div {
-		gap: 16px;
-	}
-	.auth-topbar a:not(.mm-brand) {
-		font-size: 12px;
-	}
 	.auth-entry {
-		width: calc(100% - 40px);
 		display: block;
+		width: calc(100% - 2 * var(--ds-sp-4));
+		padding: var(--ds-sp-5) 0;
 	}
-	.auth-workspace {
-		padding: 16px 0 8px;
+	.auth-form-wrap {
+		padding: var(--ds-sp-5) var(--ds-sp-4);
 	}
 	.auth-heading {
-		margin: 24px 0;
-	}
-	.auth-shell .auth-heading h1 {
-		font-size: 36px;
+		margin: var(--ds-sp-5) 0 var(--ds-sp-4);
 	}
 	.auth-atmosphere {
 		display: none;
 	}
-	.auth-shell .auth-footer {
-		width: calc(100% - 40px);
-		flex-wrap: wrap;
-		justify-content: center;
-		padding-block: 22px;
-		gap: 12px;
-		min-height: 60px;
+	.auth-topbar > div {
+		gap: var(--ds-sp-3);
 	}
-	.auth-footer nav {
-		gap: 18px;
+	.auth-shell .auth-footer {
+		justify-content: center;
+		padding-block: var(--ds-sp-4);
 	}
 }
+@media (max-width: 560px) {
+	.auth-shell .auth-topbar {
+		padding-inline: var(--ds-sp-3);
+	}
+	.auth-shell .auth-topbar a:not(.mm-brand) {
+		white-space: nowrap;
+	}
+	/* The logo, the help link and the full language name do not fit on one 390 px row in the game's font: the bar keeps two deliberate rows,
+	   the logo on the first, the help link and the language select on the second, the select at its content width (never cut to "English ..."). */
+	.auth-shell .auth-topbar {
+		flex-wrap: wrap;
+		row-gap: 0;
+	}
+	.auth-topbar > div {
+		flex: 1 0 100%;
+		justify-content: space-between;
+	}
+	.auth-topbar .mm-language .mc-select__control {
+		max-width: none;
+	}
+	/* Each tab takes its label's width plus a share of the rest, on one line: both labels sit at the same height in every language. */
+	.auth-shell .auth-modes .mc-tab {
+		flex: 1 1 auto;
+		padding-inline: var(--ds-sp-2);
+		white-space: nowrap;
+	}
+}
+@media (max-width: 400px) {
+	.auth-guest-title {
+		flex-wrap: wrap;
+	}
+	.auth-guest-title > span:last-child {
+		margin-left: 0;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.auth-entry *,
-	.auth-entry *::after {
+	.auth-shell *,
+	.auth-shell *::before,
+	.auth-shell *::after {
 		animation: none;
 		transition: none;
 	}
 }
-
-.auth-social {
-	display: grid;
-	gap: 12px;
-	margin: 24px 0;
+html[data-mc-motion="reduced"] .auth-spinner {
+	animation: none;
 }
-.auth-social p {
-	text-align: center;
-	color: var(--color-muted, #9ca896);
-	font-size: 13px;
+
+@media (forced-colors: active) {
+	.auth-form-wrap,
+	.auth-atmosphere,
+	.auth-error,
+	.auth-notice,
+	.auth-file,
+	.auth-guest-title > span:last-child {
+		border: 1px solid CanvasText;
+	}
 }

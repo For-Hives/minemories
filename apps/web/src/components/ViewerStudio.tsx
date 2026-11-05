@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/I18n'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
+import { buttonLime } from './ui'
 import { ViewerIcon } from './ViewerIcons'
 import { ViewerLayers } from './ViewerLayers'
 import { ViewerTime } from './ViewerTime'
@@ -292,7 +293,7 @@ export function ViewerStudio({
 					</div>
 					<p>{t('Anyone with the link can explore this memory. You can revoke access at any time.')}</p>
 					<SharePanel key={memoryId} memoryId={memoryId} />
-					<Link className="mm-button" to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
+					<Link className={buttonLime} to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
 						{t('Publish in the public gallery')}
 					</Link>
 				</section>

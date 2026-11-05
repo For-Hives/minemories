@@ -13,6 +13,21 @@
 //   const scrub = createFilmScrub({ siteStart: 55.5, holds: [{ id: 'capture', at: 10.6, wall: 1.2 }, ...], stations: [1, 5.5, ...], lapsePhase: (t) => cycles })
 //   scrub.input({ px: 100, source: 'wheel', at: event.timeStamp })     // px > 0 goes forward
 //   const { t, g, rate, state, events } = scrub.tick(performance.now())
+//
+// v13 (05/11/2026, Andy: "more human, more natural, a bit of acceleration and deceleration"; "a wheel-down on arrival goes to the site, and coming back up puts me where I was"):
+//   - `law: 'elan'` (the page's law; 'slew' stays the default of this module and the `?law=slew` comparison): each input is an IMPULSE that keeps its distance exactly (1 px =
+//     1/280 s, as before) but spends it on a velocity that rises in ~40 ms and glides down to zero on an ease-out (v = a (1 - s / T)^2) of finite length T: 200 ms for the fine
+//     deltas of a trackpad (its system already adds its own momentum), up to 750 ms for a wheel notch, 900 ms for a finger thrown on lift. Notches that follow each other add up:
+//     the film accelerates under a quick wheel and coasts to a dead stop. v13b: a wheel spun fast gains up to 4x more film per px and the cap is 12x (the v10 law keeps 3x);
+//     what goes beyond the cap is still DROPPED (the impulses still running are scaled down: nothing is banked or caught up), and every guard applies to the coast (it is
+//     driven motion). Driven fast into the day/night passage, the film LEAPS over it (`mode: 'cover'`, `cover: 'leap'`: the page covers the cut, the hand goes on after it).
+//     No randomness: the same inputs give the same trajectory.
+//   - `flick: true`: the visitor who just arrived and gives a first forward wheel or swipe wants to see what comes next. The position is KEPT (`memory`), the film rushes forward
+//     for 0.34 s (up to 8x, but never into the day/night lapse, the rewind wave or within 0.35 s of a cut: the rush stops at the first such barrier, so no flash can come of it),
+//     the page covers the cut with the last frame (`mode: 'cover'`, the clock waits for `release()`), then the END of the film plays at 2x from 52.3 s (after the last freeze
+//     and the last cut: the camera leaves the fire and cranes up to the whole model under "That evening was kept by Minemories") and the glide sets it in its panel (1 s).
+//   - any jump to the site from the middle of the film (the flick, Skip, Escape, End, a foreign scroll) keeps the position. At the top of the site, past the detent, the way up
+//     then RETURNS: the glide plays back on its own (0.9 s), the page covers the cut again, and the film starts again exactly where the visitor left it, with the same intent.
 
 export const SCRUB = Object.freeze({
 	pxToFilm: 1 / 280, // film seconds per CSS px
@@ -42,6 +57,38 @@ export const SCRUB = Object.freeze({
 	maxDtMs: 250, // longest wall step one tick integrates
 	subStepMs: 2,
 	reduced: Object.freeze({ gesturePx: 80, lockoutMs: 450 }),
+	law: 'slew', // 'slew' (v10: linear over 120 ms) or 'elan' (v13: impulses with momentum)
+	elan: Object.freeze({
+		attackMs: 40, // the velocity rises toward the impulses on this time constant
+		coastMinMs: 200, // length of the coast of a fine delta (trackpad, a finger that drags)
+		coastMaxMs: 750, // length of the coast of a wheel notch
+		smallPx: 12, // at or under this, the coast is coastMinMs
+		bigPx: 100, // at or over this, the coast is coastMaxMs (smooth in between)
+		keyCoastMs: 550,
+		flingCoastMs: 900, // the coast of a finger thrown on lift
+		flingMinPxPerS: 350, // slower lifts do not throw
+		brake: 0.05, // an input against the motion keeps this share of the impulses still running the other way (v13b: 0.25 was too soft at 12x)
+		stopRate: 0.01, // once every impulse has ended, |film s per wall s| under which the attack's lag stops dead
+		// v13b (Andy: "much more accelerated, it must go further, rewinding must be possible in an angry way"): the driven speed goes up to 12x, and a wheel spun fast gains
+		// up to 4x more film per px. The day/night passage is the only place where speed would strobe: crossed fast, it is LEAPT (one covered cut, see `leap`).
+		maxRate: 12,
+		boost: Object.freeze({ fromPxS: 700, toPxS: 2600, max: 4, windowMs: 250 }),
+		leapMinRate: 3, // driven faster than this into the day/night passage: the film leaps over it instead of slowing to 1 cycle per second
+		leapGap: 0.05, // where the leap lands, past the passage
+	}),
+	flick: Object.freeze({
+		minPx: 24, // forward input gathered (within gatherMs) before the arrival flick fires: a stray tick of a trackpad is not a wish
+		gatherMs: 300,
+		burstMs: 340, // the rush forward
+		burstMaxRate: 8, // its peak speed, reached at the end (ease-in), never inside a sensitive passage
+		barrierGuard: 0.35, // the rush stops this far before a cut, the lapse or the rewind wave
+		landAt: 52.3, // after the rush the film lands here (after the 51.8 freeze and the 50.5 cut): its end is the crane up to the model
+		endRate: 2, // the end of the film plays at this speed (52.3 -> 55.5 in 1.6 s; no sensitive passage there)
+		glideSec: 1.0, // then the glide to the site
+		returnSec: 0.9, // the glide played back when the visitor comes up from the site
+		quietMs: 280, // after a return, the rest of the gesture (inputs closer than this to each other) is dropped: its momentum must not rewind the film away
+		keepMin: 0.5, // a position closer than this to the site start is not kept (the visitor saw the end)
+	}),
 })
 
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x))
@@ -88,9 +135,15 @@ export function createFilmScrub({
 	t0 = 0,
 	g0 = 0,
 	autoStart = true,
+	law = null,
+	flick = false,
 } = {}) {
 	const C = override ? { ...SCRUB, ...override } : SCRUB
 	const k = C.pxToFilm
+	const elan = (law ?? C.law) === 'elan'
+	const E = C.elan
+	const driveMax = elan ? E.maxRate : C.maxRate
+	const F = C.flick
 	const stops = holds.map((h) => ({ id: h.id, at: h.at, wall: h.wall }))
 	const stationTimes = stations.map((s) => (typeof s === 'number' ? s : s.t))
 	let isReduced = Boolean(reduced)
@@ -118,7 +171,24 @@ export function createFilmScrub({
 	let lockUntil = -Infinity
 	let pending = [] // events produced between two ticks (jumps, stations)
 	let refusingReversal = false
-	const stats = { drops: 0, dropped: 0, cutsRefused: 0, reversalsRefused: 0, jumpsRefused: 0, inputs: 0, lastInputAt: -Infinity }
+	let pulses = [] // elan: { amp (film s per wall s at `start`), tau (ms), start (wall ms) }
+	let vel = 0 // elan: the driven velocity on screen (film s per wall s)
+	// v13: the arrival flick and the kept position.
+	let armed = Boolean(flick) && !isReduced && t < siteStart - F.keepMin && g === 0
+	let gather = 0
+	let gatherAt = -Infinity
+	let mode = null // null | 'burst' | 'cover' | 'arrive' (the glide after a flick) | 'return' (the glide played back)
+	let coverFor = null // 'skip' | 'return': what release() does
+	let burstStart = 0
+	let burstFrom = 0
+	let barrier = 0
+	let memory = null // { t, intent }: where the visitor left the film
+	let leapTo = 0 // v13b: where a covered leap over the day/night passage lands
+	let lastLeap = null // v13b: { dir, at } of the last leap
+	let recent = [] // v13b: the last inputs of the gesture ({ at, px }), for the boost of a wheel spun fast
+	let quiet = false // after a return: the gesture that asked for it is still sending its momentum
+	let quietAt = -Infinity // wall ms of the last input of that gesture
+	const stats = { drops: 0, dropped: 0, cutsRefused: 0, reversalsRefused: 0, jumpsRefused: 0, inputs: 0, lastInputAt: -Infinity, flicks: 0, returns: 0 }
 	let phaseNow = phaseOf(g)
 
 	function phaseOf(gg) {
@@ -144,6 +214,41 @@ export function createFilmScrub({
 		return false
 	}
 
+	// v13: the first sensitive instant ahead of `tt` (the start of the lapse or of the rewind wave, a cut), minus the guard; `tt` itself when it is already inside one.
+	function barrierAfter(tt) {
+		if (inSensitive(tt)) return tt
+		let b = siteStart
+		for (const [a] of C.sensitive) if (a > tt) b = Math.min(b, a - F.barrierGuard)
+		for (const c of C.cuts) if (c > tt) b = Math.min(b, c - C.cutGuard - F.barrierGuard)
+		return Math.max(tt, b)
+	}
+
+	// Elan: the length of the coast of an impulse, from the size of the delta (fine deltas short, notches long, smooth in between).
+	function coastOf(px, source) {
+		if (source === 'key') return E.keyCoastMs
+		if (source === 'touch') return E.coastMinMs
+		const x = clamp((Math.abs(px) - E.smallPx) / (E.bigPx - E.smallPx), 0, 1)
+		const s = x * x * (3 - 2 * x)
+		return E.coastMinMs + (E.coastMaxMs - E.coastMinMs) * s
+	}
+
+	function addPulse(dist, tau, when) {
+		// An input against the motion brakes: what still runs the other way is mostly let go (the hand that grabs the film).
+		const running = pulseRate(when)
+		if (running !== 0 && Math.sign(running) !== Math.sign(dist)) for (const p of pulses) if (Math.sign(p.amp) !== Math.sign(dist)) p.amp *= E.brake
+		// v = amp (1 - s / T)^2 over [0 ; T] covers amp * T / 3: the amplitude that covers `dist` exactly.
+		pulses.push({ amp: (3 * dist) / (tau / 1000), tau, start: when })
+	}
+
+	function pulseRate(at) {
+		let u = 0
+		for (const p of pulses) {
+			const s = (at - p.start) / p.tau
+			if (s >= 0 && s < 1) u += p.amp * (1 - s) * (1 - s)
+		}
+		return u
+	}
+
 	function recordCrossings(from, to, now) {
 		const lo = Math.min(from, to)
 		const hi = Math.max(from, to)
@@ -155,11 +260,38 @@ export function createFilmScrub({
 		let m = A + S
 		if (m === 0) return
 		if (driven) {
-			const cap = C.maxRate * dtS
+			const cap = driveMax * dtS
 			if (Math.abs(m) > cap) {
 				stats.dropped += Math.abs(m) - cap
 				stats.drops++
 				m = Math.sign(m) * cap
+			}
+			// v13b: driven fast into the day/night passage from outside it, the film leaps over it: the page covers the cut (one change of light, counted with the cuts:
+			// at most 2 per second). Slower, or from inside it, the guard below holds the sky to 1 cycle per wall second.
+			if (elan && lapsePhase && Math.abs(m) / dtS > E.leapMinRate && !inLapse(t)) {
+				const into = m > 0 ? t < C.lapse[0] && t + m >= C.lapse[0] : t > C.lapse[1] && t + m <= C.lapse[1]
+				crossLog = crossLog.filter((x) => now - x < C.cutWindowMs)
+				// A leap back over the passage right after one the other way would swap day and night twice within a blink: the reversal rule holds for leaps too.
+				const againstLast = lastLeap && Math.sign(m) !== lastLeap.dir && now - lastLeap.at < C.reversalMinMs
+				if (into && crossLog.length < C.cutMax && !againstLast) {
+					leapTo = m > 0 ? C.lapse[1] + E.leapGap : C.lapse[0] - E.leapGap
+					lastLeap = { dir: Math.sign(m), at: now }
+					noteDir(Math.sign(m), now)
+					mode = 'cover'
+					coverFor = 'leap'
+					events.push({ type: 'leap', phase: 'cover', from: t, to: leapTo })
+					return
+				}
+				if (into) {
+					// No leap allowed yet (the window of changes is full, or it would undo the last one): the film waits at the edge of the passage, the excess is
+					// dropped (not banked), and the leap comes as soon as it is allowed. Sliding in instead would cost 7 s at 1 cycle per second under a spinning wheel.
+					const edge = m > 0 ? C.lapse[0] - 1e-3 : C.lapse[1] + 1e-3
+					const kept = m > 0 ? Math.max(0, edge - t) : Math.min(0, edge - t)
+					stats.dropped += Math.abs(m - kept)
+					stats.drops++
+					m = kept
+					if (m === 0) return
+				}
 			}
 			// Sky: at most `lapseMaxCycles` day/night cycles per wall second while driving.
 			if (lapsePhase && (inLapse(t) || inLapse(t + m))) {
@@ -274,7 +406,55 @@ export function createFilmScrub({
 		g = next
 	}
 
+	// v13: the choreographies of the flick and of the return. They are not driven motion and not playback: nothing else moves while they run.
+	function modeStep(s0, s1, events) {
+		const dtS = (s1 - s0) / 1000
+		if (mode === 'burst') {
+			const e = clamp((s1 - burstStart) / F.burstMs, 0, 1)
+			const rate = 1 + (F.burstMaxRate - 1) * e * e
+			const next = Math.min(barrier, t + rate * dtS)
+			if (next > t) {
+				recordCrossings(t, next, s1)
+				noteDir(1, s1)
+				t = next
+			}
+			if (e >= 1) {
+				mode = 'cover'
+				coverFor = 'skip'
+				events.push({ type: 'flick', phase: 'cover', from: burstFrom, at: t })
+			}
+			return
+		}
+		if (mode === 'arrive') {
+			if (t < siteStart) {
+				const next = Math.min(siteStart, t + F.endRate * dtS)
+				recordCrossings(t, next, s1)
+				t = next
+				return
+			}
+			g = clamp(g + dtS / F.glideSec, 0, 1)
+			if (g >= 1) {
+				mode = null
+				events.push({ type: 'flick', phase: 'site', from: memory?.t ?? null })
+			}
+			return
+		}
+		if (mode === 'return') {
+			g = clamp(g - dtS / F.returnSec, 0, 1)
+			if (g <= 0) {
+				mode = 'cover'
+				coverFor = 'return'
+				events.push({ type: 'return', phase: 'cover', to: memory?.t ?? siteStart })
+			}
+		}
+		// 'cover': still until release().
+	}
+
 	function subStep(s0, s1, events) {
+		if (mode) {
+			modeStep(s0, s1, events)
+			return
+		}
 		const dtS = (s1 - s0) / 1000
 		let px = 0
 		let busy = false
@@ -284,6 +464,24 @@ export function createFilmScrub({
 				px += (s.px * o) / (s.end - s.start)
 				busy = true
 			}
+		}
+		let elanS = null // elan: the driven film motion of this sub-step (film s), instead of px * k
+		if (elan) {
+			let u = pulseRate((s0 + s1) / 2)
+			if (Math.abs(u) > driveMax) {
+				// Beyond the cap the excess is dropped: every impulse still running is scaled down, so nothing is banked for later.
+				const f = driveMax / Math.abs(u)
+				stats.drops++
+				stats.dropped += (Math.abs(u) - driveMax) * dtS
+				for (const p of pulses) p.amp *= f
+				u *= f
+			}
+			vel += (u - vel) * (1 - Math.exp(-(s1 - s0) / E.attackMs))
+			pulses = pulses.filter((p) => s1 - p.start < p.tau)
+			if (pulses.length === 0 && Math.abs(vel) < E.stopRate) vel = 0
+			busy = vel !== 0 || pulses.length > 0
+			if (busy) lastActive = Math.max(lastActive, s1)
+			elanS = vel * dtS
 		}
 		// A host stop: the timer runs (the pause suspends it), an input ends it for good.
 		if (hold) {
@@ -304,9 +502,9 @@ export function createFilmScrub({
 		else if (s0 >= lastActive + C.idleMs) autoK = Math.min(1, autoK + dtS / (C.rampMs / 1000))
 		// On the site the clock sleeps: nothing is automatic there (the first rewinding input finds the film at rest).
 		if (g >= 1) autoK = 0
-		if (g >= 1 && px >= 0) return
+		if (g >= 1 && (elanS ?? px) >= 0) return
 		const A = autoK * C.nominal * dtS
-		const S = px * k
+		const S = elanS ?? px * k
 		const driven = busy || S !== 0
 		// At the site start, any forward motion is the glide's (its own cap), not the film's.
 		if (g > 0 || (t >= siteStart && A / C.glideSec + S / (k * glidePx()) > 0)) glideMove(A, S, s1, dtS, driven, events)
@@ -314,9 +512,10 @@ export function createFilmScrub({
 	}
 
 	function stateName(now) {
+		if (mode) return mode
 		if (g >= 1) return 'site'
 		if (hold) return 'hold'
-		if (slews.some((s) => s.end > now)) return 'scrub'
+		if (slews.some((s) => s.end > now) || vel !== 0 || pulses.length > 0) return 'scrub'
 		if (intentNow === 'pause' || isReduced) return 'paused'
 		if (now < lastActive + C.idleMs) return 'held'
 		return 'auto'
@@ -334,6 +533,10 @@ export function createFilmScrub({
 			station,
 			idleLeft: Math.max(0, lastActive + C.idleMs - now),
 			rampK,
+			mode,
+			cover: mode === 'cover' ? coverFor : null,
+			memory: memory ? { ...memory } : null,
+			armed,
 			events,
 		}
 	}
@@ -344,6 +547,13 @@ export function createFilmScrub({
 		g = t >= siteStart ? clamp(gg, 0, 1) : 0
 		recordCrossings(before, t, now)
 		slews = []
+		recent = []
+		pulses = []
+		vel = 0
+		mode = null
+		coverFor = null
+		quiet = false
+		lastLeap = null
 		lastDir = 0
 		refusingReversal = false
 		detent = 0
@@ -368,15 +578,101 @@ export function createFilmScrub({
 			stats.lastInputAt = when
 			if (!Number.isFinite(px)) return false
 			if (isReduced) return reducedInput(px, source, when)
+			if (mode === 'cover' && coverFor === 'leap') {
+				// A leap does not stop the hand: what comes during its cover carries on after it.
+				if (px !== 0) push(px, source, when)
+				return px !== 0
+			}
+			if (mode) {
+				// The flick and the return run to their end (the momentum of the gesture that started them is not a new wish).
+				quietAt = when
+				return false
+			}
+			if (quiet) {
+				if (when - quietAt <= F.quietMs) {
+					quietAt = when
+					return false
+				}
+				quiet = false
+			}
 			if (g >= 1) return topInput(px, source, when)
 			if (px === 0) {
 				// Even a null input is activity: it restarts the idle delay.
 				lastActive = Math.max(lastActive, when)
 				return false
 			}
-			slews.push({ px, start: when, end: when + C.slewMs })
-			lastActive = Math.max(lastActive, when + C.slewMs)
+			if (armed && g === 0) {
+				if (px < 0 || (source !== 'wheel' && source !== 'touch') || t >= siteStart - F.keepMin) armed = false
+				else {
+					if (when - gatherAt > F.gatherMs) gather = 0
+					gather += px
+					gatherAt = when
+					if (gather < F.minPx) return false
+					startFlick(when)
+					return true
+				}
+			}
+			push(px, source, when)
 			return true
+		},
+		/** Elan: a finger thrown on lift at `pxPerSec` (> 0 forward): it coasts. Returns false when it does not throw. */
+		fling({ pxPerSec = 0, at } = {}) {
+			const when = Math.max(Number.isFinite(at) ? at : (lastNow ?? 0), lastNow ?? 0)
+			const leaping = mode === 'cover' && coverFor === 'leap' // a leap does not stop the hand (input() keeps it too)
+			if (!elan || isReduced || (mode && !leaping) || g >= 1 || !Number.isFinite(pxPerSec) || Math.abs(pxPerSec) < E.flingMinPxPerS) return false
+			if (armed) {
+				// A forward throw from the arrival state is the flick (a short fast swipe may not have gathered its 24 px yet); a backward one takes the film in hand.
+				if (pxPerSec > 0 && t < siteStart - F.keepMin) {
+					startFlick(when)
+					return true
+				}
+				armed = false
+			}
+			const rate = clamp(pxPerSec * k * boostOf(pxPerSec), -driveMax, driveMax) // the same boost as the drag: the film does not drop at the lift
+			addPulse((rate * (E.flingCoastMs / 1000)) / 3, E.flingCoastMs, when) // starts at the finger's speed, covers a third of speed x coast
+			return true
+		},
+		/** The page covered the cut of a flick or of a return: the clock goes on (the end of the film plays, or the film comes back where the visitor left it). */
+		release(nowMs) {
+			if (mode !== 'cover') return false
+			const now = Number.isFinite(nowMs) ? Math.max(nowMs, lastNow ?? nowMs) : (lastNow ?? 0)
+			const from = { t, g }
+			if (coverFor === 'leap') {
+				// The momentum is kept: the hand goes on on the other side of the passage.
+				crossLog.push(now)
+				t = clamp(leapTo, 0, siteStart)
+				mode = null
+				coverFor = null
+				rearm()
+				log({ type: 'jump', cause: 'leap', from, to: { t, g } })
+				return true
+			}
+			if (coverFor === 'skip') {
+				const land = Math.max(t, Math.min(F.landAt, siteStart))
+				recordCrossings(t, land, now)
+				t = land
+				g = 0
+				mode = 'arrive'
+				coverFor = null
+				for (const h of stops) done.add(h.id)
+				log({ type: 'jump', cause: 'flick', from, to: { t, g } })
+				return true
+			}
+			const back = memory ?? { t: siteStart, intent: intentNow }
+			memory = null
+			setPosition(back.t, 0, now)
+			intentNow = isReduced ? 'pause' : back.intent
+			autoK = 0
+			lastActive = now
+			quiet = true
+			quietAt = Math.max(quietAt, now)
+			stats.returns++
+			log({ type: 'jump', cause: 'return', from, to: { t, g } })
+			return true
+		},
+		/** The visitor took the film in hand (play, pause, the rail, a chapter): a forward wheel is a scroll of the film from now on. */
+		disarm() {
+			armed = false
 		},
 		/** A jump of the position (Skip, End, Home, a chapter, a station, replay, a test). Returns false when the jump is refused. */
 		jump({ t: tt = 0, g: gg = 0, cause = 'goto', resume = false } = {}) {
@@ -389,6 +685,11 @@ export function createFilmScrub({
 				lastJumpAt = now
 			}
 			const from = { t, g }
+			armed = false
+			// Any jump to the site from the middle of the film keeps where the visitor was (coming up returns there); a jump inside the film forgets it.
+			const toSite = clamp(tt, 0, siteStart) >= siteStart && gg > 0
+			if (toSite && !memory && from.g === 0 && from.t < siteStart - F.keepMin && !isReduced) memory = { t: from.t, intent: intentNow }
+			else if (!toSite) memory = null
 			setPosition(tt, gg, now)
 			if (resume && intentNow === 'play' && !isReduced) {
 				autoK = 1
@@ -406,6 +707,7 @@ export function createFilmScrub({
 				intentNow = 'pause'
 				return intentNow
 			}
+			armed = false
 			if (v === 'play' && intentNow !== 'play') lastActive = Math.min(lastActive, (lastNow ?? 0) - C.idleMs) // a visitor who presses play does not wait for the idle delay
 			intentNow = v
 			return intentNow
@@ -413,8 +715,22 @@ export function createFilmScrub({
 		setReduced(on) {
 			isReduced = Boolean(on)
 			if (isReduced) {
+				// A flick or a return under way ends at once where it was going (no rush, no glide in reduced motion).
+				if (mode === 'return' || (mode === 'cover' && coverFor === 'return')) {
+					t = memory?.t ?? siteStart
+					g = 0
+				} else if (mode) {
+					t = siteStart
+					g = 1
+				}
+				mode = null
+				coverFor = null
+				memory = null
 				intentNow = 'pause'
 				autoK = 0
+				armed = false
+				pulses = []
+				vel = 0
 				station = nearestStation(t)
 				if (g < 1 && stationTimes.length) t = stationTimes[station]
 			}
@@ -437,6 +753,14 @@ export function createFilmScrub({
 			lastActive = now
 			autoK = 0
 			slews = []
+			recent = []
+			pulses = []
+			vel = 0
+			if (mode === 'burst') {
+				mode = 'cover'
+				coverFor = 'skip'
+				pending.push({ type: 'flick', phase: 'cover', from: burstFrom, at: t })
+			}
 		},
 		/** Moves the clock to `nowMs` and returns the position. */
 		tick(nowMs) {
@@ -464,6 +788,7 @@ export function createFilmScrub({
 			lastNow = nowMs
 			crossLog = crossLog.filter((x) => nowMs - x < C.cutWindowMs)
 			lastRate = (t - tBefore) / (span / 1000)
+			if (g > 0) armed = false // the end of the film was reached: a later forward wheel scrubs
 			const next = phaseOf(g)
 			if (next !== phaseNow) {
 				events.push({ type: 'phase', from: phaseNow, to: next, t, g })
@@ -493,6 +818,15 @@ export function createFilmScrub({
 		get detent() {
 			return detent
 		},
+		get mode() {
+			return mode
+		},
+		get memory() {
+			return memory ? { ...memory } : null
+		},
+		get armed() {
+			return armed
+		},
 		get lastInputAt() {
 			return lastInputAt
 		},
@@ -503,6 +837,7 @@ export function createFilmScrub({
 
 	// At the top of the site: the first inputs towards the top only fill the detent (a scroll that arrives at the top with momentum must not rewind the film).
 	function topInput(px, source, when) {
+		armed = false
 		if (px >= 0) return false
 		if (when - detentUpAt > C.detentResetMs) detent = 0
 		detentUpAt = when
@@ -512,9 +847,55 @@ export function createFilmScrub({
 		const excess = detent - limit
 		detent = limit
 		if (excess <= 0) return false
-		slews.push({ px: -excess, start: when, end: when + C.slewMs })
-		lastActive = Math.max(lastActive, when + C.slewMs)
+		if (memory) {
+			// v13: the visitor left the film in the middle: the way up takes them back there (the glide plays back on its own, then the page covers the cut).
+			mode = 'return'
+			detent = 0
+			log({ type: 'return', phase: 'glide', to: memory.t })
+			return true
+		}
+		push(-excess, source, when)
 		return true
+	}
+
+	function push(px, source, when) {
+		if (elan) {
+			// v13b: a wheel or a finger moving fast gets up to 4x more film per px (same sign only: a change of direction starts from 1x).
+			recent = recent.filter((r) => when - r.at <= E.boost.windowMs && Math.sign(r.px) === Math.sign(px))
+			recent.push({ at: when, px })
+			const speed = recent.reduce((a, r) => a + Math.abs(r.px), 0) / (E.boost.windowMs / 1000)
+			addPulse(px * k * boostOf(speed), coastOf(px, source), when)
+			lastActive = Math.max(lastActive, when)
+			return
+		}
+		slews.push({ px, start: when, end: when + C.slewMs })
+		lastActive = Math.max(lastActive, when + C.slewMs)
+	}
+
+	// v13b: the gain of a hand moving at `pxPerS` (1 up to fromPxS, E.boost.max from toPxS, smooth in between).
+	function boostOf(pxPerS) {
+		const x = clamp((Math.abs(pxPerS) - E.boost.fromPxS) / (E.boost.toPxS - E.boost.fromPxS), 0, 1)
+		return 1 + (E.boost.max - 1) * x * x * (3 - 2 * x)
+	}
+
+	function startFlick(when) {
+		memory = { t, intent: intentNow }
+		armed = false
+		gather = 0
+		stats.flicks++
+		if (hold) {
+			log({ type: 'hold', phase: 'end', id: hold.id, at: hold.at, reason: 'input' })
+			hold = null
+		}
+		slews = []
+		pulses = []
+		vel = 0
+		autoK = 0
+		burstFrom = t
+		burstStart = when
+		barrier = barrierAfter(t)
+		mode = 'burst'
+		log({ type: 'flick', phase: 'burst', from: t, barrier })
 	}
 
 	function reducedInput(px, source, when) {

@@ -136,17 +136,16 @@ export function CaptureRestorationPanel({ view, onRestore }: { view: Restoration
 	if (!view) return null
 	const { availability, busy, error } = view
 	return (
-		<div className="absolute inset-0 z-[5] grid place-items-center bg-night-soft/95 p-6">
-			<div role="status" aria-live="polite" className="max-w-sm space-y-4 text-center text-[#e6eadc]">
+		<div className="cinema-restore">
+			<div role="status" aria-live="polite" className="cinema-restore-card">
 				<h2>{t(busy ? 'Restoring this memory…' : stateTitles[availability.state])}</h2>
 				<p>{t(restorationMessage(view))}</p>
 				<progress
-					className="w-full"
 					aria-label={t('Restoration progress')}
 					max={availability.totalObjects}
 					value={availability.readyObjects}
 				/>
-				<p>
+				<p className="cinema-restore-count">
 					{availability.readyObjects} / {availability.totalObjects} {t('parts ready')}
 				</p>
 				{error && <p role="alert">{t('Restoration could not be checked. Try again.')}</p>}

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { useI18n } from '../i18n/I18n'
+import { buttonDark } from './ui'
 
 export function AdminAccessLink() {
 	const { session } = useAppContext(),
@@ -22,7 +23,7 @@ export function AdminAccessLink() {
 		return () => controller.abort()
 	}, [userId])
 	return allowed ? (
-		<Link className="mm-admin-entry" to="/admin">
+		<Link className={`mm-admin-entry ${buttonDark}`} to="/admin">
 			{t('Open administration dashboard')} →
 		</Link>
 	) : null

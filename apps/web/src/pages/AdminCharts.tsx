@@ -29,7 +29,7 @@ function Bars({
 				{field === 'uploadedBytes' ? gigabytes(maximum, locale) : maximum}
 			</desc>
 			{[0, 0.25, 0.5, 0.75, 1].map(part => (
-				<line key={part} x1={0} x2={width} y1={part * height} y2={part * height} stroke="#354238" />
+				<line key={part} x1={0} x2={width} y1={part * height} y2={part * height} className="mm-admin-chart-grid" />
 			))}
 			{series.map((row, i) => {
 				const barHeight = (row[field] / maximum) * height
@@ -45,8 +45,7 @@ function Bars({
 								y={0}
 								width={width / series.length}
 								height={height}
-								fill="#354238"
-								opacity="0.45"
+								className="mm-admin-chart-gap"
 							/>
 						) : (
 							<rect
@@ -54,8 +53,7 @@ function Bars({
 								y={height - barHeight}
 								width={Math.max(0.7, (width / series.length) * 0.7)}
 								height={barHeight}
-								fill={field === 'uploadedBytes' ? '#d9f36c' : '#78c3ac'}
-								opacity={row.coverage === 'partial' ? 0.55 : 1}
+								className={`mm-admin-chart-bar${field === 'signups' ? ' is-signups' : ''}${row.coverage === 'partial' ? ' is-partial' : ''}`}
 							/>
 						)}
 					</g>

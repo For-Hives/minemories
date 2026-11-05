@@ -1,44 +1,42 @@
-/* World view: a film of the captures, the left-hand twin of the toolbar; it rests and hides with the controls. */
+/* World view: a film of the captures, the left-hand twin of the toolbar (the same hotbar strip); it rests and hides with the controls.
+   Each capture is a hotbar slot, the one shown wears the game's selection frame, a status is a small coloured block. */
 .timeline-error {
 	position: absolute;
 	left: 50%;
 	top: 92px;
 	transform: translateX(-50%);
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 12px;
-	padding: 10px 16px;
-	border: 1px solid #e4dbbd30;
-	border-radius: 14px;
-	background: #15221bf0;
-	font-size: 12px;
+	gap: var(--ds-sp-3);
+	max-width: calc(100% - 32px);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night-2);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
 }
 .timeline-error p {
 	margin: 0;
-}
-.timeline-error button {
-	border: 1px solid #ffffff30;
-	border-radius: 10px;
-	background: transparent;
-	color: inherit;
 }
 
 .film {
 	--film-thumb: 44px;
 	position: absolute;
-	left: 24px;
+	left: var(--ds-sp-5);
 	top: 50%;
 	transform: translateY(-50%);
-	width: 128px;
+	width: 192px;
 	max-height: min(640px, calc(100% - 220px));
 	display: flex;
 	flex-direction: column;
-	padding: 6px;
-	border: 1px solid #d6e2d226;
-	border-radius: 20px;
-	background: #14211bf5;
-	box-shadow: 0 16px 50px #0003;
-	transition: opacity 400ms ease-out;
+	padding: var(--ds-sp-1);
+	/* Near-opaque night: the strip's labels must read over a bright sky or a light build. */
+	background: rgb(20 17 14 / 0.94);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	transition: opacity var(--ds-dur-3) ease-out;
 }
 .is-immersed > .film {
 	display: none;
@@ -49,91 +47,113 @@
 }
 .film-head {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
-	padding: 2px 2px 6px;
-	border-bottom: 1px solid #ffffff14;
-	margin-bottom: 4px;
+	gap: var(--ds-sp-2);
+	padding: var(--gp) var(--gp) var(--ds-sp-2);
+	margin-bottom: var(--ds-sp-1);
+	box-shadow: 0 var(--gp) 0 rgb(160 152 140 / 0.42);
 }
+/* Play: the copper button of the film (stone once it plays). */
 .cinema-page .film-play {
 	display: grid;
 	place-items: center;
-	width: 44px;
-	height: 44px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
 	flex: none;
-	padding: 0;
-	border-radius: 14px;
-	background: var(--cinema-ink);
-	color: #1d2a22;
+	margin: 0;
+	padding: 0 0 var(--gp);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--copper);
+	color: #fff;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--copper-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--copper-lo);
+	cursor: pointer;
+}
+.cinema-page .film-play:hover:not(:disabled) {
+	border-color: var(--hover);
 }
 .film-play svg {
-	width: 15px;
-	height: 15px;
+	width: 16px;
+	height: 16px;
 	fill: currentColor;
 }
 .cinema-page .film-play[aria-pressed="true"] {
-	background: #2a3a30;
-	color: var(--cinema-ink);
+	background: var(--stone);
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
+}
+.cinema-page .film-play:disabled {
+	background: var(--off);
+	color: var(--off-ink);
+	box-shadow: none;
 }
 .film-title {
 	display: grid;
+	flex: 1 1 100%;
 	min-width: 0;
-	line-height: 1.25;
+	gap: 2px;
 }
+/* The number of captures, as a stack count. */
 .film-title strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 11px;
-	font-weight: 600;
+	font: 400 16px / 20px var(--f-ui);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-1);
 }
 .film-title span {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 9px;
-	color: var(--cinema-muted);
+	font: 400 var(--ds-rd-fs-sm) / 1.3 var(--ds-f-text);
+	color: var(--text-2);
 }
+/* Loading: the kit's segmented bar, filled with ember. */
 .film-progress {
-	height: 2px;
-	margin: 0 4px 6px;
-	border-radius: 2px;
-	background: #ffffff1a;
+	height: 8px;
+	margin: 0 var(--ds-sp-1) var(--ds-sp-2);
+	background: #1a1612;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 	overflow: hidden;
 }
 .film-progress span {
 	display: block;
 	height: 100%;
-	background: var(--cinema-gold);
-	transition: width 300ms ease-out;
+	background: var(--ember);
+	transition: width var(--ds-dur-3) steps(4, end);
 }
 .film-list {
 	flex: 1;
 	min-height: 0;
 	margin: 0;
-	padding: 2px 0 4px;
+	padding: var(--gp) 0 var(--ds-sp-1);
 	overflow-y: auto;
 	list-style: none;
 	scrollbar-width: thin;
-	scrollbar-color: #ffffff30 transparent;
+	scrollbar-color: var(--stone) transparent;
 }
 .film-item {
 	position: relative;
-	padding: 0 2px;
+	padding: 0 var(--ds-sp-1);
 }
 /* The thread joining the frames: what is shown is lit, the future stays faint. */
 .film-item::before {
 	content: "";
 	position: absolute;
-	left: calc(2px + var(--film-thumb) / 2);
+	left: calc(var(--ds-sp-1) + var(--film-thumb) / 2);
 	top: 0;
 	bottom: 0;
-	width: 2px;
+	width: var(--gp);
 	transform: translateX(-50%);
-	background: var(--cinema-gold);
-	opacity: 0.55;
+	background: var(--ember);
 }
 .film-item[data-future="true"]::before {
-	background: #ffffff;
-	opacity: 0.12;
+	background: rgb(160 152 140 / 0.3);
 }
 .film-item:first-child::before {
 	top: 50%;
@@ -145,148 +165,154 @@
 	position: relative;
 	display: block;
 	width: fit-content;
-	margin: 6px 0 2px;
-	padding: 1px 6px;
-	border-radius: 6px;
-	background: #14211b;
-	font: 600 11px / 1.4 var(--font-sans, inherit);
-	color: var(--cinema-muted);
+	margin: var(--ds-sp-2) 0 var(--gp);
+	padding: 0 var(--ds-sp-1);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	font: 400 16px / 20px var(--f-ui);
+	color: var(--text-2);
 }
 .film-row {
 	position: relative;
 	display: flex;
 	align-items: center;
-	padding: 3px 0;
+	gap: var(--ds-sp-1);
+	padding: var(--ds-sp-1) 0;
 }
 .cinema-page .film-frame {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 	min-width: 0;
 	flex: 1;
+	min-height: var(--ds-hit);
+	margin: 0;
 	padding: 0;
 	border: 0;
+	border-radius: 0;
 	background: transparent;
 	color: inherit;
 	text-align: left;
+	cursor: pointer;
 }
+/* A capture is a slot: its picture in the slot's frame. */
 .film-thumb {
 	position: relative;
 	width: var(--film-thumb);
 	height: var(--film-thumb);
 	flex: none;
-	border-radius: 12px;
-	border: 2px solid #ffffff22;
-	background: #2a3a30 center / cover;
-	transition:
-		transform 200ms ease-out,
-		border-color 200ms,
-		filter 200ms;
+	background: var(--slot-lo) center / cover;
+	box-shadow:
+		inset 0 0 0 var(--gp) rgb(160 152 140 / 0.6),
+		0 0 0 var(--gp) var(--outline);
+	image-rendering: pixelated;
 }
 .film-frame:hover .film-thumb {
-	transform: scale(1.05);
-	border-color: #ffffff55;
+	box-shadow:
+		inset 0 0 0 var(--gp) var(--hover),
+		0 0 0 var(--gp) var(--outline);
 }
 .film-frame[aria-current="step"] .film-thumb {
-	border-color: var(--cinema-gold);
-	transform: scale(1.08);
+	box-shadow:
+		inset 0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 calc(2 * var(--gp)) var(--text),
+		0 0 0 var(--gp) var(--outline);
 }
 .film-item[data-future="true"] .film-thumb {
 	filter: grayscale(0.7) brightness(0.65);
 }
 .film-frame time {
+	min-width: 0;
+	overflow: hidden;
 	white-space: nowrap;
-	font-size: 10px;
+	font: 400 16px / 20px var(--f-ui);
 	font-variant-numeric: tabular-nums;
-	color: var(--cinema-muted);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .film-frame[aria-current="step"] time {
-	color: var(--cinema-ink);
-	font-weight: 600;
+	color: #fff;
 }
+/* The capture's state: a small block at the slot's corner. */
 .film-status {
 	position: absolute;
 	right: -4px;
 	bottom: -4px;
 	width: 12px;
 	height: 12px;
-	border-radius: 50%;
-	border: 2px solid #14211b;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 	display: none;
 }
 .film-item:is([data-status="loading"], [data-status="waiting"]) .film-status {
 	display: block;
-	border-color: #ffffff30;
-	border-top-color: var(--cinema-gold);
-	background: #14211b;
-	animation: film-spin 900ms linear infinite;
+	background: var(--stone);
 }
-.film-item[data-status="waiting"] .film-status {
-	animation: none;
-	border-top-color: #ffffff30;
+.film-item[data-status="loading"] .film-status {
+	background: var(--ember);
+	animation: film-blink 900ms steps(2, jump-none) infinite;
 }
 .film-item[data-status="failed"] .film-status {
 	display: block;
-	background: #e07a6a;
+	background: var(--bad);
 }
 .film-item:is([data-status="archived"], [data-status="skipped"]) .film-status {
 	display: block;
-	background: #8fa8c8;
+	background: var(--c-blue);
 }
 .film-item:is([data-status="archived"], [data-status="skipped"], [data-status="failed"]) .film-thumb {
 	opacity: 0.5;
 }
+/* Open alone (or retry): a stone button at the end of the row. */
 .cinema-page .film-side {
-	position: absolute;
-	left: calc(var(--film-thumb) - 14px);
-	top: -2px;
 	display: grid;
 	place-items: center;
-	width: 20px;
-	height: 20px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
 	flex: none;
-	padding: 0;
-	border: 0;
-	border-radius: 50%;
-	background: #0d1612f2;
-	color: var(--cinema-muted);
+	margin: 0;
+	padding: 0 0 var(--gp);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--stone);
+	color: #fff;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 	opacity: 0;
-	transition: opacity 160ms;
+	transition: opacity var(--ds-dur-2) linear;
 }
 .film-side svg {
-	width: 11px;
-	height: 11px;
+	width: 16px;
+	height: 16px;
 }
 .film-row:hover .film-side,
 .film-side:focus-visible,
 .film-item[data-status="failed"] .film-side {
 	opacity: 1;
 }
-.film-side:hover {
-	background: var(--cinema-gold);
-	color: #1d2a22;
+.cinema-page .film-side:hover {
+	border-color: var(--hover);
 }
 .film-note {
 	margin: 0;
-	padding: 6px 4px 2px;
-	font-size: 9px;
-	line-height: 1.4;
-	color: var(--cinema-muted);
+	padding: var(--ds-sp-2) var(--ds-sp-1) var(--gp);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
-@keyframes film-spin {
-	to {
-		transform: rotate(360deg);
+@keyframes film-blink {
+	50% {
+		background: var(--ember-deep);
 	}
 }
 
 /* Phones: the film becomes a horizontal strip above the day clock. */
 @media (max-width: 800px) {
 	.film {
-		--film-thumb: 42px;
-		left: 12px;
-		right: 12px;
+		--film-thumb: 44px;
+		left: var(--ds-sp-3);
+		right: 68px;
 		top: auto;
-		bottom: 150px;
+		bottom: 176px;
 		transform: none;
 		width: auto;
 		max-height: none;
@@ -294,9 +320,10 @@
 		align-items: center;
 	}
 	.film-head {
-		padding: 0 6px 0 0;
+		flex-wrap: nowrap;
+		padding: 0 var(--ds-sp-1) 0 0;
 		margin: 0;
-		border-bottom: 0;
+		box-shadow: none;
 	}
 	.film-title,
 	.film-progress,
@@ -309,8 +336,8 @@
 	}
 	.film-list {
 		display: flex;
-		gap: 8px;
-		padding: 2px 4px;
+		gap: var(--ds-sp-2);
+		padding: var(--gp) var(--ds-sp-1);
 		overflow-x: auto;
 		overflow-y: hidden;
 	}
@@ -324,7 +351,8 @@
 	display: none;
 }
 @media (prefers-reduced-motion: reduce) {
-	.film-thumb,
+	.film,
+	.film-side,
 	.film-progress span {
 		transition: none;
 	}
@@ -333,42 +361,55 @@
 	}
 }
 
-/* Previous / next capture and the switch that hides captures older than the one shown. */
+/* Previous / next capture and the switch that hides captures older than the one shown: three hotbar slots. */
 .film-steps {
 	display: flex;
 	justify-content: center;
-	gap: 2px;
-	padding: 2px 0 6px;
+	gap: var(--gp);
+	padding: var(--gp) 0 var(--ds-sp-2);
 }
 .cinema-page .film-steps button {
 	display: grid;
 	place-items: center;
-	width: 34px;
-	min-height: 32px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
+	margin: 0;
 	padding: 0;
 	border: 0;
-	border-radius: 10px;
+	border-radius: 0;
 	background: transparent;
-	color: inherit;
+	color: var(--text);
+	box-shadow: inset 0 0 0 var(--gp) rgb(160 152 140 / 0.42);
 	cursor: pointer;
 }
 .cinema-page .film-steps button:hover:not(:disabled) {
-	background: #ffffff14;
+	background: rgb(255 255 255 / 0.2);
+	color: #fff;
 }
 .cinema-page .film-steps button:disabled {
-	opacity: 0.35;
+	color: var(--text-3);
 	cursor: default;
 }
+/* Older captures hidden: the switch wears the selection frame, in ember. */
 .cinema-page .film-steps button[aria-pressed="false"] {
-	color: #dcc493;
-	background: #e6c68e22;
+	color: var(--ember);
+	box-shadow:
+		inset 0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 calc(2 * var(--gp)) var(--text),
+		0 0 0 var(--gp) var(--outline);
 }
 .film-steps .cinema-icon {
-	width: 16px;
-	height: 16px;
+	width: 24px;
+	height: 24px;
 }
 @media (max-width: 800px) {
 	.film-steps {
-		padding: 0 4px;
+		padding: 0 var(--ds-sp-1);
+	}
+}
+@media (forced-colors: active) {
+	.film,
+	.timeline-error {
+		border: 1px solid CanvasText;
 	}
 }

@@ -10,7 +10,7 @@ import { fileInputHidden } from '../components/ui'
 import { errorMessageKey } from '../i18n/error-messages'
 import { useI18n } from '../i18n/I18n'
 
-const inputField = 'auth-input'
+const inputField = 'auth-input mc-field'
 
 function submitText(creating: boolean, busy: boolean) {
 	if (busy) return 'One moment…'
@@ -74,11 +74,16 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 		<section className="auth-entry">
 			<div className="auth-workspace">
 				<div className="auth-form-wrap">
-					<nav className="auth-modes" aria-label={t('Access your space')}>
-						<Link to="/login" state={{ from, email }} aria-current={!creating ? 'page' : undefined}>
+					<nav className="auth-modes mc-tabs" aria-label={t('Access your space')}>
+						<Link className="mc-tab" to="/login" state={{ from, email }} aria-current={!creating ? 'page' : undefined}>
 							{t('Sign in')}
 						</Link>
-						<Link to="/register" state={{ from, email }} aria-current={creating ? 'page' : undefined}>
+						<Link
+							className="mc-tab"
+							to="/register"
+							state={{ from, email }}
+							aria-current={creating ? 'page' : undefined}
+						>
 							{t('Create a space')}
 						</Link>
 					</nav>
@@ -129,7 +134,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								{t(error)}
 							</p>
 						)}
-						<button className="auth-submit" type="submit" disabled={busy}>
+						<button className="auth-submit mc-btn mc-btn--primary mc-btn--block" type="submit" disabled={busy}>
 							{busy && <span className="auth-spinner" aria-hidden="true" />}
 							{t(submitText(creating, busy))}
 							<span aria-hidden="true">↗</span>
@@ -194,11 +199,7 @@ function AuthAtmosphere() {
 	const { t } = useI18n()
 	return (
 		<aside className="auth-atmosphere" aria-label={t('The spirit of Minemories')}>
-			<div className="auth-art-sky" aria-hidden="true">
-				<span className="auth-art-sun" />
-				<i />
-				<i />
-			</div>
+			<div className="auth-art-sky" aria-hidden="true" />
 			<div className="auth-art-label">
 				<span>MINEMORIES</span>
 				<span>{t('THE PLACES REMAIN.')}</span>

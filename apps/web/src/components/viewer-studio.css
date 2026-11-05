@@ -1,3 +1,8 @@
+/* The viewer's chrome in the landing's Minecraft interface (docs/features/design-system.md). The 3D canvas and its rendering are untouched.
+   The toolbar is the game's hotbar (slots on a dark strip, the white selection frame), its labels are the game's item tooltip,
+   the panels are the game's dark containers, the toasts are the game's notification. The viewer lives outside .mm-site: every font is set here.
+   Game font (--f-ui, --f-title): titles, labels, buttons, keys, numbers. Reading font (--ds-f-text): running text, file and world data. */
+
 /* Shared studio primitives. */
 .viewer-stage {
 	overflow: hidden;
@@ -14,17 +19,11 @@
 }
 :where(.viewer-studio) button,
 :where(.viewer-studio) select {
-	padding: 9px 13px;
-	border: 1px solid transparent;
 	font: inherit;
 	cursor: pointer;
-	transition:
-		background 160ms,
-		border-color 160ms;
 }
 .viewer-studio button:disabled,
 .viewer-studio fieldset:disabled {
-	opacity: 0.45;
 	cursor: default;
 }
 .viewer-weather {
@@ -34,28 +33,32 @@
 }
 .viewer-quality {
 	display: grid;
-	font-size: 11px;
 }
-/* The studio is an application surface, independent of the marketing layout. */
-.cinema-layout {
-	min-height: 100svh;
-	background: #111715;
-}
+
+/* The page: the night of the landing. */
 .cinema-page {
 	/* The day's sky, midnight to midnight; kept on one line so its taste-skill exemption sits beside it. */
 	/* biome-ignore format: the exemption comment must stay on the gradient's line */
 	--day-sky: linear-gradient(90deg, #424767, #ebb08c 25%, #f7e9b4, #cd8c6a 75%, #424767); /* taste-skill-ignore */
-	--cinema-ink: #f3ecdc;
-	--cinema-muted: #b9c5bc;
-	--cinema-gold: #e6c68e;
+	--cinema-ink: var(--text);
+	--cinema-muted: var(--text-2);
+	--cinema-gold: var(--ember);
+	/* The game's materials, read by the rules below. */
+	--v-panel: 0 0 0 var(--gp) var(--outline), var(--ds-panel-bevel);
+	--v-stone:
+		inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
+	--v-slot: inset 0 0 0 var(--gp) rgb(160 152 140 / 0.42);
+	--v-selected:
+		inset 0 0 0 var(--gp) var(--outline), inset 0 0 0 calc(2 * var(--gp)) var(--text), 0 0 0 var(--gp) var(--outline);
 	position: relative;
 	width: 100%;
 	height: 100svh;
 	min-height: 520px;
 	padding: 0;
 	overflow: hidden;
-	color: var(--cinema-ink);
-	font-family: inherit;
+	background: var(--night);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .cinema-page .viewer-stage {
 	position: absolute;
@@ -65,13 +68,18 @@
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	background: #172420;
+	background: var(--night);
 }
+/* A shade along the top and bottom edges, so the controls read over a bright sky (the night's colour):
+   hard-edged steps, like the game's shading, never a blurred shadow. */
 .cinema-page .viewer-stage::after {
 	box-shadow:
-		inset 0 100px 100px -70px #091310c9,
-		inset 0 -140px 100px -90px #091310c9;
-	border-radius: 0;
+		inset 0 32px 0 rgb(20 17 14 / 0.3),
+		inset 0 64px 0 rgb(20 17 14 / 0.2),
+		inset 0 96px 0 rgb(20 17 14 / 0.15),
+		inset 0 -40px 0 rgb(20 17 14 / 0.3),
+		inset 0 -80px 0 rgb(20 17 14 / 0.2),
+		inset 0 -120px 0 rgb(20 17 14 / 0.15);
 }
 .cinema-canvas {
 	position: absolute;
@@ -79,18 +87,20 @@
 	width: 100%;
 	height: 100%;
 	display: block;
-	transition: opacity 800ms ease;
+	transition: opacity var(--ds-dur-3) var(--ds-ease);
 }
 .cinema-canvas.is-empty {
 	opacity: 0;
 }
+
+/* --- Header: a stone back button, the kicker on a plaque, the title in the game's font --- */
 .cinema-header {
-	transition: opacity 400ms ease-out;
+	transition: opacity var(--ds-dur-3) ease-out;
 	position: absolute;
-	inset: 24px 28px auto;
+	inset: var(--ds-sp-5) var(--ds-sp-5) auto;
 	display: flex;
 	align-items: center;
-	gap: 16px;
+	gap: var(--ds-sp-4);
 	z-index: 5;
 	pointer-events: none;
 }
@@ -98,230 +108,309 @@
 .cinema-header label {
 	pointer-events: auto;
 }
-.cinema-back {
-	display: grid;
-	place-items: center;
-	width: 44px;
-	height: 44px;
-	border: 1px solid #ffffff30;
-	border-radius: 50%;
-	background: #16201dd9;
-	color: #f3ecdc;
-	font-size: 21px;
+/* Stone buttons drawn on the viewer's own classes (the kit's .mc-btn). */
+.cinema-back,
+.cinema-open,
+.cinema-page .cinema-immerse,
+.cinema-page .cinema-navigation button,
+.cinema-page .viewer-layers button,
+.cinema-page .timeline-error button,
+.cinema-page .cinema-panel-heading button {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-4) var(--gp);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--stone);
+	color: #fff;
+	font: 400 16px / 18px var(--f-ui);
 	text-decoration: none;
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	white-space: nowrap;
+	box-shadow: var(--v-stone);
+	cursor: pointer;
+	transition: border-color var(--ds-dur-1) var(--ds-ease-std);
+}
+.cinema-back:hover,
+.cinema-open:hover,
+.cinema-page .cinema-immerse:hover,
+.cinema-page .cinema-navigation button:hover,
+.cinema-page .viewer-layers button:hover,
+.cinema-page .timeline-error button:hover,
+.cinema-page .cinema-panel-heading button:hover {
+	border-color: var(--hover);
+}
+.cinema-back:active,
+.cinema-page .cinema-immerse:active,
+.cinema-page .cinema-navigation button:active,
+.cinema-page .viewer-layers button:active,
+.cinema-page .timeline-error button:active {
+	box-shadow: inset var(--gp) var(--gp) 0 var(--stone-lo);
+	padding-top: var(--gp);
+	padding-bottom: 0;
+}
+.cinema-back {
+	flex: none;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
+	padding: 0 0 var(--gp);
+	font-size: 16px;
 }
 .cinema-title {
+	display: grid;
+	justify-items: start;
+	gap: var(--ds-sp-1);
 	min-width: 0;
-	text-shadow: 0 2px 12px #000a;
 }
 .cinema-title > span {
-	font-size: 10px;
-	letter-spacing: 2px;
+	padding: var(--gp) calc(3 * var(--gp));
+	background: rgb(0 0 0 / var(--mc-plaque-alpha));
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--text-2);
 	text-transform: uppercase;
-	color: #e0e7d9;
+	white-space: nowrap;
 }
 .cinema-title i {
-	padding: 0 10px;
-	opacity: 0.5;
+	padding: 0 var(--ds-sp-2);
+	color: var(--text-3);
 }
+/* On a plaque, the kit's rule for a title over a light image (the sky can be bright). */
 .cinema-title h1 {
-	margin: 5px 0 0;
-	font-size: 16px;
-	font-weight: 500;
-	letter-spacing: -0.3px;
+	margin: 0;
+	padding: 0 calc(3 * var(--gp));
+	background: rgb(0 0 0 / var(--mc-plaque-alpha));
 	max-width: 50vw;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	letter-spacing: 0;
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-2);
 }
 .cinema-header-actions {
 	margin-left: auto;
 }
 .cinema-open {
-	display: flex;
-	align-items: center;
-	gap: 24px;
-	padding: 12px 18px;
-	border: 1px solid #ffffff30;
-	border-radius: 30px;
-	background: #16201dd9;
-	color: #f3ecdc;
-	font-size: 12px;
-	text-decoration: none;
-	cursor: pointer;
+	gap: var(--ds-sp-3);
+}
+/* The full-width plus has no glyph in the game's font: it is drawn in the reading font. */
+.cinema-open > span {
+	font-family: var(--ds-f-text);
 }
 .cinema-open:focus-within {
-	outline: 2px solid #e6c68e;
-	outline-offset: 4px;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
 }
+.cinema-page :is(button, input, select, a, label):focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+/* --- The studio layer --- */
 .cinema-page .viewer-studio {
 	position: absolute;
 	inset: 0;
 	z-index: 3;
 	padding: 0;
 	pointer-events: none;
-	color: var(--cinema-ink);
+	color: var(--text);
 }
 .viewer-studio > * {
 	pointer-events: auto;
 }
-:where(.cinema-page .viewer-studio) button,
-:where(.cinema-page .viewer-studio) select {
-	background: transparent;
-	color: inherit;
-	border-color: transparent;
-	font-size: 12px;
-	border-radius: 10px;
-	min-height: 42px;
-}
-:where(.cinema-page .viewer-studio) button:hover {
-	background: #ffffff12;
-	border-color: #ffffff20;
-}
-:where(.cinema-page .viewer-studio) button[aria-pressed="true"] {
-	background: #e6c68e22;
-	color: #ffe0a8;
-	border-color: #e6c68e40;
-}
-.cinema-page button:focus-visible,
-.cinema-page input:focus-visible,
-.cinema-page a:focus-visible {
-	outline: 2px solid #e6c68e;
-	outline-offset: 4px;
-}
+
+/* --- Toolbar: the game's hotbar, standing on the right edge. Each tool is a hotbar slot; a pressed one wears the selection frame --- */
 .cinema-toolbar {
 	position: absolute;
-	right: 24px;
+	right: var(--ds-sp-5);
 	top: 50%;
 	transform: translateY(-50%);
 	display: grid;
-	gap: 2px;
-	padding: 6px;
-	border: 1px solid #d6e2d226;
-	border-radius: 20px;
-	background: #14211bf5;
-	box-shadow: 0 16px 50px #0003;
+	gap: var(--gp);
+	padding: var(--gp);
+	background: rgb(0 0 0 / 0.55);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .cinema-toolbar hr {
-	width: 22px;
-	margin: 4px auto;
+	width: 100%;
+	height: var(--gp);
+	margin: var(--gp) 0;
 	border: 0;
-	border-top: 1px solid #ffffff1f;
+	background: rgb(160 152 140 / 0.42);
 }
 .cinema-page .cinema-toolbar button {
 	position: relative;
 	display: grid;
 	place-items: center;
-	width: 44px;
-	height: 44px;
+	width: 48px;
+	height: 48px;
+	margin: 0;
 	padding: 0;
-	border-radius: 14px;
-	transition:
-		background 140ms ease-out,
-		transform 120ms ease-out;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--text);
+	box-shadow: var(--v-slot);
 }
-.cinema-page .cinema-toolbar button:active:not(:disabled) {
-	transform: scale(0.94);
+/* Hovering a slot: the game's white veil. */
+.cinema-page .cinema-toolbar button:hover:not(:disabled) {
+	background: rgb(255 255 255 / 0.2);
+	color: #fff;
+}
+.cinema-page .cinema-toolbar button:is([aria-pressed="true"], [aria-expanded="true"]) {
+	color: var(--ember);
+	box-shadow: var(--v-selected);
+}
+.cinema-page .cinema-toolbar button:disabled {
+	color: var(--text-3);
 }
 .cinema-icon {
-	width: 21px;
-	height: 21px;
+	width: 24px;
+	height: 24px;
+	shape-rendering: crispEdges;
 }
+/* The tool's name: the game's item tooltip, beside the slot. */
 .cinema-toolbar button > span {
 	position: absolute;
-	right: calc(100% + 12px);
+	right: calc(100% + var(--ds-sp-3));
 	top: 50%;
-	transform: translate(6px, -50%);
-	padding: 6px 10px;
-	border-radius: 8px;
-	background: #0d1612f2;
-	font-size: 11px;
+	transform: translateY(-50%);
+	padding: var(--ds-sp-1) var(--ds-sp-3);
+	border: var(--gp) solid;
+	border-image: linear-gradient(var(--tip-a), var(--tip-b)) 1; /* taste-skill-ignore: the game's tooltip outline */
+	background: var(--tip-bg);
+	color: var(--text);
+	font: 400 16px / 20px var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
 	white-space: nowrap;
-	opacity: 0;
+	visibility: hidden;
 	pointer-events: none;
-	transition:
-		opacity 120ms ease-out,
-		transform 120ms ease-out;
 }
 .cinema-toolbar button:is(:hover, :focus-visible) > span {
-	opacity: 1;
-	transform: translate(0, -50%);
+	visibility: visible;
 }
+/* A key, as the hotbar's key caption. */
 .viewer-studio kbd {
-	margin-left: 6px;
-	padding: 1px 5px;
-	border: 1px solid #ffffff30;
-	border-radius: 4px;
-	font: inherit;
-	font-size: 9px;
-	color: #dcc493;
+	display: inline-block;
+	min-width: 20px;
+	margin-left: var(--ds-sp-2);
+	padding: 0 var(--ds-sp-1);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--g-key, #5a534b);
+	font: 400 16px / 20px var(--f-ui);
+	color: var(--text-2);
+	text-align: center;
+	text-shadow: none;
+}
+
+/* --- Panels (atmosphere, sharing, first person): the game's dark container --- */
+.cinema-settings,
+.cinema-page .viewer-sharing,
+.cinema-navigation,
+.cinema-loading-card,
+.cinema-restore-card {
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow: var(--v-panel);
 }
 .cinema-settings {
 	position: absolute;
 	top: 110px;
-	right: 96px;
-	width: 300px;
+	right: 100px;
+	width: 320px;
 	max-height: calc(100% - 270px);
 	overflow: auto;
-	border: 1px solid #e3ddc130;
-	border-radius: 20px;
-	padding: 22px;
-	background: #15221bf2;
-	box-shadow: 0 20px 60px #0004;
+	padding: var(--ds-sp-5);
 }
 .cinema-panel-title {
 	margin: 0;
-	font-size: 15px;
-	font-weight: 600;
+	font: 400 16px / 24px var(--f-title);
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .cinema-panel-heading {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	gap: 8px;
+	gap: var(--ds-sp-2);
 }
 .cinema-page .cinema-panel-heading button {
-	padding: 0;
-	min-height: 28px;
-	width: 28px;
-	font-size: 22px;
+	flex: none;
+	width: var(--ds-hit);
+	padding: 0 0 var(--gp);
+	font-size: 24px;
+	line-height: 1;
 }
 .cinema-settings h2,
 .viewer-sharing h2 {
-	font:
-		26px / 1.2 Georgia,
-		serif;
-	letter-spacing: -0.7px;
-	margin: 18px 0 8px;
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	letter-spacing: 0;
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-2);
+}
+h2.cinema-panel-title {
+	margin: 0;
+	font-size: 16px;
+	line-height: 24px;
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
 }
 .cinema-settings p {
-	color: #b9c5bc;
-	font-size: 12px;
-	line-height: 1.7;
-	margin: 0 0 24px;
+	margin: 0 0 var(--ds-sp-5);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
 .cinema-page .viewer-weather {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 5px;
+	gap: var(--ds-sp-2);
 }
-.cinema-page .viewer-weather legend {
-	color: #f3ecdc;
-	font-size: 11px;
-	margin-bottom: 12px;
+.cinema-page :is(.viewer-weather, .viewer-layers) legend {
+	margin-bottom: var(--ds-sp-3);
+	padding: 0;
+	font: 400 16px / 24px var(--f-ui);
+	color: var(--text);
 }
+/* A weather is a slot holding a small picture of the sky it selects. */
 .cinema-page .viewer-weather button {
-	padding: 5px 5px 9px;
-	font-size: 10px;
+	display: grid;
+	justify-items: stretch;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: var(--ds-sp-1) var(--ds-sp-1) var(--ds-sp-2);
+	border: 0;
+	border-radius: 0;
+	background: rgb(0 0 0 / 0.35);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / 1.25 var(--ds-f-text);
+	text-align: center;
+	box-shadow: var(--v-slot);
+}
+.cinema-page .viewer-weather button:hover:not(:disabled) {
+	background: rgb(255 255 255 / 0.12);
+}
+.cinema-page .viewer-weather button[aria-pressed="true"] {
+	box-shadow: var(--v-selected);
+}
+.viewer-weather:disabled button {
+	color: var(--text-3);
 }
 /* taste-skill-ignore: each swatch is a small picture of the sky it selects, not decoration. */
 .cinema-weather-swatch {
 	display: block;
-	height: 48px;
-	margin-bottom: 8px;
-	border-radius: 6px;
+	height: 40px;
 	background:
 		radial-gradient(circle at 70% 30%, #ffe0a8 0 4%, transparent 18%), linear-gradient(#5084a1, #dfcaa2); /* taste-skill-ignore: the sky at this hour */
+	box-shadow: inset 0 0 0 var(--gp) rgb(0 0 0 / 0.35);
+	image-rendering: pixelated;
 }
 .cinema-weather-swatch.mist {
 	background: linear-gradient(#6c8684, #b7c6ba 65%, #8c9b85); /* taste-skill-ignore: the sky at this hour */
@@ -329,59 +418,87 @@
 .cinema-weather-swatch.overcast {
 	background: linear-gradient(150deg, #56676f, #a1a9aa 60%, #63777b); /* taste-skill-ignore: the sky at this hour */
 }
-.cinema-page .viewer-quality {
-	margin-top: 24px;
-	gap: 10px;
-	color: #e8e6da;
+.cinema-weather-swatch.rain {
+	background: #5d839d;
 }
+.cinema-weather-swatch.snow {
+	background: #e4edf3;
+}
+.cinema-page .viewer-quality {
+	margin-top: var(--ds-sp-5);
+	gap: var(--ds-sp-2);
+	font: 400 16px / 24px var(--f-ui);
+	color: var(--text);
+}
+/* The kit's black field. */
 .cinema-page .viewer-quality select {
-	border: 1px solid #ffffff25;
-	background: #1d2d24;
 	width: 100%;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	background: var(--field);
+	color: var(--field-ink);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+.cinema-page .viewer-quality select:hover:not(:disabled) {
+	border-color: #d6d0c6;
+}
+.cinema-page .viewer-quality select:disabled {
+	background: var(--off);
+	color: var(--off-ink);
+	border-color: var(--night-3);
 }
 .cinema-settings small {
 	display: block;
-	font-size: 10px;
-	line-height: 1.7;
-	color: #98aa9e;
-	margin-top: 16px;
+	margin-top: var(--ds-sp-4);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
+
+/* --- Time of day: the experience bar above the hotbar. The clock is the level number, the rail is the day's sky --- */
 .cinema-time {
 	position: absolute;
 	left: 50%;
-	bottom: 48px;
+	bottom: var(--ds-sp-7);
 	transform: translateX(-50%);
-	width: min(380px, calc(100% - 120px));
+	width: min(400px, calc(100% - 120px));
 	display: grid;
 	grid-template-columns: auto 1fr;
 	align-items: center;
-	gap: 8px 14px;
-	padding: 10px 16px;
-	border-radius: 16px;
-	background: #15221bf5;
-	border: 1px solid #e4dbbd30;
-	box-shadow: 0 18px 50px #0004;
+	gap: var(--ds-sp-3) var(--ds-sp-4);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: rgb(20 17 14 / 0.92);
+	box-shadow: var(--v-panel);
 }
 .cinema-time .cinema-clock-value {
-	font:
-		20px / 1 Georgia,
-		serif;
+	font: 400 var(--ds-fs-h3) / 1 var(--f-ui);
 	font-variant-numeric: tabular-nums;
-	color: #f2e7cf;
+	color: var(--c-green);
+	text-shadow: var(--gp) var(--gp) 0 #263a1c;
 }
 .cinema-time-presets {
 	grid-column: 1 / -1;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	gap: var(--ds-sp-1);
 }
+/* An hour is a slot showing its sky. */
 .cinema-page .cinema-time-presets button {
-	width: 26px;
-	height: 26px;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
 	min-height: 0;
+	margin: 0;
 	padding: 0;
-	border: 2px solid #ffffff40;
-	border-radius: 50%;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	/* The game's slot frame, light enough to show the darkest sky against the night panel. */
+	box-shadow: inset 0 0 0 var(--gp) var(--slot);
+	cursor: pointer;
+}
+.cinema-page .cinema-time-presets button:hover {
+	border-color: var(--hover);
 }
 .cinema-time-presets button:nth-child(1) {
 	background: linear-gradient(#424767, #ebb08c); /* taste-skill-ignore: the sky at this hour */
@@ -399,83 +516,115 @@
 	background: linear-gradient(#0b1030, #424767); /* taste-skill-ignore: the sky at this hour */
 }
 .cinema-page .cinema-time-presets button[aria-pressed="true"] {
-	border-color: #fff1ce;
-	box-shadow: 0 0 0 2px #e6c68e55;
+	border-color: var(--text);
+	box-shadow:
+		inset 0 0 0 var(--gp) var(--outline),
+		0 0 0 var(--gp) var(--outline);
 }
 .cinema-page .cinema-time-presets .cinema-time-capture {
 	display: grid;
 	place-items: center;
-	width: auto;
-	height: 30px;
-	padding: 0 10px;
-	border-radius: 15px;
-	background: #ffffff10;
-	color: #f2e7cf;
+	background: var(--stone);
+	color: #fff;
+	box-shadow: var(--v-stone);
+}
+.cinema-page .cinema-time-presets .cinema-time-capture[aria-pressed="true"] {
+	border-color: var(--text);
+	background: var(--copper);
+	box-shadow:
+		inset 0 0 0 var(--gp) var(--outline),
+		0 0 0 var(--gp) var(--outline);
 }
 .cinema-time-capture .cinema-icon {
-	width: 16px;
-	height: 16px;
+	width: 24px;
+	height: 24px;
 }
+/* The kit's slider: a black-edged rail (here the day's sky) and a stone handle.
+   The input keeps the 44 px target; the 24 px rail is drawn on its track. */
 .cinema-time input {
 	display: block;
 	width: 100%;
-	height: 4px;
+	height: var(--ds-hit);
+	margin: 0;
 	appearance: none;
-	border-radius: 3px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.cinema-time input::-webkit-slider-runnable-track {
+	box-sizing: border-box;
+	height: 24px;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
 	/* The slider track is the day's sky from midnight to midnight. */
 	background: var(--day-sky); /* taste-skill-ignore: the sky at this hour */
-	cursor: pointer;
-	accent-color: #f4e1b9;
+	box-shadow: inset 0 0 0 var(--gp) rgb(0 0 0 / 0.35);
 }
-.cinema-time input::-moz-range-thumb {
-	border: 2px solid #fff1ce;
-	background: #bea476;
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
+.cinema-time input::-moz-range-track {
+	box-sizing: border-box;
+	height: 24px;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--day-sky); /* taste-skill-ignore: the sky at this hour */
+	box-shadow: inset 0 0 0 var(--gp) rgb(0 0 0 / 0.35);
 }
 .cinema-time input::-webkit-slider-thumb {
 	appearance: none;
-	border: 2px solid #fff1ce;
-	background: #bea476;
-	width: 14px;
-	height: 14px;
-	border-radius: 50%;
+	width: 12px;
+	height: 28px;
+	margin-top: -4px;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--stone);
+	box-shadow: var(--v-stone);
 }
+.cinema-time input::-moz-range-thumb {
+	width: 8px;
+	height: 24px;
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	background: var(--stone);
+	box-shadow: var(--v-stone);
+}
+.cinema-time input:hover::-webkit-slider-thumb {
+	border-color: var(--hover);
+}
+
+/* --- Caption: the file and the gesture, on a plaque (it must read over the scene) --- */
 .cinema-caption {
 	position: absolute;
-	left: 28px;
-	bottom: 23px;
+	left: var(--ds-sp-5);
+	bottom: var(--ds-sp-5);
 	display: flex;
 	align-items: center;
-	gap: 9px;
-	font-size: 9px;
-	letter-spacing: 0.5px;
-	color: #d2dacd;
-	text-shadow: 0 1px 4px #000;
+	gap: var(--ds-sp-2);
+	max-width: calc(50% - 232px);
+	padding: var(--gp) calc(3 * var(--gp));
+	background: rgb(0 0 0 / var(--mc-plaque-alpha));
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text);
 	pointer-events: none;
 }
 .cinema-gesture {
-	margin-left: 18px;
-	color: #bcc9bb;
+	margin-left: var(--ds-sp-3);
+	color: var(--text-2);
 }
 .cinema-live-dot {
-	width: 5px;
-	height: 5px;
-	border-radius: 50%;
-	background: #d7d1a1;
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .cinema-page .cinema-immerse {
 	position: absolute;
-	right: 24px;
-	bottom: 16px;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 10px;
-	background: #14211bc9;
-	border-radius: 30px;
-	padding: 7px 14px;
+	right: var(--ds-sp-5);
+	bottom: var(--ds-sp-4);
+	padding-inline: var(--ds-sp-3);
+}
+.cinema-page .cinema-immerse kbd {
+	margin-left: 0;
 }
 .cinema-immerse .cinema-icon {
 	width: 16px;
@@ -495,36 +644,45 @@
 .cinema-page .viewer-sharing {
 	position: absolute;
 	top: 105px;
-	right: 96px;
-	width: min(400px, calc(100% - 48px));
+	right: 100px;
+	width: min(420px, calc(100% - 48px));
 	margin: 0;
-	padding: 24px;
-	background: #15221bf5;
-	border-color: #e4dbbd30;
-	border-radius: 20px;
-	box-shadow: 0 20px 80px #0006;
+	padding: var(--ds-sp-5);
 	max-height: calc(100% - 240px);
 	overflow: auto;
 }
-:where(.cinema-page) .viewer-sharing h2 {
-	font-size: 23px;
+.cinema-panel-heading > h2 {
 	margin: 0;
 }
-:where(.cinema-page) .viewer-sharing p {
-	color: #b9c5bc;
-	line-height: 1.7;
+.viewer-sharing p {
+	margin: var(--ds-sp-2) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
+.viewer-sharing > .mc-btn {
+	--_h: var(--ds-hit);
+	margin-top: var(--ds-sp-4);
+	white-space: normal;
+}
+/* The game's notification (toast). */
 .cinema-page .cinema-toast {
 	position: absolute;
 	top: 100px;
 	left: 50%;
 	transform: translateX(-50%);
-	border-radius: 30px;
-	padding: 14px 24px;
-	background: #15221bf0;
-	border: 1px solid #e4dbbd30;
-	font-size: 12px;
+	max-width: calc(100% - 32px);
+	margin: 0;
+	padding: var(--ds-sp-3) var(--ds-sp-5);
+	background: var(--toast);
+	color: #fff;
+	font: 400 16px / 20px var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--toast-ring);
 }
+
+/* --- Empty studio: the landing's hero, centred --- */
 .cinema-empty {
 	position: absolute;
 	inset: 0;
@@ -532,114 +690,196 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 90px 24px 40px;
+	padding: 90px var(--ds-sp-5) var(--ds-sp-6);
 	text-align: center;
 }
+/* An empty slot holding the ember. */
 .cinema-orbit {
-	width: 90px;
-	height: 90px;
-	border: 1px solid #bcb58b35;
-	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	margin-bottom: 26px;
+	width: 72px;
+	height: 72px;
+	margin-bottom: var(--ds-sp-5);
+	background: var(--slot);
 	box-shadow:
-		0 0 0 18px #c5bc8310,
-		0 0 90px #d8ce7820;
-	color: #e6c68e;
-	font-size: 32px;
+		inset var(--gp) var(--gp) 0 var(--slot-lo),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi),
+		0 0 0 var(--gp) var(--outline);
+}
+.cinema-orbit .mc-icon {
+	--gp: 4px;
 }
 .cinema-empty h2 {
-	font:
-		clamp(36px, 5vw, 68px) / 1.08 Georgia,
-		serif;
-	font-weight: 400;
-	letter-spacing: -2px;
-	margin: 24px 0 16px;
+	margin: var(--ds-sp-4) 0 var(--ds-sp-4);
+	font: 400 var(--ds-fs-h2) / var(--ds-lh-h2) var(--f-title);
+	letter-spacing: 0;
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-3);
+	text-wrap: balance;
 }
 .cinema-empty h2 em {
-	color: #d7c493;
-	font-weight: 400;
+	color: var(--ember);
+	font-style: normal;
 }
 .cinema-empty p {
-	max-width: 340px;
-	font-size: 13px;
-	line-height: 1.8;
-	color: #b9c5bc;
-	margin: 0 0 28px;
+	max-width: 400px;
+	margin: 0 0 var(--ds-sp-6);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	color: var(--text-2);
 }
+/* The screen's one main action: the copper button. */
 .cinema-open-primary {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	gap: 40px;
-	background: #e6d7b4;
-	color: #233328;
-	border-radius: 40px;
-	padding: 16px 24px;
-	font-size: 12px;
+	justify-content: center;
+	gap: var(--ds-sp-3);
+	min-width: 196px;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-5) var(--gp);
+	border: var(--gp) solid var(--outline);
+	background: var(--copper);
+	color: #fff;
+	font: 400 16px / 18px var(--f-ui);
+	text-decoration: none;
+	text-shadow: var(--gp) var(--gp) 0 #2b1b0e;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--copper-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--copper-lo);
 	cursor: pointer;
-	box-shadow: 0 8px 32px #0003;
+	transition: border-color var(--ds-dur-1) var(--ds-ease-std);
+}
+.cinema-open-primary:hover {
+	border-color: var(--hover);
 }
 .cinema-empty small {
-	font-size: 10px;
-	margin-top: 20px;
-	color: #a4b4a7;
+	margin-top: var(--ds-sp-5);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	color: var(--text-2);
 }
+
+/* --- Loading and errors: a dark container over the night, the kit's segmented bar --- */
 .cinema-loading {
 	position: absolute;
 	inset: 0;
 	z-index: 6;
 	display: grid;
 	place-items: center;
-	background: #122019f0;
+	background: rgb(20 17 14 / 0.94);
 }
 .cinema-loading-card {
-	width: min(420px, calc(100% - 48px));
+	width: min(440px, calc(100% - 48px));
+	padding: var(--ds-sp-6) var(--ds-sp-5);
 	text-align: center;
 }
 .cinema-loading h2 {
-	font:
-		38px / 1.2 Georgia,
-		serif;
-	color: #f3ecdc;
-	margin: 22px 0 28px;
+	margin: 0 0 var(--ds-sp-5);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-2);
+	text-wrap: balance;
 }
 .cinema-loading p {
-	font-size: 12px;
-	line-height: 1.7;
-	color: #c0cdbe;
+	margin: 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
 .cinema-loading-line {
-	height: 2px;
-	background: #d8cda62b;
+	position: relative;
+	height: 12px;
+	margin: 0 var(--ds-sp-6) var(--ds-sp-5);
+	padding: var(--gp);
+	background: #1a1612;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
 	overflow: hidden;
-	margin: 0 30px 24px;
 }
 .cinema-loading-line::after {
 	content: "";
 	display: block;
-	width: 35%;
+	width: 30%;
 	height: 100%;
-	background: #e6c68e;
-	animation: cinema-loading 1.8s ease-in-out infinite alternate;
+	background: var(--ember);
+	animation: cinema-loading 1.8s steps(7, end) infinite;
 }
 @keyframes cinema-loading {
-	to {
-		transform: translateX(190%);
+	from {
+		transform: translateX(-100%);
 	}
+	to {
+		transform: translateX(340%);
+	}
+}
+/* Restoring an archived memory: the same container, with the experience bar. */
+.cinema-restore {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	display: grid;
+	place-items: center;
+	padding: var(--ds-sp-5);
+	background: rgb(20 17 14 / 0.94);
+}
+.cinema-restore-card {
+	display: grid;
+	justify-items: center;
+	gap: var(--ds-sp-4);
+	width: min(440px, 100%);
+	padding: var(--ds-sp-6) var(--ds-sp-5);
+	text-align: center;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+}
+.cinema-restore-card h2 {
+	margin: 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-2);
+	text-wrap: balance;
+}
+.cinema-restore-card p {
+	margin: 0;
+}
+.cinema-restore-card [role="alert"] {
+	color: var(--bad);
+}
+.cinema-restore-card .cinema-restore-count {
+	font: 400 16px / 18px var(--f-ui);
+	color: var(--c-green);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.cinema-restore-card progress {
+	width: 100%;
+	height: 12px;
+	appearance: none;
+	border: 0;
+	background: #1a1612;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.cinema-restore-card progress::-webkit-progress-bar {
+	background: #1a1612;
+}
+.cinema-restore-card progress::-webkit-progress-value {
+	background: var(--c-green);
+}
+.cinema-restore-card progress::-moz-progress-bar {
+	background: var(--c-green);
+}
+.cinema-restore-card .mc-btn {
+	--_h: var(--ds-hit);
 }
 .cinema-drop {
 	position: absolute;
-	inset: 20px;
+	inset: var(--ds-sp-5);
 	z-index: 7;
-	border: 1px dashed #e6c68e;
-	border-radius: 24px;
-	background: #15221beb;
 	display: grid;
 	place-items: center;
-	font:
-		32px Georgia,
-		serif;
+	background: rgb(20 17 14 / 0.9);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 calc(2 * var(--gp)) var(--ember),
+		inset 0 0 0 calc(3 * var(--gp)) var(--outline);
+	font: 400 var(--ds-fs-h2) / var(--ds-lh-h2) var(--f-title);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-3);
 	pointer-events: none;
 }
 .cinema-page:fullscreen {
@@ -648,80 +888,97 @@
 .cinema-page:fullscreen .viewer-stage {
 	height: 100%;
 }
+@media (min-width: 640px) {
+	.cinema-empty h2 {
+		font-size: var(--ds-fs-h1);
+		line-height: var(--ds-lh-h1);
+	}
+}
 @media (max-width: 800px) {
 	.cinema-header {
-		inset: 18px 16px auto;
-		gap: 10px;
+		inset: var(--ds-sp-4) var(--ds-sp-4) auto;
+		gap: var(--ds-sp-3);
 	}
-	.cinema-title > span {
-		font-size: 8px;
-		letter-spacing: 1px;
+	/* The back button and the action share the first row; the title takes its own full row below, whole. */
+	.cinema-header {
+		flex-wrap: wrap;
+	}
+	.cinema-title {
+		order: 1;
+		flex: 1 1 100%;
 	}
 	.cinema-title h1 {
-		font-size: 13px;
-		max-width: 42vw;
+		max-width: 100%;
+		overflow: visible;
+		white-space: normal;
+		font-size: 16px;
+		line-height: 24px;
+		text-shadow: var(--ds-text-shadow-1);
+	}
+	.cinema-title > span {
+		max-width: 100%;
+		white-space: normal;
+	}
+	.cinema-header-actions {
+		flex: none;
 	}
 	.cinema-open {
-		padding: 11px 13px;
-		font-size: 10px;
-		gap: 8px;
+		padding: 0 var(--ds-sp-3) var(--gp);
+		white-space: nowrap;
 	}
 	.cinema-toolbar {
-		right: 12px;
-		padding: 5px;
-		gap: 2px;
-	}
-	.cinema-toolbar :where(button) span {
-		display: none;
+		right: var(--ds-sp-3);
 	}
 	.cinema-page .cinema-toolbar button {
-		width: 42px;
-		justify-content: center;
-		padding: 8px;
-		font-size: 17px;
+		width: 44px;
+		height: 44px;
 	}
+	.cinema-toolbar button > span {
+		display: none;
+	}
+	/* Panels open below the header, whose title takes its own row on a phone (it ends near 124 px). */
 	.cinema-settings {
 		right: 68px;
-		top: 90px;
-		width: min(290px, calc(100% - 84px));
-		max-height: calc(100% - 250px);
-		padding: 16px;
+		top: 136px;
+		width: min(300px, calc(100% - 84px));
+		max-height: calc(100% - 296px);
+		padding: var(--ds-sp-4);
 	}
+	/* Below the toolbar's column: the strip takes the width, so the six hour slots keep 44 px. */
 	.cinema-time {
-		width: calc(100% - 84px);
-		bottom: 56px;
-		left: 12px;
+		width: calc(100% - 2 * var(--ds-sp-3));
+		bottom: 64px;
+		left: var(--ds-sp-3);
 		transform: none;
+		padding: var(--ds-sp-2);
+	}
+	.cinema-time-presets {
+		gap: 0;
 	}
 	.cinema-caption {
-		left: 16px;
-		bottom: 28px;
-		max-width: 50%;
+		left: var(--ds-sp-3);
+		bottom: var(--ds-sp-3);
+		max-width: calc(100% - 180px);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		font-size: 8px;
 	}
 	.cinema-gesture {
 		display: none;
 	}
 	.cinema-page .cinema-immerse {
-		right: 12px;
-		bottom: 12px;
+		right: var(--ds-sp-3);
+		bottom: var(--ds-sp-3);
 	}
 	.cinema-page .viewer-sharing {
-		top: 90px;
-		right: 76px;
-		width: calc(100% - 88px);
-		padding: 18px;
+		top: 136px;
+		right: 68px;
+		width: calc(100% - 84px);
+		padding: var(--ds-sp-4);
 	}
-	.cinema-empty h2 {
-		letter-spacing: -1px;
-	}
-	.cinema-orbit {
-		width: 60px;
-		height: 60px;
-		margin-bottom: 20px;
+	.cinema-page .cinema-navigation,
+	.cinema-page .cinema-toast {
+		top: 136px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -734,42 +991,39 @@
 	}
 }
 
+/* --- First person: the movement keys on a dark container --- */
 .cinema-navigation {
 	position: absolute;
-	left: 24px;
-	top: 92px;
-	width: min(330px, calc(100vw - 100px));
-	padding: 16px;
-	border: 1px solid #ffffff24;
-	border-radius: 16px;
-	background: #15201deb;
-	color: #eee8d7;
+	left: var(--ds-sp-5);
+	top: 100px;
+	width: min(340px, calc(100vw - 100px));
+	padding: var(--ds-sp-4);
 	pointer-events: auto;
 }
+.cinema-navigation strong {
+	font: 400 16px / 24px var(--f-title);
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-1);
+}
 .cinema-navigation p {
-	font-size: 12px;
-	line-height: 1.6;
-	opacity: 0.7;
+	margin: var(--ds-sp-2) 0 var(--ds-sp-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
 }
 .cinema-navigation div {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: var(--ds-sp-2);
 }
 .cinema-page .cinema-navigation button {
 	touch-action: none;
-	padding: 8px;
-	border: 1px solid #ffffff30;
-	border-radius: 8px;
-	background: #ffffff10;
-	color: inherit;
 }
 .is-immersed .cinema-navigation {
 	display: none;
 }
 
 .viewer-studio > :is(.cinema-toolbar, .cinema-time, .cinema-caption, .cinema-immerse) {
-	transition: opacity 400ms ease-out;
+	transition: opacity var(--ds-dur-3) ease-out;
 }
 .viewer-studio.is-idle:not(:focus-within) > :is(.cinema-toolbar, .cinema-time, .cinema-caption, .cinema-immerse) {
 	opacity: 0;
@@ -781,40 +1035,175 @@
 .cinema-page:has(.is-idle) .cinema-canvas {
 	cursor: none;
 }
-@media (max-width: 800px) {
-	.cinema-page .cinema-toolbar button {
-		width: 42px;
-		height: 42px;
-	}
-	.cinema-toolbar button > span {
-		display: none;
-	}
-}
 @media (prefers-reduced-motion: reduce) {
-	.cinema-toolbar button > span,
 	.viewer-studio > *,
 	.cinema-header {
 		transition: none;
 	}
 }
+
+/* --- Layers: stone toggles; a hidden layer is struck through on the off face --- */
 .viewer-layers {
-	margin: 24px 0 0;
+	margin: var(--ds-sp-5) 0 0;
 	padding: 0;
 	border: 0;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
-}
-.cinema-page .viewer-layers legend {
-	color: #f3ecdc;
-	font-size: 11px;
-	margin-bottom: 12px;
+	gap: var(--ds-sp-2);
 }
 .cinema-page .viewer-layers button {
-	padding: 6px 10px;
-	font-size: 11px;
+	padding-inline: var(--ds-sp-3);
+	white-space: normal;
 }
 .cinema-page .viewer-layers button[aria-pressed="false"] {
-	opacity: 0.5;
+	background: var(--off);
+	color: var(--off-ink);
+	text-shadow: none;
+	box-shadow: none;
 	text-decoration: line-through;
+	text-decoration-thickness: var(--gp);
+}
+.viewer-layers:disabled button {
+	background: var(--off);
+	color: var(--off-ink);
+	box-shadow: none;
+	text-shadow: none;
+}
+
+/* --- Share panel (viewer and gallery sheet; SharePanel imports this file): a black slot inside the panel --- */
+.memory-share-panel {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-4) var(--gp) 0;
+	padding: var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.memory-share-panel h3 {
+	margin: 0;
+	font: 400 16px / 24px var(--f-title);
+	letter-spacing: 0;
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.memory-share-panel p {
+	margin: 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+}
+.memory-share-panel [role="alert"] {
+	color: var(--bad);
+}
+.memory-share-panel .mc-btn {
+	--_h: var(--ds-hit);
+	justify-self: start;
+}
+.memory-share-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-2);
+}
+.memory-share-row .mc-btn {
+	justify-self: auto;
+}
+/* The link: the kit's black field, in the reading font (an address is data). */
+.memory-share-panel .memory-share-url {
+	--_h: var(--ds-hit);
+	flex: 1 1 200px;
+	width: auto;
+	min-width: 0;
+	font: 400 var(--ds-rd-fs-sm) / 1 var(--ds-f-text);
+}
+.memory-share-panel a {
+	justify-self: start;
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+.memory-share-panel a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+.memory-share-panel .mm-button-quiet:hover:not(:disabled).memory-share-stop {
+	border-color: var(--bad);
+	color: var(--bad);
+}
+
+@media (forced-colors: active) {
+	.cinema-toolbar,
+	.cinema-settings,
+	.cinema-page .viewer-sharing,
+	.cinema-time,
+	.cinema-navigation,
+	.cinema-loading-card,
+	.cinema-restore-card,
+	.memory-share-panel {
+		border: 1px solid CanvasText;
+	}
+	.cinema-toolbar button > span {
+		border-image: none;
+	}
+}
+
+/* An error's title (kept last: it outranks the panel titles above). */
+.cinema-loading[role="alert"] h2 {
+	color: var(--bad);
+}
+
+/* Korean and Japanese (Unifont): pixel text in multiples of 16 px only. */
+html.mm-cjk:not([data-mc-font="read"])
+:is(.cinema-title h1, .cinema-settings h2, .viewer-sharing h2, .cinema-loading h2, .cinema-restore-card h2) {
+	font-size: 16px;
+	line-height: 24px;
+}
+html.mm-cjk:not([data-mc-font="read"]) .cinema-time .cinema-clock-value,
+html.mm-cjk:not([data-mc-font="read"]) .cinema-page .cinema-panel-heading button {
+	font-size: 16px;
+}
+html.mm-cjk:not([data-mc-font="read"]) .cinema-empty h2,
+html.mm-cjk:not([data-mc-font="read"]) .cinema-drop {
+	font-size: 32px;
+	line-height: 40px;
+}
+
+/* Readable font: titles in bold with a 2 px shadow, no pixel shadow on running text (charter-app's rule). */
+html[data-mc-font="read"]
+:is(
+	.cinema-title h1,
+	.cinema-settings h2,
+	.viewer-sharing h2,
+	.cinema-loading h2,
+	.cinema-restore-card h2,
+	.cinema-empty h2,
+	.cinema-drop,
+	.cinema-panel-title,
+	.cinema-navigation strong,
+	.memory-share-panel h3
+) {
+	font-weight: 700;
+	text-shadow: 2px 2px 0 var(--text-shadow);
+}
+html[data-mc-font="read"]
+	:is(
+		.cinema-back,
+		.cinema-open,
+		.cinema-open-primary,
+		.cinema-immerse,
+		.cinema-navigation button,
+		.viewer-layers button,
+		.timeline-error button,
+		.cinema-toast,
+		.cinema-clock-value,
+		.film-title strong
+	) {
+	font-weight: 700;
 }
