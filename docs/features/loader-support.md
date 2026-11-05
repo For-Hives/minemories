@@ -82,3 +82,14 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
 Déjà compilé : 1.20.1 (Forge, Fabric) et 1.21.1 (NeoForge, Fabric, Forge). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. P1 est Minecraft 1.21.11 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+
+### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
+
+Compiler les sources 1.21.1 telles quelles contre 1.21.11 (Loom, Mojmap, Fabric API 0.141.6) donne environ 145 erreurs distinctes, concentrées dans la capture :
+
+- API de rendu Fabric v1 (`RendererAccess`, `RenderMaterial`, `BlendMode`, `FabricBakedModel`) disparue ou réécrite : `FabricModelCapture`, `CaptureQuadEmitter`, `FabricPlatform`.
+- `RenderType` / `RenderStateShard`, `GlStateManager` et la lecture de texture (`bind`, `getId`, `downloadTexture`) remplacés par la couche GPU : `RenderedModelCapture`, `CapturePixels`.
+- Rendu des entités et blocs-entités par états de rendu (`prepare`, `getRenderOffset`, `render`) et `VertexConsumer.setLineWidth` : `ClientRuntime`, `ProgressiveGameCapture`.
+- Renommages et API d'interface : `ResourceLocation`→`Identifier`, `getMinBuildHeight`→`getMinY`, `ClickEvent`/`HoverEvent`, `Matrix3x2f` pour la pile GUI, `renderContents` des boutons.
+
+Le gros du travail est donc la capture de géométrie et de textures, qui demande une validation en jeu ; les renommages seuls ne suffisent pas.
