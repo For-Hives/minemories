@@ -1,5 +1,13 @@
 {
-	"minecraft": ["1.12.2", "1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.11"],
+	"minecraft": [
+		"1.12.2",
+		"1.16.5",
+		"1.18.2",
+		"1.19.2",
+		"1.20.1",
+		"1.21.1",
+		"1.21.11"
+	],
 	"builds": [
 		{
 			"loader": "neoforge",
@@ -42,17 +50,18 @@
 			"project": "fabric",
 			"jar": "minemories-fabric-mc1.20.1-{version}.jar",
 			"loaderProperty": "fabricLoaderVersion"
-		}
-	],
-	"planned": [
+		},
 		{
 			"loader": "fabric",
 			"minecraft": "1.21.11",
 			"loaderVersion": "0.20.1",
-			"java": "21",
-			"priority": 1,
-			"note": "Fabric API 0.141.6+1.21.11 ; pipeline de rendu refait depuis 1.21.5 : portage, pas une adaptation mécanique"
-		},
+			"dir": "mod/minemories-1.21.11",
+			"project": "fabric",
+			"jar": "minemories-fabric-mc1.21.11-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion"
+		}
+	],
+	"planned": [
 		{
 			"loader": "neoforge",
 			"minecraft": "1.21.11",
