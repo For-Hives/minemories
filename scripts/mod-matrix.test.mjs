@@ -103,3 +103,14 @@ test('names archived JARs so loader, Minecraft and loader versions are readable 
 	})
 	assert.equal(parseArchiveName('notes.txt'), null)
 })
+
+test('shows planned targets and carries their note into the issue', () => {
+	const planned = [
+		{ loader: 'forge', minecraft: '1.21.4', loaderVersion: '54.0.1', java: '21', priority: 2, note: 'portage' },
+	]
+	const withPlan = { ...matrix, planned }
+	const grid = loaderGrid(withPlan, new Map(), 'forge')
+	assert.ok(grid.columns.includes('54.0.1'))
+	assert.ok(renderGrid(grid, withPlan.version).includes('○ prévu P2'))
+	assert.ok(issueFor(withPlan, 'forge', '1.21.4').body.includes('priorité 2'))
+})
