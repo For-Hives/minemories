@@ -30,9 +30,18 @@ loom {
             client()
             vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
             vmArg '-Dminemories.gametest=true'
+            vmArg '-Dminemories.gametest.grass=grass'
         }
     }
 }
+// GlbReport is Minecraft-free and shared with the 1.21.11 tests.
+def sharedReport = tasks.register('copyGlbReport', Copy) {
+    from('../../minemories-1.21.11/gametest-common/java/dev/minemories/gametest/GlbReport.java')
+    into layout.buildDirectory.dir('gametest-shared/dev/minemories/gametest')
+}
+sourceSets.gametest.java.srcDir layout.buildDirectory.dir('gametest-shared')
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+tasks.named('compileGametestJava') { dependsOn sharedReport }
 tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
 
 // `-PforgeVersion=<x>` builds against another Forge version (scripts/mod-matrix.mjs).
