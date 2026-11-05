@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.34.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.33.0-beta.1...mod-v0.34.0-beta.1) (2026-11-05)
+
+### Fonctionnalités
+
+* **mod:** archiver les JAR de mod:matrix dans un dossier unique aux noms explicites ([bf3a80d](https://github.com/For-Hives/minemories/commit/bf3a80d288039e1d8cc7b51601b224cd0a6de6e7))
+* **mod:** build Forge 47.4.26 et Fabric pour Minecraft 1.20.1 (Java 17) ([9902208](https://github.com/For-Hives/minemories/commit/99022083f4f5623af88c404b06b5f66429dc6e51))
+* **mod:** outil local mod:matrix pour lister, compiler et préparer les issues de la grille loader × Minecraft ([d4f56cb](https://github.com/For-Hives/minemories/commit/d4f56cb80a32ed216bdcc1644b39709e1d27b8d0))
+* **web:** charte de la landing sur tout le site et film piloté avec élan ([#198](https://github.com/For-Hives/minemories/issues/198)) ([e671436](https://github.com/For-Hives/minemories/commit/e6714361e94e16bc7321f8d9285764fa48e54f33))
+
 ## [0.33.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.1-beta.1...mod-v0.33.0-beta.1) (2026-11-04)
 
 ### Fonctionnalités
