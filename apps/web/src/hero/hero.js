@@ -1611,8 +1611,9 @@ export function mountHero(host) {
 		applyScene(r)
 		await scene.nextFrame()
 		if (token !== siteToken) return
-		if (!covered) veil.classList.remove('is-on')
-		else await releaseFilmFrame()
+		// The veil may also have been put up by a flick or a return cut short by this jump: lifted in both cases.
+		veil.classList.remove('is-on')
+		if (covered) await releaseFilmFrame()
 		if (cause === 'skip' && token === siteToken) $('#hero-title')?.focus({ preventScroll: true })
 	}
 

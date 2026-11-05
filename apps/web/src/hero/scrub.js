@@ -22,7 +22,8 @@
 //     caught up), and every guard applies to the coast (it is driven motion). No randomness: the same inputs give the same trajectory.
 //   - `flick: true`: the visitor who just arrived and gives a first forward wheel or swipe wants to see what comes next. The position is KEPT (`memory`), the film rushes forward
 //     for 0.34 s (up to 8x, but never into the day/night lapse, the rewind wave or within 0.35 s of a cut: the rush stops at the first such barrier, so no flash can come of it),
-//     the page covers the cut with the last frame (`mode: 'cover'`, the clock waits for `release()`), then the end of the film plays: the glide to the site in 1.15 s.
+//     the page covers the cut with the last frame (`mode: 'cover'`, the clock waits for `release()`), then the END of the film plays at 2x from 52.3 s (after the last freeze
+//     and the last cut: the camera leaves the fire and cranes up to the whole model under "That evening was kept by Minemories") and the glide sets it in its panel (1 s).
 //   - any jump to the site from the middle of the film (the flick, Skip, Escape, End, a foreign scroll) keeps the position. At the top of the site, past the detent, the way up
 //     then RETURNS: the glide plays back on its own (0.9 s), the page covers the cut again, and the film starts again exactly where the visitor left it, with the same intent.
 
@@ -73,7 +74,9 @@ export const SCRUB = Object.freeze({
 		burstMs: 340, // the rush forward
 		burstMaxRate: 8, // its peak speed, reached at the end (ease-in), never inside a sensitive passage
 		barrierGuard: 0.35, // the rush stops this far before a cut, the lapse or the rewind wave
-		glideSec: 1.15, // the end of the film after the rush: the glide to the site
+		landAt: 52.3, // after the rush the film lands here (after the 51.8 freeze and the 50.5 cut): its end is the crane up to the model
+		endRate: 2, // the end of the film plays at this speed (52.3 -> 55.5 in 1.6 s; no sensitive passage there)
+		glideSec: 1.0, // then the glide to the site
 		returnSec: 0.9, // the glide played back when the visitor comes up from the site
 		quietMs: 280, // after a return, the rest of the gesture (inputs closer than this to each other) is dropped: its momentum must not rewind the film away
 		keepMin: 0.5, // a position closer than this to the site start is not kept (the visitor saw the end)
@@ -384,6 +387,12 @@ export function createFilmScrub({
 			return
 		}
 		if (mode === 'arrive') {
+			if (t < siteStart) {
+				const next = Math.min(siteStart, t + F.endRate * dtS)
+				recordCrossings(t, next, s1)
+				t = next
+				return
+			}
 			g = clamp(g + dtS / F.glideSec, 0, 1)
 			if (g >= 1) {
 				mode = null
@@ -582,8 +591,9 @@ export function createFilmScrub({
 			const now = Number.isFinite(nowMs) ? Math.max(nowMs, lastNow ?? nowMs) : (lastNow ?? 0)
 			const from = { t, g }
 			if (coverFor === 'skip') {
-				recordCrossings(t, siteStart, now)
-				t = siteStart
+				const land = Math.max(t, Math.min(F.landAt, siteStart))
+				recordCrossings(t, land, now)
+				t = land
 				g = 0
 				mode = 'arrive'
 				coverFor = null

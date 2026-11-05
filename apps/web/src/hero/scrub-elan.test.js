@@ -174,10 +174,13 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	const kept = sc.memory
 	check('S21', 'the kept position is where the visitor was', kept && near(kept.t, fire.from, 1e-9) && kept.intent === 'play', JSON.stringify(kept))
 	sc.release(7000)
-	const arrive = sim(sc, { ms: 1500, step: 4, start: 7000 })
-	check('S21', 'release: the end of the film plays from the site start', arrive.samples[0].t === SITE)
+	const arrive = sim(sc, { ms: 3200, step: 4, start: 7000 })
+	check('S21', 'release: the film lands at 52.3 s, after the last freeze and the last cut', arrive.samples[0].t === SCRUB.flick.landAt)
+	const end = arrive.samples.filter(s => s.mode === 'arrive' && s.g === 0 && s.t < SITE)
+	check('S21', 'its end (the crane up to the model) plays at 2x, through no sensitive passage', end.every(s => s.t < SITE + 1e-9 && !SCRUB.cuts.some(c => Math.abs(s.t - c) <= SCRUB.cutGuard)) && end.slice(2).every(s => near(s.rate, 2, 0.01)))
+	const reach = arrive.samples.find(s => s.t === SITE)
 	const site = arrive.samples.find(s => s.g === 1)
-	check('S21', 'the glide reaches the site in 1.15 s (+-0.02)', site && near((site.w - 7000) / 1000, 1.15, 0.02), site ? `${(site.w - 7000) / 1000}` : 'never')
+	check('S21', 'the end takes 1.6 s, then the glide reaches the site in 1.0 s (+-0.02)', reach && site && near((reach.w - 7000) / 1000, 1.6, 0.02) && near((site.w - reach.w) / 1000, 1.0, 0.02), reach && site ? `${(reach.w - 7000) / 1000} + ${(site.w - reach.w) / 1000}` : 'never')
 	check('S21', 'phases film -> glide -> site are reported', ['glide', 'site'].every(p => arrive.events.some(e => e.type === 'phase' && e.to === p)))
 	check('S21', 'the jump is reported with cause flick', arrive.events.some(e => e.type === 'jump' && e.cause === 'flick'))
 
@@ -217,21 +220,21 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	sim(sc, { ms: 6000, step: 4, inputs: [{ at: 5000, px: 100 }] })
 	const keptT = sc.memory.t
 	sc.release(6000)
-	sim(sc, { ms: 1500, step: 4, start: 6000 })
+	sim(sc, { ms: 3000, step: 4, start: 6000 })
 	check('S22', 'on the site with a kept position', sc.position.g === 1 && sc.memory !== null)
-	const a = sim(sc, { ms: 400, step: 4, start: 7500, inputs: [{ at: 7600, px: -100 }] })
+	const a = sim(sc, { ms: 400, step: 4, start: 9500, inputs: [{ at: 9600, px: -100 }] })
 	check('S22', 'the detent still absorbs the first 120 px (the momentum that arrives at the top)', a.samples.every(s => s.g === 1 && s.mode === null))
-	const b = sim(sc, { ms: 1200, step: 4, start: 7900, inputs: [{ at: 8000, px: -100 }] })
+	const b = sim(sc, { ms: 1200, step: 4, start: 9900, inputs: [{ at: 10000, px: -100 }] })
 	const ret = b.events.find(e => e.type === 'return' && e.phase === 'glide')
 	check('S22', 'past it, the way up returns (glide played back on its own)', Boolean(ret) && near(ret.to, keptT, 1e-9))
 	const down = b.samples.filter(s => s.mode === 'return')
 	check('S22', 'the glide back lasts 0.9 s (+-0.02) and g only goes down', near(down.length * 4, 900, 20) && down.every((s, i) => i === 0 || s.g <= down[i - 1].g), `${down.length * 4} ms`)
 	check('S22', 'then the clock waits for the page (cover)', sc.mode === 'cover' && sc.position.g === 0 && sc.position.t === SITE)
-	sc.release(9200)
+	sc.release(11200)
 	check('S22', 'release: the film is back exactly where the visitor left it, with its intent', sc.position.t === keptT && sc.position.g === 0 && sc.intent === 'play' && sc.memory === null)
-	const c = sim(sc, { ms: 2600, step: 4, start: 9200 })
+	const c = sim(sc, { ms: 2600, step: 4, start: 11200 })
 	const moved = c.samples.find(s => s.rate > 0)
-	check('S22', 'it holds 1.6 s, then plays on', moved && near((moved.w - 9200) / 1000, 1.6, 0.05), moved ? `${(moved.w - 9200) / 1000}` : 'never')
+	check('S22', 'it holds 1.6 s, then plays on', moved && near((moved.w - 11200) / 1000, 1.6, 0.05), moved ? `${(moved.w - 11200) / 1000}` : 'never')
 
 	const esc = mk({ flick: true, t0: 20, autoStart: false, intent: 'pause' })
 	esc.tick(0)
@@ -254,15 +257,15 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 	sim(sc, { ms: 6000, step: 4, inputs: [{ at: 5000, px: 100 }] })
 	const keptT = sc.memory.t
 	sc.release(6000)
-	sim(sc, { ms: 1500, step: 4, start: 6000 })
+	sim(sc, { ms: 3000, step: 4, start: 6000 })
 	const r = sim(sc, {
 		ms: 3400,
 		step: 4,
-		start: 7500,
-		inputs: stream(-80, 40, 7600, 3000),
+		start: 9000,
+		inputs: stream(-80, 40, 9100, 3000),
 		onTick: (w, s) => s.mode === 'cover' && s.release(w),
 	})
-	const back = r.samples.find(s => s.mode === null && s.g === 0 && s.w > 7700)
+	const back = r.samples.find(s => s.mode === null && s.g === 0 && s.w > 9200)
 	const after = back ? r.samples.filter(s => s.w >= back.w) : []
 	check(
 		'S25',
@@ -270,9 +273,9 @@ const lastMoving = samples => samples.reduce((w, s) => (Math.abs(s.rate) > 1e-9 
 		back && after.every(s => s.t >= keptT - 1e-9),
 		back ? `min t ${Math.min(...after.map(s => s.t)).toFixed(3)} (kept ${keptT.toFixed(3)})` : 'no return'
 	)
-	const later = sim(sc, { ms: 400, step: 4, start: 10900, inputs: [{ at: 11000, px: -100 }] })
-	const before = later.samples.find(s => s.w >= 10996)
-	const minAfter = Math.min(...later.samples.filter(s => s.w > 11000).map(s => s.t))
+	const later = sim(sc, { ms: 400, step: 4, start: 12400, inputs: [{ at: 12500, px: -100 }] })
+	const before = later.samples.find(s => s.w >= 12496)
+	const minAfter = Math.min(...later.samples.filter(s => s.w > 12500).map(s => s.t))
 	check('S25', 'a new gesture after a pause scrubs again', minAfter < before.t - 0.1, `${before.t.toFixed(3)} -> ${minAfter.toFixed(3)}`)
 
 	const f = mk({ flick: true })
