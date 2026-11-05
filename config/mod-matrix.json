@@ -86,17 +86,18 @@
 			"project": "forge",
 			"jar": "minemories-forge-mc1.19.2-{version}.jar",
 			"loaderProperty": "forgeVersion"
-		}
-	],
-	"planned": [
+		},
 		{
 			"loader": "fabric",
 			"minecraft": "1.19.2",
 			"loaderVersion": "0.20.1",
-			"java": "17",
-			"priority": 3,
-			"note": "Fabric API 0.77.0+1.19.2"
-		},
+			"dir": "mod/minemories-1.19.2",
+			"project": "fabric",
+			"jar": "minemories-fabric-mc1.19.2-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion"
+		}
+	],
+	"planned": [
 		{
 			"loader": "forge",
 			"minecraft": "1.18.2",

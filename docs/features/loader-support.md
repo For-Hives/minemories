@@ -91,6 +91,17 @@ Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.19.
 
 Particularités : l'herbe s'appelle `grass` avant 1.20.3 (`-Dminemories.gametest.grass=grass`) ; pas de champ de saisie avec indication (`setHint`), remplacé par la suggestion grise de `EditBox`. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés. La cible n'est donc pas déclarée prise en charge.
 
+### Fabric 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+
+Même sous-projet que Forge 1.19.2 (`mod/minemories-1.19.2`, module `fabric`), Fabric Loader 0.20.1 et Fabric API 0.77.0+1.19.2. Il reprend `mod/compat-legacy` et ses règles d'adaptation ; seul l'adaptateur Fabric change, parce que l'API de rendu de Fabric API 0.77 est l'ancienne, à sprites multiples :
+
+- `CaptureQuadEmitter` est réécrit pour cette API (`spriteColor`, `sprite`, `spriteBake(index, …)`, `fromVanilla(…, isItem)`, `toVanilla(index, …)`), et `FabricModelCapture` lit les UV par `spriteU(i, 0)`.
+- L'API de 0.77 n'expose pas les drapeaux d'un matériau (mode de fusion, émissivité, indice de couleur) ; `MaterialFlags` les demande par réflexion à l'implémentation d'Indigo et retombe sur les valeurs par défaut ailleurs. Avec un autre moteur de rendu (Canvas…), le GLB peut donc perdre la translucidité et l'émissivité : non essayé.
+- Les pixels d'un sprite passent par un accesseur Mixin (`SpriteImageAccess`, champ `mainImage`) : avant 1.19.3 `TextureAtlasSprite` n'a pas `getPixelRGBA` (Forge l'ajoute).
+- `copyUv` n'existe pas dans cette API.
+
+Test en jeu : `./gradlew :fabric:runClientGametest` (depuis `mod/minemories-1.19.2`), même scénario que Forge : 2507 blocs, 3 entités, 17 matériaux, GLB de 182 280 octets. Le mod de test Fabric rejoint le classpath de développement mais reste inactif sans `-Dminemories.gametest=true`. Limites : GLB non ouvert dans le viewer, Quilt 1.19.2 non essayé, menus et sélection manuelle non essayés. Cible non déclarée prise en charge.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
