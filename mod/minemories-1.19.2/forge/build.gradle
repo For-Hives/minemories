@@ -29,6 +29,7 @@ loom {
         clientGametest {
             client()
             vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            vmArg '-Dminemories.gametest=true'
             vmArg '-Dminemories.gametest.grass=grass'
         }
     }

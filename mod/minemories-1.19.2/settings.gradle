@@ -8,4 +8,4 @@ pluginManagement {
 }
 plugins { id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0' }
 rootProject.name = 'minemories-1.19.2'
-include 'forge'
+include 'forge', 'fabric'

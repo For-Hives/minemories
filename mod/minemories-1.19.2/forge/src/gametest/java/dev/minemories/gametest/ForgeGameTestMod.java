@@ -8,6 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod("minemories_gametest")
 public final class ForgeGameTestMod {
   public ForgeGameTestMod() {
+    if (!Boolean.getBoolean("minemories.gametest")) return;
     MinecraftForge.EVENT_BUS.addListener(
         (TickEvent.ClientTickEvent event) -> {
           if (event.phase == TickEvent.Phase.END) TickDrivenCapture.tick();

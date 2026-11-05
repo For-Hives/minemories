@@ -1,0 +1,82 @@
+plugins { id 'dev.architectury.loom-remap' version '1.17.493' }
+
+// Minecraft 1.19.2 runs on Java 17 and an older client API. The shared 1.21.1 sources are copied
+// and adapted mechanically here (see adaptSources) instead of being forked.
+def shared = file('../../minemories')
+def modVersion = file('../../minemories/gradle.properties').readLines().find { it.startsWith('mod_version=') }.split('=')[1]
+version = modVersion
+group = 'dev.minemories'
+base { archivesName = 'minemories-fabric-mc1.19.2' }
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+loom { mixin { useLegacyMixinAp = true; defaultRefmapName = 'minemories.refmap.json' } }
+sourceSets { gametest { compileClasspath += sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.runtimeClasspath } }
+loom {
+    accessWidenerPath = file('src/main/resources/minemories.accesswidener')
+    runs {
+        // In-game validation: ./gradlew :fabric:runClientGametest (opens a Minecraft window, isolated user.home).
+        clientGametest {
+            client()
+            vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            vmArg '-Dminemories.gametest.grass=grass'
+            vmArg '-Dminemories.gametest=true'
+        }
+    }
+}
+// GlbReport is Minecraft-free and shared with the 1.21.11 tests.
+def sharedReport = tasks.register('copyGlbReport', Copy) {
+    from('../../minemories-1.21.11/gametest-common/java/dev/minemories/gametest/GlbReport.java')
+    into layout.buildDirectory.dir('gametest-shared/dev/minemories/gametest')
+}
+sourceSets.gametest.java.srcDir layout.buildDirectory.dir('gametest-shared')
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+tasks.named('compileGametestJava') { dependsOn sharedReport }
+// The test mod rides the dev classpath (inactive unless -Dminemories.gametest=true, set by the test run only).
+sourceSets.main.runtimeClasspath += sourceSets.gametest.output
+tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
+
+def adapted = layout.buildDirectory.dir('adapted-sources')
+def adaptSources = tasks.register('adaptSources') {
+    inputs.dir(shared.toPath().resolve('core/src/main/java').toFile())
+    inputs.dir(shared.toPath().resolve('common/src/main/java').toFile())
+    inputs.file(rootProject.file('adapt.gradle'))
+    inputs.file(file('../../compat-legacy/adapt-legacy.gradle'))
+    outputs.dir(adapted)
+    doLast {
+        def out = adapted.get().asFile
+        delete out
+        copy {
+            from(shared.toPath().resolve('core/src/main/java').toFile())
+            from(shared.toPath().resolve('common/src/main/java').toFile())
+            into out
+        }
+        apply from: rootProject.file('adapt.gradle')
+        adaptDir(out)
+    }
+}
+sourceSets.main.java.srcDir adapted
+sourceSets.main.java.srcDir file('../../compat-legacy/java')
+tasks.named('compileJava') { dependsOn adaptSources }
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.19.2'
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${findProperty('fabricLoaderVersion') ?: '0.20.1'}"
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.77.0+1.19.2'
+    annotationProcessor 'net.fabricmc:sponge-mixin:0.12.5+mixin.0.8.5'
+    gametestImplementation sourceSets.main.output
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+    options.compilerArgs.addAll(['-Xmaxerrs', '500'])
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
