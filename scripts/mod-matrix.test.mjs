@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+	archiveName,
 	cellState,
 	gradleArgs,
 	issueFor,
 	jarVersion,
 	loaderGrid,
 	missingTargets,
+	parseArchiveName,
 	pickJdk,
 	renderGrid,
 	requireBuildable,
@@ -88,4 +90,16 @@ test('prepares an issue with the validation checklist', () => {
 	assert.ok(issue.body.includes('Aucun projet Gradle'))
 	assert.ok(issue.body.includes('Test en jeu'))
 	assert.ok(issueFor(matrix, 'forge', '1.20.1', '47.4.30').body.includes('Un build existe déjà'))
+})
+
+test('names archived JARs so loader, Minecraft and loader versions are readable and parseable', () => {
+	const name = archiveName(forge120, '47.4.26', '1.0.0-beta.1')
+	assert.equal(name, 'minemories-1.0.0-beta.1-forge-mc1.20.1-47.4.26.jar')
+	assert.deepEqual(parseArchiveName(name), {
+		version: '1.0.0-beta.1',
+		loader: 'forge',
+		minecraft: '1.20.1',
+		loaderVersion: '47.4.26',
+	})
+	assert.equal(parseArchiveName('notes.txt'), null)
 })
