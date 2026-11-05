@@ -483,6 +483,33 @@ html[data-sky='page'] .scrim {
 	transition: opacity 0.3s linear;
 }
 
+/* v13: the cut of a flick is a rush past the frame (it grows and fades), the cut of a return a dive back into the film (the end frame comes toward the visitor while the
+   film, where they left it, settles under it: html.is-diving). One luminance change each, over 0.42 s and 0.5 s: no flash. */
+.film-snap.is-on.is-rush,
+.film-snap.is-on.is-dive {
+	transform-origin: 50% 55%;
+}
+
+.film-snap.is-on.is-rush:not(.is-out) {
+	transform: scale(1.08);
+}
+
+.film-snap.is-on.is-out.is-rush {
+	opacity: 0;
+	transform: scale(1.24);
+	transition:
+		opacity 0.42s cubic-bezier(0.3, 0, 0.2, 1),
+		transform 0.42s cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+.film-snap.is-on.is-out.is-dive {
+	opacity: 0;
+	transform: scale(1.1);
+	transition:
+		opacity 0.5s cubic-bezier(0.3, 0, 0.2, 1),
+		transform 0.5s cubic-bezier(0.3, 0, 0.2, 1);
+}
+
 html.is-crossfade[data-phase='site'] .site,
 html.is-crossfade[data-phase='site'] .mc-sitebar {
 	transition-delay: 0s;
@@ -1822,6 +1849,54 @@ html.is-scrub[data-phase='film'],
 html.is-scrub[data-phase='glide'] {
 	overflow: hidden;
 	touch-action: pinch-zoom;
+}
+
+/* v13: after a flick the site stays still until the gesture is quiet (a trackpad sends its momentum for a second or more). */
+html.is-scrub.is-settling {
+	overflow: hidden;
+}
+
+/* --- v13: the rush of a flick and the dive of a return ------------------------------------------------------------------------------------------------------------
+   No luminance effect is tied to the scroll speed (a vignette driven by the rate pulsed with a back-and-forth wheel, which no flash guard limits): the rush only zooms the
+   canvas in (1 -> 1.08 over 0.34 s) while the HUD steps aside, and the cover copy starts at that same zoom (.film-snap.is-rush) so nothing pops when it takes over. The dive
+   brings the film, where the visitor left it, from 1.06 to 1 (larger, so no page band shows at the edges), then its HUD comes back once the image has settled. Never in reduced motion (there is no flick nor return there). */
+html.is-scrub.is-burst[data-phase='film'] .stage > canvas {
+	transform: scale(1.08);
+	transform-origin: 50% 55%;
+	transition: transform 0.34s cubic-bezier(0.5, 0, 0.9, 0.5);
+}
+
+html.is-scrub.is-burst .hud8 {
+	opacity: 0;
+	transition: opacity 0.2s linear;
+}
+
+html.is-scrub.is-diving[data-phase='film'] .stage > canvas {
+	transform-origin: 50% 55%;
+	animation: mm-dive 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+html.is-scrub.is-diving[data-phase='film'] .hud8 {
+	animation: mm-hud-back 0.6s linear both;
+}
+
+@keyframes mm-dive {
+	from {
+		transform: scale(1.06);
+	}
+	to {
+		transform: scale(1);
+	}
+}
+
+@keyframes mm-hud-back {
+	from,
+	60% {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 /* --- the hand-over, driven by --g (0 to 1), no CSS transition on what it drives (§ 3.2) ------------------------------------------------------------------------ */
