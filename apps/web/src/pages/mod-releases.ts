@@ -9,6 +9,7 @@ const digestPattern = /^sha256:([a-f0-9]{64})$/
 export const quiltTestedVersion = '0.30.1'
 
 export interface LoaderTarget {
+	id: string
 	loader: string
 	name: string
 	minecraft: string
@@ -40,6 +41,7 @@ export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =
 	target.enabled && target.loaderVersion
 		? [
 				{
+					id: target.id,
 					loader: target.loader,
 					name: target.name,
 					minecraft: target.minecraft,

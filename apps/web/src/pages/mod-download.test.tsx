@@ -4,11 +4,14 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { ModDownload, selectLatestRelease } from './ModDownload'
+import { type LoaderTarget, loaderTargets } from './mod-releases'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
 }
 
+const target = (id: string) => loaderTargets.find(item => item.id === id) as LoaderTarget
+const neoforge = target('neoforge-mc1.21.1')
 const jarFor = (loader: string) => `minemories-${loader}-mc1.21.1.jar`
 const filename = jarFor('neoforge')
 function release(version = '0.1.0', published = '2026-10-10T12:00:00Z', loaders = ['neoforge']) {
@@ -39,7 +42,7 @@ test('downloads the most recently published compatible JAR directly from public 
 	vi.stubGlobal('fetch', fetchMock)
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.1.0 (.jar)' })
@@ -74,7 +77,7 @@ test('a release without a digest or checksum still has a download, without an in
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	await screen.findByRole('link', { name: /Télécharger Minemories/ })
@@ -87,7 +90,7 @@ test.each([[], { message: 'API rate limit exceeded' }, null])(
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(data)))
 		render(
 			<MemoryRouter>
-				<ModDownload />
+				<ModDownload target={neoforge} />
 			</MemoryRouter>
 		)
 		await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
@@ -105,7 +108,7 @@ test('retry recovers from a GitHub error and leaving cancels the request', async
 	vi.stubGlobal('fetch', fetchMock)
 	const view = render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	fireEvent.click(await screen.findByRole('button', { name: 'Réessayer le téléchargement' }))
@@ -117,7 +120,7 @@ test('network failure and timeout both allow retry', async () => {
 	vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 	const view = render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
@@ -129,7 +132,7 @@ test('network failure and timeout both allow retry', async () => {
 	)
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	await act(async () => {
@@ -137,7 +140,7 @@ test('network failure and timeout both allow retry', async () => {
 	})
 	expect(screen.getByRole('button', { name: 'Réessayer le téléchargement' })).toBeTruthy()
 })
-test('the NeoForge guide downloads the newest NeoForge JAR and points other loaders to the versions page', async () => {
+test('the guide downloads the newest JAR of the chosen target and links the versions pages', async () => {
 	vi.stubGlobal(
 		'fetch',
 		vi
@@ -151,7 +154,7 @@ test('the NeoForge guide downloads the newest NeoForge JAR and points other load
 	)
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.2.0 (.jar)' })
@@ -161,27 +164,22 @@ test('the NeoForge guide downloads the newest NeoForge JAR and points other load
 	expect(screen.getByText('a'.repeat(64))).toBeTruthy()
 	expect(screen.queryByText('f'.repeat(64))).toBeNull()
 	expect(screen.getByText(/NeoForge 21\.1\.248/)).toBeTruthy()
-	expect(
-		screen
-			.getByRole('link', {
-				name: 'Tu joues avec Fabric, Forge ou Quilt ? Récupère le JAR qui correspond sur la page des versions du mod.',
-			})
-			.getAttribute('href')
-	).toBe('/versions')
+	expect(screen.getByRole('link', { name: 'Versions précédentes et nouveautés' }).getAttribute('href')).toBe(
+		'/versions'
+	)
 })
-test('releases without a NeoForge JAR never offer another loader in the NeoForge guide', async () => {
+test('releases without the chosen JAR never offer another loader', async () => {
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([release('0.3.0', undefined, ['fabric', 'forge'])])))
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={neoforge} />
 		</MemoryRouter>
 	)
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 	expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
-	expect(screen.getByRole('link', { name: /Fabric, Forge ou Quilt/ }).getAttribute('href')).toBe('/versions')
 	expect(selectLatestRelease([release('0.3.0', undefined, ['fabric'])])?.downloads[0]?.target.loader).toBe('fabric')
 })
-test('choosing another Minecraft version and loader offers the matching JAR with its compatibility', async () => {
+test('a Fabric 1.19.2 guide offers its own JAR with compatibility, Fabric API and the Quilt note', async () => {
 	const jar = 'minemories-fabric-mc1.19.2.jar'
 	const prefix = 'https://github.com/For-Hives/minemories/releases/download/mod-v0.4.0/'
 	const published = {
@@ -191,19 +189,13 @@ test('choosing another Minecraft version and loader offers the matching JAR with
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
 	render(
 		<MemoryRouter>
-			<ModDownload />
+			<ModDownload target={target('fabric-mc1.19.2')} />
 		</MemoryRouter>
 	)
-	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
-	fireEvent.change(screen.getByLabelText('Version de Minecraft'), { target: { value: '1.19.2' } })
-	fireEvent.change(screen.getByLabelText('Loader de mods'), { target: { value: 'fabric' } })
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.4.0 (.jar)' })
 	expect(link.getAttribute('href')).toBe(prefix + jar)
 	expect(
 		screen.getByText(/Minecraft Java 1\.19\.2 · Fabric 0\.20\.1 \+ Fabric API 0\.77\.0\+1\.19\.2 · Java 17/)
 	).toBeTruthy()
 	expect(screen.getByText(/Quilt 0\.30\.1/)).toBeTruthy()
-	expect(screen.getByText(/détaillent Minecraft 1\.21\.1 avec NeoForge/)).toBeTruthy()
-	fireEvent.change(screen.getByLabelText('Version de Minecraft'), { target: { value: '1.18.2' } })
-	expect((screen.getByLabelText('Loader de mods') as HTMLSelectElement).value).toBe('forge')
 })

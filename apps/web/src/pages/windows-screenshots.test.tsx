@@ -27,7 +27,7 @@ test('all ten reserved screenshots are attached to the Windows manual steps with
 	)
 	const expected = [
 		[
-			'Installer NeoForge',
+			'Installer le loader',
 			['01-minecraft-1.21.1', '02-java-21', '03-neoforge-install-client', '04-profil-dossier-jeu'],
 		],
 		['Télécharger le mod', ['05-jar-telecharge']],
@@ -45,8 +45,8 @@ test('all ten reserved screenshots are attached to the Windows manual steps with
 	fireEvent.click(screen.getByRole('button', { name: 'macOS' }))
 	expect(document.querySelectorAll('figure[data-screenshot]').length).toBe(0)
 	fireEvent.click(screen.getByRole('button', { name: 'Windows' }))
-	fireEvent.click(screen.getByRole('button', { name: 'CurseForge' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Installer NeoForge' }))
+	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Installer le loader' }))
 	expect(document.querySelectorAll('figure[data-screenshot]').length).toBe(0)
 })
 

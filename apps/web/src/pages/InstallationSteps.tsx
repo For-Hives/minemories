@@ -2,24 +2,20 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
-import type { Launcher, System } from './installation-state'
+import { catalogLinks, fabricApiUrl, guideUrl, installerUrl, javaUrl } from './installation-loaders'
+import type { System } from './installation-state'
 import { ModDownload } from './ModDownload'
+import type { LoaderTarget } from './mod-releases'
 import { WindowsScreenshot } from './WindowsScreenshot'
 
 export const stepNames = [
 	'Prepare',
-	'Install NeoForge',
+	'Install the loader',
 	'Download the mod',
 	'Place the file',
 	'Check in game',
 	'Create a memory',
 ]
-export const launcherNames: Record<Launcher, string> = {
-	manuel: 'Minecraft Launcher',
-	curseforge: 'CurseForge',
-	modrinth: 'Modrinth App',
-	autre: 'Another launcher',
-}
 const folders: Record<System, string> = {
 	windows: '%APPDATA%\\.minecraft-minemories',
 	mac: '~/Library/Application Support/minecraft-minemories',
@@ -57,7 +53,7 @@ export function CopyText({ text, label }: { text: string; label: string }) {
 	)
 }
 
-function PrepareStep() {
+function PrepareStep({ target }: { target: LoaderTarget }) {
 	return (
 		<>
 			<p>
@@ -68,11 +64,13 @@ function PrepareStep() {
 				<T message={'. The mod is not available for Bedrock, consoles or mobile devices.'} />
 			</p>
 			<div className="install-note">
-				<strong>Minecraft Java Edition 1.21.1 + NeoForge 21.1.248</strong>
+				<strong>
+					Minecraft Java Edition {target.minecraft} + {target.name} {target.loaderVersion}
+				</strong>
 				<p>
 					<T
 						message={
-							'This guide details NeoForge, which lets the game load the mod. Fabric and Forge JARs (the Fabric JAR also runs under Quilt) and the validated versions are on'
+							'A loader lets the game load mods, and the JAR you download must match it. Every published version, and the Quilt note, are on'
 						}
 					/>{' '}
 					<Link to="/versions">
@@ -99,7 +97,7 @@ function PrepareStep() {
 				<p>
 					<T
 						message={
-							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use Java 1.21.1 with NeoForge, Fabric or Forge (Quilt uses the Fabric JAR). This guide details NeoForge; with Fabric or Forge, take the matching JAR from the Mod versions page. Otherwise, ask its administrator for help.'
+							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use the Minecraft version and loader you chose above (Quilt uses the Fabric JAR). Otherwise, ask its administrator for help.'
 						}
 					/>
 				</p>
@@ -115,9 +113,17 @@ function PrepareStep() {
 	)
 }
 
-function ManualLoader({ system }: { system: System }) {
+function LoaderInstaller({
+	target,
+	system,
+	walkthrough,
+}: {
+	target: LoaderTarget
+	system: System
+	walkthrough: boolean
+}) {
 	const { t } = useI18n()
-
+	const fabric = target.loader === 'fabric'
 	return (
 		<>
 			<ol>
@@ -126,34 +132,49 @@ function ManualLoader({ system }: { system: System }) {
 					<strong>
 						<T message={'Installations → New installation'} />
 					</strong>
-					<T message={', choose version'} /> <strong>release 1.21.1</strong>{' '}
+					<T message={', choose version'} /> <strong>release {target.minecraft}</strong>{' '}
 					<T message={'and launch it once. Close the game and launcher.'} />
-					{system === 'windows' && <WindowsScreenshot id="minecraftVersion" />}
+					{walkthrough && <WindowsScreenshot id="minecraftVersion" />}
 				</li>
 				<li>
 					<T message={'Install'} />{' '}
-					<a href="https://adoptium.net/temurin/releases/?version=21">
-						<T message={'Java 21 (Temurin, official site)'} />
+					<a href={javaUrl(target)}>
+						<T message={'Java {version} (Temurin, official site)'} params={{ version: target.java }} />
 					</a>{' '}
 					<T
 						message={
-							"if you do not have it. Choose your system, JDK 21 and your computer's architecture: x64 for Intel/AMD, aarch64 for Apple Silicon. The Java bundled with Minecraft is not always available to open an installer."
+							"if you do not have it. Choose your system, JDK {version} and your computer's architecture: x64 for Intel/AMD, aarch64 for Apple Silicon. The Java bundled with Minecraft is not always available to open an installer."
 						}
+						params={{ version: target.java }}
 					/>
-					{system === 'windows' && <WindowsScreenshot id="java21" />}
+					{walkthrough && <WindowsScreenshot id="java21" />}
 				</li>
 				<li>
 					<T message={'Download'} />{' '}
-					<a href="https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-installer.jar">
-						<T message={'the NeoForge 21.1.248 installer'} />
+					<a href={installerUrl(target)}>
+						<T
+							message={'the {loader} {version} installer'}
+							params={{ loader: target.name, version: target.loaderVersion }}
+						/>
 					</a>
 					<T message={'. Open'} />{' '}
 					<em>
 						<T message={'this'} />
 					</em>{' '}
-					<T message={'file with Java, select'} /> <strong>Install client</strong>
-					<T message={', then confirm. Wait for the success message.'} />
-					{system === 'windows' && <WindowsScreenshot id="neoforge" />}
+					{fabric ? (
+						<T
+							message={
+								'file with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.'
+							}
+							params={{ minecraft: target.minecraft, version: target.loaderVersion }}
+						/>
+					) : (
+						<>
+							<T message={'file with Java, select'} /> <strong>Install client</strong>
+							<T message={', then confirm. Wait for the success message.'} />
+						</>
+					)}
+					{walkthrough && <WindowsScreenshot id="neoforge" />}
 				</li>
 				<li>
 					<T message={'Reopen Minecraft Launcher. Under'} /> <strong>Installations</strong>
@@ -161,11 +182,11 @@ function ManualLoader({ system }: { system: System }) {
 					<strong>
 						<T message={'Modded'} />
 					</strong>{' '}
-					<T message={'versions if necessary. Edit the NeoForge installation created using'} />{' '}
+					<T message={'versions if necessary. Edit the modded installation created using'} />{' '}
 					<strong>
 						<T message={'… → Edit → More options'} />
 					</strong>
-					<T message={'. Check that its version contains'} /> <strong>21.1.248</strong>.
+					<T message={'. Check that its version contains'} /> <strong>{target.loaderVersion}</strong>.
 				</li>
 				<li>
 					<T message={'Under'} />{' '}
@@ -187,18 +208,20 @@ function ManualLoader({ system }: { system: System }) {
 							'The ~ symbol means your user directory. Create the suggested folder in your file manager, then select it in the launcher.'
 						)}
 			</p>
-			{system === 'windows' && <WindowsScreenshot id="gameDirectory" />}
+			{walkthrough && <WindowsScreenshot id="gameDirectory" />}
 			<p>
 				<T message={'Save, launch'} />{' '}
 				<strong>
-					<T message={'this NeoForge installation'} />
+					<T message={'this installation'} />
 				</strong>
 				<T message={'once, then close Minecraft. This creates the folder'} /> <code>mods</code>
-				<T message={'. If Java or NeoForge gets stuck, open the help at the bottom of this page before continuing.'} />
+				<T
+					message={'. If Java or the loader gets stuck, open the help at the bottom of this page before continuing.'}
+				/>
 			</p>
 			<p className="install-caption">
-				<a href="https://docs.neoforged.net/user/docs/">
-					<T message={'Official Java and NeoForge guide'} />
+				<a href={guideUrl(target)}>
+					<T message={'Official guide for {loader}'} params={{ loader: target.name }} />
 				</a>
 				<T message={'. The Minecraft Launcher walkthrough still needs in-game validation with the distributed JAR.'} />
 			</p>
@@ -206,31 +229,13 @@ function ManualLoader({ system }: { system: System }) {
 	)
 }
 
-function LauncherLoader({ launcher }: { launcher: Exclude<Launcher, 'manuel'> }) {
-	if (launcher === 'autre')
-		return (
-			<>
-				<p>
-					<T message={'In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a'} />{' '}
-					<strong>Minecraft 1.21.1</strong> <T message={'instance and add loader'} /> <strong>NeoForge 21.1.248</strong>
-					<T message={'. Buttons vary between applications.'} />
-				</p>
-				<p>
-					<T
-						message={
-							'For an existing world, copy its compatible instance and keep its mods. If your launcher does not offer these exact versions, do not choose a random alternative: use the Minecraft Launcher walkthrough or ask for help.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={'Launch this instance once, then close the game. This walkthrough still needs in-game validation.'}
-					/>
-				</p>
-			</>
-		)
-	if (launcher === 'curseforge')
-		return (
+function OtherLaunchers({ target }: { target: LoaderTarget }) {
+	return (
+		<details className="install-launchers">
+			<summary>
+				<T message={'I use CurseForge, Modrinth App or another launcher'} />
+			</summary>
+			<h4>CurseForge</h4>
 			<ol>
 				<li>
 					<T message={'Open'} /> <a href="https://www.curseforge.com/download/app">CurseForge</a>
@@ -241,94 +246,100 @@ function LauncherLoader({ launcher }: { launcher: Exclude<Launcher, 'manuel'> })
 					.
 				</li>
 				<li>
-					<T message={'Name it Minemories, choose'} /> <strong>Minecraft 1.21.1</strong>
-					<T message={', type'} /> <strong>NeoForge</strong> <T message={'and version'} /> <strong>21.1.248</strong>
+					<T message={'Name it Minemories, choose'} /> <strong>Minecraft {target.minecraft}</strong>
+					<T message={', type'} /> <strong>{target.name}</strong> <T message={'and version'} />{' '}
+					<strong>{target.loaderVersion}</strong>
 					<T message={'. For an existing compatible modpack, duplicate its profile instead and keep its mods.'} />
 				</li>
-				<li>
-					<T
-						message={
-							'Launch the profile once, then close the game. If the copied profile is locked, allow editing in its options.'
-						}
-					/>
-				</li>
 			</ol>
-		)
-	return (
-		<>
+			<h4>Modrinth App</h4>
 			<ol>
 				<li>
 					<T message={'Open'} /> <a href="https://modrinth.com/app">Modrinth App</a>{' '}
 					<T message={'and sign in to your Minecraft account.'} />
 				</li>
 				<li>
-					<T message={'Create an instance running'} /> <strong>Minecraft 1.21.1</strong> <T message={'with'} />{' '}
-					<strong>NeoForge</strong>
-					<T message={'. In its settings, select loader'} /> <strong>21.1.248</strong>
+					<T message={'Create an instance running'} /> <strong>Minecraft {target.minecraft}</strong>{' '}
+					<T message={'with'} /> <strong>{target.name}</strong>
+					<T message={'. In its settings, select loader'} /> <strong>{target.loaderVersion}</strong>
 					<T message={'. For an existing compatible modpack, duplicate its instance and keep its mods.'} />
 				</li>
-				<li>
-					<T message={'Launch this instance once, then close the game.'} />
-				</li>
 			</ol>
+			<h4>Prism Launcher, ATLauncher, GDLauncher, MultiMC</h4>
+			<p>
+				<T message={'Create a'} /> <strong>Minecraft {target.minecraft}</strong>{' '}
+				<T message={'instance and add loader'} />{' '}
+				<strong>
+					{target.name} {target.loaderVersion}
+				</strong>
+				<T message={'. Buttons vary between applications.'} />
+			</p>
 			<p className="install-caption">
-				<T message={'This local-file walkthrough still needs in-game validation.'} />{' '}
-				<a href="https://support.modrinth.com/en/collections/7804910-modrinth-app">
-					<T message={'Official Modrinth App help'} />
-				</a>
-				.
+				<T
+					message={
+						'Launch the instance once, then close the game. If your launcher does not offer these exact versions, do not choose a random alternative: use the Minecraft Launcher walkthrough or ask for help.'
+					}
+				/>
+			</p>
+		</details>
+	)
+}
+
+function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrough: boolean }) {
+	const catalogs = catalogLinks()
+	return (
+		<>
+			<p>
+				{catalogs.length > 0 ? (
+					<T
+						message={
+							'Using the CurseForge or Modrinth app? Install Minemories from its catalog, then go to the next step. Otherwise, download the JAR here.'
+						}
+					/>
+				) : (
+					<T
+						message={
+							'The JAR is the mod file. It is not yet published in the CurseForge and Modrinth catalogs: download it here, then place it in your game’s mods folder.'
+						}
+					/>
+				)}
+			</p>
+			{catalogs.length > 0 && (
+				<p className="install-catalogs">
+					{catalogs.map(catalog => (
+						<a key={catalog.name} className={buttonOutline} href={catalog.url}>
+							{catalog.name}
+						</a>
+					))}
+				</p>
+			)}
+			<ModDownload target={target} />
+			{target.fabricApi && (
+				<p className="install-caption">
+					<a href={fabricApiUrl(target)}>Fabric API {target.fabricApi}</a>
+				</p>
+			)}
+			{walkthrough && <WindowsScreenshot id="jarDownload" />}
+			<p>
+				<T
+					message={
+						'The Minemories JAR is copied into the game. Only the loader installer from the previous step runs with Java.'
+					}
+				/>
 			</p>
 		</>
 	)
 }
 
-function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: boolean }) {
+function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: boolean }) {
 	const { t } = useI18n()
-
-	let instruction = (
-		<>
-			<T
-				message={'In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its'}
-			/>{' '}
-			<strong>
-				<T message={'folder icon'} />
-			</strong>
-			<T message={'. Check that this is the dedicated game directory you chose.'} />
-		</>
-	)
-	if (launcher === 'curseforge')
-		instruction = (
-			<>
-				<T message={'In CurseForge, open the'} /> <strong>…</strong>{' '}
-				<T message={'menu of the Minemories profile, then'} />{' '}
-				<strong>
-					<T message={'Open Folder'} />
-				</strong>
-				.
-			</>
-		)
-	if (launcher === 'modrinth')
-		instruction = (
-			<>
-				<T message={'In Modrinth App, open the Minemories instance folder using its'} />{' '}
-				<strong>
-					<T message={'folder icon'} />
-				</strong>{' '}
-				<T message={'or its menu.'} />
-			</>
-		)
-	if (launcher === 'autre')
-		instruction = (
-			<>
-				<T message={'In your launcher, open the'} />{' '}
-				<strong>
-					<T message={'instance folder'} />
-				</strong>{' '}
-				<T message={"of your chosen NeoForge 21.1.248 instance. Use that instance's folder button or menu."} />
-			</>
-		)
 	return (
 		<>
+			{catalogLinks().length > 0 && (
+				<p className="install-caption">
+					<T message={'Installed from CurseForge or Modrinth? The app already placed the file: go to the next step.'} />
+				</p>
+			)}
 			<p>
 				<strong>
 					<T message={'Close Minecraft completely'} />
@@ -336,7 +347,13 @@ function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: 
 				<T message={'before copying the file.'} />
 			</p>
 			<ol>
-				<li>{instruction}</li>
+				<li>
+					<T
+						message={
+							'In your launcher, open the folder of the profile configured in step 2: in Minecraft Launcher, click the folder icon of its installation; in CurseForge or Modrinth App, use the folder button or the menu of the profile. Check that this is the dedicated game directory you chose.'
+						}
+					/>
+				</li>
 				<li>
 					<T message={'Open the subfolder'} /> <code>mods</code>
 					<T message={'. If it is missing, create a folder named exactly'} /> <code>mods</code>
@@ -353,10 +370,11 @@ function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: 
 			</ol>
 			<fieldset className="install-folder" aria-label={t('File location')}>
 				<span>
-					<T message={'NeoForge profile folder'} />
+					<T message={'Profile folder'} />
 				</span>
 				<span>└─ mods</span>
-				<strong>　 └─ minemories-neoforge-mc1.21.1.jar</strong>
+				<strong>　 └─ {target.jarName}</strong>
+				{target.fabricApi && <span>　 └─ fabric-api-{target.fabricApi}.jar</span>}
 			</fieldset>
 			{screenshots && <WindowsScreenshot id="modsFolder" />}
 			<p>
@@ -368,14 +386,16 @@ function FileStep({ launcher, screenshots }: { launcher: Launcher; screenshots: 
 	)
 }
 
-function VerifyStep({ launcher, screenshots }: { launcher: Launcher; screenshots: boolean }) {
-	const { t } = useI18n()
+function VerifyStep({ target, screenshots }: { target: LoaderTarget; screenshots: boolean }) {
 	return (
 		<>
 			<ol>
 				<li>
-					<T message={'Restart Minecraft from'} /> <strong>{t(launcherNames[launcher])}</strong>
-					<T message={', using the'} /> <strong>NeoForge 21.1.248</strong> <T message={'profile you just prepared.'} />
+					<T message={'Restart Minecraft from the launcher, using the'} />{' '}
+					<strong>
+						{target.name} {target.loaderVersion}
+					</strong>{' '}
+					<T message={'profile you just prepared.'} />
 				</li>
 				<li>
 					<T message={'In the game menu, open'} /> <strong>Mods</strong> <T message={'and look for'} />{' '}
@@ -505,38 +525,25 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 	)
 }
 
-export function InstallationStep({ step, system, launcher }: { step: number; system: System; launcher: Launcher }) {
-	const screenshots = system === 'windows' && launcher === 'manuel'
+export function InstallationStep({ step, system, target }: { step: number; system: System; target: LoaderTarget }) {
+	// The screenshots show the validated walkthrough: Windows, Minecraft Launcher, NeoForge 1.21.1.
+	const screenshots = system === 'windows' && target.loader === 'neoforge' && target.minecraft === '1.21.1'
 	switch (step) {
 		case 0:
-			return <PrepareStep />
+			return <PrepareStep target={target} />
 		case 1:
-			return launcher === 'manuel' ? <ManualLoader system={system} /> : <LauncherLoader launcher={launcher} />
-		case 2:
 			return (
 				<>
-					<p>
-						<T
-							message={
-								'The JAR is the mod file. Download it here, from the site; it is not yet published in the CurseForge and Modrinth catalogs. Even with these applications, you add the file manually.'
-							}
-						/>
-					</p>
-					<ModDownload />
-					{screenshots && <WindowsScreenshot id="jarDownload" />}
-					<p>
-						<T
-							message={
-								'The Minemories JAR is copied into the game. Only the NeoForge installer from the previous step runs with Java.'
-							}
-						/>
-					</p>
+					<LoaderInstaller target={target} system={system} walkthrough={screenshots} />
+					<OtherLaunchers target={target} />
 				</>
 			)
+		case 2:
+			return <DownloadStep target={target} walkthrough={screenshots} />
 		case 3:
-			return <FileStep launcher={launcher} screenshots={screenshots} />
+			return <FileStep target={target} screenshots={screenshots} />
 		case 4:
-			return <VerifyStep launcher={launcher} screenshots={screenshots} />
+			return <VerifyStep target={target} screenshots={screenshots} />
 		default:
 			return <MemoryStep system={system} screenshots={screenshots} />
 	}

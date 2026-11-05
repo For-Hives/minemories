@@ -138,6 +138,48 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # Every other Minecraft version and loader of config/mod-matrix.json (the 1.21.1 root is built by `mod`). Any mod change, shared
+  # core and common included, compiles and checks each of them, so a port never silently stops building.
+  mod-cells:
+    needs: changes
+    if: needs.changes.outputs.mod == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      cells: ${{ steps.cells.outputs.cells }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: List the matrix cells
+        id: cells
+        run: node scripts/mod-matrix.mjs ci
+
+  mod-matrix:
+    needs: mod-cells
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.mod-cells.outputs.cells) }}
+    name: mod ${{ matrix.loader }} ${{ matrix.minecraft }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            ${{ matrix.java }}
+            21
+            25
+          cache: gradle
+      - name: Check and build ${{ matrix.loader }} for Minecraft ${{ matrix.minecraft }}
+        env:
+          MINEMORIES_MOD_DIR: ${{ matrix.dir }}
+        run: node scripts/gradle.mjs ":${{ matrix.project }}:build"
+
   mod-artifact:
     needs: mod
     runs-on: ubuntu-latest
@@ -163,11 +205,11 @@ jobs:
   # The one check to read: green when every gate that had to run passed. A gate skipped because the change does not concern it counts as passed.
   quality:
     if: always()
-    needs: [changes, audit, web, api, mod, mod-artifact]
+    needs: [changes, audit, web, api, mod, mod-cells, mod-matrix, mod-artifact]
     runs-on: ubuntu-latest
     steps:
       - name: Fail when a gate that had to run failed
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
       - name: Every required gate passed
-        run: echo "web=${{ needs.web.result }} api=${{ needs.api.result }} mod=${{ needs.mod.result }} audit=${{ needs.audit.result }}"
+        run: echo "web=${{ needs.web.result }} api=${{ needs.api.result }} mod=${{ needs.mod.result }} mod-matrix=${{ needs.mod-matrix.result }} audit=${{ needs.audit.result }}"

@@ -110,7 +110,7 @@ export function I18nProvider({
 export function useI18n() {
 	return useContext(I18nContext)
 }
-export function T({ message }: { message: string }) {
+export function T({ message, params }: { message: string; params?: Record<string, string | number> }) {
 	const { t } = useI18n()
-	return <>{t(message)}</>
+	return <>{t(message, params)}</>
 }

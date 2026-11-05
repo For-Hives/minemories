@@ -4,21 +4,24 @@ import { buttonLime, buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { InfoNavigation } from './InfoPages'
 import { InstallationScene } from './InstallationScene'
-import { InstallationStep, launcherNames, stepNames } from './InstallationSteps'
+import { InstallationStep, stepNames } from './InstallationSteps'
+import { guideUrl } from './installation-loaders'
 import {
 	defaults,
 	type GuideState,
-	type Launcher,
+	loadersFor,
 	readGuide,
 	resetGuide,
 	type System,
 	saveGuide,
+	targetFor,
 } from './installation-state'
+import { type LoaderTarget, minecraftVersions } from './mod-releases'
 import './installation.css'
 
 function GuidePreferences({ guide, update }: { guide: GuideState; update: (value: Partial<GuideState>) => void }) {
 	const { t } = useI18n()
-
+	const target = targetFor(guide.minecraft, guide.loader)
 	return (
 		<section className="install-preferences" aria-labelledby="preferences-title">
 			<div>
@@ -59,47 +62,57 @@ function GuidePreferences({ guide, update }: { guide: GuideState; update: (value
 				</fieldset>
 				<fieldset>
 					<legend>
-						<T message={'You launch Minecraft with…'} />
+						<T message={'Your Minecraft version…'} />
 					</legend>
 					<div className="install-choices">
-						{Object.entries(launcherNames).map(([value, label]) => (
+						{minecraftVersions().map(version => (
 							<button
-								key={value}
+								key={version}
 								type="button"
 								className={buttonOutline}
-								aria-pressed={guide.launcher === value}
-								onClick={() => update({ launcher: value as Launcher, done: [], step: 0 })}
+								aria-pressed={target.minecraft === version}
+								onClick={() =>
+									update({ minecraft: version, loader: targetFor(version, guide.loader).loader, done: [], step: 0 })
+								}
 							>
-								{t(label)}
+								{version}
 							</button>
 						))}
 					</div>
 				</fieldset>
-				<label className="install-name">
-					<T message={'Your first name (optional)'} />
-					<input
-						type="text"
-						maxLength={40}
-						autoComplete="off"
-						value={guide.name}
-						placeholder={t('For a guide that feels a little more yours')}
-						onChange={event => update({ name: event.target.value })}
-					/>
-				</label>
-				<label className="install-motion">
-					<input
-						type="checkbox"
-						checked={guide.reduceMotion}
-						onChange={event => update({ reduceMotion: event.target.checked })}
-					/>
-					<T message={'Reduce animations'} />
-				</label>
+				<fieldset>
+					<legend>
+						<T message={'Mod loader'} />
+					</legend>
+					<div className="install-choices">
+						{loadersFor(target.minecraft).map(item => (
+							<button
+								key={item.loader}
+								type="button"
+								className={buttonOutline}
+								aria-pressed={target.loader === item.loader}
+								onClick={() => update({ loader: item.loader, done: [], step: 0 })}
+							>
+								{item.name}
+							</button>
+						))}
+					</div>
+				</fieldset>
+				<p className="install-summary">
+					Minecraft Java {target.minecraft} · {target.name} {target.loaderVersion} · Java {target.java}
+				</p>
 			</div>
 		</section>
 	)
 }
 
-function InstallationHelp() {
+function InstallationHelp({ target }: { target: LoaderTarget }) {
+	const values = {
+		java: target.java,
+		loader: target.name,
+		minecraft: target.minecraft,
+		version: target.loaderVersion,
+	}
 	return (
 		<section className="install-help" aria-labelledby="help-title">
 			<span className="install-eyebrow">
@@ -110,18 +123,18 @@ function InstallationHelp() {
 			</h2>
 			<details>
 				<summary>
-					<T message={'The NeoForge installer will not open'} />
+					<T message={'The loader installer will not open'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'You need Java 21 to open the installer. On Windows, try right-click → Open with → Java. If it is missing, install Temurin 21 using the link in step 2. On macOS or Linux, follow'
+							'You need Java {java} to open the installer. On Windows, try right-click → Open with → Java. If it is missing, install Temurin {java} using the link in step 2. On macOS or Linux, follow the official guide for {loader} to run the installer. Do not change security settings at random.'
 						}
+						params={values}
 					/>{' '}
-					<a href="https://docs.neoforged.net/user/docs/">
-						<T message={'the official NeoForge guide'} />
-					</a>{' '}
-					<T message={'to run the installer. Do not change security settings at random.'} />
+					<a href={guideUrl(target)}>
+						<T message={'Official guide for {loader}'} params={values} />
+					</a>
 				</p>
 			</details>
 			<details>
@@ -133,8 +146,9 @@ function InstallationHelp() {
 					<code>mods</code>{' '}
 					<T
 						message={
-							'if it is missing. Check that the file ends in .jar, not .jar.zip, then fully close the game and restart the NeoForge 21.1.248 profile. Worlds belong in saves; the mod belongs in mods.'
+							'if it is missing. Check that the file ends in .jar, not .jar.zip, then fully close the game and restart the {loader} {version} profile. Worlds belong in saves; the mod belongs in mods.'
 						}
+						params={values}
 					/>
 				</p>
 			</details>
@@ -157,8 +171,9 @@ function InstallationHelp() {
 				<p>
 					<T
 						message={
-							'Check Minecraft 1.21.1, your loader version (NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API, or Forge 52.1.19), that the JAR matches this loader and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
+							'Check Minecraft {minecraft}, your loader version ({loader} {version}), that the JAR matches this loader and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
 						}
+						params={values}
 					/>
 				</p>
 			</details>
@@ -211,8 +226,9 @@ export function InstallationPage() {
 		}))
 	}
 	const complete = guide.done.length === 6
+	const target = targetFor(guide.minecraft, guide.loader)
 	return (
-		<article lang={locale} className={`installation ${guide.reduceMotion ? 'install-still' : ''}`}>
+		<article lang={locale} className="installation">
 			<header className="install-hero">
 				<div>
 					<span className="install-eyebrow">
@@ -237,7 +253,10 @@ export function InstallationPage() {
 						<T message={'Start installing'} /> <span aria-hidden="true">↓</span>
 					</a>
 					<p className="install-caption">
-						<T message={'Minecraft Java 1.21.1 · NeoForge, Fabric or Forge · Experimental mod'} />
+						<T
+							message={'Minecraft Java {versions} · NeoForge, Fabric or Forge · Experimental mod'}
+							params={{ versions: minecraftVersions().join(', ') }}
+						/>
 					</p>
 				</div>
 				<div className="install-hero-art">
@@ -255,7 +274,7 @@ export function InstallationPage() {
 				<div className="install-progress-heading">
 					<div>
 						<span className="install-eyebrow">
-							{guide.name.trim() ? t('Your turn, {name}', { name: guide.name.trim() }) : t('Your turn')}
+							<T message={'Your turn'} />
 						</span>
 						<h2>
 							<T message={'From download to first memory.'} />
@@ -292,18 +311,20 @@ export function InstallationPage() {
 							</button>
 						))}
 					</nav>
-					<div className="install-panel" key={`${guide.launcher}-${guide.step}`}>
+					<div className="install-panel" key={`${target.id}-${guide.step}`}>
 						<div className="install-panel-meta">
 							<span>
 								<T message={'Step 0'} />
 								{guide.step + 1}
 							</span>
-							<span>{t(launcherNames[guide.launcher])}</span>
+							<span>
+								{target.name} · Minecraft {target.minecraft}
+							</span>
 						</div>
 						<h3 ref={heading} tabIndex={-1}>
 							{t(stepNames[guide.step] ?? '')}
 						</h3>
-						<InstallationStep step={guide.step} system={guide.system} launcher={guide.launcher} />
+						<InstallationStep step={guide.step} system={guide.system} target={target} />
 						<div className="install-panel-actions">
 							<button
 								className={`${buttonOutline} install-secondary`}
@@ -328,9 +349,7 @@ export function InstallationPage() {
 						<span aria-hidden="true">✦</span>
 						<div>
 							<h2>
-								{guide.name.trim()
-									? t('Your first memory, {name}.', { name: guide.name.trim() })
-									: t('Your first memory is here.')}
+								<T message={'Your first memory is here.'} />
 							</h2>
 							<p>
 								<T
@@ -349,7 +368,7 @@ export function InstallationPage() {
 					<p>
 						<T
 							message={
-								'Your first name, choices and progress stay in this browser on this device. You can close this page and return.'
+								'Your choices and progress stay in this browser on this device. You can close this page and return.'
 							}
 						/>
 					</p>
@@ -364,7 +383,7 @@ export function InstallationPage() {
 					</button>
 				</div>
 			</section>
-			<InstallationHelp />
+			<InstallationHelp target={target} />
 			<p className="install-caption install-final-note">
 				<T
 					message={
@@ -388,7 +407,7 @@ export function InstallationPage() {
 							<h3>
 								{index + 1}. {t(name)}
 							</h3>
-							<InstallationStep step={index} system="windows" launcher="manuel" />
+							<InstallationStep step={index} system="windows" target={targetFor(defaults.minecraft, defaults.loader)} />
 						</section>
 					))}
 				</section>

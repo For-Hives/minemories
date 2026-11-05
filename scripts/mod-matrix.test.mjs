@@ -3,9 +3,11 @@ import { test } from 'node:test'
 import {
 	archiveName,
 	cellState,
+	ciCells,
 	gradleArgs,
 	issueFor,
 	jarVersion,
+	javaFor,
 	matrixEntries,
 	missingTargets,
 	parseArchiveName,
@@ -124,4 +126,35 @@ test('carries the planned note into the issue', () => {
 		{ loader: 'forge', minecraft: '1.21.4', loaderVersion: '54.0.1', java: '21', priority: 2, note: 'portage' },
 	]
 	assert.ok(issueFor({ ...matrix, planned }, 'forge', '1.21.4').body.includes('priorité 2'))
+})
+
+test('CI builds every cell outside the 1.21.1 root, with the Java of its Minecraft version', () => {
+	const matrix = {
+		builds: [
+			{ loader: 'forge', minecraft: '1.21.1', loaderVersion: '52.1.19', dir: 'mod/minemories', project: 'forge' },
+			{
+				loader: 'forge',
+				minecraft: '1.20.1',
+				loaderVersion: '47.4.26',
+				dir: 'mod/minemories-1.20.1',
+				project: 'forge',
+			},
+			{
+				loader: 'fabric',
+				minecraft: '1.21.11',
+				loaderVersion: '0.20.1',
+				dir: 'mod/minemories-1.21.11',
+				project: 'fabric',
+			},
+		],
+	}
+	assert.deepEqual(
+		ciCells(matrix).map(cell => [cell.id, cell.java, cell.dir]),
+		[
+			['forge-mc1.20.1', '17', 'mod/minemories-1.20.1'],
+			['fabric-mc1.21.11', '21', 'mod/minemories-1.21.11'],
+		]
+	)
+	assert.equal(javaFor('1.18.2'), '17')
+	assert.equal(javaFor('1.21.1'), '21')
 })

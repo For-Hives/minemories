@@ -201,9 +201,7 @@
 	border: 0;
 }
 
-.install-fields legend,
-.install-name,
-.install-motion {
+.install-fields legend {
 	color: var(--text);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-shadow: var(--ds-text-shadow-1);
@@ -235,45 +233,27 @@
 	color: #fff;
 }
 
-.install-name {
-	display: grid;
-	gap: var(--ds-sp-2);
+.install-summary {
+	margin: 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
 
-.install-name input {
-	width: 100%;
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-3);
-	appearance: none;
-	background: var(--field);
-	color: var(--field-ink);
-	border: var(--gp) solid var(--field-edge);
-	border-radius: 0;
-	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
-	text-shadow: none;
-	caret-color: #fff;
+.install-launchers {
+	margin-top: var(--ds-sp-6);
 }
 
-.install-name input::placeholder {
-	color: var(--text-3);
-	opacity: 1;
+.install-launchers h4 {
+	margin: var(--ds-sp-5) 0 var(--ds-sp-2);
 }
 
-.install-name input:hover {
-	border-color: #d6d0c6;
-}
-
-.mm-site .install-name input:focus-visible {
-	border-color: #fff;
-	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
-}
-
-.install-motion {
+.install-catalogs {
 	display: flex;
-	align-items: center;
+	flex-wrap: wrap;
 	gap: var(--ds-sp-3);
-	min-height: var(--ds-hit);
-	cursor: pointer;
 }
 
 /* --- The journey ----------------------------------------------------------------------------------------------------------------------------------- */
@@ -745,13 +725,6 @@
 	}
 }
 
-.install-still *,
-.install-still *::before,
-.install-still *::after {
-	animation: none !important;
-	transition: none !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.installation *,
 	.installation *::before,
@@ -850,19 +823,4 @@ html[data-mc-font="read"] .installation .install-lead {
 	.install-step-number {
 		border: 1px solid CanvasText;
 	}
-}
-
-.install-picker {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-5);
-	margin: 0 0 var(--ds-sp-5);
-	padding: 0;
-	border: 0;
-}
-
-.install-picker label {
-	display: grid;
-	gap: var(--ds-sp-2);
-	min-width: 12rem;
 }
