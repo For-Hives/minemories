@@ -18,7 +18,7 @@
 	"scripts": {
 		"mod:dev": "node scripts/gradle.mjs :neoforge:runClient",
 		"mod:build": "node scripts/gradle.mjs build",
-		"mod:build:1.20.1": "cd mod/minemories-1.20.1 && ./gradlew build",
+		"mod:matrix": "node scripts/mod-matrix.mjs",
 		"mod:check": "node scripts/gradle.mjs spotlessApply check",
 		"mod:check:ci": "node scripts/gradle.mjs check",
 		"web:dev": "bun run --filter @minemories/web dev",
@@ -38,7 +38,7 @@
 		"check": "bun run lint && bun run hero:check && bun run package:mod:test && bun run release:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
 		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run hero:assets && node scripts/hero-assets/cli.mjs --check && bun run web:build",
 		"package:mod": "node scripts/package-mod.mjs",
-		"package:mod:test": "node --test scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
+		"package:mod:test": "node --test scripts/mod-matrix.test.mjs scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
 		"api:garage": "node scripts/garage-integration.mjs",
 		"api:coverage:test": "node --test scripts/check-api-coverage.test.mjs",
 		"release:test": "node --test scripts/release-utils.test.mjs scripts/sync-release-versions.test.mjs scripts/release-flow.test.mjs scripts/release-assets.test.mjs scripts/build-release-target.test.mjs",

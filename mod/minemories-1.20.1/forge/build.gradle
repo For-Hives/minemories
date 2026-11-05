@@ -21,6 +21,8 @@ loom {
     accessWidenerPath = file('src/main/resources/minemories.accesswidener')
 }
 
+// `-PforgeVersion=<x>` builds against another Forge version (scripts/mod-matrix.mjs).
+def loaderVersion = findProperty('forgeVersion') ?: '47.4.26'
 def adapted = layout.buildDirectory.dir('adapted-sources')
 def adaptSources = tasks.register('adaptSources') {
     inputs.dir(shared.toPath().resolve('core/src/main/java').toFile())
@@ -45,7 +47,7 @@ tasks.named('compileJava') { dependsOn adaptSources }
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
-    forge 'net.minecraftforge:forge:1.20.1-47.4.26'
+    forge "net.minecraftforge:forge:1.20.1-${loaderVersion}"
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 tasks.withType(JavaCompile).configureEach {
@@ -55,6 +57,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 tasks.withType(ProcessResources).configureEach {
     inputs.property('version', project.version)
-    filesMatching('META-INF/mods.toml') { expand version: project.version }
+    inputs.property('loaderVersion', loaderVersion)
+    filesMatching('META-INF/mods.toml') { expand version: project.version, loaderVersion: loaderVersion }
 }
 tasks.named('jar') { manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json') }

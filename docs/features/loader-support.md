@@ -58,3 +58,13 @@ La CI conserve les trois paquets puis les télécharge dans trois jobs distincts
 `config/mod-targets.json` est la source de la matrice de publication. NeoForge, Fabric et Forge sont activés après ces validations ; la réservation Quilt reste désactivée puisqu'elle réutilise le JAR Fabric. La release automatique construit les trois cibles avec noms, manifestes, checksums et provenance distincts. `validatedInGame` décrit la combinaison prise en charge : il ne prétend pas que chaque nouvelle archive automatique a été jouée. Voir [le pipeline de release](automatic-releases.md).
 
 Le téléchargement public par défaut reste NeoForge ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
+
+## Grille locale des versions compilées
+
+`bun mod:matrix` affiche, pour chaque loader, un tableau Minecraft × version du loader dont chaque case liste les versions du mod déjà compilées (✓ version courante, ⚠ anciennes versions seulement, `·` rien). La configuration est dans `config/mod-matrix.json` (indépendante de `config/mod-targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
+
+- `bun mod:matrix build <loader> <minecraft> [versionLoader]` compile la cible avec un JDK 21 (celui de `JAVA_HOME` ou `~/.local/tools/jdk-*`) et archive le JAR dans `build/mod-matrix/<loader>/<minecraft>/<versionLoader>/`. Une version de loader autre que celle fixée n'est compilable que si l'entrée déclare `loaderProperty` (c'est le cas des projets 1.20.1 : `-PforgeVersion`, `-PfabricLoaderVersion`).
+- `bun mod:matrix build --missing` compile toutes les cases fixées qui n'ont pas la version courante du mod.
+- `bun mod:matrix issue <loader> <minecraft> [versionLoader]` prépare le texte de l'issue (checklist build, test en jeu, documentation) pour une combinaison non configurée ; `--create` l'ouvre sur GitHub avec les labels `mod` et `enhancement` si aucune issue proche n'est ouverte.
+
+Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus.

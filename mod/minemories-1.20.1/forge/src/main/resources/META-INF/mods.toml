@@ -9,7 +9,7 @@ description='''Client-side Minecraft memory capture.'''
 [[dependencies.minemories]]
 modId="forge"
 mandatory=true
-versionRange="[47.4.26,48)"
+versionRange="[${loaderVersion},48)"
 ordering="NONE"
 side="CLIENT"
 [[dependencies.minemories]]
