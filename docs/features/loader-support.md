@@ -102,6 +102,14 @@ Même sous-projet que Forge 1.19.2 (`mod/minemories-1.19.2`, module `fabric`), F
 
 Test en jeu : `./gradlew :fabric:runClientGametest` (depuis `mod/minemories-1.19.2`), même scénario que Forge : 2507 blocs, 3 entités, 17 matériaux, GLB de 182 280 octets. Le mod de test Fabric rejoint le classpath de développement mais reste inactif sans `-Dminemories.gametest=true`. Limites : GLB non ouvert dans le viewer, Quilt 1.19.2 non essayé, menus et sélection manuelle non essayés. Cible non déclarée prise en charge.
 
+### Forge 1.18.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+
+Sous-projet `mod/minemories-1.18.2` (Forge 40.3.12, Java 17, Architectury Loom), construit comme celui de 1.19.2 : mêmes règles d'adaptation de `mod/compat-legacy`, plus `mod/compat-pre-1.19` pour ce qui n'existe pas encore en 1.18 (`Component.literal` et `Component.translatable`, remplacés par `Components`; `Screen.rebuildWidgets`, remplacé par `clearWidgets(); init();`). Premier essai : 97 erreurs de symboles, 74 d'entre elles sur les composants de texte.
+
+Ce qui change dans l'adaptateur Forge, écrit pour cette version : touches enregistrées dans `FMLClientSetupEvent` par `ClientRegistry`, événements d'écran `ScreenEvent.InitScreenEvent` et `DrawScreenEvent`, entrées `InputEvent.KeyInputEvent` et `MouseInputEvent`, sélection dessinée sur `RenderLevelLastEvent` (déprécié, il n'y a pas d'étape de rendu), modèles avec `IModelData`/`EmptyModelData` et `java.util.Random`, teinte du fluide par `FluidAttributes`. Le dessin de la sélection n'a pas été vu à l'écran.
+
+Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.18.2`), pilote `TickDrivenCapture` propre à 1.18.2 (monde plat créé par `Minecraft.createLevel`, commande envoyée par `Screen.sendMessage`). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 540 octets. Le démarrage prend environ deux minutes avant que le test avance. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés ; cible non déclarée prise en charge.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
