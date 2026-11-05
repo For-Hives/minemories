@@ -86,7 +86,10 @@ export function cellState(versions, current) {
 }
 
 export function loaderGrid(matrix, cells, loader) {
-	const loaderVersions = new Set(matrix.builds.filter(b => b.loader === loader).map(b => b.loaderVersion))
+	const planned = matrix.planned ?? []
+	const loaderVersions = new Set(
+		[...matrix.builds, ...planned].filter(b => b.loader === loader).map(b => b.loaderVersion)
+	)
 	for (const key of cells.keys()) {
 		const [l, , loaderVersion] = key.split('|')
 		if (l === loader) loaderVersions.add(loaderVersion)
@@ -94,13 +97,16 @@ export function loaderGrid(matrix, cells, loader) {
 	const columns = [...loaderVersions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 	const rows = matrix.minecraft.map(minecraft => ({
 		minecraft,
-		configured: matrix.builds.some(b => b.loader === loader && b.minecraft === minecraft),
+		configured: [...matrix.builds, ...planned].some(b => b.loader === loader && b.minecraft === minecraft),
 		cells: columns.map(loaderVersion => {
 			const versions = cells.get(cellKey(loader, minecraft, loaderVersion)) ?? []
 			const pinned = matrix.builds.some(
 				b => b.loader === loader && b.minecraft === minecraft && b.loaderVersion === loaderVersion
 			)
-			return { loaderVersion, versions, pinned, state: cellState(versions, matrix.version) }
+			const plan = planned.find(
+				p => p.loader === loader && p.minecraft === minecraft && p.loaderVersion === loaderVersion
+			)
+			return { loaderVersion, versions, pinned, plan, state: cellState(versions, matrix.version) }
 		}),
 	}))
 	return { loader, columns, rows }
@@ -111,6 +117,7 @@ const symbols = { current: '✓', stale: '⚠', missing: '·' }
 function cellLabel(cell, configured) {
 	if (cell.versions.length) return `${symbols[cell.state]} ${cell.versions.join(', ')}`
 	if (cell.pinned) return `${symbols.missing} à compiler`
+	if (cell.plan) return `○ prévu P${cell.plan.priority}`
 	return `${symbols.missing} ${configured ? '—' : 'non configuré'}`
 }
 
@@ -202,7 +209,8 @@ async function buildOne(matrix, build, loaderVersion, root = repositoryRoot) {
 
 export function issueFor(matrix, loader, minecraft, loaderVersion) {
 	const build = findBuild(matrix, loader, minecraft)
-	const version = loaderVersion ?? build?.loaderVersion ?? '<version du loader>'
+	const plan = (matrix.planned ?? []).find(p => p.loader === loader && p.minecraft === minecraft)
+	const version = loaderVersion ?? build?.loaderVersion ?? plan?.loaderVersion ?? '<version du loader>'
 	const title = `feat(mod): prendre en charge ${loader} ${version} pour Minecraft ${minecraft}`
 	const body = [
 		`## Contexte`,
@@ -210,6 +218,7 @@ export function issueFor(matrix, loader, minecraft, loaderVersion) {
 		build
 			? `Un build existe déjà pour ${loader} ${minecraft} (loader ${build.loaderVersion}) ; il faut ajouter la version ${version}.`
 			: `Aucun projet Gradle ne cible encore ${loader} ${minecraft}.`,
+		...(plan ? [`Cible prévue (priorité ${plan.priority}, Java ${plan.java}) : ${plan.note}.`] : []),
 		'',
 		`## À faire`,
 		`- [ ] Projet / propriété de version Gradle (Java adapté à Minecraft ${minecraft}), entrée dans \`config/mod-matrix.json\``,
@@ -248,7 +257,9 @@ function listGrids(matrix, cells) {
 	const loaders = [...new Set(matrix.builds.map(b => b.loader))]
 	console.log(loaders.map(l => renderGrid(loaderGrid(matrix, cells, l), matrix.version)).join('\n\n'))
 	console.log(`\nJAR archivés : ${join(repositoryRoot, ...archiveRoot)}  (bun mod:matrix open pour l’ouvrir)`)
-	console.log('✓ version courante compilée   ⚠ seulement d’anciennes versions   · rien de compilé')
+	console.log(
+		'✓ version courante compilée   ⚠ seulement d’anciennes versions   · rien de compilé   ○ prévu (voir planned)'
+	)
 }
 
 async function buildMissing(matrix, cells) {

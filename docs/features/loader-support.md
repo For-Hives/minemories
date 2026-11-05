@@ -68,3 +68,17 @@ Le téléchargement public par défaut reste NeoForge ; choisir l'archive corres
 - `bun mod:matrix issue <loader> <minecraft> [versionLoader]` prépare le texte de l'issue (checklist build, test en jeu, documentation) pour une combinaison non configurée ; `--create` l'ouvre sur GitHub avec les labels `mod` et `enhancement` si aucune issue proche n'est ouverte.
 
 Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus.
+
+## Versions visées par les modpacks (mesure du 5 novembre 2026)
+
+Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
+
+| Minecraft | Loader | Part approximative |
+|---|---|---|
+| 1.21.11 | Fabric | 37 % |
+| 1.20.1 | Forge / Fabric | 20 % / 10 % |
+| 1.21.1 | Fabric / NeoForge / Forge | 20 % / 5 % / 5 % |
+| 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
+| 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
+
+Déjà compilé : 1.20.1 (Forge, Fabric) et 1.21.1 (NeoForge, Fabric, Forge). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. P1 est Minecraft 1.21.11 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.

@@ -1,5 +1,5 @@
 {
-	"minecraft": ["1.20.1", "1.21.1"],
+	"minecraft": ["1.12.2", "1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.11"],
 	"builds": [
 		{
 			"loader": "neoforge",
@@ -42,6 +42,72 @@
 			"project": "fabric",
 			"jar": "minemories-fabric-mc1.20.1-{version}.jar",
 			"loaderProperty": "fabricLoaderVersion"
+		}
+	],
+	"planned": [
+		{
+			"loader": "fabric",
+			"minecraft": "1.21.11",
+			"loaderVersion": "0.20.1",
+			"java": "21",
+			"priority": 1,
+			"note": "Fabric API 0.141.6+1.21.11 ; pipeline de rendu refait depuis 1.21.5 : portage, pas une adaptation mécanique"
+		},
+		{
+			"loader": "neoforge",
+			"minecraft": "1.21.11",
+			"loaderVersion": "21.11.48",
+			"java": "21",
+			"priority": 1,
+			"note": "même portage de rendu que Fabric 1.21.11"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.21.11",
+			"loaderVersion": "61.2.5",
+			"java": "21",
+			"priority": 2,
+			"note": "même portage de rendu que Fabric 1.21.11"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.19.2",
+			"loaderVersion": "43.5.2",
+			"java": "17",
+			"priority": 2,
+			"note": "avant GuiGraphics (1.20) : écrans et rendu à adapter"
+		},
+		{
+			"loader": "fabric",
+			"minecraft": "1.19.2",
+			"loaderVersion": "0.20.1",
+			"java": "17",
+			"priority": 3,
+			"note": "Fabric API 0.77.0+1.19.2"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.18.2",
+			"loaderVersion": "40.3.12",
+			"java": "17",
+			"priority": 3,
+			"note": "avant 1.19 : chat, commandes et rendu à adapter"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.16.5",
+			"loaderVersion": "36.2.42",
+			"java": "8",
+			"priority": 4,
+			"note": "Java 8, ForgeGradle ; API très éloignée de 1.21"
+		},
+		{
+			"loader": "forge",
+			"minecraft": "1.12.2",
+			"loaderVersion": "14.23.5.2864",
+			"java": "8",
+			"priority": 4,
+			"note": "Java 8, ForgeGradle ; pas de GLB moderne, réécriture probable"
 		}
 	]
 }
