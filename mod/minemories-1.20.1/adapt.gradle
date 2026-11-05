@@ -18,6 +18,8 @@ ext.adaptDir = { File root ->
         t = t.replace('net.minecraft.world.level.chunk.status.ChunkStatus', 'net.minecraft.world.level.chunk.ChunkStatus')
         t = t.replace('public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', 'public void renderBackground(GuiGraphics graphics)')
         t = t.replace('super.renderBackground(graphics, mouseX, mouseY, partialTick)', 'super.renderBackground(graphics)')
+        // Before 1.20.2 Screen.render does not draw the background itself: screens call it first.
+        t = t.replace('public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {\n    super.render(graphics, mouseX, mouseY, partialTick);', 'public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {\n    renderBackground(graphics);\n    super.render(graphics, mouseX, mouseY, partialTick);')
         t = t.replace('Math.clamp(', 'dev.minemories.compat.Clamp.clamp(')
         t = t.replace('page.entries().getLast()', 'page.entries().get(page.entries().size() - 1)')
         t = t.replace('previous.removeLast()', 'previous.remove(previous.size() - 1)')

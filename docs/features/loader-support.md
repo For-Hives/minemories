@@ -110,6 +110,12 @@ Ce qui change dans l'adaptateur Forge, écrit pour cette version : touches enreg
 
 Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.18.2`), pilote `TickDrivenCapture` propre à 1.18.2 (monde plat créé par `Minecraft.createLevel`, commande envoyée par `Screen.sendMessage`). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 540 octets. Le démarrage prend environ deux minutes avant que le test avance. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés ; cible non déclarée prise en charge.
 
+### Fond des écrans en 1.20.1 : défaut trouvé et corrigé (5 novembre 2026)
+
+Avant 1.20.2, `Screen.render` ne dessine pas le fond : chaque écran l'appelle lui-même. Les écrans partagés (écrits pour 1.21.1) comptent sur `render` pour le faire, et l'adaptation vers 1.20.1 ne le rétablissait pas : le panneau et le fond des écrans du mod n'étaient pas dessinés. Mesuré en jeu (Forge 1.20.1) : le pixel lu dans le panneau du hub était celui du ciel (`0xffdfc7b9`), pas la couleur du panneau (`0xff262925`). `mod/minemories-1.20.1/adapt.gradle` ajoute maintenant l'appel `renderBackground(graphics)` en tête de `render`, ce qui corrige aussi le module Fabric 1.20.1 ; le même pixel vaut `0xff262925` ensuite.
+
+Le contrôle se lance par `./gradlew :forge:runClientGametest` depuis `mod/minemories-1.20.1` : monde plat, ouverture du hub, lecture d'un pixel du panneau dans le tampon d'image. Il vérifie le fond, pas la mise en page des boutons ni les textes. Les ponts 1.19.2 et 1.18.2 appellent `renderBackground` explicitement (`mod/compat-legacy/adapt-legacy.gradle`) ; ils n'ont pas ce contrôle de pixel. Fabric 1.20.1 n'a pas été relancé en jeu.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).

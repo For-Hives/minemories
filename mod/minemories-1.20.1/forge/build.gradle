@@ -12,6 +12,7 @@ repositories {
     mavenCentral()
     maven { url = 'https://maven.fabricmc.net/' }
 }
+sourceSets { gametest { compileClasspath += sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.runtimeClasspath } }
 loom {
     forge {
         mixinConfig('minemories.forge.mixins.json')
@@ -19,7 +20,20 @@ loom {
         extraAccessWideners.add('minemories.accesswidener')
     }
     accessWidenerPath = file('src/main/resources/minemories.accesswidener')
+    mods {
+        minemories { sourceSet sourceSets.main }
+        minemories_gametest { sourceSet sourceSets.gametest }
+    }
+    runs {
+        // In-game screen check: ./gradlew :forge:runClientGametest (opens a Minecraft window, isolated user.home).
+        clientGametest {
+            client()
+            vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            vmArg '-Dminemories.gametest=true'
+        }
+    }
 }
+tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
 
 // `-PforgeVersion=<x>` builds against another Forge version (scripts/mod-matrix.mjs).
 def loaderVersion = findProperty('forgeVersion') ?: '47.4.26'
@@ -48,6 +62,7 @@ dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
     forge "net.minecraftforge:forge:1.20.1-${loaderVersion}"
+    gametestImplementation sourceSets.main.output
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 tasks.withType(JavaCompile).configureEach {
