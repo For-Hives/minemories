@@ -1,0 +1,55 @@
+plugins { id 'dev.architectury.loom-remap' version '1.17.493' }
+
+// Minecraft 1.21.11 (Java 21). The shared 1.21.1 sources are copied, adapted mechanically
+// (adapt.gradle) and overlaid with the classes that had to be rewritten (overlay/java).
+def shared = file('../../minemories')
+def modVersion = file('../../minemories/gradle.properties').readLines().find { it.startsWith('mod_version=') }.split('=')[1]
+version = modVersion
+group = 'dev.minemories'
+base { archivesName = 'minemories-fabric-mc1.21.11' }
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+loom { accessWidenerPath = file('src/main/resources/minemories.accesswidener') }
+
+def adapted = layout.buildDirectory.dir('adapted-sources')
+def adaptSources = tasks.register('adaptSources') {
+    inputs.dir(shared.toPath().resolve('core/src/main/java').toFile())
+    inputs.dir(shared.toPath().resolve('common/src/main/java').toFile())
+    inputs.dir(rootProject.file('overlay/java'))
+    inputs.file(rootProject.file('adapt.gradle'))
+    outputs.dir(adapted)
+    doLast {
+        def out = adapted.get().asFile
+        delete out
+        copy {
+            from(shared.toPath().resolve('core/src/main/java').toFile())
+            from(shared.toPath().resolve('common/src/main/java').toFile())
+            into out
+        }
+        apply from: rootProject.file('adapt.gradle')
+        adaptDir(out)
+        copy { from(rootProject.file('overlay/java')); into out }
+    }
+}
+sourceSets.main.java.srcDir adapted
+tasks.named('compileJava') { dependsOn adaptSources }
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.11'
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${findProperty('fabricLoaderVersion') ?: '0.20.1'}"
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.141.6+1.21.11'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs', '2000'])
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}

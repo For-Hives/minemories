@@ -1,0 +1,12 @@
+// Mechanical 1.21.1 -> 1.21.11 source adaptation. Class rewrites live in overlay/java.
+ext.adaptDir = { File root ->
+    root.eachFileRecurse { f ->
+        if (!f.name.endsWith('.java')) return
+        def t = f.getText('UTF-8')
+        def o = t
+        t = t.replace('net.minecraft.resources.ResourceLocation', 'net.minecraft.resources.Identifier')
+        t = t.replaceAll(/\bResourceLocation\b/, 'Identifier')
+        t = t.replace('getMinBuildHeight()', 'getMinY()').replace('getMaxBuildHeight()', 'getMaxY()')
+        if (t != o) f.setText(t, 'UTF-8')
+    }
+}
