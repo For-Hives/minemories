@@ -1,0 +1,18 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "dev.minemories.fabric.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"MinecraftFrameMixin",
+		"KeyboardActivityMixin",
+		"MouseActivityMixin",
+		"TextureAtlasAccess",
+		"SpriteContentsAccess",
+		"FlywheelCaptureMixin",
+		"ClientCrashMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
