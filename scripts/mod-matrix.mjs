@@ -1,7 +1,8 @@
 // Local tool: shows which mod JARs exist per loader x Minecraft version x loader version,
 // builds a missing cell, or prepares the GitHub issue for a combination that is not set up yet.
-// Usage: bun mod:matrix [list | build <loader> <mc> [loaderVersion] | build --missing | issue <loader> <mc> [loaderVersion] [--create]]
+// Usage: bun mod:matrix [list | open | build <loader> <mc> [loaderVersion] | build --missing | issue <loader> <mc> [loaderVersion] [--create]]
 import { spawnSync } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -9,6 +10,7 @@ import { isMain, repositoryRoot } from './release-utils.mjs'
 
 const minimumGradleJava = 21
 const archiveRoot = ['build', 'mod-matrix']
+const archiveNamePattern = /^minemories-(.+)-(forge|fabric|neoforge|quilt)-mc([\d.]+)-(.+)\.jar$/
 const modVersionLine = /^mod_version=(.+)$/m
 const releaseVersion = /^\d+\.\d+\.\d+(-[\w.]+)?$/
 const jdkRelease = /JAVA_VERSION="(\d+)/
@@ -50,21 +52,21 @@ async function scanBuildOutputs(matrix, root, add) {
 		}
 }
 
-async function scanArchiveCell(build, dir, loaderVersion, add) {
-	for (const name of await listDir(dir)) {
-		const version = jarVersion(name, build.jar)
-		if (version) add(build.loader, build.minecraft, loaderVersion, version)
-	}
+// One flat folder: the file name carries everything needed to tell the builds apart.
+export function archiveName(build, loaderVersion, version) {
+	return `minemories-${version}-${build.loader}-mc${build.minecraft}-${loaderVersion}.jar`
 }
 
-async function scanArchive(matrix, base, add) {
-	for (const loader of await listDir(base))
-		for (const minecraft of await listDir(join(base, loader))) {
-			const build = findBuild(matrix, loader, minecraft)
-			if (!build) continue
-			for (const loaderVersion of await listDir(join(base, loader, minecraft)))
-				await scanArchiveCell(build, join(base, loader, minecraft, loaderVersion), loaderVersion, add)
-		}
+export function parseArchiveName(name) {
+	const match = archiveNamePattern.exec(name)
+	return match && { version: match[1], loader: match[2], minecraft: match[3], loaderVersion: match[4] }
+}
+
+async function scanArchive(base, add) {
+	for (const name of await listDir(base)) {
+		const parsed = parseArchiveName(name)
+		if (parsed) add(parsed.loader, parsed.minecraft, parsed.loaderVersion, parsed.version)
+	}
 }
 
 export async function scanCells(matrix, root = repositoryRoot) {
@@ -74,7 +76,7 @@ export async function scanCells(matrix, root = repositoryRoot) {
 		cells.set(key, [...new Set([...(cells.get(key) ?? []), version])].sort())
 	}
 	await scanBuildOutputs(matrix, root, add)
-	await scanArchive(matrix, join(root, ...archiveRoot), add)
+	await scanArchive(join(root, ...archiveRoot), add)
 	return cells
 }
 
@@ -191,10 +193,11 @@ async function buildOne(matrix, build, loaderVersion, root = repositoryRoot) {
 	const name = build.jar.replace('{version}', matrix.version)
 	const source = join(root, build.dir, build.project, 'build', 'libs', name)
 	await stat(source)
-	const target = join(root, ...archiveRoot, build.loader, build.minecraft, loaderVersion)
+	const target = join(root, ...archiveRoot)
+	const archived = archiveName(build, loaderVersion, matrix.version)
 	await mkdir(target, { recursive: true })
-	await copyFile(source, join(target, name))
-	console.log(`✓ ${join(...archiveRoot, build.loader, build.minecraft, loaderVersion, name)}`)
+	await copyFile(source, join(target, archived))
+	console.log(`✓ ${join(...archiveRoot, archived)}`)
 }
 
 export function issueFor(matrix, loader, minecraft, loaderVersion) {
@@ -234,10 +237,18 @@ function createIssue({ title, body }) {
 	spawnSync('gh', args, { stdio: 'inherit' })
 }
 
+function openArchive() {
+	const folder = join(repositoryRoot, ...archiveRoot)
+	mkdirSync(folder, { recursive: true })
+	console.log(folder)
+	spawnSync('xdg-open', [folder], { stdio: 'ignore' })
+}
+
 function listGrids(matrix, cells) {
 	const loaders = [...new Set(matrix.builds.map(b => b.loader))]
 	console.log(loaders.map(l => renderGrid(loaderGrid(matrix, cells, l), matrix.version)).join('\n\n'))
-	console.log('\n✓ version courante compilée   ⚠ seulement d’anciennes versions   · rien de compilé')
+	console.log(`\nJAR archivés : ${join(repositoryRoot, ...archiveRoot)}  (bun mod:matrix open pour l’ouvrir)`)
+	console.log('✓ version courante compilée   ⚠ seulement d’anciennes versions   · rien de compilé')
 }
 
 async function buildMissing(matrix, cells) {
@@ -260,6 +271,7 @@ export async function main(argv) {
 	const [loader, minecraft, requested] = rest.filter(a => !a.startsWith('--'))
 	const cells = await scanCells(matrix)
 	if (command === 'list') return listGrids(matrix, cells)
+	if (command === 'open') return openArchive()
 	if (command === 'build' && flags.includes('--missing')) return buildMissing(matrix, cells)
 	if (command !== 'build' && command !== 'issue') throw new Error(`Commande inconnue : ${command}`)
 	if (!(loader && minecraft)) throw new Error(`Usage : bun mod:matrix ${command} <loader> <minecraft> [loaderVersion]`)
