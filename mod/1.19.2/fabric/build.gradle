@@ -80,3 +80,6 @@ tasks.withType(ProcessResources).configureEach {
     inputs.property('version', project.version)
     filesMatching('fabric.mod.json') { expand version: project.version }
 }
+
+// Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
+apply from: rootProject.file('../shared/prod.gradle')

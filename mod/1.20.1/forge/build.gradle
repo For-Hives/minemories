@@ -85,3 +85,6 @@ tasks.withType(ProcessResources).configureEach {
     filesMatching('META-INF/mods.toml') { expand version: project.version, loaderVersion: loaderVersion }
 }
 tasks.named('jar') { manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json') }
+
+// Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
+apply from: rootProject.file('../shared/prod.gradle')
