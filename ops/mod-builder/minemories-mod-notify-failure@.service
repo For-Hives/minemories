@@ -1,0 +1,25 @@
+# Started by OnFailure= of minemories-mod-release.service (%i is the failed unit): posts the end of its journal to
+# Discord through `bun mod notify`. Best effort: a failed notification must never raise another alert.
+# The journal tail goes through the same secret/path masking as every other notification.
+[Unit]
+Description=Discord alert for failed unit %i
+
+[Service]
+Type=oneshot
+User=minemories
+Group=minemories
+Slice=minemories-mod.slice
+WorkingDirectory=/opt/minemories
+EnvironmentFile=/etc/minemories/mod-builder.env
+Environment=HOME=/var/lib/minemories
+Nice=19
+# The `minemories` user must be allowed to read the system journal (usermod -aG systemd-journal minemories).
+ExecStart=/bin/sh -c 'journalctl -u %i -n 60 --no-pager -o cat | /usr/local/bin/bun mod notify --kind release-failure --title "Release du mod en échec (%i)" --summary "Le service %i a échoué. Fin du journal ci-dessous ; journalctl -u %i sur le serveur pour le détail." --log-stdin'
+SuccessExitStatus=0 1
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minemories-mod-notify
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes

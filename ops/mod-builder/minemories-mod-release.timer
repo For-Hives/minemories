@@ -1,0 +1,19 @@
+# Checks once a night whether main has a release to build. `bun mod release` exits quickly when there is nothing new,
+# so the check is cheap. 03:30 Paris time is the quietest hour of the site and the API; the random delay avoids
+# starting at the same minute as other maintenance. Persistent=true runs a missed night at the next boot.
+#
+# To release on demand (after a merge): `systemctl start minemories-mod-release.service`.
+# To react to merges instead of polling, call that command from a deployment hook or a webhook receiver; keep this
+# timer as a safety net.
+[Unit]
+Description=Nightly check for a mod release
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Europe/Paris
+RandomizedDelaySec=20min
+Persistent=true
+Unit=minemories-mod-release.service
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
