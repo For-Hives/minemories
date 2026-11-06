@@ -169,3 +169,122 @@ test.skipIf(!enabled)(
 		expect(report.perTarget[id]?.versions).toBe(2)
 	}
 )
+
+test.skipIf(!enabled)(
+	'un vrai Garage : même bucket que les captures, objets étrangers, préfixe public-mods/',
+	async () => {
+		const { ListObjectsV2Command, PutObjectCommand } = await import('@aws-sdk/client-s3')
+		const { s3Target } = await import('./storage-s3')
+		const { uploadS3Memory } = await import('./storage-s3')
+		const { createModDownloads, createS3ModSource } = await import('./mod-downloads')
+		const { createModUploads } = await import('./mod-upload')
+		const { makeJar, sha256Hex } = await import('./test-support/jar-fixture')
+		const { Hono } = await import('hono')
+		const { client, bucket } = s3Target()
+		const prefix = 'public-mods/'
+		const id = 'forge-mc1.21.1'
+		const token = 'garage-prefix-token-with-more-than-32-chars'
+		const env = {
+			...process.env,
+			MOD_STORAGE_BUCKET: bucket,
+			MOD_STORAGE_PREFIX: prefix,
+			MOD_UPLOAD_TOKEN: token,
+			MOD_STORAGE_KEEP: '2',
+		}
+
+		// Objets étrangers dans le MÊME bucket : captures réelles (chemin d'écriture de l'API), niveaux froids, pièges.
+		const capture = Buffer.from('glTF-capture')
+		await uploadS3Memory('owner1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.glb', capture, capture.length)
+		const foreign: Record<string, string> = {
+			'owner1/tiers/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.glb': 'tier',
+			'users/u/1.glb': 'user',
+			'public-mods../x': 'trap-dotdot',
+			'public-modsx/mods/note.txt': 'trap-sibling',
+			[`mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`]: 'trap-unprefixed-mod',
+		}
+		for (const [Key, text] of Object.entries(foreign))
+			await client.send(new PutObjectCommand({ Bucket: bucket, Key, Body: Buffer.from(text) }))
+		const listAll = async (Prefix?: string) => {
+			const keys: string[] = []
+			let ContinuationToken: string | undefined
+			do {
+				const page = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix, ContinuationToken }))
+				for (const item of page.Contents ?? []) keys.push(`${item.Key}:${item.Size}`)
+				ContinuationToken = page.IsTruncated ? page.NextContinuationToken : undefined
+			} while (ContinuationToken)
+			return keys.sort()
+		}
+		const outside = async () => (await listAll()).filter(entry => !entry.startsWith(prefix))
+		const before = await outside()
+		expect(before.length).toBeGreaterThanOrEqual(6)
+
+		const uploads = new Hono()
+		uploads.route('/upload', createModUploads({ env: () => env, client: () => client as never }))
+		const downloads = new Hono()
+		downloads.route(
+			'/',
+			createModDownloads(() => createS3ModSource(bucket), 0, prefix)
+		)
+		const manifest = (version: string, day: number) =>
+			Buffer.from(
+				JSON.stringify({
+					id,
+					version,
+					minecraft: '1.21.1',
+					loader: 'forge',
+					loaderVersion: '52.1.19',
+					java: '21',
+					commit: 'abcdef1',
+					builtAt: `2026-10-0${day}T00:00:00.000Z`,
+					builtBy: 'pc',
+				})
+			).toString('base64url')
+		const jars: Record<string, Buffer> = {}
+		const put = (version: string, day: number, bytes: Buffer) => {
+			jars[version] = bytes
+			return uploads.request(`/upload/${id}/${version}`, {
+				method: 'PUT',
+				body: bytes as unknown as BodyInit,
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Length': String(bytes.length),
+					'X-Content-SHA256': sha256Hex(bytes),
+					'X-Mod-Manifest': manifest(version, day),
+				},
+			})
+		}
+		expect((await put('0.1.0', 1, makeJar(['dev/minemories/One.class']))).status).toBe(200)
+		expect((await put('0.2.0', 2, makeJar(['dev/minemories/Two.class']))).status).toBe(200)
+		// Plus gros qu'une partie multipart (8 Mio) : multipart réel sous le préfixe.
+		expect((await put('0.3.0', 3, makeJar(['dev/minemories/Three.class'], 9 * 1024 * 1024))).status).toBe(200)
+
+		// Tout ce qui a été écrit est sous le préfixe ; le reste du bucket est intact octet pour octet.
+		const mine = await listAll(prefix)
+		expect(mine.some(entry => entry.startsWith(`${prefix}index.json:`))).toBe(true)
+		expect(mine.some(entry => entry.startsWith(`${prefix}latest/${id}.jar:`))).toBe(true)
+		expect(await outside()).toEqual(before)
+
+		// Rétention (2 versions) : 0.1.0 supprimée sous le préfixe seulement, y compris le piège « mods/<id>/0.1.0/ » racine.
+		const index = await (await downloads.request('/index.json')).json()
+		expect(index.targets[id].versions.map((item: { version: string }) => item.version)).toEqual(['0.3.0', '0.2.0'])
+		expect(index.targets[id].versions[0].key).toBe(`mods/${id}/0.3.0/minemories-${id}-0.3.0.jar`)
+		expect(mine.some(entry => entry.includes('/0.1.0/'))).toBe(false)
+
+		const latest = await downloads.request(`/${id}/latest`)
+		expect(latest.status).toBe(200)
+		expect(Buffer.from(await latest.arrayBuffer()).equals(jars['0.3.0'] as Buffer)).toBe(true)
+		const second = await downloads.request(`/${id}/0.2.0`)
+		expect(Buffer.from(await second.arrayBuffer()).equals(jars['0.2.0'] as Buffer)).toBe(true)
+		expect((await downloads.request(`/${id}/0.1.0`)).status).toBe(404)
+
+		// Le même index lu sans préfixe ne voit pas les mods : ils ne sont pas à la racine du bucket.
+		const bare = new Hono()
+		bare.route(
+			'/',
+			createModDownloads(() => createS3ModSource(bucket), 0, '')
+		)
+		const bareIndex = await (await bare.request('/index.json')).json()
+		expect(bareIndex.targets[id]).toBeUndefined()
+		expect(await outside()).toEqual(before)
+	}
+)
