@@ -126,7 +126,6 @@ async function receive(body: ReadableStream<Uint8Array>, file: string, declared:
 				return 'too_large'
 			}
 			hash.update(value)
-			// biome-ignore lint/performance/noAwaitInLoops: l'écriture suit la lecture, un morceau à la fois.
 			await handle.write(value)
 		}
 	} finally {
