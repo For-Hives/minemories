@@ -284,12 +284,15 @@ test('release matrix follows the enabled targets of mod/targets.json', () => {
 		['forge', 'minemories-forge-mc1.21.1.jar', '52.1.19'],
 		['fabric', 'minemories-fabric-mc1.21.11.jar', '0.20.1'],
 		['neoforge', 'minemories-neoforge-mc1.21.11.jar', '21.11.48'],
+		['forge', 'minemories-forge-mc1.21.11.jar', '61.2.5'],
+		['forge', 'minemories-forge-mc1.20.1.jar', '47.4.26'],
+		['fabric', 'minemories-fabric-mc1.20.1.jar', '0.19.5'],
 		['forge', 'minemories-forge-mc1.19.2.jar', '43.5.2'],
 		['fabric', 'minemories-fabric-mc1.19.2.jar', '0.20.1'],
 		['forge', 'minemories-forge-mc1.18.2.jar', '40.3.12'],
 	])
 	expect(loaderTargets.find(target => target.loader === 'fabric')?.fabricApi).toBe('0.116.17+1.21.1')
-	expect(minecraftVersions()).toEqual(['1.21.11', '1.21.1', '1.19.2', '1.18.2'])
+	expect(minecraftVersions()).toEqual(['1.21.11', '1.21.1', '1.20.1', '1.19.2', '1.18.2'])
 	expect(loaderTargets.find(target => target.loader === 'forge')?.fabricApi).toBeNull()
 })
 
