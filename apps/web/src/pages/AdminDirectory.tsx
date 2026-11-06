@@ -153,7 +153,7 @@ export function Directory({
 			<Overview directory={directory} />
 			<Search filters={filters} onSearch={onSearch} />
 			<div className="mm-admin-table-wrap">
-				<table>
+				<table className="mm-admin-users">
 					<thead>
 						<tr>
 							<th>{t('Account')}</th>
@@ -167,21 +167,21 @@ export function Directory({
 					<tbody>
 						{directory.users.map(user => (
 							<tr key={user.id}>
-								<td>
+								<td className="mm-admin-account">
 									<strong>{user.name}</strong>
 									<small>{user.email}</small>
 								</td>
-								<td>
+								<td data-label={t('Role')}>
 									<span className={`mm-admin-role ${user.role === 'admin' ? 'is-admin' : ''}`}>
 										{user.role === 'admin' ? t('Admin') : t('User')}
 									</span>
 								</td>
-								<td>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
-								<td>{user.captures.toLocaleString(locale)}</td>
-								<td>
+								<td data-label={t('Registered')}>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
+								<td data-label={t('Captures')}>{user.captures.toLocaleString(locale)}</td>
+								<td data-label={t('Storage')}>
 									<StorageMeter user={user} quotaBytes={directory.quotaBytes} />
 								</td>
-								<td>
+								<td className="mm-admin-actions">
 									<button
 										type="button"
 										className={`mm-admin-secondary ${buttonDark}`}
