@@ -61,15 +61,21 @@ Les cibles des autres versions de Minecraft (1.21.11, 1.19.2, 1.18.2, puis 1.20.
 
 Le téléchargement public par défaut reste NeoForge 1.21.1 ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
 
-## Grille locale des versions compilées
+## Outil `bun mod`
 
-`bun mod:matrix` affiche un seul tableau (Minecraft en lignes, loaders en colonnes) où chaque version de loader est colorée selon son état pour la version courante du mod : ✓ à jour, ⚠ seulement d'anciennes versions, ✗ configurée mais non compilée, ○ prévue, `·` rien. Les couleurs sont coupées hors terminal ou avec `NO_COLOR`. La configuration est dans `mod/matrix.json` (indépendante de `mod/targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
+`bun mod` (`scripts/mod/cli.mjs`) remplace l'ancien `mod:matrix` : un seul outil pour compiler, suivre l'état, versionner et orchestrer la release du mod. `bun mod` sans argument liste les commandes ; `bun mod <commande> --help` donne l'usage. Les commandes sont les fichiers de `scripts/mod/commands/` (contrat : `{ name, summary, usage, run(args, { config, env, log, root }) }`, documenté en tête de `cli.mjs`), donc stockage, tests, publication et notifications s'y ajoutent sans toucher au cœur.
 
-- `bun mod:matrix build <loader> <minecraft> [versionLoader]` compile la cible avec un JDK 21 (celui de `JAVA_HOME` ou `~/.local/tools/jdk-*`) et archive le JAR dans le dossier unique `build/mod-matrix/` sous le nom `minemories-<mod>-<loader>-mc<minecraft>-<versionLoader>.jar` (`bun mod:matrix open` l’ouvre). Une version de loader autre que celle fixée n'est compilable que si l'entrée déclare `loaderProperty` (c'est le cas des projets 1.20.1 : `-PforgeVersion`, `-PfabricLoaderVersion`).
-- `bun mod:matrix build --missing` compile toutes les cases fixées qui n'ont pas la version courante du mod.
-- `bun mod:matrix issue <loader> <minecraft> [versionLoader]` prépare le texte de l'issue (checklist build, test en jeu, documentation) pour une combinaison non configurée ; `--create` l'ouvre sur GitHub avec les labels `mod` et `enhancement` si aucune issue proche n'est ouverte.
+**Configuration unique : `mod/targets.json`.** `minecraft` (versions affichées, dans l'ordre), `targets[]` (cibles construites) et `planned` (cibles prévues, non construites : 1.16.5 et 1.12.2). Chaque cible porte son identité (`id` = `<loader>-mc<minecraft>`, `loader`, `name`, `minecraft`, `loaderVersion`, `fabricApi`), son état (`enabled`, `validatedInGame`) et ses champs de build : `java` (JDK de compilation, 17 avant 1.21, 21 depuis), `project` (sous-projet Gradle), `dir` (racine Gradle `mod/<minecraft>`, par défaut), `jar` (gabarit du JAR produit, avec `{version}`) et `loaderProperty` (propriété Gradle pour compiler une autre version du loader). Les versions de Minecraft suivent `\d+(\.\d+)*` (donc `26.3` convient) et la validation est stricte (ids uniques, dossier cohérent). L'application web lit toujours `targets[]`.
 
-Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus.
+**Commandes.**
+- `bun mod status` : grille Minecraft (lignes) x loader (colonnes). ✓ à jour, ⚠ seulement d'anciennes versions, ✗ à compiler, ○ prévu, `·` rien, `*` cible désactivée. Si le module de stockage répond, chaque case ajoute `↑<dernière version publiée>` et l'espace utilisé, et la ligne finale donne le total ; sans stockage, la grille reste locale. Couleurs coupées hors terminal ou avec `NO_COLOR`.
+- `bun mod build [<loader> <minecraft> | <id>…] [--all] [--missing] [--dev] [--verbose]` : lance Gradle dans `mod/<minecraft>` (`:<projet>:clean`, `:<projet>:build`, `-PmodVersion`, `-Pminemories.prod=true`) et dépose dans `build/mod-dist/<version>/<id>/` le JAR renommé `minemories-<loader>-mc<minecraft>-<version>.jar`, son `.sha256` et `manifest.json` (version, Minecraft, loader, versions de loader et Fabric API, taille, SHA-256, commit, JDK, `prod`). `--dev` passe `-Pminemories.prod=false` ; `--missing` ne compile que les cibles activées sans build à jour. Une cible en échec n'arrête pas les autres : le résumé donne durée et taille de chacune, et le code de sortie est non nul s'il y a un échec. Un seul build à la fois par machine (verrou `build/mod-build.lock`, ignoré si son propriétaire n'existe plus). Le cache Gradle est celui de `~/.gradle`, partagé entre cibles.
+- `bun mod jdk [list|install <8|17|21|25>]` : Gradle tourne sur un JDK 21 et chaque cible compile avec le sien. Les JDK sont cherchés dans `JAVA_HOME`, `~/.local/tools`, `~/.gradle/jdks` et le `PATH`, puis téléchargés si besoin depuis l'API Adoptium (somme SHA-256 obligatoire, refus sinon) dans `~/.local/tools`, et passés à Gradle (`JAVA_HOME`, `-Dorg.gradle.java.installations.paths`). `--no-jdk-download` sur `build` interdit le téléchargement.
+- `bun mod version [show|bump patch|minor|beta] [--commit]` : `mod_version` reste dans `mod/1.21.1/gradle.properties`. `bump` le réécrit au format `X.Y.Z-beta.N` ; avec `--commit` il crée le commit `chore(release): X.Y.Z-beta.N` et le tag `mod-vX.Y.Z-beta.N`.
+- `bun mod release [--skip-tests] [--no-publish] [--dry-run]` : verrou, version, build de production de toutes les cibles activées, tests headless, stockage, publication Modrinth/CurseForge (seulement si un jeton est présent), notification. Chaque étape facultative est chargée à la demande : un module absent est signalé puis ignoré. Une cible en échec n'empêche pas le stockage des autres mais fait échouer la release (code 1) et déclenche une notification d'échec ; toute exception est capturée et notifiée. `--dry-run` n'affiche que le plan et la présence des modules.
+- `bun mod open` ouvre `build/mod-dist/` ; `bun mod ci` imprime les cases hors racine 1.21.1 compilées par le workflow qualité.
+
+Les variables (jetons, webhook Discord, stockage S3) viennent de l'environnement, complété par le `.env` racine sans l'écraser. Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus. Pour une nouvelle combinaison, ajouter l'entrée dans `mod/targets.json` (désactivée), puis documenter les essais en jeu ici.
 
 ### Quilt 1.21.11 : le JAR Fabric se charge tel quel (5 novembre 2026)
 
@@ -152,7 +158,7 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
-Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `mod/matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `mod/targets.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
 
 ### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
 
@@ -167,7 +173,7 @@ Le gros du travail est donc la capture de géométrie et de textures, qui demand
 
 ### Port Fabric 1.21.11 : compile, non testé en jeu
 
-`mod/1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé.
+`mod/1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; `bun mod status` le compte comme compilé.
 
 Test en jeu : `./gradlew :fabric:runClientGameTest` (depuis `mod/1.21.11/`) ouvre Minecraft 1.21.11 (son coupé, `user.home` isolé dans `build/gametest-home`), crée un monde, place pierre, verre teinté, feuilles, herbe, coffre, eau et torche, fait apparaître une vache et un armor stand, lance `/minemories export 12` et vérifie le GLB (matériaux attendus, modes alpha BLEND et MASK). Il passe (5 novembre 2026) et a déjà trouvé les mixins de souris et de clavier cassés ainsi qu'un `fabric.mod.json` qui exigeait encore 1.21.1. Reste à valider : le GLB ouvert dans le viewer, d'autres modpacks et un rendu visuel comparé à Minecraft ; la cible ne doit pas être présentée comme prise en charge avant.
 
@@ -186,7 +192,7 @@ Maintenance : le code propre à un loader reste dans `fabric/` derrière l'inter
 
 ### NeoForge 1.21.11 : compile, test en jeu passé, non validé dans le viewer
 
-`mod/1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod:matrix build neoforge 1.21.11` archive le JAR.
+`mod/1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod build neoforge 1.21.11` produit le JAR dans `build/mod-dist/`.
 
 Ce qui change par rapport à NeoForge 1.21.1 : `@EventBusSubscriber` sans `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, géométrie par `BlockStateModel.collectParts` (les données de modèle viennent du niveau), `NeoForgeVersion` déplacé dans `common`, et un access transformer pour `RenderType.state`, `RenderSetup.textures` et `TextureAtlas.texturesByName`.
 
@@ -194,7 +200,7 @@ Test en jeu : `./gradlew :neoforge:runClientGametest` ; NeoForge n'a pas d'API d
 
 ### Forge 1.21.11 : compile, test en jeu automatisé passé, non validé dans le viewer
 
-`mod/1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod:matrix build forge 1.21.11` archive le JAR.
+`mod/1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod build forge 1.21.11` produit le JAR dans `build/mod-dist/`.
 
 Deux écarts avec les autres loaders, à connaître avant de toucher à ce projet :
 

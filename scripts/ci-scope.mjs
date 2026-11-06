@@ -29,9 +29,9 @@ const rules = {
 	],
 	mod: [
 		/^mod\//,
-		/^mod\/(targets|matrix)\.json$/,
+		/^mod\/targets\.json$/,
 		/^\.github\/workflows\/(automatic-release|mod-release)\.yml$/,
-		/^scripts\/(gradle|mod-matrix|package-mod|verify-mod|release-|sync-release|build-release|collect-release|download-release|plan-release|prepare-release|publish-release)/,
+		/^scripts\/(gradle|mod\/|package-mod|verify-mod|release-|sync-release|build-release|collect-release|download-release|plan-release|prepare-release|publish-release)/,
 	],
 }
 const dependencies = [
