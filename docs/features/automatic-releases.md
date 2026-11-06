@@ -71,6 +71,82 @@ Le workflow peut être lancé manuellement sur `main` avec `dry_run=true` (défa
 
 `mod-release.yml` télécharge une release GitHub existante, compare les octets au digest fourni par GitHub et au manifeste/checksum, puis utilise `mc-publish` pour les destinations sélectionnées. Il conserve `tested_in_game`, les identifiants/secrets Modrinth/CurseForge et l’environnement `mod-releases`. Il ne compile plus le mod et ne crée plus de release GitHub concurrente.
 
+## Stockage et distribution du mod
+
+Les JAR ne sont plus servis par GitHub Releases : ils vivent dans notre stockage S3 (Garage), dans un bucket dédié distinct des captures des utilisateurs, alimenté par `bun mod` (module `scripts/mod/storage/`) et servi publiquement par l’API. Le site lit l’index de l’API (plus de limite de débit GitHub, plus de dépendance au format des assets GitHub).
+
+### Disposition du bucket
+
+```text
+index.json                                           index des versions (écrit en dernier, atomiquement)
+mods/<targetId>/<version>/minemories-<targetId>-<version>.jar
+mods/<targetId>/<version>/minemories-<targetId>-<version>.jar.sha256   (si présent à côté du JAR)
+mods/<targetId>/<version>/manifest.json                                (si présent)
+latest/<targetId>.jar                                copie stable de la dernière version
+```
+
+`<targetId>` est l’identifiant de cible `<loader>-mc<minecraft>` (ex. `fabric-mc1.21.11`). `storeRelease` téléverse chaque JAR (multipart au-delà de 8 Mio), relit l’objet pour vérifier sa taille et son SHA-256, met à jour `latest/` puis réécrit `index.json` en dernier : un échec en cours de route laisse l’index inchangé et il ne pointe jamais vers un objet absent. Re-stocker la même version est idempotent (un objet identique n’est pas renvoyé).
+
+### Schéma de `index.json`
+
+```json
+{
+  "schema": 1,
+  "generatedAt": "2026-10-20T10:00:00Z",
+  "targets": {
+    "fabric-mc1.21.11": {
+      "loader": "fabric", "minecraft": "1.21.11", "loaderVersion": "0.20.1", "java": "21",
+      "fabricApi": "0.140.0+1.21.11",
+      "latest": "0.37.0",
+      "versions": [
+        { "version": "0.37.0", "builtAt": "2026-10-20T10:00:00Z", "commit": "abc1234", "bytes": 300220,
+          "sha256": "…64 hex…", "key": "mods/fabric-mc1.21.11/0.37.0/minemories-fabric-mc1.21.11-0.37.0.jar",
+          "pinned": true, "published": { "modrinth": "https://…", "curseforge": "https://…" } }
+      ]
+    }
+  }
+}
+```
+
+Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`, `pinned` et `published` sont facultatifs. Le typedef JSDoc est dans `scripts/mod/storage/index.mjs` et le schéma zod (`modIndex`) dans `packages/api-contract/src/mod-downloads.ts`.
+
+### Rétention
+
+`bun mod storage prune` conserve les **3 versions les plus récentes par cible**. Ne sont jamais supprimées : la version `latest`, les versions épinglées (`pinned`) et celles déjà référencées par une publication tierce (`published`). La suppression est en simulation par défaut ; `--yes` réécrit d’abord l’index, puis supprime les objets (un objet orphelin est inoffensif, un index pointant dans le vide non). Le site n’affiche que les 3 versions retenues par cible.
+
+### Variables d’environnement
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `MOD_STORAGE_BUCKET` | `minemories-mods` | Bucket des JAR (distinct de `S3_BUCKET`, celui des captures). |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | identiques à l’API (Garage local) | Connexion S3 partagée avec `apps/api`. |
+| `MOD_S3_ENDPOINT`, `MOD_S3_REGION`, `MOD_S3_ACCESS_KEY`, `MOD_S3_SECRET_KEY` | valeur `S3_*` | Surcharge facultative pour l’outil de release (clés d’écriture distinctes de celles de l’API). |
+| `MOD_STORAGE_WARN_BYTES` | 5 Gio | Seuil d’alerte de `bun mod storage status`. |
+| `MOD_INDEX_CACHE_MS` | 15000 | Durée du cache mémoire de l’index côté API. |
+
+Hors production, le bucket est créé s’il manque ; en production (`NODE_ENV=production`) il doit être provisionné explicitement. L’API n’a besoin que d’un accès en lecture.
+
+### Commandes
+
+- `bun mod storage status` : espace par cible et total, alerte au-delà du seuil.
+- `bun mod storage ls` : versions de l’index (`latest`, `pinned`, `published`).
+- `bun mod storage prune [--yes] [--keep N]` : rétention (simulation sans `--yes`).
+- `bun mod storage pin <id> <version>` / `unpin <id> <version>` : épingle une version pour la soustraire à la rétention.
+
+### Routes de l’API
+
+Publiques, sans authentification, lues depuis le bucket des mods (les JAR sont envoyés en flux, jamais chargés entièrement en mémoire) :
+
+- `GET /downloads/index.json` : l’index, `Cache-Control: public, max-age=60, must-revalidate` et `ETag` (304 sur `If-None-Match`). Un bucket sans index donne un index vide.
+- `GET /downloads/:targetId/latest` : dernier JAR de la cible (cache court).
+- `GET /downloads/:targetId/:version` : JAR d’une version listée dans l’index (`immutable`).
+
+Les JAR sont envoyés avec `Content-Type: application/java-archive`, `Content-Disposition: attachment; filename="minemories-<targetId>-<version>.jar"`, `ETag` (le SHA-256), `X-Content-SHA256` et `X-Minemories-Version`. Les paramètres sont validés strictement (400 sinon) et la clé d’objet provient toujours de l’index, jamais de l’URL ; une cible ou une version inconnue (ou purgée) répond 404 ; une panne du stockage répond 503 `downloads_unavailable` sans détail interne.
+
+### Validation
+
+Tests unitaires du stockage avec un faux client S3 : `node --test scripts/mod/storage`. Test réel contre un Garage jetable (stockage, multipart, index, téléchargement par l’API, rétention) : `bun api:garage`.
+
 ## Vérifications de développement
 
 - `bun release:test` : vrais dépôts Git locaux pour les versions/commits/tags/reprises et tests de fichiers pour la matrice, les empreintes et les catalogues ; aucune publication externe depuis les tests.
