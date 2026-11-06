@@ -33,7 +33,7 @@ function describe(cell, paint) {
 	return `${base} ${paint(ansi.none, `${published} ${formatBytes(cell.stored.bytes ?? 0)}`)}`
 }
 
-export function renderStatus({ config, cells, version, storage, color = false }) {
+export function renderStatus({ config, cells, version, storage, color = false, source = 'Stockage' }) {
 	const paint = (code, text) => (color ? `\u001b[${code}m${text}\u001b[0m` : text)
 	const loaders = [...new Set([...config.targets.filter(isBuildable), ...config.planned].map(t => t.loader))].sort()
 	const minecraft = [...config.minecraft].sort(compareVersions).reverse()
@@ -61,7 +61,7 @@ export function renderStatus({ config, cells, version, storage, color = false })
 	].join('  ')
 	const out = [paint(ansi.head, `Mod ${version}`), '', line(header), ...rows.map(line), '', legend]
 	if (storage)
-		out.push(paint(ansi.none, `Stockage : ${formatBytes(storage.totalBytes ?? 0)} (↑ = dernière version publiée)`))
+		out.push(paint(ansi.none, `${source} : ${formatBytes(storage.totalBytes ?? 0)} (↑ = dernière version publiée)`))
 	return out.join('\n')
 }
 
@@ -70,6 +70,19 @@ export async function loadStorageReport(env, importer = () => import('./storage/
 	try {
 		const storage = await importer()
 		return typeof storage.storageReport === 'function' ? await storage.storageReport({ env }) : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Lit l'index public de l'API (ce que voit le site) au lieu de S3 : le PC voit ce qui est publié sans clés S3.
+ * Une API injoignable donne null (la grille s'affiche sans les chiffres publiés).
+ */
+export async function loadRemoteReport({ apiUrl, fetchImpl, importer = () => import('./remote/index.mjs') }) {
+	try {
+		const remote = await importer()
+		return await remote.remoteReport({ apiUrl, fetchImpl })
 	} catch {
 		return null
 	}
