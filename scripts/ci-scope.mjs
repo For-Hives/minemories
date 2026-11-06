@@ -3,7 +3,7 @@ import { appendFileSync } from 'node:fs'
 
 /**
  * Which gates of `.github/workflows/quality.yml` a change needs. A front-only change runs the web gate and nothing of the mod or the API; a mod-only change runs no web test.
- * Shared files (lockfile, Biome, the workflow itself) run everything, and so does every push to `main` (the automatic release waits for the whole workflow).
+ * Shared files (lockfile, Biome, the workflow itself) run everything, and so does every push to `main`.
  */
 const shared = [
 	/^package\.json$/,
@@ -27,12 +27,7 @@ const rules = {
 		/^scripts\/(check-api-coverage|garage-integration)/,
 		/^docker-compose\.yml$/,
 	],
-	mod: [
-		/^mod\//,
-		/^mod\/targets\.json$/,
-		/^\.github\/workflows\/(automatic-release|mod-release)\.yml$/,
-		/^scripts\/(gradle|mod\/|package-mod|verify-mod|release-|sync-release|build-release|collect-release|download-release|plan-release|prepare-release|publish-release)/,
-	],
+	mod: [/^mod\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
 }
 const dependencies = [
 	/^package\.json$/,
