@@ -57,6 +57,7 @@ export const discoveryContract = {
 		.input(z.object({ id, reason: z.string().trim().min(1).max(500) }))
 		.output(z.object({ ok: z.literal(true) })),
 	moderator: oc.output(z.object({ allowed: z.boolean() })),
+	queueSummary: oc.output(z.object({ pending: z.number().int().nonnegative(), reported: z.number().int().nonnegative() })),
 	queue: oc
 		.input(
 			z.object({

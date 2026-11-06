@@ -115,6 +115,8 @@ test('real HTTP/oRPC publication requires consent, ownership and moderation; pri
 	const id = publication.id as string
 	expect(await anonymous.discovery.moderator()).toEqual({ allowed: false })
 	expect(await moderatorApi.discovery.moderator()).toEqual({ allowed: true })
+	await expect(ownerApi.discovery.queueSummary()).rejects.toMatchObject({ code: 'FORBIDDEN' })
+	expect(await moderatorApi.discovery.queueSummary()).toMatchObject({ pending: expect.any(Number), reported: 0 })
 	await expect(ownerApi.discovery.queue({})).rejects.toMatchObject({ code: 'FORBIDDEN' })
 	await expect(ownerApi.discovery.review({ id })).rejects.toMatchObject({ code: 'FORBIDDEN' })
 	await expect(ownerApi.discovery.moderate({ id, decision: 'approved' })).rejects.toMatchObject({ code: 'FORBIDDEN' })
