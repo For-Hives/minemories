@@ -71,8 +71,8 @@
 			"project": "forge",
 			"dir": "mod/1.21.11",
 			"jarPrefix": "minemories-forge-mc1.21.11-",
-			"enabled": false,
-			"validatedInGame": false
+			"enabled": true,
+			"validatedInGame": true
 		},
 		{
 			"id": "forge-mc1.20.1",
@@ -84,8 +84,8 @@
 			"project": "forge",
 			"dir": "mod/1.20.1",
 			"jarPrefix": "minemories-forge-mc1.20.1-",
-			"enabled": false,
-			"validatedInGame": false
+			"enabled": true,
+			"validatedInGame": true
 		},
 		{
 			"id": "fabric-mc1.20.1",
@@ -97,8 +97,8 @@
 			"project": "fabric",
 			"dir": "mod/1.20.1",
 			"jarPrefix": "minemories-fabric-mc1.20.1-",
-			"enabled": false,
-			"validatedInGame": false,
+			"enabled": true,
+			"validatedInGame": true,
 			"fabricApi": "0.92.12+1.20.1"
 		},
 		{

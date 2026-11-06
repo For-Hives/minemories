@@ -19,7 +19,7 @@ for (const [message, expected] of [
 		assert.equal(plan.version, expected)
 		assert.deepEqual(
 			plan.targets.map(target => target.loader),
-			['neoforge', 'fabric', 'forge', 'fabric', 'neoforge', 'forge', 'fabric', 'forge']
+			['neoforge', 'fabric', 'forge', 'fabric', 'neoforge', 'forge', 'forge', 'fabric', 'forge', 'fabric', 'forge']
 		)
 		assert.equal(fixture.git(['status', '--porcelain']), '')
 		assert.equal(fixture.git(['rev-parse', 'HEAD']), fixture.sourceCommit)
