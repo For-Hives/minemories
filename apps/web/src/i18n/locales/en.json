@@ -1371,5 +1371,18 @@
 	"Approve or reject submitted publications and review reports.": "Approve or reject submitted publications and review reports.",
 	"{count} waiting for review": "{count} waiting for review",
 	"{count} reported": "{count} reported",
-	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Failed exports, interrupted uploads and crashes reported by the mod with consent."
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Failed exports, interrupted uploads and crashes reported by the mod with consent.",
+	"Newest first": "Newest first",
+	"Oldest first": "Oldest first",
+	"Most storage used": "Most storage used",
+	"Least storage used": "Least storage used",
+	"Total storage used": "Total storage used",
+	"Accounts near their quota": "Accounts near their quota",
+	"{used} of {quota} used ({percent}%)": "{used} of {quota} used ({percent}%)",
+	"Near quota": "Near quota",
+	"Quota reached": "Quota reached",
+	"Storage of {name}": "Storage of {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} reserved for uploads, {pending} awaiting deletion",
+	"Account concerned": "Account concerned",
+	"Quota per account: {quota}": "Quota per account: {quota}"
 }
