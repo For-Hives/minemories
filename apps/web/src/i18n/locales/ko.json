@@ -1417,5 +1417,18 @@
 	"Minemories downloads by Minecraft version and mod loader": "Minecraft 버전과 모드 로더별 Minemories 다운로드",
 	"Not sure? Follow the guided installation": "잘 모르겠다면 안내에 따라 설치하세요",
 	"All downloads — Minemories": "모든 다운로드 — Minemories",
-	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "모든 Minecraft Java 버전과 모드 로더를 한 표에서. NeoForge, Fabric, Forge용 Minemories JAR를 내려받으세요."
+	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "모든 Minecraft Java 버전과 모드 로더를 한 표에서. NeoForge, Fabric, Forge용 Minemories JAR를 내려받으세요.",
+	"Newest first": "최신순",
+	"Oldest first": "오래된 순",
+	"Most storage used": "사용량 많은 순",
+	"Least storage used": "사용량 적은 순",
+	"Total storage used": "사용 중인 전체 저장 공간",
+	"Accounts near their quota": "한도에 가까운 계정",
+	"{used} of {quota} used ({percent}%)": "{quota} 중 {used} 사용 중({percent}%)",
+	"Near quota": "한도 근접",
+	"Quota reached": "한도 도달",
+	"Storage of {name}": "{name}의 저장 공간",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "업로드용 {reserved} 예약, {pending} 삭제 대기",
+	"Account concerned": "대상 계정",
+	"Quota per account: {quota}": "계정당 한도: {quota}"
 }

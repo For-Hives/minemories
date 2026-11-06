@@ -66,10 +66,10 @@ export function AdminRoleDialog({
 				<h2 id="role-dialog-title">
 					{role === 'admin' ? t('Promote this account?') : t('Remove administrator access?')}
 				</h2>
-				<p>
+				<p className="mm-admin-dialog-target">
+					<small>{t('Account concerned')}</small>
 					<strong>{target.name}</strong>
-					<br />
-					{target.email}
+					<span>{target.email}</span>
 				</p>
 				<p>
 					{role === 'admin'

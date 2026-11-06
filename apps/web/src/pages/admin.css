@@ -439,6 +439,7 @@
 
 /* --- Role dialog: the kit's dark panel over a flat veil -------------------------------------------------------------------------------------------- */
 .mm-admin-dialog {
+	margin: auto; /* the global reset zeroes margins, which pinned the modal to the top-left corner */
 	width: min(520px, calc(100% - 32px));
 	padding: var(--ds-sp-6);
 	border: 0;
@@ -535,5 +536,184 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	.mm-admin-error,
 	.mm-admin-role {
 		border: 1px solid CanvasText;
+	}
+}
+
+/* --- Accounts: totals, storage meter against the quota ------------------------------------------------------------------------------------------ */
+.mm-admin-overview {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ds-sp-4);
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+}
+.mm-admin-overview > div {
+	min-width: 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-overview dt {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.mm-admin-overview dd {
+	margin: var(--ds-sp-1) 0 0;
+	font: 400 var(--ds-fs-md) / 24px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+	overflow-wrap: anywhere;
+}
+.mm-admin-storage {
+	display: grid;
+	gap: var(--ds-sp-1);
+	min-width: 200px;
+}
+.mm-admin-page td .mm-admin-storage strong,
+.mm-admin-page td .mm-admin-storage small {
+	display: block;
+	margin: 0;
+}
+.mm-admin-meter {
+	height: calc(5 * var(--gp));
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-meter > span {
+	display: block;
+	height: 100%;
+	background: var(--ember);
+}
+.mm-admin-storage.is-near .mm-admin-meter > span {
+	background: var(--c-gold);
+}
+.mm-admin-storage.is-full .mm-admin-meter > span {
+	background: var(--bad);
+}
+.mm-admin-quota-flag {
+	justify-self: start;
+	padding: 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	font-style: normal;
+	color: var(--c-gold);
+	box-shadow: inset 0 0 0 var(--gp) var(--tip-b);
+}
+.mm-admin-storage.is-full .mm-admin-quota-flag {
+	color: var(--bad);
+	box-shadow: inset 0 0 0 var(--gp) var(--bad);
+}
+.mm-admin-search .mc-select {
+	min-width: 190px;
+}
+.mm-admin-dialog .mm-admin-dialog-target {
+	display: grid;
+	gap: var(--ds-sp-1);
+	margin: var(--ds-sp-3) 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-dialog .mm-admin-dialog-target small {
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+}
+@media (max-width: 650px) {
+	.mm-admin-overview {
+		grid-template-columns: 1fr;
+		gap: var(--ds-sp-3);
+	}
+	.mm-admin-search > label,
+	.mm-admin-search .mc-select {
+		width: 100%;
+	}
+}
+@media (forced-colors: active) {
+	.mm-admin-meter,
+	.mm-admin-meter > span {
+		border: 1px solid CanvasText;
+	}
+	.mm-admin-meter > span {
+		background: Highlight;
+	}
+}
+
+/* Accounts table: cells wrap (long e-mails), then stack as cards on phones instead of scrolling sideways. */
+.mm-admin-page table.mm-admin-users {
+	white-space: normal;
+}
+.mm-admin-users .mm-admin-account {
+	min-width: 170px;
+	max-width: 220px;
+	overflow-wrap: break-word;
+}
+.mm-admin-page table.mm-admin-users th,
+.mm-admin-page table.mm-admin-users td {
+	padding-inline: var(--ds-sp-2);
+}
+.mm-admin-users .mm-admin-actions {
+	width: 150px;
+}
+.mm-admin-users .mm-admin-storage {
+	min-width: 170px;
+}
+.mm-admin-users .mm-admin-actions button {
+	white-space: normal;
+}
+@media (max-width: 650px) {
+	.mm-admin-users thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+	.mm-admin-users,
+	.mm-admin-users tbody,
+	.mm-admin-users tr,
+	.mm-admin-users td {
+		display: block;
+	}
+	.mm-admin-users tr {
+		padding: var(--ds-sp-3) 0;
+		background:
+			repeating-linear-gradient(
+				90deg,
+				var(--night-3) 0 calc(2 * var(--gp)),
+				transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+			)
+			bottom / 100% var(--gp) no-repeat;
+	}
+	.mm-admin-page .mm-admin-users td {
+		display: grid;
+		grid-template-columns: 124px minmax(0, 1fr);
+		gap: var(--ds-sp-3);
+		align-items: start;
+		padding: var(--ds-sp-2) 0;
+		background: none;
+	}
+	.mm-admin-users td[data-label]::before {
+		content: attr(data-label);
+		font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+		color: var(--text-2);
+	}
+	.mm-admin-page .mm-admin-users td.mm-admin-account,
+	.mm-admin-page .mm-admin-users td.mm-admin-actions {
+		display: block;
+		width: auto;
+		max-width: none;
+	}
+	.mm-admin-users .mm-admin-actions button {
+		width: 100%;
+	}
+	.mm-admin-users .mm-admin-storage {
+		min-width: 0;
+	}
+	.mm-admin-users .mm-admin-role {
+		justify-self: start;
+	}
+	.mm-admin-pagination {
+		flex-wrap: wrap;
+	}
+	.mm-admin-pagination .mc-btn {
+		min-width: 0;
+		flex: 1 1 120px;
 	}
 }

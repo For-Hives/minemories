@@ -1417,5 +1417,18 @@
 	"Minemories downloads by Minecraft version and mod loader": "Téléchargements de Minemories par version de Minecraft et loader de mods",
 	"Not sure? Follow the guided installation": "Pas sûr ? Suis l’installation guidée",
 	"All downloads — Minemories": "Tous les téléchargements — Minemories",
-	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Toutes les versions de Minecraft Java et tous les loaders de mods dans un tableau : télécharge le JAR de Minemories pour NeoForge, Fabric ou Forge."
+	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Toutes les versions de Minecraft Java et tous les loaders de mods dans un tableau : télécharge le JAR de Minemories pour NeoForge, Fabric ou Forge.",
+	"Newest first": "Plus récents d’abord",
+	"Oldest first": "Plus anciens d’abord",
+	"Most storage used": "Plus gros stockage d’abord",
+	"Least storage used": "Plus petit stockage d’abord",
+	"Total storage used": "Stockage total utilisé",
+	"Accounts near their quota": "Comptes proches de leur quota",
+	"{used} of {quota} used ({percent}%)": "{used} utilisés sur {quota} ({percent} %)",
+	"Near quota": "Proche du quota",
+	"Quota reached": "Quota atteint",
+	"Storage of {name}": "Stockage de {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} réservés pour des envois, {pending} en attente de suppression",
+	"Account concerned": "Compte concerné",
+	"Quota per account: {quota}": "Quota par compte : {quota}"
 }

@@ -1417,5 +1417,18 @@
 	"Minemories downloads by Minecraft version and mod loader": "Minecraft バージョンとMod ローダー別の Minemories ダウンロード",
 	"Not sure? Follow the guided installation": "迷ったら、ガイド付きインストールへ",
 	"All downloads — Minemories": "すべてのダウンロード — Minemories",
-	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "すべての Minecraft Java バージョンとMod ローダーを一つの表に。NeoForge、Fabric、Forge 用の Minemories JAR をダウンロードできます。"
+	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "すべての Minecraft Java バージョンとMod ローダーを一つの表に。NeoForge、Fabric、Forge 用の Minemories JAR をダウンロードできます。",
+	"Newest first": "新しい順",
+	"Oldest first": "古い順",
+	"Most storage used": "使用量が多い順",
+	"Least storage used": "使用量が少ない順",
+	"Total storage used": "使用中の合計ストレージ",
+	"Accounts near their quota": "上限に近いアカウント",
+	"{used} of {quota} used ({percent}%)": "{quota} 中 {used} 使用中（{percent}%）",
+	"Near quota": "上限間近",
+	"Quota reached": "上限に到達",
+	"Storage of {name}": "{name} のストレージ",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "アップロード用に {reserved} を確保、{pending} が削除待ち",
+	"Account concerned": "対象のアカウント",
+	"Quota per account: {quota}": "アカウントごとの上限: {quota}"
 }

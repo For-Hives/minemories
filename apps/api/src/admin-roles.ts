@@ -1,7 +1,19 @@
 import type { Database } from 'bun:sqlite'
+import type { AdminUserSort } from '@minemories/api-contract'
 import { ORPCError } from '@orpc/server'
+import { ACCOUNT_STORAGE_BYTES } from './configuration'
+import { ACCOUNT_USAGE_SQL } from './storage-quota'
 
 const wildcard = /[\\%_]/g
+/** Fixed ORDER BY clauses: the requested sort only selects one, nothing from the request is interpolated. */
+const orders = {
+	registered_desc: 'u.createdAt DESC',
+	registered_asc: 'u.createdAt ASC',
+	storage_desc: 'COALESCE(g.usedBytes,0) DESC',
+	storage_asc: 'COALESCE(g.usedBytes,0) ASC',
+} as const
+/** An account is "near" its quota from 90 %. */
+const NEAR_QUOTA_PERCENT = 90
 const filter = `(u.name LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR u.id LIKE ? ESCAPE '\\')
  AND (?='all' OR (?='admin')=EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id))`
 export class AdminRoles {
@@ -56,20 +68,33 @@ export class AdminRoles {
 			})
 			.immediate()
 	}
-	users(actorId: string | null, input: { query: string; role: 'all' | 'user' | 'admin'; page: number }) {
+	users(
+		actorId: string | null,
+		input: {
+			query: string
+			role: 'all' | 'user' | 'admin'
+			page: number
+			sort?: AdminUserSort | undefined
+		}
+	) {
 		this.require(actorId)
 		const search = `%${input.query.replace(wildcard, '\\$&')}%`,
 			values = [search, search, search, input.role, input.role]
 		const total = (
 			this.database.query(`SELECT COUNT(*) AS n FROM user u WHERE ${filter}`).get(...values) as { n: number }
 		).n
+		// One grouped usage query joined to the page (no per-account loop); only metadata leaves this method.
 		const users = this.database
-			.query(`SELECT u.id,u.name,u.email,u.emailVerified,u.createdAt,
+			.query(`WITH usage AS (${ACCOUNT_USAGE_SQL})
+   SELECT u.id,u.name,u.email,u.emailVerified,u.createdAt,
    CASE WHEN EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id) THEN 'admin' ELSE 'user' END AS role,
-   (SELECT COUNT(*) FROM memories m WHERE m.user_id=u.id) AS captures,
-   (SELECT COALESCE(SUM(size),0) FROM memories m WHERE m.user_id=u.id) AS storedBytes,
+   COALESCE(g.captures,0) AS captures,
+   COALESCE(g.storedBytes,0) AS storedBytes,
+   COALESCE(g.usedBytes,0) AS usedBytes,
+   COALESCE(g.reservedBytes,0) AS reservedBytes,
+   COALESCE(g.pendingDeletionBytes,0) AS pendingDeletionBytes,
    (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id AND d.revoked_at IS NULL) AS devices
-   FROM user u WHERE ${filter} ORDER BY u.createdAt DESC,u.id LIMIT 25 OFFSET ?`)
+   FROM user u LEFT JOIN usage g ON g.user_id=u.id WHERE ${filter} ORDER BY ${orders[input.sort ?? 'registered_desc']},u.id LIMIT 25 OFFSET ?`)
 			.all(...values, (input.page - 1) * 25) as Array<{
 			id: string
 			name: string
@@ -79,8 +104,17 @@ export class AdminRoles {
 			role: 'user' | 'admin'
 			captures: number
 			storedBytes: number
+			usedBytes: number
+			reservedBytes: number
+			pendingDeletionBytes: number
 			devices: number
 		}>
+		const overview = this.database
+			.query(`WITH usage AS (${ACCOUNT_USAGE_SQL})
+   SELECT COUNT(*) AS accounts,COALESCE(SUM(g.usedBytes),0) AS usedBytes,
+   COALESCE(SUM(CASE WHEN COALESCE(g.usedBytes,0)*100>=?*${NEAR_QUOTA_PERCENT} THEN 1 ELSE 0 END),0) AS nearQuotaAccounts
+   FROM user u LEFT JOIN usage g ON g.user_id=u.id`)
+			.get(ACCOUNT_STORAGE_BYTES) as { accounts: number; usedBytes: number; nearQuotaAccounts: number }
 		return {
 			users: users.map(u => ({
 				...u,
@@ -90,6 +124,8 @@ export class AdminRoles {
 			total,
 			page: input.page,
 			pageSize: 25 as const,
+			quotaBytes: ACCOUNT_STORAGE_BYTES,
+			overview,
 		}
 	}
 	audit(actorId: string | null) {

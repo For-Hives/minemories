@@ -1417,5 +1417,18 @@
 	"Minemories downloads by Minecraft version and mod loader": "Minemories downloads by Minecraft version and mod loader",
 	"Not sure? Follow the guided installation": "Not sure? Follow the guided installation",
 	"All downloads — Minemories": "All downloads — Minemories",
-	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge."
+	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.",
+	"Newest first": "Newest first",
+	"Oldest first": "Oldest first",
+	"Most storage used": "Most storage used",
+	"Least storage used": "Least storage used",
+	"Total storage used": "Total storage used",
+	"Accounts near their quota": "Accounts near their quota",
+	"{used} of {quota} used ({percent}%)": "{used} of {quota} used ({percent}%)",
+	"Near quota": "Near quota",
+	"Quota reached": "Quota reached",
+	"Storage of {name}": "Storage of {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} reserved for uploads, {pending} awaiting deletion",
+	"Account concerned": "Account concerned",
+	"Quota per account: {quota}": "Quota per account: {quota}"
 }

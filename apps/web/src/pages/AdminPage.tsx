@@ -1,14 +1,14 @@
-import type { AdminSummary, AdminUser } from '@minemories/api-contract'
-import { type SyntheticEvent, useState } from 'react'
+import type { AdminSummary, AdminUser, AdminUserSort } from '@minemories/api-contract'
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { buttonDark, buttonLime } from '../components/ui'
+import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { AdminCharts, gigabytes } from './AdminCharts'
+import { Directory, type RoleFilter } from './AdminDirectory'
 import { AdminRoleDialog } from './AdminRoleDialog'
 import { type AdminDataset, useAdminData } from './admin-data'
 import './admin.css'
 
-type RoleFilter = 'all' | 'user' | 'admin'
 function Totals({ data }: { data: AdminSummary }) {
 	const { t, locale } = useI18n()
 	const cards = [
@@ -72,128 +72,6 @@ function Operations({ data }: { data: AdminSummary['totals'] }) {
 		</section>
 	)
 }
-function Directory({
-	directory,
-	admins,
-	filters,
-	onSearch,
-	onPage,
-	onSelect,
-}: {
-	directory: AdminDataset['directory']
-	admins: number
-	filters: { query: string; role: RoleFilter; page: number }
-	onSearch(query: string, role: RoleFilter): void
-	onPage(page: number): void
-	onSelect(user: AdminUser): void
-}) {
-	const { t, locale } = useI18n()
-	function search(event: SyntheticEvent<HTMLFormElement>) {
-		event.preventDefault()
-		const data = new FormData(event.currentTarget)
-		onSearch(String(data.get('query') ?? ''), String(data.get('role')) as RoleFilter)
-	}
-	return (
-		<section className="mm-admin-card mm-admin-directory">
-			<div className="mm-admin-card-title">
-				<h2>{t('Users and access')}</h2>
-				<span>
-					{directory.total.toLocaleString(locale)} {t('accounts')}
-				</span>
-			</div>
-			<form className="mm-admin-search" onSubmit={search}>
-				<label>
-					{t('Find an account')}
-					<input name="query" defaultValue={filters.query} placeholder={t('Name, email or ID')} maxLength={100} />
-				</label>
-				<label>
-					{t('Role')}
-					<span className="mc-select">
-						<select name="role" defaultValue={filters.role} className="mc-select__control">
-							<option value="all">{t('filters.allStates')}</option>
-							<option value="admin">{t('Administrators')}</option>
-							<option value="user">{t('Users')}</option>
-						</select>
-					</span>
-				</label>
-				<button type="submit" className={`mm-admin-secondary ${buttonDark}`}>
-					{t('Search')}
-				</button>
-			</form>
-			<div className="mm-admin-table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>{t('Account')}</th>
-							<th>{t('Role')}</th>
-							<th>{t('Registered')}</th>
-							<th>{t('Captures')}</th>
-							<th>{t('Storage')}</th>
-							<th>{t('Actions')}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{directory.users.map(user => (
-							<tr key={user.id}>
-								<td>
-									<strong>{user.name}</strong>
-									<small>{user.email}</small>
-								</td>
-								<td>
-									<span className={`mm-admin-role ${user.role === 'admin' ? 'is-admin' : ''}`}>
-										{user.role === 'admin' ? t('Admin') : t('User')}
-									</span>
-								</td>
-								<td>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
-								<td>{user.captures.toLocaleString(locale)}</td>
-								<td>
-									{gigabytes(user.storedBytes, locale)} {t('GB')}
-								</td>
-								<td>
-									<button
-										type="button"
-										className={`mm-admin-secondary ${buttonDark}`}
-										disabled={user.role === 'admin' && admins <= 1}
-										onClick={() => onSelect(user)}
-									>
-										{user.role === 'admin' ? t('Remove admin role') : t('Promote to admin')}
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
-			{directory.users.length === 0 && <p className="mm-admin-note">{t('No accounts match this search.')}</p>}
-			<div className="mm-admin-pagination">
-				<button
-					type="button"
-					className={`mm-admin-secondary ${buttonDark}`}
-					disabled={filters.page === 1}
-					onClick={() => onPage(filters.page - 1)}
-				>
-					{t('Previous')}
-				</button>
-				<span>
-					{t('Page')} {filters.page} / {Math.max(1, Math.ceil(directory.total / directory.pageSize))}
-				</span>
-				<button
-					type="button"
-					className={`mm-admin-secondary ${buttonDark}`}
-					disabled={filters.page * directory.pageSize >= directory.total}
-					onClick={() => onPage(filters.page + 1)}
-				>
-					{t('Next')}
-				</button>
-			</div>
-			<p className="mm-admin-note">
-				{t(
-					'Every role change requires your password and is audited. The last administrator cannot be demoted. Private files remain protected by their owner.'
-				)}
-			</p>
-		</section>
-	)
-}
 function Audit({ rows }: { rows: AdminDataset['audit'] }) {
 	const { t, locale } = useI18n()
 	return (
@@ -224,7 +102,13 @@ function Audit({ rows }: { rows: AdminDataset['audit'] }) {
 }
 export function AdminPage() {
 	const { t } = useI18n()
-	const [filters, setFilters] = useState({ hours: 24 as 24 | 168 | 720, query: '', role: 'all' as RoleFilter, page: 1 })
+	const [filters, setFilters] = useState({
+		hours: 24 as 24 | 168 | 720,
+		query: '',
+		role: 'all' as RoleFilter,
+		page: 1,
+		sort: 'registered_desc' as AdminUserSort,
+	})
 	const [target, setTarget] = useState<AdminUser | null>(null)
 	const load = useAdminData(filters)
 	return (
@@ -288,7 +172,7 @@ export function AdminPage() {
 						directory={load.data.directory}
 						admins={load.data.summary.totals.admins}
 						filters={filters}
-						onSearch={(query, role) => setFilters(previous => ({ ...previous, query, role, page: 1 }))}
+						onSearch={(query, role, sort) => setFilters(previous => ({ ...previous, query, role, sort, page: 1 }))}
 						onPage={page => setFilters(previous => ({ ...previous, page }))}
 						onSelect={setTarget}
 					/>

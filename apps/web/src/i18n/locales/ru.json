@@ -1417,5 +1417,18 @@
 	"Minemories downloads by Minecraft version and mod loader": "Загрузки Minemories по версии Minecraft и загрузчику модов",
 	"Not sure? Follow the guided installation": "Не уверены? Воспользуйтесь пошаговой установкой",
 	"All downloads — Minemories": "Все загрузки — Minemories",
-	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Все версии Minecraft Java и загрузчики модов в одной таблице: скачайте JAR Minemories для NeoForge, Fabric или Forge."
+	"Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.": "Все версии Minecraft Java и загрузчики модов в одной таблице: скачайте JAR Minemories для NeoForge, Fabric или Forge.",
+	"Newest first": "Сначала новые",
+	"Oldest first": "Сначала старые",
+	"Most storage used": "Сначала с большим хранилищем",
+	"Least storage used": "Сначала с меньшим хранилищем",
+	"Total storage used": "Всего занято в хранилище",
+	"Accounts near their quota": "Аккаунты рядом с квотой",
+	"{used} of {quota} used ({percent}%)": "Занято {used} из {quota} ({percent}%)",
+	"Near quota": "Близко к квоте",
+	"Quota reached": "Квота исчерпана",
+	"Storage of {name}": "Хранилище {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} зарезервировано под загрузки, {pending} ожидает удаления",
+	"Account concerned": "Выбранный аккаунт",
+	"Quota per account: {quota}": "Квота на аккаунт: {quota}"
 }
