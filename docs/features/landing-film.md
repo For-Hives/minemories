@@ -131,7 +131,7 @@ Machine : Chromium de bureau, GPU réel (`--use-angle=gl`), un seul navigateur �
 
 ### Portes de qualité (ce qui passe, ce qui ne passe pas ici)
 
-- Passent : `bun run lint` ; `bun run web:check` (Biome, `tsc`, Vitest : 63 fichiers, 361 tests, **couverture 100 %** de `src/lib/**`) ; `package:mod:test` ; `release:test` ; `api:coverage:test` ; `bun run --filter @minemories/web build` (typage, bundle, **prérendu de 19 pages**).
+- Passent : `bun run lint` ; `bun run web:check` (Biome, `tsc`, Vitest : 63 fichiers, 361 tests, **couverture 100 %** de `src/lib/**`) ; `scripts:test` ; `api:coverage:test` ; `bun run --filter @minemories/web build` (typage, bundle, **prérendu de 19 pages**).
 - Ne passent pas, hors de cette modification : `api:check` (14 tests de l'API échouent dès l'état initial, avant tout changement : `Cannot access 'app' before initialization`, Bun 1.3.14 local au lieu de 1.4.3) ; `mod:check:ci` et donc `bun run build` racine (pas de JDK sur la machine). Le mod n'est pas touché.
 
 ## Ligne de chat de la capture (29/10/2026)

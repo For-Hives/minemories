@@ -33,46 +33,31 @@ L’URL officielle a répondu `{"status":"ok"}` à `GET /healthz` le 10 octobre 
 
 ## Téléchargement sur le site
 
-`bun run build` exécute les contrôles, construit le JAR du mod, lance `package:mod`, puis construit le web. Le script de packaging exige un seul JAR jouable dans `mod/1.21.1/neoforge/build/libs` (les sources, dev et javadocs sont exclus), refuse un fichier sans en-tête d’archive JAR et calcule son SHA-256.
+Le front ne compile pas Java et ne contient aucun JAR. La page `/installation` choisit une version de Minecraft puis un loader parmi les cibles activées, lit l'index public de l'API (`/downloads/index.json`) et propose le JAR de la dernière version de cette cible, servi par `/downloads/<cible>/latest` avec son SHA-256. Aucun ZIP n'est nécessaire : le joueur dépose le JAR dans `mods`, sans extraction ni exécution par double-clic. Le JAR reste expérimental (préversions `-beta.N`).
 
-Il génère dans `apps/web/public/downloads/` (gitignored) :
-
-- `minemories-neoforge-mc1.21.1.jar` : le JAR complet, avec les classes de `core` intégrées ;
-- `minemories-neoforge-mc1.21.1.jar.sha256` : son empreinte ;
-- `manifest.json` : version, compatibilité, taille et empreinte.
-
-Ces fichiers restent les artefacts de packaging CI du mod ; ils ne sont plus un prérequis du build web. La page `/installation` propose le JAR directement depuis GitHub Releases. Aucun ZIP n’est nécessaire : le joueur dépose le JAR dans `mods` sans extraction ni exécution par double-clic. Le JAR reste expérimental.
-
-Le déploiement web utilise `railpack.web.json` sans Java et ne reconstruit pas le mod. Le build aggregate et la CI produisent les artefacts séparément. En cas de JARs anciens multiples, nettoyer `neoforge/build/libs` avant reconstruction.
+Les JAR sont construits sur le VPS par `bun mod release`, rangés dans le stockage S3 (3 versions par cible) puis servis par l'API ; le détail est dans [le flux de release](automatic-releases.md). Le déploiement web utilise `railpack.web.json` sans Java.
 
 ## CI et publications
 
-Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours). Un second job télécharge cet artefact et vérifie les octets contre le SHA-256 émis par le build.
-
-Le workflow **Automatic mod releases** (`.github/workflows/automatic-release.yml`) démarre après le succès de Quality gates sur le dernier commit poussé dans `main`. Release-it et Conventional Changelog calculent une version bêta, puis la matrice de `mod/targets.json` construit et teste chaque cible activée. Toutes doivent réussir avant publication. La version est synchronisée dans les packages Bun, le lockfile et Gradle ; le changelog, le commit de version et le tag `mod-v<version>` sont générés automatiquement. La release GitHub contient les JAR vérifiés, leurs SHA-256 et les manifestes. Le front continue à télécharger ces fichiers depuis GitHub, sans compiler Java.
-
-Les releases automatiques sont des **préversions** : les tests CI ne valent pas validation en jeu du JAR exact. NeoForge est la seule cible activée actuellement ; Fabric, Forge et Quilt ont des entrées désactivées jusqu’à leur portage et leur validation. Voir [le fonctionnement et la reprise](automatic-releases.md).
-
-Le workflow manuel **Distribute a validated mod release** (`.github/workflows/mod-release.yml`) sert uniquement aux catalogues. Choisir `main`, renseigner le tag GitHub existant et confirmer `tested_in_game` pour les JAR exacts de cette release. Il les télécharge, vérifie leur digest GitHub, leur manifeste et leur empreinte, puis publie sur les plateformes sélectionnées **sans reconstruire** les archives.
+Le workflow **Quality gates** vérifie seulement que le mod compile et passe ses contrôles (racine 1.21.1 et une cellule par cible activée) ; il ne produit, ne conserve et ne publie aucun JAR. Les publications Modrinth et CurseForge sont faites par `bun mod publish` (ou par la fin de `bun mod release`) avec `mod/catalogs.json` et les jetons `MODRINTH_TOKEN` / `CURSEFORGE_TOKEN` du VPS, sans reconstruire les archives stockées. Elles restent désactivées tant que les projets ne sont pas créés ; la procédure est dans [automatic-releases.md](automatic-releases.md).
 
 Avant une publication catalogue :
 
 1. Créer les fiches officielles sur Modrinth et CurseForge et préparer descriptions, licence et illustrations.
-2. Ajouter les variables GitHub `MODRINTH_PROJECT_ID` et `CURSEFORGE_PROJECT_ID`.
-3. Ajouter les secrets GitHub `MODRINTH_TOKEN` et `CURSEFORGE_TOKEN` avec les droits nécessaires.
-4. Valider en jeu le JAR de chaque cible sélectionnée, puis lancer le workflow manuel sur son tag. L’environnement `mod-releases` existant est conservé pour les catalogues ; les releases GitHub automatiques ne demandent aucune approbation manuelle.
+2. Renseigner `projectId` et `enabled` dans `mod/catalogs.json`, puis les jetons dans l'environnement du VPS.
+3. Valider en jeu le JAR de chaque cible sélectionnée, puis essayer `bun mod publish --dry-run`.
 
 ## Autres launchers
 
 Modrinth et CurseForge sont les destinations de publication retenues. Prism Launcher, ATLauncher et GDLauncher proposent des téléchargements issus de ces catalogues ; il n’est pas nécessaire de leur envoyer un second JAR. Une instance compatible dans un autre launcher peut utiliser le JAR manuel. Ce mécanisme ne constitue pas une validation en jeu de chaque launcher, et aucune publication universelle sur tous les gestionnaires n’est annoncée.
 
-Sources officielles consultées le 10 octobre 2026 : [MC-Publish](https://github.com/Kira-NT/mc-publish), [Modrinth Create a version](https://docs.modrinth.com/api/operations/createversion/), [CurseForge Upload API](https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api), [Prism](https://prismlauncher.org/wiki/getting-started/download-mods/), [ATLauncher](https://wiki.atlauncher.com/getting-started/downloading-content/), [GDLauncher](https://gdlauncher.com/).
+Sources officielles consultées le 10 octobre 2026 : [Modrinth Create a version](https://docs.modrinth.com/api/operations/createversion/), [CurseForge Upload API](https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api), [Prism](https://prismlauncher.org/wiki/getting-started/download-mods/), [ATLauncher](https://wiki.atlauncher.com/getting-started/downloading-content/), [GDLauncher](https://gdlauncher.com/).
 
 ## Validation
 
 Tests de réglages : défaut officiel et overrides, rejet des URLs dangereuses, invalidation des identifiants au changement d’API, conservation du compte au changement de dossier, validation sans mutation partielle, chemins locaux, défaut AFK et permissions privées/écriture atomique.
 
-Tests du packaging et du téléchargement CI : octets et métadonnées reproductibles, exclusion des sources, builds absents/ambigus/corrompus, fichiers modifiés/tronqués/manquants et refus d’une empreinte remplacée dans l’artefact. Tests React : téléchargement et empreinte, erreurs réseau/manifeste, absence de lien cassé et annulation lors d’un changement de page.
+Tests du stockage et de l'outil `bun mod` : `node --test scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs`. Tests React : téléchargement et empreinte, erreurs réseau/manifeste, absence de lien cassé et annulation lors d’un changement de page.
 
 La vérification en jeu doit couvrir les modes simple/avancé à différentes échelles GUI, la persistance du dossier, l’export local réel, le changement d’API et le nouvel appairage, les erreurs de connexion, l’envoi en galerie et le retour à l’écran précédent. Tester sur un monde jetable et conserver une copie du profil avant installation.
 
@@ -91,16 +76,6 @@ redémarrage et autre joueur) est documentée dans
 
 Le bouton **Profondeur** des réglages avancés permet de revenir à toute la hauteur de la dimension. Une sélection explicite conserve toujours ses deux coins. Le suivi ne modifie aucun bloc du monde et ne charge aucun chunk absent. Les côtés et le dessous de la coupe reçoivent une section esthétique : terre dans les trois blocs sous la surface, puis pierre. Les ouvertures de grottes rencontrant le bord sont fermées à ce plan, sans remplir la grotte à l’intérieur. Les fluides au-dessus du fond d’un lac gardent leur surface et leurs faces de coupe transparentes, même si l’eau continue hors de la capture ; les fluides souterrains peuvent rencontrer la section de pierre. Les blocs transparents et non cubiques gardent leur modèle. Aucune paroi n’est ajoutée au-dessus du terrain et aucun bloc du monde n’est modifié.
 
-## Distribution depuis le dépôt public
+## Historique des versions
 
-Les pages `/versions` et `/changelog` présentent l’historique des JAR et les notes officielles des releases, avec pagination et accès depuis le tutoriel. Voir [les sources, états et limites](release-history.md).
-
-Le front ne compile plus Java au déploiement. `/installation` choisit la release publiée la plus récente parmi les trente dernières releases de `For-Hives/minemories`, avec tag `mod-v<version>` et asset `minemories-neoforge-mc1.21.1.jar`. Les brouillons, tags non conformes, assets étrangers et builds pour d’autres versions sont exclus. Les préversions restent marquées expérimentales. Le JAR est téléchargé directement depuis GitHub ; le digest SHA-256 de GitHub est affiché lorsqu’il existe, ainsi que le fichier d’empreinte lorsqu’il est publié. Le workflow ajoute le manifeste de compatibilité et l’empreinte à la release.
-
-La [préversion `0.1.0-beta`](https://github.com/For-Hives/minemories/releases/tag/mod-v0.1.0-beta) a été publiée le 14 octobre 2026 depuis le commit `5c14000a541db812ce6ccc0734d95b645a7c87a5` (PR #56). Elle contient le JAR exact testé dans Minecraft/Blender, le manifeste et l’empreinte. Publication avec `gh release create --prerelease` après les deux jobs CI réussis sur le commit de la PR, sans reconstruction de l’archive testée. Le workflow dédié reste disponible pour les publications suivantes et les catalogues.
-
-La page publique `https://minemories.xenos.lightin.io/installation/` affiche la beta et ses instructions ; son lien a réellement téléchargé un JAR de 181 754 octets dont le SHA-256 est `249fa27d83b00a78beef6bca300a94b60a8e1297c2948ffde6e645c61cd70b20`, identique au fichier exercé en jeu et aux assets GitHub. La copie installée dans les profils CurseForge locaux `mc breval` et `All the Mons - ATMons` possède la même empreinte, avec sauvegarde de l’ancienne version. Cela ne valide pas le rendu de chaque mod d’ATMons ni la publication sur le catalogue CurseForge. Voir [les modèles et la validation](frozen-entities.md).
-
-Les anciens fichiers `public/downloads` décrivent le packaging CI local ; ils restent indépendants du déploiement front Coolify. Aucun ZIP n'est requis.
-
-Le build prépare également les JAR Fabric et Forge avec manifestes et empreintes séparés dans `build/mod-loaders/`, vérifiés par la matrice CI. Le téléchargement public par défaut reste NeoForge ; la publication et les autres téléchargements utilisent les cibles activées dans `mod/targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.
+Les pages `/versions` et `/changelog` présentent l'historique des JAR stockés (trois versions par cible) avec accès depuis le tutoriel. Voir [les sources, états et limites](release-history.md). Le téléchargement par défaut reste NeoForge 1.21.1 ; les autres téléchargements utilisent les cibles activées dans `mod/targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.

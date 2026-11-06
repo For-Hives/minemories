@@ -6,8 +6,8 @@
 - `apps/api/` — Bun/Hono + Better Auth + oRPC + SQLite + S3-compatible storage (`@minemories/api`).
 - `packages/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
 - `mod/1.21.1/` — Gradle root. `:core` in `mod/shared/core/` is loader-independent GLB code; `:common` contains the shared Minecraft client; `:neoforge`, `:fabric`, and `:forge` are the loader adapters.
-- `mod/<minecraft version>/` — one Gradle root per Minecraft version (`1.21.11`, `1.20.1`, `1.19.2`, `1.18.2`, ...): loader adapters, `adapt.gradle`, `overlay/` only. `mod/shared/` holds what is not a Minecraft version (`core`, `common`, `compat-legacy`, `compat-pre-1.19`, `gametest-common` for the Minecraft-free `GlbReport`). `mod/matrix.json` is the local build matrix, `mod/targets.json` the published targets.
-- `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`).
+- `mod/<minecraft version>/` — one Gradle root per Minecraft version (`1.21.11`, `1.20.1`, `1.19.2`, `1.18.2`, ...): loader adapters, `adapt.gradle`, `overlay/` only. `mod/shared/` holds what is not a Minecraft version (`core`, `common`, `compat-legacy`, `compat-pre-1.19`, `gametest-common` for the Minecraft-free `GlbReport`). `mod/targets.json` is the single source of the build matrix and the published targets.
+- `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`, `mod/` = the `bun mod` tool).
 
 ## Commands (run from repo root)
 
@@ -15,6 +15,7 @@
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
 - `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/1.21.1/`; `bun mod:build` builds the three loader JARs.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
+- `bun mod` is the local mod tool (`scripts/mod/`): `build`, `test` (headless in-game), `status` (Minecraft x loader grid), `version`, `release`, `storage`, `publish`, `notify`, `jdk`, `ci`; `bun mod <command> --help`. Tests: `node --test scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs`.
 - `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check` (Biome, typecheck, Bun tests).
 - `bun check` is the no-fix aggregate quality gate. `bun run build` checks everything, then builds web and mod.
 - Single TS test: `bun run --filter @minemories/web test -- src/lib/glb.test.ts`.
@@ -64,4 +65,4 @@ if needed, you can find more context in diferent files (look inside ./docs/AI ):
 - GitHub Issues are the source of truth for tasks: https://github.com/For-Hives/minemories/issues. Check existing issues before creating a separate issue for each new task; record what is implemented, remaining acceptance criteria and validation evidence. Use the existing labels (`mod`, `api`, `front`, `autonomous`, `needs-human`, etc.). Close an issue only when its full scope and required validations are complete. `docs/AI/TASKS.md` is intentionally empty after migration; do not repopulate it.
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)
 
-- Release automation: `mod/targets.json` owns the enabled loader matrix; `mod/1.21.1/gradle.properties` owns `mod_version`. Release-it synchronizes the private Bun workspace versions and Gradle after main quality gates; automatic GitHub releases are betas, not assertions of exact-JAR in-game validation. Run `bun release:test` for release orchestration changes.
+- Release automation: no GitHub workflow builds, tags or publishes the mod. `bun mod release` runs on the VPS (`ops/mod-builder/`, nightly timer): production build of every enabled target of `mod/targets.json`, headless in-game tests, S3 storage (3 versions per target, `scripts/mod/storage/`), then optional Modrinth/CurseForge publication (`mod/catalogs.json`, off until configured) and Discord notification; the API serves the JARs (`/downloads/...`) and the site reads its index. `mod/1.21.1/gradle.properties` owns `mod_version`, bumped by `bun mod version bump`. CI (`quality.yml`) only checks: Gradle on `mod/1.21.1`, the `scripts/mod` tests and a compile matrix (`node scripts/mod/cli.mjs ci`). Releases are betas, not assertions of exact-JAR in-game validation. See `docs/features/automatic-releases.md`.

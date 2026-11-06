@@ -1,6 +1,6 @@
 # Spécification : build multi-versions rapide et reproductible
 
-Statut : **proposition** (28 octobre 2026), phase 0 (mesures) réalisée. Le reste n'est pas implémenté. Les tâches suivies vivent dans les GitHub Issues ; ce fichier porte la décision d'architecture et les critères d'acceptation.
+Statut : **proposition** (28 octobre 2026), phase 0 (mesures) réalisée. Le reste n'est pas implémenté. La construction des JAR a depuis quitté GitHub Actions pour l'outil local `bun mod` ([automatic-releases.md](automatic-releases.md)) : la CI ne fait plus que compiler chaque cellule, et les passages de ce document sur les scripts de release de GitHub sont des notes historiques. Les tâches suivies vivent dans les GitHub Issues ; ce fichier porte la décision d'architecture et les critères d'acceptation.
 
 ## 1. Problème
 
@@ -8,7 +8,7 @@ La cible est une matrice **versions de Minecraft × loaders** (NeoForge, Fabric,
 
 - Une seule version est dans le build principal (`mod/1.21.1`, 1.21.1). 1.20.1 vit dans un second build (`mod/1.20.1`) qui **copie puis modifie par regex** les sources partagées (`adapt.gradle`). Chaque nouvelle version ajouterait un build, une copie et un lot de regex à maintenir.
 - La CI reconstruit chaque cible à froid : `setup-java` avec `cache: gradle` ne sauve que `~/.gradle/caches`, et le Gradle de la machine est relancé sans daemon (`org.gradle.daemon=false`).
-- `build-release-target.mjs` exécute `clean :core:check :common:check` dans **chaque** cellule de la matrice, donc les mêmes tests et analyses sont répétés N fois.
+- L'ancien script de build par cellule exécutait `clean :core:check :common:check` dans **chaque** cellule de la matrice, donc les mêmes tests et analyses sont répétés N fois.
 
 Le code Java est petit (environ 14 000 lignes pour `common`). Le coût dominant n'est donc pas `javac` : la phase 0 (section 4) confirme que le démarrage à froid est dominé par la préparation de Minecraft et la résolution des dépendances, pas par les tâches de compilation.
 
@@ -40,7 +40,7 @@ Le cache distant est en **lecture seule** pour les PR et les forks. Le cache d'A
 
 ### D5. Contraintes légales et de sécurité
 - Les sources décompilées, les jars remappés et les images contenant du Minecraft **ne sont jamais publiés** : cache distant privé et authentifié, aucune image Docker publique préremplie, aucun artefact de CI contenant autre chose que le mod.
-- Le cache distant n'est jamais accessible en écriture depuis une PR issue d'un fork (risque d'empoisonnement). Les JAR de release sont vérifiés par l'empreinte existante (`verify-mod-artifact`) et reconstruits **sans lire le cache distant** lors d'une release (`--no-build-cache`) : le cache accélère, il ne fait pas autorité.
+- Le cache distant n'est jamais accessible en écriture depuis une PR issue d'un fork (risque d'empoisonnement). Les JAR de release sont vérifiés par l'empreinte du manifeste (`bun mod build`) et reconstruits **sans lire le cache distant** lors d'une release (`--no-build-cache`) : le cache accélère, il ne fait pas autorité.
 - Vérification du wrapper Gradle et `dependency-verification` (`gradle/verification-metadata.xml`) pour figer les plugins.
 
 ### D6. Pipeline en niveaux
@@ -113,13 +113,13 @@ Le gain est surtout local : un rebuild sans changement passe de 20 s à 0,6 s, e
 
 ### Phase 2 : sortir le commun de la matrice
 - `:core` en `--release 17`, construit une fois, consommé par les cellules.
-- Séparer les tâches : `check` global (un job) et `assemble`/`build` par cellule. Adapter `build-release-target.mjs` (plus de `:core:check` ni `:common:check` par cellule ; ils restent dans le job de qualité, avec une vérification que ce job a réussi pour la même révision).
+- Séparer les tâches : `check` global (un job) et `assemble`/`build` par cellule. Adapter le build par cellule (plus de `:core:check` ni `:common:check` par cellule ; ils restent dans le job de qualité, avec une vérification que ce job a réussi pour la même révision).
 - **Acceptation** : une cellule n'exécute ni JaCoCo ni SpotBugs de `core` ; la couverture publiée est identique.
 
 **Phase 2 réalisée (28 octobre 2026).**
 - `:core` compile avec `options.release = 17` (classes en version 61). Aucun appel à une API Java 21 n'était présent ; `check` de `:core` passe, couverture comprise.
-- `scripts/build-release-target.mjs` expose `releaseGradleTasks`. Quand `RELEASE_SHARED_CHECKS_DONE=true`, une cellule exécute `clean :<loader>:check :<loader>:build` sans `:core:check` ni `:common:check`. Le workflow ne positionne cette variable que sur l'événement `workflow_run` : c'est le seul chemin qui prouve que *Quality gates* a réussi pour ce commit exact (`head_sha == github.sha`). Un lancement manuel (`workflow_dispatch`) garde la vérification complète.
-- `scripts/build-release-target.test.mjs` couvre les deux chemins ; il est ajouté à `release:test`.
+- L'ancien script de build par cellule exposait `releaseGradleTasks`. Quand `RELEASE_SHARED_CHECKS_DONE=true`, une cellule exécute `clean :<loader>:check :<loader>:build` sans `:core:check` ni `:common:check`. Le workflow ne positionne cette variable que sur l'événement `workflow_run` : c'est le seul chemin qui prouve que *Quality gates* a réussi pour ce commit exact (`head_sha == github.sha`). Un lancement manuel (`workflow_dispatch`) garde la vérification complète.
+- Ce script et ses tests ont été retirés avec la chaîne GitHub ; la matrice de contrôle actuelle est `node scripts/mod/cli.mjs ci`.
 
 Mesure : une cellule Fabric à chaud avec `--no-build-cache` passe de 26–27 s à 12,6–12,8 s (environ 14 s économisées par cellule : tests de `core` et `common`, JaCoCo, SpotBugs). À froid, SpotBugs de `core`/`common` ajoutait plus, mais je ne l'ai pas isolé. Limite : chaque job de CI recompile quand même `:core` (environ 1 s). Le partager entre jobs demanderait un artefact intermédiaire ; le cache distant de la phase 3 le fera plus simplement, donc je ne l'ai pas ajouté ici.
 
@@ -146,7 +146,7 @@ Mesure : une cellule Fabric à chaud avec `--no-build-cache` passe de 26–27 s 
 - **Risque principal** : compatibilité Stonecutter avec chacun des trois plugins (ModDevGradle, Architectury Loom pour Fabric et Forge). **Spike d'une demi-journée en tête de phase** pour confirmer, sur une branche jetable, qu'une cellule de chaque loader compile ; sinon repli sur un projet Gradle par version avec un script de synchronisation de sources testé.
 
 ### Phase 5 : pipeline à niveaux
-- Calcul de matrice par diff (D6) dans `plan-release.mjs` ou un script voisin, avec tests (`node:test`) pour chaque règle de chemin.
+- Calcul de matrice par diff (D6) dans `scripts/ci-scope.mjs` ou un script voisin, avec tests (`node:test`) pour chaque règle de chemin.
 - Budgets de temps en CI : alerte (pas d'échec) quand une cellule dépasse le budget fixé en phase 0.
 - **Acceptation** : une PR de documentation n'exécute aucun job Java ; une PR qui change un adaptateur n'exécute que ses cellules.
 
