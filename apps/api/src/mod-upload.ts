@@ -11,6 +11,7 @@ import {
 } from '@minemories/api-contract'
 import {
 	ModStorageConflictError,
+	parseModPrefix,
 	type S3Like,
 	type StoreUploadOptions,
 	type StoreUploadResult,
@@ -197,6 +198,8 @@ function validate(request: Request, params: { targetId: string; version: string 
  */
 export function createModUploads(options: ModUploadOptions = {}) {
 	const readEnv = options.env ?? (() => process.env)
+	// Un préfixe invalide empêche le montage de la route (donc le démarrage de l'API) au lieu d'échouer à l'envoi.
+	parseModPrefix(readEnv().MOD_STORAGE_PREFIX)
 	const store = options.store ?? storeUpload
 	const client = options.client ?? (() => s3Target().client as S3Like)
 	const now = options.now ?? Date.now

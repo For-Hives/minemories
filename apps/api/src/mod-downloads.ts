@@ -2,12 +2,18 @@ import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 import { GetObjectCommand, S3ServiceException } from '@aws-sdk/client-s3'
 import { type ModIndex, modIndex, modJarName, modTargetId, modVersion } from '@minemories/api-contract'
+import { parseModPrefix, resolveObjectKey } from '@minemories/mod-storage'
 import { type Context, Hono } from 'hono'
 import { logApiFailure } from './safe-errors'
 import { s3Target } from './storage-s3'
 
 /** Bucket des JAR du mod, distinct des captures des utilisateurs (même endpoint et mêmes identifiants). */
 export const modBucket = process.env.MOD_STORAGE_BUCKET || 'minemories-mods'
+/**
+ * Préfixe des clés des mods (`MOD_STORAGE_PREFIX`, vide par défaut). Validé à l'import : une valeur invalide
+ * empêche l'API de démarrer. Les clés de l'index sont relatives à ce préfixe.
+ */
+export const modPrefix = parseModPrefix(process.env.MOD_STORAGE_PREFIX)
 const INDEX_KEY = 'index.json'
 const INDEX_TTL_MS = Number(process.env.MOD_INDEX_CACHE_MS ?? 15_000)
 const IMMUTABLE = 'public, max-age=31536000, immutable'
@@ -65,13 +71,13 @@ const emptyIndex = (): ModIndex => ({ schema: 1, generatedAt: new Date(0).toISOS
  * Routes publiques de téléchargement du mod, sans authentification. Seules les versions listées dans
  * l'index sont servies, et la clé d'objet vient de l'index (jamais des paramètres de l'URL).
  */
-export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_TTL_MS) {
+export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_TTL_MS, prefix = modPrefix) {
 	const router = new Hono<{ Variables: { correlationId: string } }>()
 	let cached: { text: string; etag: string; at: number } | null = null
 
 	async function indexText(signal?: AbortSignal) {
 		if (cached && Date.now() - cached.at < ttlMs) return cached
-		const text = await source().readText(INDEX_KEY, signal)
+		const text = await source().readText(`${prefix}${INDEX_KEY}`, signal)
 		const body = text ?? JSON.stringify(emptyIndex())
 		cached = { text: body, etag: `"${createHash('sha256').update(body).digest('hex').slice(0, 32)}"`, at: Date.now() }
 		return cached
@@ -102,6 +108,11 @@ export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_
 		})
 	})
 
+	async function openEntry(key: string, signal?: AbortSignal) {
+		const objectKey = resolveObjectKey(prefix, key)
+		return objectKey ? await source().open(objectKey, signal) : null
+	}
+
 	async function serve(context: Context<{ Variables: { correlationId: string } }>, targetId: string, wanted: string) {
 		if (!(modTargetId.safeParse(targetId).success && (wanted === 'latest' || modVersion.safeParse(wanted).success)))
 			return context.json({ error: 'invalid_parameter' }, 400)
@@ -119,7 +130,8 @@ export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_
 			'X-Minemories-Version': entry.version,
 		}
 		if (context.req.header('If-None-Match') === etag) return context.body(null, 304, headers)
-		const object = await source().open(entry.key, context.req.raw.signal)
+		// La clé vient de l'index, jamais de l'URL, et doit rester sous `<préfixe>mods/` ou `<préfixe>latest/`.
+		const object = await openEntry(entry.key, context.req.raw.signal)
 		if (!object) return context.json({ error: 'not_found' }, 404)
 		return context.body(object.body, 200, { ...headers, 'Content-Length': String(entry.bytes) })
 	}

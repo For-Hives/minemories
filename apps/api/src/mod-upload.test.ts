@@ -380,3 +380,23 @@ test('dans l’API réelle la route est désactivée par défaut, sans CORS, et 
 		else process.env.MOD_UPLOAD_TOKEN = original
 	}
 })
+
+test('avec un préfixe, la route écrit sous le préfixe sans toucher aux objets étrangers', async () => {
+	const prefix = 'public-mods/'
+	const { client, put, stored } = harness({ MOD_STORAGE_PREFIX: prefix })
+	for (const key of ['users/a/1.glb', 'abc/tiers/x.glb', 'public-mods../x', 'index.json'])
+		client.objects.set(key, { body: Buffer.from('foreign'), contentType: 'x', metadata: {} })
+	const before = new Map([...client.objects].map(([key, value]) => [key, value.body.toString()]))
+	const response = await put(makeJar(['dev/minemories/A.class']))
+	expect(response.status).toBe(200)
+	expect(stored).toEqual(['stored'])
+	for (const [key, text] of before) expect(client.objects.get(key)?.body.toString()).toBe(text)
+	const added = [...client.objects.keys()].filter(key => !before.has(key))
+	expect(added.length).toBeGreaterThan(0)
+	expect(added.every(key => key.startsWith(prefix))).toBe(true)
+	expect(added).toContain(`${prefix}index.json`)
+})
+
+test('un préfixe invalide empêche de monter la route d’envoi', () => {
+	expect(() => createModUploads({ env: () => ({ MOD_STORAGE_PREFIX: 'a/../' }) })).toThrow('MOD_STORAGE_PREFIX')
+})

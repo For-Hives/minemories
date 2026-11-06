@@ -229,3 +229,78 @@ test('l’application monte /downloads publiquement, sans session', async () => 
 	expect((await response.json()).targets).toEqual({})
 	send.mockRestore()
 })
+
+const prefixed = (files: Record<string, string>) =>
+	Object.fromEntries(Object.entries(files).map(([key, value]) => [`public-mods/${key}`, value]))
+function mountPrefixed(files: Record<string, string>, opened: string[] = []) {
+	const router = new Hono()
+	router.route(
+		'/downloads',
+		createModDownloads(() => fakeSource(files, opened), 0, 'public-mods/')
+	)
+	return router
+}
+
+test('avec un préfixe, l’index et les JAR sont lus sous le préfixe, la clé venant de l’index', async () => {
+	const opened: string[] = []
+	const router = mountPrefixed(prefixed(withIndex()), opened)
+	expect((await router.request('/downloads/index.json')).status).toBe(200)
+	expect((await router.request(`/downloads/${id}/latest`)).status).toBe(200)
+	expect((await router.request(`/downloads/${id}/0.1.0`)).status).toBe(200)
+	expect(opened).toEqual([
+		`public-mods/mods/${id}/0.2.0/minemories-${id}-0.2.0.jar`,
+		`public-mods/mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`,
+	])
+	// Les mêmes objets sans le préfixe ne sont jamais lus : l'index est vide, donc 404.
+	const bare = mountPrefixed(withIndex())
+	expect((await bare.request('/downloads/index.json')).status).toBe(200)
+	expect((await bare.request(`/downloads/${id}/latest`)).status).toBe(404)
+})
+
+test('un index corrompu ne peut pas faire servir un objet hors de mods/ ou latest/', async () => {
+	const keys = [
+		'../users/abc/1.glb',
+		'users/abc/1.glb',
+		'index.json',
+		'/mods/x.jar',
+		'mods/../users/a.jar',
+		'mods//x.jar',
+		'mods/',
+		'',
+	]
+	for (const key of keys) {
+		const opened: string[] = []
+		const corrupted = { ...index, targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', key)] } } }
+		const files = { ...prefixed({ 'index.json': JSON.stringify(corrupted) }), [`public-mods/${key}`]: 'x', [key]: 'x' }
+		// 404 (clé refusée) ou 503 (index rejeté par le schéma) : jamais 200.
+		expect([404, 503]).toContain((await mountPrefixed(files, opened).request(`/downloads/${id}/0.2.0`)).status)
+		expect(opened).toEqual([])
+	}
+	const allowed = {
+		...index,
+		targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', `latest/${id}.jar`)] } },
+	}
+	const opened: string[] = []
+	const router = mountPrefixed(prefixed({ 'index.json': JSON.stringify(allowed), [`latest/${id}.jar`]: 'x' }), opened)
+	expect((await router.request(`/downloads/${id}/0.2.0`)).status).toBe(200)
+	expect(opened).toEqual([`public-mods/latest/${id}.jar`])
+})
+
+test('l’URL ne construit jamais une clé : seuls des paramètres valides atteignent la source', async () => {
+	const opened: string[] = []
+	const router = mountPrefixed(prefixed(withIndex()), opened)
+	for (const path of [`/downloads/${id}/..%2f..%2fusers`, '/downloads/..%2fusers/latest', `/downloads/${id}/0.9.9`])
+		expect([400, 404]).toContain((await router.request(path)).status)
+	expect(opened).toEqual([])
+})
+
+test('un préfixe invalide empêche le chargement du module de téléchargement', () => {
+	const script = "await import('./src/mod-downloads.ts')"
+	const result = Bun.spawnSync(['bun', '-e', script], {
+		cwd: join(import.meta.dir, '..'),
+		stderr: 'pipe',
+		env: { ...process.env, MOD_STORAGE_PREFIX: '../x/' },
+	})
+	expect(result.exitCode).not.toBe(0)
+	expect(result.stderr.toString()).toContain('MOD_STORAGE_PREFIX invalide')
+})
