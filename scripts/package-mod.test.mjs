@@ -54,7 +54,7 @@ test('packages separate loader artifacts without replacing the website default',
 	]
 	await Promise.all(
 		targets.map(async ([loader, prefix]) => {
-			const source = join(root, 'mod/minemories', loader, 'build/libs')
+			const source = join(root, 'mod/1.21.1', loader, 'build/libs')
 			await mkdir(source, { recursive: true })
 			await writeFile(join(source, `${prefix}0.2.0-beta.1.jar`), Buffer.from([0x50, 0x4b, 0x03, 0x04, loader.length]))
 			await writeFile(join(source, `${prefix}0.2.0-beta.1-dev.jar`), 'development classes')

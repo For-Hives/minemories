@@ -18,10 +18,10 @@ const releaseVersion = /^\d+\.\d+\.\d+(-[\w.]+)?$/
 const jdkRelease = /JAVA_VERSION="(\d+)/
 
 export async function readMatrix(root = repositoryRoot) {
-	const matrix = JSON.parse(await readFile(resolve(root, 'config/mod-matrix.json'), 'utf8'))
-	const properties = await readFile(resolve(root, 'mod/minemories/gradle.properties'), 'utf8')
+	const matrix = JSON.parse(await readFile(resolve(root, 'mod/matrix.json'), 'utf8'))
+	const properties = await readFile(resolve(root, 'mod/1.21.1/gradle.properties'), 'utf8')
 	const version = modVersionLine.exec(properties)?.[1]?.trim()
-	if (!version) throw new Error('mod_version not found in mod/minemories/gradle.properties.')
+	if (!version) throw new Error('mod_version not found in mod/1.21.1/gradle.properties.')
 	return { ...matrix, version }
 }
 
@@ -149,7 +149,7 @@ export function javaFor(minecraft) {
 /** Cells the `mod` job does not already build (it builds the 1.21.1 root): one CI job each. */
 export function ciCells(matrix) {
 	return matrix.builds
-		.filter(build => build.dir !== 'mod/minemories')
+		.filter(build => build.dir !== 'mod/1.21.1')
 		.map(({ loader, minecraft, loaderVersion, dir, project }) => ({
 			id: `${loader}-mc${minecraft}`,
 			loader,
@@ -247,11 +247,11 @@ export function issueFor(matrix, loader, minecraft, loaderVersion) {
 		...(plan ? [`Cible prévue (priorité ${plan.priority}, Java ${plan.java}) : ${plan.note}.`] : []),
 		'',
 		`## À faire`,
-		`- [ ] Projet / propriété de version Gradle (Java adapté à Minecraft ${minecraft}), entrée dans \`config/mod-matrix.json\``,
+		`- [ ] Projet / propriété de version Gradle (Java adapté à Minecraft ${minecraft}), entrée dans \`mod/matrix.json\``,
 		`- [ ] \`bun mod:matrix build ${loader} ${minecraft} ${version}\` produit le JAR pour la version courante (${matrix.version})`,
 		`- [ ] Test en jeu : blocs standards, textures alpha/teintées, contenu moddé, capture GLB puis ouverture dans le viewer`,
 		`- [ ] Documenter dans \`docs/features/loader-support.md\` (scénarios et limites)`,
-		`- [ ] Activer la cible dans \`config/mod-targets.json\` seulement après validation en jeu`,
+		`- [ ] Activer la cible dans \`mod/targets.json\` seulement après validation en jeu`,
 		'',
 		`Ne jamais annoncer le loader comme pris en charge avant build et test en jeu.`,
 	].join('\n')

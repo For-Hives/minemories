@@ -1,4 +1,4 @@
-import modTargets from '../../../../config/mod-targets.json'
+import modTargets from '../../../../mod/targets.json'
 
 export const releasesUrl = 'https://github.com/For-Hives/minemories/releases'
 export const releasesApi = 'https://api.github.com/repos/For-Hives/minemories/releases'
@@ -29,14 +29,14 @@ export interface LoaderDownload {
 export interface ModRelease {
 	version: string
 	pageUrl: string
-	/** One download per enabled loader JAR found in the release, in config/mod-targets.json order. */
+	/** One download per enabled loader JAR found in the release, in mod/targets.json order. */
 	downloads: LoaderDownload[]
 	prerelease: boolean
 	published: number
 	notes: string
 }
 
-/** Enabled publication targets, read at build time from config/mod-targets.json. */
+/** Enabled publication targets, read at build time from mod/targets.json. */
 export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =>
 	target.enabled && target.loaderVersion
 		? [

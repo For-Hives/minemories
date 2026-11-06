@@ -19,7 +19,7 @@ export const defaults: GuideState = {
 	done: [],
 }
 
-/** Loaders published for a Minecraft version, in config/mod-targets.json order. */
+/** Loaders published for a Minecraft version, in mod/targets.json order. */
 export function loadersFor(minecraft: string): LoaderTarget[] {
 	return loaderTargets.filter(target => target.minecraft === minecraft)
 }

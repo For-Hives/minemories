@@ -22,7 +22,7 @@ const target = {
 	validatedInGame: true,
 }
 test('only implemented and validated loader targets enter the matrix', async () => {
-	const configuration = JSON.parse(await readFile(`${repositoryRoot}/config/mod-targets.json`, 'utf8'))
+	const configuration = JSON.parse(await readFile(`${repositoryRoot}/mod/targets.json`, 'utf8'))
 	const active = enabledTargets(configuration)
 	assert.deepEqual(
 		active.map(item => item.id),
@@ -40,11 +40,11 @@ test('only implemented and validated loader targets enter the matrix', async () 
 	assert.ok(active.every(item => item.enabled && item.validatedInGame && ['17', '21'].includes(item.java)))
 	assert.ok(active.filter(item => item.minecraft === '1.21.1').every(item => item.dir === undefined))
 	assert.equal(active.find(item => item.id === 'fabric-mc1.21.1').fabricApi, '0.116.17+1.21.1')
-	assert.equal(active.find(item => item.id === 'forge-mc1.19.2').dir, 'mod/minemories-1.19.2')
+	assert.equal(active.find(item => item.id === 'forge-mc1.19.2').dir, 'mod/1.19.2')
 	assert.equal(configuration.targets.find(item => item.loader === 'quilt').enabled, false)
 	assert.equal(filenameFor(target), 'minemories-neoforge-mc1.21.1.jar')
-	assert.equal(modDirectory(target), 'mod/minemories')
-	assert.equal(modDirectory({ dir: 'mod/minemories-1.19.2' }), 'mod/minemories-1.19.2')
+	assert.equal(modDirectory(target), 'mod/1.21.1')
+	assert.equal(modDirectory({ dir: 'mod/1.19.2' }), 'mod/1.19.2')
 	for (const broken of [
 		null,
 		{},

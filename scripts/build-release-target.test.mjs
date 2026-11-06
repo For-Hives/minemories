@@ -25,7 +25,7 @@ test('a cell whose commit already passed the quality gates only checks its adapt
 })
 
 test('a ported Gradle root has no shared modules to check', () => {
-	assert.deepEqual(releaseGradleTasks({ project: 'forge', dir: 'mod/minemories-1.19.2' }, '0.2.0-beta.1'), [
+	assert.deepEqual(releaseGradleTasks({ project: 'forge', dir: 'mod/1.19.2' }, '0.2.0-beta.1'), [
 		'clean',
 		':forge:check',
 		':forge:build',

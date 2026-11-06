@@ -21,11 +21,8 @@ async function fixture(t) {
 			)
 		})
 	)
-	await mkdir(resolve(root, 'mod/minemories'), { recursive: true })
-	await writeFile(
-		resolve(root, 'mod/minemories/gradle.properties'),
-		'org.gradle.caching=true\nmod_version=0.1.1-dev.1\n'
-	)
+	await mkdir(resolve(root, 'mod/1.21.1'), { recursive: true })
+	await writeFile(resolve(root, 'mod/1.21.1/gradle.properties'), 'org.gradle.caching=true\nmod_version=0.1.1-dev.1\n')
 	return root
 }
 test('root, every workspace and Gradle receive the same release version, preserving dependencies', async t => {
@@ -38,7 +35,7 @@ test('root, every workspace and Gradle receive the same release version, preserv
 		stable: 'workspace:*',
 	})
 	assert.equal(
-		await readFile(resolve(root, 'mod/minemories/gradle.properties'), 'utf8'),
+		await readFile(resolve(root, 'mod/1.21.1/gradle.properties'), 'utf8'),
 		'org.gradle.caching=true\nmod_version=0.2.0-beta.1\n'
 	)
 	await syncReleaseVersions('0.2.0-beta.1', root)
@@ -47,7 +44,7 @@ test('invalid versions or Gradle configuration fail before modifying package man
 	const root = await fixture(t)
 	const original = await readFile(resolve(root, 'apps/web/package.json'), 'utf8')
 	await assert.rejects(syncReleaseVersions('0.2.0;bad', root))
-	await writeFile(resolve(root, 'mod/minemories/gradle.properties'), 'other=true\n')
+	await writeFile(resolve(root, 'mod/1.21.1/gradle.properties'), 'other=true\n')
 	await assert.rejects(syncReleaseVersions('0.2.0-beta.1', root))
 	assert.equal(await readFile(resolve(root, 'apps/web/package.json'), 'utf8'), original)
 })

@@ -20,14 +20,11 @@ test('the shared contract runs the web and the API gates, never the mod', () => 
 	only(['packages/api-contract/src/index.ts'], 'web', 'api')
 })
 test('a mod change runs the mod gate only', () => {
-	only(['mod/minemories/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
-	only(['config/mod-targets.json'], 'web', 'mod')
+	only(['mod/shared/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
+	only(['mod/targets.json'], 'web', 'mod')
 	only(['scripts/package-mod.mjs'], 'mod')
-	only(['config/mod-matrix.json', 'scripts/mod-matrix.mjs'], 'mod')
-	only(
-		['mod/minemories-1.19.2/forge/build.gradle', 'mod/minemories/core/src/main/java/dev/minemories/core/GlbScene.java'],
-		'mod'
-	)
+	only(['mod/matrix.json', 'scripts/mod-matrix.mjs'], 'mod')
+	only(['mod/1.19.2/forge/build.gradle', 'mod/shared/core/src/main/java/dev/minemories/core/GlbScene.java'], 'mod')
 	only(['.github/workflows/mod-release.yml'], 'mod')
 })
 test('documentation alone runs no gate', () => {

@@ -9,7 +9,8 @@ export const commitPattern = /^[a-f0-9]{40}$/
 const componentPattern = /^[a-z][a-z0-9_-]*$/
 const minecraftPattern = /^\d+\.\d+(?:\.\d+)?$/
 const loaderVersionPattern = /^[a-zA-Z0-9.+-]+$/
-const directoryPattern = /^mod\/minemories(?:-\d+\.\d+(?:\.\d+)?)?$/
+// mod/<minecraft version>, e.g. mod/1.21.1 or mod/26.3 (mod/shared holds the code common to every version).
+const directoryPattern = /^mod\/\d+(?:\.\d+)*$/
 const jarPrefixPattern = /^minemories-[a-z0-9.-]+-$/
 const javaVersions = new Set(['17', '21'])
 export function run(command, args, { cwd = repositoryRoot, ...options } = {}) {
@@ -64,11 +65,11 @@ export function enabledTargets(configuration) {
 	return active
 }
 export async function readTargets(root = repositoryRoot) {
-	return enabledTargets(JSON.parse(await readFile(resolve(root, 'config/mod-targets.json'), 'utf8')))
+	return enabledTargets(JSON.parse(await readFile(resolve(root, 'mod/targets.json'), 'utf8')))
 }
 /** Gradle root of a target: the 1.21.1 root unless the target ports another Minecraft version. */
 export function modDirectory(target) {
-	return target.dir ?? 'mod/minemories'
+	return target.dir ?? 'mod/1.21.1'
 }
 export function filenameFor(target) {
 	return `minemories-${target.id}.jar`

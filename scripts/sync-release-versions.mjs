@@ -20,7 +20,7 @@ export async function syncReleaseVersions(version, root = repositoryRoot) {
 			return [file, `${JSON.stringify({ ...data, version }, null, '\t')}\n`]
 		})
 	)
-	const propertiesPath = 'mod/minemories/gradle.properties'
+	const propertiesPath = 'mod/1.21.1/gradle.properties'
 	const properties = await readFile(resolve(root, propertiesPath), 'utf8')
 	if (!modVersionPattern.test(properties)) throw new Error('Missing mod_version in Gradle properties.')
 	updates.push([propertiesPath, properties.replace(modVersionPattern, `mod_version=${version}`)])
