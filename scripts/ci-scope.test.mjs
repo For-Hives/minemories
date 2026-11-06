@@ -19,6 +19,9 @@ test('an API change runs the API gate only', () => {
 test('the shared contract runs the web and the API gates, never the mod', () => {
 	only(['packages/api-contract/src/index.ts'], 'web', 'api')
 })
+test('the shared mod storage package runs the API and the mod gates, never the web', () => {
+	only(['packages/mod-storage/src/index.mjs'], 'api', 'mod')
+})
 test('a mod change runs the mod gate only', () => {
 	only(['mod/shared/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
 	only(['mod/targets.json'], 'web', 'mod')

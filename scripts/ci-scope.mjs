@@ -23,11 +23,12 @@ const rules = {
 	],
 	api: [
 		/^apps\/api\//,
+		/^packages\/mod-storage\//,
 		/^packages\/api-contract\//,
 		/^scripts\/(check-api-coverage|garage-integration)/,
 		/^docker-compose\.yml$/,
 	],
-	mod: [/^mod\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
+	mod: [/^mod\//, /^packages\/mod-storage\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
 }
 const dependencies = [
 	/^package\.json$/,
