@@ -1,0 +1,9 @@
+{
+	"_comment": "Minimum GLB statistics after the in-game capture test (scene: stone, tinted glass, leaves, grass, chest, water, torch, cow, armor stand). References measured on 2026-11: 181-190 KB, 5 meshes, 16-17 materials, 15 images. Thresholds leave a wide margin so only a really empty or broken capture fails.",
+	"default": { "bytes": 100000, "maxBytes": 8000000, "meshes": 3, "materials": 10, "images": 8, "nodes": 3 },
+	"targets": {
+		"fabric-mc1.21.11": { "bytes": 150000, "materials": 14, "images": 12 },
+		"neoforge-mc1.21.11": { "bytes": 150000, "materials": 14, "images": 12 },
+		"forge-mc1.21.11": { "bytes": 150000, "materials": 14, "images": 12 }
+	}
+}
