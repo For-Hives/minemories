@@ -27,6 +27,7 @@ const FaqPage = lazy(() => InfoPages().then(module => ({ default: module.FaqPage
 const InstallationPage = lazy(() =>
 	import('./pages/InstallationPage').then(module => ({ default: module.InstallationPage }))
 )
+const DownloadsPage = lazy(() => import('./pages/DownloadsPage').then(module => ({ default: module.DownloadsPage })))
 const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
@@ -45,6 +46,7 @@ const publicPageChunks = [
 	ContentPages,
 	DiscoveryPages,
 	() => import('./pages/InstallationPage'),
+	() => import('./pages/DownloadsPage'),
 	() => import('./pages/ReleasesPage'),
 	() => import('./pages/PricingPage'),
 	() => import('./pages/AuthPage'),
@@ -149,6 +151,14 @@ export function App() {
 								element={
 									<Page>
 										<InstallationPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/telechargements"
+								element={
+									<Page>
+										<DownloadsPage />
 									</Page>
 								}
 							/>
