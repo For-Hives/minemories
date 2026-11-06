@@ -45,6 +45,7 @@
 		"package:mod:all": "node scripts/package-mod.mjs --all"
 	},
 	"devDependencies": {
+		"@aws-sdk/client-s3": "3.1161.0",
 		"@biomejs/biome": "2.5.15",
 		"@jsquash/oxipng": "2.3.0",
 		"@release-it/conventional-changelog": "12.0.2",

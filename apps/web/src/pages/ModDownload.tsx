@@ -1,10 +1,8 @@
 import { Link } from 'react-router'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
-import { downloadFor, type LoaderTarget, quiltTestedVersion, releasesUrl } from './mod-releases'
+import { downloadFor, type LoaderTarget, quiltTestedVersion } from './mod-releases'
 import { useModReleases } from './useModReleases'
-
-export { selectLatestRelease } from './mod-releases'
 
 function QuiltNote({ target }: { target: LoaderTarget }) {
 	const { t } = useI18n()
@@ -47,36 +45,27 @@ export function ModDownload({ target }: { target: LoaderTarget }) {
 					<QuiltNote target={download.target} />
 					<p className="install-caption">
 						{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })}{' '}
-						<T message={'MiB · Download from GitHub Releases.'} />
+						<T message={'MiB · Direct download from Minemories.'} />
 					</p>
 					<p>
 						<T message={"Place this file directly in the profile's folder"} /> <code>mods</code>{' '}
 						<T message={'. Do not extract it or run it by double-clicking.'} />
 					</p>
-					{(download.sha256 || download.checksumUrl) && (
-						<details>
-							<summary>
-								<T message={'Verify the downloaded file (advanced)'} />
-							</summary>
-							{download.sha256 && (
-								<p>
-									<T message={'SHA-256 checksum:'} /> <code>{download.sha256}</code>
-								</p>
-							)}
-							{download.checksumUrl && (
-								<a href={download.checksumUrl}>
-									<T message={'Download checksum'} />
-								</a>
-							)}
-						</details>
-					)}
+					<details>
+						<summary>
+							<T message={'Verify the downloaded file (advanced)'} />
+						</summary>
+						<p>
+							<T message={'SHA-256 checksum:'} /> <code>{download.sha256}</code>
+						</p>
+					</details>
 				</>
 			) : (
 				<>
 					<p role="status">
 						<T
 							message={
-								"No compatible release is available right now, or GitHub is not responding. Check the project's releases or try again shortly."
+								'No download is available for this version right now. Try again shortly or open the versions page.'
 							}
 						/>
 					</p>
@@ -89,11 +78,6 @@ export function ModDownload({ target }: { target: LoaderTarget }) {
 				<Link to="/versions">
 					<T message={"Previous versions and what's new"} />
 				</Link>
-			</p>
-			<p>
-				<a href={releasesUrl}>
-					<T message={'All releases on GitHub'} />
-				</a>
 			</p>
 		</div>
 	)

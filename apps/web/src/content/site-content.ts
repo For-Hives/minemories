@@ -52,8 +52,8 @@ export const legalContent = {
 				body: 'A shared link can be forwarded and gives access without an account. Revocation stops future access, not copies already made. Trash retains captures for 30 days; permanent deletion frees space once processed.',
 			},
 			{
-				heading: 'Release list from GitHub',
-				body: 'The installation, mod versions and changelog pages load the list of releases from GitHub (api.github.com) directly from your browser. GitHub therefore receives your IP address, under its own privacy policy. JAR downloads also come from GitHub.',
+				heading: 'Mod download list',
+				body: 'The installation, mod versions and changelog pages load the list of available mod files from the Minemories API, directly from your browser, which receives your IP address like any request to the service. JAR downloads also come from the Minemories API, without an account or cookie.',
 			},
 		],
 	},

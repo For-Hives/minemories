@@ -7,7 +7,7 @@ export const discoveryPages = [
 		accent: 'mint',
 		points: ['Source you can inspect', 'An open 3D format', 'Files that stay yours'],
 		story:
-			'The repository contains the mod, viewer and API. Distributed versions use GitHub Releases. Captures appear in your private gallery after pairing the mod. Shared links can be viewed without an account.',
+			'The repository contains the mod, viewer and API. Distributed versions are downloaded from Minemories. Captures appear in your private gallery after pairing the mod. Shared links can be viewed without an account.',
 		note: 'The ambition is open source. The repository is public, but a redistribution license still needs to be chosen; visibility alone does not grant those rights.',
 	},
 	{

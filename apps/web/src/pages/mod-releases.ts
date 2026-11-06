@@ -1,10 +1,18 @@
+import { modIndex } from '@minemories/api-contract'
 import modTargets from '../../../../mod/targets.json'
+import { apiBase } from '../api-client'
 
-export const releasesUrl = 'https://github.com/For-Hives/minemories/releases'
-export const releasesApi = 'https://api.github.com/repos/For-Hives/minemories/releases'
-export const releasesPageSize = 30
-const versionPattern = /^mod-v(\d+\.\d+\.\d+(?:[-+][\w.-]+)?)$/
-const digestPattern = /^sha256:([a-f0-9]{64})$/
+/** Versions kept per target by the storage retention (scripts/mod/storage); the page never shows more. */
+export const retainedVersions = 3
+export const indexUrl = `${apiBase}/downloads/index.json`
+export const downloadUrl = (targetId: string, version: string) =>
+	`${apiBase}/downloads/${encodeURIComponent(targetId)}/${encodeURIComponent(version)}`
+export const latestDownloadUrl = (minecraft: string, loader: string) => {
+	const target = loaderTargets.find(item => item.minecraft === minecraft && item.loader === loader)
+	return `${apiBase}/downloads/${target?.id ?? ''}/latest`
+}
+const commitUrl = 'https://github.com/For-Hives/minemories/commit'
+const commitPattern = /^[0-9a-f]{7,40}$/
 /** Quilt has no JAR of its own: the Fabric JAR is tested under this Quilt Loader (docs/features/loader-support.md). */
 export const quiltTestedVersion = '0.30.1'
 
@@ -16,24 +24,21 @@ export interface LoaderTarget {
 	loaderVersion: string
 	java: string
 	fabricApi: string | null
-	/** Release asset name, as produced by `filenameFor` in scripts/release-utils.mjs. */
-	jarName: string
 }
 export interface LoaderDownload {
 	target: LoaderTarget
 	url: string
 	bytes: number
-	sha256: string | null
-	checksumUrl: string | null
+	sha256: string
 }
 export interface ModRelease {
 	version: string
-	pageUrl: string
-	/** One download per enabled loader JAR found in the release, in mod/targets.json order. */
+	/** Link to the commit the build comes from, when the index carries a usable hash. */
+	commitUrl: string | null
+	/** One download per enabled loader JAR published for this version, in mod/targets.json order. */
 	downloads: LoaderDownload[]
 	prerelease: boolean
 	published: number
-	notes: string
 }
 
 /** Enabled publication targets, read at build time from mod/targets.json. */
@@ -48,58 +53,10 @@ export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =
 					loaderVersion: target.loaderVersion,
 					java: target.java,
 					fabricApi: 'fabricApi' in target ? target.fabricApi : null,
-					jarName: `minemories-${target.id}.jar`,
 				},
 			]
 		: []
 )
-
-function record(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null
-}
-function parseDownload(assets: Record<string, unknown>[], prefix: string, target: LoaderTarget): LoaderDownload[] {
-	const url = `${prefix}${target.jarName}`
-	const asset = assets.find(item => item.name === target.jarName && item.browser_download_url === url)
-	if (!(asset && Number.isSafeInteger(asset.size)) || (asset.size as number) < 4) return []
-	const checksumUrl = `${url}.sha256`
-	const checksum = assets.some(
-		item => item.name === `${target.jarName}.sha256` && item.browser_download_url === checksumUrl
-	)
-	return [
-		{
-			target,
-			url,
-			bytes: asset.size as number,
-			sha256: typeof asset.digest === 'string' ? (digestPattern.exec(asset.digest)?.[1] ?? null) : null,
-			checksumUrl: checksum ? checksumUrl : null,
-		},
-	]
-}
-function parseRelease(value: unknown): ModRelease | null {
-	if (!record(value)) return null
-	if (
-		value.draft !== false ||
-		typeof value.tag_name !== 'string' ||
-		typeof value.published_at !== 'string' ||
-		!Array.isArray(value.assets)
-	)
-		return null
-	const version = versionPattern.exec(value.tag_name)?.[1]
-	const published = Date.parse(value.published_at)
-	if (!(version && Number.isFinite(published))) return null
-	const prefix = `${releasesUrl}/download/${encodeURIComponent(value.tag_name)}/`
-	const assets = value.assets.filter(record)
-	const downloads = loaderTargets.flatMap(target => parseDownload(assets, prefix, target))
-	if (downloads.length === 0) return null
-	return {
-		version,
-		pageUrl: `${releasesUrl}/tag/${encodeURIComponent(value.tag_name)}`,
-		downloads,
-		prerelease: value.prerelease === true || version.includes('-'),
-		published,
-		notes: typeof value.body === 'string' ? value.body : '',
-	}
-}
 
 export function downloadFor(release: ModRelease, loader: string, minecraft?: string): LoaderDownload | null {
 	return (
@@ -117,28 +74,38 @@ export function minecraftVersions(targets: LoaderTarget[] = loaderTargets): stri
 		return (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
 	})
 }
-export function parseReleases(data: unknown): ModRelease[] {
-	if (!Array.isArray(data)) return []
-	return mergeReleases(
-		[],
-		data.map(parseRelease).filter((release): release is ModRelease => release !== null)
-	)
-}
-export function mergeReleases(previous: ModRelease[], next: ModRelease[]): ModRelease[] {
-	return [...new Map([...previous, ...next].map(release => [release.version, release])).values()].sort(
-		(a, b) => b.published - a.published || b.version.localeCompare(a.version)
-	)
+
+/** Turns the API index into releases: one per version, grouping the loader JARs published for it. */
+export function parseIndex(data: unknown): ModRelease[] {
+	const parsed = modIndex.safeParse(data)
+	if (!parsed.success) throw new Error('Invalid downloads index')
+	const releases = new Map<string, ModRelease>()
+	for (const target of loaderTargets) {
+		const published = parsed.data.targets[target.id]
+		for (const entry of published?.versions.slice(0, retainedVersions) ?? []) {
+			const release = releases.get(entry.version) ?? {
+				version: entry.version,
+				commitUrl: commitPattern.test(entry.commit) ? `${commitUrl}/${entry.commit}` : null,
+				downloads: [],
+				prerelease: entry.version.includes('-'),
+				published: Date.parse(entry.builtAt) || 0,
+			}
+			release.downloads.push({
+				target,
+				url: downloadUrl(target.id, entry.version),
+				bytes: entry.bytes,
+				sha256: entry.sha256,
+			})
+			releases.set(entry.version, release)
+		}
+	}
+	return [...releases.values()].sort((a, b) => b.published - a.published || b.version.localeCompare(a.version))
 }
 export function selectLatestRelease(data: unknown): ModRelease | null {
-	return parseReleases(data)[0] ?? null
+	return parseIndex(data)[0] ?? null
 }
-export async function fetchReleasePage(page: number, signal: AbortSignal) {
-	const response = await fetch(`${releasesApi}?per_page=${releasesPageSize}&page=${page}`, {
-		signal,
-		headers: { Accept: 'application/vnd.github+json' },
-	})
-	if (!response.ok) throw new Error('GitHub releases unavailable')
-	const data: unknown = await response.json()
-	if (!Array.isArray(data)) throw new Error('Invalid GitHub releases response')
-	return { releases: parseReleases(data), hasMore: data.length === releasesPageSize }
+export async function fetchModReleases(signal: AbortSignal) {
+	const response = await fetch(indexUrl, { signal, headers: { Accept: 'application/json' } })
+	if (!response.ok) throw new Error('Downloads index unavailable')
+	return parseIndex(await response.json())
 }

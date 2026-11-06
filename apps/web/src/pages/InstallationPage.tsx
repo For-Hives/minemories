@@ -16,7 +16,7 @@ import {
 	saveGuide,
 	targetFor,
 } from './installation-state'
-import { type LoaderTarget, minecraftVersions } from './mod-releases'
+import { type LoaderTarget, latestDownloadUrl, minecraftVersions } from './mod-releases'
 import './installation.css'
 
 function GuidePreferences({ guide, update }: { guide: GuideState; update: (value: Partial<GuideState>) => void }) {
@@ -399,7 +399,7 @@ export function InstallationPage() {
 					</h2>
 					<p>
 						<T message={'Download the mod from'} />{' '}
-						<a href="https://github.com/For-Hives/minemories/releases">GitHub Releases</a>
+						<a href={latestDownloadUrl(defaults.minecraft, defaults.loader)}>Minemories</a>
 						<T message={'. Here are all the steps for Minecraft Launcher:'} />
 					</p>
 					{stepNames.map((name, index) => (

@@ -1,4 +1,3 @@
-import Markdown from 'react-markdown'
 import { Link } from 'react-router'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
@@ -6,17 +5,12 @@ import { type LoaderDownload, type LoaderTarget, type ModRelease, quiltTestedVer
 
 function Integrity({ download }: { download: LoaderDownload }) {
 	const { t } = useI18n()
-	if (!(download.sha256 || download.checksumUrl))
-		return <p className="mm-release-muted">{t('SHA-256 checksum not provided.')}</p>
 	return (
 		<details className="mm-release-integrity">
 			<summary>{t('Verify the file (SHA-256)')}</summary>
-			{download.sha256 && (
-				<p>
-					<code>{download.sha256}</code>
-				</p>
-			)}
-			{download.checksumUrl && <a href={download.checksumUrl}>{t('Download checksum')}</a>}
+			<p>
+				<code>{download.sha256}</code>
+			</p>
 		</details>
 	)
 }
@@ -93,7 +87,7 @@ export function ReleaseCard({
 			<ul className="mm-release-downloads" aria-label={t('Files for each loader')}>
 				{release.downloads.map((download, index) => (
 					<Download
-						key={download.target.loader}
+						key={download.target.id}
 						download={download}
 						version={release.version}
 						recommended={recommended && index === 0}
@@ -105,33 +99,11 @@ export function ReleaseCard({
 					<Link to={`/changelog#${id}`}>{t('What’s new →')}</Link>
 				</p>
 			)}
-			{changelog && (
-				<details className="mm-release-notes" open={recommended}>
-					<summary>
-						{t('Release notes')} <span className="sr-only">{release.version}</span>
-					</summary>
-					<div className="mm-release-markdown">
-						{release.notes.trim() ? (
-							<Markdown
-								skipHtml
-								components={{
-									h1: ({ children }) => <h3>{children}</h3>,
-									h2: ({ children }) => <h3>{children}</h3>,
-									h3: ({ children }) => <h4>{children}</h4>,
-									img: ({ alt }) => <span>{alt}</span>,
-								}}
-							>
-								{release.notes}
-							</Markdown>
-						) : (
-							<p>{t('No notes published for this release.')}</p>
-						)}
-					</div>
-				</details>
+			{changelog && release.commitUrl && (
+				<p className="mm-release-source">
+					<a href={release.commitUrl}>{t('View the build commit on GitHub')}</a>
+				</p>
 			)}
-			<p className="mm-release-source">
-				<a href={release.pageUrl}>{t('View release on GitHub')}</a>
-			</p>
 		</article>
 	)
 }
