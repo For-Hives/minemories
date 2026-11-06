@@ -48,6 +48,8 @@ test('private data, shared links and account routes are excluded from indexing a
 		'/moderation',
 		'/admin',
 		'/admin/diagnostics',
+		'/admin/users',
+		'/admin/moderation',
 		'/login',
 		'/register',
 	]) {

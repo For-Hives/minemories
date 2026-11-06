@@ -1361,5 +1361,15 @@
 	"the {loader} {version} installer": "the {loader} {version} installer",
 	"this installation": "this installation",
 	"versions if necessary. Edit the modded installation created using": "versions if necessary. Edit the modded installation created using",
-	"Install the loader": "Install the loader"
+	"Install the loader": "Install the loader",
+	"Administration sections": "Administration sections",
+	"Overview": "Overview",
+	"Accounts and roles": "Accounts and roles",
+	"Administration": "Administration",
+	"Everything that keeps the service running, one section at a time.": "Everything that keeps the service running, one section at a time.",
+	"Service figures, accounts, storage and administrator roles.": "Service figures, accounts, storage and administrator roles.",
+	"Approve or reject submitted publications and review reports.": "Approve or reject submitted publications and review reports.",
+	"{count} waiting for review": "{count} waiting for review",
+	"{count} reported": "{count} reported",
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Failed exports, interrupted uploads and crashes reported by the mod with consent."
 }
