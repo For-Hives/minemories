@@ -55,7 +55,12 @@ export async function targetState(root, target, version) {
 }
 
 export function gradleArgs(target, { version, prod = true, loaderVersion, ci = Boolean(process.env.CI) } = {}) {
-	const args = ['--console=plain', ...(ci ? ['-Dorg.gradle.daemon=false', '--no-configuration-cache'] : [])]
+	// A release must come from freshly compiled classes: a restored build cache once produced an empty JAR.
+	const args = [
+		'--console=plain',
+		'--no-build-cache',
+		...(ci ? ['-Dorg.gradle.daemon=false', '--no-configuration-cache'] : []),
+	]
 	args.push(`:${target.project}:clean`, `:${target.project}:build`, `-PmodVersion=${version}`)
 	args.push(`-Pminemories.prod=${prod ? 'true' : 'false'}`)
 	if (loaderVersion && loaderVersion !== target.loaderVersion) {
@@ -102,12 +107,18 @@ export function gitInfo(root) {
 	}
 }
 
+/** A JAR whose central directory names no .class entry is an empty build (a restored cache can produce one). */
+export function jarHasClasses(bytes) {
+	return bytes.includes('.class')
+}
+
 async function collectArtifact(root, target, { version, prod, git, builtAt }) {
 	const source = join(libsDir(root, target), target.jar.replace('{version}', version))
 	const bytes = await readFile(source).catch(() => {
 		throw new Error(`JAR attendu introuvable : ${source}`)
 	})
 	if (bytes.length < 4 || bytes.readUInt32LE(0) !== zipMagic) throw new Error(`${source} n'est pas une archive JAR.`)
+	if (!jarHasClasses(bytes)) throw new Error(`${source} ne contient aucune classe : build incomplet, JAR refusé.`)
 	const sha256 = createHash('sha256').update(bytes).digest('hex')
 	const directory = distDir(root, version, target.id)
 	const file = distFileName(target, version)

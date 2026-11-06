@@ -12,6 +12,7 @@ import {
 	distDir,
 	formatBytes,
 	gradleArgs,
+	jarHasClasses,
 	jarVersion,
 	libsDir,
 	runGradleProcess,
@@ -30,7 +31,7 @@ const target = {
 	jar: 'minemories-forge-mc1.18.2-{version}.jar',
 	loaderProperty: 'forgeVersion',
 }
-const jar = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from('payload')])
+const jar = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from('dev/minemories/Mod.class')])
 const setup = { args: ['-Dx=1'], env: { JAVA_HOME: '/j' } }
 const jdks = { gradle: { home: '/j/21', major: 21 }, compile: new Map([[17, { home: '/j/17', major: 17 }]]), all: [] }
 const git = { commit: 'a'.repeat(40), dirty: false }
@@ -51,6 +52,7 @@ test('gradleArgs cleans the project, pins the version and the prod flag', () => 
 	const args = gradleArgs(target, { version: '1.0.0-beta.1', ci: false })
 	assert.deepEqual(args, [
 		'--console=plain',
+		'--no-build-cache',
 		':forge:clean',
 		':forge:build',
 		'-PmodVersion=1.0.0-beta.1',
@@ -191,4 +193,9 @@ test('formatBytes uses Ko and Mo', () => {
 	assert.equal(formatBytes(10), '1 Ko')
 	assert.equal(formatBytes(2048), '2 Ko')
 	assert.equal(formatBytes(5 * 1024 * 1024), '5.0 Mo')
+})
+
+test('a JAR without any class entry is recognised as an empty build', () => {
+	assert.equal(jarHasClasses(Buffer.from('PK META-INF/MANIFEST.MF assets/x.json')), false)
+	assert.equal(jarHasClasses(Buffer.from('PK dev/minemories/Mod.class')), true)
 })
