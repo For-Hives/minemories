@@ -1,4 +1,5 @@
 {
+	"minecraft": ["1.12.2", "1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.11"],
 	"targets": [
 		{
 			"id": "neoforge-mc1.21.1",
@@ -8,6 +9,7 @@
 			"loaderVersion": "21.1.248",
 			"java": "21",
 			"project": "neoforge",
+			"jar": "minemories-{version}.jar",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -19,6 +21,7 @@
 			"loaderVersion": "0.19.5",
 			"java": "21",
 			"project": "fabric",
+			"jar": "minemories-fabric-{version}.jar",
 			"enabled": true,
 			"validatedInGame": true,
 			"fabricApi": "0.116.17+1.21.1"
@@ -31,6 +34,7 @@
 			"loaderVersion": "52.1.19",
 			"java": "21",
 			"project": "forge",
+			"jar": "minemories-forge-{version}.jar",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -44,6 +48,8 @@
 			"project": "fabric",
 			"dir": "mod/1.21.11",
 			"jarPrefix": "minemories-fabric-mc1.21.11-",
+			"jar": "minemories-fabric-mc1.21.11-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion",
 			"enabled": true,
 			"validatedInGame": true,
 			"fabricApi": "0.141.6+1.21.11"
@@ -58,6 +64,8 @@
 			"project": "neoforge",
 			"dir": "mod/1.21.11",
 			"jarPrefix": "minemories-neoforge-mc1.21.11-",
+			"jar": "minemories-neoforge-mc1.21.11-{version}.jar",
+			"loaderProperty": "neoForgeVersion",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -71,6 +79,8 @@
 			"project": "forge",
 			"dir": "mod/1.21.11",
 			"jarPrefix": "minemories-forge-mc1.21.11-",
+			"jar": "minemories-forge-mc1.21.11-{version}.jar",
+			"loaderProperty": "forgeVersion",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -84,6 +94,8 @@
 			"project": "forge",
 			"dir": "mod/1.20.1",
 			"jarPrefix": "minemories-forge-mc1.20.1-",
+			"jar": "minemories-forge-mc1.20.1-{version}.jar",
+			"loaderProperty": "forgeVersion",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -97,6 +109,8 @@
 			"project": "fabric",
 			"dir": "mod/1.20.1",
 			"jarPrefix": "minemories-fabric-mc1.20.1-",
+			"jar": "minemories-fabric-mc1.20.1-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion",
 			"enabled": true,
 			"validatedInGame": true,
 			"fabricApi": "0.92.12+1.20.1"
@@ -111,6 +125,8 @@
 			"project": "forge",
 			"dir": "mod/1.19.2",
 			"jarPrefix": "minemories-forge-mc1.19.2-",
+			"jar": "minemories-forge-mc1.19.2-{version}.jar",
+			"loaderProperty": "forgeVersion",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -124,6 +140,8 @@
 			"project": "fabric",
 			"dir": "mod/1.19.2",
 			"jarPrefix": "minemories-fabric-mc1.19.2-",
+			"jar": "minemories-fabric-mc1.19.2-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion",
 			"enabled": true,
 			"validatedInGame": true,
 			"fabricApi": "0.77.0+1.19.2"
@@ -138,6 +156,8 @@
 			"project": "forge",
 			"dir": "mod/1.18.2",
 			"jarPrefix": "minemories-forge-mc1.18.2-",
+			"jar": "minemories-forge-mc1.18.2-{version}.jar",
+			"loaderProperty": "forgeVersion",
 			"enabled": true,
 			"validatedInGame": true
 		},
@@ -151,6 +171,28 @@
 			"project": "quilt",
 			"enabled": false,
 			"validatedInGame": false
+		}
+	],
+	"planned": [
+		{
+			"id": "forge-mc1.16.5",
+			"loader": "forge",
+			"minecraft": "1.16.5",
+			"loaderVersion": "36.2.42",
+			"java": "8",
+			"dir": "mod/1.16.5",
+			"priority": 4,
+			"note": "Java 8, ForgeGradle ; API très éloignée de 1.21"
+		},
+		{
+			"id": "forge-mc1.12.2",
+			"loader": "forge",
+			"minecraft": "1.12.2",
+			"loaderVersion": "14.23.5.2864",
+			"java": "8",
+			"dir": "mod/1.12.2",
+			"priority": 4,
+			"note": "Java 8, ForgeGradle ; pas de GLB moderne, réécriture probable"
 		}
 	]
 }

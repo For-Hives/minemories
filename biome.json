@@ -176,7 +176,7 @@
 			"formatter": { "enabled": true }
 		},
 		{
-			"includes": ["**/test/**", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+			"includes": ["**/test/**", "**/*.test.ts", "**/*.test.mjs", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
 			"linter": {
 				"rules": {
 					"performance": {
