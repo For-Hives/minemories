@@ -1,16 +1,22 @@
 import { buildPayload, notify } from '../notify.mjs'
 
+async function readAll() {
+	const chunks = []
+	for await (const chunk of process.stdin) chunks.push(chunk)
+	return Buffer.concat(chunks).toString('utf8')
+}
+
 export const name = 'notify'
 export const summary = 'Envoie une notification Discord (message de test avec --test)'
 export const usage =
-	'bun mod notify --test [--dry-run] | bun mod notify --kind <kind> --title <t> [--summary <s>] [--dry-run]'
+	'bun mod notify --test [--dry-run] | bun mod notify --kind <kind> --title <t> [--summary <s>] [--log-stdin] [--dry-run]'
 
 function option(args, flag) {
 	const index = args.indexOf(flag)
 	return index >= 0 ? args[index + 1] : undefined
 }
 
-export function eventFromArgs(args) {
+export async function eventFromArgs(args, readStdin = readAll) {
 	if (args.includes('--test')) {
 		return {
 			kind: 'release-success',
@@ -26,11 +32,13 @@ export function eventFromArgs(args) {
 	}
 	const kind = option(args, '--kind')
 	if (!kind) return null
-	return { kind, title: option(args, '--title') ?? kind, summary: option(args, '--summary') ?? '' }
+	const event = { kind, title: option(args, '--title') ?? kind, summary: option(args, '--summary') ?? '' }
+	if (args.includes('--log-stdin')) event.logTail = await readStdin()
+	return event
 }
 
 export async function run(args, ctx) {
-	const event = eventFromArgs(args)
+	const event = await eventFromArgs(args, ctx.readStdin)
 	if (!event) {
 		ctx.log(`Usage : ${usage}`)
 		return 1

@@ -267,3 +267,10 @@ test('command: usage without arguments, --kind dry-run, and a missing webhook', 
 	assert.equal(await run(['--test'], ctx), 0)
 	assert.match(lines.at(-1), NOT_SENT)
 })
+
+test('command: --log-stdin attaches the piped log tail', async () => {
+	const lines = []
+	const ctx = { env: {}, log: m => lines.push(m), readStdin: () => Promise.resolve('une\ndeux') }
+	assert.equal(await run(['--kind', 'release-failure', '--log-stdin', '--dry-run'], ctx), 0)
+	assert.ok(JSON.parse(lines.at(-1)).embeds[0].fields.some(field => field.value.includes('deux')))
+})
