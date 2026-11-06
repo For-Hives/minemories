@@ -40,3 +40,24 @@ export type ModIndexVersion = z.infer<typeof modIndexVersion>
 
 /** Nom de distribution d'un JAR (en-tête Content-Disposition). */
 export const modJarName = (targetId: string, version: string) => `minemories-${targetId}-${version}.jar`
+
+export const modBuiltBy = z.enum(['pc', 'vps'])
+const hexCommit = /^[0-9a-f]{7,64}$/
+const versionLike = /^[0-9A-Za-z][\w.+-]{0,63}$/
+/**
+ * Manifeste de build joint à un envoi (`X-Mod-Manifest`, JSON encodé en base64url) : sous-ensemble du
+ * `manifest.json` produit par `bun mod build`. Les autres champs sont ignorés.
+ */
+export const modUploadManifest = z.object({
+	id: modTargetId,
+	version: modVersion,
+	minecraft: z.string().regex(/^[0-9][A-Za-z0-9.]{0,31}$/),
+	loader: z.string().regex(/^[a-z]{1,32}$/),
+	loaderVersion: z.string().regex(versionLike),
+	java: z.string().regex(/^[0-9]{1,2}$/),
+	fabricApi: z.string().regex(versionLike).optional(),
+	commit: z.string().regex(hexCommit),
+	builtAt: z.iso.datetime(),
+	builtBy: modBuiltBy,
+})
+export type ModUploadManifest = z.infer<typeof modUploadManifest>

@@ -28,11 +28,14 @@ export {
 	type ModIndex,
 	type ModIndexTarget,
 	type ModIndexVersion,
+	type ModUploadManifest,
+	modBuiltBy,
 	modIndex,
 	modIndexTarget,
 	modIndexVersion,
 	modJarName,
 	modTargetId,
+	modUploadManifest,
 	modVersion,
 } from './mod-downloads'
 export {

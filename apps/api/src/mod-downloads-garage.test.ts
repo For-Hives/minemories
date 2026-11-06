@@ -84,3 +84,88 @@ test.skipIf(!enabled)('un vrai Garage : stockage, index, téléchargement via l�
 	const report = await storage.storageReport({ env: process.env })
 	expect(report.perTarget[id]?.versions).toBe(3)
 })
+
+test.skipIf(!enabled)(
+	'un vrai Garage : envoi par la route PUT, index, téléchargement, erreurs et rétention',
+	async () => {
+		const { app } = await import('./index')
+		const { makeJar, sha256Hex } = await import('./test-support/jar-fixture')
+		const id = 'neoforge-mc1.21.1'
+		const token = 'garage-upload-token-with-more-than-32-chars'
+		process.env.MOD_UPLOAD_TOKEN = token
+		process.env.MOD_STORAGE_KEEP = '2'
+		const manifest = (version: string, day: number) =>
+			Buffer.from(
+				JSON.stringify({
+					id,
+					version,
+					minecraft: '1.21.1',
+					loader: 'neoforge',
+					loaderVersion: '21.1.248',
+					java: '21',
+					commit: 'abcdef1',
+					builtAt: `2026-10-0${day}T00:00:00.000Z`,
+					builtBy: 'pc',
+				})
+			).toString('base64url')
+		const put = (version: string, day: number, bytes: Buffer, headers: Record<string, string> = {}, query = '') =>
+			app.request(`/downloads/upload/${id}/${version}${query}`, {
+				method: 'PUT',
+				body: bytes as unknown as BodyInit,
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Length': String(bytes.length),
+					'X-Content-SHA256': sha256Hex(bytes),
+					'X-Mod-Manifest': manifest(version, day),
+					...headers,
+				},
+			})
+
+		const first = makeJar(['dev/minemories/One.class'])
+		expect((await put('0.1.0', 1, first, { Authorization: `Bearer ${'z'.repeat(40)}` })).status).toBe(401)
+		expect((await put('0.1.0', 1, first, { 'X-Content-SHA256': 'f'.repeat(64) })).status).toBe(422)
+		expect((await put('0.1.0', 1, makeJar(['fabric.mod.json']))).status).toBe(422)
+
+		const created = await put('0.1.0', 1, first)
+		expect(created.status).toBe(200)
+		expect(await created.json()).toEqual({
+			ok: true,
+			targetId: id,
+			version: '0.1.0',
+			sha256: sha256Hex(first),
+			bytes: first.length,
+			latest: true,
+			replaced: false,
+		})
+		const again = await put('0.1.0', 1, first)
+		expect(await again.json()).toMatchObject({ ok: true, replaced: false })
+		const conflict = await put('0.1.0', 1, makeJar(['dev/minemories/Other.class']))
+		expect(conflict.status).toBe(409)
+
+		const second = makeJar(['dev/minemories/Two.class'])
+		expect((await put('0.2.0', 2, second)).status).toBe(200)
+		// Plus gros que la taille d'une partie multipart (8 Mio) : envoi multipart réel via la route.
+		const third = makeJar(['dev/minemories/Three.class'], 9 * 1024 * 1024)
+		expect((await put('0.3.0', 3, third)).status).toBe(200)
+
+		const index = await (await app.request('/downloads/index.json')).json()
+		expect(index.targets[id].latest).toBe('0.3.0')
+		expect(index.targets[id].versions.map((item: { version: string }) => item.version)).toEqual(['0.3.0', '0.2.0'])
+		expect(index.targets[id].versions[0]).toMatchObject({ builtBy: 'pc', commit: 'abcdef1', bytes: third.length })
+		expect(index.targets[id].loaderVersion).toBe('21.1.248')
+		const latest = await app.request(`/downloads/${id}/latest`)
+		expect(
+			createHash('sha256')
+				.update(Buffer.from(await latest.arrayBuffer()))
+				.digest('hex')
+		).toBe(sha256Hex(third))
+		expect((await app.request(`/downloads/${id}/0.1.0`)).status).toBe(404)
+
+		const replaced = await put('0.2.0', 2, makeJar(['dev/minemories/Two.class', 'x.txt']), {}, '?replace=1')
+		expect(replaced.status).toBe(200)
+		expect(await replaced.json()).toMatchObject({ replaced: true, latest: false })
+		const storage = (await import(storagePath)) as ModStorage
+		const report = await storage.storageReport({ env: process.env })
+		expect(report.perTarget[id]?.versions).toBe(2)
+	}
+)

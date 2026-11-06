@@ -1,0 +1,382 @@
+import { afterAll, expect, spyOn, test } from 'bun:test'
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { type ModIndex, modIndex } from '@minemories/api-contract'
+import { createFakeClient } from '@minemories/mod-storage/fake-client'
+import { Hono } from 'hono'
+
+const directory = mkdtempSync(join(tmpdir(), 'minemories-mod-upload-test-'))
+process.env.DATABASE_PATH = join(directory, 'test.sqlite')
+process.env.LOCAL_OBJECTS_PATH = join(directory, 'objects')
+process.env.STORAGE_DRIVER = 'filesystem'
+process.env.TRUSTED_PROXY_IPS = ''
+process.env.BETTER_AUTH_SECRET = 'test-auth-secret-at-least-32-characters'
+process.env.PAIRING_PEPPER = 'test-pairing-pepper-at-least-32-characters'
+
+const { createModUploads, tokenMatches } = await import('./mod-upload')
+const { app } = await import('./index')
+const { database } = await import('./database')
+const { makeJar, sha256Hex } = await import('./test-support/jar-fixture')
+
+afterAll(() => {
+	database.close()
+	rmSync(directory, { recursive: true, force: true })
+})
+
+const TOKEN = 'a'.repeat(40)
+const id = 'fabric-mc1.21.11'
+const bucketEnv = { MOD_STORAGE_BUCKET: 'test-mods' }
+const manifest = (extra: Record<string, unknown> = {}) => ({
+	id,
+	version: '0.5.0',
+	minecraft: '1.21.11',
+	loader: 'fabric',
+	loaderVersion: '0.19.5',
+	java: '21',
+	fabricApi: '0.140.0+1.21.11',
+	commit: 'abc1234def',
+	builtAt: '2026-10-20T10:00:00.000Z',
+	builtBy: 'pc',
+	extra: 'ignored',
+	...extra,
+})
+const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url')
+
+type Body = Uint8Array | ReadableStream<Uint8Array> | null
+interface PutOptions {
+	token?: string | null
+	targetId?: string
+	version?: string
+	sha?: string | null
+	manifest?: string | null
+	length?: string | null
+	query?: string
+}
+const orDefault = <T>(value: T | undefined, computed: T) => (value === undefined ? computed : value)
+function uploadHeaders(bytes: Body, options: PutOptions) {
+	const raw = bytes instanceof Uint8Array ? bytes : null
+	const wanted: [string, string | null][] = [
+		['Authorization', options.token === null ? null : `Bearer ${options.token ?? TOKEN}`],
+		['X-Content-SHA256', orDefault(options.sha, raw ? sha256Hex(raw) : null)],
+		['X-Mod-Manifest', orDefault(options.manifest, encode(manifest()))],
+		['Content-Length', orDefault(options.length, raw ? String(raw.length) : null)],
+	]
+	const headers = new Headers()
+	for (const [name, value] of wanted) if (value) headers.set(name, value)
+	return headers
+}
+
+function harness(env: Record<string, string | undefined> = {}, extra: Record<string, unknown> = {}) {
+	const client = createFakeClient()
+	const stored: string[] = []
+	let clock = 1_000_000
+	const router = createModUploads({
+		env: () => ({ ...bucketEnv, MOD_UPLOAD_TOKEN: TOKEN, ...env }),
+		client: () => client,
+		onStored: () => stored.push('stored'),
+		now: () => clock,
+		...extra,
+	})
+	const mounted = new Hono()
+	mounted.route('/downloads/upload', router)
+	return {
+		client,
+		stored,
+		advance: (ms: number) => {
+			clock += ms
+		},
+		async index() {
+			return modIndex.parse(
+				JSON.parse((client.objects.get('index.json')?.body ?? Buffer.from('{}')).toString())
+			) as ModIndex
+		},
+		put(bytes: Body, options: PutOptions = {}) {
+			const request = new Request(
+				`http://api.test/downloads/upload/${options.targetId ?? id}/${options.version ?? '0.5.0'}${options.query ?? ''}`,
+				{
+					method: 'PUT',
+					headers: uploadHeaders(bytes, options),
+					body: bytes as BodyInit | null,
+					...(bytes instanceof ReadableStream ? { duplex: 'half' } : {}),
+				}
+			)
+			return mounted.request(request)
+		},
+	}
+}
+
+const tempEntries = () =>
+	readdirSync(tmpdir()).filter(name => name.startsWith('minemories-mod-upload-') && !name.includes('test'))
+
+test('sans MOD_UPLOAD_TOKEN valide la route répond 404 et ne révèle rien', async () => {
+	const jar = makeJar()
+	for (const token of [undefined, '', 'short-token']) {
+		const h = harness({ MOD_UPLOAD_TOKEN: token })
+		const response = await h.put(jar, { token: token ?? 'x' })
+		expect(response.status).toBe(404)
+		expect(await response.json()).toEqual({ error: 'not_found' })
+		expect(response.headers.get('cache-control')).toBe('no-store')
+		expect(h.client.calls).toHaveLength(0)
+	}
+})
+
+test('un jeton absent ou faux donne 401 générique sans écho du jeton, et rien n’est journalisé', async () => {
+	const logged = spyOn(console, 'error').mockImplementation(() => undefined)
+	const h = harness()
+	const jar = makeJar()
+	for (const token of ['b'.repeat(40), 'a'.repeat(39), null]) {
+		const response = await h.put(jar, { token })
+		expect(response.status).toBe(401)
+		const text = await response.text()
+		expect(text).toBe('{"error":"unauthorized"}')
+		expect(response.headers.get('cache-control')).toBe('no-store')
+		expect(response.headers.get('access-control-allow-origin')).toBeNull()
+	}
+	expect(logged).not.toHaveBeenCalled()
+	logged.mockRestore()
+	expect(h.client.calls).toHaveLength(0)
+})
+
+test('les échecs d’authentification sont limités par adresse puis la fenêtre se rouvre', async () => {
+	const h = harness()
+	const jar = makeJar()
+	for (let i = 0; i < 10; i += 1) expect((await h.put(jar, { token: 'x'.repeat(40) })).status).toBe(401)
+	const blocked = await h.put(jar, { token: 'x'.repeat(40) })
+	expect(blocked.status).toBe(429)
+	expect(blocked.headers.get('retry-after')).toBe('60')
+	expect((await h.put(jar)).status).toBe(429)
+	h.advance(61_000)
+	expect((await h.put(jar)).status).toBe(200)
+})
+
+test('un envoi valide écrit le JAR, latest, l’index (builtBy) et le manifeste, puis nettoie le temporaire', async () => {
+	const before = tempEntries()
+	const h = harness()
+	const jar = makeJar()
+	const response = await h.put(jar)
+	expect(response.status).toBe(200)
+	expect(response.headers.get('cache-control')).toBe('no-store')
+	expect(await response.json()).toEqual({
+		ok: true,
+		targetId: id,
+		version: '0.5.0',
+		sha256: sha256Hex(jar),
+		bytes: jar.length,
+		latest: true,
+		replaced: false,
+	})
+	const index = await h.index()
+	const entry = index.targets[id]?.versions[0]
+	expect(entry).toMatchObject({ version: '0.5.0', builtBy: 'pc', commit: 'abc1234def', bytes: jar.length })
+	expect(index.targets[id]).toMatchObject({ loaderVersion: '0.19.5', fabricApi: '0.140.0+1.21.11', latest: '0.5.0' })
+	expect(h.client.objects.get(`mods/${id}/0.5.0/minemories-${id}-0.5.0.jar`)?.body.equals(jar)).toBe(true)
+	expect(h.client.objects.has(`latest/${id}.jar`)).toBe(true)
+	const sidecar = JSON.parse(h.client.objects.get(`mods/${id}/0.5.0/manifest.json`)?.body.toString() ?? '{}')
+	expect(sidecar).toMatchObject({ id, sha256: sha256Hex(jar), bytes: jar.length, builtBy: 'pc' })
+	expect(sidecar.extra).toBeUndefined()
+	expect(h.stored).toEqual(['stored'])
+	expect(tempEntries()).toEqual(before)
+})
+
+test('renvoyer les mêmes octets est idempotent, un autre contenu donne 409 sauf ?replace=1', async () => {
+	const h = harness()
+	const jar = makeJar()
+	await h.put(jar)
+	const again = await h.put(jar)
+	expect(again.status).toBe(200)
+	expect(await again.json()).toMatchObject({ ok: true, replaced: false, latest: true })
+	expect(h.stored).toEqual(['stored'])
+	const other = makeJar(['a/Other.class'])
+	const conflict = await h.put(other)
+	expect(conflict.status).toBe(409)
+	expect(await conflict.json()).toEqual({ error: 'version_exists' })
+	expect((await h.index()).targets[id]?.versions[0]?.bytes).toBe(jar.length)
+	const replaced = await h.put(other, { query: '?replace=1' })
+	expect(replaced.status).toBe(200)
+	expect(await replaced.json()).toMatchObject({ replaced: true, sha256: sha256Hex(other) })
+	expect((await h.index()).targets[id]?.versions[0]?.sha256).toBe(sha256Hex(other))
+})
+
+test('la rétention MOD_STORAGE_KEEP s’applique après un envoi sans toucher latest', async () => {
+	const h = harness({ MOD_STORAGE_KEEP: '2' })
+	for (const n of [1, 2, 3]) {
+		const version = `0.${n}.0`
+		const jar = makeJar([`v${n}/Main.class`])
+		// biome-ignore lint/performance/noAwaitInLoops: les versions doivent arriver dans l'ordre.
+		const response = await h.put(jar, {
+			version,
+			manifest: encode(manifest({ version, builtAt: `2026-10-0${n}T00:00:00.000Z` })),
+		})
+		expect(response.status).toBe(200)
+	}
+	const versions = (await h.index()).targets[id]?.versions.map(item => item.version)
+	expect(versions).toEqual(['0.3.0', '0.2.0'])
+	expect(h.client.objects.has(`mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`)).toBe(false)
+	expect(h.client.objects.has(`latest/${id}.jar`)).toBe(true)
+})
+
+test('paramètres et en-têtes invalides sont refusés avant toute écriture', async () => {
+	const h = harness()
+	const jar = makeJar()
+	const status = async (promise: Promise<Response> | Response) => (await promise).status
+	expect(await status(h.put(jar, { targetId: 'Fabric_1.21' }))).toBe(400)
+	expect(await status(h.put(jar, { version: 'v..x' }))).toBe(400)
+	expect(await status(h.put(jar, { sha: null }))).toBe(400)
+	expect(await status(h.put(jar, { sha: 'F'.repeat(64) }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: null }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: '***' }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: Buffer.from('{').toString('base64url') }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: 'A'.repeat(5000) }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: encode(manifest({ builtBy: 'laptop' })) }))).toBe(400)
+	expect(await status(h.put(jar, { manifest: encode(manifest({ commit: 'not a commit' })) }))).toBe(400)
+	expect(await status(h.put(new Uint8Array(), { sha: sha256Hex(jar) }))).toBe(400)
+	expect(await status(h.put(jar, { length: 'abc' }))).toBe(400)
+	expect(h.client.calls).toHaveLength(0)
+})
+
+test('le manifeste doit correspondre à l’URL et à lui-même', async () => {
+	const h = harness()
+	const jar = makeJar()
+	const mismatches = [
+		manifest({ id: 'forge-mc1.21.11' }),
+		manifest({ version: '0.6.0' }),
+		manifest({ loader: 'forge' }),
+		manifest({ minecraft: '1.20.1' }),
+	]
+	for (const value of mismatches) {
+		// biome-ignore lint/performance/noAwaitInLoops: quelques requêtes en série.
+		const response = await h.put(jar, { manifest: encode(value) })
+		expect(response.status).toBe(422)
+		expect(await response.json()).toEqual({ error: 'manifest_mismatch' })
+	}
+	expect(h.client.calls).toHaveLength(0)
+})
+
+test('taille : Content-Length obligatoire, plafond configurable, longueur déclarée vérifiée', async () => {
+	const h = harness({ MOD_UPLOAD_MAX_BYTES: '4000' })
+	const jar = makeJar()
+	const stream = (bytes: Uint8Array) =>
+		new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(bytes)
+				controller.close()
+			},
+		})
+	const chunked = await h.put(stream(jar), { sha: sha256Hex(jar) })
+	expect(chunked.status).toBe(411)
+	const big = makeJar(['a/Big.class'], 5000)
+	const tooBig = await h.put(big)
+	expect(tooBig.status).toBe(413)
+	const larger = await h.put(stream(jar), { sha: sha256Hex(jar), length: String(jar.length - 1) })
+	expect(larger.status).toBe(413)
+	const shorter = await h.put(stream(jar), { sha: sha256Hex(jar), length: String(jar.length + 10) })
+	expect(shorter.status).toBe(400)
+	expect(await shorter.json()).toEqual({ error: 'length_mismatch' })
+	expect(h.client.calls).toHaveLength(0)
+})
+
+test('empreinte fausse, archive invalide ou sans classe : 422 et rien n’est écrit', async () => {
+	const before = tempEntries()
+	const h = harness()
+	const jar = makeJar()
+	const wrong = await h.put(jar, { sha: 'e'.repeat(64) })
+	expect(wrong.status).toBe(422)
+	expect(await wrong.json()).toEqual({ error: 'sha256_mismatch' })
+	const text = new TextEncoder().encode('this is plainly not a jar archive')
+	for (const bytes of [text, makeJar(['fabric.mod.json'])]) {
+		// biome-ignore lint/performance/noAwaitInLoops: deux requêtes en série.
+		const response = await h.put(bytes)
+		expect(response.status).toBe(422)
+		expect(await response.json()).toEqual({ error: 'invalid_jar' })
+	}
+	expect(h.client.calls).toHaveLength(0)
+	expect(tempEntries()).toEqual(before)
+})
+
+test('une panne de stockage donne 503 avec un événement générique, sans jeton ni détail', async () => {
+	const logged = spyOn(console, 'error').mockImplementation(() => undefined)
+	const before = tempEntries()
+	const h = harness({}, { store: () => Promise.reject(new Error(`boom with ${TOKEN}`)) })
+	const response = await h.put(makeJar())
+	expect(response.status).toBe(503)
+	expect(await response.json()).toEqual({ error: 'upload_unavailable' })
+	expect(logged).toHaveBeenCalledTimes(1)
+	const line = String(logged.mock.calls[0]?.[0])
+	expect(JSON.parse(line).event).toBe('mod_upload_failed')
+	expect(line).not.toContain(TOKEN)
+	logged.mockRestore()
+	expect(tempEntries()).toEqual(before)
+})
+
+test('les mises à jour de l’index sont sérialisées et au plus deux réceptions en parallèle', async () => {
+	let active = 0
+	let peak = 0
+	const h = harness(
+		{},
+		{
+			store: async () => {
+				active += 1
+				peak = Math.max(peak, active)
+				await new Promise(resolve => setTimeout(resolve, 20))
+				active -= 1
+				return { latest: true, replaced: false, unchanged: false, index: { schema: 1, generatedAt: '', targets: {} } }
+			},
+		}
+	)
+	const jar = makeJar()
+	const responses = await Promise.all([h.put(jar), h.put(jar)])
+	expect(responses.map(response => response.status).sort()).toEqual([200, 200])
+	expect(peak).toBe(1)
+
+	const stalled: ReadableStreamDefaultController<Uint8Array>[] = []
+	const hanging = () =>
+		new ReadableStream<Uint8Array>({
+			start(controller) {
+				stalled.push(controller)
+			},
+		})
+	const pending = [
+		h.put(hanging(), { sha: sha256Hex(jar), length: String(jar.length) }),
+		h.put(hanging(), { sha: sha256Hex(jar), length: String(jar.length) }),
+	]
+	await new Promise(resolve => setTimeout(resolve, 30))
+	const busy = await h.put(jar)
+	expect(busy.status).toBe(503)
+	expect(busy.headers.get('retry-after')).toBe('5')
+	for (const controller of stalled) {
+		controller.enqueue(jar)
+		controller.close()
+	}
+	expect((await Promise.all(pending)).map(response => response.status)).toEqual([200, 200])
+})
+
+test('comparaison de jeton à temps constant : égale seulement pour le même texte', () => {
+	expect(tokenMatches(TOKEN, TOKEN)).toBe(true)
+	expect(tokenMatches(`${TOKEN}x`, TOKEN)).toBe(false)
+	expect(tokenMatches('', TOKEN)).toBe(false)
+})
+
+test('dans l’API réelle la route est désactivée par défaut, sans CORS, et exige le jeton', async () => {
+	const original = process.env.MOD_UPLOAD_TOKEN
+	try {
+		delete process.env.MOD_UPLOAD_TOKEN
+		const origin = { Origin: 'http://localhost:5173' }
+		const off = await app.request(`/downloads/upload/${id}/0.5.0`, { method: 'PUT', headers: origin })
+		expect(off.status).toBe(404)
+		process.env.MOD_UPLOAD_TOKEN = TOKEN
+		const denied = await app.request(`/downloads/upload/${id}/0.5.0`, { method: 'PUT', headers: origin })
+		expect(denied.status).toBe(401)
+		expect(denied.headers.get('access-control-allow-origin')).toBeNull()
+		const preflight = await app.request(`/downloads/upload/${id}/0.5.0`, {
+			method: 'OPTIONS',
+			headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'PUT' },
+		})
+		expect(preflight.headers.get('access-control-allow-origin')).toBeNull()
+		// La lecture publique des téléchargements n'est pas affectée.
+		expect((await app.request('/downloads/upload')).status).toBe(404)
+	} finally {
+		if (original === undefined) delete process.env.MOD_UPLOAD_TOKEN
+		else process.env.MOD_UPLOAD_TOKEN = original
+	}
+})

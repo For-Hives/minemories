@@ -20,6 +20,7 @@ type ErrorEvent =
 	| 'upload_cleanup_failed'
 	| 'request_failed'
 	| 'mod_download_failed'
+	| 'mod_upload_failed'
 	| 'diagnostics_failed'
 
 export function requestCorrelation(request: Request): string {

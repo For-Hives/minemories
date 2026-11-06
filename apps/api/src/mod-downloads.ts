@@ -127,7 +127,12 @@ export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_
 	router.get('/:targetId/:version', context =>
 		serve(context, context.req.param('targetId'), context.req.param('version'))
 	)
-	return router
+	return Object.assign(router, {
+		/** Oublie l'index en cache (après un envoi, pour que la nouvelle version soit visible tout de suite). */
+		invalidateIndex() {
+			cached = null
+		},
+	})
 }
 
 export const modDownloads = createModDownloads(() => s3ModSource)
