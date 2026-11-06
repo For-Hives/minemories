@@ -21,7 +21,7 @@ export function verifyReleaseCommit(plan, commit, root = repositoryRoot) {
 		git(['log', '-1', '--format=%s', commit]) !== `chore(release): ${plan.version} [skip ci]`
 	)
 		throw new Error('Existing release tag belongs to another source commit.')
-	const allowed = new Set(['package.json', 'bun.lock', 'CHANGELOG.md', 'mod/minemories/gradle.properties'])
+	const allowed = new Set(['package.json', 'bun.lock', 'CHANGELOG.md', 'mod/1.21.1/gradle.properties'])
 	const changed = git(['diff', '--name-only', plan.sourceCommit, commit]).split('\n')
 	if (changed.some(file => !(allowed.has(file) || packageManifestPattern.test(file))))
 		throw new Error('The release commit contains untested source changes.')

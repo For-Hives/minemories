@@ -277,7 +277,7 @@ test('parser rejects malformed, foreign and incompatible assets and ignores forg
 	expect(parseReleases(null)).toEqual([])
 })
 
-test('release matrix follows the enabled targets of config/mod-targets.json', () => {
+test('release matrix follows the enabled targets of mod/targets.json', () => {
 	expect(loaderTargets.map(target => [target.loader, target.jarName, target.loaderVersion])).toEqual([
 		['neoforge', 'minemories-neoforge-mc1.21.1.jar', '21.1.248'],
 		['fabric', 'minemories-fabric-mc1.21.1.jar', '0.19.5'],

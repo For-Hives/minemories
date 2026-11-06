@@ -14,7 +14,7 @@ import { filenameFor, repositoryRoot } from './release-utils.mjs'
 async function fixture(t, multiple = false) {
 	const root = await mkdtemp(resolve(tmpdir(), 'minemories-assets-'))
 	t.after(() => rm(root, { recursive: true, force: true }))
-	const configuration = JSON.parse(await readFile(resolve(repositoryRoot, 'config/mod-targets.json'), 'utf8'))
+	const configuration = JSON.parse(await readFile(resolve(repositoryRoot, 'mod/targets.json'), 'utf8'))
 	for (const target of configuration.targets) {
 		target.enabled =
 			target.minecraft === '1.21.1' && (target.loader === 'neoforge' || (multiple && target.loader === 'fabric'))
@@ -22,8 +22,8 @@ async function fixture(t, multiple = false) {
 	}
 	if (multiple) configuration.targets.find(target => target.id === 'fabric-mc1.21.1').loaderVersion = 'test-fixture'
 	const targets = configuration.targets.filter(target => target.enabled)
-	await mkdir(resolve(root, 'config'))
-	await writeFile(resolve(root, 'config/mod-targets.json'), JSON.stringify(configuration))
+	await mkdir(resolve(root, 'mod'))
+	await writeFile(resolve(root, 'mod/targets.json'), JSON.stringify(configuration))
 	const plan = {
 		version: '0.2.0-beta.1',
 		tag: 'mod-v0.2.0-beta.1',

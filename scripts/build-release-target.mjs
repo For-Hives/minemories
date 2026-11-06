@@ -15,7 +15,7 @@ import { verifyModArtifact } from './verify-mod-artifact.mjs'
 // :core and :common do not depend on the loader. When the Quality gates workflow already passed for this exact
 // commit, each matrix cell only checks and builds its own adapter instead of repeating their tests and analyses.
 export function releaseGradleTasks(target, version, { sharedChecksDone = false } = {}) {
-	// Ported Gradle roots (mod/minemories-<version>) have no :core or :common of their own.
+	// Ported Gradle roots (mod/<version>) have no :core or :common of their own.
 	const shared = sharedChecksDone || target.dir !== undefined
 	return [
 		'clean',

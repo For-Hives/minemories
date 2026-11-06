@@ -5,7 +5,7 @@
 			"loader": "neoforge",
 			"minecraft": "1.21.1",
 			"loaderVersion": "21.1.248",
-			"dir": "mod/minemories",
+			"dir": "mod/1.21.1",
 			"project": "neoforge",
 			"jar": "minemories-{version}.jar"
 		},
@@ -13,7 +13,7 @@
 			"loader": "fabric",
 			"minecraft": "1.21.1",
 			"loaderVersion": "0.19.5",
-			"dir": "mod/minemories",
+			"dir": "mod/1.21.1",
 			"project": "fabric",
 			"jar": "minemories-fabric-{version}.jar"
 		},
@@ -21,7 +21,7 @@
 			"loader": "forge",
 			"minecraft": "1.21.1",
 			"loaderVersion": "52.1.19",
-			"dir": "mod/minemories",
+			"dir": "mod/1.21.1",
 			"project": "forge",
 			"jar": "minemories-forge-{version}.jar"
 		},
@@ -29,7 +29,7 @@
 			"loader": "forge",
 			"minecraft": "1.20.1",
 			"loaderVersion": "47.4.26",
-			"dir": "mod/minemories-1.20.1",
+			"dir": "mod/1.20.1",
 			"project": "forge",
 			"jar": "minemories-forge-mc1.20.1-{version}.jar",
 			"loaderProperty": "forgeVersion"
@@ -38,7 +38,7 @@
 			"loader": "fabric",
 			"minecraft": "1.20.1",
 			"loaderVersion": "0.19.5",
-			"dir": "mod/minemories-1.20.1",
+			"dir": "mod/1.20.1",
 			"project": "fabric",
 			"jar": "minemories-fabric-mc1.20.1-{version}.jar",
 			"loaderProperty": "fabricLoaderVersion"
@@ -47,7 +47,7 @@
 			"loader": "fabric",
 			"minecraft": "1.21.11",
 			"loaderVersion": "0.20.1",
-			"dir": "mod/minemories-1.21.11",
+			"dir": "mod/1.21.11",
 			"project": "fabric",
 			"jar": "minemories-fabric-mc1.21.11-{version}.jar",
 			"loaderProperty": "fabricLoaderVersion"
@@ -56,7 +56,7 @@
 			"loader": "neoforge",
 			"minecraft": "1.21.11",
 			"loaderVersion": "21.11.48",
-			"dir": "mod/minemories-1.21.11",
+			"dir": "mod/1.21.11",
 			"project": "neoforge",
 			"jar": "minemories-neoforge-mc1.21.11-{version}.jar",
 			"loaderProperty": "neoForgeVersion"
@@ -65,7 +65,7 @@
 			"loader": "forge",
 			"minecraft": "1.21.11",
 			"loaderVersion": "61.2.5",
-			"dir": "mod/minemories-1.21.11",
+			"dir": "mod/1.21.11",
 			"project": "forge",
 			"jar": "minemories-forge-mc1.21.11-{version}.jar",
 			"loaderProperty": "forgeVersion"
@@ -74,7 +74,7 @@
 			"loader": "forge",
 			"minecraft": "1.19.2",
 			"loaderVersion": "43.5.2",
-			"dir": "mod/minemories-1.19.2",
+			"dir": "mod/1.19.2",
 			"project": "forge",
 			"jar": "minemories-forge-mc1.19.2-{version}.jar",
 			"loaderProperty": "forgeVersion"
@@ -83,7 +83,7 @@
 			"loader": "fabric",
 			"minecraft": "1.19.2",
 			"loaderVersion": "0.20.1",
-			"dir": "mod/minemories-1.19.2",
+			"dir": "mod/1.19.2",
 			"project": "fabric",
 			"jar": "minemories-fabric-mc1.19.2-{version}.jar",
 			"loaderProperty": "fabricLoaderVersion"
@@ -92,7 +92,7 @@
 			"loader": "forge",
 			"minecraft": "1.18.2",
 			"loaderVersion": "40.3.12",
-			"dir": "mod/minemories-1.18.2",
+			"dir": "mod/1.18.2",
 			"project": "forge",
 			"jar": "minemories-forge-mc1.18.2-{version}.jar",
 			"loaderProperty": "forgeVersion"

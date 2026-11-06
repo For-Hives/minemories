@@ -8,7 +8,7 @@ import { filenameFor } from './release-utils.mjs'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const versionPattern = '\\d+\\.\\d+\\.\\d+(?:[-+][\\w.-]+)?'
 const prefixes = Object.freeze({ neoforge: 'minemories-', fabric: 'minemories-fabric-', forge: 'minemories-forge-' })
-const targets = JSON.parse(readFileSync(resolve(root, 'config/mod-targets.json'), 'utf8')).targets
+const targets = JSON.parse(readFileSync(resolve(root, 'mod/targets.json'), 'utf8')).targets
 
 export function modArtifact(loader = 'neoforge') {
 	if (!Object.hasOwn(prefixes, loader)) throw new Error('Unknown mod loader.')
@@ -62,7 +62,7 @@ export async function packageAllMods(repository = root) {
 			Object.keys(prefixes).map(async loader => [
 				loader,
 				await packageMod(
-					resolve(repository, `mod/minemories/${loader}/build/libs`),
+					resolve(repository, `mod/1.21.1/${loader}/build/libs`),
 					resolve(repository, `build/mod-loaders/${loader}`),
 					{ loader }
 				),
@@ -74,5 +74,5 @@ export async function packageAllMods(repository = root) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	if (process.argv[2] === '--all') await packageAllMods()
 	else if (process.argv.length > 2) throw new Error('Usage: package-mod.mjs [--all]')
-	else await packageMod(resolve(root, 'mod/minemories/neoforge/build/libs'), resolve(root, 'apps/web/public/downloads'))
+	else await packageMod(resolve(root, 'mod/1.21.1/neoforge/build/libs'), resolve(root, 'apps/web/public/downloads'))
 }

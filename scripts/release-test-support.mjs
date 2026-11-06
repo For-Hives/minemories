@@ -32,13 +32,9 @@ export async function releaseFixture(t, message = 'fix(mod): repair capture uplo
 			)
 		})
 	)
-	await mkdir(resolve(root, 'config'))
-	await copyFile(resolve(repositoryRoot, 'config/mod-targets.json'), resolve(root, 'config/mod-targets.json'))
-	await mkdir(resolve(root, 'mod/minemories'), { recursive: true })
-	await writeFile(
-		resolve(root, 'mod/minemories/gradle.properties'),
-		'org.gradle.caching=true\nmod_version=0.1.1-dev.1\n'
-	)
+	await mkdir(resolve(root, 'mod/1.21.1'), { recursive: true })
+	await copyFile(resolve(repositoryRoot, 'mod/targets.json'), resolve(root, 'mod/targets.json'))
+	await writeFile(resolve(root, 'mod/1.21.1/gradle.properties'), 'org.gradle.caching=true\nmod_version=0.1.1-dev.1\n')
 	await mkdir(resolve(root, 'scripts'))
 	await Promise.all(
 		['sync-release-versions.mjs', 'release-utils.mjs'].map(file =>

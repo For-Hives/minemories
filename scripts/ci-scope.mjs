@@ -18,7 +18,7 @@ const rules = {
 		/^apps\/web\//,
 		/^packages\/api-contract\//,
 		// The versions page reads the loader list.
-		/^config\/mod-targets\.json$/,
+		/^mod\/targets\.json$/,
 		/^scripts\/(hero-assets\/|build-web|prerender-web)/,
 	],
 	api: [
@@ -29,7 +29,7 @@ const rules = {
 	],
 	mod: [
 		/^mod\//,
-		/^config\/mod-(targets|matrix)\.json$/,
+		/^mod\/(targets|matrix)\.json$/,
 		/^\.github\/workflows\/(automatic-release|mod-release)\.yml$/,
 		/^scripts\/(gradle|mod-matrix|package-mod|verify-mod|release-|sync-release|build-release|collect-release|download-release|plan-release|prepare-release|publish-release)/,
 	],

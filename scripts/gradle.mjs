@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // MINEMORIES_MOD_DIR selects another Gradle root (a port to another Minecraft version), relative to the repository.
-const modDir = resolve(root, process.env.MINEMORIES_MOD_DIR ?? 'mod/minemories')
+const modDir = resolve(root, process.env.MINEMORIES_MOD_DIR ?? 'mod/1.21.1')
 const windows = process.platform === 'win32'
 // CI runners are single-use: a daemon or a stored configuration only adds overhead there.
 const ciFlags = process.env.CI ? ['-Dorg.gradle.daemon=false', '--no-configuration-cache'] : []
