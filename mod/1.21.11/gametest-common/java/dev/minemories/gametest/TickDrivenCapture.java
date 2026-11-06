@@ -31,6 +31,10 @@ public final class TickDrivenCapture {
       switch (step) {
         case MENU -> {
           mc.options.getSoundSourceOptionInstance(SoundSource.MASTER).set(0.0);
+          // A window without focus pauses the game and its integrated server: the world never finishes loading (and
+          // a headless machine never has focus).
+          mc.options.pauseOnLostFocus = false;
+          mc.options.enableVsync().set(false);
           // A fresh profile opens the accessibility onboarding before the title screen.
           if (mc.screen instanceof AccessibilityOnboardingScreen) {
             mc.options.onboardAccessibility = false;
