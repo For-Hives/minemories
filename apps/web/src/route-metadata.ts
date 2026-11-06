@@ -64,6 +64,14 @@ const metadataMessages: PageMetadata[] = [
 		language: 'fr',
 	},
 	{
+		path: '/telechargements',
+		title: 'All downloads — Minemories',
+		description:
+			'Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
 		path: '/versions',
 		title: 'Mod versions — Minemories',
 		description:

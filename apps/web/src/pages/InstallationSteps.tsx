@@ -1,287 +1,102 @@
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
-import { catalogLinks, fabricApiUrl, guideUrl, installerUrl, javaUrl } from './installation-loaders'
-import type { System } from './installation-state'
+import { CopyText, exports, folders, InstallerLine, LoaderInstaller, OtherLaunchers } from './InstallationWalkthrough'
+import { catalogLinks, fabricApiUrl, javaUrl } from './installation-loaders'
+import type { StepId, System } from './installation-state'
 import { ModDownload } from './ModDownload'
 import type { LoaderTarget } from './mod-releases'
 import { WindowsScreenshot } from './WindowsScreenshot'
 
-export const stepNames = [
-	'Prepare',
-	'Install the loader',
-	'Download the mod',
-	'Place the file',
-	'Check in game',
-	'Create a memory',
-]
-const folders: Record<System, string> = {
-	windows: '%APPDATA%\\.minecraft-minemories',
-	mac: '~/Library/Application Support/minecraft-minemories',
-	linux: '~/.minecraft-minemories',
+export const stepTitles: Record<StepId, string> = {
+	system: 'Which computer do you play on?',
+	minecraft: 'Which Minecraft version do you play?',
+	loader: 'Which mod loader do you use?',
+	install: 'Install the loader',
+	download: 'Download the mod',
+	place: 'Place the file',
+	verify: 'Check in game',
+	memory: 'Create a memory',
 }
-const exports: Record<System, string> = {
-	windows: '%USERPROFILE%\\export',
-	mac: '~/export',
-	linux: '~/export',
+/** The screens that explain how to install, after the questions. */
+export const installStepIds: StepId[] = ['install', 'download', 'place', 'verify', 'memory']
+
+/** One sentence saying what this screen gets you. */
+function Goal({ children }: { children: ReactNode }) {
+	return <p className="install-goal">{children}</p>
 }
 
-export function CopyText({ text, label }: { text: string; label: string }) {
-	const { t } = useI18n()
-	const [message, setMessage] = useState('')
+/** The Windows screenshots of the validated walkthrough, folded away until asked for. */
+function Screenshots({ show, children }: { show: boolean; children: ReactNode }) {
+	if (!show) return null
 	return (
-		<div className="install-copy">
-			<code>{text}</code>
-			<button
-				type="button"
-				className={buttonOutline}
-				aria-label={t(label)}
-				onClick={async () => {
-					try {
-						await navigator.clipboard.writeText(text)
-						setMessage('Copied!')
-					} catch {
-						setMessage('Select the text above to copy it.')
-					}
-				}}
-			>
-				<T message={'Copy'} />
-			</button>
-			{message && <span role="status">{t(message)}</span>}
-		</div>
+		<details>
+			<summary>
+				<T message={'Show the screenshots'} />
+			</summary>
+			{children}
+		</details>
 	)
 }
 
-function PrepareStep({ target }: { target: LoaderTarget }) {
+function UsualWorld() {
 	return (
-		<>
+		<details>
+			<summary>
+				<T message={'I want to use my usual world or server'} />
+			</summary>
 			<p>
-				<T message={'You need'} />{' '}
-				<strong>
-					<T message={'Minecraft Java Edition on a computer'} />
-				</strong>
-				<T message={'. The mod is not available for Bedrock, consoles or mobile devices.'} />
-			</p>
-			<div className="install-note">
-				<strong>
-					Minecraft Java Edition {target.minecraft} + {target.name} {target.loaderVersion}
-				</strong>
-				<p>
-					<T
-						message={
-							'A loader lets the game load mods, and the JAR you download must match it. Every published version, and the Quilt note, are on'
-						}
-					/>{' '}
-					<Link to="/versions">
-						<T message={'Mod versions'} />
-					</Link>
-					<T message={'.'} />
-				</p>
-			</div>
-			<p>
-				<T message={'To discover Minemories, start in a'} />{' '}
-				<strong>
-					<T message={'new test world'} />
-				</strong>
 				<T
 					message={
-						'. You can export a capture without an account; to view it on the site, link the mod to your private gallery.'
+						'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use the Minecraft version and loader you chose above (Quilt uses the Fabric JAR). Otherwise, ask its administrator for help.'
 					}
 				/>
 			</p>
-			<details>
-				<summary>
-					<T message={'I want to use my usual world or server'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use the Minecraft version and loader you chose above (Quilt uses the Fabric JAR). Otherwise, ask its administrator for help.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'Minemories installs on your computer, not on the server. Check the server rules before capturing.'
-						}
-					/>
-				</p>
-			</details>
-		</>
+			<p>
+				<T
+					message={'Minemories installs on your computer, not on the server. Check the server rules before capturing.'}
+				/>
+			</p>
+		</details>
 	)
 }
 
-function LoaderInstaller({
-	target,
-	system,
-	walkthrough,
-}: {
-	target: LoaderTarget
-	system: System
-	walkthrough: boolean
-}) {
-	const { t } = useI18n()
-	const fabric = target.loader === 'fabric'
+function InstallStep({ target, system, walkthrough }: { target: LoaderTarget; system: System; walkthrough: boolean }) {
 	return (
 		<>
+			<Goal>
+				<T message={'Install {loader} so that Minecraft can load mods.'} params={{ loader: target.name }} />
+			</Goal>
 			<ol>
-				<li>
-					<T message={'In Minecraft Launcher, open'} />{' '}
-					<strong>
-						<T message={'Installations → New installation'} />
-					</strong>
-					<T message={', choose version'} /> <strong>release {target.minecraft}</strong>{' '}
-					<T message={'and launch it once. Close the game and launcher.'} />
-					{walkthrough && <WindowsScreenshot id="minecraftVersion" />}
-				</li>
 				<li>
 					<T message={'Install'} />{' '}
 					<a href={javaUrl(target)}>
 						<T message={'Java {version} (Temurin, official site)'} params={{ version: target.java }} />
-					</a>{' '}
+					</a>
+					<T message={', if you do not have it.'} />
+				</li>
+				<li>
+					<InstallerLine target={target} />
+				</li>
+				<li>
 					<T
 						message={
-							"if you do not have it. Choose your system, JDK {version} and your computer's architecture: x64 for Intel/AMD, aarch64 for Apple Silicon. The Java bundled with Minecraft is not always available to open an installer."
+							'Give the new profile its own game folder, such as the one below, then launch it once and close the game.'
 						}
-						params={{ version: target.java }}
 					/>
-					{walkthrough && <WindowsScreenshot id="java21" />}
-				</li>
-				<li>
-					<T message={'Download'} />{' '}
-					<a href={installerUrl(target)}>
-						<T
-							message={'the {loader} {version} installer'}
-							params={{ loader: target.name, version: target.loaderVersion }}
-						/>
-					</a>
-					<T message={'. Open'} />{' '}
-					<em>
-						<T message={'this'} />
-					</em>{' '}
-					{fabric ? (
-						<T
-							message={
-								'file with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.'
-							}
-							params={{ minecraft: target.minecraft, version: target.loaderVersion }}
-						/>
-					) : (
-						<>
-							<T message={'file with Java, select'} /> <strong>Install client</strong>
-							<T message={', then confirm. Wait for the success message.'} />
-						</>
-					)}
-					{walkthrough && <WindowsScreenshot id="neoforge" />}
-				</li>
-				<li>
-					<T message={'Reopen Minecraft Launcher. Under'} /> <strong>Installations</strong>
-					<T message={', enable display of'} />{' '}
-					<strong>
-						<T message={'Modded'} />
-					</strong>{' '}
-					<T message={'versions if necessary. Edit the modded installation created using'} />{' '}
-					<strong>
-						<T message={'… → Edit → More options'} />
-					</strong>
-					<T message={'. Check that its version contains'} /> <strong>{target.loaderVersion}</strong>.
-				</li>
-				<li>
-					<T message={'Under'} />{' '}
-					<strong>
-						<T message={'Game Directory'} />
-					</strong>
-					<T message={', choose a new folder dedicated to Minemories using'} />{' '}
-					<strong>
-						<T message={'Browse'} />
-					</strong>
-					<T message={'. For example:'} />
 				</li>
 			</ol>
 			<CopyText text={folders[system]} label="Copy the suggested game folder" />
-			<p className="install-caption">
-				{system === 'windows'
-					? t("Paste %APPDATA% into File Explorer's address bar, then create the .minecraft-minemories folder.")
-					: t(
-							'The ~ symbol means your user directory. Create the suggested folder in your file manager, then select it in the launcher.'
-						)}
-			</p>
-			{walkthrough && <WindowsScreenshot id="gameDirectory" />}
-			<p>
-				<T message={'Save, launch'} />{' '}
-				<strong>
-					<T message={'this installation'} />
-				</strong>
-				<T message={'once, then close Minecraft. This creates the folder'} /> <code>mods</code>
-				<T
-					message={'. If Java or the loader gets stuck, open the help at the bottom of this page before continuing.'}
-				/>
-			</p>
-			<p className="install-caption">
-				<a href={guideUrl(target)}>
-					<T message={'Official guide for {loader}'} params={{ loader: target.name }} />
-				</a>
-				<T message={'. The Minecraft Launcher walkthrough still needs in-game validation with the distributed JAR.'} />
-			</p>
+			<details>
+				<summary>
+					<T message={'Detailed walkthrough with the Minecraft Launcher'} />
+				</summary>
+				<LoaderInstaller target={target} system={system} walkthrough={walkthrough} />
+			</details>
+			<OtherLaunchers target={target} />
+			<UsualWorld />
 		</>
-	)
-}
-
-function OtherLaunchers({ target }: { target: LoaderTarget }) {
-	return (
-		<details className="install-launchers">
-			<summary>
-				<T message={'I use CurseForge, Modrinth App or another launcher'} />
-			</summary>
-			<h4>CurseForge</h4>
-			<ol>
-				<li>
-					<T message={'Open'} /> <a href="https://www.curseforge.com/download/app">CurseForge</a>
-					<T message={', choose Minecraft, then'} />{' '}
-					<strong>
-						<T message={'Create Custom Profile'} />
-					</strong>
-					.
-				</li>
-				<li>
-					<T message={'Name it Minemories, choose'} /> <strong>Minecraft {target.minecraft}</strong>
-					<T message={', type'} /> <strong>{target.name}</strong> <T message={'and version'} />{' '}
-					<strong>{target.loaderVersion}</strong>
-					<T message={'. For an existing compatible modpack, duplicate its profile instead and keep its mods.'} />
-				</li>
-			</ol>
-			<h4>Modrinth App</h4>
-			<ol>
-				<li>
-					<T message={'Open'} /> <a href="https://modrinth.com/app">Modrinth App</a>{' '}
-					<T message={'and sign in to your Minecraft account.'} />
-				</li>
-				<li>
-					<T message={'Create an instance running'} /> <strong>Minecraft {target.minecraft}</strong>{' '}
-					<T message={'with'} /> <strong>{target.name}</strong>
-					<T message={'. In its settings, select loader'} /> <strong>{target.loaderVersion}</strong>
-					<T message={'. For an existing compatible modpack, duplicate its instance and keep its mods.'} />
-				</li>
-			</ol>
-			<h4>Prism Launcher, ATLauncher, GDLauncher, MultiMC</h4>
-			<p>
-				<T message={'Create a'} /> <strong>Minecraft {target.minecraft}</strong>{' '}
-				<T message={'instance and add loader'} />{' '}
-				<strong>
-					{target.name} {target.loaderVersion}
-				</strong>
-				<T message={'. Buttons vary between applications.'} />
-			</p>
-			<p className="install-caption">
-				<T
-					message={
-						'Launch the instance once, then close the game. If your launcher does not offer these exact versions, do not choose a random alternative: use the Minecraft Launcher walkthrough or ask for help.'
-					}
-				/>
-			</p>
-		</details>
 	)
 }
 
@@ -289,7 +104,7 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 	const catalogs = catalogLinks()
 	return (
 		<>
-			<p>
+			<Goal>
 				{catalogs.length > 0 ? (
 					<T
 						message={
@@ -297,13 +112,9 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 						}
 					/>
 				) : (
-					<T
-						message={
-							'The JAR is the mod file. It is not yet published in the CurseForge and Modrinth catalogs: download it here, then place it in your game’s mods folder.'
-						}
-					/>
+					<T message={'Download the Minemories JAR: the single file that adds the mod to your game.'} />
 				)}
-			</p>
+			</Goal>
 			{catalogs.length > 0 && (
 				<p className="install-catalogs">
 					{catalogs.map(catalog => (
@@ -313,20 +124,27 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 					))}
 				</p>
 			)}
-			<ModDownload target={target} />
+			<ModDownload target={target} primary={false} />
 			{target.fabricApi && (
 				<p className="install-caption">
 					<a href={fabricApiUrl(target)}>Fabric API {target.fabricApi}</a>
 				</p>
 			)}
-			{walkthrough && <WindowsScreenshot id="jarDownload" />}
-			<p>
-				<T
-					message={
-						'The Minemories JAR is copied into the game. Only the loader installer from the previous step runs with Java.'
-					}
-				/>
-			</p>
+			<details>
+				<summary>
+					<T message={'Do I run this file?'} />
+				</summary>
+				<p>
+					<T
+						message={
+							'The Minemories JAR is copied into the game. Only the loader installer from the previous step runs with Java.'
+						}
+					/>
+				</p>
+			</details>
+			<Screenshots show={walkthrough}>
+				<WindowsScreenshot id="jarDownload" />
+			</Screenshots>
 		</>
 	)
 }
@@ -335,24 +153,20 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 	const { t } = useI18n()
 	return (
 		<>
+			<Goal>
+				<strong>
+					<T message={'Close Minecraft completely'} />
+				</strong>{' '}
+				<T message={'before copying the file.'} />
+			</Goal>
 			{catalogLinks().length > 0 && (
 				<p className="install-caption">
 					<T message={'Installed from CurseForge or Modrinth? The app already placed the file: go to the next step.'} />
 				</p>
 			)}
-			<p>
-				<strong>
-					<T message={'Close Minecraft completely'} />
-				</strong>{' '}
-				<T message={'before copying the file.'} />
-			</p>
 			<ol>
 				<li>
-					<T
-						message={
-							'In your launcher, open the folder of the profile configured in step 2: in Minecraft Launcher, click the folder icon of its installation; in CurseForge or Modrinth App, use the folder button or the menu of the profile. Check that this is the dedicated game directory you chose.'
-						}
-					/>
+					<T message={"Open the profile's folder from your launcher (the folder icon on its installation)."} />
 				</li>
 				<li>
 					<T message={'Open the subfolder'} /> <code>mods</code>
@@ -376,12 +190,26 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 				<strong>　 └─ minemories-{target.id}-X.Y.Z.jar</strong>
 				{target.fabricApi && <span>　 └─ fabric-api-{target.fabricApi}.jar</span>}
 			</fieldset>
-			{screenshots && <WindowsScreenshot id="modsFolder" />}
-			<p>
-				<T message={'The file stays a'} /> <code>.jar</code> <T message={': do not extract it, run it or put it in'} />{' '}
-				<code>saves</code>
-				<T message={'. There is nothing to install on the server.'} />
-			</p>
+			<details>
+				<summary>
+					<T message={'I cannot find the profile folder'} />
+				</summary>
+				<p>
+					<T
+						message={
+							'In your launcher, open the folder of the profile configured in the loader step: in Minecraft Launcher, click the folder icon of its installation; in CurseForge or Modrinth App, use the folder button or the menu of the profile. Check that this is the dedicated game directory you chose.'
+						}
+					/>
+				</p>
+				<p>
+					<T message={'The file stays a'} /> <code>.jar</code>{' '}
+					<T message={': do not extract it, run it or put it in'} /> <code>saves</code>
+					<T message={'. There is nothing to install on the server.'} />
+				</p>
+			</details>
+			<Screenshots show={screenshots}>
+				<WindowsScreenshot id="modsFolder" />
+			</Screenshots>
 		</>
 	)
 }
@@ -389,6 +217,9 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 function VerifyStep({ target, screenshots }: { target: LoaderTarget; screenshots: boolean }) {
 	return (
 		<>
+			<Goal>
+				<T message={'Start the game and check that Minemories is there.'} />
+			</Goal>
 			<ol>
 				<li>
 					<T message={'Restart Minecraft from the launcher, using the'} />{' '}
@@ -410,56 +241,35 @@ function VerifyStep({ target, screenshots }: { target: LoaderTarget; screenshots
 				<strong>
 					<T message={'Can you see the Minemories menu? The installation is recognized.'} />
 				</strong>
-				<p>
-					<T message={'The next step also checks that capturing works.'} />
-				</p>
 			</div>
-			{screenshots && (
-				<>
-					<WindowsScreenshot id="modsList" />
-					<WindowsScreenshot id="minemoriesMenu" />
-				</>
-			)}
-			<p>
-				<T message={'If M opens something else, go to'} />{' '}
-				<strong>
-					<T message={'Options → Controls → Key Binds → Minemories'} />
-				</strong>{' '}
-				<T
-					message={'and choose an unused key. You can also find the Minemories button in the pause menu or options.'}
-				/>
-			</p>
+			<details>
+				<summary>
+					<T message={'M opens another menu, or the command is unknown'} />
+				</summary>
+				<p>
+					<T message={'If M opens something else, go to'} />{' '}
+					<strong>
+						<T message={'Options → Controls → Key Binds → Minemories'} />
+					</strong>{' '}
+					<T
+						message={'and choose an unused key. You can also find the Minemories button in the pause menu or options.'}
+					/>
+				</p>
+			</details>
+			<Screenshots show={screenshots}>
+				<WindowsScreenshot id="modsList" />
+				<WindowsScreenshot id="minemoriesMenu" />
+			</Screenshots>
 		</>
 	)
 }
 
-function MemoryStep({ system, screenshots }: { system: System; screenshots: boolean }) {
-	const { t } = useI18n()
-
+function GalleryDetails() {
 	return (
-		<>
-			<p>
-				<T message={'For your first attempt, approach a small build and wait for terrain to load. Open chat with'} />{' '}
-				<kbd>T</kbd>
-				<T message={', paste this command, then press Enter:'} />
-			</p>
-			<CopyText text="/minemories export 16" label="Copy the first capture command" />
-			<p>
-				<T
-					message={
-						'Wait for the export completion message. The number 16 means a radius of 16 blocks: this small capture lets you check the result before capturing a large area.'
-					}
-				/>
-			</p>
-			{screenshots && <WindowsScreenshot id="localCapture" />}
-			<p>
-				<T message={'Open the folder below'} />{' '}
-				{system === 'windows'
-					? t("by pasting this path into File Explorer's address bar")
-					: t('using your file manager (~ means your user directory)')}
-				<T message={', then find'} /> <strong>capture.glb</strong> :
-			</p>
-			<CopyText text={exports[system]} label="Copy the first memory folder" />
+		<details>
+			<summary>
+				<T message={'Find the memory in my private gallery'} />
+			</summary>
 			<p>
 				<T
 					message={
@@ -467,84 +277,112 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 					}
 				/>
 			</p>
-			{screenshots && <WindowsScreenshot id="viewer" />}
-			<div>
-				<h4>
-					<T message={'Find the memory in my private gallery'} />
-				</h4>
-				<ol>
-					<li>
-						<Link to="/register" target="_blank">
-							<T message={'Create your account'} />
-						</Link>{' '}
-						<T message={'or'} />{' '}
-						<Link to="/login" target="_blank">
-							<T message={'sign in'} />
-						</Link>
-						<T message={', then open'} />{' '}
-						<Link to="/gallery" target="_blank">
-							<T message={'My gallery'} />
-						</Link>
-						.
-					</li>
-					<li>
-						<T
-							message={
-								'Generate the six-digit pairing code. In Minecraft, press M, type the code and click “Connect”. The code expires after five minutes: generate another if needed.'
-							}
-						/>
-					</li>
-					<li>
-						<T message={'Click'} />{' '}
-						<strong>
-							<T message={'Take a memory'} />
-						</strong>{' '}
-						<T
-							message={
-								'in the M menu. Once your account is connected, the memory is also sent: wait for confirmation, then check that it appears in the gallery.'
-							}
-						/>
-					</li>
-				</ol>
+			<ol>
+				<li>
+					<Link to="/register" target="_blank">
+						<T message={'Create your account'} />
+					</Link>{' '}
+					<T message={'or'} />{' '}
+					<Link to="/login" target="_blank">
+						<T message={'sign in'} />
+					</Link>
+					<T message={', then open'} />{' '}
+					<Link to="/gallery" target="_blank">
+						<T message={'My gallery'} />
+					</Link>
+					.
+				</li>
+				<li>
+					<T
+						message={
+							'Generate the six-digit pairing code. In Minecraft, press M, type the code and click “Connect”. The code expires after five minutes: generate another if needed.'
+						}
+					/>
+				</li>
+				<li>
+					<T message={'Click'} />{' '}
+					<strong>
+						<T message={'Take a memory'} />
+					</strong>{' '}
+					<T
+						message={
+							'in the M menu. Once your account is connected, the memory is also sent: wait for confirmation, then check that it appears in the gallery.'
+						}
+					/>
+				</li>
+			</ol>
+			<p>
+				<T
+					message={
+						'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can turn them off with “Auto memories” in M. Without a linked account, they stay on your computer.'
+					}
+				/>
+			</p>
+		</details>
+	)
+}
+
+function MemoryStep({ system, screenshots }: { system: System; screenshots: boolean }) {
+	const { t } = useI18n()
+	return (
+		<>
+			<Goal>
+				<T message={'Capture a small build, then find the file on your computer.'} />
+			</Goal>
+			<ol>
+				<li>
+					<T message={'Approach a small build and wait for terrain to load. Open chat with'} /> <kbd>T</kbd>
+					<T message={', paste this command, then press Enter:'} />
+					<CopyText text="/minemories export 16" label="Copy the first capture command" />
+				</li>
+				<li>
+					<T message={'Open the folder below'} />{' '}
+					{system === 'windows'
+						? t("by pasting this path into File Explorer's address bar")
+						: t('using your file manager (~ means your user directory)')}
+					<T message={', then find'} /> <strong>capture.glb</strong> :
+					<CopyText text={exports[system]} label="Copy the first memory folder" />
+				</li>
+			</ol>
+			<details>
+				<summary>
+					<T message={'What does 16 mean?'} />
+				</summary>
 				<p>
 					<T
 						message={
-							'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can turn them off with “Auto memories” in M. Without a linked account, they stay on your computer.'
+							'Wait for the export completion message. The number 16 means a radius of 16 blocks: this small capture lets you check the result before capturing a large area.'
 						}
 					/>
 				</p>
-			</div>
-			<p className="install-caption">
-				<T message={"The export folder can be changed in the mod's advanced settings."} />{' '}
-				<Link to="/fonctionnement">
-					<T message={'Learn more about captures and sharing'} />
-				</Link>
-				.
-			</p>
+				<p className="install-caption">
+					<T message={"The export folder can be changed in the mod's advanced settings."} />
+				</p>
+			</details>
+			<GalleryDetails />
+			<Screenshots show={screenshots}>
+				<WindowsScreenshot id="localCapture" />
+				<WindowsScreenshot id="viewer" />
+			</Screenshots>
 		</>
 	)
 }
 
-export function InstallationStep({ step, system, target }: { step: number; system: System; target: LoaderTarget }) {
-	// The screenshots show the validated walkthrough: Windows, Minecraft Launcher, NeoForge 1.21.1.
+/** The body of one of the five installation screens; the Windows screenshots show the validated walkthrough only. */
+export function InstallationStep({ step, system, target }: { step: StepId; system: System; target: LoaderTarget }) {
 	const screenshots = system === 'windows' && target.loader === 'neoforge' && target.minecraft === '1.21.1'
 	switch (step) {
-		case 0:
-			return <PrepareStep target={target} />
-		case 1:
-			return (
-				<>
-					<LoaderInstaller target={target} system={system} walkthrough={screenshots} />
-					<OtherLaunchers target={target} />
-				</>
-			)
-		case 2:
+		case 'install':
+			return <InstallStep target={target} system={system} walkthrough={screenshots} />
+		case 'download':
 			return <DownloadStep target={target} walkthrough={screenshots} />
-		case 3:
+		case 'place':
 			return <FileStep target={target} screenshots={screenshots} />
-		case 4:
+		case 'verify':
 			return <VerifyStep target={target} screenshots={screenshots} />
-		default:
+		case 'memory':
 			return <MemoryStep system={system} screenshots={screenshots} />
+		default:
+			return null
 	}
 }

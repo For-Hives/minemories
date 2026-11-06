@@ -6,6 +6,7 @@ export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
 	{ to: '/fonctionnement', label: 'How it works' },
 	{ to: '/installation', label: 'Install the mod' },
+	{ to: '/telechargements', label: 'All downloads' },
 	{ to: '/faq', label: 'FAQ' },
 ]
 
