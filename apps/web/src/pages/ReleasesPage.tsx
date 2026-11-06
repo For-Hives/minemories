@@ -4,13 +4,13 @@ import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
-import { releasesUrl } from './mod-releases'
+import { indexUrl } from './mod-releases'
 import { ReleaseCard } from './ReleaseCard'
 import { useModReleases } from './useModReleases'
 import './releases.css'
 
 export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
-	const { releases, status, hasMore, retry, loadMore } = useModReleases()
+	const { releases, status, retry } = useModReleases()
 	const { t } = useI18n()
 	const { hash } = useLocation()
 	// The release named in the URL is opened and scrolled to once: loading older pages must not jump back to it.
@@ -28,7 +28,7 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 			eyebrow="MINEMORIES · RELEASES"
 			title={t(changelog ? 'releases.changelog.title' : 'Mod versions')}
 			lead={t(
-				'The right file for your Minecraft profile, and what changes in each release. Direct downloads from GitHub.'
+				'The right file for your Minecraft profile, with its size and checksum. Direct downloads from Minemories.'
 			)}
 		>
 			<nav className="mm-release-tabs" aria-label={t('Downloads and updates')}>
@@ -45,7 +45,7 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 				</p>
 				<p className="mm-release-muted">
 					{t(
-						'Automatic prereleases pass CI checks; this does not guarantee an in-game test of every published JAR. Read the notes and keep a backup of your world.'
+						'Prereleases are built automatically; this does not guarantee an in-game test of every published JAR. Keep a backup of your world.'
 					)}
 				</p>
 			</aside>
@@ -57,29 +57,17 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 			{status === 'loading' && <LoadingSkeleton label={t('Loading releases…')} />}
 			{status === 'error' && (
 				<div className="mm-release-feedback" role="alert">
-					<p>
-						{t(
-							'GitHub is unavailable or temporarily rate-limiting requests. Releases already shown remain available to download.'
-						)}
-					</p>
+					<p>{t('The list of versions could not be loaded. Try again in a moment.')}</p>
 					<button type="button" className={buttonOutline} onClick={retry}>
 						{t('Retry')}
 					</button>
 				</div>
 			)}
-			{status === 'ready' && releases.length === 0 && (
-				<p role="status">{t('No compatible releases in this part of the history.')}</p>
-			)}
-			{status === 'ready' && hasMore && (
-				<button className={buttonOutline} type="button" onClick={loadMore}>
-					{t('Load older releases')}
-				</button>
-			)}
-			<p className="mm-release-source">
-				<a href={releasesUrl}>{t('All releases on GitHub ↗')}</a>
-			</p>
+			{status === 'ready' && releases.length === 0 && <p role="status">{t('No version is published yet.')}</p>}
 			<noscript>
-				<p>{t('Enable JavaScript to view the history here, or open GitHub releases directly above.')}</p>
+				<p>
+					{t('Enable JavaScript to see the available versions here.')} <a href={indexUrl}>index.json</a>
+				</p>
 			</noscript>
 		</ContentLayout>
 	)

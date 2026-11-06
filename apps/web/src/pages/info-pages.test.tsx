@@ -107,7 +107,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('de', auto)).toContain('„Auto-Fotos“')
 })
 
-test('privacy page explains mod diagnostics and GitHub requests and keeps the web consent control', () => {
+test('privacy page explains mod diagnostics and download requests and keeps the web consent control', () => {
 	vi.stubEnv('VITE_WEB_DIAGNOSTICS_DSN', 'https://public@ingest.example/12')
 	try {
 		mountEnglish(<LegalPage kind="privacy" />)
@@ -116,15 +116,15 @@ test('privacy page explains mod diagnostics and GitHub requests and keeps the we
 		expect(text).toContain('nothing is ever sent before you pair the game')
 		expect(text).toContain('at most eight pending reports, for at most seven days')
 		expect(text).toContain('M → Settings → Privacy → Diagnostics')
-		expect(screen.getByRole('heading', { name: 'Release list from GitHub' })).toBeTruthy()
-		expect(text).toContain('GitHub therefore receives your IP address')
+		expect(screen.getByRole('heading', { name: 'Mod download list' })).toBeTruthy()
+		expect(text).toContain('which receives your IP address like any request to the service')
 		expect(screen.getByRole('checkbox', { name: 'Allow public-page diagnostics' })).toBeTruthy()
 	} finally {
 		vi.unstubAllEnvs()
 	}
 })
 
-test('French privacy page translates the new mod diagnostics and GitHub sections', () => {
+test('French privacy page translates the new mod diagnostics and download list sections', () => {
 	renderUi(
 		<I18nProvider initialLocale="fr">
 			<MemoryRouter>
@@ -133,8 +133,8 @@ test('French privacy page translates the new mod diagnostics and GitHub sections
 		</I18nProvider>
 	)
 	expect(screen.getByRole('heading', { name: 'Diagnostics dans le mod Minecraft' })).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'Liste des versions depuis GitHub' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Liste des téléchargements du mod' })).toBeTruthy()
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('rien n’est jamais envoyé avant d’avoir appairé le jeu')
-	expect(text).toContain('GitHub reçoit donc ton adresse IP')
+	expect(text).toContain('qui reçoit ton adresse IP comme pour toute requête au service')
 })
