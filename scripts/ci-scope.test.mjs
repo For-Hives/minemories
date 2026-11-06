@@ -23,7 +23,7 @@ test('a mod change runs the mod gate only', () => {
 	only(['mod/shared/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
 	only(['mod/targets.json'], 'web', 'mod')
 	only(['scripts/package-mod.mjs'], 'mod')
-	only(['mod/matrix.json', 'scripts/mod-matrix.mjs'], 'mod')
+	only(['mod/targets.json', 'scripts/mod/cli.mjs'], 'web', 'mod')
 	only(['mod/1.19.2/forge/build.gradle', 'mod/shared/core/src/main/java/dev/minemories/core/GlbScene.java'], 'mod')
 	only(['.github/workflows/mod-release.yml'], 'mod')
 })

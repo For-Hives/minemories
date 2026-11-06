@@ -138,7 +138,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Every other Minecraft version and loader of mod/matrix.json (the 1.21.1 root is built by `mod`). Any mod change, shared
+  # Every other Minecraft version and loader of mod/targets.json (the 1.21.1 root is built by `mod`). Any mod change, shared
   # core and common included, compiles and checks each of them, so a port never silently stops building.
   mod-cells:
     needs: changes
@@ -153,7 +153,7 @@ jobs:
           node-version: 26
       - name: List the matrix cells
         id: cells
-        run: node scripts/mod-matrix.mjs ci
+        run: node scripts/mod/cli.mjs ci
 
   mod-matrix:
     needs: mod-cells
