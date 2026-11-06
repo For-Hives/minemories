@@ -1361,5 +1361,15 @@
 	"the {loader} {version} installer": "установщик {loader} {version}",
 	"this installation": "эта установка",
 	"versions if necessary. Edit the modded installation created using": "версии, если нужно. Измените установку с модами, созданную с помощью",
-	"Install the loader": "Установить загрузчик"
+	"Install the loader": "Установить загрузчик",
+	"Administration sections": "Разделы администрирования",
+	"Overview": "Обзор",
+	"Accounts and roles": "Аккаунты и роли",
+	"Administration": "Администрирование",
+	"Everything that keeps the service running, one section at a time.": "Всё, что поддерживает работу сервиса, по разделам.",
+	"Service figures, accounts, storage and administrator roles.": "Показатели сервиса, аккаунты, хранилище и роли администраторов.",
+	"Approve or reject submitted publications and review reports.": "Одобряйте или отклоняйте присланные публикации и разбирайте жалобы.",
+	"{count} waiting for review": "{count} ожидает проверки",
+	"{count} reported": "{count} с жалобами",
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Неудачные экспорты, прерванные загрузки и сбои, о которых мод сообщил с согласия игрока."
 }

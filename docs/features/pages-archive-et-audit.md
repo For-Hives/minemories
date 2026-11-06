@@ -46,7 +46,7 @@ Conséquences à connaître avant d'aller plus loin :
 | `/gallery` | Galerie privée : captures, stockage, jumelage, partage, corbeille, publication | session | 871 + 103 | Le cœur du produit, à refaire en premier |
 | `/viewer` | Visualiseur 3D (fichier local ou capture) avec studio (ciel, météo, heure) | public | 264 + 240 | Le cœur du produit |
 | `/share/:token`, `/public/:id` | Visualiseur d'une capture partagée | lien | 183 | Le cœur du partage |
-| `/admin`, `/admin/diagnostics`, `/moderation` | Outils d'opérateur : chiffres du service, rôles, diagnostics du mod, file de modération | opérateur | 302 + 256 + 105 | Hors site public, à garder à part |
+| `/admin`, `/admin/users`, `/admin/moderation`, `/admin/diagnostics` (`/moderation` redirige) | Outils d'opérateur : chiffres du service, rôles, diagnostics du mod, file de modération | opérateur | 302 + 256 + 105 | Hors site public, à garder à part |
 | `*` | Page 404 | public | dans ContentPages | Gardée (minimale) |
 
 Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propres aux pages (hors `theme.css`), 8 langues de textes.
@@ -87,11 +87,11 @@ Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propr
 
 ### Parcours opérateur
 
-**`/admin`** : chiffres du service (comptes, captures, volume, appareils jumelés, objets archivés), recherche de comptes, promotion et retrait du rôle administrateur, journal des 50 derniers changements.
+**`/admin`** : tableau de bord (cartes vers les sections autorisées, compteurs de publications en attente et signalées pour les modérateurs, barre de sections commune à toutes les pages d'administration). **`/admin/users`** : chiffres du service (comptes, captures, volume, appareils jumelés, objets archivés), recherche de comptes, promotion et retrait du rôle administrateur, journal des 50 derniers changements.
 
 **`/admin/diagnostics`** : diagnostics du mod envoyés avec consentement, groupés par erreur, filtres par version du mod et de l'API. Réservé aux identifiants de `DIAGNOSTICS_OPERATOR_IDS`.
 
-**`/moderation`** : file des publications et des signalements, décision avec motif, interdiction de décider sur sa propre publication.
+**`/admin/moderation`** (ancienne URL `/moderation`, redirigée) : file des publications et des signalements, décision avec motif, interdiction de décider sur sa propre publication.
 
 ## 4. Audit : ce qui est utile, ce qui ne l'est pas
 

@@ -123,6 +123,20 @@ test('votes are unique and idempotent; self voting, bursts and restart bypasses 
 	expect(f.db.query('SELECT * FROM public_action_limits WHERE user_id=?').all('voter')).toHaveLength(0)
 })
 
+test('the moderation summary counts pending and reported publications for moderators only', () => {
+	const f = fixture()
+	expect(() => f.service.queueSummary('owner')).toThrow('Forbidden')
+	expect(f.service.queueSummary('moderator')).toEqual({ pending: 0, reported: 0 })
+	const waiting = f.publish()
+	const live = f.approved()
+	expect(f.service.queueSummary('moderator')).toEqual({ pending: 1, reported: 0 })
+	f.service.report('voter', live, 'Private sign')
+	f.service.report('owner', live, 'Spam')
+	expect(f.service.queueSummary('moderator')).toEqual({ pending: 1, reported: 1 })
+	f.service.moderate('moderator', waiting.id, 'rejected', '')
+	expect(f.service.queueSummary('moderator')).toEqual({ pending: 0, reported: 1 })
+})
+
 test('reports are unique, bounded and can be reviewed or reject a live publication', () => {
 	const f = fixture()
 	const id = f.approved()

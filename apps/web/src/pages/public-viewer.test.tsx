@@ -80,7 +80,7 @@ test('review mode uses the protected review procedure and returns to moderation'
 	await screen.findByRole('heading', { name: 'Candidat à examiner' })
 	expect(mocks.review).toHaveBeenCalled()
 	expect(mocks.get).not.toHaveBeenCalled()
-	expect(screen.getByRole('link', { name: 'Retour à la modération' }).getAttribute('href')).toBe('/moderation')
+	expect(screen.getByRole('link', { name: 'Retour à la modération' }).getAttribute('href')).toBe('/admin/moderation')
 })
 test('a refused review never requests the file', async () => {
 	mocks.review.mockRejectedValueOnce(new Error('Forbidden'))
