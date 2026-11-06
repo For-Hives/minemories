@@ -24,7 +24,7 @@ flowchart LR
 5. **Publication tierce** si au moins un jeton Modrinth/CurseForge est présent et que la plateforme est activée ; sinon l'étape est ignorée.
 6. **Notification Discord** de succès ou d'échec, avec la fin du journal.
 
-`bun mod release --dry-run` affiche le plan (version, cibles, modules présents) sans rien construire ni envoyer. `bun mod status` montre la grille Minecraft x loader : état local, version publiée, espace utilisé. `bun mod build`, `bun mod test`, `bun mod storage`, `bun mod publish`, `bun mod notify`, `bun mod jdk` et `bun mod open` lancent chaque étape seule.
+`bun mod release --dry-run` affiche le plan (version, cibles, modules présents) sans rien construire ni envoyer. `bun mod status` montre la grille Minecraft x loader : état local, version publiée, espace utilisé. `bun mod build`, `bun mod test`, `bun mod storage`, `bun mod push`, `bun mod publish`, `bun mod notify`, `bun mod jdk` et `bun mod open` lancent chaque étape seule.
 
 Les releases sont des **préversions** (`-beta.N`) : les tests automatisés ne valent pas une validation en jeu à la main du JAR exact. Une cible n'entre dans la matrice que si son adaptateur compile, que son loader est renseigné et qu'elle a été validée en jeu (`mod/targets.json`, `docs/features/loader-support.md`).
 
@@ -89,7 +89,34 @@ Commandes utiles : `systemctl start minemories-mod-release.service`, `journalctl
 
 ## Stockage et distribution du mod
 
-Les JAR vivent dans notre stockage S3 (Garage), dans un bucket dédié distinct des captures des utilisateurs, alimenté par `bun mod` (module `scripts/mod/storage/`) et servi publiquement par l’API. Le site lit l’index de l’API.
+Les JAR vivent dans notre stockage S3 (Garage), dans un bucket dédié distinct des captures des utilisateurs, alimenté par `bun mod` et servi publiquement par l’API. Le site lit l’index de l’API.
+
+### Deux modes de publication
+
+Toute la logique du stockage (clés, schéma de l’index, idempotence, index écrit en dernier, `latest/`, rétention) est dans un seul paquet, `packages/mod-storage` (`@minemories/mod-storage`), importé par l’outil (`scripts/mod/storage/index.mjs` n’en garde que l’interface publique) et par l’API. Les deux modes écrivent donc exactement les mêmes objets.
+
+```mermaid
+flowchart LR
+  subgraph vps[Mode 1 : le VPS construit]
+    A1[bun mod release] -->|clés S3| S[(Bucket des mods)]
+  end
+  subgraph pc[Mode 2 : le PC construit]
+    A2[bun mod release --remote] -->|PUT /downloads/upload + jeton| API
+    API -->|clés S3, côté serveur seulement| S
+  end
+  S --> D[GET /downloads/...]
+```
+
+| | Mode 1 : VPS direct | Mode 2 : PC via l’API |
+| --- | --- | --- |
+| Commande | `bun mod release` (timer systemd) | `bun mod release --remote`, ou `bun mod push [<version>]` pour ce qui est déjà dans `build/mod-dist/<version>/` |
+| Secret sur la machine de build | clés S3 d’écriture | `MOD_UPLOAD_TOKEN` seulement ; les clés S3 ne quittent jamais le serveur |
+| Qui écrit dans S3 | l’outil | l’API (`PUT /downloads/upload/...`) |
+| `builtBy` dans l’index | `vps` (`MOD_BUILT_BY=vps` dans l’unité systemd) | `pc` (défaut) |
+| Publication Modrinth / CurseForge | oui, quand activée | non : elle reste côté VPS |
+| Lecture de ce qui est publié | `bun mod status` (S3) | `bun mod status --remote` (index public, sans clés S3) |
+
+Les deux modes sont indépendants : on peut utiliser l’un, l’autre, ou les deux sur la même version (un JAR renvoyé avec les mêmes octets ne change rien). Un JAR construit sur le PC et le même commit construit sur le VPS ne sont **pas forcément identiques octet pour octet** (JDK, horodatages d’archive, ordre des entrées) : c’est pourquoi chaque entrée de l’index porte `builtBy` (`pc` ou `vps`) et pourquoi renvoyer une version déjà publiée avec un autre contenu est refusé (409) sauf demande explicite (`--replace`).
 
 ### Disposition du bucket
 
@@ -117,14 +144,14 @@ latest/<targetId>.jar                                copie stable de la dernièr
       "versions": [
         { "version": "0.37.0", "builtAt": "2026-10-20T10:00:00Z", "commit": "abc1234", "bytes": 300220,
           "sha256": "…64 hex…", "key": "mods/fabric-mc1.21.11/0.37.0/minemories-fabric-mc1.21.11-0.37.0.jar",
-          "pinned": true, "published": { "modrinth": "https://…", "curseforge": "https://…" } }
+          "builtBy": "vps", "pinned": true, "published": { "modrinth": "https://…", "curseforge": "https://…" } }
       ]
     }
   }
 }
 ```
 
-Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`, `pinned` et `published` sont facultatifs. Le typedef JSDoc est dans `scripts/mod/storage/index.mjs` et le schéma zod (`modIndex`) dans `packages/api-contract/src/mod-downloads.ts`.
+Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`, `builtBy`, `pinned` et `published` sont facultatifs (`builtBy` manque aux entrées antérieures à l’envoi par l’API). Le typedef JSDoc est dans `packages/mod-storage/src/index.mjs` et le schéma zod (`modIndex`) dans `packages/api-contract/src/mod-downloads.ts`.
 
 ### Rétention
 
@@ -138,9 +165,14 @@ Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`,
 | `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | identiques à l’API (Garage local) | Connexion S3 partagée avec `apps/api`. |
 | `MOD_S3_ENDPOINT`, `MOD_S3_REGION`, `MOD_S3_ACCESS_KEY`, `MOD_S3_SECRET_KEY` | valeur `S3_*` | Surcharge facultative pour l’outil de release (clés d’écriture distinctes de celles de l’API). |
 | `MOD_STORAGE_WARN_BYTES` | 5 Gio | Seuil d’alerte de `bun mod storage status`. |
-| `MOD_INDEX_CACHE_MS` | 15000 | Durée du cache mémoire de l’index côté API. |
+| `MOD_INDEX_CACHE_MS` | 15000 | Durée du cache mémoire de l’index côté API (vidé aussitôt après un envoi). |
+| `MOD_STORAGE_KEEP` | 3 | Versions conservées par cible après un envoi par l’API (l’outil local utilise `--keep`, 3 par défaut). |
+| `MOD_UPLOAD_TOKEN` | absent | **API** : active `PUT /downloads/upload/...` (32 caractères minimum, sinon la route répond 404). **Outil** : jeton envoyé par `--remote` et `push`. |
+| `MOD_UPLOAD_MAX_BYTES` | 16777216 (16 Mio) | Taille maximale d’un JAR reçu par l’API. |
+| `MOD_API_URL` | `https://api.minemories.net` | **Outil** : API qui reçoit les JAR (aussi `--api-url`). HTTP clair refusé hors `localhost`, `127.0.0.1` et `[::1]`. |
+| `MOD_BUILT_BY` | `pc` | **Outil** : machine de build, `pc` ou `vps`, écrite dans `manifest.json` puis dans l’index. |
 
-Hors production, le bucket est créé s’il manque ; en production (`NODE_ENV=production`) il doit être provisionné explicitement. L’API n’a besoin que d’un accès en lecture.
+Hors production, le bucket est créé s’il manque ; en production (`NODE_ENV=production`) il doit être provisionné explicitement. Sans `MOD_UPLOAD_TOKEN`, l’API n’a besoin que d’un accès en lecture ; avec, elle a besoin d’un accès en lecture et écriture au bucket des mods (les identifiants `S3_*` de l’API, comme pour les captures).
 
 ### Commandes
 
@@ -148,6 +180,11 @@ Hors production, le bucket est créé s’il manque ; en production (`NODE_ENV=p
 - `bun mod storage ls` : versions de l’index (`latest`, `pinned`, `published`).
 - `bun mod storage prune [--yes] [--keep N]` : rétention (simulation sans `--yes`).
 - `bun mod storage pin <id> <version>` / `unpin <id> <version>` : épingle une version pour la soustraire à la rétention.
+- `bun mod release --remote [--api-url <url>] [--replace]` : mode PC. Construit puis envoie chaque JAR à l’API au lieu d’appeler `storeRelease` ; vérifie l’URL et le jeton avant le build, ne publie rien chez des tiers, notifie Discord comme en mode local. Le code de sortie est 1 si une cible a échoué (les autres sont quand même envoyées).
+- `bun mod push [<version>] [--api-url <url>] [--replace] [--dry-run]` : envoie ce qui est déjà dans `build/mod-dist/<version>/` sans recompiler (version courante par défaut).
+- `bun mod status --remote` (ou `--api-url <url>`) : lit l’index public de l’API au lieu de S3.
+
+Côté outil (`scripts/mod/remote/index.mjs`, `uploadRelease`) : une requête par JAR, nouvelles tentatives (4 essais, attente 1 s, 2 s, 4 s) sur erreur réseau ou 5xx seulement, jamais sur 401, 409 ou 422 ; le SHA-256 renvoyé doit être celui du fichier ; une fois tout envoyé, `GET /downloads/index.json` confirme que chaque version est publiée (3 lectures). Le jeton ne se passe jamais en argument ; il est masqué dans le journal, les erreurs et les notifications.
 
 ### Routes de l’API
 
@@ -159,20 +196,70 @@ Publiques, sans authentification, lues depuis le bucket des mods (les JAR sont e
 
 Les JAR sont envoyés avec `Content-Type: application/java-archive`, `Content-Disposition: attachment; filename="minemories-<targetId>-<version>.jar"`, `ETag` (le SHA-256), `X-Content-SHA256` et `X-Minemories-Version`. Les paramètres sont validés strictement (400 sinon) et la clé d’objet provient toujours de l’index, jamais de l’URL ; une cible ou une version inconnue (ou purgée) répond 404 ; une panne du stockage répond 503 `downloads_unavailable` sans détail interne.
 
+#### Envoi d’un JAR (mode PC)
+
+`PUT /downloads/upload/:targetId/:version`, corps = les octets bruts du JAR. Route destinée à l’outil, pas aux navigateurs : montée avant le middleware CORS (aucun en-tête CORS), réponses `Cache-Control: no-store`.
+
+| En-tête | Rôle |
+| --- | --- |
+| `Authorization: Bearer <MOD_UPLOAD_TOKEN>` | obligatoire |
+| `Content-Length` | obligatoire (411 sans), entre 1 octet et `MOD_UPLOAD_MAX_BYTES` |
+| `X-Content-SHA256` | obligatoire, 64 hexadécimaux minuscules ; recalculé pendant la réception |
+| `X-Mod-Manifest` | obligatoire, JSON encodé en base64url (4096 caractères au plus) : `id` (`<loader>-mc<minecraft>`), `version`, `minecraft`, `loader`, `loaderVersion`, `java`, `fabricApi?`, `commit`, `builtAt` (ISO 8601), `builtBy` (`pc` ou `vps`) ; l’`id` et la `version` doivent être ceux de l’URL, et `<loader>-mc<minecraft>` doit redonner l’`id` |
+
+Paramètre facultatif : `?replace=1` pour remplacer une version existante dont le contenu diffère.
+
+| Code | Corps | Cas |
+| --- | --- | --- |
+| 200 | `{ ok: true, targetId, version, sha256, bytes, latest, replaced }` | stocké, ou déjà présent avec les mêmes octets (idempotent : rien n’est réécrit) |
+| 400 | `invalid_parameter`, `invalid_length`, `invalid_sha256`, `invalid_manifest`, `length_mismatch` | paramètre ou en-tête invalide, corps plus court que `Content-Length` |
+| 401 | `unauthorized` | jeton absent ou faux (message identique dans les deux cas) |
+| 404 | `not_found` | `MOD_UPLOAD_TOKEN` absent ou de moins de 32 caractères : la route ne révèle pas son existence |
+| 409 | `version_exists` | même version, autre contenu, sans `?replace=1` |
+| 411 | `length_required` | pas de `Content-Length` (corps en morceaux) |
+| 413 | `too_large` | plus gros que `MOD_UPLOAD_MAX_BYTES` (refusé dès l’en-tête, ou en cours de réception) |
+| 422 | `manifest_mismatch`, `sha256_mismatch`, `invalid_jar` | manifeste incohérent avec l’URL, empreinte fausse, pas une archive ZIP (signature `PK\x03\x04`) ou aucune entrée `.class` dans le répertoire central |
+| 429 | `too_many_attempts` (`Retry-After: 60`) | 10 jetons faux en une minute depuis la même adresse (`TRUSTED_PROXY_IPS` pour l’adresse réelle derrière un proxy) |
+| 503 | `busy` (`Retry-After: 5`), `upload_unavailable` | deux réceptions déjà en cours ; panne du stockage (événement générique `mod_upload_failed`, sans détail) |
+
+Le jeton est comparé à temps constant (empreintes SHA-256) et n’est jamais journalisé ni renvoyé. Le corps est écrit en flux dans un fichier du répertoire temporaire de l’OS, haché au passage (jamais plus d’un morceau en mémoire), puis supprimé quoi qu’il arrive. Après un stockage réussi, la rétention (`MOD_STORAGE_KEEP`) s’applique comme `bun mod storage prune --yes` : jamais `latest`, ni une version épinglée ou publiée. Le cache de l’index public est vidé, donc la nouvelle version est visible tout de suite.
+
+**Une seule instance d’API.** La mise à jour de l’index (lecture, modification, écriture) est protégée par un verrou en mémoire du processus : avec plusieurs instances, deux envois simultanés pourraient s’écraser l’un l’autre. Le déploiement Coolify actuel n’a qu’une instance ; si l’API est un jour répliquée, retirer `MOD_UPLOAD_TOKEN` de toutes sauf une (la route répond alors 404), ou ajouter un verrou partagé.
+
+#### Générer, faire tourner et protéger le jeton
+
+- Générer : `openssl rand -hex 32` (64 caractères). Le mettre dans les variables de l’API (Coolify) et dans le `.env` du PC (non versionné) ou dans l’environnement du shell : `MOD_UPLOAD_TOKEN=… bun mod release --remote`.
+- Rotation : générer un nouveau jeton, le poser dans l’API puis redéployer, puis mettre à jour le PC. L’ancien cesse de fonctionner au redéploiement. En cas de fuite, retirer `MOD_UPLOAD_TOKEN` de l’API désactive la route aussitôt (404).
+- Le jeton donne le droit d’ajouter ou de remplacer des JAR publics : le traiter comme un secret de publication. Les JAR passent les contrôles ci-dessus, mais l’API ne peut pas savoir si le code est digne de confiance.
+
+#### Mise en service sur Coolify (mode PC)
+
+1. Créer le bucket des mods dans Garage (`MOD_STORAGE_BUCKET`, `minemories-mods` par défaut) et donner à la clé S3 de l’API un accès lecture et écriture dessus.
+2. Dans l’application API de Coolify : variables S3 du bucket des mods (`S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, comme pour les captures), `MOD_STORAGE_BUCKET`, `MOD_UPLOAD_TOKEN` (jeton généré ci-dessus), éventuellement `MOD_STORAGE_KEEP`, `MOD_UPLOAD_MAX_BYTES` et `TRUSTED_PROXY_IPS`. Une seule instance.
+3. Déployer. Vérifier que `curl -i -X PUT https://api.minemories.net/downloads/upload/x/1` répond 401 (route active) et que `GET /downloads/index.json` répond 200.
+4. Sur le PC : `MOD_UPLOAD_TOKEN=… bun mod release --remote` (ou `bun mod build --all` puis `bun mod push`), puis `bun mod status --remote` et la page `/installation`.
+
+#### Limites
+
+- Une seule instance d’API pour la route d’envoi (voir plus haut).
+- Les JAR du PC et du VPS ne sont pas forcément identiques octet pour octet ; `builtBy` dit qui a construit ce qui est servi. Renvoyer une version existante avec d’autres octets exige `--replace`.
+- Le mode PC ne publie pas chez Modrinth ni CurseForge, et les tests en jeu sans écran exigent Xvfb et Mesa (`--skip-tests` les saute proprement).
+- L’API contrôle la forme (archive ZIP, au moins une classe, taille, empreinte), pas le contenu : une release envoyée depuis le PC n’est pas pour autant validée en jeu.
+
 ### Validation
 
-Tests unitaires du stockage avec un faux client S3 : `node --test scripts/mod/storage`. Test réel contre un Garage jetable (stockage, multipart, index, téléchargement par l’API, rétention) : `bun api:garage`.
+Tests du paquet de stockage et de l’outil avec un faux client S3 et un `fetch` simulé : `node --test packages/mod-storage/src/*.test.mjs scripts/mod/storage/*.test.mjs scripts/mod/remote/*.test.mjs`. Tests HTTP de la route d’envoi : `apps/api/src/mod-upload.test.ts` (`bun api:check`). Test réel contre un Garage jetable (stockage, multipart, index, téléchargement par l’API, rétention, et envoi par la route `PUT /downloads/upload` : mauvais jeton, empreinte fausse, JAR sans classe, conflit, remplacement, rétention) : `bun api:garage`.
 
 ## Vérifications de développement
 
-- `node --test scripts/*.test.mjs scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs` (ou `bun run scripts:test` pour la part utilisée par `bun check`) : outil `bun mod`, stockage avec faux client S3, publication tierce simulée, scope de la CI ; aucune publication externe depuis les tests.
+- `node --test scripts/*.test.mjs scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs packages/mod-storage/src/*.test.mjs` (ou `bun run scripts:test` pour la part utilisée par `bun check`) : outil `bun mod`, stockage avec faux client S3, publication tierce simulée, scope de la CI ; aucune publication externe depuis les tests.
 - `bun check` et `bun run build` incluent ces tests et les contrôles habituels.
 - `actionlint` : syntaxe et expressions des workflows.
 
 ## Checklist de mise en service
 
 1. Installer le VPS avec `ops/mod-builder/install.sh`, remplir `/etc/minemories/mod-builder.env` (S3, webhook Discord, jetons de catalogue le moment venu).
-2. Provisionner le bucket des mods (`MOD_STORAGE_BUCKET`) et donner à l'API un accès en lecture seule.
+2. Provisionner le bucket des mods (`MOD_STORAGE_BUCKET`) et donner à l'API un accès en lecture seule (mode VPS seul) ou en lecture et écriture avec `MOD_UPLOAD_TOKEN` (mode PC, voir « Mise en service sur Coolify »).
 3. `bun mod notify --test`, `bun mod jdk`, puis `bun mod release --dry-run` et `bun mod status`.
 4. Premier `systemctl start minemories-mod-release.service` à la main, lire `journalctl -fu minemories-mod-release`, vérifier `/downloads/index.json` et la page `/installation`.
 5. Activer la publication tierce quand les projets existent (section dédiée plus haut).
