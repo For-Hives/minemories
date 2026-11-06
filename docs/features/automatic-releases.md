@@ -89,7 +89,7 @@ Commandes utiles : `systemctl start minemories-mod-release.service`, `journalctl
 
 ## Stockage et distribution du mod
 
-Les JAR vivent dans notre stockage S3 (Garage), dans un bucket dédié distinct des captures des utilisateurs, alimenté par `bun mod` et servi publiquement par l’API. Le site lit l’index de l’API.
+Les JAR vivent dans notre stockage S3 (Garage), dans un bucket dédié (ou, à défaut, sous un préfixe réservé du bucket des captures : voir « Bucket dédié ou préfixe »), alimenté par `bun mod` et servi publiquement par l’API. Le site lit l’index de l’API.
 
 ### Deux modes de publication
 
@@ -119,6 +119,8 @@ flowchart LR
 Les deux modes sont indépendants : on peut utiliser l’un, l’autre, ou les deux sur la même version (un JAR renvoyé avec les mêmes octets ne change rien). Un JAR construit sur le PC et le même commit construit sur le VPS ne sont **pas forcément identiques octet pour octet** (JDK, horodatages d’archive, ordre des entrées) : c’est pourquoi chaque entrée de l’index porte `builtBy` (`pc` ou `vps`) et pourquoi renvoyer une version déjà publiée avec un autre contenu est refusé (409) sauf demande explicite (`--replace`).
 
 ### Disposition du bucket
+
+Les clés ci-dessous sont **relatives au préfixe** `MOD_STORAGE_PREFIX` (vide par défaut) : avec `public-mods/`, l'objet réel est `public-mods/index.json`, `public-mods/mods/...`, `public-mods/latest/...`.
 
 ```text
 index.json                                           index des versions (écrit en dernier, atomiquement)
@@ -161,7 +163,8 @@ Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`,
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
-| `MOD_STORAGE_BUCKET` | `minemories-mods` | Bucket des JAR (distinct de `S3_BUCKET`, celui des captures). |
+| `MOD_STORAGE_BUCKET` | `minemories-mods` | Bucket des JAR. Distinct de `S3_BUCKET` (captures) sauf en configuration à préfixe, voir ci-dessous. |
+| `MOD_STORAGE_PREFIX` | vide | Préfixe de toutes les clés des mods. Vide, ou un seul niveau `[a-z0-9][a-z0-9-]*/` de 1 à 40 caractères terminé par `/` (ex. `public-mods/`). Toute autre valeur fait échouer le démarrage de l'API (et de la route d'envoi) ou de l'outil `bun mod`. |
 | `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | identiques à l’API (Garage local) | Connexion S3 partagée avec `apps/api`. |
 | `MOD_S3_ENDPOINT`, `MOD_S3_REGION`, `MOD_S3_ACCESS_KEY`, `MOD_S3_SECRET_KEY` | valeur `S3_*` | Surcharge facultative pour l’outil de release (clés d’écriture distinctes de celles de l’API). |
 | `MOD_STORAGE_WARN_BYTES` | 5 Gio | Seuil d’alerte de `bun mod storage status`. |
@@ -173,6 +176,24 @@ Les versions sont triées de la plus récente à la plus ancienne ; `fabricApi`,
 | `MOD_BUILT_BY` | `pc` | **Outil** : machine de build, `pc` ou `vps`, écrite dans `manifest.json` puis dans l’index. |
 
 Hors production, le bucket est créé s’il manque ; en production (`NODE_ENV=production`) il doit être provisionné explicitement. Sans `MOD_UPLOAD_TOKEN`, l’API n’a besoin que d’un accès en lecture ; avec, elle a besoin d’un accès en lecture et écriture au bucket des mods (les identifiants `S3_*` de l’API, comme pour les captures).
+
+### Bucket dédié ou préfixe
+
+Deux configurations de production possibles :
+
+1. **Bucket dédié** (préférée) : `MOD_STORAGE_BUCKET=minemories-mods`, `MOD_STORAGE_PREFIX` vide. Isolation complète des captures.
+2. **Bucket des captures + préfixe** (quand on ne peut pas créer de bucket, comme sur Garage sous Coolify sans shell) : `MOD_STORAGE_BUCKET=minemories` (la valeur de `S3_BUCKET`) et `MOD_STORAGE_PREFIX=public-mods/`.
+
+Préfixe recommandé : `public-mods/`. L'API nomme les objets des captures `<userId>/<uuid>.glb` et `<userId>/tiers/<uuid>.glb` (`apps/api/src/index.ts`, `uploads.ts`, `tier-locations.ts` ; `<userId>` est un identifiant Better Auth aléatoire de 32 caractères alphanumériques, sans trait d'union). `public-mods` contient un trait d'union et 11 caractères : il ne peut pas être un identifiant d'utilisateur, et aucune clé de mod (`public-mods/index.json`, `public-mods/mods/...`, `public-mods/latest/...`) ne ressemble à `<id>/<uuid>.glb`. Le rapprochement de stockage (`storage-reconciliation`) ne met en file de suppression que les clés `<propriétaire connu>/<uuid>.glb` : une clé de mod y est classée « à revoir » (`unknown_key_or_owner`), jamais supprimée.
+
+Conception : le préfixe est appliqué à un seul endroit du paquet partagé (`at()` dans `packages/mod-storage/src/index.mjs`), utilisé par l'outil, la route d'envoi et la lecture publique, pas par des remplacements dispersés.
+
+- **Les clés de l'index sont relatives au préfixe** (`mods/<id>/<version>/...jar`, jamais `public-mods/mods/...`). Changer de préfixe, ou passer d'un bucket dédié à un préfixe en copiant les objets, ne casse donc pas l'index. L'API reconstruit la clé réelle en lisant `<préfixe><clé de l'index>`.
+- **Les listings sont bornés au préfixe** : la rétention (`prune`), `storageReport` et `ls` ne lisent, ne comptent et ne suppriment jamais une clé hors du préfixe (une clé hors préfixe renvoyée par le stockage est ignorée, et une suppression est refusée hors de `mods/`). Sans préfixe, `storageReport` compte tout le bucket (comportement historique) : ne pas partager un bucket sans préfixe.
+- **L'API ne construit jamais une clé depuis l'URL** : `targetId` et `version` sont validés puis cherchés dans l'index, et la clé résolue doit rester sous `<préfixe>mods/` ou `<préfixe>latest/` (sans `..`, `//` ni `/` initial), sinon 404. Un index corrompu ne peut donc pas faire servir `users/...` ou une capture. `validateIndex` applique la même règle à l'écriture.
+- Le préfixe ne peut ni contenir `.` ni `/` interne : `..` et `//` sont inexprimables.
+
+**Mise en garde** : dans la configuration 2, les mods partagent le bucket des captures privées, isolés **seulement** par le préfixe. Il n'y a aucun accès public direct au bucket : l'API ne sert que les clés listées dans l'index, et l'identifiant S3 de l'API a de toute façon accès à tout le bucket. N'activez pas d'accès public ou de CDN sur le bucket des captures pour servir les mods.
 
 ### Commandes
 
