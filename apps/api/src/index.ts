@@ -27,6 +27,7 @@ import { diagnostics } from './diagnostics-state'
 import { PublicDiscovery } from './discovery'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
+import { modDownloads } from './mod-downloads'
 import { ObjectDeletionQueue } from './object-deletions'
 import { CaptureArchivedError } from './object-tiers'
 import type { MemoryMetadata } from './pairing'
@@ -324,6 +325,7 @@ app.use(
 app.get('/api/auth-providers', context => context.json(Object.keys(auth.options.socialProviders ?? {})))
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
+app.route('/downloads', modDownloads)
 app.use('/api/auth/*', (context, next) =>
 	requestBodyLimit(
 		billing.config && context.req.path === '/api/auth/polar/webhooks' ? BILLING_WEBHOOK_BODY_BYTES : AUTH_BODY_BYTES

@@ -25,6 +25,17 @@ export {
 	storedDiagnostic,
 } from './diagnostics'
 export {
+	type ModIndex,
+	type ModIndexTarget,
+	type ModIndexVersion,
+	modIndex,
+	modIndexTarget,
+	modIndexVersion,
+	modJarName,
+	modTargetId,
+	modVersion,
+} from './mod-downloads'
+export {
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
