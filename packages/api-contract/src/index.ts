@@ -80,7 +80,7 @@ const memorySchema = z.object({
 	}),
 })
 
-export type { AdminSummary, AdminUser } from './admin'
+export type { AdminSummary, AdminUser, AdminUserSort } from './admin'
 
 export const apiContract = {
 	admin: adminContract,

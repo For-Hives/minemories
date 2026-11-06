@@ -11,8 +11,15 @@ export const adminUser = z.object({
 	role,
 	captures: z.number().int().nonnegative(),
 	storedBytes: z.number().nonnegative(),
+	/** Bytes counted against the account quota: captures, upload reservations and pending deletions. */
+	usedBytes: z.number().nonnegative(),
+	/** Part of `usedBytes` held by unfinished or discarded uploads. */
+	reservedBytes: z.number().nonnegative(),
+	/** Part of `usedBytes` still awaiting object deletion. */
+	pendingDeletionBytes: z.number().nonnegative(),
 	devices: z.number().int().nonnegative(),
 })
+export const adminUserSort = z.enum(['registered_desc', 'registered_asc', 'storage_desc', 'storage_asc'])
 export const adminSummary = z.object({
 	trackingStartedAt: z.number(),
 	from: z.number(),
@@ -51,9 +58,24 @@ export const adminContract = {
 				query: z.string().trim().max(100),
 				role: z.enum(['all', 'user', 'admin']),
 				page: z.number().int().min(1).max(100000),
+				sort: adminUserSort.optional(),
 			})
 		)
-		.output(z.object({ users: z.array(adminUser), total: z.number(), page: z.number(), pageSize: z.literal(25) })),
+		.output(
+			z.object({
+				users: z.array(adminUser),
+				total: z.number(),
+				page: z.number(),
+				pageSize: z.literal(25),
+				quotaBytes: z.number().positive(),
+				/** Counts over every account, whatever the filter or page. */
+				overview: z.object({
+					accounts: z.number().int().nonnegative(),
+					usedBytes: z.number().nonnegative(),
+					nearQuotaAccounts: z.number().int().nonnegative(),
+				}),
+			})
+		),
 	setRole: oc
 		.input(z.object({ userId: z.string().min(1).max(200), role, currentPassword: z.string().min(1).max(128) }))
 		.output(z.object({ ok: z.literal(true) })),
@@ -70,4 +92,5 @@ export const adminContract = {
 	),
 }
 export type AdminSummary = z.infer<typeof adminSummary>
+export type AdminUserSort = z.infer<typeof adminUserSort>
 export type AdminUser = z.infer<typeof adminUser>
