@@ -1,0 +1,63 @@
+plugins { id 'dev.architectury.loom-remap' version '1.17.493' }
+
+// Minecraft 1.21.11 (Java 21). The shared 1.21.1 sources are copied, adapted mechanically
+// (adapt.gradle) and overlaid with the classes that had to be rewritten (overlay/java).
+base { archivesName = 'minemories-fabric-mc1.21.11' }
+
+// In-game validation: ./gradlew :fabric:runClientGametest (opens a Minecraft window, isolated user.home).
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'minemories-gametest'
+        enableClientGameTests = true
+        eula = true
+        username = 'MinemoriesTest'
+    }
+}
+loom {
+    accessWidenerPath = file('src/main/resources/minemories.accesswidener')
+    runs.configureEach {
+        // The mod reads settings and the export folder under user.home; keep the developer's own untouched.
+        if (name == 'clientGameTest') vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+    }
+}
+
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+sourceSets.gametest.java.srcDir '../../shared/gametest-common/java'
+
+def adapted = rootProject.layout.buildDirectory.dir('adapted-sources')
+def adaptedResources = rootProject.layout.buildDirectory.dir('adapted-resources')
+sourceSets.main.java.srcDir adapted
+sourceSets.main.resources.srcDir adaptedResources
+tasks.named('compileJava') { dependsOn ':adaptSources' }
+tasks.named('processResources') { dependsOn ':adaptSources' }
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.11'
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${findProperty('fabricLoaderVersion') ?: '0.20.1'}"
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.141.6+1.21.11'
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs', '2000'])
+}
+tasks.withType(ProcessResources).configureEach {
+    inputs.property('version', project.version)
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+// Quilt check: the Fabric JAR and this remapped test mod are loaded by a Quilt client (docs/features/loader-support.md).
+tasks.register('gametestJar', Jar) {
+    archiveClassifier = 'gametest'
+    from sourceSets.gametest.output
+    dependsOn 'gametestClasses'
+}
+tasks.register('remapGametestJar', net.fabricmc.loom.task.RemapJarTask) {
+    inputFile = tasks.named('gametestJar').flatMap { it.archiveFile }
+    archiveClassifier = 'gametest-remapped'
+    addNestedDependencies = false
+    dependsOn 'gametestJar'
+}
