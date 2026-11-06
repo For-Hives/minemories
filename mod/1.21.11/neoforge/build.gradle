@@ -1,0 +1,57 @@
+plugins { id 'net.neoforged.moddev' version '2.0.148' }
+
+// Minecraft 1.21.11 (Java 21). Sources come from the root adaptSources task; this project only
+// holds the NeoForge adapter.
+base { archivesName = 'minemories-neoforge-mc1.21.11' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs', '2000'])
+}
+
+// In-game validation: ./gradlew :neoforge:runClientGametest (opens a Minecraft window, isolated user.home).
+sourceSets { gametest { java.srcDir '../gametest-common/java'; java.srcDir '../../shared/gametest-common/java' } }
+dependencies { gametestImplementation sourceSets.main.output }
+
+sourceSets.main.java.srcDir rootProject.layout.buildDirectory.dir('adapted-sources')
+sourceSets.main.resources.srcDir rootProject.layout.buildDirectory.dir('adapted-resources')
+tasks.named('compileJava') { dependsOn ':adaptSources' }
+tasks.named('processResources') { dependsOn ':adaptSources' }
+
+dependencies {
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
+}
+
+neoForge {
+    version = findProperty('neoForgeVersion') ?: '21.11.48'
+    addModdingDependenciesTo(sourceSets.gametest)
+    runs {
+        client {
+            client()
+            gameDirectory = layout.buildDirectory.dir('run')
+        }
+        clientGametest {
+            client()
+            gameDirectory = layout.buildDirectory.dir('run-gametest')
+            // The mod reads settings and the export folder under user.home; keep the developer's own untouched.
+            jvmArgument "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            sourceSet = sourceSets.gametest
+            systemProperty 'minemories.gametest', 'true'
+        }
+    }
+    mods {
+        minemories {
+            sourceSet(sourceSets.main)
+        }
+        minemories_gametest {
+            sourceSet(sourceSets.gametest)
+        }
+    }
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var props = [version: project.version]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') { expand props }
+}
