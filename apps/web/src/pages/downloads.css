@@ -157,6 +157,16 @@
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
+@media (max-width: 580px) {
+	.mm-dl-table th,
+	.mm-dl-table td {
+		padding: var(--ds-sp-3);
+	}
+	.mm-dl-table tbody th {
+		width: 104px;
+	}
+}
+
 @media (forced-colors: active) {
 	.mm-dl-scroll,
 	.mm-dl-feedback {
