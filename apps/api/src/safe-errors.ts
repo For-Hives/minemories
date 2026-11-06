@@ -19,6 +19,7 @@ type ErrorEvent =
 	| 'chunk_upload_failed'
 	| 'upload_cleanup_failed'
 	| 'request_failed'
+	| 'mod_download_failed'
 	| 'diagnostics_failed'
 
 export function requestCorrelation(request: Request): string {
