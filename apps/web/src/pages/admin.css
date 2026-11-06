@@ -439,6 +439,7 @@
 
 /* --- Role dialog: the kit's dark panel over a flat veil -------------------------------------------------------------------------------------------- */
 .mm-admin-dialog {
+	margin: auto; /* the global reset zeroes margins, which pinned the modal to the top-left corner */
 	width: min(520px, calc(100% - 32px));
 	padding: var(--ds-sp-6);
 	border: 0;
@@ -631,5 +632,88 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	}
 	.mm-admin-meter > span {
 		background: Highlight;
+	}
+}
+
+/* Accounts table: cells wrap (long e-mails), then stack as cards on phones instead of scrolling sideways. */
+.mm-admin-page table.mm-admin-users {
+	white-space: normal;
+}
+.mm-admin-users .mm-admin-account {
+	min-width: 170px;
+	max-width: 220px;
+	overflow-wrap: break-word;
+}
+.mm-admin-page table.mm-admin-users th,
+.mm-admin-page table.mm-admin-users td {
+	padding-inline: var(--ds-sp-2);
+}
+.mm-admin-users .mm-admin-actions {
+	width: 150px;
+}
+.mm-admin-users .mm-admin-storage {
+	min-width: 170px;
+}
+.mm-admin-users .mm-admin-actions button {
+	white-space: normal;
+}
+@media (max-width: 650px) {
+	.mm-admin-users thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+	.mm-admin-users,
+	.mm-admin-users tbody,
+	.mm-admin-users tr,
+	.mm-admin-users td {
+		display: block;
+	}
+	.mm-admin-users tr {
+		padding: var(--ds-sp-3) 0;
+		background:
+			repeating-linear-gradient(
+				90deg,
+				var(--night-3) 0 calc(2 * var(--gp)),
+				transparent calc(2 * var(--gp)) calc(4 * var(--gp))
+			)
+			bottom / 100% var(--gp) no-repeat;
+	}
+	.mm-admin-page .mm-admin-users td {
+		display: grid;
+		grid-template-columns: 124px minmax(0, 1fr);
+		gap: var(--ds-sp-3);
+		align-items: start;
+		padding: var(--ds-sp-2) 0;
+		background: none;
+	}
+	.mm-admin-users td[data-label]::before {
+		content: attr(data-label);
+		font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+		color: var(--text-2);
+	}
+	.mm-admin-page .mm-admin-users td.mm-admin-account,
+	.mm-admin-page .mm-admin-users td.mm-admin-actions {
+		display: block;
+		width: auto;
+		max-width: none;
+	}
+	.mm-admin-users .mm-admin-actions button {
+		width: 100%;
+	}
+	.mm-admin-users .mm-admin-storage {
+		min-width: 0;
+	}
+	.mm-admin-users .mm-admin-role {
+		justify-self: start;
+	}
+	.mm-admin-pagination {
+		flex-wrap: wrap;
+	}
+	.mm-admin-pagination .mc-btn {
+		min-width: 0;
+		flex: 1 1 120px;
 	}
 }
