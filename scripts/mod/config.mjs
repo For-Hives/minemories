@@ -1,7 +1,7 @@
 // Single source of truth for the mod build matrix: mod/targets.json (see docs/features/loader-support.md).
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { repositoryRoot } from '../release-utils.mjs'
+import { repositoryRoot } from './utils.mjs'
 
 export const minecraftPattern = /^\d+(?:\.\d+)*$/
 const componentPattern = /^[a-z][a-z0-9_-]*$/

@@ -13,9 +13,9 @@
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { isMain, repositoryRoot } from '../release-utils.mjs'
 import { readConfig } from './config.mjs'
 import { loadEnv } from './env.mjs'
+import { isMain, repositoryRoot } from './utils.mjs'
 
 const commandsDir = join(dirname(fileURLToPath(import.meta.url)), 'commands')
 const extension = /\.mjs$/
