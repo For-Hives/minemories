@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Minecraft 1.18.2 version of the loader test driver (see mod/minemories-1.21.11/gametest-common):
+ * Minecraft 1.18.2 version of the loader test driver (see mod/1.21.11/gametest-common):
  * creates a flat world, builds the scene, runs /minemories export, checks the GLB and exits.
  * The loader's test mod calls {@link #tick()} from its client tick.
  */
