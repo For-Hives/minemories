@@ -1361,5 +1361,15 @@
 	"the {loader} {version} installer": "{loader} {version} のインストーラー",
 	"this installation": "このインストール",
 	"versions if necessary. Edit the modded installation created using": "のバージョンを必要に応じて表示します。次で作成された Mod 用のインストールを編集します：",
-	"Install the loader": "ローダーをインストール"
+	"Install the loader": "ローダーをインストール",
+	"Administration sections": "管理セクション",
+	"Overview": "概要",
+	"Accounts and roles": "アカウントとロール",
+	"Administration": "管理",
+	"Everything that keeps the service running, one section at a time.": "サービスの運用に必要なものを、セクションごとにまとめています。",
+	"Service figures, accounts, storage and administrator roles.": "サービスの数値、アカウント、ストレージ、管理者ロール。",
+	"Approve or reject submitted publications and review reports.": "投稿された公開リクエストを承認または却下し、報告を確認します。",
+	"{count} waiting for review": "審査待ち {count} 件",
+	"{count} reported": "報告 {count} 件",
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "同意のもとでMODから報告された、エクスポートの失敗、アップロードの中断、クラッシュ。"
 }

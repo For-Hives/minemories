@@ -148,7 +148,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 		}
 	}, [reference, isPublic, review, restoreLoad])
 
-	const publicBack = review ? '/moderation' : '/explorer'
+	const publicBack = review ? '/admin/moderation' : '/explorer'
 	return (
 		<section className="viewer-page cinema-page">
 			<ViewerHeader

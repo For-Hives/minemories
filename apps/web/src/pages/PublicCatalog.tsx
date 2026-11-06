@@ -105,7 +105,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 	return (
 		<section aria-label={t('Public gallery')} className="mm-demo-gallery">
 			{moderator && (
-				<Link to="/moderation" className={buttonOutline}>
+				<Link to="/admin/moderation" className={buttonOutline}>
 					{t('Moderation')}
 				</Link>
 			)}

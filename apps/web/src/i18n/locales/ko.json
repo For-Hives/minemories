@@ -1361,5 +1361,15 @@
 	"the {loader} {version} installer": "{loader} {version} 설치 프로그램",
 	"this installation": "이 설치",
 	"versions if necessary. Edit the modded installation created using": "버전을 필요하면 표시하세요. 다음으로 만들어진 모드용 설치를 편집하세요:",
-	"Install the loader": "로더 설치"
+	"Install the loader": "로더 설치",
+	"Administration sections": "관리 섹션",
+	"Overview": "개요",
+	"Accounts and roles": "계정 및 역할",
+	"Administration": "관리",
+	"Everything that keeps the service running, one section at a time.": "서비스 운영에 필요한 모든 것을 섹션별로 모았습니다.",
+	"Service figures, accounts, storage and administrator roles.": "서비스 지표, 계정, 저장 공간, 관리자 역할.",
+	"Approve or reject submitted publications and review reports.": "제출된 게시물을 승인하거나 거부하고 신고를 검토합니다.",
+	"{count} waiting for review": "검토 대기 {count}건",
+	"{count} reported": "신고 {count}건",
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "동의를 받아 모드가 보고한 내보내기 실패, 중단된 업로드, 충돌."
 }

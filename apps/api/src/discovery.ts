@@ -231,6 +231,16 @@ export class PublicDiscovery {
 			.immediate()
 	}
 
+	queueSummary(userId: string | null) {
+		this.moderator(userId)
+		const count = (sql: string) => (this.db.query(sql).get() as { total: number }).total
+		return {
+			pending: count("SELECT COUNT(*) AS total FROM public_publications WHERE state='pending'"),
+			reported: count(`SELECT COUNT(DISTINCT p.id) AS total FROM public_publications p
+ JOIN public_reports r ON r.publication_id=p.id WHERE p.state='approved'`),
+		}
+	}
+
 	queue(userId: string | null, input: { state: 'pending' | 'approved' | 'rejected' | 'reported'; page: number }) {
 		this.moderator(userId)
 		const state = input.state === 'reported' ? 'approved' : input.state
