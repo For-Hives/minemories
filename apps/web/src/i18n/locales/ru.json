@@ -1371,5 +1371,18 @@
 	"Approve or reject submitted publications and review reports.": "Одобряйте или отклоняйте присланные публикации и разбирайте жалобы.",
 	"{count} waiting for review": "{count} ожидает проверки",
 	"{count} reported": "{count} с жалобами",
-	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Неудачные экспорты, прерванные загрузки и сбои, о которых мод сообщил с согласия игрока."
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Неудачные экспорты, прерванные загрузки и сбои, о которых мод сообщил с согласия игрока.",
+	"Newest first": "Сначала новые",
+	"Oldest first": "Сначала старые",
+	"Most storage used": "Сначала с большим хранилищем",
+	"Least storage used": "Сначала с меньшим хранилищем",
+	"Total storage used": "Всего занято в хранилище",
+	"Accounts near their quota": "Аккаунты рядом с квотой",
+	"{used} of {quota} used ({percent}%)": "Занято {used} из {quota} ({percent}%)",
+	"Near quota": "Близко к квоте",
+	"Quota reached": "Квота исчерпана",
+	"Storage of {name}": "Хранилище {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} зарезервировано под загрузки, {pending} ожидает удаления",
+	"Account concerned": "Выбранный аккаунт",
+	"Quota per account: {quota}": "Квота на аккаунт: {quota}"
 }

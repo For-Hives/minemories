@@ -1,3 +1,4 @@
+import type { AdminUserSort } from '@minemories/api-contract'
 import { useCallback, useEffect, useState } from 'react'
 import { apiClient } from '../api-client'
 
@@ -12,16 +13,17 @@ export function useAdminData(filters: {
 	query: string
 	role: 'all' | 'user' | 'admin'
 	page: number
+	sort: AdminUserSort
 }) {
 	const [state, setState] = useState<State>({ kind: 'loading' }),
 		[revision, setRevision] = useState(0)
 	const reload = useCallback(() => setRevision(value => value + 1), [])
-	const { hours, query, role, page } = filters
+	const { hours, query, role, page, sort } = filters
 	useEffect(() => {
 		const controller = new AbortController()
 		let active = true
 		setState({ kind: 'loading' })
-		void readData({ hours, query, role, page }, controller.signal)
+		void readData({ hours, query, role, page, sort }, controller.signal)
 			.then(result => {
 				if (active) setState(result)
 			})
@@ -32,7 +34,7 @@ export function useAdminData(filters: {
 			active = false
 			controller.abort()
 		}
-	}, [hours, query, role, page, revision])
+	}, [hours, query, role, page, sort, revision])
 	return { ...state, reload }
 }
 
@@ -41,17 +43,17 @@ function failure(cause: unknown): State {
 	return { kind: code === 'FORBIDDEN' || code === 'UNAUTHORIZED' ? 'denied' : 'error' }
 }
 async function readData(
-	filters: { hours: 24 | 168 | 720; query: string; role: 'all' | 'user' | 'admin'; page: number },
+	filters: { hours: 24 | 168 | 720; query: string; role: 'all' | 'user' | 'admin'; page: number; sort: AdminUserSort },
 	signal: AbortSignal
 ): Promise<State> {
 	const options = { signal }
 	const access = await apiClient.admin.access(undefined, options)
 	signal.throwIfAborted()
 	if (!access.allowed) return { kind: 'denied' }
-	const { hours, query, role, page } = filters
+	const { hours, query, role, page, sort } = filters
 	const [summary, directory, audit] = await Promise.all([
 		apiClient.admin.summary({ hours }, options),
-		apiClient.admin.users({ query, role, page }, options),
+		apiClient.admin.users({ query, role, page, sort }, options),
 		apiClient.admin.audit(undefined, options),
 	])
 	signal.throwIfAborted()

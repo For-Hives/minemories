@@ -537,3 +537,99 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 		border: 1px solid CanvasText;
 	}
 }
+
+/* --- Accounts: totals, storage meter against the quota ------------------------------------------------------------------------------------------ */
+.mm-admin-overview {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ds-sp-4);
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+}
+.mm-admin-overview > div {
+	min-width: 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-overview dt {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.mm-admin-overview dd {
+	margin: var(--ds-sp-1) 0 0;
+	font: 400 var(--ds-fs-md) / 24px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+	overflow-wrap: anywhere;
+}
+.mm-admin-storage {
+	display: grid;
+	gap: var(--ds-sp-1);
+	min-width: 200px;
+}
+.mm-admin-page td .mm-admin-storage strong,
+.mm-admin-page td .mm-admin-storage small {
+	display: block;
+	margin: 0;
+}
+.mm-admin-meter {
+	height: calc(5 * var(--gp));
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-meter > span {
+	display: block;
+	height: 100%;
+	background: var(--ember);
+}
+.mm-admin-storage.is-near .mm-admin-meter > span {
+	background: var(--c-gold);
+}
+.mm-admin-storage.is-full .mm-admin-meter > span {
+	background: var(--bad);
+}
+.mm-admin-quota-flag {
+	justify-self: start;
+	padding: 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	font-style: normal;
+	color: var(--c-gold);
+	box-shadow: inset 0 0 0 var(--gp) var(--tip-b);
+}
+.mm-admin-storage.is-full .mm-admin-quota-flag {
+	color: var(--bad);
+	box-shadow: inset 0 0 0 var(--gp) var(--bad);
+}
+.mm-admin-search .mc-select {
+	min-width: 190px;
+}
+.mm-admin-dialog .mm-admin-dialog-target {
+	display: grid;
+	gap: var(--ds-sp-1);
+	margin: var(--ds-sp-3) 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-admin-dialog .mm-admin-dialog-target small {
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+}
+@media (max-width: 650px) {
+	.mm-admin-overview {
+		grid-template-columns: 1fr;
+		gap: var(--ds-sp-3);
+	}
+	.mm-admin-search > label,
+	.mm-admin-search .mc-select {
+		width: 100%;
+	}
+}
+@media (forced-colors: active) {
+	.mm-admin-meter,
+	.mm-admin-meter > span {
+		border: 1px solid CanvasText;
+	}
+	.mm-admin-meter > span {
+		background: Highlight;
+	}
+}

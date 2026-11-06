@@ -1371,5 +1371,18 @@
 	"Approve or reject submitted publications and review reports.": "Aprove ou rejeite publicações enviadas e analise denúncias.",
 	"{count} waiting for review": "{count} aguardando revisão",
 	"{count} reported": "{count} denunciadas",
-	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Exportações com falha, envios interrompidos e travamentos relatados pelo mod com consentimento."
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Exportações com falha, envios interrompidos e travamentos relatados pelo mod com consentimento.",
+	"Newest first": "Mais recentes primeiro",
+	"Oldest first": "Mais antigas primeiro",
+	"Most storage used": "Maior uso de armazenamento primeiro",
+	"Least storage used": "Menor uso de armazenamento primeiro",
+	"Total storage used": "Armazenamento total usado",
+	"Accounts near their quota": "Contas perto da cota",
+	"{used} of {quota} used ({percent}%)": "{used} de {quota} usados ({percent}%)",
+	"Near quota": "Perto da cota",
+	"Quota reached": "Cota atingida",
+	"Storage of {name}": "Armazenamento de {name}",
+	"{reserved} reserved for uploads, {pending} awaiting deletion": "{reserved} reservados para envios, {pending} aguardando exclusão",
+	"Account concerned": "Conta em questão",
+	"Quota per account: {quota}": "Cota por conta: {quota}"
 }
