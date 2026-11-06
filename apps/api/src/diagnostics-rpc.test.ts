@@ -32,10 +32,9 @@ async function register(email: string) {
 const operator = await register('operator@example.com')
 const player = await register('player@example.com')
 const moderator = await register('moderator@example.com')
-process.env.DIAGNOSTICS_OPERATOR_IDS = operator.id
-process.env.PUBLIC_MODERATOR_IDS = moderator.id
 const { app } = await import('./index')
 const { database } = await import('./database')
+database.query('INSERT INTO user_roles VALUES (?)').run(operator.id) // administrators are the operators and moderators
 const { createPairingCode, exchangePairingCode } = await import('./pairing')
 afterAll(() => {
 	database.close()
@@ -95,7 +94,7 @@ async function submit(value = report) {
 	})
 }
 
-test('web diagnostics require an explicit operator session; moderator and device credentials are insufficient', async () => {
+test('web diagnostics require an administrator session; plain-account and device credentials are insufficient', async () => {
 	expect(await rpc().diagnostics.access()).toEqual({ allowed: false })
 	expect(await rpc(player.cookie).diagnostics.access()).toEqual({ allowed: false })
 	expect(await rpc(moderator.cookie).diagnostics.access()).toEqual({ allowed: false })

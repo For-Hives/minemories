@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { discoveryPages } from '../content/discovery'
+import { navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
@@ -49,17 +50,38 @@ export function HeroAccount({ menu = false }: { menu?: boolean }) {
 	)
 }
 
+/** The site's main links, as on every other page (home first, then the sections, then the gallery once signed in). */
+export function HeroNavLinks() {
+	const { session } = useAppContext()
+	const { t } = useI18n()
+	const links = [
+		{ to: '/', label: 'Home' },
+		...navigation,
+		...(session ? [{ to: '/gallery', label: 'My gallery' }] : []),
+	]
+	return (
+		<>
+			{links.map(link => (
+				<li key={link.to}>
+					<Link to={link.to} aria-current={link.to === '/' ? 'page' : undefined}>
+						{t(link.label)}
+					</Link>
+				</li>
+			))}
+		</>
+	)
+}
+
 const footerPages = [
 	{ to: '/installation', label: 'Installation' },
 	{ to: '/concept', label: 'The concept' },
-	{ to: '/fonctionnement', label: 'How it works' },
+	{ to: '/how-it-works', label: 'How it works' },
 	{ to: '/faq', label: 'FAQ' },
 	{ to: '/versions', label: 'Mod versions' },
 	{ to: '/changelog', label: 'What’s new' },
-	{ to: '/decouvrir', label: 'Discover' },
-	{ to: '/explorer', label: 'Public gallery' },
+	{ to: '/discover', label: 'Discover' },
+	{ to: '/explore', label: 'Public gallery' },
 	{ to: '/blog', label: 'Blog' },
-	{ to: '/pricing', label: 'Pricing' },
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
 	{ to: '/legal', label: 'Legal notice' },
@@ -125,12 +147,12 @@ export function HeroExtras() {
 					</Link>
 				</li>
 				<li>
-					<Link className="mc-link" to="/explorer">
+					<Link className="mc-link" to="/explore">
 						{t('Explore community memories')}
 					</Link>
 				</li>
 				<li>
-					<Link className="mc-link" to="/explorer?demo=1">
+					<Link className="mc-link" to="/explore?demo=1">
 						{t('Explore the demo memories')}
 					</Link>
 				</li>

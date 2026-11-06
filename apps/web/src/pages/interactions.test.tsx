@@ -41,6 +41,7 @@ vi.mock('../components/ui', () => ({
 	buttonDark: '',
 	buttonLime: '',
 	buttonOutline: '',
+	buttonQuiet: '',
 	fileInputHidden: '',
 	useAppContext: () => mocks.context,
 	Eyebrow: ({ children }: { children: ReactNode }) => <span>{children}</span>,
@@ -639,7 +640,7 @@ test('guests can open a local capture directly without authentication', () => {
 	expect(mocks.signIn).not.toHaveBeenCalled()
 })
 
-test('authentication uses a focused shell with a language control', () => {
+test('authentication keeps the site header with its language control', () => {
 	render(
 		<MemoryRouter initialEntries={['/login']}>
 			<SiteLayout>
@@ -649,8 +650,11 @@ test('authentication uses a focused shell with a language control', () => {
 	)
 	expect(screen.getByRole('main')).toBeTruthy()
 	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
-	expect(screen.queryByRole('navigation', { name: 'Main navigation' })).toBeNull()
-	expect(screen.getByRole('link', { name: 'Sign in' }).getAttribute('aria-current')).toBe('page')
+	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
+	expect(screen.getAllByRole('link', { name: 'Blog' }).length).toBeGreaterThan(0)
+	expect(
+		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
+	).toBe(true)
 })
 
 test('pending authentication prevents duplicate submission and lets the user retry after failure', async () => {

@@ -36,7 +36,7 @@ export function DiscoveryPage() {
 					<h2>{t('Start with a visit.')}</h2>
 					<p>{t('Public memories to visit, with a separate demo to try.')}</p>
 				</div>
-				<Link className={buttonLime} to="/explorer">
+				<Link className={buttonLime} to="/explore">
 					{t('Explore the gallery')}
 				</Link>
 			</section>
@@ -56,7 +56,7 @@ export function MarketingPage() {
 		>
 			<div className={`mm-story-hero mm-accent-${page.accent}`}>
 				<MemoryScene
-					theme={page.path === '/nostalgie' ? 'home' : 'village'}
+					theme={page.path === '/nostalgia' ? 'home' : 'village'}
 					label={t('Illustration of a small Minecraft world')}
 				/>
 				<div>
@@ -72,7 +72,7 @@ export function MarketingPage() {
 					</Link>
 				</div>
 			</div>
-			{page.path === '/nostalgie' && <TimelinePreview />}
+			{page.path === '/nostalgia' && <TimelinePreview />}
 			{page.path === '/open-source' && (
 				<section className="mm-callout">
 					<div>
@@ -89,14 +89,14 @@ export function MarketingPage() {
 					</div>
 				</section>
 			)}
-			{page.path === '/partager' && (
+			{page.path === '/sharing' && (
 				<section className="mm-callout">
 					<div>
 						<h2>{t('Try it, then create your own gallery.')}</h2>
 						<p>{t('The demo needs nothing. Your own space requires an account and keeps your captures private.')}</p>
 					</div>
 					<div className="mm-actions">
-						<Link className={buttonOutline} to="/explorer?demo=1">
+						<Link className={buttonOutline} to="/explore?demo=1">
 							{t('View the demo')}
 						</Link>
 						<Link className={buttonLime} to="/gallery">
@@ -105,14 +105,11 @@ export function MarketingPage() {
 					</div>
 				</section>
 			)}
-			{page.path === '/classement' && <GalleryPreview ranking />}
+			{page.path === '/ranking' && <GalleryPreview ranking />}
 			<p className="mm-note">{translate(locale, page.note)}</p>
 			<div className="mm-actions">
-				<Link to="/decouvrir" className={buttonOutline}>
+				<Link to="/discover" className={buttonOutline}>
 					{t('All paths')}
-				</Link>
-				<Link to="/pricing" className={buttonOutline}>
-					{t('Plan my budget')}
 				</Link>
 			</div>
 		</ContentLayout>
@@ -149,7 +146,7 @@ export function ExplorerPage({ ranking = false }: { ranking?: boolean }) {
 	const { t } = useI18n()
 	const [params] = useSearchParams()
 	const demo = params.get('demo') === '1'
-	const base = ranking ? '/classement' : '/explorer'
+	const base = ranking ? '/ranking' : '/explore'
 	let title = t('Memories to explore')
 	if (ranking) title = t('Most loved memories')
 	if (demo) title = t('A little visit, just to see.')
@@ -336,7 +333,7 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 		heading.current?.scrollIntoView({ block: 'center', behavior: 'instant' })
 	}, [])
 	async function share() {
-		const url = new URL('/explorer', window.location.origin)
+		const url = new URL('/explore', window.location.origin)
 		url.searchParams.set('souvenir', memory.id)
 		setLink(url.href)
 		try {

@@ -19,7 +19,7 @@ function Success({ onRestart }: { onRestart: () => void }) {
 					/>
 				</p>
 				<p>
-					<Link to="/fonctionnement">
+					<Link to="/how-it-works">
 						<T message={'Explore captures, the gallery and sharing →'} />
 					</Link>
 				</p>

@@ -296,8 +296,8 @@ Une page adopte la charte en : (1) portant `.ds-page` sur sa racine ; (2) utilis
 | Page | Écran du jeu évoqué | Composants |
 |---|---|---|
 | Landing `/` | écran titre + cinématique | déjà en production. La section « Ce que Minemories ne fait pas » (cadre doré) a été retirée ; ses quatre limites (pas une sauvegarde, rien avant le mod, une capture AFK toutes les 4 h, Java 1.21.1 en bêta) restent à dire ailleurs si besoin (FAQ, page installation) |
-| Guides (`/installation`, `/fonctionnement`, `/faq`…) | livre, écran d'aide | `mc-step`, `mc-faq`, `mc-recipe`, `mc-section` |
-| Découverte (`/decouvrir`, `/classement`, `/explorer`) | sélection de monde | ligne de monde : miniature carrée, nom en blanc, détail en gris, bouton à droite |
+| Guides (`/installation`, `/how-it-works`, `/faq`…) | livre, écran d'aide | `mc-step`, `mc-faq`, `mc-recipe`, `mc-section` |
+| Découverte (`/discover`, `/ranking`, `/explore`) | sélection de monde | ligne de monde : miniature carrée, nom en blanc, détail en gris, bouton à droite |
 | Textes longs (`/blog`, `/privacy`, `/terms`) | livre signé | `mc-prose`, mesure de 58 caractères |
 | Connexion, inscription, compte | écran de réglages | `mc-form`, `mc-field`, `mc-check`, `mc-select`, un seul bouton principal |
 | Galerie, partage | album de captures | grille de cases, légende en infobulle au survol et au focus |

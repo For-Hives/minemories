@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { adminRoutes } from './admin-routes'
 import { AppContext, type AppContextValue, useAppContext } from './app-context'
 import { authClient } from './auth-client'
-import { LoadingSkeleton } from './components/Loading'
 import { Page, preloadWhenIdle } from './components/PageFrame'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
@@ -28,7 +27,8 @@ const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
 const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
-const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
+// Pricing is disabled for now (page kept in pages/PricingPage.tsx): re-enable this import and its route, the header/footer links and the metadata entry.
+// const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
 const DiscoveryPages = () => import('./pages/DiscoveryPages')
 const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
 const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
@@ -44,14 +44,28 @@ const publicPageChunks = [
 	() => import('./pages/InstallationPage'),
 	() => import('./pages/DownloadsPage'),
 	() => import('./pages/ReleasesPage'),
-	() => import('./pages/PricingPage'),
 	() => import('./pages/AuthPage'),
 ]
 
+/** The French paths this site used before its URLs were put in English: they keep working. */
+const legacyPaths = {
+	'/decouvrir': '/discover',
+	'/explorer': '/explore',
+	'/classement': '/ranking',
+	'/nostalgie': '/nostalgia',
+	'/partager': '/sharing',
+	'/fonctionnement': '/how-it-works',
+	'/telechargements': '/downloads',
+}
+
+function LegacyRedirect({ to }: { to: string }) {
+	const { search, hash } = useLocation()
+	return <Navigate to={`${to}${search}${hash}`} replace />
+}
 function RequireSession() {
 	const { session, isPending } = useAppContext()
 	const location = useLocation()
-	if (isPending) return <LoadingSkeleton kind="gallery" label="Loading your space…" />
+	if (isPending) return <div className="mm-page-pending" aria-hidden="true" />
 	if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />
 	return <Outlet />
 }
@@ -84,7 +98,7 @@ export function App() {
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
 							<Route
-								path="/decouvrir"
+								path="/discover"
 								element={
 									<Page>
 										<DiscoveryPage />
@@ -92,7 +106,7 @@ export function App() {
 								}
 							/>
 							<Route
-								path="/explorer"
+								path="/explore"
 								element={
 									<Page>
 										<ExplorerPage />
@@ -100,14 +114,14 @@ export function App() {
 								}
 							/>
 							<Route
-								path="/classement"
+								path="/ranking"
 								element={
 									<Page>
 										<ExplorerPage ranking />
 									</Page>
 								}
 							/>
-							{['/open-source', '/nostalgie', '/partager'].map(path => (
+							{['/open-source', '/nostalgia', '/sharing'].map(path => (
 								<Route
 									key={path}
 									path={path}
@@ -135,7 +149,7 @@ export function App() {
 								}
 							/>
 							<Route
-								path="/fonctionnement"
+								path="/how-it-works"
 								element={
 									<Page>
 										<HowItWorksPage />
@@ -151,7 +165,7 @@ export function App() {
 								}
 							/>
 							<Route
-								path="/telechargements"
+								path="/downloads"
 								element={
 									<Page>
 										<DownloadsPage />
@@ -198,6 +212,7 @@ export function App() {
 									</Page>
 								}
 							/>
+							{/* Pricing disabled (falls through to the 404 page):
 							<Route
 								path="/pricing"
 								element={
@@ -206,6 +221,7 @@ export function App() {
 									</Page>
 								}
 							/>
+							*/}
 							<Route
 								path="/privacy"
 								element={
@@ -289,6 +305,9 @@ export function App() {
 									</Page>
 								}
 							/>
+							{Object.entries(legacyPaths).map(([from, to]) => (
+								<Route key={from} path={from} element={<LegacyRedirect to={to} />} />
+							))}
 							<Route
 								path="*"
 								element={

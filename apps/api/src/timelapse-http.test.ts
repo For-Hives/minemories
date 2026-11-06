@@ -33,12 +33,12 @@ async function register(email: string) {
 }
 const owner = await register('owner@example.com'),
 	other = await register('other@example.com')
-process.env.PUBLIC_MODERATOR_IDS = other.id
 const { readMemoryStream } = await import('./storage')
 const { storageInventory } = await import('./storage-inventory')
 const { collectReconciliationPlan } = await import('./storage-reconciliation-plan')
 const { app, timelapseMaintenance } = await import('./index'),
 	{ database } = await import('./database')
+database.query('INSERT INTO user_roles VALUES (?)').run(other.id) // administrators are the operators and moderators
 afterAll(async () => {
 	await timelapseMaintenance.stop()
 	database.close()

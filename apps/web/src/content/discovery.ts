@@ -11,7 +11,7 @@ export const discoveryPages = [
 		note: 'The ambition is open source. The repository is public, but a redistribution license still needs to be chosen; visibility alone does not grant those rights.',
 	},
 	{
-		path: '/nostalgie',
+		path: '/nostalgia',
 		label: 'The places that matter',
 		title: 'Remember our first house?',
 		lead: 'The crooked roof. The shared chest. That path we took every evening. Keep a place, and everything it brings back.',
@@ -22,7 +22,7 @@ export const discoveryPages = [
 		note: 'A 3D memory keeps captured shapes and textures. It does not preserve the entire game or replace your Minecraft backup.',
 	},
 	{
-		path: '/partager',
+		path: '/sharing',
 		label: 'A gallery to share',
 		title: 'Invite people back, even if they no longer play.',
 		lead: 'No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it.',
@@ -33,7 +33,7 @@ export const discoveryPages = [
 		note: 'The demo explorer uses illustrations. No private captures are published there. The community public gallery is in preparation.',
 	},
 	{
-		path: '/classement',
+		path: '/ranking',
 		label: 'Builds to discover',
 		title: 'Small worlds deserve their moment too.',
 		lead: 'A cabin can tell as much as a megabase. Discover voluntarily published memories and the places visitors love.',

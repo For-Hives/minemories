@@ -30,7 +30,7 @@ function mountGuide(entry = '/installation') {
 			<Where />
 			<Routes>
 				<Route path="/installation" element={<InstallationPage />} />
-				<Route path="/telechargements" element={<p>Downloads page</p>} />
+				<Route path="/downloads" element={<p>Downloads page</p>} />
 			</Routes>
 		</MemoryRouter>
 	)
@@ -64,9 +64,7 @@ test('the welcome screen detects the system and offers only the two ways in, a w
 	expect(choices).toHaveLength(2)
 	expect(choices[0]).toBe('Ce n’est pas ça ? Changer')
 	expect(choices[1]).toMatch(/^Installation guidée/)
-	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ }).getAttribute('href')).toBe(
-		'/telechargements'
-	)
+	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ }).getAttribute('href')).toBe('/downloads')
 	expect(screen.getByRole('link', { name: 'Besoin d’aide ?' }).getAttribute('href')).toBe('#aide')
 	expect(document.getElementById('aide')).toBeTruthy()
 	expect(screen.queryByLabelText('Réduire les animations')).toBeNull()
@@ -142,7 +140,7 @@ test('the guided installation asks three light questions, then walks through the
 	expect(title()).toBe('Ton premier souvenir est là.')
 	expect(document.activeElement).toBe(panel())
 	expect(screen.queryByRole('progressbar')).toBeNull()
-	expect(screen.getByRole('link', { name: /Explorer les captures/ }).getAttribute('href')).toBe('/fonctionnement')
+	expect(screen.getByRole('link', { name: /Explorer les captures/ }).getAttribute('href')).toBe('/how-it-works')
 	expect(stored()).toMatchObject({ step: 'done', minecraft: '1.21.11', loader: 'fabric' })
 	click('Recommencer et effacer mes choix')
 	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()

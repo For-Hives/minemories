@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
 import { discoveryPages } from '../content/discovery'
+import { navigation } from '../content/navigation'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
@@ -18,12 +19,6 @@ import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
 
-const navigation = [
-	{ to: '/decouvrir', label: 'Discover' },
-	{ to: '/installation', label: 'Guides' },
-	{ to: '/blog', label: 'Blog' },
-	{ to: '/pricing', label: 'Pricing' },
-]
 const legalLinks = [
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
@@ -127,9 +122,10 @@ function LanguageControl() {
 		</label>
 	)
 }
-export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
+/** The site's bar, the same on every page that is not the landing film or the 3D viewer: brand, links, language, account and the phones' menu. */
+function SiteHeader() {
 	const { session } = useAppContext()
-	const { t, locale } = useI18n()
+	const { t } = useI18n()
 	const { pathname } = useLocation()
 	const mobile = useRef<HTMLDetailsElement>(null)
 	// The menu's own language picker (phones) only exists while the menu is open: one picker at a time.
@@ -137,6 +133,52 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 	useEffect(() => {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
+	return (
+		<header className="mm-header">
+			<Brand />
+			<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
+				<NavLink to="/" end>
+					{t('Home')}
+				</NavLink>
+				{navigation.map(link => (
+					<NavLink key={link.to} to={link.to}>
+						{t(link.label)}
+					</NavLink>
+				))}
+				{session && <NavLink to="/gallery">{t('My gallery')}</NavLink>}
+			</nav>
+			<div className="mm-header-actions">
+				<LanguageControl />
+				<FileControl />
+				<AccountControl />
+				<details ref={mobile} className="mm-mobile-menu" onToggle={event => setMenuOpen(event.currentTarget.open)}>
+					<summary className="mc-btn mc-btn--tool" aria-label={t('Open menu')}>
+						<span className="mc-icon mc-icon--menu" aria-hidden="true" />
+					</summary>
+					<nav aria-label={t('Main navigation')}>
+						<Link to="/">{t('Home')}</Link>
+						{navigation.map(link => (
+							<Link key={link.to} to={link.to}>
+								{t(link.label)}
+							</Link>
+						))}
+						{session && <Link to="/gallery">{t('My gallery')}</Link>}
+						{legalLinks.map(link => (
+							<Link to={link.to} key={link.to}>
+								{t(link.label)}
+							</Link>
+						))}
+						{menuOpen && <LanguageControl />}
+					</nav>
+				</details>
+			</div>
+		</header>
+	)
+}
+export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
+	const { session } = useAppContext()
+	const { t, locale } = useI18n()
+	const { pathname } = useLocation()
 	// The landing's film resets <html> when it leaves: the stored display options and the Unifont class are put back on every page (lib/display-preferences.ts).
 	useLayoutEffect(() => {
 		if (pathname !== '/') applyDisplay(document.documentElement, safeStorage(), locale)
@@ -166,45 +208,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			<a className="mm-skip" href="#main-content">
 				{t('Skip to content')}
 			</a>
-			<header className="mm-header">
-				<Brand />
-				<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
-					<NavLink to="/" end>
-						{t('Home')}
-					</NavLink>
-					{navigation.map(link => (
-						<NavLink key={link.to} to={link.to}>
-							{t(link.label)}
-						</NavLink>
-					))}
-					{session && <NavLink to="/gallery">{t('My gallery')}</NavLink>}
-				</nav>
-				<div className="mm-header-actions">
-					<LanguageControl />
-					<FileControl />
-					<AccountControl />
-					<details ref={mobile} className="mm-mobile-menu" onToggle={event => setMenuOpen(event.currentTarget.open)}>
-						<summary className="mc-btn mc-btn--tool" aria-label={t('Open menu')}>
-							<span className="mc-icon mc-icon--menu" aria-hidden="true" />
-						</summary>
-						<nav aria-label={t('Main navigation')}>
-							<Link to="/">{t('Home')}</Link>
-							{navigation.map(link => (
-								<Link key={link.to} to={link.to}>
-									{t(link.label)}
-								</Link>
-							))}
-							{session && <Link to="/gallery">{t('My gallery')}</Link>}
-							{legalLinks.map(link => (
-								<Link to={link.to} key={link.to}>
-									{t(link.label)}
-								</Link>
-							))}
-							{menuOpen && <LanguageControl />}
-						</nav>
-					</details>
-				</div>
-			</header>
+			<SiteHeader />
 			<main id="main-content" tabIndex={-1} className="mm-main">
 				<div className="mm-page-transition">{children ?? <Outlet />}</div>
 			</main>
@@ -216,7 +220,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						<br />
 						<em>{t('What they leave us stays.')}</em>
 					</span>
-					<Link to="/explorer">{t('Explore memories')} ↗</Link>
+					<Link to="/explore">{t('Explore memories')} ↗</Link>
 				</div>
 				<div>
 					<Brand />
@@ -225,7 +229,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				</div>
 				<nav aria-label={t('Guides')}>
 					<Link to="/concept">{t('The concept')}</Link>
-					<Link to="/fonctionnement">{t('How it works')}</Link>
+					<Link to="/how-it-works">{t('How it works')}</Link>
 					<Link to="/installation">{t('Install the mod')}</Link>
 					<Link to="/versions">{t('Mod versions')}</Link>
 					<Link to="/changelog">{t('What’s new')}</Link>
@@ -239,7 +243,7 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
-					{[...discoveryPages, { path: '/explorer', label: 'Public gallery' }].map(page => (
+					{[...discoveryPages, { path: '/explore', label: 'Public gallery' }].map(page => (
 						<Link key={page.path} to={page.path}>
 							{translate(locale, page.label)}
 						</Link>
@@ -309,13 +313,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			<a className="mm-skip" href="#main-content">
 				{t('Skip to content')}
 			</a>
-			<header className="auth-topbar">
-				<Brand />
-				<div>
-					<Link to="/faq">{t('Need help?')}</Link>
-					<LanguageControl />
-				</div>
-			</header>
+			<SiteHeader />
 			<main id="main-content" tabIndex={-1}>
 				{children}
 			</main>

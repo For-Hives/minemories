@@ -75,7 +75,7 @@ function status(row: Pick<Publication, 'id' | 'state' | 'reason'> | null) {
 export class PublicDiscovery {
 	constructor(
 		private readonly db: Database,
-		private readonly moderators: ReadonlySet<string>,
+		private readonly moderators: { has(userId: string): boolean },
 		private readonly now = Date.now
 	) {}
 

@@ -73,22 +73,21 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 		'/terms',
 		'/legal',
 		'/concept',
-		'/fonctionnement',
+		'/how-it-works',
 		'/faq',
 		'/blog',
-		'/pricing',
 		'/login',
 	])
 		expect(hrefs, route).toContain(route)
 	// every target of the former home page is still linked (the demo memories, the community, the concept, the discovery pages, the album)
 	for (const target of [
-		'/explorer?demo=1',
-		'/explorer',
+		'/explore?demo=1',
+		'/explore',
 		'/concept',
 		'/open-source',
-		'/nostalgie',
-		'/partager',
-		'/classement',
+		'/nostalgia',
+		'/sharing',
+		'/ranking',
 		'/register',
 	])
 		expect(hrefs, target).toContain(target)

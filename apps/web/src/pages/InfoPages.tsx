@@ -4,9 +4,9 @@ import { T, useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
-	{ to: '/fonctionnement', label: 'How it works' },
+	{ to: '/how-it-works', label: 'How it works' },
 	{ to: '/installation', label: 'Install the mod' },
-	{ to: '/telechargements', label: 'All downloads' },
+	{ to: '/downloads', label: 'All downloads' },
 	{ to: '/faq', label: 'FAQ' },
 ]
 
@@ -91,7 +91,7 @@ export function ConceptPage() {
 				/>
 			</p>
 			<p>
-				<Link to="/fonctionnement">
+				<Link to="/how-it-works">
 					<T message={'Create my first memory, step by step'} />
 				</Link>
 			</p>
@@ -336,7 +336,7 @@ export function FaqPage() {
 				))}
 			</div>
 			<p>
-				<Link to="/fonctionnement">
+				<Link to="/how-it-works">
 					<T message={'All the steps to capture, upload and share'} />
 				</Link>
 			</p>

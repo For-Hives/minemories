@@ -562,7 +562,8 @@ export function mountHero(host) {
 		// The header's section links glide (the browser's own smooth scrolling, only when motion is welcome); every other jump or focus move is instant.
 		for (const link of $$('.mc-sitebar__nav a, .mc-sitebar__brand, .site-menu__links a')) {
 			link.addEventListener('click', event => {
-				const target = phase() === 'site' ? document.querySelector(link.getAttribute('href') ?? '') : null
+				const href = link.getAttribute('href') ?? ''
+				const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
 				if (!target || reduced()) return
 				event.preventDefault()
 				target.scrollIntoView({ behavior: 'smooth', block: 'start' })

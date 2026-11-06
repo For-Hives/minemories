@@ -49,8 +49,8 @@ Le Nginx doit servir `$uri/index.html` pour les pages publiques, `/app.html` pou
 | Viewer local/distant | Module Three.js différé, skeleton du cadre, libellés et présélections | Profilage shader ; aucune modification du moteur GLB |
 | Partage | Module différé, téléchargement annulé à la sortie, état accessible et texte mobile sans débordement | Test de révocation/incident avec API de production |
 | Journal | Données FR/EN, index et article, schema et sitemap automatiques | Articles éditoriaux supplémentaires, éventuel CMS |
-| Découverte | Quatre pages FR/EN, hub `/decouvrir`, navigation depuis l’accueil | Choisir une licence ; finaliser les messages avant lancement |
-| Galerie/classement démo | `/explorer`, recherche, thèmes, tri, favoris, votes locaux et aperçu par URL | Publication volontaire, modération et votes réels côté API |
+| Découverte | Quatre pages FR/EN, hub `/discover`, navigation depuis l’accueil | Choisir une licence ; finaliser les messages avant lancement |
+| Galerie/ranking démo | `/explore`, recherche, thèmes, tri, favoris, votes locaux et aperçu par URL | Publication volontaire, modération et votes réels côté API |
 | Tarifs/légal | Tarifs fournis, simulateur, estimation locale et textes factuels | Paiement Polar, taxes, quota, contrat de conservation et coordonnées juridiques |
 
 Les comptes privés et les captures n’entrent jamais dans les artefacts de rendu public. La crawlabilité signifie que le HTML est accessible aux robots ; elle ne garantit pas l’indexation par un moteur.
@@ -58,9 +58,9 @@ Les comptes privés et les captures n’entrent jamais dans les artefacts de ren
 
 ## Démonstrations et préférences
 
-`/open-source`, `/nostalgie`, `/partager` et `/classement` présentent des usages différents avec des CTA vers le tutoriel, GitHub et la vraie galerie privée. `/nostalgie` permet de faire évoluer une illustration SVG par curseur ; ce n’est pas un timelapse réel. Les images de la démo sont des illustrations, sans import de captures privées ni de moteur Three.js. Le dépôt public n’a pas encore de licence de redistribution : la page distingue cette réalité de l’ambition open source.
+`/open-source`, `/nostalgia`, `/sharing` et `/ranking` présentent des usages différents avec des CTA vers le tutoriel, GitHub et la vraie galerie privée. `/nostalgia` permet de faire évoluer une illustration SVG par curseur ; ce n’est pas un timelapse réel. Les images de la démo sont des illustrations, sans import de captures privées ni de moteur Three.js. Le dépôt public n’a pas encore de licence de redistribution : la page distingue cette réalité de l’ambition open source.
 
-`/explorer?souvenir=premiere-maison` ouvre un aperçu d’exemple. Son lien peut être copié ; si le presse-papiers est bloqué, un champ sélectionnable permet la copie manuelle. Recherche, filtres, favoris et votes réversibles fonctionnent sur l’appareil. Les scores initiaux sont des exemples explicitement identifiés. Les préférences `minemories-demo-v1` sont validées au chargement et effaçables avec « Réinitialiser la démo ». Elles ne sont jamais envoyées à l’API.
+`/explore?souvenir=premiere-maison` ouvre un aperçu d’exemple. Son lien peut être copié ; si le presse-papiers est bloqué, un champ sélectionnable permet la copie manuelle. Recherche, filtres, favoris et votes réversibles fonctionnent sur l’appareil. Les scores initiaux sont des exemples explicitement identifiés. Les préférences `minemories-demo-v1` sont validées au chargement et effaçables avec « Réinitialiser la démo ». Elles ne sont jamais envoyées à l’API.
 
 Le simulateur `/pricing` accepte 1–100 snapshots et 1–10 ans ; un champ invalide empêche l’enregistrement. « Garder cette estimation » écrit uniquement `minemories-quote-v1`, relu après hydratation et ignoré s’il est invalide. Une restriction du stockage navigateur ne bloque pas le parcours. Le mod actuel exporte un souvenir GLB de zone : les sauvegardes Minecraft complètes et leur archive commerciale ne sont pas annoncées comme déjà fonctionnelles.
 
