@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { repositoryRoot } from '../release-utils.mjs'
 import {
 	ciCells,
 	compareVersions,
@@ -10,6 +9,7 @@ import {
 	selectTargets,
 	validateConfig,
 } from './config.mjs'
+import { repositoryRoot } from './utils.mjs'
 
 const target = (overrides = {}) => ({
 	id: 'forge-mc26.3',

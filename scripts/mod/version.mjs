@@ -1,7 +1,7 @@
 // The mod version lives in mod/1.21.1/gradle.properties (the ports read it from there).
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { releaseVersionPattern, repositoryRoot, run } from '../release-utils.mjs'
+import { releaseVersionPattern, repositoryRoot, run } from './utils.mjs'
 
 export const propertiesPath = 'mod/1.21.1/gradle.properties'
 const versionLine = /^mod_version=(.+)$/m

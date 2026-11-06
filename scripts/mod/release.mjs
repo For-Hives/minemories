@@ -3,10 +3,10 @@
 import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { run } from '../release-utils.mjs'
 import { buildTargets, lockPath, summarize } from './build.mjs'
 import { enabledTargets } from './config.mjs'
 import { acquireLock } from './lock.mjs'
+import { run } from './utils.mjs'
 import { bump, readModVersion } from './version.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))

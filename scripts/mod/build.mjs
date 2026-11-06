@@ -3,10 +3,10 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { repositoryRoot, run } from '../release-utils.mjs'
 import { distFileName, isBuildable } from './config.mjs'
 import { ensureJdks, gradleJavaSetup } from './jdk.mjs'
 import { withLock } from './lock.mjs'
+import { repositoryRoot, run } from './utils.mjs'
 
 const releaseVersion = /^\d+\.\d+\.\d+(-[\w.]+)?$/
 const zipMagic = 0x04034b50

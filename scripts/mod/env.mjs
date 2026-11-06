@@ -1,7 +1,7 @@
 // Loads the repository .env without overriding variables already set in the environment.
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { repositoryRoot } from '../release-utils.mjs'
+import { repositoryRoot } from './utils.mjs'
 
 const linePattern = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/
 const lineBreak = /\r?\n/

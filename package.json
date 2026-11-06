@@ -35,29 +35,18 @@
 		"api:check": "biome check apps/api packages/api-contract && bun run --filter @minemories/api typecheck && bun run --filter @minemories/api test",
 		"format": "biome check --write apps scripts package.json biome.json",
 		"lint": "biome check apps scripts package.json biome.json",
-		"check": "bun run lint && bun run hero:check && bun run package:mod:test && bun run release:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
-		"build": "bun run check && bun run mod:build && bun run package:mod:all && bun run package:mod && bun run hero:assets && node scripts/hero-assets/cli.mjs --check && bun run web:build",
-		"package:mod": "node scripts/package-mod.mjs",
-		"package:mod:test": "node --test scripts/mod/*.test.mjs scripts/package-mod.test.mjs scripts/verify-mod-artifact.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs",
+		"check": "bun run lint && bun run hero:check && bun run scripts:test && bun run api:coverage:test && bun run web:check && bun run api:check && bun run mod:check:ci",
+		"build": "bun run check && bun run mod:build && bun run hero:assets && node scripts/hero-assets/cli.mjs --check && bun run web:build",
 		"api:garage": "node scripts/garage-integration.mjs",
 		"api:coverage:test": "node --test scripts/check-api-coverage.test.mjs",
-		"release:test": "node --test scripts/release-utils.test.mjs scripts/sync-release-versions.test.mjs scripts/release-flow.test.mjs scripts/release-assets.test.mjs scripts/build-release-target.test.mjs",
-		"package:mod:all": "node scripts/package-mod.mjs --all"
+		"scripts:test": "node --test scripts/build-web.test.mjs scripts/prerender-web.test.mjs scripts/ci-scope.test.mjs scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-s3": "3.1161.0",
 		"@biomejs/biome": "2.5.15",
 		"@jsquash/oxipng": "2.3.0",
-		"@release-it/conventional-changelog": "12.0.2",
 		"meshoptimizer": "1.1.1",
-		"pngjs": "7.0.0",
-		"release-it": "21.1.2"
-	},
-	"overrides": {
-		"basic-ftp": "6.2.5",
-		"release-it": {
-			"undici": "8.12.3"
-		}
+		"pngjs": "7.0.0"
 	},
 	"version": "0.36.0-beta.1"
 }

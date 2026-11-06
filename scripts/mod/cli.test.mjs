@@ -4,9 +4,9 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { repositoryRoot } from '../release-utils.mjs'
 import { parseArgs } from './args.mjs'
 import { discoverCommands, helpText, main } from './cli.mjs'
+import { repositoryRoot } from './utils.mjs'
 
 const capture = () => {
 	const out = { info: [], warn: [], error: [] }
