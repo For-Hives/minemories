@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { AdminAccessLink } from '../components/AdminAccessLink'
@@ -24,8 +24,12 @@ const user = {
 	role: 'user',
 	captures: 2,
 	storedBytes: 2000,
+	usedBytes: 2000,
+	reservedBytes: 0,
+	pendingDeletionBytes: 0,
 	devices: 1,
 }
+const quotaBytes = 2147483648
 beforeEach(() => {
 	vi.resetAllMocks()
 	localStorage.clear()
@@ -64,6 +68,8 @@ beforeEach(() => {
 		total: 26,
 		page: 1,
 		pageSize: 25,
+		quotaBytes,
+		overview: { accounts: 26, usedBytes: 4000, nearQuotaAccounts: 0 },
 	})
 	mocks.audit.mockResolvedValue([])
 	mocks.setRole.mockResolvedValue({ ok: true })
@@ -86,25 +92,41 @@ test('unauthorized visitors never fetch private statistics or the directory', as
 test('directory searches, role filters, pagination and periods reach the server', async () => {
 	page()
 	await screen.findByText('Candidate')
-	expect(screen.getByRole('button', { name: 'Retirer le rôle admin' })).toHaveProperty('disabled', true)
+	expect(screen.getByRole('button', { name: 'Retirer le rôle admin (Owner)' })).toHaveProperty('disabled', true)
 	fireEvent.change(screen.getByLabelText('Rechercher un compte'), { target: { value: 'candidate' } })
 	fireEvent.change(screen.getByLabelText('Rôle'), { target: { value: 'user' } })
 	fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
 	await waitFor(() =>
-		expect(mocks.users).toHaveBeenLastCalledWith({ query: 'candidate', role: 'user', page: 1 }, expect.anything())
+		expect(mocks.users).toHaveBeenLastCalledWith(
+			{ query: 'candidate', role: 'user', page: 1, sort: 'registered_desc' },
+			expect.anything()
+		)
 	)
 	await screen.findByText('Candidate')
 	fireEvent.click(screen.getByRole('button', { name: 'Suivant' }))
 	await waitFor(() =>
-		expect(mocks.users).toHaveBeenLastCalledWith({ query: 'candidate', role: 'user', page: 2 }, expect.anything())
+		expect(mocks.users).toHaveBeenLastCalledWith(
+			{ query: 'candidate', role: 'user', page: 2, sort: 'registered_desc' },
+			expect.anything()
+		)
+	)
+	fireEvent.change(screen.getByLabelText('Trier par'), { target: { value: 'storage_desc' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+	await waitFor(() =>
+		expect(mocks.users).toHaveBeenLastCalledWith(
+			{ query: 'candidate', role: 'user', page: 1, sort: 'storage_desc' },
+			expect.anything()
+		)
 	)
 	fireEvent.change(screen.getByLabelText('Période'), { target: { value: '168' } })
 	await waitFor(() => expect(mocks.summary).toHaveBeenLastCalledWith({ hours: 168 }, expect.anything()))
 })
 test('role changes require confirmation, show safe errors and refresh after success', async () => {
 	page()
-	fireEvent.click(await screen.findByRole('button', { name: 'Promouvoir admin' }))
+	fireEvent.click(await screen.findByRole('button', { name: 'Promouvoir admin (Candidate)' }))
 	expect(mocks.setRole).not.toHaveBeenCalled()
+	expect(within(screen.getByRole('dialog')).getByText('Compte concerné')).toBeTruthy()
+	expect(within(screen.getByRole('dialog')).getByText('candidate@example.com')).toBeTruthy()
 	const password = screen.getByLabelText('Ton mot de passe actuel')
 	fireEvent.change(password, { target: { value: 'confirmed-password' } })
 	mocks.setRole.mockRejectedValueOnce(new Error('private database internals'))
@@ -119,6 +141,43 @@ test('role changes require confirmation, show safe errors and refresh after succ
 	fireEvent.click(screen.getByRole('button', { name: 'Confirmer le changement' }))
 	await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 	await waitFor(() => expect(mocks.summary).toHaveBeenCalledTimes(2))
+	expect(mocks.users).toHaveBeenCalledTimes(2)
+	expect(mocks.audit).toHaveBeenCalledTimes(2)
+})
+test('each account shows its storage as a labelled progress bar, in text and in bytes', async () => {
+	mocks.users.mockResolvedValue({
+		users: [
+			{ ...user, id: 'empty', name: 'Empty', captures: 0, storedBytes: 0, usedBytes: 0 },
+			{
+				...user,
+				id: 'near',
+				name: 'Nearly full',
+				usedBytes: 1_900_000_000,
+				storedBytes: 1_800_000_000,
+				reservedBytes: 50_000_000,
+				pendingDeletionBytes: 50_000_000,
+			},
+			{ ...user, id: 'full', name: 'Full', usedBytes: quotaBytes + 5 },
+		],
+		total: 3,
+		page: 1,
+		pageSize: 25,
+		quotaBytes,
+		overview: { accounts: 3, usedBytes: 4_000_000_000, nearQuotaAccounts: 2 },
+	})
+	page()
+	await screen.findByText('Nearly full')
+	const bar = (name: string) => screen.getByRole('progressbar', { name })
+	expect(bar('Stockage de Empty').getAttribute('aria-valuenow')).toBe('0')
+	expect(bar('Stockage de Nearly full').getAttribute('aria-valuenow')).toBe('88')
+	expect(bar('Stockage de Nearly full').getAttribute('aria-valuetext')).toMatch(/1,9\s+Go.*2,15\s+Go.*88\s%/)
+	expect(bar('Stockage de Full').getAttribute('aria-valuenow')).toBe('100')
+	expect(screen.getByText('Quota atteint')).toBeTruthy()
+	expect(screen.getAllByText(/1\u202f900\u202f000\u202f000 octets|1 900 000 000 octets/).length).toBeGreaterThan(0)
+	expect(screen.getByText(/50\sMo réservés pour des envois, 50\sMo en attente de suppression/)).toBeTruthy()
+	const totals = screen.getByText('Stockage total utilisé').closest('div') as HTMLElement
+	expect(totals.textContent).toMatch(/4\sGo/)
+	expect(screen.getByText('Comptes proches de leur quota').closest('div')?.textContent).toContain('2')
 })
 test('network failures can be retried and revoked permissions hide private data', async () => {
 	mocks.summary.mockRejectedValueOnce(new Error('network'))
