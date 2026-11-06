@@ -72,10 +72,14 @@ export class ModStorageConflictError extends Error {}
 export function storageSettings(env?: Record<string, string | undefined>): {
 	bucket: string
 	endpoint: string
+	prefix: string
 	region: string
 	accessKeyId: string
 	secretAccessKey: string
 }
+export function parseModPrefix(value?: string): string
+export function isSafeKey(key: unknown): key is string
+export function resolveObjectKey(prefix: string, key: unknown, roots?: string[]): string | null
 export function jarName(targetId: string, version: string): string
 export function versionPrefix(targetId: string, version: string): string
 export function versionKey(targetId: string, version: string): string
