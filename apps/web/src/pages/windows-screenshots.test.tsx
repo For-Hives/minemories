@@ -19,12 +19,28 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 })
 
-test('all ten reserved screenshots are attached to the Windows manual steps without broken image requests', () => {
+function openStep(title: string, version = '1.21.1', loader = 'NeoForge') {
+	localStorage.clear()
+	cleanup()
+	vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32')
 	render(
 		<MemoryRouter>
 			<InstallationPage />
 		</MemoryRouter>
 	)
+	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?!\\d)`) }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: new RegExp(loader) }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	while ((document.querySelector('.install-panel h2') as HTMLElement).textContent !== title)
+		fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+}
+const figures = () =>
+	[...document.querySelectorAll('figure[data-screenshot]')].map(figure => figure.getAttribute('data-screenshot'))
+
+test('all ten reserved screenshots are attached to the Windows steps, folded away, without broken image requests', () => {
 	const expected = [
 		[
 			'Installer le loader',
@@ -36,18 +52,31 @@ test('all ten reserved screenshots are attached to the Windows manual steps with
 		['Créer un souvenir', ['09-premiere-capture', '10-souvenir-dans-viewer']],
 	] as const
 	for (const [step, files] of expected) {
-		fireEvent.click(screen.getByRole('button', { name: step }))
-		expect(
-			[...document.querySelectorAll('figure[data-screenshot]')].map(figure => figure.getAttribute('data-screenshot'))
-		).toEqual(files)
+		openStep(step)
+		expect(figures()).toEqual(files)
+		for (const figure of document.querySelectorAll('figure[data-screenshot]'))
+			expect(figure.closest('details')).toBeTruthy()
 	}
 	expect(screen.queryByRole('img')).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'macOS' }))
-	expect(document.querySelectorAll('figure[data-screenshot]').length).toBe(0)
-	fireEvent.click(screen.getByRole('button', { name: 'Windows' }))
-	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Installer le loader' }))
-	expect(document.querySelectorAll('figure[data-screenshot]').length).toBe(0)
+})
+
+test('the screenshots only show for the validated Windows NeoForge 1.21.1 walkthrough', () => {
+	openStep('Installer le loader', '1.21.1', 'Fabric')
+	expect(figures()).toEqual([])
+	openStep('Installer le loader', '1.19.2', 'Fabric')
+	expect(figures()).toEqual([])
+	localStorage.clear()
+	cleanup()
+	vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel')
+	render(
+		<MemoryRouter>
+			<InstallationPage />
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
+	for (let index = 0; index < 3; index++) fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Installer le loader')
+	expect(figures()).toEqual([])
 })
 
 test('a supplied screenshot uses its caption as alt text, reserves image space and can be enlarged', () => {

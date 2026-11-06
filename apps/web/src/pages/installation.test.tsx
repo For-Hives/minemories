@@ -1,13 +1,49 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { act, cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { InstallationPage } from './InstallationPage'
-import { guideStorageKey, readGuide, resetGuide, saveGuide } from './installation-state'
+import {
+	defaults,
+	guideLink,
+	guideStorageKey,
+	loadersFor,
+	presetFromSearch,
+	readGuide,
+	resetGuide,
+	saveGuide,
+	stepsFor,
+	targetFor,
+} from './installation-state'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
+}
+
+function Where() {
+	return <output data-testid="where">{useLocation().pathname + useLocation().search}</output>
+}
+function mountGuide(entry = '/installation') {
+	return render(
+		<MemoryRouter initialEntries={[entry]}>
+			<Where />
+			<Routes>
+				<Route path="/installation" element={<InstallationPage />} />
+				<Route path="/telechargements" element={<p>Downloads page</p>} />
+			</Routes>
+		</MemoryRouter>
+	)
+}
+const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
+const start = () => click(/^Installation guidée/)
+const panel = () => document.querySelector('.install-panel h2') as HTMLElement
+const next = () => click('Continuer')
+const title = () => panel().textContent
+const stored = () => JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}')
+function platform(name: string, userAgent = '') {
+	vi.spyOn(navigator, 'platform', 'get').mockReturnValue(name)
+	vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent)
 }
 
 beforeEach(() => {
@@ -19,95 +55,198 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 	vi.restoreAllMocks()
 })
-function mountGuide() {
-	return render(
-		<MemoryRouter>
-			<InstallationPage />
-		</MemoryRouter>
-	)
-}
-function step(name: string) {
-	fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }))
-}
 
-test('guides a beginner from exact loader versions through a local first capture', async () => {
+test('the welcome screen detects the system and offers only the two ways in, a way to correct the guess and the help', () => {
+	platform('MacIntel')
 	mountGuide()
-	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
-	expect(screen.queryByLabelText('Ton prénom (facultatif)')).toBeNull()
+	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('macOS')
+	const choices = screen.getAllByRole('button').map(button => button.textContent)
+	expect(choices).toHaveLength(2)
+	expect(choices[0]).toBe('Ce n’est pas ça ? Changer')
+	expect(choices[1]).toMatch(/^Installation guidée/)
+	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ }).getAttribute('href')).toBe(
+		'/telechargements'
+	)
+	expect(screen.getByRole('link', { name: 'Besoin d’aide ?' }).getAttribute('href')).toBe('#aide')
+	expect(document.getElementById('aide')).toBeTruthy()
 	expect(screen.queryByLabelText('Réduire les animations')).toBeNull()
-	expect(screen.queryByRole('button', { name: 'CurseForge' })).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer le loader')
-	expect(document.activeElement).toBe(screen.getByRole('heading', { level: 3 }))
-	expect(screen.getByRole('link', { name: 'l’installateur NeoForge 21.1.248' }).getAttribute('href')).toContain(
-		'/21.1.248/'
+	expect(screen.queryByRole('progressbar')).toBeNull()
+	click('Ce n’est pas ça ? Changer')
+	expect(screen.getByRole('button', { name: 'Ce n’est pas ça ? Changer' }).getAttribute('aria-expanded')).toBe('true')
+	fireEvent.click(screen.getByRole('button', { name: 'Linux' }))
+	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('Linux')
+	expect(screen.queryByRole('button', { name: 'Windows' })).toBeNull()
+	expect(stored().system).toBe('linux')
+})
+
+test('an unrecognised browser falls back to Windows and the other link opens the download table', () => {
+	platform('Plan 9')
+	mountGuide()
+	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('Windows')
+	fireEvent.click(screen.getByRole('link', { name: /Voir tous les téléchargements/ }))
+	expect(screen.getByText('Downloads page')).toBeTruthy()
+})
+
+test('the guided installation asks three light questions, then walks through the installation one screen at a time', async () => {
+	platform('Win32')
+	mountGuide()
+	start()
+	expect(title()).toBe('Sur quel ordinateur joues-tu ?')
+	expect(document.activeElement).toBe(panel())
+	expect(screen.getByText('Étape 1 sur 8')).toBeTruthy()
+	expect(screen.getByRole('progressbar').getAttribute('max')).toBe('8')
+	expect(screen.getByRole('radio', { name: 'Windows' })).toHaveProperty('checked', true)
+	expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Continuer', '← Retour'])
+	next()
+	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
+	expect(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }).closest('label')?.textContent).toContain(
+		'La plus utilisée'
 	)
-	expect(screen.getByText('%APPDATA%\\.minecraft-minemories')).toBeTruthy()
-	step('Télécharger le mod')
+	expect(screen.getByRole('radio', { name: /^1\.21\.1(?!\d)/ }).closest('label')?.textContent).toContain(
+		'Validée en jeu'
+	)
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }))
+	next()
+	expect(title()).toBe('Quel loader de mods utilises-tu ?')
+	expect(screen.getByRole('radio', { name: /Fabric/ }).closest('label')?.textContent).toContain('La plus utilisée')
+	expect(screen.getByText(/Pas sûr \?/)).toBeTruthy()
+	fireEvent.click(screen.getByRole('radio', { name: /Fabric/ }))
+	next()
+	expect(title()).toBe('Installer le loader')
+	expect(screen.getByText('Étape 4 sur 8')).toBeTruthy()
+	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]?.getAttribute('href')).toBe(
+		'https://fabricmc.net/use/installer/'
+	)
+	expect(screen.getAllByRole('link', { name: 'Java 21 (Temurin, site officiel)' }).length).toBeGreaterThan(0)
+	expect(screen.getAllByText('%APPDATA%\\.minecraft-minemories').length).toBeGreaterThan(0)
+	expect(screen.getByText('Pas à pas détaillé avec le Minecraft Launcher').closest('details')).toBeTruthy()
+	expect(screen.getByText(/CurseForge, Modrinth App ou un autre launcher/).closest('details')).toBeTruthy()
+	next()
+	expect(title()).toBe('Télécharger le mod')
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
-	step('Ranger le fichier')
-	expect(screen.getByText(/icône de dossier/)).toBeTruthy()
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain(
-		'minemories-neoforge-mc1.21.1-X.Y.Z.jar'
-	)
-	step('Vérifier en jeu')
+	expect(screen.getByRole('link', { name: /Fabric API 0\.141\.6\+1\.21\.11/ })).toBeTruthy()
+	next()
+	expect(title()).toBe('Ranger le fichier')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.21.11-X.Y.Z.jar')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('fabric-api-0.141.6+1.21.11.jar')
+	next()
+	expect(title()).toBe('Vérifier en jeu')
 	expect(screen.getAllByText(/Options → Contrôles/).length).toBeGreaterThan(0)
-	step('Créer un souvenir')
+	next()
+	expect(title()).toBe('Créer un souvenir')
 	expect(screen.getByText('/minemories export 16')).toBeTruthy()
 	expect(screen.getByText('%USERPROFILE%\\export')).toBeTruthy()
 	expect(screen.getByText(/relie Minecraft à ta galerie privée/)).toBeTruthy()
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
+	click('Mon souvenir s’ouvre en 3D')
+	expect(title()).toBe('Ton premier souvenir est là.')
+	expect(document.activeElement).toBe(panel())
+	expect(screen.queryByRole('progressbar')).toBeNull()
+	expect(screen.getByRole('link', { name: /Explorer les captures/ }).getAttribute('href')).toBe('/fonctionnement')
+	expect(stored()).toMatchObject({ step: 'done', minecraft: '1.21.11', loader: 'fabric' })
+	click('Recommencer et effacer mes choix')
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
+	expect(stored()).toMatchObject({ active: false, step: 'system', minecraft: '1.21.1', loader: 'neoforge' })
 })
 
-test('the version and loader choices rewrite every step and resume after a reload', () => {
-	const view = mountGuide()
-	fireEvent.click(screen.getByRole('button', { name: 'macOS' }))
-	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
-	expect(screen.getByText('Minecraft Java Edition 1.19.2 + Forge 43.5.2')).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'Fabric' }))
-	expect(screen.getByText('Minecraft Java Edition 1.19.2 + Fabric 0.20.1')).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('link', { name: 'Java 17 (Temurin, site officiel)' })).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'l’installateur Fabric 0.20.1' }).getAttribute('href')).toBe(
-		'https://fabricmc.net/use/installer/'
-	)
-	expect(screen.getByText(/Fabric Loader 0\.20\.1/)).toBeTruthy()
-	expect(screen.getByText('~/Library/Application Support/minecraft-minemories')).toBeTruthy()
-	expect(screen.getByText(/CurseForge, Modrinth App ou un autre launcher/)).toBeTruthy()
-	step('Télécharger le mod')
-	expect(screen.getByText(/pas encore publié dans les catalogues CurseForge et Modrinth/)).toBeTruthy()
-	expect(screen.getByRole('link', { name: /Fabric API 0\.77\.0\+1\.19\.2/ })).toBeTruthy()
-	step('Ranger le fichier')
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.19.2-X.Y.Z.jar')
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('fabric-api-0.77.0+1.19.2.jar')
-	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('1')
-	view.unmount()
+test('Back returns one screen, and from the first screen to the welcome screen', () => {
 	mountGuide()
-	expect(screen.getByRole('button', { name: 'macOS' }).getAttribute('aria-pressed')).toBe('true')
-	expect(screen.getByRole('button', { name: '1.19.2' }).getAttribute('aria-pressed')).toBe('true')
-	expect(screen.getByRole('button', { name: 'Fabric' }).getAttribute('aria-pressed')).toBe('true')
-	fireEvent.click(screen.getByRole('button', { name: 'Recommencer et effacer mes choix' }))
-	expect(screen.getByText('Minecraft Java Edition 1.21.1 + NeoForge 21.1.248')).toBeTruthy()
-	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
+	start()
+	next()
+	next()
+	expect(title()).toBe('Quel loader de mods utilises-tu ?')
+	click('← Retour')
+	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
+	click('← Retour')
+	click('← Retour')
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
+	expect(stored().active).toBe(false)
 })
 
-test('a Forge guide links its own installer and a loader missing for a version falls back', () => {
+test('a version with a single loader skips the loader question', () => {
 	mountGuide()
-	fireEvent.click(screen.getByRole('button', { name: '1.18.2' }))
-	expect(screen.getByText('Minecraft Java Edition 1.18.2 + Forge 40.3.12')).toBeTruthy()
-	expect(screen.queryByRole('button', { name: 'Fabric' })).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('link', { name: 'l’installateur Forge 40.3.12' }).getAttribute('href')).toBe(
+	start()
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.18\.2(?!\d)/ }))
+	expect(screen.getByRole('radio', { name: /^1\.18\.2(?!\d)/ }).closest('label')?.textContent).toContain('Forge')
+	next()
+	expect(title()).toBe('Installer le loader')
+	expect(screen.getByText('Étape 3 sur 7')).toBeTruthy()
+	expect(screen.getAllByRole('link', { name: 'l’installateur Forge 40.3.12' })[0]?.getAttribute('href')).toBe(
 		'https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.2-40.3.12/forge-1.18.2-40.3.12-installer.jar'
 	)
+	click('← Retour')
+	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
+})
+
+test('a mac guide suggests its folders and a loader missing for a newly chosen version falls back', () => {
+	platform('MacIntel')
+	mountGuide()
+	start()
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /Fabric/ }))
+	click('← Retour')
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.18\.2(?!\d)/ }))
+	next()
+	expect(title()).toBe('Installer le loader')
+	expect(screen.getAllByText('~/Library/Application Support/minecraft-minemories').length).toBeGreaterThan(0)
+	expect(screen.getAllByRole('link', { name: 'l’installateur Forge 40.3.12' })[0]).toBeTruthy()
+})
+
+test('progress is saved and the guide resumes on the same screen after a reload without stealing focus', () => {
+	const view = mountGuide()
+	start()
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /Fabric/ }))
+	next()
+	expect(title()).toBe('Installer le loader')
+	view.unmount()
+	mountGuide()
+	expect(title()).toBe('Installer le loader')
+	expect(screen.getByText('Étape 4 sur 8')).toBeTruthy()
+	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]).toBeTruthy()
+	expect(document.activeElement).not.toBe(panel())
+	click('← Retour')
+	expect(screen.getByRole('radio', { name: /Fabric/ })).toHaveProperty('checked', true)
+})
+
+test('a link from the download table pre-selects the version and loader and skips those two questions', () => {
+	mountGuide(guideLink(targetFor('1.21.11', 'fabric')))
+	expect(screen.getByTestId('where').textContent).toBe('/installation')
+	expect(title()).toBe('Sur quel ordinateur joues-tu ?')
+	expect(screen.getByText('Étape 1 sur 6')).toBeTruthy()
+	expect(stored()).toMatchObject({ minecraft: '1.21.11', loader: 'fabric', preset: true, active: true })
+	next()
+	expect(title()).toBe('Installer le loader')
+	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]).toBeTruthy()
+	click('← Retour')
+	click('← Retour')
+	start()
+	expect(screen.getByText('Étape 1 sur 8')).toBeTruthy()
+})
+
+test('an unknown pre-selection in the link is ignored', () => {
+	mountGuide('/installation?minecraft=9.9&loader=fabric')
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
+	expect(presetFromSearch(new URLSearchParams('minecraft=1.18.2&loader=fabric'))).toBeNull()
+	expect(presetFromSearch(new URLSearchParams('minecraft=1.18.2&loader=forge'))).toEqual({
+		minecraft: '1.18.2',
+		loader: 'forge',
+	})
 })
 
 test('copies the first capture command and gives a manual fallback when clipboard access fails', async () => {
 	const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'))
 	Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+	platform('Linux x86_64')
 	mountGuide()
-	fireEvent.click(screen.getByRole('button', { name: 'Linux' }))
-	step('Créer un souvenir')
+	start()
+	for (let index = 0; index < 7; index++) next()
+	expect(title()).toBe('Créer un souvenir')
 	await act(async () => {
 		fireEvent.click(screen.getByRole('button', { name: 'Copier la commande de première capture' }))
 	})
@@ -120,36 +259,49 @@ test('copies the first capture command and gives a manual fallback when clipboar
 	expect(writeText).toHaveBeenLastCalledWith('~/export')
 })
 
-test('completion is explicit and revisiting a step does not count it twice', () => {
+test('the help stays reachable at the bottom of every screen', () => {
 	mountGuide()
-	for (let index = 0; index < 5; index++)
-		fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Mon souvenir s’ouvre en 3D' }))
-	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('6')
-	expect(screen.getByRole('heading', { name: 'Ton premier souvenir est là.' })).toBeTruthy()
-	step('Préparer')
-	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('6')
-	fireEvent.click(screen.getByRole('button', { name: '← Précédent' }))
-	expect(screen.getByRole('button', { name: '← Précédent' }).hasAttribute('disabled')).toBe(true)
+	const help = document.getElementById('aide') as HTMLElement
+	expect(within(help).getByRole('heading', { name: 'Si une étape coince' })).toBeTruthy()
+	start()
+	expect(document.getElementById('aide')).toBe(help)
+})
+
+test('the state helpers know which screens a choice needs', () => {
+	expect(stepsFor({ minecraft: '1.21.1', preset: false })).toHaveLength(8)
+	expect(stepsFor({ minecraft: '1.18.2', preset: false })).not.toContain('loader')
+	expect(stepsFor({ minecraft: '1.21.1', preset: true })).toEqual([
+		'system',
+		'install',
+		'download',
+		'place',
+		'verify',
+		'memory',
+	])
+	expect(loadersFor('1.18.2').map(item => item.loader)).toEqual(['forge'])
+	expect(guideLink({ minecraft: '1.21.1', loader: 'neoforge' })).toBe('/installation?minecraft=1.21.1&loader=neoforge')
 })
 
 test('ignores malformed stored state and remains usable if storage is blocked', () => {
 	localStorage.setItem(guideStorageKey, '{broken')
-	expect(readGuide().step).toBe(0)
+	expect(readGuide()).toBeNull()
+	localStorage.setItem(guideStorageKey, 'null')
+	expect(readGuide()).toBeNull()
 	localStorage.setItem(
 		guideStorageKey,
-		JSON.stringify({ system: 'other', minecraft: '1.2.3', loader: 'other', step: 90, done: [0, 0, -1, '1', 5, 6] })
+		JSON.stringify({ system: 'other', minecraft: '1.2.3', loader: 'other', step: 'nowhere', active: 'yes', preset: 1 })
 	)
-	expect(readGuide()).toMatchObject({
-		system: 'windows',
-		minecraft: '1.21.1',
-		loader: 'neoforge',
-		step: 0,
-		done: [0, 5],
-	})
-	localStorage.setItem(guideStorageKey, JSON.stringify({ minecraft: '1.18.2', loader: 'fabric' }))
-	expect(readGuide()).toMatchObject({ minecraft: '1.18.2', loader: 'forge' })
+	expect(readGuide()).toEqual({ ...defaults, minecraft: '1.21.1', loader: 'neoforge' })
+	localStorage.setItem(
+		guideStorageKey,
+		JSON.stringify({ system: 'mac', minecraft: '1.18.2', loader: 'fabric', step: 'loader' })
+	)
+	expect(readGuide()).toMatchObject({ system: 'mac', minecraft: '1.18.2', loader: 'forge', step: 'system' })
+	localStorage.setItem(
+		guideStorageKey,
+		JSON.stringify({ system: 'linux', minecraft: '1.21.1', loader: 'forge', step: 'done', active: true })
+	)
+	expect(readGuide()).toMatchObject({ system: 'linux', loader: 'forge', step: 'done', active: true, preset: false })
 	vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
 		throw new Error('blocked')
 	})
@@ -159,10 +311,14 @@ test('ignores malformed stored state and remains usable if storage is blocked', 
 	vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
 		throw new Error('blocked')
 	})
-	const state = readGuide()
-	expect(() => saveGuide(state)).not.toThrow()
-	expect(resetGuide().done).toEqual([])
+	expect(readGuide()).toBeNull()
+	expect(() => saveGuide(defaults)).not.toThrow()
+	expect(resetGuide('mac')).toEqual({ ...defaults, system: 'mac' })
 	mountGuide()
-	fireEvent.click(screen.getByRole('button', { name: 'Recommencer et effacer mes choix' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Préparer')
+	start()
+	next()
+	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
+	click('← Retour')
+	click('← Retour')
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
 })
