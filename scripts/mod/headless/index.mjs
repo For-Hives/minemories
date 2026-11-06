@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs'
 import { readFile, rm } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { execLogged } from './exec.mjs'
+import { execLogged, reapProcesses } from './exec.mjs'
 import {
 	buildCommand,
 	buildEnvironment,
@@ -28,6 +28,7 @@ import {
 	parseSummary,
 	thresholdsFor,
 } from './report.mjs'
+import { createWatchdog, DEFAULT_IDLE_SECONDS } from './watchdog.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = resolve(here, '..', '..', '..')
@@ -60,8 +61,11 @@ async function readStats(paths) {
 
 function interpret({ outcome, stats, error, thresholds, spec }) {
 	const markers = parseLogMarkers(outcome.tail)
-	if (outcome.timedOut) return { status: 'failed', message: 'délai dépassé, Minecraft a été arrêté' }
-	if (markers.failed || outcome.code !== 0) {
+	if (outcome.stuck) return { status: 'failed', message: `Minecraft bloqué (${outcome.stuck}), arrêté` }
+	if (outcome.timedOut && !outcome.completed)
+		return { status: 'failed', message: 'délai dépassé, Minecraft a été arrêté' }
+	// A finished test is judged on its log and report: ForgeGradle can keep the process alive after the result.
+	if (markers.failed || (outcome.code !== 0 && !outcome.completed)) {
 		const detail = failureMessage(outcome.tail)
 		return { status: 'failed', message: detail ?? `${spec.gradleArgs[0]} a échoué (code ${outcome.code})` }
 	}
@@ -71,8 +75,30 @@ function interpret({ outcome, stats, error, thresholds, spec }) {
 	return { status: 'passed' }
 }
 
+// A hung client is killed and tried once more; a second hang is reported, never waited on.
+const MAX_ATTEMPTS = 2
+
+async function execWithRetry({ context, plan, target, logFile, gradleJdk }) {
+	const { root, env, gameMemoryMb, timeoutSeconds, exec, reap } = context
+	let outcome
+	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+		// biome-ignore lint/performance/noAwaitInLoops: a single Minecraft instance at a time, retried only when stuck.
+		outcome = await exec({
+			...plan,
+			env: buildEnvironment({ env, gradleJdk, gameMemoryMb }),
+			timeoutMs: timeoutSeconds * 1000,
+			idleTimeoutMs: DEFAULT_IDLE_SECONDS * 1000,
+			watch: createWatchdog(),
+			logFile,
+		})
+		reap(join(root, gradleRoot(target)))
+		if (!(outcome.stuck || outcome.timedOut) || outcome.completed) break
+	}
+	return outcome
+}
+
 async function runTarget(target, context) {
-	const { root, env, thresholdsFile, gameMemoryMb, timeoutSeconds, keepLogs, exec, prerequisites, jdkLookup } = context
+	const { root, thresholdsFile, keepLogs, prerequisites, jdkLookup } = context
 	const spec = gametestSpec(target)
 	if (!spec) return { status: 'skipped', message: noGametestReason(target) }
 	if (prerequisites.missing.length > 0) {
@@ -94,12 +120,7 @@ async function runTarget(target, context) {
 	await rm(dirname(paths.glb), { recursive: true, force: true })
 	const logFile = join(root, 'build', 'mod-test-logs', `${target.id}.log`)
 	const plan = buildCommand({ root, target, spec, jdkPaths: [...new Set([gradleJdk, gameJdk])] })
-	const outcome = await exec({
-		...plan,
-		env: buildEnvironment({ env, gradleJdk, gameMemoryMb }),
-		timeoutMs: timeoutSeconds * 1000,
-		logFile,
-	})
+	const outcome = await execWithRetry({ context, plan, target, logFile, gradleJdk })
 	const { stats, error } = await readStats(paths)
 	const thresholds = thresholdsFor(thresholdsFile, target.id)
 	const verdict = interpret({ outcome, stats, error, thresholds, spec })
@@ -121,6 +142,7 @@ export async function runHeadlessTests({ config, targets, env = process.env, kee
 		env,
 		keepLogs,
 		exec: deps.exec ?? execLogged,
+		reap: deps.reap ?? reapProcesses,
 		gameMemoryMb: Number.isFinite(memory) && memory > 0 ? memory : DEFAULT_GAME_MEMORY_MB,
 		timeoutSeconds: Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TIMEOUT_SECONDS,
 		thresholdsFile: deps.thresholds ?? (await loadThresholds()),

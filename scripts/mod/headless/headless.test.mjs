@@ -449,3 +449,64 @@ test('test command: usage, arguments, results and exit code', async () => {
 	assert.ok(String(lines.at(-1)).includes('ignorée neoforge-mc1.21.1'))
 	assert.equal(await runTestCommand(['--all'], ctx), 0)
 })
+
+test('the watchdog flags a repeating line and a printed result, ignoring timestamps and counters', async () => {
+	const { createWatchdog } = await import('./watchdog.mjs')
+	const loop = createWatchdog({ repeatLimit: 5 })
+	let verdict = null
+	for (let second = 10; second < 20 && !verdict; second++) {
+		verdict = loop.onLine(
+			`[17:12:${second}] [Render thread/INFO] (x) World loading finished: null screen: S@${second}ab`
+		)
+	}
+	assert.equal(verdict.stop, 'stuck')
+	assert.match(verdict.reason, /se répète 5 fois/)
+	const healthy = createWatchdog({ repeatLimit: 5 })
+	for (const line of ['a', 'b', 'a', 'b', 'a', 'b', 'a']) assert.equal(healthy.onLine(line), null)
+	assert.equal(createWatchdog().onLine('MINEMORIES-GLB bytes=1 meshes=5').stop, 'completed')
+})
+
+test('reapProcesses kills the game processes of a folder but never a Gradle daemon', async () => {
+	const { reapProcesses } = await import('./exec.mjs')
+	const killed = []
+	const list = () =>
+		[
+			'100 java -Dfoo /w/mod/1.21.11/fabric/build/classes',
+			'101 java org.gradle.launcher.daemon.bootstrap.GradleDaemon /w/mod/1.21.11',
+			'102 java /elsewhere/other',
+			'abc not-a-pid /w/mod/1.21.11',
+		].join('\n')
+	const count = reapProcesses('/w/mod/1.21.11', { list, kill: pid => killed.push(pid) })
+	assert.deepEqual(killed, [100])
+	assert.equal(count, 1)
+})
+
+test('a hung run is retried once, a finished test is judged on its report even if the process never exits', async () => {
+	const root = await sandbox()
+	const target = T('forge', '1.20.1')
+	const outcomes = []
+	const exec = async options => {
+		const outcome = outcomes.shift()
+		const { glb: path } = exportPaths(root, target)
+		await mkdir(join(path, '..'), { recursive: true })
+		await writeFile(path, glb())
+		await mkdir(join(options.logFile, '..'), { recursive: true })
+		await writeFile(options.logFile, outcome.tail)
+		return outcome
+	}
+	const run = () =>
+		runHeadlessTests(
+			{ config: { targets: [target] }, env: {} },
+			{ root, jdkLookup: jdks, prerequisites: READY, exec, reap: () => 0 }
+		)
+	const hung = { code: null, timedOut: false, completed: false, stuck: 'répétition', tail: 'loop' }
+	const finished = { code: null, timedOut: true, completed: true, stuck: null, tail: 'MINEMORIES-GLB bytes=1' }
+	outcomes.push(hung, finished)
+	assert.equal((await run())[0].status, 'passed')
+	assert.equal(outcomes.length, 0)
+	outcomes.push(hung, hung)
+	const failed = (await run())[0]
+	assert.equal(failed.status, 'failed')
+	assert.match(failed.message, /bloqué.*répétition/)
+	await rm(root, { recursive: true })
+})
