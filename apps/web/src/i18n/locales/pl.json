@@ -1361,5 +1361,15 @@
 	"the {loader} {version} installer": "instalator {loader} {version}",
 	"this installation": "tę instalację",
 	"versions if necessary. Edit the modded installation created using": "wersje, jeśli trzeba. Edytuj instalację z modami utworzoną przez",
-	"Install the loader": "Zainstaluj loader"
+	"Install the loader": "Zainstaluj loader",
+	"Administration sections": "Sekcje administracji",
+	"Overview": "Przegląd",
+	"Accounts and roles": "Konta i role",
+	"Administration": "Administracja",
+	"Everything that keeps the service running, one section at a time.": "Wszystko, co utrzymuje usługę, sekcja po sekcji.",
+	"Service figures, accounts, storage and administrator roles.": "Dane usługi, konta, miejsce i role administratorów.",
+	"Approve or reject submitted publications and review reports.": "Zatwierdzaj lub odrzucaj zgłoszone publikacje i przeglądaj zgłoszenia.",
+	"{count} waiting for review": "{count} czeka na sprawdzenie",
+	"{count} reported": "{count} zgłoszonych",
+	"Failed exports, interrupted uploads and crashes reported by the mod with consent.": "Nieudane eksporty, przerwane przesyłania i awarie zgłoszone przez moda za zgodą."
 }

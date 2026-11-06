@@ -1,0 +1,114 @@
+/* Administration hub: the section bar shared by every admin route and the overview cards, in the admin pages' charter. */
+
+.mm-admin-nav {
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: var(--ds-sp-5) var(--ds-sp-5) 0;
+}
+.mm-admin-nav ul {
+	display: flex;
+	gap: var(--ds-sp-3);
+	margin: 0;
+	padding: var(--ds-sp-1) var(--ds-sp-1) var(--ds-sp-2);
+	list-style: none;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+}
+.mm-admin-nav li {
+	flex: none;
+}
+.mm-admin-nav a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-4);
+	background: var(--app-panel);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+	white-space: nowrap;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+.mm-admin-nav a:hover {
+	color: var(--text);
+}
+.mm-admin-nav a[aria-current="page"] {
+	color: var(--ember);
+	box-shadow:
+		0 0 0 var(--gp) var(--ember),
+		var(--ds-panel-bevel);
+}
+.mm-admin-nav a:focus-visible,
+.mm-admin-hub-card a:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.mm-admin-hub-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+	gap: var(--ds-sp-5);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.mm-admin-hub-card {
+	position: relative;
+	display: grid;
+	align-content: start;
+	gap: var(--ds-sp-3);
+	min-width: 0;
+	padding: var(--ds-sp-5);
+	background: var(--app-panel);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+.mm-admin-hub-card h2 {
+	margin: 0;
+}
+.mm-admin-hub-card h2 a {
+	color: inherit;
+	text-decoration: none;
+}
+/* The whole card is the target of its title link. */
+.mm-admin-hub-card h2 a::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+}
+.mm-admin-hub-card:hover h2 a {
+	color: var(--ember);
+}
+.mm-admin-hub-card p {
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-admin-hub-card strong {
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--ember);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+@media (max-width: 650px) {
+	.mm-admin-nav {
+		padding: var(--ds-sp-4) var(--ds-sp-4) 0;
+	}
+	.mm-admin-hub-card {
+		padding: var(--ds-sp-4);
+	}
+}
+@media (forced-colors: active) {
+	.mm-admin-nav a,
+	.mm-admin-hub-card {
+		border: 1px solid CanvasText;
+	}
+	.mm-admin-nav a[aria-current="page"] {
+		border-width: 3px;
+	}
+}
