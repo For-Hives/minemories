@@ -16,7 +16,8 @@ function QuiltNote({ target }: { target: LoaderTarget }) {
 	)
 }
 
-export function ModDownload({ target }: { target: LoaderTarget }) {
+/** `primary` styles the download as the page's main action; the guide keeps that role for its Continue button. */
+export function ModDownload({ target, primary = true }: { target: LoaderTarget; primary?: boolean }) {
 	const { t, locale } = useI18n()
 
 	const { releases, status, retry } = useModReleases()
@@ -33,7 +34,7 @@ export function ModDownload({ target }: { target: LoaderTarget }) {
 			{release && download ? (
 				<>
 					<p>
-						<a className={`${buttonLime} install-primary`} href={download.url}>
+						<a className={`${primary ? buttonLime : buttonOutline} install-download-link`} href={download.url}>
 							<T message={'Download Minemories'} /> {release.version} (.jar)
 						</a>
 					</p>
@@ -46,10 +47,6 @@ export function ModDownload({ target }: { target: LoaderTarget }) {
 					<p className="install-caption">
 						{(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })}{' '}
 						<T message={'MiB · Direct download from Minemories.'} />
-					</p>
-					<p>
-						<T message={"Place this file directly in the profile's folder"} /> <code>mods</code>{' '}
-						<T message={'. Do not extract it or run it by double-clicking.'} />
 					</p>
 					<details>
 						<summary>

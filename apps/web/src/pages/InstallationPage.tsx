@@ -1,234 +1,70 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
-import { buttonLime, buttonOutline } from '../components/ui'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { T, useI18n } from '../i18n/I18n'
+import { detectSystem, type System, systems } from '../lib/platform'
 import { InfoNavigation } from './InfoPages'
+import { InstallationGuide } from './InstallationGuide'
+import { InstallationHelp } from './InstallationHelp'
+import { systemNames } from './InstallationQuestions'
 import { InstallationScene } from './InstallationScene'
-import { InstallationStep, stepNames } from './InstallationSteps'
-import { guideUrl } from './installation-loaders'
+import { InstallationStep, installStepIds, stepTitles } from './InstallationSteps'
 import {
 	defaults,
 	type GuideState,
-	loadersFor,
+	presetFromSearch,
 	readGuide,
 	resetGuide,
-	type System,
 	saveGuide,
 	targetFor,
 } from './installation-state'
-import { type LoaderTarget, latestDownloadUrl, minecraftVersions } from './mod-releases'
+import { latestDownloadUrl } from './mod-releases'
 import './installation.css'
 
-function GuidePreferences({ guide, update }: { guide: GuideState; update: (value: Partial<GuideState>) => void }) {
+/** "It looks like you are on Windows", with a quiet way to correct the guess. */
+function DetectedSystem({ system, onChange }: { system: System; onChange: (value: System) => void }) {
 	const { t } = useI18n()
-	const target = targetFor(guide.minecraft, guide.loader)
+	const [open, setOpen] = useState(false)
 	return (
-		<section className="install-preferences" aria-labelledby="preferences-title">
-			<div>
-				<span className="install-eyebrow">
-					<T message={'Your way'} />
-				</span>
-				<h2 id="preferences-title">
-					<T message={'Your computer. Your journey.'} />
-				</h2>
-				<p>
-					<T message={'The steps adapt to your choices. You can change them at any time.'} />
-				</p>
-			</div>
-			<div className="install-fields">
-				<fieldset>
-					<legend>
-						<T message={'You play on…'} />
-					</legend>
-					<div className="install-choices">
-						{(
-							[
-								['windows', 'Windows'],
-								['mac', 'macOS'],
-								['linux', 'Linux'],
-							] as const
-						).map(([value, label]) => (
-							<button
-								key={value}
-								type="button"
-								className={buttonOutline}
-								aria-pressed={guide.system === value}
-								onClick={() => update({ system: value as System })}
-							>
-								{t(label)}
-							</button>
-						))}
-					</div>
+		<div className="install-detected">
+			<p>
+				<T message={'It looks like you are on {system}.'} params={{ system: systemNames[system] }} />{' '}
+				<button type="button" className="install-quiet" aria-expanded={open} onClick={() => setOpen(value => !value)}>
+					<T message={'Not right? Change'} />
+				</button>
+			</p>
+			{open && (
+				<fieldset className="install-switch">
+					<legend className="install-sr-only">{t('Which computer do you play on?')}</legend>
+					{systems.map(value => (
+						<button
+							key={value}
+							type="button"
+							aria-pressed={system === value}
+							onClick={() => {
+								onChange(value)
+								setOpen(false)
+							}}
+						>
+							{systemNames[value]}
+						</button>
+					))}
 				</fieldset>
-				<fieldset>
-					<legend>
-						<T message={'Your Minecraft version…'} />
-					</legend>
-					<div className="install-choices">
-						{minecraftVersions().map(version => (
-							<button
-								key={version}
-								type="button"
-								className={buttonOutline}
-								aria-pressed={target.minecraft === version}
-								onClick={() =>
-									update({ minecraft: version, loader: targetFor(version, guide.loader).loader, done: [], step: 0 })
-								}
-							>
-								{version}
-							</button>
-						))}
-					</div>
-				</fieldset>
-				<fieldset>
-					<legend>
-						<T message={'Mod loader'} />
-					</legend>
-					<div className="install-choices">
-						{loadersFor(target.minecraft).map(item => (
-							<button
-								key={item.loader}
-								type="button"
-								className={buttonOutline}
-								aria-pressed={target.loader === item.loader}
-								onClick={() => update({ loader: item.loader, done: [], step: 0 })}
-							>
-								{item.name}
-							</button>
-						))}
-					</div>
-				</fieldset>
-				<p className="install-summary">
-					Minecraft Java {target.minecraft} · {target.name} {target.loaderVersion} · Java {target.java}
-				</p>
-			</div>
-		</section>
+			)}
+		</div>
 	)
 }
 
-function InstallationHelp({ target }: { target: LoaderTarget }) {
-	const values = {
-		java: target.java,
-		loader: target.name,
-		minecraft: target.minecraft,
-		version: target.loaderVersion,
-	}
+function Welcome({
+	system,
+	onSystem,
+	onStart,
+}: {
+	system: System
+	onSystem: (value: System) => void
+	onStart: () => void
+}) {
 	return (
-		<section className="install-help" aria-labelledby="help-title">
-			<span className="install-eyebrow">
-				<T message={'A little help'} />
-			</span>
-			<h2 id="help-title">
-				<T message={'If a step gets stuck'} />
-			</h2>
-			<details>
-				<summary>
-					<T message={'The loader installer will not open'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'You need Java {java} to open the installer. On Windows, try right-click → Open with → Java. If it is missing, install Temurin {java} using the link in step 2. On macOS or Linux, follow the official guide for {loader} to run the installer. Do not change security settings at random.'
-						}
-						params={values}
-					/>{' '}
-					<a href={guideUrl(target)}>
-						<T message={'Official guide for {loader}'} params={values} />
-					</a>
-				</p>
-			</details>
-			<details>
-				<summary>
-					<T message={'I cannot find the mods folder or the mod does not appear'} />
-				</summary>
-				<p>
-					<T message={'Open the folder from the profile you launch, rather than another Minecraft folder. Create'} />{' '}
-					<code>mods</code>{' '}
-					<T
-						message={
-							'if it is missing. Check that the file ends in .jar, not .jar.zip, then fully close the game and restart the {loader} {version} profile. Worlds belong in saves; the mod belongs in mods.'
-						}
-						params={values}
-					/>
-				</p>
-			</details>
-			<details>
-				<summary>
-					<T message={'M opens another menu, or the command is unknown'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'Change the Minemories key in Options → Controls → Key Binds. An unknown command often means the mod is not loaded: check its entry in Mods, the versions and the profile folder.'
-						}
-					/>
-				</p>
-			</details>
-			<details>
-				<summary>
-					<T message={'Minecraft crashes at startup'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'Check Minecraft {minecraft}, your loader version ({loader} {version}), that the JAR matches this loader and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.'
-						}
-						params={values}
-					/>
-				</p>
-			</details>
-			<details>
-				<summary>
-					<T message={'The capture is empty, incomplete or uploading fails'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'Wait for terrain to load, move closer to the build and try again with radius 16. Some modded blocks are not reproduced faithfully. If uploading fails, keep capture.glb and view it locally. Check your connection, generate another code if five minutes have passed and retry; the mod upload limit is 450 MiB.'
-						}
-					/>
-				</p>
-			</details>
-		</section>
-	)
-}
-
-export function InstallationPage() {
-	const { t, locale } = useI18n()
-
-	const [guide, setGuide] = useState(() => ({ ...defaults, done: [] as number[] }))
-	const [restored, setRestored] = useState(false)
-	const heading = useRef<HTMLHeadingElement>(null)
-	const [moveFocus, setMoveFocus] = useState(false)
-	useEffect(() => {
-		setGuide(readGuide())
-		setRestored(true)
-	}, [])
-	useEffect(() => {
-		if (restored) saveGuide(guide)
-	}, [guide, restored])
-	useEffect(() => {
-		if (moveFocus) heading.current?.focus()
-	}, [guide.step, moveFocus])
-	function update(value: Partial<GuideState>) {
-		setGuide(current => ({ ...current, ...value }))
-	}
-	function goTo(step: number) {
-		setMoveFocus(true)
-		update({ step })
-	}
-	function completeStep() {
-		setMoveFocus(true)
-		setGuide(current => ({
-			...current,
-			done: [...new Set([...current.done, current.step])],
-			step: Math.min(5, current.step + 1),
-		}))
-	}
-	const complete = guide.done.length === 6
-	const target = targetFor(guide.minecraft, guide.loader)
-	return (
-		<article lang={locale} className="installation">
+		<>
 			<header className="install-hero">
 				<div>
 					<span className="install-eyebrow">
@@ -244,152 +80,97 @@ export function InstallationPage() {
 					</p>
 					<p>
 						<T
-							message={
-								'We will take this one step at a time. No coding required: choose your computer, follow the guide and keep your first memory in 3D.'
-							}
-						/>
-					</p>
-					<a className={`${buttonLime} install-primary`} href="#parcours">
-						<T message={'Start installing'} /> <span aria-hidden="true">↓</span>
-					</a>
-					<p className="install-caption">
-						<T
-							message={'Minecraft Java {versions} · NeoForge, Fabric or Forge · Experimental mod'}
-							params={{ versions: minecraftVersions().join(', ') }}
+							message={'No coding required. Pick how you want to install it, and we will take it one step at a time.'}
 						/>
 					</p>
 				</div>
 				<div className="install-hero-art">
-					<InstallationScene step={guide.step} />
+					<InstallationScene step={0} />
 					<span>
 						<T message={'Build. Capture. Return.'} />
 					</span>
 				</div>
 			</header>
-			<p className="install-view-only">
-				<T message={'Just here to view a shared memory? Open its link: there is nothing to install.'} />
-			</p>
-			<GuidePreferences guide={guide} update={update} />
-			<section id="parcours" className="install-journey" aria-label={t('Step-by-step guide')}>
-				<div className="install-progress-heading">
-					<div>
-						<span className="install-eyebrow">
-							<T message={'Your turn'} />
-						</span>
-						<h2>
-							<T message={'From download to first memory.'} />
-						</h2>
-					</div>
-					<span role="status">
-						{guide.done.length} <T message={'/ 6 steps checked'} />
+			<DetectedSystem system={system} onChange={onSystem} />
+			<div className="install-ways">
+				<button type="button" className="install-way install-way--main" onClick={onStart}>
+					<strong>
+						<T message={'Guided installation'} />
+					</strong>
+					<span>
+						<T message={'A few quick questions, then one simple step at a time.'} />
 					</span>
-				</div>
-				<progress value={guide.done.length} max={6} aria-label={t('Installation progress')} />
-				<div className="install-workspace">
-					<nav className="install-step-nav" aria-label={t('Installation steps')}>
-						{stepNames.map((name, index) => (
-							<button
-								key={name}
-								type="button"
-								aria-current={guide.step === index ? 'step' : undefined}
-								onClick={() => goTo(index)}
-							>
-								<span
-									className={`install-step-number${guide.done.includes(index) ? ' is-done' : ''}`}
-									aria-hidden="true"
-								>
-									{guide.done.includes(index) ? '✓' : `0${index + 1}`}
-								</span>
-								<span>
-									{t(name)}
-									{guide.done.includes(index) && (
-										<small>
-											<T message={'Step checked'} />
-										</small>
-									)}
-								</span>
-							</button>
-						))}
-					</nav>
-					<div className="install-panel" key={`${target.id}-${guide.step}`}>
-						<div className="install-panel-meta">
-							<span>
-								<T message={'Step 0'} />
-								{guide.step + 1}
-							</span>
-							<span>
-								{target.name} · Minecraft {target.minecraft}
-							</span>
-						</div>
-						<h3 ref={heading} tabIndex={-1}>
-							{t(stepNames[guide.step] ?? '')}
-						</h3>
-						<InstallationStep step={guide.step} system={guide.system} target={target} />
-						<div className="install-panel-actions">
-							<button
-								className={`${buttonOutline} install-secondary`}
-								type="button"
-								disabled={guide.step === 0}
-								onClick={() => goTo(guide.step - 1)}
-							>
-								<T message={'← Previous'} />
-							</button>
-							<button className={`${buttonLime} install-primary`} type="button" onClick={completeStep}>
-								{guide.step === 5 ? t('My memory opens in 3D') : t("Done, let's continue")}{' '}
-								<span aria-hidden="true">✓</span>
-							</button>
-						</div>
-						<p className="install-caption">
-							<T message={'Check a step when you have completed it. You can also move freely between steps.'} />
-						</p>
-					</div>
-				</div>
-				{complete && (
-					<div className="install-success" role="status">
-						<span aria-hidden="true">✦</span>
-						<div>
-							<h2>
-								<T message={'Your first memory is here.'} />
-							</h2>
-							<p>
-								<T
-									message={
-										'If the capture opens correctly, you have completed this first trial. Keep a world backup too: a 3D memory cannot resume your game.'
-									}
-								/>
-							</p>
-							<Link to="/fonctionnement">
-								<T message={'Explore captures, the gallery and sharing →'} />
-							</Link>
-						</div>
-					</div>
-				)}
-				<div className="install-resume">
-					<p>
-						<T
-							message={
-								'Your choices and progress stay in this browser on this device. You can close this page and return.'
-							}
-						/>
-					</p>
-					<button
-						type="button"
-						onClick={() => {
-							setMoveFocus(false)
-							setGuide(resetGuide())
+				</button>
+				<Link className="install-way" to="/telechargements">
+					<strong>
+						<T message={'See all downloads'} />
+					</strong>
+					<span>
+						<T message={'Every Minecraft version and loader in one table, ready to download.'} />
+					</span>
+				</Link>
+			</div>
+			<p className="install-view-only">
+				<T message={'Just here to view a shared memory? Open its link: there is nothing to install.'} />{' '}
+				<a href="#aide">
+					<T message={'Need help?'} />
+				</a>
+			</p>
+		</>
+	)
+}
+
+/** The installation guide: a calm welcome screen with two ways in, then either the interactive steps or the download table. */
+export function InstallationPage() {
+	const { locale, t } = useI18n()
+	const navigate = useNavigate()
+	const [params] = useSearchParams()
+	const preset = useRef(presetFromSearch(params))
+	const [guide, setGuide] = useState<GuideState>(defaults)
+	const [restored, setRestored] = useState(false)
+	const [enteredByClick, setEnteredByClick] = useState(false)
+	useEffect(() => {
+		const saved = readGuide()
+		const base = saved ?? { ...defaults, system: detectSystem(navigator) }
+		setGuide(preset.current ? { ...base, ...preset.current, step: 'system', active: true, preset: true } : base)
+		if (preset.current) navigate('/installation', { replace: true })
+		setRestored(true)
+	}, [navigate])
+	useEffect(() => {
+		if (restored) saveGuide(guide)
+	}, [guide, restored])
+	const update = (value: Partial<GuideState>) => setGuide(current => ({ ...current, ...value }))
+	const target = targetFor(guide.minecraft, guide.loader)
+	return (
+		<article lang={locale} className="installation">
+			{guide.active ? (
+				<>
+					<h1 className="install-guide-title">
+						<T message={'Install the Minemories mod'} />
+					</h1>
+					<InstallationGuide
+						guide={guide}
+						update={update}
+						focusOnEnter={enteredByClick}
+						onExit={() => update({ active: false, step: 'system' })}
+						onRestart={() => {
+							setGuide(resetGuide(guide.system))
 						}}
-					>
-						<T message={'Start again and clear my choices'} />
-					</button>
-				</div>
-			</section>
+					/>
+				</>
+			) : (
+				<Welcome
+					system={guide.system}
+					onSystem={system => update({ system })}
+					onStart={() => {
+						setEnteredByClick(true)
+						update({ active: true, step: 'system', preset: false })
+					}}
+				/>
+			)}
 			<InstallationHelp target={target} />
 			<p className="install-caption install-final-note">
-				<T
-					message={
-						'Minemories is experimental: start with a test world and keep your local files. Checked steps are reminders; they do not verify the game for you.'
-					}
-				/>
+				<T message={'Minemories is experimental: start with a test world and keep your local files.'} />
 			</p>
 			<InfoNavigation />
 			<noscript>
@@ -402,12 +183,10 @@ export function InstallationPage() {
 						<a href={latestDownloadUrl(defaults.minecraft, defaults.loader)}>Minemories</a>
 						<T message={'. Here are all the steps for Minecraft Launcher:'} />
 					</p>
-					{stepNames.map((name, index) => (
-						<section key={name}>
-							<h3>
-								{index + 1}. {t(name)}
-							</h3>
-							<InstallationStep step={index} system="windows" target={targetFor(defaults.minecraft, defaults.loader)} />
+					{installStepIds.map(step => (
+						<section key={step}>
+							<h3>{t(stepTitles[step])}</h3>
+							<InstallationStep step={step} system="windows" target={targetFor(defaults.minecraft, defaults.loader)} />
 						</section>
 					))}
 				</section>
