@@ -95,7 +95,14 @@ test('un objet manquant derrière une entrée identique est réparé', async () 
 test('identifiants dangereux refusés et builtBy invalide dans l’index', async () => {
 	const client = createFakeClient()
 	await assert.rejects(upload(client, '..%2f0.1.0', 'x'), /invalide/)
-	const entry = { version: '0.1.0', builtAt: 'x', commit: 'c', bytes: 1, sha256: 'a'.repeat(64), key: 'k' }
+	const entry = {
+		version: '0.1.0',
+		builtAt: 'x',
+		commit: 'c',
+		bytes: 1,
+		sha256: 'a'.repeat(64),
+		key: 'mods/x/0.1.0/x.jar',
+	}
 	const index = (extra = {}) => ({
 		schema: 1,
 		generatedAt: 'x',

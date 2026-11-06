@@ -2,6 +2,7 @@
 //   mods/<targetId>/<version>/<jar>[.sha256|manifest.json]   versions conservées
 //   latest/<targetId>.jar                                    copie stable de la dernière version
 //   index.json                                               écrit EN DERNIER, atomiquement
+// Toutes ces clés vivent sous `MOD_STORAGE_PREFIX` (vide par défaut) ; l'index les garde relatives.
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { open, readFile, stat } from 'node:fs/promises'
@@ -20,7 +21,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { createClient, ensureBucket, isNotFound, storageSettings } from './client.mjs'
 
-export { DEFAULT_MOD_BUCKET, storageSettings } from './client.mjs'
+export { DEFAULT_MOD_BUCKET, parseModPrefix, storageSettings } from './client.mjs'
 
 /**
  * @typedef {{ modrinth?: string, curseforge?: string }} PublishedLinks
@@ -44,8 +45,44 @@ export const versionPrefix = (targetId, version) => `mods/${targetId}/${version}
 export const versionKey = (targetId, version) => `${versionPrefix(targetId, version)}${jarName(targetId, version)}`
 export const latestKey = targetId => `latest/${targetId}.jar`
 
+/**
+ * Contexte d'une opération. Toutes les clés manipulées par ce fichier sont RELATIVES au préfixe
+ * (`MOD_STORAGE_PREFIX`) ; `at()` est l'unique endroit où le préfixe est ajouté avant un appel S3, y compris les
+ * listings, qui sont bornés au préfixe. L'index conserve donc des clés relatives : changer de préfixe (ou le
+ * retirer) ne casse pas un index déplacé avec ses objets.
+ */
 function context({ env = process.env, client } = {}) {
-	return { env, client: client ?? createClient(env), bucket: storageSettings(env).bucket }
+	const { bucket, prefix } = storageSettings(env)
+	return { env, client: client ?? createClient(env), bucket, prefix }
+}
+
+/** Une clé relative sûre : non vide, ni `/` initial, ni `//`, ni segment `.` ou `..`, ni barre oblique inverse. */
+export function isSafeKey(key) {
+	return (
+		typeof key === 'string' &&
+		key.length > 0 &&
+		key.length <= 1024 &&
+		!key.includes('\\') &&
+		!key.split('/').some(segment => segment === '.' || segment === '..' || segment === '')
+	)
+}
+
+/** Clé absolue dans le bucket pour `key` relative au préfixe `prefix`, ou `null` si `key` sort de `roots`. */
+export function resolveObjectKey(prefix, key, roots = ['mods/', 'latest/']) {
+	return isSafeKey(key) && roots.some(root => key.startsWith(root) && key.length > root.length)
+		? `${prefix}${key}`
+		: null
+}
+
+function at(ctx, key) {
+	if (!isSafeKey(key)) throw new Error(`Clé de stockage refusée : ${JSON.stringify(key)}`)
+	return `${ctx.prefix}${key}`
+}
+
+/** Seules les clés sous `mods/` peuvent être supprimées. */
+function removable(key) {
+	if (!(key.startsWith('mods/') && isSafeKey(key))) throw new Error(`Suppression refusée hors de mods/ : ${key}`)
+	return key
 }
 
 export function emptyIndex() {
@@ -70,7 +107,7 @@ export function validateIndex(value) {
 				!(
 					sha256Pattern.test(entry.sha256) &&
 					Number.isSafeInteger(entry.bytes) &&
-					typeof entry.key === 'string' &&
+					resolveObjectKey('', entry.key, ['mods/']) !== null &&
 					(entry.builtBy === undefined || BUILT_BY.includes(entry.builtBy))
 				)
 			)
@@ -86,13 +123,13 @@ async function bodyBuffer(body) {
 }
 
 async function readObject(ctx, key) {
-	const response = await ctx.client.send(new GetObjectCommand({ Bucket: ctx.bucket, Key: key }))
+	const response = await ctx.client.send(new GetObjectCommand({ Bucket: ctx.bucket, Key: at(ctx, key) }))
 	return bodyBuffer(response.Body)
 }
 
 async function head(ctx, key) {
 	try {
-		return await ctx.client.send(new HeadObjectCommand({ Bucket: ctx.bucket, Key: key }))
+		return await ctx.client.send(new HeadObjectCommand({ Bucket: ctx.bucket, Key: at(ctx, key) }))
 	} catch (error) {
 		if (isNotFound(error)) return null
 		throw error
@@ -120,7 +157,7 @@ async function writeIndex(ctx, index) {
 	await ctx.client.send(
 		new PutObjectCommand({
 			Bucket: ctx.bucket,
-			Key: INDEX_KEY,
+			Key: at(ctx, INDEX_KEY),
 			Body: Buffer.from(`${JSON.stringify(next, null, 2)}\n`),
 			ContentType: 'application/json',
 			CacheControl: 'no-cache',
@@ -134,9 +171,12 @@ async function listObjects(ctx, prefix) {
 	let token
 	do {
 		const page = await ctx.client.send(
-			new ListObjectsV2Command({ Bucket: ctx.bucket, Prefix: prefix, ContinuationToken: token })
+			new ListObjectsV2Command({ Bucket: ctx.bucket, Prefix: `${ctx.prefix}${prefix}`, ContinuationToken: token })
 		)
-		for (const item of page.Contents ?? []) objects.push({ key: item.Key, bytes: item.Size ?? 0 })
+		// Ceinture et bretelles : une clé hors du préfixe n'est jamais comptée ni renvoyée (donc jamais supprimée).
+		for (const item of page.Contents ?? [])
+			if (item.Key?.startsWith(ctx.prefix) && item.Key.length > ctx.prefix.length)
+				objects.push({ key: item.Key.slice(ctx.prefix.length), bytes: item.Size ?? 0 })
 		token = page.IsTruncated ? page.NextContinuationToken : undefined
 	} while (token)
 	return objects
@@ -152,7 +192,7 @@ async function putMultipart(ctx, key, file, size, partSize, metadata) {
 	const created = await ctx.client.send(
 		new CreateMultipartUploadCommand({
 			Bucket: ctx.bucket,
-			Key: key,
+			Key: at(ctx, key),
 			ContentType: 'application/java-archive',
 			Metadata: metadata,
 		})
@@ -166,7 +206,7 @@ async function putMultipart(ctx, key, file, size, partSize, metadata) {
 			const part = await ctx.client.send(
 				new UploadPartCommand({
 					Bucket: ctx.bucket,
-					Key: key,
+					Key: at(ctx, key),
 					UploadId: created.UploadId,
 					PartNumber: number,
 					Body: body,
@@ -178,14 +218,14 @@ async function putMultipart(ctx, key, file, size, partSize, metadata) {
 		await ctx.client.send(
 			new CompleteMultipartUploadCommand({
 				Bucket: ctx.bucket,
-				Key: key,
+				Key: at(ctx, key),
 				UploadId: created.UploadId,
 				MultipartUpload: { Parts: parts },
 			})
 		)
 	} catch (error) {
 		await ctx.client
-			.send(new AbortMultipartUploadCommand({ Bucket: ctx.bucket, Key: key, UploadId: created.UploadId }))
+			.send(new AbortMultipartUploadCommand({ Bucket: ctx.bucket, Key: at(ctx, key), UploadId: created.UploadId }))
 			.catch(() => undefined)
 		throw error
 	} finally {
@@ -200,7 +240,7 @@ async function putFile(ctx, key, file, { contentType, metadata, partSize = PART_
 	await ctx.client.send(
 		new PutObjectCommand({
 			Bucket: ctx.bucket,
-			Key: key,
+			Key: at(ctx, key),
 			Body: body,
 			ContentLength: body.length,
 			ContentType: contentType,
@@ -211,7 +251,7 @@ async function putFile(ctx, key, file, { contentType, metadata, partSize = PART_
 
 /** Relit l'objet téléversé et compare taille et empreinte au fichier d'origine. */
 async function verifyUpload(ctx, key, bytes, sha256) {
-	const response = await ctx.client.send(new GetObjectCommand({ Bucket: ctx.bucket, Key: key }))
+	const response = await ctx.client.send(new GetObjectCommand({ Bucket: ctx.bucket, Key: at(ctx, key) }))
 	const hash = createHash('sha256')
 	let size = 0
 	for await (const chunk of response.Body) {
@@ -328,8 +368,8 @@ export async function storeRelease({
 		await ctx.client.send(
 			new CopyObjectCommand({
 				Bucket: ctx.bucket,
-				Key: latestKey(targetId),
-				CopySource: `${ctx.bucket}/${result.key}`,
+				Key: at(ctx, latestKey(targetId)),
+				CopySource: `${ctx.bucket}/${at(ctx, result.key)}`,
 				MetadataDirective: 'REPLACE',
 				ContentType: 'application/java-archive',
 				Metadata: { sha256: result.sha256, version },
@@ -457,7 +497,8 @@ export async function pruneStorage({ keep = 3, dryRun = true, env = process.env,
 	const freedBytes = deleted.reduce((total, item) => total + item.bytes, 0)
 	if (!dryRun && deleted.length > 0) {
 		await writeIndex(ctx, { ...index, targets })
-		for (const item of deleted) await ctx.client.send(new DeleteObjectCommand({ Bucket: ctx.bucket, Key: item.key }))
+		for (const item of deleted)
+			await ctx.client.send(new DeleteObjectCommand({ Bucket: ctx.bucket, Key: at(ctx, removable(item.key)) }))
 	}
 	return { deleted, kept, freedBytes }
 }
