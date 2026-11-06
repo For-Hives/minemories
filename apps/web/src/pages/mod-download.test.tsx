@@ -3,8 +3,16 @@ import { act, cleanup, fireEvent, render as renderUi, screen } from '@testing-li
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { ModDownload, selectLatestRelease } from './ModDownload'
-import { type LoaderTarget, loaderTargets } from './mod-releases'
+import { modIndexFixture } from '../testing/mod-index'
+import { ModDownload } from './ModDownload'
+import {
+	downloadUrl,
+	indexUrl,
+	type LoaderTarget,
+	loaderTargets,
+	parseIndex,
+	selectLatestRelease,
+} from './mod-releases'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
@@ -12,105 +20,64 @@ function render(ui: Parameters<typeof renderUi>[0]) {
 
 const target = (id: string) => loaderTargets.find(item => item.id === id) as LoaderTarget
 const neoforge = target('neoforge-mc1.21.1')
-const jarFor = (loader: string) => `minemories-${loader}-mc1.21.1.jar`
-const filename = jarFor('neoforge')
-function release(version = '0.1.0', published = '2026-10-10T12:00:00Z', loaders = ['neoforge']) {
-	const prefix = `https://github.com/For-Hives/minemories/releases/download/mod-v${version}/`
-	return {
-		tag_name: `mod-v${version}`,
-		draft: false,
-		prerelease: true,
-		published_at: published,
-		assets: loaders.flatMap(loader => [
-			{
-				name: jarFor(loader),
-				browser_download_url: prefix + jarFor(loader),
-				size: 4096,
-				digest: `sha256:${(loader === 'neoforge' ? 'a' : 'f').repeat(64)}`,
-			},
-			{ name: `${jarFor(loader)}.sha256`, browser_download_url: `${prefix}${jarFor(loader)}.sha256` },
-		]),
-	}
-}
+const mount = (chosen: LoaderTarget = neoforge) =>
+	render(
+		<MemoryRouter>
+			<ModDownload target={chosen} />
+		</MemoryRouter>
+	)
+const serve = (data: unknown) => vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(data)))
+
 afterEach(() => {
 	cleanup()
 	vi.unstubAllGlobals()
 	vi.useRealTimers()
 })
-test('downloads the most recently published compatible JAR directly from public GitHub Releases', async () => {
-	const fetchMock = vi.fn().mockResolvedValue(Response.json([release()]))
+test('downloads the newest JAR of the chosen target from the Minemories API, without GitHub', async () => {
+	const fetchMock = vi.fn().mockResolvedValue(Response.json(modIndexFixture({ 'neoforge-mc1.21.1': ['0.1.0-beta.1'] })))
 	vi.stubGlobal('fetch', fetchMock)
-	render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
-	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.1.0 (.jar)' })
-	expect(link.getAttribute('href')).toBe(release().assets[0]?.browser_download_url)
+	mount()
+	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.1.0-beta.1 (.jar)' })
+	expect(link.getAttribute('href')).toBe(downloadUrl('neoforge-mc1.21.1', '0.1.0-beta.1'))
 	expect(fetchMock).toHaveBeenCalledTimes(1)
-	expect(fetchMock.mock.calls[0]?.[0]).toContain('api.github.com/repos/For-Hives/minemories/releases')
+	expect(fetchMock.mock.calls[0]?.[0]).toBe(indexUrl)
+	expect(indexUrl).toMatch(/\/downloads\/index\.json$/)
 	expect(screen.getByText('a'.repeat(64))).toBeTruthy()
 	expect(screen.getByText(/Préversion expérimentale/)).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'Télécharger l’empreinte' }).getAttribute('href')).toContain('.jar.sha256')
+	expect(screen.getByText(/0,29/)).toBeTruthy()
+	expect(document.body.innerHTML).not.toContain('github.com')
 })
-test('selects by publication date, includes alpha releases and ignores invalid or incompatible releases', () => {
-	const latest = release('0.3.0', '2026-10-14T12:00:00Z')
-	const foreign = {
-		...release('0.4.0', '2026-10-15T12:00:00Z'),
-		assets: [{ ...latest.assets[0], browser_download_url: 'https://evil.example/mod.jar' }],
-	}
-	expect(
-		selectLatestRelease([
-			release(),
-			foreign,
-			{ ...latest, draft: true },
-			{ ...latest, published_at: 'invalid' },
-			latest,
-		])?.version
-	).toBe('0.3.0')
-	expect(selectLatestRelease([{ ...latest, tag_name: 'other' }, { ...latest, assets: [] }, null])).toBeNull()
-	expect(selectLatestRelease({})).toBeNull()
-	expect(selectLatestRelease([{ ...latest, assets: [{ ...latest.assets[0], size: 0 }] }])).toBeNull()
-})
-test('a release without a digest or checksum still has a download, without an invented checksum', async () => {
-	const published = { ...release(), prerelease: false, assets: [{ ...release().assets[0], digest: null }] }
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
-	render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
-	await screen.findByRole('link', { name: /Télécharger Minemories/ })
-	expect(screen.queryByText('Vérifier le fichier téléchargé (avancé)')).toBeNull()
+test('a stable version is described as a published release', async () => {
+	serve(modIndexFixture({ 'neoforge-mc1.21.1': ['1.0.0'] }))
+	mount()
+	await screen.findByRole('link', { name: /Télécharger Minemories 1\.0\.0/ })
 	expect(screen.getByText(/Version publiée/)).toBeTruthy()
 })
-test.each([[], { message: 'API rate limit exceeded' }, null])(
-	'missing releases or an API failure offer the public releases page and retry',
+test.each([{ schema: 1, generatedAt: 'x', targets: {} }, modIndexFixture({ 'fabric-mc1.21.1': ['0.3.0'] })])(
+	'a missing target offers a retry and the versions page, never another loader',
 	async data => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(data)))
-		render(
-			<MemoryRouter>
-				<ModDownload target={neoforge} />
-			</MemoryRouter>
-		)
+		serve(data)
+		mount()
 		await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 		expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
-		expect(screen.getByRole('link', { name: 'Toutes les versions sur GitHub' }).getAttribute('href')).toBe(
-			'https://github.com/For-Hives/minemories/releases'
+		expect(screen.getByRole('link', { name: 'Versions précédentes et nouveautés' }).getAttribute('href')).toBe(
+			'/versions'
 		)
 	}
 )
-test('retry recovers from a GitHub error and leaving cancels the request', async () => {
+test.each([{ message: 'nope' }, null, { schema: 2 }])('an invalid index is an error with a retry', async data => {
+	serve(data)
+	mount()
+	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
+	expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
+})
+test('retry recovers from an API error and leaving cancels the request', async () => {
 	const fetchMock = vi
 		.fn()
-		.mockResolvedValueOnce(new Response(null, { status: 403 }))
-		.mockResolvedValueOnce(Response.json([release()]))
+		.mockResolvedValueOnce(new Response(null, { status: 503 }))
+		.mockResolvedValueOnce(Response.json(modIndexFixture({ 'neoforge-mc1.21.1': ['0.1.0'] })))
 	vi.stubGlobal('fetch', fetchMock)
-	const view = render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
+	const view = mount()
 	fireEvent.click(await screen.findByRole('button', { name: 'Réessayer le téléchargement' }))
 	await screen.findByRole('link', { name: /Télécharger Minemories/ })
 	view.unmount()
@@ -118,84 +85,58 @@ test('retry recovers from a GitHub error and leaving cancels the request', async
 })
 test('network failure and timeout both allow retry', async () => {
 	vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-	const view = render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
+	const view = mount()
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 	view.unmount()
 	vi.useFakeTimers()
 	vi.stubGlobal(
 		'fetch',
-		vi.fn().mockImplementation(() => new Promise(() => {}))
+		vi.fn().mockImplementation(() => new Promise(() => undefined))
 	)
-	render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
+	mount()
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(15000)
 	})
 	expect(screen.getByRole('button', { name: 'Réessayer le téléchargement' })).toBeTruthy()
 })
-test('the guide downloads the newest JAR of the chosen target and links the versions pages', async () => {
-	vi.stubGlobal(
-		'fetch',
-		vi
-			.fn()
-			.mockResolvedValue(
-				Response.json([
-					release('0.3.0', '2026-10-20T12:00:00Z', ['fabric', 'forge']),
-					release('0.2.0', '2026-10-15T12:00:00Z', ['neoforge', 'fabric', 'forge']),
-				])
-			)
+test('the guide downloads the newest version of the chosen target and links the versions page', async () => {
+	serve(
+		modIndexFixture({
+			'fabric-mc1.21.1': ['0.3.0', '0.2.0'],
+			'neoforge-mc1.21.1': [{ version: '0.2.0', builtAt: '2026-10-15T12:00:00Z' }],
+		})
 	)
-	render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
+	mount()
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.2.0 (.jar)' })
-	expect(link.getAttribute('href')).toBe(
-		`https://github.com/For-Hives/minemories/releases/download/mod-v0.2.0/${filename}`
-	)
+	expect(link.getAttribute('href')).toBe(downloadUrl('neoforge-mc1.21.1', '0.2.0'))
 	expect(screen.getByText('a'.repeat(64))).toBeTruthy()
-	expect(screen.queryByText('f'.repeat(64))).toBeNull()
+	expect(screen.queryByText('b'.repeat(64))).toBeNull()
 	expect(screen.getByText(/NeoForge 21\.1\.248/)).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'Versions précédentes et nouveautés' }).getAttribute('href')).toBe(
-		'/versions'
-	)
-})
-test('releases without the chosen JAR never offer another loader', async () => {
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([release('0.3.0', undefined, ['fabric', 'forge'])])))
-	render(
-		<MemoryRouter>
-			<ModDownload target={neoforge} />
-		</MemoryRouter>
-	)
-	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
-	expect(screen.queryByRole('link', { name: /Télécharger Minemories/ })).toBeNull()
-	expect(selectLatestRelease([release('0.3.0', undefined, ['fabric'])])?.downloads[0]?.target.loader).toBe('fabric')
 })
 test('a Fabric 1.19.2 guide offers its own JAR with compatibility, Fabric API and the Quilt note', async () => {
-	const jar = 'minemories-fabric-mc1.19.2.jar'
-	const prefix = 'https://github.com/For-Hives/minemories/releases/download/mod-v0.4.0/'
-	const published = {
-		...release('0.4.0'),
-		assets: [{ name: jar, browser_download_url: prefix + jar, size: 4096, digest: `sha256:${'c'.repeat(64)}` }],
-	}
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json([published])))
-	render(
-		<MemoryRouter>
-			<ModDownload target={target('fabric-mc1.19.2')} />
-		</MemoryRouter>
-	)
+	serve(modIndexFixture({ 'fabric-mc1.19.2': [{ version: '0.4.0', bytes: 4096 }], 'neoforge-mc1.21.1': ['0.9.0'] }))
+	mount(target('fabric-mc1.19.2'))
 	const link = await screen.findByRole('link', { name: 'Télécharger Minemories 0.4.0 (.jar)' })
-	expect(link.getAttribute('href')).toBe(prefix + jar)
+	expect(link.getAttribute('href')).toBe(downloadUrl('fabric-mc1.19.2', '0.4.0'))
 	expect(
 		screen.getByText(/Minecraft Java 1\.19\.2 · Fabric 0\.20\.1 \+ Fabric API 0\.77\.0\+1\.19\.2 · Java 17/)
 	).toBeTruthy()
 	expect(screen.getByText(/Quilt 0\.30\.1/)).toBeTruthy()
+})
+test('parsing groups loader JARs per version, shows only the retained versions and ignores unknown targets', () => {
+	const index = modIndexFixture({
+		'neoforge-mc1.21.1': ['0.5.0', '0.4.0', '0.3.0', '0.2.0'],
+		'fabric-mc1.21.1': ['0.5.0'],
+		'quilt-mc1.21.1': ['9.9.9'],
+	})
+	const releases = parseIndex(index)
+	expect(releases.map(release => release.version)).toEqual(['0.5.0', '0.4.0', '0.3.0'])
+	expect(releases[0]?.downloads.map(download => download.target.id)).toEqual(['neoforge-mc1.21.1', 'fabric-mc1.21.1'])
+	expect(selectLatestRelease(index)?.version).toBe('0.5.0')
+	expect(selectLatestRelease(modIndexFixture({}))).toBeNull()
+	expect(() => parseIndex({ schema: 1 })).toThrow('Invalid downloads index')
+	const [odd] = parseIndex(
+		modIndexFixture({ 'neoforge-mc1.21.1': [{ version: '1.0.0', builtAt: 'not a date', commit: 'x y z' }] })
+	)
+	expect(odd).toMatchObject({ published: 0, commitUrl: null, prerelease: false })
 })
