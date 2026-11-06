@@ -12,6 +12,8 @@ export const modIndexVersion = z.object({
 	sha256: z.string().regex(/^[a-f0-9]{64}$/),
 	/** Clé de l'objet dans le bucket : `mods/<targetId>/<version>/<jar>`. */
 	key: z.string(),
+	/** Machine qui a compilé le JAR (les octets peuvent différer entre le PC et le VPS). Absent des anciennes entrées. */
+	builtBy: z.enum(['pc', 'vps']).optional(),
 	pinned: z.boolean().optional(),
 	published: z.object({ modrinth: z.string().optional(), curseforge: z.string().optional() }).optional(),
 })

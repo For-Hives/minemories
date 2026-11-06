@@ -123,6 +123,7 @@ function storable(state) {
 			filePath: r.filePath,
 			bytes: r.bytes,
 			sha256: r.manifest.sha256,
+			builtBy: r.manifest.builtBy,
 		}))
 }
 
