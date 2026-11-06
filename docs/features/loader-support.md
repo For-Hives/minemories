@@ -55,15 +55,15 @@ Les preuves locales sont sous `loader-adapters-20261015/` : profils `neoforge-cr
 
 La CI conserve les trois paquets puis les télécharge dans trois jobs distincts : loader, métadonnées et octets sont vérifiés contre l'empreinte du job de compilation. Les tests refusent les builds absents/ambigus, les manifestes réétiquetés, les versions/commits étrangers et les empreintes altérées. Les contrôles de qualité restent actifs, y compris les tests du client commun.
 
-`config/mod-targets.json` est la source de la matrice de publication. NeoForge, Fabric et Forge sont activés après ces validations ; la réservation Quilt reste désactivée puisqu'elle réutilise le JAR Fabric. La release automatique construit les trois cibles avec noms, manifestes, checksums et provenance distincts. `validatedInGame` décrit la combinaison prise en charge : il ne prétend pas que chaque nouvelle archive automatique a été jouée. Voir [le pipeline de release](automatic-releases.md).
+`mod/targets.json` est la source de la matrice de publication. NeoForge, Fabric et Forge sont activés après ces validations ; la réservation Quilt reste désactivée puisqu'elle réutilise le JAR Fabric. La release automatique construit les trois cibles avec noms, manifestes, checksums et provenance distincts. `validatedInGame` décrit la combinaison prise en charge : il ne prétend pas que chaque nouvelle archive automatique a été jouée. Voir [le pipeline de release](automatic-releases.md).
 
-Les cibles des autres versions de Minecraft (1.21.11, 1.19.2, 1.18.2, puis 1.20.1 une fois testée) portent `dir` (racine Gradle `mod/minemories-<version>`) et `jarPrefix` (préfixe du JAR construit) ; Java 17 est accepté pour les versions avant 1.21. Elles n'ont pas de `:core`/`:common` propres : seul l'adaptateur est vérifié. Une cible n'est activée que si son test en jeu automatique est passé ; Forge 1.21.11 et 1.20.1 restent désactivées. La CI n'a pas encore construit ces cibles (à vérifier avec un lancement manuel à blanc de la release automatique). La page d'installation propose une version de Minecraft puis un loader parmi les cibles activées, avec NeoForge 1.21.1 par défaut.
+Les cibles des autres versions de Minecraft (1.21.11, 1.19.2, 1.18.2, puis 1.20.1 une fois testée) portent `dir` (racine Gradle `mod/1.21.1-<version>`) et `jarPrefix` (préfixe du JAR construit) ; Java 17 est accepté pour les versions avant 1.21. Elles n'ont pas de `:core`/`:common` propres : seul l'adaptateur est vérifié. Une cible n'est activée que si son test en jeu automatique est passé ; Forge 1.21.11 et 1.20.1 restent désactivées. La CI n'a pas encore construit ces cibles (à vérifier avec un lancement manuel à blanc de la release automatique). La page d'installation propose une version de Minecraft puis un loader parmi les cibles activées, avec NeoForge 1.21.1 par défaut.
 
 Le téléchargement public par défaut reste NeoForge 1.21.1 ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
 
 ## Grille locale des versions compilées
 
-`bun mod:matrix` affiche un seul tableau (Minecraft en lignes, loaders en colonnes) où chaque version de loader est colorée selon son état pour la version courante du mod : ✓ à jour, ⚠ seulement d'anciennes versions, ✗ configurée mais non compilée, ○ prévue, `·` rien. Les couleurs sont coupées hors terminal ou avec `NO_COLOR`. La configuration est dans `config/mod-matrix.json` (indépendante de `config/mod-targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
+`bun mod:matrix` affiche un seul tableau (Minecraft en lignes, loaders en colonnes) où chaque version de loader est colorée selon son état pour la version courante du mod : ✓ à jour, ⚠ seulement d'anciennes versions, ✗ configurée mais non compilée, ○ prévue, `·` rien. Les couleurs sont coupées hors terminal ou avec `NO_COLOR`. La configuration est dans `mod/matrix.json` (indépendante de `mod/targets.json`, qui reste réservé aux cibles validées en jeu pour les releases).
 
 - `bun mod:matrix build <loader> <minecraft> [versionLoader]` compile la cible avec un JDK 21 (celui de `JAVA_HOME` ou `~/.local/tools/jdk-*`) et archive le JAR dans le dossier unique `build/mod-matrix/` sous le nom `minemories-<mod>-<loader>-mc<minecraft>-<versionLoader>.jar` (`bun mod:matrix open` l’ouvre). Une version de loader autre que celle fixée n'est compilable que si l'entrée déclare `loaderProperty` (c'est le cas des projets 1.20.1 : `-PforgeVersion`, `-PfabricLoaderVersion`).
 - `bun mod:matrix build --missing` compile toutes les cases fixées qui n'ont pas la version courante du mod.
@@ -83,40 +83,40 @@ Limites : aucun GLB n'a été ouvert dans le viewer (pas de WebGL dans le naviga
 
 ### Forge 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
 
-Sous-projet `mod/minemories-1.19.2` (Forge 43.5.2, Java 17, Architectury Loom, mappings Mojang), construit comme `mod/minemories-1.20.1` : les sources partagées sont copiées, adaptées par `adapt.gradle` puis compilées avec les classes de l'adaptateur Forge.
+Sous-projet `mod/1.19.2` (Forge 43.5.2, Java 17, Architectury Loom, mappings Mojang), construit comme `mod/1.20.1` : les sources partagées sont copiées, adaptées par `adapt.gradle` puis compilées avec les classes de l'adaptateur Forge.
 
 Écart mesuré avant portage : 123 erreurs de symboles dans 15 fichiers, dont 110 pour l'interface (`GuiGraphics`, `Button.builder`, `Tooltip`, `getX`/`getY`, `renderWidget`). Après la couche de compat ci-dessous, il restait 27 erreurs, toutes mécaniques : `sprite.contents()` renommé, `BuiltInRegistries` devenu `Registry`, `worldGenOptions`, `getIconBytes`, `BlockPos.containing`, `setHint`, atlas d'une version sans `getTextureLocations`.
 
-**Couche de compat partagée par les cibles avant 1.20** : `mod/compat-legacy`. Elle contient `GuiGraphics` (dessin sur `PoseStack`, objets via la pile modèle-vue), `Tooltip`/`Tooltips` (info-bulles dessinées par l'écran), `CompatButton` (le `Button.builder(...)` de 1.19.3+), `Clamp`, et `adapt-legacy.gradle` qui réécrit les écrans partagés (signatures `render`, `renderButton`, `x`/`y` des widgets). Le code commun reste celui de 1.21.1 ; chaque version ajoute seulement ses règles dans son `adapt.gradle`. Un motif qui cesse de correspondre fait échouer la compilation. 1.18.2 peut reprendre cette couche.
+**Couche de compat partagée par les cibles avant 1.20** : `mod/shared/compat-legacy`. Elle contient `GuiGraphics` (dessin sur `PoseStack`, objets via la pile modèle-vue), `Tooltip`/`Tooltips` (info-bulles dessinées par l'écran), `CompatButton` (le `Button.builder(...)` de 1.19.3+), `Clamp`, et `adapt-legacy.gradle` qui réécrit les écrans partagés (signatures `render`, `renderButton`, `x`/`y` des widgets). Le code commun reste celui de 1.21.1 ; chaque version ajoute seulement ses règles dans son `adapt.gradle`. Un motif qui cesse de correspondre fait échouer la compilation. 1.18.2 peut reprendre cette couche.
 
-Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.19.2`). Un mod de test Forge (`src/gametest`) appelle `TickDrivenCapture` à chaque tick client : monde plat, scène, `/minemories export 12` envoyé par l'écran de chat (une commande côté client n'est pas reconnue par `commandUnsigned`), puis vérification du GLB par `GlbReport` (partagé avec 1.21.11). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 556 octets, alpha BLEND et MASK présents. Le son est coupé par le test.
+Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/1.19.2`). Un mod de test Forge (`src/gametest`) appelle `TickDrivenCapture` à chaque tick client : monde plat, scène, `/minemories export 12` envoyé par l'écran de chat (une commande côté client n'est pas reconnue par `commandUnsigned`), puis vérification du GLB par `GlbReport` (partagé avec 1.21.11). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 556 octets, alpha BLEND et MASK présents. Le son est coupé par le test.
 
 Particularités : l'herbe s'appelle `grass` avant 1.20.3 (`-Dminemories.gametest.grass=grass`) ; pas de champ de saisie avec indication (`setHint`), remplacé par la suggestion grise de `EditBox`. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés. La cible n'est donc pas déclarée prise en charge.
 
 ### Fabric 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
 
-Même sous-projet que Forge 1.19.2 (`mod/minemories-1.19.2`, module `fabric`), Fabric Loader 0.20.1 et Fabric API 0.77.0+1.19.2. Il reprend `mod/compat-legacy` et ses règles d'adaptation ; seul l'adaptateur Fabric change, parce que l'API de rendu de Fabric API 0.77 est l'ancienne, à sprites multiples :
+Même sous-projet que Forge 1.19.2 (`mod/1.19.2`, module `fabric`), Fabric Loader 0.20.1 et Fabric API 0.77.0+1.19.2. Il reprend `mod/shared/compat-legacy` et ses règles d'adaptation ; seul l'adaptateur Fabric change, parce que l'API de rendu de Fabric API 0.77 est l'ancienne, à sprites multiples :
 
 - `CaptureQuadEmitter` est réécrit pour cette API (`spriteColor`, `sprite`, `spriteBake(index, …)`, `fromVanilla(…, isItem)`, `toVanilla(index, …)`), et `FabricModelCapture` lit les UV par `spriteU(i, 0)`.
 - L'API de 0.77 n'expose pas les drapeaux d'un matériau (mode de fusion, émissivité, indice de couleur) ; `MaterialFlags` les demande par réflexion à l'implémentation d'Indigo et retombe sur les valeurs par défaut ailleurs. Avec un autre moteur de rendu (Canvas…), le GLB peut donc perdre la translucidité et l'émissivité : non essayé.
 - Les pixels d'un sprite passent par un accesseur Mixin (`SpriteImageAccess`, champ `mainImage`) : avant 1.19.3 `TextureAtlasSprite` n'a pas `getPixelRGBA` (Forge l'ajoute).
 - `copyUv` n'existe pas dans cette API.
 
-Test en jeu : `./gradlew :fabric:runClientGametest` (depuis `mod/minemories-1.19.2`), même scénario que Forge : 2507 blocs, 3 entités, 17 matériaux, GLB de 182 280 octets. Le mod de test Fabric rejoint le classpath de développement mais reste inactif sans `-Dminemories.gametest=true`. Limites : GLB non ouvert dans le viewer, Quilt 1.19.2 non essayé, menus et sélection manuelle non essayés. Cible non déclarée prise en charge.
+Test en jeu : `./gradlew :fabric:runClientGametest` (depuis `mod/1.19.2`), même scénario que Forge : 2507 blocs, 3 entités, 17 matériaux, GLB de 182 280 octets. Le mod de test Fabric rejoint le classpath de développement mais reste inactif sans `-Dminemories.gametest=true`. Limites : GLB non ouvert dans le viewer, Quilt 1.19.2 non essayé, menus et sélection manuelle non essayés. Cible non déclarée prise en charge.
 
 ### Forge 1.18.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
 
-Sous-projet `mod/minemories-1.18.2` (Forge 40.3.12, Java 17, Architectury Loom), construit comme celui de 1.19.2 : mêmes règles d'adaptation de `mod/compat-legacy`, plus `mod/compat-pre-1.19` pour ce qui n'existe pas encore en 1.18 (`Component.literal` et `Component.translatable`, remplacés par `Components`; `Screen.rebuildWidgets`, remplacé par `clearWidgets(); init();`). Premier essai : 97 erreurs de symboles, 74 d'entre elles sur les composants de texte.
+Sous-projet `mod/1.18.2` (Forge 40.3.12, Java 17, Architectury Loom), construit comme celui de 1.19.2 : mêmes règles d'adaptation de `mod/shared/compat-legacy`, plus `mod/shared/compat-pre-1.19` pour ce qui n'existe pas encore en 1.18 (`Component.literal` et `Component.translatable`, remplacés par `Components`; `Screen.rebuildWidgets`, remplacé par `clearWidgets(); init();`). Premier essai : 97 erreurs de symboles, 74 d'entre elles sur les composants de texte.
 
 Ce qui change dans l'adaptateur Forge, écrit pour cette version : touches enregistrées dans `FMLClientSetupEvent` par `ClientRegistry`, événements d'écran `ScreenEvent.InitScreenEvent` et `DrawScreenEvent`, entrées `InputEvent.KeyInputEvent` et `MouseInputEvent`, sélection dessinée sur `RenderLevelLastEvent` (déprécié, il n'y a pas d'étape de rendu), modèles avec `IModelData`/`EmptyModelData` et `java.util.Random`, teinte du fluide par `FluidAttributes`. Le dessin de la sélection n'a pas été vu à l'écran.
 
-Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/minemories-1.18.2`), pilote `TickDrivenCapture` propre à 1.18.2 (monde plat créé par `Minecraft.createLevel`, commande envoyée par `Screen.sendMessage`). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 540 octets. Le démarrage prend environ deux minutes avant que le test avance. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés ; cible non déclarée prise en charge.
+Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/1.18.2`), pilote `TickDrivenCapture` propre à 1.18.2 (monde plat créé par `Minecraft.createLevel`, commande envoyée par `Screen.sendMessage`). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 540 octets. Le démarrage prend environ deux minutes avant que le test avance. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés ; cible non déclarée prise en charge.
 
 ### Fond des écrans en 1.20.1 : défaut trouvé et corrigé (5 novembre 2026)
 
-Avant 1.20.2, `Screen.render` ne dessine pas le fond : chaque écran l'appelle lui-même. Les écrans partagés (écrits pour 1.21.1) comptent sur `render` pour le faire, et l'adaptation vers 1.20.1 ne le rétablissait pas : le panneau et le fond des écrans du mod n'étaient pas dessinés. Mesuré en jeu (Forge 1.20.1) : le pixel lu dans le panneau du hub était celui du ciel (`0xffdfc7b9`), pas la couleur du panneau (`0xff262925`). `mod/minemories-1.20.1/adapt.gradle` ajoute maintenant l'appel `renderBackground(graphics)` en tête de `render`, ce qui corrige aussi le module Fabric 1.20.1 ; le même pixel vaut `0xff262925` ensuite.
+Avant 1.20.2, `Screen.render` ne dessine pas le fond : chaque écran l'appelle lui-même. Les écrans partagés (écrits pour 1.21.1) comptent sur `render` pour le faire, et l'adaptation vers 1.20.1 ne le rétablissait pas : le panneau et le fond des écrans du mod n'étaient pas dessinés. Mesuré en jeu (Forge 1.20.1) : le pixel lu dans le panneau du hub était celui du ciel (`0xffdfc7b9`), pas la couleur du panneau (`0xff262925`). `mod/1.20.1/adapt.gradle` ajoute maintenant l'appel `renderBackground(graphics)` en tête de `render`, ce qui corrige aussi le module Fabric 1.20.1 ; le même pixel vaut `0xff262925` ensuite.
 
-Le contrôle se lance par `./gradlew :forge:runClientGametest` depuis `mod/minemories-1.20.1` : monde plat, ouverture du hub, lecture d'un pixel du panneau dans le tampon d'image. Il vérifie le fond, pas la mise en page des boutons ni les textes. Les ponts 1.19.2 et 1.18.2 appellent `renderBackground` explicitement (`mod/compat-legacy/adapt-legacy.gradle`) ; ils n'ont pas ce contrôle de pixel. Fabric 1.20.1 n'a pas été relancé en jeu.
+Le contrôle se lance par `./gradlew :forge:runClientGametest` depuis `mod/1.20.1` : monde plat, ouverture du hub, lecture d'un pixel du panneau dans le tampon d'image. Il vérifie le fond, pas la mise en page des boutons ni les textes. Les ponts 1.19.2 et 1.18.2 appellent `renderBackground` explicitement (`mod/shared/compat-legacy/adapt-legacy.gradle`) ; ils n'ont pas ce contrôle de pixel. Fabric 1.20.1 n'a pas été relancé en jeu.
 
 ### Inventaire chiffré : Forge 1.16.5 et Forge 1.12.2 (5 novembre 2026, rien de codé)
 
@@ -144,7 +144,7 @@ Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pou
 | 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
 | 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
 
-Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `config/mod-matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `mod/matrix.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
 
 ### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
 
@@ -159,11 +159,11 @@ Le gros du travail est donc la capture de géométrie et de textures, qui demand
 
 ### Port Fabric 1.21.11 : compile, non testé en jeu
 
-`mod/minemories-1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé.
+`mod/1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; la grille `bun mod:matrix` le compte comme compilé.
 
-Test en jeu : `./gradlew :fabric:runClientGameTest` (depuis `mod/minemories-1.21.11/`) ouvre Minecraft 1.21.11 (son coupé, `user.home` isolé dans `build/gametest-home`), crée un monde, place pierre, verre teinté, feuilles, herbe, coffre, eau et torche, fait apparaître une vache et un armor stand, lance `/minemories export 12` et vérifie le GLB (matériaux attendus, modes alpha BLEND et MASK). Il passe (5 novembre 2026) et a déjà trouvé les mixins de souris et de clavier cassés ainsi qu'un `fabric.mod.json` qui exigeait encore 1.21.1. Reste à valider : le GLB ouvert dans le viewer, d'autres modpacks et un rendu visuel comparé à Minecraft ; la cible ne doit pas être présentée comme prise en charge avant.
+Test en jeu : `./gradlew :fabric:runClientGameTest` (depuis `mod/1.21.11/`) ouvre Minecraft 1.21.11 (son coupé, `user.home` isolé dans `build/gametest-home`), crée un monde, place pierre, verre teinté, feuilles, herbe, coffre, eau et torche, fait apparaître une vache et un armor stand, lance `/minemories export 12` et vérifie le GLB (matériaux attendus, modes alpha BLEND et MASK). Il passe (5 novembre 2026) et a déjà trouvé les mixins de souris et de clavier cassés ainsi qu'un `fabric.mod.json` qui exigeait encore 1.21.1. Reste à valider : le GLB ouvert dans le viewer, d'autres modpacks et un rendu visuel comparé à Minecraft ; la cible ne doit pas être présentée comme prise en charge avant.
 
-Les sources de `mod/minemories` sont copiées, adaptées par `adapt.gradle` (un motif qui ne correspond plus fait échouer le build) puis recouvertes par `overlay/java`. Par lot :
+Les sources de `mod/1.21.1` sont copiées, adaptées par `adapt.gradle` (un motif qui ne correspond plus fait échouer le build) puis recouvertes par `overlay/java`. Par lot :
 
 1. Renommages : `Identifier`, `getMinY`/`getMaxY`, `identifier()`, `WorldVersion.name()`, `GameProfile.id()`, `Camera.position()`, catégorie de touche `KeyMapping.Category` (la traduction `key.category.minemories.minemories` est ajoutée aux fichiers de langue à la compilation).
 2. GUI : `renderContents` des boutons, `Matrix3x2fStack` (`pushMatrix`/`popMatrix`), `ClickEvent.RunCommand`, `HoverEvent.ShowText`.
@@ -178,7 +178,7 @@ Maintenance : le code propre à un loader reste dans `fabric/` derrière l'inter
 
 ### NeoForge 1.21.11 : compile, test en jeu passé, non validé dans le viewer
 
-`mod/minemories-1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/minemories-1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod:matrix build neoforge 1.21.11` archive le JAR.
+`mod/1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod:matrix build neoforge 1.21.11` archive le JAR.
 
 Ce qui change par rapport à NeoForge 1.21.1 : `@EventBusSubscriber` sans `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, géométrie par `BlockStateModel.collectParts` (les données de modèle viennent du niveau), `NeoForgeVersion` déplacé dans `common`, et un access transformer pour `RenderType.state`, `RenderSetup.textures` et `TextureAtlas.texturesByName`.
 
@@ -186,7 +186,7 @@ Test en jeu : `./gradlew :neoforge:runClientGametest` ; NeoForge n'a pas d'API d
 
 ### Forge 1.21.11 : compile, test en jeu automatisé non fonctionnel
 
-`mod/minemories-1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod:matrix build forge 1.21.11` archive le JAR.
+`mod/1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod:matrix build forge 1.21.11` archive le JAR.
 
 Deux écarts avec les autres loaders, à connaître avant de toucher à ce projet :
 

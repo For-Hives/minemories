@@ -6,7 +6,7 @@ Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome
 
 | Chemin | Rôle |
 | --- | --- |
-| `mod/minemories/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:common` contient le client partagé ; `:neoforge`, `:fabric` et `:forge` isolent les hooks des loaders. Voir la [matrice de validation](docs/features/loader-support.md). |
+| `mod/1.21.1/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:common` contient le client partagé ; `:neoforge`, `:fabric` et `:forge` isolent les hooks des loaders. Voir la [matrice de validation](docs/features/loader-support.md). |
 | `apps/web/` | Viewer React / Three.js. |
 | `apps/api/` | API Bun / Hono, Better Auth, SQLite et stockage objet S3. |
 | `packages/api-contract/` | Contrat oRPC partagé entre API et web ; ce dossier est une bibliothèque, pas une application. |
@@ -35,7 +35,7 @@ L'API écoute sur `localhost:3001`, le web sur `localhost:5173`. Compose lance G
 bun mod:dev
 ```
 
-Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/minemories/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/concepts/development-workflow.md).
+Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/1.21.1/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/concepts/development-workflow.md).
 
 ## Interface du mod
 
@@ -49,14 +49,14 @@ Chaque export conserve un GLB et ses métadonnées dans un dossier daté sous `~
 
 Les diagnostics techniques sont **activés par défaut** une fois le compte lié (jamais avant l'appairage) et se désactivent dans les réglages avancés ; un refus explicite est conservé après un changement de compte ou d'API. Les rapports excluent messages libres, URL, jetons, chemins, coordonnées, graine, noms de monde/joueur et captures. Ils sont reliés au compte/appareil et consultables uniquement par l'opérateur de l'API. Voir [le consentement, les limites et le retrait](docs/features/consented-diagnostics.md).
 
-Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et `bun mod:dev`, règle l’API du mod sur `http://localhost:3001` dans les réglages avancés, crée un monde de test, capture, crée le code dans le web, puis lie le mod et envoie le fichier. Le fichier `mod/minemories/run/config/minemories.properties` conserve le jeton local.
+Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et `bun mod:dev`, règle l’API du mod sur `http://localhost:3001` dans les réglages avancés, crée un monde de test, capture, crée le code dans le web, puis lie le mod et envoie le fichier. Le fichier `mod/1.21.1/run/config/minemories.properties` conserve le jeton local.
 
 ## Commandes
 
 | Commande | Effet |
 | --- | --- |
 | `bun mod:dev` | Démarre le client NeoForge de développement (`runClient`). |
-| `bun mod:build` | Construit et vérifie le JAR Gradle dans `mod/minemories/neoforge/build/libs/`. Ce build n'effectue pas de minification. |
+| `bun mod:build` | Construit et vérifie le JAR Gradle dans `mod/1.21.1/neoforge/build/libs/`. Ce build n'effectue pas de minification. |
 | `bun mod:check` | Applique Spotless puis lance les contrôles Gradle (JUnit, JaCoCo, SpotBugs, compilation). Modifie les sources si nécessaire. |
 | `bun mod:check:ci` | Même vérification sans modification des fichiers. |
 | `bun web:dev` / `bun api:dev` | Démarre les applications séparément. |

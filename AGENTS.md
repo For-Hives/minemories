@@ -5,19 +5,20 @@
 - `apps/web/` — React + Three.js SPA (Bun workspace `@minemories/web`).
 - `apps/api/` — Bun/Hono + Better Auth + oRPC + SQLite + S3-compatible storage (`@minemories/api`).
 - `packages/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
-- `mod/minemories/` — Gradle root. `:core` in `mod/minemories/core/` is loader-independent GLB code; `:common` contains the shared Minecraft client; `:neoforge`, `:fabric`, and `:forge` are the loader adapters.
+- `mod/1.21.1/` — Gradle root. `:core` in `mod/shared/core/` is loader-independent GLB code; `:common` contains the shared Minecraft client; `:neoforge`, `:fabric`, and `:forge` are the loader adapters.
+- `mod/<minecraft version>/` — one Gradle root per Minecraft version (`1.21.11`, `1.20.1`, `1.19.2`, `1.18.2`, ...): loader adapters, `adapt.gradle`, `overlay/` only. `mod/shared/` holds what is not a Minecraft version (`core`, `common`, `compat-legacy`, `compat-pre-1.19`, `gametest-common` for the Minecraft-free `GlbReport`). `mod/matrix.json` is the local build matrix, `mod/targets.json` the published targets.
 - `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`).
 
 ## Commands (run from repo root)
 
 - Install: `bun install` locally; CI uses `bun install --frozen-lockfile`. Bun 1.4.3, Node 24.15+ recommended (or 22.22.2+), JDK 21.
 - `docker compose up -d` starts local Garage (S3 endpoint `127.0.0.1:3900`). Root `.env` needs two distinct 32+ character auth secrets.
-- `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/minemories/`; `bun mod:build` builds the three loader JARs.
+- `bun mod:dev` starts Gradle `:neoforge:runClient` in `mod/1.21.1/`; `bun mod:build` builds the three loader JARs.
 - `bun mod:check` runs `spotlessApply check` and modifies Java files; `bun mod:check:ci` runs `check` without edits.
 - `bun web:dev` / `bun web:check` / `bun web:build`; `bun api:dev` / `bun api:check` (Biome, typecheck, Bun tests).
 - `bun check` is the no-fix aggregate quality gate. `bun run build` checks everything, then builds web and mod.
 - Single TS test: `bun run --filter @minemories/web test -- src/lib/glb.test.ts`.
-- Java (from `mod/minemories/`): `./gradlew :core:test --tests "dev.minemories.core.GlbSceneTest"`.
+- Java (from `mod/1.21.1/`): `./gradlew :core:test --tests "dev.minemories.core.GlbSceneTest"`.
 - `bun format` formats TypeScript/CSS; `bun mod:check` formats Java intentionally.
 
 ## Quality Gates (enforced, not optional)
@@ -25,7 +26,7 @@
 - Viewer Vitest: 100% lines/branches/functions/statements on `src/lib/**/*.ts` (`apps/web/vitest.config.ts`). New browser-independent logic needs tests; UI behavior changes need interaction coverage.
 - Core JaCoCo (runs on `check`): 90% line, 60% branch. Fix coverage with tests, not threshold edits.
 - SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
-- `mod/minemories/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
+- `mod/shared/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
 - Biome 2.5.15: tabs, single quotes, optional semicolons, 120 columns, recommended rules plus the explicit rules in `biome.json` (complexity <= 15, `noForEach`, no nested ternaries). Run `bun format` after changing TypeScript/CSS/JSON; new suppressions need a local reason. CSS parser supports Tailwind v4 `@theme`.
 - API coverage requires 90% lines and 80% functions per reported file (`apps/api/bunfig.toml`); an LCOV inventory gate rejects missing production sources. Keep text + LCOV reporters enabled.
 - API Bun tests run in separate processes (`--parallel`) so temporary SQLite paths and environment variables cannot leak between suites. Keep HTTP route tests and real oRPC contract tests when upgrading Hono, Better Auth, Bun or oRPC.
@@ -38,7 +39,7 @@
 
 ## GLB + Mod Contract
 
-- Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/minemories/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
+- Export is a self-contained `.glb`: embedded textures, alpha/emissive, `KHR_lights_punctual` when available. `mod/shared/core` must drop quads with non-finite positions/UVs and invalid light positions (regression: `GlbSceneTest`); never emit NaN/Infinity.
 - Any GLB/texture/selection/render change needs: unit test + visual validation in Blender or Minecraft + doc update. Tests alone are insufficient (`docs/concepts/development-workflow.md`).
 - Mod writes `~/export/capture.glb` locally by default; the folder is configurable. AFK captures are enabled by default (5 minutes idle, at most every 4 hours, radius 32), including while paused or unfocused; preserve an explicit stored disable preference. M opens a simple interface with pairing, manual capture/upload and AFK toggle; timing/radius, local folder and custom API are advanced settings. The official API defaults to `https://api.minemories.net`. Upload requires pairing: the viewer issues a 6-digit code (5-min expiry, single use), `/minemories pair <code>` exchanges it for a device token in `config/minemories.properties`; paired AFK captures upload automatically, unpaired captures stay local, and `/minemories upload` sends a file manually. Commands: `/minemories select first|second|status|clear`, `/minemories export [<radius 2-128>|selection]`.
 - Around-player captures default to the lowest locally visited depth in intersecting chunks plus five foundation blocks, scoped per world/dimension/player; explicit selections keep their corners. `captureFullHeight=true` is an advanced override. Exploration history is local and bounded.
@@ -63,4 +64,4 @@ if needed, you can find more context in diferent files (look inside ./docs/AI ):
 - GitHub Issues are the source of truth for tasks: https://github.com/For-Hives/minemories/issues. Check existing issues before creating a separate issue for each new task; record what is implemented, remaining acceptance criteria and validation evidence. Use the existing labels (`mod`, `api`, `front`, `autonomous`, `needs-human`, etc.). Close an issue only when its full scope and required validations are complete. `docs/AI/TASKS.md` is intentionally empty after migration; do not repopulate it.
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)
 
-- Release automation: `config/mod-targets.json` owns the enabled loader matrix; `mod/minemories/gradle.properties` owns `mod_version`. Release-it synchronizes the private Bun workspace versions and Gradle after main quality gates; automatic GitHub releases are betas, not assertions of exact-JAR in-game validation. Run `bun release:test` for release orchestration changes.
+- Release automation: `mod/targets.json` owns the enabled loader matrix; `mod/1.21.1/gradle.properties` owns `mod_version`. Release-it synchronizes the private Bun workspace versions and Gradle after main quality gates; automatic GitHub releases are betas, not assertions of exact-JAR in-game validation. Run `bun release:test` for release orchestration changes.

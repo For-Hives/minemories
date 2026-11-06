@@ -5,7 +5,7 @@
 - `bun install --frozen-lockfile`: installe exactement les versions enregistrées dans `bun.lock`.
 - `bun format`: applique le formatage Biome aux fichiers web et scripts.
 - `bun mod:check`: applique Spotless puis lance `check` Gradle. `bun mod:check:ci` vérifie sans modifier les sources.
-- `bun check`: Biome, vérification TypeScript, Vitest avec seuil de couverture, puis `check` Gradle dans `mod/minemories/` (Spotless, SpotBugs, JUnit et seuils JaCoCo).
+- `bun check`: Biome, vérification TypeScript, Vitest avec seuil de couverture, puis `check` Gradle dans `mod/1.21.1/` (Spotless, SpotBugs, JUnit et seuils JaCoCo).
 - `bun api:check`: Biome, vérification TypeScript puis tests Bun de l'API. Les tests utilisent une base SQLite et un stockage temporaires isolés.
 - `bun run build`: exécute les contrôles du dépôt, produit le viewer, puis construit le mod et le core.
 
@@ -17,16 +17,16 @@ Depuis la racine du dépôt, avec JDK 21 :
 bun mod:dev
 ```
 
-Cette commande lance la tâche Gradle `:neoforge:runClient` du POC NeoForge directement à partir des classes compilées. Gradle réutilise ses caches et ne construit pas le JAR de distribution ni les applications web. Au premier lancement il doit télécharger Minecraft et NeoForge, donc il sera plus long. Les suivants recompilent les sources modifiées. Le profil de développement est dans `mod/minemories/run/` (ignoré par Git) : il garde les options, ressources et mondes de test d'un lancement à l'autre. Ne copie pas le dossier de sauvegardes réel pour tester.
+Cette commande lance la tâche Gradle `:neoforge:runClient` du POC NeoForge directement à partir des classes compilées. Gradle réutilise ses caches et ne construit pas le JAR de distribution ni les applications web. Au premier lancement il doit télécharger Minecraft et NeoForge, donc il sera plus long. Les suivants recompilent les sources modifiées. Le profil de développement est dans `mod/1.21.1/run/` (ignoré par Git) : il garde les options, ressources et mondes de test d'un lancement à l'autre. Ne copie pas le dossier de sauvegardes réel pour tester.
 
 Dans le client de développement, ouvre un monde puis le menu pause : le bouton **Minemories** permet de capturer autour du joueur, d'exporter une sélection déjà définie par commandes, d'entrer le code d'appairage du web et d'envoyer le GLB manuellement. Un bouton identique est ajouté à l'écran des options, et la touche **M** (rebindable dans Contrôles) ouvre l'interface depuis n'importe quel écran, y compris les menus remplacés par FancyMenu/FTB/BHMenu. Vérifie visuellement le menu avec plusieurs boutons ajoutés par d'autres mods, à petite échelle GUI, la touche M quand aucune place ne reste, le retour au jeu, l'état des boutons, l'échec d'un code invalide et le fichier `~/export/capture.glb` après capture. Démarre `bun api:dev` et `bun web:dev`, puis règle l’API du mod sur `http://localhost:3001` dans le mode avancé pour exercer l’appairage et l’envoi ; les contrôles Java seuls ne couvrent pas ces interactions.
 
 Chaque upload joint les coordonnées du joueur, la dimension, le biome, l'heure du monde, la météo, le nom du monde ou du serveur, et la miniature disponible. La seed est envoyée uniquement en solo, car le client ne la connaît pas sur les serveurs distants. Les métadonnées sont conservées avec la capture et affichées dans la galerie ; les anciennes captures sans métadonnées restent compatibles.
 
-Pour reproduire un problème de modpack, place seulement les JARs requis et compatibles **Minecraft 1.21.1 / NeoForge 21.1.248** dans `mod/minemories/run/mods/`, puis copie les fichiers de configuration nécessaires dans `mod/minemories/run/config/`. Commence avec le client vierge, puis ajoute les dépendances utiles au cas testé ; un modpack complet peut réintroduire son temps de démarrage. Un changement de Java nécessite un redémarrage du client pour une validation fiable. Pour inspecter vite la sérialisation GLB sans lancer Minecraft :
+Pour reproduire un problème de modpack, place seulement les JARs requis et compatibles **Minecraft 1.21.1 / NeoForge 21.1.248** dans `mod/1.21.1/run/mods/`, puis copie les fichiers de configuration nécessaires dans `mod/1.21.1/run/config/`. Commence avec le client vierge, puis ajoute les dépendances utiles au cas testé ; un modpack complet peut réintroduire son temps de démarrage. Un changement de Java nécessite un redémarrage du client pour une validation fiable. Pour inspecter vite la sérialisation GLB sans lancer Minecraft :
 
 ```sh
-cd mod/minemories
+cd mod/1.21.1
 ./gradlew :core:test --tests "dev.minemories.core.GlbSceneTest"
 ./gradlew spotlessCheck
 ```
@@ -35,7 +35,7 @@ Sur Windows, utilise `gradlew.bat` à la place de `./gradlew`. `spotlessApply` f
 
 ## Politique de changement
 
-1. Chaque correction de logique reproductible reçoit un test au niveau le plus bas qui l’exerce; privilégier `mod/minemories/core` pour la logique indépendante du jeu.
+1. Chaque correction de logique reproductible reçoit un test au niveau le plus bas qui l’exerce; privilégier `mod/shared/core` pour la logique indépendante du jeu.
 2. Aucun avertissement SpotBugs n’est ignoré globalement. Les suppressions doivent être localisées, justifiées et accompagnées d’un commentaire.
 3. La couverture Java minimale du core est de 90 % des lignes et 60 % des branches. Les utilitaires TypeScript couverts par Vitest restent à 100 %.
 4. Les changements des formats GLB, des textures, de la sélection ou du rendu ont aussi besoin d’une validation visuelle documentée : les tests unitaires ne remplacent pas Blender ou une session Minecraft.

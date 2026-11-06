@@ -6,7 +6,7 @@ Statut : **proposition** (28 octobre 2026), phase 0 (mesures) réalisée. Le res
 
 La cible est une matrice **versions de Minecraft × loaders** (NeoForge, Fabric, Forge, plus les versions antérieures comme 1.20.1). Aujourd'hui :
 
-- Une seule version est dans le build principal (`mod/minemories`, 1.21.1). 1.20.1 vit dans un second build (`mod/minemories-1.20.1`) qui **copie puis modifie par regex** les sources partagées (`adapt.gradle`). Chaque nouvelle version ajouterait un build, une copie et un lot de regex à maintenir.
+- Une seule version est dans le build principal (`mod/1.21.1`, 1.21.1). 1.20.1 vit dans un second build (`mod/1.20.1`) qui **copie puis modifie par regex** les sources partagées (`adapt.gradle`). Chaque nouvelle version ajouterait un build, une copie et un lot de regex à maintenir.
 - La CI reconstruit chaque cible à froid : `setup-java` avec `cache: gradle` ne sauve que `~/.gradle/caches`, et le Gradle de la machine est relancé sans daemon (`org.gradle.daemon=false`).
 - `build-release-target.mjs` exécute `clean :core:check :common:check` dans **chaque** cellule de la matrice, donc les mêmes tests et analyses sont répétés N fois.
 
@@ -22,7 +22,7 @@ Remplacer `adapt.gradle` (regex fragiles, copie de fichiers) par **Stonecutter**
 - Alternatives écartées : un dépôt ou dossier par version (dérive garantie) ; multi-module Architectury seul (n'adresse pas les différences d'API entre versions de Minecraft).
 
 ### D2. Une seule source de vérité pour la matrice
-`config/mod-targets.json` reste la source. Gradle (`settings.gradle`) et la CI en dérivent leurs listes ; aucun numéro de version Minecraft ou loader n'est dupliqué dans un `build.gradle`. Le catalogue `gradle/libs.versions.toml` ne porte que les versions d'outils et de bibliothèques.
+`mod/targets.json` reste la source. Gradle (`settings.gradle`) et la CI en dérivent leurs listes ; aucun numéro de version Minecraft ou loader n'est dupliqué dans un `build.gradle`. Le catalogue `gradle/libs.versions.toml` ne porte que les versions d'outils et de bibliothèques.
 
 ### D3. Compiler une fois ce qui ne dépend pas de Minecraft
 - `:core` n'a aucune dépendance Minecraft : il est compilé **une fois** avec `--release 17` (plus petit commun dénominateur) puis réutilisé par toutes les cellules. Cela supprime `Math.clamp`/`getLast` du code partagé ou les isole derrière un utilitaire commun.
@@ -100,7 +100,7 @@ Limites : une machine, un échantillon, réseau variable, pas de mesure en CI (r
 - `org.gradle.parallel=true`, `org.gradle.configuration-cache=true` (à désactiver par plugin incompatible, avec raison), `org.gradle.daemon=true` en local et `-Dorg.gradle.daemon=false` en CI, mémoire relevée si la phase 0 le justifie.
 - **Acceptation** : build à chaud sans changement dominé par le coût de configuration ; aucune tâche exécutée à nouveau sans changement d'entrée.
 
-**Phase 1 réalisée (28 octobre 2026).** `mod/minemories/gradle.properties` (et la copie 1.20.1) : `org.gradle.parallel=true`, `org.gradle.configuration-cache=true`, et `org.gradle.daemon=false` retiré (le daemon est actif en local). `scripts/gradle.mjs` ajoute `-Dorg.gradle.daemon=false --no-configuration-cache` quand `CI` est défini : les runners sont jetables, donc ces deux mécanismes n'y apportent que du coût. `-Xmx3G` est inchangé : la phase 0 n'a montré aucun problème de mémoire. Le cache de configuration s'enregistre sans erreur avec les trois plugins (ModDevGradle, Architectury Loom Fabric et Forge).
+**Phase 1 réalisée (28 octobre 2026).** `mod/1.21.1/gradle.properties` (et la copie 1.20.1) : `org.gradle.parallel=true`, `org.gradle.configuration-cache=true`, et `org.gradle.daemon=false` retiré (le daemon est actif en local). `scripts/gradle.mjs` ajoute `-Dorg.gradle.daemon=false --no-configuration-cache` quand `CI` est défini : les runners sont jetables, donc ces deux mécanismes n'y apportent que du coût. `-Xmx3G` est inchangé : la phase 0 n'a montré aucun problème de mémoire. Le cache de configuration s'enregistre sans erreur avec les trois plugins (ModDevGradle, Architectury Loom Fabric et Forge).
 
 Mesure : `./gradlew build` sur les trois loaders 1.21.1 (cache Gradle utilisateur déjà chaud, même machine, un seul échantillon) :
 
@@ -140,7 +140,7 @@ Mesure : une cellule Fabric à chaud avec `--no-build-cache` passe de 26–27 s 
 
 ### Phase 4 : migration vers Stonecutter
 - Introduire Stonecutter avec 1.21.1 comme référence, sans changement de comportement : les trois JAR de la version actuelle doivent avoir des classes équivalentes (comparaison des empreintes de classes ou du contenu).
-- Migrer 1.20.1 : convertir chaque règle de `adapt.gradle` en bloc conditionnel, supprimer `mod/minemories-1.20.1/adapt.gradle` et le build séparé.
+- Migrer 1.20.1 : convertir chaque règle de `adapt.gradle` en bloc conditionnel, supprimer `mod/1.20.1/adapt.gradle` et le build séparé.
 - Générer les projets depuis `mod-targets.json` (D2).
 - **Acceptation** : un seul `./gradlew` construit toute la matrice ; `adapt.gradle` supprimé ; les JAR 1.20.1 passent les validations en jeu déjà documentées.
 - **Risque principal** : compatibilité Stonecutter avec chacun des trois plugins (ModDevGradle, Architectury Loom pour Fabric et Forge). **Spike d'une demi-journée en tête de phase** pour confirmer, sur une branche jetable, qu'une cellule de chaque loader compile ; sinon repli sur un projet Gradle par version avec un script de synchronisation de sources testé.

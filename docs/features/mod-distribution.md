@@ -33,7 +33,7 @@ L’URL officielle a répondu `{"status":"ok"}` à `GET /healthz` le 10 octobre 
 
 ## Téléchargement sur le site
 
-`bun run build` exécute les contrôles, construit le JAR du mod, lance `package:mod`, puis construit le web. Le script de packaging exige un seul JAR jouable dans `mod/minemories/neoforge/build/libs` (les sources, dev et javadocs sont exclus), refuse un fichier sans en-tête d’archive JAR et calcule son SHA-256.
+`bun run build` exécute les contrôles, construit le JAR du mod, lance `package:mod`, puis construit le web. Le script de packaging exige un seul JAR jouable dans `mod/1.21.1/neoforge/build/libs` (les sources, dev et javadocs sont exclus), refuse un fichier sans en-tête d’archive JAR et calcule son SHA-256.
 
 Il génère dans `apps/web/public/downloads/` (gitignored) :
 
@@ -49,7 +49,7 @@ Le déploiement web utilise `railpack.web.json` sans Java et ne reconstruit pas 
 
 Le workflow **Quality gates** conserve le JAR, l’empreinte et le manifeste comme artefact après un build réussi (14 jours). Un second job télécharge cet artefact et vérifie les octets contre le SHA-256 émis par le build.
 
-Le workflow **Automatic mod releases** (`.github/workflows/automatic-release.yml`) démarre après le succès de Quality gates sur le dernier commit poussé dans `main`. Release-it et Conventional Changelog calculent une version bêta, puis la matrice de `config/mod-targets.json` construit et teste chaque cible activée. Toutes doivent réussir avant publication. La version est synchronisée dans les packages Bun, le lockfile et Gradle ; le changelog, le commit de version et le tag `mod-v<version>` sont générés automatiquement. La release GitHub contient les JAR vérifiés, leurs SHA-256 et les manifestes. Le front continue à télécharger ces fichiers depuis GitHub, sans compiler Java.
+Le workflow **Automatic mod releases** (`.github/workflows/automatic-release.yml`) démarre après le succès de Quality gates sur le dernier commit poussé dans `main`. Release-it et Conventional Changelog calculent une version bêta, puis la matrice de `mod/targets.json` construit et teste chaque cible activée. Toutes doivent réussir avant publication. La version est synchronisée dans les packages Bun, le lockfile et Gradle ; le changelog, le commit de version et le tag `mod-v<version>` sont générés automatiquement. La release GitHub contient les JAR vérifiés, leurs SHA-256 et les manifestes. Le front continue à télécharger ces fichiers depuis GitHub, sans compiler Java.
 
 Les releases automatiques sont des **préversions** : les tests CI ne valent pas validation en jeu du JAR exact. NeoForge est la seule cible activée actuellement ; Fabric, Forge et Quilt ont des entrées désactivées jusqu’à leur portage et leur validation. Voir [le fonctionnement et la reprise](automatic-releases.md).
 
@@ -103,4 +103,4 @@ La page publique `https://minemories.xenos.lightin.io/installation/` affiche la 
 
 Les anciens fichiers `public/downloads` décrivent le packaging CI local ; ils restent indépendants du déploiement front Coolify. Aucun ZIP n'est requis.
 
-Le build prépare également les JAR Fabric et Forge avec manifestes et empreintes séparés dans `build/mod-loaders/`, vérifiés par la matrice CI. Le téléchargement public par défaut reste NeoForge ; la publication et les autres téléchargements utilisent les cibles activées dans `config/mod-targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.
+Le build prépare également les JAR Fabric et Forge avec manifestes et empreintes séparés dans `build/mod-loaders/`, vérifiés par la matrice CI. Le téléchargement public par défaut reste NeoForge ; la publication et les autres téléchargements utilisent les cibles activées dans `mod/targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.

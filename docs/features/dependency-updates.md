@@ -8,7 +8,7 @@ Les quatre échecs de recherche signalés en #4 venaient de dépendances d’ex�
 - Fabric Loader et Fabric API utilisent explicitement `https://maven.fabricmc.net/`.
 - Forge utilise explicitement `https://maven.minecraftforge.net/`.
 
-Les versions d’exécution sont contraintes à la matrice réellement validée dans `config/mod-targets.json`. Elles continuent d’être recherchées : aucune dépendance n’est ignorée et les avertissements ne sont pas masqués. Un changement de Minecraft, Fabric Loader/API ou Forge se fait avec une modification explicite de la matrice, des contraintes correspondantes et des scénarios en jeu, avant de revendiquer la nouvelle compatibilité. Les outils de construction restent éligibles aux mises à jour ordinaires de Renovate.
+Les versions d’exécution sont contraintes à la matrice réellement validée dans `mod/targets.json`. Elles continuent d’être recherchées : aucune dépendance n’est ignorée et les avertissements ne sont pas masqués. Un changement de Minecraft, Fabric Loader/API ou Forge se fait avec une modification explicite de la matrice, des contraintes correspondantes et des scénarios en jeu, avant de revendiquer la nouvelle compatibilité. Les outils de construction restent éligibles aux mises à jour ordinaires de Renovate.
 
 `dependencyDashboardAutoclose` permet au bot de fermer son tableau quand il ne reste aucune mise à jour. Le tableau ne doit pas être fermé manuellement pour cacher une erreur de recherche ; le prochain passage hébergé doit confirmer la disparition des avertissements.
 

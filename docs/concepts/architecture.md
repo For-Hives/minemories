@@ -2,15 +2,15 @@
 
 ## Modules actuels
 
-- `mod/minemories/`: projet Gradle du mod client Minecraft NeoForge.
-- `mod/minemories/neoforge/`: adaptateur NeoForge, commandes et capture du jeu.
-- `mod/minemories/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
+- `mod/1.21.1/`: projet Gradle du mod client Minecraft NeoForge.
+- `mod/1.21.1/neoforge/`: adaptateur NeoForge, commandes et capture du jeu.
+- `mod/shared/core/`: bibliothèque Java sans dépendance Minecraft pour assembler la scène et écrire le GLB.
 - `apps/web/`: SPA React (stylisée avec Tailwind CSS, thème dans `src/theme.css`) avec pages d'accueil, authentification, galerie privée et viewer Three.js. L’ouverture locale de GLB reste possible sans compte.
 - `apps/api/`: API Bun/Hono avec Better Auth, oRPC, SQLite et stockage objet S3 compatible.
 - `packages/api-contract/`: contrat oRPC partagé par l’API et le viewer, sans logique serveur. Les routes REST utilisées par le mod sont définies dans `apps/api/src/index.ts`.
 - `docs/`: documentation transverse et état du POC.
 
-Les builds Minecraft sont orchestrés par le wrapper Gradle dans `mod/minemories/`. Les apps TypeScript sont gérées par Bun workspaces et vérifiées par Biome. Les applications restent indépendantes : une évolution de l’une ne doit pas imposer son runtime aux autres.
+Les builds Minecraft sont orchestrés par le wrapper Gradle dans `mod/1.21.1/`. Les apps TypeScript sont gérées par Bun workspaces et vérifiées par Biome. Les applications restent indépendantes : une évolution de l’une ne doit pas imposer son runtime aux autres.
 
 ## Contrat mod → viewer
 
@@ -20,7 +20,7 @@ Avant de faire évoluer le format, documenter les métadonnées nécessaires (s�
 
 ## Extensions prévues
 
-Les futurs outils vont dans `apps/<nom>/`. Les adaptateurs Fabric, Forge et Quilt, s'ils sont développés, restent sous `mod/minemories/` et partagent `mod/minemories/core/` lorsqu'une API neutre est appropriée.
+Les futurs outils vont dans `apps/<nom>/`. Les adaptateurs Fabric, Forge et Quilt, s'ils sont développés, restent sous `mod/1.21.1/` et partagent `mod/shared/core/` lorsqu'une API neutre est appropriée.
 
 ## Développement de l'API
 
