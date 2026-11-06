@@ -197,6 +197,7 @@ const router = os.router({
 			discovery.report(authenticated(context), input.id, input.reason)
 		),
 		moderator: os.discovery.moderator.handler(({ context }) => ({ allowed: discovery.isModerator(context.userId) })),
+		queueSummary: os.discovery.queueSummary.handler(({ context }) => discovery.queueSummary(context.userId)),
 		queue: os.discovery.queue.handler(({ context, input }) => discovery.queue(context.userId, input)),
 		moderate: os.discovery.moderate.handler(({ context, input }) =>
 			discovery.moderate(context.userId, input.id, input.decision, input.reason)
