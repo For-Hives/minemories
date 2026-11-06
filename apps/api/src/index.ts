@@ -7,7 +7,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
-import { bootstrapTemporaryAdministrator } from './admin-bootstrap'
+import { bootstrapAdministratorsFromEnvironment, bootstrapTemporaryAdministrator } from './admin-bootstrap'
 import { AdminMetrics } from './admin-metrics'
 import { AdminRoles } from './admin-roles'
 import { auth, billing, handleAuthRequest } from './auth'
@@ -81,6 +81,7 @@ const os = implement(apiContract).$context<ApiContext>()
 const accountSecurity = new AccountSecurity(database, (await auth.$context).password)
 const adminRoles = new AdminRoles(database)
 bootstrapTemporaryAdministrator(database, adminRoles)
+bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
 const diagnosticsReview = new DiagnosticsReview(
 	diagnostics,
