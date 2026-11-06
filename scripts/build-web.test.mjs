@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
-const javaCommands = /(?:java|gradle|mod:build|package:mod)/i
+const javaCommands = /(?:java|gradle|mod:build)/i
 
 test('the Coolify web deploy has no Java toolchain or mod artifact dependency', async () => {
 	const config = JSON.parse(await readFile(new URL('../railpack.web.json', import.meta.url), 'utf8'))

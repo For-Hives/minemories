@@ -23,7 +23,7 @@ Railpack installe le workspace, vérifie les types de l’API puis démarre `NOD
 
 Le build web installe uniquement Bun et Node : contrôle TypeScript puis bundle Vite. Aucun JDK, aucune compilation Minecraft, aucun test Gradle et aucune release ne sont requis pour déployer le front. Le serveur statique Coolify/Nginx sert `apps/web/dist`.
 
-La page d’installation interroge l’API publique GitHub Releases de `For-Hives/minemories` et propose le JAR de la release compatible la plus récemment publiée, préversions incluses. Un dépôt sans release, une limite API GitHub ou une panne affiche un réessai et un lien vers les releases ; cela ne fait pas échouer le déploiement web. La publication du mod reste dans le workflow Java dédié.
+La page d’installation lit l’index de l’API Minemories (`/downloads/index.json`) et propose le JAR de la version la plus récente de la cible choisie, préversions incluses. Un index vide ou une panne de l’API affiche un réessai ; cela ne fait pas échouer le déploiement web. La construction et la publication du mod se font sur le VPS avec `bun mod release`.
 
 ## Déploiement
 
