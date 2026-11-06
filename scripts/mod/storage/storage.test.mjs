@@ -466,3 +466,38 @@ test('la commande utilise console.log ou un logger objet sans fonction de log', 
 		console.log = original
 	}
 })
+
+test('bun mod storage sous MOD_STORAGE_PREFIX : status, ls et prune ignorent le reste du bucket', async () => {
+	const client = createFakeClient()
+	const env = { MOD_STORAGE_BUCKET: 'shared', MOD_STORAGE_PREFIX: 'public-mods/' }
+	for (const key of ['owner/a.glb', 'owner/tiers/b.glb', 'public-mods../x', 'mods/neoforge-mc1.21.1/0.1.0/old.jar'])
+		client.objects.set(key, { body: Buffer.alloc(2_000_000), contentType: 'x', metadata: {} })
+	const dir = await mkdtemp(join(tmpdir(), 'mm-cli-prefix-'))
+	for (const n of [1, 2, 3]) {
+		const file = join(dir, `a${n}.jar`)
+		await writeFile(file, `jar-${n}`)
+		await storeRelease({
+			config,
+			version: `0.${n}.0`,
+			commit: 'abc1234',
+			builtAt: `2026-10-0${n}T00:00:00Z`,
+			artifacts: [{ targetId: 'neoforge-mc1.21.1', file }],
+			env,
+			client,
+		})
+	}
+	const lines = []
+	const ctx = { env, log: message => lines.push(message), storageClient: client }
+	assert.equal(await storage.run(['status'], ctx), 0)
+	assert.ok(lines.some(line => line.includes('3 version(s)')))
+	// Le total ne compte que le préfixe : les 8 Mo étrangers sont ignorés.
+	assert.ok(lines.some(line => line.startsWith('Total : ') && !line.includes('Mio')))
+	const before = [...client.objects.keys()].filter(key => !key.startsWith('public-mods/')).sort()
+	await storage.run(['prune', '--keep', '1', '--yes'], ctx)
+	assert.deepEqual([...client.objects.keys()].filter(key => !key.startsWith('public-mods/')).sort(), before)
+	assert.equal((await readIndex({ env, client })).targets['neoforge-mc1.21.1'].versions.length, 1)
+	await assert.rejects(
+		storage.run(['status'], { ...ctx, env: { ...env, MOD_STORAGE_PREFIX: 'a/../' } }),
+		/MOD_STORAGE_PREFIX/
+	)
+})
