@@ -61,3 +61,6 @@ tasks.register('remapGametestJar', net.fabricmc.loom.task.RemapJarTask) {
     addNestedDependencies = false
     dependsOn 'gametestJar'
 }
+
+// Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
+apply from: rootProject.file('../shared/prod.gradle')

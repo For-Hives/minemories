@@ -68,3 +68,6 @@ tasks.named('jar') {
     from project(':core').sourceSets.main.output
     from project(':common').sourceSets.main.output
 }
+
+// Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
+apply from: rootProject.file('../shared/prod.gradle')
