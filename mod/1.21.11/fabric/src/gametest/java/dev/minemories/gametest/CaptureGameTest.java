@@ -21,6 +21,13 @@ public final class CaptureGameTest implements FabricClientGameTest {
                 .options
                 .getSoundSourceOptionInstance(net.minecraft.sounds.SoundSource.MASTER)
                 .set(0.0));
+    // A window without focus pauses the game and its integrated server: the world never finishes loading (and a
+    // headless machine never has focus).
+    context.runOnClient(
+        client -> {
+          client.options.pauseOnLostFocus = false;
+          client.options.enableVsync().set(false);
+        });
     Path glb = GlbReport.exportedGlb();
     try (TestSingleplayerContext world = context.worldBuilder().create()) {
       world.getClientWorld().waitForChunksRender();

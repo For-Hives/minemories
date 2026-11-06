@@ -39,6 +39,10 @@ public final class TickDrivenCapture {
       switch (step) {
         case MENU -> {
           mc.options.setSoundCategoryVolume(SoundSource.MASTER, 0f);
+          // A window without focus pauses the game and its integrated server: the world never finishes loading (and
+          // a headless machine never has focus).
+          mc.options.pauseOnLostFocus = false;
+          mc.options.enableVsync().set(false);
           if (mc.screen instanceof TitleScreen && ticks > 40) {
             RegistryAccess.Writable access = RegistryAccess.builtinCopy();
             var settings =

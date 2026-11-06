@@ -45,6 +45,7 @@ sourceSets.main.resources.srcDir rootProject.layout.buildDirectory.dir('adapted-
 if (gameTest) {
     sourceSets.main.java.srcDir 'src/gametest/java'
     sourceSets.main.java.srcDir '../gametest-common/java'
+    sourceSets.main.java.srcDir '../../shared/gametest-common/java'
 }
 // Classes land in the folder processResources also writes (FML scans it in dev runs): restoring them from the
 // build cache loses them, and the JAR ships empty. Always compile.
