@@ -22,13 +22,12 @@ test('the shared contract runs the web and the API gates, never the mod', () => 
 test('a mod change runs the mod gate only', () => {
 	only(['mod/shared/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
 	only(['mod/targets.json'], 'web', 'mod')
-	only(['scripts/package-mod.mjs'], 'mod')
+	only(['scripts/gradle.mjs', 'scripts/mod/release.mjs'], 'mod')
 	only(['mod/targets.json', 'scripts/mod/cli.mjs'], 'web', 'mod')
 	only(['mod/1.19.2/forge/build.gradle', 'mod/shared/core/src/main/java/dev/minemories/core/GlbScene.java'], 'mod')
-	only(['.github/workflows/mod-release.yml'], 'mod')
 })
 test('documentation alone runs no gate', () => {
-	only(['docs/features/plan-site-complet.md', 'README.md'])
+	only(['docs/features/plan-site-complet.md', 'README.md', 'ops/mod-builder/install.sh'])
 })
 test('shared files and the workflow itself run every gate', () => {
 	for (const file of [

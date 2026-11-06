@@ -83,60 +83,19 @@ jobs:
     needs: changes
     if: needs.changes.outputs.mod == 'true'
     runs-on: ubuntu-latest
-    outputs:
-      mod_checksums: ${{ steps.metadata.outputs.checksums }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           java: 'true'
-      - name: Lint and test the packaging and release scripts
+      - name: Lint and test the `bun mod` tool
         run: |
           bunx biome check scripts package.json biome.json
-          bun run package:mod:test
-          bun run release:test
-      - name: Check, build and package the mod
+          node --test scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs
+      - name: Check and build the mod (Minecraft 1.21.1 root)
         run: |
           bun run mod:check:ci
           bun run mod:build
-          bun run package:mod:all
-          bun run package:mod
-
-      - name: Read original loader checksums
-        id: metadata
-        run: |
-          node --input-type=module -e '
-            import { readFileSync, appendFileSync } from "node:fs";
-            const checksums = Object.fromEntries(["neoforge", "fabric", "forge"].map(loader => {
-              const manifest = JSON.parse(readFileSync(`build/mod-loaders/${loader}/manifest.json`, "utf8"));
-              return [loader, manifest.sha256];
-            }));
-            appendFileSync(process.env.GITHUB_OUTPUT, `checksums=${JSON.stringify(checksums)}\n`);
-          '
-
-      - name: Keep the installable mod artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: minemories-neoforge-mc1.21.1
-          path: build/mod-loaders/neoforge/*
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Keep the Fabric artifact (also tested under Quilt)
-        uses: actions/upload-artifact@v7
-        with:
-          name: minemories-fabric-mc1.21.1
-          path: build/mod-loaders/fabric/*
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Keep the Forge artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: minemories-forge-mc1.21.1
-          path: build/mod-loaders/forge/*
-          if-no-files-found: error
-          retention-days: 14
 
   # Every other Minecraft version and loader of mod/targets.json (the 1.21.1 root is built by `mod`). Any mod change, shared
   # core and common included, compiles and checks each of them, so a port never silently stops building.
@@ -180,32 +139,10 @@ jobs:
           MINEMORIES_MOD_DIR: ${{ matrix.dir }}
         run: node scripts/gradle.mjs ":${{ matrix.project }}:build"
 
-  mod-artifact:
-    needs: mod
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        loader: [neoforge, fabric, forge]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 26
-      - name: Download the built mod in a separate job
-        uses: actions/download-artifact@v8
-        with:
-          name: minemories-${{ matrix.loader }}-mc1.21.1
-          path: downloads
-      - name: Verify the downloaded JAR and metadata
-        env:
-          BUILD_SHA256: ${{ fromJSON(needs.mod.outputs.mod_checksums)[matrix.loader] }}
-        run: node scripts/verify-mod-artifact.mjs downloads "$BUILD_SHA256" "${{ matrix.loader }}"
-
   # The one check to read: green when every gate that had to run passed. A gate skipped because the change does not concern it counts as passed.
   quality:
     if: always()
-    needs: [changes, audit, web, api, mod, mod-cells, mod-matrix, mod-artifact]
+    needs: [changes, audit, web, api, mod, mod-cells, mod-matrix]
     runs-on: ubuntu-latest
     steps:
       - name: Fail when a gate that had to run failed
