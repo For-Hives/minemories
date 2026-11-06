@@ -90,3 +90,6 @@ tasks.withType(ProcessResources).configureEach {
 tasks.named('jar') { manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json') }
 
 tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
+
+// Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
+apply from: rootProject.file('../shared/prod.gradle')
