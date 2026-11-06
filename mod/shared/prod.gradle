@@ -1,0 +1,211 @@
+// Production packaging of the distributed JAR, applied by every loader adapter:
+//   apply from: rootProject.file('../shared/prod.gradle')
+//
+// `-Pminemories.prod=false` keeps the JAR exactly as the loader plugin produced it (dev behaviour).
+// By default (true) the final JAR task (`remapJar` with Loom, `jar` otherwise) is rewritten in place:
+//   - classes lose their debug attributes (what `javac -g:none` would drop: SourceFile, LineNumberTable,
+//     LocalVariableTable, LocalVariableTypeTable) and the SpotBugs annotations, and get a fresh constant pool;
+//   - JSON resources are minified, and lang files lose keys identical to en_us (the game falls back to it);
+//   - signatures, module descriptors, Markdown and `.gitkeep` files are left out;
+//   - every entry is DEFLATED at level 9.
+// Compilation, tests, coverage and every run task (runClient, gametests) keep their debug information because
+// nothing here touches `compileJava`: only the file that ships is rewritten.
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'org.ow2.asm:asm:9.7.1' }
+}
+
+import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Label
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+class ProdJar {
+    static final List<String> DROPPED_ANNOTATIONS = [
+        'Ledu/umd/cs/findbugs/annotations/', 'Lcom/github/spotbugs/', 'Lorg/jetbrains/annotations/',
+    ]
+    static final long FIXED_TIME = 315619200000L // 1980-01-02, what Gradle uses for reproducible archives
+
+    static boolean dropped(String name) {
+        return name.endsWith('/') ||
+            name == 'module-info.class' ||
+            name ==~ /META-INF\/[^\/]+\.(SF|DSA|RSA|EC)/ || name.startsWith('META-INF/maven/') ||
+            name.endsWith('.md') || name.endsWith('.gitkeep') || name.endsWith('.DS_Store')
+    }
+
+    static void optimize(File jar) {
+        File tmp = new File(jar.parentFile, jar.name + '.prod')
+        long before = jar.length()
+        ZipFile zip = new ZipFile(jar)
+        try {
+            Map<String, byte[]> entries = new LinkedHashMap<>()
+            for (ZipEntry e : Collections.list(zip.entries())) {
+                if (!e.isDirectory()) entries.put(e.name, zip.getInputStream(e).readAllBytes())
+            }
+            byte[] enUs = entries.get('assets/minemories/lang/en_us.json')
+            Map<String, String> reference = enUs == null ? null : parseLang(enUs)
+            tmp.withOutputStream { raw ->
+                ZipOutputStream out = new ZipOutputStream(raw)
+                out.setLevel(Deflater.BEST_COMPRESSION)
+                out.setMethod(ZipOutputStream.DEFLATED)
+                // Keep Gradle's directory entries: only metadata and dead weight are removed, never the layout.
+                for (ZipEntry e : Collections.list(zip.entries())) {
+                    String name = e.name
+                    if (e.isDirectory()) {
+                        ZipEntry d = new ZipEntry(name)
+                        d.setTime(FIXED_TIME)
+                        out.putNextEntry(d)
+                        out.closeEntry()
+                        continue
+                    }
+                    if (dropped(name)) continue
+                    byte[] data = transform(name, entries.get(name), reference)
+                    ZipEntry z = new ZipEntry(name)
+                    z.setTime(FIXED_TIME)
+                    out.putNextEntry(z)
+                    out.write(data)
+                    out.closeEntry()
+                }
+                out.finish()
+            }
+        } finally {
+            zip.close()
+        }
+        java.nio.file.Files.move(tmp.toPath(), jar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        println "minemories.prod: ${jar.name} ${before} -> ${jar.length()} bytes"
+    }
+
+    static byte[] transform(String name, byte[] data, Map<String, String> reference) {
+        if (name.endsWith('.class')) return stripClass(data)
+        if (name.matches('assets/minemories/lang/[a-z_]+\\.json') && reference != null && name != 'assets/minemories/lang/en_us.json') return minifyLang(data, reference)
+        if (name.endsWith('.json') || name.endsWith('.mcmeta')) return minifyJson(data)
+        return data
+    }
+
+    // Dev-run proof (-Pminemories.prod.run=true): the same transformations applied in place to build/classes and
+    // build/resources, so the game tests execute exactly the bytecode and resources the production JAR ships.
+    static void optimizeDir(File dir) {
+        if (!dir.isDirectory()) return
+        File enUsFile = new File(dir, 'assets/minemories/lang/en_us.json')
+        Map<String, String> reference = enUsFile.exists() ? parseLang(enUsFile.bytes) : null
+        dir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            String name = dir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+            if (dropped(name)) return
+            byte[] data = f.bytes
+            byte[] out = transform(name, data, reference)
+            if (!Arrays.equals(data, out)) f.bytes = out
+        }
+    }
+
+    static byte[] stripClass(byte[] bytes) {
+        ClassReader reader = new ClassReader(bytes)
+        // No reader handed to the writer: the constant pool is rebuilt without the entries the debug attributes used.
+        ClassWriter writer = new ClassWriter(0)
+        reader.accept(new ClassVisitor(Opcodes.ASM9, writer) {
+            @Override void visitSource(String source, String debug) {}
+            @Override AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+                return unwanted(descriptor) ? null : super.visitAnnotation(descriptor, visible)
+            }
+            @Override org.objectweb.asm.FieldVisitor visitField(int access, String name, String desc, String sig, Object value) {
+                def fv = super.visitField(access, name, desc, sig, value)
+                return fv == null ? null : new org.objectweb.asm.FieldVisitor(Opcodes.ASM9, fv) {
+                    @Override AnnotationVisitor visitAnnotation(String d, boolean v) { return unwanted(d) ? null : super.visitAnnotation(d, v) }
+                }
+            }
+            @Override MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] exceptions) {
+                def mv = super.visitMethod(access, name, desc, sig, exceptions)
+                return mv == null ? null : new MethodVisitor(Opcodes.ASM9, mv) {
+                    @Override void visitLineNumber(int line, Label start) {}
+                    @Override void visitLocalVariable(String n, String d, String s, Label a, Label b, int index) {}
+                    @Override AnnotationVisitor visitAnnotation(String d, boolean v) { return unwanted(d) ? null : super.visitAnnotation(d, v) }
+                }
+            }
+        }, 0)
+        return writer.toByteArray()
+    }
+
+    static boolean unwanted(String descriptor) {
+        return DROPPED_ANNOTATIONS.any { descriptor.startsWith(it) }
+    }
+
+    static Map<String, String> parseLang(byte[] data) {
+        return new groovy.json.JsonSlurper().parse(data, 'UTF-8') as Map<String, String>
+    }
+
+    // The game always loads en_us first, then the selected language over it: a key equal to en_us adds nothing.
+    static byte[] minifyLang(byte[] data, Map<String, String> reference) {
+        Map<String, String> kept = new LinkedHashMap<>()
+        parseLang(data).each { k, v -> if (reference.get(k) != v) kept.put(k, v) }
+        StringBuilder sb = new StringBuilder('{')
+        boolean first = true
+        kept.each { k, v ->
+            if (!first) sb.append(',')
+            first = false
+            quote(sb, k).append(':')
+            quote(sb, v)
+        }
+        return sb.append('}').toString().getBytes('UTF-8')
+    }
+
+    static StringBuilder quote(StringBuilder sb, String s) {
+        sb.append('"')
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i)
+            switch (c) {
+                case '"': sb.append('\\"'); break
+                case '\\': sb.append('\\\\'); break
+                case '\n': sb.append('\\n'); break
+                case '\r': sb.append('\\r'); break
+                case '\t': sb.append('\\t'); break
+                default:
+                    if (c < 0x20 || c == 0x2028 || c == 0x2029) sb.append(String.format('\\u%04x', (int) c))
+                    else sb.append(c)
+            }
+        }
+        return sb.append('"')
+    }
+
+    // Removes the whitespace outside strings; string contents are copied untouched.
+    static byte[] minifyJson(byte[] data) {
+        String text = new String(data, 'UTF-8')
+        StringBuilder sb = new StringBuilder(text.length())
+        boolean inString = false
+        boolean escaped = false
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i)
+            if (inString) {
+                sb.append(c)
+                if (escaped) escaped = false
+                else if (c == '\\') escaped = true
+                else if (c == '"') inString = false
+            } else if (c == '"') {
+                inString = true
+                sb.append(c)
+            } else if (!Character.isWhitespace(c)) {
+                sb.append(c)
+            }
+        }
+        return sb.toString().getBytes('UTF-8')
+    }
+}
+
+def prod = providers.gradleProperty('minemories.prod').map { it != 'false' }.orElse(true).get()
+def finalJar = tasks.names.contains('remapJar') ? 'remapJar' : 'jar'
+tasks.named(finalJar) {
+    inputs.property('minemories.prod', prod)
+    if (prod) {
+        doLast { ProdJar.optimize(archiveFile.get().asFile) }
+    }
+}
+
+if (providers.gradleProperty('minemories.prod.run').map { it == 'true' }.orElse(false).get()) {
+    tasks.named('compileJava') { doLast { ProdJar.optimizeDir(destinationDirectory.get().asFile) } }
+    tasks.named('processResources') { doLast { ProdJar.optimizeDir(destinationDir) } }
+}
