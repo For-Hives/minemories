@@ -96,7 +96,7 @@ Les outils sont dans le prototype (`docs/marketing/v0/web/mcui/`, local) :
 - `gen-mcfont.mjs` : fabrique « MM Minecraft » (`assets/mc/fonts/*.woff2`) depuis les atlas du jar ; `gen-unifont.mjs` : GNU Unifont aux mesures du jeu (ko, ja) ; `gen-wordmark.mjs` : le mot-symbole ; `gen-assets.mjs` : icônes et tuiles.
 - `i18n/src/build.mjs` : catalogues depuis `catalog-src.mjs`.
 
-Le jar est celui du cache de développement : `mod/minemories/neoforge/build/moddev/artifacts/…-minecraft-resources.jar`. Copier ensuite les fichiers produits dans `apps/web/public/hero/…` (mêmes noms) et relancer `bun run web:check`.
+Le jar est celui du cache de développement : `mod/1.21.1/neoforge/build/moddev/artifacts/…-minecraft-resources.jar`. Copier ensuite les fichiers produits dans `apps/web/public/hero/…` (mêmes noms) et relancer `bun run web:check`.
 
 ## Vérifications
 

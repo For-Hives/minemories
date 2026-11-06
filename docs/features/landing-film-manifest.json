@@ -2,7 +2,7 @@
 	"_note": "Everything under web/assets/mc/ except MANIFEST.json and README.md is listed here. Replace or delete the files (and the strings/fonts sections as needed) before publication.",
 	"generatedBy": "web/mcui/extract-mc-assets.mjs (files), web/i18n/src/build.mjs (strings), web/mcui/gen-unifont.mjs (fonts section), web/mcui/gen-mcfont.mjs (fonts/ files)",
 	"jar": {
-		"path": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+		"path": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 		"bytes": 9361844,
 		"sha256": "8e9cf6f4b6eafb1c6bf745a67a61dd1736f31865cad409e5b2bec918667dab5e"
 	},
@@ -18,7 +18,7 @@
 			"height": 16,
 			"sha256": "f5f2a37e7466f2983c00550874a2a94d2d006eae52b0e73acb722fadeb9bdb3b",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/bone.png",
 				"sha256": "f5f2a37e7466f2983c00550874a2a94d2d006eae52b0e73acb722fadeb9bdb3b"
 			}
@@ -34,7 +34,7 @@
 			"height": 16,
 			"sha256": "07d08a99d1b51230aa7edf4e6a890130cce02a6a5fa64407850354192bfdbea3",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/cooked_beef.png",
 				"sha256": "07d08a99d1b51230aa7edf4e6a890130cce02a6a5fa64407850354192bfdbea3"
 			}
@@ -50,7 +50,7 @@
 			"height": 16,
 			"sha256": "8970ef231b71a4aec68b56d77d4bab27d69fdeb59e4a5faa6c837c3ccc9f87a5",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/lead.png",
 				"sha256": "8970ef231b71a4aec68b56d77d4bab27d69fdeb59e4a5faa6c837c3ccc9f87a5"
 			}
@@ -66,7 +66,7 @@
 			"height": 16,
 			"sha256": "9283c0e731db15be1095278b75a5d68b08bb39cd22d86ed02ab425219622b986",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/campfire.png",
 				"sha256": "9283c0e731db15be1095278b75a5d68b08bb39cd22d86ed02ab425219622b986"
 			}
@@ -82,7 +82,7 @@
 			"height": 16,
 			"sha256": "329db8f31720564ca9c6eeb3bafb98bb30a4d277e958e55806720cc01dbf296d",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/block/torch.png",
 				"sha256": "329db8f31720564ca9c6eeb3bafb98bb30a4d277e958e55806720cc01dbf296d"
 			}
@@ -98,7 +98,7 @@
 			"height": 16,
 			"sha256": "7e0e4a9fcb8bd4b85820ee3aa7ea83b66f08687cd907a8d38cc98281b41fac1d",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/bread.png",
 				"sha256": "7e0e4a9fcb8bd4b85820ee3aa7ea83b66f08687cd907a8d38cc98281b41fac1d"
 			}
@@ -114,7 +114,7 @@
 			"height": 16,
 			"sha256": "0b14eabd82b84a1273057baac58cff50279329e15260b16b711e5a49ffdc56a4",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/compass_16.png",
 				"sha256": "0b14eabd82b84a1273057baac58cff50279329e15260b16b711e5a49ffdc56a4"
 			}
@@ -154,7 +154,7 @@
 			"height": 16,
 			"sha256": "181b670aafb03287849957ee882863c3924a2aaa826f3f44ab94bea906c54228",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/item/writable_book.png",
 				"sha256": "181b670aafb03287849957ee882863c3924a2aaa826f3f44ab94bea906c54228"
 			}
@@ -170,7 +170,7 @@
 			"height": 22,
 			"sha256": "57aad603aafc75cea079d8db04b3029c1b1b5501eb0799971ccaf858876f52a7",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/gui/sprites/hud/hotbar.png",
 				"sha256": "57aad603aafc75cea079d8db04b3029c1b1b5501eb0799971ccaf858876f52a7"
 			}
@@ -186,7 +186,7 @@
 			"height": 23,
 			"sha256": "8c1e1cd977cce0c3a2aaf04036af4904426dafd1a6f4db9665b0d8be1468e80a",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png",
 				"sha256": "8c1e1cd977cce0c3a2aaf04036af4904426dafd1a6f4db9665b0d8be1468e80a"
 			}
@@ -202,7 +202,7 @@
 			"height": 8,
 			"sha256": "351e76662421bfd9285429847568b93046cd26100acc3f53550c663234bbde7b",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/particle/heart.png",
 				"sha256": "351e76662421bfd9285429847568b93046cd26100acc3f53550c663234bbde7b"
 			}
@@ -216,7 +216,7 @@
 			"replacement": "a dog skin of our own (64 x 32, same UV layout)",
 			"sha256": "5392bbf297df4acf930d84d3d7c8c4a85277971c3ed6b61df6d889287630c914",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/entity/wolf/wolf_tame.png",
 				"sha256": "d56a902771a9cb21b432205a98237d41c5be4870c4298c0d7d5ad4af8ba3540b"
 			},
@@ -233,7 +233,7 @@
 			"replacement": "a collar of our own (64 x 32, same UV layout)",
 			"sha256": "b1311dce18557b2c6bd4f1552c50bf646c8a98e49ac43e6638657ae2dc9c457d",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/entity/wolf/wolf_collar.png",
 				"sha256": "a5791b414c8217f7568bff652a745ea3ff1f6ba26058214733865c8d56fe3572"
 			},
@@ -250,7 +250,7 @@
 			"replacement": "a skin of our own (64 x 64, slim layout)",
 			"sha256": "fece7017b1bb13926d1158864b283b8b930271f80a90482f174cca6a17e88236",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/entity/player/slim/efe.png",
 				"sha256": "fa3569f027caadcc17efbb1b46f8d0f2830c408cafc774e1f3bf573f4bb7c419"
 			},
@@ -267,7 +267,7 @@
 			"replacement": "a flame strip of our own (16 x 128)",
 			"sha256": "35d5e013ec297d0ff2e09cac67a35d5228d6c36a8e9b70209f89e86db0a06542",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/block/campfire_fire.png",
 				"sha256": "35d5e013ec297d0ff2e09cac67a35d5228d6c36a8e9b70209f89e86db0a06542"
 			},
@@ -284,7 +284,7 @@
 			"replacement": "delete with the strip",
 			"sha256": "e9b8025fde1b09b0a4d2a38427b04f98f28a593045be6d177eb2b29164c872b0",
 			"source": {
-				"jar": "mod/minemories/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
+				"jar": "mod/1.21.1/neoforge/build/moddev/artifacts/neoforge-21.1.248-client-extra-aka-minecraft-resources.jar",
 				"entry": "assets/minecraft/textures/block/campfire_fire.png.mcmeta",
 				"sha256": "e9b8025fde1b09b0a4d2a38427b04f98f28a593045be6d177eb2b29164c872b0"
 			},
