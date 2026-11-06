@@ -1,6 +1,6 @@
 # Administration du service
 
-Le panneau privé `/admin` est accessible depuis « Mon compte » après vérification des droits par le serveur. Il propose les volumes finalisés en Go décimaux par heure, les inscriptions, des périodes de 24 heures, 7 jours et 30 jours, une recherche paginée des comptes avec filtre de rôle, les compteurs de stockage et d’activité, et les 50 derniers changements de rôle. Les heures sont regroupées en UTC. Les droits administrateur ne donnent aucun accès supplémentaire aux fichiers privés.
+Le tableau de bord `/admin` présente les sections ouvertes au compte (comptes et rôles, modération, diagnostics) ; le panneau des comptes et des chiffres vit sous `/admin/users`. Il est accessible depuis « Mon compte » après vérification des droits par le serveur. Il propose les volumes finalisés en Go décimaux par heure, les inscriptions, des périodes de 24 heures, 7 jours et 30 jours, une recherche paginée des comptes avec filtre de rôle, les compteurs de stockage et d’activité, et les 50 derniers changements de rôle. Les heures sont regroupées en UTC. Les droits administrateur ne donnent aucun accès supplémentaire aux fichiers privés.
 
 ## Premier administrateur
 
