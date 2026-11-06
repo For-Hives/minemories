@@ -1,0 +1,21 @@
+# cgroup shared by everything the mod build starts (Gradle, the Minecraft JVMs, Xvfb). The VPS also runs the site and
+# the API: whatever happens in here, these limits keep them alive. Adjust to the real size of the VPS.
+#
+#   MemoryHigh : the kernel throttles and reclaims above this value (the build slows down, nothing is killed).
+#   MemoryMax  : hard cap; above it the OOM killer only picks processes of this slice, never the API or the site.
+#   CPUQuota   : at most 1.5 cores, whatever the load of the others.
+#   CPUWeight / IOWeight : lowest priorities when the machine is busy.
+[Unit]
+Description=Mod builds (limited so they never starve the site and the API)
+
+[Slice]
+MemoryAccounting=yes
+MemoryHigh=2560M
+MemoryMax=3G
+MemorySwapMax=1G
+CPUAccounting=yes
+CPUQuota=150%
+CPUWeight=10
+IOAccounting=yes
+IOWeight=10
+TasksMax=2048

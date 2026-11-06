@@ -1,0 +1,58 @@
+# Builds, tests and publishes the mod releases (`bun mod release`). Started by minemories-mod-release.timer or by hand:
+#   systemctl start minemories-mod-release.service ; journalctl -fu minemories-mod-release
+#
+# Protecting the site and the API on the same VPS:
+#   - one instance only: a oneshot unit never overlaps itself, flock guards against a manual run, and the tool has
+#     its own lock; the headless tests run one Minecraft at a time;
+#   - Nice=19 + idle CPU/IO scheduling: the build only uses what the API leaves free;
+#   - the cgroup limits live in minemories-mod.slice (memory, CPU, tasks);
+#   - the timer fires in the quietest hours.
+[Unit]
+Description=Minemories mod release (build, in-game tests, storage, publication)
+Documentation=file:///opt/minemories/docs/features/automatic-releases.md
+After=network-online.target
+Wants=network-online.target
+OnFailure=minemories-mod-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+User=minemories
+Group=minemories
+Slice=minemories-mod.slice
+WorkingDirectory=/opt/minemories
+# Secrets: MOD_DISCORD_WEBHOOK_URL, MODRINTH_TOKEN, CURSEFORGE_TOKEN, S3 variables. File readable by root and the
+# minemories group only (see mod-builder.env.example).
+EnvironmentFile=/etc/minemories/mod-builder.env
+Environment=HOME=/var/lib/minemories
+Environment=CI=1
+# Heap of the game JVM in the headless tests (bun mod test), on top of Gradle (see MOD_TEST_* in the env file).
+Environment=MOD_TEST_GAME_MEMORY_MB=2048
+ExecStart=/usr/bin/flock --nonblock /run/lock/minemories-mod.lock /usr/local/bin/bun mod release
+# A whole matrix of builds and in-game tests is slow on a small machine; it must still end.
+TimeoutStartSec=5h
+KillMode=control-group
+# `bun mod release` is the only thing that may take this long; a clean stop gives it time to unlock and notify.
+TimeoutStopSec=60
+
+Nice=19
+CPUSchedulingPolicy=idle
+IOSchedulingClass=idle
+IOSchedulingPriority=7
+OOMScoreAdjust=900
+OOMPolicy=kill
+LimitNOFILE=65536
+
+# Journal: `journalctl -u minemories-mod-release`; Gradle and Minecraft output included.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minemories-mod-release
+
+# Hardening: the build only writes in its own folders. /tmp must be private (Xvfb socket, Minecraft temp files).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/minemories /var/lib/minemories /run/lock
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
