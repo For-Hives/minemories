@@ -8,6 +8,7 @@
         "@aws-sdk/client-s3": "3.1161.0",
         "@biomejs/biome": "2.5.15",
         "@jsquash/oxipng": "2.3.0",
+        "@minemories/mod-storage": "workspace:*",
         "meshoptimizer": "1.1.1",
         "pngjs": "7.0.0",
       },
@@ -19,6 +20,7 @@
         "@aws-sdk/client-s3": "3.1161.0",
         "@aws-sdk/lib-storage": "3.1161.0",
         "@minemories/api-contract": "workspace:*",
+        "@minemories/mod-storage": "workspace:*",
         "@orpc/server": "^1.14.0",
         "@polar-sh/better-auth": "2.1.0",
         "@polar-sh/sdk": "1.0.2",
@@ -70,6 +72,13 @@
       "dependencies": {
         "@orpc/contract": "^1.14.0",
         "zod": "^4.0.0",
+      },
+    },
+    "packages/mod-storage": {
+      "name": "@minemories/mod-storage",
+      "version": "0.36.0-beta.1",
+      "dependencies": {
+        "@aws-sdk/client-s3": "3.1161.0",
       },
     },
   },
@@ -203,6 +212,8 @@
     "@minemories/api": ["@minemories/api@workspace:apps/api"],
 
     "@minemories/api-contract": ["@minemories/api-contract@workspace:packages/api-contract"],
+
+    "@minemories/mod-storage": ["@minemories/mod-storage@workspace:packages/mod-storage"],
 
     "@minemories/web": ["@minemories/web@workspace:apps/web"],
 

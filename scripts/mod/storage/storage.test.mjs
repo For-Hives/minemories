@@ -4,8 +4,8 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { createFakeClient } from '@minemories/mod-storage/fake-client'
 import storage, { formatBytes, parsePruneArgs } from '../commands/storage.mjs'
-import { createFakeClient } from './fake-client.mjs'
 import {
 	emptyIndex,
 	latestKey,
