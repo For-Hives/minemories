@@ -571,6 +571,15 @@ html[data-mc-font="read"] .installation .install-lead {
 	transition: box-shadow var(--ds-dur-2) var(--ds-ease);
 }
 
+.installation .install-way,
+.installation a.install-way:not(.mc-btn),
+.installation a.install-way:not(.mc-btn):hover,
+.installation .install-way span,
+.installation .install-way strong {
+	color: var(--text);
+	text-decoration: none;
+}
+
 .installation .install-way:hover,
 .installation .install-way:focus-visible {
 	box-shadow:
@@ -600,7 +609,8 @@ html[data-mc-font="read"] .installation .install-lead {
 /* --- The guide: one screen, one main action ------------------------------------------------------------------------------------------------- */
 
 .install-guide-title {
-	margin: var(--ds-sp-5) 0 0;
+	max-width: 760px;
+	margin: var(--ds-sp-5) auto 0;
 	color: var(--text-2);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-shadow: var(--ds-text-shadow-1);
@@ -750,6 +760,14 @@ html[data-mc-font="read"] .installation .install-lead {
 	outline-offset: calc(3 * var(--gp));
 }
 
+/* On the success screen the panel is already the frame. */
+.install-panel .install-success {
+	margin: 0;
+	padding: var(--ds-sp-4) 0 0;
+	background: none;
+	box-shadow: none;
+}
+
 @media (max-width: 800px) {
 	.install-ways {
 		grid-template-columns: minmax(0, 1fr);
@@ -781,6 +799,12 @@ html[data-mc-font="read"] .installation .install-lead {
 	}
 	.installation .install-way {
 		padding: var(--ds-sp-5);
+	}
+	/* The path takes its own line so that it reads whole; the copy button goes below it. */
+	.installation .install-copy code {
+		flex: 1 1 100%;
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 }
 
