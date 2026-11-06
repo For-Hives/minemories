@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * The slice of the 1.20 {@code GuiGraphics} the Minemories screens use, on top of the pose-stack
- * drawing of Minecraft before 1.20. Shared by every pre-1.20 target (see mod/compat-legacy).
+ * drawing of Minecraft before 1.20. Shared by every pre-1.20 target (see mod/shared/compat-legacy).
  */
 public final class GuiGraphics {
   private final PoseStack pose;
