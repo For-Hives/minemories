@@ -1,0 +1,29 @@
+{
+	"_comment": "Third-party catalogs (Modrinth, CurseForge). Nothing is published until `enabled` is true, the project exists and the token is in the environment (MODRINTH_TOKEN / CURSEFORGE_TOKEN, never in this file). Checklist: docs/features/automatic-releases.md, section 'Publication tierce'.",
+	"modrinth": {
+		"enabled": false,
+		"projectId": null,
+		"slug": null,
+		"contact": "https://github.com/For-Hives/minemories",
+		"featured": true,
+		"dependencies": {
+			"fabric": [{ "slug": "fabric-api", "type": "required" }]
+		}
+	},
+	"curseforge": {
+		"enabled": false,
+		"projectId": null,
+		"slug": null,
+		"changelogType": "markdown",
+		"environment": "Client",
+		"dependencies": {
+			"fabric": [{ "slug": "fabric-api", "type": "requiredDependency" }]
+		}
+	},
+	"mapping": {
+		"neoforge": { "modrinth": "neoforge", "curseforge": "NeoForge" },
+		"fabric": { "modrinth": "fabric", "curseforge": "Fabric" },
+		"forge": { "modrinth": "forge", "curseforge": "Forge" },
+		"quilt": { "modrinth": "quilt", "curseforge": "Quilt" }
+	}
+}
