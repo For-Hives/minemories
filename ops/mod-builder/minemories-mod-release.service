@@ -25,6 +25,8 @@ WorkingDirectory=/opt/minemories
 EnvironmentFile=/etc/minemories/mod-builder.env
 Environment=HOME=/var/lib/minemories
 Environment=CI=1
+# Marks the built JARs in manifest.json and in the public index (the PC builds are marked pc).
+Environment=MOD_BUILT_BY=vps
 # Heap of the game JVM in the headless tests (bun mod test), on top of Gradle (see MOD_TEST_* in the env file).
 Environment=MOD_TEST_GAME_MEMORY_MB=2048
 ExecStart=/usr/bin/flock --nonblock /run/lock/minemories-mod.lock /usr/local/bin/bun mod release

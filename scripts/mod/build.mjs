@@ -112,7 +112,14 @@ export function jarHasClasses(bytes) {
 	return bytes.includes('.class')
 }
 
-async function collectArtifact(root, target, { version, prod, git, builtAt }) {
+/** Machine de build : MOD_BUILT_BY=pc|vps (défaut pc). Le VPS positionne vps dans son unité systemd. */
+export function builtByFrom(env = process.env) {
+	const value = env.MOD_BUILT_BY || 'pc'
+	if (value !== 'pc' && value !== 'vps') throw new Error(`MOD_BUILT_BY doit valoir pc ou vps (reçu : ${value}).`)
+	return value
+}
+
+async function collectArtifact(root, target, { version, prod, git, builtAt, builtBy }) {
 	const source = join(libsDir(root, target), target.jar.replace('{version}', version))
 	const bytes = await readFile(source).catch(() => {
 		throw new Error(`JAR attendu introuvable : ${source}`)
@@ -141,6 +148,7 @@ async function collectArtifact(root, target, { version, prod, git, builtAt }) {
 		java: target.java,
 		prod,
 		builtAt,
+		builtBy,
 	}
 	await writeFile(join(directory, 'manifest.json'), `${JSON.stringify(manifest, null, '\t')}\n`)
 	return { manifest, filePath: join(directory, file) }
@@ -166,6 +174,7 @@ export async function buildTarget(target, options) {
 			prod,
 			git,
 			builtAt: new Date().toISOString(),
+			builtBy: builtByFrom(options.env),
 		})
 		return {
 			targetId: target.id,

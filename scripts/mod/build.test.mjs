@@ -8,6 +8,7 @@ import { test } from 'node:test'
 import {
 	buildTarget,
 	buildTargets,
+	builtByFrom,
 	builtVersions,
 	distDir,
 	formatBytes,
@@ -102,6 +103,21 @@ test('buildTarget collects the JAR, checksum and manifest', async () => {
 		new RegExp(`^${manifest.sha256}  ${manifest.file}\n$`)
 	)
 	assert.equal(result.filePath, join(directory, manifest.file))
+})
+
+test('builtByFrom reads MOD_BUILT_BY (pc by default) and manifest.json records it', async () => {
+	assert.equal(builtByFrom({}), 'pc')
+	assert.equal(builtByFrom({ MOD_BUILT_BY: 'vps' }), 'vps')
+	assert.throws(() => builtByFrom({ MOD_BUILT_BY: 'laptop' }), /MOD_BUILT_BY/)
+	const root = await repo()
+	const runGradle = async () => {
+		await writeFile(join(libsDir(root, target), 'minemories-forge-mc1.18.2-1.0.0-beta.1.jar'), jar)
+		return { code: 0, tail: '' }
+	}
+	const options = { root, version: '1.0.0-beta.1', prod: true, jdks, setup, git, runGradle }
+	assert.equal((await buildTarget(target, { ...options, env: { MOD_BUILT_BY: 'vps' } })).manifest.builtBy, 'vps')
+	assert.equal((await buildTarget(target, { ...options, env: {} })).manifest.builtBy, 'pc')
+	assert.equal((await buildTarget(target, { ...options, env: { MOD_BUILT_BY: 'x' } })).status, 'failed')
 })
 
 test('buildTarget reports Gradle failures, missing JARs and non-JAR files without throwing', async () => {

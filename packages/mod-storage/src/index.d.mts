@@ -84,9 +84,7 @@ export function emptyIndex(): ModIndex
 export function validateIndex(value: unknown): ModIndex
 export function readIndex(options?: StorageContext): Promise<ModIndex>
 export function storeUpload(options: StoreUploadOptions): Promise<StoreUploadResult>
-export function pruneStorage(
-	options?: StorageContext & { keep?: number; dryRun?: boolean }
-): Promise<{
+export function pruneStorage(options?: StorageContext & { keep?: number; dryRun?: boolean }): Promise<{
 	deleted: { targetId: string; version: string; key: string; bytes: number }[]
 	kept: unknown[]
 	freedBytes: number
