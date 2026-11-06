@@ -9,7 +9,7 @@ import { s3Target } from './storage-s3'
 /** Bucket des JAR du mod, distinct des captures des utilisateurs (même endpoint et mêmes identifiants). */
 export const modBucket = process.env.MOD_STORAGE_BUCKET || 'minemories-mods'
 const INDEX_KEY = 'index.json'
-const INDEX_TTL_MS = 15_000
+const INDEX_TTL_MS = Number(process.env.MOD_INDEX_CACHE_MS ?? 15_000)
 const IMMUTABLE = 'public, max-age=31536000, immutable'
 const SHORT = 'public, max-age=60, must-revalidate'
 
