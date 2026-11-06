@@ -146,6 +146,32 @@ Résultat identique : 2507 blocs, 3 entités, 17 matériaux (GLB de 180 704 octe
 
 Le premier essai a échoué sur `oak_leaves` : ce n'était pas un défaut du mod. Des feuilles sans tronc se dégradent avant l'export (l'entité `minecraft:item` en plus dans le GLB était leur butin) ; la scène partagée pose maintenant `oak_leaves[persistent=true]`. Le même essai a fait trouver l'écran d'accessibilité d'un profil neuf, que le pilote ferme. Limites : GLB non ouvert dans le viewer, sélection manuelle et menus non essayés.
 
+## JAR de prod
+
+`bun mod build` produit par défaut des JAR de prod : la propriété Gradle `minemories.prod` vaut `true` (`-Pminemories.prod=false`, ou `bun mod build --dev`, rend le JAR du plugin du loader tel quel). `mod/shared/prod.gradle`, appliqué par chaque adaptateur, réécrit sur place le JAR final (`remapJar` avec Loom, `jar` sinon) : les classes perdent leurs attributs de débogage (fichier source, numéros de ligne, variables locales) et les annotations SpotBugs/JetBrains, les JSON sont minifiés, les fichiers de langue ne gardent que les clés différentes de `en_us` (le jeu retombe dessus), signatures, descripteurs de module, Markdown et `.gitkeep` sont retirés, et toutes les entrées sont compressées au niveau 9. La compilation, les tests et les tâches de lancement ne sont pas touchés. Les noms de JAR ne changent pas.
+
+| Cible | JAR de dev (octets) | JAR de prod (octets) | Gain |
+|---|---|---|---|
+| neoforge 1.21.1 | 441 408 | 362 664 | 17,8 % |
+| fabric 1.21.1 | 458 659 | 380 495 | 17,0 % |
+| forge 1.21.1 | 450 995 | 374 666 | 16,9 % |
+| fabric 1.21.11 | 458 012 | 379 327 | 17,2 % |
+| neoforge 1.21.11 | 446 281 | 365 750 | 18,0 % |
+| forge 1.21.11 | 447 379 | 366 672 | 18,0 % |
+| fabric 1.20.1 | 460 052 | 380 354 | 17,3 % |
+| forge 1.20.1 | 452 647 | 374 795 | 17,2 % |
+| fabric 1.19.2 | 466 904 | 385 743 | 17,4 % |
+| forge 1.19.2 | 457 193 | 378 317 | 17,3 % |
+| forge 1.18.2 | 458 061 | 379 041 | 17,3 % |
+
+Ce qui pèse encore est du code (environ 200 classes, 300 Ko avant compression ; `ClientRuntime` seule fait 65 Ko) : aller plus loin demande de réduire le bytecode lui-même. Refusé pour l'instant : ProGuard ou tout élagage/obfuscation des noms, qui casserait les mixins, les points d'entrée chargés par nom (Fabric, `@Mod`, ServiceLoader) et les traces d'erreur envoyées par les diagnostics consentis, sans preuve en jeu qu'un JAR ainsi réduit fonctionne.
+
+Preuve en jeu : `-Pminemories.prod.run=true` applique les mêmes transformations aux classes et ressources compilées (`build/classes`, `build/resources`) avant un lancement, de sorte que les tests de capture exécutent exactement le bytecode et les ressources que le JAR de prod embarque. Les huit tests automatiques passent dans cette configuration (6 novembre 2026) avec les mêmes chiffres qu'en dev : Fabric, NeoForge et Forge 1.21.11 (GLB de 189 512 à 189 616 octets, 16 matériaux), Forge et Fabric 1.20.1, Fabric et Forge 1.19.2, Forge 1.18.2. Les cibles 1.21.1 n'ont pas de test automatique : leurs JAR de prod passent par la même transformation et restent à essayer à la main. Forge 1.21.11 ne s'arrête pas tout seul après le test (ForgeGradle 7 garde le processus) : le runner headless juge sur le rapport et tue le reste.
+
+`bun mod build` refuse un JAR sans aucune classe et compile sans cache de build Gradle : une restauration depuis le cache avait livré un JAR vide de 41 Ko pour Forge 1.21.11, dont les classes sont compilées dans le dossier des ressources.
+
+Les tests en jeu ne doivent dépendre ni du focus de la fenêtre ni de l'affichage : un client sans focus se met en pause avec son serveur local et le monde ne finit jamais de charger (boucle « World loading finished » à l'écran de chargement), ce qui est systématique sur une machine sans écran. Les pilotes désactivent `pauseOnLostFocus` et la synchronisation verticale ; le runner headless (`scripts/mod/headless`) arrête de plus un client dont la même ligne de log se répète 120 fois ou qui reste muet 5 minutes, relance une fois, et nettoie les processus restants.
+
 ## Versions visées par les modpacks (mesure du 5 novembre 2026)
 
 Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
