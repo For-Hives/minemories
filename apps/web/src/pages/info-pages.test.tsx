@@ -43,9 +43,8 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
 	fireEvent.click(screen.getByRole('link', { name: 'Installe le mod' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer le mod Minemories')
-	expect(screen.getByRole('button', { name: '1.21.1' })).toBeTruthy()
-	expect(screen.getByRole('button', { name: /Télécharger le mod/ })).toBeTruthy()
-	expect(screen.getByText('0 / 6 étapes cochées')).toBeTruthy()
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
+	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ })).toBeTruthy()
 	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
@@ -83,14 +82,14 @@ test('guides describe the current M screen labels and its advanced settings tabs
 	expect(faq).not.toContain('NeoForge 21.1.248')
 })
 
-test('the first memory step names the in-game button and the loader note points to other JARs', () => {
-	mountEnglish(<InstallationStep step={5} system="linux" target={targetFor('1.21.1', 'neoforge')} />)
+test('the first memory step names the in-game button and the download step points to other versions', async () => {
+	mountEnglish(<InstallationStep step="memory" system="linux" target={targetFor('1.21.1', 'neoforge')} />)
 	expect(screen.getByText('Take a memory')).toBeTruthy()
 	expect(document.body.textContent).toContain('You can turn them off with “Auto memories” in M.')
 	cleanup()
-	mountEnglish(<InstallationStep step={0} system="linux" target={targetFor('1.21.1', 'neoforge')} />)
-	expect(document.body.textContent).toContain('Every published version, and the Quilt note, are on')
-	expect(screen.getByRole('link', { name: 'Mod versions' }).getAttribute('href')).toBe('/versions')
+	mountEnglish(<InstallationStep step="download" system="linux" target={targetFor('1.21.1', 'neoforge')} />)
+	await screen.findByRole('button', { name: 'Retry download' })
+	expect(screen.getByRole('link', { name: "Previous versions and what's new" }).getAttribute('href')).toBe('/versions')
 })
 
 test('each language quotes the labels of its own mod translation', async () => {

@@ -47,34 +47,42 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 )
 test('every platform, version, loader and step uses English copy, preserving filenames and command payloads', async () => {
 	mount(<InstallationPage />)
-	for (const system of ['Windows', 'macOS', 'Linux'])
-		for (const version of ['1.21.11', '1.18.2']) {
-			fireEvent.click(screen.getByRole('button', { name: system }))
-			fireEvent.click(screen.getByRole('button', { name: version }))
-			for (const step of [
-				'Prepare',
-				'Install the loader',
-				'Download the mod',
-				'Place the file',
-				'Check in game',
-				'Create a memory',
-			]) {
-				fireEvent.click(screen.getByRole('button', { name: step }))
-				expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
-			}
+	fireEvent.click(screen.getByRole('button', { name: /^Guided installation/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+	for (const version of ['1.21.11', '1.18.2']) {
+		fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?!\\d)`) }))
+		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+		if (version === '1.21.11') fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+		for (let step = 0; step < 5; step++) {
+			expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
+			fireEvent.click(screen.getByRole('button', { name: step === 4 ? 'My memory opens in 3D' : 'Continue' }))
 		}
-	expect(screen.getByText('/minemories export 16')).toBeTruthy()
-	await waitFor(() => expect(localStorage.getItem(guideStorageKey)).toContain('"minecraft":"1.18.2"'))
+		expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
+		fireEvent.click(screen.getByRole('button', { name: 'Start again and clear my choices' }))
+		fireEvent.click(screen.getByRole('button', { name: /^Guided installation/ }))
+		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+	}
+	await waitFor(() => expect(localStorage.getItem(guideStorageKey)).toContain('"active":true'))
 })
-test('switching language preserves the chosen version, loader and checked steps', async () => {
+test('switching language preserves the chosen version, loader and screen', async () => {
 	mount(<InstallationPage />, 'fr')
-	fireEvent.click(screen.getByRole('button', { name: '1.19.2' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Fabric' }))
-	fireEvent.click(screen.getByRole('button', { name: 'C’est fait, on continue' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Installer le loader')
+	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: /Fabric/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Installer le loader')
 	fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
-	expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Install the loader')
-	expect(screen.getByRole('button', { name: 'Fabric' }).getAttribute('aria-pressed')).toBe('true')
-	expect(screen.getByRole('button', { name: '1.19.2' }).getAttribute('aria-pressed')).toBe('true')
-	await waitFor(() => expect(JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}').done).toEqual([0]))
+	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Install the loader')
+	expect(screen.getByText('Step 4 of 8')).toBeTruthy()
+	await waitFor(() =>
+		expect(JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}')).toMatchObject({
+			minecraft: '1.19.2',
+			loader: 'fabric',
+			step: 'install',
+		})
+	)
+	fireEvent.click(screen.getByRole('button', { name: '← Back' }))
+	expect(screen.getByRole('radio', { name: /Fabric/ })).toHaveProperty('checked', true)
 })

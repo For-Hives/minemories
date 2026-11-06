@@ -7,6 +7,7 @@ import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
 import { ArticlePage, BlogPage, LegalPage, NotFoundPage } from './pages/ContentPages'
 import { DiscoveryPage, ExplorerPage, MarketingPage } from './pages/DiscoveryPages'
+import { DownloadsPage } from './pages/DownloadsPage'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
@@ -40,6 +41,9 @@ export function renderPage(path: string) {
 			break
 		case '/installation':
 			content = <InstallationPage />
+			break
+		case '/telechargements':
+			content = <DownloadsPage />
 			break
 		case '/versions':
 			content = <ReleasesPage />

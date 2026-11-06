@@ -37,6 +37,24 @@ test('release history and changelog render headings, navigation and a direct API
 	expect(renderPage('/versions')).toContain('Versions du mod')
 	expect(renderPage('/changelog')).toContain('Les nouveautés')
 })
+test('the download table and the guide welcome render without JavaScript, with the two ways in', () => {
+	const table = renderPage('/telechargements')
+	expect(table).toContain('<h1')
+	expect(table).toContain('Tous les téléchargements')
+	expect(table).toContain('<table')
+	expect(table).toContain('scope="col"')
+	expect(table).toContain('scope="row"')
+	expect(table).toContain('<noscript>')
+	expect(table).toContain('/downloads/neoforge-mc1.21.1/latest')
+	expect(table).toContain('/downloads/index.json')
+	expect(table).toContain('href="/versions"')
+	const welcome = renderPage('/installation')
+	expect(welcome).toContain('Installation guidée')
+	expect(welcome).toContain('href="/telechargements"')
+	expect(welcome).toContain('href="#aide"')
+	expect(welcome).not.toContain('<progress')
+	expect(publicMetadata.some(page => page.path === '/telechargements' && page.indexable)).toBe(true)
+})
 test('private data, shared links and account routes are excluded from indexing and static rendering', () => {
 	for (const path of [
 		'/gallery',
