@@ -47,7 +47,9 @@ test('guides a beginner from exact loader versions through a local first capture
 	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
 	step('Ranger le fichier')
 	expect(screen.getByText(/icône de dossier/)).toBeTruthy()
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-neoforge-mc1.21.1.jar')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain(
+		'minemories-neoforge-mc1.21.1-X.Y.Z.jar'
+	)
 	step('Vérifier en jeu')
 	expect(screen.getAllByText(/Options → Contrôles/).length).toBeGreaterThan(0)
 	step('Créer un souvenir')
@@ -76,7 +78,7 @@ test('the version and loader choices rewrite every step and resume after a reloa
 	expect(screen.getByText(/pas encore publié dans les catalogues CurseForge et Modrinth/)).toBeTruthy()
 	expect(screen.getByRole('link', { name: /Fabric API 0\.77\.0\+1\.19\.2/ })).toBeTruthy()
 	step('Ranger le fichier')
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.19.2.jar')
+	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.19.2-X.Y.Z.jar')
 	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('fabric-api-0.77.0+1.19.2.jar')
 	expect(screen.getByRole('progressbar').getAttribute('value')).toBe('1')
 	view.unmount()

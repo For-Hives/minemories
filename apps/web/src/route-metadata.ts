@@ -74,7 +74,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/changelog',
 		title: 'Mod updates — Minemories',
-		description: 'Official Minemories release notes: features, fixes and downloads from GitHub.',
+		description: 'Official Minemories mod builds: dates, sizes and checksums.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -104,7 +104,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/privacy',
 		title: 'Privacy — Minemories',
 		description:
-			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and release requests to GitHub.',
+			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
 		language: 'fr',
 	},

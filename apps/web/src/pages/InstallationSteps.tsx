@@ -373,7 +373,7 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 					<T message={'Profile folder'} />
 				</span>
 				<span>└─ mods</span>
-				<strong>　 └─ {target.jarName}</strong>
+				<strong>　 └─ minemories-{target.id}-X.Y.Z.jar</strong>
 				{target.fabricApi && <span>　 └─ fabric-api-{target.fabricApi}.jar</span>}
 			</fieldset>
 			{screenshots && <WindowsScreenshot id="modsFolder" />}

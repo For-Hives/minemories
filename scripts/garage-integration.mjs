@@ -46,6 +46,7 @@ try {
 	await run(bun, ['test', 'apps/api/src/session-rpc.test.ts'])
 	await run(bun, ['test', 'apps/api/src/timelapse-http.test.ts'])
 	await run(bun, ['test', 'apps/api/src/storage-garage.test.ts'])
+	await run(bun, ['test', 'apps/api/src/mod-downloads-garage.test.ts'])
 } finally {
 	// Only this disposable fixture project is removed; development Garage/MinIO volumes are untouched.
 	await run('docker', ['compose', '-p', 'minemories-integration', 'down', '--volumes'])
