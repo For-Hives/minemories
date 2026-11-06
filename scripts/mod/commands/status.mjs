@@ -4,11 +4,11 @@ import { collectCells, loadRemoteReport, loadStorageReport, renderStatus } from 
 import { readModVersion } from '../version.mjs'
 
 export const name = 'status'
-export const summary = 'Grille Minecraft x loader : état local, version publiée et espace utilisé'
+export const summary = 'Minecraft x loader grid: local build state, published version and space used'
 export const usage =
 	'bun mod status [--no-storage] [--remote | --api-url <url>]\n' +
-	"  --remote   lit l'index public de l'API (MOD_API_URL, puis https://api.minemories.net) au lieu de S3 :\n" +
-	'             pas besoin des clés S3'
+	'  --remote   reads the public index of the API (MOD_API_URL, then https://api.minemories.net) instead of S3:\n' +
+	'             no S3 keys needed'
 
 export async function run(args, { config, env, log, root }) {
 	const version = await readModVersion(root)
@@ -19,6 +19,6 @@ export async function run(args, { config, env, log, root }) {
 	else if (!flags['no-storage']) storage = await loadStorageReport(env)
 	const cells = await collectCells(config, root, version, storage)
 	const color = Boolean(process.stdout.isTTY) && !env.NO_COLOR
-	log.info(renderStatus({ config, cells, version, storage, color, source: remote ? 'Publié (API)' : 'Stockage' }))
+	log.info(renderStatus({ config, cells, version, storage, color, source: remote ? 'Published (API)' : 'Storage' }))
 	return 0
 }

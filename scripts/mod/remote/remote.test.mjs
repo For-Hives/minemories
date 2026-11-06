@@ -450,7 +450,7 @@ test('bun mod status --remote lit l’index public sans clés S3 ; une URL HTTP 
 	try {
 		assert.equal(await statusCommand(['--remote'], { config, env: { NO_COLOR: '1' }, log: out.log, root }), 0)
 		assert.ok(urls[0].startsWith('https://api.minemories.net/downloads/index.json'))
-		assert.ok(out.lines.info[0].includes('Publié (API) : 2 Ko'))
+		assert.ok(out.lines.info[0].includes('Published (API): 2 KB'))
 		await assert.rejects(
 			statusCommand(['--api-url', 'http://api.example.org'], { config, env: {}, log: out.log, root }),
 			/HTTPS/

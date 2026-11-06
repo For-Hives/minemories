@@ -33,7 +33,7 @@ function describe(cell, paint) {
 	return `${base} ${paint(ansi.none, `${published} ${formatBytes(cell.stored.bytes ?? 0)}`)}`
 }
 
-export function renderStatus({ config, cells, version, storage, color = false, source = 'Stockage' }) {
+export function renderStatus({ config, cells, version, storage, color = false, source = 'Storage' }) {
 	const paint = (code, text) => (color ? `\u001b[${code}m${text}\u001b[0m` : text)
 	const loaders = [...new Set([...config.targets.filter(isBuildable), ...config.planned].map(t => t.loader))].sort()
 	const minecraft = [...config.minecraft].sort(compareVersions).reverse()
@@ -53,15 +53,15 @@ export function renderStatus({ config, cells, version, storage, color = false, s
 			.join('   ')
 			.trimEnd()
 	const legend = [
-		paint(ansi.current, '✓ à jour'),
-		paint(ansi.stale, '⚠ ancien'),
-		paint(ansi.todo, '✗ à compiler'),
-		paint(ansi.planned, '○ prévu'),
-		paint(ansi.none, '· rien   * désactivée'),
+		paint(ansi.current, '✓ up to date'),
+		paint(ansi.stale, '⚠ outdated'),
+		paint(ansi.todo, '✗ to build'),
+		paint(ansi.planned, '○ planned'),
+		paint(ansi.none, '· none   * disabled'),
 	].join('  ')
 	const out = [paint(ansi.head, `Mod ${version}`), '', line(header), ...rows.map(line), '', legend]
 	if (storage)
-		out.push(paint(ansi.none, `${source} : ${formatBytes(storage.totalBytes ?? 0)} (↑ = dernière version publiée)`))
+		out.push(paint(ansi.none, `${source}: ${formatBytes(storage.totalBytes ?? 0)} (↑ = latest published version)`))
 	return out.join('\n')
 }
 
