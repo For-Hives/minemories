@@ -38,7 +38,7 @@ test('release history and changelog render headings, navigation and a direct API
 	expect(renderPage('/changelog')).toContain('Les nouveautés')
 })
 test('the download table and the guide welcome render without JavaScript, with the two ways in', () => {
-	const table = renderPage('/telechargements')
+	const table = renderPage('/downloads')
 	expect(table).toContain('<h1')
 	expect(table).toContain('Tous les téléchargements')
 	expect(table).toContain('<table')
@@ -50,10 +50,10 @@ test('the download table and the guide welcome render without JavaScript, with t
 	expect(table).toContain('href="/versions"')
 	const welcome = renderPage('/installation')
 	expect(welcome).toContain('Installation guidée')
-	expect(welcome).toContain('href="/telechargements"')
+	expect(welcome).toContain('href="/downloads"')
 	expect(welcome).toContain('href="#aide"')
 	expect(welcome).not.toContain('<progress')
-	expect(publicMetadata.some(page => page.path === '/telechargements' && page.indexable)).toBe(true)
+	expect(publicMetadata.some(page => page.path === '/downloads' && page.indexable)).toBe(true)
 })
 test('private data, shared links and account routes are excluded from indexing and static rendering', () => {
 	for (const path of [
@@ -78,8 +78,8 @@ test('private data, shared links and account routes are excluded from indexing a
 })
 
 test('public ranking prerenders the real catalogue shell and keeps demo opt-in', () => {
-	const html = renderPage('/classement')
+	const html = renderPage('/ranking')
 	expect(html).toContain('Les coups de cœur')
-	expect(html).toContain('/classement?demo=1')
+	expect(html).toContain('/ranking?demo=1')
 	expect(html).not.toContain('Les coups de cœur, pour essayer')
 })

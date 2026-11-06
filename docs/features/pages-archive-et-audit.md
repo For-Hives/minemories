@@ -30,11 +30,11 @@ Conséquences à connaître avant d'aller plus loin :
 
 | Route | Rôle | Accès | Lignes de code (TSX) | Verdict |
 |---|---|---|---|---|
-| `/decouvrir` | Hub de 4 chemins (open source, nostalgie, partage, classement) | public | 382 (avec les 3 suivantes) | Fusionner dans la landing |
-| `/open-source`, `/nostalgie`, `/partager` | 3 pages au même gabarit : titre, chapô, 3 points, histoire, note | public | idem | Supprimer, garder les textes |
-| `/explorer`, `/classement` | Galerie publique (modérée) ou démo à données fictives, classement par votes | public | 510 | Reporter : la galerie publique n'est pas ouverte |
+| `/discover` | Hub de 4 chemins (open source, nostalgie, partage, classement) | public | 382 (avec les 3 suivantes) | Fusionner dans la landing |
+| `/open-source`, `/nostalgia`, `/sharing` | 3 pages au même gabarit : titre, chapô, 3 points, histoire, note | public | idem | Supprimer, garder les textes |
+| `/explore`, `/ranking` | Galerie publique (modérée) ou démo à données fictives, classement par votes | public | 510 | Reporter : la galerie publique n'est pas ouverte |
 | `/concept` | Pourquoi (reste de saison, enfant, serveur fermé) | public | 352 (avec les 2 suivantes) | Fusionner dans la landing |
-| `/fonctionnement` | 3 étapes détaillées, commandes, touche M | public | idem | Fusionner avec `/installation` |
+| `/how-it-works` | 3 étapes détaillées, commandes, touche M | public | idem | Fusionner avec `/installation` |
 | `/faq` | 16 questions | public | idem | Garder 6 à 8 questions sur la landing |
 | `/installation` | Guide interactif en 6 étapes, choix du chargeur, prénom, dépannage | public | 929 (page + étapes) | Garder, à refaire |
 | `/versions`, `/changelog` | Téléchargements JAR depuis GitHub Releases, notes de version | public | 83 + 93 + 84 | Garder `/versions`, fusionner `/changelog` |
@@ -57,7 +57,7 @@ Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propr
 
 **`/concept`** : « Les constructions restent, même quand la saison se termine ». Trois blocs : le problème (un serveur qui ferme, des modpacks introuvables), la promesse (un souvenir 3D qu'on ouvre dans un navigateur, sans Minecraft), la limite (un instantané qu'on regarde, pas une sauvegarde). Pour qui : admin de serveur en fin de saison, parent avec son enfant, joueur occasionnel, créateur de modpack. Texte intégral en annexe.
 
-**`/fonctionnement`** : trois étapes (installer et ouvrir le monde, choisir une petite zone et capturer, retrouver le fichier), plus les commandes (`/minemories export 16`, sélection par deux coins), la touche M, la profondeur souterraine limitée, les faces fermées « terre/pierre ». Doublonne en grande partie `/installation`.
+**`/how-it-works`** : trois étapes (installer et ouvrir le monde, choisir une petite zone et capturer, retrouver le fichier), plus les commandes (`/minemories export 16`, sélection par deux coins), la touche M, la profondeur souterraine limitée, les faces fermées « terre/pierre ». Doublonne en grande partie `/installation`.
 
 **`/faq`** : 16 questions. Sauvegarde ou pas, compte et mod requis pour voir, build vanilla, compatibilité des mods, serveur, partage et enfant, envois automatiques (AFK), retrouver une ancienne capture, serveur fermé ou ZIP, partie manquante, échec de jumelage, timelapse, impression 3D, abonnement. La landing en reprend 4.
 
@@ -65,7 +65,7 @@ Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propr
 
 **`/versions` et `/changelog`** : liste des JAR depuis l'API GitHub Releases (cache, repli en cas de limite de débit), somme SHA-256 à vérifier, notes de version, « Charger les versions plus anciennes ». Les deux routes affichent le même composant, l'une centrée sur le téléchargement, l'autre sur les notes.
 
-**`/decouvrir`, `/open-source`, `/nostalgie`, `/partager`, `/classement`** : quatre pages « marketing » au même gabarit (accent de couleur, trois points, histoire, note) autour d'illustrations : un curseur qui montre trois étapes d'une construction, une démo de favoris et de votes stockés en local. Textes intégraux en annexe.
+**`/discover`, `/open-source`, `/nostalgia`, `/sharing`, `/ranking`** : quatre pages « marketing » au même gabarit (accent de couleur, trois points, histoire, note) autour d'illustrations : un curseur qui montre trois étapes d'une construction, une démo de favoris et de votes stockés en local. Textes intégraux en annexe.
 
 **`/blog`** : un seul article, daté du 14/10/2026, « Un premier souvenir, avec un chemin connu ». Repris en annexe.
 
@@ -89,7 +89,7 @@ Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propr
 
 **`/admin`** : tableau de bord (cartes vers les sections autorisées, compteurs de publications en attente et signalées pour les modérateurs, barre de sections commune à toutes les pages d'administration). **`/admin/users`** : chiffres du service (comptes, captures, volume, appareils jumelés, objets archivés), recherche de comptes, promotion et retrait du rôle administrateur, journal des 50 derniers changements.
 
-**`/admin/diagnostics`** : diagnostics du mod envoyés avec consentement, groupés par erreur, filtres par version du mod et de l'API. Réservé aux identifiants de `DIAGNOSTICS_OPERATOR_IDS`.
+**`/admin/diagnostics`** : diagnostics du mod envoyés avec consentement, groupés par erreur, filtres par version du mod et de l'API. Réservé aux administrateurs.
 
 **`/admin/moderation`** (ancienne URL `/moderation`, redirigée) : file des publications et des signalements, décision avec motif, interdiction de décider sur sa propre publication.
 
@@ -105,8 +105,8 @@ Taille totale retirée : environ 12 000 lignes de TSX, 3 400 lignes de CSS propr
 
 ### Ce qui ne l'est pas, ou pas encore
 
-1. **Trois pages d'information qui disent la même chose** : `/concept`, `/fonctionnement`, `/installation` et la FAQ se recoupent sur le jumelage, la touche M, les envois automatiques, la profondeur et le partage. Un visiteur lit trois fois la même explication.
-2. **Quatre pages « découvrir »** : `/open-source`, `/nostalgie`, `/partager`, `/classement` ont le même squelette et peu de contenu propre. Les phrases fortes (« Tu te souviens de notre première maison ? ») sont meilleures dans la landing, où elles ont le film derrière elles.
+1. **Trois pages d'information qui disent la même chose** : `/concept`, `/how-it-works`, `/installation` et la FAQ se recoupent sur le jumelage, la touche M, les envois automatiques, la profondeur et le partage. Un visiteur lit trois fois la même explication.
+2. **Quatre pages « découvrir »** : `/open-source`, `/nostalgia`, `/sharing`, `/ranking` ont le même squelette et peu de contenu propre. Les phrases fortes (« Tu te souviens de notre première maison ? ») sont meilleures dans la landing, où elles ont le film derrière elles.
 3. **Un blog d'un article** : un blog vide ne marque pas le sérieux, il marque l'inachevé.
 4. **Une page de prix sans paiement** : un calculateur qui dit « paiements non activés » crée une attente sans la satisfaire. Les tarifs ne sont pas figés non plus.
 5. **Une galerie publique et un classement sans contenu** : la démo à données fictives (« Notre première maison », 24 cœurs) fait un faux de communauté.
@@ -133,7 +133,7 @@ Une seule voix visuelle, celle de la charte : police du jeu pour les titres et c
 | Page | Reprend | Forme |
 |---|---|---|
 | `/` | Landing + concept + FAQ courte + sections « open source » et « nostalgie » en ancres | Le film et ses sections, déjà faits |
-| `/installer` | `/installation`, `/fonctionnement`, `/versions`, `/changelog` | Une page à ancres : choisir son chargeur, télécharger, six étapes, dépannage, notes de version repliables |
+| `/installer` | `/installation`, `/how-it-works`, `/versions`, `/changelog` | Une page à ancres : choisir son chargeur, télécharger, six étapes, dépannage, notes de version repliables |
 | `/connexion` | `/login`, `/register` | Un seul panneau centré avec bascule, sur fond de décor du film (image fixe) |
 | `/galerie` | `/gallery`, `/account` (en panneau latéral), jumelage, corbeille, stockage | Grille de cartes « interface Minecraft » ; le jumelage en carte d'accueil |
 | `/souvenir/:id` | `/viewer`, `/share/:token`, `/public/:id` | Plein écran, une barre d'outils du jeu, studio en panneau repliable |
@@ -180,16 +180,16 @@ Les textes sont donnés en anglais, langue source des catalogues (le français e
 | Route | Libellé | Titre | Chapô |
 |---|---|---|---|
 | `/open-source` | Code we can share | A memory that does not depend on a black box. | A mod, a GLB file and a public repository. See how it works, suggest an idea and keep a copy at home. |
-| `/nostalgie` | The places that matter | Remember our first house? | The crooked roof. The shared chest. That path we took every evening. Keep a place, and everything it brings back. |
-| `/partager` | A gallery to share | Invite people back, even if they no longer play. | No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it. |
-| `/classement` | Builds to discover | Small worlds deserve their moment too. | A cabin can tell as much as a megabase. Discover voluntarily published memories and the places visitors love. |
+| `/nostalgia` | The places that matter | Remember our first house? | The crooked roof. The shared chest. That path we took every evening. Keep a place, and everything it brings back. |
+| `/sharing` | A gallery to share | Invite people back, even if they no longer play. | No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it. |
+| `/ranking` | Builds to discover | Small worlds deserve their moment too. | A cabin can tell as much as a megabase. Discover voluntarily published memories and the places visitors love. |
 
 Points et notes :
 
 - `/open-source` : Source you can inspect, An open 3D format, Files that stay yours. Note : The ambition is open source. The repository is public, but a redistribution license still needs to be chosen; visibility alone does not grant those rights.
-- `/nostalgie` : Revisit in your browser, Keep several moments, Pass on a memory. Note : A 3D memory keeps captured shapes and textures. It does not preserve the entire game or replace your Minecraft backup.
-- `/partager` : A gallery that starts private, A link accessible without an account, Sharing you can revoke. Note : The demo explorer uses illustrations. No private captures are published there. The community public gallery is in preparation.
-- `/classement` : Discover by theme, Favorite a place, Try the ranking. Note : Memories stay private without an explicit submission; publications and votes can be withdrawn.
+- `/nostalgia` : Revisit in your browser, Keep several moments, Pass on a memory. Note : A 3D memory keeps captured shapes and textures. It does not preserve the entire game or replace your Minecraft backup.
+- `/sharing` : A gallery that starts private, A link accessible without an account, Sharing you can revoke. Note : The demo explorer uses illustrations. No private captures are published there. The community public gallery is in preparation.
+- `/ranking` : Discover by theme, Favorite a place, Try the ranking. Note : Memories stay private without an explicit submission; publications and votes can be withdrawn.
 
 Souvenirs de démonstration : « Our first house » (With friends, 24 cœurs), « The riverside village » (Builds, 42), « The winding garden » (Exploration, 31).
 
@@ -236,7 +236,7 @@ Ce qui suit est extrait automatiquement des fichiers `InfoPages.tsx`, `Installat
 - What you can do today
 - Create my first memory, step by step
 
-#### /fonctionnement
+#### /how-it-works
 
 - From Minecraft world to 3D memory
 - 1. Install and open the world

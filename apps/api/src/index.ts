@@ -83,15 +83,9 @@ const adminRoles = new AdminRoles(database)
 bootstrapTemporaryAdministrator(database, adminRoles)
 bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
-const diagnosticsReview = new DiagnosticsReview(
-	diagnostics,
-	new Set(
-		(process.env.DIAGNOSTICS_OPERATOR_IDS ?? '')
-			.split(',')
-			.map(id => id.trim())
-			.filter(Boolean)
-	)
-)
+// Administrators (Better Auth accounts promoted in `user_roles`) are also the diagnostics operators and the public-gallery moderators.
+const administrators = { has: (userId: string) => adminRoles.allowed(userId) }
+const diagnosticsReview = new DiagnosticsReview(diagnostics, administrators)
 const tieredObjects = new TieredObjects(database, { read: readMemoryStream, write: storeMemory }, removeMemory)
 const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =>
 	tieredObjects.remove(key, discardUpload ? discardMemoryUpload : removeMemory)
@@ -108,15 +102,7 @@ export const coldStorageMaintenance = coldStorageConfiguration
 	: null
 const captureStorage = new CaptureStorage(database, coldStorageMaintenance !== null)
 export const timelapseMaintenance = new TimelapseMaintenance(database, captureFiles, objectDeletions)
-const discovery = new PublicDiscovery(
-	database,
-	new Set(
-		(process.env.PUBLIC_MODERATOR_IDS ?? '')
-			.split(',')
-			.map(id => id.trim())
-			.filter(Boolean)
-	)
-)
+const discovery = new PublicDiscovery(database, administrators)
 function authenticated(context: ApiContext) {
 	if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 	return context.userId

@@ -14,7 +14,7 @@ afterEach(() => {
 	cleanup()
 	vi.restoreAllMocks()
 })
-function gallery(path = '/explorer', ranking = false) {
+function gallery(path = '/explore', ranking = false) {
 	return render(
 		<I18nProvider>
 			<MemoryRouter initialEntries={[path]}>
@@ -43,7 +43,7 @@ test('search, themes, favorites and empty states work without an account and res
 	expect(screen.getByRole('button', { name: 'Mes favoris (0)' })).toBeTruthy()
 })
 test('ranking votes add once, can be removed and remain local', () => {
-	gallery('/classement', true)
+	gallery('/ranking', true)
 	const first = screen.getAllByRole('article')[0]
 	if (!first) throw new Error('Demo has no entries')
 	expect(within(first).getByRole('heading').textContent).toBe('Le village au bord de l’eau')
@@ -58,11 +58,11 @@ test('ranking votes add once, can be removed and remain local', () => {
 test('a demo link opens its memory, copies a real URL and provides a fallback when clipboard is unavailable', async () => {
 	const writeText = vi.fn().mockResolvedValue(undefined)
 	vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
-	gallery('/explorer?souvenir=premiere-maison')
+	gallery('/explore?souvenir=premiere-maison')
 	expect(screen.getByRole('region', { name: 'Aperçu du souvenir' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de la démo' }))
 	await screen.findByText('Lien copié')
-	expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explorer?souvenir=premiere-maison`)
+	expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore?souvenir=premiere-maison`)
 	writeText.mockRejectedValueOnce(new Error('Clipboard blocked'))
 	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de la démo' }))
 	await screen.findByText('Sélectionne le lien pour le copier')
@@ -73,7 +73,7 @@ test('a demo link opens its memory, copies a real URL and provides a fallback wh
 test('nostalgia timeline updates its illustration and new journeys can be read in English', async () => {
 	render(
 		<I18nProvider>
-			<MemoryRouter initialEntries={['/nostalgie']}>
+			<MemoryRouter initialEntries={['/nostalgia']}>
 				<MarketingPage />
 			</MemoryRouter>
 		</I18nProvider>
@@ -84,7 +84,7 @@ test('nostalgia timeline updates its illustration and new journeys can be read i
 	localStorage.setItem('minemories-locale', 'en')
 	render(
 		<I18nProvider>
-			<MemoryRouter initialEntries={['/explorer?demo=1']}>
+			<MemoryRouter initialEntries={['/explore?demo=1']}>
 				<ExplorerPage />
 			</MemoryRouter>
 		</I18nProvider>

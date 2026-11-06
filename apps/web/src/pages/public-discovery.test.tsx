@@ -30,7 +30,7 @@ const item = {
 	votes: 2,
 	voted: false,
 }
-function mount(content: React.ReactNode, signedIn = false, path = '/explorer') {
+function mount(content: React.ReactNode, signedIn = false, path = '/explore') {
 	const context: AppContextValue = {
 		session: signedIn ? ({ user: { id: 'viewer' } } as unknown as AppContextValue['session']) : null,
 		isPending: false,
@@ -73,11 +73,11 @@ afterEach(() => {
 
 test('public catalogue uses server filters, ranking and pages; demo remains an explicit separate choice', async () => {
 	discovery.list.mockResolvedValue({ items: [item], hasMore: true })
-	mount(<ExplorerPage ranking />, false, '/classement')
+	mount(<ExplorerPage ranking />, false, '/ranking')
 	await screen.findByRole('heading', { name: 'Village public' })
 	expect(discovery.list).toHaveBeenCalledTimes(1)
 	expect(discovery.list.mock.calls[0]?.[0]).toMatchObject({ sort: 'votes', page: 0 })
-	expect(screen.getByRole('link', { name: 'Essayer la démonstration' }).getAttribute('href')).toBe('/classement?demo=1')
+	expect(screen.getByRole('link', { name: 'Essayer la démonstration' }).getAttribute('href')).toBe('/ranking?demo=1')
 	expect(screen.queryByRole('button', { name: 'Soumettre à la modération' })).toBeNull()
 	fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Village' } })
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ query: 'Village' }))

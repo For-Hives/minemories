@@ -11,7 +11,6 @@ import { DownloadsPage } from './pages/DownloadsPage'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
-import { PricingPage } from './pages/PricingPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
 
@@ -36,13 +35,13 @@ export function renderPage(path: string) {
 		case '/concept':
 			content = <ConceptPage />
 			break
-		case '/fonctionnement':
+		case '/how-it-works':
 			content = <HowItWorksPage />
 			break
 		case '/installation':
 			content = <InstallationPage />
 			break
-		case '/telechargements':
+		case '/downloads':
 			content = <DownloadsPage />
 			break
 		case '/versions':
@@ -57,22 +56,19 @@ export function renderPage(path: string) {
 		case '/blog':
 			content = <BlogPage />
 			break
-		case '/decouvrir':
+		case '/discover':
 			content = <DiscoveryPage />
 			break
-		case '/explorer':
+		case '/explore':
 			content = <ExplorerPage />
 			break
-		case '/classement':
+		case '/ranking':
 			content = <ExplorerPage ranking />
 			break
 		case '/open-source':
-		case '/nostalgie':
-		case '/partager':
+		case '/nostalgia':
+		case '/sharing':
 			content = <MarketingPage />
-			break
-		case '/pricing':
-			content = <PricingPage />
 			break
 		case '/privacy':
 			content = <LegalPage kind="privacy" />

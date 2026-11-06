@@ -28,7 +28,7 @@ function issue(row: GroupRow) {
 export class DiagnosticsReview {
 	constructor(
 		private readonly store: DiagnosticsStore,
-		private readonly operators: ReadonlySet<string>
+		private readonly operators: { has(userId: string): boolean }
 	) {}
 	allowed(userId: string | null): boolean {
 		return userId !== null && this.operators.has(userId)

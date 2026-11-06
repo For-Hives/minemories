@@ -24,9 +24,8 @@ du consentement présenté au propriétaire. Le partage privé par lien est sép
 
 ## Modération et protections
 
-`PUBLIC_MODERATOR_IDS` contient les identifiants Better Auth des modérateurs,
-séparés par virgules, configurés par l’opérateur avant démarrage. Vide par défaut,
-il n’accorde de rôle à personne : les soumissions restent en attente. Un compte ne
+Les modérateurs sont les administrateurs Better Auth (table `user_roles`).
+Sans administrateur, les soumissions restent en attente. Un compte ne
 peut pas approuver sa propre publication. Aucun client ne peut s’attribuer ce rôle.
 Les files `pending`, `approved`, `rejected` et `reported` sont réservées à ces rôles.
 Les signalements ne rendent pas automatiquement un souvenir invisible ; un
@@ -64,7 +63,7 @@ l’ouverture du flux. La couverture de `discovery.ts` est de 100 % lignes/fonct
 
 ## Interfaces et preuve locale
 
-`/explorer` et `/classement` affichent le catalogue réel, ses filtres et ses votes
+`/explore` et `/ranking` affichent le catalogue réel, ses filtres et ses votes
 serveur. Le choix « Essayer la démonstration » ouvre `?demo=1` : favoris, votes et
 partages de ces exemples restent distincts et ne publient aucune capture privée.
 La carte d’une capture privée propose « Publication publique », avec titre,

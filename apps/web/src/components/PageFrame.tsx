@@ -2,7 +2,6 @@ import { Component, type ReactNode, Suspense, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { T } from '../i18n/I18n'
 import { reportWebFailure } from '../observability/WebObservability'
-import { LoadingSkeleton } from './Loading'
 
 type PageKind = 'page' | 'gallery' | 'viewer' | 'home'
 
@@ -44,12 +43,11 @@ function PageReady() {
 	}, [])
 	return null
 }
-// Only the landing has a loading screen (index.html's miner, first load only). Elsewhere a page that is still arriving is an empty area of the page's height, never a
+// Only the landing has a loading screen (index.html's miner, first load only). Elsewhere (gallery and viewer included) a page that is still arriving is an empty area of the page's height, never a
 // skeleton: navigations keep the current page on screen (PageBoundary), and the public pages' chunks are fetched ahead of time (preloadWhenIdle).
 function pendingPage(kind: PageKind) {
 	if (kind === 'home') return <div className="landing-pending" aria-hidden="true" />
-	if (kind === 'page') return <div className="mm-page-pending" aria-hidden="true" />
-	return <LoadingSkeleton kind={kind} />
+	return <div className="mm-page-pending" aria-hidden="true" />
 }
 export function Page({ children, kind = 'page' }: { children: ReactNode; kind?: PageKind }) {
 	const { pathname } = useLocation()

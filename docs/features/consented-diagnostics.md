@@ -66,7 +66,7 @@ Le contrat du mod se trouve dans `packages/api-contract/src/diagnostics.ts`. Les
 
 ## Console opérateur privée
 
-La route `/admin/diagnostics` exige une session Better Auth et un identifiant utilisateur présent dans `DIAGNOSTICS_OPERATOR_IDS` (liste séparée par virgules). La liste vide refuse tout accès. Ce droit est distinct de `PUBLIC_MODERATOR_IDS` : modérer la galerie ne donne pas accès aux erreurs. Le lien apparaît dans le pied de page uniquement après confirmation du rôle ; la route reste chargée à la demande, hors pré-rendu/sitemap et sous `noindex`, y compris via Nginx et la preview Vite.
+La route `/admin/diagnostics` exige une session Better Auth et le rôle administrateur (table `user_roles`, promotion depuis `/admin/users`). Aucune variable d'environnement ne désigne d'opérateur. Le lien apparaît dans le pied de page uniquement après confirmation du rôle ; la route reste chargée à la demande, hors pré-rendu/sitemap et sous `noindex`, y compris via Nginx et la preview Vite.
 
 Le contrat oRPC `diagnostics` expose `access`, `list`, `detail` et `update`. L’API contrôle le rôle sur chaque lecture et modification, avec `Cache-Control: private, no-store`. La liste regroupe les occurrences par empreinte de source/phase/type/frames, affiche les versions réelles, les compteurs d’occurrences/appareils, dates et dernière trace. Filtres : statut, phase, source mod/API et version. Pages de 25 groupes et 20 occurrences. Les détails montrent les traces bornées, étapes, appareil et corrélation.
 

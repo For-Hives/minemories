@@ -30,7 +30,6 @@ async function register(email: string) {
 const moderator = await register('moderator@example.com')
 const owner = await register('owner@example.com')
 const voter = await register('voter@example.com')
-process.env.PUBLIC_MODERATOR_IDS = moderator.id
 const storage = await import('./storage')
 const originalRead = storage.readMemoryStream
 let failStorage = false
@@ -48,6 +47,7 @@ mock.module('./storage', () => ({
 }))
 const { app } = await import('./index')
 const { database } = await import('./database')
+database.query('INSERT INTO user_roles VALUES (?)').run(moderator.id) // administrators are the operators and moderators
 afterAll(() => {
 	database.close()
 	rmSync(directory, { recursive: true, force: true })

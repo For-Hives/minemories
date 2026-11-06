@@ -2,7 +2,7 @@
 
 ## Sources et périmètre
 
-Les pages `/concept`, `/fonctionnement`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/features/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
+Les pages `/concept`, `/how-it-works`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/features/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
 
 Le contenu est en français et reprend les libellés anglais des boutons existants. La page d’installation possède désormais un guide interactif : système et launcher, prénom facultatif, étapes mémorisées localement, navigation libre et illustration SVG animée avec réduction des animations. Les guides sont publics, accessibles depuis toutes les pages, y compris sur mobile.
 
@@ -80,6 +80,6 @@ L'illustration SVG existante est réutilisée, sans téléchargement de scène 3
 
 ### Ouverture locale réservée au développement
 
-Les sélecteurs de GLB et le glisser-déposer sont conditionnés par `import.meta.env.DEV`. Le build de production ne propose aucun chargement de fichier local dans l'en-tête, l'authentification, la galerie ou le viewer. Une visite directe de `/viewer` sans identifiant mène à `/explorer`. Les captures distantes (`/viewer?memory=…`), timelapses et liens de partage conservent leur chargement existant. Les guides et le contenu public orientent vers l'appairage et l'envoi depuis Minecraft.
+Les sélecteurs de GLB et le glisser-déposer sont conditionnés par `import.meta.env.DEV`. Le build de production ne propose aucun chargement de fichier local dans l'en-tête, l'authentification, la galerie ou le viewer. Une visite directe de `/viewer` sans identifiant mène à `/explore`. Les captures distantes (`/viewer?memory=…`), timelapses et liens de partage conservent leur chargement existant. Les guides et le contenu public orientent vers l'appairage et l'envoi depuis Minecraft.
 
 Les tests exécutent les deux modes : import local en développement ; absence des contrôles, redirection sans identifiant et rejet d'un dépôt en production, avec chargement distant toujours fonctionnel. Les exports locaux du mod et les téléchargements de sauvegarde ne sont pas supprimés.

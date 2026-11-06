@@ -101,7 +101,7 @@ function Welcome({
 						<T message={'A few quick questions, then one simple step at a time.'} />
 					</span>
 				</button>
-				<Link className="install-way" to="/telechargements">
+				<Link className="install-way" to="/downloads">
 					<strong>
 						<T message={'See all downloads'} />
 					</strong>

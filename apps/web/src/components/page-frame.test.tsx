@@ -108,7 +108,7 @@ test('a page that fails is replaced by a reload notice, which clears on the next
 	expect(screen.queryByRole('alert')).toBeNull()
 })
 
-test('the landing and the app spaces keep their own placeholders', () => {
+test('only the landing has a loading placeholder; the app spaces stay empty', () => {
 	const home = deferredPage('Home')
 	const gallery = deferredPage('Gallery')
 	const first = shell(
@@ -123,7 +123,8 @@ test('the landing and the app spaces keep their own placeholders', () => {
 			<gallery.Component />
 		</Page>
 	)
-	expect(second.container.querySelector('.mm-loading-gallery')).not.toBeNull()
+	expect(second.container.querySelector('.mm-loading')).toBeNull()
+	expect(second.container.querySelector('.mm-page-pending')).not.toBeNull()
 })
 
 test('page chunks are fetched once the browser is idle, and the wait can be cancelled', () => {

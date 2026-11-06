@@ -13,14 +13,14 @@ export interface PageMetadata {
 }
 const metadataMessages: PageMetadata[] = [
 	{
-		path: '/decouvrir',
+		path: '/discover',
 		title: 'Discover Minemories — One world, many memories',
 		description: 'Open source, nostalgia, sharing and discovery: explore ways to use Minemories.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
-		path: '/explorer',
+		path: '/explore',
 		title: 'Public gallery — Minemories',
 		description: 'Explore Minecraft memories deliberately published after moderation and their rankings.',
 		indexable: true,
@@ -49,7 +49,7 @@ const metadataMessages: PageMetadata[] = [
 		language: 'fr',
 	},
 	{
-		path: '/fonctionnement',
+		path: '/how-it-works',
 		title: 'How it works — Minemories',
 		description: 'From Minecraft world to 3D memory: local capture, pairing, private gallery and sharing.',
 		indexable: true,
@@ -64,7 +64,7 @@ const metadataMessages: PageMetadata[] = [
 		language: 'fr',
 	},
 	{
-		path: '/telechargements',
+		path: '/downloads',
 		title: 'All downloads — Minemories',
 		description:
 			'Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
@@ -97,14 +97,6 @@ const metadataMessages: PageMetadata[] = [
 		path: '/blog',
 		title: 'The memory journal — Minemories',
 		description: 'Guides and ideas for keeping and revisiting your Minecraft memories.',
-		indexable: true,
-		language: 'fr',
-	},
-	{
-		path: '/pricing',
-		title: 'Snapshots and long-term cloud — Minemories',
-		description:
-			'Estimate storage for your captures. Payments are disabled and the commercial offer remains unconfirmed.',
 		indexable: true,
 		language: 'fr',
 	},

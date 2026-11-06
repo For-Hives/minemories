@@ -1,6 +1,6 @@
 # Langues du site et publication des URL
 
-Le site propose les parcours français et anglais dans un même shell. `I18nProvider` sélectionne la langue et conserve uniquement cette préférence sur l’appareil. Les guides concept/fonctionnement/FAQ, les six étapes d’installation (tous les launchers), les légendes et textes alternatifs des captures tutoriel ont un catalogue anglais explicite dans `i18n/guide-messages.ts`. L’interface commune conserve ses clés sources et le catalogue français `messages.ts` ; les textes éditoriaux déjà appariés restent dans `content/`.
+Le site propose les parcours français et anglais dans un même shell. `I18nProvider` sélectionne la langue et conserve uniquement cette préférence sur l’appareil. Les guides concept/how-it-works/FAQ, les six étapes d’installation (tous les launchers), les légendes et textes alternatifs des captures tutoriel ont un catalogue anglais explicite dans `i18n/guide-messages.ts`. L’interface commune conserve ses clés sources et le catalogue français `messages.ts` ; les textes éditoriaux déjà appariés restent dans `content/`.
 
 Le changement de langue est une présentation : les valeurs `windows`, `manuel`, `curseforge`, `autre`, numéros d’étape, identifiants de capture, dimensions Minecraft, commandes, noms de fichiers et chemins ne changent pas. Le prénom, la progression et les cases cochées du tutoriel sont conservés. Les textes de commandes restent copiables à l’identique.
 

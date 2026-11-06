@@ -21,10 +21,9 @@ test('the prerendered home page holds the whole site and the film markup, with n
 		'/terms',
 		'/legal',
 		'/concept',
-		'/fonctionnement',
+		'/how-it-works',
 		'/faq',
 		'/blog',
-		'/pricing',
 		'/login',
 	])
 		expect(html, route).toContain(`href="${route}"`)

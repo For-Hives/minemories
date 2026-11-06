@@ -10,14 +10,13 @@ Variables runtime API :
 
 ```dotenv
 DIAGNOSTICS_ENABLED=true
-DIAGNOSTICS_OPERATOR_IDS=<identifiant Better Auth du compte opérateur>
 DIAGNOSTICS_RETENTION_DAYS=14
 DIAGNOSTICS_PER_HOUR=5
 DIAGNOSTICS_MAX_PER_DEVICE=1000
 DIAGNOSTICS_MAX_REPORTS=10000
 ```
 
-`DIAGNOSTICS_OPERATOR_IDS` contient des IDs Better Auth, pas des adresses email ni des identifiants GitHub. Obtenir l’ID depuis une session connectée (`/api/auth/get-session`, champ `user.id`) ou la base privée existante. Configurer cette liste côté API, jamais dans une variable `VITE_` ou dans le dépôt. Une liste vide bloque la console. Redémarrer l’API après modification : la liste est lue au démarrage. La réception est activée par défaut mais ne collecte rien sans accord et appareil appairé.
+L'accès à la console est réservé aux administrateurs (rôle `user_roles`, promotion depuis `/admin/users`) : aucune liste d'identifiants à configurer. La réception est activée par défaut mais ne collecte rien sans accord et appareil appairé.
 
 Conserver `DATABASE_PATH` sur un volume privé persistant. Le compte système de l’API doit être propriétaire des fichiers SQLite, WAL/SHM et sauvegardes ; limiter l’accès aux opérateurs. Ne jamais placer la base ou une sortie de `bun api:diagnostics` dans le dossier web public. Les suppressions ne réduisent pas automatiquement le fichier SQLite ni les sauvegardes historiques : appliquer une durée de conservation aux sauvegardes également. Vérifier ces droits dans le conteneur de production avant d’ouvrir les essais.
 

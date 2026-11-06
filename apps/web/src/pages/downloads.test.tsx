@@ -15,9 +15,9 @@ function render(ui: Parameters<typeof renderUi>[0]) {
 const serve = (data: unknown) => vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(data)))
 function mount() {
 	return render(
-		<MemoryRouter initialEntries={['/telechargements']}>
+		<MemoryRouter initialEntries={['/downloads']}>
 			<Routes>
-				<Route path="/telechargements" element={<DownloadsPage />} />
+				<Route path="/downloads" element={<DownloadsPage />} />
 				<Route path="/installation" element={<InstallationPage />} />
 				<Route path="/versions" element={<p>Versions page</p>} />
 			</Routes>

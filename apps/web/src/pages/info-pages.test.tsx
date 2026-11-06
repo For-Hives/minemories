@@ -26,7 +26,7 @@ function mountGuide() {
 			<Routes>
 				<Route path="/" element={<InfoNavigation />} />
 				<Route path="/concept" element={<ConceptPage />} />
-				<Route path="/fonctionnement" element={<HowItWorksPage />} />
+				<Route path="/how-it-works" element={<HowItWorksPage />} />
 				<Route path="/installation" element={<InstallationPage />} />
 				<Route path="/faq" element={<FaqPage />} />
 			</Routes>

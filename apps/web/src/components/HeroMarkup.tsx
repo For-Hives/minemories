@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { Link } from 'react-router'
 import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
-import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage } from './HeroParts'
+import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage, HeroNavLinks } from './HeroParts'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
@@ -161,21 +161,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				</a>
 				<nav className="site-nav" data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
 					<ul className="mc-sitebar__nav">
-						<li>
-							<a href="#steps" data-i18n="How it works">
-								{t('How it works')}
-							</a>
-						</li>
-						<li>
-							<a href="#share" data-i18n="Sharing">
-								{t('Sharing')}
-							</a>
-						</li>
-						<li>
-							<a href="#faq" data-i18n="FAQ">
-								{t('FAQ')}
-							</a>
-						</li>
+						<HeroNavLinks />
 					</ul>
 				</nav>
 				<div className="mc-sitebar__end">
@@ -207,21 +193,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				<div className="site-menu" id="site-menu" hidden>
 					<nav data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
 						<ul className="site-menu__links">
-							<li>
-								<a href="#steps" data-i18n="How it works">
-									{t('How it works')}
-								</a>
-							</li>
-							<li>
-								<a href="#share" data-i18n="Sharing">
-									{t('Sharing')}
-								</a>
-							</li>
-							<li>
-								<a href="#faq" data-i18n="FAQ">
-									{t('FAQ')}
-								</a>
-							</li>
+							<HeroNavLinks />
 						</ul>
 					</nav>
 					<HeroAccount menu />
