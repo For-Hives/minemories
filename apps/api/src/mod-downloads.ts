@@ -33,37 +33,41 @@ function missing(error: unknown) {
 	return error instanceof S3ServiceException && (error.name === 'NoSuchKey' || error.$metadata.httpStatusCode === 404)
 }
 
-async function s3Body(key: string, signal?: AbortSignal) {
-	const { client } = s3Target()
-	try {
-		const response = await client.send(
-			new GetObjectCommand({ Bucket: modBucket, Key: key }),
-			signal ? { abortSignal: signal } : {}
-		)
-		return response.Body instanceof Readable ? response : null
-	} catch (error) {
-		if (missing(error)) return null
-		throw error
+/** Source S3 d'un bucket de mods ; le bucket est paramétrable pour les tests d'un bucket partagé avec les captures. */
+export function createS3ModSource(bucket = modBucket): ModObjectSource {
+	async function s3Body(key: string, signal?: AbortSignal) {
+		const { client } = s3Target()
+		try {
+			const response = await client.send(
+				new GetObjectCommand({ Bucket: bucket, Key: key }),
+				signal ? { abortSignal: signal } : {}
+			)
+			return response.Body instanceof Readable ? response : null
+		} catch (error) {
+			if (missing(error)) return null
+			throw error
+		}
+	}
+	return {
+		async readText(key, signal) {
+			const response = await s3Body(key, signal)
+			if (!response) return null
+			const chunks: Buffer[] = []
+			for await (const chunk of response.Body as Readable) chunks.push(Buffer.from(chunk))
+			return Buffer.concat(chunks).toString('utf8')
+		},
+		async open(key, signal) {
+			const response = await s3Body(key, signal)
+			if (!response) return null
+			return {
+				body: Readable.toWeb(response.Body as Readable) as unknown as ReadableStream<Uint8Array>,
+				bytes: response.ContentLength ?? 0,
+			}
+		},
 	}
 }
 
-export const s3ModSource: ModObjectSource = {
-	async readText(key, signal) {
-		const response = await s3Body(key, signal)
-		if (!response) return null
-		const chunks: Buffer[] = []
-		for await (const chunk of response.Body as Readable) chunks.push(Buffer.from(chunk))
-		return Buffer.concat(chunks).toString('utf8')
-	},
-	async open(key, signal) {
-		const response = await s3Body(key, signal)
-		if (!response) return null
-		return {
-			body: Readable.toWeb(response.Body as Readable) as unknown as ReadableStream<Uint8Array>,
-			bytes: response.ContentLength ?? 0,
-		}
-	},
-}
+export const s3ModSource = createS3ModSource()
 
 const emptyIndex = (): ModIndex => ({ schema: 1, generatedAt: new Date(0).toISOString(), targets: {} })
 
