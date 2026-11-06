@@ -46,10 +46,10 @@ test('cells show local state, planned entries and storage figures; colours are o
 	assert.equal(cells.get('forge|26.3').state, 'planned')
 	const plain = renderStatus({ config, cells, version: '2.0.0-beta.1', storage })
 	assert.match(plain, /Mod 2\.0\.0-beta\.1/)
-	assert.match(plain, /✓ 1\.0 ↑1\.9\.0-beta\.1 2 Ko/)
+	assert.match(plain, /✓ 1\.0 ↑1\.9\.0-beta\.1 2 KB/)
 	assert.match(plain, /✗ 1\.0\*/)
 	assert.match(plain, /○ 9\.9/)
-	assert.match(plain, /Stockage : 3\.0 Mo/)
+	assert.match(plain, /Storage: 3\.0 MB/)
 	assert.ok(plain.indexOf('26.3') < plain.indexOf('1.21.1'))
 	assert.equal(plain.includes('\u001b'), false)
 	assert.ok(renderStatus({ config, cells, version: 'v', color: true }).includes('\u001b[32m'))
@@ -58,7 +58,7 @@ test('cells show local state, planned entries and storage figures; colours are o
 test('storage figures without a published version show a dash', async () => {
 	const root = await mkdtemp(join(tmpdir(), 'mod-status-'))
 	const cells = await collectCells(config, root, 'v', { perTarget: { 'forge-mc1.21.1': { bytes: 0 } } })
-	assert.match(renderStatus({ config, cells, version: 'v' }), /↑- 1 Ko/)
+	assert.match(renderStatus({ config, cells, version: 'v' }), /↑- 1 KB/)
 })
 
 test('loadStorageReport ignores an absent or failing storage module', async () => {

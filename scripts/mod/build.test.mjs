@@ -205,10 +205,10 @@ test('runGradleProcess streams lines and keeps a bounded tail', async () => {
 	await assert.rejects(runGradleProcess({ cwd: '.', args: [], env: {}, spawnImpl: failing }), /ENOENT/)
 })
 
-test('formatBytes uses Ko and Mo', () => {
-	assert.equal(formatBytes(10), '1 Ko')
-	assert.equal(formatBytes(2048), '2 Ko')
-	assert.equal(formatBytes(5 * 1024 * 1024), '5.0 Mo')
+test('formatBytes uses KB and MB', () => {
+	assert.equal(formatBytes(10), '1 KB')
+	assert.equal(formatBytes(2048), '2 KB')
+	assert.equal(formatBytes(5 * 1024 * 1024), '5.0 MB')
 })
 
 test('a JAR without any class entry is recognised as an empty build', () => {
