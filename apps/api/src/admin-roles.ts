@@ -68,6 +68,22 @@ export class AdminRoles {
 			})
 			.immediate()
 	}
+	/** Promotes an existing account by its identifier (not by e-mail, which another person could register first). */
+	bootstrapById(userId: string, now = Date.now()) {
+		return this.database
+			.transaction(() => {
+				if (!this.database.query('SELECT 1 FROM user WHERE id=?').get(userId)) return false
+				const inserted = this.database
+					.query('INSERT OR IGNORE INTO user_roles VALUES (?) RETURNING user_id')
+					.get(userId)
+				if (inserted)
+					this.database
+						.query("INSERT INTO admin_role_audit(actor_id,target_id,role,created_at) VALUES (NULL,?,'admin',?)")
+						.run(userId, now)
+				return Boolean(inserted)
+			})
+			.immediate()
+	}
 	users(
 		actorId: string | null,
 		input: {
