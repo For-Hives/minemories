@@ -2,5 +2,8 @@
 coverage = true
 coverageReporter = ["text", "lcov"]
 coverageSkipTestFiles = true
+# The shared mod-storage package is covered by its own node:test suites (packages/mod-storage/src/*.test.mjs);
+# the API tests only exercise the upload path through it.
+coveragePathIgnorePatterns = ["../../packages/mod-storage/**"]
 # Per-file gates; keep startup/HTTP handler functions at 80%, and executable lines at 90%.
 coverageThreshold = { lines = 0.90, functions = 0.80 }

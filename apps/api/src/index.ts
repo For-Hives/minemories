@@ -28,6 +28,7 @@ import { PublicDiscovery } from './discovery'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
 import { modDownloads } from './mod-downloads'
+import { createModUploads } from './mod-upload'
 import { ObjectDeletionQueue } from './object-deletions'
 import { CaptureArchivedError } from './object-tiers'
 import type { MemoryMetadata } from './pairing'
@@ -301,6 +302,9 @@ app.onError((_error, context) => {
 	logApiFailure('request_failed', context.get('correlationId'))
 	return context.json({ error: 'request_failed' }, 500)
 })
+
+// Envoi des JAR du mod (outil de release, jamais un navigateur) : monté AVANT le CORS, donc sans en-têtes CORS.
+app.route('/downloads/upload', createModUploads({ onStored: () => modDownloads.invalidateIndex() }))
 
 app.use(
 	'*',
