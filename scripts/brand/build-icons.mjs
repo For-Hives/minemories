@@ -82,15 +82,15 @@ function textWidth(text, pointsize) {
 }
 
 /** The full logo and the word "Minemories" in the game font, centred together on the site background. */
-function socialImage(logo, work) {
+function socialImage(logo, size, work) {
 	const { file, width, height } = ICONS.og
 	const art = join(work, 'og-logo.png')
 	const logoHeight = 480
-	const logoWidth = Math.round((logoHeight * 584) / 938)
+	const logoWidth = Math.round((logoHeight * size.width) / size.height)
 	const pointsize = 80
 	const gap = 56
 	const left = Math.round((width - logoWidth - gap - textWidth('Minemories', pointsize)) / 2)
-	render(logo, 584, logoWidth, logoHeight, art)
+	render(logo, size.width, logoWidth, logoHeight, art)
 	// biome-ignore format: one ImageMagick option and its value per line
 	magick(
 		'-size', `${width}x${height}`,
@@ -106,7 +106,12 @@ function socialImage(logo, work) {
 }
 
 function main() {
-	const { logo, mark, markBox } = buildLogos(readFileSync(at('design/logo/minemories-logo.svg'), 'utf8'))
+	const {
+		logo,
+		mark,
+		markBox,
+		size: logoSize,
+	} = buildLogos(readFileSync(at('design/logo/minemories-logo.svg'), 'utf8'))
 	write(LOGO, logo)
 	write(MARK, mark)
 	write('apps/web/public/favicon.svg', mark)
@@ -134,7 +139,7 @@ function main() {
 		render(at(MARK), side, mod.size, mod.size, at(mod.file))
 		console.log(`wrote ${mod.file}`)
 
-		socialImage(at(LOGO), work)
+		socialImage(at(LOGO), logoSize, work)
 	} finally {
 		rmSync(work, { recursive: true, force: true })
 	}
