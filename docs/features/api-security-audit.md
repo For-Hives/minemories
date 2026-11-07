@@ -1,113 +1,121 @@
-# Audit initial de l’API — 10 octobre 2026
+# Initial API audit: 10 October 2026
 
-## Périmètre
+## Scope
 
-Revue du code Bun/Hono, des contrats oRPC/zod, de l’authentification, de
-l’appairage, des uploads et du stockage. Tests locaux HTTP/oRPC et scan du
-`bun.lock` par `bun audit`. Aucun test intrusif sur la production ni audit de
-l’infrastructure Coolify, du reverse proxy ou du bucket de production.
+Review of the Bun/Hono code, the oRPC/zod contracts, authentication, pairing,
+uploads and storage. Local HTTP/oRPC tests and a scan of `bun.lock` with
+`bun audit`. No intrusive testing of production and no audit of the Coolify
+infrastructure, the reverse proxy or the production bucket.
 
-Le produit reste privé par défaut : l’appairage autorise les envois du mod ;
-un partage nécessite une action du propriétaire. La revue ne change pas ce parcours.
+The product stays private by default: pairing authorizes uploads from the mod;
+sharing requires an action by the owner. The review does not change this flow.
 
-## Corrections réalisées
+## Fixes made
 
-- Les GLB partagés et leurs métadonnées portent `Cache-Control: private, no-store`.
-  Les tests HTTP vérifient l’ouverture puis la révocation du fichier et des métadonnées.
-- Les tentatives d’appairage sont comptées par IP du socket Bun. Les headers
-  `X-Forwarded-For` et `CF-Connecting-IP` d’un client direct ne réinitialisent plus
-  son quota. Un proxy n’est accepté que si son IP exacte est dans `TRUSTED_PROXY_IPS` ;
-  seul le dernier élément IP valide de `X-Forwarded-For` est utilisé. Le proxy doit
-  ajouter ou remplacer cette dernière adresse, et son accès doit être contrôlé.
-- Le limiteur conserve au plus 4096 adresses, nettoyées périodiquement. Une table
-  pleine refuse les nouvelles adresses sans évincer les clients déjà limités.
-  Chaque adresse garde huit tentatives par minute ; la réponse de dépassement est 429.
-  La limite est locale au processus, elle ne protège pas plusieurs réplicas ensemble.
-- Le JSON d’appairage est limité à 2048 octets avant parsing. La lecture est arrêtée
-  et annulée au dépassement, même sans `Content-Length` ou avec une valeur mensongère.
-  Le nom et le code attendus tiennent dans cette limite ; les uploads restent inchangés.
-- `source-map-js` passe de 1.2.1 à 1.2.2 dans le lockfile, version compatible avec
-  les plages existantes, pour corriger [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q).
+- Shared GLBs and their metadata carry `Cache-Control: private, no-store`.
+  The HTTP tests check opening, then revoking, the file and the metadata.
+- Pairing attempts are counted per Bun socket IP. The `X-Forwarded-For` and
+  `CF-Connecting-IP` headers of a direct client no longer reset its quota. A
+  proxy is only trusted if its exact IP is in `TRUSTED_PROXY_IPS`; only the
+  last valid IP entry of `X-Forwarded-For` is used. The proxy must add or
+  replace that last address, and access to it must be controlled.
+- The limiter keeps at most 4096 addresses, cleaned up periodically. A full
+  table refuses new addresses without evicting clients already being limited.
+  Each address gets eight attempts per minute; the overflow response is 429.
+  The limit is local to the process; it does not protect several replicas
+  together.
+- Pairing JSON is limited to 2048 bytes before parsing. Reading is stopped and
+  aborted when exceeded, even without `Content-Length` or with a false value.
+  The expected name and code fit within this limit; uploads are unchanged.
+- `source-map-js` goes from 1.2.1 to 1.2.2 in the lockfile, a version
+  compatible with the existing ranges, to fix
+  [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q).
 
-## Contrôles exercés
+## Checks exercised
 
-- Sessions réelles et requêtes oRPC : accès anonyme refusé, isolation entre comptes,
-  partage explicite, révocation, corbeille et suppression.
-- Appairage : code expirant après cinq minutes, usage unique transactionnel et
-  tokens hachés par HMAC ; neuf requêtes réseau depuis le même socket restent
-  limitées malgré des headers IP différents.
-- Stockage : contrôle des clés filesystem contre la traversée de chemins,
-  accès propriétaire, téléchargement en stream, réponse 503 générique en cas de panne.
-- Upload : tailles 100 MiB legacy / 450 MiB reprenable, morceaux de 4 MiB, SHA-256,
-  isolation par device, rejeu, offsets, expiration et quotas de staging. Un échec
-  SQL après stockage legacy retire l’objet provisoire et ne publie pas de souvenir.
-- La couverture reste contrôlée par fichier à 90 % des lignes et 80 % des fonctions,
-  avec un inventaire des sources couvertes. Les seuils ne sont pas abaissés.
+- Real sessions and oRPC requests: anonymous access refused, isolation between
+  accounts, explicit sharing, revocation, trash and deletion.
+- Pairing: code expiring after five minutes, transactional single use and
+  HMAC-hashed tokens; nine network requests from the same socket stay limited
+  despite different IP headers.
+- Storage: filesystem key checks against path traversal, owner access,
+  streamed download, generic 503 response on outage.
+- Upload: sizes of 100 MiB legacy / 450 MiB resumable, 4 MiB chunks, SHA-256,
+  per-device isolation, replay, offsets, expiry and staging quotas. An SQL
+  failure after legacy storage removes the provisional object and publishes no
+  memory.
+- Coverage is still enforced per file at 90% of lines and 80% of functions,
+  with an inventory of covered sources. Thresholds are not lowered.
 
-Validation : `bun run build` (incluant `bun check`) passe ; 44 tests API passent
-avec les seuils par fichier. `bun run api:garage` passe les six scénarios réels,
-dont la panne du stockage et le redémarrage API. La fixture et ses volumes sont
-supprimés après le test. Aucun changement de format GLB ou de comportement Minecraft.
+Validation: `bun run build` (including `bun check`) passes; 44 API tests pass
+with the per-file thresholds. `bun run api:garage` passes the six real
+scenarios, including storage outage and API restart. The fixture and its
+volumes are deleted after the test. No change to the GLB format or Minecraft
+behavior.
 
-## Alertes et suites autonomes
+## Alerts and autonomous follow-ups
 
-Le scan après correction du 10 octobre conservait quatre alertes modérées dans les dépendances
-transitives de `minio@8.0.7` :
+The post-fix scan of 10 October still showed four moderate alerts in the
+transitive dependencies of `minio@8.0.7`:
 
-| Dépendance | Alerte | Suite |
+| Dependency | Alert | Follow-up |
 | --- | --- | --- |
-| `decode-uri-component@0.2.2` via `query-string@7.1.3` | [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr) | Mise à jour compatible du SDK ou correctif maintenu. |
-| `stream-json@1.9.1` | [GHSA-528h-pc64-c93x](https://github.com/advisories/GHSA-528h-pc64-c93x), [GHSA-hqr4-qq8f-hg3x](https://github.com/advisories/GHSA-hqr4-qq8f-hg3x), [GHSA-mjw6-4jj6-33hc](https://github.com/advisories/GHSA-mjw6-4jj6-33hc) | Vérifier la compatibilité avant migration vers la version corrigée. |
+| `decode-uri-component@0.2.2` via `query-string@7.1.3` | [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr) | Compatible SDK update or maintained fix. |
+| `stream-json@1.9.1` | [GHSA-528h-pc64-c93x](https://github.com/advisories/GHSA-528h-pc64-c93x), [GHSA-hqr4-qq8f-hg3x](https://github.com/advisories/GHSA-hqr4-qq8f-hg3x), [GHSA-mjw6-4jj6-33hc](https://github.com/advisories/GHSA-mjw6-4jj6-33hc) | Check compatibility before migrating to the fixed version. |
 
-Correction du 11 octobre : le client MinIO est remplacé par
-`@aws-sdk/client-s3` et `@aws-sdk/lib-storage` en version exacte `3.1149.0`.
-Cette migration retire les deux chaînes vulnérables du lockfile, sans override
-incompatible ni exclusion d’audit. `bun audit` retourne un rapport vide avec ce
-lockfile ; la CI exécute désormais aussi ce contrôle.
+Fix of 11 October: the MinIO client is replaced by `@aws-sdk/client-s3` and
+`@aws-sdk/lib-storage` at exact version `3.1149.0`. This migration removes both
+vulnerable chains from the lockfile, without an incompatible override or audit
+exclusion. `bun audit` returns an empty report with this lockfile; CI now runs
+this check as well.
 
-Les variables S3 et les clés d’objets restent compatibles. Les captures sont
-transmises en stream avec des parts de 8 MiB et un seul envoi simultané ; les
-jobs durables abandonnent les uploads incomplets, y compris ceux listés sur
-plusieurs pages. Les tests couvrent les octets et les signatures des parts,
-la pagination, les refus et les régions. Les huit scénarios Garage réels passent,
-dont panne et reprise après redémarrage. Voir [la migration S3](storage-s3.md).
+S3 variables and object keys stay compatible. Captures are streamed in 8 MiB
+parts with a single concurrent upload; durable jobs abort incomplete uploads,
+including those listed across several pages. The tests cover part bytes and
+signatures, pagination, refusals and regions. The eight real Garage scenarios
+pass, including outage and recovery after restart. See
+[the S3 migration](storage-s3.md).
 
-Observations et suites : les protections applicatives ci-dessous sont implémentées ; la réconciliation de production reste dans [issue #65](https://github.com/For-Hives/minemories/issues/65) et l’audit de l’infrastructure dans [issue #66](https://github.com/For-Hives/minemories/issues/66).
+Observations and follow-ups: the application-level protections below are
+implemented; production reconciliation remains in
+[issue #65](https://github.com/For-Hives/minemories/issues/65) and the
+infrastructure audit in
+[issue #66](https://github.com/For-Hives/minemories/issues/66).
 
-- Correction du 11 octobre : la suppression et la purge inscrivent maintenant les
-  objets à effacer dans une file SQLite transactionnelle, avec retries et reprise
-  après redémarrage. Voir [les suppressions durables](durable-deletions.md). La
-  réconciliation historique reste suivie. Le legacy inscrit aussi maintenant une
-  intention avant l’écriture ; son nettoyage après crash et panne a été exercé
-  avec Garage réel. Voir [le quota et cette validation](account-storage-quota.md).
-- Correction du 11 octobre : les ressources GLB sont contrôlées en commun dans
-  les deux uploads et dans le viewer avant le parseur Three.js. Les URI externes,
-  buffers sans données et JSON de remplacement sont refusés. Voir
-  [les règles et les validations](embedded-glb-resources.md). La disposition et
-  les valeurs binaires des accessors sont aussi vérifiées avant stockage et
-  chargement. Les dimensions, pixels cumulés et coût estimé des textures sont
-  également bornés avant publication et chargement ; voir
-  [les budgets et leur validation](embedded-glb-resources.md#dimensions-et-budgets-des-textures).
-- Correction du 11 octobre : quota GLB par compte de 2 Gio, configurable, incluant
-  la corbeille, les uploads réservés et les objets en attente de suppression.
-  Réservations transactionnelles entre legacy et reprenable ; libération après
-  nettoyage réussi. Voir [le périmètre et la migration](account-storage-quota.md).
-- Correction du 11 octobre : les corps auth sont limités à 16 KiB, les RPC et
-  l’initialisation d’upload à 256 KiB avant parsing, avec comptage réel des octets.
-  Les deux miniatures maximales restent acceptées et les plafonds binaires restent
-  inchangés. Voir [les limites et les validations](api-json-limits.md).
-- Correction du 11 octobre : secrets explicitement distincts, suppression du repli
-  du pepper et contrôle de la configuration de production avant ouverture SQLite.
-  Voir [les variables et la migration](api-startup-configuration.md). L’audit de
-  l’infrastructure réelle reste suivi séparément.
+- Fix of 11 October: deletion and purge now record the objects to erase in a
+  transactional SQLite queue, with retries and recovery after restart. See
+  [durable deletions](durable-deletions.md). Historical reconciliation is
+  still tracked. The legacy path now also records an intent before writing;
+  its cleanup after a crash and an outage was exercised with real Garage. See
+  [the quota and this validation](account-storage-quota.md).
+- Fix of 11 October: GLB resources are checked by shared code in both uploads
+  and in the viewer before the Three.js parser. External URIs, buffers without
+  data and replacement JSON are refused. See
+  [the rules and validations](embedded-glb-resources.md). Accessor layout and
+  binary values are also verified before storage and loading. Texture
+  dimensions, cumulative pixels and estimated cost are also bounded before
+  publishing and loading; see
+  [the budgets and their validation](embedded-glb-resources.md#texture-dimensions-and-budgets).
+- Fix of 11 October: a per-account GLB quota of 2 GiB, configurable,
+  including the trash, reserved uploads and objects awaiting deletion.
+  Transactional reservations between legacy and resumable; release after a
+  successful cleanup. See [the scope and the migration](account-storage-quota.md).
+- Fix of 11 October: auth bodies are limited to 16 KiB, RPC and upload
+  initialization to 256 KiB before parsing, with real byte counting. The two
+  maximum thumbnails are still accepted and the binary caps are unchanged. See
+  [the limits and validations](api-json-limits.md).
+- Fix of 11 October: explicitly distinct secrets, removal of the pepper
+  fallback and a check of the production configuration before opening SQLite.
+  See [the variables and the migration](api-startup-configuration.md). The
+  audit of the real infrastructure is tracked separately.
 
-## Exploitation
+## Operations
 
-Configurer les proxys selon [le guide Coolify](coolify-railpack.md). Sans IP de
-proxy déclarée, les joueurs derrière celui-ci partagent sa limite d’appairage.
-Les captures d’un mod déjà appairé ne passent pas par ce limiteur.
+Configure proxies according to [the Coolify guide](coolify-railpack.md).
+Without a declared proxy IP, players behind it share its pairing limit.
+Captures from an already paired mod do not go through this limiter.
 
-Relancer `bun audit` régulièrement : le rapport décrit l’état du lockfile à sa
-rédaction, pas une garantie permanente. Les contrôles du déploiement, les sauvegardes,
-la rotation des secrets et les protections à l’entrée restent à vérifier sur
-l’infrastructure réelle.
+Rerun `bun audit` regularly: the report describes the state of the lockfile
+when it was written, not a permanent guarantee. Deployment checks, backups,
+secret rotation and edge protections still need to be verified on the real
+infrastructure.

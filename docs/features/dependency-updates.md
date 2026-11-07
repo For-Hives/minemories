@@ -1,21 +1,21 @@
-# Mises à jour et recherches de dépendances
+# Dependency updates and lookups
 
-Renovate utilise `renovate.json`. Les dépendances Bun, outils Gradle, actions CI et images conservent le preset recommandé. La PR #113 met à jour l’outil de remappage Architectury Loom de 1.17.487 à 1.17.493 ; ce changement ne constitue pas une validation native d’un nouveau loader.
+Renovate uses `renovate.json`. Bun dependencies, Gradle tooling, CI actions and images keep the recommended preset. PR #113 updates the Architectury Loom remapping tool from 1.17.487 to 1.17.493; this change is not native validation of a new loader.
 
-Les quatre échecs de recherche signalés en #4 venaient de dépendances d’exécution résolues comme si elles étaient toutes sur Maven Central :
+The four lookup failures reported in #4 came from runtime dependencies resolved as if they all lived on Maven Central:
 
-- `com.mojang:minecraft` utilise maintenant le manifeste officiel Mojang, transformé par la datasource personnalisée Renovate en versions de releases stables.
-- Fabric Loader et Fabric API utilisent explicitement `https://maven.fabricmc.net/`.
-- Forge utilise explicitement `https://maven.minecraftforge.net/`.
+- `com.mojang:minecraft` now uses the official Mojang manifest, turned into stable release versions by the Renovate custom datasource.
+- Fabric Loader and Fabric API explicitly use `https://maven.fabricmc.net/`.
+- Forge explicitly uses `https://maven.minecraftforge.net/`.
 
-Les versions d’exécution sont contraintes à la matrice réellement validée dans `mod/targets.json`. Elles continuent d’être recherchées : aucune dépendance n’est ignorée et les avertissements ne sont pas masqués. Un changement de Minecraft, Fabric Loader/API ou Forge se fait avec une modification explicite de la matrice, des contraintes correspondantes et des scénarios en jeu, avant de revendiquer la nouvelle compatibilité. Les outils de construction restent éligibles aux mises à jour ordinaires de Renovate.
+Runtime versions are constrained to the matrix actually validated in `mod/targets.json`. They are still looked up: no dependency is ignored and warnings are not hidden. Changing Minecraft, Fabric Loader/API or Forge requires an explicit change to the matrix, the matching constraints and the in-game scenarios before claiming the new compatibility. Build tools remain eligible for ordinary Renovate updates.
 
-`dependencyDashboardAutoclose` permet au bot de fermer son tableau quand il ne reste aucune mise à jour. Le tableau ne doit pas être fermé manuellement pour cacher une erreur de recherche ; le prochain passage hébergé doit confirmer la disparition des avertissements.
+`dependencyDashboardAutoclose` lets the bot close its dashboard when no updates remain. The dashboard must not be closed manually to hide a lookup error; the next hosted run must confirm the warnings are gone.
 
-## Validation locale
+## Local validation
 
-Le validateur officiel `renovate-config-validator --strict renovate.json` et une exécution officielle Renovate `--platform=local --dry-run=lookup` vérifient l’extraction des vrais fichiers Gradle et les recherches, sans écrire sur GitHub ni modifier les dépendances. Renovate 44.164.10 attend Node 24 ; Node 26 peut effectuer les recherches mais retourne une erreur d’environnement et ne constitue donc pas une exécution réussie. Utiliser Node 24.15+ pour cette validation.
+The official validator `renovate-config-validator --strict renovate.json` and an official Renovate run with `--platform=local --dry-run=lookup` check extraction from the real Gradle files and the lookups, without writing to GitHub or changing dependencies. Renovate 44.164.10 expects Node 24; Node 26 can perform the lookups but returns an environment error, so it does not count as a successful run. Use Node 24.15+ for this validation.
 
-Les journaux privés de validation ne sont pas committés. Le passage hébergé, la CI du remappage et les tests du dépôt complètent cette vérification ; une nouvelle version de JAR n’est pas annoncée comme validée en jeu sur cette seule base.
+Private validation logs are not committed. The hosted run, the remapping CI and the repository tests complete this check; a new JAR version is not announced as validated in game on this basis alone.
 
-Références : [datasources personnalisées](https://docs.renovatebot.com/modules/datasource/custom/), [Maven](https://docs.renovatebot.com/modules/datasource/maven/), [fermeture automatique du tableau](https://docs.renovatebot.com/configuration-options/#dependencydashboardautoclose).
+References: [custom datasources](https://docs.renovatebot.com/modules/datasource/custom/), [Maven](https://docs.renovatebot.com/modules/datasource/maven/), [dashboard autoclose](https://docs.renovatebot.com/configuration-options/#dependencydashboardautoclose).

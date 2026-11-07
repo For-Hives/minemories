@@ -17,7 +17,7 @@ final class StorageQuotaScreen extends Screen {
   private int top;
 
   StorageQuotaScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.stockage_de_la_galerie"));
+    super(Component.translatable("minemories.ui.gallery_storage"));
     this.parent = parent;
   }
 
@@ -36,13 +36,13 @@ final class StorageQuotaScreen extends Screen {
     Button refresh =
         addRenderableWidget(
             Button.builder(
-                    Component.translatable("minemories.ui.actualiser"),
+                    Component.translatable("minemories.ui.refresh"),
                     ignored -> storage.reset(paired))
                 .bounds(left + 14, top + 176, half, 20)
                 .build());
     refresh.active = paired;
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.back"), ignored -> onClose())
             .bounds(left + 20 + half, top + 176, half, 20)
             .build());
   }
@@ -84,10 +84,10 @@ final class StorageQuotaScreen extends Screen {
       List<String> details =
           List.of(
               quota.availableLabel(),
-              I18n.get("minemories.ui.utilise") + StorageQuota.formatBytes(quota.usedBytes()),
-              I18n.get("minemories.ui.envois_reserves")
+              I18n.get("minemories.ui.used") + StorageQuota.formatBytes(quota.usedBytes()),
+              I18n.get("minemories.ui.reserved_uploads")
                   + StorageQuota.formatBytes(quota.reservedBytes()),
-              I18n.get("minemories.ui.effacement_en_attente")
+              I18n.get("minemories.ui.pending_deletion")
                   + StorageQuota.formatBytes(quota.pendingDeletionBytes()));
       for (int i = 0; i < details.size(); i++) {
         graphics.drawString(font, details.get(i), left + 14, top + 34 + i * 13, 0xFFECE8DC);

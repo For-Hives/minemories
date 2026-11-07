@@ -1,32 +1,32 @@
-# Captures en jeu du guide d'installation
+# In-game screenshots for the installation guide
 
-Ces images sont affichées sur `/installation`, quel que soit le système ou le loader choisi :
+These images are shown on `/installation`, whatever system or loader is chosen:
 
-| Fichier | Étape du guide | Ce qu'elle montre |
+| File | Guide step | What it shows |
 | --- | --- | --- |
-| `guide-pause-menu` | Lancer le jeu | Menu pause (Échap) avec le bouton Minemories en haut à droite |
-| `guide-minemories-menu` | Créer un souvenir, avec le menu | Menu Minemories ouvert avec M, bouton « Take a memory » |
-| `guide-export-command` | Créer un souvenir, avec une commande | Chat avec `/minemories export 16` saisi, pas encore envoyé |
+| `guide-pause-menu` | Launch the game | Pause menu (Esc) with the Minemories button at the top right |
+| `guide-minemories-menu` | Create a memory, with the menu | Minemories menu opened with M, "Take a memory" button |
+| `guide-export-command` | Create a memory, with a command | Chat with `/minemories export 16` typed, not yet sent |
 
-Ce sont de vraies captures du jeu, prises par le test client Fabric 1.21.11 (`mod/1.21.11/fabric/src/gametest/java/dev/minemories/gametest/GuideScreenshotsGameTest.java`), en anglais, 1280 × 720, interface à l'échelle 2 (la commande est recadrée sur la ligne du chat). Sans fichier, la page n'affiche rien à cet endroit.
+These are real game screenshots, taken by the Fabric 1.21.11 client test (`mod/1.21.11/fabric/src/gametest/java/dev/minemories/gametest/GuideScreenshotsGameTest.java`), in English, 1280 × 720, GUI scale 2 (the command is cropped to the chat line). Without a file, the page shows nothing in that spot.
 
-## Quand les refaire
+## When to retake them
 
-**À chaque changement de l'un de ces éléments**, dans la même PR :
+**Whenever one of these changes**, in the same PR:
 
-- la place ou le libellé du bouton Minemories du menu pause ou des options (`ClientRuntime.addPauseMenuButton`, `PauseMenuPlacement`) ;
-- le menu ouvert avec M (`SimpleHubScreen` : boutons, libellés, disposition) ou sa touche par défaut ;
-- la syntaxe de `/minemories export`.
+- the position or label of the Minemories button in the pause menu or options (`ClientRuntime.addPauseMenuButton`, `PauseMenuPlacement`);
+- the menu opened with M (`SimpleHubScreen`: buttons, labels, layout) or its default key;
+- the `/minemories export` syntax.
 
-Mettre aussi à jour le texte des étapes (`apps/web/src/pages/InstallationSteps.tsx`) s'il décrit l'emplacement ou le libellé.
+Also update the step text (`apps/web/src/pages/InstallationSteps.tsx`) if it describes the position or label.
 
-## Comment
+## How
 
 ```bash
 bun mod test fabric-mc1.21.11
 ```
 
-Le test écrit les PNG (préfixés d’un numéro) dans `mod/1.21.11/fabric/build/run/clientGameTest/screenshots/`. Les convertir en WebP sous le nom exact ci-dessus :
+The test writes the PNGs (prefixed with a number) to `mod/1.21.11/fabric/build/run/clientGameTest/screenshots/`. Convert them to WebP with the exact names above:
 
 ```bash
 shots=mod/1.21.11/fabric/build/run/clientGameTest/screenshots
@@ -38,4 +38,4 @@ done
 cwebp -quiet -q 90 -crop 0 662 460 58 "$(ls -t $shots/*guide-export-command.png | head -1)" -o "$out/guide-export-command.webp"
 ```
 
-Vérifier ensuite l'image sur `/installation` (taille, lisibilité à 390 px de large). Ne jamais remplacer ces captures par des images générées ou retouchées.
+Then check the image on `/installation` (size, readability at 390 px wide). Never replace these screenshots with generated or retouched images.

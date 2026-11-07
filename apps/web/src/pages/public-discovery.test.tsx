@@ -100,11 +100,11 @@ test('votes and reports call authenticated server operations; failures do not fa
 
 	fireEvent.click(screen.getByRole('button', { name: 'Signaler' }))
 	fireEvent.change(screen.getByRole('textbox', { name: 'Motif du signalement' }), {
-		target: { value: 'Panneau privé' },
+		target: { value: 'Private sign' },
 	})
 	fireEvent.click(screen.getByRole('button', { name: 'Envoyer le signalement' }))
 	await screen.findByText('Signalement transmis aux modérateurs.')
-	expect(discovery.report).toHaveBeenCalledWith({ id: item.id, reason: 'Panneau privé' })
+	expect(discovery.report).toHaveBeenCalledWith({ id: item.id, reason: 'Private sign' })
 	discovery.vote.mockRejectedValueOnce(new Error('rate'))
 	fireEvent.click(screen.getByRole('button', { name: '♥ 2' }))
 	await screen.findByText('Vote refusé ou limite atteinte. Réessaie plus tard.')
@@ -156,10 +156,10 @@ test('publication status and mutation failures never report a false success', as
 	await screen.findByText('Statut de publication indisponible.')
 	expect(screen.getByRole('button', { name: 'Soumettre à la modération' }).hasAttribute('disabled')).toBe(true)
 	first.unmount()
-	discovery.status.mockResolvedValue({ id: item.id, state: 'rejected', reason: 'Panneau privé' })
+	discovery.status.mockResolvedValue({ id: item.id, state: 'rejected', reason: 'Private sign' })
 	discovery.publish.mockRejectedValueOnce(new Error('limit'))
 	mount(<PublicationPanel memory={memory} />)
-	await screen.findByText(/Refusé · Panneau privé/)
+	await screen.findByText(/Refusé · Private sign/)
 	fireEvent.click(screen.getByRole('checkbox'))
 	fireEvent.click(screen.getByRole('button', { name: 'Soumettre à la modération' }))
 	await screen.findByText('Publication refusée ou limite atteinte. Réessaie plus tard.')
@@ -173,11 +173,11 @@ test('moderation checks role, exposes reported queue and sends explicit approve/
 	await screen.findByRole('heading', { name: item.title })
 	expect(screen.getByRole('link', { name: 'Examiner le GLB' }).getAttribute('href')).toBe(`/public/${item.id}?review=1`)
 	fireEvent.change(screen.getByRole('textbox', { name: 'Motif de la décision (facultatif)' }), {
-		target: { value: 'Examiné' },
+		target: { value: 'Reviewed' },
 	})
 	fireEvent.click(screen.getByRole('button', { name: 'Approuver' }))
 	await waitFor(() =>
-		expect(discovery.moderate).toHaveBeenCalledWith({ id: item.id, decision: 'approved', reason: 'Examiné' })
+		expect(discovery.moderate).toHaveBeenCalledWith({ id: item.id, decision: 'approved', reason: 'Reviewed' })
 	)
 	await waitFor(() => expect(discovery.queue).toHaveBeenCalledTimes(2))
 	fireEvent.change(screen.getByRole('combobox', { name: 'File' }), { target: { value: 'reported' } })
@@ -185,7 +185,7 @@ test('moderation checks role, exposes reported queue and sends explicit approve/
 	await screen.findByRole('button', { name: 'Refuser' })
 	fireEvent.click(screen.getByRole('button', { name: 'Refuser' }))
 	await waitFor(() =>
-		expect(discovery.moderate).toHaveBeenLastCalledWith({ id: item.id, decision: 'rejected', reason: 'Examiné' })
+		expect(discovery.moderate).toHaveBeenLastCalledWith({ id: item.id, decision: 'rejected', reason: 'Reviewed' })
 	)
 })
 

@@ -28,13 +28,13 @@ final class FlywheelCaptureBridge {
   static void verify(LevelAccessor level) {
     if (!FLYWHEEL.present()) return;
     if (FLYWHEEL.supports() == null)
-      throw new IllegalStateException("Cette version de Flywheel ne permet pas la capture CPU.");
+      throw new IllegalStateException("This Flywheel version does not support CPU capture.");
     try {
       if (Boolean.TRUE.equals(FLYWHEEL.supports().invoke(null, level)))
         throw new IllegalStateException(
-            "Le renderer Flywheel ne fournit pas son modèle CPU pendant la capture.");
+            "The Flywheel renderer does not expose its CPU model during the capture.");
     } catch (ReflectiveOperationException error) {
-      throw new IllegalStateException("Le renderer Flywheel ne peut pas être capturé.", error);
+      throw new IllegalStateException("The Flywheel renderer cannot be captured.", error);
     }
   }
 }

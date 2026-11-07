@@ -1,29 +1,29 @@
-# Règles de développement
+# Development rules
 
-## Commandes de référence
+## Reference commands
 
-- `bun install --frozen-lockfile`: installe exactement les versions enregistrées dans `bun.lock`.
-- `bun format`: applique le formatage Biome aux fichiers web et scripts.
-- `bun mod:check`: applique Spotless puis lance `check` Gradle. `bun mod:check:ci` vérifie sans modifier les sources.
-- `bun check`: Biome, vérification TypeScript, Vitest avec seuil de couverture, puis `check` Gradle dans `mod/1.21.1/` (Spotless, SpotBugs, JUnit et seuils JaCoCo).
-- `bun api:check`: Biome, vérification TypeScript puis tests Bun de l'API. Les tests utilisent une base SQLite et un stockage temporaires isolés.
-- `bun run build`: exécute les contrôles du dépôt, produit le viewer, puis construit le mod et le core.
+- `bun install --frozen-lockfile`: installs exactly the versions recorded in `bun.lock`.
+- `bun format`: applies Biome formatting to web files and scripts.
+- `bun mod:check`: applies Spotless, then runs Gradle `check`. `bun mod:check:ci` checks without modifying sources.
+- `bun check`: Biome, TypeScript checking, Vitest with a coverage threshold, then Gradle `check` in `mod/1.21.1/` (Spotless, SpotBugs, JUnit and JaCoCo thresholds).
+- `bun api:check`: Biome, TypeScript checking, then the API's Bun tests. The tests use an isolated temporary SQLite database and storage.
+- `bun run build`: runs the repository checks, builds the viewer, then builds the mod and the core.
 
-## Boucle courte pour le mod
+## Short loop for the mod
 
-Depuis la racine du dépôt, avec JDK 21 :
+From the repository root, with JDK 21:
 
 ```sh
 bun mod:dev
 ```
 
-Cette commande lance la tâche Gradle `:neoforge:runClient` du POC NeoForge directement à partir des classes compilées. Gradle réutilise ses caches et ne construit pas le JAR de distribution ni les applications web. Au premier lancement il doit télécharger Minecraft et NeoForge, donc il sera plus long. Les suivants recompilent les sources modifiées. Le profil de développement est dans `mod/1.21.1/run/` (ignoré par Git) : il garde les options, ressources et mondes de test d'un lancement à l'autre. Ne copie pas le dossier de sauvegardes réel pour tester.
+This command runs the NeoForge POC's Gradle `:neoforge:runClient` task directly from the compiled classes. Gradle reuses its caches and builds neither the distribution JAR nor the web applications. The first launch has to download Minecraft and NeoForge, so it takes longer. Later launches recompile the changed sources. The development profile lives in `mod/1.21.1/run/` (ignored by Git): it keeps options, resources and test worlds from one launch to the next. Do not copy your real saves folder for testing.
 
-Dans le client de développement, ouvre un monde puis le menu pause : le bouton **Minemories** permet de capturer autour du joueur, d'exporter une sélection déjà définie par commandes, d'entrer le code d'appairage du web et d'envoyer le GLB manuellement. Un bouton identique est ajouté à l'écran des options, et la touche **M** (rebindable dans Contrôles) ouvre l'interface depuis n'importe quel écran, y compris les menus remplacés par FancyMenu/FTB/BHMenu. Vérifie visuellement le menu avec plusieurs boutons ajoutés par d'autres mods, à petite échelle GUI, la touche M quand aucune place ne reste, le retour au jeu, l'état des boutons, l'échec d'un code invalide et le fichier `~/export/capture.glb` après capture. Démarre `bun api:dev` et `bun web:dev`, puis règle l’API du mod sur `http://localhost:3001` dans le mode avancé pour exercer l’appairage et l’envoi ; les contrôles Java seuls ne couvrent pas ces interactions.
+In the development client, open a world and then the pause menu: the **Minemories** button lets you capture around the player, export a selection already defined with commands, enter the pairing code from the web and send the GLB manually. An identical button is added to the options screen, and the **M** key (rebindable in Controls) opens the interface from any screen, including menus replaced by FancyMenu/FTB/BHMenu. Visually check the menu with several buttons added by other mods, at a small GUI scale, the M key when no space is left, returning to the game, button states, the failure of an invalid code and the `~/export/capture.glb` file after capture. Start `bun api:dev` and `bun web:dev`, then set the mod's API to `http://localhost:3001` in advanced mode to exercise pairing and upload; Java checks alone do not cover these interactions.
 
-Chaque upload joint les coordonnées du joueur, la dimension, le biome, l'heure du monde, la météo, le nom du monde ou du serveur, et la miniature disponible. La seed est envoyée uniquement en solo, car le client ne la connaît pas sur les serveurs distants. Les métadonnées sont conservées avec la capture et affichées dans la galerie ; les anciennes captures sans métadonnées restent compatibles.
+Each upload attaches the player's coordinates, dimension, biome, world time, weather, world or server name, and the available thumbnail. The seed is sent only in single player, because the client does not know it on remote servers. Metadata is kept with the capture and shown in the gallery; older captures without metadata remain compatible.
 
-Pour reproduire un problème de modpack, place seulement les JARs requis et compatibles **Minecraft 1.21.1 / NeoForge 21.1.248** dans `mod/1.21.1/run/mods/`, puis copie les fichiers de configuration nécessaires dans `mod/1.21.1/run/config/`. Commence avec le client vierge, puis ajoute les dépendances utiles au cas testé ; un modpack complet peut réintroduire son temps de démarrage. Un changement de Java nécessite un redémarrage du client pour une validation fiable. Pour inspecter vite la sérialisation GLB sans lancer Minecraft :
+To reproduce a modpack issue, put only the required JARs compatible with **Minecraft 1.21.1 / NeoForge 21.1.248** in `mod/1.21.1/run/mods/`, then copy the needed configuration files into `mod/1.21.1/run/config/`. Start with the clean client, then add the dependencies relevant to the tested case; a full modpack can bring its startup time back. A Java change requires restarting the client for reliable validation. To inspect GLB serialization quickly without launching Minecraft:
 
 ```sh
 cd mod/1.21.1
@@ -31,266 +31,266 @@ cd mod/1.21.1
 ./gradlew spotlessCheck
 ```
 
-Sur Windows, utilise `gradlew.bat` à la place de `./gradlew`. `spotlessApply` formate le Java ; `spotlessCheck` vérifie sans modifier. Pour le test d'intégration final : `./gradlew build`, puis exercice en jeu et inspection du GLB dans Blender ou le viewer. Les raccourcis ne changent pas les cibles supportées (voir [Support des loaders](../features/loader-support.md)).
+On Windows, use `gradlew.bat` instead of `./gradlew`. `spotlessApply` formats the Java; `spotlessCheck` checks without modifying. For the final integration test: `./gradlew build`, then exercise in game and inspect the GLB in Blender or the viewer. These shortcuts do not change the supported targets (see [Loader support](../features/loader-support.md)).
 
-## Politique de changement
+## Change policy
 
-1. Chaque correction de logique reproductible reçoit un test au niveau le plus bas qui l’exerce; privilégier `mod/shared/core` pour la logique indépendante du jeu.
-2. Aucun avertissement SpotBugs n’est ignoré globalement. Les suppressions doivent être localisées, justifiées et accompagnées d’un commentaire.
-3. La couverture Java minimale du core est de 90 % des lignes et 60 % des branches. Les utilitaires TypeScript couverts par Vitest restent à 100 %.
-4. Les changements des formats GLB, des textures, de la sélection ou du rendu ont aussi besoin d’une validation visuelle documentée : les tests unitaires ne remplacent pas Blender ou une session Minecraft.
-5. Les dépendances web sont installées depuis la racine, verrouillées dans `bun.lock`, et mises à jour volontairement. Les versions de plugins et outils Gradle restent explicites.
-6. Une fonctionnalité ne se déclare compatible qu’avec les loaders/version réellement compilés et essayés.
+1. Every reproducible logic fix gets a test at the lowest level that exercises it; prefer `mod/shared/core` for game-independent logic.
+2. No SpotBugs warning is ignored globally. Suppressions must be local, justified and accompanied by a comment.
+3. Minimum Java coverage for the core is 90% of lines and 60% of branches. TypeScript utilities covered by Vitest stay at 100%.
+4. Changes to GLB formats, textures, selection or rendering also need documented visual validation: unit tests do not replace Blender or a Minecraft session.
+5. Web dependencies are installed from the root, locked in `bun.lock`, and updated deliberately. Gradle plugin and tool versions stay explicit.
+6. A feature is declared compatible only with the loaders/versions actually compiled and tried.
 
-La CI GitHub exécute `bun run build` sur chaque pull request et chaque push vers `main`. Les protections de branche doivent exiger ce statut avant fusion.
+GitHub CI runs `bun run build` on every pull request and every push to `main`. Branch protections must require this status before merging.
 
-Le wrapper Gradle utilise la version 9.8.1 et vérifie le SHA-256 officiel de la distribution avant son installation. Le JAR du wrapper mis à jour a aussi été comparé à l’empreinte publiée par Gradle. Foojay Resolver 1.0.0 reste compatible avec cette version. Le développement local et le jeu utilisent toujours Java 21 ; les toolchains de `:core`, `:common` et des trois adaptateurs ciblent explicitement Java 21. Les prérequis officiels sont décrits dans la [matrice Gradle](https://docs.gradle.org/current/userguide/compatibility.html) et le [README Foojay](https://github.com/gradle/foojay-toolchains/blob/main/README.md).
+The Gradle wrapper uses version 9.8.1 and checks the official SHA-256 of the distribution before installing it. The updated wrapper JAR was also compared with the checksum published by Gradle. Foojay Resolver 1.0.0 remains compatible with this version. Local development and the game still use Java 21; the toolchains of `:core`, `:common` and the three adapters explicitly target Java 21. Official prerequisites are described in the [Gradle matrix](https://docs.gradle.org/current/userguide/compatibility.html) and the [Foojay README](https://github.com/gradle/foojay-toolchains/blob/main/README.md).
 
-En CI, `setup-java` installe Java 21 puis Java 25 : le dernier exécute Gradle, tandis que `JAVA_HOME_21_X64` expose explicitement le JDK de compilation et de test du mod. Cette séparation ne change ni les prérequis d’installation du joueur ni le développement local sous Java 21. Voir les [installations multiples de setup-java](https://github.com/actions/setup-java/blob/main/README.md#multiple-jdks-and-maven-toolchains) et les [emplacements de toolchains Gradle](https://docs.gradle.org/current/userguide/toolchains.html#sec:custom_loc).
+In CI, `setup-java` installs Java 21 then Java 25: the latter runs Gradle, while `JAVA_HOME_21_X64` explicitly exposes the JDK used to compile and test the mod. This split changes neither the player's installation prerequisites nor local development under Java 21. See [setup-java multiple installations](https://github.com/actions/setup-java/blob/main/README.md#multiple-jdks-and-maven-toolchains) and [Gradle toolchain locations](https://docs.gradle.org/current/userguide/toolchains.html#sec:custom_loc).
 
-Le mod affiche encore des avertissements de dépréciation provenant des APIs Minecraft/NeoForge de la cible 1.21.1. Ils restent visibles dans le build; le core neutre, lui, traite tout avertissement javac comme une erreur. Migrer ces hooks nécessite une validation en jeu, donc ne pas masquer la sortie javac ni remplacer une API sans exercice du mod.
+The mod still shows deprecation warnings coming from the Minecraft/NeoForge APIs of the 1.21.1 target. They stay visible in the build; the neutral core, however, treats every javac warning as an error. Migrating these hooks requires in-game validation, so do not hide javac output or replace an API without exercising the mod.
 
-## Galerie et ambiance du viewer
+## Gallery and viewer atmosphere
 
-Le site utilise un thème sombre. La galerie affiche chaque monde/serveur comme un dossier replié par défaut façon liste de serveurs Minecraft : icône 64 px (miniature de la capture la plus récente), nom et MOTD (`N captures · Seed … · last visit …`). Les captures solo sont regroupées par nom de monde et seed, les multijoueur par nom de serveur. Les anciennes captures sans ces informations restent dans « Other captures ». Deux serveurs enregistrés sous le même nom sont regroupés ensemble tant qu'aucun identifiant de serveur n'est disponible. Dans un même monde, les captures distantes de moins de 64 blocs horizontalement sont empilées visuellement (« Same area · N captures · Near x, y, z ») pour montrer qu'il s'agit de la même zone. Chaque carte affiche un aperçu du modèle 3D lui-même : à la première ouverture d'une capture sans miniature, le viewer rend la scène (400×250 JPEG, recadrage cover sans étirement, downscale haute qualité) et la persiste via `memories.setThumbnail`. L'icône du monde/serveur envoyée par le mod reste affichée sur le dossier (`metadata.icon`) : l'upload range l'image du mod dans `icon` et laisse `thumbnail` vide, et les anciennes captures voient leur image promue en `icon` à leur prochaine ouverture. Les avatars utilisent les images de compte quand elles existent, sinon des pixel-art générés via DiceBear avec une seed hachée (aucun e-mail envoyé au CDN). Le bandeau « Your mod is paired » reste affiché tant qu'une snapshot date de moins de deux mois ; au-delà, la galerie propose de ré-appairer.
+The site uses a dark theme. The gallery shows each world/server as a folder collapsed by default, like the Minecraft server list: a 64 px icon (thumbnail of the most recent capture), name and MOTD (`N captures · Seed … · last visit …`). Single-player captures are grouped by world name and seed, multiplayer ones by server name. Older captures without this information stay in "Other captures". Two servers saved under the same name are grouped together as long as no server identifier is available. Within a world, captures less than 64 blocks apart horizontally are stacked visually ("Same area · N captures · Near x, y, z") to show that they cover the same area. Each card shows a preview of the 3D model itself: the first time a capture without a thumbnail is opened, the viewer renders the scene (400×250 JPEG, cover crop without stretching, high-quality downscale) and persists it through `memories.setThumbnail`. The world/server icon sent by the mod stays on the folder (`metadata.icon`): the upload stores the mod's image in `icon` and leaves `thumbnail` empty, and older captures have their image promoted to `icon` the next time they are opened. Avatars use account images when they exist, otherwise pixel art generated through DiceBear with a hashed seed (no email sent to the CDN). The "Your mod is paired" banner stays visible while a snapshot is less than two months old; beyond that, the gallery offers to pair again.
 
-Le viewer propose quatre éclairages fixes (matin, midi, coucher du soleil, nuit). L'éclairage initial reprend l'heure capturée (`dayTime` en ticks converti en minutes) et le preset le plus proche est surligné. La skybox s'adapte à la dimension et au biome (`getAtmosphere`) : halo de braise fixe sans soleil ni étoiles dans le Nether, nuit étoilée violette fixe dans l'End, obscurité atténuée dans le deep dark, cycle jour/nuit classique ailleurs ; les teintes hémisphériques suivent la dimension. Les ombres sont filtrées en PCF doux, sur une carte de 2048 pixels. Les nuages continuent à avancer à 0,6 bloc/seconde vers +X pendant que l'éclairage reste fixe. La couche utilise le motif `assets/minecraft/textures/environment/clouds.png` de Minecraft Java 1.21.1 (copie locale dans `apps/web/public/textures/minecraft-clouds.png`), avec des cellules de 12 × 12 blocs et une épaisseur de 4 blocs. Le rendu place la couche au-dessus du modèle (`bounds.max.y + max(32, empreinteHorizontale × 1,6)`) avec un matériau non éclairé opaque façon « fast graphics », teinté par la lumière du jour ; l'opaque évite que les nuages se dessinent devant le feuillage transparent. Les coordonnées de la capture, la position caméra et un décalage déduit de la seed (hachage 0-255) décalent le motif ; l'heure enregistrée sert de point de départ reproductible au mouvement (`ticks * 0,03`). Le Minecraft vanilla utilise un motif indépendant de la seed et une horloge de rendu locale : le décalage par seed distingue les mondes sans prétendre à une synchronisation image par image. Les nuages sont masqués pour les dimensions autres que l'Overworld. Un GLB local sans métadonnées utilise une origine de secours (0,64,0).
+The viewer offers four fixed lighting presets (morning, noon, sunset, night). The initial lighting follows the captured time (`dayTime` in ticks converted to minutes) and the closest preset is highlighted. The skybox adapts to the dimension and biome (`getAtmosphere`): a fixed ember glow with no sun or stars in the Nether, a fixed purple starry night in the End, dimmed darkness in the deep dark, and the classic day/night cycle elsewhere; hemispheric tints follow the dimension. Shadows use soft PCF filtering on a 2048-pixel map. Clouds keep drifting at 0.6 blocks/second towards +X while the lighting stays fixed. The layer uses the `assets/minecraft/textures/environment/clouds.png` pattern from Minecraft Java 1.21.1 (local copy in `apps/web/public/textures/minecraft-clouds.png`), with 12 × 12 block cells and a thickness of 4 blocks. Rendering places the layer above the model (`bounds.max.y + max(32, horizontalFootprint × 1.6)`) with an opaque unlit "fast graphics" style material, tinted by daylight; opacity prevents clouds from being drawn in front of transparent foliage. The capture coordinates, the camera position and an offset derived from the seed (hash 0-255) shift the pattern; the recorded time is a reproducible starting point for the movement (`ticks * 0.03`). Vanilla Minecraft uses a seed-independent pattern and a local render clock: the per-seed offset tells worlds apart without claiming frame-by-frame synchronization. Clouds are hidden for dimensions other than the Overworld. A local GLB without metadata uses a fallback origin (0,64,0).
 
-`/minemories export` sans argument utilise un rayon horizontal de 128 blocs (8 chunks). Les boutons du menu utilisent le rayon configuré dans les réglages avancés, 32 blocs par défaut, avec une profondeur limitée aux visites locales par défaut (voir [réglages](../features/mod-distribution.md)). `/minemories export 16` réduit ce rayon à 16 blocs ; `/minemories export selection` exporte les coins sélectionnés. Le client ne force pas le chargement des chunks absents. Cette zone est beaucoup plus coûteuse que l'ancienne boîte de 8 blocs : l'export reste synchrone et peut suspendre momentanément l'affichage. Le nouveau client envoie les captures jusqu’à 200 MiB en morceaux reprenables de 4 MiB ; l’ancien endpoint conserve sa limite de 100 MiB. Voir [le protocole d’upload](../features/resumable-uploads.md).
+`/minemories export` without an argument uses a horizontal radius of 128 blocks (8 chunks). The menu buttons use the radius configured in the advanced settings, 32 blocks by default, with depth limited to local visits by default (see [settings](../features/mod-distribution.md)). `/minemories export 16` reduces the radius to 16 blocks; `/minemories export selection` exports the selected corners. The client does not force-load missing chunks. This area is much more expensive than the old 8-block box: the export stays synchronous and can briefly freeze the display. The new client uploads captures up to 200 MiB in resumable 4 MiB chunks; the old endpoint keeps its 100 MiB limit. See [the upload protocol](../features/resumable-uploads.md).
 
-Les snapshots se renomment depuis leur carte (80 caractères max) et les zones empilées depuis leur bandeau (stocké dans le navigateur). La corbeille (`deleted_at`, `purge_after`, listée via `memories.listTrash` avec `purgeAt`) garde les nouvelles snapshots 30 jours (`TRASH_RETENTION_MS`) avant purge au démarrage puis toutes les heures. La migration protège les anciennes échéances ; le site affiche l’échéance reçue de l’API. Voir [les délais de récupération](../features/trash-retention.md) et [les suppressions durables](../features/durable-deletions.md). Un lien de partage (`/share/:token`, jeton stocké haché, révocable) ouvre la snapshot en lecture seule sans compte via `/api/shared/:token` et `/file`.
+Snapshots are renamed from their card (80 characters max) and stacked areas from their banner (stored in the browser). The trash (`deleted_at`, `purge_after`, listed through `memories.listTrash` with `purgeAt`) keeps new snapshots for 30 days (`TRASH_RETENTION_MS`) before purging them at startup and then every hour. The migration protects older deadlines; the site shows the deadline received from the API. See [recovery delays](../features/trash-retention.md) and [durable deletions](../features/durable-deletions.md). A share link (`/share/:token`, token stored hashed, revocable) opens the snapshot read-only without an account through `/api/shared/:token` and `/file`.
 
 
-### Tests des parcours web et API
+### Web and API flow tests
 
-Les tests React dans `apps/web/src/pages/interactions.test.tsx` utilisent jsdom : connexion,
-inscription, rafraîchissement de galerie, états et annulation du polling d'appairage, choix
-et erreurs de fichier local du viewer. Le moteur WebGL est remplacé par une fixture ; ces
-cas ne valident pas le rendu 3D. La couverture à 100 % reste limitée aux utilitaires `src/lib`.
+The React tests in `apps/web/src/pages/interactions.test.tsx` use jsdom: sign-in,
+sign-up, gallery refresh, pairing polling states and cancellation, and the
+viewer's local file choice and errors. The WebGL engine is replaced by a fixture; these
+cases do not validate 3D rendering. 100% coverage is still limited to the `src/lib` utilities.
 
-`apps/api/src/session-rpc.test.ts` crée de vraies sessions Better Auth et traverse les routes
-HTTP/oRPC pour l'appairage, l'isolation entre comptes, les captures, les miniatures, le
-partage, la corbeille, la restauration, la suppression et la déconnexion.
+`apps/api/src/session-rpc.test.ts` creates real Better Auth sessions and goes through the
+HTTP/oRPC routes for pairing, isolation between accounts, captures, thumbnails,
+sharing, trash, restore, deletion and sign-out.
 
-`storage-s3.test.ts` exerce le SDK S3 réel contre un serveur HTTP de test, y compris une
-panne, le retry d'initialisation et les octets binaires. Pour vérifier un Garage réel, utiliser
-un bucket de test dédié et les variables `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`,
-`S3_SECRET_KEY` et `S3_REGION`, puis lancer :
+`storage-s3.test.ts` exercises the real S3 SDK against a test HTTP server, including an
+outage, the initialization retry and binary bytes. To check a real Garage, use
+a dedicated test bucket and the `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`,
+`S3_SECRET_KEY` and `S3_REGION` variables, then run:
 
 ```sh
 RUN_GARAGE_INTEGRATION=1 bun test apps/api/src/storage-garage.test.ts
 ```
 
-Sans cette variable, ce test est ignoré. `bun run api:garage` crée un Garage Docker jetable, exerce les sessions HTTP/oRPC,
-l’appairage et l’envoi de 5 MiB par morceaux, la lecture et la suppression, puis une panne
-réelle de Garage et une reprise dans un nouveau processus API. Le scénario vérifie
-l’absence de doublon et les octets du GLB. Il supprime uniquement son projet Docker
-`minemories-integration`. La CI exécute ce parcours après le build. La couverture API impose 90 % des lignes et 80 % des fonctions **dans chaque fichier**,
-via `apps/api/bunfig.toml`, avec les reporters texte et LCOV. Le contrôle d’inventaire
-`check-api-coverage.mjs` refuse un fichier source absent du rapport ; les tests, fixtures
-et déclarations `.d.ts` sont exclus de cet inventaire. Un test négatif exécute le vrai Bun
-sur une fixture dont la moyenne dépasse les seuils mais dont un fichier reste faible :
-le processus doit échouer. Voir la [documentation Bun](https://bun.sh/docs/test/code-coverage).
+Without this variable, the test is skipped. `bun run api:garage` creates a disposable Docker Garage, exercises HTTP/oRPC sessions,
+pairing and a 5 MiB chunked upload, reading and deletion, then a real Garage
+outage and a resume in a new API process. The scenario checks that there is no
+duplicate and checks the GLB bytes. It deletes only its own
+`minemories-integration` Docker project. CI runs this flow after the build. API coverage requires 90% of lines and 80% of functions **in each file**,
+through `apps/api/bunfig.toml`, with the text and LCOV reporters. The inventory check
+`check-api-coverage.mjs` rejects a source file missing from the report; tests, fixtures
+and `.d.ts` declarations are excluded from this inventory. A negative test runs the real Bun
+on a fixture whose average exceeds the thresholds but where one file stays low:
+the process must fail. See the [Bun documentation](https://bun.sh/docs/test/code-coverage).
 
-### Modes et distribution
+### Modes and distribution
 
-Le menu démarre en mode simple (connexion et capture/envoi). Le mode avancé présente le dossier local, l’API personnalisée, les exports locaux et l’AFK. L’AFK est actif par défaut (5 min d’inactivité / 4 h entre captures / rayon 32), y compris en pause et en arrière-plan ; une désactivation existante est conservée. Le mode simple propose le bouton AFK, et le sous-écran avancé les délais et le rayon. Voir [réglages et distribution](../features/mod-distribution.md). `runClient` déclare les sources de `:core`, `:common` et de `:neoforge` comme un seul mod, pour retrouver en développement les mêmes classes que dans le JAR autonome.
+The menu starts in simple mode (sign-in and capture/upload). Advanced mode shows the local folder, the custom API, local exports and AFK. AFK is on by default (5 min idle / 4 h between captures / radius 32), including while paused and in the background; an existing opt-out is kept. Simple mode offers the AFK button, and the advanced sub-screen the delays and radius. See [settings and distribution](../features/mod-distribution.md). `runClient` declares the `:core`, `:common` and `:neoforge` sources as a single mod, so development uses the same classes as the standalone JAR.
 
-Validation viewer du 10 octobre 2026 : ouverture locale du GLB réel de 189,6 MiB dans Chromium avec rendu du terrain et textures. Le parcours galerie affiche désormais le téléchargement avant le chargement 3D, annule les requêtes en quittant la page et donne priorité au souvenir demandé sur un ancien fichier local. La lecture authentifiée du même souvenir en production reste à confirmer.
+Viewer validation of 10 October 2026: local opening of the real 189.6 MiB GLB in Chromium with terrain and textures rendered. The gallery flow now shows the download before 3D loading, cancels requests when leaving the page and gives priority to the requested memory over an old local file. Authenticated reading of the same memory in production is still to be confirmed.
 
-Validation Three.js 0.186.1 du 11 octobre 2026 : `bun run build` passe sur la branche
-rebasée, avec 82 tests API et 62 tests web. Le viewer local ouvre le GLB réel de
-10 MiB (134 matériaux, 55 textures intégrées et 128 lumières importées, plafonnées
-à 32 par le viewer) ; terrain, neige, végétation et sous-sol sont visibles après
-la préparation. Le même fichier est importé et rendu dans Blender 5.2.2.
-La première compilation des shaders est longue sur le navigateur de test ;
-son profilage reste suivi dans [issue #74](https://github.com/For-Hives/minemories/issues/74). Les adaptations du
-[guide de migration officiel](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
-remplacent `PCFSoftShadowMap` par `PCFShadowMap` et appellent `super.dispose()`
-dans les nuages, avec vérification de l’événement de libération. Le bundle viewer
-mesure environ 656 kB minifiés / 166 kB gzip : le léger dépassement de
-l’avertissement de 650 kB reste visible, sans modification du seuil.
+Three.js 0.186.1 validation of 11 October 2026: `bun run build` passes on the rebased
+branch, with 82 API tests and 62 web tests. The local viewer opens the real
+10 MiB GLB (134 materials, 55 embedded textures and 128 imported lights, capped
+at 32 by the viewer); terrain, snow, vegetation and underground are visible after
+preparation. The same file is imported and rendered in Blender 5.2.2.
+The first shader compilation is slow on the test browser;
+its profiling is still tracked in [issue #74](https://github.com/For-Hives/minemories/issues/74). The adaptations from the
+[official migration guide](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
+replace `PCFSoftShadowMap` with `PCFShadowMap` and call `super.dispose()`
+in the clouds, with a check of the dispose event. The viewer bundle
+is about 656 kB minified / 166 kB gzip: the slight overshoot of the
+650 kB warning stays visible, without changing the threshold.
 
-Le chargement animé couvre désormais le téléchargement API, la lecture GLB, les textures et la compilation des shaders. Le viewer attend la préparation et le premier rendu avant de retirer cet état ; un test d’interaction vérifie la présence du spinner pendant ces phases. Le rendu d’une capture AFK réelle a été revérifié dans Chromium. Les demandes de limitation à la profondeur visitée et de fermeture terre/pierre des bordures sont détaillées dans les issues #7 et #8 ; la limitation de profondeur est implémentée et [validée par un parcours comparatif](../features/exploration-depth-validation.md), la fermeture des bordures est implémentée et validée ci-dessous.
+The animated loading state now covers the API download, GLB reading, textures and shader compilation. The viewer waits for preparation and the first render before removing this state; an interaction test checks that the spinner is present during these phases. Rendering of a real AFK capture was checked again in Chromium. The requests to limit captures to the visited depth and to close borders with dirt/stone are detailed in issues #7 and #8; depth limiting is implemented and [validated by a comparative run](../features/exploration-depth-validation.md), and border closing is implemented and validated below.
 
 
-Validation locale des coupes du 10 octobre 2026 : exports NeoForge sur une copie isolée
-du monde de test, puis import/rendu Blender 5.2.2. Une capture de surface de 17 × 17
-blocs mesure 5 blocs de haut et présente des côtés terre/pierre fermés, avec neige et
-végétation préservées. Une capture avec historique profond mesure environ 60 blocs de
-haut et referme les ouvertures de grottes sur les bords. Les visites sont persistées
-après redémarrage ; le suivi actif est effectué à chaque tick pour enregistrer les
-courtes descentes, avec un contrôle de rendu en pause. Les modèles déclarant des quads
-sans direction de culling sont filtrés seulement lorsqu’ils coïncident avec la coupe.
+Local validation of cut faces on 10 October 2026: NeoForge exports on an isolated copy
+of the test world, then Blender 5.2.2 import/render. A 17 × 17 block surface capture
+is 5 blocks high and has closed dirt/stone sides, with snow and
+vegetation preserved. A capture with deep history is about 60 blocks
+high and closes cave openings on the edges. Visits persist
+after restart; active tracking runs every tick to record
+short descents, with a render check while paused. Models declaring quads
+without a cull direction are filtered only when they coincide with the cut.
 
-Une fixture supplémentaire sur la copie isolée contient un bassin traversant le plan
-de coupe, du verre, des feuilles et un escalier. L’export en pause conserve les matériaux
-MASK (verre/feuilles), BLEND (eau) et le modèle non cubique de l’escalier. Six quads d’eau
-sont présents sur la coupe est malgré l’eau voisine hors capture. Le rendu Blender de
-cette capture de 17 × 17 × 5 blocs a été inspecté : pas de paroi opaque au-dessus du
-fond du bassin, section terre/pierre fermée, transparence conservée.
+An additional fixture on the isolated copy contains a pool crossing the cut
+plane, glass, leaves and stairs. The export while paused keeps the
+MASK (glass/leaves) and BLEND (water) materials and the stairs' non-cubic model. Six water quads
+are present on the east cut despite the neighboring water outside the capture. The Blender render of
+this 17 × 17 × 5 block capture was inspected: no opaque wall above the
+pool floor, closed dirt/stone section, transparency preserved.
 
-### Studio du viewer — octobre 2026
+### Viewer studio — October 2026
 
-Le viewer local, celui de la galerie et les liens partagés utilisent désormais la
-même chaîne de rendu HDR : ACES, bloom modéré sur pyramide de résolutions, sortie
-sRGB et FXAA. L’environnement de réflexion est généré localement depuis le ciel
-(PMREM) et recalculé uniquement aux changements d’ambiance, jamais à chaque image.
-Les surfaces transparentes reçoivent une rugosité plus faible ; ce sont des reflets
-d’environnement, pas des reflets des objets voisins ni du ray tracing. Les textures
-restent pixelisées de près, avec mipmaps interpolées et anisotropie plafonnée à 4.
-Les lumières ponctuelles sont regroupées par cellules puis plafonnées à 12 ; les
-ombres solaires de 2048 pixels sont mises à jour au changement d’éclairage/capture.
-Aucun format GLB ni export Minecraft n’est modifié.
+The local viewer, the gallery viewer and shared links now use the
+same HDR render chain: ACES, moderate bloom on a resolution pyramid, sRGB
+output and FXAA. The reflection environment is generated locally from the sky
+(PMREM) and recomputed only when the atmosphere changes, never every frame.
+Transparent surfaces get lower roughness; these are environment
+reflections, not reflections of neighboring objects or ray tracing. Textures
+stay pixelated up close, with interpolated mipmaps and anisotropy capped at 4.
+Point lights are grouped by cell and then capped at 12; the
+2048-pixel sun shadows are updated when the lighting/capture changes.
+No GLB format or Minecraft export is modified.
 
-Les palettes désert/badlands/savane, neige/glace et jungle/marais complètent les
-ambiances Nether, End et deep dark. Les réglages Limpide, Brume et Couvert sont des
-variantes artistiques locales, sans pluie simulée ni modification du souvenir.
-Le coucher du soleil vise 17 h 15 pour garder des ombres rasantes. L’ouverture des
-captures très profondes vise leur surface, avec possibilité d’explorer les sous-sols
-par déplacement de la caméra. Les nuages sont placés au-dessus du cadrage initial.
+The desert/badlands/savanna, snow/ice and jungle/swamp palettes complement the
+Nether, End and deep dark atmospheres. The Clear, Mist and Overcast settings are
+local artistic variants, with no simulated rain and no change to the memory.
+Sunset targets 5:15 pm to keep long, low shadows. Very deep
+captures open on their surface, and the underground can be explored
+by moving the camera. Clouds are placed above the initial framing.
 
-La qualité Auto démarre avec un DPR plafonné à 1,5 et diminue par paliers de 0,25
-(jusqu’à 0,75) si plus de 100 des 180 images mesurées dépassent 26 ms. Le bloom est
-coupé à DPR <= 1 dans ce cas. Le mode Cinéma autorise DPR 2 ; Économie force DPR 1
-sans bloom. Le rendu s’arrête dans un onglet masqué et avant ouverture d’un modèle.
-La préférence de mouvement réduit immobilise les nuages ; la contemplation ne
-démarre que sur demande. Le chargement reste affiché jusqu’au premier rendu composé.
-Les chargements annulés sont écartés et leurs ressources libérées ; le remplacement conserve la capture précédente jusqu’à la compilation réussie, comme le lecteur de timelapse.
+Auto quality starts with a DPR capped at 1.5 and drops in steps of 0.25
+(down to 0.75) if more than 100 of the 180 measured frames exceed 26 ms. Bloom is
+turned off at DPR <= 1 in that case. Cinematic mode allows DPR 2; Eco forces DPR 1
+without bloom. Rendering stops in a hidden tab and before a model is opened.
+The reduced-motion preference freezes the clouds; contemplation only
+starts on request. Loading stays visible until the first composited render.
+Cancelled loads are discarded and their resources released; replacement keeps the previous capture until compilation succeeds, as in the timelapse player.
 
-Les commandes communes offrent rotation contemplative, plein écran et carte postale
-JPEG locale. La carte postale est recadrée en 1920 × 1080 depuis la résolution de
-rendu disponible. Depuis une capture de galerie, le panneau de partage explique
-l’accès par lien, puis exige une action explicite pour créer ce lien et permet sa
-révocation. Un fichier local n’est jamais publié par ces commandes.
+The shared controls offer contemplative rotation, fullscreen and a local JPEG
+postcard. The postcard is cropped to 1920 × 1080 from the available render
+resolution. From a gallery capture, the share panel explains
+link access, then requires an explicit action to create the link and allows its
+revocation. A local file is never published by these controls.
 
-Validation : tests d’interaction des ambiances/qualité/contemplation/carte postale,
-non-régression des chargements obsolètes et de la libération des textures partagées,
-palettes couvertes à 100 %. Inspection Chromium des captures réelles de la fixture
-NeoForge (entités, coffres, lit, sol) et import/rendu Blender 5.2.2 de la capture AFK.
-La refonte est suivie dans l’issue #93. La mesure comparative GPU sur matériels identifiés reste à faire dans l’issue #74 ;
-le rendu logiciel de Chromium ne constitue pas une preuve de 60 FPS sur mobile.
+Validation: interaction tests for atmospheres/quality/contemplation/postcard,
+non-regression of stale loads and of releasing shared textures,
+palettes covered at 100%. Chromium inspection of real captures from the
+NeoForge fixture (entities, chests, bed, ground) and Blender 5.2.2 import/render of the AFK capture.
+The redesign is tracked in issue #93. Comparative GPU measurement on identified hardware is still to be done in issue #74;
+Chromium software rendering is not proof of 60 FPS on mobile.
 
-Régression Firefox (15 octobre 2026) : conserver le choix de normales/shading du
-GLTFLoader. Forcer `flatShading` sur tous les matériaux PBR produisait des valeurs
-NaN dans le rendu HDR sur Firefox/NVIDIA GTX 980 ; les flous successifs du bloom
-les propageaient à toute l’image en Auto/Cinéma. Le mode Économie masquait le problème.
-Le correctif conserve les normales importées, donc les arêtes des blocs exportés,
-et laisse le bloom actif. Test unitaire de préparation des matériaux, reproduction
-avant/après dans Firefox 153 avec une capture réelle de 14,9 Mio : 2 286 composantes
-non finies dans la passe lumineuse avant, zéro après dans celle-ci et les cinq niveaux
-de flou. Vérifier Auto → Économie → Cinéma, puis les heures et les atmosphères lors
-des prochaines validations navigateur ; un simple chargement sans erreur JS ne suffit pas.
-La même capture a également été importée et rendue dans Blender 5.2.2 ; aucun
-changement de géométrie, de texture ou de format d’export n’est nécessaire.
+Firefox regression (15 October 2026): keep the GLTFLoader's normals/shading
+choice. Forcing `flatShading` on every PBR material produced NaN
+values in HDR rendering on Firefox/NVIDIA GTX 980; the successive bloom blurs
+spread them over the whole image in Auto/Cinematic. Eco mode hid the problem.
+The fix keeps the imported normals, and therefore the edges of exported blocks,
+and leaves bloom on. Unit test of material preparation, before/after
+reproduction in Firefox 153 with a real 14.9 MiB capture: 2,286 non-finite
+components in the bright pass before, zero after in that pass and the five blur
+levels. Check Auto → Eco → Cinematic, then times of day and atmospheres during
+the next browser validations; a simple load without JS errors is not enough.
+The same capture was also imported and rendered in Blender 5.2.2; no
+change to geometry, textures or export format is needed.
 
-### Studio immersif — deuxième passe
+### Immersive studio — second pass
 
-Le viewer local, privé et public occupe désormais le viewport entier, hors navigation
-marketing. L’ouverture et le chargement ont leurs propres écrans ; l’image est entourée
-d’un bandeau de retour/ouverture, d’une barre d’actions latérale et d’une réglette horaire
-continue (aube, matin, midi, heure dorée, nuit). Le panneau Ambiance reste fermé au départ.
-Immersion masque les commandes ; Échap les rétablit et ferme les panneaux. Sur mobile,
-les actions deviennent des icônes nommées pour les lecteurs d’écran. Le partage privé
-reste explicite, révocable et absent des fichiers locaux. Le lecteur timelapse conserve
-son interface spécifique et utilise le même moteur de rendu.
+The local, private and public viewer now fills the whole viewport, outside the marketing
+navigation. Opening and loading have their own screens; the image is surrounded
+by a back/open banner, a side action bar and a continuous time-of-day slider
+(dawn, morning, noon, golden hour, night). The Atmosphere panel starts closed.
+Immerse hides the controls; Escape restores them and closes the panels. On mobile,
+actions become icons named for screen readers. Private sharing
+stays explicit, revocable and absent from local files. The timelapse player keeps
+its specific interface and uses the same render engine.
 
-La chaîne devient : scène HDR + profondeur → atmosphère → bloom → ACES/sRGB → FXAA.
-L’atmosphère reconstruit les positions depuis la profondeur existante : occlusion de
-contact à 12 échantillons, brume selon distance/hauteur, diffusion solaire à 12 échantillons
-seulement lorsque le soleil est visible, étalonnage léger et vignette. Pas de second rendu
-de la géométrie, de calcul de normales par matériau ni de tampon historique. Le produit
-vectoriel utilisé pour l’occlusion est normalisé avec un dénominateur borné, pour éviter
-les NaN sur les surfaces dégénérées. Les deux cibles HDR portent une texture de profondeur ;
-les passes plein écran ne modifient pas la profondeur. Économie coupe occlusion, diffusion
-solaire et bloom, en conservant brume/étalonnage/FXAA. Les rayons sont une approximation
-en espace écran, pas un volume physique ni un effet visible hors champ.
+The chain becomes: HDR scene + depth → atmosphere → bloom → ACES/sRGB → FXAA.
+The atmosphere pass reconstructs positions from the existing depth: 12-sample
+contact occlusion, distance/height fog, 12-sample sun scattering
+only when the sun is visible, light grading and a vignette. No second render
+of the geometry, no per-material normal computation and no history buffer. The cross
+product used for occlusion is normalized with a bounded denominator, to avoid
+NaN on degenerate surfaces. Both HDR targets carry a depth texture;
+fullscreen passes do not modify depth. Eco turns off occlusion, sun scattering
+and bloom, keeping fog/grading/FXAA. The rays are a screen-space
+approximation, not a physical volume or an effect visible off screen.
 
-L’éclairage oppose désormais soleil chaud et ambiance froide moins intense. Les ombres
-2048 sont concentrées autour de la surface cadrée plutôt que sur toute la profondeur des
-sous-sols. Les faisceaux `beacon_beam` restent visibles mais ne déplacent plus le cadrage
-et ne projettent pas d’ombre. Les 12 lumières ponctuelles sont classées par intensité et
-proximité de cette surface : la lave profonde ne doit pas évincer toutes les torches.
-Leur intensité est rééquilibrée et reste plafonnée, sans ombres ponctuelles supplémentaires.
+Lighting now contrasts a warm sun with a cooler, less intense ambient light. The 2048
+shadows are concentrated around the framed surface rather than the full depth of the
+underground. `beacon_beam` beams stay visible but no longer shift the framing
+and cast no shadow. The 12 point lights are ranked by intensity and
+proximity to that surface: deep lava must not push out every torch.
+Their intensity is rebalanced and stays capped, with no additional point-light shadows.
 
-Les matériaux explicitement identifiés comme eau Minecraft reçoivent des normales
-légèrement ondulées et des reflets du ciel plus présents. Le patch est idempotent pour
-les matériaux partagés ; le mouvement s’arrête avec `prefers-reduced-motion`. Le verre
-n’est pas assimilé à l’eau. Il s’agit toujours de reflets PMREM du ciel, sans SSR ni reflet
-dynamique des bâtiments. Les palettes de biomes restent fondées sur les métadonnées
-connues ; aucun biome n’est inventé pour un GLB local sans contexte.
+Materials explicitly identified as Minecraft water get slightly
+rippled normals and stronger sky reflections. The patch is idempotent for
+shared materials; movement stops with `prefers-reduced-motion`. Glass
+is not treated as water. These are still PMREM sky reflections, without SSR or dynamic
+reflections of buildings. Biome palettes are still based on known
+metadata; no biome is invented for a local GLB without context.
 
-Validation : capture mod réelle figée de 25,9 Mio (mangrove, base, eau, beacon et sources
-émissives), Firefox 153/NVIDIA GTX 980, desktop et 390 × 844, trois qualités, nuit/brume,
-immersion et restauration des commandes. Lecture GPU des buffers HDR : aucune composante
-NaN/Infinity dans les trois qualités. Tests de cadrage sans beacon, priorité des lumières
-de surface, matériaux d’eau partagés, branchement de profondeur et interactions du studio.
-La comparaison multi-GPU et la validation esthétique finale restent suivies dans #74/#93.
-La même capture a été exercée dans Chromium (desktop et mobile) puis importée et rendue
-dans Blender 5.2.2. Le squelette de chargement initial du module viewer utilise aussi une
-surface plein écran, sans réafficher temporairement les anciennes cartes de page.
+Validation: a frozen real 25.9 MiB mod capture (mangrove, base, water, beacon and emissive
+sources), Firefox 153/NVIDIA GTX 980, desktop and 390 × 844, three quality levels, night/mist,
+immersion and restoring the controls. GPU read of the HDR buffers: no NaN/Infinity
+component at any of the three quality levels. Tests of framing without the beacon, priority of surface
+lights, shared water materials, depth wiring and studio interactions.
+Multi-GPU comparison and final aesthetic validation are still tracked in #74/#93.
+The same capture was exercised in Chromium (desktop and mobile), then imported and rendered
+in Blender 5.2.2. The viewer module's initial loading skeleton also uses a
+fullscreen surface, without temporarily showing the old page cards again.
 
-### Cadrage du joueur et exploration intérieure — 16 octobre 2026
+### Player framing and interior exploration — 16 October 2026
 
-Les nouvelles captures manuelles et progressives écrivent
-`scenes[0].extras.minemoriesPlayerPosition: [x, y, z]` : position des pieds du joueur
-au début de la capture, relative au `captureOrigin` de la géométrie. Aucun nom,
-identifiant de joueur ou coordonnée absolue n'est ajouté au GLB. Les deux sérialiseurs
-rejettent les coordonnées non finies. Le viewer applique la transformation du modèle
-(notamment le décalage des séquences) avant de centrer son orbite sur ce point.
-Les anciens champs de métadonnées `x/y/z` ne sont pas utilisés à cette fin : certains
-exports y plaçaient le centre du volume. Pour un ancien fichier sans cette donnée,
-le cadrage conserve le repli sur la surface, sans faisceau de beacon. Il faut une
-nouvelle capture avec le mod mis à jour pour retrouver exactement le joueur.
+New manual and progressive captures write
+`scenes[0].extras.minemoriesPlayerPosition: [x, y, z]`: the position of the player's feet
+at the start of the capture, relative to the geometry's `captureOrigin`. No name,
+player identifier or absolute coordinate is added to the GLB. Both serializers
+reject non-finite coordinates. The viewer applies the model transform
+(notably the sequence offset) before centering its orbit on that point.
+The old `x/y/z` metadata fields are not used for this: some
+exports stored the volume's center there. For an old file without this data,
+framing keeps falling back to the surface, without the beacon beam. A
+new capture with the updated mod is needed to find the player exactly.
 
-Le bouton Première personne ouvre une caméra libre à 1,62 bloc au-dessus du point
-capturé. Glisser tourne la caméra ; WASD/ZQSD (touches physiques) ou les flèches
-la déplacent à 3 blocs/s. E/Espace monte, Q QWERTY/A AZERTY descend, Maj accélère
-(12 blocs/s), Alt ralentit (0,7 bloc/s). Des boutons maintenus offrent aussi les
-translations sur écran tactile. La caméra peut traverser les murs ; aucune physique
-ou collision lourde n'est ajoutée. Le plan proche est à 0,02 bloc. Perte de focus,
-masquage de l'onglet et Échap arrêtent les déplacements clavier. Recentrer revient
-à l'orbite ; quitter le mode conserve la position de visite.
+The First person button opens a free camera 1.62 blocks above the captured
+point. Dragging turns the camera; WASD/ZQSD (physical keys) or the arrow keys
+move it at 3 blocks/s. E/Space goes up, Q on QWERTY/A on AZERTY goes down, Shift speeds up
+(12 blocks/s), Alt slows down (0.7 blocks/s). Hold-down buttons also offer
+movement on touch screens. The camera can pass through walls; no physics
+or heavy collision is added. The near plane is at 0.02 blocks. Losing focus,
+hiding the tab and Escape stop keyboard movement. Recenter goes back
+to the orbit; leaving the mode keeps the visit position.
 
-Validation : tests de coordonnées locales transformées/invalides, sérialiseurs
-legacy et spool, publication asynchrone, déplacements, relâchement des touches et
-interactions de la barre. Firefox GPU : cible [4,-70,5], yeux [4,-68.38,5], déplacement
-0,15 bloc en 50 ms, retour orbite sans saut et zéro valeur HDR non finie. Cette position
-est une donnée de test ajoutée à une copie de la capture réelle de 25,9 Mio, pas une
-position joueur prétendument récupérée de l'ancien fichier. Interface contrôlée à
-1200×850 et 390×844, sans erreur JS ni débordement. Cette copie enrichie s'importe et
-se rend dans Blender 5.2.2. La nouvelle extraction de position depuis Minecraft doit
-encore être exercée en jeu avec le JAR mis à jour ; ce contrôle n'est pas remplacé par
-les tests Java ni le rendu Blender.
+Validation: tests of transformed/invalid local coordinates, legacy and spool
+serializers, asynchronous publication, movement, key release and
+toolbar interactions. Firefox GPU: target [4,-70,5], eyes [4,-68.38,5], movement of
+0.15 blocks in 50 ms, return to orbit without a jump and zero non-finite HDR values. This position
+is test data added to a copy of the real 25.9 MiB capture, not a
+player position supposedly recovered from the old file. Interface checked at
+1200×850 and 390×844, with no JS errors or overflow. This enriched copy imports and
+renders in Blender 5.2.2. The new position extraction from Minecraft still has
+to be exercised in game with the updated JAR; that check is not replaced by
+Java tests or the Blender render.
 
-### Proposition de direction artistique « L’album vivant » — 16 octobre 2026
+### "The living album" art direction proposal — 16 October 2026
 
-La proposition étend l'ambiance du viewer au site : forêt profonde `#101e1c`,
-ivoire `#f0ebdc`, or doux `#e9c583`, surfaces vert sauge et filets discrets. Les grands
-titres utilisent une pile serif système (Iowan/Palatino/Georgia), les commandes gardent
-la sans-serif et les repères utilisent la monospace existante. Aucune police distante
-ni bibliothèque d'animation n'est ajoutée. Le petit cube filaire est un signe de marque
-proposé, pas une identité de marque validée pour les catalogues ou le mod.
+The proposal extends the viewer's atmosphere to the site: deep forest `#101e1c`,
+ivory `#f0ebdc`, soft gold `#e9c583`, sage green surfaces and subtle rules. Large
+headings use a system serif stack (Iowan/Palatino/Georgia), controls keep
+the sans-serif and markers use the existing monospace. No remote font
+or animation library is added. The small wireframe cube is a proposed brand
+mark, not a validated brand identity for the catalogs or the mod.
 
-L'accueil est recomposé autour d'un récit, d'un paysage SVG illustratif à trois lumières,
-d'une section ivoire, d'un parcours et de collections. Le paysage est explicitement une
-illustration : il ne prétend pas montrer une capture réelle. Les formes réutilisent les
-illustrations vectorielles du dépôt ; aucune capture privée n'entre dans les assets publics.
-Le changement matin/heure dorée/nuit est accessible par boutons natifs avec état annoncé.
-Aucun contexte WebGL n'est créé hors du viewer. Les animations décoratives respectent
+The home page is rebuilt around a story, an illustrative SVG landscape with three lighting moods,
+an ivory section, a journey and collections. The landscape is explicitly an
+illustration: it does not claim to show a real capture. The shapes reuse the
+repository's vector illustrations; no private capture enters the public assets.
+The morning/golden hour/night switch is reachable through native buttons with an announced state.
+No WebGL context is created outside the viewer. Decorative animations respect
 `prefers-reduced-motion`.
 
-La navigation devient une capsule persistante ; le pied de page reprend la typographie
-éditoriale. Connexion/inscription, contenus, tarifs, guides et collections utilisent la même
-palette. La galerie place les outils de liaison/stockage dans une colonne dédiée sur grand
-écran et conserve les groupes/renommages/partages existants ; les captures isolées se rangent
-en grille sans colonnes vides par zone. Les petits écrans retrouvent un flux unique.
+Navigation becomes a persistent capsule; the footer picks up the editorial
+typography. Sign-in/sign-up, content, pricing, guides and collections use the same
+palette. On large screens the gallery puts the pairing/storage tools in a dedicated
+column and keeps the existing groups/renames/shares; standalone captures are laid out
+in a grid without empty columns per area. Small screens get a single flow again.
 
-Validation visuelle Chromium : accueil, tarifs, connexion, installation, découverte,
-journal, confidentialité et démonstration publique ; galerie avec données de test interceptées
-uniquement dans Playwright. Contrôle desktop/mobile, aucun débordement ni erreur JavaScript.
-Firefox : changements de lumière, réduction du mouvement, disponibilité de la navigation
-à 360/390/730/740/930/1440 px et fermeture du menu après navigation. Les tests d'interaction
-couvrent les lumières et les destinations visiteur/connecté en FR/EN. La validation esthétique
-par le propriétaire reste ouverte dans l'issue #76 ; la proposition ne vaut pas validation
-finale de la marque.
+Chromium visual validation: home, pricing, sign-in, installation, discovery,
+journal, privacy and the public demo; gallery with test data intercepted
+only in Playwright. Desktop/mobile check, no overflow or JavaScript error.
+Firefox: lighting changes, reduced motion, navigation availability
+at 360/390/730/740/930/1440 px and the menu closing after navigation. Interaction tests
+cover the lighting and visitor/signed-in destinations in FR/EN. Aesthetic validation
+by the owner remains open in issue #76; the proposal is not a final
+brand validation.

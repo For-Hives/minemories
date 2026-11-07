@@ -4,28 +4,28 @@ import { readModVersion } from '../version.mjs'
 import { collectArtifacts } from './publish.mjs'
 
 export const name = 'push'
-export const summary = "Envoie à l'API les JAR déjà construits (build/mod-dist/<version>/), sans recompiler"
+export const summary = 'Uploads already built JARs (build/mod-dist/<version>/) to the API, without rebuilding'
 export const usage =
 	'bun mod push [<version>] [--api-url <url>] [--replace] [--dry-run]\n' +
-	'  <version>   défaut : la version courante du mod ; envoie build/mod-dist/<version>/<id>/*.jar\n' +
-	"  --api-url   URL de l'API (défaut MOD_API_URL, puis https://api.minemories.net)\n" +
-	'  --replace   remplace une version déjà publiée avec un autre contenu (sinon refusée)\n' +
-	'  --dry-run   liste ce qui serait envoyé, sans réseau\n' +
-	'Jeton : MOD_UPLOAD_TOKEN (environnement ou .env, jamais en argument).'
+	'  <version>   default: the current mod version; uploads build/mod-dist/<version>/<id>/*.jar\n' +
+	'  --api-url   API URL (default MOD_API_URL, then https://api.minemories.net)\n' +
+	'  --replace   replaces an already published version with different content (refused otherwise)\n' +
+	'  --dry-run   lists what would be uploaded, without network\n' +
+	'Token: MOD_UPLOAD_TOKEN (environment or .env, never as an argument).'
 
 export async function run(args, { env, log, root, fetchImpl, sleep }) {
 	const { positionals, flags } = parseArgs(args, ['api-url'])
 	const version = positionals[0] ?? (await readModVersion(root))
 	const artifacts = await collectArtifacts(root, version)
 	if (artifacts.length === 0) {
-		log.error(`Aucun JAR dans build/mod-dist/${version}/<id>/ : lancer « bun mod build » d'abord.`)
+		log.error(`No JAR in build/mod-dist/${version}/<id>/: run "bun mod build" first.`)
 		return 1
 	}
 	const apiUrl = flags['api-url']
 	if (flags['dry-run']) {
 		const remote = resolveRemote({ apiUrl, env })
-		log.info(`[dry-run] ${artifacts.length} artefact(s) ${version} vers ${remote.apiUrl} :`)
-		for (const artifact of artifacts) log.info(`  ${artifact.targetId}  ${artifact.bytes} octets`)
+		log.info(`[dry-run] ${artifacts.length} artifact(s) ${version} to ${remote.apiUrl}:`)
+		for (const artifact of artifacts) log.info(`  ${artifact.targetId}  ${artifact.bytes} bytes`)
 		return 0
 	}
 	const result = await uploadRelease({

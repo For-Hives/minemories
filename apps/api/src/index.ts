@@ -291,7 +291,7 @@ app.onError((_error, context) => {
 	return context.json({ error: 'request_failed' }, 500)
 })
 
-// Envoi des JAR du mod (outil de release, jamais un navigateur) : monté AVANT le CORS, donc sans en-têtes CORS.
+// Mod JAR uploads (release tool, never a browser): mounted BEFORE CORS, so without CORS headers.
 app.route('/downloads/upload', createModUploads({ onStored: () => modDownloads.invalidateIndex() }))
 
 app.use(
@@ -526,12 +526,12 @@ function captureName(requestedName: string | undefined, metadata: MemoryMetadata
 	const rawName =
 		requestedName && requestedName !== 'Minecraft capture'
 			? requestedName
-			: (metadata.worldName ?? metadata.serverName ?? 'Souvenir Minecraft')
+			: (metadata.worldName ?? metadata.serverName ?? 'Minecraft memory')
 	return (
 		rawName
 			.replace(/\p{Cc}/gu, '')
 			.trim()
-			.slice(0, 80) || 'Souvenir Minecraft'
+			.slice(0, 80) || 'Minecraft memory'
 	)
 }
 

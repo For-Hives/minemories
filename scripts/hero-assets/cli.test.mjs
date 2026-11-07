@@ -8,7 +8,7 @@ import { MeshoptEncoder } from 'meshoptimizer'
 import { diffOutputs, main } from './cli.mjs'
 import { syntheticGlb } from './synthetic.mjs'
 
-const NAMES = ['S0', 'S1', 'S2', 'S3', 'S4', 'personnages']
+const NAMES = ['S0', 'S1', 'S2', 'S3', 'S4', 'characters']
 
 async function workspace(t) {
 	await MeshoptEncoder.ready

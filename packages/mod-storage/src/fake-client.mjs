@@ -1,4 +1,4 @@
-// Faux client S3 en mémoire pour les tests : pas de réseau. `failOn(command)` permet de simuler une panne.
+// In-memory fake S3 client for tests: no network. `failOn(command)` simulates a failure.
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 
@@ -84,9 +84,9 @@ export function createFakeClient({ failOn } = {}) {
 		send(command) {
 			const type = command.constructor.name
 			calls.push({ type, input: command.input })
-			if (failOn?.(type, command.input)) return Promise.reject(new Error(`panne simulée sur ${type}`))
+			if (failOn?.(type, command.input)) return Promise.reject(new Error(`simulated failure on ${type}`))
 			const handler = handlers[type]
-			if (!handler) return Promise.reject(new Error(`commande non gérée : ${type}`))
+			if (!handler) return Promise.reject(new Error(`unhandled command: ${type}`))
 			try {
 				return Promise.resolve(handler(command.input))
 			} catch (error) {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
 
-// Chargement : le mineur en SVG vit dans index.html (il s'affiche avant tout JavaScript) ; ces garde-fous évitent qu'il bloque la page ou pèse plus que prévu.
+// Loading screen: the SVG miner lives in index.html (it shows before any JavaScript); these guards keep it from blocking the page or weighing more than planned.
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
 
 test('the loading screen is self-contained, labelled and cannot trap the visitor', () => {

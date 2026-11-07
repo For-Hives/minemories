@@ -38,7 +38,7 @@ final class ApiResponseBody implements HttpResponse.BodySubscriber<String> {
       if (buffer.remaining() > MAX_BYTES - received) {
         finished = true;
         subscription.cancel();
-        delegate.onError(new IOException("Réponse API trop volumineuse."));
+        delegate.onError(new IOException("API response too large."));
         return;
       }
       received += buffer.remaining();

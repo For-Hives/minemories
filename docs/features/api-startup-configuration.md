@@ -1,48 +1,48 @@
-# Configuration vérifiée au démarrage de l’API
+# Configuration checked at API startup
 
-En production, l’API vérifie sa configuration avant d’ouvrir SQLite, de migrer les tables ou
-d’écouter des requêtes. Railpack démarre explicitement avec `NODE_ENV=production`.
-En développement, utiliser `bun api:dev` avec les variables de `.env.example`
-remplacées par ses propres secrets.
+In production, the API checks its configuration before opening SQLite, migrating tables or
+listening for requests. Railpack starts it explicitly with `NODE_ENV=production`.
+In development, use `bun api:dev` with the variables from `.env.example`
+replaced by your own secrets.
 
-Dans tous les environnements, `BETTER_AUTH_SECRET` et `PAIRING_PEPPER` sont
-obligatoires, distincts et longs d’au moins trente-deux caractères après retrait
-des espaces en début et fin.
-Les valeurs `replace-with-…` de l’exemple sont refusées. Aucun secret n’est généré
-ou remplacé au démarrage ; les erreurs nomment la variable, sans en recopier la
-valeur. `PAIRING_PEPPER` ne retombe plus sur le secret d’authentification.
+In every environment, `BETTER_AUTH_SECRET` and `PAIRING_PEPPER` are
+required, distinct, and at least thirty-two characters long after trimming
+leading and trailing whitespace.
+The example's `replace-with-…` values are rejected. No secret is generated
+or replaced at startup; errors name the variable without echoing its
+value. `PAIRING_PEPPER` no longer falls back to the authentication secret.
 
-En production, les contrôles supplémentaires sont les suivants :
+In production, the additional checks are:
 
-- `BETTER_AUTH_URL` et chaque origine de `WEB_ORIGIN` sont des URL HTTPS explicites,
-  sans identifiants, query ni fragment. Les origines ne contiennent aucun chemin.
-  Elles sont normalisées pour CORS et Better Auth, notamment la casse, le port
-  HTTPS par défaut et le slash final. Aucun wildcard implicite n’est ajouté.
-- `API_PORT` est un entier de 1 à 65535, avec 3001 comme valeur par défaut.
-- `DATABASE_PATH` et `UPLOADS_PATH` sont explicites et absolus. L’exploitant doit
-  monter leurs volumes persistants : le contrôle d’un chemin ne prouve pas que
-  l’hébergeur conserve son contenu après redéploiement.
-- Le driver est `s3` par défaut ou explicitement `filesystem`. En S3, l’endpoint
-  HTTP/HTTPS sans chemin, les deux identifiants, le bucket et la région sont
-  obligatoires ; les identifiants de la fixture Garage locale sont refusés.
-  HTTP reste accepté pour Garage sur le réseau interne du déploiement.
-  En filesystem, `LOCAL_OBJECTS_PATH` doit être explicite, absolu et persistant.
-- Les adresses de `TRUSTED_PROXY_IPS`, si présentes, sont des IPv4/IPv6 exactes.
-  Cela ne vérifie pas à distance que le proxy est correctement configuré.
+- `BETTER_AUTH_URL` and every origin in `WEB_ORIGIN` are explicit HTTPS URLs,
+  without credentials, query or fragment. Origins contain no path.
+  They are normalized for CORS and Better Auth, including case, the default
+  HTTPS port and the trailing slash. No implicit wildcard is added.
+- `API_PORT` is an integer from 1 to 65535, defaulting to 3001.
+- `DATABASE_PATH` and `UPLOADS_PATH` are explicit and absolute. The operator must
+  mount their persistent volumes: checking a path does not prove that the
+  host keeps its content after a redeploy.
+- The driver is `s3` by default, or explicitly `filesystem`. With S3, the
+  HTTP/HTTPS endpoint without a path, both credentials, the bucket and the region are
+  required; the local Garage fixture credentials are rejected.
+  HTTP is still accepted for Garage on the deployment's internal network.
+  With filesystem, `LOCAL_OBJECTS_PATH` must be explicit, absolute and persistent.
+- Addresses in `TRUSTED_PROXY_IPS`, if present, are exact IPv4/IPv6 addresses.
+  This does not remotely verify that the proxy is configured correctly.
 
-Avant de redéployer, renseigner ces variables selon
-[le guide Coolify](coolify-railpack.md). Garder les secrets existants lorsqu’ils
-répondent aux contrôles : les changer invalide les sessions ou les appareils
-appairés. Si une ancienne installation utilisait le repli du pepper sur le secret
-d’authentification, définir un pepper distinct impose un nouvel appairage des
-mods. Les captures locales et les souvenirs déjà stockés sont conservés.
+Before redeploying, set these variables following
+[the Coolify guide](coolify-railpack.md). Keep existing secrets when they
+pass the checks: changing them invalidates sessions or paired
+devices. If an older installation relied on the pepper falling back to the
+authentication secret, setting a distinct pepper requires pairing the mods
+again. Local captures and already stored memories are kept.
 
-Le démarrage configuré et le refus des configurations invalides sont exercés
-dans de vrais processus Bun, avec une base temporaire et sans accès aux données
-ou secrets de production. Le contrôle de santé est `GET /healthz`. Le processus
-ferme aussi ses minuteries de maintenance lors de SIGINT/SIGTERM, attend l’arrêt
-du serveur, puis ferme SQLite ; le test vérifie sa terminaison normale.
+Configured startup and the rejection of invalid configurations are exercised
+in real Bun processes, with a temporary database and no access to production data
+or secrets. The health check is `GET /healthz`. On SIGINT/SIGTERM the process
+also closes its maintenance timers, waits for the server to stop, then closes
+SQLite; the test checks that it exits normally.
 
-Ces validations ne constituent pas un audit de l’infrastructure en production.
-L’accès direct au port API, les droits du bucket, les sauvegardes, les montages
-persistants et la rotation des secrets restent suivis dans [issue #66](https://github.com/For-Hives/minemories/issues/66).
+These validations are not an audit of the production infrastructure.
+Direct access to the API port, bucket permissions, backups, persistent
+mounts and secret rotation are still tracked in [issue #66](https://github.com/For-Hives/minemories/issues/66).

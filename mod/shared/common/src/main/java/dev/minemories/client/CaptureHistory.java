@@ -52,7 +52,7 @@ final class CaptureHistory {
   static synchronized Path save(Path directory, Instant capturedAt, String metadata, Writer writer)
       throws IOException {
     byte[] json = metadata.getBytes(StandardCharsets.UTF_8);
-    if (json.length > MAX_METADATA_BYTES) throw new IOException("Métadonnées trop volumineuses.");
+    if (json.length > MAX_METADATA_BYTES) throw new IOException("Metadata too large.");
     return saveWritten(directory, capturedAt, writer, file -> Files.write(file, json));
   }
 
@@ -68,8 +68,7 @@ final class CaptureHistory {
         writer,
         file -> {
           byte[] json = metadata.get().getBytes(StandardCharsets.UTF_8);
-          if (json.length > MAX_METADATA_BYTES)
-            throw new IOException("Métadonnées trop volumineuses.");
+          if (json.length > MAX_METADATA_BYTES) throw new IOException("Metadata too large.");
           Files.write(file, json);
         });
   }
@@ -92,7 +91,7 @@ final class CaptureHistory {
       throws IOException {
     interrupted();
     String id = "capture-" + TIMESTAMP.format(time) + "-" + UUID.randomUUID();
-    if (!ID.matcher(id).matches()) throw new IOException("Date de capture invalide.");
+    if (!ID.matcher(id).matches()) throw new IOException("Invalid capture date.");
     Path staging = Files.createTempDirectory(history, ".pending-");
     try {
       glb.write(staging.resolve("capture.glb"));
@@ -101,7 +100,7 @@ final class CaptureHistory {
       interrupted();
       if (!Files.isRegularFile(staging.resolve("capture.glb"), LinkOption.NOFOLLOW_LINKS)
           || Files.size(staging.resolve("capture.glb")) == 0) {
-        throw new IOException("Capture vide ou incomplète.");
+        throw new IOException("Empty or incomplete capture.");
       }
       Path destination = history.resolve(id);
       move(staging, destination);
@@ -145,14 +144,14 @@ final class CaptureHistory {
     Path pointer = directory.resolve(POINTER);
     if (!Files.exists(pointer, LinkOption.NOFOLLOW_LINKS)) return directory.resolve("capture.glb");
     String id = boundedText(pointer, 96);
-    if (!ID.matcher(id).matches()) throw new IOException("Référence de capture illisible.");
+    if (!ID.matcher(id).matches()) throw new IOException("Unreadable capture reference.");
     Path history = directory.resolve("history");
     requireDirectory(history);
     Path folder = history.resolve(id);
     requireDirectory(folder);
     Path file = folder.resolve("capture.glb");
     if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
-      throw new IOException("La dernière capture locale est introuvable.");
+      throw new IOException("The latest local capture cannot be found.");
     }
     return file;
   }
@@ -212,7 +211,7 @@ final class CaptureHistory {
 
   private static void requireDirectory(Path directory) throws IOException {
     if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) {
-      throw new IOException("Dossier d’historique indisponible.");
+      throw new IOException("History folder unavailable.");
     }
   }
 
@@ -233,25 +232,25 @@ final class CaptureHistory {
     try {
       return JsonParser.parseString(boundedText(sidecar, MAX_METADATA_BYTES)).getAsJsonObject();
     } catch (RuntimeException error) {
-      throw new IOException("Métadonnées de cette capture illisibles.", error);
+      throw new IOException("This capture metadata is unreadable.", error);
     }
   }
 
   private static String boundedText(Path file, int limit) throws IOException {
     if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
-      throw new IOException("Fichier de capture indisponible.");
+      throw new IOException("Capture file unavailable.");
     }
     try (var input = Files.newInputStream(file, LinkOption.NOFOLLOW_LINKS)) {
       byte[] bytes = input.readNBytes(limit + 1);
-      if (bytes.length > limit) throw new IOException("Fichier de capture trop volumineux.");
+      if (bytes.length > limit) throw new IOException("Capture file too large.");
       return StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
     }
   }
 
   static Page list(Path directory, String before, int limit) throws IOException {
-    if (limit < 1 || limit > 100) throw new IllegalArgumentException("Page trop grande.");
+    if (limit < 1 || limit > 100) throw new IllegalArgumentException("Page too large.");
     if (before != null && !ID.matcher(before).matches()) {
-      throw new IllegalArgumentException("Page invalide.");
+      throw new IllegalArgumentException("Invalid page.");
     }
     migrateLegacy(directory);
     Path history = directory.resolve("history");
@@ -288,7 +287,7 @@ final class CaptureHistory {
   }
 
   private static Entry describe(Entry entry) {
-    String world = "Monde non renseigné";
+    String world = "Unknown world";
     boolean readable = true;
     try {
       JsonObject json = metadata(entry.file());
@@ -304,7 +303,7 @@ final class CaptureHistory {
       }
     } catch (IOException error) {
       readable = false;
-      world = "Métadonnées illisibles";
+      world = "Unreadable metadata";
     }
     return new Entry(entry.id(), entry.file(), entry.capturedAt(), entry.bytes(), world, readable);
   }

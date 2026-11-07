@@ -13,7 +13,7 @@ final class StorageStatusClient {
 
   static CompletableFuture<StorageQuota> fetch(HttpClient http, String apiUrl, String token) {
     if (token == null || token.isBlank()) {
-      return CompletableFuture.failedFuture(new IOException("Galerie non connectée."));
+      return CompletableFuture.failedFuture(new IOException("Gallery not linked."));
     }
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(apiUrl + "/api/mod/status"))
@@ -28,14 +28,14 @@ final class StorageStatusClient {
                 throw new CompletionException(
                     new StatusException(
                         response.statusCode() == 401
-                            ? "Connexion expirée. Reconnecte ton compte."
-                            : "Espace indisponible. Réessaie plus tard."));
+                            ? "Session expired. Link your account again."
+                            : "Storage unavailable. Try again later."));
               }
               try {
                 return StorageQuota.parseStatus(response.body());
               } catch (RuntimeException error) {
                 throw new CompletionException(
-                    new StatusException("Cette API ne fournit pas un résumé de stockage valide."));
+                    new StatusException("This API does not return a valid storage summary."));
               }
             });
   }

@@ -1,9 +1,9 @@
 /* ==========================================================================================================================================================
-   CHARTE DE LA LANDING POUR TOUTES LES PAGES DE L'APP. Référence : docs/features/design-system.md (section « Les pages de l'app »).
-   Chargée après le kit (hero/kit.css : polices, couleurs, boutons, panneaux, formulaires) et ses jetons (hero/tokens.css). Ici : la base des pages, l'en-tête,
-   le pied de page, les boutons de l'app (.mm-button porte aussi .mc-btn), et les blocs partagés par plusieurs pages (contenu, cartes, notes, chargement).
-   Deux voix : la police du jeu (--f-ui, --f-title) pour titres, étiquettes, boutons et navigation ; la police de lecture (--ds-f-text) pour le texte courant,
-   les champs et les données. Coréen et japonais (html.mm-cjk) : Unifont partout, comme sur la landing.
+   THE LANDING DESIGN SYSTEM FOR EVERY APP PAGE. Reference: docs/features/design-system.md (app pages section).
+   Loaded after the kit (hero/kit.css: fonts, colours, buttons, panels, forms) and its tokens (hero/tokens.css). Here: the page base, the header,
+   the footer, the app's buttons (.mm-button also carries .mc-btn), and the blocks shared by several pages (content, cards, notes, loading).
+   Two voices: the game font (--f-ui, --f-title) for titles, labels, buttons and navigation; the reading font (--ds-f-text) for running text,
+   fields and data. Korean and Japanese (html.mm-cjk): Unifont everywhere, as on the landing.
    ========================================================================================================================================================== */
 
 /* --- 1. Base ------------------------------------------------------------------------------------------------------------------------------------------ */

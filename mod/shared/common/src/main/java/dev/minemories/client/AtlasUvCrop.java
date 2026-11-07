@@ -16,7 +16,7 @@ record AtlasUvCrop(int x, int y, int width, int height, int atlasWidth, int atla
       maxV = Math.max(maxV, uv[i + 1]);
     }
     if (minU < 0 || minV < 0 || maxU > 1 || maxV > 1)
-      throw new IOException("UV du renderer hors de l’atlas.");
+      throw new IOException("Renderer UV outside the atlas.");
     // Include neighbouring texels so filtering at the used UV boundary still samples the atlas.
     int x = (int) Math.max(0L, (long) Math.floor((double) minU * atlasWidth) - 1);
     int y = (int) Math.max(0L, (long) Math.floor((double) minV * atlasHeight) - 1);

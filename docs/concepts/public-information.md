@@ -1,94 +1,94 @@
-# Information destinée aux joueurs
+# Information for players
 
-## Sources et périmètre
+## Sources and scope
 
-Les pages `/concept`, `/how-it-works`, `/installation` et `/faq` reprennent le besoin de `BESOIN.md`, sections 2 et 3 : garder les lieux construits ensemble, réduire les frictions de relance et rendre les souvenirs consultables. Les ambitions du document initial ne sont pas des fonctions livrées. Les faits actuels sont recoupés avec `README.md`, `docs/features/loader-support.md`, les commandes du mod et les panneaux de galerie/partage.
+The `/concept`, `/how-it-works`, `/installation` and `/faq` pages build on the need described in `VISION.md`, sections 2 and 3: keep the places built together, reduce the friction of coming back, and make memories viewable. The ambitions of the initial document are not shipped features. Current facts are cross-checked against `README.md`, `docs/features/loader-support.md`, the mod commands and the gallery/sharing panels.
 
-Le contenu est en français et reprend les libellés anglais des boutons existants. La page d’installation possède désormais un guide interactif : système et launcher, prénom facultatif, étapes mémorisées localement, navigation libre et illustration SVG animée avec réduction des animations. Les guides sont publics, accessibles depuis toutes les pages, y compris sur mobile.
+The content was written in French and reuses the English labels of the existing buttons. The installation page now has an interactive guide: system and launcher, optional first name, steps remembered locally, free navigation and an animated SVG illustration that honours reduced motion. The guides are public and reachable from every page, including on mobile.
 
-## Personas de travail et revue de clarté
+## Working personas and clarity review
 
-Ces personnages sont des hypothèses de conception, pas des entretiens utilisateurs. La revue ci-dessous vérifie que chaque question trouve une réponse dans le contenu ; elle ne remplace pas un test avec de vraies personnes.
+These personas are design hypotheses, not user interviews. The review below checks that each question is answered by the content; it does not replace a test with real people.
 
-| Public / persona | Situation et besoin | Question de compréhension | Réponse à trouver / parcours |
+| Audience / persona | Situation and need | Comprehension question | Answer to find / path |
 | --- | --- | --- | --- |
-| Admin serveur — Léo, 22 ans | Termine une saison à six amis ; veut conserver les lieux avant fermeture | Faut-il modifier le serveur ? Est-ce une sauvegarde ? | Installation côté client, règles du serveur, zones chargées ; Concept explique de garder la sauvegarde ; Fonctionnement mène au partage révocable |
-| Parent — Camille, 40 ans | Veut conserver le château construit avec son enfant sans le rendre public | Qui voit le fichier ? Quand est-il envoyé ? | Fonctionnement et FAQ distinguent local, galerie privée, lien transmissible ; explicitent l’AFK après appairage et les informations associées |
-| Jeune adulte — Sarah, 19 ans | Veut revoir la base de ses amis après la saison, sans réinstaller le pack | Ai-je besoin du mod ou d’un compte pour visiter ? | Concept et FAQ : une capture déjà créée se consulte par lien sans compte ni mod ; un serveur fermé ne se récupère pas directement |
-| Ado — Alex, 15 ans | Veut capturer sa construction et la montrer à ses amis | Quel fichier copier ? Où ? Que taper ? | Installation définit JAR/profil/loader, étapes numérotées ; Fonctionnement donne commandes exactes et explique CODE ; partage et données personnelles explicites |
-| Casual vanilla — Jules, 30 ans | N’a jamais installé de mod ; veut garder sa maison solo | Java ou Bedrock ? Vais-je modifier mon monde ? | Installation annonce les versions, conseille une copie, définit les termes ; FAQ explique pourquoi un profil NeoForge est requis même pour un monde vanilla |
-| Pro modder — Morgan, 27 ans | Utilise plusieurs instances ; veut vérifier la fidélité d’un pack | Quel loader/build ? Quelles limites de rendu et d’export ? | Installation donne les versions et le dossier du profil ; FAQ annonce les rendus non garantis ; Fonctionnement précise bornes de sélection, historique local et limite de taille |
+| Server admin — Léo, 22 | Ending a season with six friends; wants to keep the places before shutting down | Do I need to change the server? Is this a backup? | Client-side installation, server rules, loaded areas; Concept explains to keep the save; How it works leads to revocable sharing |
+| Parent — Camille, 40 | Wants to keep the castle built with their child without making it public | Who sees the file? When is it uploaded? | How it works and FAQ distinguish local, private gallery and forwardable link; they spell out AFK after pairing and the associated information |
+| Young adult — Sarah, 19 | Wants to revisit her friends' base after the season, without reinstalling the pack | Do I need the mod or an account to visit? | Concept and FAQ: an existing capture can be viewed through a link without an account or the mod; a closed server cannot be recovered directly |
+| Teen — Alex, 15 | Wants to capture his build and show it to his friends | Which file do I copy? Where? What do I type? | Installation defines JAR/profile/loader, numbered steps; How it works gives exact commands and explains CODE; sharing and personal data are explicit |
+| Casual vanilla — Jules, 30 | Has never installed a mod; wants to keep his solo house | Java or Bedrock? Will I modify my world? | Installation states the versions, recommends a copy, defines the terms; FAQ explains why a NeoForge profile is required even for a vanilla world |
+| Pro modder — Morgan, 27 | Uses several instances; wants to check how faithful a pack is | Which loader/build? What are the rendering and export limits? | Installation gives the versions and the profile folder; FAQ lists renders that are not guaranteed; How it works specifies selection bounds, local history and size limit |
 
-## Vérification éditoriale effectuée
+## Editorial check performed
 
-- Chaque parcours a un point d’entrée, une action et un résultat attendu (mod visible, fichier exporté, capture présente dans la galerie).
-- Les mots launcher, profil/instance, loader, JAR, GLB et appairage sont expliqués à leur première utilisation dans les guides concernés.
-- Les fonctions actuelles sont séparées du timelapse, de l’import ZIP, des autres loaders, de l’impression et des anciens scénarios de prix.
-- La consultation sans installation est distinguée de la création nécessitant Minecraft compatible.
-- Aucune promesse de compatibilité universelle ou d’hébergement permanent ; confidentialité et envoi AFK automatique sont explicites.
-- Le bouton télécharge le JAR inclus dans le build du site ; il reste absent si le manifeste manque ou ne correspond pas à la cible. Les publications catalogue sont en préparation.
+- Each path has an entry point, an action and an expected result (mod visible, file exported, capture present in the gallery).
+- The words launcher, profile/instance, loader, JAR, GLB and pairing are explained on first use in the relevant guides.
+- Current features are kept apart from timelapse, ZIP import, other loaders, printing and old pricing scenarios.
+- Viewing without installing is distinguished from creating, which requires a compatible Minecraft.
+- No promise of universal compatibility or permanent hosting; privacy and automatic AFK uploads are explicit.
+- The button downloads the JAR included in the website build; it stays hidden if the manifest is missing or does not match the target. Catalog releases are in preparation.
 
-## Sources externes vérifiées le 10 octobre 2026
+## External sources checked on 10 October 2026
 
-- [CurseForge — Getting Started](https://support.curseforge.com/support/solutions/articles/9000218572-getting-started) : profils et loaders, application.
-- [Modrinth App — aide officielle](https://support.modrinth.com/en/collections/7804910-modrinth-app) : instances, dossiers, versions de loaders.
-- [NeoForge — guide utilisateur](https://docs.neoforged.net/user/docs/) : Java 21 et installation client.
+- [CurseForge — Getting Started](https://support.curseforge.com/support/solutions/articles/9000218572-getting-started): profiles and loaders, application.
+- [Modrinth App — official help](https://support.modrinth.com/en/collections/7804910-modrinth-app): instances, folders, loader versions.
+- [NeoForge — user guide](https://docs.neoforged.net/user/docs/): Java 21 and client installation.
 
-Les parcours Modrinth et manuel sont des instructions documentées, pas une validation en jeu de Minemories. Seul le profil CurseForge documenté dans `docs/features/loader-support.md` a été exercé.
+The Modrinth and manual paths are documented instructions, not an in-game validation of Minemories. Only the CurseForge profile documented in `docs/features/loader-support.md` has been exercised.
 
-## Validation utilisateur à réaliser
+## User validation still to do
 
-Faire lire les pages à une personne représentative de chaque public et lui demander de réaliser son parcours sans explication orale. Vérifier qu’elle sait dire : « une capture ne remplace pas une sauvegarde », « le lien peut être retransmis », « les captures AFK sont actives par défaut, et sont envoyées automatiquement seulement après connexion du compte », et retrouver le fichier exporté. Noter les hésitations et corriger le texte. Tester séparément les trois parcours d’installation avec un JAR distribué officiellement.
+Have someone representative of each audience read the pages and complete their path without verbal explanation. Check that they can say: "a capture does not replace a backup", "the link can be forwarded", "AFK captures are on by default, and are only uploaded automatically after the account is connected", and that they can find the exported file. Note hesitations and fix the text. Test the three installation paths separately with an officially distributed JAR.
 
-## Contrôles sur cette modification
+## Checks on this change
 
-- `bun format` et `git diff --check` : réussis.
-- Partie web de `bun check` : typecheck et 40 tests réussis, couverture des utilitaires à 100 % ; test d’interaction ajouté pour le parcours entre les quatre guides et les ancres d’installation.
-- Partie API de `bun check` : typecheck et 35 tests réussis.
-- `bun web:build` : réussi.
-- Validation complète après configuration du JDK 21 local et correction des dépendances de test Java : `bun run build` réussi (inclut `bun check`, le bundle web et le JAR du mod). Le test Garage réel reste ignoré sans environnement dédié ; aucune validation en jeu supplémentaire effectuée.
+- `bun format` and `git diff --check`: passed.
+- Web part of `bun check`: typecheck and 40 tests passed, 100% utility coverage; interaction test added for navigation between the four guides and the installation anchors.
+- API part of `bun check`: typecheck and 35 tests passed.
+- `bun web:build`: passed.
+- Full validation after setting up the local JDK 21 and fixing the Java test dependencies: `bun run build` passed (includes `bun check`, the web bundle and the mod JAR). The real Garage test is still skipped without a dedicated environment; no additional in-game validation was done.
 
-## Guide d’installation interactif (14 octobre 2026)
+## Interactive installation guide (14 October 2026)
 
-Le parcours par défaut utilise Minecraft Launcher et l’installateur officiel NeoForge 21.1.248. Windows, macOS et Linux disposent de chemins adaptés ; CurseForge, Modrinth App et les autres launchers utilisent le même JAR local, sans prétendre à une publication catalogue. Le premier essai exporte une petite zone via `/minemories export 16`, puis ouvre le GLB sans compte. Le lien à une galerie reste facultatif et explique les envois AFK après appairage. Les libellés des menus du mod ont été recoupés avec `MinemoriesScreen.java`.
+The default path uses the Minecraft Launcher and the official NeoForge 21.1.248 installer. Windows, macOS and Linux have tailored paths; CurseForge, Modrinth App and other launchers use the same local JAR, without claiming a catalog release. The first trial exports a small area with `/minemories export 16`, then opens the GLB without an account. Linking a gallery stays optional and explains AFK uploads after pairing. The mod menu labels were cross-checked against `MinemoriesScreen.java`.
 
-La progression est déclarative : cliquer « C’est fait » n’atteste pas de l’état du jeu. Les choix, le prénom facultatif et les étapes sont conservés uniquement dans localStorage, peuvent être effacés et ne sont pas envoyés au serveur. Le parcours reste utilisable si le stockage ou le presse-papiers sont bloqués. Les animations respectent `prefers-reduced-motion` et le choix dans le guide. Les changements d’étape placent le focus sur leur titre pour la navigation clavier.
+Progress is self-declared: clicking "Done" does not attest to the game's state. The choices, optional first name and steps are kept only in localStorage, can be cleared and are never sent to the server. The path stays usable when storage or the clipboard is blocked. Animations honour `prefers-reduced-motion` and the choice made in the guide. Step changes move focus to their heading for keyboard navigation.
 
-Le 14 octobre, l’URL publique du manifeste renvoyait un HTTP 200 avec le HTML de la SPA. La présence du bouton dans le dépôt ne prouvait donc pas la disponibilité du mod. Le front interroge désormais les releases publiques GitHub et télécharge directement le dernier JAR compatible ; aucun build Java ni JAR local n’est nécessaire à son déploiement. La sélection exclut les brouillons et les assets incompatibles ; les erreurs GitHub disposent d’un délai maximal et d’un bouton de réessai. Le déploiement du front et la vérification des URL publiques restent nécessaires.
+On 14 October, the public manifest URL returned HTTP 200 with the SPA's HTML. The button being in the repository therefore did not prove the mod was available. The front end now queries GitHub's public releases and downloads the latest compatible JAR directly; no Java build or local JAR is needed to deploy it. The selection excludes drafts and incompatible assets; GitHub errors have a maximum timeout and a retry button. Deploying the front end and checking the public URLs are still required.
 
-Le parcours Windows / Minecraft Launcher réserve dix captures légendées : version du jeu, Java 21, installateur NeoForge, dossier du profil, JAR téléchargé, dossier mods, liste Mods, menu M, export local et viewer. Les fichiers attendus et leur contenu sont décrits dans `apps/web/src/assets/tutorial/windows/README.md`. Les vraies images remplacent les zones au prochain build ; aucune requête vers une image manquante n’est faite, et une image chargée peut être agrandie. Ces zones sont propres au parcours manuel Windows.
+The Windows / Minecraft Launcher path reserves ten captioned screenshots: game version, Java 21, NeoForge installer, profile folder, downloaded JAR, mods folder, Mods list, M menu, local export and viewer. The expected files and their content are described in `apps/web/src/assets/tutorial/windows/README.md`. Real images replace the placeholders on the next build; no request is made for a missing image, and a loaded image can be enlarged. These placeholders are specific to the manual Windows path.
 
-## Connexion et inscription : saisie accompagnée
+## Sign-in and sign-up: guided input
 
-Le champ de mot de passe propose Afficher/Masquer, conserve la valeur et se masque à nouveau quand le focus quitte son groupe. La consigne de création (12 caractères minimum) reste visible ; Verr. Maj est signalé. Les erreurs serveur reçoivent le focus et le formulaire annonce son attente. Le passage connexion/inscription conserve la destination initiale.
+The password field offers Show/Hide, keeps the value and hides it again when focus leaves its group. The creation rule (12 characters minimum) stays visible; Caps Lock is flagged. Server errors receive focus and the form announces when it is waiting. Switching between sign-in and sign-up keeps the original destination.
 
-Cette amélioration répond aux hypothèses des six personas : Camille et Jules disposent d'une aide persistante pour vérifier leur saisie ; Alex bénéficie de commandes tactiles de 48 px minimum et de champs de 16 px ; Léo et Morgan conservent les attributs d'autocomplétion et le parcours clavier ; Sarah retrouve toujours l'accès aux souvenirs partagés sans compte. Les textes supplémentaires existent en français et en anglais. Aucun mot de passe n'est stocké par cette interface.
+This improvement addresses the six personas' hypotheses: Camille and Jules get persistent help to check their input; Alex gets touch targets of at least 48 px and 16 px fields; Léo and Morgan keep autocomplete attributes and the keyboard path; Sarah can still reach shared memories without an account. The additional text exists in French and English. This interface stores no password.
 
-Validation : tests React de visibilité, conservation de valeur, masquage au départ, Verr. Maj, attributs de saisie, focus des erreurs et destination après changement de mode. Contrôle navigateur Chromium et Firefox au clavier et à 390 px, avec inspection des captures desktop/mobile. Ce contrôle technique ne constitue pas un entretien utilisateur ni un essai sur un téléphone physique.
+Validation: React tests for visibility, value preservation, hiding on blur, Caps Lock, input attributes, error focus and destination after a mode change. Browser check in Chromium and Firefox with the keyboard and at 390 px, with inspection of desktop/mobile screenshots. This technical check is neither a user interview nor a trial on a physical phone.
 
-### Entrée dédiée après revue du parcours
+### Dedicated entry after the flow review
 
-Les routes connexion/inscription utilisent désormais une structure dédiée : marque, aide et langue en tête, navigation entre les deux modes, formulaire, accès à la galerie publique puis liens légaux. Le grand pied de page et le panneau décoratif avant le formulaire sont retirés de ces routes. Sur mobile, l'illustration est masquée et le bouton de connexion apparaît dans le premier écran à 390 × 844 px.
+The sign-in/sign-up routes now use a dedicated layout: brand, help and language at the top, navigation between the two modes, the form, access to the public gallery, then legal links. The large footer and the decorative panel before the form are removed from these routes. On mobile, the illustration is hidden and the sign-in button appears on the first screen at 390 × 844 px.
 
-- Camille/Jules : confidentialité par défaut près de l'action, aide disponible, formulaire lisible sans introduction décorative à franchir.
-- Alex : saisie mobile adaptée et e-mail conservé en changeant de mode ; le mot de passe n'est pas transmis dans l'état de navigation.
-- Léo/Morgan : autocomplétion et clavier conservés, double soumission bloquée pendant l'attente, destination respectée.
-- Sarah : galerie publique et liens de partage accessibles sans compte. L'ouverture d'un GLB local est un outil de développement, absent de la production.
+- Camille/Jules: privacy by default next to the action, help available, a readable form with no decorative introduction to get past.
+- Alex: mobile-friendly input and the email kept when switching mode; the password is not passed in the navigation state.
+- Léo/Morgan: autocomplete and keyboard preserved, double submission blocked while waiting, destination honoured.
+- Sarah: public gallery and share links reachable without an account. Opening a local GLB is a development tool, absent from production.
 
-L'illustration SVG existante est réutilisée, sans téléchargement de scène 3D ni animation de décor. Les interactions du formulaire et les liens d'aide/langue/légal sont testés. Chromium/Firefox ont été vérifiés à 1440 px et aux largeurs 360/390/768 px ; la conservation de l'e-mail a été exercée sur un vrai changement de route. Le contrôle de l'onglet intégré a été refusé par sa politique d'URL ; les vérifications ont été réalisées dans des navigateurs de test avant ce refus.
+The existing SVG illustration is reused, with no 3D scene download or background animation. The form interactions and the help/language/legal links are tested. Chromium/Firefox were checked at 1440 px and at 360/390/768 px widths; preserving the email was exercised on a real route change. Checking in the built-in tab was refused by its URL policy; the checks were done in test browsers before that refusal.
 
 
-### Ouverture locale réservée au développement
+### Local opening reserved for development
 
-Les sélecteurs de GLB et le glisser-déposer sont conditionnés par `import.meta.env.DEV`. Le build de production ne propose aucun chargement de fichier local dans l'en-tête, l'authentification, la galerie ou le viewer. Une visite directe de `/viewer` sans identifiant mène à `/explore`. Les captures distantes (`/viewer?memory=…`), timelapses et liens de partage conservent leur chargement existant. Les guides et le contenu public orientent vers l'appairage et l'envoi depuis Minecraft.
+The GLB pickers and drag and drop are gated by `import.meta.env.DEV`. The production build offers no local file loading in the header, authentication, gallery or viewer. Visiting `/viewer` directly without an identifier leads to `/explore`. Remote captures (`/viewer?memory=…`), timelapses and share links keep their existing loading. The guides and public content point to pairing and uploading from Minecraft.
 
-Les tests exécutent les deux modes : import local en développement ; absence des contrôles, redirection sans identifiant et rejet d'un dépôt en production, avec chargement distant toujours fonctionnel. Les exports locaux du mod et les téléchargements de sauvegarde ne sont pas supprimés.
+The tests run both modes: local import in development; in production, no controls, redirect without an identifier and rejection of a drop, with remote loading still working. The mod's local exports and backup downloads are not removed.
 
-## Guide d’installation : questions épurées et vraies captures du jeu (7 novembre 2026)
+## Installation guide: simplified questions and real game screenshots (7 November 2026)
 
-- **Questions** : la version de Minecraft et le loader n’affichent plus que leur nom (plus de liste de loaders, de version de loader ni de badge). La question du loader est toujours posée et se termine par « Je n’ai pas encore de loader de mods ».
-- **Installer le loader** n’apparaît que pour ce dernier choix. Le guide installe alors NeoForge sur 1.21.1 (le parcours Windows validé, avec ses emplacements de captures), sinon Fabric quand il est publié, sinon le premier loader de la version. Un visiteur qui a déjà un loader passe directement au téléchargement.
-- **Ranger le fichier** donne le dossier `mods` par défaut du Minecraft Launcher officiel (ou celui du profil dédié créé par le guide), avec le geste pour l’ouvrir selon le système (Windows + R, Aller au dossier, Ctrl + L).
-- **Lancer le jeu** (ancien « Vérifier en jeu ») : lancer le profil, ouvrir un monde, Échap ; le bouton Minemories est en haut à droite du menu pause (un autre coin si un mod l’occupe). L’écran Mods n’est plus cité : il n’existe pas sous Fabric sans Mod Menu.
-- **Créer un souvenir** présente les deux façons : le bouton « Take a memory » du menu M (rayon 32), ou `/minemories export 16` avec le sens de chaque partie (`export`, rayon 2–128, `selection`).
-- Les captures du menu pause, du menu M et de la commande sont de vraies captures prises par le test client Fabric 1.21.11, avec un cadre dessiné par la page sur le bouton à cliquer. Procédure de mise à jour : `apps/web/src/assets/tutorial/game/README.md` (règle rappelée dans `AGENTS.md`).
+- **Questions**: the Minecraft version and the loader now show only their name (no more loader list, loader version or badge). The loader question is always asked and ends with "I have no mod loader yet".
+- **Install the loader** only appears for that last choice. The guide then installs NeoForge on 1.21.1 (the validated Windows path, with its screenshot slots), otherwise Fabric when it is published, otherwise the version's first loader. A visitor who already has a loader goes straight to the download.
+- **Place the file** gives the default `mods` folder of the official Minecraft Launcher (or that of the dedicated profile created by the guide), with the way to open it for each system (Windows + R, Go to Folder, Ctrl + L).
+- **Launch the game** (formerly "Check in game"): launch the profile, open a world, press Esc; the Minemories button is at the top right of the pause menu (another corner if a mod already uses it). The Mods screen is no longer mentioned: it does not exist under Fabric without Mod Menu.
+- **Create a memory** presents both ways: the "Take a memory" button of the M menu (radius 32), or `/minemories export 16` with the meaning of each part (`export`, radius 2–128, `selection`).
+- The pause menu, M menu and command screenshots are real captures taken by the Fabric 1.21.11 client test, with a frame drawn by the page around the button to click. Update procedure: `apps/web/src/assets/tutorial/game/README.md` (rule restated in `AGENTS.md`).

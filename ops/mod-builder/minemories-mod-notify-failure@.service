@@ -14,7 +14,7 @@ EnvironmentFile=/etc/minemories/mod-builder.env
 Environment=HOME=/var/lib/minemories
 Nice=19
 # The `minemories` user must be allowed to read the system journal (usermod -aG systemd-journal minemories).
-ExecStart=/bin/sh -c 'journalctl -u %i -n 60 --no-pager -o cat | /usr/local/bin/bun mod notify --kind release-failure --title "Release du mod en échec (%i)" --summary "Le service %i a échoué. Fin du journal ci-dessous ; journalctl -u %i sur le serveur pour le détail." --log-stdin'
+ExecStart=/bin/sh -c 'journalctl -u %i -n 60 --no-pager -o cat | /usr/local/bin/bun mod notify --kind release-failure --title "Mod release failed (%i)" --summary "Service %i failed. End of its journal below; run journalctl -u %i on the server for details." --log-stdin'
 SuccessExitStatus=0 1
 StandardOutput=journal
 StandardError=journal

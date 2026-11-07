@@ -13,13 +13,13 @@ final class AfkSettingsScreen extends Screen {
   private EditBox idle;
   private EditBox interval;
   private EditBox radius;
-  private String status = I18n.get("minemories.ui.actif_aussi_en_pause_et_en_arriere_plan");
+  private String status = I18n.get("minemories.ui.active_while_paused_and_in_background");
   private int left;
   private int top;
   private int panelWidth;
 
   AfkSettingsScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.reglages_afk"));
+    super(Component.translatable("minemories.ui.afk_settings"));
     this.parent = parent;
   }
 
@@ -29,21 +29,16 @@ final class AfkSettingsScreen extends Screen {
     left = (width - panelWidth) / 2;
     top = Math.max(4, (height - 230) / 2);
     var options = PairingClient.afkOptions();
-    idle =
-        field(
-            I18n.get("minemories.ui.inactivite_avant_capture_minutes"), 44, options.idleMinutes());
+    idle = field(I18n.get("minemories.ui.idle_minutes"), 44, options.idleMinutes());
     interval =
-        field(
-            I18n.get("minemories.ui.intervalle_entre_captures_minutes"),
-            87,
-            options.intervalMinutes());
-    radius = field(I18n.get("minemories.ui.rayon_autour_du_joueur_blocs"), 130, options.radius());
+        field(I18n.get("minemories.ui.capture_interval_minutes"), 87, options.intervalMinutes());
+    radius = field(I18n.get("minemories.ui.player_radius_blocks"), 130, options.radius());
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.enregistrer"), ignored -> save())
+        Button.builder(Component.translatable("minemories.ui.save"), ignored -> save())
             .bounds(left + 14, top + 160, (panelWidth - 34) / 2, 20)
             .build());
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.back"), ignored -> onClose())
             .bounds(left + 20 + (panelWidth - 34) / 2, top + 160, (panelWidth - 34) / 2, 20)
             .build());
     addRenderableWidget(
@@ -62,8 +57,8 @@ final class AfkSettingsScreen extends Screen {
         "minemories.options.depth",
         Component.translatable(
             PairingClient.isFullHeightCapture()
-                ? "minemories.ui.toute_la_dimension"
-                : "minemories.ui.zones_visitees"));
+                ? "minemories.ui.full_dimension"
+                : "minemories.ui.visited_areas"));
   }
 
   private EditBox field(String label, int y, int value) {
@@ -83,9 +78,9 @@ final class AfkSettingsScreen extends Screen {
               Integer.parseInt(idle.getValue()),
               Integer.parseInt(interval.getValue()),
               Integer.parseInt(radius.getValue())));
-      status = I18n.get("minemories.ui.reglages_enregistres_plus_petit_capture_plus_legere");
+      status = I18n.get("minemories.ui.settings_saved_smaller_is_lighter");
     } catch (NumberFormatException error) {
-      status = I18n.get("minemories.ui.remplis_les_trois_champs_avec_des_nombres_entiers");
+      status = I18n.get("minemories.ui.fill_three_fields_whole_numbers");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -97,28 +92,20 @@ final class AfkSettingsScreen extends Screen {
     UiTheme.panel(graphics, left, top, panelWidth, 230);
     graphics.drawString(
         font,
-        I18n.get("minemories.ui.reglages_avances_captures_afk"),
+        I18n.get("minemories.ui.advanced_afk_capture_settings"),
         left + 14,
         top + 12,
         UiTheme.TEXT);
     graphics.drawString(
         font,
-        I18n.get("minemories.ui.inactivite_avant_capture_11440_min"),
+        I18n.get("minemories.ui.idle_before_capture_range"),
         left + 14,
         top + 31,
         UiTheme.TEXT);
     graphics.drawString(
-        font,
-        I18n.get("minemories.ui.intervalle_entre_captures_110080_min"),
-        left + 14,
-        top + 74,
-        UiTheme.TEXT);
+        font, I18n.get("minemories.ui.capture_interval_range"), left + 14, top + 74, UiTheme.TEXT);
     graphics.drawString(
-        font,
-        I18n.get("minemories.ui.rayon_autour_du_joueur_2128_blocs"),
-        left + 14,
-        top + 117,
-        UiTheme.TEXT);
+        font, I18n.get("minemories.ui.player_radius_range"), left + 14, top + 117, UiTheme.TEXT);
   }
 
   @Override

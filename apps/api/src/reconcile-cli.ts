@@ -44,7 +44,7 @@ export async function runReconciliationCli(args: string[], context: CommandConte
 	if (values.help)
 		return {
 			usage:
-				'Inventaire : --plan <nouveau fichier> [--prefix <propriétaire/>]. Application : --plan <fichier> --apply --api-stopped --backup <nouveau fichier SQLite>.',
+				'Inventory: --plan <new file> [--prefix <owner/>]. Apply: --plan <file> --apply --api-stopped --backup <new SQLite file>.',
 		}
 	const path = await realpath(context.databasePath ?? process.env.DATABASE_PATH ?? './data/minemories.sqlite')
 	const inventory = context.inventory ?? storageInventory()
@@ -65,7 +65,7 @@ export async function runReconciliationCli(args: string[], context: CommandConte
 			return {
 				mode: 'apply',
 				...report,
-				cleanup: 'Les objets seront nettoyés par la file durable au redémarrage de l’API.',
+				cleanup: 'Objects will be cleaned up by the durable queue when the API restarts.',
 			}
 		}
 		const plan = await collectReconciliationPlan(database, inventory, {
@@ -84,7 +84,7 @@ export async function executeReconciliationCli(args: string[], context: CommandC
 		return 0
 	} catch {
 		console.error(
-			'Réconciliation interrompue. Vérifie les options, les fichiers, leurs droits et l’accès au stockage. Aucun nettoyage physique n’a été exécuté ; une sauvegarde éventuellement créée reste disponible.'
+			'Reconciliation aborted. Check the options, the files, their permissions and storage access. No physical cleanup was run; any backup already created is still available.'
 		)
 		return 1
 	}

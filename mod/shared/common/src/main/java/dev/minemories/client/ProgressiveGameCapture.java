@@ -184,7 +184,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     for (var entry : chunks.entrySet()) {
       int x = (int) (entry.getKey() >> 32), z = (int) (long) entry.getKey();
       if (level.getChunkSource().getChunk(x, z, ChunkStatus.FULL, false) != entry.getValue())
-        throw new IOException("Des chunks ont changé pendant la capture AFK. Elle sera réessayée.");
+        throw new IOException("Chunks changed during the AFK capture. It will be retried.");
     }
     return true;
   }
@@ -230,7 +230,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
         throw error.getCause();
       }
       if (cell == null) return null;
-      if (!chunk(cell.x(), cell.z())) throw new IOException("Chunk déchargé pendant la capture.");
+      if (!chunk(cell.x(), cell.z())) throw new IOException("Chunk unloaded during the capture.");
       sink.element = new CaptureElement();
       var dispatcher = mc.getBlockEntityRenderDispatcher();
       dispatcher.prepare(
@@ -264,7 +264,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     Entity entity = level.getEntity(entities.get(entityIndex++));
     if (!eligible(entity)) return null;
     if (!chunk(entity.getBlockX(), entity.getBlockZ()))
-      throw new IOException("Chunk d’entité déchargé pendant la capture.");
+      throw new IOException("Entity chunk unloaded during the capture.");
     sink.element = new CaptureElement();
     ClientRuntime.captureEntity(models, mc, entity, center);
     entityCount++;
@@ -304,7 +304,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     Object received = level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
     Object previous = chunks.get(key);
     if (previous != null && previous != received)
-      throw new IOException("Chunk remplacé pendant la capture AFK.");
+      throw new IOException("Chunk replaced during the AFK capture.");
     if (received == null) return false;
     chunks.put(key, received);
     return true;
@@ -321,9 +321,9 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     int examined = 0;
     for (Entity entity : level.entitiesForRendering()) {
       if (++examined > 8192)
-        throw new IOException("Trop d’entités chargées pour cette capture AFK.");
+        throw new IOException("Too many entities loaded for this AFK capture.");
       if (!eligible(entity) || !chunk(entity.getBlockX(), entity.getBlockZ())) continue;
-      if (entities.size() == 2048) throw new IOException("Trop d’entités dans la zone AFK.");
+      if (entities.size() == 2048) throw new IOException("Too many entities in the AFK area.");
       entities.add(entity.getId());
     }
     entitiesScanned = true;

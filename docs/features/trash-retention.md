@@ -1,38 +1,38 @@
-# Délais de récupération des souvenirs
+# Memory recovery windows
 
-Une nouvelle mise en corbeille conserve le souvenir pendant trente jours de
-24 heures, soit 2 592 000 000 ms. La date de suppression et l’échéance sont
-enregistrées ensemble dans `deleted_at` et `purge_after`. Restaurer le souvenir
-efface ces deux dates ; le remettre ensuite en corbeille ouvre un nouveau délai.
+Moving a memory to the trash now keeps it for thirty 24-hour days, i.e.
+2,592,000,000 ms. The deletion date and the deadline are stored together in
+`deleted_at` and `purge_after`. Restoring the memory clears both dates; moving
+it back to the trash afterwards starts a new window.
 
-La conversion antérieure utilisait `3_600_1_000` pour une heure, soit 36 001 000 ms
-au lieu de 3 600 000 ms. Elle produisait une rétention d’environ trois cents jours.
-La migration ne raccourcit pas la période de récupération déjà accordée : pour
-chaque souvenir déjà en corbeille, elle conserve la plus tardive des deux dates
-suivantes : son ancienne échéance ou trente jours après la migration. Un souvenir
-dont l’ancienne échéance est dépassée reçoit donc au moins trente jours de grâce.
-Certains souvenirs anciens affichent encore plus de trente jours restants.
+The previous conversion used `3_600_1_000` for one hour, i.e. 36,001,000 ms
+instead of 3,600,000 ms. It produced a retention of about three hundred days.
+The migration does not shorten a recovery period already granted: for each
+memory already in the trash, it keeps the later of two dates: its old deadline
+or thirty days after the migration. A memory whose old deadline has passed
+therefore gets at least thirty days of grace. Some older memories still show
+more than thirty days remaining.
 
-La colonne et les échéances sont ajoutées dans une transaction SQLite. Un échec
-annule l’ensemble ; un redémarrage après réussite ne prolonge pas les échéances.
-Les souvenirs actifs gardent une échéance nulle. Le repli pour une ligne en
-corbeille sans échéance est `deleted_at + trente jours`.
+The column and the deadlines are added in a single SQLite transaction. A failure
+rolls everything back; a restart after success does not extend the deadlines.
+Active memories keep a null deadline. The fallback for a trashed row with no
+deadline is `deleted_at + thirty days`.
 
-`memories.listTrash` retourne `purgeAt`, utilisé par le compte à rebours du site.
-Ce champ est optionnel dans le contrat pour accepter une ancienne API ; le repli
-web est alors trente jours après `deletedAt`. Déployer l’API migrée avant le front
-permet d’afficher correctement les échéances protégées des anciennes captures.
-La purge examine les échéances au démarrage et toutes les heures. L’effacement
-physique suit [la file de suppressions durables](durable-deletions.md) et peut être
-retardé par une panne du stockage.
+`memories.listTrash` returns `purgeAt`, used by the site's countdown. This field
+is optional in the contract so an older API is still accepted; the web fallback
+is then thirty days after `deletedAt`. Deploying the migrated API before the
+front end makes the protected deadlines of old captures display correctly.
+The purge checks deadlines at startup and every hour. Physical erasure follows
+[the durable deletion queue](durable-deletions.md) and can be delayed by a
+storage outage.
 
-Le cache web du badge d’appairage conserve sa durée prévue de soixante jours de
-24 heures. Cette correction ne modifie ni les codes d’appairage de cinq minutes,
-ni les tokens des appareils.
+The web cache of the pairing badge keeps its intended duration of sixty 24-hour
+days. This fix changes neither the five-minute pairing codes nor the device
+tokens.
 
-Validation : migration d’une base ancienne persistante puis réouverture, rollback
-et reprise après erreur SQL, protection des anciennes dates, purge à l’échéance,
-restauration et nouvelle mise en corbeille, isolation propriétaire, contrat oRPC
-réel et compte à rebours avec restauration depuis la galerie. Les tests utilisent
-des durées et dates calendaires indépendantes des constantes de production.
-`bun run build`, `bun web:check` et les sept scénarios `bun run api:garage` passent.
+Validation: migration of a persistent old database then reopening, rollback and
+recovery after an SQL error, protection of old dates, purge at the deadline,
+restore and re-trash, owner isolation, the real oRPC contract and the countdown
+with restore from the gallery. Tests use durations and calendar dates that are
+independent of the production constants. `bun run build`, `bun web:check` and
+the seven `bun run api:garage` scenarios pass.

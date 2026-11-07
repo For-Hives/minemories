@@ -182,7 +182,7 @@
 			"java": "8",
 			"dir": "mod/1.16.5",
 			"priority": 4,
-			"note": "Java 8, ForgeGradle ; API très éloignée de 1.21"
+			"note": "Java 8, ForgeGradle; API very far from 1.21"
 		},
 		{
 			"id": "forge-mc1.12.2",
@@ -192,7 +192,7 @@
 			"java": "8",
 			"dir": "mod/1.12.2",
 			"priority": 4,
-			"note": "Java 8, ForgeGradle ; pas de GLB moderne, réécriture probable"
+			"note": "Java 8, ForgeGradle; no modern GLB, likely rewrite"
 		}
 	]
 }

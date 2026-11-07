@@ -109,7 +109,7 @@ function harness(env: Record<string, string | undefined> = {}, extra: Record<str
 const tempEntries = () =>
 	readdirSync(tmpdir()).filter(name => name.startsWith('minemories-mod-upload-') && !name.includes('test'))
 
-test('sans MOD_UPLOAD_TOKEN valide la route répond 404 et ne révèle rien', async () => {
+test('without a valid MOD_UPLOAD_TOKEN the route answers 404 and reveals nothing', async () => {
 	const jar = makeJar()
 	for (const token of [undefined, '', 'short-token']) {
 		const h = harness({ MOD_UPLOAD_TOKEN: token })
@@ -121,7 +121,7 @@ test('sans MOD_UPLOAD_TOKEN valide la route répond 404 et ne révèle rien', as
 	}
 })
 
-test('un jeton absent ou faux donne 401 générique sans écho du jeton, et rien n’est journalisé', async () => {
+test('a missing or wrong token yields a generic 401 without echoing the token, and nothing is logged', async () => {
 	const logged = spyOn(console, 'error').mockImplementation(() => undefined)
 	const h = harness()
 	const jar = makeJar()
@@ -138,7 +138,7 @@ test('un jeton absent ou faux donne 401 générique sans écho du jeton, et rien
 	expect(h.client.calls).toHaveLength(0)
 })
 
-test('les échecs d’authentification sont limités par adresse puis la fenêtre se rouvre', async () => {
+test('authentication failures are rate limited per address, then the window reopens', async () => {
 	const h = harness()
 	const jar = makeJar()
 	for (let i = 0; i < 10; i += 1) expect((await h.put(jar, { token: 'x'.repeat(40) })).status).toBe(401)
@@ -150,7 +150,7 @@ test('les échecs d’authentification sont limités par adresse puis la fenêtr
 	expect((await h.put(jar)).status).toBe(200)
 })
 
-test('un envoi valide écrit le JAR, latest, l’index (builtBy) et le manifeste, puis nettoie le temporaire', async () => {
+test('a valid upload writes the JAR, latest, the index (builtBy) and the manifest, then cleans up the temporary file', async () => {
 	const before = tempEntries()
 	const h = harness()
 	const jar = makeJar()
@@ -179,7 +179,7 @@ test('un envoi valide écrit le JAR, latest, l’index (builtBy) et le manifeste
 	expect(tempEntries()).toEqual(before)
 })
 
-test('renvoyer les mêmes octets est idempotent, un autre contenu donne 409 sauf ?replace=1', async () => {
+test('resending the same bytes is idempotent, different content yields 409 unless ?replace=1', async () => {
 	const h = harness()
 	const jar = makeJar()
 	await h.put(jar)
@@ -198,12 +198,12 @@ test('renvoyer les mêmes octets est idempotent, un autre contenu donne 409 sauf
 	expect((await h.index()).targets[id]?.versions[0]?.sha256).toBe(sha256Hex(other))
 })
 
-test('la rétention MOD_STORAGE_KEEP s’applique après un envoi sans toucher latest', async () => {
+test('MOD_STORAGE_KEEP retention applies after an upload without touching latest', async () => {
 	const h = harness({ MOD_STORAGE_KEEP: '2' })
 	for (const n of [1, 2, 3]) {
 		const version = `0.${n}.0`
 		const jar = makeJar([`v${n}/Main.class`])
-		// biome-ignore lint/performance/noAwaitInLoops: les versions doivent arriver dans l'ordre.
+		// biome-ignore lint/performance/noAwaitInLoops: versions must arrive in order.
 		const response = await h.put(jar, {
 			version,
 			manifest: encode(manifest({ version, builtAt: `2026-10-0${n}T00:00:00.000Z` })),
@@ -216,7 +216,7 @@ test('la rétention MOD_STORAGE_KEEP s’applique après un envoi sans toucher l
 	expect(h.client.objects.has(`latest/${id}.jar`)).toBe(true)
 })
 
-test('paramètres et en-têtes invalides sont refusés avant toute écriture', async () => {
+test('invalid parameters and headers are rejected before any write', async () => {
 	const h = harness()
 	const jar = makeJar()
 	const status = async (promise: Promise<Response> | Response) => (await promise).status
@@ -235,7 +235,7 @@ test('paramètres et en-têtes invalides sont refusés avant toute écriture', a
 	expect(h.client.calls).toHaveLength(0)
 })
 
-test('le manifeste doit correspondre à l’URL et à lui-même', async () => {
+test('the manifest must match the URL and itself', async () => {
 	const h = harness()
 	const jar = makeJar()
 	const mismatches = [
@@ -245,7 +245,7 @@ test('le manifeste doit correspondre à l’URL et à lui-même', async () => {
 		manifest({ minecraft: '1.20.1' }),
 	]
 	for (const value of mismatches) {
-		// biome-ignore lint/performance/noAwaitInLoops: quelques requêtes en série.
+		// biome-ignore lint/performance/noAwaitInLoops: a few requests in sequence.
 		const response = await h.put(jar, { manifest: encode(value) })
 		expect(response.status).toBe(422)
 		expect(await response.json()).toEqual({ error: 'manifest_mismatch' })
@@ -253,7 +253,7 @@ test('le manifeste doit correspondre à l’URL et à lui-même', async () => {
 	expect(h.client.calls).toHaveLength(0)
 })
 
-test('taille : Content-Length obligatoire, plafond configurable, longueur déclarée vérifiée', async () => {
+test('size: Content-Length required, configurable cap, declared length verified', async () => {
 	const h = harness({ MOD_UPLOAD_MAX_BYTES: '4000' })
 	const jar = makeJar()
 	const stream = (bytes: Uint8Array) =>
@@ -276,7 +276,7 @@ test('taille : Content-Length obligatoire, plafond configurable, longueur décla
 	expect(h.client.calls).toHaveLength(0)
 })
 
-test('empreinte fausse, archive invalide ou sans classe : 422 et rien n’est écrit', async () => {
+test('wrong digest, invalid archive or no class: 422 and nothing is written', async () => {
 	const before = tempEntries()
 	const h = harness()
 	const jar = makeJar()
@@ -285,7 +285,7 @@ test('empreinte fausse, archive invalide ou sans classe : 422 et rien n’est é
 	expect(await wrong.json()).toEqual({ error: 'sha256_mismatch' })
 	const text = new TextEncoder().encode('this is plainly not a jar archive')
 	for (const bytes of [text, makeJar(['fabric.mod.json'])]) {
-		// biome-ignore lint/performance/noAwaitInLoops: deux requêtes en série.
+		// biome-ignore lint/performance/noAwaitInLoops: two requests in sequence.
 		const response = await h.put(bytes)
 		expect(response.status).toBe(422)
 		expect(await response.json()).toEqual({ error: 'invalid_jar' })
@@ -294,7 +294,7 @@ test('empreinte fausse, archive invalide ou sans classe : 422 et rien n’est é
 	expect(tempEntries()).toEqual(before)
 })
 
-test('une panne de stockage donne 503 avec un événement générique, sans jeton ni détail', async () => {
+test('a storage failure yields 503 with a generic event, without token or details', async () => {
 	const logged = spyOn(console, 'error').mockImplementation(() => undefined)
 	const before = tempEntries()
 	const h = harness({}, { store: () => Promise.reject(new Error(`boom with ${TOKEN}`)) })
@@ -309,7 +309,7 @@ test('une panne de stockage donne 503 avec un événement générique, sans jeto
 	expect(tempEntries()).toEqual(before)
 })
 
-test('les mises à jour de l’index sont sérialisées et au plus deux réceptions en parallèle', async () => {
+test('index updates are serialized and at most two uploads are received in parallel', async () => {
 	let active = 0
 	let peak = 0
 	const h = harness(
@@ -351,13 +351,13 @@ test('les mises à jour de l’index sont sérialisées et au plus deux récepti
 	expect((await Promise.all(pending)).map(response => response.status)).toEqual([200, 200])
 })
 
-test('comparaison de jeton à temps constant : égale seulement pour le même texte', () => {
+test('constant-time token comparison: equal only for the same text', () => {
 	expect(tokenMatches(TOKEN, TOKEN)).toBe(true)
 	expect(tokenMatches(`${TOKEN}x`, TOKEN)).toBe(false)
 	expect(tokenMatches('', TOKEN)).toBe(false)
 })
 
-test('dans l’API réelle la route est désactivée par défaut, sans CORS, et exige le jeton', async () => {
+test('in the real API the route is disabled by default, without CORS, and requires the token', async () => {
 	const original = process.env.MOD_UPLOAD_TOKEN
 	try {
 		delete process.env.MOD_UPLOAD_TOKEN
@@ -373,7 +373,7 @@ test('dans l’API réelle la route est désactivée par défaut, sans CORS, et 
 			headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'PUT' },
 		})
 		expect(preflight.headers.get('access-control-allow-origin')).toBeNull()
-		// La lecture publique des téléchargements n'est pas affectée.
+		// Public download reads are not affected.
 		expect((await app.request('/downloads/upload')).status).toBe(404)
 	} finally {
 		if (original === undefined) delete process.env.MOD_UPLOAD_TOKEN
@@ -381,7 +381,7 @@ test('dans l’API réelle la route est désactivée par défaut, sans CORS, et 
 	}
 })
 
-test('avec un préfixe, la route écrit sous le préfixe sans toucher aux objets étrangers', async () => {
+test('with a prefix, the route writes under the prefix without touching foreign objects', async () => {
 	const prefix = 'public-mods/'
 	const { client, put, stored } = harness({ MOD_STORAGE_PREFIX: prefix })
 	for (const key of ['users/a/1.glb', 'abc/tiers/x.glb', 'public-mods../x', 'index.json'])
@@ -397,6 +397,6 @@ test('avec un préfixe, la route écrit sous le préfixe sans toucher aux objets
 	expect(added).toContain(`${prefix}index.json`)
 })
 
-test('un préfixe invalide empêche de monter la route d’envoi', () => {
+test('an invalid prefix prevents mounting the upload route', () => {
 	expect(() => createModUploads({ env: () => ({ MOD_STORAGE_PREFIX: 'a/../' }) })).toThrow('MOD_STORAGE_PREFIX')
 })

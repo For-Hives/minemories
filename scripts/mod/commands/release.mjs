@@ -2,15 +2,15 @@ import { parseArgs } from '../args.mjs'
 import { runRelease } from '../release.mjs'
 
 export const name = 'release'
-export const summary = 'Pipeline complet : build prod, tests headless, stockage, publication tierce, notification'
+export const summary = 'Full pipeline: prod build, headless tests, storage, third-party publishing, notification'
 export const usage =
 	'bun mod release [--skip-tests] [--no-publish] [--dry-run] [--bump patch|minor|beta [--commit]]\n' +
 	'                [--remote [--api-url <url>] [--replace]]\n' +
-	'  --dry-run  affiche le plan et la présence des modules, sans rien construire ni envoyer\n' +
-	"  --remote   mode PC : envoie les JAR à l'API (PUT /downloads/upload) au lieu d'écrire dans S3 ; exige\n" +
-	'             MOD_UPLOAD_TOKEN (environnement ou .env) ; la publication tierce reste côté VPS\n' +
-	"  --api-url  URL de l'API (défaut MOD_API_URL, puis https://api.minemories.net)\n" +
-	'  --replace  remplace une version déjà publiée avec un autre contenu (sinon refusée)'
+	'  --dry-run  shows the plan and which modules are present, without building or uploading anything\n' +
+	'  --remote   PC mode: uploads the JARs to the API (PUT /downloads/upload) instead of writing to S3; requires\n' +
+	'             MOD_UPLOAD_TOKEN (environment or .env); third-party publishing stays on the VPS\n' +
+	'  --api-url  API URL (default MOD_API_URL, then https://api.minemories.net)\n' +
+	'  --replace  replaces an already published version with different content (refused otherwise)'
 
 export async function run(args, { config, env, log, root }) {
 	const { flags } = parseArgs(args, ['bump', 'api-url'])

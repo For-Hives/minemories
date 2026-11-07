@@ -1,7 +1,7 @@
 /**
  * Delivery of the film's GLB captures (docs/features/film-assets-pipeline.md).
  *
- * `bun run hero:assets` rebuilds S0 losslessly and ships S1..S4 (and personnages) as a byte delta against that S0, with a
+ * `bun run hero:assets` rebuilds S0 losslessly and ships S1..S4 (and characters) as a byte delta against that S0, with a
  * manifest of content-hashed files. This module is the browser side, kept pure (no DOM, no module state): it reads the
  * manifest, downloads the base once, rebuilds each stage from its delta, checks the result, and falls back to the full
  * GLB served from the raw captures folder whenever anything fails. The self-contained file imports nothing, so the

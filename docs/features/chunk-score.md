@@ -1,110 +1,110 @@
-# Score de zone, empreintes par chunk et rayon conseillé (issue #173, phase 5)
+# Zone score, per-chunk fingerprints and suggested radius (issue #173, phase 5)
 
-Objectif : savoir **quelles zones comptent** pour le joueur, sans rien envoyer et sans toucher à ses préférences. Cette
-phase ne change **ni le déclenchement AFK, ni le rayon, ni l'envoi** : elle classe les suggestions de zones et conserve
-localement ce que chaque capture a montré. Le prototype est validé sur des captures réelles et **en jeu** (essai natif du
-2 novembre 2026 : voir `glb-size.md`, « Validation en jeu »). Les changements de comportement (voir « Reste ») ne sont pas faits.
+Goal: know **which areas matter** to the player, without sending anything and without touching their preferences. This
+phase changes **neither AFK triggering, nor the radius, nor uploading**: it ranks area suggestions and keeps
+locally what each capture showed. The prototype is validated on real captures and **in game** (native trial of
+2 November 2026: see `glb-size.md`, “In-game validation”). The behavior changes (see “Remaining”) are not done.
 
-## Signaux et score (`ZoneScore`, module `core`, testé sans Minecraft)
+## Signals and score (`ZoneScore`, `core` module, tested without Minecraft)
 
-Score d'un chunk 16 × 16 dans [0, 1] : moyenne pondérée de signaux saturés (`min(1, ln(1+x)/ln(1+plafond))`, linéaire
-pour une proportion). **Un signal inconnu est écarté et les poids restants renormalisés**, jamais compté comme zéro.
+Score of a 16 × 16 chunk in [0, 1]: weighted average of saturated signals (`min(1, ln(1+x)/ln(1+cap))`, linear
+for a proportion). **An unknown signal is dropped and the remaining weights are renormalized**, never counted as zero.
 
-| Signal | Poids | Plafond | Source | État |
+| Signal | Weight | Cap | Source | Status |
 | --- | ---: | ---: | --- | --- |
-| Temps actif de la zone | 0,30 | 2 h | `VisitedZones` (existant) | utilisé |
-| Modifications du joueur (pose/casse) | 0,25 | 64 | aucun point d'entrée client sans mixin | **non implémenté** (inconnu) |
-| Part de blocs construits (planches, briques, verre, laine…) | 0,20 | 30 % | quads de la capture, `NaturalBlocks` | utilisé |
-| Blocs-entités (coffres, lits, fours, panneaux) | 0,15 | 8 | quads de la catégorie `block_entities` ÷ 24 | utilisé (approximatif) |
-| Lumières posées | 0,05 | 16 | lumières de la capture | utilisé, peu discriminant |
-| `InhabitedTime` du chunk | 0,10 | 72 000 ticks | `ChunkAccess.getInhabitedTime()` existe en 1.21.1 (vérifié par `javap`) | **non utilisé** : valeur côté client non vérifiée, prévue comme bonus facultatif |
+| Active time in the area | 0.30 | 2 h | `VisitedZones` (existing) | used |
+| Player edits (place/break) | 0.25 | 64 | no client entry point without a mixin | **not implemented** (unknown) |
+| Share of built blocks (planks, bricks, glass, wool…) | 0.20 | 30% | capture quads, `NaturalBlocks` | used |
+| Block entities (chests, beds, furnaces, signs) | 0.15 | 8 | quads in the `block_entities` category ÷ 24 | used (approximate) |
+| Placed lights | 0.05 | 16 | capture lights | used, weakly discriminating |
+| Chunk `InhabitedTime` | 0.10 | 72,000 ticks | `ChunkAccess.getInhabitedTime()` exists in 1.21.1 (checked with `javap`) | **not used**: client-side value unverified, planned as an optional bonus |
 
-Zone de 64 blocs (4 × 4 chunks décrits par les captures) : `0,6 × meilleur chunk + 0,4 × moyenne`. Sans capture, seul le
-temps compte. **Rayon conseillé** : 16 à 64 par pas de 16 selon le score ; affiché dans la suggestion, jamais appliqué.
+64-block area (4 × 4 chunks described by captures): `0.6 × best chunk + 0.4 × average`. Without a capture, only
+time counts. **Suggested radius**: 16 to 64 in steps of 16 depending on the score; shown in the suggestion, never applied.
 
-## Stockage local (`ZoneInsights`)
+## Local storage (`ZoneInsights`)
 
-Fichier `*.insights` à côté de l'historique des zones (mêmes règles de lecture défensive et de borne : 10 000 chunks, 2 Mio) :
-part de blocs construits, nombre de blocs-entités, lumières et empreinte par chunk **absolu**. Il n'est lu et écrit que
-dans le monde persistant du joueur ; il ne sort jamais de l'appareil (ni avant ni après l'appairage), n'entre jamais dans
-le GLB ni dans les métadonnées envoyées, et la désactivation des diagnostics, l'AFK désactivé ou tout autre réglage
-explicite ne sont pas lus ni modifiés. Les captures lancées manuellement et AFK l'alimentent de la même façon.
+An `*.insights` file next to the area history (same defensive reading and bounding rules: 10,000 chunks, 2 MiB):
+share of built blocks, number of block entities, lights and fingerprint per **absolute** chunk. It is only read and written
+in the player's persistent world; it never leaves the device (neither before nor after pairing), never goes into
+the GLB or the uploaded metadata, and the diagnostics opt-out, disabled AFK or any other explicit
+setting are neither read nor modified. Manually triggered and AFK captures feed it the same way.
 
-## Empreinte par chunk (`ChunkStats`)
+## Per-chunk fingerprint (`ChunkStats`)
 
-Pour reconnaître les chunks **inchangés** entre deux captures. Indépendante de l'origine de capture et de l'ordre des
-quads : somme de hachages de forme (matériau + arêtes relatives) et moments d'ordre 1 et 2 des centres de quads,
-**décalés en coordonnées absolues** une fois l'origine connue ; les entités (mobiles) sont exclues. C'est un détecteur de
-changement, pas une preuve (deux blocs échangés de façon symétrique ne se voient pas). Le client journalise
-`total / changed / new` après chaque capture ; **aucune capture n'est encore évitée** sur cette base : décider de ne pas
-recapturer un chunk change le comportement du mod et demande une validation en jeu (voir « Reste »).
+Used to recognize **unchanged** chunks between two captures. Independent of the capture origin and of quad
+order: a sum of shape hashes (material + relative edges) and first- and second-order moments of quad centers,
+**shifted to absolute coordinates** once the origin is known; entities (mobile) are excluded. It is a change
+detector, not a proof (two blocks swapped symmetrically go unnoticed). The client logs
+`total / changed / new` after each capture; **no capture is skipped yet** on this basis: deciding not to
+recapture a chunk changes the mod's behavior and needs in-game validation (see “Remaining”).
 
-## Validation sur données réelles (hors jeu)
+## Validation on real data (outside the game)
 
-Les 42 captures lisibles de l'historique local (46 dossiers ; 4 d'un autre format non lus), rejouées par le vrai
-writer avec les catégories déduites des noms de matériaux :
+The 42 readable captures from the local history (46 folders; 4 in another format not read), replayed through the real
+writer with categories inferred from material names:
 
-- Le score sépare nettement constructions et nature : une capture dont 66 % des quads sont construits (832 quads de
-  blocs-entités) atteint 0,88 sur son meilleur chunk ; les neuf captures dont moins de 0,5 % des quads sont construits restent
-  entre 0,00 et 0,29 (meilleur chunk). Les captures les mieux notées (≥ 0,85) sont toutes des sites où des blocs-entités et
-  des blocs construits sont présents.
-- Les lumières saturent presque toujours (128 = limite du writer, nombreuses sources naturelles en grotte) : elles
-  restent à poids 0,05.
-- Carte de chaleur d'une capture (chunk à 1,00 contenant la structure visible) superposée à une vue de dessus Blender :
-  cohérente à l'œil, mais le rendu de dessus est plat (sable) et ne permet pas une comparaison fine.
-- Empreintes : sur deux captures de même portée prises à deux minutes d'intervalle avec des origines décalées d'un
-  bloc, **106 chunks sur 134 (79 %) sont reconnus identiques** ; les autres paires comparées ont des portées différentes
-  (profondeur, origines différentes) et diffèrent presque partout, comme attendu.
+- The score clearly separates builds from nature: a capture where 66% of quads are built (832
+  block-entity quads) reaches 0.88 on its best chunk; the nine captures with less than 0.5% built quads stay
+  between 0.00 and 0.29 (best chunk). The highest-scoring captures (≥ 0.85) are all sites where block entities and
+  built blocks are present.
+- Lights almost always saturate (128 = writer limit, many natural sources in caves): they
+  stay at weight 0.05.
+- Heat map of one capture (chunk at 1.00 containing the visible structure) overlaid on a top-down Blender view:
+  consistent to the eye, but the top-down render is flat (sand) and does not allow a fine comparison.
+- Fingerprints: on two captures of the same range taken two minutes apart with origins offset by one
+  block, **106 chunks out of 134 (79%) are recognized as identical**; the other compared pairs have different ranges
+  (depth, different origins) and differ almost everywhere, as expected.
 
-## Validation en jeu
+## In-game validation
 
-Essai natif NeoForge 1.21.1 sur profil isolé : `*.insights` écrit et relu, journal `Chunks seen by this capture`, et sur deux
-captures AFK de même portée séparées par la modification de deux blocs : `changed=2, new=0` sur 9 chunks. L'AFK désactivé est
-respecté (aucune capture en 600 images) et rien n'est envoyé sans appairage.
+Native NeoForge 1.21.1 trial on an isolated profile: `*.insights` written and read back, `Chunks seen by this capture` log, and on two
+same-range AFK captures separated by editing two blocks: `changed=2, new=0` over 9 chunks. Disabled AFK is
+respected (no capture in 600 frames) and nothing is sent without pairing.
 
-## Comportements (suite de la phase 5)
+## Behaviors (phase 5 follow-up)
 
-Validés en jeu (voir plus bas), tous **locaux** : aucun envoi supplémentaire et aucune lecture de réglage nouveau hors
+Validated in game (see below), all **local**: no extra upload and no new setting read besides
 `captureRadius`.
 
-- **Rayon adaptatif de l'AFK.** Si le joueur n'a **jamais enregistré** de rayon (clé `captureRadius` absente de
-  `minemories.properties`), l'AFK utilise le rayon conseillé de la zone (16, 32, 48 ou 64 selon le score) **une fois que des
-  captures ont décrit cette zone** ; sinon, et dès qu'un rayon est enregistré (l'écran AFK l'écrit), le réglage est utilisé tel quel. Le
-  contexte AFK (`CaptureSettings`) n'est pas modifié : seule la capture reçoit le rayon choisi, le journal indique
-  `radius=…, stored=…` et le score.
-- **Envoi évité pour une capture sans rien de nouveau.** Une capture AFK dont **aucun chunk n'a changé, aucun n'est nouveau
-  et où le nombre de quads de créatures n'a pas bougé** reste enregistrée localement mais n'est pas téléversée
-  (`upload skipped`). Les créatures entrent donc dans la décision par leur nombre de quads par chunk, pas par l'empreinte :
-  un monde où des créatures se déplacent n'est jamais écarté. Un ancien fichier `*.insights` (sans ces comptes) compte comme
-  « créatures déplacées » : rien n'est écarté sur une supposition. `/minemories upload` et les captures manuelles ne sont pas
-  concernés ; sans appairage, rien n'est envoyé de toute façon.
-- **Modifications du joueur.** Aucun point d'entrée client commun aux loaders (pose et casse sont des événements propres à chaque
-  loader ou des mixins), donc la phase s'appuie sur le signal mesurable : le **nombre de captures qui ont trouvé le chunk
-  différent** de la précédente (compteur `changes`, jusqu'à 1000), compté comme 16 modifications par changement observé
-  (plafond du score à 64). Un chunk jamais vu changer reste « inconnu », pas « jamais modifié ».
-- **`InhabitedTime`.** `ChunkAccess.getInhabitedTime()` est lu **dans le serveur intégré** (thread serveur, chunks que la capture
-  vient de décrire), uniquement en solo ; sur un serveur distant le signal reste inconnu. API vanilla commune aux loaders,
-  validée en jeu sur NeoForge seulement.
+- **Adaptive AFK radius.** If the player has **never saved** a radius (`captureRadius` key absent from
+  `minemories.properties`), AFK uses the area's suggested radius (16, 32, 48 or 64 depending on the score) **once
+  captures have described that area**; otherwise, and as soon as a radius is saved (the AFK screen writes it), the setting is used as is. The
+  AFK context (`CaptureSettings`) is not modified: only the capture receives the chosen radius, and the log shows
+  `radius=…, stored=…` and the score.
+- **Upload skipped for a capture with nothing new.** An AFK capture where **no chunk changed, none is new
+  and the number of creature quads has not moved** stays saved locally but is not uploaded
+  (`upload skipped`). Creatures therefore enter the decision through their quad count per chunk, not through the fingerprint:
+  a world where creatures move around is never skipped. An old `*.insights` file (without these counts) counts as
+  “creatures moved”: nothing is skipped on an assumption. `/minemories upload` and manual captures are not
+  affected; without pairing, nothing is sent anyway.
+- **Player edits.** There is no client entry point shared by the loaders (placing and breaking are loader-specific
+  events or mixins), so the phase relies on the measurable signal: the **number of captures that found the chunk
+  different** from the previous one (`changes` counter, up to 1000), counted as 16 edits per observed change
+  (score cap at 64). A chunk never seen changing stays “unknown”, not “never edited”.
+- **`InhabitedTime`.** `ChunkAccess.getInhabitedTime()` is read **in the integrated server** (server thread, chunks the capture
+  has just described), in single player only; on a remote server the signal stays unknown. A vanilla API shared by the loaders,
+  validated in game on NeoForge only.
 
-### Validation en jeu des comportements (2 novembre 2026)
+### In-game validation of the behaviors (2 November 2026)
 
-Même méthode que `glb-size.md` (NeoForge 21.1.248, profil isolé, JAR `minemories-0.30.2-beta.1.jar` SHA-256
-`2ecec8eb2697d532d674fcf13324ead29b8fea41e365bc221e5a59efebcac131`, pilote QA hors JAR, serveur HTTP local qui compte les requêtes) :
+Same method as `glb-size.md` (NeoForge 21.1.248, isolated profile, JAR `minemories-0.30.2-beta.1.jar` SHA-256
+`2ecec8eb2697d532d674fcf13324ead29b8fea41e365bc221e5a59efebcac131`, QA driver outside the JAR, local HTTP server counting requests):
 
-| Contrôle | Résultat |
+| Check | Result |
 | --- | --- |
-| Avant appairage | 0 requête après deux captures AFK |
-| 1re capture sans rayon enregistré, zone inconnue | rayon 32 (largeur de capture 64), score 0,26 |
-| 2e capture, zone décrite, temps actif fixé à 2 h (fixture du pilote) | score 0,79 → **rayon 48** (largeur 96), 49 chunks |
-| Rayon 16 enregistré | rayon 16 utilisé tel quel (`stored=true`, largeur 32) |
-| Appairé, capture modifiée | tentative d'envoi (3 requêtes : refus 503 volontaire du serveur local, avec reprises) |
-| Capture suivante identique | `upload skipped`, **0 requête de plus**, aucun envoi en attente |
-| `InhabitedTime` | 25 chunks relevés, 4 850 à 8 692 ticks, 0 inconnu |
-| Changements | 9 chunks vus changés après modification de blocs ; 2 chunks sur 25 pour deux blocs édités entre deux captures de même portée |
-| AFK désactivé | aucune capture en 600 images, historique inchangé |
+| Before pairing | 0 requests after two AFK captures |
+| 1st capture with no saved radius, unknown area | radius 32 (capture width 64), score 0.26 |
+| 2nd capture, area described, active time set to 2 h (driver fixture) | score 0.79 → **radius 48** (width 96), 49 chunks |
+| Radius 16 saved | radius 16 used as is (`stored=true`, width 32) |
+| Paired, modified capture | upload attempted (3 requests: deliberate 503 refusal from the local server, with retries) |
+| Next identical capture | `upload skipped`, **0 more requests**, no pending upload |
+| `InhabitedTime` | 25 chunks read, 4,850 to 8,692 ticks, 0 unknown |
+| Changes | 9 chunks seen changed after editing blocks; 2 chunks out of 25 for two blocks edited between two same-range captures |
+| AFK disabled | no capture in 600 frames, history unchanged |
 
-## Reste (suivi dans #173)
+## Remaining (tracked in #173)
 
-- Validation des comportements de cette phase sur Fabric et Forge (le code est commun et compile sur les trois loaders ; l'essai
-  natif ne couvre que NeoForge) et sur un serveur distant (`InhabitedTime` inconnu par construction).
-- Compter les vraies poses/casses de blocs : nécessite des événements par loader.
+- Validate this phase's behaviors on Fabric and Forge (the code is shared and compiles on all three loaders; the native
+  trial only covers NeoForge) and on a remote server (`InhabitedTime` unknown by design).
+- Count real block placements/breaks: needs per-loader events.

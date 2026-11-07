@@ -25,9 +25,9 @@ export function gametestSpec(target) {
 
 /** Why a target has no headless test (for the `skipped` message). */
 export function noGametestReason(target) {
-	if (target?.enabled === false) return 'cible désactivée'
-	if (target?.loader === 'quilt') return 'Quilt n’a pas de projet Gradle (le JAR Fabric est essayé à la main)'
-	return `pas de test client automatique pour Minecraft ${target?.minecraft} (validation manuelle en jeu)`
+	if (target?.enabled === false) return 'target disabled'
+	if (target?.loader === 'quilt') return 'Quilt has no Gradle project (the Fabric JAR is tried by hand)'
+	return `no automated client test for Minecraft ${target?.minecraft} (manual in-game validation)`
 }
 
 /** Gradle root of a target (`dir`, default `mod/1.21.1`), relative to the repository root. */

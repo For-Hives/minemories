@@ -147,7 +147,7 @@ class CaptureHistoryTest {
     assertFalse(CaptureHistory.metadata(file).has("worldName"));
     save(TIME.plusSeconds(5), "new", "New world");
     var legacy = CaptureHistory.list(directory, null, 4).entries().getLast();
-    assertEquals("Monde non renseigné", legacy.world());
+    assertEquals("Unknown world", legacy.world());
     assertFalse(CaptureHistory.metadata(legacy.file()).has("worldName"));
   }
 
@@ -179,7 +179,7 @@ class CaptureHistoryTest {
     Files.writeString(file.resolveSibling("capture.json"), "[1]");
     var entry = CaptureHistory.list(directory, null, 4).entries().getFirst();
     assertFalse(entry.readable());
-    assertEquals("Métadonnées illisibles", entry.world());
+    assertEquals("Unreadable metadata", entry.world());
     assertThrows(IOException.class, () -> CaptureHistory.metadata(file));
     Files.write(file.resolveSibling("capture.json"), new byte[] {(byte) 0xc3, 0x28});
     assertThrows(IOException.class, () -> CaptureHistory.metadata(file));

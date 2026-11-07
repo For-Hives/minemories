@@ -1,39 +1,39 @@
 /* ==========================================================================================================================================================
-   CHARTE GRAPHIQUE MINEMORIES : jetons (source unique). Référence : docs/features/design-system.md
-   Les couleurs, matières et le pixel du jeu (--gp, --night, --text, --copper, --ember...) sont ceux du kit (film.css :root) : ils ne sont pas redéfinis ici.
-   Ce fichier ajoute ce qui manquait au kit : l'échelle typographique, l'espacement, les cibles, les durées et courbes de mouvement, le focus, la mesure du texte.
-   Règle : un composant n'écrit jamais une taille, une durée ou une distance en dur ; il lit un jeton --ds-*.
+   MINEMORIES DESIGN SYSTEM: tokens (single source). Reference: docs/features/design-system.md
+   The game's colours, materials and pixel (--gp, --night, --text, --copper, --ember...) come from the kit (film.css :root) and are not redefined here.
+   This file adds what the kit lacked: the type scale, spacing, targets, motion durations and curves, focus, and text measure.
+   Rule: a component never hard-codes a size, duration or distance; it reads a --ds-* token.
    ========================================================================================================================================================== */
 
 :root {
-	/* Typographie : la police du jeu est un pixel de 8 texels, donc des tailles multiples de 8 px (16, 24, 32, 40) restent nettes. Quatre marches, rien au-dessus de 40 px
-	   hors du film. Interligne : 1,5 pour le texte, 1,25 à 1,2 pour les titres. Corps : 16 px partout (le 24 px du bureau est retiré). */
-	--ds-fs-xs: 16px;      /* étiquettes, méta, pied de page, boutons */
+	/* Type: the game font is an 8-texel pixel font, so sizes in multiples of 8 px (16, 24, 32, 40) stay crisp. Four steps, nothing above 40 px
+	   outside the film. Line height: 1.5 for text, 1.25 to 1.2 for titles. Body: 16 px everywhere (the 24 px desktop size is retired). */
+	--ds-fs-xs: 16px;      /* labels, meta, footer, buttons */
 	--ds-lh-xs: 24px;
-	--ds-fs-md: 16px;      /* corps du texte (une seule taille de lecture) */
+	--ds-fs-md: 16px;      /* body text (a single reading size) */
 	--ds-lh-md: 24px;
-	--ds-fs-lead: 16px;    /* chapeau : 16 px sur petit écran, 24 px à partir de 1 000 px (hero seulement) */
+	--ds-fs-lead: 16px;    /* lead: 16 px on small screens, 24 px from 1,000 px (hero only) */
 	--ds-lh-lead: 24px;
-	--ds-fs-h3: 24px;      /* titre de carte, d'étape */
+	--ds-fs-h3: 24px;      /* card and step title */
 	--ds-lh-h3: 32px;
-	--ds-fs-h2: 32px;      /* titre de section */
+	--ds-fs-h2: 32px;      /* section title */
 	--ds-lh-h2: 40px;
-	--ds-fs-h1: 32px;      /* titre du hero : 32 px, 40 px à partir de 640 px */
+	--ds-fs-h1: 32px;      /* hero title: 32 px, 40 px from 640 px */
 	--ds-lh-h1: 40px;
-	--ds-measure: 58ch;    /* longueur de ligne : le « ch » de la police du jeu vaut 12 px à 16 px, soit environ 58 caractères */
+	--ds-measure: 58ch;    /* line length: the game font's "ch" is 12 px at 16 px, so about 58 characters */
 
-	/* Police de lecture « moderne » : le texte courant (chapeau, paragraphes, FAQ, pied de page) est en sans-serif (Atkinson Hyperlegible Next, déjà hébergée) ; la police du jeu
-	   garde les titres, les boutons et le HUD. Un seul jeton pour changer de police de lecture. Le coréen et le japonais restent en Unifont (pas de glyphes CJK en Atkinson). */
+	/* "Modern" reading font: running text (lead, paragraphs, FAQ, footer) is sans-serif (Atkinson Hyperlegible Next, already self-hosted); the game font
+	   keeps titles, buttons and the HUD. One token switches the reading font. Korean and Japanese stay in Unifont (Atkinson has no CJK glyphs). */
 	--ds-f-text: var(--f-legible);
-	--ds-rd-fs: 18px;    /* paragraphes de section, chapeau de page */
+	--ds-rd-fs: 18px;    /* section paragraphs, page lead */
 	--ds-rd-lh: 1.6;
-	--ds-rd-fs-lg: 18px; /* chapeau de page (20 px dès 1 000 px, voir plus bas) */
-	--ds-rd-fs-sm: 16px; /* cartes, FAQ, listes, pied de page */
-	--ds-rd-fs-label: 13px;   /* étiquette en capitales */
-	--ds-rd-fs-q: 18px;       /* question de FAQ */
+	--ds-rd-fs-lg: 18px; /* page lead (20 px from 1,000 px, see below) */
+	--ds-rd-fs-sm: 16px; /* cards, FAQ, lists, footer */
+	--ds-rd-fs-label: 13px;   /* uppercase label */
+	--ds-rd-fs-q: 18px;       /* FAQ question */
 	--ds-rd-lh-sm: 1.5;
 
-	/* Espacement (pas de 4 px) */
+	/* Spacing (4 px steps) */
 	--ds-sp-1: 4px;
 	--ds-sp-2: 8px;
 	--ds-sp-3: 12px;
@@ -42,39 +42,39 @@
 	--ds-sp-6: 32px;
 	--ds-sp-7: 48px;
 	--ds-sp-8: 64px;
-	--ds-section-y: var(--ds-sp-6);  /* respiration verticale d'une section : 32 px, 40 px à partir de 640 px (64 / 80 px entre deux sections) */
-	--ds-gap: var(--ds-sp-5);        /* entre le titre d'une section et son contenu, et entre deux blocs : 24 px */
+	--ds-section-y: var(--ds-sp-6);  /* vertical breathing room of a section: 32 px, 40 px from 640 px (64 / 80 px between two sections) */
+	--ds-gap: var(--ds-sp-5);        /* between a section title and its content, and between two blocks: 24 px */
 
-	/* Cibles et pixel : tout ce qui se touche fait au moins 44 px de haut */
+	/* Targets and pixel: anything you can touch is at least 44 px tall */
 	--ds-hit: 44px;
-	--ds-px: var(--gp);              /* l'épaisseur de bordure « pixel » du jeu : 2 px */
+	--ds-px: var(--gp);              /* the game's "pixel" border thickness: 2 px */
 
-	/* Ombres du texte (une ombre = un texel de la taille du texte) et du relief des panneaux */
+	/* Text shadows (one shadow = one texel at the text size) and panel bevel */
 	--ds-text-shadow-1: 2px 2px 0 var(--text-shadow);   /* 16 px */
 	--ds-text-shadow-2: 2px 2px 0 var(--text-shadow);   /* 24 px */
 	--ds-text-shadow-3: 3px 3px 0 var(--text-shadow);   /* 32 px */
 	--ds-text-shadow-4: 4px 4px 0 var(--text-shadow);   /* 40 px */
-	--ds-panel-bevel: inset 4px 4px 0 #3a322b, inset -4px -4px 0 #0f0c0a;  /* relief des cartes « interface Minecraft » */
-	/* Contour de 2 px aux coins coupés, comme les panneaux du kit (--mc-notch) : quatre ombres décalées, pas un anneau carré */
+	--ds-panel-bevel: inset 4px 4px 0 #3a322b, inset -4px -4px 0 #0f0c0a;  /* bevel of the "Minecraft UI" cards */
+	/* 2 px outline with cut corners, like the kit's panels (--mc-notch): four offset shadows, not a square ring */
 	--ds-notch: 0 -2px 0 0 var(--outline), 0 2px 0 0 var(--outline), -2px 0 0 0 var(--outline), 2px 0 0 0 var(--outline);
 	--ds-notch-hover: 0 -2px 0 0 var(--hover), 0 2px 0 0 var(--hover), -2px 0 0 0 var(--hover), 2px 0 0 0 var(--hover);
 	--ds-notch-tip: 0 -2px 0 0 var(--tip-bg), 0 2px 0 0 var(--tip-bg), -2px 0 0 0 var(--tip-bg), 2px 0 0 0 var(--tip-bg);
 
-	/* Focus : un anneau clair de 2 px, décalé de 2 px, sur tout ce qui se commande */
+	/* Focus: a light 2 px ring, offset by 2 px, on every control */
 	--ds-focus: var(--ds-px) solid var(--hover);
 	--ds-focus-offset: var(--ds-px);
 
-	/* Mouvement : trois durées, deux courbes, une distance d'entrée. Tout est coupé par prefers-reduced-motion et par l'option « Mouvement réduit ». */
-	--ds-dur-1: 120ms;               /* survol, pression, focus */
-	--ds-dur-2: 200ms;               /* changement d'état (ouverture, couleur) */
-	--ds-dur-3: 360ms;               /* entrée d'un bloc au défilement, ouverture d'un panneau */
-	--ds-dur-4: 560ms;               /* entrée du hero au chargement (une seule fois) */
-	--ds-ease: cubic-bezier(0.2, 0.8, 0.2, 1);        /* arrivée douce */
-	--ds-ease-std: cubic-bezier(0.4, 0, 0.2, 1);      /* aller-retour */
-	--ds-ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* petit rebond (6 %) pour les pastilles, icônes et numéros : jamais sur un bloc de texte */
-	--ds-lift: 2px;                  /* soulèvement d'un bouton au survol */
-	--ds-reveal-y: 12px;             /* décalage d'entrée : court, sans saut de mise en page (transform et opacité seulement) */
-	--ds-stagger: 60ms;              /* décalage entre frères qui entrent ensemble */
+	/* Motion: four durations, three curves, one entry distance. All of it is switched off by prefers-reduced-motion and by the "Reduced motion" option. */
+	--ds-dur-1: 120ms;               /* hover, press, focus */
+	--ds-dur-2: 200ms;               /* state change (opening, colour) */
+	--ds-dur-3: 360ms;               /* block entering on scroll, panel opening */
+	--ds-dur-4: 560ms;               /* hero entrance on load (once) */
+	--ds-ease: cubic-bezier(0.2, 0.8, 0.2, 1);        /* soft arrival */
+	--ds-ease-std: cubic-bezier(0.4, 0, 0.2, 1);      /* back and forth */
+	--ds-ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* small bounce (6%) for badges, icons and numbers: never on a block of text */
+	--ds-lift: 2px;                  /* button lift on hover */
+	--ds-reveal-y: 12px;             /* entry offset: short, no layout shift (transform and opacity only) */
+	--ds-stagger: 60ms;              /* delay between siblings entering together */
 }
 
 @media (min-width: 640px) {

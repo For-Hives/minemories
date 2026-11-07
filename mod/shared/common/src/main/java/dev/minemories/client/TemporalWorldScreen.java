@@ -17,14 +17,13 @@ final class TemporalWorldScreen extends Screen {
   private final Screen parent;
   private final String server;
   private EditBox namespace;
-  private String status =
-      I18n.get("minemories.ui.aucun_identifiant_partage_avec_un_serveur_minecraft");
+  private String status = I18n.get("minemories.ui.no_identifier_shared_with_server");
   private int left;
   private int top;
   private int panelWidth;
 
   TemporalWorldScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.monde_distant_et_timelapse"));
+    super(Component.translatable("minemories.ui.remote_world_and_timeline"));
     this.parent = parent;
     server = currentServer();
   }
@@ -48,7 +47,7 @@ final class TemporalWorldScreen extends Screen {
                 top + 118,
                 panelWidth - 28,
                 20,
-                Component.translatable("minemories.ui.identifiant_de_ce_monde_distant")));
+                Component.translatable("minemories.ui.remote_world_identifier")));
     namespace.setMaxLength(36);
     namespace.setEditable(server != null);
     if (server != null) {
@@ -57,32 +56,29 @@ final class TemporalWorldScreen extends Screen {
       } catch (RuntimeException error) {
         status = ClientRuntime.pairingError(error);
       }
-    } else
-      status =
-          I18n.get(
-              "minemories.ui.connecte_toi_a_un_serveur_les_mondes_solo_sont_identifies_automatiquement");
+    } else status = I18n.get("minemories.ui.connect_to_server_singleplayer_auto");
     int half = (panelWidth - 34) / 2;
     Button generate =
         addRenderableWidget(
             Button.builder(
-                    Component.translatable("minemories.ui.generer"),
+                    Component.translatable("minemories.ui.generate"),
                     ignored -> namespace.setValue(UUID.randomUUID().toString()))
                 .bounds(left + 14, top + 144, half, 20)
                 .build());
     Button clear =
         addRenderableWidget(
             Button.builder(
-                    Component.translatable("minemories.ui.effacer"),
+                    Component.translatable("minemories.ui.clear"),
                     ignored -> namespace.setValue(""))
                 .bounds(left + 20 + half, top + 144, half, 20)
                 .build());
     Button save =
         addRenderableWidget(
-            Button.builder(Component.translatable("minemories.ui.enregistrer"), ignored -> save())
+            Button.builder(Component.translatable("minemories.ui.save"), ignored -> save())
                 .bounds(left + 14, top + 174, half, 20)
                 .build());
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.back"), ignored -> onClose())
             .bounds(left + 20 + half, top + 174, half, 20)
             .build());
     generate.active = server != null;
@@ -92,17 +88,15 @@ final class TemporalWorldScreen extends Screen {
 
   private void save() {
     if (server == null || !Objects.equals(server, currentServer())) {
-      status =
-          I18n.get("minemories.ui.connexion_modifiee_rouvre_cet_ecran_depuis_le_monde_concerne");
+      status = I18n.get("minemories.ui.connection_changed_reopen_screen");
       return;
     }
     try {
       PairingClient.configureRemoteWorld(server, namespace.getValue());
       status =
           namespace.getValue().isBlank()
-              ? I18n.get("minemories.ui.enregistre_une_serie_distincte_par_connexion")
-              : I18n.get(
-                  "minemories.ui.identifiant_conserve_pour_ce_monde_change_le_si_sa_carte_est_remplacee");
+              ? I18n.get("minemories.ui.saved_separate_series_per_connection")
+              : I18n.get("minemories.ui.identifier_saved_for_world");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -116,22 +110,19 @@ final class TemporalWorldScreen extends Screen {
     graphics.drawString(
         font,
         font.plainSubstrByWidth(
-            server == null ? I18n.get("minemories.ui.aucun_serveur_distant") : server,
-            panelWidth - 28),
+            server == null ? I18n.get("minemories.ui.no_remote_server") : server, panelWidth - 28),
         left + 14,
         top + 30,
         UiTheme.MUTED);
     var explanation =
         font.split(
-            Component.literal(
-                I18n.get(
-                    "minemories.ui.sans_identifiant_chaque_connexion_reste_separee_pour_retrouver_la_meme_serie_apres_reconnexion_conserve_lidentifiant_de_ce_monde_change_le_si_la_carte_du_serveur_est_remplacee")),
+            Component.literal(I18n.get("minemories.ui.remote_world_identifier_hint")),
             panelWidth - 28);
     for (int i = 0; i < Math.min(5, explanation.size()); i++)
       graphics.drawString(font, explanation.get(i), left + 14, top + 48 + i * 10, UiTheme.TEXT);
     graphics.drawString(
         font,
-        I18n.get("minemories.ui.identifiant_du_monde_uuid_facultatif"),
+        I18n.get("minemories.ui.world_identifier_uuid_optional"),
         left + 14,
         top + 104,
         UiTheme.TEXT);

@@ -126,7 +126,7 @@ public final class TickDrivenCapture {
                   Integer.toHexString(PANEL_ABGR),
                   x,
                   y);
-              if (pixel != PANEL_ABGR) throw new AssertionError("Fond de l'écran non dessiné");
+              if (pixel != PANEL_ABGR) throw new AssertionError("Screen background not drawn");
             }
             LOGGER.info("MINEMORIES-GAMETEST PASSED");
             step(Step.DONE);

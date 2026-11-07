@@ -52,8 +52,8 @@ export function hasMesaSoftware(env, fs = realFs) {
 /** { missing: string[] } — `missing` names what to install, empty when the machine can run the tests. */
 export function detectPrerequisites(env, fs = realFs) {
 	const missing = []
-	if (!findOnPath('xvfb-run', env, fs)) missing.push('xvfb-run (paquet xvfb)')
-	if (!hasMesaSoftware(env, fs)) missing.push('Mesa llvmpipe (paquet libgl1-mesa-dri)')
+	if (!findOnPath('xvfb-run', env, fs)) missing.push('xvfb-run (package xvfb)')
+	if (!hasMesaSoftware(env, fs)) missing.push('Mesa llvmpipe (package libgl1-mesa-dri)')
 	return { missing }
 }
 

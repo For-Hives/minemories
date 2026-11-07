@@ -47,7 +47,7 @@ class StorageStatusViewTest {
     assertEquals(1, calls.get());
     result.complete(FIRST);
     assertNull(view.quota());
-    assertEquals("Espace : chargement…", view.label());
+    assertEquals("Storage: loading…", view.label());
     client.getFirst().run();
     assertEquals(FIRST, view.quota());
     assertEquals(FIRST.availableLabel(), view.label());
@@ -101,7 +101,7 @@ class StorageStatusViewTest {
         Runnable::run);
     closing.complete(FULL);
     assertNull(view.quota());
-    assertEquals("Galerie non connectée", view.label());
+    assertEquals("Gallery not linked", view.label());
   }
 
   @Test
@@ -115,7 +115,7 @@ class StorageStatusViewTest {
         () -> CompletableFuture.failedFuture(new IllegalStateException("Private error")),
         Runnable::run);
     assertNull(view.quota());
-    assertTrue(view.label().contains("indisponible"));
+    assertTrue(view.label().contains("unavailable"));
     assertFalse(view.label().contains("Private"));
     view.update(
         23_999,
@@ -147,9 +147,9 @@ class StorageStatusViewTest {
             CompletableFuture.failedFuture(
                 new java.util.concurrent.CompletionException(
                     new StorageStatusClient.StatusException(
-                        "Connexion expirée. Reconnecte ton compte."))),
+                        "Session expired. Link your account again."))),
         Runnable::run);
-    assertEquals("Connexion expirée. Reconnecte ton compte.", view.label());
+    assertEquals("Session expired. Link your account again.", view.label());
     assertNull(view.quota());
     view.update(
         12_000,

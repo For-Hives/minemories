@@ -1,332 +1,332 @@
-# Validation des renderers de modpacks
+# Modpack renderer validation
 
-Le périmètre ci-dessous couvre des renderers ciblés, puis des copies isolées avec
-les listes complètes de JAR des profils. La compatibilité de chaque renderer tiers
-et de chaque configuration du joueur reste à évaluer séparément.
-Les sauvegardes personnelles ne sont pas utilisées ni modifiées. Les bancs ont leurs
-propres réglages ; les essais des profils complets reproduisent aussi les réglages
-de compatibilité du pack explicitement indiqués ci-dessous.
+The scope below covers targeted renderers, then isolated copies with the
+profiles' full JAR lists. Compatibility with each third-party renderer
+and each player configuration still has to be assessed separately.
+Personal saves are neither used nor modified. The test benches have their
+own settings; the full-profile trials also reproduce the pack's compatibility
+settings explicitly listed below.
 
-Le périmètre de cette validation est Minecraft 1.21.1, avec les listes de JAR
-NeoForge des profils `mc breval` et `All the Mons - ATMons`. Le profil local
-DeceasedCraft est en Minecraft 1.20.1 / Forge 47.4.0 : il ne reçoit pas ce JAR
-NeoForge et n’est pas validé par ces essais. Les autres loaders sont suivis par
-[l’issue de portage et la matrice de loaders](loader-support.md).
+This validation covers Minecraft 1.21.1, with the NeoForge JAR lists of the
+`mc breval` and `All the Mons - ATMons` profiles. The local DeceasedCraft
+profile runs Minecraft 1.20.1 / Forge 47.4.0: it does not receive this NeoForge
+JAR and is not validated by these trials. Other loaders are tracked by
+[the porting issue and the loader matrix](loader-support.md).
 
-## UV débordants des lunettes Create
+## Overflowing UVs on the Create goggles
 
-Le journal d’un joueur a révélé un cas supplémentaire, suivi dans
-[#115](https://github.com/For-Hives/minemories/issues/115) : le renderer Curios des
-lunettes Create 6.0.10 utilise `assets/create/models/block/goggles.json`, dont deux
-faces du verre ont les UV `[11, 0, 17, 0.2]`. Elles dépassent donc le bord droit
-d’un sprite dont les coordonnées nominales vont de 0 à 16.
+A player's log revealed an additional case, tracked in
+[#115](https://github.com/For-Hives/minemories/issues/115): the Curios renderer
+for the Create 6.0.10 goggles uses `assets/create/models/block/goggles.json`, where two
+faces of the glass have UVs `[11, 0, 17, 0.2]`. They therefore go past the right edge
+of a sprite whose nominal coordinates run from 0 to 16.
 
-Sur un grand atlas, ces faces ne correspondent pas à un seul sprite. Le collecteur
-copie désormais le rectangle de pixels effectivement échantillonné, avec un texel
-de voisinage pour le filtrage, puis remappe les UV vers ce rectangle. Il conserve
-le découpage par sprite pour les autres faces et partage les crops déjà copiés.
-Il ne supprime pas la géométrie du joueur ou de l’accessoire et ne borne pas les UV
-au sprite d’origine, ce qui changerait les pixels du modèle.
+On a large atlas, these faces do not map to a single sprite. The collector
+now copies the pixel rectangle that is actually sampled, with one neighboring
+texel for filtering, then remaps the UVs to that rectangle. It keeps the
+per-sprite split for other faces and shares crops that were already copied.
+It does not remove the player's or the accessory's geometry and does not clamp the UVs
+to the original sprite, which would change the model's pixels.
 
-Les limites de pixels, PNG, textures et recherche restent inchangées. Un crop trop
-grand ou des UV hors de l’atlas restent des erreurs ; les primitives aux UV non
-finis sont écartées. Seule l’absence d’un sprite contenant les UV autorise ce
-chemin : une limite de recherche dépassée ne le déclenche pas.
+Pixel, PNG, texture and lookup limits are unchanged. A crop that is too
+large or UVs outside the atlas are still errors; primitives with non-finite UVs
+are dropped. Only the absence of a sprite containing the UVs enables this
+path: exceeding a lookup limit does not trigger it.
 
-Les tests unitaires reproduisent les coordonnées du verre et vérifient la
-conservation des positions des texels, les bords/dégénérescences et les rejets.
-Le banc isolé reproduit l’échec avec le JAR installé précédemment (SHA-256
+Unit tests reproduce the glass coordinates and check that texel positions are
+preserved, along with edges/degenerate cases and rejections.
+The isolated bench reproduces the failure with the previously installed JAR (SHA-256
 `13a05b64cf1c8ff7b9055b1b68d099739f2fc89d932a83a6c88a54073ac3a021`).
-Il utilise Minecraft 1.21.1 / NeoForge 21.1.248, Create 6.0.10, Curios 9.5.1,
-Sodium 0.8.13 et Irregular Implements 1.12.0, avec leurs dépendances. Une texture
-inutilisée agrandit l’atlas à 4 096 × 4 096 ; le joueur porte réellement les lunettes
-dans le slot Curios `head`. Les sauvegardes personnelles ne sont pas utilisées.
+It uses Minecraft 1.21.1 / NeoForge 21.1.248, Create 6.0.10, Curios 9.5.1,
+Sodium 0.8.13 and Irregular Implements 1.12.0, with their dependencies. An unused
+texture grows the atlas to 4,096 × 4,096; the player actually wears the goggles
+in the Curios `head` slot. Personal saves are not used.
 
-Le JAR local corrigé, version embarquée 0.5.0-beta.1, a le SHA-256
+The fixed local JAR, embedded version 0.5.0-beta.1, has SHA-256
 `7f108a5234b51381d278d13ea8ea10491fb27f79a2d0caea7119d2e1400b8d46`.
-Ce nom de version local ne remplace pas un artefact déjà publié ; la publication
-suivra le workflow habituel après fusion du correctif.
+This local version name does not replace an already published artifact; publication
+will follow the usual workflow once the fix is merged.
 
-- L’export manuel aboutit : 914 triangles, 10 images, 89 264 octets.
-- La capture progressive AFK, poursuivie pendant la pause, aboutit : 22 812
-  triangles, 52 images, 1 721 840 octets. La portée de capture ne reste pas active
-  entre les étapes.
-- Les deux GLB embarquent le joueur, le verre et la sangle des lunettes. Le crop
-  problématique est partagé et mesure 8 × 3 pixels. Ses 24 pixels encodés ont été
-  comparés en jeu à une nouvelle lecture du rectangle GPU : ils sont identiques.
-- Onze états OpenGL sont restaurés, avec PBO de 16 octets et packing non standard.
-  Les positions/normales/UV sont finis ; aucune image de l’atlas complet n’est
-  embarquée. Les validateurs API et les contrôles de métadonnées passent.
-- L’écran Minecraft et les imports/rendus Blender sont inspectés. `bun mod:check`
-  et `VITEST_MAX_WORKERS=2 bun run build` passent, sans modifier les seuils de qualité.
+- The manual export succeeds: 914 triangles, 10 images, 89,264 bytes.
+- The progressive AFK capture, continued while paused, succeeds: 22,812
+  triangles, 52 images, 1,721,840 bytes. The capture scope does not stay active
+  between steps.
+- Both GLBs embed the player, the glass and the goggles' strap. The problematic
+  crop is shared and measures 8 × 3 pixels. Its 24 encoded pixels were
+  compared in game with a fresh read of the GPU rectangle: they are identical.
+- Eleven OpenGL states are restored, with a 16-byte PBO and non-standard packing.
+  Positions/normals/UVs are finite; no image of the full atlas is
+  embedded. The API validators and metadata checks pass.
+- The Minecraft screen and the Blender imports/renders were inspected. `bun mod:check`
+  and `VITEST_MAX_WORKERS=2 bun run build` pass, without changing the quality thresholds.
 
-Preuves locales : `goggles-atlas-20261015/evidence.json`, `baseline/`, `fixed/`,
-`full-build.log` et `mod-check.log` sous le répertoire privé de validation.
+Local evidence: `goggles-atlas-20261015/evidence.json`, `baseline/`, `fixed/`,
+`full-build.log` and `mod-check.log` under the private validation directory.
 
-## Premier banc, 15 octobre 2026
+## First bench, 15 October 2026
 
-Minecraft 1.21.1 / NeoForge 21.1.249, Mesa llvmpipe OpenGL 4.6, sans resource pack
-additionnel ni shader pack activé. Le client charge ces versions exactes :
+Minecraft 1.21.1 / NeoForge 21.1.249, Mesa llvmpipe OpenGL 4.6, with no additional
+resource pack and no shader pack enabled. The client loads these exact versions:
 
-| Composant | Version |
+| Component | Version |
 | --- | --- |
 | Create | 6.0.10 |
-| Flywheel embarqué par Create | 1.0.6 |
-| Ponder embarqué | 1.0.82+mc1.21.1 |
+| Flywheel bundled with Create | 1.0.6 |
+| Bundled Ponder | 1.0.82+mc1.21.1 |
 | Cobblemon | 1.7.3+1.21.1 |
-| Mekanism | 10.7.19.85, version déclarée 10.7.19 |
+| Mekanism | 10.7.19.85, declared version 10.7.19 |
 | Kotlin for Forge | 5.12.0 |
-| GeckoLib chargé | 4.9.2 — aucun renderer GeckoLib spécifique n’est validé ici |
+| GeckoLib loaded | 4.9.2 — no specific GeckoLib renderer is validated here |
 
-Le banc place arbres de transmission, roue dentée, grande roue à eau et presse
-Create, réservoirs Create/Mekanism, infuseur Mekanism, feuillage teinté, verre rouge,
-eau courante et Pikachu avec sa texture secondaire marquée émissive. Le mod reste non appairé et
-les captures AFK sont explicitement désactivées pendant ce premier essai manuel.
-Les réglages et la sauvegarde sont propres au banc.
+The bench places Create shafts, a cogwheel, a large water wheel and a press,
+Create/Mekanism tanks, a Mekanism infuser, tinted foliage, red glass,
+flowing water and a Pikachu whose secondary texture is marked emissive. The mod stays unpaired and
+AFK captures are explicitly disabled during this first manual trial.
+Settings and the save are specific to the bench.
 
-Avec le JAR précédent, Flywheel contourne le renderer CPU des composants animés.
-L’export aboutit mais omet la géométrie de plusieurs composants visibles en jeu.
-Pikachu et ses deux textures sont déjà présents. Le correctif donne
-accès au renderer CPU uniquement pendant la collecte d’un modèle :
+With the previous JAR, Flywheel bypasses the CPU renderer of animated components.
+The export succeeds but omits the geometry of several components visible in game.
+Pikachu and its two textures are already present. The fix gives
+access to the CPU renderer only while a model is being collected:
 
-- une portée locale au thread entoure les renderers de block entities et d’entités ;
-  elle est restaurée sur sortie normale, erreur et appels imbriqués ;
-- un mixin facultatif sur l’implémentation Flywheel répond « sans visualisation GPU »
-  dans cette portée. Le reste du rendu du jeu conserve son backend ;
-- une sonde vérifie pendant la capture que Flywheel a effectivement cédé la place.
-  Une API inconnue ou un backend qui ne cède pas fait échouer la capture plutôt que
-  d’enregistrer silencieusement des pièces manquantes. L’absence de Flywheel n’est
-  pas une erreur. La portée ne reste jamais active entre deux étapes AFK.
+- a thread-local scope wraps block entity and entity renderers;
+  it is restored on normal exit, on error and for nested calls;
+- an optional mixin on the Flywheel implementation answers "no GPU visualization"
+  within that scope. The rest of the game's rendering keeps its backend;
+- a probe checks during capture that Flywheel actually stepped aside.
+  An unknown API or a backend that does not step aside makes the capture fail rather than
+  silently recording missing parts. The absence of Flywheel is
+  not an error. The scope is never left active between two AFK steps.
 
-Cette intégration vise la version Flywheel ci-dessus. Elle n’extrait pas un mesh
-arbitraire depuis un shader : le mod concerné doit fournir un chemin CPU utilisable.
-Les effets purement GPU, glint, texte, lignes et couches sans normales restent soumis
-aux [limites de capture](frozen-entities.md). Les limites de textures et primitives
-ne sont pas relevées pour masquer un problème de compatibilité.
+This integration targets the Flywheel version above. It does not extract an arbitrary
+mesh from a shader: the mod involved must provide a usable CPU path.
+Purely GPU effects, glint, text, lines and layers without normals remain subject
+to the [capture limits](frozen-entities.md). Texture and primitive limits
+are not raised to hide a compatibility problem.
 
-## Preuves avant/après
+## Before/after evidence
 
-Le JAR de référence a l’empreinte
+The reference JAR has checksum
 `4104f3cd139857846593db52b61a47c84590a0c75a3e2f43ca2460a8d464113a`.
-Le premier candidat exercé a l’empreinte
+The first candidate exercised has checksum
 `9a6433648ddb3b3ab405e2849366b6d5fb0ba2a70d162258f1cffab35090c2bc`.
-Les références de textures d’un atlas sont partagées ; le nom de matériau ne suffit
-pas à identifier chaque bloc. Le contrôle compte donc les triangles issus du
-renderer dans les cellules géométriques des composants :
+Atlas texture references are shared; the material name is not enough
+to identify each block. The check therefore counts the triangles produced by the
+renderer within the components' geometric cells:
 
-| Composant | Avant | Après |
+| Component | Before | After |
 | --- | ---: | ---: |
-| Arbre de transmission | 0 | 12 |
-| Roue dentée | 0 | 1 284 |
-| Grande roue à eau, cellule centrale | 0 | 279 |
-| Presse | 0 | 42 |
+| Shaft | 0 | 12 |
+| Cogwheel | 0 | 1,284 |
+| Large water wheel, central cell | 0 | 279 |
+| Press | 0 | 42 |
 
-Ces nombres sont des triangles dont le centre se trouve dans la cellule inspectée,
-pas le total de tout le modèle. Les GLB contiennent respectivement 4 148 et 14 130
-triangles, avec positions/UV finis. Les poses et le nombre de Pikachu ont changé
-entre essais ; une identité pixel à pixel de toute la scène n’est pas revendiquée.
-Les rendus Blender 5.2.2 avant/après et l’écran Minecraft après capture ont été
-inspectés : les composants Create auparavant absents apparaissent.
+These numbers are triangles whose center lies in the inspected cell,
+not the total for the whole model. The GLBs contain 4,148 and 14,130
+triangles respectively, with finite positions/UVs. Pikachu poses and counts changed
+between trials; pixel-for-pixel identity of the whole scene is not claimed.
+The Blender 5.2.2 before/after renders and the Minecraft screen after capture were
+inspected: the previously missing Create components appear.
 
-Les bindings de texture, pack/PBO, unité active, programme et framebuffer surveillés
-restent identiques avant/après capture. Flywheel est actif après la capture.
-Deux tests unitaires vérifient imbrication, erreur et isolation entre threads ; les
-contrôles Java, Spotless et SpotBugs passent. Ce premier essai n’exerce pas encore
-toutes les conditions de #91.
+The monitored texture bindings, pack/PBO, active unit, program and framebuffer
+stay identical before/after capture. Flywheel is active after the capture.
+Two unit tests check nesting, errors and isolation between threads; the
+Java, Spotless and SpotBugs checks pass. This first trial does not yet exercise
+all the conditions of #91.
 
-Preuves locales hors Git :
-`~/.local/state/minemories-validation/modpack-renderers-20261015/`, notamment
+Local evidence outside Git:
+`~/.local/state/minemories-validation/modpack-renderers-20261015/`, notably
 `installed-targets.json`, `cpu-fallback/runtime.json`,
 `cpu-fallback/renderers.json`, `cpu-fallback/comparison.json`,
 `cpu-fallback/screenshots/`, `cpu-fallback/before-blender.png`,
-`cpu-fallback/after-blender.png` et `cpu-fallback/blender-report.json`.
-Le projet Gradle de validation est séparé du dépôt pour lancer NeoForge 21.1.249.
-Les premiers essais ont corrigé le pilote (chargement explicite des chunks et
-état de bloc valide), sans attribuer ces échecs au produit.
+`cpu-fallback/after-blender.png` and `cpu-fallback/blender-report.json`.
+The validation Gradle project is kept separate from the repository to run NeoForge 21.1.249.
+The first trials fixed the driver (explicit chunk loading and a
+valid block state), without attributing those failures to the product.
 
-## Mécanismes alimentés et fluides
+## Powered mechanisms and fluids
 
-Le candidat final de cette étape, après formatage du JSON de mixin, porte le SHA-256
+The final candidate of this step, after formatting the mixin JSON, has SHA-256
 `972533a8cf84199aded16a7cfc0be8ab3a734aa4a7599adc4b073e72d42008ec`.
-Le second parcours client confirme les valeurs synchronisées suivantes : arbre,
-roue dentée et presse à 16 tr/min, grande roue alimentée par de l’eau à 4 tr/min,
-réservoir Create avec 4 000 mB de lave et réservoir Mekanism avec 8 000 mB d’eau.
-L’export manuel aboutit à un GLB autonome de 2 715 596 octets, avec les neuf états
-OpenGL surveillés conservés et Flywheel toujours actif après capture.
+The second client run confirms the following synchronized values: shaft,
+cogwheel and press at 16 RPM, a large wheel driven by water at 4 RPM,
+a Create tank with 4,000 mB of lava and a Mekanism tank with 8,000 mB of water.
+The manual export produces a self-contained 2,715,596-byte GLB, with the nine monitored
+OpenGL states preserved and Flywheel still active after capture.
 
-Les trois fichiers (référence, premier repli CPU et mécanismes alimentés) passent
-les validateurs GLB et métadonnées réels de l’API. Les mouvements sont figés, pas
-exportés comme animations jouables. Les rapports sont dans `powered/` et
-`api-validation.json`. Blender importe les 22 282 triangles du second export ;
-son rendu et l’écran Minecraft ont été inspectés, avec les mécanismes, la chute
-d’eau et les contenus des réservoirs présents. Le premier placement de presse utilisait un axe non relié
-au moteur ; le pilote a été corrigé et les vitesses non nulles sont ensuite
-vérifiées sur le client, sans présenter cet échec de fixture comme un défaut du mod.
+All three files (reference, first CPU fallback and powered mechanisms) pass
+the API's real GLB and metadata validators. Movements are frozen, not
+exported as playable animations. The reports are in `powered/` and
+`api-validation.json`. Blender imports the 22,282 triangles of the second export;
+its render and the Minecraft screen were inspected, with the mechanisms, the
+waterfall and the tank contents present. The first press placement used a shaft not connected
+to the motor; the driver was fixed and non-zero speeds were then
+checked on the client, without presenting this fixture failure as a mod defect.
 
-`bun run build` passe sur ce code, incluant `bun check`, les tests unitaires,
-Spotless, SpotBugs et JaCoCo. Les essais complémentaires et les profils complets
-sont décrits ci-dessous.
+`bun run build` passes on this code, including `bun check`, the unit tests,
+Spotless, SpotBugs and JaCoCo. The additional trials and the full profiles
+are described below.
 
-## AFK, annulation et combinaisons de rendu
+## AFK, cancellation and render combinations
 
-Le même JAR `972533a8…` a terminé une capture AFK progressive pendant la pause,
-avec un rayon de 12 et la hauteur complète activée dans le banc. Le producteur
-rapporte 909 étapes, 59 917 blocs, cinq entités et 39 622 quads. Le GLB de
-6 888 448 octets contient 79 images intégrées et 79 244 triangles ; les composants
-Create, les fluides des réservoirs et Pikachu sont présents. Les positions/UV sont
-finis et les deux horodatages de l’intervalle sont enregistrés. Le rendu Blender
-a été inspecté. Le producteur reste soumis à des opérations indivisibles : sept
-dépassements du budget souple ont été mesurés, avec une étape maximale de 16,98 ms ;
-aucun budget dur de deux millisecondes n’est revendiqué pour un renderer tiers.
+The same `972533a8…` JAR completed a progressive AFK capture while paused,
+with radius 12 and full height enabled in the bench. The producer
+reports 909 steps, 59,917 blocks, five entities and 39,622 quads. The
+6,888,448-byte GLB contains 79 embedded images and 79,244 triangles; the Create
+components, the tank fluids and Pikachu are present. Positions/UVs are
+finite and both interval timestamps are recorded. The Blender render
+was inspected. The producer is still subject to indivisible operations: seven
+soft-budget overruns were measured, with a maximum step of 16.98 ms;
+no hard two-millisecond budget is claimed for a third-party renderer.
 
-La portée de collecte est désactivée entre les étapes AFK et Flywheel reste actif.
-Un deuxième cycle est annulé : aucun souvenir supplémentaire n’est publié, le
-hash du dernier GLB complet reste identique et le spool est nettoyé. Aucun
-appairage ou envoi réseau Minemories n’est utilisé dans ce parcours.
+The collection scope is disabled between AFK steps and Flywheel stays active.
+A second cycle is cancelled: no additional memory is published, the
+hash of the last complete GLB stays identical and the spool is cleaned up. No
+Minemories pairing or network upload is used in this run.
 
-| Combinaison exercée | Résultat |
+| Combination exercised | Result |
 | --- | --- |
-| NeoForge 21.1.248, sans Flywheel | Démarrage et capture de coffre, mouton coloré, feuillage, verre et eau ; portée restaurée. |
-| NeoForge 21.1.249 + Sodium 0.8.13 | Capture des mécanismes alimentés et fluides ; neuf états GL surveillés identiques, Flywheel actif après capture. |
-| Même banc + Iris 1.8.14-beta.1 + MakeUp UltraFast 9.5e | API Iris confirmant le shader activé ; capture réussie, neuf états GL surveillés identiques. Dans cette combinaison Iris désactive déjà Flywheel hors capture. |
+| NeoForge 21.1.248, without Flywheel | Startup and capture of a chest, dyed sheep, foliage, glass and water; scope restored. |
+| NeoForge 21.1.249 + Sodium 0.8.13 | Capture of powered mechanisms and fluids; nine monitored GL states identical, Flywheel active after capture. |
+| Same bench + Iris 1.8.14-beta.1 + MakeUp UltraFast 9.5e | Iris API confirming the shader is enabled; capture succeeds, nine monitored GL states identical. In this combination Iris already disables Flywheel outside capture. |
 
-Les sept GLB de la matrice, AFK et régression compris, passent les validateurs API
-réels. Les rendus Blender de la régression, de Sodium et d’Iris ont également été
-inspectés. Sodium signale que le collecteur utilise le chemin de sommets générique ;
-ce diagnostic n’est pas masqué et aucune accélération Sodium du collecteur n’est
-annoncée. Les effets visuels propres au shader ne sont pas reproduits dans le GLB,
-qui conserve la géométrie et les textures de base autonomes.
+The matrix's seven GLBs, including AFK and the regression, pass the real API
+validators. The Blender renders of the regression, Sodium and Iris were also
+inspected. Sodium reports that the collector uses the generic vertex path;
+this diagnostic is not hidden and no Sodium acceleration of the collector is
+claimed. Shader-specific visual effects are not reproduced in the GLB,
+which keeps the self-contained base geometry and textures.
 
-Preuves : sous-dossiers `afk/`, `vanilla/`, `sodium/`, `iris/`,
-`api-validation.json` et rapports/rendus Blender associés. Ces combinaisons
-emploient le sous-ensemble ciblé des mods ; les essais avec les listes complètes
-sont décrits dans les sections suivantes.
+Evidence: the `afk/`, `vanilla/`, `sodium/`, `iris/` subfolders,
+`api-validation.json` and the associated Blender reports/renders. These combinations
+use the targeted subset of mods; the trials with the full lists
+are described in the following sections.
 
-## Atlas des profils complets
+## Full-profile atlases
 
-La copie de `mc breval` charge la liste de 483 JAR tiers du profil avec NeoForge
-21.1.248 et le candidat `972533a8…`. Le chargement du monde requiert le réglage
-existant `disable_chisel_modern=true` de JustDynaThings et les données KubeJS du
-pack. Avec ces données, les mécanismes et fluides du banc sont visibles, mais
-l’export échoue : l’atlas de blocs fait 8 192 × 8 192 pixels, au-delà de la limite
-de quatre millions de pixels par image. Aucun GLB incomplet n’est publié et les
-états GL surveillés sont restaurés.
+The `mc breval` copy loads the profile's list of 483 third-party JARs with NeoForge
+21.1.248 and the `972533a8…` candidate. Loading the world requires the existing
+JustDynaThings setting `disable_chisel_modern=true` and the pack's KubeJS
+data. With that data, the bench's mechanisms and fluids are visible, but
+the export fails: the block atlas is 8,192 × 8,192 pixels, above the limit
+of four million pixels per image. No incomplete GLB is published and the
+monitored GL states are restored.
 
-Le correctif en validation identifie le sprite de chaque primitive du renderer
-sur les grands atlas et lit uniquement sa région GPU, par bandes. Les UV sont
-ramenés à cette image ; l’image correspond à la texture réellement affichée,
-y compris la frame courante d’une texture animée. Les limites par image, de pixels
-cumulés et de textures restent identiques. La recherche retient au plus 256 sprites utilisés, parcourt au plus un million
-d’entrées par recherche et partage un budget de 32 millions d’entrées examinées
-entre tous les atlas de la capture ; une primitive traversant plusieurs sprites
-échoue explicitement plutôt que d’utiliser une image erronée. Les UV non finis
-sont éliminés. Les tests couvrent le changement de coordonnées, les petits sprites,
-les bords, les primitives traversantes et les budgets de recherche.
+The fix under validation identifies the sprite of each renderer primitive
+on large atlases and reads only its GPU region, in strips. UVs are
+remapped to that image; the image matches the texture actually displayed,
+including the current frame of an animated texture. The per-image, cumulative-pixel
+and texture limits are unchanged. The lookup keeps at most 256 used sprites, walks at most one million
+entries per lookup and shares a budget of 32 million examined entries
+across all atlases in the capture; a primitive spanning several sprites
+fails explicitly rather than using a wrong image. Non-finite UVs
+are dropped. Tests cover the coordinate change, small sprites,
+edges, spanning primitives and lookup budgets.
 
-Le premier essai de la copie ATMons sans ses réglages de compatibilité échoue
-avant toute capture dans le mixin Sodium de Mekanism Covers. Le profil original
-définit `disableAdvancedCoverRendering=true` ; le banc reproduit désormais ce
-réglage, sans retirer de mod. Ce premier échec ne prouve donc pas une
-incompatibilité du profil configuré.
+The first trial of the ATMons copy without its compatibility settings fails
+before any capture, in the Mekanism Covers Sodium mixin. The original profile
+sets `disableAdvancedCoverRendering=true`; the bench now reproduces that
+setting, without removing any mod. This first failure therefore does not prove an
+incompatibility of the configured profile.
 
-Le candidat intermédiaire `0590b85a…` réussit l’export manuel du pack complet
-avec l’atlas de 8 192 × 8 192 : 1 347 424 octets, 17 104 triangles et 42 images
-intégrées. Les neuf états GL surveillés sont identiques après capture. La copie
-d’un sprite de pierre de 16 × 16 est comparée à ses 256 pixels d’origine ; elle
-préserve les états GL. Le GLB et ses métadonnées passent les validateurs réels
-de l’API. L’écran Minecraft et le rendu Blender sont inspectés : mécanismes,
-réservoirs, mouton coloré, verre, feuilles et eau sont présents. Le shader MakeUp
-est activé ; son éclairage reste propre au jeu.
+The intermediate candidate `0590b85a…` succeeds at the manual export of the full pack
+with the 8,192 × 8,192 atlas: 1,347,424 bytes, 17,104 triangles and 42 embedded
+images. The nine monitored GL states are identical after capture. The copy
+of a 16 × 16 stone sprite is compared with its 256 original pixels; it
+preserves the GL states. The GLB and its metadata pass the API's real
+validators. The Minecraft screen and the Blender render were inspected: mechanisms,
+tanks, dyed sheep, glass, leaves and water are present. The MakeUp shader
+is enabled; its lighting stays specific to the game.
 
-La première lecture rencontrait aussi une erreur GL déjà en attente (`1281`)
-avant toute copie. Le candidat suivant journalise et consomme les erreurs
-antérieures, avec une boucle bornée, puis contrôle séparément les erreurs de sa
-propre lecture. Le pilote injecte une erreur préalable pour vérifier ce cas ; il
-ne contourne pas les erreurs de lecture du collecteur. Le candidat `7a01ab0c…`
-passe cette injection avant la lecture du sprite puis avant l’export manuel, avec restauration des neuf états GL surveillés.
+The first read also ran into a GL error already pending (`1281`)
+before any copy. The next candidate logs and consumes earlier
+errors, with a bounded loop, then separately checks the errors of its
+own read. The driver injects a prior error to check this case; it
+does not work around the collector's read errors. The `7a01ab0c…` candidate
+passes this injection before the sprite read and then before the manual export, with the nine monitored GL states restored.
 
-Le même JAR termine une capture AFK **avant tout export manuel de cette session**
-dans la copie de mc breval, en pause, rayon 12/hauteur complète. Elle contient
-59 854 blocs, huit entités, 78 764 triangles et 98 images intégrées pour
-6 081 860 octets. Les composants animés et les deux fluides sont présents ; les
-positions/UV sont finis et les validateurs API acceptent GLB et métadonnées.
-L’intervalle est `04:37:38.921451715Z`–`04:40:10.365172822Z`, le 15 octobre 2026.
-La portée est désactivée entre les 813 étapes et l’état Flywheel reste identique
-à celui d’avant capture (désactivé par Iris). Les 54 dépassements du budget souple,
-avec un maximum de 35,57 ms, sont conservés dans les mesures ; le temps total du
-banc logiciel n’est pas une promesse de performance. Le rendu Blender a été
-inspecté. Le cycle suivant est annulé : historique inchangé, dernier fichier
-complet préservé et spool nettoyé. L’export manuel qui suit réussit également,
-avec 21 506 triangles et 42 images ; ses métadonnées et son GLB passent l’API.
+The same JAR completes an AFK capture **before any manual export in this session**
+in the mc breval copy, while paused, radius 12/full height. It contains
+59,854 blocks, eight entities, 78,764 triangles and 98 embedded images for
+6,081,860 bytes. The animated components and both fluids are present; the
+positions/UVs are finite and the API validators accept the GLB and metadata.
+The interval is `04:37:38.921451715Z`–`04:40:10.365172822Z`, on 15 October 2026.
+The scope is disabled between the 813 steps and the Flywheel state stays identical
+to what it was before capture (disabled by Iris). The 54 soft-budget overruns,
+with a maximum of 35.57 ms, are kept in the measurements; the software bench's
+total time is not a performance promise. The Blender render was
+inspected. The next cycle is cancelled: history unchanged, last complete
+file preserved and spool cleaned up. The manual export that follows also succeeds,
+with 21,506 triangles and 42 images; its metadata and GLB pass the API.
 
-Le candidat intermédiaire `5388c08c3563ebc1e5c99c14f4d0d67d83a27ea6f676407b59dfc1edfad85831`
-ajoute un garde-fou : les descripteurs d’atlas comptent dans le budget de textures
-avant leur construction, y compris si le renderer n’émet aucun sommet. Les tests
-unitaires, Spotless, SpotBugs et `bun run build` passent (140 tests web, 235 tests
-API exécutés, 33 core et 154 NeoForge). Le premier essai ATMons avec shader manque de tas Java (5 Gio) pendant
-l’initialisation JEI/Ars Nouveau, avant le scénario Minemories. Il est conservé
-comme échec du banc, pas comme validation du produit. Le nouvel essai conserve
-les 396 JAR tiers, avec un tas de 7 Gio et les shaders désactivés ; les parcours
-avec shader de mc breval et du banc ciblé sont conservés séparément.
-Preuves : `full-breval/crop-clean/`, `full-breval/cold-afk/`, fichiers JAR et
-empreintes conservés avec chaque parcours ; `full-atmons/heap5g-attempt/`, `full-atmons/client-sync-attempt/` et
-`full-atmons/atlas-no-shader-afk/` pour la suite.
+The intermediate candidate `5388c08c3563ebc1e5c99c14f4d0d67d83a27ea6f676407b59dfc1edfad85831`
+adds a safeguard: atlas descriptors count towards the texture budget
+before they are built, even if the renderer emits no vertex. Unit
+tests, Spotless, SpotBugs and `bun run build` pass (140 web tests, 235 API
+tests run, 33 core and 154 NeoForge). The first ATMons trial with a shader runs out of Java heap (5 GiB) during
+JEI/Ars Nouveau initialization, before the Minemories scenario. It is kept
+as a bench failure, not as product validation. The new trial keeps
+the 396 third-party JARs, with a 7 GiB heap and shaders disabled; the runs
+with a shader on mc breval and on the targeted bench are kept separately.
+Evidence: `full-breval/crop-clean/`, `full-breval/cold-afk/`, JAR files and
+checksums kept with each run; `full-atmons/heap5g-attempt/`, `full-atmons/client-sync-attempt/` and
+`full-atmons/atlas-no-shader-afk/` for what follows.
 
-L’essai ATMons suivant confirme vitesses et fluides synchronisés, puis reproduit
-la limite du premier index : plus de 65 536 entrées dans l’atlas. Le candidat
-suivant conserve une vue paresseuse de l’atlas et ne met en cache que les sprites
-trouvés pour les primitives. Il ne matérialise plus un index complet ; les limites
-d’images/pixels sont identiques et le travail de recherche reste borné. Les tests
-exercent un atlas de plus de 80 000 entrées sans allocation d’un index complet,
-le cache des recherches répétées, le budget partagé entre atlas et la limite
-des sprites retenus. Une course du pilote, qui lisait les blocs client avant
-réception des chunks après téléportation, a aussi été corrigée dans le banc ;
-elle n’est pas présentée comme un défaut Minemories.
+The next ATMons trial confirms synchronized speeds and fluids, then reproduces
+the limit of the first index: more than 65,536 entries in the atlas. The next
+candidate keeps a lazy view of the atlas and caches only the sprites
+found for primitives. It no longer materializes a full index; the image/pixel
+limits are identical and lookup work stays bounded. Tests
+exercise an atlas of more than 80,000 entries without allocating a full index,
+the cache for repeated lookups, the budget shared between atlases and the limit
+on kept sprites. A race in the driver, which read client blocks before
+the chunks were received after a teleport, was also fixed in the bench;
+it is not presented as a Minemories defect.
 
-## Candidat final et périmètre validé
+## Final candidate and validated scope
 
-Le JAR `6b6c10b93c29e1daa3b45dd57b7690c5e12212e24355d43c9fce29cbad71c318`
-passe `bun run build`, incluant les contrôles globaux et 156 tests NeoForge.
-Il est exercé dans ATMons avec ses 396 JAR tiers et 434 identifiants de mods
-chargés, NeoForge 21.1.249, Sodium 0.8.13 et Iris présent avec shaders désactivés.
-Le réglage Mekanism Covers du pack est reproduit ; le tas Java est de 7 Gio et
-le processus de validation limité à 12 Gio, sans swap. L’atlas expose 71 641
-entrées. La comparaison des 256 pixels du sprite GPU et la restauration des
-neuf états GL surveillés passent, y compris après injection d’une erreur GL
-antérieure. Flywheel est actif après l’export manuel.
+The JAR `6b6c10b93c29e1daa3b45dd57b7690c5e12212e24355d43c9fce29cbad71c318`
+passes `bun run build`, including the global checks and 156 NeoForge tests.
+It is exercised in ATMons with its 396 third-party JARs and 434 loaded mod
+identifiers, NeoForge 21.1.249, Sodium 0.8.13 and Iris present with shaders disabled.
+The pack's Mekanism Covers setting is reproduced; the Java heap is 7 GiB and
+the validation process is limited to 12 GiB, without swap. The atlas exposes 71,641
+entries. The comparison of the GPU sprite's 256 pixels and the restoration of the
+nine monitored GL states pass, including after injecting an earlier
+GL error. Flywheel is active after the manual export.
 
-L’export manuel contient 1 186 344 octets, 15 172 triangles et 42 images intégrées.
-L’AFK en pause produit 5 298 968 octets, 71 890 triangles et 94 images, avec
-59 917 blocs et cinq entités. Le producteur compte 836 étapes (837 callbacks
-observés par le pilote), 19 dépassements du budget souple et un maximum de
-19,85 ms. L’intervalle est `05:07:13.713390313Z`–`05:08:05.780712909Z`, le
-15 octobre 2026. Portée désactivée et Flywheel actif entre les étapes ; second
-cycle annulé avec historique et dernier fichier complet préservés, spool nettoyé.
-Les mécanismes, fluides et textures de Pikachu sont présents, les positions/UV
-sont finis. Les GLB et métadonnées passent l’API ; écrans Minecraft et rendus
-Blender manuel/AFK inspectés.
+The manual export contains 1,186,344 bytes, 15,172 triangles and 42 embedded images.
+AFK while paused produces 5,298,968 bytes, 71,890 triangles and 94 images, with
+59,917 blocks and five entities. The producer counts 836 steps (837 callbacks
+observed by the driver), 19 soft-budget overruns and a maximum of
+19.85 ms. The interval is `05:07:13.713390313Z`–`05:08:05.780712909Z`, on
+15 October 2026. Scope disabled and Flywheel active between steps; second
+cycle cancelled with history and last complete file preserved, spool cleaned up.
+The mechanisms, fluids and Pikachu textures are present, and positions/UVs
+are finite. The GLBs and metadata pass the API; Minecraft screens and the manual/AFK
+Blender renders were inspected.
 
-La vérification des couches précise une limite : les deux textures de Pikachu,
-dont `pikachu_emissive.png`, sont intégrées, mais l’auto-éclairage spécifique de
-cette couche Cobblemon n’est pas traduit en émission glTF. Il ne faut pas lire
-les observations précédentes de « passe lumineuse » comme une validation de cet
-effet. Les effets GPU arbitraires, glint, texte et autres exclusions restent
-suivis dans [les limites de capture](frozen-entities.md).
+Checking the layers reveals one limit: both Pikachu textures,
+including `pikachu_emissive.png`, are embedded, but the specific self-illumination of
+this Cobblemon layer is not translated into glTF emission. The earlier
+"bright pass" observations must not be read as a validation of this
+effect. Arbitrary GPU effects, glint, text and other exclusions are still
+tracked in [the capture limits](frozen-entities.md).
 
-Le même JAR passe la régression NeoForge 21.1.248 sans Flywheel : coffre, mouton
-coloré, feuillage, verre, eau et Enderman. Le pilote impose un PBO de lecture de
-16 octets et des réglages de packing non standards (alignement 8, longueur de
-ligne 23, offsets 3/2) ; les onze états GL comparés sont restaurés. Le GLB de
-1 008 triangles contient neuf images intégrées, avec positions/UV finis et
-métadonnées acceptées par l’API. Les yeux d’Enderman portent bien
-`emissiveFactor=[0.65,0.65,0.65]` et leur texture d’émission. Les écrans
-Minecraft et le rendu Blender sont inspectés, avec le mouton coloré et les yeux
-lumineux présents. Le premier contrôle Blender avait révélé deux moutons
-exactement superposés dans la fixture (triangles dupliqués) ; le pilote nettoie
-désormais ces entités avant placement. Le parcours est rejoué avec un seul
-mouton, sans modification du produit.
+The same JAR passes the NeoForge 21.1.248 regression without Flywheel: chest, dyed
+sheep, foliage, glass, water and Enderman. The driver forces a 16-byte read PBO
+and non-standard packing settings (alignment 8, row length
+23, offsets 3/2); the eleven compared GL states are restored. The
+1,008-triangle GLB contains nine embedded images, with finite positions/UVs and
+metadata accepted by the API. The Enderman's eyes do carry
+`emissiveFactor=[0.65,0.65,0.65]` and their emission texture. The Minecraft
+screens and the Blender render were inspected, with the dyed sheep and the glowing
+eyes present. The first Blender check had revealed two sheep
+exactly on top of each other in the fixture (duplicated triangles); the driver now
+clears these entities before placement. The run was replayed with a single
+sheep, without changing the product.
 
-Preuves finales : `full-atmons/atlas-no-shader-afk/` et `vanilla/atlas-final/`,
-avec JAR exact, inventaire, réglages, résultats GL, géométrie, couches spéciales,
-validation API et rendus. Ces essais valident ce périmètre ; ils ne garantissent
-pas tous les renderers et réglages des modpacks. CI encore nécessaire avant fusion.
+Final evidence: `full-atmons/atlas-no-shader-afk/` and `vanilla/atlas-final/`,
+with the exact JAR, inventory, settings, GL results, geometry, special layers,
+API validation and renders. These trials validate this scope; they do not guarantee
+every modpack renderer and setting. CI still needed before merging.

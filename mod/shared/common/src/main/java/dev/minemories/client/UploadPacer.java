@@ -47,7 +47,7 @@ final class UploadPacer {
   void check() throws InterruptedIOException {
     if (Thread.currentThread().isInterrupted() || !allowed.getAsBoolean())
       throw new InterruptedIOException(
-          "Envoi AFK arrêté : contexte ou réglages modifiés. Le fichier local est conservé.");
+          "AFK upload stopped: context or settings changed. The local file is kept.");
   }
 
   private synchronized void pace(int amount) throws IOException {
@@ -62,7 +62,7 @@ final class UploadPacer {
         sleeper.sleep(Math.min(remaining, 50_000_000));
       } catch (InterruptedException error) {
         Thread.currentThread().interrupt();
-        throw new InterruptedIOException("Envoi AFK interrompu.");
+        throw new InterruptedIOException("AFK upload interrupted.");
       }
     }
   }

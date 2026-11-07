@@ -58,7 +58,7 @@ function harness({ failing = [], modules = {}, tests } = {}) {
 	const loadModule = async name => {
 		const module = modules[name]
 		if (module === undefined) {
-			log.warn(`Module ${name} absent : étape ignorée.`)
+			log.warn(`Module ${name} missing: step skipped.`)
 			return null
 		}
 		return module(calls)
@@ -142,7 +142,7 @@ test('a headless test failure keeps that target out of storage and notifies a te
 	assert.equal(result.exitCode, 1)
 	assert.deepEqual(h.calls.find(c => c[0] === 'store')[1], ['fabric-mc1.21.1'])
 	assert.equal(h.calls.find(c => c[0] === 'notify')[1], 'test-failure')
-	assert.ok(h.logs.info.some(m => m.includes('Aucun jeton')))
+	assert.ok(h.logs.info.some(m => m.includes('No Modrinth/CurseForge token')))
 })
 
 test('--skip-tests, --no-publish and absent modules are skipped with warnings', async () => {
@@ -190,7 +190,7 @@ test('a publish failure and a notifier that throws are both handled', async () =
 	const result = await run(root, h)
 	assert.equal(result.exitCode, 1)
 	assert.ok(h.logs.warn.some(m => m.includes('webhook down')))
-	assert.ok(h.logs.warn.some(m => m.includes('storeRelease') || m.includes("n'exporte pas")))
+	assert.ok(h.logs.warn.some(m => m.includes('storeRelease') || m.includes('does not export')))
 })
 
 test('--dry-run builds and sends nothing, and --bump rewrites the version otherwise', async () => {
@@ -200,7 +200,7 @@ test('--dry-run builds and sends nothing, and --bump rewrites the version otherw
 	const dry = await run(root, h, { dryRun: true, bump: 'patch' })
 	assert.equal(dry.exitCode, 0)
 	assert.equal(h.calls.length, 0)
-	assert.ok(h.logs.info.some(m => m.includes('module présent')))
+	assert.ok(h.logs.info.some(m => m.includes('module present')))
 	const real = await run(root, h, { bump: 'patch', skipTests: true, noPublish: true })
 	assert.equal(real.version, '1.0.1-beta.1')
 })
@@ -259,7 +259,7 @@ test('--remote checks the API settings first, uploads instead of storing and ski
 		'http://localhost:3001',
 		true,
 	])
-	assert.ok(h.logs.info.some(m => m.includes('publication tierce reste côté VPS')))
+	assert.ok(h.logs.info.some(m => m.includes('third-party publishing stays on the VPS')))
 	assert.equal(h.calls.find(c => c[0] === 'notify')[1], 'release-success')
 })
 
@@ -280,7 +280,7 @@ test('--remote fails before any build when the API settings are invalid or the m
 		...h.full,
 		'./remote/index.mjs': () => ({
 			resolveRemote: () => {
-				throw new Error('MOD_UPLOAD_TOKEN est absent')
+				throw new Error('MOD_UPLOAD_TOKEN is missing')
 			},
 		}),
 	}
@@ -292,7 +292,7 @@ test('--remote fails before any build when the API settings are invalid or the m
 	const absent = harness()
 	absent.loadModule = async name => (name === './remote/index.mjs' ? null : null)
 	assert.equal((await run(root, absent, { remote: true })).exitCode, 1)
-	assert.ok(absent.logs.error.some(m => m.includes('Module remote absent')))
+	assert.ok(absent.logs.error.some(m => m.includes('Remote module missing')))
 })
 
 test('--remote with no artifact warns and --dry-run names the remote step', async () => {
@@ -301,9 +301,9 @@ test('--remote with no artifact warns and --dry-run names the remote step', asyn
 	const modules = remoteModules(h)
 	h.loadModule = async name => modules[name]?.(h.calls) ?? null
 	await run(root, h, { remote: true, noPublish: true })
-	assert.ok(h.logs.warn.some(m => m.includes('Aucun artefact à envoyer')))
+	assert.ok(h.logs.warn.some(m => m.includes('No artifact to upload')))
 	const dry = harness()
 	dry.loadModule = async name => remoteModules(dry)[name]?.(dry.calls) ?? null
 	await run(root, dry, { remote: true, dryRun: true })
-	assert.ok(dry.logs.info.some(m => m.includes("envoi via l'API")))
+	assert.ok(dry.logs.info.some(m => m.includes('upload through the API')))
 })
