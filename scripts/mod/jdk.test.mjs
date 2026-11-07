@@ -62,7 +62,7 @@ test('Adoptium metadata must carry a SHA-256', () => {
 	assert.throws(() => pickAdoptiumPackage(null), /SHA-256/)
 	assert.match(adoptiumUrl(17, { platform: 'linux', arch: 'x64' }), /\/17\/hotspot\?architecture=x64.*os=linux/)
 	assert.deepEqual(adoptiumPlatform('darwin', 'arm64'), { os: 'mac', architecture: 'aarch64' })
-	assert.throws(() => adoptiumPlatform('sunos', 'x64'), /non gérée/)
+	assert.throws(() => adoptiumPlatform('sunos', 'x64'), /Unsupported platform/)
 })
 
 function fakeFetch(archive, checksum) {
@@ -101,7 +101,7 @@ test('installJdk downloads, verifies the checksum and extracts into jdk-<release
 test('installJdk refuses a wrong checksum, a bad HTTP status and an unsupported major', async () => {
 	const toolsDir = await mkdtemp(join(tmpdir(), 'mod-jdk-install-'))
 	const { fetchImpl } = fakeFetch(Buffer.from('tampered'), 'f'.repeat(64))
-	await assert.rejects(installJdk(21, { toolsDir, fetchImpl, extract: () => {} }), /SHA-256 du JDK 21 invalide/)
+	await assert.rejects(installJdk(21, { toolsDir, fetchImpl, extract: () => {} }), /Invalid SHA-256 for JDK 21/)
 	await assert.rejects(installJdk(21, { toolsDir, fetchImpl: async () => ({ ok: false, status: 503 }) }), /503/)
 	await assert.rejects(
 		installJdk(21, {
@@ -118,13 +118,13 @@ test('installJdk refuses a wrong checksum, a bad HTTP status and an unsupported 
 		}),
 		/404/
 	)
-	await assert.rejects(installJdk(11, { toolsDir }), /non géré/)
+	await assert.rejects(installJdk(11, { toolsDir }), /is not supported/)
 })
 
 test('ensureJdks installs only what is missing, or refuses when downloads are disabled', async () => {
 	const installed = []
 	const detect = { env: { PATH: '' }, toolsDir: '/nonexistent-tools', gradleJdks: '/nonexistent-gradle' }
-	await assert.rejects(ensureJdks([17], { ...detect, download: false }), /JDK manquant\(s\) : 21, 17/)
+	await assert.rejects(ensureJdks([17], { ...detect, download: false }), /Missing JDK\(s\): 21, 17/)
 	const result = await ensureJdks([21], {
 		...detect,
 		install: async major => installed.push(major),
@@ -145,5 +145,5 @@ test('gradleJavaSetup points Gradle at its JDK and lists every installation', ()
 	assert.equal(setup.env.JAVA_HOME, '/j/21')
 	assert.ok(setup.env.PATH.startsWith('/j/21/bin'))
 	assert.deepEqual(setup.args, ['-Dorg.gradle.java.installations.paths=/j/17,/j/21'])
-	assert.throws(() => gradleJavaSetup({ gradle: null, all: [] }), /Aucun JDK/)
+	assert.throws(() => gradleJavaSetup({ gradle: null, all: [] }), /No JDK/)
 })

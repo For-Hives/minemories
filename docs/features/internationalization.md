@@ -1,52 +1,52 @@
-# Localisation du site — marchés Minecraft Java
+# Website localization — Minecraft Java markets
 
-Le sélecteur du site couvre les dix pays demandés, avec onze variantes linguistiques :
+The website's language picker covers the ten requested countries, with eleven language variants:
 
-| Pays | Choix | Balise HTML / format régional |
+| Country | Choice | HTML tag / regional format |
 | --- | --- | --- |
-| États-Unis | English (US) | en-US |
-| Russie | Русский | ru-RU |
-| Allemagne | Deutsch | de-DE |
-| Royaume-Uni | English (UK) | en-GB |
+| United States | English (US) | en-US |
+| Russia | Русский | ru-RU |
+| Germany | Deutsch | de-DE |
+| United Kingdom | English (UK) | en-GB |
 | France | Français (FR) | fr-FR |
-| Corée du Sud | 한국어 | ko-KR |
-| Brésil | Português (BR) | pt-BR |
-| Pologne | Polski | pl-PL |
+| South Korea | 한국어 | ko-KR |
+| Brazil | Português (BR) | pt-BR |
+| Poland | Polski | pl-PL |
 | Canada | English (CA), Français (CA) | en-CA, fr-CA |
-| Japon | 日本語 | ja-JP |
+| Japan | 日本語 | ja-JP |
 
-Les identifiants historiques `en` et `fr` restent valables dans la préférence locale, pour préserver les choix déjà enregistrés. La préférence sauvegardée prime sur la liste ordonnée des langues du navigateur. Aucune géolocalisation ni déduction du pays à partir d’une adresse IP n’est utilisée. Les balises régionales alimentent le document HTML ; les dates, nombres, tailles et compteurs suivent Intl, avec les catégories de pluriels russes et polonaises.
+The legacy identifiers `en` and `fr` remain valid in the local preference, so choices already stored are preserved. The saved preference takes precedence over the browser's ordered language list. No geolocation or IP-based country detection is used. Regional tags feed the HTML document; dates, numbers, sizes and counters go through Intl, including the Russian and Polish plural categories.
 
-## Catalogues et périmètre
+## Catalogs and scope
 
-Le site utilise un seul moteur : `translate(locale, key, values)` dans `i18n/catalog.ts`. Le hook `useI18n().t()` et le composant JSX `T` appellent ce même moteur. Les textes sont uniquement dans `i18n/locales/*.json` : `en.json` est la source canonique, `fr.json` et les six autres langues sont des catalogues complets. Les variantes régionales ne contiennent que leurs différences et héritent du catalogue de leur langue principale.
+The website uses a single engine: `translate(locale, key, values)` in `i18n/catalog.ts`. The `useI18n().t()` hook and the `T` JSX component call that same engine. Text lives only in `i18n/locales/*.json`: `en.json` is the canonical source, `fr.json` and the six other languages are full catalogs. Regional variants only contain their differences and inherit from the catalog of their main language.
 
-Les anciens couples `copy(fr, en)`, objets éditoriaux `{ fr, en }`, dictionnaires de guides inversés et tables de métadonnées séparées ont été supprimés. Les composants, contenus éditoriaux, guides, libellés de diagnostics, métadonnées, dates relatives immédiates et compteurs utilisent les mêmes clés. Les pluriels sont sélectionnés par `Intl.PluralRules`, puis résolus dans les catalogues ; les nombres sont formatés par `Intl.NumberFormat`.
+The old `copy(fr, en)` pairs, `{ fr, en }` editorial objects, inverted guide dictionaries and separate metadata tables have been removed. Components, editorial content, guides, diagnostics labels, metadata, immediate relative dates and counters use the same keys. Plurals are selected by `Intl.PluralRules`, then resolved in the catalogs; numbers are formatted by `Intl.NumberFormat`.
 
-Les identifiants d’API, chemins, noms de fichiers, commandes Minecraft et paramètres `{name}`, `{count}`, etc. gardent leur forme technique. Les contenus saisis par les utilisateurs restent littéraux. Les devises commerciales ne sont pas converties automatiquement lors d’un changement de langue.
+API identifiers, paths, file names, Minecraft commands and parameters such as `{name}`, `{count}`, etc. keep their technical form. User-entered content stays literal. Commercial currencies are not converted automatically when the language changes.
 
-Les nouveaux catalogues sont importés à la demande et fournis avec le site : aucun service de traduction n’est appelé par l’application. Pendant un chargement, la langue précédente reste active ; une erreur permet de réessayer. Une réponse tardive ne remplace pas un choix plus récent et une réponse après démontage ne modifie pas la préférence. Le rendu statique initial conserve les routes françaises existantes ; les métadonnées et le contenu sont actualisés après le choix du navigateur. Aucune URL de traduction ou balise hreflang ne désigne une page inexistante.
+New catalogs are imported on demand and shipped with the website: the application never calls a translation service. While a catalog loads, the previous language stays active; an error offers a retry. A late response does not override a more recent choice, and a response after unmount does not change the preference. The initial static render keeps the existing French routes; metadata and content are refreshed after the browser's choice. No translation URL or hreflang tag points to a page that does not exist.
 
-Les six nouveaux catalogues partent d’une prétraduction des textes publics avec Google Translate. Les termes principaux de navigation, compte, authentification, partage et viewer ont été revus ; les noms de produits, commandes et paramètres sont contrôlés automatiquement. Une relecture éditoriale par des locuteurs natifs reste utile pour les textes longs, notamment les guides et les pages légales.
+The six new catalogs started from a Google Translate pre-translation of the public text. The main navigation, account, authentication, sharing and viewer terms have been reviewed; product names, commands and parameters are checked automatically. An editorial review by native speakers is still worthwhile for long texts, especially the guides and legal pages.
 
-## Maintenance et validation
+## Maintenance and validation
 
-Pour ajouter un message, choisir une clé stable dans `locales/en.json`, compléter tous les catalogues complets. Dans un composant, utiliser `t(key, values)` ou `T` ; dans les données éditoriales, stocker la clé seule et la traduire à l’affichage. Ne jamais recréer de couples de textes par langue dans les composants. Les variantes ne contiennent que leurs différences régionales.
+To add a message, pick a stable key in `locales/en.json` and fill in every full catalog. In a component, use `t(key, values)` or `T`; in editorial data, store only the key and translate it at render time. Never recreate per-language text pairs in components. Variants only contain their regional differences.
 
-Les tests contrôlent la parité des clés, les paramètres, les commandes et fichiers, les pluriels, le repli anglais et l’absence de l’ancien système dans les sources. Les tests d’interaction couvrent le vrai sélecteur, les préférences, les stockages bloqués, les chargements concurrents et leurs échecs, les guides et leurs étapes cochées, les métadonnées et les titres saisis par les propriétaires.
+The tests check key parity, parameters, commands and files, plurals, the English fallback and the absence of the old system from the sources. The interaction tests cover the real picker, preferences, blocked storage, concurrent loads and their failures, the guides and their checked steps, metadata and titles entered by owners.
 
-## Options du mod : langue de Minecraft
+## Mod options: Minecraft's language
 
-Le mod utilise exclusivement le système natif de Minecraft : `Component.translatable` pour les composants et `I18n.get` lorsque une API de dessin ou de champ exige une chaîne. Les ressources sont dans `assets/minemories/lang/` : anglais américain/britannique/canadien, français de France/du Canada, russe, allemand, coréen, portugais brésilien, polonais et japonais. Minecraft assure le repli vers `en_us` pour les langues ou clés absentes.
+The mod relies only on Minecraft's native system: `Component.translatable` for components and `I18n.get` when a drawing or field API requires a string. The resources are in `assets/minemories/lang/`: American/British/Canadian English, French (France/Canada), Russian, German, Korean, Brazilian Portuguese, Polish and Japanese. Minecraft falls back to `en_us` for missing languages or keys.
 
-Il n’y a aucun sélecteur de langue propre au mod, aucune préférence de langue dans sa configuration, aucun appel au site pour choisir ou traduire les options. Changer la langue du site ne change pas celle des options en jeu. Les options simples/avancées, AFK, dossier local, API, diagnostic, monde distant et les écrans associés suivent la langue choisie dans Minecraft. Les messages techniques provenant des services et du moteur de capture ne sont pas retraduits à partir de leur texte libre.
+The mod has no language picker of its own, no language preference in its configuration, and no call to the website to choose or translate the options. Changing the website's language does not change the in-game options. The simple/advanced options, AFK, local folder, API, diagnostics, remote world and related screens follow the language chosen in Minecraft. Technical messages coming from the services and the capture engine are not re-translated from their free-form text.
 
-Les tests Java vérifient les catalogues, les commandes et les chemins. Un même composant d’option est résolu successivement sous les onze langues injectées dans le moteur de Minecraft, afin de vérifier qu’il ne fige pas une traduction indépendante.
+The Java tests check the catalogs, commands and paths. A single option component is resolved in turn under the eleven languages injected into Minecraft's engine, to check that it does not freeze an independent translation.
 
-## Validation de la migration
+## Migration validation
 
-Biome, typecheck et build web réussis ; 19 pages publiques pré-rendues. La suite avec couverture a exécuté 303 tests réussis et couvert les utilitaires à 100 % (lignes, branches, fonctions et instructions). Le worker de `temporal-files.test.ts` a expiré ; sa relance isolée a réussi ses quatre tests et terminé normalement. Les 54 fichiers, soit 307 tests, ont ainsi été vérifiés sans modifier les seuils de couverture ni l’isolation des tests.
+Biome, typecheck and the web build succeeded; 19 public pages pre-rendered. The coverage run executed 303 passing tests and covered the utilities at 100% (lines, branches, functions and statements). The `temporal-files.test.ts` worker timed out; rerunning it alone passed its four tests and exited normally. All 54 files, i.e. 307 tests, were thus verified without changing the coverage thresholds or test isolation.
 
-Chromium a parcouru les onze choix en développement et en production à 390 × 844 : libellés traduits, balises régionales correctes et aucun débordement horizontal. Les imports JSON différés n’utilisent pas d’attribut de type JSON : Vite les sert comme modules JavaScript, que le navigateur refuserait avec cet attribut. Les imports statiques des catalogues de base gardent l’attribut nécessaire au chargement de la configuration par Node.
+Chromium went through all eleven choices in development and production at 390 × 844: translated labels, correct regional tags and no horizontal overflow. Deferred JSON imports do not use a JSON type attribute: Vite serves them as JavaScript modules, which the browser would reject with that attribute. Static imports of the base catalogs keep the attribute Node needs to load the configuration.
 
-Le contrôle Gradle du module commun réussit : compilation, formatage, SpotBugs principal/tests et 176 tests Java, dont les deux tests de localisation. Le moteur natif est vérifié automatiquement sous les onze langues ; aucun essai visuel en jeu n’a été réalisé pour cette migration.
+The Gradle check of the common module succeeds: compilation, formatting, main/test SpotBugs and 176 Java tests, including the two localization tests. The native engine is checked automatically under the eleven languages; no visual in-game trial was done for this migration.

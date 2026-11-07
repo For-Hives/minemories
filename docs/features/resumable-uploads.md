@@ -1,129 +1,125 @@
-# Upload des captures volumineuses
+# Uploading large captures
 
-Le mod utilise un upload séquentiel et reprenable jusqu’à **450 MiB** (471 859 200 octets). Chaque requête contient au maximum **4 MiB**.
-L’ancien `POST /api/mod/memories` reste disponible pour les anciens clients, avec sa
-limite de 100 MiB. Déployer l’API avant le nouveau mod.
+The mod uses a sequential, resumable upload of up to **450 MiB** (471,859,200 bytes). Each request carries at most **4 MiB**.
+The old `POST /api/mod/memories` stays available for old clients, with its
+100 MiB limit. Deploy the API before the new mod.
 
-## Utilisation
+## Usage
 
-Après appairage, `/minemories upload` conserve le comportement habituel. L’envoi, le
-calcul du SHA-256 et les lectures de fichiers tournent hors du thread du jeu. Un seul
-envoi peut tourner à la fois dans le mod ; les snapshots AFK utilisent aussi ce client.
+After pairing, `/minemories upload` behaves as before. Sending, SHA-256
+computation and file reads run off the game thread. Only one upload can run at
+a time in the mod; AFK snapshots use the same client.
 
-Chaque requête dispose de trois tentatives au maximum, espacées de 1 puis 2 secondes,
-pour les erreurs réseau et les statuts 408, 429, 5xx ou `409 upload_busy`. Une erreur
-permanente, notamment 401, est immédiatement remontée. Après une interruption durable,
-relancer `/minemories upload` reprend au dernier offset confirmé par l’API.
+Each request gets at most three attempts, spaced 1 then 2 seconds apart, for
+network errors and 408, 429, 5xx or `409 upload_busy` statuses. A permanent
+error, including 401, is reported immediately. After a lasting interruption,
+running `/minemories upload` again resumes from the last offset confirmed by the API.
 
-Le fichier `capture.glb.upload.properties`, à côté du GLB, conserve l’identifiant de
-session, le SHA-256 et l’identité du destinataire (empreinte de l’API et du token,
-sans enregistrer le token lui-même). Il est supprimé après confirmation finale. Un
-fichier modifié ou un autre compte/API crée une nouvelle session. Une modification
-pendant l’envoi entraîne un échec du checksum ; ne pas réexporter le même fichier
-pendant son transfert. Une session expirée peut être recommencée.
+The `capture.glb.upload.properties` file, next to the GLB, keeps the session
+identifier, the SHA-256 and the recipient's identity (a fingerprint of the API
+and the token, without storing the token itself). It is deleted after final
+confirmation. A modified file or another account/API creates a new session. A
+change during upload makes the checksum fail; do not re-export the same file
+while it is being transferred. An expired session can be started over.
 
-## Protocole HTTP
+## HTTP protocol
 
-Toutes les routes nécessitent `Authorization: Bearer <deviceToken>` et appartiennent
-au **device appairé**, pas seulement à son compte.
+Every route requires `Authorization: Bearer <deviceToken>` and belongs to the
+**paired device**, not just its account.
 
-| Méthode et route | Contenu / résultat |
+| Method and route | Content / result |
 | --- | --- |
-| `POST /api/mod/uploads` | JSON `{ id: UUID, size, sha256, metadata }`. Création idempotente ou reprise avec `offset`, `chunkSize`, `completed`, `expiresAt`. |
-| `GET /api/mod/uploads/:id` | Offset persistant et statut de session. |
-| `PUT /api/mod/uploads/:id` | Corps binaire `application/octet-stream`, header `Upload-Offset`. Morceau de 4 MiB, sauf le dernier. |
-| `POST /api/mod/uploads/:id/complete` | Vérifie la taille, le conteneur GLB et le SHA-256, puis stocke et publie la capture. Rejouable sans doublon. |
-| `DELETE /api/mod/uploads/:id` | Annule une session incomplète ; une capture déjà publiée reste conservée. |
+| `POST /api/mod/uploads` | JSON `{ id: UUID, size, sha256, metadata }`. Idempotent creation or resume with `offset`, `chunkSize`, `completed`, `expiresAt`. |
+| `GET /api/mod/uploads/:id` | Persistent offset and session status. |
+| `PUT /api/mod/uploads/:id` | Binary `application/octet-stream` body, `Upload-Offset` header. 4 MiB chunk, except the last one. |
+| `POST /api/mod/uploads/:id/complete` | Checks the size, the GLB container and the SHA-256, then stores and publishes the capture. Replayable without duplicates. |
+| `DELETE /api/mod/uploads/:id` | Cancels an incomplete session; a capture already published is kept. |
 
-Un morceau rejoué est comparé aux octets déjà écrits. Un contenu différent ou un
-saut d’offset est rejeté. L’offset n’est confirmé qu’après écriture et synchronisation
-du fichier. Les métadonnées d’une session existante restent celles de sa création.
-Le JSON du GLB est limité à 4 MiB et le nombre de chunks GLB à 64 ; le payload BIN
-n’est jamais chargé en entier pour sa validation.
+A replayed chunk is compared with the bytes already written. Different content
+or an offset jump is rejected. The offset is confirmed only after the file has
+been written and synced. An existing session keeps the metadata it was created with.
+The GLB JSON is limited to 4 MiB and the number of GLB chunks to 64; the BIN
+payload is never loaded in full for validation.
 
-## Stockage et déploiement
+## Storage and deployment
 
-Les sessions sont persistées dans SQLite (`mod_uploads`) et leurs fichiers temporaires
-sous `UPLOADS_PATH`. Sans configuration, ce dossier est placé à côté de la base, dans
-`uploads`. **Conserver la base et ce dossier sur un volume persistant commun** pour
-reprendre après redémarrage. Cette implémentation vise un seul processus API utilisant
-ce volume ; les verrous en mémoire ne coordonnent pas plusieurs réplicas.
+Sessions are persisted in SQLite (`mod_uploads`) and their temporary files
+under `UPLOADS_PATH`. Without configuration, this folder sits next to the
+database, in `uploads`. **Keep the database and this folder on a shared
+persistent volume** to resume after a restart. This implementation targets a
+single API process using that volume; in-memory locks do not coordinate several replicas.
 
-Limites : deux sessions incomplètes par device, 128 globalement, 2 GiB de taille déclarée
-réservée pour les fichiers temporaires et quatre mutations/finalisations simultanées.
-Les sessions expirent au bout de 24 heures. Le nettoyage tourne au démarrage, toutes
-les heures et lors d’une initialisation. Il retire les fichiers temporaires et les
-objets/parts S3 abandonnés après une tentative de stockage ; un stockage indisponible
-conserve la session pour un nettoyage ultérieur.
+Limits: two incomplete sessions per device, 128 globally, 2 GiB of declared size
+reserved for temporary files and four concurrent mutations/finalizations.
+Sessions expire after 24 hours. Cleanup runs at startup, every hour and on
+initialization. It removes temporary files and S3 objects/parts abandoned after
+a storage attempt; unavailable storage keeps the session for a later cleanup.
 
-Un [quota GLB par compte](account-storage-quota.md), de 2 Gio par défaut et
-configurable par `ACCOUNT_STORAGE_BYTES`, s’ajoute au staging global. Il partage
-le budget entre tous les devices, les uploads legacy et reprenables, la corbeille
-et les suppressions en attente. Un dépassement reçoit `storage_quota_exceeded`
-(HTTP 413) ; une réservation déjà obtenue n’est pas facturée deux fois au rejeu
-ou à la finalisation. La libération attend le nettoyage réussi.
+A [per-account GLB quota](account-storage-quota.md), 2 GiB by default and
+configurable with `ACCOUNT_STORAGE_BYTES`, comes on top of global staging. It
+shares the budget across all devices, legacy and resumable uploads, the trash
+and pending deletions. Exceeding it returns `storage_quota_exceeded`
+(HTTP 413); a reservation already obtained is not charged twice on replay
+or finalization. Space is released only after successful cleanup.
 
-La finalisation utilise un stream fichier vers S3 et des parts SDK de **8 MiB**,
-envoyées une par une avec AWS SDK v3. Le nettoyage durable parcourt
-toutes les pages d’uploads multipart et abandonne uniquement ceux de la clé exacte.
-Les morceaux mod → API restent de **4 MiB**. Voir [le stockage S3](storage-s3.md).
-Les routes de téléchargement privées et partagées utilisent également des streams. Les GLB
-et les métadonnées accessibles par lien de partage portent `Cache-Control: private, no-store`
-pour éviter qu’un cache public continue à les servir après révocation. Une
-capture devient visible uniquement après finalisation du stockage et transaction
-SQLite. Après une panne entre ces deux étapes, une nouvelle finalisation remplace
-l’objet réservé à cette session, puis confirme la même capture.
+Finalization streams the file to S3 with **8 MiB** SDK parts, sent one at a
+time with AWS SDK v3. Durable cleanup walks every page of multipart uploads and
+aborts only those for the exact key. Mod → API chunks stay at **4 MiB**. See
+[S3 storage](storage-s3.md). Private and shared download routes also use
+streams. GLBs and metadata reachable through a share link carry
+`Cache-Control: private, no-store` so a public cache cannot keep serving them
+after revocation. A capture becomes visible only after storage finalization and
+the SQLite transaction. After a crash between those two steps, a new
+finalization replaces the object reserved for that session, then confirms the same capture.
 
-Le bucket doit autoriser les opérations multipart (création, liste des uploads/parts,
-complétion, abandon) en plus de la lecture/écriture/suppression des objets. Prévoir
-l’espace pour les fichiers temporaires et le stockage final ; en mode filesystem,
-la copie finale peut temporairement doubler l’espace occupé par une capture.
-Configurer le reverse proxy pour accepter une requête de 4 MiB et attendre la
-finalisation S3 (timeout client de cinq minutes). Bun accepte 100 MiB par requête
-pour maintenir l’ancien endpoint ; les nouveaux morceaux restent limités à 4 MiB.
+The bucket must allow multipart operations (create, list uploads/parts,
+complete, abort) in addition to object read/write/delete. Plan space for
+temporary files and final storage; in filesystem mode, the final copy can
+temporarily double the space taken by a capture. Configure the reverse proxy
+to accept a 4 MiB request and to wait for S3 finalization (five-minute client
+timeout). Bun accepts 100 MiB per request to keep the old endpoint working; new
+chunks stay limited to 4 MiB.
 
-## Vérifications
+## Checks
 
-- `bun api:check` : routes, isolation entre devices, rejeu, quotas, expiration,
-  checksum, reprise dans un nouveau processus et stockage temporairement indisponible.
-- Le test API assemble et finalise un GLB de 200 MiB en 50 morceaux sans buffer du fichier entier.
-- `storage-stream.test.ts` traverse le SDK S3 réel contre une fixture HTTP et
-  vérifie les parts de 8 MiB, leurs SHA-256 signés et le nettoyage après refus d’une
-  part. Une source qui retient sa fin jusqu’à réception de la première part prouve
-  que l’envoi commence avant lecture du fichier entier. Cela ne constitue pas un
-  test Garage réel.
-- `ChunkedUploaderTest` vérifie les retries bornés, la reprise du sidecar, les erreurs
-  permanentes et les offsets invalides.
-- Un smoke test HTTP du client Java avec `-Xmx64m` a transféré et finalisé
-  200 MiB sur l’API avec le stockage filesystem (une seule capture publiée).
-- `bun run build` vérifie et construit le web, l’API et le JAR NeoForge avec JDK 21.
-- `bun run api:garage` valide le stockage réel, sa panne et sa reprise, ainsi que
-  la reprise après redémarrage du processus API, sans doublon.
-- Le parcours natif Minecraft à 200 Mio, coupure après 12 Mio et reprise après
-  redémarrage client/API est [validé et documenté](native-upload-resume-validation.md) :
-  une seule mémoire complète est stockée, avec checksum et métadonnées identiques.
+- `bun api:check`: routes, isolation between devices, replay, quotas, expiry,
+  checksum, resume in a new process and temporarily unavailable storage.
+- The API test assembles and finalizes a 200 MiB GLB in 50 chunks without buffering the whole file.
+- `storage-stream.test.ts` runs the real S3 SDK against an HTTP fixture and
+  checks the 8 MiB parts, their signed SHA-256 and cleanup after a part is
+  refused. A source that holds back its end until the first part is received
+  proves that sending starts before the whole file is read. This is not a real
+  Garage test.
+- `ChunkedUploaderTest` checks bounded retries, sidecar resume, permanent
+  errors and invalid offsets.
+- An HTTP smoke test of the Java client with `-Xmx64m` transferred and finalized
+  200 MiB on the API with filesystem storage (a single capture published).
+- `bun run build` checks and builds the web app, the API and the NeoForge JAR with JDK 21.
+- `bun run api:garage` validates real storage, its outage and recovery, as well
+  as resume after an API process restart, without duplicates.
+- The native Minecraft flow at 200 MiB, cut off after 12 MiB and resumed after a
+  client/API restart, is [validated and documented](native-upload-resume-validation.md):
+  a single complete memory is stored, with identical checksum and metadata.
 
-## Captures AFK
+## AFK captures
 
-L’AFK est actif par défaut : cinq minutes d’inactivité, au plus une capture toutes
-les quatre heures et un rayon de 32 blocs. Une désactivation enregistrée reste
-respectée. Le bouton AFK est dans le menu simple ; les délais et le rayon sont
-configurables dans le mode avancé.
+AFK is on by default: five minutes of inactivity, at most one capture every
+four hours and a 32-block radius. A saved opt-out is respected. The AFK button
+is in the simple menu; delays and radius are configurable in advanced mode.
 
-La capture peut se déclencher pendant la pause et quand Minecraft n’a pas le focus.
-Un joueur appairé envoie automatiquement sa capture ; sans appairage, elle reste
-locale. L’AFK ne remplace pas le GLB pendant un upload déjà en cours. Les erreurs
-restent dans le log local Minecraft ; aucune collecte distante n’est ajoutée.
+The capture can trigger while paused and when Minecraft does not have focus.
+A paired player uploads the capture automatically; without pairing, it stays
+local. AFK does not replace the GLB while an upload is already running. Errors
+stay in the local Minecraft log; no remote collection is added.
 
-Pour un test court, configurer temporairement les deux délais à une minute dans
-les réglages avancés, puis rétablir les valeurs souhaitées. Vérifier un compte
-appairé, un compte non appairé, AFK OFF, le retour du mouvement, la pause et une
-API indisponible. Le fonctionnement en pause et les réglages ont été validés sur
-le client de développement ; le JAR distribué et la reprise d’upload après panne
-restent à exercer en jeu.
+For a short test, temporarily set both delays to one minute in the advanced
+settings, then restore the values you want. Check a paired account, an
+unpaired account, AFK OFF, returning movement, pause and an unavailable API.
+Pause behavior and settings were validated on the development client; the
+distributed JAR and upload resume after an outage still need to be exercised in game.
 
-## Plafond de 450 Mio
+## 450 MiB cap
 
-Le 16 octobre 2026, le test API finalise un GLB de 471 859 200 octets envoyé en 113 requêtes de 4 Mio au maximum ; le dernier morceau contient 2 Mio. Un octet au-delà du plafond est refusé dès l’initialisation. Les lectures de validation restent en flux. La suite complète inclut les quotas, la reprise et les erreurs de stockage.
+On 16 October 2026, the API test finalizes a 471,859,200-byte GLB sent in 113 requests of at most 4 MiB; the last chunk holds 2 MiB. One byte above the cap is refused at initialization. Validation reads stay streamed. The full suite includes quotas, resume and storage errors.
 
-Les anciennes bases SQLite sont migrées dans une transaction : réservations, références en préparation et références publiées sont conservées, leurs contraintes de taille et de nombre de morceaux sont relevées. Le test exerce aussi une seconde migration sans changement et les clés étrangères. Le lecteur temporel du viewer accepte le même plafond. Les preuves historiques à 200 Mio ci-dessus restent celles de leurs versions respectives.
+Older SQLite databases are migrated in a transaction: reservations, pending references and published references are kept, and their size and chunk-count constraints are raised. The test also runs a second migration with no changes and checks foreign keys. The viewer's timeline player accepts the same cap. The historical 200 MiB evidence above still applies to its respective versions.

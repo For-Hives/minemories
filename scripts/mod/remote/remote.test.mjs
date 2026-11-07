@@ -59,7 +59,7 @@ async function dist(version, ids = ['fabric-mc1.21.1', 'forge-mc1.21.1'], manife
 	return { root, artifacts }
 }
 
-/** Faux serveur : mémorise les envois, répond selon `behave` et sert l'index public correspondant. */
+/** Fake server: records uploads, answers according to `behave` and serves the matching public index. */
 function server({ behave = () => null, indexVisibleAfter = 0 } = {}) {
 	const calls = []
 	const published = {}
@@ -114,7 +114,7 @@ const noSleep = () => {
 	return { waits, sleep: async ms => waits.push(ms) }
 }
 
-test('resolveApiUrl: production par défaut, MOD_API_URL, option, HTTP clair seulement en local', () => {
+test('resolveApiUrl: production by default, MOD_API_URL, option, plain HTTP only locally', () => {
 	assert.equal(resolveApiUrl({ env: {} }), DEFAULT_API_URL)
 	assert.equal(resolveApiUrl({ env: { MOD_API_URL: 'https://api.example.org/' } }), 'https://api.example.org')
 	assert.equal(
@@ -125,23 +125,23 @@ test('resolveApiUrl: production par défaut, MOD_API_URL, option, HTTP clair seu
 	assert.equal(resolveApiUrl({ flag: 'http://[::1]:3001' }), 'http://[::1]:3001')
 	assert.throws(() => resolveApiUrl({ flag: 'http://api.example.org' }), /HTTPS/)
 	assert.throws(() => resolveApiUrl({ flag: 'ftp://localhost' }), /HTTPS/)
-	assert.throws(() => resolveApiUrl({ flag: 'not a url' }), /invalide/)
-	assert.throws(() => resolveApiUrl({ flag: 'https://user:pw@api.example.org' }), /identifiant/)
+	assert.throws(() => resolveApiUrl({ flag: 'not a url' }), /Invalid API URL/)
+	assert.throws(() => resolveApiUrl({ flag: 'https://user:pw@api.example.org' }), /credentials/)
 })
 
-test('le jeton vient de l’environnement : absent ou trop court est refusé, jamais affiché', () => {
+test('the token comes from the environment: missing or too short is refused, never shown', () => {
 	assert.equal(readToken(env), TOKEN)
-	assert.throws(() => readToken({}), /MOD_UPLOAD_TOKEN est absent/)
+	assert.throws(() => readToken({}), /MOD_UPLOAD_TOKEN is missing/)
 	assert.throws(
-		() => readToken({ MOD_UPLOAD_TOKEN: 'short' }),
-		error => error.message.includes('trop court') && !error.message.includes('short')
+		() => readToken({ MOD_UPLOAD_TOKEN: 'tiny-x' }),
+		error => error.message.includes('too short') && !error.message.includes('tiny-x')
 	)
 	assert.deepEqual(resolveRemote({ apiUrl: 'http://localhost:1', env }), { apiUrl: 'http://localhost:1', token: TOKEN })
-	assert.equal(maskToken(`Bearer ${TOKEN} et ${TOKEN}`, TOKEN), 'Bearer [masqué] et [masqué]')
-	assert.equal(maskToken('rien', undefined), 'rien')
+	assert.equal(maskToken(`Bearer ${TOKEN} and ${TOKEN}`, TOKEN), 'Bearer [masked] and [masked]')
+	assert.equal(maskToken('nothing', undefined), 'nothing')
 })
 
-test('un envoi réussi : en-têtes, manifeste, octets, confirmation par l’index public', async () => {
+test('a successful upload: headers, manifest, bytes, confirmation through the public index', async () => {
 	const { artifacts } = await dist('0.9.0')
 	const s = server()
 	const out = silent()
@@ -180,10 +180,10 @@ test('un envoi réussi : en-têtes, manifeste, octets, confirmation par l’inde
 	])
 	assert.equal(manifest.builtBy, 'pc')
 	assert.ok(!out.all().includes(TOKEN))
-	assert.match(summarizeUpload(result), /2 cible\(s\) envoyée\(s\), 0 échec/)
+	assert.match(summarizeUpload(result), /2 target\(s\) uploaded, 0 failed/)
 })
 
-test('builtBy vient du manifest ou de MOD_BUILT_BY, et ?replace=1 est transmis', async () => {
+test('builtBy comes from the manifest or MOD_BUILT_BY, and ?replace=1 is passed on', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1'], { builtBy: 'vps' })
 	const s = server()
 	await uploadRelease({ version: '0.9.0', artifacts, env, fetchImpl: s.fetchImpl, replace: true, log: silent().log })
@@ -193,10 +193,10 @@ test('builtBy vient du manifest ou de MOD_BUILT_BY, et ?replace=1 est transmis',
 		MOD_BUILT_BY: 'vps',
 	})
 	assert.equal(JSON.parse(Buffer.from(inline, 'base64url').toString()).builtBy, 'vps')
-	await assert.rejects(encodeManifest({ file: '/nonexistent/x.jar' }, '1', {}), /manifest\.json introuvable/)
+	await assert.rejects(encodeManifest({ file: '/nonexistent/x.jar' }, '1', {}), /manifest\.json not found/)
 })
 
-test('401, 409 et 422 ne sont jamais retentés ; une cible en échec n’empêche pas les autres', async () => {
+test('401, 409 and 422 are never retried; a failing target does not stop the others', async () => {
 	for (const status of [401, 409, 422]) {
 		const { artifacts } = await dist('0.9.0')
 		const s = server({ behave: call => (call.url.includes('fabric') ? { status, body: { error: 'nope' } } : null) })
@@ -221,11 +221,11 @@ test('401, 409 et 422 ne sont jamais retentés ; une cible en échec n’empêch
 			]
 		)
 		assert.equal(result.results[0].message, `HTTP ${status} (nope)`)
-		assert.match(summarizeUpload(result), /1 cible\(s\) envoyée\(s\), 1 échec/)
+		assert.match(summarizeUpload(result), /1 target\(s\) uploaded, 1 failed/)
 	}
 })
 
-test('les erreurs réseau et 5xx sont retentées avec attente croissante, dans une limite', async () => {
+test('network errors and 5xx are retried with growing delays, within a limit', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1'])
 	const failures = [new Error('ECONNRESET'), { status: 503 }]
 	const flaky = server({ behave: (_call, n) => failures[n - 1] ?? null })
@@ -258,7 +258,7 @@ test('les erreurs réseau et 5xx sont retentées avec attente croissante, dans u
 	assert.equal(failed.results[0].message, 'HTTP 502')
 })
 
-test('le jeton n’apparaît dans aucun message, même renvoyé par une erreur réseau', async () => {
+test('the token never shows up in any message, even when echoed by a network error', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1'])
 	const leaky = server({ behave: () => new Error(`socket closed for Bearer ${TOKEN}`) })
 	const out = silent()
@@ -274,10 +274,10 @@ test('le jeton n’apparaît dans aucun message, même renvoyé par une erreur r
 	assert.equal(result.ok, false)
 	assert.ok(!out.all().includes(TOKEN))
 	assert.ok(!JSON.stringify(result).includes(TOKEN))
-	assert.match(result.results[0].message, /\[masqué\]/)
+	assert.match(result.results[0].message, /\[masked\]/)
 })
 
-test('un SHA-256 renvoyé différent, un fichier altéré ou un manifest absent sont des échecs', async () => {
+test('a different returned SHA-256, a tampered file or a missing manifest are failures', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1', 'forge-mc1.21.1'])
 	const liar = server({ behave: () => ({ status: 200, body: { ok: true, sha256: 'a'.repeat(64) } }) })
 	const mismatch = await uploadRelease({
@@ -287,7 +287,7 @@ test('un SHA-256 renvoyé différent, un fichier altéré ou un manifest absent 
 		fetchImpl: liar.fetchImpl,
 		log: silent().log,
 	})
-	assert.match(mismatch.results[0].message, /SHA-256 différent/)
+	assert.match(mismatch.results[0].message, /SHA-256 that does not match/)
 	const tampered = [
 		{ ...artifacts[0], sha256: 'b'.repeat(64) },
 		{ targetId: 'x-mc1.0', filePath: join(tmpdir(), 'missing.jar') },
@@ -300,12 +300,12 @@ test('un SHA-256 renvoyé différent, un fichier altéré ou un manifest absent 
 		fetchImpl: s.fetchImpl,
 		log: silent().log,
 	})
-	assert.match(result.results[0].message, /sha256 inattendu/)
+	assert.match(result.results[0].message, /unexpected sha256/)
 	assert.equal(result.results[1].status, 'failed')
 	assert.equal(s.calls.length, 0)
 })
 
-test('la confirmation relit l’index public avec patience, puis échoue si la version reste absente', async () => {
+test('confirmation patiently rereads the public index, then fails if the version stays missing', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1'])
 	const slow = server({ indexVisibleAfter: 2 })
 	const waits = noSleep()
@@ -332,8 +332,8 @@ test('la confirmation relit l’index public avec patience, puis échoue si la v
 		log: out.log,
 	})
 	assert.equal(missing.ok, false)
-	assert.match(missing.results[0].message, /absente de l'index publié/)
-	assert.ok(out.lines.error.some(m => m.includes("absente de l'index")))
+	assert.match(missing.results[0].message, /missing from the published index/)
+	assert.ok(out.lines.error.some(m => m.includes('missing from the published index')))
 
 	const broken = server()
 	const fetchBroken = async (url, init) =>
@@ -349,7 +349,7 @@ test('la confirmation relit l’index public avec patience, puis échoue si la v
 	assert.match(unreadable.results[0].message, /HTTP 500/)
 })
 
-test('une URL en HTTP clair est refusée avant tout envoi, tout comme un jeton absent', async () => {
+test('a plain HTTP URL is refused before any upload, as is a missing token', async () => {
 	const { artifacts } = await dist('0.9.0', ['fabric-mc1.21.1'])
 	const s = server()
 	await assert.rejects(
@@ -370,7 +370,7 @@ test('une URL en HTTP clair est refusée avant tout envoi, tout comme un jeton a
 	assert.equal(s.calls.length, 0)
 })
 
-test('lecture de l’index public : rapport par cible, erreur HTTP, API injoignable', async () => {
+test('reading the public index: per-target report, HTTP error, unreachable API', async () => {
 	const index = {
 		schema: 1,
 		targets: {
@@ -406,7 +406,7 @@ test('lecture de l’index public : rapport par cible, erreur HTTP, API injoigna
 	)
 })
 
-test('bun mod push envoie build/mod-dist/<version>/ ; --dry-run ne touche pas au réseau', async () => {
+test('bun mod push uploads build/mod-dist/<version>/; --dry-run never touches the network', async () => {
 	const { root } = await dist('0.9.0')
 	await mkdir(join(root, 'mod/1.21.1'), { recursive: true })
 	await writeFile(join(root, propertiesPath), 'mod_version=0.9.0\n')
@@ -421,20 +421,20 @@ test('bun mod push envoie build/mod-dist/<version>/ ; --dry-run ne touche pas au
 	}
 	assert.equal(await push(['--dry-run'], ctx), 0)
 	assert.equal(s.calls.length, 0)
-	assert.ok(out.lines.info.some(m => m.includes('[dry-run] 2 artefact(s) 0.9.0 vers https://api.example.org')))
+	assert.ok(out.lines.info.some(m => m.includes('[dry-run] 2 artifact(s) 0.9.0 to https://api.example.org')))
 	assert.equal(await push(['0.9.0', '--replace'], ctx), 0)
 	assert.equal(s.calls.length, 2)
 	assert.ok(s.calls[0].url.endsWith('?replace=1'))
-	assert.ok(out.lines.info.some(m => m.includes('2 cible(s) envoyée(s)')))
+	assert.ok(out.lines.info.some(m => m.includes('2 target(s) uploaded')))
 
 	const failing = server({ behave: () => ({ status: 401 }) })
 	assert.equal(await push(['0.9.0', '--api-url', 'http://localhost:3001'], { ...ctx, fetchImpl: failing.fetchImpl }), 1)
 	assert.equal(await push(['1.2.3'], ctx), 1)
-	assert.ok(out.lines.error.some(m => m.includes('Aucun JAR')))
+	assert.ok(out.lines.error.some(m => m.includes('No JAR')))
 	assert.ok(!out.all().includes(TOKEN))
 })
 
-test('bun mod status --remote lit l’index public sans clés S3 ; une URL HTTP est refusée', async () => {
+test('bun mod status --remote reads the public index without S3 keys; an HTTP URL is refused', async () => {
 	const root = join(import.meta.dirname, '..', '..', '..')
 	const config = await readConfig(root)
 	const out = silent()

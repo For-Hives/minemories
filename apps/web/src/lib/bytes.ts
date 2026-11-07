@@ -26,7 +26,7 @@ export function formatBytes(bytes: number, locale: Locale): string {
 	const value = safe / match[1]
 	return unitFormat(locale, match[0], fractionDigits(value)).format(value)
 }
-/** The exact byte count, spelled out in full ("2 048 octets"), for assistive technology and tooltips. */
+/** The exact byte count, spelled out in full ("2,048 bytes"), for assistive technology and tooltips. */
 export function formatExactBytes(bytes: number, locale: Locale): string {
 	const safe = Number.isFinite(bytes) ? Math.max(0, Math.round(bytes)) : 0
 	return unitFormat(locale, 'byte', 0, 'long').format(safe)

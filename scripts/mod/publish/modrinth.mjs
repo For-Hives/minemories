@@ -65,7 +65,7 @@ async function resolveDependencies({ catalog, loader, env, dryRun, fetchImpl, ca
 					headers: { 'User-Agent': 'minemories', Authorization: env.MODRINTH_TOKEN },
 				})
 				if (!response.ok)
-					throw new Error(`dépendance ${dependency.slug} introuvable (${await errorDetail(response, env)})`)
+					throw new Error(`dependency ${dependency.slug} not found (${await errorDetail(response, env)})`)
 				cache.set(dependency.slug, (await response.json()).id)
 			}
 			projectId = cache.get(dependency.slug)
@@ -82,7 +82,7 @@ export async function findExistingVersion({ projectId, target, mapping, number, 
 		game_versions: JSON.stringify([target.minecraft]),
 	})
 	const response = await request(fetchImpl, `${MODRINTH_API}/project/${projectId}/version?${query}`, { headers })
-	if (!response.ok) throw new Error(`liste des versions impossible (${await errorDetail(response, env)})`)
+	if (!response.ok) throw new Error(`could not list versions (${await errorDetail(response, env)})`)
 	const versions = await response.json()
 	return versions.find(version => version.version_number === number) ?? null
 }
@@ -90,7 +90,7 @@ export async function findExistingVersion({ projectId, target, mapping, number, 
 async function upload({ artifact, data, headers, readImpl, fetchImpl, env, catalog, number }) {
 	const file = await readArtifact(artifact, readImpl)
 	if (artifact.sha256 && createHash('sha256').update(file.data).digest('hex') !== artifact.sha256) {
-		return { status: 'failed', message: 'empreinte SHA-256 différente de celle du build, envoi annulé' }
+		return { status: 'failed', message: 'SHA-256 digest differs from the build, upload cancelled' }
 	}
 	const form = new FormData()
 	form.set('data', JSON.stringify(data))
@@ -105,19 +105,19 @@ async function publishOne(context, artifact) {
 	const { config, catalog, catalogs, release, env, dryRun, fetchImpl, readImpl, missing, depCache } = context
 	const result = fields => ({ platform: 'modrinth', targetId: artifact.targetId, ...fields })
 	const target = findTarget(config, artifact.targetId)
-	if (!target) return result({ status: 'failed', message: `cible inconnue : ${artifact.targetId}` })
+	if (!target) return result({ status: 'failed', message: `unknown target: ${artifact.targetId}` })
 	const mapping = catalogs.mapping?.[target.loader]
 	if (!mapping?.modrinth) {
 		return result({
 			status: 'skipped',
-			message: `aucun chargeur Modrinth pour "${target.loader}" dans mod/catalogs.json (mapping)`,
+			message: `no Modrinth loader for "${target.loader}" in mod/catalogs.json (mapping)`,
 		})
 	}
 	if (release.published?.modrinth?.[artifact.targetId]) {
 		return result({
 			status: 'skipped',
 			url: release.published.modrinth[artifact.targetId],
-			message: 'déjà publié (index du site)',
+			message: 'already published (site index)',
 		})
 	}
 	if (missing.length > 0 && !dryRun) return result({ status: 'skipped', message: skippedMessage('Modrinth', missing) })
@@ -131,7 +131,11 @@ async function publishOne(context, artifact) {
 		if (!dryRun) {
 			const existing = await findExistingVersion({ projectId, target, mapping, number, headers, fetchImpl, env })
 			if (existing) {
-				return result({ status: 'skipped', url: versionUrl(catalog, existing), message: `déjà publié (${number})` })
+				return result({
+					status: 'skipped',
+					url: versionUrl(catalog, existing),
+					message: `already published (${number})`,
+				})
 			}
 		}
 		const dependencies = await resolveDependencies({
@@ -148,8 +152,8 @@ async function publishOne(context, artifact) {
 				{ method: 'POST', url: `${MODRINTH_API}/version`, headers, fields: { data }, artifact },
 				env
 			)
-			const note = missing.length > 0 ? ` (publication réelle impossible : ${missing.join(' ; ')})` : ''
-			return result({ status: 'skipped', message: `dry-run : requête construite${note}`, request: description })
+			const note = missing.length > 0 ? ` (real publishing impossible: ${missing.join('; ')})` : ''
+			return result({ status: 'skipped', message: `dry-run: request built${note}`, request: description })
 		}
 		return result(await upload({ artifact, data, headers, readImpl, fetchImpl, env, catalog, number }))
 	} catch (error) {

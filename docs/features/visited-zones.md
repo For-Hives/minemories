@@ -1,79 +1,80 @@
-# Suggestions de zones fréquentées
+# Frequently visited area suggestions
 
-Le menu **M → Zones suggérées** et `/minemories suggestions` présentent les cinq
-zones les plus fréquentées du monde, de la dimension et du joueur actuels.
-Ces suggestions restent locales : ouvrir la liste ne change aucun coin de sélection,
-ne produit aucun GLB et ne déclenche aucun envoi. Le joueur rejoint une zone puis
-choisit normalement son export local ou sa capture.
+The **M → Areas to explore** menu and `/minemories suggestions` show the five
+most visited areas of the current world, dimension and player. These
+suggestions stay local: opening the list changes no selection corner, produces
+no GLB and triggers no upload. The player goes to an area and then chooses their
+local export or capture as usual.
 
-## Score et agrégation
+## Score and aggregation
 
-Le score est un temps actif approximatif, échantillonné une fois par seconde sur
-le thread client. Deux observations consécutives doivent être actives et espacées
-de 1 à 2 secondes ; chacune crédite une seconde au maximum. Aucun rattrapage
-n’est effectué après un arrêt, un changement d’horloge ou un client bloqué.
+The score is an approximate active time, sampled once per second on the client
+thread. Two consecutive observations must be active and 1 to 2 seconds apart;
+each credits at most one second. Nothing is caught up after a stop, a clock
+change or a stalled client.
 
-Une observation est active lorsque le jeu est focalisé, non pausé et que le joueur
-a bougé ou tourné la caméra dans la dernière minute. Le chunk doit avoir réellement
-été reçu par le client : le compteur ne charge pas de terrain. Les longues pauses
-AFK ne rendent donc pas une zone artificiellement intéressante. Les interactions
-immobiles sans mouvement de caméra ne sont pas un signal supplémentaire.
+An observation is active when the game is focused, not paused, and the player
+has moved or turned the camera within the last minute. The chunk must actually
+have been received by the client: the counter does not load terrain. Long AFK
+breaks therefore do not make an area artificially interesting. Stationary
+interactions without camera movement are not an extra signal.
 
-Les chunks sont agrégés en cases fixes de **64 × 64 blocs** (4 × 4 chunks), avec
-arrondi vers le bas aussi aux coordonnées négatives. Une case apparaît après
-60 secondes créditées. La liste affiche ses bornes X/Z et les minutes cumulées ;
-les égalités sont départagées par coordonnées. Il s’agit d’un signal de
-fréquentation, sans analyse ni promesse de détection des constructions.
+Chunks are aggregated into fixed **64 × 64 block** cells (4 × 4 chunks), rounded
+down, including for negative coordinates. A cell appears after 60 credited
+seconds. The list shows its X/Z bounds and the accumulated minutes; ties are
+broken by coordinates. This is a visit signal, with no analysis and no promise
+of detecting builds.
 
-## Persistance et limites
+## Persistence and limits
 
-Les scores sont séparés du suivi de profondeur :
-`config/minemories/exploration/<identité-hachée>.properties.zones`.
-L’identité reprend le chemin du monde solo ou l’adresse du serveur, la dimension
-et l’UUID du joueur. Aucun nom de serveur n’apparaît dans le nom de fichier.
-Le suivi fonctionne aussi sans appairage et avec les captures AFK désactivées.
+Scores are kept separate from depth tracking:
+`config/minemories/exploration/<hashed-identity>.properties.zones`.
+The identity combines the singleplayer world path or the server address, the
+dimension and the player UUID. No server name appears in the file name.
+Tracking also works without pairing and with AFK captures turned off.
 
-Chaque historique conserve au plus 10 000 cases ; une ancienne entrée est
-évincée à la limite. Le crédit replace une case en fin de file, mais l’ordre
-d’éviction est reconstitué à la lecture. Un score sature à 365 jours. La lecture refuse les fichiers
-supérieurs à 1 Mio, les liens symboliques et les scores/coordonnées invalides.
-Les entrées textuelles endommagées sont ignorées ; un fichier illisible est
-préservé, le suivi de cette session restant en mémoire. Les sauvegardes utilisent
-le remplacement atomique commun aux réglages, toutes les dix secondes et lors
-d’un changement d’identité/d’une déconnexion. Un arrêt brutal peut perdre les
-dernières secondes non sauvegardées.
+Each history keeps at most 10,000 cells; an old entry is evicted at the limit.
+Crediting moves a cell to the end of the queue, but the eviction order is
+rebuilt on read. A score saturates at 365 days. Reading refuses files larger
+than 1 MiB, symbolic links and invalid scores/coordinates. Damaged text entries
+are ignored; an unreadable file is preserved, and tracking for that session
+stays in memory. Saves use the same atomic replacement as the settings, every
+ten seconds and on an identity change or disconnect. A hard crash can lose the
+last unsaved seconds.
 
 ## Validation
 
-`VisitedZonesTest` vérifie agrégation, classement, coordonnées négatives, seuil,
-pause/chunks absents/horloge, persistance sans rattrapage, éviction, limite de liste,
-fichiers surdimensionnés et liens symboliques. Les tests d’identité de
-`ExplorationDepthTest` couvrent la clé partagée monde/dimension/joueur.
-## Essai natif du 15 octobre 2026
+`VisitedZonesTest` checks aggregation, ranking, negative coordinates, threshold,
+pause/missing chunks/clock, persistence without catch-up, eviction, list limit,
+oversized files and symbolic links. The identity tests in
+`ExplorationDepthTest` cover the shared world/dimension/player key.
+
+## Native trial of 15 October 2026
 
 Minecraft 1.21.1 / NeoForge 21.1.248, Temurin 21.0.12.1+1, Mesa llvmpipe
-OpenGL 4.6. JAR 0.1.1-dev.1 chargé depuis `mods/`, SHA-256 :
+OpenGL 4.6. JAR 0.1.1-dev.1 loaded from `mods/`, SHA-256:
 `27f273dc654bfc6f3cef3c8f4ef839750743af2f02258e1f8241136f1fd9788a`.
-Le pilote QA est un mod séparé, absent du JAR distribué. Il fait tourner la caméra
-pendant deux séjours réels de 70 secondes, en fenêtre focalisée, puis ouvre le
-bouton **Zones suggérées** du menu M.
+The QA driver is a separate mod, not included in the distributed JAR. It turns
+the camera during two real 70-second stays, with the window focused, then opens
+the **Areas to explore** button of the M menu.
 
-Les cases X 0…63 / Z 0…63 et X 64…127 / Z 0…63 apparaissent après une minute.
-L’écran est inspecté sur une capture native 900 × 600 : texte, bornes, minutes et
-bouton Retour lisibles. L’ouverture conserve la sélection ; six secondes dans
-cet écran pausé ne créditent rien. Un déplacement temporaire du client dans un
-chunk non reçu ne crée pas de score. Un aller-retour Nether/Overworld sépare puis
-restaure les suggestions du monde initial. Le compte reste non appairé et l’AFK
-désactivé ; aucun export ni envoi n’est demandé.
+The cells X 0…63 / Z 0…63 and X 64…127 / Z 0…63 appear after one minute. The
+screen is inspected on a native 900 × 600 screenshot: text, bounds, minutes and
+Back button are readable. Opening it keeps the selection; six seconds on this
+paused screen credit nothing. Temporarily moving the client into a chunk that
+was not received creates no score. A Nether/Overworld round trip separates and
+then restores the suggestions of the initial world. The account stays unpaired
+and AFK turned off; no export or upload is requested.
 
-Les processus de redémarrage, autre monde et autre joueur vérifient la persistance
-et l’isolation. Les artefacts restent hors Git dans
-`~/.local/state/minemories-validation/visited-zones-fixed-20261015/` : sources du
-pilote, JAR/empreinte, logs, rapports d’assertions et capture d’écran. `bun check`
-et `bun run build` passent avec les 140 tests NeoForge, SpotBugs et les seuils de
-couverture inchangés.
+The restart, other-world and other-player processes check persistence and
+isolation. The artifacts stay outside Git in
+`~/.local/state/minemories-validation/visited-zones-fixed-20261015/`: driver
+sources, JAR/hash, logs, assertion reports and screenshot. `bun check` and
+`bun run build` pass with the 140 NeoForge tests, SpotBugs and unchanged
+coverage thresholds.
 
-Sur serveur distant, la séparation par connexion et l’identifiant de monde
-configurable sont décrits dans [Timelapse](timelapse.md). Sans identifiant explicite,
-l’historique est en mémoire (huit dimensions au plus) ; avec un identifiant, il
-est conservé entre connexions. Les historiques solo existants restent inchangés.
+On a remote server, per-connection separation and the configurable world
+identifier are described in [Timelapse](timelapse.md). Without an explicit
+identifier, the history is in memory (at most eight dimensions); with an
+identifier, it is kept across connections. Existing singleplayer histories are
+unchanged.

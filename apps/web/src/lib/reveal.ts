@@ -1,4 +1,4 @@
-/** Blocs de la landing qui entrent au défilement (charte : docs/features/design-system.md, règles de mouvement). */
+/** Landing blocks that enter on scroll (design system: docs/features/design-system.md, motion rules). */
 export const revealSelector = [
 	'.mc-section__title',
 	'.mc-section__text',
@@ -20,9 +20,9 @@ const browserObserver: ObserverFactory = callback =>
 	new IntersectionObserver(callback, { rootMargin: '0px 0px -8% 0px' })
 
 /**
- * Prépare l'entrée au défilement dans `root` (le conteneur #site) : décalage et fondu courts (transform et opacité, jamais de saut de mise en page).
- * Sans effet, et rien n'est masqué, si le mouvement est réduit ou si IntersectionObserver n'existe pas : le contenu est visible par défaut.
- * Chaque bloc entre une fois ; les frères qui entrent ensemble sont décalés de --ds-stagger. Renvoie la fonction qui défait tout.
+ * Sets up scroll entrances inside `root` (the #site container): a short offset and fade (transform and opacity, never a layout shift).
+ * Does nothing, and hides nothing, when motion is reduced or IntersectionObserver is missing: content is visible by default.
+ * Each block enters once; siblings entering together are staggered by --ds-stagger. Returns the function that undoes everything.
  */
 export function observeReveal(
 	root: HTMLElement,

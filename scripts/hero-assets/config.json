@@ -8,6 +8,6 @@
 		{ "name": "S2", "role": "stage", "priority": "low", "delta": true },
 		{ "name": "S3", "role": "stage", "priority": "low", "delta": true },
 		{ "name": "S4", "role": "stage", "priority": "low", "delta": true },
-		{ "name": "personnages", "role": "characters", "priority": "low", "delta": true }
+		{ "name": "characters", "role": "characters", "priority": "low", "delta": true }
 	]
 }

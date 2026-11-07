@@ -22,7 +22,7 @@ import {
 const target = { id: 'fabric-mc1.21.1', loader: 'fabric', minecraft: '1.21.1', loaderVersion: '0.19.5', java: '21' }
 const env = { MOD_STORAGE_BUCKET: 'shared', MOD_STORAGE_PREFIX: 'public-mods/' }
 const JAR = 'minemories-fabric-mc1.21.1-0.1.0.jar'
-// Objets étrangers du même bucket, dont des pièges qui ressemblent au préfixe sans être dessous.
+// Foreign objects in the same bucket, including traps that look like the prefix without being under it.
 const FOREIGN = {
 	'users/abc/1.glb': 'capture-a',
 	'abc123/00000000-0000-4000-8000-000000000000.glb': 'capture-b',
@@ -68,19 +68,18 @@ async function upload(client, version, content, extra = {}) {
 	})
 }
 
-test('validation stricte du préfixe', () => {
+test('strict prefix validation', () => {
 	for (const ok of [undefined, '', 'public-mods/', 'a/', '0-9/', `${'a'.repeat(39)}/`])
 		assert.equal(parseModPrefix(ok), ok ?? '')
 	const invalid = ['public-mods', '/', '/a/', 'a//', 'a/b/', '../', 'a/../', '.a/', 'A/', '-a/', 'a b/', 'a_b/', 'a.b/']
 	invalid.push(`${'a'.repeat(40)}/`, ' ', 'é/', 'a\\/', 'a/\n')
-	for (const bad of invalid)
-		assert.throws(() => parseModPrefix(bad), /MOD_STORAGE_PREFIX invalide/, JSON.stringify(bad))
+	for (const bad of invalid) assert.throws(() => parseModPrefix(bad), /Invalid MOD_STORAGE_PREFIX/, JSON.stringify(bad))
 	assert.throws(() => parseModPrefix(42), /MOD_STORAGE_PREFIX/)
 	assert.throws(() => storageSettings({ MOD_STORAGE_PREFIX: '../' }), /MOD_STORAGE_PREFIX/)
 	assert.equal(storageSettings({}).prefix, '')
 })
 
-test('clés sûres et résolution bornée aux racines', () => {
+test('safe keys and resolution bounded to the roots', () => {
 	assert.equal(isSafeKey('mods/a/b'), true)
 	for (const bad of ['', '/a', 'a//b', 'a/', 'a/../b', '../a', './a', 'a\\b', 1, 'x'.repeat(1025)])
 		assert.equal(isSafeKey(bad), false)
@@ -90,10 +89,10 @@ test('clés sûres et résolution bornée aux racines', () => {
 		assert.equal(resolveObjectKey('p/', bad), null)
 	const entry = { version: '1', sha256: 'a'.repeat(64), bytes: 1, key: '../x' }
 	const index = { schema: 1, targets: { a: { latest: '1', versions: [entry] } } }
-	assert.throws(() => validateIndex(index), /invalide/)
+	assert.throws(() => validateIndex(index), /invalid/)
 })
 
-test('envoi sous préfixe : tout est sous le préfixe, l’index garde des clés relatives', async () => {
+test('upload under a prefix: everything is under the prefix, the index keeps relative keys', async () => {
 	const client = createFakeClient()
 	seed(client)
 	await upload(client, '0.1.0', 'one')
@@ -109,7 +108,7 @@ test('envoi sous préfixe : tout est sous le préfixe, l’index garde des clés
 	assert.ok(validateIndex(JSON.parse(client.objects.get('public-mods/index.json').body.toString())))
 })
 
-test('rétention et rapport ne lisent, ne comptent ni ne suppriment rien hors du préfixe', async () => {
+test('retention and report never read, count or delete anything outside the prefix', async () => {
 	const client = createFakeClient()
 	seed(client)
 	for (const n of [1, 2, 3, 4]) await upload(client, `0.${n}.0`, `jar-${n}`, { keep: 10 })
@@ -132,7 +131,7 @@ test('rétention et rapport ne lisent, ne comptent ni ne suppriment rien hors du
 		assert.ok(call.input.Key.startsWith('public-mods/mods/'))
 })
 
-test('un index corrompu ne peut pas faire supprimer ni lire hors du préfixe', async () => {
+test('a corrupted index cannot cause deletes or reads outside the prefix', async () => {
 	const client = createFakeClient()
 	seed(client)
 	await upload(client, '0.1.0', 'one')
@@ -140,11 +139,11 @@ test('un index corrompu ne peut pas faire supprimer ni lire hors du préfixe', a
 	raw.targets[target.id].versions[0].key = '../users/abc/1.glb'
 	const body = Buffer.from(JSON.stringify(raw))
 	client.objects.set('public-mods/index.json', { body, contentType: 'x', metadata: {} })
-	await assert.rejects(pruneStorage({ keep: 1, dryRun: false, env, client }), /invalide/)
+	await assert.rejects(pruneStorage({ keep: 1, dryRun: false, env, client }), /invalid/)
 	assert.deepEqual(foreign(client), FOREIGN)
 })
 
-test('storeRelease respecte le préfixe ; un préfixe invalide échoue avant tout accès', async () => {
+test('storeRelease honors the prefix; an invalid prefix fails before any access', async () => {
 	const client = createFakeClient()
 	seed(client)
 	const dir = await mkdtemp(join(tmpdir(), 'mm-prefix-'))
@@ -167,7 +166,7 @@ test('storeRelease respecte le préfixe ; un préfixe invalide échoue avant tou
 	assert.ok(copy.input.Key.startsWith('public-mods/latest/'))
 })
 
-test('sans préfixe le comportement est inchangé', async () => {
+test('without a prefix the behavior is unchanged', async () => {
 	const client = createFakeClient()
 	await upload(client, '0.1.0', 'one', { env: { MOD_STORAGE_BUCKET: 'shared' } })
 	assert.ok(client.objects.has('index.json'))

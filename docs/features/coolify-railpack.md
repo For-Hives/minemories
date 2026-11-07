@@ -1,32 +1,32 @@
-# Déploiement Coolify avec Railpack
+# Coolify deployment with Railpack
 
-Créer deux applications Coolify connectées au même dépôt Git. Pour les deux, choisir **Railpack** et définir le **Base Directory** à `/` afin que Bun voie le workspace, `bun.lock` et `packages/api-contract`.
+Create two Coolify applications connected to the same Git repository. For both, choose **Railpack** and set the **Base Directory** to `/` so Bun sees the workspace, `bun.lock` and `packages/api-contract`.
 
 ## API
 
-- Fichier de configuration Railpack : `railpack.api.json` (variable de build `RAILPACK_CONFIG_FILE=railpack.api.json`).
-- Application serveur, site statique désactivé ; exposer le port interne `3001`.
-- Variables d’exécution : `NODE_ENV=production`, `API_PORT=3001`, `WEB_ORIGIN=https://<domaine-du-front>`, `BETTER_AUTH_URL=https://<domaine-api>`, `BETTER_AUTH_SECRET` et `PAIRING_PEPPER` (deux secrets aléatoires distincts d’au moins 32 caractères).
-- Configurer Garage ou un autre stockage S3 avec `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` et `S3_REGION`. L’endpoint doit être joignable depuis le conteneur API ; les valeurs locales de `.env.example` ne conviennent pas à Coolify.
-- Le quota GLB par compte est de 2 Gio par défaut. Configurer `ACCOUNT_STORAGE_BYTES` en octets pour l’adapter ; une valeur positive entière est obligatoire si renseignée. La corbeille, les réservations et les suppressions non acquittées restent comptées. Voir [le quota et sa migration](account-storage-quota.md).
-- Ajouter un volume persistant monté sur `/app/apps/api/data`. Définir `DATABASE_PATH=/app/apps/api/data/minemories.sqlite` et `UPLOADS_PATH=/app/apps/api/data/uploads` pour conserver la base et les uploads en attente entre les redéploiements. Avec `STORAGE_DRIVER=filesystem`, définir aussi `LOCAL_OBJECTS_PATH=/app/apps/api/data/objects`.
-- Le contrôle de santé est `GET /healthz`.
-- Si l’API est derrière un reverse proxy, définir `TRUSTED_PROXY_IPS` avec les IP exactes des proxys immédiatement connectés à Bun, séparées par des virgules. Le proxy doit remplacer `X-Forwarded-For` ou y ajouter l’IP réelle du client en dernière position ; ne pas transmettre le header client inchangé. Restreindre l’accès direct au port API. Sans cette configuration, la limite d’appairage s’applique à l’IP du proxy pour tous ses clients ; les headers IP non fiables sont ignorés. Ne pas ajouter arbitrairement des IP publiques ou celles des joueurs.
+- Railpack config file: `railpack.api.json` (build variable `RAILPACK_CONFIG_FILE=railpack.api.json`).
+- Server application, static site disabled; expose internal port `3001`.
+- Runtime variables: `NODE_ENV=production`, `API_PORT=3001`, `WEB_ORIGIN=https://<front-domain>`, `BETTER_AUTH_URL=https://<api-domain>`, `BETTER_AUTH_SECRET` and `PAIRING_PEPPER` (two distinct random secrets of at least 32 characters).
+- Configure Garage or another S3 store with `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` and `S3_REGION`. The endpoint must be reachable from the API container; the local values from `.env.example` do not work on Coolify.
+- The per-account GLB quota defaults to 2 GiB. Set `ACCOUNT_STORAGE_BYTES` in bytes to change it; when set it must be a positive integer. Trash, reservations and unacknowledged deletions still count. See [the quota and its migration](account-storage-quota.md).
+- Add a persistent volume mounted at `/app/apps/api/data`. Set `DATABASE_PATH=/app/apps/api/data/minemories.sqlite` and `UPLOADS_PATH=/app/apps/api/data/uploads` to keep the database and pending uploads across redeploys. With `STORAGE_DRIVER=filesystem`, also set `LOCAL_OBJECTS_PATH=/app/apps/api/data/objects`.
+- The health check is `GET /healthz`.
+- If the API sits behind a reverse proxy, set `TRUSTED_PROXY_IPS` to the exact, comma-separated IPs of the proxies directly connected to Bun. The proxy must replace `X-Forwarded-For` or append the real client IP as the last entry; do not forward the client header unchanged. Restrict direct access to the API port. Without this configuration, the pairing limit applies to the proxy IP for all of its clients; untrusted IP headers are ignored. Do not add arbitrary public IPs or player IPs.
 
-Railpack installe le workspace, vérifie les types de l’API puis démarre `NODE_ENV=production bun run --filter @minemories/api start`. La [validation de configuration](api-startup-configuration.md) refuse les valeurs manquantes ou invalides avant l’ouverture de SQLite. Conserver les secrets stables ; retirer un ancien repli de pepper nécessite de réappairer les mods.
+Railpack installs the workspace, type-checks the API, then starts `NODE_ENV=production bun run --filter @minemories/api start`. [Configuration validation](api-startup-configuration.md) rejects missing or invalid values before SQLite is opened. Keep secrets stable; removing an old pepper fallback requires re-pairing the mods.
 
 ## Front
 
-- Fichier de configuration Railpack : `railpack.web.json` (variable de build `RAILPACK_CONFIG_FILE=railpack.web.json`).
-- Activer **Is it a static site?** et définir le **Publish Directory** à `apps/web/dist`.
-- Définir `VITE_API_URL=https://<domaine-api>` comme variable de **build**, puis reconstruire le front après toute modification de cette URL. Vite l’intègre aux fichiers statiques.
+- Railpack config file: `railpack.web.json` (build variable `RAILPACK_CONFIG_FILE=railpack.web.json`).
+- Enable **Is it a static site?** and set the **Publish Directory** to `apps/web/dist`.
+- Set `VITE_API_URL=https://<api-domain>` as a **build** variable, then rebuild the front after any change to this URL. Vite bakes it into the static files.
 
-Le build web installe uniquement Bun et Node : contrôle TypeScript puis bundle Vite. Aucun JDK, aucune compilation Minecraft, aucun test Gradle et aucune release ne sont requis pour déployer le front. Le serveur statique Coolify/Nginx sert `apps/web/dist`.
+The web build installs only Bun and Node: TypeScript check, then Vite bundle. No JDK, Minecraft compilation, Gradle tests or release are needed to deploy the front. The Coolify/Nginx static server serves `apps/web/dist`.
 
-La page d’installation lit l’index de l’API Minemories (`/downloads/index.json`) et propose le JAR de la version la plus récente de la cible choisie, préversions incluses. Un index vide ou une panne de l’API affiche un réessai ; cela ne fait pas échouer le déploiement web. La construction et la publication du mod se font sur le VPS avec `bun mod release`.
+The install page reads the Minemories API index (`/downloads/index.json`) and offers the JAR of the latest version for the chosen target, pre-releases included. An empty index or an API outage shows a retry; it does not fail the web deployment. The mod is built and published on the VPS with `bun mod release`.
 
-## Déploiement
+## Deployment
 
-Dans chaque application, ajouter `RAILPACK_CONFIG_FILE` comme variable de build pour sélectionner le fichier correspondant. Ne pas y mettre de secrets dans les fichiers Railpack. Déployer d’abord l’API, puis le front ; les origines `WEB_ORIGIN`, `BETTER_AUTH_URL` et `VITE_API_URL` doivent correspondre aux domaines HTTPS publics configurés dans Coolify.
+In each application, add `RAILPACK_CONFIG_FILE` as a build variable to select the matching file. Do not put secrets in the Railpack files. Deploy the API first, then the front; the `WEB_ORIGIN`, `BETTER_AUTH_URL` and `VITE_API_URL` origins must match the public HTTPS domains configured in Coolify.
 
-Le front pré-rend ses pages publiques sans serveur Node à l’exécution. Configurer `VITE_SITE_URL` pour le domaine public, et appliquer le routage de `deploy/nginx.web.conf` (ou ses locations dans le Nginx existant) : pages publiques via `$uri/index.html`, routes privées via `/app.html` avec `X-Robots-Tag: noindex,nofollow`, URL inconnues en 404. L’indexation est **bloquée par défaut** (variable absente ou `VITE_INDEXABLE=false`) : noindex dans le HTML, `robots.txt` Disallow et sitemap vide. La commande Railpack force `VITE_INDEXABLE=false`, même si une ancienne variable Coolify est à `true` ; le template Nginx bloque aussi toutes les réponses par `X-Robots-Tag`. Ne pas retirer ce blocage avant l’ouverture publique volontaire. Voir [les fondations web](web-foundations.md).
+The front pre-renders its public pages, with no Node server at runtime. Set `VITE_SITE_URL` to the public domain and apply the routing from `deploy/nginx.web.conf` (or its locations in the existing Nginx): public pages via `$uri/index.html`, private routes via `/app.html` with `X-Robots-Tag: noindex,nofollow`, unknown URLs as 404. Indexing is **blocked by default** (variable absent or `VITE_INDEXABLE=false`): noindex in the HTML, `robots.txt` Disallow and an empty sitemap. The Railpack command forces `VITE_INDEXABLE=false`, even if an old Coolify variable is set to `true`; the Nginx template also blocks every response with `X-Robots-Tag`. Do not remove this block before the deliberate public launch. See [web foundations](web-foundations.md).

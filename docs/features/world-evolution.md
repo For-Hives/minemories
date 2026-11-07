@@ -1,138 +1,138 @@
-# Vue d’un monde : toutes ses captures composées chunk par chunk
+# World view: all its captures composed chunk by chunk
 
-Remplace le lecteur « Évolution » par zone (une série par `zoneId`) et la tentative de tuiles du 27 octobre
-(voir `docs/concepts/tiles-evolution-postmortem.md`). C'est le viewer normal d'un monde, pas un mode à part : l'interface ne parle donc pas de « monde évolutif ».
-Chaque monde n'a plus qu'**une vue** : toutes ses
-captures identifiées sont chargées dans la même scène et la pellicule de gauche fait évoluer le monde de la plus
-ancienne capture à la plus récente.
+Replaces the per-zone "Evolution" player (one series per `zoneId`) and the tile attempt of 27 October
+(see `docs/concepts/tiles-evolution-postmortem.md`). This is a world's normal viewer, not a separate mode, so the interface does not talk about an "evolving world".
+Each world now has **a single view**: all its
+identified captures are loaded into the same scene and the left filmstrip moves the world from the oldest
+capture to the most recent.
 
-## Principe : rien ne change dans le mod ni dans le format
+## Principle: nothing changes in the mod or the format
 
-Le bilan de la tentative précédente montrait que découper côté mod (tuiles alignées, bundle `.mmtiles`) agrandissait
-les captures, effaçait du terrain avec des tuiles partielles et cassait Blender. Ici :
+The review of the previous attempt showed that splitting on the mod side (aligned tiles, `.mmtiles` bundle) made
+captures bigger, erased terrain with partial tiles and broke Blender. Here:
 
-- le mod, le `.glb`, l'envoi et les valeurs par défaut sont **inchangés** ; toutes les captures déjà identifiées
-  (`worldId`, `captureBounds`, `captureOrigin`) en profitent immédiatement, AFK comme manuelles ou sélections ;
-- la composition est faite **dans le navigateur**, à partir des bornes exactes déjà présentes dans les métadonnées.
+- the mod, the `.glb`, the upload and the defaults are **unchanged**; every already identified capture
+  (`worldId`, `captureBounds`, `captureOrigin`) benefits immediately, AFK as well as manual captures or selections;
+- composition happens **in the browser**, from the exact bounds already present in the metadata.
 
-## Règle de composition
+## Composition rule
 
-À l'étape `n`, chaque bloc affiche la capture **la plus récente ≤ n** qui le contient, parmi les captures qui ont
-réellement de la géométrie dans sa colonne de chunk (16 × 16, coordonnées absolues).
+At step `n`, each block shows the **most recent capture ≤ n** that contains it, among the captures that actually
+have geometry in its chunk column (16 × 16, absolute coordinates).
 
-- Chaque triangle est rattaché au bloc qui le possède : centroïde poussé de 1/64 de bloc contre sa normale, puis
-  coordonnées absolues (`origine de la capture + position locale`). Une face posée sur une frontière de chunk
-  appartient donc au bon chunk.
-- Une capture plus récente ne masque l'ancienne que **dans ses bornes exactes** (pas d'alignement, pas de
-  zone agrandie) et **seulement dans les chunks où elle a de la géométrie** : un chunk non chargé au moment de la
-  capture ne crée jamais de trou, l'ancien contenu reste.
-- Les bornes verticales comptent : une capture moins profonde laisse visibles les grottes plus anciennes en dessous.
-- Les lumières ponctuelles suivent la même règle.
+- Each triangle is attached to the block that owns it: centroid pushed 1/64 of a block against its normal, then
+  absolute coordinates (`capture origin + local position`). A face lying on a chunk boundary therefore
+  belongs to the right chunk.
+- A more recent capture only hides the older one **within its exact bounds** (no alignment, no enlarged
+  zone) and **only in the chunks where it has geometry**: a chunk that was not loaded at capture time
+  never creates a hole; the old content stays.
+- Vertical bounds count: a shallower capture leaves older caves below it visible.
+- Point lights follow the same rule.
 
-`apps/web/src/lib/world-evolution.ts` implémente ce modèle sans dépendance à Three.js (tests à 100 %).
+`apps/web/src/lib/world-evolution.ts` implements this model without depending on Three.js (100% test coverage).
 
-## Optimisations
+## Optimizations
 
-| Point | Choix |
+| Point | Choice |
 | --- | --- |
-| Transfert | Les routes de fichier (privée, partagée, publique) compressent en GZIP niveau 4 **en flux** quand le client l'accepte ; aucune capture n'est mise en mémoire entière. Mesuré : ~7,7× moins d'octets sur des GLB du writer réel. |
-| Ordre | Téléchargements du plus ancien au plus récent, 3 en parallèle ; un seul décodage/attache à la fois pour ne pas bloquer le fil principal. La première capture s'affiche dès qu'elle est prête. |
-| Budget | 256 captures et 768 Mio décompressés au plus ; au-delà, les plus récentes sont gardées (l'état actuel du monde compte le plus) et la page le signale. L'API renvoie au plus 512 métadonnées par monde. |
-| Composition | Triangles triés une fois par chunk au chargement ; chaque étape recopie des plages contiguës d'indices (test par triangle seulement dans les chunks partiellement recouverts). Une capture n'est recalculée que si l'ensemble de ses captures plus récentes visibles change. |
-| GPU | Un seul tampon d'indices par primitive, réécrit sur la plage utile (`addUpdateRange`) ; une primitive vide est masquée (aucun draw call). Les captures entièrement recouvertes ne coûtent donc rien au rendu. |
-| Textures | Une capture entièrement recouverte à l'étape affichée libère ses textures GPU ; Three.js les renvoie depuis les images conservées si elle redevient visible (vérifié dans Chromium en revenant à la première capture). Les positions déjà chargées sont lues sans copie. |
-| Lumières | 12 lumières fixes partagées par toute la scène, mises à jour à chaque étape : pas de recompilation de shaders. |
+| Transfer | File routes (private, shared, public) compress with GZIP level 4 **as a stream** when the client accepts it; no capture is held fully in memory. Measured: ~7.7× fewer bytes on GLBs from the real writer. |
+| Order | Downloads from oldest to newest, 3 in parallel; a single decode/attach at a time so the main thread is not blocked. The first capture is displayed as soon as it is ready. |
+| Budget | At most 256 captures and 768 MiB decompressed; beyond that, the most recent ones are kept (the current state of the world matters most) and the page says so. The API returns at most 512 metadata entries per world. |
+| Composition | Triangles sorted once per chunk on load; each step copies contiguous index ranges (per-triangle tests only in partially covered chunks). A capture is only recomputed if the set of its visible newer captures changes. |
+| GPU | A single index buffer per primitive, rewritten over the useful range (`addUpdateRange`); an empty primitive is hidden (no draw call). Fully covered captures therefore cost nothing to render. |
+| Textures | A capture fully covered at the displayed step releases its GPU textures; Three.js re-uploads them from the retained images if it becomes visible again (checked in Chromium by going back to the first capture). Already loaded positions are read without copying. |
+| Lights | 12 fixed lights shared by the whole scene, updated at each step: no shader recompilation. |
 
-## Mesures (27 octobre 2026)
+## Measurements (27 October 2026)
 
-GLB produits par le **vrai writer** `dev.minemories.core.GlbScene` (générateur de terrain synthétique, hors Git),
-servis par une API locale (Bun/SQLite/filesystem) et ouverts dans Chromium headless avec SwiftShader (rendu CPU) :
+GLBs produced by the **real writer** `dev.minemories.core.GlbScene` (synthetic terrain generator, outside Git),
+served by a local API (Bun/SQLite/filesystem) and opened in headless Chromium with SwiftShader (CPU rendering):
 
-- histoire de 6 captures (plaine, maison, tour à l'est, lac avec un chunk non chargé, sélection, ferme) :
-  5,5 Mio, chargées en 5,2 s ; la vue de dessus calculée vérifie tour, lac, extension de la ferme et **l'absence
-  de trou** sur le chunk non chargé ;
-- 60 captures de rayon 32 qui se recouvrent : 73,4 Mio bruts, ~10 Mio transférés, chargées en 9,3 s ; tri
-  initial ≈ 4,5 ms par capture, composition d'une étape ≤ 7,4 ms, 111 214 triangles visibles sur ~2,2 millions
-  chargés.
+- a history of 6 captures (plain, house, tower to the east, lake with one unloaded chunk, selection, farm):
+  5.5 MiB, loaded in 5.2 s; the computed top view checks the tower, the lake, the farm extension and **the absence
+  of a hole** over the unloaded chunk;
+- 60 overlapping radius-32 captures: 73.4 MiB raw, ~10 MiB transferred, loaded in 9.3 s; initial sort
+  ≈ 4.5 ms per capture, composing one step ≤ 7.4 ms, 111,214 visible triangles out of ~2.2 million
+  loaded.
 
-Ces mesures ne remplacent pas une validation en jeu avec de vraies captures AFK et un GPU réel.
+These measurements do not replace in-game validation with real AFK captures and a real GPU.
 
-## Interface du viewer
+## Viewer interface
 
-- **Pellicule** à gauche, jumelle de la barre d'outils de droite (même verre, centrée verticalement, hauteur
-  ajustée au contenu) ; elle fait partie du studio : elle s'efface au repos et disparaît en immersion (H) comme
-  les autres contrôles. Contenu : vignette de chaque capture (image envoyée par le mod), heure, séparateur par jour,
-  fil doré jusqu'à la capture affichée et captures futures grisées. L'état de chargement est une pastille sur la
-  vignette (rotation pendant le chargement, rouge en échec avec bouton de nouvel essai, bleue si archivée ou
-  hors budget) et une fine barre de progression tant que des captures arrivent. Un bouton lecture/pause en tête
-  (1,8 s par capture, repart du début à la fin) ; ← → ou ↑ ↓ passent d'une capture à l'autre. Sur téléphone,
-  la pellicule devient une bande horizontale. L'ancienne barre de transport est retirée.
-- **Centrage** : le pivot de la caméra va sur le joueur enregistré dans la capture (`minemoriesPlayerPosition`),
-  s'il se trouvait dans la capture ; sinon (anciennes captures, sélection faite à distance) sur la surface la plus
-  haute au centre de la capture, jamais au milieu du volume ni dans le vide. « Recentrer » et le double-clic
-  visent la capture affichée.
-- **Transitions** : en changeant de capture, le pivot de la caméra glisse vers ce point de la capture affichée
-  (1,1 s, l'angle et la distance sont conservés ; une interaction de l'utilisateur interrompt le glissement) et le
-  soleil tourne par le chemin le plus court jusqu'à l'heure de la capture (1,6 s). `prefers-reduced-motion`
-  rend les deux instantanés.
-- **Zoom** : la molette ne déplace plus le pivot vers le curseur (`zoomToCursor` désactivé) ; seul le
-  déplacement (pan) le déplace.
-- **Pivot** : pendant une interaction, une ombre douce est posée sur la surface visible juste sous le pivot,
-  reliée par un fil vertical ; elle s'élargit et pâlit avec la hauteur. La surface est mesurée par un lancer de
-  rayon vers le bas sur les maillages visibles, au plus toutes les 120 ms et seulement quand le pivot bouge.
+- **Filmstrip** on the left, twin of the right toolbar (same glass, vertically centered, height
+  fitted to its content); it is part of the studio: it fades when idle and disappears in immersive mode (H) like
+  the other controls. Content: a thumbnail for each capture (image sent by the mod), time, a separator per day,
+  a gold thread up to the displayed capture and greyed-out future captures. Loading state is a badge on the
+  thumbnail (spinning while loading, red on failure with a retry button, blue if archived or
+  over budget) and a thin progress bar while captures are arriving. A play/pause button at the top
+  (1.8 s per capture, restarts from the beginning at the end); ← → or ↑ ↓ move from one capture to the next. On phones,
+  the filmstrip becomes a horizontal strip. The old transport bar is removed.
+- **Centering**: the camera pivot goes to the player recorded in the capture (`minemoriesPlayerPosition`),
+  if they were inside the capture; otherwise (old captures, selection made from a distance) to the highest
+  surface at the center of the capture, never the middle of the volume or empty space. "Recenter" and double-click
+  target the displayed capture.
+- **Transitions**: when switching captures, the camera pivot glides toward that point of the displayed capture
+  (1.1 s, angle and distance are kept; a user interaction interrupts the glide) and the
+  sun turns along the shortest path to the capture's time of day (1.6 s). `prefers-reduced-motion`
+  makes both instant.
+- **Zoom**: the mouse wheel no longer moves the pivot toward the cursor (`zoomToCursor` disabled); only
+  panning moves it.
+- **Pivot**: during an interaction, a soft shadow is placed on the visible surface right below the pivot,
+  connected by a vertical line; it widens and fades with height. The surface is measured by a downward raycast
+  on the visible meshes, at most every 120 ms and only when the pivot moves.
 
-- **Pluie et neige** s'arrêtent au bloc le plus haut de chaque colonne, comme dans Minecraft : rien ne tombe sous
-  un toit, un arbre ou un surplomb. La carte des hauteurs est calculée sur les triangles visibles, seulement
-  quand la météo est active et après un changement de géométrie (nouvelle capture ou étape) ; le shader masque
-  les gouttes et flocons sous cette hauteur.
+- **Rain and snow** stop at the highest block of each column, as in Minecraft: nothing falls under
+  a roof, a tree or an overhang. The height map is computed from the visible triangles, only
+  when weather is active and after a geometry change (new capture or step); the shader hides
+  drops and flakes below that height.
 
-## Galerie
+## Gallery
 
-Les serveurs/mondes forment une **grille de tuiles** (mosaïque des dernières vignettes, nombre de captures,
-taille, dernière visite, seed). La tuile choisie affiche ses zones en dessous ; la plus récente est choisie par
-défaut. Le crayon d'une tuile ouvre la **fiche du serveur** (feuille latérale) : nom modifiable, gardé dans ce
-navigateur (`localStorage`) comme les noms de zone, avec un lien pour revenir au nom d'origine ; captures, taille,
-première capture, dernière visite, dimensions, seed et liste des zones. Les zones ont un onglet **Détails**
-(date, dimension, biome, position X/Y/Z, heure du jeu, météo, taille, seed) à côté de Partage, Publication et
-Captures. Le **clic droit** (ou la touche menu du clavier) ouvre les actions d'une zone (voir, détails, partage,
-publication, captures, renommer, corbeille) ou d'un serveur (ouvrir, détails, renommer), au pointeur, navigable
-au clavier. Les cartes de zone affichent dimension
-(pastille de couleur), biome lisible (`Snowy taiga`), coordonnées X/Y/Z, météo et taille sous forme de puces.
-Les captures sans identité complète restent groupées par proximité. Une capture archivée est signalée dans la
-pellicule et peut être restaurée en l'ouvrant seule.
+Servers/worlds form a **grid of tiles** (mosaic of the latest thumbnails, number of captures,
+size, last visit, seed). The selected tile shows its zones below; the most recent one is selected by
+default. A tile's pencil opens the **server sheet** (side sheet): editable name, kept in this
+browser (`localStorage`) like zone names, with a link to go back to the original name; captures, size,
+first capture, last visit, dimensions, seed and list of zones. Zones have a **Details** tab
+(date, dimension, biome, X/Y/Z position, game time, weather, size, seed) next to Share, Publish and
+Captures. **Right-click** (or the keyboard menu key) opens the actions of a zone (view, details, share,
+publish, captures, rename, trash) or of a server (open, details, rename), at the pointer, keyboard
+navigable. Zone cards show the dimension
+(colored badge), readable biome (`Snowy taiga`), X/Y/Z coordinates, weather and size as chips.
+Captures without a complete identity stay grouped by proximity. An archived capture is flagged in the
+filmstrip and can be restored by opening it on its own.
 
-## Limites connues et étapes suivantes
+## Known limits and next steps
 
-- La géométrie de toutes les captures chargées reste en mémoire GPU, même entièrement recouverte (les textures,
-  elles, sont libérées).
-- La taille brute de la géométrie domine (≈ 150 octets par quad). Pistes à mesurer avant tout changement de
-  format : quantification (`KHR_mesh_quantization`, lisible par Blender), `EXT_meshopt_compression`, et un
-  stockage des chunks inchangés par empreinte pour ne télécharger que ce qui a changé.
-- Une capture plus récente peut garder ses parois de coupe (`CutBoundary`) face à une grotte plus ancienne voisine.
-- Le contrat `timelapse.frames` (série par zone) reste servi par l'API mais n'est plus utilisé par le viewer.
+- The geometry of all loaded captures stays in GPU memory, even when fully covered (textures,
+  on the other hand, are released).
+- Raw geometry size dominates (≈ 150 bytes per quad). Leads to measure before any format
+  change: quantization (`KHR_mesh_quantization`, readable by Blender), `EXT_meshopt_compression`, and
+  fingerprint-based storage of unchanged chunks so only what changed is downloaded.
+- A more recent capture may keep its cut walls (`CutBoundary`) facing an older neighboring cave.
+- The `timelapse.frames` contract (series per zone) is still served by the API but no longer used by the viewer.
 
-## Passe « taste-skill » (31 octobre 2026)
+## "taste-skill" pass (31 October 2026)
 
-La galerie et le viewer ont été revus avec le skill [taste-skill](https://github.com/Leonxlnx/taste-skill) en
-mode écran d'application (`references/app-screens.md`), style `true-black-flat` tiré avec la palette et la
-typographie de la marque conservées (`--keep palette,type`). Mesures de l'inspecteur du skill sur un instantané
-statique de `/gallery` (1440, 768 et 390 px) :
+The gallery and the viewer were reviewed with the [taste-skill](https://github.com/Leonxlnx/taste-skill) skill in
+app-screen mode (`references/app-screens.md`), `true-black-flat` style applied while keeping the brand's palette and
+typography (`--keep palette,type`). Measurements from the skill's inspector on a static snapshot
+of `/gallery` (1440, 768 and 390 px):
 
-| | Avant | Après |
+| | Before | After |
 | --- | --- | --- |
-| Échecs | 4 (dégradé, ombre lourde, texte < 11 px, image externe) | 1 (avatar externe bloqué par le réseau du conteneur) |
-| Alertes | 7 | 3, défendues ci-dessous |
-| Titre | 52 px, accueil « Your memories, Alex. » sous un surtitre | 28 px, nom de l'écran et constat (captures, mondes, dernière visite) |
+| Failures | 4 (gradient, heavy shadow, text < 11 px, external image) | 1 (external avatar blocked by the container's network) |
+| Warnings | 7 | 3, justified below |
+| Title | 52 px, greeting "Your memories, Alex." under an eyebrow | 28 px, screen name and summary (captures, worlds, last visit) |
 
-- Relief par paliers de luminosité, sans bordure ni ombre au repos ; la tuile choisie prend le motif du style
-  (bordure 1,5 px de l'accent et teinte pâle).
-- L'or ne sert qu'aux données et à la sélection ; une seule action principale inversée par écran, les autres
-  actions sont des pilules discrètes ; chaque tuile ouvre son monde en un clic (« Open »).
-- Plus de dégradés, de flou de verre, de surtitres ni de monospace hors code ; texte à 12–13 px minimum.
-- Le nombre de colonnes des tuiles suit le nombre de serveurs (`gridColumns` : 4 au plus sur grand écran,
-  3 sous 1 200 px, 2 sur téléphone avec la dernière tuile seule en pleine largeur) : aucune tuile orpheline.
-- Exceptions déclarées (`taste-skill-ignore`) : les pastilles de ciel et la piste de l'heure, qui montrent le
-  ciel qu'elles sélectionnent.
-- Alertes laissées : ombres des éléments qui flottent sur la 3D (barres, panneaux, menu, feuille) ; bordure de
-  la barre de navigation du site (hors galerie) ; colonne secondaire d'appairage/stockage plus courte que la
-  rangée de tuiles ; « crème » détecté sur l'encre de la marque (`#f2efdf`, une couleur de texte).
+- Depth through brightness steps, with no border or shadow at rest; the selected tile takes the style's pattern
+  (1.5 px accent border and pale tint).
+- Gold is only used for data and selection; a single inverted primary action per screen, the other
+  actions are discreet pills; each tile opens its world in one click ("Open").
+- No more gradients, glass blur, eyebrows or monospace outside code; text at 12–13 px minimum.
+- The number of tile columns follows the number of servers (`gridColumns`: at most 4 on a large screen,
+  3 below 1,200 px, 2 on phones with the last tile alone at full width): no orphan tile.
+- Declared exceptions (`taste-skill-ignore`): the sky swatches and the time-of-day track, which show the
+  sky they select.
+- Warnings left as is: shadows of elements floating over the 3D (bars, panels, menu, sheet); border of
+  the site navigation bar (outside the gallery); secondary pairing/storage column shorter than the
+  row of tiles; "cream" detected on the brand ink (`#f2efdf`, a text color).

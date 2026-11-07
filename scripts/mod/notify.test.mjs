@@ -4,9 +4,9 @@ import { run } from './commands/notify.mjs'
 import { buildPayload, formatLogTail, LIMITS, notify, redactSecrets } from './notify.mjs'
 
 const LEAK_HOME = /~\/repo/
-const FAILED_B = /ÉCHEC · b/
+const FAILED_B = /FAILED · b/
 const MISSING_WEBHOOK = /MOD_DISCORD_WEBHOOK_URL/
-const NOT_SENT = /non envoyée/
+const NOT_SENT = /not sent/
 const noop = () => undefined
 const WEBHOOK = 'https://discord.com/api/webhooks/123456789/abcDEF_secret-token'
 const env = { HOME: '/home/alice', MOD_DISCORD_WEBHOOK_URL: WEBHOOK, S3_SECRET_KEY: 'supersecretvalue' }
@@ -34,27 +34,27 @@ test('redactSecrets masks webhooks, tokens, secret env values and home paths', (
 		'alice',
 		'bob',
 	]) {
-		assert.ok(!out.includes(leak), `${leak} fuite dans : ${out}`)
+		assert.ok(!out.includes(leak), `${leak} leaks in: ${out}`)
 	}
 	assert.match(out, LEAK_HOME)
 })
 
 test('formatLogTail keeps the last lines in a closed, bounded code block', () => {
-	const log = Array.from({ length: 100 }, (_, i) => `ligne ${i} ${'x'.repeat(40)}`).join('\n')
+	const log = Array.from({ length: 100 }, (_, i) => `line ${i} ${'x'.repeat(40)}`).join('\n')
 	const out = formatLogTail(log)
 	assert.ok(out.length <= LIMITS.fieldValue)
 	assert.ok(out.startsWith('```\n…\n'))
 	assert.ok(out.endsWith('\n```'))
-	assert.ok(out.includes('ligne 99'))
-	assert.ok(!out.includes('ligne 0 '))
+	assert.ok(out.includes('line 99'))
+	assert.ok(!out.includes('line 0 '))
 	assert.equal(formatLogTail('a\nb\n\n'), '```\na\nb\n```')
 	assert.ok(!formatLogTail('``` danger').slice(3, -3).includes('```'))
 })
 
 test('formatLogTail truncates a single huge line from its start', () => {
-	const out = formatLogTail(`${'a'.repeat(5000)}FIN`)
+	const out = formatLogTail(`${'a'.repeat(5000)}END`)
 	assert.ok(out.length <= LIMITS.fieldValue)
-	assert.ok(out.includes('FIN'))
+	assert.ok(out.includes('END'))
 })
 
 test('success payload summarizes each target in green', () => {
@@ -74,7 +74,7 @@ test('success payload summarizes each target in green', () => {
 	assert.deepEqual(payload.allowed_mentions, { parse: [] })
 	assert.ok(embed.fields.some(field => field.name === 'Commit' && field.value === 'abcdef0'))
 	const target = embed.fields.find(field => field.name.includes('fabric-mc1.21.1'))
-	assert.equal(target.value, '1.2.3-beta.1 · 2.0 Mo · 61 s')
+	assert.equal(target.value, '1.2.3-beta.1 · 2.0 MB · 61 s')
 })
 
 test('failure payload is red with failing targets first, log tail and link', () => {
@@ -94,8 +94,8 @@ test('failure payload is red with failing targets first, log tail and link', () 
 	).embeds[0]
 	assert.equal(embed.color, 0xe74c3c)
 	assert.match(embed.fields[0].name, FAILED_B)
-	assert.equal(embed.fields[0].value, 'ÉCHEC : compileJava')
-	assert.ok(embed.fields.some(field => field.name === 'Journal (fin)' && !field.value.includes('alice')))
+	assert.equal(embed.fields[0].value, 'FAILED: compileJava')
+	assert.ok(embed.fields.some(field => field.name === 'Log (tail)' && !field.value.includes('alice')))
 	assert.ok(!JSON.stringify(embed).includes('zzzzzzzz'))
 	assert.equal(embed.fields.at(-1).value, 'https://logs.example/1')
 })
@@ -135,7 +135,7 @@ test('overflowing targets collapse into one summary field', () => {
 	const targets = Array.from({ length: 40 }, (_, i) => ({ id: `t${i}`, status: 'passed' }))
 	const embed = buildPayload({ kind: 'release-success', version: '1', targets }, env).embeds[0]
 	assert.equal(embed.fields.length, 25)
-	assert.equal(embed.fields.at(-1).name, 'Autres cibles')
+	assert.equal(embed.fields.at(-1).name, 'Other targets')
 })
 
 test('notify without webhook warns and does not call fetch', async () => {
@@ -254,7 +254,7 @@ test('command: --test --dry-run prints JSON without sending', async () => {
 	const lines = []
 	const code = await run(['--test', '--dry-run'], { env, log: m => lines.push(m) })
 	assert.equal(code, 0)
-	assert.equal(JSON.parse(lines[0]).embeds[0].title, 'Test de notification Minemories')
+	assert.equal(JSON.parse(lines[0]).embeds[0].title, 'Minemories notification test')
 	assert.ok(!lines[0].includes('abcDEF_secret'))
 })
 
@@ -262,15 +262,15 @@ test('command: usage without arguments, --kind dry-run, and a missing webhook', 
 	const lines = []
 	const ctx = { env: {}, log: m => lines.push(m) }
 	assert.equal(await run([], ctx), 1)
-	assert.equal(await run(['--kind', 'storage-warning', '--title', 'Disque', '--dry-run'], ctx), 0)
-	assert.equal(JSON.parse(lines.at(-1)).embeds[0].title, 'Disque')
+	assert.equal(await run(['--kind', 'storage-warning', '--title', 'Disk', '--dry-run'], ctx), 0)
+	assert.equal(JSON.parse(lines.at(-1)).embeds[0].title, 'Disk')
 	assert.equal(await run(['--test'], ctx), 0)
 	assert.match(lines.at(-1), NOT_SENT)
 })
 
 test('command: --log-stdin attaches the piped log tail', async () => {
 	const lines = []
-	const ctx = { env: {}, log: m => lines.push(m), readStdin: () => Promise.resolve('une\ndeux') }
+	const ctx = { env: {}, log: m => lines.push(m), readStdin: () => Promise.resolve('one\ntwo') }
 	assert.equal(await run(['--kind', 'release-failure', '--log-stdin', '--dry-run'], ctx), 0)
-	assert.ok(JSON.parse(lines.at(-1)).embeds[0].fields.some(field => field.value.includes('deux')))
+	assert.ok(JSON.parse(lines.at(-1)).embeds[0].fields.some(field => field.value.includes('two')))
 })

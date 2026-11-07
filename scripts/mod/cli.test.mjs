@@ -53,13 +53,13 @@ test('main dispatches with the documented context and propagates exit codes', as
 	assert.equal(await main(['beta'], options), 1)
 	assert.equal(out.error.at(-1), 'beta exploded')
 	assert.equal(await main(['gamma'], options), 1)
-	assert.match(out.error.at(-1), /indisponible/)
+	assert.match(out.error.at(-1), /unavailable/)
 	assert.equal(await main(['nope'], options), 1)
-	assert.match(out.error.at(-1), /Commande inconnue : nope/)
+	assert.match(out.error.at(-1), /Unknown command: nope/)
 	assert.equal(await main(['alpha', '--help'], options), 0)
-	assert.match(out.info.at(-1), /Usage : bun mod alpha/)
+	assert.match(out.info.at(-1), /Usage: bun mod alpha/)
 	assert.equal(await main([], options), 0)
-	assert.match(out.info.at(-1), /Commandes :/)
+	assert.match(out.info.at(-1), /Commands:/)
 })
 
 test('parseArgs separates positionals, flags and valued options', () => {

@@ -1,19 +1,19 @@
-// `bun mod storage <status|ls|prune|pin|unpin>` : état et rétention du bucket des JAR du mod.
+// `bun mod storage <status|ls|prune|pin|unpin>`: state and retention of the mod JAR bucket.
 import { pruneStorage, readIndex, setPinned, storageReport } from '../storage/index.mjs'
 
 export const DEFAULT_WARN_BYTES = 5 * 1024 ** 3
 
 export const name = 'storage'
-export const summary = 'Espace, rétention et épinglage des JAR stockés sur S3'
+export const summary = 'Space, retention and pinning of the JARs stored on S3'
 export const usage = `bun mod storage status
 bun mod storage ls
-bun mod storage prune [--yes] [--keep N]   (simulation par défaut)
+bun mod storage prune [--yes] [--keep N]   (dry run by default)
 bun mod storage pin <id> <version>
 bun mod storage unpin <id> <version>`
 
 export const formatBytes = bytes => {
-	if (bytes < 1024) return `${bytes} o`
-	const units = ['Kio', 'Mio', 'Gio', 'Tio']
+	if (bytes < 1024) return `${bytes} B`
+	const units = ['KiB', 'MiB', 'GiB', 'TiB']
 	let value = bytes
 	let unit = -1
 	while (value >= 1024 && unit < units.length - 1) {
@@ -37,8 +37,8 @@ export function parsePruneArgs(args) {
 		else if (args[i] === '--keep') {
 			i += 1
 			keep = Number(args[i])
-			if (!(Number.isInteger(keep) && keep >= 1)) throw new Error('--keep attend un entier >= 1.')
-		} else throw new Error(`Option inconnue : ${args[i]}`)
+			if (!(Number.isInteger(keep) && keep >= 1)) throw new Error('--keep expects an integer >= 1.')
+		} else throw new Error(`Unknown option: ${args[i]}`)
 	}
 	return { keep, yes }
 }
@@ -48,11 +48,9 @@ async function status(out, env, client) {
 	const threshold = Number(env.MOD_STORAGE_WARN_BYTES ?? DEFAULT_WARN_BYTES)
 	for (const [id, target] of Object.entries(report.perTarget))
 		out(`${id}  ${target.versions} version(s)  ${formatBytes(target.bytes)}  latest ${target.latest}`)
-	out(`Total : ${formatBytes(report.totalBytes)}`)
+	out(`Total: ${formatBytes(report.totalBytes)}`)
 	if (report.totalBytes > threshold) {
-		out(
-			`ALERTE : le stockage dépasse ${formatBytes(threshold)} (MOD_STORAGE_WARN_BYTES). Lancez « bun mod storage prune ».`
-		)
+		out(`ALERT: storage exceeds ${formatBytes(threshold)} (MOD_STORAGE_WARN_BYTES). Run "bun mod storage prune".`)
 		return 1
 	}
 	return 0
@@ -77,19 +75,17 @@ async function list(out, env, client) {
 async function prune(args, out, env, client) {
 	const { keep, yes } = parsePruneArgs(args)
 	const result = await pruneStorage({ keep, dryRun: !yes, env, client })
-	for (const item of result.deleted) out(`${yes ? 'supprimé' : 'à supprimer'}  ${item.key}  ${formatBytes(item.bytes)}`)
-	out(
-		`${result.kept.length} version(s) conservée(s), ${formatBytes(result.freedBytes)} ${yes ? 'libérés' : 'libérables'}.`
-	)
-	if (!yes && result.deleted.length > 0) out('Simulation : relancez avec --yes pour supprimer.')
+	for (const item of result.deleted) out(`${yes ? 'deleted' : 'to delete'}  ${item.key}  ${formatBytes(item.bytes)}`)
+	out(`${result.kept.length} version(s) kept, ${formatBytes(result.freedBytes)} ${yes ? 'freed' : 'can be freed'}.`)
+	if (!yes && result.deleted.length > 0) out('Dry run: run again with --yes to delete.')
 	return 0
 }
 
 async function pin(args, pinned, out, env, client) {
 	const [targetId, version] = args
-	if (!(targetId && version)) throw new Error(`Usage : bun mod storage ${pinned ? 'pin' : 'unpin'} <id> <version>`)
+	if (!(targetId && version)) throw new Error(`Usage: bun mod storage ${pinned ? 'pin' : 'unpin'} <id> <version>`)
 	await setPinned({ targetId, version, pinned, env, client })
-	out(`${targetId} ${version} ${pinned ? 'épinglée' : 'désépinglée'}.`)
+	out(`${targetId} ${version} ${pinned ? 'pinned' : 'unpinned'}.`)
 	return 0
 }
 
@@ -110,7 +106,7 @@ function dispatch(args, ctx) {
 		case 'unpin':
 			return pin(rest, false, out, env, client)
 		default:
-			throw new Error(`Sous-commande inconnue : ${subcommand}\n${usage}`)
+			throw new Error(`Unknown subcommand: ${subcommand}\n${usage}`)
 	}
 }
 

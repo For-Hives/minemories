@@ -25,12 +25,12 @@ REPO="$(cd "$HERE/../.." && pwd)"
 log() { printf '\033[1m==> %s\033[0m\n' "$*"; }
 
 if [[ "$(id -u)" -ne 0 ]]; then
-	echo "À lancer en root (sudo)." >&2
+	echo "Run as root (sudo)." >&2
 	exit 1
 fi
 
 # ---- 1. Packages -----------------------------------------------------------------------------------------------
-log "Paquets système"
+log "System packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 # libasound2 became libasound2t64 on Ubuntu 24.04 / Debian 13.
@@ -44,7 +44,7 @@ apt-get install -y --no-install-recommends \
 	"$ALSA" libopenal1 fontconfig
 
 # ---- 2. User and folders ---------------------------------------------------------------------------------------
-log "Utilisateur ${APP_USER}"
+log "User ${APP_USER}"
 if ! id -u "$APP_USER" >/dev/null 2>&1; then
 	useradd --system --create-home --home-dir "$APP_HOME" --shell /usr/sbin/nologin "$APP_USER"
 fi
@@ -55,12 +55,12 @@ install -d -o root -g "$APP_USER" -m 0750 "$ENV_DIR"
 # A build of the whole matrix needs a few GiB of disk (Gradle caches, Minecraft assets, JDKs).
 AVAILABLE_KB="$(df --output=avail -k "$APP_HOME" | tail -1)"
 if [[ "$AVAILABLE_KB" -lt 15000000 ]]; then
-	echo "Attention : moins de 15 Go libres dans ${APP_HOME} (caches Gradle, assets Minecraft, JDK)." >&2
+	echo "Warning: less than 15 GB free in ${APP_HOME} (Gradle caches, Minecraft assets, JDKs)." >&2
 fi
 # Without swap a JVM peak can wake the OOM killer, which may pick the API. The cgroup limits of the units protect
 # the site, but a small swap file absorbs the peaks.
 if [[ "$(swapon --show --noheadings | wc -l)" -eq 0 && "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" -lt 6000000 ]]; then
-	echo "Attention : aucun swap et moins de 6 Go de RAM. Prévoir un fichier de swap de 2 Go (fallocate/mkswap/swapon)." >&2
+	echo "Warning: no swap and less than 6 GB of RAM. Add a 2 GB swap file (fallocate/mkswap/swapon)." >&2
 fi
 
 # ---- 3. Bun ----------------------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ if [[ "$(/usr/local/bin/bun --version 2>/dev/null || true)" != "$BUN_VERSION" ]]
 fi
 
 # ---- 4. Source tree and JDKs -----------------------------------------------------------------------------------
-log "Dépôt dans ${APP_DIR}"
+log "Repository in ${APP_DIR}"
 if [[ "$REPO" != "$APP_DIR" ]]; then
 	if [[ ! -d "$APP_DIR/.git" ]]; then
 		git clone "$(git -C "$REPO" remote get-url origin)" "$APP_DIR"
@@ -86,22 +86,22 @@ if runuser -u "$APP_USER" -- env HOME="$APP_HOME" bash -c "cd '$APP_DIR' && bun 
 		runuser -u "$APP_USER" -- env HOME="$APP_HOME" bash -c "cd '$APP_DIR' && bun mod jdk install $major"
 	done
 else
-	echo "La commande 'bun mod jdk' n'existe pas encore dans cette branche : installer les JDK 8/17/21/25" >&2
-	echo "dans ${APP_HOME}/.local/tools/jdk-<version> (ou exporter MOD_JDK_<majeure> dans ${ENV_DIR}/mod-builder.env)." >&2
+	echo "The 'bun mod jdk' command does not exist on this branch yet: install JDKs 8/17/21/25" >&2
+	echo "into ${APP_HOME}/.local/tools/jdk-<version> (or export MOD_JDK_<major> in ${ENV_DIR}/mod-builder.env)." >&2
 fi
 
 # ---- 5. systemd ------------------------------------------------------------------------------------------------
-log "Unités systemd"
+log "systemd units"
 for unit in minemories-mod.slice minemories-mod-release.service minemories-mod-release.timer \
 	minemories-mod-notify-failure@.service; do
 	install -m 0644 "$HERE/$unit" "/etc/systemd/system/$unit"
 done
 if [[ ! -f "$ENV_DIR/mod-builder.env" ]]; then
 	install -o root -g "$APP_USER" -m 0640 "$HERE/mod-builder.env.example" "$ENV_DIR/mod-builder.env"
-	echo "Renseigner les secrets dans ${ENV_DIR}/mod-builder.env (webhook Discord, S3, jetons)." >&2
+	echo "Fill in the secrets in ${ENV_DIR}/mod-builder.env (Discord webhook, S3, tokens)." >&2
 fi
 systemctl daemon-reload
 systemctl enable --now minemories-mod-release.timer
 systemctl list-timers minemories-mod-release.timer --no-pager || true
 
-log "Terminé. Essai à la main : systemctl start minemories-mod-release.service && journalctl -fu minemories-mod-release"
+log "Done. Try it by hand: systemctl start minemories-mod-release.service && journalctl -fu minemories-mod-release"

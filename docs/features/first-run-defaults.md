@@ -1,33 +1,33 @@
-# Installation sans configuration
+# Zero-configuration install
 
-Après installation, le mod doit fonctionner **sans aucune action** du joueur, y compris pour un enfant de 12 ans sans connaissance technique. Les réglages sont donc des exceptions que l'on peut désactiver (opt-out), pas des étapes à franchir. Cette page liste chaque clé de `config/minemories.properties`, sa valeur quand elle est absente et la raison du choix. Une clé absente n'est jamais confondue avec une valeur explicitement désactivée par le joueur : un réglage refusé reste refusé.
+Once installed, the mod must work **without any action** from the player, including a 12-year-old with no technical knowledge. Settings are therefore exceptions the player can turn off (opt-out), not steps to complete. This page lists every key in `config/minemories.properties`, its value when absent and the reason for that choice. An absent key is never confused with a value the player explicitly disabled: a refused setting stays refused.
 
-## Valeurs par défaut
+## Defaults
 
-| Clé | Si absente | Remarque |
+| Key | If absent | Notes |
 | --- | --- | --- |
-| `afkSnapshots` | `true` | Captures automatiques après 5 minutes d'inactivité, au plus toutes les 4 heures, y compris en pause ou fenêtre inactive. Un `false` explicite est conservé. |
-| `afkIdleMinutes`, `afkIntervalMinutes`, `captureRadius` | 5, 240, 32 | Réglages avancés ; une valeur invalide retombe sur ces défauts. |
-| `captureFullHeight` | `false` | Les captures autour du joueur gardent la profondeur réellement visitée plus cinq blocs. |
-| `exportDirectory` | `~/export` | Dossier des souvenirs locaux. |
-| `apiUrl` | `https://api.minemories.net` | Service officiel ; changer d'API déconnecte le compte. |
-| `deviceToken`, `deviceId` | absents | **Seule action nécessaire : connecter son compte** (code à 6 chiffres). Tant que le joueur n'est pas connecté, un message cliquable du chat le lui rappelle à chaque entrée dans un monde, et ouvre les réglages. Les captures restent locales jusqu'à la connexion ; après la connexion, elles partent automatiquement. |
-| `diagnosticsConsent` | activé | Diagnostics techniques assainis, jamais envoyés avant l'appairage. Un `false` explicite est conservé après appairage, déconnexion ou changement d'API. Détails : [diagnostics](consented-diagnostics.md). |
-| `pairingReminder` | `true` | Rappel de connexion dans le chat ; `false` le désactive. |
-| `remoteWorld.<empreinte>` | absent | Sur serveur distant, une série par connexion ; l'identifiant de monde est un réglage avancé. |
+| `afkSnapshots` | `true` | Automatic captures after 5 minutes idle, at most every 4 hours, including while paused or unfocused. An explicit `false` is preserved. |
+| `afkIdleMinutes`, `afkIntervalMinutes`, `captureRadius` | 5, 240, 32 | Advanced settings; an invalid value falls back to these defaults. |
+| `captureFullHeight` | `false` | Captures around the player keep the depth actually visited plus five blocks. |
+| `exportDirectory` | `~/export` | Folder for local memories. |
+| `apiUrl` | `https://api.minemories.net` | Official service; changing the API unlinks the account. |
+| `deviceToken`, `deviceId` | absent | **The only required action: link the account** (6-digit code). Until the player is linked, a clickable chat message reminds them each time they join a world and opens the settings. Captures stay local until linking; after linking they upload automatically. |
+| `diagnosticsConsent` | on | Sanitized technical diagnostics, never sent before pairing. An explicit `false` is preserved across pairing, unlinking or an API change. Details: [diagnostics](consented-diagnostics.md). |
+| `pairingReminder` | `true` | Linking reminder in chat; `false` turns it off. |
+| `remoteWorld.<fingerprint>` | absent | On a remote server, one series per connection; the world identifier is an advanced setting. |
 
-L'historique d'exploration et les zones suggérées sont toujours actifs, locaux et bornés. Rien d'autre n'est envoyé avant l'appairage.
+Exploration history and suggested areas are always on, local and bounded. Nothing else is sent before pairing.
 
-## Rappel de connexion
+## Linking reminder
 
-- Une fois par entrée dans un monde (pas à chaque changement de dimension), environ cinq secondes après l'arrivée, uniquement si le joueur n'est pas connecté et que `pairingReminder` n'est pas désactivé.
-- Le message n'existe que côté client : il n'est jamais envoyé au serveur Minecraft.
-- Cliquer le message exécute `/minemories settings`, qui ouvre le menu Minemories au tick suivant. L'ouverture est différée : un écran ouvert pendant que le chat se ferme serait aussitôt remplacé.
+- Once per world join (not on every dimension change), about five seconds after arrival, only if the player is not linked and `pairingReminder` is not disabled.
+- The message exists only on the client: it is never sent to the Minecraft server.
+- Clicking the message runs `/minemories settings`, which opens the Minemories menu on the next tick. Opening is deferred: a screen opened while the chat is closing would be replaced immediately.
 
-## Ce qui n'est pas validé
+## Not yet validated
 
-La logique (consentement par défaut, conservation d'un refus explicite, cadence du rappel) est testée en unitaire. Le rendu, le clic dans le chat sur NeoForge, Fabric et Forge (solo et serveur distant) et la compréhension par des joueurs réels (#87) restent à valider en jeu.
+The logic (default consent, preserving an explicit refusal, reminder cadence) is unit tested. Rendering, clicking in chat on NeoForge, Fabric and Forge (single player and remote server) and comprehension by real players (#87) still need in-game validation.
 
-## Réglages avancés par onglets
+## Tabbed advanced settings
 
-Le bouton « Réglages » de l'écran simple ouvre l'écran avancé, organisé en quatre onglets : **Compte** (adresse de l'API, stockage, déconnexion), **Captures** (dossier local, exports, AFK, historique), **Monde** (identité du monde distant, zones suggérées) et **Confidentialité** (diagnostics). Le bouton Enregistrer reste visible sous tous les onglets. Mise en page non validée en jeu.
+The "Settings" button on the simple screen opens the advanced screen, organized in four tabs: **Account** (API address, storage, unlinking), **Captures** (local folder, exports, AFK, history), **World** (remote world identity, suggested areas) and **Privacy** (diagnostics). The Save button stays visible on every tab. Layout not validated in game.

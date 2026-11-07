@@ -1,4 +1,4 @@
-// Types de l'API publique de index.mjs (consommée par apps/api, qui est en TypeScript).
+// Types for the public API of index.mjs (consumed by apps/api, which is written in TypeScript).
 export type BuiltBy = 'pc' | 'vps'
 export interface PublishedLinks {
 	modrinth?: string

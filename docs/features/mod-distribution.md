@@ -1,81 +1,81 @@
-# Réglages et distribution du mod
+# Mod settings and distribution
 
-## Parcours joueur
+## Player flow
 
-La cible reste Minecraft Java 1.21.1. La matrice de release contient NeoForge 21.1.248, Fabric Loader 0.19.5 avec Fabric API 0.116.17+1.21.1, et Forge 52.1.19. Quilt 0.30.1 utilise le JAR Fabric ; voir les [essais et leurs limites](loader-support.md). Le mod s’installe uniquement côté client.
+The target is still Minecraft Java 1.21.1. The release matrix contains NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API 0.116.17+1.21.1, and Forge 52.1.19. Quilt 0.30.1 uses the Fabric JAR; see the [trials and their limits](loader-support.md). The mod is installed on the client only.
 
-**Mode simple (par défaut)** : ouvrir avec M, prendre le code à six chiffres dans la galerie, connecter le compte, puis utiliser « Capturer et envoyer ». Ce bouton nécessite un compte lié et un monde ouvert. Le service utilisé est indiqué : Minemories ou API personnalisée. « Déconnecter ce compte » retire les identifiants locaux et arrête les envois automatiques ; les captures AFK locales restent actives, sans supprimer les souvenirs en ligne.
+**Simple mode (default)**: open with M, get the six-digit code from the gallery, connect the account, then use “Capture and send”. This button requires a linked account and an open world. The service in use is shown: Minemories or a custom API. “Disconnect this account” removes the local credentials and stops automatic uploads; local AFK captures stay on, and online memories are not deleted.
 
-**Mode avancé** : saisir une adresse API compatible et un dossier local, enregistrer, exporter localement autour du joueur ou sur une sélection déjà définie par commandes. Un export local ne déclenche aucun envoi. Le rayon des captures du menu suit le réglage avancé (32 blocs par défaut) ; utiliser `/minemories export 16` pour un essai plus petit. Les captures datées et leurs métadonnées restent dans le sous-dossier `history` du dossier configuré. `capture.glb` et `capture.json` restent des copies du dernier export. **Captures locales**, disponible dans les deux modes, permet de choisir et d’envoyer une capture précédente. Voir [l’historique local](local-capture-history.md).
+**Advanced mode**: enter a compatible API address and a local folder, save, then export locally around the player or on a selection already defined with commands. A local export triggers no upload. The radius of menu captures follows the advanced setting (32 blocks by default); use `/minemories export 16` for a smaller trial. Timestamped captures and their metadata stay in the `history` subfolder of the configured folder. `capture.glb` and `capture.json` remain copies of the latest export. **Local captures**, available in both modes, lets you pick and upload an earlier capture. See [the local history](local-capture-history.md).
 
-Le bouton « API Minemories » remplit l’adresse officielle, mais elle ne change qu’après « Enregistrer ». Les modifications non enregistrées sont abandonnées en quittant le mode avancé. Changer d’API retire le jeton et l’identifiant du compte, puis nécessite un nouveau code provenant de la galerie de cette API. Ne jamais partager `config/minemories.properties`.
+The “Minemories API” button fills in the official address, but it only changes after “Save”. Unsaved changes are discarded when leaving advanced mode. Switching API removes the token and the account ID, then requires a new code from that API's gallery. Never share `config/minemories.properties`.
 
-**Zones suggérées**, dans le mode simple ou via `/minemories suggestions`, classe
-les zones de 64 × 64 blocs par temps actif local. La liste reste séparée de la
-sélection et des envois ; voir [le score et ses limites](visited-zones.md).
+**Suggested areas**, in simple mode or via `/minemories suggestions`, ranks
+64 × 64-block areas by local active time. The list stays separate from the
+selection and from uploads; see [the score and its limits](visited-zones.md).
 
-Sur une nouvelle installation, l’AFK est actif : 5 minutes d’inactivité, une capture au plus toutes les 4 heures, rayon 32 blocs. Une désactivation explicite existante est conservée. Le mode simple permet de l’activer/désactiver. Le sous-écran avancé « Réglages AFK » règle l’inactivité (1–1440 min), l’intervalle (1–10080 min) et le rayon (2–128 blocs), persistés dans les propriétés. Les captures restent locales sans compte, puis sont envoyées à la galerie du compte lié. Le contrôle utilise le temps réel depuis les hooks de frame de chaque adaptateur, qui continue en pause et en arrière-plan ; aucun menu n’est bloquant. Les touches, clics et mouvements du joueur réinitialisent l’inactivité. Les captures AFK sont préparées progressivement entre les frames, puis écrites sur worker et envoyées à débit limité ; voir [le parcours, ses limites et les mesures](spooling-glb.md). Le retour du joueur suspend la lecture ; les changements de contexte annulent une capture incomplète.
+On a new installation, AFK is on: 5 minutes of inactivity, at most one capture every 4 hours, 32-block radius. An existing explicit opt-out is kept. Simple mode can turn it on or off. The advanced “AFK settings” sub-screen sets inactivity (1–1440 min), interval (1–10080 min) and radius (2–128 blocks), persisted in the properties. Captures stay local without an account, then are uploaded to the linked account's gallery. The check uses real time from each adapter's frame hooks, which keeps running when paused and in the background; no menu blocks it. The player's keys, clicks and movements reset inactivity. AFK captures are prepared progressively between frames, then written on a worker and uploaded at a limited rate; see [the flow, its limits and measurements](spooling-glb.md). The player's return suspends reading; context changes cancel an incomplete capture.
 
-## Configuration locale
+## Local configuration
 
-`config/minemories.properties` dans le dossier du profil contient les réglages persistants :
+`config/minemories.properties` in the profile folder holds the persistent settings:
 
-| Clé | Valeur par défaut / règle |
+| Key | Default value / rule |
 | --- | --- |
-| `afkSnapshots` | `true` par défaut ; une désactivation enregistrée reste respectée. |
-| `captureFullHeight` | `false` ; le mode avancé permet de capturer toute la hauteur de la dimension. |
-| `afkIdleMinutes` / `afkIntervalMinutes` / `captureRadius` | `5` / `240` / `32` ; réglages avancés pour les captures AFK et le rayon des captures du menu. |
-| `apiUrl` | `https://api.minemories.net` ; une valeur existante est conservée. À défaut de valeur enregistrée, `MINEMORIES_API_URL` reste utilisable pour le développement. HTTPS requis, HTTP accepté uniquement pour localhost, 127.0.0.1 ou ::1. Pas d’identifiants, query ni fragment dans l’URL. |
-| `exportDirectory` | `~/export` ; chemin absolu ou expansion de `~/`, normalisé avant enregistrement. Le dossier est créé lors d’un export. |
-| `deviceToken`, `deviceId` | Créés lors de l’appairage ; retirés lors d’une déconnexion ou d’un changement d’API. |
+| `afkSnapshots` | `true` by default; a saved opt-out is still respected. |
+| `captureFullHeight` | `false`; advanced mode can capture the full height of the dimension. |
+| `afkIdleMinutes` / `afkIntervalMinutes` / `captureRadius` | `5` / `240` / `32`; advanced settings for AFK captures and the radius of menu captures. |
+| `apiUrl` | `https://api.minemories.net`; an existing value is kept. Without a saved value, `MINEMORIES_API_URL` remains usable for development. HTTPS required; HTTP only accepted for localhost, 127.0.0.1 or ::1. No credentials, query or fragment in the URL. |
+| `exportDirectory` | `~/export`; absolute path or `~/` expansion, normalized before saving. The folder is created on export. |
+| `deviceToken`, `deviceId` | Created on pairing; removed on disconnect or when switching API. |
 
-L’URL officielle a répondu `{"status":"ok"}` à `GET /healthz` le 10 octobre 2026. Ce contrôle ne valide pas un appairage authentifié ni un upload sur le service de production.
+The official URL answered `{"status":"ok"}` to `GET /healthz` on 10 October 2026. This check does not validate authenticated pairing or an upload to the production service.
 
-## Téléchargement sur le site
+## Download from the site
 
-Le front ne compile pas Java et ne contient aucun JAR. La page `/installation` choisit une version de Minecraft puis un loader parmi les cibles activées, lit l'index public de l'API (`/downloads/index.json`) et propose le JAR de la dernière version de cette cible, servi par `/downloads/<cible>/latest` avec son SHA-256. Aucun ZIP n'est nécessaire : le joueur dépose le JAR dans `mods`, sans extraction ni exécution par double-clic. Le JAR reste expérimental (préversions `-beta.N`).
+The front end does not compile Java and contains no JAR. The `/installation` page picks a Minecraft version, then a loader among the enabled targets, reads the API's public index (`/downloads/index.json`) and offers the JAR of the latest version for that target, served by `/downloads/<target>/latest` with its SHA-256. No ZIP is needed: the player drops the JAR into `mods`, without extracting or double-clicking anything. The JAR is still experimental (`-beta.N` prereleases).
 
-Les JAR sont construits sur le VPS par `bun mod release`, rangés dans le stockage S3 (3 versions par cible) puis servis par l'API ; le détail est dans [le flux de release](automatic-releases.md). Le déploiement web utilise `railpack.web.json` sans Java.
+JARs are built on the VPS by `bun mod release`, stored in S3 storage (3 versions per target) and then served by the API; details are in [the release flow](automatic-releases.md). The web deployment uses `railpack.web.json` without Java.
 
-## CI et publications
+## CI and publishing
 
-Le workflow **Quality gates** vérifie seulement que le mod compile et passe ses contrôles (racine 1.21.1 et une cellule par cible activée) ; il ne produit, ne conserve et ne publie aucun JAR. Les publications Modrinth et CurseForge sont faites par `bun mod publish` (ou par la fin de `bun mod release`) avec `mod/catalogs.json` et les jetons `MODRINTH_TOKEN` / `CURSEFORGE_TOKEN` du VPS, sans reconstruire les archives stockées. Elles restent désactivées tant que les projets ne sont pas créés ; la procédure est dans [automatic-releases.md](automatic-releases.md).
+The **Quality gates** workflow only checks that the mod compiles and passes its checks (1.21.1 root and one cell per enabled target); it produces, keeps and publishes no JAR. Modrinth and CurseForge publishing is done by `bun mod publish` (or by the end of `bun mod release`) with `mod/catalogs.json` and the VPS's `MODRINTH_TOKEN` / `CURSEFORGE_TOKEN` tokens, without rebuilding the stored archives. It stays disabled until the projects are created; the procedure is in [automatic-releases.md](automatic-releases.md).
 
-Avant une publication catalogue :
+Before publishing to a catalog:
 
-1. Créer les fiches officielles sur Modrinth et CurseForge et préparer descriptions, licence et illustrations.
-2. Renseigner `projectId` et `enabled` dans `mod/catalogs.json`, puis les jetons dans l'environnement du VPS.
-3. Valider en jeu le JAR de chaque cible sélectionnée, puis essayer `bun mod publish --dry-run`.
+1. Create the official pages on Modrinth and CurseForge and prepare descriptions, license and artwork.
+2. Fill in `projectId` and `enabled` in `mod/catalogs.json`, then the tokens in the VPS environment.
+3. Validate the JAR of each selected target in game, then try `bun mod publish --dry-run`.
 
-## Autres launchers
+## Other launchers
 
-Modrinth et CurseForge sont les destinations de publication retenues. Prism Launcher, ATLauncher et GDLauncher proposent des téléchargements issus de ces catalogues ; il n’est pas nécessaire de leur envoyer un second JAR. Une instance compatible dans un autre launcher peut utiliser le JAR manuel. Ce mécanisme ne constitue pas une validation en jeu de chaque launcher, et aucune publication universelle sur tous les gestionnaires n’est annoncée.
+Modrinth and CurseForge are the chosen publishing destinations. Prism Launcher, ATLauncher and GDLauncher offer downloads from these catalogs; there is no need to send them a second JAR. A compatible instance in another launcher can use the manual JAR. This does not amount to in-game validation of each launcher, and no universal publication on every manager is announced.
 
-Sources officielles consultées le 10 octobre 2026 : [Modrinth Create a version](https://docs.modrinth.com/api/operations/createversion/), [CurseForge Upload API](https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api), [Prism](https://prismlauncher.org/wiki/getting-started/download-mods/), [ATLauncher](https://wiki.atlauncher.com/getting-started/downloading-content/), [GDLauncher](https://gdlauncher.com/).
+Official sources consulted on 10 October 2026: [Modrinth Create a version](https://docs.modrinth.com/api/operations/createversion/), [CurseForge Upload API](https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api), [Prism](https://prismlauncher.org/wiki/getting-started/download-mods/), [ATLauncher](https://wiki.atlauncher.com/getting-started/downloading-content/), [GDLauncher](https://gdlauncher.com/).
 
 ## Validation
 
-Tests de réglages : défaut officiel et overrides, rejet des URLs dangereuses, invalidation des identifiants au changement d’API, conservation du compte au changement de dossier, validation sans mutation partielle, chemins locaux, défaut AFK et permissions privées/écriture atomique.
+Settings tests: official default and overrides, rejection of dangerous URLs, credentials invalidated when switching API, account kept when changing folder, validation without partial mutation, local paths, AFK default, and private permissions/atomic writes.
 
-Tests du stockage et de l'outil `bun mod` : `node --test scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs`. Tests React : téléchargement et empreinte, erreurs réseau/manifeste, absence de lien cassé et annulation lors d’un changement de page.
+Storage and `bun mod` tool tests: `node --test scripts/mod/*.test.mjs scripts/mod/*/*.test.mjs`. React tests: download and fingerprint, network/manifest errors, no broken link, and cancellation on page change.
 
-La vérification en jeu doit couvrir les modes simple/avancé à différentes échelles GUI, la persistance du dossier, l’export local réel, le changement d’API et le nouvel appairage, les erreurs de connexion, l’envoi en galerie et le retour à l’écran précédent. Tester sur un monde jetable et conserver une copie du profil avant installation.
+In-game verification must cover simple/advanced modes at different GUI scales, folder persistence, a real local export, switching API and re-pairing, connection errors, uploading to the gallery and returning to the previous screen. Test on a throwaway world and keep a copy of the profile before installing.
 
-Validation locale du 10 octobre 2026 : le client de développement NeoForge 21.1.248 a démarré après déclaration des sources de `:core` dans `neoForge.mods.minemories`. Le crash initial `NoClassDefFoundError: dev/minemories/core/GlbScene` est résolu. Les logs montrent un export réel terminé depuis le monde de test (7 369 322 blocs, 291 matériaux). L’utilisateur a validé en jeu la lisibilité des deux modes et la persistance du dossier après fermeture/réouverture. Un test AFK réglé temporairement à 1 min / 1 min / rayon 8 a produit plusieurs captures avec `paused=true`, puis des envois réussis sur l’API de production. L’utilisateur confirme le test ; les réglages locaux ont été remis à 5 / 240 / 32. La validation porte sur le client de développement ; le JAR publié doit encore être testé séparément. Les deux workflows passent `actionlint` 1.7.12.
+Local validation of 10 October 2026: the NeoForge 21.1.248 development client started after the `:core` sources were declared in `neoForge.mods.minemories`. The initial `NoClassDefFoundError: dev/minemories/core/GlbScene` crash is fixed. The logs show a real export completed from the test world (7,369,322 blocks, 291 materials). The user validated in game the readability of both modes and folder persistence after closing/reopening. An AFK test temporarily set to 1 min / 1 min / radius 8 produced several captures with `paused=true`, then successful uploads to the production API. The user confirms the test; the local settings were reset to 5 / 240 / 32. The validation covers the development client; the published JAR still has to be tested separately. Both workflows pass `actionlint` 1.7.12.
 
 
-## Profondeur des captures
+## Capture depth
 
-Par défaut, les captures autour du joueur, manuelles ou AFK, coupent le sous-sol cinq blocs sous la profondeur la plus basse visitée dans les chunks concernés. À la première capture, le terrain de surface sert aussi de référence pour éviter une capture vide si le joueur vole. Les passages en profondeur étendent ensuite les captures de cette zone. Le suivi fonctionne aussi lorsque les captures AFK sont désactivées.
+By default, captures around the player, manual or AFK, cut the underground five blocks below the lowest depth visited in the chunks concerned. On the first capture, the surface terrain also serves as a reference to avoid an empty capture if the player is flying. Trips underground then extend the captures of that area. Tracking also works when AFK captures are off.
 
-Cet historique est local, séparé par monde/serveur, dimension et joueur. Il est enregistré dans `config/minemories/exploration/` toutes les dix secondes, avant une capture et au changement de monde. Il conserve au maximum 100 000 chunks par historique ; les plus anciens peuvent être évincés. Les visites antérieures à cette version ne sont pas récupérées. Le seuil est commun à la zone capturée : des cavités non visitées au-dessus de cette profondeur peuvent encore apparaître. Ce n’est pas une reconstruction des seuls blocs vus par le joueur.
+This history is local, separated by world/server, dimension and player. It is saved in `config/minemories/exploration/` every ten seconds, before a capture and when changing world. It keeps at most 100,000 chunks per history; the oldest can be evicted. Visits from before this version are not recovered. The threshold is shared across the captured area: unvisited cavities above that depth can still appear. This is not a reconstruction of only the blocks the player saw.
 
-La validation comparative complète (surface/grotte/retour/autre zone, dimensions,
-redémarrage et autre joueur) est documentée dans
-[Validation de la profondeur visitée](exploration-depth-validation.md).
+The full comparative validation (surface/cave/return/other area, dimensions,
+restart and another player) is documented in
+[Visited depth validation](exploration-depth-validation.md).
 
-Le bouton **Profondeur** des réglages avancés permet de revenir à toute la hauteur de la dimension. Une sélection explicite conserve toujours ses deux coins. Le suivi ne modifie aucun bloc du monde et ne charge aucun chunk absent. Les côtés et le dessous de la coupe reçoivent une section esthétique : terre dans les trois blocs sous la surface, puis pierre. Les ouvertures de grottes rencontrant le bord sont fermées à ce plan, sans remplir la grotte à l’intérieur. Les fluides au-dessus du fond d’un lac gardent leur surface et leurs faces de coupe transparentes, même si l’eau continue hors de la capture ; les fluides souterrains peuvent rencontrer la section de pierre. Les blocs transparents et non cubiques gardent leur modèle. Aucune paroi n’est ajoutée au-dessus du terrain et aucun bloc du monde n’est modifié.
+The **Depth** button in the advanced settings switches back to the full height of the dimension. An explicit selection always keeps its two corners. Tracking modifies no block in the world and loads no missing chunk. The sides and bottom of the cut get a cosmetic cross-section: dirt in the three blocks below the surface, then stone. Cave openings that meet the edge are closed at that plane, without filling the cave inside. Fluids above a lake bed keep their surface and transparent cut faces, even if the water continues outside the capture; underground fluids may meet the stone cross-section. Transparent and non-cube blocks keep their model. No wall is added above the terrain and no block in the world is modified.
 
-## Historique des versions
+## Version history
 
-Les pages `/versions` et `/changelog` présentent l'historique des JAR stockés (trois versions par cible) avec accès depuis le tutoriel. Voir [les sources, états et limites](release-history.md). Le téléchargement par défaut reste NeoForge 1.21.1 ; les autres téléchargements utilisent les cibles activées dans `mod/targets.json` : voir la [matrice des loaders](loader-support.md) et ses validations.
+The `/versions` and `/changelog` pages show the history of stored JARs (three versions per target), reachable from the tutorial. See [the sources, states and limits](release-history.md). The default download is still NeoForge 1.21.1; the other downloads use the targets enabled in `mod/targets.json`: see the [loader matrix](loader-support.md) and its validations.

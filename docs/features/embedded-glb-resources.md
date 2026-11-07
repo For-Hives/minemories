@@ -1,234 +1,234 @@
-# Ressources embarquées des souvenirs GLB
+# Embedded resources in GLB memories
 
-Un souvenir doit garder sa géométrie et ses textures avec lui. Les références à
-des fichiers voisins, à une URL HTTP, à un chemin local ou à un blob créé ailleurs
-sont refusées par les deux uploads et par le viewer avant son parseur Three.js.
-Cela concerne aussi les anciens souvenirs téléchargés et les liens partagés :
-ils passent par le même chargement de scène que les fichiers ouverts localement.
+A memory must carry its geometry and textures with it. References to
+neighboring files, an HTTP URL, a local path or a blob created elsewhere
+are rejected by both uploads and by the viewer before its Three.js parser.
+This also applies to older downloaded memories and shared links:
+they go through the same scene loading as files opened locally.
 
-La validation commune est dans `@minemories/api-contract/glb` :
+The shared validation lives in `@minemories/api-contract/glb`:
 
-- GLB 2, longueur exacte, premier bloc JSON UTF-8 valide et `asset.version=2.0`.
-- Au maximum 4 MiB de JSON, puis 64 blocs supplémentaires au plus. Les extensions
-  à types de blocs inconnus restent ignorables ; un second JSON est refusé, car il
-  pourrait remplacer le contenu contrôlé dans le parseur. Le BIN est unique et,
-  s’il existe, suit immédiatement le JSON.
-- Seul le premier buffer peut utiliser ce BIN sans URI. Sa longueur déclarée est
-  positive, entière et compatible avec la taille du BIN, avec trois octets de
-  padding au maximum. Tout autre buffer doit fournir ses propres données via une
-  URI `data:application/octet-stream` ou `data:application/gltf-buffer` en base64.
-  Leur longueur déclarée doit correspondre aux octets intégrés, avec ou sans
-  padding base64 ; une URI courte ne peut pas annoncer un buffer plus grand.
-- Chaque image fournit une référence `bufferView` avec un type MIME, ou une URI
-  `data:` raster intégrée. Les types acceptés sont PNG, JPEG, WebP, AVIF et KTX2.
-  Les formats à extensions restent soumis aux capacités du loader ; ce contrôle
-  ne prétend pas ajouter de nouveaux décodeurs au viewer. SVG est refusé.
-- Les URI de métadonnées dans `extras` ne sont pas des ressources du loader et ne
-  sont pas traitées comme des textures ou de la géométrie.
+- GLB 2, exact length, a valid UTF-8 JSON first chunk and `asset.version=2.0`.
+- At most 4 MiB of JSON, then at most 64 additional chunks. Extensions
+  with unknown chunk types stay ignorable; a second JSON chunk is rejected because it
+  could replace the checked content in the parser. The BIN chunk is unique and,
+  if present, immediately follows the JSON.
+- Only the first buffer may use that BIN without a URI. Its declared length is
+  positive, an integer and compatible with the BIN size, with at most three bytes of
+  padding. Any other buffer must provide its own data through a base64
+  `data:application/octet-stream` or `data:application/gltf-buffer` URI.
+  Its declared length must match the embedded bytes, with or without
+  base64 padding; a short URI cannot announce a larger buffer.
+- Each image provides a `bufferView` reference with a MIME type, or an embedded
+  raster `data:` URI. Accepted types are PNG, JPEG, WebP, AVIF and KTX2.
+  Extension-based formats remain subject to the loader's capabilities; this check
+  does not claim to add new decoders to the viewer. SVG is rejected.
+- Metadata URIs in `extras` are not loader resources and are
+  not treated as textures or geometry.
 
-Ces règles suivent la structure et les ressources intégrées de la
-[spécification glTF 2.0](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html),
-avec une politique Minemories qui exige l’autonomie du fichier.
+These rules follow the structure and embedded resources of the
+[glTF 2.0 specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html),
+with a Minemories policy that requires the file to be self-contained.
 
-Les plafonds binaires restent 100 MiB pour l’ancien upload et 450 MiB pour l’upload
-reprenable en morceaux de 4 MiB. La validation de ce dernier lit le JSON, les
-en-têtes de textures et les fenêtres d’accessors, puis calcule le checksum en
-stream ; elle ne charge pas le BIN entier. Les fichiers refusés ne créent ni
-souvenir ni objet de stockage. Une
-session reprenable refusée peut être annulée ; sinon son staging privé expire
-avec le mécanisme existant.
+Binary caps remain 100 MiB for the legacy upload and 450 MiB for the
+resumable upload in 4 MiB chunks. Validation of the latter reads the JSON, the
+texture headers and the accessor windows, then computes the checksum as a
+stream; it does not load the whole BIN. Rejected files create neither a
+memory nor a storage object. A
+rejected resumable session can be cancelled; otherwise its private staging expires
+through the existing mechanism.
 
-Dans le viewer, le fichier est contrôlé avant de charger une texture ou un buffer.
-En cas de refus, le chargement s’arrête et un message demande de réexporter avec
-les textures et la géométrie intégrées. Les anciens fichiers non autonomes ne
-sont ni modifiés ni supprimés automatiquement. L’export actuel du mod conserve
-son format et ses textures PNG embarquées.
+In the viewer, the file is checked before any texture or buffer is loaded.
+On rejection, loading stops and a message asks to re-export with
+embedded textures and geometry. Older non-self-contained files are
+neither modified nor deleted automatically. The mod's current export keeps
+its format and its embedded PNG textures.
 
-Validation : URI externes/relatives/locales/blob sur les deux uploads HTTP,
-absence de stockage et de publication après refus, JSON de remplacement, BIN
-dupliqué ou manquant, padding, bornes du JSON et des blocs, UTF-8 invalide,
-URI de données acceptées, parseur Three.js réel pour une scène autonome et refus
-avant le loader de textures. Les interactions du viewer local et de la galerie
-vérifient le message et la disparition du chargement. La capture Minecraft réelle
-de 10 488 752 octets passe les deux validations ; son import et son rendu Blender
-ont été inspectés, avec un mesh et 55 images PNG intégrées. Aucun fichier privé n’est
-ajouté au dépôt ou envoyé en production pour ces tests.
+Validation: external/relative/local/blob URIs on both HTTP uploads,
+no storage and no publication after rejection, replacement JSON, duplicated
+or missing BIN, padding, JSON and chunk bounds, invalid UTF-8,
+accepted data URIs, the real Three.js parser for a self-contained scene, and rejection
+before the texture loader. Local viewer and gallery interactions
+check the message and that the loading indicator goes away. The real Minecraft capture
+of 10,488,752 bytes passes both validations; its Blender import and render
+were inspected, with one mesh and 55 embedded PNG images. No private file is
+added to the repository or sent to production for these tests.
 
 ## Format 2 (issue #173)
 
-Les GLB produits depuis le format 2 contiennent un nœud et un mesh par catégorie (`terrain`, `decor`, `fluids`,
-`block_entities`, `entities`) et des `extras` (`asset.extras.minemories`, `minemoriesChunks` par primitive). Aucun
-nouveau type d'accessor ni extension : les validateurs n'ont pas changé et les anciens fichiers (un seul mesh) restent
-acceptés. Voir `docs/features/glb-size.md`.
+GLBs produced since format 2 contain one node and one mesh per category (`terrain`, `decor`, `fluids`,
+`block_entities`, `entities`) and `extras` (`asset.extras.minemories`, `minemoriesChunks` per primitive). No
+new accessor type or extension: the validators have not changed and older files (a single mesh) are still
+accepted. See `docs/features/glb-size.md`.
 
-Depuis la phase 3, les attributs sont quantifiés (`KHR_mesh_quantization`, déjà accepté par le validateur) : POSITION en int16
-non normalisé avec échelle de nœud, NORMAL en int8 normalisé, TEXCOORD_0 en uint16 normalisé, tous avec `byteStride`.
+Since phase 3, attributes are quantized (`KHR_mesh_quantization`, already accepted by the validator): POSITION as non-normalized
+int16 with a node scale, NORMAL as normalized int8, TEXCOORD_0 as normalized uint16, all with `byteStride`.
 
-## Disposition et budgets de géométrie
+## Layout and geometry budgets
 
-Le même contrôle commun vérifie la disposition JSON avant stockage et avant
-appel du loader Three.js. Chaque vue référence un buffer existant et reste dans
-sa longueur. Les offsets et strides sont entiers, alignés et compatibles avec
-les types de composants ; les matrices tiennent compte du padding de colonnes.
-La plage complète d’un accessor, y compris son dernier élément, doit tenir dans
-la vue. Les références et plages des remplacements sparse sont aussi contrôlées.
+The same shared check verifies the JSON layout before storage and before
+the Three.js loader is called. Each view references an existing buffer and stays within
+its length. Offsets and strides are integers, aligned and compatible with
+the component types; matrices account for column padding.
+The full range of an accessor, including its last element, must fit in
+the view. References and ranges of sparse substitutions are checked too.
 
-Les primitives référencent des accessors existants, avec des nombres de sommets
-identiques, des types adaptés aux attributs et des bornes POSITION finies.
-Les indices utilisent un scalaire entier non signé et une topologie cohérente.
-Le contrôle distingue les vues de textures, de sommets et d’indices ; plusieurs
-accessors de sommets partageant une vue exigent un stride explicite. Les morph
-targets, les attributs de skin, les types quantifiés déclarés et les instances GPU
-passent ces contrôles de disposition. Meshopt et Draco sont refusés : le viewer
-n’a pas leurs décodeurs configurés, et leurs dispositions compressées ne peuvent
-pas contourner les budgets.
+Primitives reference existing accessors, with matching vertex
+counts, types suited to the attributes and finite POSITION bounds.
+Indices use an unsigned integer scalar and a consistent topology.
+The check distinguishes texture, vertex and index views; several
+vertex accessors sharing a view require an explicit stride. Morph
+targets, skin attributes, declared quantized types and GPU instancing
+go through these layout checks. Meshopt and Draco are rejected: the viewer
+does not have their decoders configured, and their compressed layouts cannot
+bypass the budgets.
 
-| Budget commun API / viewer | Plafond |
+| Shared API / viewer budget | Cap |
 | --- | --- |
-| Entrées par liste contrôlée | 16 384 |
-| Éléments d’accessors cumulés, indices compris | 32 000 000 |
-| Géométrie décompressée estimée en float32 | 256 MiB |
-| Primitives cumulées | 4 096 |
-| Éléments à dessiner, répétitions et instances comprises | 32 000 000 |
-| Nœuds | 4 096 |
-| Profondeur de hiérarchie | 128 |
+| Entries per checked list | 16,384 |
+| Total accessor elements, indices included | 32,000,000 |
+| Estimated decompressed geometry as float32 | 256 MiB |
+| Total primitives | 4,096 |
+| Elements to draw, repetitions and instances included | 32,000,000 |
+| Nodes | 4,096 |
+| Hierarchy depth | 128 |
 
-Ces budgets sont des limites Minemories, en plus de la structure glTF. Ils portent
-sur les listes complètes, y compris les données non utilisées dans la scène
-initiale. Les accessors à zéros implicites et les données sparse sont comptés
-avant allocation ; la taille du GLB seule ne bornerait pas leur expansion.
-Les nœuds référencent des meshes existants, avec des transformations finies.
-Les cycles, les parents multiples et les racines de scène incohérentes sont
-refusés sans parcours récursif du graphe.
+These budgets are Minemories limits, on top of the glTF structure. They apply
+to the full lists, including data not used in the initial
+scene. Implicit-zero accessors and sparse data are counted
+before allocation; the GLB size alone would not bound their expansion.
+Nodes reference existing meshes, with finite transforms.
+Cycles, multiple parents and inconsistent scene roots are
+rejected without recursively walking the graph.
 
-Les uploads HTTP legacy et reprenables refusent les fixtures de géométrie
-incohérente avant publication ou stockage d’objet. Le viewer refuse les mêmes
-dispositions avant d’invoquer le loader ; une scène triangulaire valide passe
-aussi le parseur Three.js réel. Les captures Minecraft de 10 488 752 et
-13 628 224 octets passent le contrôle en mémoire du viewer et celui du fichier
-reprenable, qui lit seulement le JSON et les en-têtes avant son checksum en stream.
-Le rendu Blender de la capture récente a été inspecté : le village, les textures
-et le volume de terrain restent visibles. `bun run build`, incluant `bun check`,
-passe avec 93 tests API et 64 tests web ; les fonctions et lignes du contrôle
-commun sont couvertes à 100 %. Les huit scénarios Garage réels passent aussi,
-y compris l’envoi reprenable, la panne et le nettoyage dans un nouveau processus.
+The legacy and resumable HTTP uploads reject the inconsistent-geometry fixtures
+before publication or object storage. The viewer rejects the same
+layouts before invoking the loader; a valid triangle scene also passes
+the real Three.js parser. The Minecraft captures of 10,488,752 and
+13,628,224 bytes pass the viewer's in-memory check and the resumable
+file check, which reads only the JSON and headers before its streamed checksum.
+The Blender render of the recent capture was inspected: the village, textures
+and terrain volume remain visible. `bun run build`, including `bun check`,
+passes with 93 API tests and 64 web tests; the functions and lines of the shared
+check are 100% covered. The eight real Garage scenarios pass as well,
+including the resumable upload, the outage and the cleanup in a new process.
 
-## Valeurs binaires des accessors
+## Binary accessor values
 
-Le contrôle du 11 octobre examine aussi les octets de chaque accessor, y compris
-ceux qui ne sont pas utilisés par la scène initiale. Les uploads legacy et
-reprenable ainsi que le viewer utilisent les mêmes règles avant stockage ou
-appel du loader :
+The 11 October check also examines the bytes of every accessor, including
+those not used by the initial scene. The legacy and
+resumable uploads and the viewer apply the same rules before storage or
+calling the loader:
 
-- Les composants flottants doivent être finis : NaN et les deux infinis sont
-  refusés dans les valeurs de base et les remplacements sparse.
-- Les bornes déclarées doivent correspondre aux extrema effectifs. Les nombres
-  JSON sont arrondis en float32 avec `Math.fround` avant comparaison ; les types
-  entiers normalisés conservent leurs bornes brutes, conformément au format.
-- Chaque indice de primitive référence un sommet existant pour toutes les
-  primitives qui l’utilisent. Les valeurs maximales réservées des uint8/16/32
-  sont refusées comme indices.
-- Les indices sparse sont strictement croissants, uniques et inférieurs au
-  nombre d’éléments de l’accessor. Les bornes sont calculées après remplacement,
-  avec les zéros implicites restants. Un accessor sans base ni sparse peut garder
-  des bornes descriptives sans données, comme prévu par glTF.
-- Les strides et le padding des colonnes de matrices sont respectés ; les
-  octets de padding ne deviennent pas des composants.
+- Float components must be finite: NaN and both infinities are
+  rejected in base values and sparse substitutions.
+- Declared bounds must match the actual extrema. JSON numbers
+  are rounded to float32 with `Math.fround` before comparison; normalized integer
+  types keep their raw bounds, as the format specifies.
+- Every primitive index references an existing vertex for all the
+  primitives that use it. The reserved maximum values of uint8/16/32
+  are rejected as indices.
+- Sparse indices are strictly increasing, unique and lower than the
+  accessor's element count. Bounds are computed after substitution,
+  with the remaining implicit zeros. An accessor with neither a base nor sparse data may keep
+  descriptive bounds without data, as glTF allows.
+- Strides and matrix column padding are respected;
+  padding bytes do not become components.
 
-Chaque lecture reste limitée à **64 KiB**, pour la base, les indices sparse et
-leurs valeurs. Les fenêtres sont parcourues sans construire l’accessor complet
-ni conserver une table de tous les remplacements. Les URI base64 sont décodées
-dans la limite du JSON de 4 MiB. Le contrôle rend régulièrement la main à la
-boucle d’événements, afin que le chargement reste visible. Le checksum final
-reprenable conserve son parcours en stream.
+Each read stays limited to **64 KiB**, for the base, the sparse indices and
+their values. Windows are walked without building the full accessor
+or keeping a table of all substitutions. Base64 URIs are decoded
+within the 4 MiB JSON limit. The check regularly yields to the
+event loop so that loading stays visible. The final resumable
+checksum keeps its streamed pass.
 
-Ces règles suivent les sections Accessor Bounds, Sparse Accessors et Topology
-and Connectivity de la
-[spécification glTF 2.0](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html).
+These rules follow the Accessor Bounds, Sparse Accessors and Topology
+and Connectivity sections of the
+[glTF 2.0 specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html).
 
-Les tests couvrent les valeurs non finies, les bornes fausses, les trois types
-d’indices, les quatre types entiers normalisés, les matrices avec padding, les
-strides, les remplacements sur plusieurs fenêtres, les lectures trop courtes
-et les buffers inline. Les deux uploads refusent les fichiers malformés sans
-créer d’objet ni publier de souvenir. Le vrai parseur Three.js accepte aussi
-une géométrie sparse valide et n’est pas appelé pour les fixtures refusées.
+The tests cover non-finite values, wrong bounds, the three index
+types, the four normalized integer types, padded matrices,
+strides, substitutions across several windows, short reads
+and inline buffers. Both uploads reject malformed files without
+creating an object or publishing a memory. The real Three.js parser also accepts
+valid sparse geometry and is not called for rejected fixtures.
 
-Les captures réelles de **10 488 752** et **13 628 224** octets passent le contrôle
-en mémoire et la validation du fichier reprenable avec SHA-256. Le rendu Blender
-de la seconde a été revérifié : village, textures et terrain de 65 × 65 × 118
-restent visibles. Aucun changement du fichier exporté ni du code Minecraft.
+The real captures of **10,488,752** and **13,628,224** bytes pass the in-memory
+check and the resumable file validation with SHA-256. The Blender render
+of the second one was re-checked: village, textures and 65 × 65 × 118 terrain
+remain visible. No change to the exported file or the Minecraft code.
 
-Ces contrôles ne constituent pas une validation exhaustive des autres contraintes
-et extensions glTF.
+These checks are not an exhaustive validation of the other glTF constraints
+and extensions.
 
-## Dimensions et budgets des textures
+## Texture dimensions and budgets
 
-Les en-têtes des images sont examinés avant le décodeur du navigateur et avant
-publication par les deux uploads. Un petit fichier compressé ne peut donc pas
-annoncer une texture arbitrairement grande. Les images non utilisées comptent
-aussi. Chaque entrée de texture consomme le coût de ses sources, y compris les
-sources de secours des extensions ; répéter une source dans plusieurs textures
-ne contourne pas le total.
+Image headers are examined before the browser's decoder and before
+publication by both uploads. A small compressed file therefore cannot
+announce an arbitrarily large texture. Unused images count
+too. Each texture entry consumes the cost of its sources, including
+extension fallback sources; repeating a source in several textures
+does not bypass the total.
 
-| Budget commun API / viewer | Plafond |
+| Shared API / viewer budget | Cap |
 | --- | --- |
-| Largeur ou hauteur d’une image | 16 384 pixels |
-| Pixels par image, plans et frames comptés | 16 777 216 |
-| Pixels cumulés, sources répétées comprises | 67 108 864 |
-| Taille décompressée estimée par image | 128 MiB |
-| Taille décompressée estimée cumulée | 512 MiB |
-| Images / textures | 1 024 / 4 096 |
-| Octets lus pour les en-têtes, toutes images confondues | 8 MiB |
-| En-têtes de blocs, marqueurs, boxes et extents parcourus | 16 384 |
-| Fenêtre de lecture d’image | 4 KiB |
+| Width or height of an image | 16,384 pixels |
+| Pixels per image, planes and frames counted | 16,777,216 |
+| Total pixels, repeated sources included | 67,108,864 |
+| Estimated decompressed size per image | 128 MiB |
+| Total estimated decompressed size | 512 MiB |
+| Images / textures | 1,024 / 4,096 |
+| Bytes read for headers, across all images | 8 MiB |
+| Chunk headers, markers, boxes and extents walked | 16,384 |
+| Image read window | 4 KiB |
 
-L’estimation prend huit octets par pixel ; pour KTX2, elle prend le maximum entre
-ce coût et la somme des tailles décompressées déclarées par les niveaux. Les
-mipmaps, couches, faces de cube et profondeur sont examinés ; la profondeur est
-limitée à 16 384 et les couches à 1 024. Les plages et les tailles des niveaux
-supercompressés sont contrôlées avant lecture des données codées.
+The estimate uses eight bytes per pixel; for KTX2, it takes the maximum of
+that cost and the sum of the decompressed sizes declared by the levels.
+Mipmaps, layers, cube faces and depth are examined; depth is
+limited to 16,384 and layers to 1,024. Ranges and sizes of
+supercompressed levels are checked before the encoded data is read.
 
-PNG vérifie l’IHDR et les dimensions des frames APNG. JPEG lit les marqueurs
-jusqu’au premier scan et contrôle le SOF. WebP vérifie à la fois le canvas VP8X,
-les dimensions VP8/VP8L et chaque frame animée. Pour APNG et WebP animé, le budget
-compte un canvas par frame, plus un canvas de composition.
+PNG checks the IHDR and APNG frame dimensions. JPEG reads markers
+up to the first scan and checks the SOF. WebP checks the VP8X canvas,
+the VP8/VP8L dimensions and every animated frame. For APNG and animated WebP, the budget
+counts one canvas per frame, plus one compositing canvas.
 
-Pour AVIF, le contrôle suit les items AV1 et alpha jusqu’à leurs extents, sans
-concaténer l’image entière. Il lit les maxima de dimensions des véritables
-Sequence Header OBUs AV1 : les propriétés d’affichage `ispe` seules ne bornent
-pas les images intermédiaires. Les grilles comptent leur sortie et, par prudence,
-tous les plans codés pour chaque cellule, afin de couvrir aussi les plans alpha
-réutilisés. Ce calcul peut refuser une grille qu’un décodeur optimisé garderait
-en moins de mémoire. Les références externes, méthodes de construction non
-contrôlées, dérivations inconnues et tracks AVIF animés sont refusés. Les items
-statiques, alpha et grilles restent soumis au budget commun.
+For AVIF, the check follows the AV1 and alpha items down to their extents, without
+concatenating the whole image. It reads the maximum dimensions from the actual
+AV1 Sequence Header OBUs: `ispe` display properties alone do not bound
+intermediate images. Grids count their output and, to be safe,
+every coded plane for each cell, so that reused alpha planes are covered
+too. This calculation may reject a grid that an optimized decoder would hold
+in less memory. External references, unchecked construction
+methods, unknown derivations and animated AVIF tracks are rejected. Static
+items, alpha and grids remain subject to the shared budget.
 
-Les layouts contrôlés sont décrits par les spécifications
+The checked layouts are described by the
 [PNG/APNG](https://www.w3.org/TR/png-3/),
 [JPEG](https://www.w3.org/Graphics/JPEG/itu-t81.pdf),
 [WebP](https://developers.google.com/speed/webp/docs/riff_container),
-[KTX2](https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html) et
-[AVIF](https://aomediacodec.github.io/av1-avif/), ainsi que la syntaxe du
-[Sequence Header AV1](https://github.com/AOMediaCodec/av1-spec/blob/master/06.bitstream.syntax.md).
-Le cas d’alpha partagé entre cellules est décrit dans le
-[décodeur libavif](https://github.com/AOMediaCodec/libavif/blob/main/src/read.c).
+[KTX2](https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html) and
+[AVIF](https://aomediacodec.github.io/av1-avif/) specifications, along with the
+[AV1 Sequence Header](https://github.com/AOMediaCodec/av1-spec/blob/master/06.bitstream.syntax.md) syntax.
+The case of alpha shared across cells is described in the
+[libavif decoder](https://github.com/AOMediaCodec/libavif/blob/main/src/read.c).
 
-Ces contrôles d’en-têtes ne décodent pas les pixels, ne vérifient pas les CRC PNG
-ou toute la syntaxe des codecs, et ne garantissent pas la mémoire totale du
-processus ou du GPU. Les erreurs du décodeur restent visibles. Aucun décodeur
-KTX2 n’est ajouté au viewer ; valider son budget ne rend pas ce format affichable
-sur une configuration qui ne le prenait pas en charge.
+These header checks do not decode pixels, do not verify PNG CRCs
+or the full codec syntax, and do not guarantee the total memory of the
+process or the GPU. Decoder errors stay visible. No KTX2 decoder
+is added to the viewer; validating its budget does not make this format displayable
+on a configuration that did not support it.
 
-Validation du 11 octobre : fixtures raster produites pour les tests (PNG/APNG,
-JPEG, WebP statique/animé et AVIF avec alpha), en-têtes KTX2 et AV1 synthétiques,
-dimensions excessives, références répétées, budget KTX2 cumulé, grilles AVIF,
-metadata floods, données inline, MIME contradictoires et lectures tronquées.
-Les uploads legacy et reprenable refusent ces fichiers avant stockage et
-publication. Le viewer refuse les mêmes budgets avant d’appeler Three.js.
+Validation of 11 October: raster fixtures produced for the tests (PNG/APNG,
+JPEG, static/animated WebP and AVIF with alpha), synthetic KTX2 and AV1 headers,
+excessive dimensions, repeated references, cumulative KTX2 budget, AVIF grids,
+metadata floods, inline data, contradictory MIME types and truncated reads.
+The legacy and resumable uploads reject these files before storage and
+publication. The viewer rejects the same budgets before calling Three.js.
 
-Les captures Minecraft réelles de **10 488 752** et **13 628 224** octets passent
-encore les validations en mémoire et sur fichier avec SHA-256. Le rendu Blender
-5.2.2 de la seconde a été inspecté : village, feuillage, textures et volume de
-terrain de 65 × 65 × 118 restent visibles. Le format exporté et le code du mod
-ne changent pas. Les fixtures synthétiques testent le contrôle d’en-têtes ; elles
-ne sont pas présentées comme des images décodables.
+The real Minecraft captures of **10,488,752** and **13,628,224** bytes still pass
+the in-memory and on-file validations with SHA-256. The Blender
+5.2.2 render of the second one was inspected: village, foliage, textures and 65 × 65 × 118
+terrain volume remain visible. The exported format and the mod code
+do not change. The synthetic fixtures test the header check; they
+are not presented as decodable images.

@@ -604,10 +604,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</summary>
 								<p
 									className="mc-footer__meta"
-									data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in French only)."
+									data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only)."
 								>
 									{t(
-										'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in French only).'
+										'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only).'
 									)}
 								</p>
 							</details>

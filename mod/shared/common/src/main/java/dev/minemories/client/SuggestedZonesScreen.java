@@ -16,7 +16,7 @@ final class SuggestedZonesScreen extends Screen {
   private int panelWidth;
 
   SuggestedZonesScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.zones_suggerees"));
+    super(Component.translatable("minemories.ui.suggested_areas"));
     this.parent = parent;
   }
 
@@ -27,7 +27,7 @@ final class SuggestedZonesScreen extends Screen {
     top = Math.max(4, (height - 236) / 2);
     zones = ClientRuntime.suggestedZones();
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.back"), ignored -> onClose())
             .bounds(left + 14, top + 202, panelWidth - 28, 20)
             .build());
   }
@@ -37,25 +37,17 @@ final class SuggestedZonesScreen extends Screen {
     super.render(graphics, mouseX, mouseY, partialTick);
     graphics.drawString(font, title, left + 14, top + 14, 0xFFECE8DC);
     graphics.drawString(
-        font,
-        I18n.get("minemories.ui.temps_actif_local_zones_de_64_64_blocs"),
-        left + 14,
-        top + 35,
-        0xFFB2B6AA);
+        font, I18n.get("minemories.ui.local_active_time_areas"), left + 14, top + 35, 0xFFB2B6AA);
     if (zones.isEmpty()) {
       graphics.drawString(
-          font,
-          I18n.get("minemories.ui.joue_au_moins_une_minute_dans_une_zone"),
-          left + 14,
-          top + 65,
-          0xFFECE8DC);
+          font, I18n.get("minemories.ui.play_one_minute_in_area"), left + 14, top + 65, 0xFFECE8DC);
     }
     for (int i = 0; i < zones.size(); i++) {
       graphics.drawString(font, zones.get(i).label(), left + 14, top + 65 + i * 22, 0xFFECE8DC);
     }
     graphics.drawString(
         font,
-        I18n.get("minemories.ui.rejoins_une_zone_puis_choisis_ton_export"),
+        I18n.get("minemories.ui.return_to_area_choose_export"),
         left + 14,
         top + 180,
         0xFFB2B6AA);

@@ -30,7 +30,7 @@ async function upload(client, version, content, extra = {}) {
 	})
 }
 
-test('un envoi écrit le JAR, latest, l’index et builtBy', async () => {
+test('an upload writes the JAR, latest, the index and builtBy', async () => {
 	const client = createFakeClient()
 	const result = await upload(client, '0.1.0', 'jar-one')
 	assert.deepEqual([result.latest, result.replaced, result.unchanged], [true, false, false])
@@ -41,7 +41,7 @@ test('un envoi écrit le JAR, latest, l’index et builtBy', async () => {
 	assert.equal(index.targets[target.id].loaderVersion, '0.19.5')
 })
 
-test('renvoyer les mêmes octets ne change rien (index non réécrit)', async () => {
+test('resending the same bytes changes nothing (index not rewritten)', async () => {
 	const client = createFakeClient()
 	await upload(client, '0.1.0', 'jar-one')
 	const writes = () => client.calls.filter(call => call.type === 'PutObjectCommand').length
@@ -51,7 +51,7 @@ test('renvoyer les mêmes octets ne change rien (index non réécrit)', async ()
 	assert.equal(writes(), before)
 })
 
-test('un autre contenu pour la même version est refusé sans replace, accepté avec', async () => {
+test('different content for the same version is rejected without replace, accepted with it', async () => {
 	const client = createFakeClient()
 	await upload(client, '0.1.0', 'jar-one')
 	await assert.rejects(upload(client, '0.1.0', 'jar-two'), ModStorageConflictError)
@@ -61,7 +61,7 @@ test('un autre contenu pour la même version est refusé sans replace, accepté 
 	assert.equal((await readIndex({ env, client })).targets[target.id].versions[0].bytes, 14)
 })
 
-test('la rétention suit l’envoi mais garde latest, épinglées et publiées', async () => {
+test('retention follows the upload but keeps latest, pinned and published versions', async () => {
 	const client = createFakeClient()
 	for (const n of [1, 2]) await upload(client, `0.${n}.0`, `jar-${n}`)
 	await setPinned({ targetId: target.id, version: '0.1.0', pinned: true, env, client })
@@ -75,7 +75,7 @@ test('la rétention suit l’envoi mais garde latest, épinglées et publiées',
 	assert.ok(client.objects.has(versionKey(target.id, '0.1.0')))
 })
 
-test('une version plus ancienne que latest n’est pas latest', async () => {
+test('a version older than latest does not become latest', async () => {
 	const client = createFakeClient()
 	await upload(client, '0.3.0', 'jar-3')
 	const older = await upload(client, '0.1.0', 'jar-1')
@@ -83,7 +83,7 @@ test('une version plus ancienne que latest n’est pas latest', async () => {
 	assert.equal((await readIndex({ env, client })).targets[target.id].latest, '0.3.0')
 })
 
-test('un objet manquant derrière une entrée identique est réparé', async () => {
+test('a missing object behind an identical entry is repaired', async () => {
 	const client = createFakeClient()
 	await upload(client, '0.1.0', 'jar-one')
 	client.objects.delete(versionKey(target.id, '0.1.0'))
@@ -92,9 +92,9 @@ test('un objet manquant derrière une entrée identique est réparé', async () 
 	assert.ok(client.objects.has(versionKey(target.id, '0.1.0')))
 })
 
-test('identifiants dangereux refusés et builtBy invalide dans l’index', async () => {
+test('dangerous identifiers rejected and invalid builtBy in the index', async () => {
 	const client = createFakeClient()
-	await assert.rejects(upload(client, '..%2f0.1.0', 'x'), /invalide/)
+	await assert.rejects(upload(client, '..%2f0.1.0', 'x'), /invalid/)
 	const entry = {
 		version: '0.1.0',
 		builtAt: 'x',
@@ -110,5 +110,5 @@ test('identifiants dangereux refusés et builtBy invalide dans l’index', async
 	})
 	assert.ok(validateIndex(index({ builtBy: 'vps' })))
 	assert.ok(validateIndex(index()))
-	assert.throws(() => validateIndex(index({ builtBy: 'laptop' })), /invalide/)
+	assert.throws(() => validateIndex(index({ builtBy: 'laptop' })), /invalid/)
 })

@@ -2,7 +2,7 @@ import { appendFileSync } from 'node:fs'
 import { ciCells } from '../config.mjs'
 
 export const name = 'ci'
-export const summary = 'Imprime les cases de la matrice à compiler dans le workflow qualité (JSON)'
+export const summary = 'Prints the matrix cells to build in the quality workflow (JSON)'
 export const usage = 'bun mod ci'
 
 export function run(_args, { config, env, log }) {

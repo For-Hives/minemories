@@ -7,7 +7,7 @@ async function readAll() {
 }
 
 export const name = 'notify'
-export const summary = 'Envoie une notification Discord (message de test avec --test)'
+export const summary = 'Sends a Discord notification (test message with --test)'
 export const usage =
 	'bun mod notify --test [--dry-run] | bun mod notify --kind <kind> --title <t> [--summary <s>] [--log-stdin] [--dry-run]'
 
@@ -20,13 +20,13 @@ export async function eventFromArgs(args, readStdin = readAll) {
 	if (args.includes('--test')) {
 		return {
 			kind: 'release-success',
-			title: 'Test de notification Minemories',
-			summary: 'Message de test envoyé par `bun mod notify --test`.',
+			title: 'Minemories notification test',
+			summary: 'Test message sent by `bun mod notify --test`.',
 			version: '0.0.0-beta.0',
 			targets: [
 				{ id: 'neoforge-mc1.21.1', status: 'passed', bytes: 3_250_000, seconds: 84 },
-				{ id: 'fabric-mc1.21.1', status: 'failed', message: 'exemple d’échec (test)' },
-				{ id: 'forge-mc1.21.1', status: 'skipped', message: 'exemple de cible ignorée' },
+				{ id: 'fabric-mc1.21.1', status: 'failed', message: 'example failure (test)' },
+				{ id: 'forge-mc1.21.1', status: 'skipped', message: 'example skipped target' },
 			],
 		}
 	}
@@ -40,7 +40,7 @@ export async function eventFromArgs(args, readStdin = readAll) {
 export async function run(args, ctx) {
 	const event = await eventFromArgs(args, ctx.readStdin)
 	if (!event) {
-		ctx.log(`Usage : ${usage}`)
+		ctx.log(`Usage: ${usage}`)
 		return 1
 	}
 	if (args.includes('--dry-run')) {
@@ -48,6 +48,6 @@ export async function run(args, ctx) {
 		return 0
 	}
 	const result = await notify(event, { env: ctx.env, warn: ctx.log })
-	ctx.log(result.sent ? 'Notification envoyée.' : `Notification non envoyée (${result.reason}).`)
+	ctx.log(result.sent ? 'Notification sent.' : `Notification not sent (${result.reason}).`)
 	return 0
 }

@@ -1,84 +1,85 @@
-# Validation de la profondeur visitée
+# Visited depth validation
 
-Le scénario de l’issue [#7](https://github.com/For-Hives/minemories/issues/7) a été
-exercé le 15 octobre 2026 dans quatre lancements Minecraft réels, avec un mod de
-validation séparé et le JAR de distribution chargé depuis `mods/`.
+The scenario of issue [#7](https://github.com/For-Hives/minemories/issues/7) was
+exercised on 15 October 2026 in four real Minecraft launches, with a separate
+validation mod and the distribution JAR loaded from `mods/`.
 
-Versions : Minecraft 1.21.1, NeoForge 21.1.248, JDK Temurin 21.0.12.1+1,
-Minemories 0.1.1-dev.1 ; Mesa llvmpipe OpenGL 4.6 et Blender 5.2.2.
-SHA-256 du JAR :
+Versions: Minecraft 1.21.1, NeoForge 21.1.248, JDK Temurin 21.0.12.1+1,
+Minemories 0.1.1-dev.1; Mesa llvmpipe OpenGL 4.6 and Blender 5.2.2.
+JAR SHA-256:
 `34d6bf346cfe97d869325df9282295f9a67598a7a749705e20e4ec715646068f`.
 
-## Parcours comparatif
+## Comparative run
 
-Une copie isolée du monde de test contient une petite construction au-dessus du
-sol et une chambre à Y=30, avec deux blocs de fondation à Y=28/29. Les téléports
-utilisent les commandes du serveur intégré, puis les tests attendent la position
-client et les chunks reçus. Les captures autour du joueur utilisent un rayon 2
-(5×5 colonnes). Le mode spectateur évite qu’un plafond de pierre empêche la visite.
+An isolated copy of the test world contains a small build above ground and a
+room at Y=30, with two foundation blocks at Y=28/29. Teleports use the
+integrated server's commands, then the tests wait for the client position and
+the received chunks. Captures around the player use radius 2 (5×5 columns).
+Spectator mode prevents a stone ceiling from blocking the visit.
 
-| Étape | Fond du GLB, Y monde | Sommet | Hauteur | Taille |
+| Step | GLB bottom, world Y | Top | Height | Size |
 | --- | ---: | ---: | ---: | ---: |
-| Surface, avant descente | 69 | 80 | 11 | 63 096 octets |
-| Chambre, pieds à Y=30 | 28 | 80 | 52 | 184 312 octets |
-| Retour en surface | 28 | 80 | 52 | 184 312 octets |
-| Autre zone, 64 blocs plus loin | 69 | 84 | 15 | 67 380 octets |
-| Pleine hauteur explicite | -64 | 80 | 144 | 483 628 octets |
-| Sélection Y=40..45 | 40 | 46 | 6 | 16 512 octets |
-| Retour après passage dans le Nether | 28 | 80 | 52 | 184 312 octets |
-| Même monde après redémarrage complet | 28 | 80 | 52 | 184 312 octets |
-| Autre sauvegarde, mêmes nom/seed/position | 69 | 74 | 5 | 57 016 octets |
-| Même sauvegarde, autre UUID joueur | 69 | 80 | 11 | 61 864 octets |
+| Surface, before descending | 69 | 80 | 11 | 63,096 bytes |
+| Room, feet at Y=30 | 28 | 80 | 52 | 184,312 bytes |
+| Back on the surface | 28 | 80 | 52 | 184,312 bytes |
+| Other area, 64 blocks away | 69 | 84 | 15 | 67,380 bytes |
+| Explicit full height | -64 | 80 | 144 | 483,628 bytes |
+| Selection Y=40..45 | 40 | 46 | 6 | 16,512 bytes |
+| Back after a trip to the Nether | 28 | 80 | 52 | 184,312 bytes |
+| Same world after a full restart | 28 | 80 | 52 | 184,312 bytes |
+| Other save, same name/seed/position | 69 | 74 | 5 | 57,016 bytes |
+| Same save, other player UUID | 69 | 80 | 11 | 61,864 bytes |
 
-Les extrema sont lus dans les accessors de positions et replacés dans le repère
-monde avec l’origine enregistrée par l’export manuel. Le sommet de la construction
-est conservé avant et après la descente. Le plancher Y=28 garde bien deux blocs
-sous les pieds Y=30. Les coins explicites ne reprennent pas cette profondeur ;
-la pleine hauteur descend au minimum de dimension -64.
+Extremes are read from the position accessors and moved back into world space
+with the origin recorded by the manual export. The top of the build is kept
+before and after the descent. The Y=28 floor does keep two blocks below feet at
+Y=30. Explicit corners do not reuse this depth; full height goes down to the
+dimension minimum of -64.
 
-Dans le Nether, le chemin d’historique change et aucune profondeur Overworld Y=30
-n’est héritée. Au retour, le chemin Overworld et son minimum sont retrouvés.
-Une position client temporaire dans un chunk non reçu n’ajoute aucune entrée :
-la map de visites avant/après est identique. Cette vérification appelle le suivi
-avant un tick réseau puis rétablit la position ; elle ne fait pas charger le chunk.
+In the Nether, the history path changes and no Overworld Y=30 depth is
+inherited. On return, the Overworld path and its minimum are found again.
+A temporary client position in an unreceived chunk adds no entry: the visit
+map is identical before and after. This check calls the tracker before a
+network tick and then restores the position; it does not load the chunk.
 
-Le second lancement reprend le même monde/joueur et retrouve le minimum Y=28 à
-la surface. Le troisième ouvre une autre sauvegarde ayant le même nom et la même
-seed ; sa capture reste peu profonde. Le quatrième lance un autre nom/UUID joueur
-dans le premier monde ; son historique ne récupère pas celui du premier joueur.
+The second launch reopens the same world/player and finds the Y=28 minimum on
+the surface. The third opens another save with the same name and seed; its
+capture stays shallow. The fourth launches another player name/UUID in the
+first world; its history does not pick up the first player's.
 
-## Persistance, limites et confidentialité
+## Persistence, limits and privacy
 
-Les quatre lancements utilisent une préférence AFK explicitement désactivée,
-conservée après redémarrage. Le suivi de profondeur continue malgré cette préférence.
-Aucun appareil n’est appairé ; les captures et historiques restent locaux. Le
-transport d’envoi lit le GLB et ses métadonnées, sans lire l’historique d’exploration.
+All four launches use an explicitly disabled AFK preference, kept after
+restart. Depth tracking continues despite that preference. No device is
+paired; captures and histories stay local. The upload transport reads the GLB
+and its metadata, without reading the exploration history.
 
-Les tests `ExplorationDepthTest` couvrent séparément coordonnées négatives, limites
-extrêmes, identités, fichiers altérés, persistance et un parcours de 100 001 chunks :
-l’entrée la plus ancienne est évincée, le fichier reste sous 8 Mio et le minimum
-conservé est retrouvé après lecture. L’historique est borné à 100 000 chunks par
-monde/serveur, dimension et joueur. Les visites précédant l’installation ne sont
-pas inventées.
+The `ExplorationDepthTest` tests separately cover negative coordinates, extreme
+limits, identities, tampered files, persistence and a run of 100,001 chunks:
+the oldest entry is evicted, the file stays under 8 MiB and the kept minimum is
+found again after reading. History is capped at 100,000 chunks per
+world/server, dimension and player. Visits before installation are not
+invented.
 
-Les dix GLB du scénario passent le validateur partagé API. Les rendus Blender de
-la première surface et du retour après visite profonde ont été inspectés : la
-construction est intacte, le volume superficiel reste court avant la descente et
-le volume sous-jacent s’étend après visite. Les coupes terre/pierre gardent leurs
-limites décrites dans la validation de #8.
+The scenario's ten GLBs pass the shared API validator. Blender renders of the
+first surface capture and of the return after the deep visit were inspected:
+the build is intact, the shallow volume stays short before the descent and the
+underlying volume extends after the visit. Dirt/stone cut faces keep the limits
+described in the #8 validation.
 
-Artefacts locaux : `~/.local/state/minemories-validation/depth-zones-20261015/`
-(programme, empreinte du JAR, événements, rapports des bornes, GLB, rendus et journaux
-des quatre processus). Le monde original, les profils personnels et leurs
-préférences n’ont pas été modifiés. Aucun monde, GLB ou historique privé n’est committé.
+Local artifacts: `~/.local/state/minemories-validation/depth-zones-20261015/`
+(program, JAR checksum, events, bounds reports, GLBs, renders and logs of the
+four processes). The original world, personal profiles and their preferences
+were not modified. No private world, GLB or history is committed.
 
-Sur serveur distant, la séparation par connexion et l’identifiant de monde
-configurable sont décrits dans [Timelapse](timelapse.md). Sans identifiant explicite,
-l’historique est en mémoire (huit dimensions au plus) ; avec un identifiant, il
-est conservé entre connexions. Les historiques solo existants restent inchangés.
+On a remote server, per-connection separation and the configurable world
+identifier are described in [Timelapse](timelapse.md). Without an explicit
+identifier, history is kept in memory (at most eight dimensions); with an
+identifier, it is kept across connections. Existing single-player histories are
+unchanged.
 
-## Marge basse de cinq blocs
+## Five-block bottom margin
 
-Les captures autour du joueur conservent désormais cinq blocs sous la plus basse position des pieds visitée dans les chunks concernés, sans descendre sous le fond de la dimension. Cette marge s’applique aussi à l’historique déjà enregistré. Les sélections explicites conservent leurs coins.
+Captures around the player now keep five blocks below the lowest visited foot position in the relevant chunks, without going below the bottom of the dimension. This margin also applies to history already recorded. Explicit selections keep their corners.
 
-Vérification du 16 octobre 2026 : Minecraft 1.21.1 / NeoForge 21.1.248, JAR de distribution `0.5.1-beta.1` (SHA-256 `4c34794280d40fb8fb2ab0921e69d84de54442772aaa61e351eb7d371146d331`). Une visite à Y=30 produit un GLB dont le bas est Y=25 ; le retour en surface et le changement de dimension conservent ce bas. Le mode pleine hauteur et les coins explicites restent vérifiés. Le GLB a été importé dans Blender 5.2.2 et son rendu inspecté. Client isolé avec volume maître à zéro ; aucun monde personnel modifié. Preuves locales : `~/.local/state/minemories-validation/depth-margin-five-20261015/`.
+Check of 16 October 2026: Minecraft 1.21.1 / NeoForge 21.1.248, distribution JAR `0.5.1-beta.1` (SHA-256 `4c34794280d40fb8fb2ab0921e69d84de54442772aaa61e351eb7d371146d331`). A visit to Y=30 produces a GLB whose bottom is Y=25; returning to the surface and changing dimension keep that bottom. Full-height mode and explicit corners are still verified. The GLB was imported into Blender 5.2.2 and its render inspected. Isolated client with master volume at zero; no personal world modified. Local evidence: `~/.local/state/minemories-validation/depth-margin-five-20261015/`.

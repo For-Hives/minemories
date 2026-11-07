@@ -22,6 +22,7 @@ export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 		'A model is already loading',
 		'Could not read this GLB',
 		'Invalid GLB',
+		'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.',
 		'Storage unavailable',
 		'This memory is unavailable or access was revoked.',
 		'This link is invalid or was revoked.',
@@ -29,9 +30,6 @@ export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 		'WebGL is unavailable. Try another browser or enable hardware acceleration.',
 	].map(message => [message, message])
 )
-stableErrorMessages[
-	'GLB invalide ou trop complexe : réexporte une zone plus petite avec ses textures et sa géométrie intégrées.'
-] = 'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
 
 /** Store stable message keys, so changing language also updates an error already on screen. */
 export function errorMessageKey(error: unknown, fallback: string): string {

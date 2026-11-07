@@ -1,5 +1,5 @@
-/* Blocs des pages publiques encore servis par ce fichier : la mise en page de la galerie privée (GalleryPage) et le décalage des ancres sous l'en-tête.
-   Les couleurs et polices sont celles de la landing (hero/kit.css, hero/tokens.css) ; ces noms restent pour les feuilles qui les lisent encore. */
+/* Public page blocks still served by this file: the private gallery layout (GalleryPage) and the anchor offset below the header.
+   Colours and fonts are the landing's (hero/kit.css, hero/tokens.css); these names remain for the stylesheets that still read them. */
 :root {
 	--album-display: var(--f-title);
 	--album-gold: var(--ember);

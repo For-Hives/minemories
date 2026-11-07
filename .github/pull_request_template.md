@@ -1,17 +1,17 @@
-## Objectif
+## Goal
 
-<!-- Quel problème ou besoin ce changement traite-t-il ? -->
+<!-- What problem or need does this change address? -->
 
-## Changements
+## Changes
 
-<!-- Résumer les changements importants et leurs effets sur les autres modules. -->
+<!-- Summarize the important changes and their effects on other modules. -->
 
-## Vérifications
+## Checks
 
 - [ ] `bun check`
-- [ ] `bun run build` si le build, les assets ou l’intégration entre modules changent
-- [ ] Test en jeu si le comportement du mod ou le format GLB change
+- [ ] `bun run build` if the build, assets or cross-module integration change
+- [ ] In-game test if mod behavior or the GLB format changes
 
-## Points à revoir
+## Points to review
 
-<!-- Risques, limites, migrations ou captures à examiner. Écrire « Aucun » si rien. -->
+<!-- Risks, limits, migrations or screenshots to examine. Write "None" if nothing. -->

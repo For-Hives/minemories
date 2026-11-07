@@ -958,7 +958,7 @@ select.mc-field.mm-field-fill {
 	margin-top: auto;
 }
 
-/* The yearly slots go two by two when the plan is narrow ("Year 4+", "Année 4+" in the game's font need about 100 px). */
+/* The yearly slots go two by two when the plan is narrow ("Year 4+" and its longest translation in the game's font need about 100 px). */
 .mm-plan {
 	container-type: inline-size;
 }

@@ -11,7 +11,7 @@ const tmp = async () => join(await mkdtemp(join(tmpdir(), 'mod-lock-')), 'sub', 
 test('a second acquisition fails while the owner is alive, then succeeds after release', async () => {
 	const path = await tmp()
 	const release = await acquireLock(path, { label: 'one' })
-	await assert.rejects(acquireLock(path, { label: 'two' }), /déjà en cours \(one/)
+	await assert.rejects(acquireLock(path, { label: 'two' }), /already running \(one/)
 	await release()
 	assert.equal(existsSync(path), false)
 	await (await acquireLock(path))()

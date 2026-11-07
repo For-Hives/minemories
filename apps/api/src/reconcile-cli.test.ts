@@ -119,6 +119,6 @@ test('the actual Bun entrypoint exits on errors without booting HTTP or creating
 	})
 	expect(await child.exited).toBe(1)
 	expect(await new Response(child.stdout).text()).toBe('')
-	expect(await new Response(child.stderr).text()).toContain('Réconciliation interrompue')
+	expect(await new Response(child.stderr).text()).toContain('Reconciliation aborted')
 	await expect(stat(path)).rejects.toThrow()
 })

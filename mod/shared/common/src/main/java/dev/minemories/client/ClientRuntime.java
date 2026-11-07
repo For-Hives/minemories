@@ -103,18 +103,17 @@ public final class ClientRuntime {
 
   static String afkCaptureStatus() {
     if (CAPTURES.job == null) return "";
-    if (CAPTURES.job.cancelled()) return "Arrêt de la capture AFK…";
+    if (CAPTURES.job.cancelled()) return "Stopping the AFK capture…";
     return CAPTURES.job.suspended()
-        ? "Capture AFK en pause pendant ton activité."
-        : "Capture AFK en cours, en arrière-plan…";
+        ? "AFK capture paused while you are active."
+        : "AFK capture running in the background…";
   }
 
   private static boolean manualCaptureAllowed() {
     if (CAPTURES.job == null) return true;
-    CAPTURES.job.cancel("Capture manuelle demandée.");
+    CAPTURES.job.cancel("Manual capture requested.");
     lastActivityMs = System.currentTimeMillis();
-    captureFailure =
-        "Arrêt de la capture AFK en cours. Réessaie la capture manuelle dans un instant.";
+    captureFailure = "Stopping the AFK capture. Retry the manual capture in a moment.";
     tell(captureFailure);
     return false;
   }
@@ -130,7 +129,7 @@ public final class ClientRuntime {
   private static BlockPos selectionFirst;
   private static BlockPos selectionSecond;
   private static ResourceKey<Level> selectionDimension;
-  private static String captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+  private static String captureFailure = "Capture failed. Check the world and the area.";
 
   static String captureFailure() {
     return captureFailure;
@@ -276,7 +275,7 @@ public final class ClientRuntime {
 
   public static void resourcesReloaded() {
     resourceEpoch++;
-    if (CAPTURES.job != null) CAPTURES.job.cancel("Ressources rechargées.");
+    if (CAPTURES.job != null) CAPTURES.job.cancel("Resources reloaded.");
   }
 
   public static void addPauseMenuButton(
@@ -395,7 +394,7 @@ public final class ClientRuntime {
       }
       if (CAPTURES.job != null) {
         if (!CAPTURES.job.valid(CAPTURES.settings, resourceEpoch))
-          CAPTURES.job.cancel("Monde, ressources ou réglages modifiés.");
+          CAPTURES.job.cancel("World, resources or settings changed.");
         if (!CAPTURES.job.done())
           CAPTURES.job.step(
               mc.getOverlay() == null
@@ -430,10 +429,10 @@ public final class ClientRuntime {
           PairingClient.storedCaptureRadius());
     } catch (Exception error) {
       lastActivityMs = now;
-      if (CAPTURES.job != null) CAPTURES.job.cancel("Échec de la capture.");
+      if (CAPTURES.job != null) CAPTURES.job.cancel("Capture failed.");
       if (afkDiagnostics != null) afkDiagnostics.failed(error);
       LOGGER.error("AFK progressive capture failed", error);
-      tell("Capture AFK impossible : " + pairingError(error));
+      tell("AFK capture failed: " + pairingError(error));
     }
   }
 
@@ -469,7 +468,7 @@ public final class ClientRuntime {
           completed.entities(),
           result.quads(),
           result.textures());
-      tell("Souvenir AFK enregistré localement.");
+      tell("AFK memory saved locally.");
       if (merge.identical()) {
         // Nothing was added, moved or changed since the previous capture of these chunks: keep it
         // local only.
@@ -488,13 +487,13 @@ public final class ClientRuntime {
                         afkUploadPending = false;
                         if (error != null) {
                           LOGGER.error("AFK upload failed", error);
-                          tell("Envoi AFK impossible : " + pairingError(error));
-                        } else tell("Souvenir AFK envoyé dans ta galerie.");
+                          tell("AFK upload failed: " + pairingError(error));
+                        } else tell("AFK memory sent to your gallery.");
                       }));
     } catch (RuntimeException error) {
       afkDiagnostics.failed(error);
       LOGGER.error("AFK capture completion failed", error);
-      tell("Capture AFK impossible : " + pairingError(error));
+      tell("AFK capture failed: " + pairingError(error));
     }
   }
 
@@ -882,7 +881,7 @@ public final class ClientRuntime {
     while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) {
       cause = cause.getCause();
     }
-    return "Échec : " + cause.getMessage();
+    return "Failed: " + cause.getMessage();
   }
 
   public static void renderSelection(PoseStack pose, Vec3 camera) {
@@ -961,7 +960,7 @@ public final class ClientRuntime {
 
   static int exportSelection() {
     if (!manualCaptureAllowed()) return 0;
-    captureFailure = "Définis les deux coins de la sélection dans le monde actuel.";
+    captureFailure = "Set both selection corners in the current world.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
       int result = exportSelection(diagnostics);
@@ -998,7 +997,7 @@ public final class ClientRuntime {
 
   static int export(int radius) {
     if (!manualCaptureAllowed()) return 0;
-    captureFailure = "Capture impossible. Vérifie le monde et la zone.";
+    captureFailure = "Capture failed. Check the world and the area.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
       int result = export(radius, diagnostics);
@@ -1061,7 +1060,7 @@ public final class ClientRuntime {
         sy = (long) max.getY() - min.getY() + 1,
         sz = (long) max.getZ() - min.getZ() + 1;
     if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
-      captureFailure = "Zone trop grande. Réduis la sélection ou le rayon de capture.";
+      captureFailure = "Area too large. Shrink the selection or the capture radius.";
       tell("Area too large. Maximum: 257 blocks wide, 1024 blocks tall.");
       return 0;
     }
@@ -1136,7 +1135,7 @@ public final class ClientRuntime {
       renderedModels.reportSkipped();
       if (!scene.hasGeometry()) {
         captureFailure =
-            "Aucun bloc visible dans la zone. Attends le chargement du terrain ou choisis une autre zone, puis réessaie.";
+            "No visible blocks in the area. Wait for the terrain to load or pick another area, then retry.";
         tell(captureFailure);
         return 0;
       }
@@ -1161,7 +1160,7 @@ public final class ClientRuntime {
                   + saved),
           false);
     } catch (Exception e) {
-      captureFailure = "Capture impossible : " + e.getMessage();
+      captureFailure = "Capture failed: " + e.getMessage();
       diagnostics.failed(e);
       player.displayClientMessage(
           Component.literal("Minemories: export failed: " + e.getMessage()), false);
@@ -1537,7 +1536,7 @@ public final class ClientRuntime {
           || !bounds.containsEntity(entity.getX(), entity.getY(), entity.getZ())
           || !chunkLoaded(mc, entity.getBlockX(), entity.getBlockZ())) continue;
       if (++count > 2048)
-        throw new IOException("Trop d’entités dans cette capture. Réduis la zone.");
+        throw new IOException("Too many entities in this capture. Shrink the area.");
       captureEntity(capture, mc, entity, center);
     }
     return count;
@@ -1565,7 +1564,7 @@ public final class ClientRuntime {
         entity.getY() - center.getY() + offset.y,
         entity.getZ() - center.getZ() + offset.z);
     // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
-    // flames, hitboxes and nameplate text are not part of the souvenir geometry.
+    // flames, hitboxes and nameplate text are not part of the memory geometry.
     CaptureRenderScope.render(
         () -> {
           FlywheelCaptureBridge.verify(level);

@@ -12,9 +12,9 @@ record StorageQuota(
     long reservedBytes,
     long pendingDeletionBytes) {
   static final String NO_SPACE_MESSAGE =
-      "Espace insuffisant. GLB conservé en local. Supprime définitivement des captures de la corbeille sur le site, puis réessaie /minemories upload.";
+      "Not enough space. GLB kept locally. Permanently delete captures from the trash on the website, then retry /minemories upload.";
   static final String CLEANUP_HELP =
-      "Un refus d’envoi conserve ton GLB local. Pour libérer de l’espace, supprime définitivement des captures de la corbeille sur le site. Puis réessaie /minemories upload. Les effacements en attente doivent se terminer.";
+      "A refused upload keeps your local GLB. To free up space, permanently delete captures from the trash on the website. Then retry /minemories upload. Pending deletions must finish first.";
   private static final long MAX_SAFE_INTEGER = 9_007_199_254_740_991L;
 
   StorageQuota {
@@ -27,7 +27,7 @@ record StorageQuota(
         || pendingDeletionBytes > usedBytes - reservedBytes
         || usedBytes > MAX_SAFE_INTEGER
         || limitBytes > MAX_SAFE_INTEGER) {
-      throw new IllegalArgumentException("Résumé de stockage invalide.");
+      throw new IllegalArgumentException("Invalid storage summary.");
     }
   }
 
@@ -38,7 +38,7 @@ record StorageQuota(
         || !paired.isJsonPrimitive()
         || !paired.getAsJsonPrimitive().isBoolean()
         || !paired.getAsBoolean()) {
-      throw new IllegalArgumentException("Connexion non confirmée.");
+      throw new IllegalArgumentException("Connection not confirmed.");
     }
     JsonObject storage = status.getAsJsonObject("storage");
     return new StorageQuota(
@@ -52,24 +52,24 @@ record StorageQuota(
   private static long quantity(JsonObject storage, String key) {
     JsonElement value = storage == null ? null : storage.get(key);
     if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
-      throw new IllegalArgumentException("Résumé de stockage invalide.");
+      throw new IllegalArgumentException("Invalid storage summary.");
     }
     return value.getAsBigDecimal().longValueExact();
   }
 
   String availableLabel() {
-    return "Libre : " + formatBytes(availableBytes) + " / " + formatBytes(limitBytes);
+    return "Free: " + formatBytes(availableBytes) + " / " + formatBytes(limitBytes);
   }
 
   static String formatBytes(long bytes) {
-    if (bytes < 1000) return bytes + " o";
-    String[] units = {"Ko", "Mo", "Go", "To", "Po"};
+    if (bytes < 1000) return bytes + " B";
+    String[] units = {"kB", "MB", "GB", "TB", "PB"};
     double amount = bytes / 1000.0;
     int index = 0;
     while (amount >= 1000 && index < units.length - 1) {
       amount /= 1000;
       index++;
     }
-    return String.format(Locale.FRANCE, "%.1f %s", amount, units[index]);
+    return String.format(Locale.ROOT, "%.1f %s", amount, units[index]);
   }
 }

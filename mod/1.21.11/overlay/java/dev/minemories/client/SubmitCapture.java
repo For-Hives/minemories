@@ -21,7 +21,7 @@ import org.joml.Quaternionf;
  * Since 1.21.5 renderers no longer draw into a buffer: they submit nodes that a feature dispatcher
  * turns into vertices. Entities and block entities are extracted, submitted to a private storage
  * and flushed into the capture's own buffer source. Shadows, flames and outlines are dispatcher
- * features and are not part of the souvenir geometry.
+ * features and are not part of the memory geometry.
  */
 final class SubmitCapture {
   // Only ever drawn into when an outline colour is set, which extraction clears.

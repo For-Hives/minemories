@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 final class StorageStatusView {
   private static final long REFRESH_MILLIS = 12_000;
   private StorageQuota quota;
-  private String message = "Galerie non connectée";
+  private String message = "Gallery not linked";
   private long generation;
   private long nextRefresh;
   private boolean pending;
@@ -26,7 +26,7 @@ final class StorageStatusView {
     pending = false;
     nextRefresh = 0;
     quota = null;
-    message = paired ? "Espace : chargement…" : "Galerie non connectée";
+    message = paired ? "Storage: loading…" : "Gallery not linked";
   }
 
   void update(
@@ -60,6 +60,6 @@ final class StorageStatusView {
     message =
         cause instanceof StorageStatusClient.StatusException
             ? cause.getMessage()
-            : "Espace indisponible · voir les détails";
+            : "Storage unavailable · see details";
   }
 }

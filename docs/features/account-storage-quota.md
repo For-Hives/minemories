@@ -1,180 +1,175 @@
-# Quota de stockage par compte
+# Per-account storage quota
 
-L’API borne les octets de GLB alloués à un compte. Le plafond par défaut est
-**2 Gio**, soit 2 147 483 648 octets. `ACCOUNT_STORAGE_BYTES` permet de le changer
-au démarrage ; la valeur doit être un entier positif, représentable exactement
-en JavaScript. Une valeur invalide arrête l’API avant l’ouverture de SQLite.
-Ce plafond technique ne définit pas une offre commerciale ni un abonnement.
+The API caps the GLB bytes allocated to an account. The default limit is
+**2 GiB**, i.e. 2,147,483,648 bytes. `ACCOUNT_STORAGE_BYTES` changes it at
+startup; the value must be a positive integer that JavaScript can represent
+exactly. An invalid value stops the API before SQLite is opened. This technical
+limit does not define a commercial offer or a subscription.
 
-Le total additionne, pour un même propriétaire :
+For a given owner, the total adds up:
 
-- les captures finalisées, y compris celles dans la corbeille ;
-- les tailles déclarées des sessions reprenables non terminées, même expirées
-  tant que leur nettoyage n’a pas réussi ;
-- les octets des uploads legacy en cours ou abandonnés ;
-- les objets dont la suppression physique reste en attente.
+- finalized captures, including those in the trash;
+- the declared sizes of unfinished resumable sessions, even expired ones, as
+  long as their cleanup has not succeeded;
+- the bytes of in-progress or abandoned legacy uploads;
+- objects whose physical deletion is still pending.
 
-Tous les appareils appairés au compte partagent ce total. Les autres comptes
-gardent leur propre budget. Les reçus de sessions déjà terminées ne sont pas
-comptés une seconde fois. La limite porte sur les GLB ; les métadonnées SQLite,
-les miniatures et le surcoût du stockage multipart ne sont pas des octets GLB.
-Le quota temporaire global de staging reste indépendant.
+All devices paired with the account share this total. Other accounts keep their
+own budget. Receipts of already finished sessions are not counted twice. The
+limit applies to GLBs; SQLite metadata, thumbnails and multipart storage
+overhead are not GLB bytes. The global temporary staging quota remains separate.
 
-## Réservation et publication
+## Reservation and publishing
 
-Les deux endpoints refusent une allocation supplémentaire qui dépasserait le
-plafond avec HTTP 413 et `{"error":"storage_quota_exceeded"}`. Atteindre
-exactement le plafond reste autorisé. Les plafonds par fichier ne changent pas :
-100 MiB legacy, 450 MiB reprenable et morceaux de 4 MiB.
+Both endpoints reject an extra allocation that would exceed the limit with HTTP
+413 and `{"error":"storage_quota_exceeded"}`. Reaching the limit exactly is
+still allowed. Per-file limits do not change: 100 MiB legacy, 450 MiB resumable
+and 4 MiB chunks.
 
-Une initialisation reprenable vérifie le budget avant création du staging, puis
-le revérifie dans une transaction SQLite `IMMEDIATE` au moment de l’inscription
-de la session. Cette seconde vérification couvre un upload legacy arrivé pendant
-l’attente des opérations disque. Un refus à ce stade retire le fichier temporaire.
-Le rejeu de la même initialisation restitue son reçu sans nouvelle allocation.
+A resumable initialization checks the budget before creating the staging file,
+then checks it again in an `IMMEDIATE` SQLite transaction when registering the
+session. This second check covers a legacy upload that arrived while disk
+operations were pending. A rejection at that point removes the temporary file.
+Replaying the same initialization returns its receipt without a new allocation.
 
-Une finalisation convertit la réservation en capture dans une seule transaction.
-Son rejeu n’ajoute pas d’octets. Une réservation historique qui porterait déjà
-le compte au-dessus du plafond ne peut pas être finalisée avant libération
-d’espace ; les captures existantes restent accessibles. Le changement de plafond
-n’entraîne aucune suppression automatique supplémentaire.
+Finalization converts the reservation into a capture in a single transaction.
+Replaying it adds no bytes. A legacy reservation that already puts the account
+over the limit cannot be finalized until space is freed; existing captures stay
+accessible. Changing the limit causes no additional automatic deletion.
 
-Le legacy inscrit, avant tout envoi au stockage, une intention de nettoyage avec
-la clé, le propriétaire et le nombre d’octets dans `object_deletions`. Cette
-inscription et le contrôle de quota sont transactionnels : deux uploads
-simultanés ne peuvent pas réserver le même espace disponible. La file ignore
-cette intention tant que l’upload est actif dans le processus courant.
-La publication du souvenir et le retrait de l’intention forment une autre
-transaction atomique. Un crash avant publication conserve donc une clé connue,
-ses octets réservés et un nettoyage à reprendre.
+Before anything is sent to storage, the legacy endpoint records a cleanup intent
+with the key, the owner and the byte count in `object_deletions`. That record
+and the quota check are transactional: two simultaneous uploads cannot reserve
+the same available space. The queue ignores this intent while the upload is
+active in the current process. Publishing the memory and removing the intent
+form another atomic transaction. A crash before publishing therefore keeps a
+known key, its reserved bytes and a cleanup to resume.
 
-Après échec, le legacy libère sa protection en mémoire et tente le nettoyage de
-l’objet et des parts multipart abandonnées. Une panne conserve l’intention,
-son quota et ses retries. Un nouveau processus reprend la file ; elle relit
-chaque job avant effacement pour qu’un ancien batch ne puisse pas supprimer
-un upload qui vient d’être publié.
+After a failure, the legacy endpoint releases its in-memory protection and tries
+to clean up the object and the abandoned multipart parts. An outage keeps the
+intent, its quota and its retries. A new process resumes the queue; it re-reads
+each job before deleting so an old batch cannot delete an upload that has just
+been published.
 
-## Libérer de l’espace et migrer
+## Freeing space and migrating
 
-Mettre une capture à la corbeille ou la restaurer ne modifie pas le total.
-La suppression définitive ou la purge transfère ses octets vers la file de
-suppression dans la transaction qui retire ses métadonnées. L’espace redevient
-disponible après effacement physique et acquittement SQLite. Pendant une panne
-S3, ce délai empêche de contourner le quota par une succession de suppressions
-et d’uploads. L’annulation ou l’expiration d’une session reprenable suit le
-même principe : sa réservation reste présente jusqu’au nettoyage réussi.
+Moving a capture to the trash or restoring it does not change the total.
+Permanent deletion or purging moves its bytes to the deletion queue in the
+transaction that removes its metadata. The space becomes available again after
+physical deletion and SQLite acknowledgement. During an S3 outage, this delay
+prevents bypassing the quota with a series of deletions and uploads. Cancelling
+or expiring a resumable session follows the same principle: its reservation
+stays until cleanup succeeds.
 
-La migration ajoute `user_id`, `size` et `discard_upload` aux jobs existants,
-sans réinitialiser leurs échéances ou leurs tentatives. Les anciens jobs dont
-la taille et le propriétaire ont déjà été oubliés restent à nettoyer, mais
-peuvent être complétés après revue de l’inventaire avec la
-[réconciliation du stockage](storage-reconciliation.md), quand leur attribution
-et leur taille exacte sont récupérables.
-Les objets historiques sans métadonnées et les anciennes versions d’un bucket
-versionné restent également hors de cet inventaire. Ces suites restent dans
-[issue #65](https://github.com/For-Hives/minemories/issues/65) ; aucun scan ou effacement d’objets de production n’est effectué.
+The migration adds `user_id`, `size` and `discard_upload` to existing jobs,
+without resetting their deadlines or attempts. Old jobs whose size and owner
+were already lost still need cleaning, but they can be completed after
+reviewing the inventory with [storage reconciliation](storage-reconciliation.md),
+when their attribution and exact size are recoverable. Legacy objects without
+metadata and old versions in a versioned bucket also stay outside this
+inventory. Follow-ups remain in
+[issue #65](https://github.com/For-Hives/minemories/issues/65); no production
+objects are scanned or deleted.
 
-Le déploiement cible un seul processus API, comme les sessions reprenables.
-Conserver SQLite et le staging sur leurs volumes persistants, et autoriser les
-opérations multipart nécessaires au nettoyage. La galerie affiche ces informations.
-Le client Minecraft affiche aussi l’espace et un message de quota spécifique.
-La lisibilité des modes simple/avancé et du détail a été confirmée en jeu.
-La capture locale est conservée après refus d’upload.
+The deployment targets a single API process, like resumable sessions. Keep
+SQLite and staging on their persistent volumes, and allow the multipart
+operations needed for cleanup. The gallery shows this information. The
+Minecraft client also shows the space and a specific quota message. Readability
+of the simple/advanced modes and of the details was confirmed in game. The local
+capture is kept after an upload is rejected.
 
-## Consulter l’espace
+## Checking available space
 
-Le contrat oRPC fournit `account.storage()` pour une session web authentifiée.
-`GET /api/mod/status` fournit le même objet `storage` avec un token de device
-valide. Le propriétaire est déduit de la session ou du token ; aucune entrée
-ne permet de choisir un autre compte. Les réponses portent
-`Cache-Control: private, no-store` ; ce header est aussi appliqué aux autres
-réponses RPC privées.
+The oRPC contract provides `account.storage()` for an authenticated web session.
+`GET /api/mod/status` provides the same `storage` object with a valid device
+token. The owner is derived from the session or token; no input lets a caller
+choose another account. Responses carry `Cache-Control: private, no-store`; this
+header is also applied to the other private RPC responses.
 
-| Champ | Signification, en octets |
+| Field | Meaning, in bytes |
 | --- | --- |
-| `usedBytes` | Total de captures, corbeille, uploads réservés et suppressions en attente. |
-| `limitBytes` | Plafond configuré sur cette API. |
-| `availableBytes` | Espace réservable, jamais inférieur à zéro, même pour un compte historique au-dessus du plafond. |
-| `reservedBytes` | Sessions reprenables incomplètes et intentions legacy non publiées, y compris leur nettoyage après échec. |
-| `pendingDeletionBytes` | Captures définitivement supprimées ou purgées dont l’objet attend encore l’effacement. |
+| `usedBytes` | Total of captures, trash, reserved uploads and pending deletions. |
+| `limitBytes` | Limit configured on this API. |
+| `availableBytes` | Reservable space, never below zero, even for a legacy account over the limit. |
+| `reservedBytes` | Incomplete resumable sessions and unpublished legacy intents, including their cleanup after a failure. |
+| `pendingDeletionBytes` | Permanently deleted or purged captures whose object is still waiting to be erased. |
 
-Le résumé est calculé dans une seule requête SQLite, sans lire les GLB ni
-interroger le bucket. Un index par propriétaire accompagne la file de nettoyage.
-Les anciens jobs sans taille/propriétaire restent hors du résumé, comme du quota.
+The summary is computed in a single SQLite query, without reading GLBs or
+querying the bucket. A per-owner index backs the cleanup queue. Old jobs with no
+size/owner stay out of the summary, as they do from the quota.
 
-La galerie rafraîchit le résumé avec ses captures toutes les douze secondes et
-après ses actions. Elle indique l’espace disponible, la suppression définitive
-nécessaire pour libérer la corbeille, les réservations et les effacements encore
-en cours. Un quota plein rappelle que l’upload refusé conserve le GLB local.
-Lorsqu’un rafraîchissement échoue, les chiffres précédents sont retirés et un
-message d’indisponibilité est affiché ; les captures restent accessibles.
-Une ancienne réponse lente, réussie ou en erreur, ne remplace pas un résumé plus
-récent. Une fermeture de la page invalide les réponses encore attendues.
+The gallery refreshes the summary along with its captures every twelve seconds
+and after its actions. It shows the available space, the permanent deletion
+needed to free the trash, the reservations and the deletions still in progress.
+A full quota reminds the user that a rejected upload keeps the local GLB. When a
+refresh fails, the previous figures are removed and an unavailability message
+is shown; captures stay accessible. An old slow response, successful or failed,
+does not replace a newer summary. Closing the page invalidates responses still
+pending.
 
-## Dans Minecraft
+## In Minecraft
 
-Le mode simple affiche un bouton `Libre : … / …` après connexion du compte.
-Il ouvre le détail du stockage ; le mode avancé propose `Stockage galerie`,
-à côté des réglages AFK. Le détail présente l’espace libre, le total utilisé,
-les envois réservés et les effacements encore en attente, avec les actions
-de libération dans la galerie. Les unités affichées (Ko, Mo, Go…) sont décimales.
-Le plafond vient de l’API configurée, y compris une API personnelle.
+The simple mode shows a free-space button (`… / …`) once the account is linked.
+It opens the storage details; the advanced mode offers `Gallery storage` next to
+the AFK settings. The details show free space, total used, reserved uploads and
+deletions still pending, with the actions to free space in the gallery. Displayed
+units (kB, MB, GB…) are decimal. The limit comes from the configured API,
+including a self-hosted API.
 
-Le statut est demandé en arrière-plan toutes les douze secondes tant que le menu
-est ouvert, puis après un envoi ou un changement de réglages. Aucun statut n’est
-demandé sans token. La fermeture, le changement de mode ou de compte invalident
-les anciennes réponses ; une erreur retire les anciens chiffres. Une ancienne
-API sans champ `storage` reste utilisable pour capturer et envoyer, avec une
-indication d’espace indisponible. Un token refusé demande de reconnecter le compte.
+The status is requested in the background every twelve seconds while the menu
+is open, then after an upload or a settings change. No status is requested
+without a token. Closing, switching mode or switching account invalidates old
+responses; an error removes the old figures. An old API without a `storage`
+field remains usable for capturing and uploading, with storage shown as
+unavailable. A rejected token asks the player to link the account again.
 
-Un HTTP 413 identifié par `storage_quota_exceeded` affiche l’espace insuffisant,
-la conservation du GLB local et la suppression définitive nécessaire dans la
-corbeille, puis `/minemories upload` pour réessayer. Ce refus n’est pas retenté
-automatiquement et conserve l’identifiant de session local pour une reprise.
-Un autre HTTP 413 conserve son message HTTP générique. Les réponses JSON de
-statut, d’appairage et d’upload sont limitées à 16 KiB d’octets reçus, même sans
-Content-Length ; les corps d’envoi GLB et leurs limites restent inchangés.
+An HTTP 413 identified by `storage_quota_exceeded` shows that there is not
+enough space, that the local GLB is kept and that permanent deletion from the
+trash is needed, then `/minemories upload` to retry. This rejection is not
+retried automatically and keeps the local session identifier for a resume.
+Any other HTTP 413 keeps its generic HTTP message. JSON responses for status,
+pairing and upload are limited to 16 KiB of received bytes, even without
+Content-Length; GLB upload bodies and their limits are unchanged.
 
-Cette interface est construite et testée automatiquement. Le 11 octobre 2026,
-le testeur a confirmé que les deux modes et les détails sont lisibles dans le
-client de développement isolé. Le premier refus sur la fixture pleine a conservé
-le GLB et son fichier de reprise dans le dossier local ; la reprise vers l’API
-locale réelle a ensuite abouti.
+This interface is built and tested automatically. On 11 October 2026, the
+tester confirmed that both modes and the details are readable in the isolated
+development client. The first rejection on the full fixture kept the GLB and its
+resume file in the local folder; the resume to the real local API then succeeded.
 
-La première fixture locale simulait une galerie pleine sans recevoir de GLB.
-Elle a été remplacée par l’API du dépôt, avec SQLite et stockage filesystem dans
-le dossier de test isolé, un compte dédié et un quota de **200 Mo**
-(200 000 000 octets). La connexion du client de test reste utilisable. Une capture
-de 13 628 224 octets envoyée depuis Minecraft a été finalisée ; le téléchargement
-avec une session web authentifiée restitue les mêmes octets que le GLB local.
-Le résumé annonce 186 371 776 octets disponibles, sans réservation ni suppression
-en attente. Ce test local ne valide pas un déploiement en production ou le JAR
-distribué installé dans un profil joueur.
+The first local fixture simulated a full gallery without receiving GLBs. It was
+replaced by the repository's API, with SQLite and filesystem storage in the
+isolated test folder, a dedicated account and a **200 MB** quota (200,000,000
+bytes). The test client's link remains usable. A 13,628,224-byte capture sent
+from Minecraft was finalized; downloading it with an authenticated web session
+returns the same bytes as the local GLB. The summary reports 186,371,776 bytes
+available, with no pending reservation or deletion. This local test does not
+validate a production deployment or the distributed JAR installed in a player
+profile.
 
-## Vérifications
+## Checks
 
-- Tests de frontières, isolation entre propriétaires/appareils, addition des
-  réservations et de la corbeille, valeurs numériques invalides, migration et rejeu.
-- Requêtes concurrentes legacy/legacy et legacy/reprenable : une seule allocation
-  à la frontière, absence de staging refusé, aucun double comptage à la publication.
-- Suppression, purge et expiration avec panne de nettoyage : conservation des
-  octets jusqu’à l’acquittement ; reprise après réouverture SQLite.
-- Test Garage réel : un processus est interrompu juste avant l’inscription d’un
-  souvenir, après un upload legacy multipart de 9 MiB. Le GLB stocké est comparé
-  octet pour octet, la fixture est arrêtée, le nettoyage échoue dans un nouveau
-  processus, puis réussit après redémarrage de Garage dans un autre processus.
-- `bun run build` incluant `bun check` : 93 tests API passent, 64 tests web passent,
-  Gradle et JAR distribué construits. Le quota et la file sont couverts à 100 %
-  des lignes et fonctions. `bun run api:garage` passe ses huit scénarios réels.
-- Sessions HTTP/oRPC réelles : accès anonyme refusé, isolation entre comptes,
-  résumé identique côté device, headers privés et sans cache. Contrat testé sur
-  les quantités invalides ; interactions galerie couvrant chargement, quota plein,
-  rafraîchissement, panne et réponses tardives.
+- Boundary tests, isolation between owners/devices, reservations and trash
+  added together, invalid numeric values, migration and replay.
+- Concurrent legacy/legacy and legacy/resumable requests: a single allocation at
+  the boundary, no rejected staging left behind, no double counting on publish.
+- Deletion, purge and expiration with a cleanup failure: bytes kept until
+  acknowledgement; recovery after reopening SQLite.
+- Real Garage test: a process is interrupted just before a memory is recorded,
+  after a 9 MiB legacy multipart upload. The stored GLB is compared byte for
+  byte, the fixture is stopped, cleanup fails in a new process, then succeeds
+  after Garage restarts in another process.
+- `bun run build` including `bun check`: 93 API tests pass, 64 web tests pass,
+  Gradle and distributed JAR built. The quota and the queue have 100% line and
+  function coverage. `bun run api:garage` passes its eight real scenarios.
+- Real HTTP/oRPC sessions: anonymous access rejected, isolation between
+  accounts, identical summary on the device side, private no-cache headers.
+  Contract tested on invalid quantities; gallery interactions covering loading,
+  full quota, refresh, outage and late responses.
 
-- Mod : treize nouveaux tests, dont des requêtes HTTP réelles authentifiées,
-  limite exacte/multioctets, API ancienne et connexion refusée, quantités invalides,
-  réponses tardives et application sur le thread du client. Un refus de quota
-  vérifie une seule tentative, les octets locaux inchangés, le fichier de reprise
-  sans token et le rejeu du même identifiant après libération d’espace.
+- Mod: thirteen new tests, including real authenticated HTTP requests, exact
+  limit/multibyte, old API and rejected connection, invalid quantities, late
+  responses and applying results on the client thread. A quota rejection checks
+  a single attempt, unchanged local bytes, a resume file without a token and
+  replaying the same identifier after space is freed.
 
-Aucun changement de format GLB.
+No GLB format change.

@@ -76,7 +76,7 @@ class StorageStatusClientTest {
             () ->
                 StorageStatusClient.fetch(HttpClient.newHttpClient(), api, "private-device")
                     .join());
-    assertTrue(error.getCause().getMessage().contains("résumé de stockage valide"));
+    assertTrue(error.getCause().getMessage().contains("valid storage summary"));
   }
 
   @Test
@@ -88,7 +88,7 @@ class StorageStatusClientTest {
             () ->
                 StorageStatusClient.fetch(HttpClient.newHttpClient(), api, "private-device")
                     .join());
-    assertEquals("Connexion expirée. Reconnecte ton compte.", error.getCause().getMessage());
+    assertEquals("Session expired. Link your account again.", error.getCause().getMessage());
   }
 
   @Test
@@ -100,6 +100,6 @@ class StorageStatusClientTest {
             () ->
                 StorageStatusClient.fetch(HttpClient.newHttpClient(), api, "private-device")
                     .join());
-    assertTrue(error.getCause().getMessage().contains("trop volumineuse"));
+    assertTrue(error.getCause().getMessage().contains("too large"));
   }
 }

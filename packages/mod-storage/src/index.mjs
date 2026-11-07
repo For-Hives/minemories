@@ -1,8 +1,8 @@
-// Stockage S3 des JAR du mod (distribution maison). Disposition du bucket :
-//   mods/<targetId>/<version>/<jar>[.sha256|manifest.json]   versions conservées
-//   latest/<targetId>.jar                                    copie stable de la dernière version
-//   index.json                                               écrit EN DERNIER, atomiquement
-// Toutes ces clés vivent sous `MOD_STORAGE_PREFIX` (vide par défaut) ; l'index les garde relatives.
+// S3 storage for the mod JARs (self-hosted distribution). Bucket layout:
+//   mods/<targetId>/<version>/<jar>[.sha256|manifest.json]   kept versions
+//   latest/<targetId>.jar                                    stable copy of the latest version
+//   index.json                                               written LAST, atomically
+// All these keys live under `MOD_STORAGE_PREFIX` (empty by default); the index keeps them relative.
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { open, readFile, stat } from 'node:fs/promises'
@@ -37,7 +37,7 @@ export const PART_SIZE = 8 * 1024 * 1024
 const targetIdPattern = /^([a-z]+)-mc([0-9][\w.]*)$/
 const versionPattern = /^[0-9][\w.+-]*$/
 const sha256Pattern = /^[a-f0-9]{64}$/
-/** Machine qui a compilé le JAR : le PC du propriétaire ou le VPS (les octets peuvent différer entre les deux). */
+/** Machine that built the JAR: the owner's PC or the VPS (bytes may differ between the two). */
 export const BUILT_BY = ['pc', 'vps']
 
 export const jarName = (targetId, version) => `minemories-${targetId}-${version}.jar`
@@ -46,17 +46,17 @@ export const versionKey = (targetId, version) => `${versionPrefix(targetId, vers
 export const latestKey = targetId => `latest/${targetId}.jar`
 
 /**
- * Contexte d'une opération. Toutes les clés manipulées par ce fichier sont RELATIVES au préfixe
- * (`MOD_STORAGE_PREFIX`) ; `at()` est l'unique endroit où le préfixe est ajouté avant un appel S3, y compris les
- * listings, qui sont bornés au préfixe. L'index conserve donc des clés relatives : changer de préfixe (ou le
- * retirer) ne casse pas un index déplacé avec ses objets.
+ * Context of an operation. Every key handled in this file is RELATIVE to the prefix (`MOD_STORAGE_PREFIX`);
+ * `at()` is the only place where the prefix is added before an S3 call, listings included, which are bounded
+ * to the prefix. The index therefore stores relative keys: changing the prefix (or removing it) does not break
+ * an index moved along with its objects.
  */
 function context({ env = process.env, client } = {}) {
 	const { bucket, prefix } = storageSettings(env)
 	return { env, client: client ?? createClient(env), bucket, prefix }
 }
 
-/** Une clé relative sûre : non vide, ni `/` initial, ni `//`, ni segment `.` ou `..`, ni barre oblique inverse. */
+/** A safe relative key: non-empty, no leading `/`, no `//`, no `.` or `..` segment, no backslash. */
 export function isSafeKey(key) {
 	return (
 		typeof key === 'string' &&
@@ -67,7 +67,7 @@ export function isSafeKey(key) {
 	)
 }
 
-/** Clé absolue dans le bucket pour `key` relative au préfixe `prefix`, ou `null` si `key` sort de `roots`. */
+/** Absolute bucket key for `key` relative to `prefix`, or `null` when `key` falls outside `roots`. */
 export function resolveObjectKey(prefix, key, roots = ['mods/', 'latest/']) {
 	return isSafeKey(key) && roots.some(root => key.startsWith(root) && key.length > root.length)
 		? `${prefix}${key}`
@@ -75,13 +75,13 @@ export function resolveObjectKey(prefix, key, roots = ['mods/', 'latest/']) {
 }
 
 function at(ctx, key) {
-	if (!isSafeKey(key)) throw new Error(`Clé de stockage refusée : ${JSON.stringify(key)}`)
+	if (!isSafeKey(key)) throw new Error(`Storage key rejected: ${JSON.stringify(key)}`)
 	return `${ctx.prefix}${key}`
 }
 
-/** Seules les clés sous `mods/` peuvent être supprimées. */
+/** Only keys under `mods/` can be deleted. */
 function removable(key) {
-	if (!(key.startsWith('mods/') && isSafeKey(key))) throw new Error(`Suppression refusée hors de mods/ : ${key}`)
+	if (!(key.startsWith('mods/') && isSafeKey(key))) throw new Error(`Refusing to delete outside mods/: ${key}`)
 	return key
 }
 
@@ -89,7 +89,7 @@ export function emptyIndex() {
 	return { schema: 1, generatedAt: new Date().toISOString(), targets: {} }
 }
 
-/** Ordre des versions : la plus récente d'abord (date de build, puis comparaison numérique). */
+/** Version order: newest first (build date, then numeric comparison). */
 export function compareVersions(a, b) {
 	const time = Date.parse(b.builtAt) - Date.parse(a.builtAt)
 	if (time) return time
@@ -98,10 +98,10 @@ export function compareVersions(a, b) {
 
 export function validateIndex(value) {
 	if (!value || typeof value !== 'object' || value.schema !== 1 || typeof value.targets !== 'object' || !value.targets)
-		throw new Error('index.json invalide (schema 1 attendu).')
+		throw new Error('index.json is invalid (expected schema 1).')
 	for (const [id, target] of Object.entries(value.targets)) {
 		if (!(Array.isArray(target?.versions) && target.versions.length > 0 && typeof target.latest === 'string'))
-			throw new Error(`index.json invalide pour ${id}.`)
+			throw new Error(`index.json is invalid for ${id}.`)
 		for (const entry of target.versions)
 			if (
 				!(
@@ -111,7 +111,7 @@ export function validateIndex(value) {
 					(entry.builtBy === undefined || BUILT_BY.includes(entry.builtBy))
 				)
 			)
-				throw new Error(`index.json invalide pour ${id} ${entry.version}.`)
+				throw new Error(`index.json is invalid for ${id} ${entry.version}.`)
 	}
 	return value
 }
@@ -147,7 +147,7 @@ async function readIndexIn(ctx) {
 	return validateIndex(JSON.parse(raw.toString('utf8')))
 }
 
-/** Index courant ; un bucket vide ou sans index donne un index vide. */
+/** Current index; an empty bucket or one without an index yields an empty index. */
 export function readIndex({ env = process.env, client } = {}) {
 	return readIndexIn(context({ env, client }))
 }
@@ -173,7 +173,7 @@ async function listObjects(ctx, prefix) {
 		const page = await ctx.client.send(
 			new ListObjectsV2Command({ Bucket: ctx.bucket, Prefix: `${ctx.prefix}${prefix}`, ContinuationToken: token })
 		)
-		// Ceinture et bretelles : une clé hors du préfixe n'est jamais comptée ni renvoyée (donc jamais supprimée).
+		// Belt and braces: a key outside the prefix is never counted nor returned (so never deleted).
 		for (const item of page.Contents ?? [])
 			if (item.Key?.startsWith(ctx.prefix) && item.Key.length > ctx.prefix.length)
 				objects.push({ key: item.Key.slice(ctx.prefix.length), bytes: item.Size ?? 0 })
@@ -249,7 +249,7 @@ async function putFile(ctx, key, file, { contentType, metadata, partSize = PART_
 	)
 }
 
-/** Relit l'objet téléversé et compare taille et empreinte au fichier d'origine. */
+/** Reads the uploaded object back and compares size and digest with the source file. */
 async function verifyUpload(ctx, key, bytes, sha256) {
 	const response = await ctx.client.send(new GetObjectCommand({ Bucket: ctx.bucket, Key: at(ctx, key) }))
 	const hash = createHash('sha256')
@@ -259,7 +259,7 @@ async function verifyUpload(ctx, key, bytes, sha256) {
 		size += chunk.length
 	}
 	if (size !== bytes || hash.digest('hex') !== sha256)
-		throw new Error(`Vérification sha256 échouée après upload de ${key}.`)
+		throw new Error(`sha256 verification failed after uploading ${key}.`)
 }
 
 function targetMetadata(config, targetId) {
@@ -277,7 +277,7 @@ function targetMetadata(config, targetId) {
 
 function assertSafe(targetId, version) {
 	if (!(targetIdPattern.test(targetId) && versionPattern.test(version)))
-		throw new Error(`Cible ou version invalide : ${targetId} ${version}`)
+		throw new Error(`Target or version is invalid: ${targetId} ${version}`)
 }
 
 async function uploadSidecars(ctx, artifact, targetId, version, sha256) {
@@ -299,8 +299,8 @@ async function storeArtifact(ctx, { targetId, version, artifact, partSize }) {
 	const key = versionKey(targetId, version)
 	const sha256 = await hashFile(artifact.file)
 	const bytes = (await stat(artifact.file)).size
-	if (artifact.sha256 && artifact.sha256 !== sha256) throw new Error(`sha256 inattendu pour ${artifact.file}.`)
-	if (artifact.bytes && artifact.bytes !== bytes) throw new Error(`Taille inattendue pour ${artifact.file}.`)
+	if (artifact.sha256 && artifact.sha256 !== sha256) throw new Error(`Unexpected sha256 for ${artifact.file}.`)
+	if (artifact.bytes && artifact.bytes !== bytes) throw new Error(`Unexpected size for ${artifact.file}.`)
 	const existing = await head(ctx, key)
 	if (!(existing && existing.ContentLength === bytes && existing.Metadata?.sha256 === sha256)) {
 		await putFile(ctx, key, artifact.file, { contentType: 'application/java-archive', metadata: { sha256 }, partSize })
@@ -324,8 +324,8 @@ function mergeVersion(current, meta, entry) {
 }
 
 /**
- * Téléverse une release complète. L'index n'est réécrit qu'une fois tous les objets (et les copies
- * `latest/`) présents et vérifiés : un échec en cours de route laisse l'index intact.
+ * Uploads a complete release. The index is only rewritten once every object (and the `latest/` copies)
+ * is present and verified: a failure midway leaves the index intact.
  * @param {{ config: object, version: string, commit: string, builtAt: string,
  *   artifacts: { targetId: string, file: string, bytes?: number, sha256?: string, builtBy?: 'pc' | 'vps' }[],
  *   env?: Record<string, string|undefined>, client?: object, partSize?: number }} options
@@ -387,11 +387,11 @@ export class ModStorageConflictError extends Error {
 }
 
 /**
- * Enregistre un JAR reçu (envoi via l'API) avec la même logique que `storeRelease`, puis applique la rétention.
- * - même version, mêmes octets : rien n'est écrit (`unchanged`) ;
- * - même version, autres octets : refusé (`ModStorageConflictError`) sauf `replace` ;
- * - après un envoi réussi, `pruneStorage({ keep, dryRun: false })` : jamais `latest`, épinglées ni publiées.
- * Les appelants doivent sérialiser les appels (un seul écrivain d'index à la fois).
+ * Stores a received JAR (uploaded through the API) with the same logic as `storeRelease`, then applies retention.
+ * - same version, same bytes: nothing is written (`unchanged`);
+ * - same version, different bytes: rejected (`ModStorageConflictError`) unless `replace`;
+ * - after a successful upload, `pruneStorage({ keep, dryRun: false })`: never `latest`, pinned or published.
+ * Callers must serialize calls (a single index writer at a time).
  * @param {{ target: { id: string, loader: string, minecraft: string, loaderVersion: string, java: string,
  *   fabricApi?: string }, version: string, commit: string, builtAt: string, builtBy?: 'pc' | 'vps',
  *   file: string, bytes: number, sha256: string, replace?: boolean, keep?: number,
@@ -419,7 +419,7 @@ export async function storeUpload({
 	const existing = current.targets[target.id]?.versions.find(item => item.version === version)
 	const sameBytes = existing?.sha256 === sha256 && existing.bytes === bytes
 	if (existing && !sameBytes && !replace)
-		throw new ModStorageConflictError(`La version ${version} de ${target.id} existe avec un autre contenu.`)
+		throw new ModStorageConflictError(`Version ${version} of ${target.id} already exists with different content.`)
 	if (sameBytes && (await head(ctx, existing.key))?.ContentLength === bytes)
 		return { latest: current.targets[target.id].latest === version, replaced: false, unchanged: true, index: current }
 	await storeRelease({
@@ -441,12 +441,12 @@ async function updateEntry({ targetId, version, env, client }, change) {
 	const ctx = context({ env, client })
 	const index = await readIndexIn(ctx)
 	const entry = index.targets[targetId]?.versions.find(item => item.version === version)
-	if (!entry) throw new Error(`Version introuvable : ${targetId} ${version}`)
+	if (!entry) throw new Error(`Version not found: ${targetId} ${version}`)
 	change(entry)
 	return writeIndex(ctx, index)
 }
 
-/** Épingle ou désépingle une version (le drapeau vit dans l'index). */
+/** Pins or unpins a version (the flag lives in the index). */
 export function setPinned({ targetId, version, pinned, env = process.env, client }) {
 	return updateEntry({ targetId, version, env, client }, entry => {
 		if (pinned) entry.pinned = true
@@ -454,7 +454,7 @@ export function setPinned({ targetId, version, pinned, env = process.env, client
 	})
 }
 
-/** Enregistre les liens d'une publication tierce (Modrinth, CurseForge) : la version devient intouchable. */
+/** Records the links of a third-party publication (Modrinth, CurseForge): the version becomes untouchable. */
 export function setPublished({ targetId, version, links, env = process.env, client }) {
 	return updateEntry({ targetId, version, env, client }, entry => {
 		entry.published = { ...entry.published, ...links }
@@ -469,12 +469,12 @@ function keptReason(entry, target, rank, keep) {
 }
 
 /**
- * Rétention : garde les `keep` versions les plus récentes de chaque cible, plus la version `latest`,
- * les versions épinglées et celles référencées par une publication tierce. L'index est réécrit AVANT
- * la suppression des objets (un objet orphelin est inoffensif, un index pointant dans le vide non).
+ * Retention: keeps the `keep` newest versions of each target, plus the `latest` version, pinned versions
+ * and those referenced by a third-party publication. The index is rewritten BEFORE objects are deleted
+ * (an orphaned object is harmless, an index pointing at nothing is not).
  */
 export async function pruneStorage({ keep = 3, dryRun = true, env = process.env, client } = {}) {
-	if (!(Number.isInteger(keep) && keep >= 1)) throw new Error('keep doit être un entier >= 1.')
+	if (!(Number.isInteger(keep) && keep >= 1)) throw new Error('keep must be an integer >= 1.')
 	const ctx = context({ env, client })
 	const index = await readIndexIn(ctx)
 	const deleted = []
@@ -503,7 +503,7 @@ export async function pruneStorage({ keep = 3, dryRun = true, env = process.env,
 	return { deleted, kept, freedBytes }
 }
 
-/** Occupation du bucket : total (tous objets) et détail par cible. */
+/** Bucket usage: total (all objects) and breakdown per target. */
 export async function storageReport({ env = process.env, client } = {}) {
 	const ctx = context({ env, client })
 	const index = await readIndexIn(ctx)

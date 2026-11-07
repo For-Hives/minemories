@@ -78,7 +78,7 @@ final class PairingClient {
               Properties current = readSettings();
               if (!api.equals(apiUrl(current))
                   || !Objects.equals(token, current.getProperty("deviceToken"))) {
-                throw new CompletionException(new IllegalStateException("Compte modifié."));
+                throw new CompletionException(new IllegalStateException("Account changed."));
               }
               return quota;
             });
@@ -107,7 +107,7 @@ final class PairingClient {
         () -> {
           Properties settings = readSettings();
           if (enabled && settings.getProperty("deviceToken", "").isBlank())
-            throw new IllegalStateException("Connecte ton compte avant d’activer les diagnostics.");
+            throw new IllegalStateException("Link your account before enabling diagnostics.");
           settings.setProperty("diagnosticsConsent", Boolean.toString(enabled));
           if (enabled)
             settings.setProperty("diagnosticsEpoch", java.util.UUID.randomUUID().toString());
@@ -222,7 +222,7 @@ final class PairingClient {
                         || !apiUrl(current).equals(apiUrl(settings))) {
                       throw new CompletionException(
                           new IllegalStateException(
-                              "Compte ou API changé. Génère un nouveau code."));
+                              "Account or API changed. Generate a new code."));
                     }
                     current.setProperty("deviceToken", result.get("deviceToken").getAsString());
                     current.setProperty("deviceId", result.get("deviceId").getAsString());
@@ -239,7 +239,7 @@ final class PairingClient {
   static CompletableFuture<String> uploadAfkCapture(Path file, CaptureSettings expected) {
     if (!expected.paired() || !expected.equals(captureSettings()))
       return CompletableFuture.failedFuture(
-          new IllegalStateException("Contexte AFK modifié. Capture conservée localement."));
+          new IllegalStateException("AFK context changed. Capture kept locally."));
     return uploadCapture(file, expected);
   }
 
@@ -335,7 +335,7 @@ final class PairingClient {
   }
 
   static boolean configure(String api, String directory) {
-    if (isUploading()) throw new IllegalStateException("Attends la fin de l’envoi.");
+    if (isUploading()) throw new IllegalStateException("Wait for the upload to finish.");
     AtomicBoolean changed = new AtomicBoolean();
     updateSettings(
         settings -> {

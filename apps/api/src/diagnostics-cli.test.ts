@@ -74,7 +74,7 @@ test('private CLI reads existing database, groups and lists bounded reports with
 			stderr: 'pipe',
 		})
 		expect(await command.exited).toBe(0)
-		expect(await new Response(command.stdout).text()).toContain('Groupes privés')
+		expect(await new Response(command.stdout).text()).toContain('Private groups')
 		const rootCommand = Bun.spawn([process.execPath, 'run', '--silent', 'api:diagnostics', '--help'], {
 			cwd: join(import.meta.dir, '../../..'),
 			stdout: 'pipe',

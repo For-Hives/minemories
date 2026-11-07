@@ -1,349 +1,347 @@
-# Taille des GLB : mesures et optimisation
+# GLB size: measurements and optimization
 
-L’issue #73 réduit les fichiers sans changer les données visibles : indices au
-plus petit type entier possible et PNG d’atlas dont les zones inutilisées sont
-uniformisées. Le format reste glTF 2.0 autonome, sans nouvelle extension.
+Issue #73 shrinks files without changing the visible data: indices use the
+smallest possible integer type, and the unused areas of atlas PNGs are made
+uniform. The format remains self-contained glTF 2.0, with no new extension.
 
-## Corpus réel et mesures avant/après
+## Real corpus and before/after measurements
 
-Cinq captures Minecraft existantes sont rejouées dans les deux JAR identifiés.
-L’ancien writer reproduit chaque fichier original **octet pour octet** : le
-benchmark reçoit donc les mêmes quads, PNG, matériaux et lumières, sans confondre
-l’optimisation avec une animation de texture ou un mouvement d’entité.
-Les fixtures d’upload étendues artificiellement à 200 Mio sont exclues.
+Five existing Minecraft captures are replayed in the two identified JARs. The
+old writer reproduces each original file **byte for byte**: the benchmark
+therefore receives the same quads, PNGs, materials and lights, without
+confusing the optimization with a texture animation or an entity moving.
+Upload fixtures artificially padded to 200 MiB are excluded.
 
-| Capture | Avant (octets) | Après (octets) | Gain | Triangles | Images |
+| Capture | Before (bytes) | After (bytes) | Gain | Triangles | Images |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| AFK progressif rayon 8 | 605 228 | 267 072 | 55,87 % | 2 766 | 17 |
-| AFK progressif rayon 32 | 2 501 392 | 2 012 360 | 19,55 % | 27 220 | 26 |
-| Tour et surface | 63 096 | 59 396 | 5,86 % | 412 | 12 |
-| Hauteur complète | 483 628 | 446 728 | 7,63 % | 5 716 | 25 |
-| Modèles, alpha et lumières | 819 204 | 438 740 | 46,44 % | 4 416 | 32 |
+| Progressive AFK radius 8 | 605,228 | 267,072 | 55.87% | 2,766 | 17 |
+| Progressive AFK radius 32 | 2,501,392 | 2,012,360 | 19.55% | 27,220 | 26 |
+| Tower and surface | 63,096 | 59,396 | 5.86% | 412 | 12 |
+| Full height | 483,628 | 446,728 | 7.63% | 5,716 | 25 |
+| Models, alpha and lights | 819,204 | 438,740 | 46.44% | 4,416 | 32 |
 
-La dernière scène contient lit, coffres, panneau, chat, loup, mouton, cochon,
-joueur et zombie équipé, du verre, de l’eau, de la végétation teintée et 144
-lumières. Le grand export contient aussi un ours polaire. Les matériaux OPAQUE,
-MASK et BLEND ainsi que l’émissivité sont conservés.
+The last scene contains a bed, chests, a sign, a cat, a wolf, a sheep, a pig, a
+player and an equipped zombie, glass, water, tinted vegetation and 144 lights.
+The large export also contains a polar bear. OPAQUE, MASK and BLEND materials
+as well as emissive properties are kept.
 
-Sur le rayon 32 initial : positions et normales occupent chacune 653 280 octets,
-UV 435 520, indices 326 640 et PNG 331 100 (hors JSON/padding). Sur le rayon 8,
-les PNG dominent avec 327 378 octets, dont 321 233 pour l’atlas de blocs : seules
-18 × 18 cellules, marge comprise, sont nécessaires à l’objet tenu. Son PNG passe
-à 2 245 octets sans changer ses dimensions ni les coordonnées d’échantillonnage.
+On the initial radius 32: positions and normals take 653,280 bytes each, UVs
+435,520, indices 326,640 and PNGs 331,100 (excluding JSON/padding). On radius 8,
+PNGs dominate with 327,378 bytes, 321,233 of them for the block atlas: only
+18 × 18 cells, margin included, are needed for the held item. Its PNG drops to
+2,245 bytes without changing its dimensions or the sampling coordinates.
 
-## Encodage exact des indices
+## Exact index encoding
 
-Les deux writers choisissent le plus petit type compatible avec le nombre de
-sommets de la primitive : 8 bits jusqu’à 255 sommets, 16 bits jusqu’à 65 535, puis
-32 bits. Les quads ajoutent quatre sommets ; les frontières réellement exercées
-sont donc 252/256 et 65 532/65 536.
+Both writers pick the smallest type compatible with the primitive's vertex
+count: 8 bits up to 255 vertices, 16 bits up to 65,535, then 32 bits. Quads add
+four vertices; the boundaries actually exercised are therefore 252/256 and
+65,532/65,536.
 
-La [spécification glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#meshes)
-interdit la valeur maximale du type d’indice, réservée au primitive restart.
-Le nombre de sommets, borne exclusive des indices, empêche donc l’émission de
-255/65 535 dans les types correspondants. Les valeurs corrompues sont refusées,
-sans troncature silencieuse. L’ordre et le nombre de triangles restent identiques.
+The [glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#meshes)
+forbids the maximum value of the index type, which is reserved for primitive
+restart. The vertex count, an exclusive upper bound on indices, therefore
+prevents emitting 255/65,535 in the matching types. Corrupt values are refused,
+with no silent truncation. Triangle order and count stay identical.
 
-Le writer spoolé garde les indices temporaires 32 bits et les compacte seulement
-pendant la copie finale, dans le buffer existant de 64 Kio. Le spool temporaire
-peut donc être plus grand que le GLB publié.
+The spooled writer keeps temporary 32-bit indices and only compacts them during
+the final copy, in the existing 64 KiB buffer. The temporary spool can therefore
+be larger than the published GLB.
 
-## PNG d’atlas : préserver les échantillons, sans déplacer les UV
+## Atlas PNGs: preserve samples, without moving UVs
 
-Pour les images `rendered/...textures/atlas/...`, le writer agrège les UV de
-**tous** les matériaux référençant la même image. Il conserve le rectangle de
-texels potentiellement échantillonnés et une marge d’un pixel. Les autres texels
-sont remplacés par une couleur uniforme, plus compressible. Les dimensions,
-samplers NEAREST sans mipmaps, UV, positions, normales, facteurs alpha/teinte et
-liens émissifs restent inchangés. Les textures d’entités et sprites ordinaires ne
-sont pas traités comme des atlas.
+For `rendered/...textures/atlas/...` images, the writer aggregates the UVs of
+**all** materials referencing the same image. It keeps the rectangle of texels
+that may be sampled plus a one-pixel margin. Other texels are replaced with a
+uniform colour, which compresses better. Dimensions, NEAREST samplers without
+mipmaps, UVs, positions, normals, alpha/tint factors and emissive links are
+unchanged. Entity textures and ordinary sprites are not treated as atlases.
 
-Des UV répétés, négatifs, non finis ou atteignant la borne supérieure entraînent
-un retour au PNG initial. Les utilisations couvrant au moins la moitié de l’image
-sont laissées intactes. Le décodage est limité à un PNG de 16 Mio / 4 millions de
-pixels à la fois ; un réencodage illisible ou plus gros conserve l’original.
-Le traitement vérifie l’interruption de capture. Il n’ajoute ni texture ni
-matériau et ne réduit pas le coût GPU de l’image, dont les dimensions sont gardées.
+Repeated, negative, non-finite UVs, or UVs reaching the upper bound, cause a
+fallback to the original PNG. Uses covering at least half of the image are left
+intact. Decoding is limited to one PNG of 16 MiB / 4 million pixels at a time;
+an unreadable or larger re-encode keeps the original. Processing checks for
+capture interruption. It adds no texture or material and does not reduce the
+image's GPU cost, since its dimensions are kept.
 
-Dans le spool, cette étape intervient après fermeture des streams d’ajout et
-avant calcul du layout final ; elle ne touche que le fichier temporaire possédé,
-après contrôle de son identité et de sa taille. La publication atomique reste en
-vigueur. Les limites de spool, de capture et d’upload ne sont pas relevées.
+In the spool, this step happens after the append streams are closed and before
+the final layout is computed; it only touches the owned temporary file, after
+checking its identity and size. Atomic publication still applies. Spool,
+capture and upload limits are not raised.
 
-## Fusion exacte des sommets (issue #173, phase 1)
+## Exact vertex merging (issue #173, phase 1)
 
-Les deux writers partagent `VertexCache` et `QuadGeometry` : un sommet n'est écrit qu'une fois par primitive quand
-position, normale et UV sont **identiques bit à bit** ; les indices des quads suivants le réutilisent. La table est à
-adressage direct de 65 536 entrées (≈ 2,6 Mio d'entiers, taille constante quelle que soit la capture) : une collision
-évince l'ancienne entrée, ce qui ne fait manquer qu'une fusion et ne change jamais le rendu. Le writer spoolé garde
-donc sa borne de heap (test à 32 Mio inchangé) ; les fichiers temporaires ne contiennent que les sommets uniques.
-Les arêtes voisines se partagent surtout entre quads proches dans le temps (médiane 35 quads, 90e centile 66 sur le
-rayon 32), ce qui rend une fenêtre bornée presque aussi efficace qu'une fusion globale.
+Both writers share `VertexCache` and `QuadGeometry`: a vertex is written only once per primitive when its
+position, normal and UV are **bit-for-bit identical**; the indices of following quads reuse it. The table is
+direct-mapped with 65,536 entries (≈ 2.6 MiB of integers, constant size whatever the capture): a collision
+evicts the old entry, which only misses a merge and never changes the render. The spooled writer therefore keeps
+its heap bound (32 MiB test unchanged); temporary files only contain unique vertices.
+Neighbouring edges are mostly shared between quads close in time (median 35 quads, 90th percentile 66 on
+radius 32), which makes a bounded window almost as effective as a global merge.
 
-Un quad dont aucun des deux triangles n'a de surface (`0,1,2` puis `0,2,3`) est supprimé au lieu d'être écrit avec une
-normale nulle ; la normale d'un quad « triangle » (coin répété) vient du premier triangle non dégénéré. Un triangle
-dont deux indices deviennent égaux après fusion n'est pas émis. Les overlays volontaires (`RenderedLayer`) sont
-séparés par un décalage de position : ils ne sont ni fusionnés ni supprimés.
+A quad where neither of its two triangles has any area (`0,1,2` then `0,2,3`) is dropped instead of being written with
+a zero normal; the normal of a "triangle" quad (repeated corner) comes from the first non-degenerate triangle. A
+triangle whose two indices become equal after merging is not emitted. Intentional overlays (`RenderedLayer`) are
+separated by a position offset: they are neither merged nor dropped.
 
-Mesures sur les cinq captures de référence rejouées (même quads, PNG et matériaux, `Replay` hors Git) :
+Measurements on the five replayed reference captures (same quads, PNGs and materials, `Replay` outside Git):
 
-| Capture | Avant (octets) | Après (octets) | Sommets | Doublons exacts restants |
+| Capture | Before (bytes) | After (bytes) | Vertices | Remaining exact duplicates |
 | --- | ---: | ---: | ---: | ---: |
-| AFK progressif rayon 32 | 2 012 360 | 1 835 420 (−8,8 %) | 54 440 → 48 911 | 5 536 → 7 |
-| AFK progressif rayon 8 | 267 072 | 255 300 (−4,4 %) | 5 532 → 5 165 | 368 → 1 |
-| Hauteur complète | 446 728 | 393 540 (−11,9 %) | 11 432 → 9 770 | 1 669 → 7 |
-| Tour et surface | 59 396 | 58 788 (−1,0 %) | 824 → 805 | 19 → 0 |
-| Modèles, alpha et lumières | 438 740 | 432 084 (−1,5 %) | 8 832 → 8 624 | 209 → 1 |
+| Progressive AFK radius 32 | 2,012,360 | 1,835,420 (−8.8%) | 54,440 → 48,911 | 5,536 → 7 |
+| Progressive AFK radius 8 | 267,072 | 255,300 (−4.4%) | 5,532 → 5,165 | 368 → 1 |
+| Full height | 446,728 | 393,540 (−11.9%) | 11,432 → 9,770 | 1,669 → 7 |
+| Tower and surface | 59,396 | 58,788 (−1.0%) | 824 → 805 | 19 → 0 |
+| Models, alpha and lights | 438,740 | 432,084 (−1.5%) | 8,832 → 8,624 | 209 → 1 |
 
-Rendu Blender 5.2.2 (Cycles CPU, 16 échantillons, graine 42, 560 × 480) avant/après sur le rayon 32 et la scène
-modèles/lumières : **identique pixel pour pixel** (écart maximal 0). Le gain reste modeste, comme prévu par la phase 0 :
-la vraie réduction vient de la quantification (phase 3). Les mesures sont celles du writer rejoué hors jeu ; la
-validation en jeu des captures progressives reste à faire avec le prochain JAR.
+Blender 5.2.2 render (Cycles CPU, 16 samples, seed 42, 560 × 480) before/after on radius 32 and the
+models/lights scene: **pixel-for-pixel identical** (maximum difference 0). The gain stays modest, as predicted by
+phase 0: the real reduction comes from quantization (phase 3). The measurements are those of the writer replayed
+outside the game; in-game validation of progressive captures is still to be done with the next JAR.
 
-## Format 2 : catégories, métadonnées et plages par chunk (issue #173, phase 2)
+## Format 2: categories, metadata and per-chunk ranges (issue #173, phase 2)
 
-Le glTF reste autonome et sans extension nouvelle ; seuls la structure et `extras` changent.
+The glTF stays self-contained with no new extension; only the structure and `extras` change.
 
-- **Nœuds nommés par catégorie** : `terrain` (cubes pleins), `decor` (modèles de bloc non pleins : plantes, neige,
-  tapis, dalles), `fluids`, `block_entities` (coffres, lits, panneaux…), `entities`, plus un nœud par lumière
-  ponctuelle. Chaque nœud porte un mesh du même nom ; seules les catégories présentes sont écrites. Une primitive par
-  (catégorie, matériau) : le nombre d'appels de dessin reste celui d'avant, à une primitive près par catégorie et
-  matériau partagés. Pas de nœud par entité : `MAX_GLB_NODES`/`MAX_GLB_PRIMITIVES` valent 4096 et une ferme
-  d'entités les dépasserait. Dans Blender, chaque catégorie devient un objet que l'on peut supprimer ou masquer.
-- **`asset.extras.minemories`** : `format: 2`, versions Minecraft / loader / mod, identifiant de dimension, `chunkSize`
-  et nombre de quads par catégorie. Champs fermés et validés (`GlbMetadata`) : aucune donnée personnelle, aucun
-  nom de monde, de serveur ou de joueur, aucune graine, aucun chemin, aucun texte de panneau ou de livre, et **aucune
-  coordonnée absolue**. Les bornes et l'origine de capture restent dans le fichier de métadonnées déjà envoyé à l'API.
-  `scenes[0].extras.minemoriesPlayerPosition` est conservé.
-- **Plages par chunk** : chaque primitive peut porter `extras.minemoriesChunks = [x, z, premierTriangle, nombre, …]`,
-  `x`/`z` étant relatifs au chunk qui contient l'origine de capture. Le parcours de capture est désormais **chunk par
-  chunk** (`CaptureCursor` et export manuel), le propriétaire est la cellule source (entité : son chunk). Une primitive
-  sans chunk connu ou qui dépasserait le budget de 40 000 plages par scène n'en publie pas : le JSON reste borné
-  (limite de 4 Mio) et un lecteur retombe sur son propre tri.
-- Les anciens GLB (un seul mesh, aucun `extras`) restent lus par le viewer et les deux validateurs : le viewer
-  ne dépend pas de ces champs. **Le viewer n'utilise pas les plages, par mesure** : sa composition a besoin du bloc de
-  chaque triangle (couverture partielle d'un chunk), calculé depuis les positions. Sur 98 000 triangles en ordre chunk par
-  chunk, `buildPrimitive` prend 22,2 ms dont **1,9 ms pour le tri** (moins de 9 %) : les plages ne feraient gagner que ce tri. Elles
-  restent disponibles pour les outils tiers.
+- **Nodes named by category**: `terrain` (full cubes), `decor` (non-full block models: plants, snow,
+  carpets, slabs), `fluids`, `block_entities` (chests, beds, signs…), `entities`, plus one node per point
+  light. Each node carries a mesh with the same name; only the categories present are written. One primitive per
+  (category, material): the number of draw calls stays as before, give or take one primitive per shared category
+  and material. No node per entity: `MAX_GLB_NODES`/`MAX_GLB_PRIMITIVES` are 4096 and an entity farm would exceed
+  them. In Blender, each category becomes an object that can be deleted or hidden.
+- **`asset.extras.minemories`**: `format: 2`, Minecraft / loader / mod versions, dimension identifier, `chunkSize`
+  and the number of quads per category. Closed, validated fields (`GlbMetadata`): no personal data, no world,
+  server or player name, no seed, no path, no sign or book text, and **no absolute coordinate**. The bounds and
+  capture origin stay in the metadata file already sent to the API.
+  `scenes[0].extras.minemoriesPlayerPosition` is kept.
+- **Per-chunk ranges**: each primitive may carry `extras.minemoriesChunks = [x, z, firstTriangle, count, …]`,
+  `x`/`z` being relative to the chunk containing the capture origin. The capture traversal is now **chunk by
+  chunk** (`CaptureCursor` and manual export); the owner is the source cell (entity: its chunk). A primitive with
+  no known chunk, or that would exceed the budget of 40,000 ranges per scene, publishes none: the JSON stays bounded
+  (4 MiB limit) and a reader falls back to its own sort.
+- Old GLBs (a single mesh, no `extras`) are still read by the viewer and both validators: the viewer does not
+  depend on these fields. **The viewer does not use the ranges, based on measurement**: its composition needs the
+  block of each triangle (partial coverage of a chunk), computed from the positions. On 98,000 triangles in
+  chunk-by-chunk order, `buildPrimitive` takes 22.2 ms, of which **1.9 ms is the sort** (less than 9%): the ranges
+  would only save that sort. They remain available for third-party tools.
 
-Mesures sur les cinq captures rejouées avec catégories (heuristique sur les noms de matériaux, hors jeu, plages dans
-l'ordre d'origine donc plus nombreuses qu'avec le parcours chunk-major) : rayon 32 1 835 420 → 1 859 984 octets
-(+1,3 %, dont ≈ 24 Kio de JSON), hauteur complète 393 540 → 396 848. Le coût est celui du JSON ; la vraie réduction
-vient de la phase 3.
+Measurements on the five captures replayed with categories (heuristic on material names, outside the game, ranges in
+the original order and therefore more numerous than with the chunk-major traversal): radius 32 1,835,420 → 1,859,984
+bytes (+1.3%, of which ≈ 24 KiB is JSON), full height 393,540 → 396,848. The cost is the JSON; the real reduction
+comes from phase 3.
 
-Validation : les cinq GLB passent le validateur du viewer et celui de l'API (5/5). Blender 5.2.2 importe un objet par
-catégorie (ex. `terrain` 1 400 faces, `decor` 1 748, `fluids` 336, `block_entities` 132, `entities` 800) ; rendu Cycles
-identique pixel pour pixel sur le rayon 32, et 49 pixels différents (6 avec écart > 8, écart max 18 sur 268 800) sur
-la scène modèles/lumières, imputés à l'ordre de rendu des matériaux translucides entre objets. Le viewer charge le
-fichier (Chromium headless, SwiftShader) et affiche la scène complète. Validation en jeu : non faite.
+Validation: the five GLBs pass both the viewer and the API validators (5/5). Blender 5.2.2 imports one object per
+category (e.g. `terrain` 1,400 faces, `decor` 1,748, `fluids` 336, `block_entities` 132, `entities` 800); the Cycles
+render is pixel-for-pixel identical on radius 32, with 49 differing pixels (6 with a difference > 8, max difference 18
+out of 268,800) on the models/lights scene, attributed to the render order of translucent materials across objects.
+The viewer loads the file (headless Chromium, SwiftShader) and shows the complete scene. In-game validation: not done.
 
-## Quantification `KHR_mesh_quantization` (issue #173, phase 3)
+## `KHR_mesh_quantization` quantization (issue #173, phase 3)
 
-Les deux writers quantifient la géométrie ; le fichier reste du glTF 2.0 autonome, lisible par Blender 5.2.2 (mesuré,
-voir `docs/features/glb-v2-decisions.md`), `extensionsUsed`/`extensionsRequired` déclarent `KHR_mesh_quantization`.
+Both writers quantize the geometry; the file remains self-contained glTF 2.0, readable by Blender 5.2.2 (measured,
+see `docs/features/glb-v2-decisions.md`); `extensionsUsed`/`extensionsRequired` declare `KHR_mesh_quantization`.
 
-| Attribut | Avant | Après |
+| Attribute | Before | After |
 | --- | --- | --- |
-| POSITION | 3 × float32 (12 o) | 3 × int16 + 2 o de remplissage (8 o), échelle `1/2^k` et translation entière portées par le nœud de catégorie |
-| NORMAL | 3 × float32 (12 o) | 3 × int8 normalisé + 1 o (4 o) |
-| TEXCOORD_0 | 2 × float32 (8 o) | 2 × uint16 normalisé (4 o) |
+| POSITION | 3 × float32 (12 B) | 3 × int16 + 2 B of padding (8 B), `1/2^k` scale and integer translation carried by the category node |
+| NORMAL | 3 × float32 (12 B) | 3 × normalized int8 + 1 B (4 B) |
+| TEXCOORD_0 | 2 × float32 (8 B) | 2 × normalized uint16 (4 B) |
 
-- Les attributs sont écrits avec `byteStride` (8/4/4), exigé par glTF pour les éléments non multiples de 4 octets.
-- **Échelle** : choisie à l'écriture, par catégorie, d'après l'étendue réelle des positions : la plus fine des grilles
-  `1/128`…`1/16` de bloc dont l'étendue tient dans ±32 766. La grille de Minecraft (1/16) est donc **exacte** ; les
-  modèles tournés et les fluides sont arrondis au plus à 1/256 de bloc sur les petites captures et 1/32 sur les très
-  grandes, au plus près du seuil de 1/64 de bloc du viewer. Une catégorie plus étendue que ±1 024 blocs garde des
-  positions float32.
-- **UV** : uint16 seulement si tous les UV d'une primitive sont dans [0, 1] ; sinon float32 (UV répétés). Erreur
-  maximale 1/65 535 de l'image, soit 0,016 texel sur l'atlas 1024.
-- **Normales** : conservées (int8) plutôt que supprimées : sans normales, `GLTFLoader` active `flatShading`, que le
-  viewer évite (NaN signalés sur Firefox/NVIDIA, voir `viewer-scene.ts`), et recalculer les normales après fusion
-  lisserait les arêtes.
-- Dans le writer spoolé, le spool temporaire reste en float32 ; la conversion se fait à la copie finale, dans un
-  tampon de 64 Kio (plus un tampon de sortie de même taille) : la borne de heap et les limites de spool/fichier ne
-  changent pas. Les deux writers produisent toujours des fichiers identiques octet pour octet.
-- Dans Blender, chaque catégorie importée porte une **échelle de 0,0078** (1/128, ou plus sur les grandes captures) :
-  appliquer l'échelle (*Object → Apply → Scale*) avant de modéliser. Les positions de lumière restent en float32.
-- Le validateur de `@minemories/api-contract/glb` acceptait déjà ces types (quantification, `byteStride`) ; le viewer
-  lit les positions via la matrice du nœud (`localPositions`), donc sans changement.
+- Attributes are written with `byteStride` (8/4/4), which glTF requires for elements that are not multiples of 4 bytes.
+- **Scale**: chosen at write time, per category, from the actual extent of the positions: the finest of the
+  `1/128`…`1/16` block grids whose extent fits in ±32,766. Minecraft's grid (1/16) is therefore **exact**; rotated
+  models and fluids are rounded to at most 1/256 of a block on small captures and 1/32 on very large ones, as close
+  as possible to the viewer's 1/64-block threshold. A category spanning more than ±1,024 blocks keeps float32
+  positions.
+- **UV**: uint16 only if all UVs of a primitive are within [0, 1]; otherwise float32 (repeated UVs). Maximum error
+  1/65,535 of the image, i.e. 0.016 texel on the 1024 atlas.
+- **Normals**: kept (int8) rather than removed: without normals, `GLTFLoader` enables `flatShading`, which the
+  viewer avoids (NaN reported on Firefox/NVIDIA, see `viewer-scene.ts`), and recomputing normals after merging
+  would smooth the edges.
+- In the spooled writer, the temporary spool stays in float32; conversion happens during the final copy, in a
+  64 KiB buffer (plus an output buffer of the same size): the heap bound and the spool/file limits do not change.
+  Both writers still produce byte-for-byte identical files.
+- In Blender, each imported category carries a **scale of 0.0078** (1/128, or more on large captures): apply the
+  scale (*Object → Apply → Scale*) before modelling. Light positions stay in float32.
+- The `@minemories/api-contract/glb` validator already accepted these types (quantization, `byteStride`); the viewer
+  reads positions through the node matrix (`localPositions`), so nothing changes there.
 
-Mesures (écriture rejouée, hors jeu ; « avant » = fin de la phase 2) :
+Measurements (replayed writer, outside the game; "before" = end of phase 2):
 
-| Capture | Avant (octets) | Après (octets) | Gain | gzip avant → après |
+| Capture | Before (bytes) | After (bytes) | Gain | gzip before → after |
 | --- | ---: | ---: | ---: | ---: |
-| AFK rayon 32 | 1 859 984 | 1 085 060 | −41,7 % | 280 279 → 259 366 |
-| AFK rayon 8 | 260 368 | 182 588 | −29,9 % | 38 927 → 34 435 |
-| Hauteur complète | 396 848 | 243 820 | −38,6 % | 60 637 → 58 676 |
-| Tour et surface | 60 616 | 49 884 | −17,7 % | 9 762 → 9 468 |
-| Modèles, alpha et lumières | 438 832 | 306 856 | −30,1 % | 71 932 → 62 322 |
-| Capture réelle (modpack) | 20 299 828 (original) | 10 651 588 | −47,5 % | 2 599 432 → 2 408 324 |
+| AFK radius 32 | 1,859,984 | 1,085,060 | −41.7% | 280,279 → 259,366 |
+| AFK radius 8 | 260,368 | 182,588 | −29.9% | 38,927 → 34,435 |
+| Full height | 396,848 | 243,820 | −38.6% | 60,637 → 58,676 |
+| Tower and surface | 60,616 | 49,884 | −17.7% | 9,762 → 9,468 |
+| Models, alpha and lights | 438,832 | 306,856 | −30.1% | 71,932 → 62,322 |
+| Real capture (modpack) | 20,299,828 (original) | 10,651,588 | −47.5% | 2,599,432 → 2,408,324 |
 
-Le gain après compression de transfert est faible (gzip −7 %, brotli de la capture réelle 1 492 397 → 1 578 659,
-légèrement pire) car les entiers quantifiés se compressent moins bien que des floats très répétitifs : la réduction
-du transfert viendra du dérivé Meshopt (phase 4). La quantification réduit surtout la mémoire de chargement et le
-stockage non compressé.
+The gain after transfer compression is small (gzip −7%, brotli on the real capture 1,492,397 → 1,578,659,
+slightly worse) because quantized integers compress less well than highly repetitive floats: the transfer
+reduction will come from the Meshopt derivative (phase 4). Quantization mainly reduces load-time memory and
+uncompressed storage.
 
-Validation : les six fichiers passent le validateur du viewer et celui de l'API ; Blender 5.2.2 les importe, rendu
-Cycles (560 × 480, 16 échantillons, graine 42) : écart moyen 0,85/255 sur la scène modèles/lumières et 0,35/255 sur
-le rayon 32 (0,24/255 en moyenne par bloc de 8 × 8 pixels), jusqu'à 18/255 en moyenne de bloc de 8 × 8 sur les
-plantes. Ce n'est plus pixel pour pixel ; la cause n'a pas été isolée entre normales int8, UV 16 bits et positions des
-modèles tournés. Le viewer (Chromium headless, SwiftShader) affiche la scène sans différence visible. Validation en
-jeu : non faite.
+Validation: the six files pass both the viewer and the API validators; Blender 5.2.2 imports them, Cycles render
+(560 × 480, 16 samples, seed 42): mean difference 0.85/255 on the models/lights scene and 0.35/255 on radius 32
+(0.24/255 on average per 8 × 8 pixel block), up to 18/255 on average per 8 × 8 block on plants. It is no longer
+pixel for pixel; the cause has not been isolated between int8 normals, 16-bit UVs and rotated model positions. The
+viewer (headless Chromium, SwiftShader) shows the scene with no visible difference. In-game validation: not done.
 
-## Repack des atlas (issue #173, phase 3 suite)
+## Atlas repack (issue #173, phase 3 continued)
 
-Mesure préalable : sur le corpus et la capture réelle, **0 image dupliquée** (83 images uniques) et tous les PNG ont
-moins de 256 couleurs pour 3 à 76 Kio au total : la **déduplication d'images** et le **PNG indexé** n'apportent rien
-d'utile et ne sont pas implémentés. Le coût est la VRAM : l'atlas de blocs de 1 024 × 512 (2 Mio en RGBA 8 bits)
-n'est utilisé que sur 2 à 27 cellules de 16 × 16 sur 2 048 (221 sur la capture modée, 11 %).
+Preliminary measurement: on the corpus and the real capture, **0 duplicate images** (83 unique images) and every PNG
+has fewer than 256 colours for 3 to 76 KiB in total: **image deduplication** and **indexed PNG** would bring nothing
+useful and are not implemented. The cost is VRAM: the 1,024 × 512 block atlas (2 MiB in 8-bit RGBA) only uses 2 to
+27 of its 2,048 16 × 16 cells (221 on the modded capture, 11%).
 
-`AtlasRepack` reconstruit donc, pour chaque atlas `rendered/…/textures/atlas/…` dont les UV sont tous dans [0, 1[ et
-sans répétition, une image ne contenant que les texels que les primitives peuvent échantillonner (rectangle UV de
-chaque primitive, marge d'un texel comme en #73, rectangles qui se recouvrent fusionnés, rangement par étagères,
-largeur en puissance de deux la plus compacte). Chaque primitive reçoit une transformation affine
-`u' = u × (W/W') + décalage` appliquée à l'écriture, avec les UV 16 bits de la phase 3. Les échantillonneurs NEAREST
-sans mipmaps rendent le remappage exact aux arêtes de texel près. Le repack n'est gardé que si l'image obtenue a au
-plus la moitié des texels ; sinon le masquage de #73 reste en vigueur. Dans le writer spoolé le spool garde les UV
-d'origine : la transformation est appliquée à la copie finale, sans mémoire supplémentaire ; les deux writers
-restent identiques octet pour octet.
+`AtlasRepack` therefore rebuilds, for each `rendered/…/textures/atlas/…` atlas whose UVs are all within [0, 1[ and
+non-repeating, an image containing only the texels the primitives can sample (each primitive's UV rectangle, a
+one-texel margin as in #73, overlapping rectangles merged, shelf packing, most compact power-of-two width). Each
+primitive gets an affine transform `u' = u × (W/W') + offset` applied at write time, with the 16-bit UVs of phase 3.
+NEAREST samplers without mipmaps make the remapping exact up to texel edges. The repack is only kept if the
+resulting image has at most half the texels; otherwise the #73 masking still applies. In the spooled writer the spool
+keeps the original UVs: the transform is applied during the final copy, with no extra memory; both writers stay
+byte-for-byte identical.
 
-| Capture | VRAM avant (RGBA 8 bits) | VRAM après | Octets avant → après |
+| Capture | VRAM before (8-bit RGBA) | VRAM after | Bytes before → after |
 | --- | ---: | ---: | ---: |
-| AFK rayon 32 | 2 177 024 | 81 168 (−96 %) | 1 085 060 → 1 082 984 |
-| AFK rayon 8 | 2 136 064 | 40 208 (−98 %) | 182 588 → 180 516 |
-| Modèles, alpha et lumières | 3 244 032 | 150 436 (−95 %) | 306 856 → 302 216 |
-| Capture réelle (modpack) | 2 246 656 | 205 472 (−91 %) | 10 651 588 → 10 614 852 |
+| AFK radius 32 | 2,177,024 | 81,168 (−96%) | 1,085,060 → 1,082,984 |
+| AFK radius 8 | 2,136,064 | 40,208 (−98%) | 182,588 → 180,516 |
+| Models, alpha and lights | 3,244,032 | 150,436 (−95%) | 306,856 → 302,216 |
+| Real capture (modpack) | 2,246,656 | 205,472 (−91%) | 10,651,588 → 10,614,852 |
 
-Rendu Blender 5.2.2 (Cycles, 560 × 480, graine 42) : identique pixel pour pixel à la version quantifiée sur le rayon 32
-(écart 0) et à moins de 0,0001/255 en moyenne sur la scène modèles/lumières (7/255 au plus, quelques pixels). Les six
-fichiers passent les validateurs du viewer et de l'API ; le viewer (Chromium headless, SwiftShader) affiche la scène
-sans différence visible. Validation en jeu : non faite (les atlas des entités, lits, coffres et panneaux sont traités
-de la même façon, à vérifier avec le prochain JAR sur des textures modées).
+Blender 5.2.2 render (Cycles, 560 × 480, seed 42): pixel-for-pixel identical to the quantized version on radius 32
+(difference 0) and under 0.0001/255 on average on the models/lights scene (7/255 at most, a few pixels). The six
+files pass the viewer and API validators; the viewer (headless Chromium, SwiftShader) shows the scene with no
+visible difference. In-game validation: not done (entity, bed, chest and sign atlases are handled the same way; to
+be checked with the next JAR on modded textures).
 
-## Coût de préparation
+## Preparation cost
 
-Mesures locales sur Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, heap 512 Mio :
-médiane de cinq exports après trois chauffes, dans des JVM séparées par version.
-Le temps inclut ingestion dans le writer spoolé et publication, mais pas la
-capture du jeu ni l’encodage PNG initial des pixels GPU.
+Local measurements on a Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, 512 MiB heap:
+median of five exports after three warm-ups, in separate JVMs per version. The
+time includes ingestion into the spooled writer and publication, but not the
+game capture or the initial PNG encoding of GPU pixels.
 
-| Capture | Avant (ms) | Après (ms) |
+| Capture | Before (ms) | After (ms) |
 | --- | ---: | ---: |
-| Rayon 8 | 44,89 | 78,03 |
-| Rayon 32 | 152,98 | 184,33 |
-| Tour et surface | 15,49 | 16,48 |
-| Hauteur complète | 49,73 | 47,52 |
-| Modèles/lumières | 61,97 | 112,29 |
+| Radius 8 | 44.89 | 78.03 |
+| Radius 32 | 152.98 | 184.33 |
+| Tower and surface | 15.49 | 16.48 |
+| Full height | 49.73 | 47.52 |
+| Models/lights | 61.97 | 112.29 |
 
-Le réencodage des atlas coûte ici environ 30–50 ms supplémentaires, en échange
-principalement d’un fichier plus petit. En AFK il reste sur le worker. Le choix
-préserve exactement les attributs et pixels utilisés ; greedy meshing/LOD et
-compressions nécessitant une extension ne sont pas introduits par cette version.
-Ces mesures ne prétendent pas établir un minimum théorique pour tout modpack.
+Re-encoding the atlases costs about 30–50 ms extra here, mainly in exchange for a
+smaller file. In AFK it stays on the worker. The approach exactly preserves the
+attributes and pixels used; greedy meshing/LOD and compressions requiring an
+extension are not introduced by this version. These measurements do not claim to
+establish a theoretical minimum for every modpack.
 
 ## Validations
 
-- Tests core : frontières des types, indices réservés/corrompus, concordance des
-  deux writers, agrégation des UV, marge, RGBA translucides/cutout, fichiers
-  incorrects, fallback sans croissance et interruption. JaCoCo/SpotBugs passent
-  sans modification des seuils.
-- Les cinq comparaisons indépendantes vérifient attributs POSITION/NORMAL/UV
-  identiques en binaire, indices décodés identiques, matériaux/nœuds/lumières
-  identiques, dimensions d’images et tous les RGBA des rectangles protégés.
-- Les dix GLB rejoués et quatre nouveaux exports natifs passent à la fois le
-  validateur commun viewer et le validateur API de fichier borné : 14/14.
-- Blender 5.2.2 importe et rend les cinq paires, caméra/lumières inchangées,
-  560 × 480, Cycles CPU, 16 samples, seed 42 : les cinq rendus RGB sont identiques
-  pixel pour pixel (écart maximal de canal : 0). La scène avec modèles/lumières
-  est également inspectée visuellement.
+- Core tests: type boundaries, reserved/corrupt indices, agreement between the
+  two writers, UV aggregation, margin, translucent/cutout RGBA, invalid files,
+  fallback without growth and interruption. JaCoCo/SpotBugs pass without
+  changing the thresholds.
+- The five independent comparisons check binary-identical POSITION/NORMAL/UV
+  attributes, identical decoded indices, identical materials/nodes/lights, image
+  dimensions and every RGBA value of the protected rectangles.
+- The ten replayed GLBs and four new native exports pass both the shared viewer
+  validator and the bounded-file API validator: 14/14.
+- Blender 5.2.2 imports and renders the five pairs, camera/lights unchanged,
+  560 × 480, Cycles CPU, 16 samples, seed 42: the five RGB renders are
+  pixel-for-pixel identical (maximum channel difference: 0). The scene with
+  models/lights is also inspected visually.
 
-L’essai natif du 15 octobre 2026 utilise Minecraft 1.21.1 / NeoForge 21.1.248,
-Mesa llvmpipe OpenGL 4.6 et le JAR 0.1.1-dev.1 chargé depuis `mods/`, core embarqué
-compris. Il exerce exports manuels/progressifs rayon 8/32 en pause, PACK/PBO,
-activité/reprise, désactivation, reload des ressources, retrait de chunk, dimension
-et déconnexion : aucun faux commit et nettoyage du worker. Les captures AFK
-prennent ici 1,53 s / 14,80 s sur 43 / 469 frames ; les pas maximaux de capture
-sont 2,33 / 2,02 ms (2 / 1 dépassements du budget coopératif de 2 ms). La durée
-totale d’une frame inclut aussi rendu logiciel, limitation FPS et GC.
+The native trial of 15 October 2026 uses Minecraft 1.21.1 / NeoForge 21.1.248,
+Mesa llvmpipe OpenGL 4.6 and the 0.1.1-dev.1 JAR loaded from `mods/`, embedded
+core included. It exercises manual/progressive exports at radius 8/32 while
+paused, PACK/PBO, activity/resume, disabling, resource reload, chunk removal,
+dimension change and disconnect: no false commit and the worker is cleaned up.
+AFK captures take 1.53 s / 14.80 s over 43 / 469 frames here; the maximum
+capture steps are 2.33 / 2.02 ms (2 / 1 overruns of the 2 ms cooperative
+budget). Total frame time also includes software rendering, FPS limiting and GC.
 
-Empreintes des JAR :
+JAR hashes:
 
-- Avant : `34d6bf346cfe97d869325df9282295f9a67598a7a749705e20e4ec715646068f`.
-- Après, également testé en jeu :
+- Before: `34d6bf346cfe97d869325df9282295f9a67598a7a749705e20e4ec715646068f`.
+- After, also tested in game:
   `be45cff30a5aad0201a4f75a272e8aae9566caf05a9ab3a655d68dc7f774d8d2`.
 
-Artefacts hors Git : `~/.local/state/minemories-validation/glb-size-20261015/`
-(corpus/empreintes, replay Java, mesures, vérification indépendante, validateurs,
-rendus avant/après et comparaison, pilote/logs/scénarios natifs). `bun check` et
-`bun run build` passent ; la CI complète reste requise avant fusion.
+Artifacts outside Git: `~/.local/state/minemories-validation/glb-size-20261015/`
+(corpus/hashes, Java replay, measurements, independent check, validators,
+before/after renders and comparison, native driver/logs/scenarios). `bun check`
+and `bun run build` pass; full CI is still required before merging.
 
-## Bilan global de l'issue #173 (hors jeu)
+## Overall results of issue #173 (outside the game)
 
-« Avant » : GLB de #73 (indices compacts + atlas masqués), « après » : fusion exacte, catégories, quantification et repack
-d'atlas ; « transfert » : gzip niveau 4 de la variante Meshopt servie au viewer (voir `glb-derivative.md`). La capture réelle est
-une capture personnelle (modpack), mesurée en lecture seule, non publiée.
+"Before": the #73 GLB (compact indices + masked atlases); "after": exact merging, categories, quantization and atlas
+repack; "transfer": gzip level 4 of the Meshopt variant served to the viewer (see `glb-derivative.md`). The real capture
+is a personal capture (modpack), measured read-only, not published.
 
-| Capture | Brut avant → après | gzip avant → transfert variante | VRAM textures avant → après |
+| Capture | Raw before → after | gzip before → variant transfer | Texture VRAM before → after |
 | --- | ---: | ---: | ---: |
-| AFK rayon 32 | 2 012 360 → 1 082 984 (−46 %) | 278 144 → 94 826 (−66 %) | 2 177 024 → 81 168 (−96 %) |
-| AFK rayon 8 | 267 072 → 180 516 (−32 %) | 36 890 → 27 237 (−26 %) | 2 136 064 → 40 208 (−98 %) |
-| Hauteur complète | 446 728 → 243 820 (−45 %) | 62 375 → 28 944 (−54 %) | 25 600 → 25 600 |
-| Tour et surface | 59 396 → 49 884 (−16 %) | 9 209 → 9 468 (variante non applicable) | 12 288 → 12 288 |
-| Modèles, alpha et lumières | 438 740 → 302 216 (−31 %) | 69 446 → 50 923 (−27 %) | 3 244 032 → 150 436 (−95 %) |
-| Capture réelle (modpack) | 20 299 828 → 10 614 852 (−48 %) | 2 599 432 → 743 867 (−71 %) | 2 246 656 → 205 472 (−91 %) |
+| AFK radius 32 | 2,012,360 → 1,082,984 (−46%) | 278,144 → 94,826 (−66%) | 2,177,024 → 81,168 (−96%) |
+| AFK radius 8 | 267,072 → 180,516 (−32%) | 36,890 → 27,237 (−26%) | 2,136,064 → 40,208 (−98%) |
+| Full height | 446,728 → 243,820 (−45%) | 62,375 → 28,944 (−54%) | 25,600 → 25,600 |
+| Tower and surface | 59,396 → 49,884 (−16%) | 9,209 → 9,468 (variant not applicable) | 12,288 → 12,288 |
+| Models, alpha and lights | 438,740 → 302,216 (−31%) | 69,446 → 50,923 (−27%) | 3,244,032 → 150,436 (−95%) |
+| Real capture (modpack) | 20,299,828 → 10,614,852 (−48%) | 2,599,432 → 743,867 (−71%) | 2,246,656 → 205,472 (−91%) |
 
-Le fichier local reste lisible par Blender 5.2.2 (une échelle de 0,0078 par catégorie à appliquer, rendus écart moyen
-< 1/255 sur la quantification) ; les catégories permettent d'y supprimer plantes, fluides ou entités. Limites : tout est
-mesuré hors jeu, sans GPU réel ; le temps de chargement complet du viewer n'est pas mesuré ; la vue d'un monde n'utilise
-pas encore la variante ; le viewer n'exploite pas les plages par chunk.
+The local file stays readable by Blender 5.2.2 (a scale of 0.0078 per category to apply, renders with a mean difference
+< 1/255 from quantization); categories make it possible to delete plants, fluids or entities. Limits: everything is
+measured outside the game, without a real GPU; the viewer's full load time is not measured; the world view does not
+use the variant yet; the viewer does not use the per-chunk ranges.
 
-## Validation en jeu du JAR de la pile #174–#180 (2 novembre 2026)
+## In-game validation of the #174–#180 stack JAR (2 November 2026)
 
-Essai natif sur un profil isolé (méthode de #73) : Minecraft 1.21.1 / NeoForge 21.1.248, rendu logiciel Mesa llvmpipe,
-JAR `minemories-0.30.2-beta.1.jar` (SHA-256 `75435739a2cfdeb9bea5fcf1c0d3a6ab7ea6a38509eeb07303271a816d5e8dae`) chargé depuis
-`mods/` avec son cœur embarqué, pilote QA séparé hors JAR distribué (`ChunkValidation`), aucun profil CurseForge touché,
-aucun identifiant réel, appairage absent. Artefacts hors Git :
-`~/.local/state/minemories-validation/glb-v2-20261102/native/` (pilote, `run.init.gradle`, journaux, GLB, `*.insights`).
+Native trial on an isolated profile (the #73 method): Minecraft 1.21.1 / NeoForge 21.1.248, Mesa llvmpipe software
+rendering, JAR `minemories-0.30.2-beta.1.jar` (SHA-256 `75435739a2cfdeb9bea5fcf1c0d3a6ab7ea6a38509eeb07303271a816d5e8dae`)
+loaded from `mods/` with its embedded core, a separate QA driver outside the distributed JAR (`ChunkValidation`), no
+CurseForge profile touched, no real credentials, no pairing. Artifacts outside Git:
+`~/.local/state/minemories-validation/glb-v2-20261102/native/` (driver, `run.init.gradle`, logs, GLBs, `*.insights`).
 
-Scénario : maison en planches (coffre, four, lit, panneau, lanterne, verre), plantes, eau, feuilles et quatre mobs figés,
-posés autour du joueur au sol ; export manuel rayon 16 en pause, capture AFK progressive, modification de deux blocs puis
-seconde capture AFK, AFK désactivé 600 images.
+Scenario: plank house (chest, furnace, bed, sign, lantern, glass), plants, water, leaves and four frozen mobs,
+placed around the player on the ground; manual export at radius 16 while paused, progressive AFK capture, two blocks
+changed then a second AFK capture, AFK disabled for 600 frames.
 
-| Contrôle | Résultat |
+| Check | Result |
 | --- | --- |
-| Export manuel et deux captures AFK | passent, GLB format 2, versions MC/loader/mod et dimension dans `extras`, `KHR_mesh_quantization` + lumières |
-| Validateurs viewer et API | 3/3 |
-| Classement | `terrain` : planches, four, pierre, terre ; `decor` : verre, lanterne, feuilles, fleurs, herbe, neige, porte ; `fluids` : eau (manuel) ; `block_entities` : coffre, lit, panneau ; `entities` : joueur, chat, loup, mouton, zombie, ours polaire, objet |
-| Chunks par primitive | plages `minemoriesChunks` présentes sur 105/105 primitives ; entités rattachées à leur chunk (une primitive peut en couvrir plusieurs) |
-| Blender 5.2.2 | import réussi (5 objets : terrain, decor, fluids, block_entities, entities), maison et terrain reconnaissables |
-| Viewer (Chromium headless) | affiche la capture AFK ; bascules « Plants and decor » et « Creatures » opérationnelles |
-| Empreintes de chunks | 1re capture : `new=9` ; AFK suivante (portée différente de l'export manuel) : `changed=6, new=3` ; 2e AFK après modification de deux blocs : **`changed=2`, `new=0` sur 9 chunks** |
-| `*.insights` | écrit, 12 chunks absolus, chunk de la maison : 19 % de blocs construits, 2 blocs-entités, 1 lumière |
-| AFK désactivé | aucune capture démarrée en 600 images, historique inchangé |
-| Réseau | aucun envoi ni tentative avant appairage (journal) |
+| Manual export and two AFK captures | pass, GLB format 2, MC/loader/mod versions and dimension in `extras`, `KHR_mesh_quantization` + lights |
+| Viewer and API validators | 3/3 |
+| Classification | `terrain`: planks, furnace, stone, dirt; `decor`: glass, lantern, leaves, flowers, grass, snow, door; `fluids`: water (manual); `block_entities`: chest, bed, sign; `entities`: player, cat, wolf, sheep, zombie, polar bear, item |
+| Chunks per primitive | `minemoriesChunks` ranges present on 105/105 primitives; entities attached to their chunk (a primitive can cover several) |
+| Blender 5.2.2 | import succeeded (5 objects: terrain, decor, fluids, block_entities, entities), house and terrain recognizable |
+| Viewer (headless Chromium) | shows the AFK capture; "Plants and decor" and "Creatures" toggles work |
+| Chunk fingerprints | 1st capture: `new=9`; next AFK (different range from the manual export): `changed=6, new=3`; 2nd AFK after changing two blocks: **`changed=2`, `new=0` out of 9 chunks** |
+| `*.insights` | written, 12 absolute chunks, house chunk: 19% built blocks, 2 block entities, 1 light |
+| AFK disabled | no capture started in 600 frames, history unchanged |
+| Network | no upload or attempt before pairing (log) |
 
-Limites de l'essai : un premier lancement a posé la maquette en altitude (joueur en chute) et a révélé un défaut du pilote
-(réentrance de `disconnect`), pas du produit ; le second est valide. La sortie du monde n'a pas pu être exercée : le rendu
-logiciel du fond flouté a bloqué le fil de rendu après les captures, le processus a été arrêté (les fichiers étaient déjà écrits).
-Les atlas modés (lits, coffres, panneaux vanilla seulement), un modpack et un GPU réel n'ont pas été exercés.
+Trial limits: a first launch placed the mock-up high in the air (player falling) and revealed a driver bug
+(re-entrant `disconnect`), not a product bug; the second launch is valid. Leaving the world could not be exercised:
+software rendering of the blurred background blocked the render thread after the captures, and the process was
+stopped (the files were already written). Modded atlases (vanilla beds, chests and signs only), a modpack and a real
+GPU were not exercised.
 
-### Écart de rendu Blender après quantification : cause isolée
+### Blender render difference after quantization: cause isolated
 
-Rendus Cycles (16 échantillons, graine 42) de la scène modèles/lumières, écart moyen sur 255 par rapport à l'original :
+Cycles renders (16 samples, seed 42) of the models/lights scene, mean difference out of 255 compared with the original:
 
-| Variante | Écart moyen |
+| Variant | Mean difference |
 | --- | ---: |
-| UV 16 bits seuls | 0,0001 |
-| Normales int8 seules | 0,035 |
-| Positions décalées de 10⁻⁶ bloc (plancher de bruit) | 0,34 |
-| Positions arrondies à 1/4096 | 0,70 |
-| Positions arrondies à 1/128 (échelle de la quantification) | 0,83 |
-| Positions arrondies à 1/16 | 1,07 |
-| Quantification complète | 0,85 |
+| 16-bit UVs only | 0.0001 |
+| int8 normals only | 0.035 |
+| Positions shifted by 10⁻⁶ block (noise floor) | 0.34 |
+| Positions rounded to 1/4096 | 0.70 |
+| Positions rounded to 1/128 (quantization scale) | 0.83 |
+| Positions rounded to 1/16 | 1.07 |
+| Full quantization | 0.85 |
 
-L'écart est dominé par le **bruit de Monte-Carlo** : une perturbation de 10⁻⁶ bloc modifie déjà les chemins de rayons à
-16 échantillons (0,34/255). Normales et UV sont sous ce plancher ; l'arrondi des positions n'ajoute que ≈ 0,5/255 sur les
-géométries hors grille (plantes à 45°, modèles tournés). Il n'y a rien à corriger.
+The difference is dominated by **Monte Carlo noise**: a 10⁻⁶ block perturbation already changes the ray paths at
+16 samples (0.34/255). Normals and UVs are below this floor; rounding positions only adds ≈ 0.5/255 on off-grid
+geometry (plants at 45°, rotated models). There is nothing to fix.
 
-Les comportements de la phase 5 (rayon adaptatif, envoi évité d'une capture identique, `InhabitedTime`) sont validés en jeu par le
-même type d'essai : voir `docs/features/chunk-score.md`.
+The phase 5 behaviours (adaptive radius, skipping the upload of an identical capture, `InhabitedTime`) are validated
+in game with the same kind of trial: see `docs/features/chunk-score.md`.

@@ -50,7 +50,7 @@ async function artifact(targetId, content, { sidecars = true } = {}) {
 const release = (client, version, builtAt, artifacts, extra = {}) =>
 	storeRelease({ config, version, commit: 'abc1234', builtAt, artifacts, env, client, ...extra })
 
-test('stocke un jar, ses fichiers associés, la copie latest et un index valide', async () => {
+test('stores a jar, its sidecar files, the latest copy and a valid index', async () => {
 	const client = createFakeClient()
 	const jar = await artifact('neoforge-mc1.21.1', 'jar-1')
 	const { index } = await release(client, '0.1.0', '2026-10-01T00:00:00Z', [jar])
@@ -77,7 +77,7 @@ test('stocke un jar, ses fichiers associés, la copie latest et un index valide'
 	validateIndex(index)
 })
 
-test('un fichier créé sans fichiers associés est accepté et fabricApi est recopié', async () => {
+test('a file built without sidecar files is accepted and fabricApi is copied over', async () => {
 	const client = createFakeClient()
 	const jar = await artifact('fabric-mc1.21.1', 'fab', { sidecars: false })
 	const { index } = await release(client, '0.1.0', '2026-10-01T00:00:00Z', [jar])
@@ -85,7 +85,7 @@ test('un fichier créé sans fichiers associés est accepté et fabricApi est re
 	assert.equal([...client.objects.keys()].filter(key => key.endsWith('manifest.json')).length, 0)
 })
 
-test("l'index est écrit en dernier, après les objets et les copies latest", async () => {
+test('the index is written last, after the objects and the latest copies', async () => {
 	const client = createFakeClient()
 	await release(client, '0.1.0', '2026-10-01T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'a')])
 	const writes = client.calls.filter(call => ['PutObjectCommand', 'CopyObjectCommand'].includes(call.type))
@@ -93,7 +93,7 @@ test("l'index est écrit en dernier, après les objets et les copies latest", as
 	assert.equal(writes.filter(call => call.input.Key === 'index.json').length, 1)
 })
 
-test('stocker deux fois la même version est idempotent', async () => {
+test('storing the same version twice is idempotent', async () => {
 	const client = createFakeClient()
 	const jar = await artifact('neoforge-mc1.21.1', 'same')
 	await release(client, '0.1.0', '2026-10-01T00:00:00Z', [jar])
@@ -108,7 +108,7 @@ test('stocker deux fois la même version est idempotent', async () => {
 	)
 })
 
-test('une version reconstruite avec un autre contenu est remplacée en gardant épinglage et publication', async () => {
+test('a version rebuilt with different content is replaced, keeping pinning and publication', async () => {
 	const client = createFakeClient()
 	await release(client, '0.1.0', '2026-10-01T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'one')])
 	await setPinned({ targetId: 'neoforge-mc1.21.1', version: '0.1.0', pinned: true, env, client })
@@ -127,7 +127,7 @@ test('une version reconstruite avec un autre contenu est remplacée en gardant �
 	assert.deepEqual(entry.published, { modrinth: 'https://m/1' })
 })
 
-test('les versions sont triées de la plus récente à la plus ancienne et latest suit', async () => {
+test('versions are sorted newest first and latest follows', async () => {
 	const client = createFakeClient()
 	await release(client, '0.2.0', '2026-10-02T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'b')])
 	const { index } = await release(client, '0.1.0', '2026-10-01T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'a')])
@@ -142,7 +142,7 @@ test('les versions sont triées de la plus récente à la plus ancienne et lates
 	assert.equal(tie.index.targets['neoforge-mc1.21.1'].latest, '0.10.0')
 })
 
-test('les gros fichiers passent par un envoi multipart et sont vérifiés', async () => {
+test('large files go through a multipart upload and are verified', async () => {
 	const client = createFakeClient()
 	const jar = await artifact('neoforge-mc1.21.1', 'x'.repeat(25))
 	await release(client, '0.1.0', '2026-10-01T00:00:00Z', [jar], { partSize: 10 })
@@ -151,26 +151,28 @@ test('les gros fichiers passent par un envoi multipart et sont vérifiés', asyn
 	assert.equal(client.uploads.size, 0)
 })
 
-test("un échec pendant l'upload laisse l'index intact et annule le multipart", async () => {
+test('a failure during the upload leaves the index intact and aborts the multipart upload', async () => {
 	const client = createFakeClient()
 	const first = await artifact('neoforge-mc1.21.1', 'ok')
 	const { index: before } = await release(client, '0.1.0', '2026-10-01T00:00:00Z', [first])
 	const wrapped = {
 		...client,
 		send: command =>
-			command.constructor.name === 'UploadPartCommand' ? Promise.reject(new Error('coupure')) : client.send(command),
+			command.constructor.name === 'UploadPartCommand'
+				? Promise.reject(new Error('connection cut'))
+				: client.send(command),
 	}
 	await assert.rejects(
 		release(wrapped, '0.2.0', '2026-10-02T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'y'.repeat(25))], {
 			partSize: 10,
 		}),
-		has('coupure')
+		has('connection cut')
 	)
 	assert.deepEqual(await readIndex({ env, client }), before)
 	assert.equal(client.uploads.size, 0)
 })
 
-test("un échec sur la 2e cible n'écrit jamais l'index", async () => {
+test('a failure on the 2nd target never writes the index', async () => {
 	const client = createFakeClient({
 		failOn: (type, input) => type === 'PutObjectCommand' && input.Key.includes('fabric-mc1.21.1/0.1.0/minemories'),
 	})
@@ -179,44 +181,44 @@ test("un échec sur la 2e cible n'écrit jamais l'index", async () => {
 			await artifact('neoforge-mc1.21.1', 'a'),
 			await artifact('fabric-mc1.21.1', 'b'),
 		]),
-		has('panne simulée')
+		has('simulated failure')
 	)
 	assert.equal(client.objects.has('index.json'), false)
 })
 
-test('la vérification sha256 après upload détecte un objet corrompu', async () => {
+test('the sha256 check after upload detects a corrupted object', async () => {
 	const client = createFakeClient()
 	const corrupting = {
 		...client,
 		send: async command => {
 			const result = await client.send(command)
 			if (command.constructor.name === 'PutObjectCommand' && command.input.Key.endsWith('.jar'))
-				client.objects.get(command.input.Key).body = Buffer.from('corrompu')
+				client.objects.get(command.input.Key).body = Buffer.from('corrupted')
 			return result
 		},
 	}
 	await assert.rejects(
 		release(corrupting, '0.1.0', '2026-10-01T00:00:00Z', [await artifact('neoforge-mc1.21.1', 'abc')]),
-		has('Vérification sha256')
+		has('sha256 verification failed')
 	)
 	assert.equal(client.objects.has('index.json'), false)
 })
 
-test('refuse un artefact dont le sha256 ou la taille ne correspondent pas, et les identifiants dangereux', async () => {
+test('rejects an artifact whose sha256 or size does not match, and dangerous identifiers', async () => {
 	const client = createFakeClient()
 	const jar = await artifact('neoforge-mc1.21.1', 'abc')
 	await assert.rejects(
 		release(client, '0.1.0', '2026-10-01T00:00:00Z', [{ ...jar, sha256: 'a'.repeat(64) }]),
-		has('sha256 inattendu')
+		has('Unexpected sha256')
 	)
 	await assert.rejects(
 		release(client, '0.1.0', '2026-10-01T00:00:00Z', [{ ...jar, bytes: 99 }]),
-		has('Taille inattendue')
+		has('Unexpected size')
 	)
-	await assert.rejects(release(client, '../x', '2026-10-01T00:00:00Z', [jar]), has('invalide'))
+	await assert.rejects(release(client, '../x', '2026-10-01T00:00:00Z', [jar]), has('is invalid'))
 	await assert.rejects(
 		release(client, '0.1.0', '2026-10-01T00:00:00Z', [{ ...jar, targetId: '../../etc' }]),
-		has('invalide')
+		has('is invalid')
 	)
 })
 
@@ -225,7 +227,7 @@ async function populate(client, count = 5) {
 		await release(client, `0.${i}.0`, `2026-10-0${i}T00:00:00Z`, [await artifact('neoforge-mc1.21.1', `jar-${i}`)])
 }
 
-test('la rétention garde les 3 plus récentes et simule par défaut', async () => {
+test('retention keeps the 3 newest and is a dry run by default', async () => {
 	const client = createFakeClient()
 	await populate(client)
 	const dry = await pruneStorage({ env, client })
@@ -236,7 +238,7 @@ test('la rétention garde les 3 plus récentes et simule par défaut', async () 
 	assert.equal((await readIndex({ env, client })).targets['neoforge-mc1.21.1'].versions.length, 5)
 })
 
-test("prune --yes met l'index à jour avant de supprimer les objets", async () => {
+test('prune --yes updates the index before deleting the objects', async () => {
 	const client = createFakeClient()
 	await populate(client)
 	client.calls.length = 0
@@ -254,7 +256,7 @@ test("prune --yes met l'index à jour avant de supprimer les objets", async () =
 	assert.ok(client.objects.has(latestKey('neoforge-mc1.21.1')))
 })
 
-test('les versions épinglées, publiées ou latest ne sont jamais supprimées', async () => {
+test('pinned, published or latest versions are never deleted', async () => {
 	const client = createFakeClient()
 	await populate(client)
 	await setPinned({ targetId: 'neoforge-mc1.21.1', version: '0.1.0', pinned: true, env, client })
@@ -277,7 +279,7 @@ test('les versions épinglées, publiées ou latest ne sont jamais supprimées',
 	assert.deepEqual([...new Set(unpinned.deleted.map(item => item.version))], ['0.1.0'])
 })
 
-test('prune sans rien à supprimer ne réécrit pas l’index, et refuse un keep invalide', async () => {
+test('prune with nothing to delete does not rewrite the index, and rejects an invalid keep', async () => {
 	const client = createFakeClient()
 	await populate(client, 2)
 	const writes = () =>
@@ -289,19 +291,19 @@ test('prune sans rien à supprimer ne réécrit pas l’index, et refuse un keep
 	await assert.rejects(pruneStorage({ keep: 0, env, client }), has('keep'))
 })
 
-test('épingler une version inconnue échoue', async () => {
+test('pinning an unknown version fails', async () => {
 	const client = createFakeClient()
 	await assert.rejects(
 		setPinned({ targetId: 'x-mc1', version: '9.9.9', pinned: true, env, client }),
-		has('introuvable')
+		has('Version not found')
 	)
 	await assert.rejects(
 		setPublished({ targetId: 'x-mc1', version: '9.9.9', links: {}, env, client }),
-		has('introuvable')
+		has('Version not found')
 	)
 })
 
-test('rapport : total et détail par cible, bucket vide accepté', async () => {
+test('report: total and per-target detail, empty bucket accepted', async () => {
 	const client = createFakeClient()
 	assert.deepEqual(await storageReport({ env, client }), { totalBytes: 0, perTarget: {} })
 	await populate(client, 2)
@@ -315,12 +317,12 @@ test('rapport : total et détail par cible, bucket vide accepté', async () => {
 	)
 })
 
-test('un index illisible ou invalide est refusé, un index vide est valide', async () => {
-	assert.throws(() => validateIndex({ schema: 2 }), has('invalide'))
-	assert.throws(() => validateIndex(null), has('invalide'))
+test('an unreadable or invalid index is rejected, an empty index is valid', async () => {
+	assert.throws(() => validateIndex({ schema: 2 }), has('is invalid'))
+	assert.throws(() => validateIndex(null), has('is invalid'))
 	assert.throws(
 		() => validateIndex({ schema: 1, targets: { a: { versions: [], latest: 'x' } } }),
-		has('invalide pour a')
+		has('is invalid for a')
 	)
 	assert.throws(
 		() =>
@@ -328,7 +330,7 @@ test('un index illisible ou invalide est refusé, un index vide est valide', asy
 				schema: 1,
 				targets: { a: { latest: '1', versions: [{ version: '1', sha256: 'x', bytes: 1, key: 'k' }] } },
 			}),
-		has('invalide pour a 1')
+		has('is invalid for a 1')
 	)
 	assert.equal(validateIndex(emptyIndex()).schema, 1)
 	const client = createFakeClient()
@@ -342,10 +344,10 @@ test('un index illisible ou invalide est refusé, un index vide est valide', asy
 		client,
 	})
 	client.objects.set('index.json', { body: Buffer.from('{"schema":3}'), metadata: {} })
-	await assert.rejects(readIndex({ env, client }), has('invalide'))
+	await assert.rejects(readIndex({ env, client }), has('is invalid'))
 })
 
-test('le bucket est créé hors production seulement; une autre erreur est propagée', async () => {
+test('the bucket is created outside production only; any other error is propagated', async () => {
 	const client = createFakeClient()
 	await release(client, '0.1.0', '2026-10-01T00:00:00Z', [])
 	assert.ok(client.calls.some(call => call.type === 'CreateBucketCommand'))
@@ -360,13 +362,13 @@ test('le bucket est créé hors production seulement; une autre erreur est propa
 			env: { ...env, NODE_ENV: 'production' },
 			client: production,
 		}),
-		has("n'existe pas")
+		has('does not exist')
 	)
 	const broken = createFakeClient({ failOn: type => type === 'HeadBucketCommand' })
-	await assert.rejects(release(broken, '0.1.0', '2026-10-01T00:00:00Z', []), has('panne simulée'))
+	await assert.rejects(release(broken, '0.1.0', '2026-10-01T00:00:00Z', []), has('simulated failure'))
 })
 
-test("l'index provient d'une cible dont l'identifiant seul décrit loader et Minecraft", async () => {
+test('the index comes from a target whose id alone describes loader and Minecraft', async () => {
 	const client = createFakeClient()
 	const { index } = await storeRelease({
 		config: {},
@@ -393,7 +395,7 @@ test("l'index provient d'une cible dont l'identifiant seul décrit loader et Min
 	assert.equal(keyed.index.targets['forge-mc1.20.1'].java, '17')
 })
 
-// --- Commande `bun mod storage` ---------------------------------------------------------------
+// --- `bun mod storage` command ---------------------------------------------------------------
 
 function commandContext(client, overrides = {}) {
 	const lines = []
@@ -409,7 +411,7 @@ function commandContext(client, overrides = {}) {
 	}
 }
 
-test('commande status : total, par cible et alerte au-delà du seuil', async () => {
+test('status command: total, per target and alert above the threshold', async () => {
 	const client = createFakeClient()
 	await populate(client, 2)
 	const calm = commandContext(client)
@@ -418,10 +420,10 @@ test('commande status : total, par cible et alerte au-delà du seuil', async () 
 	assert.ok(calm.lines.at(-1).startsWith('Total'))
 	const loud = commandContext(client, { MOD_STORAGE_WARN_BYTES: '1' })
 	assert.equal(await storage.run([], loud.ctx), 1)
-	assert.ok(loud.lines.at(-1).includes('ALERTE'))
+	assert.ok(loud.lines.at(-1).includes('ALERT'))
 })
 
-test('commande ls, pin, unpin et prune', async () => {
+test('ls, pin, unpin and prune commands', async () => {
 	const client = createFakeClient()
 	await populate(client)
 	const { ctx, lines } = commandContext(client)
@@ -431,30 +433,30 @@ test('commande ls, pin, unpin et prune', async () => {
 	assert.ok(lines.some(line => line.includes('0.5.0') && line.includes('latest')))
 	lines.length = 0
 	await storage.run(['prune'], ctx)
-	assert.ok(lines.some(line => line.includes('Simulation')))
+	assert.ok(lines.some(line => line.includes('Dry run')))
 	assert.ok(client.objects.has(versionKey('neoforge-mc1.21.1', '0.2.0')))
 	lines.length = 0
 	await storage.run(['prune', '--yes', '--keep', '2'], ctx)
-	assert.ok(lines.some(line => line.startsWith('supprimé')))
+	assert.ok(lines.some(line => line.startsWith('deleted')))
 	assert.equal(client.objects.has(versionKey('neoforge-mc1.21.1', '0.2.0')), false)
 	assert.ok(client.objects.has(versionKey('neoforge-mc1.21.1', '0.1.0')))
 	await storage.run(['unpin', 'neoforge-mc1.21.1', '0.1.0'], ctx)
 	await assert.rejects(storage.run(['pin', 'x'], ctx), has('Usage'))
-	await assert.rejects(storage.run(['bogus'], ctx), has('Sous-commande inconnue'))
+	await assert.rejects(storage.run(['bogus'], ctx), has('Unknown subcommand'))
 })
 
-test('arguments de prune et formats', () => {
+test('prune arguments and formats', () => {
 	assert.deepEqual(parsePruneArgs([]), { keep: 3, yes: false })
 	assert.deepEqual(parsePruneArgs(['--yes', '--keep', '5']), { keep: 5, yes: true })
-	assert.throws(() => parsePruneArgs(['--keep', 'x']), has('entier'))
-	assert.throws(() => parsePruneArgs(['--nope']), has('inconnue'))
-	assert.equal(formatBytes(10), '10 o')
-	assert.equal(formatBytes(2048), '2.0 Kio')
-	assert.equal(formatBytes(3 * 1024 ** 3), '3.0 Gio')
+	assert.throws(() => parsePruneArgs(['--keep', 'x']), has('integer'))
+	assert.throws(() => parsePruneArgs(['--nope']), has('Unknown option'))
+	assert.equal(formatBytes(10), '10 B')
+	assert.equal(formatBytes(2048), '2.0 KiB')
+	assert.equal(formatBytes(3 * 1024 ** 3), '3.0 GiB')
 	assert.equal(storage.name, 'storage')
 })
 
-test('la commande utilise console.log ou un logger objet sans fonction de log', async () => {
+test('the command uses console.log or an object logger without a log function', async () => {
 	const client = createFakeClient()
 	const lines = []
 	await storage.run(['ls'], { env, log: { info: message => lines.push(message) }, storageClient: client })
@@ -467,7 +469,7 @@ test('la commande utilise console.log ou un logger objet sans fonction de log', 
 	}
 })
 
-test('bun mod storage sous MOD_STORAGE_PREFIX : status, ls et prune ignorent le reste du bucket', async () => {
+test('bun mod storage under MOD_STORAGE_PREFIX: status, ls and prune ignore the rest of the bucket', async () => {
 	const client = createFakeClient()
 	const env = { MOD_STORAGE_BUCKET: 'shared', MOD_STORAGE_PREFIX: 'public-mods/' }
 	for (const key of ['owner/a.glb', 'owner/tiers/b.glb', 'public-mods../x', 'mods/neoforge-mc1.21.1/0.1.0/old.jar'])
@@ -490,8 +492,8 @@ test('bun mod storage sous MOD_STORAGE_PREFIX : status, ls et prune ignorent le 
 	const ctx = { env, log: message => lines.push(message), storageClient: client }
 	assert.equal(await storage.run(['status'], ctx), 0)
 	assert.ok(lines.some(line => line.includes('3 version(s)')))
-	// Le total ne compte que le préfixe : les 8 Mo étrangers sont ignorés.
-	assert.ok(lines.some(line => line.startsWith('Total : ') && !line.includes('Mio')))
+	// The total only counts the prefix: the 8 MB of foreign objects are ignored.
+	assert.ok(lines.some(line => line.startsWith('Total: ') && !line.includes('MiB')))
 	const before = [...client.objects.keys()].filter(key => !key.startsWith('public-mods/')).sort()
 	await storage.run(['prune', '--keep', '1', '--yes'], ctx)
 	assert.deepEqual([...client.objects.keys()].filter(key => !key.startsWith('public-mods/')).sort(), before)

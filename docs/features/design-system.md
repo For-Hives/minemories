@@ -1,148 +1,148 @@
-# Charte graphique Minemories
+# Minemories design system
 
-La landing (`/`) est la **référence** ; depuis novembre 2026, toutes les pages de l'app la reprennent (section « Les pages de l'app »). Direction artistique : l'interface de Minecraft (police pixel du jeu, panneaux biseautés, bordures de 2 px, ombre de texte d'un texel, couleurs chaudes de nuit) avec un mouvement sobre. Le film du hero et son HUD ne sont pas concernés : la charte vit **sous le film** (`.site`, en-tête, pied de page).
+The landing page (`/`) is the **reference**; since November 2026 every app page follows it (see "App pages"). Art direction: the Minecraft interface (the game's pixel font, bevelled panels, 2 px borders, one-texel text shadow, warm night colors) with restrained motion. The hero film and its HUD are out of scope: the design system lives **below the film** (`.site`, header, footer).
 
-## Où est quoi
+## Where things are
 
-| Fichier (`apps/web/src/`) | Rôle |
+| File (`apps/web/src/`) | Role |
 |---|---|
-| `hero/tokens.css` | **Jetons de la charte (source unique)** : échelle typographique, espacement, cibles, ombres, focus, durées et courbes de mouvement. Chargé sur toutes les pages (`main.tsx`). |
-| `hero/kit.css` | Le kit du jeu (`mc-*` : polices, couleurs et matières, boutons, panneaux, cases, info-bulles, formulaires, sections, étapes, FAQ, pied de page, option « Police lisible »). Chargé sur toutes les pages. Les `@font-face` entre marqueurs sont écrits par les générateurs du prototype. |
-| `hero/film.css` | Le film de la landing (HUD, phases, en-tête et panneau 3D de `/`). Styles globaux (`html`, `body`) : injecté seulement sur `/` par `HeroFilm.tsx`. |
-| `hero/charter.css` | Composants de la charte sous le film (`.site`), injecté après `film.css` sur `/`. |
-| `charter-app.css` | **La charte sur les pages de l'app** : base, en-tête, pied de page, boutons de l'app, cartes, notes, chargement des listes. Chargé après le kit. |
-| `lib/reveal.ts` | Entrée des blocs au défilement de la landing (testé, 100 % de couverture). |
-| `lib/display-preferences.ts` | Options « Police lisible » et « Mouvement réduit » (clés `mcui-font`, `mcui-motion`) et classe `html.mm-cjk`, sur toutes les pages. |
+| `hero/tokens.css` | **Design system tokens (single source)**: type scale, spacing, targets, shadows, focus, motion durations and curves. Loaded on every page (`main.tsx`). |
+| `hero/kit.css` | The game kit (`mc-*`: fonts, colors and materials, buttons, panels, slots, tooltips, forms, sections, steps, FAQ, footer, "Readable font" option). Loaded on every page. The `@font-face` rules between markers are written by the prototype's generators. |
+| `hero/film.css` | The landing film (HUD, phases, header and 3D panel of `/`). Global styles (`html`, `body`): injected only on `/` by `HeroFilm.tsx`. |
+| `hero/charter.css` | Design system components below the film (`.site`), injected after `film.css` on `/`. |
+| `charter-app.css` | **The design system on app pages**: base, header, footer, app buttons, cards, notes, list loading. Loaded after the kit. |
+| `lib/reveal.ts` | Scroll-in of landing blocks (tested, 100% coverage). |
+| `lib/display-preferences.ts` | "Readable font" and "Reduced motion" options (keys `mcui-font`, `mcui-motion`) and the `html.mm-cjk` class, on every page. |
 
-**Règle : un composant n'écrit jamais une taille, une durée ou une distance en dur ; il lit un jeton `--ds-*`.**
+**Rule: a component never hardcodes a size, duration or distance; it reads a `--ds-*` token.**
 
-## Principes
+## Principles
 
-1. **Deux voix.** La police du jeu (pixel de 8 texels : tailles 16, 24, 32, 40 nettes) titre et commande ; le texte de lecture est en Atkinson Hyperlegible Next (jeton `--ds-f-text`, section 8 de `charter.css`). Rien au-dessus de 40 px hors du film. Le coréen et le japonais (Unifont) gardent la police du jeu partout et des multiples de 16.
-2. **Un corps de texte.** 16 px sur 24 px partout (le 24 px de bureau est retiré), mesure de 58 caractères (`--ds-measure`).
-3. **Tout ce qui se touche fait 44 px de haut** (`--ds-hit`) : boutons, liens, lignes de FAQ, résumés, cases à cocher (la ligne, pas la case).
-4. **Relief du jeu, pas d'ombres floues.** Bordure de 2 px (`--gp`), biseau intérieur, ombre de texte d'un texel (2 px à 16, 3 à 24, 4 à 32, 5 à 40).
-5. **Le contenu est visible par défaut.** Sans JavaScript, sans WebGL, en mouvement réduit : rien n'est masqué ni décalé.
-6. **Le canvas du film ne bouge pas.** Les gels à 0 px et l'identité au pixel avec le prototype sont des invariants (voir le journal).
+1. **Two voices.** The game font (8-texel pixel font: sizes 16, 24, 32, 40 are crisp) is for titles and controls; reading text uses Atkinson Hyperlegible Next (token `--ds-f-text`, section 8 of `charter.css`). Nothing above 40 px outside the film. Korean and Japanese (Unifont) keep the game font everywhere, in multiples of 16.
+2. **One body size.** 16 px on 24 px everywhere (the 24 px desktop size is gone), 58-character measure (`--ds-measure`).
+3. **Everything tappable is 44 px tall** (`--ds-hit`): buttons, links, FAQ rows, summaries, checkboxes (the row, not the box).
+4. **Game relief, no blurred shadows.** 2 px border (`--gp`), inner bevel, one-texel text shadow (2 px at 16, 3 at 24, 4 at 32, 5 at 40).
+5. **Content is visible by default.** Without JavaScript, without WebGL, with reduced motion: nothing is hidden or offset.
+6. **The film canvas does not move.** The 0 px freezes and pixel identity with the prototype are invariants (see the log).
 
-## Jetons
+## Tokens
 
-| Jeton | Valeur | Usage |
+| Token | Value | Use |
 |---|---|---|
-| `--ds-fs-h1` / `--ds-lh-h1` | 32/40 px, 40/48 px dès 640 px | titre du hero |
-| `--ds-fs-h2` / `--ds-lh-h2` | 32/40 px | titre de section |
-| `--ds-fs-h3` / `--ds-lh-h3` | 24/32 px | titre de carte ou d'étape |
-| `--ds-fs-lead` / `--ds-lh-lead` | 16/24 px, 24/32 px dès 1 000 px | chapeau du hero (seul texte au-dessus de 16 px) |
-| `--ds-fs-md` / `--ds-lh-md` | 16/24 px | corps du texte, listes, réponses |
-| `--ds-fs-xs` / `--ds-lh-xs` | 16/24 px | méta, pied de page, boutons |
-| `--ds-measure` | 58ch | longueur de ligne maximale |
-| `--ds-sp-1` à `--ds-sp-8` | 4, 8, 12, 16, 24, 32, 48, 64 px | espacement (pas de 4) |
-| `--ds-section-y` | 32 px, 48 px dès 640 px | respiration verticale d'une section |
-| `--ds-hit` | 44 px | hauteur minimale d'une cible |
-| `--ds-focus`, `--ds-focus-offset` | 2 px clair, décalé de 2 px | anneau de focus de tout ce qui se commande |
-| `--ds-text-shadow-1` à `-4` | 2, 3, 4, 5 px | ombre de texte par taille |
-| `--ds-panel-bevel` | biseau 4 px | panneau « interface Minecraft » |
-| `--ds-dur-1` à `-4` | 120, 200, 360, 560 ms | survol/pression, changement d'état, entrée au défilement et ouverture de panneau, entrée du hero |
-| `--ds-ease`, `--ds-ease-std`, `--ds-ease-pop` | `cubic-bezier(.2,.8,.2,1)`, `(.4,0,.2,1)`, `(.34,1.56,.64,1)` | arrivée douce, aller-retour, petit rebond |
-| `--ds-reveal-y`, `--ds-stagger` | 12 px, 60 ms | décalage d'entrée, écart entre frères |
+| `--ds-fs-h1` / `--ds-lh-h1` | 32/40 px, 40/48 px from 640 px | hero title |
+| `--ds-fs-h2` / `--ds-lh-h2` | 32/40 px | section title |
+| `--ds-fs-h3` / `--ds-lh-h3` | 24/32 px | card or step title |
+| `--ds-fs-lead` / `--ds-lh-lead` | 16/24 px, 24/32 px from 1,000 px | hero lead (the only text above 16 px) |
+| `--ds-fs-md` / `--ds-lh-md` | 16/24 px | body text, lists, answers |
+| `--ds-fs-xs` / `--ds-lh-xs` | 16/24 px | meta, footer, buttons |
+| `--ds-measure` | 58ch | maximum line length |
+| `--ds-sp-1` to `--ds-sp-8` | 4, 8, 12, 16, 24, 32, 48, 64 px | spacing (4 px step) |
+| `--ds-section-y` | 32 px, 48 px from 640 px | vertical breathing room of a section |
+| `--ds-hit` | 44 px | minimum target height |
+| `--ds-focus`, `--ds-focus-offset` | 2 px light, 2 px offset | focus ring for every control |
+| `--ds-text-shadow-1` to `-4` | 2, 3, 4, 5 px | text shadow per size |
+| `--ds-panel-bevel` | 4 px bevel | "Minecraft interface" panel |
+| `--ds-dur-1` to `-4` | 120, 200, 360, 560 ms | hover/press, state change, scroll-in and panel opening, hero entrance |
+| `--ds-ease`, `--ds-ease-std`, `--ds-ease-pop` | `cubic-bezier(.2,.8,.2,1)`, `(.4,0,.2,1)`, `(.34,1.56,.64,1)` | soft arrival, back and forth, small bounce |
+| `--ds-reveal-y`, `--ds-stagger` | 12 px, 60 ms | entrance offset, gap between siblings |
 
-Couleurs (kit) : fond `--night` `#14110e`, panneaux `--night-2`, texte `--text` `#f4efe6` (≥ 15:1), texte secondaire `--text-2` (≥ 9,6:1), action `--copper` (bouton primaire, 5,9:1), braise `--ember` (survol, état ouvert), focus `--hover`.
+Colors (kit): background `--night` `#14110e`, panels `--night-2`, text `--text` `#f4efe6` (≥ 15:1), secondary text `--text-2` (≥ 9.6:1), action `--copper` (primary button, 5.9:1), ember `--ember` (hover, open state), focus `--hover`.
 
-## Composants
+## Components
 
-| Composant | Classes | Règles |
+| Component | Classes | Rules |
 |---|---|---|
-| Bouton | `mc-btn`, `mc-btn--primary`, `--auto` | 44 px ; relief du jeu ; survol : contour clair + 1 px vers le haut ; pression : relief enfoncé ; focus : anneau `--ds-focus`. Un seul primaire par zone. |
-| Lien | `mc-link` | souligné, cible 44 px, le soulignement s'épaissit au survol, ambre au survol. |
-| Carte d'étape | `mc-step` (+ `mc-step__num`, `__title`, `__body`, `__more`) | titre 24 px, corps 16 px, numéro en case de barre d'objets, détails en `<details>`. |
-| Panneau d'info | `mc-tip`, `mc-limits` | texte 16 px, titre en couleur de nom d'objet. |
-| En-tête de section | `mc-section`, `mc-section__title`, `mc-section__text` | titre 32 px, texte 58ch, respiration `--ds-section-y`. |
-| FAQ | `mc-faq`, `mc-faq__item`, `__q`, `__a` | ligne 48 px, chevron qui tourne (200 ms), question ambre une fois ouverte. |
-| Liste de liens | `site-links` | liens de 44 px, colonnes qui passent à la ligne. |
-| Pied de page | `mc-footer`, `.footer` | deux colonnes dès 900 px (mentions | grille de liens de 11 rem), liens de 44 px. |
-| Formulaire | `mc-select`, `mc-check` | sélecteur de langue compact (44 px), cases à cocher à ligne de 44 px. |
+| Button | `mc-btn`, `mc-btn--primary`, `--auto` | 44 px; game relief; hover: light outline + 1 px up; press: pushed-in relief; focus: `--ds-focus` ring. Only one primary per area. |
+| Link | `mc-link` | underlined, 44 px target, underline thickens on hover, amber on hover. |
+| Step card | `mc-step` (+ `mc-step__num`, `__title`, `__body`, `__more`) | 24 px title, 16 px body, number in a hotbar slot, details in `<details>`. |
+| Info panel | `mc-tip`, `mc-limits` | 16 px text, title in item-name color. |
+| Section header | `mc-section`, `mc-section__title`, `mc-section__text` | 32 px title, 58ch text, `--ds-section-y` breathing room. |
+| FAQ | `mc-faq`, `mc-faq__item`, `__q`, `__a` | 48 px row, rotating chevron (200 ms), question turns amber once open. |
+| Link list | `site-links` | 44 px links, wrapping columns. |
+| Footer | `mc-footer`, `.footer` | two columns from 900 px (legal notices | 11 rem link grid), 44 px links. |
+| Form | `mc-select`, `mc-check` | compact language selector (44 px), checkboxes with a 44 px row. |
 
-Captures (après) :
+Screenshots (after):
 
-![Étapes, 1440 px](design-system/apres-1440-etapes.jpg)
-![FAQ et pied de page, 1440 px](design-system/apres-1440-pied.jpg)
-![Section « Chaque monde a une histoire », 390 px](design-system/apres-390-plus.jpg)
+![Steps, 1440 px](design-system/after-1440-steps.jpg)
+![FAQ and footer, 1440 px](design-system/after-1440-footer.jpg)
+!["Every world has a story" section, 390 px](design-system/after-390-plus.jpg)
 
-## Règles de mouvement
+## Motion rules
 
-- Quatre durées (120, 200, 360 ms, plus 560 ms pour l'entrée du hero) et trois courbes (dont un rebond de 6 % réservé aux pastilles, icônes et numéros) ; rien de plus long, rien qui boucle sous le film. Catalogue complet : [charte-graphique.md](charte-graphique.md), section 9.
-- **Entrée au défilement** (`reveal.ts`) : décalage de 12 px + fondu, **transform et opacité seulement** (aucun saut de mise en page), une fois par bloc, frères décalés de 60 ms (jusqu'à 4). Sélection : titres et textes de section, étapes, panneau « limites », liste de liens, lignes de FAQ, appel final, pied de page.
-- Survol, pression, focus et ouverture de FAQ : transitions de 120 à 200 ms sur couleur, contour, transform et chevron.
-- **Mouvement réduit** : `prefers-reduced-motion`, ou l'option « Mouvement réduit » du pied de page : aucune entrée, aucune transition, aucun déplacement ; le contenu est là.
-- **Pas plus de deux flashs par seconde** : aucune animation de luminosité ; le film garde ses propres garde-fous (scrub.js, S1 à S16).
-- Aucune animation ne gêne la lecture : rien ne bouge dans un bloc de texte déjà affiché.
+- Four durations (120, 200, 360 ms, plus 560 ms for the hero entrance) and three curves (including a 6% bounce reserved for badges, icons and numbers); nothing longer, nothing looping below the film. Full catalog: [brand-guidelines.md](brand-guidelines.md), section 9.
+- **Scroll-in** (`reveal.ts`): 12 px offset + fade, **transform and opacity only** (no layout shift), once per block, siblings staggered by 60 ms (up to 4). Selection: section titles and texts, steps, the "limits" panel, link list, FAQ rows, final call to action, footer.
+- Hover, press, focus and FAQ opening: 120 to 200 ms transitions on color, outline, transform and chevron.
+- **Reduced motion**: `prefers-reduced-motion`, or the "Reduced motion" option in the footer: no entrance, no transition, no movement; the content is simply there.
+- **No more than two flashes per second**: no brightness animation; the film keeps its own safeguards (scrub.js, S1 to S16).
+- No animation gets in the way of reading: nothing moves inside a text block that is already displayed.
 
-## Accessibilité
+## Accessibility
 
-- Contraste ≥ 4,5:1 pour tout texte (mesuré : le plus faible est le bouton primaire, 5,87:1).
-- Focus visible partout (anneau de 2 px clair) ; ordre de Tab = ordre du DOM : lien d'évitement, barre du film, en-tête, contenu, pied de page, panneau 3D.
-- Cibles de 44 px de haut (reste sous 44 px : les cases à cocher elles-mêmes, dont la ligne fait 44 px).
-- Option « Police lisible » (Atkinson Hyperlegible Next) : les titres suivent la même échelle.
-- Langue de la page à jour (`<html lang>`), noms propres et paramètres préservés dans les 11 langues.
+- Contrast ≥ 4.5:1 for all text (measured: the lowest is the primary button, 5.87:1).
+- Visible focus everywhere (2 px light ring); Tab order = DOM order: skip link, film bar, header, content, footer, 3D panel.
+- 44 px tall targets (still below 44 px: the checkboxes themselves, whose row is 44 px).
+- "Readable font" option (Atkinson Hyperlegible Next): titles follow the same scale.
+- Page language kept up to date (`<html lang>`), proper nouns and parameters preserved in all 11 languages.
 
-## Audit de la landing (avant)
+## Landing audit (before)
 
-Mesures dans Chromium (`getComputedStyle`, 360, 390, 820, 1440, 1920 px). Problèmes constatés, avec la correction :
+Measured in Chromium (`getComputedStyle`, 360, 390, 820, 1440, 1920 px). Issues found, with the fix:
 
-| Constat (avant) | Correction |
+| Finding (before) | Fix |
 |---|---|
-| Échelle réelle 16 / 24 / 32 / **48** px : titre de section 48 px et corps 24 px sur 24 lignes de 32 px dès 1 280 px (« méga gros ») ; 4 jeux de règles qui se contredisent (`mcui.css`, `hero.css`, `site.css`, 2 blocs de bureau) | Échelle unique 16 / 24 / 32 / 40 ; blocs de bureau retirés ; tout lu dans `tokens.css`. |
-| Pied de page cassé dès 900 px : colonne des mentions légales de 108 px de large, 1 100 px de haut (la rangée de 14 liens l'écrasait) | Deux colonnes `5fr / 7fr`, liens en grille de 11 rem. |
-| 12 à 13 cibles < 44 px (liens de section de 16 px de haut, bouton « Se connecter » de 40 px) | Liens et boutons à 44 px ; reste les cases à cocher (ligne de 44 px). |
-| Mesure : texte à 24 px sur 734 px = 29 à 45 caractères par ligne, irrégulier selon la taille | `--ds-measure: 58ch` partout. |
-| Aucun mouvement sous le film, sauf la transition de phase | Entrée au défilement, états de survol et de pression, chevron de FAQ. |
-| Contrastes | Tous ≥ 5,87:1 : rien à corriger. |
+| Actual scale 16 / 24 / 32 / **48** px: 48 px section titles and 24 px body on 32 px lines from 1,280 px ("way too big"); 4 contradicting rule sets (`mcui.css`, `hero.css`, `site.css`, 2 desktop blocks) | Single 16 / 24 / 32 / 40 scale; desktop blocks removed; everything read from `tokens.css`. |
+| Footer broken from 900 px: legal-notice column 108 px wide and 1,100 px tall (crushed by the row of 14 links) | Two columns `5fr / 7fr`, links in an 11 rem grid. |
+| 12 to 13 targets < 44 px (16 px tall section links, 40 px "Sign in" button) | Links and buttons at 44 px; checkboxes remain (44 px row). |
+| Measure: 24 px text over 734 px = 29 to 45 characters per line, uneven depending on size | `--ds-measure: 58ch` everywhere. |
+| No motion below the film, except the phase transition | Scroll-in, hover and press states, FAQ chevron. |
+| Contrast | All ≥ 5.87:1: nothing to fix. |
 
-## Avant / après (tailles en px, police / interligne)
+## Before / after (sizes in px, font size / line height)
 
-| Élément | 360 avant | 360 après | 1440 avant | 1440 après | 1920 avant | 1920 après |
+| Element | 360 before | 360 after | 1440 before | 1440 after | 1920 before | 1920 after |
 |---|---|---|---|---|---|---|
-| Titre du hero (h1) | 32/40 px | 32/40 px | 48/56 px | 40/48 px | 48/56 px | 40/48 px |
-| Chapeau du hero | 16/24 px | 16/24 px | 24/32 px | 24/32 px | 24/32 px | 24/32 px |
-| Titre de section (h2) | 32/40 px | 32/40 px | 48/56 px | 32/40 px | 48/56 px | 32/40 px |
-| Titre d’étape (h3) | 24/30 px | 24/32 px | 32/40 px | 24/32 px | 32/40 px | 24/32 px |
-| Corps d’étape | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
-| Texte de section | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
-| Question de FAQ | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
-| Réponse de FAQ | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
-| Liste « limites » | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
-| Lien de section | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
-| Pied : mention légale | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
-| Pied : lien | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
-| Bouton | 16/18 px | 16/18 px | 16/18 px | 16/18 px | 16/18 px | 16/18 px |
+| Hero title (h1) | 32/40 px | 32/40 px | 48/56 px | 40/48 px | 48/56 px | 40/48 px |
+| Hero lead | 16/24 px | 16/24 px | 24/32 px | 24/32 px | 24/32 px | 24/32 px |
+| Section title (h2) | 32/40 px | 32/40 px | 48/56 px | 32/40 px | 48/56 px | 32/40 px |
+| Step title (h3) | 24/30 px | 24/32 px | 32/40 px | 24/32 px | 32/40 px | 24/32 px |
+| Step body | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
+| Section text | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
+| FAQ question | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
+| FAQ answer | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
+| "Limits" list | 16/24 px | 16/24 px | 24/32 px | 16/24 px | 24/32 px | 16/24 px |
+| Section link | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
+| Footer: legal notice | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
+| Footer: link | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px | 16/24 px |
+| Button | 16/18 px | 16/18 px | 16/18 px | 16/18 px | 16/18 px | 16/18 px |
 
-| Mesure | 360 | 390 | 820 | 1440 | 1920 |
+| Measurement | 360 | 390 | 820 | 1440 | 1920 |
 |---|---|---|---|---|---|
-| Échelle de tailles de police réelle, avant | 16:99 24:3 32:8 | 16:99 24:3 32:8 | 16:99 24:3 32:7 48:1 | 16:81 24:18 32:6 48:5 | 16:81 24:18 32:6 48:5 |
-| Échelle de tailles de police réelle, après | 16:99 24:3 32:8 | 16:99 24:3 32:8 | 16:99 24:3 32:7 40:1 | 16:97 24:5 32:7 40:1 | 16:97 24:5 32:7 40:1 |
-| Cibles < 44 px, avant → après | 12 → 5 | 12 → 5 | 12 → 5 | 13 → 5 | 13 → 5 |
-| Hauteur de la page (px), avant → après | 4364 → 4832 | 4301 → 4765 | 3684 → 3798 | 4042 → 3266 | 4006 → 3314 |
-| Contraste texte le plus faible, avant → après | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 |
+| Actual font size scale, before | 16:99 24:3 32:8 | 16:99 24:3 32:8 | 16:99 24:3 32:7 48:1 | 16:81 24:18 32:6 48:5 | 16:81 24:18 32:6 48:5 |
+| Actual font size scale, after | 16:99 24:3 32:8 | 16:99 24:3 32:8 | 16:99 24:3 32:7 40:1 | 16:97 24:5 32:7 40:1 | 16:97 24:5 32:7 40:1 |
+| Targets < 44 px, before → after | 12 → 5 | 12 → 5 | 12 → 5 | 13 → 5 | 13 → 5 |
+| Page height (px), before → after | 4364 → 4832 | 4301 → 4765 | 3684 → 3798 | 4042 → 3266 | 4006 → 3314 |
+| Lowest text contrast, before → after | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 | 5.87 → 5.87 |
 
 
-Captures avant :
+Screenshots before:
 
-![Étapes avant, 1440 px](design-system/avant-1440-etapes.jpg)
-![Pied de page avant, 1440 px](design-system/avant-1440-pied.jpg)
+![Steps before, 1440 px](design-system/before-1440-steps.jpg)
+![Footer before, 1440 px](design-system/before-1440-footer.jpg)
 
-## Les pages de l'app
+## App pages
 
-- **Socle** : `tokens.css` et `kit.css` sont chargés partout, puis `charter-app.css`. Les couleurs Tailwind de `theme.css` (`paper`, `ink`, `forest`, `lime`…) pointent sur la nuit de la landing ; `--font-sans` est la police de lecture, `--font-mono` la police du jeu.
-- **En-tête et pied de page** (`SiteLayout.tsx`) : ceux de la landing (barre de nuit à double filet, mot-symbole, liens en police du jeu, sélecteur de langue du kit, bande de terre puis pied de page `night-2`). Le pied de page porte les deux options d'accessibilité.
-- **Boutons** : `buttonDark`, `buttonLime`, `buttonOutline`, `buttonQuiet` (`components/ui.tsx`) sont le bouton de pierre, le bouton de cuivre (un seul par zone), un bouton de nuit et un bouton sans relief.
-- **Illustrations** : plus de dessins plats. `MemoryScene`, l'illustration de l'installation et le panneau de connexion montrent des vues isométriques des captures de la landing (`public/hero/scenes/*.webp` : chalet, clairière et forêt, puis le chalet envahi et oublié pour la frise de `/nostalgia`, rendus de `S0`, `S2` et `S4`, fond transparent). La marque des en-têtes de contenu (`BlockMark`) est un vrai bloc d'herbe aux textures de la capture (`bloc-herbe.webp`). Les rendus sortent d'une page three.js jetable (lumières de la capture retirées, teintes de feuillage corrigées comme `prepareCapture` du film, caméra orthographique à 35,26°) : à refaire si les captures changent.
-- **Titres** h1 à h3 des pages : police du jeu aux tailles 40/32/24 (32/32/16 en coréen et japonais), ombre d'un texel. Le texte courant, les champs et les données restent en police de lecture.
-- **Polices** : « MM Minecraft » et Unifont ont été régénérées avec les caractères des 11 catalogues de l'app (`MM_EXTRA_TEXT` dans `mcatlas.mjs` du prototype : `MM_EXTRA_TEXT=$(ls apps/web/src/i18n/locales/*.json | tr '\n' ':') node gen-mcfont.mjs && node gen-unifont.mjs`, puis copier les woff2 et les blocs `@font-face` dans `kit.css`). Les deux faces du jeu sont préchargées par `index.html`.
-- **Chargement** : le mineur d'`index.html` n'apparaît que sur `/` ; entre deux pages, la page courante reste affichée jusqu'à l'arrivée de la suivante (`components/PageFrame.tsx`), puis un fondu court (`mm-enter`).
-- Le viewer 3D garde sa scène ; seule son interface (barres, panneaux, menus) prend la charte.
+- **Foundation**: `tokens.css` and `kit.css` are loaded everywhere, then `charter-app.css`. The Tailwind colors in `theme.css` (`paper`, `ink`, `forest`, `lime`…) point to the landing's night palette; `--font-sans` is the reading font, `--font-mono` the game font.
+- **Header and footer** (`SiteLayout.tsx`): the landing ones (night bar with a double rule, wordmark, links in the game font, the kit's language selector, dirt strip then a `night-2` footer). The footer carries both accessibility options.
+- **Buttons**: `buttonDark`, `buttonLime`, `buttonOutline`, `buttonQuiet` (`components/ui.tsx`) are the stone button, the copper button (only one per area), a night button and a flat button.
+- **Illustrations**: no more flat drawings. `MemoryScene`, the install illustration and the sign-in panel show isometric views of the landing captures (`public/hero/scenes/*.webp`: chalet, clearing and forest, then the overgrown and forgotten chalet for the `/nostalgia` timeline, renders of `S0`, `S2` and `S4`, transparent background). The content header mark (`BlockMark`) is a real grass block with the capture's textures (`grass-block.webp`). The renders come from a throwaway three.js page (capture lights removed, foliage tints corrected like the film's `prepareCapture`, orthographic camera at 35.26°): redo them if the captures change.
+- **Titles** h1 to h3 on pages: game font at sizes 40/32/24 (32/32/16 in Korean and Japanese), one-texel shadow. Running text, fields and data stay in the reading font.
+- **Fonts**: "MM Minecraft" and Unifont were regenerated with the characters of the app's 11 catalogs (`MM_EXTRA_TEXT` in the prototype's `mcatlas.mjs`: `MM_EXTRA_TEXT=$(ls apps/web/src/i18n/locales/*.json | tr '\n' ':') node gen-mcfont.mjs && node gen-unifont.mjs`, then copy the woff2 files and the `@font-face` blocks into `kit.css`). Both game faces are preloaded by `index.html`.
+- **Loading**: the miner in `index.html` only appears on `/`; between pages, the current page stays displayed until the next one arrives (`components/PageFrame.tsx`), then a short fade (`mm-enter`).
+- The 3D viewer keeps its scene; only its interface (bars, panels, menus) follows the design system.
 
-## Décisions à trancher (Andy)
+## Open decisions (Andy)
 
-- Corps à 16 px partout, y compris sur grand écran (lisible mais petit sur 1920 px) ; l'alternative est 24 px pour le chapeau seulement (c'est le cas) ou 20 px (non net avec la police pixel).
-- Page de démonstration des composants (`/design`) : non créée dans cette passe (la landing sert de référence) ; à faire avec la migration des pages.
-- Les anciens « 48 px » du hero et des sections étaient une décision du prototype (v11b) : ils sont supprimés ici.
+- 16 px body everywhere, including on large screens (readable but small at 1920 px); the alternative is 24 px for the lead only (the current choice) or 20 px (not crisp with the pixel font).
+- Component demo page (`/design`): not created in this pass (the landing serves as reference); to do along with the page migration.
+- The old "48 px" hero and section sizes were a prototype decision (v11b): they are removed here.

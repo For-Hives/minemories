@@ -60,20 +60,20 @@ final class OptionsLocalizationTest {
   @Test
   void existingOptionComponentResolvesAgainWhenMinecraftChangesItsLanguage() throws IOException {
     Language previous = Language.getInstance();
-    Component option = Component.translatable("minemories.ui.reglages_afk");
+    Component option = Component.translatable("minemories.ui.afk_settings");
     Component depth =
         Component.translatable(
-            "minemories.options.depth", Component.translatable("minemories.ui.toute_la_dimension"));
+            "minemories.options.depth", Component.translatable("minemories.ui.full_dimension"));
     try {
       for (String locale : LOCALES) {
         JsonObject messages = catalog(locale);
         Language.inject(new CatalogLanguage(messages));
-        assertEquals(messages.get("minemories.ui.reglages_afk").getAsString(), option.getString());
+        assertEquals(messages.get("minemories.ui.afk_settings").getAsString(), option.getString());
         assertEquals(
             messages
                 .get("minemories.options.depth")
                 .getAsString()
-                .replace("%s", messages.get("minemories.ui.toute_la_dimension").getAsString()),
+                .replace("%s", messages.get("minemories.ui.full_dimension").getAsString()),
             depth.getString());
       }
     } finally {

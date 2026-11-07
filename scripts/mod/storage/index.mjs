@@ -1,6 +1,6 @@
-// Adaptation CLI du stockage S3 des JAR du mod. Toute la logique (clés, index, rétention, idempotence) vit dans le
-// paquet partagé `@minemories/mod-storage`, aussi utilisé par l'API : l'outil local et l'envoi via l'API écrivent
-// donc exactement les mêmes objets. Cette interface est celle qu'utilisent `release.mjs` et les commandes.
+// CLI adapter of the S3 storage of the mod JARs. All the logic (keys, index, retention, idempotence) lives in the
+// shared `@minemories/mod-storage` package, also used by the API: the local tool and uploads through the API therefore
+// write exactly the same objects. This is the interface used by `release.mjs` and the commands.
 export {
 	DEFAULT_MOD_BUCKET,
 	emptyIndex,

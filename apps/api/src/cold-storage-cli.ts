@@ -17,7 +17,7 @@ export async function runColdStorageCli(args: string[], context: PreviewContext 
 		allowPositionals: false,
 		options: { 'idle-days': { type: 'string' }, limit: { type: 'string' }, help: { type: 'boolean' } },
 	})
-	if (values.help) return { usage: 'Prévisualiser uniquement : [--idle-days <60-90>] [--limit <1-1000>].' }
+	if (values.help) return { usage: 'Preview only: [--idle-days <60-90>] [--limit <1-1000>].' }
 	const days = coldStorageInactiveDays(values['idle-days'] ?? process.env.COLD_STORAGE_INACTIVE_DAYS),
 		limit = Number(values.limit ?? '100')
 	if (values.limit !== undefined && !positiveInteger.test(values.limit)) throw new Error('Invalid preview limit.')
@@ -44,7 +44,7 @@ export async function executeColdStorageCli(args: string[], context: PreviewCont
 		process.stdout.write(`${JSON.stringify(await runColdStorageCli(args, context))}\n`)
 		return 0
 	} catch {
-		console.error('Prévisualisation interrompue : vérifier les options et la base migrée. Aucun objet modifié.')
+		console.error('Preview aborted: check the options and the migrated database. No object was modified.')
 		return 1
 	}
 }

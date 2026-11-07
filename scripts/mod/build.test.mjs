@@ -66,7 +66,7 @@ test('gradleArgs cleans the project, pins the version and the prod flag', () => 
 	)
 	assert.throws(
 		() => gradleArgs({ ...target, loaderProperty: undefined }, { version: 'v', loaderVersion: '1' }),
-		/ne sait compiler/
+		/can only build/
 	)
 })
 
@@ -125,13 +125,13 @@ test('buildTarget reports Gradle failures, missing JARs and non-JAR files withou
 	const base = { root, version: '1.0.0-beta.1', jdks: { ...jdks, compile: new Map() }, setup, git }
 	const failed = await buildTarget(target, { ...base, runGradle: async () => ({ code: 1, tail: 'FAILURE' }) })
 	assert.equal(failed.status, 'failed')
-	assert.match(failed.message, /code 1.*JDK 17 absent/)
+	assert.match(failed.message, /code 1.*JDK 17 missing/)
 	assert.equal(failed.logTail, 'FAILURE')
 	const missing = await buildTarget(target, { ...base, runGradle: async () => ({ code: 0, tail: '' }) })
-	assert.match(missing.message, /introuvable/)
+	assert.match(missing.message, /not found/)
 	await writeFile(join(libsDir(root, target), 'minemories-forge-mc1.18.2-1.0.0-beta.1.jar'), 'text')
 	const bad = await buildTarget(target, { ...base, runGradle: async () => ({ code: 0, tail: '' }) })
-	assert.match(bad.message, /pas une archive/)
+	assert.match(bad.message, /not a JAR archive/)
 })
 
 test('buildTargets keeps going after a failure, uses the lock and ignores non-buildable targets', async () => {
@@ -163,8 +163,8 @@ test('buildTargets keeps going after a failure, uses the lock and ignores non-bu
 		['failed', 'passed']
 	)
 	assert.ok(messages.some(m => m.startsWith('✗ forge-mc1.18.2')))
-	assert.match(summarize(results), /1 échec\(s\) sur 2/)
-	assert.match(summarize([results[1]]), /1 cible\(s\) compilée\(s\)/)
+	assert.match(summarize(results), /1 of 2 failed/)
+	assert.match(summarize([results[1]]), /1 target\(s\) built/)
 })
 
 test('buildTargets refuses to run while another build holds the lock', async () => {
@@ -175,7 +175,7 @@ test('buildTargets refuses to run while another build holds the lock', async () 
 	const log = { info() {}, warn() {}, error() {} }
 	await assert.rejects(
 		buildTargets([target], { root, env: {}, log, version: 'v', ensure: async () => jdks }),
-		/déjà en cours/
+		/already running/
 	)
 	await release()
 })

@@ -18,23 +18,23 @@ const screenshots = {
 		caption: 'In the NeoForge 21.1.248 installer, select Install client, then confirm.',
 	},
 	gameDirectory: {
-		file: '04-profil-dossier-jeu',
+		file: '04-profile-game-directory',
 		title: 'Choose the NeoForge profile folder',
 		caption: 'Edit the profile: check 21.1.248 and select the .minecraft-minemories folder under Game Directory.',
 	},
 	jarDownload: {
-		file: '05-jar-telecharge',
+		file: '05-downloaded-jar',
 		title: 'Find the downloaded JAR',
 		caption: 'In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.',
 	},
 	modsFolder: {
-		file: '06-dossier-mods',
+		file: '06-mods-folder',
 		title: 'Place the JAR in mods',
 		caption:
 			"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.",
 	},
 	viewer: {
-		file: '10-souvenir-dans-viewer',
+		file: '10-memory-in-viewer',
 		title: 'Revisit the first memory in 3D',
 		caption: 'After uploading from the mod, open the capture in your private gallery to revisit it in 3D.',
 	},
