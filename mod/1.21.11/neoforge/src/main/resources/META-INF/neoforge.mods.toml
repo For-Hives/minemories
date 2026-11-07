@@ -5,6 +5,8 @@ license="MIT"
 modId="minemories"
 version="${version}"
 displayName="Minemories"
+logoFile="minemories-logo.png"
+logoBlur=false
 description='''Client-side voxel capture proof of concept.'''
 [[dependencies.minemories]]
 modId="neoforge"

@@ -728,7 +728,16 @@ html[data-mc-motion="reduced"] .mm-toast {
 	max-width: var(--ds-measure);
 }
 
-/* The grass block of the content headers: drawn texel for texel (nearest), with a ground shadow like the dock's stills. */
+/* The whole logo (camera and tripod) at the end of the content headers, at the grass block's former height. */
+.mm-content-logo {
+	width: auto;
+	height: 112px;
+	flex-shrink: 0;
+	image-rendering: pixelated;
+	filter: drop-shadow(0 12px 10px rgb(0 0 0 / 45%));
+}
+
+/* The grass block of the blog cards: drawn texel for texel (nearest), with a ground shadow like the dock's stills. */
 .mm-block-mark {
 	width: 96px;
 	height: auto;
@@ -933,8 +942,8 @@ a.mm-editorial-card:hover {
 		align-items: start;
 		gap: var(--ds-sp-3);
 	}
-	.mm-content-header .mm-block-mark {
-		width: 56px;
+	.mm-content-header .mm-content-logo {
+		height: 64px;
 	}
 	.mm-editorial-card {
 		padding: var(--ds-sp-5);

@@ -15,6 +15,7 @@ import {
 	setDisplayOption,
 	storeDisplayOption,
 } from '../lib/display-preferences'
+import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
 import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
@@ -27,7 +28,7 @@ const legalLinks = [
 export function Brand() {
 	return (
 		<Link className="mm-brand" to="/" aria-label="Minemories">
-			<i className="mc-icon mc-icon--ember" aria-hidden="true" />
+			<BrandMark />
 			<span>Minemories</span>
 		</Link>
 	)

@@ -5,6 +5,7 @@
 	"name": "Minemories",
 	"description": "Capture private Minecraft memories as self-contained GLB files.",
 	"license": "MIT",
+	"icon": "assets/minemories/icon.png",
 	"environment": "client",
 	"entrypoints": { "client": ["dev.minemories.fabric.MinemoriesFabric"] },
 	"mixins": ["minemories.fabric.mixins.json"],

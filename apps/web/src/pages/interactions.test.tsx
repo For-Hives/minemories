@@ -7,6 +7,7 @@ import { SiteLayout } from '../components/SiteLayout'
 import { I18nProvider } from '../i18n/I18n'
 import { UnsupportedGlbError } from '../lib/glb'
 import { AuthPage } from './AuthPage'
+import { ContentLayout } from './ContentPages'
 import { GalleryPage } from './GalleryPage'
 import { ViewerPage } from './ViewerPage'
 
@@ -654,6 +655,29 @@ test('authentication keeps the site header with its language control', () => {
 	expect(
 		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
 	).toBe(true)
+})
+
+test('the header and footer brand show the logo camera before the word, and a content page header the whole logo', () => {
+	const view = render(
+		<MemoryRouter initialEntries={['/missing-page']}>
+			<SiteLayout>
+				<ContentLayout eyebrow="404" title="Page not found">
+					<p>Body</p>
+				</ContentLayout>
+			</SiteLayout>
+		</MemoryRouter>
+	)
+	const brands = screen.getAllByRole('link', { name: 'Minemories' })
+	expect(brands).toHaveLength(2)
+	for (const brand of brands) {
+		const mark = brand.querySelector('img')
+		expect(mark?.getAttribute('src')).toBe('/brand/minemories-mark.svg')
+		expect(mark?.getAttribute('alt')).toBe('')
+		expect(brand.textContent).toBe('Minemories')
+	}
+	const logo = view.container.querySelector('.mm-content-header img')
+	expect(logo?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
+	expect(logo?.className).toBe('mm-brand-logo mm-content-logo')
 })
 
 test('pending authentication prevents duplicate submission and lets the user retry after failure', async () => {

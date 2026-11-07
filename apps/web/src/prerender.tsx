@@ -13,9 +13,9 @@ import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
-import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
+import { publicMetadata, siteOrigin, socialImage, structuredDataFor } from './route-metadata'
 
-export { publicMetadata, siteOrigin, structuredDataFor }
+export { publicMetadata, siteOrigin, socialImage, structuredDataFor }
 /** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
 export const firstPaintScripts: Record<string, string> = { '/': firstPaintScript }
 
