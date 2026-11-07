@@ -128,7 +128,9 @@ test('the guided installation asks three light questions, then walks through the
 	next()
 	expect(title()).toBe('Lancer le jeu')
 	expect(screen.getAllByText(/en haut à droite du menu pause/).length).toBeGreaterThan(0)
-	expect(screen.getByRole('img', { name: /Le menu pause de Minecraft/ }).getAttribute('src')).toContain('guide-pause-menu')
+	expect(screen.getByRole('img', { name: /Le menu pause de Minecraft/ }).getAttribute('src')).toContain(
+		'guide-pause-menu'
+	)
 	expect(screen.getAllByText(/Options → Contrôles/).length).toBeGreaterThan(0)
 	next()
 	expect(title()).toBe('Créer un souvenir')
