@@ -1,6 +1,6 @@
 # Mod releases
 
-The mod is no longer built or published by GitHub Actions. A local tool, `bun mod` (`scripts/mod/`), builds every JAR on the production VPS, tests them headless, stores them in our S3 storage (Garage), and the API serves them to the site. No workflow publishes, tags or pushes to `main`: GitHub CI (`quality.yml`) only checks changes.
+The mod is no longer built or published by GitHub Actions. A local tool, `bun mod` (`scripts/mod/`), builds every JAR on the production VPS, tests them headless, stores them in our S3 storage (Garage), and the API serves them to the site. No workflow publishes the mod, tags or pushes to `main`: GitHub CI (`quality.yml`) only checks changes. The one exception is `discord.yml`, which posts the changelog and the roadmap to Discord (see `discord-sync.md`).
 
 ## From the VPS to the site
 

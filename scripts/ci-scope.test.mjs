@@ -4,7 +4,8 @@ import { scopeOf } from './ci-scope.mjs'
 
 const only = (files, ...gates) => {
 	const scope = scopeOf(files)
-	for (const gate of ['web', 'api', 'mod']) assert.equal(scope[gate], gates.includes(gate), `${gate} for ${files}`)
+	for (const gate of ['web', 'api', 'mod', 'discord'])
+		assert.equal(scope[gate], gates.includes(gate), `${gate} for ${files}`)
 }
 
 test('a front change runs the web gate and nothing of the mod or the API', () => {
@@ -26,8 +27,13 @@ test('a mod change runs the mod gate only', () => {
 	only(['mod/shared/common/src/main/java/dev/minemories/client/SimpleHubScreen.java'], 'mod')
 	only(['mod/targets.json'], 'web', 'mod')
 	only(['scripts/gradle.mjs', 'scripts/mod/release.mjs'], 'mod')
+	only(['scripts/mod/notify.mjs'], 'mod', 'discord')
 	only(['mod/targets.json', 'scripts/mod/cli.mjs'], 'web', 'mod')
 	only(['mod/1.19.2/forge/build.gradle', 'mod/shared/core/src/main/java/dev/minemories/core/GlbScene.java'], 'mod')
+})
+test('a Discord sync change runs the Discord gate only', () => {
+	only(['scripts/discord/roadmap.mjs'], 'discord')
+	only(['.github/workflows/discord.yml'], 'discord')
 })
 test('documentation alone runs no gate', () => {
 	only(['docs/features/plan-site-complet.md', 'README.md', 'ops/mod-builder/install.sh'])
@@ -41,11 +47,17 @@ test('shared files and the workflow itself run every gate', () => {
 		'.github/actions/setup/action.yml',
 		'scripts/ci-scope.mjs',
 	])
-		only([file], 'web', 'api', 'mod')
+		only([file], 'web', 'api', 'mod', 'discord')
 })
 test('a mixed change runs the union, and a push runs everything', () => {
 	only(['apps/web/src/App.tsx', 'apps/api/src/auth.ts'], 'web', 'api')
-	assert.deepEqual(scopeOf([], { everything: true }), { web: true, api: true, mod: true, deps: true })
+	assert.deepEqual(scopeOf([], { everything: true }), {
+		web: true,
+		api: true,
+		mod: true,
+		discord: true,
+		deps: true,
+	})
 })
 test('dependencies are audited only when a manifest or the lockfile changes', () => {
 	assert.equal(scopeOf(['apps/web/src/App.tsx']).deps, false)

@@ -39,6 +39,18 @@ export {
 	modVersion,
 } from './mod-downloads'
 export {
+	ROADMAP_COLUMN_LIMIT,
+	ROADMAP_DONE_DAYS,
+	type RoadmapArea,
+	type RoadmapColumn,
+	type RoadmapItem,
+	type RoadmapResponse,
+	roadmapArea,
+	roadmapColumn,
+	roadmapItem,
+	roadmapResponse,
+} from './roadmap'
+export {
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,

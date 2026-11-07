@@ -1,0 +1,106 @@
+name: Discord sync
+
+# Posts to the project's Discord: #changelog after each push to main and each mod release tag, and keeps one #roadmap
+# message in sync with the GitHub issues labelled `roadmap`. This is the owner's explicit exception (7 November 2026)
+# to "CI publishes nothing": see docs/features/discord-sync.md. Scripts: scripts/discord/.
+
+on:
+  push:
+    branches: [main]
+    tags: ['mod-v*']
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled, deleted]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+# The scripts' tests and Biome run in quality.yml (the `discord` gate), never here: this workflow only posts.
+permissions: {}
+
+jobs:
+  changelog:
+    # A deleted tag or branch has nothing to announce.
+    if: github.event_name == 'push' && !github.event.deleted
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # One group per push: GitHub keeps only one pending run per group, so a shared group would silently drop the
+    # changelog of a push queued behind two others. Each run carries its own before..after range anyway.
+    concurrency:
+      group: discord-changelog-${{ github.ref }}-${{ github.sha }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Post to #changelog
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # The webhook id is not a secret; it completes a secret that only holds the token.
+          DISCORD_WEBHOOK_ID: '1568693604787163206'
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+          FORCED: ${{ github.event.forced }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::notice::DISCORD_WEBHOOK_URL is not set: nothing posted to Discord."
+            exit 0
+          fi
+          if [ "$REF_TYPE" = "tag" ]; then
+            node scripts/discord/cli.mjs changelog release --tag "$REF_NAME"
+          elif [ -z "$BEFORE" ] || [ -z "${BEFORE//0/}" ]; then
+            echo "::notice::New branch or unknown previous commit: no changelog posted."
+          elif [ "$FORCED" = "true" ]; then
+            echo "::notice::Force push to main: history was rewritten, no changelog posted."
+          else
+            node scripts/discord/cli.mjs changelog push --before "$BEFORE" --after "$AFTER"
+          fi
+
+  roadmap:
+    # Issue events only matter when the issue is (or just stopped being) on the roadmap. Manual runs only from the
+    # default branch, so unreviewed code never edits the message (schedule and issue events always use it).
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+        github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
+      (github.event_name == 'issues' &&
+        (contains(github.event.issue.labels.*.name, 'roadmap') || github.event.label.name == 'roadmap'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    concurrency:
+      group: discord-roadmap
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Update the #roadmap message
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # The webhook id is not a secret; it completes a secret that only holds the token.
+          DISCORD_WEBHOOK_ID: '1568693604787163206'
+          DISCORD_ROADMAP_MESSAGE_ID: ${{ vars.DISCORD_ROADMAP_MESSAGE_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          # A deleted roadmap message is only reposted by a manual run (otherwise every event would post a new one).
+          DISCORD_ROADMAP_ALLOW_REPOST: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::notice::DISCORD_WEBHOOK_URL is not set: nothing posted to Discord."
+            exit 0
+          fi
+          # Without a stored message id only a manual run posts the first message, so issue events cannot pile up
+          # new roadmap messages before the variable is set.
+          if [ -z "$DISCORD_ROADMAP_MESSAGE_ID" ] && [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            echo "::notice::DISCORD_ROADMAP_MESSAGE_ID is not set: run this workflow manually once to post the message."
+            exit 0
+          fi
+          node scripts/discord/cli.mjs roadmap

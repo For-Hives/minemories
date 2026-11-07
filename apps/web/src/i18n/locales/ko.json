@@ -1473,5 +1473,22 @@
 	"key opens the same menu.": "키로 같은 메뉴를 열 수 있습니다.",
 	"profile, then click Play.": "프로필을 고른 뒤 플레이를 클릭하세요.",
 	"Launch the game": "게임 실행",
-	"With other mods, the button can sit in another corner of the pause menu.": "다른 모드가 있으면 버튼이 일시 정지 메뉴의 다른 모서리에 있을 수 있습니다."
+	"With other mods, the button can sit in another corner of the pause menu.": "다른 모드가 있으면 버튼이 일시 정지 메뉴의 다른 모서리에 있을 수 있습니다.",
+	"Roadmap": "로드맵",
+	"Roadmap — Minemories": "로드맵 — Minemories",
+	"What the Minemories team is building now, what comes next and what shipped recently.": "Minemories 팀이 지금 만들고 있는 것, 다음에 나올 것, 최근에 출시된 것.",
+	"What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.": "지금 만들고 있는 것, 다음에 나올 것, 최근 30일 동안 출시된 것을 프로젝트의 GitHub 이슈에서 바로 보여 줍니다.",
+	"The same board is posted on the Minemories Discord.": "같은 보드가 Minemories Discord에도 게시됩니다.",
+	"Updated {time}": "{time} 업데이트",
+	"Loading the roadmap…": "로드맵 불러오는 중…",
+	"The roadmap could not be loaded. Try again in a moment.": "로드맵을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+	"Every roadmap issue on GitHub ↗": "GitHub에서 모든 로드맵 이슈 보기 ↗",
+	"Planned": "예정",
+	"Done": "완료",
+	"Nothing here right now.": "지금은 비어 있습니다.",
+	"+{count} more on GitHub": "GitHub에서 +{count}개 더 보기",
+	"Project areas": "프로젝트 영역",
+	"Mod": "모드",
+	"API": "API",
+	"Website": "웹사이트"
 }

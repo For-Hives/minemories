@@ -1473,5 +1473,22 @@
 	"key opens the same menu.": "открывает то же меню.",
 	"profile, then click Play.": "и нажмите «Играть».",
 	"Launch the game": "Запустите игру",
-	"With other mods, the button can sit in another corner of the pause menu.": "С другими модами кнопка может оказаться в другом углу меню паузы."
+	"With other mods, the button can sit in another corner of the pause menu.": "С другими модами кнопка может оказаться в другом углу меню паузы.",
+	"Roadmap": "Дорожная карта",
+	"Roadmap — Minemories": "Дорожная карта — Minemories",
+	"What the Minemories team is building now, what comes next and what shipped recently.": "Над чем команда Minemories работает сейчас, что будет дальше и что недавно вышло.",
+	"What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.": "Над чем идёт работа сейчас, что будет дальше и что вышло за последние 30 дней — прямо из задач проекта на GitHub.",
+	"The same board is posted on the Minemories Discord.": "Та же доска публикуется в Discord Minemories.",
+	"Updated {time}": "Обновлено {time}",
+	"Loading the roadmap…": "Загрузка дорожной карты…",
+	"The roadmap could not be loaded. Try again in a moment.": "Не удалось загрузить дорожную карту. Повторите попытку чуть позже.",
+	"Every roadmap issue on GitHub ↗": "Все задачи дорожной карты на GitHub ↗",
+	"Planned": "Запланировано",
+	"Done": "Готово",
+	"Nothing here right now.": "Здесь пока пусто.",
+	"+{count} more on GitHub": "Ещё на GitHub: +{count}",
+	"Project areas": "Части проекта",
+	"Mod": "Мод",
+	"API": "API",
+	"Website": "Сайт"
 }

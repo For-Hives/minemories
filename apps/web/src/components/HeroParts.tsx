@@ -79,6 +79,7 @@ const footerPages = [
 	{ to: '/faq', label: 'FAQ' },
 	{ to: '/versions', label: 'Mod versions' },
 	{ to: '/changelog', label: 'What’s new' },
+	{ to: '/roadmap', label: 'Roadmap' },
 	{ to: '/discover', label: 'Discover' },
 	{ to: '/explore', label: 'Public gallery' },
 	{ to: '/blog', label: 'Blog' },
