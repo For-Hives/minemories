@@ -826,3 +826,58 @@ html[data-mc-font="read"] .installation .install-lead {
 		outline: 2px solid Highlight;
 	}
 }
+
+/* The two ways to make a memory (menu, command) and the file: small section titles inside one screen. */
+.install-panel .install-method {
+	margin: var(--ds-sp-6) 0 var(--ds-sp-2);
+	color: var(--text);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+/* What each part of the export command means: the token on the left, its meaning on the right. */
+.install-command-parts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--ds-sp-2) var(--ds-sp-4);
+	margin: var(--ds-sp-4) 0;
+}
+
+.install-command-parts dt {
+	white-space: nowrap;
+}
+
+.install-command-parts dd {
+	margin: 0;
+	color: var(--text-2);
+}
+
+/* Real in-game screenshots: pixel art stays sharp when the image is scaled, and the frame keeps the image's own
+   proportions so the outline of the control to click lands on it. */
+.install-game-shot a {
+	position: relative;
+	display: block;
+}
+
+.install-game-shot img {
+	max-height: none;
+	image-rendering: pixelated;
+}
+
+.install-game-mark {
+	position: absolute;
+	box-shadow:
+		0 0 0 calc(2 * var(--gp)) var(--ember),
+		0 0 0 calc(4 * var(--gp)) var(--outline);
+	pointer-events: none;
+}
+
+@media (max-width: 560px) {
+	.install-command-parts {
+		grid-template-columns: 1fr;
+	}
+
+	.install-command-parts dd {
+		margin-bottom: var(--ds-sp-2);
+	}
+}

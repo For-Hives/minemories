@@ -84,7 +84,10 @@ test('guides describe the current M screen labels and its advanced settings tabs
 
 test('the first memory step names the in-game button and the download step points to other versions', async () => {
 	mountEnglish(<InstallationStep step="memory" system="linux" target={targetFor('1.21.1', 'neoforge')} />)
-	expect(screen.getByText('Take a memory')).toBeTruthy()
+	expect(screen.getAllByText('Take a memory').length).toBeGreaterThan(0)
+	expect(screen.getByRole('heading', { name: 'With the menu' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'With a command' })).toBeTruthy()
+	expect(document.body.textContent).toContain('The radius in blocks around you, from 2 to 128.')
 	expect(document.body.textContent).toContain('You can turn them off with “Auto memories” in M.')
 	cleanup()
 	mountEnglish(<InstallationStep step="download" system="linux" target={targetFor('1.21.1', 'neoforge')} />)

@@ -2,6 +2,8 @@ package dev.minemories.client;
 
 import java.util.List;
 
+// The website's installation guide shows a screenshot of this screen: regenerate it when it changes
+// (apps/web/src/assets/tutorial/game/README.md).
 final class PauseMenuPlacement {
   static final int BUTTON_WIDTH = 104;
   static final int BUTTON_HEIGHT = 20;

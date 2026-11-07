@@ -4,7 +4,7 @@ import { buttonLime } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
 import { QuestionStep } from './InstallationQuestions'
 import { InstallationStep, stepTitles } from './InstallationSteps'
-import { type GuideState, stepsFor, targetFor } from './installation-state'
+import { type GuideState, recommendedLoader, stepsFor, targetFor } from './installation-state'
 
 function Success({ onRestart }: { onRestart: () => void }) {
 	return (
@@ -63,7 +63,8 @@ export function InstallationGuide({
 	}
 	function choose(value: Partial<GuideState>) {
 		const next = { ...guide, ...value }
-		update({ ...value, loader: targetFor(next.minecraft, next.loader).loader })
+		const loader = next.needsLoader ? recommendedLoader(next.minecraft) : targetFor(next.minecraft, next.loader).loader
+		update({ ...value, loader })
 	}
 	const step = guide.step === 'done' ? null : steps[index]
 	const question = step === 'system' || step === 'minecraft' || step === 'loader'
@@ -82,7 +83,9 @@ export function InstallationGuide({
 					{step ? t(stepTitles[step]) : t('Your first memory is here.')}
 				</h2>
 				{step && question && <QuestionStep step={step} selection={guide} onSelect={choose} />}
-				{step && !question && <InstallationStep step={step} system={guide.system} target={target} />}
+				{step && !question && (
+					<InstallationStep step={step} system={guide.system} target={target} needsLoader={guide.needsLoader} />
+				)}
 				{!step && <Success onRestart={onRestart} />}
 				{step && (
 					<div className="install-panel-actions">
