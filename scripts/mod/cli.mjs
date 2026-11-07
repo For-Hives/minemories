@@ -6,7 +6,7 @@
 //   ctx = { config, env, log, root }
 //     config  the validated mod/targets.json ({ minecraft, targets, planned }, see config.mjs)
 //     env     process.env merged with the repository .env (existing variables win)
-//     log     { info, warn, error } (info on stdout, warn/error on stderr)
+//     log     callable as log(message) (stdout), plus { info, warn, error } (warn/error on stderr)
 //     root    repository root
 // `run` returns an exit code (a number; anything else means 0) or throws (message printed, exit code 1).
 // Commands are discovered from the folder, so a new command only needs its file.
@@ -79,7 +79,9 @@ export async function main(argv, options = {}) {
 	}
 	try {
 		const env = baseEnv ?? (await loadEnv({ root }))
-		const code = await command.run(args, { config: await readConfig(root), env, log, root })
+		// Commands call ctx.log(message) for plain output and ctx.log.warn/error for the rest.
+		const commandLog = Object.assign(message => log.info(message), log)
+		const code = await command.run(args, { config: await readConfig(root), env, log: commandLog, root })
 		return typeof code === 'number' ? code : 0
 	} catch (error) {
 		log.error(error.message)
