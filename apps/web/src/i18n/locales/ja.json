@@ -1473,5 +1473,22 @@
 	"key opens the same menu.": "キーで同じメニューが開きます。",
 	"profile, then click Play.": "プロファイルを選び、プレイをクリックします。",
 	"Launch the game": "ゲームを起動する",
-	"With other mods, the button can sit in another corner of the pause menu.": "ほかの Mod があると、ボタンが一時停止メニューの別の隅にあることがあります。"
+	"With other mods, the button can sit in another corner of the pause menu.": "ほかの Mod があると、ボタンが一時停止メニューの別の隅にあることがあります。",
+	"Roadmap": "ロードマップ",
+	"Roadmap — Minemories": "ロードマップ — Minemories",
+	"What the Minemories team is building now, what comes next and what shipped recently.": "Minemories チームがいま作っているもの、次に来るもの、最近リリースされたもの。",
+	"What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.": "いま作っているもの、次に来るもの、直近 30 日にリリースされたものを、プロジェクトの GitHub Issue からそのまま表示します。",
+	"The same board is posted on the Minemories Discord.": "同じボードは Minemories の Discord にも投稿されています。",
+	"Updated {time}": "{time}に更新",
+	"Loading the roadmap…": "ロードマップを読み込み中…",
+	"The roadmap could not be loaded. Try again in a moment.": "ロードマップを読み込めませんでした。しばらくしてからもう一度お試しください。",
+	"Every roadmap issue on GitHub ↗": "GitHub ですべてのロードマップ Issue を見る ↗",
+	"Planned": "予定",
+	"Done": "完了",
+	"Nothing here right now.": "いまは何もありません。",
+	"+{count} more on GitHub": "GitHub でさらに +{count} 件",
+	"Project areas": "プロジェクトの分野",
+	"Mod": "Mod",
+	"API": "API",
+	"Website": "サイト"
 }

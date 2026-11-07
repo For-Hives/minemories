@@ -87,6 +87,13 @@ const metadataMessages: PageMetadata[] = [
 		language: 'fr',
 	},
 	{
+		path: '/roadmap',
+		title: 'Roadmap — Minemories',
+		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
+		indexable: true,
+		language: 'fr',
+	},
+	{
 		path: '/faq',
 		title: 'Frequently asked questions — Minemories',
 		description: 'Mod compatibility, GLB files, AFK captures, privacy and sharing: answers to get started.',

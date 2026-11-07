@@ -24,6 +24,7 @@ const InstallationPage = lazy(() =>
 )
 const DownloadsPage = lazy(() => import('./pages/DownloadsPage').then(module => ({ default: module.DownloadsPage })))
 const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
+const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(module => ({ default: module.RoadmapPage })))
 const ContentPages = () => import('./pages/ContentPages')
 const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
 const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
@@ -44,6 +45,7 @@ const publicPageChunks = [
 	() => import('./pages/InstallationPage'),
 	() => import('./pages/DownloadsPage'),
 	() => import('./pages/ReleasesPage'),
+	() => import('./pages/RoadmapPage'),
 	() => import('./pages/AuthPage'),
 ]
 
@@ -185,6 +187,14 @@ export function App() {
 								element={
 									<Page>
 										<ReleasesPage changelog />
+									</Page>
+								}
+							/>
+							<Route
+								path="/roadmap"
+								element={
+									<Page>
+										<RoadmapPage />
 									</Page>
 								}
 							/>
