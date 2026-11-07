@@ -1490,5 +1490,16 @@
 	"Project areas": "Части проекта",
 	"Mod": "Мод",
 	"API": "API",
-	"Website": "Сайт"
+	"Website": "Сайт",
+	"Socials": "Соцсети",
+	"Latest mod version": "Последняя версия мода",
+	"Beta": "Бета",
+	"Released {date}": "Выпущена {date}",
+	"Changes in this version": "Изменения в этой версии",
+	"New": "Новое",
+	"Fixed": "Исправлено",
+	"Changed": "Изменено",
+	"+{count} more changes": "Ещё изменений: +{count}",
+	"All changes": "Все изменения",
+	"Compare on GitHub ↗": "Сравнить на GitHub ↗"
 }

@@ -1,5 +1,6 @@
 /* Public roadmap in the landing's charter: three night panels with the game's bevel (in progress, planned, done), cards in rows
-   split by the kit's separator, area chips as the game's name tags. Columns stack below 18rem so 375 px never scrolls sideways. */
+   split by the kit's separator, area chips as the game's name tags. Columns stack below 18rem so 375 px never scrolls sideways.
+   The latest mod version sits above the board in the same night panel, its version in the game's title font. */
 
 .mm-roadmap-note,
 .mm-roadmap-updated,
@@ -137,6 +138,97 @@
 	color: var(--c-lore);
 }
 
+.mm-roadmap-area-socials {
+	color: var(--c-gold);
+}
+
+/* Latest mod version: one night panel above the board. */
+.mm-roadmap-release {
+	min-width: 0;
+	margin: var(--ds-sp-6) var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+.mm-site .mm-roadmap-release h2 {
+	margin: 0 0 var(--ds-sp-3);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-roadmap-release-head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2) var(--ds-sp-3);
+	margin: 0 0 var(--ds-sp-4);
+}
+
+.mm-roadmap-release-version {
+	color: #fff;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	text-shadow: var(--ds-text-shadow-1);
+	overflow-wrap: anywhere;
+}
+
+.mm-roadmap-release-beta,
+.mm-roadmap-release-type {
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.7);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-roadmap-release-beta {
+	color: var(--c-gold);
+}
+
+.mm-roadmap-release-head time {
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-roadmap-release-notes {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	overflow-wrap: anywhere;
+}
+
+.mm-roadmap-release-type-feature {
+	color: var(--c-green);
+}
+
+.mm-roadmap-release-type-fix {
+	color: var(--c-blue);
+}
+
+.mm-roadmap-release-type-other {
+	color: var(--text-2);
+}
+
+.mm-roadmap-release-more {
+	margin: var(--ds-sp-3) 0 0;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-roadmap-release-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 var(--ds-sp-5);
+	margin: var(--ds-sp-4) 0 0;
+}
+
 .mm-roadmap-empty {
 	margin: 0;
 	color: var(--text-2);
@@ -144,7 +236,8 @@
 }
 
 .mm-site .mm-roadmap-more,
-.mm-site .mm-roadmap-source a {
+.mm-site .mm-roadmap-source a,
+.mm-site .mm-roadmap-release a {
 	display: inline-flex;
 	align-items: center;
 	min-height: var(--ds-hit);
@@ -162,9 +255,16 @@
 }
 
 .mm-site .mm-roadmap-more:hover,
-.mm-site .mm-roadmap-source a:hover {
+.mm-site .mm-roadmap-source a:hover,
+.mm-site .mm-roadmap-release a:hover {
 	color: var(--ember);
 	text-decoration-color: var(--ember);
+}
+
+/* Pull request numbers flow inside the note text instead of taking a full-height row of their own. */
+.mm-site .mm-roadmap-release-notes a {
+	display: inline;
+	min-height: 0;
 }
 
 /* Error: a tooltip in the error colour. */
@@ -184,19 +284,24 @@
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
-html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-roadmap-column h2 {
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-roadmap-column h2,
+html.mm-cjk:not([data-mc-font="read"]) .mm-roadmap-release-version {
 	font-size: 16px;
 	line-height: 24px;
 }
 
 @media (max-width: 480px) {
-	.mm-roadmap-column {
+	.mm-roadmap-column,
+	.mm-roadmap-release {
 		padding: var(--ds-sp-4);
 	}
 }
 
 @media (forced-colors: active) {
 	.mm-roadmap-column,
+	.mm-roadmap-release,
+	.mm-roadmap-release-beta,
+	.mm-roadmap-release-type,
 	.mm-roadmap-feedback,
 	.mm-roadmap-area,
 	.mm-roadmap-count {

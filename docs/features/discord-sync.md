@@ -8,9 +8,9 @@ The GitHub workflow `.github/workflows/discord.yml` posts to the project's Disco
 | --- | --- | --- |
 | Push to `main` | #changelog | One embed "main updated: N changes" linking to the compare view, with the commit subjects grouped into Features (`feat`), Fixes (`fix`), Performance (`perf`), Documentation (`docs`) and Other. `(#123)` becomes a link to the pull request. `chore(release)`, `[skip ci]` and merge commits are dropped; nothing is posted when nothing is left, nor for a new branch or a force push. The footer shows the short SHA. |
 | Push of a `mod-v*` tag | #changelog | One embed "Minemories mod X released": the commits touching `mod/` since the previous `mod-v*` tag (at most 50 when there is none), grouped the same way, with links to `/downloads` and `/changelog` on the site. |
-| Issue opened, edited, closed, reopened, labelled, unlabelled or deleted (only when it carries, or just lost, the `roadmap` label), every day at 06:00 UTC, manual run | #roadmap | A single message, edited in place, with three embeds: In progress, Planned, Done, last 30 days. |
+| Push of a `mod-v*` tag, issue opened, edited, closed, reopened, labelled, unlabelled or deleted (only when it carries, or just lost, the `roadmap` label), every day at 06:00 UTC, manual run | #roadmap | A single message, edited in place: a "Latest mod version" embed, then three embeds: In progress, Planned, Done, last 30 days. |
 
-The workflow posts through the webhook stored in the `DISCORD_WEBHOOK_URL` secret; the webhook decides the channel. If changelog and roadmap must land in two different channels, use two webhooks and adapt the workflow (one secret per job).
+Two channels, one webhook each: the changelog job posts to `#changelog` through the `DISCORD_CHANGELOG_WEBHOOK_URL` secret, and the roadmap job edits its single message in `#roadmap` through `DISCORD_WEBHOOK_URL`. Nobody posts by hand in `#roadmap`. Each secret may hold the full webhook URL, `<id>/<token>` or only the token: the workflow sets the matching webhook id (not a secret) next to it.
 
 ## How the roadmap works
 
@@ -20,7 +20,20 @@ The source of truth is the GitHub issues of `For-Hives/minemories` that carry th
 - **Planned**: any other open roadmap issue;
 - **Done**: roadmap issue closed as completed (or without a reason) during the last 30 days. Issues closed as "not planned" or "duplicate" never appear.
 
-Planned and In progress are sorted by last update, Done by closing date, newest first (ties: highest issue number first). Each column shows at most 25 issues and a "+N more" line for the rest. Each line is `#123 title — areas`, linking to the issue, where the areas are the labels among `mod`, `api` and `front`. When the three columns together exceed Discord's 6000-character limit, the longest column loses lines (counted in its "+N more") until the message fits.
+## Latest mod version
+
+The first embed of the roadmap message (and the card above the board on `/roadmap`, from the same `latestRelease` field of `GET /api/roadmap`) shows the newest mod release, read from the public GitHub API (`scripts/discord/release-info.mjs`):
+
+- **Version**: the `mod-v*` tags (`mod-vX.Y.Z` or `mod-vX.Y.Z-beta.N`, at most three pages of 100 tags), sorted by semver with a release above its betas (`0.36.1` > `0.36.1-beta.3` > `0.36.1-beta.1` > `0.36.0`). The newest is the latest version, the next one the previous version. A beta is marked as such.
+- **Date**: the committer date of the latest tag's commit, shown as a Discord date (`<t:…:D>`, in each reader's locale).
+- **Notes**: the commits touching `mod/` reachable from the latest tag and strictly newer than the previous tag's commit (the previous tag's commit excluded). `chore(release)`, `[skip ci]` and merge commits are dropped. Each note is the first line of the subject without its Conventional Commit prefix, marked New (`feat`), Fixed (`fix`) or Changed (everything else), features first, then fixes, then the rest; `(#123)` becomes a link to the pull request. At most 12 notes, the rest counted in "+N more". Without a previous tag, the 12 newest `mod/` commits.
+- **Links**: Download (`/downloads`), All changes (`/changelog`) and Compare (the GitHub compare view between the two tags, or the tag's tree when there is no previous tag).
+
+When GitHub fails while reading the release (or there is no `mod-v*` tag yet), the roadmap is still posted, without this embed, and the job logs a warning. When the message exceeds Discord's 6000-character limit, release notes are dropped first (into "+N more"), then roadmap lines.
+
+## Columns
+
+Planned and In progress are sorted by last update, Done by closing date, newest first (ties: highest issue number first). Each column shows at most 25 issues and a "+N more" line for the rest. Each line is `#123 title — areas`, linking to the issue, where the areas are the labels among `mod`, `api`, `front` and `socials` (community and videos). When the three columns together exceed Discord's 6000-character limit, the longest column loses lines (counted in its "+N more") until the message fits.
 
 To put something on the roadmap: add the `roadmap` label to the issue. To mark it as being worked on: add `in-progress`. Closing it as completed moves it to Done for 30 days.
 
@@ -32,13 +45,14 @@ To put something on the roadmap: add the `roadmap` label to the issue. To mark i
 - Deliveries retry on 429 (Discord's `retry_after`, capped at 30 s) and on 5xx or network errors (4 attempts in total); a 4xx is not retried.
 - Changelog posts are best effort: a Discord failure is logged as a warning and the job stays green. The roadmap job fails when GitHub or Discord fails, so a stale roadmap is visible in the Actions tab.
 - Without the secret, every job exits successfully with a notice and sends nothing. Pull requests never trigger this workflow; their tests run in `quality.yml`.
+- Release notes are commit subjects: they are escaped and clipped like issue titles. The version comes only from tags matching `mod-vX.Y.Z(-beta.N)`.
 - The `issues` trigger runs with the webhook secret for any edit of a roadmap issue. Issue titles only reach the Node script through the GitHub API, never a shell line, and are escaped before posting.
 
 ## One-time setup
 
 1. In Discord, create a webhook on the target channel (Server settings → Integrations → Webhooks) and copy its URL.
-2. Store it as the repository secret `DISCORD_WEBHOOK_URL` (Settings → Secrets and variables → Actions). Never paste it in an issue, a commit or a log.
-3. Create the labels `roadmap` and `in-progress` if they do not exist (the areas `mod`, `api`, `front` already do).
+2. Store the `#roadmap` webhook as the repository secret `DISCORD_WEBHOOK_URL` and the `#changelog` webhook as `DISCORD_CHANGELOG_WEBHOOK_URL` (Settings → Secrets and variables → Actions, or `gh secret set <name>`). Never paste them in an issue, a commit or a log.
+3. Create the labels `roadmap`, `in-progress` and `socials` if they do not exist (the areas `mod`, `api`, `front` already do).
 4. Run the workflow manually once (Actions → Discord sync → Run workflow). Without a stored message id, the roadmap job posts a new message and prints **only its id** in the log. Issue events and the daily run do nothing until the id is stored, so they cannot pile up messages.
 5. Store that id as the repository **variable** `DISCORD_ROADMAP_MESSAGE_ID`. From then on, every run edits that message.
 

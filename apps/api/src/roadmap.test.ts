@@ -13,7 +13,7 @@ process.env.BETTER_AUTH_SECRET = 'test-auth-secret-at-least-32-characters'
 process.env.PAIRING_PEPPER = 'test-pairing-pepper-at-least-32-characters'
 process.env.GITHUB_TOKEN = ''
 
-const { buildRoadmap, createRoadmap, fetchRoadmapIssues, githubToken } = await import('./roadmap')
+const { buildRoadmap, createRoadmap, fetchRoadmapIssues } = await import('./roadmap')
 const { app } = await import('./index')
 const { database } = await import('./database')
 
@@ -56,9 +56,16 @@ function headersOf(init: RequestInit | undefined) {
 	return (init?.headers ?? {}) as Record<string, string>
 }
 
-function recorder(pages: unknown[][] | (() => Promise<Response>)) {
+const ISSUES = 'https://api.github.com/repos/For-Hives/minemories/issues?'
+
+/** Records GitHub issue requests; release requests (tags, commits) go to `releases`, by default no mod tag. */
+function recorder(
+	pages: unknown[][] | (() => Promise<Response>),
+	releases: (url: string) => Promise<Response> = () => Promise.resolve(json([]))
+) {
 	const calls: { url: string; init: RequestInit }[] = []
 	const fetcher = (url: string, init: RequestInit) => {
+		if (!url.startsWith(ISSUES)) return releases(url)
 		calls.push({ url, init })
 		if (typeof pages === 'function') return pages()
 		return Promise.resolve(json(pages[calls.length - 1] ?? []))
@@ -66,16 +73,10 @@ function recorder(pages: unknown[][] | (() => Promise<Response>)) {
 	return { calls, fetcher }
 }
 
-test('githubToken trims the variable and treats an empty value as absent', () => {
-	expect(githubToken({})).toBeUndefined()
-	expect(githubToken({ GITHUB_TOKEN: '   ' })).toBeUndefined()
-	expect(githubToken({ GITHUB_TOKEN: ' ghp_example ' })).toBe('ghp_example')
-})
-
 test('classifies open, in-progress and recently completed issues and drops the rest', () => {
 	const roadmap = buildRoadmap(
 		[
-			issue(1, { labels: ['roadmap', 'front', 'mod'] }),
+			issue(1, { labels: ['roadmap', 'socials', 'front', 'mod'] }),
 			issue(2, { labels: [{ name: 'roadmap' }, { name: 'in-progress' }, { name: 'api' }] }),
 			issue(3, { state: 'closed', state_reason: 'completed', closed_at: iso(NOW - 2 * DAY) }),
 			issue(4, { state: 'closed', state_reason: null, closed_at: iso(NOW - 30 * DAY) }),
@@ -90,13 +91,14 @@ test('classifies open, in-progress and recently completed issues and drops the r
 		NOW
 	)
 	expect(roadmapResponse.parse(roadmap)).toEqual(roadmap)
+	expect(roadmap.latestRelease).toBeNull()
 	expect(roadmap.updatedAt).toBe(iso(NOW))
 	expect(roadmap.columns.planned.items.map(item => item.number)).toEqual([1])
 	expect(roadmap.columns.planned.items[0]).toEqual({
 		number: 1,
 		title: 'Issue 1',
 		url: 'https://github.com/For-Hives/minemories/issues/1',
-		areas: ['mod', 'front'],
+		areas: ['mod', 'front', 'socials'],
 		updatedAt: iso(NOW - 1000),
 		closedAt: null,
 	})
@@ -248,8 +250,10 @@ test('answers 503 without cache while GitHub is unavailable, then recovers', asy
 })
 
 test('GET /api/roadmap is served by the app with CORS for the web origin', async () => {
-	const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation((() =>
-		Promise.resolve(json([issue(42, { labels: ['roadmap', 'api'] })]))) as unknown as typeof fetch)
+	const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(((url: string) =>
+		Promise.resolve(
+			json(url.startsWith(ISSUES) ? [issue(42, { labels: ['roadmap', 'api'] })] : [])
+		)) as unknown as typeof fetch)
 	try {
 		const response = await app.request('/api/roadmap', { headers: { Origin: 'http://localhost:5173' } })
 		expect(response.status).toBe(200)
@@ -257,9 +261,62 @@ test('GET /api/roadmap is served by the app with CORS for the web origin', async
 		expect(response.headers.get('Cache-Control')).toBe('public, max-age=300')
 		const body = roadmapResponse.parse(await response.json())
 		expect(body.columns.planned.items.map(item => [item.number, item.areas])).toEqual([[42, ['api']]])
+		expect(body.latestRelease).toBeNull()
 		const headers = headersOf(fetchSpy.mock.calls[0]?.[1])
 		expect(headers.Authorization).toBeUndefined()
 	} finally {
 		fetchSpy.mockRestore()
 	}
+})
+
+const TAG_SHA = 'a'.repeat(40)
+function releaseFixtures(url: string): Promise<Response> {
+	if (url.includes('/tags?')) return Promise.resolve(json([{ name: 'mod-v0.36.1-beta.1', commit: { sha: TAG_SHA } }]))
+	if (url.includes(`/commits/${TAG_SHA}`))
+		return Promise.resolve(json({ sha: TAG_SHA, commit: { message: 'x', committer: { date: iso(NOW - DAY) } } }))
+	const commit = { sha: 'b'.repeat(40), commit: { message: 'feat(mod): faster export (#210)', committer: null } }
+	return Promise.resolve(json([commit]))
+}
+
+test('adds the latest mod release, keeps the last good one when GitHub fails, and still serves the board', async () => {
+	const errors = silenced()
+	let now = NOW
+	let releasesUp = true
+	const { calls, fetcher } = recorder(
+		() => Promise.resolve(json([issue(1)])),
+		url => (releasesUp ? releaseFixtures(url) : Promise.resolve(json({}, 502)))
+	)
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => now })
+	const first = roadmapResponse.parse(await (await roadmap.request('/')).json())
+	expect(first.latestRelease).toEqual({
+		version: '0.36.1-beta.1',
+		tag: 'mod-v0.36.1-beta.1',
+		date: iso(NOW - DAY),
+		prerelease: true,
+		notes: [{ type: 'feature', text: 'faster export', pr: 210 }],
+		more: 0,
+		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
+		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1-beta.1',
+	})
+	releasesUp = false
+	now += 10 * 60_000
+	const second = await roadmap.current()
+	expect(calls).toHaveLength(2)
+	expect(second?.updatedAt).toBe(iso(now))
+	expect(second?.latestRelease).toEqual(first.latestRelease)
+	expect(errors.mock.calls.map(call => String(call[0]))).toEqual([expect.stringContaining('mod_release_unavailable')])
+	errors.mockRestore()
+})
+
+test('a release failure without any earlier release serves the board with a null release', async () => {
+	const errors = silenced()
+	const { fetcher } = recorder(
+		() => Promise.resolve(json([issue(1)])),
+		() => Promise.reject(new Error('network down'))
+	)
+	const body = await createRoadmap({ fetch: fetcher, now: () => NOW }).current()
+	expect(body?.columns.planned.items.map(item => item.number)).toEqual([1])
+	expect(body?.latestRelease).toBeNull()
+	errors.mockRestore()
 })

@@ -4,8 +4,10 @@ import * as z from 'zod'
 export const ROADMAP_COLUMN_LIMIT = 25
 /** Closed roadmap issues stay in the `done` column for this many days. */
 export const ROADMAP_DONE_DAYS = 30
+/** Maximum number of release notes in `latestRelease`; `more` counts the rest. */
+export const ROADMAP_RELEASE_NOTES_LIMIT = 12
 /** Area labels copied from GitHub issues, in this fixed order. */
-export const roadmapArea = z.enum(['mod', 'api', 'front'])
+export const roadmapArea = z.enum(['mod', 'api', 'front', 'socials'])
 
 export const roadmapItem = z.object({
 	number: z.number().int().positive(),
@@ -19,13 +21,40 @@ export const roadmapColumn = z.object({
 	items: z.array(roadmapItem).max(ROADMAP_COLUMN_LIMIT),
 	more: z.number().int().nonnegative(),
 })
+/** Conventional Commit group of a release note: `feat` -> feature, `fix` -> fix, anything else -> other. */
+export const roadmapReleaseNoteType = z.enum(['feature', 'fix', 'other'])
+export const roadmapReleaseNote = z.object({
+	type: roadmapReleaseNoteType,
+	text: z.string(),
+	pr: z.number().int().positive().nullable(),
+})
+/**
+ * Newest `mod-v*` tag (semver order, a release above its betas) with the commits touching `mod/` since the previous
+ * one.
+ */
+export const roadmapLatestRelease = z.object({
+	version: z.string(),
+	tag: z.string(),
+	date: z.string(),
+	prerelease: z.boolean(),
+	notes: z.array(roadmapReleaseNote).max(ROADMAP_RELEASE_NOTES_LIMIT),
+	more: z.number().int().nonnegative(),
+	downloadUrl: z.string(),
+	changelogUrl: z.string(),
+	compareUrl: z.string(),
+})
 /** Body of `GET /api/roadmap`: GitHub issues labelled `roadmap`, grouped into three columns. */
 export const roadmapResponse = z.object({
 	updatedAt: z.string(),
 	columns: z.object({ planned: roadmapColumn, inProgress: roadmapColumn, done: roadmapColumn }),
+	/** Null when no mod tag exists or GitHub never answered; defaults to null for bodies served before this field. */
+	latestRelease: roadmapLatestRelease.nullable().default(null),
 })
 
 export type RoadmapArea = z.infer<typeof roadmapArea>
 export type RoadmapItem = z.infer<typeof roadmapItem>
 export type RoadmapColumn = z.infer<typeof roadmapColumn>
+export type RoadmapReleaseNoteType = z.infer<typeof roadmapReleaseNoteType>
+export type RoadmapReleaseNote = z.infer<typeof roadmapReleaseNote>
+export type RoadmapLatestRelease = z.infer<typeof roadmapLatestRelease>
 export type RoadmapResponse = z.infer<typeof roadmapResponse>
