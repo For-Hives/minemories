@@ -77,7 +77,7 @@ const withIndex = (value: unknown = index) => ({
 	[`mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`]: 'x',
 })
 
-test('index.json est public, valide, avec ETag et cache court, et répond 304', async () => {
+test('index.json is public, valid, has an ETag and a short cache, and answers 304', async () => {
 	const router = mount(withIndex())
 	const response = await router.request('/downloads/index.json')
 	expect(response.status).toBe(200)
@@ -91,7 +91,7 @@ test('index.json est public, valide, avec ETag et cache court, et répond 304', 
 	expect(await again.text()).toBe('')
 })
 
-test('un bucket sans index donne un index vide, un index invalide donne 503', async () => {
+test('a bucket without an index yields an empty index, an invalid index yields 503', async () => {
 	const empty = await mount({}).request('/downloads/index.json')
 	expect(empty.status).toBe(200)
 	expect((await empty.json()).targets).toEqual({})
@@ -103,7 +103,7 @@ test('un bucket sans index donne un index vide, un index invalide donne 503', as
 	silenced.mockRestore()
 })
 
-test('latest et une version précise sont servies en flux avec les en-têtes de distribution', async () => {
+test('latest and a specific version are streamed with distribution headers', async () => {
 	const opened: string[] = []
 	const router = mount(withIndex(), opened)
 	const latest = await router.request(`/downloads/${id}/latest`)
@@ -122,7 +122,7 @@ test('latest et une version précise sont servies en flux avec les en-têtes de 
 	await old.arrayBuffer()
 })
 
-test('If-None-Match évite de rouvrir le JAR; HEAD ne renvoie pas de corps', async () => {
+test('If-None-Match avoids reopening the JAR; HEAD returns no body', async () => {
 	const opened: string[] = []
 	const router = mount(withIndex(), opened)
 	const cached = await router.request(`/downloads/${id}/0.2.0`, { headers: { 'If-None-Match': `"${sha}"` } })
@@ -133,7 +133,7 @@ test('If-None-Match évite de rouvrir le JAR; HEAD ne renvoie pas de corps', asy
 	expect(await head.text()).toBe('')
 })
 
-test('cible ou version inconnue, ou JAR absent du bucket : 404 propre', async () => {
+test('unknown target or version, or JAR missing from the bucket: clean 404', async () => {
 	const router = mount(withIndex())
 	const paths = [`${id}/9.9.9`, 'forge-mc1.20.1/latest', 'forge-mc1.20.1/0.1.0']
 	const responses = await Promise.all(paths.map(path => router.request(`/downloads/${path}`)))
@@ -143,7 +143,7 @@ test('cible ou version inconnue, ou JAR absent du bucket : 404 propre', async ()
 	expect((await noObject.request(`/downloads/${id}/0.2.0`)).status).toBe(404)
 })
 
-test('paramètres invalides ou path traversal : 400 sans lire le bucket', async () => {
+test('invalid parameters or path traversal: 400 without reading the bucket', async () => {
 	const opened: string[] = []
 	const router = mount(withIndex(), opened)
 	const paths = [
@@ -162,7 +162,7 @@ test('paramètres invalides ou path traversal : 400 sans lire le bucket', async 
 	expect((await router.request('/downloads/BAD/latest')).status).toBe(400)
 })
 
-test('le cache de l’index évite de relire le bucket dans la fenêtre de validité', async () => {
+test('the index cache avoids rereading the bucket within its validity window', async () => {
 	let reads = 0
 	const router = new Hono()
 	router.route(
@@ -183,7 +183,7 @@ test('le cache de l’index évite de relire le bucket dans la fenêtre de valid
 	expect(reads).toBe(1)
 })
 
-test('s3ModSource lit le bucket des mods, distinct de celui des captures', async () => {
+test('s3ModSource reads the mod bucket, separate from the captures bucket', async () => {
 	expect(modBucket).toBe('minemories-mods')
 	expect(modBucket).not.toBe(s3Target().bucket)
 	const calls: { bucket: string; key: string }[] = []
@@ -214,7 +214,7 @@ test('s3ModSource lit le bucket des mods, distinct de celui des captures', async
 	send.mockRestore()
 })
 
-test('l’application monte /downloads publiquement, sans session', async () => {
+test('the app mounts /downloads publicly, without a session', async () => {
 	const send = spyOn(s3Target().client, 'send').mockImplementation((async () => {
 		throw new S3ServiceException({
 			name: 'NoSuchKey',
@@ -241,7 +241,7 @@ function mountPrefixed(files: Record<string, string>, opened: string[] = []) {
 	return router
 }
 
-test('avec un préfixe, l’index et les JAR sont lus sous le préfixe, la clé venant de l’index', async () => {
+test('with a prefix, the index and JARs are read under the prefix, with the key taken from the index', async () => {
 	const opened: string[] = []
 	const router = mountPrefixed(prefixed(withIndex()), opened)
 	expect((await router.request('/downloads/index.json')).status).toBe(200)
@@ -251,13 +251,13 @@ test('avec un préfixe, l’index et les JAR sont lus sous le préfixe, la clé 
 		`public-mods/mods/${id}/0.2.0/minemories-${id}-0.2.0.jar`,
 		`public-mods/mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`,
 	])
-	// Les mêmes objets sans le préfixe ne sont jamais lus : l'index est vide, donc 404.
+	// The same objects without the prefix are never read: the index is empty, hence 404.
 	const bare = mountPrefixed(withIndex())
 	expect((await bare.request('/downloads/index.json')).status).toBe(200)
 	expect((await bare.request(`/downloads/${id}/latest`)).status).toBe(404)
 })
 
-test('un index corrompu ne peut pas faire servir un objet hors de mods/ ou latest/', async () => {
+test('a corrupted index cannot serve an object outside mods/ or latest/', async () => {
 	const keys = [
 		'../users/abc/1.glb',
 		'users/abc/1.glb',
@@ -272,7 +272,7 @@ test('un index corrompu ne peut pas faire servir un objet hors de mods/ ou lates
 		const opened: string[] = []
 		const corrupted = { ...index, targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', key)] } } }
 		const files = { ...prefixed({ 'index.json': JSON.stringify(corrupted) }), [`public-mods/${key}`]: 'x', [key]: 'x' }
-		// 404 (clé refusée) ou 503 (index rejeté par le schéma) : jamais 200.
+		// 404 (key rejected) or 503 (index rejected by the schema): never 200.
 		expect([404, 503]).toContain((await mountPrefixed(files, opened).request(`/downloads/${id}/0.2.0`)).status)
 		expect(opened).toEqual([])
 	}
@@ -286,7 +286,7 @@ test('un index corrompu ne peut pas faire servir un objet hors de mods/ ou lates
 	expect(opened).toEqual([`public-mods/latest/${id}.jar`])
 })
 
-test('l’URL ne construit jamais une clé : seuls des paramètres valides atteignent la source', async () => {
+test('the URL never builds a key: only valid parameters reach the source', async () => {
 	const opened: string[] = []
 	const router = mountPrefixed(prefixed(withIndex()), opened)
 	for (const path of [`/downloads/${id}/..%2f..%2fusers`, '/downloads/..%2fusers/latest', `/downloads/${id}/0.9.9`])
@@ -294,7 +294,7 @@ test('l’URL ne construit jamais une clé : seuls des paramètres valides attei
 	expect(opened).toEqual([])
 })
 
-test('un préfixe invalide empêche le chargement du module de téléchargement', () => {
+test('an invalid prefix prevents loading the download module', () => {
 	const script = "await import('./src/mod-downloads.ts')"
 	const result = Bun.spawnSync(['bun', '-e', script], {
 		cwd: join(import.meta.dir, '..'),
@@ -302,5 +302,5 @@ test('un préfixe invalide empêche le chargement du module de téléchargement'
 		env: { ...process.env, MOD_STORAGE_PREFIX: '../x/' },
 	})
 	expect(result.exitCode).not.toBe(0)
-	expect(result.stderr.toString()).toContain('MOD_STORAGE_PREFIX invalide')
+	expect(result.stderr.toString()).toContain('Invalid MOD_STORAGE_PREFIX')
 })

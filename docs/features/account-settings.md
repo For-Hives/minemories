@@ -1,11 +1,11 @@
-# Identifiants du compte
+# Account credentials
 
-La page privée `/account`, accessible depuis « Mon compte », permet de changer l’e-mail de connexion ou le mot de passe. Elle est exclue de l’indexation et du prérendu public ; le routage Nginx sert l’application pour cette URL.
+The private `/account` page, reached from "My account", lets users change their sign-in email or password. It is excluded from indexing and public prerendering; Nginx routing serves the application for this URL.
 
-Chaque opération exige la session courante et le mot de passe actuel, limité à 128 caractères. Le nouveau mot de passe contient au moins 12 caractères ; le formulaire demande une confirmation. Le serveur utilise les fonctions de hash et de vérification configurées par Better Auth, sans dupliquer son algorithme.
+Every operation requires the current session and the current password, capped at 128 characters. The new password must be at least 12 characters long, and the form asks for a confirmation. The server uses the hash and verification functions configured in Better Auth instead of duplicating its algorithm.
 
-Le changement et la révocation de toutes les sessions du compte sont publiés ensemble dans une transaction SQLite. L’état des identifiants et de la session est revérifié après la confirmation : une modification concurrente ou une session révoquée empêche la publication. Une adresse déjà utilisée annule la transaction. Les tentatives de confirmation sont limitées à huit par minute et par compte, avec compteur persistant.
+The change and the revocation of every session on the account are committed together in one SQLite transaction. Credentials and session state are checked again after confirmation: a concurrent change or a revoked session blocks the commit. An address already in use rolls the transaction back. Confirmation attempts are limited to eight per minute per account, with a persistent counter.
 
-L’adresse est normalisée en minuscules et reste non vérifiée : aucune preuve de possession de la nouvelle boîte n’est inventée. Le service actuel n’envoie pas d’e-mails de vérification ; la confirmation repose sur le mot de passe actuel. L’identifiant du compte reste stable, ainsi que ses souvenirs, appairages et rôles. Un nouveau chargement de la page de connexion évite de garder une session en cache après succès.
+The address is normalized to lowercase and stays unverified: no proof of ownership of the new mailbox is invented. The current service does not send verification emails; confirmation relies on the current password. The account identifier stays the same, along with its memories, pairings and roles. After success, the sign-in page is reloaded so no session stays cached.
 
-Validation : tests du service (concurrence, expiration, rollback et limitation), vrais parcours HTTP Better Auth/oRPC (nouvelle connexion, ancien mot de passe et sessions invalides, autre compte intact), et interactions FR/EN des formulaires. Aucun mot de passe ni hash n’est conservé dans les traces de validation.
+Validation: service tests (concurrency, expiry, rollback and rate limiting), real Better Auth/oRPC HTTP flows (new sign-in, old password and sessions invalidated, other account untouched), and FR/EN form interactions. No password or hash is kept in validation traces.

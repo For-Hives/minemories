@@ -19,7 +19,7 @@ final class DiagnosticsSettingsScreen extends Screen {
   private int panelWidth;
 
   DiagnosticsSettingsScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.diagnostics_techniques"));
+    super(Component.translatable("minemories.ui.technical_diagnostics"));
     this.parent = parent;
   }
 
@@ -32,12 +32,12 @@ final class DiagnosticsSettingsScreen extends Screen {
     toggle =
         addRenderableWidget(
             Button.builder(
-                    Component.translatable("minemories.ui.diagnostics_non"),
+                    Component.translatable("minemories.ui.diagnostics_off"),
                     ignored -> changeConsent())
                 .bounds(left + 14, top + 204, half, 20)
                 .build());
     addRenderableWidget(
-        Button.builder(Component.translatable("minemories.ui.retour"), ignored -> onClose())
+        Button.builder(Component.translatable("minemories.ui.back"), ignored -> onClose())
             .bounds(left + 20 + half, top + 204, half, 20)
             .build());
     refresh();
@@ -51,11 +51,11 @@ final class DiagnosticsSettingsScreen extends Screen {
           Component.translatable(
               enabled
                   ? "minemories.options.diagnostics.enabled"
-                  : "minemories.ui.diagnostics_non"));
+                  : "minemories.ui.diagnostics_off"));
       status = saveError != null ? saveError : PairingClient.diagnosticsStatus();
     } catch (RuntimeException ignored) {
       toggle.active = false;
-      status = I18n.get("minemories.ui.configuration_illisible_aucune_collecte");
+      status = I18n.get("minemories.ui.unreadable_settings_no_collection");
     }
   }
 
@@ -67,9 +67,8 @@ final class DiagnosticsSettingsScreen extends Screen {
     } catch (RuntimeException ignored) {
       saveError =
           enabled
-              ? I18n.get(
-                  "minemories.ui.retrait_actif_ici_mais_non_enregistre_repare_les_droits_avant_de_relancer")
-              : I18n.get("minemories.ui.reglage_non_enregistre_reessaie");
+              ? I18n.get("minemories.ui.withdrawal_not_saved_fix_permissions")
+              : I18n.get("minemories.ui.setting_not_saved_retry");
       refresh();
     }
   }
@@ -95,12 +94,9 @@ final class DiagnosticsSettingsScreen extends Screen {
     for (String paragraph :
         List.of(
             I18n.get("minemories.ui.diagnostics_intro"),
-            I18n.get(
-                "minemories.ui.versions_erreur_et_lignes_de_code_huit_rapports_prives_gardes_7_jours_au_plus_renvoyes_apres_relance"),
-            I18n.get(
-                "minemories.ui.exclus_messages_urls_jetons_coordonnees_graine_noms_monde_joueur_et_captures"),
-            I18n.get(
-                "minemories.ui.non_efface_la_file_locale_et_demande_leffacement_serveur_hors_ligne_sa_retention_sapplique"))) {
+            I18n.get("minemories.ui.diagnostics_contents"),
+            I18n.get("minemories.ui.diagnostics_exclusions"),
+            I18n.get("minemories.ui.diagnostics_off_effect"))) {
       var lines = font.split(Component.literal(paragraph), panelWidth - 28);
       for (var line : lines) {
         if (y < top + 178) graphics.drawString(font, line, left + 14, y, 0xFFECE8DC);

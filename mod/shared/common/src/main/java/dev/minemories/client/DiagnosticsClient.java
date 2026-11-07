@@ -241,13 +241,12 @@ final class DiagnosticsClient {
 
   synchronized String status() {
     refresh();
-    if (identity == null) return "Désactivés : aucune collecte ni aucun envoi.";
-    if (permit != null) return "Activés. Rapports en attente : " + outbox.size() + ".";
-    if (!refused && outbox.authorized())
-      return "Hors ligne : rapports conservés pour le prochain envoi.";
+    if (identity == null) return "Disabled: nothing is collected or sent.";
+    if (permit != null) return "Enabled. Pending reports: " + outbox.size() + ".";
+    if (!refused && outbox.authorized()) return "Offline: reports kept for the next upload.";
     return authorization != null
-        ? "Vérification du compte et de l’accord…"
-        : "API indisponible ou compte refusé : aucune collecte.";
+        ? "Checking the account and consent…"
+        : "API unavailable or account refused: nothing is collected.";
   }
 
   synchronized boolean isSending() {

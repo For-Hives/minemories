@@ -33,10 +33,10 @@ export async function acquireLock(path, { label = 'bun mod', alive = pidAlive, p
 		}
 		const current = await readOwner(path)
 		if (current && alive(current.pid) && current.host === owner.host)
-			throw new Error(`Un build est déjà en cours (${current.label}, pid ${current.pid}, depuis ${current.since}).`)
+			throw new Error(`A build is already running (${current.label}, pid ${current.pid}, since ${current.since}).`)
 		await rm(path, { force: true }) // stale: owner crashed or lock unreadable
 	}
-	throw new Error(`Impossible de prendre le verrou ${path}.`)
+	throw new Error(`Could not take the lock ${path}.`)
 }
 
 export async function withLock(path, fn, options) {

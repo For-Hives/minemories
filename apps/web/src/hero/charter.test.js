@@ -1,4 +1,4 @@
-// Garde-fous de la charte graphique (docs/features/design-system.md) : l'échelle, les cibles et le mouvement ne dérivent pas.
+// Design system guards (docs/features/design-system.md): the scale, the targets and the motion do not drift.
 import { expect, test } from 'vitest'
 import { readFileSync } from 'node:fs'
 
@@ -48,7 +48,7 @@ test('touch targets are 44 px and the motion tokens are the four durations and t
 test('the shared components read tokens: no hard-coded font size, duration or easing in charter.css, except the Unifont steps', () => {
 	const css = charter.replace(/\/\*[\s\S]*?\*\//g, '')
 	const hardSizes = [...css.matchAll(/font-size:\s*(\d+)px/g)].map(m => m[1])
-	expect(new Set(hardSizes)).toEqual(new Set(['32', '16'])) // coréen et japonais (Unifont), seules tailles nettes
+	expect(new Set(hardSizes)).toEqual(new Set(['32', '16'])) // Korean and Japanese (Unifont), the only crisp sizes
 	expect(css).not.toMatch(/\d+ms\b/)
 	expect(css).not.toMatch(/cubic-bezier/)
 	expect(css).toContain('--ds-reveal-y')

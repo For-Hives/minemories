@@ -1,4 +1,4 @@
-/* Film d'accueil : hero.css + site.css et la partie film de mcui.css (le kit commun est dans kit.css) (source : docs/marketing, voir docs/features/landing-film.md). Chemins d'assets réécrits vers /hero/. Les ttf de repli sont retirés (woff2 suffit). */
+/* Home film: hero.css + site.css and the film part of mcui.css (the shared kit is in kit.css) (source: docs/marketing, see docs/features/landing-film.md). Asset paths rewritten to /hero/. The fallback ttf files are removed (woff2 is enough). */
 
 /* ========================================================================================================================== */
 /* Film HUD (v8, ADDED): the narration in the language of the game.                                                             */

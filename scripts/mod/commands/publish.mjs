@@ -3,8 +3,7 @@ import { join } from 'node:path'
 import { publishThirdParty } from '../publish/index.mjs'
 
 export const name = 'publish'
-export const summary =
-	'Publie la release sur Modrinth et CurseForge (ignoré tant que les comptes ne sont pas configurés)'
+export const summary = 'Publishes the release on Modrinth and CurseForge (skipped until the accounts are configured)'
 export const usage = 'bun mod publish [--version X] [--dry-run]'
 
 function option(args, flag) {
@@ -38,7 +37,7 @@ async function readJson(path) {
 	}
 }
 
-/** Artifacts of build/mod-dist/<version>/<id>/ : the first .jar of each folder, with the manifest's digest if any. */
+/** Artifacts of build/mod-dist/<version>/<id>/: the first .jar of each folder, with the manifest's digest if any. */
 export async function collectArtifacts(root, version) {
 	const base = join(root, 'build', 'mod-dist', version)
 	const artifacts = []
@@ -57,19 +56,19 @@ export async function collectArtifacts(root, version) {
 export async function run(args, ctx) {
 	const version = option(args, '--version') ?? (await latestVersion(ctx.root))
 	if (!version) {
-		ctx.log('Aucun build local dans build/mod-dist : lancer `bun mod build` ou passer --version.')
+		ctx.log('No local build in build/mod-dist: run `bun mod build` or pass --version.')
 		return 1
 	}
 	const artifacts = await collectArtifacts(ctx.root, version)
 	if (artifacts.length === 0) {
-		ctx.log(`Aucun JAR dans build/mod-dist/${version}/<id>/.`)
+		ctx.log(`No JAR in build/mod-dist/${version}/<id>/.`)
 		return 1
 	}
 	const dryRun = args.includes('--dry-run')
 	const release = { version, commit: option(args, '--commit'), changelog: option(args, '--changelog') ?? '', artifacts }
 	const results = await publishThirdParty({ config: ctx.config, release, env: ctx.env, dryRun })
 	for (const result of results) {
-		ctx.log(`${result.platform} ${result.targetId} : ${result.status}${result.message ? ` — ${result.message}` : ''}`)
+		ctx.log(`${result.platform} ${result.targetId}: ${result.status}${result.message ? ` — ${result.message}` : ''}`)
 		if (result.request) ctx.log(result.request)
 	}
 	return results.some(result => result.status === 'failed') ? 1 : 0

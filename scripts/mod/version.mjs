@@ -9,19 +9,19 @@ const versionLine = /^mod_version=(.+)$/m
 export async function readModVersion(root = repositoryRoot) {
 	const text = await readFile(resolve(root, propertiesPath), 'utf8')
 	const version = versionLine.exec(text)?.[1]?.trim()
-	if (!version) throw new Error(`mod_version introuvable dans ${propertiesPath}.`)
+	if (!version) throw new Error(`mod_version not found in ${propertiesPath}.`)
 	return version
 }
 
 /** patch: X.Y.(Z+1)-beta.1, minor: X.(Y+1).0-beta.1, beta: X.Y.Z-beta.(N+1). */
 export function bumpVersion(current, kind) {
 	const match = releaseVersionPattern.exec(current)
-	if (!match) throw new Error(`Version ${current} hors format X.Y.Z-beta.N.`)
+	if (!match) throw new Error(`Version ${current} does not match X.Y.Z-beta.N.`)
 	const [major, minor, patch, beta] = match.slice(1).map(Number)
 	if (kind === 'beta') return `${major}.${minor}.${patch}-beta.${beta + 1}`
 	if (kind === 'patch') return `${major}.${minor}.${patch + 1}-beta.1`
 	if (kind === 'minor') return `${major}.${minor + 1}.0-beta.1`
-	throw new Error(`Type de bump inconnu : ${kind} (patch, minor ou beta).`)
+	throw new Error(`Unknown bump type: ${kind} (patch, minor or beta).`)
 }
 
 export async function writeModVersion(root, version) {

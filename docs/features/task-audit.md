@@ -1,98 +1,98 @@
-# État des tâches — 14 octobre 2026
+# Task status — 14 October 2026
 
-Cet audit conserve les preuves des critères exercés. Le 14 octobre 2026, les 36 lignes de `docs/AI/TASKS.md` ont été transférées chacune dans une issue GitHub : 33 nouvelles issues et actualisation des issues #5, #6 et #7. Le fichier est désormais vide ; le suivi des travaux ouverts se fait uniquement dans [GitHub Issues](https://github.com/For-Hives/minemories/issues). Une fonction implémentée reste ouverte si des critères ou validations manquent.
+This audit keeps the evidence for the criteria that were exercised. On 14 October 2026, each of the 36 lines of `docs/AI/TASKS.md` was moved into a GitHub issue: 33 new issues plus updates to issues #5, #6 and #7. The file is now empty; open work is tracked only in [GitHub Issues](https://github.com/For-Hives/minemories/issues). An implemented feature stays open if criteria or validations are missing.
 
-Les 38 issues du dépôt, ouvertes ou fermées, utilisent les labels existants. Les 36 tâches transférées sont réparties entre 18 `autonomous` et 18 `needs-human`, avec les domaines `mod`, `api`, `front` et `ideas` selon leur portée. L’issue #4 conserve son dashboard de dépendances et l’issue #8 reste fermée. Les preuves et critères de chaque ligne originale figurent dans le corps de son issue ; aucun second backlog local n’est maintenu.
+The repository's 38 issues, open or closed, use the existing labels. The 36 moved tasks are split into 18 `autonomous` and 18 `needs-human`, with the `mod`, `api`, `front` and `ideas` domains according to their scope. Issue #4 keeps its dependency dashboard and issue #8 stays closed. The evidence and criteria for each original line are in the body of its issue; no second local backlog is maintained.
 
-## Parcours terminés
+## Completed flows
 
-- AFK par défaut, pause/arrière-plan et réglages simples/avancés : validés par l’utilisateur en client de développement. La validation du JAR distribué reste distincte.
-- Sources core/NeoForge et export réel : démarrage et capture validés ; le crash `GlbScene` est corrigé.
-- Envoi automatique après appairage : capture AFK envoyée en production ; sans appairage, capture locale uniquement.
-- Garage réel : `bun run api:garage` passe huit scénarios HTTP/oRPC et stockage, dont une panne réelle du conteneur, une reprise par nouveau processus API et un crash après upload legacy multipart, sans doublon et avec contrôle des octets. Fixture Docker jetable, distincte des volumes de développement.
-- Ancien volume local `dev_minio_data` : inspection en lecture seule, aucun fichier et aucun bucket de captures trouvé. Pas de migration locale à effectuer. Cette conclusion ne concerne aucun autre déploiement.
+- AFK by default, pause/background and simple/advanced settings: validated by the user in a development client. Validation of the distributed JAR remains separate.
+- Core/NeoForge sources and real export: startup and capture validated; the `GlbScene` crash is fixed.
+- Automatic upload after pairing: AFK capture uploaded in production; without pairing, the capture stays local only.
+- Real Garage: `bun run api:garage` passes eight HTTP/oRPC and storage scenarios, including a real container outage, a resume by a new API process and a crash after a legacy multipart upload, with no duplicate and with byte checks. Disposable Docker fixture, separate from the development volumes.
+- Old local `dev_minio_data` volume: read-only inspection, no file and no capture bucket found. No local migration to perform. This conclusion does not cover any other deployment.
 
-- Audit initial API : headers de partage sans cache public, IP du socket et proxys de confiance, limiteur mémoire borné, corps d’appairage limité, correctif source-map-js. Les observations et alertes restantes sont dans [le rapport](api-security-audit.md) et les suites dans [issue #66](https://github.com/For-Hives/minemories/issues/66) et [issue #65](https://github.com/For-Hives/minemories/issues/65).
+- Initial API audit: share headers without public caching, socket IP and trusted proxies, bounded in-memory limiter, limited pairing body, source-map-js fix. Remaining observations and alerts are in [the report](api-security-audit.md) and the follow-ups in [issue #66](https://github.com/For-Hives/minemories/issues/66) and [issue #65](https://github.com/For-Hives/minemories/issues/65).
 
-- Suppressions/purges durables : file SQLite transactionnelle, backoff, reprise dans un nouveau processus après panne réelle Garage et refus de réutilisation des clés en attente. Voir [la validation et les limites](durable-deletions.md).
+- Durable deletions/purges: transactional SQLite queue, backoff, resume in a new process after a real Garage outage, and refusal to reuse pending keys. See [the validation and limits](durable-deletions.md).
 
-- Délais corrigés : trente jours pour les nouvelles mises en corbeille, anciennes échéances préservées avec trente jours de grâce minimum, compte à rebours issu de l’API et cache d’appairage de soixante jours. Migration persistante, rollback, frontières calendaires, contrat oRPC et restauration dans la galerie testés ; build complet et sept scénarios Garage passent. Voir [la migration](trash-retention.md).
+- Fixed delays: thirty days for new trash entries, older deadlines preserved with at least thirty days of grace, countdown coming from the API and a sixty-day pairing cache. Persistent migration, rollback, calendar boundaries, oRPC contract and restore in the gallery tested; full build and seven Garage scenarios pass. See [the migration](trash-retention.md).
 
-- Démarrage API : secrets explicites et distincts, configuration de production validée avant SQLite, origines normalisées et arrêt des minuteries au signal. Tests unitaires et vrais processus Bun avec configuration invalide/valide, sans secrets réels. L’audit du déploiement reste ouvert. Voir [les contrôles et les conséquences d’un changement de pepper](api-startup-configuration.md).
+- API startup: explicit and distinct secrets, production configuration validated before SQLite, normalized origins and timers stopped on signal. Unit tests and real Bun processes with invalid/valid configuration, without real secrets. The deployment audit stays open. See [the checks and the consequences of a pepper change](api-startup-configuration.md).
 
-- Ressources GLB embarquées : validation commune aux uploads legacy/reprenable et au viewer, URI externes refusées, prévention du remplacement de JSON et des buffers absents, limites conservées. Tests HTTP, parseur Three.js réel, interactions local/galerie, capture Minecraft de 10 MiB acceptée et rendu Blender inspecté avec ses 55 textures PNG. Build complet et sept scénarios Garage passent. Voir [la politique et les limites](embedded-glb-resources.md).
+- Embedded GLB resources: validation shared by legacy/resumable uploads and the viewer, external URIs refused, prevention of JSON replacement and missing buffers, limits kept. HTTP tests, real Three.js parser, local/gallery interactions, a 10 MiB Minecraft capture accepted and a Blender render inspected with its 55 PNG textures. Full build and seven Garage scenarios pass. See [the policy and limits](embedded-glb-resources.md).
 
-- Corps JSON auth/RPC/initialisation : limites distinctes avant parsing, arrêt des flux trop grands même sans taille fiable, conservation des cookies et tokens, deux miniatures proches du maximum acceptées, et plafonds binaires préservés. Tests sur serveur Bun réel et sessions oRPC ; le nouveau middleware est couvert à 100 % des lignes et fonctions. Voir [les plafonds et leur portée](api-json-limits.md).
+- Auth/RPC/initialization JSON bodies: separate limits before parsing, oversized streams stopped even without a reliable size, cookies and tokens kept, two thumbnails close to the maximum accepted, and binary caps preserved. Tests on a real Bun server and oRPC sessions; the new middleware has 100% line and function coverage. See [the caps and their scope](api-json-limits.md).
 
-- Quota GLB par compte : 2 Gio configurables, captures et corbeille, réservations des deux uploads, objets à effacer ; concurrence, rejeu, panne et libération après nettoyage testés. Legacy durable avant écriture et publication atomique ; crash après upload multipart de 9 MiB, panne Garage et nettoyage par nouveaux processus exercés. Build complet et huit scénarios Garage passent. Voir [le quota et les limites historiques](account-storage-quota.md). L’exécution de la réconciliation en production reste suivie.
+- Per-account GLB quota: 2 GiB configurable, captures and trash, reservations for both upload kinds, objects pending deletion; concurrency, replay, outage and release after cleanup tested. Legacy upload made durable before writing, with atomic publication; crash after a 9 MiB multipart upload, Garage outage and cleanup by new processes exercised. Full build and eight Garage scenarios pass. See [the quota and the historical limits](account-storage-quota.md). Running the reconciliation in production is still tracked.
 
-- Résumé de stockage privé : contrat oRPC et statut device exposent l’espace disponible, le total, les réservations et les effacements en attente. La galerie explique la libération d’espace et la conservation du GLB local ; chargement, panne, rafraîchissement et réponses tardives testés. Sessions réelles et Garage exercés. Dans Minecraft, le compteur des deux modes et l’écran de détails ont été validés par le développeur ; la fixture locale permet les envois jusqu’à 200 MiB. Voir [les champs et le parcours](account-storage-quota.md#consulter-lespace).
+- Private storage summary: the oRPC contract and device status expose available space, total, reservations and pending deletions. The gallery explains how space is freed and that the local GLB is kept; loading, outage, refresh and late responses tested. Real sessions and Garage exercised. In Minecraft, the counter in both modes and the details screen were validated by the developer; the local fixture allows uploads up to 200 MiB. See [the fields and the flow](account-storage-quota.md#checking-available-space).
 
-- Réconciliation historique : inventaire privé par clé et upload multipart, plan borné et ciblable par préfixe, revue puis application après arrêt de l’API et sauvegarde SQLite. Les claims existants sont réparés uniquement avec des valeurs connues ; les objets protégés restent conservés et les cas ambigus nécessitent une revue. La file durable exécute ensuite les suppressions. Neuf scénarios Garage passent ; aucune exécution en production n’est déduite de cette validation locale. Voir [la commande et le parcours](storage-reconciliation.md).
+- Historical reconciliation: private inventory by key and multipart upload, a bounded plan that can be targeted by prefix, review then application after stopping the API and backing up SQLite. Existing claims are repaired only with known values; protected objects are kept and ambiguous cases require review. The durable queue then performs the deletions. Nine Garage scenarios pass; no production run is inferred from this local validation. See [the command and the flow](storage-reconciliation.md).
 
-- Historique local : captures datées distinctes, migration du dernier export existant, copies de compatibilité `capture.glb`/`capture.json`, pagination et envoi de la capture sélectionnée avec ses propres métadonnées. Tests de collision, panne d’écriture, JSON borné/illisible, chemins, réponse tardive et envoi pendant un nouvel export. Minecraft 1.21.1 / NeoForge 21.1.248 exercé sur une copie isolée : six captures réelles lors du premier essai, persistance après redémarrage, puis import d’une ancienne capture de 57 016 octets et cinq nouvelles captures de terrain de 61 300 octets. Les accès simple/avancé, pages de quatre puis deux entrées, retour, envoi des anciens octets/métadonnées vers une API HTTP de test et refus sans appairage ont été vérifiés ; les écrans ont été inspectés visuellement. Cela ne prouve pas l’envoi de production ni le JAR distribué. Voir [l’historique et ses limites](local-capture-history.md).
+- Local history: distinct dated captures, migration of the existing latest export, `capture.glb`/`capture.json` compatibility copies, pagination and upload of the selected capture with its own metadata. Tests for collisions, write failure, bounded/unreadable JSON, paths, late response and upload during a new export. Minecraft 1.21.1 / NeoForge 21.1.248 exercised on an isolated copy: six real captures in the first trial, persistence after restart, then import of an old 57,016-byte capture and five new 61,300-byte terrain captures. Simple/advanced access, pages of four then two entries, back navigation, upload of the old bytes/metadata to a test HTTP API and refusal without pairing were checked; the screens were inspected visually. This does not prove production upload or the distributed JAR. See [the history and its limits](local-capture-history.md).
 
-- Refus des captures vides : contrôle des vrais chunks reçus, absence de publication sans géométrie, conservation du dernier GLB/JSON/référence et messages d’aide dans les deux modes. Tests core/historique et scénario Minecraft 1.21.1 / NeoForge 21.1.248 isolé : chunk absent, sélection d’air, absence d’upload et de profondeur provisoire, puis exports d’eau seule BLEND et de terrain chargé. Les messages ont été inspectés visuellement. Le buffer NORMAL est aussi testé pour les coordonnées finies extrêmes, après correction des soustractions en float. Voir [le scénario et ses limites](local-capture-history.md#vérification-du-refus-des-captures-vides).
+- Refusing empty captures: check of the chunks actually received, nothing published without geometry, latest GLB/JSON/reference kept and help messages in both modes. Core/history tests and an isolated Minecraft 1.21.1 / NeoForge 21.1.248 scenario: missing chunk, air selection, no upload and no provisional depth, then exports of BLEND water only and of loaded terrain. The messages were inspected visually. The NORMAL buffer is also tested for extreme finite coordinates, after fixing float subtractions. See [the scenario and its limits](local-capture-history.md#checking-that-empty-captures-are-refused).
 
-Les entités, lits et coffres standards sont maintenant capturés avec leur pose
-et leurs vraies textures. Le JAR beta a été chargé seul dans Minecraft
-1.21.1 / NeoForge 21.1.248 : animaux, mobs équipés, joueur, lit et coffres
-simple/double fermés puis ouverts ; capture d'un animal seul et AFK en menu
-pause. Les rendus Blender et les contrôles API/viewer passent. Les renderers
-particuliers des modpacks restent à exercer. Voir [la validation](frozen-entities.md).
-
-
-- Préversion GitHub `0.1.0-beta` publiée après fusion de la PR #56 et succès CI. Le téléchargement réel depuis le guide public a la même empreinte que le JAR testé en jeu ; profils CurseForge compatibles mis à jour avec sauvegarde. Voir [la distribution](mod-distribution.md).
-
-## Travaux encore ouverts
+Standard entities, beds and chests are now captured with their pose
+and their real textures. The beta JAR was loaded on its own in Minecraft
+1.21.1 / NeoForge 21.1.248: animals, equipped mobs, player, bed and
+single/double chests closed then open; capture of a lone animal and AFK in the
+pause menu. Blender renders and API/viewer checks pass. Specific modpack
+renderers still need to be exercised. See [the validation](frozen-entities.md).
 
 
-Le writer core `SpoolingGlbScene` prépare la mémoire bornée : géométrie/textures/JSON sur disque, cache de fichiers ouverts borné et publication atomique, avec refus des dépassements, interruptions et fichiers remplacés. Les tests vérifient l’équivalence binaire avec `GlbScene`, y compris les normales extrêmes ; un vrai processus à heap limitée à 32 Mio produit un GLB de 91 201 408 octets. Les fixtures legacy/spoolées sont identiques et leurs rendus Blender ont été inspectés. La PR #58 raccorde la capture AFK progressive : copie par frames, file/worker bornés, suspension, annulations, débit d’envoi et dates de capture. Le JAR final est exercé dans Minecraft, avec API loopback réelle et rendus Blender ; voir [les preuves et les mesures](spooling-glb.md). L’issue #84 suit ce raccordement ; l’issue #79 est terminée avec les [mesures par phase et leur corpus](afk-performance.md) ; les matériels/renderers de modpacks particuliers restent dans #91. La beta GitHub déjà publiée reste distincte de ce JAR de développement.
+- GitHub pre-release `0.1.0-beta` published after PR #56 was merged and CI passed. The real download from the public guide has the same checksum as the JAR tested in game; compatible CurseForge profiles updated with a backup. See [the distribution](mod-distribution.md).
 
-Les diagnostics privés consentis sont implémentés : consentement explicite lié à l’API/appareil/jeton, permis révocable, traces et étapes bornées, corrélation capture/upload, limites persistantes, rétention et consultation/groupement CLI en lecture seule. Les tests HTTP/Java couvrent les refus, changements d’identité, retries et réponses tardives ; deux lancements Minecraft isolés avec API loopback réelle ont exercé appairage, NON/OUI, upload, panne, persistance, retrait/effacement et déconnexion. Les rapports privés ont été contrôlés. Leur déploiement et validation de production restent suivis dans [issue #82](https://github.com/For-Hives/minemories/issues/82) ; voir [le parcours et les limites](consented-diagnostics.md).
-
-Les tâches mod/API restantes sont suivies dans leurs issues GitHub : sélection des zones fréquentées, optimisation GLB, timelapse, lecture progressive et mesures de performance, autres loaders, observabilité consentie, facturation Polar et stockage hot/cold. Les validations en jeu des coupures/reprises de production et des autres parcours du JAR restent suivies. Les tests de galerie restent suivis. La couverture API est maintenant contrôlée par fichier (90 % des lignes, 80 % des fonctions), avec inventaire des sources et test négatif du vrai runner.
-
-La profondeur visitée est implémentée avec tests de persistance/isolation et captures réelles importées dans Blender ; le parcours comparatif complet surface/grotte/retour/autre zone, dimension, monde, joueur et redémarrage est désormais [documenté](exploration-depth-validation.md), avec AFK désactivé, pleine hauteur et sélection explicite vérifiés. Les faces de coupe terre/pierre sont implémentées, avec tests des limites et des plans, et rendus Blender de surface et de profondeur. La scène de contrôle eau/verre/feuilles/escalier exportée en pause confirme les faces d’eau sur la coupe et les matériaux MASK/BLEND, avec un rendu Blender inspecté. La tâche #8 est terminée.
-
-## Actions humaines et périmètre
-
-- Issue #5 : créer/configurer les projets et identifiants de distribution Modrinth/CurseForge. La CI est préparée, la publication reste désactivée par défaut.
-- Issue #6 : contrôler/redéployer le front et confirmer l’ouverture authentifiée de la galerie. Les sujets auparavant regroupés sont séparés : infrastructure API [issue #66](https://github.com/For-Hives/minemories/issues/66), réconciliation [issue #65](https://github.com/For-Hives/minemories/issues/65), routage Nginx [issue #67](https://github.com/For-Hives/minemories/issues/67) et diagnostics [issue #82](https://github.com/For-Hives/minemories/issues/82).
-- Logo et direction artistique : [issue #76](https://github.com/For-Hives/minemories/issues/76) ; maquettes du mod : [issue #62](https://github.com/For-Hives/minemories/issues/62). Ces travaux restent exclus de l’implémentation mod/API prioritaire.
+## Work still open
 
 
-## Envoi natif à la limite de 200 Mio
+The core writer `SpoolingGlbScene` prepares bounded memory: geometry/textures/JSON on disk, a bounded cache of open files and atomic publication, with refusal of overflows, interruptions and replaced files. Tests check binary equivalence with `GlbScene`, including extreme normals; a real process with a heap capped at 32 MiB produces a 91,201,408-byte GLB. The legacy/spooled fixtures are identical and their Blender renders were inspected. PR #58 wires up progressive AFK capture: per-frame copying, bounded queue/worker, suspension, cancellations, upload throughput and capture dates. The final JAR is exercised in Minecraft, with a real loopback API and Blender renders; see [the evidence and measurements](spooling-glb.md). Issue #84 tracks this wiring; issue #79 is done with the [per-phase measurements and their corpus](afk-performance.md); specific modpack hardware/renderers stay in #91. The GitHub beta already published remains distinct from this development JAR.
 
-Le scénario de #81 est validé avec le JAR exact et l’API réelle locale : appairage,
-arrêt API après trois morceaux, nouveaux processus API/Minecraft, reprise à 12 Mio,
-50 morceaux au total, même UUID et SHA-256, métadonnées intactes et aucun doublon.
-Les allocations JFR restent par morceau ; le dépassement et le quota sont refusés.
-Voir [les preuves, le fixture et leur portée](native-upload-resume-validation.md).
-Les validations sur les profils/déploiements de production restent dans #83.
+Private consented diagnostics are implemented: explicit consent tied to the API/device/token, a revocable permit, bounded traces and steps, capture/upload correlation, persistent limits, retention and read-only CLI viewing/grouping. HTTP/Java tests cover refusals, identity changes, retries and late responses; two isolated Minecraft launches with a real loopback API exercised pairing, NO/YES, upload, outage, persistence, withdrawal/erasure and disconnection. The private reports were checked. Their deployment and production validation are still tracked in [issue #82](https://github.com/For-Hives/minemories/issues/82); see [the flow and limits](consented-diagnostics.md).
 
-## Suggestions de zones fréquentées
+The remaining mod/API tasks are tracked in their GitHub issues: selection of frequently visited areas, GLB optimization, timelapse, progressive reading and performance measurements, other loaders, consented observability, Polar billing and hot/cold storage. In-game validations of production outages/resumes and of the JAR's other flows are still tracked. Gallery tests are still tracked. API coverage is now checked per file (90% of lines, 80% of functions), with a source inventory and a negative test of the real runner.
 
-L’issue #72 ajoute un score de temps actif local, agrégé en cases de 64 × 64 blocs,
-avec cinq propositions dans M et `/minemories suggestions`. L’historique borné est
-séparé par monde/dimension/joueur ; consulter la liste ne change ni sélection ni
-capture/envoi. Les tests couvrent notamment la cadence réelle des ticks, et le
-JAR est exercé en jeu sur deux séjours, pause, chunk absent, dimension, redémarrage,
-autre monde et autre joueur. Voir [le fonctionnement et les preuves](visited-zones.md).
+Visited depth is implemented with persistence/isolation tests and real captures imported into Blender; the full comparative surface/cave/return/other area, dimension, world, player and restart run is now [documented](exploration-depth-validation.md), with AFK disabled, full height and explicit selection verified. Dirt/stone cut faces are implemented, with tests of the limits and planes, and Blender renders of surface and depth. The water/glass/leaves/stairs control scene exported while paused confirms water faces on the cut and MASK/BLEND materials, with an inspected Blender render. Task #8 is done.
+
+## Human actions and scope
+
+- Issue #5: create/configure the Modrinth/CurseForge distribution projects and credentials. CI is ready; publication stays disabled by default.
+- Issue #6: check/redeploy the front end and confirm that the gallery opens when authenticated. Previously grouped topics are now separate: API infrastructure [issue #66](https://github.com/For-Hives/minemories/issues/66), reconciliation [issue #65](https://github.com/For-Hives/minemories/issues/65), Nginx routing [issue #67](https://github.com/For-Hives/minemories/issues/67) and diagnostics [issue #82](https://github.com/For-Hives/minemories/issues/82).
+- Logo and art direction: [issue #76](https://github.com/For-Hives/minemories/issues/76); mod mockups: [issue #62](https://github.com/For-Hives/minemories/issues/62). This work stays outside the priority mod/API implementation.
 
 
-## Galerie publique et classement réels
+## Native upload at the 200 MiB limit
 
-L’issue #69 relie `/explore` et `/ranking` à une publication volontaire,
-révocable et modérée, distincte des exemples `?demo=1`. Les votes sont uniques
-par compte et les limites persistées ; corbeille/restauration, concurrence et
-révocation avant réponse du flux sont testées. Le propriétaire et les modérateurs
-disposent de leurs contrôles ; voir [les contrats, limites et preuves](public-discovery.md).
+The #81 scenario is validated with the exact JAR and the real local API: pairing,
+API stopped after three chunks, new API/Minecraft processes, resume at 12 MiB,
+50 chunks in total, same UUID and SHA-256, intact metadata and no duplicate.
+JFR allocations stay per chunk; overflow and quota are refused.
+See [the evidence, the fixture and their scope](native-upload-resume-validation.md).
+Validations on production profiles/deployments stay in #83.
 
-## Taille des GLB
+## Frequently visited area suggestions
 
-L’issue #73 ajoute des indices adaptatifs et le masquage des zones inutilisées
-d’atlas, sans extension ni modification des attributs visibles. Le corpus réel
-mesure 5,86–55,87 % de réduction, avec coûts de préparation explicités ; les cinq
-paires de rendus Blender sont identiques pixel pour pixel. Les validateurs,
-frontières, annulations et le JAR natif sont exercés. Voir [mesures et preuves](glb-size.md).
+Issue #72 adds a local active-time score, aggregated into 64 × 64 block cells,
+with five suggestions in M and `/minemories suggestions`. The bounded history is
+separated by world/dimension/player; viewing the list changes neither the
+selection nor capture/upload. Tests notably cover the real tick cadence, and the
+JAR is exercised in game over two stays, pause, missing chunk, dimension, restart,
+another world and another player. See [how it works and the evidence](visited-zones.md).
+
+
+## Real public gallery and ranking
+
+Issue #69 connects `/explore` and `/ranking` to voluntary, revocable and
+moderated publication, separate from the `?demo=1` examples. Votes are unique
+per account and limits are persisted; trash/restore, concurrency and
+revocation before the feed responds are tested. The owner and moderators
+have their controls; see [the contracts, limits and evidence](public-discovery.md).
+
+## GLB size
+
+Issue #73 adds adaptive indices and masking of unused atlas areas, without
+extensions or changes to visible attributes. The real corpus shows a 5.86–55.87%
+reduction, with preparation costs stated; the five pairs of Blender renders are
+pixel-identical. Validators, boundaries, cancellations and the native JAR are
+exercised. See [measurements and evidence](glb-size.md).

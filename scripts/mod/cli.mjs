@@ -37,7 +37,7 @@ export async function discoverCommands(dir = commandsDir) {
 			if (typeof command.run === 'function') commands.push(command)
 		} catch (error) {
 			const name = file.replace(extension, '')
-			commands.push({ name, summary: `(chargement impossible : ${error.message})`, broken: true })
+			commands.push({ name, summary: `(failed to load: ${error.message})`, broken: true })
 		}
 	}
 	return commands
@@ -47,12 +47,12 @@ export function helpText(commands) {
 	const width = Math.max(...commands.map(c => c.name.length))
 	const lines = commands.map(c => `  ${c.name.padEnd(width)}  ${c.summary}`)
 	return [
-		'Usage : bun mod <commande> [options]',
+		'Usage: bun mod <command> [options]',
 		'',
-		'Commandes :',
+		'Commands:',
 		...lines,
 		'',
-		'bun mod <commande> --help : usage détaillé.',
+		'bun mod <command> --help: detailed usage.',
 	].join('\n')
 }
 
@@ -66,15 +66,15 @@ export async function main(argv, options = {}) {
 	}
 	const command = commands.find(c => c.name === name)
 	if (!command) {
-		log.error(`Commande inconnue : ${name}\n\n${helpText(commands)}`)
+		log.error(`Unknown command: ${name}\n\n${helpText(commands)}`)
 		return 1
 	}
 	if (command.broken) {
-		log.error(`Commande ${name} indisponible : ${command.summary}`)
+		log.error(`Command ${name} unavailable: ${command.summary}`)
 		return 1
 	}
 	if (args.includes('--help') || args.includes('-h')) {
-		log.info(`${command.summary}\n\nUsage : ${command.usage}`)
+		log.info(`${command.summary}\n\nUsage: ${command.usage}`)
 		return 0
 	}
 	try {

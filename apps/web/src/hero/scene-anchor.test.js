@@ -23,7 +23,7 @@ test('the fetcher option is set when the film mounts and cleared when it is disp
 
 test('every capture is downloaded by fetchGlb and nowhere else', () => {
 	const downloads = source.match(/\bfetchGlb\(/g) ?? []
-	// the declaration, loadGlb (S0, personnages) and the S1..S4 loop
+	// the declaration, loadGlb (S0, characters) and the S1..S4 loop
 	expect(downloads.length).toBe(3)
 	expect(source).toContain('await fetchGlb(base, name)')
 	expect(source).toContain('settle(fetchGlb(CAPTURES, name))')

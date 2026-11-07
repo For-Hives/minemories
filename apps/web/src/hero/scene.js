@@ -7016,7 +7016,7 @@ export function mount(target, opts = {}) {
 		return Object.fromEntries(entries)
 	}
 	const charTexturesFromGlb = async () => {
-		const gltf = await loadGlb(loader, CAPTURES, 'personnages')
+		const gltf = await loadGlb(loader, CAPTURES, 'characters')
 		const { byKind } = prepareCapture(gltf.scene)
 		const maps = { collarColor: null }
 		for (const m of [...byKind.wolf, ...byKind.player]) {
@@ -7231,7 +7231,7 @@ export function mount(target, opts = {}) {
 					importModule('backdrop.js', () => import('./backdrop.js'), warn),
 				]),
 				loadCharTextures().catch((error) => {
-					console.warn('[scene] character PNG textures unavailable, falling back to personnages.glb', error)
+					console.warn('[scene] character PNG textures unavailable, falling back to characters.glb', error)
 					return null
 				}),
 			]),
@@ -7326,7 +7326,7 @@ export function mount(target, opts = {}) {
 					try {
 						maps = await charTexturesFromGlb()
 					} catch (error) {
-						warn(`personnages.glb missing (${error.reason ?? error.message}): characters absent`)
+						warn(`characters.glb missing (${error.reason ?? error.message}): characters absent`)
 						maps = {}
 					}
 				}

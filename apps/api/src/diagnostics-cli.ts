@@ -23,7 +23,7 @@ export async function runDiagnosticsCli(
 	if (values.help)
 		return {
 			usage:
-				'Groupes privés : [--limit 1..1000] [--device UUID]. Rapports assainis : --reports. DATABASE_PATH doit désigner une base existante.',
+				'Private groups: [--limit 1..1000] [--device UUID]. Sanitized reports: --reports. DATABASE_PATH must point to an existing database.',
 		}
 	const limit = Number(values.limit ?? 100)
 	if (!(integer.test(values.limit ?? '100') && Number.isSafeInteger(limit)) || limit < 1 || limit > 1000)
@@ -62,7 +62,7 @@ export async function executeDiagnosticsCli(args: string[], databasePath?: strin
 		return 0
 	} catch {
 		console.error(
-			'Consultation interrompue. Vérifie les options et la base privée existante. Aucun rapport ni fichier n’a été modifié.'
+			'Lookup aborted. Check the options and the existing private database. No report or file was modified.'
 		)
 		return 1
 	}

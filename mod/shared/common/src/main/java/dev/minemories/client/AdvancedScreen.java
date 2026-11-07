@@ -31,7 +31,7 @@ final class AdvancedScreen extends Screen {
   private Button saveButton;
   private Button defaultsButton;
   private Button storageButton;
-  private String status = I18n.get("minemories.ui.pret");
+  private String status = I18n.get("minemories.ui.ready");
   private boolean paired;
   private int panelWidth;
   private int left;
@@ -60,7 +60,7 @@ final class AdvancedScreen extends Screen {
     saveButton =
         button(
             null,
-            I18n.get("minemories.ui.enregistrer"),
+            I18n.get("minemories.ui.save"),
             14,
             PANEL_HEIGHT - 66,
             panelWidth - 28,
@@ -85,7 +85,7 @@ final class AdvancedScreen extends Screen {
                   ignored -> selectTab(each)));
       tabButtons.add(tabButton);
     }
-    button(null, I18n.get("minemories.ui.retour"), panelWidth - 14 - back, 34, back, this::onClose);
+    button(null, I18n.get("minemories.ui.back"), panelWidth - 14 - back, 34, back, this::onClose);
   }
 
   private void selectTab(AdvancedTab selected) {
@@ -122,20 +122,17 @@ final class AdvancedScreen extends Screen {
     apiInput =
         input(
             AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.adresse_de_lapi"),
+            I18n.get("minemories.ui.api_address"),
             CONTENT_Y + 14,
             panelWidth - 28);
     directoryInput =
         input(
             AdvancedTab.CAPTURES,
-            I18n.get("minemories.ui.dossier_des_exports_locaux"),
+            I18n.get("minemories.ui.local_export_folder"),
             CONTENT_Y + 14,
             panelWidth - 28);
     directoryInput.setTooltip(
-        Tooltip.create(
-            Component.literal(
-                I18n.get(
-                    "minemories.ui.chemin_absolu_ou_export_les_captures_datees_restent_dans_history_capture_glb_donne_le_dernier_export"))));
+        Tooltip.create(Component.literal(I18n.get("minemories.ui.local_export_folder_hint"))));
     try {
       apiInput.setValue(PairingClient.apiUrl());
       directoryInput.setValue(PairingClient.exportDirectory().toString());
@@ -151,19 +148,17 @@ final class AdvancedScreen extends Screen {
     defaultsButton =
         button(
             AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.adresse_officielle"),
+            I18n.get("minemories.ui.official_address"),
             14,
             y,
             half,
             () -> apiInput.setValue(ClientSettings.DEFAULT_API_URL));
     defaultsButton.setTooltip(
-        Tooltip.create(
-            Component.translatable(
-                "minemories.ui.retablit_ladresse_officielle_clique_ensuite_sur_enregistrer")));
+        Tooltip.create(Component.translatable("minemories.ui.official_address_hint")));
     storageButton =
         button(
             AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.stockage"),
+            I18n.get("minemories.ui.storage"),
             20 + half,
             y,
             half,
@@ -171,7 +166,7 @@ final class AdvancedScreen extends Screen {
     unlinkButton =
         button(
             AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.deconnecter_ce_compte"),
+            I18n.get("minemories.ui.disconnect_account"),
             14,
             y + 26,
             panelWidth - 28,
@@ -184,7 +179,7 @@ final class AdvancedScreen extends Screen {
     localButton =
         button(
             AdvancedTab.CAPTURES,
-            I18n.get("minemories.ui.exporter_en_local"),
+            I18n.get("minemories.ui.export_locally"),
             14,
             y,
             half,
@@ -192,18 +187,16 @@ final class AdvancedScreen extends Screen {
     selectionButton =
         button(
             AdvancedTab.CAPTURES,
-            I18n.get("minemories.ui.exporter_la_selection"),
+            I18n.get("minemories.ui.export_selection"),
             20 + half,
             y,
             half,
             () -> capture(true));
     selectionButton.setTooltip(
-        Tooltip.create(
-            Component.translatable(
-                "minemories.ui.definis_les_deux_coins_avec_minemories_select_first_et_second")));
+        Tooltip.create(Component.translatable("minemories.ui.export_selection_hint")));
     button(
         AdvancedTab.CAPTURES,
-        I18n.get("minemories.ui.captures_auto"),
+        I18n.get("minemories.ui.auto_captures"),
         14,
         y + 26,
         half,
@@ -211,7 +204,7 @@ final class AdvancedScreen extends Screen {
     historyButton =
         button(
             AdvancedTab.CAPTURES,
-            I18n.get("minemories.ui.captures_locales"),
+            I18n.get("minemories.ui.local_captures"),
             20 + half,
             y + 26,
             half,
@@ -223,17 +216,15 @@ final class AdvancedScreen extends Screen {
     Button worldButton =
         button(
             AdvancedTab.WORLD,
-            I18n.get("minemories.ui.monde"),
+            I18n.get("minemories.ui.world"),
             14,
             y,
             panelWidth - 28,
             () -> Minecraft.getInstance().setScreen(new TemporalWorldScreen(this)));
-    worldButton.setTooltip(
-        Tooltip.create(
-            Component.translatable("minemories.ui.identite_du_monde_distant_pour_la_timelapse")));
+    worldButton.setTooltip(Tooltip.create(Component.translatable("minemories.ui.world_hint")));
     button(
         AdvancedTab.WORLD,
-        I18n.get("minemories.ui.zones_suggerees"),
+        I18n.get("minemories.ui.suggested_areas"),
         14,
         y + 26,
         panelWidth - 28,
@@ -259,8 +250,7 @@ final class AdvancedScreen extends Screen {
       paired = PairingClient.isPaired();
     } catch (RuntimeException error) {
       paired = false;
-      status =
-          I18n.get("minemories.ui.configuration_illisible") + ClientRuntime.pairingError(error);
+      status = I18n.get("minemories.ui.unreadable_settings") + ClientRuntime.pairingError(error);
     }
   }
 
@@ -293,8 +283,8 @@ final class AdvancedScreen extends Screen {
       directoryInput.setValue(PairingClient.exportDirectory().toString());
       status =
           changedApi
-              ? I18n.get("minemories.ui.reglages_enregistres_reconnecte_ton_compte_a_cette_api")
-              : I18n.get("minemories.ui.reglages_enregistres");
+              ? I18n.get("minemories.ui.settings_saved_reconnect_account")
+              : I18n.get("minemories.ui.settings_saved");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -309,7 +299,7 @@ final class AdvancedScreen extends Screen {
               : ClientRuntime.export(PairingClient.afkOptions().radius());
       status =
           result == 1
-              ? I18n.get("minemories.ui.fichier_local_enregistre_aucun_envoi")
+              ? I18n.get("minemories.ui.local_file_saved_nothing_sent")
               : ClientRuntime.captureFailure();
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
@@ -321,7 +311,7 @@ final class AdvancedScreen extends Screen {
     try {
       PairingClient.unlink();
       refreshSettings();
-      status = I18n.get("minemories.ui.compte_deconnecte_tes_souvenirs_en_ligne_sont_conserves");
+      status = I18n.get("minemories.ui.account_disconnected_memories_kept");
     } catch (RuntimeException error) {
       status = ClientRuntime.pairingError(error);
     }
@@ -353,8 +343,8 @@ final class AdvancedScreen extends Screen {
         COLOR_TEXT);
     String hint =
         switch (tab) {
-          case ACCOUNT -> I18n.get("minemories.ui.adresse_de_lapi_https");
-          case CAPTURES -> I18n.get("minemories.ui.dossier_local_historique_conserve");
+          case ACCOUNT -> I18n.get("minemories.ui.api_address_https");
+          case CAPTURES -> I18n.get("minemories.ui.local_folder_history_kept");
           case WORLD, PRIVACY -> "";
         };
     graphics.drawString(font, hint, left + 14, top + CONTENT_Y, COLOR_MUTED);

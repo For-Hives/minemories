@@ -124,7 +124,7 @@ class DiagnosticsClientTest {
 
   private void enable(DiagnosticsClient client) throws Exception {
     settings.set(paired(true, "private-test-token"));
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
   }
 
   private static void await(BooleanSupplier condition) throws Exception {
@@ -165,7 +165,7 @@ class DiagnosticsClientTest {
       operation.step(DiagnosticReport.Step.CAPTURE_STARTED);
       operation.failed(error);
       assertEquals(0, error.stackReads);
-      assertTrue(client.status().startsWith("Désactivés"));
+      assertTrue(client.status().startsWith("Disabled"));
       assertTrue(
           operation
               .headers(HttpRequest.newBuilder(URI.create(api)))
@@ -195,7 +195,7 @@ class DiagnosticsClientTest {
     implicit.remove("diagnosticsConsent");
     implicit.remove("diagnosticsIdentity");
     settings.set(implicit);
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
     var operation = client.begin(DiagnosticReport.Phase.CAPTURE, null);
     operation.step(DiagnosticReport.Step.CAPTURE_STARTED);
     operation.failed(new PrivateError());
@@ -258,14 +258,14 @@ class DiagnosticsClientTest {
     DiagnosticsClient client = start();
     authorizationRelease = new CountDownLatch(1);
     settings.set(paired(true, "private"));
-    assertTrue(client.status().startsWith("Vérification"));
+    assertTrue(client.status().startsWith("Checking"));
     await(() -> authorizations.get() == 1);
     client.settingsChanged(() -> settings.get().setProperty("diagnosticsConsent", "false"));
     authorizationRelease.countDown();
     await(() -> deletions.get() == 1);
     PrivateError error = new PrivateError();
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(error);
-    assertTrue(client.status().startsWith("Désactivés"));
+    assertTrue(client.status().startsWith("Disabled"));
     assertEquals(0, error.stackReads);
     assertEquals(0, reports.get());
   }
@@ -290,7 +290,7 @@ class DiagnosticsClientTest {
     PrivateError ignored = new PrivateError();
     old.failed(ignored);
     assertEquals(0, ignored.stackReads);
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
     client.begin(DiagnosticReport.Phase.UPLOAD, file).failed(new PrivateError());
     await(() -> reports.get() == 1 && !client.isSending());
     assertEquals("Bearer other-test-token", tokens.getFirst());
@@ -315,7 +315,7 @@ class DiagnosticsClientTest {
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(ignored);
     assertEquals(0, ignored.stackReads);
     assertFalse(client.isSending());
-    assertTrue(client.status().startsWith("Désactivés"));
+    assertTrue(client.status().startsWith("Disabled"));
     assertEquals(1, reports.get());
   }
 
@@ -329,7 +329,7 @@ class DiagnosticsClientTest {
     PrivateError ignored = new PrivateError();
     client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(ignored);
     assertEquals(0, ignored.stackReads);
-    assertTrue(client.status().contains("refusé"));
+    assertTrue(client.status().contains("refused"));
     assertEquals(1, authorizations.get());
     assertEquals(1, reports.get());
   }
@@ -411,11 +411,11 @@ class DiagnosticsClientTest {
     client.settingsChanged(() -> {});
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(ignored);
     assertEquals(0, ignored.stackReads);
-    assertTrue(client.status().startsWith("Désactivés"));
+    assertTrue(client.status().startsWith("Disabled"));
     await(() -> deletions.get() == 1);
     assertEquals(0, reports.get());
     client.changeConsent(true, () -> {});
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
     assertTrue(client.consentAllowed());
   }
 
@@ -428,7 +428,7 @@ class DiagnosticsClientTest {
     PrivateError error = new PrivateError();
     previous.failed(error);
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(error);
-    assertTrue(client.status().startsWith("Désactivés"));
+    assertTrue(client.status().startsWith("Disabled"));
     assertEquals(0, error.stackReads);
     assertEquals(1, authorizations.get());
     await(() -> deletions.get() == 1);
@@ -441,7 +441,7 @@ class DiagnosticsClientTest {
                 .setProperty(
                     "diagnosticsIdentity",
                     ClientSettings.diagnosticsBinding(settings.get(), null)));
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
     client.begin(DiagnosticReport.Phase.UPLOAD, null).failed(new PrivateError());
     await(() -> reports.get() == 1 && !client.isSending());
     assertEquals("Bearer replacement-private-token", tokens.getFirst());
@@ -468,7 +468,7 @@ class DiagnosticsClientTest {
     String id = bodies.getFirst().getAsJsonObject("report").get("id").getAsString();
     var restarted = durable(clock);
     reportStatus = 201;
-    await(() -> restarted.status().startsWith("Activés"));
+    await(() -> restarted.status().startsWith("Enabled"));
     assertEquals(1, reports.get());
     clock.addAndGet(30001);
     restarted.tick();
@@ -572,7 +572,7 @@ class DiagnosticsClientTest {
     settings.set(paired(true, "private-test-token"));
     authorizationStatus = 503;
     client.tick();
-    await(() -> authorizations.get() == 1 && client.status().contains("indisponible"));
+    await(() -> authorizations.get() == 1 && client.status().contains("unavailable"));
     PrivateError ignored = new PrivateError();
     client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(ignored);
     assertEquals(0, ignored.stackReads);
@@ -580,7 +580,7 @@ class DiagnosticsClientTest {
     authorizationStatus = 200;
     clock.addAndGet(30001);
     client.tick();
-    await(() -> client.status().startsWith("Activés"));
+    await(() -> client.status().startsWith("Enabled"));
     client.begin(DiagnosticReport.Phase.CAPTURE, null).failed(new IOException("private"));
     await(() -> reports.get() == 1 && !client.isSending());
   }
@@ -598,7 +598,7 @@ class DiagnosticsClientTest {
     var next = durable(clock);
     settings.get().setProperty("diagnosticsEpoch", UUID.randomUUID().toString());
     settings.get().setProperty("diagnosticsConsent", "true");
-    await(() -> next.status().startsWith("Activés"));
+    await(() -> next.status().startsWith("Enabled"));
     next.tick();
     assertEquals(0, reports.get());
   }

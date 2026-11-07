@@ -1,12 +1,12 @@
-# Activer l’observabilité distante du mod
+# Enabling remote observability for the mod
 
-Le fonctionnement et les champs transmis sont décrits dans [Diagnostics privés et consentis](consented-diagnostics.md). Le complément fonctionnel est suivi dans [#108](https://github.com/For-Hives/minemories/issues/108) ; le déploiement et ses preuves restent [#82](https://github.com/For-Hives/minemories/issues/82).
+How it works and which fields are sent is described in [Private, consented diagnostics](consented-diagnostics.md). The functional follow-up is tracked in [#108](https://github.com/For-Hives/minemories/issues/108); deployment and its evidence remain [#82](https://github.com/For-Hives/minemories/issues/82).
 
-## Configuration API dans Coolify
+## API configuration in Coolify
 
-Déployer d’abord l’API contenant le contrat `crash`, la migration des groupes et les routes oRPC opérateur, puis le web et le JAR. Le workflow de release reste indépendant du déploiement web. La nouvelle API accepte encore les rapports des anciennes versions du mod. Un nouveau mod conserve et réessaie les crashs refusés par une ancienne API dans les limites de sa file.
+First deploy the API that contains the `crash` contract, the group migration and the operator oRPC routes, then the web app and the JAR. The release workflow stays independent from the web deployment. The new API still accepts reports from older mod versions. A new mod keeps and retries crashes rejected by an older API, within the limits of its queue.
 
-Variables runtime API :
+API runtime variables:
 
 ```dotenv
 DIAGNOSTICS_ENABLED=true
@@ -16,32 +16,32 @@ DIAGNOSTICS_MAX_PER_DEVICE=1000
 DIAGNOSTICS_MAX_REPORTS=10000
 ```
 
-L'accès à la console est réservé aux administrateurs (rôle `user_roles`, promotion depuis `/admin/users`) : aucune liste d'identifiants à configurer. La réception est activée par défaut mais ne collecte rien sans accord et appareil appairé.
+Console access is restricted to administrators (`user_roles` role, promoted from `/admin/users`): there is no ID list to configure. Ingestion is on by default but collects nothing without consent and a paired device.
 
-Conserver `DATABASE_PATH` sur un volume privé persistant. Le compte système de l’API doit être propriétaire des fichiers SQLite, WAL/SHM et sauvegardes ; limiter l’accès aux opérateurs. Ne jamais placer la base ou une sortie de `bun api:diagnostics` dans le dossier web public. Les suppressions ne réduisent pas automatiquement le fichier SQLite ni les sauvegardes historiques : appliquer une durée de conservation aux sauvegardes également. Vérifier ces droits dans le conteneur de production avant d’ouvrir les essais.
+Keep `DATABASE_PATH` on a private persistent volume. The API's system account must own the SQLite, WAL/SHM and backup files; restrict access to operators. Never put the database or any `bun api:diagnostics` output in the public web folder. Deletions do not automatically shrink the SQLite file or past backups: apply a retention period to backups as well. Check these permissions in the production container before opening the trials.
 
-Côté web : construire avec `VITE_API_URL` pointant vers l’API déployée et garder `VITE_INDEXABLE=false`. Appliquer `deploy/nginx.web.conf` mis à jour pour que `/admin/diagnostics` serve `app.html` avec `noindex`. Configurer les origines de session/CORS comme pour la galerie ; la console utilise la même session Better Auth, aucun nouveau secret d’administration à transmettre au navigateur.
+Web side: build with `VITE_API_URL` pointing at the deployed API and keep `VITE_INDEXABLE=false`. Apply the updated `deploy/nginx.web.conf` so that `/admin/diagnostics` serves `app.html` with `noindex`. Configure session/CORS origins as for the gallery; the console uses the same Better Auth session, so no new admin secret has to reach the browser.
 
-## Essai de production avec un appareil de contrôle
+## Production trial with a control device
 
-1. Se connecter au site avec le compte opérateur. `/admin/diagnostics` doit s’ouvrir ; un compte ordinaire et un modérateur de galerie non autorisé doivent être refusés. Vérifier `Cache-Control: private, no-store` et `noindex`.
-2. Appairer une installation de contrôle, puis ouvrir **M → Diagnostics**. Vérifier NON par défaut ; le propriétaire du profil active lui-même OUI après lecture. Ne jamais activer l’accord à la place de Mae ou d’un autre joueur.
-3. Sur un profil de test sauvegardé, provoquer une erreur d’export maîtrisée (par exemple un dossier d’export qui ne peut pas être créé). Vérifier dans la console la phase capture, version du JAR, date, frames et corrélation. Un refus normal de sélection/zone n’est pas une exception technique.
-4. Simuler une indisponibilité réseau puis rétablir l’accès ; la file doit rester bornée et le rapport arriver avec le même UUID. Un délai et les limites horaires peuvent différer la réception.
-5. Sur un profil de contrôle jetable, exercer un vrai crash Java Minecraft, puis relancer. Vérifier la phase crash et les étapes disponibles. Un arrêt forcé du processus ne garantit aucune trace.
-6. Passer une erreur en cours puis résolue ; provoquer une occurrence équivalente pour vérifier la réouverture. Actualiser avant modification lorsqu’une occurrence arrive pendant la consultation.
-7. Retirer OUI dans le mod : file locale effacée, permis révoqué et rapports de cet appareil supprimés. Les groupes sans autre occurrence disparaissent. Déclencher ensuite un nouvel échec pour confirmer l’absence de collecte. Sans accès à l’API ou après révocation du jeton, l’effacement serveur immédiat ne peut pas être confirmé ; la rétention et le nettoyage des appareils révoqués prennent le relais.
-8. Consigner révision API/web, version/empreinte du JAR, compte opérateur de contrôle, résultats et permissions des volumes/sauvegardes dans le suivi privé de déploiement. Fermer #82 seulement après ces preuves.
+1. Sign in to the site with the operator account. `/admin/diagnostics` must open; a regular account and an unauthorized gallery moderator must be refused. Check `Cache-Control: private, no-store` and `noindex`.
+2. Pair a control installation, then open **M → Diagnostics**. Check that it is OFF by default; the profile owner turns it ON themselves after reading. Never turn consent on in place of Mae or any other player.
+3. On a backed-up test profile, trigger a controlled export error (for example an export folder that cannot be created). In the console, check the capture phase, JAR version, date, frames and correlation. A normal selection/area refusal is not a technical exception.
+4. Simulate a network outage, then restore access; the queue must stay bounded and the report must arrive with the same UUID. A delay and the hourly limits can postpone ingestion.
+5. On a throwaway control profile, trigger a real Minecraft Java crash, then relaunch. Check the crash phase and the available steps. Force-killing the process guarantees no trace.
+6. Move an error to in progress, then resolved; trigger an equivalent occurrence to check that it reopens. Refresh before editing when an occurrence arrives while you are viewing it.
+7. Turn consent OFF in the mod: local queue cleared, permit revoked and this device's reports deleted. Groups with no other occurrence disappear. Then trigger a new failure to confirm nothing is collected. Without API access, or after the token is revoked, immediate server-side deletion cannot be confirmed; retention and cleanup of revoked devices take over.
+8. Record the API/web revision, JAR version/fingerprint, control operator account, results, and volume/backup permissions in the private deployment log. Close #82 only after this evidence.
 
-## Exploitation
+## Operations
 
-Commencer par les groupes « À examiner », filtrer les crashs ou la version concernée, puis ouvrir une occurrence. La cause technique et les frames permettent de retrouver la release ; les messages libres, noms de mondes et journaux Minecraft complets sont volontairement absents. La dernière décision est conservée avec date et identifiant d’opérateur. Le nettoyage borne aussi les groupes et retire les appareils révoqués.
+Start with the “Open” groups, filter by crashes or the relevant version, then open an occurrence. The technical cause and the frames lead back to the release; free-form messages, world names and full Minecraft logs are deliberately absent. The latest decision is kept with its date and operator ID. Cleanup also bounds the groups and removes revoked devices.
 
-La CLI privée reste disponible dans le conteneur API :
+The private CLI is still available in the API container:
 
 ```sh
 bun api:diagnostics --limit 100
 bun api:diagnostics --reports --device <UUID> --limit 20
 ```
 
-Aucun accès Coolify ni compte opérateur de production n’est fourni par le code. Les essais Minecraft/API/web locaux documentés ne prouvent pas que la révision a été déployée. Garder cette distinction dans les annonces aux testeurs.
+The code provides neither Coolify access nor a production operator account. The documented local Minecraft/API/web trials do not prove that the revision was deployed. Keep this distinction in announcements to testers.

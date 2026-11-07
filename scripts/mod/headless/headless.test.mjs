@@ -71,7 +71,7 @@ test('gametestSpec picks the exact Gradle task per loader and version', () => {
 test('skip reasons and paths', () => {
 	assert.ok(String(noGametestReason(T('neoforge', '1.21.1'))).includes('1.21.1'))
 	assert.ok(String(noGametestReason(T('quilt', '1.21.1'))).includes('Quilt'))
-	assert.ok(String(noGametestReason(T('forge', '1.20.1', { enabled: false }))).includes('désactivée'))
+	assert.ok(String(noGametestReason(T('forge', '1.20.1', { enabled: false }))).includes('disabled'))
 	assert.equal(gradleRoot(T('neoforge', '1.21.1')), 'mod/1.21.1')
 	assert.equal(gametestHome('/r', T('fabric', '1.21.11')), '/r/mod/1.21.11/fabric/build/gametest-home')
 	assert.equal(
@@ -129,7 +129,7 @@ test('parse GLB, summary and log markers', () => {
 		images: 15,
 		nodes: 9,
 	})
-	assert.equal(parseSummary('rien'), null)
+	assert.equal(parseSummary('nothing'), null)
 	assert.equal(parseSummary(undefined), null)
 	assert.deepEqual(parseLogMarkers('x MINEMORIES-GAMETEST PASSED'), { passed: true, failed: false })
 	assert.deepEqual(parseLogMarkers('MINEMORIES-GAMETEST FAILED'), { passed: false, failed: true })
@@ -140,9 +140,9 @@ test('parse GLB, summary and log markers', () => {
 })
 
 test('failureMessage extracts the assertion after the FAILED marker', () => {
-	const log = 'a\n[x] MINEMORIES-GAMETEST FAILED\njava.lang.AssertionError: Absent du GLB : minecraft:cow\n\tat x'
-	assert.equal(failureMessage(log), 'java.lang.AssertionError: Absent du GLB : minecraft:cow')
-	assert.ok(String(failureMessage('MINEMORIES-GAMETEST FAILED\nrien')).includes('FAILED'))
+	const log = 'a\n[x] MINEMORIES-GAMETEST FAILED\njava.lang.AssertionError: Missing from GLB: minecraft:cow\n\tat x'
+	assert.equal(failureMessage(log), 'java.lang.AssertionError: Missing from GLB: minecraft:cow')
+	assert.ok(String(failureMessage('MINEMORIES-GAMETEST FAILED\nnothing')).includes('FAILED'))
 	assert.equal(failureMessage('fine'), null)
 	assert.equal(failureMessage(undefined), null)
 })
@@ -158,7 +158,7 @@ test('thresholds merge defaults and per-target overrides, and evaluation lists e
 	const problems = evaluateStats({ bytes: 10, meshes: 0, materials: 1, images: 1, nodes: 0 }, thresholds)
 	assert.equal(problems.length, 5)
 	assert.ok(
-		evaluateStats({ bytes: 5000, meshes: 5, materials: 16, images: 15, nodes: 6 }, thresholds)[0].includes('trop gros')
+		evaluateStats({ bytes: 5000, meshes: 5, materials: 16, images: 15, nodes: 6 }, thresholds)[0].includes('too large')
 	)
 	assert.deepEqual(evaluateStats({ bytes: 1 }, {}), [])
 	// The shipped file accepts the figures measured in game for every target.
@@ -254,12 +254,12 @@ test('runHeadlessTests skips with a clear message when prerequisites are missing
 			{ root, jdkLookup: jdks, prerequisites: READY, exec: () => assert.fail('exec'), ...deps }
 		)
 	assert.ok(
-		String((await run({ prerequisites: { missing: ['xvfb-run (paquet xvfb)'] } }))[0].message).includes('xvfb-run')
+		String((await run({ prerequisites: { missing: ['xvfb-run (package xvfb)'] } }))[0].message).includes('xvfb-run')
 	)
 	assert.ok(String((await run({ jdkLookup: m => (m === '21' ? '/j' : null) }))[0].message).includes('JDK 17'))
 	assert.ok(String((await run({ jdkLookup: () => null }))[0].message).includes('JDK 21'))
 	const noGradle = await run({}, [T('fabric', '1.19.2')])
-	assert.ok(String(noGradle[0].message).includes('gradlew absent'))
+	assert.ok(String(noGradle[0].message).includes('gradlew missing'))
 	const noTest = await run({}, [T('neoforge', '1.21.1')])
 	assert.equal(noTest[0].status, 'skipped')
 	assert.equal(noTest[0].targetId, 'neoforge-mc1.21.1')
@@ -313,7 +313,7 @@ test('runHeadlessTests passes, fails on thresholds, failures, timeouts and missi
 
 	const small = (await go(fakeExec({ root, target, glbBuffer: glb({ materials: 2, padding: 10 }) })))[0]
 	assert.equal(small.status, 'failed')
-	assert.ok(String(small.message).includes('materials : 2'))
+	assert.ok(String(small.message).includes('materials: 2'))
 
 	const crashed = (
 		await go(
@@ -329,11 +329,11 @@ test('runHeadlessTests passes, fails on thresholds, failures, timeouts and missi
 	assert.ok(String(crashed.logTail).includes('FAILED'))
 
 	assert.ok(String((await go(fakeExec({ root, target, code: 2, tail: 'boom' })))[0].message).includes('code 2'))
-	assert.ok(String((await go(fakeExec({ root, target, timedOut: true, code: null })))[0].message).includes('délai'))
-	assert.ok(String((await go(fakeExec({ root, target, glbBuffer: null })))[0].message).includes('absent'))
+	assert.ok(String((await go(fakeExec({ root, target, timedOut: true, code: null })))[0].message).includes('timed out'))
+	assert.ok(String((await go(fakeExec({ root, target, glbBuffer: null })))[0].message).includes('missing'))
 
 	const throwing = await go(() => Promise.reject(new Error('spawn')))
-	assert.ok(String(throwing[0].message).includes('erreur inattendue'))
+	assert.ok(String(throwing[0].message).includes('unexpected error'))
 
 	const tuned = await runHeadlessTests(
 		{ config: { targets: [target], headless: { gameMemoryMb: 1024, timeoutSeconds: 10 } }, env: {} },
@@ -351,7 +351,7 @@ test('runHeadlessTests reads summary.txt when the GLB is unreadable and rejects 
 	const { glb: path, summary } = exportPaths(root, target)
 	const exec = async options => {
 		await mkdir(join(path, '..'), { recursive: true })
-		await writeFile(path, 'pas un glb')
+		await writeFile(path, 'not a glb')
 		await writeFile(summary, 'bytes=181556 meshes=5 materials=17 images=15 nodes=9\n')
 		return { code: 0, timedOut: false, tail: 'ok', logFile: options.logFile }
 	}
@@ -362,14 +362,14 @@ test('runHeadlessTests reads summary.txt when the GLB is unreadable and rejects 
 	assert.equal(result[0].status, 'passed')
 	const garbled = async () => {
 		await mkdir(join(path, '..'), { recursive: true })
-		await writeFile(path, 'pas un glb')
+		await writeFile(path, 'not a glb')
 		return { code: 0, timedOut: false, tail: 'ok' }
 	}
 	const bad = await runHeadlessTests(
 		{ config: { targets: [target] }, env: {} },
 		{ root, jdkLookup: jdks, prerequisites: READY, exec: garbled }
 	)
-	assert.ok(String(bad[0].message).includes('GLB invalide'))
+	assert.ok(String(bad[0].message).includes('Invalid GLB'))
 	await rm(root, { recursive: true })
 })
 
@@ -378,15 +378,15 @@ test('execLogged captures output, exit codes, spawn errors and kills on timeout'
 	const logFile = join(dir, 'logs', 'a.log')
 	const ok = await execLogged({
 		command: process.execPath,
-		args: ['-e', 'console.log("un");process.stdout.write("fin")'],
+		args: ['-e', 'console.log("one");process.stdout.write("end")'],
 		cwd: dir,
 		env: process.env,
 		timeoutMs: 20_000,
 		logFile,
 	})
 	assert.equal(ok.code, 0)
-	assert.equal(ok.tail, 'un\nfin')
-	assert.equal(await readFile(logFile, 'utf8'), 'un\nfin')
+	assert.equal(ok.tail, 'one\nend')
+	assert.equal(await readFile(logFile, 'utf8'), 'one\nend')
 	const failed = await execLogged({
 		command: process.execPath,
 		args: ['-e', 'process.exit(3)'],
@@ -446,7 +446,7 @@ test('test command: usage, arguments, results and exit code', async () => {
 	assert.ok(String(lines[0]).includes('Usage'))
 	const code = await runTestCommand(['neoforge-mc1.21.1'], { ...ctx, config: { targets: [T('neoforge', '1.21.1')] } })
 	assert.equal(code, 0)
-	assert.ok(String(lines.at(-1)).includes('ignorée neoforge-mc1.21.1'))
+	assert.ok(String(lines.at(-1)).includes('skipped neoforge-mc1.21.1'))
 	assert.equal(await runTestCommand(['--all'], ctx), 0)
 })
 
@@ -460,7 +460,7 @@ test('the watchdog flags a repeating line and a printed result, ignoring timesta
 		)
 	}
 	assert.equal(verdict.stop, 'stuck')
-	assert.match(verdict.reason, /se répète 5 fois/)
+	assert.match(verdict.reason, /repeated 5 times/)
 	const healthy = createWatchdog({ repeatLimit: 5 })
 	for (const line of ['a', 'b', 'a', 'b', 'a', 'b', 'a']) assert.equal(healthy.onLine(line), null)
 	assert.equal(createWatchdog().onLine('MINEMORIES-GLB bytes=1 meshes=5').stop, 'completed')
@@ -499,7 +499,7 @@ test('a hung run is retried once, a finished test is judged on its report even i
 			{ config: { targets: [target] }, env: {} },
 			{ root, jdkLookup: jdks, prerequisites: READY, exec, reap: () => 0 }
 		)
-	const hung = { code: null, timedOut: false, completed: false, stuck: 'répétition', tail: 'loop' }
+	const hung = { code: null, timedOut: false, completed: false, stuck: 'repetition', tail: 'loop' }
 	const finished = { code: null, timedOut: true, completed: true, stuck: null, tail: 'MINEMORIES-GLB bytes=1' }
 	outcomes.push(hung, finished)
 	assert.equal((await run())[0].status, 'passed')
@@ -507,6 +507,6 @@ test('a hung run is retried once, a finished test is judged on its report even i
 	outcomes.push(hung, hung)
 	const failed = (await run())[0]
 	assert.equal(failed.status, 'failed')
-	assert.match(failed.message, /bloqué.*répétition/)
+	assert.match(failed.message, /stuck.*repetition/)
 	await rm(root, { recursive: true })
 })

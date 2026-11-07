@@ -1,17 +1,17 @@
-# Captures pour le tuto manuel Windows
+# Screenshots for the manual Windows guide
 
-Ajouter ici les vraies captures Windows. Les écrans du jeu (menu pause, menu M, commande d’export) sont des captures automatiques du jeu : voir `../game/README.md`. Les emplacements sont déjà intégrés à `/installation` lorsque **Windows** et **Minecraft Launcher** sont sélectionnés. Sans image, le guide affiche une zone réservée légendée ; aucun fichier absent n’est demandé au serveur. Au prochain build, une image portant le bon nom remplace automatiquement sa zone. Un clic ouvre l’image complète dans un nouvel onglet.
+Add the real Windows screenshots here. The in-game screens (pause menu, M menu, export command) are automatic game captures: see `../game/README.md`. The slots are already wired into `/installation` when **Windows** and **Minecraft Launcher** are selected. Without an image, the guide shows a captioned placeholder; no missing file is requested from the server. On the next build, an image with the right name automatically replaces its placeholder. Clicking opens the full image in a new tab.
 
-Formats : `.webp` (prioritaire), `.png` ou `.jpg`. Garder le nom ci-dessous, sans changer la casse. Préférer 1600 × 900 ; une autre proportion sera affichée entièrement, sans recadrage. Ne pas inclure de compte personnel, code d’appairage réel ou chemin contenant le nom d’une personne. Les captures doivent provenir de Minecraft 1.21.1 et NeoForge 21.1.248 sous Windows.
+Formats: `.webp` (preferred), `.png` or `.jpg`. Keep the name below, with the same case. Prefer 1600 × 900; other aspect ratios are shown in full, without cropping. Do not include a personal account, a real pairing code or a path containing someone's name. Screenshots must come from Minecraft 1.21.1 and NeoForge 21.1.248 on Windows.
 
-| Nom sans extension | Emplacement | Ce que la capture doit montrer |
+| Name without extension | Slot | What the screenshot must show |
 | --- | --- | --- |
-| `01-minecraft-1.21.1` | Installer NeoForge, première action | Minecraft Launcher, nouvelle installation avec `release 1.21.1` sélectionnée |
-| `02-java-21` | Installer NeoForge, Java | Sélection Windows / Java 21 / architecture du PC et installation Temurin |
-| `03-neoforge-install-client` | Installer NeoForge, installateur | Version `21.1.248`, option `Install client` cochée, bouton de validation |
-| `04-profil-dossier-jeu` | Installer NeoForge, dossier de jeu | Édition du profil NeoForge, version `21.1.248`, champ Dossier du jeu / `.minecraft-minemories` |
-| `05-jar-telecharge` | Télécharger le mod | Explorateur Windows, dossier Téléchargements et fichier `.jar` avec extension visible |
-| `06-dossier-mods` | Ranger le fichier | Chemin du bon profil, sous-dossier `mods`, une seule version du JAR Minemories |
-| `10-souvenir-dans-viewer` | Créer un souvenir, ouverture | Capture de la construction de test ouverte dans le viewer web |
+| `01-minecraft-1.21.1` | Install NeoForge, first action | Minecraft Launcher, new installation with `release 1.21.1` selected |
+| `02-java-21` | Install NeoForge, Java | Windows / Java 21 / PC architecture selection and Temurin installation |
+| `03-neoforge-install-client` | Install NeoForge, installer | Version `21.1.248`, `Install client` option checked, confirm button |
+| `04-profile-game-directory` | Install NeoForge, game directory | Editing the NeoForge profile, version `21.1.248`, Game directory field / `.minecraft-minemories` |
+| `05-downloaded-jar` | Download the mod | Windows File Explorer, Downloads folder and `.jar` file with its extension visible |
+| `06-mods-folder` | Place the file | Path of the right profile, `mods` subfolder, a single version of the Minemories JAR |
+| `10-memory-in-viewer` | Create a memory, opening it | The test build opened in the web viewer |
 
-Vérifier la lisibilité à 390 px, ainsi que le texte et les noms des boutons par rapport aux captures. Ne pas utiliser d’images générées pour simuler les écrans du jeu. La préparation des zones ne constitue pas une validation du parcours en jeu.
+Check readability at 390 px, and check the text and button names against the screenshots. Do not use generated images to simulate game screens. Preparing the slots does not count as validating the in-game flow.

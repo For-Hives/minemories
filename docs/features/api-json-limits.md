@@ -1,67 +1,63 @@
-# Limites des requêtes JSON
+# JSON request limits
 
-Les routes qui reçoivent les informations d’un compte ou d’une capture ont un
-plafond propre, appliqué avant leur parseur. Les fichiers GLB suivent leurs
-limites binaires habituelles.
+Routes that receive account or capture information have their own cap, applied
+before their parser. GLB files keep their usual binary limits.
 
-| Parcours | Plafond du corps reçu |
+| Route | Cap on the received body |
 | --- | --- |
-| Authentification `/api/auth/*` | 16 KiB, soit 16 384 octets |
-| RPC `/rpc/*` | 256 KiB, soit 262 144 octets |
-| Initialisation `POST /api/mod/uploads` | 256 KiB, soit 262 144 octets |
-| Appairage `POST /api/mod/pair` | 2 KiB, inchangé |
+| Authentication `/api/auth/*` | 16 KiB, i.e. 16,384 bytes |
+| RPC `/rpc/*` | 256 KiB, i.e. 262,144 bytes |
+| Initialization `POST /api/mod/uploads` | 256 KiB, i.e. 262,144 bytes |
+| Pairing `POST /api/mod/pair` | 2 KiB, unchanged |
 
-Le contrôle compte les octets du flux, même sans `Content-Length` ou avec une
-valeur déclarée trop petite. Une taille déclarée supérieure au plafond est
-refusée immédiatement. La lecture s’arrête et le flux est annulé au premier
-dépassement ; le corps refusé n’est pas transmis au parseur ni conservé dans le
-staging d’un upload. Une erreur d’annulation ne transforme pas le refus en
-succès.
+The check counts the bytes of the stream, even without `Content-Length` or with
+a declared value that is too small. A declared size above the cap is refused
+immediately. Reading stops and the stream is cancelled as soon as the cap is
+exceeded; the refused body is neither passed to the parser nor kept in an
+upload's staging area. A cancellation error does not turn the refusal into a
+success.
 
-Pour les trois nouveaux plafonds, la réponse est HTTP 413 avec
-`{"error":"request_body_too_large"}`. Un flux illisible reçoit HTTP 400 avec
-`{"error":"invalid_request_body"}`, sans détails internes. Un JSON mal formé
-qui respecte la taille reste traité par le parseur de la route. Les réponses
-conservent les règles CORS de l’API.
+For the three new caps, the response is HTTP 413 with
+`{"error":"request_body_too_large"}`. An unreadable stream gets HTTP 400 with
+`{"error":"invalid_request_body"}`, without internal details. Malformed JSON
+that fits within the size is still handled by the route's parser. Responses
+keep the API's CORS rules.
 
-Un corps accepté conserve l’URL, la méthode, les cookies, le token et l’origine.
-Le header de taille est recalculé et `Transfer-Encoding` retiré avant de remettre
-le corps au parseur. Les appels sans corps, notamment la lecture de session,
-restent possibles. Les contrôles auth/RPC précèdent leurs gestionnaires ;
-l’initialisation exige d’abord un device appairé, puis vérifie la taille avant
-toute réservation de fichier.
+An accepted body keeps the URL, method, cookies, token and origin. The length
+header is recomputed and `Transfer-Encoding` removed before handing the body to
+the parser. Calls without a body, notably reading the session, still work. The
+auth/RPC checks run before their handlers; initialization first requires a
+paired device, then checks the size before reserving any file.
 
-## Miniatures et fichiers
+## Thumbnails and files
 
-Le contrat autorise 96 000 caractères pour chacune des deux images `thumbnail`
-et `icon`. Le plafond de 256 KiB permet de transmettre les deux images avec
-leurs métadonnées et l’enveloppe oRPC. Les tests utilisent deux vrais PNG en
-data URI de 95 998 caractères chacun, avec une métadonnée UTF-8, et vérifient
-leur conservation après upload et modification via une session authentifiée.
-Le PNG de test contient un chunk texte avec CRC valide ; son décodage a aussi
-été vérifié avec Pillow.
+The contract allows 96,000 characters for each of the two images, `thumbnail`
+and `icon`. The 256 KiB cap leaves room for both images plus their metadata and
+the oRPC envelope. The tests use two real PNGs as data URIs of 95,998 characters
+each, with UTF-8 metadata, and check that they are preserved after upload and
+after an update through an authenticated session. The test PNG contains a text
+chunk with a valid CRC; its decoding was also checked with Pillow.
 
-Les uploads legacy restent limités à 100 MiB. Les uploads reprenables restent
-limités à 450 MiB, avec des morceaux de 4 MiB : le nouveau middleware n’est
-appliqué ni aux fichiers legacy ni aux morceaux. La validation GLB et le calcul
-du SHA-256 des fichiers reprenables restent en streaming.
+Legacy uploads remain limited to 100 MiB. Resumable uploads remain limited to
+450 MiB, in 4 MiB chunks: the new middleware applies neither to legacy files nor
+to chunks. GLB validation and SHA-256 computation of resumable files remain
+streamed.
 
-## Validation et portée
+## Validation and scope
 
-Les tests couvrent la frontière exacte en octets, un caractère UTF-8 réparti
-sur deux lectures, une taille absente ou mensongère, l’arrêt de lecture, les
-erreurs de flux et la conservation des credentials. Un serveur Bun réel reçoit
-des requêtes streamées trop grandes sur les trois parcours et renvoie 413 avec
-les headers CORS ; il accepte ensuite un fichier GLB dépassant 256 KiB. Les
-tests d’initialisation vérifient aussi l’absence de ligne SQLite et de fichier
-staging après refus.
+The tests cover the exact byte boundary, a UTF-8 character split across two
+reads, a missing or false size, stopping the read, stream errors and
+preservation of credentials. A real Bun server receives oversized streamed
+requests on the three routes and returns 413 with the CORS headers; it then
+accepts a GLB file larger than 256 KiB. The initialization tests also check that
+no SQLite row or staging file remains after a refusal.
 
-`bun run build`, qui inclut `bun check`, passe avec 72 tests API et 57 tests
-web. Le middleware est couvert à 100 % des lignes et fonctions.
-`bun run api:garage` passe ses sept scénarios réels HTTP/oRPC et stockage,
-y compris panne et reprise dans un nouveau processus. Les quatre tests Garage
-ignorés par le runner API ordinaire sont exercés par cette commande dédiée.
+`bun run build`, which includes `bun check`, passes with 72 API tests and 57 web
+tests. The middleware has 100% line and function coverage.
+`bun run api:garage` passes its seven real HTTP/oRPC and storage scenarios,
+including failure and recovery in a new process. The four Garage tests skipped
+by the regular API runner are exercised by this dedicated command.
 
-Ces plafonds bornent le corps transmis au parseur. Ils ne remplacent pas les
-quotas de stockage par compte ni les protections du proxy contre les connexions
-lentes ou les requêtes concurrentes, suivis séparément dans [issue #66](https://github.com/For-Hives/minemories/issues/66).
+These caps bound the body passed to the parser. They do not replace per-account
+storage quotas or proxy protections against slow connections or concurrent
+requests, which are tracked separately in [issue #66](https://github.com/For-Hives/minemories/issues/66).

@@ -366,7 +366,7 @@ class ChunkedUploaderTest {
               IOException.class,
               () -> uploader().upload(url, "test-token", file, new JsonObject(), offset -> {}));
       assertTrue(error.getMessage().contains("HTTP 413"));
-      assertFalse(error.getMessage().contains("Espace insuffisant"));
+      assertFalse(error.getMessage().contains("Not enough space"));
     }
     assertEquals(bodies.size(), calls.get());
     assertTrue(Files.exists(file));

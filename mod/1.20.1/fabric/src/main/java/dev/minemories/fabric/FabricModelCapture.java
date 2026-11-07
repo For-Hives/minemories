@@ -52,7 +52,7 @@ final class FabricModelCapture implements RenderContext {
     this.visible = visible;
     this.sink = sink;
     var renderer = RendererAccess.INSTANCE.getRenderer();
-    if (renderer == null) throw new IOException("Renderer Fabric indisponible pour ce modèle.");
+    if (renderer == null) throw new IOException("Fabric renderer unavailable for this model.");
     builder = renderer.meshBuilder();
     emitter = new CaptureQuadEmitter(builder.getEmitter(), this::emit);
     standard = renderer.materialById(RenderMaterial.MATERIAL_STANDARD);
@@ -70,7 +70,7 @@ final class FabricModelCapture implements RenderContext {
 
   private void emit(QuadEmitter quad) {
     if (++emitted > MAX_QUADS)
-      throw new UncheckedIOException(new IOException("Trop de primitives dans ce modèle Fabric."));
+      throw new UncheckedIOException(new IOException("Too many primitives in this Fabric model."));
     boolean keep = true;
     for (var transform : transforms) {
       if (!transform.transform(quad)) {
@@ -99,7 +99,7 @@ final class FabricModelCapture implements RenderContext {
           || quad.v(i) < sprite.getV0() - .000001f
           || quad.v(i) > sprite.getV1() + .000001f)
         throw new UncheckedIOException(
-            new IOException("Les UV Fabric traversent plusieurs sprites."));
+            new IOException("Fabric UVs span several sprites."));
     var baked = quad.toBakedQuad(sprite);
     var material = quad.material();
     if (material.disableColorIndex())
@@ -143,7 +143,7 @@ final class FabricModelCapture implements RenderContext {
 
   @Override
   public void pushTransform(QuadTransform transform) {
-    if (transforms.size() >= 64) throw new IllegalStateException("Trop de transformations Fabric.");
+    if (transforms.size() >= 64) throw new IllegalStateException("Too many Fabric transforms.");
     transforms.push(transform);
   }
 

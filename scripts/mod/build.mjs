@@ -64,7 +64,7 @@ export function gradleArgs(target, { version, prod = true, loaderVersion, ci = B
 	args.push(`:${target.project}:clean`, `:${target.project}:build`, `-PmodVersion=${version}`)
 	args.push(`-Pminemories.prod=${prod ? 'true' : 'false'}`)
 	if (loaderVersion && loaderVersion !== target.loaderVersion) {
-		if (!target.loaderProperty) throw new Error(`${target.id} ne sait compiler que le loader ${target.loaderVersion}.`)
+		if (!target.loaderProperty) throw new Error(`${target.id} can only build loader ${target.loaderVersion}.`)
 		args.push(`-P${target.loaderProperty}=${loaderVersion}`)
 	}
 	return args
@@ -112,20 +112,20 @@ export function jarHasClasses(bytes) {
 	return bytes.includes('.class')
 }
 
-/** Machine de build : MOD_BUILT_BY=pc|vps (défaut pc). Le VPS positionne vps dans son unité systemd. */
+/** Build machine: MOD_BUILT_BY=pc|vps (default pc). The VPS sets vps in its systemd unit. */
 export function builtByFrom(env = process.env) {
 	const value = env.MOD_BUILT_BY || 'pc'
-	if (value !== 'pc' && value !== 'vps') throw new Error(`MOD_BUILT_BY doit valoir pc ou vps (reçu : ${value}).`)
+	if (value !== 'pc' && value !== 'vps') throw new Error(`MOD_BUILT_BY must be pc or vps (got: ${value}).`)
 	return value
 }
 
 async function collectArtifact(root, target, { version, prod, git, builtAt, builtBy }) {
 	const source = join(libsDir(root, target), target.jar.replace('{version}', version))
 	const bytes = await readFile(source).catch(() => {
-		throw new Error(`JAR attendu introuvable : ${source}`)
+		throw new Error(`Expected JAR not found: ${source}`)
 	})
-	if (bytes.length < 4 || bytes.readUInt32LE(0) !== zipMagic) throw new Error(`${source} n'est pas une archive JAR.`)
-	if (!jarHasClasses(bytes)) throw new Error(`${source} ne contient aucune classe : build incomplet, JAR refusé.`)
+	if (bytes.length < 4 || bytes.readUInt32LE(0) !== zipMagic) throw new Error(`${source} is not a JAR archive.`)
+	if (!jarHasClasses(bytes)) throw new Error(`${source} contains no class: incomplete build, JAR rejected.`)
 	const sha256 = createHash('sha256').update(bytes).digest('hex')
 	const directory = distDir(root, version, target.id)
 	const file = distFileName(target, version)
@@ -167,7 +167,7 @@ export async function buildTarget(target, options) {
 		logTail = result.tail
 		if (result.code !== 0)
 			throw new Error(
-				`Gradle a échoué (code ${result.code}) pour ${target.id}${jdk ? '' : ` (JDK ${target.java} absent)`}.`
+				`Gradle failed (code ${result.code}) for ${target.id}${jdk ? '' : ` (JDK ${target.java} missing)`}.`
 			)
 		const { manifest, filePath } = await collectArtifact(root, target, {
 			version,
@@ -212,7 +212,7 @@ export function buildTargets(targets, options) {
 			log[result.status === 'passed' ? 'info' : 'error'](
 				result.status === 'passed'
 					? `✓ ${target.id} ${result.seconds}s ${formatBytes(result.bytes)}`
-					: `✗ ${target.id} : ${result.message}`
+					: `✗ ${target.id}: ${result.message}`
 			)
 			results.push(result)
 		}
@@ -233,9 +233,7 @@ export function summarize(results) {
 			: `  ✗ ${r.targetId.padEnd(20)} ${String(r.seconds).padStart(7)}s  ${r.message}`
 	)
 	const failed = results.filter(r => r.status === 'failed').length
-	return [
-		...lines,
-		'',
-		failed ? `${failed} échec(s) sur ${results.length}.` : `${results.length} cible(s) compilée(s).`,
-	].join('\n')
+	return [...lines, '', failed ? `${failed} of ${results.length} failed.` : `${results.length} target(s) built.`].join(
+		'\n'
+	)
 }

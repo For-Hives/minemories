@@ -17,7 +17,7 @@ const config = {
 	captures: [
 		{ name: 'S0', role: 'stage', priority: 'critical' },
 		{ name: 'S1', role: 'stage', priority: 'low', delta: true },
-		{ name: 'personnages', role: 'characters', priority: 'low', delta: true },
+		{ name: 'characters', role: 'characters', priority: 'low', delta: true },
 	],
 }
 let tools
@@ -28,20 +28,20 @@ before(async () => {
 	sources = {
 		S0: syntheticGlb({ MeshoptEncoder }, { cells: 96 }),
 		S1: syntheticGlb({ MeshoptEncoder }, { cells: 90 }),
-		personnages: syntheticGlb({ MeshoptEncoder }, { cells: 40, tint: 9 }),
+		characters: syntheticGlb({ MeshoptEncoder }, { cells: 40, tint: 9 }),
 	}
 })
 
 test('every capture is rebuilt, proven, hashed and listed; deltas rebuild the exact GLB with the shipped applier', async () => {
 	const { outputs, manifest, report } = await runPipeline(config, sources, tools)
-	assert.deepEqual(Object.keys(manifest.files), ['S0', 'S1', 'personnages'])
+	assert.deepEqual(Object.keys(manifest.files), ['S0', 'S1', 'characters'])
 	const base = outputs.get(manifest.files.S0.file)
 	assert.match(manifest.files.S0.file, HASHED_GLB)
 	assert.match(manifest.files.S1.file, HASHED_PATCH)
 	assert.equal(manifest.files.S0.sha256, sha256(base))
 	assert.equal(manifest.files.S0.kind, 'base')
 	assert.equal(manifest.files.S1.base, 'S0')
-	for (const name of ['S1', 'personnages']) {
+	for (const name of ['S1', 'characters']) {
 		const entry = manifest.files[name]
 		const rebuilt = applyDelta(base, outputs.get(entry.file))
 		assert.equal(rebuilt.length, entry.size)
@@ -116,7 +116,7 @@ test('the inventory counts what the captures hold and what they share', () => {
 	assert.equal(one.primitives, 1)
 	assert.equal(one.images, 1)
 	assert.ok(one.geometryBytes > 0 && one.textureBytes > 0)
-	const all = inventoryOfAll({ S0: sources.S0, S1: sources.S1, personnages: sources.personnages })
+	const all = inventoryOfAll({ S0: sources.S0, S1: sources.S1, characters: sources.characters })
 	assert.equal(all.images.unique, 2)
 	assert.equal(all.images.sharedBetweenFiles, 1)
 	assert.equal(all.captures.S0.uniqueImages, 1)

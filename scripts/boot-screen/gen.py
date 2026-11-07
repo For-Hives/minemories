@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Génère l'écran de chargement (SVG + CSS + script) et l'écrit dans apps/web/index.html.
+"""Generates the loading screen (SVG + CSS + script) and writes it into apps/web/index.html.
 
-Un joueur du jeu (peau « Steve ») casse un bloc de minerai à la pioche ; le bloc se fissure, éclate et laisse tomber un diamant.
-Le joueur et la pioche sont les textures du JEU (fichiers Mojang) lues dans le client local, jamais téléchargées, puis incrustées en data: URI (aucune requête de plus).
-Le bloc et ses fissures sont des dessins VECTORIELS à nous ; le diamant est la vraie texture du jeu convertie en vecteur (net à toute taille).
-Ce qui vient du jeu est de la marque : voir docs/features/charte-graphique.md, section 12, avant toute mise en ligne publique.
+A player from the game ("Steve" skin) mines an ore block with a pickaxe; the block cracks, bursts and drops a diamond.
+The player and the pickaxe are the GAME textures (Mojang files) read from the local client, never downloaded, then inlined as data: URIs (no extra request).
+The block and its cracks are our own VECTOR drawings; the diamond is the real game texture converted to vectors (sharp at any size).
+Anything taken from the game is brand material: see docs/features/brand-guidelines.md, section 12, before any public release.
 
-Usage : python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
-Le bloc est entre les marqueurs <!-- boot:begin --> et <!-- boot:end --> (style, balisage, script) ; relancer remplace tout le bloc.
+Usage: python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
+The block sits between the <!-- boot:begin --> and <!-- boot:end --> markers (style, markup, script); running again replaces the whole block.
 """
 import base64, re, subprocess, sys
 
 jar = sys.argv[1]
 target = sys.argv[2] if len(sys.argv) > 2 else 'apps/web/index.html'
-T = 6.2   # durée de la boucle : le diamant a le temps d'être vu au sol
+T = 6.2   # loop length: long enough for the diamond to be seen on the ground
 OY = 10
 
 
@@ -30,7 +30,7 @@ def y(v):
 	return v + OY
 
 
-# --- bloc isométrique 2:1, dessiné en vectoriel : 24 px de demi-largeur, 24 px de haut (plus petit que le joueur, plus mignon) ---
+# --- 2:1 isometric block, drawn as vectors: 24 px half-width, 24 px tall (smaller than the player, cuter) ---
 BW, BH = 24, 24
 Nx, Ny = 100, y(60)
 poly = lambda *a: ' '.join(f'{px:g},{py:g}' for px, py in a)
@@ -40,7 +40,7 @@ top_poly, left_poly, right_poly = poly(Np, Ep, Sp, Wp), poly(Wp, Sp, Sb, Wb), po
 
 
 def uv(face, u, v):
-	"""Point d'une face (u, v dans [0,1]) ; haut, gauche, droite."""
+	"""Point on a face (u, v in [0,1]); top, left, right."""
 	if face == 't':
 		return (Nx + u * BW - v * BW, Ny + u * BW / 2 + v * BW / 2)
 	if face == 'l':
@@ -61,19 +61,19 @@ vec_faces = ''
 for f, (base, hi, lo) in FACE.items():
 	poly_f = {'t': top_poly, 'l': left_poly, 'r': right_poly}[f]
 	vec_faces += f'<polygon points="{poly_f}" fill="{base}"/>'
-	for _ in range(9):   # taches de pierre, claires et sombres
+	for _ in range(9):   # stone speckles, light and dark
 		u, v = rnd.random() * 0.8, rnd.random() * 0.8
 		vec_faces += quad(f, u, v, 0.12 + rnd.random() * 0.14, 0.1 + rnd.random() * 0.12, hi if rnd.random() < 0.5 else lo, 0.85)
-	for _ in range(ORE[f]):   # filons de diamant : un losange cyan avec un reflet
+	for _ in range(ORE[f]):   # diamond veins: a cyan rhombus with a highlight
 		u, v = 0.12 + rnd.random() * 0.55, 0.12 + rnd.random() * 0.55
 		vec_faces += quad(f, u, v, 0.26, 0.2, '#2bb8aa') + quad(f, u + 0.03, v + 0.03, 0.17, 0.12, '#58f0dd') + quad(f, u + 0.05, v + 0.04, 0.06, 0.04, '#e9fffb')
-# --- joueur (vue de côté, face à droite), 1 texel = 2 px : tête 16, torse 24, jambes 24 ---
-gy = y(106)          # sol sous les pieds
+# --- player (side view, facing right), 1 texel = 2 px: head 16, torso 24, legs 24 ---
+gy = y(106)          # ground under the feet
 leg_y = gy - 24
 torso_y = leg_y - 24
 head_y = torso_y - 16
 x0 = 42
-sx, sy = x0 + 4, torso_y + 3   # épaule
+sx, sy = x0 + 4, torso_y + 3   # shoulder
 
 
 def part(sx_, sy_, sw, sh, dx, dy, dw, dh, extra=''):
@@ -81,25 +81,25 @@ def part(sx_, sy_, sw, sh, dx, dy, dw, dh, extra=''):
 
 
 body = ''.join([
-	part(16, 52, 4, 12, x0 + 2, leg_y, 6, 24, ' opacity=".7"'),    # jambe gauche (derrière, assombrie), 6 px de large
-	part(0, 20, 4, 12, x0, leg_y, 6, 24),                          # jambe droite, côté : 6 px, les deux jambes font 8 px comme le torse
-	part(16, 20, 4, 12, x0, torso_y, 8, 24),                       # torse, côté
-	part(0, 8, 8, 8, x0 - 4, head_y, 16, 16),                      # tête, côté droit (le visage est à droite)
-	part(32, 8, 8, 8, x0 - 4, head_y, 16, 16),                     # calque de la tête
+	part(16, 52, 4, 12, x0 + 2, leg_y, 6, 24, ' opacity=".7"'),    # left leg (behind, darkened), 6 px wide
+	part(0, 20, 4, 12, x0, leg_y, 6, 24),                          # right leg, side: 6 px, both legs are 8 px like the torso
+	part(16, 20, 4, 12, x0, torso_y, 8, 24),                       # torso, side
+	part(0, 8, 8, 8, x0 - 4, head_y, 16, 16),                      # head, right side (the face is on the right)
+	part(32, 8, 8, 8, x0 - 4, head_y, 16, 16),                     # head overlay layer
 ])
-# la pioche est DERRIÈRE le bras : elle est dessinée avant, la main passe devant le manche
+# the pickaxe is BEHIND the arm: it is drawn first, the hand goes in front of the handle
 arm = f'<g transform="translate({sx} {sy + 22}) rotate(135)"><use href="#pick" x="-8" y="-24"/></g>' + part(40, 20, 4, 12, sx - 4, sy, 8, 24)
 
-# Les images du jeu sont affichées à un multiple ENTIER de leur taille (viewBox de 160 : 240 px = x1,5 soit 3 px par texel ; 320 px = x2 soit 4 px par texel) avec `image-rendering: pixelated` :
-# un texel a toujours la même taille à l'écran, rien n'est lissé.
-# --- images du jeu (data: URI, une seule fois) : le joueur et la pioche ; tout le reste est vectoriel ---
+# Game images are shown at a WHOLE multiple of their size (160 viewBox: 240 px = x1.5, i.e. 3 px per texel; 320 px = x2, i.e. 4 px per texel) with `image-rendering: pixelated`:
+# a texel always has the same on-screen size and nothing is smoothed.
+# --- game images (data: URIs, once): the player and the pickaxe; everything else is vector ---
 defs = (f'<defs><image id="skin" width="64" height="64" href="{tex("entity/player/wide/steve.png")}"/>'
 	f'<image id="pick" width="32" height="32" href="{tex("item/iron_pickaxe.png")}"/>')
 
 
 def destroy_stage(n):
-	"""Une VRAIE texture de casse du jeu (block/destroy_stage_N.png) en vecteur : les pixels sombres (61) creusent la fissure, les clairs (155) l'éclaircissent.
-	Le jeu mélange la texture avec le bloc en multipliant (résultat = 2 x texture x bloc) : ici, du noir à demi transparent pour les sombres, du blanc très léger pour les clairs."""
+	"""A REAL game breaking texture (block/destroy_stage_N.png) as vectors: dark pixels (61) carve the crack, light ones (155) brighten it.
+	The game blends the texture with the block by multiplying (result = 2 x texture x block): here, half-transparent black for the dark pixels, very faint white for the light ones."""
 	from PIL import Image
 	import io
 	data = subprocess.run(['unzip', '-p', jar, f'assets/minecraft/textures/block/destroy_stage_{n}.png'], check=True, capture_output=True).stdout
@@ -121,9 +121,9 @@ def destroy_stage(n):
 	return f'<g id="ds{n}" shape-rendering="crispEdges"><path fill="#fff" opacity=".13" d="{path(runs[155])}"/><path fill="#000" opacity=".55" d="{path(runs[61])}"/></g>'
 
 
-# comme dans le jeu : la même texture sur CHAQUE face, qui change à chaque coup (stades 2, 5 puis 8 sur 10) ; le 4e coup casse le bloc
+# like in the game: the same texture on EVERY face, changing on each hit (stages 2, 5 then 8 out of 10); the 4th hit breaks the block
 STAGES = [2, 5, 8]
-# matrice SVG d'une face : texture 16 x 16 -> parallélogramme de la face (haut, gauche, droite)
+# SVG matrix of a face: 16 x 16 texture -> the face's parallelogram (top, left, right)
 FACE_MATRIX = {
 	't': (BW / 16, BW / 32, -BW / 16, BW / 32, Nx, Ny),
 	'l': (BW / 16, BW / 32, 0, BH / 16, Wp[0], Wp[1]),
@@ -136,7 +136,7 @@ block = (vec_faces
 	+ ''.join(f'<g class="bk-c{i}">{c}</g>' for i, c in enumerate(cracks))
 	+ f'<polygon points="{poly(Wp, Wb, Sb, Eb, Ep, Np)}" fill="none" stroke="#0a0806" stroke-width="1.6" stroke-linejoin="round"/><polyline points="{poly(Wp, Sp, Ep)} {poly(Sp, Sb)}" fill="none" stroke="#0a0806" stroke-width="1.2" stroke-linejoin="round"/>')
 
-# diamant : la VRAIE texture du jeu (item/diamond.png), convertie en vecteur (un carré par pixel, regroupés en un tracé par couleur) : exactement le dessin du jeu, net à toute taille
+# diamond: the REAL game texture (item/diamond.png) converted to vectors (one square per pixel, grouped into one path per color): exactly the game drawing, sharp at any size
 def vector_texture(path):
 	from PIL import Image
 	import io
@@ -161,7 +161,7 @@ def vector_texture(path):
 GEM = f'<g transform="scale(1.3)">{vector_texture("item/diamond.png")}</g>'   # 21 x 21 px
 GEM_W = 21
 
-ix, iy = Nx - 14, y(84)   # point d'impact sur la face gauche
+ix, iy = Nx - 14, y(84)   # impact point on the left face
 HIT0, STEP = 0.44, 0.8
 hits = [HIT0 + STEP * k for k in range(4)]
 Wd, Sd, Rd = -150, -55, -30
@@ -180,18 +180,18 @@ def kf(name, items, prop):
 
 
 css = [kf('b-arm', [(a_, f'rotate({b_}deg)', c_) for a_, b_, c_ in arm_kf], 'transform')]
-# le joueur se fend vers le bloc à chaque coup (un peu de corps derrière la pioche)
+# the player lunges toward the block on each hit (some body weight behind the pickaxe)
 lg = [(0, 'translateX(0) rotate(0)', '')]
 for h in hits:
 	lg += [(h - 0.32, 'translateX(0) rotate(0)', 'ease-out'), (h - 0.2, 'translateX(-3px) rotate(-5deg)', 'linear'), (h - 0.1, 'translateX(-3px) rotate(-5deg)', 'cubic-bezier(.7,0,.95,.35)'), (h, 'translateX(4px) rotate(3.5deg)', 'ease-out'), (h + 0.28, 'translateX(0) rotate(0)', '')]
 css.append(kf('b-lunge', lg + [(T, 'translateX(0) rotate(0)', '')], 'transform'))
-# tremblement de l'ensemble à l'impact, plus fort à l'éclatement
+# the whole scene shakes on impact, harder when the block bursts
 sk = [(0, 'translate(0,0)', '')]
 for i_, h in enumerate(hits):
 	amp = 3.2 if i_ == 3 else 1.5
 	sk += [(h - 0.001, 'translate(0,0)', ''), (h + 0.04, f'translate({-amp}px,{amp * .6}px)', ''), (h + 0.09, f'translate({amp * .8}px,{-amp * .5}px)', ''), (h + 0.14, f'translate({-amp * .4}px,{amp * .3}px)', ''), (h + 0.2, 'translate(0,0)', '')]
 css.append(kf('b-shake', sk + [(T, 'translate(0,0)', '')], 'transform'))
-# le bloc s'écrase à chaque coup puis rebondit ; au dernier il gonfle et éclate
+# the block squashes on each hit then bounces back; on the last one it swells and bursts
 bk = [(0, 'translateY(0) scale(1,1)', '')]
 for h in hits[:3]:
 	bk += [(h - 0.001, 'translateY(0) scale(1,1)', 'ease-out'), (h + 0.05, 'translateY(3px) scale(1.07,.92)', 'ease-out'), (h + 0.13, 'translateY(0) scale(.98,1.03)', 'ease-out'), (h + 0.22, 'translateY(0) scale(1,1)', '')]
@@ -202,7 +202,7 @@ for k in range(3):
 	t0 = hits[k]
 	off = [(hits[k + 1] - 0.001, '1', ''), (hits[k + 1], '0', '')] if k < 2 else [(T - 0.2, '1', ''), (T - 0.1, '0', '')]
 	css.append(kf(f'b-c{k}', [(0, '0', ''), (t0 - 0.001, '0', ''), (t0, '1', '')] + off + [(T, '0', '')], 'opacity'))
-# éclats de pierre à chaque coup : 6 particules en arc (montée rapide, chute avec la gravité), DIFFÉRENTES à chaque coup (origine et vecteurs tirés au hasard, graine fixe)
+# stone chips on each hit: 6 particles in an arc (fast rise, fall with gravity), DIFFERENT on each hit (random origin and vectors, fixed seed)
 rnd2 = random.Random(21)
 origins = [(0, 0), (9, -7), (-5, 5), (13, 3)]
 cols = ['#9a9a9a', '#4aedd9', '#6b6b6b', '#c9c9c9', '#5a5a5a', '#2bb8aa']
@@ -218,7 +218,7 @@ for i in range(6):
 		fade += [(h - 0.001, '0', ''), (h, '1', ''), (h + 0.3, '1', 'ease-in'), (h + 0.44, '0', '')]
 	css.append(kf(f'b-p{i}', its + [(T, 'translate(0,0)', '')], 'transform'))
 	css.append(kf(f'b-p{i}o', fade + [(T, '0', '')], 'opacity'))
-# éclatement : 9 morceaux, une bouffée de poussière
+# burst: 9 pieces, a puff of dust
 sh = [(-30, -18, 5, '#8b8b8b'), (-12, -30, 4, '#6b6b6b'), (14, -28, 5, '#7f7f7f'), (32, -12, 4, '#4aedd9'), (4, -16, 6, '#5a5a5a'), (-22, -6, 4, '#9a9a9a'), (22, -20, 3, '#2bb8aa'), (-4, -34, 3, '#c9c9c9'), (36, -2, 4, '#6b6b6b')]
 tb = hits[3]
 for i, (dx, dy, sz, col) in enumerate(sh):
@@ -227,9 +227,9 @@ for i, (dx, dy, sz, col) in enumerate(sh):
 for i, (dx, dy) in enumerate([(-10, 2), (10, 0), (0, -6)]):
 	css.append(kf(f'b-d{i}', [(0, 'translate(0,0) scale(.3)', ''), (tb, 'translate(0,0) scale(.3)', 'ease-out'), (tb + 0.45, f'translate({dx}px,{dy}px) scale(1.6)', ''), (T, f'translate({dx}px,{dy}px) scale(1.6)', '')], 'transform'))
 	css.append(kf(f'b-d{i}o', [(0, '0', ''), (tb, '.55', 'ease-out'), (tb + 0.45, '0', ''), (T, '0', '')], 'opacity'))
-# le diamant jaillit du bloc, retombe AU SOL (en s'écrasant un peu), rebondit deux fois, repose le temps d'être vu, puis s'efface ; trois éclats de lumière brillent à tour de rôle
+# the diamond pops out of the block, lands ON THE GROUND (squashing a little), bounces twice, rests long enough to be seen, then fades; three sparkles shine in turn
 ti = tb + 0.12
-FLOOR = 16   # le sol : 16 px plus bas que le centre du bloc
+FLOOR = 16   # the ground: 16 px below the block center
 css.append(kf('b-item', [(0, 'translateY(0) scale(0)', ''), (ti, 'translateY(0) scale(0)', 'cubic-bezier(.2,.8,.2,1)'), (ti + 0.3, 'translateY(-32px) scale(1.3)', 'cubic-bezier(.5,0,.9,.5)'), (ti + 0.64, f'translateY({FLOOR}px) scale(1,1)', 'ease-out'), (ti + 0.68, f'translateY({FLOOR + 2}px) scale(1.2,.8)', 'cubic-bezier(.2,.8,.4,1)'), (ti + 0.84, f'translateY({FLOOR - 14}px) scale(1,1)', 'cubic-bezier(.5,0,.9,.5)'), (ti + 1.0, f'translateY({FLOOR}px) scale(1.08,.92)', 'cubic-bezier(.2,.8,.4,1)'), (ti + 1.1, f'translateY({FLOOR - 5}px) scale(1,1)', 'cubic-bezier(.5,0,.9,.5)'), (ti + 1.18, f'translateY({FLOOR}px) scale(1,1)', ''), (T - 0.5, f'translateY({FLOOR}px) scale(1,1)', ''), (T - 0.3, f'translateY({FLOOR}px) scale(0)', ''), (T, 'translateY(0) scale(0)', '')], 'transform'))
 css.append(kf('b-gs', [(0, 'scale(0)', ''), (ti + 0.3, 'scale(.3)', ''), (ti + 0.64, 'scale(1)', ''), (ti + 0.84, 'scale(.6)', ''), (ti + 1.0, 'scale(1)', ''), (T - 0.5, 'scale(1)', ''), (T - 0.3, 'scale(0)', ''), (T, 'scale(0)', '')], 'transform'))
 for i in range(3):
@@ -287,4 +287,4 @@ html = html.replace('</head>', f'    <!-- boot:begin -->{style}<!-- boot:end -->
 html = html.replace('<div id="app"></div>', f'<!-- boot:begin -->{markup}<!-- boot:end -->\n    <div id="app"></div>', 1)
 html = html.replace('<script type="module" src="/src/main.tsx"></script>', f'<!-- boot:begin -->{script}<!-- boot:end -->\n    <script type="module" src="/src/main.tsx"></script>', 1)
 open(target, 'w').write(html)
-print('ok', len(html), 'octets')
+print('ok', len(html), 'bytes')

@@ -56,7 +56,7 @@ public final class GlbReport {
     Files.writeString(summary, text);
     System.out.println("MINEMORIES-GLB " + text.lines().findFirst().orElse(""));
     if (meshes == 0 || materials == 0 || images == 0)
-      throw new AssertionError("GLB vide : " + text.lines().findFirst().orElse(""));
+      throw new AssertionError("Empty GLB: " + text.lines().findFirst().orElse(""));
     // Standard blocks, alpha (glass blends, leaves cut out), tint, a block entity, entities, fluid.
     for (String expected :
         new String[] {
@@ -64,7 +64,7 @@ public final class GlbReport {
           "grass_block_top", "minecraft:chest", "minecraft:cow", "minecraft:armor_stand",
           "minecraft:water", "minecraft:torch"
         })
-      if (!text.contains(expected)) throw new AssertionError("Absent du GLB : " + expected);
+      if (!text.contains(expected)) throw new AssertionError("Missing from GLB: " + expected);
     if (!text.contains("\"alphaMode\":\"BLEND\"") || !text.contains("\"alphaMode\":\"MASK\""))
       throw new AssertionError("Modes alpha BLEND et MASK attendus");
   }

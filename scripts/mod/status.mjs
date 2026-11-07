@@ -76,8 +76,8 @@ export async function loadStorageReport(env, importer = () => import('./storage/
 }
 
 /**
- * Lit l'index public de l'API (ce que voit le site) au lieu de S3 : le PC voit ce qui est publié sans clés S3.
- * Une API injoignable donne null (la grille s'affiche sans les chiffres publiés).
+ * Reads the public index of the API (what the site sees) instead of S3: the PC sees what is published without S3 keys.
+ * An unreachable API gives null (the grid is shown without the published figures).
  */
 export async function loadRemoteReport({ apiUrl, fetchImpl, importer = () => import('./remote/index.mjs') }) {
 	try {

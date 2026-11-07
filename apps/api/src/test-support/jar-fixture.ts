@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 
-/** Archive ZIP minimale (entrées stockées, sans compression) : assez pour le contrôle du répertoire central. */
+/** Minimal ZIP archive (stored entries, no compression): enough for the central directory check. */
 export function makeJar(names: string[] = ['dev/minemories/Mod.class', 'fabric.mod.json'], padding = 0): Buffer {
 	const locals: Buffer[] = []
 	const centrals: Buffer[] = []

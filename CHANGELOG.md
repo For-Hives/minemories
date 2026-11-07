@@ -2,74 +2,74 @@
 
 ## [0.36.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.35.0-beta.1...mod-v0.36.0-beta.1) (2026-11-05)
 
-### Fonctionnalités
+### Features
 
-* **mod:** porter le mod Forge sur Minecraft 1.18.2 en réutilisant la couche de compat (test en jeu passé) ([780f37b](https://github.com/For-Hives/minemories/commit/780f37b0da2e479c9d69a9483feec03d7260fe8e))
+* **mod:** port the Forge mod to Minecraft 1.18.2 reusing the compat layer (in-game test passed) ([780f37b](https://github.com/For-Hives/minemories/commit/780f37b0da2e479c9d69a9483feec03d7260fe8e))
 
-### Corrections
+### Bug Fixes
 
-* **mod:** dessiner le fond des écrans en 1.20.1 et ajouter un contrôle en jeu ([c9a2aa2](https://github.com/For-Hives/minemories/commit/c9a2aa2ecbb3eec76d4692601f13dc6fa1314ac0))
+* **mod:** draw screen backgrounds on 1.20.1 and add an in-game check ([c9a2aa2](https://github.com/For-Hives/minemories/commit/c9a2aa2ecbb3eec76d4692601f13dc6fa1314ac0))
 
 ### Documentation
 
-* **mod:** inventaire chiffré des portages Forge 1.16.5 et 1.12.2 ([c53beec](https://github.com/For-Hives/minemories/commit/c53beec658f2033a909f583aa869f6f7ce0c22a5))
+* **mod:** quantified inventory of the Forge 1.16.5 and 1.12.2 ports ([c53beec](https://github.com/For-Hives/minemories/commit/c53beec658f2033a909f583aa869f6f7ce0c22a5))
 
 ## [0.35.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.34.0-beta.1...mod-v0.35.0-beta.1) (2026-11-05)
 
-### Fonctionnalités
+### Features
 
-* **mod:** affichage compact et coloré de mod:matrix ([8621459](https://github.com/For-Hives/minemories/commit/8621459ef6607cee14a5b493e905afdd4ff0fadd))
-* **mod:** cibles prévues par priorité dans mod:matrix d'après les versions des modpacks ([140a217](https://github.com/For-Hives/minemories/commit/140a217badcc077b1882a95da4b97f829206f42b))
-* **mod:** porter le mod Fabric sur Minecraft 1.19.2 (API de rendu 0.77, test en jeu passé) ([f820c60](https://github.com/For-Hives/minemories/commit/f820c604cc0d30982a467afa182550947bbcc25c))
-* **mod:** porter le mod Fabric sur Minecraft 1.21.11 (compile, non testé en jeu) ([c75a62c](https://github.com/For-Hives/minemories/commit/c75a62c6eaf5074e2f969e9817e3df3b4d7daf21))
-* **mod:** porter le mod Forge sur Minecraft 1.19.2 avec une couche de compat GUI partagée (test en jeu passé) ([3696a60](https://github.com/For-Hives/minemories/commit/3696a60beb8e444b62b1fd23d90bb9c47057874a))
-* **mod:** porter le mod Forge sur Minecraft 1.21.11 avec ForgeGradle 7 (compile, test auto non fonctionnel) ([262c850](https://github.com/For-Hives/minemories/commit/262c850fb90cba9cfa02b7414d9afcb76c2b859e))
-* **mod:** porter le mod NeoForge sur Minecraft 1.21.11 (compile, test en jeu passé) ([a346285](https://github.com/For-Hives/minemories/commit/a3462850ca305eb7b2c94abc6d3f979c40a3db06))
+* **mod:** compact, colored mod:matrix output ([8621459](https://github.com/For-Hives/minemories/commit/8621459ef6607cee14a5b493e905afdd4ff0fadd))
+* **mod:** planned targets ranked by priority in mod:matrix based on modpack versions ([140a217](https://github.com/For-Hives/minemories/commit/140a217badcc077b1882a95da4b97f829206f42b))
+* **mod:** port the Fabric mod to Minecraft 1.19.2 (rendering API 0.77, in-game test passed) ([f820c60](https://github.com/For-Hives/minemories/commit/f820c604cc0d30982a467afa182550947bbcc25c))
+* **mod:** port the Fabric mod to Minecraft 1.21.11 (compiles, not tested in game) ([c75a62c](https://github.com/For-Hives/minemories/commit/c75a62c6eaf5074e2f969e9817e3df3b4d7daf21))
+* **mod:** port the Forge mod to Minecraft 1.19.2 with a shared GUI compat layer (in-game test passed) ([3696a60](https://github.com/For-Hives/minemories/commit/3696a60beb8e444b62b1fd23d90bb9c47057874a))
+* **mod:** port the Forge mod to Minecraft 1.21.11 with ForgeGradle 7 (compiles, automated test not working) ([262c850](https://github.com/For-Hives/minemories/commit/262c850fb90cba9cfa02b7414d9afcb76c2b859e))
+* **mod:** port the NeoForge mod to Minecraft 1.21.11 (compiles, in-game test passed) ([a346285](https://github.com/For-Hives/minemories/commit/a3462850ca305eb7b2c94abc6d3f979c40a3db06))
 
-### Corrections
+### Bug Fixes
 
-* **mod:** corriger les mixins et fabric.mod.json de 1.21.11, ajouter un test en jeu de la capture ([8539029](https://github.com/For-Hives/minemories/commit/8539029b98b8dcaeeb65b5f5e030165a1a685439))
+* **mod:** fix the 1.21.11 mixins and fabric.mod.json, add an in-game capture test ([8539029](https://github.com/For-Hives/minemories/commit/8539029b98b8dcaeeb65b5f5e030165a1a685439))
 
 ### Documentation
 
-* **mod:** documenter le chargement du JAR Fabric 1.21.11 sous Quilt 0.30.2 et abaisser la borne fabricloader à 0.17.3 ([616a242](https://github.com/For-Hives/minemories/commit/616a242677801c1896a07b058dc21dd84c15365b))
-* **mod:** écart mesuré entre les sources 1.21.1 et Minecraft 1.21.11 ([9db0a39](https://github.com/For-Hives/minemories/commit/9db0a3910e044c9426bf4d7b57fb6f55df3eb46a))
+* **mod:** document loading the Fabric 1.21.11 JAR under Quilt 0.30.2 and lower the fabricloader bound to 0.17.3 ([616a242](https://github.com/For-Hives/minemories/commit/616a242677801c1896a07b058dc21dd84c15365b))
+* **mod:** measured gap between the 1.21.1 sources and Minecraft 1.21.11 ([9db0a39](https://github.com/For-Hives/minemories/commit/9db0a3910e044c9426bf4d7b57fb6f55df3eb46a))
 
 ## [0.34.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.33.0-beta.1...mod-v0.34.0-beta.1) (2026-11-05)
 
-### Fonctionnalités
+### Features
 
-* **mod:** archiver les JAR de mod:matrix dans un dossier unique aux noms explicites ([bf3a80d](https://github.com/For-Hives/minemories/commit/bf3a80d288039e1d8cc7b51601b224cd0a6de6e7))
-* **mod:** build Forge 47.4.26 et Fabric pour Minecraft 1.20.1 (Java 17) ([9902208](https://github.com/For-Hives/minemories/commit/99022083f4f5623af88c404b06b5f66429dc6e51))
-* **mod:** outil local mod:matrix pour lister, compiler et préparer les issues de la grille loader × Minecraft ([d4f56cb](https://github.com/For-Hives/minemories/commit/d4f56cb80a32ed216bdcc1644b39709e1d27b8d0))
-* **web:** charte de la landing sur tout le site et film piloté avec élan ([#198](https://github.com/For-Hives/minemories/issues/198)) ([e671436](https://github.com/For-Hives/minemories/commit/e6714361e94e16bc7321f8d9285764fa48e54f33))
+* **mod:** archive mod:matrix JARs in a single folder with explicit names ([bf3a80d](https://github.com/For-Hives/minemories/commit/bf3a80d288039e1d8cc7b51601b224cd0a6de6e7))
+* **mod:** Forge 47.4.26 and Fabric builds for Minecraft 1.20.1 (Java 17) ([9902208](https://github.com/For-Hives/minemories/commit/99022083f4f5623af88c404b06b5f66429dc6e51))
+* **mod:** local mod:matrix tool to list, compile and prepare issues for the loader × Minecraft grid ([d4f56cb](https://github.com/For-Hives/minemories/commit/d4f56cb80a32ed216bdcc1644b39709e1d27b8d0))
+* **web:** landing brand guidelines across the whole site and film scrubbing with momentum ([#198](https://github.com/For-Hives/minemories/issues/198)) ([e671436](https://github.com/For-Hives/minemories/commit/e6714361e94e16bc7321f8d9285764fa48e54f33))
 
 ## [0.33.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.1-beta.1...mod-v0.33.0-beta.1) (2026-11-04)
 
-### Fonctionnalités
+### Features
 
-* **web:** rétablir toutes les pages et leur accès par le pied de page ([#193](https://github.com/For-Hives/minemories/issues/193)) ([a1e956e](https://github.com/For-Hives/minemories/commit/a1e956eac830a61ee826e8af72641418d4a5ce97))
+* **web:** restore all pages and their access from the footer ([#193](https://github.com/For-Hives/minemories/issues/193)) ([a1e956e](https://github.com/For-Hives/minemories/commit/a1e956eac830a61ee826e8af72641418d4a5ce97))
 
 ## [0.32.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.32.0-beta.1...mod-v0.32.1-beta.1) (2026-11-04)
 
-### Intégration continue
+### Continuous Integration
 
-* ne lancer que les portes concernées par la modification ([#192](https://github.com/For-Hives/minemories/issues/192)) ([dab7e93](https://github.com/For-Hives/minemories/commit/dab7e93822e660786e2defdd16a8bcd3e8c54e5c))
+* only run the gates affected by the change ([#192](https://github.com/For-Hives/minemories/issues/192)) ([dab7e93](https://github.com/For-Hives/minemories/commit/dab7e93822e660786e2defdd16a8bcd3e8c54e5c))
 
 ## [0.32.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.1-beta.1...mod-v0.32.0-beta.1) (2026-11-03)
 
-### Fonctionnalités
+### Features
 
-* **web:** recentrage auto sur le joueur, panneaux sans superposition, navigation et masquage des anciennes captures ([4a8c822](https://github.com/For-Hives/minemories/commit/4a8c822e0691964f860c0ef5e19d88c189b74a0e))
+* **web:** auto-recenter on the player, non-overlapping panels, navigating and hiding older captures ([4a8c822](https://github.com/For-Hives/minemories/commit/4a8c822e0691964f860c0ef5e19d88c189b74a0e))
 
-### Corrections
+### Bug Fixes
 
-* **mod:** ajouter TabButton et UiTheme oubliés du commit 4a8c822 ([4cf8878](https://github.com/For-Hives/minemories/commit/4cf8878eb7bf567383e20c861ee165d43c0354d3))
-* **mod:** traduire adresse_officielle et captures_auto dans toutes les langues ([d32ec37](https://github.com/For-Hives/minemories/commit/d32ec37baaefe7ff7a25fdf025782b19db8dca70))
+* **mod:** add TabButton and UiTheme missing from commit 4a8c822 ([4cf8878](https://github.com/For-Hives/minemories/commit/4cf8878eb7bf567383e20c861ee165d43c0354d3))
+* **mod:** translate adresse_officielle and captures_auto into every language ([d32ec37](https://github.com/For-Hives/minemories/commit/d32ec37baaefe7ff7a25fdf025782b19db8dca70))
 
-### Intégration continue
+### Continuous Integration
 
-* lancer les quality gates web, API et Java selon les fichiers modifiés ([7d101c2](https://github.com/For-Hives/minemories/commit/7d101c2dbebecfc21f60fa00c95c9d568891e7b1))
+* run the web, API and Java quality gates based on the changed files ([7d101c2](https://github.com/For-Hives/minemories/commit/7d101c2dbebecfc21f60fa00c95c9d568891e7b1))
 
 ### Maintenance
 
@@ -77,10 +77,10 @@
 
 ## [0.31.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.31.0-beta.1...mod-v0.31.1-beta.1) (2026-11-02)
 
-### Corrections
+### Bug Fixes
 
 * **deps:** update aws-sdk-js-v3 monorepo to v3.1161.0 ([7d08a81](https://github.com/For-Hives/minemories/commit/7d08a816e7e58467f8e8d8dfdef6e3ccee0ff9b7))
-* **mod:** une limite de textures, de passes ou de primitives d'entités ne fait plus échouer la capture ([615fcca](https://github.com/For-Hives/minemories/commit/615fcca686b015bcd88aed9f5ace1e71117ad477))
+* **mod:** a texture, pass or entity primitive limit no longer makes the capture fail ([615fcca](https://github.com/For-Hives/minemories/commit/615fcca686b015bcd88aed9f5ace1e71117ad477))
 
 ### Maintenance
 
@@ -92,42 +92,42 @@
 
 ## [0.31.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.2-beta.1...mod-v0.31.0-beta.1) (2026-11-02)
 
-### Fonctionnalités
+### Features
 
-* **api:** variante de transport Meshopt à la demande et décodage dans le viewer ([1d83bd3](https://github.com/For-Hives/minemories/commit/1d83bd354950724557075f1342d36cdabcf6ac0f))
-* **mod:** catégories en nœuds nommés, métadonnées format 2 et plages de triangles par chunk dans les writers GLB ([ee8b8e4](https://github.com/For-Hives/minemories/commit/ee8b8e45e812a3a331569c2a9b8ac8b1c2bc2666))
-* **mod:** catégories, chunk propriétaire et parcours chunk-major dans la capture GLB ([f0f0ca2](https://github.com/For-Hives/minemories/commit/f0f0ca21183d9ba0be52c0c79ff2724d5c10775f))
-* **mod:** quantification KHR_mesh_quantization des positions, normales et UV dans les writers GLB ([14db2a6](https://github.com/For-Hives/minemories/commit/14db2a6effae457d0783bb275b7949ea2a4bcbbf))
-* **mod:** rayon AFK adaptatif, envoi évité des captures identiques, signaux de modification et InhabitedTime ([909b696](https://github.com/For-Hives/minemories/commit/909b69692e93d9b0d411f49c163034a0ff7817a2))
-* **mod:** score de zone, empreintes par chunk et stockage local des signaux de capture ([591caae](https://github.com/For-Hives/minemories/commit/591caaeabfc6e251f108cbb15c421a2fb6730e9b))
-* **web:** bascules d'affichage par catégorie dans le studio ([b13ebd6](https://github.com/For-Hives/minemories/commit/b13ebd6545481727f7513e63425ce12bd436c6bc))
-* **web:** la vue d'un monde demande la variante Meshopt ; docs de la validation en jeu ([ed2427c](https://github.com/For-Hives/minemories/commit/ed2427c26b2e5c7a78b289f0e33cf82801097684))
+* **api:** on-demand Meshopt transport variant and decoding in the viewer ([1d83bd3](https://github.com/For-Hives/minemories/commit/1d83bd354950724557075f1342d36cdabcf6ac0f))
+* **mod:** categories as named nodes, format 2 metadata and per-chunk triangle ranges in the GLB writers ([ee8b8e4](https://github.com/For-Hives/minemories/commit/ee8b8e45e812a3a331569c2a9b8ac8b1c2bc2666))
+* **mod:** categories, owning chunk and chunk-major traversal in the GLB capture ([f0f0ca2](https://github.com/For-Hives/minemories/commit/f0f0ca21183d9ba0be52c0c79ff2724d5c10775f))
+* **mod:** KHR_mesh_quantization of positions, normals and UVs in the GLB writers ([14db2a6](https://github.com/For-Hives/minemories/commit/14db2a6effae457d0783bb275b7949ea2a4bcbbf))
+* **mod:** adaptive AFK radius, skipped upload of identical captures, edit signals and InhabitedTime ([909b696](https://github.com/For-Hives/minemories/commit/909b69692e93d9b0d411f49c163034a0ff7817a2))
+* **mod:** zone score, per-chunk fingerprints and local storage of capture signals ([591caae](https://github.com/For-Hives/minemories/commit/591caaeabfc6e251f108cbb15c421a2fb6730e9b))
+* **web:** per-category visibility toggles in the studio ([b13ebd6](https://github.com/For-Hives/minemories/commit/b13ebd6545481727f7513e63425ce12bd436c6bc))
+* **web:** the world view requests the Meshopt variant; in-game validation docs ([ed2427c](https://github.com/For-Hives/minemories/commit/ed2427c26b2e5c7a78b289f0e33cf82801097684))
 
-### Performances
+### Performance
 
-* **mod:** core en Java 17 et contrôles partagés hors des cellules de release ([46411a5](https://github.com/For-Hives/minemories/commit/46411a5aa28b091e53b59103ac5ee734616d65bd))
-* **mod:** daemon, parallélisme et cache de configuration Gradle, spec de la matrice de build ([351b5e3](https://github.com/For-Hives/minemories/commit/351b5e3ddeb1d1ec9f8bb74dae1d54cdca8fcd27))
-* **mod:** fusion exacte des sommets bornée en mémoire dans les deux writers GLB ([ef3023b](https://github.com/For-Hives/minemories/commit/ef3023bb9161d2acdf0ed217a8e2d9d5eb5a369c))
-* **mod:** repack des atlas aux seuls texels échantillonnés avec remappage des UV ([7fdddec](https://github.com/For-Hives/minemories/commit/7fdddecf5ea7d919681574017eb8504db3c9bfb9))
+* **mod:** core on Java 17 and shared checks outside the release cells ([46411a5](https://github.com/For-Hives/minemories/commit/46411a5aa28b091e53b59103ac5ee734616d65bd))
+* **mod:** Gradle daemon, parallelism and configuration cache, build matrix spec ([351b5e3](https://github.com/For-Hives/minemories/commit/351b5e3ddeb1d1ec9f8bb74dae1d54cdca8fcd27))
+* **mod:** memory-bounded exact vertex merging in both GLB writers ([ef3023b](https://github.com/For-Hives/minemories/commit/ef3023bb9161d2acdf0ed217a8e2d9d5eb5a369c))
+* **mod:** repack atlases to sampled texels only, with UV remapping ([7fdddec](https://github.com/For-Hives/minemories/commit/7fdddecf5ea7d919681574017eb8504db3c9bfb9))
 
 ### Build
 
-* **mod:** JaCoCo 0.8.16, Gson 2.15.0, correctif processResources avec le cache de configuration ([24a62ec](https://github.com/For-Hives/minemories/commit/24a62ec10e7eaa76cf1033358dde49a4655089d4))
+* **mod:** JaCoCo 0.8.16, Gson 2.15.0, processResources fix with the configuration cache ([24a62ec](https://github.com/For-Hives/minemories/commit/24a62ec10e7eaa76cf1033358dde49a4655089d4))
 
 ### Documentation
 
-* **glb:** format 2, catégories, métadonnées et plages par chunk ([#173](https://github.com/For-Hives/minemories/issues/173) phase 2) ([bc19f05](https://github.com/For-Hives/minemories/commit/bc19f051a955f9856edc39337ea3b2a57675cc6e))
-* **glb:** le tri du viewer pèse moins de 9 % de la préparation d'une capture, plages par chunk non exploitées ([1c61d36](https://github.com/For-Hives/minemories/commit/1c61d36a35507ce0f46a9cf5f7e477011e3e4f22))
-* **glb:** mesures de la fusion exacte des sommets ([#173](https://github.com/For-Hives/minemories/issues/173) phase 1) ([317e3fe](https://github.com/For-Hives/minemories/commit/317e3fe0899c1df83c7f568af2c5c4960ada3b84))
-* **glb:** mesures de la phase 0 et décisions du format GLB v2 ([#173](https://github.com/For-Hives/minemories/issues/173)) ([4ebef96](https://github.com/For-Hives/minemories/commit/4ebef965f665f0aedc5de90e693ac31c66bf0328))
+* **glb:** format 2, categories, metadata and per-chunk ranges ([#173](https://github.com/For-Hives/minemories/issues/173) phase 2) ([bc19f05](https://github.com/For-Hives/minemories/commit/bc19f051a955f9856edc39337ea3b2a57675cc6e))
+* **glb:** viewer sorting takes under 9% of capture preparation, per-chunk ranges unused ([1c61d36](https://github.com/For-Hives/minemories/commit/1c61d36a35507ce0f46a9cf5f7e477011e3e4f22))
+* **glb:** exact vertex merging measurements ([#173](https://github.com/For-Hives/minemories/issues/173) phase 1) ([317e3fe](https://github.com/For-Hives/minemories/commit/317e3fe0899c1df83c7f568af2c5c4960ada3b84))
+* **glb:** phase 0 measurements and GLB v2 format decisions ([#173](https://github.com/For-Hives/minemories/issues/173)) ([4ebef96](https://github.com/For-Hives/minemories/commit/4ebef965f665f0aedc5de90e693ac31c66bf0328))
 
 ### Tests
 
-* **mod:** le nœud de catégorie porte la transformation de quantification ([483d37f](https://github.com/For-Hives/minemories/commit/483d37f9dac1df9541b276e11f0bf6df141e276d))
+* **mod:** the category node carries the quantization transform ([483d37f](https://github.com/For-Hives/minemories/commit/483d37f9dac1df9541b276e11f0bf6df141e276d))
 
 ### Maintenance
 
-* **glb:** outil de rapport de mesure des GLB ([#173](https://github.com/For-Hives/minemories/issues/173)) ([352fe20](https://github.com/For-Hives/minemories/commit/352fe206ab58234d3eb314034d03050f7d8f5129))
+* **glb:** GLB measurement report tool ([#173](https://github.com/For-Hives/minemories/issues/173)) ([352fe20](https://github.com/For-Hives/minemories/commit/352fe206ab58234d3eb314034d03050f7d8f5129))
 
 ## [0.30.2-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.30.1-beta.1...mod-v0.30.2-beta.1) (2026-10-31)
 
@@ -135,169 +135,169 @@
 
 ## [0.30.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.29.0-beta.1...mod-v0.30.0-beta.1) (2026-10-31)
 
-### Fonctionnalités
+### Features
 
-* **web:** centrage sur le joueur, météo abritée, pellicule intégrée, menus et fiches de galerie ([f082f7c](https://github.com/For-Hives/minemories/commit/f082f7cc6a6861022d059b9295f7de0ce31b04fc))
+* **web:** player centering, sheltered weather, built-in filmstrip, gallery menus and cards ([f082f7c](https://github.com/For-Hives/minemories/commit/f082f7cc6a6861022d059b9295f7de0ce31b04fc))
 
 ### Documentation
 
-* noter l'autorisation de push direct sur main après contrôles verts ([91f2893](https://github.com/For-Hives/minemories/commit/91f289314c650ef7c8bf13ff41f7f768417ba6c7))
+* record permission to push directly to main after green checks ([91f2893](https://github.com/For-Hives/minemories/commit/91f289314c650ef7c8bf13ff41f7f768417ba6c7))
 
 ## [0.29.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.28.0-beta.1...mod-v0.29.0-beta.1) (2026-10-31)
 
-### Fonctionnalités
+### Features
 
-* **web:** pellicule du monde, transitions douces, pivot ombré et galerie en grille ([bb9881b](https://github.com/For-Hives/minemories/commit/bb9881b5f460fd1a0fe7ef161f36bced5eb5733a))
+* **web:** world filmstrip, smooth transitions, shadowed pivot and grid gallery ([bb9881b](https://github.com/For-Hives/minemories/commit/bb9881b5f460fd1a0fe7ef161f36bced5eb5733a))
 
 ## [0.28.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.27.0-beta.1...mod-v0.28.0-beta.1) (2026-10-31)
 
-### Fonctionnalités
+### Features
 
-* **web:** rétablir la galerie, le viewer et la page du monde, refondus ([6593207](https://github.com/For-Hives/minemories/commit/659320788a579740dc8bb579b2695fb679770e86))
+* **web:** restore the redesigned gallery, viewer and world page ([6593207](https://github.com/For-Hives/minemories/commit/659320788a579740dc8bb579b2695fb679770e86))
 
 ### Maintenance
 
-* retirer le script mod:build:1.20.1 ajouté par erreur (le dossier n'est pas suivi) ([405f38f](https://github.com/For-Hives/minemories/commit/405f38ff0f923f3564d6e5030857eddf510fc89f))
-* **web:** zéro avertissement Biome (spécificité CSS, paramètre inutilisé, script de chargement généré) ([684f418](https://github.com/For-Hives/minemories/commit/684f418a14a0148dd8d628f780bb756841f9e2df))
+* remove the mod:build:1.20.1 script added by mistake (the folder is not tracked) ([405f38f](https://github.com/For-Hives/minemories/commit/405f38ff0f923f3564d6e5030857eddf510fc89f))
+* **web:** zero Biome warnings (CSS specificity, unused parameter, generated loading script) ([684f418](https://github.com/For-Hives/minemories/commit/684f418a14a0148dd8d628f780bb756841f9e2df))
 
 ## [0.27.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.26.0-beta.1...mod-v0.27.0-beta.1) (2026-10-31)
 
-### Fonctionnalités
+### Features
 
-* **web:** motion des dépliants, landing seule, audit des pages archivées ([#171](https://github.com/For-Hives/minemories/issues/171)) ([275ba36](https://github.com/For-Hives/minemories/commit/275ba36ba141670505d2f153243a9d3ea916fbfa))
+* **web:** disclosure motion, landing only, audit of archived pages ([#171](https://github.com/For-Hives/minemories/issues/171)) ([275ba36](https://github.com/For-Hives/minemories/commit/275ba36ba141670505d2f153243a9d3ea916fbfa))
 
 ## [0.26.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.25.0-beta.1...mod-v0.26.0-beta.1) (2026-10-30)
 
-### Fonctionnalités
+### Features
 
-* **web:** charte graphique, motion design, chargement, barre du film et carte dynamique ([#164](https://github.com/For-Hives/minemories/issues/164) à [#170](https://github.com/For-Hives/minemories/issues/170)) ([e443e7d](https://github.com/For-Hives/minemories/commit/e443e7d5bee35f151198793841a4698ed4688db2))
+* **web:** brand guidelines, motion design, loading, film bar and dynamic map ([#164](https://github.com/For-Hives/minemories/issues/164) to [#170](https://github.com/For-Hives/minemories/issues/170)) ([e443e7d](https://github.com/For-Hives/minemories/commit/e443e7d5bee35f151198793841a4698ed4688db2))
 
 ## [0.25.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.24.0-beta.1...mod-v0.25.0-beta.1) (2026-10-30)
 
-### Fonctionnalités
+### Features
 
-* **web:** pipeline d'optimisation du film d'accueil (hero:assets) ([#163](https://github.com/For-Hives/minemories/issues/163)) ([685a513](https://github.com/For-Hives/minemories/commit/685a513c829112ce8bbd967ef5f84f7db29c0920))
+* **web:** landing film optimization pipeline (hero:assets) ([#163](https://github.com/For-Hives/minemories/issues/163)) ([685a513](https://github.com/For-Hives/minemories/commit/685a513c829112ce8bbd967ef5f84f7db29c0920))
 
 ## [0.24.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.23.0-beta.1...mod-v0.24.0-beta.1) (2026-10-28)
 
-### Fonctionnalités
+### Features
 
-* **web:** le film d'accueil devient la page d'accueil ([#162](https://github.com/For-Hives/minemories/issues/162)) ([05ca999](https://github.com/For-Hives/minemories/commit/05ca999dc9e0bc1aff8d10e75084c3c6a7067c1f))
+* **web:** the landing film becomes the home page ([#162](https://github.com/For-Hives/minemories/issues/162)) ([05ca999](https://github.com/For-Hives/minemories/commit/05ca999dc9e0bc1aff8d10e75084c3c6a7067c1f))
 
 ## [0.23.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.22.0-beta.1...mod-v0.23.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* monde évolutif unique, composé chunk par chunk dans le viewer ([91e0ba5](https://github.com/For-Hives/minemories/commit/91e0ba531b16d866198d38a873a8c818e7717527))
+* single evolving world, composed chunk by chunk in the viewer ([91e0ba5](https://github.com/For-Hives/minemories/commit/91e0ba531b16d866198d38a873a8c818e7717527))
 
-### Corrections
+### Bug Fixes
 
-* **web:** ne plus étiqueter la vue du monde comme « monde évolutif » ([6199ec2](https://github.com/For-Hives/minemories/commit/6199ec209a6d226f9ea495a077018cd117183dc1))
+* **web:** stop labeling the world view as “evolving world” ([6199ec2](https://github.com/For-Hives/minemories/commit/6199ec209a6d226f9ea495a077018cd117183dc1))
 
-### Performances
+### Performance
 
-* **web:** libérer les textures des captures recouvertes et lire les positions sans copie ([5300110](https://github.com/For-Hives/minemories/commit/5300110e98af576527e5760661f9224481991523))
+* **web:** release textures of covered captures and read positions without copying ([5300110](https://github.com/For-Hives/minemories/commit/5300110e98af576527e5760661f9224481991523))
 
 ## [0.22.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.21.0-beta.1...mod-v0.22.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* adopter minemories.net et api.minemories.net comme domaines officiels ([690b6a5](https://github.com/For-Hives/minemories/commit/690b6a573fcac267db8d5ca23dd7c90bb18f461b))
-* **mod:** option pour enregistrer les captures manuelles en tuiles ([0bf0a39](https://github.com/For-Hives/minemories/commit/0bf0a3949ca458f21195cdaf87297b8120d4fe1a))
-* timelapse monde cumulatif à partir des captures tuilées ([43832af](https://github.com/For-Hives/minemories/commit/43832af2525b6127efb1aa36274a08be1a596f6b))
-* un seul visualiseur avec l'évolution intégrée, captures manuelles tuilées par défaut ([76c0b20](https://github.com/For-Hives/minemories/commit/76c0b200976a5deeddeda24d4ed1fdd857cddcac))
-* une carte par évolution, ouverture sur la dernière capture, réponses GZIP, tuiles de 32 blocs ([7aaadeb](https://github.com/For-Hives/minemories/commit/7aaadeb6d062a31cd35f84e33166bf4627cbcf3b))
+* adopt minemories.net and api.minemories.net as the official domains ([690b6a5](https://github.com/For-Hives/minemories/commit/690b6a573fcac267db8d5ca23dd7c90bb18f461b))
+* **mod:** option to save manual captures as tiles ([0bf0a39](https://github.com/For-Hives/minemories/commit/0bf0a3949ca458f21195cdaf87297b8120d4fe1a))
+* cumulative world timelapse from tiled captures ([43832af](https://github.com/For-Hives/minemories/commit/43832af2525b6127efb1aa36274a08be1a596f6b))
+* a single viewer with built-in evolution, manual captures tiled by default ([76c0b20](https://github.com/For-Hives/minemories/commit/76c0b200976a5deeddeda24d4ed1fdd857cddcac))
+* one card per evolution, opening on the latest capture, GZIP responses, 32-block tiles ([7aaadeb](https://github.com/For-Hives/minemories/commit/7aaadeb6d062a31cd35f84e33166bf4627cbcf3b))
 
-### Corrections
+### Bug Fixes
 
-* **deps:** mettre à jour better-auth en 1.7.7 (bun audit) ([3e5eac2](https://github.com/For-Hives/minemories/commit/3e5eac25084ad64c09cf84f0e2575b7d78327f5f))
+* **deps:** update better-auth to 1.7.7 (bun audit) ([3e5eac2](https://github.com/For-Hives/minemories/commit/3e5eac25084ad64c09cf84f0e2575b7d78327f5f))
 
 ### Documentation
 
-* bilan de la tentative de tuiles et du mode évolution ([8714847](https://github.com/For-Hives/minemories/commit/8714847fc95ceb61cc9ebd5ccacdd3846ff34510))
+* review of the tiles attempt and evolution mode ([8714847](https://github.com/For-Hives/minemories/commit/8714847fc95ceb61cc9ebd5ccacdd3846ff34510))
 
 ### Tests
 
-* **mod:** couvrir l'ancien historique d'exploration et le zoneId ([#148](https://github.com/For-Hives/minemories/issues/148)) ([9bd26e1](https://github.com/For-Hives/minemories/commit/9bd26e16b96158427ab967838da8555315d4a794))
+* **mod:** cover the old exploration history and the zoneId ([#148](https://github.com/For-Hives/minemories/issues/148)) ([9bd26e1](https://github.com/For-Hives/minemories/commit/9bd26e16b96158427ab967838da8555315d4a794))
 
 ## [0.21.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.20.0-beta.1...mod-v0.21.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **mod:** réglages avancés organisés en onglets ([efc4a6e](https://github.com/For-Hives/minemories/commit/efc4a6ef79f26cbb15f6568357305a202e8c0a88))
+* **mod:** advanced settings organized in tabs ([efc4a6e](https://github.com/For-Hives/minemories/commit/efc4a6ef79f26cbb15f6568357305a202e8c0a88))
 
-### Corrections
+### Bug Fixes
 
-* **mod:** retirer l'écriture statique de l'onglet avancé signalée par SpotBugs ([7c60436](https://github.com/For-Hives/minemories/commit/7c60436393b8924e12c127d7f9b834149c5a71fa))
+* **mod:** remove the advanced tab's static write flagged by SpotBugs ([7c60436](https://github.com/For-Hives/minemories/commit/7c60436393b8924e12c127d7f9b834149c5a71fa))
 
 ## [0.20.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.1-beta.1...mod-v0.20.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **mod:** écran d'accueil simple à icônes et réglages avancés séparés ([9fb18f3](https://github.com/For-Hives/minemories/commit/9fb18f3d29c969f6c05235156a3e2ff3941df76f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
-* **mod:** modèle de vue et textes de l'écran d'accueil simple ([e18219e](https://github.com/For-Hives/minemories/commit/e18219ec03e67ba1720fa87da9ac5c94a2f6a718)), references [#156](https://github.com/For-Hives/minemories/issues/156)
-* **mod:** tout activé par défaut et rappel de connexion cliquable dans le chat ([e37123b](https://github.com/For-Hives/minemories/commit/e37123ba0144c809314955fcea20d4eeba868911)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** simple icon-based home screen and separate advanced settings ([9fb18f3](https://github.com/For-Hives/minemories/commit/9fb18f3d29c969f6c05235156a3e2ff3941df76f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** view model and copy for the simple home screen ([e18219e](https://github.com/For-Hives/minemories/commit/e18219ec03e67ba1720fa87da9ac5c94a2f6a718)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** everything on by default and a clickable sign-in reminder in chat ([e37123b](https://github.com/For-Hives/minemories/commit/e37123ba0144c809314955fcea20d4eeba868911)), references [#156](https://github.com/For-Hives/minemories/issues/156)
 
-### Corrections
+### Bug Fixes
 
-* **mod:** corriger le formatage des tests et le champ volatile de ClientRuntime ([d7a3083](https://github.com/For-Hives/minemories/commit/d7a3083d0545d24c689f965867955f4681b292e9)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* **mod:** fix test formatting and ClientRuntime's volatile field ([d7a3083](https://github.com/For-Hives/minemories/commit/d7a3083d0545d24c689f965867955f4681b292e9)), references [#156](https://github.com/For-Hives/minemories/issues/156)
 
 ### Documentation
 
-* décrire l'écran d'accueil simple et les diagnostics activés par défaut ([ab01f48](https://github.com/For-Hives/minemories/commit/ab01f4891bdcf133ef8fb543bf7d2ad85b32523f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
+* describe the simple home screen and diagnostics on by default ([ab01f48](https://github.com/For-Hives/minemories/commit/ab01f4891bdcf133ef8fb543bf7d2ad85b32523f)), references [#156](https://github.com/For-Hives/minemories/issues/156)
 
 ## [0.19.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.19.0-beta.1...mod-v0.19.1-beta.1) (2026-10-27)
 
-### Corrections
+### Bug Fixes
 
-* **api:** servir un GLB assemblé pour les captures tuilées sur les routes de fichier ([71950ee](https://github.com/For-Hives/minemories/commit/71950eec3e1f015956482d15d7fe221c3bd24598)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** serve an assembled GLB for tiled captures on file routes ([71950ee](https://github.com/For-Hives/minemories/commit/71950eec3e1f015956482d15d7fe221c3bd24598)), references [#146](https://github.com/For-Hives/minemories/issues/146)
 
-### Refactorisation
+### Refactoring
 
-* **front:** déplacer la fusion de GLB de tuiles dans le package de contrat ([b73b976](https://github.com/For-Hives/minemories/commit/b73b9763a498bdf09c29e97b23aa7bbd449d6253)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **front:** move tile GLB merging into the contract package ([b73b976](https://github.com/For-Hives/minemories/commit/b73b9763a498bdf09c29e97b23aa7bbd449d6253)), references [#146](https://github.com/For-Hives/minemories/issues/146)
 
 ## [0.19.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.18.0-beta.1...mod-v0.19.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **mod:** écrire les tuiles par spool pour les captures AFK ([2bd39f0](https://github.com/For-Hives/minemories/commit/2bd39f08a901e3ea050ff02100083508c4fe2965)), references [#145](https://github.com/For-Hives/minemories/issues/145)
-* **mod:** écrire un bundle de tuiles pour les captures AFK (option avancée) ([baaaea5](https://github.com/For-Hives/minemories/commit/baaaea57ec2d67d5866af5217f7a37ae71aa22b5)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+* **mod:** write tiles via the spool for AFK captures ([2bd39f0](https://github.com/For-Hives/minemories/commit/2bd39f08a901e3ea050ff02100083508c4fe2965)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+* **mod:** write a tile bundle for AFK captures (advanced option) ([baaaea5](https://github.com/For-Hives/minemories/commit/baaaea57ec2d67d5866af5217f7a37ae71aa22b5)), references [#145](https://github.com/For-Hives/minemories/issues/145)
 
 ## [0.18.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.17.0-beta.1...mod-v0.18.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **front:** exporter la capture affichée en un seul GLB depuis le lecteur ([e292557](https://github.com/For-Hives/minemories/commit/e292557c8e0cccb2c75f3b3bc6d8b162335ed607)), references [#148](https://github.com/For-Hives/minemories/issues/148)
-* **front:** fusionner les GLB de tuiles en un seul GLB autonome ([6421a5f](https://github.com/For-Hives/minemories/commit/6421a5fae7b75364599c675c985e9a86e73f5091)), references [#148](https://github.com/For-Hives/minemories/issues/148)
+* **front:** export the displayed capture as a single GLB from the player ([e292557](https://github.com/For-Hives/minemories/commit/e292557c8e0cccb2c75f3b3bc6d8b162335ed607)), references [#148](https://github.com/For-Hives/minemories/issues/148)
+* **front:** merge tile GLBs into a single self-contained GLB ([6421a5f](https://github.com/For-Hives/minemories/commit/6421a5fae7b75364599c675c985e9a86e73f5091)), references [#148](https://github.com/For-Hives/minemories/issues/148)
 
 ## [0.17.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.16.0-beta.1...mod-v0.17.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **front:** ajouter le planificateur de tuiles et l'API par tuile du viewer ([e9dc2eb](https://github.com/For-Hives/minemories/commit/e9dc2ebb8c245041b5565b53dd01a60e8bb21b05)), references [#147](https://github.com/For-Hives/minemories/issues/147)
-* **front:** lire une série tuilée tuile par tuile dans le lecteur temporel ([f92829a](https://github.com/For-Hives/minemories/commit/f92829a8a3a8d57eccbe0b7221d92e2dc7a6cc97)), references [#147](https://github.com/For-Hives/minemories/issues/147)
+* **front:** add the tile planner and the viewer's per-tile API ([e9dc2eb](https://github.com/For-Hives/minemories/commit/e9dc2ebb8c245041b5565b53dd01a60e8bb21b05)), references [#147](https://github.com/For-Hives/minemories/issues/147)
+* **front:** play a tiled series tile by tile in the timeline player ([f92829a](https://github.com/For-Hives/minemories/commit/f92829a8a3a8d57eccbe0b7221d92e2dc7a6cc97)), references [#147](https://github.com/For-Hives/minemories/issues/147)
 
 ## [0.16.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.15.0-beta.1...mod-v0.16.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **api:** accepter les bundles de tuiles et servir leurs tuiles au propriétaire ([735ed1f](https://github.com/For-Hives/minemories/commit/735ed1fecea6c644ec1ef6365de201bde4662cbe)), references [#146](https://github.com/For-Hives/minemories/issues/146)
-* **api:** indexer les tuiles d'un bundle et lire un intervalle d'octets ([f192555](https://github.com/For-Hives/minemories/commit/f192555daba57a3277cc25cd3e51cdebf5f19e3c)), references [#146](https://github.com/For-Hives/minemories/issues/146)
-* **api:** valider les bundles de tuiles et déclarer leur contrat ([509718f](https://github.com/For-Hives/minemories/commit/509718ffa2f1959ba0c216f28f4a8e6aefdf339a)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** accept tile bundles and serve their tiles to the owner ([735ed1f](https://github.com/For-Hives/minemories/commit/735ed1fecea6c644ec1ef6365de201bde4662cbe)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** index a bundle's tiles and read a byte range ([f192555](https://github.com/For-Hives/minemories/commit/f192555daba57a3277cc25cd3e51cdebf5f19e3c)), references [#146](https://github.com/For-Hives/minemories/issues/146)
+* **api:** validate tile bundles and declare their contract ([509718f](https://github.com/For-Hives/minemories/commit/509718ffa2f1959ba0c216f28f4a8e6aefdf339a)), references [#146](https://github.com/For-Hives/minemories/issues/146)
 
 ### Tests
 
-* **api:** justifier la boucle séquentielle des tests de tuiles ([9e3eb90](https://github.com/For-Hives/minemories/commit/9e3eb90300985f0b72762ecddeae6551497cb631))
+* **api:** justify the sequential loop in the tile tests ([9e3eb90](https://github.com/For-Hives/minemories/commit/9e3eb90300985f0b72762ecddeae6551497cb631))
 
 ## [0.15.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.14.0-beta.1...mod-v0.15.0-beta.1) (2026-10-27)
 
-### Fonctionnalités
+### Features
 
-* **mod:** découper les captures en tuiles Minemories dans le cœur ([b04f474](https://github.com/For-Hives/minemories/commit/b04f474161a95ee25a5b12c58c7889b88f2341e7)), references [#145](https://github.com/For-Hives/minemories/issues/145)
+* **mod:** split captures into Minemories tiles in core ([b04f474](https://github.com/For-Hives/minemories/commit/b04f474161a95ee25a5b12c58c7889b88f2341e7)), references [#145](https://github.com/For-Hives/minemories/issues/145)
 
-### Corrections
+### Bug Fixes
 
-* **deps:** résoudre les avis de sécurité signalés par bun audit ([5b1fd1b](https://github.com/For-Hives/minemories/commit/5b1fd1b7c7522e3b63436a640e0176515b050bfb))
+* **deps:** resolve security advisories reported by bun audit ([5b1fd1b](https://github.com/For-Hives/minemories/commit/5b1fd1b7c7522e3b63436a640e0176515b050bfb))
 
 ### Maintenance
 
@@ -305,22 +305,22 @@
 
 ## [0.14.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.13.0-beta.1...mod-v0.14.0-beta.1) (2026-10-19)
 
-### Fonctionnalités
+### Features
 
 * **i18n:** localize the website for ten countries ([94808d8](https://github.com/For-Hives/minemories/commit/94808d87aafec0519d243495931aebe294e244fd))
 * improve viewer, sharing and account settings ([c320b92](https://github.com/For-Hives/minemories/commit/c320b92b7e142449ef2763793861527f6c640d0e))
 
-### Refactorisation
+### Refactoring
 
 * **i18n:** unify web catalogs and localize mod options ([139271e](https://github.com/For-Hives/minemories/commit/139271ef10df199786ea8cc76d2450c5a8bf1626))
 
 ## [0.13.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.12.0-beta.1...mod-v0.13.0-beta.1) (2026-10-16)
 
-### Fonctionnalités
+### Features
 
 * **front:** complete French and English guides and display formats ([980c59f](https://github.com/For-Hives/minemories/commit/980c59f80f465cbba450df36166b01b07ace257a))
 
-### Corrections
+### Bug Fixes
 
 * **deps:** resolve Minecraft runtime dependencies from their official sources ([c8c9044](https://github.com/For-Hives/minemories/commit/c8c9044a27b8e949c5dbb88043cef59739e7eda8))
 
@@ -330,28 +330,28 @@
 
 ## [0.12.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.11.0-beta.1...mod-v0.12.0-beta.1) (2026-10-16)
 
-### Fonctionnalités
+### Features
 
 * **front:** prepare consented public-page error diagnostics ([6e986f7](https://github.com/For-Hives/minemories/commit/6e986f7e6c29aacaa7499d94160264349a8e77fb))
 
 ## [0.11.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.10.0-beta.1...mod-v0.11.0-beta.1) (2026-10-16)
 
-### Fonctionnalités
+### Features
 
 * **web:** redesign sign-in around focused and guest journeys ([4dc3076](https://github.com/For-Hives/minemories/commit/4dc3076d1661091cdbbf457e6ae548f2f78d80a6))
 
-### Corrections
+### Bug Fixes
 
 * **front:** cover gallery lifecycle and ignore obsolete responses ([dcf75ee](https://github.com/For-Hives/minemories/commit/dcf75ee993303e6c760411a2f9b6e68b60c57db0))
 * **web:** reserve local GLB loading for development ([516fdf2](https://github.com/For-Hives/minemories/commit/516fdf26cade4f57c4714d3316c13e70183b49e8))
 
-### Refactorisation
+### Refactoring
 
 * **front:** isolate gallery state and cancellable pairing polling ([05a2cc7](https://github.com/For-Hives/minemories/commit/05a2cc74d10a54937b20d975981e7a6f3320acce))
 
 ## [0.10.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.9.0-beta.1...mod-v0.10.0-beta.1) (2026-10-16)
 
-### Fonctionnalités
+### Features
 
 * **api:** prepare opt-in Polar billing with verified webhook ledger ([f4d3278](https://github.com/For-Hives/minemories/commit/f4d327822a78737d14fde4385c45a707dcfa0823))
 
@@ -361,7 +361,7 @@
 
 ## [0.9.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.8.0-beta.1...mod-v0.9.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **admin:** add protected dashboard and administrator management ([2f50c9d](https://github.com/For-Hives/minemories/commit/2f50c9dbe3b85c92f981f8385db17dd56a988ba5))
 * **admin:** bootstrap requested owner once with cleanup reminder ([94f04c7](https://github.com/For-Hives/minemories/commit/94f04c7e84fddfe8910ce243b65ca53b7c997533))
@@ -369,23 +369,23 @@
 
 ## [0.8.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.7.0-beta.1...mod-v0.8.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **web:** propose a living-album art direction across the site ([16e0684](https://github.com/For-Hives/minemories/commit/16e068426c3ed91cd1c461ce88edef3fd5e9be00))
 
 ## [0.7.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.6.0-beta.1...mod-v0.7.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **account:** change email and password from account settings ([749ce6b](https://github.com/For-Hives/minemories/commit/749ce6b8650a1aa63474b846e5c521fed4392fc4))
 
-### Corrections
+### Bug Fixes
 
 * **front:** keep account settings accessible with avatar fallback ([52e8054](https://github.com/For-Hives/minemories/commit/52e805425bc5f266c36b31a48047b16ab397109c))
 
 ## [0.6.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.1-beta.1...mod-v0.6.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **api:** bind cold storage catalogs to an explicit provider target ([7029f7f](https://github.com/For-Hives/minemories/commit/7029f7feef418513d304fac4ef3e5dd2d8314b70))
 * **api:** coordinate cancellable cold storage copy workers ([a4ebb2c](https://github.com/For-Hives/minemories/commit/a4ebb2c89926f65f57263b343c5afbfc09c8086a))
@@ -402,7 +402,7 @@
 * **viewer:** center captured players and add first-person exploration ([dd1bba3](https://github.com/For-Hives/minemories/commit/dd1bba3b8bdff008706f8dae985664558d438441))
 * **web:** rebuild viewer as an immersive cinematic studio ([6a9f424](https://github.com/For-Hives/minemories/commit/6a9f4242345040d383c57b9717e77054eded75b2))
 
-### Corrections
+### Bug Fixes
 
 * **api:** await durable cleanup before closing SQLite on shutdown ([7d64e89](https://github.com/For-Hives/minemories/commit/7d64e89bc5789330d4e70cb59f8872facb42a1b6))
 * **api:** keep bound S3 uploads in STANDARD storage ([2d4b546](https://github.com/For-Hives/minemories/commit/2d4b546db425aaa216d222956c6c220bfbebd986))
@@ -421,18 +421,18 @@
 
 ## [0.5.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.5.0-beta.1...mod-v0.5.1-beta.1) (2026-10-15)
 
-### Corrections
+### Bug Fixes
 
 * **mod:** preserve atlas sampling across sprite boundaries ([4b879bb](https://github.com/For-Hives/minemories/commit/4b879bbe70b5c0d343d0ab8287b8e9ee9b920342))
 
 ## [0.5.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.4.0-beta.1...mod-v0.5.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **mod:** enable validated Fabric and Forge release targets ([6e46ebe](https://github.com/For-Hives/minemories/commit/6e46ebee5f90782bce638b522bd659065b10622b))
 * **mod:** share client across Fabric and Forge adapters ([eed3186](https://github.com/For-Hives/minemories/commit/eed31869f8384d2c60d85c24c3b88321bde76501))
 
-### Corrections
+### Bug Fixes
 
 * **web:** preserve imported normals to prevent Firefox bloom corruption ([f20b8e2](https://github.com/For-Hives/minemories/commit/f20b8e230861fe9671dfb236e9a83bd83bc3b199))
 
@@ -442,7 +442,7 @@
 
 ## [0.4.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.3.1-beta.1...mod-v0.4.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **web:** add adaptive viewer lighting and memory studio controls ([5f2919f](https://github.com/For-Hives/minemories/commit/5f2919f03c3955393b5e2d4b79a7f5e3ca2183f7))
 
@@ -454,7 +454,7 @@
 
 ## [0.3.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.1-beta.1...mod-v0.3.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * recover mod crash diagnostics and add private operator triage ([a05a3a1](https://github.com/For-Hives/minemories/commit/a05a3a1dd8863db636d75c94d6be146959882ed0))
 * **web:** expose mod release history and automatic changelog ([a45957a](https://github.com/For-Hives/minemories/commit/a45957a0d13b3d2698f4390b46161ecab5539bd7))
@@ -465,13 +465,13 @@
 
 ## [0.2.1-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.2.0-beta.1...mod-v0.2.1-beta.1) (2026-10-15)
 
-### Corrections
+### Bug Fixes
 
 * **ci:** publish from the authoritative draft creation response ([87bccca](https://github.com/For-Hives/minemories/commit/87bccca62a0b11fc7f4f4d127f0fa9770aca3bc1))
 
 ## [0.2.0-beta.1](https://github.com/For-Hives/minemories/compare/mod-v0.1.0-beta...mod-v0.2.0-beta.1) (2026-10-15)
 
-### Fonctionnalités
+### Features
 
 * **api:** add moderated public discovery and durable votes ([e7cf4c2](https://github.com/For-Hives/minemories/commit/e7cf4c2de3f87474164eeaef1422ffbab27bba0e))
 * **api:** add transactional catalog for temporal capture chunks ([b87aea4](https://github.com/For-Hives/minemories/commit/b87aea4bfefa6eaaac5f6a4389e5ca153d420eda))
@@ -480,14 +480,14 @@
 * **api:** serve temporal manifests and maintain deduplicated capture storage ([81756c3](https://github.com/For-Hives/minemories/commit/81756c3107c3a8db1574b2a22d075d871339a101))
 * **ci:** automate versioned mod releases after main quality gates ([f4383a1](https://github.com/For-Hives/minemories/commit/f4383a1f896c4761da56804364995a3a411f167b))
 * **mod:** identify capture footprints and prepare bounded temporal chunks ([7070ede](https://github.com/For-Hives/minemories/commit/7070edecd457cf1490f9af0889248cb958f8f80c))
-* **mod:** rendre les captures AFK progressives ([#58](https://github.com/For-Hives/minemories/issues/58)) ([6bca109](https://github.com/For-Hives/minemories/commit/6bca1090a6f0743370f623ae076d2c952ed43b58))
+* **mod:** make AFK captures progressive ([#58](https://github.com/For-Hives/minemories/issues/58)) ([6bca109](https://github.com/For-Hives/minemories/commit/6bca1090a6f0743370f623ae076d2c952ed43b58))
 * **mod:** scope remote captures to sessions or explicit worlds ([e77d6f8](https://github.com/For-Hives/minemories/commit/e77d6f8bfb725c770761747adafa161a7a70296b))
 * **mod:** suggest locally frequented zones ([6cd3471](https://github.com/For-Hives/minemories/commit/6cd3471bbdd57e08cfc50d60857db63c6d566cf5))
 * **web:** bound temporal scene loading and release replaced capture assets ([91c3eeb](https://github.com/For-Hives/minemories/commit/91c3eeb4c124d9e8b2d679bcf30d5c2af5b8b01b))
 * **web:** connect moderated public gallery and ranking ([3c2c5e0](https://github.com/For-Hives/minemories/commit/3c2c5e01eba2b7295a3c0016f2448b597e4b9ba8))
 * **web:** play recorded capture timelines with bounded paging and resume ([cb19a16](https://github.com/For-Hives/minemories/commit/cb19a163023fd5298ee5fff85d8bd82b587adc6e))
 
-### Corrections
+### Bug Fixes
 
 * **ci:** collect a single flattened release artifact ([d1b962d](https://github.com/For-Hives/minemories/commit/d1b962df3b609f5a552a58f7efc927776bf5aef6))
 * **ci:** isolate release previews from the publication queue ([6719fd1](https://github.com/For-Hives/minemories/commit/6719fd14be5909a9124105a6c26bbff844fd0377))
@@ -497,7 +497,7 @@
 * **mod:** crop used renderer sprites from large modpack atlases ([abd28f8](https://github.com/For-Hives/minemories/commit/abd28f83947b3e7bf9edf75613adc9e9f10fdfbb))
 * **test:** keep Java diagnostics out of the crash probe path ([54f0c18](https://github.com/For-Hives/minemories/commit/54f0c188de39a0957692f7df98e0739cf70a8940))
 
-### Performances
+### Performance
 
 * **core:** mask unsampled atlas texels without changing UVs ([9d22a95](https://github.com/For-Hives/minemories/commit/9d22a951ac3b71f0bebba5e257ef204df876360a))
 * **core:** pack exact indices with adaptive unsigned widths ([ae8f6ec](https://github.com/For-Hives/minemories/commit/ae8f6ec91e32ed6a422b2fdeba936f4a4c95ea34))
@@ -511,8 +511,8 @@
 * **mod:** validate visited depth across zones and player identities ([68e5760](https://github.com/For-Hives/minemories/commit/68e576061a164bf8624b58f17815dd8d24a78607))
 * record tested beta release and completed distribution tasks ([8888df4](https://github.com/For-Hives/minemories/commit/8888df41533cf71fee99d664184e83635711e02c))
 
-Les entrées suivantes seront générées depuis les Conventional Commits lors des releases automatiques.
+The following entries will be generated from Conventional Commits during automatic releases.
 
 ## 0.1.0-beta — 2026-10-14
 
-Première bêta publiée manuellement, avec le JAR validé en jeu : [release et empreintes](https://github.com/For-Hives/minemories/releases/tag/mod-v0.1.0-beta).
+First beta published manually, with the JAR validated in game: [release and fingerprints](https://github.com/For-Hives/minemories/releases/tag/mod-v0.1.0-beta).

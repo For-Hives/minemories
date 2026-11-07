@@ -370,8 +370,7 @@ test('failed memory downloads replace the progress indicator with an error', asy
 })
 
 test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error and clears loading', async source => {
-	const message =
-		'GLB invalide ou trop complexe : réexporte une zone plus petite avec ses textures et sa géométrie intégrées.'
+	const message = 'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
 	mocks.loadFile.mockImplementation(() => {
 		mocks.viewerEvents?.onLoading(null)
 		return Promise.reject(new UnsupportedGlbError(message))

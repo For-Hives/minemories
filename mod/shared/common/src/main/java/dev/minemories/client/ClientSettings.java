@@ -72,7 +72,7 @@ final class ClientSettings {
     try {
       uri = URI.create(value.strip().replaceAll("/+$", ""));
     } catch (IllegalArgumentException error) {
-      throw new IllegalArgumentException("Adresse API invalide.", error);
+      throw new IllegalArgumentException("Invalid API address.", error);
     }
     String host = uri.getHost();
     boolean local = "localhost".equals(host) || "127.0.0.1".equals(host) || "[::1]".equals(host);
@@ -81,7 +81,7 @@ final class ClientSettings {
         || uri.getUserInfo() != null
         || uri.getQuery() != null
         || uri.getFragment() != null) {
-      throw new IllegalArgumentException("Utilise une URL HTTPS (HTTP seulement sur localhost).");
+      throw new IllegalArgumentException("Use an HTTPS URL (HTTP only on localhost).");
     }
     return uri.toString();
   }
@@ -97,7 +97,7 @@ final class ClientSettings {
       result = Path.of(directory);
     }
     if (!result.isAbsolute()) {
-      throw new IllegalArgumentException("Choisis un chemin absolu pour le dossier local.");
+      throw new IllegalArgumentException("Choose an absolute path for the local folder.");
     }
     return result.normalize();
   }
@@ -124,7 +124,7 @@ final class ClientSettings {
     String value = namespace.strip().toLowerCase(java.util.Locale.ROOT);
     if (!value.isEmpty()
         && !value.matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")) {
-      throw new IllegalArgumentException("Utilise un UUID complet ou laisse le champ vide.");
+      throw new IllegalArgumentException("Use a full UUID or leave the field empty.");
     }
     return value;
   }
@@ -199,7 +199,7 @@ final class ClientSettings {
           || radius < 2
           || radius > 128) {
         throw new IllegalArgumentException(
-            "AFK : délai 1–1440 min, intervalle 1–10080 min, rayon 2–128 blocs.");
+            "AFK: delay 1–1440 min, interval 1–10080 min, radius 2–128 blocks.");
       }
     }
   }

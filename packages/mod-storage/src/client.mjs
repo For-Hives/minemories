@@ -1,26 +1,26 @@
-// Client S3 du bucket des JAR du mod. Mêmes variables d'environnement que apps/api pour Garage
-// (S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY), bucket distinct des captures.
+// S3 client for the mod JAR bucket. Same environment variables as apps/api for Garage
+// (S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY), with a bucket separate from captures.
 import { CreateBucketCommand, HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
 
-// Identifiants de développement identiques à apps/api/src/configuration.ts (Garage local).
+// Development credentials, identical to apps/api/src/configuration.ts (local Garage).
 const DEV_S3_ACCESS_KEY = 'GK0123456789abcdef0123456789abcdef'
 const DEV_S3_SECRET_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 export const DEFAULT_MOD_BUCKET = 'minemories-mods'
-// Préfixe facultatif : un seul niveau, `[a-z0-9][a-z0-9-]*/`, 40 caractères au plus (barre oblique comprise).
-// Aucun `.`, aucun `/` interne : ni `..` ni `//` ni sortie du préfixe ne sont exprimables.
+// Optional prefix: a single level, `[a-z0-9][a-z0-9-]*/`, at most 40 characters (slash included).
+// No `.` and no inner `/`: neither `..`, `//` nor escaping the prefix can be expressed.
 const MOD_PREFIX_PATTERN = /^(?:[a-z0-9][a-z0-9-]{0,38}\/)?$/
 
-/** Valide `MOD_STORAGE_PREFIX` : vide (défaut) ou un niveau terminé par `/`. Lève une erreur claire sinon. */
+/** Validates `MOD_STORAGE_PREFIX`: empty (default) or one level ending with `/`. Throws a clear error otherwise. */
 export function parseModPrefix(value) {
 	const prefix = value ?? ''
 	if (typeof prefix !== 'string' || !MOD_PREFIX_PATTERN.test(prefix))
 		throw new Error(
-			`MOD_STORAGE_PREFIX invalide : vide, ou un seul niveau « [a-z0-9][a-z0-9-]*/ » de 1 à 40 caractères terminé par « / » (ex. public-mods/). Reçu : ${JSON.stringify(prefix)}`
+			`Invalid MOD_STORAGE_PREFIX: must be empty, or a single level "[a-z0-9][a-z0-9-]*/" of 1 to 40 characters ending with "/" (e.g. public-mods/). Got: ${JSON.stringify(prefix)}`
 		)
 	return prefix
 }
 
-/** Paramètres de connexion : MOD_S3_* surcharge S3_* (un outil de release peut avoir d'autres clés que l'API). */
+/** Connection settings: MOD_S3_* overrides S3_* (a release tool may use different keys than the API). */
 export function storageSettings(env = process.env) {
 	return {
 		bucket: env.MOD_STORAGE_BUCKET || DEFAULT_MOD_BUCKET,
@@ -40,7 +40,7 @@ export function createClient(env = process.env) {
 		forcePathStyle: true,
 		maxAttempts: 3,
 		credentials: { accessKeyId: settings.accessKeyId, secretAccessKey: settings.secretAccessKey },
-		// Garage n'implémente pas les extensions CRC optionnelles du SDK.
+		// Garage does not implement the SDK's optional CRC extensions.
 		requestChecksumCalculation: 'WHEN_REQUIRED',
 		responseChecksumValidation: 'WHEN_REQUIRED',
 	})
@@ -52,7 +52,7 @@ export function isNotFound(error) {
 	return status === 404 || error.name === 'NotFound' || error.name === 'NoSuchKey' || error.name === 'NoSuchBucket'
 }
 
-/** Crée le bucket s'il manque, sauf en production où il doit être provisionné explicitement. */
+/** Creates the bucket when missing, except in production where it must be provisioned explicitly. */
 export async function ensureBucket(client, env = process.env) {
 	const { bucket, region } = storageSettings(env)
 	try {
@@ -60,7 +60,7 @@ export async function ensureBucket(client, env = process.env) {
 	} catch (error) {
 		if (!isNotFound(error)) throw error
 		if (env.NODE_ENV === 'production')
-			throw new Error(`Le bucket ${bucket} n'existe pas (création automatique désactivée en production).`)
+			throw new Error(`Bucket ${bucket} does not exist (automatic creation is disabled in production).`)
 		await client.send(
 			new CreateBucketCommand({
 				Bucket: bucket,

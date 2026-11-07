@@ -104,7 +104,7 @@ const identity = { worldId, zoneId, captureBounds, captureOrigin, captureMode, w
 const token = await deviceToken(await signedInCookie())
 console.log(`Seeding ${DEV_EMAIL}`)
 const jobs = [
-	...real.map(capture => () => upload(token, 'Village (captures réelles)', capture)),
+	...real.map(capture => () => upload(token, 'Village (real captures)', capture)),
 	...EVOLUTION_DAY_TICKS.map((dayTime, index) => () => {
 		const at = new Date(base + (index + 1) * DAY_MS).toISOString()
 		const overrides = {
@@ -113,11 +113,11 @@ const jobs = [
 			captureStartedAt: at,
 			captureFinishedAt: at,
 			dayTime,
-			worldName: 'Évolution (dev)',
+			worldName: 'Evolution (dev)',
 		}
-		return upload(token, 'Évolution (dev)', smallest[index % smallest.length] ?? anchor, overrides)
+		return upload(token, 'Evolution (dev)', smallest[index % smallest.length] ?? anchor, overrides)
 	}),
-	...singles.slice(0, 3).map(capture => () => upload(token, 'Capture isolée', capture)),
+	...singles.slice(0, 3).map(capture => () => upload(token, 'Single capture', capture)),
 ]
 for (const job of jobs) {
 	// biome-ignore lint/performance/noAwaitInLoops: the API accepts at most two staged uploads per device.

@@ -49,13 +49,13 @@ test('invalid shapes are rejected', () => {
 	rejects(raw({ targets: [target({ id: 'forge-1.0' })] }), /id/)
 	rejects(raw({ targets: [target({ dir: 'mod/1.21.1' })] }), /dir/)
 	rejects(raw({ targets: [target({ java: 'x' })] }), /java/)
-	rejects(raw({ targets: [target({ minecraft: '1.0', id: 'forge-mc1.0', dir: 'mod/1.0' })] }), /absent/)
-	rejects(raw({ targets: [target(), target()] }), /double/)
-	rejects(raw({ targets: [target({ jar: undefined })] }), /compilable/)
+	rejects(raw({ targets: [target({ minecraft: '1.0', id: 'forge-mc1.0', dir: 'mod/1.0' })] }), /missing from/)
+	rejects(raw({ targets: [target(), target()] }), /duplicate/)
+	rejects(raw({ targets: [target({ jar: undefined })] }), /buildable/)
 	rejects(raw({ targets: [target({ jar: 'no-placeholder.jar' })] }), /jar/)
 	rejects(raw({ targets: [target({ enabled: 'yes' })] }), /name\/enabled/)
 	rejects(raw({ targets: [target({ loaderVersion: 'a b' })] }), /loaderVersion/)
-	rejects(raw({ planned: [{ ...target(), jar: undefined }] }), /construit et prévu/)
+	rejects(raw({ planned: [{ ...target(), jar: undefined }] }), /both built and planned/)
 	rejects(undefined, /minecraft/)
 })
 
@@ -64,7 +64,7 @@ test('a disabled target without a Gradle project is allowed but not selectable',
 		raw({ targets: [target(), target({ id: 'quilt-mc26.3', loader: 'quilt', jar: undefined, enabled: false })] })
 	)
 	assert.equal(enabledTargets(config).length, 1)
-	assert.throws(() => selectTargets(config, ['quilt-mc26.3']), /pas de projet/)
+	assert.throws(() => selectTargets(config, ['quilt-mc26.3']), /no Gradle project/)
 })
 
 test('selectTargets resolves ids, loader/minecraft pairs and --all', () => {
@@ -72,7 +72,7 @@ test('selectTargets resolves ids, loader/minecraft pairs and --all', () => {
 	assert.equal(selectTargets(config, ['forge-mc26.3'])[0].id, 'forge-mc26.3')
 	assert.equal(selectTargets(config, ['forge', '26.3', 'forge-mc26.3']).length, 1)
 	assert.equal(selectTargets(config, [], { all: true }).length, 1)
-	assert.throws(() => selectTargets(config, ['fabric', '26.3']), /inconnue/)
+	assert.throws(() => selectTargets(config, ['fabric', '26.3']), /Unknown target/)
 })
 
 test('distribution names and CI cells', () => {

@@ -12,10 +12,10 @@ const COUNT_KEYS = ['meshes', 'materials', 'images', 'nodes']
 
 /** Statistics from the binary GLB (little endian header, first chunk is JSON). Throws on a malformed file. */
 export function parseGlbStats(buffer) {
-	if (buffer.length < 20 || buffer.readUInt32LE(0) !== GLB_MAGIC) throw new Error('Fichier GLB invalide (magic)')
+	if (buffer.length < 20 || buffer.readUInt32LE(0) !== GLB_MAGIC) throw new Error('Invalid GLB file (magic)')
 	const jsonLength = buffer.readUInt32LE(12)
 	if (buffer.readUInt32LE(16) !== JSON_CHUNK || 20 + jsonLength > buffer.length) {
-		throw new Error('Fichier GLB invalide (bloc JSON)')
+		throw new Error('Invalid GLB file (JSON chunk)')
 	}
 	const root = JSON.parse(buffer.subarray(20, 20 + jsonLength).toString('utf8'))
 	const stats = { bytes: buffer.length }
@@ -55,14 +55,14 @@ export function thresholdsFor(file, targetId) {
 export function evaluateStats(stats, thresholds) {
 	const problems = []
 	if (typeof thresholds.bytes === 'number' && stats.bytes < thresholds.bytes) {
-		problems.push(`GLB trop petit : ${stats.bytes} octets (minimum ${thresholds.bytes})`)
+		problems.push(`GLB too small: ${stats.bytes} bytes (minimum ${thresholds.bytes})`)
 	}
 	if (typeof thresholds.maxBytes === 'number' && stats.bytes > thresholds.maxBytes) {
-		problems.push(`GLB trop gros : ${stats.bytes} octets (maximum ${thresholds.maxBytes})`)
+		problems.push(`GLB too large: ${stats.bytes} bytes (maximum ${thresholds.maxBytes})`)
 	}
 	for (const key of COUNT_KEYS) {
 		if (typeof thresholds[key] === 'number' && stats[key] < thresholds[key]) {
-			problems.push(`${key} : ${stats[key]} (minimum ${thresholds[key]})`)
+			problems.push(`${key}: ${stats[key]} (minimum ${thresholds[key]})`)
 		}
 	}
 	return problems

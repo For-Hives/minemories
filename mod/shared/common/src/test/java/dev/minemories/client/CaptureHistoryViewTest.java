@@ -85,7 +85,7 @@ class CaptureHistoryViewTest {
     assertEquals(1, client.size());
     client.removeFirst().run();
     assertFalse(view.pending());
-    assertTrue(view.message().contains("indisponible"));
+    assertTrue(view.message().contains("unavailable"));
     view.refresh(
         ignored -> {
           throw new IllegalStateException("settings");
@@ -93,10 +93,10 @@ class CaptureHistoryViewTest {
         Runnable::run);
     assertFalse(view.pending());
     view.refresh(ignored -> CompletableFuture.completedFuture(null), Runnable::run);
-    assertTrue(view.message().contains("indisponible"));
+    assertTrue(view.message().contains("unavailable"));
     view.refresh(
         ignored -> CompletableFuture.completedFuture(new CaptureHistory.Page(List.of(), false)),
         Runnable::run);
-    assertTrue(view.message().contains("Aucune capture"));
+    assertTrue(view.message().contains("No captures"));
   }
 }

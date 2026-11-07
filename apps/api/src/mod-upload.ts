@@ -42,15 +42,15 @@ type Env = Record<string, string | undefined>
 
 export interface ModUploadOptions {
 	env?: () => Env
-	/** Remplaçable en test ; par défaut le client S3 de l'API (mêmes identifiants que les téléchargements). */
+	/** Replaceable in tests; defaults to the API's S3 client (same credentials as downloads). */
 	client?: () => S3Like
 	store?: (options: StoreUploadOptions) => Promise<StoreUploadResult>
-	/** Appelé après un envoi qui a modifié le bucket (invalide le cache de l'index public). */
+	/** Called after an upload that changed the bucket (invalidates the public index cache). */
 	onStored?: () => void
 	now?: () => number
 }
 
-/** Exclusion mutuelle des mises à jour de l'index : un seul écrivain à la fois dans ce processus. */
+/** Mutual exclusion for index updates: a single writer at a time in this process. */
 class Mutex {
 	private tail: Promise<unknown> = Promise.resolve()
 	run<T>(task: () => Promise<T>): Promise<T> {
@@ -60,7 +60,7 @@ class Mutex {
 	}
 }
 
-/** Tentatives d'authentification échouées par adresse : au-delà du plafond, la route répond 429. */
+/** Failed authentication attempts per address: past the cap, the route answers 429. */
 class FailureLimiter {
 	private readonly windows = new Map<string, { startedAt: number; failures: number }>()
 
@@ -89,7 +89,7 @@ function digest(value: string) {
 	return createHash('sha256').update(value).digest()
 }
 
-/** Comparaison à temps constant (empreintes de même longueur). */
+/** Constant-time comparison (digests of equal length). */
 export function tokenMatches(supplied: string, expected: string): boolean {
 	return timingSafeEqual(digest(supplied), digest(expected))
 }
@@ -110,7 +110,7 @@ function decodeManifest(header: string | null | undefined) {
 
 type Received = { bytes: number; sha256: string } | 'too_large' | 'length_mismatch'
 
-/** Écrit le corps en flux dans `file` en le hachant ; ne garde jamais plus d'un morceau en mémoire. */
+/** Streams the body into `file` while hashing it; never keeps more than one chunk in memory. */
 async function receive(body: ReadableStream<Uint8Array>, file: string, declared: number): Promise<Received> {
 	const hash = createHash('sha256')
 	const handle = await open(file, 'w', 0o600)
@@ -118,7 +118,7 @@ async function receive(body: ReadableStream<Uint8Array>, file: string, declared:
 	let bytes = 0
 	try {
 		while (true) {
-			// biome-ignore lint/performance/noAwaitInLoops: la lecture séquentielle borne la mémoire et la taille.
+			// biome-ignore lint/performance/noAwaitInLoops: sequential reads bound memory and size.
 			const { value, done } = await reader.read()
 			if (done) break
 			bytes += value.byteLength
@@ -159,7 +159,7 @@ interface Accepted {
 	keep: number
 }
 
-/** Valide les paramètres, les en-têtes et le manifeste ; ne lit pas le corps. */
+/** Validates parameters, headers and the manifest; does not read the body. */
 function validate(request: Request, params: { targetId: string; version: string }, env: Env): Failure | Accepted {
 	const { targetId, version } = params
 	if (!(modTargetId.safeParse(targetId).success && modVersion.safeParse(version).success))
@@ -192,13 +192,13 @@ function validate(request: Request, params: { targetId: string; version: string 
 }
 
 /**
- * Envoi d'un JAR depuis le PC du propriétaire : `PUT /:targetId/:version`, corps = octets du JAR. L'API écrit
- * elle-même dans S3 : les clés S3 ne quittent jamais le serveur. La route n'existe (404) que si `MOD_UPLOAD_TOKEN`
- * (32 caractères minimum) est défini. Une seule instance d'API doit servir cette route (le verrou est en mémoire).
+ * JAR upload from the owner's PC: `PUT /:targetId/:version`, body = the JAR bytes. The API writes to S3
+ * itself: S3 keys never leave the server. The route only exists (otherwise 404) when `MOD_UPLOAD_TOKEN`
+ * (at least 32 characters) is set. Only one API instance may serve this route (the lock is in memory).
  */
 export function createModUploads(options: ModUploadOptions = {}) {
 	const readEnv = options.env ?? (() => process.env)
-	// Un préfixe invalide empêche le montage de la route (donc le démarrage de l'API) au lieu d'échouer à l'envoi.
+	// An invalid prefix prevents mounting the route (and so starting the API) instead of failing at upload time.
 	parseModPrefix(readEnv().MOD_STORAGE_PREFIX)
 	const store = options.store ?? storeUpload
 	const client = options.client ?? (() => s3Target().client as S3Like)

@@ -1,71 +1,71 @@
-# Variante de transport Meshopt (issue #173, phase 4)
+# Meshopt transport variant (issue #173, phase 4)
 
-Le `capture.glb` stocké et téléchargeable reste le glTF 2.0 quantifié lisible par Blender (voir
-`docs/features/glb-size.md` et `glb-v2-decisions.md` : Blender 5.2.2 ne décode pas `EXT_meshopt_compression`). Pour le
-viewer, l'API sait en produire une **variante de transport** compressée avec `EXT_meshopt_compression`.
+The stored, downloadable `capture.glb` remains the quantized glTF 2.0 that Blender can read (see
+`docs/features/glb-size.md` and `glb-v2-decisions.md`: Blender 5.2.2 does not decode `EXT_meshopt_compression`). For the
+viewer, the API can produce a **transport variant** compressed with `EXT_meshopt_compression`.
 
-## Principe
+## Principle
 
-- `GET /api/memories/:id/file`, `/api/shared/:token/file` et `/api/public/:id/file` acceptent `?variant=meshopt`.
-  Toute autre valeur, un fichier trop gros, une file d'attente pleine ou un échec de compression renvoient **l'original
-  tel quel** : la variante est toujours optionnelle. L'API annonce la variante par l'en-tête `X-Minemories-Variant:
-  meshopt` (exposé en CORS) ; le gzip de transport existant s'applique par-dessus.
-- Le codec est dans `packages/api-contract/src/glb-meshopt.ts`, sans WebAssembly (les encodeur/décodeur `meshoptimizer`
-  sont injectés) :
-  - `compressGlb` compresse en `ATTRIBUTES` chaque vue de sommets et en `TRIANGLES` chaque vue d'indices (indices 8 bits
-    élargis à 16 bits, exigé par la spécification), **sans réordonner** les triangles : les plages par chunk des
-    `extras` restent valides. Les autres vues (images) sont copiées. Le buffer de repli est déclaré sans données et
-    `EXT_meshopt_compression` est `extensionsRequired`. Une vue partagée entre plusieurs accessors ou un accessor
-    avec décalage ou `sparse` n'est pas compressé.
-  - `expandGlb` fait l'inverse et renvoie un GLB **ordinaire**. Il refuse (null, jamais d'exception) tout fichier mal
-    formé : tampon de repli avec `uri`, plages hors du chunk binaire, `count × byteStride` différent de la taille
-    déclarée, mode inconnu, plus de 256 Mio décodés, flux corrompu rejeté par le décodeur.
-- **Compatibilité du validateur** : le viewer n'accepte pas le format compressé dans `validateSelfContainedGlb` (qui
-  rejette toujours ces vues, voir `glb-layout.ts`). `downloadCapture` décode la variante en un GLB ordinaire **avant**
-  la validation habituelle (budgets, bornes d'accessors, valeurs) : le validateur, l'API d'envoi et les anciens GLB sont
-  inchangés. Le décodeur WebAssembly (`meshoptimizer/decoder`) n'est chargé qu'à la première variante reçue.
+- `GET /api/memories/:id/file`, `/api/shared/:token/file` and `/api/public/:id/file` accept `?variant=meshopt`.
+  Any other value, a file that is too large, a full queue or a compression failure return **the original
+  unchanged**: the variant is always optional. The API announces the variant with the `X-Minemories-Variant:
+  meshopt` header (exposed through CORS); the existing transport gzip applies on top.
+- The codec lives in `packages/api-contract/src/glb-meshopt.ts`, without WebAssembly (the `meshoptimizer` encoder/decoder
+  are injected):
+  - `compressGlb` compresses each vertex view as `ATTRIBUTES` and each index view as `TRIANGLES` (8-bit indices
+    widened to 16 bits, as the specification requires), **without reordering** triangles: the per-chunk ranges in
+    `extras` stay valid. Other views (images) are copied. The fallback buffer is declared without data and
+    `EXT_meshopt_compression` is in `extensionsRequired`. A view shared by several accessors, or an accessor
+    with an offset or `sparse`, is not compressed.
+  - `expandGlb` does the reverse and returns an **ordinary** GLB. It refuses (null, never an exception) any malformed
+    file: fallback buffer with a `uri`, ranges outside the binary chunk, `count × byteStride` different from the declared
+    size, unknown mode, more than 256 MiB decoded, corrupt stream rejected by the decoder.
+- **Validator compatibility**: the viewer does not accept the compressed format in `validateSelfContainedGlb` (which
+  still rejects these views, see `glb-layout.ts`). `downloadCapture` decodes the variant into an ordinary GLB **before**
+  the usual validation (budgets, accessor bounds, values): the validator, the upload API and older GLBs are
+  unchanged. The WebAssembly decoder (`meshoptimizer/decoder`) is only loaded when the first variant arrives.
 
-## Stockage, quota et durée de vie
+## Storage, quota and lifetime
 
-Rien de durable : la variante est **calculée à la demande** depuis l'objet stocké et gardée dans un cache **mémoire**
-(`capture-variants.ts`) : au plus 128 Mio, durée de vie 10 minutes, clé = SHA-256 de l'original (une capture remplacée
-ou supprimée n'est donc jamais resservie après expiration), un seul encodage à la fois avec deux en attente (au-delà
-on sert l'original), originaux de plus de 64 Mio non compressés. Conséquences :
+Nothing is durable: the variant is **computed on demand** from the stored object and kept in an **in-memory** cache
+(`capture-variants.ts`): at most 128 MiB, 10-minute lifetime, key = SHA-256 of the original (so a replaced or deleted
+capture is never served again after expiry), a single encode at a time with two waiting (beyond that the original is
+served), and originals over 64 MiB are not compressed. Consequences:
 
-- aucun objet S3 ou fichier supplémentaire : pas de quota à imputer (`account-storage-quota.md`), pas de suppression
-  durable à propager (`durable-deletions.md`, `trash-retention.md`), pas de cycle de vie en stockage froid
-  (`cold-storage-costs.md`) ; une capture archivée suit le chemin de restauration (HTTP 202) avant toute variante ;
-- le coût est du CPU à la demande : 46 ms pour la capture de 10,6 Mio mesurée ci-dessous.
+- no extra S3 object or file: no quota to charge (`account-storage-quota.md`), no durable deletion to propagate
+  (`durable-deletions.md`, `trash-retention.md`), no cold-storage lifecycle (`cold-storage-costs.md`); an archived
+  capture goes through the restore path (HTTP 202) before any variant;
+- the cost is on-demand CPU: 46 ms for the 10.6 MiB capture measured below.
 
-## Mesures (écriture quantifiée + repack d'atlas, hors jeu ; gzip niveau 4 comme l'API, brotli 9)
+## Measurements (quantized writer + atlas repack, outside the game; gzip level 4 like the API, brotli 9)
 
-| Capture | Brut original | Brut variante | gzip original → variante | brotli original → variante |
+| Capture | Original raw | Variant raw | gzip original → variant | brotli original → variant |
 | --- | ---: | ---: | ---: | ---: |
-| AFK rayon 32 | 1 082 984 | 458 148 | 269 344 → 94 826 (−65 %) | 108 496 → 72 265 |
-| AFK rayon 8 | 180 516 | 162 296 | 35 493 → 27 237 | 22 346 → 20 450 |
-| Hauteur complète | 243 820 | 133 972 | 60 321 → 28 944 | 34 098 → 22 879 |
-| Modèles, alpha et lumières | 302 216 | 251 492 | 62 843 → 50 923 | 42 281 → 40 542 |
-| Capture réelle (modpack) | 10 614 852 | 2 975 836 | 2 430 289 → 743 867 (−69 %) | 1 212 331 → 601 470 |
+| AFK radius 32 | 1,082,984 | 458,148 | 269,344 → 94,826 (−65%) | 108,496 → 72,265 |
+| AFK radius 8 | 180,516 | 162,296 | 35,493 → 27,237 | 22,346 → 20,450 |
+| Full height | 243,820 | 133,972 | 60,321 → 28,944 | 34,098 → 22,879 |
+| Models, alpha and lights | 302,216 | 251,492 | 62,843 → 50,923 | 42,281 → 40,542 |
+| Real capture (modpack) | 10,614,852 | 2,975,836 | 2,430,289 → 743,867 (−69%) | 1,212,331 → 601,470 |
 
-Les petites captures dominées par les PNG et le JSON gagnent peu ; la capture « tour et surface » (49 Kio) n'est pas
-compressible (la variante ne serait pas plus petite). Par rapport à l'export d'avant #173 (capture réelle : 20,3 Mio
-bruts, 2,60 Mio en gzip), le transfert passe à 0,74 Mio.
+Small captures dominated by PNGs and JSON gain little; the "tower and surface" capture (49 KiB) is not
+compressible (the variant would not be smaller). Compared with the pre-#173 export (real capture: 20.3 MiB
+raw, 2.60 MiB gzipped), the transfer drops to 0.74 MiB.
 
-Temps (Bun pour l'encodage, Chromium pour le décodage, médiane de 5) : encodage 46 ms sur la capture réelle, 13 ms sur le
-rayon 32 ; décodage et remise en forme dans le navigateur 24,5 ms (capture réelle), 4,6 ms (rayon 32), 14,7 ms
-(modèles). Le temps de chargement complet avec un GPU réel n'est pas mesuré (SwiftShader seulement) ; le décodage
-reste négligeable devant le transfert et la préparation de la scène.
+Timings (Bun for encoding, Chromium for decoding, median of 5): encoding 46 ms on the real capture, 13 ms on
+radius 32; decoding and reshaping in the browser 24.5 ms (real capture), 4.6 ms (radius 32), 14.7 ms
+(models). Full load time with a real GPU is not measured (SwiftShader only); decoding remains negligible
+compared with the transfer and scene preparation.
 
 ## Validation
 
-- Tests API : aller-retour bit à bit des vues, indices 8/16/32 bits, entrées hostiles, cache (expiration, éviction,
-  file, taille), route partagée `?variant=meshopt` ; le GLB décodé passe `validateSelfContainedGlb`.
-- Tests viewer : `downloadCapture` demande la variante, décode, rejette une variante corrompue et respecte l'annulation.
-- Les cinq GLB rejoués et la capture réelle sont compressés puis décodés sans écart d'un octet par rapport à l'original ;
-  les six GLB décodés passent le validateur ; le viewer (Chromium headless, SwiftShader) affiche les fichiers décodés.
+- API tests: bit-exact round trip of the views, 8/16/32-bit indices, hostile inputs, cache (expiry, eviction,
+  queue, size), shared route `?variant=meshopt`; the decoded GLB passes `validateSelfContainedGlb`.
+- Viewer tests: `downloadCapture` requests the variant, decodes it, rejects a corrupt variant and honours cancellation.
+- The five replayed GLBs and the real capture are compressed then decoded without a single byte of difference from the
+  original; the six decoded GLBs pass the validator; the viewer (headless Chromium, SwiftShader) renders the decoded files.
 
-## Limites
+## Limits
 
-- La vue d'un monde (`fetchTemporalFile`) demande aussi la variante : elle ne contrôle plus la taille exacte mais borne le flux par la taille déclarée de l'original (une variante n'est jamais plus grande).
-- Le cache est par processus : plusieurs instances API recalculent chacune.
-- Pas de validation en jeu (le mod n'est pas modifié par cette phase).
+- The world view (`fetchTemporalFile`) also requests the variant: it no longer checks the exact size but bounds the stream by the original's declared size (a variant is never larger).
+- The cache is per process: several API instances each recompute.
+- No in-game validation (this phase does not change the mod).

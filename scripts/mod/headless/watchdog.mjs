@@ -27,7 +27,7 @@ export function createWatchdog({ repeatLimit = DEFAULT_REPEAT_LIMIT, graceMs = C
 				repeats = 1
 			}
 			if (repeats >= repeatLimit) {
-				return { stop: 'stuck', reason: `la même ligne se répète ${repeats} fois : ${key.slice(0, REASON_LENGTH)}` }
+				return { stop: 'stuck', reason: `the same line repeated ${repeats} times: ${key.slice(0, REASON_LENGTH)}` }
 			}
 			return null
 		},

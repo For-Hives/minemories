@@ -11,7 +11,7 @@ final class CaptureHistoryView {
   private CaptureHistory.Page page = new CaptureHistory.Page(List.of(), false);
   private CaptureHistory.Entry selected;
   private String cursor;
-  private String message = "Chargement des captures locales…";
+  private String message = "Loading local captures…";
   private long generation;
   private boolean pending;
 
@@ -59,7 +59,7 @@ final class CaptureHistoryView {
     selected = null;
     page = new CaptureHistory.Page(List.of(), false);
     pending = true;
-    message = "Chargement des captures locales…";
+    message = "Loading local captures…";
     try {
       fetch
           .apply(cursor)
@@ -75,10 +75,10 @@ final class CaptureHistoryView {
     page = error == null && value != null ? value : new CaptureHistory.Page(List.of(), false);
     message =
         error != null || value == null
-            ? "Historique indisponible. Vérifie le dossier local dans le mode avancé."
+            ? "History unavailable. Check the local folder in advanced mode."
             : page.entries().isEmpty()
-                ? "Aucune capture sur cette page. Actualise ou reviens à la page précédente."
-                : "Choisis une capture locale pour l’envoyer dans ta galerie privée.";
+                ? "No captures on this page. Refresh or go back to the previous page."
+                : "Choose a local capture to send it to your private gallery.";
   }
 
   void close() {

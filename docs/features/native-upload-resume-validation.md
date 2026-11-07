@@ -1,81 +1,82 @@
-# Upload reprenable de 200 Mio depuis Minecraft
+# Resumable 200 MiB upload from Minecraft
 
-L’issue [#81](https://github.com/For-Hives/minemories/issues/81) a été exercée le
-15 octobre 2026 avec le JAR de distribution chargé depuis `mods/`, trois processus
-Minecraft et deux processus de l’API réelle. Aucun compte ou service de production
-n’a été utilisé.
+Issue [#81](https://github.com/For-Hives/minemories/issues/81) was exercised on
+15 October 2026 with the distribution JAR loaded from `mods/`, three Minecraft
+processes and two processes of the real API. No production account or service
+was used.
 
-## Fixture et versions
+## Fixture and versions
 
-Minecraft 1.21.1 / NeoForge 21.1.248, Temurin 21.0.12.1+1 et Minemories
-0.1.1-dev.1 ; Mesa llvmpipe OpenGL 4.6 dans un profil isolé. SHA-256 du JAR :
+Minecraft 1.21.1 / NeoForge 21.1.248, Temurin 21.0.12.1+1 and Minemories
+0.1.1-dev.1; Mesa llvmpipe OpenGL 4.6 in an isolated profile. JAR SHA-256:
 `34d6bf346cfe97d869325df9282295f9a67598a7a749705e20e4ec715646068f`.
-L’API utilise le code de main, Bun 1.4.3, Better Auth, Hono/oRPC, SQLite persistée
-et le driver filesystem, sur une adresse loopback. Un compte de test est créé et
-le mod échange un vrai code à six chiffres via `/api/mod/pair` ; le token est
-persisté par le client dans son fichier de configuration.
+The API runs the code from main, Bun 1.4.3, Better Auth, Hono/oRPC, persisted
+SQLite and the filesystem driver, on a loopback address. A test account is
+created and the mod exchanges a real six-digit code through `/api/mod/pair`; the
+client persists the token in its configuration file.
 
-Le fichier est dérivé d’un GLB réellement capturé dans Minecraft. Sa géométrie,
-ses textures et ses accessors sont conservés ; la partie BIN inutilisée est
-étendue avec des zéros et la longueur du buffer/du conteneur est ajustée pour
-atteindre exactement **209 715 200 octets (200 Mio)**. Cela teste la frontière du
-protocole d’envoi ; ce fixture n’est pas une mesure de construction d’une scène
-naturelle de 200 Mio.
+The file is derived from a GLB actually captured in Minecraft. Its geometry,
+textures and accessors are kept; the unused BIN chunk is padded with zeros and
+the buffer/container length is adjusted to reach exactly
+**209,715,200 bytes (200 MiB)**. This tests the boundary of the upload
+protocol; this fixture is not a measurement of building a natural 200 MiB
+scene.
 
-SHA-256 du fichier :
+File SHA-256:
 `783a515d3bd761be4460fe3eb09278b1e9380e2d61b804a993a42d8fcee6e2b2`.
 
-## Coupure et redémarrages
+## Interruption and restarts
 
-1. Le premier client Minecraft appaire l’appareil auprès de l’API réelle puis
-   appelle le transport normal du mod avec le fichier de 200 Mio.
-2. Après le commit de trois morceaux de 4 Mio, l’observateur constate l’offset
-   **12 582 912**, bloque les nouvelles requêtes d’upload et arrête le processus
-   API. Le client reçoit une erreur après ses retries bornés.
-3. Le fichier local et son sidecar de session restent présents. L’UUID du sidecar
-   correspond à la session interrompue dans SQLite. Le client Minecraft termine.
-4. Un nouveau processus API ouvre la même SQLite, le même staging et le même port.
-   Un nouveau client Minecraft conserve son appairage et reprend le même fichier.
-5. La trace HTTP du second processus montre le premier `Upload-Offset` à
-   **12 582 912**, puis les 47 morceaux restants. Les deux processus API ont reçu
-   **50 morceaux** au total, aux offsets 0, 4 Mio, …, 196 Mio.
-6. La finalisation conserve le même UUID et produit une seule mémoire de 200 Mio.
-   Le SHA-256 du fichier stocké est identique, ainsi que les métadonnées fournies
-   (`worldName`, `capturedAt`, `captureStartedAt`, `captureFinishedAt`). Le sidecar
-   est supprimé après succès ; le GLB local complet reste présent.
+1. The first Minecraft client pairs the device with the real API, then calls
+   the mod's normal transport with the 200 MiB file.
+2. After three 4 MiB chunks are committed, the observer sees offset
+   **12,582,912**, blocks new upload requests and stops the API process. The
+   client gets an error after its bounded retries.
+3. The local file and its session sidecar remain. The sidecar's UUID matches
+   the interrupted session in SQLite. The Minecraft client exits.
+4. A new API process opens the same SQLite, the same staging area and the same
+   port. A new Minecraft client keeps its pairing and resumes the same file.
+5. The second process's HTTP trace shows the first `Upload-Offset` at
+   **12,582,912**, then the 47 remaining chunks. The two API processes received
+   **50 chunks** in total, at offsets 0, 4 MiB, …, 196 MiB.
+6. Finalization keeps the same UUID and produces a single 200 MiB memory. The
+   SHA-256 of the stored file is identical, as are the provided metadata
+   (`worldName`, `capturedAt`, `captureStartedAt`, `captureFinishedAt`). The
+   sidecar is deleted after success; the complete local GLB remains.
 
-La vérification du fichier stocké utilise `validateUploadFile`, le même lecteur
-borné et validateur que la finalisation de production : en-têtes, ressources,
-valeurs d’accessors et checksum sont lus sans buffer BIN complet.
+Verification of the stored file uses `validateUploadFile`, the same bounded
+reader and validator as production finalization: headers, resources, accessor
+values and checksum are read without buffering the whole BIN chunk.
 
-## Limites, quota et allocations
+## Limits, quota and allocations
 
-Un troisième client Minecraft tente **200 Mio + 4 octets**. Le transport du JAR
-refuse le fichier et ne crée pas de sidecar/session distante. L’API refuse également
-une initialisation de cette taille (HTTP 400 `invalid_upload`).
+A third Minecraft client attempts **200 MiB + 4 bytes**. The JAR's transport
+rejects the file and creates no sidecar/remote session. The API also rejects an
+initialization of that size (HTTP 400 `invalid_upload`).
 
-Le compte isolé dispose de 300 Mio. Après stockage de 200 Mio, l’initialisation
-d’un autre upload de 150 Mio est refusée avec HTTP 413 `storage_quota_exceeded`.
-Les refus n’ajoutent ni mémoire ni session ; il reste une seule capture publiée.
+The isolated account has 300 MiB. After 200 MiB are stored, initializing
+another 150 MiB upload is rejected with HTTP 413 `storage_quota_exceeded`.
+The rejections add neither a memory nor a session; a single published capture
+remains.
 
-Les deux envois sont enregistrés par JFR (`jdk.ObjectAllocationOutsideTLAB`, piles
-incluses), en filtrant les allocations dont la pile contient `ChunkedUploader`.
-Le plus grand objet observé est **4 194 320 octets**, soit un tableau de payload
-4 Mio avec son en-tête JVM, avant et après redémarrage. Aucun objet de taille
-200 Mio n’est observé dans ces piles. Le code conserve un seul morceau 4 Mio et
-utilise un buffer de checksum 64 Kio ; cette mesure ne décrit pas la heap entière
-du jeu ni les allocations de son renderer.
+Both uploads are recorded with JFR (`jdk.ObjectAllocationOutsideTLAB`, stacks
+included), filtering allocations whose stack contains `ChunkedUploader`. The
+largest object observed is **4,194,320 bytes**, i.e. a 4 MiB payload array
+with its JVM header, before and after the restart. No 200 MiB object is
+observed in these stacks. The code keeps a single 4 MiB chunk and uses a
+64 KiB checksum buffer; this measurement does not describe the game's whole
+heap or its renderer's allocations.
 
-## Portée et preuves
+## Scope and evidence
 
-Les artefacts sont locaux dans
-`~/.local/state/minemories-validation/upload-200m-verified-20261015/` : fixture,
-empreintes, journal HTTP, offset de coupure, rapports de session/résumption,
-JFR/allocations, résultats des limites/quotas et logs des processus.
-Les tokens, cookies, bases, mondes, enregistrements JFR et GLB ne sont pas committés.
+The artifacts are local in
+`~/.local/state/minemories-validation/upload-200m-verified-20261015/`: fixture,
+fingerprints, HTTP log, interruption offset, session/resumption reports,
+JFR/allocations, limit/quota results and process logs.
+Tokens, cookies, databases, worlds, JFR recordings and GLBs are not committed.
 
-Cette validation complète le parcours mod → API réelle → stockage filesystem
-avec coupure API et redémarrage du client. Les tests existants et la CI couvrent
-les sessions/contrats réels, Garage, sa panne et sa reprise dans un nouveau processus.
-Elle ne prouve pas les erreurs réseau d’un déploiement de production ni les profils
-particuliers des joueurs, qui restent dans #83.
+This validation completes the mod → real API → filesystem storage path with an
+API interruption and a client restart. The existing tests and CI cover real
+sessions/contracts, Garage, its outage and its recovery in a new process. It
+does not prove network errors of a production deployment or players'
+particular profiles, which remain in #83.

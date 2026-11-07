@@ -13,14 +13,14 @@ class StorageQuotaTest {
 
   @Test
   void acceptsEmptyAndHistoricalOverQuotaAccountsWithoutNegativeAvailability() {
-    assertEquals("Libre : 724 o / 1,0 Ko", StorageQuota.parseStatus(VALID).availableLabel());
+    assertEquals("Free: 724 B / 1.0 kB", StorageQuota.parseStatus(VALID).availableLabel());
     assertEquals(0, new StorageQuota(2048, 1024, 0, 100, 20).availableBytes());
     assertEquals(1024, new StorageQuota(0, 1024, 1024, 0, 0).availableBytes());
-    assertEquals("0 o", StorageQuota.formatBytes(0));
-    assertEquals("1,5 Mo", StorageQuota.formatBytes(1_500_000));
-    assertEquals("2,1 Go", StorageQuota.formatBytes(2_147_483_648L));
-    assertEquals("1,0 To", StorageQuota.formatBytes(1_000_000_000_000L));
-    assertEquals("9,0 Po", StorageQuota.formatBytes(9_007_199_254_740_991L));
+    assertEquals("0 B", StorageQuota.formatBytes(0));
+    assertEquals("1.5 MB", StorageQuota.formatBytes(1_500_000));
+    assertEquals("2.1 GB", StorageQuota.formatBytes(2_147_483_648L));
+    assertEquals("1.0 TB", StorageQuota.formatBytes(1_000_000_000_000L));
+    assertEquals("9.0 PB", StorageQuota.formatBytes(9_007_199_254_740_991L));
   }
 
   @Test

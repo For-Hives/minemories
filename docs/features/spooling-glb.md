@@ -1,217 +1,217 @@
-# Captures AFK progressives et writer GLB sur disque
+# Progressive AFK captures and on-disk GLB writer
 
-Les captures AFK utilisent maintenant `ProgressiveGameCapture` sur le client et
-`QueuedGlbCapture` dans un worker. `SpoolingGlbScene`, dans `:core`, écrit le GLB
-sans conserver toute sa géométrie en heap. Le parcours manuel conserve son writer
-legacy : une demande manuelle arrête d’abord le travail AFK et demande de réessayer
-après son arrêt, sans exporter deux scènes simultanément.
+AFK captures now use `ProgressiveGameCapture` on the client and
+`QueuedGlbCapture` in a worker. `SpoolingGlbScene`, in `:core`, writes the GLB
+without keeping all of its geometry on the heap. The manual path keeps its
+legacy writer: a manual request first stops the AFK work and asks to retry
+once it has stopped, without exporting two scenes at the same time.
 
-## Lecture par frames et préparation en arrière-plan
+## Reading across frames and background preparation
 
-Le client parcourt progressivement la surface, les cellules et les entités. Une
-frame admet au plus 4 096 opérations et arrête les nouvelles admissions après
-2 ms. Une lecture de modèle, de colonne ou de bande GPU reste indivisible : le
-budget ne constitue pas une limite absolue de freeze. Les dépassements et le temps
-maximal de travail sont enregistrés dans le log local à la fin de la capture.
+The client progressively walks the surface, the cells and the entities. A
+frame admits at most 4,096 operations and stops admitting new ones after
+2 ms. Reading a model, a column or a GPU strip stays indivisible: the budget is
+not an absolute freeze limit. Overruns and the maximum work time are written to
+the local log at the end of the capture.
 
-`CaptureElement` copie un bloc/renderer, sans références au monde, avec un budget
-conservateur de 2 Mio et 8 192 primitives tentées. La pompe conserve cet élément
-jusqu’à son admission complète ; la backpressure ne fait perdre aucune géométrie.
-Les sprites et textures de renderers sont copiés sur le thread du client par bandes
-d’au plus 16 384 pixels. Le framebuffer de lecture temporaire restaure framebuffer,
-buffer de lecture, texture et réglages PACK/PBO, même en erreur.
+`CaptureElement` copies a block/renderer, with no references to the world, with
+a conservative budget of 2 MiB and 8,192 attempted primitives. The pump keeps
+this element until it is fully admitted; backpressure never loses geometry.
+Sprites and renderer textures are copied on the client thread in strips of at
+most 16,384 pixels. The temporary read framebuffer restores the framebuffer,
+read buffer, texture and PACK/PBO settings, even on error.
 
-La file contient au plus seize paquets ; un paquet géométrique contient au plus
-64 quads et 128 lumières. Le worker accepte au total 4 095 lumières,
-avec un nœud de mesh pour rester dans les 4 096 nœuds du validateur commun.
-Les scènes riches en torches ne sont donc pas limitées aux 128 lumières du
-writer legacy ; le viewer garde son propre plafond de lumières actives. Le worker ne reçoit que des tableaux copiés et des
-descripteurs immuables. Il assemble/encode un PNG à la fois, conserve les sources
-sur disque et utilise `SpoolingGlbScene`. Alpha, teintes, couches secondaires et
-lumières restent conservés. Aucun monde, modèle ou renderer n’est utilisé par le
-worker. Les fichiers datés sont publiés uniquement après préparation complète.
+The queue holds at most sixteen packets; a geometry packet holds at most
+64 quads and 128 lights. The worker accepts 4,095 lights in total, plus one
+mesh node, to stay within the shared validator's 4,096 nodes. Torch-heavy
+scenes are therefore not limited to the legacy writer's 128 lights; the viewer
+keeps its own cap on active lights. The worker only receives copied arrays and
+immutable descriptors. It assembles/encodes one PNG at a time, keeps the
+sources on disk and uses `SpoolingGlbScene`. Alpha, tints, secondary layers and
+lights are preserved. No world, model or renderer is used by the worker. Dated
+files are published only after preparation is complete.
 
-Le contrôle tourne en pause et en arrière-plan. Le retour du joueur suspend les
-lectures ; elles reprennent après le délai d’inactivité configuré. Désactivation,
-changement de réglages/API/compte, monde/dimension/joueur ou rechargement des
-ressources annulent le travail. Les chunks déjà lus doivent conserver leur
-identité jusqu’à la fin ; un déchargement/remplacement refuse la capture. Il n’y
-a jamais de file de captures concurrentes. Une capture complète déjà publiée
-reste conservée, même si son contexte change avant la notification.
+The check runs while paused and in the background. The player's return
+suspends reading; it resumes after the configured idle delay. Disabling,
+changing settings/API/account, world/dimension/player or reloading resources
+cancels the work. Chunks already read must keep their identity until the end;
+an unload/replacement rejects the capture. There is never a queue of concurrent
+captures. A complete capture already published is kept, even if its context
+changes before the notification.
 
-Le statut « capture en cours / en pause / arrêt » apparaît dans les deux modes du
-menu M. Après appairage, l’envoi AFK est séquentiel et limité à **512 Kio/s**, par
-lectures HTTP de 16 Kio, sans crédit de débit accumulé pendant les attentes.
-API/identité/réglages et sortie du monde sont vérifiés pour arrêter cet envoi ;
-le GLB local et l’état de reprise sont conservés. L’envoi manuel reste inchangé.
+The "capturing / paused / stopping" status appears in both modes of the M menu.
+After pairing, the AFK upload is sequential and limited to **512 KiB/s**, using
+16 KiB HTTP reads, with no rate credit accumulated while waiting.
+API/identity/settings and leaving the world are checked to stop this upload;
+the local GLB and the resume state are kept. Manual upload is unchanged.
 
-Les métadonnées `captureStartedAt`/`captureFinishedAt` encadrent la lecture et
-l’écriture réelle. Les anciennes captures restent compatibles. Il s’agit d’une
-capture sur une période, pas d’un état atomique de tous les blocs/entités : les
-poses et atlas animés peuvent évoluer entre leurs lectures.
+The `captureStartedAt`/`captureFinishedAt` metadata bracket the actual reading
+and writing. Older captures remain compatible. This is a capture over a period
+of time, not an atomic state of all blocks/entities: poses and animated atlases
+can change between their reads.
 
-`CaptureWorkspace` verrouille les espaces entre processus. Avant un nouveau
-travail, le worker nettoie les spools abandonnés dont les noms et identités sont
-reconnus, avec un inventaire borné. Un travail actif, un lien, une entrée inconnue
-ou un GLB complet sont préservés. Un vrai processus arrêté brutalement est exercé
-par les tests. La lecture d’un historique déjà publié ne bloque pas derrière la
-préparation d’un autre GLB.
+`CaptureWorkspace` locks workspaces across processes. Before new work, the
+worker cleans up abandoned spools whose names and identities it recognizes,
+with a bounded inventory. Active work, a link, an unknown entry or a complete
+GLB are preserved. A real process killed abruptly is exercised by the tests.
+Reading an already published history does not block behind the preparation of
+another GLB.
 
-## Validation du raccordement
+## Integration validation
 
-Les 14 et 15 octobre 2026, le JAR `0.1.1-dev.1` seul a été chargé dans Minecraft 1.21.1 /
-NeoForge 21.1.248, sur une copie isolée. SHA-256 du JAR final :
-`4d10773982896e19920fea0aa2b49bbe7406bbb3e12b76900eb1d95209fbe3bf`
-(254 048 octets). Le test exerce pause, focus client désactivé, suspension/reprise,
-réglage AFK désactivé, vrai reload de ressources, chunk déchargé et déconnexion
-avec conservation de l’historique. Les états PACK/PBO/framebuffer/buffer de lecture
-sont contrôlés pendant la capture ; les écrans simple/avancé sont inspectés.
+On 14 and 15 October 2026, the `0.1.1-dev.1` JAR alone was loaded into
+Minecraft 1.21.1 / NeoForge 21.1.248, on an isolated copy. SHA-256 of the final
+JAR: `4d10773982896e19920fea0aa2b49bbe7406bbb3e12b76900eb1d95209fbe3bf`
+(254,048 bytes). The test exercises pause, client focus lost, suspend/resume,
+AFK setting disabled, a real resource reload, an unloaded chunk and
+disconnection with history preserved. The PACK/PBO/framebuffer/read buffer
+states are checked during capture; the simple/advanced screens are inspected.
 
-Deux scènes sont mesurées sur Mesa llvmpipe, avec textures standards et entités :
+Two scenes are measured on Mesa llvmpipe, with standard textures and entities:
 
-| Scène | Export synchrone | Plus longue étape AFK | Capture progressive |
+| Scene | Synchronous export | Longest AFK step | Progressive capture |
 | --- | --- | --- | --- |
-| Rayon 32, 77 744 quads, 74 textures | 765 ms | 3,83 ms (13 dépassements du budget) | 187,6 s avec suspension et focus désactivé |
-| Rayon 8, 6 141 quads, 22 textures, avant consolidation | 93 ms | 4,00 ms (2 dépassements) | 26,3 s ; environ 3 s supplémentaires pour l’envoi |
+| Radius 32, 77,744 quads, 74 textures | 765 ms | 3.83 ms (13 budget overruns) | 187.6 s with suspension and focus lost |
+| Radius 8, 6,141 quads, 22 textures, before consolidation | 93 ms | 4.00 ms (2 overruns) | 26.3 s; about 3 s more for the upload |
 
-Ces mesures précèdent la consolidation des correctifs distants. Le JAR consolidé
-réexerce tous les scénarios : 225 torches dans la zone, 12 194 quads, 23 textures
-et 225 lumières conservées. L’export synchrone prend 105 ms, la plus longue étape
-AFK 3,44 ms (5 dépassements), pour 83,3 s de capture et environ 4 s d’envoi.
-Le validateur commun et l’API réelle acceptent ce fichier de 2 288 976 octets.
-Le contrôle du contexte avant notification est aussi exercé. Les pas se limitent
-à la capture, pas au temps complet d’une frame : rendu logiciel, limitation FPS,
-menus, GC et autres mods restent visibles dans les latences totales. Ces résultats
-ne garantissent pas les mêmes performances sur tous les matériels/modpacks.
+These measurements predate the consolidation of the remote fixes. The
+consolidated JAR re-exercises every scenario: 225 torches in the area,
+12,194 quads, 23 textures and 225 lights preserved. The synchronous export
+takes 105 ms, the longest AFK step 3.44 ms (5 overruns), for 83.3 s of capture
+and about 4 s of upload. The shared validator and the real API accept this
+2,288,976-byte file. The context check before notification is also exercised.
+The steps only cover the capture, not a whole frame's time: software rendering,
+FPS limiting, menus, GC and other mods remain visible in the total latencies.
+These results do not guarantee the same performance on all hardware/modpacks.
 
-Les sept GLB de la grande scène, les six de l’essai avec contrôle de contexte
-et les six de l’essai consolidé à 225 lumières passent le validateur
-commun API/viewer. Blender importe les rendus avant/après : même géométrie, même
-nombre de matériaux et de textures. Sur la grande scène, les accessors de géométrie
-sont identiques octet pour octet ; 73 images sont identiques après décodage, l’atlas
-animé de blocs change pendant la période de capture. Le GLB de 1 329 204 octets et le GLB consolidé de 2 288 976 octets
-sont envoyés à une API loopback réelle via appareil appairé, avec SHA-256 identique
-côté stockage et dates conservées via oRPC. Aucun diagnostic n’est collecté sans
-accord. Cette validation locale ne prouve pas le déploiement de l’API en production
-ni la compatibilité de tous les renderers de modpacks.
+The seven GLBs of the large scene, the six from the run with the context check
+and the six from the consolidated 225-light run pass the shared API/viewer
+validator. Blender imports the before/after renders: same geometry, same number
+of materials and textures. On the large scene, the geometry accessors are
+byte-for-byte identical; 73 images are identical after decoding, while the
+animated block atlas changes during the capture period. The 1,329,204-byte GLB
+and the consolidated 2,288,976-byte GLB are sent to a real loopback API through
+a paired device, with an identical SHA-256 on the storage side and dates
+preserved through oRPC. No diagnostics are collected without consent. This
+local validation proves neither the production API deployment nor
+compatibility with every modpack renderer.
 
-Les tests couvrent budgets/admission, ordre textures-géométrie, backpressure,
-annulation, crash/nettoyage, images, horodatages et refus sans écrasement. Un test
-HTTP mesure le publisher réellement cadencé et l’arrêt avant finalisation lorsque
-son contexte change. `bun run build` passe avec les seuils de couverture et SpotBugs.
-La beta publiée et les profils CurseForge installés ne sont pas remplacés par ce
-JAR de développement.
+The tests cover budgets/admission, texture-geometry ordering, backpressure,
+cancellation, crash/cleanup, images, timestamps and refusal without
+overwriting. An HTTP test measures the actually paced publisher and stopping
+before finalization when its context changes. `bun run build` passes with the
+coverage and SpotBugs thresholds. The published beta and the installed
+CurseForge profiles are not replaced by this development JAR.
 
-## Propriété des données et publication
+## Data ownership and publishing
 
-Le constructeur crée un dossier temporaire privé sous le parent choisi. Le
-builder appartient à un seul thread ; il ne synchronise pas des appels concurrents.
-`addQuad` accepte les mêmes informations primitives que `GlbScene` et consomme
-les tableaux avant son retour. Le caller peut ensuite les réutiliser. Les PNG,
-positions, normales, UV et indices sont écrits dans des fichiers du spool, sans
-conserver les tableaux fournis. Les chaînes sont immuables et leur taille est
-contrôlée avant admission. Aucun objet du monde, modèle, renderer ou atlas n’est
-accepté. Ces méthodes font de l’I/O : le pipeline les appelle dans son
-worker, après copie des données du jeu sur le thread du client.
+The constructor creates a private temporary folder under the chosen parent. The
+builder belongs to a single thread; it does not synchronize concurrent calls.
+`addQuad` accepts the same primitive information as `GlbScene` and consumes the
+arrays before returning. The caller can then reuse them. PNGs, positions,
+normals, UVs and indices are written to spool files, without keeping the
+provided arrays. Strings are immutable and their size is checked before
+admission. No world, model, renderer or atlas object is accepted. These methods
+perform I/O: the pipeline calls them in its worker, after the game data has
+been copied on the client thread.
 
-Un cache LRU limite les streams ouverts ; la copie finale ouvre seulement la
-sortie et une entrée à la fois. Le compteur `peakOpenFiles` comprend les créations
-de fichiers et cette phase. Un quad utilise 152 octets de données binaires avant
-texture et JSON. Les buffers sont fixes : 152 octets pour l’encodage d’un quad,
-64 Kio pour la copie, 8 Kio par stream de spool et 64 Kio pour la sortie finale.
-Les descriptions, bornes et compteurs restent en mémoire, bornés par les limites
-d’entrées et de chaînes. Le builder ne conserve ni BIN complet ni GLB complet.
-La mémoire des tableaux entrants et de leur production doit être bornée par le
-pipeline client ; ce builder ne limite pas une allocation déjà faite par le caller.
+An LRU cache limits open streams; the final copy only opens the output and one
+input at a time. The `peakOpenFiles` counter includes file creation and this
+phase. A quad uses 152 bytes of binary data before textures and JSON. Buffers
+are fixed: 152 bytes for encoding a quad, 64 KiB for copying, 8 KiB per spool
+stream and 64 KiB for the final output. Descriptions, bounds and counters stay
+in memory, bounded by the input and string limits. The builder keeps neither a
+full BIN nor a full GLB. Memory for the incoming arrays and their production
+must be bounded by the client pipeline; this builder does not limit an
+allocation already made by the caller.
 
-`write` ferme le cache, vérifie les identités et tailles réelles des fichiers,
-prépare le JSON sur disque puis copie les segments dans un fichier temporaire à
-côté de la destination. Le remplacement final demande `ATOMIC_MOVE` ; son refus
-est une erreur, sans fallback qui supprimerait le fichier précédent. Le système
-de fichiers du spool doit fournir des identités de fichiers. Les links et les
-remplacements de dossier ou de fichiers sont refusés. La publication ne fait pas
-un `fsync` de chaque fichier ; elle ne constitue pas une garantie contre une
-coupure électrique.
+`write` closes the cache, checks the actual identities and sizes of the files,
+prepares the JSON on disk, then copies the segments into a temporary file next
+to the destination. The final replacement requests `ATOMIC_MOVE`; if that is
+refused, it is an error, with no fallback that would delete the previous file.
+The spool's file system must provide file identities. Links and replaced
+folders or files are refused. Publishing does not `fsync` each file; it is not
+a guarantee against a power cut.
 
-Une erreur d’I/O, limite dépassée ou interruption invalide le builder. Il ne peut
-plus accepter ni publier de données. Les fichiers temporaires enregistrés sont
-supprimés ; le nettoyage n’entre jamais récursivement dans un dossier inconnu,
-un lien ou un dossier remplacé. Les autres suppressions sont tentées même si une
-suppression échoue, et `close` permet de réessayer le nettoyage. Les erreurs de
-nettoyage remontent au caller. Un fichier publié par un `write` réussi reste
-conservé si un nettoyage ultérieur échoue. Un arrêt brutal peut laisser un spool
-sur disque : le coordinateur le nettoie avant le prochain travail, selon les
-contrôles d’identité et de contenu décrits plus haut.
+An I/O error, an exceeded limit or an interruption invalidates the builder. It
+can no longer accept or publish data. Recorded temporary files are deleted;
+cleanup never recurses into an unknown folder, a link or a replaced folder.
+Other deletions are attempted even if one deletion fails, and `close` allows
+retrying the cleanup. Cleanup errors are reported to the caller. A file
+published by a successful `write` is kept if a later cleanup fails. An abrupt
+stop can leave a spool on disk: the coordinator cleans it up before the next
+job, according to the identity and content checks described above.
 
-## Limites et format
+## Limits and format
 
-`Limits` permet de régler séparément matériaux, textures, lumières, octets UTF-8
-par chaîne, octets JSON, octets du spool, octets du GLB final et fichiers ouverts.
-Les valeurs par défaut sont 4 096 matériaux, 1 024 textures, 128 lumières,
-4 096 octets par chaîne, 4 Mio de JSON, 256 Mio de spool, 200 Mio de GLB et
-8 fichiers ouverts. Au moins deux fichiers ouverts sont nécessaires à la copie.
-Le spool inclut la taille non paddée du JSON ; la limite du fichier final inclut
-headers, alignements, géométrie, JSON et textures. Le pic disque peut atteindre
-spool + fichier final, puis les copies de compatibilité réalisées par l’historique.
-Le cache du système de fichiers consomme aussi de la mémoire hors heap Java.
+`Limits` lets you tune materials, textures, lights, UTF-8 bytes per string,
+JSON bytes, spool bytes, final GLB bytes and open files separately. The
+defaults are 4,096 materials, 1,024 textures, 128 lights, 4,096 bytes per
+string, 4 MiB of JSON, 256 MiB of spool, 200 MiB of GLB and 8 open files. At
+least two open files are required for the copy. The spool includes the
+unpadded JSON size; the final file limit includes headers, alignment, geometry,
+JSON and textures. Peak disk usage can reach spool + final file, plus the
+compatibility copies made by the history. The file system cache also uses
+memory outside the Java heap.
 
-Les PNG partagés sont spoolés une seule fois. Un nouveau matériau qui redéfinit
-une image avec d’autres octets est refusé. Comme `GlbScene`, le premier descripteur
-d’un matériau est conservé pour les quads suivants de cette même clé. Les quads
-aux positions/UV non finies et les lumières invalides sont ignorés. Un export sans
-géométrie est refusé. Les caps ne suppriment pas silencieusement des matériaux ou
-lumières : dépasser une limite invalide la capture entière.
+Shared PNGs are spooled only once. A new material that redefines an image with
+different bytes is refused. As with `GlbScene`, a material's first descriptor
+is kept for subsequent quads with the same key. Quads with non-finite
+positions/UVs and invalid lights are ignored. An export without geometry is
+refused. The caps never silently drop materials or lights: exceeding a limit
+invalidates the whole capture.
 
-Alpha MASK/BLEND, tint, opacité, textures émissives et `KHR_lights_punctual` sont
-conservés. Les soustractions du calcul des normales ont lieu en double avant le
-produit vectoriel : même des positions finies extrêmes ne deviennent pas des
-normales NaN par overflow d’une soustraction en float.
+Alpha MASK/BLEND, tint, opacity, emissive textures and `KHR_lights_punctual`
+are preserved. The subtractions in the normal computation happen in double
+before the cross product: even extreme finite positions do not become NaN
+normals through a float subtraction overflow.
 
-## Vérification et mesures
+## Verification and measurements
 
-Les tests comparent les octets avec `GlbScene` sur plusieurs matériaux, images
-partagées, quads entrelacés, indices, UV, normales, alpha, tint, émissivité et
-lumières. Les cas extrêmes vérifient les floats binaires des normales. Ils couvrent
-les limites exactes, mutation des tableaux après admission, I/O, interruption,
-fichiers/dossiers remplacés, nettoyage partiellement refusé, fermeture et refus
-de publication sans géométrie. Une régression démarre un vrai processus Java avec
-`-Xms16m -Xmx32m` et écrit 600 000 quads, soit un GLB de 91 201 408 octets.
+The tests compare bytes with `GlbScene` across several materials, shared
+images, interleaved quads, indices, UVs, normals, alpha, tint, emissivity and
+lights. The edge cases check the binary floats of the normals. They cover exact
+limits, array mutation after admission, I/O, interruption, replaced
+files/folders, partially refused cleanup, closing and refusal to publish
+without geometry. A regression test starts a real Java process with
+`-Xms16m -Xmx32m` and writes 600,000 quads, i.e. a 91,201,408-byte GLB.
 
-Pour reproduire la mesure après `:core:testClasses` :
+To reproduce the measurement after `:core:testClasses`:
 
 ```sh
 java -Xms16m -Xmx32m -cp core/build/classes/java/main:core/build/classes/java/test \
   dev.minemories.core.SpoolingGlbProbe /tmp/capture-spooled.glb 600000
 ```
 
-Mesure locale du 13 octobre 2026, JDK 21.0.12.1, fichiers sous `/tmp` : environ
-3,57 s pour ce fixture, heap maximale autorisée 32 Mio, heap utilisée observée par
-échantillonnage 10 102 752 octets et RSS maximal du processus 82 264 Kio. Le RSS
-inclut JVM, bibliothèques et autres allocations natives ; l’échantillonnage ne
-mesure pas exactement le pic de heap. Le test utilise une texture minuscule et
-une géométrie répétée ; il ne mesure ni capture de modèles Minecraft ni freezes
-du client. Ajouter `legacy` comme dernier argument exerce l’ancien builder avec
-les mêmes quads et la même heap, pour comparer l’usage mémoire.
+Local measurement of 13 October 2026, JDK 21.0.12.1, files under `/tmp`: about
+3.57 s for this fixture, maximum allowed heap 32 MiB, heap used as observed by
+sampling 10,102,752 bytes and maximum process RSS 82,264 KiB. The RSS includes
+the JVM, libraries and other native allocations; sampling does not measure the
+heap peak exactly. The test uses a tiny texture and repeated geometry; it
+measures neither the capture of Minecraft models nor client freezes. Adding
+`legacy` as the last argument exercises the old builder with the same quads and
+the same heap, to compare memory usage.
 
-`SpoolingGlbFixture` produit un petit terrain, des feuilles avec découpe alpha,
-du verre transparent et une lampe. Les GLB legacy/spoolés sont identiques octet
-pour octet. Blender 5.2.2 importe chaque fichier avec un mesh, quatre matériaux,
-quatre images 2 × 2 et une lumière ; les deux rendus ont été inspectés visuellement.
-Cette validation du format ne constitue pas une validation AFK en jeu.
+`SpoolingGlbFixture` produces a small terrain, leaves with alpha cutout,
+transparent glass and a lamp. The legacy/spooled GLBs are byte-for-byte
+identical. Blender 5.2.2 imports each file with one mesh, four materials, four
+2 × 2 images and one light; both renders were inspected visually. This format
+validation does not count as an in-game AFK validation.
 
 
-## Coûts détaillés et préparation des métadonnées
+## Detailed costs and metadata preparation
 
-Le complément de l’issue #79 ajoute des mesures cumulées par phase client et
-worker, sans modifier le budget de 2 ms / 4 096 admissions ni le pacing 512 Kio/s.
-Le corpus, le JAR mesuré et les limites d’interprétation sont décrits dans
-[Mesures des captures AFK](afk-performance.md). La lecture des icônes de métadonnées
-est bornée à 128 Kio, aux en-têtes PNG ≤512×512, et refuse les liens symboliques.
+The follow-up to issue #79 adds cumulative measurements per client and worker
+phase, without changing the 2 ms / 4,096 admissions budget or the 512 KiB/s
+pacing. The corpus, the measured JAR and the interpretation limits are
+described in [AFK capture measurements](afk-performance.md). Reading metadata
+icons is bounded to 128 KiB and PNG headers ≤512×512, and refuses symbolic
+links.
 
-## Taille du livrable
+## Deliverable size
 
-Les indices du fichier final utilisent désormais 8/16/32 bits selon la primitive,
-et les texels inutilisés des atlas de renderers peuvent être uniformisés sans
-modifier UV, dimensions ou pixels échantillonnés. Le spool d’indices reste 32 bits ;
-les limites et la publication atomique restent appliquées. Voir [mesures, coûts,
-frontières et validations avant/après](glb-size.md).
+Indices in the final file now use 8/16/32 bits depending on the primitive, and
+unused texels in renderer atlases can be made uniform without changing UVs,
+dimensions or sampled pixels. The index spool stays 32-bit; the limits and
+atomic publishing still apply. See [measurements, costs, boundaries and
+before/after validations](glb-size.md).

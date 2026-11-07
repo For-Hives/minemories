@@ -1,55 +1,55 @@
-# Lessons learned 
+# Lessons learned
 
 ## Comments
 
-### issue : 
-too much comment, multilines block of comment for everything 
+### Issue
+Too many comments, multi-line comment blocks for everything.
 
-### solution :
-prefere self defined code, only use one line of comment when really needed for the context
+### Solution
+Prefer self-explanatory code; only add a one-line comment when the context really needs it.
 
-## Validation du mod en jeu
+## Validating the mod in game
 
-Quand le développeur signale qu'un correctif ne change rien, vérifier le JAR réellement installé dans son profil CurseForge avant de modifier encore le code. Comparer les empreintes et, si nécessaire, le bytecode. Livrer le correctif dans l'instance utilisée, avec sauvegarde, et préciser qu'un redémarrage complet de Minecraft est nécessaire ; un build dans le dépôt seul ne met pas le jeu à jour.
+When the developer reports that a fix changes nothing, check the JAR actually installed in their CurseForge profile before changing the code again. Compare fingerprints and, if needed, the bytecode. Deliver the fix into the instance they use, with a backup, and say that a full Minecraft restart is required; a build in the repository alone does not update the game.
 
-## Information produit avant design
+## Product information before design
 
-Pour les pages d’information Minemories, le développeur veut d’abord du contenu concret fondé sur BESOIN.md, pensé pour plusieurs publics (admin, parent, jeune adulte, ado, casual vanilla, pro modder). Privilégier les étapes compréhensibles et vérifier les questions de chaque persona avant de travailler l’apparence.
+For Minemories information pages, the developer first wants concrete content grounded in VISION.md, written for several audiences (admin, parent, young adult, teenager, casual vanilla player, pro modder). Favor understandable steps and check each persona's questions before working on the look.
 
-## Commandes de build et Java local
+## Build commands and local Java
 
-`bun build` appelle le bundler natif, pas le script build du dépôt : utiliser `bun run build`, aussi en CI. Le JDK 21 local est dans `/home/lightin/.local/tools/jdk-21.0.12.1+1` ; définir JAVA_HOME et ajouter son bin au PATH pour les contrôles Gradle.
+`bun build` calls the native bundler, not the repository's build script: use `bun run build`, in CI too. The local JDK 21 is in `/home/lightin/.local/tools/jdk-21.0.12.1+1`; set JAVA_HOME and add its bin to PATH for Gradle checks.
 
-- Les captures AFK font partie de l’expérience simplifiée attendue : actives par défaut, même en pause ou en arrière-plan ; ne pas imposer une activation avancée. Les délais et la taille restent des réglages avancés.
+- AFK captures are part of the expected simplified experience: on by default, even when paused or in the background; do not require an advanced opt-in. Timing and size stay advanced settings.
 
-- Le développeur attend un suivi concret de ses remarques : rendre visible le chargement réel du viewer et garder des tâches précises pour la profondeur visitée et les bordures des captures.
+- The developer expects concrete follow-up on their feedback: make the viewer's real loading visible and keep precise tasks for visited depth and capture borders.
 
-- Pour accueillir une personne non technique, livrer un parcours d’installation concret jusqu’au premier souvenir, avec téléchargement du JAR sur le site, personnalisation et illustrations légères ; vérifier le fichier réellement servi en production, pas seulement le bouton dans le code.
+- To welcome a non-technical person, deliver a concrete installation path up to the first memory, with the JAR downloaded from the site, personalization and light illustrations; check the file actually served in production, not just the button in the code.
 
-- Le déploiement web doit rester indépendant du build Minecraft/Java : distribuer le mod depuis les releases GitHub publiques et réserver Gradle à la CI du mod. Pour le web, préparer les contenus et l’i18n sans inventer d’offres commerciales, et pré-rendre les pages publiques pour les robots.
+- The web deployment must stay independent from the Minecraft/Java build: distribute the mod from public GitHub releases and keep Gradle for the mod's CI. For the web, prepare content and i18n without inventing commercial offers, and prerender public pages for crawlers.
 
-- Préparer les fonctionnalités web avec des démonstrations réellement interactives et plusieurs angles marketing (code public, nostalgie, partage, classement). L’indexation doit désormais rester bloquée jusqu’au lancement ; les nouveaux tarifs explicitement donnés remplacent l’ancien besoin sans inventer un paiement déjà connecté.
+- Prepare web features with genuinely interactive demos and several marketing angles (public code, nostalgia, sharing, leaderboard). Indexing must now stay blocked until launch; the new prices that were explicitly given replace the old requirement, without inventing a payment flow that is already connected.
 
-- Les releases GitHub du mod doivent devenir automatiques après merge sur main : versions des packages et de Gradle synchronisées, matrice par loader réellement disponible et changelog généré. Éviter une deuxième PR de release à fusionner ; conserver la distinction entre bêta CI et validation en jeu du JAR exact.
+- The mod's GitHub releases must become automatic after merging to main: package and Gradle versions synchronized, a matrix of the loaders actually available, and a generated changelog. Avoid a second release PR to merge; keep the distinction between a CI beta and in-game validation of the exact JAR.
 
-- Avant de faire tester le parcours par Mae, le développeur priorise l’observabilité distante : erreurs d’export et crashs doivent être remontés à l’API et exploitables dans une page d’administration privée, avec groupes, détails et statut de traitement. Les diagnostics doivent survivre aux coupures et à une relance sans activer le consentement d’un joueur à sa place.
+- Before having Mae test the flow, the developer prioritizes remote observability: export errors and crashes must be reported to the API and usable in a private admin page, with groups, details and handling status. Diagnostics must survive outages and a relaunch, without turning on a player's consent on their behalf.
 
-- Pour le viewer, le développeur attend une refonte autonome et créative du parcours entier, avec une atmosphère de souvenir agréable inspirée des shaders Minecraft. La fluidité, les ambiances et le partage font partie du rendu premium ; valider sur des captures réelles et ne pas se limiter à ajouter des réglages graphiques.
+- For the viewer, the developer expects an autonomous, creative redesign of the whole flow, with a pleasant memory-like atmosphere inspired by Minecraft shaders. Smoothness, moods and sharing are part of the premium feel; validate on real captures and do not stop at adding graphics settings.
 
-- Une « vraie refonte » du viewer doit être immédiatement visible dans la composition de la page, pas seulement dans ses paramètres graphiques. Après validation technique, intégrer effectivement sur main et préciser où voir le résultat ; tester Firefox sur une vraie capture, y compris les modes avec post-traitement, avant de demander au développeur de réessayer.
+- A “real redesign” of the viewer must be immediately visible in the page composition, not only in its graphics settings. After technical validation, actually integrate it on main and say where to see the result; test Firefox on a real capture, including the post-processing modes, before asking the developer to try again.
 
-- Le viewer doit privilégier la position vécue par le joueur et les visites d'intérieurs : un cadrage mathématique du volume, même correctement rendu, ne suffit pas. Ne pas confondre les anciennes coordonnées de capture (parfois le centre du volume) avec une position joueur réellement enregistrée.
+- The viewer must favor the position the player actually experienced and interior walkthroughs: a mathematical framing of the volume, even if rendered correctly, is not enough. Do not confuse old capture coordinates (sometimes the volume's center) with an actually recorded player position.
 
-- Pour la continuité du viewer, l’utilisateur donne carte blanche sur la direction artistique du reste du site et demande une proposition. La rendre concrète et navigable sur les vraies pages, avec une identité cohérente, afin qu’il puisse juger le layout, la typographie et les interactions ensemble.
+- For viewer continuity, the user gives free rein on the art direction of the rest of the site and asks for a proposal. Make it concrete and navigable on the real pages, with a coherent identity, so they can judge layout, typography and interactions together.
 
-- Après « fait mieux » sur une amélioration UX, ne pas empiler des micro-ajustements : revoir la hiérarchie et les actions du parcours. Pour la connexion, le formulaire doit être immédiatement utile sur mobile et l'accès sans compte doit proposer la galerie publique, pas une note discrète.
+- After “do better” on a UX improvement, do not stack micro-adjustments: rethink the flow's hierarchy and actions. For sign-in, the form must be immediately useful on mobile, and access without an account must offer the public gallery, not a discreet note.
 
-- Le chargement d'un GLB local dans le viewer web sert uniquement aux tests de développement. Le retirer du build de production et des parcours publics ; garder les captures du mod, la galerie et les liens partagés comme parcours produit.
+- Loading a local GLB in the web viewer is only for development testing. Remove it from the production build and public flows; keep mod captures, the gallery and shared links as the product flows.
 
-- Le viewer d’un monde est la vue normale, composée de toutes ses captures : ne pas l’étiqueter « monde évolutif » ni créer de mode à part dans l’interface. L’UI de cette vue sera refaite ; privilégier le moteur et la stratégie.
+- A world's viewer is the normal view, made of all its captures: do not label it “evolving world” or create a separate mode in the interface. The UI of this view will be redone; prioritize the engine and the strategy.
 
-- Pour le viewer d’un monde, le développeur préfère une interface visuelle et peu verbeuse : pellicule de vignettes plutôt que barre de transport, transitions douces de caméra et d’heure entre captures, pivot de caméra localisable (ombre au sol). Les noms de serveurs doivent pouvoir être surchargés depuis la galerie.
+- For a world's viewer, the developer prefers a visual, low-text interface: a filmstrip of thumbnails rather than a transport bar, smooth camera and time-of-day transitions between captures, a locatable camera pivot (ground shadow). Server names must be overridable from the gallery.
 
-- Le développeur autorise le push direct sur main quand tests, lint, format et contrôles passent : ne plus attendre de confirmation dans ce cas.
+- The developer allows pushing directly to main when tests, lint, format and checks pass: no need to wait for confirmation in that case.
 
-- Pour les écrans web, le développeur veut le skill taste-skill (https://github.com/Leonxlnx/taste-skill) : galerie et viewer en mode écran d’application, style true-black-flat avec la palette et la typographie de la marque gardées ; mesurer avant/après avec son inspecteur.
+- For web screens, the developer wants the taste-skill skill (https://github.com/Leonxlnx/taste-skill): gallery and viewer in app-screen mode, true-black-flat style while keeping the brand palette and typography; measure before/after with its inspector.

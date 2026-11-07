@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+## Language
+
+- Code, comments, docs, commit messages and PR text are written in English. French only lives in translation catalogs (`apps/web/src/i18n/locales/*.json` other than the English ones, and the mod's `lang/*.json` files other than `en_*.json`) and in tests that check those translations.
+
 ## Monorepo Map
 
 - `apps/web/` — React + Three.js SPA (Bun workspace `@minemories/web`).
@@ -7,7 +11,7 @@
 - `packages/api-contract/` — oRPC + zod contract shared by API and web. Edit here first when changing RPC shapes.
 - `mod/1.21.1/` — Gradle root. `:core` in `mod/shared/core/` is loader-independent GLB code; `:common` contains the shared Minecraft client; `:neoforge`, `:fabric`, and `:forge` are the loader adapters.
 - `mod/<minecraft version>/` — one Gradle root per Minecraft version (`1.21.11`, `1.20.1`, `1.19.2`, `1.18.2`, ...): loader adapters, `adapt.gradle`, `overlay/` only. `mod/shared/` holds what is not a Minecraft version (`core`, `common`, `compat-legacy`, `compat-pre-1.19`, `gametest-common` for the Minecraft-free `GlbReport`). `mod/targets.json` is the single source of the build matrix and the published targets.
-- `docs/` (French), `docker-compose.yml`, `scripts/` (`gradle.mjs`, `mod/` = the `bun mod` tool).
+- `docs/` (English), `docker-compose.yml`, `scripts/` (`gradle.mjs`, `mod/` = the `bun mod` tool).
 
 ## Commands (run from repo root)
 
@@ -61,7 +65,7 @@ Per `.github/pull_request_template.md`: report `bun check`; add `bun run build` 
 ## Interesting context 
 if needed, you can find more context in diferent files (look inside ./docs/AI ): 
 - README.md for an overview of the project (the summery)
-- BESOIN.md for the initial need and idea that started this project (the vision)
+- VISION.md for the initial need and idea that started this project (the vision)
 - TOOLS.md for the tools and paths you can use to build this project, local to this computer (in git ignore)
 - GitHub Issues are the source of truth for tasks: https://github.com/For-Hives/minemories/issues. Check existing issues before creating a separate issue for each new task; record what is implemented, remaining acceptance criteria and validation evidence. Use the existing labels (`mod`, `api`, `front`, `autonomous`, `needs-human`, etc.). Close an issue only when its full scope and required validations are complete. `docs/AI/TASKS.md` is intentionally empty after migration; do not repopulate it.
 - LESSONS.md is a local to this developper usages, you have to to write a memory of each lesson you learn about the personality of the dev, how to work with him, what he want from you, how he approch code (in gitignore)

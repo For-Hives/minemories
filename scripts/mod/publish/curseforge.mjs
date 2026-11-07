@@ -50,7 +50,7 @@ export async function getGameVersions({ fetchImpl, env, cache }) {
 	const response = await request(fetchImpl, `${CURSEFORGE_API}/game/versions`, {
 		headers: { 'X-Api-Token': env.CURSEFORGE_TOKEN },
 	})
-	if (!response.ok) throw new Error(`liste des versions de jeu impossible (${await errorDetail(response, env)})`)
+	if (!response.ok) throw new Error(`could not list game versions (${await errorDetail(response, env)})`)
 	const versions = await response.json()
 	await cache.write(versions)
 	return versions
@@ -67,10 +67,10 @@ function byName(versions, name) {
  */
 export function resolveGameVersionIds({ versions, target, mapping, catalog }) {
 	const minecraft = byName(versions, target.minecraft)
-	if (!minecraft) throw new Error(`version Minecraft ${target.minecraft} inconnue de CurseForge`)
+	if (!minecraft) throw new Error(`Minecraft version ${target.minecraft} unknown to CurseForge`)
 	const loaderKey = mapping.curseforge
 	const loader = typeof loaderKey === 'number' ? { id: loaderKey } : byName(versions, loaderKey)
-	if (!loader) throw new Error(`chargeur ${loaderKey} inconnu de CurseForge`)
+	if (!loader) throw new Error(`loader ${loaderKey} unknown to CurseForge`)
 	const ids = [minecraft.id, loader.id]
 	const java = versions.find(version => JAVA_NAME.exec(version.name)?.[1] === String(target.java))
 	if (java) ids.push(java.id)
@@ -103,16 +103,16 @@ async function publishOne(context, artifact) {
 	const { config, catalog, catalogs, release, env, dryRun, fetchImpl, readImpl, missing, versionsLoader } = context
 	const result = fields => ({ platform: 'curseforge', targetId: artifact.targetId, ...fields })
 	const target = findTarget(config, artifact.targetId)
-	if (!target) return result({ status: 'failed', message: `cible inconnue : ${artifact.targetId}` })
+	if (!target) return result({ status: 'failed', message: `unknown target: ${artifact.targetId}` })
 	const mapping = catalogs.mapping?.[target.loader]
 	if (mapping?.curseforge === undefined || mapping.curseforge === null) {
 		return result({
 			status: 'skipped',
-			message: `aucun chargeur CurseForge pour "${target.loader}" dans mod/catalogs.json (mapping)`,
+			message: `no CurseForge loader for "${target.loader}" in mod/catalogs.json (mapping)`,
 		})
 	}
 	const known = release.published?.curseforge?.[artifact.targetId]
-	if (known) return result({ status: 'skipped', url: known, message: 'déjà publié (index du site)' })
+	if (known) return result({ status: 'skipped', url: known, message: 'already published (site index)' })
 	if (missing.length > 0 && !dryRun)
 		return result({ status: 'skipped', message: skippedMessage('CurseForge', missing) })
 	const projectId = catalog.projectId ?? PLACEHOLDER_PROJECT
@@ -124,11 +124,11 @@ async function publishOne(context, artifact) {
 			const versions = await context.cache.read()
 			const ids = versions
 				? resolveGameVersionIds({ versions, target, mapping, catalog })
-				: ['<ids résolus par GET /game/versions>']
+				: ['<ids resolved by GET /game/versions>']
 			const fields = { metadata: buildMetadata({ catalog, release, target, gameVersions: ids }) }
-			const note = missing.length > 0 ? ` (publication réelle impossible : ${missing.join(' ; ')})` : ''
+			const note = missing.length > 0 ? ` (real publishing impossible: ${missing.join('; ')})` : ''
 			const description = describeRequest({ method: 'POST', url, headers, fields, artifact }, env)
-			return result({ status: 'skipped', message: `dry-run : requête construite${note}`, request: description })
+			return result({ status: 'skipped', message: `dry-run: request built${note}`, request: description })
 		}
 		const versions = await versionsLoader()
 		const gameVersions = resolveGameVersionIds({ versions, target, mapping, catalog })
@@ -140,7 +140,7 @@ async function publishOne(context, artifact) {
 		const response = await request(fetchImpl, url, { method: 'POST', headers, body: form })
 		if (!response.ok) return result({ status: 'failed', message: await errorDetail(response, env) })
 		const created = await response.json()
-		return result({ status: 'published', url: fileUrl(catalog, created.id), message: `fichier ${created.id}` })
+		return result({ status: 'published', url: fileUrl(catalog, created.id), message: `file ${created.id}` })
 	} catch (error) {
 		return result({ status: 'failed', message: errorMessage(error, env) })
 	}

@@ -56,7 +56,7 @@ final class CapturePixels {
       throws IOException {
     if (sources.containsKey(key)) return;
     if (rendererTextures == 256)
-      throw new IOException("Trop de textures de renderers dans la capture.");
+      throw new IOException("Too many renderer textures in the capture.");
     AbstractTexture texture = minecraft.getTextureManager().getTexture(location);
     GpuTexture gpu = texture.getTexture();
     int textureWidth = gpu.getWidth(0);
@@ -70,7 +70,7 @@ final class CapturePixels {
         || width < 1
         || height < 1
         || x > textureWidth - width
-        || y > textureHeight - height) throw new IOException("Région de texture hors limites.");
+        || y > textureHeight - height) throw new IOException("Texture region out of bounds.");
     // Atlases can be copied back from the GPU. Most single textures are upload-only (no
     // USAGE_COPY_SRC), so those are read from their source image instead.
     if ((gpu.usage() & GpuTexture.USAGE_COPY_SRC) != 0)
@@ -89,14 +89,14 @@ final class CapturePixels {
         return crop(contents.image(), textureWidth, textureHeight, x, y, width, height);
       }
     }
-    throw new IOException("Le renderer utilise une texture qui ne peut pas être relue.");
+    throw new IOException("The renderer uses a texture that cannot be read back.");
   }
 
   private static int[] crop(
       NativeImage image, int textureWidth, int textureHeight, int x, int y, int width, int height)
       throws IOException {
     if (image.getWidth() != textureWidth || image.getHeight() != textureHeight)
-      throw new IOException("Dimensions de texture modifiées pendant la capture.");
+      throw new IOException("Texture dimensions changed during the capture.");
     int[] abgr = image.getPixelsABGR();
     int[] rgba = new int[width * height];
     for (int row = 0; row < height; row++)
@@ -108,14 +108,14 @@ final class CapturePixels {
     RenderedTexture.checkDimensions(source.width(), source.height());
     long amount = (long) source.width() * source.height();
     if (sources.size() == 1024 || amount > 64L * 1024 * 1024 - pixels)
-      throw new IOException("Le budget de pixels de la capture est dépassé.");
+      throw new IOException("The capture pixel budget was exceeded.");
     sources.put(source.key(), new TimedSource(source));
     pixels += amount;
   }
 
   Source source(String key) throws IOException {
     Source source = sources.get(key);
-    if (source == null) throw new IOException("Source de texture absente de la capture.");
+    if (source == null) throw new IOException("Texture source missing from the capture.");
     return source;
   }
 
@@ -157,7 +157,7 @@ final class CapturePixels {
         || rows < 1
         || row > source.height() - rows
         || (long) rows * source.width() > QueuedGlbCapture.MAX_BAND_PIXELS)
-      throw new IOException("Bande de texture hors limites.");
+      throw new IOException("Texture strip out of bounds.");
   }
 
   private record SpriteSource(String key, TextureAtlasSprite sprite) implements Source {
@@ -264,7 +264,7 @@ final class CapturePixels {
     public int[] readBand(int row, int rows) throws IOException {
       RenderSystem.assertOnRenderThread();
       validateBand(this, row, rows);
-      if (texture.getTexture() != gpu) throw new IOException("Texture remplacée pendant la capture.");
+      if (texture.getTexture() != gpu) throw new IOException("Texture replaced during the capture.");
       var device = RenderSystem.getDevice();
       var encoder = device.createCommandEncoder();
       try (GpuTexture band =

@@ -4,7 +4,7 @@ import './theme.css'
 import './pages/installation.css'
 import './album.css'
 import './pages/auth.css'
-// La charte de la landing, sur toutes les pages : jetons, puis le kit du jeu (polices, couleurs, boutons, panneaux), puis l'habillage des pages de l'app.
+// The landing design system on every page: tokens, then the game kit (fonts, colours, buttons, panels), then the app pages' styling.
 import './hero/tokens.css'
 import './hero/kit.css'
 import './charter-app.css'

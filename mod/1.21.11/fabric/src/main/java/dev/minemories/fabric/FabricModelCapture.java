@@ -48,7 +48,7 @@ final class FabricModelCapture {
     try {
       renderer = Renderer.get();
     } catch (UnsupportedOperationException unavailable) {
-      throw new IOException("Renderer Fabric indisponible pour ce modèle.", unavailable);
+      throw new IOException("Fabric renderer unavailable for this model.", unavailable);
     }
     var mesh = renderer.mutableMesh();
     try {
@@ -61,7 +61,7 @@ final class FabricModelCapture {
           RandomSource.create(request.seed()),
           face -> !visible.test(face));
       if (mesh.size() > MAX_QUADS)
-        throw new IOException("Trop de primitives dans ce modèle Fabric.");
+        throw new IOException("Too many primitives in this Fabric model.");
       mesh.forEach(this::accept);
     } catch (UncheckedIOException error) {
       throw error.getCause();
@@ -77,7 +77,7 @@ final class FabricModelCapture {
           && Float.isFinite(quad.u(i))
           && Float.isFinite(quad.v(i)))) return;
     if (quad.atlas() != QuadAtlas.BLOCK)
-      throw new UncheckedIOException(new IOException("Un modèle de bloc utilise l’atlas d’objets."));
+      throw new UncheckedIOException(new IOException("A block model uses the item atlas."));
     var atlas = (TextureAtlas) minecraft.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
     TextureAtlasSprite sprite = atlas.spriteFinder().find(quad);
     for (int i = 0; i < 4; i++)
@@ -86,7 +86,7 @@ final class FabricModelCapture {
           || quad.v(i) < sprite.getV0() - .000001f
           || quad.v(i) > sprite.getV1() + .000001f)
         throw new UncheckedIOException(
-            new IOException("Les UV Fabric traversent plusieurs sprites."));
+            new IOException("Fabric UVs span several sprites."));
     int color =
         VertexColors.averageArgb(quad.color(0), quad.color(1), quad.color(2), quad.color(3));
     try {

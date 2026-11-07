@@ -27,15 +27,14 @@ export function findTarget(config, targetId) {
 /** Human checklist of what is missing for a platform; empty when it can publish. */
 export function missingItems({ name, settings, tokenName, env }) {
 	const missing = []
-	if (settings?.enabled !== true) missing.push(`mettre "${name}.enabled" à true dans mod/catalogs.json`)
-	if (!settings?.projectId)
-		missing.push(`renseigner "${name}.projectId" dans mod/catalogs.json (créer le projet d’abord)`)
-	if (!env[tokenName]) missing.push(`définir ${tokenName} dans l’environnement (jamais dans un fichier du dépôt)`)
+	if (settings?.enabled !== true) missing.push(`set "${name}.enabled" to true in mod/catalogs.json`)
+	if (!settings?.projectId) missing.push(`fill in "${name}.projectId" in mod/catalogs.json (create the project first)`)
+	if (!env[tokenName]) missing.push(`define ${tokenName} in the environment (never in a repository file)`)
 	return missing
 }
 
 export function skippedMessage(platformLabel, missing) {
-	return `${platformLabel} non publié, reste à faire : ${missing.join(' ; ')}`
+	return `${platformLabel} not published, still to do: ${missing.join('; ')}`
 }
 
 export async function readArtifact(artifact, readImpl = readFile) {
@@ -85,7 +84,7 @@ export async function errorDetail(response, env) {
 	} catch {
 		body = ''
 	}
-	return redactSecrets(`HTTP ${response.status}${body ? ` : ${body.slice(0, 300)}` : ''}`, env)
+	return redactSecrets(`HTTP ${response.status}${body ? `: ${body.slice(0, 300)}` : ''}`, env)
 }
 
 /** Fails soft: converts an exception into a message without any secret. */

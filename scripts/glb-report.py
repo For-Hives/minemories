@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Rapport de mesure d'un ou plusieurs GLB Minemories (issue #173, phase 0).
+"""Measurement report for one or more Minemories GLBs (issue #173, phase 0).
 
-Usage : python3 scripts/glb-report.py [--json] fichier.glb [...]
+Usage: python3 scripts/glb-report.py [--json] file.glb [...]
 
-Octets par catégorie (positions, normales, UV, indices, PNG, JSON), quads, sommets
-dupliqués (exacts et par position seule), tailles gzip/brotli et VRAM estimée des
-textures (RGBA 8 bits, sans mipmaps). Bibliothèque standard uniquement ; `brotli`
-du système est optionnel. Ne modifie aucun fichier.
+Bytes per category (positions, normals, UV, indices, PNG, JSON), quads, duplicated
+vertices (exact and by position only), gzip/brotli sizes and estimated texture VRAM
+(8-bit RGBA, no mipmaps). Standard library only; the system `brotli` is optional.
+Modifies no files.
 """
 import gzip
 import json
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         print(json.dumps(rows, indent=2))
     else:
         for r in rows:
-            print(r['file'], r['bytes'], 'octets;', r['quads'], 'quads;', r['vertices'], 'sommets')
-            print('  octets :', r['bytes_by_category'], 'json', r['json_bytes'])
-            print('  doublons exacts', r['duplicate_vertices_exact'], '; par position', r['duplicate_vertices_by_position'])
-            print('  compressé', r['compressed'], '; VRAM RGBA8', r['texture_vram_bytes_rgba8'])
+            print(r['file'], r['bytes'], 'bytes;', r['quads'], 'quads;', r['vertices'], 'vertices')
+            print('  bytes:', r['bytes_by_category'], 'json', r['json_bytes'])
+            print('  exact duplicates', r['duplicate_vertices_exact'], '; by position', r['duplicate_vertices_by_position'])
+            print('  compressed', r['compressed'], '; VRAM RGBA8', r['texture_vram_bytes_rgba8'])

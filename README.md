@@ -1,87 +1,96 @@
 # Minemories
 
-Minemories permet de capturer une zone de Minecraft dans un fichier GLB autonome, de l'ouvrir dans un viewer web et, après appairage explicite, de l'envoyer dans une galerie privée. Le mod client cible **Minecraft 1.21.1** : NeoForge 21.1.248, Fabric Loader 0.19.5 avec Fabric API 0.116.17+1.21.1, et Forge 52.1.19. Le JAR Fabric a également été testé sous Quilt 0.30.1. Voir la [matrice et les limites des validations](docs/features/loader-support.md).
+> [!NOTE]
+> **To everyone at war with AI, or who just wants to know more about us**
+>
+> We are two French developers, Bréval & Andy. Everything about our work is here: [andy-cinquin.com](https://andy-cinquin.com/) and [brev.al](https://brev.al/).
+>
+> We both have plenty of experience: we learned to code before AI, in C, then C++, C#, Java, JavaScript and more. So no, this is not 100% vibe coding without understanding what we do. We care about security, good practices, tests and the quality of what we ship, with or without AI.
+>
+> You will find plenty more on our GitHub profiles and on our respective sites!
+
+Minemories captures an area of Minecraft into a self-contained GLB file, opens it in a web viewer and, after explicit pairing, uploads it to a private gallery. The client mod targets **Minecraft 1.21.1**: NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API 0.116.17+1.21.1, and Forge 52.1.19. The Fabric JAR has also been tested under Quilt 0.30.1. See the [validation matrix and its limits](docs/features/loader-support.md).
 
 ## Structure
 
-| Chemin | Rôle |
+| Path | Role |
 | --- | --- |
-| `mod/1.21.1/` | Projet Gradle. `:core` sérialise le GLB sans Minecraft ; `:common` contient le client partagé ; `:neoforge`, `:fabric` et `:forge` isolent les hooks des loaders. Voir la [matrice de validation](docs/features/loader-support.md). |
-| `apps/web/` | Viewer React / Three.js. |
-| `apps/api/` | API Bun / Hono, Better Auth, SQLite et stockage objet S3. |
-| `packages/api-contract/` | Contrat oRPC partagé entre API et web ; ce dossier est une bibliothèque, pas une application. |
-| `docs/` | Architecture, workflow et état du POC. |
+| `mod/1.21.1/` | Gradle project. `:core` serializes the GLB without Minecraft; `:common` holds the shared client; `:neoforge`, `:fabric` and `:forge` isolate the loader hooks. See the [validation matrix](docs/features/loader-support.md). |
+| `apps/web/` | React / Three.js viewer. |
+| `apps/api/` | Bun / Hono API, Better Auth, SQLite and S3 object storage. |
+| `packages/api-contract/` | oRPC contract shared by the API and the web app; this folder is a library, not an application. |
+| `docs/` | Architecture, workflow and POC status. |
 
-Le contrat oRPC décrit les procédures `pairing` et `memories` utilisées par le web. Les routes HTTP du mod sont définies dans `apps/api/src/index.ts` et restent distinctes.
+The oRPC contract describes the `pairing` and `memories` procedures used by the web app. The mod's HTTP routes are defined in `apps/api/src/index.ts` and stay separate.
 
-Le dossier `mod/` pourra accueillir d'autres projets Minecraft ; le nom `minemories` reste celui du projet Gradle. Le mod utilise désormais l'identifiant `minemories`, la commande `/minemories` et le nom de classe `Minemories`.
+The `mod/` folder may host other Minecraft projects; `minemories` remains the Gradle project name. The mod now uses the `minemories` identifier, the `/minemories` command and the `Minemories` class name.
 
-## Démarrage local
+## Local setup
 
-Prérequis : Bun 1.4.3, Node.js 22.12+, JDK 21 et Docker Compose. À la racine :
+Prerequisites: Bun 1.4.3, Node.js 22.12+, JDK 21 and Docker Compose. From the repository root:
 
 ```sh
 bun install --frozen-lockfile
 cp .env.example .env
-# Remplacer BETTER_AUTH_SECRET et PAIRING_PEPPER par deux secrets distincts de 32 caractères minimum.
+# Replace BETTER_AUTH_SECRET and PAIRING_PEPPER with two distinct secrets of at least 32 characters.
 docker compose up -d
 bun api:dev
 bun web:dev
 ```
 
-L'API écoute sur `localhost:3001`, le web sur `localhost:5173`. Compose lance Garage en mono-nœud sur `127.0.0.1:3900` pour le développement. Le profil Minecraft du mod est indépendant du profil CurseForge :
+The API listens on `localhost:3001`, the web app on `localhost:5173`. Compose runs a single-node Garage on `127.0.0.1:3900` for development. The mod's Minecraft profile is independent of your CurseForge profile:
 
 ```sh
 bun mod:dev
 ```
 
-Au premier lancement, Gradle télécharge les dépendances du jeu ; les relancements recompilent seulement ce qui a changé. Le dossier de jeu est `mod/1.21.1/run/`. Pour reproduire une interaction avec le modpack, ajoute les JARs NeoForge 1.21.1 pertinents dans `run/mods/`. Voir [le workflow](docs/concepts/development-workflow.md).
+On first launch, Gradle downloads the game dependencies; later launches only recompile what changed. The game folder is `mod/1.21.1/run/`. To reproduce an interaction with a modpack, add the relevant NeoForge 1.21.1 JARs to `run/mods/`. See [the workflow](docs/concepts/development-workflow.md).
 
-## Interface du mod
+## Mod interface
 
-Dans un monde, ouvre le menu pause puis clique sur **Minemories** ; le bouton existe aussi dans les options. La touche **M**, modifiable dans les contrôles, ouvre le menu même si un modpack utilise un menu de pause personnalisé. Un joueur qui n'est pas encore connecté reçoit aussi, une fois par entrée dans un monde, un message cliquable dans le chat qui ouvre ce menu.
+In a world, open the pause menu and click **Minemories**; the button is also in the options screen. The **M** key, rebindable in the controls, opens the menu even when a modpack uses a custom pause menu. A player who is not signed in yet also gets, once per world join, a clickable chat message that opens this menu.
 
-L'écran d'accueil est volontairement minimal : l'état de la connexion, la saisie du code à six chiffres de la galerie (avec un lien vers le site pour le trouver) et trois grosses actions à icône : **Prendre un souvenir**, **Photos auto** (activées par défaut) et **Mes souvenirs** (captures locales). Le bouton **Réglages** ouvre l'écran des réglages avancés : API, dossier local, export local ou de la sélection, AFK, stockage, monde distant, diagnostics, zones suggérées et déconnexion du compte. Les valeurs par défaut sont décrites dans [l'installation sans configuration](docs/features/first-run-defaults.md).
+The home screen is deliberately minimal: the connection status, the six-digit gallery code field (with a link to the website to find it) and three large icon actions: **Take a memory**, **Auto memories** (on by default) and **My memories** (local captures). The **Settings** button opens the advanced settings screen: API, local folder, local or selection export, AFK, storage, remote world, diagnostics, suggested areas and account sign-out. The defaults are described in [zero-configuration install](docs/features/first-run-defaults.md).
 
-Les captures AFK sont actives par défaut après **5 minutes d’inactivité**, au plus une fois toutes les **4 heures**, même en pause ou en arrière-plan. Sans compte lié, elles restent locales ; après appairage, elles sont envoyées dans la galerie privée. Les réglages avancés permettent de régler délai, fréquence, rayon (**32 blocs par défaut**, 2–128 réglables), dossier local et API. Il propose aussi l’export local ou de la sélection définie par commandes, sans envoi. La profondeur suit les visites locales ; la capture sur toute la hauteur est un réglage avancé. Les commandes conservent leur rayon par défaut de 128 blocs et capturent uniquement les chunks chargés.
+AFK captures are on by default after **5 minutes of inactivity**, at most once every **4 hours**, even while paused or in the background. Without a linked account they stay local; after pairing, they are uploaded to the private gallery. The advanced settings let you adjust the delay, frequency, radius (**32 blocks by default**, adjustable from 2 to 128), local folder and API. They also offer a local export, or an export of the selection defined by commands, without uploading. Depth follows local visits; full-height capture is an advanced setting. The commands keep their default radius of 128 blocks and only capture loaded chunks.
 
-Chaque export conserve un GLB et ses métadonnées dans un dossier daté sous `~/export/history/` par défaut. `capture.glb` et `capture.json` restent des copies du dernier export. **Captures locales** permet de parcourir et d’envoyer les captures conservées ; prévoir de l’espace et des sauvegardes, aucune suppression locale automatique n’est effectuée. Voir [l’historique local](docs/features/local-capture-history.md). Les erreurs restent dans le log Minecraft et fermer le menu ramène à l’écran précédent.
+Each export keeps a GLB and its metadata in a dated folder under `~/export/history/` by default. `capture.glb` and `capture.json` remain copies of the latest export. **Memories on this computer** lets you browse and upload the kept captures; plan for disk space and backups, as nothing is ever deleted locally automatically. See [local history](docs/features/local-capture-history.md). Errors go to the Minecraft log, and closing the menu returns to the previous screen.
 
-Les diagnostics techniques sont **activés par défaut** une fois le compte lié (jamais avant l'appairage) et se désactivent dans les réglages avancés ; un refus explicite est conservé après un changement de compte ou d'API. Les rapports excluent messages libres, URL, jetons, chemins, coordonnées, graine, noms de monde/joueur et captures. Ils sont reliés au compte/appareil et consultables uniquement par l'opérateur de l'API. Voir [le consentement, les limites et le retrait](docs/features/consented-diagnostics.md).
+Technical diagnostics are **on by default** once the account is linked (never before pairing) and can be turned off in the advanced settings; an explicit refusal is kept across account or API changes. Reports exclude free-form messages, URLs, tokens, paths, coordinates, seed, world/player names and captures. They are tied to the account/device and can only be read by the API operator. See [consent, limits and withdrawal](docs/features/consented-diagnostics.md).
 
-Pour tester rapidement le parcours local, lance `bun api:dev`, `bun web:dev` et `bun mod:dev`, règle l’API du mod sur `http://localhost:3001` dans les réglages avancés, crée un monde de test, capture, crée le code dans le web, puis lie le mod et envoie le fichier. Le fichier `mod/1.21.1/run/config/minemories.properties` conserve le jeton local.
+To quickly test the local flow, run `bun api:dev`, `bun web:dev` and `bun mod:dev`, set the mod's API to `http://localhost:3001` in the advanced settings, create a test world, capture, create the code in the web app, then link the mod and upload the file. The file `mod/1.21.1/run/config/minemories.properties` stores the local token.
 
-## Commandes
+## Commands
 
-| Commande | Effet |
+| Command | Effect |
 | --- | --- |
-| `bun mod:dev` | Démarre le client NeoForge de développement (`runClient`). |
-| `bun mod:build` | Construit et vérifie le JAR Gradle dans `mod/1.21.1/neoforge/build/libs/`. Ce build n'effectue pas de minification. |
-| `bun mod:check` | Applique Spotless puis lance les contrôles Gradle (JUnit, JaCoCo, SpotBugs, compilation). Modifie les sources si nécessaire. |
-| `bun mod:check:ci` | Même vérification sans modification des fichiers. |
-| `bun web:dev` / `bun api:dev` | Démarre les applications séparément. |
-| `bun web:check` | Biome, TypeScript et Vitest avec couverture de 100 % des utilitaires du viewer ; tests du contrat oRPC partagé. |
-| `bun api:check` | Biome API et contrat, TypeScript API, puis tests Bun isolés avec rapport de couverture (GLB, routes HTTP, appairage et stockage fichier). |
-| `bun check` / `bun run build` | Contrôles de tout le dépôt, puis JAR du mod, fichiers de téléchargement et bundle web. |
+| `bun mod:dev` | Starts the NeoForge development client (`runClient`). |
+| `bun mod:build` | Builds and checks the Gradle JAR in `mod/1.21.1/neoforge/build/libs/`. This build does not minify. |
+| `bun mod:check` | Applies Spotless then runs the Gradle checks (JUnit, JaCoCo, SpotBugs, compilation). Modifies sources if needed. |
+| `bun mod:check:ci` | Same checks without modifying files. |
+| `bun web:dev` / `bun api:dev` | Starts the applications separately. |
+| `bun web:check` | Biome, TypeScript and Vitest with 100% coverage of the viewer utilities; tests of the shared oRPC contract. |
+| `bun api:check` | Biome for the API and contract, API TypeScript, then isolated Bun tests with a coverage report (GLB, HTTP routes, pairing and file storage). |
+| `bun check` / `bun run build` | Checks the whole repository, then builds the mod JAR, download files and web bundle. |
 
-`bun <script>` est le raccourci Bun pour `bun run <script>`, sauf pour les commandes natives comme `build` : utilise `bun run build` pour le script du dépôt. En CI, `bun check` ne réécrit aucun fichier.
+`bun <script>` is Bun's shortcut for `bun run <script>`, except for built-in commands such as `build`: use `bun run build` for the repository script. In CI, `bun check` does not rewrite any file.
 
-`bun format` applique la configuration Biome 2.5.15 à onglets, largeur 120 et points-virgules facultatifs. Pour Java, `bun mod:check` applique Spotless et lance JUnit, JaCoCo et SpotBugs ; `bun mod:check:ci` vérifie sans modifier. Les tests de `:core` vérifient aussi le conteneur GLB avec des entrées invalides et des coordonnées extrêmes. Les essais du menu et le rendu GLB en jeu restent nécessaires avant d'annoncer le support d'un loader.
+`bun format` applies the Biome 2.5.15 configuration: tabs, 120 columns and optional semicolons. For Java, `bun mod:check` applies Spotless and runs JUnit, JaCoCo and SpotBugs; `bun mod:check:ci` checks without modifying. The `:core` tests also check the GLB container with invalid inputs and extreme coordinates. Menu trials and in-game GLB rendering are still required before claiming support for a loader.
 
-## Stockage et données
+## Storage and data
 
-`.env.example` contient uniquement des identifiants de **développement local** pour Garage. Change les clés et la configuration avant tout déploiement, et n'expose pas le port S3 sans protection. Les données Garage vivent dans les volumes `garage_meta` et `garage_data` ; `docker compose down` les conserve, `down -v` les efface. Si tu avais des objets dans l'ancien volume `minio_data`, le passage à Garage **ne les transfère pas** : exporte-les et réimporte-les avant de supprimer ce volume.
+`.env.example` only contains **local development** credentials for Garage. Change the keys and configuration before any deployment, and do not expose the S3 port without protection. Garage data lives in the `garage_meta` and `garage_data` volumes; `docker compose down` keeps them, `down -v` erases them. If you had objects in the old `minio_data` volume, switching to Garage **does not transfer them**: export and re-import them before deleting that volume.
 
-L'API peut utiliser `STORAGE_DRIVER=filesystem` et `LOCAL_OBJECTS_PATH=./data/objects` pour développer sans Docker. Les exports GLB restent locaux par défaut ; l'envoi au serveur demande un appairage explicite. Le jeton d'appairage est enregistré dans `config/minemories.properties`. Voir [l'architecture](docs/concepts/architecture.md) et [les loaders](docs/features/loader-support.md).
+The API can use `STORAGE_DRIVER=filesystem` and `LOCAL_OBJECTS_PATH=./data/objects` for development without Docker. GLB exports stay local by default; uploading to the server requires explicit pairing. The pairing token is stored in `config/minemories.properties`. See [the architecture](docs/concepts/architecture.md) and [the loaders](docs/features/loader-support.md).
 
-Les captures du mod peuvent être envoyées en morceaux de 4 MiB, jusqu’à 200 MiB, avec reprise après interruption. Voir [le protocole et les contraintes de déploiement](docs/features/resumable-uploads.md).
+Mod captures can be uploaded in 4 MiB chunks, up to 200 MiB, with resume after interruption. See [the protocol and deployment constraints](docs/features/resumable-uploads.md).
 
-## Installation et distribution du mod
+## Mod installation and distribution
 
-Le mod utilise l’API `https://api.minemories.net` par défaut. Le menu M démarre sur un écran d'accueil minimal : connexion par code de galerie, souvenir à la demande, photos automatiques. Les réglages avancés permettent de choisir le dossier local, une API personnalisée compatible et les délais, la fréquence et la taille des captures AFK (actives par défaut). Une préférence AFK déjà enregistrée est conservée. Un changement d’API retire les identifiants du compte précédent.
+The mod uses the `https://api.minemories.net` API by default. The M menu opens on a minimal home screen: sign-in with the gallery code, on-demand memory, automatic photos. The advanced settings let you choose the local folder, a compatible custom API, and the delay, frequency and size of AFK captures (on by default). An AFK preference that is already stored is kept. Changing the API removes the previous account's credentials.
 
-`bun run build` vérifie et construit le dépôt complet, y compris le mod. Le front se construit indépendamment avec `bun run --filter @minemories/web build`, sans Java ni JAR local. La page `/installation` propose le dernier JAR compatible avec la version de Minecraft et le loader choisis, servi par l’API Minemories : déposer le fichier dans `mods`, sans extraction de ZIP. Le mod se construit et se publie avec l’outil local `bun mod` (sur le VPS de production), jamais depuis GitHub Actions. Voir [la distribution et les réglages](docs/features/mod-distribution.md) pour la configuration des projets/secrets et les vérifications en jeu.
+`bun run build` checks and builds the whole repository, including the mod. The front end builds on its own with `bun run --filter @minemories/web build`, with no Java or local JAR. The `/installation` page offers the latest JAR compatible with the chosen Minecraft version and loader, served by the Minemories API: drop the file into `mods`, no ZIP to extract. The mod is built and published with the local `bun mod` tool (on the production VPS), never from GitHub Actions. See [distribution and settings](docs/features/mod-distribution.md) for project/secret configuration and in-game checks.
 
-## Releases automatiques
+## Automatic releases
 
-Le VPS exécute `bun mod release` : build de production de chaque cible activée (Minecraft x loader de `mod/targets.json`), tests en jeu sans écran, stockage S3 (3 versions par cible), index lu par le site, publication Modrinth/CurseForge quand elle est configurée, notification Discord. Un merge dans `main` ne publie rien : la CI GitHub se limite aux contrôles. [Flux, versions et mise en service](docs/features/automatic-releases.md).
+The VPS runs `bun mod release`: a production build of each enabled target (Minecraft x loader from `mod/targets.json`), headless in-game tests, S3 storage (3 versions per target), an index read by the website, Modrinth/CurseForge publishing when configured, and a Discord notification. A merge into `main` publishes nothing: GitHub CI only runs checks. [Flow, versions and setup](docs/features/automatic-releases.md).

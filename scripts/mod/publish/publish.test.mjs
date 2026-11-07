@@ -73,7 +73,7 @@ const memoryCache = (initial = null) => {
 		},
 	}
 }
-const noNetwork = () => assert.fail('aucun réseau attendu')
+const noNetwork = () => assert.fail('no network expected')
 const publish = options => publishThirdParty({ config, release: release(), ...options })
 
 test('release types', () => {
@@ -90,8 +90,8 @@ test('shipped catalogs are disabled and map every loader of the targets', async 
 	assert.equal(catalogs.modrinth.projectId, null)
 	const targets = JSON.parse(await readFile(new URL('../../../mod/targets.json', import.meta.url), 'utf8'))
 	for (const target of targets.targets) {
-		assert.ok(catalogs.mapping[target.loader]?.modrinth, `mapping Modrinth manquant pour ${target.loader}`)
-		assert.ok(catalogs.mapping[target.loader]?.curseforge, `mapping CurseForge manquant pour ${target.loader}`)
+		assert.ok(catalogs.mapping[target.loader]?.modrinth, `Modrinth mapping missing for ${target.loader}`)
+		assert.ok(catalogs.mapping[target.loader]?.curseforge, `CurseForge mapping missing for ${target.loader}`)
 	}
 })
 
@@ -106,7 +106,7 @@ test('everything is skipped with the exact checklist while accounts are missing'
 	)
 	assert.equal(
 		results[0].message,
-		'Modrinth non publié, reste à faire : mettre "modrinth.enabled" à true dans mod/catalogs.json ; renseigner "modrinth.projectId" dans mod/catalogs.json (créer le projet d’abord) ; définir MODRINTH_TOKEN dans l’environnement (jamais dans un fichier du dépôt)'
+		'Modrinth not published, still to do: set "modrinth.enabled" to true in mod/catalogs.json; fill in "modrinth.projectId" in mod/catalogs.json (create the project first); define MODRINTH_TOKEN in the environment (never in a repository file)'
 	)
 	assert.ok(results[1].message.includes('CURSEFORGE_TOKEN'))
 	const onlyToken = await publish({
@@ -121,7 +121,7 @@ test('modrinth: creates the version with the right multipart request', async () 
 	const fetchStub = (url, init) => {
 		calls.push({ url, init })
 		if (url.includes('/project/fabric-api')) return Promise.resolve(json({ id: 'P7dR8mSH' }))
-		if (url.includes('/version?')) return Promise.resolve(json([{ version_number: 'autre', id: 'x' }]))
+		if (url.includes('/version?')) return Promise.resolve(json([{ version_number: 'other', id: 'x' }]))
 		return Promise.resolve(json({ id: 'VERID', project_id: 'AABBCCDD' }, 200))
 	}
 	const catalogs = catalogsFull()
@@ -206,16 +206,16 @@ test('modrinth: idempotence, site index, errors and guards', async () => {
 	assert.ok(!failing.message.includes(MODRINTH_TOKEN))
 
 	const listFails = await pick({ ...base, deps: { ...base.deps, fetch: () => Promise.resolve(json('nope', 500)) } })
-	assert.ok(listFails.message.includes('liste des versions impossible'))
+	assert.ok(listFails.message.includes('could not list versions'))
 
 	const noDependency = await pick({
 		...base,
 		deps: {
 			...base.deps,
-			fetch: url => Promise.resolve(url.includes('/version?') ? json([]) : json('introuvable', 404)),
+			fetch: url => Promise.resolve(url.includes('/version?') ? json([]) : json('not found', 404)),
 		},
 	})
-	assert.ok(noDependency.message.includes('dépendance fabric-api introuvable'))
+	assert.ok(noDependency.message.includes('dependency fabric-api not found'))
 
 	const badDigest = await pick({
 		...base,
@@ -236,13 +236,13 @@ test('modrinth: idempotence, site index, errors and guards', async () => {
 		release: release({ artifacts: [{ targetId: 'ghost', filePath: '/g.jar' }] }),
 		deps: { ...base.deps, fetch: noNetwork },
 	})
-	assert.ok(unknownTarget.message.includes('cible inconnue'))
+	assert.ok(unknownTarget.message.includes('unknown target'))
 	const noMapping = await pick({
 		...base,
 		release: release({ artifacts: [{ targetId: 'mystery-mc1.21.1', filePath: '/g.jar' }] }),
 		deps: { ...base.deps, fetch: noNetwork },
 	})
-	assert.ok(noMapping.message.includes('aucun chargeur Modrinth'))
+	assert.ok(noMapping.message.includes('no Modrinth loader'))
 })
 
 test('modrinth helpers', () => {
@@ -271,7 +271,7 @@ test('dry run builds masked requests, sends nothing and still lists what is miss
 	assert.equal(results.length, 2)
 	for (const result of results) {
 		assert.equal(result.status, 'skipped')
-		assert.ok(result.message.startsWith('dry-run : requête construite (publication réelle impossible'))
+		assert.ok(result.message.startsWith('dry-run: request built (real publishing impossible'))
 		assert.ok(!result.request.includes(MODRINTH_TOKEN))
 		assert.ok(!result.request.includes(CURSEFORGE_TOKEN))
 		assert.ok(result.request.includes('"***"'))
@@ -289,8 +289,8 @@ test('dry run without token or cache uses placeholders', async () => {
 		deps: { catalogs: catalogsFull(), fetch: noNetwork, cache: memoryCache() },
 	})
 	assert.ok(results[0].request.includes('<MODRINTH_TOKEN>'))
-	assert.ok(results[1].request.includes('<ids résolus par GET /game/versions>'))
-	assert.ok(results[1].message.startsWith('dry-run : requête construite'))
+	assert.ok(results[1].request.includes('<ids resolved by GET /game/versions>'))
+	assert.ok(results[1].message.startsWith('dry-run: request built'))
 })
 
 test('curseforge: resolves game versions once, caches them and uploads', async () => {
@@ -343,7 +343,7 @@ test('curseforge: errors and guards', async () => {
 	const versionsDown = await pick({
 		deps: { ...deps, cache: memoryCache(), fetch: () => Promise.resolve(json('no', 403)) },
 	})
-	assert.ok(versionsDown.message.includes('liste des versions de jeu impossible'))
+	assert.ok(versionsDown.message.includes('could not list game versions'))
 
 	const uploadFails = await pick({
 		deps: {
@@ -358,11 +358,11 @@ test('curseforge: errors and guards', async () => {
 	const unknownMinecraft = await pick({
 		deps: { ...deps, cache: memoryCache([{ id: 1, name: 'Fabric' }]), fetch: noNetwork },
 	})
-	assert.ok(unknownMinecraft.message.includes('Minecraft 1.21.1 inconnue'))
+	assert.ok(unknownMinecraft.message.includes('Minecraft version 1.21.1 unknown'))
 	const unknownLoader = await pick({
 		deps: { ...deps, cache: memoryCache([{ id: 1, name: '1.21.1' }]), fetch: noNetwork },
 	})
-	assert.ok(unknownLoader.message.includes('chargeur Fabric inconnu'))
+	assert.ok(unknownLoader.message.includes('loader Fabric unknown'))
 
 	const indexed = await pick({
 		release: release({ published: { curseforge: { 'fabric-mc1.21.1': 'https://cf/1' } } }),
@@ -373,12 +373,12 @@ test('curseforge: errors and guards', async () => {
 		release: release({ artifacts: [{ targetId: 'ghost', filePath: '/g' }] }),
 		deps: { ...deps, cache: memoryCache(), fetch: noNetwork },
 	})
-	assert.ok(unknownTarget.message.includes('cible inconnue'))
+	assert.ok(unknownTarget.message.includes('unknown target'))
 	const noMapping = await pick({
 		release: release({ artifacts: [{ targetId: 'mystery-mc1.21.1', filePath: '/g' }] }),
 		deps: { ...deps, cache: memoryCache(), fetch: noNetwork },
 	})
-	assert.ok(noMapping.message.includes('aucun chargeur CurseForge'))
+	assert.ok(noMapping.message.includes('no CurseForge loader'))
 	const noCurseMapping = await pick({
 		release: release({ artifacts: [{ targetId: 'fabric-mc1.21.1', filePath: '/g' }] }),
 		deps: {
@@ -388,7 +388,7 @@ test('curseforge: errors and guards', async () => {
 			fetch: noNetwork,
 		},
 	})
-	assert.ok(noCurseMapping.message.includes('aucun chargeur CurseForge'))
+	assert.ok(noCurseMapping.message.includes('no CurseForge loader'))
 })
 
 test('curseforge helpers: ids without Java/environment, metadata defaults, cache TTL', async () => {
@@ -421,7 +421,7 @@ test('curseforge helpers: ids without Java/environment, metadata defaults, cache
 	assert.deepEqual(await cache.read(), GAME_VERSIONS)
 	now += 25 * 3600 * 1000
 	assert.equal(await cache.read(), null)
-	await writeFile(path, 'pas du json')
+	await writeFile(path, 'not json')
 	now = Date.now()
 	assert.equal(await cache.read(), null)
 	await rm(dir, { recursive: true })
@@ -452,7 +452,7 @@ test('publish command: latest build, artifacts, dry run and failures', async () 
 	const ctx = { config, env: {}, log: m => lines.push(m), root }
 	assert.equal(await latestVersion(root), null)
 	assert.equal(await runPublish([], ctx), 1)
-	assert.ok(lines.at(-1).includes('Aucun build local'))
+	assert.ok(lines.at(-1).includes('No local build'))
 
 	await make('0.1.0-beta.1', 'fabric-mc1.21.1', { 'minemories-fabric.jar': 'old' })
 	await make('0.2.0-beta.1', 'fabric-mc1.21.1', {
@@ -460,8 +460,8 @@ test('publish command: latest build, artifacts, dry run and failures', async () 
 		'minemories-fabric-sources.jar': 's',
 		'manifest.json': JSON.stringify({ sha256: 'abc' }),
 	})
-	await make('0.2.0-beta.1', 'forge-mc1.21.1', { 'notes.txt': 'pas de jar' })
-	await make('0.2.0-beta.1', 'neoforge-mc1.21.1', { 'a.jar': 'x', 'manifest.json': 'cassé' })
+	await make('0.2.0-beta.1', 'forge-mc1.21.1', { 'notes.txt': 'no jar' })
+	await make('0.2.0-beta.1', 'neoforge-mc1.21.1', { 'a.jar': 'x', 'manifest.json': 'broken' })
 	await utimes(join(root, 'build', 'mod-dist', '0.1.0-beta.1'), new Date(1000), new Date(1000))
 	assert.equal(await latestVersion(root), '0.2.0-beta.1')
 
@@ -475,10 +475,10 @@ test('publish command: latest build, artifacts, dry run and failures', async () 
 	)
 
 	assert.equal(await runPublish(['--dry-run'], ctx), 0)
-	assert.ok(lines.some(l => l.startsWith('modrinth fabric-mc1.21.1 : skipped')))
+	assert.ok(lines.some(l => l.startsWith('modrinth fabric-mc1.21.1: skipped')))
 	assert.ok(lines.some(l => l.includes('"method": "POST"')))
 	assert.equal(await runPublish(['--version', '0.2.0-beta.1'], ctx), 0)
 	assert.equal(await runPublish(['--version', '9.9.9'], ctx), 1)
-	assert.ok(lines.at(-1).includes('Aucun JAR'))
+	assert.ok(lines.at(-1).includes('No JAR'))
 	await rm(root, { recursive: true })
 })

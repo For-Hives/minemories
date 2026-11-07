@@ -142,13 +142,11 @@ final class CaptureElement implements CaptureSink {
       float[] uv,
       int layer)
       throws IOException {
-    if (++attempted > MAX_QUADS)
-      throw new IOException("Le modèle dépasse la limite de primitives.");
+    if (++attempted > MAX_QUADS) throw new IOException("The model exceeds the primitive limit.");
     if (xyz.length != 12 || uv.length != 8) throw new IllegalArgumentException("Expected a quad");
     for (float value : xyz) if (!Float.isFinite(value)) return;
     for (float value : uv) if (!Float.isFinite(value)) return;
-    if (quads.size() == MAX_QUADS)
-      throw new IOException("Le modèle dépasse la limite de primitives.");
+    if (quads.size() == MAX_QUADS) throw new IOException("The model exceeds the primitive limit.");
     Material material = materials.get(key);
     if (material == null) {
       reserve(512L + 2L * (textBytes(key) + textBytes(name) + textBytes(image)));
@@ -177,16 +175,16 @@ final class CaptureElement implements CaptureSink {
 
   private static int textBytes(String value) throws IOException {
     Objects.requireNonNull(value);
-    if (value.length() > 4096) throw new IOException("Descripteur du modèle trop long.");
+    if (value.length() > 4096) throw new IOException("Model descriptor too long.");
     int length = value.getBytes(StandardCharsets.UTF_8).length;
-    if (length > 4096) throw new IOException("Descripteur du modèle trop long.");
+    if (length > 4096) throw new IOException("Model descriptor too long.");
     return length;
   }
 
   private void reserve(long amount) throws IOException {
     if (amount > MAX_BYTES - bytes) {
       failed = true;
-      throw new IOException("Le modèle dépasse le budget de copie.");
+      throw new IOException("The model exceeds the copy budget.");
     }
     bytes += amount;
   }

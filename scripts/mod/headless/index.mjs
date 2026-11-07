@@ -56,23 +56,22 @@ async function readStats(paths) {
 		} catch {
 			// No summary either: report the GLB problem below.
 		}
-		return { error: existsSync(paths.glb) ? glbError.message : 'GLB de capture absent après le test' }
+		return { error: existsSync(paths.glb) ? glbError.message : 'capture GLB missing after the test' }
 	}
 }
 
 function interpret({ outcome, stats, error, thresholds, spec }) {
 	const markers = parseLogMarkers(outcome.tail)
-	if (outcome.stuck) return { status: 'failed', message: `Minecraft bloqué (${outcome.stuck}), arrêté` }
-	if (outcome.timedOut && !outcome.completed)
-		return { status: 'failed', message: 'délai dépassé, Minecraft a été arrêté' }
+	if (outcome.stuck) return { status: 'failed', message: `Minecraft stuck (${outcome.stuck}), stopped` }
+	if (outcome.timedOut && !outcome.completed) return { status: 'failed', message: 'timed out, Minecraft was stopped' }
 	// A finished test is judged on its log and report: ForgeGradle can keep the process alive after the result.
 	if (markers.failed || (outcome.code !== 0 && !outcome.completed)) {
 		const detail = failureMessage(outcome.tail)
-		return { status: 'failed', message: detail ?? `${spec.gradleArgs[0]} a échoué (code ${outcome.code})` }
+		return { status: 'failed', message: detail ?? `${spec.gradleArgs[0]} failed (code ${outcome.code})` }
 	}
 	if (error) return { status: 'failed', message: error }
 	const problems = evaluateStats(stats, thresholds)
-	if (problems.length > 0) return { status: 'failed', message: problems.join(' ; ') }
+	if (problems.length > 0) return { status: 'failed', message: problems.join('; ') }
 	return { status: 'passed' }
 }
 
@@ -103,7 +102,7 @@ async function runTarget(target, context) {
 	const spec = gametestSpec(target)
 	if (!spec) return { status: 'skipped', message: noGametestReason(target) }
 	if (prerequisites.missing.length > 0) {
-		return { status: 'skipped', message: `prérequis manquants : ${prerequisites.missing.join(', ')}` }
+		return { status: 'skipped', message: `missing prerequisites: ${prerequisites.missing.join(', ')}` }
 	}
 	const gradleJdk = jdkLookup(GRADLE_JAVA)
 	const gameJdk = jdkLookup(String(target.java ?? GRADLE_JAVA))
@@ -111,11 +110,11 @@ async function runTarget(target, context) {
 		const major = gradleJdk ? target.java : GRADLE_JAVA
 		return {
 			status: 'skipped',
-			message: `JDK ${major} introuvable (MOD_JDK_${major}, JAVA_HOME_${major} ou ~/.local/tools)`,
+			message: `JDK ${major} not found (MOD_JDK_${major}, JAVA_HOME_${major} or ~/.local/tools)`,
 		}
 	}
 	if (!existsSync(join(root, gradleRoot(target), 'gradlew'))) {
-		return { status: 'skipped', message: `gradlew absent de ${gradleRoot(target)}` }
+		return { status: 'skipped', message: `gradlew missing from ${gradleRoot(target)}` }
 	}
 	const paths = exportPaths(root, target)
 	await rm(dirname(paths.glb), { recursive: true, force: true })
@@ -160,7 +159,7 @@ export async function runHeadlessTests({ config, targets, env = process.env, kee
 			// biome-ignore lint/performance/noAwaitInLoops: a single Minecraft instance at a time on the small VPS.
 			result = await runTarget(target, context)
 		} catch (error) {
-			result = { status: 'failed', message: `erreur inattendue : ${error.message}` }
+			result = { status: 'failed', message: `unexpected error: ${error.message}` }
 		}
 		results.push({ targetId: target.id, seconds: Math.round((Date.now() - started) / 100) / 10, ...result })
 	}

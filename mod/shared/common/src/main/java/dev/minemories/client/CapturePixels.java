@@ -57,7 +57,7 @@ final class CapturePixels {
       throws IOException {
     if (sources.containsKey(key)) return;
     if (rendererTextures == 256)
-      throw new IOException("Trop de textures de renderers dans la capture.");
+      throw new IOException("Too many renderer textures in the capture.");
     int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
     try {
       AbstractTexture texture = minecraft.getTextureManager().getTexture(location);
@@ -74,7 +74,7 @@ final class CapturePixels {
           || width < 1
           || height < 1
           || x > textureWidth - width
-          || y > textureHeight - height) throw new IOException("Région de texture hors limites.");
+          || y > textureHeight - height) throw new IOException("Texture region out of bounds.");
       add(
           new TextureSource(
               key, texture, texture.getId(), textureWidth, textureHeight, x, y, width, height));
@@ -88,14 +88,14 @@ final class CapturePixels {
     RenderedTexture.checkDimensions(source.width(), source.height());
     long amount = (long) source.width() * source.height();
     if (sources.size() == 1024 || amount > 64L * 1024 * 1024 - pixels)
-      throw new IOException("Le budget de pixels de la capture est dépassé.");
+      throw new IOException("The capture pixel budget was exceeded.");
     sources.put(source.key(), new TimedSource(source));
     pixels += amount;
   }
 
   Source source(String key) throws IOException {
     Source source = sources.get(key);
-    if (source == null) throw new IOException("Source de texture absente de la capture.");
+    if (source == null) throw new IOException("Texture source missing from the capture.");
     return source;
   }
 
@@ -137,7 +137,7 @@ final class CapturePixels {
         || rows < 1
         || row > source.height() - rows
         || (long) rows * source.width() > QueuedGlbCapture.MAX_BAND_PIXELS)
-      throw new IOException("Bande de texture hors limites.");
+      throw new IOException("Texture strip out of bounds.");
   }
 
   private static void startGraphicsRead() throws IOException {
@@ -152,7 +152,7 @@ final class CapturePixels {
         return;
       }
     }
-    throw new IOException("L’état graphique reste en erreur avant la copie de texture.");
+    throw new IOException("The graphics state is still in error before the texture copy.");
   }
 
   private record SpriteSource(String key, TextureAtlasSprite sprite) implements Source {
@@ -193,7 +193,7 @@ final class CapturePixels {
     public int[] readBand(int row, int rows) throws IOException {
       RenderSystem.assertOnRenderThread();
       validateBand(this, row, rows);
-      if (texture.getId() != id) throw new IOException("Texture remplacée pendant la capture.");
+      if (texture.getId() != id) throw new IOException("Texture replaced during the capture.");
       startGraphicsRead();
       int previousTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
       int previousFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
@@ -207,20 +207,19 @@ final class CapturePixels {
       ByteBuffer bytes = MemoryUtil.memCalloc(width * rows * 4);
       try {
         framebuffer = GL30.glGenFramebuffers();
-        if (framebuffer == 0) throw new IOException("Framebuffer de copie indisponible.");
+        if (framebuffer == 0) throw new IOException("Copy framebuffer unavailable.");
         texture.bind();
         if (GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH)
                 != textureWidth
             || GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT)
                 != textureHeight)
-          throw new IOException("Dimensions de texture modifiées pendant la capture.");
+          throw new IOException("Texture dimensions changed during the capture.");
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer);
         GL30.glFramebufferTexture2D(
             GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, id, 0);
         GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT0);
         if (GL30.glCheckFramebufferStatus(GL30.GL_READ_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE)
-          throw new IOException(
-              "Le renderer utilise une texture qui ne peut pas être lue par bandes.");
+          throw new IOException("The renderer uses a texture that cannot be read in strips.");
         GL15.glBindBuffer(GL21.GL_PIXEL_PACK_BUFFER, 0);
         GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 4);
         GL11.glPixelStorei(GL11.GL_PACK_ROW_LENGTH, 0);
@@ -228,7 +227,7 @@ final class CapturePixels {
         GL11.glPixelStorei(GL11.GL_PACK_SKIP_PIXELS, 0);
         GL11.glReadPixels(x, y + row, width, rows, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bytes);
         if (GL11.glGetError() != GL11.GL_NO_ERROR)
-          throw new IOException("La lecture graphique de la texture a échoué.");
+          throw new IOException("Reading the texture from the GPU failed.");
         int[] rgba = new int[width * rows];
         bytes.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(rgba);
         return rgba;

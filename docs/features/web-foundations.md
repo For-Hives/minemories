@@ -1,75 +1,75 @@
-# Structure et audit du web
+# Web structure and audit
 
-## Organisation
+## Organization
 
-- `app-context.tsx` conserve uniquement session, fichier local et notifications ; les pages ne dépendent plus de `App.tsx`.
-- `components/SiteLayout.tsx` porte marque, navigation desktop/mobile, choix de langue, ouverture GLB, compte, footer et lien d’évitement. Les actions sont accessibles au clavier et la navigation mobile se ferme au changement de page.
-- `components/ui.tsx` regroupe les boutons et titres de section ; `components/Loading.tsx` fournit des skeletons page, galerie, viewer et compte ainsi qu’un SVG orbital.
-- `App.tsx` charge toutes les familles de pages à la demande, avec Suspense et reprise sur erreur de chargement. Le module Three.js n’est pas importé par les pages de contenu.
-- `theme.css` porte couleurs, espacements, transitions à ressort, entrées, flottement SVG et shimmer. Toutes les animations respectent `prefers-reduced-motion`.
+- `app-context.tsx` holds only the session, the local file and notifications; pages no longer depend on `App.tsx`.
+- `components/SiteLayout.tsx` carries the brand, desktop/mobile navigation, language picker, GLB opening, account, footer and skip link. Actions are keyboard accessible and mobile navigation closes on page change.
+- `components/ui.tsx` groups buttons and section titles; `components/Loading.tsx` provides page, gallery, viewer and account skeletons plus an orbital SVG.
+- `App.tsx` loads every page family on demand, with Suspense and recovery from loading errors. Content pages do not import the Three.js module.
+- `theme.css` carries colors, spacing, spring transitions, entrances, SVG floating and shimmer. Every animation respects `prefers-reduced-motion`.
 
-## Langues et contenus
+## Languages and content
 
-Le shell, l’accueil, l’authentification et les libellés des fonctionnalités utilisent `i18n/I18n.tsx` (`useI18n`, `T`, `translate`). Les messages sources servent de clés ; `i18n/messages.ts` contient leurs traductions françaises. Un message absent reste lisible dans sa langue source. La préférence FR/EN reste dans le navigateur. `translate` accepte des variables nommées `{count}`, `{name}` ; les données utilisateur, chemins et identifiants d’état ne se traduisent pas.
+The shell, home page, authentication and feature labels use `i18n/I18n.tsx` (`useI18n`, `T`, `translate`). Source messages serve as keys; `i18n/messages.ts` holds their French translations. A missing message stays readable in its source language. The FR/EN preference stays in the browser. `translate` accepts named variables `{count}`, `{name}`; user data, paths and state identifiers are not translated.
 
-Les guides détaillés (concept, fonctionnement, FAQ et les six étapes d’installation pour chaque launcher), légendes et textes alternatifs sont traduits via `i18n/guide-messages.ts`. Les erreurs API/moteur connues deviennent des clés stables ; les messages serveur inconnus sont remplacés par une erreur contextuelle traduite. Les dates relatives, heures d’expiration, tailles et métadonnées suivent la langue sélectionnée. Le tutoriel conserve ses choix et sa progression au changement de langue. Le contenu pré-rendu reste français et l’indexation est bloquée par défaut ; aucune URL anglaise indexable ni `hreflang` artificiel n’est annoncé. Voir [la stratégie de publication multilingue](multilingual-web.md).
+The detailed guides (concept, how it works, FAQ and the six installation steps for each launcher), captions and alt text are translated through `i18n/guide-messages.ts`. Known API/engine errors become stable keys; unknown server messages are replaced by a translated contextual error. Relative dates, expiry times, sizes and metadata follow the selected language. The tutorial keeps its choices and progress when the language changes. Prerendered content stays in French and indexing is blocked by default; no indexable English URL or artificial `hreflang` is announced. See [the multilingual publication strategy](multilingual-web.md).
 
-`content/site-content.ts` contient les articles et sections légales typés `Localized`. Ajouter un article alimente sa page, le journal, le pré-rendu et son schéma Article. `content/discovery.ts` centralise les quatre angles éditoriaux FR/EN et les exemples de la galerie. `useLocalizedCopy` sélectionne les paires de textes éditoriaux ; le catalogue de messages partagé reste utilisé pour l’interface commune.
+`content/site-content.ts` holds articles and legal sections typed as `Localized`. Adding an article feeds its page, the journal, prerendering and its Article schema. `content/discovery.ts` centralizes the four FR/EN editorial angles and the gallery examples. `useLocalizedCopy` selects pairs of editorial texts; the shared message catalog is still used for the common interface.
 
-`content/pricing.ts` porte les montants en centimes et les règles testées : 2 € par snapshot, cloud 6 / 5 / 4 / 3 €/an puis plancher à 3 €, par snapshot conservée. Ce périmètre est une hypothèse explicite en attente de confirmation métier. Les tarifs fournis le 14 octobre 2026 prennent priorité sur l’ancienne vision de facturation par serveur dans BESOIN.md. La projection suppose des captures de même ancienneté et une conservation continue ; elle sépare création et renouvellements. Aucun paiement n’est activé. L’éditeur/hébergeur/contact, les taxes, le quota, les conditions de conservation et le prestataire de paiement restent à finaliser.
+`content/pricing.ts` holds amounts in cents and the tested rules: €2 per snapshot, cloud €6 / 5 / 4 / 3 per year then a €3 floor, per kept snapshot. This scope is an explicit assumption awaiting business confirmation. The prices supplied on 14 October 2026 take priority over the older per-server billing vision in VISION.md. The projection assumes captures of the same age and continuous retention; it separates creation from renewals. No payment is enabled. Publisher/host/contact, taxes, quota, retention terms and the payment provider are still to be finalized.
 
-Pour ajouter une nouvelle famille de pages : déclarer sa route dans `App.tsx`, ses métadonnées dans `route-metadata.ts` et son rendu dans `prerender.tsx`. Réutiliser `ContentLayout`, les blocs et les composants communs. Chaque nouvelle page doit inclure ses deux contenus et métadonnées, puis être ajoutée aux tests de traduction ; une publication de nouvelles URL suit la stratégie multilingue documentée.
+To add a new page family: declare its route in `App.tsx`, its metadata in `route-metadata.ts` and its rendering in `prerender.tsx`. Reuse `ContentLayout`, the blocks and the shared components. Every new page must include both its content versions and metadata, then be added to the translation tests; publishing new URLs follows the documented multilingual strategy.
 
-## Pré-rendu et crawl
+## Prerendering and crawling
 
-`build-web.mjs` génère le client Vite, puis une entrée de rendu React temporaire dans `work/web-ssr`. `prerender-web.mjs` écrit dix-sept pages publiques complètes (HTML, titres, description, canonical, Open Graph, JSON-LD), `sitemap.xml`, `robots.txt`, un shell privé `app.html` et une page 404. Le tutoriel contient un parcours manuel Windows complet dans `noscript`. Les pages s’hydratent dans le navigateur ; la progression sauvegardée est restaurée après l’hydratation.
+`build-web.mjs` builds the Vite client, then a temporary React render entry in `work/web-ssr`. `prerender-web.mjs` writes seventeen complete public pages (HTML, titles, description, canonical, Open Graph, JSON-LD), `sitemap.xml`, `robots.txt`, a private `app.html` shell and a 404 page. The tutorial contains a full manual Windows walkthrough inside `noscript`. Pages hydrate in the browser; saved progress is restored after hydration.
 
-Ni la galerie, ni le viewer local, ni les liens `/share/`, ni l’authentification ne figurent dans le sitemap. Ils utilisent `noindex,nofollow` et sont exclus dans robots.txt. Une capture partagée reste accessible à son destinataire, sans devenir une page marketing indexée. Aucun compte ni appel API authentifié n’est utilisé au pré-rendu.
+The gallery, the local viewer, `/share/` links and authentication are not in the sitemap. They use `noindex,nofollow` and are excluded in robots.txt. A shared capture stays reachable for its recipient without becoming an indexed marketing page. No account or authenticated API call is used during prerendering.
 
-Variables de build :
+Build variables:
 
-- `VITE_SITE_URL` : origine publique, défaut `https://minemories.net` ; configure-la pour un autre domaine.
-- `VITE_INDEXABLE` : seules les valeurs exactement `true` autorisent l’indexation dans le build. Par défaut, y compris variable absente : `noindex,nofollow` partout, sitemap vide et `robots.txt` avec `Disallow: /`. Le HTML source et les changements de route client restent aussi en noindex. La commande de `railpack.web.json` force aussi `false` pour neutraliser une ancienne variable Coolify à `true`.
-- `VITE_API_URL` : origine API, déjà utilisée par Better Auth/oRPC.
+- `VITE_SITE_URL`: public origin, default `https://minemories.net`; set it for another domain.
+- `VITE_INDEXABLE`: only the exact value `true` allows indexing in the build. By default, including when the variable is absent: `noindex,nofollow` everywhere, an empty sitemap and `robots.txt` with `Disallow: /`. The source HTML and client-side route changes also stay noindex. The `railpack.web.json` command also forces `false` to neutralize an old Coolify variable set to `true`.
+- `VITE_API_URL`: API origin, already used by Better Auth/oRPC.
 
-## Serveur statique Coolify
+## Coolify static server
 
-Conserver Railpack, `railpack.web.json`, base `/` et publish directory `apps/web/dist`. **Aucun JDK ni Gradle dans le front.** Le pré-rendu utilise uniquement Node et React ; aucun serveur Node de production n’est nécessaire. Le JAR est récupéré depuis GitHub Releases dans le navigateur.
+Keep Railpack, `railpack.web.json`, base `/` and publish directory `apps/web/dist`. **No JDK or Gradle in the front end.** Prerendering uses only Node and React; no production Node server is needed. The JAR is fetched from GitHub Releases in the browser.
 
-Le Nginx doit servir `$uri/index.html` pour les pages publiques, `/app.html` pour les routes privées et une vraie 404 pour les URL inconnues. `deploy/nginx.web.conf` est le template pour un conteneur statique avec racine `/usr/share/nginx/html` ; adapter la racine si le conteneur diffère. Reprendre ces locations dans la configuration Nginx personnalisée Coolify. Le template ajoute actuellement `X-Robots-Tag: noindex,nofollow` sur toutes les réponses, erreurs comprises. L’aperçu Vite lit la politique dans le HTML construit et émet le même blocage pour les pages non indexables. Pour une future ouverture, retirer le verrou `VITE_INDEXABLE=false` de la commande Railpack, reconstruire volontairement avec `VITE_INDEXABLE=true` **et** retirer l’en-tête global du serveur, en conservant celui des pages privées et des 404. Le template met aussi en cache `/assets/` (fichiers hachés, immuable un an) et `/hero/` (film d’accueil : captures GLB, polices, icônes ; un jour puis revalidation) ; un `add_header` dans une location remplaçant ceux du serveur, `X-Robots-Tag` y est répété. La garde `data-route` empêche une erreur d’hydratation si un serveur ancien renvoie encore l’accueil en repli, mais ne remplace pas une configuration HTTP correcte.
+Nginx must serve `$uri/index.html` for public pages, `/app.html` for private routes and a real 404 for unknown URLs. `deploy/nginx.web.conf` is the template for a static container with root `/usr/share/nginx/html`; adjust the root if the container differs. Copy these locations into the custom Coolify Nginx configuration. The template currently adds `X-Robots-Tag: noindex,nofollow` to every response, errors included. The Vite preview reads the policy from the built HTML and emits the same block for non-indexable pages. To open indexing later, remove the `VITE_INDEXABLE=false` lock from the Railpack command, deliberately rebuild with `VITE_INDEXABLE=true` **and** remove the server's global header, keeping the one on private pages and 404s. The template also caches `/assets/` (hashed files, immutable for one year) and `/hero/` (home film: GLB captures, fonts, icons; one day then revalidation); since an `add_header` in a location replaces the server's headers, `X-Robots-Tag` is repeated there. The `data-route` guard prevents a hydration error if an older server still falls back to the home page, but it does not replace a correct HTTP configuration.
 
-## Audit par parcours
+## Audit by flow
 
-| Parcours | Travaux effectués | Suite spécifique |
+| Flow | Work done | Specific follow-up |
 | --- | --- | --- |
-| Accueil et guides | Shell partagé, messages, navigation et pré-rendu ; l’accueil `/` est le film scrollé de [la page d’accueil](landing-film.md), avec son propre en-tête et pied de page | Traduction complète des guides et revue éditoriale ; remplacement des assets Mojang avant ouverture large |
-| Installation | Hydratation compatible avec la reprise locale, version sans JS, zones Windows préservées | Vraies captures, première release GitHub et essai Mae en jeu |
-| Compte | Module différé, skeleton, formulaires et libellés localisés | Sessions de production et compte réel |
-| Galerie | Module différé, skeleton en cartes, libellés et états d’appairage préservés | États et polling extraits, interactions et annulations couvertes (#59, #77) |
-| Viewer local/distant | Module Three.js différé, skeleton du cadre, libellés et présélections | Profilage shader ; aucune modification du moteur GLB |
-| Partage | Module différé, téléchargement annulé à la sortie, état accessible et texte mobile sans débordement | Test de révocation/incident avec API de production |
-| Journal | Données FR/EN, index et article, schema et sitemap automatiques | Articles éditoriaux supplémentaires, éventuel CMS |
-| Découverte | Quatre pages FR/EN, hub `/discover`, navigation depuis l’accueil | Choisir une licence ; finaliser les messages avant lancement |
-| Galerie/ranking démo | `/explore`, recherche, thèmes, tri, favoris, votes locaux et aperçu par URL | Publication volontaire, modération et votes réels côté API |
-| Tarifs/légal | Tarifs fournis, simulateur, estimation locale et textes factuels | Paiement Polar, taxes, quota, contrat de conservation et coordonnées juridiques |
+| Home and guides | Shared shell, messages, navigation and prerendering; the `/` home page is the scroll film of [the home page](landing-film.md), with its own header and footer | Full translation of the guides and editorial review; replace Mojang assets before a wide launch |
+| Installation | Hydration compatible with local resume, no-JS version, Windows sections preserved | Real screenshots, first GitHub release and Mae's in-game trial |
+| Account | Deferred module, skeleton, localized forms and labels | Production sessions and a real account |
+| Gallery | Deferred module, card skeleton, labels and pairing states preserved | States and polling extracted, interactions and cancellations covered (#59, #77) |
+| Local/remote viewer | Deferred Three.js module, frame skeleton, labels and presets | Shader profiling; no change to the GLB engine |
+| Sharing | Deferred module, download cancelled on exit, accessible state and mobile text without overflow | Revocation/incident test with the production API |
+| Journal | FR/EN data, index and article, automatic schema and sitemap | More editorial articles, possibly a CMS |
+| Discovery | Four FR/EN pages, `/discover` hub, navigation from the home page | Choose a license; finalize messages before launch |
+| Demo gallery/ranking | `/explore`, search, themes, sorting, favorites, local votes and preview by URL | Voluntary publication, moderation and real votes on the API side |
+| Pricing/legal | Supplied prices, simulator, local estimate and factual texts | Polar payment, taxes, quota, retention contract and legal details |
 
-Les comptes privés et les captures n’entrent jamais dans les artefacts de rendu public. La crawlabilité signifie que le HTML est accessible aux robots ; elle ne garantit pas l’indexation par un moteur.
+Private accounts and captures never enter public render artifacts. Crawlability means the HTML is reachable by robots; it does not guarantee indexing by a search engine.
 
 
-## Démonstrations et préférences
+## Demos and preferences
 
-`/open-source`, `/nostalgia`, `/sharing` et `/ranking` présentent des usages différents avec des CTA vers le tutoriel, GitHub et la vraie galerie privée. `/nostalgia` permet de faire évoluer une illustration SVG par curseur ; ce n’est pas un timelapse réel. Les images de la démo sont des illustrations, sans import de captures privées ni de moteur Three.js. Le dépôt public n’a pas encore de licence de redistribution : la page distingue cette réalité de l’ambition open source.
+`/open-source`, `/nostalgia`, `/sharing` and `/ranking` present different uses with CTAs to the tutorial, GitHub and the real private gallery. `/nostalgia` lets a slider evolve an SVG illustration; it is not a real timelapse. Demo images are illustrations, with no import of private captures and no Three.js engine. The public repository does not have a redistribution license yet: the page separates that reality from the open source ambition.
 
-`/explore?souvenir=premiere-maison` ouvre un aperçu d’exemple. Son lien peut être copié ; si le presse-papiers est bloqué, un champ sélectionnable permet la copie manuelle. Recherche, filtres, favoris et votes réversibles fonctionnent sur l’appareil. Les scores initiaux sont des exemples explicitement identifiés. Les préférences `minemories-demo-v1` sont validées au chargement et effaçables avec « Réinitialiser la démo ». Elles ne sont jamais envoyées à l’API.
+`/explore?souvenir=premiere-maison` opens an example preview. Its link can be copied; if the clipboard is blocked, a selectable field allows manual copying. Search, filters, favorites and reversible votes work on the device. Initial scores are explicitly labelled examples. The `minemories-demo-v1` preferences are validated on load and can be cleared with "Reset demo". They are never sent to the API.
 
-Le simulateur `/pricing` accepte 1–100 snapshots et 1–10 ans ; un champ invalide empêche l’enregistrement. « Garder cette estimation » écrit uniquement `minemories-quote-v1`, relu après hydratation et ignoré s’il est invalide. Une restriction du stockage navigateur ne bloque pas le parcours. Le mod actuel exporte un souvenir GLB de zone : les sauvegardes Minecraft complètes et leur archive commerciale ne sont pas annoncées comme déjà fonctionnelles.
+The `/pricing` simulator accepts 1–100 snapshots and 1–10 years; an invalid field prevents saving. "Save this estimate" writes only `minemories-quote-v1`, which is reread after hydration and ignored if invalid. A browser storage restriction does not block the flow. The current mod exports an area GLB memory: full Minecraft saves and their commercial archive are not advertised as already working.
 
-## Régressions de la galerie et du viewer distant
+## Gallery and remote viewer regressions
 
-Les interactions de `gallery-lifecycle.test.tsx` couvrent le cycle capture → corbeille → restauration → effacement confirmé, le refus de la confirmation, les pannes et reprises, les renommages de capture et de zone, ainsi que la création, copie, rotation et révocation d’un lien. Les noms de zones restent locaux ; un renommage annulé ne déclenche aucune mutation serveur.
+The interactions in `gallery-lifecycle.test.tsx` cover the capture → trash → restore → confirmed deletion cycle, declining the confirmation, outages and recovery, capture and area renames, and creating, copying, rotating and revoking a link. Area names stay local; a cancelled rename triggers no server mutation.
 
-Une réponse de liste ancienne ne peut plus remplacer une actualisation récente. Les réponses de partage, renommage et corbeille arrivant après la fermeture de leur composant ne produisent plus de notification sur la page suivante ni de rafraîchissement inutile. Les tests du viewer vérifient le signal d’annulation, la destruction de la scène et le rejet d’un ancien téléchargement lors du passage à une autre capture. Les tests des liens publics/partagés complètent ce parcours avec l’ouverture et les accès révoqués. Ces tests utilisent les vrais composants avec une API simulée ; ils ne remplacent pas une validation de déploiement ou un profilage GPU.
+An old list response can no longer replace a recent refresh. Share, rename and trash responses that arrive after their component has closed no longer produce a notification on the next page or a useless refresh. Viewer tests check the abort signal, scene disposal and rejection of an old download when switching to another capture. Public/shared link tests complete this flow with opening and revoked access. These tests use the real components with a simulated API; they do not replace deployment validation or GPU profiling.
 
-La coordination de la galerie est séparée en `gallery-data.ts` (listes, quota, actions et actualisation), `gallery-pairing.ts` (création et vérification du code) et `GalleryPairingCard.tsx` (présentation). Le polling de la galerie reprend douze secondes après la fin du cycle précédent : une réponse lente n’empile pas les requêtes automatiques. Une actualisation manuelle reste disponible et conserve la protection contre les réponses anciennes. Les vérifications d’appairage gardent leurs délais de 1,1 puis 1,6 seconde et sont interrompues au départ de la page, y compris si la création du code est encore en cours. Les dossiers restent ouverts après un aller-retour par la corbeille. Les deux exceptions de complexité historiques de `GalleryPage` ont été retirées après ajout des interactions.
+Gallery coordination is split into `gallery-data.ts` (lists, quota, actions and refresh), `gallery-pairing.ts` (code creation and checking) and `GalleryPairingCard.tsx` (presentation). Gallery polling resumes twelve seconds after the previous cycle ends: a slow response does not pile up automatic requests. A manual refresh stays available and keeps the protection against stale responses. Pairing checks keep their 1.1 then 1.6 second delays and stop when the page is left, including while the code is still being created. Folders stay open after a round trip through the trash. The two historical complexity exceptions in `GalleryPage` were removed after the interactions were added.
 
-Les diagnostics facultatifs des pages publiques sont décrits dans [web-observability.md](web-observability.md) : configuration vide et consentement absent interdisent le chargement du fournisseur, les routes privées restent exclues.
+Optional diagnostics on public pages are described in [web-observability.md](web-observability.md): an empty configuration and absent consent prevent the provider from loading, and private routes stay excluded.

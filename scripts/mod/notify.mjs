@@ -12,7 +12,7 @@ export const KINDS = [
 	'publish-failure',
 	'storage-warning',
 ]
-const STATUS_LABEL = { passed: 'OK', failed: 'ÉCHEC', skipped: 'ignorée' }
+const STATUS_LABEL = { passed: 'OK', failed: 'FAILED', skipped: 'skipped' }
 const LOG_LINES = 30
 const MAX_ATTEMPTS = 4
 const MAX_WAIT_MS = 30_000
@@ -46,12 +46,12 @@ function safeHome() {
 export function redactSecrets(text, env = process.env) {
 	let out = String(text ?? '')
 	for (const value of secretValues(env).sort((a, b) => b.length - a.length)) {
-		out = out.replace(new RegExp(value.replace(REGEXP_SPECIALS, '\\$&'), 'g'), '[masqué]')
+		out = out.replace(new RegExp(value.replace(REGEXP_SPECIALS, '\\$&'), 'g'), '[masked]')
 	}
-	out = out.replace(WEBHOOK_URL, '[webhook masqué]')
-	out = out.replace(KEY_VALUE, (_, name, separator) => `${name}${separator}[masqué]`)
-	out = out.replace(BEARER, (_, scheme) => `${scheme} [masqué]`)
-	out = out.replace(KNOWN_TOKENS, '[masqué]')
+	out = out.replace(WEBHOOK_URL, '[webhook masked]')
+	out = out.replace(KEY_VALUE, (_, name, separator) => `${name}${separator}[masked]`)
+	out = out.replace(BEARER, (_, scheme) => `${scheme} [masked]`)
+	out = out.replace(KNOWN_TOKENS, '[masked]')
 	const home = env?.HOME ?? safeHome()
 	if (home && home.length > 1) out = out.split(home).join('~')
 	return out.replace(HOME_PATHS, '~')
@@ -90,11 +90,11 @@ export function formatLogTail(logTail, { lines = LOG_LINES, max = LIMITS.fieldVa
 function describeTarget(target, version) {
 	if (target.status === 'failed' || target.status === 'skipped') {
 		const base = STATUS_LABEL[target.status]
-		return target.message ? `${base} : ${target.message}` : base
+		return target.message ? `${base}: ${target.message}` : base
 	}
 	const parts = []
 	if (version) parts.push(version)
-	if (typeof target.bytes === 'number') parts.push(`${(target.bytes / (1024 * 1024)).toFixed(1)} Mo`)
+	if (typeof target.bytes === 'number') parts.push(`${(target.bytes / (1024 * 1024)).toFixed(1)} MB`)
 	if (typeof target.seconds === 'number') parts.push(`${Math.round(target.seconds)} s`)
 	return parts.length > 0 ? parts.join(' · ') : STATUS_LABEL.passed
 }
@@ -132,14 +132,14 @@ export function buildPayload(event, env = process.env) {
 	if (event.commit) fields.push({ name: 'Commit', value: clean(String(event.commit).slice(0, 7), 64), inline: true })
 	const tail = []
 	if (event.logTail) {
-		tail.push({ name: 'Journal (fin)', value: formatLogTail(redactSecrets(event.logTail, env)), inline: false })
+		tail.push({ name: 'Log (tail)', value: formatLogTail(redactSecrets(event.logTail, env)), inline: false })
 	}
-	if (event.logUrl) tail.push({ name: 'Journal complet', value: clean(event.logUrl, LIMITS.fieldValue), inline: false })
+	if (event.logUrl) tail.push({ name: 'Full log', value: clean(event.logUrl, LIMITS.fieldValue), inline: false })
 	let targets = targetFields(event, clean)
 	const room = Math.max(0, LIMITS.fields - fields.length - tail.length)
 	if (targets.length > room) {
 		const shown = Math.max(0, room - 1)
-		const more = { name: 'Autres cibles', value: `… et ${targets.length - shown} de plus`, inline: false }
+		const more = { name: 'Other targets', value: `… and ${targets.length - shown} more`, inline: false }
 		targets = [...targets.slice(0, shown), more].slice(0, room)
 	}
 	const embed = {
@@ -202,7 +202,7 @@ async function attemptOnce(url, payload, fetchImpl, attempt) {
 
 /** Sends one payload with bounded retries. Returns { sent, status?, reason? }; never throws. */
 async function deliver(url, payload, { fetchImpl, sleep, env }) {
-	let reason = 'inconnu'
+	let reason = 'unknown'
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
 		let outcome
 		try {
@@ -232,8 +232,8 @@ export async function notify(event, options = {}) {
 	try {
 		const url = env.MOD_DISCORD_WEBHOOK_URL
 		if (!url) {
-			warn('notify : MOD_DISCORD_WEBHOOK_URL absente, aucune notification Discord envoyée.')
-			return { sent: false, reason: 'webhook absent' }
+			warn('notify: MOD_DISCORD_WEBHOOK_URL is not set, no Discord notification sent.')
+			return { sent: false, reason: 'webhook missing' }
 		}
 		const payload = buildPayload(event ?? {}, env)
 		const result = await deliver(url, payload, {
@@ -241,12 +241,12 @@ export async function notify(event, options = {}) {
 			sleep: options.sleep ?? defaultSleep,
 			env,
 		})
-		if (!result.sent) warn(`notify : envoi Discord abandonné (${result.reason}).`)
+		if (!result.sent) warn(`notify: Discord delivery abandoned (${result.reason}).`)
 		return result
 	} catch (error) {
 		const reason = redactSecrets(error?.message ?? String(error), env)
 		try {
-			warn(`notify : échec inattendu (${reason}).`)
+			warn(`notify: unexpected failure (${reason}).`)
 		} catch {
 			// Nothing left to do: notifications are best effort.
 		}

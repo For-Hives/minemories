@@ -1,236 +1,236 @@
-# Support des loaders Minecraft
+# Minecraft loader support
 
-Un launcher démarre un profil ; le loader fournit les API utilisées par le mod. Changer de launcher ne nécessite pas un autre JAR si Minecraft et le loader restent identiques. Changer de loader exige de choisir le bon artefact.
+A launcher starts a profile; the loader provides the APIs the mod uses. Switching launchers does not require another JAR as long as Minecraft and the loader stay the same. Switching loaders means picking the right artifact.
 
-## Matrice validée
+## Validated matrix
 
-Toutes les cibles ci-dessous utilisent **Minecraft 1.21.1 et Java 21**.
+Every target below uses **Minecraft 1.21.1 and Java 21**.
 
-| Loader | Version exercée | Artefact | Validation en jeu |
+| Loader | Version exercised | Artifact | In-game validation |
 | --- | --- | --- | --- |
-| NeoForge | 21.1.248 | `minemories-neoforge-mc1.21.1.jar` | Blocs standards, alpha/teintes, eau, coffre, entités ; modèle avec `ModelData`, Create 6.0.10 et Flywheel 1.0.6. Le profil utilisateur `mc breval` reste la référence historique. |
-| Fabric | Loader 0.19.5 + Fabric API 0.116.17+1.21.1 | `minemories-fabric-mc1.21.1.jar` | Même scène standard, modèle Renderer API personnalisé avec transformations, teinte, alpha, émission et mesh supplémentaire. Fabric API doit être installé séparément. |
-| Quilt | Loader 0.30.1 + la même Fabric API | **Le JAR Fabric** | Client Quilt lancé séparément avec le même modèle personnalisé, menus et capture AFK. Aucune archive ou adaptateur Quilt distinct. |
-| Forge | 52.1.19 | `minemories-forge-mc1.21.1.jar` | Même scène standard et bloc personnalisé dont le modèle exige la propagation de `ModelData`, avec teinte et géométrie de demi-hauteur. |
+| NeoForge | 21.1.248 | `minemories-neoforge-mc1.21.1.jar` | Standard blocks, alpha/tints, water, chest, entities; a model using `ModelData`, Create 6.0.10 and Flywheel 1.0.6. The user profile `mc breval` remains the historical reference. |
+| Fabric | Loader 0.19.5 + Fabric API 0.116.17+1.21.1 | `minemories-fabric-mc1.21.1.jar` | Same standard scene, plus a custom Renderer API model with transforms, tint, alpha, emission and an extra mesh. Fabric API must be installed separately. |
+| Quilt | Loader 0.30.1 + the same Fabric API | **The Fabric JAR** | Quilt client launched separately with the same custom model, menus and AFK capture. No separate Quilt archive or adapter. |
+| Forge | 52.1.19 | `minemories-forge-mc1.21.1.jar` | Same standard scene and a custom block whose model requires `ModelData` propagation, with tint and half-height geometry. |
 
-La validation porte sur ces combinaisons et scénarios. Elle ne garantit pas tous les mods, renderers ou shaders d'un modpack. Une nouvelle cible ne peut être annoncée qu'après compilation, tests et validation en jeu de blocs standards, textures transparentes/teintées, fluides, block entities et contenu moddé.
+Validation covers these combinations and scenarios. It does not guarantee every mod, renderer or shader in a modpack. A new target may only be announced after it builds, passes tests and has been validated in game with standard blocks, transparent/tinted textures, fluids, block entities and modded content.
 
 ## Architecture
 
-- `:core` sérialise le GLB sans dépendance Minecraft et conserve ses tests JUnit, JaCoCo et SpotBugs.
-- `:common` contient la capture Minecraft, les écrans, les transferts, les diagnostics consentis et leurs tests. `ClientPlatform` isole modèles/model data, fluides, sprites et versions. Ce module n'est pas un mod installable.
-- `:neoforge` conserve ModDevGradle et ses événements/API NeoForge.
-- `:fabric` utilise Architectury Loom 1.17.487, Fabric API et des mixins ciblés pour les frames pendant la pause, les entrées, les données de texture et le point de crash vanilla.
-- `:forge` utilise Loom séparément, les événements Forge, ses model data et ses hooks de fluides. Les accès aux classes de rendu sont convertis en access transformers au remappage.
+- `:core` serializes the GLB without any Minecraft dependency and keeps its JUnit, JaCoCo and SpotBugs tests.
+- `:common` contains the Minecraft capture, screens, transfers, consented diagnostics and their tests. `ClientPlatform` isolates models/model data, fluids, sprites and versions. This module is not an installable mod.
+- `:neoforge` keeps ModDevGradle and its NeoForge events/APIs.
+- `:fabric` uses Architectury Loom 1.17.487, Fabric API and targeted mixins for frames while paused, input, texture data and the vanilla crash point.
+- `:forge` uses Loom separately, with Forge events, its model data and its fluid hooks. Access to rendering classes is converted into access transformers during remapping.
 
-Les trois adaptateurs embarquent `:core` et le client commun. Les hooks de crash conservent le comportement vanilla ; le stockage/envoi des diagnostics reste soumis à l'appairage et au consentement existants. La capture n'ajoute aucun envoi sans appairage.
+All three adapters bundle `:core` and the common client. Crash hooks keep vanilla behavior; storing/sending diagnostics remains subject to the existing pairing and consent. Capture adds no upload without pairing.
 
-## Preuves du portage du 15 octobre 2026
+## Evidence from the 15 October 2026 port
 
-Les clients de test chargent les JAR livrables, avec des sauvegardes et configurations isolées. Fabric et Quilt utilisent le bootstrap de production, sans classes de développement du mod sur le classpath. Forge utilise son installation client distincte. NeoForge vérifie également le chemin du JAR effectivement chargé. Les clients de test sont lancés sans son.
+The test clients load the shipped JARs, with isolated saves and configurations. Fabric and Quilt use the production bootstrap, without the mod's development classes on the classpath. Forge uses its own separate client install. NeoForge also checks the path of the JAR actually loaded. Test clients run without sound.
 
-La scène standard comporte coffre, feuilles, verre rouge, eau, mouton teinté et Enderman. Son export initial contient 1 008 triangles, 9 images et le matériau émissif des yeux. La capture conserve les onze états OpenGL contrôlés, notamment un pixel pack buffer de 16 octets et des paramètres de packing non standards. Les GLB passent les validateurs de production de l'API ; les rendus ont été inspectés dans Blender.
+The standard scene contains a chest, leaves, red glass, water, a tinted sheep and an Enderman. Its initial export contains 1,008 triangles, 9 images and the emissive eye material. The capture preserves the eleven controlled OpenGL states, notably a 16-byte pixel pack buffer and non-standard packing parameters. The GLBs pass the API's production validators; the renders were inspected in Blender.
 
-Le mod compagnon Fabric enregistre un bloc dont le modèle Renderer API n'est pas un adaptateur vanilla : fallback cubique transformé, teinte personnalisée, alpha et émission, puis mesh cyan supplémentaire. L'export contient 1 018 triangles. Le test a détecté le cast interne d'Indigo dans `Mesh.outputTo` ; le collecteur utilise maintenant l'énumération publique des quads avant son émetteur borné. Il limite quads et transformations par modèle et rejette les primitives non finies.
+The Fabric companion mod registers a block whose Renderer API model is not a vanilla adapter: transformed cube fallback, custom tint, alpha and emission, then an extra cyan mesh. The export contains 1,018 triangles. The test caught Indigo's internal cast in `Mesh.outputTo`; the collector now uses the public quad enumeration ahead of its bounded emitter. It caps quads and transforms per model and rejects non-finite primitives.
 
-Les compagnons Forge et NeoForge imposent un marqueur `ModelData` avant de retourner leurs quads. La demi-hauteur et la couleur cyan attendues sont vérifiables dans le GLB. Le pack de ressources déclare son `pack.mcmeta` ; la texture blanche est réellement chargée, sans texture de remplacement. Sous NeoForge, le moteur Create entraîne arbre et engrenage, et Flywheel retrouve son état entre les callbacks de capture.
+The Forge and NeoForge companions require a `ModelData` marker before returning their quads. The expected half height and cyan color can be checked in the GLB. The resource pack declares its `pack.mcmeta`; the white texture is actually loaded, with no fallback texture. Under NeoForge, the Create engine drives a shaft and a cogwheel, and Flywheel recovers its state between capture callbacks.
 
-Les scénarios interactifs contrôlent M, le bouton Minemories du menu pause, le respect de `afkSnapshots=false`, puis une capture progressive complète pendant la pause après activation explicite. Le scope de capture est inactif entre les frames. Les nouveaux hooks de crash et la récupération des diagnostics issus de `main` sont inclus dans les derniers JAR ; le signal de crash sans consentement n'est pas enregistré dans le scénario NeoForge.
+The interactive scenarios check M, the Minemories button in the pause menu, that `afkSnapshots=false` is respected, then a full progressive capture while paused after explicit activation. The capture scope is inactive between frames. The new crash hooks and the diagnostics recovery from `main` are included in the latest JARs; the crash signal without consent is not recorded in the NeoForge scenario.
 
-Empreintes des JAR locaux `0.3.1-beta.1` reconstruits et exercés après intégration des changements de `main`. Ils ne remplacent pas la release GitHub existante sous ce numéro ; la prochaine release aura son propre numéro et ses checksums :
+Fingerprints of the local `0.3.1-beta.1` JARs rebuilt and exercised after merging the changes from `main`. They do not replace the existing GitHub release under that number; the next release will have its own number and checksums:
 
-| Artefact | SHA-256 |
+| Artifact | SHA-256 |
 | --- | --- |
 | NeoForge | `13a05b64cf1c8ff7b9055b1b68d099739f2fc89d932a83a6c88a54073ac3a021` |
-| Fabric, également utilisé sous Quilt | `f0b9c970c8b1ba2c29d697019f23ab0dd58df035336b9d5a3304a9ade748aa5f` |
+| Fabric, also used under Quilt | `f0b9c970c8b1ba2c29d697019f23ab0dd58df035336b9d5a3304a9ade748aa5f` |
 | Forge | `f31d197923fc1049378e55f00820e0b56be6c1d0ab5461b2142b64dbb43b2270` |
 
-Une régression complémentaire a chargé le modpack ATMons complet sous NeoForge 21.1.249 avec le JAR intermédiaire `77afb1bb9f3ee62f2df2650db7fe08e3631aa0a45a42de3b06b6e0cdda0a6fc6`, avant intégration des nouveaux diagnostics : export manuel de 20 716 triangles/42 images, AFK de 77 582 triangles/93 images et 5 698 460 octets. Flywheel reste actif entre les frames ; l'annulation conserve le dernier GLB complet et nettoie le spool. Le maximum d'une étape a atteint 56,29 ms avec 83 dépassements souples : le budget de frame ne constitue pas une garantie de latence pour tout renderer tiers. Les limites des rendus personnalisés, notamment l'émission de certains Pokémon, restent décrites dans [les modèles capturés](frozen-entities.md).
+An additional regression run loaded the full ATMons modpack under NeoForge 21.1.249 with the intermediate JAR `77afb1bb9f3ee62f2df2650db7fe08e3631aa0a45a42de3b06b6e0cdda0a6fc6`, before the new diagnostics were merged: manual export of 20,716 triangles/42 images, AFK of 77,582 triangles/93 images and 5,698,460 bytes. Flywheel stays active between frames; cancellation keeps the last complete GLB and cleans up the spool. The longest step reached 56.29 ms with 83 soft overruns: the frame budget is not a latency guarantee for every third-party renderer. The limits of custom renders, notably the emission of some Pokémon, are described in [captured models](frozen-entities.md).
 
-Les preuves locales sont sous `loader-adapters-20261015/` : profils `neoforge-create-final`, `fabric-rebased-final`, `quilt-rebased-final`, `forge-rebased-final` et `neoforge-full-final`. Les tentatives de harnais corrigées sont conservées séparément des résultats réussis.
+The local evidence lives under `loader-adapters-20261015/`: profiles `neoforge-create-final`, `fabric-rebased-final`, `quilt-rebased-final`, `forge-rebased-final` and `neoforge-full-final`. Corrected harness attempts are kept separate from the successful results.
 
-## Compilation et distribution
+## Building and distribution
 
-`bun mod:check:ci` et `bun mod:build` couvrent tous les modules Java de la racine 1.21.1. Les JAR remappés sont dans les répertoires `build/libs/` des trois adaptateurs. Les JAR de production, avec empreinte `.sha256` et manifeste (version du mod, Minecraft, loader, version du loader, taille, empreinte, commit), sont construits par `bun mod build` dans `build/mod-dist/<version>/<id>/`.
+`bun mod:check:ci` and `bun mod:build` cover every Java module of the 1.21.1 root. The remapped JARs are in the `build/libs/` directories of the three adapters. Production JARs, with a `.sha256` fingerprint and a manifest (mod version, Minecraft, loader, loader version, size, fingerprint, commit), are built by `bun mod build` into `build/mod-dist/<version>/<id>/`.
 
-La CI ne produit aucun JAR distribué : elle compile et contrôle chaque cellule de la matrice (`node scripts/mod/cli.mjs ci`), y compris les tests du client commun, pour qu'un portage ne cesse pas de compiler. La construction des JAR publiés a lieu sur le VPS (`bun mod release`).
+CI produces no distributed JAR: it builds and checks every cell of the matrix (`node scripts/mod/cli.mjs ci`), including the common client tests, so that a port never stops compiling. Published JARs are built on the VPS (`bun mod release`).
 
-`mod/targets.json` est la source de la matrice de publication. NeoForge, Fabric et Forge sont activés après ces validations ; la réservation Quilt reste désactivée puisqu'elle réutilise le JAR Fabric. `bun mod release` construit chaque cible activée avec nom, manifeste, checksum et provenance distincts. `validatedInGame` décrit la combinaison prise en charge : il ne prétend pas que chaque nouvelle archive automatique a été jouée. Voir [le pipeline de release](automatic-releases.md).
+`mod/targets.json` is the source of the release matrix. NeoForge, Fabric and Forge are enabled after these validations; the Quilt placeholder stays disabled since it reuses the Fabric JAR. `bun mod release` builds every enabled target with its own name, manifest, checksum and provenance. `validatedInGame` describes the supported combination: it does not claim that each new automatic archive has been played. See [the release pipeline](automatic-releases.md).
 
-Les cibles des autres versions de Minecraft (1.21.11, 1.19.2, 1.18.2, puis 1.20.1 une fois testée) portent `dir` (racine Gradle `mod/1.21.1-<version>`) et `jarPrefix` (préfixe du JAR construit) ; Java 17 est accepté pour les versions avant 1.21. Elles n'ont pas de `:core`/`:common` propres : seul l'adaptateur est vérifié. Une cible n'est activée que si son test en jeu automatique est passé ; Forge 1.21.11 et 1.20.1 restent désactivées. La page d'installation propose une version de Minecraft puis un loader parmi les cibles activées, avec NeoForge 1.21.1 par défaut.
+Targets for other Minecraft versions (1.21.11, 1.19.2, 1.18.2, then 1.20.1 once tested) carry `dir` (Gradle root `mod/1.21.1-<version>`) and `jarPrefix` (prefix of the built JAR); Java 17 is accepted for versions before 1.21. They have no `:core`/`:common` of their own: only the adapter is checked. A target is only enabled once its automated in-game test has passed; Forge 1.21.11 and 1.20.1 stay disabled. The installation page offers a Minecraft version, then a loader among the enabled targets, with NeoForge 1.21.1 as the default.
 
-Le téléchargement public par défaut reste NeoForge 1.21.1 ; choisir l'archive correspondant au loader et installer Fabric API pour Fabric/Quilt. Une compilation CI ne remplace jamais les essais graphiques d'une nouvelle cible ou d'un changement de rendu.
+The default public download remains NeoForge 1.21.1; pick the archive matching the loader and install Fabric API for Fabric/Quilt. A CI build never replaces graphical testing of a new target or a rendering change.
 
-## Outil `bun mod`
+## The `bun mod` tool
 
-`bun mod` (`scripts/mod/cli.mjs`) : un seul outil pour compiler, suivre l'état, versionner et orchestrer la release du mod. `bun mod` sans argument liste les commandes ; `bun mod <commande> --help` donne l'usage. Les commandes sont les fichiers de `scripts/mod/commands/` (contrat : `{ name, summary, usage, run(args, { config, env, log, root }) }`, documenté en tête de `cli.mjs`), donc stockage, tests, publication et notifications s'y ajoutent sans toucher au cœur.
+`bun mod` (`scripts/mod/cli.mjs`): a single tool to build, track status, version and orchestrate the mod release. `bun mod` with no argument lists the commands; `bun mod <command> --help` prints usage. Commands are the files in `scripts/mod/commands/` (contract: `{ name, summary, usage, run(args, { config, env, log, root }) }`, documented at the top of `cli.mjs`), so storage, tests, publishing and notifications plug in without touching the core.
 
-**Configuration unique : `mod/targets.json`.** `minecraft` (versions affichées, dans l'ordre), `targets[]` (cibles construites) et `planned` (cibles prévues, non construites : 1.16.5 et 1.12.2). Chaque cible porte son identité (`id` = `<loader>-mc<minecraft>`, `loader`, `name`, `minecraft`, `loaderVersion`, `fabricApi`), son état (`enabled`, `validatedInGame`) et ses champs de build : `java` (JDK de compilation, 17 avant 1.21, 21 depuis), `project` (sous-projet Gradle), `dir` (racine Gradle `mod/<minecraft>`, par défaut), `jar` (gabarit du JAR produit, avec `{version}`) et `loaderProperty` (propriété Gradle pour compiler une autre version du loader). Les versions de Minecraft suivent `\d+(\.\d+)*` (donc `26.3` convient) et la validation est stricte (ids uniques, dossier cohérent). L'application web lit toujours `targets[]`.
+**Single configuration: `mod/targets.json`.** `minecraft` (displayed versions, in order), `targets[]` (built targets) and `planned` (planned targets, not built: 1.16.5 and 1.12.2). Each target carries its identity (`id` = `<loader>-mc<minecraft>`, `loader`, `name`, `minecraft`, `loaderVersion`, `fabricApi`), its state (`enabled`, `validatedInGame`) and its build fields: `java` (build JDK, 17 before 1.21, 21 since), `project` (Gradle subproject), `dir` (Gradle root, `mod/<minecraft>` by default), `jar` (template of the produced JAR, with `{version}`) and `loaderProperty` (Gradle property to build against another loader version). Minecraft versions follow `\d+(\.\d+)*` (so `26.3` works) and validation is strict (unique ids, consistent folder). The web app always reads `targets[]`.
 
-**Commandes.**
-- `bun mod status` : grille Minecraft (lignes) x loader (colonnes). ✓ à jour, ⚠ seulement d'anciennes versions, ✗ à compiler, ○ prévu, `·` rien, `*` cible désactivée. Si le module de stockage répond, chaque case ajoute `↑<dernière version publiée>` et l'espace utilisé, et la ligne finale donne le total ; sans stockage, la grille reste locale. Couleurs coupées hors terminal ou avec `NO_COLOR`.
-- `bun mod build [<loader> <minecraft> | <id>…] [--all] [--missing] [--dev] [--verbose]` : lance Gradle dans `mod/<minecraft>` (`:<projet>:clean`, `:<projet>:build`, `-PmodVersion`, `-Pminemories.prod=true`) et dépose dans `build/mod-dist/<version>/<id>/` le JAR renommé `minemories-<loader>-mc<minecraft>-<version>.jar`, son `.sha256` et `manifest.json` (version, Minecraft, loader, versions de loader et Fabric API, taille, SHA-256, commit, JDK, `prod`). `--dev` passe `-Pminemories.prod=false` ; `--missing` ne compile que les cibles activées sans build à jour. Une cible en échec n'arrête pas les autres : le résumé donne durée et taille de chacune, et le code de sortie est non nul s'il y a un échec. Un seul build à la fois par machine (verrou `build/mod-build.lock`, ignoré si son propriétaire n'existe plus). Le cache Gradle est celui de `~/.gradle`, partagé entre cibles.
-- `bun mod jdk [list|install <8|17|21|25>]` : Gradle tourne sur un JDK 21 et chaque cible compile avec le sien. Les JDK sont cherchés dans `JAVA_HOME`, `~/.local/tools`, `~/.gradle/jdks` et le `PATH`, puis téléchargés si besoin depuis l'API Adoptium (somme SHA-256 obligatoire, refus sinon) dans `~/.local/tools`, et passés à Gradle (`JAVA_HOME`, `-Dorg.gradle.java.installations.paths`). `--no-jdk-download` sur `build` interdit le téléchargement.
-- `bun mod version [show|bump patch|minor|beta] [--commit]` : `mod_version` reste dans `mod/1.21.1/gradle.properties`. `bump` le réécrit au format `X.Y.Z-beta.N` ; avec `--commit` il crée le commit `chore(release): X.Y.Z-beta.N` et le tag `mod-vX.Y.Z-beta.N`.
-- `bun mod release [--skip-tests] [--no-publish] [--dry-run]` : verrou, version, build de production de toutes les cibles activées, tests headless, stockage, publication Modrinth/CurseForge (seulement si un jeton est présent), notification. Chaque étape facultative est chargée à la demande : un module absent est signalé puis ignoré. Une cible en échec n'empêche pas le stockage des autres mais fait échouer la release (code 1) et déclenche une notification d'échec ; toute exception est capturée et notifiée. `--dry-run` n'affiche que le plan et la présence des modules.
-- `bun mod open` ouvre `build/mod-dist/` ; `bun mod ci` imprime les cases hors racine 1.21.1 compilées par le workflow qualité.
+**Commands.**
+- `bun mod status`: Minecraft (rows) x loader (columns) grid. ✓ up to date, ⚠ only old versions, ✗ needs building, ○ planned, `·` nothing, `*` disabled target. If the storage module responds, each cell adds `↑<latest published version>` and the space used, and the last line gives the total; without storage, the grid stays local. Colors are off outside a terminal or with `NO_COLOR`.
+- `bun mod build [<loader> <minecraft> | <id>…] [--all] [--missing] [--dev] [--verbose]`: runs Gradle in `mod/<minecraft>` (`:<project>:clean`, `:<project>:build`, `-PmodVersion`, `-Pminemories.prod=true`) and drops into `build/mod-dist/<version>/<id>/` the JAR renamed `minemories-<loader>-mc<minecraft>-<version>.jar`, its `.sha256` and `manifest.json` (version, Minecraft, loader, loader and Fabric API versions, size, SHA-256, commit, JDK, `prod`). `--dev` passes `-Pminemories.prod=false`; `--missing` only builds enabled targets without an up-to-date build. A failing target does not stop the others: the summary gives each one's duration and size, and the exit code is non-zero if anything failed. Only one build at a time per machine (lock `build/mod-build.lock`, ignored if its owner no longer exists). The Gradle cache is `~/.gradle`, shared across targets.
+- `bun mod jdk [list|install <8|17|21|25>]`: Gradle runs on JDK 21 and each target compiles with its own. JDKs are looked up in `JAVA_HOME`, `~/.local/tools`, `~/.gradle/jdks` and the `PATH`, then downloaded if needed from the Adoptium API (SHA-256 checksum mandatory, refused otherwise) into `~/.local/tools`, and passed to Gradle (`JAVA_HOME`, `-Dorg.gradle.java.installations.paths`). `--no-jdk-download` on `build` forbids downloading.
+- `bun mod version [show|bump patch|minor|beta] [--commit]`: `mod_version` stays in `mod/1.21.1/gradle.properties`. `bump` rewrites it in the `X.Y.Z-beta.N` format; with `--commit` it creates the commit `chore(release): X.Y.Z-beta.N` and the tag `mod-vX.Y.Z-beta.N`.
+- `bun mod release [--skip-tests] [--no-publish] [--dry-run]`: lock, version, production build of every enabled target, headless tests, storage, Modrinth/CurseForge publishing (only if a token is present), notification. Each optional step is loaded on demand: a missing module is reported then skipped. A failing target does not prevent storing the others but fails the release (exit code 1) and triggers a failure notification; any exception is caught and notified. `--dry-run` only prints the plan and which modules are present.
+- `bun mod open` opens `build/mod-dist/`; `bun mod ci` prints the cells outside the 1.21.1 root that the quality workflow builds.
 
-Les variables (jetons, webhook Discord, stockage S3) viennent de l'environnement, complété par le `.env` racine sans l'écraser. Compiler une combinaison ne la rend pas « prise en charge » : voir les règles ci-dessus. Pour une nouvelle combinaison, ajouter l'entrée dans `mod/targets.json` (désactivée), puis documenter les essais en jeu ici.
+Variables (tokens, Discord webhook, S3 storage) come from the environment, completed by the root `.env` without overriding it. Building a combination does not make it "supported": see the rules above. For a new combination, add the entry to `mod/targets.json` (disabled), then document the in-game tests here.
 
-### Quilt 1.21.11 : le JAR Fabric se charge tel quel (5 novembre 2026)
+### Quilt 1.21.11: the Fabric JAR loads as is (5 November 2026)
 
-Aucun projet Quilt n'est créé : le JAR `minemories-fabric-mc1.21.11-*.jar` est lancé sous Quilt Loader 0.30.2 (profil `meta.quiltmc.org` pour 1.21.11, bibliothèques Mojang, Fabric API 0.141.6+1.21.11 en mod). Le test de capture automatisé de Fabric y passe avec les mêmes chiffres : 2507 blocs, 3 entités, 16 matériaux, GLB de 189 628 octets (5 maillages, 15 images). Le mod de test est remappé par la tâche `:fabric:remapGametestJar`, avec le module `fabric-client-gametest-api-v1` 4.3.5.
+No Quilt project is created: the `minemories-fabric-mc1.21.11-*.jar` JAR is launched under Quilt Loader 0.30.2 (`meta.quiltmc.org` profile for 1.21.11, Mojang libraries, Fabric API 0.141.6+1.21.11 as a mod). Fabric's automated capture test passes there with the same numbers: 2507 blocks, 3 entities, 16 materials, a 189,628-byte GLB (5 meshes, 15 images). The test mod is remapped by the `:fabric:remapGametestJar` task, with the `fabric-client-gametest-api-v1` 4.3.5 module.
 
-Ce que l'essai a révélé :
-- Quilt 0.30.2 fournit Fabric Loader 0.19.5. Le `fabric.mod.json` exigeait ≥ 0.20.1, ce qui refusait le chargement ; la borne est maintenant ≥ 0.17.3, le minimum de Fabric API. Les anciens loaders Fabric entre 0.17.3 et 0.20.0 n'ont pas été essayés.
-- Le module de test client de Fabric API 6.0.11 (Java 25) ne tourne pas sous Quilt et JDK 21 ; le 4.3.5 oui.
+What the run revealed:
+- Quilt 0.30.2 provides Fabric Loader 0.19.5. `fabric.mod.json` required ≥ 0.20.1, which refused to load; the bound is now ≥ 0.17.3, Fabric API's minimum. Older Fabric loaders between 0.17.3 and 0.20.0 have not been tried.
+- Fabric API 6.0.11's client test module (Java 25) does not run under Quilt and JDK 21; 4.3.5 does.
 
-Limites : aucun GLB n'a été ouvert dans le viewer (pas de WebGL dans le navigateur intégré), et seul ce scénario de capture a été joué (menus, AFK et sélection manuelle non essayés sous Quilt). Quilt 1.21.11 n'est donc pas déclaré pris en charge.
+Limits: no GLB was opened in the viewer (no WebGL in the built-in browser), and only this capture scenario was played (menus, AFK and manual selection not tried under Quilt). Quilt 1.21.11 is therefore not declared supported.
 
-### Forge 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+### Forge 1.19.2: builds, automated in-game test passed, not validated in the viewer (5 November 2026)
 
-Sous-projet `mod/1.19.2` (Forge 43.5.2, Java 17, Architectury Loom, mappings Mojang), construit comme `mod/1.20.1` : les sources partagées sont copiées, adaptées par `adapt.gradle` puis compilées avec les classes de l'adaptateur Forge.
+Subproject `mod/1.19.2` (Forge 43.5.2, Java 17, Architectury Loom, Mojang mappings), built like `mod/1.20.1`: the shared sources are copied, adapted by `adapt.gradle`, then compiled with the Forge adapter classes.
 
-Écart mesuré avant portage : 123 erreurs de symboles dans 15 fichiers, dont 110 pour l'interface (`GuiGraphics`, `Button.builder`, `Tooltip`, `getX`/`getY`, `renderWidget`). Après la couche de compat ci-dessous, il restait 27 erreurs, toutes mécaniques : `sprite.contents()` renommé, `BuiltInRegistries` devenu `Registry`, `worldGenOptions`, `getIconBytes`, `BlockPos.containing`, `setHint`, atlas d'une version sans `getTextureLocations`.
+Gap measured before porting: 123 symbol errors in 15 files, 110 of them in the UI (`GuiGraphics`, `Button.builder`, `Tooltip`, `getX`/`getY`, `renderWidget`). After the compat layer below, 27 errors remained, all mechanical: `sprite.contents()` renamed, `BuiltInRegistries` became `Registry`, `worldGenOptions`, `getIconBytes`, `BlockPos.containing`, `setHint`, an atlas from a version without `getTextureLocations`.
 
-**Couche de compat partagée par les cibles avant 1.20** : `mod/shared/compat-legacy`. Elle contient `GuiGraphics` (dessin sur `PoseStack`, objets via la pile modèle-vue), `Tooltip`/`Tooltips` (info-bulles dessinées par l'écran), `CompatButton` (le `Button.builder(...)` de 1.19.3+), `Clamp`, et `adapt-legacy.gradle` qui réécrit les écrans partagés (signatures `render`, `renderButton`, `x`/`y` des widgets). Le code commun reste celui de 1.21.1 ; chaque version ajoute seulement ses règles dans son `adapt.gradle`. Un motif qui cesse de correspondre fait échouer la compilation. 1.18.2 peut reprendre cette couche.
+**Compat layer shared by pre-1.20 targets**: `mod/shared/compat-legacy`. It contains `GuiGraphics` (drawing on a `PoseStack`, items via the model-view stack), `Tooltip`/`Tooltips` (tooltips drawn by the screen), `CompatButton` (the 1.19.3+ `Button.builder(...)`), `Clamp`, and `adapt-legacy.gradle`, which rewrites the shared screens (`render` and `renderButton` signatures, widget `x`/`y`). The common code stays the 1.21.1 code; each version only adds its rules in its `adapt.gradle`. A pattern that stops matching fails the build. 1.18.2 can reuse this layer.
 
-Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/1.19.2`). Un mod de test Forge (`src/gametest`) appelle `TickDrivenCapture` à chaque tick client : monde plat, scène, `/minemories export 12` envoyé par l'écran de chat (une commande côté client n'est pas reconnue par `commandUnsigned`), puis vérification du GLB par `GlbReport` (partagé avec 1.21.11). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 556 octets, alpha BLEND et MASK présents. Le son est coupé par le test.
+In-game test: `./gradlew :forge:runClientGametest` (from `mod/1.19.2`). A Forge test mod (`src/gametest`) calls `TickDrivenCapture` on every client tick: flat world, scene, `/minemories export 12` sent through the chat screen (a client-side command is not recognized by `commandUnsigned`), then GLB verification by `GlbReport` (shared with 1.21.11). Result: 2507 blocks, 3 entities, 17 materials, a 181,556-byte GLB, alpha BLEND and MASK present. The test mutes the sound.
 
-Particularités : l'herbe s'appelle `grass` avant 1.20.3 (`-Dminemories.gametest.grass=grass`) ; pas de champ de saisie avec indication (`setHint`), remplacé par la suggestion grise de `EditBox`. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés. La cible n'est donc pas déclarée prise en charge.
+Quirks: grass is called `grass` before 1.20.3 (`-Dminemories.gametest.grass=grass`); there is no input field with a hint (`setHint`), replaced by `EditBox`'s grey suggestion. Limits: GLB not opened in the viewer, menus and manual selection not tried. The target is therefore not declared supported.
 
-### Fabric 1.19.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+### Fabric 1.19.2: builds, automated in-game test passed, not validated in the viewer (5 November 2026)
 
-Même sous-projet que Forge 1.19.2 (`mod/1.19.2`, module `fabric`), Fabric Loader 0.20.1 et Fabric API 0.77.0+1.19.2. Il reprend `mod/shared/compat-legacy` et ses règles d'adaptation ; seul l'adaptateur Fabric change, parce que l'API de rendu de Fabric API 0.77 est l'ancienne, à sprites multiples :
+Same subproject as Forge 1.19.2 (`mod/1.19.2`, `fabric` module), Fabric Loader 0.20.1 and Fabric API 0.77.0+1.19.2. It reuses `mod/shared/compat-legacy` and its adaptation rules; only the Fabric adapter changes, because the rendering API of Fabric API 0.77 is the old multi-sprite one:
 
-- `CaptureQuadEmitter` est réécrit pour cette API (`spriteColor`, `sprite`, `spriteBake(index, …)`, `fromVanilla(…, isItem)`, `toVanilla(index, …)`), et `FabricModelCapture` lit les UV par `spriteU(i, 0)`.
-- L'API de 0.77 n'expose pas les drapeaux d'un matériau (mode de fusion, émissivité, indice de couleur) ; `MaterialFlags` les demande par réflexion à l'implémentation d'Indigo et retombe sur les valeurs par défaut ailleurs. Avec un autre moteur de rendu (Canvas…), le GLB peut donc perdre la translucidité et l'émissivité : non essayé.
-- Les pixels d'un sprite passent par un accesseur Mixin (`SpriteImageAccess`, champ `mainImage`) : avant 1.19.3 `TextureAtlasSprite` n'a pas `getPixelRGBA` (Forge l'ajoute).
-- `copyUv` n'existe pas dans cette API.
+- `CaptureQuadEmitter` is rewritten for this API (`spriteColor`, `sprite`, `spriteBake(index, …)`, `fromVanilla(…, isItem)`, `toVanilla(index, …)`), and `FabricModelCapture` reads UVs through `spriteU(i, 0)`.
+- The 0.77 API does not expose a material's flags (blend mode, emissivity, color index); `MaterialFlags` asks Indigo's implementation for them via reflection and falls back to the defaults elsewhere. With another renderer (Canvas…), the GLB may therefore lose translucency and emissivity: not tried.
+- A sprite's pixels go through a Mixin accessor (`SpriteImageAccess`, field `mainImage`): before 1.19.3 `TextureAtlasSprite` has no `getPixelRGBA` (Forge adds it).
+- `copyUv` does not exist in this API.
 
-Test en jeu : `./gradlew :fabric:runClientGametest` (depuis `mod/1.19.2`), même scénario que Forge : 2507 blocs, 3 entités, 17 matériaux, GLB de 182 280 octets. Le mod de test Fabric rejoint le classpath de développement mais reste inactif sans `-Dminemories.gametest=true`. Limites : GLB non ouvert dans le viewer, Quilt 1.19.2 non essayé, menus et sélection manuelle non essayés. Cible non déclarée prise en charge.
+In-game test: `./gradlew :fabric:runClientGametest` (from `mod/1.19.2`), same scenario as Forge: 2507 blocks, 3 entities, 17 materials, a 182,280-byte GLB. The Fabric test mod joins the development classpath but stays inactive without `-Dminemories.gametest=true`. Limits: GLB not opened in the viewer, Quilt 1.19.2 not tried, menus and manual selection not tried. Target not declared supported.
 
-### Forge 1.18.2 : compile, test en jeu automatisé passé, non validé dans le viewer (5 novembre 2026)
+### Forge 1.18.2: builds, automated in-game test passed, not validated in the viewer (5 November 2026)
 
-Sous-projet `mod/1.18.2` (Forge 40.3.12, Java 17, Architectury Loom), construit comme celui de 1.19.2 : mêmes règles d'adaptation de `mod/shared/compat-legacy`, plus `mod/shared/compat-pre-1.19` pour ce qui n'existe pas encore en 1.18 (`Component.literal` et `Component.translatable`, remplacés par `Components`; `Screen.rebuildWidgets`, remplacé par `clearWidgets(); init();`). Premier essai : 97 erreurs de symboles, 74 d'entre elles sur les composants de texte.
+Subproject `mod/1.18.2` (Forge 40.3.12, Java 17, Architectury Loom), built like the 1.19.2 one: same adaptation rules from `mod/shared/compat-legacy`, plus `mod/shared/compat-pre-1.19` for what does not exist yet in 1.18 (`Component.literal` and `Component.translatable`, replaced by `Components`; `Screen.rebuildWidgets`, replaced by `clearWidgets(); init();`). First attempt: 97 symbol errors, 74 of them on text components.
 
-Ce qui change dans l'adaptateur Forge, écrit pour cette version : touches enregistrées dans `FMLClientSetupEvent` par `ClientRegistry`, événements d'écran `ScreenEvent.InitScreenEvent` et `DrawScreenEvent`, entrées `InputEvent.KeyInputEvent` et `MouseInputEvent`, sélection dessinée sur `RenderLevelLastEvent` (déprécié, il n'y a pas d'étape de rendu), modèles avec `IModelData`/`EmptyModelData` et `java.util.Random`, teinte du fluide par `FluidAttributes`. Le dessin de la sélection n'a pas été vu à l'écran.
+What changes in the Forge adapter, written for this version: key mappings registered in `FMLClientSetupEvent` through `ClientRegistry`, screen events `ScreenEvent.InitScreenEvent` and `DrawScreenEvent`, input `InputEvent.KeyInputEvent` and `MouseInputEvent`, selection drawn on `RenderLevelLastEvent` (deprecated; there is no render stage), models with `IModelData`/`EmptyModelData` and `java.util.Random`, fluid tint through `FluidAttributes`. The selection drawing has not been seen on screen.
 
-Test en jeu : `./gradlew :forge:runClientGametest` (depuis `mod/1.18.2`), pilote `TickDrivenCapture` propre à 1.18.2 (monde plat créé par `Minecraft.createLevel`, commande envoyée par `Screen.sendMessage`). Résultat : 2507 blocs, 3 entités, 17 matériaux, GLB de 181 540 octets. Le démarrage prend environ deux minutes avant que le test avance. Limites : GLB non ouvert dans le viewer, menus et sélection manuelle non essayés ; cible non déclarée prise en charge.
+In-game test: `./gradlew :forge:runClientGametest` (from `mod/1.18.2`), with a `TickDrivenCapture` driver specific to 1.18.2 (flat world created by `Minecraft.createLevel`, command sent through `Screen.sendMessage`). Result: 2507 blocks, 3 entities, 17 materials, a 181,540-byte GLB. Startup takes about two minutes before the test moves on. Limits: GLB not opened in the viewer, menus and manual selection not tried; target not declared supported.
 
-### Fond des écrans en 1.20.1 : défaut trouvé et corrigé (5 novembre 2026)
+### Screen backgrounds on 1.20.1: bug found and fixed (5 November 2026)
 
-Avant 1.20.2, `Screen.render` ne dessine pas le fond : chaque écran l'appelle lui-même. Les écrans partagés (écrits pour 1.21.1) comptent sur `render` pour le faire, et l'adaptation vers 1.20.1 ne le rétablissait pas : le panneau et le fond des écrans du mod n'étaient pas dessinés. Mesuré en jeu (Forge 1.20.1) : le pixel lu dans le panneau du hub était celui du ciel (`0xffdfc7b9`), pas la couleur du panneau (`0xff262925`). `mod/1.20.1/adapt.gradle` ajoute maintenant l'appel `renderBackground(graphics)` en tête de `render`, ce qui corrige aussi le module Fabric 1.20.1 ; le même pixel vaut `0xff262925` ensuite.
+Before 1.20.2, `Screen.render` does not draw the background: each screen calls it itself. The shared screens (written for 1.21.1) rely on `render` to do it, and the adaptation to 1.20.1 did not restore it: the mod screens' panel and background were not drawn. Measured in game (Forge 1.20.1): the pixel read inside the hub panel was the sky (`0xffdfc7b9`), not the panel color (`0xff262925`). `mod/1.20.1/adapt.gradle` now inserts a `renderBackground(graphics)` call at the start of `render`, which also fixes the Fabric 1.20.1 module; the same pixel then reads `0xff262925`.
 
-Le contrôle se lance par `./gradlew :forge:runClientGametest` depuis `mod/1.20.1` : monde plat, ouverture du hub, lecture d'un pixel du panneau dans le tampon d'image. Il vérifie le fond, pas la mise en page des boutons ni les textes. Les ponts 1.19.2 et 1.18.2 appellent `renderBackground` explicitement (`mod/shared/compat-legacy/adapt-legacy.gradle`) ; ils n'ont pas ce contrôle de pixel. Fabric 1.20.1 n'a pas été relancé en jeu.
+The check runs with `./gradlew :forge:runClientGametest` from `mod/1.20.1`: flat world, open the hub, read a panel pixel from the framebuffer. It checks the background, not the button layout or text. The 1.19.2 and 1.18.2 bridges call `renderBackground` explicitly (`mod/shared/compat-legacy/adapt-legacy.gradle`); they do not have this pixel check. Fabric 1.20.1 has not been rerun in game.
 
-### Inventaire chiffré : Forge 1.16.5 et Forge 1.12.2 (5 novembre 2026, rien de codé)
+### Measured inventory: Forge 1.16.5 and Forge 1.12.2 (5 November 2026, nothing coded)
 
-**Forge 1.16.5 (36.2.42).** Mesure : un sous-projet jetable (supprimé) compile les sources partagées déjà adaptées pour 1.18.2 contre Minecraft 1.16.5 (Architectury Loom, mappings Mojang) : 99 erreurs de symboles, un minimum puisque javac s'arrête avant le typage. Elles tiennent en quelques familles mécaniques : `addRenderableWidget` (19 usages, `addButton` avant 1.17), `JsonParser.parseString` (8, l'ancien Gson), `VertexFormat.Mode` et `RenderedVertexConsumer` (le rendu de capture, 380 lignes à réécrire pour les `RenderType` de l'époque), `getMinBuildHeight` (la hauteur est fixe, 0 à 255), `getYRot`/`getXRot`/`getBlockX` (champs et méthodes renommés), `CaptureLevelView`, `isHoveredOrFocused`, `GuiGraphics` (les quatre appels à `RenderSystem` de la couche de compat). C'est du même ordre que 1.18.2 (97 erreurs au premier essai).
+**Forge 1.16.5 (36.2.42).** Measurement: a throwaway subproject (deleted) compiles the shared sources already adapted for 1.18.2 against Minecraft 1.16.5 (Architectury Loom, Mojang mappings): 99 symbol errors, a lower bound since javac stops before type checking. They fall into a few mechanical families: `addRenderableWidget` (19 uses, `addButton` before 1.17), `JsonParser.parseString` (8, old Gson), `VertexFormat.Mode` and `RenderedVertexConsumer` (the capture renderer, 380 lines to rewrite for that era's `RenderType`s), `getMinBuildHeight` (height is fixed, 0 to 255), `getYRot`/`getXRot`/`getBlockX` (renamed fields and methods), `CaptureLevelView`, `isHoveredOrFocused`, `GuiGraphics` (the four `RenderSystem` calls in the compat layer). That is on the same order as 1.18.2 (97 errors on the first attempt).
 
-La vraie question est Java 8. Le code partagé est en Java 17 : 58 `record`, 145 lignes avec `var` (28 fichiers), 22 lignes de `switch` à flèche, 14 `instanceof` à motif, 22 appels `List.of`/`Map.of`/`Set.of`, 12 lignes d'import de `java.net.http` (6 fichiers : `PairingClient`, `ChunkedUploader`, `DiagnosticsClient`, `StorageStatusClient`, `UploadPacer`, `ApiResponseBody`), plus `HexFormat`, `Math.clamp`, `getLast`, `Files.readString`. Les trois voies :
+The real question is Java 8. The shared code is Java 17: 58 `record`s, 145 lines using `var` (28 files), 22 lines of arrow `switch`, 14 pattern `instanceof`, 22 `List.of`/`Map.of`/`Set.of` calls, 12 import lines from `java.net.http` (6 files: `PairingClient`, `ChunkedUploader`, `DiagnosticsClient`, `StorageStatusClient`, `UploadPacer`, `ApiResponseBody`), plus `HexFormat`, `Math.clamp`, `getLast`, `Files.readString`. The three options:
 
-1. **Classes Java 17 sur Minecraft 1.16.5** : le coût se réduit aux 99 erreurs ci-dessus, soit un portage de la taille de 1.18.2. Ne fonctionne que si le joueur lance Forge 1.16.5 avec Java 16 ou 17, et pas sur le Java 8 que la plupart des lanceurs de modpacks emploient pour cette version. Non essayé : il faut vérifier que Forge 36.2.42 démarre sur Java 17.
-2. **Vrai Java 8 avec un compilateur d'abaissement** (Jabel pour `var`, `switch`, `instanceof`) : reste à réécrire à la main les 58 `record` en classes et les 6 fichiers qui utilisent `java.net.http` avec `HttpURLConnection` (environ 1 500 lignes concernées), puis les appels d'API de Java 9 à 17. Au total, environ trois fois le travail de la voie 1.
-3. **Cœur Java 8 séparé** : porter `core` (2 751 lignes, 15 fichiers, sans dépendance à Minecraft) en Java 8, et laisser le client sur Java 17. Insuffisant seul : le client reste en Java 17.
+1. **Java 17 classes on Minecraft 1.16.5**: the cost comes down to the 99 errors above, i.e. a port the size of 1.18.2. Only works if the player runs Forge 1.16.5 on Java 16 or 17, not on the Java 8 that most modpack launchers use for this version. Not tried: we need to check that Forge 36.2.42 starts on Java 17.
+2. **Real Java 8 with a downleveling compiler** (Jabel for `var`, `switch`, `instanceof`): the 58 `record`s still need to be rewritten by hand as classes, and the 6 files using `java.net.http` ported to `HttpURLConnection` (about 1,500 lines affected), then the Java 9 to 17 API calls. Overall, about three times the work of option 1.
+3. **Separate Java 8 core**: port `core` (2,751 lines, 15 files, no Minecraft dependency) to Java 8 and leave the client on Java 17. Not enough on its own: the client stays on Java 17.
 
-Recommandation : voie 1, puis décider de la voie 2 selon la demande. L'environnement n'a que les JDK 21 et 25 : tester Java 8 ou 16 demande d'en télécharger un, ce que je n'ai pas fait sans accord.
+Recommendation: option 1, then decide on option 2 depending on demand. The environment only has JDK 21 and 25: testing Java 8 or 16 requires downloading one, which I did not do without approval.
 
-**Forge 1.12.2 (14.23.5.2864).** Non mesuré par compilation : ForgeGradle 2.3 exige Gradle 4.9 et un JDK 8, absent ici (Gradle 4.9 ne tourne pas sur un JDK 21). Estimation par comptage : sur 64 fichiers (9 992 lignes) du client partagé, 20 fichiers (4 939 lignes) touchent Minecraft, dont `ClientRuntime` (1 690 lignes), `ProgressiveGameCapture`, `RenderedModelCapture`, `PairingClient` et tous les écrans. Aucun n'est adaptable mécaniquement : 1.12.2 précède l'aplatissement (états de blocs par identifiant et métadonnées), n'a pas les noms Mojang (mappings MCP), ni Brigadier (commandes `CommandBase`), ni `BakedModel`/`BlockEntityRenderer` actuels (`IBakedModel`, `TileEntitySpecialRenderer`), ni `GuiGraphics`, et les entités passent par `Render<T>`. S'y ajoutent les 58 `record`, le Java 8 et le HTTP. C'est une réécriture du client, de l'ordre de 5 000 lignes, sur un cœur `core` à passer en Java 8. Voie la plus économe : un mod minimal pour 1.12.2 qui sérialise le monde visible (blocs et textures) avec `core` porté en Java 8, sans reprendre les écrans, l'AFK ni le diagnostic, et qui exporte par commande. Part de marché mesurée : au plus 1,4 % (voir ci-dessus).
+**Forge 1.12.2 (14.23.5.2864).** Not measured by compiling: ForgeGradle 2.3 requires Gradle 4.9 and a JDK 8, which is missing here (Gradle 4.9 does not run on JDK 21). Estimate by counting: out of 64 files (9,992 lines) in the shared client, 20 files (4,939 lines) touch Minecraft, including `ClientRuntime` (1,690 lines), `ProgressiveGameCapture`, `RenderedModelCapture`, `PairingClient` and every screen. None can be adapted mechanically: 1.12.2 predates the flattening (block states by id and metadata), has no Mojang names (MCP mappings), no Brigadier (`CommandBase` commands), none of the current `BakedModel`/`BlockEntityRenderer` (`IBakedModel`, `TileEntitySpecialRenderer`), no `GuiGraphics`, and entities go through `Render<T>`. Add the 58 `record`s, Java 8 and HTTP on top. It is a rewrite of the client, around 5,000 lines, on a `core` that has to move to Java 8. Cheapest option: a minimal 1.12.2 mod that serializes the visible world (blocks and textures) with `core` ported to Java 8, without the screens, AFK or diagnostics, exporting through a command. Measured market share: at most 1.4% (see below).
 
-### Forge 1.20.1 et Fabric 1.20.1 : test de capture en jeu passé (5 novembre 2026)
+### Forge 1.20.1 and Fabric 1.20.1: in-game capture test passed (5 November 2026)
 
-Le pilote `mod/1.20.1/gametest-common` (monde plat, scène, `/minemories export 12`, vérification du GLB, puis ouverture du hub et lecture d'un pixel du panneau) tourne sur les deux loaders : `./gradlew :forge:runClientGametest` ou `:fabric:runClientGametest`, depuis `mod/minemories-1.20.1`. Le mod de test Fabric rejoint le classpath de développement et reste inactif sans `-Dminemories.gametest=true`.
+The `mod/1.20.1/gametest-common` driver (flat world, scene, `/minemories export 12`, GLB verification, then open the hub and read a panel pixel) runs on both loaders: `./gradlew :forge:runClientGametest` or `:fabric:runClientGametest`, from `mod/minemories-1.20.1`. The Fabric test mod joins the development classpath and stays inactive without `-Dminemories.gametest=true`.
 
-Résultat identique : 2507 blocs, 3 entités, 17 matériaux (GLB de 180 704 octets sous Forge, 180 732 sous Fabric). Modes alpha : 5 opaques, 8 `MASK` (feuilles, herbe, torche, coffre, vache, support d'armure…), 4 `BLEND` (verre teinté, eau). Coffre, vache, support d'armure et joueur passent par le rendu réel (texture `rendered/…`). Panneau du hub dessiné sur les deux.
+Identical result: 2507 blocks, 3 entities, 17 materials (180,704-byte GLB under Forge, 180,732 under Fabric). Alpha modes: 5 opaque, 8 `MASK` (leaves, grass, torch, chest, cow, armor stand…), 4 `BLEND` (stained glass, water). Chest, cow, armor stand and player go through the real renderer (`rendered/…` texture). Hub panel drawn on both.
 
-Le premier essai a échoué sur `oak_leaves` : ce n'était pas un défaut du mod. Des feuilles sans tronc se dégradent avant l'export (l'entité `minecraft:item` en plus dans le GLB était leur butin) ; la scène partagée pose maintenant `oak_leaves[persistent=true]`. Le même essai a fait trouver l'écran d'accessibilité d'un profil neuf, que le pilote ferme. Limites : GLB non ouvert dans le viewer, sélection manuelle et menus non essayés.
+The first attempt failed on `oak_leaves`: this was not a mod bug. Leaves without a trunk decay before the export (the extra `minecraft:item` entity in the GLB was their drop); the shared scene now places `oak_leaves[persistent=true]`. The same run surfaced the accessibility screen of a fresh profile, which the driver now closes. Limits: GLB not opened in the viewer, manual selection and menus not tried.
 
-## JAR de prod
+## Production JARs
 
-`bun mod build` produit par défaut des JAR de prod : la propriété Gradle `minemories.prod` vaut `true` (`-Pminemories.prod=false`, ou `bun mod build --dev`, rend le JAR du plugin du loader tel quel). `mod/shared/prod.gradle`, appliqué par chaque adaptateur, réécrit sur place le JAR final (`remapJar` avec Loom, `jar` sinon) : les classes perdent leurs attributs de débogage (fichier source, numéros de ligne, variables locales) et les annotations SpotBugs/JetBrains, les JSON sont minifiés, les fichiers de langue ne gardent que les clés différentes de `en_us` (le jeu retombe dessus), signatures, descripteurs de module, Markdown et `.gitkeep` sont retirés, et toutes les entrées sont compressées au niveau 9. La compilation, les tests et les tâches de lancement ne sont pas touchés. Les noms de JAR ne changent pas.
+`bun mod build` produces production JARs by default: the Gradle property `minemories.prod` is `true` (`-Pminemories.prod=false`, or `bun mod build --dev`, leaves the loader plugin's JAR untouched). `mod/shared/prod.gradle`, applied by every adapter, rewrites the final JAR in place (`remapJar` with Loom, `jar` otherwise): classes lose their debug attributes (source file, line numbers, local variables) and their SpotBugs/JetBrains annotations, JSON is minified, language files keep only the keys that differ from `en_us` (the game falls back to it), signatures, module descriptors, Markdown and `.gitkeep` are removed, and every entry is compressed at level 9. Compilation, tests and run tasks are untouched. JAR names do not change.
 
-| Cible | JAR de dev (octets) | JAR de prod (octets) | Gain |
+| Target | Dev JAR (bytes) | Prod JAR (bytes) | Saving |
 |---|---|---|---|
-| neoforge 1.21.1 | 441 408 | 362 664 | 17,8 % |
-| fabric 1.21.1 | 458 659 | 380 495 | 17,0 % |
-| forge 1.21.1 | 450 995 | 374 666 | 16,9 % |
-| fabric 1.21.11 | 458 012 | 379 327 | 17,2 % |
-| neoforge 1.21.11 | 446 281 | 365 750 | 18,0 % |
-| forge 1.21.11 | 447 379 | 366 672 | 18,0 % |
-| fabric 1.20.1 | 460 052 | 380 354 | 17,3 % |
-| forge 1.20.1 | 452 647 | 374 795 | 17,2 % |
-| fabric 1.19.2 | 466 904 | 385 743 | 17,4 % |
-| forge 1.19.2 | 457 193 | 378 317 | 17,3 % |
-| forge 1.18.2 | 458 061 | 379 041 | 17,3 % |
+| neoforge 1.21.1 | 441,408 | 362,664 | 17.8% |
+| fabric 1.21.1 | 458,659 | 380,495 | 17.0% |
+| forge 1.21.1 | 450,995 | 374,666 | 16.9% |
+| fabric 1.21.11 | 458,012 | 379,327 | 17.2% |
+| neoforge 1.21.11 | 446,281 | 365,750 | 18.0% |
+| forge 1.21.11 | 447,379 | 366,672 | 18.0% |
+| fabric 1.20.1 | 460,052 | 380,354 | 17.3% |
+| forge 1.20.1 | 452,647 | 374,795 | 17.2% |
+| fabric 1.19.2 | 466,904 | 385,743 | 17.4% |
+| forge 1.19.2 | 457,193 | 378,317 | 17.3% |
+| forge 1.18.2 | 458,061 | 379,041 | 17.3% |
 
-Ce qui pèse encore est du code (environ 200 classes, 300 Ko avant compression ; `ClientRuntime` seule fait 65 Ko) : aller plus loin demande de réduire le bytecode lui-même. Refusé pour l'instant : ProGuard ou tout élagage/obfuscation des noms, qui casserait les mixins, les points d'entrée chargés par nom (Fabric, `@Mod`, ServiceLoader) et les traces d'erreur envoyées par les diagnostics consentis, sans preuve en jeu qu'un JAR ainsi réduit fonctionne.
+What remains is code (about 200 classes, 300 KB before compression; `ClientRuntime` alone is 65 KB): going further means shrinking the bytecode itself. Rejected for now: ProGuard or any name shrinking/obfuscation, which would break the mixins, the entry points loaded by name (Fabric, `@Mod`, ServiceLoader) and the stack traces sent by consented diagnostics, with no in-game proof that such a reduced JAR works.
 
-Preuve en jeu : `-Pminemories.prod.run=true` applique les mêmes transformations aux classes et ressources compilées (`build/classes`, `build/resources`) avant un lancement, de sorte que les tests de capture exécutent exactement le bytecode et les ressources que le JAR de prod embarque. Les huit tests automatiques passent dans cette configuration (6 novembre 2026) avec les mêmes chiffres qu'en dev : Fabric, NeoForge et Forge 1.21.11 (GLB de 189 512 à 189 616 octets, 16 matériaux), Forge et Fabric 1.20.1, Fabric et Forge 1.19.2, Forge 1.18.2. Les cibles 1.21.1 n'ont pas de test automatique : leurs JAR de prod passent par la même transformation et restent à essayer à la main. Forge 1.21.11 ne s'arrête pas tout seul après le test (ForgeGradle 7 garde le processus) : le runner headless juge sur le rapport et tue le reste.
+In-game proof: `-Pminemories.prod.run=true` applies the same transformations to the compiled classes and resources (`build/classes`, `build/resources`) before a launch, so that the capture tests run exactly the bytecode and resources the production JAR ships. All eight automated tests pass in this configuration (6 November 2026) with the same numbers as in dev: Fabric, NeoForge and Forge 1.21.11 (GLBs of 189,512 to 189,616 bytes, 16 materials), Forge and Fabric 1.20.1, Fabric and Forge 1.19.2, Forge 1.18.2. The 1.21.1 targets have no automated test: their production JARs go through the same transformation and still need to be tried by hand. Forge 1.21.11 does not stop on its own after the test (ForgeGradle 7 keeps the process alive): the headless runner judges by the report and kills the rest.
 
-`bun mod build` refuse un JAR sans aucune classe et compile sans cache de build Gradle : une restauration depuis le cache avait livré un JAR vide de 41 Ko pour Forge 1.21.11, dont les classes sont compilées dans le dossier des ressources.
+`bun mod build` rejects a JAR with no classes at all and builds without the Gradle build cache: a cache restore once shipped an empty 41 KB JAR for Forge 1.21.11, whose classes are compiled into the resources folder.
 
-Les tests en jeu ne doivent dépendre ni du focus de la fenêtre ni de l'affichage : un client sans focus se met en pause avec son serveur local et le monde ne finit jamais de charger (boucle « World loading finished » à l'écran de chargement), ce qui est systématique sur une machine sans écran. Les pilotes désactivent `pauseOnLostFocus` et la synchronisation verticale ; le runner headless (`scripts/mod/headless`) arrête de plus un client dont la même ligne de log se répète 120 fois ou qui reste muet 5 minutes, relance une fois, et nettoie les processus restants.
+In-game tests must depend neither on window focus nor on a display: an unfocused client pauses along with its local server and the world never finishes loading ("World loading finished" loop on the loading screen), which always happens on a headless machine. The drivers disable `pauseOnLostFocus` and vsync; the headless runner (`scripts/mod/headless`) also stops a client whose same log line repeats 120 times or that stays silent for 5 minutes, retries once, and cleans up leftover processes.
 
-## Versions visées par les modpacks (mesure du 5 novembre 2026)
+## Versions targeted by modpacks (measured 5 November 2026)
 
-Mesure : 500 modpacks Modrinth les plus téléchargés, chaque pack comptant pour ses téléchargements sur sa version de Minecraft la plus récente (estimation grossière ; CurseForge, où pèsent les gros packs Forge anciens, n'est pas mesuré).
+Measurement: the 500 most downloaded Modrinth modpacks, each pack counting its downloads on its most recent Minecraft version (rough estimate; CurseForge, where big older Forge packs weigh more, is not measured).
 
-| Minecraft | Loader | Part approximative |
+| Minecraft | Loader | Approximate share |
 |---|---|---|
-| 1.21.11 | Fabric | 37 % |
-| 1.20.1 | Forge / Fabric | 20 % / 10 % |
-| 1.21.1 | Fabric / NeoForge / Forge | 20 % / 5 % / 5 % |
-| 1.21.11 | Quilt / NeoForge / Forge | 4 % / 4 % / 2 % |
-| 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Forge surtout | 0,2 à 1,4 % chacune |
+| 1.21.11 | Fabric | 37% |
+| 1.20.1 | Forge / Fabric | 20% / 10% |
+| 1.21.1 | Fabric / NeoForge / Forge | 20% / 5% / 5% |
+| 1.21.11 | Quilt / NeoForge / Forge | 4% / 4% / 2% |
+| 1.12.2, 1.19.2, 1.18.2, 1.16.5 | Mostly Forge | 0.2 to 1.4% each |
 
-Déjà compilé : 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) et 1.21.11 (Fabric, NeoForge et Forge, voir ci-dessous). Les cibles restantes sont dans `planned` de `mod/targets.json` avec une priorité (P1 à P4), leur version de loader et la difficulté attendue. Minecraft 1.21.11 est la cible P1 : le rendu a été refait depuis 1.21.5, c'est un portage et non une adaptation mécanique comme pour 1.20.1. Les anciennes versions (1.19.2 et avant) n'ont pas `GuiGraphics` ni les API de rendu actuelles.
+Already built: 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge, Fabric, Forge) and 1.21.11 (Fabric, NeoForge and Forge, see below). The remaining targets are in `planned` in `mod/targets.json` with a priority (P1 to P4), their loader version and the expected difficulty. Minecraft 1.21.11 is the P1 target: rendering was rewritten since 1.21.5, so it is a port and not a mechanical adaptation like 1.20.1. Older versions (1.19.2 and before) have neither `GuiGraphics` nor the current rendering APIs.
 
-### Écart mesuré pour Minecraft 1.21.11 (Fabric, 5 novembre 2026)
+### Gap measured for Minecraft 1.21.11 (Fabric, 5 November 2026)
 
-Compiler les sources 1.21.1 telles quelles contre 1.21.11 (Loom, Mojmap, Fabric API 0.141.6) donne environ 145 erreurs distinctes, concentrées dans la capture :
+Compiling the 1.21.1 sources as is against 1.21.11 (Loom, Mojmap, Fabric API 0.141.6) gives about 145 distinct errors, concentrated in the capture:
 
-- API de rendu Fabric v1 (`RendererAccess`, `RenderMaterial`, `BlendMode`, `FabricBakedModel`) disparue ou réécrite : `FabricModelCapture`, `CaptureQuadEmitter`, `FabricPlatform`.
-- `RenderType` / `RenderStateShard`, `GlStateManager` et la lecture de texture (`bind`, `getId`, `downloadTexture`) remplacés par la couche GPU : `RenderedModelCapture`, `CapturePixels`.
-- Rendu des entités et blocs-entités par états de rendu (`prepare`, `getRenderOffset`, `render`) et `VertexConsumer.setLineWidth` : `ClientRuntime`, `ProgressiveGameCapture`.
-- Renommages et API d'interface : `ResourceLocation`→`Identifier`, `getMinBuildHeight`→`getMinY`, `ClickEvent`/`HoverEvent`, `Matrix3x2f` pour la pile GUI, `renderContents` des boutons.
+- Fabric rendering API v1 (`RendererAccess`, `RenderMaterial`, `BlendMode`, `FabricBakedModel`) removed or rewritten: `FabricModelCapture`, `CaptureQuadEmitter`, `FabricPlatform`.
+- `RenderType` / `RenderStateShard`, `GlStateManager` and texture reading (`bind`, `getId`, `downloadTexture`) replaced by the GPU layer: `RenderedModelCapture`, `CapturePixels`.
+- Entity and block entity rendering through render states (`prepare`, `getRenderOffset`, `render`) and `VertexConsumer.setLineWidth`: `ClientRuntime`, `ProgressiveGameCapture`.
+- Renames and UI APIs: `ResourceLocation`→`Identifier`, `getMinBuildHeight`→`getMinY`, `ClickEvent`/`HoverEvent`, `Matrix3x2f` for the GUI stack, buttons' `renderContents`.
 
-Le gros du travail est donc la capture de géométrie et de textures, qui demande une validation en jeu ; les renommages seuls ne suffisent pas.
+Most of the work is therefore geometry and texture capture, which needs in-game validation; renames alone are not enough.
 
-### Port Fabric 1.21.11 : compile, non testé en jeu
+### Fabric 1.21.11 port: builds, not tested in game
 
-`mod/1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) compile avec `./gradlew :fabric:build` ; `bun mod status` le compte comme compilé.
+`mod/1.21.11/` (Fabric loader 0.20.1, Fabric API 0.141.6+1.21.11, Java 21) builds with `./gradlew :fabric:build`; `bun mod status` counts it as built.
 
-Test en jeu : `./gradlew :fabric:runClientGameTest` (depuis `mod/1.21.11/`) ouvre Minecraft 1.21.11 (son coupé, `user.home` isolé dans `build/gametest-home`), crée un monde, place pierre, verre teinté, feuilles, herbe, coffre, eau et torche, fait apparaître une vache et un armor stand, lance `/minemories export 12` et vérifie le GLB (matériaux attendus, modes alpha BLEND et MASK). Il passe (5 novembre 2026) et a déjà trouvé les mixins de souris et de clavier cassés ainsi qu'un `fabric.mod.json` qui exigeait encore 1.21.1. Reste à valider : le GLB ouvert dans le viewer, d'autres modpacks et un rendu visuel comparé à Minecraft ; la cible ne doit pas être présentée comme prise en charge avant.
+In-game test: `./gradlew :fabric:runClientGameTest` (from `mod/1.21.11/`) opens Minecraft 1.21.11 (sound muted, `user.home` isolated in `build/gametest-home`), creates a world, places stone, stained glass, leaves, grass, a chest, water and a torch, spawns a cow and an armor stand, runs `/minemories export 12` and checks the GLB (expected materials, BLEND and MASK alpha modes). It passes (5 November 2026) and has already caught broken mouse and keyboard mixins as well as a `fabric.mod.json` that still required 1.21.1. Still to validate: the GLB opened in the viewer, other modpacks and a visual render compared with Minecraft; the target must not be presented as supported before that.
 
-Les sources de `mod/1.21.1` sont copiées, adaptées par `adapt.gradle` (un motif qui ne correspond plus fait échouer le build) puis recouvertes par `overlay/java`. Par lot :
+The `mod/1.21.1` sources are copied, adapted by `adapt.gradle` (a pattern that no longer matches fails the build), then overlaid by `overlay/java`. By batch:
 
-1. Renommages : `Identifier`, `getMinY`/`getMaxY`, `identifier()`, `WorldVersion.name()`, `GameProfile.id()`, `Camera.position()`, catégorie de touche `KeyMapping.Category` (la traduction `key.category.minemories.minemories` est ajoutée aux fichiers de langue à la compilation).
-2. GUI : `renderContents` des boutons, `Matrix3x2fStack` (`pushMatrix`/`popMatrix`), `ClickEvent.RunCommand`, `HoverEvent.ShowText`.
-3. Géométrie des blocs : `BakedQuad` est un record, `BakedQuads` (overlay) le remet dans l'ancienne disposition de sommets ; côté Fabric, `FabricModelCapture` collecte `BlockStateModel.emitQuads` dans un `MutableMesh` au lieu de l'ancienne API `RenderContext`.
-4. Textures : `CapturePixels` lit les atlas par copie GPU (`copyTextureToTexture` puis `copyTextureToBuffer`, bande par bande) et relit les textures d'entités depuis leur image source, car elles n'ont pas `USAGE_COPY_SRC` ; `RenderedModelCapture` trouve la texture d'un `RenderType` par l'access widener (`RenderType.state`, `RenderSetup.textures`).
-5. Entités et blocs-entités : `SubmitCapture` extrait l'état de rendu, le soumet à un `SubmitNodeStorage` privé et le vide dans le tampon de la capture avec un `FeatureRenderDispatcher` ; ombres, flammes et contours ne sont pas capturés.
-6. Sélection en jeu : `WorldRenderEvents.END_MAIN` et `ShapeRenderer.renderShape` à la place de `renderLineBox`.
+1. Renames: `Identifier`, `getMinY`/`getMaxY`, `identifier()`, `WorldVersion.name()`, `GameProfile.id()`, `Camera.position()`, key category `KeyMapping.Category` (the `key.category.minemories.minemories` translation is added to the language files at build time).
+2. GUI: buttons' `renderContents`, `Matrix3x2fStack` (`pushMatrix`/`popMatrix`), `ClickEvent.RunCommand`, `HoverEvent.ShowText`.
+3. Block geometry: `BakedQuad` is a record, `BakedQuads` (overlay) puts it back into the old vertex layout; on the Fabric side, `FabricModelCapture` collects `BlockStateModel.emitQuads` into a `MutableMesh` instead of the old `RenderContext` API.
+4. Textures: `CapturePixels` reads atlases through a GPU copy (`copyTextureToTexture` then `copyTextureToBuffer`, strip by strip) and rereads entity textures from their source image, since they lack `USAGE_COPY_SRC`; `RenderedModelCapture` finds a `RenderType`'s texture through the access widener (`RenderType.state`, `RenderSetup.textures`).
+5. Entities and block entities: `SubmitCapture` extracts the render state, submits it to a private `SubmitNodeStorage` and flushes it into the capture buffer with a `FeatureRenderDispatcher`; shadows, flames and outlines are not captured.
+6. In-game selection: `WorldRenderEvents.END_MAIN` and `ShapeRenderer.renderShape` instead of `renderLineBox`.
 
-Points à vérifier en jeu : l'UV des quads Fabric après `toBakedQuad`, la lecture GPU des atlas, les blocs-entités hors de la distance de rendu (l'extraction saute le test `shouldRender`), et la borne de 4096 quads par modèle, désormais contrôlée après l'émission et non pendant.
+Points to check in game: the UV of Fabric quads after `toBakedQuad`, GPU reading of atlases, block entities beyond render distance (extraction skips the `shouldRender` test), and the 4096 quads per model bound, now checked after emission rather than during it.
 
-Maintenance : le code propre à un loader reste dans `fabric/` derrière l'interface `ClientPlatform` (le cœur et `common` n'importent aucune classe de loader). Les deux classes d'`overlay/java` qui remplacent une classe partagée (`CapturePixels`, `RenderedModelCapture`) sont épinglées par `overlay/shared-sources.properties` : le build échoue si la version partagée change, pour reporter le correctif dans l'overlay puis mettre à jour l'empreinte.
+Maintenance: loader-specific code stays in `fabric/` behind the `ClientPlatform` interface (the core and `common` import no loader class). The two `overlay/java` classes that replace a shared class (`CapturePixels`, `RenderedModelCapture`) are pinned by `overlay/shared-sources.properties`: the build fails if the shared version changes, so the fix gets carried over to the overlay before the fingerprint is updated.
 
-### NeoForge 1.21.11 : compile, test en jeu passé, non validé dans le viewer
+### NeoForge 1.21.11: builds, in-game test passed, not validated in the viewer
 
-`mod/1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) réutilise le même `adaptSources` que Fabric : la tâche vit dans le `build.gradle` racine de `mod/1.21.11/` et produit `build/adapted-sources`, chaque sous-projet ne contient que son adaptateur. `./gradlew :neoforge:build` réussit et `bun mod build neoforge 1.21.11` produit le JAR dans `build/mod-dist/`.
+`mod/1.21.11/neoforge/` (NeoForge 21.11.48, Java 21, ModDevGradle) reuses the same `adaptSources` as Fabric: the task lives in the root `build.gradle` of `mod/1.21.11/` and produces `build/adapted-sources`; each subproject only contains its adapter. `./gradlew :neoforge:build` succeeds and `bun mod build neoforge 1.21.11` produces the JAR in `build/mod-dist/`.
 
-Ce qui change par rapport à NeoForge 1.21.1 : `@EventBusSubscriber` sans `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, géométrie par `BlockStateModel.collectParts` (les données de modèle viennent du niveau), `NeoForgeVersion` déplacé dans `common`, et un access transformer pour `RenderType.state`, `RenderSetup.textures` et `TextureAtlas.texturesByName`.
+What changes compared with NeoForge 1.21.1: `@EventBusSubscriber` without `bus`, `AddClientReloadListenersEvent`, `RenderLevelStageEvent.AfterTranslucentBlocks`, geometry through `BlockStateModel.collectParts` (model data comes from the level), `NeoForgeVersion` moved into `common`, and an access transformer for `RenderType.state`, `RenderSetup.textures` and `TextureAtlas.texturesByName`.
 
-Test en jeu : `./gradlew :neoforge:runClientGametest` ; NeoForge n'a pas d'API de test client, un petit mod (`src/gametest`) pilote donc le client depuis ses ticks (monde plat, scène, `/minemories export 12`, vérification du GLB). La scène et les vérifications sont partagées avec Fabric dans `gametest-common/`. Résultat identique sur les deux loaders (2507 blocs, 3 entités, 16 matériaux). Comme pour Fabric, le GLB n'a pas été ouvert dans le viewer (WebGL absent du navigateur intégré) : la cible n'est pas déclarée prise en charge.
+In-game test: `./gradlew :neoforge:runClientGametest`; NeoForge has no client test API, so a small mod (`src/gametest`) drives the client from its ticks (flat world, scene, `/minemories export 12`, GLB verification). The scene and checks are shared with Fabric in `gametest-common/`. Identical result on both loaders (2507 blocks, 3 entities, 16 materials). As with Fabric, the GLB was not opened in the viewer (no WebGL in the built-in browser): the target is not declared supported.
 
-### Forge 1.21.11 : compile, test en jeu automatisé passé, non validé dans le viewer
+### Forge 1.21.11: builds, automated in-game test passed, not validated in the viewer
 
-`mod/1.21.11/forge/` (Forge 61.2.5, Java 21) réutilise le même `adaptSources`. `./gradlew :forge:build` réussit et `bun mod build forge 1.21.11` produit le JAR dans `build/mod-dist/`.
+`mod/1.21.11/forge/` (Forge 61.2.5, Java 21) reuses the same `adaptSources`. `./gradlew :forge:build` succeeds and `bun mod build forge 1.21.11` produces the JAR in `build/mod-dist/`.
 
-Deux écarts avec les autres loaders, à connaître avant de toucher à ce projet :
+Two differences from the other loaders, worth knowing before touching this project:
 
-- **Plugin Gradle** : Architectury Loom résout Forge 61.2.5 et compile, mais le jeu planterait au démarrage (`NoSuchMethodError` sur `ByteBufCodecs$11`, jar Minecraft patché de façon incohérente). Le projet utilise donc ForgeGradle 7 (`net.minecraftforge.gradle`, mappings `official`). FML 61 ne trouve la classe `@Mod` que si les classes sont compilées à côté de `mods.toml` : `build.gradle` compile dans `build/resources/main`.
-- **EventBus 7** : chaque événement a son `BUS`, les écouteurs sont enregistrés dans `ForgeClient.initialize()` au lieu d'annotations ; `RenderLevelStageEvent` n'existe plus, la sélection est dessinée par une passe `AddFramePassEvent` sur la cible principale. Les accès aux textures passent par un access transformer.
+- **Gradle plugin**: Architectury Loom resolves Forge 61.2.5 and compiles, but the game would crash at startup (`NoSuchMethodError` on `ByteBufCodecs$11`, inconsistently patched Minecraft jar). The project therefore uses ForgeGradle 7 (`net.minecraftforge.gradle`, `official` mappings). FML 61 only finds the `@Mod` class if the classes are compiled next to `mods.toml`: `build.gradle` compiles into `build/resources/main`.
+- **EventBus 7**: each event has its own `BUS`, listeners are registered in `ForgeClient.initialize()` instead of through annotations; `RenderLevelStageEvent` no longer exists, so the selection is drawn by an `AddFramePassEvent` pass on the main target. Texture access goes through an access transformer.
 
-Test en jeu automatisé : `./gradlew :forge:runClient -PgameTest=true` (depuis `mod/minemories-1.21.11`). ForgeGradle 7 ne sait pas lancer deux mods à la fois (la tâche `slimeLauncherMetadataForForge` est créée en double), et FML ne trouve les classes d'un second dossier que s'il a son propre `mods.toml`. Avec la propriété, les classes de test sont donc compilées dans le dossier du mod, et `src/gametest/mods-gametest.toml` est ajouté à son `mods.toml` comme seconde entrée `[[mods]]` ; sans la propriété rien ne change dans le JAR. Le pilote `TickDrivenCapture` est celui de NeoForge. Résultat : 2507 blocs, 3 entités, 16 matériaux, GLB de 189 616 octets, les mêmes chiffres que Fabric et NeoForge. La cause du blocage « bloqué sur l'écran titre » n'était pas la découverte du mod mais l'écran d'accessibilité qu'un profil neuf ouvre avant le titre : le pilote le ferme maintenant. Limites : le dessin de la sélection par la passe `AddFramePassEvent` n'a pas été vu à l'écran, et le GLB n'est pas ouvert dans le viewer.
+Automated in-game test: `./gradlew :forge:runClient -PgameTest=true` (from `mod/minemories-1.21.11`). ForgeGradle 7 cannot launch two mods at once (the `slimeLauncherMetadataForForge` task gets created twice), and FML only finds classes from a second folder if it has its own `mods.toml`. With the property set, the test classes are therefore compiled into the mod's folder, and `src/gametest/mods-gametest.toml` is appended to its `mods.toml` as a second `[[mods]]` entry; without the property nothing changes in the JAR. The `TickDrivenCapture` driver is NeoForge's. Result: 2507 blocks, 3 entities, 16 materials, a 189,616-byte GLB, the same numbers as Fabric and NeoForge. The "stuck on the title screen" hang was not caused by mod discovery but by the accessibility screen a fresh profile opens before the title screen: the driver now closes it. Limits: the selection drawing by the `AddFramePassEvent` pass has not been seen on screen, and the GLB has not been opened in the viewer.

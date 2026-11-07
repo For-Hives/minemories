@@ -50,7 +50,7 @@ export function BlockMark({ className = '' }: { className?: string }) {
 	return (
 		<img
 			className={`mm-block-mark ${className}`}
-			src="/hero/scenes/bloc-herbe.webp"
+			src="/hero/scenes/grass-block.webp"
 			alt=""
 			aria-hidden="true"
 			width="214"

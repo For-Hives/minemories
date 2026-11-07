@@ -18,7 +18,7 @@ final class AtlasUvIndex<T> {
     @java.io.Serial private static final long serialVersionUID = 1L;
 
     NoMatchingSpriteException() {
-      super("Les UV du renderer ne correspondent pas à un seul sprite exportable.");
+      super("The renderer UVs do not map to a single exportable sprite.");
     }
   }
 
@@ -27,7 +27,7 @@ final class AtlasUvIndex<T> {
 
     void visit() throws IOException {
       if (++scanned > MAX_TOTAL_SCAN)
-        throw new IOException("La recherche des sprites du renderer dépasse son budget.");
+        throw new IOException("The renderer sprite lookup exceeded its budget.");
     }
   }
 
@@ -76,14 +76,13 @@ final class AtlasUvIndex<T> {
       maxV = Math.max(maxV, uv[i + 1]);
     }
     if (minU < 0 || minV < 0 || maxU > 1 || maxV > 1)
-      throw new IOException("UV du renderer hors de l’atlas.");
+      throw new IOException("Renderer UVs outside the atlas.");
     for (Region<T> region : matches) if (region.contains(minU, minV, maxU, maxV)) return region;
-    if (matches.size() == MAX_MATCHES)
-      throw new IOException("Trop de sprites utilisés par les renderers.");
+    if (matches.size() == MAX_MATCHES) throw new IOException("Too many sprites used by renderers.");
     int visited = 0;
     for (Region<T> region : regions) {
       if (++visited > MAX_SCAN)
-        throw new IOException("La recherche des sprites du renderer dépasse son budget.");
+        throw new IOException("The renderer sprite lookup exceeded its budget.");
       budget.visit();
       if (region.contains(minU, minV, maxU, maxV)) {
         matches.add(region);

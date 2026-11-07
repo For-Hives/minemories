@@ -143,15 +143,14 @@ final class RenderedModelCapture {
 
   private Texture texture(RenderType type) throws IOException {
     if (!(type instanceof RenderType.CompositeRenderType composite))
-      throw new IOException("Le renderer utilise une passe dont la texture n’est pas accessible.");
+      throw new IOException("The renderer uses a pass whose texture is not accessible.");
     RenderStateShard.EmptyTextureStateShard state = composite.state().textureState;
     Optional<ResourceLocation> location;
     if (state instanceof RenderStateShard.TextureStateShard single) location = single.texture;
     else if (state instanceof RenderStateShard.MultiTextureStateShard multi)
       location = multi.cutoutTexture;
-    else throw new IOException("Le renderer utilise une texture procédurale non exportable.");
-    ResourceLocation id =
-        location.orElseThrow(() -> new IOException("Texture du renderer absente."));
+    else throw new IOException("The renderer uses a procedural texture that cannot be exported.");
+    ResourceLocation id = location.orElseThrow(() -> new IOException("Renderer texture missing."));
     Texture existing = textures.get(id);
     if (existing != null) return existing;
     String refusal = "rendered/" + id;

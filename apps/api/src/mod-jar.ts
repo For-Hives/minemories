@@ -11,8 +11,8 @@ const ENTRY_MIN = 46
 const ZIP64 = 0xffffffff
 
 /**
- * Contrôle un JAR reçu sans le charger en entier : signature `PK\x03\x04`, répertoire central lisible (sans
- * zip64, inutile pour un mod de quelques Mio) et au moins une entrée `.class`. Refuse un JAR vide ou tronqué.
+ * Checks a received JAR without loading it whole: `PK\x03\x04` signature, readable central directory (no zip64,
+ * which a mod of a few MiB never needs) and at least one `.class` entry. Rejects an empty or truncated JAR.
  */
 export async function inspectJar(path: string): Promise<JarVerdict> {
 	const handle = await open(path, 'r')

@@ -289,7 +289,7 @@ final class ChunkedUploader {
           // An unknown response keeps the generic HTTP message.
         }
       }
-      return "Envoi refusé (HTTP " + status + "). Réessaie /minemories upload pour reprendre.";
+      return "Upload refused (HTTP " + status + "). Retry /minemories upload to resume.";
     }
   }
 

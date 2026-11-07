@@ -2,8 +2,8 @@ import type { DemoTheme } from '../content/discovery'
 
 // Isometric stills of the landing's captures (public/hero/scenes/, docs/features/design-system.md): the same chalet and forest,
 // seen from another side for each theme. The stages of a timeline go from the forgotten chalet to the lived-in one.
-const themeStill: Record<DemoTheme, string> = { home: 'chalet', village: 'clairiere', garden: 'foret' }
-const stageStill = ['chalet-oublie', 'chalet-envahi']
+const themeStill: Record<DemoTheme, string> = { home: 'chalet', village: 'clearing', garden: 'forest' }
+const stageStill = ['chalet-forgotten', 'chalet-overgrown']
 
 export function MemoryScene({
 	theme = 'home',

@@ -148,9 +148,9 @@
 //   Pure functions: the same (state.t, pose) always gives the same image.
 //   Paused game (state.frozen: menu, diorama of act III): the integrator keeps `pose.t` fixed,
 //   otherwise breathing and ears keep moving with state.t.
-//   The entities of personnages.glb look toward -Z: yaw = pi in this convention.
+//   The entities of characters.glb look toward -Z: yaw = pi in this convention.
 //
-// The textures are THREE.Texture (images of ../captures/personnages.glb): the module forces
+// The textures are THREE.Texture (images of ../captures/characters.glb): the module forces
 // NEAREST, no mipmaps, sRGB, and reads `flipY` to orient the UVs (false for glTF textures).
 
 import * as THREE from 'three'

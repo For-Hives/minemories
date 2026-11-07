@@ -23,7 +23,7 @@ final class RenderedTexture {
         || width > 16384
         || height > 16384
         || (long) width * height > MAX_PIXELS)
-      throw new IOException("La texture du modèle dépasse la limite de pixels.");
+      throw new IOException("The model texture exceeds the pixel limit.");
   }
 
   static RenderedTexture fromRgba(int width, int height, int[] rgba) throws IOException {

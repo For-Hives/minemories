@@ -44,12 +44,12 @@ test('all seven reserved screenshots are attached to the Windows steps, folded a
 	const expected = [
 		[
 			'Installer le loader',
-			['01-minecraft-1.21.1', '02-java-21', '03-neoforge-install-client', '04-profil-dossier-jeu'],
+			['01-minecraft-1.21.1', '02-java-21', '03-neoforge-install-client', '04-profile-game-directory'],
 		],
-		['Télécharger le mod', ['05-jar-telecharge']],
-		['Ranger le fichier', ['06-dossier-mods']],
+		['Télécharger le mod', ['05-downloaded-jar']],
+		['Ranger le fichier', ['06-mods-folder']],
 		['Lancer le jeu', []],
-		['Créer un souvenir', ['10-souvenir-dans-viewer']],
+		['Créer un souvenir', ['10-memory-in-viewer']],
 	] as const
 	for (const [step, files] of expected) {
 		openStep(step)

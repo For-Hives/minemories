@@ -81,13 +81,13 @@ class ClientSettingsTest {
             settings,
             ClientSettings.DEFAULT_API_URL,
             ClientSettings.DEFAULT_API_URL + "/",
-            "~/souvenirs",
+            "~/memories",
             temporary));
     assertEquals("private-token", settings.getProperty("deviceToken"));
     assertTrue(ClientSettings.diagnosticsConsent(settings));
     assertTrue(ClientSettings.afkSnapshots(settings));
     assertEquals(
-        temporary.resolve("souvenirs"), ClientSettings.exportDirectory(settings, temporary));
+        temporary.resolve("memories"), ClientSettings.exportDirectory(settings, temporary));
   }
 
   @Test

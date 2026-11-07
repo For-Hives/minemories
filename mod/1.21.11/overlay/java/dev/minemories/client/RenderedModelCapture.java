@@ -189,7 +189,7 @@ final class RenderedModelCapture {
   private static Identifier textureLocation(RenderType type) throws IOException {
     var bindings = type.state.textures;
     if (bindings.isEmpty())
-      throw new IOException("Le renderer utilise une texture procédurale non exportable.");
+      throw new IOException("The renderer uses a procedural texture that cannot be exported.");
     return bindings.values().iterator().next().location();
   }
 

@@ -86,8 +86,7 @@ export function jdkFor(jdks, major) {
 export function adoptiumPlatform(platform = osPlatform(), arch = osArch()) {
 	const os = { linux: 'linux', darwin: 'mac', win32: 'windows' }[platform]
 	const architecture = { x64: 'x64', arm64: 'aarch64' }[arch]
-	if (!(os && architecture))
-		throw new Error(`Plateforme non gérée pour le téléchargement de JDK : ${platform}/${arch}.`)
+	if (!(os && architecture)) throw new Error(`Unsupported platform for JDK download: ${platform}/${arch}.`)
 	return { os, architecture }
 }
 
@@ -101,7 +100,7 @@ export function pickAdoptiumPackage(json) {
 	const entry = Array.isArray(json) ? json.find(item => item?.binary?.package?.link) : null
 	const pack = entry?.binary?.package
 	if (!(pack?.checksum && checksumPattern.test(pack.checksum)))
-		throw new Error('Réponse Adoptium sans somme SHA-256 exploitable : téléchargement refusé.')
+		throw new Error('Adoptium answer without a usable SHA-256 checksum: download refused.')
 	return { link: pack.link, checksum: pack.checksum.toLowerCase(), name: pack.name, release: entry.release_name }
 }
 
@@ -111,7 +110,7 @@ export function sha256Hex(bytes) {
 
 function defaultExtract(archive, destination) {
 	const result = spawnSync('tar', ['-xf', archive, '-C', destination], { stdio: 'inherit' })
-	if (result.status !== 0) throw new Error(`Extraction de ${archive} échouée.`)
+	if (result.status !== 0) throw new Error(`Extraction of ${archive} failed.`)
 }
 
 /**
@@ -121,16 +120,16 @@ function defaultExtract(archive, destination) {
 export async function installJdk(major, options = {}) {
 	const { toolsDir = defaultToolsDir(), fetchImpl = fetch, extract = defaultExtract, log = noop, platform } = options
 	if (!supportedMajors.includes(Number(major)))
-		throw new Error(`JDK ${major} non géré (versions : ${supportedMajors.join(', ')}).`)
+		throw new Error(`JDK ${major} is not supported (versions: ${supportedMajors.join(', ')}).`)
 	const metadata = await fetchImpl(adoptiumUrl(major, platform))
-	if (!metadata.ok) throw new Error(`Adoptium a répondu ${metadata.status}.`)
+	if (!metadata.ok) throw new Error(`Adoptium answered ${metadata.status}.`)
 	const pack = pickAdoptiumPackage(await metadata.json())
-	log(`Téléchargement de ${pack.name} (${pack.release})`)
+	log(`Downloading ${pack.name} (${pack.release})`)
 	const response = await fetchImpl(pack.link)
-	if (!response.ok) throw new Error(`Téléchargement du JDK ${major} : HTTP ${response.status}.`)
+	if (!response.ok) throw new Error(`JDK ${major} download: HTTP ${response.status}.`)
 	const bytes = Buffer.from(await response.arrayBuffer())
 	const actual = sha256Hex(bytes)
-	if (actual !== pack.checksum) throw new Error(`SHA-256 du JDK ${major} invalide (attendu ${pack.checksum}).`)
+	if (actual !== pack.checksum) throw new Error(`Invalid SHA-256 for JDK ${major} (expected ${pack.checksum}).`)
 	await mkdir(toolsDir, { recursive: true })
 	const staging = join(toolsDir, `.jdk-${major}-${process.pid}`)
 	await rm(staging, { recursive: true, force: true })
@@ -140,7 +139,7 @@ export async function installJdk(major, options = {}) {
 		await writeFile(archive, bytes)
 		extract(archive, staging)
 		const folder = (await listDir(staging)).find(name => name !== pack.name)
-		if (!folder) throw new Error('Archive de JDK vide.')
+		if (!folder) throw new Error('Empty JDK archive.')
 		const final = join(toolsDir, `jdk-${pack.release.replace(releasePrefix, '')}`)
 		await rm(final, { recursive: true, force: true })
 		await rename(join(staging, folder), final)
@@ -162,9 +161,9 @@ export async function ensureJdks(majors, options = {}) {
 	if (!pickGradleJdk(jdks)) missing.push(minimumGradleJava)
 	for (const major of need) if (!(jdkFor(jdks, major) || missing.includes(major))) missing.push(major)
 	if (missing.length && !download)
-		throw new Error(`JDK manquant(s) : ${missing.join(', ')}. Lance « bun mod jdk install <version> ».`)
+		throw new Error(`Missing JDK(s): ${missing.join(', ')}. Run "bun mod jdk install <version>".`)
 	for (const major of missing) {
-		log(`JDK ${major} introuvable, téléchargement.`)
+		log(`JDK ${major} not found, downloading.`)
 		await install(major, { ...options, log })
 	}
 	if (missing.length) jdks = await detectJdks(options)
@@ -175,7 +174,7 @@ export async function ensureJdks(majors, options = {}) {
 /** Environment and -D flags that give Gradle its JDK and the toolchains it may pick. */
 export function gradleJavaSetup(jdks, env = process.env) {
 	const { gradle, all } = jdks
-	if (!gradle) throw new Error(`Aucun JDK ${minimumGradleJava}+ pour lancer Gradle.`)
+	if (!gradle) throw new Error(`No JDK ${minimumGradleJava}+ to run Gradle.`)
 	const paths = all.map(jdk => jdk.home).join(',')
 	return {
 		env: { ...env, JAVA_HOME: gradle.home, PATH: `${join(gradle.home, 'bin')}${delimiter}${env.PATH ?? ''}` },

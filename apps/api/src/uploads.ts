@@ -138,10 +138,10 @@ uploadRouter.post('/', requestBodyLimit(UPLOAD_INIT_BODY_BYTES), async context =
 		const file = await open(join(root, input.id), 'w', 0o600)
 		await file.close()
 		const name =
-			(metadata.worldName ?? metadata.serverName ?? 'Souvenir Minecraft')
+			(metadata.worldName ?? metadata.serverName ?? 'Minecraft memory')
 				.replace(/\p{Cc}/gu, '')
 				.trim()
-				.slice(0, 80) || 'Souvenir Minecraft'
+				.slice(0, 80) || 'Minecraft memory'
 		try {
 			database
 				.transaction(() => {

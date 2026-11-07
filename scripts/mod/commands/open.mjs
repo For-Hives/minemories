@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { distRoot } from '../build.mjs'
 
 export const name = 'open'
-export const summary = 'Ouvre le dossier build/mod-dist des JAR compilés'
+export const summary = 'Opens the build/mod-dist folder of built JARs'
 export const usage = 'bun mod open'
 
 export function run(_args, { log, root }) {

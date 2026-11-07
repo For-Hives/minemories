@@ -16,8 +16,8 @@ test('bumpVersion follows X.Y.Z-beta.N', () => {
 	assert.equal(bumpVersion('0.36.0-beta.1', 'beta'), '0.36.0-beta.2')
 	assert.equal(bumpVersion('0.36.4-beta.3', 'patch'), '0.36.5-beta.1')
 	assert.equal(bumpVersion('0.36.4-beta.3', 'minor'), '0.37.0-beta.1')
-	assert.throws(() => bumpVersion('0.36.0', 'beta'), /hors format/)
-	assert.throws(() => bumpVersion('0.36.0-beta.1', 'major'), /inconnu/)
+	assert.throws(() => bumpVersion('0.36.0', 'beta'), /does not match/)
+	assert.throws(() => bumpVersion('0.36.0-beta.1', 'major'), /Unknown bump type/)
 })
 
 test('bump rewrites only the version line and commits with a tag on request', async () => {
@@ -43,5 +43,5 @@ test('commitBump defaults to running git in the root; a file without version fai
 	const root = await mkdtemp(join(tmpdir(), 'mod-version-'))
 	await mkdir(join(root, 'mod/1.21.1'), { recursive: true })
 	await writeFile(join(root, propertiesPath), 'x=1\n')
-	await assert.rejects(readModVersion(root), /introuvable/)
+	await assert.rejects(readModVersion(root), /not found/)
 })

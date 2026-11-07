@@ -1,6 +1,6 @@
-// Mode « PC » : au lieu d'écrire dans S3 avec les clés S3, l'outil ENVOIE chaque JAR à l'API
-// (`PUT {MOD_API_URL}/downloads/upload/<id>/<version>`), qui écrit elle-même dans le bucket. Les clés S3 restent sur
-// le serveur ; seul le jeton MOD_UPLOAD_TOKEN (variable d'environnement ou .env, jamais un argument) quitte le PC.
+// "PC" mode: instead of writing to S3 with the S3 keys, the tool UPLOADS each JAR to the API
+// (`PUT {MOD_API_URL}/downloads/upload/<id>/<version>`), which writes to the bucket itself. The S3 keys stay on the
+// server; only the MOD_UPLOAD_TOKEN token (environment variable or .env, never an argument) leaves the PC.
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -16,36 +16,36 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
 const trailingSlashes = /\/+$/
 const shortFields = ['id', 'version', 'minecraft', 'loader', 'loaderVersion', 'java', 'fabricApi', 'commit', 'builtAt']
 
-/** Masque le jeton dans un texte (journal, message d'erreur, corps de réponse, notification). */
+/** Masks the token in a text (log, error message, response body, notification). */
 export function maskToken(text, token) {
 	const value = String(text ?? '')
-	return token ? value.split(token).join('[masqué]') : value
+	return token ? value.split(token).join('[masked]') : value
 }
 
-/** URL de l'API : `--api-url`, puis MOD_API_URL, puis la production. HTTP clair refusé hors machine locale. */
+/** API URL: `--api-url`, then MOD_API_URL, then production. Plain HTTP is refused outside the local machine. */
 export function resolveApiUrl({ flag, env = process.env } = {}) {
 	const raw = flag || env.MOD_API_URL || DEFAULT_API_URL
 	let url
 	try {
 		url = new URL(raw)
 	} catch {
-		throw new Error(`URL de l'API invalide : ${maskToken(raw, env.MOD_UPLOAD_TOKEN)}`)
+		throw new Error(`Invalid API URL: ${maskToken(raw, env.MOD_UPLOAD_TOKEN)}`)
 	}
-	if (url.username || url.password) throw new Error("L'URL de l'API ne doit contenir aucun identifiant.")
+	if (url.username || url.password) throw new Error('The API URL must not contain any credentials.')
 	if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname)))
-		throw new Error("L'URL de l'API doit être en HTTPS (HTTP clair accepté seulement pour localhost).")
+		throw new Error('The API URL must use HTTPS (plain HTTP is only accepted for localhost).')
 	return `${url.origin}${url.pathname.replace(trailingSlashes, '')}`
 }
 
 export function readToken(env = process.env) {
 	const token = env.MOD_UPLOAD_TOKEN
-	if (!token) throw new Error("MOD_UPLOAD_TOKEN est absent (variable d'environnement ou .env, jamais en argument).")
+	if (!token) throw new Error('MOD_UPLOAD_TOKEN is missing (environment variable or .env, never as an argument).')
 	if (token.length < MIN_TOKEN_LENGTH)
-		throw new Error(`MOD_UPLOAD_TOKEN est trop court (${MIN_TOKEN_LENGTH} caractères au minimum).`)
+		throw new Error(`MOD_UPLOAD_TOKEN is too short (${MIN_TOKEN_LENGTH} characters minimum).`)
 	return token
 }
 
-/** Vérifie l'URL et le jeton avant un long build. */
+/** Checks the URL and the token before a long build. */
 export function resolveRemote({ apiUrl, env = process.env } = {}) {
 	return { apiUrl: resolveApiUrl({ flag: apiUrl, env }), token: readToken(env) }
 }
@@ -54,11 +54,11 @@ async function readManifest(file) {
 	try {
 		return JSON.parse(await readFile(join(dirname(file), 'manifest.json'), 'utf8'))
 	} catch {
-		throw new Error(`manifest.json introuvable à côté de ${file} : relancer « bun mod build ».`)
+		throw new Error(`manifest.json not found next to ${file}: run "bun mod build" again.`)
 	}
 }
 
-/** Sous-ensemble du manifest de build envoyé à l'API (en-tête X-Mod-Manifest, JSON en base64url). */
+/** Subset of the build manifest sent to the API (X-Mod-Manifest header, base64url JSON). */
 export async function encodeManifest(artifact, version, env) {
 	const manifest = artifact.manifest ?? (await readManifest(artifact.file ?? artifact.filePath))
 	const picked = Object.fromEntries(shortFields.filter(key => manifest[key] != null).map(key => [key, manifest[key]]))
@@ -83,7 +83,7 @@ async function sendOnce({ fetchImpl, url, headers, body }) {
 		try {
 			json = JSON.parse(text)
 		} catch {
-			// corps non JSON : seul le statut compte
+			// non-JSON body: only the status matters
 		}
 		return { status: response.status, json }
 	} catch (error) {
@@ -100,7 +100,7 @@ async function sendWithRetry(request, { sleep, attempts, log }) {
 		result = await sendOnce(request)
 		if (!(result.network || retryable(result.status))) return result
 		if (attempt < attempts) {
-			log.warn(`  nouvelle tentative ${attempt}/${attempts - 1} : ${describeFailure(result)}`)
+			log.warn(`  retry ${attempt}/${attempts - 1}: ${describeFailure(result)}`)
 			await sleep(BACKOFF_MS * 2 ** (attempt - 1))
 		}
 	}
@@ -112,7 +112,7 @@ async function uploadOne({ artifact, version, apiUrl, token, env, fetchImpl, sle
 	const file = artifact.file ?? artifact.filePath
 	const bytes = await readFile(file)
 	const sha256 = createHash('sha256').update(bytes).digest('hex')
-	if (artifact.sha256 && artifact.sha256 !== sha256) throw new Error(`sha256 inattendu pour ${file}.`)
+	if (artifact.sha256 && artifact.sha256 !== sha256) throw new Error(`unexpected sha256 for ${file}.`)
 	const headers = {
 		Authorization: `Bearer ${token}`,
 		'Content-Type': 'application/java-archive',
@@ -123,22 +123,22 @@ async function uploadOne({ artifact, version, apiUrl, token, env, fetchImpl, sle
 	const result = await sendWithRetry({ fetchImpl, url, headers, body: bytes }, { sleep, attempts, log })
 	if (result.status !== 200) throw new Error(describeFailure(result))
 	if (!(result.json?.ok === true && result.json.sha256 === sha256))
-		throw new Error("l'API a renvoyé un SHA-256 différent de celui du fichier.")
+		throw new Error('the API returned a SHA-256 that does not match the file.')
 	return { sha256, bytes: bytes.length, latest: Boolean(result.json.latest), replaced: Boolean(result.json.replaced) }
 }
 
-/** Index public de l'API (ce que voit le site), sans cache. */
+/** Public index of the API (what the site sees), uncached. */
 export async function fetchPublicIndex({ apiUrl, fetchImpl = fetch }) {
 	const response = await fetchImpl(`${apiUrl}/downloads/index.json?t=${Date.now()}`, {
 		headers: { 'Cache-Control': 'no-cache' },
 		redirect: 'error',
 		signal: AbortSignal.timeout(30_000),
 	})
-	if (response.status !== 200) throw new Error(`Lecture de l'index publié impossible : HTTP ${response.status}.`)
+	if (response.status !== 200) throw new Error(`Could not read the published index: HTTP ${response.status}.`)
 	return response.json()
 }
 
-/** Même forme que `storageReport` pour que `bun mod status --remote` réutilise l'affichage. */
+/** Same shape as `storageReport` so that `bun mod status --remote` reuses the display. */
 export async function remoteReport({ apiUrl, fetchImpl }) {
 	const index = await fetchPublicIndex({ apiUrl, fetchImpl })
 	const perTarget = {}
@@ -167,13 +167,13 @@ async function confirm({ results, version, apiUrl, fetchImpl, sleep, log }) {
 	}
 	for (const result of pending()) {
 		result.status = 'failed'
-		result.message = result.confirmError ?? "version absente de l'index publié après l'envoi."
-		log.error(`✗ ${result.targetId} : ${result.message}`)
+		result.message = result.confirmError ?? 'version missing from the published index after the upload.'
+		log.error(`✗ ${result.targetId}: ${result.message}`)
 	}
 }
 
 /**
- * Envoie chaque JAR à l'API. L'échec d'une cible n'empêche pas les autres. Résout
+ * Uploads each JAR to the API. A failing target does not stop the others. Resolves
  * `{ ok, apiUrl, results: [{ targetId, status: 'sent' | 'failed', confirmed?, message?, sha256?, bytes?, latest?, replaced? }] }`.
  * @param {{ config?: object, version: string, artifacts: { targetId: string, file?: string, filePath?: string,
  *   bytes?: number, sha256?: string, manifest?: object }[], env?: Record<string, string|undefined>,
@@ -197,11 +197,11 @@ export async function uploadRelease({
 		warn: message => rawLog.warn(maskToken(message, token)),
 		error: message => rawLog.error(maskToken(message, token)),
 	}
-	log.info(`Envoi vers ${apiUrl} : ${artifacts.length} artefact(s).`)
+	log.info(`Uploading to ${apiUrl}: ${artifacts.length} artifact(s).`)
 	const results = []
 	for (const artifact of artifacts) {
 		const { targetId } = artifact
-		log.info(`▶ envoi ${targetId} ${version}`)
+		log.info(`▶ uploading ${targetId} ${version}`)
 		try {
 			const sent = await uploadOne({
 				artifact,
@@ -218,22 +218,22 @@ export async function uploadRelease({
 			results.push({ targetId, status: 'sent', ...sent })
 		} catch (error) {
 			const message = maskToken(error.message, token)
-			log.error(`✗ ${targetId} : ${message}`)
+			log.error(`✗ ${targetId}: ${message}`)
 			results.push({ targetId, status: 'failed', message })
 		}
 	}
 	await confirm({ results, version, apiUrl, fetchImpl, sleep, log })
 	for (const result of results.filter(r => r.status === 'sent'))
-		log.info(`✓ ${result.targetId} publié${result.latest ? ' (latest)' : ''}${result.replaced ? ' (remplacé)' : ''}`)
+		log.info(`✓ ${result.targetId} published${result.latest ? ' (latest)' : ''}${result.replaced ? ' (replaced)' : ''}`)
 	return { ok: results.every(result => result.status === 'sent'), apiUrl, results }
 }
 
-/** Résumé en une ligne par cible, pour la fin d'une release ou d'un push. */
+/** One-line-per-target summary, for the end of a release or a push. */
 export function summarizeUpload({ results }) {
 	const sent = results.filter(result => result.status === 'sent')
 	const failed = results.filter(result => result.status === 'failed')
 	const lines = results.map(result =>
-		result.status === 'sent' ? `  ✓ ${result.targetId}` : `  ✗ ${result.targetId} : ${result.message}`
+		result.status === 'sent' ? `  ✓ ${result.targetId}` : `  ✗ ${result.targetId}: ${result.message}`
 	)
-	return [...lines, '', `${sent.length} cible(s) envoyée(s), ${failed.length} échec(s).`].join('\n')
+	return [...lines, '', `${sent.length} target(s) uploaded, ${failed.length} failed.`].join('\n')
 }

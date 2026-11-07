@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 export function loadOptionalModule(name, log) {
 	const path = resolve(here, name)
 	if (!existsSync(path)) {
-		log.warn(`Module ${name} absent : étape ignorée.`)
+		log.warn(`Module ${name} missing: step skipped.`)
 		return Promise.resolve(null)
 	}
 	return import(pathToFileURL(path).href)
@@ -25,7 +25,7 @@ async function optionalFunction(loadModule, name, fn, log) {
 	const module = await loadModule(name, log)
 	if (!module) return null
 	if (typeof module[fn] === 'function') return module[fn]
-	log.warn(`${name} n'exporte pas ${fn} : étape ignorée.`)
+	log.warn(`${name} does not export ${fn}: step skipped.`)
 	return null
 }
 
@@ -50,7 +50,7 @@ function targetReport(results, tests) {
 				id: r.targetId,
 				status: 'failed',
 				seconds: r.seconds,
-				message: test.message ?? 'Test headless en échec.',
+				message: test.message ?? 'Headless test failed.',
 			}
 		return { id: r.targetId, status: 'passed', seconds: r.seconds, bytes: r.bytes }
 	})
@@ -80,17 +80,17 @@ export async function runRelease({ config, env, root, log, flags = {}, deps = {}
 			const notifyFn = await optionalFunction(loadModule, './notify.mjs', 'notify', log)
 			await notifyFn?.(event)
 		} catch (error) {
-			log.warn(`Notification échouée : ${error.message}`)
+			log.warn(`Notification failed: ${error.message}`)
 		}
 	}
 	try {
 		if (flags.dryRun) return await dryRun({ config, root, log, loadModule, flags })
 		if (flags.remote) await checkRemote({ flags, env, loadModule, log })
 		release = await acquire(lockPath(root), { label: 'bun mod release' })
-		if (flags.bump) log.info(`Version : ${(await bump(root, flags.bump, { commit: flags.commit })).next}`)
+		if (flags.bump) log.info(`Version: ${(await bump(root, flags.bump, { commit: flags.commit })).next}`)
 		state.version = await readModVersion(root)
 		const targets = enabledTargets(config)
-		log.info(`Release ${state.version} : ${targets.length} cible(s).`)
+		log.info(`Release ${state.version}: ${targets.length} target(s).`)
 		state.results = await build(targets, { root, env, log, version: state.version, prod: true, locked: true })
 		state.commit = state.results.find(r => r.manifest)?.manifest.commit ?? null
 		log.info(`\n${summarize(state.results)}`)
@@ -101,10 +101,10 @@ export async function runRelease({ config, env, root, log, flags = {}, deps = {}
 		await publishStage({ state, artifacts, config, env, root, log, loadModule, flags, changelog: deps.changelog })
 		return await finish({ state, notify, log })
 	} catch (error) {
-		log.error(`Release interrompue : ${error.message}`)
+		log.error(`Release interrupted: ${error.message}`)
 		await notify({
 			kind: 'release-failure',
-			title: `Release ${state.version ?? ''} interrompue`,
+			title: `Release ${state.version ?? ''} interrupted`,
 			summary: error.message,
 			version: state.version ?? undefined,
 			commit: state.commit ?? undefined,
@@ -132,27 +132,27 @@ function storable(state) {
 }
 
 async function testStage({ state, targets, config, env, log, loadModule, flags }) {
-	if (flags.skipTests) return log.info('Tests headless ignorés (--skip-tests).')
+	if (flags.skipTests) return log.info('Headless tests skipped (--skip-tests).')
 	const runTests = await optionalFunction(loadModule, './headless/index.mjs', 'runHeadlessTests', log)
 	if (!runTests) return
 	const built = new Set(state.results.filter(r => r.status === 'passed').map(r => r.targetId))
 	const wanted = targets.filter(t => built.has(t.id))
 	state.tests = (await runTests({ config, targets: wanted, env })) ?? []
-	for (const t of state.tests) log.info(`  test ${t.targetId} : ${t.status}${t.message ? ` (${t.message})` : ''}`)
+	for (const t of state.tests) log.info(`  test ${t.targetId}: ${t.status}${t.message ? ` (${t.message})` : ''}`)
 }
 
-/** Mode PC : vérifie l'URL et le jeton avant de lancer un long build. */
+/** PC mode: checks the URL and the token before starting a long build. */
 async function checkRemote({ flags, env, loadModule, log }) {
 	const remote = await optionalFunction(loadModule, './remote/index.mjs', 'resolveRemote', log)
-	if (!remote) throw new Error("Module remote absent : impossible d'envoyer via l'API.")
+	if (!remote) throw new Error('Remote module missing: cannot upload through the API.')
 	remote({ apiUrl: flags.apiUrl, env })
 }
 
-/** Mode PC : envoie les JAR à l'API (qui écrit dans S3) au lieu d'utiliser les clés S3. */
+/** PC mode: uploads the JARs to the API (which writes to S3) instead of using the S3 keys. */
 async function uploadStage({ state, artifacts, env, log, loadModule, flags }) {
-	if (artifacts.length === 0) return log.warn('Aucun artefact à envoyer.')
+	if (artifacts.length === 0) return log.warn('No artifact to upload.')
 	const upload = await optionalFunction(loadModule, './remote/index.mjs', 'uploadRelease', log)
-	if (!upload) throw new Error('Module remote absent : envoi impossible.')
+	if (!upload) throw new Error('Remote module missing: upload impossible.')
 	state.remote = await upload({
 		version: state.version,
 		artifacts,
@@ -162,11 +162,11 @@ async function uploadStage({ state, artifacts, env, log, loadModule, flags }) {
 		log,
 	})
 	const sent = state.remote.results.filter(r => r.status === 'sent').length
-	log.info(`Envoi : ${sent}/${artifacts.length} artefact(s) publié(s) via l'API.`)
+	log.info(`Upload: ${sent}/${artifacts.length} artifact(s) published through the API.`)
 }
 
 async function storeStage({ state, artifacts, config, env, log, loadModule }) {
-	if (artifacts.length === 0) return log.warn('Aucun artefact à stocker.')
+	if (artifacts.length === 0) return log.warn('No artifact to store.')
 	const store = await optionalFunction(loadModule, './storage/index.mjs', 'storeRelease', log)
 	if (!store) return
 	state.store = await store({
@@ -177,13 +177,13 @@ async function storeStage({ state, artifacts, config, env, log, loadModule }) {
 		artifacts,
 		env,
 	})
-	log.info(`Stockage : ${artifacts.length} artefact(s) enregistré(s).`)
+	log.info(`Storage: ${artifacts.length} artifact(s) stored.`)
 }
 
 async function publishStage({ state, artifacts, config, env, root, log, loadModule, flags, changelog }) {
-	if (flags.remote) return log.info('Mode --remote : la publication tierce reste côté VPS (ignorée).')
-	if (flags.noPublish) return log.info('Publication tierce ignorée (--no-publish).')
-	if (!hasPublishTokens(env)) return log.info('Aucun jeton Modrinth/CurseForge : publication tierce ignorée.')
+	if (flags.remote) return log.info('--remote mode: third-party publishing stays on the VPS (skipped).')
+	if (flags.noPublish) return log.info('Third-party publishing skipped (--no-publish).')
+	if (!hasPublishTokens(env)) return log.info('No Modrinth/CurseForge token: third-party publishing skipped.')
 	const publish = await optionalFunction(loadModule, './publish/index.mjs', 'publishThirdParty', log)
 	if (!publish) return
 	const enabled = new Set(enabledTargets(config).map(t => t.id))
@@ -198,13 +198,13 @@ async function publishStage({ state, artifacts, config, env, root, log, loadModu
 		env,
 		dryRun: false,
 	})
-	for (const p of state.published) log.info(`  ${p.platform} ${p.targetId} : ${p.status}${p.url ? ` ${p.url}` : ''}`)
+	for (const p of state.published) log.info(`  ${p.platform} ${p.targetId}: ${p.status}${p.url ? ` ${p.url}` : ''}`)
 }
 
 function failureSummary(state, uploadFailed) {
-	if (!uploadFailed) return 'Une ou plusieurs étapes ont échoué.'
+	if (!uploadFailed) return 'One or more steps failed.'
 	const failed = state.remote.results.filter(r => r.status === 'failed').map(r => r.targetId)
-	return `Envoi via l'API en échec pour : ${failed.join(', ')}.`
+	return `Upload through the API failed for: ${failed.join(', ')}.`
 }
 
 async function finish({ state, notify, log }) {
@@ -217,36 +217,36 @@ async function finish({ state, notify, log }) {
 	const firstFailure = state.results.find(r => r.status === 'failed')
 	await notify({
 		kind,
-		title: ok ? `Release ${state.version} publiée` : `Release ${state.version} en échec`,
-		summary: ok ? 'Toutes les cibles sont compilées, testées et stockées.' : failureSummary(state, uploadFailed),
+		title: ok ? `Release ${state.version} published` : `Release ${state.version} failed`,
+		summary: ok ? 'Every target is built, tested and stored.' : failureSummary(state, uploadFailed),
 		version: state.version,
 		commit: state.commit ?? undefined,
 		targets: targetReport(state.results, state.tests),
 		logTail: firstFailure?.logTail?.split('\n').slice(-40).join('\n'),
 	})
-	log[ok ? 'info' : 'error'](ok ? 'Release terminée.' : 'Release terminée avec des échecs.')
+	log[ok ? 'info' : 'error'](ok ? 'Release finished.' : 'Release finished with failures.')
 	return { ok, exitCode: ok ? 0 : 1, ...state }
 }
 
 async function dryRun({ config, root, log, loadModule, flags }) {
 	const version = await readModVersion(root)
-	log.info(`[dry-run] version ${version}${flags.bump ? ` (bump ${flags.bump} non appliqué)` : ''}`)
+	log.info(`[dry-run] version ${version}${flags.bump ? ` (bump ${flags.bump} not applied)` : ''}`)
 	log.info(
-		`[dry-run] build prod : ${enabledTargets(config)
+		`[dry-run] prod build: ${enabledTargets(config)
 			.map(t => t.id)
 			.join(', ')}`
 	)
 	const steps = [
-		['tests headless', './headless/index.mjs', flags.skipTests],
+		['headless tests', './headless/index.mjs', flags.skipTests],
 		flags.remote
-			? ["envoi via l'API (--remote)", './remote/index.mjs', false]
-			: ['stockage', './storage/index.mjs', false],
-		['publication tierce', './publish/index.mjs', flags.noPublish],
+			? ['upload through the API (--remote)', './remote/index.mjs', false]
+			: ['storage', './storage/index.mjs', false],
+		['third-party publishing', './publish/index.mjs', flags.noPublish],
 		['notification', './notify.mjs', false],
 	]
 	for (const [label, module, skipped] of steps) {
-		if (skipped) log.info(`[dry-run] ${label} : ignoré par option`)
-		else log.info(`[dry-run] ${label} : ${(await loadModule(module, log)) ? 'module présent' : 'module absent'}`)
+		if (skipped) log.info(`[dry-run] ${label}: skipped by option`)
+		else log.info(`[dry-run] ${label}: ${(await loadModule(module, log)) ? 'module present' : 'module missing'}`)
 	}
 	return { ok: true, exitCode: 0, results: [], tests: [], published: [], store: null, remote: null, version }
 }

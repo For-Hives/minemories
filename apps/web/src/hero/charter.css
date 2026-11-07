@@ -1,11 +1,11 @@
 /* ==========================================================================================================================================================
-   CHARTE GRAPHIQUE MINEMORIES : composants partagés de la landing (sous le film). Référence : docs/features/design-system.md
-   Chargé après film.css (le kit : boutons, panneaux, FAQ...) ; lit uniquement les jetons de tokens.css. Rien ici ne touche au canvas du film ni à son HUD (.hud8, .film-bar) :
-   tout est sous `.site` (le contenu), `.footer`, ou limité par un sélecteur de composant.
-   Pour étendre la charte à une autre page : la page porte `.site` ou `.ds-page` sur sa racine, utilise les classes mc-* ci-dessous, ne définit aucune taille en dur.
+   MINEMORIES DESIGN SYSTEM: shared landing components (below the film). Reference: docs/features/design-system.md
+   Loaded after film.css (the kit: buttons, panels, FAQ...); reads only the tokens from tokens.css. Nothing here touches the film canvas or its HUD (.hud8, .film-bar):
+   everything sits under `.site` (the content), `.footer`, or is scoped by a component selector.
+   To extend the design system to another page: the page puts `.site` or `.ds-page` on its root, uses the mc-* classes below, and hard-codes no size.
    ========================================================================================================================================================== */
 
-/* --- 1. Échelle typographique (police du jeu et Unifont) ------------------------------------------------------------------------------------------------ */
+/* --- 1. Type scale (game font and Unifont) -------------------------------------------------------------------------------------------------------------------- */
 
 .site .mc-hero__title,
 .ds-page .mc-hero__title {
@@ -60,7 +60,7 @@
 	font-size: var(--ds-fs-xs);
 }
 
-/* Coréen et japonais (Unifont, 1 px par texel) : seules les tailles multiples de 16 restent nettes. */
+/* Korean and Japanese (Unifont, 1 px per texel): only multiples of 16 stay crisp. */
 html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__title,
 html.mm-cjk:not([data-mc-font='read']) .site .mc-section__title {
 	font-size: 32px;
@@ -79,7 +79,7 @@ html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead {
 	line-height: 24px;
 }
 
-/* Police lisible : les titres suivent l'échelle (plus de 48 px), le corps garde ses tailles propres (17 à 18 px). */
+/* Legible font: titles follow the scale (no longer 48 px), the body keeps its own sizes (17 to 18 px). */
 html[data-mc-font='read'] .site .mc-hero__title {
 	font-size: var(--ds-fs-h1);
 	line-height: var(--ds-lh-h1);
@@ -95,7 +95,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 	line-height: var(--ds-lh-h3);
 }
 
-/* --- 2. Rythme vertical ---------------------------------------------------------------------------------------------------------------------------- */
+/* --- 2. Vertical rhythm --------------------------------------------------------------------------------------------------------------------------- */
 
 .site .mc-section,
 .ds-page .mc-section {
@@ -119,7 +119,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 	gap: var(--ds-sp-3);
 }
 
-/* --- 3. Boutons : 44 px, relief du jeu, survol, pression, focus ------------------------------------------------------------------------------------------ */
+/* --- 3. Buttons: 44 px, game bevel, hover, press, focus ---------------------------------------------------------------------------------------------- */
 
 .site .mc-btn,
 .site-account {
@@ -147,7 +147,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 	outline-offset: var(--ds-focus-offset);
 }
 
-/* --- 4. Liens : cible de 44 px, soulignement qui s'épaissit au survol -------------------------------------------------------------------------------------- */
+/* --- 4. Links: 44 px target, underline that thickens on hover ------------------------------------------------------------------------------------------ */
 
 .site a.mc-link,
 .footer a.mc-link {
@@ -175,7 +175,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 	margin-block: 0;
 }
 
-/* --- 5. Cartes et panneaux « interface Minecraft » : étapes, limites, FAQ --------------------------------------------------------------------------------- */
+/* --- 5. "Minecraft UI" cards and panels: steps, limits, FAQ -------------------------------------------------------------------------------------------- */
 
 .site .mc-step,
 .site .mc-faq__item,
@@ -207,7 +207,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 	cursor: pointer;
 }
 
-/* --- 6. Pied de page : deux colonnes lisibles, liens en grille ------------------------------------------------------------------------------------------- */
+/* --- 6. Footer: two readable columns, links in a grid ---------------------------------------------------------------------------------------------------- */
 
 .footer .mc-footer__inner {
 	grid-template-columns: minmax(0, 1fr);
@@ -248,8 +248,8 @@ html[data-mc-font='read'] .site .mc-step__title {
 	align-items: center;
 }
 
-/* --- 7. Mouvement : entrée des blocs au défilement (réglé par src/lib/reveal.ts) ------------------------------------------------------------------------------ */
-/* Le contenu est visible par défaut (sans JavaScript, sans WebGL, en mouvement réduit) : le masquage n'existe que si #site porte data-reveal="on". */
+/* --- 7. Motion: blocks entering on scroll (driven by src/lib/reveal.ts) -------------------------------------------------------------------------------------- */
+/* Content is visible by default (without JavaScript, without WebGL, with reduced motion): hiding only exists when #site has data-reveal="on". */
 
 #site[data-reveal='on'] .ds-reveal:not(.is-in) {
 	opacity: 0;
@@ -294,10 +294,10 @@ html[data-mc-motion='reduced'] #site[data-reveal='on'] .ds-reveal:not(.is-in) {
 	transform: none;
 }
 
-/* --- 8. Lecture moderne : texte courant en sans-serif, titres et commandes dans la police du jeu ------------------------------------------------------------ */
-/* La police du jeu en 16 px sur de longs paragraphes fatigue et fait « jouet » : on la garde pour ce qui se commande et ce qui titre (logo, h1 à h3, boutons, étiquettes, HUD du film),
-   et le texte qui se lit passe en sans-serif, sans ombre pixel, sur un interligne de 1,5 à 1,6. Inactif pour le coréen et le japonais (Unifont) et pour l'option « Police lisible »
-   (qui met déjà tout en Atkinson). Le film et son HUD ne sont pas touchés. */
+/* --- 8. Modern reading: running text in sans-serif, titles and controls in the game font ------------------------------------------------------------------ */
+/* The game font at 16 px over long paragraphs is tiring and looks like a toy: it stays for controls and titles (logo, h1 to h3, buttons, labels, film HUD),
+   and text meant for reading switches to sans-serif, with no pixel shadow, at a 1.5 to 1.6 line height. Inactive for Korean and Japanese (Unifont) and for the "Legible font" option
+   (which already sets everything in Atkinson). The film and its HUD are untouched. */
 
 html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-hero__lead, .mc-section__text, .mc-prose, .mc-lead) {
 	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
@@ -330,17 +330,17 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	font-size: var(--ds-rd-fs-lg);
 }
 
-/* --- 9. Motion design : tout ce qui est interactif ou qui arrive à l'écran ------------------------------------------------------------------------------------ */
-/* Règles : transform et opacité seulement (aucun saut de mise en page), jamais de variation de luminosité (pas plus de 2 flashs par seconde), jamais sur le canvas ni le HUD du film.
-   Tout est derrière `prefers-reduced-motion: no-preference` ET l'option « Mouvement réduit » du pied de page : le mouvement est l'exception, le contenu est la règle.
-   Les ouvertures de panneaux (`::details-content`, `display` discret) sont une amélioration progressive : un navigateur qui ne les connaît pas ouvre et ferme sans animation. */
+/* --- 9. Motion design: everything interactive or arriving on screen ------------------------------------------------------------------------------------------- */
+/* Rules: transform and opacity only (no layout shift), never a brightness change (no more than 2 flashes per second), never on the film canvas or HUD.
+   Everything sits behind `prefers-reduced-motion: no-preference` AND the footer's "Reduced motion" option: motion is the exception, content is the rule.
+   Panel openings (`::details-content`, discrete `display`) are a progressive enhancement: a browser that lacks them opens and closes without animation. */
 
 @media (prefers-reduced-motion: no-preference) {
 	:root:not([data-mc-motion='reduced']) {
 		interpolate-size: allow-keywords;
 	}
 
-	/* 9.1 Entrée du hero au chargement : kicker, titre, chapeau, boutons, compatibilité arrivent l'un après l'autre. Terminé en moins d'une seconde, une seule fois. */
+	/* 9.1 Hero entrance on load: kicker, title, lead, buttons and compatibility arrive one after another. Done in under a second, once. */
 	@keyframes ds-rise {
 		from {
 			opacity: 0;
@@ -373,7 +373,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		animation-delay: calc(var(--ds-stagger) * 4);
 	}
 
-	/* 9.2 Titres de section : balayage par pas (un « pixel » à la fois, comme un texte qui se tape) en plus du fondu de reveal.ts. */
+	/* 9.2 Section titles: stepped wipe (one "pixel" at a time, like text being typed) on top of the reveal.ts fade. */
 	@keyframes ds-wipe {
 		from {
 			clip-path: inset(0 100% 0 0);
@@ -388,7 +388,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		animation: ds-wipe var(--ds-dur-3) steps(12, end) both;
 	}
 
-	/* 9.3 Boutons : soulèvement, pression, icône qui répond. Le principal garde son cuivre ; seules la position et l'icône bougent. */
+	/* 9.3 Buttons: lift, press, responsive icon. The primary keeps its copper; only position and icon move. */
 	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]),
 	:root:not([data-mc-motion='reduced']) .site-account:hover {
 		transform: translateY(calc(-1 * var(--ds-lift)));
@@ -413,7 +413,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transform: translateX(3px);
 	}
 
-	/* 9.4 Liens : le soulignement s'écarte du texte au survol ; la navigation du bandeau a une barre qui entre depuis la gauche. */
+	/* 9.4 Links: the underline moves away from the text on hover; the header navigation has a bar that slides in from the left. */
 	:root:not([data-mc-motion='reduced']) .site a.mc-link,
 	:root:not([data-mc-motion='reduced']) .footer a.mc-link {
 		text-underline-offset: 3px;
@@ -448,7 +448,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transform: scaleX(1);
 	}
 
-	/* 9.5 Cartes d'étape : le numéro de case « tombe » en place à l'entrée (rebond de 6 %) et répond au survol de la carte. */
+	/* 9.5 Step cards: the slot number "drops" into place on entry (6% bounce) and responds to hovering the card. */
 	@keyframes ds-pop {
 		from {
 			opacity: 0;
@@ -474,7 +474,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transform: scale(1.08);
 	}
 
-	/* 9.6 Panneaux qui s'ouvrent (FAQ, détails d'étape, pied de page) : la hauteur s'anime, le contenu se fond ; le chevron rebondit. */
+	/* 9.6 Opening panels (FAQ, step details, footer): height animates, content fades in; the chevron bounces. */
 	:root:not([data-mc-motion='reduced']) .mc-faq__item::details-content,
 	:root:not([data-mc-motion='reduced']) .words-fold::details-content,
 	:root:not([data-mc-motion='reduced']) .mc-step__more::details-content,
@@ -501,7 +501,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
 	}
 
-	/* 9.7 Menu du bandeau (petits écrans) : il descend en se fondant ; la croix et les trois barres s'échangent par rebond. */
+	/* 9.7 Header menu (small screens): it slides down while fading in; the cross and the three bars swap with a bounce. */
 	:root:not([data-mc-motion='reduced']) .site-menu {
 		transition:
 			opacity var(--ds-dur-2) var(--ds-ease),
@@ -540,8 +540,8 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transform: translateX(var(--ds-sp-1));
 	}
 
-	/* 9.8 FAQ : un seul panneau ouvert à la fois (attribut `name`), un liseré cuivre qui se déploie sur la carte ouverte, la réponse qui monte après l'ouverture,
-	   la question qui avance au survol, la pression qui l'enfonce d'un pixel, le chevron qui s'abaisse avant de se retourner. */
+	/* 9.8 FAQ: one open panel at a time (`name` attribute), a copper edge that unfolds on the open card, the answer rising after opening,
+	   the question shifting forward on hover, a press that sinks it by one pixel, the chevron dipping before it flips. */
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__item {
 		position: relative;
 	}
@@ -599,7 +599,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transition-delay: 0s;
 	}
 
-	/* 9.9 Autres dépliants (repli « Le film, en mots », notes du pied de page, détails d'étape) : le sommaire répond au survol et à la pression comme une question de FAQ. */
+	/* 9.9 Other disclosures ("The film, in words" fallback, footer notes, step details): the summary responds to hover and press like a FAQ question. */
 	:root:not([data-mc-motion='reduced']) .words-fold summary,
 	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary {
@@ -623,9 +623,9 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 }
 
-/* --- 10. Listes déroulantes : le sélecteur de langue ouvre un panneau du jeu qui descend en se fondant ---------------------------------------------------- */
-/* `appearance: base-select` (Chrome 135 et suivants) rend la liste stylable tout en gardant le <select> natif : clavier, lecteurs d'écran et mobile restent ceux du navigateur.
-   Ailleurs, la liste native s'ouvre comme avant (amélioration progressive, rien ne casse). */
+/* --- 10. Dropdowns: the language selector opens a game panel that slides down while fading in ---------------------------------------------------------- */
+/* `appearance: base-select` (Chrome 135 and later) makes the list stylable while keeping the native <select>: keyboard, screen readers and mobile stay the browser's own.
+   Elsewhere, the native list opens as before (progressive enhancement, nothing breaks). */
 
 @supports (appearance: base-select) {
 	.mc-select__control,
@@ -639,7 +639,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	.mc-select__control::picker-icon {
-		display: none; /* le chevron du kit (.mc-select::after) reste le seul */
+		display: none; /* the kit's chevron (.mc-select::after) stays the only one */
 	}
 
 	.mc-select__control::picker(select) {
@@ -717,9 +717,9 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 }
 
-/* --- 11. La barre du film : une frise verticale au bord droit, pour savoir où l'on en est et remonter dans l'histoire ------------------------------------------------ */
-/* Le remplissage et la poignée suivent le temps du film (`--rail-p`, 0 à 1, posé par hero.js) ; la barre disparaît à la fin du film. Les cinq chapitres sont des repères cliquables. Un glissement ne
-   fait que déplacer la poignée : le film saute UNE fois au relâchement (voir `railSeek`), ce qui garde les garde-fous contre les flashs. */
+/* --- 11. The film rail: a vertical timeline on the right edge, to see where you are and go back in the story ------------------------------------------------------ */
+/* The fill and the thumb follow the film time (`--rail-p`, 0 to 1, set by hero.js); the rail disappears when the film ends. The five chapters are clickable markers. Dragging
+   only moves the thumb: the film jumps ONCE on release (see `railSeek`), which keeps the anti-flash safeguards. */
 
 .film-rail {
 	--rail-p: 0;
@@ -735,7 +735,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	touch-action: none;
 }
 
-/* La barre n'existe que pendant le film : elle disparaît au glissement vers le site (Andy). */
+/* The rail only exists during the film: it disappears on the glide to the site (Andy). */
 html[data-phase='glide'] .film-rail,
 html[data-phase='site'] .film-rail {
 	--rail-p: 1;
@@ -757,7 +757,7 @@ html[data-phase='site'] .film-rail {
 .film-rail__track::before {
 	content: '';
 	position: absolute;
-	inset: 0 -11px; /* zone de saisie de 30 px de large autour d'un trait de 8 px */
+	inset: 0 -11px; /* 30 px wide grab area around an 8 px line */
 }
 
 .film-rail__fill {
@@ -806,7 +806,7 @@ html[data-phase='site'] .film-rail {
 .film-rail__node::before {
 	content: '';
 	position: absolute;
-	inset: -16px; /* cible de 44 px */
+	inset: -16px; /* 44 px target */
 }
 
 .film-rail__node:hover,

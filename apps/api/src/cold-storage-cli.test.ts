@@ -39,7 +39,7 @@ test('archive preview opens an existing database read-only, reports physical obj
 			expect(await executeColdStorageCli(['--help'])).toBe(0)
 			expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toHaveProperty('usage')
 			expect(await executeColdStorageCli(['--apply'], context)).toBe(1)
-			expect(stderr).toHaveBeenCalledWith(expect.stringContaining('Aucun objet modifié'))
+			expect(stderr).toHaveBeenCalledWith(expect.stringContaining('No object was modified'))
 		} finally {
 			stdout.mockRestore()
 			stderr.mockRestore()

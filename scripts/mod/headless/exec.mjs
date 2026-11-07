@@ -68,7 +68,7 @@ export async function execLogged({ command, args, cwd, env, timeoutMs, logFile, 
 			if (!idleTimeoutMs) return
 			clearTimeout(idleTimer)
 			idleTimer = setTimeout(() => {
-				stuck ??= `aucune sortie depuis ${Math.round(idleTimeoutMs / 1000)} s`
+				stuck ??= `no output for ${Math.round(idleTimeoutMs / 1000)} s`
 				stop()
 			}, idleTimeoutMs)
 		}

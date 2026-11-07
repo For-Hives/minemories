@@ -1,292 +1,284 @@
-# Archivage des captures inactives
+# Archiving inactive captures
 
-Suivi de l’issue [#85](https://github.com/For-Hives/minemories/issues/85).
-Le suivi des ouvertures, la prévisualisation, les transitions et les API sont
-implémentés avec un worker optionnel et le parcours viewer de restauration.
-L’archivage reste désactivé par défaut. Les classes, délais et coûts publics sont
-comparés dans [la politique et le chiffrage](cold-storage-costs.md) ; l’activation
-sur un compte réel relève du déploiement.
+Tracks issue [#85](https://github.com/For-Hives/minemories/issues/85).
+Open tracking, preview, transitions and APIs are implemented, with an optional
+worker and the viewer's restoration flow. Archiving stays disabled by default.
+Public classes, delays and costs are compared in
+[the policy and cost estimate](cold-storage-costs.md); enabling it on a real
+account is a deployment matter.
 
-## Dernière ouverture réelle
+## Last real open
 
-`memories.last_opened_at` est un timestamp SQLite en millisecondes, initialement
-`NULL`, y compris pour les captures présentes avant migration. Les routes GLB
-privées, partagées et publiques le mettent à jour lors de la livraison du premier
-fragment non vide du flux. Il s’agit d’une lecture du fichier côté serveur ; cela
-ne prouve pas que le navigateur a terminé son rendu ou téléchargé tout le fichier.
+`memories.last_opened_at` is a SQLite timestamp in milliseconds, initially
+`NULL`, including for captures that existed before the migration. The private,
+shared and public GLB routes update it when the first non-empty chunk of the
+stream is delivered. This is a server-side read of the file; it does not prove
+that the browser finished rendering or downloaded the whole file.
 
-Une requête non autorisée, un handle ouvert sans consommation, un flux vide ou
-un échec avant le premier fragment ne comptent pas. L’autorisation est vérifiée
-à nouveau avant d’enregistrer l’ouverture. Les accès à la galerie, aux métadonnées,
-aux miniatures et les lectures internes de conversion/réconciliation ne comptent
-pas. Une livraison partielle compte si des octets ont déjà été délivrés.
+An unauthorized request, a handle opened but never consumed, an empty stream or
+a failure before the first chunk do not count. Authorization is checked again
+before recording the open. Gallery, metadata and thumbnail accesses, and
+internal conversion/reconciliation reads, do not count. A partial delivery
+counts if bytes have already been delivered.
 
-La mise à jour est monotone, utilise la date de création comme borne inférieure
-et suit la ligne du souvenir après conversion de sa clé physique. Une capture
-supprimée ne reçoit plus de nouvelle date. En l’absence d’ouverture, la politique
-d’inactivité devra utiliser `created_at` ; aucun historique antérieur n’est inventé.
+The update is monotonic, uses the creation date as a lower bound and follows
+the memory row after its physical key is converted. A deleted capture no longer
+receives new dates. When there has been no open, the inactivity policy must use
+`created_at`; no earlier history is invented.
 
-## Prévisualiser l’éligibilité
+## Previewing eligibility
 
-Depuis la racine du dépôt :
+From the repository root:
 
 ```bash
 bun api:archive:plan --idle-days 90 --limit 100
 ```
 
-La commande ouvre une base existante et migrée en lecture seule. `--idle-days`
-accepte un entier de 60 à 90 ; à défaut, `COLD_STORAGE_INACTIVE_DAYS` s’applique,
-puis la valeur 90. `--limit` borne le résultat entre 1 et 1 000 objets (100 par
-défaut). Le JSON contient des clés et identifiants privés : conserver sa sortie
-dans un emplacement privé. Aucun accès au provider, archivage ni suppression
-n’est effectué. Ce résultat n’est pas une réservation : un worker devra vérifier
-l’éligibilité à nouveau atomiquement avant toute transition.
+The command opens an existing, migrated database read-only. `--idle-days`
+accepts an integer from 60 to 90; otherwise `COLD_STORAGE_INACTIVE_DAYS`
+applies, then the value 90. `--limit` bounds the result between 1 and 1,000
+objects (100 by default). The JSON contains private keys and identifiers: keep
+its output in a private location. No provider access, archiving or deletion is
+performed. This result is not a reservation: a worker must check eligibility
+again atomically before any transition.
 
-La sélection prend la plus récente des dates de création/ouverture de **tous**
-les souvenirs qui référencent un objet. Les clés de manifestes virtuels ne sont
-pas des objets physiques. Un bloc dédupliqué n’est compté qu’une fois, même s’il
-apparaît plusieurs fois dans un même souvenir. Les souvenirs dans la corbeille
-protègent leurs blocs ; les conversions, lectures timelapse en cours et intentions
-de suppression excluent les objets concernés. La prévisualisation ne modifie pas
-les dates d’ouverture.
+Selection takes the most recent creation/open date across **all** memories that
+reference an object. Virtual manifest keys are not physical objects. A
+deduplicated chunk is counted only once, even if it appears several times in
+the same memory. Memories in the trash protect their chunks; conversions,
+in-progress timelapse reads and deletion intents exclude the objects involved.
+The preview does not change open dates.
 
-Les lectures de GLB originaux obtiennent un lease dans `capture_readers`, visible
-par les autres connexions SQLite. Il est renouvelé pendant le transfert et libéré
-à la fermeture, à l’annulation ou en cas d’échec d’ouverture du stockage. Un flux
-sans progrès pendant 15 minutes est interrompu ; un lease expiré ne peut pas être
-renouvelé. Le budget est de 8 lecteurs par propriétaire et 64 au total pour les
-originaux, en complément des limites des lecteurs timelapse.
+Reads of original GLBs get a lease in `capture_readers`, visible to other SQLite
+connections. It is renewed during the transfer and released on close,
+cancellation or a storage open failure. A stream with no progress for 15 minutes
+is interrupted; an expired lease cannot be renewed. The budget is 8 readers per
+owner and 64 in total for originals, on top of the timelapse reader limits.
 
-La file de suppression et la réconciliation reconnaissent aussi ces lecteurs :
-une conversion peut remplacer la clé logique pendant qu’un téléchargement garde
-l’original ouvert, sans supprimer ce fichier avant la fermeture du flux. Les
-leases périmés après une interruption sont collectés ; les suppressions restent
-dans la file durable jusque-là.
+The deletion queue and reconciliation also recognize these readers: a
+conversion can replace the logical key while a download keeps the original
+open, without deleting that file before the stream closes. Stale leases after
+an interruption are collected; deletions stay in the durable queue until then.
 
-## États durables et exclusion des lectures
+## Durable states and read exclusion
 
-`object_tiers` conserve l’état de chaque objet : `hot`, `archiving`, `cold` ou
-`restoring`. L’absence de ligne signifie que l’objet est à chaud. Le catalogue
-réserve un objet dans une transaction SQLite immédiate, en vérifiant à nouveau
-son éligibilité exacte, toutes ses références et les lecteurs/conversions actifs.
-La limite de prévisualisation ne limite pas cette vérification à un premier lot.
+`object_tiers` keeps the state of each object: `hot`, `archiving`, `cold` or
+`restoring`. A missing row means the object is hot. The catalog reserves an
+object in an immediate SQLite transaction, checking again its exact
+eligibility, all its references and active readers/conversions. The preview
+limit does not restrict this check to a first batch.
 
-Les leases de lecture vérifient dans leur propre transaction que les objets sont
-à chaud. Un souvenir timelapse vérifie **tous** ses blocs avant d’ouvrir un flux ;
-un seul bloc indisponible empêche l’ouverture complète, sans lecteur partiellement
-créé. Une conversion ne peut ni lire un original en transition ni réutiliser un
-bloc froid. Les opérations d’archivage/restauration en cours protègent aussi leurs
-objets contre la suppression et la réconciliation.
+Read leases check within their own transaction that the objects are hot. A
+timelapse memory checks **all** its chunks before opening a stream; a single
+unavailable chunk prevents the whole open, with no partially created reader. A
+conversion can neither read an original in transition nor reuse a cold chunk.
+In-progress archiving/restoration operations also protect their objects from
+deletion and reconciliation.
 
-Les travaux ont une génération d’opération et un lease de worker de 15 minutes.
-La reprise d’un lease expiré ne remet pas l’objet à chaud : une ancienne
-confirmation ne peut pas modifier la nouvelle réservation. Un échec garde l’état
-indisponible et une date de nouvelle tentative en base, avec un délai exponentiel
-de 1 minute à 1 heure. Une demande de restauration pendant l’archivage attend sa
-confirmation ; les demandes répétées sont idempotentes. La restauration est
-prioritaire sur un nouvel archivage.
+Jobs have an operation generation and a 15-minute worker lease. Taking over an
+expired lease does not make the object hot again: an old confirmation cannot
+change the new reservation. A failure keeps the unavailable state and a retry
+date in the database, with exponential backoff from 1 minute to 1 hour. A
+restoration request during archiving waits for its confirmation; repeated
+requests are idempotent. Restoration takes priority over a new archiving.
 
-Après restauration confirmée, une fenêtre de 15 minutes empêche un réarchivage
-immédiat avant que le viewer récupère le fichier. Cette fenêtre ne compte pas
-comme une ouverture réelle et ne modifie pas `last_opened_at`. Une suppression
-confirmée retire les métadonnées de tier devenues inutiles avec sa tâche durable.
+After a confirmed restoration, a 15-minute window prevents immediate
+re-archiving before the viewer fetches the file. This window does not count as
+a real open and does not change `last_opened_at`. A confirmed deletion removes
+the tier metadata that is no longer needed along with its durable task.
 
-Les réservations SQLite sont reliées au worker optionnel. Son adaptateur confirme
-les résultats distants, y compris après une réponse perdue, avant de publier
-un état lisible. Les leases SQLite ne peuvent pas annuler une copie déjà reçue
-par le provider. Les API d’état/restauration et leur affichage sont reliés au worker.
+The SQLite reservations are connected to the optional worker. Its adapter
+confirms remote results, including after a lost response, before publishing a
+readable state. SQLite leases cannot cancel a copy the provider has already
+received. The status/restoration APIs and their display are connected to the
+worker.
 
-## Générations physiques et nettoyage
+## Physical generations and cleanup
 
-Les clés logiques des souvenirs et des blocs timelapse restent stables. Une copie
-réserve une nouvelle clé physique dans `<propriétaire>/tiers/<uuid>.glb`, distincte
-des clés d’upload. La réservation est persistée avant l’écriture. Après confirmation
-du provider, la publication du pointeur physique et du nouvel état se fait dans
-la même transaction. Un worker expiré reçoit une autre clé à sa reprise et ne peut
-pas publier l’ancienne réservation.
+The logical keys of memories and timelapse chunks stay stable. A copy reserves a
+new physical key in `<owner>/tiers/<uuid>.glb`, distinct from upload keys. The
+reservation is persisted before writing. After the provider confirms, the
+physical pointer and the new state are published in the same transaction. An
+expired worker gets another key when it resumes and cannot publish the old
+reservation.
 
-Cette séparation protège aussi contre une requête distante déjà reçue dont la
-réponse a été perdue : si elle finit après une restauration, elle écrit son ancienne
-génération, jamais le fichier redevenu lisible. Les lectures et suppressions de
-l’API résolvent le pointeur ; le flux GLB reste streaming et les URL, permissions,
-métadonnées et miniatures ne changent pas. Le quota logique ne compte pas deux fois
-un souvenir pendant une copie technique. Le catalogue n’accorde qu’un lease de
-copie actif à la fois ; les coûts physiques transitoires restent à inclure dans le
-dimensionnement de l’opérateur.
+This separation also protects against a remote request already received whose
+response was lost: if it finishes after a restoration, it writes its old
+generation, never the file that became readable again. API reads and deletions
+resolve the pointer; the GLB stream keeps streaming and URLs, permissions,
+metadata and thumbnails do not change. The logical quota does not count a
+memory twice during a technical copy. The catalog grants only one active copy
+lease at a time; transient physical costs still need to be included in the
+operator's sizing.
 
-L’ancienne copie est conservée jusqu’à publication de la nouvelle. Elle rejoint
-ensuite une file de nettoyage physique distincte de la suppression du souvenir.
-Cette distinction permet de libérer l’ancien objet même si sa clé logique est
-encore utilisée. Une génération publiée ou réservée reste protégée contre le
-nettoyage et l’inventaire de réconciliation. Les copies abandonnées après perte de
-lease passent par le délai de grâce des orphelins (24 heures). Le namespace `tiers`
-est reconnu par la réconciliation si une écriture tardive recrée un objet déjà
-retiré de cette file.
+The old copy is kept until the new one is published. It then joins a physical
+cleanup queue separate from memory deletion. This distinction makes it possible
+to free the old object even if its logical key is still in use. A published or
+reserved generation stays protected from cleanup and from the reconciliation
+inventory. Copies abandoned after a lost lease go through the orphan grace
+period (24 hours). Reconciliation recognizes the `tiers` namespace in case a
+late write recreates an object already removed from this queue.
 
-Le nettoyeur traite au plus une génération par passage, conserve les échecs et
-leurs délais de reprise dans SQLite, puis attend le transfert en cours lors de
-son arrêt. Son ordonnanceur est relié au worker du provider ; aucun archivage
-ni nettoyage physique de tier n’est activé sans configuration explicite.
+The cleaner handles at most one generation per pass, keeps failures and their
+retry delays in SQLite, then waits for the in-progress transfer when it stops.
+Its scheduler is connected to the provider worker; no tier archiving or
+physical cleanup is enabled without explicit configuration.
 
-Les tests utilisent de vrais fichiers : archivage/restauration avec changement de
-clé, suppression de l’original, lecture via la nouvelle génération, reprise après
-interruption, panne de suppression et écriture ancienne terminée en retard. Ils
-vérifient aussi que le quota et le nettoyage des références restent cohérents.
+The tests use real files: archiving/restoration with a key change, deletion of
+the original, reading through the new generation, recovery after interruption,
+deletion failure and an old write finishing late. They also check that the
+quota and reference cleanup stay consistent.
 
-## Contraintes pour la suite
+## Constraints for what comes next
 
-### Disponibilité et demande de restauration
+### Availability and restoration requests
 
-Le contrat partagé expose `captureStorage.status` et `captureStorage.restore`,
-avec un accès propriétaire (ID du souvenir), un lien partagé (token) ou une
-publication publique (ID public). L’autorisation est réévaluée dans la même
-transaction que le manifeste et la demande de restauration. Les accès révoqués
-ou supprimés ne peuvent ni lire l’état ni ajouter du travail.
+The shared contract exposes `captureStorage.status` and
+`captureStorage.restore`, with owner access (memory ID), a shared link (token)
+or a public publication (public ID). Authorization is re-evaluated in the same
+transaction as the manifest and the restoration request. Revoked or deleted
+accesses can neither read the status nor add work.
 
-La réponse contient l’état `ready`, `archiving`, `cold` ou `restoring`, le nombre
-d’objets physiques distincts prêts et leur nombre total, sans clé ni détail du
-fournisseur. Un bloc dédupliqué ne compte qu’une fois. La demande porte sur tous
-les blocs du manifeste ; les répétitions restent idempotentes et ne modifient pas
-la dernière ouverture. Aucun lecteur ne commence tant qu’un bloc reste froid.
-La disponibilité décrit le catalogue ; une panne du stockage demeure une erreur
-distincte lors de la lecture.
+The response contains the `ready`, `archiving`, `cold` or `restoring` state,
+the number of distinct physical objects that are ready and their total number,
+with no key or provider details. A deduplicated chunk counts only once. The
+request covers every chunk in the manifest; repeats stay idempotent and do not
+change the last open. No reader starts while a chunk is still cold.
+Availability describes the catalog; a storage outage remains a separate error
+at read time.
 
-Les trois routes GLB répondent `202` avec `memory_restoration_required` et
-`availability` lorsque la restauration est nécessaire, en conservant
-`Cache-Control: private, no-store`. Consulter cet état ou recevoir ce JSON ne
-compte pas comme une ouverture du GLB. Les tests HTTP/oRPC couvrent propriétaires,
-partages sans compte, publications approuvées, révocation, fichiers originaux et
-captures dédupliquées. Lorsque le fournisseur est configuré, `restorationAvailable`
-vaut `true` et une demande autorisée ajoute le travail durable ; le polling proposé
-est de cinq secondes tant que la capture n’est pas prête. Sinon, cette valeur
-reste `false`, une demande autorisée renvoie `503` et aucun polling n’est annoncé.
-Un test de l’API configurée parcourt aussi le vrai RPC anonyme d’un lien partagé,
-les copies du SDK sur HTTP local, le téléchargement GLB exact et la suppression
-finale. Seul son transport de test est redirigé ; aucun compte cloud n’est utilisé.
+The three GLB routes respond `202` with `memory_restoration_required` and
+`availability` when restoration is needed, keeping
+`Cache-Control: private, no-store`. Checking this state or receiving this JSON
+does not count as opening the GLB. The HTTP/oRPC tests cover owners, account-less
+shares, approved publications, revocation, original files and deduplicated
+captures. When the provider is configured, `restorationAvailable` is `true` and
+an authorized request adds the durable job; the suggested polling interval is
+five seconds until the capture is ready. Otherwise this value stays `false`, an
+authorized request returns `503` and no polling is announced. A test of the
+configured API also walks through the real anonymous RPC of a shared link, the
+SDK copies over local HTTP, the exact GLB download and the final deletion. Only
+its test transport is redirected; no cloud account is used.
 
-### Parcours viewer
+### Viewer flow
 
-Les vues propriétaire, partagée, publique et timeline reconnaissent la réponse
-202 avant de créer un fichier GLB. Un panneau traduit en français/anglais affiche
-l’état et le nombre d’éléments prêts. Le bouton de restauration est explicite ;
-consulter une capture froide ne lance pas de demande payante automatiquement.
-Une restauration déjà en cours est suivie automatiquement au délai annoncé.
-La progression compte les objets prêts et ne prétend pas mesurer un pourcentage
-d’octets ni annoncer un délai fournisseur non vérifié.
+The owner, shared, public and timeline views recognize the 202 response before
+creating a GLB file. A panel translated into French and English shows the state
+and the number of ready items. The restoration button is explicit; viewing a
+cold capture never starts a paid request automatically. A restoration already
+in progress is followed automatically at the announced interval. Progress
+counts ready objects and does not claim to measure a percentage of bytes or
+announce an unverified provider delay.
 
-Les erreurs transitoires permettent une nouvelle demande idempotente. Un accès
-révoqué termine le suivi. Naviguer ou sélectionner une autre capture annule les
-requêtes, l’attente d’action et les timers locaux ; le travail déjà accepté par
-le serveur continue. Sans fournisseur actif, le panneau propose une vérification
-manuelle, sans polling ni demande de restauration. La timeline garde son lecteur
-borné et vérifie toujours la taille exacte du GLB. Les tests couvrent la logique
-à 100 %, les interactions, les traductions, les liens publics et l’annulation.
+Transient errors allow a new idempotent request. Revoked access ends the
+tracking. Navigating or selecting another capture cancels the requests, the
+pending action and the local timers; work already accepted by the server
+continues. Without an active provider, the panel offers a manual check, with no
+polling or restoration request. The timeline keeps its bounded reader and still
+checks the exact GLB size. The tests cover the logic at 100%, the interactions,
+the translations, the public links and cancellation.
 
-### Configuration et traitement distant
+### Configuration and remote processing
 
-La configuration reste désactivée par défaut (`COLD_STORAGE_PROVIDER=off`). Une
-activation exige un choix explicite `aws` ou `r2`, `COLD_STORAGE_CLASS`
-(`GLACIER`, `DEEP_ARCHIVE` ou `STANDARD_IA` ; R2 accepte uniquement cette dernière),
-et un endpoint HTTPS, un bucket et une région explicitement renseignés. Cette
-configuration active un passage au démarrage de l’API puis chaque minute. Garage
-et le stockage local ne reçoivent pas automatiquement une politique froide.
+The configuration stays disabled by default (`COLD_STORAGE_PROVIDER=off`).
+Enabling it requires an explicit choice of `aws` or `r2`, `COLD_STORAGE_CLASS`
+(`GLACIER`, `DEEP_ARCHIVE` or `STANDARD_IA`; R2 accepts only the latter), and an
+explicitly set HTTPS endpoint, bucket and region. This configuration enables a
+pass at API startup and then every minute. Garage and local storage do not
+automatically get a cold policy.
 
-À la première configuration, SQLite lie le catalogue au driver, à l’URL complète,
-au bucket, à la région et à la politique choisie. Un catalogue préexistant sans
-identité doit être réconcilié avant cette liaison. La rotation des identifiants
-n’impose pas de migration. Changer de destination ou de politique exige une
-migration explicite ; même après désactivation du worker, une autre destination
-bloque le démarrage de l’API et la réconciliation avant l’accès à l’inventaire.
-Cela protège les générations publiées et les nettoyages encore en attente.
+On first configuration, SQLite binds the catalog to the driver, the full URL,
+the bucket, the region and the chosen policy. A pre-existing catalog without an
+identity must be reconciled before this binding. Rotating credentials does not
+require a migration. Changing the destination or policy requires an explicit
+migration; even after the worker is disabled, a different destination blocks
+API startup and reconciliation before the inventory is accessed. This protects
+published generations and cleanups still pending.
 
-`ColdStorageWorker` utilise le catalogue et ses réservations durables, traite
-une opération par passage et regroupe les appels concurrents. Il renouvelle
-son bail pendant les appels distants, transmet un signal d’annulation et attend
-la fin de l’opération lors de l’arrêt. Un fournisseur doit confirmer la disponibilité
-de la source avant la copie, puis vérifier la taille et la classe de la destination
-avant de rendre la main. Une restauration encore en attente reprend avec le délai
-de réessai durable. Une copie dont la réponse est perdue reste isolée dans sa
-génération et son nettoyage attend le délai de grâce des orphelins.
-Les tests couvrent ces cas avec de vrais fichiers, ainsi que la perte du bail et
-les acquittements périmés. L’adaptateur `S3ColdStorageProvider` est maintenant testé
-avec le vrai SDK contre un serveur HTTP local. `ColdStorageMaintenance` relie la
-sélection, les copies et le nettoyage physique : un objet au plus est traité par
-passage et les travaux en attente passent avant un nouvel archivage. Si une
-ancienne génération attend encore sa suppression, aucun nouvel archivage n’est
-sélectionné ; les restaurations explicites continuent. L’arrêt annule le worker
-et attend aussi le nettoyage en cours avant de fermer SQLite.
+`ColdStorageWorker` uses the catalog and its durable reservations, handles one
+operation per pass and coalesces concurrent calls. It renews its lease during
+remote calls, passes a cancellation signal and waits for the operation to end
+when stopping. A provider must confirm the source is available before copying,
+then check the destination size and class before returning. A restoration still
+pending resumes with the durable retry delay. A copy whose response is lost
+stays isolated in its generation, and its cleanup waits for the orphan grace
+period. The tests cover these cases with real files, along with lease loss and
+stale acknowledgements. The `S3ColdStorageProvider` adapter is now tested with
+the real SDK against a local HTTP server. `ColdStorageMaintenance` ties together
+selection, copies and physical cleanup: at most one object is handled per pass
+and pending jobs come before a new archiving. If an old generation is still
+waiting for deletion, no new archiving is selected; explicit restorations
+continue. Stopping cancels the worker and also waits for the in-progress cleanup
+before closing SQLite.
 
-L’arrêt de l’API ferme également l’écoute HTTP, attend les requêtes et le
-nettoyage périodique des uploads, puis ferme SQLite une seule fois même si plusieurs
-signaux arrivent. Les appels concurrents à la file de suppression attendent le
-même passage borné ; après son arrêt, aucun nouvel objet n’est supprimé. La
-requête distante déjà envoyée termine son acquittement ou conserve son retry
-durable avant fermeture. Les tests lancent le vrai processus Bun avec une
-suppression HTTP suspendue, pour un souvenir puis un upload expiré, et vérifient
-la confirmation SQLite après deux signaux d’arrêt. Les objets non démarrés restent
-à traiter au prochain lancement.
+Stopping the API also closes the HTTP listener, waits for requests and the
+periodic upload cleanup, then closes SQLite only once even if several signals
+arrive. Concurrent calls to the deletion queue wait for the same bounded pass;
+after it stops, no new object is deleted. A remote request already sent
+completes its acknowledgement or keeps its durable retry before closing. The
+tests launch the real Bun process with a suspended HTTP deletion, for a memory
+and then an expired upload, and check the SQLite confirmation after two stop
+signals. Objects not yet started remain to be handled at the next launch.
 
-L’adaptateur copie côté stockage, sans télécharger le GLB dans l’API. Il contrôle
-la taille (bornée au même plafond que les uploads reprenables), le propriétaire, les clés réservées, la classe et
-l’ETag de la source, transmet `CopySourceIfMatch`, puis exige un résultat SDK et
-un `HEAD` destination concordants avant la publication. Les métadonnées sont
-conservées et aucune ACL publique n’est ajoutée. Les classes hot/cold sont
-`STANDARD` et la classe explicitement choisie. Sur AWS, chaque préparation/copie
-refuse un bucket versionné ou dont le versioning a été suspendu : les suppressions
-ordinaires ne garantiraient pas l’effacement des anciennes versions privées.
-La même vérification précède chaque suppression AWS, y compris les uploads
-abandonnés et les générations retirées. La politique de suppression vient de
-l’identité persistée même après désactivation de l’archivage. Un marqueur de
-suppression ou un identifiant de version dans la réponse empêche de confirmer
-le nettoyage : la tâche persiste et une suppression de souvenir conserve son
-quota réservé jusqu’à résolution. Cela
-couvre aussi une activation concurrente du versioning entre contrôle et DELETE.
-R2 n’implémente pas `GetBucketVersioning` ; cette opération ne lui est pas envoyée.
+The adapter copies on the storage side, without downloading the GLB into the
+API. It checks the size (bounded by the same limit as resumable uploads), the
+owner, the reserved keys, the class and the source ETag, passes
+`CopySourceIfMatch`, then requires a matching SDK result and destination `HEAD`
+before publishing. Metadata is preserved and no public ACL is added. The
+hot/cold classes are `STANDARD` and the explicitly chosen class. On AWS, every
+preparation/copy rejects a bucket that is versioned or whose versioning was
+suspended: ordinary deletions would not guarantee that old private versions are
+erased. The same check precedes every AWS deletion, including abandoned uploads
+and retired generations. The deletion policy comes from the persisted identity
+even after archiving is disabled. A delete marker or a version ID in the
+response prevents confirming the cleanup: the task persists and a memory
+deletion keeps its reserved quota until it is resolved. This also covers
+versioning being enabled concurrently between the check and the DELETE. R2 does
+not implement `GetBucketVersioning`; this operation is not sent to it.
 
-Pour Glacier/Deep Archive, `RestoreObject` demande une copie temporaire d’un jour,
-en mode Standard. Un retour accepté ou un conflit « déjà en cours » ne rend pas
-le GLB lisible : le worker attend un `HEAD` confirmant la restauration, avec au
-moins quinze minutes avant expiration, puis copie vers une nouvelle génération
-`STANDARD` permanente. R2 et `STANDARD_IA` utilisent directement `CopyObject`.
-Les frais et délais de ce mode sont détaillés dans [le chiffrage](cold-storage-costs.md).
+For Glacier/Deep Archive, `RestoreObject` requests a temporary one-day copy in
+Standard mode. An accepted response or an "already in progress" conflict does
+not make the GLB readable: the worker waits for a `HEAD` confirming the
+restoration, with at least fifteen minutes before expiry, then copies to a new
+permanent `STANDARD` generation. R2 and `STANDARD_IA` use `CopyObject`
+directly. The fees and delays of this mode are detailed in
+[the cost estimate](cold-storage-costs.md).
 
-Les tests HTTP couvrent aussi l’erreur XML dans une réponse 200, la réponse perdue
-après écriture distante, la précondition refusée, les métadonnées incohérentes,
-l’annulation du SDK et une copie distante finissant après l’arrêt du worker.
-Cette dernière reste dans sa génération non publiée ; une reprise publie une
-autre clé. Ces tests ne remplacent pas une validation sur le fournisseur réel.
+The HTTP tests also cover an XML error inside a 200 response, a lost response
+after a remote write, a rejected precondition, inconsistent metadata, SDK
+cancellation and a remote copy finishing after the worker stopped. That copy
+stays in its unpublished generation; a retry publishes another key. These tests
+do not replace validation against the real provider.
 
-Les
-métadonnées et miniatures restent accessibles.
-Une restauration doit rendre tous les blocs nécessaires
-lisibles avant d’ouvrir le flux GLB ; le viewer doit afficher l’état et la progression.
-Les transitions doivent pouvoir reprendre après interruption et se réconcilier
-avec le provider, sans contourner les claims de suppression.
+Metadata and thumbnails remain accessible. A restoration must make every needed
+chunk readable before opening the GLB stream; the viewer must show the state
+and progress. Transitions must be able to resume after an interruption and
+reconcile with the provider, without bypassing deletion claims.
 
-Le choix du provider et de ses classes reste à confirmer. Une compatibilité S3
-ne suffit pas à établir la disponibilité de classes froides ou de `RestoreObject`.
-Références officielles consultées le 15 octobre 2026 :
+The choice of provider and classes is still to be confirmed. S3 compatibility
+alone does not establish the availability of cold classes or `RestoreObject`.
+Official references consulted on 15 October 2026:
 
-- [Compatibilité S3 de Garage](https://github.com/deuxfleurs-org/garage/blob/main-v2/doc/book/reference-manual/s3-compatibility.md) :
-  vérifier les opérations effectivement disponibles pour la version déployée.
-- [Restauration AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects.html) :
-  Glacier Flexible Retrieval/Deep Archive nécessitent une copie restaurée temporaire ;
-  le maintien à chaud nécessite une transition distincte.
-- [Copie AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html) :
-  valider la réponse complète via le SDK ; un statut HTTP 200 peut contenir une
-  erreur de copie et ne suffit pas à autoriser la publication d’une génération.
-- [Suppression AWS S3](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html) :
-  un marqueur de suppression ne détruit pas les versions privées précédentes ;
-  le premier adaptateur refuse les buckets versionnés ou suspendus.
-- [Contraintes d’archivage AWS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/archival-storage.html) :
-  tenir compte des durées minimales et des frais de suppression anticipée.
-- [Classes R2](https://developers.cloudflare.com/r2/buckets/storage-classes/) et
-  [tarifs R2](https://developers.cloudflare.com/r2/pricing/) : Infrequent Access
-  applique des frais de récupération et une durée minimale facturée.
-- [Compatibilité de l’API S3 R2](https://developers.cloudflare.com/r2/api/s3/api/) :
-  opérations de copie conditionnelle et classes `STANDARD`/`STANDARD_IA` ;
-  `GetBucketVersioning` n’est pas implémenté.
+- [Garage S3 compatibility](https://github.com/deuxfleurs-org/garage/blob/main-v2/doc/book/reference-manual/s3-compatibility.md):
+  check which operations are actually available for the deployed version.
+- [AWS S3 restoration](https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects.html):
+  Glacier Flexible Retrieval/Deep Archive require a temporary restored copy;
+  keeping it hot requires a separate transition.
+- [AWS S3 copy](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html):
+  validate the full response through the SDK; an HTTP 200 status can contain a
+  copy error and is not enough to allow publishing a generation.
+- [AWS S3 deletion](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObject.html):
+  a delete marker does not destroy previous private versions; the first adapter
+  rejects versioned or suspended buckets.
+- [AWS archival constraints](https://docs.aws.amazon.com/AmazonS3/latest/userguide/archival-storage.html):
+  take minimum durations and early deletion fees into account.
+- [R2 classes](https://developers.cloudflare.com/r2/buckets/storage-classes/) and
+  [R2 pricing](https://developers.cloudflare.com/r2/pricing/): Infrequent Access
+  charges retrieval fees and a minimum billed duration.
+- [R2 S3 API compatibility](https://developers.cloudflare.com/r2/api/s3/api/):
+  conditional copy operations and `STANDARD`/`STANDARD_IA` classes;
+  `GetBucketVersioning` is not implemented.
 
-Aucun tarif régional ni coût d’exploitation n’est supposé. Le choix final doit
-chiffrer stockage, transitions, requêtes, restauration, durée minimale et latence
-avec le compte et la région réellement utilisés.
+No regional pricing or operating cost is assumed. The final choice must price
+storage, transitions, requests, restoration, minimum duration and latency with
+the account and region actually used.

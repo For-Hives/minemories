@@ -45,7 +45,7 @@ beforeEach(() => {
 	vi.clearAllMocks()
 	localStorage.clear()
 	mocks.get.mockResolvedValue({ title: 'Mon village public' })
-	mocks.review.mockResolvedValue({ title: 'Candidat à examiner' })
+	mocks.review.mockResolvedValue({ title: 'Candidate to review' })
 	mocks.load.mockResolvedValue(undefined)
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]), { status: 200 })))
 })
@@ -77,7 +77,7 @@ test('public viewer downloads the approved file and receives no private capture 
 })
 test('review mode uses the protected review procedure and returns to moderation', async () => {
 	mount('/public/11111111-1111-4111-8111-111111111111?review=1')
-	await screen.findByRole('heading', { name: 'Candidat à examiner' })
+	await screen.findByRole('heading', { name: 'Candidate to review' })
 	expect(mocks.review).toHaveBeenCalled()
 	expect(mocks.get).not.toHaveBeenCalled()
 	expect(screen.getByRole('link', { name: 'Retour à la modération' }).getAttribute('href')).toBe('/admin/moderation')
@@ -99,7 +99,7 @@ test('private shared links retain their existing metadata and file route', async
 	vi.mocked(fetch).mockResolvedValueOnce(
 		new Response(
 			JSON.stringify({
-				name: 'Partage privé',
+				name: 'Private share',
 				size: 3,
 				metadata: {
 					x: 1,
@@ -115,7 +115,7 @@ test('private shared links retain their existing metadata and file route', async
 		)
 	)
 	mount('/share/private-token', false)
-	await screen.findByRole('heading', { name: 'Partage privé' })
+	await screen.findByRole('heading', { name: 'Private share' })
 	await waitFor(() => expect(mocks.load).toHaveBeenCalled())
 	expect(fetch).toHaveBeenNthCalledWith(
 		2,

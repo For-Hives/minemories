@@ -1,6 +1,6 @@
-/* Kit de l'interface du jeu (mcui.css du prototype, partie commune) : polices, couleurs et matières, boutons, panneaux, cases, info-bulles, formulaires, pied de page.
-   Chargé sur toutes les pages (main.tsx) ; le film de la landing (film.css) et la charte (charter.css) s'y ajoutent sur `/`. Chemins d'assets réécrits vers /hero/.
-   Les @font-face entre marqueurs sont écrits par les générateurs du prototype (mcui/gen-mcfont.mjs, gen-unifont.mjs, gen-wordmark.mjs) : ne pas les modifier à la main. */
+/* The game interface kit (the shared part of the prototype's mcui.css): fonts, colours and materials, buttons, panels, slots, tooltips, forms, footer.
+   Loaded on every page (main.tsx); the landing film (film.css) and the design system (charter.css) are added on `/`. Asset paths rewritten to /hero/.
+   The @font-face rules between markers are written by the prototype's generators (mcui/gen-mcfont.mjs, gen-unifont.mjs, gen-wordmark.mjs): do not edit them by hand. */
 /* ===== mcui.css ===== */
 /* mcui · the Minemories interface kit, v11 (prototype).
    The visual language of the Minecraft Java interface (bevels, notches, slots, tooltips, toasts, bars, tabs), RECREATED:

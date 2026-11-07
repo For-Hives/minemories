@@ -7,11 +7,11 @@ import { type Context, Hono } from 'hono'
 import { logApiFailure } from './safe-errors'
 import { s3Target } from './storage-s3'
 
-/** Bucket des JAR du mod, distinct des captures des utilisateurs (même endpoint et mêmes identifiants). */
+/** Mod JAR bucket, separate from user captures (same endpoint and same credentials). */
 export const modBucket = process.env.MOD_STORAGE_BUCKET || 'minemories-mods'
 /**
- * Préfixe des clés des mods (`MOD_STORAGE_PREFIX`, vide par défaut). Validé à l'import : une valeur invalide
- * empêche l'API de démarrer. Les clés de l'index sont relatives à ce préfixe.
+ * Key prefix for mods (`MOD_STORAGE_PREFIX`, empty by default). Validated at import: an invalid value
+ * prevents the API from starting. Index keys are relative to this prefix.
  */
 export const modPrefix = parseModPrefix(process.env.MOD_STORAGE_PREFIX)
 const INDEX_KEY = 'index.json'
@@ -23,7 +23,7 @@ export interface ModObject {
 	body: ReadableStream<Uint8Array>
 	bytes: number
 }
-/** Lecture seule du bucket des JAR ; remplaçable en test. */
+/** Read-only access to the JAR bucket; replaceable in tests. */
 export interface ModObjectSource {
 	readText(key: string, signal?: AbortSignal): Promise<string | null>
 	open(key: string, signal?: AbortSignal): Promise<ModObject | null>
@@ -33,7 +33,7 @@ function missing(error: unknown) {
 	return error instanceof S3ServiceException && (error.name === 'NoSuchKey' || error.$metadata.httpStatusCode === 404)
 }
 
-/** Source S3 d'un bucket de mods ; le bucket est paramétrable pour les tests d'un bucket partagé avec les captures. */
+/** S3 source for a mod bucket; the bucket is configurable for tests of a bucket shared with captures. */
 export function createS3ModSource(bucket = modBucket): ModObjectSource {
 	async function s3Body(key: string, signal?: AbortSignal) {
 		const { client } = s3Target()
@@ -72,8 +72,8 @@ export const s3ModSource = createS3ModSource()
 const emptyIndex = (): ModIndex => ({ schema: 1, generatedAt: new Date(0).toISOString(), targets: {} })
 
 /**
- * Routes publiques de téléchargement du mod, sans authentification. Seules les versions listées dans
- * l'index sont servies, et la clé d'objet vient de l'index (jamais des paramètres de l'URL).
+ * Public mod download routes, without authentication. Only versions listed in the index are served,
+ * and the object key comes from the index (never from URL parameters).
  */
 export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_TTL_MS, prefix = modPrefix) {
 	const router = new Hono<{ Variables: { correlationId: string } }>()
@@ -134,7 +134,7 @@ export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_
 			'X-Minemories-Version': entry.version,
 		}
 		if (context.req.header('If-None-Match') === etag) return context.body(null, 304, headers)
-		// La clé vient de l'index, jamais de l'URL, et doit rester sous `<préfixe>mods/` ou `<préfixe>latest/`.
+		// The key comes from the index, never from the URL, and must stay under `<prefix>mods/` or `<prefix>latest/`.
 		const object = await openEntry(entry.key, context.req.raw.signal)
 		if (!object) return context.json({ error: 'not_found' }, 404)
 		return context.body(object.body, 200, { ...headers, 'Content-Length': String(entry.bytes) })
@@ -144,7 +144,7 @@ export function createModDownloads(source: () => ModObjectSource, ttlMs = INDEX_
 		serve(context, context.req.param('targetId'), context.req.param('version'))
 	)
 	return Object.assign(router, {
-		/** Oublie l'index en cache (après un envoi, pour que la nouvelle version soit visible tout de suite). */
+		/** Drops the cached index (after an upload, so the new version is visible right away). */
 		invalidateIndex() {
 			cached = null
 		},

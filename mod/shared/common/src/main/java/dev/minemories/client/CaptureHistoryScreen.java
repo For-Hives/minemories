@@ -35,7 +35,7 @@ final class CaptureHistoryScreen extends Screen {
   private int top;
 
   CaptureHistoryScreen(Screen parent) {
-    super(Component.translatable("minemories.ui.captures_locales"));
+    super(Component.translatable("minemories.ui.local_captures"));
     this.parent = parent;
   }
 
@@ -50,28 +50,22 @@ final class CaptureHistoryScreen extends Screen {
       rows.add(button("", 14, 62 + i * 22, panelWidth - 28, () -> history.select(index)));
     }
     int half = (panelWidth - 34) / 2;
-    send =
-        button(I18n.get("minemories.ui.envoyer_cette_capture"), 14, 173, half, this::sendSelected);
+    send = button(I18n.get("minemories.ui.send_this_capture"), 14, 173, half, this::sendSelected);
     send.setTooltip(
-        Tooltip.create(
-            Component.translatable(
-                "minemories.ui.envoie_uniquement_le_souvenir_selectionne_aucun_nouvel_export")));
-    button(I18n.get("minemories.ui.retour"), 20 + half, 173, half, this::onClose);
+        Tooltip.create(Component.translatable("minemories.ui.send_selected_only_hint")));
+    button(I18n.get("minemories.ui.back"), 20 + half, 173, half, this::onClose);
     previous = button("‹", 14, 201, 36, () -> history.previous(this::fetch, minecraft::execute));
-    previous.setTooltip(
-        Tooltip.create(Component.translatable("minemories.ui.captures_plus_recentes")));
+    previous.setTooltip(Tooltip.create(Component.translatable("minemories.ui.newer_captures")));
     next =
         button("›", panelWidth - 50, 201, 36, () -> history.next(this::fetch, minecraft::execute));
-    next.setTooltip(
-        Tooltip.create(Component.translatable("minemories.ui.captures_plus_anciennes")));
-    refresh =
-        button(I18n.get("minemories.ui.actualiser"), 56, 201, panelWidth - 112, this::refresh);
+    next.setTooltip(Tooltip.create(Component.translatable("minemories.ui.older_captures")));
+    refresh = button(I18n.get("minemories.ui.refresh"), 56, 201, panelWidth - 112, this::refresh);
     try {
       directory = PairingClient.exportDirectory();
       paired = PairingClient.isPaired();
       refresh();
     } catch (RuntimeException error) {
-      status = I18n.get("minemories.ui.dossier_local_indisponible_verifie_les_reglages_avances");
+      status = I18n.get("minemories.ui.local_folder_unavailable");
     }
     updateButtons();
   }
@@ -104,7 +98,7 @@ final class CaptureHistoryScreen extends Screen {
     CaptureHistory.Entry selected = history.selected();
     if (selected == null || !paired || sending || PairingClient.isUploading()) return;
     sending = true;
-    status = I18n.get("minemories.ui.envoi_de_la_capture_selectionnee");
+    status = I18n.get("minemories.ui.sending_selected_capture");
     updateButtons();
     try {
       PairingClient.uploadCapture(selected.file())
@@ -116,8 +110,7 @@ final class CaptureHistoryScreen extends Screen {
                             sending = false;
                             status =
                                 error == null
-                                    ? I18n.get(
-                                        "minemories.ui.souvenir_envoye_dans_ta_galerie_privee")
+                                    ? I18n.get("minemories.ui.memory_sent_to_private_gallery")
                                     : ClientRuntime.pairingError(error);
                           }));
     } catch (RuntimeException error) {
@@ -182,8 +175,8 @@ final class CaptureHistoryScreen extends Screen {
     }
     String help =
         paired
-            ? I18n.get("minemories.ui.envoi_uniquement_avec_le_bouton_ci_dessous")
-            : I18n.get("minemories.ui.connecte_ta_galerie_via_m_pour_envoyer_une_capture");
+            ? I18n.get("minemories.ui.send_only_with_button_below")
+            : I18n.get("minemories.ui.connect_gallery_with_m_to_send");
     graphics.drawString(
         font, font.plainSubstrByWidth(help, panelWidth - 28), left + 14, top + 154, 0xFFB2B6AA);
   }
