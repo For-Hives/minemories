@@ -40,5 +40,8 @@ tasks.named('jar') {
     manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json')
 }
 
+// Launcher and mod-list icon, shared by every loader and Minecraft version.
+apply from: rootProject.file('../shared/brand/brand.gradle')
+
 // Production packaging of the shipped JAR (-Pminemories.prod=false keeps the dev JAR).
 apply from: rootProject.file('../shared/prod.gradle')

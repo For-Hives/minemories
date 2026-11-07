@@ -82,3 +82,25 @@ test('a route can ask for an inline first-paint script, written before the app m
 	assert.ok(!article.includes('dataset.film'))
 	assert.ok(!(await readFile(join(directory, '404.html'), 'utf8')).includes('dataset.film'))
 })
+test('every public page carries the link preview image as an absolute URL from the site origin', async t => {
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-social-image-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	await writeFile(join(directory, 'index.html'), template)
+	const socialImage = { path: '/brand/og-image.png', width: 1200, height: 630, alt: 'Minemories & co' }
+	await prerenderWeb(directory, { ...entry, socialImage })
+	const pages = await Promise.all(
+		['index.html', 'blog/story/index.html'].map(file => readFile(join(directory, file), 'utf8'))
+	)
+	for (const html of pages) {
+		assert.ok(html.includes('<meta property="og:image" content="https://example.org/brand/og-image.png" />'))
+		assert.ok(html.includes('<meta property="og:image:width" content="1200" />'))
+		assert.ok(html.includes('<meta property="og:image:height" content="630" />'))
+		assert.ok(html.includes('<meta property="og:image:alt" content="Minemories &amp; co" />'))
+		assert.ok(html.includes('<meta name="twitter:card" content="summary_large_image" />'))
+		assert.ok(html.includes('<meta name="twitter:image" content="https://example.org/brand/og-image.png" />'))
+	}
+	// Without an image (the entry's field is optional), no preview tags. The template is written again: prerendering replaced it.
+	await writeFile(join(directory, 'index.html'), template)
+	await prerenderWeb(directory, entry)
+	assert.ok(!(await readFile(join(directory, 'index.html'), 'utf8')).includes('og:image'))
+})

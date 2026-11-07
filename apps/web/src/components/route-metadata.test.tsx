@@ -27,11 +27,24 @@ test('route changes retain article schema and remove public metadata on a privat
 	const schema = document.querySelector('script[data-page-schema]')?.textContent
 	expect(JSON.parse(schema ?? '{}')['@type']).toBe('Article')
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/blog/premier-souvenir')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content).toBe(
+		'https://minemories.net/brand/og-image.png'
+	)
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image:width"]')?.content).toBe('1200')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image:height"]')?.content).toBe('630')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image:alt"]')?.content).toBe('Minemories')
+	expect(document.querySelector<HTMLMetaElement>('meta[name="twitter:card"]')?.content).toBe('summary_large_image')
+	expect(document.querySelector<HTMLMetaElement>('meta[name="twitter:image"]')?.content).toBe(
+		'https://minemories.net/brand/og-image.png'
+	)
 	fireEvent.click(screen.getByRole('link', { name: 'Private' }))
 	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 	expect(document.querySelector('link[rel="canonical"]')).toBeNull()
 	expect(document.querySelector('meta[property="og:url"]')).toBeNull()
+	expect(document.querySelector('meta[property="og:image"]')).toBeNull()
+	expect(document.querySelector('meta[name="twitter:card"]')).toBeNull()
+	expect(document.querySelector('meta[name="twitter:image"]')).toBeNull()
 })
 test.each(['/versions', '/changelog', '/downloads'])('release route %s retains the preview noindex policy', path => {
 	render(

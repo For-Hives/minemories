@@ -161,6 +161,8 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 	}
 }
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.net'
+/** The link preview of every public page (og:image, twitter:image): the logo on the night background, built by `bun run brand:icons`. */
+export const socialImage = { path: '/brand/og-image.png', width: 1200, height: 630, alt: 'Minemories' } as const
 
 export function structuredDataFor(page: PageMetadata) {
 	const canonical = new URL(page.path, siteOrigin).href
