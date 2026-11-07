@@ -62,7 +62,7 @@ sourceSets.main.java.srcDir file('../../shared/compat-legacy/java')
 tasks.named('compileJava') { dependsOn adaptSources }
 
 dependencies {
-    minecraft 'com.mojang:minecraft:1.19.2'
+    minecraft 'com.mojang:minecraft:1.21.1'
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${findProperty('fabricLoaderVersion') ?: '0.20.1'}"
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.77.0+1.19.2'

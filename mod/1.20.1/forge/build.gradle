@@ -68,7 +68,7 @@ sourceSets.main.java.srcDir adapted
 tasks.named('compileJava') { dependsOn adaptSources }
 
 dependencies {
-    minecraft 'com.mojang:minecraft:1.20.1'
+    minecraft 'com.mojang:minecraft:1.21.1'
     mappings loom.officialMojangMappings()
     forge "net.minecraftforge:forge:1.20.1-${loaderVersion}"
     gametestImplementation sourceSets.main.output
