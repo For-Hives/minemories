@@ -10,7 +10,7 @@ The GitHub workflow `.github/workflows/discord.yml` posts to the project's Disco
 | Push of a `mod-v*` tag | #changelog | One embed "Minemories mod X released": the commits touching `mod/` since the previous `mod-v*` tag (at most 50 when there is none), grouped the same way, with links to `/downloads` and `/changelog` on the site. |
 | Push of a `mod-v*` tag, issue opened, edited, closed, reopened, labelled, unlabelled or deleted (only when it carries, or just lost, the `roadmap` label), every day at 06:00 UTC, manual run | #roadmap | A single message, edited in place: a "Latest mod version" embed, then three embeds: In progress, Planned, Done, last 30 days. |
 
-The workflow posts through the webhook stored in the `DISCORD_WEBHOOK_URL` secret; the webhook decides the channel. If changelog and roadmap must land in two different channels, use two webhooks and adapt the workflow (one secret per job).
+Two channels, one webhook each: the changelog job posts to `#changelog` through the `DISCORD_CHANGELOG_WEBHOOK_URL` secret, and the roadmap job edits its single message in `#roadmap` through `DISCORD_WEBHOOK_URL`. Nobody posts by hand in `#roadmap`. Each secret may hold the full webhook URL, `<id>/<token>` or only the token: the workflow sets the matching webhook id (not a secret) next to it.
 
 ## How the roadmap works
 
@@ -51,7 +51,7 @@ To put something on the roadmap: add the `roadmap` label to the issue. To mark i
 ## One-time setup
 
 1. In Discord, create a webhook on the target channel (Server settings → Integrations → Webhooks) and copy its URL.
-2. Store it as the repository secret `DISCORD_WEBHOOK_URL` (Settings → Secrets and variables → Actions). Never paste it in an issue, a commit or a log.
+2. Store the `#roadmap` webhook as the repository secret `DISCORD_WEBHOOK_URL` and the `#changelog` webhook as `DISCORD_CHANGELOG_WEBHOOK_URL` (Settings → Secrets and variables → Actions, or `gh secret set <name>`). Never paste them in an issue, a commit or a log.
 3. Create the labels `roadmap`, `in-progress` and `socials` if they do not exist (the areas `mod`, `api`, `front` already do).
 4. Run the workflow manually once (Actions → Discord sync → Run workflow). Without a stored message id, the roadmap job posts a new message and prints **only its id** in the log. Issue events and the daily run do nothing until the id is stored, so they cannot pile up messages.
 5. Store that id as the repository **variable** `DISCORD_ROADMAP_MESSAGE_ID`. From then on, every run edits that message.
