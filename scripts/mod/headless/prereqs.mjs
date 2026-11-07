@@ -67,7 +67,8 @@ export function resolveJdk(major, env, fs = realFs) {
 	for (const candidate of [env[`MOD_JDK_${wanted}`], env[`JAVA_HOME_${wanted}`]]) {
 		if (candidate && fs.isExecutable(join(candidate, 'bin', 'java'))) return candidate
 	}
-	const prefix = new RegExp(`^jdk-?${wanted}(?:[.+_-]|$)`)
+	// Adoptium names Java 8 `jdk8u512-b09` / `jdk-8u512-b09` and later versions `jdk-21.0.12.1+1`.
+	const prefix = new RegExp(`^jdk-?${wanted}(?:u\\d|[.+_-]|$)`)
 	for (const root of jdkRoots(env)) {
 		const folder = fs
 			.list(root)

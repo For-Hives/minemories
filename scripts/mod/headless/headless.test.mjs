@@ -211,6 +211,12 @@ test('resolveJdk uses injected paths, then the tools folder', () => {
 	assert.equal(resolveJdk('17', { ...env, JAVA_HOME_17: '/nope' }, fs), '/home/x/.local/tools/jdk-17.0.9+9')
 	assert.equal(resolveJdk(25, env, fs), null)
 	assert.equal(resolveJdk(11, env, fs), null)
+	// Java 8 builds from Adoptium use the update notation.
+	const java8 = fakeFs({
+		executables: ['/home/x/.local/tools/jdk-8u512-b09/bin/java'],
+		dirs: { '/home/x/.local/tools': ['jdk-8u512-b09', 'jdk-80'] },
+	})
+	assert.equal(resolveJdk(8, { HOME: '/home/x' }, java8), '/home/x/.local/tools/jdk-8u512-b09')
 	assert.equal(
 		resolveJdk(
 			21,
