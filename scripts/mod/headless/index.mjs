@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs'
 import { readFile, rm } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { supportedMajors } from '../jdk.mjs'
 import { execLogged, reapProcesses } from './exec.mjs'
 import {
 	buildCommand,
@@ -119,7 +120,9 @@ async function runTarget(target, context) {
 	const paths = exportPaths(root, target)
 	await rm(dirname(paths.glb), { recursive: true, force: true })
 	const logFile = join(root, 'build', 'mod-test-logs', `${target.id}.log`)
-	const plan = buildCommand({ root, target, spec, jdkPaths: [...new Set([gradleJdk, gameJdk])] })
+	// Every installed JDK is offered: configuring a Gradle root also configures its other loaders (Forge 1.21.11 needs 25).
+	const installed = supportedMajors.map(major => jdkLookup(String(major))).filter(Boolean)
+	const plan = buildCommand({ root, target, spec, jdkPaths: [...new Set([gradleJdk, gameJdk, ...installed])] })
 	const outcome = await execWithRetry({ context, plan, target, logFile, gradleJdk })
 	const { stats, error } = await readStats(paths)
 	const thresholds = thresholdsFor(thresholdsFile, target.id)
