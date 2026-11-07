@@ -1,5 +1,15 @@
 import { expect, test } from 'vitest'
-import { parseRoadmap, parseRoadmapItem, type RoadmapItem, roadmapColumnCap, roadmapItemDate } from './roadmap'
+import {
+	parseLatestRelease,
+	parseReleaseNote,
+	parseRoadmap,
+	parseRoadmapItem,
+	pullRequestUrl,
+	type RoadmapItem,
+	releaseNoteCap,
+	roadmapColumnCap,
+	roadmapItemDate,
+} from './roadmap'
 
 const issue = (number: number, extra: Record<string, unknown> = {}) => ({
 	number,
@@ -91,4 +101,91 @@ test('done cards show their closing date, other cards their last activity', () =
 	expect(roadmapItemDate(closed, 'planned')).toBe('2026-11-01T10:00:00Z')
 	expect(roadmapItemDate(open, 'done')).toBe('2026-11-01T10:00:00Z')
 	expect(roadmapItemDate(open, 'inProgress')).toBe('2026-11-01T10:00:00Z')
+})
+
+const release = (extra: Record<string, unknown> = {}) => ({
+	version: '0.36.1-beta.1',
+	tag: 'mod-v0.36.1-beta.1',
+	date: '2026-11-06T18:00:00Z',
+	prerelease: true,
+	notes: [{ type: 'feature', text: 'AFK captures', pr: 210 }],
+	more: 0,
+	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
+	changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
+	...extra,
+})
+
+test('the latest release is optional: a board without it, or with an unusable one, still parses', () => {
+	expect(parseRoadmap(board()).latestRelease).toBeNull()
+	expect(parseRoadmap({ ...board(), latestRelease: null }).latestRelease).toBeNull()
+	expect(parseRoadmap({ ...board(), latestRelease: { tag: 'v1' } }).latestRelease).toBeNull()
+	expect(parseRoadmap({ ...board(), latestRelease: release() }).latestRelease).toEqual({
+		version: '0.36.1-beta.1',
+		tag: 'mod-v0.36.1-beta.1',
+		date: '2026-11-06T18:00:00Z',
+		prerelease: true,
+		notes: [{ type: 'feature', text: 'AFK captures', pr: 210 }],
+		more: 0,
+		compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
+	})
+})
+
+test('rejects a latest release whose tag, version or date is unusable', () => {
+	for (const value of [
+		null,
+		'mod-v1.0.0',
+		release({ tag: 'v0.36.1' }),
+		release({ tag: 'mod-v0.36' }),
+		release({ tag: 'mod-v0.36.1-rc.1' }),
+		release({ tag: 42 }),
+		release({ version: '0.36.0' }),
+		release({ date: 'today' }),
+		release({ date: undefined }),
+	])
+		expect(parseLatestRelease(value)).toBeNull()
+	expect(parseLatestRelease(release({ version: undefined }))?.version).toBe('0.36.1-beta.1')
+})
+
+test('a missing prerelease flag is derived from the version', () => {
+	expect(parseLatestRelease(release({ prerelease: undefined }))?.prerelease).toBe(true)
+	expect(parseLatestRelease(release({ version: '0.37.0', tag: 'mod-v0.37.0', prerelease: 'no' }))?.prerelease).toBe(
+		false
+	)
+	expect(parseLatestRelease(release({ prerelease: false }))?.prerelease).toBe(false)
+})
+
+test('keeps usable notes, trims them, counts the cut ones as more and treats unknown types as other', () => {
+	expect(parseReleaseNote({ type: 'fix', text: '  Fix leaves  ', pr: null })).toEqual({
+		type: 'fix',
+		text: 'Fix leaves',
+		pr: null,
+	})
+	expect(parseReleaseNote({ type: 'perf', text: 'Faster', pr: 0 })).toEqual({ type: 'other', text: 'Faster', pr: null })
+	expect(parseReleaseNote({ type: 'fix', text: 'Typo', pr: '12' })?.pr).toBeNull()
+	for (const value of [null, 'note', { type: 'fix' }, { type: 'fix', text: '   ' }, { text: 3 }])
+		expect(parseReleaseNote(value)).toBeNull()
+	const notes = Array.from({ length: releaseNoteCap + 2 }, (_, index) => ({
+		type: 'fix',
+		text: `Fix ${index}`,
+		pr: index + 1,
+	}))
+	const parsed = parseLatestRelease(release({ notes: [...notes, { broken: true }], more: 3 }))
+	expect(parsed?.notes).toHaveLength(releaseNoteCap)
+	expect(parsed?.more).toBe(5)
+	expect(parseLatestRelease(release({ notes: 'none', more: -1 }))).toMatchObject({ notes: [], more: 0 })
+})
+
+test('the compare link only ever points at this repository, falling back to the tag tree', () => {
+	const tree = 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1-beta.1'
+	expect(parseLatestRelease(release({ compareUrl: tree }))?.compareUrl).toBe(tree)
+	for (const compareUrl of [
+		undefined,
+		'javascript:alert(1)',
+		'https://evil.example/For-Hives/minemories/compare/mod-v1.0.0...mod-v1.0.1',
+		'https://github.com/For-Hives/minemories/compare/main...evil',
+		'https://github.com/For-Hives/minemories/tree/mod-v1.0.0?x=<script>',
+	])
+		expect(parseLatestRelease(release({ compareUrl }))?.compareUrl).toBe(tree)
+	expect(pullRequestUrl(210)).toBe('https://github.com/For-Hives/minemories/pull/210')
 })

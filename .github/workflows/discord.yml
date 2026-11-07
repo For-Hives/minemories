@@ -1,8 +1,8 @@
 name: Discord sync
 
 # Posts to the project's Discord: #changelog after each push to main and each mod release tag, and keeps one #roadmap
-# message in sync with the GitHub issues labelled `roadmap`. This is the owner's explicit exception (7 November 2026)
-# to "CI publishes nothing": see docs/features/discord-sync.md. Scripts: scripts/discord/.
+# message in sync with the latest mod version and the GitHub issues labelled `roadmap`. This is the owner's explicit
+# exception (7 November 2026) to "CI publishes nothing": see docs/features/discord-sync.md. Scripts: scripts/discord/.
 
 on:
   push:
@@ -62,10 +62,14 @@ jobs:
           fi
 
   roadmap:
-    # Issue events only matter when the issue is (or just stopped being) on the roadmap. Manual runs only from the
-    # default branch, so unreviewed code never edits the message (schedule and issue events always use it).
+    # Issue events only matter when the issue is (or just stopped being) on the roadmap. A pushed mod-v* tag refreshes
+    # the "Latest mod version" block. Manual runs only from the default branch, so unreviewed code never edits the
+    # message (schedule and issue events always use it; a tag push runs the workflow of the tagged commit, which only a
+    # maintainer can push).
     if: >-
       github.event_name == 'schedule' ||
+      (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'mod-v') &&
+        !github.event.deleted) ||
       (github.event_name == 'workflow_dispatch' &&
         github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
       (github.event_name == 'issues' &&
