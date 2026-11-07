@@ -19,7 +19,7 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 })
 
-function openStep(title: string, version = '1.21.1', loader = 'NeoForge') {
+function openStep(title: string, version = '1.21.1', loader = 'Je n’ai pas encore de loader de mods') {
 	localStorage.clear()
 	cleanup()
 	vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32')
@@ -32,7 +32,7 @@ function openStep(title: string, version = '1.21.1', loader = 'NeoForge') {
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?!\\d)`) }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
-	fireEvent.click(screen.getByRole('radio', { name: new RegExp(loader) }))
+	fireEvent.click(screen.getByRole('radio', { name: loader }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	while ((document.querySelector('.install-panel h2') as HTMLElement).textContent !== title)
 		fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
@@ -40,7 +40,7 @@ function openStep(title: string, version = '1.21.1', loader = 'NeoForge') {
 const figures = () =>
 	[...document.querySelectorAll('figure[data-screenshot]')].map(figure => figure.getAttribute('data-screenshot'))
 
-test('all ten reserved screenshots are attached to the Windows steps, folded away, without broken image requests', () => {
+test('all seven reserved screenshots are attached to the Windows steps, folded away, without broken image requests', () => {
 	const expected = [
 		[
 			'Installer le loader',
@@ -48,8 +48,8 @@ test('all ten reserved screenshots are attached to the Windows steps, folded awa
 		],
 		['Télécharger le mod', ['05-jar-telecharge']],
 		['Ranger le fichier', ['06-dossier-mods']],
-		['Vérifier en jeu', ['07-liste-mods', '08-menu-minemories']],
-		['Créer un souvenir', ['09-premiere-capture', '10-souvenir-dans-viewer']],
+		['Lancer le jeu', []],
+		['Créer un souvenir', ['10-souvenir-dans-viewer']],
 	] as const
 	for (const [step, files] of expected) {
 		openStep(step)
@@ -57,13 +57,14 @@ test('all ten reserved screenshots are attached to the Windows steps, folded awa
 		for (const figure of document.querySelectorAll('figure[data-screenshot]'))
 			expect(figure.closest('details')).toBeTruthy()
 	}
-	expect(screen.queryByRole('img')).toBeNull()
+	// Missing Windows screenshots stay placeholders: no request for an image that does not exist.
+	expect(document.querySelector('figure[data-screenshot] img')).toBeNull()
 })
 
 test('the screenshots only show for the validated Windows NeoForge 1.21.1 walkthrough', () => {
-	openStep('Installer le loader', '1.21.1', 'Fabric')
+	openStep('Ranger le fichier', '1.21.1', 'Fabric')
 	expect(figures()).toEqual([])
-	openStep('Installer le loader', '1.19.2', 'Fabric')
+	openStep('Installer le loader', '1.19.2')
 	expect(figures()).toEqual([])
 	localStorage.clear()
 	cleanup()
@@ -74,7 +75,10 @@ test('the screenshots only show for the validated Windows NeoForge 1.21.1 walkth
 		</MemoryRouter>
 	)
 	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
-	for (let index = 0; index < 3; index++) fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Installer le loader')
 	expect(figures()).toEqual([])
 })

@@ -132,7 +132,11 @@ export function InstallationPage() {
 	useEffect(() => {
 		const saved = readGuide()
 		const base = saved ?? { ...defaults, system: detectSystem(navigator) }
-		setGuide(preset.current ? { ...base, ...preset.current, step: 'system', active: true, preset: true } : base)
+		setGuide(
+			preset.current
+				? { ...base, ...preset.current, step: 'system', active: true, preset: true, needsLoader: false }
+				: base
+		)
 		if (preset.current) navigate('/installation', { replace: true })
 		setRestored(true)
 	}, [navigate])
@@ -186,7 +190,12 @@ export function InstallationPage() {
 					{installStepIds.map(step => (
 						<section key={step}>
 							<h3>{t(stepTitles[step])}</h3>
-							<InstallationStep step={step} system="windows" target={targetFor(defaults.minecraft, defaults.loader)} />
+							<InstallationStep
+								step={step}
+								system="windows"
+								target={targetFor(defaults.minecraft, defaults.loader)}
+								needsLoader
+							/>
 						</section>
 					))}
 				</section>

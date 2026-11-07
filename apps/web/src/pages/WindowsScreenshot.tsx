@@ -33,21 +33,6 @@ const screenshots = {
 		caption:
 			"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.",
 	},
-	modsList: {
-		file: '07-liste-mods',
-		title: 'Check that Minecraft recognizes Minemories',
-		caption: "In the game's Mods menu, Minemories appears in the list.",
-	},
-	minemoriesMenu: {
-		file: '08-menu-minemories',
-		title: 'Open the menu with M',
-		caption: 'In a test world, the M key opens the Minemories menu.',
-	},
-	localCapture: {
-		file: '09-premiere-capture',
-		title: 'Create a small local capture',
-		caption: 'In chat, /minemories export 16 ends with an export confirmation message.',
-	},
 	viewer: {
 		file: '10-souvenir-dans-viewer',
 		title: 'Revisit the first memory in 3D',

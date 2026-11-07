@@ -83,3 +83,12 @@ L'illustration SVG existante est réutilisée, sans téléchargement de scène 3
 Les sélecteurs de GLB et le glisser-déposer sont conditionnés par `import.meta.env.DEV`. Le build de production ne propose aucun chargement de fichier local dans l'en-tête, l'authentification, la galerie ou le viewer. Une visite directe de `/viewer` sans identifiant mène à `/explore`. Les captures distantes (`/viewer?memory=…`), timelapses et liens de partage conservent leur chargement existant. Les guides et le contenu public orientent vers l'appairage et l'envoi depuis Minecraft.
 
 Les tests exécutent les deux modes : import local en développement ; absence des contrôles, redirection sans identifiant et rejet d'un dépôt en production, avec chargement distant toujours fonctionnel. Les exports locaux du mod et les téléchargements de sauvegarde ne sont pas supprimés.
+
+## Guide d’installation : questions épurées et vraies captures du jeu (7 novembre 2026)
+
+- **Questions** : la version de Minecraft et le loader n’affichent plus que leur nom (plus de liste de loaders, de version de loader ni de badge). La question du loader est toujours posée et se termine par « Je n’ai pas encore de loader de mods ».
+- **Installer le loader** n’apparaît que pour ce dernier choix. Le guide installe alors NeoForge sur 1.21.1 (le parcours Windows validé, avec ses emplacements de captures), sinon Fabric quand il est publié, sinon le premier loader de la version. Un visiteur qui a déjà un loader passe directement au téléchargement.
+- **Ranger le fichier** donne le dossier `mods` par défaut du Minecraft Launcher officiel (ou celui du profil dédié créé par le guide), avec le geste pour l’ouvrir selon le système (Windows + R, Aller au dossier, Ctrl + L).
+- **Lancer le jeu** (ancien « Vérifier en jeu ») : lancer le profil, ouvrir un monde, Échap ; le bouton Minemories est en haut à droite du menu pause (un autre coin si un mod l’occupe). L’écran Mods n’est plus cité : il n’existe pas sous Fabric sans Mod Menu.
+- **Créer un souvenir** présente les deux façons : le bouton « Take a memory » du menu M (rayon 32), ou `/minemories export 16` avec le sens de chaque partie (`export`, rayon 2–128, `selection`).
+- Les captures du menu pause, du menu M et de la commande sont de vraies captures prises par le test client Fabric 1.21.11, avec un cadre dessiné par la page sur le bouton à cliquer. Procédure de mise à jour : `apps/web/src/assets/tutorial/game/README.md` (règle rappelée dans `AGENTS.md`).

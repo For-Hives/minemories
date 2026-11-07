@@ -14,6 +14,8 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+// The website's installation guide shows a screenshot of this screen: regenerate it when it changes
+// (apps/web/src/assets/tutorial/game/README.md).
 final class SimpleHubScreen extends Screen {
   private static final int ACTIONS_HEIGHT = 58;
   private final Screen parent;

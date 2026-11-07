@@ -52,7 +52,9 @@ test('every platform, version, loader and step uses English copy, preserving fil
 	for (const version of ['1.21.11', '1.18.2']) {
 		fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?!\\d)`) }))
 		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
-		if (version === '1.21.11') fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+		// The last loader choice adds the loader installation screen, so all five installation screens are checked.
+		fireEvent.click(screen.getByRole('radio', { name: 'I have no mod loader yet' }))
+		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 		for (let step = 0; step < 5; step++) {
 			expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
 			fireEvent.click(screen.getByRole('button', { name: step === 4 ? 'My memory opens in 3D' : 'Continue' }))
@@ -70,7 +72,7 @@ test('switching language preserves the chosen version, loader and screen', async
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
-	fireEvent.click(screen.getByRole('radio', { name: /Fabric/ }))
+	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Installer le loader')
 	fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
@@ -81,8 +83,9 @@ test('switching language preserves the chosen version, loader and screen', async
 			minecraft: '1.19.2',
 			loader: 'fabric',
 			step: 'install',
+			needsLoader: true,
 		})
 	)
 	fireEvent.click(screen.getByRole('button', { name: '← Back' }))
-	expect(screen.getByRole('radio', { name: /Fabric/ })).toHaveProperty('checked', true)
+	expect(screen.getByRole('radio', { name: 'I have no mod loader yet' })).toHaveProperty('checked', true)
 })

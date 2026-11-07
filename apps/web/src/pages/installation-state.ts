@@ -24,6 +24,8 @@ export interface GuideState {
 	active: boolean
 	/** True when the download table already chose the version and loader: those two questions are skipped. */
 	preset: boolean
+	/** True when the visitor has no mod loader yet: the guide adds a screen that installs one. */
+	needsLoader: boolean
 }
 
 export const guideStorageKey = 'minemories-installation-v3'
@@ -35,6 +37,7 @@ export const defaults: GuideState = {
 	step: 'system',
 	active: false,
 	preset: false,
+	needsLoader: false,
 }
 /** The Minecraft version the owner validated in game, and the version and loader most players use. */
 export const validatedMinecraft = '1.21.1'
@@ -51,11 +54,21 @@ export function targetFor(minecraft: string, loader: string): LoaderTarget {
 	return found ?? (loaderTargets[0] as LoaderTarget)
 }
 
-/** The screens this visitor goes through: the questions with a single possible answer are not asked. */
-export function stepsFor(state: Pick<GuideState, 'minecraft' | 'preset'>): StepId[] {
+/**
+ * The loader the guide installs for a visitor who has none: the validated NeoForge walkthrough (with its Windows
+ * screenshots) on its Minecraft version, otherwise Fabric when published (the lightest), else the first one.
+ */
+export function recommendedLoader(minecraft: string): string {
+	if (minecraft === defaults.minecraft) return defaults.loader
+	const candidates = loadersFor(minecraft)
+	return (candidates.find(target => target.loader === 'fabric') ?? targetFor(minecraft, '')).loader
+}
+
+/** The screens this visitor goes through: installing a loader only when they said they have none. */
+export function stepsFor(state: Pick<GuideState, 'preset' | 'needsLoader'>): StepId[] {
 	return stepIds.filter(id => {
-		if (id === 'minecraft') return !state.preset
-		if (id === 'loader') return !state.preset && loadersFor(state.minecraft).length > 1
+		if (id === 'minecraft' || id === 'loader') return !state.preset
+		if (id === 'install') return state.needsLoader && !state.preset
 		return true
 	})
 }
@@ -77,7 +90,8 @@ export function readGuide(): GuideState | null {
 		if (!data || typeof data !== 'object') return null
 		const target = targetFor(String(data.minecraft), String(data.loader))
 		const preset = data.preset === true
-		const steps = stepsFor({ minecraft: target.minecraft, preset })
+		const needsLoader = data.needsLoader === true
+		const steps = stepsFor({ preset, needsLoader })
 		const step = data.step === 'done' || steps.includes(data.step) ? data.step : 'system'
 		return {
 			system: isSystem(data.system) ? data.system : defaults.system,
@@ -86,6 +100,7 @@ export function readGuide(): GuideState | null {
 			step,
 			active: data.active === true,
 			preset,
+			needsLoader,
 		}
 	} catch {
 		return null
