@@ -1473,5 +1473,22 @@
 	"key opens the same menu.": "dasselbe Menü.",
 	"profile, then click Play.": "und klicken Sie dann auf Spielen.",
 	"Launch the game": "Spiel starten",
-	"With other mods, the button can sit in another corner of the pause menu.": "Mit anderen Mods kann die Schaltfläche in einer anderen Ecke des Pausenmenüs liegen."
+	"With other mods, the button can sit in another corner of the pause menu.": "Mit anderen Mods kann die Schaltfläche in einer anderen Ecke des Pausenmenüs liegen.",
+	"Roadmap": "Roadmap",
+	"Roadmap — Minemories": "Roadmap — Minemories",
+	"What the Minemories team is building now, what comes next and what shipped recently.": "Woran das Minemories-Team gerade arbeitet, was als Nächstes kommt und was kürzlich erschienen ist.",
+	"What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.": "Woran gerade gebaut wird, was als Nächstes kommt und was in den letzten 30 Tagen erschienen ist, direkt aus den GitHub-Issues des Projekts.",
+	"The same board is posted on the Minemories Discord.": "Dieselbe Übersicht wird auch auf dem Minemories-Discord veröffentlicht.",
+	"Updated {time}": "Aktualisiert {time}",
+	"Loading the roadmap…": "Roadmap wird geladen…",
+	"The roadmap could not be loaded. Try again in a moment.": "Die Roadmap konnte nicht geladen werden. Versuchen Sie es gleich noch einmal.",
+	"Every roadmap issue on GitHub ↗": "Alle Roadmap-Issues auf GitHub ↗",
+	"Planned": "Geplant",
+	"Done": "Erledigt",
+	"Nothing here right now.": "Hier gibt es gerade nichts.",
+	"+{count} more on GitHub": "+{count} weitere auf GitHub",
+	"Project areas": "Projektbereiche",
+	"Mod": "Mod",
+	"API": "API",
+	"Website": "Website"
 }

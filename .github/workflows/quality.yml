@@ -20,6 +20,7 @@ jobs:
       web: ${{ steps.scope.outputs.web }}
       api: ${{ steps.scope.outputs.api }}
       mod: ${{ steps.scope.outputs.mod }}
+      discord: ${{ steps.scope.outputs.discord }}
       deps: ${{ steps.scope.outputs.deps }}
     steps:
       - uses: actions/checkout@v7
@@ -97,6 +98,19 @@ jobs:
           bun run mod:check:ci
           bun run mod:build
 
+  # The Discord sync scripts (scripts/discord/, run by .github/workflows/discord.yml): lint and tests, nothing is sent.
+  discord:
+    needs: changes
+    if: needs.changes.outputs.discord == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Lint and test the Discord sync scripts
+        run: |
+          bunx biome check scripts/discord
+          node --test scripts/discord/*.test.mjs
+
   # Every other Minecraft version and loader of mod/targets.json (the 1.21.1 root is built by `mod`). Any mod change, shared
   # core and common included, compiles and checks each of them, so a port never silently stops building.
   mod-cells:
@@ -142,11 +156,11 @@ jobs:
   # The one check to read: green when every gate that had to run passed. A gate skipped because the change does not concern it counts as passed.
   quality:
     if: always()
-    needs: [changes, audit, web, api, mod, mod-cells, mod-matrix]
+    needs: [changes, audit, web, api, mod, mod-cells, mod-matrix, discord]
     runs-on: ubuntu-latest
     steps:
       - name: Fail when a gate that had to run failed
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
       - name: Every required gate passed
-        run: echo "web=${{ needs.web.result }} api=${{ needs.api.result }} mod=${{ needs.mod.result }} mod-matrix=${{ needs.mod-matrix.result }} audit=${{ needs.audit.result }}"
+        run: echo "web=${{ needs.web.result }} api=${{ needs.api.result }} mod=${{ needs.mod.result }} mod-matrix=${{ needs.mod-matrix.result }} discord=${{ needs.discord.result }} audit=${{ needs.audit.result }}"

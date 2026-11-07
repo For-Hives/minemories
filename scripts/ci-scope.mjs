@@ -29,6 +29,8 @@ const rules = {
 		/^docker-compose\.yml$/,
 	],
 	mod: [/^mod\//, /^packages\/mod-storage\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
+	// The Discord sync scripts reuse the redaction of `scripts/mod/notify.mjs`.
+	discord: [/^scripts\/discord\//, /^scripts\/mod\/notify\.mjs$/, /^\.github\/workflows\/discord\.yml$/],
 }
 const dependencies = [
 	/^package\.json$/,
@@ -40,12 +42,13 @@ const dependencies = [
 const matches = (patterns, file) => patterns.some(pattern => pattern.test(file))
 
 export function scopeOf(files, { everything = false } = {}) {
-	if (everything) return { web: true, api: true, mod: true, deps: true }
+	if (everything) return { web: true, api: true, mod: true, discord: true, deps: true }
 	const everyGate = files.some(file => matches(shared, file))
 	return {
 		web: everyGate || files.some(file => matches(rules.web, file)),
 		api: everyGate || files.some(file => matches(rules.api, file)),
 		mod: everyGate || files.some(file => matches(rules.mod, file)),
+		discord: everyGate || files.some(file => matches(rules.discord, file)),
 		deps: files.some(file => matches(dependencies, file)),
 	}
 }

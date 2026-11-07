@@ -1,0 +1,205 @@
+/* Public roadmap in the landing's charter: three night panels with the game's bevel (in progress, planned, done), cards in rows
+   split by the kit's separator, area chips as the game's name tags. Columns stack below 18rem so 375 px never scrolls sideways. */
+
+.mm-roadmap-note,
+.mm-roadmap-updated,
+.mm-roadmap-source {
+	max-width: 780px;
+	margin: var(--ds-sp-4) var(--gp);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-roadmap-updated {
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-roadmap-board {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+	align-items: start;
+	gap: var(--ds-sp-6);
+	margin: var(--ds-sp-6) 0;
+}
+
+.mm-roadmap-column {
+	min-width: 0;
+	margin: var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+/* The column being worked on wears the featured panel's ember frame. */
+.mm-roadmap-column-inProgress {
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember-deep),
+		0 0 0 calc(3 * var(--gp)) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+.mm-site .mm-roadmap-column h2 {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+	margin: 0 0 var(--ds-sp-4);
+	color: #fff;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-roadmap-count {
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.7);
+	color: var(--c-gold);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: 2px 2px 0 #3f3416;
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-roadmap-cards {
+	display: grid;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mm-roadmap-card {
+	min-width: 0;
+	padding: var(--ds-sp-4) 0;
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+}
+
+.mm-site .mm-roadmap-card > a {
+	display: block;
+	color: #fff;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.mm-site .mm-roadmap-card > a:hover {
+	color: var(--ember);
+}
+
+.mm-roadmap-number {
+	color: var(--c-name);
+	font-family: var(--f-ui);
+}
+
+.mm-roadmap-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2) var(--ds-sp-3);
+	margin-top: var(--ds-sp-2);
+}
+
+.mm-roadmap-meta time {
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-roadmap-areas {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Area chip: the game's name tag, one text colour per area. */
+.mm-roadmap-area {
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.7);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.mm-roadmap-area-mod {
+	color: var(--c-green);
+}
+
+.mm-roadmap-area-api {
+	color: var(--c-blue);
+}
+
+.mm-roadmap-area-front {
+	color: var(--c-lore);
+}
+
+.mm-roadmap-empty {
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-site .mm-roadmap-more,
+.mm-site .mm-roadmap-source a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+	overflow-wrap: anywhere;
+}
+
+.mm-site .mm-roadmap-more {
+	margin-top: var(--ds-sp-3);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-site .mm-roadmap-more:hover,
+.mm-site .mm-roadmap-source a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+/* Error: a tooltip in the error colour. */
+.mm-roadmap-feedback {
+	margin: var(--ds-sp-5) var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--tip-bg);
+	color: var(--text-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--tip-b);
+}
+
+.mm-roadmap-feedback p {
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-roadmap-column h2 {
+	font-size: 16px;
+	line-height: 24px;
+}
+
+@media (max-width: 480px) {
+	.mm-roadmap-column {
+		padding: var(--ds-sp-4);
+	}
+}
+
+@media (forced-colors: active) {
+	.mm-roadmap-column,
+	.mm-roadmap-feedback,
+	.mm-roadmap-area,
+	.mm-roadmap-count {
+		border: 1px solid CanvasText;
+	}
+}

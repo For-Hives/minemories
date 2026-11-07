@@ -30,6 +30,9 @@ In production, the additional checks are:
 - Addresses in `TRUSTED_PROXY_IPS`, if present, are exact IPv4/IPv6 addresses.
   This does not remotely verify that the proxy is configured correctly.
 
+Optional in every environment: `GITHUB_TOKEN` (a read-only token, never logged) only raises the GitHub
+rate limit of `GET /api/roadmap`, which reads public issues labelled `roadmap` and works without it.
+
 Before redeploying, set these variables following
 [the Coolify guide](coolify-railpack.md). Keep existing secrets when they
 pass the checks: changing them invalidates sessions or paired

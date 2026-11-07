@@ -55,6 +55,7 @@ import {
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
 import { encodedCapture } from './response-encoding'
+import { roadmap } from './roadmap'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
@@ -318,6 +319,7 @@ app.get('/api/auth-providers', context => context.json(Object.keys(auth.options.
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
 app.route('/downloads', modDownloads)
+app.route('/api/roadmap', roadmap)
 app.use('/api/auth/*', (context, next) =>
 	requestBodyLimit(
 		billing.config && context.req.path === '/api/auth/polar/webhooks' ? BILLING_WEBHOOK_BODY_BYTES : AUTH_BODY_BYTES

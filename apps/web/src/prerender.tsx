@@ -12,6 +12,7 @@ import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
+import { RoadmapPage } from './pages/RoadmapPage'
 import { publicMetadata, siteOrigin, structuredDataFor } from './route-metadata'
 
 export { publicMetadata, siteOrigin, structuredDataFor }
@@ -49,6 +50,9 @@ export function renderPage(path: string) {
 			break
 		case '/changelog':
 			content = <ReleasesPage changelog />
+			break
+		case '/roadmap':
+			content = <RoadmapPage />
 			break
 		case '/faq':
 			content = <FaqPage />
