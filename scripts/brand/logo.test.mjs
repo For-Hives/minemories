@@ -9,9 +9,10 @@ test('the canonical logo parses into named parts in drawing order', () => {
 	const { paths, gradientId } = parseLogo(canonical)
 	assert.equal(gradientId, 'radial-gradient-1')
 	const parts = [...new Set(paths.map(path => path.part))]
-	assert.deepEqual(parts.slice(0, 3), ['Body', 'Grip', 'Lens'])
+	assert.deepEqual(parts.slice(0, 3), ['Body', 'Lens', 'Barrel'])
 	assert.equal(parts.at(-1), 'Button')
-	for (const part of HEAD_PARTS) assert.ok(parts.includes(part), part)
+	// The grip sits behind the body in this view, so it has no visible face and no path.
+	for (const part of HEAD_PARTS.filter(part => part !== 'Grip')) assert.ok(parts.includes(part), part)
 })
 
 test('the bounds cover every coordinate pair and reject relative commands', () => {
@@ -26,8 +27,8 @@ test('the square is centred on the bounds with padding on the longest side', () 
 test('the mark keeps only the camera head, in a square, and each file has its own glow id', () => {
 	const { logo, mark, markBox } = buildLogos(canonical)
 	assert.equal(markBox.width, markBox.height)
-	assert.match(logo, /viewBox="0 0 584 938"/)
-	assert.match(logo, /id="LegCenter"/)
+	assert.match(logo, /viewBox="0 0 568 864"/)
+	assert.match(logo, /id="LegBack"/)
 	assert.doesNotMatch(mark, /id="(Neck|TripodRing|Hub|Leg\w*)"/)
 	assert.match(mark, /id="Lens"/)
 	assert.match(mark, /url\(#mm-mark-glow\)/)

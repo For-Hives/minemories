@@ -133,6 +133,7 @@ export function buildLogos(svg, { padding = 0.03 } = {}) {
 		}),
 		mark: renderSvg({ ...logo, paths: head }, { viewBox: markBox, glowId: 'mm-mark-glow' }),
 		markBox,
+		size: { width: Number(size[1]), height: Number(size[2]) },
 	}
 }
 
