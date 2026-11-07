@@ -102,9 +102,9 @@ test('every published cell links to the guided installation with its version and
 	const guided = within(recent).getByRole('link', { name: 'Installation guidée' })
 	expect(guided.getAttribute('href')).toBe('/installation?minecraft=1.21.11&loader=fabric')
 	fireEvent.click(guided)
-	expect(await screen.findByText('Étape 1 sur 6')).toBeTruthy()
+	expect(await screen.findByText('Étape 1 sur 5')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
-	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' }).length).toBeGreaterThan(0)
+	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Télécharger le mod')
 })
 
 test('while the index loads the cells say so, and a failure offers a retry instead of empty promises', async () => {

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { T, useI18n } from '../i18n/I18n'
 import { type System, systems } from '../lib/platform'
-import { loadersFor, mostUsed, type StepId, validatedMinecraft } from './installation-state'
+import { loadersFor, type StepId } from './installation-state'
 import { minecraftVersions } from './mod-releases'
 
 export const systemNames: Record<System, string> = { windows: 'Windows', mac: 'macOS', linux: 'Linux' }
@@ -54,7 +54,10 @@ interface Selection {
 	system: System
 	minecraft: string
 	loader: string
+	needsLoader: boolean
 }
+/** The radio value of the last loader card, for visitors who have no loader yet. */
+const noLoader = 'none'
 
 function SystemQuestion({
 	selection,
@@ -87,12 +90,6 @@ function SystemQuestion({
 	)
 }
 
-function versionBadge(version: string, t: (message: string) => string): { badge?: string } {
-	if (version === mostUsed.minecraft) return { badge: t('Most used') }
-	if (version === validatedMinecraft) return { badge: t('Validated in game') }
-	return {}
-}
-
 function MinecraftQuestion({
 	selection,
 	onSelect,
@@ -101,14 +98,7 @@ function MinecraftQuestion({
 	onSelect: (value: Partial<Selection>) => void
 }) {
 	const { t } = useI18n()
-	const choices = minecraftVersions().map(version => ({
-		value: version,
-		label: version,
-		hint: loadersFor(version)
-			.map(item => item.name)
-			.join(' · '),
-		...versionBadge(version, t),
-	}))
+	const choices = minecraftVersions().map(version => ({ value: version, label: version }))
 	return (
 		<>
 			<p className="install-goal">
@@ -133,12 +123,10 @@ function LoaderQuestion({
 	onSelect: (value: Partial<Selection>) => void
 }) {
 	const { t } = useI18n()
-	const choices = loadersFor(selection.minecraft).map(item => ({
-		value: item.loader,
-		label: item.name,
-		hint: item.loaderVersion,
-		...(item.loader === mostUsed.loader && item.minecraft === mostUsed.minecraft ? { badge: t('Most used') } : {}),
-	}))
+	const choices = [
+		...loadersFor(selection.minecraft).map(item => ({ value: item.loader, label: item.name })),
+		{ value: noLoader, label: t('I have no mod loader yet') },
+	]
 	return (
 		<>
 			<p className="install-goal">
@@ -147,12 +135,12 @@ function LoaderQuestion({
 			<ChoiceCards
 				name="loader"
 				legend={t('Which mod loader do you use?')}
-				value={selection.loader}
+				value={selection.needsLoader ? noLoader : selection.loader}
 				choices={choices}
-				onChange={value => onSelect({ loader: value })}
+				onChange={value => onSelect(value === noLoader ? { needsLoader: true } : { loader: value, needsLoader: false })}
 			/>
 			<p className="install-caption">
-				<T message={'Not sure? Fabric and NeoForge are the usual choices, and the guide works the same for both.'} />
+				<T message={'No loader yet, or not sure? Pick the last choice: the guide installs one with you.'} />
 			</p>
 		</>
 	)

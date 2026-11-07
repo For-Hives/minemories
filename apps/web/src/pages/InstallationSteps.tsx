@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
 import { T, useI18n } from '../i18n/I18n'
+import { GameScreenshot } from './GameScreenshot'
 import { CopyText, exports, folders, InstallerLine, LoaderInstaller, OtherLaunchers } from './InstallationWalkthrough'
 import { catalogLinks, fabricApiUrl, javaUrl } from './installation-loaders'
 import type { StepId, System } from './installation-state'
@@ -16,7 +17,7 @@ export const stepTitles: Record<StepId, string> = {
 	install: 'Install the loader',
 	download: 'Download the mod',
 	place: 'Place the file',
-	verify: 'Check in game',
+	verify: 'Launch the game',
 	memory: 'Create a memory',
 }
 /** The screens that explain how to install, after the questions. */
@@ -149,7 +150,35 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 	)
 }
 
-function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: boolean }) {
+/** The mods folder of the default game directory, or of the dedicated one the guide had a new loader use. */
+const defaultMods: Record<System, string> = {
+	windows: '%APPDATA%\\.minecraft\\mods',
+	mac: '~/Library/Application Support/minecraft/mods',
+	linux: '~/.minecraft/mods',
+}
+const dedicatedMods: Record<System, string> = {
+	windows: `${folders.windows}\\mods`,
+	mac: `${folders.mac}/mods`,
+	linux: `${folders.linux}/mods`,
+}
+const modsSuffix = /[\\/]mods$/
+const openFolder: Record<System, string> = {
+	windows: 'Press Windows + R, paste this path, then press Enter.',
+	mac: 'In Finder, choose Go → Go to Folder (Shift + Cmd + G), paste this path, then press Enter.',
+	linux: 'In your file manager, press Ctrl + L, paste this path, then press Enter.',
+}
+
+function FileStep({
+	target,
+	system,
+	needsLoader,
+	screenshots,
+}: {
+	target: LoaderTarget
+	system: System
+	needsLoader: boolean
+	screenshots: boolean
+}) {
 	const { t } = useI18n()
 	return (
 		<>
@@ -166,11 +195,16 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 			)}
 			<ol>
 				<li>
-					<T message={"Open the profile's folder from your launcher (the folder icon on its installation)."} />
+					{needsLoader ? (
+						<T message={'Open the mods folder of the profile you just created:'} />
+					) : (
+						<T message={'Open the mods folder. With the official Minecraft Launcher, it is here by default:'} />
+					)}
+					<CopyText text={(needsLoader ? dedicatedMods : defaultMods)[system]} label="Copy the mods folder path" />
+					<span className="install-caption">{t(openFolder[system])}</span>
 				</li>
 				<li>
-					<T message={'Open the subfolder'} /> <code>mods</code>
-					<T message={'. If it is missing, create a folder named exactly'} /> <code>mods</code>
+					<T message={'If the folder does not exist, create a folder named exactly'} /> <code>mods</code>
 					<T message={', in lowercase.'} />
 				</li>
 				<li>
@@ -183,21 +217,19 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 				</li>
 			</ol>
 			<fieldset className="install-folder" aria-label={t('File location')}>
-				<span>
-					<T message={'Profile folder'} />
-				</span>
+				<span>{needsLoader ? folders[system] : defaultMods[system].replace(modsSuffix, '')}</span>
 				<span>└─ mods</span>
 				<strong>　 └─ minemories-{target.id}-X.Y.Z.jar</strong>
 				{target.fabricApi && <span>　 └─ fabric-api-{target.fabricApi}.jar</span>}
 			</fieldset>
 			<details>
 				<summary>
-					<T message={'I cannot find the profile folder'} />
+					<T message={'I use CurseForge, Modrinth App or another launcher'} />
 				</summary>
 				<p>
 					<T
 						message={
-							'In your launcher, open the folder of the profile configured in the loader step: in Minecraft Launcher, click the folder icon of its installation; in CurseForge or Modrinth App, use the folder button or the menu of the profile. Check that this is the dedicated game directory you chose.'
+							'Each profile there has its own folder. Open the profile, use its folder button or its menu (Open folder), then open mods inside it.'
 						}
 					/>
 				</p>
@@ -214,52 +246,54 @@ function FileStep({ target, screenshots }: { target: LoaderTarget; screenshots: 
 	)
 }
 
-function VerifyStep({ target, screenshots }: { target: LoaderTarget; screenshots: boolean }) {
+function VerifyStep({ target }: { target: LoaderTarget }) {
 	return (
 		<>
 			<Goal>
-				<T message={'Start the game and check that Minemories is there.'} />
+				<T message={'Launch Minecraft and check that Minemories is there.'} />
 			</Goal>
 			<ol>
 				<li>
-					<T message={'Restart Minecraft from the launcher, using the'} />{' '}
-					<strong>
-						{target.name} {target.loaderVersion}
-					</strong>{' '}
-					<T message={'profile you just prepared.'} />
+					<T message={'In your launcher, choose the'} /> <strong>{target.name}</strong>{' '}
+					<T message={'profile, then click Play.'} />
 				</li>
 				<li>
-					<T message={'In the game menu, open'} /> <strong>Mods</strong> <T message={'and look for'} />{' '}
-					<strong>Minemories</strong>.
+					<T message={'Open a world, or create a small test world, and wait for the terrain to load.'} />
 				</li>
 				<li>
-					<T message={'Create a small test world, wait for terrain to load, then press'} /> <kbd>M</kbd>
-					<T message={'. The Minemories menu should open.'} />
+					<T message={'Press'} /> <kbd>Esc</kbd>
+					<T message={': a Minemories button appears in the top-right corner of the pause menu.'} />
 				</li>
 			</ol>
+			<GameScreenshot id="pauseMenu" />
 			<div className="install-note">
 				<strong>
-					<T message={'Can you see the Minemories menu? The installation is recognized.'} />
-				</strong>
+					<T message={'You can see the Minemories button? The mod is installed.'} />
+				</strong>{' '}
+				<T message={'In game, the'} /> <kbd>M</kbd> <T message={'key opens the same menu.'} />
 			</div>
 			<details>
 				<summary>
-					<T message={'M opens another menu, or the command is unknown'} />
+					<T message={'No Minemories button, or M opens another menu'} />
 				</summary>
+				<p>
+					<T
+						message={
+							'No button: check that the profile launched is the one whose mods folder holds the JAR, and that it uses the version and loader you chose.'
+						}
+					/>
+				</p>
+				<p>
+					<T message={'With other mods, the button can sit in another corner of the pause menu.'} />
+				</p>
 				<p>
 					<T message={'If M opens something else, go to'} />{' '}
 					<strong>
 						<T message={'Options → Controls → Key Binds → Minemories'} />
 					</strong>{' '}
-					<T
-						message={'and choose an unused key. You can also find the Minemories button in the pause menu or options.'}
-					/>
+					<T message={'and choose an unused key.'} />
 				</p>
 			</details>
-			<Screenshots show={screenshots}>
-				<WindowsScreenshot id="modsList" />
-				<WindowsScreenshot id="minemoriesMenu" />
-			</Screenshots>
 		</>
 	)
 }
@@ -322,46 +356,93 @@ function GalleryDetails() {
 	)
 }
 
+function ExportCommand() {
+	return (
+		<dl className="install-command-parts">
+			<dt>
+				<code>/minemories</code>
+			</dt>
+			<dd>
+				<T message={'The commands of the mod.'} />
+			</dd>
+			<dt>
+				<code>export</code>
+			</dt>
+			<dd>
+				<T message={'Captures now and saves a .glb file on this computer. Nothing is sent.'} />
+			</dd>
+			<dt>
+				<code>16</code>
+			</dt>
+			<dd>
+				<T
+					message={
+						'The radius in blocks around you, from 2 to 128. Small is quick: good for a first try. Larger takes longer and makes a bigger file.'
+					}
+				/>
+			</dd>
+			<dt>
+				<code>selection</code>
+			</dt>
+			<dd>
+				<T message={'Instead of a number: captures the box you marked with'} /> <code>/minemories select first</code>{' '}
+				<T message={'and'} /> <code>/minemories select second</code>.
+			</dd>
+		</dl>
+	)
+}
+
 function MemoryStep({ system, screenshots }: { system: System; screenshots: boolean }) {
 	const { t } = useI18n()
 	return (
 		<>
 			<Goal>
-				<T message={'Capture a small build, then find the file on your computer.'} />
+				<T message={'Stand near a small build. There are two ways to capture it: the menu, or a command.'} />
 			</Goal>
+			<h3 className="install-method">
+				<T message={'With the menu'} />
+			</h3>
 			<ol>
 				<li>
-					<T message={'Approach a small build and wait for terrain to load. Open chat with'} /> <kbd>T</kbd>
-					<T message={', paste this command, then press Enter:'} />
-					<CopyText text="/minemories export 16" label="Copy the first capture command" />
+					<T message={'Press'} /> <kbd>M</kbd> <T message={'(or Esc, then the Minemories button).'} />
 				</li>
 				<li>
-					<T message={'Open the folder below'} />{' '}
-					{system === 'windows'
-						? t("by pasting this path into File Explorer's address bar")
-						: t('using your file manager (~ means your user directory)')}
-					<T message={', then find'} /> <strong>capture.glb</strong> :
-					<CopyText text={exports[system]} label="Copy the first memory folder" />
+					<T message={'Click'} />{' '}
+					<strong>
+						<T message={'Take a memory'} />
+					</strong>
+					<T
+						message={'. It captures 32 blocks around you. Without a linked account, the memory stays on this computer.'}
+					/>
 				</li>
 			</ol>
-			<details>
-				<summary>
-					<T message={'What does 16 mean?'} />
-				</summary>
-				<p>
-					<T
-						message={
-							'Wait for the export completion message. The number 16 means a radius of 16 blocks: this small capture lets you check the result before capturing a large area.'
-						}
-					/>
-				</p>
-				<p className="install-caption">
-					<T message={"The export folder can be changed in the mod's advanced settings."} />
-				</p>
-			</details>
+			<GameScreenshot id="minemoriesMenu" />
+			<h3 className="install-method">
+				<T message={'With a command'} />
+			</h3>
+			<p>
+				<T message={'Use it to choose the size of the capture. Open chat with'} /> <kbd>T</kbd>
+				<T message={', paste this command, then press Enter:'} />
+			</p>
+			<CopyText text="/minemories export 16" label="Copy the first capture command" />
+			<GameScreenshot id="exportCommand" />
+			<ExportCommand />
+			<h3 className="install-method">
+				<T message={'Find the file'} />
+			</h3>
+			<p>
+				<T message={'Wait for the end-of-export message, then open the folder below'} />{' '}
+				{system === 'windows'
+					? t("by pasting this path into File Explorer's address bar")
+					: t('using your file manager (~ means your user directory)')}
+				<T message={', then find'} /> <strong>capture.glb</strong> :
+			</p>
+			<CopyText text={exports[system]} label="Copy the first memory folder" />
+			<p className="install-caption">
+				<T message={"The export folder can be changed in the mod's advanced settings."} />
+			</p>
 			<GalleryDetails />
 			<Screenshots show={screenshots}>
-				<WindowsScreenshot id="localCapture" />
 				<WindowsScreenshot id="viewer" />
 			</Screenshots>
 		</>
@@ -369,7 +450,18 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 }
 
 /** The body of one of the five installation screens; the Windows screenshots show the validated walkthrough only. */
-export function InstallationStep({ step, system, target }: { step: StepId; system: System; target: LoaderTarget }) {
+export function InstallationStep({
+	step,
+	system,
+	target,
+	needsLoader = false,
+}: {
+	step: StepId
+	system: System
+	target: LoaderTarget
+	/** The visitor installs a new loader in a dedicated game folder (and the place step points there). */
+	needsLoader?: boolean
+}) {
 	const screenshots = system === 'windows' && target.loader === 'neoforge' && target.minecraft === '1.21.1'
 	switch (step) {
 		case 'install':
@@ -377,9 +469,9 @@ export function InstallationStep({ step, system, target }: { step: StepId; syste
 		case 'download':
 			return <DownloadStep target={target} walkthrough={screenshots} />
 		case 'place':
-			return <FileStep target={target} screenshots={screenshots} />
+			return <FileStep target={target} system={system} needsLoader={needsLoader} screenshots={screenshots} />
 		case 'verify':
-			return <VerifyStep target={target} screenshots={screenshots} />
+			return <VerifyStep target={target} />
 		case 'memory':
 			return <MemoryStep system={system} screenshots={screenshots} />
 		default:
