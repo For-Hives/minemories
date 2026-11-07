@@ -41,13 +41,20 @@ export {
 export {
 	ROADMAP_COLUMN_LIMIT,
 	ROADMAP_DONE_DAYS,
+	ROADMAP_RELEASE_NOTES_LIMIT,
 	type RoadmapArea,
 	type RoadmapColumn,
 	type RoadmapItem,
+	type RoadmapLatestRelease,
+	type RoadmapReleaseNote,
+	type RoadmapReleaseNoteType,
 	type RoadmapResponse,
 	roadmapArea,
 	roadmapColumn,
 	roadmapItem,
+	roadmapLatestRelease,
+	roadmapReleaseNote,
+	roadmapReleaseNoteType,
 	roadmapResponse,
 } from './roadmap'
 export {

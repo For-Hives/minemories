@@ -1,8 +1,9 @@
 // #roadmap message: GitHub issues labelled `roadmap`, sorted into three columns and rendered as one webhook message
 // that is edited in place (PATCH {webhook}/messages/{DISCORD_ROADMAP_MESSAGE_ID}). The classification mirrors
-// GET /api/roadmap so Discord and the site always agree.
+// GET /api/roadmap so Discord and the site always agree. A first embed shows the latest mod version and its notes.
 import {
 	COLORS,
+	clip,
 	embedSize,
 	escapeClipped,
 	fitLines,
@@ -16,10 +17,11 @@ import {
 	sendWebhook,
 	webhookUrl,
 } from './discord.mjs'
+import { fetchLatestRelease } from './release-info.mjs'
 
 export const ROADMAP_LABEL = 'roadmap'
 export const IN_PROGRESS_LABEL = 'in-progress'
-export const AREAS = ['mod', 'api', 'front']
+export const AREAS = ['mod', 'api', 'front', 'socials']
 export const DONE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 export const COLUMN_CAP = 25
 export const COLUMNS = [
@@ -29,6 +31,8 @@ export const COLUMNS = [
 ]
 const DONE_REASONS = new Set(['completed', null])
 const TITLE_MAX = 90
+const NOTE_MAX = 150
+const NOTE_MARKERS = { feature: 'New', fix: 'Fixed', other: 'Changed' }
 const TOTAL_BUDGET = LIMITS.total - 100
 const PAGE_LIMIT = 20
 const NEXT_LINK = /<([^>]+)>;\s*rel="next"/
@@ -97,8 +101,43 @@ function describe(lines, more) {
 	})
 }
 
-/** Builds the message; drops lines from the longest column (into its "+N more") until it fits Discord's limits. */
-export function buildRoadmapPayload(columns, now = Date.now()) {
+/** One Markdown bullet per release note: a marker, the escaped text, then a link to its pull request. */
+export function formatNote(note) {
+	const marker = NOTE_MARKERS[note.type] ?? NOTE_MARKERS.other
+	const pr = Number.isInteger(note.pr) && note.pr > 0 ? ` ([#${note.pr}](${REPOSITORY_URL}/pull/${note.pr}))` : ''
+	return `- **${marker}:** ${escapeClipped(note.text, NOTE_MAX)}${pr}`
+}
+
+function unixSeconds(iso) {
+	const parsed = Date.parse(iso ?? '')
+	return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null
+}
+
+/** The "Latest mod version" embed, built from `latestRelease` with `lines` notes kept and `more` counted. */
+export function releaseEmbed(release, lines, more) {
+	const seconds = unixSeconds(release.date)
+	const header = [seconds === null ? null : `Released <t:${seconds}:D>`, release.prerelease ? 'beta' : null]
+		.filter(Boolean)
+		.join(' · ')
+	const notes =
+		lines.length === 0 && more === 0 ? ['No mod changes listed.'] : [...lines, ...(more > 0 ? [`+${more} more`] : [])]
+	const links = `[Download](${release.downloadUrl}) · [All changes](${release.changelogUrl}) · [Compare](${release.compareUrl})`
+	return {
+		title: clip(`Latest mod version: ${release.version}`, LIMITS.title),
+		url: release.downloadUrl,
+		description: clip([...(header ? [header, ''] : []), ...notes, '', links].join('\n'), LIMITS.description),
+		color: COLORS.release,
+	}
+}
+
+/**
+ * Builds the message: the latest mod version (when known), then the three columns. Past Discord's limits it drops
+ * release notes first, then lines from the longest column (counted in their "+N more"), until the message fits.
+ */
+export function buildRoadmapPayload(columns, now = Date.now(), latestRelease = null) {
+	const release = latestRelease
+		? { lines: (latestRelease.notes ?? []).map(formatNote), more: Number(latestRelease.more) || 0 }
+		: null
 	const state = COLUMNS.map(({ key, title }) => ({
 		key,
 		title,
@@ -115,14 +154,21 @@ export function buildRoadmapPayload(columns, now = Date.now()) {
 			...(key === 'done' ? { footer: { text: 'Minemories roadmap · GitHub issues labelled roadmap' } } : {}),
 			...(key === 'done' ? { timestamp: new Date(now).toISOString() } : {}),
 		}))
-	let embeds = render()
+	const all = () => [...(release ? [releaseEmbed(latestRelease, release.lines, release.more)] : []), ...render()]
+	let embeds = all()
 	while (embeds.reduce((sum, embed) => sum + embedSize(embed), 0) > TOTAL_BUDGET) {
-		const sizes = embeds.map((embed, index) => (state[index].lines.length > 0 ? embedSize(embed) : -1))
+		if (release?.lines.length > 0) {
+			release.lines = release.lines.slice(0, -1)
+			release.more += 1
+			embeds = all()
+			continue
+		}
+		const sizes = render().map((embed, index) => (state[index].lines.length > 0 ? embedSize(embed) : -1))
 		const longest = state[sizes.indexOf(Math.max(...sizes))]
 		if (longest.lines.length === 0) break
 		longest.lines = longest.lines.slice(0, -1)
 		longest.more += 1
-		embeds = render()
+		embeds = all()
 	}
 	return {
 		username: 'Minemories',
@@ -204,6 +250,17 @@ async function publishEdit(webhook, messageId, payload, deps, { out, warn }) {
 	return 1
 }
 
+/** The latest mod release, or null (with a warning) when GitHub fails: the board is posted without it. */
+async function latestReleaseOrNull(fetchImpl, env, io) {
+	try {
+		return await fetchLatestRelease({ fetchImpl, token: env.GITHUB_TOKEN })
+	} catch (error) {
+		const reason = redactSecrets(error?.message ?? String(error), env)
+		io.warn(`roadmap: latest mod version unavailable, posting the board without it (${reason}).`)
+		return null
+	}
+}
+
 /**
  * Fetches the roadmap and updates the Discord message. Resolves to the exit code: 0 when the message is up to date
  * (or nothing was sent because the webhook is missing), 1 when GitHub or Discord failed, or when the message had been
@@ -220,7 +277,8 @@ export async function syncRoadmap(options = {}) {
 	}
 	try {
 		const issues = await fetchRoadmapIssues({ fetchImpl: deps.fetchImpl, token: env.GITHUB_TOKEN })
-		const payload = buildRoadmapPayload(classify(issues, options.now), options.now)
+		const latestRelease = await latestReleaseOrNull(deps.fetchImpl, env, io)
+		const payload = buildRoadmapPayload(classify(issues, options.now), options.now, latestRelease)
 		if (options.dryRun) {
 			io.out(JSON.stringify(payload, null, '\t'))
 			return 0

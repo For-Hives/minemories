@@ -1490,5 +1490,16 @@
 	"Project areas": "プロジェクトの分野",
 	"Mod": "Mod",
 	"API": "API",
-	"Website": "サイト"
+	"Website": "サイト",
+	"Socials": "SNS",
+	"Latest mod version": "Modの最新バージョン",
+	"Beta": "ベータ",
+	"Released {date}": "{date} リリース",
+	"Changes in this version": "このバージョンの変更点",
+	"New": "新機能",
+	"Fixed": "修正",
+	"Changed": "変更",
+	"+{count} more changes": "ほか +{count} 件の変更",
+	"All changes": "すべての変更",
+	"Compare on GitHub ↗": "GitHubで比較 ↗"
 }

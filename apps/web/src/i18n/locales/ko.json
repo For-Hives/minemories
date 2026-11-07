@@ -1490,5 +1490,16 @@
 	"Project areas": "프로젝트 영역",
 	"Mod": "모드",
 	"API": "API",
-	"Website": "웹사이트"
+	"Website": "웹사이트",
+	"Socials": "소셜",
+	"Latest mod version": "최신 모드 버전",
+	"Beta": "베타",
+	"Released {date}": "{date} 출시",
+	"Changes in this version": "이번 버전의 변경 사항",
+	"New": "신규",
+	"Fixed": "수정",
+	"Changed": "변경",
+	"+{count} more changes": "변경 사항 +{count}개 더",
+	"All changes": "전체 변경 사항",
+	"Compare on GitHub ↗": "GitHub에서 비교 ↗"
 }

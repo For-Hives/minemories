@@ -27,6 +27,22 @@ const board = (columns: Record<string, unknown> = {}) => ({
 		...columns,
 	},
 })
+const latestRelease = (extra: Record<string, unknown> = {}) => ({
+	version: '0.36.1-beta.1',
+	tag: 'mod-v0.36.1-beta.1',
+	date: '2026-11-06T18:00:00Z',
+	prerelease: true,
+	notes: [
+		{ type: 'feature', text: 'AFK captures while paused', pr: 210 },
+		{ type: 'fix', text: 'Leaves keep their tint', pr: null },
+		{ type: 'other', text: 'Faster export', pr: 199 },
+	],
+	more: 4,
+	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
+	changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
+	...extra,
+})
 const serve = (...responses: Response[]) => {
 	const fetch = vi.fn()
 	for (const response of responses) fetch.mockResolvedValueOnce(response)
@@ -93,6 +109,68 @@ test('loads the board from the API and shows the three columns in order with lin
 	expect(screen.getByText('The same board is posted on the Minemories Discord.')).toBeTruthy()
 	expect(screen.queryByRole('status')).toBeNull()
 	expect(screen.queryByText(/more on GitHub/)).toBeNull()
+	expect(screen.queryByRole('article', { name: 'Latest mod version' })).toBeNull()
+})
+
+test('the latest mod version sits above the board with its date, beta chip, notes and links', async () => {
+	serve(Response.json({ ...board(), latestRelease: latestRelease() }))
+	mount()
+	const card = await screen.findByRole('article', { name: 'Latest mod version' })
+	expect(card.compareDocumentPosition(screen.getAllByRole('region')[0] as HTMLElement)).toBe(
+		Node.DOCUMENT_POSITION_FOLLOWING
+	)
+	expect(within(card).getByText('0.36.1-beta.1')).toBeTruthy()
+	expect(within(card).getByText('Beta')).toBeTruthy()
+	expect(within(card).getByText('Released November 6, 2026').getAttribute('dateTime')).toBe('2026-11-06T18:00:00Z')
+	const notes = within(card).getByRole('list', { name: 'Changes in this version' })
+	expect(
+		within(notes)
+			.getAllByRole('listitem')
+			.map(item => item.textContent)
+	).toEqual(['New AFK captures while paused #210', 'Fixed Leaves keep their tint', 'Changed Faster export #199'])
+	const pr = within(notes).getByRole('link', { name: '#210' })
+	expect(pr.getAttribute('href')).toBe('https://github.com/For-Hives/minemories/pull/210')
+	expect(pr.getAttribute('rel')).toContain('noopener')
+	expect(within(card).getByText('+4 more changes')).toBeTruthy()
+	expect(within(card).getByRole('link', { name: 'Download' }).getAttribute('href')).toBe('/downloads')
+	expect(within(card).getByRole('link', { name: 'All changes' }).getAttribute('href')).toBe('/changelog')
+	const compare = within(card).getByRole('link', { name: 'Compare on GitHub ↗' })
+	expect(compare.getAttribute('href')).toBe(
+		'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1'
+	)
+	expect(compare.getAttribute('target')).toBe('_blank')
+})
+
+test('a stable release without notes shows no beta chip, no list and no extra count, in French too', async () => {
+	serve(
+		Response.json({
+			...board({ planned: { items: [issue(40, { areas: ['socials'] })], more: 0 } }),
+			latestRelease: latestRelease({ version: '0.37.0', tag: 'mod-v0.37.0', prerelease: false, notes: [], more: 0 }),
+		})
+	)
+	mount('/roadmap', 'fr')
+	const card = await screen.findByRole('article', { name: 'Dernière version du mod' })
+	expect(within(card).queryByText('Bêta')).toBeNull()
+	expect(within(card).queryByRole('list')).toBeNull()
+	expect(within(card).queryByText(/autres changements/)).toBeNull()
+	expect(within(card).getByText('Sortie le 6 novembre 2026')).toBeTruthy()
+	expect(within(card).getByRole('link', { name: 'Toutes les nouveautés' })).toBeTruthy()
+	expect(screen.getByText('Réseaux').className).toContain('mm-roadmap-area-socials')
+})
+
+test('release notes are rendered as text, never as markup', async () => {
+	serve(
+		Response.json({
+			...board(),
+			latestRelease: latestRelease({
+				notes: [{ type: 'fix', text: '<img src=x onerror="alert(1)"> **bold**', pr: 3 }],
+			}),
+		})
+	)
+	mount()
+	const card = await screen.findByRole('article', { name: 'Latest mod version' })
+	expect(within(card).getByText(/<img src=x onerror="alert\(1\)"> \*\*bold\*\*/)).toBeTruthy()
+	expect(card.querySelector('img')).toBeNull()
 })
 
 test('an empty column says so, and a capped column links to every roadmap issue on GitHub', async () => {

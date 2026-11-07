@@ -4,24 +4,25 @@ import {
 	type RoadmapArea,
 	type RoadmapColumn,
 	type RoadmapItem,
+	type RoadmapLatestRelease,
 	type RoadmapResponse,
 	roadmapArea,
 } from '@minemories/api-contract'
 import { Hono } from 'hono'
 import * as z from 'zod'
+import { GITHUB_API, type GithubFetch, githubGet, githubToken } from './github'
+import { fetchLatestModRelease } from './mod-release'
 import { logApiFailure } from './safe-errors'
 
-type Environment = Readonly<Record<string, string | undefined>>
-export type RoadmapFetch = (url: string, init: RequestInit) => Promise<Response>
+export type RoadmapFetch = GithubFetch
+export { githubToken }
 
-export const ROADMAP_REPOSITORY = 'For-Hives/minemories'
-const ISSUES_URL = `https://api.github.com/repos/${ROADMAP_REPOSITORY}/issues`
+const ISSUES_URL = `${GITHUB_API}/issues`
 const PAGE_SIZE = 100
 const MAX_PAGES = 5
 const CACHE_MS = 10 * 60_000
 /** After a failed refresh, GitHub is not called again for a minute (60 requests/hour without a token). */
 const RETRY_MS = 60_000
-const TIMEOUT_MS = 10_000
 const DAY_MS = 86_400_000
 const PUBLIC_CACHE = 'public, max-age=300'
 const DONE_REASONS = new Set<string | null>(['completed', null])
@@ -41,11 +42,6 @@ const githubIssue = z.object({
 const githubIssues = z.array(githubIssue)
 export type GithubIssue = z.infer<typeof githubIssue>
 
-/** Optional `GITHUB_TOKEN` (read-only, public data): it only raises GitHub's rate limit. */
-export function githubToken(environment: Environment): string | undefined {
-	return environment.GITHUB_TOKEN?.trim() || undefined
-}
-
 function issuesUrl(page: number): string {
 	const url = new URL(ISSUES_URL)
 	url.search = new URLSearchParams({
@@ -59,18 +55,11 @@ function issuesUrl(page: number): string {
 
 /** Reads the roadmap issues (pull requests included, filtered later), at most five pages of 100. */
 export async function fetchRoadmapIssues(fetcher: RoadmapFetch, token?: string): Promise<GithubIssue[]> {
-	const headers: Record<string, string> = {
-		Accept: 'application/vnd.github+json',
-		'User-Agent': 'minemories-api',
-		'X-GitHub-Api-Version': '2022-11-28',
-	}
-	if (token) headers.Authorization = `Bearer ${token}`
 	const issues: GithubIssue[] = []
 	for (let page = 1; page <= MAX_PAGES; page++) {
 		// biome-ignore lint/performance/noAwaitInLoops: GitHub pagination stops on the first short page.
-		const response = await fetcher(issuesUrl(page), { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
-		if (!response.ok) throw new Error(`GitHub issues request failed with status ${response.status}`)
-		const batch = githubIssues.parse(await response.json())
+		const { body } = await githubGet(fetcher, issuesUrl(page), token)
+		const batch = githubIssues.parse(body)
 		issues.push(...batch)
 		if (batch.length < PAGE_SIZE) break
 	}
@@ -110,7 +99,11 @@ function column(items: RoadmapItem[], date: (item: RoadmapItem) => string | null
  * Groups roadmap issues: open with `in-progress` -> inProgress, other open -> planned, closed as completed
  * (or without a reason) during the last 30 days -> done. Pull requests and `not_planned` closures are dropped.
  */
-export function buildRoadmap(issues: readonly GithubIssue[], now: number): RoadmapResponse {
+export function buildRoadmap(
+	issues: readonly GithubIssue[],
+	now: number,
+	latestRelease: RoadmapLatestRelease | null = null
+): RoadmapResponse {
 	const planned: RoadmapItem[] = []
 	const inProgress: RoadmapItem[] = []
 	const done: RoadmapItem[] = []
@@ -128,6 +121,7 @@ export function buildRoadmap(issues: readonly GithubIssue[], now: number): Roadm
 			inProgress: column(inProgress, item => item.updatedAt),
 			done: column(done, item => item.closedAt),
 		},
+		latestRelease,
 	}
 }
 
@@ -140,8 +134,9 @@ export interface RoadmapOptions {
 }
 
 /**
- * `GET /api/roadmap`: public roadmap read from GitHub issues. Cached 10 minutes in memory, one GitHub refresh at a
- * time shared by concurrent requests, last good data served when GitHub fails, 503 when nothing was ever fetched.
+ * `GET /api/roadmap`: public roadmap read from GitHub issues, with the latest mod release. Cached 10 minutes in
+ * memory, one GitHub refresh at a time shared by concurrent requests, last good data served when GitHub fails, 503
+ * when nothing was ever fetched.
  */
 export function createRoadmap(options: RoadmapOptions = {}) {
 	const fetcher: RoadmapFetch = options.fetch ?? ((url, init) => fetch(url, init))
@@ -151,12 +146,26 @@ export function createRoadmap(options: RoadmapOptions = {}) {
 	let cached: { body: RoadmapResponse; at: number } | null = null
 	let failedAt: number | null = null
 	let pending: Promise<RoadmapResponse | null> | null = null
+	let latestRelease: RoadmapLatestRelease | null = null
+
+	/** Never rejects: a release failure keeps the last good release (or null) and the board is still served. */
+	async function refreshRelease(correlationId?: string): Promise<RoadmapLatestRelease | null> {
+		try {
+			latestRelease = await fetchLatestModRelease(fetcher, options.token)
+		} catch {
+			logApiFailure('mod_release_unavailable', correlationId)
+		}
+		return latestRelease
+	}
 
 	async function refresh(correlationId?: string): Promise<RoadmapResponse | null> {
 		try {
-			const issues = await fetchRoadmapIssues(fetcher, options.token)
+			const [issues, release] = await Promise.all([
+				fetchRoadmapIssues(fetcher, options.token),
+				refreshRelease(correlationId),
+			])
 			const at = now()
-			cached = { body: buildRoadmap(issues, at), at }
+			cached = { body: buildRoadmap(issues, at, release), at }
 			failedAt = null
 		} catch {
 			failedAt = now()

@@ -1490,5 +1490,16 @@
 	"Project areas": "Project areas",
 	"Mod": "Mod",
 	"API": "API",
-	"Website": "Website"
+	"Website": "Website",
+	"Socials": "Socials",
+	"Latest mod version": "Latest mod version",
+	"Beta": "Beta",
+	"Released {date}": "Released {date}",
+	"Changes in this version": "Changes in this version",
+	"New": "New",
+	"Fixed": "Fixed",
+	"Changed": "Changed",
+	"+{count} more changes": "+{count} more changes",
+	"All changes": "All changes",
+	"Compare on GitHub ↗": "Compare on GitHub ↗"
 }

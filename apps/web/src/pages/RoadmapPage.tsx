@@ -1,8 +1,12 @@
+import { Link } from 'react-router'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import {
+	type LatestRelease,
+	pullRequestUrl,
+	type ReleaseNoteType,
 	type RoadmapArea,
 	type RoadmapColumn,
 	type RoadmapColumnId,
@@ -20,7 +24,55 @@ const columnTitles: Record<RoadmapColumnId, string> = {
 	planned: 'Planned',
 	done: 'Done',
 }
-const areaLabels: Record<RoadmapArea, string> = { mod: 'Mod', api: 'API', front: 'Website' }
+const areaLabels: Record<RoadmapArea, string> = { mod: 'Mod', api: 'API', front: 'Website', socials: 'Socials' }
+const noteLabels: Record<ReleaseNoteType, string> = { feature: 'New', fix: 'Fixed', other: 'Changed' }
+
+/** The newest mod version above the board: its tag, date and what changed in mod/ since the previous tag. */
+function LatestReleaseCard({ release }: { release: LatestRelease }) {
+	const { locale, t } = useI18n()
+	const date = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(release.date))
+	return (
+		<article className="mm-roadmap-release" aria-labelledby="roadmap-latest-release">
+			<h2 id="roadmap-latest-release">{t('Latest mod version')}</h2>
+			<p className="mm-roadmap-release-head">
+				<span className="mm-roadmap-release-version">{release.version}</span>
+				{release.prerelease && <span className="mm-roadmap-release-beta">{t('Beta')}</span>}
+				<time dateTime={release.date}>{t('Released {date}', { date })}</time>
+			</p>
+			{release.notes.length > 0 && (
+				<ul className="mm-roadmap-release-notes" aria-label={t('Changes in this version')}>
+					{release.notes.map((note, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: notes have no id and two commits can share a subject.
+						<li key={index}>
+							<span className={`mm-roadmap-release-type mm-roadmap-release-type-${note.type}`}>
+								{t(noteLabels[note.type])}
+							</span>{' '}
+							{note.text}
+							{note.pr !== null && (
+								<>
+									{' '}
+									<a href={pullRequestUrl(note.pr)} target="_blank" rel="noopener noreferrer">
+										#{note.pr}
+									</a>
+								</>
+							)}
+						</li>
+					))}
+				</ul>
+			)}
+			{release.more > 0 && (
+				<p className="mm-roadmap-release-more">{t('+{count} more changes', { count: release.more })}</p>
+			)}
+			<p className="mm-roadmap-release-links">
+				<Link to="/downloads">{t('Download')}</Link>
+				<Link to="/changelog">{t('All changes')}</Link>
+				<a href={release.compareUrl} target="_blank" rel="noopener noreferrer">
+					{t('Compare on GitHub ↗')}
+				</a>
+			</p>
+		</article>
+	)
+}
 
 function RoadmapCard({ item, column, now }: { item: RoadmapItem; column: RoadmapColumnId; now: number }) {
 	const { locale, t } = useI18n()
@@ -92,6 +144,7 @@ export function RoadmapPage() {
 							{t('Updated {time}', { time: formatRelativeDate(roadmap.updatedAt, now, locale) })}
 						</time>
 					</p>
+					{roadmap.latestRelease && <LatestReleaseCard release={roadmap.latestRelease} />}
 					<div className="mm-roadmap-board" aria-busy={status === 'loading'}>
 						{roadmapColumns.map(id => (
 							<RoadmapColumnPanel key={id} id={id} column={roadmap.columns[id]} now={now} />
