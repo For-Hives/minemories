@@ -1,5 +1,14 @@
 # Minemories
 
+> [!NOTE]
+> **To everyone at war with AI, or who just wants to know more about us**
+>
+> We are two French developers, Bréval & Andy. Everything about our work is here: [andy-cinquin.com](https://andy-cinquin.com/) and [brev.al](https://brev.al/).
+>
+> We both have plenty of experience: we learned to code before AI, in C, then C++, C#, Java, JavaScript and more. So no, this is not 100% vibe coding without understanding what we do. We care about security, good practices, tests and the quality of what we ship, with or without AI.
+>
+> You will find plenty more on our GitHub profiles and on our respective sites!
+
 Minemories captures an area of Minecraft into a self-contained GLB file, opens it in a web viewer and, after explicit pairing, uploads it to a private gallery. The client mod targets **Minecraft 1.21.1**: NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API 0.116.17+1.21.1, and Forge 52.1.19. The Fabric JAR has also been tested under Quilt 0.30.1. See the [validation matrix and its limits](docs/features/loader-support.md).
 
 ## Structure
