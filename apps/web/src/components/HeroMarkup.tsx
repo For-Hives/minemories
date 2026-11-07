@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Link } from 'react-router'
 import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
+import { BrandMark } from './BrandMark'
 import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage, HeroNavLinks } from './HeroParts'
 
 /**
@@ -156,7 +157,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 					data-i18n-attr="aria-label:Minemories, back to the top"
 					aria-label={t('Minemories, back to the top')}
 				>
-					<i className="mc-icon mc-icon--ember" aria-hidden="true" />
+					<BrandMark />
 					<span>Minemories</span>
 				</a>
 				<nav className="site-nav" data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>

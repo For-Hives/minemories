@@ -19,7 +19,9 @@ const rules = {
 		/^packages\/api-contract\//,
 		// The versions page reads the loader list.
 		/^mod\/targets\.json$/,
-		/^scripts\/(hero-assets\/|build-web|prerender-web)/,
+		/^scripts\/(hero-assets\/|brand\/|build-web|prerender-web)/,
+		// The brand tests read the canonical logo.
+		/^design\/logo\//,
 	],
 	api: [
 		/^apps\/api\//,

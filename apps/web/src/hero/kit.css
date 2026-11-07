@@ -170,6 +170,8 @@ html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead { font-size: 16px; l
 .mc-icon--ember {
 	background: var(--mc-i) center / 100% 100% no-repeat; -webkit-mask: none; mask: none;
 }
+/* The logo's camera in front of the word Minemories (components/BrandMark.tsx): the footprint of the ember icon it replaced, 8 game pixels square. */
+.mm-brand-mark { display: block; flex: none; width: calc(8 * var(--gp)); height: calc(8 * var(--gp)); image-rendering: pixelated; }
 .mc-icon--arrow-r { --mc-i: url('/hero/mcui/icons/arrow-r.svg'); }
 .mc-icon--arrow-d { --mc-i: url('/hero/mcui/icons/arrow-d.svg'); }
 .mc-icon--pause { --mc-i: url('/hero/mcui/icons/pause.svg'); }

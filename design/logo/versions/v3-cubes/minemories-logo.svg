@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="582" height="917" viewBox="0 0 582 917">
+  <defs>
+    <radialGradient id="radial-gradient-1" cx="0" cy="0" r="58" gradientTransform="matrix(1 0 0 1.138 73.25 231.75)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd25a" stop-opacity="0.34"/>
+      <stop offset="0.5" stop-color="#ffc94f" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffc94f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <title>Minemories</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <path id="Body" d="M75.2 418.8 L183.2 449.7 L183.2 109.7 L75.2 78.8 L75.2 189.3 L111.2 199.6 L111.2 276.1 L77.2 276.1 L75.2 275.5 Z" fill="#3a2d33" stroke="#3a2d33" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Body-2" d="M75.2 78.8 L183.2 109.7 L455.2 109.7 L347.2 78.8 L283.2 78.8 L283.2 99.4 L181.2 99.4 L127.2 84 L127.2 78.8 Z" fill="#4d3a3e" stroke="#4d3a3e" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Body-3" d="M183.2 313.7 L183.2 449.7 L455.2 449.7 L455.2 422.9 L361.2 422.9 L325.2 412.6 L325.2 388.3 L291.2 378.6 L291.2 368.9 L217.2 347.7 L217.2 323.4 Z M183.2 109.7 L183.2 177.7 L217.2 177.7 L217.2 143.7 L325.2 143.7 L325.2 140.6 L455.2 140.6 L455.2 109.7 Z" fill="#241a1e" stroke="#241a1e" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Grip" d="M21.2 131.4 L21.2 369.4 L75.2 384.8 L75.2 275.5 L41.2 265.8 L41.2 189.3 L75.2 189.3 L75.2 146.8 Z" fill="#3a2d33" stroke="#3a2d33" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Grip-2" d="M21.2 131.4 L75.2 146.8 L75.2 131.4 Z" fill="#4d3a3e" stroke="#4d3a3e" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Viewfinder" d="M127.2 16 L127.2 84 L181.2 99.4 L181.2 31.4 Z" fill="#4b414b" stroke="#4b414b" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Viewfinder-2" d="M127.2 16 L181.2 31.4 L283.2 31.4 L229.2 16 Z" fill="#5f5563" stroke="#5f5563" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Viewfinder-3" d="M181.2 99.4 L283.2 99.4 L283.2 31.4 L181.2 31.4 Z" fill="#352b32" stroke="#352b32" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens" d="M325.2 140.6 L325.2 174.6 L361.2 184.9 L361.2 150.9 Z M257.2 344.6 L291.2 354.3 L291.2 378.6 L325.2 388.3 L325.2 412.6 L361.2 422.9 L361.2 388.9 L327.2 388.9 L327.2 354.9 L293.2 354.9 L293.2 218.9 L257.2 208.6 Z M291.2 174.6 L291.2 208.6 L327.2 218.9 L327.2 184.9 Z" fill="#fcd35b" stroke="#fcd35b" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-2" d="M531.2 209.2 L531.2 218.9 L565.2 218.9 Z M497.2 175.2 L497.2 184.9 L531.2 184.9 Z M325.2 140.6 L361.2 150.9 L497.2 150.9 L461.2 140.6 Z M291.2 174.6 L327.2 184.9 L361.2 184.9 L325.2 174.6 Z M257.2 208.6 L293.2 218.9 L327.2 218.9 L291.2 208.6 Z" fill="#fde68a" stroke="#fde68a" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-3" d="M293.2 354.9 L327.2 354.9 L327.2 388.9 L361.2 388.9 L361.2 422.9 L497.2 422.9 L497.2 388.9 L531.2 388.9 L531.2 354.9 L565.2 354.9 L565.2 218.9 L531.2 218.9 L531.2 184.9 L497.2 184.9 L497.2 150.9 L361.2 150.9 L361.2 184.9 L327.2 184.9 L327.2 218.9 L293.2 218.9 Z M361.2 218.9 L361.2 184.9 L497.2 184.9 L497.2 218.9 L531.2 218.9 L531.2 354.9 L497.2 354.9 L497.2 388.9 L361.2 388.9 L361.2 354.9 L327.2 354.9 L327.2 218.9 Z" fill="#df9233" stroke="#df9233" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-4" d="M327.2 354.9 L361.2 354.9 L361.2 388.9 L497.2 388.9 L497.2 354.9 L531.2 354.9 L531.2 218.9 L497.2 218.9 L497.2 184.9 L361.2 184.9 L361.2 218.9 L327.2 218.9 Z M497.2 218.9 L497.2 354.9 L361.2 354.9 L361.2 218.9 Z" fill="#3b1e17" stroke="#3b1e17" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-5" d="M361.2 252.9 L395.2 252.9 L395.2 218.9 L361.2 218.9 Z" fill="#3a4157" stroke="#3a4157" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-6" d="M395.2 252.9 L429.2 252.9 L429.2 218.9 L395.2 218.9 Z" fill="#a6e3f2" stroke="#a6e3f2" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-7" d="M429.2 252.9 L463.2 252.9 L463.2 218.9 L429.2 218.9 Z" fill="#40cde0" stroke="#40cde0" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-8" d="M463.2 218.9 L463.2 286.9 L497.2 286.9 L497.2 218.9 Z" fill="#1556a0" stroke="#1556a0" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-9" d="M361.2 286.9 L395.2 286.9 L395.2 252.9 L361.2 252.9 Z" fill="#52b6de" stroke="#52b6de" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-10" d="M395.2 286.9 L429.2 286.9 L429.2 252.9 L395.2 252.9 Z" fill="#ffffff" stroke="#ffffff" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-11" d="M429.2 286.9 L463.2 286.9 L463.2 252.9 L429.2 252.9 Z" fill="#2a7fbd" stroke="#2a7fbd" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-12" d="M361.2 320.9 L395.2 320.9 L395.2 286.9 L361.2 286.9 Z" fill="#4fd6e8" stroke="#4fd6e8" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-13" d="M395.2 320.9 L429.2 320.9 L429.2 286.9 L395.2 286.9 Z" fill="#22b0cd" stroke="#22b0cd" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-14" d="M429.2 320.9 L463.2 320.9 L463.2 286.9 L429.2 286.9 Z" fill="#1f7ab0" stroke="#1f7ab0" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-15" d="M463.2 320.9 L497.2 320.9 L497.2 286.9 L463.2 286.9 Z" fill="#3f97cf" stroke="#3f97cf" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-16" d="M361.2 354.9 L395.2 354.9 L395.2 320.9 L361.2 320.9 Z" fill="#3a3f55" stroke="#3a3f55" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-17" d="M395.2 354.9 L429.2 354.9 L429.2 320.9 L395.2 320.9 Z" fill="#46d3e6" stroke="#46d3e6" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-18" d="M429.2 354.9 L463.2 354.9 L463.2 320.9 L429.2 320.9 Z" fill="#6ee0ea" stroke="#6ee0ea" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Lens-19" d="M463.2 354.9 L497.2 354.9 L497.2 320.9 L463.2 320.9 Z" fill="#a6e8f5" stroke="#a6e8f5" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Barrel" d="M217.2 143.7 L217.2 177.7 L291.2 198.9 L291.2 174.6 L325.2 174.6 Z M183.2 177.7 L183.2 313.7 L217.2 323.4 L217.2 347.7 L291.2 368.9 L291.2 354.3 L257.2 344.6 L257.2 208.6 L291.2 208.6 Z" fill="#9e4818" stroke="#9e4818" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Barrel-2" d="M217.2 143.7 L325.2 174.6 L325.2 143.7 Z M183.2 177.7 L291.2 208.6 L291.2 198.9 L217.2 177.7 Z" fill="#cc7230" stroke="#cc7230" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Neck" d="M185 475 L257 495.6 L257 449.7 L185 449.7 Z" fill="#2e242a" stroke="#2e242a" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Neck-2" d="M257 449.7 L257 495.6 L359 495.6 L359 449.7 Z" fill="#1c1417" stroke="#1c1417" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Head" d="M167.5 472.4 L167.5 529.6 L199.2 538.7 L202.3 540.1 L257.5 555.9 L257.5 498.1 Z" fill="#7a4f36" stroke="#7a4f36" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Head-2" d="M167.5 472.4 L257.5 498.1 L376.5 498.1 L359 493.1 L359 495.6 L257 495.6 L185 475 L185 472.4 Z" fill="#8a6047" stroke="#8a6047" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Head-3" d="M257.5 555.9 L376.5 555.9 L376.5 498.1 L257.5 498.1 Z" fill="#5f3323" stroke="#5f3323" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegCenter" d="M233.4 554.6 L237.8 556.7 L233.4 566 L233.4 607.6 L269.4 617.9 L269.4 555.9 L257.5 555.9 L233.4 549 Z M233.4 678.3 L233.4 756.1 L269.4 766.4 L269.4 688.6 Z M233.4 819.8 L233.4 890.5 L269.4 900.8 L269.4 830.1 Z" fill="#3b3138" stroke="#3b3138" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegCenter-2" d="M269.4 555.9 L269.4 617.9 L303.4 617.9 L303.4 555.9 Z M269.4 688.6 L269.4 766.4 L303.4 766.4 L303.4 688.6 Z M269.4 830.1 L269.4 900.8 L303.4 900.8 L303.4 830.1 Z" fill="#1d1519" stroke="#1d1519" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegCenter-3" d="M233.4 607.6 L233.4 678.3 L269.4 688.6 L269.4 617.9 Z M233.4 756.1 L233.4 819.8 L269.4 830.1 L269.4 766.4 Z" fill="#b86424" stroke="#b86424" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegCenter-4" d="M269.4 617.9 L269.4 688.6 L303.4 688.6 L303.4 617.9 Z M269.4 766.4 L269.4 830.1 L303.4 830.1 L303.4 766.4 Z" fill="#78340f" stroke="#78340f" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegLeft" d="M130.9 589 L170.5 600.3 L199.2 538.7 L159.6 527.4 Z M70.6 718.4 L110.2 729.8 L141.8 662 L102.2 650.6 Z M16 835.5 L54.5 853.5 L94.1 864.8 L55.6 846.9 L84.3 785.2 L44.7 773.9 Z" fill="#3b3138" stroke="#3b3138" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegLeft-2" d="M170.5 600.3 L209 618.3 L237.8 556.7 L199.2 538.7 Z M110.2 729.8 L148.7 747.7 L180.3 679.9 L141.8 662 Z M55.6 846.9 L94.1 864.8 L122.8 803.2 L84.3 785.2 Z" fill="#1d1519" stroke="#1d1519" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegLeft-3" d="M102.2 650.6 L141.8 662 L170.5 600.3 L130.9 589 Z M44.7 773.9 L84.3 785.2 L110.2 729.8 L70.6 718.4 Z" fill="#b86424" stroke="#b86424" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegLeft-4" d="M141.8 662 L180.3 679.9 L209 618.3 L170.5 600.3 Z M84.3 785.2 L122.8 803.2 L148.7 747.7 L110.2 729.8 Z" fill="#78340f" stroke="#78340f" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegRight" d="M414 791.9 L442.7 853.5 L482.3 864.8 L453.6 803.2 Z M356.5 668.6 L388.1 736.4 L427.7 747.7 L396.1 679.9 Z M304 555.9 L327.8 607 L367.4 618.3 L338.6 556.7 L336.1 555.9 Z" fill="#3b3138" stroke="#3b3138" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegRight-2" d="M453.6 803.2 L482.3 864.8 L520.9 846.9 L492.1 785.2 Z M396.1 679.9 L427.7 747.7 L466.3 729.8 L434.6 662 Z M338.6 556.7 L367.4 618.3 L405.9 600.3 L377.2 538.7 L376.5 539 L376.5 555.9 L340.2 555.9 Z" fill="#1d1519" stroke="#1d1519" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegRight-3" d="M388.1 736.4 L414 791.9 L453.6 803.2 L427.7 747.7 Z M327.8 607 L356.5 668.6 L396.1 679.9 L367.4 618.3 Z" fill="#b86424" stroke="#b86424" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="LegRight-4" d="M427.7 747.7 L453.6 803.2 L492.1 785.2 L466.3 729.8 Z M367.4 618.3 L396.1 679.9 L434.6 662 L405.9 600.3 Z" fill="#78340f" stroke="#78340f" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="ButtonGlow" d="M15.25 231.75 C15.25 195.299 41.217 165.75 73.25 165.75 C105.283 165.75 131.25 195.299 131.25 231.75 C131.25 268.201 105.283 297.75 73.25 297.75 C41.217 297.75 15.25 268.201 15.25 231.75 Z" fill="url(#radial-gradient-1)"/>
+    <path id="Button" d="M41.2 189.3 L41.2 265.8 L77.2 276.1 L77.2 199.6 Z" fill="#fdd65c" stroke="#fdd65c" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Button-2" d="M41.2 189.3 L77.2 199.6 L111.2 199.6 L75.2 189.3 Z" fill="#fdeb94" stroke="#fdeb94" stroke-width="0.6" stroke-linejoin="round"/>
+    <path id="Button-3" d="M77.2 276.1 L111.2 276.1 L111.2 199.6 L77.2 199.6 Z" fill="#db8b2c" stroke="#db8b2c" stroke-width="0.6" stroke-linejoin="round"/>
+  </g>
+</svg>

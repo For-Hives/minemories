@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
+import { BrandLogo } from '../components/BrandMark'
 import { BlockMark } from '../components/Loading'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
 import { articles, legalContent } from '../content/site-content'
@@ -26,7 +27,7 @@ export function ContentLayout({
 					<h1>{title}</h1>
 					{lead && <p>{lead}</p>}
 				</div>
-				<BlockMark />
+				<BrandLogo className="mm-content-logo" />
 			</header>
 			{children}
 		</article>

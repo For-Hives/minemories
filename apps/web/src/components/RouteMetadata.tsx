@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { useI18n } from '../i18n/I18n'
-import { metadataFor, siteOrigin, structuredDataFor } from '../route-metadata'
+import { metadataFor, siteOrigin, socialImage, structuredDataFor } from '../route-metadata'
 
 function meta(name: string, content: string, attribute: 'name' | 'property' = 'name') {
 	let element = document.querySelector<HTMLMetaElement>(`meta[${attribute}="${name}"]`)
@@ -26,6 +26,12 @@ function publicHead(page: ReturnType<typeof metadataFor>) {
 	meta('og:url', canonicalUrl, 'property')
 	meta('og:locale', page.language === 'fr' ? 'fr_FR' : 'en_US', 'property')
 	meta('og:type', page.articleDate ? 'article' : 'website', 'property')
+	meta('og:image', new URL(socialImage.path, siteOrigin).href, 'property')
+	meta('og:image:width', String(socialImage.width), 'property')
+	meta('og:image:height', String(socialImage.height), 'property')
+	meta('og:image:alt', socialImage.alt, 'property')
+	meta('twitter:card', 'summary_large_image')
+	meta('twitter:image', new URL(socialImage.path, siteOrigin).href)
 	const schema = document.createElement('script')
 	schema.type = 'application/ld+json'
 	schema.dataset.pageSchema = ''
@@ -45,8 +51,8 @@ export function RouteMetadata() {
 		if (page.indexable) publicHead(page)
 		else {
 			document.querySelector('link[rel="canonical"]')?.remove()
-			for (const property of ['og:title', 'og:description', 'og:url', 'og:type', 'og:locale'])
-				document.querySelector(`meta[property="${property}"]`)?.remove()
+			for (const element of document.head.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]'))
+				element.remove()
 		}
 		if (previous.current !== pathname) {
 			previous.current = pathname
