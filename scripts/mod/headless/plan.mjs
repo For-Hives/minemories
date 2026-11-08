@@ -6,6 +6,8 @@ export const DEFAULT_GAME_MEMORY_MB = 2048
 export const DEFAULT_TIMEOUT_SECONDS = 1500
 export const XVFB_SCREEN = '1280x720x24'
 const SAFE_ENV = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'GRADLE_USER_HOME', 'XDG_CACHE_HOME', 'XDG_CONFIG_HOME']
+// What `--local` also passes on so the game opens a window on the real screen.
+const DISPLAY_ENV = ['DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'XDG_SESSION_TYPE', 'XAUTHORITY']
 const TASK_NAME = { fabric: 'runClientGameTest' }
 
 /**
@@ -48,18 +50,25 @@ export function exportPaths(root, target) {
 /**
  * Environment for the process: a small allow-list of the parent environment (never secrets such as tokens or S3
  * keys), software rendering and a heap cap for every JVM (`_JAVA_OPTIONS` wins over the build's own -Xmx).
+ * With `local`, the graphical session of the user is passed on and rendering is left to their GPU.
  */
-export function buildEnvironment({ env, gradleJdk, gameMemoryMb = DEFAULT_GAME_MEMORY_MB }) {
+export function buildEnvironment({ env, gradleJdk, gameMemoryMb = DEFAULT_GAME_MEMORY_MB, local = false }) {
 	const out = {}
-	for (const name of SAFE_ENV) if (env[name] !== undefined) out[name] = env[name]
+	for (const name of local ? [...SAFE_ENV, ...DISPLAY_ENV] : SAFE_ENV)
+		if (env[name] !== undefined) out[name] = env[name]
+	const software = local
+		? {}
+		: {
+				LIBGL_ALWAYS_SOFTWARE: '1',
+				GALLIUM_DRIVER: 'llvmpipe',
+				MESA_GL_VERSION_OVERRIDE: '4.5',
+				MESA_GLSL_VERSION_OVERRIDE: '450',
+			}
 	return {
 		...out,
 		JAVA_HOME: gradleJdk,
 		PATH: `${join(gradleJdk, 'bin')}:${env.PATH ?? ''}`,
-		LIBGL_ALWAYS_SOFTWARE: '1',
-		GALLIUM_DRIVER: 'llvmpipe',
-		MESA_GL_VERSION_OVERRIDE: '4.5',
-		MESA_GLSL_VERSION_OVERRIDE: '450',
+		...software,
 		ALSOFT_DRIVERS: 'null',
 		SDL_AUDIODRIVER: 'dummy',
 		_JAVA_OPTIONS: `-Xmx${gameMemoryMb}m`,
@@ -67,25 +76,24 @@ export function buildEnvironment({ env, gradleJdk, gameMemoryMb = DEFAULT_GAME_M
 }
 
 /**
- * Command line: xvfb-run → gradlew. Gradle runs on JDK 21 (`gradleJdk`); the other JDKs are exposed to its
- * toolchain resolution without any download.
+ * Command line: xvfb-run → gradlew (or gradlew alone with `local`, on the screen of the user). Gradle runs on
+ * JDK 21 (`gradleJdk`); the other JDKs are exposed to its toolchain resolution without any download.
  */
-export function buildCommand({ root, target, spec, jdkPaths = [] }) {
+export function buildCommand({ root, target, spec, jdkPaths = [], local = false }) {
 	const toolchains = jdkPaths.length > 0 ? [`-Dorg.gradle.java.installations.paths=${jdkPaths.join(',')}`] : []
+	const cwd = join(root, gradleRoot(target))
+	const gradle = [
+		'--no-daemon',
+		'--console=plain',
+		'-Dorg.gradle.java.installations.auto-download=false',
+		...toolchains,
+		'-Dminemories.gametest=true',
+		...spec.gradleArgs,
+	]
+	if (local) return { command: join(cwd, 'gradlew'), args: gradle, cwd }
 	return {
 		command: 'xvfb-run',
-		args: [
-			'-a',
-			'-s',
-			`-screen 0 ${XVFB_SCREEN} -nolisten tcp`,
-			'./gradlew',
-			'--no-daemon',
-			'--console=plain',
-			'-Dorg.gradle.java.installations.auto-download=false',
-			...toolchains,
-			'-Dminemories.gametest=true',
-			...spec.gradleArgs,
-		],
-		cwd: join(root, gradleRoot(target)),
+		args: ['-a', '-s', `-screen 0 ${XVFB_SCREEN} -nolisten tcp`, './gradlew', ...gradle],
+		cwd,
 	}
 }

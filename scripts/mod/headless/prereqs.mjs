@@ -57,6 +57,13 @@ export function detectPrerequisites(env, fs = realFs) {
 	return { missing }
 }
 
+/** `--local` needs a graphical session, not Xvfb or Mesa software rendering. */
+export function detectLocalPrerequisites(env) {
+	const missing = []
+	if (!(env.DISPLAY || env.WAYLAND_DISPLAY)) missing.push('a graphical session (DISPLAY or WAYLAND_DISPLAY)')
+	return { missing }
+}
+
 function jdkRoots(env) {
 	return [env.MOD_JDK_DIR, join(env.HOME ?? homedir(), '.local', 'tools')].filter(Boolean)
 }

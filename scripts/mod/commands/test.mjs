@@ -2,8 +2,8 @@ import { runHeadlessTests } from '../headless/index.mjs'
 import { notify } from '../notify.mjs'
 
 export const name = 'test'
-export const summary = 'Runs the in-game tests (headless Minecraft) on the mod targets'
-export const usage = 'bun mod test [<id>…|--all] [--keep-logs] [--notify]'
+export const summary = 'Runs the in-game tests on the mod targets (headless by default, --local on your screen)'
+export const usage = 'bun mod test [<id>…|--all] [--local] [--keep-logs] [--notify]'
 
 const ICON = { passed: 'OK     ', failed: 'FAILED ', skipped: 'skipped' }
 
@@ -14,6 +14,7 @@ export function parseArgs(args) {
 		all: flags.has('--all'),
 		keepLogs: flags.has('--keep-logs'),
 		notify: flags.has('--notify'),
+		local: flags.has('--local'),
 	}
 }
 
@@ -28,6 +29,7 @@ export async function run(args, ctx) {
 		targets: options.all ? undefined : options.ids,
 		env: ctx.env,
 		keepLogs: options.keepLogs,
+		local: options.local,
 	})
 	for (const result of results) {
 		ctx.log(

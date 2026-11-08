@@ -20,7 +20,7 @@ import {
 	gradleRoot,
 	noGametestReason,
 } from './plan.mjs'
-import { detectPrerequisites, resolveJdk } from './prereqs.mjs'
+import { detectLocalPrerequisites, detectPrerequisites, resolveJdk } from './prereqs.mjs'
 import {
 	evaluateStats,
 	failureMessage,
@@ -79,13 +79,13 @@ function interpret({ outcome, stats, error, thresholds, spec }) {
 const MAX_ATTEMPTS = 2
 
 async function execWithRetry({ context, plan, target, logFile, gradleJdk }) {
-	const { root, env, gameMemoryMb, timeoutSeconds, exec, reap } = context
+	const { root, env, gameMemoryMb, timeoutSeconds, exec, reap, local } = context
 	let outcome
 	for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 		// biome-ignore lint/performance/noAwaitInLoops: a single Minecraft instance at a time, retried only when stuck.
 		outcome = await exec({
 			...plan,
-			env: buildEnvironment({ env, gradleJdk, gameMemoryMb }),
+			env: buildEnvironment({ env, gradleJdk, gameMemoryMb, local }),
 			timeoutMs: timeoutSeconds * 1000,
 			idleTimeoutMs: DEFAULT_IDLE_SECONDS * 1000,
 			watch: createWatchdog(),
@@ -98,7 +98,7 @@ async function execWithRetry({ context, plan, target, logFile, gradleJdk }) {
 }
 
 async function runTarget(target, context) {
-	const { root, thresholdsFile, keepLogs, prerequisites, jdkLookup } = context
+	const { root, thresholdsFile, keepLogs, prerequisites, jdkLookup, local } = context
 	const spec = gametestSpec(target)
 	if (!spec) return { status: 'skipped', message: noGametestReason(target) }
 	if (prerequisites.missing.length > 0) {
@@ -121,7 +121,7 @@ async function runTarget(target, context) {
 	const logFile = join(root, 'build', 'mod-test-logs', `${target.id}.log`)
 	// Every installed JDK is offered: configuring a Gradle root also configures its other loaders (Forge 1.21.11 needs 25).
 	const installed = supportedMajors.map(major => jdkLookup(String(major))).filter(Boolean)
-	const plan = buildCommand({ root, target, spec, jdkPaths: [...new Set([gradleJdk, gameJdk, ...installed])] })
+	const plan = buildCommand({ root, target, spec, jdkPaths: [...new Set([gradleJdk, gameJdk, ...installed])], local })
 	const outcome = await execWithRetry({ context, plan, target, logFile, gradleJdk })
 	const { stats, error } = await readStats(paths)
 	const thresholds = thresholdsFor(thresholdsFile, target.id)
@@ -131,11 +131,16 @@ async function runTarget(target, context) {
 	return { ...verdict, report, logTail: verdict.status === 'failed' ? outcome.tail : undefined }
 }
 
+const detectFor = (local, env) => (local ? detectLocalPrerequisites(env) : detectPrerequisites(env))
+
 /**
  * Runs the headless tests, sequentially. `deps` is for tests only (exec, filesystem, root, thresholds).
  * @returns {Promise<{targetId, status, seconds, report?, message?}[]>}
  */
-export async function runHeadlessTests({ config, targets, env = process.env, keepLogs = false }, deps = {}) {
+export async function runHeadlessTests(
+	{ config, targets, env = process.env, keepLogs = false, local = false },
+	deps = {}
+) {
 	const root = deps.root ?? config?.root ?? repositoryRoot
 	const memory = Number(config?.headless?.gameMemoryMb ?? env.MOD_TEST_GAME_MEMORY_MB ?? DEFAULT_GAME_MEMORY_MB)
 	const timeout = Number(config?.headless?.timeoutSeconds ?? env.MOD_TEST_TIMEOUT_SECONDS ?? DEFAULT_TIMEOUT_SECONDS)
@@ -143,12 +148,13 @@ export async function runHeadlessTests({ config, targets, env = process.env, kee
 		root,
 		env,
 		keepLogs,
+		local,
 		exec: deps.exec ?? execLogged,
 		reap: deps.reap ?? reapProcesses,
 		gameMemoryMb: Number.isFinite(memory) && memory > 0 ? memory : DEFAULT_GAME_MEMORY_MB,
 		timeoutSeconds: Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TIMEOUT_SECONDS,
 		thresholdsFile: deps.thresholds ?? (await loadThresholds()),
-		prerequisites: deps.prerequisites ?? detectPrerequisites(env),
+		prerequisites: deps.prerequisites ?? detectFor(local, env),
 		jdkLookup: deps.jdkLookup ?? (major => resolveJdk(major, env)),
 	}
 	const results = []

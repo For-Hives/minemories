@@ -15,7 +15,7 @@ import {
 	gradleRoot,
 	noGametestReason,
 } from './plan.mjs'
-import { detectPrerequisites, findOnPath, hasMesaSoftware, resolveJdk } from './prereqs.mjs'
+import { detectLocalPrerequisites, detectPrerequisites, findOnPath, hasMesaSoftware, resolveJdk } from './prereqs.mjs'
 import {
 	evaluateStats,
 	failureMessage,
@@ -92,6 +92,35 @@ test('buildCommand wraps gradlew in xvfb-run on the target root', () => {
 	assert.equal(plan.args.at(-1), ':forge:runClientGametest')
 	const bare = buildCommand({ root: '/r', target, spec: gametestSpec(target) })
 	assert.ok(!bare.args.some(arg => arg.includes('installations.paths')))
+})
+
+test('--local runs gradlew directly on the real screen', () => {
+	const target = T('forge', '1.20.1')
+	const plan = buildCommand({ root: '/r', target, spec: gametestSpec(target), local: true })
+	assert.equal(plan.command, '/r/mod/1.20.1/gradlew')
+	assert.equal(plan.cwd, '/r/mod/1.20.1')
+	assert.ok(!plan.args.includes('-a'))
+	assert.ok(plan.args.includes('-Dminemories.gametest=true'))
+	assert.equal(plan.args.at(-1), ':forge:runClientGametest')
+	const env = buildEnvironment({
+		env: {
+			PATH: '/usr/bin',
+			DISPLAY: ':0',
+			WAYLAND_DISPLAY: 'wayland-0',
+			XDG_RUNTIME_DIR: '/run/user/1',
+			MODRINTH_TOKEN: 'x',
+		},
+		gradleJdk: '/j/21',
+		local: true,
+	})
+	assert.equal(env.DISPLAY, ':0')
+	assert.equal(env.WAYLAND_DISPLAY, 'wayland-0')
+	assert.equal(env.LIBGL_ALWAYS_SOFTWARE, undefined)
+	assert.equal(env.MODRINTH_TOKEN, undefined)
+	assert.equal(buildEnvironment({ env: { DISPLAY: ':0' }, gradleJdk: '/j' }).DISPLAY, undefined)
+	assert.equal(detectLocalPrerequisites({}).missing.length, 1)
+	assert.deepEqual(detectLocalPrerequisites({ DISPLAY: ':0' }).missing, [])
+	assert.deepEqual(detectLocalPrerequisites({ WAYLAND_DISPLAY: 'wayland-0' }).missing, [])
 })
 
 test('buildEnvironment is software-rendered, memory capped and leaks no secret', () => {
@@ -445,7 +474,9 @@ test('test command: usage, arguments, results and exit code', async () => {
 		all: true,
 		keepLogs: true,
 		notify: true,
+		local: false,
 	})
+	assert.equal(parseArgs(['--all', '--local']).local, true)
 	const lines = []
 	const ctx = { config: { targets: [] }, env: { PATH: '' }, log: m => lines.push(m) }
 	assert.equal(await runTestCommand([], ctx), 1)
