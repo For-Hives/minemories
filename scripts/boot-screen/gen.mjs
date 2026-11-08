@@ -162,14 +162,14 @@ export function bootBlocks() {
 	const tile = tilePng(dirtTile(SEED), DIRT)
 	const style = [
 		"@font-face{font-family:'MM Boot';font-display:block;src:url(/hero/assets/mc/fonts/mm-minecraft-regular.woff2) format('woff2')}",
-		'#boot{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:hidden;--c:3px;--f:8px;background:#1f1610;image-rendering:pixelated;animation:b-max .3s ease-in 20s forwards}',
+		'#boot{position:fixed;inset:0 auto 0 0;width:100vw;z-index:2147483000;display:grid;place-items:center;overflow:hidden;--c:3px;--f:8px;background:#1f1610;image-rendering:pixelated;animation:b-max .3s ease-in 20s forwards}',
 		'@media (min-height:900px){#boot{--c:4px;--f:16px}}@media (min-height:1300px){#boot{--c:5px}}',
 		`#boot::before{content:'';position:absolute;inset:0;background:url(${tile}) 0 0/calc(16 * var(--c));animation:b-in .2s ease-out .25s backwards}`,
 		'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}',
 		'#boot.is-out{background:none;pointer-events:none}#boot.is-out::before{display:none}',
 		'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}',
 		'html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}',
-		'#boot .boot-map{position:relative;z-index:1;top:calc(13 * var(--c));animation:b-in .2s ease-out .25s backwards}',
+		'#boot .boot-map{position:relative;z-index:1;animation:b-in .2s ease-out .25s backwards}',
 		`#boot .boot-map canvas{display:block;box-sizing:content-box;width:calc(${n} * var(--c));height:calc(${n} * var(--c));border:2px solid #000;background:#000}`,
 		"#boot .boot-pc{position:absolute;left:0;right:0;bottom:100%;margin:0 0 calc(6 * var(--c));font:var(--f)/1 'MM Boot',monospace;color:#fff;text-align:center;text-shadow:calc(var(--f) / 8) calc(var(--f) / 8) 0 #3f3f3f;white-space:nowrap}",
 		'#boot .boot-cv{position:absolute;inset:0;width:100%;height:100%}',
