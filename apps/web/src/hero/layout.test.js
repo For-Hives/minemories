@@ -3,8 +3,8 @@
 // This test is that step: the CSS variables written before the first paint equal the ones the film's own functions return, at the sizes that matter.
 import { expect, test } from 'vitest'
 import { prepareRoot } from './first-paint.js'
-import { framePath } from './scene.js'
-import { dockOf, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf, widenedRect } from './site.js'
+import { framePath, siteCameraFrom } from './scene.js'
+import { dockOf, dragOrbit, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf, widenedRect } from './site.js'
 
 const SIZES = [
 	[390, 844],
@@ -144,4 +144,17 @@ test('framePath: the size moves by a constant ratio and the centre follows the z
 	// no scale change: a plain slide; a degenerate scale: linear
 	expect(framePath([0, 0], [1, 1], 1, 1, 0.5)).toEqual({ cx: 0.5, cy: 0.5, scale: 1 })
 	expect(framePath([0, 0], [1, 1], 0, 2, 0.5)).toEqual({ cx: 0.5, cy: 0.5, scale: 1 })
+})
+
+test('a drag or an arrow turns the model the way the pointer goes, not the camera', () => {
+	const base = { eye: [0, 5, 10], target: [0, 0, 0], fov: 40 }
+	const eyeAt = (yaw) => siteCameraFrom(base, { yaw, pitch: 20 }).eye
+	// The camera looks down -z from +z, so its right is +x. The model turns right on screen when the camera goes left.
+	const cameraShiftRight = (yaw) => eyeAt(yaw)[0] - eyeAt(0)[0]
+	expect(cameraShiftRight(dragOrbit(100, 0).yaw)).toBeLessThan(0)
+	expect(cameraShiftRight(dragOrbit(-100, 0).yaw)).toBeGreaterThan(0)
+	expect(cameraShiftRight(keyAction('ArrowRight').orbit[0])).toBeLessThan(0)
+	expect(cameraShiftRight(keyAction('ArrowLeft').orbit[0])).toBeGreaterThan(0)
+	// Dragging down still raises the view (more of the top of the model), as before.
+	expect(dragOrbit(0, 50).pitch).toBeGreaterThan(0)
 })
