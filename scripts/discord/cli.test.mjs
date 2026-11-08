@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { main, parseArgs, postChangelog, validArguments } from './cli.mjs'
+import { releaseNotesUrl } from './release-info.mjs'
 
 const WEBHOOK = 'https://discord.com/api/webhooks/123456789/fakeToken_for-tests'
 const BEFORE = 'a'.repeat(40)
@@ -14,6 +18,7 @@ const response = (status, body = {}) => ({
 	status,
 	headers: { get: () => null },
 	json: async () => body,
+	text: async () => String(body),
 })
 
 function harness({
@@ -89,12 +94,88 @@ test('changelog never fails the workflow on Discord or git errors, and masks the
 	assert.ok(!broken.warnings.join('\n').includes('fakeToken'))
 })
 
-test('changelog release dry-run prints the payload and sends nothing', async () => {
-	const h = harness({ exec: args => (args[0] === 'describe' ? 'mod-v1.0.0-beta.1' : record('fix(mod): crash')) })
+const API = 'https://api.github.com/repos/For-Hives/minemories'
+const GITHUB_ROUTES = {
+	[`${API}/tags?per_page=100`]: [
+		{ name: 'mod-v1.0.0-beta.2', commit: { sha: 'new' } },
+		{ name: 'mod-v1.0.0-beta.1', commit: { sha: 'old' } },
+	],
+	[`${API}/commits/new`]: { sha: 'new', commit: { message: 'x', committer: { date: '2026-11-06T08:00:00Z' } } },
+	[`${API}/commits/old`]: { sha: 'old', commit: { message: 'x', committer: { date: '2026-11-01T00:00:00Z' } } },
+	[`${API}/commits?sha=new&path=mod&per_page=100`]: [
+		{ sha: 'c', commit: { message: 'fix(mod): crash (#5)', committer: { date: '2026-11-05T00:00:00Z' } } },
+	],
+}
+
+/** The harness, with GitHub answered from `routes` (raw notes included) and Discord from `discord`. */
+function releaseHarness({ routes = GITHUB_ROUTES, discord = [], env = { DISCORD_WEBHOOK_URL: WEBHOOK } } = {}) {
+	const h = harness({ env, discord })
+	h.github = []
+	h.options.fetch = (url, init = {}) => {
+		if (!url.startsWith('https://discord.com/')) {
+			h.github.push(url)
+			return Promise.resolve(url in routes ? response(200, routes[url]) : response(404, 'Not Found'))
+		}
+		h.calls.push({ url, init })
+		return Promise.resolve(discord.shift())
+	}
+	return h
+}
+
+test('changelog release dry-run prints the release card from GitHub and sends nothing', async () => {
+	const h = releaseHarness()
 	const code = await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2', '--dry-run'], h.options)
 	assert.equal(code, 0)
 	assert.equal(h.calls.length, 0)
-	assert.equal(JSON.parse(h.out[0]).embeds[0].title, 'Minemories mod 1.0.0-beta.2 released')
+	const [embed] = JSON.parse(h.out[0]).embeds
+	assert.equal(embed.title, 'Minemories mod 1.0.0-beta.2')
+	assert.ok(embed.description.includes('- **Fixed:** crash ([#5](https://github.com/For-Hives/minemories/pull/5))'))
+	assert.ok(embed.description.includes('[Compare](https://github.com/For-Hives/minemories/compare/mod-v1.0.0-beta.1'))
+	assert.ok(h.github.includes(releaseNotesUrl('1.0.0-beta.2')))
+})
+
+test('changelog release reads curated notes from GitHub, --notes-dir or DISCORD_RELEASE_NOTES_DIR', async () => {
+	const remote = releaseHarness({
+		routes: { ...GITHUB_ROUTES, [releaseNotesUrl('1.0.0-beta.2')]: '- New: remote note' },
+	})
+	await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2', '--dry-run'], remote.options)
+	assert.ok(JSON.parse(remote.out[0]).embeds[0].description.includes('- **New:** remote note'))
+	assert.ok(!remote.github.some(url => url.includes('path=mod')))
+
+	const dir = await mkdtemp(join(tmpdir(), 'minemories-cli-notes-'))
+	try {
+		await writeFile(join(dir, '1.0.0-beta.2.md'), '- Changed: local note (#9)\n')
+		const flag = releaseHarness()
+		await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2', '--notes-dir', dir, '--dry-run'], flag.options)
+		assert.ok(JSON.parse(flag.out[0]).embeds[0].description.includes('- **Changed:** local note'))
+		assert.ok(!flag.github.includes(releaseNotesUrl('1.0.0-beta.2')))
+		const fromEnv = releaseHarness({ env: { DISCORD_RELEASE_NOTES_DIR: dir } })
+		await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2', '--dry-run'], fromEnv.options)
+		assert.ok(JSON.parse(fromEnv.out[0]).embeds[0].description.includes('local note'))
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('changelog release posts the card, and skips or warns without failing the workflow', async () => {
+	const posted = releaseHarness({ discord: [response(204)] })
+	assert.equal(await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2'], posted.options), 0)
+	assert.equal(posted.calls.length, 1)
+	assert.equal(JSON.parse(posted.calls[0].init.body).embeds[0].title, 'Minemories mod 1.0.0-beta.2')
+	assert.match(posted.warnings.at(-1), /posted/)
+
+	const unknown = releaseHarness()
+	assert.equal(await main(['changelog', 'release', '--tag', 'mod-v9.0.0', '--dry-run'], unknown.options), 0)
+	assert.deepEqual(unknown.out, [])
+	assert.match(unknown.warnings[0], /not a mod release tag listed on GitHub/)
+
+	const env = { DISCORD_WEBHOOK_URL: WEBHOOK, GITHUB_TOKEN: 'ghs_secretvalue' }
+	const down = releaseHarness({ env })
+	down.options.fetch = () => Promise.reject(new Error(`network down ghs_secretvalue ${WEBHOOK}`))
+	assert.equal(await main(['changelog', 'release', '--tag', 'mod-v1.0.0-beta.2'], down.options), 0)
+	assert.equal(down.calls.length, 0)
+	assert.ok(!down.warnings.join('\n').includes('ghs_secretvalue'))
+	assert.ok(!down.warnings.join('\n').includes('fakeToken'))
 })
 
 test('changelog without a webhook sends nothing and succeeds', async () => {
@@ -117,7 +198,7 @@ test('roadmap dry-run goes through main', async () => {
 	const h = harness({ env: {} })
 	h.options.fetch = () => Promise.resolve(response(200, []))
 	assert.equal(await main(['roadmap', '--dry-run'], h.options), 0)
-	assert.equal(JSON.parse(h.out[0]).embeds.length, 3)
+	assert.equal(JSON.parse(h.out[0]).embeds.length, 2)
 })
 
 test('the CLI runs as a script and exits 2 on bad usage', () => {

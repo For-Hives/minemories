@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
 	buildPushPayload,
 	buildReleasePayload,
+	formatNote,
 	git,
 	groupCommits,
 	keepCommit,
@@ -10,7 +11,7 @@ import {
 	parseSubject,
 	parseTag,
 	pushCommits,
-	releaseCommits,
+	releaseEmbed,
 	renderGroups,
 } from './changelog.mjs'
 import { LIMITS, payloadSize } from './discord.mjs'
@@ -30,7 +31,7 @@ test('parseLog reads sha, parents and subject records', () => {
 	assert.deepEqual(parseLog('x'), [{ sha: 'x', parents: [], subject: '' }])
 })
 
-test('keepCommit drops release, [skip ci], merge and empty commits', () => {
+test('keepCommit drops release, skip-ci marker, merge and empty commits', () => {
 	assert.equal(keepCommit(commit('chore(release): 0.36.1-beta.1')), false)
 	assert.equal(keepCommit(commit('docs: typo [skip ci]')), false)
 	assert.equal(keepCommit(commit('feat: merged', ['p', 'q'])), false)
@@ -116,25 +117,78 @@ test('parseTag accepts mod release tags only', () => {
 	assert.equal(parseTag(undefined), null)
 })
 
-test('buildReleasePayload links downloads and changelog, with or without notes', () => {
-	const withNotes = buildReleasePayload({
-		tag: 'mod-v1.0.0-beta.2',
-		version: '1.0.0-beta.2',
-		previousTag: 'mod-v1.0.0-beta.1',
-		commits: [commit('fix(mod): crash (#5)')],
-	})
-	const [embed] = withNotes.embeds
-	assert.equal(embed.title, 'Minemories mod 1.0.0-beta.2 released')
-	assert.ok(embed.description.includes('https://minemories.xenos.lightin.io/downloads'))
-	assert.ok(embed.description.includes('https://minemories.xenos.lightin.io/changelog'))
-	assert.ok(embed.description.includes('**Fixes**'))
-	assert.equal(embed.footer.text, 'mod-v1.0.0-beta.2 · since mod-v1.0.0-beta.1')
-	assert.deepEqual(withNotes.allowed_mentions, { parse: [] })
-	const empty = buildReleasePayload({ tag: 'mod-v1.0.0', version: '1.0.0', previousTag: null, commits: [] })
-	assert.ok(empty.embeds[0].description.startsWith('No mod changes listed.'))
-	assert.equal(empty.embeds[0].footer.text, 'mod-v1.0.0')
-	const since = buildReleasePayload({ tag: 'mod-v1.0.1', version: '1.0.1', previousTag: 'mod-v1.0.0', commits: [] })
-	assert.ok(since.embeds[0].description.startsWith('No mod changes listed since mod\\-v1.0.0.'))
+const RELEASE = {
+	version: '0.36.1-beta.1',
+	tag: 'mod-v0.36.1-beta.1',
+	date: '2026-11-06T08:00:00.000Z',
+	prerelease: true,
+	notes: [
+		{ type: 'feature', text: 'AFK toggle', pr: 14 },
+		{ type: 'fix', text: '@everyone [x](http://evil)', pr: null },
+		{ type: 'other', text: 'faster export', pr: 13 },
+	],
+	more: 2,
+	source: 'curated',
+	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
+	changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0-beta.1...mod-v0.36.1-beta.1',
+}
+
+test('formatNote marks the type, escapes the text and links the pull request', () => {
+	assert.equal(
+		formatNote({ type: 'feature', text: 'AFK toggle', pr: 14 }),
+		'- **New:** AFK toggle ([#14](https://github.com/For-Hives/minemories/pull/14))'
+	)
+	assert.equal(formatNote({ type: 'fix', text: '**b** @here', pr: null }), '- **Fixed:** \\*\\*b\\*\\* @​here')
+	assert.equal(formatNote({ type: 'weird', text: 't', pr: -1 }), '- **Changed:** t')
+	assert.ok(formatNote({ type: 'other', text: 'x'.repeat(400), pr: null }).length < 300)
+})
+
+test('releaseEmbed shows the date as a Discord timestamp, beta, notes, "+N more" and the links', () => {
+	const embed = releaseEmbed(RELEASE)
+	assert.equal(embed.title, 'Minemories mod 0.36.1-beta.1')
+	assert.equal(embed.url, RELEASE.downloadUrl)
+	assert.equal(embed.footer.text, 'mod-v0.36.1-beta.1')
+	const lines = embed.description.split('\n')
+	assert.equal(lines[0], `Released <t:${Date.parse(RELEASE.date) / 1000}:D> · beta`)
+	assert.equal(lines[2], '- **New:** AFK toggle ([#14](https://github.com/For-Hives/minemories/pull/14))')
+	assert.ok(!embed.description.includes('](http://evil)'))
+	assert.equal(lines[5], '+2 more')
+	assert.equal(
+		lines.at(-1),
+		`[Download](${RELEASE.downloadUrl}) · [All changes](${RELEASE.changelogUrl}) · [Compare](${RELEASE.compareUrl})`
+	)
+	const bare = releaseEmbed({ ...RELEASE, date: 'nope', prerelease: false, notes: [], more: 0 })
+	assert.ok(bare.description.startsWith('No mod changes listed.\n\n[Download]('))
+	const stable = releaseEmbed({ ...RELEASE, prerelease: false, notes: [], more: 0 })
+	assert.ok(stable.description.startsWith('Released <t:'))
+	assert.ok(!stable.description.split('\n')[0].includes('beta'))
+	const hidden = releaseEmbed({ ...RELEASE, notes: [], more: 3 })
+	assert.equal(hidden.description.split('\n')[2], '+3 more')
+	const plain = releaseEmbed({ ...RELEASE, notes: RELEASE.notes.slice(0, 1), more: 0 })
+	assert.ok(!plain.description.includes('more'))
+})
+
+test('releaseEmbed keeps the links and counts notes that do not fit the description', () => {
+	const notes = Array.from({ length: 30 }, (_, index) => ({
+		type: 'other',
+		text: `${index} ${'x'.repeat(270)}`,
+		pr: 1,
+	}))
+	const embed = releaseEmbed({ ...RELEASE, notes, more: 4 })
+	assert.ok(embed.description.length <= LIMITS.description)
+	assert.ok(embed.description.endsWith(`[Compare](${RELEASE.compareUrl})`))
+	const kept = embed.description.split('\n').filter(line => line.startsWith('- ')).length
+	assert.ok(kept > 0 && kept < 30)
+	assert.ok(embed.description.includes(`+${30 - kept + 4} more`))
+})
+
+test('buildReleasePayload posts the release card without mentions', () => {
+	const payload = buildReleasePayload(RELEASE)
+	assert.deepEqual(payload.allowed_mentions, { parse: [] })
+	assert.equal(payload.username, 'Minemories')
+	assert.deepEqual(payload.embeds, [releaseEmbed(RELEASE)])
+	assert.ok(payloadSize(payload) <= LIMITS.total)
 })
 
 test('pushCommits reads the first-parent range and validates SHAs', () => {
@@ -146,33 +200,6 @@ test('pushCommits reads the first-parent range and validates SHAs', () => {
 	assert.equal(pushCommits({ before: BEFORE, after: AFTER, exec }).length, 1)
 	assert.deepEqual(calls[0], ['log', '--first-parent', '--format=%H%x1f%P%x1f%s%x1e', `${BEFORE}..${AFTER}`])
 	assert.throws(() => pushCommits({ before: '--output=x', after: AFTER, exec }))
-})
-
-test('releaseCommits searches the previous tag from the parent of the new tag', () => {
-	const calls = []
-	const exec = args => {
-		calls.push(args)
-		return args[0] === 'describe' ? 'mod-v1.0.0-beta.1\n' : log([commit('fix: a')])
-	}
-	const result = releaseCommits({ tag: 'mod-v1.0.0-beta.2', exec })
-	assert.equal(result.previousTag, 'mod-v1.0.0-beta.1')
-	assert.equal(result.commits.length, 1)
-	assert.deepEqual(calls[0], ['describe', '--tags', '--abbrev=0', '--match', 'mod-v*', 'mod-v1.0.0-beta.2^'])
-	assert.deepEqual(calls[1].slice(-3), ['mod-v1.0.0-beta.1..mod-v1.0.0-beta.2', '--', 'mod'])
-})
-
-test('releaseCommits caps the history when there is no previous tag', () => {
-	const calls = []
-	const exec = args => {
-		calls.push(args)
-		if (args[0] === 'describe') throw new Error('No names found')
-		return ''
-	}
-	const result = releaseCommits({ tag: 'mod-v1.0.0', exec })
-	assert.equal(result.previousTag, null)
-	assert.ok(calls[1].includes('--max-count=50'))
-	const blank = releaseCommits({ tag: 'mod-v1.0.0', exec: args => (args[0] === 'describe' ? '\n' : '') })
-	assert.equal(blank.previousTag, null)
 })
 
 test('git runs the real binary and throws on failure', () => {

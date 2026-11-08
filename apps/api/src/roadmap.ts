@@ -151,7 +151,9 @@ export function createRoadmap(options: RoadmapOptions = {}) {
 	/** Never rejects: a release failure keeps the last good release (or null) and the board is still served. */
 	async function refreshRelease(correlationId?: string): Promise<RoadmapLatestRelease | null> {
 		try {
-			latestRelease = await fetchLatestModRelease(fetcher, options.token)
+			latestRelease = await fetchLatestModRelease(fetcher, options.token, () =>
+				logApiFailure('release_notes_unavailable', correlationId)
+			)
 		} catch {
 			logApiFailure('mod_release_unavailable', correlationId)
 		}

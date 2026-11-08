@@ -47,6 +47,7 @@ export {
 	type RoadmapItem,
 	type RoadmapLatestRelease,
 	type RoadmapReleaseNote,
+	type RoadmapReleaseNotesSource,
 	type RoadmapReleaseNoteType,
 	type RoadmapResponse,
 	roadmapArea,
@@ -54,6 +55,7 @@ export {
 	roadmapItem,
 	roadmapLatestRelease,
 	roadmapReleaseNote,
+	roadmapReleaseNotesSource,
 	roadmapReleaseNoteType,
 	roadmapResponse,
 } from './roadmap'

@@ -24,6 +24,7 @@ type ErrorEvent =
 	| 'diagnostics_failed'
 	| 'roadmap_unavailable'
 	| 'mod_release_unavailable'
+	| 'release_notes_unavailable'
 
 export function requestCorrelation(request: Request): string {
 	const supplied = request.headers.get('x-minemories-correlation') ?? ''
