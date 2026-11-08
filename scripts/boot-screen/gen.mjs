@@ -16,13 +16,19 @@ import { deflateSync } from 'node:zlib'
 import {
 	bootDissolve,
 	bootFade,
+	bootPace,
 	bootRandom,
 	bootScreen,
 	bootTarget,
-	cellLevel,
 	dissolvePlan,
+	inFront,
+	mapDepth,
 	mapLevels,
-	mapNoise,
+	mapPlan,
+	mapShift,
+	mapSides,
+	mapSize,
+	mapSpeck,
 	paintMap,
 	popTile,
 } from './chunk-screen.mjs'
@@ -43,12 +49,13 @@ export const DIRT = [
 ]
 /** How many of the tile's 256 texels take each shade but the pebble (darkest first): the capture's brightness histogram. */
 const SHARES = [26, 52, 77, 64, 37]
-/** Chunk map: not started, started, the two rings, loaded. */
+/** Chunk map: not started, started, the blue and green rings, finishing (the reference's light-grey speckles, about #ddd), loaded. */
 export const MAP_COLORS = [
 	[0, 0, 0],
 	[153, 153, 153],
 	[49, 47, 124],
 	[47, 174, 28],
+	[221, 221, 221],
 	[255, 255, 255],
 ]
 const SEED = 0x6d6d6c73
@@ -123,16 +130,47 @@ export function tilePng(tile, palette) {
 	return `data:image/png;base64,${png.toString('base64')}`
 }
 
-/** The runtime functions as one inline script: indentation and whole-line comments removed (the code relies on line breaks, never on indentation). */
+/**
+ * The spaces next to an operator or a bracket, outside string and template literals, dropped: `a = b + c` becomes `a=b+c`. A space between two `+`
+ * or two `-` (`a + +b`) or that would start or end a comment stays. Line breaks stay too (the code relies on them, never on indentation).
+ */
+export function squeeze(code) {
+	let out = ''
+	let quote = ''
+	for (let i = 0; i < code.length; i++) {
+		const ch = code[i]
+		const pair = `${out.at(-1)}${code[i + 1]}`
+		if (quote && ch === '\\') {
+			out += ch + code[i + 1]
+			i++
+			continue
+		}
+		if (quote && ch === quote) quote = ''
+		else if (!quote && `'"\``.includes(ch)) quote = ch
+		else if (!quote && ch === ' ' && SQUEEZABLE.test(pair) && !KEEP.includes(pair)) continue
+		out += ch
+	}
+	return out
+}
+const SQUEEZABLE = /[=+\-*/%<>!&|?:,;{}()[\]]/
+const KEEP = ['++', '--', '//', '/*', '*/']
+
+/** The runtime functions as one inline script: indentation and whole-line comments removed (the code relies on line breaks, never on indentation), then squeezed. */
 export function inlineRuntime(config) {
 	// in dependency order; each one is a plain function declaration, so the inline copies call each other by name
 	const functions = [
 		bootRandom,
-		mapNoise,
-		cellLevel,
+		mapPlan,
+		mapSize,
+		mapSides,
+		inFront,
+		mapDepth,
+		mapSpeck,
 		mapLevels,
+		mapShift,
 		paintMap,
 		bootTarget,
+		bootPace,
 		dissolvePlan,
 		popTile,
 		bootFade,
@@ -140,20 +178,23 @@ export function inlineRuntime(config) {
 		bootScreen,
 	]
 	const source = functions.map(fn => fn.toString()).join('\n')
-	const compact = source.replace(/^\t+/gm, '').replace(/^\/\/.*\n/gm, '')
+	const compact = squeeze(source.replace(/^\t+/gm, '').replace(/^\/\/.*\n/gm, ''))
 	return `<script>!function(){${compact}\nbootScreen(document,window,${JSON.stringify(config)})}()</script>`
 }
 
-/** What the inline script receives: the map size and seed, the colours and the timings (ms). The tile is read back from the CSS (it is in the page once). */
+/**
+ * What the inline script receives: the map size and seed, the colours, the timings (ms) and the recentring (the player starts `from` cells off the
+ * centre, down and left as in the reference, and the view recentres from `at` of the fill). The tile is read back from the CSS (it is in the page once).
+ */
 export function bootConfig() {
-	const timings = { show: 250, least: 700, fill: 300, hold: 150, out: 1100, pop: 200, stop: 20000 }
-	return { n: 37, seed: SEED, colors: MAP_COLORS, ...timings }
+	const timings = { lead: 350, fill: 4000, catchup: 2000, hold: 400, move: 400, out: 1100, pop: 200, stop: 20000 }
+	return { n: 38, seed: SEED, colors: MAP_COLORS, from: [-13, 13], at: 0.13, ...timings }
 }
 
 /**
  * The scale var(--c) is one map cell and one dirt texel (3 px up to 900 px of height, then 4, then 5), like the game's interface scale: the tile is
- * 16 of them. #boot itself is plain dirt colour from the first paint (the page under it never flashes); the texture (::before) and the map fade in after
- * 250 ms. The game font is drawn in whole pixels only at multiples of 8 px (128 units per texel, 1024 per em): 8 px at the 720p scale, like the capture's
+ * 16 of them. #boot itself is plain dirt colour from the first paint (the page under it never flashes); the texture (::before) and the map fade in over
+ * 200 ms. The game font is drawn in whole pixels only at multiples of 8 px (128 units per texel, 1024 per em): 8 px at the 720p scale, like the capture's
  * "100%", then 16 px.
  */
 export function bootBlocks() {
@@ -164,26 +205,24 @@ export function bootBlocks() {
 		"@font-face{font-family:'MM Boot';font-display:block;src:url(/hero/assets/mc/fonts/mm-minecraft-regular.woff2) format('woff2')}",
 		'#boot{position:fixed;inset:0 auto 0 0;width:100vw;z-index:2147483000;display:grid;place-items:center;overflow:hidden;--c:3px;--f:8px;background:#1f1610;image-rendering:pixelated;animation:b-max .3s ease-in 20s forwards}',
 		'@media (min-height:900px){#boot{--c:4px;--f:16px}}@media (min-height:1300px){#boot{--c:5px}}',
-		`#boot::before{content:'';position:absolute;inset:0;background:url(${tile}) 0 0/calc(16 * var(--c));animation:b-in .2s ease-out .25s backwards}`,
+		`#boot::before{content:'';position:absolute;inset:0;background:url(${tile}) 0 0/calc(16 * var(--c));animation:b-in .2s ease-out backwards}`,
 		'#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}',
 		'#boot.is-out{background:none;pointer-events:none}#boot.is-out::before{display:none}',
 		'#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}',
 		'html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}',
-		'#boot .boot-map{position:relative;z-index:1;animation:b-in .2s ease-out .25s backwards}',
+		'#boot .boot-map{position:relative;z-index:1;animation:b-in .2s ease-out backwards}',
 		`#boot .boot-map canvas{display:block;box-sizing:content-box;width:calc(${n} * var(--c));height:calc(${n} * var(--c));border:2px solid #000;background:#000}`,
 		"#boot .boot-pc{position:absolute;left:0;right:0;bottom:100%;margin:0 0 calc(6 * var(--c));font:var(--f)/1 'MM Boot',monospace;color:#fff;text-align:center;text-shadow:calc(var(--f) / 8) calc(var(--f) / 8) 0 #3f3f3f;white-space:nowrap}",
 		'#boot .boot-cv{position:absolute;inset:0;width:100%;height:100%}',
 		'#boot.is-out .boot-map{opacity:0;transform:scale(1.3);transition:transform .5s cubic-bezier(.5,0,.75,.2),opacity .35s ease-in .15s}',
 		'#boot.is-out .boot-pc{opacity:0;transition:opacity .12s ease-in}',
-		// a fast load fades the cover before the dirt and the map appear: freeze their fade-in (still at 0 during its delay; no effect once it is done)
-		'#boot.is-done::before,#boot.is-done .boot-map{animation-play-state:paused}',
 		'@keyframes b-in{from{opacity:0}}@keyframes b-max{to{opacity:0;visibility:hidden}}',
 		'@media (prefers-reduced-motion:reduce){#boot *{transition:none!important}}',
 	].join('')
 	const markup = [
 		'<div id="boot" role="status">',
 		'<span class="boot-t boot-en">Loading Minemories…</span><span class="boot-t boot-fr">Chargement de Minemories…</span>',
-		`<div class="boot-map" aria-hidden="true"><p class="boot-pc">0%</p><canvas width="${n}" height="${n}"></canvas></div>`,
+		`<div class="boot-map" aria-hidden="true"><p class="boot-pc">0%</p><canvas width="${3 * n}" height="${3 * n}"></canvas></div>`,
 		'</div>',
 	].join('')
 	return { style: `<style>${style}</style>`, markup, script: inlineRuntime(config) }

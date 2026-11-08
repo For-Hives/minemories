@@ -14,56 +14,135 @@ export function bootRandom(seed) {
 	}
 }
 
-/** How far each map cell lags behind the loading front, in [0, 1): clumps of 3 x 3 cells plus a little grain, so the edges are jagged like the game's. */
-export function mapNoise(n, seed) {
+/**
+ * The chunk map's plan, computed once (seeded). Each front (0 the loaded core, 1 the grey) grows side by side, one ring at a time like the game's:
+ * for each front, side and step, when that side's step lands (a ring of the front's size, give or take 0.35, so the four sides move one after the
+ * other) and from which end its new strip of cells fills in. `at` is where the view recentres (fraction of the fill).
+ */
+export function mapPlan(n, seed, at) {
 	const rand = bootRandom(seed)
-	const blocks = Math.ceil(n / 3)
-	const coarse = []
-	for (let i = 0; i < blocks * blocks; i++) coarse.push(rand())
-	const noise = new Float32Array(n * n)
-	for (let i = 0; i < n * n; i++) {
-		const clump = coarse[Math.floor(Math.floor(i / n) / 3) * blocks + Math.floor((i % n) / 3)]
-		noise[i] = clump * 0.75 + rand() * 0.25
-	}
-	return noise
-}
-
-/** One cell: 4 loaded (white), 3 green ring, 2 blue ring, 1 started (grey), 0 not started (black). */
-export function cellLevel(ring, area, white, grey) {
-	if (ring < white) return 4
-	if (ring < white + 1) return 3
-	if (ring < white + 2) return 2
-	return area < grey ? 1 : 0
+	return { n, seed, at, steps: Array.from({ length: 8 * n }, () => [rand() * 0.7 - 0.35, rand() < 0.5]) }
 }
 
 /**
- * The chunk map at progress p (0..1), one level per cell (row by row). Square rings around the centre: the grey area spreads first and fills the map by
- * about 35 %, the white core grows to its final size with a green then a blue ring around it. While loading, `noise` pushes every cell back by up to a few
- * cells (jagged edges); at 1 the shape is exact: a white square, one green ring, one blue ring, grey to the border.
+ * The loaded core's half-size, in rings, at p (0..1) of the fill, as measured on the reference video: nothing for a moment (the grey alone), then a
+ * blue dot that grows into a green ring around a white dot (about 3 rings) before the recentring at `at`, then an area that grows slowly at first
+ * and then at a steady rate (so the side slows down) to its full size just before 100 %. A side's whole rings lag its size by half a ring on average.
  */
-export function mapLevels(p, n, noise) {
-	const q = Math.min(1, Math.max(0, p))
+export function mapSize(p, at) {
+	if (p < 0.025) return 0
+	if (p < at) return Math.min(3.25, 1 + (p - 0.025) * 30)
+	const u = Math.min(1, (p - at) / (0.97 - at))
+	return Math.sqrt(u < 0.19 ? 10.56 + u * 14.4 : 13.3 + (u - 0.19) * 175)
+}
+
+/**
+ * A front's four sides (left, right, top, bottom) at size v: each one's whole rings, how much of its next strip is filled (0..1, over the last 0.3
+ * ring before its step lands) and from which end. `cap` rings at most. No strip on a side of 2 rings or less, and two strips at most at once (the two
+ * that started first): more would read as a cross on a small front.
+ */
+export function mapSides(plan, front, v, cap) {
+	const sides = [0, 1, 2, 3].map(side => {
+		const steps = plan.steps.slice((front * 4 + side) * plan.n)
+		let k = 0
+		while (k < cap && v >= k + 1 + steps[k + 1][0]) k++
+		const fill = k > 1 && k < cap ? (v - k - 1 - steps[k + 1][0]) / 0.3 + 1 : 0
+		return [k, Math.min(1, Math.max(0, fill)), steps[k + 1]?.[1]]
+	})
+	const third = sides.map(side => side[1]).sort((a, b) => b - a)[2]
+	for (const side of sides) if (side[1] <= third) side[1] = 0
+	return sides
+}
+
+/**
+ * Whether the cell (x, y) (from the centre) is inside the front: in the rectangle of its sides, or in the strip a side is filling. A strip cell's place
+ * along it is counted on the step's nominal length (2k), so a cell, once in, stays in.
+ */
+export function inFront(sides, x, y) {
+	const [l, r, t, b] = sides
+	const across = (a, lo, hi) => a >= -lo[0] && a < hi[0]
+	if (across(x, l, r) && across(y, t, b)) return true
+	const strip = (side, a, lo, hi) => {
+		const k = side[0] + 1
+		return side[1] * k >= 1 && across(a, lo, hi) && (side[2] ? k - 1 - a : a + k) < side[1] * 2 * k
+	}
+	return (
+		(x === r[0] && strip(r, y, t, b)) ||
+		(x === -l[0] - 1 && strip(l, y, t, b)) ||
+		(y === b[0] && strip(b, x, l, r)) ||
+		(y === -t[0] - 1 && strip(t, x, l, r))
+	)
+}
+
+/** How deep the cell i is inside the marked cells (0 on their edge, 1 next, 2 beyond), over the 5 x 5 cells around it. */
+export function mapDepth(inside, n, i) {
+	let depth = 2
+	for (let k = 0; k < 25; k++) {
+		const [dx, dy] = [(k % 5) - 2, Math.floor(k / 5) - 2]
+		if (!inside[i + dy * n + dx]) depth = Math.min(depth, Math.max(Math.abs(dx), Math.abs(dy)) - 1)
+	}
+	return depth
+}
+
+/**
+ * A loaded cell inside the green ring: light grey (4, finishing) or white (5). Specks show within two rings of the core's last whole edge (`done`, the
+ * sides one ring back), a few one ring deeper; more as the fill goes on (q), fading over the hold (q from 1 to 2). `chance` is a draw in 0..1.
+ */
+export function mapSpeck(done, x, y, q, chance) {
+	const deep = k => x >= k - done[0][0] && x < done[1][0] - k && y >= k - done[2][0] && y < done[3][0] - k
+	return chance < [0.4, 0.08, 0][deep(2) + deep(3)] * Math.min(q, 2 - q) ? 4 : 5
+}
+
+/**
+ * The chunk map at q, one level per cell (row by row): 5 loaded (white), 4 finishing (light grey), 3 green ring, 2 blue ring, 1 started (grey), 0 black.
+ * q is the fill (0..1): the grey square appears around the player at once, about 7 rings, a blue dot then a green ring around a white dot grow in it,
+ * and from the recentring both fronts grow side by side, the grey 7 rings ahead of the core. The rings follow the core's edge; the cells it reached
+ * last are still finishing (light grey, with a few re-drawn every `tick`). At q = 1 every front snaps to an exact square (white 20 cells, a green and
+ * a blue ring, 7 rings of grey to the border); from 1 to 2 (the hold) the last light-grey cells fade, and the map is clean at 2.
+ */
+export function mapLevels(q, plan, tick) {
+	const { n, at } = plan
+	const c = n / 2
 	const levels = new Uint8Array(n * n)
-	if (q === 0) return levels
-	const half = (n - 1) / 2
-	const grey = (half + 0.5) * Math.min(1, 0.3 + 2 * q)
-	const white = (Math.round(half * 0.56) + 0.5) * q ** 0.6
-	const rough = 1 - q
-	for (let i = 0; i < n * n; i++) {
-		const d = Math.max(Math.abs((i % n) - half), Math.abs(Math.floor(i / n) - half))
-		levels[i] = cellLevel(d + noise[i] * 2.5 * rough, d + noise[n * n - 1 - i] * 4 * rough, white, grey)
+	if (q <= 0) return levels
+	const v = q < 1 ? mapSize(q, at) : 99
+	const core = mapSides(plan, 0, v, c - 7)
+	const grey = mapSides(plan, 1, q < at ? 7.5 + (2.6 * q) / at : v + 7, c)
+	const done = mapSides(plan, 0, v - 1, c - 7)
+	const inside = Uint8Array.from(levels, (_, i) => inFront(core, (i % n) - c, Math.floor(i / n) - c))
+	const rand = bootRandom(plan.seed + tick)
+	for (let i = 0; i < levels.length; i++) {
+		const [x, y] = [(i % n) - c, Math.floor(i / n) - c]
+		const depth = inside[i] ? mapDepth(inside, n, i) : -1
+		if (depth < 0) levels[i] = inFront(grey, x, y) ? 1 : 0
+		else if (depth < 2) levels[i] = 2 + depth
+		else levels[i] = mapSpeck(done, x, y, q, rand())
 	}
 	return levels
 }
 
-/** Writes the levels' colours into an ImageData of the map (n x n pixels, one per cell). */
-export function paintMap(image, levels, colors) {
+/** The view's offset from the player (whole cells) at k (0..1) of the recentring: an ease in and out from `from` to the centre. */
+export function mapShift(k, from) {
+	const u = Math.min(1, Math.max(0, k))
+	const ease = u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2
+	return from.map(v => Math.round(v * (1 - ease)) || 0)
+}
+
+/**
+ * Writes the levels' colours into an ImageData of the map at three pixels per cell (3n x 3n), the player `shift` cells away from the centre (black
+ * outside). The blue ring is two pixels wide, its inner third green, as the game's map reads at this size.
+ */
+export function paintMap(image, levels, colors, shift) {
 	const data = image.data
-	for (let i = 0; i < levels.length; i++) {
-		const color = colors[levels[i]]
-		data[i * 4] = color[0]
-		data[i * 4 + 1] = color[1]
-		data[i * 4 + 2] = color[2]
+	const n = Math.round(Math.sqrt(levels.length))
+	const level = (x, y) => (x >= 0 && x < n && y >= 0 && y < n ? levels[y * n + x] : 0)
+	for (let i = 0; i < 9 * n * n; i++) {
+		const [u, w] = [i % (3 * n), Math.floor(i / (3 * n))]
+		const [x, y] = [Math.floor(u / 3) - shift[0], Math.floor(w / 3) - shift[1]]
+		const [dx, dy] = [(u % 3) - 1, (w % 3) - 1]
+		let k = level(x, y)
+		if (k === 2 && [level(x + dx, y), level(x, y + dy), level(x + dx, y + dy)].includes(3)) k = 3
+		data.set(colors[k], i * 4)
 		data[i * 4 + 3] = 255
 	}
 	return image
@@ -176,18 +255,28 @@ export function bootDissolve(boot, win, C, tile, done) {
 	win.setTimeout(end, C.out + 400)
 }
 
-/** The short fade (a fast load, reduced motion, no canvas, or the safety stop): the CSS class is-done, then the screen leaves the page. */
+/** The short fade (reduced motion, no canvas, or the safety stop): the CSS class is-done, then the screen leaves the page. */
 export function bootFade(boot, win, done) {
 	boot.classList.add('is-done')
 	win.setTimeout(done, 300)
 }
 
 /**
- * Drives #boot. The screen only plays on the landing ("/"): it covers the page in plain dirt colour from the first paint, and its texture and map only
- * fade in after `C.show` ms (CSS), so a fast load only sees a short dark fade into the film. Its percentage follows the app's milestones
- * (`mm:boot-progress`) and an estimate; it reaches 100 % once the page has loaded and the app says it is on screen (`mm:ready`: the film's first image is
- * drawn), holds `C.hold` ms (and at least `C.least` ms of being visible), then reveals the film. If anything stalls, the screen fades away after `C.stop`
- * ms anyway (the CSS does the same without JavaScript). Once gone, it leaves nothing behind: listeners removed, the reveal canvas freed.
+ * Where the percentage may be after `t` ms of the screen's own clock: nothing for `C.lead` ms (the black map), then a straight line to 100 % over
+ * `C.fill` ms. Every visit plays the whole fill, even when the page is cached and ready at once; a slow app only holds it lower. The clock only moves
+ * 50 ms per frame at most, so while the app's start blocks the main thread the fill pauses and then resumes where it was, rather than skipping ahead.
+ */
+export function bootPace(t, C) {
+	return Math.min(1, Math.max(0, (t - C.lead) / C.fill))
+}
+
+/**
+ * Drives #boot. The screen only plays on the landing ("/"), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace),
+ * holds `C.hold` ms, then the film is revealed block by block. Its percentage follows the app's milestones (`mm:boot-progress`) and an estimate, never
+ * faster than bootPace, and reaches 100 % only once the page has loaded and the app says it is on screen (`mm:ready`: the film's first image is drawn).
+ * Like the game, the map starts around the player off-centre, then recentres (`C.move` ms, or at once with reduced motion, which also fades instead of
+ * the reveal). If anything stalls, the screen fades away after `C.stop` ms anyway (the CSS does the same without JavaScript). Once gone, it leaves
+ * nothing behind: listeners removed, the reveal canvas freed.
  */
 export function bootScreen(doc, win, C) {
 	const boot = doc.getElementById('boot')
@@ -200,18 +289,24 @@ export function bootScreen(doc, win, C) {
 	const t0 = now()
 	const map = boot.querySelector('canvas')
 	const ctx = map.getContext('2d')
-	const image = ctx?.createImageData(C.n, C.n)
+	const image = ctx?.createImageData(3 * C.n, 3 * C.n)
 	const label = boot.querySelector('.boot-pc')
-	const noise = mapNoise(C.n, C.seed)
+	const plan = mapPlan(C.n, C.seed, C.at)
+	// the system setting, or the site's own motion option (html[data-mc-motion=reduced], as the film reads it)
+	const reduced = () =>
+		win.matchMedia?.('(prefers-reduced-motion: reduce)').matches || doc.documentElement.dataset.mcMotion === 'reduced'
 	// the dirt tile is the CSS background of #boot::before (index.html holds it once): read now, before is-out drops it, so it has decoded by the reveal
 	const tile = new win.Image()
 	// url("data:image/png;base64,…"): no quote inside
 	const css = win.getComputedStyle(boot, '::before').backgroundImage
 	if (css.startsWith('url(')) tile.src = css.slice(4, -1).replaceAll('"', '')
 	const listen = new AbortController()
-	const s = { floor: 0, floorAt: t0, readyAt: 0, from: 0, shown: 0, fullAt: 0, pct: -1, last: t0, over: false }
+	// clock: the screen's own time, in frames of 50 ms at most, so a busy main thread pauses the animation instead of skipping part of it
+	const s = { floor: 0, floorAt: t0, shown: 0, fullAt: 0, moveAt: 0, key: '', last: t0, clock: 0, over: false }
 	s.loaded = doc.readyState === 'complete'
 	s.ready = doc.documentElement.dataset.mmReady === '1'
+	// reduced motion: the map starts centred (its recentring is over before it starts)
+	if (reduced()) s.moveAt = -Infinity
 	const remove = () => {
 		listen.abort()
 		const reveal = boot.querySelector('.boot-cv')
@@ -219,43 +314,49 @@ export function bootScreen(doc, win, C) {
 		if (reveal) reveal.width = 0
 		boot.remove()
 	}
-	const show = p => {
+	const shift = t => {
+		// the site's own option may have been set since the start: no motion then, the view jumps to the centre
+		if (!s.moveAt && s.shown >= C.at) s.moveAt = reduced() ? -Infinity : t
+		return mapShift(s.moveAt ? (t - s.moveAt) / C.move : 0, C.from)
+	}
+	// the map at q: the fill, then 1 to 2 over the hold (the last light-grey cells fade); its speckles are re-drawn every 150 ms
+	const show = (p, at) => {
 		const pct = Math.floor(p * 100)
-		if (pct === s.pct) return
-		s.pct = pct
+		const view = shift(at)
+		const q = s.fullAt ? 1 + (at - s.fullAt) / C.hold : p
+		const tick = Math.floor(at / 150)
+		const key = `${pct} ${view} ${tick} ${q >= 2}`
+		if (key === s.key) return
+		s.key = key
 		label.textContent = `${pct}%`
-		if (ctx) ctx.putImageData(paintMap(image, mapLevels(p, C.n, noise), C.colors), 0, 0)
+		if (ctx) ctx.putImageData(paintMap(image, mapLevels(q, plan, tick), C.colors, view), 0, 0)
 	}
 	const leave = () => {
 		s.over = true
-		// the system setting, or the site's own motion option (html[data-mc-motion=reduced], as the film reads it)
-		const reduced =
-			win.matchMedia?.('(prefers-reduced-motion: reduce)').matches || doc.documentElement.dataset.mcMotion === 'reduced'
 		// too close to the safety stop (the CSS one may already be fading the screen): no reveal that would bring it back
 		const late = now() - t0 >= C.stop - C.out
-		if (reduced || late || !tile.complete || !tile.naturalWidth) bootFade(boot, win, remove)
+		if (reduced() || late || !tile.complete || !tile.naturalWidth) bootFade(boot, win, remove)
 		else bootDissolve(boot, win, C, tile, remove)
 	}
-	const check = () => {
-		if (s.readyAt || !s.loaded || !s.ready) return
-		s.readyAt = now()
-		s.from = s.shown
-		if (s.readyAt - t0 >= C.show) return
-		s.over = true
-		bootFade(boot, win, remove)
-	}
+	// before ready: the app's progress or the pace, whichever is further, never past the pace nor 95 %; once ready, up to the pace (or catching up)
 	const advance = (t, dt) => {
-		if (s.readyAt) return Math.min(1, s.shown + (dt * Math.max(0.2, 1 - s.from)) / C.fill)
-		return s.shown + (bootTarget(t - t0, s.floor, t - s.floorAt) - s.shown) * (1 - Math.exp(-dt / 400))
+		const pace = bootPace(s.clock, C)
+		const next =
+			s.loaded && s.ready
+				? s.shown + dt / C.catchup
+				: Math.min(0.95, Math.max(bootTarget(t - t0, s.floor, t - s.floorAt), pace))
+		return Math.max(s.shown, Math.min(next, pace))
 	}
 	const frame = () => {
 		if (s.over) return
 		const t = now()
-		s.shown = advance(t, Math.min(100, t - s.last))
+		const dt = Math.min(50, t - s.last)
 		s.last = t
-		show(s.shown)
-		if (s.shown >= 1 && !s.fullAt) s.fullAt = t
-		if (s.fullAt && t >= Math.max(s.fullAt + C.hold, t0 + C.show + C.least)) leave()
+		s.clock += dt
+		s.shown = advance(t, dt)
+		if (s.shown >= 1 && !s.fullAt) s.fullAt = s.clock
+		show(s.shown, s.clock)
+		if (s.fullAt && s.clock >= s.fullAt + C.hold) leave()
 		else win.requestAnimationFrame(frame)
 	}
 	const onProgress = event => {
@@ -266,11 +367,9 @@ export function bootScreen(doc, win, C) {
 	}
 	const onLoad = () => {
 		s.loaded = true
-		check()
 	}
 	const onReady = () => {
 		s.ready = true
-		check()
 	}
 	win.addEventListener('mm:boot-progress', onProgress, { signal: listen.signal })
 	win.addEventListener('load', onLoad, { signal: listen.signal })
@@ -280,6 +379,5 @@ export function bootScreen(doc, win, C) {
 		s.over = true
 		bootFade(boot, win, remove)
 	}, C.stop)
-	check()
-	if (!s.over) win.requestAnimationFrame(frame)
+	win.requestAnimationFrame(frame)
 }

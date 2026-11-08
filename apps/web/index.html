@@ -13,241 +13,294 @@
     <link rel="preload" href="/hero/assets/mc/fonts/mm-minecraft-regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/hero/assets/mc/fonts/mm-minecraft-bold.woff2" as="font" type="font/woff2" crossorigin />
     <title>Minemories — Your worlds, your memories</title>
-      <!-- boot:begin --><style>@font-face{font-family:'MM Boot';font-display:block;src:url(/hero/assets/mc/fonts/mm-minecraft-regular.woff2) format('woff2')}#boot{position:fixed;inset:0 auto 0 0;width:100vw;z-index:2147483000;display:grid;place-items:center;overflow:hidden;--c:3px;--f:8px;background:#1f1610;image-rendering:pixelated;animation:b-max .3s ease-in 20s forwards}@media (min-height:900px){#boot{--c:4px;--f:16px}}@media (min-height:1300px){#boot{--c:5px}}#boot::before{content:'';position:absolute;inset:0;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAElBMVEUXDggbEgwfFhAjGhQnHhgtJB4rMOxSAAABG0lEQVR4AQEQAe/+AAIBBAIBAgMCAgMDAgQCAgIAAAIEAwMEBAEBBAIBAgMEBAAABAQBAQMEAgIEAQECAQMBAAMCBAICAwMBBAICAQADAAMAAgMBAQIABQMCAwABAQAAAwAEAgICAAEDAAQBAgICAAMCAAABAwEBAQMEAwECAgAAAgEAAAUDAwEDBAIDAwIAAAADAAACBAADAwMEAgQCBAQCAQEAAAEDBAIDAwIBAwMEAQACAQEAAgEBAgQCAgIDBQQCAAMFAwACAgICAgIBAQADAAMBAQIAAAMDAQMEAgIEAgQDAwIDAAIAAgMBAwIBAwMDAwQDAgMABAADAAICAQECAQADBAQCAQMDAAIDAgIBAQIDAgIEAgQBAwEjzgIlJ+WJqAAAAABJRU5ErkJggg==) 0 0/calc(16 * var(--c));animation:b-in .2s ease-out .25s backwards}#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}#boot.is-out{background:none;pointer-events:none}#boot.is-out::before{display:none}#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}#boot .boot-map{position:relative;z-index:1;animation:b-in .2s ease-out .25s backwards}#boot .boot-map canvas{display:block;box-sizing:content-box;width:calc(37 * var(--c));height:calc(37 * var(--c));border:2px solid #000;background:#000}#boot .boot-pc{position:absolute;left:0;right:0;bottom:100%;margin:0 0 calc(6 * var(--c));font:var(--f)/1 'MM Boot',monospace;color:#fff;text-align:center;text-shadow:calc(var(--f) / 8) calc(var(--f) / 8) 0 #3f3f3f;white-space:nowrap}#boot .boot-cv{position:absolute;inset:0;width:100%;height:100%}#boot.is-out .boot-map{opacity:0;transform:scale(1.3);transition:transform .5s cubic-bezier(.5,0,.75,.2),opacity .35s ease-in .15s}#boot.is-out .boot-pc{opacity:0;transition:opacity .12s ease-in}#boot.is-done::before,#boot.is-done .boot-map{animation-play-state:paused}@keyframes b-in{from{opacity:0}}@keyframes b-max{to{opacity:0;visibility:hidden}}@media (prefers-reduced-motion:reduce){#boot *{transition:none!important}}</style><!-- boot:end -->
+      <!-- boot:begin --><style>@font-face{font-family:'MM Boot';font-display:block;src:url(/hero/assets/mc/fonts/mm-minecraft-regular.woff2) format('woff2')}#boot{position:fixed;inset:0 auto 0 0;width:100vw;z-index:2147483000;display:grid;place-items:center;overflow:hidden;--c:3px;--f:8px;background:#1f1610;image-rendering:pixelated;animation:b-max .3s ease-in 20s forwards}@media (min-height:900px){#boot{--c:4px;--f:16px}}@media (min-height:1300px){#boot{--c:5px}}#boot::before{content:'';position:absolute;inset:0;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAElBMVEUXDggbEgwfFhAjGhQnHhgtJB4rMOxSAAABG0lEQVR4AQEQAe/+AAIBBAIBAgMCAgMDAgQCAgIAAAIEAwMEBAEBBAIBAgMEBAAABAQBAQMEAgIEAQECAQMBAAMCBAICAwMBBAICAQADAAMAAgMBAQIABQMCAwABAQAAAwAEAgICAAEDAAQBAgICAAMCAAABAwEBAQMEAwECAgAAAgEAAAUDAwEDBAIDAwIAAAADAAACBAADAwMEAgQCBAQCAQEAAAEDBAIDAwIBAwMEAQACAQEAAgEBAgQCAgIDBQQCAAMFAwACAgICAgIBAQADAAMBAQIAAAMDAQMEAgIEAgQDAwIDAAIAAgMBAwIBAwMDAwQDAgMABAADAAICAQECAQADBAQCAQMDAAIDAgIBAQIDAgIEAgQBAwEjzgIlJ+WJqAAAAABJRU5ErkJggg==) 0 0/calc(16 * var(--c));animation:b-in .2s ease-out backwards}#boot.is-done{animation:none;opacity:0;transition:opacity .25s ease-out;pointer-events:none}#boot.is-out{background:none;pointer-events:none}#boot.is-out::before{display:none}#boot .boot-t{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}html[lang^=fr] #boot .boot-en,html:not([lang^=fr]) #boot .boot-fr{display:none}#boot .boot-map{position:relative;z-index:1;animation:b-in .2s ease-out backwards}#boot .boot-map canvas{display:block;box-sizing:content-box;width:calc(38 * var(--c));height:calc(38 * var(--c));border:2px solid #000;background:#000}#boot .boot-pc{position:absolute;left:0;right:0;bottom:100%;margin:0 0 calc(6 * var(--c));font:var(--f)/1 'MM Boot',monospace;color:#fff;text-align:center;text-shadow:calc(var(--f) / 8) calc(var(--f) / 8) 0 #3f3f3f;white-space:nowrap}#boot .boot-cv{position:absolute;inset:0;width:100%;height:100%}#boot.is-out .boot-map{opacity:0;transform:scale(1.3);transition:transform .5s cubic-bezier(.5,0,.75,.2),opacity .35s ease-in .15s}#boot.is-out .boot-pc{opacity:0;transition:opacity .12s ease-in}@keyframes b-in{from{opacity:0}}@keyframes b-max{to{opacity:0;visibility:hidden}}@media (prefers-reduced-motion:reduce){#boot *{transition:none!important}}</style><!-- boot:end -->
   </head>
   <body>
-    <!-- boot:begin --><div id="boot" role="status"><span class="boot-t boot-en">Loading Minemories…</span><span class="boot-t boot-fr">Chargement de Minemories…</span><div class="boot-map" aria-hidden="true"><p class="boot-pc">0%</p><canvas width="37" height="37"></canvas></div></div><!-- boot:end -->
+    <!-- boot:begin --><div id="boot" role="status"><span class="boot-t boot-en">Loading Minemories…</span><span class="boot-t boot-fr">Chargement de Minemories…</span><div class="boot-map" aria-hidden="true"><p class="boot-pc">0%</p><canvas width="114" height="114"></canvas></div></div><!-- boot:end -->
     <div id="app"></div>
-    <!-- boot:begin --><script>!function(){function bootRandom(seed) {
-let state = seed >>> 0
-return () => {
-state = (state + 0x6d2b79f5) >>> 0
-let t = state
-t = Math.imul(t ^ (t >>> 15), t | 1)
-t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    <!-- boot:begin --><script>!function(){function bootRandom(seed){
+let state=seed>>>0
+return()=>{
+state=(state+0x6d2b79f5)>>>0
+let t=state
+t=Math.imul(t ^(t>>>15),t|1)
+t ^=t+Math.imul(t ^(t>>>7),t|61)
+return((t ^(t>>>14))>>>0)/4294967296
 }
 }
-function mapNoise(n, seed) {
-const rand = bootRandom(seed)
-const blocks = Math.ceil(n / 3)
-const coarse = []
-for (let i = 0; i < blocks * blocks; i++) coarse.push(rand())
-const noise = new Float32Array(n * n)
-for (let i = 0; i < n * n; i++) {
-const clump = coarse[Math.floor(Math.floor(i / n) / 3) * blocks + Math.floor((i % n) / 3)]
-noise[i] = clump * 0.75 + rand() * 0.25
+function mapPlan(n,seed,at){
+const rand=bootRandom(seed)
+return{n,seed,at,steps:Array.from({length:8*n},()=>[rand()*0.7-0.35,rand()<0.5])}
 }
-return noise
+function mapSize(p,at){
+if(p<0.025)return 0
+if(p<at)return Math.min(3.25,1+(p-0.025)*30)
+const u=Math.min(1,(p-at)/(0.97-at))
+return Math.sqrt(u<0.19?10.56+u*14.4:13.3+(u-0.19)*175)
 }
-function cellLevel(ring, area, white, grey) {
-if (ring < white) return 4
-if (ring < white + 1) return 3
-if (ring < white + 2) return 2
-return area < grey ? 1 : 0
+function mapSides(plan,front,v,cap){
+const sides=[0,1,2,3].map(side=>{
+const steps=plan.steps.slice((front*4+side)*plan.n)
+let k=0
+while(k<cap&&v>=k+1+steps[k+1][0])k++
+const fill=k>1&&k<cap?(v-k-1-steps[k+1][0])/0.3+1:0
+return[k,Math.min(1,Math.max(0,fill)),steps[k+1]?.[1]]
+})
+const third=sides.map(side=>side[1]).sort((a,b)=>b-a)[2]
+for(const side of sides)if(side[1]<=third)side[1]=0
+return sides
 }
-function mapLevels(p, n, noise) {
-const q = Math.min(1, Math.max(0, p))
-const levels = new Uint8Array(n * n)
-if (q === 0) return levels
-const half = (n - 1) / 2
-const grey = (half + 0.5) * Math.min(1, 0.3 + 2 * q)
-const white = (Math.round(half * 0.56) + 0.5) * q ** 0.6
-const rough = 1 - q
-for (let i = 0; i < n * n; i++) {
-const d = Math.max(Math.abs((i % n) - half), Math.abs(Math.floor(i / n) - half))
-levels[i] = cellLevel(d + noise[i] * 2.5 * rough, d + noise[n * n - 1 - i] * 4 * rough, white, grey)
+function inFront(sides,x,y){
+const[l,r,t,b]=sides
+const across=(a,lo,hi)=>a>=-lo[0]&&a<hi[0]
+if(across(x,l,r)&&across(y,t,b))return true
+const strip=(side,a,lo,hi)=>{
+const k=side[0]+1
+return side[1]*k>=1&&across(a,lo,hi)&&(side[2]?k-1-a:a+k)<side[1]*2*k
+}
+return(
+(x===r[0]&&strip(r,y,t,b))||
+(x===-l[0]-1&&strip(l,y,t,b))||
+(y===b[0]&&strip(b,x,l,r))||
+(y===-t[0]-1&&strip(t,x,l,r))
+)
+}
+function mapDepth(inside,n,i){
+let depth=2
+for(let k=0;k<25;k++){
+const[dx,dy]=[(k%5)-2,Math.floor(k/5)-2]
+if(!inside[i+dy*n+dx])depth=Math.min(depth,Math.max(Math.abs(dx),Math.abs(dy))-1)
+}
+return depth
+}
+function mapSpeck(done,x,y,q,chance){
+const deep=k=>x>=k-done[0][0]&&x<done[1][0]-k&&y>=k-done[2][0]&&y<done[3][0]-k
+return chance<[0.4,0.08,0][deep(2)+deep(3)]*Math.min(q,2-q)?4:5
+}
+function mapLevels(q,plan,tick){
+const{n,at}=plan
+const c=n/2
+const levels=new Uint8Array(n*n)
+if(q<=0)return levels
+const v=q<1?mapSize(q,at):99
+const core=mapSides(plan,0,v,c-7)
+const grey=mapSides(plan,1,q<at?7.5+(2.6*q)/at:v+7,c)
+const done=mapSides(plan,0,v-1,c-7)
+const inside=Uint8Array.from(levels,(_,i)=>inFront(core,(i%n)-c,Math.floor(i/n)-c))
+const rand=bootRandom(plan.seed+tick)
+for(let i=0;i<levels.length;i++){
+const[x,y]=[(i%n)-c,Math.floor(i/n)-c]
+const depth=inside[i]?mapDepth(inside,n,i):-1
+if(depth<0)levels[i]=inFront(grey,x,y)?1:0
+else if(depth<2)levels[i]=2+depth
+else levels[i]=mapSpeck(done,x,y,q,rand())
 }
 return levels
 }
-function paintMap(image, levels, colors) {
-const data = image.data
-for (let i = 0; i < levels.length; i++) {
-const color = colors[levels[i]]
-data[i * 4] = color[0]
-data[i * 4 + 1] = color[1]
-data[i * 4 + 2] = color[2]
-data[i * 4 + 3] = 255
+function mapShift(k,from){
+const u=Math.min(1,Math.max(0,k))
+const ease=u<0.5?4*u**3:1-(2-2*u)**3/2
+return from.map(v=>Math.round(v*(1-ease))||0)
+}
+function paintMap(image,levels,colors,shift){
+const data=image.data
+const n=Math.round(Math.sqrt(levels.length))
+const level=(x,y)=>(x>=0&&x<n&&y>=0&&y<n?levels[y*n+x]:0)
+for(let i=0;i<9*n*n;i++){
+const[u,w]=[i%(3*n),Math.floor(i/(3*n))]
+const[x,y]=[Math.floor(u/3)-shift[0],Math.floor(w/3)-shift[1]]
+const[dx,dy]=[(u%3)-1,(w%3)-1]
+let k=level(x,y)
+if(k===2&&[level(x+dx,y),level(x,y+dy),level(x+dx,y+dy)].includes(3))k=3
+data.set(colors[k],i*4)
+data[i*4+3]=255
 }
 return image
 }
-function bootTarget(elapsed, floor, since) {
-const creep = floor + (Math.min(0.95, floor + 0.25) - floor) * (1 - Math.exp(-since / 2500))
-const guess = 0.9 * (1 - Math.exp(-elapsed / 6000))
-return Math.min(0.95, Math.max(creep, guess))
+function bootTarget(elapsed,floor,since){
+const creep=floor+(Math.min(0.95,floor+0.25)-floor)*(1-Math.exp(-since/2500))
+const guess=0.9*(1-Math.exp(-elapsed/6000))
+return Math.min(0.95,Math.max(creep,guess))
 }
-function dissolvePlan(cols, rows, cx, cy, seed, span) {
-const rand = bootRandom(seed)
-const far = Math.max(cx, cols - cx, cy, rows - cy)
-const plan = new Float32Array(cols * rows)
-for (let i = 0; i < plan.length; i++) {
-const d = Math.max(Math.abs((i % cols) + 0.5 - cx), Math.abs(Math.floor(i / cols) + 0.5 - cy)) / far
-plan[i] = Math.min(1, d * 0.82 + rand() * 0.18) * span
+function bootPace(t,C){
+return Math.min(1,Math.max(0,(t-C.lead)/C.fill))
+}
+function dissolvePlan(cols,rows,cx,cy,seed,span){
+const rand=bootRandom(seed)
+const far=Math.max(cx,cols-cx,cy,rows-cy)
+const plan=new Float32Array(cols*rows)
+for(let i=0;i<plan.length;i++){
+const d=Math.max(Math.abs((i%cols)+0.5-cx),Math.abs(Math.floor(i/cols)+0.5-cy))/far
+plan[i]=Math.min(1,d*0.82+rand()*0.18)*span
 }
 return plan
 }
-function popTile(g, tile, x, y, w, h, u) {
-g.clearRect(x, y, w, h)
-if (u >= 1) return true
-const k = Math.ceil((1 - u) * 4) / 4
-const sw = Math.round(w * k)
-const sh = Math.round(h * k)
-const sx = x + Math.round((w - sw) / 2)
-const sy = y + Math.round((h - sh) / 2)
-g.drawImage(tile, sx, sy, sw, sh)
-g.fillStyle = `rgba(0,0,0,${(u * 0.12).toFixed(2)})`
-g.fillRect(sx, sy, sw, sh)
+function popTile(g,tile,x,y,w,h,u){
+g.clearRect(x,y,w,h)
+if(u>=1)return true
+const k=Math.ceil((1-u)*4)/4
+const sw=Math.round(w*k)
+const sh=Math.round(h*k)
+const sx=x+Math.round((w-sw)/2)
+const sy=y+Math.round((h-sh)/2)
+g.drawImage(tile,sx,sy,sw,sh)
+g.fillStyle=`rgba(0,0,0,${(u * 0.12).toFixed(2)})`
+g.fillRect(sx,sy,sw,sh)
 return false
 }
-function bootFade(boot, win, done) {
+function bootFade(boot,win,done){
 boot.classList.add('is-done')
-win.setTimeout(done, 300)
+win.setTimeout(done,300)
 }
-function bootDissolve(boot, win, C, tile, done) {
-const ratio = win.devicePixelRatio || 1
-const w = boot.clientWidth || win.innerWidth
-const h = boot.clientHeight || win.innerHeight
-const map = boot.querySelector('.boot-map')
-const size = (16 * map.querySelector('canvas').clientWidth) / C.n || 48
-const cols = Math.ceil(w / size)
-const rows = Math.ceil(h / size)
-const canvas = boot.ownerDocument.createElement('canvas')
-canvas.width = Math.round(w * ratio)
-canvas.height = Math.round(h * ratio)
-const g = canvas.getContext('2d')
-if (!g) return bootFade(boot, win, done)
-const box = map.getBoundingClientRect()
-const cx = (box.left + box.width / 2) / size
-const cy = (box.top + box.height / 2) / size
-const plan = dissolvePlan(cols, rows, cx, cy, C.seed, 1 - C.pop / C.out)
-const edge = c => Math.round(c * size * ratio)
-const rect = i => {
-const [col, row] = [i % cols, Math.floor(i / cols)]
-return [edge(col), edge(row), edge(col + 1) - edge(col), edge(row + 1) - edge(row)]
+function bootDissolve(boot,win,C,tile,done){
+const ratio=win.devicePixelRatio||1
+const w=boot.clientWidth||win.innerWidth
+const h=boot.clientHeight||win.innerHeight
+const map=boot.querySelector('.boot-map')
+const size=(16*map.querySelector('canvas').clientWidth)/C.n||48
+const cols=Math.ceil(w/size)
+const rows=Math.ceil(h/size)
+const canvas=boot.ownerDocument.createElement('canvas')
+canvas.width=Math.round(w*ratio)
+canvas.height=Math.round(h*ratio)
+const g=canvas.getContext('2d')
+if(!g)return bootFade(boot,win,done)
+const box=map.getBoundingClientRect()
+const cx=(box.left+box.width/2)/size
+const cy=(box.top+box.height/2)/size
+const plan=dissolvePlan(cols,rows,cx,cy,C.seed,1-C.pop/C.out)
+const edge=c=>Math.round(c*size*ratio)
+const rect=i=>{
+const[col,row]=[i%cols,Math.floor(i/cols)]
+return[edge(col),edge(row),edge(col+1)-edge(col),edge(row+1)-edge(row)]
 }
-g.imageSmoothingEnabled = false
-for (let i = 0; i < plan.length; i++) {
-const [x, y, tw, th] = rect(i)
-g.drawImage(tile, x, y, tw, th)
+g.imageSmoothingEnabled=false
+for(let i=0;i<plan.length;i++){
+const[x,y,tw,th]=rect(i)
+g.drawImage(tile,x,y,tw,th)
 }
-canvas.className = 'boot-cv'
+canvas.className='boot-cv'
 boot.prepend(canvas)
 boot.classList.add('is-out')
-const gone = new Uint8Array(plan.length)
-const start = win.performance.now()
-let left = plan.length
-let over = false
-const end = () => {
-if (over) return
-over = true
+const gone=new Uint8Array(plan.length)
+const start=win.performance.now()
+let left=plan.length
+let over=false
+const end=()=>{
+if(over)return
+over=true
 done()
 }
-const pop = (i, at) => {
-const [x, y, tw, th] = rect(i)
-if (!popTile(g, tile, x, y, tw, th, ((at - plan[i]) * C.out) / C.pop)) return
-gone[i] = 1
+const pop=(i,at)=>{
+const[x,y,tw,th]=rect(i)
+if(!popTile(g,tile,x,y,tw,th,((at-plan[i])*C.out)/C.pop))return
+gone[i]=1
 left--
 }
-const step = () => {
-if (over) return
-const at = (win.performance.now() - start) / C.out
-for (let i = 0; i < plan.length; i++) if (!gone[i] && at > plan[i]) pop(i, at)
-if (left > 0) win.requestAnimationFrame(step)
+const step=()=>{
+if(over)return
+const at=(win.performance.now()-start)/C.out
+for(let i=0;i<plan.length;i++)if(!gone[i]&&at>plan[i])pop(i,at)
+if(left>0)win.requestAnimationFrame(step)
 else end()
 }
 win.requestAnimationFrame(step)
-win.setTimeout(end, C.out + 400)
+win.setTimeout(end,C.out+400)
 }
-function bootScreen(doc, win, C) {
-const boot = doc.getElementById('boot')
-if (!boot) return
-if (win.location.pathname !== '/') {
+function bootScreen(doc,win,C){
+const boot=doc.getElementById('boot')
+if(!boot)return
+if(win.location.pathname!=='/'){
 boot.remove()
 return
 }
-const now = () => win.performance.now()
-const t0 = now()
-const map = boot.querySelector('canvas')
-const ctx = map.getContext('2d')
-const image = ctx?.createImageData(C.n, C.n)
-const label = boot.querySelector('.boot-pc')
-const noise = mapNoise(C.n, C.seed)
-const tile = new win.Image()
-const css = win.getComputedStyle(boot, '::before').backgroundImage
-if (css.startsWith('url(')) tile.src = css.slice(4, -1).replaceAll('"', '')
-const listen = new AbortController()
-const s = { floor: 0, floorAt: t0, readyAt: 0, from: 0, shown: 0, fullAt: 0, pct: -1, last: t0, over: false }
-s.loaded = doc.readyState === 'complete'
-s.ready = doc.documentElement.dataset.mmReady === '1'
-const remove = () => {
+const now=()=>win.performance.now()
+const t0=now()
+const map=boot.querySelector('canvas')
+const ctx=map.getContext('2d')
+const image=ctx?.createImageData(3*C.n,3*C.n)
+const label=boot.querySelector('.boot-pc')
+const plan=mapPlan(C.n,C.seed,C.at)
+const reduced=()=>
+win.matchMedia?.('(prefers-reduced-motion: reduce)').matches||doc.documentElement.dataset.mcMotion==='reduced'
+const tile=new win.Image()
+const css=win.getComputedStyle(boot,'::before').backgroundImage
+if(css.startsWith('url('))tile.src=css.slice(4,-1).replaceAll('"','')
+const listen=new AbortController()
+const s={floor:0,floorAt:t0,shown:0,fullAt:0,moveAt:0,key:'',last:t0,clock:0,over:false}
+s.loaded=doc.readyState==='complete'
+s.ready=doc.documentElement.dataset.mmReady==='1'
+if(reduced())s.moveAt=-Infinity
+const remove=()=>{
 listen.abort()
-const reveal = boot.querySelector('.boot-cv')
-if (reveal) reveal.width = 0
+const reveal=boot.querySelector('.boot-cv')
+if(reveal)reveal.width=0
 boot.remove()
 }
-const show = p => {
-const pct = Math.floor(p * 100)
-if (pct === s.pct) return
-s.pct = pct
-label.textContent = `${pct}%`
-if (ctx) ctx.putImageData(paintMap(image, mapLevels(p, C.n, noise), C.colors), 0, 0)
+const shift=t=>{
+if(!s.moveAt&&s.shown>=C.at)s.moveAt=reduced()?-Infinity:t
+return mapShift(s.moveAt?(t-s.moveAt)/C.move:0,C.from)
 }
-const leave = () => {
-s.over = true
-const reduced =
-win.matchMedia?.('(prefers-reduced-motion: reduce)').matches || doc.documentElement.dataset.mcMotion === 'reduced'
-const late = now() - t0 >= C.stop - C.out
-if (reduced || late || !tile.complete || !tile.naturalWidth) bootFade(boot, win, remove)
-else bootDissolve(boot, win, C, tile, remove)
+const show=(p,at)=>{
+const pct=Math.floor(p*100)
+const view=shift(at)
+const q=s.fullAt?1+(at-s.fullAt)/C.hold:p
+const tick=Math.floor(at/150)
+const key=`${pct} ${view} ${tick} ${q >= 2}`
+if(key===s.key)return
+s.key=key
+label.textContent=`${pct}%`
+if(ctx)ctx.putImageData(paintMap(image,mapLevels(q,plan,tick),C.colors,view),0,0)
 }
-const check = () => {
-if (s.readyAt || !s.loaded || !s.ready) return
-s.readyAt = now()
-s.from = s.shown
-if (s.readyAt - t0 >= C.show) return
-s.over = true
-bootFade(boot, win, remove)
+const leave=()=>{
+s.over=true
+const late=now()-t0>=C.stop-C.out
+if(reduced()||late||!tile.complete||!tile.naturalWidth)bootFade(boot,win,remove)
+else bootDissolve(boot,win,C,tile,remove)
 }
-const advance = (t, dt) => {
-if (s.readyAt) return Math.min(1, s.shown + (dt * Math.max(0.2, 1 - s.from)) / C.fill)
-return s.shown + (bootTarget(t - t0, s.floor, t - s.floorAt) - s.shown) * (1 - Math.exp(-dt / 400))
+const advance=(t,dt)=>{
+const pace=bootPace(s.clock,C)
+const next=
+s.loaded&&s.ready
+?s.shown+dt/C.catchup
+:Math.min(0.95,Math.max(bootTarget(t-t0,s.floor,t-s.floorAt),pace))
+return Math.max(s.shown,Math.min(next,pace))
 }
-const frame = () => {
-if (s.over) return
-const t = now()
-s.shown = advance(t, Math.min(100, t - s.last))
-s.last = t
-show(s.shown)
-if (s.shown >= 1 && !s.fullAt) s.fullAt = t
-if (s.fullAt && t >= Math.max(s.fullAt + C.hold, t0 + C.show + C.least)) leave()
+const frame=()=>{
+if(s.over)return
+const t=now()
+const dt=Math.min(50,t-s.last)
+s.last=t
+s.clock+=dt
+s.shown=advance(t,dt)
+if(s.shown>=1&&!s.fullAt)s.fullAt=s.clock
+show(s.shown,s.clock)
+if(s.fullAt&&s.clock>=s.fullAt+C.hold)leave()
 else win.requestAnimationFrame(frame)
 }
-const onProgress = event => {
-const value = Math.min(1, Number(event.detail) || 0)
-if (value <= s.floor) return
-s.floor = value
-s.floorAt = now()
+const onProgress=event=>{
+const value=Math.min(1,Number(event.detail)||0)
+if(value<=s.floor)return
+s.floor=value
+s.floorAt=now()
 }
-const onLoad = () => {
-s.loaded = true
-check()
+const onLoad=()=>{
+s.loaded=true
 }
-const onReady = () => {
-s.ready = true
-check()
+const onReady=()=>{
+s.ready=true
 }
-win.addEventListener('mm:boot-progress', onProgress, { signal: listen.signal })
-win.addEventListener('load', onLoad, { signal: listen.signal })
-win.addEventListener('mm:ready', onReady, { signal: listen.signal })
-win.setTimeout(() => {
-if (s.over) return
-s.over = true
-bootFade(boot, win, remove)
-}, C.stop)
-check()
-if (!s.over) win.requestAnimationFrame(frame)
+win.addEventListener('mm:boot-progress',onProgress,{signal:listen.signal})
+win.addEventListener('load',onLoad,{signal:listen.signal})
+win.addEventListener('mm:ready',onReady,{signal:listen.signal})
+win.setTimeout(()=>{
+if(s.over)return
+s.over=true
+bootFade(boot,win,remove)
+},C.stop)
+win.requestAnimationFrame(frame)
 }
-bootScreen(document,window,{"n":37,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[255,255,255]],"show":250,"least":700,"fill":300,"hold":150,"out":1100,"pop":200,"stop":20000})}()</script><!-- boot:end -->
+bootScreen(document,window,{"n":38,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[221,221,221],[255,255,255]],"from":[-13,13],"at":0.13,"lead":350,"fill":4000,"catchup":2000,"hold":400,"move":400,"out":1100,"pop":200,"stop":20000})}()</script><!-- boot:end -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
