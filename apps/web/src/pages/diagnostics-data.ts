@@ -17,4 +17,5 @@ export const phaseLabels = {
 	upload: 'Upload',
 	pairing: 'Pairing',
 	crash: 'Client crash',
+	error: 'Handled error',
 }

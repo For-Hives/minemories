@@ -6,7 +6,7 @@ const javaClass =
 	/^(?:dev\.minemories|net\.minecraft|net\.neoforged|com\.mojang|java|javax|com\.google\.gson)\.[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$/
 const javaMethod = /^(?:[A-Za-z_$][A-Za-z0-9_$]*|<init>|<clinit>)$/
 const javaFile = /^[A-Za-z_$][A-Za-z0-9_$]*\.java$/
-export const diagnosticPhase = z.enum(['capture', 'upload', 'pairing', 'crash'])
+export const diagnosticPhase = z.enum(['capture', 'upload', 'pairing', 'crash', 'error'])
 export const diagnosticStep = z.enum([
 	'capture_requested',
 	'capture_started',
@@ -22,6 +22,7 @@ export const diagnosticStep = z.enum([
 	'pairing_completed',
 	'pairing_failed',
 	'client_crashed',
+	'error_handled',
 ])
 const version = z
 	.string()

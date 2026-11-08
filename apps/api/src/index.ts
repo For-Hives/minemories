@@ -375,6 +375,9 @@ app.post('/api/mod/pair', async context => {
 	return context.json(paired)
 })
 
+const accountName = (userId: string) =>
+	(database.query('SELECT name FROM user WHERE id=?').get(userId) as { name: string } | null)?.name ?? null
+
 app.get('/api/mod/status', context => {
 	const authorization = context.req.header('authorization')
 	const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
@@ -385,6 +388,7 @@ app.get('/api/mod/status', context => {
 	return context.json({
 		paired: true,
 		device: { id: device.id, name: device.name },
+		account: { name: accountName(device.userId) },
 		storage: accountStorageSummary(database, device.userId),
 	})
 })
