@@ -1,6 +1,7 @@
 import { Component, type ReactNode, Suspense, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { T } from '../i18n/I18n'
+import { signalPageReady } from '../lib/boot-progress'
 import { reportWebFailure } from '../observability/WebObservability'
 
 type PageKind = 'page' | 'gallery' | 'viewer' | 'home'
@@ -37,13 +38,10 @@ class PageBoundary extends Component<{ children: ReactNode; path: string }, { fa
 }
 /** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing is left out: its film says so itself (hero.js `signalReady`), once it can play. */
 function PageReady() {
-	useEffect(() => {
-		document.documentElement.dataset.mmReady = '1'
-		window.dispatchEvent(new Event('mm:ready'))
-	}, [])
+	useEffect(() => signalPageReady(document.documentElement, window), [])
 	return null
 }
-// Only the landing has a loading screen (index.html's miner, first load only). Elsewhere (gallery and viewer included) a page that is still arriving is an empty area of the page's height, never a
+// Only the landing has a loading screen (index.html's chunk-loading screen, first load only). Elsewhere (gallery and viewer included) a page that is still arriving is an empty area of the page's height, never a
 // skeleton: navigations keep the current page on screen (PageBoundary), and the public pages' chunks are fetched ahead of time (preloadWhenIdle).
 function pendingPage(kind: PageKind) {
 	if (kind === 'home') return <div className="landing-pending" aria-hidden="true" />

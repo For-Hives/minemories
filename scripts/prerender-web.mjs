@@ -6,6 +6,10 @@ const escapeHtml = text =>
 const htmlLanguagePattern = /<html lang="[^"]*">/
 const titlePattern = /<title>[^<]*<\/title>/
 const descriptionPattern = /<meta name="description"[^>]*>/
+/** The landing's loading screen (scripts/boot-screen/gen.mjs): its style, markup and script, each between <!-- boot:begin --> and <!-- boot:end -->. */
+const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
+/** Only the landing keeps it: anywhere else its opaque cover would hide the page until the inline script drops it, or for 20 s without JavaScript. */
+const withoutBootScreen = html => html.replace(bootPattern, '')
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
 	const { publicMetadata, renderPage, siteOrigin, firstPaintScripts = {}, socialImage } = entry
@@ -37,7 +41,7 @@ export async function prerenderWeb(directory, entry) {
 						url: canonical,
 					}
 			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" /><link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>`
-			const html = template
+			const html = (page.path === '/' ? template : withoutBootScreen(template))
 				.replace(htmlLanguagePattern, '<html lang="fr">')
 				.replace(titlePattern, `<title>${escapeHtml(page.title)}</title>`)
 				.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(page.description)}" />`)
@@ -68,13 +72,13 @@ export async function prerenderWeb(directory, entry) {
 			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
 			: 'User-agent: *\nDisallow: /\n'
 	)
-	const fallback = template
+	const fallback = withoutBootScreen(template)
 		.replace(titlePattern, '<title>Minemories — Espace personnel</title>')
 		.replace('</head>', '<meta name="robots" content="noindex,nofollow" /></head>')
 	await writeFile(resolve(directory, 'app.html'), fallback)
 	await writeFile(
 		resolve(directory, '404.html'),
-		template
+		withoutBootScreen(template)
 			.replace('</head>', '<meta name="robots" content="noindex,follow" /></head>')
 			.replace(
 				'<div id="app"></div>',

@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Generates the loading screen (SVG + CSS + script) and writes it into apps/web/index.html.
+"""ARCHIVED (08/11/2026): the landing's loading screen until that date, replaced by the chunk-loading screen of scripts/boot-screen/gen.mjs.
+Kept unchanged so it can come back: see scripts/boot-screen/legacy/README.md. Nothing in the build reads this file.
+Restore: `python3 scripts/boot-screen/legacy/steve-ore.py <minecraft_1.21.1_client.jar>` (rewrites the boot:begin/boot:end blocks of apps/web/index.html),
+or paste the three blocks of steve-ore.boot.html (its exact last output) back in place; then put back the matching apps/web/src/boot-screen.test.ts.
+
+Generates the loading screen (SVG + CSS + script) and writes it into apps/web/index.html.
 
 A player from the game ("Steve" skin) mines an ore block with a pickaxe; the block cracks, bursts and drops a diamond.
 The player and the pickaxe are the GAME textures (Mojang files) read from the local client, never downloaded, then inlined as data: URIs (no extra request).
 The block and its cracks are our own VECTOR drawings; the diamond is the real game texture converted to vectors (sharp at any size).
 Anything taken from the game is brand material: see docs/features/brand-guidelines.md, section 12, before any public release.
 
-Usage: python3 scripts/boot-screen/gen.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
+Usage: python3 scripts/boot-screen/legacy/steve-ore.py <minecraft_1.21.1_client.jar> [apps/web/index.html]
 The block sits between the <!-- boot:begin --> and <!-- boot:end --> markers (style, markup, script); running again replaces the whole block.
 """
 import base64, re, subprocess, sys
