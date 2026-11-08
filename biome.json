@@ -127,7 +127,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["apps/web/index.html"],
+			"includes": ["apps/web/index.html", "scripts/boot-screen/legacy/steve-ore.boot.html"],
 			"linter": { "rules": { "complexity": { "useArrowFunction": "off" } } }
 		},
 		{

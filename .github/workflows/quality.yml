@@ -57,7 +57,7 @@ jobs:
       - name: Check the film assets and the build scripts
         run: |
           bun run hero:check
-          node --test scripts/brand/*.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs
+          node --test scripts/boot-screen/*.test.mjs scripts/brand/*.test.mjs scripts/build-web.test.mjs scripts/prerender-web.test.mjs
       - name: Lint, typecheck and test the web app
         run: bun run web:check
       - name: Build the web app
