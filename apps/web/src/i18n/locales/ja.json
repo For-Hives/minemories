@@ -1502,5 +1502,12 @@
 	"Changed": "変更",
 	"+{count} more changes": "ほか +{count} 件の変更",
 	"All changes": "すべての変更",
-	"Compare on GitHub ↗": "GitHubで比較 ↗"
+	"Compare on GitHub ↗": "GitHubで比較 ↗",
+	"Snapshot": "スナップショット",
+	"World": "ワールド",
+	"Link to": "リンク先",
+	"Link active": "リンク有効",
+	"This moment only.": "この瞬間だけ。",
+	"Every snapshot, as the world grows.": "ワールドの成長とともに、すべてのスナップショット。",
+	"First and last snapshot": "最初と最後のスナップショット"
 }

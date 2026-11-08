@@ -1,0 +1,42 @@
+/* A world link's snapshot slider: a kit slot floating at the top of the stage, over the 3D scene. */
+.share-timeline {
+	position: absolute;
+	top: var(--ds-sp-4);
+	left: 50%;
+	z-index: 2;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	width: min(560px, calc(100% - 2 * var(--ds-sp-4)));
+	padding: var(--ds-sp-2) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / 1 var(--ds-f-text);
+}
+.share-timeline .gallery-icon {
+	flex: none;
+	width: 16px;
+	height: 16px;
+}
+.share-timeline input[type="range"] {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: var(--ds-hit);
+	accent-color: var(--ember);
+	cursor: pointer;
+}
+.share-timeline time {
+	color: var(--text);
+	white-space: nowrap;
+}
+.share-timeline span {
+	color: var(--off-ink);
+	white-space: nowrap;
+}
+@media (max-width: 520px) {
+	.share-timeline span {
+		display: none;
+	}
+}

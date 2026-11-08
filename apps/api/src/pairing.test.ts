@@ -285,3 +285,71 @@ test('model-rendered thumbnails persist on the owner memory only', () => {
 	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg, jpeg)).toBe(true)
 	expect(listMemories('user-f')[0]).toMatchObject({ metadata: { thumbnail: jpeg, icon: jpeg } })
 })
+
+test('a world link and a snapshot link coexist and each replaces only its own kind', async () => {
+	const { TimelapseIndex } = await import('./timelapse-index')
+	const { code } = createPairingCode('user-w')
+	const paired = exchangePairingCode(code, 'World device')
+	if (!paired) throw new Error('Pairing unexpectedly failed.')
+	const identity = {
+		worldId: 'a'.repeat(64),
+		zoneId: 'b'.repeat(64),
+		captureMode: 'around',
+		captureBounds: { minX: 0, minY: 0, minZ: 0, maxX: 2, maxY: 2, maxZ: 2 },
+		captureOrigin: { x: 1, y: 1, z: 1 },
+		dimension: 'minecraft:overworld',
+	}
+	const index = new TimelapseIndex(database)
+	for (const [id, day] of [
+		['world-1', '01'],
+		['world-2', '02'],
+		['world-3', '03'],
+	] as const) {
+		addMemory({
+			id,
+			userId: 'user-w',
+			deviceId: paired.deviceId,
+			name: id,
+			objectKey: `user-w/${id}.glb`,
+			size: 7,
+			metadata: { ...identity, worldName: 'Home', capturedAt: `2026-10-${day}T10:00:00Z` },
+		} as Parameters<typeof addMemory>[0])
+		index.put(id)
+	}
+	const worldKey = index.worldKeyOf('user-w', 'world-1')
+	const world = { scope: 'world' as const, worldKey }
+
+	expect(shareStatus('user-w', 'world-2', world)).toEqual({ shared: false })
+	const snapshot = createShareLink('user-w', 'world-2')
+	const wide = createShareLink('user-w', 'world-2', world)
+	if (!(snapshot && wide)) throw new Error('Share creation unexpectedly failed.')
+	expect(shareStatus('user-w', 'world-2')).toEqual({ shared: true, urlPath: `/share/${snapshot.token}` })
+	// Any snapshot of the world reaches the same world link.
+	expect(shareStatus('user-w', 'world-1', world)).toEqual({ shared: true, urlPath: `/share/${wide.token}` })
+
+	expect(getSharedMemory(snapshot.token)).toMatchObject({ id: 'world-2', scope: 'memory' })
+	expect(getSharedMemory(snapshot.token)).not.toHaveProperty('snapshots')
+	expect(getSharedMemory(wide.token)).toMatchObject({ id: 'world-3', scope: 'world' })
+	expect(getSharedMemory(wide.token)?.snapshots?.map(entry => entry.id)).toEqual(['world-1', 'world-2', 'world-3'])
+	expect(getSharedMemory(wide.token, 'world-1')).toMatchObject({ id: 'world-1' })
+	expect(getSharedMemory(wide.token, 'elsewhere')).toBeNull()
+	expect(getSharedMemory(snapshot.token, 'world-1')).toMatchObject({ id: 'world-2' })
+
+	// A new world link replaces the old world link from any snapshot, and leaves the snapshot link alone.
+	const replacement = createShareLink('user-w', 'world-1', world)
+	if (!replacement) throw new Error('Share replacement unexpectedly failed.')
+	expect(getSharedMemory(wide.token)).toBeNull()
+	expect(getSharedMemory(replacement.token)).toMatchObject({ scope: 'world' })
+	expect(getSharedMemory(snapshot.token)).toMatchObject({ id: 'world-2' })
+
+	// Revoking one kind keeps the other.
+	revokeShareLink('user-w', 'world-3', world)
+	expect(getSharedMemory(replacement.token)).toBeNull()
+	expect(shareStatus('user-w', 'world-2', world)).toEqual({ shared: false })
+	expect(getSharedMemory(snapshot.token)).not.toBeNull()
+	// A world link whose snapshots are all gone resolves to nothing.
+	const last = createShareLink('user-w', 'world-1', world)
+	if (!last) throw new Error('Share creation unexpectedly failed.')
+	for (const id of ['world-1', 'world-2', 'world-3']) trashMemory('user-w', id)
+	expect(getSharedMemory(last.token)).toBeNull()
+})

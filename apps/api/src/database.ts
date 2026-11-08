@@ -95,3 +95,10 @@ configureS3StorageProvider(boundColdStorageProvider(database))
 const shareLinkColumns = database.query('PRAGMA table_info(share_links)').all() as Array<{ name: string }>
 if (!shareLinkColumns.some(column => column.name === 'token_ciphertext'))
 	database.exec('ALTER TABLE share_links ADD COLUMN token_ciphertext TEXT')
+// A link opens one snapshot ('memory') or the whole evolving world of a snapshot ('world').
+if (!shareLinkColumns.some(column => column.name === 'scope'))
+	database.exec("ALTER TABLE share_links ADD COLUMN scope TEXT NOT NULL DEFAULT 'memory'")
+if (!shareLinkColumns.some(column => column.name === 'world_key')) {
+	database.exec('ALTER TABLE share_links ADD COLUMN world_key TEXT')
+	database.exec('CREATE INDEX IF NOT EXISTS share_links_world_idx ON share_links(user_id, world_key, created_at DESC)')
+}

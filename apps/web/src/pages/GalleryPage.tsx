@@ -1,5 +1,5 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { type CSSProperties, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
@@ -8,8 +8,16 @@ import { LoadingSkeleton } from '../components/Loading'
 import { buttonDark } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { type Locale, T, translate, useI18n } from '../i18n/I18n'
-import { formatRelativeDate } from '../lib/dates'
-import { type CaptureArea, captureAreas, gridColumns, groupCaptures, latestCapture, viewPath } from '../lib/gallery'
+import { formatDateSpan, formatRelativeDate } from '../lib/dates'
+import {
+	type CaptureArea,
+	captureAreas,
+	captureSpan,
+	chronological,
+	groupCaptures,
+	latestCapture,
+	viewPath,
+} from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -19,14 +27,6 @@ import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
 import { ServerSheet } from './ServerSheet'
-
-/** The system's setting or the site's own "reduced motion" option (html[data-mc-motion='reduced']). */
-function reducedMotion(): boolean {
-	return (
-		window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true ||
-		document.documentElement.dataset.mcMotion === 'reduced'
-	)
-}
 
 function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
 	if (storage.availableBytes === 0) return 'full'
@@ -233,68 +233,53 @@ function WorldSections({
 	onTrashed(id: string): void
 }) {
 	const { t } = useI18n()
+	// Worlds read as a journey back in time: the one played last comes first.
 	const servers = useMemo(
 		() =>
-			groupCaptures(memories).map(group => ({
-				...group,
-				areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null),
-			})),
+			chronological(
+				groupCaptures(memories).map(group => ({
+					...group,
+					areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null),
+				}))
+			),
 		[memories]
 	)
 	const [selectedKey, setSelectedKey] = useState<string | null>(null)
 	const [, setRenamed] = useState(0)
-	const areas = useRef<HTMLElement>(null)
 	const selected = servers.find(server => server.key === selectedKey) ?? servers[0]
 	const publishId = new URLSearchParams(window.location.search).get('publish')
 	if (!selected) return null
 	// Server names live in this browser, like area names; a rename re-reads them.
 	const name = (server: Server) => getStackName(server.key, SERVER_NAME) ?? server.name
 	return (
-		<div className="gallery-worlds">
-			<ul
-				className="gallery-servers"
-				aria-label={t('Servers')}
-				style={
-					{
-						'--columns': gridColumns(servers.length, 4),
-						'--columns-narrow': gridColumns(servers.length, 3),
-					} as CSSProperties
-				}
-			>
-				{servers.map(server => (
-					<ServerTile
-						key={server.key}
-						server={server}
-						name={name(server)}
-						selected={server === selected}
-						onSelect={() => {
-							setSelectedKey(server.key)
-							// On a narrow screen the areas sit below every tile: bring them into view.
-							const top = areas.current?.getBoundingClientRect().top ?? 0
-							if (top > window.innerHeight * 0.8)
-								areas.current?.scrollIntoView?.({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
-						}}
-						onRenamed={() => setRenamed(value => value + 1)}
-					/>
-				))}
-			</ul>
-			<section ref={areas} aria-label={name(selected)} className="gallery-world">
-				<h2 className="gallery-world-heading">{name(selected)}</h2>
-				<div className="gallery-areas">
-					{selected.areas.map(area => (
-						<AreaCard
-							key={area.stack.key}
-							groupKey={selected.key}
-							stack={area.stack}
-							evolving={area.evolving}
-							publishId={publishId}
-							onChanged={onChanged}
-							onTrashed={onTrashed}
-						/>
-					))}
-				</div>
-			</section>
-		</div>
+		<ol className="gallery-servers" aria-label={t('Servers')}>
+			{servers.map(server => (
+				<ServerTile
+					key={server.key}
+					server={server}
+					name={name(server)}
+					selected={server === selected}
+					onSelect={() => setSelectedKey(server.key)}
+					onRenamed={() => setRenamed(value => value + 1)}
+				>
+					{server === selected && (
+						<div className="gallery-areas">
+							{server.areas.map(area => (
+								<AreaCard
+									key={area.stack.key}
+									groupKey={server.key}
+									stack={area.stack}
+									evolving={area.evolving}
+									publishId={publishId}
+									onChanged={onChanged}
+									onTrashed={onTrashed}
+								/>
+							))}
+						</div>
+					)}
+				</ServerTile>
+			))}
+		</ol>
 	)
 }
 
@@ -322,17 +307,20 @@ function ServerTile({
 	selected,
 	onSelect,
 	onRenamed,
+	children,
 }: {
 	server: Server
 	name: string
 	selected: boolean
 	onSelect(): void
 	onRenamed(): void
+	children?: ReactNode
 }) {
 	const { t, locale } = useI18n()
 	const [sheet, setSheet] = useState(false)
 	const menu = useContextMenu()
 	const newest = latestCapture(server.captures)
+	const span = captureSpan(server.captures)
 	const bytes = server.captures.reduce((total, capture) => total + capture.size, 0)
 	const newestArea = newest && server.areas.find(area => area.stack.captures.includes(newest))
 	const openPath = newest && viewPath(newest.id, Boolean(newestArea?.evolving && newestArea.stack.captures.length > 1))
@@ -343,52 +331,58 @@ function ServerTile({
 	]
 	return (
 		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
-			<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
-				<ServerCovers captures={server.captures} />
-				<span className="gallery-sr-only">{name}</span>
-			</button>
-			<div className="gallery-server-body">
-				<div className="gallery-title">
-					<h3>{name}</h3>
-					<button
-						type="button"
-						className="gallery-icon-button"
-						title={t('Rename this server')}
-						aria-label={t('Rename {name}', { name })}
-						onClick={() => setSheet(true)}
-					>
-						<GalleryIcon name="pencil" />
-					</button>
-				</div>
-				<dl className="gallery-server-stats">
-					<div>
-						<dt>
-							<GalleryIcon name="layers" />
-							<span className="gallery-sr-only">{t('Snapshots')}</span>
-						</dt>
-						<dd>{formatCaptureCount(locale, server.captures.length)}</dd>
-					</div>
-					<div>
-						<dt>
-							<GalleryIcon name="disk" />
-							<span className="gallery-sr-only">{t('Size')}</span>
-						</dt>
-						<dd>{formatFileSize(bytes, locale)}</dd>
-					</div>
-				</dl>
-				<div className="gallery-server-foot">
-					<span className="gallery-seed" title={t('Last visit {date}', { date: '' }).trim()}>
-						<GalleryIcon name="clock" />
-						{newest ? formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale) : '—'}
-					</span>
-					{openPath && (
-						<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
-							{t('Open')}
-							<GalleryIcon name="view" />
-						</Link>
-					)}
-				</div>
+			<div className="gallery-server-when">
+				<time dateTime={span?.last}>{span ? formatRelativeDate(span.last, Date.now(), locale) : '—'}</time>
 			</div>
+			<div className="gallery-server-card">
+				<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
+					<ServerCovers captures={server.captures} />
+					<span className="gallery-sr-only">{name}</span>
+				</button>
+				<div className="gallery-server-body">
+					<div className="gallery-title">
+						<h3>{name}</h3>
+						<button
+							type="button"
+							className="gallery-icon-button"
+							title={t('Rename this server')}
+							aria-label={t('Rename {name}', { name })}
+							onClick={() => setSheet(true)}
+						>
+							<GalleryIcon name="pencil" />
+						</button>
+					</div>
+					{span && (
+						<p className="gallery-seed" title={t('First and last snapshot')}>
+							<GalleryIcon name="clock" />
+							<span>{formatDateSpan(span.first, span.last, locale)}</span>
+						</p>
+					)}
+					<dl className="gallery-server-stats">
+						<div>
+							<dt>
+								<GalleryIcon name="layers" />
+								<span className="gallery-sr-only">{t('Snapshots')}</span>
+							</dt>
+							<dd>{formatCaptureCount(locale, server.captures.length)}</dd>
+						</div>
+						<div>
+							<dt>
+								<GalleryIcon name="disk" />
+								<span className="gallery-sr-only">{t('Size')}</span>
+							</dt>
+							<dd>{formatFileSize(bytes, locale)}</dd>
+						</div>
+					</dl>
+				</div>
+				{openPath && (
+					<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
+						{t('Open')}
+						<GalleryIcon name="view" />
+					</Link>
+				)}
+			</div>
+			{children}
 			{menu.element}
 			{sheet && (
 				<ServerSheet

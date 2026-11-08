@@ -309,40 +309,94 @@
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
-.gallery-worlds {
+/* The gallery is a timeline: one row per world, the one played last on top, hung on a vertical rail. */
+.gallery-servers {
+	position: relative;
 	display: grid;
 	gap: var(--ds-sp-6);
-}
-.gallery-servers {
-	display: grid;
-	/* Columns follow the number of servers (gridColumns), so no tile is left alone on its row. */
-	grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
-	gap: var(--ds-sp-4);
 	margin: 0;
-	padding: var(--gp);
+	padding: var(--gp) var(--gp) var(--gp) 0;
 	list-style: none;
 }
 .gallery-server {
+	--when: 108px;
+	--dot: calc(6 * var(--gp));
+	--axis: calc(var(--when) + var(--ds-sp-5) / 2);
 	position: relative;
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: var(--when) minmax(0, 1fr);
+	column-gap: var(--ds-sp-5);
+	row-gap: var(--ds-sp-4);
+	align-items: start;
+}
+/* A square on the rail marks each world; the date of its last snapshot sits to its left. */
+/* The rail: each row draws its own stretch, down to the next row's dot; the last one stops at its dot. */
+.gallery-server::before {
+	content: "";
+	position: absolute;
+	top: var(--ds-sp-3);
+	bottom: calc(-1 * var(--ds-sp-6));
+	left: calc(var(--axis) - var(--gp));
+	width: calc(2 * var(--gp));
+	background: var(--outline);
+}
+.gallery-server:last-child::before {
+	bottom: auto;
+	height: 0;
+}
+.gallery-server-when {
+	position: relative;
+	padding-top: var(--ds-sp-3);
+	text-align: right;
+	font: 400 var(--ds-rd-fs-sm) / 1.3 var(--ds-f-text);
+	color: var(--text-2);
+}
+.gallery-server-when::after {
+	content: "";
+	position: absolute;
+	top: var(--ds-sp-3);
+	right: calc(-1 * (var(--ds-sp-5) + var(--dot)) / 2);
+	width: var(--dot);
+	height: var(--dot);
+	z-index: 1;
+	background: var(--text-3);
+	box-shadow: 0 0 0 var(--gp) var(--night);
+}
+.gallery-server[data-selected="true"] .gallery-server-when {
+	color: var(--text);
+}
+.gallery-server[data-selected="true"] .gallery-server-when::after {
+	background: var(--ember);
+}
+.gallery-server-card {
+	position: relative;
+	display: grid;
+	grid-template-columns: 180px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--ds-sp-4);
+	padding: var(--ds-sp-2) var(--ds-sp-4) var(--ds-sp-2) var(--ds-sp-2);
 	background: var(--night-2);
 	box-shadow: var(--g-panel);
 	transition: box-shadow var(--ds-dur-1) var(--ds-ease-std);
 }
-.gallery-server:hover {
+.gallery-server-card:hover {
 	box-shadow:
 		0 0 0 var(--gp) var(--hover),
 		var(--ds-panel-bevel);
 }
-.gallery-server[data-selected="true"] {
+.gallery-server[data-selected="true"] .gallery-server-card {
 	box-shadow: var(--g-selected), var(--ds-panel-bevel);
+}
+/* The expanded world: its areas hang under its row, in the card column. */
+.gallery-server > .gallery-areas {
+	grid-column: 2;
+	padding: var(--gp);
 }
 .gallery-server-open {
 	position: relative;
 	display: block;
-	width: calc(100% - 2 * var(--ds-sp-2));
-	margin: var(--ds-sp-2) var(--ds-sp-2) 0;
+	width: 100%;
+	margin: 0;
 	padding: var(--gp);
 	border: 0;
 	border-radius: 0;
@@ -358,7 +412,7 @@
 }
 .gallery-server-covers {
 	display: grid;
-	height: 110px;
+	height: 96px;
 	grid-template-columns: 2fr 1fr;
 	grid-template-rows: 1fr 1fr;
 	gap: var(--gp);
@@ -396,9 +450,9 @@
 	display: grid;
 	flex: 1;
 	grid-template-columns: minmax(0, 1fr);
-	grid-template-rows: auto auto 1fr;
+	align-content: center;
 	gap: var(--ds-sp-2);
-	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-4);
+	min-width: 0;
 }
 .gallery-server-stats {
 	display: flex;
@@ -428,22 +482,12 @@
 	margin: 0;
 	font-variant-numeric: tabular-nums;
 }
-.gallery-server-foot {
-	display: flex;
-	align-items: end;
-	justify-content: space-between;
-	gap: var(--ds-sp-2);
-	min-width: 0;
-}
 .gallery-seed {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--ds-sp-2);
 	min-width: 0;
 	margin: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 	font: 400 var(--ds-rd-fs-sm) / 1.25 var(--ds-f-text);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-2);
@@ -1094,21 +1138,39 @@
 	.gallery-areas {
 		grid-template-columns: 1fr;
 	}
+	/* Narrow: the rail goes, each world's date heads its row. */
 	.gallery-servers {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--ds-sp-3);
+		padding-right: var(--gp);
+		gap: var(--ds-sp-5);
 	}
-	.gallery-server:last-child:nth-child(odd) {
+	.gallery-server::before,
+	.gallery-server-when::after {
+		display: none;
+	}
+	.gallery-server {
+		grid-template-columns: minmax(0, 1fr);
+		row-gap: var(--ds-sp-2);
+	}
+	.gallery-server-when {
+		padding-top: 0;
+		text-align: left;
+	}
+	.gallery-server > .gallery-areas {
+		grid-column: 1;
+	}
+	.gallery-server-card {
+		grid-template-columns: 96px minmax(0, 1fr);
+		gap: var(--ds-sp-3);
+		padding-right: var(--ds-sp-2);
+	}
+	.gallery-server-go {
 		grid-column: 1 / -1;
+		justify-content: center;
 	}
 	.gallery-server-covers {
-		height: 76px;
+		height: 64px;
 	}
-	.gallery-server-body {
-		padding: var(--ds-sp-2) var(--ds-sp-3) var(--ds-sp-3);
-	}
-	.gallery-server-stats div:nth-child(n + 2),
-	.gallery-seed {
+	.gallery-server-stats div:nth-child(n + 2) {
 		display: none;
 	}
 	.gallery-dialog header,
@@ -1330,12 +1392,6 @@ html[data-mc-motion="reduced"]
 .gallery-dialog-body .gallery-sheet-reset:hover {
 	color: var(--ember);
 	text-decoration-color: var(--ember);
-}
-
-@media (max-width: 1199px) and (min-width: 651px) {
-	.gallery-servers {
-		grid-template-columns: repeat(var(--columns-narrow, 3), minmax(0, 1fr));
-	}
 }
 
 /* A lone area does not sit beside a void: it lies down, picture and facts side by side. */

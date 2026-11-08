@@ -1502,5 +1502,12 @@
 	"Changed": "변경",
 	"+{count} more changes": "변경 사항 +{count}개 더",
 	"All changes": "전체 변경 사항",
-	"Compare on GitHub ↗": "GitHub에서 비교 ↗"
+	"Compare on GitHub ↗": "GitHub에서 비교 ↗",
+	"Snapshot": "스냅샷",
+	"World": "월드",
+	"Link to": "링크 대상",
+	"Link active": "링크 활성",
+	"This moment only.": "이 순간만.",
+	"Every snapshot, as the world grows.": "세계가 자라는 대로 모든 스냅샷.",
+	"First and last snapshot": "첫 스냅샷과 마지막 스냅샷"
 }

@@ -132,6 +132,11 @@ function archivedAvailability(error: unknown, lookup: () => string | null) {
 		return null
 	}
 }
+function shareTarget(userId: string, input: { id: string; scope: 'memory' | 'world' }) {
+	return input.scope === 'world'
+		? { scope: 'world' as const, worldKey: temporalIndex.worldKeyOf(userId, input.id) }
+		: { scope: 'memory' as const }
+}
 const router = os.router({
 	admin: {
 		access: os.admin.access.handler(({ context }) => ({ allowed: adminRoles.allowed(context.userId) })),
@@ -255,18 +260,18 @@ const router = os.router({
 		}),
 		createShare: os.memories.createShare.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			const link = createShareLink(context.userId, input.id)
+			const link = createShareLink(context.userId, input.id, shareTarget(context.userId, input))
 			if (!link) throw new ORPCError('NOT_FOUND')
 			return { token: link.token, urlPath: `/share/${link.token}` }
 		}),
 		revokeShare: os.memories.revokeShare.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			revokeShareLink(context.userId, input.id)
+			revokeShareLink(context.userId, input.id, shareTarget(context.userId, input))
 			return { ok: true as const }
 		}),
 		shareStatus: os.memories.shareStatus.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
-			return shareStatus(context.userId, input.id)
+			return shareStatus(context.userId, input.id, shareTarget(context.userId, input))
 		}),
 		setThumbnail: os.memories.setThumbnail.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
@@ -431,15 +436,19 @@ app.get('/api/public/:id/file', async context => {
 
 app.get('/api/shared/:token/file', async context => {
 	context.header('Cache-Control', 'private, no-store')
-	const shared = getSharedMemory(context.req.param('token'))
+	const shared = getSharedMemory(context.req.param('token'), context.req.query('snapshot'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 
 	try {
 		const contents = await openAuthorizedCapture(
 			captureFiles,
-			() => getSharedMemory(context.req.param('token'))?.objectKey ?? null,
+			() => getSharedMemory(context.req.param('token'), context.req.query('snapshot'))?.objectKey ?? null,
 			context.req.raw.signal,
-			() => recordCaptureOpening(database, getSharedMemory(context.req.param('token'))?.objectKey ?? null)
+			() =>
+				recordCaptureOpening(
+					database,
+					getSharedMemory(context.req.param('token'), context.req.query('snapshot'))?.objectKey ?? null
+				)
 		)
 		if (!contents) return context.json({ error: 'memory_not_found' }, 404)
 		const variant = await variantCapture(context.req.query('variant'), contents)
@@ -453,7 +462,7 @@ app.get('/api/shared/:token/file', async context => {
 	} catch (error) {
 		const availability = archivedAvailability(
 			error,
-			() => getSharedMemory(context.req.param('token'))?.objectKey ?? null
+			() => getSharedMemory(context.req.param('token'), context.req.query('snapshot'))?.objectKey ?? null
 		)
 		if (availability) return context.json({ error: 'memory_restoration_required', availability }, 202)
 		logApiFailure('shared_download_failed', context.get('correlationId'))
@@ -462,7 +471,7 @@ app.get('/api/shared/:token/file', async context => {
 })
 
 app.get('/api/shared/:token', context => {
-	const shared = getSharedMemory(context.req.param('token'))
+	const shared = getSharedMemory(context.req.param('token'), context.req.query('snapshot'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
 	const { objectKey, ...publicMemory } = shared
 	context.header('Cache-Control', 'private, no-store')

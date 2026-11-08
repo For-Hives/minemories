@@ -58,5 +58,12 @@
 	"Check Minecraft 1.21.1, your loader version (NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API, or Forge 52.1.19), that the JAR matches this loader and that Minemories is not duplicated. Remove the Minemories JAR to return to the previous profile. Ask for help with the error message and versions used; do not delete your world.": "Vérifie Minecraft 1.21.1, la version de ton chargeur (NeoForge 21.1.248, Fabric Loader 0.19.5 avec Fabric API, ou Forge 52.1.19), que le JAR correspond à ce chargeur et l’absence de doublon Minemories. Retire le JAR Minemories pour revenir au profil précédent. Demande de l’aide avec le message d’erreur et les versions utilisées ; ne supprime pas ton monde.",
 	"Copy the world and profile before making changes. A profile (or instance) groups the game, its mods and settings. Keep all mods required by your world or server. Do not change its version or loader for this tutorial: it must already use Java 1.21.1 with NeoForge, Fabric or Forge (Quilt uses the Fabric JAR). This guide details NeoForge; with Fabric or Forge, take the matching JAR from the Mod versions page. Otherwise, ask its administrator for help.": "Fais une copie du monde et du profil avant toute modification. Un profil (ou une instance) regroupe le jeu, ses mods et ses réglages. Garde tous les mods attendus par ton monde ou ton serveur. Ne change pas sa version ou son chargeur pour ce tuto : il doit déjà utiliser Java 1.21.1 avec NeoForge, Fabric ou Forge (Quilt utilise le JAR Fabric). Ce parcours détaille NeoForge ; avec Fabric ou Forge, prends le JAR correspondant sur la page Versions du mod. Sinon, demande de l’aide à son responsable.",
 	"Yes, if you can open a copy of the Java 1.21.1 world with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. Vanilla means without mods: the profile used for capturing must still load one of these loaders and the mod. The exact versions are on the Mod versions page. Bedrock and consoles are not supported.": "Oui, si tu peux ouvrir une copie du monde Java 1.21.1 avec NeoForge, Fabric ou Forge et Minemories ; Quilt utilise le JAR Fabric. Vanilla signifie sans mods : le profil utilisé pour capturer doit néanmoins charger l’un de ces chargeurs et le mod. Les versions exactes sont sur la page Versions du mod. Bedrock et les consoles ne sont pas supportés.",
-	"instance and add loader": "et ajoute le chargeur"
+	"instance and add loader": "et ajoute le chargeur",
+	"Snapshot": "Capture",
+	"World": "Monde",
+	"Link to": "Lien vers",
+	"Link active": "lien actif",
+	"This moment only.": "Cet instant uniquement.",
+	"Every snapshot, as the world grows.": "Toutes les captures, au fil du monde.",
+	"First and last snapshot": "Première et dernière capture"
 }

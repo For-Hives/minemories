@@ -1502,5 +1502,12 @@
 	"Changed": "Geändert",
 	"+{count} more changes": "+{count} weitere Änderungen",
 	"All changes": "Alle Änderungen",
-	"Compare on GitHub ↗": "Auf GitHub vergleichen ↗"
+	"Compare on GitHub ↗": "Auf GitHub vergleichen ↗",
+	"Snapshot": "Schnappschuss",
+	"World": "Welt",
+	"Link to": "Link zu",
+	"Link active": "Link aktiv",
+	"This moment only.": "Nur dieser Moment.",
+	"Every snapshot, as the world grows.": "Alle Schnappschüsse, während die Welt wächst.",
+	"First and last snapshot": "Erster und letzter Schnappschuss"
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRelativeDate } from './dates'
+import { formatDateSpan, formatRelativeDate } from './dates'
 
 const NOW = Date.parse('2026-09-29T12:00:00.000Z')
 const iso = (ms: number) => new Date(ms).toISOString()
@@ -54,4 +54,16 @@ it('formats every relative unit in French without changing protocol dates', () =
 		[365 * 86_400_000, 'il y a 1 an'],
 	] as const)
 		expect(formatRelativeDate(iso(NOW - duration), NOW, 'fr')).toBe(text)
+})
+
+describe('formatDateSpan', () => {
+	it('reads one day once, a same-year span with a single year and a longer span with both', () => {
+		expect(formatDateSpan('2026-10-03T08:00:00', '2026-10-03T20:00:00')).toBe('Oct 3, 2026')
+		expect(formatDateSpan('2026-10-03T12:00:00', '2026-11-08T12:00:00')).toBe('Oct 3 → Nov 8, 2026')
+		expect(formatDateSpan('2025-12-30T12:00:00', '2026-01-02T12:00:00')).toBe('Dec 30, 2025 → Jan 2, 2026')
+	})
+	it('shows a dash for dates it cannot read', () => {
+		expect(formatDateSpan('nope', '2026-11-08T12:00:00')).toBe('—')
+		expect(formatDateSpan('2026-11-08T12:00:00', 'nope')).toBe('—')
+	})
 })
