@@ -113,8 +113,11 @@ export const bandSizeFor = ({ heroVisible }) => (heroVisible ? 'large' : 'small'
 // Gestures
 // ---------------------------------------------------------------------------------------------------------------
 
-/** A drag of (dx, dy) CSS px turns the model 1:1: 0.3 degree of yaw and 0.2 degree of pitch per px. At release everything stops (no inertia). */
-export const dragOrbit = (dx, dy) => ({ yaw: dx * 0.3, pitch: dy * 0.2 })
+/**
+ * A drag of (dx, dy) CSS px turns the model 1:1: 0.3 degree of yaw and 0.2 degree of pitch per px. At release everything stops (no inertia).
+ * The yaw moves the CAMERA around the model (siteCameraFrom), so it is the opposite of the drag: the model follows the pointer, a drag to the right turns its front to the right.
+ */
+export const dragOrbit = (dx, dy) => ({ yaw: -dx * 0.3, pitch: dy * 0.2 })
 
 export const TURN_STEP = 15 // degrees per press of the left / right arrows
 
@@ -130,10 +133,11 @@ export const isTap = ({ movedPx, ms, button = 0 }) => button === 0 && movedPx < 
  */
 export function keyAction(key) {
 	switch (key) {
+		// Same direction as a drag: the right arrow turns the model's front to the right (the camera goes left).
 		case 'ArrowLeft':
-			return { orbit: [-TURN_STEP, 0] }
-		case 'ArrowRight':
 			return { orbit: [TURN_STEP, 0] }
+		case 'ArrowRight':
+			return { orbit: [-TURN_STEP, 0] }
 		case ' ':
 		case 'Spacebar':
 		case 'Enter':
