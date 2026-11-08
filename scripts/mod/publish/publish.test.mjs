@@ -83,11 +83,20 @@ test('release types', () => {
 	assert.equal(releaseType('1.2.3-alpha.1'), 'alpha')
 })
 
-test('shipped catalogs are disabled and map every loader of the targets', async () => {
+/** The shipped catalogs as they were before the projects existed: nothing enabled, no project id. */
+async function blankCatalogs() {
 	const catalogs = await loadCatalogs()
-	assert.equal(catalogs.modrinth.enabled, false)
-	assert.equal(catalogs.curseforge.enabled, false)
-	assert.equal(catalogs.modrinth.projectId, null)
+	for (const platform of [catalogs.modrinth, catalogs.curseforge])
+		Object.assign(platform, { enabled: false, projectId: null })
+	return catalogs
+}
+
+test('shipped catalogs point at the real projects and map every loader of the targets', async () => {
+	const catalogs = await loadCatalogs()
+	assert.equal(catalogs.modrinth.projectId, 'q6vM8uLX')
+	assert.equal(catalogs.modrinth.slug, 'minemories-3d')
+	assert.equal(catalogs.curseforge.projectId, '1782364')
+	assert.equal(catalogs.curseforge.slug, 'minemories')
 	const targets = JSON.parse(await readFile(new URL('../../../mod/targets.json', import.meta.url), 'utf8'))
 	for (const target of targets.targets) {
 		assert.ok(catalogs.mapping[target.loader]?.modrinth, `Modrinth mapping missing for ${target.loader}`)
@@ -96,7 +105,7 @@ test('shipped catalogs are disabled and map every loader of the targets', async 
 })
 
 test('everything is skipped with the exact checklist while accounts are missing', async () => {
-	const results = await publish({ env: {}, deps: { catalogs: await loadCatalogs(), fetch: noNetwork } })
+	const results = await publish({ env: {}, deps: { catalogs: await blankCatalogs(), fetch: noNetwork } })
 	assert.deepEqual(
 		results.map(r => [r.platform, r.status]),
 		[
@@ -111,7 +120,7 @@ test('everything is skipped with the exact checklist while accounts are missing'
 	assert.ok(results[1].message.includes('CURSEFORGE_TOKEN'))
 	const onlyToken = await publish({
 		env: { MODRINTH_TOKEN },
-		deps: { catalogs: await loadCatalogs(), fetch: noNetwork },
+		deps: { catalogs: await blankCatalogs(), fetch: noNetwork },
 	})
 	assert.ok(!onlyToken[0].message.includes('MODRINTH_TOKEN'))
 })
@@ -266,7 +275,7 @@ test('dry run builds masked requests, sends nothing and still lists what is miss
 	const results = await publish({
 		env: { MODRINTH_TOKEN, CURSEFORGE_TOKEN },
 		dryRun: true,
-		deps: { catalogs: await loadCatalogs(), fetch: noNetwork, readFile: noNetwork, cache: memoryCache(GAME_VERSIONS) },
+		deps: { catalogs: await blankCatalogs(), fetch: noNetwork, readFile: noNetwork, cache: memoryCache(GAME_VERSIONS) },
 	})
 	assert.equal(results.length, 2)
 	for (const result of results) {
