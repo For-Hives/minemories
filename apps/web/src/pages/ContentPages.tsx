@@ -7,6 +7,7 @@ import { articles, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
+import { catalogLinks } from './installation-loaders'
 
 export function ContentLayout({
 	eyebrow,
@@ -108,6 +109,14 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 				<a className="mc-link" href="https://github.com/For-Hives/minemories">
 					{t('Project repository')}
 				</a>
+				{catalogLinks().map(catalog => (
+					<span key={catalog.name}>
+						{' · '}
+						<a className="mc-link" href={catalog.url}>
+							{catalog.name}
+						</a>
+					</span>
+				))}
 			</p>
 		</ContentLayout>
 	)

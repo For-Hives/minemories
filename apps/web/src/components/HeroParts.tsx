@@ -4,6 +4,7 @@ import { discoveryPages } from '../content/discovery'
 import { navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
+import { catalogLinks } from '../pages/installation-loaders'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 
 /*
@@ -116,6 +117,13 @@ export function HeroFooterLinks() {
 					GitHub
 				</a>
 			</li>
+			{catalogLinks().map(catalog => (
+				<li key={catalog.name}>
+					<a className="mc-link" href={catalog.url}>
+						{catalog.name}
+					</a>
+				</li>
+			))}
 		</>
 	)
 }
