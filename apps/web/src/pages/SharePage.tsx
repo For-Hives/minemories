@@ -2,18 +2,29 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
+import { GalleryIcon } from '../components/GalleryIcons'
 import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { errorMessageKey } from '../i18n/error-messages'
 import { T, useI18n } from '../i18n/I18n'
+import { localeTag } from '../i18n/locales'
 import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { ViewerScene } from '../viewer-scene'
 import { ticksToMinutes } from './ViewerPage'
+import './share-timeline.css'
+
+interface SharedSnapshot {
+	id: string
+	at: string
+}
 
 interface SharedCapture {
 	name: string
 	size: number
+	/** Present on a world link: every snapshot of the world, oldest first. The served one is `id`. */
+	id?: string
+	snapshots?: SharedSnapshot[]
 	metadata: {
 		x: number | null
 		y: number | null
@@ -25,11 +36,17 @@ interface SharedCapture {
 	}
 }
 
-async function fetchSharedCapture(token: string, signal: AbortSignal): Promise<{ capture: SharedCapture; file: File }> {
-	const metaResponse = await fetch(`${apiBase}/api/shared/${encodeURIComponent(token)}`, { signal })
+async function fetchSharedCapture(
+	token: string,
+	signal: AbortSignal,
+	snapshot?: string | null
+): Promise<{ capture: SharedCapture; file: File }> {
+	const base = `${apiBase}/api/shared/${encodeURIComponent(token)}`
+	const query = snapshot ? `?snapshot=${encodeURIComponent(snapshot)}` : ''
+	const metaResponse = await fetch(`${base}${query}`, { signal })
 	if (!metaResponse.ok) throw new Error('This link is invalid or was revoked.')
 	const capture = (await metaResponse.json()) as SharedCapture
-	const file = await downloadCapture(`${apiBase}/api/shared/${encodeURIComponent(token)}/file`, 'shared.glb', signal)
+	const file = await downloadCapture(`${base}/file${query}`, 'shared.glb', signal)
 	return { capture, file }
 }
 
@@ -65,6 +82,54 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 	onTitle(capture.name)
 }
 
+/** A world link: a slider over the snapshots, oldest to newest, committed once the visitor stops moving. */
+function SnapshotTimeline({
+	snapshots,
+	shown,
+	onPick,
+}: {
+	snapshots: SharedSnapshot[]
+	shown: string | null
+	onPick(id: string): void
+}) {
+	const { t, locale } = useI18n()
+	const current = Math.max(
+		0,
+		snapshots.findIndex(entry => entry.id === shown)
+	)
+	const [position, setPosition] = useState(current)
+	useEffect(() => setPosition(current), [current])
+	useEffect(() => {
+		const picked = snapshots[position]
+		if (!picked || picked.id === shown) return
+		const timer = setTimeout(() => onPick(picked.id), 250)
+		return () => clearTimeout(timer)
+	}, [position, snapshots, shown, onPick])
+	const stamp = new Date(snapshots[position]?.at ?? '')
+	const label = Number.isNaN(stamp.getTime())
+		? '—'
+		: new Intl.DateTimeFormat(localeTag(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(stamp)
+	return (
+		<div className="share-timeline">
+			<GalleryIcon name="layers" />
+			<input
+				type="range"
+				min={0}
+				max={snapshots.length - 1}
+				step={1}
+				value={position}
+				aria-label={t('Snapshots')}
+				aria-valuetext={label}
+				onChange={event => setPosition(Number(event.currentTarget.value))}
+			/>
+			<time dateTime={snapshots[position]?.at}>{label}</time>
+			<span>
+				{position + 1}/{snapshots.length}
+			</span>
+		</div>
+	)
+}
+
 export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const { t, locale } = useI18n()
 
@@ -78,6 +143,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const [title, setTitle] = useState<string | null>(null)
 	const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null)
 	const [empty, setEmpty] = useState(true)
+	const [snapshots, setSnapshots] = useState<SharedSnapshot[] | null>(null)
+	const [shown, setShown] = useState<string | null>(null)
+	const [wanted, setWanted] = useState<string | null>(null)
 	const [status, setStatus] = useState<string | null>('Loading the shared world…')
 	const [error, setError] = useState('')
 	const restoration = useCaptureRestoration()
@@ -130,12 +198,14 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					() =>
 						isPublic
 							? fetchPublicCapture(reference, review, controller.signal)
-							: fetchSharedCapture(reference, controller.signal),
+							: fetchSharedCapture(reference, controller.signal, wanted),
 					isPublic ? { kind: 'public', id: reference } : { kind: 'shared', token: reference },
 					controller.signal
 				)
 				if (cancelled) return
 				applySharedCapture(scene, capture, setTitle)
+				setSnapshots(capture.snapshots ?? null)
+				setShown(capture.id ?? null)
 				await scene.loadFile(file)
 			} catch (cause) {
 				reportError(cause)
@@ -146,7 +216,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 			cancelled = true
 			controller.abort()
 		}
-	}, [reference, isPublic, review, restoreLoad])
+	}, [reference, isPublic, review, restoreLoad, wanted])
 
 	const publicBack = review ? '/admin/moderation' : '/explore'
 	return (
@@ -167,6 +237,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					className={empty ? 'cinema-canvas is-empty' : 'cinema-canvas'}
 					aria-label={t('Shared 3D scene')}
 				/>
+				{snapshots && snapshots.length > 1 && (
+					<SnapshotTimeline snapshots={snapshots} shown={shown} onPick={setWanted} />
+				)}
 				<CaptureRestorationPanel view={restoration.view} onRestore={restoration.resume} />
 				{!restoration.view && <ViewerLoadState loading={status} error={error} />}
 			</div>

@@ -238,7 +238,7 @@ test('share panel creates, copies, replaces and revokes an explicit link', async
 	)
 	fireEvent.click(screen.getByRole('button', { name: 'Stop sharing' }))
 	await screen.findByRole('button', { name: 'Create a link' })
-	expect(mocks.revokeShare).toHaveBeenCalledWith({ id: 'one' })
+	expect(mocks.revokeShare).toHaveBeenCalledWith({ id: 'one', scope: 'memory' })
 	expect(screen.queryByLabelText('Share link')).toBeNull()
 })
 test('sharing errors keep retry controls and do not expose raw errors', async () => {
@@ -325,10 +325,10 @@ test('an area with several snapshots has one View action and a dialog to manage 
 	expect(within(dialog).getAllByRole('listitem')).toHaveLength(2)
 	fireEvent.click(within(dialog).getByRole('tab', { name: 'Share' }))
 	fireEvent.click(await within(dialog).findByRole('button', { name: 'Create a link' }))
-	await waitFor(() => expect(mocks.createShare).toHaveBeenCalledWith({ id: 'two' }))
+	await waitFor(() => expect(mocks.createShare).toHaveBeenCalledWith({ id: 'two', scope: 'memory' }))
 	fireEvent.click(within(dialog).getByRole('tab', { name: 'Snapshots' }))
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Share this snapshot: Cabin' }))
-	await waitFor(() => expect(mocks.shareStatus).toHaveBeenLastCalledWith({ id: 'one' }))
+	await waitFor(() => expect(mocks.shareStatus).toHaveBeenCalledWith({ id: 'one', scope: 'memory' }))
 	fireEvent.click(within(dialog).getByRole('tab', { name: 'Snapshots' }))
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Move Cabin to trash' }))
 	await waitFor(() => expect(mocks.trash).toHaveBeenCalledWith({ id: 'one' }))
@@ -398,7 +398,7 @@ test('changing the shared capture discards the old link even if creation finishe
 	expect(screen.queryByLabelText('Share link')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: 'Create a link' }))
 	await screen.findByLabelText('Share link')
-	expect(mocks.createShare).toHaveBeenLastCalledWith({ id: 'two' })
+	expect(mocks.createShare).toHaveBeenLastCalledWith({ id: 'two', scope: 'memory' })
 })
 
 test('a slow automatic refresh is not duplicated and its timer stops on exit', async () => {

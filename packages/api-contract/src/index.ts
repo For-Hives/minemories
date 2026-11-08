@@ -72,6 +72,10 @@ export const thumbnailDataUrl = z
 	.max(96_000)
 	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
 
+/** A share link opens one snapshot ("memory") or every snapshot of its evolving world ("world"). */
+export const shareScope = z.enum(['memory', 'world']).default('memory')
+export type ShareScope = z.infer<typeof shareScope>
+
 export const DAY_MS = 24 * 60 * 60 * 1000
 export const TRASH_RETENTION_MS = 30 * DAY_MS
 
@@ -161,11 +165,13 @@ export const apiContract = {
 			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl, icon: thumbnailDataUrl.nullish() }))
 			.output(z.object({ ok: z.literal(true) })),
 		createShare: oc
-			.input(z.object({ id: z.string().uuid() }))
+			.input(z.object({ id: z.string().uuid(), scope: shareScope }))
 			.output(z.object({ token: z.string().min(20), urlPath: z.string().min(1) })),
-		revokeShare: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		revokeShare: oc
+			.input(z.object({ id: z.string().uuid(), scope: shareScope }))
+			.output(z.object({ ok: z.literal(true) })),
 		shareStatus: oc
-			.input(z.object({ id: z.string().uuid() }))
+			.input(z.object({ id: z.string().uuid(), scope: shareScope }))
 			.output(z.object({ shared: z.boolean(), urlPath: z.string().optional() })),
 	},
 }

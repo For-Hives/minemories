@@ -1502,5 +1502,12 @@
 	"Changed": "Изменено",
 	"+{count} more changes": "Ещё изменений: +{count}",
 	"All changes": "Все изменения",
-	"Compare on GitHub ↗": "Сравнить на GitHub ↗"
+	"Compare on GitHub ↗": "Сравнить на GitHub ↗",
+	"Snapshot": "Снимок",
+	"World": "Мир",
+	"Link to": "Ссылка на",
+	"Link active": "ссылка активна",
+	"This moment only.": "Только этот момент.",
+	"Every snapshot, as the world grows.": "Все снимки по мере роста мира.",
+	"First and last snapshot": "Первый и последний снимок"
 }

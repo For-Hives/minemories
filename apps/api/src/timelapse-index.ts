@@ -250,6 +250,21 @@ export class TimelapseIndex {
 			.immediate()
 	}
 
+	/** The evolving world a snapshot belongs to; NOT_FOUND when it has no temporal identity. */
+	worldKeyOf(userId: string, memoryId: string): string {
+		return this.entry(userId, memoryId).world_key
+	}
+
+	/** Live snapshots of one owner's world, oldest first, as (id, instant) pairs. */
+	worldSnapshots(userId: string, worldKey: string): { id: string; at: string }[] {
+		const rows = this.database
+			.query(`SELECT i.memory_id,i.capture_json FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
+			 WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL
+			 ORDER BY i.time_key DESC,i.memory_id DESC LIMIT ?`)
+			.all(userId, worldKey, WORLD_EVOLUTION_FRAMES) as { memory_id: string; capture_json: string }[]
+		return rows.reverse().map(row => ({ id: row.memory_id, at: (JSON.parse(row.capture_json) as Stored).at }))
+	}
+
 	private entry(userId: string, id: string): Entry {
 		if (!this.database.query('SELECT 1 FROM memories WHERE id=? AND user_id=? AND deleted_at IS NULL').get(id, userId))
 			throw new ORPCError('NOT_FOUND')

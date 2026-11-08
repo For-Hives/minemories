@@ -139,6 +139,30 @@ function captureStamp(capture: DatedCapture): number {
 	return Number.isNaN(stamp) ? 0 : stamp
 }
 
+/** Newest activity first: the gallery reads as a journey back in time. */
+export function chronological<T extends { captures: DatedCapture[] }>(groups: T[]): T[] {
+	const last = (group: T) => {
+		const newest = latestCapture(group.captures)
+		return newest ? captureStamp(newest) : 0
+	}
+	return [...groups].sort((a, b) => last(b) - last(a))
+}
+
+/** First and last snapshot of a set of captures, as the instants they were taken (or uploaded). */
+export function captureSpan(captures: DatedCapture[]): { first: string; last: string } | null {
+	let first: DatedCapture | undefined
+	let last: DatedCapture | undefined
+	for (const capture of captures) {
+		if (!first || captureStamp(capture) < captureStamp(first)) first = capture
+		if (!last || captureStamp(capture) > captureStamp(last)) last = capture
+	}
+	return first && last ? { first: capturedInstant(first), last: capturedInstant(last) } : null
+}
+
+function capturedInstant(capture: DatedCapture): string {
+	return capture.metadata.capturedAt ?? capture.createdAt
+}
+
 /** The snapshot the single "View" action opens: the most recently captured one, newest upload winning ties. */
 export function latestCapture<T extends DatedCapture>(captures: T[]): T | undefined {
 	let latest: T | undefined
@@ -185,15 +209,4 @@ export function blockCoordinates(metadata: { x: number | null; y: number | null;
 	const { x, y, z } = metadata
 	if (x === null || z === null) return null
 	return { x: Math.floor(x), y: y === null ? null : Math.floor(y), z: Math.floor(z) }
-}
-
-/**
- * Column count for `count` peer tiles, at most `max` per row: an even split first, so no tile is left alone on
- * its last row; otherwise the widest grid whose last row is at least half full.
- */
-export function gridColumns(count: number, max: number): number {
-	if (count <= max) return Math.max(1, count)
-	for (let columns = max; columns >= 2; columns--) if (count % columns === 0) return columns
-	for (let columns = max; columns >= 3; columns--) if (count % columns >= columns / 2) return columns
-	return max
 }

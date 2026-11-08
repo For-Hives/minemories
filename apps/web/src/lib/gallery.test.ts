@@ -4,7 +4,8 @@ import {
 	blockCoordinates,
 	bundleWorlds,
 	captureAreas,
-	gridColumns,
+	captureSpan,
+	chronological,
 	groupCaptures,
 	latestCapture,
 	stackCaptures,
@@ -137,12 +138,29 @@ it('labels biomes and block coordinates for display', () => {
 	expect(blockCoordinates({ x: null, y: 3, z: 2 })).toBeNull()
 })
 
-it('chooses tile columns from the count so no tile is orphaned', () => {
-	expect(gridColumns(0, 4)).toBe(1)
-	expect(gridColumns(3, 4)).toBe(3)
-	expect(gridColumns(4, 3)).toBe(2)
-	expect(gridColumns(6, 4)).toBe(3)
-	expect(gridColumns(7, 4)).toBe(4)
-	expect(gridColumns(5, 4)).toBe(3)
-	expect(gridColumns(13, 4)).toBe(4)
+const dated = (id: string, capturedAt: string | null, createdAt = '2026-01-01T00:00:00Z') => ({
+	id,
+	createdAt,
+	metadata: { capturedAt },
+})
+
+it('orders worlds by their latest snapshot, newest first, without touching the input', () => {
+	const old = { captures: [dated('a', '2026-03-01T00:00:00Z')] }
+	const fresh = { captures: [dated('b', '2026-01-01T00:00:00Z'), dated('c', '2026-05-01T00:00:00Z')] }
+	const empty = { captures: [] }
+	const input = [empty, old, fresh]
+	expect(chronological(input)).toEqual([fresh, old, empty])
+	expect(input[0]).toBe(empty)
+})
+
+it('reports the first and last snapshot instants of a world, falling back to upload time', () => {
+	expect(captureSpan([])).toBeNull()
+	expect(
+		captureSpan([
+			dated('a', '2026-03-01T00:00:00Z'),
+			dated('b', null, '2026-02-01T00:00:00Z'),
+			dated('c', '2026-04-01T00:00:00Z'),
+			dated('d', '2026-03-15T00:00:00Z'),
+		])
+	).toEqual({ first: '2026-02-01T00:00:00Z', last: '2026-04-01T00:00:00Z' })
 })

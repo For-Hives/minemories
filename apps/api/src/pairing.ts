@@ -188,53 +188,101 @@ export function purgeDeletedMemories(now = Date.now()): string[] {
 	})()
 }
 
-export function createShareLink(userId: string, memoryId: string): { token: string } | null {
+export type ShareScope = 'memory' | 'world'
+
+/** What a link opens: this snapshot alone, or every snapshot of the evolving world it belongs to. */
+export type ShareTarget = { scope: 'memory' } | { scope: 'world'; worldKey: string }
+
+const shareIdentity = (userId: string, memoryId: string, target: ShareTarget) =>
+	target.scope === 'world' ? `${userId}:world:${target.worldKey}` : `${userId}:${memoryId}`
+
+/** The active links the target replaces or revokes: one per snapshot, one per world. */
+const shareFilter = (target: ShareTarget, memoryId: string) =>
+	target.scope === 'world'
+		? { sql: "scope = 'world' AND world_key = ?", value: target.worldKey }
+		: { sql: "scope = 'memory' AND memory_id = ?", value: memoryId }
+
+export function createShareLink(
+	userId: string,
+	memoryId: string,
+	target: ShareTarget = { scope: 'memory' }
+): { token: string } | null {
 	const memory = database
 		.query('SELECT id FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NULL')
 		.get(memoryId, userId) as { id: string } | null
 	if (!memory) return null
 	const token = randomBytes(32).toString('base64url')
 	const now = Date.now()
+	const filter = shareFilter(target, memoryId)
 	database.transaction(() => {
 		database
-			.query('UPDATE share_links SET revoked_at = ? WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL')
-			.run(now, memoryId, userId)
+			.query(`UPDATE share_links SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL AND ${filter.sql}`)
+			.run(now, userId, filter.value)
 		database
 			.query(
-				'INSERT INTO share_links (token_hash, memory_id, user_id, created_at, revoked_at, token_ciphertext) VALUES (?, ?, ?, ?, NULL, ?)'
+				'INSERT INTO share_links (token_hash, memory_id, user_id, created_at, revoked_at, token_ciphertext, scope, world_key) VALUES (?, ?, ?, ?, NULL, ?, ?, ?)'
 			)
-			.run(codeHash(token), memoryId, userId, now, sealShareToken(token, pepper, `${userId}:${memoryId}`))
+			.run(
+				codeHash(token),
+				memoryId,
+				userId,
+				now,
+				sealShareToken(token, pepper, shareIdentity(userId, memoryId, target)),
+				target.scope,
+				target.scope === 'world' ? target.worldKey : null
+			)
 	})()
 	return { token }
 }
 
-export function revokeShareLink(userId: string, memoryId: string): void {
+export function revokeShareLink(userId: string, memoryId: string, target: ShareTarget = { scope: 'memory' }): void {
+	const filter = shareFilter(target, memoryId)
 	database
-		.query('UPDATE share_links SET revoked_at = ? WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL')
-		.run(Date.now(), memoryId, userId)
+		.query(`UPDATE share_links SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL AND ${filter.sql}`)
+		.run(Date.now(), userId, filter.value)
 }
 
-export function shareStatus(userId: string, memoryId: string) {
+export function shareStatus(userId: string, memoryId: string, target: ShareTarget = { scope: 'memory' }) {
+	const filter = shareFilter(target, memoryId)
 	const row = database
 		.query(
-			'SELECT token_ciphertext FROM share_links WHERE memory_id = ? AND user_id = ? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 1'
+			`SELECT memory_id, token_ciphertext FROM share_links WHERE user_id = ? AND revoked_at IS NULL AND ${filter.sql} ORDER BY created_at DESC LIMIT 1`
 		)
-		.get(memoryId, userId) as { token_ciphertext: string | null } | null
-	const token = openShareToken(row?.token_ciphertext ?? null, pepper, `${userId}:${memoryId}`)
+		.get(userId, filter.value) as {
+		memory_id: string
+		token_ciphertext: string | null
+	} | null
+	const token = openShareToken(
+		row?.token_ciphertext ?? null,
+		pepper,
+		shareIdentity(userId, row?.memory_id ?? memoryId, target)
+	)
 	return { shared: row !== null, ...(token ? { urlPath: `/share/${token}` } : {}) }
 }
 
-export function getSharedMemory(token: string) {
+/**
+ * A snapshot link serves its snapshot; a world link serves the latest snapshot of the world, or the requested one
+ * when it belongs to that same world, and lists every snapshot so visitors can move through time.
+ */
+export function getSharedMemory(token: string, snapshot?: string) {
 	if (!token || token.length < 20) return null
 	const link = database
-		.query('SELECT memory_id, user_id FROM share_links WHERE token_hash = ? AND revoked_at IS NULL')
-		.get(codeHash(token)) as { memory_id: string; user_id: string } | null
+		.query('SELECT memory_id, user_id, scope, world_key FROM share_links WHERE token_hash = ? AND revoked_at IS NULL')
+		.get(codeHash(token)) as { memory_id: string; user_id: string; scope: ShareScope; world_key: string | null } | null
 	if (!link) return null
+	let memoryId = link.memory_id
+	let snapshots: { id: string; at: string }[] | undefined
+	if (link.scope === 'world' && link.world_key) {
+		snapshots = new TimelapseIndex(database).worldSnapshots(link.user_id, link.world_key)
+		const chosen = snapshot ? snapshots.find(entry => entry.id === snapshot) : snapshots.at(-1)
+		if (!chosen) return null
+		memoryId = chosen.id
+	}
 	const row = database
 		.query(
 			'SELECT id, name, size, created_at, metadata_json, object_key FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
 		)
-		.get(link.memory_id, link.user_id) as {
+		.get(memoryId, link.user_id) as {
 		id: string
 		name: string
 		size: number
@@ -258,6 +306,8 @@ export function getSharedMemory(token: string) {
 		createdAt: new Date(row.created_at).toISOString(),
 		objectKey: row.object_key,
 		metadata,
+		scope: link.scope,
+		...(snapshots ? { snapshots } : {}),
 	}
 }
 
