@@ -10,7 +10,17 @@ record StorageQuota(
     long limitBytes,
     long availableBytes,
     long reservedBytes,
-    long pendingDeletionBytes) {
+    long pendingDeletionBytes,
+    String accountName) {
+  StorageQuota(
+      long usedBytes,
+      long limitBytes,
+      long availableBytes,
+      long reservedBytes,
+      long pendingDeletionBytes) {
+    this(usedBytes, limitBytes, availableBytes, reservedBytes, pendingDeletionBytes, null);
+  }
+
   static final String NO_SPACE_MESSAGE =
       "Not enough space. GLB kept locally. Permanently delete captures from the trash on the website, then retry /minemories upload.";
   static final String CLEANUP_HELP =
@@ -46,7 +56,20 @@ record StorageQuota(
         quantity(storage, "limitBytes"),
         quantity(storage, "availableBytes"),
         quantity(storage, "reservedBytes"),
-        quantity(storage, "pendingDeletionBytes"));
+        quantity(storage, "pendingDeletionBytes"),
+        accountName(status));
+  }
+
+  /** The account's display name when the API sends one; never trusted for more than a label. */
+  private static String accountName(JsonObject status) {
+    JsonElement account = status.get("account");
+    if (account == null || !account.isJsonObject()) return null;
+    JsonElement name = account.getAsJsonObject().get("name");
+    if (name == null || !name.isJsonPrimitive() || !name.getAsJsonPrimitive().isString())
+      return null;
+    String value = name.getAsString().replaceAll("[\\p{Cntrl}§]", "").strip();
+    if (value.isEmpty()) return null;
+    return value.length() > 32 ? value.substring(0, 32) : value;
   }
 
   private static long quantity(JsonObject storage, String key) {

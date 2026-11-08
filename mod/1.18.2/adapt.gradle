@@ -18,6 +18,8 @@ ext.adaptDir = { File root ->
         t = adaptLegacyGui(t, n)
         t = t.replace('net.minecraft.client.gui.screens.options.OptionsScreen', 'net.minecraft.client.gui.screens.OptionsScreen')
         t = t.replace('net.minecraft.world.level.chunk.status.ChunkStatus', 'net.minecraft.world.level.chunk.ChunkStatus')
+        t = t.replace('SystemToast.SystemToastId.', 'SystemToast.SystemToastIds.')
+        t = t.replace('ResourceLocation.fromNamespaceAndPath(', 'new ResourceLocation(')
         t = t.replace('Math.clamp(', 'dev.minemories.compat.Clamp.clamp(')
         t = t.replace('page.entries().getLast()', 'page.entries().get(page.entries().size() - 1)')
         t = t.replace('previous.removeLast()', 'previous.remove(previous.size() - 1)')
@@ -42,8 +44,9 @@ ext.adaptDir = { File root ->
             t = rep(t, 'worldData.worldGenOptions().seed()', 'worldData.worldGenSettings().seed()', n)
             t = rep(t, 'byte[] icon = currentServer.getIconBytes();', 'String iconB64 = currentServer.getIconB64();\n      byte[] icon = iconB64 == null ? null : java.util.Base64.getDecoder().decode(iconB64);', n)
             t = rep(t, 'widget.getX(), widget.getY(),', 'widget.x, widget.y,', n)
-            t = rep(t, 'button.setX(spot.x());', 'button.x = spot.x();', n)
-            t = rep(t, 'button.setY(spot.y());', 'button.y = spot.y();', n)
+            t = rep(t, 'button.setX(spot[0]);', 'button.x = spot[0];', n)
+            t = rep(t, 'button.setY(spot[1]);', 'button.y = spot[1];', n)
+            t = rep(t, 'credits.getX()', 'credits.x', n).replace('credits.getY()', 'credits.y')
             t = rep(t, 'BlockPos.containing(position)', 'new BlockPos(position)', n)
         }
         // Lot 1.18: Component factories, Screen.rebuildWidgets and RandomSource are 1.19 additions.

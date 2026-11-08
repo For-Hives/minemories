@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -108,6 +109,7 @@ final class CaptureHistoryScreen extends Screen {
                       .execute(
                           () -> {
                             sending = false;
+                            if (error == null) refresh();
                             status =
                                 error == null
                                     ? I18n.get("minemories.ui.memory_sent_to_private_gallery")
@@ -136,11 +138,19 @@ final class CaptureHistoryScreen extends Screen {
       CaptureHistory.Entry entry = entries.get(i);
       String prefix =
           (entry.equals(selected) ? "› " : "") + DATE.format(entry.capturedAt()) + " · ";
+      String tag =
+          I18n.get(entry.uploaded() ? "minemories.ui.history_sent" : "minemories.ui.history_local");
       String suffix = " · " + StorageQuota.formatBytes(entry.bytes());
       String world =
           font.plainSubstrByWidth(
-              entry.world(), Math.max(12, panelWidth - 40 - font.width(prefix + suffix)));
-      row.setMessage(Component.literal(prefix + world + suffix));
+              entry.world(),
+              Math.max(12, panelWidth - 40 - font.width(prefix + tag + " · " + suffix)));
+      row.setMessage(
+          Component.literal(prefix)
+              .append(
+                  Component.literal(tag)
+                      .withStyle(entry.uploaded() ? ChatFormatting.GREEN : ChatFormatting.GRAY))
+              .append(Component.literal(" · " + world + suffix)));
       row.setTooltip(Tooltip.create(Component.literal(entry.world() + "\n" + entry.file())));
     }
   }

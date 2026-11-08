@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component;
 final class AdvancedScreen extends Screen {
   private static final int COLOR_TEXT = UiTheme.TEXT;
   private static final int COLOR_MUTED = UiTheme.MUTED;
-  private static final int PANEL_HEIGHT = 236;
+  private static final int PANEL_HEIGHT = 262;
   private static final int CONTENT_Y = 64;
   private final Screen parent;
   private final List<List<AbstractWidget>> tabWidgets = new ArrayList<>();
@@ -30,7 +30,12 @@ final class AdvancedScreen extends Screen {
   private Button selectionButton;
   private Button saveButton;
   private Button defaultsButton;
-  private Button storageButton;
+  private final StorageStatusView storage = new StorageStatusView();
+  private boolean editingApi;
+  private Button privacyToggle;
+  private boolean diagnostics;
+  private String diagnosticsError;
+  private String diagnosticsStatus = "";
   private String status = I18n.get("minemories.ui.ready");
   private boolean paired;
   private int panelWidth;
@@ -55,7 +60,6 @@ final class AdvancedScreen extends Screen {
     initFields();
     initAccount();
     initCaptures();
-    initWorld();
     initPrivacy();
     saveButton =
         button(
@@ -66,6 +70,7 @@ final class AdvancedScreen extends Screen {
             panelWidth - 28,
             this::saveConfiguration);
     refreshSettings();
+    storage.reset(paired);
     selectTab(tab);
   }
 
@@ -144,32 +149,16 @@ final class AdvancedScreen extends Screen {
 
   private void initAccount() {
     int half = (panelWidth - 34) / 2;
-    int y = CONTENT_Y + 40;
-    defaultsButton =
-        button(
-            AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.official_address"),
-            14,
-            y,
-            half,
-            () -> apiInput.setValue(ClientSettings.DEFAULT_API_URL));
-    defaultsButton.setTooltip(
-        Tooltip.create(Component.translatable("minemories.ui.official_address_hint")));
-    storageButton =
-        button(
-            AdvancedTab.ACCOUNT,
-            I18n.get("minemories.ui.storage"),
-            20 + half,
-            y,
-            half,
-            this::openStorage);
+    int y = CONTENT_Y + 62;
+    defaultsButton = button(AdvancedTab.ACCOUNT, "", 14, y, half, this::toggleApiEditing);
+    updateApiButton();
     unlinkButton =
         button(
             AdvancedTab.ACCOUNT,
             I18n.get("minemories.ui.disconnect_account"),
-            14,
-            y + 26,
-            panelWidth - 28,
+            20 + half,
+            y,
+            half,
             this::unlink);
   }
 
@@ -192,8 +181,6 @@ final class AdvancedScreen extends Screen {
             y,
             half,
             () -> capture(true));
-    selectionButton.setTooltip(
-        Tooltip.create(Component.translatable("minemories.ui.export_selection_hint")));
     button(
         AdvancedTab.CAPTURES,
         I18n.get("minemories.ui.auto_captures"),
@@ -201,6 +188,20 @@ final class AdvancedScreen extends Screen {
         y + 26,
         half,
         () -> Minecraft.getInstance().setScreen(new AfkSettingsScreen(this)));
+    button(
+        AdvancedTab.CAPTURES,
+        I18n.get("minemories.ui.memory_size"),
+        14,
+        y + 52,
+        half,
+        () -> Minecraft.getInstance().setScreen(new MemorySizeScreen(this)));
+    button(
+        AdvancedTab.CAPTURES,
+        I18n.get("minemories.ui.suggested_areas"),
+        20 + half,
+        y + 52,
+        half,
+        () -> Minecraft.getInstance().setScreen(new SuggestedZonesScreen(this)));
     historyButton =
         button(
             AdvancedTab.CAPTURES,
@@ -211,38 +212,81 @@ final class AdvancedScreen extends Screen {
             () -> Minecraft.getInstance().setScreen(new CaptureHistoryScreen(this)));
   }
 
-  private void initWorld() {
-    int y = CONTENT_Y + 14;
-    Button worldButton =
-        button(
-            AdvancedTab.WORLD,
-            I18n.get("minemories.ui.world"),
-            14,
-            y,
-            panelWidth - 28,
-            () -> Minecraft.getInstance().setScreen(new TemporalWorldScreen(this)));
-    worldButton.setTooltip(Tooltip.create(Component.translatable("minemories.ui.world_hint")));
-    button(
-        AdvancedTab.WORLD,
-        I18n.get("minemories.ui.suggested_areas"),
-        14,
-        y + 26,
-        panelWidth - 28,
-        () -> Minecraft.getInstance().setScreen(new SuggestedZonesScreen(this)));
-  }
-
   private void initPrivacy() {
-    button(
-        AdvancedTab.PRIVACY,
-        I18n.get("minemories.ui.diagnostics"),
-        14,
-        CONTENT_Y + 14,
-        panelWidth - 28,
-        () -> Minecraft.getInstance().setScreen(new DiagnosticsSettingsScreen(this)));
+    privacyToggle =
+        button(AdvancedTab.PRIVACY, "", 14, CONTENT_Y, panelWidth - 28, this::changeDiagnostics);
+    privacyToggle.setTooltip(
+        Tooltip.create(
+            Component.literal(
+                I18n.get("minemories.ui.diagnostics_contents")
+                    + "\n"
+                    + I18n.get("minemories.ui.diagnostics_exclusions")
+                    + "\n"
+                    + I18n.get("minemories.ui.diagnostics_off_effect"))));
   }
 
-  private void openStorage() {
-    Minecraft.getInstance().setScreen(new StorageQuotaScreen(this));
+  private void changeDiagnostics() {
+    try {
+      PairingClient.setDiagnosticsConsent(!diagnostics);
+      diagnosticsError = null;
+    } catch (RuntimeException ignored) {
+      diagnosticsError =
+          diagnostics
+              ? I18n.get("minemories.ui.withdrawal_not_saved_fix_permissions")
+              : I18n.get("minemories.ui.setting_not_saved_retry");
+    }
+    refreshDiagnostics();
+  }
+
+  private void refreshDiagnostics() {
+    try {
+      diagnostics = PairingClient.diagnosticsConsent();
+      privacyToggle.active = diagnostics || paired;
+      privacyToggle.setMessage(
+          Component.translatable(
+              diagnostics
+                  ? "minemories.options.diagnostics.enabled"
+                  : "minemories.ui.diagnostics_off"));
+      diagnosticsStatus =
+          diagnosticsError != null ? diagnosticsError : PairingClient.diagnosticsStatus();
+    } catch (RuntimeException ignored) {
+      privacyToggle.active = false;
+      diagnosticsStatus = I18n.get("minemories.ui.unreadable_settings_no_collection");
+    }
+  }
+
+  private void drawPrivacy(GuiGraphics graphics) {
+    int y = top + CONTENT_Y + 30;
+    for (var line :
+        font.split(Component.translatable("minemories.ui.privacy_short"), panelWidth - 28)) {
+      graphics.drawString(font, line, left + 14, y, COLOR_TEXT);
+      y += 10;
+    }
+    y += 6;
+    var statusLines = font.split(Component.literal(diagnosticsStatus), panelWidth - 28);
+    for (int i = 0; i < Math.min(2, statusLines.size()); i++) {
+      graphics.drawString(font, statusLines.get(i), left + 14, y + i * 10, COLOR_MUTED);
+    }
+  }
+
+  /** The server address is locked: a typo would send the player's account to the wrong place. */
+  private void toggleApiEditing() {
+    editingApi = !editingApi;
+    if (!editingApi) apiInput.setValue(ClientSettings.DEFAULT_API_URL);
+    updateApiButton();
+    updateButtons();
+  }
+
+  private void updateApiButton() {
+    defaultsButton.setMessage(
+        Component.translatable(
+            editingApi ? "minemories.ui.official_address" : "minemories.ui.change_server"));
+    defaultsButton.setTooltip(
+        Tooltip.create(
+            Component.translatable(
+                editingApi
+                    ? "minemories.ui.official_address_hint"
+                    : "minemories.ui.change_server_hint")));
   }
 
   private void refreshSettings() {
@@ -260,18 +304,44 @@ final class AdvancedScreen extends Screen {
     historyButton.active = !waiting;
     saveButton.active = !waiting;
     defaultsButton.active = !waiting;
-    apiInput.setEditable(!waiting);
+    apiInput.setEditable(!waiting && editingApi);
+    apiInput.setTooltip(
+        editingApi ? null : Tooltip.create(Component.translatable("minemories.ui.api_locked")));
     directoryInput.setEditable(!waiting);
     localButton.active = !waiting && mc.level != null;
+    localButton.setTooltip(needWorld(mc.level != null));
     selectionButton.active = !waiting && ClientRuntime.hasSelection();
-    storageButton.active = paired;
+    selectionButton.setTooltip(
+        Tooltip.create(
+            Component.translatable(
+                mc.level == null
+                    ? "minemories.hub.need_world"
+                    : "minemories.ui.export_selection_hint")));
+    apiInput.visible = tab == AdvancedTab.ACCOUNT && editingApi;
+    saveButton.visible = tab != AdvancedTab.PRIVACY;
+    if (tab == AdvancedTab.PRIVACY) refreshDiagnostics();
     unlinkButton.visible = paired && tab == AdvancedTab.ACCOUNT;
     unlinkButton.active = !waiting;
+  }
+
+  private static Tooltip needWorld(boolean inWorld) {
+    return inWorld ? null : Tooltip.create(Component.translatable("minemories.hub.need_world"));
+  }
+
+  @Override
+  public void removed() {
+    storage.reset(false);
+    super.removed();
   }
 
   @Override
   public void tick() {
     super.tick();
+    storage.update(
+        System.currentTimeMillis(),
+        paired,
+        PairingClient::storageStatus,
+        Minecraft.getInstance()::execute);
     updateButtons();
   }
 
@@ -293,10 +363,7 @@ final class AdvancedScreen extends Screen {
 
   private void capture(boolean selection) {
     try {
-      int result =
-          selection
-              ? ClientRuntime.exportSelection()
-              : ClientRuntime.export(PairingClient.afkOptions().radius());
+      int result = selection ? ClientRuntime.exportSelection() : ClientRuntime.exportManual();
       status =
           result == 1
               ? I18n.get("minemories.ui.local_file_saved_nothing_sent")
@@ -343,11 +410,66 @@ final class AdvancedScreen extends Screen {
         COLOR_TEXT);
     String hint =
         switch (tab) {
-          case ACCOUNT -> I18n.get("minemories.ui.api_address_https");
+          case ACCOUNT -> editingApi ? I18n.get("minemories.ui.api_address_warning") : "";
           case CAPTURES -> I18n.get("minemories.ui.local_folder_history_kept");
-          case WORLD, PRIVACY -> "";
+          case PRIVACY -> "";
         };
     graphics.drawString(font, hint, left + 14, top + CONTENT_Y, COLOR_MUTED);
+    if (tab == AdvancedTab.ACCOUNT && !editingApi) drawAccount(graphics);
+    if (tab == AdvancedTab.PRIVACY) drawPrivacy(graphics);
+  }
+
+  /** Who is connected, to which server, and how much gallery space is left. */
+  private void drawAccount(GuiGraphics graphics) {
+    int x = left + 14;
+    StorageQuota quota = storage.quota();
+    String name = quota == null ? null : quota.accountName();
+    Component who =
+        !paired
+            ? Component.translatable("minemories.hub.not_connected")
+            : name == null
+                ? Component.translatable("minemories.hub.connected")
+                : Component.translatable("minemories.ui.account_as", name);
+    graphics.drawString(
+        font,
+        who.copy().withStyle(ChatFormatting.BOLD),
+        x,
+        top + CONTENT_Y + 4,
+        paired ? UiTheme.OK : UiTheme.WARN);
+    graphics.drawString(
+        font,
+        Component.translatable("minemories.ui.server_is", serverHost()),
+        x,
+        top + CONTENT_Y + 18,
+        COLOR_MUTED);
+    if (!paired) return;
+    if (quota == null) {
+      graphics.drawString(font, storage.label(), x, top + CONTENT_Y + 32, COLOR_MUTED);
+      return;
+    }
+    graphics.drawString(
+        font,
+        Component.translatable(
+            "minemories.ui.space_used",
+            StorageQuota.formatBytes(quota.usedBytes()),
+            StorageQuota.formatBytes(quota.limitBytes())),
+        x,
+        top + CONTENT_Y + 32,
+        COLOR_TEXT);
+    int barWidth = panelWidth - 28;
+    int filled = (int) (barWidth * Math.min(1.0, (double) quota.usedBytes() / quota.limitBytes()));
+    int barY = top + CONTENT_Y + 45;
+    graphics.fill(x, barY, x + barWidth, barY + 5, 0xFF1B1E1C);
+    graphics.fill(
+        x, barY, x + filled, barY + 5, filled > barWidth * 0.9 ? UiTheme.WARN : UiTheme.OK);
+  }
+
+  private String serverHost() {
+    try {
+      return java.net.URI.create(PairingClient.apiUrl()).getHost();
+    } catch (RuntimeException error) {
+      return ClientSettings.DEFAULT_API_URL;
+    }
   }
 
   @Override

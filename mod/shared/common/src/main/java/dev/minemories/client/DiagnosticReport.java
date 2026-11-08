@@ -39,7 +39,9 @@ final class DiagnosticReport {
     CAPTURE("capture"),
     UPLOAD("upload"),
     PAIRING("pairing"),
-    CRASH("crash");
+    CRASH("crash"),
+    /** A handled error (a command or screen failed, the game carried on). */
+    ERROR("error");
 
     private final String value;
 
@@ -62,7 +64,8 @@ final class DiagnosticReport {
     PAIRING_STARTED("pairing_started"),
     PAIRING_COMPLETED("pairing_completed"),
     PAIRING_FAILED("pairing_failed"),
-    CLIENT_CRASHED("client_crashed");
+    CLIENT_CRASHED("client_crashed"),
+    ERROR_HANDLED("error_handled");
 
     private final String value;
 

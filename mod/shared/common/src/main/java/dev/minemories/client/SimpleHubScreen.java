@@ -25,6 +25,8 @@ final class SimpleHubScreen extends Screen {
   private Button connectButton;
   private Button codeHelpButton;
   private IconButton takeButton;
+  private Button sizeButton;
+  private Boolean takeHintInWorld;
   private IconButton autoButton;
   private IconButton memoriesButton;
   private String typedCode = "";
@@ -115,13 +117,22 @@ final class SimpleHubScreen extends Screen {
             new IconButton(
                 left + 14,
                 top + y,
-                slot,
+                slot - 18,
                 ACTIONS_HEIGHT,
                 new ItemStack(Items.SPYGLASS),
                 Component.translatable("minemories.hub.take"),
                 ignored -> takeMemory(),
                 true));
-    takeButton.setTooltip(Tooltip.create(Component.translatable("minemories.hub.take_tooltip")));
+    sizeButton =
+        addRenderableWidget(
+            new GearButton(
+                left + 14 + slot - 15,
+                top + y,
+                15,
+                Component.translatable("minemories.hub.size_tooltip"),
+                ignored -> Minecraft.getInstance().setScreen(new MemorySizeScreen(this))));
+    sizeButton.setTooltip(Tooltip.create(Component.translatable("minemories.hub.size_tooltip")));
+    takeHintInWorld = null;
     autoButton =
         addRenderableWidget(
             new IconButton(
@@ -164,6 +175,13 @@ final class SimpleHubScreen extends Screen {
     if (codeInput != null) codeInput.setEditable(!input.busy());
     if (connectButton != null) connectButton.active = actions.connectEnabled();
     takeButton.active = actions.captureEnabled();
+    if (takeHintInWorld == null || takeHintInWorld != input.inWorld()) {
+      takeHintInWorld = input.inWorld();
+      takeButton.setTooltip(
+          Tooltip.create(
+              Component.translatable(
+                  input.inWorld() ? "minemories.hub.take_tooltip" : "minemories.hub.need_world")));
+    }
     autoButton.active = actions.autoEnabled();
     autoButton.setMessage(Component.translatable(SimpleHubModel.autoLabelKey(input)));
     autoButton.setStatus(input.autoPhotos());
@@ -201,6 +219,7 @@ final class SimpleHubScreen extends Screen {
     if (failure == null) {
       typedCode = "";
       result = null;
+      ClientRuntime.diagnosticsToast();
     } else {
       result = Component.literal(ClientRuntime.pairingError(failure));
     }
@@ -211,7 +230,7 @@ final class SimpleHubScreen extends Screen {
     busy = true;
     result = null;
     try {
-      if (ClientRuntime.export(PairingClient.afkOptions().radius()) != 1) {
+      if (ClientRuntime.exportManual() != 1) {
         finish("minemories.hub.failed");
       } else if (!PairingClient.isPaired()) {
         finish("minemories.hub.saved_local");
@@ -228,6 +247,7 @@ final class SimpleHubScreen extends Screen {
                                         : "minemories.hub.failed")));
       }
     } catch (RuntimeException error) {
+      DiagnosticCrashHook.recordHandled(error);
       finish("minemories.hub.failed");
     }
   }
@@ -235,6 +255,7 @@ final class SimpleHubScreen extends Screen {
   private void finish(String key) {
     busy = false;
     result = Component.translatable(key);
+    if (key.equals("minemories.hub.sent")) ClientRuntime.say("minemories.chat.memory_sent");
   }
 
   private void toggleAuto() {
@@ -260,7 +281,7 @@ final class SimpleHubScreen extends Screen {
   @Override
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.render(graphics, mouseX, mouseY, partialTick);
-    graphics.renderItem(new ItemStack(Items.FILLED_MAP), left + 14, top + 8);
+    BrandIcon.draw(graphics, left + 14, top + 7, BrandIcon.SIZE, 0xFFFFFFFF);
     drawLines(
         graphics,
         Component.translatable("minemories.hub.title").withStyle(ChatFormatting.BOLD),
@@ -270,22 +291,26 @@ final class SimpleHubScreen extends Screen {
         1,
         UiTheme.TEXT);
     boolean paired = input.paired();
-    IconButton.drawScaled(
-        graphics, new ItemStack(paired ? Items.EMERALD : Items.BARRIER), left + 18, top + 42);
+    Component statusTitle =
+        Component.translatable(SimpleHubModel.statusTitleKey(input)).withStyle(ChatFormatting.BOLD);
     drawLines(
         graphics,
-        Component.translatable(SimpleHubModel.statusTitleKey(input)).withStyle(ChatFormatting.BOLD),
-        left + 62,
+        statusTitle,
+        left + 18,
         top + 40,
-        panelWidth - 70,
+        panelWidth - 40,
         1,
         paired ? UiTheme.OK : UiTheme.WARN);
+    graphics.renderItem(
+        new ItemStack(paired ? Items.EMERALD : Items.BARRIER),
+        left + 18 + font.width(statusTitle) + 4,
+        top + 36);
     drawLines(
         graphics,
         Component.translatable(SimpleHubModel.statusHintKey(input)),
-        left + 62,
-        top + 52,
-        panelWidth - 70,
+        left + 18,
+        top + 54,
+        panelWidth - 36,
         3,
         UiTheme.MUTED);
     drawLines(

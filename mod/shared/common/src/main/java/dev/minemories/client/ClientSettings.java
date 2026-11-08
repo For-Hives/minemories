@@ -154,8 +154,8 @@ final class ClientSettings {
     }
   }
 
+  /** Off until the account is linked: an absent key means no consent, never an implicit one. */
   static boolean diagnosticsConsentForIdentity(Properties settings, String environmentApi) {
-    if (!settings.containsKey("diagnosticsConsent")) return true;
     return diagnosticsConsent(settings)
         && diagnosticsBinding(settings, environmentApi)
             .equals(settings.getProperty("diagnosticsIdentity"));
@@ -166,10 +166,19 @@ final class ClientSettings {
         && !"true".equals(settings.getProperty("diagnosticsConsent"));
   }
 
-  static String diagnosticsIdentityKey(Properties settings, String environmentApi) {
-    if (!settings.containsKey("diagnosticsConsent"))
-      return diagnosticsBinding(settings, environmentApi);
-    return settings.getProperty("diagnosticsIdentity");
+  static String diagnosticsIdentityKey(Properties settings) {
+    return settings.getProperty("diagnosticsIdentity", "");
+  }
+
+  /**
+   * Linking an account is the moment the player accepts the terms, so diagnostics start then. An
+   * explicit refusal stays refused across linking, unlinking and API changes.
+   */
+  static void enableDiagnosticsOnLink(Properties settings, String environmentApi) {
+    if (diagnosticsRefused(settings)) return;
+    settings.setProperty("diagnosticsConsent", "true");
+    settings.setProperty("diagnosticsEpoch", java.util.UUID.randomUUID().toString());
+    settings.setProperty("diagnosticsIdentity", diagnosticsBinding(settings, environmentApi));
   }
 
   static String diagnosticsEpoch(Properties settings) {
@@ -224,6 +233,38 @@ final class ClientSettings {
     settings.setProperty("afkIdleMinutes", Integer.toString(options.idleMinutes()));
     settings.setProperty("afkIntervalMinutes", Integer.toString(options.intervalMinutes()));
     settings.setProperty("captureRadius", Integer.toString(options.radius()));
+  }
+
+  /**
+   * Size of a manual memory: blocks around the player, and blocks kept above and below. Zero above
+   * or below means automatic (top of the world; the lowest visited depth plus a foundation).
+   */
+  record ManualSize(int radius, int up, int down) {
+    ManualSize {
+      if (radius < 2 || radius > 128 || up < 0 || up > 4096 || down < 0 || down > 4096) {
+        throw new IllegalArgumentException(
+            "Memory size: radius 2–128 blocks, height and depth 0–4096.");
+      }
+    }
+  }
+
+  static ManualSize manualSize(Properties settings) {
+    try {
+      return new ManualSize(
+          Integer.parseInt(
+              settings.getProperty(
+                  "manualRadius", Integer.toString(afkOptions(settings).radius()))),
+          Integer.parseInt(settings.getProperty("manualUp", "0")),
+          Integer.parseInt(settings.getProperty("manualDown", "0")));
+    } catch (IllegalArgumentException error) {
+      return new ManualSize(afkOptions(settings).radius(), 0, 0);
+    }
+  }
+
+  static void configureManualSize(Properties settings, ManualSize size) {
+    settings.setProperty("manualRadius", Integer.toString(size.radius()));
+    settings.setProperty("manualUp", Integer.toString(size.up()));
+    settings.setProperty("manualDown", Integer.toString(size.down()));
   }
 
   static boolean configure(

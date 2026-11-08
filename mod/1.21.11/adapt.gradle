@@ -23,7 +23,7 @@ ext.adaptDir = { File root ->
         t = t.replace('.dimension().location()', '.dimension().identifier()')
         t = t.replace('key.location().toString()', 'key.identifier().toString()')
         // Lot 2: GUI. AbstractButton.renderWidget is final, subclasses draw in renderContents.
-        if (n == 'IconButton.java' || n == 'TabButton.java') {
+        if (n == 'IconButton.java' || n == 'TabButton.java' || n == 'BrandButton.java' || n == 'GearButton.java') {
             t = rep(t, 'public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', 'public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', n)
         }
         if (n == 'IconButton.java') {
@@ -49,6 +49,7 @@ ext.adaptDir = { File root ->
         }
         if (n == 'ClientRuntime.java') {
             t = rep(t, '"key.categories.minemories"', 'KeyMapping.Category.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("minemories", "minemories"))', n)
+            t = rep(t, 'mc.getToasts()', 'mc.getToastManager()', n)
             t = rep(t, 'connection.getLocalGameProfile().getId()', 'connection.getLocalGameProfile().id()', n)
             t = rep(t, 'new ClickEvent(ClickEvent.Action.RUN_COMMAND, ', 'new ClickEvent.RunCommand(', n)
             t = regex(t, /new HoverEvent\(\s*HoverEvent\.Action\.SHOW_TEXT,\s*/, 'new HoverEvent.ShowText(', n)

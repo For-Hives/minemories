@@ -284,7 +284,8 @@ class DiagnosticReportTest {
             "pairing_started",
             "pairing_completed",
             "pairing_failed",
-            "client_crashed");
+            "client_crashed",
+            "error_handled");
     DiagnosticReport.Step[] steps = DiagnosticReport.Step.values();
     assertEquals(expected.size(), steps.length);
     for (int index = 0; index < steps.length; index++) {

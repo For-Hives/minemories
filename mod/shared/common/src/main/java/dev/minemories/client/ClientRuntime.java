@@ -23,8 +23,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.player.LocalPlayer;
@@ -63,7 +63,7 @@ public final class ClientRuntime {
   private static final int VERTEX_STRIDE = 8;
   private static final KeyMapping OPEN_SCREEN =
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
-  private static WeakReference<Button> pauseButton = new WeakReference<>(null);
+  private static WeakReference<Button> optionsButton = new WeakReference<>(null);
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   // All exploration state is owned by the Minecraft client thread, including pause rendering.
   private static final ExplorationState EXPLORATION = new ExplorationState();
@@ -214,36 +214,43 @@ public final class ClientRuntime {
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("select")
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("first")
-                            .executes(ctx -> selectCorner(true)))
+                            .executes(ctx -> guarded(() -> selectCorner(true))))
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("second")
-                            .executes(ctx -> selectCorner(false)))
+                            .executes(ctx -> guarded(() -> selectCorner(false))))
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("clear")
-                            .executes(ctx -> clearSelection()))
+                            .executes(ctx -> guarded(ClientRuntime::clearSelection)))
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("status")
-                            .executes(ctx -> selectionStatus())))
+                            .executes(ctx -> guarded(ClientRuntime::selectionStatus))))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("export")
-                    .executes(ctx -> export(DEFAULT_CAPTURE_RADIUS))
+                    .executes(ctx -> guarded(() -> export(DEFAULT_CAPTURE_RADIUS)))
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("selection")
-                            .executes(ctx -> exportSelection()))
+                            .executes(ctx -> guarded(ClientRuntime::exportSelection)))
                     .then(
                         com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, Integer>argument(
                                 "radius", IntegerArgumentType.integer(2, DEFAULT_CAPTURE_RADIUS))
                             .executes(
-                                ctx -> export(IntegerArgumentType.getInteger(ctx, "radius")))))
+                                ctx ->
+                                    guarded(
+                                        () ->
+                                            export(
+                                                IntegerArgumentType.getInteger(ctx, "radius"))))))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("pair")
                     .then(
                         com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, String>argument(
                                 "code", StringArgumentType.word())
-                            .executes(ctx -> pair(StringArgumentType.getString(ctx, "code")))))
+                            .executes(
+                                ctx ->
+                                    guarded(
+                                        () -> pair(StringArgumentType.getString(ctx, "code"))))))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("upload")
-                    .executes(ctx -> uploadCapture()))
+                    .executes(ctx -> guarded(ClientRuntime::uploadCapture)))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("settings")
                     .executes(
@@ -258,6 +265,21 @@ public final class ClientRuntime {
                           openLater(() -> new SuggestedZonesScreen(null));
                           return 1;
                         })));
+  }
+
+  /**
+   * A command that throws must not take the game down or vanish silently: the error is reported
+   * (only when diagnostics are on) and the player gets a plain message.
+   */
+  private static int guarded(java.util.function.IntSupplier action) {
+    try {
+      return action.getAsInt();
+    } catch (RuntimeException error) {
+      LOGGER.error("Minemories command failed", error);
+      DiagnosticCrashHook.recordHandled(error);
+      tell(I18n.get("minemories.chat.command_failed"));
+      return 0;
+    }
   }
 
   // Chat closes after a command runs, so a screen opened inside the command would be replaced.
@@ -278,43 +300,80 @@ public final class ClientRuntime {
     if (CAPTURES.job != null) CAPTURES.job.cancel("Resources reloaded.");
   }
 
+  /**
+   * The pause menu no longer has a Minemories button: it lives in Options, next to "Credits &
+   * Attribution". The loader adapters still forward the pause-menu init event, so it stays a no-op.
+   */
   public static void addPauseMenuButton(
       Screen value,
       java.util.function.Consumer<Button> add,
-      List<? extends GuiEventListener> listeners) {
-    if (!(value instanceof PauseScreen screen)) return;
-    Button button =
-        Button.builder(
-                Component.literal("Minemories"),
-                pressed -> Minecraft.getInstance().setScreen(new SimpleHubScreen(screen)))
-            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
-            .build();
-    add.accept(button);
-    pauseButton = new WeakReference<>(button);
-    placeMenuButton(screen, button, listeners);
-  }
+      List<? extends GuiEventListener> listeners) {}
 
+  /**
+   * Called before every screen render: Options re-arranges its widgets on a window resize without
+   * firing the init event again, so the button follows "Credits & Attribution" from here.
+   */
   public static void repositionPauseMenuButton(Screen value) {
-    if (!(value instanceof PauseScreen screen)) return;
-    Button button = pauseButton.get();
-    if (button != null && screen.children().contains(button)) {
-      placeMenuButton(screen, button, screen.children());
+    Button button = optionsButton.get();
+    if (button != null
+        && value instanceof OptionsScreen screen
+        && screen.children().contains(button)) {
+      placeOptionsButton(screen, button, screen.children());
     }
   }
 
+  /** A small square icon button right beside "Credits &amp; Attribution" in the Options screen. */
   public static void addOptionsButton(
       Screen value,
       java.util.function.Consumer<Button> add,
       List<? extends GuiEventListener> listeners) {
     if (!(value instanceof OptionsScreen screen)) return;
     Button button =
-        Button.builder(
-                Component.literal("Minemories"),
-                pressed -> Minecraft.getInstance().setScreen(new SimpleHubScreen(screen)))
-            .bounds(8, 8, PauseMenuPlacement.BUTTON_WIDTH, PauseMenuPlacement.BUTTON_HEIGHT)
-            .build();
+        new BrandButton(
+            0,
+            0,
+            Component.literal("Minemories"),
+            pressed -> Minecraft.getInstance().setScreen(new SimpleHubScreen(screen)));
+    button.setTooltip(Tooltip.create(Component.translatable("minemories.options.button_tooltip")));
     add.accept(button);
-    placeMenuButton(screen, button, listeners);
+    optionsButton = new WeakReference<>(button);
+    placeOptionsButton(screen, button, listeners);
+  }
+
+  private static void placeOptionsButton(
+      Screen screen, Button button, List<? extends GuiEventListener> listeners) {
+    List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
+    AbstractWidget credits = null;
+    String creditsLabel = I18n.get("options.credits_and_attribution");
+    for (GuiEventListener listener : listeners) {
+      if (!(listener instanceof AbstractWidget widget) || widget == button || !widget.visible)
+        continue;
+      occupied.add(
+          new PauseMenuPlacement.Rect(
+              widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+      if (creditsLabel.equals(widget.getMessage().getString())) credits = widget;
+    }
+    int size = BrandButton.SIZE;
+    int[][] candidates =
+        credits == null
+            ? new int[][] {{8, 8}}
+            : new int[][] {
+              {credits.getX() + credits.getWidth() + 4, credits.getY()},
+              {credits.getX() - size - 4, credits.getY()},
+              {8, 8}
+            };
+    button.visible = false;
+    for (int[] spot : candidates) {
+      var rect = new PauseMenuPlacement.Rect(spot[0], spot[1], size, size);
+      if (spot[0] >= 0
+          && spot[0] + size <= screen.width
+          && occupied.stream().noneMatch(rect::overlaps)) {
+        button.setX(spot[0]);
+        button.setY(spot[1]);
+        button.visible = true;
+        return;
+      }
+    }
   }
 
   public static void openFromShortcut() {
@@ -329,7 +388,13 @@ public final class ClientRuntime {
     java.util.function.Supplier<Screen> later = pendingScreen;
     if (later != null) {
       pendingScreen = null;
-      Minecraft.getInstance().setScreen(later.get());
+      try {
+        Minecraft.getInstance().setScreen(later.get());
+      } catch (RuntimeException error) {
+        LOGGER.error("Minemories screen failed to open", error);
+        DiagnosticCrashHook.recordHandled(error);
+        tell(I18n.get("minemories.chat.command_failed"));
+      }
     }
     tickPairingReminder(Minecraft.getInstance());
   }
@@ -432,7 +497,7 @@ public final class ClientRuntime {
       if (CAPTURES.job != null) CAPTURES.job.cancel("Capture failed.");
       if (afkDiagnostics != null) afkDiagnostics.failed(error);
       LOGGER.error("AFK progressive capture failed", error);
-      tell("AFK capture failed: " + pairingError(error));
+      say("minemories.chat.auto_failed");
     }
   }
 
@@ -468,7 +533,7 @@ public final class ClientRuntime {
           completed.entities(),
           result.quads(),
           result.textures());
-      tell("AFK memory saved locally.");
+      say("minemories.chat.auto_saved");
       if (merge.identical()) {
         // Nothing was added, moved or changed since the previous capture of these chunks: keep it
         // local only.
@@ -487,13 +552,13 @@ public final class ClientRuntime {
                         afkUploadPending = false;
                         if (error != null) {
                           LOGGER.error("AFK upload failed", error);
-                          tell("AFK upload failed: " + pairingError(error));
-                        } else tell("AFK memory sent to your gallery.");
+                          say("minemories.chat.auto_upload_failed");
+                        } else say("minemories.chat.auto_sent");
                       }));
     } catch (RuntimeException error) {
       afkDiagnostics.failed(error);
       LOGGER.error("AFK capture completion failed", error);
-      tell("AFK capture failed: " + pairingError(error));
+      say("minemories.chat.auto_failed");
     }
   }
 
@@ -667,6 +732,13 @@ public final class ClientRuntime {
     return EXPLORATION.path.resolveSibling(EXPLORATION.path.getFileName() + ".zones");
   }
 
+  static java.util.List<VisitedZones.Zone> visitedZones() {
+    Minecraft mc = Minecraft.getInstance();
+    trackExploration(mc, System.currentTimeMillis());
+    if (mc.level == null || mc.player == null) return java.util.List.of();
+    return EXPLORATION.zones.all();
+  }
+
   static java.util.List<ZoneRanking.Suggestion> suggestedZones() {
     Minecraft mc = Minecraft.getInstance();
     trackExploration(mc, System.currentTimeMillis());
@@ -804,25 +876,6 @@ public final class ClientRuntime {
     }
   }
 
-  private static void placeMenuButton(
-      Screen screen, Button button, List<? extends GuiEventListener> listeners) {
-    List<PauseMenuPlacement.Rect> occupied = new ArrayList<>();
-    for (GuiEventListener listener : listeners) {
-      if (listener instanceof AbstractWidget widget && widget != button && widget.visible) {
-        occupied.add(
-            new PauseMenuPlacement.Rect(
-                widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
-      }
-    }
-    PauseMenuPlacement.Rect spot = PauseMenuPlacement.find(screen.width, screen.height, occupied);
-    button.visible = spot != null;
-    if (spot != null) {
-      button.setX(spot.x());
-      button.setY(spot.y());
-      button.setWidth(spot.width());
-    }
-  }
-
   static boolean hasSelection() {
     Minecraft mc = Minecraft.getInstance();
     return mc.level != null
@@ -845,10 +898,10 @@ public final class ClientRuntime {
 
   private static int pair(String code) {
     if (!code.matches("\\d{6}")) {
-      tell("Enter the 6-digit code shown in the web interface.");
+      say("minemories.chat.pair_code_hint");
       return 0;
     }
-    tell("Pairing…");
+    say("minemories.chat.pairing");
     PairingClient.pair(code)
         .whenComplete(
             (message, error) ->
@@ -859,20 +912,24 @@ public final class ClientRuntime {
                             tell(pairingError(error));
                             return;
                           }
-                          tell(message);
-                          tell(I18n.get("minemories.chat.pair_diagnostics_notice"));
+                          say("minemories.chat.paired");
+                          diagnosticsToast();
                         }));
     return 1;
   }
 
   private static int uploadCapture() {
     Path capture = latestCapturePath();
-    tell("Sending " + capture + "…");
+    say("minemories.chat.sending");
     PairingClient.uploadCapture(capture)
         .whenComplete(
             (message, error) ->
                 Minecraft.getInstance()
-                    .execute(() -> tell(error == null ? message : pairingError(error))));
+                    .execute(
+                        () -> {
+                          if (error == null) say("minemories.chat.memory_sent");
+                          else tell(pairingError(error));
+                        }));
     return 1;
   }
 
@@ -952,6 +1009,22 @@ public final class ClientRuntime {
     return 1;
   }
 
+  /** A plain, translated line in the chat: no technical detail (that goes to the log). */
+  static void say(String key) {
+    tell(I18n.get(key));
+  }
+
+  /** A toast (like an advancement) saying diagnostics start with the connection, if they did. */
+  static void diagnosticsToast() {
+    Minecraft mc = Minecraft.getInstance();
+    if (!PairingClient.diagnosticsOnInSettings()) return;
+    net.minecraft.client.gui.components.toasts.SystemToast.addOrUpdate(
+        mc.getToasts(),
+        net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+        Component.translatable("minemories.toast.connected"),
+        Component.translatable("minemories.toast.diagnostics"));
+  }
+
   private static void tell(String message) {
     Minecraft mc = Minecraft.getInstance();
     if (mc.player != null)
@@ -995,12 +1068,21 @@ public final class ClientRuntime {
     return exportBox(min, max, diagnostics, true);
   }
 
+  /** The memory the player asked for with the size they configured. */
+  static int exportManual() {
+    return export(PairingClient.manualSize());
+  }
+
   static int export(int radius) {
+    return export(new ClientSettings.ManualSize(radius, 0, 0));
+  }
+
+  private static int export(ClientSettings.ManualSize size) {
     if (!manualCaptureAllowed()) return 0;
     captureFailure = "Capture failed. Check the world and the area.";
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
-      int result = export(radius, diagnostics);
+      int result = export(size, diagnostics);
       if (result == 1) diagnostics.captured(latestCapturePath());
       else diagnostics.success();
       return result;
@@ -1010,7 +1092,8 @@ public final class ClientRuntime {
     }
   }
 
-  private static int export(int radius, DiagnosticsClient.Operation diagnostics) {
+  private static int export(
+      ClientSettings.ManualSize size, DiagnosticsClient.Operation diagnostics) {
     Minecraft mc = Minecraft.getInstance();
     var level = mc.level;
     var player = mc.player;
@@ -1021,23 +1104,25 @@ public final class ClientRuntime {
             center.getX(),
             center.getZ(),
             level.getMinBuildHeight(),
-            level.getMaxBuildHeight(),
-            radius);
+            size.up() > 0
+                ? Math.min(level.getMaxBuildHeight(), center.getY() + size.up() + 1)
+                : level.getMaxBuildHeight(),
+            size.radius());
     trackExploration(mc, System.currentTimeMillis());
     int bottom = bounds.minY();
-    if (!PairingClient.isFullHeightCapture()) {
-      int surfaceFloor = Math.min(center.getY(), bounds.maxY());
-      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
-        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
-          if (!chunkLoaded(mc, x, z)) continue;
-          int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-          // Empty/void columns must not force an otherwise shallow island down to dimension bottom.
-          if (surface > bottom) surfaceFloor = Math.min(surfaceFloor, surface);
-        }
-      }
+    if (size.down() > 0) {
+      bottom = Math.max(bottom, center.getY() - size.down());
+    } else if (!PairingClient.isFullHeightCapture()) {
+      // Automatic depth: a few blocks below the lowest point the player reached in this area (or
+      // below their feet when the area is new), never down to the lowest terrain around them.
       bottom =
           EXPLORATION.depth.captureBottom(
-              bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bottom);
+              bounds.minX(),
+              bounds.maxX(),
+              bounds.minZ(),
+              bounds.maxZ(),
+              Math.min(center.getY(), bounds.maxY()),
+              bottom);
     }
     saveExploration();
     bounds =
@@ -1148,22 +1233,17 @@ public final class ClientRuntime {
       rememberChunks(
           new int[] {center.getX(), center.getY(), center.getZ()},
           scene.chunkStats().snapshot(center.getX(), center.getY(), center.getZ()));
-      player.displayClientMessage(
-          Component.literal(
-              "Minemories: "
-                  + blockCount
-                  + " blocks / "
-                  + entityCount
-                  + " entities / "
-                  + scene.materialCount()
-                  + " textured materials exported to "
-                  + saved),
-          false);
+      LOGGER.info(
+          "Memory saved: {} blocks, {} entities, {} materials, {}",
+          blockCount,
+          entityCount,
+          scene.materialCount(),
+          saved);
+      say("minemories.chat.memory_saved");
     } catch (Exception e) {
       captureFailure = "Capture failed: " + e.getMessage();
       diagnostics.failed(e);
-      player.displayClientMessage(
-          Component.literal("Minemories: export failed: " + e.getMessage()), false);
+      say("minemories.chat.memory_failed");
       LOGGER.error("Capture export failed", e);
       return 0;
     }

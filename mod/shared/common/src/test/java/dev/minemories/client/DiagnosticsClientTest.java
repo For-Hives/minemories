@@ -180,7 +180,7 @@ class DiagnosticsClientTest {
   }
 
   @Test
-  void anAbsentConsentKeyMeansOnOnceButOnlyAfterPairing() throws Exception {
+  void anAbsentConsentKeyMeansOffUntilTheAccountIsLinked() throws Exception {
     DiagnosticsClient client = start();
     Properties unpaired = new Properties();
     unpaired.setProperty("apiUrl", api);
@@ -195,6 +195,17 @@ class DiagnosticsClientTest {
     implicit.remove("diagnosticsConsent");
     implicit.remove("diagnosticsIdentity");
     settings.set(implicit);
+    var silent = client.begin(DiagnosticReport.Phase.CAPTURE, null);
+    silent.failed(new PrivateError());
+    Thread.sleep(150);
+    assertEquals(0, authorizations.get());
+    assertEquals(0, reports.get());
+
+    Properties linked = paired(true, "private-test-token");
+    linked.remove("diagnosticsConsent");
+    linked.remove("diagnosticsIdentity");
+    ClientSettings.enableDiagnosticsOnLink(linked, null);
+    settings.set(linked);
     await(() -> client.status().startsWith("Enabled"));
     var operation = client.begin(DiagnosticReport.Phase.CAPTURE, null);
     operation.step(DiagnosticReport.Step.CAPTURE_STARTED);
