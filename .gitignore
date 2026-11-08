@@ -29,3 +29,7 @@ apps/web/public/hero/captures-opt/
 
 # Python venv for design/logo/model
 design/logo/.venv/
+
+# IDE (Eclipse/Buildship) build output and launch configs
+bin/
+*.launch
