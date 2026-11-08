@@ -1,13 +1,18 @@
 import { expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import { roadmapLatestRelease } from '@minemories/api-contract'
 import {
 	buildNotes,
 	compareModTags,
+	fetchCuratedNotes,
 	fetchLatestModRelease,
 	fetchModTags,
 	type GithubCommit,
+	parseCuratedNotes,
 	parseModTag,
 	parseNote,
+	type ReleaseNotes,
+	releaseNotesUrl,
 } from './mod-release'
 
 const API = 'https://api.github.com/repos/For-Hives/minemories'
@@ -194,6 +199,7 @@ test('fetches the latest release with its date, notes since the previous tag and
 		prerelease: false,
 		notes: [{ type: 'fix', text: 'AFK timer', pr: 12 }],
 		more: 0,
+		source: 'commits',
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
 		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
 		compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.1-beta.1...mod-v0.36.1',
@@ -218,4 +224,76 @@ test('returns null without any mod tag and rejects when GitHub fails or omits th
 	const routes = releaseRoutes(tags)
 	delete (routes as Record<string, unknown>)[`${API}/commits?sha=${LATEST}&path=mod&per_page=100`]
 	await expect(fetchLatestModRelease(github(routes).fetcher)).rejects.toThrow('status 404')
+})
+
+/** Shared with scripts/discord/release-info.test.mjs: both parsers must give exactly these results. */
+const FIXTURES = JSON.parse(
+	readFileSync(new URL('../../../scripts/discord/fixtures/curated-notes.json', import.meta.url), 'utf8')
+) as { name: string; markdown: string; expected: ReleaseNotes | null }[]
+
+test('parses curated notes exactly like the Discord script (shared fixture)', () => {
+	expect(FIXTURES.length).toBeGreaterThanOrEqual(4)
+	for (const fixture of FIXTURES)
+		expect({ [fixture.name]: parseCuratedNotes(fixture.markdown) }).toEqual({
+			[fixture.name]: fixture.expected,
+		})
+})
+
+test('reads curated notes from the default branch: found, missing, empty or failing', async () => {
+	const url = releaseNotesUrl('1.0.0')
+	expect(url).toBe('https://raw.githubusercontent.com/For-Hives/minemories/main/mod/release-notes/1.0.0.md')
+	let errors = 0
+	const onError = () => {
+		errors++
+	}
+	const text =
+		(body: string, status = 200) =>
+		() =>
+			new Response(body, { status })
+	expect(await fetchCuratedNotes(github({ [url]: text('- Fixed: thing (#4)\n') }).fetcher, '1.0.0')).toEqual({
+		notes: [{ type: 'fix', text: 'thing', pr: 4 }],
+		more: 0,
+	})
+	expect(await fetchCuratedNotes(github({}).fetcher, '1.0.0', onError)).toBeNull()
+	expect(await fetchCuratedNotes(github({ [url]: text('# soon\n') }).fetcher, '1.0.0', onError)).toBeNull()
+	expect(errors).toBe(0)
+	expect(await fetchCuratedNotes(github({ [url]: text('', 503) }).fetcher, '1.0.0', onError)).toBeNull()
+	expect(await fetchCuratedNotes(() => Promise.reject(new Error('network down')), '1.0.0', onError)).toBeNull()
+	expect(errors).toBe(2)
+	expect(await fetchCuratedNotes(() => Promise.reject(new Error('network down')), '1.0.0')).toBeNull()
+})
+
+test('prefers the curated notes of the latest release and skips the commit history', async () => {
+	const tags = [
+		{ name: 'mod-v0.36.1-beta.1', commit: { sha: PREVIOUS } },
+		{ name: 'mod-v0.36.1', commit: { sha: LATEST } },
+	]
+	const routes = {
+		...releaseRoutes(tags),
+		[releaseNotesUrl('0.36.1')]: () => new Response('- Changed: English note (#207)\n- New: second\n'),
+	}
+	const { urls, fetcher } = github(routes)
+	const release = await fetchLatestModRelease(fetcher)
+	expect(release?.source).toBe('curated')
+	expect(release?.notes).toEqual([
+		{ type: 'other', text: 'English note', pr: 207 },
+		{ type: 'feature', text: 'second', pr: null },
+	])
+	expect(urls.some(url => url.includes('path=mod') || url.endsWith(`/commits/${PREVIOUS}`))).toBe(false)
+})
+
+test('older bodies without a notes source still parse, as commit notes', () => {
+	const body = {
+		version: '0.36.1',
+		tag: 'mod-v0.36.1',
+		date: iso(NOW),
+		prerelease: false,
+		notes: [],
+		more: 0,
+		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
+		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1',
+	}
+	expect(roadmapLatestRelease.parse(body).source).toBe('commits')
+	expect(() => roadmapLatestRelease.parse({ ...body, source: 'nope' })).toThrow()
 })

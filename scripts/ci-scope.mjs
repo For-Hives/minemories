@@ -29,10 +29,18 @@ const rules = {
 		/^packages\/api-contract\//,
 		/^scripts\/(check-api-coverage|garage-integration)/,
 		/^docker-compose\.yml$/,
+		// The API parses curated release notes against the fixture shared with the Discord script.
+		/^scripts\/discord\/fixtures\//,
 	],
-	mod: [/^mod\//, /^packages\/mod-storage\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
-	// The Discord sync scripts reuse the redaction of `scripts/mod/notify.mjs`.
-	discord: [/^scripts\/discord\//, /^scripts\/mod\/notify\.mjs$/, /^\.github\/workflows\/discord\.yml$/],
+	// Curated release notes are not built by Gradle: the Discord tests check them instead.
+	mod: [/^mod\/(?!release-notes\/)/, /^packages\/mod-storage\//, /^mod\/targets\.json$/, /^scripts\/(gradle|mod\/)/],
+	// The Discord sync scripts reuse the redaction of `scripts/mod/notify.mjs` and parse the curated release notes.
+	discord: [
+		/^scripts\/discord\//,
+		/^scripts\/mod\/notify\.mjs$/,
+		/^\.github\/workflows\/discord\.yml$/,
+		/^mod\/release-notes\//,
+	],
 }
 const dependencies = [
 	/^package\.json$/,

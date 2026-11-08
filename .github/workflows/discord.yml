@@ -1,8 +1,9 @@
 name: Discord sync
 
-# Posts to the project's Discord: #changelog after each push to main and each mod release tag, and keeps one #roadmap
-# message in sync with the latest mod version and the GitHub issues labelled `roadmap`. This is the owner's explicit
-# exception (7 November 2026) to "CI publishes nothing": see docs/features/discord-sync.md. Scripts: scripts/discord/.
+# Posts to the project's Discord: #changelog after each push to main and a release card for each mod release tag
+# (curated English notes from mod/release-notes/), and keeps one #roadmap message in sync with the open GitHub issues
+# labelled `roadmap`. This is the owner's explicit exception (7 November 2026) to "CI publishes nothing": see
+# docs/features/discord-sync.md. Scripts: scripts/discord/.
 
 on:
   push:
@@ -41,6 +42,8 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK_URL }}
           # The webhook id is not a secret; it completes a secret that only holds the token.
           DISCORD_WEBHOOK_ID: '1568717896820199455'
+          # A release card reads the tags, dates and commits from the GitHub API; the token only raises its rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
           BEFORE: ${{ github.event.before }}
@@ -62,14 +65,11 @@ jobs:
           fi
 
   roadmap:
-    # Issue events only matter when the issue is (or just stopped being) on the roadmap. A pushed mod-v* tag refreshes
-    # the "Latest mod version" block. Manual runs only from the default branch, so unreviewed code never edits the
-    # message (schedule and issue events always use it; a tag push runs the workflow of the tagged commit, which only a
-    # maintainer can push).
+    # Issue events only matter when the issue is (or just stopped being) on the roadmap. Mod releases go to #changelog,
+    # so pushes never update the roadmap. Manual runs only from the default branch, so unreviewed code never edits the
+    # message (schedule and issue events always use it).
     if: >-
       github.event_name == 'schedule' ||
-      (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'mod-v') &&
-        !github.event.deleted) ||
       (github.event_name == 'workflow_dispatch' &&
         github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
       (github.event_name == 'issues' &&

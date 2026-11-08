@@ -271,6 +271,8 @@ test('GET /api/roadmap is served by the app with CORS for the web origin', async
 
 const TAG_SHA = 'a'.repeat(40)
 function releaseFixtures(url: string): Promise<Response> {
+	if (url.startsWith('https://raw.githubusercontent.com/'))
+		return Promise.resolve(new Response('Not Found', { status: 404 }))
 	if (url.includes('/tags?')) return Promise.resolve(json([{ name: 'mod-v0.36.1-beta.1', commit: { sha: TAG_SHA } }]))
 	if (url.includes(`/commits/${TAG_SHA}`))
 		return Promise.resolve(json({ sha: TAG_SHA, commit: { message: 'x', committer: { date: iso(NOW - DAY) } } }))
@@ -295,6 +297,7 @@ test('adds the latest mod release, keeps the last good one when GitHub fails, an
 		prerelease: true,
 		notes: [{ type: 'feature', text: 'faster export', pr: 210 }],
 		more: 0,
+		source: 'commits',
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
 		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
 		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1-beta.1',
@@ -306,6 +309,22 @@ test('adds the latest mod release, keeps the last good one when GitHub fails, an
 	expect(second?.updatedAt).toBe(iso(now))
 	expect(second?.latestRelease).toEqual(first.latestRelease)
 	expect(errors.mock.calls.map(call => String(call[0]))).toEqual([expect.stringContaining('mod_release_unavailable')])
+	errors.mockRestore()
+})
+
+test('logs unreachable curated notes by event name and falls back to commit notes', async () => {
+	const errors = silenced()
+	const { fetcher } = recorder(
+		() => Promise.resolve(json([issue(1)])),
+		url =>
+			url.startsWith('https://raw.githubusercontent.com/')
+				? Promise.resolve(new Response('busy', { status: 503 }))
+				: releaseFixtures(url)
+	)
+	const body = await createRoadmap({ fetch: fetcher, now: () => NOW }).current()
+	expect(body?.latestRelease?.source).toBe('commits')
+	expect(body?.latestRelease?.notes).toEqual([{ type: 'feature', text: 'faster export', pr: 210 }])
+	expect(errors.mock.calls.map(call => String(call[0]))).toEqual([expect.stringContaining('release_notes_unavailable')])
 	errors.mockRestore()
 })
 

@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 import {
 	buildNotes,
 	compareModTags,
+	fetchCuratedNotes,
 	fetchLatestRelease,
 	fetchModTags,
+	fetchRelease,
+	MOD_TAG,
 	NOTES_CAP,
+	parseCuratedNotes,
 	parseModTag,
+	releaseNotesUrl,
 } from './release-info.mjs'
 
 const API = 'https://api.github.com/repos/For-Hives/minemories'
@@ -15,7 +23,9 @@ const response = (status, body, headers = {}) => ({
 	status,
 	headers: { get: name => headers[name.toLowerCase()] ?? null },
 	json: async () => body,
+	text: async () => String(body),
 })
+const FIXTURES = JSON.parse(await readFile(new URL('./fixtures/curated-notes.json', import.meta.url), 'utf8'))
 const tag = (name, sha = `sha-${name}`) => ({ name, commit: { sha } })
 const commit = (sha, message, date) => ({ sha, commit: { message, committer: { date } } })
 
@@ -154,11 +164,14 @@ test('fetchLatestRelease builds the release from the two newest tags', async () 
 			{ type: 'fix', text: 'open the live gallery', pr: 206 },
 		],
 		more: 0,
+		source: 'commits',
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
 		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
 		compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0-beta.1...mod-v0.36.1-beta.1',
 	})
-	assert.equal(calls.length, 4)
+	assert.equal(calls.length, 5)
+	assert.equal(calls[2].url, releaseNotesUrl('0.36.1-beta.1'))
+	assert.equal(calls[2].init.headers.authorization, undefined)
 })
 
 test('fetchLatestRelease without a previous tag, without any tag, and on GitHub failures', async () => {
@@ -197,4 +210,134 @@ test('fetchLatestRelease without a previous tag, without any tag, and on GitHub 
 		[`${API}/tags?per_page=100`]: response(200, [tag('mod-v1.0.0', 'one')]),
 	})
 	await assert.rejects(fetchLatestRelease({ fetchImpl: missingCommit.fetchImpl }), /HTTP 404/)
+})
+
+test('parseCuratedNotes matches the shared fixture (the API parser is checked against the same file)', () => {
+	assert.ok(FIXTURES.length >= 4)
+	for (const fixture of FIXTURES) assert.deepEqual(parseCuratedNotes(fixture.markdown), fixture.expected, fixture.name)
+	assert.equal(parseCuratedNotes(undefined), null)
+})
+
+test('every curated notes file in the repository holds at least one note', async () => {
+	const dir = new URL('../../mod/release-notes/', import.meta.url)
+	const files = (await readdir(dir)).filter(name => MOD_TAG.test(`mod-v${name.replace(/\.md$/, '')}`))
+	assert.ok(files.includes('0.36.1-beta.1.md'))
+	const texts = await Promise.all(files.map(name => readFile(new URL(name, dir), 'utf8')))
+	for (const [index, text] of texts.entries()) {
+		const parsed = parseCuratedNotes(text)
+		assert.ok(parsed && parsed.notes.length > 0, `${files[index]} holds no "- New:", "- Fixed:" or "- Changed:" line`)
+	}
+})
+
+test('releaseNotesUrl reads the default branch', () => {
+	assert.equal(
+		releaseNotesUrl('0.36.1-beta.1'),
+		'https://raw.githubusercontent.com/For-Hives/minemories/main/mod/release-notes/0.36.1-beta.1.md'
+	)
+})
+
+test('fetchCuratedNotes reads GitHub raw content: found, missing (silent) and failing (warned, redacted)', async () => {
+	const url = releaseNotesUrl('1.0.0')
+	const found = fakeGitHub({ [url]: response(200, '- New: thing (#3)\n') })
+	assert.deepEqual(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: found.fetchImpl }), {
+		notes: [{ type: 'feature', text: 'thing', pr: 3 }],
+		more: 0,
+	})
+	const warnings = []
+	const warn = text => warnings.push(text)
+	const missing = fakeGitHub({})
+	assert.equal(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: missing.fetchImpl, warn }), null)
+	assert.deepEqual(warnings, [])
+	const empty = fakeGitHub({ [url]: response(200, '# nothing yet\n') })
+	assert.equal(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: empty.fetchImpl, warn }), null)
+	assert.deepEqual(warnings, [])
+	const failing = fakeGitHub({ [url]: response(503, '') })
+	assert.equal(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: failing.fetchImpl, warn }), null)
+	assert.match(warnings[0], /release notes for 1\.0\.0 unavailable, using commits \(release notes HTTP 503\)/)
+	const env = { GITHUB_TOKEN: 'ghs_secretvalue' }
+	const rejecting = () => Promise.reject(new Error('network down ghs_secretvalue'))
+	assert.equal(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: rejecting, warn, env }), null)
+	assert.ok(!warnings[1].includes('ghs_secretvalue'))
+	assert.equal(await fetchCuratedNotes({ version: '1.0.0', fetchImpl: rejecting }), null)
+})
+
+test('fetchCuratedNotes reads a local folder instead of GitHub when notesDir is set', async () => {
+	const dir = await mkdtemp(join(tmpdir(), 'minemories-notes-'))
+	try {
+		await writeFile(join(dir, '1.0.0.md'), '- Fixed: local file\n')
+		await mkdir(join(dir, '2.0.0.md'))
+		const fetchImpl = () => assert.fail('GitHub must not be called')
+		const warnings = []
+		const warn = text => warnings.push(text)
+		assert.deepEqual(await fetchCuratedNotes({ version: '1.0.0', notesDir: dir, fetchImpl, warn }), {
+			notes: [{ type: 'fix', text: 'local file', pr: null }],
+			more: 0,
+		})
+		assert.equal(await fetchCuratedNotes({ version: '3.0.0', notesDir: dir, fetchImpl, warn }), null)
+		assert.deepEqual(warnings, [])
+		assert.equal(await fetchCuratedNotes({ version: '2.0.0', notesDir: dir, fetchImpl, warn }), null)
+		assert.match(warnings[0], /release notes for 2\.0\.0 unavailable/)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('fetchRelease prefers curated notes and skips the commit history', async () => {
+	const { calls, fetchImpl } = fakeGitHub({
+		[`${API}/tags?per_page=100`]: response(200, [tag('mod-v0.36.0-beta.1', 'old'), tag('mod-v0.36.1-beta.1', 'new')]),
+		[`${API}/commits/new`]: response(200, commit('new', 'x', '2026-11-06T08:00:00Z')),
+		[releaseNotesUrl('0.36.1-beta.1')]: response(200, '- Fixed: English note (#206)\n'),
+	})
+	const release = await fetchLatestRelease({ fetchImpl })
+	assert.equal(release.source, 'curated')
+	assert.deepEqual(release.notes, [{ type: 'fix', text: 'English note', pr: 206 }])
+	assert.equal(release.more, 0)
+	assert.ok(!calls.some(call => call.url.includes('path=mod') || call.url.endsWith('/commits/old')))
+})
+
+test('fetchRelease falls back to commit notes when the notes request times out', async () => {
+	const github = fakeGitHub({
+		[`${API}/tags?per_page=100`]: response(200, [tag('mod-v1.0.0', 'one')]),
+		[`${API}/commits/one`]: response(200, commit('one', 'x', '2026-11-06T00:00:00Z')),
+		[`${API}/commits?sha=one&path=mod&per_page=100`]: response(200, [
+			commit('c1', 'feat(mod): thing', '2026-11-05T00:00:00Z'),
+		]),
+	})
+	const signals = []
+	const fetchImpl = (url, init) => {
+		if (url !== releaseNotesUrl('1.0.0')) return github.fetchImpl(url, init)
+		signals.push(init.signal)
+		return Promise.reject(new DOMException('The operation was aborted due to timeout', 'TimeoutError'))
+	}
+	const warnings = []
+	const release = await fetchRelease({ fetchImpl, warn: text => warnings.push(text) })
+	assert.ok(signals[0] instanceof AbortSignal)
+	assert.equal(release.source, 'commits')
+	assert.deepEqual(release.notes, [{ type: 'feature', text: 'thing', pr: null }])
+	assert.match(warnings[0], /release notes for 1\.0\.0 unavailable, using commits \(The operation was aborted/)
+})
+
+test('fetchRelease builds a given tag against the next older one, or null when GitHub does not list it', async () => {
+	const { fetchImpl } = fakeGitHub({
+		[`${API}/tags?per_page=100`]: response(200, [
+			tag('mod-v0.37.0-beta.1', 'newest'),
+			tag('mod-v0.36.1-beta.1', 'new'),
+			tag('mod-v0.36.0-beta.1', 'old'),
+		]),
+		[`${API}/commits/new`]: response(200, commit('new', 'x', '2026-11-06T08:00:00Z')),
+		[`${API}/commits/old`]: response(200, commit('old', 'x', '2026-11-01T00:00:00Z')),
+		[`${API}/commits?sha=new&path=mod&per_page=100`]: response(200, [
+			commit('n1', 'fix(mod): crash (#5)', '2026-11-05T00:00:00Z'),
+		]),
+	})
+	const release = await fetchRelease({ tag: 'mod-v0.36.1-beta.1', fetchImpl })
+	assert.equal(release.version, '0.36.1-beta.1')
+	assert.equal(release.source, 'commits')
+	assert.deepEqual(release.notes, [{ type: 'fix', text: 'crash', pr: 5 }])
+	assert.equal(
+		release.compareUrl,
+		'https://github.com/For-Hives/minemories/compare/mod-v0.36.0-beta.1...mod-v0.36.1-beta.1'
+	)
+	assert.equal(await fetchRelease({ tag: 'mod-v9.9.9', fetchImpl }), null)
+	assert.equal(await fetchRelease({ tag: 'mod-v1.0.0-rc.1', fetchImpl }), null)
 })

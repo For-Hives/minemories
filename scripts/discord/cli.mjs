@@ -1,27 +1,21 @@
 // Discord sync entry point, run by .github/workflows/discord.yml:
 //   node scripts/discord/cli.mjs changelog push --before <sha> --after <sha> [--dry-run]
-//   node scripts/discord/cli.mjs changelog release --tag mod-vX.Y.Z-beta.N [--dry-run]
+//   node scripts/discord/cli.mjs changelog release --tag mod-vX.Y.Z-beta.N [--notes-dir <dir>] [--dry-run]
 //   node scripts/discord/cli.mjs roadmap [--dry-run]
 // The webhook comes from DISCORD_WEBHOOK_URL and is never printed. Changelog posts are best effort (exit 0 even when
-// Discord fails); the roadmap exits 1 on failure so the workflow shows it.
+// Discord or GitHub fails); the roadmap exits 1 on failure so the workflow shows it. A release reads its curated notes
+// from `--notes-dir` (or DISCORD_RELEASE_NOTES_DIR) when set, otherwise from the default branch on GitHub.
 import { realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import {
-	buildPushPayload,
-	buildReleasePayload,
-	isSha,
-	isZeroSha,
-	parseTag,
-	pushCommits,
-	releaseCommits,
-} from './changelog.mjs'
+import { buildPushPayload, buildReleasePayload, isSha, isZeroSha, parseTag, pushCommits } from './changelog.mjs'
 import { redactSecrets, resolveWebhook, sendWebhook } from './discord.mjs'
+import { fetchRelease } from './release-info.mjs'
 import { syncRoadmap } from './roadmap.mjs'
 
 export const USAGE = [
 	'Usage:',
 	'  node scripts/discord/cli.mjs changelog push --before <sha> --after <sha> [--dry-run]',
-	'  node scripts/discord/cli.mjs changelog release --tag mod-vX.Y.Z-beta.N [--dry-run]',
+	'  node scripts/discord/cli.mjs changelog release --tag mod-vX.Y.Z-beta.N [--notes-dir <dir>] [--dry-run]',
 	'  node scripts/discord/cli.mjs roadmap [--dry-run]',
 ].join('\n')
 
@@ -52,16 +46,26 @@ export function validArguments(mode, flags) {
 	return false
 }
 
-function changelogPayload(mode, flags, deps) {
-	if (mode === 'push') {
-		if (isZeroSha(flags.before)) return { skip: 'new branch (no previous commit): nothing to post.' }
-		const commits = pushCommits({ before: flags.before, after: flags.after, exec: deps.exec, cwd: deps.cwd })
-		const payload = buildPushPayload({ before: flags.before, after: flags.after, commits })
-		return payload ? { payload } : { skip: 'only release or skipped commits: nothing to post.' }
-	}
-	const parsed = parseTag(flags.tag)
-	const { previousTag, commits } = releaseCommits({ tag: parsed.tag, exec: deps.exec, cwd: deps.cwd })
-	return { payload: buildReleasePayload({ ...parsed, previousTag, commits }) }
+/** The release card of `--tag`, read from GitHub like the site's latest release (curated notes first). */
+async function releasePayload(flags, deps, env, warn) {
+	const release = await fetchRelease({
+		tag: parseTag(flags.tag).tag,
+		fetchImpl: deps.fetch ?? globalThis.fetch,
+		token: env.GITHUB_TOKEN,
+		notesDir: flags['notes-dir'] || env.DISCORD_RELEASE_NOTES_DIR || undefined,
+		warn: text => warn(`changelog: ${text}`),
+		env,
+	})
+	if (!release) return { skip: `${flags.tag} is not a mod release tag listed on GitHub: nothing to post.` }
+	return { payload: buildReleasePayload(release) }
+}
+
+function changelogPayload(mode, flags, deps, env, warn) {
+	if (mode === 'release') return releasePayload(flags, deps, env, warn)
+	if (isZeroSha(flags.before)) return { skip: 'new branch (no previous commit): nothing to post.' }
+	const commits = pushCommits({ before: flags.before, after: flags.after, exec: deps.exec, cwd: deps.cwd })
+	const payload = buildPushPayload({ before: flags.before, after: flags.after, commits })
+	return payload ? { payload } : { skip: 'only release or skipped commits: nothing to post.' }
 }
 
 /** Posts a changelog embed. Best effort: always resolves to 0 once the arguments are valid. */
@@ -74,7 +78,7 @@ export async function postChangelog(mode, flags, options = {}) {
 		return 2
 	}
 	try {
-		const { payload, skip } = changelogPayload(mode, flags, options)
+		const { payload, skip } = await changelogPayload(mode, flags, options, env, warn)
 		if (skip) {
 			warn(`changelog: ${skip}`)
 			return 0
