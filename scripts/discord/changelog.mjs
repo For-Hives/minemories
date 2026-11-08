@@ -1,7 +1,7 @@
 // #changelog posts: one embed per push to `main` (commit subjects grouped by Conventional Commit type) and one per mod
-// release tag (`mod-vX.Y.Z-beta.N`, commits touching `mod/` since the previous mod tag).
+// release tag (`mod-vX.Y.Z-beta.N`): the release card built from `release-info.mjs` (curated English notes first).
 import { spawnSync } from 'node:child_process'
-import { COLORS, clip, escapeClipped, escapeMarkdown, fitLines, LIMITS, REPOSITORY_URL, SITE_URL } from './discord.mjs'
+import { COLORS, clip, escapeClipped, fitLines, LIMITS, REPOSITORY_URL } from './discord.mjs'
 
 export const GROUPS = [
 	{ key: 'feat', title: 'Features' },
@@ -20,7 +20,8 @@ const SHA = /^[0-9a-f]{7,40}$/i
 const ZERO_SHA = /^0+$/
 const TAG = /^mod-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)$/
 const SUBJECT_MAX = 180
-const RELEASE_LIMIT = 50
+const NOTE_MAX = 280
+const NOTE_MARKERS = { feature: 'New', fix: 'Fixed', other: 'Changed' }
 const LEADING_NEWLINES = /^\n+/
 const FIELD = '\u001f'
 const RECORD = '\u001e'
@@ -48,7 +49,7 @@ export function parseLog(output) {
 		})
 }
 
-/** Drops release commits, `[skip ci]` commits and merge commits. */
+/** Drops release commits, commits carrying the skip-ci marker and merge commits. */
 export function keepCommit(commit) {
 	if (!commit.subject) return false
 	if (RELEASE_COMMIT.test(commit.subject) || SKIP_CI.test(commit.subject)) return false
@@ -113,21 +114,50 @@ export function parseTag(tag) {
 	return match ? { tag: match[0], version: match[1] } : null
 }
 
-/** The embed posted for a mod release tag. */
-export function buildReleasePayload({ tag, version, previousTag, commits }) {
-	const groups = groupCommits(commits)
-	const links = `[Download](${SITE_URL}/downloads) · [Changelog](${SITE_URL}/changelog)`
-	const since = previousTag ? ` since ${escapeMarkdown(previousTag)}` : ''
-	const notes = groups.length > 0 ? renderGroups(groups, LIMITS.description - 200) : `No mod changes listed${since}.`
-	const embed = {
-		title: clip(`Minemories mod ${version} released`, LIMITS.title),
-		url: `${SITE_URL}/downloads`,
-		description: clip(`${notes}\n\n${links}`, LIMITS.description),
+/** One Markdown bullet per release note: a marker, the escaped text, then a link to its pull request. */
+export function formatNote(note) {
+	const marker = NOTE_MARKERS[note.type] ?? NOTE_MARKERS.other
+	const pr = Number.isInteger(note.pr) && note.pr > 0 ? ` ([#${note.pr}](${REPOSITORY_URL}/pull/${note.pr}))` : ''
+	return `- **${marker}:** ${escapeClipped(note.text, NOTE_MAX)}${pr}`
+}
+
+function unixSeconds(iso) {
+	const parsed = Date.parse(iso ?? '')
+	return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : null
+}
+
+/**
+ * The release card (a `fetchRelease` result): title, release date as a Discord timestamp, beta marker, notes with
+ * pull request links, "+N more", then Download, All changes and Compare links.
+ */
+export function releaseEmbed(release) {
+	const lines = (release.notes ?? []).map(formatNote)
+	const more = Number(release.more) || 0
+	const seconds = unixSeconds(release.date)
+	const header = [seconds === null ? null : `Released <t:${seconds}:D>`, release.prerelease ? 'beta' : null]
+		.filter(Boolean)
+		.join(' · ')
+	const top = header ? [header, ''] : []
+	const links = `[Download](${release.downloadUrl}) · [All changes](${release.changelogUrl}) · [Compare](${release.compareUrl})`
+	// Notes that do not fit Discord's description limit are counted in "+N more" with the ones already left out.
+	const body =
+		lines.length === 0 && more === 0
+			? [...top, 'No mod changes listed.'].join('\n')
+			: fitLines([...top, ...lines], LIMITS.description - links.length - 2, dropped =>
+					dropped + more > 0 ? `+${dropped + more} more` : ''
+				)
+	return {
+		title: clip(`Minemories mod ${release.version}`, LIMITS.title),
+		url: release.downloadUrl,
+		description: `${body}\n\n${links}`,
 		color: COLORS.release,
-		footer: { text: clip(previousTag ? `${tag} · since ${previousTag}` : tag, 256) },
-		timestamp: new Date().toISOString(),
+		footer: { text: clip(release.tag, 256) },
 	}
-	return { username: 'Minemories', allowed_mentions: { parse: [] }, embeds: [embed] }
+}
+
+/** The #changelog message for a mod release. */
+export function buildReleasePayload(release) {
+	return { username: 'Minemories', allowed_mentions: { parse: [] }, embeds: [releaseEmbed(release)] }
 }
 
 const LOG_FORMAT = '--format=%H%x1f%P%x1f%s%x1e'
@@ -136,17 +166,4 @@ const LOG_FORMAT = '--format=%H%x1f%P%x1f%s%x1e'
 export function pushCommits({ before, after, exec = git, cwd }) {
 	if (!(isSha(before) && isSha(after))) throw new Error('push mode needs two commit SHAs (--before and --after).')
 	return parseLog(exec(['log', '--first-parent', LOG_FORMAT, `${before}..${after}`], { cwd }))
-}
-
-/** Commits touching `mod/` since the previous mod tag (the tag itself excluded from the search). */
-export function releaseCommits({ tag, exec = git, cwd }) {
-	let previousTag = null
-	try {
-		previousTag = exec(['describe', '--tags', '--abbrev=0', '--match', 'mod-v*', `${tag}^`], { cwd }).trim() || null
-	} catch {
-		previousTag = null
-	}
-	const range = previousTag ? [`${previousTag}..${tag}`] : [`--max-count=${RELEASE_LIMIT}`, tag]
-	const commits = parseLog(exec(['log', '--no-merges', LOG_FORMAT, ...range, '--', 'mod'], { cwd }))
-	return { previousTag, commits }
 }

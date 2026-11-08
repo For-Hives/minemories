@@ -5,14 +5,27 @@ import {
 	type RoadmapReleaseNoteType,
 } from '@minemories/api-contract'
 import * as z from 'zod'
-import { GITHUB_API, GITHUB_URL, type GithubFetch, githubGet } from './github'
+import { GITHUB_API, GITHUB_REPOSITORY, GITHUB_URL, type GithubFetch, githubGet } from './github'
 
-// Mirrors scripts/discord/release-info.mjs so the Discord #roadmap message and /roadmap show the same release.
+// Mirrors scripts/discord/release-info.mjs so the Discord #changelog release card and /roadmap show the same release.
 export const MOD_TAG = /^mod-v(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/
 export const SITE_URL = 'https://minemories.xenos.lightin.io'
 const TAG_PAGES = 3
 const RELEASE_COMMIT = /^chore\(release\)/i
 const SKIP_CI = /\[skip ci\]/i
+/** Curated English notes live on the default branch, so a file added right after tagging still counts. */
+export const RELEASE_NOTES_BASE = `https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/mod/release-notes`
+const NOTES_TIMEOUT_MS = 10_000
+const CURATED_MAX_CHARS = 64 * 1024
+const CURATED_LINE = /^\s*-\s+(new|fixed|changed):\s*(.*)$/i
+// Matched on the right-trimmed note so a long run of spaces cannot make the search quadratic.
+const CURATED_PR = /\(#([1-9]\d{0,8})\)$/
+const CURATED_TYPES: Readonly<Record<string, RoadmapReleaseNoteType>> = {
+	new: 'feature',
+	fixed: 'fix',
+	changed: 'other',
+}
+const LINE_BREAK = /\r?\n/
 const PR_REFERENCE = /\s*\(#(\d+)\)/g
 const CONVENTIONAL = /^(\w+)(?:\(([^)]*)\))?!?:\s*(.+)$/
 const NOTE_TYPES: Readonly<Record<string, RoadmapReleaseNoteType>> = { feat: 'feature', fix: 'fix' }
@@ -97,7 +110,7 @@ export interface NotesRange {
 }
 
 /**
- * Turns GitHub commits (newest first) into release notes: drops release, `[skip ci]` and merge commits, keeps the
+ * Turns GitHub commits (newest first) into release notes: drops release, skip-ci marker and merge commits, keeps the
  * first line, groups features, then fixes, then everything else, and caps the list (the rest is counted in `more`).
  */
 export function buildNotes(
@@ -122,9 +135,77 @@ export function buildNotes(
 	}
 }
 
+export interface ReleaseNotes {
+	notes: RoadmapReleaseNote[]
+	more: number
+}
+
+/**
+ * Parses a curated release notes file: one `- New: …`, `- Fixed: …` or `- Changed: …` line per note (marker case
+ * ignored), an optional trailing `(#123)` pull request, every other line ignored, the author's order kept, capped like
+ * commit notes. Null when the file holds no note. Same rules as scripts/discord/release-info.mjs, checked by both test
+ * suites against scripts/discord/fixtures/curated-notes.json.
+ */
+export function parseCuratedNotes(markdown: string): ReleaseNotes | null {
+	const notes: RoadmapReleaseNote[] = []
+	for (const line of markdown.slice(0, CURATED_MAX_CHARS).split(LINE_BREAK)) {
+		const match = CURATED_LINE.exec(line)
+		if (!match) continue
+		const body = (match[2] as string).trimEnd()
+		const pr = CURATED_PR.exec(body)
+		const text = (pr ? body.slice(0, pr.index) : body).trim()
+		const type = CURATED_TYPES[(match[1] as string).toLowerCase()] as RoadmapReleaseNoteType
+		if (text) notes.push({ type, text, pr: pr ? Number(pr[1]) : null })
+	}
+	if (notes.length === 0) return null
+	return {
+		notes: notes.slice(0, ROADMAP_RELEASE_NOTES_LIMIT),
+		more: Math.max(0, notes.length - ROADMAP_RELEASE_NOTES_LIMIT),
+	}
+}
+
+export const releaseNotesUrl = (version: string) => `${RELEASE_NOTES_BASE}/${version}.md`
+
+/**
+ * The curated notes of `version` from the default branch, or null: a missing file (404) is silent, any other failure
+ * calls `onError` (the caller logs an event name, never the error) and also falls back to commit notes.
+ */
+export async function fetchCuratedNotes(
+	fetcher: GithubFetch,
+	version: string,
+	onError: () => void = () => undefined
+): Promise<ReleaseNotes | null> {
+	try {
+		const response = await fetcher(releaseNotesUrl(version), {
+			headers: { 'User-Agent': 'minemories-api' },
+			signal: AbortSignal.timeout(NOTES_TIMEOUT_MS),
+		})
+		if (response.status === 404) return null
+		if (!response.ok) throw new Error(`release notes request failed with status ${response.status}`)
+		return parseCuratedNotes(await response.text())
+	} catch {
+		onError()
+		return null
+	}
+}
+
 async function commitDate(fetcher: GithubFetch, sha: string, token?: string): Promise<number> {
 	const { body } = await githubGet(fetcher, `${GITHUB_API}/commits/${encodeURIComponent(sha)}`, token)
 	return time(githubCommit.parse(body).commit.committer?.date)
+}
+
+async function commitNotes(
+	fetcher: GithubFetch,
+	latest: ModTag,
+	previous: ModTag | undefined,
+	token?: string
+): Promise<ReleaseNotes> {
+	const commitsUrl = `${GITHUB_API}/commits?sha=${encodeURIComponent(latest.sha)}&path=mod&per_page=100`
+	const [since, commits] = await Promise.all([
+		previous ? commitDate(fetcher, previous.sha, token) : 0,
+		githubGet(fetcher, commitsUrl, token).then(({ body }) => githubCommits.parse(body)),
+	])
+	return buildNotes(commits, { since, exclude: previous?.sha ?? null, newest: !previous })
 }
 
 /**
@@ -133,18 +214,18 @@ async function commitDate(fetcher: GithubFetch, sha: string, token?: string): Pr
  */
 export async function fetchLatestModRelease(
 	fetcher: GithubFetch,
-	token?: string
+	token?: string,
+	onNotesError?: () => void
 ): Promise<RoadmapLatestRelease | null> {
 	const [latest, previous] = await fetchModTags(fetcher, token)
 	if (!latest) return null
-	const commitsUrl = `${GITHUB_API}/commits?sha=${encodeURIComponent(latest.sha)}&path=mod&per_page=100`
-	const [date, since, commits] = await Promise.all([
+	const [date, curated] = await Promise.all([
 		commitDate(fetcher, latest.sha, token),
-		previous ? commitDate(fetcher, previous.sha, token) : 0,
-		githubGet(fetcher, commitsUrl, token).then(({ body }) => githubCommits.parse(body)),
+		fetchCuratedNotes(fetcher, latest.version, onNotesError),
 	])
 	if (!date) throw new Error('GitHub returned no date for the latest mod tag')
-	const { notes, more } = buildNotes(commits, { since, exclude: previous?.sha ?? null, newest: !previous })
+	// The commit history is only read when there is no curated file (60 GitHub requests per hour without a token).
+	const { notes, more } = curated ?? (await commitNotes(fetcher, latest, previous, token))
 	return {
 		version: latest.version,
 		tag: latest.name,
@@ -152,6 +233,7 @@ export async function fetchLatestModRelease(
 		prerelease: latest.parts[3] !== null,
 		notes,
 		more,
+		source: curated ? 'curated' : 'commits',
 		downloadUrl: `${SITE_URL}/downloads`,
 		changelogUrl: `${SITE_URL}/changelog`,
 		compareUrl: previous

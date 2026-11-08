@@ -1,8 +1,11 @@
-// Latest mod release, read from the public GitHub API: the newest `mod-v*` tag (semver order, a release above its
-// betas), its commit date, and the commits touching `mod/` since the previous mod tag as short release notes. The
-// shape matches `latestRelease` in GET /api/roadmap so Discord and the site always agree.
+// A mod release, read from the public GitHub API: a `mod-v*` tag (the newest by default, semver order, a release
+// above its betas), its commit date and its release notes. Notes come from the curated English file
+// `mod/release-notes/<version>.md` on the default branch when it exists, otherwise from the commits touching `mod/`
+// since the previous mod tag. The shape matches `latestRelease` in GET /api/roadmap so Discord and the site agree.
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { parseSubject } from './changelog.mjs'
-import { REPOSITORY, REPOSITORY_URL, SITE_URL } from './discord.mjs'
+import { REPOSITORY, REPOSITORY_URL, redactSecrets, SITE_URL } from './discord.mjs'
 
 export const MOD_TAG = /^mod-v(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/
 export const NOTES_CAP = 12
@@ -13,6 +16,15 @@ const RELEASE_COMMIT = /^chore\(release\)/i
 const SKIP_CI = /\[skip ci\]/i
 const NOTE_TYPES = { feat: 'feature', fix: 'fix' }
 const NOTE_ORDER = ['feature', 'fix', 'other']
+/** Raw files of the default branch: curated notes are read from `main` so a file added after tagging still counts. */
+export const RELEASE_NOTES_BASE = `https://raw.githubusercontent.com/${REPOSITORY}/main/mod/release-notes`
+const CURATED_MAX_CHARS = 64 * 1024
+const NOTES_TIMEOUT_MS = 10_000
+const CURATED_LINE = /^\s*-\s+(new|fixed|changed):\s*(.*)$/i
+// Matched on the right-trimmed note so a long run of spaces cannot make the search quadratic.
+const CURATED_PR = /\(#([1-9]\d{0,8})\)$/
+const CURATED_TYPES = { new: 'feature', fixed: 'fix', changed: 'other' }
+const LINE_BREAK = /\r?\n/
 
 /** { name, version, parts: [major, minor, patch, beta|null] } for a mod tag, or null. */
 export function parseModTag(name) {
@@ -46,7 +58,7 @@ const subjectOf = commit =>
 		.split('\n')[0]
 		.trim()
 
-/** Whether a GitHub commit is a release note: in range, not a release, `[skip ci]` or merge commit. */
+/** Whether a GitHub commit is a release note: in range, not a release, skip-ci marker or merge commit. */
 function isNote(commit, subject, { since, exclude }) {
 	if (!subject || commit.sha === exclude) return false
 	if (since > 0 && time(commit.commit?.committer?.date) <= since) return false
@@ -56,7 +68,7 @@ function isNote(commit, subject, { since, exclude }) {
 }
 
 /**
- * Turns GitHub commits (newest first) into release notes: drops release, `[skip ci]` and merge commits, keeps the
+ * Turns GitHub commits (newest first) into release notes: drops release, skip-ci marker and merge commits, keeps the
  * first line, groups features, then fixes, then everything else, and caps the list at NOTES_CAP (the rest is counted
  * in `more`). `since`/`exclude` bound the range to the previous tag; `newest` keeps only the NOTES_CAP newest commits.
  */
@@ -112,34 +124,105 @@ async function commitDate(get, sha) {
 }
 
 /**
- * The latest mod release, or null when there is no mod tag. Throws when GitHub fails: callers decide whether a
- * missing release block is acceptable (the roadmap still posts without it).
+ * Parses a curated release notes file: one `- New: …`, `- Fixed: …` or `- Changed: …` line per note (marker case
+ * ignored), an optional trailing `(#123)` pull request, every other line ignored, the author's order kept. Capped at
+ * NOTES_CAP (the rest counted in `more`). Null when the file holds no note. `apps/api/src/mod-release.ts` implements
+ * the same rules; `fixtures/curated-notes.json` is checked by both test suites.
  */
-export async function fetchLatestRelease({ fetchImpl = globalThis.fetch, token } = {}) {
-	const [latest, previous] = await fetchModTags({ fetchImpl, token })
-	if (!latest) return null
-	const get = githubGet(fetchImpl, token)
-	const date = await commitDate(get, latest.sha)
-	if (!time(date)) throw new Error('GitHub API returned no date for the latest mod tag.')
-	const since = previous ? time(await commitDate(get, previous.sha)) : 0
-	const { body } = await get(`${API_BASE}/commits?sha=${encodeURIComponent(latest.sha)}&path=mod&per_page=100`)
-	if (!Array.isArray(body)) throw new Error('GitHub API returned an unexpected body.')
-	const { notes, more } = buildNotes(body, {
-		since,
-		exclude: previous?.sha ?? null,
-		newest: !previous,
+export function parseCuratedNotes(markdown) {
+	const notes = []
+	for (const line of String(markdown ?? '')
+		.slice(0, CURATED_MAX_CHARS)
+		.split(LINE_BREAK)) {
+		const match = CURATED_LINE.exec(line)
+		if (!match) continue
+		const body = match[2].trimEnd()
+		const pr = CURATED_PR.exec(body)
+		const text = (pr ? body.slice(0, pr.index) : body).trim()
+		if (text) notes.push({ type: CURATED_TYPES[match[1].toLowerCase()], text, pr: pr ? Number(pr[1]) : null })
+	}
+	if (notes.length === 0) return null
+	return { notes: notes.slice(0, NOTES_CAP), more: Math.max(0, notes.length - NOTES_CAP) }
+}
+
+export const releaseNotesUrl = version => `${RELEASE_NOTES_BASE}/${version}.md`
+
+async function readLocalNotes(notesDir, version) {
+	try {
+		return await readFile(join(notesDir, `${version}.md`), 'utf8')
+	} catch (error) {
+		if (error?.code === 'ENOENT') return null
+		throw error
+	}
+}
+
+async function readRemoteNotes(fetchImpl, version) {
+	// A hung connection must not hold the best-effort changelog job: the timeout falls back to commit notes.
+	const response = await fetchImpl(releaseNotesUrl(version), {
+		headers: { 'user-agent': 'minemories-discord-sync' },
+		signal: AbortSignal.timeout(NOTES_TIMEOUT_MS),
 	})
+	if (response.status === 404) return null
+	if (!response.ok) throw new Error(`release notes HTTP ${response.status}`)
+	return await response.text()
+}
+
+/**
+ * The curated notes of `version` ({ notes, more }), or null when there is none. Reads `<notesDir>/<version>.md` when
+ * `notesDir` is set, otherwise the raw file on the default branch. A missing file is silent; any other failure is
+ * reported through `warn` (secrets redacted) and also returns null, so callers fall back to commit notes.
+ */
+export async function fetchCuratedNotes({ version, fetchImpl = globalThis.fetch, notesDir, warn, env } = {}) {
+	try {
+		const text = notesDir ? await readLocalNotes(notesDir, version) : await readRemoteNotes(fetchImpl, version)
+		return text === null ? null : parseCuratedNotes(text)
+	} catch (error) {
+		const reason = redactSecrets(error?.message ?? String(error), env)
+		warn?.(`release notes for ${version} unavailable, using commits (${reason}).`)
+		return null
+	}
+}
+
+async function commitNotes(get, release, previous) {
+	const since = previous ? time(await commitDate(get, previous.sha)) : 0
+	const { body } = await get(`${API_BASE}/commits?sha=${encodeURIComponent(release.sha)}&path=mod&per_page=100`)
+	if (!Array.isArray(body)) throw new Error('GitHub API returned an unexpected body.')
+	return buildNotes(body, { since, exclude: previous?.sha ?? null, newest: !previous })
+}
+
+/**
+ * A mod release: `tag` when given (null when GitHub does not list it), otherwise the newest `mod-v*` tag (null when
+ * there is none). Its previous release is the next older mod tag. Curated notes win over commit notes (`source`).
+ * Throws when the GitHub API fails: callers decide whether a missing release is acceptable.
+ */
+export async function fetchRelease({ tag, fetchImpl = globalThis.fetch, token, notesDir, warn, env } = {}) {
+	const tags = await fetchModTags({ fetchImpl, token })
+	const index = tag === undefined ? 0 : tags.findIndex(entry => entry.name === tag)
+	const release = tags[index]
+	if (!release) return null
+	const previous = tags[index + 1] ?? null
+	const get = githubGet(fetchImpl, token)
+	const date = await commitDate(get, release.sha)
+	if (!time(date)) throw new Error('GitHub API returned no date for the mod tag.')
+	const curated = await fetchCuratedNotes({ version: release.version, fetchImpl, notesDir, warn, env })
+	const { notes, more } = curated ?? (await commitNotes(get, release, previous))
 	return {
-		version: latest.version,
-		tag: latest.name,
+		version: release.version,
+		tag: release.name,
 		date: new Date(date).toISOString(),
-		prerelease: latest.parts[3] !== null,
+		prerelease: release.parts[3] !== null,
 		notes,
 		more,
+		source: curated ? 'curated' : 'commits',
 		downloadUrl: `${SITE_URL}/downloads`,
 		changelogUrl: `${SITE_URL}/changelog`,
 		compareUrl: previous
-			? `${REPOSITORY_URL}/compare/${previous.name}...${latest.name}`
-			: `${REPOSITORY_URL}/tree/${latest.name}`,
+			? `${REPOSITORY_URL}/compare/${previous.name}...${release.name}`
+			: `${REPOSITORY_URL}/tree/${release.name}`,
 	}
+}
+
+/** The latest mod release, or null when there is no mod tag. Throws when GitHub fails. */
+export function fetchLatestRelease(options = {}) {
+	return fetchRelease({ ...options, tag: undefined })
 }

@@ -1,0 +1,163 @@
+[
+	{
+		"name": "the 0.36.1-beta.1 notes, in file order",
+		"markdown": "- Fixed: \"Where is my code?\" opens the gallery on the live site again. (#206)\n- Fixed: the Forge 1.21.11 build can no longer ship an empty JAR.\n- Changed: the mod's chat and error messages are now in English; the menus stay translated in every language. (#207)\n- Changed: every supported version (Minecraft 1.18.2 to 1.21.11 with NeoForge, Fabric or Forge) is built and tested in game from a single build matrix before release.\n- Changed: more in-game capture tests (Forge and Fabric 1.20.1, Forge 1.21.11).\n",
+		"expected": {
+			"notes": [
+				{
+					"type": "fix",
+					"text": "\"Where is my code?\" opens the gallery on the live site again.",
+					"pr": 206
+				},
+				{
+					"type": "fix",
+					"text": "the Forge 1.21.11 build can no longer ship an empty JAR.",
+					"pr": null
+				},
+				{
+					"type": "other",
+					"text": "the mod's chat and error messages are now in English; the menus stay translated in every language.",
+					"pr": 207
+				},
+				{
+					"type": "other",
+					"text": "every supported version (Minecraft 1.18.2 to 1.21.11 with NeoForge, Fabric or Forge) is built and tested in game from a single build matrix before release.",
+					"pr": null
+				},
+				{
+					"type": "other",
+					"text": "more in-game capture tests (Forge and Fabric 1.20.1, Forge 1.21.11).",
+					"pr": null
+				}
+			],
+			"more": 0
+		}
+	},
+	{
+		"name": "headings, blank lines, CRLF, case and unknown markers",
+		"markdown": "# 1.0.0\r\n\r\nIntro paragraph.\r\n- new: lower-case marker (#12)  \r\n  - Fixed:indented, no space after the colon\r\n- Removed: unknown marker is ignored\r\n* New: star bullets are ignored\r\n- Fixed:    \r\n- Changed: only the trailing reference counts (#3) (#4)\r\n- Changed: zero is not a pull request (#0)\r\n- New: (#5)\r\n",
+		"expected": {
+			"notes": [
+				{
+					"type": "feature",
+					"text": "lower-case marker",
+					"pr": 12
+				},
+				{
+					"type": "fix",
+					"text": "indented, no space after the colon",
+					"pr": null
+				},
+				{
+					"type": "other",
+					"text": "only the trailing reference counts (#3)",
+					"pr": 4
+				},
+				{
+					"type": "other",
+					"text": "zero is not a pull request (#0)",
+					"pr": null
+				}
+			],
+			"more": 0
+		}
+	},
+	{
+		"name": "a long run of spaces around the pull request reference",
+		"markdown": "- New: spaces before the reference                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                (#7)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \n- Fixed: spaces without a reference                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \n",
+		"expected": {
+			"notes": [
+				{
+					"type": "feature",
+					"text": "spaces before the reference",
+					"pr": 7
+				},
+				{
+					"type": "fix",
+					"text": "spaces without a reference",
+					"pr": null
+				}
+			],
+			"more": 0
+		}
+	},
+	{
+		"name": "more than twelve notes",
+		"markdown": "- New: feature 1\n- New: feature 2\n- New: feature 3\n- New: feature 4\n- New: feature 5\n- New: feature 6\n- New: feature 7\n- New: feature 8\n- New: feature 9\n- New: feature 10\n- New: feature 11\n- New: feature 12\n- New: feature 13\n- New: feature 14\n",
+		"expected": {
+			"notes": [
+				{
+					"type": "feature",
+					"text": "feature 1",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 2",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 3",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 4",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 5",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 6",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 7",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 8",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 9",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 10",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 11",
+					"pr": null
+				},
+				{
+					"type": "feature",
+					"text": "feature 12",
+					"pr": null
+				}
+			],
+			"more": 2
+		}
+	},
+	{
+		"name": "a file without any note",
+		"markdown": "# 1.0.0\n\nNothing player-facing.\n",
+		"expected": null
+	},
+	{
+		"name": "an empty file",
+		"markdown": "",
+		"expected": null
+	}
+]

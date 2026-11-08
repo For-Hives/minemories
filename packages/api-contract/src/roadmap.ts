@@ -21,16 +21,20 @@ export const roadmapColumn = z.object({
 	items: z.array(roadmapItem).max(ROADMAP_COLUMN_LIMIT),
 	more: z.number().int().nonnegative(),
 })
-/** Conventional Commit group of a release note: `feat` -> feature, `fix` -> fix, anything else -> other. */
+/**
+ * Group of a release note: `feat` or `New:` -> feature, `fix` or `Fixed:` -> fix, anything else (`Changed:`) -> other.
+ */
 export const roadmapReleaseNoteType = z.enum(['feature', 'fix', 'other'])
 export const roadmapReleaseNote = z.object({
 	type: roadmapReleaseNoteType,
 	text: z.string(),
 	pr: z.number().int().positive().nullable(),
 })
+/** Where release notes come from: the curated `mod/release-notes/<version>.md` file, or the mod commits. */
+export const roadmapReleaseNotesSource = z.enum(['curated', 'commits'])
 /**
- * Newest `mod-v*` tag (semver order, a release above its betas) with the commits touching `mod/` since the previous
- * one.
+ * Newest `mod-v*` tag (semver order, a release above its betas) with its curated English notes, or the commits
+ * touching `mod/` since the previous one when no curated file exists.
  */
 export const roadmapLatestRelease = z.object({
 	version: z.string(),
@@ -39,6 +43,8 @@ export const roadmapLatestRelease = z.object({
 	prerelease: z.boolean(),
 	notes: z.array(roadmapReleaseNote).max(ROADMAP_RELEASE_NOTES_LIMIT),
 	more: z.number().int().nonnegative(),
+	/** Defaults to `commits` for bodies served before this field. */
+	source: roadmapReleaseNotesSource.default('commits'),
 	downloadUrl: z.string(),
 	changelogUrl: z.string(),
 	compareUrl: z.string(),
@@ -56,5 +62,6 @@ export type RoadmapItem = z.infer<typeof roadmapItem>
 export type RoadmapColumn = z.infer<typeof roadmapColumn>
 export type RoadmapReleaseNoteType = z.infer<typeof roadmapReleaseNoteType>
 export type RoadmapReleaseNote = z.infer<typeof roadmapReleaseNote>
+export type RoadmapReleaseNotesSource = z.infer<typeof roadmapReleaseNotesSource>
 export type RoadmapLatestRelease = z.infer<typeof roadmapLatestRelease>
 export type RoadmapResponse = z.infer<typeof roadmapResponse>
