@@ -3,6 +3,7 @@ import charterCss from '../hero/charter.css?raw'
 import filmCss from '../hero/film.css?raw'
 import { prepareRoot } from '../hero/first-paint.js'
 import { useI18n } from '../i18n/I18n'
+import { BOOT_STEPS, reportBootProgress, signalPageReady, withBootProgress } from '../lib/boot-progress'
 import { createGlbFetcher, loadCaptureManifest } from '../lib/capture-delta'
 import { createHeroI18n } from '../lib/hero-i18n'
 import { observeReveal } from '../lib/reveal'
@@ -33,6 +34,9 @@ export function HeroFilm() {
 	useEffect(() => {
 		let cancelled = false
 		let dispose: (() => void) | undefined
+		// Milestones for the loading screen of index.html (lib/boot-progress.ts); hero.js stays a copy of the prototype, so they are reported from here.
+		const report = (value: number) => reportBootProgress(value, window)
+		report(BOOT_STEPS.app)
 		// The manifest is requested now, alongside the film's chunk, so that the first capture does not wait for it.
 		const assets = new URL(captureAssetsUrl, window.location.href)
 		const fetchGlb = createGlbFetcher({
@@ -43,12 +47,17 @@ export function HeroFilm() {
 		import('../hero/hero.js')
 			.then(({ mountHero }) => {
 				if (cancelled) return
-				dispose = mountHero({ i18n, capturesUrl, fetchGlb })
+				report(BOOT_STEPS.film)
+				dispose = mountHero({ i18n, capturesUrl, fetchGlb: withBootProgress(fetchGlb, report) })
 				// test hook: how many captures fell back to the full GLB files (the identity harness expects 0)
 				const hero = (window as { __hero?: Record<string, unknown> }).__hero
 				if (hero) hero.captureFallbacks = fetchGlb.stats
 			})
-			.catch(() => reportWebFailure('page-render'))
+			.catch(() => {
+				reportWebFailure('page-render')
+				// no film: the page (the prerendered site) is what there is to see, so the loading screen leaves now rather than after its 20 s stop
+				if (!cancelled) signalPageReady(document.documentElement, window)
+			})
 		return () => {
 			cancelled = true
 			dispose?.()

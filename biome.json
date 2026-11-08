@@ -127,8 +127,16 @@
 	},
 	"overrides": [
 		{
-			"includes": ["apps/web/index.html"],
+			"includes": ["apps/web/index.html", "scripts/boot-screen/legacy/steve-ore.boot.html"],
 			"linter": { "rules": { "complexity": { "useArrowFunction": "off" } } }
+		},
+		{
+			"includes": ["apps/web/index.html"],
+			"linter": {
+				"rules": {
+					"complexity": { "noExcessiveCognitiveComplexity": "off", "noExcessiveLinesPerFunction": "off" }
+				}
+			}
 		},
 		{
 			"includes": ["apps/web/src/hero/**", "apps/web/public/hero/**"],

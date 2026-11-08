@@ -13,6 +13,7 @@ test('a front change runs the web gate and nothing of the mod or the API', () =>
 	only(['scripts/hero-assets/cli.mjs'], 'web')
 	only(['scripts/build-web.mjs'], 'web')
 	only(['scripts/brand/build-icons.mjs'], 'web')
+	only(['scripts/boot-screen/gen.mjs'], 'web')
 	only(['design/logo/minemories-logo.svg'], 'web')
 })
 test('an API change runs the API gate only', () => {
