@@ -15,6 +15,7 @@ import {
 	setDisplayOption,
 	storeDisplayOption,
 } from '../lib/display-preferences'
+import { catalogLinks } from '../pages/installation-loaders'
 import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
@@ -251,6 +252,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 						</Link>
 					))}
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
+					{catalogLinks().map(catalog => (
+						<a key={catalog.name} href={catalog.url}>
+							{catalog.name}
+						</a>
+					))}
 					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>
 				<nav aria-label={t('Legal')}>
