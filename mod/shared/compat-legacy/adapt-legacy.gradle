@@ -21,7 +21,7 @@ ext.adaptLegacyGui = { String t, String n ->
     t = t.replace('public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {\n    super.render(graphics, mouseX, mouseY, partialTick);',
         'public void render(com.mojang.blaze3d.vertex.PoseStack pose, int mouseX, int mouseY, float partialTick) {\n    renderBackground(pose);\n    super.render(pose, mouseX, mouseY, partialTick);\n    dev.minemories.compat.Tooltips.render(pose, this, mouseX, mouseY);\n    dev.minemories.compat.GuiGraphics graphics = new dev.minemories.compat.GuiGraphics(pose);')
     // Widgets: x and y are fields, renderWidget is renderButton, the narration argument is gone.
-    if (n == 'IconButton.java' || n == 'TabButton.java') {
+    if (n == 'IconButton.java' || n == 'TabButton.java' || n == 'BrandButton.java' || n == 'GearButton.java') {
         t = regex(t, /\bgetX\(\)/, 'x')
         t = regex(t, /\bgetY\(\)/, 'y')
         t = rep(t, ', DEFAULT_NARRATION)', ')')

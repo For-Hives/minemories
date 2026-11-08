@@ -20,6 +20,6 @@ class AdvancedTabTest {
   void anOutOfRangeIndexFallsBackToTheFirstTab() {
     assertEquals(AdvancedTab.ACCOUNT, AdvancedTab.at(-1));
     assertEquals(AdvancedTab.ACCOUNT, AdvancedTab.at(99));
-    assertEquals(AdvancedTab.WORLD, AdvancedTab.at(2));
+    assertEquals(AdvancedTab.PRIVACY, AdvancedTab.at(2));
   }
 }

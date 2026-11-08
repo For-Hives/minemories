@@ -4,7 +4,6 @@ package dev.minemories.client;
 enum AdvancedTab {
   ACCOUNT("minemories.advanced.tab.account"),
   CAPTURES("minemories.advanced.tab.captures"),
-  WORLD("minemories.advanced.tab.world"),
   PRIVACY("minemories.advanced.tab.privacy");
 
   private final String labelKey;

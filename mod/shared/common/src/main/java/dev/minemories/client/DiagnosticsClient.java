@@ -1,5 +1,6 @@
 package dev.minemories.client;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -130,7 +131,7 @@ final class DiagnosticsClient {
           ClientSettings.apiUrl(current, System.getenv("MINEMORIES_API_URL")),
           token,
           device,
-          ClientSettings.diagnosticsIdentityKey(current, System.getenv("MINEMORIES_API_URL"))
+          ClientSettings.diagnosticsIdentityKey(current)
               + ":"
               + ClientSettings.diagnosticsEpoch(current));
     } catch (RuntimeException ignored) {
@@ -353,6 +354,15 @@ final class DiagnosticsClient {
   }
 
   synchronized void crash(Throwable error) {
+    record(DiagnosticReport.Phase.CRASH, DiagnosticReport.Step.CLIENT_CRASHED, error);
+  }
+
+  /** A failure Minecraft survived (a command or screen threw): same bounds as a crash report. */
+  synchronized void handled(Throwable error) {
+    record(DiagnosticReport.Phase.ERROR, DiagnosticReport.Step.ERROR_HANDLED, error);
+  }
+
+  private void record(DiagnosticReport.Phase phase, DiagnosticReport.Step last, Throwable error) {
     refresh();
     if (!collectingAllowed()) return;
     List<DiagnosticReport.Breadcrumb> steps = new ArrayList<>();
@@ -360,11 +370,11 @@ final class DiagnosticsClient {
     var active = operations.peekLast();
     long elapsed =
         active == null ? 0 : Math.max(0, (System.nanoTime() - active.started) / 1_000_000);
-    steps.add(new DiagnosticReport.Breadcrumb(DiagnosticReport.Step.CLIENT_CRASHED, elapsed));
+    steps.add(new DiagnosticReport.Breadcrumb(last, elapsed));
     try {
       var report =
           DiagnosticReport.create(
-              DiagnosticReport.Phase.CRASH,
+              phase,
               versions.get(),
               active == null ? UUID.randomUUID() : active.correlation,
               error,
@@ -480,9 +490,8 @@ final class DiagnosticsClient {
               clear();
               outbox.purge();
               refused = true;
-            } else if (status == 400
-                && "crash".equals(payload.getAsJsonObject("report").get("phase").getAsString())) {
-              // A rolling deployment may still serve the previous API contract without crash.
+            } else if (status == 400 && isFailureReport(payload)) {
+              // A rolling deployment may still serve the previous API contract without crash/error.
               // Retain this sanitized report until the API catches up, within the same bounds.
               outbox.retry(clock.getAsLong(), 300000);
             } else if (status == 200
@@ -499,6 +508,11 @@ final class DiagnosticsClient {
             }
           }
         });
+  }
+
+  private static boolean isFailureReport(JsonObject payload) {
+    String phase = payload.getAsJsonObject("report").get("phase").getAsString();
+    return "crash".equals(phase) || "error".equals(phase);
   }
 
   private static long retryDelay(HttpResponse<?> response) {

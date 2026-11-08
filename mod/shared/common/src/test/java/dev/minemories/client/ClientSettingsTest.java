@@ -164,13 +164,11 @@ class ClientSettingsTest {
   }
 
   @Test
-  void diagnosticsDefaultToOnForAnAbsentKeyAndPersistExplicitChoices() throws IOException {
+  void diagnosticsDefaultToOffForAnAbsentKeyAndPersistExplicitChoices() throws IOException {
     Properties settings = paired();
-    assertTrue(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    assertFalse(ClientSettings.diagnosticsConsentForIdentity(settings, null));
     assertFalse(ClientSettings.diagnosticsRefused(settings));
-    assertEquals(
-        ClientSettings.diagnosticsBinding(settings, null),
-        ClientSettings.diagnosticsIdentityKey(settings, null));
+    assertEquals("", ClientSettings.diagnosticsIdentityKey(settings));
     settings.setProperty("diagnosticsConsent", "true");
     settings.setProperty("diagnosticsIdentity", ClientSettings.diagnosticsBinding(settings, null));
     Path path = temporary.resolve("config/minemories.properties");
@@ -197,11 +195,22 @@ class ClientSettingsTest {
   }
 
   @Test
-  void defaultIdentityChangesWithTheTokenSoThePreviousOutboxIsPurged() {
+  void linkingTurnsDiagnosticsOnUnlessThePlayerRefusedThem() {
     Properties settings = paired();
-    String before = ClientSettings.diagnosticsIdentityKey(settings, null);
+    ClientSettings.enableDiagnosticsOnLink(settings, null);
+    assertTrue(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    String before = ClientSettings.diagnosticsIdentityKey(settings);
     settings.setProperty("deviceToken", "rotated-token");
-    assertNotEquals(before, ClientSettings.diagnosticsIdentityKey(settings, null));
+    assertFalse(ClientSettings.diagnosticsConsentForIdentity(settings, null));
+    ClientSettings.forgetBoundDiagnostics(settings);
+    ClientSettings.enableDiagnosticsOnLink(settings, null);
+    assertNotEquals(before, ClientSettings.diagnosticsIdentityKey(settings));
+
+    Properties refused = paired();
+    refused.setProperty("diagnosticsConsent", "false");
+    ClientSettings.enableDiagnosticsOnLink(refused, null);
+    assertTrue(ClientSettings.diagnosticsRefused(refused));
+    assertFalse(ClientSettings.diagnosticsConsentForIdentity(refused, null));
   }
 
   @Test
@@ -219,7 +228,7 @@ class ClientSettingsTest {
     Properties settings = paired();
     settings.setProperty("diagnosticsConsent", "true");
     settings.setProperty("diagnosticsIdentity", "stored");
-    assertEquals("stored", ClientSettings.diagnosticsIdentityKey(settings, null));
+    assertEquals("stored", ClientSettings.diagnosticsIdentityKey(settings));
   }
 
   @Test
@@ -327,5 +336,18 @@ class ClientSettingsTest {
         IllegalArgumentException.class, () -> ClientSettings.remoteWorldNamespace(settings, "a"));
     assertTrue(ClientSettings.configureRemoteWorld(settings, "a", ""));
     assertEquals("", ClientSettings.remoteWorldNamespace(settings, "a"));
+  }
+
+  @Test
+  void manualSizeDefaultsToTheAutoRadiusAndRejectsNonsense() {
+    Properties settings = new Properties();
+    assertEquals(new ClientSettings.ManualSize(32, 0, 0), ClientSettings.manualSize(settings));
+    settings.setProperty("captureRadius", "64");
+    assertEquals(64, ClientSettings.manualSize(settings).radius());
+    ClientSettings.configureManualSize(settings, new ClientSettings.ManualSize(16, 48, 24));
+    assertEquals(new ClientSettings.ManualSize(16, 48, 24), ClientSettings.manualSize(settings));
+    settings.setProperty("manualUp", "-1");
+    assertEquals(64, ClientSettings.manualSize(settings).radius());
+    assertThrows(IllegalArgumentException.class, () -> new ClientSettings.ManualSize(1, 0, 0));
   }
 }

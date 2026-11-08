@@ -121,12 +121,22 @@ final class PairingClient {
         });
   }
 
+  /** True once linking turned diagnostics on (before the server has even acknowledged them). */
+  static boolean diagnosticsOnInSettings() {
+    return ClientSettings.diagnosticsConsentForIdentity(
+        readSettings(), System.getenv("MINEMORIES_API_URL"));
+  }
+
   static void diagnosticsTick() {
     DIAGNOSTICS.tick();
   }
 
   static void reportCrash(Throwable error) {
     DIAGNOSTICS.crash(error);
+  }
+
+  static void reportHandled(Throwable error) {
+    DIAGNOSTICS.handled(error);
   }
 
   static String diagnosticsStatus() {
@@ -178,6 +188,14 @@ final class PairingClient {
     return ClientSettings.afkOptions(readSettings());
   }
 
+  static ClientSettings.ManualSize manualSize() {
+    return ClientSettings.manualSize(readSettings());
+  }
+
+  static void configureManualSize(ClientSettings.ManualSize size) {
+    updateSettings(settings -> ClientSettings.configureManualSize(settings, size));
+  }
+
   static void configureAfk(ClientSettings.AfkOptions options) {
     updateSettings(settings -> ClientSettings.configureAfk(settings, options));
   }
@@ -227,6 +245,8 @@ final class PairingClient {
                     current.setProperty("deviceToken", result.get("deviceToken").getAsString());
                     current.setProperty("deviceId", result.get("deviceId").getAsString());
                     ClientSettings.forgetBoundDiagnostics(current);
+                    ClientSettings.enableDiagnosticsOnLink(
+                        current, System.getenv("MINEMORIES_API_URL"));
                   });
               return "Mod paired. You can now use /minemories upload.";
             });
@@ -283,6 +303,7 @@ final class PairingClient {
                     metadata,
                     offset -> diagnostics.step(DiagnosticReport.Step.UPLOAD_CHUNK));
             diagnostics.success();
+            CaptureHistory.markUploaded(file);
             return "Your memory is saved. Find it in your gallery.";
           } catch (InterruptedException error) {
             diagnostics.failed(error);

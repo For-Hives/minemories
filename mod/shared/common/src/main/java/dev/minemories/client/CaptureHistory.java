@@ -41,7 +41,30 @@ final class CaptureHistory {
   }
 
   record Entry(
-      String id, Path file, Instant capturedAt, long bytes, String world, boolean readable) {}
+      String id,
+      Path file,
+      Instant capturedAt,
+      long bytes,
+      String world,
+      boolean readable,
+      boolean uploaded) {
+    Entry(String id, Path file, Instant capturedAt, long bytes, String world, boolean readable) {
+      this(id, file, capturedAt, bytes, world, readable, false);
+    }
+  }
+
+  private static Path uploadedMarker(Path file) {
+    return file.resolveSibling(file.getFileName() + ".uploaded");
+  }
+
+  /** Remembers, next to the file, that this memory reached the gallery. */
+  static void markUploaded(Path file) {
+    try {
+      Files.writeString(uploadedMarker(file), "uploaded\n");
+    } catch (IOException | RuntimeException ignored) {
+      // The marker only labels the list; an upload that worked must not look failed.
+    }
+  }
 
   record Page(List<Entry> entries, boolean hasMore) {
     Page {
@@ -305,6 +328,13 @@ final class CaptureHistory {
       readable = false;
       world = "Unreadable metadata";
     }
-    return new Entry(entry.id(), entry.file(), entry.capturedAt(), entry.bytes(), world, readable);
+    return new Entry(
+        entry.id(),
+        entry.file(),
+        entry.capturedAt(),
+        entry.bytes(),
+        world,
+        readable,
+        Files.isRegularFile(uploadedMarker(entry.file())));
   }
 }

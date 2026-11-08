@@ -5,6 +5,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +32,37 @@ public final class GuiGraphics {
 
   public int drawString(Font font, String text, int x, int y, int color) {
     return font.drawShadow(pose, text, (float) x, (float) y, color);
+  }
+
+  public int drawString(Font font, String text, int x, int y, int color, boolean shadow) {
+    return shadow
+        ? font.drawShadow(pose, text, (float) x, (float) y, color)
+        : font.draw(pose, text, (float) x, (float) y, color);
+  }
+
+  /** Tints what is drawn next (a white tint leaves textures as they are). */
+  public void setColor(float red, float green, float blue, float alpha) {
+    RenderSystem.setShaderColor(red, green, blue, alpha);
+  }
+
+  /** Draws a whole texture region scaled to width x height, like GuiGraphics#blit since 1.20. */
+  public void blit(
+      ResourceLocation texture,
+      int x,
+      int y,
+      int width,
+      int height,
+      float u,
+      float v,
+      int regionWidth,
+      int regionHeight,
+      int textureWidth,
+      int textureHeight) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderTexture(0, texture);
+    RenderSystem.enableBlend();
+    GuiComponent.blit(
+        pose, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight);
   }
 
   public int drawString(Font font, Component text, int x, int y, int color) {
