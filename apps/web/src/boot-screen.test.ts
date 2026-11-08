@@ -35,7 +35,7 @@ test('the loading screen stays small and uses no game texture', () => {
 })
 
 test('the loading screen covers the page from the first paint, only shows its dirt and map if the page is slow, and respects reduced motion', () => {
-	expect(html).toMatch(/#boot\{position:fixed;inset:0;[^}]*background:#1f1610;/) // plain dirt colour at once: the landing never flashes before it
+	expect(html).toMatch(/#boot\{position:fixed;inset:0 auto 0 0;width:100vw;[^}]*background:#1f1610;/) // plain dirt colour at once: the landing never flashes before it
 	expect(html).toMatch(/#boot::before\{[^}]*animation:b-in \.2s ease-out \.25s backwards\}/) // the texture and the map: invisible for 250 ms
 	expect(html).toMatch(/#boot \.boot-map\{[^}]*animation:b-in \.2s ease-out \.25s backwards\}/)
 	expect(html).toContain('"show":250')
