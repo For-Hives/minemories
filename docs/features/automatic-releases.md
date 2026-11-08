@@ -65,10 +65,19 @@ There is no "dedicated server startup" test: the mod is client-only (`"environme
 - CurseForge: `POST https://minecraft.curseforge.com/api/projects/{id}/upload-file` (`metadata` + `file`, `X-Api-Token` header). Game version identifiers (Minecraft, loader, Java, Client environment) come from `GET /api/game/versions`, cached for one day in `build/mod-cache/`. The upload API cannot list files: idempotence relies on the site index.
 - `-beta.N` versions are published as `beta`.
 
+#### Mirroring the released JARs: `bun mod sync --remote`
+
+`bun mod sync --remote [--all] [--platform modrinth|curseforge] [--target <id>] [--dry-run]` reads the public release index (`GET {MOD_API_URL}/downloads/index.json`) and brings both platforms in line with it, from any machine that has the tokens (no build needed). For each enabled target it looks at the latest stored version (every stored version with `--all`) and first asks the platform whether the file is already there; only the missing ones are downloaded from the API (SHA-256 checked against the index) and uploaded through the publishers above, so nothing is sent twice and the platform APIs stay lightly used.
+
+- Modrinth: one `GET /project/{id}/version` per run. A version counts as present when its number is `<version>+<loader>-mc<minecraft>` or a plain `<version>` (uploaded by hand) for the same loader and Minecraft version.
+- CurseForge: the upload token cannot list files. With `CURSEFORGE_API_KEY` (a Core API key from console.curseforge.com, optional) the tool lists the project's files and matches `minemories-<id>-<version>.jar`. Without it, it relies on the index `published` links and a local ledger (`build/mod-cache/sync-ledger.json`) of what this machine uploaded, so a first run on a new machine can duplicate a file that was uploaded elsewhere.
+- Tokens come from the environment or `.env` (`MODRINTH_TOKEN`, `CURSEFORGE_TOKEN`); a platform that is disabled or has no `projectId` is skipped with a message. Exit code 1 if any item failed.
+- Projects: Modrinth `minemories-3d` (`q6vM8uLX`), CurseForge `minemories` (`1782364`), both in `mod/catalogs.json`; the site (guide, footer) links to them in `apps/web/src/pages/installation-loaders.ts`.
+
 To finish later:
 
-1. Create the project on Modrinth and on CurseForge (client mod, license, description, images).
-2. Fill in each platform's `projectId` (and `slug`) in `mod/catalogs.json`, and set `enabled` to `true`.
+1. Create the project on Modrinth and on CurseForge (client mod, license, description, images). Done; both are awaiting moderation approval before they are public.
+2. Fill in each platform's `projectId` (and `slug`) in `mod/catalogs.json`, and set `enabled` to `true`. Done.
 3. Create a Modrinth personal token (version creation scope) and a CurseForge upload token; put them in `/etc/minemories/mod-builder.env`.
 4. Check `mapping` (CurseForge loader names: `Fabric`, `Forge`, `NeoForge`, `Quilt`) and the `contact` in the Modrinth `User-Agent`.
 5. Try `bun mod publish --dry-run`, then a first manual publication of a beta version, and check the page.

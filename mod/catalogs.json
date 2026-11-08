@@ -1,29 +1,51 @@
 {
-	"_comment": "Third-party catalogs (Modrinth, CurseForge). Nothing is published until `enabled` is true, the project exists and the token is in the environment (MODRINTH_TOKEN / CURSEFORGE_TOKEN, never in this file). Checklist: docs/features/automatic-releases.md, section 'Publication tierce'.",
+	"_comment": "Third-party catalogs (Modrinth, CurseForge). Nothing is published unless `enabled` is true, the project exists and the token is in the environment (MODRINTH_TOKEN / CURSEFORGE_TOKEN, never in this file). `bun mod sync --remote` mirrors the API releases on both. Checklist: docs/features/automatic-releases.md, section 'Publication tierce'.",
 	"modrinth": {
-		"enabled": false,
-		"projectId": null,
-		"slug": null,
+		"enabled": true,
+		"projectId": "q6vM8uLX",
+		"slug": "minemories-3d",
 		"contact": "https://github.com/For-Hives/minemories",
 		"featured": true,
 		"dependencies": {
-			"fabric": [{ "slug": "fabric-api", "type": "required" }]
+			"fabric": [
+				{
+					"slug": "fabric-api",
+					"type": "required"
+				}
+			]
 		}
 	},
 	"curseforge": {
-		"enabled": false,
-		"projectId": null,
-		"slug": null,
+		"enabled": true,
+		"projectId": "1782364",
+		"slug": "minemories",
 		"changelogType": "markdown",
 		"environment": "Client",
 		"dependencies": {
-			"fabric": [{ "slug": "fabric-api", "type": "requiredDependency" }]
+			"fabric": [
+				{
+					"slug": "fabric-api",
+					"type": "requiredDependency"
+				}
+			]
 		}
 	},
 	"mapping": {
-		"neoforge": { "modrinth": "neoforge", "curseforge": "NeoForge" },
-		"fabric": { "modrinth": "fabric", "curseforge": "Fabric" },
-		"forge": { "modrinth": "forge", "curseforge": "Forge" },
-		"quilt": { "modrinth": "quilt", "curseforge": "Quilt" }
+		"neoforge": {
+			"modrinth": "neoforge",
+			"curseforge": "NeoForge"
+		},
+		"fabric": {
+			"modrinth": "fabric",
+			"curseforge": "Fabric"
+		},
+		"forge": {
+			"modrinth": "forge",
+			"curseforge": "Forge"
+		},
+		"quilt": {
+			"modrinth": "quilt",
+			"curseforge": "Quilt"
+		}
 	}
 }
