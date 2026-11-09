@@ -151,6 +151,11 @@ export function HeroExtras() {
 					</li>
 				))}
 				<li>
+					<Link className="mc-link" to="/sharing">
+						{t('A gallery to share')}
+					</Link>
+				</li>
+				<li>
 					<Link className="mc-link" to="/concept">
 						{t('The story behind Minemories')}
 					</Link>

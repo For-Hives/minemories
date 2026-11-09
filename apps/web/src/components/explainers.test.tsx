@@ -7,6 +7,7 @@ import { I18nProvider } from '../i18n/I18n'
 import { ArticlePage } from '../pages/ContentPages'
 import { MarketingPage } from '../pages/DiscoveryPages'
 import { FaqPage } from '../pages/InfoPages'
+import { SharingPage } from '../pages/SharingPage'
 import { Pipeline, RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
 import { Command, TabPanel, type TabSpec, TabStrip, verdictLabel } from './explainers'
 
@@ -143,7 +144,7 @@ test('the open source page lets a visitor pick each piece of the chain', () => {
 })
 
 test('the sharing page carries the demo, and the nostalgia stops move the timeline', () => {
-	english(<MarketingPage />, '/sharing')
+	english(<SharingPage />, '/sharing')
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
 	expect(screen.getByRole('link', { name: 'My private gallery' })).toBeTruthy()
 	// The public gallery is live: no note may still announce it as coming.

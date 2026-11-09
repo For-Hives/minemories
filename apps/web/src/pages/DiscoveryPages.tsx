@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
-import { Pipeline, ShareDemo } from '../components/diagrams'
+import { Pipeline } from '../components/diagrams'
 import { More } from '../components/explainers'
 import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline } from '../components/ui'
@@ -16,7 +16,6 @@ const trailingSlash = /\/$/
 const pathScenes: Record<string, { theme: DemoTheme; stage?: number }> = {
 	'/open-source': { theme: 'garden' },
 	'/nostalgia': { theme: 'home', stage: 2 },
-	'/sharing': { theme: 'village' },
 	'/ranking': { theme: 'home' },
 }
 export function DiscoveryPage() {
@@ -83,23 +82,10 @@ export function MarketingPage() {
 		<ContentLayout eyebrow={`MINEMORIES / ${translate(locale, page.label)}`} title={translate(locale, page.title)}>
 			{page.path === '/nostalgia' && <TimelinePreview />}
 			{page.path === '/open-source' && <OpenSourcePipeline points={page.points} />}
-			{page.path === '/sharing' && <ShareDemo />}
 			<div className="mm-actions">
-				{page.path === '/sharing' && (
-					<>
-						<Link className={buttonOutline} to="/explore?demo=1">
-							{t('View the demo')}
-						</Link>
-						<Link className={buttonLime} to="/gallery">
-							{t('My private gallery')}
-						</Link>
-					</>
-				)}
-				{page.path !== '/sharing' && (
-					<Link className={buttonLime} to="/installation">
-						{t('Create my first memory')}
-					</Link>
-				)}
+				<Link className={buttonLime} to="/installation">
+					{t('Create my first memory')}
+				</Link>
 				<Link to="/discover" className={buttonOutline}>
 					{t('All paths')}
 				</Link>

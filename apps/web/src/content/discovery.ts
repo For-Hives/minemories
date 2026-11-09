@@ -18,15 +18,6 @@ export const discoveryPages = [
 		note: 'A 3D memory keeps captured shapes and textures. It does not preserve the entire game or replace your Minecraft backup.',
 	},
 	{
-		path: '/sharing',
-		label: 'A gallery to share',
-		title: 'Show people around your base, even those who don’t play',
-		lead: 'No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it.',
-		accent: 'sky',
-		points: ['A gallery that starts private', 'A link accessible without an account', 'Sharing you can revoke'],
-		note: 'The demo explorer uses illustrations. No private captures are published there.',
-	},
-	{
 		path: '/ranking',
 		label: 'Builds to discover',
 		title: 'Small worlds deserve their moment too.',

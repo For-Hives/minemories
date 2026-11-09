@@ -254,7 +254,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
-					{[...discoveryPages, { path: '/explore', label: 'Public gallery' }].map(page => (
+					{[
+						...discoveryPages,
+						{ path: '/sharing', label: 'A gallery to share' },
+						{ path: '/explore', label: 'Public gallery' },
+					].map(page => (
 						<Link key={page.path} to={page.path}>
 							{translate(locale, page.label)}
 						</Link>

@@ -13,6 +13,7 @@ import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
+import { SharingPage } from './pages/SharingPage'
 import { publicMetadata, siteOrigin, socialImage } from './route-metadata'
 import { structuredDataFor } from './structured-data'
 
@@ -72,8 +73,10 @@ export function renderPage(path: string) {
 			break
 		case '/open-source':
 		case '/nostalgia':
-		case '/sharing':
 			content = <MarketingPage />
+			break
+		case '/sharing':
+			content = <SharingPage />
 			break
 		case '/privacy':
 			content = <LegalPage kind="privacy" />

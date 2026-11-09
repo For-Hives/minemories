@@ -35,6 +35,7 @@ const DiscoveryPages = () => import('./pages/DiscoveryPages')
 const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
 const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
 const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
+const SharingPage = lazy(() => import('./pages/SharingPage').then(module => ({ default: module.SharingPage })))
 const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
 const NotFoundPage = lazy(() => ContentPages().then(module => ({ default: module.NotFoundPage })))
 /** The pages reachable from the header and the footer: fetched once the browser is idle, so that a link opens its page without waiting. */
@@ -47,6 +48,7 @@ const publicPageChunks = [
 	() => import('./pages/DownloadsPage'),
 	() => import('./pages/ReleasesPage'),
 	() => import('./pages/RoadmapPage'),
+	() => import('./pages/SharingPage'),
 	() => import('./pages/AuthPage'),
 ]
 
@@ -125,7 +127,7 @@ export function App() {
 									</Page>
 								}
 							/>
-							{['/open-source', '/nostalgia', '/sharing'].map(path => (
+							{['/open-source', '/nostalgia'].map(path => (
 								<Route
 									key={path}
 									path={path}
@@ -136,6 +138,14 @@ export function App() {
 									}
 								/>
 							))}
+							<Route
+								path="/sharing"
+								element={
+									<Page>
+										<SharingPage />
+									</Page>
+								}
+							/>
 							<Route
 								index
 								element={

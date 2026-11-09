@@ -30,17 +30,16 @@ const metadataMessages: PageMetadata[] = [
 		indexable: false,
 		language: 'fr',
 	},
+	{
+		path: '/sharing',
+		title: 'Share a Minecraft build in 3D with a link',
+		description:
+			'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
+		indexable: true,
+		language: 'fr',
+		updated: '2026-11-10',
+	},
 	...discoveryPages.map(page => {
-		if (page.path === '/sharing')
-			return {
-				path: page.path,
-				title: 'Share a Minecraft build in 3D with a link',
-				description:
-					'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
-				indexable: true,
-				language: 'fr' as const,
-				updated: '2026-11-10',
-			}
 		return {
 			path: page.path,
 			title: `${page.label} — Minemories`,
