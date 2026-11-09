@@ -59,7 +59,9 @@ final class FabricPlatform implements ClientPlatform {
   public int spritePixel(TextureAtlasSprite sprite, int x, int y) {
     if (!(sprite.contents() instanceof SpriteContentsAccess access))
       throw new IllegalStateException("Sprite accessor not installed");
-    return access.minemories$image().getPixel(x, y);
+    // NativeImage.getPixel is ARGB in Minecraft 26.3 (it was read as ABGR before); the shared capture reads ABGR (red in the low byte).
+    int argb = access.minemories$image().getPixel(x, y);
+    return (argb & 0xFF00FF00) | ((argb & 0xFF) << 16) | ((argb >> 16) & 0xFF);
   }
 
   @Override
