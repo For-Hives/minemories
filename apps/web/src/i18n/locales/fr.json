@@ -1601,5 +1601,7 @@
 	"MINEMORIES · ROADMAP": "MINEMORIES · FEUILLE DE ROUTE",
 	"MINEMORIES / PLAYGROUND": "MINEMORIES / TERRAIN DE JEU",
 	"Sign in — Minemories": "Connexion — Minemories",
-	"Create an account — Minemories": "Créer un compte — Minemories"
+	"Create an account — Minemories": "Créer un compte — Minemories",
+	"Delete this snapshot forever? This cannot be undone.": "Supprimer définitivement cette capture ? Impossible de revenir en arrière.",
+	"Could not create the code.": "Impossible de créer le code."
 }

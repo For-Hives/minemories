@@ -1601,5 +1601,7 @@
 	"MINEMORIES · ROADMAP": "MINEMORIES · 로드맵",
 	"MINEMORIES / PLAYGROUND": "MINEMORIES / 놀이터",
 	"Sign in — Minemories": "로그인 — Minemories",
-	"Create an account — Minemories": "계정 만들기 — Minemories"
+	"Create an account — Minemories": "계정 만들기 — Minemories",
+	"Delete this snapshot forever? This cannot be undone.": "이 스냅샷을 완전히 삭제할까요? 되돌릴 수 없습니다.",
+	"Could not create the code.": "코드를 만들 수 없습니다."
 }

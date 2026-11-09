@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
+import { errorMessageKey } from '../i18n/error-messages'
 import { useI18n } from '../i18n/I18n'
 export type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
@@ -50,7 +51,7 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 		} catch (error) {
 			if (version !== revision.current) return
 			setPairStatus('error')
-			onError(error instanceof Error ? error.message : 'Could not create the code.')
+			onError(errorMessageKey(error, 'Could not create the code.'))
 		} finally {
 			if (version === revision.current) setPairBusy(false)
 		}

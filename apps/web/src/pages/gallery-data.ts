@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { errorMessageKey } from '../i18n/error-messages'
+import { useI18n } from '../i18n/I18n'
 export type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 export type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
 export type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
@@ -87,6 +88,7 @@ function useTrashActions(
 	refreshAll: () => Promise<void>
 ) {
 	const active = useLivePage()
+	const { t } = useI18n()
 	async function trashSnapshot(id: string) {
 		try {
 			await apiClient.memories.trash({ id })
@@ -109,7 +111,7 @@ function useTrashActions(
 	}
 
 	async function deleteSnapshot(id: string) {
-		if (!window.confirm('Delete this snapshot forever? This cannot be undone.')) return
+		if (!window.confirm(t('Delete this snapshot forever? This cannot be undone.'))) return
 		try {
 			await apiClient.memories.delete({ id })
 			if (!active.current) return

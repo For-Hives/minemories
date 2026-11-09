@@ -1601,5 +1601,7 @@
 	"MINEMORIES · ROADMAP": "MINEMORIES · ROADMAP",
 	"MINEMORIES / PLAYGROUND": "MINEMORIES / PLAYGROUND",
 	"Sign in — Minemories": "Sign in — Minemories",
-	"Create an account — Minemories": "Create an account — Minemories"
+	"Create an account — Minemories": "Create an account — Minemories",
+	"Delete this snapshot forever? This cannot be undone.": "Delete this snapshot forever? This cannot be undone.",
+	"Could not create the code.": "Could not create the code."
 }

@@ -1601,5 +1601,7 @@
 	"MINEMORIES · ROADMAP": "MINEMORIES · ДОРОЖНАЯ КАРТА",
 	"MINEMORIES / PLAYGROUND": "MINEMORIES / ПЕСОЧНИЦА",
 	"Sign in — Minemories": "Вход — Minemories",
-	"Create an account — Minemories": "Создать аккаунт — Minemories"
+	"Create an account — Minemories": "Создать аккаунт — Minemories",
+	"Delete this snapshot forever? This cannot be undone.": "Удалить этот снимок навсегда? Это действие нельзя отменить.",
+	"Could not create the code.": "Не удалось создать код."
 }

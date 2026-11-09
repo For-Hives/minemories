@@ -929,7 +929,9 @@ test('code creation failure remains recoverable and releases the busy control', 
 	mocks.create.mockRejectedValueOnce(new Error('Pairing unavailable'))
 	mount(<GalleryPage />)
 	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
-	await screen.findByRole('alert')
+	// The raw transport message never reaches the page: the failure is shown with a translated sentence.
+	expect((await screen.findByRole('alert')).textContent).toContain('Could not create the code.')
+	expect(screen.queryByText(/Pairing unavailable/)).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
 	await screen.findByText('123 456')
 	expect(mocks.create).toHaveBeenCalledTimes(2)

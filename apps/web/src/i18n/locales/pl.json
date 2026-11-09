@@ -1601,5 +1601,7 @@
 	"MINEMORIES · ROADMAP": "MINEMORIES · PLAN DZIAŁAŃ",
 	"MINEMORIES / PLAYGROUND": "MINEMORIES / PLAC ZABAW",
 	"Sign in — Minemories": "Logowanie — Minemories",
-	"Create an account — Minemories": "Utwórz konto — Minemories"
+	"Create an account — Minemories": "Utwórz konto — Minemories",
+	"Delete this snapshot forever? This cannot be undone.": "Usunąć tę migawkę na zawsze? Tej operacji nie można cofnąć.",
+	"Could not create the code.": "Nie można utworzyć kodu."
 }
