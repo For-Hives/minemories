@@ -141,6 +141,22 @@ Screenshots before:
 - **Loading**: the chunk-loading screen in `index.html` (`scripts/boot-screen/gen.mjs`) only appears on `/`; between pages, the current page stays displayed until the next one arrives (`components/PageFrame.tsx`), then a short fade (`mm-enter`).
 - The 3D viewer keeps its scene; only its interface (bars, panels, menus) follows the design system.
 
+## Explainer pages (December 2026 pass)
+
+The nine text-heavy pages (`/concept`, `/how-it-works`, `/faq`, `/privacy`, `/blog/premier-souvenir`, `/sharing`, `/open-source`, `/nostalgia`, `/discover`) were measured at 1440 x 900 by counting the words visible on the first screen (menu included, nothing scrolled): 223, 219, 204, 186, 147, 111, 107, 96 and 94. Studies of web reading (Nielsen Norman Group: about 20 % of the words of an average 593-word page get read; Chartbeat: 55 % of visits last under 15 seconds) say a first screen beyond roughly 100 words is skimmed, not read. The rule since this pass: **a picture or a diagram before a paragraph, an interaction before a diagram, the fine print behind "Details"**.
+
+| Piece | File | Use |
+|---|---|---|
+| Pixel pictograms | `components/explainers.tsx` (`Glyph`, 8 x 8 texels, reuses `GalleryIcons`) | one per tab, row, chip; always decorative |
+| Tab strip + panel | `TabStrip`, `TabPanel` | arrow keys per the ARIA pattern; unselected panels stay in the page (`hidden`) so prerender and search engines still see all the text |
+| Command chip | `Command` | a chat command or a path with a copy button |
+| Closed details | `More` | the long, exact text (paths, menus, limits) that used to be the page |
+| Verdict chip | `VerdictChip` | Yes / No / Not yet / Depends, readable before the answer |
+| Diagrams | `components/diagrams.tsx` | `RadiusMap` (top-down map, slider = `/minemories export <radius>`), `ShareDemo` (private, link, revoked), `SeasonDemo` (server closes, memory stays), `DataFlow` (computer, gallery, link), `Pipeline` (selectable boxes) |
+| Styles | `components/explainers.css` | same tokens and materials as the rest of the site; one narrow-screen block (grid rows, stacked diagrams) |
+
+Rules: a new explainer string is short (a label, or one sentence) and exists in the 8 full catalogs; the CJK catalogs may only use glyphs already in the Unifont subset (regenerate the font before adding others). Do not move a fact out of the page to shorten it: move it under `More`. Each diagram needs an interaction test (`components/explainers.test.tsx`).
+
 ## Open decisions (Andy)
 
 - 16 px body everywhere, including on large screens (readable but small at 1920 px); the alternative is 24 px for the lead only (the current choice) or 20 px (not crisp with the pixel font).

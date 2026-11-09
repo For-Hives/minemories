@@ -1,46 +1,81 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
+import { Pipeline, ShareDemo } from '../components/diagrams'
+import { More } from '../components/explainers'
 import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useDemoPreferences } from '../content/demo-preferences'
-import { demoMemories, discoveryPages } from '../content/discovery'
+import { type DemoTheme, demoMemories, discoveryPages } from '../content/discovery'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { ContentLayout, NotFoundPage } from './ContentPages'
 import { PublicGallery } from './PublicCatalog'
 
 const trailingSlash = /\/$/
+/** One distinct still per path, so the four tiles never look alike. */
+const pathScenes: Record<string, { theme: DemoTheme; stage?: number }> = {
+	'/open-source': { theme: 'garden' },
+	'/nostalgia': { theme: 'home', stage: 2 },
+	'/sharing': { theme: 'village' },
+	'/ranking': { theme: 'home' },
+}
 export function DiscoveryPage() {
 	const { locale, t } = useI18n()
 	return (
-		<ContentLayout
-			eyebrow="MINEMORIES / PLAYGROUND"
-			title={t('One world. Many reasons to keep it.')}
-			lead={t('Pick what speaks to you. Explore the journeys and demos without an account.')}
-		>
-			<div className="mm-angle-grid">
-				{discoveryPages.map((page, index) => (
+		<ContentLayout eyebrow="MINEMORIES / PLAYGROUND" title={t('One world. Many reasons to keep it.')}>
+			<div className="mm-angle-grid mm-angle-grid--paths">
+				{discoveryPages.map(page => (
 					<Link key={page.path} to={page.path} className={`mm-angle-card mm-accent-${page.accent}`}>
-						<span className="mm-kicker">
-							0{index + 1} / {translate(locale, page.label)}
-						</span>
-						<MemoryScene theme={index % 2 ? 'home' : 'village'} label={translate(locale, page.label)} />
-						<h2>{translate(locale, page.title)}</h2>
-						<p>{translate(locale, page.lead)}</p>
+						<MemoryScene
+							theme={pathScenes[page.path]?.theme ?? 'home'}
+							stage={pathScenes[page.path]?.stage}
+							label={translate(locale, page.label)}
+						/>
+						<h2>{translate(locale, page.label)}</h2>
 						<span>{t('Explore this path ↗')}</span>
 					</Link>
 				))}
 			</div>
 			<section className="mm-callout">
-				<div>
-					<h2>{t('Start with a visit.')}</h2>
-					<p>{t('Public memories to visit, with a separate demo to try.')}</p>
-				</div>
+				<h2>{t('Start with a visit.')}</h2>
 				<Link className={buttonLime} to="/explore">
 					{t('Explore the gallery')}
 				</Link>
 			</section>
 		</ContentLayout>
+	)
+}
+const repository = 'https://github.com/For-Hives/minemories'
+function OpenSourcePipeline({ points }: { points: string[] }) {
+	const { t } = useI18n()
+	return (
+		<Pipeline
+			nodes={[
+				{
+					id: 'mod',
+					glyph: 'code',
+					label: 'Mod',
+					point: points[0] ?? '',
+					extra: (
+						<a className={buttonOutline} href={repository}>
+							GitHub ↗
+						</a>
+					),
+				},
+				{ id: 'glb', glyph: 'cube', label: 'GLB', point: points[1] ?? '' },
+				{
+					id: 'files',
+					glyph: 'disk',
+					label: 'Your computer',
+					point: points[2] ?? '',
+					extra: (
+						<a className={buttonOutline} href={`${repository}/blob/main/README.md`}>
+							{t('Read the documentation')}
+						</a>
+					),
+				},
+			]}
+		/>
 	)
 }
 export function MarketingPage() {
@@ -49,69 +84,33 @@ export function MarketingPage() {
 	const page = discoveryPages.find(item => item.path === pathname.replace(trailingSlash, ''))
 	if (!page) return <NotFoundPage />
 	return (
-		<ContentLayout
-			eyebrow={`MINEMORIES / ${translate(locale, page.label)}`}
-			title={translate(locale, page.title)}
-			lead={translate(locale, page.lead)}
-		>
-			<div className={`mm-story-hero mm-accent-${page.accent}`}>
-				<MemoryScene
-					theme={page.path === '/nostalgia' ? 'home' : 'village'}
-					label={t('Illustration of a small Minecraft world')}
-				/>
-				<div>
-					<span className="mm-kicker">{t('What we want to keep')}</span>
-					<ul className="mm-feature-list">
-						{page.points.map(point => (
-							<li key={point}>{translate(locale, point)}</li>
-						))}
-					</ul>
-					<p>{translate(locale, page.story)}</p>
-					<Link className={buttonLime} to="/installation">
-						{t('Create my first memory')}
-					</Link>
-				</div>
-			</div>
+		<ContentLayout eyebrow={`MINEMORIES / ${translate(locale, page.label)}`} title={translate(locale, page.title)}>
 			{page.path === '/nostalgia' && <TimelinePreview />}
-			{page.path === '/open-source' && (
-				<section className="mm-callout">
-					<div>
-						<h2>{t('Look behind the scenes.')}</h2>
-						<p>{t('Code, releases, discussions and development instructions are public.')}</p>
-					</div>
-					<div className="mm-actions">
-						<a className={buttonOutline} href="https://github.com/For-Hives/minemories">
-							GitHub ↗
-						</a>
-						<a className={buttonOutline} href="https://github.com/For-Hives/minemories/blob/main/README.md">
-							{t('Read the documentation')}
-						</a>
-					</div>
-				</section>
-			)}
-			{page.path === '/sharing' && (
-				<section className="mm-callout">
-					<div>
-						<h2>{t('Try it, then create your own gallery.')}</h2>
-						<p>{t('The demo needs nothing. Your own space requires an account and keeps your captures private.')}</p>
-					</div>
-					<div className="mm-actions">
+			{page.path === '/open-source' && <OpenSourcePipeline points={page.points} />}
+			{page.path === '/sharing' && <ShareDemo />}
+			<div className="mm-actions">
+				{page.path === '/sharing' && (
+					<>
 						<Link className={buttonOutline} to="/explore?demo=1">
 							{t('View the demo')}
 						</Link>
 						<Link className={buttonLime} to="/gallery">
 							{t('My private gallery')}
 						</Link>
-					</div>
-				</section>
-			)}
-			{page.path === '/ranking' && <GalleryPreview ranking />}
-			<p className="mm-note">{translate(locale, page.note)}</p>
-			<div className="mm-actions">
+					</>
+				)}
+				{page.path !== '/sharing' && (
+					<Link className={buttonLime} to="/installation">
+						{t('Create my first memory')}
+					</Link>
+				)}
 				<Link to="/discover" className={buttonOutline}>
 					{t('All paths')}
 				</Link>
 			</div>
+			<More label={t('Good to know')}>
+				<p>{translate(locale, page.note)}</p>
+			</More>
 		</ContentLayout>
 	)
 }
@@ -121,10 +120,8 @@ function TimelinePreview() {
 	const labels = [t('The beginning'), t('The first evenings'), t('A small village')]
 	return (
 		<section className="mm-timeline-preview">
-			<div>
-				<span className="mm-kicker">{t('Interactive illustration')}</span>
-				<h2>{t('Places change. The memory stays.')}</h2>
-				<p>{t('Move the slider to imagine three stages of a build.')}</p>
+			<MemoryScene theme="home" stage={stage} label={labels[stage - 1] ?? ''} />
+			<div className="ex-range-field">
 				<label htmlFor="memory-timeline">{t('Memory moment')}</label>
 				<input
 					id="memory-timeline"
@@ -132,13 +129,19 @@ function TimelinePreview() {
 					min="1"
 					max="3"
 					value={stage}
+					aria-valuetext={labels[stage - 1]}
 					onChange={event => setStage(Number(event.target.value))}
 				/>
-				<output htmlFor="memory-timeline" aria-live="polite">
-					{labels[stage - 1]}
-				</output>
+				<ol className="ex-ticks">
+					{labels.map((label, index) => (
+						<li key={label}>
+							<button type="button" aria-pressed={stage === index + 1} onClick={() => setStage(index + 1)}>
+								{label}
+							</button>
+						</li>
+					))}
+				</ol>
 			</div>
-			<MemoryScene theme="home" stage={stage} label={labels[stage - 1] ?? ''} />
 		</section>
 	)
 }

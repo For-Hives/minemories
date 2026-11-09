@@ -1,9 +1,13 @@
+export type ArticleVisual =
+	| { kind: 'scene'; theme: 'home' | 'village' | 'garden' }
+	| { kind: 'radius' }
+	| { kind: 'files' }
 export interface Article {
 	slug: string
 	published: string
 	title: string
 	summary: string
-	sections: Array<{ heading: string; body: string }>
+	sections: Array<{ heading: string; body: string; visual: ArticleVisual }>
 }
 export const articles: Article[] = [
 	{
@@ -14,15 +18,18 @@ export const articles: Article[] = [
 		sections: [
 			{
 				heading: 'A place at a moment in time',
-				body: 'Minemories captures blocks in a loaded Minecraft area and creates a GLB containing its shapes and textures. Revisit the place in your browser. A capture does not replace a world backup and cannot resume your game.',
+				body: 'A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.',
+				visual: { kind: 'scene', theme: 'home' },
 			},
 			{
 				heading: 'Start with a small build',
-				body: 'Validated combinations use Minecraft Java 1.21.1 with NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API, or Forge 52.1.19; Quilt 0.30.1 uses the Fabric JAR. In a test world, wait for terrain to load and use /minemories export 16. A 16-block radius lets you check the result before capturing a large base.',
+				body: 'Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.',
+				visual: { kind: 'radius' },
 			},
 			{
 				heading: 'Keep the file, choose whether to share',
-				body: 'By default, capture.glb is in the export folder of your user directory. Pair the mod with your account to send captures to your private gallery. AFK captures are enabled by default and upload automatically after pairing; you can disable them in the M menu.',
+				body: 'The capture lands in your export folder. Pair the mod to send captures to your private gallery.',
+				visual: { kind: 'files' },
 			},
 		],
 	},
