@@ -14,10 +14,18 @@ export const publicCapture = z.object({
 	votes: z.number().int().nonnegative(),
 	voted: z.boolean(),
 })
+/** What the owner last submitted for a memory (any state), so the form can start from it. */
+export const publicationSubmission = z.object({
+	title: z.string().max(80),
+	description: z.string().max(500),
+	category: discoveryCategory,
+})
 export const publicationStatus = z.object({
 	id: id.nullable(),
 	state: publicationState,
 	reason: z.string().max(500).nullable(),
+	// Defaulted so payloads from an API that predates the field still parse.
+	submission: publicationSubmission.nullable().default(null),
 })
 export const discoveryContract = {
 	list: oc

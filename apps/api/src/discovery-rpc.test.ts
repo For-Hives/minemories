@@ -104,7 +104,7 @@ function candidate(memoryId: string) {
 
 test('real HTTP/oRPC publication requires consent, ownership and moderation; private fields stay private', async () => {
 	const memoryId = await capture()
-	expect(await ownerApi.discovery.status({ memoryId })).toMatchObject({ state: 'private' })
+	expect(await ownerApi.discovery.status({ memoryId })).toMatchObject({ state: 'private', submission: null })
 	expect(await anonymous.discovery.list({})).toEqual({ items: [], hasMore: false })
 	await expect(anonymous.discovery.publish(candidate(memoryId))).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
 	await expect(voterApi.discovery.publish(candidate(memoryId))).rejects.toMatchObject({ code: 'NOT_FOUND' })
@@ -113,6 +113,9 @@ test('real HTTP/oRPC publication requires consent, ownership and moderation; pri
 	})
 	const publication = await ownerApi.discovery.publish(candidate(memoryId))
 	const id = publication.id as string
+	const submission = { title: 'Public village', description: 'Chosen description', category: 'build' as const }
+	expect(publication).toMatchObject({ state: 'pending', submission })
+	expect(await ownerApi.discovery.status({ memoryId })).toMatchObject({ state: 'pending', submission })
 	expect(await anonymous.discovery.moderator()).toEqual({ allowed: false })
 	expect(await moderatorApi.discovery.moderator()).toEqual({ allowed: true })
 	await expect(ownerApi.discovery.queueSummary()).rejects.toMatchObject({ code: 'FORBIDDEN' })
@@ -145,7 +148,7 @@ test('real HTTP/oRPC publication requires consent, ownership and moderation; pri
 	expect((await moderatorApi.discovery.queue({ state: 'reported' })).items[0]?.reports).toHaveLength(1)
 	await expect(anonymous.discovery.report({ id, reason: 'No session' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
 	await expect(voterApi.discovery.revoke({ memoryId })).rejects.toMatchObject({ code: 'NOT_FOUND' })
-	await ownerApi.discovery.revoke({ memoryId })
+	expect(await ownerApi.discovery.revoke({ memoryId })).toMatchObject({ state: 'revoked', submission })
 	expect((await app.request(`/api/public/${id}/file`)).status).toBe(404)
 	await expect(anonymous.discovery.get({ id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
 })

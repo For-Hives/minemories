@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import { GalleryIcon } from '../components/GalleryIcons'
@@ -6,11 +5,14 @@ import { buttonLime } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
+import { isDraftString } from '../lib/form-drafts'
 import { type CaptureArea, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { useModal } from './GalleryDialog'
 import { dimensionLabels, Fact } from './GalleryFacts'
 import type { Memories } from './gallery-data'
+import { DraftMarker, SavedNote } from './RenameField'
+import { trimText, useDraft, useFlash } from './use-draft'
 
 type Memory = Memories[number]
 
@@ -35,38 +37,42 @@ function NameField({
 	onRename: (name: string) => void
 }) {
 	const { t } = useI18n()
-	const [draft, setDraft] = useState(name)
+	const draft = useDraft('server-name', server.key, name, isDraftString, { normalize: trimText })
+	const [saved, flashSaved] = useFlash()
 	const custom = name !== server.name
+	const next = draft.value.trim()
+	// An empty field saves nothing: "Restore" is the one way back to the game's name.
+	const unchanged = !next || next === name
+	function rename(value: string) {
+		onRename(value)
+		draft.clear()
+		flashSaved()
+	}
 	return (
 		<form
 			className="gallery-sheet-name"
 			onSubmit={event => {
 				event.preventDefault()
-				onRename(draft.trim() === server.name ? '' : draft)
+				if (!unchanged) rename(next === server.name ? '' : next)
 			}}
 		>
 			<label htmlFor="server-name">{t('Server name')}</label>
 			<div>
 				<input
 					id="server-name"
-					value={draft}
+					value={draft.value}
 					maxLength={80}
 					placeholder={server.name}
-					onChange={event => setDraft(event.currentTarget.value)}
+					onChange={event => draft.setValue(event.currentTarget.value)}
 				/>
-				<button type="submit" className={buttonLime} disabled={draft.trim() === name}>
+				<button type="submit" className={buttonLime} disabled={unchanged}>
 					{t('Save')}
 				</button>
 			</div>
+			{draft.isDraft && <DraftMarker onDiscard={draft.discard} />}
+			<SavedNote visible={saved} />
 			{custom && (
-				<button
-					type="button"
-					className="gallery-sheet-reset"
-					onClick={() => {
-						setDraft(server.name)
-						onRename('')
-					}}
-				>
+				<button type="button" className="gallery-sheet-reset" onClick={() => rename('')}>
 					{t('Restore “{name}”', { name: server.name })}
 				</button>
 			)}

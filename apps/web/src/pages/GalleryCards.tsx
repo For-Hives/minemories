@@ -7,6 +7,7 @@ import { GalleryIcon, type GalleryIconName } from '../components/GalleryIcons'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
+import { isDraftString } from '../lib/form-drafts'
 import { biomeLabel, blockCoordinates, type CaptureStack, latestCapture, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { getStackName, setStackName } from '../lib/stack-names'
@@ -14,6 +15,8 @@ import { daysUntilPurge } from '../lib/trash'
 import { type DialogTab, type DialogTarget, GalleryDialog } from './GalleryDialog'
 import { dimensionLabels } from './GalleryFacts'
 import { type Memories, type TrashMemories, useLivePage } from './gallery-data'
+import { DraftChip, RenameForm, SavedNote, useReturnFocus } from './RenameField'
+import { trimText, useDraft, useFlash } from './use-draft'
 
 type Memory = Memories[number]
 
@@ -95,11 +98,18 @@ function useAreaName(groupKey: string, stack: CaptureStack<Memory>, latest: Memo
 	const { notify } = useAppContext()
 	const active = useLivePage()
 	const [custom, setCustom] = useState(() => getStackName(groupKey, stack.key))
-	const [editing, setEditing] = useState(false)
-	const [draft, setDraft] = useState('')
-	const [saving, setSaving] = useState(false)
 	const name = custom ?? latest?.name ?? ''
 	const single = stack.captures.length === 1
+	// A one-capture area renames that capture: its draft is the capture's, the one its snapshot row uses when the area
+	// later gains captures (and the other way round when it loses them).
+	const own = single && latest ? latest.id : null
+	const draft = useDraft(own ? 'snapshot-name' : 'area-name', own ?? `${groupKey}/${stack.key}`, name, isDraftString, {
+		normalize: trimText,
+	})
+	const [editing, setEditing] = useState(false)
+	const [saving, setSaving] = useState(false)
+	const [error, setError] = useState('')
+	const [saved, flashSaved] = useFlash()
 
 	function ifLive(action: () => void) {
 		if (active.current) action()
@@ -108,68 +118,66 @@ function useAreaName(groupKey: string, stack: CaptureStack<Memory>, latest: Memo
 	function remember(next: string) {
 		setStackName(groupKey, stack.key, next)
 		setCustom(getStackName(groupKey, stack.key))
+		draft.clear()
 		setEditing(false)
+		flashSaved()
 		if (single) onChanged()
 	}
 
 	async function save() {
-		const next = draft.trim().slice(0, 80)
-		if (!next || next === name) return setEditing(false)
+		const next = draft.value.trim().slice(0, 80)
+		if (!next || next === name) {
+			draft.discard()
+			return setEditing(false)
+		}
 		setSaving(true)
+		setError('')
 		try {
 			await renameSnapshot(single ? latest : undefined, next)
 			ifLive(() => remember(next))
 		} catch {
-			ifLive(() => notify('Could not save this name.'))
+			ifLive(() => {
+				setError('Could not save this name.')
+				notify('Could not save this name.')
+			})
 		} finally {
 			ifLive(() => setSaving(false))
 		}
 	}
 
 	function start() {
-		setDraft(name)
+		setError('')
 		setEditing(true)
 	}
 
-	return { name, editing, draft, saving, single, setDraft, setEditing, save, start }
+	return { name, draft, editing, saving, error, saved, single, setEditing, save, start }
 }
 
 function AreaTitle({ rename }: { rename: ReturnType<typeof useAreaName> }) {
 	const { t } = useI18n()
-	const { name, editing, draft, saving, single, setDraft, setEditing, save, start } = rename
+	const { name, draft, editing, saving, error, saved, single, setEditing, save, start } = rename
+	const pencil = useReturnFocus(editing)
 	if (editing)
 		return (
-			<form
+			<RenameForm
 				className="gallery-rename"
-				onSubmit={event => {
-					event.preventDefault()
-					void save()
-				}}
-			>
-				<input
-					value={draft}
-					maxLength={80}
-					aria-label={single ? t('Snapshot name') : t('Stack name')}
-					placeholder={t('Name this area…')}
-					onChange={event => setDraft(event.currentTarget.value)}
-				/>
-				<button type="submit" className="gallery-field-button" disabled={saving}>
-					{saving ? '…' : t('Save')}
-				</button>
-				<button
-					type="button"
-					className="gallery-field-button"
-					aria-label={t('Cancel')}
-					onClick={() => setEditing(false)}
-				>
-					<GalleryIcon name="close" />
-				</button>
-			</form>
+				draft={draft}
+				saved={name}
+				label={single ? t('Snapshot name') : t('Stack name')}
+				placeholder={t('Name this area…')}
+				saving={saving}
+				error={error}
+				onSave={() => void save()}
+				onCancel={() => setEditing(false)}
+			/>
 		)
 	return (
 		<div className="gallery-title">
 			<h3>{name}</h3>
+			<SavedNote visible={saved} />
+			{draft.isDraft && <DraftChip />}
 			<button
+				ref={pencil}
 				type="button"
 				className="gallery-icon-button"
 				onClick={start}
