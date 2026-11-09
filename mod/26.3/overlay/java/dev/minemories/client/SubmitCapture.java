@@ -175,9 +175,16 @@ final class SubmitCapture {
         int[] tints,
         ItemQuads quads,
         ItemStackRenderState.FoilType foil) {
+      itemQuads(pose, quads.solid(), tints, light, overlay);
+      itemQuads(pose, quads.translucent(), tints, light, overlay);
+    }
+
+    private void itemQuads(
+        PoseStack pose, List<BakedQuad> quads, int[] tints, int light, int overlay) {
       if (quads.isEmpty()) return;
-      quads(pose, buffers.getBuffer(quads.solid().isEmpty() ? null : quadType(quads.solid())), quads.solid(), tints, light, overlay);
-      quads(pose, buffers.getBuffer(quads.translucent().isEmpty() ? null : quadType(quads.translucent())), quads.translucent(), tints, light, overlay);
+      RenderType type = quadType(quads);
+      if (type == null) return;
+      quads(pose, buffers.getBuffer(type), quads, tints, light, overlay);
     }
 
     private static RenderType quadType(List<BakedQuad> quads) {
