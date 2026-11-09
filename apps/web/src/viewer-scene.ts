@@ -5,7 +5,7 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
-import { hasLegacySrgbColours } from './lib/glb-colours'
+import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
 import { dayDelta, Glide } from './lib/transitions'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
@@ -75,8 +75,9 @@ export interface ViewerSceneEvents {
 
 /**
  * Captures before GLB format 3 stored 8-bit sRGB colours where glTF 2.0 (and GLTFLoader) expects linear ones:
- * converts base colour (never opacity), emissive colour and KHR light colours so old and new captures look the
- * same. GLTFLoader shares one material between meshes, so each material is converted once.
+ * converts base colour (never opacity), the hue of the emissive colour (its strength is not a colour) and KHR light
+ * colours so old and new captures look the same. GLTFLoader shares one material between meshes, so each material is
+ * converted once.
  */
 function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown }): void {
 	if (!hasLegacySrgbColours(gltf.asset)) return
@@ -93,7 +94,8 @@ function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown })
 			if (converted.has(material) || !pbrMaterial.isMeshStandardMaterial) continue
 			converted.add(material)
 			pbrMaterial.color.convertSRGBToLinear()
-			pbrMaterial.emissive.convertSRGBToLinear()
+			const { r, g, b } = pbrMaterial.emissive
+			pbrMaterial.emissive.setRGB(...legacyEmissiveToLinear([r, g, b]), THREE.LinearSRGBColorSpace)
 		}
 	})
 }
