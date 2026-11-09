@@ -10,11 +10,13 @@ import { credentialChangeComplete } from './account-navigation'
 import './account.css'
 import { AdminAccessLink } from '../components/AdminAccessLink'
 
-type Kind = 'email' | 'password' | 'name'
+type Kind = 'email' | 'password' | 'name' | 'head'
 function errorCode(error: unknown): string {
 	return error !== null && typeof error === 'object' && 'message' in error ? String(error.message) : ''
 }
 function requestChange(kind: Kind, data: FormData) {
+	if (kind === 'head')
+		return apiClient.account.setMinecraftHead({ username: String(data.get('username') ?? '').trim() })
 	if (kind === 'name') return apiClient.account.changeName({ name: String(data.get('name') ?? '').trim() })
 	const currentPassword = String(data.get('currentPassword') ?? '')
 	if (kind === 'email')
@@ -64,9 +66,9 @@ export function AccountPage() {
 	}, [])
 	async function complete(kind: Kind, form: HTMLFormElement) {
 		if (!alive.current) return
-		if (kind === 'name') {
+		if (kind === 'name' || kind === 'head') {
 			await refreshSession()
-			if (alive.current) setSuccess(t('Display name saved.'))
+			if (alive.current) setSuccess(kind === 'name' ? t('Display name saved.') : t('Minecraft head saved.'))
 			return
 		}
 		form.reset()
@@ -91,6 +93,23 @@ export function AccountPage() {
 		} catch (cause) {
 			if (!alive.current) return
 			setError(accountError(cause, t))
+		} finally {
+			busy.current = false
+			if (alive.current) setPending(null)
+		}
+	}
+	async function removeHead() {
+		if (busy.current) return
+		busy.current = true
+		setPending('head')
+		setError('')
+		setSuccess('')
+		try {
+			await apiClient.account.setMinecraftHead({ username: null })
+			await refreshSession()
+			if (alive.current) setSuccess(t('Picture removed.'))
+		} catch (cause) {
+			if (alive.current) setError(accountError(cause, t))
 		} finally {
 			busy.current = false
 			if (alive.current) setPending(null)
@@ -147,6 +166,32 @@ export function AccountPage() {
 					<button className={buttonLime} type="submit" disabled={pending !== null}>
 						{pending === 'name' ? t('Saving…') : t('Save display name')}
 					</button>
+				</form>
+				<form className="mm-account-card" aria-labelledby="head-heading" onSubmit={event => void submit('head', event)}>
+					<h2 id="head-heading">{t('Minecraft head')}</h2>
+					<p>{t('Use the head of your Minecraft skin as your picture. Only your username is sent, to Minotar.')}</p>
+					<label>
+						{t('Minecraft username')}
+						<input
+							className="mc-field"
+							name="username"
+							autoComplete="off"
+							pattern="\w{3,16}"
+							minLength={3}
+							maxLength={16}
+							required
+							spellCheck={false}
+							disabled={pending !== null}
+						/>
+					</label>
+					<button className={buttonLime} type="submit" disabled={pending !== null}>
+						{pending === 'head' ? t('Saving…') : t('Use my Minecraft head')}
+					</button>
+					{session?.user.image && (
+						<button type="button" disabled={pending !== null} onClick={() => void removeHead()}>
+							{t('Remove my picture')}
+						</button>
+					)}
 				</form>
 				{hasPassword && (
 					<>

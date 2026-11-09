@@ -133,6 +133,7 @@ export function Directory({
 	onSearch,
 	onPage,
 	onSelect,
+	onDelete,
 }: {
 	directory: AdminDataset['directory']
 	admins: number
@@ -140,6 +141,7 @@ export function Directory({
 	onSearch(query: string, role: RoleFilter, sort: AdminUserSort): void
 	onPage(page: number): void
 	onSelect(user: AdminUser): void
+	onDelete(user: AdminUser): void
 }) {
 	const { t, locale } = useI18n()
 	return (
@@ -191,6 +193,16 @@ export function Directory({
 									>
 										{user.role === 'admin' ? t('Remove admin role') : t('Promote to admin')}
 									</button>
+									{user.role !== 'admin' && (
+										<button
+											type="button"
+											className={`mm-admin-secondary mm-admin-danger ${buttonDark}`}
+											aria-label={`${t('Delete the account')} (${user.name})`}
+											onClick={() => onDelete(user)}
+										>
+											{t('Delete the account')}
+										</button>
+									)}
 								</td>
 							</tr>
 						))}

@@ -102,3 +102,8 @@ if (!shareLinkColumns.some(column => column.name === 'world_key')) {
 	database.exec('ALTER TABLE share_links ADD COLUMN world_key TEXT')
 	database.exec('CREATE INDEX IF NOT EXISTS share_links_world_idx ON share_links(user_id, world_key, created_at DESC)')
 }
+// Opening counters for the administration overview; they hold no visitor identity.
+if (!shareLinkColumns.some(column => column.name === 'open_count'))
+	database.exec('ALTER TABLE share_links ADD COLUMN open_count INTEGER NOT NULL DEFAULT 0')
+if (!shareLinkColumns.some(column => column.name === 'last_opened_at'))
+	database.exec('ALTER TABLE share_links ADD COLUMN last_opened_at INTEGER')

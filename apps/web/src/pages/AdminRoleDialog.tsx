@@ -7,14 +7,19 @@ import { useI18n } from '../i18n/I18n'
 function roleError(cause: unknown, t: ReturnType<typeof useI18n>['t']): string {
 	const message = cause instanceof Error ? cause.message : ''
 	if (message === 'LAST_ADMIN') return t('The last administrator must keep their role.')
+	if (message === 'SELF_DELETE') return t('You cannot delete your own account from here.')
+	if (message === 'ADMIN_ACCOUNT') return t('Remove administrator access before deleting this account.')
 	return t('Action denied. Check your password and permissions, then try again.')
 }
 export function AdminRoleDialog({
 	target,
+	mode = 'role',
 	onClose,
 	onSuccess,
 }: {
 	target: AdminUser
+	/** `delete` permanently removes the account and its captures instead of changing its role. */
+	mode?: 'role' | 'delete'
 	onClose(): void
 	onSuccess(): void
 }) {
@@ -24,6 +29,7 @@ export function AdminRoleDialog({
 		[error, setError] = useState(''),
 		active = useRef(true)
 	const role = target.role === 'admin' ? 'user' : 'admin'
+	const confirmLabel = mode === 'delete' ? t('Delete the account') : t('Confirm change')
 	useEffect(() => {
 		active.current = true
 		const element = dialog.current
@@ -41,7 +47,8 @@ export function AdminRoleDialog({
 		setBusy(true)
 		setError('')
 		try {
-			await apiClient.admin.setRole({ userId: target.id, role, currentPassword })
+			if (mode === 'delete') await apiClient.admin.deleteUser({ userId: target.id, currentPassword })
+			else await apiClient.admin.setRole({ userId: target.id, role, currentPassword })
 			form.reset()
 			if (active.current) onSuccess()
 		} catch (cause) {
@@ -62,9 +69,10 @@ export function AdminRoleDialog({
 			}}
 		>
 			<form onSubmit={event => void submit(event)}>
-				<span className="mm-kicker">{t('ACCESS MANAGEMENT')}</span>
+				<span className="mm-kicker">{mode === 'delete' ? t('ACCOUNT DELETION') : t('ACCESS MANAGEMENT')}</span>
 				<h2 id="role-dialog-title">
-					{role === 'admin' ? t('Promote this account?') : t('Remove administrator access?')}
+					{mode === 'delete' && t('Delete this account?')}
+					{mode === 'role' && (role === 'admin' ? t('Promote this account?') : t('Remove administrator access?'))}
 				</h2>
 				<p className="mm-admin-dialog-target">
 					<small>{t('Account concerned')}</small>
@@ -72,9 +80,12 @@ export function AdminRoleDialog({
 					<span>{target.email}</span>
 				</p>
 				<p>
-					{role === 'admin'
-						? t('This account will be able to view statistics and manage administrators.')
-						: t('This account keeps its memories and loses access to this panel.')}
+					{mode === 'delete' &&
+						t('The account, its captures, share links and devices are deleted for good. This cannot be undone.')}
+					{mode === 'role' &&
+						(role === 'admin'
+							? t('This account will be able to view statistics and manage administrators.')
+							: t('This account keeps its memories and loses access to this panel.'))}
 				</p>
 				<label>
 					{t('Your current password')}
@@ -97,7 +108,7 @@ export function AdminRoleDialog({
 						{t('Cancel')}
 					</button>
 					<button type="submit" className={`mm-admin-primary ${buttonLime}`} disabled={busy}>
-						{busy ? t('Saving…') : t('Confirm change')}
+						{busy ? t('Saving…') : confirmLabel}
 					</button>
 				</div>
 			</form>

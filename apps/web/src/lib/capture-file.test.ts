@@ -1,6 +1,12 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { compressedSample } from '../testing/quads-glb'
-import { CaptureRestorationRequired, capturePollDelay, downloadCapture, requireCaptureReady } from './capture-file'
+import {
+	CaptureRestorationRequired,
+	captureFileName,
+	capturePollDelay,
+	downloadCapture,
+	requireCaptureReady,
+} from './capture-file'
 
 const availability = {
 	state: 'cold',
@@ -99,4 +105,12 @@ test('a Meshopt variant is expanded to an ordinary GLB before it reaches the vie
 		})
 	)
 	await expect(downloadCapture('/late', 'f.glb', controller.signal)).rejects.toThrow('stopped late')
+})
+
+test('snapshot names become safe GLB file names', () => {
+	expect(captureFileName('Château de Léa')).toBe('Chateau-de-Lea.glb')
+	expect(captureFileName('../../etc/passwd')).toBe('etc-passwd.glb')
+	expect(captureFileName('日本語')).toBe('snapshot.glb')
+	expect(captureFileName('')).toBe('snapshot.glb')
+	expect(captureFileName('x'.repeat(100))).toBe(`${'x'.repeat(60)}.glb`)
 })

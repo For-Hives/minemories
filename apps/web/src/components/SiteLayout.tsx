@@ -46,13 +46,13 @@ function AccountControl() {
 				{t('Sign in')}
 			</Link>
 		)
+	const avatar = avatarUrl(session.user)
 	return (
 		<div className="mm-account">
 			<Link to="/account" title={`${session.user.name} — ${t('My account')}`} aria-label={t('My account')}>
 				<b className="mm-account-avatar" aria-hidden="true">
 					{session.user.name.slice(0, 1).toUpperCase()}
-					{/* biome-ignore lint/performance/noImgElement: optional avatar overlays the local initial fallback. */}
-					<img src={avatarUrl(session.user)} alt="" width={32} height={32} loading="lazy" />
+					{avatar && <img src={avatar} alt="" width={32} height={32} loading="lazy" />}
 				</b>
 				<span>{session.user.name}</span>
 			</Link>
