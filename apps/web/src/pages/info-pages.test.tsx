@@ -58,6 +58,8 @@ test('public guides let a visitor move from concept to capture, installation and
 	fireEvent.click(screen.getByRole('link', { name: 'Toutes les étapes pour capturer, envoyer et partager' }))
 	fireEvent.click(screen.getByRole('tab', { name: 'Partager' }))
 	expect(screen.getByRole('heading', { name: '5. Partager seulement ce que tu choisis' })).toBeTruthy()
+	expect(document.body.textContent).toContain('clique sur « Partager » puis « Créer un lien »')
+	expect(document.body.textContent).not.toMatch(/« Share »|« Create a link »/)
 })
 
 function mountEnglish(ui: React.ReactNode) {
