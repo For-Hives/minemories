@@ -12,9 +12,10 @@ export function pngOf(width, height, pixel, options = {}) {
 
 /**
  * @param {{ MeshoptEncoder: any }} meshopt
- * @param {{ cells?: number, tint?: number }} [options] `cells` grid quads (more cells = more geometry), `tint` changes one texture colour
+ * @param {{ cells?: number, tint?: number, minemories?: object }} [options] `cells` grid quads (more cells = more geometry),
+ *   `tint` changes one texture colour, `minemories` is written as `asset.extras.minemories` (as the mod does)
  */
-export function syntheticGlb({ MeshoptEncoder }, { cells = 64, tint = 0 } = {}) {
+export function syntheticGlb({ MeshoptEncoder }, { cells = 64, tint = 0, minemories } = {}) {
 	const vertexCount = cells * 4
 	const positions = new Float32Array(vertexCount * 3)
 	for (let cell = 0; cell < cells; cell++)
@@ -51,7 +52,7 @@ export function syntheticGlb({ MeshoptEncoder }, { cells = 64, tint = 0 } = {}) 
 		},
 	})
 	const json = {
-		asset: { generator: 'synthetic', version: '2.0' },
+		asset: { generator: 'synthetic', version: '2.0', ...(minemories ? { extras: { minemories } } : {}) },
 		accessors: [
 			{ type: 'SCALAR', componentType: 5123, count: indices.length, bufferView: 2 },
 			{

@@ -29,8 +29,10 @@ export function linearToSrgb(value: number): number {
 
 /**
  * The mod writes `emissiveFactor` as the tint times a strength (`emission × 0.65`), and only the tint is a colour:
- * the strength must not go through the transfer curve. Emissive blocks are untinted (white) in practice, so the
- * largest channel is the strength; the remaining hue is converted and the strength kept.
+ * the strength must not go through the transfer curve. The file does not say which part is which, so the largest
+ * channel is taken as the strength and the remaining hue is converted. That is exact only when the tint's largest
+ * channel is 255 (the untinted, white emissive blocks captures contain in practice); a darker tint keeps its legacy
+ * brightness instead of being dimmed by the curve, an approximation of what format 3 writes.
  */
 function convertEmissive(rgb: Rgb, curve: (value: number) => number): [number, number, number] {
 	const strength = Math.max(...rgb)

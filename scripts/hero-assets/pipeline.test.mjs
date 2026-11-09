@@ -5,6 +5,7 @@ import { applyDelta } from '../../apps/web/src/lib/capture-delta.ts'
 import { budgetMetrics, checkBudget } from './budget.mjs'
 import { makeDelta, makeVerifiedDelta } from './delta.mjs'
 import { sha256 } from './equivalence.mjs'
+import { parseGlb } from './glb.mjs'
 import { inventoryOf, inventoryOfAll } from './inventory.mjs'
 import { runPipeline } from './pipeline.mjs'
 import { pngOf, syntheticGlb } from './synthetic.mjs'
@@ -55,6 +56,23 @@ test('every capture is rebuilt, proven, hashed and listed; deltas rebuild the ex
 	assert.equal(JSON.parse(new TextDecoder().decode(outputs.get('manifest.json'))).version, 1)
 	assert.equal(report.files.S1.source.file, 'S1.glb')
 	assert.ok(report.files.S0.bytes.brotli < report.files.S0.bytes.raw)
+})
+
+test('the Minemories format in asset.extras survives the rebuild, in the base file and in every delta', async () => {
+	// A format 3 capture holds linear colours; losing asset.extras would make the viewer and the film convert them twice.
+	const minemories = { format: 3, chunkSize: 16 }
+	const marked = {
+		S0: syntheticGlb({ MeshoptEncoder }, { cells: 96, minemories }),
+		S1: syntheticGlb({ MeshoptEncoder }, { cells: 90, minemories }),
+		characters: syntheticGlb({ MeshoptEncoder }, { cells: 40, tint: 9, minemories }),
+	}
+	const { outputs, manifest } = await runPipeline(config, marked, tools)
+	const base = outputs.get(manifest.files.S0.file)
+	assert.deepEqual(parseGlb(base).json.asset, { generator: 'synthetic', version: '2.0', extras: { minemories } })
+	for (const name of ['S1', 'characters']) {
+		const rebuilt = applyDelta(base, outputs.get(manifest.files[name].file))
+		assert.deepEqual(parseGlb(rebuilt).json.asset.extras, { minemories }, name)
+	}
 })
 
 test('the same sources give the same bytes (the CI can compare), and a changed source changes the hash', async () => {
