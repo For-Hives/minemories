@@ -51,56 +51,45 @@ export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: st
 	const { t } = useI18n()
 	const [failed, setFailed] = useState(false)
 	const screenshot = screenshots[id]
+	// A missing or broken image shows nothing rather than an empty frame promising a screenshot.
+	if (!src || failed) return null
 	return (
 		<figure className="install-screenshot" data-screenshot={screenshot.file}>
-			{src && !failed ? (
-				<a
-					href={src}
-					target="_blank"
-					rel="noreferrer"
-					aria-label={t('Enlarge: {title}', { title: t(screenshot.title) })}
-				>
-					<img
-						src={src}
-						width={1600}
-						height={900}
-						alt={t(screenshot.caption)}
-						loading="lazy"
-						onError={() => setFailed(true)}
-					/>
-				</a>
-			) : (
-				<div className="install-screenshot-placeholder">
-					<svg width="44" height="36" viewBox="0 0 44 36" fill="none" aria-hidden="true">
-						<rect x="1" y="1" width="42" height="34" stroke="currentColor" strokeWidth="2" />
-						<circle cx="31" cy="10" r="3" stroke="currentColor" />
-						<path d="m5 29 11-13 10 11 5-6 8 8" stroke="currentColor" />
-					</svg>
-					<strong>{t(screenshot.title)}</strong>
-					<span>
-						<T message={'Screenshot coming soon'} />
-					</span>
-				</div>
-			)}
+			<a href={src} target="_blank" rel="noreferrer" aria-label={t('Enlarge: {title}', { title: t(screenshot.title) })}>
+				<img
+					src={src}
+					width={1600}
+					height={900}
+					alt={t(screenshot.caption)}
+					loading="lazy"
+					onError={() => setFailed(true)}
+				/>
+			</a>
 			<figcaption>
 				<span>
 					<T message={'Visual reference · Windows'} />
 				</span>
 				{t(screenshot.caption)}
-				{src && !failed && (
-					<small>
-						<T message={'Click the image to enlarge it.'} />
-					</small>
-				)}
+				<small>
+					<T message={'Click the image to enlarge it.'} />
+				</small>
 			</figcaption>
 		</figure>
 	)
 }
 
-export function WindowsScreenshot({ id }: { id: WindowsScreenshotId }) {
+function screenshotSource(id: WindowsScreenshotId): string | undefined {
 	const file = screenshots[id].file
-	const src = ['webp', 'png', 'jpg']
+	return ['webp', 'png', 'jpg']
 		.map(extension => images[`../assets/tutorial/windows/${file}.${extension}`])
 		.find(Boolean)
+}
+/** Whether at least one of these screenshots has an image file: the fold that holds them is not shown empty. */
+export function hasWindowsScreenshot(ids: WindowsScreenshotId[]): boolean {
+	return ids.some(id => screenshotSource(id) !== undefined)
+}
+
+export function WindowsScreenshot({ id }: { id: WindowsScreenshotId }) {
+	const src = screenshotSource(id)
 	return <ScreenshotFrame key={src} id={id} src={src} />
 }

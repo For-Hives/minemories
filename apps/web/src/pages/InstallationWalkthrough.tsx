@@ -152,7 +152,6 @@ export function LoaderInstaller({
 				<a href={guideUrl(target)}>
 					<T message={'Official guide for {loader}'} params={{ loader: target.name }} />
 				</a>
-				<T message={'. The Minecraft Launcher walkthrough still needs in-game validation with the distributed JAR.'} />
 			</p>
 		</>
 	)

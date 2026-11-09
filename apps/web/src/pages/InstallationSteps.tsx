@@ -8,7 +8,7 @@ import { catalogLinks, fabricApiUrl, javaUrl } from './installation-loaders'
 import type { StepId, System } from './installation-state'
 import { ModDownload } from './ModDownload'
 import type { LoaderTarget } from './mod-releases'
-import { WindowsScreenshot } from './WindowsScreenshot'
+import { hasWindowsScreenshot, WindowsScreenshot, type WindowsScreenshotId } from './WindowsScreenshot'
 
 export const stepTitles: Record<StepId, string> = {
 	system: 'Which computer do you play on?',
@@ -28,15 +28,17 @@ function Goal({ children }: { children: ReactNode }) {
 	return <p className="install-goal">{children}</p>
 }
 
-/** The Windows screenshots of the validated walkthrough, folded away until asked for. */
-function Screenshots({ show, children }: { show: boolean; children: ReactNode }) {
-	if (!show) return null
+/** The Windows screenshots of the validated walkthrough, folded away until asked for; no fold while none has an image. */
+function Screenshots({ show, ids }: { show: boolean; ids: WindowsScreenshotId[] }) {
+	if (!(show && hasWindowsScreenshot(ids))) return null
 	return (
 		<details>
 			<summary>
 				<T message={'Show the screenshots'} />
 			</summary>
-			{children}
+			{ids.map(id => (
+				<WindowsScreenshot key={id} id={id} />
+			))}
 		</details>
 	)
 }
@@ -143,9 +145,7 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 					/>
 				</p>
 			</details>
-			<Screenshots show={walkthrough}>
-				<WindowsScreenshot id="jarDownload" />
-			</Screenshots>
+			<Screenshots show={walkthrough} ids={['jarDownload']} />
 		</>
 	)
 }
@@ -239,9 +239,7 @@ function FileStep({
 					<T message={'. There is nothing to install on the server.'} />
 				</p>
 			</details>
-			<Screenshots show={screenshots}>
-				<WindowsScreenshot id="modsFolder" />
-			</Screenshots>
+			<Screenshots show={screenshots} ids={['modsFolder']} />
 		</>
 	)
 }
@@ -442,9 +440,7 @@ function MemoryStep({ system, screenshots }: { system: System; screenshots: bool
 				<T message={"The export folder can be changed in the mod's advanced settings."} />
 			</p>
 			<GalleryDetails />
-			<Screenshots show={screenshots}>
-				<WindowsScreenshot id="viewer" />
-			</Screenshots>
+			<Screenshots show={screenshots} ids={['viewer']} />
 		</>
 	)
 }

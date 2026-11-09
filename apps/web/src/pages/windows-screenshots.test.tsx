@@ -40,25 +40,19 @@ function openStep(title: string, version = '1.21.1', loader = 'Je n’ai pas enc
 const figures = () =>
 	[...document.querySelectorAll('figure[data-screenshot]')].map(figure => figure.getAttribute('data-screenshot'))
 
-test('all seven reserved screenshots are attached to the Windows steps, folded away, without broken image requests', () => {
-	const expected = [
-		[
-			'Installer le loader',
-			['01-minecraft-1.21.1', '02-java-21', '03-neoforge-install-client', '04-profile-game-directory'],
-		],
-		['Télécharger le mod', ['05-downloaded-jar']],
-		['Ranger le fichier', ['06-mods-folder']],
-		['Lancer le jeu', []],
-		['Créer un souvenir', ['10-memory-in-viewer']],
-	] as const
-	for (const [step, files] of expected) {
+test('without image files, the Windows steps show no empty screenshot frame, fold or placeholder', () => {
+	for (const step of [
+		'Installer le loader',
+		'Télécharger le mod',
+		'Ranger le fichier',
+		'Lancer le jeu',
+		'Créer un souvenir',
+	]) {
 		openStep(step)
-		expect(figures()).toEqual(files)
-		for (const figure of document.querySelectorAll('figure[data-screenshot]'))
-			expect(figure.closest('details')).toBeTruthy()
+		expect(figures()).toEqual([])
+		expect(screen.queryByText('Voir les captures d’écran')).toBeNull()
+		expect(document.body.textContent).not.toMatch(/à venir|reste à valider en jeu/)
 	}
-	// Missing Windows screenshots stay placeholders: no request for an image that does not exist.
-	expect(document.querySelector('figure[data-screenshot] img')).toBeNull()
 })
 
 test('the screenshots only show for the validated Windows NeoForge 1.21.1 walkthrough', () => {
@@ -92,8 +86,8 @@ test('a supplied screenshot uses its caption as alt text, reserves image space a
 	expect(screen.getByRole('link', { name: 'Agrandir : Déposer le JAR dans mods' }).getAttribute('href')).toBe(
 		'/assets/tutorial-image.png'
 	)
-	expect(screen.queryByText('Capture d’écran à venir')).toBeNull()
 	fireEvent.error(image)
+	// A broken image takes its whole frame with it.
 	expect(screen.queryByRole('img')).toBeNull()
-	expect(screen.getByText('Capture d’écran à venir')).toBeTruthy()
+	expect(document.querySelector('figure')).toBeNull()
 })
