@@ -201,6 +201,7 @@ test.each([false, true])(
 )
 test('login submits credentials, refreshes the session and opens the gallery', async () => {
 	mount(<AuthPage mode="login" />)
+	expect(screen.getByRole('link', { name: 'Just visiting?' }).getAttribute('href')).toBe('/explore')
 	credentials()
 	fireEvent.click(screen.getByRole('button', { name: /Sign in/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))

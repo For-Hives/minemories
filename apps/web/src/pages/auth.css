@@ -292,6 +292,11 @@
 	font: 400 var(--ds-fs-xs) / 18px var(--f-title);
 	text-shadow: var(--ds-text-shadow-1);
 }
+.auth-guest-link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
 /* "No account": a game tag. */
 .auth-guest-title > span:last-child {
 	margin-left: auto;

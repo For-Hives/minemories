@@ -163,7 +163,11 @@ function GuestEntry() {
 		<aside className="auth-guest" aria-label={t('Visit without an account')}>
 			<div className="auth-guest-title">
 				<span aria-hidden="true">↗</span>
-				<h2>{t('Just visiting?')}</h2>
+				<h2>
+					<Link className="auth-guest-link" to="/explore">
+						{t('Just visiting?')}
+					</Link>
+				</h2>
 				<span>{t('NO ACCOUNT')}</span>
 			</div>
 			{import.meta.env.DEV ? (
