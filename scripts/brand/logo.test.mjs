@@ -36,6 +36,15 @@ test('the mark keeps only the camera head, in a square, and each file has its ow
 	assert.doesNotMatch(mark, /radial-gradient-1|data-name/)
 })
 
+test('the icon is the whole logo, tripod included, centred in a square', () => {
+	const { icon, iconBox } = buildLogos(canonical)
+	assert.equal(iconBox.width, iconBox.height)
+	assert.match(icon, /id="LegBack"/)
+	assert.match(icon, /id="Lens"/)
+	assert.match(icon, /url\(#mm-icon-glow\)/)
+	assert.match(icon, new RegExp(`viewBox="${iconBox.x} ${iconBox.y} ${iconBox.width} ${iconBox.height}"`))
+})
+
 test('a logo without a gradient or with an incomplete path is refused', () => {
 	assert.throws(() => parseLogo('<svg><path id="a" d="M0 0Z" fill="#000"/></svg>'), /radial gradient/)
 	assert.throws(
@@ -64,6 +73,6 @@ test('the manifest lists each app icon as any and maskable on the site backgroun
 		]
 	)
 	assert.deepEqual(ICONS.favicon.sizes, [16, 32, 48])
-	// The head's half-diagonal (≈ 0.61 of the mark) must stay inside the maskable circle of radius 0.4.
-	for (const { scale } of ICONS.app) assert.ok(0.61 * scale <= 0.4, `scale ${scale}`)
+	// The whole logo's half-diagonal (≈ 0.56 of the icon's square) must stay inside the maskable circle of radius 0.4.
+	for (const { scale } of ICONS.app) assert.ok(0.56 * scale <= 0.4, `scale ${scale}`)
 })

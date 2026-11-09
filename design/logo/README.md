@@ -45,9 +45,10 @@ Careful: the logo size changes with the angle, and `scripts/brand/logo.test.mjs`
 `bun brand:icons` (`scripts/brand/build-icons.mjs`, needs ImageMagick 7 with librsvg) rebuilds, from `minemories-logo.svg`:
 
 - `apps/web/public/brand/minemories-logo.svg`: the full logo, optimised (same rendering, pixel for pixel).
-- `apps/web/public/brand/minemories-mark.svg` and `apps/web/public/favicon.svg`: the square mark, the camera head only, for small sizes.
-- `apps/web/public/favicon.ico` (16, 32, 48), `apple-touch-icon.png` (180), `icon-192.png` and `icon-512.png` (mark on the site background `#14110e`, inside the maskable safe circle), `site.webmanifest`.
-- `apps/web/public/brand/og-image.png`: the 1200 × 630 social image, logo and name in the game font.
+- `apps/web/public/brand/minemories-mark.svg`: the square mark, the camera head only (footer, mod icon).
+- `apps/web/public/favicon.svg`: the whole logo, tripod included, centred in a square.
+- `apps/web/public/favicon.ico` (16, 32, 48), `apple-touch-icon.png` (180), `icon-192.png` and `icon-512.png` (the whole logo on the site background `#14110e`, inside the maskable safe circle), `site.webmanifest`.
+- `apps/web/public/brand/og-image.png`: the 1200 × 630 social image, the whole logo alone on the site background.
 - `mod/shared/brand/icon.png`: the 128 × 128 transparent mod icon.
 
 The outputs are committed; rerun the command after changing the canonical SVG and check the small icons by eye.
