@@ -214,7 +214,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 						setCategory('all')
 						setFavoritesOnly(false)
 						setSort(ranking ? 'hearts' : 'title')
-						setParams({})
+						setParams({ demo: '1' })
 					}}
 				>
 					{t('Reset demo')}
@@ -269,7 +269,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 							aria-label={`${t('Visit')} ${translate(locale, memory.title)}`}
 							onClick={event => {
 								trigger.current = event.currentTarget
-								setParams({ souvenir: memory.id })
+								setParams({ demo: '1', souvenir: memory.id })
 							}}
 						>
 							<MemoryScene theme={memory.theme} label={t('Demo illustration')} />
@@ -313,8 +313,9 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 				<DemoDetail
 					key={selected.id}
 					memory={selected}
+					base={ranking ? '/ranking' : '/explore'}
 					close={() => {
-						setParams({})
+						setParams({ demo: '1' })
 						trigger.current?.focus()
 					}}
 				/>
@@ -322,7 +323,15 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 		</section>
 	)
 }
-function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; close: () => void }) {
+function DemoDetail({
+	memory,
+	base,
+	close,
+}: {
+	memory: (typeof demoMemories)[number]
+	base: string
+	close: () => void
+}) {
 	const { locale, t } = useI18n()
 	const [link, setLink] = useState('')
 	const [copied, setCopied] = useState(false)
@@ -332,7 +341,8 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 		heading.current?.scrollIntoView({ block: 'center', behavior: 'instant' })
 	}, [])
 	async function share() {
-		const url = new URL('/explore', window.location.origin)
+		const url = new URL(base, window.location.origin)
+		url.searchParams.set('demo', '1')
 		url.searchParams.set('souvenir', memory.id)
 		setLink(url.href)
 		try {

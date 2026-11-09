@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { ExplorerPage, GalleryPreview, MarketingPage } from './DiscoveryPages'
@@ -58,17 +58,38 @@ test('ranking votes add once, can be removed and remain local', () => {
 test('a demo link opens its memory, copies a real URL and provides a fallback when clipboard is unavailable', async () => {
 	const writeText = vi.fn().mockResolvedValue(undefined)
 	vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
-	gallery('/explore?souvenir=premiere-maison')
+	gallery('/explore?demo=1&souvenir=premiere-maison')
 	expect(screen.getByRole('region', { name: 'Aperçu du souvenir' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de la démo' }))
 	await screen.findByText('Lien copié')
-	expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore?souvenir=premiere-maison`)
+	// The copied link opens the demo again, not the public gallery where this illustration does not exist.
+	expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore?demo=1&souvenir=premiere-maison`)
 	writeText.mockRejectedValueOnce(new Error('Clipboard blocked'))
 	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de la démo' }))
 	await screen.findByText('Sélectionne le lien pour le copier')
 	fireEvent.click(screen.getByRole('button', { name: 'Fermer l’aperçu' }))
 	expect(screen.queryByRole('region', { name: 'Aperçu du souvenir' })).toBeNull()
 	vi.unstubAllGlobals()
+})
+test('opening and closing a demo memory keeps the demo mode in the address', () => {
+	function Address() {
+		const location = useLocation()
+		return <output aria-label="address">{location.search}</output>
+	}
+	render(
+		<I18nProvider>
+			<MemoryRouter initialEntries={['/ranking?demo=1']}>
+				<GalleryPreview ranking />
+				<Address />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Visiter Notre première maison' }))
+	expect(screen.getByLabelText('address').textContent).toBe('?demo=1&souvenir=premiere-maison')
+	fireEvent.click(screen.getByRole('button', { name: 'Fermer l’aperçu' }))
+	expect(screen.getByLabelText('address').textContent).toBe('?demo=1')
+	fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser la démo' }))
+	expect(screen.getByLabelText('address').textContent).toBe('?demo=1')
 })
 test('nostalgia timeline updates its illustration and new journeys can be read in English', async () => {
 	render(
