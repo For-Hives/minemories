@@ -8,11 +8,14 @@ import { SharePanel } from '../components/SharePanel'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
+import { isDraftString } from '../lib/form-drafts'
 import { viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { CaptureFacts } from './GalleryFacts'
 import { type Memories, useLivePage } from './gallery-data'
 import { PublicationPanel } from './PublicDiscovery'
+import { DraftChip, RenameForm, SavedNote, useReturnFocus } from './RenameField'
+import { trimText, useDraft, useFlash } from './use-draft'
 
 export type DialogTab = 'details' | 'share' | 'publish' | 'snapshots'
 export interface DialogTarget {
@@ -37,13 +40,21 @@ function trapFocus(event: KeyboardEvent, dialog: HTMLElement) {
 	;(leavingStart ? last : first)?.focus()
 }
 
+/**
+ * Focuses the dialog once, when it opens, and gives focus back to its opener when it closes. Parents re-render it on
+ * every gallery refresh with a new `onClose`: kept in a ref, it never re-runs the effect, so a field being typed in keeps
+ * its focus and caret.
+ */
 export function useModal(onClose: () => void) {
 	const dialog = useRef<HTMLDivElement>(null)
+	const close = useRef(onClose)
+	close.current = onClose
 	useEffect(() => {
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
 		dialog.current?.focus()
 		function onKey(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose()
+			// A field that handles Escape itself (an inline rename) prevents the default: the dialog stays open.
+			if (event.key === 'Escape' && !event.defaultPrevented) close.current()
 			else if (event.key === 'Tab' && dialog.current) trapFocus(event, dialog.current)
 		}
 		document.addEventListener('keydown', onKey)
@@ -54,7 +65,7 @@ export function useModal(onClose: () => void) {
 			document.body.style.overflow = overflow
 			opener?.focus()
 		}
-	}, [onClose])
+	}, [])
 	return dialog
 }
 
@@ -189,26 +200,38 @@ function SnapshotRow({
 	const { t, locale } = useI18n()
 	const { notify } = useAppContext()
 	const active = useLivePage()
+	// The saved name shows at once, before the refreshed list brings it back from the server.
+	const [renamed, setRenamed] = useState<{ from: string; to: string } | null>(null)
+	const shown = renamed?.from === memory.name ? renamed.to : memory.name
+	const draft = useDraft('snapshot-name', memory.id, shown, isDraftString, { normalize: trimText })
 	const [editing, setEditing] = useState(false)
-	const [draft, setDraft] = useState(memory.name)
 	const [saving, setSaving] = useState(false)
+	const [error, setError] = useState('')
+	const [saved, flashSaved] = useFlash()
+	const pencil = useReturnFocus(editing)
 	const thumbnail = memory.metadata.thumbnail ?? memory.metadata.icon
 
 	async function save() {
-		const name = draft.trim().slice(0, 80)
-		if (!name || name === memory.name) {
+		const name = draft.value.trim().slice(0, 80)
+		if (!name || name === shown) {
+			draft.discard()
 			setEditing(false)
-			setDraft(memory.name)
 			return
 		}
 		setSaving(true)
+		setError('')
 		try {
 			await apiClient.memories.rename({ id: memory.id, name })
 			if (!active.current) return
+			setRenamed({ from: memory.name, to: name })
+			draft.clear()
 			setEditing(false)
+			flashSaved()
 			onChanged()
 		} catch {
-			if (active.current) notify('Could not save this name.')
+			if (!active.current) return
+			setError('Could not save this name.')
+			notify('Could not save this name.')
 		} finally {
 			if (active.current) setSaving(false)
 		}
@@ -223,39 +246,25 @@ function SnapshotRow({
 			/>
 			<div className="gallery-snapshot-text">
 				{editing ? (
-					<form
-						onSubmit={event => {
-							event.preventDefault()
-							void save()
-						}}
-					>
-						<input
-							value={draft}
-							maxLength={80}
-							aria-label={t('Snapshot name')}
-							onChange={event => setDraft(event.currentTarget.value)}
-						/>
-						<button type="submit" className="gallery-field-button" disabled={saving}>
-							{saving ? '…' : t('Save')}
-						</button>
-						<button
-							type="button"
-							className="gallery-field-button"
-							aria-label={t('Cancel')}
-							onClick={() => {
-								setEditing(false)
-								setDraft(memory.name)
-							}}
-						>
-							<GalleryIcon name="close" />
-						</button>
-					</form>
+					<RenameForm
+						draft={draft}
+						saved={shown}
+						label={t('Snapshot name')}
+						saving={saving}
+						error={error}
+						onSave={() => void save()}
+						onCancel={() => setEditing(false)}
+					/>
 				) : (
 					<>
-						<strong>{memory.name}</strong>
+						<strong>{shown}</strong>
 						<span className="gallery-snapshot-meta">
 							{formatRelativeDate(memory.metadata.capturedAt ?? memory.createdAt, Date.now(), locale)} ·{' '}
 							{formatFileSize(memory.size, locale)}
+						</span>
+						<span className="gallery-snapshot-state">
+							{draft.isDraft && <DraftChip />}
+							<SavedNote visible={saved} />
 						</span>
 					</>
 				)}
@@ -265,16 +274,20 @@ function SnapshotRow({
 					className="gallery-icon-button"
 					to={viewPath(memory.id, timeline)}
 					title={t('Open this snapshot')}
-					aria-label={`${t('Open this snapshot')}: ${memory.name}`}
+					aria-label={`${t('Open this snapshot')}: ${shown}`}
 				>
 					<GalleryIcon name="view" />
 				</Link>
 				<button
+					ref={pencil}
 					type="button"
 					className="gallery-icon-button"
 					title={t('Rename this snapshot')}
-					aria-label={t('Rename {name}', { name: memory.name })}
-					onClick={() => setEditing(true)}
+					aria-label={t('Rename {name}', { name: shown })}
+					onClick={() => {
+						setError('')
+						setEditing(true)
+					}}
 				>
 					<GalleryIcon name="pencil" />
 				</button>
@@ -282,7 +295,7 @@ function SnapshotRow({
 					type="button"
 					className="gallery-icon-button"
 					title={t('Share this snapshot')}
-					aria-label={`${t('Share this snapshot')}: ${memory.name}`}
+					aria-label={`${t('Share this snapshot')}: ${shown}`}
 					onClick={() => onTarget({ tab: 'share', id: memory.id })}
 				>
 					<GalleryIcon name="link" />
@@ -291,7 +304,7 @@ function SnapshotRow({
 					type="button"
 					className="gallery-icon-button"
 					title={t('Public publication')}
-					aria-label={`${t('Public publication')}: ${memory.name}`}
+					aria-label={`${t('Public publication')}: ${shown}`}
 					onClick={() => onTarget({ tab: 'publish', id: memory.id })}
 				>
 					<GalleryIcon name="globe" />
@@ -300,7 +313,7 @@ function SnapshotRow({
 					type="button"
 					className="gallery-icon-button is-danger"
 					title={t('Move to trash')}
-					aria-label={t('Move {name} to trash', { name: memory.name })}
+					aria-label={t('Move {name} to trash', { name: shown })}
 					onClick={() => onTrashed(memory.id)}
 				>
 					<GalleryIcon name="trash" />

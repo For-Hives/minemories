@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { publicationStatus } from '@minemories/api-contract'
 import { migrateDiscovery, PublicDiscovery } from './discovery'
 
 const resources: { db: Database; path: string }[] = []
@@ -52,8 +53,8 @@ const listing = { query: '', sort: 'recent' as const, page: 0 }
 test('private by default, consent candidate hidden until another moderator approves', () => {
 	const f = fixture()
 	const memoryId = f.memory()
-	expect(f.service.status('owner', memoryId)).toEqual({ id: null, state: 'private', reason: null })
-	expect(f.service.revoke('owner', memoryId).state).toBe('private')
+	expect(f.service.status('owner', memoryId)).toEqual({ id: null, state: 'private', reason: null, submission: null })
+	expect(f.service.revoke('owner', memoryId)).toMatchObject({ state: 'private', submission: null })
 	const candidate = f.publish(memoryId)
 	expect(f.service.list(null, listing).items).toEqual([])
 	expect(() => f.service.get(candidate.id, null)).toThrow('Not Found')
@@ -91,8 +92,20 @@ test('owner authorization, rejection reason, revocation and republication invali
 	])
 		expect(operation).toThrow('Not Found')
 	const candidate = f.publish(memoryId)
-	f.service.moderate('moderator', candidate.id, 'rejected', 'Private signs')
-	expect(f.service.status('owner', memoryId)).toMatchObject({ state: 'rejected', reason: 'Private signs' })
+	const submitted = { title: 'Village', description: 'A build', category: 'build' as const }
+	expect(candidate.submission).toEqual(submitted)
+	expect(f.service.status('owner', memoryId)).toMatchObject({ state: 'pending', submission: submitted })
+	expect(f.service.moderate('moderator', candidate.id, 'rejected', 'Private signs')).toEqual({
+		id: candidate.id,
+		state: 'rejected',
+		reason: 'Private signs',
+		submission: submitted,
+	})
+	expect(f.service.status('owner', memoryId)).toMatchObject({
+		state: 'rejected',
+		reason: 'Private signs',
+		submission: submitted,
+	})
 	f.service.moderate('moderator', candidate.id, 'approved', '')
 	f.service.vote('voter', candidate.id, true)
 	f.service.report('reporter', candidate.id, 'Sign')
@@ -100,8 +113,12 @@ test('owner authorization, rejection reason, revocation and republication invali
 	expect(replacement.id).not.toBe(candidate.id)
 	expect(() => f.service.get(candidate.id, null)).toThrow('Not Found')
 	expect(f.db.query('SELECT * FROM public_votes').all()).toHaveLength(0)
-	f.service.moderate('moderator', replacement.id, 'approved', '')
-	expect(f.service.revoke('owner', memoryId).state).toBe('revoked')
+	const changed = { ...submitted, title: 'Changed title' }
+	expect(replacement.submission).toEqual(changed)
+	expect(f.service.moderate('moderator', replacement.id, 'approved', '')).toMatchObject({ submission: changed })
+	expect(f.service.status('owner', memoryId)).toMatchObject({ state: 'approved', submission: changed })
+	expect(f.service.revoke('owner', memoryId)).toMatchObject({ state: 'revoked', submission: changed })
+	expect(f.service.status('owner', memoryId)).toMatchObject({ state: 'revoked', submission: changed })
 	expect(() => f.service.file(replacement.id, 'moderator')).toThrow('Not Found')
 	expect(() => f.service.moderate('moderator', replacement.id, 'approved', '')).toThrow('Not Found')
 })
@@ -225,4 +242,11 @@ test('independent SQLite processes serialize duplicate votes and concurrent owne
 	await Promise.all([worker('owner', 'revoke', memoryId), worker('last-voter')])
 	expect(() => f.service.get(id, null)).toThrow('Not Found')
 	expect(f.db.query('SELECT * FROM public_votes').all()).toHaveLength(0)
+})
+
+test('status payloads from an API without submission still parse with submission null', () => {
+	const legacy = { id: null, state: 'private' as const, reason: null }
+	expect(publicationStatus.parse(legacy)).toEqual({ ...legacy, submission: null })
+	const submission = { title: 'Village', description: '', category: 'other' as const }
+	expect(publicationStatus.parse({ ...legacy, submission }).submission).toEqual(submission)
 })

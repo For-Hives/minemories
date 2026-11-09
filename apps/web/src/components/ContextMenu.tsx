@@ -22,6 +22,8 @@ export function useContextMenu() {
 	const [menu, setMenu] = useState<OpenMenu | null>(null)
 	const open = useCallback((event: MouseEvent<HTMLElement>, label: string, items: MenuItem[]) => {
 		event.preventDefault()
+		// An area card sits inside its server tile: only the innermost element opens its menu.
+		event.stopPropagation()
 		const keyboard = event.clientX === 0 && event.clientY === 0
 		const rect = event.currentTarget.getBoundingClientRect()
 		setMenu({

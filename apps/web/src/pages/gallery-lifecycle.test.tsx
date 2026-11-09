@@ -4,7 +4,9 @@ import { act } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { SharePanel } from '../components/SharePanel'
+import { type DialogTarget, GalleryDialog } from './GalleryDialog'
 import { GalleryPage } from './GalleryPage'
+import { ServerSheet } from './ServerSheet'
 
 const mocks = vi.hoisted(() => ({
 	list: vi.fn(),
@@ -181,24 +183,90 @@ test.each(['trash', 'restore', 'remove'] as const)(
 		await waitFor(() => expect(mocks[action]).toHaveBeenCalledTimes(2))
 	}
 )
-test('snapshot renaming can be cancelled, trimmed, retried and left unchanged without an RPC', async () => {
+test('snapshot renaming keeps a cancelled draft, discards it on request, trims, retries and skips unchanged names', async () => {
 	page()
 	await expand()
-	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Discarded' } })
+	const pencil = screen.getByRole('button', { name: 'Rename Cabin' })
+	fireEvent.click(pencil)
+	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	expect(document.activeElement).toBe(field)
+	expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5])
+	expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
+	// A trailing space is typed as is, but it is no change worth a draft.
+	fireEvent.change(field, { target: { value: 'Cabin ' } })
+	expect(field.value).toBe('Cabin ')
+	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
+	fireEvent.change(field, { target: { value: 'Discarded' } })
+	expect(screen.getByText('Draft — not saved yet')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 	expect(mocks.rename).not.toHaveBeenCalled()
+	expect(screen.getByRole('heading', { name: 'Cabin' })).toBeTruthy()
+	expect(screen.getByText('Draft')).toBeTruthy()
+	expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Rename Cabin' }))
+	// A one-capture area renames the capture: the draft is the capture's, shared with its snapshot row.
+	expect(Object.keys(JSON.parse(localStorage.getItem('minemories-form-drafts') ?? '{}'))).toEqual([
+		JSON.stringify(['snapshot-name', 'local', 'one']),
+	])
+
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Discarded')
+	fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }))
+	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Cabin')
+	expect(document.activeElement).toBe(screen.getByLabelText('Snapshot name'))
+	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+	// Enter on an unchanged name only closes the field.
+	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
+	expect(screen.queryByLabelText('Snapshot name')).toBeNull()
 	expect(mocks.rename).not.toHaveBeenCalled()
+
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
 	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: '  New cabin  ' } })
 	mocks.rename.mockRejectedValueOnce(new Error('offline'))
-	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('Could not save this name.'))
+	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
+	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Could not save this name.')
+	expect(mocks.notify).toHaveBeenCalledWith('Could not save this name.')
+	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', '  New cabin  ')
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 	await screen.findByRole('heading', { name: 'New cabin' })
 	expect(mocks.rename).toHaveBeenLastCalledWith({ id: 'one', name: 'New cabin' })
+	expect(screen.getByText('Saved')).toBeTruthy()
+	expect(screen.queryByText('Draft')).toBeNull()
+	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
+})
+test('renaming from the right-click menu leaves focus in the field, caret at the end', async () => {
+	page()
+	await expand()
+	fireEvent.contextMenu(card(), { clientX: 10, clientY: 10 })
+	fireEvent.click(
+		within(screen.getByRole('menu', { name: 'Cabin' })).getByRole('menuitem', { name: 'Rename this snapshot' })
+	)
+	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	expect(screen.queryByRole('menu')).toBeNull()
+	expect(document.activeElement).toBe(field)
+	expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5])
+})
+test('an unsaved area name survives leaving the gallery and is restored when editing starts again', async () => {
+	memories.push(capture('two', 'Barn'))
+	const view = page()
+	await expand()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
+	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'Half typed' } })
+	fireEvent.keyDown(screen.getByLabelText('Stack name'), { key: 'Escape' })
+	expect(screen.queryByLabelText('Stack name')).toBeNull()
+	expect(screen.getByText('Draft')).toBeTruthy()
+	view.unmount()
+	page()
+	await expand()
+	expect(screen.getByText('Draft')).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
+	expect(screen.getByLabelText('Stack name')).toHaveProperty('value', 'Half typed')
+	expect(screen.getByText('Draft — not saved yet')).toBeTruthy()
+	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'Typed in full' } })
+	fireEvent.keyDown(screen.getByLabelText('Stack name'), { key: 'Enter' })
+	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+	expect(await screen.findByRole('heading', { name: 'Typed in full' })).toBeTruthy()
+	expect(screen.queryByText('Draft')).toBeNull()
 })
 test('area names are local, support cancellation and survive reopening the gallery', async () => {
 	memories.push(capture('two', 'Barn'))
@@ -357,6 +425,136 @@ test('snapshots can be renamed from the manage dialog and the dialog traps keybo
 	expect(document.activeElement).toBe(close)
 	fireEvent.click(close)
 	expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+test('Escape in a snapshot rename stops editing but keeps the dialog open and the draft', async () => {
+	memories = [capture('two', 'Barn'), capture('one', 'Cabin')]
+	page()
+	fireEvent.click(await screen.findByRole('button', { name: 'Manage Barn' }))
+	const dialog = await screen.findByRole('dialog', { name: 'Barn' })
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Rename Cabin' }))
+	fireEvent.change(within(dialog).getByLabelText('Snapshot name'), { target: { value: 'Cab' } })
+	fireEvent.keyDown(within(dialog).getByLabelText('Snapshot name'), { key: 'Escape' })
+	expect(screen.getByRole('dialog', { name: 'Barn' })).toBeTruthy()
+	expect(within(dialog).queryByLabelText('Snapshot name')).toBeNull()
+	expect(within(dialog).getByText('Draft')).toBeTruthy()
+	expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Rename Cabin' }))
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.queryByRole('dialog')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Manage Barn' }))
+	const reopened = await screen.findByRole('dialog', { name: 'Barn' })
+	expect(within(reopened).getByText('Draft')).toBeTruthy()
+	fireEvent.click(within(reopened).getByRole('button', { name: 'Rename Cabin' }))
+	expect(within(reopened).getByLabelText('Snapshot name')).toHaveProperty('value', 'Cab')
+})
+test('a parent re-render (the 12 s refresh) never moves focus or the caret out of a dialog field', async () => {
+	memories = [capture('two', 'Barn'), capture('one', 'Cabin')]
+	const dialogProps = {
+		title: 'Barn',
+		memories,
+		target: { tab: 'snapshots', id: 'two' } as DialogTarget,
+		onTarget: vi.fn(),
+		onChanged: vi.fn(),
+		onTrashed: vi.fn(),
+	}
+	const view = render(
+		<MemoryRouter>
+			<GalleryDialog {...dialogProps} onClose={() => undefined} />
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
+	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	fireEvent.change(field, { target: { value: 'Cabin by the lake' } })
+	field.setSelectionRange(5, 5)
+	view.rerender(
+		<MemoryRouter>
+			<GalleryDialog {...dialogProps} memories={structuredClone(memories)} onClose={() => undefined} />
+		</MemoryRouter>
+	)
+	expect(document.activeElement).toBe(field)
+	expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5])
+	view.unmount()
+
+	const server = { key: 'world', name: 'World', captures: memories, areas: [] }
+	const sheet = render(
+		<MemoryRouter>
+			<ServerSheet server={server} name="World" onRename={vi.fn()} onClose={() => undefined} />
+		</MemoryRouter>
+	)
+	const name = screen.getByLabelText('Server name') as HTMLInputElement
+	name.focus()
+	fireEvent.change(name, { target: { value: 'Worldwide' } })
+	name.setSelectionRange(3, 3)
+	sheet.rerender(
+		<MemoryRouter>
+			<ServerSheet server={{ ...server }} name="World" onRename={vi.fn()} onClose={() => undefined} />
+		</MemoryRouter>
+	)
+	expect(document.activeElement).toBe(name)
+	expect([name.selectionStart, name.selectionEnd]).toEqual([3, 3])
+})
+test('a saved snapshot name shows at once, before the refreshed list brings it back', async () => {
+	memories = [capture('two', 'Barn'), capture('one', 'Cabin')]
+	render(
+		<MemoryRouter>
+			<GalleryDialog
+				title="Barn"
+				memories={memories}
+				target={{ tab: 'snapshots', id: 'two' }}
+				onTarget={vi.fn()}
+				onChanged={vi.fn()}
+				onTrashed={vi.fn()}
+				onClose={vi.fn()}
+			/>
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
+	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Shed' } })
+	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
+	await screen.findByText('Saved')
+	expect(screen.getByText('Shed').tagName).toBe('STRONG')
+	expect(screen.queryByText('Cabin')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Shed' }))
+	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Shed')
+	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+})
+test('the server name keeps its draft across closing the sheet, can discard it, and confirms a save', async () => {
+	page()
+	fireEvent.click(await screen.findByRole('button', { name: 'Rename World' }))
+	let sheet = screen.getByRole('dialog', { name: 'World' })
+	expect(within(sheet).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
+	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends' } })
+	expect(within(sheet).getByText('Draft — not saved yet')).toBeTruthy()
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.queryByRole('dialog')).toBeNull()
+	expect(screen.getByRole('heading', { level: 3, name: 'World' })).toBeTruthy()
+	// The tile shows that an unsaved name waits behind its pencil.
+	expect(
+		within(screen.getByRole('heading', { level: 3, name: 'World' }).parentElement as HTMLElement).getByText('Draft')
+	).toBeTruthy()
+
+	fireEvent.click(screen.getByRole('button', { name: 'Rename World' }))
+	sheet = screen.getByRole('dialog', { name: 'World' })
+	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'Friends')
+	expect(within(sheet).getByText('Draft — not saved yet')).toBeTruthy()
+	fireEvent.click(within(sheet).getByRole('button', { name: 'Discard draft' }))
+	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'World')
+	expect(within(sheet).queryByText('Draft — not saved yet')).toBeNull()
+
+	// An empty name saves nothing, neither from the button nor from Enter.
+	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: '  ' } })
+	expect(within(sheet).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
+	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	expect(within(sheet).getByRole('status').textContent).toBe('')
+	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: ' Friends SMP ' } })
+	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	expect(screen.getByRole('dialog', { name: 'Friends SMP' })).toBeTruthy()
+	expect(within(sheet).getByRole('status').textContent).toBe('Saved')
+	expect(within(sheet).queryByText('Draft — not saved yet')).toBeNull()
+	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.getByRole('heading', { level: 3, name: 'Friends SMP' })).toBeTruthy()
+	expect(screen.queryByText('Draft')).toBeNull()
 })
 
 test('a late trash listing cannot resurrect a capture that has just been restored', async () => {

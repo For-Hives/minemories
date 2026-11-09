@@ -628,6 +628,8 @@
 .gallery-title .gallery-icon-button {
 	opacity: 0;
 }
+/* A waiting draft also keeps its edit button visible: the owner sees where the unsaved name is. */
+.gallery-title:has(.mm-draft-chip) .gallery-icon-button,
 .gallery-card:hover .gallery-title .gallery-icon-button,
 .gallery-server:hover .gallery-title .gallery-icon-button,
 .gallery-title .gallery-icon-button:focus-visible {
@@ -726,9 +728,8 @@
 }
 .gallery-rename,
 .gallery-snapshot-text form {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-1);
+	display: grid;
+	gap: var(--ds-sp-2);
 }
 /* Fields: the kit's black field with a light edge; what is typed is in the reading font. */
 .gallery-rename input,

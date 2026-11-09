@@ -1,0 +1,324 @@
+/* Editing in the gallery (RenameField.tsx, PublicDiscovery.tsx): inline renames, drafts kept in this browser and the
+   public publication form. Dialogs are portalled out of .mm-site, so nothing here depends on it. */
+
+.mm-rename-row {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	gap: var(--ds-sp-1);
+}
+
+/* Rename forms never grow past their card, row or sheet: the field gives up its intrinsic width (size=20) and shrinks,
+   the buttons keep theirs. */
+.gallery-rename,
+.gallery-snapshot-text form,
+.gallery-sheet-name > div {
+	min-width: 0;
+}
+
+.mm-rename-row input {
+	flex: 1 1 0;
+	width: 0;
+	min-width: 0;
+}
+
+.mm-rename-row button,
+.gallery-sheet-name button {
+	flex: none;
+}
+
+/* The server name keeps a comfortable field; on a phone the kit's wide Save button moves to the next line. */
+.gallery-sheet-name > div {
+	flex-wrap: wrap;
+}
+
+.gallery-sheet-name input {
+	flex: 1 1 12rem;
+	width: 0;
+	min-width: 0;
+}
+
+/* A snapshot row being renamed gives the form the whole width; its actions wrap below (the li already wraps). */
+.gallery-snapshots li:has(form) .gallery-snapshot-text {
+	flex-basis: 100%;
+}
+
+.gallery-snapshot-state {
+	display: flex;
+	gap: var(--ds-sp-2);
+}
+
+.gallery-snapshot-state:empty {
+	display: none;
+}
+
+/* A form value kept in this browser, not saved yet (gallery renames and the publication form). */
+.mm-draft {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	margin: 0;
+}
+
+.mm-draft-chip {
+	display: inline-flex;
+	align-items: center;
+	min-height: 24px;
+	padding: 0 var(--ds-sp-2);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--gold);
+	color: var(--gold);
+	font: 400 var(--ds-rd-fs-sm) / 1.2 var(--ds-f-text);
+	white-space: nowrap;
+}
+
+.mm-draft-chip.is-small {
+	min-height: 20px;
+	padding: 0 var(--ds-sp-1);
+	font-size: 12px;
+}
+
+.mm-draft button.mm-draft-discard {
+	min-height: var(--ds-hit);
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	text-shadow: none;
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+	cursor: pointer;
+}
+
+.mm-draft button.mm-draft-discard:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+	transform: none;
+}
+
+.mm-saved-note {
+	color: var(--c-green);
+	font: 400 var(--ds-rd-fs-sm) / 1.2 var(--ds-f-text);
+	white-space: nowrap;
+}
+
+.mm-saved-note:empty {
+	display: none;
+}
+
+.mm-field-error {
+	margin: 0;
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+
+.mm-publication-form {
+	display: grid;
+	gap: var(--ds-sp-4);
+}
+
+.mm-publication-field {
+	display: grid;
+	gap: var(--ds-sp-2);
+}
+
+/* Field label on the left, its live character count on the right (its type is set in theme.css). */
+.mm-publication-label,
+.mm-publication-categories legend {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+	padding: 0;
+}
+
+.mm-publication-counter {
+	color: var(--text-3);
+	font: 400 var(--ds-rd-fs-sm) / 1 var(--ds-f-text);
+	font-variant-numeric: tabular-nums;
+	text-shadow: none;
+}
+
+.mm-publication-counter[data-full="true"] {
+	color: var(--ember);
+}
+
+.mm-publication textarea {
+	min-height: 96px;
+	padding-block: var(--ds-sp-2);
+	resize: vertical;
+}
+
+/* Where the capture stands: a dark slot whose left edge carries the state's colour. */
+.mm-publication-state {
+	--_state: var(--text-3);
+	display: grid;
+	gap: var(--ds-sp-1);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--night);
+	box-shadow:
+		inset calc(2 * var(--gp)) 0 0 var(--_state),
+		0 0 0 var(--gp) var(--g-line);
+}
+
+.mm-publication-state[data-state="pending"] {
+	--_state: var(--gold);
+}
+
+.mm-publication-state[data-state="approved"] {
+	--_state: var(--c-green);
+}
+
+.mm-publication-state[data-state="rejected"] {
+	--_state: var(--bad);
+}
+
+.mm-publication-state strong {
+	color: #fff;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-publication-state a {
+	justify-self: start;
+	color: var(--ember);
+}
+
+.mm-publication-state:focus {
+	outline: none;
+}
+
+.mm-publication-state:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.mm-publication-failed {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-3);
+}
+
+.mm-publication-failed p {
+	margin: 0;
+}
+
+.mm-publication-reason {
+	color: var(--text);
+}
+
+/* Categories: four pills in one row; the radio itself stays focusable for the keyboard. */
+.mm-publication-categories {
+	display: grid;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.mm-segmented {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2);
+}
+
+.mm-segmented label {
+	position: relative;
+	cursor: pointer;
+}
+
+.mm-segmented input {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.mm-segmented span {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-4);
+	background: var(--field);
+	border: var(--gp) solid var(--field-edge);
+	color: var(--text-2);
+	font: 400 16px / 18px var(--f-ui);
+}
+
+.mm-segmented label:hover span {
+	border-color: #d6d0c6;
+	color: var(--text);
+}
+
+.mm-segmented input:checked + span {
+	background: var(--night-3);
+	border-color: #fff;
+	color: #fff;
+	text-shadow: var(--ds-text-shadow-1);
+	box-shadow: inset 0 calc(-2 * var(--gp)) 0 var(--ember);
+}
+
+.mm-segmented input:focus-visible + span {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.mm-publication-actions,
+.mm-publication-confirm > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-3);
+}
+
+.mm-publication-confirm {
+	display: grid;
+	gap: var(--ds-sp-2);
+	margin: 0;
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	border: 0;
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--bad);
+}
+
+.mm-publication-confirm legend {
+	float: left;
+	padding: 0;
+	color: #fff;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.mm-publication-confirm legend + * {
+	clear: left;
+}
+
+.mm-publication-hint,
+.mm-publication-loading {
+	color: var(--text-3);
+}
+
+.mm-publication-notice:empty {
+	display: none;
+}
+
+.mm-publication-notice {
+	color: var(--c-green);
+}
+
+/* While the status loads the fields are read-only: they look quieter, not broken. */
+.mm-publication-field :is(input, textarea):read-only,
+.mm-publication-categories:disabled .mm-segmented span {
+	opacity: 0.6;
+}
+
+.mm-publication-categories:disabled label {
+	cursor: progress;
+}
