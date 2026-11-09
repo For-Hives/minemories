@@ -222,8 +222,8 @@ final class CapturePixels {
   }
 
   /**
-   * Copies a band into a band-sized GPU texture first: copyTextureToBuffer demands a buffer as large
-   * as the whole source texture, which an atlas of tens of megapixels must not allocate.
+   * Copies one band of rows straight into a band-sized buffer (the region overload of copyTextureToBuffer),
+   * so an atlas of tens of megapixels never needs a buffer as large as the whole texture.
    */
   private static final class GpuSource implements Source {
     private final String key;
@@ -267,23 +267,13 @@ final class CapturePixels {
       if (texture.getTexture() != gpu) throw new IOException("Texture replaced during the capture.");
       var device = RenderSystem.getDevice();
       var encoder = device.createCommandEncoder();
-      try (GpuTexture band =
-              device.createTexture(
-                  "minemories band",
-                  GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_COPY_SRC,
-                  GpuFormat.RGBA8_UNORM,
-                  width,
-                  rows,
-                  1,
-                  1);
-          GpuBuffer buffer =
+      try (GpuBuffer buffer =
               device.createBuffer(
                   () -> "minemories band",
                   GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ,
                   (long) width * rows * GpuFormat.RGBA8_UNORM.blockSize())) {
-        encoder.copyTextureToTexture(gpu, band, 0, 0, 0, x, y + row, width, rows);
         // The callback is a fenced task that runs on a later frame; mapping the buffer is what waits.
-        encoder.copyTextureToBuffer(band, buffer, 0L, () -> {}, 0);
+        encoder.copyTextureToBuffer(gpu, buffer, 0L, () -> {}, 0, x, y + row, width, rows);
         try (var view = buffer.map(true, false)) {
           int[] rgba = new int[width * rows];
           // RGBA bytes read as little-endian ints are the ABGR pixels the PNG encoder expects.
