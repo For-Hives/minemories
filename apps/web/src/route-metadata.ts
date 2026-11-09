@@ -15,7 +15,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/discover',
 		title: 'Discover Minemories — One world, many memories',
-		description: 'Open source, nostalgia, sharing and discovery: explore ways to use Minemories.',
+		description: 'Public code, nostalgia, sharing and discovery: explore ways to use Minemories.',
 		indexable: true,
 		language: 'fr',
 	},

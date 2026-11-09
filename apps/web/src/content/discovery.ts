@@ -6,7 +6,7 @@ export const discoveryPages = [
 		lead: 'A mod, a GLB file and a public repository. See how it works, suggest an idea and keep a copy at home.',
 		accent: 'mint',
 		points: ['Source you can inspect', 'An open 3D format', 'Files that stay yours'],
-		note: 'The ambition is open source. The repository is public, but a redistribution license still needs to be chosen; visibility alone does not grant those rights.',
+		note: 'The code can be read on GitHub.',
 	},
 	{
 		path: '/nostalgia',
