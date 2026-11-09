@@ -15,6 +15,7 @@ import {
 	setDisplayOption,
 	storeDisplayOption,
 } from '../lib/display-preferences'
+import { clearAllDrafts } from '../lib/form-drafts'
 import { catalogLinks } from '../pages/installation-loaders'
 import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
@@ -58,6 +59,8 @@ function AccountControl() {
 			<button
 				type="button"
 				onClick={async () => {
+					// Unsaved names and descriptions are private: they never outlive the session on a shared computer.
+					clearAllDrafts()
 					await authClient.signOut()
 					await refreshSession()
 					navigate('/')

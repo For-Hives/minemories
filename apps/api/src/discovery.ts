@@ -68,8 +68,15 @@ function capture(row: Publication) {
 		voted: !!row.voted,
 	}
 }
-function status(row: Pick<Publication, 'id' | 'state' | 'reason'> | null) {
-	return { id: row?.id ?? null, state: row?.state ?? ('private' as State), reason: row?.reason ?? null }
+type StatusRow = Pick<Publication, 'id' | 'state' | 'reason' | 'title' | 'description' | 'category'>
+const selectStatus = 'SELECT id,state,reason,title,description,category FROM public_publications'
+function status(row: StatusRow | null) {
+	return {
+		id: row?.id ?? null,
+		state: row?.state ?? ('private' as State),
+		reason: row?.reason ?? null,
+		submission: row ? { title: row.title, description: row.description, category: row.category } : null,
+	}
 }
 
 export class PublicDiscovery {
@@ -158,11 +165,7 @@ export class PublicDiscovery {
 
 	status(userId: string, memoryId: string) {
 		this.owner(userId, memoryId)
-		return status(
-			this.db
-				.query('SELECT id,state,reason FROM public_publications WHERE memory_id=?')
-				.get(memoryId) as Publication | null
-		)
+		return status(this.db.query(`${selectStatus} WHERE memory_id=?`).get(memoryId) as StatusRow | null)
 	}
 
 	publish(userId: string, input: PublishInput) {
@@ -177,7 +180,8 @@ export class PublicDiscovery {
 					.query(`INSERT INTO public_publications
  (id,memory_id,user_id,title,description,category,thumbnail,state,submitted_at) VALUES (?,?,?,?,?,?,?,'pending',?)`)
 					.run(id, input.memoryId, userId, input.title, input.description, input.category, input.thumbnail, this.now())
-				return { id, state: 'pending' as const, reason: null }
+				const { title, description, category } = input
+				return { id, state: 'pending' as const, reason: null, submission: { title, description, category } }
 			})
 			.immediate()
 	}
@@ -281,7 +285,7 @@ export class PublicDiscovery {
 					.query('UPDATE public_publications SET state=?,reason=?,reviewed_at=?,reviewed_by=? WHERE id=?')
 					.run(decision, reason || null, this.now(), userId, id)
 				this.db.query('DELETE FROM public_reports WHERE publication_id=?').run(id)
-				return { id, state: decision, reason: reason || null }
+				return status(this.db.query(`${selectStatus} WHERE id=?`).get(id) as StatusRow)
 			})
 			.immediate()
 	}

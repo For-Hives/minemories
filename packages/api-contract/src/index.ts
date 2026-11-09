@@ -24,6 +24,7 @@ export {
 	type ModDiagnostic,
 	storedDiagnostic,
 } from './diagnostics'
+export { publicationStatus, publicationSubmission } from './discovery'
 export {
 	type ModIndex,
 	type ModIndexTarget,

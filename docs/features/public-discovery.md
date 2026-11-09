@@ -67,8 +67,13 @@ votes. The "Try the demo" option opens `?demo=1`: favorites, votes and shares
 of these examples stay separate and publish no private capture. A private
 capture's card offers "Public publication", with title, description, category,
 consent unchecked by default and withdrawal. States and reasons come from the
-API. The moderator role gives access to the **Moderation** link, the queues
-and GLB review through `/public/:id?review=1`; the server enforces this mode,
+API. `discovery.status`, `publish`, `revoke` and `moderate` also return
+`submission` (`{ title, description, category }` of the current or latest
+publication, whatever its state, or `null` if the memory was never submitted),
+so the form starts from what the owner last sent. The contract defaults a
+missing `submission` to `null`, so payloads from an older API still parse.
+The moderator role gives access to the **Moderation** link, the queues and GLB
+review through `/public/:id?review=1`; the server enforces this mode,
 the URL parameter grants no role.
 
 Report and decision reasons are entered in the page. The tests cover

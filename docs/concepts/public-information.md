@@ -58,6 +58,10 @@ On 14 October, the public manifest URL returned HTTP 200 with the SPA's HTML. Th
 
 The Windows / Minecraft Launcher path reserves ten captioned screenshots: game version, Java 21, NeoForge installer, profile folder, downloaded JAR, mods folder, Mods list, M menu, local export and viewer. The expected files and their content are described in `apps/web/src/assets/tutorial/windows/README.md`. Real images replace the placeholders on the next build; no request is made for a missing image, and a loaded image can be enlarged. These placeholders are specific to the manual Windows path.
 
+## Gallery form drafts (9 November 2026)
+
+What the owner types in a gallery form and has not saved yet is kept in this browser's localStorage under one key, `minemories-form-drafts`: area names, snapshot names, the server name and the public publication form (title, description, category). Each draft is scoped to the signed-in account and the item, expires after 30 days, and the store keeps at most 40 drafts of at most 4,000 characters each. A draft is never sent to the server; it only becomes data there when the owner saves or submits it. "Discard draft" removes one draft, a successful save removes it too, and signing out removes every draft in this browser so a shared computer keeps no unsaved private text. Saved server and area names stay browser-only, as before (`apps/web/src/lib/stack-names.ts`), except that renaming a one-capture area also renames that capture on the server. The draft store is `apps/web/src/lib/form-drafts.ts`.
+
 ## Sign-in and sign-up: guided input
 
 The password field offers Show/Hide, keeps the value and hides it again when focus leaves its group. The creation rule (12 characters minimum) stays visible; Caps Lock is flagged. Server errors receive focus and the form announces when it is waiting. Switching between sign-in and sign-up keeps the original destination.

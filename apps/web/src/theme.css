@@ -359,7 +359,8 @@ select.mc-field.mm-field-fill {
 	text-shadow: var(--ds-text-shadow-1);
 }
 
-.mm-publication > label:not(.mm-publication-consent) {
+.mm-publication-label,
+.mm-publication-categories legend {
 	color: var(--text);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-shadow: var(--ds-text-shadow-1);

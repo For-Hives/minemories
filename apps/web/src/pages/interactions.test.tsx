@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
 	},
 	signIn: vi.fn(),
 	signUp: vi.fn(),
+	signOut: vi.fn(),
 	navigate: vi.fn(),
 	list: vi.fn(),
 	storage: vi.fn(),
@@ -47,7 +48,9 @@ vi.mock('../components/ui', () => ({
 	useAppContext: () => mocks.context,
 	Eyebrow: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }))
-vi.mock('../auth-client', () => ({ authClient: { signIn: { email: mocks.signIn }, signUp: { email: mocks.signUp } } }))
+vi.mock('../auth-client', () => ({
+	authClient: { signIn: { email: mocks.signIn }, signUp: { email: mocks.signUp }, signOut: mocks.signOut },
+}))
 vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
 	apiClient: {
@@ -76,6 +79,8 @@ vi.mock('../viewer-scene', () => ({
 }))
 beforeEach(() => {
 	vi.clearAllMocks()
+	// Form drafts live in localStorage: one test's typing must not reach the next.
+	localStorage.clear()
 	mocks.context.session = null
 	mocks.context.isPending = false
 	mocks.context.viewerFile = null
@@ -655,6 +660,24 @@ test('authentication keeps the site header with its language control', () => {
 	expect(
 		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
 	).toBe(true)
+})
+
+test('signing out forgets every unsaved form draft kept in this browser', async () => {
+	mocks.context.session = { user: { name: 'Alex' } }
+	mocks.signOut.mockResolvedValue({})
+	localStorage.setItem('minemories-form-drafts', JSON.stringify({ x: { value: 'Private name', savedAt: Date.now() } }))
+	render(
+		<MemoryRouter initialEntries={['/account']}>
+			<SiteLayout>
+				<p>Body</p>
+			</SiteLayout>
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0] as HTMLElement)
+	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
+	expect(mocks.signOut).toHaveBeenCalledOnce()
+	expect(mocks.context.refreshSession).toHaveBeenCalled()
 })
 
 test('the header and footer brand show the logo camera before the word, and a content page header the whole logo', () => {

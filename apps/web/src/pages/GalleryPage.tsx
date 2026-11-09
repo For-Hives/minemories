@@ -26,7 +26,9 @@ import { AreaCard, TrashCard } from './GalleryCards'
 import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
+import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
+import { useWaitingDraft } from './use-draft'
 
 function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
 	if (storage.availableBytes === 0) return 'full'
@@ -285,8 +287,9 @@ function WorldSections({
 
 function ServerCovers({ captures }: { captures: Memories }) {
 	const images = captures
-		.map(capture => capture.metadata.thumbnail ?? capture.metadata.icon)
-		.filter((image): image is string => typeof image === 'string')
+		// Keyed by capture: two captures can share the same thumbnail.
+		.map(capture => ({ id: capture.id, image: capture.metadata.thumbnail ?? capture.metadata.icon }))
+		.filter((cover): cover is { id: string; image: string } => typeof cover.image === 'string')
 		.slice(0, 3)
 	return (
 		<span className="gallery-server-covers" data-count={images.length} aria-hidden="true">
@@ -295,7 +298,7 @@ function ServerCovers({ captures }: { captures: Memories }) {
 					<GalleryIcon name="cube" />
 				</span>
 			) : (
-				images.map(image => <span key={image.slice(-48)} style={{ backgroundImage: `url("${image}")` }} />)
+				images.map(({ id, image }) => <span key={id} style={{ backgroundImage: `url("${image}")` }} />)
 			)}
 		</span>
 	)
@@ -318,6 +321,8 @@ function ServerTile({
 }) {
 	const { t, locale } = useI18n()
 	const [sheet, setSheet] = useState(false)
+	// A name typed in the sheet and left unsaved shows on the tile, like an area's draft.
+	const waiting = useWaitingDraft('server-name', server.key, name) && !sheet
 	const menu = useContextMenu()
 	const newest = latestCapture(server.captures)
 	const span = captureSpan(server.captures)
@@ -342,6 +347,7 @@ function ServerTile({
 				<div className="gallery-server-body">
 					<div className="gallery-title">
 						<h3>{name}</h3>
+						{waiting && <DraftChip />}
 						<button
 							type="button"
 							className="gallery-icon-button"
