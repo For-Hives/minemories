@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { hasLegacySrgbColours, LINEAR_COLOURS_FORMAT } from './glb-colours'
+import {
+	emissiveToLegacy,
+	hasLegacySrgbColours,
+	LINEAR_COLOURS_FORMAT,
+	legacyEmissiveToLinear,
+	linearToSrgb,
+	srgbToLinear,
+} from './glb-colours'
 
 const asset = (minemories: unknown) => ({ version: '2.0', generator: 'Minemories', extras: { minemories } })
 
@@ -23,5 +30,42 @@ describe('hasLegacySrgbColours', () => {
 		expect(hasLegacySrgbColours(asset(null))).toBe(true)
 		expect(hasLegacySrgbColours(asset({ format: '3' }))).toBe(true)
 		expect(hasLegacySrgbColours('format 3')).toBe(true)
+	})
+})
+
+describe('sRGB transfer curves', () => {
+	it('matches the mod on both segments', () => {
+		// Grass tint 0xA4C954, as GlbColor writes it.
+		expect(srgbToLinear(0xa4 / 255)).toBeCloseTo(0.371, 3)
+		expect(srgbToLinear(0xc9 / 255)).toBeCloseTo(0.584, 3)
+		expect(srgbToLinear(0x54 / 255)).toBeCloseTo(0.089, 3)
+		expect(srgbToLinear(10 / 255)).toBeCloseTo(10 / 255 / 12.92, 9)
+		expect(srgbToLinear(0)).toBe(0)
+		expect(srgbToLinear(1)).toBe(1)
+	})
+
+	it('round-trips', () => {
+		for (const value of [0, 0.002, 0.01, 0.2, 0.5, 1]) expect(linearToSrgb(srgbToLinear(value))).toBeCloseTo(value, 9)
+	})
+})
+
+describe('emissive factors', () => {
+	it('keeps the strength of an untinted glow and converts only the hue', () => {
+		expect(legacyEmissiveToLinear([0.65, 0.65, 0.65])).toEqual([0.65, 0.65, 0.65])
+		const [r, g, b] = legacyEmissiveToLinear([0.65, 0.65 * (0xaa / 255), 0.65 * (0x70 / 255)])
+		expect(r).toBeCloseTo(0.65, 9)
+		expect(g).toBeCloseTo(0.65 * srgbToLinear(0xaa / 255), 9)
+		expect(b).toBeCloseTo(0.65 * srgbToLinear(0x70 / 255), 9)
+	})
+
+	it('inverts the conversion for format 3 files', () => {
+		const legacy = [0.4, 0.3, 0.1] as const
+		const back = emissiveToLegacy(legacyEmissiveToLinear(legacy))
+		for (const [index, value] of legacy.entries()) expect(back[index]).toBeCloseTo(value, 9)
+	})
+
+	it('leaves a black emissive black', () => {
+		expect(legacyEmissiveToLinear([0, 0, 0])).toEqual([0, 0, 0])
+		expect(emissiveToLegacy([0, 0, 0])).toEqual([0, 0, 0])
 	})
 })
