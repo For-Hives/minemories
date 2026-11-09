@@ -92,7 +92,7 @@ final class GlbStructureTest {
   @Test
   void categoriesBecomeNamedNodesAndMeshesWithChunkRangesAndSafeMetadata() throws IOException {
     String text = written(false);
-    assertTrue(text.contains("\"extras\":{\"minemories\":{\"format\":2,\"minecraft\":\"1.21.1\""));
+    assertTrue(text.contains("\"extras\":{\"minemories\":{\"format\":3,\"minecraft\":\"1.21.1\""));
     assertTrue(text.contains("\"dimension\":\"minecraft:overworld\",\"chunkSize\":16"));
     assertTrue(text.contains("\"terrain\":{\"quads\":4}"));
     assertTrue(text.contains("\"fluids\":{\"quads\":1}"));
@@ -126,7 +126,7 @@ final class GlbStructureTest {
     Path output = temporary.resolve("plain.glb");
     scene.write(output);
     String text = json(output);
-    assertTrue(text.contains("\"minemories\":{\"format\":2,\"chunkSize\":16"), text);
+    assertTrue(text.contains("\"minemories\":{\"format\":3,\"chunkSize\":16"), text);
     assertFalse(text.contains("Users"));
     assertFalse(text.contains("minemoriesChunks"));
   }

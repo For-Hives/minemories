@@ -7,7 +7,9 @@ import java.util.regex.Pattern;
  * ever written: no player, world, server, path, sign or book data, and no absolute coordinates.
  */
 public final class GlbMetadata {
-  public static final int FORMAT = 2;
+  /** 3: material and light colours are linear, as glTF 2.0 requires (2 wrote them in sRGB). */
+  public static final int FORMAT = 3;
+
   private static final Pattern VERSION = Pattern.compile("[A-Za-z0-9_.+\\-]{1,64}");
   private static final Pattern RESOURCE =
       Pattern.compile("[a-z0-9_.\\-]{1,32}:[a-z0-9_./\\-]{1,64}");
