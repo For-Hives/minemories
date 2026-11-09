@@ -1598,5 +1598,9 @@
 	"Good to know": "知っておくと安心",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "キャプチャは、読み込まれたエリアの3Dスナップショットです。見まわすことはできますが、ゲームの再開はできません。",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "地形の読み込みを待ってから、チャットにこれを入力します。半径16ブロックなら確認しやすいです。",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "キャプチャはエクスポートフォルダーに保存されます。MOD をペアリングすると、プライベートギャラリーに送れます。"
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "キャプチャはエクスポートフォルダーに保存されます。MOD をペアリングすると、プライベートギャラリーに送れます。",
+	"Language suggestion": "言語の提案",
+	"Read Minemories in this language?": "Minemories を日本語で読みますか？",
+	"Switch to this language": "日本語に切り替える",
+	"No thanks": "いいえ、けっこうです"
 }

@@ -19,7 +19,9 @@ const rules = {
 		/^packages\/api-contract\//,
 		// The versions page reads the loader list.
 		/^mod\/targets\.json$/,
-		/^scripts\/(hero-assets\/|brand\/|boot-screen\/|build-web|prerender-web)/,
+		/^scripts\/(hero-assets\/|brand\/|boot-screen\/|build-web|prerender-web|smoke-web)/,
+		// The nginx configuration of the static front end.
+		/^deploy\/nginx\.web\.conf$/,
 		// The brand tests read the canonical logo.
 		/^design\/logo\//,
 	],

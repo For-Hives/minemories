@@ -8,6 +8,9 @@ test('all public routes render readable content and navigation without browser A
 		expect(html).toContain('<h1')
 		expect(html).toContain('href="/installation"')
 		expect(html).not.toContain('<!--$!-->')
+		// The language suggestion depends on the visitor's browser: it never enters the static HTML crawlers read.
+		expect(html).not.toContain('data-nosnippet')
+		expect(html).not.toContain('Read Minemories in')
 	}
 	expect(renderPage('/blog/premier-souvenir')).toContain('Un premier souvenir')
 })

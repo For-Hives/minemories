@@ -85,16 +85,17 @@ Actual CI safeguards: pipeline unit tests, decoding proof (on every generation a
 
 ## Server
 
-Findings on the current production (29 October 2026, `curl -I`): `nginx/1.31.8` responds **without `Cache-Control`** (neither on `/assets/*.js` nor on `/hero/…`), **without `X-Robots-Tag`**, with `ETag`/`Last-Modified` and the `application/octet-stream` type for `.glb` files, in gzip even when the client accepts brotli, and **responds 200 for non-existent paths** (`/hero/captures-opt/manifest.json` before deployment). `deploy/nginx.web.conf` responds 404 for a missing file and sets `Cache-Control` and `X-Robots-Tag` with `always`: this file is **therefore not applied** by this deployment. Likely cause: the site is deployed as a "static site" by Coolify, whose default nginx serves `apps/web/dist` without the repository's file; `coolify-railpack.md` asks to apply it "or its locations in the existing Nginx", which is a manual step in Coolify, probably never done. Nothing was changed on the Coolify side; to do: paste the configuration from `deploy/nginx.web.conf` into the application's custom nginx configuration, or build an image with this file. Without that, captures are gzipped on the fly, with no durable caching.
+Findings on the production of 29 October 2026 (`curl -I`): `nginx/1.31.8` answered **without `Cache-Control`** and **without `X-Robots-Tag`**, served `.glb` files as `application/octet-stream`, and **answered 200 for non-existent paths**. Cause: Coolify's default custom nginx configuration (`try_files $uri $uri/ /index.html`), not the repository file. The fix is to paste `deploy/nginx.web.conf` as the application's **Custom Nginx Configuration** (see [web foundations](web-foundations.md#coolify-static-server)), then run `bun run web:smoke <base URL>`.
 
-What the repository configuration now does:
+What that configuration does for the film assets:
 
-- `/hero/captures-opt/*.glb` and `*.patch`: `Cache-Control: public, max-age=31536000, immutable`, fixed MIME type (`model/gltf-binary`, `application/octet-stream` for deltas), `X-Robots-Tag` repeated (a location `add_header` replaces the server's).
+- `/hero/captures-opt/*.<10 hex>.glb` and `*.patch`: `Cache-Control: public, max-age=31536000, immutable`, fixed MIME type (`model/gltf-binary`, `application/octet-stream` for deltas).
 - `/hero/captures-opt/manifest.json`: `Cache-Control: no-cache` (ETag revalidation), **never immutable**: the folder is emptied on every build, so a manifest cached for a day would point to deleted hashes and every returning visitor would get the full GLBs.
-- `/hero/` (unhashed): one day + `stale-while-revalidate`, unchanged.
-- `gzip_static on` (standard nginx module: serves the precomputed `.gz`), `gzip_vary on`, `gzip_types` (including `model/gltf-binary` and `application/octet-stream`, for on-the-fly compression of files without a `.gz`). These directives are **inside `server {}`**, not at the `http` level: if the host nginx already enables `gzip` in its `nginx.conf`, a second declaration at the same level makes `nginx -t` fail ("\"gzip\" directive is duplicate"). The immutable cache rules only target `\.[0-9a-f]{10}\.(glb|patch)$` (regex in quotes: otherwise the braces are nginx syntax).
-- `brotli_static on` is **commented out**: it requires the `ngx_brotli` module, absent from the standard nginx image; without the module, nginx refuses to start on an unknown directive. The `.br` files produced (321 KB instead of 375 KB for the captures) are only useful with that module or behind a CDN that reads `.br` files.
-- This configuration has not been run in a real nginx (no nginx binary or image on this machine, and no image was downloaded): run `nginx -t` on first deployment, including with a host `nginx.conf` that already enables gzip.
+- `/hero/` (unhashed): one day + `stale-while-revalidate`.
+- Cache-Control and X-Robots-Tag come from two `map $uri` blocks and one `add_header` each at server level; the locations only set MIME types. The indexing switch is the `default` of `map $uri $mm_robots`.
+- `gzip_static on` (serves the precomputed `.gz`), `gzip_vary on`, `gzip_types` including `model/gltf-binary` and `application/octet-stream`. These directives are **inside `server {}`**, so a host `nginx.conf` that already has `gzip on` at http level still passes `nginx -t`.
+- `brotli_static on` stays **commented out**: `nginx:alpine` has no `ngx_brotli` module and nginx refuses to start on an unknown directive. The `.br` files (321 KB instead of 375 KB for the captures) only help with that module or a CDN that reads them.
+- Tested on 9 November 2026 in `nginx:alpine` (nginx 1.31.8) with the file mounted at `/etc/nginx/conf.d/default.conf` and a locked build in `/usr/share/nginx/html`: `nginx -t` passes, also with `gzip on` added at http level, and `bun run web:smoke` passes in both modes (switch on and off).
 
 ## Measured results
 

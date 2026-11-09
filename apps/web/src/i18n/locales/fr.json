@@ -544,7 +544,7 @@
 	"Minemories is experimental: start with a test world and keep your local files. Checked steps are reminders; they do not verify the game for you.": "Minemories est expérimental : commence par un monde de test et garde tes fichiers locaux. Les étapes cochées servent de repères ; elles ne vérifient pas le jeu à ta place.",
 	"Minemories keeps a light, explorable version of it. The original file stays on your computer; your captures can also be found in your private gallery.": "Minemories en garde une version à explorer. Le fichier reste sur ton ordinateur ; tu peux aussi envoyer tes captures dans ta galerie privée.",
 	"Minemories — Worlds built together": "Minemories — Les mondes construits ensemble",
-	"Minemories — Your space": "Minemories — Your space",
+	"Minemories — Your space": "Minemories — Ton espace",
 	"Mist": "Brume",
 	"Mod / API version": "Version du mod / API",
 	"Mod compatibility, GLB files, AFK captures, privacy and sharing: answers to get started.": "Compatibilité du mod, fichiers GLB, captures AFK, confidentialité et partage : les réponses pour commencer.",
@@ -1028,7 +1028,7 @@
 	"You play on…": "Tu joues sur…",
 	"Your": "Ta",
 	"Your Minecraft name, for example": "Ton pseudo Minecraft, par exemple",
-	"Your Minemories space.": "Your Minemories space.",
+	"Your Minemories space.": "Ton espace Minemories.",
 	"Your account does not have these permissions.": "Ton compte ne dispose pas de ces droits.",
 	"Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.": "Ton compte, ta galerie privée, les liens de partage, la conservation des captures, les diagnostics du mod, les diagnostics facultatifs des pages publiques et les requêtes de téléchargement du mod.",
 	"Your album starts here.": "Le début de ton album.",
@@ -1598,5 +1598,9 @@
 	"Good to know": "Bon à savoir",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "Une capture est un instantané 3D de la zone chargée. Tu peux regarder autour de toi, pas reprendre la partie.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "Attends que le terrain soit chargé, puis tape ceci dans le chat. Un rayon de 16 blocs se vérifie facilement.",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "La capture arrive dans ton dossier d’export. Appaire le mod pour envoyer les captures vers ta galerie privée."
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "La capture arrive dans ton dossier d’export. Appaire le mod pour envoyer les captures vers ta galerie privée.",
+	"Language suggestion": "Suggestion de langue",
+	"Read Minemories in this language?": "Lire Minemories en français ?",
+	"Switch to this language": "Passer en français",
+	"No thanks": "Non merci"
 }
