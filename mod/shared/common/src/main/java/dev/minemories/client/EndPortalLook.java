@@ -54,10 +54,7 @@ final class EndPortalLook {
           add(color, sample(portal, portalSize, (float) u, (float) v), COLORS[layer - 1]);
         }
         out[y * SIZE + x] =
-            0xFF000000
-                | (channel(color[2]) << 16)
-                | (channel(color[1]) << 8)
-                | channel(color[0]);
+            0xFF000000 | (channel(color[2]) << 16) | (channel(color[1]) << 8) | channel(color[0]);
       }
     }
     return out;
