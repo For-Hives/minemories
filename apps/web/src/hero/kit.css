@@ -172,6 +172,8 @@ html.mm-cjk:not([data-mc-font='read']) .site .mc-hero__lead { font-size: 16px; l
 }
 /* The logo's camera in front of the word Minemories (components/BrandMark.tsx): the footprint of the ember icon it replaced, 8 game pixels square. */
 .mm-brand-mark { display: block; flex: none; width: calc(8 * var(--gp)); height: calc(8 * var(--gp)); image-rendering: pixelated; }
+/* The logo alone, without the word, in the site header and the landing bar: 40 px fits the 44 px link (the camera reads as a camera only at this size). */
+.mm-brand-mark--solo { width: 40px; height: 40px; image-rendering: auto; }
 .mc-icon--arrow-r { --mc-i: url('/hero/mcui/icons/arrow-r.svg'); }
 .mc-icon--arrow-d { --mc-i: url('/hero/mcui/icons/arrow-d.svg'); }
 .mc-icon--pause { --mc-i: url('/hero/mcui/icons/pause.svg'); }
@@ -547,7 +549,7 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 	background: rgb(20 17 14 / 0); transition: background-color 0.3s linear, box-shadow 0.3s linear;
 }
 .mc-sitebar.is-solid { background: var(--night); box-shadow: 0 var(--gp) 0 var(--outline), 0 calc(2 * var(--gp)) 0 #3a322b; }
-/* the mark: the ember (8 x 8) and "Minemories" in the game's bold, both at the same texel size (x2, or x3 from 1 280 px: one texel size in the header) */
+/* the brand link: the logo alone (BrandMark solo, 40 px); the font settings below still size its focus ring and any text fallback (x2, or x3 from 1 280 px) */
 .mc-sitebar__brand { --gp: 2px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font: 700 16px/18px var(--f-brand); color: #fff; text-decoration: none; text-shadow: 2px 2px 0 #3f3f3f; }
 /* x3 (24 px) only from 1 280 px: at x3 the mark is 216 px wide, and the header (language, install action, menu button) needs the room below that width (measured, 11 widths x 5 languages) */
 @media (min-width: 1280px) { .mc-sitebar__brand { --gp: 3px; font-size: 24px; line-height: 27px; text-shadow: 3px 3px 0 #3f3f3f; } }

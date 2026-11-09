@@ -713,8 +713,13 @@ test('the header and footer brand show the logo camera before the word, and a co
 		const mark = brand.querySelector('img')
 		expect(mark?.getAttribute('src')).toBe('/brand/minemories-mark.svg')
 		expect(mark?.getAttribute('alt')).toBe('')
-		expect(brand.textContent).toBe('Minemories')
 	}
+	// The header shows the logo alone (its name comes from the link's aria-label); the footer keeps the word.
+	const [header, footer] = brands
+	expect(header?.textContent).toBe('')
+	expect(header?.querySelector('img')?.className).toBe('mm-brand-mark mm-brand-mark--solo')
+	expect(footer?.textContent).toBe('Minemories')
+	expect(footer?.querySelector('img')?.className).toBe('mm-brand-mark')
 	const logo = view.container.querySelector('.mm-content-header img')
 	expect(logo?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
 	expect(logo?.className).toBe('mm-brand-logo mm-content-logo')
