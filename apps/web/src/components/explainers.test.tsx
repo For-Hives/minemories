@@ -8,7 +8,7 @@ import { ArticlePage } from '../pages/ContentPages'
 import { MarketingPage } from '../pages/DiscoveryPages'
 import { FaqPage } from '../pages/InfoPages'
 import { Pipeline, RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
-import { Command, TabPanel, type TabSpec, TabStrip } from './explainers'
+import { Command, TabPanel, type TabSpec, TabStrip, verdictLabel } from './explainers'
 
 afterEach(() => {
 	cleanup()
@@ -165,6 +165,18 @@ test('the FAQ shows one topic at a time with a drawn verdict on the questions th
 	fireEvent.click(screen.getByRole('tab', { name: 'Your world' }))
 	const backup = screen.getByRole('heading', { name: 'Is this a backup of my world?' }).closest('summary')
 	expect(backup?.textContent).toContain('No')
+})
+
+const verdictCatalogs = import.meta.glob<Record<string, string>>('../i18n/locales/{en,fr,ru,de,ko,pt-BR,pl,ja}.json', {
+	import: 'default',
+	eager: true,
+})
+test('every verdict chip label is translated in each catalogue, and French says “Non”', () => {
+	expect(Object.keys(verdictCatalogs)).toHaveLength(8)
+	for (const [path, catalog] of Object.entries(verdictCatalogs))
+		for (const label of Object.values(verdictLabel)) expect(catalog[label]?.trim(), `${path}: ${label}`).toBeTruthy()
+	const french = Object.entries(verdictCatalogs).find(([path]) => path.endsWith('/fr.json'))?.[1]
+	expect(french?.[verdictLabel.no]).toBe('Non')
 })
 
 test('the article shows a picture, an adjustable radius map and the export folder, one per section', () => {

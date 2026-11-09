@@ -154,7 +154,8 @@ export function More({ label, children }: { label?: string; children: ReactNode 
 
 export type Verdict = 'yes' | 'no' | 'later' | 'depends'
 const verdictGlyph: Record<Verdict, GlyphName> = { yes: 'check', no: 'close', later: 'clock', depends: 'layers' }
-const verdictLabel: Record<Verdict, string> = { yes: 'Yes', no: 'No', later: 'Not yet', depends: 'Depends' }
+/** English source keys of the chip labels; every one must exist in each catalogue. */
+export const verdictLabel: Record<Verdict, string> = { yes: 'Yes', no: 'No', later: 'Not yet', depends: 'Depends' }
 
 /** A one-word answer, coloured and drawn, that can be read before the sentence. */
 export function VerdictChip({ verdict }: { verdict: Verdict }) {

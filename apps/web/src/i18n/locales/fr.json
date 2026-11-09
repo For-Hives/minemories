@@ -1598,5 +1598,6 @@
 	"Good to know": "Bon à savoir",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "Une capture est un instantané 3D de la zone chargée. Tu peux regarder autour de toi, pas reprendre la partie.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "Attends que le terrain soit chargé, puis tape ceci dans le chat. Un rayon de 16 blocs se vérifie facilement.",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "La capture arrive dans ton dossier d’export. Appaire le mod pour envoyer les captures vers ta galerie privée."
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "La capture arrive dans ton dossier d’export. Appaire le mod pour envoyer les captures vers ta galerie privée.",
+	"No": "Non"
 }
