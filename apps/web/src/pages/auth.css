@@ -457,6 +457,9 @@
 		inset 0 var(--gp) 0 var(--outline),
 		inset 0 calc(2 * var(--gp)) 0 var(--app-line);
 }
+.auth-footer p {
+	margin: 0;
+}
 .auth-footer nav {
 	display: flex;
 	flex-wrap: wrap;

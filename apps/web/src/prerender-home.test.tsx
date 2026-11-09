@@ -16,6 +16,12 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Rien ne part tant que tu n’as pas connecté le jeu à ton compte.')
 	expect(html).toContain('Réglages → Confidentialité')
 	expect(html).not.toContain('1.21.1 · NeoForge')
+	// the full trademark notice in the footer, and the connection path through the M menu
+	expect(html).toContain(
+		'Minemories n’est pas un produit officiel Minecraft. Ni approuvé par Mojang ou Microsoft, ni associé à eux.'
+	)
+	expect(html).toContain('Dans Minecraft : M → tape le code → Se connecter.')
+	expect(html).not.toContain('/minemories pair')
 	for (const id of ['id="steps"', 'id="share"', 'id="more"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)
 	// the story in words, which is also the description of the canvas for screen readers
 	expect(html).toContain('id="w1"')

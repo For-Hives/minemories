@@ -626,10 +626,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<div className="mc-footer__legal">
 							<p
 								className="mc-disclaimer"
-								data-i18n="Not an official Minecraft product. Minemories is not approved by or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang Synergies AB."
+								data-i18n="Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft."
 							>
 								{t(
-									'Not an official Minecraft product. Minemories is not approved by or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang Synergies AB.'
+									'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
 								)}
 							</p>
 							<details className="mc-footer__notes">

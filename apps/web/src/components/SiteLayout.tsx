@@ -231,7 +231,11 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				<div>
 					<Brand />
 					<p>{t('Your worlds stay yours.')}</p>
-					<p className="mm-fineprint">{t('Not affiliated with Mojang or Microsoft.')}</p>
+					<p className="mm-fineprint">
+						{t(
+							'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+						)}
+					</p>
 				</div>
 				<nav aria-label={t('Guides')}>
 					<Link to="/concept">{t('The concept')}</Link>
@@ -331,6 +335,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			</main>
 			<footer className="auth-footer">
 				<span>© Minemories</span>
+				<p>
+					{t(
+						'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+					)}
+				</p>
 				<nav aria-label={t('Legal')}>
 					{legalLinks.map(link => (
 						<Link key={link.to} to={link.to}>

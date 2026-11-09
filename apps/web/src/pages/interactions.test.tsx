@@ -679,6 +679,9 @@ test('authentication keeps the site header with its language control', () => {
 	expect(
 		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
 	).toBe(true)
+	expect(screen.getByRole('contentinfo').textContent).toContain(
+		'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+	)
 })
 
 test('signing out forgets every unsaved form draft kept in this browser', async () => {
@@ -720,6 +723,10 @@ test('the header and footer brand show the logo camera before the word, and a co
 	expect(header?.querySelector('img')?.className).toBe('mm-brand-mark mm-brand-mark--solo')
 	expect(footer?.textContent).toBe('Minemories')
 	expect(footer?.querySelector('img')?.className).toBe('mm-brand-mark')
+	// The full trademark notice sits in the footer of every page.
+	expect(screen.getByRole('contentinfo').textContent).toContain(
+		'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+	)
 	const logo = view.container.querySelector('.mm-content-header img')
 	expect(logo?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
 	expect(logo?.className).toBe('mm-brand-logo mm-content-logo')
