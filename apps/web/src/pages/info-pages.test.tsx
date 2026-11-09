@@ -130,7 +130,8 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('en-GB', auto)).toContain('“Auto photos”')
 	expect(translate('de', auto)).toContain('„Auto-Fotos“')
 	const earlier =
-		'From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.'
+		'From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.'
+	expect(translate('fr', earlier)).toContain('M → Prendre un souvenir, ou en AFK')
 	expect(translate('fr', earlier)).toContain('M → Mes souvenirs → Envoyer ce souvenir')
 	expect(translate('fr-CA', earlier)).toContain('M → Mes souvenirs → Envoyer cette capture')
 	expect(translate('en-GB', earlier)).toContain('M → My memories → Send this capture')

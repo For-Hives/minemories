@@ -411,7 +411,7 @@
 	"In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.": "다운로드에서 minemories-neoforge-mc1.21.1.jar를 찾으세요. 이 파일을 복사하세요. 열지 마세요.",
 	"In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its": "Minecraft 실행기 → 설치에서 2단계에서 구성한 NeoForge 프로필을 찾아 해당 프로필을 클릭합니다.",
 	"In Minecraft Launcher, open": "Minecraft 실행기에서 다음을 엽니다.",
-	"From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.": "그 뒤로는 직접 남긴 추억도 AFK 추억도 비공개 갤러리로 알아서 올라갑니다. 그 전에 남긴 추억: M → 내 추억 → 이 캡처 보내기.",
+	"From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.": "그 뒤로는 M → 추억 남기기로 남긴 추억도 AFK 추억도 비공개 갤러리로 알아서 올라갑니다. 그 밖의 추억: M → 내 추억 → 이 캡처 보내기.",
 	"In Modrinth App, open the Minemories instance folder using its": "Modrinth 앱에서 해당 폴더를 사용하여 Minemories 인스턴스 폴더를 엽니다.",
 	"In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a": "Prism Launcher, ATLauncher, GDLauncher 또는 MultiMC에서",
 	"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.": "Windows 파일 탐색기에서 올바른 프로필의 mods 폴더에는 Minemories JAR 버전이 하나만 포함되어 있습니다.",

@@ -323,7 +323,7 @@ function UploadStep() {
 					<li>
 						<T
 							message={
-								'From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.'
+								'From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.'
 							}
 						/>
 					</li>

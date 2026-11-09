@@ -411,7 +411,7 @@
 	"In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.": "В разделе «Загрузки» найдите minemories-neoforge-mc1.21.1.jar. Скопируйте этот файл; не открывайте его.",
 	"In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its": "В программе запуска Minecraft → Установки найдите профиль NeoForge, настроенный на шаге 2, и щелкните его.",
 	"In Minecraft Launcher, open": "В лаунчере Minecraft откройте",
-	"From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.": "После этого каждое воспоминание, вручную или в AFK, само отправляется в вашу личную галерею. Сделанные раньше: M → Мои воспоминания → Отправить этот снимок.",
+	"From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.": "После этого каждое воспоминание, сделанное через M → Сделать воспоминание или в AFK, само отправляется в вашу личную галерею. Остальные: M → Мои воспоминания → Отправить этот снимок.",
 	"In Modrinth App, open the Minemories instance folder using its": "В приложении Modrinth откройте папку экземпляра Minemories, используя ее",
 	"In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a": "В Prism Launcher, ATLauncher, GDLauncher или MultiMC создайте",
 	"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.": "В проводнике Windows папка модов правильного профиля содержит только одну версию Minemories JAR.",

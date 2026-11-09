@@ -411,7 +411,7 @@
 	"In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.": "In Downloads, find minemories-neoforge-mc1.21.1.jar. Copy this file; do not open it.",
 	"In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its": "In Minecraft Launcher → Installations, find the NeoForge profile configured in step 2 and click its",
 	"In Minecraft Launcher, open": "In Minecraft Launcher, open",
-	"From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.": "From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.",
+	"From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.": "From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.",
 	"In Modrinth App, open the Minemories instance folder using its": "In Modrinth App, open the Minemories instance folder using its",
 	"In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a": "In Prism Launcher, ATLauncher, GDLauncher or MultiMC, create a",
 	"In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.": "In Windows File Explorer, the correct profile's mods folder contains only one version of the Minemories JAR.",
