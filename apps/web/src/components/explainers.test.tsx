@@ -4,10 +4,9 @@ import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { FaqPage } from '../pages/InfoPages'
 import { SharingPage } from '../pages/SharingPage'
 import { RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
-import { Command, TabPanel, type TabSpec, TabStrip, verdictLabel } from './explainers'
+import { Command, TabPanel, type TabSpec, TabStrip } from './explainers'
 
 afterEach(() => {
 	cleanup()
@@ -120,28 +119,4 @@ test('the sharing page carries the demo', () => {
 	expect(screen.getByRole('link', { name: 'My private gallery' })).toBeTruthy()
 	// The public gallery is live: no note may still announce it as coming.
 	expect(document.body.textContent).not.toContain('in preparation')
-})
-
-test('the FAQ shows one topic at a time with a drawn verdict on the questions that have one', () => {
-	english(<FaqPage />)
-	expect(screen.getByRole('heading', { name: 'Is this a backup of my world?' })).toBeTruthy()
-	expect(screen.queryByRole('heading', { name: 'Why is part of the build missing?' })).toBeNull()
-	fireEvent.click(screen.getByRole('tab', { name: 'Captures' }))
-	const missing = screen.getByRole('heading', { name: 'Why is part of the build missing?' })
-	expect(missing.closest('details')?.textContent).toContain('Move closer, check your corners and height')
-	fireEvent.click(screen.getByRole('tab', { name: 'Your world' }))
-	const backup = screen.getByRole('heading', { name: 'Is this a backup of my world?' }).closest('summary')
-	expect(backup?.textContent).toContain('No')
-})
-
-const verdictCatalogs = import.meta.glob<Record<string, string>>('../i18n/locales/{en,fr,ru,de,ko,pt-BR,pl,ja}.json', {
-	import: 'default',
-	eager: true,
-})
-test('every verdict chip label is translated in each catalogue, and French says “Non”', () => {
-	expect(Object.keys(verdictCatalogs)).toHaveLength(8)
-	for (const [path, catalog] of Object.entries(verdictCatalogs))
-		for (const label of Object.values(verdictLabel)) expect(catalog[label]?.trim(), `${path}: ${label}`).toBeTruthy()
-	const french = Object.entries(verdictCatalogs).find(([path]) => path.endsWith('/fr.json'))?.[1]
-	expect(french?.[verdictLabel.no]).toBe('Non')
 })

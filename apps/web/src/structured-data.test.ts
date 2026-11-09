@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest'
+import { faqGroups } from './content/faq'
 import { metadataFor, publicMetadata } from './route-metadata'
 import { modVersion, modVersionFrom, structuredDataFor } from './structured-data'
 
@@ -55,8 +56,9 @@ test('the downloads page identifies the mod, without a price or a rating', () =>
 })
 
 test('each page describes itself, with its date, and stories stay articles', () => {
+	expect(nodes('/downloads')[0]).toMatchObject({ '@type': 'WebPage', url: 'https://minemories.net/downloads' })
 	expect(nodes('/faq')[0]).toMatchObject({
-		'@type': 'WebPage',
+		'@type': 'FAQPage',
 		url: 'https://minemories.net/faq',
 		dateModified: metadataFor('/faq').updated,
 		isPartOf: { '@id': 'https://minemories.net/#website', name: 'Minemories' },
@@ -68,6 +70,19 @@ test('each page describes itself, with its date, and stories stay articles', () 
 		datePublished: '2026-10-14',
 		mainEntityOfPage: 'https://minemories.net/story',
 	})
+})
+
+test('the FAQ page lists every visible question with its answer, in the page language', () => {
+	const faq = nodes('/faq')[0] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> }
+	expect(faq.mainEntity).toHaveLength(faqGroups.flatMap(group => group.ids).length)
+	const ban = faq.mainEntity.find(entry => entry.name === 'Je risque un ban ?')
+	expect(ban?.acceptedAnswer.text).toContain('règles')
+	const versions = faq.mainEntity.find(entry => entry.name === 'Quelles versions ?')
+	expect(versions?.acceptedAnswer.text).toContain('1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
+	expect(versions?.acceptedAnswer.text).not.toMatch(/1\.16\.5,|\{/)
+	const english = structuredDataFor(metadataFor('/faq', 'en'))['@graph'][0] as typeof faq
+	expect(english.mainEntity[0]?.name).toBe('Does it work on Bedrock, consoles or phones?')
+	expect(JSON.stringify(faq)).not.toMatch(/gratuit|free|open source/i)
 })
 
 test('the mod version is read from the Gradle properties, and missing when they do not name one', () => {

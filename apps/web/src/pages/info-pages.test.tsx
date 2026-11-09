@@ -53,9 +53,10 @@ test('public guides let a visitor move from concept to capture, installation and
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
 	expect(screen.getByRole('heading', { name: 'Dois-je installer quelque chose sur le serveur ?' })).toBeTruthy()
-	fireEvent.click(screen.getByRole('tab', { name: 'Partager' }))
 	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant ?' })).toBeTruthy()
-	fireEvent.click(screen.getByRole('link', { name: 'Toutes les étapes pour capturer, envoyer et partager' }))
+	const howTo = screen.getAllByRole('link', { name: 'Comment ça marche' }).at(0)
+	if (!howTo) throw new Error('How it works navigation is missing')
+	fireEvent.click(howTo)
 	fireEvent.click(screen.getByRole('tab', { name: 'Partager' }))
 	expect(screen.getByRole('heading', { name: '5. Partager seulement ce que tu choisis' })).toBeTruthy()
 	expect(document.body.textContent).toContain('clique sur « Partager » puis « Créer un lien »')
@@ -92,16 +93,35 @@ test('guides describe the current M screen labels and its advanced settings tabs
 	expect(howTo).not.toContain('/minemories upload')
 	expect(howTo).toContain('M → Settings → Memories → Auto captures, “Captured depth”')
 	expect(howTo).toContain('“Official address”')
-	cleanup()
+})
+
+test('the FAQ is one visible list, grouped, with an anchor per question and the supported versions', () => {
 	mountEnglish(<FaqPage />)
 	const faq = document.querySelector('article')?.textContent ?? ''
 	expect(faq).not.toMatch(outdatedMenu)
-	expect(faq).toContain('M → My memories lists dated captures')
+	expect(document.querySelector('details')).toBeNull()
+	expect(screen.queryByRole('tab')).toBeNull()
+	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
+		'Before installing',
+		'What is it?',
+		'Installing',
+		'Capturing',
+		'Gallery and sharing',
+		'Safety and privacy',
+		'Problems',
+	])
+	for (const anchor of ['ban', 'sodium', 'vieux-monde', 'versions'])
+		expect(document.getElementById(anchor)?.querySelector('a')?.getAttribute('href')).toBe(`#${anchor}`)
 	expect(faq).toContain(
-		'Yes, with Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 and the loader listed for your version'
+		'In beta: Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, plus 26.3 as an experimental version.'
 	)
-	expect(faq).not.toContain('Java 1.21.1 with')
-	expect(faq).not.toContain('NeoForge 21.1.248')
+	expect(faq).toContain('M → Settings → Privacy')
+	expect(faq).toContain('M → My memories → Send this memory.')
+	// Questions that wait for an owner decision are not written: price, modpacks, performance.
+	expect(faq).not.toMatch(/free|open source|modpack|lag/i)
+	expect(faq).not.toMatch(/@[\w-]+\.\w+/)
+	expect(faq).not.toContain('1.18.2 → 1.21.11')
+	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
 })
 
 test('the first memory step names the in-game button and the download step points to other versions', async () => {

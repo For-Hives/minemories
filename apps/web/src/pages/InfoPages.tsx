@@ -1,22 +1,12 @@
 import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router'
 import { RadiusMap, SeasonDemo, ShareDemo } from '../components/diagrams'
-import {
-	FileTree,
-	Glyph,
-	type GlyphName,
-	More,
-	TabPanel,
-	type TabSpec,
-	TabStrip,
-	type Verdict,
-	VerdictChip,
-} from '../components/explainers'
+import { FileTree, Glyph, type GlyphName, More, TabPanel, type TabSpec, TabStrip } from '../components/explainers'
 import { MemoryScene } from '../components/MemoryScene'
-import { buttonLime, buttonOutline } from '../components/ui'
+import { buttonLime } from '../components/ui'
 import type { DemoTheme } from '../content/discovery'
+import { type FaqEntry, faqGroups, faqText, type QuestionId, questions } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
-import { supportedMinecraft } from './mod-releases'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
@@ -413,137 +403,46 @@ export function HowItWorksPage() {
 	)
 }
 
-interface Question {
-	topic: Topic
-	glyph: GlyphName
-	question: string
-	answer: string
-	verdict?: Verdict
+/** Questions and their short answers, from content/faq.ts. On /faq each one carries its anchor (`/faq#ban`). */
+export function Questions({ ids, anchors = false }: { ids: readonly QuestionId[]; anchors?: boolean }) {
+	const { t } = useI18n()
+	return (
+		<div className="ex-faq">
+			{ids.map(id => {
+				const entry: FaqEntry = questions[id]
+				const { question, answer } = faqText(id, t)
+				return (
+					<div key={id} className="ex-faq-item" id={anchors ? id : undefined}>
+						<h3>{anchors ? <a href={`#${id}`}>{question}</a> : question}</h3>
+						<p>
+							{answer}
+							{entry.link && (
+								<>
+									{' '}
+									<Link to={entry.link.to}>{t(entry.link.label)} →</Link>
+								</>
+							)}
+						</p>
+					</div>
+				)
+			})}
+		</div>
+	)
 }
-type Topic = 'world' | 'captures' | 'sharing'
-const topics: Array<TabSpec<Topic>> = [
-	{ id: 'world', label: 'Your world', glyph: 'home' },
-	{ id: 'captures', label: 'Captures', glyph: 'cube' },
-	{ id: 'sharing', label: 'Sharing', glyph: 'link' },
-]
-const questions: Question[] = [
-	{
-		topic: 'world',
-		glyph: 'disk',
-		question: 'Is this a backup of my world?',
-		answer: 'It is a static 3D view of one area. Keep your Minecraft backup too.',
-		verdict: 'no',
-	},
-	{
-		topic: 'world',
-		glyph: 'cube',
-		question: 'Can I keep a vanilla build?',
-		answer:
-			'Yes, with Minecraft Java {versions} and the loader listed for your version (NeoForge, Fabric or Forge); Quilt uses the Fabric JAR. No Bedrock or consoles.',
-		verdict: 'yes',
-	},
-	{
-		topic: 'world',
-		glyph: 'code',
-		question: 'Do I need to install anything on the server?',
-		answer: 'It is a client mod. Ask the admin first and capture only what you may.',
-		verdict: 'no',
-	},
-	{
-		topic: 'world',
-		glyph: 'clock',
-		question: 'Can I recover a closed server or import a ZIP?',
-		answer: 'Not directly. The world must reopen in a compatible setup to be captured.',
-		verdict: 'later',
-	},
-	{
-		topic: 'captures',
-		glyph: 'layers',
-		question: 'Is it compatible with every mod?',
-		answer: 'Not guaranteed. Custom-rendered blocks can be incomplete: try a small capture first.',
-		verdict: 'depends',
-	},
-	{
-		topic: 'captures',
-		glyph: 'view',
-		question: 'Why is part of the build missing?',
-		answer: 'Move closer, check your corners and height, or capture a smaller area.',
-	},
-	{
-		topic: 'captures',
-		glyph: 'key',
-		question: 'The code does not work or uploading fails: what should I do?',
-		answer: 'Codes expire after 5 minutes and work once. Generate a new one and retry; your local file is safe.',
-	},
-	{
-		topic: 'captures',
-		glyph: 'restore',
-		question: 'How can I find an older capture?',
-		answer: 'M → My memories lists dated captures from the history folder.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'globe',
-		question: 'Do I need an account or mod to view a memory?',
-		answer: 'A shared link opens in any browser. You only need an account to upload.',
-		verdict: 'no',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'heart',
-		question: "Who can see my child's memories?",
-		answer: 'Private by default. Anyone with a link you create can see it until you revoke it.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'refresh',
-		question: 'Does the mod upload everything automatically?',
-		answer:
-			'Nothing leaves before you connect the game. After that, every memory, by hand or AFK, goes to your private gallery on its own. Turn off the automatic ones with “Auto memories” in M.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'clock',
-		question: 'Is there timelapse, 3D printing or a subscription?',
-		answer: 'Timelapse links dated captures. 3D printing is only an idea, and no price is confirmed.',
-	},
-]
 
 export function FaqPage() {
 	const { t } = useI18n()
-	const [topic, setTopic] = useState<Topic>('world')
 	return (
 		<InfoPage title="Frequently asked questions">
-			<TabStrip
-				base="faq"
-				label={t('Frequently asked questions')}
-				tabs={topics.map(item => ({ ...item, label: t(item.label) }))}
-				value={topic}
-				onChange={setTopic}
-			/>
-			{topics.map(item => (
-				<TabPanel key={item.id} base="faq" id={item.id} active={item.id === topic}>
-					<div className="ex-rows ex-rows--flat">
-						{questions
-							.filter(entry => entry.topic === item.id)
-							.map(entry => (
-								<details key={entry.question} className="ex-row">
-									<summary>
-										<Glyph name={entry.glyph} />
-										<h2 className="ex-q">{t(entry.question)}</h2>
-										{entry.verdict && <VerdictChip verdict={entry.verdict} />}
-									</summary>
-									<div className="ex-row-body">
-										<p>{t(entry.answer, supportedMinecraft())}</p>
-									</div>
-								</details>
-							))}
-					</div>
-				</TabPanel>
+			{faqGroups.map(group => (
+				<section key={group.label} className="ex-faq-group">
+					<h2>{t(group.label)}</h2>
+					<Questions ids={group.ids} anchors />
+				</section>
 			))}
 			<p>
-				<Link className={buttonOutline} to="/how-it-works">
-					<T message={'All the steps to capture, upload and share'} />
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
 				</Link>
 			</p>
 		</InfoPage>

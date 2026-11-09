@@ -1,4 +1,7 @@
 import gradleProperties from '../../../mod/1.21.1/gradle.properties?raw'
+import { faqGroups, faqText } from './content/faq'
+import { translate } from './i18n/catalog'
+import { resolveLocale } from './i18n/locales'
 import { repositoryUrl } from './lib/repository'
 import { catalogLinks } from './pages/installation-loaders'
 import { type PageMetadata, siteOrigin } from './route-metadata'
@@ -9,6 +12,17 @@ export function modVersionFrom(properties: string): string | undefined {
 	return modVersionPattern.exec(properties)?.[1]?.trim() || undefined
 }
 export const modVersion = modVersionFrom(gradleProperties)
+
+/** The questions of /faq as schema.org Questions, in the page's language, from the same source as the visible list. */
+function faqEntities(language: string) {
+	const locale = resolveLocale(language) ?? 'fr'
+	return faqGroups
+		.flatMap(group => group.ids)
+		.map(id => {
+			const { question, answer } = faqText(id, (message, values) => translate(locale, message, values))
+			return { '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } }
+		})
+}
 
 /**
  * The page's JSON-LD, the one source for the prerendered HTML and the client head. Every page describes itself (WebPage,
@@ -34,7 +48,7 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 					publisher: organization,
 				}
 			: {
-					'@type': 'WebPage',
+					'@type': page.path === '/faq' ? 'FAQPage' : 'WebPage',
 					'@id': canonical,
 					inLanguage: page.language,
 					name: page.title,
@@ -42,6 +56,7 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 					url: canonical,
 					dateModified: page.updated,
 					isPartOf: website,
+					...(page.path === '/faq' && { mainEntity: faqEntities(page.language) }),
 				},
 	]
 	if (page.path === '/')

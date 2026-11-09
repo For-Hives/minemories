@@ -100,7 +100,10 @@
 	"Download the GLB file": "Télécharger le fichier GLB",
 	"Preparing the file…": "Préparation du fichier…",
 	"Unknown version": "Version inconnue",
-	"Nothing leaves before you connect the game. After that, every memory, by hand or AFK, goes to your private gallery on its own. Turn off the automatic ones with “Auto memories” in M.": "Rien ne part avant que tu connectes le jeu. Ensuite, chaque souvenir, à la main ou AFK, part tout seul dans ta galerie privée. Coupe les souvenirs automatiques avec « Photos auto » dans M.",
 	"Nothing leaves your computer until you link the game to your account. After that, automatic memories arrive in your private gallery on their own (at most one every 4 hours), along with a short technical report, with no personal data, when something goes wrong. You can turn both off in the M menu: “Auto memories”, and Settings → Privacy for the reports.": "Rien ne part tant que tu n’as pas connecté le jeu à ton compte. Ensuite, les souvenirs automatiques arrivent seuls dans ta galerie privée (au plus un toutes les 4 heures), avec un petit rapport technique, sans données personnelles, quand quelque chose plante. Tu peux couper les deux dans le menu M : « Photos auto », et Réglages → Confidentialité pour les rapports.",
-	"From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.": "Ensuite, chaque souvenir pris avec M → Prendre un souvenir, ou en AFK, part tout seul dans ta galerie privée. Pour les autres : M → Mes souvenirs → Envoyer cette capture."
+	"From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.": "Ensuite, chaque souvenir pris avec M → Prendre un souvenir, ou en AFK, part tout seul dans ta galerie privée. Pour les autres : M → Mes souvenirs → Envoyer cette capture.",
+	"Can I turn off auto memories?": "Je peux couper les photos auto ?",
+	"Yes: M → Auto memories.": "Oui : M → Photos auto.",
+	"You can change it in M → Settings → Memories.": "Tu peux le changer dans M → Réglages → Captures.",
+	"M → My memories → Send this memory.": "M → Mes souvenirs → Envoyer cette capture."
 }

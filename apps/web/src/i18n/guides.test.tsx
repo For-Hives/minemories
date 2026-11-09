@@ -38,7 +38,8 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 	Page => {
 		mount(<Page />)
 		expect(document.querySelector('article')?.lang).toBe('en')
-		expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
+		// Bréval is a name (who makes Minemories), not French copy left untranslated.
+		expect(document.querySelector('article')?.textContent?.replaceAll('Bréval', '')).not.toMatch(/[àâçéèêëîïôùûü]/i)
 		expect(screen.getAllByRole('link', { name: 'Install the mod' }).length).toBeGreaterThan(0)
 		fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
 		expect(document.querySelector('article')?.lang).toBe('fr')
