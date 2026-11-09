@@ -289,7 +289,6 @@
 	transition: width var(--ds-dur-3) steps(6, end);
 }
 
-
 /* --- Servers: a row of inventory slots; the selected one wears the game's white selection frame and opens its areas below --- */
 .gallery-sr-only {
 	position: absolute;

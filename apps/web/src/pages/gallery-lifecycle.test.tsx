@@ -21,11 +21,17 @@ const mocks = vi.hoisted(() => ({
 	notify: vi.fn(),
 	navigate: vi.fn(),
 	setFile: vi.fn(),
+	download: vi.fn(),
+}))
+vi.mock('../lib/capture-file', async importOriginal => ({
+	...(await importOriginal<typeof import('../lib/capture-file')>()),
+	downloadCapture: mocks.download,
 }))
 vi.mock('../app-context', () => ({
 	useAppContext: () => ({ session: { user: { name: 'Tester' } }, notify: mocks.notify, setViewerFile: mocks.setFile }),
 }))
 vi.mock('../api-client', () => ({
+	apiBase: 'http://localhost:3001',
 	apiClient: {
 		account: {
 			storage: async () => ({
@@ -618,4 +624,46 @@ test('a slow automatic refresh is not duplicated and its timer stops on exit', a
 		await vi.advanceTimersByTimeAsync(24000)
 	})
 	expect(mocks.list).toHaveBeenCalledTimes(2)
+})
+
+test('a snapshot is downloaded as a GLB from its details sheet and from the snapshot list', async () => {
+	const { CaptureRestorationRequired } = await import('../lib/capture-file')
+	memories = [capture('two', 'Barn'), capture('one', 'Cabin')]
+	const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+	URL.createObjectURL = vi.fn(() => 'blob:glb')
+	URL.revokeObjectURL = vi.fn()
+	mocks.download.mockResolvedValue(new File(['glTF'], 'Barn.glb'))
+	const props = { title: 'Barn', memories, onTarget: vi.fn(), onClose: vi.fn(), onChanged: vi.fn(), onTrashed: vi.fn() }
+	const view = render(
+		<MemoryRouter>
+			<GalleryDialog {...props} target={{ tab: 'details', id: 'two' }} />
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file' }))
+	await waitFor(() => expect(click).toHaveBeenCalledOnce())
+	expect(mocks.download).toHaveBeenCalledWith(
+		expect.stringContaining('/api/memories/two/file'),
+		'Barn.glb',
+		expect.anything()
+	)
+	mocks.download.mockRejectedValueOnce(
+		new CaptureRestorationRequired({
+			state: 'cold',
+			readyObjects: 0,
+			totalObjects: 1,
+			restorationAvailable: true,
+			retryAfterSeconds: 5,
+		})
+	)
+	view.rerender(
+		<MemoryRouter>
+			<GalleryDialog {...props} target={{ tab: 'snapshots', id: 'two' }} />
+		</MemoryRouter>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file: Cabin' }))
+	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('archived')))
+	mocks.download.mockRejectedValueOnce(new Error('network'))
+	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file: Cabin' }))
+	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('Could not download this snapshot.'))
+	click.mockRestore()
 })

@@ -24,7 +24,8 @@ async function readOwner(path) {
 export async function acquireLock(path, { label = 'bun mod', alive = pidAlive, pid = process.pid } = {}) {
 	await mkdir(dirname(path), { recursive: true })
 	const owner = { pid, label, host: hostname(), since: new Date().toISOString() }
-	for (let attempt = 0; attempt < 2; attempt++) {
+	const take = async attempt => {
+		if (attempt >= 2) throw new Error(`Could not take the lock ${path}.`)
 		try {
 			await writeFile(path, JSON.stringify(owner), { flag: 'wx' })
 			return () => rm(path, { force: true })
@@ -35,8 +36,9 @@ export async function acquireLock(path, { label = 'bun mod', alive = pidAlive, p
 		if (current && alive(current.pid) && current.host === owner.host)
 			throw new Error(`A build is already running (${current.label}, pid ${current.pid}, since ${current.since}).`)
 		await rm(path, { force: true }) // stale: owner crashed or lock unreadable
+		return take(attempt + 1)
 	}
-	throw new Error(`Could not take the lock ${path}.`)
+	return take(0)
 }
 
 export async function withLock(path, fn, options) {

@@ -524,6 +524,24 @@ select.mc-field.mm-field-fill {
 	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
 
+.mm-site .mm-angle-card h2 {
+	margin: var(--ds-sp-3) 0 0;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+	color: #fff;
+}
+
+.mm-site :is(.mm-callout, .mm-timeline-preview, .mm-section-heading, .mm-price-simulator, .mm-demo-detail) h2 {
+	margin: var(--ds-sp-3) 0;
+	color: #fff;
+}
+
+.mm-site .mm-plan h2 {
+	margin: var(--ds-sp-3) 0 0;
+	color: #fff;
+}
+
 .mm-site .mm-info .mm-info-faq h2 {
 	display: flex;
 	align-items: center;
@@ -531,6 +549,58 @@ select.mc-field.mm-field-fill {
 	margin: 0 0 var(--ds-sp-2);
 	font-size: var(--ds-fs-xs);
 	line-height: var(--ds-lh-xs);
+}
+.mm-angle-card p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-story-hero p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-callout p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-timeline-preview p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-plan p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-price-simulator p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+.mm-demo-detail p {
+	margin: var(--ds-sp-3) 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+.mm-memory-card p {
+	min-height: 72px;
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-empty-demo p {
+	margin: 0;
+	color: var(--text-2);
+}
+
+.mm-estimate > p {
+	color: var(--text-2);
 }
 
 .mm-info .mm-info-faq p {
@@ -615,30 +685,20 @@ select.mc-field.mm-field-fill {
 		var(--ds-panel-bevel);
 }
 
+/* A still of the landing's captures (transparent background): it keeps its 4:3 frame and stays sharp at every size. */
+.mm-memory-scene {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 4 / 3;
+	padding: var(--ds-sp-3);
+	object-fit: contain;
+}
+
 /* The illustration sits in a recess, like an item in a slot. */
 :is(.mm-angle-card, .mm-story-hero, .mm-timeline-preview, .mm-demo-detail) > .mm-memory-scene {
 	background: var(--night);
 	box-shadow: var(--mm-recess-shadow);
-}
-
-.mm-site .mm-angle-card h2 {
-	margin: var(--ds-sp-3) 0 0;
-	font-size: var(--ds-fs-h3);
-	line-height: var(--ds-lh-h3);
-	text-shadow: var(--ds-text-shadow-2);
-	color: #fff;
-}
-
-.mm-angle-card p,
-.mm-story-hero p,
-.mm-callout p,
-.mm-timeline-preview p,
-.mm-plan p,
-.mm-price-simulator p,
-.mm-demo-detail p {
-	margin: var(--ds-sp-3) 0;
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
 }
 
 .mm-angle-card > span:last-child {
@@ -648,16 +708,6 @@ select.mc-field.mm-field-fill {
 	color: var(--ember);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
-}
-
-/* A still of the landing's captures (transparent background): it keeps its 4:3 frame and stays sharp at every size. */
-.mm-memory-scene {
-	display: block;
-	width: 100%;
-	height: auto;
-	aspect-ratio: 4 / 3;
-	padding: var(--ds-sp-3);
-	object-fit: contain;
 }
 
 /* Call to action at the end of a page: the kit's separator above, a title and the buttons. */
@@ -674,11 +724,6 @@ select.mc-field.mm-field-fill {
 
 .mm-callout .mm-actions {
 	margin: 0;
-}
-
-.mm-site :is(.mm-callout, .mm-timeline-preview, .mm-section-heading, .mm-price-simulator, .mm-demo-detail) h2 {
-	margin: var(--ds-sp-3) 0;
-	color: #fff;
 }
 
 /* --- Discovery: a path (MarketingPage) ------------------------------------------------------------------------------------------------------------------ */
@@ -822,13 +867,6 @@ select.mc-field.mm-field-fill {
 	color: #fff;
 }
 
-.mm-memory-card p {
-	min-height: 72px;
-	margin: 0 0 var(--ds-sp-4);
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
-}
-
 /* The actions stand on the card's floor, whatever the length of the title above. */
 .mm-memory-actions {
 	display: flex;
@@ -875,11 +913,6 @@ select.mc-field.mm-field-fill {
 	color: var(--c-name);
 }
 
-.mm-empty-demo p {
-	margin: 0;
-	color: var(--text-2);
-}
-
 /* --- Pricing (PricingPage, PriceSimulator) ------------------------------------------------------------------------------------------------------------ */
 
 /* "Offer in preparation": a permanent tooltip (the item card of the kit). */
@@ -912,11 +945,6 @@ select.mc-field.mm-field-fill {
 		var(--ds-panel-bevel);
 }
 
-.mm-site .mm-plan h2 {
-	margin: var(--ds-sp-3) 0 0;
-	color: #fff;
-}
-
 .mm-plan .mm-big-price {
 	margin: var(--ds-sp-4) 0;
 	color: var(--ember);
@@ -936,6 +964,26 @@ select.mc-field.mm-field-fill {
 	list-style: none;
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-price-steps li {
+	display: grid;
+	justify-items: center;
+	gap: var(--ds-sp-1);
+	min-width: 0;
+	padding: var(--ds-sp-2) var(--ds-sp-1);
+	background: var(--slot-lo);
+	text-align: center;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #1d1d1d,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot);
+}
+
+.mm-estimate-years li {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr) max-content;
+	gap: var(--ds-sp-3);
+	align-items: center;
 }
 
 .mm-plan ul li {
@@ -975,19 +1023,6 @@ select.mc-field.mm-field-fill {
 	list-style: none;
 	background: rgb(0 0 0 / 0.55);
 	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-
-.mm-price-steps li {
-	display: grid;
-	justify-items: center;
-	gap: var(--ds-sp-1);
-	min-width: 0;
-	padding: var(--ds-sp-2) var(--ds-sp-1);
-	background: var(--slot-lo);
-	text-align: center;
-	box-shadow:
-		inset var(--gp) var(--gp) 0 #1d1d1d,
-		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot);
 }
 
 .mm-site .mm-plan .mm-price-steps span {
@@ -1048,10 +1083,6 @@ select.mc-field.mm-field-fill {
 	box-shadow: var(--mm-recess-shadow);
 }
 
-.mm-estimate > p {
-	color: var(--text-2);
-}
-
 .mm-estimate-total {
 	display: block;
 	margin-top: var(--ds-sp-3);
@@ -1090,13 +1121,6 @@ select.mc-field.mm-field-fill {
 	list-style: none;
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	color: var(--text-2);
-}
-
-.mm-estimate-years li {
-	display: grid;
-	grid-template-columns: max-content minmax(0, 1fr) max-content;
-	gap: var(--ds-sp-3);
-	align-items: center;
 }
 
 .mm-estimate-years strong {

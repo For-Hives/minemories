@@ -43,19 +43,20 @@ const manifestOf = (id, version, extra = {}) => ({
 
 async function dist(version, ids = ['fabric-mc1.21.1', 'forge-mc1.21.1'], manifestExtra = {}) {
 	const root = await mkdtemp(join(tmpdir(), 'mod-remote-'))
-	const artifacts = []
-	for (const id of ids) {
-		const dir = join(root, 'build', 'mod-dist', version, id)
-		await mkdir(dir, { recursive: true })
-		const bytes = Buffer.from(`PK-jar-${id}`)
-		const file = join(dir, `minemories-${id}-${version}.jar`)
-		await writeFile(file, bytes)
-		await writeFile(
-			join(dir, 'manifest.json'),
-			JSON.stringify(manifestOf(id, version, { sha256: sha(bytes), ...manifestExtra }))
-		)
-		artifacts.push({ targetId: id, filePath: file, bytes: bytes.length, sha256: sha(bytes) })
-	}
+	const artifacts = await Promise.all(
+		ids.map(async id => {
+			const dir = join(root, 'build', 'mod-dist', version, id)
+			await mkdir(dir, { recursive: true })
+			const bytes = Buffer.from(`PK-jar-${id}`)
+			const file = join(dir, `minemories-${id}-${version}.jar`)
+			await writeFile(file, bytes)
+			await writeFile(
+				join(dir, 'manifest.json'),
+				JSON.stringify(manifestOf(id, version, { sha256: sha(bytes), ...manifestExtra }))
+			)
+			return { targetId: id, filePath: file, bytes: bytes.length, sha256: sha(bytes) }
+		})
+	)
 	return { root, artifacts }
 }
 
@@ -197,32 +198,34 @@ test('builtBy comes from the manifest or MOD_BUILT_BY, and ?replace=1 is passed 
 })
 
 test('401, 409 and 422 are never retried; a failing target does not stop the others', async () => {
-	for (const status of [401, 409, 422]) {
-		const { artifacts } = await dist('0.9.0')
-		const s = server({ behave: call => (call.url.includes('fabric') ? { status, body: { error: 'nope' } } : null) })
-		const out = silent()
-		const waits = noSleep()
-		const result = await uploadRelease({
-			version: '0.9.0',
-			artifacts,
-			env,
-			fetchImpl: s.fetchImpl,
-			sleep: waits.sleep,
-			log: out.log,
+	await Promise.all(
+		[401, 409, 422].map(async status => {
+			const { artifacts } = await dist('0.9.0')
+			const s = server({ behave: call => (call.url.includes('fabric') ? { status, body: { error: 'nope' } } : null) })
+			const out = silent()
+			const waits = noSleep()
+			const result = await uploadRelease({
+				version: '0.9.0',
+				artifacts,
+				env,
+				fetchImpl: s.fetchImpl,
+				sleep: waits.sleep,
+				log: out.log,
+			})
+			assert.equal(result.ok, false)
+			assert.equal(s.calls.filter(call => call.url.includes('fabric')).length, 1)
+			assert.deepEqual(waits.waits, [])
+			assert.deepEqual(
+				result.results.map(r => [r.targetId, r.status]),
+				[
+					['fabric-mc1.21.1', 'failed'],
+					['forge-mc1.21.1', 'sent'],
+				]
+			)
+			assert.equal(result.results[0].message, `HTTP ${status} (nope)`)
+			assert.match(summarizeUpload(result), /1 target\(s\) uploaded, 1 failed/)
 		})
-		assert.equal(result.ok, false)
-		assert.equal(s.calls.filter(call => call.url.includes('fabric')).length, 1)
-		assert.deepEqual(waits.waits, [])
-		assert.deepEqual(
-			result.results.map(r => [r.targetId, r.status]),
-			[
-				['fabric-mc1.21.1', 'failed'],
-				['forge-mc1.21.1', 'sent'],
-			]
-		)
-		assert.equal(result.results[0].message, `HTTP ${status} (nope)`)
-		assert.match(summarizeUpload(result), /1 target\(s\) uploaded, 1 failed/)
-	}
+	)
 })
 
 test('network errors and 5xx are retried with growing delays, within a limit', async () => {

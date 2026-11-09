@@ -244,9 +244,12 @@ async function dryRun({ config, root, log, loadModule, flags }) {
 		['third-party publishing', './publish/index.mjs', flags.noPublish],
 		['notification', './notify.mjs', false],
 	]
-	for (const [label, module, skipped] of steps) {
-		if (skipped) log.info(`[dry-run] ${label}: skipped by option`)
-		else log.info(`[dry-run] ${label}: ${(await loadModule(module, log)) ? 'module present' : 'module missing'}`)
-	}
+	const lines = await Promise.all(
+		steps.map(async ([label, module, skipped]) => {
+			if (skipped) return `[dry-run] ${label}: skipped by option`
+			return `[dry-run] ${label}: ${(await loadModule(module, log)) ? 'module present' : 'module missing'}`
+		})
+	)
+	for (const line of lines) log.info(line)
 	return { ok: true, exitCode: 0, results: [], tests: [], published: [], store: null, remote: null, version }
 }

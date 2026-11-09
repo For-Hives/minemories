@@ -106,7 +106,15 @@ const memorySchema = z.object({
 	}),
 })
 
-export type { AdminSummary, AdminUser, AdminUserSort } from './admin'
+export type { AdminInsights, AdminSummary, AdminUser, AdminUserSort } from './admin'
+
+/** Java Edition usernames: 3 to 16 letters, digits and underscores. */
+export const minecraftUsername = z
+	.string()
+	.trim()
+	.regex(/^\w{3,16}$/)
+/** Head (face with its hat layer) of a Minecraft account, served by Minotar from the username. */
+export const minecraftHeadUrl = (username: string) => `https://minotar.net/helm/${encodeURIComponent(username)}/64.png`
 
 export const apiContract = {
 	admin: adminContract,
@@ -117,6 +125,10 @@ export const apiContract = {
 	account: {
 		changeName: oc
 			.input(z.object({ name: z.string().trim().min(1).max(80) }))
+			.output(z.object({ ok: z.literal(true) })),
+		/** Uses the Minecraft head of this player as the account image; `null` goes back to the initial. */
+		setMinecraftHead: oc
+			.input(z.object({ username: minecraftUsername.nullable() }))
 			.output(z.object({ ok: z.literal(true) })),
 		changeEmail: oc
 			.input(z.object({ email: z.email().trim().toLowerCase().max(254), currentPassword: z.string().min(1).max(128) }))

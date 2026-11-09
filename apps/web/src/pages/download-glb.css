@@ -1,0 +1,13 @@
+.gallery-download {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 1rem;
+	min-height: var(--ds-hit, 2.75rem);
+	padding: 0 1rem;
+	cursor: pointer;
+}
+.gallery-download:disabled {
+	cursor: progress;
+	opacity: 0.7;
+}

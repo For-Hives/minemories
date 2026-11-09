@@ -252,6 +252,11 @@ test('shared snapshots open without an account until revoked', async () => {
 	const metadata = await app.request(`/api/shared/${missing.token}`)
 	expect(metadata.status).toBe(200)
 	expect(await metadata.json()).toMatchObject({ id: '19e2b9a5-9c9c-4c9c-8c9c-9c9c9c9c9c9c', name: 'Shared build' })
+	// A world link repeats the request with `snapshot` when the visitor moves in time: that is not a new opening.
+	await app.request(`/api/shared/${missing.token}?snapshot=19e2b9a5-9c9c-4c9c-8c9c-9c9c9c9c9c9c`)
+	expect(database.query('SELECT open_count AS n FROM share_links WHERE user_id = ?').get('share-owner')).toEqual({
+		n: 1,
+	})
 	const file = await app.request(`/api/shared/${missing.token}/file`)
 	expect(file.status).toBe(200)
 	expect(file.headers.get('content-type')).toBe('model/gltf-binary')

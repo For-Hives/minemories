@@ -11,7 +11,9 @@ const mocks = vi.hoisted(() => ({
 	summary: vi.fn(),
 	users: vi.fn(),
 	audit: vi.fn(),
+	insights: vi.fn(),
 	setRole: vi.fn(),
+	deleteUser: vi.fn(),
 }))
 vi.mock('../api-client', () => ({ apiClient: { admin: mocks } }))
 vi.mock('../app-context', () => ({ useAppContext: () => ({ session: { user: { id: 'admin' } } }) }))
@@ -72,7 +74,57 @@ beforeEach(() => {
 		overview: { accounts: 26, usedBytes: 4000, nearQuotaAccounts: 0 },
 	})
 	mocks.audit.mockResolvedValue([])
+	mocks.insights.mockResolvedValue({
+		windowDays: 30,
+		versions: {
+			reportingDevices: 3,
+			minecraft: [
+				{ version: '1.21.1', devices: 2 },
+				{ version: 'unknown', devices: 1 },
+			],
+			loader: [],
+			mod: [{ version: '0.36.5-beta.1', devices: 3 }],
+		},
+		shares: {
+			links: 4,
+			activeLinks: 3,
+			revokedLinks: 1,
+			worldLinks: 1,
+			openedLinks: 2,
+			opens: 9,
+			top: [
+				{ name: 'Castle', owner: 'Alex', scope: 'memory', opens: 7, lastOpenedAt: 1, revoked: false },
+				{ name: 'Farm', owner: null, scope: 'world', opens: 2, lastOpenedAt: null, revoked: true },
+			],
+		},
+		activity: {
+			activeUsers: 2,
+			users: [
+				{
+					id: 'a',
+					name: 'Alex',
+					email: 'alex@example.com',
+					level: 'high',
+					score: 20,
+					logins: 5,
+					uploads: 5,
+					lastActiveAt: 86_400_000,
+				},
+				{
+					id: 'b',
+					name: 'Bo',
+					email: 'bo@example.com',
+					level: 'low',
+					score: 1,
+					logins: 1,
+					uploads: 0,
+					lastActiveAt: null,
+				},
+			],
+		},
+	})
 	mocks.setRole.mockResolvedValue({ ok: true })
+	mocks.deleteUser.mockResolvedValue({ ok: true })
 })
 afterEach(cleanup)
 function page(element = <AdminPage />) {
@@ -198,4 +250,44 @@ test('account entry appears only after server permission confirmation', async ()
 	page(<AdminAccessLink />)
 	await waitFor(() => expect(mocks.access).toHaveBeenCalledTimes(2))
 	expect(screen.queryByRole('link')).toBeNull()
+})
+
+test('insights list versions, shared links and the most active accounts', async () => {
+	page()
+	await screen.findByText('Versions utilisées')
+	expect(screen.getByText('1.21.1')).toBeTruthy()
+	expect(screen.getByText('Version inconnue')).toBeTruthy()
+	expect(screen.getByText('0.36.5-beta.1')).toBeTruthy()
+	expect(screen.getAllByText('Aucune donnée pour le moment.')).toHaveLength(1)
+	expect(screen.getByText('Castle')).toBeTruthy()
+	expect(screen.getByText(/Compte supprimé · Monde · Révoqué/)).toBeTruthy()
+	expect(screen.getByText('Très actif')).toBeTruthy()
+	expect(screen.getByText('Occasionnel')).toBeTruthy()
+})
+test('an empty period shows no activity', async () => {
+	const insights = await mocks.insights()
+	mocks.insights.mockResolvedValue({
+		...insights,
+		shares: { ...insights.shares, top: [] },
+		activity: { activeUsers: 0, users: [] },
+	})
+	page()
+	await screen.findByText('Aucune activité sur cette période.')
+})
+test('deleting an account asks for the password, shows safe errors and refreshes', async () => {
+	page()
+	fireEvent.click(await screen.findByRole('button', { name: 'Supprimer le compte (Candidate)' }))
+	expect(screen.queryByRole('button', { name: 'Supprimer le compte (Owner)' })).toBeNull()
+	expect(mocks.deleteUser).not.toHaveBeenCalled()
+	fireEvent.change(screen.getByLabelText('Ton mot de passe actuel'), { target: { value: 'confirmed-password' } })
+	mocks.deleteUser.mockRejectedValueOnce(new Error('ADMIN_ACCOUNT'))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Supprimer le compte' }))
+	await screen.findByText("Retire d'abord l'accès administrateur avant de supprimer ce compte.")
+	mocks.deleteUser.mockRejectedValueOnce(new Error('SELF_DELETE'))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Supprimer le compte' }))
+	await screen.findByText("Tu ne peux pas supprimer ton propre compte d'ici.")
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Supprimer le compte' }))
+	await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+	expect(mocks.deleteUser).toHaveBeenLastCalledWith({ userId: 'candidate', currentPassword: 'confirmed-password' })
+	await waitFor(() => expect(mocks.summary).toHaveBeenCalledTimes(2))
 })

@@ -136,3 +136,27 @@ test('console bootstrap needs an existing database/account and is idempotent', (
 		)
 	).toBe(true)
 })
+
+test('insights and account deletion need an administrator and the current password', async () => {
+	const admin = await register('insights-admin@example.com'),
+		victim = await register('insights-victim@example.com')
+	promoteAdministrator(['--email', admin.email], process.env)
+	await expect(victim.client.admin.insights()).rejects.toMatchObject({ code: 'FORBIDDEN' })
+	expect(await admin.client.admin.insights()).toMatchObject({
+		windowDays: 30,
+		versions: { reportingDevices: 0 },
+		shares: { links: 0, opens: 0 },
+	})
+	await expect(
+		victim.client.admin.deleteUser({ userId: admin.id, currentPassword: victim.password })
+	).rejects.toMatchObject({ code: 'FORBIDDEN' })
+	await expect(admin.client.admin.deleteUser({ userId: victim.id, currentPassword: 'wrong' })).rejects.toMatchObject({
+		code: 'BAD_REQUEST',
+	})
+	await expect(
+		admin.client.admin.deleteUser({ userId: admin.id, currentPassword: admin.password })
+	).rejects.toMatchObject({ code: 'CONFLICT' })
+	await admin.client.admin.deleteUser({ userId: victim.id, currentPassword: admin.password })
+	expect(database.query('SELECT 1 FROM user WHERE id=?').get(victim.id)).toBeNull()
+	expect((await admin.client.admin.users({ query: 'insights-victim', role: 'all', page: 1 })).total).toBe(0)
+}, 15000)

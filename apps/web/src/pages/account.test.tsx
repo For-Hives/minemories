@@ -8,6 +8,8 @@ import { AccountPage } from './AccountPage'
 
 const mocks = vi.hoisted(() => ({
 	name: vi.fn(),
+	head: vi.fn(),
+	image: { value: null as string | null },
 	refresh: vi.fn(),
 	email: vi.fn(),
 	password: vi.fn(),
@@ -15,12 +17,19 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
-	apiClient: { account: { changeName: mocks.name, changeEmail: mocks.email, changePassword: mocks.password } },
+	apiClient: {
+		account: {
+			changeName: mocks.name,
+			setMinecraftHead: mocks.head,
+			changeEmail: mocks.email,
+			changePassword: mocks.password,
+		},
+	},
 }))
 vi.mock('../app-context', () => ({
 	useAppContext: () => ({
 		refreshSession: mocks.refresh,
-		session: { user: { name: 'Tester', email: 'tester@example.com' } },
+		session: { user: { name: 'Tester', email: 'tester@example.com', image: mocks.image.value } },
 	}),
 }))
 vi.mock('../auth-client', () => ({
@@ -29,6 +38,8 @@ vi.mock('../auth-client', () => ({
 vi.mock('./account-navigation', () => ({ credentialChangeComplete: mocks.complete }))
 beforeEach(() => {
 	vi.clearAllMocks()
+	mocks.image.value = null
+	mocks.head.mockResolvedValue({ ok: true })
 	localStorage.clear()
 	mocks.email.mockResolvedValue({ ok: true })
 	mocks.password.mockResolvedValue({ ok: true })
@@ -136,9 +147,47 @@ test('display name is trimmed, saved and refreshes the visible session without s
 })
 
 test('social accounts manage credentials at their provider and retain display-name editing', async () => {
-	vi.mocked(authClient.listAccounts).mockResolvedValueOnce({ data: [{ providerId: 'google' }] } as never)
+	vi.mocked(authClient.listAccounts).mockResolvedValueOnce({
+		data: [
+			{
+				id: 'google-account',
+				providerId: 'google',
+				accountId: 'google-user',
+				userId: 'tester',
+				createdAt: new Date(0),
+				updatedAt: new Date(0),
+				scopes: [],
+			},
+		],
+		error: null,
+	})
 	page()
 	await screen.findByText('Ton e-mail et ton mot de passe se gèrent auprès de ton fournisseur de connexion.')
 	expect(screen.queryByRole('form', { name: 'Mot de passe' })).toBeNull()
 	expect(screen.getByRole('form', { name: 'Profil' })).toBeTruthy()
+})
+
+test('the Minecraft head is saved from the username and can be removed once set', async () => {
+	page()
+	expect(screen.queryByRole('button', { name: 'Retirer ma photo' })).toBeNull()
+	const form = screen.getByRole('form', { name: 'Tête Minecraft' })
+	fill(form, 'Pseudo Minecraft', '  Notch ')
+	fireEvent.submit(form)
+	await waitFor(() => expect(mocks.head).toHaveBeenCalledWith({ username: 'Notch' }))
+	await screen.findByText('Tête Minecraft enregistrée.')
+	expect(mocks.refresh).toHaveBeenCalledOnce()
+	cleanup()
+	mocks.image.value = 'https://minotar.net/helm/Notch/64.png'
+	page()
+	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
+	await waitFor(() => expect(mocks.head).toHaveBeenLastCalledWith({ username: null }))
+	await screen.findByText('Photo retirée.')
+})
+test('a failed picture removal shows a safe error', async () => {
+	mocks.image.value = 'https://minotar.net/helm/Notch/64.png'
+	mocks.head.mockRejectedValue(new Error('private details'))
+	page()
+	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
+	await screen.findByRole('alert')
+	expect(screen.queryByText('private details')).toBeNull()
 })
