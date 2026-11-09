@@ -10,6 +10,33 @@
 		0 0 0 var(--gp) var(--outline),
 		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
 }
+.mm-release-source a {
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+.mm-release-integrity a {
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+
+.mm-release-markdown a {
+	color: var(--text);
+	text-decoration-color: var(--text-3);
+}
+
+.mm-release-card > p a {
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
 
 .mm-site .mm-release-tabs a {
 	display: inline-flex;
@@ -20,6 +47,19 @@
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 	text-decoration: none;
 	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-release-source a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+.mm-release-integrity a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+.mm-release-card > p a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
 }
 
 .mm-site .mm-release-tabs a:hover {
@@ -57,6 +97,21 @@
 
 .mm-release-guide p {
 	margin: 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.mm-release-download p {
+	margin: var(--ds-sp-1) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text);
+}
+.mm-release-markdown p {
+	margin: var(--ds-sp-4) 0;
+}
+
+.mm-release-feedback p {
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--bad);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
@@ -175,12 +230,6 @@
 	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
 
-.mm-release-download p {
-	margin: var(--ds-sp-1) 0;
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
-	color: var(--text);
-}
-
 .mm-site .mm-release-download h3 {
 	margin: var(--ds-sp-2) 0 var(--ds-sp-1);
 	color: #fff;
@@ -189,10 +238,7 @@
 .mm-release-download .mm-release-actions {
 	margin: var(--ds-sp-3) 0 var(--ds-sp-1);
 }
-
-.mm-release-muted,
-.mm-release-source,
-.mm-site .mm-release-download .mm-release-muted {
+.mm-release-muted {
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
@@ -201,25 +247,14 @@
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
 
+.mm-release-source,
+.mm-site .mm-release-download .mm-release-muted {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
 .mm-release-source {
 	margin-top: var(--ds-sp-5);
-}
-
-.mm-release-source a,
-.mm-release-integrity a,
-.mm-release-card > p a {
-	color: var(--text);
-	text-decoration: underline;
-	text-decoration-thickness: var(--gp);
-	text-underline-offset: calc(2 * var(--gp));
-	text-decoration-color: var(--text-3);
-}
-
-.mm-release-source a:hover,
-.mm-release-integrity a:hover,
-.mm-release-card > p a:hover {
-	color: var(--ember);
-	text-decoration-color: var(--ember);
 }
 
 /* Disclosures: the landing's FAQ row (game font, pixel chevron). */
@@ -306,7 +341,6 @@
 	min-height: var(--ds-hit);
 }
 
-.mm-release-markdown p,
 .mm-release-markdown ul,
 .mm-release-markdown ol {
 	margin: var(--ds-sp-4) 0;
@@ -344,11 +378,6 @@
 	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 
-.mm-release-markdown a {
-	color: var(--text);
-	text-decoration-color: var(--text-3);
-}
-
 /* Error: a tooltip in the error colour. */
 .mm-release-feedback {
 	margin: var(--ds-sp-5) var(--gp);
@@ -358,12 +387,6 @@
 	box-shadow:
 		0 0 0 var(--gp) var(--outline),
 		inset 0 0 0 var(--gp) var(--tip-b);
-}
-
-.mm-release-feedback p {
-	margin: 0 0 var(--ds-sp-4);
-	color: var(--bad);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 
 html.mm-cjk:not([data-mc-font="read"]) .mm-site .mm-release-guide h2 {

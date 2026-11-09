@@ -11,10 +11,9 @@ export const usage =
 	'  --dev      development build (-Pminemories.prod=false), prod by default'
 
 async function missingTargets(config, root, version) {
-	const missing = []
-	for (const target of enabledTargets(config))
-		if ((await targetState(root, target, version)).state !== 'current') missing.push(target)
-	return missing
+	const targets = enabledTargets(config)
+	const states = await Promise.all(targets.map(target => targetState(root, target, version)))
+	return targets.filter((_, index) => states[index].state !== 'current')
 }
 
 export async function run(args, { config, env, log, root }) {

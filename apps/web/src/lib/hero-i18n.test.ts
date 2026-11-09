@@ -55,7 +55,7 @@ test('apply works on a given document and root, with an injected translation', (
 	const other = document.implementation.createHTMLDocument('x')
 	other.body.innerHTML = '<p data-i18n="K">x</p>'
 	const translate = vi.fn((_locale: string, key: string) => `<${key}>`)
-	const i18n = createHeroI18n('en', other, translate as never)
+	const i18n = createHeroI18n('en', other, translate)
 	i18n.apply(other.body)
 	expect(other.body.textContent).toBe('<K>')
 	expect(translate).toHaveBeenCalledWith('en', 'K', { name: 'Efe' })

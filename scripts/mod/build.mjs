@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { distFileName, isBuildable } from './config.mjs'
 import { ensureJdks, gradleJavaSetup } from './jdk.mjs'
 import { withLock } from './lock.mjs'
+import { mapSequentially } from './sequence.mjs'
 import { repositoryRoot, run } from './utils.mjs'
 
 const releaseVersion = /^\d+\.\d+\.\d+(-[\w.]+)?$/
@@ -38,8 +39,12 @@ async function listDir(path) {
 /** Mod versions available for a target, from the dist folder and from the Gradle output. */
 export async function builtVersions(root, target) {
 	const versions = new Set()
-	for (const version of await listDir(distRoot(root)))
-		if ((await listDir(join(distRoot(root), version, target.id))).includes('manifest.json')) versions.add(version)
+	const distributed = await Promise.all(
+		(await listDir(distRoot(root))).map(async version =>
+			(await listDir(join(distRoot(root), version, target.id))).includes('manifest.json') ? version : null
+		)
+	)
+	for (const version of distributed) if (version) versions.add(version)
 	for (const name of await listDir(libsDir(root, target))) {
 		const version = jarVersion(name, target.jar)
 		if (version) versions.add(version)
@@ -204,8 +209,7 @@ export function buildTargets(targets, options) {
 		)
 		const setup = gradleJavaSetup(jdks, env)
 		const git = options.git ?? gitInfo(root)
-		const results = []
-		for (const target of buildable) {
+		return mapSequentially(buildable, async target => {
 			log.info(`▶ ${target.id} (Gradle ${jdks.gradle.major}, JDK ${target.java})`)
 			const onLine = options.verbose ? line => log.info(`  ${line}`) : undefined
 			const result = await buildTarget(target, { ...options, root, jdks, setup, git, onLine })
@@ -214,9 +218,8 @@ export function buildTargets(targets, options) {
 					? `✓ ${target.id} ${result.seconds}s ${formatBytes(result.bytes)}`
 					: `✗ ${target.id}: ${result.message}`
 			)
-			results.push(result)
-		}
-		return results
+			return result
+		})
 	}
 	return locked ? work() : withLock(lockPath(root), work, { label: 'bun mod build' })
 }

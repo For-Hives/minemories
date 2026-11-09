@@ -108,7 +108,9 @@ test('real HTTP/oRPC publication requires consent, ownership and moderation; pri
 	expect(await anonymous.discovery.list({})).toEqual({ items: [], hasMore: false })
 	await expect(anonymous.discovery.publish(candidate(memoryId))).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
 	await expect(voterApi.discovery.publish(candidate(memoryId))).rejects.toMatchObject({ code: 'NOT_FOUND' })
-	await expect(ownerApi.discovery.publish({ ...candidate(memoryId), consent: false } as never)).rejects.toMatchObject({
+	await expect(
+		ownerApi.discovery.publish(Object.assign(candidate(memoryId), { consent: false }))
+	).rejects.toMatchObject({
 		code: 'BAD_REQUEST',
 	})
 	const publication = await ownerApi.discovery.publish(candidate(memoryId))

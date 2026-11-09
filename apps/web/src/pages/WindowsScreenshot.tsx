@@ -60,7 +60,6 @@ export function ScreenshotFrame({ id, src }: { id: WindowsScreenshotId; src?: st
 					rel="noreferrer"
 					aria-label={t('Enlarge: {title}', { title: t(screenshot.title) })}
 				>
-					{/* biome-ignore lint/performance/noImgElement: static Vite tutorial asset; lazy loading avoids downloading off-screen screenshots. */}
 					<img
 						src={src}
 						width={1600}

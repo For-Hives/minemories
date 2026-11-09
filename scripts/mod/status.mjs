@@ -9,9 +9,10 @@ const marks = { current: '✓', stale: '⚠', todo: '✗', planned: '○' }
 /** One entry per (loader, Minecraft) pair: local state, loader version and optional storage figures. */
 export async function collectCells(config, root, version, storage = null) {
 	const cells = new Map()
-	for (const target of config.targets) {
-		if (!isBuildable(target)) continue
-		const { state } = await targetState(root, target, version)
+	const buildable = config.targets.filter(isBuildable)
+	const states = await Promise.all(buildable.map(target => targetState(root, target, version)))
+	for (const [index, target] of buildable.entries()) {
+		const { state } = states[index]
 		const stored = storage?.perTarget?.[target.id]
 		cells.set(`${target.loader}|${target.minecraft}`, {
 			id: target.id,
