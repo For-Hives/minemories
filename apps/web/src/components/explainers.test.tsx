@@ -146,6 +146,8 @@ test('the sharing page carries the demo, and the nostalgia stops move the timeli
 	english(<MarketingPage />, '/sharing')
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
 	expect(screen.getByRole('link', { name: 'My private gallery' })).toBeTruthy()
+	// The public gallery is live: no note may still announce it as coming.
+	expect(document.body.textContent).not.toContain('in preparation')
 	cleanup()
 	english(<MarketingPage />, '/nostalgia')
 	fireEvent.click(screen.getByRole('button', { name: 'The first evenings' }))

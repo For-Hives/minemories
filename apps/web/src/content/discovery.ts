@@ -24,7 +24,7 @@ export const discoveryPages = [
 		lead: 'No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it.',
 		accent: 'sky',
 		points: ['A gallery that starts private', 'A link accessible without an account', 'Sharing you can revoke'],
-		note: 'The demo explorer uses illustrations. No private captures are published there. The community public gallery is in preparation.',
+		note: 'The demo explorer uses illustrations. No private captures are published there.',
 	},
 	{
 		path: '/ranking',
