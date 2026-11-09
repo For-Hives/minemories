@@ -1,8 +1,9 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
-import { navigation } from '../content/navigation'
+import { footerGroups, navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
+import { repositoryUrl } from '../lib/repository'
 import { catalogLinks } from '../pages/installation-loaders'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 
@@ -50,40 +51,21 @@ export function HeroAccount({ menu = false }: { menu?: boolean }) {
 	)
 }
 
-/** The site's main links, as on every other page (home first, then the sections, then the gallery once signed in). */
+/** The site's main links, as on every other page (the sections, then the gallery once signed in). */
 export function HeroNavLinks() {
 	const { session } = useAppContext()
 	const { t } = useI18n()
-	const links = [
-		{ to: '/', label: 'Home' },
-		...navigation,
-		...(session ? [{ to: '/gallery', label: 'My gallery' }] : []),
-	]
+	const links = [...navigation, ...(session ? [{ to: '/gallery', label: 'My gallery' }] : [])]
 	return (
 		<>
 			{links.map(link => (
 				<li key={link.to}>
-					<Link to={link.to} aria-current={link.to === '/' ? 'page' : undefined}>
-						{t(link.label)}
-					</Link>
+					<Link to={link.to}>{t(link.label)}</Link>
 				</li>
 			))}
 		</>
 	)
 }
-
-const footerPages = [
-	{ to: '/installation', label: 'Installation' },
-	{ to: '/concept', label: 'The concept' },
-	{ to: '/how-it-works', label: 'How it works' },
-	{ to: '/faq', label: 'FAQ' },
-	{ to: '/versions', label: 'Mod versions' },
-	{ to: '/roadmap', label: 'Roadmap' },
-	{ to: '/explore', label: 'Public gallery' },
-	{ to: '/privacy', label: 'Privacy' },
-	{ to: '/terms', label: 'Terms' },
-	{ to: '/legal', label: 'Legal notice' },
-] as const
 
 /** The site's pages, in the film's footer: every one is a real route of the app. */
 export function HeroFooterLinks() {
@@ -96,20 +78,28 @@ export function HeroFooterLinks() {
 					{t(session ? 'My gallery' : 'Sign in')}
 				</Link>
 			</li>
-			{footerPages.map(page => (
-				<li key={page.to}>
-					<Link className="mc-link" to={page.to}>
-						{t(page.label)}
-					</Link>
-				</li>
-			))}
+			{footerGroups.flatMap(group =>
+				group.links.map(link => (
+					<li key={link.label}>
+						{'href' in link ? (
+							<a className="mc-link" href={link.href}>
+								{t(link.label)}
+							</a>
+						) : (
+							<Link className="mc-link" to={link.to}>
+								{t(link.label)}
+							</Link>
+						)}
+					</li>
+				))
+			)}
 			{session && (
 				<li>
 					<DiagnosticsAccessLink key={session.user.id} />
 				</li>
 			)}
 			<li>
-				<a className="mc-link" href="https://github.com/For-Hives/minemories">
+				<a className="mc-link" href={repositoryUrl}>
 					GitHub
 				</a>
 			</li>
@@ -141,7 +131,7 @@ export function HeroExtras() {
 			<ul className="site-links">
 				<li>
 					<Link className="mc-link" to="/sharing">
-						{t('A gallery to share')}
+						{t('Share by link')}
 					</Link>
 				</li>
 				<li>

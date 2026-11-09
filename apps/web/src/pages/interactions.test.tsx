@@ -675,13 +675,39 @@ test('authentication keeps the site header with its language control', () => {
 	expect(screen.getByRole('main')).toBeTruthy()
 	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
 	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
-	expect(screen.getAllByRole('link', { name: 'The concept' }).length).toBeGreaterThan(0)
+	expect(screen.getAllByRole('link', { name: 'How it works' }).length).toBeGreaterThan(0)
+	expect(screen.getByRole('link', { name: 'Install the mod' }).getAttribute('href')).toBe('/installation')
 	expect(
 		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
 	).toBe(true)
 	expect(screen.getByRole('contentinfo').textContent).toContain(
 		'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
 	)
+})
+
+test('the footer groups the site into product, guides, help, legal and elsewhere, with no retired page', () => {
+	render(
+		<MemoryRouter initialEntries={['/faq']}>
+			<SiteLayout>
+				<p>Body</p>
+			</SiteLayout>
+		</MemoryRouter>
+	)
+	const footer = screen.getByRole('contentinfo')
+	for (const group of ['Product', 'Guides', 'Help', 'Legal', 'Elsewhere'])
+		expect(within(footer).getByRole('navigation', { name: group })).toBeTruthy()
+	expect(within(footer).getByRole('link', { name: 'Report a bug (GitHub)' }).getAttribute('href')).toBe(
+		'https://github.com/For-Hives/minemories/issues'
+	)
+	expect(within(footer).getByRole('link', { name: 'Share by link' }).getAttribute('href')).toBe('/sharing')
+	expect(within(footer).getByRole('link', { name: 'CurseForge' })).toBeTruthy()
+	expect(within(footer).queryByRole('link', { name: 'Modrinth' })).toBeNull()
+	const hrefs = within(footer)
+		.getAllByRole('link')
+		.map(link => link.getAttribute('href'))
+	for (const retired of ['/discover', '/blog', '/changelog', '/ranking', '/nostalgia', '/open-source'])
+		expect(hrefs).not.toContain(retired)
+	expect(footer.textContent).toContain('Minemories is not an official Minecraft product.')
 })
 
 test('signing out forgets every unsaved form draft kept in this browser', async () => {
