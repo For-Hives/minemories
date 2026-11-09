@@ -7,6 +7,7 @@ import { LanguageSuggestion } from './components/LanguageSuggestion'
 import { Page, preloadWhenIdle } from './components/PageFrame'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
+import { legacyPaths } from './content/legacy-paths'
 import { I18nProvider } from './i18n/I18n'
 import { WebObservability } from './observability/WebObservability'
 
@@ -27,13 +28,9 @@ const DownloadsPage = lazy(() => import('./pages/DownloadsPage').then(module => 
 const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
 const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(module => ({ default: module.RoadmapPage })))
 const ContentPages = () => import('./pages/ContentPages')
-const BlogPage = lazy(() => ContentPages().then(module => ({ default: module.BlogPage })))
-const ArticlePage = lazy(() => ContentPages().then(module => ({ default: module.ArticlePage })))
 // Pricing is disabled for now (page kept in pages/PricingPage.tsx): re-enable this import and its route, the header/footer links and the metadata entry.
 // const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
 const DiscoveryPages = () => import('./pages/DiscoveryPages')
-const DiscoveryPage = lazy(() => DiscoveryPages().then(module => ({ default: module.DiscoveryPage })))
-const MarketingPage = lazy(() => DiscoveryPages().then(module => ({ default: module.MarketingPage })))
 const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
 const SharingPage = lazy(() => import('./pages/SharingPage').then(module => ({ default: module.SharingPage })))
 const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
@@ -52,20 +49,9 @@ const publicPageChunks = [
 	() => import('./pages/AuthPage'),
 ]
 
-/** The French paths this site used before its URLs were put in English: they keep working. */
-const legacyPaths = {
-	'/decouvrir': '/discover',
-	'/explorer': '/explore',
-	'/classement': '/ranking',
-	'/nostalgie': '/nostalgia',
-	'/partager': '/sharing',
-	'/fonctionnement': '/how-it-works',
-	'/telechargements': '/downloads',
-}
-
 function LegacyRedirect({ to }: { to: string }) {
 	const { search, hash } = useLocation()
-	return <Navigate to={`${to}${search}${hash}`} replace />
+	return <Navigate to={{ pathname: to, search, hash }} replace />
 }
 function RequireSession() {
 	const { session, isPending } = useAppContext()
@@ -104,14 +90,6 @@ export function App() {
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
 							<Route
-								path="/discover"
-								element={
-									<Page>
-										<DiscoveryPage />
-									</Page>
-								}
-							/>
-							<Route
 								path="/explore"
 								element={
 									<Page>
@@ -119,25 +97,6 @@ export function App() {
 									</Page>
 								}
 							/>
-							<Route
-								path="/ranking"
-								element={
-									<Page>
-										<ExplorerPage ranking />
-									</Page>
-								}
-							/>
-							{['/open-source', '/nostalgia'].map(path => (
-								<Route
-									key={path}
-									path={path}
-									element={
-										<Page>
-											<MarketingPage />
-										</Page>
-									}
-								/>
-							))}
 							<Route
 								path="/sharing"
 								element={
@@ -195,14 +154,6 @@ export function App() {
 								}
 							/>
 							<Route
-								path="/changelog"
-								element={
-									<Page>
-										<ReleasesPage changelog />
-									</Page>
-								}
-							/>
-							<Route
 								path="/roadmap"
 								element={
 									<Page>
@@ -215,22 +166,6 @@ export function App() {
 								element={
 									<Page>
 										<FaqPage />
-									</Page>
-								}
-							/>
-							<Route
-								path="/blog"
-								element={
-									<Page>
-										<BlogPage />
-									</Page>
-								}
-							/>
-							<Route
-								path="/blog/:slug"
-								element={
-									<Page>
-										<ArticlePage />
 									</Page>
 								}
 							/>

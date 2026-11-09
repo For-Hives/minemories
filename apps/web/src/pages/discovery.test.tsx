@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { ExplorerPage, GalleryPreview, MarketingPage } from './DiscoveryPages'
+import { ExplorerPage, GalleryPreview } from './DiscoveryPages'
 
 beforeEach(() => {
 	localStorage.clear()
@@ -14,11 +14,11 @@ afterEach(() => {
 	cleanup()
 	vi.restoreAllMocks()
 })
-function gallery(path = '/explore', ranking = false) {
+function gallery(path = '/explore') {
 	return render(
 		<I18nProvider>
 			<MemoryRouter initialEntries={[path]}>
-				<GalleryPreview ranking={ranking} />
+				<GalleryPreview />
 			</MemoryRouter>
 		</I18nProvider>
 	)
@@ -43,7 +43,8 @@ test('search, themes, favorites and empty states work without an account and res
 	expect(screen.getByRole('button', { name: 'Mes favoris (0)' })).toBeTruthy()
 })
 test('ranking votes add once, can be removed and remain local', () => {
-	gallery('/ranking', true)
+	gallery('/explore?demo=1')
+	fireEvent.change(screen.getByRole('combobox', { name: 'Trier par' }), { target: { value: 'hearts' } })
 	const first = screen.getAllByRole('article')[0]
 	if (!first) throw new Error('Demo has no entries')
 	expect(within(first).getByRole('heading').textContent).toBe('Le village au bord de l’eau')
@@ -78,8 +79,8 @@ test('opening and closing a demo memory keeps the demo mode in the address', () 
 	}
 	render(
 		<I18nProvider>
-			<MemoryRouter initialEntries={['/ranking?demo=1']}>
-				<GalleryPreview ranking />
+			<MemoryRouter initialEntries={['/explore?demo=1']}>
+				<GalleryPreview />
 				<Address />
 			</MemoryRouter>
 		</I18nProvider>
@@ -91,17 +92,7 @@ test('opening and closing a demo memory keeps the demo mode in the address', () 
 	fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser la démo' }))
 	expect(screen.getByLabelText('address').textContent).toBe('?demo=1')
 })
-test('nostalgia timeline updates its illustration and new journeys can be read in English', async () => {
-	render(
-		<I18nProvider>
-			<MemoryRouter initialEntries={['/nostalgia']}>
-				<MarketingPage />
-			</MemoryRouter>
-		</I18nProvider>
-	)
-	fireEvent.change(screen.getByRole('slider', { name: 'Moment du souvenir' }), { target: { value: '3' } })
-	expect(screen.getByRole('img', { name: 'Un petit village' })).toBeTruthy()
-	cleanup()
+test('the demo explorer can be read in English', async () => {
 	localStorage.setItem('minemories-locale', 'en')
 	render(
 		<I18nProvider>

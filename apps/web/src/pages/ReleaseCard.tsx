@@ -1,4 +1,3 @@
-import { Link } from 'react-router'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { type LoaderDownload, type LoaderTarget, type ModRelease, quiltTestedVersion } from './mod-releases'
@@ -55,15 +54,7 @@ function Download({
 		</li>
 	)
 }
-export function ReleaseCard({
-	release,
-	recommended,
-	changelog,
-}: {
-	release: ModRelease
-	recommended: boolean
-	changelog: boolean
-}) {
+export function ReleaseCard({ release, recommended }: { release: ModRelease; recommended: boolean }) {
 	const { t, locale } = useI18n()
 	const id = `v${release.version}`
 	return (
@@ -94,12 +85,7 @@ export function ReleaseCard({
 					/>
 				))}
 			</ul>
-			{!changelog && (
-				<p>
-					<Link to={`/changelog#${id}`}>{t('What’s new →')}</Link>
-				</p>
-			)}
-			{changelog && release.commitUrl && (
+			{release.commitUrl && (
 				<p className="mm-release-source">
 					<a href={release.commitUrl}>{t('View the build commit on GitHub')}</a>
 				</p>

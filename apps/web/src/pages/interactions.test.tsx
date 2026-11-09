@@ -675,7 +675,7 @@ test('authentication keeps the site header with its language control', () => {
 	expect(screen.getByRole('main')).toBeTruthy()
 	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
 	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
-	expect(screen.getAllByRole('link', { name: 'Blog' }).length).toBeGreaterThan(0)
+	expect(screen.getAllByRole('link', { name: 'The concept' }).length).toBeGreaterThan(0)
 	expect(
 		screen.getAllByRole('link', { name: 'Sign in' }).some(link => link.getAttribute('aria-current') === 'page')
 	).toBe(true)

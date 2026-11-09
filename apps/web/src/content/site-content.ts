@@ -1,39 +1,3 @@
-export type ArticleVisual =
-	| { kind: 'scene'; theme: 'home' | 'village' | 'garden' }
-	| { kind: 'radius' }
-	| { kind: 'files' }
-export interface Article {
-	slug: string
-	published: string
-	title: string
-	summary: string
-	sections: Array<{ heading: string; body: string; visual: ArticleVisual }>
-}
-export const articles: Article[] = [
-	{
-		slug: 'premier-souvenir',
-		published: '2026-10-14',
-		title: 'A first memory, with a familiar path',
-		summary: 'From the Minecraft mod to a 3D file: what a capture keeps, where to find it and why to start small.',
-		sections: [
-			{
-				heading: 'A place at a moment in time',
-				body: 'A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.',
-				visual: { kind: 'scene', theme: 'home' },
-			},
-			{
-				heading: 'Start with a small build',
-				body: 'Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.',
-				visual: { kind: 'radius' },
-			},
-			{
-				heading: 'Keep the file, choose whether to share',
-				body: 'The capture lands in your export folder. To see it on the site, connect the game (M → type the code → Connect), then M → My memories → Send this memory.',
-				visual: { kind: 'files' },
-			},
-		],
-	},
-]
 export const legalContent = {
 	privacy: {
 		title: 'Your memories, your choices',

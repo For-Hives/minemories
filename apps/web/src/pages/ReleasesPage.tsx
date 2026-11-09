@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link, NavLink, useLocation } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
@@ -9,7 +9,7 @@ import { ReleaseCard } from './ReleaseCard'
 import { useModReleases } from './useModReleases'
 import './releases.css'
 
-export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
+export function ReleasesPage() {
 	const { releases, status, retry } = useModReleases()
 	const { t } = useI18n()
 	const { hash } = useLocation()
@@ -26,14 +26,12 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 	return (
 		<ContentLayout
 			eyebrow={t('MINEMORIES · RELEASES')}
-			title={t(changelog ? 'releases.changelog.title' : 'What changes in Minemories')}
+			title={t('What changes in Minemories')}
 			lead={t(
 				'The right file for your Minecraft profile, with its size and checksum. Direct downloads from Minemories.'
 			)}
 		>
 			<nav className="mm-release-tabs" aria-label={t('Downloads and updates')}>
-				<NavLink to="/versions">{t('Mod versions')}</NavLink>
-				<NavLink to="/changelog">{t('What’s new')}</NavLink>
 				<Link to="/installation">{t('Installation guide ↗')}</Link>
 			</nav>
 			<aside className="mm-release-guide">
@@ -51,7 +49,7 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 			</aside>
 			<div className="mm-release-list" aria-busy={status === 'loading'}>
 				{releases.map((release, index) => (
-					<ReleaseCard key={release.version} release={release} recommended={index === 0} changelog={changelog} />
+					<ReleaseCard key={release.version} release={release} recommended={index === 0} />
 				))}
 			</div>
 			{status === 'loading' && <LoadingSkeleton label={t('Loading releases…')} />}

@@ -12,7 +12,11 @@ test('all public routes render readable content and navigation without browser A
 		expect(html).not.toContain('data-nosnippet')
 		expect(html).not.toContain('Read Minemories in')
 	}
-	expect(renderPage('/blog/premier-souvenir')).toContain('Un premier souvenir')
+	for (const retired of ['/discover', '/nostalgia', '/open-source', '/ranking', '/changelog', '/blog'])
+		expect(
+			publicMetadata.some(page => page.path === retired),
+			retired
+		).toBe(false)
 })
 test('the 404 page is readable, points back home and holds no film', () => {
 	const html = renderPage('/404')
@@ -28,17 +32,14 @@ test('the manual tutorial includes a complete no-JavaScript path, not only its f
 	expect(html).toContain('Install client')
 	expect(html).toContain('capture.glb')
 })
-test('release history and changelog render headings, navigation and a direct API index link without JavaScript', () => {
-	for (const path of ['/versions', '/changelog']) {
-		const html = renderPage(path)
-		expect(html).toContain('href="/versions"')
-		expect(html).toContain('href="/changelog"')
-		expect(html).toContain('/downloads/index.json')
-		expect(html).toContain('<noscript>')
-		expect(html).not.toContain('Minemories 0.2.')
-	}
-	expect(renderPage('/versions')).toContain('Ce qui change dans Minemories')
-	expect(renderPage('/changelog')).toContain('Les nouveautés')
+test('release history renders its heading and a direct API index link without JavaScript, and no retired /changelog link', () => {
+	const html = renderPage('/versions')
+	expect(html).toContain('Ce qui change dans Minemories')
+	expect(html).toContain('href="/installation"')
+	expect(html).not.toContain('href="/changelog')
+	expect(html).toContain('/downloads/index.json')
+	expect(html).toContain('<noscript>')
+	expect(html).not.toContain('Minemories 0.2.')
 })
 test('the download table and the guide welcome render without JavaScript, with the two ways in', () => {
 	const table = renderPage('/downloads')
@@ -77,12 +78,12 @@ test('private data, shared links and account routes are excluded from indexing a
 		expect(metadataFor(path).indexable).toBe(false)
 		expect(publicMetadata.some(page => page.path === path)).toBe(false)
 	}
-	expect(metadataFor('/blog/')).toEqual(metadataFor('/blog'))
+	expect(metadataFor('/faq/')).toEqual(metadataFor('/faq'))
 })
 
-test('public ranking prerenders the real catalogue shell and keeps demo opt-in', () => {
-	const html = renderPage('/ranking')
-	expect(html).toContain('Les coups de cœur')
-	expect(html).toContain('/ranking?demo=1')
-	expect(html).not.toContain('Les coups de cœur, pour essayer')
+test('the public gallery prerenders the real catalogue shell and keeps demo opt-in', () => {
+	const html = renderPage('/explore')
+	expect(html).toContain('Des lieux à visiter')
+	expect(html).toContain('/explore?demo=1')
+	expect(html).not.toContain('/ranking')
 })

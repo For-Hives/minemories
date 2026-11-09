@@ -8,7 +8,7 @@ const ofType = (path: string, type: string) => nodes(path).find(node => node['@t
 
 test('every indexable page says when it last changed, as a real calendar date the sitemap can use', () => {
 	const indexable = publicMetadata.filter(page => page.indexable)
-	expect(indexable.length).toBeGreaterThan(10)
+	expect(indexable.length).toBeGreaterThanOrEqual(10)
 	for (const page of indexable) {
 		expect(page.updated, page.path).toMatch(isoDate)
 		expect(new Date(`${page.updated}T00:00:00Z`).toISOString().slice(0, 10), page.path).toBe(page.updated)
@@ -16,7 +16,7 @@ test('every indexable page says when it last changed, as a real calendar date th
 })
 
 test('the public gallery, the legal page and the roadmap are prerendered but kept out of search results', () => {
-	for (const path of ['/explore', '/ranking', '/legal', '/roadmap']) {
+	for (const path of ['/explore', '/legal', '/roadmap']) {
 		expect(publicMetadata.find(page => page.path === path)?.indexable, path).toBe(false)
 		expect(metadataFor(path).indexable, path).toBe(false)
 	}
@@ -61,9 +61,13 @@ test('each page describes itself, with its date, and stories stay articles', () 
 		dateModified: metadataFor('/faq').updated,
 		isPartOf: { '@id': 'https://minemories.net/#website', name: 'Minemories' },
 	})
-	const article = nodes('/blog/premier-souvenir')[0]
-	expect(article?.['@type']).toBe('Article')
-	expect(article?.datePublished).toMatch(isoDate)
+	const story = { ...metadataFor('/faq'), path: '/story', articleDate: '2026-10-14' }
+	const article = structuredDataFor(story)['@graph'][0]
+	expect(article).toMatchObject({
+		'@type': 'Article',
+		datePublished: '2026-10-14',
+		mainEntityOfPage: 'https://minemories.net/story',
+	})
 })
 
 test('the mod version is read from the Gradle properties, and missing when they do not name one', () => {

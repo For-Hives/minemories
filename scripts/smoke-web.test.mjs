@@ -7,6 +7,7 @@ import {
 	classifyLocation,
 	expectations,
 	firstAssetPath,
+	hopFailures,
 	locationTarget,
 	parseArguments,
 	runSmoke,
@@ -27,7 +28,7 @@ test('redirects must stay on the requesting host', () => {
 	assert.equal(classifyLocation('//evil.example/', base), 'foreign')
 	assert.equal(classifyLocation('/\\evil.example', base), 'foreign')
 	assert.equal(classifyLocation('not a url', base), 'foreign')
-	assert.equal(locationTarget('https://example.org/discover?x=1', base), '/discover?x=1')
+	assert.equal(locationTarget('https://example.org/concept?x=1', base), '/concept?x=1')
 	assert.equal(locationTarget('/installation', base), '/installation')
 })
 
@@ -106,6 +107,25 @@ test('status, Location, Cache-Control and Content-Type are compared with the exp
 	])
 	const ok = { ...blocked, 'cache-control': 'public, max-age=86400', 'content-type': 'image/png' }
 	assert.deepEqual(checkResponse(og, { status: 200, headers: ok, body: '' }, { base }), [])
+})
+
+test('a retired URL goes to its final page in one hop', () => {
+	assert.deepEqual(hopFailures({ status: 200 }), [])
+	assert.deepEqual(hopFailures({ status: 301 }), ['redirect target answers 301, not 200 (redirect chain or dead page)'])
+	assert.deepEqual(hopFailures({ status: 404 }), ['redirect target answers 404, not 200 (redirect chain or dead page)'])
+	for (const path of ['/discover', '/nostalgia', '/open-source', '/ranking?demo=1', '/changelog', '/blog/premier-souvenir'])
+		assert.equal(find(path)?.status, 301, path)
+})
+
+test('runSmoke follows each expected redirect once and fails when its target redirects again', async () => {
+	const fakeFetch = async url => {
+		if (url === `${base}/changelog`) return new Response('', { status: 301, headers: { location: '/versions', ...blocked } })
+		if (url === `${base}/versions`) return new Response('', { status: 301, headers: { location: '/elsewhere' } })
+		return new Response('<script src="/assets/app-1.js"></script>', { status: 200, headers: blocked })
+	}
+	const results = await runSmoke({ base, indexable: false }, fakeFetch)
+	const changelog = results.find(result => result.path === '/changelog')
+	assert.deepEqual(changelog?.failures, ['redirect target answers 301, not 200 (redirect chain or dead page)'])
 })
 
 test('arguments: a base URL is required and reduced to its origin', () => {

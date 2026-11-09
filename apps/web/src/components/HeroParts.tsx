@@ -1,6 +1,5 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
-import { discoveryPages } from '../content/discovery'
 import { navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
@@ -79,11 +78,8 @@ const footerPages = [
 	{ to: '/how-it-works', label: 'How it works' },
 	{ to: '/faq', label: 'FAQ' },
 	{ to: '/versions', label: 'Mod versions' },
-	{ to: '/changelog', label: 'What’s new' },
 	{ to: '/roadmap', label: 'Roadmap' },
-	{ to: '/discover', label: 'Discover' },
 	{ to: '/explore', label: 'Public gallery' },
-	{ to: '/blog', label: 'Blog' },
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
 	{ to: '/legal', label: 'Legal notice' },
@@ -143,13 +139,6 @@ export function HeroExtras() {
 				)}
 			</p>
 			<ul className="site-links">
-				{discoveryPages.map(page => (
-					<li key={page.path}>
-						<Link className="mc-link" to={page.path}>
-							{t(page.label)}
-						</Link>
-					</li>
-				))}
 				<li>
 					<Link className="mc-link" to="/sharing">
 						{t('A gallery to share')}

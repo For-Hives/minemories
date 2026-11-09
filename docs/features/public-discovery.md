@@ -62,8 +62,8 @@ Coverage of `discovery.ts` is 100% lines/functions.
 
 ## Interfaces and local evidence
 
-`/explore` and `/ranking` show the real catalog, its filters and its server
-votes. The "Try the demo" option opens `?demo=1`: favorites, votes and shares
+`/explore` shows the real catalog, its filters, its sort (recent or most loved)
+and its server votes; the former `/ranking` URL redirects there. The "Try the demo" option opens `?demo=1`: favorites, votes and shares
 of these examples stay separate and publish no private capture. A private
 capture's card offers "Public publication", with title, description, category,
 consent unchecked by default and withdrawal. States and reasons come from the

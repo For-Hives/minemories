@@ -1,12 +1,12 @@
 import { Suspense } from 'react'
 import { renderToString } from 'react-dom/server'
-import { Route, Routes, StaticRouter } from 'react-router'
+import { StaticRouter } from 'react-router'
 import { AppContext } from './app-context'
 import { firstPaintScript } from './components/HeroFilm'
 import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
-import { ArticlePage, BlogPage, LegalPage, NotFoundPage } from './pages/ContentPages'
-import { DiscoveryPage, ExplorerPage, MarketingPage } from './pages/DiscoveryPages'
+import { LegalPage, NotFoundPage } from './pages/ContentPages'
+import { ExplorerPage } from './pages/DiscoveryPages'
 import { DownloadsPage } from './pages/DownloadsPage'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
@@ -50,30 +50,14 @@ export function renderPage(path: string) {
 		case '/versions':
 			content = <ReleasesPage />
 			break
-		case '/changelog':
-			content = <ReleasesPage changelog />
-			break
 		case '/roadmap':
 			content = <RoadmapPage />
 			break
 		case '/faq':
 			content = <FaqPage />
 			break
-		case '/blog':
-			content = <BlogPage />
-			break
-		case '/discover':
-			content = <DiscoveryPage />
-			break
 		case '/explore':
 			content = <ExplorerPage />
-			break
-		case '/ranking':
-			content = <ExplorerPage ranking />
-			break
-		case '/open-source':
-		case '/nostalgia':
-			content = <MarketingPage />
 			break
 		case '/sharing':
 			content = <SharingPage />
@@ -87,27 +71,16 @@ export function renderPage(path: string) {
 		case '/legal':
 			content = <LegalPage kind="legal" />
 			break
-		default:
-			if (path.startsWith('/blog/')) content = <ArticlePage />
 	}
-	// Routes supply article params consistently with the browser router.
 	return renderToString(
 		<I18nProvider initialLocale="fr">
 			<AppContext.Provider value={context}>
 				<StaticRouter location={path}>
 					<SiteLayout>
-						<Suspense>{path.startsWith('/blog/') ? <StaticArticle path={path} /> : content}</Suspense>
+						<Suspense>{content}</Suspense>
 					</SiteLayout>
 				</StaticRouter>
 			</AppContext.Provider>
 		</I18nProvider>
-	)
-}
-
-function StaticArticle({ path }: { path: string }) {
-	return (
-		<Routes location={path}>
-			<Route path="/blog/:slug" element={<ArticlePage />} />
-		</Routes>
 	)
 }

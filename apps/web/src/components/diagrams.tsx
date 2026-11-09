@@ -1,4 +1,4 @@
-import { type ReactNode, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { useI18n } from '../i18n/I18n'
 import { Command, Glyph, type GlyphName } from './explainers'
 import { MemoryScene } from './MemoryScene'
@@ -184,46 +184,5 @@ export function DataFlow({ nodes, edges }: { nodes: readonly FlowNode[]; edges: 
 				)
 			})}
 		</ol>
-	)
-}
-
-interface PipelineNode {
-	id: string
-	glyph: GlyphName
-	label: string
-	point: string
-	extra?: ReactNode
-}
-
-/** A small pipeline whose boxes can be selected; the selected one says in one line why it matters. */
-export function Pipeline({ nodes }: { nodes: readonly PipelineNode[] }) {
-	const { t } = useI18n()
-	const [selected, setSelected] = useState(nodes[0]?.id)
-	const current = nodes.find(node => node.id === selected) ?? nodes[0]
-	return (
-		<div className="ex-pipeline">
-			<div className="ex-pipeline-row">
-				{nodes.map((node, index) => (
-					<span key={node.id} className="ex-pipeline-item">
-						<button
-							type="button"
-							className="ex-pipeline-node"
-							aria-pressed={node.id === current?.id}
-							onClick={() => setSelected(node.id)}
-						>
-							<Glyph name={node.glyph} />
-							<span>{t(node.label)}</span>
-						</button>
-						{index < nodes.length - 1 && <span className="ex-pipeline-arrow" aria-hidden="true" />}
-					</span>
-				))}
-			</div>
-			{current && (
-				<div className="ex-pipeline-point" role="status">
-					<strong>{t(current.point)}</strong>
-					{current.extra}
-				</div>
-			)}
-		</div>
 	)
 }

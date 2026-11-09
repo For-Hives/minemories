@@ -1,5 +1,3 @@
-import { discoveryPages } from './content/discovery.ts'
-import { articles } from './content/site-content.ts'
 import { translate } from './i18n/catalog.ts'
 import type { Locale } from './i18n/I18n.tsx'
 import { localeTag } from './i18n/locales.ts'
@@ -14,15 +12,7 @@ export interface PageMetadata {
 	updated?: string
 }
 const metadataMessages: PageMetadata[] = [
-	{
-		path: '/discover',
-		title: 'Discover Minemories — One world, many memories',
-		description: 'Public code, nostalgia, sharing and discovery: explore ways to use Minemories.',
-		indexable: true,
-		language: 'fr',
-		updated: '2026-11-09',
-	},
-	// The public gallery stays out of search results until it holds 20 real published memories (/ranking is the same catalogue).
+	// The public gallery stays out of search results until it holds 20 real published memories.
 	{
 		path: '/explore',
 		title: 'Public gallery of Minecraft builds in 3D',
@@ -39,16 +29,6 @@ const metadataMessages: PageMetadata[] = [
 		language: 'fr',
 		updated: '2026-11-10',
 	},
-	...discoveryPages.map(page => {
-		return {
-			path: page.path,
-			title: `${page.label} — Minemories`,
-			description: page.lead,
-			indexable: page.path !== '/ranking',
-			language: 'fr' as const,
-			updated: '2026-11-09',
-		}
-	}),
 	{
 		path: '/',
 		title: 'Minemories: your Minecraft builds in 3D',
@@ -103,14 +83,6 @@ const metadataMessages: PageMetadata[] = [
 		updated: '2026-11-10',
 	},
 	{
-		path: '/changelog',
-		title: 'Mod updates — Minemories',
-		description: 'Official Minemories mod builds: dates, sizes and checksums.',
-		indexable: true,
-		language: 'fr',
-		updated: '2026-11-09',
-	},
-	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
 		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
@@ -124,14 +96,6 @@ const metadataMessages: PageMetadata[] = [
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
-	},
-	{
-		path: '/blog',
-		title: 'The memory journal — Minemories',
-		description: 'Guides and ideas for keeping and revisiting your Minecraft memories.',
-		indexable: true,
-		language: 'fr',
-		updated: '2026-11-09',
 	},
 	{
 		path: '/privacy',
@@ -158,15 +122,6 @@ const metadataMessages: PageMetadata[] = [
 		indexable: false,
 		language: 'fr',
 	},
-	...articles.map(article => ({
-		path: `/blog/${article.slug}`,
-		title: `${article.title} — Minemories`,
-		description: article.summary,
-		indexable: true,
-		language: 'fr' as const,
-		articleDate: article.published,
-		updated: '2026-11-09',
-	})),
 ]
 /** Private pages that still deserve their own tab title: never prerendered, never indexed. */
 const privateMessages: PageMetadata[] = [

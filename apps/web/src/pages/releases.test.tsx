@@ -24,7 +24,6 @@ function mount(path = '/versions', locale: 'fr' | 'en' = 'fr') {
 			<MemoryRouter initialEntries={[path]}>
 				<Routes>
 					<Route path="/versions" element={<ReleasesPage />} />
-					<Route path="/changelog" element={<ReleasesPage changelog />} />
 					<Route path="/installation" element={<h1>Guide d’installation</h1>} />
 				</Routes>
 			</MemoryRouter>
@@ -68,7 +67,7 @@ test('lists the retained versions by date with API downloads, beta status, date,
 	expect(screen.getByRole('heading', { name: 'Guide d’installation' })).toBeTruthy()
 })
 
-test('version links open the changelog at the selected older version, with its build commit', async () => {
+test('each version links to its build commit, with no detour through the retired /changelog', async () => {
 	serve(
 		modIndexFixture({
 			'neoforge-mc1.21.1': [
@@ -78,10 +77,8 @@ test('version links open the changelog at the selected older version, with its b
 		})
 	)
 	mount()
-	const links = await screen.findAllByRole('link', { name: 'Voir les nouveautés →' })
-	fireEvent.click(links[1] as HTMLElement)
-	await screen.findByRole('heading', { name: 'Les nouveautés' })
 	await screen.findByRole('article', { name: 'Minemories 0.1.0' })
+	expect(document.querySelector('a[href^="/changelog"]')).toBeNull()
 	const commits = screen.getAllByRole('link', { name: 'Voir le commit de cette version sur GitHub' })
 	expect(commits.map(link => link.getAttribute('href'))).toEqual([
 		'https://github.com/For-Hives/minemories/commit/abc1234',
@@ -93,7 +90,7 @@ test('the version named in the URL is scrolled to once', async () => {
 	const scroll = vi.fn()
 	Element.prototype.scrollIntoView = scroll
 	serve(modIndexFixture({ 'neoforge-mc1.21.1': ['0.3.0', '0.2.0', '0.1.0'] }))
-	mount('/changelog#v0.2.0')
+	mount('/versions#v0.2.0')
 	await screen.findByRole('article', { name: 'Minemories 0.2.0' })
 	expect(scroll).toHaveBeenCalledTimes(1)
 })
@@ -102,14 +99,14 @@ test('an unknown fragment does not scroll', async () => {
 	const scroll = vi.fn()
 	Element.prototype.scrollIntoView = scroll
 	serve(modIndexFixture({ 'neoforge-mc1.21.1': ['0.1.0'] }))
-	mount('/changelog#v9.9.9')
+	mount('/versions#v9.9.9')
 	await screen.findByRole('article', { name: 'Minemories 0.1.0' })
 	expect(scroll).not.toHaveBeenCalled()
 })
 
 test('a stable version is not a prerelease and an unusable commit shows no link', async () => {
 	serve(modIndexFixture({ 'neoforge-mc1.21.1': [{ version: '1.0.0', commit: 'not a hash' }] }))
-	mount('/changelog')
+	mount('/versions')
 	await screen.findByText('Version publiée')
 	expect(screen.queryByText('Préversion')).toBeNull()
 	expect(screen.queryByRole('link', { name: 'Voir le commit de cette version sur GitHub' })).toBeNull()
@@ -178,7 +175,7 @@ test('a timed out response cannot overwrite a successful retry, and unmount abor
 
 test('English interface localizes dates and wording', async () => {
 	serve(modIndexFixture({ 'neoforge-mc1.21.1': [{ version: '0.2.1-beta.1', builtAt: '2026-10-15T10:00:00Z' }] }))
-	mount('/changelog', 'en')
+	mount('/versions', 'en')
 	await screen.findByRole('link', { name: /Download NeoForge JAR/ })
 	expect(screen.getByText('Latest version')).toBeTruthy()
 	expect(screen.getByText('October 15, 2026')).toBeTruthy()

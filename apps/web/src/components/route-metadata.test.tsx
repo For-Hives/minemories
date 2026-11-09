@@ -11,23 +11,23 @@ afterEach(() => {
 	localStorage.clear()
 	for (const element of document.head.querySelectorAll('meta,link,script[data-page-schema]')) element.remove()
 })
-test('route changes retain article schema and remove public metadata on a private shared link', () => {
+test('route changes set the page schema and remove public metadata on a private shared link', () => {
 	vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
 	render(
 		<MemoryRouter>
 			<RouteMetadata />
-			<Link to="/blog/premier-souvenir">Article</Link>
+			<Link to="/how-it-works">Article</Link>
 			<Link to="/share/private-token">Private</Link>
 			<main id="main-content" tabIndex={-1} />
 		</MemoryRouter>
 	)
 	fireEvent.click(screen.getByRole('link', { name: 'Article' }))
-	expect(document.title).toContain('A first memory')
+	expect(document.title).toBe('How Minemories captures your Minecraft build')
 	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
 	const schema = document.querySelector('script[data-page-schema]')?.textContent
-	expect(JSON.parse(schema ?? '{}')['@graph'][0]['@type']).toBe('Article')
+	expect(JSON.parse(schema ?? '{}')['@graph'][0]['@type']).toBe('WebPage')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:site_name"]')?.content).toBe('Minemories')
-	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/blog/premier-souvenir')
+	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/how-it-works')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content).toBe(
 		'https://minemories.net/brand/og-image.png'
 	)
@@ -48,7 +48,7 @@ test('route changes retain article schema and remove public metadata on a privat
 	expect(document.querySelector('meta[name="twitter:card"]')).toBeNull()
 	expect(document.querySelector('meta[name="twitter:image"]')).toBeNull()
 })
-test.each(['/versions', '/changelog', '/downloads'])('release route %s retains the preview noindex policy', path => {
+test.each(['/versions', '/downloads'])('release route %s retains the preview noindex policy', path => {
 	render(
 		<MemoryRouter initialEntries={[path]}>
 			<RouteMetadata />
@@ -89,7 +89,7 @@ test('switching locale updates titles, descriptions and schema without publishin
 	expect(document.querySelector('link[hreflang]')).toBeNull()
 })
 
-test.each(['/explore', '/legal', '/roadmap', '/ranking'])('%s is public but kept out of search results', path => {
+test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of search results', path => {
 	render(
 		<MemoryRouter initialEntries={[path]}>
 			<RouteMetadata />

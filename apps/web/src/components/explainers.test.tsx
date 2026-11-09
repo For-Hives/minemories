@@ -1,14 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { ArticlePage } from '../pages/ContentPages'
-import { MarketingPage } from '../pages/DiscoveryPages'
 import { FaqPage } from '../pages/InfoPages'
 import { SharingPage } from '../pages/SharingPage'
-import { Pipeline, RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
+import { RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
 import { Command, TabPanel, type TabSpec, TabStrip, verdictLabel } from './explainers'
 
 afterEach(() => {
@@ -116,46 +114,12 @@ test('closing the server darkens one copy while the memory stays', () => {
 	expect(screen.getByText('Online')).toBeTruthy()
 })
 
-test('a pipeline names the selected box in one line and falls back to its first box', () => {
-	english(
-		<Pipeline
-			nodes={[
-				{ id: 'one', glyph: 'code', label: 'Mod', point: 'Source you can inspect' },
-				{ id: 'two', glyph: 'cube', label: 'GLB', point: 'An open 3D format', extra: <a href="/x">More</a> },
-			]}
-		/>
-	)
-	const status = screen.getByRole('status')
-	expect(status.textContent).toBe('Source you can inspect')
-	fireEvent.click(screen.getByRole('button', { name: 'GLB' }))
-	expect(within(status).getByText('An open 3D format')).toBeTruthy()
-	expect(within(status).getByRole('link', { name: 'More' })).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'GLB' }).getAttribute('aria-pressed')).toBe('true')
-})
-
-test('the open source page lets a visitor pick each piece of the chain', () => {
-	english(<MarketingPage />, '/open-source')
-	expect(screen.getByRole('link', { name: /GitHub/ })).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'Your computer' }))
-	expect(screen.getByText('Files that stay yours')).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'Read the documentation' })).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'GLB' }))
-	expect(screen.getByText('An open 3D format')).toBeTruthy()
-})
-
-test('the sharing page carries the demo, and the nostalgia stops move the timeline', () => {
+test('the sharing page carries the demo', () => {
 	english(<SharingPage />, '/sharing')
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
 	expect(screen.getByRole('link', { name: 'My private gallery' })).toBeTruthy()
 	// The public gallery is live: no note may still announce it as coming.
 	expect(document.body.textContent).not.toContain('in preparation')
-	cleanup()
-	english(<MarketingPage />, '/nostalgia')
-	fireEvent.click(screen.getByRole('button', { name: 'The first evenings' }))
-	expect(screen.getByRole('slider', { name: 'Memory moment' }).getAttribute('aria-valuetext')).toBe(
-		'The first evenings'
-	)
-	expect(screen.getByRole('img', { name: 'The first evenings' })).toBeTruthy()
 })
 
 test('the FAQ shows one topic at a time with a drawn verdict on the questions that have one', () => {
@@ -180,18 +144,4 @@ test('every verdict chip label is translated in each catalogue, and French says 
 		for (const label of Object.values(verdictLabel)) expect(catalog[label]?.trim(), `${path}: ${label}`).toBeTruthy()
 	const french = Object.entries(verdictCatalogs).find(([path]) => path.endsWith('/fr.json'))?.[1]
 	expect(french?.[verdictLabel.no]).toBe('Non')
-})
-
-test('the article shows a picture, an adjustable radius map and the export folder, one per section', () => {
-	english(
-		<Routes>
-			<Route path="/blog/:slug" element={<ArticlePage />} />
-		</Routes>,
-		'/blog/premier-souvenir'
-	)
-	expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3)
-	expect(screen.getByRole('img', { name: 'A place at a moment in time' })).toBeTruthy()
-	expect(screen.getByRole('slider', { name: 'Radius in blocks' })).toBeTruthy()
-	expect(screen.getByText('capture.glb')).toBeTruthy()
-	expect(screen.getByText('Every dated capture')).toBeTruthy()
 })

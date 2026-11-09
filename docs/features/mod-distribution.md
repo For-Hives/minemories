@@ -78,4 +78,4 @@ The **Depth** button in the advanced settings switches back to the full height o
 
 ## Version history
 
-The `/versions` and `/changelog` pages show the history of stored JARs (three versions per target), reachable from the tutorial. See [the sources, states and limits](release-history.md). The default download is still NeoForge 1.21.1; the other downloads use the targets enabled in `mod/targets.json`: see the [loader matrix](loader-support.md) and its validations.
+The `/versions` page shows the history of stored JARs (three versions per target), reachable from the tutorial. See [the sources, states and limits](release-history.md). The default download is still NeoForge 1.21.1; the other downloads use the targets enabled in `mod/targets.json`: see the [loader matrix](loader-support.md) and its validations.

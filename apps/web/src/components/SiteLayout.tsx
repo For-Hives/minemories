@@ -2,9 +2,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 're
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
-import { discoveryPages } from '../content/discovery'
 import { navigation } from '../content/navigation'
-import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
@@ -242,7 +240,6 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 					<Link to="/how-it-works">{t('How it works')}</Link>
 					<Link to="/installation">{t('Install the mod')}</Link>
 					<Link to="/versions">{t('Mod versions')}</Link>
-					<Link to="/changelog">{t('What’s new')}</Link>
 					<Link to="/roadmap">{t('Roadmap')}</Link>
 					<Link to="/faq">{t('FAQ')}</Link>
 				</nav>
@@ -254,15 +251,8 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 								{t(link.label)}
 							</Link>
 						))}
-					{[
-						...discoveryPages,
-						{ path: '/sharing', label: 'A gallery to share' },
-						{ path: '/explore', label: 'Public gallery' },
-					].map(page => (
-						<Link key={page.path} to={page.path}>
-							{translate(locale, page.label)}
-						</Link>
-					))}
+					<Link to="/sharing">{t('A gallery to share')}</Link>
+					<Link to="/explore">{t('Public gallery')}</Link>
 					<a href="https://github.com/For-Hives/minemories">GitHub</a>
 					{catalogLinks().map(catalog => (
 						<a key={catalog.name} href={catalog.url}>

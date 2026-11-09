@@ -20,19 +20,6 @@
 	white-space: nowrap;
 }
 
-/* A pixel arrow, drawn once and reused between the boxes of every diagram. */
-.ex-arrow,
-.ex-flow-edge::after,
-.ex-pipeline-arrow,
-.ex-season-arrow {
-	display: block;
-	flex: none;
-	width: 24px;
-	height: 24px;
-	background: currentColor;
-	clip-path: polygon(0 38%, 58% 38%, 58% 12%, 100% 50%, 58% 88%, 58% 62%, 0 62%);
-}
-
 /* --- Tabs: the kit's tab strip, one pictogram per tab ----------------------------------------------------------------------------------------------- */
 
 .ex-tabs {
@@ -534,88 +521,6 @@
 	content: "";
 }
 
-/* --- Pipeline (open source) -------------------------------------------------------------------------------------------------------------------------- */
-
-.ex-pipeline {
-	display: grid;
-	gap: var(--ds-sp-4);
-	margin: var(--ds-sp-5) 0;
-}
-
-.ex-pipeline-row {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-3);
-}
-
-.ex-pipeline-item {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-}
-
-.ex-pipeline-node {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	min-width: 128px;
-	min-height: var(--ds-hit);
-	padding: var(--ds-sp-4);
-	border: 0;
-	background: var(--night-2);
-	box-shadow: var(--mm-card-shadow);
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
-	transition:
-		color var(--ds-dur-1) var(--ds-ease),
-		transform var(--ds-dur-1) var(--ds-ease);
-}
-
-.ex-pipeline-node .ex-glyph {
-	width: 32px;
-	height: 32px;
-}
-
-.ex-pipeline-node:hover {
-	color: #fff;
-	transform: translateY(calc(-1 * var(--ds-lift)));
-}
-
-.ex-pipeline-node[aria-pressed="true"] {
-	background: var(--night-3);
-	color: #fff;
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		0 0 0 calc(2 * var(--gp)) var(--ember);
-}
-
-.ex-pipeline-node:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(3 * var(--gp));
-}
-
-.ex-pipeline-arrow {
-	color: var(--text-3);
-}
-
-.ex-pipeline-point {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--ds-sp-4);
-	min-height: calc(2 * var(--ds-hit));
-	padding: var(--ds-sp-4) var(--ds-sp-5);
-	background: var(--night-2);
-	box-shadow: var(--mm-recess-shadow);
-	color: var(--text);
-	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-2);
-}
-
 /* --- Rows that open (FAQ, privacy) ------------------------------------------------------------------------------------------------------------------ */
 
 .ex-rows {
@@ -899,11 +804,6 @@
 		flex: 1 1 auto;
 	}
 
-	.ex-flow-edge::after,
-	.ex-pipeline-arrow {
-		transform: rotate(90deg);
-	}
-
 	.ex-flow-node {
 		flex-direction: row;
 		justify-content: flex-start;
@@ -996,25 +896,18 @@
 	.ex-map-area,
 	.ex-share-people,
 	.ex-season-side img,
-	.ex-tab,
-	.ex-pipeline-node {
+	.ex-tab {
 		transition: none;
 	}
 }
 
-html[data-mc-motion="reduced"]
-	:is(.ex-map-area, .ex-share-people, .ex-season-side img, .ex-tab, .ex-pipeline-node, .ex-more > summary::before) {
-	transition: none;
-}
-
 @media (forced-colors: active) {
-	.ex-tab[aria-selected="true"],
-	.ex-pipeline-node[aria-pressed="true"] {
+	.ex-tab[aria-selected="true"] {
 		outline: 2px solid Highlight;
 	}
 }
 
-/* --- Discovery: tiles and timeline stops -------------------------------------------------------------------------------------------------------------- */
+/* --- Discovery: tiles -------------------------------------------------------------------------------------------------------------- */
 
 .mm-angle-card h2 {
 	display: flex;
@@ -1029,49 +922,6 @@ html[data-mc-motion="reduced"]
 	height: 8px;
 	background: var(--mm-accent, var(--ember));
 	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-
-.ex-ticks {
-	display: grid;
-	gap: 0;
-	margin: var(--ds-sp-3) 0 0;
-	padding: 0;
-	list-style: none;
-}
-
-.ex-ticks li {
-	margin: 0;
-	padding: 0;
-}
-
-.ex-ticks button {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-3);
-	border: 0;
-	background: none;
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-align: left;
-	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
-}
-
-.ex-ticks button:hover {
-	color: #fff;
-}
-
-.ex-ticks button[aria-pressed="true"] {
-	background: var(--night-3);
-	color: var(--ember);
-	box-shadow: inset calc(2 * var(--gp)) 0 0 var(--ember);
-}
-
-.ex-ticks button:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(-3 * var(--gp));
 }
 
 /* The three loaders the mod runs on: boxes, not a sentence. */
@@ -1100,26 +950,4 @@ html[data-mc-motion="reduced"]
 
 .ex-loaders .ex-glyph {
 	color: var(--ember);
-}
-
-/* /discover: the four paths side by side, so the whole choice (and the call to action) fits the first screen. */
-.mm-angle-grid--paths .mm-angle-card {
-	padding: var(--ds-sp-4);
-}
-
-.mm-angle-grid--paths .mm-angle-card > .mm-memory-scene {
-	padding: var(--ds-sp-2);
-}
-
-.mm-site .mm-angle-grid--paths .mm-angle-card h2 {
-	margin-top: var(--ds-sp-2);
-	font-size: var(--ds-fs-xs);
-	line-height: var(--ds-lh-xs);
-}
-
-@media (min-width: 1000px) {
-	.mm-angle-grid--paths {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: var(--ds-sp-4);
-	}
 }
