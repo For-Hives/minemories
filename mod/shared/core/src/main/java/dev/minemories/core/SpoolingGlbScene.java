@@ -804,9 +804,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
     index = 0;
     for (Part part : parts.values()) {
       if (index++ > 0) sink.text(",");
-      float r = ((part.tint >>> 16) & 255) / 255f,
-          g = ((part.tint >>> 8) & 255) / 255f,
-          b = (part.tint & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(part.tint);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       sink.text(
           "{\"name\":\""
               + escape(part.name)
@@ -905,9 +904,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       index = 0;
       for (Light light : lights.values()) {
         if (index++ > 0) sink.text(",");
-        float r = ((light.color >>> 16) & 255) / 255f,
-            g = ((light.color >>> 8) & 255) / 255f,
-            b = (light.color & 255) / 255f;
+        float[] rgb = GlbColor.linearRgb(light.color);
+        float r = rgb[0], g = rgb[1], b = rgb[2];
         sink.text(
             "{\"type\":\"point\",\"color\":["
                 + r
