@@ -26,7 +26,7 @@ test('the home page names the site and its organization, linked to CurseForge an
 	const website = ofType('/', 'WebSite')
 	const organization = ofType('/', 'Organization')
 	expect(website).toMatchObject({ '@id': 'https://minemories.net/#website', name: 'Minemories', inLanguage: 'fr' })
-	expect(website?.publisher).toEqual({ '@id': organization?.['@id'] })
+	expect(website?.publisher).toEqual({ '@id': organization?.['@id'], name: 'Minemories' })
 	expect(organization).toMatchObject({ name: 'Minemories', url: 'https://minemories.net/' })
 	expect(organization?.sameAs).toEqual([
 		'https://www.curseforge.com/minecraft/mc-mods/minemories',
@@ -59,7 +59,7 @@ test('each page describes itself, with its date, and stories stay articles', () 
 		'@type': 'WebPage',
 		url: 'https://minemories.net/faq',
 		dateModified: metadataFor('/faq').updated,
-		isPartOf: { '@id': 'https://minemories.net/#website' },
+		isPartOf: { '@id': 'https://minemories.net/#website', name: 'Minemories' },
 	})
 	const article = nodes('/blog/premier-souvenir')[0]
 	expect(article?.['@type']).toBe('Article')

@@ -1,5 +1,5 @@
 import gradleProperties from '../../../mod/1.21.1/gradle.properties?raw'
-import { repositoryUrl } from './lib/roadmap'
+import { repositoryUrl } from './lib/repository'
 import { catalogLinks } from './pages/installation-loaders'
 import { type PageMetadata, siteOrigin } from './route-metadata'
 
@@ -18,8 +18,9 @@ export const modVersion = modVersionFrom(gradleProperties)
 export function structuredDataFor(page: PageMetadata, version = modVersion) {
 	const origin = new URL(siteOrigin).href
 	const canonical = new URL(page.path, siteOrigin).href
-	const website = { '@id': `${origin}#website` }
-	const organization = { '@id': `${origin}#organization` }
+	// Named references, so a page other than the home still says whose site and work it is.
+	const website = { '@id': `${origin}#website`, name: 'Minemories' }
+	const organization = { '@id': `${origin}#organization`, name: 'Minemories' }
 	const graph: Record<string, unknown>[] = [
 		page.articleDate
 			? {
