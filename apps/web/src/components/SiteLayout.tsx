@@ -27,11 +27,12 @@ const legalLinks = [
 	{ to: '/terms', label: 'Terms' },
 	{ to: '/legal', label: 'Legal' },
 ]
-export function Brand() {
+/** The link home: the logo alone in the header (`solo`), the small mark and the word Minemories in the footer. */
+export function Brand({ solo = false }: { solo?: boolean }) {
 	return (
 		<Link className="mm-brand" to="/" aria-label="Minemories">
-			<BrandMark />
-			<span>Minemories</span>
+			<BrandMark solo={solo} />
+			{!solo && <span>Minemories</span>}
 		</Link>
 	)
 }
@@ -140,7 +141,7 @@ function SiteHeader() {
 	}, [pathname])
 	return (
 		<header className="mm-header">
-			<Brand />
+			<Brand solo />
 			<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
 				<NavLink to="/" end>
 					{t('Home')}
