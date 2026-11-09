@@ -33,7 +33,12 @@ const NIGHT_GAIN = 1
  * can never brighten the night.
  */
 const DAY_OPACITY = 0.85
-const MAX_GREY = 0.9
+/**
+ * Ceiling just above the default overworld's clear-day grey (about 0.70). Brighter desert, cold
+ * and humid skies (1.0 to 1.2 before the cap) and rain then light shaded faces like the default
+ * sky instead of up to 1.4 times brighter.
+ */
+const MAX_GREY = 0.75
 /** Overcast sky colour of the sky shader (`vec3(0.42, 0.49, 0.54)`) and its mix weight. */
 const WEATHER_SKY: Rgb = [0.42, 0.49, 0.54]
 const WEATHER_MIX = 0.72
@@ -43,8 +48,10 @@ const lerp = (from: number, to: number, amount: number) => from + (to - from) * 
 const luminance = ([red, green, blue]: Rgb) => red * 0.2126 + green * 0.7152 + blue * 0.0722
 
 /**
- * Mean luminance of the sky the environment map is baked from, following the sky shader:
- * zenith and horizon blended from night to day, then towards the overcast grey in bad weather.
+ * Approximate mean luminance of the sky the environment map is baked from: zenith and horizon
+ * blended from night to day, then towards the overcast grey in bad weather. It approximates the
+ * sky shader and ignores its darker lower hemisphere, sunset mix and sun glow; the gains and
+ * limits above were tuned against a measured viewer prototype, not derived from the shader.
  */
 export function skyLuminance(palette: SkyPalette, daylight: number, weather: number): number {
 	const day = clamp01(daylight)
