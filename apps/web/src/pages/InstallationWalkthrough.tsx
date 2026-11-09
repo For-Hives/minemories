@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { buttonOutline } from '../components/ui'
-import { T, useI18n } from '../i18n/I18n'
+import { Rich, T, useI18n } from '../i18n/I18n'
 import { guideUrl, installerUrl, javaUrl } from './installation-loaders'
 import type { System } from './installation-state'
 import type { LoaderTarget } from './mod-releases'
@@ -44,34 +44,25 @@ export function CopyText({ text, label }: { text: string; label: string }) {
 }
 
 export function InstallerLine({ target }: { target: LoaderTarget }) {
-	const fabric = target.loader === 'fabric'
+	const installer = (
+		<a href={installerUrl(target)}>
+			<T message={'the {loader} {version} installer'} params={{ loader: target.name, version: target.loaderVersion }} />
+		</a>
+	)
+	if (target.loader === 'fabric')
+		return (
+			<Rich
+				message={
+					'Download {installer}. Open it with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.'
+				}
+				slots={{ installer, minecraft: target.minecraft, version: target.loaderVersion }}
+			/>
+		)
 	return (
-		<>
-			<T message={'Download'} />{' '}
-			<a href={installerUrl(target)}>
-				<T
-					message={'the {loader} {version} installer'}
-					params={{ loader: target.name, version: target.loaderVersion }}
-				/>
-			</a>
-			<T message={'. Open'} />{' '}
-			<em>
-				<T message={'this'} />
-			</em>{' '}
-			{fabric ? (
-				<T
-					message={
-						'file with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.'
-					}
-					params={{ minecraft: target.minecraft, version: target.loaderVersion }}
-				/>
-			) : (
-				<>
-					<T message={'file with Java, select'} /> <strong>Install client</strong>
-					<T message={', then confirm. Wait for the success message.'} />
-				</>
-			)}
-		</>
+		<Rich
+			message={'Download {installer}. Open it with Java, select {option}, then confirm. Wait for the success message.'}
+			slots={{ installer, option: <strong>Install client</strong> }}
+		/>
 	)
 }
 
@@ -176,12 +167,17 @@ export function OtherLaunchers({ target }: { target: LoaderTarget }) {
 			<h4>CurseForge</h4>
 			<ol>
 				<li>
-					<T message={'Open'} /> <a href="https://www.curseforge.com/download/app">CurseForge</a>
-					<T message={', choose Minecraft, then'} />{' '}
-					<strong>
-						<T message={'Create Custom Profile'} />
-					</strong>
-					.
+					<Rich
+						message={'Open {app}, choose Minecraft, then {action}.'}
+						slots={{
+							app: <a href="https://www.curseforge.com/download/app">CurseForge</a>,
+							action: (
+								<strong>
+									<T message={'Create Custom Profile'} />
+								</strong>
+							),
+						}}
+					/>
 				</li>
 				<li>
 					<T message={'Name it Minemories, choose'} /> <strong>Minecraft {target.minecraft}</strong>
@@ -193,8 +189,10 @@ export function OtherLaunchers({ target }: { target: LoaderTarget }) {
 			<h4>Modrinth App</h4>
 			<ol>
 				<li>
-					<T message={'Open'} /> <a href="https://modrinth.com/app">Modrinth App</a>{' '}
-					<T message={'and sign in to your Minecraft account.'} />
+					<Rich
+						message={'Open {app} and sign in to your Minecraft account.'}
+						slots={{ app: <a href="https://modrinth.com/app">Modrinth App</a> }}
+					/>
 				</li>
 				<li>
 					<T message={'Create an instance running'} /> <strong>Minecraft {target.minecraft}</strong>{' '}

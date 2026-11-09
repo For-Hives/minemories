@@ -167,6 +167,11 @@ test('without a loader, the guide installs the recommended one in a dedicated fo
 	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]?.getAttribute('href')).toBe(
 		'https://fabricmc.net/use/installer/'
 	)
+	const installerLine = screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]?.parentElement
+	expect(installerLine?.textContent).toContain('Télécharge l’installateur Fabric 0.20.1. Ouvre-le avec Java, choisis')
+	expect(document.body.textContent).toContain('Ouvre CurseForge, choisis Minecraft, puis clique sur')
+	expect(document.body.textContent).toContain('Ouvre Modrinth App et connecte-toi')
+	expect(document.body.textContent).not.toContain('À examiner')
 	expect(screen.getAllByRole('link', { name: 'Java 21 (Temurin, site officiel)' }).length).toBeGreaterThan(0)
 	expect(screen.getAllByText('%APPDATA%\\.minecraft-minemories').length).toBeGreaterThan(0)
 	expect(screen.getByText('Pas à pas détaillé avec le Minecraft Launcher').closest('details')).toBeTruthy()

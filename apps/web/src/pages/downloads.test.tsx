@@ -74,7 +74,7 @@ test('published cells offer the download, size and checksum; the others say why 
 		name: 'Télécharger Minemories 0.2.0 pour Minecraft 1.21.1 avec NeoForge',
 	})
 	expect(link.getAttribute('href')).toBe(downloadUrl('neoforge-mc1.21.1', '0.2.0'))
-	expect(link.textContent).toBe('Télécharge')
+	expect(link.textContent).toBe('Télécharger')
 	const row = link.closest('tr') as HTMLElement
 	expect(within(row).getByRole('rowheader').textContent).toContain('1.21.1')
 	expect(within(row).getByRole('rowheader').textContent).toContain('Validée en jeu')
