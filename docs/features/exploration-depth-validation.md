@@ -83,3 +83,39 @@ unchanged.
 Captures around the player now keep five blocks below the lowest visited foot position in the relevant chunks, without going below the bottom of the dimension. This margin also applies to history already recorded. Explicit selections keep their corners.
 
 Check of 16 October 2026: Minecraft 1.21.1 / NeoForge 21.1.248, distribution JAR `0.5.1-beta.1` (SHA-256 `4c34794280d40fb8fb2ab0921e69d84de54442772aaa61e351eb7d371146d331`). A visit to Y=30 produces a GLB whose bottom is Y=25; returning to the surface and changing dimension keep that bottom. Full-height mode and explicit corners are still verified. The GLB was imported into Blender 5.2.2 and its render inspected. Isolated client with master volume at zero; no personal world modified. Local evidence: `~/.local/state/minemories-validation/depth-margin-five-20261015/`.
+
+## Builds under the cut
+
+The visited depth alone cuts off what other players built below the places this
+client has been: on a shared server, a fresh install has no history, so a
+capture taken at Y=64 stopped at Y=59 and left out a cave base whose floor was at
+Y=58, and the storage rooms under it. Since 0.36.5, an automatic bottom also goes
+down through the builds that reach it (`BuildDepth`, `ClientRuntime.followBuilds`),
+read from the loaded chunks of the capture area:
+
+- A build touches the cut when a placed light source or a block entity stands
+  within 6 layers above or below it. Natural ones do not count: lava, fire, glow
+  lichen, amethyst, glowing ores, sculk, spawners, bee nests, ruins, geodes and
+  Lootr's structure chests. A waterlogged lantern still counts.
+- From there, only block entities (chests, barrels, furnaces, machines, signs…)
+  carry the build further down, each at most 6 layers below a cell already
+  joined, in the same chunk or a neighbouring one. Torches alone light mines and
+  do not: a lit tunnel on the other side of the area, or a base 40 blocks down
+  with nothing in between, is not connected.
+- At most 64 layers below the automatic bottom count, and five foundation blocks
+  stay under the lowest joined layer. Explicit depth, full height and selections
+  are unchanged.
+- Known limit: the client never receives loot tables, so a plain `chest` or
+  `barrel` that a structure generated (a dungeon, a stronghold, a trial chamber)
+  looks like a placed one. Within 6 layers of the cut it can lower the bottom by
+  a few blocks, and generated containers in neighbouring chunks can carry it
+  further, never past the 64-layer cap.
+
+Measured on the reported world (Fabric 1.20.1, area 257 × 257 around
+213/2254, automatic bottom Y=59) by replaying the rule on the save: a first
+version that let torches chain and did not check chunk adjacency went down to
+the 64-layer cap (Y=-10), following lit mine tunnels and modded amethyst geodes
+across the whole area. The rule above stops at Y=41: it keeps the cave base, the
+Create machines at Y=50 to 54 and the storage room at Y=46 to 48 under the
+player's chunk, and nothing else. `BuildDepthTest` covers both cases.
+

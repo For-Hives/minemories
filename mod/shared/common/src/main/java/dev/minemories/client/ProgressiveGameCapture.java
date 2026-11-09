@@ -277,7 +277,9 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     }
     if (settings.fullHeight() || (surfaceX == bounds.maxX() && surfaceZ == bounds.maxZ())) {
       int bottom =
-          settings.fullHeight() ? bounds.minY() : ClientRuntime.captureBottom(bounds, surfaceFloor);
+          settings.fullHeight()
+              ? bounds.minY()
+              : ClientRuntime.captureBottom(level, bounds, surfaceFloor);
       bounds =
           new CaptureBounds(
               bounds.minX(), bottom, bounds.minZ(), bounds.maxX(), bounds.maxY(), bounds.maxZ());
