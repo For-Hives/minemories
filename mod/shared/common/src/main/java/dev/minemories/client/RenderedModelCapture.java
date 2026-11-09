@@ -108,7 +108,9 @@ final class RenderedModelCapture {
       return created;
     }
 
-    /** The End portal and gateway sample no copyable texture: they get a baked still frame instead. */
+    /**
+     * The End portal and gateway sample no copyable texture: they get a baked still frame instead.
+     */
     private VertexConsumer portalBuffer(RenderType type) {
       if (!supported(type.mode())) return ignored;
       RenderedVertexConsumer existing = consumers.get(type);
@@ -165,13 +167,18 @@ final class RenderedModelCapture {
       return null;
     }
     CapturePixels reader = new CapturePixels(minecraft);
-    reader.texture("end_sky", ResourceLocation.fromNamespaceAndPath("minecraft", EndPortalLook.SKY));
-    reader.texture("end_portal", ResourceLocation.fromNamespaceAndPath("minecraft", EndPortalLook.PORTAL));
+    reader.texture(
+        "end_sky", ResourceLocation.fromNamespaceAndPath("minecraft", EndPortalLook.SKY));
+    reader.texture(
+        "end_portal", ResourceLocation.fromNamespaceAndPath("minecraft", EndPortalLook.PORTAL));
     var sky = reader.source("end_sky");
     var layers = reader.source("end_portal");
     int[] baked =
         EndPortalLook.bake(
-            sky.readBand(0, sky.height()), sky.width(), layers.readBand(0, layers.height()), layers.width());
+            sky.readBand(0, sky.height()),
+            sky.width(),
+            layers.readBand(0, layers.height()),
+            layers.width());
     CapturePixels copies = pixelCopies == null ? reader : pixelCopies;
     copies.procedural(key, baked, EndPortalLook.SIZE, EndPortalLook.SIZE);
     portal = finishCopy(key, copies);

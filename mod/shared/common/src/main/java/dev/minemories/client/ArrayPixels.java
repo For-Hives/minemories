@@ -32,7 +32,8 @@ final class ArrayPixels implements CapturePixels.Source {
 
   @Override
   public int[] readBand(int row, int rows) {
-    if (row < 0 || rows < 1 || row + rows > height) throw new IllegalArgumentException("Band out of range");
+    if (row < 0 || rows < 1 || row + rows > height)
+      throw new IllegalArgumentException("Band out of range");
     int[] band = new int[width * rows];
     System.arraycopy(abgr, row * width, band, 0, band.length);
     return band;
