@@ -8,7 +8,7 @@ Once installed, the mod must work **without any action** from the player, includ
 | --- | --- | --- |
 | `afkSnapshots` | `true` | Automatic captures after 5 minutes idle, at most every 4 hours, including while paused or unfocused. An explicit `false` is preserved. |
 | `afkIdleMinutes`, `afkIntervalMinutes`, `captureRadius` | 5, 240, 32 | Advanced settings; an invalid value falls back to these defaults. |
-| `captureFullHeight` | `false` | Captures around the player keep the depth actually visited plus five blocks. |
+| `captureFullHeight` | `false` | Captures around the player keep the depth actually visited plus five blocks, and go down through builds connected to that cut ([details](exploration-depth-validation.md#builds-under-the-cut)). |
 | `exportDirectory` | `~/export` | Folder for local memories. |
 | `apiUrl` | `https://api.minemories.net` | Official service; changing the API unlinks the account. |
 | `deviceToken`, `deviceId` | absent | **The only required action: link the account** (6-digit code). Until the player is linked, a clickable chat message reminds them each time they join a world and opens the settings. Captures stay local until linking; after linking they upload automatically. |

@@ -27,6 +27,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -722,10 +723,76 @@ public final class ClientRuntime {
         != null;
   }
 
-  static int captureBottom(CaptureBounds bounds, int surfaceFloor) {
+  static int captureBottom(ClientLevel level, CaptureBounds bounds, int surfaceFloor) {
     saveExploration();
-    return EXPLORATION.depth.captureBottom(
-        bounds.minX(), bounds.maxX(), bounds.minZ(), bounds.maxZ(), surfaceFloor, bounds.minY());
+    return followBuilds(
+        level,
+        bounds,
+        EXPLORATION.depth.captureBottom(
+            bounds.minX(),
+            bounds.maxX(),
+            bounds.minZ(),
+            bounds.maxZ(),
+            surfaceFloor,
+            bounds.minY()));
+  }
+
+  /**
+   * Lowers an automatic bottom through the builds that reach the cut (see {@link BuildDepth}), read
+   * from the loaded chunks of the capture area: block entities from each chunk's own list, light
+   * sources only in the band around the cut and only in the chunk sections that may hold one.
+   */
+  static int followBuilds(ClientLevel level, CaptureBounds area, int bottom) {
+    int floor = level.getMinBuildHeight();
+    var builds = new BuildDepth.Builds(bottom, floor);
+    int lightBottom = BuildDepth.lightBottom(bottom, floor);
+    int top = Math.min(BuildDepth.scanTop(bottom), level.getMaxBuildHeight() - 1);
+    for (int chunkZ = Math.floorDiv(area.minZ(), 16);
+        chunkZ <= Math.floorDiv(area.maxZ(), 16);
+        chunkZ++) {
+      for (int chunkX = Math.floorDiv(area.minX(), 16);
+          chunkX <= Math.floorDiv(area.maxX(), 16);
+          chunkX++) {
+        var chunk = level.getChunkSource().getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+        if (chunk == null) continue;
+        for (var entity : chunk.getBlockEntities().values()) {
+          BlockPos pos = entity.getBlockPos();
+          if (!CutBoundary.outside(area, pos.getX(), area.minY(), pos.getZ())
+              && BuildDepth.builtBlockEntity(blockPath(entity.getBlockState())))
+            builds.blockEntity(chunkX, chunkZ, pos.getY());
+        }
+        for (int sectionY = Math.floorDiv(lightBottom, 16);
+            sectionY <= Math.floorDiv(top, 16);
+            sectionY++) {
+          int index = chunk.getSectionIndexFromSectionY(sectionY);
+          if (index < 0 || index >= chunk.getSections().length) continue;
+          var section = chunk.getSection(index);
+          if (section.hasOnlyAir() || !section.maybeHas(ClientRuntime::builtLight)) continue;
+          int x0 = Math.max(area.minX(), chunkX * 16), x1 = Math.min(area.maxX(), chunkX * 16 + 15);
+          int z0 = Math.max(area.minZ(), chunkZ * 16), z1 = Math.min(area.maxZ(), chunkZ * 16 + 15);
+          int y0 = Math.max(lightBottom, sectionY * 16), y1 = Math.min(top, sectionY * 16 + 15);
+          for (int y = y0; y <= y1; y++) {
+            layer:
+            for (int z = z0; z <= z1; z++)
+              for (int x = x0; x <= x1; x++)
+                if (builtLight(section.getBlockState(x & 15, y & 15, z & 15))) {
+                  builds.light(chunkX, chunkZ, y);
+                  break layer;
+                }
+          }
+        }
+      }
+    }
+    return builds.bottom();
+  }
+
+  private static boolean builtLight(BlockState state) {
+    // A waterlogged lantern still counts; lava and fire are ruled out by their ids.
+    return state.getLightEmission() > 0 && BuildDepth.builtLight(blockPath(state));
+  }
+
+  private static String blockPath(BlockState state) {
+    return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
   }
 
   private static Path zoneHistoryPath() {
@@ -1123,6 +1190,9 @@ public final class ClientRuntime {
               bounds.maxZ(),
               Math.min(center.getY(), bounds.maxY()),
               bottom);
+      // Then down through the builds that reach that cut (a cellar, a cave base), never to a
+      // build far below with nothing in between.
+      bottom = followBuilds(level, bounds, bottom);
     }
     saveExploration();
     bounds =
