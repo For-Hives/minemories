@@ -109,7 +109,7 @@ The glTF stays self-contained with no new extension; only the structure and `ext
   (category, material): the number of draw calls stays as before, give or take one primitive per shared category
   and material. No node per entity: `MAX_GLB_NODES`/`MAX_GLB_PRIMITIVES` are 4096 and an entity farm would exceed
   them. In Blender, each category becomes an object that can be deleted or hidden.
-- **`asset.extras.minemories`**: `format: 2`, Minecraft / loader / mod versions, dimension identifier, `chunkSize`
+- **`asset.extras.minemories`**: `format: 2` (3 since issue #278, see below), Minecraft / loader / mod versions, dimension identifier, `chunkSize`
   and the number of quads per category. Closed, validated fields (`GlbMetadata`): no personal data, no world,
   server or player name, no seed, no path, no sign or book text, and **no absolute coordinate**. The bounds and
   capture origin stay in the metadata file already sent to the API.
@@ -135,6 +135,31 @@ category (e.g. `terrain` 1,400 faces, `decor` 1,748, `fluids` 336, `block_entiti
 render is pixel-for-pixel identical on radius 32, with 49 differing pixels (6 with a difference > 8, max difference 18
 out of 268,800) on the models/lights scene, attributed to the render order of translucent materials across objects.
 The viewer loads the file (headless Chromium, SwiftShader) and shows the complete scene. In-game validation: not done.
+
+## Format 3: linear colours (issue #278)
+
+glTF 2.0 reads `baseColorFactor`, `emissiveFactor` and `KHR_lights_punctual` colours as **linear** values. Up to
+format 2 both writers stored the 8-bit sRGB tint as is, so every biome or block tint rendered too light in the
+viewer and in Blender (terracotta, grass, foliage, water came out washed out). Format 3 converts each channel with the
+IEC 61966-2-1 curve (`GlbColor`, shared by `GlbScene` and `SpoolingGlbScene`, which stay byte-equivalent): the
+grass tint `0xA4C954` is written `[0.371, 0.584, 0.089]`, white stays `1`, and the opacity (fourth
+`baseColorFactor` value) is unchanged. The textures were already sRGB images and do not change.
+
+Readers tell the two apart by `asset.extras.minemories.format`:
+
+- The viewer (`apps/web/src/lib/glb-colours.ts`, applied in `viewer-scene.ts`) converts base colour, emissive colour
+  and imported light colours of files **without format 3** (format 1–2, or no Minemories metadata) once per
+  material, so an old capture and a new one of the same place look the same.
+- The landing film (`hero/scene.js`, `prepareCapture`) keeps its look on both: it converts legacy factors as before
+  and only patches the old white fixed tints (spruce, birch, lily pad) on legacy files; a format-3 factor is brought
+  back to sRGB first so the cobweb dimming and the collar colour stay identical. The shipped hero captures were
+  re-baked by glTF-Transform and carry no Minemories format, so they count as legacy; a future re-bake must keep
+  `asset.extras` or a format-3 capture would be converted twice.
+- The API validators and the meshopt expansion do not read the format; the expansion keeps `asset` as is.
+
+The same change fixes opaque ARGB fixed tints (1.21.x `BlockColors` returns `0xFF619961` for spruce leaves, birch
+and the placed lily pad): the client used to replace any negative tint by white; `VertexColors.blockTint` now keeps
+the RGB, and `-1` (no tint) is still white.
 
 ## `KHR_mesh_quantization` quantization (issue #173, phase 3)
 
