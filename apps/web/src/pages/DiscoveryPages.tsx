@@ -26,11 +26,7 @@ export function DiscoveryPage() {
 			<div className="mm-angle-grid mm-angle-grid--paths">
 				{discoveryPages.map(page => (
 					<Link key={page.path} to={page.path} className={`mm-angle-card mm-accent-${page.accent}`}>
-						<MemoryScene
-							theme={pathScenes[page.path]?.theme ?? 'home'}
-							stage={pathScenes[page.path]?.stage}
-							label={translate(locale, page.label)}
-						/>
+						<MemoryScene {...(pathScenes[page.path] ?? { theme: 'home' })} label={translate(locale, page.label)} />
 						<h2>{translate(locale, page.label)}</h2>
 						<span>{t('Explore this path ↗')}</span>
 					</Link>

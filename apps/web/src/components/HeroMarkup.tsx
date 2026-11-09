@@ -157,8 +157,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 					data-i18n-attr="aria-label:Minemories, back to the top"
 					aria-label={t('Minemories, back to the top')}
 				>
-					<BrandMark />
-					<span>Minemories</span>
+					<BrandMark solo />
 				</a>
 				<nav className="site-nav" data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
 					<ul className="mc-sitebar__nav">

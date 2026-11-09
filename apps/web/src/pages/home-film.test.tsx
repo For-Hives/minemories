@@ -126,10 +126,13 @@ test('signed-in visitors see their gallery link instead of sign-in', async () =>
 	expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull()
 	expect(screen.getAllByRole('link', { name: 'Ma galerie' })[0]?.getAttribute('href')).toBe('/gallery')
 	expect(screen.getByRole('link', { name: 'Retrouver mes souvenirs' }).getAttribute('href')).toBe('/gallery')
-	// The bar's brand: the logo's camera, decorative, then the word Minemories.
-	const mark = document.querySelector('.mc-sitebar__brand img')
-	expect(mark?.getAttribute('src')).toBe('/brand/minemories-mark.svg')
+	// The bar's brand: the whole logo alone, decorative; the link's aria-label names it.
+	const brand = document.querySelector('.mc-sitebar__brand')
+	const mark = brand?.querySelector('img')
+	expect(mark?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
 	expect(mark?.getAttribute('alt')).toBe('')
+	expect(mark?.className).toBe('mm-brand-mark mm-brand-mark--solo')
+	expect(brand?.textContent).toBe('')
 })
 
 test('the film leaves nothing behind: <html> is restored, listeners and test hooks are gone, and it can mount again', async () => {
