@@ -57,6 +57,7 @@ function glb(counts = {}) {
 
 test('gametestSpec picks the exact Gradle task per loader and version', () => {
 	assert.deepEqual(gametestSpec(T('fabric', '1.21.11')).gradleArgs, [':fabric:runClientGameTest'])
+	assert.deepEqual(gametestSpec(T('fabric', '26.3')).gradleArgs, [':fabric:runClientGameTest'])
 	assert.deepEqual(gametestSpec(T('neoforge', '1.21.11')).gradleArgs, [':neoforge:runClientGametest'])
 	assert.deepEqual(gametestSpec(T('forge', '1.21.11')).gradleArgs, [':forge:runClient', '-PgameTest=true'])
 	assert.deepEqual(gametestSpec(T('forge', '1.20.1')).gradleArgs, [':forge:runClientGametest'])

@@ -176,9 +176,19 @@ export async function ensureJdks(majors, options = {}) {
 	return { gradle: pickGradleJdk(jdks), compile, all: jdks }
 }
 
+/**
+ * The JDK that runs Gradle for a target. Loom for Minecraft 26.x refuses to run on anything older than the game's
+ * own Java, so a target compiled with a JDK newer than the Gradle minimum runs Gradle on that JDK as well.
+ */
+export function gradleJdkFor(jdks, target) {
+	const major = Number(target?.java ?? 0)
+	return major > minimumGradleJava ? (jdks.compile?.get(major) ?? jdks.gradle) : jdks.gradle
+}
+
 /** Environment and -D flags that give Gradle its JDK and the toolchains it may pick. */
-export function gradleJavaSetup(jdks, env = process.env) {
-	const { gradle, all } = jdks
+export function gradleJavaSetup(jdks, env = process.env, target = undefined) {
+	const gradle = gradleJdkFor(jdks, target)
+	const { all } = jdks
 	if (!gradle) throw new Error(`No JDK ${minimumGradleJava}+ to run Gradle.`)
 	const paths = all.map(jdk => jdk.home).join(',')
 	return {

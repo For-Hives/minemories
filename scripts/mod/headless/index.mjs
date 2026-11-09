@@ -104,10 +104,12 @@ async function runTarget(target, context) {
 	if (prerequisites.missing.length > 0) {
 		return { status: 'skipped', message: `missing prerequisites: ${prerequisites.missing.join(', ')}` }
 	}
-	const gradleJdk = jdkLookup(GRADLE_JAVA)
+	// Loom for Minecraft 26.x needs Gradle on the game's own (newer) JDK.
+	const gradleMajor = Number(target.java) > Number(GRADLE_JAVA) ? String(target.java) : GRADLE_JAVA
+	const gradleJdk = jdkLookup(gradleMajor)
 	const gameJdk = jdkLookup(String(target.java ?? GRADLE_JAVA))
 	if (!(gradleJdk && gameJdk)) {
-		const major = gradleJdk ? target.java : GRADLE_JAVA
+		const major = gradleJdk ? target.java : gradleMajor
 		return {
 			status: 'skipped',
 			message: `JDK ${major} not found (MOD_JDK_${major}, JAVA_HOME_${major} or ~/.local/tools)`,

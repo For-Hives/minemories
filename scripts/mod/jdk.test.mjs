@@ -10,6 +10,7 @@ import {
 	detectJdks,
 	ensureJdks,
 	gradleJavaSetup,
+	gradleJdkFor,
 	installJdk,
 	jdkFor,
 	parseJavaMajor,
@@ -146,4 +147,18 @@ test('gradleJavaSetup points Gradle at its JDK and lists every installation', ()
 	assert.ok(setup.env.PATH.startsWith('/j/21/bin'))
 	assert.deepEqual(setup.args, ['-Dorg.gradle.java.installations.paths=/j/17,/j/21'])
 	assert.throws(() => gradleJavaSetup({ gradle: null, all: [] }), /No JDK/)
+})
+
+test("a target compiled with a JDK newer than Gradle's minimum runs Gradle on that JDK", () => {
+	const jdk21 = { home: '/j/21', major: 21 }
+	const jdk25 = { home: '/j/25', major: 25 }
+	const jdks = { gradle: jdk21, compile: new Map([[25, jdk25]]), all: [jdk21, jdk25] }
+	assert.equal(gradleJdkFor(jdks, { java: '25' }), jdk25)
+	assert.equal(gradleJdkFor(jdks, { java: '21' }), jdk21)
+	assert.equal(gradleJdkFor(jdks, { java: '17' }), jdk21)
+	assert.equal(gradleJdkFor(jdks, undefined), jdk21)
+	assert.equal(gradleJdkFor({ gradle: jdk21, all: [jdk21] }, { java: '25' }), jdk21)
+	const setup = gradleJavaSetup(jdks, { PATH: '/bin' }, { java: '25' })
+	assert.equal(setup.env.JAVA_HOME, '/j/25')
+	assert.ok(setup.env.PATH.startsWith('/j/25/bin'))
 })

@@ -1,5 +1,5 @@
 {
-	"minecraft": ["1.12.2", "1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.11"],
+	"minecraft": ["1.12.2", "1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.11", "26.3"],
 	"targets": [
 		{
 			"id": "neoforge-mc1.21.1",
@@ -160,6 +160,22 @@
 			"loaderProperty": "forgeVersion",
 			"enabled": true,
 			"validatedInGame": true
+		},
+		{
+			"id": "fabric-mc26.3",
+			"loader": "fabric",
+			"name": "Fabric",
+			"minecraft": "26.3",
+			"loaderVersion": "0.19.5",
+			"java": "25",
+			"project": "fabric",
+			"dir": "mod/26.3",
+			"jarPrefix": "minemories-fabric-mc26.3-",
+			"jar": "minemories-fabric-mc26.3-{version}.jar",
+			"loaderProperty": "fabricLoaderVersion",
+			"enabled": true,
+			"validatedInGame": false,
+			"fabricApi": "0.161.0+26.3"
 		},
 		{
 			"id": "quilt-mc1.21.1",
