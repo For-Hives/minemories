@@ -1600,5 +1600,9 @@
 	"Sign in — Minemories": "Logowanie — Minemories",
 	"Create an account — Minemories": "Utwórz konto — Minemories",
 	"Delete this snapshot forever? This cannot be undone.": "Usunąć tę migawkę na zawsze? Tej operacji nie można cofnąć.",
-	"Could not create the code.": "Nie można utworzyć kodu."
+	"Could not create the code.": "Nie można utworzyć kodu.",
+	"Language suggestion": "Propozycja języka",
+	"Read Minemories in this language?": "Czytać Minemories po polsku?",
+	"Switch to this language": "Przełącz na polski",
+	"No thanks": "Nie, dziękuję"
 }

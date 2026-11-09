@@ -21,6 +21,7 @@ export async function prerenderWeb(directory, entry) {
 	const socialTags = socialImage
 		? `<meta property="og:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" /><meta property="og:image:width" content="${socialImage.width}" /><meta property="og:image:height" content="${socialImage.height}" /><meta property="og:image:alt" content="${escapeHtml(socialImage.alt)}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" />`
 		: ''
+	// Public pages are written in French (the client renders them in French too, unless the visitor chose a language).
 	await Promise.all(
 		publicMetadata.map(async page => {
 			const canonical = new URL(page.path, origin).href
@@ -40,7 +41,7 @@ export async function prerenderWeb(directory, entry) {
 						description: page.description,
 						url: canonical,
 					}
-			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" /><link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>`
+			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" /><link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="fr_FR" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>`
 			const html = (page.path === '/' ? template : withoutBootScreen(template))
 				.replace(htmlLanguagePattern, '<html lang="fr">')
 				.replace(titlePattern, `<title>${escapeHtml(page.title)}</title>`)

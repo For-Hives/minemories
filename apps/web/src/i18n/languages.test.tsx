@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { AppContext } from '../app-context'
+import { LanguageSuggestion } from '../components/LanguageSuggestion'
 import { SiteLayout } from '../components/SiteLayout'
 import { formatRelativeDate } from '../lib/dates'
 import { formatFileSize } from '../lib/glb'
@@ -38,14 +39,15 @@ function Example() {
 		</>
 	)
 }
-function page(detectLocale = false) {
+function page(suggestLocale = false) {
 	return render(
-		<I18nProvider detectLocale={detectLocale}>
+		<I18nProvider suggestLocale={suggestLocale}>
 			<AppContext.Provider value={context}>
 				<MemoryRouter initialEntries={['/faq']}>
 					<SiteLayout>
 						<Example />
 					</SiteLayout>
+					<LanguageSuggestion />
 				</MemoryRouter>
 			</AppContext.Provider>
 		</I18nProvider>
@@ -66,14 +68,17 @@ test('the actual selector changes editorial and shared text, persists the prefer
 	expect(screen.getByText('Partager par lien')).toBeTruthy()
 })
 
-test('browser preference respects priority while a saved choice always takes precedence', async () => {
+test('browser preference is only suggested, in its priority order, while a saved choice silences it', async () => {
 	vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['ko-KR', 'en-US'])
 	const view = page(true)
-	await screen.findByText('링크로 공유', {}, { timeout: 10000 })
-	view.unmount()
-	localStorage.setItem('minemories-locale', 'fr')
-	page(true)
+	await screen.findByRole('region', { name: '언어 제안' }, { timeout: 10000 })
 	expect(screen.getByText('Partager par lien')).toBeTruthy()
+	expect(document.documentElement.lang).toBe('fr-FR')
+	view.unmount()
+	localStorage.setItem('minemories-locale', 'ja')
+	page(true)
+	await screen.findByText('リンクで共有', {}, { timeout: 10000 })
+	expect(screen.queryByRole('region', { name: '언어 제안' })).toBeNull()
 })
 
 test('switching countries preserves numeric/date formatting, metadata language and known technical strings', async () => {

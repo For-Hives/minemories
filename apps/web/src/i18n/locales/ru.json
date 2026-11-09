@@ -1600,5 +1600,9 @@
 	"Sign in — Minemories": "Вход — Minemories",
 	"Create an account — Minemories": "Создать аккаунт — Minemories",
 	"Delete this snapshot forever? This cannot be undone.": "Удалить этот снимок навсегда? Это действие нельзя отменить.",
-	"Could not create the code.": "Не удалось создать код."
+	"Could not create the code.": "Не удалось создать код.",
+	"Language suggestion": "Предложение языка",
+	"Read Minemories in this language?": "Читать Minemories на русском?",
+	"Switch to this language": "Перейти на русский",
+	"No thanks": "Нет, спасибо"
 }

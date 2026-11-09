@@ -1600,5 +1600,9 @@
 	"Sign in — Minemories": "ログイン — Minemories",
 	"Create an account — Minemories": "アカウント作成 — Minemories",
 	"Delete this snapshot forever? This cannot be undone.": "このスナップショットを永久に削除しますか？元に戻せません。",
-	"Could not create the code.": "コードを作成できませんでした。"
+	"Could not create the code.": "コードを作成できませんでした。",
+	"Language suggestion": "言語の提案",
+	"Read Minemories in this language?": "Minemories を日本語で読みますか？",
+	"Switch to this language": "日本語に切り替える",
+	"No thanks": "いいえ、けっこうです"
 }

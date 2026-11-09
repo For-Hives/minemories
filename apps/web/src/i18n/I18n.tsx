@@ -9,8 +9,9 @@ import {
 	useRef,
 	useState,
 } from 'react'
+import { dismissedSuggestionKey, savedLocaleKey, suggestedLocale } from '../lib/locale-suggestion'
 import { loadLocale, translate } from './catalog'
-import { isFrench, isLocale, type Locale, localeTag, preferredLocale, resolveLocale } from './locales'
+import { isFrench, isLocale, type Locale, localeTag, resolveLocale } from './locales'
 
 export { translate } from './catalog'
 export type { Locale } from './locales'
@@ -20,29 +21,48 @@ const I18nContext = createContext<{
 	pendingLocale: Locale | null
 	localeError: boolean
 	setLocale: (value: Locale) => void
+	/** The browser's language when it differs from the page's, offered (never applied) until the visitor picks or declines it. */
+	suggestedLocale: Locale | null
+	dismissSuggestion: () => void
 	t: (message: string, values?: Record<string, string | number>) => string
 }>({
 	locale: 'en',
 	pendingLocale: null,
 	localeError: false,
 	setLocale: () => undefined,
+	suggestedLocale: null,
+	dismissSuggestion: () => undefined,
 	t: (message, values) => translate('en', message, values),
 })
 function initialLanguage(locale: Locale): Locale {
 	return isFrench(locale) ? 'fr' : 'en'
 }
+function readPreference(key: string): string | null {
+	try {
+		return localStorage.getItem(key)
+	} catch {
+		/* Preferences are optional. */
+		return null
+	}
+}
+/**
+ * The page renders in `initialLocale` unless the visitor saved a choice in the language switcher. The browser's languages never
+ * switch the rendered text (a crawler and a visitor must read the same language on the same URL); with `suggestLocale` they only
+ * feed `suggestedLocale`, which the language suggestion offers.
+ */
 export function I18nProvider({
 	children,
 	initialLocale = 'fr',
-	detectLocale = false,
+	suggestLocale = false,
 }: {
 	children: ReactNode
 	initialLocale?: Locale
-	detectLocale?: boolean
+	suggestLocale?: boolean
 }) {
 	const [locale, setLocale] = useState<Locale>(() => initialLanguage(initialLocale))
 	const [pendingLocale, setPendingLocale] = useState<Locale | null>(null)
 	const [localeError, setLocaleError] = useState(false)
+	const [suggestion, setSuggestion] = useState<Locale | null>(null)
 	const revision = useRef(0)
 	const activate = useCallback((value: Locale, persist: boolean) => {
 		if (!isLocale(value)) return
@@ -54,7 +74,7 @@ export function I18nProvider({
 			setPendingLocale(null)
 			if (persist)
 				try {
-					localStorage.setItem('minemories-locale', value)
+					localStorage.setItem(savedLocaleKey, value)
 				} catch {
 					/* Preferences are optional. */
 				}
@@ -73,19 +93,30 @@ export function I18nProvider({
 			})
 	}, [])
 	useEffect(() => {
-		let saved: Locale | null = null
-		try {
-			saved = resolveLocale(localStorage.getItem('minemories-locale') ?? '')
-		} catch {
-			/* Preferences are optional. */
-		}
-		const value = saved ?? (detectLocale ? preferredLocale(navigator.languages) : initialLocale)
-		startTransition(() => activate(value, false))
+		const saved = resolveLocale(readPreference(savedLocaleKey) ?? '')
+		startTransition(() => activate(saved ?? initialLocale, false))
+		let active = true
+		const target = suggestLocale
+			? suggestedLocale({
+					current: initialLanguage(initialLocale),
+					saved,
+					dismissed: readPreference(dismissedSuggestionKey),
+					languages: navigator.languages,
+				})
+			: null
+		// The suggestion speaks the target language: it appears once that catalogue is here, or not at all.
+		if (target)
+			void loadLocale(target)
+				.then(() => {
+					if (active) setSuggestion(target)
+				})
+				.catch(() => undefined)
 		return () => {
+			active = false
 			revision.current += 1
 		}
 		// Initialization is intentionally stable; changing languages is an explicit action.
-	}, [activate, detectLocale, initialLocale])
+	}, [activate, suggestLocale, initialLocale])
 	useEffect(() => {
 		document.documentElement.lang = localeTag(locale)
 	}, [locale])
@@ -93,6 +124,15 @@ export function I18nProvider({
 		(message: string, values?: Record<string, string | number>) => translate(locale, message, values),
 		[locale]
 	)
+	const dismissSuggestion = useCallback(() => {
+		setSuggestion(null)
+		if (suggestion)
+			try {
+				localStorage.setItem(dismissedSuggestionKey, suggestion)
+			} catch {
+				/* Preferences are optional. */
+			}
+	}, [suggestion])
 
 	return (
 		<I18nContext.Provider
@@ -100,7 +140,12 @@ export function I18nProvider({
 				locale,
 				pendingLocale,
 				localeError,
-				setLocale: value => activate(value, true),
+				setLocale: value => {
+					setSuggestion(null)
+					activate(value, true)
+				},
+				suggestedLocale: suggestion,
+				dismissSuggestion,
 				t,
 			}}
 		>

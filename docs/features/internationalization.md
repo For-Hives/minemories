@@ -15,7 +15,7 @@ The website's language picker covers the ten requested countries, with eleven la
 | Canada | English (CA), Français (CA) | en-CA, fr-CA |
 | Japan | 日本語 | ja-JP |
 
-The legacy identifiers `en` and `fr` remain valid in the local preference, so choices already stored are preserved. The saved preference takes precedence over the browser's ordered language list. No geolocation or IP-based country detection is used. Regional tags feed the HTML document; dates, numbers, sizes and counters go through Intl, including the Russian and Polish plural categories.
+The legacy identifiers `en` and `fr` remain valid in the local preference, so choices already stored are preserved. Every page renders in French unless the visitor saved a language in the switcher; the browser's ordered language list never changes the rendered text, so a crawler and a visitor read the same language on the same URL. When the browser prefers another supported language (or an unsupported one, which falls back to English), a dismissible card (`LanguageSuggestion`, bottom-left, `data-nosnippet`, written in the suggested language) offers it once that catalog has loaded. Accepting saves the choice like the switcher; declining stores the declined language on the device under `minemories-locale-suggestion-dismissed`, which silences every regional variant of that language. No suggestion appears once a choice is saved or when the browser already reads French (fr-CA included). No geolocation or IP-based country detection is used. Regional tags feed the HTML document; dates, numbers, sizes and counters go through Intl, including the Russian and Polish plural categories.
 
 ## Catalogs and scope
 
@@ -25,7 +25,7 @@ The old `copy(fr, en)` pairs, `{ fr, en }` editorial objects, inverted guide dic
 
 API identifiers, paths, file names, Minecraft commands and parameters such as `{name}`, `{count}`, etc. keep their technical form. User-entered content stays literal. Commercial currencies are not converted automatically when the language changes.
 
-New catalogs are imported on demand and shipped with the website: the application never calls a translation service. While a catalog loads, the previous language stays active; an error offers a retry. A late response does not override a more recent choice, and a response after unmount does not change the preference. The initial static render keeps the existing French routes; metadata and content are refreshed after the browser's choice. No translation URL or hreflang tag points to a page that does not exist.
+New catalogs are imported on demand and shipped with the website: the application never calls a translation service. While a catalog loads, the previous language stays active; an error offers a retry. A late response does not override a more recent choice, and a response after unmount does not change the preference. The initial static render keeps the existing French routes and the client renders them in French too; metadata and content only change after a saved or explicit choice of language (`<html lang>`, `og:locale` and JSON-LD `inLanguage` follow the rendered language). No translation URL or hreflang tag points to a page that does not exist.
 
 The six new catalogs started from a Google Translate pre-translation of the public text. The main navigation, account, authentication, sharing and viewer terms have been reviewed; product names, commands and parameters are checked automatically. An editorial review by native speakers is still worthwhile for long texts, especially the guides and legal pages.
 
