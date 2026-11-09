@@ -216,8 +216,9 @@
 	align-items: baseline;
 	gap: var(--ds-sp-2);
 	width: 100%;
-	margin-bottom: var(--ds-sp-3);
-	padding-right: calc(var(--ds-hit) + var(--ds-sp-2));
+	min-height: var(--ds-hit);
+	margin-bottom: var(--ds-sp-4);
+	padding-right: calc(var(--ds-hit) + var(--ds-sp-3));
 }
 .gallery-storage-head strong {
 	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
@@ -228,18 +229,11 @@
 	font: 400 16px / 18px var(--f-ui);
 	color: var(--text-2);
 }
-.gallery-storage-head em {
-	margin-left: auto;
-	font: 400 16px / 18px var(--f-ui);
-	font-variant-numeric: tabular-nums;
-	font-style: normal;
-	color: var(--c-green);
-	text-shadow: var(--ds-text-shadow-1);
-}
+/* The info button sits in the card's padding, so its right edge lines up with the percentage below it. */
 .gallery-storage details {
 	position: absolute;
-	top: var(--ds-sp-4);
-	right: var(--ds-sp-4);
+	top: var(--ds-sp-5);
+	right: var(--ds-sp-5);
 }
 .gallery-storage summary {
 	--_hi: var(--stone-hi);
@@ -267,6 +261,7 @@
 }
 .gallery-meter {
 	position: relative;
+	flex: 1 1 auto;
 	width: 100%;
 	height: 12px;
 	background: #1a1612;
@@ -293,12 +288,7 @@
 	background: var(--c-green);
 	transition: width var(--ds-dur-3) steps(6, end);
 }
-.gallery-meter[data-level="high"] .gallery-meter-fill {
-	background: var(--ember);
-}
-.gallery-meter[data-level="full"] .gallery-meter-fill {
-	background: var(--bad);
-}
+
 
 /* --- Servers: a row of inventory slots; the selected one wears the game's white selection frame and opens its areas below --- */
 .gallery-sr-only {

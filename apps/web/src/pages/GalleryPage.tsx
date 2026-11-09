@@ -22,6 +22,7 @@ import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
+import './gallery-storage.css'
 import { AreaCard, TrashCard } from './GalleryCards'
 import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
@@ -30,10 +31,13 @@ import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
 import { useWaitingDraft } from './use-draft'
 
-function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
-	if (storage.availableBytes === 0) return 'full'
-	return used >= 85 ? 'high' : 'ok'
+/** The bar and its percentage change colour as the gallery fills: green, gold, ember, then red when it is almost or fully used. */
+export function storageLevel(storage: Pick<Storage, 'availableBytes'>, used: number): StorageLevel {
+	if (storage.availableBytes === 0 || used >= 90) return 'full'
+	if (used >= 75) return 'high'
+	return used >= 50 ? 'mid' : 'ok'
 }
+type StorageLevel = 'full' | 'high' | 'mid' | 'ok'
 
 function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
 	const { t, locale } = useI18n()
@@ -54,10 +58,12 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 			<div className="gallery-storage-head">
 				<strong>{formatFileSize(storage.usedBytes, locale)}</strong>
 				<span>/ {formatFileSize(storage.limitBytes, locale)}</span>
-				<em>{used}%</em>
 			</div>
-			<div className="gallery-meter" aria-hidden="true" data-level={level}>
-				<span className="gallery-meter-fill" style={{ width: `${Math.max(used, 2)}%` }} />
+			<div className="gallery-storage-bar" data-level={level}>
+				<div className="gallery-meter" aria-hidden="true">
+					<span className="gallery-meter-fill" style={{ width: `${Math.max(used, 2)}%` }} />
+				</div>
+				<em>{used}%</em>
 			</div>
 			<p>
 				{formatFileSize(storage.availableBytes, locale)} <T message={'available of'} />{' '}
