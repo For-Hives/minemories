@@ -434,9 +434,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</h3>
 								<p
 									className="mc-step__body"
-									data-i18n="When you stay still for a few minutes, or press M, the mod keeps the area around you in 3D."
+									data-i18n="When you stay still for a few minutes, or click “Take a memory” in the M menu, the mod keeps the area around you in 3D."
 								>
-									{t('When you stay still for a few minutes, or press M, the mod keeps the area around you in 3D.')}
+									{t(
+										'When you stay still for a few minutes, or click “Take a memory” in the M menu, the mod keeps the area around you in 3D.'
+									)}
 								</p>
 								<p
 									className="mc-step__help"
@@ -528,10 +530,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</summary>
 								<p
 									className="mc-faq__a"
-									data-i18n="No. Nothing is sent before you link the game to your gallery with the code. Until then, memories stay in a folder on your computer."
+									data-i18n="Nothing leaves your computer until you link the game to your account. After that, automatic memories arrive in your private gallery on their own (at most one every 4 hours), along with a short technical report, with no personal data, when something goes wrong. You can turn both off in the M menu: “Auto memories”, and Settings → Privacy for the reports."
 								>
 									{t(
-										'No. Nothing is sent before you link the game to your gallery with the code. Until then, memories stay in a folder on your computer.'
+										'Nothing leaves your computer until you link the game to your account. After that, automatic memories arrive in your private gallery on their own (at most one every 4 hours), along with a short technical report, with no personal data, when something goes wrong. You can turn both off in the M menu: “Auto memories”, and Settings → Privacy for the reports.'
 									)}
 								</p>
 							</details>

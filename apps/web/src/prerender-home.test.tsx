@@ -8,6 +8,13 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// the site, in French (the prerender language), readable without JavaScript
 	expect(html).toContain('<h1')
 	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
+	// the facts of the landing: every published Minecraft version, the M menu button and what leaves after linking
+	expect(html).toContain('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
+	expect(html).toContain('26.3 en test')
+	expect(html).toContain('quand tu cliques sur « Prendre un souvenir » dans le menu M')
+	expect(html).toContain('Rien ne part tant que tu n’as pas connecté le jeu à ton compte.')
+	expect(html).toContain('Réglages → Confidentialité')
+	expect(html).not.toContain('1.21.1 · NeoForge')
 	for (const id of ['id="steps"', 'id="share"', 'id="more"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)
 	// the story in words, which is also the description of the canvas for screen readers
 	expect(html).toContain('id="w1"')
