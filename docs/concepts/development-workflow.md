@@ -136,6 +136,12 @@ The local viewer, the gallery viewer and shared links now use the
 same HDR render chain: ACES, moderate bloom on a resolution pyramid, sRGB
 output and FXAA. The reflection environment is generated locally from the sky
 (PMREM) and recomputed only when the atmosphere changes, never every frame.
+By day a neutral grey veil sits between the sky and the scene while that
+environment is baked (`apps/web/src/lib/environment-veil.ts`): without it the
+blue sky tinted every face turned away from the sun, so purple concrete read
+navy and wood read grey-green. The veil fades out with daylight, so night
+keeps its blue moonlight, and skies without a sun (Nether, End) get none.
+Water reflections are a little greyer as a result but still read blue.
 Transparent surfaces get lower roughness; these are environment
 reflections, not reflections of neighboring objects or ray tracing. Textures
 stay pixelated up close, with interpolated mipmaps and anisotropy capped at 4.

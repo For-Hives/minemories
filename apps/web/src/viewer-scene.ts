@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
+import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
@@ -146,6 +147,11 @@ export class ViewerScene {
 	private readonly navigation: ViewerNavigation
 	private atmosphere: Atmosphere = getAtmosphere(null, null)
 	private readonly sky: THREE.Mesh
+	/** Grey shell inside the sky while the environment map is baked: see `lib/environment-veil`. */
+	private readonly skyVeil = new THREE.Mesh(
+		new THREE.SphereGeometry(90, 32, 20),
+		new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, depthWrite: false, fog: false })
+	)
 	private readonly clouds = new MinecraftClouds()
 	private readonly hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 0.65)
 	private readonly keyLight = new THREE.DirectionalLight(0xffedc2, 1.05)
@@ -686,17 +692,21 @@ export class ViewerScene {
 
 	private updateEnvironment(): void {
 		if (this.modelRoot.children.length === 0) return
+		const daylight =
+			this.atmosphere.fixedDaylight ??
+			THREE.MathUtils.smoothstep(Math.sin((this.dayTime - 0.25) * Math.PI * 2), -0.12, 0.2)
 		const environmentScene = new THREE.Scene()
 		const sky = new THREE.Mesh(this.sky.geometry, this.sky.material)
 		sky.scale.setScalar(100)
-		environmentScene.add(sky)
+		const veil = environmentVeil(this.atmosphere, daylight, this.skyUniforms.uWeather.value)
+		this.skyVeil.material.color.setScalar(veil.grey)
+		this.skyVeil.material.opacity = veil.opacity
+		this.skyVeil.visible = veil.opacity > 0
+		environmentScene.add(sky, this.skyVeil)
 		const previous = this.environment
 		this.environment = this.environmentGenerator.fromScene(environmentScene, 0.08, 0.1, 200)
 		this.scene.environment = this.environment.texture
 		previous?.dispose()
-		const daylight =
-			this.atmosphere.fixedDaylight ??
-			THREE.MathUtils.smoothstep(Math.sin((this.dayTime - 0.25) * Math.PI * 2), -0.12, 0.2)
 		const horizon = new THREE.Color()
 			.setRGB(...this.atmosphere.nightHorizon)
 			.lerp(new THREE.Color().setRGB(...this.atmosphere.dayHorizon), daylight)
@@ -764,6 +774,8 @@ export class ViewerScene {
 		this.keyLight.shadow.dispose()
 		this.effects.dispose()
 		this.environment?.dispose()
+		this.skyVeil.geometry.dispose()
+		this.skyVeil.material.dispose()
 		this.environmentGenerator.dispose()
 		this.renderer.dispose()
 	}
