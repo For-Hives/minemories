@@ -361,16 +361,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				<main id="main">
 					<section className="site-hero" id="hero" aria-labelledby="hero-title">
 						<div className="mc-hero">
-							<span className="mc-hero__kicker" data-i18n="Minecraft Java mod · beta">
-								{t('Minecraft Java mod · beta')}
-							</span>
-							<h1
-								className="mc-hero__title"
-								id="hero-title"
-								tabIndex={-1}
-								data-i18n="There are evenings we wish we could keep."
-							>
+							<span className="mc-hero__kicker" data-i18n="There are evenings we wish we could keep.">
 								{t('There are evenings we wish we could keep.')}
+							</span>
+							<h1 className="mc-hero__title" id="hero-title" tabIndex={-1} data-i18n="Keep your Minecraft builds in 3D">
+								{t('Keep your Minecraft builds in 3D')}
 							</h1>
 							<p
 								className="mc-hero__lead"
@@ -395,6 +390,8 @@ export const HeroMarkup = memo(function HeroMarkup() {
 									{t('Java {versions}', supported)}
 								</span>
 								<Experimental prefix=" · " message="{experimental} in testing" />
+								{' · '}
+								<span data-i18n="Beta">{t('Beta')}</span>
 							</p>
 						</div>
 					</section>

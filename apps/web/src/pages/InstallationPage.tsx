@@ -72,7 +72,7 @@ function Welcome({
 						<T message={'Your first memory starts here'} />
 					</span>
 					<h1>
-						<T message={'Install the Minemories mod'} />
+						<T message={'Install Minemories'} />
 					</h1>
 					<p className="install-lead">
 						<T message={'One small file.'} />
@@ -151,7 +151,7 @@ export function InstallationPage() {
 			{guide.active ? (
 				<>
 					<h1 className="install-guide-title">
-						<T message={'Install the Minemories mod'} />
+						<T message={'Install Minemories'} />
 					</h1>
 					<InstallationGuide
 						guide={guide}

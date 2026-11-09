@@ -37,13 +37,13 @@ test('release history and changelog render headings, navigation and a direct API
 		expect(html).toContain('<noscript>')
 		expect(html).not.toContain('Minemories 0.2.')
 	}
-	expect(renderPage('/versions')).toContain('Versions du mod')
+	expect(renderPage('/versions')).toContain('Ce qui change dans Minemories')
 	expect(renderPage('/changelog')).toContain('Les nouveautés')
 })
 test('the download table and the guide welcome render without JavaScript, with the two ways in', () => {
 	const table = renderPage('/downloads')
 	expect(table).toContain('<h1')
-	expect(table).toContain('Tous les téléchargements')
+	expect(table).toContain('Télécharger Minemories')
 	expect(table).toContain('<table')
 	expect(table).toContain('scope="col"')
 	expect(table).toContain('scope="row"')

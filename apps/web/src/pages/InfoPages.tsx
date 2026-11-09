@@ -109,7 +109,7 @@ export function ConceptPage() {
 	const { t } = useI18n()
 	const [persona, setPersona] = useState<Persona>('admin')
 	return (
-		<InfoPage title="The builds remain, even when the season ends">
+		<InfoPage title="Your Minecraft world, ready to visit in 3D">
 			<SeasonDemo />
 			<div className="ex-can">
 				<CanList title="You can" items={canDo} tone="yes" />

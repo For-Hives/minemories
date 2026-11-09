@@ -37,7 +37,7 @@ function mountGuide() {
 test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
 	mountGuide()
 	fireEvent.click(screen.getByRole('link', { name: 'Le concept' }))
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('saison')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
 	fireEvent.click(screen.getByRole('link', { name: 'Créer mon premier souvenir, étape par étape' }))
 	fireEvent.click(screen.getByRole('tab', { name: 'Capturer' }))
 	expect(screen.getAllByText('/minemories export 16').length).toBeGreaterThan(0)
@@ -46,7 +46,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	const installLink = screen.getAllByRole('link', { name: 'Installe le mod' }).at(0)
 	if (!installLink) throw new Error('The install step has no link')
 	fireEvent.click(installLink)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer le mod Minemories')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
 	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
 	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ })).toBeTruthy()
 	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
@@ -176,7 +176,7 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(text).not.toMatch(/Sentry|27 octobre|doivent être documentées|avant activation/)
 })
 
-test('the legal page is titled as a legal notice and leaves out internal launch notes', () => {
+test('the legal page says who makes Minemories and leaves out internal launch notes', () => {
 	renderUi(
 		<I18nProvider initialLocale="fr">
 			<MemoryRouter>
@@ -184,7 +184,7 @@ test('the legal page is titled as a legal notice and leaves out internal launch 
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Mentions légales')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Qui fait Minemories')
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('Le code source est public sur GitHub ; le mod se télécharge sur la page Téléchargements.')
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)

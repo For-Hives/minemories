@@ -21,61 +21,73 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/explore',
-		title: 'Public gallery — Minemories',
+		title: 'Public gallery of Minecraft builds in 3D',
 		description: 'Explore Minecraft memories deliberately published after moderation and their rankings.',
 		indexable: true,
 		language: 'fr',
 	},
-	...discoveryPages.map(page => ({
-		path: page.path,
-		title: `${page.label} — Minemories`,
-		description: page.lead,
-		indexable: true,
-		language: 'fr' as const,
-	})),
+	...discoveryPages.map(page => {
+		if (page.path === '/sharing')
+			return {
+				path: page.path,
+				title: 'Share a Minecraft build in 3D with a link',
+				description:
+					'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
+				indexable: true,
+				language: 'fr' as const,
+			}
+		return {
+			path: page.path,
+			title: `${page.label} — Minemories`,
+			description: page.lead,
+			indexable: true,
+			language: 'fr' as const,
+		}
+	}),
 	{
 		path: '/',
-		title: 'Minemories — Worlds built together',
+		title: 'Minemories: your Minecraft builds in 3D',
 		description:
-			'Capture a Minecraft area as a 3D memory and revisit it in your browser. Installation, a private gallery and sharing you choose.',
+			'A Minecraft Java mod that keeps the corner where you play in 3D. Revisit it in your browser and show people around it with a link.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/concept',
-		title: 'The concept — Minemories',
-		description: 'Keep places built together: a 3D memory to revisit alongside your Minecraft world backup.',
+		title: 'See your Minecraft world in 3D in the browser',
+		description:
+			'Minemories keeps an area of your Java world and makes it visitable in 3D in the browser. What it does, and what it does not.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/how-it-works',
-		title: 'How it works — Minemories',
-		description: 'From Minecraft world to 3D memory: local capture, pairing, private gallery and sharing.',
+		title: 'How Minemories captures your Minecraft build',
+		description:
+			'A memory on demand or while you are AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/installation',
-		title: 'Install the mod — Minemories',
+		title: 'Install Minemories on Fabric, Forge or NeoForge',
 		description:
-			'Step-by-step guide for Minecraft Java with NeoForge, Fabric or Forge. Download the JAR, install it and create your first memory.',
+			'Choose your Minecraft Java version and your loader, install the mod, then connect the game to your gallery.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/downloads',
-		title: 'All downloads — Minemories',
+		title: 'Download Minemories for Fabric, Forge and NeoForge',
 		description:
-			'Every supported Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
+			'The Minemories JAR for each supported Minecraft Java version and each loader, with its SHA-256 checksum.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/versions',
-		title: 'Mod versions — Minemories',
-		description:
-			'Download Minemories JARs for each supported Minecraft Java version with NeoForge, Fabric or Forge, and find previous releases.',
+		title: 'What’s new in Minemories, version by version',
+		description: 'The notes of each Minemories mod version, dated.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -95,8 +107,8 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/faq',
-		title: 'Frequently asked questions — Minemories',
-		description: 'Mod compatibility, GLB files, AFK captures, privacy and sharing: answers to get started.',
+		title: 'Minemories questions: versions, safety, sharing',
+		description: 'Bedrock? Your version? The server? What goes online? Who sees your memories? The short answers.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -117,14 +129,14 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/terms',
-		title: 'Terms of use — Minemories',
+		title: 'Minemories terms of use',
 		description: 'Guidance for using this experimental version, capturing and sharing with respect for others.',
 		indexable: true,
 		language: 'fr',
 	},
 	{
 		path: '/legal',
-		title: 'Legal notice — Minemories',
+		title: 'About Minemories and legal notice',
 		description: 'Independent project, public repository and legal information still to be completed.',
 		indexable: true,
 		language: 'fr',
@@ -180,7 +192,6 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.net'
 /** The link preview of every public page (og:image, twitter:image): the logo on the night background, built by `bun run brand:icons`. */
 export const socialImage = { path: '/brand/og-image.png', width: 1200, height: 630, alt: 'Minemories' } as const
-
 export function structuredDataFor(page: PageMetadata) {
 	const canonical = new URL(page.path, siteOrigin).href
 	if (page.articleDate)

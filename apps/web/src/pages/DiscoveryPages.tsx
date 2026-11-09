@@ -146,7 +146,7 @@ export function ExplorerPage({ ranking = false }: { ranking?: boolean }) {
 	const [params] = useSearchParams()
 	const demo = params.get('demo') === '1'
 	const base = ranking ? '/ranking' : '/explore'
-	let title = t('Memories to explore')
+	let title = t('Places to visit')
 	if (ranking) title = t('Most loved memories')
 	if (demo) title = t('A little visit, just to see.')
 	return (

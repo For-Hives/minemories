@@ -11,7 +11,7 @@ test('every public page has translated metadata while retaining its existing can
 		expect(structuredDataFor(english).inLanguage).toBe('en')
 		expect(metadataFor(page.path).language).toBe('fr')
 	}
-	expect(metadataFor('/installation/', 'en').title).toBe('Install the mod — Minemories')
+	expect(metadataFor('/installation/', 'en').title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	expect(metadataFor('/share/private-token', 'en')).toMatchObject({
 		indexable: false,
 		language: 'en',

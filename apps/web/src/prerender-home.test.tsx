@@ -9,6 +9,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// the site, in French (the prerender language), readable without JavaScript
 	expect(html).toContain('<h1')
 	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
+	expect(html).toMatch(/<h1[^>]*>Garde tes constructions Minecraft en 3D<\/h1>/)
 	// the facts of the landing: every published Minecraft version, the M menu button and what leaves after linking
 	expect(html).toContain('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
 	expect(html).toContain('26.3 en test')
@@ -69,7 +70,7 @@ test('the landing’s version line, step and FAQ follow a language change made b
 	document.body.innerHTML = renderPage('/')
 	createHeroI18n('en', document).apply()
 	const compat = document.querySelector('.mc-hero__compat')?.textContent
-	expect(compat).toBe('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 in testing')
+	expect(compat).toBe('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 in testing · Beta')
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('For Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, with NeoForge, Fabric or Forge')
 	expect(text).toContain('26.3 is available for testing, not yet validated in game.')

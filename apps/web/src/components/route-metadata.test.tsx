@@ -73,10 +73,12 @@ test('switching locale updates titles, descriptions and schema without publishin
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	expect(document.title).toBe('Installer le mod — Minemories')
+	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
 	fireEvent.click(screen.getByRole('button', { name: 'English' }))
-	expect(document.title).toBe('Install the mod — Minemories')
-	expect(document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content).toContain('Step-by-step guide')
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
+	expect(document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content).toContain(
+		'Choose your Minecraft Java version'
+	)
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('en_US')
 	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}').inLanguage).toBe('en')
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/installation')

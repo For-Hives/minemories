@@ -61,7 +61,7 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 	expect(html.dataset.phase).toBe('site')
 	expect(html.classList.contains('scene-off')).toBe(true)
 	expect(html.classList.contains('scene-on')).toBe(false)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Il y a des soirs qu’on aimerait garder.')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Garde tes constructions Minecraft en 3D')
 	for (const id of ['hero', 'steps', 'share', 'more', 'faq', 'words'])
 		expect(document.getElementById(id)).not.toBeNull()
 	// the story is readable as text for people who cannot see the canvas
@@ -106,7 +106,7 @@ test('one language selector is visible, it is the app one, and the whole page fo
 		fireEvent.change(selector, { target: { value: 'en' } })
 	})
 	await waitFor(() =>
-		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('There are evenings we wish we could keep.')
+		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Keep your Minecraft builds in 3D')
 	)
 	expect(html.lang).toBe('en-US')
 	expect(screen.getAllByRole('link', { name: 'Sign in' })[0]?.getAttribute('href')).toBe('/login')

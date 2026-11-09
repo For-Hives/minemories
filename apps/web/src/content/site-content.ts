@@ -78,7 +78,7 @@ export const legalContent = {
 		],
 	},
 	legal: {
-		title: 'Legal notice',
+		title: 'Who makes Minemories',
 		sections: [
 			{
 				heading: 'Independent project',

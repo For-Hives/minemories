@@ -61,7 +61,7 @@ export function DownloadsPage() {
 	return (
 		<ContentLayout
 			eyebrow={t('MINEMORIES · DOWNLOADS')}
-			title={t('All downloads')}
+			title={t('Download Minemories')}
 			lead={t(
 				'Pick your Minecraft version and your loader, then download the matching file. A grayed cell has no file yet.'
 			)}

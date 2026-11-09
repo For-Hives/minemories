@@ -20,7 +20,7 @@ export const discoveryPages = [
 	{
 		path: '/sharing',
 		label: 'A gallery to share',
-		title: 'Invite people back, even if they no longer play.',
+		title: 'Show people around your base, even those who don’t play',
 		lead: 'No need to launch Minecraft to show a build. A 3D memory, a link you choose to share, and others can explore it.',
 		accent: 'sky',
 		points: ['A gallery that starts private', 'A link accessible without an account', 'Sharing you can revoke'],

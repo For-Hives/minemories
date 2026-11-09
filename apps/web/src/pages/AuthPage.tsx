@@ -89,7 +89,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					</nav>
 					<header className="auth-heading">
 						<span className="auth-eyebrow">{t('YOUR WORLDS ARE WAITING')}</span>
-						<h1>{creating ? t('Your album starts here.') : t('Welcome home.')}</h1>
+						<h1>{creating ? t('Your album of worlds') : t('Good to see you again')}</h1>
 						<p>
 							{creating
 								? t('A space to keep your captures and choose who to share them with.')
