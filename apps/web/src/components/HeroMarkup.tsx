@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Link } from 'react-router'
 import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
+import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
 import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage, HeroNavLinks } from './HeroParts'
 
@@ -12,6 +13,21 @@ import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage, HeroNavLinks } 
  * What depends on the session or the language is in HeroParts.tsx, as separate components that update themselves.
  */
 const t = (key: string, values?: TranslateValues) => translate('fr', key, { name: 'Efe', ...values })
+/** The published Minecraft versions, from mod/targets.json; the film's translation bridge re-reads them from `data-i18n-values`. */
+const supported = supportedMinecraft()
+const supportedValues = JSON.stringify(supported)
+/** The experimental versions, as a sentence after the validated ones; nothing when every published version is validated. */
+function Experimental({ prefix = ' ', message }: { prefix?: string; message: string }) {
+	if (!supported.experimental) return null
+	return (
+		<>
+			{prefix}
+			<span data-i18n={message} data-i18n-values={supportedValues}>
+				{t(message, supported)}
+			</span>
+		</>
+	)
+}
 
 /** The timeline on the right edge of the film (charter.css section 11; wired by hero.js `wireRail`): the five chapters are marks, the thumb is a vertical slider. */
 function FilmRail() {
@@ -374,8 +390,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 									<span data-i18n="Watch the film again">{t('Watch the film again')}</span>
 								</button>
 							</div>
-							<p className="mc-hero__compat" data-i18n="Java 1.21.1 · NeoForge, Fabric, Forge">
-								{t('Java 1.21.1 · NeoForge, Fabric, Forge')}
+							<p className="mc-hero__compat">
+								<span data-i18n="Java {versions}" data-i18n-values={supportedValues}>
+									{t('Java {versions}', supported)}
+								</span>
+								<Experimental prefix=" · " message="{experimental} in testing" />
 							</p>
 						</div>
 					</section>
@@ -393,8 +412,15 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								<h3 className="mc-step__title" data-i18n="Add the mod to your game">
 									{t('Add the mod to your game')}
 								</h3>
-								<p className="mc-step__body" data-i18n="For Minecraft Java 1.21.1, with NeoForge, Fabric or Forge.">
-									{t('For Minecraft Java 1.21.1, with NeoForge, Fabric or Forge.')}
+								<p
+									className="mc-step__body"
+									data-i18n="For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version."
+									data-i18n-values={supportedValues}
+								>
+									{t(
+										'For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.',
+										supported
+									)}
 								</p>
 							</li>
 							<li className="mc-step">
@@ -513,11 +539,17 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								<summary className="mc-faq__q" data-i18n="Which versions does it work with?">
 									{t('Which versions does it work with?')}
 								</summary>
-								<p
-									className="mc-faq__a"
-									data-i18n="Minecraft Java 1.21.1, with NeoForge, Fabric or Forge. It is a beta."
-								>
-									{t('Minecraft Java 1.21.1, with NeoForge, Fabric or Forge. It is a beta.')}
+								<p className="mc-faq__a">
+									<span
+										data-i18n="Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta."
+										data-i18n-values={supportedValues}
+									>
+										{t(
+											'Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.',
+											supported
+										)}
+									</span>
+									<Experimental message="{experimental} is available for testing, not yet validated in game." />
 								</p>
 							</details>
 						</div>

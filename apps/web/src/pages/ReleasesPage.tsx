@@ -40,7 +40,7 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 				<h2>{t('Your first memory starts here.')}</h2>
 				<p>
 					{t(
-						'Choose the latest version for Minecraft Java 1.21.1, then the JAR for your loader: NeoForge, Fabric (also used under Quilt) or Forge. Close the game, then keep just one Minemories JAR in that profile’s mods folder.'
+						'Choose the latest version, then the JAR matching your Minecraft version and your loader: NeoForge, Fabric (also used under Quilt) or Forge. Close the game, then keep just one Minemories JAR in that profile’s mods folder.'
 					)}
 				</p>
 				<p className="mm-release-muted">

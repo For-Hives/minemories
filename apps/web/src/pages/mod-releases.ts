@@ -24,6 +24,8 @@ export interface LoaderTarget {
 	loaderVersion: string
 	java: string
 	fabricApi: string | null
+	/** False while the target is published but not yet exercised in game (an experimental Minecraft version). */
+	validated: boolean
 }
 export interface LoaderDownload {
 	target: LoaderTarget
@@ -53,6 +55,7 @@ export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =
 					loaderVersion: target.loaderVersion,
 					java: target.java,
 					fabricApi: 'fabricApi' in target ? target.fabricApi : null,
+					validated: target.validatedInGame,
 				},
 			]
 		: []
@@ -66,13 +69,39 @@ export function downloadFor(release: ModRelease, loader: string, minecraft?: str
 		) ?? null
 	)
 }
+const versionParts = (version: string) => version.split('.').map(Number)
+/** Numeric comparison, part by part from the major: 26.3 is newer than 1.21.11, which is newer than 1.21.1. */
+export function compareMinecraft(a: string, b: string): number {
+	const [x, y] = [versionParts(a), versionParts(b)]
+	for (let index = 0; index < Math.max(x.length, y.length); index++) {
+		const difference = (x[index] ?? 0) - (y[index] ?? 0)
+		if (difference !== 0) return difference
+	}
+	return 0
+}
 /** Minecraft versions with at least one published target, newest first. */
 export function minecraftVersions(targets: LoaderTarget[] = loaderTargets): string[] {
-	const parts = (version: string) => version.split('.').map(Number)
-	return [...new Set(targets.map(target => target.minecraft))].sort((a, b) => {
-		const [x, y] = [parts(a), parts(b)]
-		return (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
-	})
+	return [...new Set(targets.map(target => target.minecraft))].sort((a, b) => compareMinecraft(b, a))
+}
+/** A Minecraft version none of whose published targets has been exercised in game yet. */
+export function isExperimentalMinecraft(minecraft: string, targets: LoaderTarget[] = loaderTargets): boolean {
+	const published = targets.filter(target => target.minecraft === minecraft)
+	return published.length > 0 && published.every(target => !target.validated)
+}
+/**
+ * The published Minecraft versions as the site words them, oldest first and joined with commas (no localized "and",
+ * so the landing's static translation values stay valid in every language): validated ones, then experimental ones.
+ */
+export function supportedMinecraft(targets: LoaderTarget[] = loaderTargets): {
+	versions: string
+	experimental: string
+} {
+	const versions = minecraftVersions(targets).reverse()
+	const experimental = versions.filter(version => isExperimentalMinecraft(version, targets))
+	return {
+		versions: versions.filter(version => !experimental.includes(version)).join(', '),
+		experimental: experimental.join(', '),
+	}
 }
 
 /** Turns the API index into releases: one per version, grouping the loader JARs published for it. */

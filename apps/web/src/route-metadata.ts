@@ -59,7 +59,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/installation',
 		title: 'Install the mod — Minemories',
 		description:
-			'Step-by-step guide for Minecraft Java 1.21.1 and NeoForge 21.1.248. Download the JAR, install it and create your first memory.',
+			'Step-by-step guide for Minecraft Java with NeoForge, Fabric or Forge. Download the JAR, install it and create your first memory.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -67,7 +67,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/downloads',
 		title: 'All downloads — Minemories',
 		description:
-			'Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
+			'Every supported Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
 		indexable: true,
 		language: 'fr',
 	},
@@ -75,7 +75,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/versions',
 		title: 'Mod versions — Minemories',
 		description:
-			'Download Minemories JARs for Minecraft Java 1.21.1 with NeoForge, Fabric or Forge, and find previous releases.',
+			'Download Minemories JARs for each supported Minecraft Java version with NeoForge, Fabric or Forge, and find previous releases.',
 		indexable: true,
 		language: 'fr',
 	},

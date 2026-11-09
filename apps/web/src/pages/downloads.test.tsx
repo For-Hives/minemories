@@ -40,7 +40,7 @@ test('the grid lists every Minecraft version newest first against NeoForge, Fabr
 	const grid = downloadGrid(parseIndex(modIndexFixture(published)))
 	expect(grid.loaders.map(item => item.name)).toEqual(['NeoForge', 'Fabric', 'Forge'])
 	expect(grid.rows.map(row => row.minecraft)).toEqual(minecraftVersions())
-	expect(grid.rows[0]?.minecraft).toBe('1.21.11')
+	expect(grid.rows[0]?.minecraft).toBe('26.3')
 	const row = (version: string) => grid.rows.find(item => item.minecraft === version)?.cells ?? []
 	expect(row('1.21.1').map(cell => cell.download?.url)).toEqual([
 		downloadUrl('neoforge-mc1.21.1', '0.2.0'),
@@ -84,6 +84,9 @@ test('published cells offer the download, size and checksum; the others say why 
 	expect(within(row).getByText('Pas encore publié')).toBeTruthy()
 	const recent = screen.getByRole('rowheader', { name: /1\.21\.11/ }).closest('tr') as HTMLElement
 	expect(within(recent).getByText('La plus utilisée')).toBeTruthy()
+	const experimental = screen.getByRole('rowheader', { name: /26\.3/ })
+	expect(experimental.textContent).toContain('Expérimental · pas encore validé en jeu')
+	expect(screen.getAllByRole('rowheader')[0]).toBe(experimental)
 	expect(within(recent).getByText(/0\.3\.0-beta\.1 · 5 MiB/)).toBeTruthy()
 	expect(within(recent).getAllByText('Pas encore publié')).toHaveLength(2)
 	const old = screen.getByRole('rowheader', { name: /1\.18\.2/ }).closest('tr') as HTMLElement

@@ -4,11 +4,12 @@ import { T, useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
 import { guideLink, mostUsed, validatedMinecraft } from './installation-state'
-import { indexUrl, latestDownloadUrl, loaderTargets, quiltTestedVersion } from './mod-releases'
+import { indexUrl, isExperimentalMinecraft, latestDownloadUrl, loaderTargets, quiltTestedVersion } from './mod-releases'
 import { useModReleases } from './useModReleases'
 import './downloads.css'
 
 function rowBadge(minecraft: string): string | null {
+	if (isExperimentalMinecraft(minecraft)) return 'Experimental · not validated in game yet'
 	if (minecraft === mostUsed.minecraft) return 'Most used'
 	return minecraft === validatedMinecraft ? 'Validated in game' : null
 }

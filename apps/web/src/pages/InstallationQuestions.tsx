@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { T, useI18n } from '../i18n/I18n'
 import { type System, systems } from '../lib/platform'
 import { loadersFor, type StepId } from './installation-state'
-import { minecraftVersions } from './mod-releases'
+import { isExperimentalMinecraft, minecraftVersions } from './mod-releases'
 
 export const systemNames: Record<System, string> = { windows: 'Windows', mac: 'macOS', linux: 'Linux' }
 
@@ -98,7 +98,11 @@ function MinecraftQuestion({
 	onSelect: (value: Partial<Selection>) => void
 }) {
 	const { t } = useI18n()
-	const choices = minecraftVersions().map(version => ({ value: version, label: version }))
+	const choices = minecraftVersions().map(version => ({
+		value: version,
+		label: version,
+		...(isExperimentalMinecraft(version) && { badge: t('Experimental · not validated in game yet') }),
+	}))
 	return (
 		<>
 			<p className="install-goal">

@@ -98,8 +98,11 @@ test('the guided installation asks three light questions, then walks through the
 	expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Continuer', '← Retour'])
 	next()
 	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
-	// Only the version itself: no loader list or badge under it.
+	// Only the version itself: no loader list, and a badge only on a version not validated in game yet.
 	expect(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }).closest('label')?.textContent).toBe('1.21.11')
+	expect(screen.getByRole('radio', { name: /^26\.3/ }).closest('label')?.textContent).toBe(
+		'26.3Expérimental · pas encore validé en jeu'
+	)
 	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }))
 	next()
 	expect(title()).toBe('Quel loader de mods utilises-tu ?')

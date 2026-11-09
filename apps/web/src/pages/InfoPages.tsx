@@ -17,6 +17,7 @@ import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline } from '../components/ui'
 import type { DemoTheme } from '../content/discovery'
 import { T, useI18n } from '../i18n/I18n'
+import { supportedMinecraft } from './mod-releases'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
@@ -449,7 +450,7 @@ const questions: Question[] = [
 		glyph: 'cube',
 		question: 'Can I keep a vanilla build?',
 		answer:
-			'Yes, if you can open a copy on Java 1.21.1 with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. No Bedrock or consoles.',
+			'Yes, with Minecraft Java {versions} and the loader listed for your version (NeoForge, Fabric or Forge); Quilt uses the Fabric JAR. No Bedrock or consoles.',
 		verdict: 'yes',
 	},
 	{
@@ -543,7 +544,7 @@ export function FaqPage() {
 										{entry.verdict && <VerdictChip verdict={entry.verdict} />}
 									</summary>
 									<div className="ex-row-body">
-										<p>{t(entry.answer)}</p>
+										<p>{t(entry.answer, supportedMinecraft())}</p>
 									</div>
 								</details>
 							))}

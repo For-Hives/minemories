@@ -4,7 +4,16 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { modIndexFixture } from '../testing/mod-index'
-import { downloadFor, downloadUrl, loaderTargets, minecraftVersions, parseIndex } from './mod-releases'
+import {
+	compareMinecraft,
+	downloadFor,
+	downloadUrl,
+	isExperimentalMinecraft,
+	loaderTargets,
+	minecraftVersions,
+	parseIndex,
+	supportedMinecraft,
+} from './mod-releases'
 import { ReleasesPage } from './ReleasesPage'
 
 const digestChar: Record<string, string> = { neoforge: 'a', fabric: 'b', forge: 'c' }
@@ -189,9 +198,14 @@ test('release matrix follows the enabled targets of mod/targets.json', () => {
 		['forge-mc1.19.2', '43.5.2'],
 		['fabric-mc1.19.2', '0.20.1'],
 		['forge-mc1.18.2', '40.3.12'],
+		['fabric-mc26.3', '0.19.5'],
 	])
 	expect(loaderTargets.find(target => target.loader === 'fabric')?.fabricApi).toBe('0.116.17+1.21.1')
-	expect(minecraftVersions()).toEqual(['1.21.11', '1.21.1', '1.20.1', '1.19.2', '1.18.2'])
+	expect(minecraftVersions()).toEqual(['26.3', '1.21.11', '1.21.1', '1.20.1', '1.19.2', '1.18.2'])
+	expect(isExperimentalMinecraft('26.3')).toBe(true)
+	expect(isExperimentalMinecraft('1.21.1')).toBe(false)
+	expect(isExperimentalMinecraft('1.20.4')).toBe(false)
+	expect(supportedMinecraft()).toEqual({ versions: '1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11', experimental: '26.3' })
 	expect(loaderTargets.find(target => target.loader === 'forge')?.fabricApi).toBeNull()
 })
 
@@ -218,7 +232,11 @@ test('a multi-loader version lists every loader JAR with its validated versions,
 	expect(view.getByText('Install Fabric API separately. This same JAR is also tested under Quilt 0.30.1.')).toBeTruthy()
 	expect(view.getAllByText('0.29 MiB')).toHaveLength(3)
 	expect(view.queryByRole('link', { name: 'Download checksum' })).toBeNull()
-	expect(screen.getByText(/the JAR for your loader: NeoForge, Fabric \(also used under Quilt\) or Forge/)).toBeTruthy()
+	expect(
+		screen.getByText(
+			/the JAR matching your Minecraft version and your loader: NeoForge, Fabric \(also used under Quilt\) or Forge/
+		)
+	).toBeTruthy()
 })
 
 test('a version missing some loaders only lists the JARs it actually ships', async () => {
@@ -243,4 +261,20 @@ test('downloadFor selects by loader and optionally by Minecraft version', () => 
 	expect(downloadFor(release, 'fabric', '1.19.2')?.target.id).toBe('fabric-mc1.19.2')
 	expect(downloadFor(release, 'forge')).toBeNull()
 	expect(downloadFor(release, 'fabric', '1.8')).toBeNull()
+})
+
+test('Minecraft versions compare from the major number, so 26.3 is the newest and a missing part counts as zero', () => {
+	expect(['1.21.1', '26.3', '1.9', '1.21.11', '1.21'].sort(compareMinecraft)).toEqual([
+		'1.9',
+		'1.21',
+		'1.21.1',
+		'1.21.11',
+		'26.3',
+	])
+	expect(compareMinecraft('1.21', '1.21.0')).toBe(0)
+	const validated = loaderTargets.filter(target => target.validated)
+	expect(supportedMinecraft(validated)).toEqual({
+		versions: '1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11',
+		experimental: '',
+	})
 })

@@ -84,7 +84,10 @@ test('guides describe the current M screen labels and its advanced settings tabs
 	const faq = document.querySelector('article')?.textContent ?? ''
 	expect(faq).not.toMatch(outdatedMenu)
 	expect(faq).toContain('M → My memories lists dated captures')
-	expect(faq).toContain('with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR')
+	expect(faq).toContain(
+		'Yes, with Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 and the loader listed for your version'
+	)
+	expect(faq).not.toContain('Java 1.21.1 with')
 	expect(faq).not.toContain('NeoForge 21.1.248')
 })
 
