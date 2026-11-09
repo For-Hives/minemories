@@ -60,6 +60,8 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('heading', { name: '5. Partager seulement ce que tu choisis' })).toBeTruthy()
 	expect(document.body.textContent).toContain('clique sur « Partager » puis « Créer un lien »')
 	expect(document.body.textContent).not.toMatch(/« Share »|« Create a link »/)
+	expect(document.body.textContent).not.toContain('Le suivi commence avec cette version')
+	expect(document.body.textContent).toContain('La profondeur visitée est enregistrée sur ton ordinateur uniquement.')
 })
 
 function mountEnglish(ui: React.ReactNode) {
@@ -150,4 +152,20 @@ test('French privacy page translates the new mod diagnostics and download list s
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('rien n’est jamais envoyé avant d’avoir appairé le jeu')
 	expect(text).toContain('qui reçoit ton adresse IP comme pour toute requête au service')
+	// No internal deployment notes reach the public page.
+	expect(text).not.toMatch(/Sentry|27 octobre|doivent être documentées|avant activation/)
+})
+
+test('the legal page is titled as a legal notice and leaves out internal launch notes', () => {
+	renderUi(
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter>
+				<LegalPage kind="legal" />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Mentions légales')
+	const text = document.body.textContent ?? ''
+	expect(text).toContain('Le code source est public sur GitHub ; le mod se télécharge sur la page Téléchargements.')
+	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
 })

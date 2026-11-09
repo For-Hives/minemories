@@ -206,7 +206,7 @@ function CaptureStep() {
 				<p>
 					<T
 						message={
-							'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
+							'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. The visited depth is recorded on your computer only. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
 						}
 					/>
 				</p>

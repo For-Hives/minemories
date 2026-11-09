@@ -124,7 +124,7 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/legal',
-		title: 'About the service — Minemories',
+		title: 'Legal notice — Minemories',
 		description: 'Independent project, public repository and legal information still to be completed.',
 		indexable: true,
 		language: 'fr',

@@ -44,11 +44,11 @@ export const legalContent = {
 			},
 			{
 				heading: 'Optional web diagnostics',
-				body: 'Web diagnostics are off by default. If this deployment configures Sentry, you can allow them and withdraw consent on this page for this device. Only fixed error categories and public editorial page routes are transmitted, without raw messages, account details, captures, codes or private URLs. Sign-in, gallery, viewer and sharing pages are excluded. The receiving server sees the connection IP address; its region and retention must be documented before activating the service.',
+				body: 'Web diagnostics are off by default. When they are available, a switch on this page lets you allow them and withdraw consent for this device. Only fixed error categories and public editorial page routes are transmitted, without raw messages, account details, captures, codes or private URLs. Sign-in, gallery, viewer and sharing pages are excluded. The receiving server sees the connection IP address.',
 			},
 			{
 				heading: 'Diagnostics in the Minecraft mod',
-				body: "Since 27 October 2026, technical diagnostics in the mod are on by default, but nothing is ever sent before you pair the game with your account. An explicit refusal is kept, even after pairing, disconnecting or changing API. Reports are sanitized: versions, the failed step and a short technical trace, without raw messages, full crash logs, URLs, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight pending reports, for at most seven days. Turning diagnostics off or changing account or API purges this queue; turning them off also asks the server to delete this device's reports, and if it cannot be reached, its retention applies. Turn them off in M → Settings → Privacy → Diagnostics.",
+				body: "Technical diagnostics in the mod are on by default, but nothing is ever sent before you pair the game with your account. An explicit refusal is kept, even after pairing, disconnecting or changing API. Reports are sanitized: versions, the failed step and a short technical trace, without raw messages, full crash logs, URLs, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight pending reports, for at most seven days. Turning diagnostics off or changing account or API purges this queue; turning them off also asks the server to delete this device's reports, and if it cannot be reached, its retention applies. Turn them off in M → Settings → Privacy → Diagnostics.",
 			},
 			{
 				heading: 'Account and gallery',
@@ -78,15 +78,15 @@ export const legalContent = {
 		],
 	},
 	legal: {
-		title: 'About this service',
+		title: 'Legal notice',
 		sections: [
 			{
 				heading: 'Independent project',
-				body: 'Minemories is an independent, unofficial project, not endorsed by Mojang or Microsoft. Source code and mod releases are available in the public For-Hives/minemories repository.',
+				body: 'Minemories is an independent, unofficial project, not endorsed by Mojang or Microsoft. The source code is public on GitHub; the mod is downloaded from the Downloads page.',
 			},
 			{
 				heading: 'Information to complete',
-				body: 'Publisher and hosting details and the personal-data contact still need to be completed before commercial launch. This page describes the current project; it is not a finalized legal notice.',
+				body: 'This page does not list the publisher, the host or a personal-data contact yet. It describes the current project; it is not a finalized legal notice.',
 			},
 		],
 	},
