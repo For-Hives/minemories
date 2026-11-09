@@ -136,7 +136,7 @@
 	"Back to moderation": "검토로 돌아가기",
 	"Back to my gallery": "내 갤러리로 돌아가기",
 	"Back to public gallery": "공개 갤러리로 돌아가기",
-	"Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.": "공유하기 전에 캡처 및 관련 정보를 확인하세요. 좌표, 서버 또는 세계 이름, 싱글 플레이어 세계 시드가 기록될 수 있습니다. 개인정보가 포함된 장소나 문구는 피하고, 다른 시공업체의 허가를 받으세요.",
+	"Avoid places or text with personal information, and ask the other builders first.": "개인 정보가 담긴 장소나 글은 피하고, 함께 지은 사람들에게 먼저 물어보세요.",
 	"Blog": "블로그",
 	"Browse": "찾아보기",
 	"Build": "빌드",
@@ -1597,5 +1597,6 @@
 	"Read Minemories in this language?": "Minemories를 한국어로 볼까요?",
 	"Switch to this language": "한국어로 전환",
 	"No thanks": "괜찮아요",
-	"In Minecraft: M → type this code → Connect.": "Minecraft에서: M → 이 코드 입력 → 연결하기."
+	"In Minecraft: M → type this code → Connect.": "Minecraft에서: M → 이 코드 입력 → 연결하기.",
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "링크에는 좌표, 월드 이름, 시드(싱글플레이) 또는 서버 이름이나 주소도 표시됩니다."
 }

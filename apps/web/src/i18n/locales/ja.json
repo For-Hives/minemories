@@ -136,7 +136,7 @@
 	"Back to moderation": "モデレーションに戻る",
 	"Back to my gallery": "私のギャラリーに戻る",
 	"Back to public gallery": "公開ギャラリーに戻る",
-	"Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.": "共有する前に、キャプチャとその関連情報を確認してください。座標、サーバー名またはワールド名、シングル プレイヤーのワールド シードが記録されている可能性があります。個人情報を含む場所や文章は避け、他の建設業者に許可を求めてください。",
+	"Avoid places or text with personal information, and ask the other builders first.": "個人情報を含む場所や文字は避け、一緒に建てた人に先に確認しましょう。",
 	"Blog": "ブログ",
 	"Browse": "閲覧する",
 	"Build": "ビルドする",
@@ -1597,5 +1597,6 @@
 	"Read Minemories in this language?": "Minemories を日本語で読みますか？",
 	"Switch to this language": "日本語に切り替える",
 	"No thanks": "いいえ、けっこうです",
-	"In Minecraft: M → type this code → Connect.": "Minecraft で: M → このコードを入力 → 接続する。"
+	"In Minecraft: M → type this code → Connect.": "Minecraft で: M → このコードを入力 → 接続する。",
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "リンクには、座標、ワールド名、シード値（シングルプレイ）、またはサーバー名やアドレスも表示されます。"
 }

@@ -136,7 +136,7 @@
 	"Back to moderation": "Voltar à moderação",
 	"Back to my gallery": "Voltar para minha galeria",
 	"Back to public gallery": "Voltar para a galeria pública",
-	"Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.": "Antes de compartilhar, verifique a captura e suas informações associadas: coordenadas, nome do servidor ou mundo e semente mundial para um jogador podem ser registradas. Evite locais ou textos que contenham informações pessoais e peça permissão aos demais construtores.",
+	"Avoid places or text with personal information, and ask the other builders first.": "Evite lugares ou textos com informações pessoais e pergunte antes aos outros construtores.",
 	"Blog": "Blog",
 	"Browse": "Navegar",
 	"Build": "Construir",
@@ -1597,5 +1597,6 @@
 	"Read Minemories in this language?": "Ler o Minemories em português?",
 	"Switch to this language": "Mudar para português",
 	"No thanks": "Agora não",
-	"In Minecraft: M → type this code → Connect.": "No Minecraft: M → digite este código → Conectar."
+	"In Minecraft: M → type this code → Connect.": "No Minecraft: M → digite este código → Conectar.",
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "O link também mostra as coordenadas, o nome do mundo, a seed (no modo um jogador) ou o nome ou endereço do servidor."
 }

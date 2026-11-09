@@ -371,9 +371,10 @@ function ShareStep() {
 				<p>
 					<T
 						message={
-							'Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.'
+							'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
 						}
-					/>
+					/>{' '}
+					<T message={'Avoid places or text with personal information, and ask the other builders first.'} />
 				</p>
 			</More>
 		</>

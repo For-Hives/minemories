@@ -136,7 +136,7 @@
 	"Back to moderation": "Back to moderation",
 	"Back to my gallery": "Back to my gallery",
 	"Back to public gallery": "Back to public gallery",
-	"Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.": "Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.",
+	"Avoid places or text with personal information, and ask the other builders first.": "Avoid places or text with personal information, and ask the other builders first.",
 	"Blog": "Blog",
 	"Browse": "Browse",
 	"Build": "Build",
@@ -1597,5 +1597,6 @@
 	"Read Minemories in this language?": "Read Minemories in English?",
 	"Switch to this language": "Switch to English",
 	"No thanks": "No thanks",
-	"In Minecraft: M → type this code → Connect.": "In Minecraft: M → type this code → Connect."
+	"In Minecraft: M → type this code → Connect.": "In Minecraft: M → type this code → Connect.",
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "The link also shows the coordinates, the world name, the seed (in single player) or the server name or address."
 }

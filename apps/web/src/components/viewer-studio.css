@@ -1096,6 +1096,12 @@ h2.cinema-panel-title {
 .memory-share-panel [role="alert"] {
 	color: var(--bad);
 }
+/* What a link exposes beyond the scene, said before a link exists. */
+.memory-share-panel .memory-share-warning {
+	padding-left: var(--ds-sp-2);
+	border-left: var(--gp) solid var(--ember);
+	color: var(--text);
+}
 .memory-share-panel .mc-btn {
 	--_h: var(--ds-hit);
 	justify-self: start;

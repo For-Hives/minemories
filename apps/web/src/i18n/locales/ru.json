@@ -136,7 +136,7 @@
 	"Back to moderation": "Вернуться на модерацию",
 	"Back to my gallery": "Вернуться в мою галерею",
 	"Back to public gallery": "Вернуться в общедоступную галерею",
-	"Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.": "Прежде чем поделиться, проверьте захват и связанную с ним информацию: могут быть записаны координаты, имя сервера или мира, а также начальное число мира для одиночной игры. Избегайте мест или текста, содержащих личную информацию, и спрашивайте разрешения у других строителей.",
+	"Avoid places or text with personal information, and ask the other builders first.": "Избегайте мест и текстов с личной информацией и сначала спросите других строителей.",
 	"Blog": "Блог",
 	"Browse": "Обзор",
 	"Build": "Построить",
@@ -1597,5 +1597,6 @@
 	"Read Minemories in this language?": "Читать Minemories на русском?",
 	"Switch to this language": "Перейти на русский",
 	"No thanks": "Нет, спасибо",
-	"In Minecraft: M → type this code → Connect.": "В Minecraft: M → введите этот код → Подключить."
+	"In Minecraft: M → type this code → Connect.": "В Minecraft: M → введите этот код → Подключить.",
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "Ссылка также показывает координаты, название мира, сид (в одиночной игре) или название либо адрес сервера."
 }

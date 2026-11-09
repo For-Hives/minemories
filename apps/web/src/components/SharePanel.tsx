@@ -207,6 +207,12 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 		<div className="memory-share-panel" aria-live="polite">
 			<h3>{t('Share by link')}</h3>
 			<p>{t('Anyone with the link can visit without an account. This memory stays out of the public gallery.')}</p>
+			{/* Interim warning until /api/shared stops returning the capture's location and world identity (decision D1). */}
+			<p className="memory-share-warning">
+				{t(
+					'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
+				)}
+			</p>
 			{hasWorld && (
 				<ScopeSwitch
 					scope={active}
