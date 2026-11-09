@@ -110,7 +110,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js'
 import { ConvexHull } from 'three/addons/math/ConvexHull.js'
-import { hasLegacySrgbColours } from '../lib/glb-colours'
+import { emissiveToLegacy, hasLegacySrgbColours } from '../lib/glb-colours'
 // v11 (animation pass): pure curve tools (named eases, key tracks, closed-form springs). No state: the film stays a pure function of time.
 import { EASE, track, springKick, springStep, window4, smooth as smoothQuintic } from './anim/curves.js'
 
@@ -4284,7 +4284,8 @@ function prepareCapture(root, asset) {
 				if (fixed && material.color.getHex() === 0xffffff) material.color.setHex(fixed, THREE.LinearSRGBColorSpace)
 			} else {
 				material.color.convertLinearToSRGB()
-				material.emissive?.convertLinearToSRGB()
+				const e = material.emissive
+				if (e) e.setRGB(...emissiveToLegacy([e.r, e.g, e.b]), THREE.LinearSRGBColorSpace)
 			}
 			material.userData.rawColor = material.color.getHex(THREE.LinearSRGBColorSpace)
 			// Cobweb: white cross texture (normals upward), which stood out as a luminous spot at night and in the

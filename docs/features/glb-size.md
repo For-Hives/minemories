@@ -149,7 +149,10 @@ Readers tell the two apart by `asset.extras.minemories.format`:
 
 - The viewer (`apps/web/src/lib/glb-colours.ts`, applied in `viewer-scene.ts`) converts base colour, emissive colour
   and imported light colours of files **without format 3** (format 1–2, or no Minemories metadata) once per
-  material, so an old capture and a new one of the same place look the same.
+  material, so an old capture and a new one of the same place look the same. `emissiveFactor` is the tint times a
+  strength (`emission × 0.65`): only the hue goes through the curve, the strength (largest channel) is kept, which
+  is exact for the untinted emissive blocks captures contain (converting the whole value would dim a torch from
+  0.61 to 0.33).
 - The landing film (`hero/scene.js`, `prepareCapture`) keeps its look on both: it converts legacy factors as before
   and only patches the old white fixed tints (spruce, birch, lily pad) on legacy files; a format-3 factor is brought
   back to sRGB first so the cobweb dimming and the collar colour stay identical. The shipped hero captures were
