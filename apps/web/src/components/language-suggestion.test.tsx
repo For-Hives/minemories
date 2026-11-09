@@ -41,7 +41,9 @@ test('an English browser on a public page keeps the page in French and is offere
 	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
 	expect(document.documentElement.lang).toBe('fr-FR')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
-	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}').inLanguage).toBe('fr')
+	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
+		'fr'
+	)
 	expect(card.getAttribute('lang')).toBe('en-US')
 	expect(card.hasAttribute('data-nosnippet')).toBe(true)
 	expect(card.textContent).toContain('Read Minemories in English?')

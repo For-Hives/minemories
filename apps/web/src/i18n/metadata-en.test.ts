@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
-import { metadataFor, publicMetadata, structuredDataFor } from '../route-metadata'
+import { metadataFor, publicMetadata } from '../route-metadata'
+import { structuredDataFor } from '../structured-data'
 
 test('every public page has translated metadata while retaining its existing canonical path', () => {
 	for (const page of publicMetadata) {
@@ -8,7 +9,7 @@ test('every public page has translated metadata while retaining its existing can
 		expect(english.language).toBe('en')
 		expect(english.title).not.toBe(page.title)
 		expect(english.description).not.toBe(page.description)
-		expect(structuredDataFor(english).inLanguage).toBe('en')
+		expect(structuredDataFor(english)['@graph'][0]?.inLanguage).toBe('en')
 		expect(metadataFor(page.path).language).toBe('fr')
 	}
 	expect(metadataFor('/installation/', 'en').title).toBe('Install Minemories on Fabric, Forge or NeoForge')

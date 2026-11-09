@@ -16,8 +16,8 @@ export type RoadmapColumnId = (typeof roadmapColumns)[number]
 export const roadmapAreas: readonly RoadmapArea[] = roadmapArea.options
 /** The API caps each column at this many items and reports the rest as "more". */
 export const roadmapColumnCap = ROADMAP_COLUMN_LIMIT
+export const repositoryUrl = 'https://github.com/For-Hives/minemories'
 export const roadmapIssuesUrl = 'https://github.com/For-Hives/minemories/issues?q=label%3Aroadmap'
-const repositoryUrl = 'https://github.com/For-Hives/minemories'
 const issueUrlPrefix = `${repositoryUrl}/issues/`
 /** The API caps the notes of the latest release at this many and reports the rest as "more". */
 export const releaseNoteCap = ROADMAP_RELEASE_NOTES_LIMIT

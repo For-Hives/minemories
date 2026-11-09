@@ -25,7 +25,8 @@ test('route changes retain article schema and remove public metadata on a privat
 	expect(document.title).toContain('A first memory')
 	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
 	const schema = document.querySelector('script[data-page-schema]')?.textContent
-	expect(JSON.parse(schema ?? '{}')['@type']).toBe('Article')
+	expect(JSON.parse(schema ?? '{}')['@graph'][0]['@type']).toBe('Article')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:site_name"]')?.content).toBe('Minemories')
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/blog/premier-souvenir')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content).toBe(
 		'https://minemories.net/brand/og-image.png'
@@ -42,6 +43,7 @@ test('route changes retain article schema and remove public metadata on a privat
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 	expect(document.querySelector('link[rel="canonical"]')).toBeNull()
 	expect(document.querySelector('meta[property="og:url"]')).toBeNull()
+	expect(document.querySelector('meta[property="og:site_name"]')).toBeNull()
 	expect(document.querySelector('meta[property="og:image"]')).toBeNull()
 	expect(document.querySelector('meta[name="twitter:card"]')).toBeNull()
 	expect(document.querySelector('meta[name="twitter:image"]')).toBeNull()
@@ -80,7 +82,20 @@ test('switching locale updates titles, descriptions and schema without publishin
 		'Choose your Minecraft Java version'
 	)
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('en_US')
-	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}').inLanguage).toBe('en')
+	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
+		'en'
+	)
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/installation')
 	expect(document.querySelector('link[hreflang]')).toBeNull()
+})
+
+test.each(['/explore', '/legal', '/roadmap', '/ranking'])('%s is public but kept out of search results', path => {
+	render(
+		<MemoryRouter initialEntries={[path]}>
+			<RouteMetadata />
+		</MemoryRouter>
+	)
+	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
+	expect(document.querySelector('link[rel="canonical"]')).toBeNull()
+	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 })

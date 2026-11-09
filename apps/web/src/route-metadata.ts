@@ -10,6 +10,8 @@ export interface PageMetadata {
 	indexable: boolean
 	language: string
 	articleDate?: string
+	/** The day the page's content last changed (YYYY-MM-DD): the sitemap's lastmod, required on every indexable page (the production build has no `.git` to read it from). */
+	updated?: string
 }
 const metadataMessages: PageMetadata[] = [
 	{
@@ -18,12 +20,14 @@ const metadataMessages: PageMetadata[] = [
 		description: 'Public code, nostalgia, sharing and discovery: explore ways to use Minemories.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-09',
 	},
+	// The public gallery stays out of search results until it holds 20 real published memories (/ranking is the same catalogue).
 	{
 		path: '/explore',
 		title: 'Public gallery of Minecraft builds in 3D',
 		description: 'Explore Minecraft memories deliberately published after moderation and their rankings.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
 	...discoveryPages.map(page => {
@@ -35,13 +39,15 @@ const metadataMessages: PageMetadata[] = [
 					'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
 				indexable: true,
 				language: 'fr' as const,
+				updated: '2026-11-10',
 			}
 		return {
 			path: page.path,
 			title: `${page.label} — Minemories`,
 			description: page.lead,
-			indexable: true,
+			indexable: page.path !== '/ranking',
 			language: 'fr' as const,
+			updated: '2026-11-09',
 		}
 	}),
 	{
@@ -51,6 +57,7 @@ const metadataMessages: PageMetadata[] = [
 			'A Minecraft Java mod that keeps the corner where you play in 3D. Revisit it in your browser and show people around it with a link.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/concept',
@@ -59,6 +66,7 @@ const metadataMessages: PageMetadata[] = [
 			'Minemories keeps an area of your Java world and makes it visitable in 3D in the browser. What it does, and what it does not.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/how-it-works',
@@ -67,6 +75,7 @@ const metadataMessages: PageMetadata[] = [
 			'A memory on demand or while you are AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/installation',
@@ -75,6 +84,7 @@ const metadataMessages: PageMetadata[] = [
 			'Choose your Minecraft Java version and your loader, install the mod, then connect the game to your gallery.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/downloads',
@@ -83,6 +93,7 @@ const metadataMessages: PageMetadata[] = [
 			'The Minemories JAR for each supported Minecraft Java version and each loader, with its SHA-256 checksum.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/versions',
@@ -90,6 +101,7 @@ const metadataMessages: PageMetadata[] = [
 		description: 'The notes of each Minemories mod version, dated.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/changelog',
@@ -97,12 +109,13 @@ const metadataMessages: PageMetadata[] = [
 		description: 'Official Minemories mod builds: dates, sizes and checksums.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-09',
 	},
 	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
 		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
 	{
@@ -111,6 +124,7 @@ const metadataMessages: PageMetadata[] = [
 		description: 'Bedrock? Your version? The server? What goes online? Who sees your memories? The short answers.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/blog',
@@ -118,6 +132,7 @@ const metadataMessages: PageMetadata[] = [
 		description: 'Guides and ideas for keeping and revisiting your Minecraft memories.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-09',
 	},
 	{
 		path: '/privacy',
@@ -126,6 +141,7 @@ const metadataMessages: PageMetadata[] = [
 			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-09',
 	},
 	{
 		path: '/terms',
@@ -133,12 +149,14 @@ const metadataMessages: PageMetadata[] = [
 		description: 'Guidance for using this experimental version, capturing and sharing with respect for others.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
+	// Kept out of search results until the publisher, the host and a contact are named.
 	{
 		path: '/legal',
 		title: 'About Minemories and legal notice',
 		description: 'Independent project, public repository and legal information still to be completed.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
 	...articles.map(article => ({
@@ -148,6 +166,7 @@ const metadataMessages: PageMetadata[] = [
 		indexable: true,
 		language: 'fr' as const,
 		articleDate: article.published,
+		updated: '2026-11-09',
 	})),
 ]
 /** Private pages that still deserve their own tab title: never prerendered, never indexed. */
@@ -192,24 +211,3 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.net'
 /** The link preview of every public page (og:image, twitter:image): the logo on the night background, built by `bun run brand:icons`. */
 export const socialImage = { path: '/brand/og-image.png', width: 1200, height: 630, alt: 'Minemories' } as const
-export function structuredDataFor(page: PageMetadata) {
-	const canonical = new URL(page.path, siteOrigin).href
-	if (page.articleDate)
-		return {
-			'@context': 'https://schema.org',
-			'@type': 'Article',
-			inLanguage: page.language,
-			headline: page.title,
-			description: page.description,
-			datePublished: page.articleDate,
-			mainEntityOfPage: canonical,
-		}
-	return {
-		'@context': 'https://schema.org',
-		'@type': 'WebPage',
-		inLanguage: page.language,
-		name: page.title,
-		description: page.description,
-		url: canonical,
-	}
-}

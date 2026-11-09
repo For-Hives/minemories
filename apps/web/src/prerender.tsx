@@ -13,7 +13,8 @@ import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
-import { publicMetadata, siteOrigin, socialImage, structuredDataFor } from './route-metadata'
+import { publicMetadata, siteOrigin, socialImage } from './route-metadata'
+import { structuredDataFor } from './structured-data'
 
 export { publicMetadata, siteOrigin, socialImage, structuredDataFor }
 /** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
