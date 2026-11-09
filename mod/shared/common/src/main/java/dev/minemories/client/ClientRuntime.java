@@ -1193,7 +1193,7 @@ public final class ClientRuntime {
               if (!chunkLoaded(mc, x, z)) continue;
               int columnTop =
                   Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-              int terrainTop = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+              int terrainTop = terrainSurfaceY(level, x, z, min.getY());
               // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
               while (terrainTop >= min.getY()
                   && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
@@ -1372,6 +1372,23 @@ public final class ClientRuntime {
     return false;
   }
 
+  /**
+   * Top block of the terrain in a column: the one MOTION_BLOCKING_NO_LEAVES stops at. That
+   * heightmap is not sent to the client before Minecraft 1.21.2 and reads as the world floor there
+   * (no cut face was ever drawn), so the walk starts from MOTION_BLOCKING, which is sent, and steps
+   * down through leaves and whatever else the leafless heightmap skips. Returns floor - 1 at most.
+   */
+  static int terrainSurfaceY(net.minecraft.world.level.Level level, int x, int z, int floor) {
+    var counts = Heightmap.Types.MOTION_BLOCKING_NO_LEAVES.isOpaque();
+    var pos = new BlockPos.MutableBlockPos(x, 0, z);
+    int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) - 1;
+    while (y >= floor && !counts.test(level.getBlockState(pos.setY(y)))) y--;
+    return y;
+  }
+
+  /** Block id of the cross-section faces that close the capture's sides and bottom. */
+  private static final String CUT_BLOCK_ID = "minemories:cut";
+
   private static boolean captureCutFaces(
       CaptureSink scene,
       SpriteAssets sprites,
@@ -1421,7 +1438,7 @@ public final class ClientRuntime {
                   mc,
                   cut,
                   pos,
-                  "minemories:cut",
+                  CUT_BLOCK_ID,
                   captured,
                   pos.getX() - center.getX(),
                   pos.getY() - center.getY(),
@@ -1469,8 +1486,11 @@ public final class ClientRuntime {
       blockLight = Math.max(blockLight, (packed[base + 6] >>> 4) & 15);
     }
     float emission = captured.emissive() ? 1 : Math.max(state.getLightEmission(), blockLight) / 15f;
+    // Materials are shared by look and named after the first block that uses them; cut faces keep
+    // a material of their own so they stay "minemories:cut" whatever block was captured first.
     String key =
-        imageKey
+        (CUT_BLOCK_ID.equals(blockId) ? CUT_BLOCK_ID + "#" : "")
+            + imageKey
             + "#"
             + String.format("%06x", tint & 0xFFFFFF)
             + "#"

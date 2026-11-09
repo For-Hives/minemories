@@ -217,8 +217,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
                         Math.min(
                             bounds.maxY(),
                             level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-                    int terrain =
-                        level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                    int terrain = ClientRuntime.terrainSurfaceY(level, x, z, bounds.minY());
                     while (terrain >= bounds.minY()
                         && !level.getFluidState(new BlockPos(x, terrain, z)).isEmpty()) terrain--;
                     return new CaptureCursor.Column(top, terrain);
@@ -273,7 +272,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
 
   private void surface() throws IOException {
     if (!settings.fullHeight() && chunk(surfaceX, surfaceZ)) {
-      int height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, surfaceX, surfaceZ);
+      int height = ClientRuntime.terrainSurfaceY(level, surfaceX, surfaceZ, bounds.minY()) + 1;
       if (height > bounds.minY()) surfaceFloor = Math.min(surfaceFloor, height);
     }
     if (settings.fullHeight() || (surfaceX == bounds.maxX() && surfaceZ == bounds.maxZ())) {
