@@ -38,7 +38,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	mountGuide()
 	fireEvent.click(screen.getByRole('link', { name: 'Le concept' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
-	fireEvent.click(screen.getByRole('link', { name: 'Créer mon premier souvenir, étape par étape' }))
+	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	fireEvent.click(screen.getByRole('tab', { name: 'Capturer' }))
 	expect(screen.getAllByText('/minemories export 16').length).toBeGreaterThan(0)
 	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
@@ -93,6 +93,44 @@ test('guides describe the current M screen labels and its advanced settings tabs
 	expect(howTo).not.toContain('/minemories upload')
 	expect(howTo).toContain('M → Settings → Memories → Auto captures, “Captured depth”')
 	expect(howTo).toContain('“Official address”')
+})
+
+test('the concept page says what it is, what it is not, compares the other ways with a date, then asks three questions', () => {
+	mountEnglish(<ConceptPage />)
+	const text = document.querySelector('article')?.textContent ?? ''
+	expect(text).toContain('Minemories is a mod for Minecraft Java.')
+	for (const item of [
+		'Not playable',
+		'Not editable',
+		'Not a backup',
+		'One area, not the whole world',
+		'Java on a computer only',
+	])
+		expect(screen.getByText(item)).toBeTruthy()
+	const table = screen.getByRole('table')
+	expect(table.querySelector('caption')?.textContent).toBe('Compared in November 2026.')
+	expect(screen.getAllByRole('columnheader').map(cell => cell.textContent)).toEqual([
+		'Nothing to install on the server',
+		'Viewable without Minecraft',
+		'Stays after the server closes',
+		'Playable again',
+	])
+	expect(screen.getAllByRole('rowheader').map(cell => cell.textContent)).toEqual([
+		'Minemories',
+		'Screenshots, video',
+		'Replay Mod',
+		'World copy (WorldTools, ZIP)',
+		'BlueMap',
+	])
+	expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent)).toEqual([
+		'How is it different from BlueMap?',
+		'Can I play in it again?',
+		'Are basements included?',
+	])
+	// No before/after slider until real dated captures of one place exist.
+	expect(screen.queryByRole('slider')).toBeNull()
+	expect(document.getElementById('avant-apres')).toBeNull()
+	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
 })
 
 test('the FAQ is one visible list, grouped, with an anchor per question and the supported versions', () => {

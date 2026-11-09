@@ -123,39 +123,6 @@ export function ShareDemo() {
 	)
 }
 
-/** The server closes, the memory stays: the same build twice, one of them goes dark. */
-export function SeasonDemo() {
-	const { t } = useI18n()
-	const [closed, setClosed] = useState(false)
-	return (
-		<div className="ex-season" data-closed={closed}>
-			<figure className="ex-season-side ex-season-server">
-				<MemoryScene theme="home" stage={closed ? 2 : 3} label={t('The server')} />
-				<figcaption>
-					<Glyph name={closed ? 'close' : 'check'} />
-					{closed ? t('Closed') : t('Online')}
-				</figcaption>
-			</figure>
-			<span className="ex-season-arrow" aria-hidden="true" />
-			<figure className="ex-season-side ex-season-memory">
-				<MemoryScene theme="home" label={t('Your 3D memory')} />
-				<figcaption>
-					<Glyph name="cube" />
-					{t('Still here')}
-				</figcaption>
-			</figure>
-			<button
-				type="button"
-				className="mm-button mc-btn mc-btn--auto mm-button-outline ex-season-button"
-				aria-pressed={closed}
-				onClick={() => setClosed(!closed)}
-			>
-				{closed ? t('Reopen the server') : t('Close the server')}
-			</button>
-		</div>
-	)
-}
-
 interface FlowNode {
 	glyph: GlyphName
 	label: string

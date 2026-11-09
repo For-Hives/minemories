@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { SharingPage } from '../pages/SharingPage'
-import { RadiusMap, SeasonDemo, ShareDemo } from './diagrams'
+import { RadiusMap, ShareDemo } from './diagrams'
 import { Command, TabPanel, type TabSpec, TabStrip } from './explainers'
 
 afterEach(() => {
@@ -99,18 +99,6 @@ test('the sharing demo walks from private to a link to a revoked link', () => {
 	expect(create.hasAttribute('disabled')).toBe(true)
 	fireEvent.click(revoke)
 	expect(screen.getByText('Link revoked. Copies already saved stay.')).toBeTruthy()
-})
-
-test('closing the server darkens one copy while the memory stays', () => {
-	english(<SeasonDemo />)
-	expect(screen.getByText('Online')).toBeTruthy()
-	const button = screen.getByRole('button', { name: 'Close the server' })
-	fireEvent.click(button)
-	expect(screen.getByText('Closed')).toBeTruthy()
-	expect(screen.getByText('Still here')).toBeTruthy()
-	expect(button.getAttribute('aria-pressed')).toBe('true')
-	fireEvent.click(screen.getByRole('button', { name: 'Reopen the server' }))
-	expect(screen.getByText('Online')).toBeTruthy()
 })
 
 test('the sharing page carries the demo', () => {

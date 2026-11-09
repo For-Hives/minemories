@@ -374,59 +374,6 @@
 
 /* --- Season demo: the server goes dark, the memory stays ------------------------------------------------------------------------------------------- */
 
-.ex-season {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-	gap: var(--ds-sp-4) var(--ds-sp-5);
-	align-items: center;
-	justify-items: center;
-	margin: var(--ds-sp-5) 0;
-}
-
-.ex-season-side {
-	width: 100%;
-	margin: 0;
-	background: var(--night-2);
-	box-shadow: var(--mm-card-shadow);
-}
-
-.ex-season-side img {
-	background: var(--night);
-	box-shadow: var(--mm-recess-shadow);
-	transition: filter var(--ds-dur-3) var(--ds-ease);
-}
-
-.ex-season-side figcaption {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	color: var(--c-green);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.ex-season[data-closed="true"] .ex-season-server img {
-	filter: grayscale(1) brightness(0.55);
-}
-
-.ex-season[data-closed="true"] .ex-season-server figcaption {
-	color: var(--bad);
-}
-
-.ex-season-memory figcaption {
-	color: var(--ember);
-}
-
-.ex-season-arrow {
-	color: var(--text-3);
-}
-
-.ex-season-button {
-	grid-column: 1 / -1;
-}
-
 /* --- Flow diagram (privacy) -------------------------------------------------------------------------------------------------------------------------- */
 
 .ex-flow {
@@ -788,14 +735,6 @@
 		padding: var(--ds-sp-1) var(--ds-sp-4);
 	}
 
-	.ex-season {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.ex-season-arrow {
-		transform: rotate(90deg);
-	}
-
 	.ex-share-stage {
 		flex-direction: column;
 	}
@@ -843,13 +782,11 @@
 	}
 
 	.ex-map,
-	.ex-share-card,
-	.ex-season-side {
+	.ex-share-card {
 		max-width: 260px;
 	}
 
-	.ex-radius,
-	.ex-season {
+	.ex-radius {
 		justify-items: start;
 	}
 
@@ -861,7 +798,6 @@
 @media (prefers-reduced-motion: reduce) {
 	.ex-map-area,
 	.ex-share-people,
-	.ex-season-side img,
 	.ex-tab {
 		transition: none;
 	}
@@ -956,4 +892,82 @@
 	margin: 0;
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+/* --- /concept: what it is not, and the dated comparison ----------------------------------------------------------------------------------------- */
+
+.ex-lead {
+	max-width: var(--ds-measure);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	color: var(--text);
+}
+
+.ex-not {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-4) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-not li {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-not .ex-glyph {
+	color: var(--ember);
+}
+
+/* Five columns do not fit a phone: the table scrolls inside its own box, never the page. */
+.ex-table-scroll {
+	max-width: 100%;
+	margin: var(--ds-sp-4) 0;
+	overflow-x: auto;
+}
+
+.ex-table-scroll:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+}
+
+.ex-compare {
+	min-width: 640px;
+	border-collapse: collapse;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-compare caption {
+	padding-bottom: var(--ds-sp-2);
+	color: var(--text-3);
+	text-align: left;
+}
+
+.ex-compare :is(th, td) {
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	border-bottom: var(--gp) solid var(--night-3);
+	text-align: left;
+	vertical-align: top;
+}
+
+.ex-compare th {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.ex-compare tbody tr:first-child {
+	background: var(--night);
+}
+
+.ex-compare td[data-verdict="yes"] {
+	color: var(--text);
 }

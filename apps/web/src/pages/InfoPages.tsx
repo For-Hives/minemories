@@ -1,11 +1,9 @@
 import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router'
-import { RadiusMap, SeasonDemo, ShareDemo } from '../components/diagrams'
+import { RadiusMap, ShareDemo } from '../components/diagrams'
 import { FileTree, Glyph, type GlyphName, More, TabPanel, type TabSpec, TabStrip } from '../components/explainers'
-import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime } from '../components/ui'
-import type { DemoTheme } from '../content/discovery'
-import { type FaqEntry, faqGroups, faqText, type QuestionId, questions } from '../content/faq'
+import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
@@ -37,95 +35,94 @@ function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 			<InfoNavigation />
 			<h1>{t(title)}</h1>
 			{children}
-			<InfoNavigation />
 		</article>
 	)
 }
 
-type Persona = 'admin' | 'parent' | 'player' | 'creator'
-const personas: Array<TabSpec<Persona> & { theme: DemoTheme; line: string }> = [
-	{
-		id: 'admin',
-		label: 'An admin',
-		glyph: 'shield',
-		theme: 'village',
-		line: 'Capture the places of the group before the server closes.',
-	},
-	{ id: 'parent', label: 'A parent', glyph: 'heart', theme: 'home', line: 'Keep a build made with your child.' },
-	{
-		id: 'player',
-		label: 'A casual player',
-		glyph: 'home',
-		theme: 'garden',
-		line: 'Revisit your house whenever you like.',
-	},
-	{
-		id: 'creator',
-		label: 'A modpack creator',
-		glyph: 'cube',
-		theme: 'village',
-		line: 'Keep a record of your modded builds.',
-	},
+const notThis: Array<[GlyphName, string]> = [
+	['refresh', 'Not playable'],
+	['pencil', 'Not editable'],
+	['disk', 'Not a backup'],
+	['cube', 'One area, not the whole world'],
+	['globe', 'Java on a computer only'],
 ]
-const canDo: Array<[GlyphName, string]> = [
-	['view', 'Look around in 3D'],
-	['globe', 'Open it in any browser'],
-	['link', 'Share it by link'],
-]
-const cannotDo: Array<[GlyphName, string]> = [
-	['refresh', 'Resume the game'],
-	['pencil', 'Break blocks'],
-	['disk', 'Replace your backup'],
-]
+type Cell = 'Yes' | 'No' | (string & {})
+/** The ways to keep a build, compared on what a player asks first. Dated: the other tools change. */
+const comparison: { columns: string[]; rows: Array<[string, Cell, Cell, Cell, Cell]> } = {
+	columns: [
+		'Nothing to install on the server',
+		'Viewable without Minecraft',
+		'Stays after the server closes',
+		'Playable again',
+	],
+	rows: [
+		['Minemories', 'Yes', 'Yes, in 3D', 'Yes, if captured before', 'No'],
+		['Screenshots, video', 'Yes', 'Yes, one view', 'Yes', 'No'],
+		['Replay Mod', 'Yes', 'No, it needs Minecraft and the mod', 'Yes', 'No'],
+		['World copy (WorldTools, ZIP)', 'With the admin’s consent', 'No', 'Yes', 'Yes'],
+		['BlueMap', 'No, it runs on the server', 'Yes', 'No, unless hosted separately', 'No'],
+	],
+}
 
-function CanList({ title, items, tone }: { title: string; items: Array<[GlyphName, string]>; tone: 'yes' | 'no' }) {
+function Comparison() {
 	const { t } = useI18n()
 	return (
-		<div className={`ex-can-${tone}`}>
-			<h2>{t(title)}</h2>
-			<ul>
-				{items.map(([glyph, label]) => (
+		// biome-ignore lint/a11y/noNoninteractiveTabindex: the table scrolls on its own on a phone; keyboard users need to reach it.
+		<section className="ex-table-scroll" tabIndex={0} aria-label={t('Compared in November 2026.')}>
+			<table className="ex-compare">
+				<caption>{t('Compared in November 2026.')}</caption>
+				<thead>
+					<tr>
+						<td />
+						{comparison.columns.map(column => (
+							<th key={column} scope="col">
+								{t(column)}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{comparison.rows.map(([name, ...cells]) => (
+						<tr key={name}>
+							<th scope="row">{t(name)}</th>
+							{cells.map((cell, index) => (
+								<td key={comparison.columns[index]} data-verdict={cell.startsWith('Yes') ? 'yes' : 'no'}>
+									{t(cell)}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</section>
+	)
+}
+
+export function ConceptPage() {
+	const { t } = useI18n()
+	return (
+		<InfoPage title="Your Minecraft world, ready to visit in 3D">
+			<p className="ex-lead">
+				{t(
+					'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.'
+				)}
+			</p>
+			<h2>{t('What it is not')}</h2>
+			<ul className="ex-not">
+				{notThis.map(([glyph, label]) => (
 					<li key={label}>
 						<Glyph name={glyph} />
 						{t(label)}
 					</li>
 				))}
 			</ul>
-		</div>
-	)
-}
-
-export function ConceptPage() {
-	const { t } = useI18n()
-	const [persona, setPersona] = useState<Persona>('admin')
-	return (
-		<InfoPage title="Your Minecraft world, ready to visit in 3D">
-			<SeasonDemo />
-			<div className="ex-can">
-				<CanList title="You can" items={canDo} tone="yes" />
-				<CanList title="You cannot" items={cannotDo} tone="no" />
-			</div>
-			<h2>
-				<T message={'Who is it for?'} />
-			</h2>
-			<TabStrip
-				base="persona"
-				label={t('Who is it for?')}
-				tabs={personas.map(item => ({ ...item, label: t(item.label) }))}
-				value={persona}
-				onChange={setPersona}
-			/>
-			{personas.map(item => (
-				<TabPanel key={item.id} base="persona" id={item.id} active={item.id === persona}>
-					<div className="ex-persona">
-						<MemoryScene theme={item.theme} label={t(item.label)} />
-						<p>{t(item.line)}</p>
-					</div>
-				</TabPanel>
-			))}
+			<h2>{t('Other ways to keep a build')}</h2>
+			<Comparison />
+			<h2>{t('Questions')}</h2>
+			<Questions ids={pageQuestions.concept} />
 			<p>
-				<Link className={buttonLime} to="/how-it-works">
-					<T message={'Create my first memory, step by step'} />
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
 				</Link>
 			</p>
 		</InfoPage>
