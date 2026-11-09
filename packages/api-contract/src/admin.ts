@@ -49,6 +49,52 @@ export const adminSummary = z.object({
 		})
 	),
 })
+const versionCount = z.object({ version: z.string(), devices: z.number().int().nonnegative() })
+export const adminActivityLevel = z.enum(['high', 'medium', 'low'])
+/** Usage figures that need no new tracking: versions come from consented diagnostics, the rest from existing records. */
+export const adminInsights = z.object({
+	windowDays: z.number().int().positive(),
+	versions: z.object({
+		/** Devices whose latest consented diagnostic report gave the versions below. */
+		reportingDevices: z.number().int().nonnegative(),
+		minecraft: z.array(versionCount),
+		loader: z.array(versionCount),
+		mod: z.array(versionCount),
+	}),
+	shares: z.object({
+		links: z.number().int().nonnegative(),
+		activeLinks: z.number().int().nonnegative(),
+		revokedLinks: z.number().int().nonnegative(),
+		worldLinks: z.number().int().nonnegative(),
+		openedLinks: z.number().int().nonnegative(),
+		opens: z.number().int().nonnegative(),
+		top: z.array(
+			z.object({
+				name: z.string(),
+				owner: z.string().nullable(),
+				scope: z.enum(['memory', 'world']),
+				opens: z.number().int().nonnegative(),
+				lastOpenedAt: z.number().nullable(),
+				revoked: z.boolean(),
+			})
+		),
+	}),
+	activity: z.object({
+		activeUsers: z.number().int().nonnegative(),
+		users: z.array(
+			z.object({
+				id: z.string(),
+				name: z.string(),
+				email: z.string(),
+				level: adminActivityLevel,
+				score: z.number().int().nonnegative(),
+				logins: z.number().int().nonnegative(),
+				uploads: z.number().int().nonnegative(),
+				lastActiveAt: z.number().nullable(),
+			})
+		),
+	}),
+})
 export const adminContract = {
 	access: oc.output(z.object({ allowed: z.boolean() })),
 	summary: oc.input(z.object({ hours: z.union([z.literal(24), z.literal(168), z.literal(720)]) })).output(adminSummary),
@@ -79,6 +125,10 @@ export const adminContract = {
 	setRole: oc
 		.input(z.object({ userId: z.string().min(1).max(200), role, currentPassword: z.string().min(1).max(128) }))
 		.output(z.object({ ok: z.literal(true) })),
+	insights: oc.output(adminInsights),
+	deleteUser: oc
+		.input(z.object({ userId: z.string().min(1).max(200), currentPassword: z.string().min(1).max(128) }))
+		.output(z.object({ ok: z.literal(true) })),
 	audit: oc.output(
 		z.array(
 			z.object({
@@ -94,3 +144,4 @@ export const adminContract = {
 export type AdminSummary = z.infer<typeof adminSummary>
 export type AdminUserSort = z.infer<typeof adminUserSort>
 export type AdminUser = z.infer<typeof adminUser>
+export type AdminInsights = z.infer<typeof adminInsights>

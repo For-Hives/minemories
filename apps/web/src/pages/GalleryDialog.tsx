@@ -11,6 +11,7 @@ import { formatRelativeDate } from '../lib/dates'
 import { isDraftString } from '../lib/form-drafts'
 import { viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
+import { DownloadGlb } from './DownloadGlb'
 import { CaptureFacts } from './GalleryFacts'
 import { type Memories, useLivePage } from './gallery-data'
 import { PublicationPanel } from './PublicDiscovery'
@@ -136,7 +137,12 @@ export function GalleryDialog({
 					))}
 				</div>
 				<div className="gallery-dialog-body" role="tabpanel">
-					{target.tab === 'details' && <CaptureFacts memory={selected} />}
+					{target.tab === 'details' && (
+						<>
+							<CaptureFacts memory={selected} />
+							<DownloadGlb key={selected.id} memoryId={selected.id} name={selected.name} />
+						</>
+					)}
 					{target.tab === 'share' && <SharePanel key={selected.id} memoryId={selected.id} />}
 					{target.tab === 'publish' && <PublicationPanel key={selected.id} memory={selected} />}
 					{target.tab === 'snapshots' && (
@@ -278,6 +284,7 @@ function SnapshotRow({
 				>
 					<GalleryIcon name="view" />
 				</Link>
+				<DownloadGlb memoryId={memory.id} name={shown} compact />
 				<button
 					ref={pencil}
 					type="button"

@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { apiContract, type CaptureStorageAccess } from '@minemories/api-contract'
+import { apiContract, type CaptureStorageAccess, minecraftHeadUrl } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
+import { AdminAccounts } from './admin-accounts'
 import { bootstrapAdministratorsFromEnvironment, bootstrapTemporaryAdministrator } from './admin-bootstrap'
+import { AdminInsightsReader } from './admin-insights'
 import { AdminMetrics } from './admin-metrics'
 import { AdminRoles } from './admin-roles'
 import { auth, billing, handleAuthRequest } from './auth'
@@ -46,6 +48,7 @@ import {
 	listMemories,
 	listTrash,
 	purgeDeletedMemories,
+	recordShareOpening,
 	renameMemory,
 	restoreMemory,
 	revokeShareLink,
@@ -84,6 +87,8 @@ const adminRoles = new AdminRoles(database)
 bootstrapTemporaryAdministrator(database, adminRoles)
 bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
+const adminInsights = new AdminInsightsReader(database, adminRoles)
+const adminAccounts = new AdminAccounts(database, adminRoles)
 // Administrators (Better Auth accounts promoted in `user_roles`) are also the diagnostics operators and the public-gallery moderators.
 const administrators = { has: (userId: string) => adminRoles.allowed(userId) }
 const diagnosticsReview = new DiagnosticsReview(diagnostics, administrators)
@@ -142,6 +147,13 @@ const router = os.router({
 		access: os.admin.access.handler(({ context }) => ({ allowed: adminRoles.allowed(context.userId) })),
 		summary: os.admin.summary.handler(({ context, input }) => adminMetrics.summary(context.userId, input.hours)),
 		users: os.admin.users.handler(({ context, input }) => adminRoles.users(context.userId, input)),
+		insights: os.admin.insights.handler(({ context }) => adminInsights.read(context.userId)),
+		deleteUser: os.admin.deleteUser.handler(({ context, input }) => {
+			const actorId = adminRoles.require(context.userId)
+			return accountSecurity.confirmed(accountIdentity(context), input.currentPassword, () =>
+				adminAccounts.deleteUser(actorId, input.userId)
+			)
+		}),
 		audit: os.admin.audit.handler(({ context }) => adminRoles.audit(context.userId)),
 		setRole: os.admin.setRole.handler(({ context, input }) => {
 			const actorId = adminRoles.require(context.userId)
@@ -200,6 +212,13 @@ const router = os.router({
 		changeName: os.account.changeName.handler(({ context, input }) => {
 			const identity = accountIdentity(context)
 			database.query('UPDATE user SET name=?,updatedAt=? WHERE id=?').run(input.name, Date.now(), identity.userId)
+			return { ok: true as const }
+		}),
+		setMinecraftHead: os.account.setMinecraftHead.handler(({ context, input }) => {
+			const identity = accountIdentity(context)
+			// The URL is built here from a validated username: the client never chooses what an account image points to.
+			const image = input.username === null ? null : minecraftHeadUrl(input.username)
+			database.query('UPDATE user SET image=?,updatedAt=? WHERE id=?').run(image, Date.now(), identity.userId)
 			return { ok: true as const }
 		}),
 		changeEmail: os.account.changeEmail.handler(({ context, input }) =>
@@ -473,6 +492,8 @@ app.get('/api/shared/:token/file', async context => {
 app.get('/api/shared/:token', context => {
 	const shared = getSharedMemory(context.req.param('token'), context.req.query('snapshot'))
 	if (!shared) return context.json({ error: 'memory_not_found' }, 404)
+	// Switching snapshots inside a world link repeats this request with `snapshot`; only the first open counts.
+	if (!context.req.query('snapshot')) recordShareOpening(context.req.param('token'))
 	const { objectKey, ...publicMemory } = shared
 	context.header('Cache-Control', 'private, no-store')
 	return context.json(publicMemory)

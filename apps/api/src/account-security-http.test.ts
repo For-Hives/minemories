@@ -114,6 +114,22 @@ test('profile name changes require the current owner session and reject empty or
 	expect((await response.json()).user.name).toBe('New name')
 })
 
+test('the Minecraft head is built server-side from a valid username and can be removed', async () => {
+	const owner = await account('profile-head@example.com')
+	const image = async () =>
+		(await (await app.request('/api/auth/get-session', { headers: { cookie: owner.cookie } })).json()).user.image
+	await expect(rpc().account.setMinecraftHead({ username: 'Notch' })).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+	await Promise.all(
+		['ab', 'x'.repeat(17), 'bad name', '../evil'].map(username =>
+			expect(rpc(owner.cookie).account.setMinecraftHead({ username })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+		)
+	)
+	expect(await rpc(owner.cookie).account.setMinecraftHead({ username: ' Notch ' })).toEqual({ ok: true })
+	expect(await image()).toBe('https://minotar.net/helm/Notch/64.png')
+	expect(await rpc(owner.cookie).account.setMinecraftHead({ username: null })).toEqual({ ok: true })
+	expect(await image()).toBeNull()
+})
+
 test('OAuth discovery exposes provider names without credentials', async () => {
 	const response = await app.request('/api/auth-providers')
 	expect(response.status).toBe(200)

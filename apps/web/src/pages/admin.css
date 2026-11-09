@@ -310,8 +310,15 @@
 .mm-admin-page td:first-child {
 	padding-left: 0;
 }
+.mm-admin-page table.mm-admin-users td {
+	padding-inline: var(--ds-sp-2);
+}
 .mm-admin-page tbody tr:hover td {
 	background-color: var(--night-3);
+}
+.mm-admin-ranking small {
+	overflow-wrap: anywhere;
+	opacity: 0.7;
 }
 .mm-admin-page td strong,
 .mm-admin-page td small {
@@ -568,6 +575,9 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	gap: var(--ds-sp-1);
 	min-width: 200px;
 }
+.mm-admin-dialog .mm-admin-dialog-target small {
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+}
 .mm-admin-page td .mm-admin-storage strong,
 .mm-admin-page td .mm-admin-storage small {
 	display: block;
@@ -612,9 +622,6 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	background: var(--night);
 	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
-.mm-admin-dialog .mm-admin-dialog-target small {
-	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
-}
 @media (max-width: 650px) {
 	.mm-admin-overview {
 		grid-template-columns: 1fr;
@@ -644,8 +651,7 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	max-width: 220px;
 	overflow-wrap: break-word;
 }
-.mm-admin-page table.mm-admin-users th,
-.mm-admin-page table.mm-admin-users td {
+.mm-admin-page table.mm-admin-users th {
 	padding-inline: var(--ds-sp-2);
 }
 .mm-admin-users .mm-admin-actions {
@@ -716,4 +722,62 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 		min-width: 0;
 		flex: 1 1 120px;
 	}
+}
+
+.mm-admin-versions {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+	gap: 1.25rem;
+}
+.mm-admin-versions-list h3,
+.mm-admin-card h3 {
+	margin: 0.75rem 0 0.5rem;
+	font-size: 0.95rem;
+}
+.mm-admin-versions-list ol,
+.mm-admin-ranking {
+	display: grid;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.mm-admin-versions-list li {
+	display: grid;
+	grid-template-columns: minmax(4rem, 7rem) 1fr auto;
+	align-items: center;
+	gap: 0.6rem;
+}
+.mm-admin-versions-list meter {
+	width: 100%;
+	height: 0.6rem;
+}
+.mm-admin-ranking li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	min-width: 0;
+}
+.mm-admin-ranking li > span:first-child {
+	display: grid;
+	min-width: 0;
+}
+.mm-admin-level {
+	flex: none;
+	padding: 0.15rem 0.55rem;
+	border: 1px solid currentColor;
+	font-size: 0.8rem;
+}
+.mm-admin-level.is-high {
+	color: #7fd35a;
+}
+.mm-admin-level.is-medium {
+	color: #e5c453;
+}
+.mm-admin-level.is-low {
+	opacity: 0.75;
+}
+.mm-admin-danger {
+	color: #ff8a80;
 }

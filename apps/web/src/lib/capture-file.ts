@@ -51,3 +51,14 @@ export async function requireCaptureReady(response: Response): Promise<void> {
 		throw new CaptureRestorationRequired(availability)
 	}
 }
+
+/** A safe `.glb` file name from a snapshot name: no path separators or control characters, never empty. */
+export function captureFileName(name: string): string {
+	const stem = name
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^\w.-]+/g, '-')
+		.replace(/^[.-]+|[.-]+$/g, '')
+		.slice(0, 60)
+	return `${stem || 'snapshot'}.glb`
+}

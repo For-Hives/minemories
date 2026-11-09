@@ -6,6 +6,7 @@ export type AdminDataset = {
 	summary: Awaited<ReturnType<typeof apiClient.admin.summary>>
 	directory: Awaited<ReturnType<typeof apiClient.admin.users>>
 	audit: Awaited<ReturnType<typeof apiClient.admin.audit>>
+	insights: Awaited<ReturnType<typeof apiClient.admin.insights>>
 }
 type State = { kind: 'loading' | 'denied' | 'error' } | { kind: 'ready'; data: AdminDataset }
 export function useAdminData(filters: {
@@ -51,11 +52,12 @@ async function readData(
 	signal.throwIfAborted()
 	if (!access.allowed) return { kind: 'denied' }
 	const { hours, query, role, page, sort } = filters
-	const [summary, directory, audit] = await Promise.all([
+	const [summary, directory, audit, insights] = await Promise.all([
 		apiClient.admin.summary({ hours }, options),
 		apiClient.admin.users({ query, role, page, sort }, options),
 		apiClient.admin.audit(undefined, options),
+		apiClient.admin.insights(undefined, options),
 	])
 	signal.throwIfAborted()
-	return { kind: 'ready', data: { summary, directory, audit } }
+	return { kind: 'ready', data: { summary, directory, audit, insights } }
 }

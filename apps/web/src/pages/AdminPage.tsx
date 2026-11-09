@@ -5,6 +5,7 @@ import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { AdminCharts, gigabytes } from './AdminCharts'
 import { Directory, type RoleFilter } from './AdminDirectory'
+import { AdminInsights } from './AdminInsights'
 import { AdminRoleDialog } from './AdminRoleDialog'
 import { type AdminDataset, useAdminData } from './admin-data'
 import './admin.css'
@@ -110,6 +111,7 @@ export function AdminPage() {
 		sort: 'registered_desc' as AdminUserSort,
 	})
 	const [target, setTarget] = useState<AdminUser | null>(null)
+	const [removal, setRemoval] = useState<AdminUser | null>(null)
 	const load = useAdminData(filters)
 	return (
 		<section className="mm-content mm-admin-page">
@@ -168,6 +170,7 @@ export function AdminPage() {
 				<>
 					<Totals data={load.data.summary} />
 					<AdminCharts summary={load.data.summary} />
+					<AdminInsights insights={load.data.insights} />
 					<Directory
 						directory={load.data.directory}
 						admins={load.data.summary.totals.admins}
@@ -175,12 +178,24 @@ export function AdminPage() {
 						onSearch={(query, role, sort) => setFilters(previous => ({ ...previous, query, role, sort, page: 1 }))}
 						onPage={page => setFilters(previous => ({ ...previous, page }))}
 						onSelect={setTarget}
+						onDelete={setRemoval}
 					/>
 					<div className="mm-admin-lower">
 						<Operations data={load.data.summary.totals} />
 						<Audit rows={load.data.audit} />
 					</div>
 				</>
+			)}
+			{removal && (
+				<AdminRoleDialog
+					mode="delete"
+					target={removal}
+					onClose={() => setRemoval(null)}
+					onSuccess={() => {
+						setRemoval(null)
+						load.reload()
+					}}
+				/>
 			)}
 			{target && (
 				<AdminRoleDialog

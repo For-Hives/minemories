@@ -264,6 +264,15 @@ export function shareStatus(userId: string, memoryId: string, target: ShareTarge
  * A snapshot link serves its snapshot; a world link serves the latest snapshot of the world, or the requested one
  * when it belongs to that same world, and lists every snapshot so visitors can move through time.
  */
+/** Counts one opening of an active link (a number and a date, no visitor data). */
+export function recordShareOpening(token: string, now = Date.now()): void {
+	database
+		.query(
+			'UPDATE share_links SET open_count = open_count + 1, last_opened_at = ? WHERE token_hash = ? AND revoked_at IS NULL'
+		)
+		.run(now, codeHash(token))
+}
+
 export function getSharedMemory(token: string, snapshot?: string) {
 	if (!token || token.length < 20) return null
 	const link = database
