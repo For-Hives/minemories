@@ -1597,5 +1597,6 @@
 	"Switch to this language": "Перейти на русский",
 	"No thanks": "Нет, спасибо",
 	"In Minecraft: M → type this code → Connect.": "В Minecraft: M → введите этот код → Подключить.",
-	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "Ссылка также показывает координаты, название мира, сид (в одиночной игре) или название либо адрес сервера."
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "Ссылка также показывает координаты, название мира, сид (в одиночной игре) или название либо адрес сервера.",
+	"6-digit code": "Код из 6 цифр"
 }

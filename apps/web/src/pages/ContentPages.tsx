@@ -120,7 +120,7 @@ const privacyNodes = [
 	{ glyph: 'globe', label: 'Anyone with your link' },
 ] satisfies Array<{ glyph: GlyphName; label: string }>
 const privacyEdges = [
-	{ glyph: 'key', label: 'Pairing' },
+	{ glyph: 'key', label: '6-digit code' },
 	{ glyph: 'link', label: 'A link you create' },
 ] satisfies Array<{ glyph: GlyphName; label: string }>
 

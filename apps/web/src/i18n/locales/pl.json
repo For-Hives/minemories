@@ -1597,5 +1597,6 @@
 	"Switch to this language": "Przełącz na polski",
 	"No thanks": "Nie, dziękuję",
 	"In Minecraft: M → type this code → Connect.": "W Minecraft: M → wpisz ten kod → Połącz.",
-	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "Link pokazuje też współrzędne, nazwę świata, ziarno (w trybie jednoosobowym) albo nazwę lub adres serwera."
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "Link pokazuje też współrzędne, nazwę świata, ziarno (w trybie jednoosobowym) albo nazwę lub adres serwera.",
+	"6-digit code": "Kod 6-cyfrowy"
 }

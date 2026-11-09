@@ -1597,5 +1597,6 @@
 	"Switch to this language": "日本語に切り替える",
 	"No thanks": "いいえ、けっこうです",
 	"In Minecraft: M → type this code → Connect.": "Minecraft で: M → このコードを入力 → 接続する。",
-	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "リンクには、座標、ワールド名、シード値（シングルプレイ）、またはサーバー名やアドレスも表示されます。"
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "リンクには、座標、ワールド名、シード値（シングルプレイ）、またはサーバー名やアドレスも表示されます。",
+	"6-digit code": "6けたのコード"
 }

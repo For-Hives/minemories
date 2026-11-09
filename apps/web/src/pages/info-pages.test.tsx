@@ -169,6 +169,9 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(text).toContain('rien n’est jamais envoyé avant que tu connectes le jeu')
 	expect(text).toContain('chaque souvenir, à la main ou AFK, est envoyé tout seul dans ta galerie')
 	expect(text).toContain('qui reçoit ton adresse IP comme pour toute requête au service')
+	// The diagram names the game's own code label, not the internal word for pairing.
+	expect(text).toContain('Code à 6 chiffres')
+	expect(text).not.toContain('Appairage')
 	// No internal deployment notes reach the public page.
 	expect(text).not.toMatch(/Sentry|27 octobre|doivent être documentées|avant activation/)
 })

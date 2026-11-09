@@ -1597,5 +1597,6 @@
 	"Switch to this language": "한국어로 전환",
 	"No thanks": "괜찮아요",
 	"In Minecraft: M → type this code → Connect.": "Minecraft에서: M → 이 코드 입력 → 연결하기.",
-	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "링크에는 좌표, 월드 이름, 시드(싱글플레이) 또는 서버 이름이나 주소도 표시됩니다."
+	"The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.": "링크에는 좌표, 월드 이름, 시드(싱글플레이) 또는 서버 이름이나 주소도 표시됩니다.",
+	"6-digit code": "6자리 코드"
 }
