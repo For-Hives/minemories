@@ -87,6 +87,7 @@ final class RenderedModelCapture {
 
     /** The vertex consumer a submitted model of this render type draws into (a no-op if refused). */
     VertexConsumer getBuffer(RenderType type) {
+      if (EndPortalLook.matches(type.toString())) return portalBuffer(type);
       if (!type.format().contains(DefaultVertexFormat.NORMAL_SEMANTIC_NAME)
           || !supported(type.primitiveTopology())) return ignored;
       RenderedVertexConsumer existing = consumers.get(type);
@@ -97,6 +98,28 @@ final class RenderedModelCapture {
       if (created == null) return ignored;
       consumers.put(type, created);
       return created;
+    }
+
+    /** The End portal and gateway sample no copyable texture: they get a baked still frame instead. */
+    private VertexConsumer portalBuffer(RenderType type) {
+      if (!supported(type.primitiveTopology())) return ignored;
+      RenderedVertexConsumer existing = consumers.get(type);
+      if (existing != null) return new EndPortalLook.PlanarUv(existing);
+      if (!budget.admitPass(consumers.size())) return ignored;
+      try {
+        Texture texture = portalTexture();
+        if (texture == null) return ignored;
+        int layer = consumers.size();
+        // The shader is not lit by the world: full emission.
+        RenderedVertexConsumer created =
+            new RenderedVertexConsumer(
+                type.primitiveTopology(), vertices -> add(model, texture, vertices, 1f, layer));
+        consumers.put(type, created);
+        return new EndPortalLook.PlanarUv(created);
+      } catch (IOException error) {
+        LOGGER.warn("End portal surface not captured: {}", error.toString());
+        return ignored;
+      }
     }
 
     private RenderedVertexConsumer consumer(RenderType type) {
@@ -120,6 +143,20 @@ final class RenderedModelCapture {
       for (var consumer : consumers.values()) consumer.finish();
       consumers.clear();
     }
+  }
+
+  private Texture portal;
+  private boolean portalRefused;
+
+  private Texture portalTexture() throws IOException {
+    if (portal != null || portalRefused) return portal;
+    byte[] png = EndPortalLook.png(minecraft);
+    if (!budget.admitTexture(textures.size() + atlasTextures.size()) || !budget.admitBytes(png.length)) {
+      portalRefused = true;
+      return null;
+    }
+    portal = new Texture("rendered/" + EndPortalLook.KEY, png, 0);
+    return portal;
   }
 
   Buffers buffers(String model, float emission) {
