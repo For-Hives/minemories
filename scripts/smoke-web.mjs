@@ -159,7 +159,9 @@ export function checkResponse(expectation, response, { base, indexable = false }
 
 /** The response at the end of a redirect: anything but a 200 page means a chain or a dead target. */
 export function hopFailures(target) {
-	return target.status === 200 ? [] : [`redirect target answers ${target.status}, not 200 (redirect chain or dead page)`]
+	return target.status === 200
+		? []
+		: [`redirect target answers ${target.status}, not 200 (redirect chain or dead page)`]
 }
 
 /** The first hashed script referenced by the home page, to check the immutable cache of /assets/. */

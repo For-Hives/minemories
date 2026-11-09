@@ -113,13 +113,21 @@ test('a retired URL goes to its final page in one hop', () => {
 	assert.deepEqual(hopFailures({ status: 200 }), [])
 	assert.deepEqual(hopFailures({ status: 301 }), ['redirect target answers 301, not 200 (redirect chain or dead page)'])
 	assert.deepEqual(hopFailures({ status: 404 }), ['redirect target answers 404, not 200 (redirect chain or dead page)'])
-	for (const path of ['/discover', '/nostalgia', '/open-source', '/ranking?demo=1', '/changelog', '/blog/premier-souvenir'])
+	for (const path of [
+		'/discover',
+		'/nostalgia',
+		'/open-source',
+		'/ranking?demo=1',
+		'/changelog',
+		'/blog/premier-souvenir',
+	])
 		assert.equal(find(path)?.status, 301, path)
 })
 
 test('runSmoke follows each expected redirect once and fails when its target redirects again', async () => {
 	const fakeFetch = async url => {
-		if (url === `${base}/changelog`) return new Response('', { status: 301, headers: { location: '/versions', ...blocked } })
+		if (url === `${base}/changelog`)
+			return new Response('', { status: 301, headers: { location: '/versions', ...blocked } })
 		if (url === `${base}/versions`) return new Response('', { status: 301, headers: { location: '/elsewhere' } })
 		return new Response('<script src="/assets/app-1.js"></script>', { status: 200, headers: blocked })
 	}
