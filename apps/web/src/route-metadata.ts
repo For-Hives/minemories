@@ -138,6 +138,23 @@ const metadataMessages: PageMetadata[] = [
 		articleDate: article.published,
 	})),
 ]
+/** Private pages that still deserve their own tab title: never prerendered, never indexed. */
+const privateMessages: PageMetadata[] = [
+	{
+		path: '/login',
+		title: 'Sign in — Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'fr',
+	},
+	{
+		path: '/register',
+		title: 'Create an account — Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'fr',
+	},
+]
 export const publicMetadata = metadataMessages.map(page => ({
 	...page,
 	title: translate('fr', page.title),
@@ -146,7 +163,7 @@ export const publicMetadata = metadataMessages.map(page => ({
 const trailingSlash = /\/$/
 export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetadata {
 	const path = pathname.replace(trailingSlash, '') || '/'
-	const page: PageMetadata = metadataMessages.find(page => page.path === path) ?? {
+	const page: PageMetadata = [...metadataMessages, ...privateMessages].find(page => page.path === path) ?? {
 		path,
 		title: 'Minemories — Your space',
 		description: 'Your Minemories space.',

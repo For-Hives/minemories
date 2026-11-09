@@ -22,7 +22,7 @@ const pathScenes: Record<string, { theme: DemoTheme; stage?: number }> = {
 export function DiscoveryPage() {
 	const { locale, t } = useI18n()
 	return (
-		<ContentLayout eyebrow="MINEMORIES / PLAYGROUND" title={t('One world. Many reasons to keep it.')}>
+		<ContentLayout eyebrow={t('MINEMORIES / PLAYGROUND')} title={t('One world. Many reasons to keep it.')}>
 			<div className="mm-angle-grid mm-angle-grid--paths">
 				{discoveryPages.map(page => (
 					<Link key={page.path} to={page.path} className={`mm-angle-card mm-accent-${page.accent}`}>

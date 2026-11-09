@@ -25,7 +25,7 @@ export function ReleasesPage({ changelog = false }: { changelog?: boolean }) {
 	}, [hash, releases])
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES · RELEASES"
+			eyebrow={t('MINEMORIES · RELEASES')}
 			title={t(changelog ? 'releases.changelog.title' : 'Mod versions')}
 			lead={t(
 				'The right file for your Minecraft profile, with its size and checksum. Direct downloads from Minemories.'

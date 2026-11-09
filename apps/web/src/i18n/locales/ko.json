@@ -1595,5 +1595,11 @@
 	"For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.": "Minecraft Java {versions}용이며, 버전에 따라 NeoForge, Fabric 또는 Forge를 사용합니다.",
 	"Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.": "Minecraft Java {versions}에서 버전에 따라 NeoForge, Fabric 또는 Forge와 함께 작동합니다. 베타 버전입니다.",
 	"{experimental} is available for testing, not yet validated in game.": "{experimental}은(는) 테스트용으로 제공되며 아직 게임에서 검증되지 않았습니다.",
-	"Experimental · not validated in game yet": "실험적 · 아직 게임에서 검증되지 않음"
+	"Experimental · not validated in game yet": "실험적 · 아직 게임에서 검증되지 않음",
+	"MINEMORIES · DOWNLOADS": "MINEMORIES · 다운로드",
+	"MINEMORIES · RELEASES": "MINEMORIES · 릴리스",
+	"MINEMORIES · ROADMAP": "MINEMORIES · 로드맵",
+	"MINEMORIES / PLAYGROUND": "MINEMORIES / 놀이터",
+	"Sign in — Minemories": "로그인 — Minemories",
+	"Create an account — Minemories": "계정 만들기 — Minemories"
 }

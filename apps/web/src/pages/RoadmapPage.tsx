@@ -130,7 +130,7 @@ export function RoadmapPage() {
 	const now = Date.now()
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES · ROADMAP"
+			eyebrow={t('MINEMORIES · ROADMAP')}
 			title={t('Roadmap')}
 			lead={t(
 				'What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.'

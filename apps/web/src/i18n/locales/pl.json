@@ -1595,5 +1595,11 @@
 	"For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.": "Dla Minecraft Java {versions}, z NeoForge, Fabric lub Forge zależnie od wersji.",
 	"Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.": "Minecraft Java {versions}, z NeoForge, Fabric lub Forge zależnie od wersji. To wersja beta.",
 	"{experimental} is available for testing, not yet validated in game.": "{experimental} jest dostępna do testów, jeszcze niesprawdzona w grze.",
-	"Experimental · not validated in game yet": "Eksperymentalne · jeszcze niesprawdzone w grze"
+	"Experimental · not validated in game yet": "Eksperymentalne · jeszcze niesprawdzone w grze",
+	"MINEMORIES · DOWNLOADS": "MINEMORIES · POBIERANIE",
+	"MINEMORIES · RELEASES": "MINEMORIES · WYDANIA",
+	"MINEMORIES · ROADMAP": "MINEMORIES · PLAN DZIAŁAŃ",
+	"MINEMORIES / PLAYGROUND": "MINEMORIES / PLAC ZABAW",
+	"Sign in — Minemories": "Logowanie — Minemories",
+	"Create an account — Minemories": "Utwórz konto — Minemories"
 }

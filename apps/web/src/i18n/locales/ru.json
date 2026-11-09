@@ -1595,5 +1595,11 @@
 	"For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.": "Для Minecraft Java {versions}, с NeoForge, Fabric или Forge в зависимости от версии.",
 	"Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.": "Minecraft Java {versions}, с NeoForge, Fabric или Forge в зависимости от версии. Это бета-версия.",
 	"{experimental} is available for testing, not yet validated in game.": "{experimental} доступна для тестирования, но ещё не проверена в игре.",
-	"Experimental · not validated in game yet": "Экспериментально · ещё не проверено в игре"
+	"Experimental · not validated in game yet": "Экспериментально · ещё не проверено в игре",
+	"MINEMORIES · DOWNLOADS": "MINEMORIES · ЗАГРУЗКИ",
+	"MINEMORIES · RELEASES": "MINEMORIES · ВЫПУСКИ",
+	"MINEMORIES · ROADMAP": "MINEMORIES · ДОРОЖНАЯ КАРТА",
+	"MINEMORIES / PLAYGROUND": "MINEMORIES / ПЕСОЧНИЦА",
+	"Sign in — Minemories": "Вход — Minemories",
+	"Create an account — Minemories": "Создать аккаунт — Minemories"
 }

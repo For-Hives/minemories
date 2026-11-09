@@ -18,3 +18,10 @@ test('every public page has translated metadata while retaining its existing can
 		title: 'Minemories — Your space',
 	})
 })
+
+test('sign-in and registration pages have their own title but stay private', () => {
+	expect(metadataFor('/login')).toMatchObject({ title: 'Connexion — Minemories', indexable: false })
+	expect(metadataFor('/register/')).toMatchObject({ title: 'Créer un compte — Minemories', indexable: false })
+	expect(metadataFor('/login', 'en').title).toBe('Sign in — Minemories')
+	expect(publicMetadata.some(page => page.path === '/login' || page.path === '/register')).toBe(false)
+})

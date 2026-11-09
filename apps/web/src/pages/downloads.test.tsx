@@ -78,6 +78,7 @@ test('published cells offer the download, size and checksum; the others say why 
 	const row = link.closest('tr') as HTMLElement
 	expect(within(row).getByRole('rowheader').textContent).toContain('1.21.1')
 	expect(within(row).getByRole('rowheader').textContent).toContain('Validée en jeu')
+	expect(screen.getByText('MINEMORIES · TÉLÉCHARGEMENTS')).toBeTruthy()
 	expect(within(row).getAllByText(/0\.2\.0 · 0,29 MiB/)).toHaveLength(2)
 	expect(within(row).getByText('a'.repeat(64))).toBeTruthy()
 	expect(within(row).getAllByText('SHA-256')[0]?.closest('details')).toBeTruthy()

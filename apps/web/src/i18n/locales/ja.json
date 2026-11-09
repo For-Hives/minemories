@@ -1595,5 +1595,11 @@
 	"For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.": "Minecraft Java {versions} に対応。バージョンに応じて NeoForge、Fabric、Forge を使います。",
 	"Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.": "Minecraft Java {versions} で、バージョンに応じて NeoForge、Fabric、Forge に対応しています。ベータ版です。",
 	"{experimental} is available for testing, not yet validated in game.": "{experimental} はテスト用に公開中で、まだゲーム内で検証されていません。",
-	"Experimental · not validated in game yet": "実験的 · まだゲーム内で未検証"
+	"Experimental · not validated in game yet": "実験的 · まだゲーム内で未検証",
+	"MINEMORIES · DOWNLOADS": "MINEMORIES · ダウンロード",
+	"MINEMORIES · RELEASES": "MINEMORIES · リリース",
+	"MINEMORIES · ROADMAP": "MINEMORIES · ロードマップ",
+	"MINEMORIES / PLAYGROUND": "MINEMORIES / プレイグラウンド",
+	"Sign in — Minemories": "ログイン — Minemories",
+	"Create an account — Minemories": "アカウント作成 — Minemories"
 }
