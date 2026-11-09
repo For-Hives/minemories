@@ -141,14 +141,7 @@ export function GalleryPage() {
 					<p>{gallerySummary(memories, locale)}</p>
 				</div>
 				<div className="gallery-heading-actions">
-					<button
-						type="button"
-						className="gallery-text-button"
-						onClick={() => void refreshAll()}
-						title={t('Refresh the gallery')}
-					>
-						<T message={'↻ Refresh'} />
-					</button>
+					<RefreshButton onRefresh={refreshAll} />
 					<LocalGalleryLink />
 				</div>
 			</div>
@@ -336,9 +329,6 @@ function ServerTile({
 	]
 	return (
 		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
-			<div className="gallery-server-when">
-				<time dateTime={span?.last}>{span ? formatRelativeDate(span.last, Date.now(), locale) : '—'}</time>
-			</div>
 			<div className="gallery-server-card">
 				<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
 					<ServerCovers captures={server.captures} />
@@ -359,9 +349,15 @@ function ServerTile({
 						</button>
 					</div>
 					{span && (
-						<p className="gallery-seed" title={t('First and last snapshot')}>
+						<p className="gallery-seed">
 							<GalleryIcon name="clock" />
-							<span>{formatDateSpan(span.first, span.last, locale)}</span>
+							<time className="gallery-seed-when" dateTime={span.last}>
+								{formatRelativeDate(span.last, Date.now(), locale)}
+							</time>
+							<span className="gallery-seed-span" title={t('First and last snapshot')}>
+								<span aria-hidden="true">·</span>
+								{formatDateSpan(span.first, span.last, locale)}
+							</span>
 						</p>
 					)}
 					<dl className="gallery-server-stats">
@@ -402,6 +398,36 @@ function ServerTile({
 				/>
 			)}
 		</li>
+	)
+}
+
+const REFRESH_MIN_MS = 400
+
+/** The manual refresh: the icon turns while the gallery reloads; the 12 s background refresh stays silent. */
+function RefreshButton({ onRefresh }: { onRefresh(): Promise<void> }) {
+	const { t } = useI18n()
+	const [busy, setBusy] = useState(false)
+	async function refresh() {
+		if (busy) return
+		setBusy(true)
+		try {
+			// A local reload answers in a few milliseconds: the arrow still makes one full turn so the click reads.
+			await Promise.all([onRefresh(), new Promise(resolve => setTimeout(resolve, REFRESH_MIN_MS))])
+		} finally {
+			setBusy(false)
+		}
+	}
+	return (
+		<button
+			type="button"
+			className="gallery-text-button gallery-refresh"
+			aria-busy={busy}
+			onClick={() => void refresh()}
+			title={t('Refresh the gallery')}
+		>
+			<GalleryIcon name="refresh" />
+			{t('Refresh')}
+		</button>
 	)
 }
 

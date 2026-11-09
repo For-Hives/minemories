@@ -19,8 +19,10 @@
 	--g-selected:
 		0 0 0 var(--gp) var(--outline), 0 0 0 calc(2 * var(--gp)) var(--hover), 0 0 0 calc(3 * var(--gp)) var(--outline);
 }
+/* The page uses the screen: fluid gutters (16 px on a phone, 64 px on a wide screen) up to 1440 px of content. */
 .gallery-page {
-	width: min(100% - 88px, 1180px);
+	--g-gutter: clamp(var(--ds-sp-4), 4vw, var(--ds-sp-8));
+	width: min(100% - 2 * var(--g-gutter), 1440px);
 	min-height: 670px;
 	margin-inline: auto;
 	padding: var(--ds-sp-8) 0 var(--ds-sp-8);
@@ -34,6 +36,7 @@
 /* Heading: the page title in the game's font at the charter's scale (album.css gives it a fluid size, which blurs the pixel font). */
 .gallery-heading {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: flex-end;
 	justify-content: space-between;
 	gap: var(--ds-sp-5);
@@ -309,64 +312,20 @@
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
-/* The gallery is a timeline: one row per world, the one played last on top, hung on a vertical rail. */
+/* One row per world, the one played last on top. Every panel of the column (server, area, side card) sits one game pixel in,
+   so its outline lands on the title's left edge and the side cards' tops. */
 .gallery-servers {
-	position: relative;
 	display: grid;
 	gap: var(--ds-sp-6);
 	margin: 0;
-	padding: var(--gp) var(--gp) var(--gp) 0;
+	padding: var(--gp);
 	list-style: none;
 }
 .gallery-server {
-	--when: 108px;
-	--dot: calc(6 * var(--gp));
-	--axis: calc(var(--when) + var(--ds-sp-5) / 2);
-	position: relative;
 	display: grid;
-	grid-template-columns: var(--when) minmax(0, 1fr);
-	column-gap: var(--ds-sp-5);
-	row-gap: var(--ds-sp-4);
+	grid-template-columns: minmax(0, 1fr);
+	row-gap: var(--ds-sp-5);
 	align-items: start;
-}
-/* A square on the rail marks each world; the date of its last snapshot sits to its left. */
-/* The rail: each row draws its own stretch, down to the next row's dot; the last one stops at its dot. */
-.gallery-server::before {
-	content: "";
-	position: absolute;
-	top: var(--ds-sp-3);
-	bottom: calc(-1 * var(--ds-sp-6));
-	left: calc(var(--axis) - var(--gp));
-	width: calc(2 * var(--gp));
-	background: var(--outline);
-}
-.gallery-server:last-child::before {
-	bottom: auto;
-	height: 0;
-}
-.gallery-server-when {
-	position: relative;
-	padding-top: var(--ds-sp-3);
-	text-align: right;
-	font: 400 var(--ds-rd-fs-sm) / 1.3 var(--ds-f-text);
-	color: var(--text-2);
-}
-.gallery-server-when::after {
-	content: "";
-	position: absolute;
-	top: var(--ds-sp-3);
-	right: calc(-1 * (var(--ds-sp-5) + var(--dot)) / 2);
-	width: var(--dot);
-	height: var(--dot);
-	z-index: 1;
-	background: var(--text-3);
-	box-shadow: 0 0 0 var(--gp) var(--night);
-}
-.gallery-server[data-selected="true"] .gallery-server-when {
-	color: var(--text);
-}
-.gallery-server[data-selected="true"] .gallery-server-when::after {
-	background: var(--ember);
 }
 .gallery-server-card {
 	position: relative;
@@ -386,11 +345,6 @@
 }
 .gallery-server[data-selected="true"] .gallery-server-card {
 	box-shadow: var(--g-selected), var(--ds-panel-bevel);
-}
-/* The expanded world: its areas hang under its row, in the card column. */
-.gallery-server > .gallery-areas {
-	grid-column: 2;
-	padding: var(--gp);
 }
 .gallery-server-open {
 	position: relative;
@@ -453,6 +407,7 @@
 	align-content: center;
 	gap: var(--ds-sp-2);
 	min-width: 0;
+	container: gallery-server / inline-size;
 }
 .gallery-server-stats {
 	display: flex;
@@ -484,6 +439,7 @@
 }
 .gallery-seed {
 	display: inline-flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--ds-sp-2);
 	min-width: 0;
@@ -494,6 +450,21 @@
 }
 .gallery-seed .gallery-icon {
 	color: var(--text-3);
+}
+.gallery-seed-when {
+	color: var(--text);
+	white-space: nowrap;
+}
+/* The date range wraps as a whole, never leaving its dot behind; a narrow card keeps the last visit alone. */
+.gallery-seed-span {
+	display: inline-flex;
+	gap: var(--ds-sp-2);
+	white-space: nowrap;
+}
+@container gallery-server (max-width: 460px) {
+	.gallery-seed-span {
+		display: none;
+	}
 }
 .gallery-server-go {
 	flex: none;
@@ -512,11 +483,11 @@
 	text-shadow: none;
 	overflow-wrap: anywhere;
 }
+/* The expanded world: its areas hang under its row, on the same edges. */
 .gallery-areas {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
 	gap: var(--ds-sp-5);
-	padding: var(--ds-sp-4) var(--gp) var(--gp);
 }
 
 /* --- Area card: an item frame. The picture sits in an inventory slot, the stack count is a hotbar count --- */
@@ -602,6 +573,7 @@
 }
 .gallery-body {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ds-sp-2);
 	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-1);
 	flex: 1;
@@ -626,12 +598,13 @@
 	text-shadow: none;
 }
 .gallery-title .gallery-icon-button {
+	flex: none;
 	opacity: 0;
 }
 /* A waiting draft also keeps its edit button visible: the owner sees where the unsaved name is. */
 .gallery-title:has(.mm-draft-chip) .gallery-icon-button,
 .gallery-card:hover .gallery-title .gallery-icon-button,
-.gallery-server:hover .gallery-title .gallery-icon-button,
+.gallery-server-card:hover .gallery-title .gallery-icon-button,
 .gallery-title .gallery-icon-button:focus-visible {
 	opacity: 1;
 }
@@ -1122,14 +1095,8 @@
 	}
 }
 
-@media (max-width: 760px) {
-	.gallery-page {
-		width: min(100% - 48px, 760px);
-	}
-}
 @media (max-width: 650px) {
 	.gallery-page {
-		width: calc(100% - 32px);
 		padding: var(--ds-sp-7) 0 var(--ds-sp-8);
 	}
 	.gallery-heading {
@@ -1137,27 +1104,13 @@
 		align-items: flex-start;
 	}
 	.gallery-areas {
-		grid-template-columns: 1fr;
+		grid-template-columns: minmax(0, 1fr);
 	}
-	/* Narrow: the rail goes, each world's date heads its row. */
 	.gallery-servers {
-		padding-right: var(--gp);
 		gap: var(--ds-sp-5);
 	}
-	.gallery-server::before,
-	.gallery-server-when::after {
-		display: none;
-	}
 	.gallery-server {
-		grid-template-columns: minmax(0, 1fr);
-		row-gap: var(--ds-sp-2);
-	}
-	.gallery-server-when {
-		padding-top: 0;
-		text-align: left;
-	}
-	.gallery-server > .gallery-areas {
-		grid-column: 1;
+		row-gap: var(--ds-sp-4);
 	}
 	.gallery-server-card {
 		grid-template-columns: 96px minmax(0, 1fr);
@@ -1402,7 +1355,7 @@ html[data-mc-motion="reduced"]
 	}
 	.gallery-areas > .gallery-card:only-child {
 		display: grid;
-		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 520px) minmax(300px, 1fr);
 		grid-template-rows: 1fr auto;
 	}
 	.gallery-areas > .gallery-card:only-child > .gallery-cover {
@@ -1410,6 +1363,9 @@ html[data-mc-motion="reduced"]
 		aspect-ratio: auto;
 		min-height: 260px;
 		margin-bottom: var(--ds-sp-2);
+	}
+	.gallery-areas > .gallery-card:only-child .gallery-view {
+		flex: 0 1 200px;
 	}
 }
 
@@ -1425,6 +1381,44 @@ html[data-mc-motion="reduced"]
 	.gallery-chips li {
 		border: 1px solid CanvasText;
 		border-image: none;
+	}
+}
+
+/* On a server row the rename button follows the name; the row's right column keeps Open alone. Its 44 px target
+   does not make the name row taller than the name; a card's icon buttons never shrink under 44 px. */
+.mm-site .gallery-page .gallery-server-body .gallery-title h3 {
+	flex: 0 1 auto;
+}
+.mm-site .gallery-page .gallery-actions .gallery-icon-button {
+	flex: none;
+}
+.mm-site .gallery-page .gallery-server-body .gallery-title .gallery-icon-button {
+	margin-block: -10px;
+}
+/* Refresh: a stone-framed button with the pixel arrow, which turns a quarter at a time while the gallery reloads. */
+.gallery-refresh .gallery-icon {
+	color: var(--text-2);
+}
+.gallery-refresh[aria-busy="true"] {
+	cursor: progress;
+}
+.gallery-refresh[aria-busy="true"] .gallery-icon {
+	color: var(--ember);
+	animation: gallery-turn calc(2 * var(--ds-dur-2)) steps(4, jump-none) infinite;
+}
+@keyframes gallery-turn {
+	to {
+		transform: rotate(270deg);
+	}
+}
+
+/* Reduced motion (the system's or the site's option): the arrow stays still, the ember colour alone says it is loading. */
+html[data-mc-motion="reduced"] .gallery-refresh[aria-busy="true"] .gallery-icon {
+	animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.gallery-refresh[aria-busy="true"] .gallery-icon {
+		animation: none;
 	}
 }
 

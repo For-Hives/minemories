@@ -338,7 +338,7 @@ test.each([false, true])('an older gallery response cannot overwrite a newer ref
 	const request = deferred<ReturnType<typeof capture>[]>()
 	mocks.list.mockReturnValueOnce(request.promise)
 	page()
-	fireEvent.click(screen.getByRole('button', { name: '↻ Refresh' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 	await expand()
 	await act(async () => {
 		if (fails) request.reject(new Error('obsolete failure'))
@@ -568,7 +568,7 @@ test('a late trash listing cannot resurrect a capture that has just been restore
 	const request = deferred<typeof trash>()
 	mocks.trashList.mockReturnValueOnce(request.promise)
 	page()
-	fireEvent.click(screen.getByRole('button', { name: '↻ Refresh' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 	await screen.findByRole('region', { name: 'Trash' })
 	fireEvent.click(screen.getByRole('button', { name: '↩ Restore' }))
 	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
