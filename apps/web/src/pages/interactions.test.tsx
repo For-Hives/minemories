@@ -709,13 +709,11 @@ test('the header and footer brand show the logo camera before the word, and a co
 	)
 	const brands = screen.getAllByRole('link', { name: 'Minemories' })
 	expect(brands).toHaveLength(2)
-	for (const brand of brands) {
-		const mark = brand.querySelector('img')
-		expect(mark?.getAttribute('src')).toBe('/brand/minemories-mark.svg')
-		expect(mark?.getAttribute('alt')).toBe('')
-	}
-	// The header shows the logo alone (its name comes from the link's aria-label); the footer keeps the word.
+	for (const brand of brands) expect(brand.querySelector('img')?.getAttribute('alt')).toBe('')
+	// The header shows the whole logo alone (its name comes from the link's aria-label); the footer keeps the small mark and the word.
 	const [header, footer] = brands
+	expect(header?.querySelector('img')?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
+	expect(footer?.querySelector('img')?.getAttribute('src')).toBe('/brand/minemories-mark.svg')
 	expect(header?.textContent).toBe('')
 	expect(header?.querySelector('img')?.className).toBe('mm-brand-mark mm-brand-mark--solo')
 	expect(footer?.textContent).toBe('Minemories')
