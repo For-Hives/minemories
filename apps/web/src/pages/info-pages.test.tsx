@@ -39,13 +39,10 @@ test('public guides let a visitor move from concept to capture, installation and
 	fireEvent.click(screen.getByRole('link', { name: 'Le concept' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
-	fireEvent.click(screen.getByRole('tab', { name: 'Capturer' }))
-	expect(screen.getAllByText('/minemories export 16').length).toBeGreaterThan(0)
-	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
-	fireEvent.click(screen.getByRole('tab', { name: 'Installe' }))
-	const installLink = screen.getAllByRole('link', { name: 'Installe le mod' }).at(0)
-	if (!installLink) throw new Error('The install step has no link')
-	fireEvent.click(installLink)
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
+	expect(screen.queryByRole('tab')).toBeNull()
+	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
+	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
 	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
 	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ })).toBeTruthy()
@@ -54,15 +51,6 @@ test('public guides let a visitor move from concept to capture, installation and
 	fireEvent.click(faqLink)
 	expect(screen.getByRole('heading', { name: 'Dois-je installer quelque chose sur le serveur ?' })).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant ?' })).toBeTruthy()
-	const howTo = screen.getAllByRole('link', { name: 'Comment ça marche' }).at(0)
-	if (!howTo) throw new Error('How it works navigation is missing')
-	fireEvent.click(howTo)
-	fireEvent.click(screen.getByRole('tab', { name: 'Partager' }))
-	expect(screen.getByRole('heading', { name: '5. Partager seulement ce que tu choisis' })).toBeTruthy()
-	expect(document.body.textContent).toContain('clique sur « Partager » puis « Créer un lien »')
-	expect(document.body.textContent).not.toMatch(/« Share »|« Create a link »/)
-	expect(document.body.textContent).not.toContain('Le suivi commence avec cette version')
-	expect(document.body.textContent).toContain('La profondeur visitée est enregistrée sur ton ordinateur uniquement.')
 })
 
 function mountEnglish(ui: React.ReactNode) {
@@ -76,23 +64,35 @@ function mountEnglish(ui: React.ReactNode) {
 const outdatedMenu =
 	/[Ss]imple mode|[Aa]dvanced mode|Capture and upload|Export locally|Local captures|Minemories API” button/
 
-test('guides describe the current M screen labels and its advanced settings tabs', () => {
+test('how it works is one linear page of four steps that quotes the M menu and warns what a link shows', () => {
 	mountEnglish(<HowItWorksPage />)
 	const howTo = document.querySelector('article')?.textContent ?? ''
 	expect(howTo).not.toMatch(outdatedMenu)
+	expect(screen.queryByRole('tab')).toBeNull()
+	expect(document.querySelector('details')).toBeNull()
+	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
+		'1. You play',
+		'2. The file stays with you',
+		'3. You connect the game, if you want',
+		'4. You show it, if you want',
+		'Questions',
+	])
 	for (const label of [
-		'M → type the code → Connect',
-		'“Take a memory”',
-		'M → My memories → Send this memory',
-		'“Auto memories”',
-		'M → Settings → Account',
+		'Press M → Take a memory.',
+		'In Minecraft: M → type the code → Connect.',
+		'Yes: M → Auto memories.',
+		'M → Settings → Privacy',
+		'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.',
 	])
 		expect(howTo).toContain(label)
+	// The 32-block default radius, drawn: 65 × 65 blocks.
+	expect(screen.getByRole('img', { name: '65 × 65' })).toBeTruthy()
 	// The pairing command is gone from the how-to: the M menu is the only path given.
 	expect(howTo).not.toContain('/minemories pair')
 	expect(howTo).not.toContain('/minemories upload')
-	expect(howTo).toContain('M → Settings → Memories → Auto captures, “Captured depth”')
-	expect(howTo).toContain('“Official address”')
+	// Not before the owner confirms the measure (D13).
+	expect(howTo).not.toMatch(/lag|slow the game down/i)
+	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2)
 })
 
 test('the concept page says what it is, what it is not, compares the other ways with a date, then asks three questions', () => {
@@ -187,13 +187,14 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('fr-CA', auto)).toContain('« Photos auto »')
 	expect(translate('en-GB', auto)).toContain('“Auto photos”')
 	expect(translate('de', auto)).toContain('„Auto-Fotos“')
-	const earlier =
-		'From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.'
-	expect(translate('fr', earlier)).toContain('M → Prendre un souvenir, ou en AFK')
-	expect(translate('fr', earlier)).toContain('M → Mes souvenirs → Envoyer ce souvenir')
-	expect(translate('fr-CA', earlier)).toContain('M → Mes souvenirs → Envoyer cette capture')
-	expect(translate('en-GB', earlier)).toContain('M → My memories → Send this capture')
-	expect(translate('de', earlier)).toContain('M → Meine Erinnerungen → Diese Aufnahme senden')
+	const earlier = 'M → My memories → Send this memory.'
+	expect(translate('fr', earlier)).toBe('M → Mes souvenirs → Envoyer ce souvenir.')
+	expect(translate('fr-CA', earlier)).toBe('M → Mes souvenirs → Envoyer cette capture.')
+	expect(translate('en-GB', earlier)).toBe('M → My memories → Send this capture.')
+	expect(translate('de', earlier)).toBe('M → Meine Erinnerungen → Diese Aufnahme senden.')
+	expect(translate('en-GB', 'Yes: M → Auto memories.')).toBe('Yes: M → Auto photos.')
+	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui : M → Photos auto.')
+	expect(translate('ja', 'In Minecraft: M → type the code → Connect.')).toContain('接続する')
 })
 
 test('privacy page explains mod diagnostics and download requests and keeps the web consent control', () => {

@@ -20,85 +20,28 @@
 	white-space: nowrap;
 }
 
-/* --- Tabs: the kit's tab strip, one pictogram per tab ----------------------------------------------------------------------------------------------- */
+/* --- Steps: /how-it-works, one card per step, top to bottom ------------------------------------------------------------------------------------- */
 
-.ex-tabs {
-	display: flex;
-	flex-wrap: wrap;
-	margin: var(--ds-sp-5) 0 var(--ds-sp-4);
-	background: rgb(0 0 0 / 0.75);
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
+.ex-steps {
+	display: grid;
+	gap: var(--ds-sp-5);
+	margin: var(--ds-sp-5) 0;
+	padding: 0;
+	list-style: none;
 }
 
-.ex-tab {
-	display: inline-flex;
-	flex: 1 1 auto;
-	align-items: center;
-	justify-content: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-4);
-	border: 0;
-	background: none;
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
-	transition:
-		color var(--ds-dur-1) var(--ds-ease),
-		background-color var(--ds-dur-1) var(--ds-ease);
-}
-
-.ex-tab:hover {
-	color: #fff;
-	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
-}
-
-.ex-tab[aria-selected="true"] {
-	background: var(--night-3);
-	color: #fff;
-	box-shadow: inset 0 calc(-2 * var(--gp)) 0 var(--ember);
-}
-
-.ex-tab:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(-3 * var(--gp));
-}
-
-.ex-tabpanel {
+.ex-steps > li {
 	padding: var(--ds-sp-5);
 	background: var(--night-2);
 	box-shadow: var(--mm-card-shadow);
 }
 
-/* A panel that only holds rows (FAQ) is not a card inside a card: the rows are the card. */
-.ex-tabpanel:has(> .ex-rows) {
-	padding: 0;
-	background: none;
-	box-shadow: none;
-}
-
-.ex-tabpanel > :first-child {
+.ex-steps > li > :first-child {
 	margin-top: 0;
 }
 
-.ex-tabpanel > :last-child {
+.ex-steps > li > :last-child {
 	margin-bottom: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	html:not([data-mc-motion="reduced"]) .ex-tabpanel:not([hidden]) {
-		animation: ex-in var(--ds-dur-2) var(--ds-ease);
-	}
-}
-
-@keyframes ex-in {
-	from {
-		opacity: 0;
-		transform: translateY(var(--ds-reveal-y));
-	}
 }
 
 .ex-line {
@@ -789,23 +732,12 @@
 	.ex-radius {
 		justify-items: start;
 	}
-
-	.ex-tab {
-		flex-basis: 40%;
-	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.ex-map-area,
-	.ex-share-people,
-	.ex-tab {
+	.ex-share-people {
 		transition: none;
-	}
-}
-
-@media (forced-colors: active) {
-	.ex-tab[aria-selected="true"] {
-		outline: 2px solid Highlight;
 	}
 }
 
@@ -824,34 +756,6 @@
 	height: 8px;
 	background: var(--mm-accent, var(--ember));
 	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-
-/* The three loaders the mod runs on: boxes, not a sentence. */
-.ex-loaders {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-4);
-	margin: var(--ds-sp-4) 0;
-	padding: 0;
-	list-style: none;
-}
-
-.ex-loaders li {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-	min-height: var(--ds-hit);
-	margin: 0;
-	padding: 0 var(--ds-sp-4);
-	background: var(--night);
-	box-shadow: var(--mm-recess-shadow);
-	color: var(--text);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.ex-loaders .ex-glyph {
-	color: var(--ember);
 }
 
 /* --- Questions: the FAQ and the three questions of the other pages, a visible list with short answers --------------------------------------------- */

@@ -1,10 +1,10 @@
-import { type ReactNode, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { RadiusMap, ShareDemo } from '../components/diagrams'
-import { FileTree, Glyph, type GlyphName, More, TabPanel, type TabSpec, TabStrip } from '../components/explainers'
+import { FileTree, Glyph, type GlyphName } from '../components/explainers'
 import { buttonLime } from '../components/ui'
 import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
-import { T, useI18n } from '../i18n/I18n'
+import { useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
@@ -129,273 +129,72 @@ export function ConceptPage() {
 	)
 }
 
-type Step = 'install' | 'capture' | 'file' | 'upload' | 'share'
-const steps: Array<TabSpec<Step>> = [
-	{ id: 'install', label: 'Install', glyph: 'download' },
-	{ id: 'capture', label: 'Capture', glyph: 'crosshair' },
-	{ id: 'file', label: 'File', glyph: 'cube' },
-	{ id: 'upload', label: 'Upload', glyph: 'cloud' },
-	{ id: 'share', label: 'Share', glyph: 'link' },
-]
-
-function InstallStep() {
-	return (
-		<>
-			<h2>
-				<T message={'1. Install and open the world'} />
-			</h2>
-			<ul className="ex-loaders">
-				{['NeoForge', 'Fabric', 'Forge'].map(loader => (
-					<li key={loader}>
-						<Glyph name="cube" />
-						{loader}
-					</li>
-				))}
-			</ul>
-			<p>
-				<Link className={buttonLime} to="/installation">
-					<T message={'guides.install.action'} />
-				</Link>
-			</p>
-			<More>
-				<p>
-					<Link to="/installation">
-						<T message={'guides.install.action'} />
-					</Link>{' '}
-					<T
-						message={
-							'on your computer, then open your world or join your server using its usual compatible profile. The server must still be accessible to capture its builds.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function CaptureStep() {
-	return (
-		<>
-			<h2>
-				<T message={'2. Choose a small area and capture it'} />
-			</h2>
-			<RadiusMap />
-			<More>
-				<p>
-					<T message={'For your first attempt, stand near the build and type'} /> <code>/minemories export 16</code>{' '}
-					<T
-						message={
-							'in chat. 16 is the radius in blocks around you; accepted values range from 2 to 128. Start small: a large area can slow the game. The mod captures what the client has loaded, not the entire server.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. The visited depth is recorded on your computer only. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
-						}
-					/>
-				</p>
-				<p>
-					<T message={'For a precise area, stand at the first corner and enter'} />{' '}
-					<code>/minemories select first</code>
-					<T message={', then at the opposite corner with'} /> <code>/minemories select second</code>
-					<T message={'. These positions also define the height. Check with'} /> <code>/minemories select status</code>
-					<T message={', then run'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
-					<T message={'clears the selection.'} />
-				</p>
-				<p>
-					<T
-						message={
-							'The M key opens the Minemories menu. To connect your gallery: M → type the code → Connect. Then “Take a memory” sends each memory to your private gallery on its own; without an account, it stays on your computer. If M is already taken, change the key in Options → Controls → Key Binds.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'The sides and bottom of the capture are closed with a dirt/stone appearance, like an extracted piece of world. These faces are added to the 3D memory: no blocks are changed in Minecraft.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function FileStep() {
-	return (
-		<>
-			<h2>
-				<T message={'3. Find the file on your computer'} />
-			</h2>
-			<FileTree />
-			<More>
-				<p>
-					<T message={'The result is a file named'} /> <code>capture.glb</code> <T message={'in the folder'} />{' '}
-					<code>export</code> <T message={'under your user directory ('} />
-					<code>~/export/capture.glb</code>
-					<T
-						message={
-							') by default, not in the world folder. In M → Settings → Memories, you can choose another folder and click “Save”; “Save here” exports without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
-						}
-					/>{' '}
-					<code>history</code>. <code>capture.glb</code>
-					<T
-						message={
-							'points to the latest export. In the M menu, “My memories” lets you choose an older memory and send it to your gallery. Keep your own backups: the history takes up space on your computer.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'To revisit it on the site, send this memory from M → My memories, then open it in your private gallery.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function UploadStep() {
-	return (
-		<>
-			<h2>
-				<T message={'4. Upload to your gallery, if you choose'} />
-			</h2>
-			<ol className="ex-chain">
-				<li>
-					<Glyph name="key" />
-					<Link to="/gallery">
-						<T message={'Get a code in your gallery'} />
-					</Link>
-				</li>
-				<li>
-					<Glyph name="code" />
-					<T message={'In Minecraft: M → type the code → Connect'} />
-				</li>
-				<li>
-					<Glyph name="cloud" />
-					<T message={'Your memories go to your gallery on their own'} />
-				</li>
-			</ol>
-			<p className="ex-line">
-				<T message={'The code lasts 5 minutes and works once.'} />
-			</p>
-			<More>
-				<ol>
-					<li>
-						<Link to="/register">
-							<T message={'Create your account'} />
-						</Link>{' '}
-						<T message={'or'} />{' '}
-						<Link to="/login">
-							<T message={'sign in'} />
-						</Link>
-						<T message={', then open'} />{' '}
-						<Link to="/gallery">
-							<T message={'My gallery'} />
-						</Link>
-						.
-					</li>
-					<li>
-						<T
-							message={
-								'Get the 6-digit code in your gallery. In Minecraft: M → type the code → Connect. The code works once, for 5 minutes.'
-							}
-						/>
-					</li>
-					<li>
-						<T
-							message={
-								'From then on, every memory taken with M → Take a memory, or AFK, goes to your private gallery on its own. Any other: M → My memories → Send this memory.'
-							}
-						/>
-					</li>
-				</ol>
-				<p>
-					<T
-						message={
-							'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. The “Auto memories” button in M turns them on or off; M → Settings → Memories → Auto captures adjusts the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
-						}
-					/>
-				</p>
-				<p>
-					<strong>
-						<T message={'Use your own API (advanced)'} />
-					</strong>
-				</p>
-				<p>
-					<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
-					<T
-						message={
-							'by default. In M → Settings → Account, you can enter the HTTPS address of a compatible self-hosted Minemories API, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Official address” button restores the official address; save to apply it.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function ShareStep() {
-	return (
-		<>
-			<h2>
-				<T message={'5. Share only what you choose'} />
-			</h2>
-			<ShareDemo />
-			<More>
-				<p>
-					<T
-						message={
-							'The gallery is private by default. On a capture, “Share” then “Create a link” creates a link accessible to anyone who has it; they can forward it too. You can revoke the link from this panel, but this does not delete copies someone has already saved.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
-						}
-					/>{' '}
-					<T message={'Avoid places or text with personal information, and ask the other builders first.'} />
-				</p>
-			</More>
-		</>
-	)
-}
-
-const stepBody: Record<Step, () => ReactNode> = {
-	install: InstallStep,
-	capture: CaptureStep,
-	file: FileStep,
-	upload: UploadStep,
-	share: ShareStep,
-}
-
+/** The four steps, top to bottom, each with its drawing: what the mod takes, where the file lands, what connecting adds, what sharing shows. */
 export function HowItWorksPage() {
 	const { t } = useI18n()
-	const [step, setStep] = useState<Step>('install')
 	return (
 		<InfoPage title="From Minecraft world to 3D memory">
-			<TabStrip
-				base="step"
-				label={t('From Minecraft world to 3D memory')}
-				tabs={steps.map(item => ({ ...item, label: t(item.label) }))}
-				value={step}
-				onChange={setStep}
-			/>
-			{steps.map(item => {
-				const Body = stepBody[item.id]
-				return (
-					<TabPanel key={item.id} base="step" id={item.id} active={item.id === step}>
-						<Body />
-					</TabPanel>
-				)
-			})}
+			<ol className="ex-steps">
+				<li>
+					<h2>{t('1. You play')}</h2>
+					<p>
+						{t('Press M → Take a memory.')}{' '}
+						{t(
+							'Or leave the game for 5 minutes, even paused: the mod keeps one on its own (at most one every 4 hours).'
+						)}{' '}
+						{t('About 32 blocks around you, adjusted to what you built.')}
+					</p>
+					<RadiusMap initial={32} />
+				</li>
+				<li>
+					<h2>{t('2. The file stays with you')}</h2>
+					<p>
+						{t('Each memory is a GLB file, textures and lights included, in the export folder of your home folder.')}
+					</p>
+					<FileTree />
+				</li>
+				<li>
+					<h2>{t('3. You connect the game, if you want')}</h2>
+					<p>
+						{t('On the site, create an account and get a 6-digit code.')}{' '}
+						{t('In Minecraft: M → type the code → Connect.')} {t('Your memories then go to your private gallery.')}
+					</p>
+					<ol className="ex-chain">
+						<li>
+							<Glyph name="key" />
+							<Link to="/gallery">{t('Get a code in your gallery')}</Link>
+						</li>
+						<li>
+							<Glyph name="code" />
+							{t('In Minecraft: M → type the code → Connect')}
+						</li>
+						<li>
+							<Glyph name="cloud" />
+							{t('Your memories go to your gallery on their own')}
+						</li>
+					</ol>
+				</li>
+				<li>
+					<h2>{t('4. You show it, if you want')}</h2>
+					<p>
+						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
+						{t('You stop sharing whenever you want.')}
+					</p>
+					<ShareDemo />
+					<p className="ex-line">
+						{t(
+							'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
+						)}
+					</p>
+				</li>
+			</ol>
+			<h2>{t('Questions')}</h2>
+			<Questions ids={pageQuestions.howItWorks} />
+			<p>
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
+				</Link>
+			</p>
 		</InfoPage>
 	)
 }
