@@ -66,12 +66,12 @@ export function downloadFor(release: ModRelease, loader: string, minecraft?: str
 		) ?? null
 	)
 }
-/** Minecraft versions with at least one published target, newest first. */
+/** Minecraft versions with at least one published target, newest first (26.3 after the 1.x line ends). */
 export function minecraftVersions(targets: LoaderTarget[] = loaderTargets): string[] {
 	const parts = (version: string) => version.split('.').map(Number)
 	return [...new Set(targets.map(target => target.minecraft))].sort((a, b) => {
 		const [x, y] = [parts(a), parts(b)]
-		return (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
+		return (y[0] ?? 0) - (x[0] ?? 0) || (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
 	})
 }
 

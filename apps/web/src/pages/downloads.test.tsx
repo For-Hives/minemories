@@ -40,7 +40,7 @@ test('the grid lists every Minecraft version newest first against NeoForge, Fabr
 	const grid = downloadGrid(parseIndex(modIndexFixture(published)))
 	expect(grid.loaders.map(item => item.name)).toEqual(['NeoForge', 'Fabric', 'Forge'])
 	expect(grid.rows.map(row => row.minecraft)).toEqual(minecraftVersions())
-	expect(grid.rows[0]?.minecraft).toBe('1.21.11')
+	expect(grid.rows[0]?.minecraft).toBe('26.3')
 	const row = (version: string) => grid.rows.find(item => item.minecraft === version)?.cells ?? []
 	expect(row('1.21.1').map(cell => cell.download?.url)).toEqual([
 		downloadUrl('neoforge-mc1.21.1', '0.2.0'),
