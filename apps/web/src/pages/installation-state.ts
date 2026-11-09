@@ -29,29 +29,35 @@ export interface GuideState {
 }
 
 export const guideStorageKey = 'minemories-installation-v3'
-// NeoForge 1.21.1 is the combination the written walkthrough and its screenshots were validated on.
+/** NeoForge 1.21.1 is the combination the written walkthrough and its screenshots were validated on. */
+export const walkthrough = { minecraft: '1.21.1', loader: 'neoforge' }
+/** The guide preselects no version: the visitor names the one they play before anything else. */
 export const defaults: GuideState = {
 	system: 'windows',
-	minecraft: '1.21.1',
-	loader: 'neoforge',
+	minecraft: '',
+	loader: '',
 	step: 'system',
 	active: false,
 	preset: false,
 	needsLoader: false,
 }
-/** The Minecraft version the owner validated in game, and the version and loader most players use. */
+/** The Minecraft version the owner validated in game. */
 export const validatedMinecraft = '1.21.1'
-export const mostUsed = { minecraft: '1.21.11', loader: 'fabric' }
 
 /** Loaders published for a Minecraft version, in mod/targets.json order. */
 export function loadersFor(minecraft: string): LoaderTarget[] {
 	return loaderTargets.filter(target => target.minecraft === minecraft)
 }
-/** The target a choice points to; a loader missing for that version falls back to the first one published. */
+/**
+ * The target a choice points to; a loader missing for that version falls back to the first one published, and a
+ * version not chosen yet to the walkthrough's target.
+ */
 export function targetFor(minecraft: string, loader: string): LoaderTarget {
 	const candidates = loadersFor(minecraft)
 	const found = candidates.find(target => target.loader === loader) ?? candidates[0]
-	return found ?? (loaderTargets[0] as LoaderTarget)
+	if (found) return found
+	const fallback = loadersFor(walkthrough.minecraft).find(target => target.loader === walkthrough.loader)
+	return fallback ?? (loaderTargets[0] as LoaderTarget)
 }
 
 /**
@@ -59,7 +65,7 @@ export function targetFor(minecraft: string, loader: string): LoaderTarget {
  * screenshots) on its Minecraft version, otherwise Fabric when published (the lightest), else the first one.
  */
 export function recommendedLoader(minecraft: string): string {
-	if (minecraft === defaults.minecraft) return defaults.loader
+	if (minecraft === walkthrough.minecraft) return walkthrough.loader
 	const candidates = loadersFor(minecraft)
 	return (candidates.find(target => target.loader === 'fabric') ?? targetFor(minecraft, '')).loader
 }
@@ -88,6 +94,7 @@ export function readGuide(): GuideState | null {
 	try {
 		const data = JSON.parse(localStorage.getItem(guideStorageKey) ?? 'null')
 		if (!data || typeof data !== 'object') return null
+		const chosen = loadersFor(String(data.minecraft)).length > 0
 		const target = targetFor(String(data.minecraft), String(data.loader))
 		const preset = data.preset === true
 		const needsLoader = data.needsLoader === true
@@ -95,8 +102,8 @@ export function readGuide(): GuideState | null {
 		const step = data.step === 'done' || steps.includes(data.step) ? data.step : 'system'
 		return {
 			system: isSystem(data.system) ? data.system : defaults.system,
-			minecraft: target.minecraft,
-			loader: target.loader,
+			minecraft: chosen ? target.minecraft : '',
+			loader: chosen ? target.loader : '',
 			step,
 			active: data.active === true,
 			preset,

@@ -98,6 +98,9 @@ test('the guided installation asks three light questions, then walks through the
 	expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Continuer', '← Retour'])
 	next()
 	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
+	// No version is preselected: Continue waits for the visitor's choice.
+	expect(screen.getAllByRole('radio').some(radio => (radio as HTMLInputElement).checked)).toBe(false)
+	expect(screen.getByRole('button', { name: 'Continuer' })).toHaveProperty('disabled', true)
 	// Only the version itself: no loader list, and a badge only on a version not validated in game yet.
 	expect(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }).closest('label')?.textContent).toBe('1.21.11')
 	expect(screen.getByRole('radio', { name: /^26\.3/ }).closest('label')?.textContent).toBe(
@@ -152,7 +155,7 @@ test('the guided installation asks three light questions, then walks through the
 	expect(stored()).toMatchObject({ step: 'done', minecraft: '1.21.11', loader: 'fabric', needsLoader: false })
 	click('Recommencer et effacer mes choix')
 	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(stored()).toMatchObject({ active: false, step: 'system', minecraft: '1.21.1', loader: 'neoforge' })
+	expect(stored()).toMatchObject({ active: false, step: 'system', minecraft: '', loader: '' })
 })
 
 test('without a loader, the guide installs the recommended one in a dedicated folder and places the mod there', () => {
@@ -196,6 +199,7 @@ test('Back returns one screen, and from the first screen to the welcome screen',
 	mountGuide()
 	start()
 	next()
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.1(?!\d)/ }))
 	next()
 	expect(title()).toBe('Quel loader de mods utilises-tu ?')
 	click('← Retour')
@@ -296,7 +300,9 @@ test('copies the first capture command and gives a manual fallback when clipboar
 	platform('Linux x86_64')
 	mountGuide()
 	start()
-	for (let index = 0; index < 6; index++) next()
+	next()
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.1(?!\d)/ }))
+	for (let index = 0; index < 5; index++) next()
 	expect(title()).toBe('Créer un souvenir')
 	await act(async () => {
 		fireEvent.click(screen.getByRole('button', { name: 'Copier la commande de première capture' }))
@@ -326,6 +332,8 @@ test('the state helpers know which screens a choice needs', () => {
 	expect(recommendedLoader('1.21.11')).toBe('fabric')
 	expect(recommendedLoader('1.21.1')).toBe('neoforge')
 	expect(recommendedLoader('1.18.2')).toBe('forge')
+	// A version not chosen yet points to the validated walkthrough, never to an arbitrary first target.
+	expect(targetFor('', '')).toMatchObject({ minecraft: '1.21.1', loader: 'neoforge' })
 	expect(loadersFor('1.18.2').map(item => item.loader)).toEqual(['forge'])
 	expect(guideLink({ minecraft: '1.21.1', loader: 'neoforge' })).toBe('/installation?minecraft=1.21.1&loader=neoforge')
 })
@@ -339,7 +347,7 @@ test('ignores malformed stored state and remains usable if storage is blocked', 
 		guideStorageKey,
 		JSON.stringify({ system: 'other', minecraft: '1.2.3', loader: 'other', step: 'nowhere', active: 'yes', preset: 1 })
 	)
-	expect(readGuide()).toEqual({ ...defaults, minecraft: '1.21.1', loader: 'neoforge' })
+	expect(readGuide()).toEqual(defaults)
 	localStorage.setItem(
 		guideStorageKey,
 		JSON.stringify({ system: 'mac', minecraft: '1.18.2', loader: 'fabric', step: 'install' })

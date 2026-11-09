@@ -16,6 +16,7 @@ import {
 	resetGuide,
 	saveGuide,
 	targetFor,
+	walkthrough,
 } from './installation-state'
 import { latestDownloadUrl } from './mod-releases'
 import './installation.css'
@@ -184,7 +185,7 @@ export function InstallationPage() {
 					</h2>
 					<p>
 						<T message={'Download the mod from'} />{' '}
-						<a href={latestDownloadUrl(defaults.minecraft, defaults.loader)}>Minemories</a>
+						<a href={latestDownloadUrl(walkthrough.minecraft, walkthrough.loader)}>Minemories</a>
 						<T message={'. Here are all the steps for Minecraft Launcher:'} />
 					</p>
 					{installStepIds.map(step => (
@@ -193,7 +194,7 @@ export function InstallationPage() {
 							<InstallationStep
 								step={step}
 								system="windows"
-								target={targetFor(defaults.minecraft, defaults.loader)}
+								target={targetFor(walkthrough.minecraft, walkthrough.loader)}
 								needsLoader
 							/>
 						</section>

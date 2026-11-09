@@ -70,6 +70,7 @@ test('the screenshots only show for the validated Windows NeoForge 1.21.1 walkth
 	)
 	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.1(?!\d)/ }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
 	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))

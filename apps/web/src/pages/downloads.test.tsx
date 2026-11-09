@@ -84,7 +84,8 @@ test('published cells offer the download, size and checksum; the others say why 
 	expect(within(row).getAllByText('SHA-256')[0]?.closest('details')).toBeTruthy()
 	expect(within(row).getByText('Pas encore publié')).toBeTruthy()
 	const recent = screen.getByRole('rowheader', { name: /1\.21\.11/ }).closest('tr') as HTMLElement
-	expect(within(recent).getByText('La plus utilisée')).toBeTruthy()
+	// No popularity badge: nothing measures which version is the most used.
+	expect(within(recent).getByRole('rowheader').textContent).toBe('1.21.11')
 	const experimental = screen.getByRole('rowheader', { name: /26\.3/ })
 	expect(experimental.textContent).toContain('Expérimental · pas encore validé en jeu')
 	expect(screen.getAllByRole('rowheader')[0]).toBe(experimental)

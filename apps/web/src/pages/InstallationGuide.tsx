@@ -68,6 +68,8 @@ export function InstallationGuide({
 	}
 	const step = guide.step === 'done' ? null : steps[index]
 	const question = step === 'system' || step === 'minecraft' || step === 'loader'
+	// No version is preselected: the guide waits for one before going on.
+	const waiting = step === 'minecraft' && !guide.minecraft
 	return (
 		<section className="install-guide" aria-label={t('Step-by-step guide')}>
 			{step ? (
@@ -92,6 +94,7 @@ export function InstallationGuide({
 						<button
 							className={`${buttonLime} install-primary`}
 							type="button"
+							disabled={waiting}
 							onClick={() => go(steps[index + 1] ?? 'done')}
 						>
 							{index === steps.length - 1 ? t('My memory opens in 3D') : t('Continue')}
