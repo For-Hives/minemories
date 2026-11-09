@@ -475,9 +475,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</p>
 								<details className="mc-step__more">
 									<summary data-i18n="Details">{t('Details')}</summary>
-									<p data-i18n="The gallery needs an account on the site. Ask there for a link code (6 digits, valid 5 minutes, one use), then type /minemories pair followed by the code in the game. Until then, memories stay on your computer.">
+									<p data-i18n="Create an account, then get a 6-digit code in your gallery. In Minecraft: M → type the code → Connect. From then on, your memories go to your private gallery on their own.">
 										{t(
-											'The gallery needs an account on the site. Ask there for a link code (6 digits, valid 5 minutes, one use), then type /minemories pair followed by the code in the game. Until then, memories stay on your computer.'
+											'Create an account, then get a 6-digit code in your gallery. In Minecraft: M → type the code → Connect. From then on, your memories go to your private gallery on their own.'
 										)}
 									</p>
 								</details>

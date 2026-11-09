@@ -459,6 +459,7 @@ test('French translation does not change pairing state identifiers or hide the p
 	await act(async () => {})
 	expect(screen.getByRole('button', { name: 'Copier le code d’appairage' }).textContent).toBe('123 456')
 	expect(screen.getByText('En attente de Minecraft…')).toBeTruthy()
+	expect(screen.getByText('Dans Minecraft : M → tape ce code → Se connecter.')).toBeTruthy()
 	view.unmount()
 	localStorage.clear()
 })

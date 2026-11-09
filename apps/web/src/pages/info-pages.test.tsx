@@ -79,8 +79,17 @@ test('guides describe the current M screen labels and its advanced settings tabs
 	mountEnglish(<HowItWorksPage />)
 	const howTo = document.querySelector('article')?.textContent ?? ''
 	expect(howTo).not.toMatch(outdatedMenu)
-	for (const label of ['“Connect”', '“Take a memory”', 'M → My memories', '“Auto memories”', 'M → Settings → Account'])
+	for (const label of [
+		'M → type the code → Connect',
+		'“Take a memory”',
+		'M → My memories → Send this memory',
+		'“Auto memories”',
+		'M → Settings → Account',
+	])
 		expect(howTo).toContain(label)
+	// The pairing command is gone from the how-to: the M menu is the only path given.
+	expect(howTo).not.toContain('/minemories pair')
+	expect(howTo).not.toContain('/minemories upload')
 	expect(howTo).toContain('M → Settings → Memories → Auto captures, “Captured depth”')
 	expect(howTo).toContain('“Official address”')
 	cleanup()
@@ -120,6 +129,12 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('fr-CA', auto)).toContain('« Photos auto »')
 	expect(translate('en-GB', auto)).toContain('“Auto photos”')
 	expect(translate('de', auto)).toContain('„Auto-Fotos“')
+	const earlier =
+		'From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.'
+	expect(translate('fr', earlier)).toContain('M → Mes souvenirs → Envoyer ce souvenir')
+	expect(translate('fr-CA', earlier)).toContain('M → Mes souvenirs → Envoyer cette capture')
+	expect(translate('en-GB', earlier)).toContain('M → My memories → Send this capture')
+	expect(translate('de', earlier)).toContain('M → Meine Erinnerungen → Diese Aufnahme senden')
 })
 
 test('privacy page explains mod diagnostics and download requests and keeps the web consent control', () => {
@@ -150,7 +165,8 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(screen.getByRole('heading', { name: 'Diagnostics dans le mod Minecraft' })).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Liste des téléchargements du mod' })).toBeTruthy()
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('rien n’est jamais envoyé avant d’avoir appairé le jeu')
+	expect(text).toContain('rien n’est jamais envoyé avant que tu connectes le jeu')
+	expect(text).toContain('chaque souvenir, à la main ou AFK, est envoyé tout seul dans ta galerie')
 	expect(text).toContain('qui reçoit ton adresse IP comme pour toute requête au service')
 	// No internal deployment notes reach the public page.
 	expect(text).not.toMatch(/Sentry|27 octobre|doivent être documentées|avant activation/)

@@ -2,7 +2,6 @@ import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router'
 import { RadiusMap, SeasonDemo, ShareDemo } from '../components/diagrams'
 import {
-	Command,
 	FileTree,
 	Glyph,
 	type GlyphName,
@@ -221,7 +220,7 @@ function CaptureStep() {
 				<p>
 					<T
 						message={
-							'The M key opens the Minemories menu. To connect your gallery, type the six-digit code generated in it and click “Connect”. “Take a memory” works as soon as a world is open: without an account, the memory stays on your computer; once connected, it is also sent to your private gallery. If M is already assigned, change its shortcut in Minecraft controls.'
+							'The M key opens the Minemories menu. To connect your gallery: M → type the code → Connect. Then “Take a memory” sends each memory to your private gallery on its own; without an account, it stays on your computer. If M is already taken, change the key in Options → Controls → Key Binds.'
 						}
 					/>
 				</p>
@@ -288,13 +287,11 @@ function UploadStep() {
 				</li>
 				<li>
 					<Glyph name="code" />
-					<T message={'Enter it in chat'} />
-					<Command text="/minemories pair CODE" />
+					<T message={'In Minecraft: M → type the code → Connect'} />
 				</li>
 				<li>
 					<Glyph name="cloud" />
-					<T message={'Upload the capture'} />
-					<Command text="/minemories upload" />
+					<T message={'Your memories go to your gallery on their own'} />
 				</li>
 			</ol>
 			<p className="ex-line">
@@ -319,23 +316,14 @@ function UploadStep() {
 					<li>
 						<T
 							message={
-								'Generate a pairing code in the gallery. Pairing links this Minecraft installation to your Minemories account.'
+								'Get the 6-digit code in your gallery. In Minecraft: M → type the code → Connect. The code works once, for 5 minutes.'
 							}
 						/>
 					</li>
 					<li>
-						<T message={'In Minecraft chat, enter'} /> <code>/minemories pair CODE</code>{' '}
 						<T
 							message={
-								'replacing CODE with the six digits. The code expires after five minutes and can only be used once. Never type your password in Minecraft.'
-							}
-						/>
-					</li>
-					<li>
-						<T message={'Enter'} /> <code>/minemories upload</code>{' '}
-						<T
-							message={
-								'to upload the capture, then check that it appears in the gallery. The mod accepts files up to 450 MiB (about 472 MB). If the limit is exceeded, capture a smaller area.'
+								'From then on, every memory, by hand or AFK, goes to your private gallery on its own. Memories taken before: M → My memories → Send this memory.'
 							}
 						/>
 					</li>
@@ -509,7 +497,8 @@ const questions: Question[] = [
 		topic: 'sharing',
 		glyph: 'refresh',
 		question: 'Does the mod upload everything automatically?',
-		answer: 'AFK captures upload only once paired. Turn them off with “Auto memories” in M.',
+		answer:
+			'Nothing leaves before you connect the game. After that, every memory, by hand or AFK, goes to your private gallery on its own. Turn off the automatic ones with “Auto memories” in M.',
 	},
 	{
 		topic: 'sharing',

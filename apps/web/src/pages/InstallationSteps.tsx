@@ -305,7 +305,7 @@ function GalleryDetails() {
 			<p>
 				<T
 					message={
-						'To revisit the memory in your browser, link Minecraft to your private gallery, then upload the capture from the mod.'
+						'To revisit the memory in your browser, connect the game to your private gallery: your memories then go there on their own.'
 					}
 				/>
 			</p>
@@ -327,7 +327,7 @@ function GalleryDetails() {
 				<li>
 					<T
 						message={
-							'Generate the six-digit pairing code. In Minecraft, press M, type the code and click “Connect”. The code expires after five minutes: generate another if needed.'
+							'Get the 6-digit code in your gallery. In Minecraft: M → type the code → Connect. The code works once, for 5 minutes.'
 						}
 					/>
 				</li>

@@ -27,6 +27,7 @@ export function GalleryPairingCard({
 					<button type="button" onClick={copyCode} aria-label={t('Copy the pairing code')}>
 						{pairCode.slice(0, 3)} {pairCode.slice(3)}
 					</button>
+					<small>{t('In Minecraft: M → type this code → Connect.')}</small>
 					<small className="gallery-link-wait">
 						<i aria-hidden="true" /> {t('Waiting for Minecraft…')}
 						<span>

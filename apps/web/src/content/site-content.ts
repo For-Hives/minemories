@@ -28,7 +28,7 @@ export const articles: Article[] = [
 			},
 			{
 				heading: 'Keep the file, choose whether to share',
-				body: 'The capture lands in your export folder. Pair the mod to send captures to your private gallery.',
+				body: 'The capture lands in your export folder. Connect the game (M → type the code → Connect) and your memories go to your private gallery on their own.',
 				visual: { kind: 'files' },
 			},
 		],
@@ -52,7 +52,7 @@ export const legalContent = {
 			},
 			{
 				heading: 'Account and gallery',
-				body: 'Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. After pairing, AFK captures can upload automatically.',
+				body: 'Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory, by hand or AFK, uploads to your gallery on its own.',
 			},
 			{
 				heading: 'Links and deletion',
