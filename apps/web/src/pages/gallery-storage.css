@@ -1,0 +1,32 @@
+/* The storage card's meter row (loaded after gallery.css): the bar, its percentage on the right, and one colour per level. */
+/* The meter and its percentage share one row: the figure sits on the right edge with room around it. */
+.gallery-storage-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-4);
+	width: 100%;
+	margin-bottom: var(--ds-sp-2);
+}
+.gallery-storage-bar em {
+	flex: none;
+	min-width: 4ch;
+	text-align: right;
+	font: 400 16px / 18px var(--f-ui);
+	font-variant-numeric: tabular-nums;
+	font-style: normal;
+	color: var(--_level, var(--c-green));
+	text-shadow: var(--ds-text-shadow-1);
+}
+/* One colour per level for the fill and its percentage: green under 50 %, gold to 75 %, ember to 90 %, red beyond or when full. */
+.gallery-storage-bar[data-level="mid"] {
+	--_level: var(--c-gold);
+}
+.gallery-storage-bar[data-level="high"] {
+	--_level: var(--ember-deep);
+}
+.gallery-storage-bar[data-level="full"] {
+	--_level: var(--bad);
+}
+.gallery-storage-bar .gallery-meter-fill {
+	background: var(--_level, var(--c-green));
+}

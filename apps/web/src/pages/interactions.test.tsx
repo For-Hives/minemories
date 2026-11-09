@@ -189,7 +189,7 @@ test.each([false, true])(
 		)
 		mount(<GalleryPage />)
 		await act(async () => {
-			fireEvent.click(screen.getByRole('button', { name: '↻ Refresh' }))
+			fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 		})
 		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
 		if (!finish) throw new Error('Missing pending request')
@@ -230,6 +230,23 @@ test('gallery retries a failed refresh', async () => {
 	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
 	await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
 	expect(mocks.list).toHaveBeenCalledTimes(2)
+})
+
+test('gallery refresh turns while it reloads and ignores repeated clicks', async () => {
+	mount(<GalleryPage />)
+	await waitFor(() => expect(mocks.list).toHaveBeenCalledTimes(1))
+	let finish: (() => void) | undefined
+	mocks.list.mockReturnValueOnce(new Promise(resolve => (finish = () => resolve([]))))
+	const refresh = screen.getByRole('button', { name: 'Refresh' })
+	expect(refresh.getAttribute('aria-busy')).toBe('false')
+	fireEvent.click(refresh)
+	expect(refresh.getAttribute('aria-busy')).toBe('true')
+	fireEvent.click(refresh)
+	expect(mocks.list).toHaveBeenCalledTimes(2)
+	await act(async () => {
+		finish?.()
+	})
+	await waitFor(() => expect(refresh.getAttribute('aria-busy')).toBe('false'))
 })
 
 test('trash displays the server recovery deadline for a migrated capture', async () => {

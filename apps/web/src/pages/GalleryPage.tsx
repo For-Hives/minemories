@@ -22,6 +22,7 @@ import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
 import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
+import './gallery-storage.css'
 import { AreaCard, TrashCard } from './GalleryCards'
 import { GalleryPairingCard } from './GalleryPairingCard'
 import { type Memories, type Storage, useGalleryData } from './gallery-data'
@@ -30,10 +31,13 @@ import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
 import { useWaitingDraft } from './use-draft'
 
-function storageLevel(storage: Storage, used: number): 'full' | 'high' | 'ok' {
-	if (storage.availableBytes === 0) return 'full'
-	return used >= 85 ? 'high' : 'ok'
+/** The bar and its percentage change colour as the gallery fills: green, gold, ember, then red when it is almost or fully used. */
+export function storageLevel(storage: Pick<Storage, 'availableBytes'>, used: number): StorageLevel {
+	if (storage.availableBytes === 0 || used >= 90) return 'full'
+	if (used >= 75) return 'high'
+	return used >= 50 ? 'mid' : 'ok'
 }
+type StorageLevel = 'full' | 'high' | 'mid' | 'ok'
 
 function StorageSummary({ storage, failed }: { storage: Storage | null; failed: boolean }) {
 	const { t, locale } = useI18n()
@@ -54,10 +58,12 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 			<div className="gallery-storage-head">
 				<strong>{formatFileSize(storage.usedBytes, locale)}</strong>
 				<span>/ {formatFileSize(storage.limitBytes, locale)}</span>
-				<em>{used}%</em>
 			</div>
-			<div className="gallery-meter" aria-hidden="true" data-level={level}>
-				<span className="gallery-meter-fill" style={{ width: `${Math.max(used, 2)}%` }} />
+			<div className="gallery-storage-bar" data-level={level}>
+				<div className="gallery-meter" aria-hidden="true">
+					<span className="gallery-meter-fill" style={{ width: `${Math.max(used, 2)}%` }} />
+				</div>
+				<em>{used}%</em>
 			</div>
 			<p>
 				{formatFileSize(storage.availableBytes, locale)} <T message={'available of'} />{' '}
@@ -141,14 +147,7 @@ export function GalleryPage() {
 					<p>{gallerySummary(memories, locale)}</p>
 				</div>
 				<div className="gallery-heading-actions">
-					<button
-						type="button"
-						className="gallery-text-button"
-						onClick={() => void refreshAll()}
-						title={t('Refresh the gallery')}
-					>
-						<T message={'↻ Refresh'} />
-					</button>
+					<RefreshButton onRefresh={refreshAll} />
 					<LocalGalleryLink />
 				</div>
 			</div>
@@ -336,9 +335,6 @@ function ServerTile({
 	]
 	return (
 		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
-			<div className="gallery-server-when">
-				<time dateTime={span?.last}>{span ? formatRelativeDate(span.last, Date.now(), locale) : '—'}</time>
-			</div>
 			<div className="gallery-server-card">
 				<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
 					<ServerCovers captures={server.captures} />
@@ -359,9 +355,15 @@ function ServerTile({
 						</button>
 					</div>
 					{span && (
-						<p className="gallery-seed" title={t('First and last snapshot')}>
+						<p className="gallery-seed">
 							<GalleryIcon name="clock" />
-							<span>{formatDateSpan(span.first, span.last, locale)}</span>
+							<time className="gallery-seed-when" dateTime={span.last}>
+								{formatRelativeDate(span.last, Date.now(), locale)}
+							</time>
+							<span className="gallery-seed-span" title={t('First and last snapshot')}>
+								<span aria-hidden="true">·</span>
+								{formatDateSpan(span.first, span.last, locale)}
+							</span>
 						</p>
 					)}
 					<dl className="gallery-server-stats">
@@ -402,6 +404,36 @@ function ServerTile({
 				/>
 			)}
 		</li>
+	)
+}
+
+const REFRESH_MIN_MS = 400
+
+/** The manual refresh: the icon turns while the gallery reloads; the 12 s background refresh stays silent. */
+function RefreshButton({ onRefresh }: { onRefresh(): Promise<void> }) {
+	const { t } = useI18n()
+	const [busy, setBusy] = useState(false)
+	async function refresh() {
+		if (busy) return
+		setBusy(true)
+		try {
+			// A local reload answers in a few milliseconds: the arrow still makes one full turn so the click reads.
+			await Promise.all([onRefresh(), new Promise(resolve => setTimeout(resolve, REFRESH_MIN_MS))])
+		} finally {
+			setBusy(false)
+		}
+	}
+	return (
+		<button
+			type="button"
+			className="gallery-text-button gallery-refresh"
+			aria-busy={busy}
+			onClick={() => void refresh()}
+			title={t('Refresh the gallery')}
+		>
+			<GalleryIcon name="refresh" />
+			{t('Refresh')}
+		</button>
 	)
 }
 
