@@ -1,0 +1,112 @@
+// Mechanical Minecraft 26.3 adaptation: the 1.21.11 adaptation (../1.21.11/adapt.gradle) runs first, then the
+// 26.3 renames below (GuiGraphicsExtractor, Gui.setScreen, renderpearl packages...). A pattern that stops
+// matching fails the build. Class rewrites that are too large for a pattern live in overlay/java.
+apply from: file('../1.21.11/adapt.gradle')
+def adapt1211 = ext.adaptDir
+ext.adaptDir = { File root ->
+    adapt1211(root)
+    def rep = { String text, String from, String to, String file ->
+        if (!text.contains(from)) throw new GradleException("adapt: '${from}' not found in ${file}")
+        text.replace(from, to)
+    }
+    def regex = { String text, java.util.regex.Pattern pattern, String to, String file ->
+        def r = text.replaceAll(pattern, java.util.regex.Matcher.quoteReplacement(to))
+        if (r == text) throw new GradleException("adapt: /${pattern}/ not found in ${file}")
+        r
+    }
+    root.eachFileRecurse { f ->
+        if (!f.name.endsWith('.java')) return
+        def t = f.getText('UTF-8')
+        def o = t
+        def n = f.name
+        // GUI: GuiGraphics became GuiGraphicsExtractor, render* became extract*.
+        t = t.replace('net.minecraft.client.gui.GuiGraphics;', 'net.minecraft.client.gui.GuiGraphicsExtractor;')
+        t = t.replaceAll(/\bGuiGraphics\b/, 'GuiGraphicsExtractor')
+        t = t.replace('graphics.drawString(', 'graphics.text(').replace('graphics.renderItem(', 'graphics.item(')
+        t = t.replace('public void renderContents(', 'protected void extractContents(')
+        t = t.replace('public void renderBackground(', 'public void extractBackground(').replace('super.renderBackground(', 'super.extractBackground(')
+        t = t.replaceAll(/public void render\(GuiGraphicsExtractor/, 'public void extractRenderState(GuiGraphicsExtractor')
+        t = t.replace('super.render(graphics, mouseX, mouseY, partialTick)', 'super.extractRenderState(graphics, mouseX, mouseY, partialTick)')
+        // Screens moved from Minecraft to Minecraft.gui.
+        t = t.replaceAll(/\b(minecraft|mc|Minecraft\.getInstance\(\))\.setScreen\(/, '$1.gui.setScreen(')
+        t = t.replaceAll(/\b(minecraft|mc)\.screen\b/, '$1.gui.screen()')
+        t = t.replace('mc.getOverlay()', 'mc.gui.overlay()').replace('mc.getToastManager()', 'mc.gui.toastManager()')
+        t = t.replace('mc.player.displayClientMessage(message, false)', 'mc.player.sendSystemMessage(message)')
+        t = t.replace('mc.player.displayClientMessage(Component.literal("Minemories " + message), false)', 'mc.player.sendSystemMessage(Component.literal("Minemories " + message))')
+        t = t.replace('mc.player.displayClientMessage(Component.literal("Minemories: " + message), false)', 'mc.player.sendSystemMessage(Component.literal("Minemories: " + message))')
+        t = t.replace('getMainCamera()', 'mainCamera()')
+        // Input constants no longer come from LWJGL's GLFW binding.
+        t = t.replace('import org.lwjgl.glfw.GLFW;', 'import com.mojang.blaze3d.platform.InputConstants;')
+        t = t.replace('GLFW.GLFW_KEY_M', 'InputConstants.KEY_M').replace('GLFW.GLFW_RELEASE', 'InputConstants.RELEASE')
+        // Moved types.
+        t = t.replace('net.minecraft.client.renderer.block.model.BakedQuad', 'net.minecraft.client.resources.model.geometry.BakedQuad')
+        t = t.replace('net.minecraft.world.level.BlockAndTintGetter', 'net.minecraft.client.renderer.block.BlockAndTintGetter')
+        t = t.replace('com.mojang.blaze3d.vertex.VertexFormat', 'com.mojang.renderpearl.api.vertex.VertexFormat')
+        t = t.replace('com.mojang.blaze3d.buffers.GpuBuffer', 'com.mojang.renderpearl.api.buffers.GpuBuffer')
+        t = t.replace('com.mojang.blaze3d.textures.', 'com.mojang.renderpearl.api.textures.')
+        t = t.replace('net.minecraft.client.renderer.state.CameraRenderState', 'net.minecraft.client.renderer.state.level.CameraRenderState')
+        // Shared classes that need more than a rename.
+        if (n == 'SimpleHubScreen.java') {
+            t = rep(t, '    codeInput.setFilter(value -> value.matches("\\\\d{0,6}"));\n', '', n)
+            t = rep(t, 'codeInput.setResponder(value -> typedCode = value);', '''codeInput.setResponder(
+        value -> {
+          // EditBox lost setFilter: keep at most six digits by rewriting what was typed.
+          String digits = value.replaceAll("\\\\D", "");
+          if (digits.length() > 6) digits = digits.substring(0, 6);
+          if (digits.equals(value)) typedCode = value;
+          else codeInput.setValue(digits);
+        });''', n)
+            t = rep(t, 'Util.getPlatform().openUri(ClientSettings.DEFAULT_SITE_URL + "/gallery");', 'net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(\n        this, java.net.URI.create(ClientSettings.DEFAULT_SITE_URL + "/gallery"));', n)
+            t = t.replace('import net.minecraft.util.Util;\n', '')
+        }
+        if (n == 'CaptureLevelView.java') {
+            t = rep(t, '''  public float getShade(Direction direction, boolean shade) {
+    return world.getShade(direction, shade);''', '''  public net.minecraft.world.level.CardinalLighting cardinalLighting() {
+    return world.cardinalLighting();''', n)
+        }
+        if (n == 'ClientRuntime.java') {
+            t = rep(t, 'level.getDayTime()', 'level.getDefaultClockTime()', n)
+            t = rep(t, 'worldData.worldGenOptions().seed()', 'localServer.overworld().getSeed()', n)
+            t = rep(t, 'quad.sprite()', 'quad.materialInfo().sprite()', n)
+            t = rep(t, 'quad.isTinted()', 'quad.materialInfo().isTinted()', n)
+            t = rep(t, 'quad.tintIndex()', 'quad.materialInfo().tintIndex()', n)
+            // BlockColors hands out per-state tint sources instead of a colour for (state, level, pos, index).
+            t = rep(t, 'mc.getBlockColors().getColor(state, mc.level, pos, quad.materialInfo().tintIndex())', '''blockTint(mc, state, pos, quad.materialInfo().tintIndex())''', n)
+            t = rep(t, '  private static void addQuad(', '''  private static int blockTint(Minecraft mc, BlockState state, BlockPos pos, int index) {
+    var source = mc.getBlockColors().getTintSource(state, index);
+    return source == null ? -1 : source.colorInWorld(state, mc.level, pos);
+  }
+
+  private static void addQuad(''', n)
+            t = rep(t, 'beRenderer.prepare(mc.gameRenderer.mainCamera());', 'beRenderer.prepare(mc.gameRenderer.mainCamera().position());', n)
+            t = rep(t, 'mc.getBlockRenderer().renderLiquid(pos, fluidView, consumer, block, fluid);', 'new net.minecraft.client.renderer.block.FluidRenderer(mc.getModelManager().getFluidStateModelSet())\n        .tesselate(fluidView, pos, layer -> consumer, block, fluid);', n)
+            t = t.replace('import net.minecraft.client.renderer.ShapeRenderer;\n', '')
+            // The selection box is a gizmo now: drawn by the level renderer, no buffers or pose to manage.
+            t = regex(t, ~/(?s)public static void renderSelection\(PoseStack pose, Vec3 camera\) \{.*?\n  \}\n/, '''public static void renderSelection() {
+    if (selectionFirst == null || selectionSecond == null) return;
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.level == null || selectionDimension != mc.level.dimension()) return;
+    double x1 = Math.min(selectionFirst.getX(), selectionSecond.getX());
+    double y1 = Math.min(selectionFirst.getY(), selectionSecond.getY());
+    double z1 = Math.min(selectionFirst.getZ(), selectionSecond.getZ());
+    double x2 = Math.max(selectionFirst.getX(), selectionSecond.getX()) + 1;
+    double y2 = Math.max(selectionFirst.getY(), selectionSecond.getY()) + 1;
+    double z2 = Math.max(selectionFirst.getZ(), selectionSecond.getZ()) + 1;
+    // ARGB of the 1.21.1 line box colour (0.2, 1, 0.45, 0.95).
+    net.minecraft.gizmos.Gizmos.cuboid(
+        new AABB(x1, y1, z1, x2, y2, z2), net.minecraft.gizmos.GizmoStyle.stroke(0xF233FF73, 2f));
+  }
+''', n)
+        }
+        if (n == 'ProgressiveGameCapture.java') {
+            t = rep(t, 'dispatcher.prepare(mc.gameRenderer.mainCamera());', 'dispatcher.prepare(mc.gameRenderer.mainCamera().position());', n)
+        }
+        t = t.replace('VertexFormat.Mode', 'PrimitiveTopology')
+        if (n == 'RenderedVertexConsumer.java') t = t.replace('import com.mojang.renderpearl.api.vertex.VertexFormat;', 'import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;')
+        // VertexConsumer gained a third UV set.
+        if (n == 'RenderedVertexConsumer.java' || n == 'ClientRuntime.java') {
+            t = t.replace('    @Override\n    public VertexConsumer setLineWidth(float width) {', '    @Override\n    public VertexConsumer setUv3(float u, float v) {\n      return this;\n    }\n\n    @Override\n    public VertexConsumer setLineWidth(float width) {')
+        }
+        if (t != o) f.setText(t, 'UTF-8')
+    }
+}

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { distFileName, isBuildable } from './config.mjs'
-import { ensureJdks, gradleJavaSetup } from './jdk.mjs'
+import { ensureJdks, gradleJavaSetup, gradleJdkFor } from './jdk.mjs'
 import { withLock } from './lock.mjs'
 import { mapSequentially } from './sequence.mjs'
 import { repositoryRoot, run } from './utils.mjs'
@@ -207,10 +207,10 @@ export function buildTargets(targets, options) {
 			buildable.map(t => t.java),
 			{ env, download: options.downloadJdk !== false, log: message => log.info(message) }
 		)
-		const setup = gradleJavaSetup(jdks, env)
 		const git = options.git ?? gitInfo(root)
 		return mapSequentially(buildable, async target => {
-			log.info(`▶ ${target.id} (Gradle ${jdks.gradle.major}, JDK ${target.java})`)
+			const setup = gradleJavaSetup(jdks, env, target)
+			log.info(`▶ ${target.id} (Gradle ${gradleJdkFor(jdks, target).major}, JDK ${target.java})`)
 			const onLine = options.verbose ? line => log.info(`  ${line}`) : undefined
 			const result = await buildTarget(target, { ...options, root, jdks, setup, git, onLine })
 			log[result.status === 'passed' ? 'info' : 'error'](

@@ -21,7 +21,9 @@ export function gametestSpec(target) {
 	if (minecraft === '1.21.11' && loader === 'forge') {
 		return { gradleArgs: [`:${project}:runClient`, '-PgameTest=true'] }
 	}
-	const task = minecraft === '1.21.11' ? (TASK_NAME[loader] ?? 'runClientGametest') : 'runClientGametest'
+	// Loom names the task runClientGameTest from Minecraft 1.21.11 on (Fabric API's configureTests).
+	const task =
+		minecraft === '1.21.11' || minecraft === '26.3' ? (TASK_NAME[loader] ?? 'runClientGametest') : 'runClientGametest'
 	return { gradleArgs: [`:${project}:${task}`] }
 }
 
