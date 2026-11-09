@@ -10,7 +10,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 	const vite = resolve(web, 'node_modules/vite/bin/vite.js')
 	const server = resolve(root, 'work/web-ssr')
 	for (const args of [['build'], ['build', '--ssr', 'src/prerender.tsx', '--outDir', server, '--emptyOutDir']]) {
-		const result = spawnSync(process.execPath, [vite, ...args], { cwd: web, stdio: 'inherit' })
+		const result = spawnSync(process.execPath, [vite, '--configLoader', 'runner', ...args], {
+			cwd: web,
+			stdio: 'inherit',
+		})
 		if (result.error) throw result.error
 		if (result.status !== 0) process.exit(result.status ?? 1)
 	}
