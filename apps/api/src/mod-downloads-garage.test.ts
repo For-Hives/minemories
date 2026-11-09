@@ -200,24 +200,25 @@ test.skipIf(!enabled)('a real Garage: same bucket as captures, foreign objects, 
 		'public-modsx/mods/note.txt': 'trap-sibling',
 		[`mods/${id}/0.1.0/minemories-${id}-0.1.0.jar`]: 'trap-unprefixed-mod',
 	}
-	for (const [Key, text] of Object.entries(foreign))
-		await client.send(new PutObjectCommand({ Bucket: bucket, Key, Body: Buffer.from(text) }))
-	const listAll = async (Prefix?: string) => {
-		const keys: string[] = []
-		let ContinuationToken: string | undefined
-		do {
-			const page = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix, ContinuationToken }))
-			for (const item of page.Contents ?? []) keys.push(`${item.Key}:${item.Size}`)
-			ContinuationToken = page.IsTruncated ? page.NextContinuationToken : undefined
-		} while (ContinuationToken)
-		return keys.sort()
+	await Promise.all(
+		Object.entries(foreign).map(([Key, text]) =>
+			client.send(new PutObjectCommand({ Bucket: bucket, Key, Body: Buffer.from(text) }))
+		)
+	)
+	const listPage = async (Prefix: string | undefined, ContinuationToken?: string): Promise<string[]> => {
+		const page = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix, ContinuationToken }))
+		const keys = (page.Contents ?? []).map(item => `${item.Key}:${item.Size}`)
+		return page.IsTruncated && page.NextContinuationToken
+			? [...keys, ...(await listPage(Prefix, page.NextContinuationToken))]
+			: keys
 	}
+	const listAll = async (Prefix?: string) => (await listPage(Prefix)).sort()
 	const outside = async () => (await listAll()).filter(entry => !entry.startsWith(prefix))
 	const before = await outside()
 	expect(before.length).toBeGreaterThanOrEqual(6)
 
 	const uploads = new Hono()
-	uploads.route('/upload', createModUploads({ env: () => env, client: () => client as never }))
+	uploads.route('/upload', createModUploads({ env: () => env, client: () => client }))
 	const downloads = new Hono()
 	downloads.route(
 		'/',

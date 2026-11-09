@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { createFakeClient } from '@minemories/mod-storage/fake-client'
 import storage, { formatBytes, parsePruneArgs } from '../commands/storage.mjs'
+import { mapSequentially } from '../sequence.mjs'
 import {
 	emptyIndex,
 	latestKey,
@@ -223,8 +224,10 @@ test('rejects an artifact whose sha256 or size does not match, and dangerous ide
 })
 
 async function populate(client, count = 5) {
-	for (let i = 1; i <= count; i += 1)
-		await release(client, `0.${i}.0`, `2026-10-0${i}T00:00:00Z`, [await artifact('neoforge-mc1.21.1', `jar-${i}`)])
+	await mapSequentially(
+		Array.from({ length: count }, (_, index) => index + 1),
+		async i => release(client, `0.${i}.0`, `2026-10-0${i}T00:00:00Z`, [await artifact('neoforge-mc1.21.1', `jar-${i}`)])
+	)
 }
 
 test('retention keeps the 3 newest and is a dry run by default', async () => {
@@ -475,7 +478,7 @@ test('bun mod storage under MOD_STORAGE_PREFIX: status, ls and prune ignore the 
 	for (const key of ['owner/a.glb', 'owner/tiers/b.glb', 'public-mods../x', 'mods/neoforge-mc1.21.1/0.1.0/old.jar'])
 		client.objects.set(key, { body: Buffer.alloc(2_000_000), contentType: 'x', metadata: {} })
 	const dir = await mkdtemp(join(tmpdir(), 'mm-cli-prefix-'))
-	for (const n of [1, 2, 3]) {
+	await mapSequentially([1, 2, 3], async n => {
 		const file = join(dir, `a${n}.jar`)
 		await writeFile(file, `jar-${n}`)
 		await storeRelease({
@@ -487,7 +490,7 @@ test('bun mod storage under MOD_STORAGE_PREFIX: status, ls and prune ignore the 
 			env,
 			client,
 		})
-	}
+	})
 	const lines = []
 	const ctx = { env, log: message => lines.push(message), storageClient: client }
 	assert.equal(await storage.run(['status'], ctx), 0)

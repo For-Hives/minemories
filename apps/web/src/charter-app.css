@@ -93,6 +93,22 @@ html[data-mc-font="read"] :is(.mm-site, .auth-shell) :is(h1, h2, h3) {
 	text-shadow: 2px 2px 0 var(--text-shadow);
 }
 
+.mm-content-header h1 {
+	margin: var(--ds-sp-4) 0;
+	max-width: 760px;
+}
+
+.mm-editorial-card h2 {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-3);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.mm-prose h2 {
+	margin: var(--ds-sp-7) 0 var(--ds-sp-3);
+}
+
 html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h1,
 html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h2 {
 	font-size: 32px;
@@ -221,6 +237,10 @@ html:has(.mm-header) {
 
 .mm-brand:hover {
 	color: var(--ember);
+}
+
+.mm-footer .mm-brand {
+	text-decoration: none;
 }
 
 html[data-mc-font="read"] .mm-brand {
@@ -403,10 +423,6 @@ html[data-mc-font="read"] .mm-brand {
 	display: none;
 }
 
-.mm-mobile-menu:not([open]) nav {
-	display: none;
-}
-
 .mm-mobile-menu nav {
 	position: absolute;
 	top: 100%;
@@ -419,6 +435,31 @@ html[data-mc-font="read"] .mm-brand {
 		0 var(--gp) 0 var(--outline),
 		0 calc(2 * var(--gp)) 0 #3a322b;
 }
+.mm-footer nav {
+	display: grid;
+	align-content: start;
+	gap: 0;
+}
+
+.mm-mobile-menu:not([open]) nav {
+	display: none;
+}
+
+.mm-footer a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--ds-hit);
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: var(--gp);
+	text-underline-offset: calc(2 * var(--gp));
+	text-decoration-color: var(--text-3);
+}
+
+.mm-prose a {
+	color: var(--text);
+	text-decoration-color: var(--text-3);
+}
 
 .mm-mobile-menu nav a {
 	display: flex;
@@ -428,6 +469,16 @@ html[data-mc-font="read"] .mm-brand {
 	color: var(--text);
 	text-decoration: none;
 	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-footer a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+
+.mm-prose a:hover {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
 }
 
 .mm-mobile-menu nav a:hover {
@@ -587,31 +638,6 @@ html[data-mc-font="read"] .mm-brand {
 .mm-footer .album-footer-heading em {
 	color: var(--ember);
 }
-.mm-footer nav {
-	display: grid;
-	align-content: start;
-	gap: 0;
-}
-
-.mm-footer a {
-	display: inline-flex;
-	align-items: center;
-	min-height: var(--ds-hit);
-	color: var(--text);
-	text-decoration: underline;
-	text-decoration-thickness: var(--gp);
-	text-underline-offset: calc(2 * var(--gp));
-	text-decoration-color: var(--text-3);
-}
-
-.mm-footer a:hover {
-	color: var(--ember);
-	text-decoration-color: var(--ember);
-}
-
-.mm-footer .mm-brand {
-	text-decoration: none;
-}
 
 .mm-footer p {
 	margin: var(--ds-sp-3) 0 0;
@@ -718,11 +744,6 @@ html[data-mc-motion="reduced"] .mm-toast {
 	margin-bottom: var(--ds-sp-7);
 }
 
-.mm-content-header h1 {
-	margin: var(--ds-sp-4) 0;
-	max-width: 760px;
-}
-
 .mm-content-header p {
 	color: var(--text-2);
 	max-width: var(--ds-measure);
@@ -770,13 +791,6 @@ a.mm-editorial-card:hover {
 	box-shadow: var(--ds-panel-bevel), var(--ds-notch-hover);
 }
 
-.mm-editorial-card h2 {
-	margin: var(--ds-sp-4) 0 var(--ds-sp-3);
-	font-size: var(--ds-fs-h3);
-	line-height: var(--ds-lh-h3);
-	text-shadow: var(--ds-text-shadow-2);
-}
-
 .mm-editorial-card p {
 	color: var(--text-2);
 	margin: var(--ds-sp-4) 0;
@@ -816,24 +830,10 @@ a.mm-editorial-card:hover {
 	max-width: 760px;
 }
 
-.mm-prose h2 {
-	margin: var(--ds-sp-7) 0 var(--ds-sp-3);
-}
-
 .mm-prose p {
 	color: var(--text-2);
 	margin-bottom: var(--ds-sp-5);
 	max-width: var(--ds-measure);
-}
-
-.mm-prose a {
-	color: var(--text);
-	text-decoration-color: var(--text-3);
-}
-
-.mm-prose a:hover {
-	color: var(--ember);
-	text-decoration-color: var(--ember);
 }
 
 /* Note: the kit's item card (.mc-tip) — a flat 2 px --tip-b frame and the corners cut in --tip-bg. The app's one implementation; .mm-note-title is its title. */

@@ -58,12 +58,12 @@ test('the stagger is capped and nothing is hidden when motion is reduced or the 
 	fake.fire(fake.observed.map(target => ({ isIntersecting: true, target })))
 	expect((fake.observed[4] as HTMLElement).style.getPropertyValue('--ds-i')).toBe('4')
 	const other = page()
-	const spy = vi.fn()
+	const spy = vi.fn(fakeObserver().factory)
 	for (const options of [
 		{ reduced: true, supported: true },
 		{ reduced: false, supported: false },
 	]) {
-		const stop = observeReveal(other, { ...options, createObserver: spy as never })
+		const stop = observeReveal(other, { ...options, createObserver: spy })
 		stop()
 	}
 	expect(spy).not.toHaveBeenCalled()

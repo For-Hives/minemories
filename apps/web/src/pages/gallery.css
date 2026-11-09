@@ -387,6 +387,12 @@
 .gallery-server[data-selected="true"] .gallery-server-card {
 	box-shadow: var(--g-selected), var(--ds-panel-bevel);
 }
+.gallery-areas {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: var(--ds-sp-5);
+	padding: var(--ds-sp-4) var(--gp) var(--gp);
+}
 /* The expanded world: its areas hang under its row, in the card column. */
 .gallery-server > .gallery-areas {
 	grid-column: 2;
@@ -511,12 +517,6 @@
 	color: var(--text);
 	text-shadow: none;
 	overflow-wrap: anywhere;
-}
-.gallery-areas {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-	gap: var(--ds-sp-5);
-	padding: var(--ds-sp-4) var(--gp) var(--gp);
 }
 
 /* --- Area card: an item frame. The picture sits in an inventory slot, the stack count is a hotbar count --- */

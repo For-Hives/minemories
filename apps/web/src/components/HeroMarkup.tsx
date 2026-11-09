@@ -654,7 +654,6 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				aria-describedby="dock-hint dock-help"
 				data-motion="moving"
 			>
-				{/* biome-ignore lint/performance/noImgElement: a static single-page app, no next/image: the still of the model shown when WebGL is absent. */}
 				<img
 					className="dock-still"
 					loading="lazy"

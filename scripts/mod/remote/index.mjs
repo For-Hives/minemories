@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { builtByFrom } from '../build.mjs'
+import { mapSequentially } from '../sequence.mjs'
 
 export const DEFAULT_API_URL = 'https://api.minemories.net'
 export const MIN_TOKEN_LENGTH = 32
@@ -94,17 +95,15 @@ async function sendOnce({ fetchImpl, url, headers, body }) {
 const describeFailure = result =>
 	result.network ?? `HTTP ${result.status}${result.json?.error ? ` (${result.json.error})` : ''}`
 
-async function sendWithRetry(request, { sleep, attempts, log }) {
-	let result
-	for (let attempt = 1; attempt <= attempts; attempt += 1) {
-		result = await sendOnce(request)
-		if (!(result.network || retryable(result.status))) return result
-		if (attempt < attempts) {
-			log.warn(`  retry ${attempt}/${attempts - 1}: ${describeFailure(result)}`)
-			await sleep(BACKOFF_MS * 2 ** (attempt - 1))
-		}
+function sendWithRetry(request, { sleep, attempts, log }) {
+	const send = async attempt => {
+		const result = await sendOnce(request)
+		if (!(result.network || retryable(result.status)) || attempt >= attempts) return result
+		log.warn(`  retry ${attempt}/${attempts - 1}: ${describeFailure(result)}`)
+		await sleep(BACKOFF_MS * 2 ** (attempt - 1))
+		return send(attempt + 1)
 	}
-	return result
+	return attempts >= 1 ? send(1) : undefined
 }
 
 async function uploadOne({ artifact, version, apiUrl, token, env, fetchImpl, sleep, attempts, replace, log }) {
@@ -156,7 +155,8 @@ const published = (index, { targetId, version, sha256 }) =>
 
 async function confirm({ results, version, apiUrl, fetchImpl, sleep, log }) {
 	const pending = () => results.filter(result => result.status === 'sent' && !result.confirmed)
-	for (let attempt = 1; attempt <= CONFIRM_ATTEMPTS && pending().length > 0; attempt += 1) {
+	const poll = async attempt => {
+		if (attempt > CONFIRM_ATTEMPTS || pending().length === 0) return
 		try {
 			const index = await fetchPublicIndex({ apiUrl, fetchImpl })
 			for (const result of pending()) result.confirmed = published(index, { ...result, version })
@@ -164,7 +164,9 @@ async function confirm({ results, version, apiUrl, fetchImpl, sleep, log }) {
 			for (const result of pending()) result.confirmError = error.message
 		}
 		if (pending().length > 0 && attempt < CONFIRM_ATTEMPTS) await sleep(BACKOFF_MS * attempt)
+		await poll(attempt + 1)
 	}
+	await poll(1)
 	for (const result of pending()) {
 		result.status = 'failed'
 		result.message = result.confirmError ?? 'version missing from the published index after the upload.'
@@ -198,8 +200,7 @@ export async function uploadRelease({
 		error: message => rawLog.error(maskToken(message, token)),
 	}
 	log.info(`Uploading to ${apiUrl}: ${artifacts.length} artifact(s).`)
-	const results = []
-	for (const artifact of artifacts) {
+	const results = await mapSequentially(artifacts, async artifact => {
 		const { targetId } = artifact
 		log.info(`▶ uploading ${targetId} ${version}`)
 		try {
@@ -215,13 +216,13 @@ export async function uploadRelease({
 				replace,
 				log,
 			})
-			results.push({ targetId, status: 'sent', ...sent })
+			return { targetId, status: 'sent', ...sent }
 		} catch (error) {
 			const message = maskToken(error.message, token)
 			log.error(`✗ ${targetId}: ${message}`)
-			results.push({ targetId, status: 'failed', message })
+			return { targetId, status: 'failed', message }
 		}
-	}
+	})
 	await confirm({ results, version, apiUrl, fetchImpl, sleep, log })
 	for (const result of results.filter(r => r.status === 'sent'))
 		log.info(`✓ ${result.targetId} published${result.latest ? ' (latest)' : ''}${result.replaced ? ' (replaced)' : ''}`)

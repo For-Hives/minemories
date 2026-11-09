@@ -12,6 +12,7 @@ import { fileUrl as curseForgeFileUrl } from '../publish/curseforge.mjs'
 import { publishThirdParty } from '../publish/index.mjs'
 import { MODRINTH_API, userAgent, versionNumber, versionUrl } from '../publish/modrinth.mjs'
 import { resolveApiUrl } from '../remote/index.mjs'
+import { mapSequentially } from '../sequence.mjs'
 
 export const PLATFORMS = ['modrinth', 'curseforge']
 const CURSEFORGE_CORE_API = 'https://api.curseforge.com/v1'
@@ -258,13 +259,14 @@ async function publishMissing({ group, missing, present, ctx }) {
 		dryRun,
 		deps: { ...deps, catalogs, fetch: fetchImpl },
 	})
-	for (const outcome of outcomes) {
-		if (!missing.some(entry => entry.platform === outcome.platform && entry.item.targetId === outcome.targetId))
-			continue
-		results.push({ ...outcome, version: group.version })
-		if (outcome.status === 'published' && outcome.platform === 'curseforge')
-			await ledger.set(ledgerKey(outcome.targetId, group.version), outcome.url)
-	}
+	const requested = outcomes.filter(outcome =>
+		missing.some(entry => entry.platform === outcome.platform && entry.item.targetId === outcome.targetId)
+	)
+	results.push(...requested.map(outcome => ({ ...outcome, version: group.version })))
+	await mapSequentially(
+		requested.filter(outcome => outcome.status === 'published' && outcome.platform === 'curseforge'),
+		outcome => ledger.set(ledgerKey(outcome.targetId, group.version), outcome.url)
+	)
 	return results
 }
 

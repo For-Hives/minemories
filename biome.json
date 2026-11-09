@@ -85,6 +85,7 @@
 			},
 			"performance": {
 				"noAwaitInLoops": "warn",
+				"noImgElement": "off",
 				"useTopLevelRegex": "error"
 			},
 			"security": {

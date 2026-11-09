@@ -187,22 +187,22 @@ test('s3ModSource reads the mod bucket, separate from the captures bucket', asyn
 	expect(modBucket).toBe('minemories-mods')
 	expect(modBucket).not.toBe(s3Target().bucket)
 	const calls: { bucket: string; key: string }[] = []
-	const send = spyOn(s3Target().client, 'send').mockImplementation((async (command: {
-		input: { Bucket: string; Key: string }
-	}) => {
-		calls.push({ bucket: command.input.Bucket, key: command.input.Key })
-		if (command.input.Key === 'missing') {
-			throw new S3ServiceException({
-				name: 'NoSuchKey',
-				$fault: 'client',
-				$metadata: { httpStatusCode: 404 },
-				message: 'x',
-			})
+	const send = spyOn(s3Target().client, 'send').mockImplementation(
+		async (command: { input: { Bucket: string; Key: string } }) => {
+			calls.push({ bucket: command.input.Bucket, key: command.input.Key })
+			if (command.input.Key === 'missing') {
+				throw new S3ServiceException({
+					name: 'NoSuchKey',
+					$fault: 'client',
+					$metadata: { httpStatusCode: 404 },
+					message: 'x',
+				})
+			}
+			if (command.input.Key === 'boom') throw new Error('network')
+			if (command.input.Key === 'odd') return { Body: 'not-a-stream' }
+			return { Body: Readable.from([Buffer.from('he'), Buffer.from('llo')]), ContentLength: 5 }
 		}
-		if (command.input.Key === 'boom') throw new Error('network')
-		if (command.input.Key === 'odd') return { Body: 'not-a-stream' }
-		return { Body: Readable.from([Buffer.from('he'), Buffer.from('llo')]), ContentLength: 5 }
-	}) as never)
+	)
 	expect(await s3ModSource.readText('index.json')).toBe('hello')
 	expect(await s3ModSource.readText('missing')).toBeNull()
 	expect(await s3ModSource.open('odd')).toBeNull()
@@ -215,14 +215,14 @@ test('s3ModSource reads the mod bucket, separate from the captures bucket', asyn
 })
 
 test('the app mounts /downloads publicly, without a session', async () => {
-	const send = spyOn(s3Target().client, 'send').mockImplementation((async () => {
+	const send = spyOn(s3Target().client, 'send').mockImplementation(async () => {
 		throw new S3ServiceException({
 			name: 'NoSuchKey',
 			$fault: 'client',
 			$metadata: { httpStatusCode: 404 },
 			message: 'x',
 		})
-	}) as never)
+	})
 	const response = await app.request('/downloads/index.json', { headers: { origin: 'http://localhost:5173' } })
 	expect(response.status).toBe(200)
 	expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
@@ -268,14 +268,20 @@ test('a corrupted index cannot serve an object outside mods/ or latest/', async 
 		'mods/',
 		'',
 	]
-	for (const key of keys) {
-		const opened: string[] = []
-		const corrupted = { ...index, targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', key)] } } }
-		const files = { ...prefixed({ 'index.json': JSON.stringify(corrupted) }), [`public-mods/${key}`]: 'x', [key]: 'x' }
-		// 404 (key rejected) or 503 (index rejected by the schema): never 200.
-		expect([404, 503]).toContain((await mountPrefixed(files, opened).request(`/downloads/${id}/0.2.0`)).status)
-		expect(opened).toEqual([])
-	}
+	await Promise.all(
+		keys.map(async key => {
+			const opened: string[] = []
+			const corrupted = { ...index, targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', key)] } } }
+			const files = {
+				...prefixed({ 'index.json': JSON.stringify(corrupted) }),
+				[`public-mods/${key}`]: 'x',
+				[key]: 'x',
+			}
+			// 404 (key rejected) or 503 (index rejected by the schema): never 200.
+			expect([404, 503]).toContain((await mountPrefixed(files, opened).request(`/downloads/${id}/0.2.0`)).status)
+			expect(opened).toEqual([])
+		})
+	)
 	const allowed = {
 		...index,
 		targets: { [id]: { ...index.targets[id], versions: [entry('0.2.0', `latest/${id}.jar`)] } },
@@ -289,8 +295,12 @@ test('a corrupted index cannot serve an object outside mods/ or latest/', async 
 test('the URL never builds a key: only valid parameters reach the source', async () => {
 	const opened: string[] = []
 	const router = mountPrefixed(prefixed(withIndex()), opened)
-	for (const path of [`/downloads/${id}/..%2f..%2fusers`, '/downloads/..%2fusers/latest', `/downloads/${id}/0.9.9`])
-		expect([400, 404]).toContain((await router.request(path)).status)
+	const statuses = await Promise.all(
+		[`/downloads/${id}/..%2f..%2fusers`, '/downloads/..%2fusers/latest', `/downloads/${id}/0.9.9`].map(
+			async path => (await router.request(path)).status
+		)
+	)
+	for (const status of statuses) expect([400, 404]).toContain(status)
 	expect(opened).toEqual([])
 })
 

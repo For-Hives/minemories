@@ -37,6 +37,10 @@
 	vertical-align: top;
 }
 
+.mm-dl-cell > * + * {
+	margin-top: var(--ds-sp-2);
+}
+
 .mm-dl-table tbody tr:last-child > * {
 	border-bottom: 0;
 }
@@ -87,10 +91,6 @@
 
 .mm-dl-cell {
 	min-width: 168px;
-}
-
-.mm-dl-cell > * + * {
-	margin-top: var(--ds-sp-2);
 }
 
 .mm-dl-button {

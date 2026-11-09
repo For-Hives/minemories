@@ -30,17 +30,18 @@ export const consoleLog = {
 /** Loads each command file; one that fails to load is reported as broken instead of crashing the tool. */
 export async function discoverCommands(dir = commandsDir) {
 	const files = (await readdir(dir)).filter(name => commandFile.test(name)).sort()
-	const commands = []
-	for (const file of files) {
-		try {
-			const command = await import(pathToFileURL(join(dir, file)).href)
-			if (typeof command.run === 'function') commands.push(command)
-		} catch (error) {
-			const name = file.replace(extension, '')
-			commands.push({ name, summary: `(failed to load: ${error.message})`, broken: true })
-		}
-	}
-	return commands
+	const loaded = await Promise.all(
+		files.map(async file => {
+			try {
+				const command = await import(pathToFileURL(join(dir, file)).href)
+				return typeof command.run === 'function' ? command : null
+			} catch (error) {
+				const name = file.replace(extension, '')
+				return { name, summary: `(failed to load: ${error.message})`, broken: true }
+			}
+		})
+	)
+	return loaded.filter(Boolean)
 }
 
 export function helpText(commands) {

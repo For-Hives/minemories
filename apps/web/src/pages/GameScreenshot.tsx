@@ -58,7 +58,6 @@ export function GameScreenshot({ id }: { id: GameScreenshotId }) {
 	return (
 		<figure className="install-screenshot install-game-shot">
 			<a href={src} target="_blank" rel="noreferrer" aria-label={t('Enlarge: {title}', { title: t(shot.alt) })}>
-				{/* biome-ignore lint/performance/noImgElement: static Vite asset; lazy loading avoids downloading off-screen screenshots. */}
 				<img src={src} alt={t(shot.alt)} width={shot.size[0]} height={shot.size[1]} loading="lazy" decoding="async" />
 				{shot.mark && (
 					<span

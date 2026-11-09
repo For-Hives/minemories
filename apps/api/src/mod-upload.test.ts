@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { type ModIndex, modIndex } from '@minemories/api-contract'
 import { createFakeClient } from '@minemories/mod-storage/fake-client'
 import { Hono } from 'hono'
+import { mapSequentially } from './test-support/sequence'
 
 const directory = mkdtempSync(join(tmpdir(), 'minemories-mod-upload-test-'))
 process.env.DATABASE_PATH = join(directory, 'test.sqlite')
@@ -111,28 +112,30 @@ const tempEntries = () =>
 
 test('without a valid MOD_UPLOAD_TOKEN the route answers 404 and reveals nothing', async () => {
 	const jar = makeJar()
-	for (const token of [undefined, '', 'short-token']) {
-		const h = harness({ MOD_UPLOAD_TOKEN: token })
-		const response = await h.put(jar, { token: token ?? 'x' })
-		expect(response.status).toBe(404)
-		expect(await response.json()).toEqual({ error: 'not_found' })
-		expect(response.headers.get('cache-control')).toBe('no-store')
-		expect(h.client.calls).toHaveLength(0)
-	}
+	await Promise.all(
+		[undefined, '', 'short-token'].map(async token => {
+			const h = harness({ MOD_UPLOAD_TOKEN: token })
+			const response = await h.put(jar, { token: token ?? 'x' })
+			expect(response.status).toBe(404)
+			expect(await response.json()).toEqual({ error: 'not_found' })
+			expect(response.headers.get('cache-control')).toBe('no-store')
+			expect(h.client.calls).toHaveLength(0)
+		})
+	)
 })
 
 test('a missing or wrong token yields a generic 401 without echoing the token, and nothing is logged', async () => {
 	const logged = spyOn(console, 'error').mockImplementation(() => undefined)
 	const h = harness()
 	const jar = makeJar()
-	for (const token of ['b'.repeat(40), 'a'.repeat(39), null]) {
+	await mapSequentially(['b'.repeat(40), 'a'.repeat(39), null], async token => {
 		const response = await h.put(jar, { token })
 		expect(response.status).toBe(401)
 		const text = await response.text()
 		expect(text).toBe('{"error":"unauthorized"}')
 		expect(response.headers.get('cache-control')).toBe('no-store')
 		expect(response.headers.get('access-control-allow-origin')).toBeNull()
-	}
+	})
 	expect(logged).not.toHaveBeenCalled()
 	logged.mockRestore()
 	expect(h.client.calls).toHaveLength(0)
@@ -141,7 +144,11 @@ test('a missing or wrong token yields a generic 401 without echoing the token, a
 test('authentication failures are rate limited per address, then the window reopens', async () => {
 	const h = harness()
 	const jar = makeJar()
-	for (let i = 0; i < 10; i += 1) expect((await h.put(jar, { token: 'x'.repeat(40) })).status).toBe(401)
+	const failures = await mapSequentially(
+		Array.from({ length: 10 }),
+		async () => (await h.put(jar, { token: 'x'.repeat(40) })).status
+	)
+	expect(failures).toEqual(Array.from({ length: 10 }, () => 401))
 	const blocked = await h.put(jar, { token: 'x'.repeat(40) })
 	expect(blocked.status).toBe(429)
 	expect(blocked.headers.get('retry-after')).toBe('60')

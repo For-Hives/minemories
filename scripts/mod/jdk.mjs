@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir, arch as osArch, platform as osPlatform } from 'node:os'
 import { delimiter, dirname, join } from 'node:path'
+import { mapSequentially } from './sequence.mjs'
 
 export const supportedMajors = [8, 17, 21, 25]
 export const minimumGradleJava = 21
@@ -45,17 +46,21 @@ async function jdkAt(home) {
 
 async function pathHomes(env) {
 	const exe = osPlatform() === 'win32' ? 'java.exe' : 'java'
-	const homes = []
-	for (const dir of (env.PATH ?? '').split(delimiter).filter(Boolean)) {
-		const candidate = join(dir, exe)
-		if (!existsSync(candidate)) continue
-		try {
-			homes.push(dirname(dirname(await realpath(candidate))))
-		} catch {
-			// dangling link
-		}
-	}
-	return homes
+	const homes = await Promise.all(
+		(env.PATH ?? '')
+			.split(delimiter)
+			.filter(Boolean)
+			.map(dir => join(dir, exe))
+			.filter(candidate => existsSync(candidate))
+			.map(async candidate => {
+				try {
+					return dirname(dirname(await realpath(candidate)))
+				} catch {
+					return null // dangling link
+				}
+			})
+	)
+	return homes.filter(Boolean)
 }
 
 /** Every usable JDK found on the machine: [{ home, major }] sorted by major then home. */
@@ -66,8 +71,8 @@ export async function detectJdks({ env = process.env, toolsDir = defaultToolsDir
 	for (const name of await listDir(gradleDir)) homes.push(join(gradleDir, name))
 	homes.push(...(await pathHomes(env)))
 	const found = new Map()
-	for (const home of homes.filter(Boolean)) {
-		const jdk = await jdkAt(home)
+	const candidates = await Promise.all(homes.filter(Boolean).map(home => jdkAt(home)))
+	for (const jdk of candidates) {
 		if (jdk.major > 0 && !found.has(jdk.home)) found.set(jdk.home, jdk)
 	}
 	return [...found.values()].sort((a, b) => a.major - b.major || a.home.localeCompare(b.home))
@@ -162,10 +167,10 @@ export async function ensureJdks(majors, options = {}) {
 	for (const major of need) if (!(jdkFor(jdks, major) || missing.includes(major))) missing.push(major)
 	if (missing.length && !download)
 		throw new Error(`Missing JDK(s): ${missing.join(', ')}. Run "bun mod jdk install <version>".`)
-	for (const major of missing) {
+	await mapSequentially(missing, major => {
 		log(`JDK ${major} not found, downloading.`)
-		await install(major, { ...options, log })
-	}
+		return install(major, { ...options, log })
+	})
 	if (missing.length) jdks = await detectJdks(options)
 	const compile = new Map(need.map(major => [major, jdkFor(jdks, major)]))
 	return { gradle: pickGradleJdk(jdks), compile, all: jdks }
