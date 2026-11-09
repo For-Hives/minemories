@@ -4,12 +4,14 @@ import dev.minemories.client.ClientPlatform;
 import dev.minemories.fabric.mixin.SpriteContentsAccess;
 import dev.minemories.fabric.mixin.TextureAtlasAccess;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
@@ -18,6 +20,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.material.FluidState;
 
 final class FabricPlatform implements ClientPlatform {
+  private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+
   @Override
   public void emitBlockModel(
       Minecraft minecraft,
@@ -27,12 +31,52 @@ final class FabricPlatform implements ClientPlatform {
       Predicate<Direction> visibleFace,
       QuadSink sink)
       throws IOException {
-    var model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
+    emitModel(
+        minecraft,
+        minecraft.getModelManager().getBlockModelShaper().getBlockModel(state),
+        state,
+        request,
+        visibleFace,
+        sink);
+  }
+
+  /** Emits one block model; the Fabric game test calls it with a wrapped vanilla model. */
+  static void emitModel(
+      Minecraft minecraft,
+      BakedModel model,
+      net.minecraft.world.level.block.state.BlockState state,
+      ModelRequest request,
+      Predicate<Direction> visibleFace,
+      QuadSink sink)
+      throws IOException {
     var fabric = (FabricBakedModel) model;
     if (!fabric.isVanillaAdapter()) {
-      new FabricModelCapture(minecraft, state, request, visibleFace, sink).capture(fabric);
+      // The Fabric quads are kept apart until the whole model is read, so a failure halfway leaves
+      // nothing behind and the block falls back to its plain quads instead of failing the capture.
+      var buffered = new ArrayList<ModelQuad>();
+      try {
+        new FabricModelCapture(minecraft, state, request, visibleFace, buffered::add)
+            .capture(fabric);
+      } catch (ClassCastException | IOException unsupported) {
+        // Fabric API 0.92 (Indigo 1.5) casts any RenderContext to its own when a wrapped vanilla
+        // model emits its quads (a Create block, for one); some models also span several sprites.
+        LOGGER.debug("Fabric model of {} read as plain quads", state, unsupported);
+        emitPlainQuads(model, state, request, visibleFace, sink);
+        return;
+      }
+      for (var quad : buffered) sink.accept(quad);
       return;
     }
+    emitPlainQuads(model, state, request, visibleFace, sink);
+  }
+
+  private static void emitPlainQuads(
+      BakedModel model,
+      net.minecraft.world.level.block.state.BlockState state,
+      ModelRequest request,
+      Predicate<Direction> visibleFace,
+      QuadSink sink)
+      throws IOException {
     for (Direction face : Direction.values()) {
       if (!visibleFace.test(face)) continue;
       for (var quad : model.getQuads(state, face, RandomSource.create(request.seed())))
