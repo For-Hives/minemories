@@ -111,7 +111,7 @@ function DownloadStep({ target, walkthrough }: { target: LoaderTarget; walkthrou
 				{catalogs.length > 0 ? (
 					<T
 						message={
-							'Using the CurseForge or Modrinth app? Install Minemories from its catalog, then go to the next step. Otherwise, download the JAR here.'
+							'Using the CurseForge app? Install Minemories from it, then go to the next step. Otherwise, download the JAR here.'
 						}
 					/>
 				) : (
@@ -190,7 +190,7 @@ function FileStep({
 			</Goal>
 			{catalogLinks().length > 0 && (
 				<p className="install-caption">
-					<T message={'Installed from CurseForge or Modrinth? The app already placed the file: go to the next step.'} />
+					<T message={'Installed from the CurseForge app? It already placed the file: go to the next step.'} />
 				</p>
 			)}
 			<ol>
