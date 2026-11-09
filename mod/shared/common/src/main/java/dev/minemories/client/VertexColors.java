@@ -4,6 +4,14 @@ package dev.minemories.client;
 public final class VertexColors {
   private VertexColors() {}
 
+  /**
+   * RGB of a {@code BlockColors} result. Fixed tints can be opaque ARGB (1.21.x spruce {@code
+   * 0xFF619961}, birch, lily pad) and must keep their colour; -1 ("no tint") stays white.
+   */
+  public static int blockTint(int color) {
+    return color & 0xFFFFFF;
+  }
+
   public static int multiplyTint(int tint, int argb) {
     int red = ((tint >>> 16) & 255) * ((argb >>> 16) & 255) / 255;
     int green = ((tint >>> 8) & 255) * ((argb >>> 8) & 255) / 255;

@@ -13,6 +13,16 @@ class VertexColorsTest {
   }
 
   @Test
+  void keepsTheRgbOfOpaqueArgbBlockTints() {
+    assertEquals(0x619961, VertexColors.blockTint(0xFF619961));
+    assertEquals(0x208030, VertexColors.blockTint(-14647248));
+    assertEquals(0xFFFFFF, VertexColors.blockTint(-1));
+    assertEquals(0x91BD59, VertexColors.blockTint(0x91BD59));
+    assertEquals(
+        0x619961, VertexColors.multiplyTint(VertexColors.blockTint(0xFF619961), 0xFFFFFFFF));
+  }
+
+  @Test
   void averagesAlphaIndependentlyAndKeepsUniformColorsExact() {
     assertEquals(0x9F7F6F67, VertexColors.averageArgb(0, 0xFFFFFFFF, 0xFF804020, 0x80808080));
     assertEquals(

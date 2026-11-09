@@ -282,9 +282,8 @@ public final class GlbScene {
         textures.add("{\"sampler\":0,\"source\":" + image + "}");
         imageIndices.put(part.imageKey, texture);
       }
-      float r = ((part.tint >>> 16) & 255) / 255f,
-          g = ((part.tint >>> 8) & 255) / 255f,
-          b = (part.tint & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(part.tint);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       String alpha =
           part.alphaMode == 2
               ? ",\"alphaMode\":\"BLEND\""
@@ -340,9 +339,8 @@ public final class GlbScene {
     List<String> lights = new ArrayList<>();
     for (PointLight light : pointLights.values()) {
       int id = lights.size();
-      float r = ((light.color >>> 16) & 255) / 255f,
-          g = ((light.color >>> 8) & 255) / 255f,
-          b = (light.color & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(light.color);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       // KHR_lights_punctual uses candela. The previous 2 cd per Minecraft
       // light level was barely visible after Blender's glTF import and scene exposure.
       lights.add(

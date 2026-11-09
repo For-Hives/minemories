@@ -1537,7 +1537,7 @@ public final class ClientRuntime {
         quad.isTinted()
             ? mc.getBlockColors().getColor(state, mc.level, pos, quad.getTintIndex())
             : 0xFFFFFF;
-    if (tint < 0) tint = 0xFFFFFF;
+    tint = VertexColors.blockTint(tint);
     tint = VertexColors.multiplyTint(tint, captured.argb());
     float opacity = (captured.argb() >>> 24) / 255f;
     int alphaMode = captured.translucent() || opacity < 1 ? 2 : asset.alphaMode;
