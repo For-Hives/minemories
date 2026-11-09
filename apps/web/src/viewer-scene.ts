@@ -5,6 +5,7 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
+import { hasLegacySrgbColours } from './lib/glb-colours'
 import { dayDelta, Glide } from './lib/transitions'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
@@ -70,6 +71,31 @@ export interface ViewerSceneEvents {
 	onEmptyChange(empty: boolean): void
 	onLoading(message: string | null): void
 	onQuality?(label: string): void
+}
+
+/**
+ * Captures before GLB format 3 stored 8-bit sRGB colours where glTF 2.0 (and GLTFLoader) expects linear ones:
+ * converts base colour (never opacity), emissive colour and KHR light colours so old and new captures look the
+ * same. GLTFLoader shares one material between meshes, so each material is converted once.
+ */
+function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown }): void {
+	if (!hasLegacySrgbColours(gltf.asset)) return
+	const converted = new Set<THREE.Material>()
+	gltf.scene.traverse(object => {
+		if (object instanceof THREE.Light) {
+			object.color.convertSRGBToLinear()
+			return
+		}
+		if (!(object instanceof THREE.Mesh)) return
+		const materials: THREE.Material[] = Array.isArray(object.material) ? object.material : [object.material]
+		for (const material of materials) {
+			const pbrMaterial = material as THREE.MeshStandardMaterial
+			if (converted.has(material) || !pbrMaterial.isMeshStandardMaterial) continue
+			converted.add(material)
+			pbrMaterial.color.convertSRGBToLinear()
+			pbrMaterial.emissive.convertSRGBToLinear()
+		}
+	})
 }
 
 interface ImportedLight {
@@ -331,6 +357,7 @@ export class ViewerScene {
 			this.events.onLoading('Loading the model and textures…')
 			const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
 			imported = gltf.scene
+			linearizeLegacyColours(gltf)
 			this.ensureLoadActive(options.signal)
 			const delta = options.originDelta
 			if (delta) imported.position.add(new THREE.Vector3(delta.x, delta.y, delta.z))
@@ -413,6 +440,7 @@ export class ViewerScene {
 		const root = gltf.scene
 		try {
 			this.ensureLoadActive(signal)
+			linearizeLegacyColours(gltf)
 			const layer = prepareLayer(root, capture.origin, capture.bounds)
 			const offset = new THREE.Vector3(capture.offset.x, capture.offset.y, capture.offset.z)
 			root.position.copy(offset)

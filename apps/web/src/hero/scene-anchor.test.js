@@ -32,3 +32,13 @@ test('every capture is downloaded by fetchGlb and nowhere else', () => {
 test('hero.js hands the host fetcher to the scene', () => {
 	expect(hero).toContain('fetchGlb: host.fetchGlb ?? null')
 })
+
+// GLB format 3 (issue #278) stores linear colours: prepareCapture must know the format, or a format-3 capture
+// gets converted a second time and the old fixed-tint patch paints it.
+test('prepareCapture receives the GLB asset and checks the colour format', () => {
+	expect(source).toContain("import { hasLegacySrgbColours } from '../lib/glb-colours'")
+	expect(source).toContain('const legacy = hasLegacySrgbColours(asset)')
+	expect(count(source, 'prepareCapture(')).toBe(3)
+	expect(source).toContain('prepareCapture(gltf.scene, gltf.asset)')
+	expect(source).toContain('prepareCapture(root, gltf.asset)')
+})
