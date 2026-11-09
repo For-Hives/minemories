@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { expect, test } from 'vitest'
+import { createHeroI18n } from './lib/hero-i18n'
 import { firstPaintScripts, renderPage } from './prerender'
 
 test('the prerendered home page holds the whole site and the film markup, with no browser API and no WebGL', () => {
@@ -56,4 +57,17 @@ test('the first-paint script of the home page puts the film on <html> before the
 	expect(document.documentElement.classList.contains('is-scrub')).toBe(true)
 	expect(document.documentElement.classList.contains('scene-on')).toBe(true)
 	expect(document.body.classList.contains('mc-root')).toBe(true)
+})
+
+test('the landing’s version line, step and FAQ follow a language change made by the film’s translation bridge', () => {
+	document.body.innerHTML = renderPage('/')
+	createHeroI18n('en', document).apply()
+	const compat = document.querySelector('.mc-hero__compat')?.textContent
+	expect(compat).toBe('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 in testing')
+	const text = document.body.textContent ?? ''
+	expect(text).toContain('For Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, with NeoForge, Fabric or Forge')
+	expect(text).toContain('26.3 is available for testing, not yet validated in game.')
+	expect(text).toContain('or click “Take a memory” in the M menu')
+	expect(text).toContain('Nothing leaves your computer until you link the game to your account.')
+	document.body.innerHTML = ''
 })
