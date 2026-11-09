@@ -16,8 +16,6 @@
 	--g-panel: 0 0 0 var(--gp) var(--outline), var(--ds-panel-bevel);
 	--g-recess:
 		inset var(--gp) var(--gp) 0 var(--slot-lo), inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
-	--g-selected:
-		0 0 0 var(--gp) var(--outline), 0 0 0 calc(2 * var(--gp)) var(--hover), 0 0 0 calc(3 * var(--gp)) var(--outline);
 }
 /* The page uses the screen: fluid gutters (16 px on a phone, 64 px on a wide screen) up to 1440 px of content. */
 .gallery-page {
@@ -336,15 +334,6 @@
 	padding: var(--ds-sp-2) var(--ds-sp-4) var(--ds-sp-2) var(--ds-sp-2);
 	background: var(--night-2);
 	box-shadow: var(--g-panel);
-	transition: box-shadow var(--ds-dur-1) var(--ds-ease-std);
-}
-.gallery-server-card:hover {
-	box-shadow:
-		0 0 0 var(--gp) var(--hover),
-		var(--ds-panel-bevel);
-}
-.gallery-server[data-selected="true"] .gallery-server-card {
-	box-shadow: var(--g-selected), var(--ds-panel-bevel);
 }
 .gallery-server-open {
 	position: relative;
@@ -496,13 +485,6 @@
 	flex-direction: column;
 	background: var(--night-2);
 	box-shadow: var(--g-panel);
-	transition: box-shadow var(--ds-dur-1) var(--ds-ease-std);
-}
-.gallery-card:hover,
-.gallery-card:focus-within {
-	box-shadow:
-		0 0 0 var(--gp) var(--hover),
-		var(--ds-panel-bevel);
 }
 .gallery-cover {
 	position: relative;
