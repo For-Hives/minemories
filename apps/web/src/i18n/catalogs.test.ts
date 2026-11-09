@@ -101,3 +101,18 @@ test('production pages have one localization path and no bilingual copy helper',
 		expect(source, path).not.toMatch(/useLocalizedCopy|translateCopy|\blocalize\(/)
 	}
 })
+
+test('the French catalogues speak to the player with “tu” and call a capture a capture', async () => {
+	const french = await Promise.all(
+		['fr', 'fr-CA'].map(locale => {
+			const load = catalogs[`./locales/${locale}.json`]
+			if (!load) throw new Error('Missing locale catalogue')
+			return load()
+		})
+	)
+	for (const catalog of french)
+		for (const [key, message] of Object.entries(catalog)) {
+			expect(message, key).not.toMatch(/\b(?:vous|votre|vos)\b/i)
+			expect(message, key).not.toMatch(/snapshot/i)
+		}
+})
