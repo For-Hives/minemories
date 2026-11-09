@@ -45,8 +45,14 @@ describe('environmentVeil', () => {
 		expect(environmentVeil(overworld, 5, 0)).toEqual(levels[3])
 	})
 
-	it('caps the grey under bright cold skies', () => {
-		expect(environmentVeil(getAtmosphere(null, 'minecraft:snowy_plains'), 1, 0).grey).toBe(0.9)
+	it('keeps bright biome skies and rain close to the default overworld', () => {
+		const overworldGrey = environmentVeil(overworld, 1, 0).grey
+		for (const biome of ['minecraft:desert', 'minecraft:snowy_plains', 'minecraft:jungle']) {
+			const grey = environmentVeil(getAtmosphere(null, biome), 1, 0).grey
+			expect(grey).toBe(0.75)
+			expect(grey / overworldGrey).toBeLessThan(1.1)
+		}
+		expect(environmentVeil(overworld, 1, 1).grey).toBe(0.75)
 	})
 
 	it('leaves skies without a sun to their own tinted ambient', () => {
