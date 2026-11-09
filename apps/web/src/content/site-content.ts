@@ -28,7 +28,7 @@ export const articles: Article[] = [
 			},
 			{
 				heading: 'Keep the file, choose whether to share',
-				body: 'The capture lands in your export folder. Connect the game (M → type the code → Connect) and your memories go to your private gallery on their own.',
+				body: 'The capture lands in your export folder. To see it on the site, connect the game (M → type the code → Connect), then M → My memories → Send this memory.',
 				visual: { kind: 'files' },
 			},
 		],

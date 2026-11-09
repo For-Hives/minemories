@@ -1572,7 +1572,7 @@
 	"Good to know": "Good to know",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.",
-	"The capture lands in your export folder. Connect the game (M → type the code → Connect) and your memories go to your private gallery on their own.": "The capture lands in your export folder. Connect the game (M → type the code → Connect) and your memories go to your private gallery on their own.",
+	"The capture lands in your export folder. To see it on the site, connect the game (M → type the code → Connect), then M → My memories → Send this memory.": "The capture lands in your export folder. To see it on the site, connect the game (M → type the code → Connect), then M → My memories → Send this memory.",
 	"No": "No",
 	"Download {installer}. Open it with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.": "Download {installer}. Open it with Java, choose Minecraft {minecraft} and Fabric Loader {version}, then click Install. Wait for the success message.",
 	"Download {installer}. Open it with Java, select {option}, then confirm. Wait for the success message.": "Download {installer}. Open it with Java, select {option}, then confirm. Wait for the success message.",
