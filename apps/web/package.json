@@ -4,10 +4,10 @@
 	"version": "0.36.0-beta.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite --host 0.0.0.0",
+		"dev": "vite --configLoader runner --host 0.0.0.0",
 		"build": "node ../../scripts/hero-assets/cli.mjs && node ../../scripts/hero-assets/cli.mjs --check && bun run typecheck && bun run bundle",
 		"bundle": "node ../../scripts/build-web.mjs",
-		"preview": "vite preview --host 0.0.0.0",
+		"preview": "vite preview --configLoader runner --host 0.0.0.0",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage"
