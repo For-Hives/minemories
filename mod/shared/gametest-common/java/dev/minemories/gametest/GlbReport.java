@@ -27,7 +27,9 @@ public final class GlbReport {
     "setblock 7 -60 0 minecraft:water",
     "setblock -3 -60 0 minecraft:torch",
     "summon minecraft:cow 3 -60 3 {NoAI:1b}",
-    "summon minecraft:armor_stand 5 -60 3"
+    "summon minecraft:armor_stand 5 -60 3",
+    "setblock 9 -60 0 minecraft:end_portal", // shader-only surfaces: baked by EndPortalLook
+    "setblock 10 -60 0 minecraft:end_gateway"
   };
 
   public static final String EXPORT_COMMAND = "minemories export 12";
@@ -62,7 +64,8 @@ public final class GlbReport {
         new String[] {
           "minemories:cut / minecraft:block/stone", "red_stained_glass", "oak_leaves", GRASS,
           "grass_block_top", "minecraft:chest", "minecraft:cow", "minecraft:armor_stand",
-          "minecraft:water", "minecraft:torch"
+          // The gateway shares the portal's baked material, named after whichever was captured first.
+          "minecraft:water", "minecraft:torch", "minecraft:end_portal / rendered/minemories"
         })
       if (!text.contains(expected)) throw new AssertionError("Missing from GLB: " + expected);
     if (!text.contains("\"alphaMode\":\"BLEND\"") || !text.contains("\"alphaMode\":\"MASK\""))

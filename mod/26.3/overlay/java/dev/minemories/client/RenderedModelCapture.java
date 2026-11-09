@@ -104,7 +104,7 @@ final class RenderedModelCapture {
     private VertexConsumer portalBuffer(RenderType type) {
       if (!supported(type.primitiveTopology())) return ignored;
       RenderedVertexConsumer existing = consumers.get(type);
-      if (existing != null) return new EndPortalLook.PlanarUv(existing);
+      if (existing != null) return existing;
       if (!budget.admitPass(consumers.size())) return ignored;
       try {
         Texture texture = portalTexture();
@@ -113,9 +113,10 @@ final class RenderedModelCapture {
         // The shader is not lit by the world: full emission.
         RenderedVertexConsumer created =
             new RenderedVertexConsumer(
-                type.primitiveTopology(), vertices -> add(model, texture, vertices, 1f, layer));
+                type.primitiveTopology(),
+                vertices -> add(model, texture, EndPortalLook.planar(vertices), 1f, layer));
         consumers.put(type, created);
-        return new EndPortalLook.PlanarUv(created);
+        return created;
       } catch (IOException error) {
         LOGGER.warn("End portal surface not captured: {}", error.toString());
         return ignored;
@@ -150,12 +151,23 @@ final class RenderedModelCapture {
 
   private Texture portalTexture() throws IOException {
     if (portal != null || portalRefused) return portal;
-    byte[] png = EndPortalLook.png(minecraft);
-    if (!budget.admitTexture(textures.size() + atlasTextures.size()) || !budget.admitBytes(png.length)) {
+    String key = "rendered/" + EndPortalLook.KEY;
+    if (!budget.admitTexture(textures.size() + atlasTextures.size())) {
       portalRefused = true;
       return null;
     }
-    portal = new Texture("rendered/" + EndPortalLook.KEY, png, 0);
+    CapturePixels reader = new CapturePixels(minecraft);
+    reader.texture("end_sky", Identifier.fromNamespaceAndPath("minecraft", EndPortalLook.SKY));
+    reader.texture("end_portal", Identifier.fromNamespaceAndPath("minecraft", EndPortalLook.PORTAL));
+    var sky = reader.source("end_sky");
+    var layers = reader.source("end_portal");
+    int[] baked =
+        EndPortalLook.bake(
+            sky.readBand(0, sky.height()), sky.width(), layers.readBand(0, layers.height()), layers.width());
+    CapturePixels copies = pixelCopies == null ? reader : pixelCopies;
+    copies.procedural(key, baked, EndPortalLook.SIZE, EndPortalLook.SIZE);
+    portal = finishCopy(key, copies);
+    if (portal == null) portalRefused = true;
     return portal;
   }
 
@@ -277,6 +289,11 @@ final class RenderedModelCapture {
     }
     CapturePixels copies = pixelCopies == null ? new CapturePixels(minecraft) : pixelCopies;
     copies.textureRegion(key, location, x, y, width, height);
+    return finishCopy(key, copies);
+  }
+
+  /** The texture of a source the capture holds: queued for the pump, or encoded on the spot. */
+  private Texture finishCopy(String key, CapturePixels copies) throws IOException {
     if (pixelCopies != null) return new Texture(key, new byte[0], 0);
     var source = copies.source(key);
     var encoder = new RenderedTexture.Rows(source.width(), source.height());

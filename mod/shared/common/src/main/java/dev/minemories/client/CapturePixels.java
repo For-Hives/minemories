@@ -84,6 +84,12 @@ final class CapturePixels {
     }
   }
 
+  /** Registers a texture the game does not hold (built by the capture) as a pixel source. */
+  void procedural(String key, int[] abgr, int width, int height) throws IOException {
+    if (sources.containsKey(key)) return;
+    add(new ArrayPixels(key, abgr, width, height));
+  }
+
   private void add(Source source) throws IOException {
     RenderedTexture.checkDimensions(source.width(), source.height());
     long amount = (long) source.width() * source.height();

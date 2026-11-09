@@ -101,6 +101,8 @@ ext.adaptDir = { File root ->
         if (n == 'ProgressiveGameCapture.java') {
             t = rep(t, 'dispatcher.prepare(mc.gameRenderer.mainCamera());', 'dispatcher.prepare(mc.gameRenderer.mainCamera().position());', n)
         }
+        // Minecraft 26.x keeps the End portal texture in its own folder.
+        if (n == 'EndPortalLook.java') t = rep(t, '"textures/entity/end_portal.png"', '"textures/entity/end_portal/end_portal.png"', n)
         t = t.replace('VertexFormat.Mode', 'PrimitiveTopology')
         if (n == 'RenderedVertexConsumer.java') t = t.replace('import com.mojang.renderpearl.api.vertex.VertexFormat;', 'import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;')
         // VertexConsumer gained a third UV set.
