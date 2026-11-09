@@ -1,0 +1,1125 @@
+/* biome-ignore-all lint/style/noDescendingSpecificity: rules are grouped by block, and each flagged pair styles a different element */
+/* ==========================================================================================================================================================
+   Explainer pages (components/explainers.tsx, components/diagrams.tsx): pictograms, tabs, diagrams, verdict chips.
+   Same material as the rest of the site: night panels, 2 px outline, the game's bevel, square corners, no blur, tokens only.
+   ========================================================================================================================================================== */
+
+.ex-glyph {
+	display: block;
+	flex: none;
+	width: 24px;
+	height: 24px;
+}
+
+.ex-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* A pixel arrow, drawn once and reused between the boxes of every diagram. */
+.ex-arrow,
+.ex-flow-edge::after,
+.ex-pipeline-arrow,
+.ex-season-arrow {
+	display: block;
+	flex: none;
+	width: 24px;
+	height: 24px;
+	background: currentColor;
+	clip-path: polygon(0 38%, 58% 38%, 58% 12%, 100% 50%, 58% 88%, 58% 62%, 0 62%);
+}
+
+/* --- Tabs: the kit's tab strip, one pictogram per tab ----------------------------------------------------------------------------------------------- */
+
+.ex-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	margin: var(--ds-sp-5) 0 var(--ds-sp-4);
+	background: rgb(0 0 0 / 0.75);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
+}
+
+.ex-tab {
+	display: inline-flex;
+	flex: 1 1 auto;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-4);
+	border: 0;
+	background: none;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+	transition:
+		color var(--ds-dur-1) var(--ds-ease),
+		background-color var(--ds-dur-1) var(--ds-ease);
+}
+
+.ex-tab:hover {
+	color: #fff;
+	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
+}
+
+.ex-tab[aria-selected="true"] {
+	background: var(--night-3);
+	color: #fff;
+	box-shadow: inset 0 calc(-2 * var(--gp)) 0 var(--ember);
+}
+
+.ex-tab:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: calc(-3 * var(--gp));
+}
+
+.ex-tabpanel {
+	padding: var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+/* A panel that only holds rows (FAQ) is not a card inside a card: the rows are the card. */
+.ex-tabpanel:has(> .ex-rows) {
+	padding: 0;
+	background: none;
+	box-shadow: none;
+}
+
+.ex-tabpanel > :first-child {
+	margin-top: 0;
+}
+
+.ex-tabpanel > :last-child {
+	margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html:not([data-mc-motion="reduced"]) .ex-tabpanel:not([hidden]) {
+		animation: ex-in var(--ds-dur-2) var(--ds-ease);
+	}
+}
+
+@keyframes ex-in {
+	from {
+		opacity: 0;
+		transform: translateY(var(--ds-reveal-y));
+	}
+}
+
+.ex-line {
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+/* --- A command or a path (chat line + copy) --------------------------------------------------------------------------------------------------------- */
+
+.ex-command {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	background: rgb(0 0 0 / 0.6);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.ex-command code {
+	padding: 0 var(--ds-sp-3);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-hit) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	overflow-wrap: anywhere;
+}
+
+.ex-copy {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--ds-hit);
+	height: var(--ds-hit);
+	border: 0;
+	background: none;
+	color: var(--text-2);
+	cursor: pointer;
+}
+
+.ex-copy:hover {
+	color: var(--ember);
+}
+
+.ex-copy:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: calc(-3 * var(--gp));
+}
+
+/* --- Details (closed by default) -------------------------------------------------------------------------------------------------------------------- */
+
+.ex-more {
+	margin-top: var(--ds-sp-4);
+}
+
+.ex-more > summary {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+	list-style: none;
+}
+
+.ex-more > summary::-webkit-details-marker {
+	display: none;
+}
+
+.ex-more > summary::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border: solid currentColor;
+	border-width: 0 var(--gp) var(--gp) 0;
+	transform: translateY(-2px) rotate(-45deg);
+	transition: transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.ex-more[open] > summary::before {
+	transform: translateY(-2px) rotate(45deg);
+}
+
+.ex-more > summary:hover {
+	color: var(--ember);
+}
+
+.ex-more > summary:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.ex-more-body {
+	max-width: var(--ds-measure);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+/* --- Verdict chip ------------------------------------------------------------------------------------------------------------------------------------ */
+
+.ex-verdict {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: var(--ds-sp-1);
+	padding: 0 var(--ds-sp-3) 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.6);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--ex-tone, var(--text));
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-verdict .ex-glyph {
+	width: 16px;
+	height: 16px;
+}
+
+.ex-verdict--yes {
+	--ex-tone: var(--c-green);
+}
+
+.ex-verdict--no {
+	--ex-tone: var(--bad);
+}
+
+.ex-verdict--later {
+	--ex-tone: var(--c-blue);
+}
+
+.ex-verdict--depends {
+	--ex-tone: var(--ember);
+}
+
+/* --- Capture radius map ------------------------------------------------------------------------------------------------------------------------------ */
+
+.ex-radius {
+	display: grid;
+	grid-template-columns: minmax(0, 288px) minmax(0, 1fr);
+	gap: var(--ds-sp-6);
+	align-items: center;
+}
+
+.ex-map {
+	display: block;
+	width: 100%;
+	height: auto;
+	box-shadow: var(--mm-recess-shadow);
+	shape-rendering: crispEdges;
+}
+
+.ex-map-ground {
+	fill: var(--night);
+}
+
+.ex-map-line {
+	stroke: var(--night-3);
+	stroke-width: 1;
+}
+
+.ex-map-area {
+	fill: var(--c-green);
+	fill-opacity: 0.22;
+	stroke: var(--c-green);
+	stroke-width: 2;
+	transition:
+		x var(--ds-dur-1) linear,
+		y var(--ds-dur-1) linear,
+		width var(--ds-dur-1) linear,
+		height var(--ds-dur-1) linear;
+}
+
+.ex-map-area--heavy {
+	fill: var(--bad);
+	stroke: var(--bad);
+}
+
+.ex-map-player {
+	fill: #fff;
+	stroke: var(--outline);
+	stroke-width: 2;
+}
+
+.ex-radius-controls {
+	display: grid;
+	gap: var(--ds-sp-3);
+	justify-items: start;
+}
+
+.ex-radius-controls label {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.ex-radius-controls input[type="range"] {
+	width: 100%;
+}
+
+.ex-size {
+	color: var(--ember);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
+}
+
+.ex-warning {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	margin: 0;
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-warning[hidden] {
+	display: none;
+}
+
+/* --- Sharing: a card, a wire, three visitors ------------------------------------------------------------------------------------------------------- */
+
+.ex-share {
+	display: grid;
+	gap: var(--ds-sp-4);
+	justify-items: center;
+	padding: var(--ds-sp-6) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+.ex-share-stage {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-5);
+	width: 100%;
+}
+
+.ex-share-card {
+	position: relative;
+	flex: 0 1 280px;
+	min-width: 0;
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+}
+
+.ex-share-lock {
+	position: absolute;
+	top: var(--ds-sp-2);
+	right: var(--ds-sp-2);
+	padding: var(--ds-sp-1);
+	background: var(--night);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text-2);
+}
+
+.ex-share-wire {
+	flex: 1 1 32px;
+	min-width: 24px;
+	border-top: calc(2 * var(--gp)) dashed var(--text-3);
+	transition: border-color var(--ds-dur-2) var(--ds-ease);
+}
+
+.ex-share-people {
+	display: flex;
+	flex: none;
+	gap: var(--ds-sp-2);
+	color: var(--text-3);
+	opacity: 0.45;
+	transition:
+		color var(--ds-dur-2) var(--ds-ease),
+		opacity var(--ds-dur-2) var(--ds-ease);
+}
+
+.ex-share-people .ex-glyph {
+	width: 32px;
+	height: 32px;
+}
+
+.ex-share[data-state="link"] .ex-share-wire {
+	border-top-style: solid;
+	border-color: var(--c-green);
+}
+
+.ex-share[data-state="link"] .ex-share-people {
+	color: var(--c-green);
+	opacity: 1;
+}
+
+.ex-share[data-state="link"] .ex-share-lock {
+	color: var(--c-green);
+}
+
+.ex-share[data-state="revoked"] .ex-share-wire {
+	border-color: var(--bad);
+}
+
+.ex-share-caption {
+	margin: 0;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-align: center;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-share .mm-actions {
+	margin: 0;
+	justify-content: center;
+}
+
+/* --- Season demo: the server goes dark, the memory stays ------------------------------------------------------------------------------------------- */
+
+.ex-season {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	gap: var(--ds-sp-4) var(--ds-sp-5);
+	align-items: center;
+	justify-items: center;
+	margin: var(--ds-sp-5) 0;
+}
+
+.ex-season-side {
+	width: 100%;
+	margin: 0;
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+.ex-season-side img {
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+	transition: filter var(--ds-dur-3) var(--ds-ease);
+}
+
+.ex-season-side figcaption {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	color: var(--c-green);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-season[data-closed="true"] .ex-season-server img {
+	filter: grayscale(1) brightness(0.55);
+}
+
+.ex-season[data-closed="true"] .ex-season-server figcaption {
+	color: var(--bad);
+}
+
+.ex-season-memory figcaption {
+	color: var(--ember);
+}
+
+.ex-season-arrow {
+	color: var(--text-3);
+}
+
+.ex-season-button {
+	grid-column: 1 / -1;
+}
+
+/* --- Flow diagram (privacy) -------------------------------------------------------------------------------------------------------------------------- */
+
+.ex-flow {
+	display: flex;
+	align-items: stretch;
+	margin: var(--ds-sp-5) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-flow-step {
+	display: flex;
+	flex: 1 1 0;
+	align-items: center;
+	margin: 0;
+	padding: 0;
+}
+
+.ex-flow-step:last-child {
+	flex: 0 1 auto;
+}
+
+.ex-flow-node {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-width: 112px;
+	padding: var(--ds-sp-4) var(--ds-sp-3);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-align: center;
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-flow-node .ex-glyph {
+	width: 32px;
+	height: 32px;
+	color: var(--ember);
+}
+
+.ex-flow-edge {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ds-sp-1);
+	padding: 0 var(--ds-sp-3);
+	color: var(--c-green);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-align: center;
+}
+
+.ex-flow-edge::after {
+	content: "";
+}
+
+/* --- Pipeline (open source) -------------------------------------------------------------------------------------------------------------------------- */
+
+.ex-pipeline {
+	display: grid;
+	gap: var(--ds-sp-4);
+	margin: var(--ds-sp-5) 0;
+}
+
+.ex-pipeline-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
+}
+
+.ex-pipeline-item {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+}
+
+.ex-pipeline-node {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-width: 128px;
+	min-height: var(--ds-hit);
+	padding: var(--ds-sp-4);
+	border: 0;
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+	transition:
+		color var(--ds-dur-1) var(--ds-ease),
+		transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.ex-pipeline-node .ex-glyph {
+	width: 32px;
+	height: 32px;
+}
+
+.ex-pipeline-node:hover {
+	color: #fff;
+	transform: translateY(calc(-1 * var(--ds-lift)));
+}
+
+.ex-pipeline-node[aria-pressed="true"] {
+	background: var(--night-3);
+	color: #fff;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember);
+}
+
+.ex-pipeline-node:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: calc(3 * var(--gp));
+}
+
+.ex-pipeline-arrow {
+	color: var(--text-3);
+}
+
+.ex-pipeline-point {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-4);
+	min-height: calc(2 * var(--ds-hit));
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-recess-shadow);
+	color: var(--text);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+/* --- Rows that open (FAQ, privacy) ------------------------------------------------------------------------------------------------------------------ */
+
+.ex-rows {
+	margin: var(--ds-sp-4) var(--gp);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+.ex-row + .ex-row {
+	border-top: var(--gp) solid var(--outline);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+}
+
+.ex-row > summary {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	min-height: calc(var(--ds-hit) + var(--ds-sp-3));
+	padding: var(--ds-sp-2) var(--ds-sp-4);
+	color: var(--text);
+	cursor: pointer;
+	list-style: none;
+}
+
+.ex-row > summary::-webkit-details-marker {
+	display: none;
+}
+
+.ex-row > summary > .ex-glyph {
+	color: var(--ember);
+}
+
+.ex-row > summary > :is(h2, h3, .ex-q) {
+	flex: 1 1 auto;
+	margin: 0;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-row > summary::after {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	border: solid var(--text-2);
+	border-width: 0 var(--gp) var(--gp) 0;
+	transform: translateY(-2px) rotate(45deg);
+	transition: transform var(--ds-dur-1) var(--ds-ease);
+}
+
+.ex-row[open] > summary::after {
+	transform: translateY(2px) rotate(-135deg);
+}
+
+.ex-row > summary:hover :is(h2, h3, .ex-q) {
+	color: var(--ember);
+}
+
+.ex-row > summary:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: calc(-3 * var(--gp));
+}
+
+.ex-row-body {
+	padding: 0 var(--ds-sp-4) var(--ds-sp-4) calc(var(--ds-sp-4) + 24px + var(--ds-sp-3));
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+.ex-row-body > * {
+	max-width: var(--ds-measure);
+	margin: 0 0 var(--ds-sp-3);
+}
+
+.ex-chip {
+	flex: none;
+	padding: 0 var(--ds-sp-3);
+	background: rgb(0 0 0 / 0.6);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--c-green);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+/* --- Concept: who is it for, what it is, what it is not ------------------------------------------------------------------------------------------- */
+
+.ex-persona {
+	display: grid;
+	grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+	gap: var(--ds-sp-5);
+	align-items: center;
+}
+
+.ex-persona img {
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+}
+
+.ex-persona p {
+	margin: 0;
+	color: var(--text);
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.ex-can {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--ds-sp-5);
+	margin: var(--ds-sp-6) 0;
+}
+
+.ex-can > div {
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+
+.ex-can h2 {
+	margin: 0 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.ex-can ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-can li {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0;
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-can-yes .ex-glyph {
+	color: var(--c-green);
+}
+
+.ex-can-no .ex-glyph {
+	color: var(--bad);
+}
+
+/* --- File tree ---------------------------------------------------------------------------------------------------------------------------------------- */
+
+.ex-tree,
+.ex-tree ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-tree ul {
+	margin-left: var(--ds-sp-5);
+}
+
+.ex-tree li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-2) var(--ds-sp-3);
+	min-height: 32px;
+	margin: 0;
+	padding: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-tree li > ul {
+	flex-basis: 100%;
+}
+
+.ex-tree code {
+	padding: 0 var(--ds-sp-2);
+	background: rgb(0 0 0 / 0.6);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+/* --- Chain of three actions (upload) ------------------------------------------------------------------------------------------------------------------ */
+
+.ex-chain {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--ds-sp-4);
+	margin: 0 0 var(--ds-sp-4);
+	padding: 0;
+	list-style: none;
+}
+
+.ex-chain > li {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--ds-sp-3);
+	margin: 0;
+	padding: var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-chain .ex-glyph {
+	color: var(--ember);
+}
+
+/* --- Story blocks (article) --------------------------------------------------------------------------------------------------------------------------- */
+
+.ex-story {
+	display: grid;
+	gap: var(--ds-sp-7);
+	margin: var(--ds-sp-6) 0;
+}
+
+.ex-story-block {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--ds-sp-6);
+	align-items: center;
+}
+
+.ex-story-block:nth-child(even) .ex-story-visual {
+	order: 2;
+}
+
+.ex-story-visual img {
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+}
+
+.ex-story-visual,
+.ex-story-text {
+	min-width: 0;
+}
+
+.mm-site .ex-story-text h2 {
+	margin: 0 0 var(--ds-sp-3);
+	color: #fff;
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.ex-story-text p {
+	margin: 0 0 var(--ds-sp-4);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+/* --- Small screens ------------------------------------------------------------------------------------------------------------------------------------ */
+
+@media (max-width: 720px) {
+	.ex-radius,
+	.ex-persona,
+	.ex-story-block,
+	.ex-can {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ex-story-block:nth-child(even) .ex-story-visual {
+		order: 0;
+	}
+
+	.ex-chain {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ex-flow,
+	.ex-flow-step {
+		flex-direction: column;
+	}
+
+	.ex-flow-step:last-child {
+		flex: 1 1 auto;
+	}
+
+	.ex-flow-edge::after,
+	.ex-pipeline-arrow {
+		transform: rotate(90deg);
+	}
+
+	.ex-flow-node {
+		flex-direction: row;
+		justify-content: flex-start;
+		width: 100%;
+		padding: var(--ds-sp-3) var(--ds-sp-4);
+		text-align: left;
+	}
+
+	.ex-flow-node .ex-glyph {
+		width: 24px;
+		height: 24px;
+	}
+
+	.ex-flow-edge {
+		flex-direction: row;
+		padding: var(--ds-sp-1) var(--ds-sp-4);
+	}
+
+	.ex-season {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ex-season-arrow {
+		transform: rotate(90deg);
+	}
+
+	.ex-share-stage {
+		flex-direction: column;
+	}
+
+	.ex-share-wire {
+		flex: none;
+		width: 0;
+		height: 32px;
+		border-top: 0;
+		border-left: calc(2 * var(--gp)) dashed var(--text-3);
+	}
+
+	.ex-share[data-state="link"] .ex-share-wire {
+		border-left-style: solid;
+		border-left-color: var(--c-green);
+	}
+
+	.ex-share[data-state="revoked"] .ex-share-wire {
+		border-left-color: var(--bad);
+	}
+
+	.ex-row-body {
+		padding-left: var(--ds-sp-4);
+	}
+
+	/* A narrow row: pictogram, title and chevron on the first line, the chip or verdict under the title. */
+	.ex-row > summary {
+		display: grid;
+		grid-template-columns: 24px minmax(0, 1fr) auto;
+		column-gap: var(--ds-sp-3);
+		row-gap: var(--ds-sp-1);
+		align-items: center;
+	}
+
+	.ex-row > summary::after {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.ex-row > summary > :is(.ex-chip, .ex-verdict) {
+		grid-column: 2;
+		grid-row: 2;
+		justify-self: start;
+		max-width: 100%;
+	}
+
+	.ex-map,
+	.ex-share-card,
+	.ex-season-side {
+		max-width: 260px;
+	}
+
+	.ex-radius,
+	.ex-season {
+		justify-items: start;
+	}
+
+	.ex-tab {
+		flex-basis: 40%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ex-map-area,
+	.ex-share-people,
+	.ex-season-side img,
+	.ex-tab,
+	.ex-pipeline-node {
+		transition: none;
+	}
+}
+
+html[data-mc-motion="reduced"]
+	:is(.ex-map-area, .ex-share-people, .ex-season-side img, .ex-tab, .ex-pipeline-node, .ex-more > summary::before) {
+	transition: none;
+}
+
+@media (forced-colors: active) {
+	.ex-tab[aria-selected="true"],
+	.ex-pipeline-node[aria-pressed="true"] {
+		outline: 2px solid Highlight;
+	}
+}
+
+/* --- Discovery: tiles and timeline stops -------------------------------------------------------------------------------------------------------------- */
+
+.mm-angle-card h2 {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+}
+
+.mm-angle-card h2::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--mm-accent, var(--ember));
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+
+.ex-ticks {
+	display: grid;
+	gap: 0;
+	margin: var(--ds-sp-3) 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-ticks li {
+	margin: 0;
+	padding: 0;
+}
+
+.ex-ticks button {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	border: 0;
+	background: none;
+	color: var(--text-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-align: left;
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+}
+
+.ex-ticks button:hover {
+	color: #fff;
+}
+
+.ex-ticks button[aria-pressed="true"] {
+	background: var(--night-3);
+	color: var(--ember);
+	box-shadow: inset calc(2 * var(--gp)) 0 0 var(--ember);
+}
+
+.ex-ticks button:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
+	outline-offset: calc(-3 * var(--gp));
+}
+
+/* The three loaders the mod runs on: boxes, not a sentence. */
+.ex-loaders {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-4);
+	margin: var(--ds-sp-4) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-loaders li {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.ex-loaders .ex-glyph {
+	color: var(--ember);
+}
+
+/* /discover: the four paths side by side, so the whole choice (and the call to action) fits the first screen. */
+.mm-angle-grid--paths .mm-angle-card {
+	padding: var(--ds-sp-4);
+}
+
+.mm-angle-grid--paths .mm-angle-card > .mm-memory-scene {
+	padding: var(--ds-sp-2);
+}
+
+.mm-site .mm-angle-grid--paths .mm-angle-card h2 {
+	margin-top: var(--ds-sp-2);
+	font-size: var(--ds-fs-xs);
+	line-height: var(--ds-lh-xs);
+}
+
+@media (min-width: 1000px) {
+	.mm-angle-grid--paths {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: var(--ds-sp-4);
+	}
+}

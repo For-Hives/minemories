@@ -1,5 +1,21 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router'
+import { RadiusMap, SeasonDemo, ShareDemo } from '../components/diagrams'
+import {
+	Command,
+	FileTree,
+	Glyph,
+	type GlyphName,
+	More,
+	TabPanel,
+	type TabSpec,
+	TabStrip,
+	type Verdict,
+	VerdictChip,
+} from '../components/explainers'
+import { MemoryScene } from '../components/MemoryScene'
+import { buttonLime, buttonOutline } from '../components/ui'
+import type { DemoTheme } from '../content/discovery'
 import { T, useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
@@ -36,62 +52,89 @@ function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	)
 }
 
+type Persona = 'admin' | 'parent' | 'player' | 'creator'
+const personas: Array<TabSpec<Persona> & { theme: DemoTheme; line: string }> = [
+	{
+		id: 'admin',
+		label: 'An admin',
+		glyph: 'shield',
+		theme: 'village',
+		line: 'Capture the places of the group before the server closes.',
+	},
+	{ id: 'parent', label: 'A parent', glyph: 'heart', theme: 'home', line: 'Keep a build made with your child.' },
+	{
+		id: 'player',
+		label: 'A casual player',
+		glyph: 'home',
+		theme: 'garden',
+		line: 'Revisit your house whenever you like.',
+	},
+	{
+		id: 'creator',
+		label: 'A modpack creator',
+		glyph: 'cube',
+		theme: 'village',
+		line: 'Keep a record of your modded builds.',
+	},
+]
+const canDo: Array<[GlyphName, string]> = [
+	['view', 'Look around in 3D'],
+	['globe', 'Open it in any browser'],
+	['link', 'Share it by link'],
+]
+const cannotDo: Array<[GlyphName, string]> = [
+	['refresh', 'Resume the game'],
+	['pencil', 'Break blocks'],
+	['disk', 'Replace your backup'],
+]
+
+function CanList({ title, items, tone }: { title: string; items: Array<[GlyphName, string]>; tone: 'yes' | 'no' }) {
+	const { t } = useI18n()
+	return (
+		<div className={`ex-can-${tone}`}>
+			<h2>{t(title)}</h2>
+			<ul>
+				{items.map(([glyph, label]) => (
+					<li key={label}>
+						<Glyph name={glyph} />
+						{t(label)}
+					</li>
+				))}
+			</ul>
+		</div>
+	)
+}
+
 export function ConceptPage() {
+	const { t } = useI18n()
+	const [persona, setPersona] = useState<Persona>('admin')
 	return (
 		<InfoPage title="The builds remain, even when the season ends">
-			<p>
-				<T
-					message={
-						'A base built with friends, a castle with your child, a first village: these are memories too. When the server closes, finding the right versions and all the mods to revisit them can be difficult.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'Minemories turns an area of Minecraft into a 3D memory you can open in your browser. Once captured, you can revisit it without starting Minecraft or reinstalling the modpack.'
-					}
-				/>
-			</p>
+			<SeasonDemo />
+			<div className="ex-can">
+				<CanList title="You can" items={canDo} tone="yes" />
+				<CanList title="You cannot" items={cannotDo} tone="no" />
+			</div>
 			<h2>
-				<T message={'A memory to explore, a backup to keep'} />
+				<T message={'Who is it for?'} />
 			</h2>
+			<TabStrip
+				base="persona"
+				label={t('Who is it for?')}
+				tabs={personas.map(item => ({ ...item, label: t(item.label) }))}
+				value={persona}
+				onChange={setPersona}
+			/>
+			{personas.map(item => (
+				<TabPanel key={item.id} base="persona" id={item.id} active={item.id === persona}>
+					<div className="ex-persona">
+						<MemoryScene theme={item.theme} label={t(item.label)} />
+						<p>{t(item.line)}</p>
+					</div>
+				</TabPanel>
+			))}
 			<p>
-				<T
-					message={
-						'The capture is a three-dimensional snapshot of a place at a moment in time. You can look around, but cannot resume the game, break blocks or recover your inventory. Keep a world backup too if you want to keep playing: the 3D memory does not replace it.'
-					}
-				/>
-			</p>
-			<h2>
-				<T message={'For you and the people you play with'} />
-			</h2>
-			<p>
-				<T
-					message={
-						"At the end of a season, an admin can capture the group's places before closing the server. A parent can keep a build made with their child. An occasional player can revisit their house, and a modpack creator can keep a record of their modded builds."
-					}
-				/>
-			</p>
-			<h2>
-				<T message={'What you can do today'} />
-			</h2>
-			<p>
-				<T
-					message={
-						'Capture from the mod, upload to a private gallery and deliberately create a sharing link. Anyone receiving that link can view the capture without an account or mod.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'Timelapse lets you browse dated captures of the same area. Direct recovery of old world folders, 3D printing and other Minecraft versions remain future ideas. Lifetime online storage is not guaranteed: keep your local files.'
-					}
-				/>
-			</p>
-			<p>
-				<Link to="/how-it-works">
+				<Link className={buttonLime} to="/how-it-works">
 					<T message={'Create my first memory, step by step'} />
 				</Link>
 			</p>
@@ -99,253 +142,418 @@ export function ConceptPage() {
 	)
 }
 
-export function HowItWorksPage() {
+type Step = 'install' | 'capture' | 'file' | 'upload' | 'share'
+const steps: Array<TabSpec<Step>> = [
+	{ id: 'install', label: 'Install', glyph: 'download' },
+	{ id: 'capture', label: 'Capture', glyph: 'crosshair' },
+	{ id: 'file', label: 'File', glyph: 'cube' },
+	{ id: 'upload', label: 'Upload', glyph: 'cloud' },
+	{ id: 'share', label: 'Share', glyph: 'link' },
+]
+
+function InstallStep() {
 	return (
-		<InfoPage title="From Minecraft world to 3D memory">
+		<>
 			<h2>
 				<T message={'1. Install and open the world'} />
 			</h2>
+			<ul className="ex-loaders">
+				{['NeoForge', 'Fabric', 'Forge'].map(loader => (
+					<li key={loader}>
+						<Glyph name="cube" />
+						{loader}
+					</li>
+				))}
+			</ul>
 			<p>
-				<Link to="/installation">
+				<Link className={buttonLime} to="/installation">
 					<T message={'guides.install.action'} />
-				</Link>{' '}
-				<T
-					message={
-						'on your computer, then open your world or join your server using its usual compatible profile. The server must still be accessible to capture its builds.'
-					}
-				/>
+				</Link>
 			</p>
+			<More>
+				<p>
+					<Link to="/installation">
+						<T message={'guides.install.action'} />
+					</Link>{' '}
+					<T
+						message={
+							'on your computer, then open your world or join your server using its usual compatible profile. The server must still be accessible to capture its builds.'
+						}
+					/>
+				</p>
+			</More>
+		</>
+	)
+}
+
+function CaptureStep() {
+	return (
+		<>
 			<h2>
 				<T message={'2. Choose a small area and capture it'} />
 			</h2>
-			<p>
-				<T message={'For your first attempt, stand near the build and type'} /> <code>/minemories export 16</code>{' '}
-				<T
-					message={
-						'in chat. 16 is the radius in blocks around you; accepted values range from 2 to 128. Start small: a large area can slow the game. The mod captures what the client has loaded, not the entire server.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
-					}
-				/>
-			</p>
-			<p>
-				<T message={'For a precise area, stand at the first corner and enter'} /> <code>/minemories select first</code>
-				<T message={', then at the opposite corner with'} /> <code>/minemories select second</code>
-				<T message={'. These positions also define the height. Check with'} /> <code>/minemories select status</code>
-				<T message={', then run'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
-				<T message={'clears the selection.'} />
-			</p>
-			<p>
-				<T
-					message={
-						'The M key opens the Minemories menu. To connect your gallery, type the six-digit code generated in it and click “Connect”. “Take a memory” works as soon as a world is open: without an account, the memory stays on your computer; once connected, it is also sent to your private gallery. If M is already assigned, change its shortcut in Minecraft controls.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'The sides and bottom of the capture are closed with a dirt/stone appearance, like an extracted piece of world. These faces are added to the 3D memory: no blocks are changed in Minecraft.'
-					}
-				/>
-			</p>
+			<RadiusMap />
+			<More>
+				<p>
+					<T message={'For your first attempt, stand near the build and type'} /> <code>/minemories export 16</code>{' '}
+					<T
+						message={
+							'in chat. 16 is the radius in blocks around you; accepted values range from 2 to 128. Start small: a large area can slow the game. The mod captures what the client has loaded, not the entire server.'
+						}
+					/>
+				</p>
+				<p>
+					<T
+						message={
+							'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
+						}
+					/>
+				</p>
+				<p>
+					<T message={'For a precise area, stand at the first corner and enter'} />{' '}
+					<code>/minemories select first</code>
+					<T message={', then at the opposite corner with'} /> <code>/minemories select second</code>
+					<T message={'. These positions also define the height. Check with'} /> <code>/minemories select status</code>
+					<T message={', then run'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
+					<T message={'clears the selection.'} />
+				</p>
+				<p>
+					<T
+						message={
+							'The M key opens the Minemories menu. To connect your gallery, type the six-digit code generated in it and click “Connect”. “Take a memory” works as soon as a world is open: without an account, the memory stays on your computer; once connected, it is also sent to your private gallery. If M is already assigned, change its shortcut in Minecraft controls.'
+						}
+					/>
+				</p>
+				<p>
+					<T
+						message={
+							'The sides and bottom of the capture are closed with a dirt/stone appearance, like an extracted piece of world. These faces are added to the 3D memory: no blocks are changed in Minecraft.'
+						}
+					/>
+				</p>
+			</More>
+		</>
+	)
+}
+
+function FileStep() {
+	return (
+		<>
 			<h2>
 				<T message={'3. Find the file on your computer'} />
 			</h2>
-			<p>
-				<T message={'The result is a file named'} /> <code>capture.glb</code> <T message={'in the folder'} />{' '}
-				<code>export</code> <T message={'under your user directory ('} />
-				<code>~/export/capture.glb</code>
-				<T
-					message={
-						') by default, not in the world folder. In M → Settings → Memories, you can choose another folder and click “Save”; “Save here” exports without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
-					}
-				/>{' '}
-				<code>history</code>. <code>capture.glb</code>
-				<T
-					message={
-						'points to the latest export. In the M menu, “My memories” lets you choose an older memory and send it to your gallery. Keep your own backups: the history takes up space on your computer.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'To revisit it on the site, send this memory from M → My memories, then open it in your private gallery.'
-					}
-				/>
-			</p>
+			<FileTree />
+			<More>
+				<p>
+					<T message={'The result is a file named'} /> <code>capture.glb</code> <T message={'in the folder'} />{' '}
+					<code>export</code> <T message={'under your user directory ('} />
+					<code>~/export/capture.glb</code>
+					<T
+						message={
+							') by default, not in the world folder. In M → Settings → Memories, you can choose another folder and click “Save”; “Save here” exports without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
+						}
+					/>{' '}
+					<code>history</code>. <code>capture.glb</code>
+					<T
+						message={
+							'points to the latest export. In the M menu, “My memories” lets you choose an older memory and send it to your gallery. Keep your own backups: the history takes up space on your computer.'
+						}
+					/>
+				</p>
+				<p>
+					<T
+						message={
+							'To revisit it on the site, send this memory from M → My memories, then open it in your private gallery.'
+						}
+					/>
+				</p>
+			</More>
+		</>
+	)
+}
+
+function UploadStep() {
+	return (
+		<>
 			<h2>
 				<T message={'4. Upload to your gallery, if you choose'} />
 			</h2>
-			<ol>
+			<ol className="ex-chain">
 				<li>
-					<Link to="/register">
-						<T message={'Create your account'} />
-					</Link>{' '}
-					<T message={'or'} />{' '}
-					<Link to="/login">
-						<T message={'sign in'} />
-					</Link>
-					<T message={', then open'} />{' '}
+					<Glyph name="key" />
 					<Link to="/gallery">
-						<T message={'My gallery'} />
+						<T message={'Get a code in your gallery'} />
 					</Link>
-					.
 				</li>
 				<li>
-					<T
-						message={
-							'Generate a pairing code in the gallery. Pairing links this Minecraft installation to your Minemories account.'
-						}
-					/>
+					<Glyph name="code" />
+					<T message={'Enter it in chat'} />
+					<Command text="/minemories pair CODE" />
 				</li>
 				<li>
-					<T message={'In Minecraft chat, enter'} /> <code>/minemories pair CODE</code>{' '}
-					<T
-						message={
-							'replacing CODE with the six digits. The code expires after five minutes and can only be used once. Never type your password in Minecraft.'
-						}
-					/>
-				</li>
-				<li>
-					<T message={'Enter'} /> <code>/minemories upload</code>{' '}
-					<T
-						message={
-							'to upload the capture, then check that it appears in the gallery. The mod accepts files up to 450 MiB (about 472 MB). If the limit is exceeded, capture a smaller area.'
-						}
-					/>
+					<Glyph name="cloud" />
+					<T message={'Upload the capture'} />
+					<Command text="/minemories upload" />
 				</li>
 			</ol>
-			<p>
-				<T
-					message={
-						'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. The “Auto memories” button in M turns them on or off; M → Settings → Memories → Auto captures adjusts the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
-					}
-				/>
+			<p className="ex-line">
+				<T message={'The code lasts 5 minutes and works once.'} />
 			</p>
-			<h2>
-				<T message={'Use your own API (advanced)'} />
-			</h2>
-			<p>
-				<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
-				<T
-					message={
-						'by default. In M → Settings → Account, you can enter the HTTPS address of a compatible self-hosted Minemories API, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Official address” button restores the official address; save to apply it.'
-					}
-				/>
-			</p>
+			<More>
+				<ol>
+					<li>
+						<Link to="/register">
+							<T message={'Create your account'} />
+						</Link>{' '}
+						<T message={'or'} />{' '}
+						<Link to="/login">
+							<T message={'sign in'} />
+						</Link>
+						<T message={', then open'} />{' '}
+						<Link to="/gallery">
+							<T message={'My gallery'} />
+						</Link>
+						.
+					</li>
+					<li>
+						<T
+							message={
+								'Generate a pairing code in the gallery. Pairing links this Minecraft installation to your Minemories account.'
+							}
+						/>
+					</li>
+					<li>
+						<T message={'In Minecraft chat, enter'} /> <code>/minemories pair CODE</code>{' '}
+						<T
+							message={
+								'replacing CODE with the six digits. The code expires after five minutes and can only be used once. Never type your password in Minecraft.'
+							}
+						/>
+					</li>
+					<li>
+						<T message={'Enter'} /> <code>/minemories upload</code>{' '}
+						<T
+							message={
+								'to upload the capture, then check that it appears in the gallery. The mod accepts files up to 450 MiB (about 472 MB). If the limit is exceeded, capture a smaller area.'
+							}
+						/>
+					</li>
+				</ol>
+				<p>
+					<T
+						message={
+							'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. The “Auto memories” button in M turns them on or off; M → Settings → Memories → Auto captures adjusts the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
+						}
+					/>
+				</p>
+				<p>
+					<strong>
+						<T message={'Use your own API (advanced)'} />
+					</strong>
+				</p>
+				<p>
+					<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
+					<T
+						message={
+							'by default. In M → Settings → Account, you can enter the HTTPS address of a compatible self-hosted Minemories API, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Official address” button restores the official address; save to apply it.'
+						}
+					/>
+				</p>
+			</More>
+		</>
+	)
+}
+
+function ShareStep() {
+	return (
+		<>
 			<h2>
 				<T message={'5. Share only what you choose'} />
 			</h2>
-			<p>
-				<T
-					message={
-						'The gallery is private by default. On a capture, “Share” then “Create a link” creates a link accessible to anyone who has it; they can forward it too. You can revoke the link from this panel, but this does not delete copies someone has already saved.'
-					}
-				/>
-			</p>
-			<p>
-				<T
-					message={
-						'Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.'
-					}
-				/>
-			</p>
+			<ShareDemo />
+			<More>
+				<p>
+					<T
+						message={
+							'The gallery is private by default. On a capture, “Share” then “Create a link” creates a link accessible to anyone who has it; they can forward it too. You can revoke the link from this panel, but this does not delete copies someone has already saved.'
+						}
+					/>
+				</p>
+				<p>
+					<T
+						message={
+							'Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.'
+						}
+					/>
+				</p>
+			</More>
+		</>
+	)
+}
+
+const stepBody: Record<Step, () => ReactNode> = {
+	install: InstallStep,
+	capture: CaptureStep,
+	file: FileStep,
+	upload: UploadStep,
+	share: ShareStep,
+}
+
+export function HowItWorksPage() {
+	const { t } = useI18n()
+	const [step, setStep] = useState<Step>('install')
+	return (
+		<InfoPage title="From Minecraft world to 3D memory">
+			<TabStrip
+				base="step"
+				label={t('From Minecraft world to 3D memory')}
+				tabs={steps.map(item => ({ ...item, label: t(item.label) }))}
+				value={step}
+				onChange={setStep}
+			/>
+			{steps.map(item => {
+				const Body = stepBody[item.id]
+				return (
+					<TabPanel key={item.id} base="step" id={item.id} active={item.id === step}>
+						<Body />
+					</TabPanel>
+				)
+			})}
 		</InfoPage>
 	)
 }
 
-const questions = [
-	[
-		'Is this a backup of my world?',
-		'No. It is a static 3D model of an area loaded in the game. It cannot resume your game. Keep your Minecraft backup separately.',
-	],
-	[
-		'Do I need an account or mod to view a memory?',
-		'A shared link opens without an account or mod. You need a Minemories account to upload to your private gallery.',
-	],
-	[
-		'Can I keep a vanilla build?',
-		'Yes, if you can open a copy of the Java 1.21.1 world with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. Vanilla means without mods: the profile used for capturing must still load one of these loaders and the mod. The exact versions are on the Mod versions page. Bedrock and consoles are not supported.',
-	],
-	[
-		'Is it compatible with every mod?',
-		'This is not guaranteed. Validated Java 1.21.1 targets are detailed on the Mod versions page: NeoForge, Fabric, Forge and Quilt using the Fabric JAR. Blocks with custom rendering may be incomplete. Try a small capture and inspect it before capturing your whole base.',
-	],
-	[
-		'Do I need to install anything on the server?',
-		"Minemories is a client mod on the player's computer, not a server plugin. Ask the admin for permission, keep the profile expected by the server and capture only permitted, loaded areas.",
-	],
-	[
-		"Who can see my child's memories?",
-		'The gallery is private by default. A link created with Share gives access to anyone who has it, and they can forward it. Check the memory and its information with your child before sharing. Revoking the link stops future access through it, not copies already made.',
-	],
-	[
-		'Does the mod upload everything automatically?',
-		'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours, even while paused or in the background. Without a linked account they stay local; with one they upload to your private gallery. The “Auto memories” button in M turns them off; M → Settings → Memories → Auto captures adjusts delay, frequency and radius (32 blocks by default). A saved disable preference is preserved. Disconnecting the account stops uploads but keeps local captures. “Save here” does not upload anything.',
-	],
-	[
-		'How can I find an older capture?',
-		'In the current mod version, M → My memories lists dated captures kept in the history subfolder of your export directory. You can choose a memory and send it if your account is connected. capture.glb remains the latest export. Older versions overwrote that file: updating preserves the remaining file but cannot recover files already overwritten. Memories on your computer are not automatically deleted; allow enough space and keep your own backups. Lifetime online storage is not promised.',
-	],
-	[
-		'Can I recover a closed server or import a ZIP?',
-		'Not directly today. You must be able to reopen the world in a compatible environment to capture it. ZIP world imports and automatic recovery of old modpacks are not available.',
-	],
-	[
-		'Why is part of the build missing?',
-		"The mod captures an area and the elements loaded by the client. Move closer, check your selection's corners and height, reduce the area and try again. Some modded rendering may not be reproduced.",
-	],
-	[
-		'The code does not work or uploading fails: what should I do?',
-		'The six-digit code expires after five minutes and only works once: generate another in the gallery. Then check your connection and GLB size (450 MiB maximum from the mod). Keep the local file and retry the upload.',
-	],
-	[
-		'Is there timelapse, 3D printing or a subscription?',
-		"Timelapse links dated captures of the same area; 3D printing remains a future idea. This experimental version has no confirmed commercial offer or price. Do not rely on the project's old pricing scenarios.",
-	],
+interface Question {
+	topic: Topic
+	glyph: GlyphName
+	question: string
+	answer: string
+	verdict?: Verdict
+}
+type Topic = 'world' | 'captures' | 'sharing'
+const topics: Array<TabSpec<Topic>> = [
+	{ id: 'world', label: 'Your world', glyph: 'home' },
+	{ id: 'captures', label: 'Captures', glyph: 'cube' },
+	{ id: 'sharing', label: 'Sharing', glyph: 'link' },
+]
+const questions: Question[] = [
+	{
+		topic: 'world',
+		glyph: 'disk',
+		question: 'Is this a backup of my world?',
+		answer: 'It is a static 3D view of one area. Keep your Minecraft backup too.',
+		verdict: 'no',
+	},
+	{
+		topic: 'world',
+		glyph: 'cube',
+		question: 'Can I keep a vanilla build?',
+		answer:
+			'Yes, if you can open a copy on Java 1.21.1 with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. No Bedrock or consoles.',
+		verdict: 'yes',
+	},
+	{
+		topic: 'world',
+		glyph: 'code',
+		question: 'Do I need to install anything on the server?',
+		answer: 'It is a client mod. Ask the admin first and capture only what you may.',
+		verdict: 'no',
+	},
+	{
+		topic: 'world',
+		glyph: 'clock',
+		question: 'Can I recover a closed server or import a ZIP?',
+		answer: 'Not directly. The world must reopen in a compatible setup to be captured.',
+		verdict: 'later',
+	},
+	{
+		topic: 'captures',
+		glyph: 'layers',
+		question: 'Is it compatible with every mod?',
+		answer: 'Not guaranteed. Custom-rendered blocks can be incomplete: try a small capture first.',
+		verdict: 'depends',
+	},
+	{
+		topic: 'captures',
+		glyph: 'view',
+		question: 'Why is part of the build missing?',
+		answer: 'Move closer, check your corners and height, or capture a smaller area.',
+	},
+	{
+		topic: 'captures',
+		glyph: 'key',
+		question: 'The code does not work or uploading fails: what should I do?',
+		answer: 'Codes expire after 5 minutes and work once. Generate a new one and retry; your local file is safe.',
+	},
+	{
+		topic: 'captures',
+		glyph: 'restore',
+		question: 'How can I find an older capture?',
+		answer: 'M → My memories lists dated captures from the history folder.',
+	},
+	{
+		topic: 'sharing',
+		glyph: 'globe',
+		question: 'Do I need an account or mod to view a memory?',
+		answer: 'A shared link opens in any browser. You only need an account to upload.',
+		verdict: 'no',
+	},
+	{
+		topic: 'sharing',
+		glyph: 'heart',
+		question: "Who can see my child's memories?",
+		answer: 'Private by default. Anyone with a link you create can see it until you revoke it.',
+	},
+	{
+		topic: 'sharing',
+		glyph: 'refresh',
+		question: 'Does the mod upload everything automatically?',
+		answer: 'AFK captures upload only once paired. Turn them off with “Auto memories” in M.',
+	},
+	{
+		topic: 'sharing',
+		glyph: 'clock',
+		question: 'Is there timelapse, 3D printing or a subscription?',
+		answer: 'Timelapse links dated captures. 3D printing is only an idea, and no price is confirmed.',
+	},
 ]
 
 export function FaqPage() {
 	const { t } = useI18n()
+	const [topic, setTopic] = useState<Topic>('world')
 	return (
 		<InfoPage title="Frequently asked questions">
+			<TabStrip
+				base="faq"
+				label={t('Frequently asked questions')}
+				tabs={topics.map(item => ({ ...item, label: t(item.label) }))}
+				value={topic}
+				onChange={setTopic}
+			/>
+			{topics.map(item => (
+				<TabPanel key={item.id} base="faq" id={item.id} active={item.id === topic}>
+					<div className="ex-rows ex-rows--flat">
+						{questions
+							.filter(entry => entry.topic === item.id)
+							.map(entry => (
+								<details key={entry.question} className="ex-row">
+									<summary>
+										<Glyph name={entry.glyph} />
+										<h2 className="ex-q">{t(entry.question)}</h2>
+										{entry.verdict && <VerdictChip verdict={entry.verdict} />}
+									</summary>
+									<div className="ex-row-body">
+										<p>{t(entry.answer)}</p>
+									</div>
+								</details>
+							))}
+					</div>
+				</TabPanel>
+			))}
 			<p>
-				<T message={'New here? Start with'} />{' '}
-				<Link to="/concept">
-					<T message={'the concept'} />
-				</Link>
-				<T message={', then the'} />{' '}
-				<Link to="/installation">
-					<T message={'installation guide'} />
-				</Link>
-				<T message={'. Minecraft commands and filenames stay the same in both languages.'} />
-			</p>
-			<div className="mm-info-faqs">
-				{questions.map(([question, answer]) => (
-					<section key={question} className="mm-info-faq">
-						<h2>{t(question ?? '')}</h2>
-						<p>{t(answer ?? '')}</p>
-					</section>
-				))}
-			</div>
-			<p>
-				<Link to="/how-it-works">
+				<Link className={buttonOutline} to="/how-it-works">
 					<T message={'All the steps to capture, upload and share'} />
 				</Link>
-			</p>
-			<p>
-				<T
-					message={
-						'Minemories is an independent, unofficial project, neither approved by nor associated with Mojang or Microsoft.'
-					}
-				/>
 			</p>
 		</InfoPage>
 	)

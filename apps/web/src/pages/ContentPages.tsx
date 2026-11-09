@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { BrandLogo } from '../components/BrandMark'
+import { DataFlow, RadiusMap } from '../components/diagrams'
+import { FileTree, Glyph, type GlyphName } from '../components/explainers'
 import { BlockMark } from '../components/Loading'
+import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
-import { articles, legalContent } from '../content/site-content'
+import { type ArticleVisual, articles, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
@@ -72,11 +75,16 @@ export function ArticlePage() {
 					new Date(`${article.published}T12:00:00Z`)
 				)}
 			</time>
-			<div className="mm-prose">
+			<div className="ex-story">
 				{article.sections.map(section => (
-					<section key={section.heading}>
-						<h2>{translate(locale, section.heading)}</h2>
-						<p>{translate(locale, section.body)}</p>
+					<section key={section.heading} className="ex-story-block">
+						<div className="ex-story-visual">
+							<StoryVisual visual={section.visual} label={translate(locale, section.heading)} />
+						</div>
+						<div className="ex-story-text">
+							<h2>{translate(locale, section.heading)}</h2>
+							<p>{translate(locale, section.body)}</p>
+						</div>
 					</section>
 				))}
 			</div>
@@ -91,20 +99,75 @@ export function ArticlePage() {
 		</ContentLayout>
 	)
 }
+function StoryVisual({ visual, label }: { visual: ArticleVisual; label: string }) {
+	if (visual.kind === 'scene') return <MemoryScene theme={visual.theme} label={label} />
+	if (visual.kind === 'radius') return <RadiusMap />
+	return <FileTree />
+}
+
+/** What each privacy section is about, as a pictogram and a status read before the fine print. */
+const privacySummary: Record<string, { glyph: GlyphName; status: string }> = {
+	'Preferences on this device': { glyph: 'disk', status: 'Stays on this device' },
+	'Optional web diagnostics': { glyph: 'view', status: 'Off by default' },
+	'Diagnostics in the Minecraft mod': { glyph: 'code', status: 'Nothing sent before pairing' },
+	'Account and gallery': { glyph: 'lock', status: 'Private by default' },
+	'Links and deletion': { glyph: 'link', status: 'You control the link' },
+	'Mod download list': { glyph: 'download', status: 'No account needed' },
+}
+const privacyNodes = [
+	{ glyph: 'disk', label: 'Your computer' },
+	{ glyph: 'lock', label: 'Your private gallery' },
+	{ glyph: 'globe', label: 'Anyone with your link' },
+] satisfies Array<{ glyph: GlyphName; label: string }>
+const privacyEdges = [
+	{ glyph: 'key', label: 'Pairing' },
+	{ glyph: 'link', label: 'A link you create' },
+] satisfies Array<{ glyph: GlyphName; label: string }>
+
+function PrivacyPanels({ sections }: { sections: Array<{ heading: string; body: string }> }) {
+	const { locale, t } = useI18n()
+	return (
+		<>
+			<DataFlow nodes={privacyNodes} edges={privacyEdges} />
+			<div className="ex-rows">
+				{sections.map(section => {
+					const summary = privacySummary[section.heading]
+					return (
+						<details key={section.heading} className="ex-row">
+							<summary>
+								<Glyph name={summary?.glyph ?? 'lock'} />
+								<h2>{translate(locale, section.heading)}</h2>
+								{summary && <span className="ex-chip">{t(summary.status)}</span>}
+							</summary>
+							<div className="ex-row-body">
+								<p>{translate(locale, section.body)}</p>
+								{section.heading === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
+							</div>
+						</details>
+					)
+				})}
+			</div>
+		</>
+	)
+}
+
 export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 	const { locale, t } = useI18n()
 	const content = legalContent[kind]
 	return (
 		<ContentLayout eyebrow="MINEMORIES" title={translate(locale, content.title)}>
-			<div className="mm-prose">
-				{content.sections.map(section => (
-					<section key={section.heading}>
-						<h2>{translate(locale, section.heading)}</h2>
-						<p>{translate(locale, section.body)}</p>
-						{kind === 'privacy' && section.heading === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
-					</section>
-				))}
-			</div>
+			{kind === 'privacy' ? (
+				<PrivacyPanels sections={content.sections} />
+			) : (
+				<div className="mm-prose">
+					{content.sections.map(section => (
+						<section key={section.heading}>
+							<h2>{translate(locale, section.heading)}</h2>
+							<p>{translate(locale, section.body)}</p>
+						</section>
+					))}
+				</div>
+			)}
 			<p>
 				<a className="mc-link" href="https://github.com/For-Hives/minemories">
 					{t('Project repository')}
