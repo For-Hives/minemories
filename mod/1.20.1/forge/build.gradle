@@ -66,6 +66,11 @@ def adaptSources = tasks.register('adaptSources') {
 }
 sourceSets.main.java.srcDir adapted
 tasks.named('compileJava') { dependsOn adaptSources }
+// Translations and textures come from mod/shared, one copy for every version: a frozen per-version
+// copy went stale (new chat messages showed as raw keys) and never had the menu icon.
+tasks.named('processResources') {
+    from(shared.toPath().resolve('common/src/main/resources/assets').toFile()) { into 'assets' }
+}
 
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
