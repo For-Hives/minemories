@@ -58,6 +58,20 @@ describe('emissive factors', () => {
 		expect(b).toBeCloseTo(0.65 * srgbToLinear(0x70 / 255), 9)
 	})
 
+	it('keeps the brightest channel of a non-saturated tint, an approximation of what format 3 writes', () => {
+		const tint = [0.8, 0.4, 0.2] as const
+		const legacy = tint.map(channel => channel * 0.65) as [number, number, number]
+		const [r, g, b] = legacyEmissiveToLinear(legacy)
+		// The largest channel is read as the strength: 0.52 stays 0.52 and only the ratios go through the curve.
+		expect(r).toBeCloseTo(0.52, 9)
+		expect(g).toBeCloseTo(0.52 * srgbToLinear(0.5), 9)
+		expect(b).toBeCloseTo(0.52 * srgbToLinear(0.25), 9)
+		// Format 3 would write the linear tint times the strength, whose largest channel is dimmer (about 0.39).
+		const exact = tint.map(channel => srgbToLinear(channel) * 0.65)
+		expect(exact[0]).toBeCloseTo(0.39, 2)
+		expect(Math.abs(r - (exact[0] ?? 0))).toBeGreaterThan(0.1)
+	})
+
 	it('inverts the conversion for format 3 files', () => {
 		const legacy = [0.4, 0.3, 0.1] as const
 		const back = emissiveToLegacy(legacyEmissiveToLinear(legacy))

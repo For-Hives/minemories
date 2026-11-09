@@ -140,24 +140,30 @@ The viewer loads the file (headless Chromium, SwiftShader) and shows the complet
 
 glTF 2.0 reads `baseColorFactor`, `emissiveFactor` and `KHR_lights_punctual` colours as **linear** values. Up to
 format 2 both writers stored the 8-bit sRGB tint as is, so every biome or block tint rendered too light in the
-viewer and in Blender (terracotta, grass, foliage, water came out washed out). Format 3 converts each channel with the
+viewer and in Blender (grass, foliage, water came out washed out). Format 3 converts each channel with the
 IEC 61966-2-1 curve (`GlbColor`, shared by `GlbScene` and `SpoolingGlbScene`, which stay byte-equivalent): the
 grass tint `0xA4C954` is written `[0.371, 0.584, 0.089]`, white stays `1`, and the opacity (fourth
-`baseColorFactor` value) is unchanged. The textures were already sRGB images and do not change.
+`baseColorFactor` value) is unchanged. The textures were already sRGB images and do not change: untinted blocks
+such as terracotta are not affected. The odd look of saturated shaded blocks (purple concrete, glazed terracotta) in
+the viewer comes from its sky lighting, not from the GLB colours; it is tracked in #277.
 
 Readers tell the two apart by `asset.extras.minemories.format`:
 
 - The viewer (`apps/web/src/lib/glb-colours.ts`, applied in `viewer-scene.ts`) converts base colour, emissive colour
   and imported light colours of files **without format 3** (format 1–2, or no Minemories metadata) once per
   material, so an old capture and a new one of the same place look the same. `emissiveFactor` is the tint times a
-  strength (`emission × 0.65`): only the hue goes through the curve, the strength (largest channel) is kept, which
-  is exact for the untinted emissive blocks captures contain (converting the whole value would dim a torch from
-  0.61 to 0.33).
+  strength (`emission × 0.65`): only the hue goes through the curve, the strength (largest channel) is kept
+  (converting the whole value would dim a torch from 0.61 to 0.33). This is exact only when the tint's largest
+  channel is 255, as for the untinted (white) emissive blocks captures contain; a darker tint keeps its legacy
+  brightness instead of being dimmed by the curve, which is an approximation, not the format-3 value.
 - The landing film (`hero/scene.js`, `prepareCapture`) keeps its look on both: it converts legacy factors as before
   and only patches the old white fixed tints (spruce, birch, lily pad) on legacy files; a format-3 factor is brought
   back to sRGB first so the cobweb dimming and the collar colour stay identical. The shipped hero captures were
-  re-baked by glTF-Transform and carry no Minemories format, so they count as legacy; a future re-bake must keep
-  `asset.extras` or a format-3 capture would be converted twice.
+  re-baked by glTF-Transform before they entered the repository and carry no Minemories format, so they count as
+  legacy. The repository's asset pipeline (`scripts/hero-assets/`) rebuilds at the container level and keeps
+  `asset.extras` as is (tested in `pipeline.test.mjs`; its decoding proof refuses a file whose JSON changed), so a
+  format-3 capture stays format 3. Only a re-bake with an external tool must take care to keep `asset.extras`, or the
+  capture would be converted twice.
 - The API validators and the meshopt expansion do not read the format; the expansion keeps `asset` as is.
 
 The same change fixes opaque ARGB fixed tints (1.21.x `BlockColors` returns `0xFF619961` for spruce leaves, birch

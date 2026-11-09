@@ -66,6 +66,15 @@ test('a rebuilt file that lost one vertex is caught', async () => {
 	assert.deepEqual(proof.mismatches, ['bufferView 1: decoded data'])
 })
 
+test('a rebuild that drops the Minemories format from asset.extras is refused', async () => {
+	const marked = syntheticGlb({ MeshoptEncoder }, { minemories: { format: 3 } })
+	const { glb } = await rebuildGlb(marked, tools.rebuildTools)
+	assert.deepEqual((await proveEquivalent(marked, glb, tools.proofDecoder)).mismatches, [])
+	const { json, bin } = parseGlb(glb)
+	delete json.asset.extras
+	assert.deepEqual((await proveEquivalent(marked, buildGlb(json, bin), tools.proofDecoder)).mismatches, ['json'])
+})
+
 test('a texture that changed colour, a changed material and a changed raw view are all caught', async () => {
 	const { glb } = await rebuildGlb(source, tools.rebuildTools)
 	const other = syntheticGlb({ MeshoptEncoder }, { tint: 7 })

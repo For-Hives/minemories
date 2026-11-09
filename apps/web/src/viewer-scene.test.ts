@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
 import { UnsupportedGlbError } from './lib/glb'
+import { legacyEmissiveToLinear, srgbToLinear } from './lib/glb-colours'
 import { disposeImportedObject, ViewerScene } from './viewer-scene'
 
 test('viewer clears loading and refuses unsafe files before calling its texture loader', async () => {
@@ -75,7 +76,7 @@ function sceneFixture() {
 		hiddenCategories: new Set(),
 		camera: new THREE.PerspectiveCamera(),
 		sky: new THREE.Mesh(),
-		loader: { parseAsync: vi.fn(async () => ({ scene: next })) },
+		loader: { parseAsync: vi.fn(async (): Promise<{ scene: THREE.Group; asset?: unknown }> => ({ scene: next })) },
 		events: { onLoading: vi.fn(), onFileInfo: vi.fn(), onEmptyChange: vi.fn() },
 		renderer: { compileAsync: vi.fn(() => compile.promise), render: vi.fn() },
 		prepareWorldLighting: vi.fn(),
@@ -360,6 +361,76 @@ test('a cancelled world layer is detached and released', async () => {
 	expect(f.next.parent).toBeNull()
 	expect(dispose).toHaveBeenCalled()
 	await expect(f.scene.addLayer(f.file, capture, AbortSignal.abort())).rejects.toMatchObject({ name: 'AbortError' })
+})
+
+/** A parsed capture as GLTFLoader returns it: raw factors, one material shared by two meshes, one imported light. */
+function colouredCapture() {
+	const material = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.5 })
+	material.color.setRGB(0.5, 0.25, 0.1, THREE.LinearSRGBColorSpace)
+	material.emissive.setRGB(0.65, 0.65 * 0.5, 0, THREE.LinearSRGBColorSpace)
+	const scene = new THREE.Group()
+	const first = new THREE.Mesh(new THREE.BoxGeometry(), material)
+	const second = new THREE.Mesh(new THREE.BoxGeometry(), material)
+	const light = new THREE.PointLight()
+	light.color.setRGB(1, 0.5, 0.2, THREE.LinearSRGBColorSpace)
+	scene.add(first, second, light)
+	return { scene, material, light }
+}
+
+const legacyFormat = { version: '2.0', extras: { minemories: { format: 2 } } }
+const linearFormat = { version: '2.0', extras: { minemories: { format: 3 } } }
+
+function expectLinearised(colour: THREE.Color, [r, g, b]: [number, number, number]) {
+	expect(colour.r).toBeCloseTo(srgbToLinear(r), 9)
+	expect(colour.g).toBeCloseTo(srgbToLinear(g), 9)
+	expect(colour.b).toBeCloseTo(srgbToLinear(b), 9)
+}
+
+test.each([
+	['a format 2 capture', legacyFormat],
+	['an unversioned capture', { version: '2.0', generator: 'glTF-Transform v4.5.1' }],
+	['a capture without asset', undefined],
+])('loading %s linearises shared material and light colours once, never the opacity', async (_, asset) => {
+	const f = sceneFixture()
+	f.compile.resolve()
+	const capture = colouredCapture()
+	f.fields.loader.parseAsync.mockResolvedValueOnce({ scene: capture.scene, asset })
+	await f.scene.loadFile(f.file)
+	// Both meshes share the material: converting it twice would give srgbToLinear(srgbToLinear(0.5)).
+	expectLinearised(capture.material.color, [0.5, 0.25, 0.1])
+	const [er, eg, eb] = legacyEmissiveToLinear([0.65, 0.65 * 0.5, 0])
+	expect(capture.material.emissive.r).toBeCloseTo(er, 9)
+	expect(capture.material.emissive.g).toBeCloseTo(eg, 9)
+	expect(capture.material.emissive.b).toBe(eb)
+	expect(capture.material.opacity).toBe(0.5)
+	expectLinearised(capture.light.color, [1, 0.5, 0.2])
+})
+
+test('a format 3 capture keeps its linear colours', async () => {
+	const f = sceneFixture()
+	f.compile.resolve()
+	const capture = colouredCapture()
+	f.fields.loader.parseAsync.mockResolvedValueOnce({ scene: capture.scene, asset: linearFormat })
+	await f.scene.loadFile(f.file)
+	expect(capture.material.color.toArray()).toEqual([0.5, 0.25, 0.1])
+	expect(capture.material.emissive.toArray()).toEqual([0.65, 0.65 * 0.5, 0])
+	expect(capture.light.color.toArray()).toEqual([1, 0.5, 0.2])
+})
+
+test('world layers linearise legacy colours before their lights are collected, and leave format 3 alone', async () => {
+	const f = worldFixture()
+	const legacy = colouredCapture()
+	f.fields.loader.parseAsync.mockResolvedValueOnce({ scene: legacy.scene, asset: legacyFormat })
+	const layer = await f.scene.addLayer(f.file, capture)
+	expectLinearised(legacy.material.color, [0.5, 0.25, 0.1])
+	expect(legacy.material.opacity).toBe(0.5)
+	expect(layer.lights).toHaveLength(1)
+	expectLinearised(layer.lights[0]?.color ?? new THREE.Color(), [1, 0.5, 0.2])
+	const linear = colouredCapture()
+	f.fields.loader.parseAsync.mockResolvedValueOnce({ scene: linear.scene, asset: linearFormat })
+	const linearLayer = await f.scene.addLayer(f.file, capture)
+	expect(linear.material.color.toArray()).toEqual([0.5, 0.25, 0.1])
+	expect(linearLayer.lights[0]?.color.toArray()).toEqual([1, 0.5, 0.2])
 })
 
 interface GlideInternals {
