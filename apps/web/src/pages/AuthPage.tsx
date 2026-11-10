@@ -88,7 +88,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						</Link>
 					</nav>
 					<header className="auth-heading">
-						<span className="auth-eyebrow">{t('YOUR WORLDS ARE WAITING')}</span>
+						<span className="auth-eyebrow">{t('YOUR GALLERY')}</span>
 						<h1>{creating ? t('Your gallery starts here') : t('Good to see you again')}</h1>
 						<p>
 							{creating
@@ -144,7 +144,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 								<rect x="4" y="8" width="12" height="9" rx="2" />
 								<path d="M7 8V5a3 3 0 0 1 6 0v3" />
 							</svg>
-							{t('Your captures are private by default.')}
+							{t('Your memories are private by default.')}
 						</p>
 					</form>
 					<GuestEntry />
@@ -172,15 +172,15 @@ function GuestEntry() {
 			</div>
 			{import.meta.env.DEV ? (
 				<>
-					<p>{t('Open a capture on your device. The file stays local.')}</p>
+					<p>{t('Open a .glb file from your computer. It isn’t sent anywhere.')}</p>
 					<label className="auth-file">
-						{t('Open my capture')}
+						{t('Open a file')}
 						<span aria-hidden="true">＋</span>
 						<input
 							type="file"
 							className={fileInputHidden}
 							accept=".glb,model/gltf-binary"
-							aria-label={t('Open my capture')}
+							aria-label={t('Open a file')}
 							onChange={event => {
 								const file = event.currentTarget.files?.[0]
 								if (file) {
@@ -206,16 +206,16 @@ function AuthAtmosphere() {
 			<div className="auth-art-sky" aria-hidden="true" />
 			<div className="auth-art-label">
 				<span>MINEMORIES</span>
-				<span>{t('THE PLACES REMAIN.')}</span>
+				<span>{t('IN 3D, IN YOUR BROWSER')}</span>
 			</div>
 			<div className="auth-art-copy">
-				<p>{t('A home. A server. An era.')}</p>
+				<p>{t('Your house, your village, your group’s base.')}</p>
 				<h2>
-					{t('We all have')}
+					{t('Go back')}
 					<br />
-					{t('somewhere')}
+					{t('whenever')}
 					<br />
-					<em>{t('to return to.')}</em>
+					<em>{t('you want.')}</em>
 				</h2>
 			</div>
 			<div className="auth-art-world">

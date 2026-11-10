@@ -677,7 +677,7 @@ test('switching auth modes keeps the intended destination through successful reg
 
 test('guests can open a local capture directly without authentication', () => {
 	mount(<AuthPage mode="login" />)
-	const input = screen.getByLabelText('Open my capture')
+	const input = screen.getByLabelText('Open a file')
 	fireEvent.change(input, { target: { files: [] } })
 	expect(mocks.navigate).not.toHaveBeenCalled()
 	const file = new File(['glb fixture'], 'cabin.glb', { type: 'model/gltf-binary' })
@@ -842,7 +842,7 @@ test('production auth and site navigation offer discovery without local file inp
 			</SiteLayout>
 		</MemoryRouter>
 	)
-	expect(screen.queryByLabelText('Open my capture')).toBeNull()
+	expect(screen.queryByLabelText('Open a file')).toBeNull()
 	expect(view.container.querySelector('input[type=file]')).toBeNull()
 	view.unmount()
 	const site = mount(
