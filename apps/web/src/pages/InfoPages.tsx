@@ -180,12 +180,12 @@ export function HowItWorksPage() {
 						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
 						{t('You stop sharing whenever you want.')}
 					</p>
-					<ShareDemo />
 					<p className="ex-line">
 						{t(
-							'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+							'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
 						)}
 					</p>
+					<ShareDemo />
 				</li>
 			</ol>
 			<h2>{t('Questions')}</h2>

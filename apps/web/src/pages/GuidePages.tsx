@@ -209,11 +209,11 @@ export function SafetyPage() {
 			</section>
 			<h2>{t('What someone with a link sees')}</h2>
 			<p>
-				{t('The 3D scene, its name and its date.')}{' '}
 				{t(
-					'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+					'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
 				)}
 			</p>
+			<p>{t('The 3D scene, its name and its date.')}</p>
 			<p>
 				{t('Stop sharing blocks new visits, not a copy already made.')} {t('Players nearby appear with their skin.')}{' '}
 				{t('Ask them before you share.')}

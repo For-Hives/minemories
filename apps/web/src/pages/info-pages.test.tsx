@@ -81,7 +81,7 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'In Minecraft: M → type the code → Connect.',
 		'Yes: M → Auto memories.',
 		'M → Settings → Privacy',
-		'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.',
+		'Heads-up: the link shows your base’s coordinates and the server name or address.',
 	])
 		expect(howTo).toContain(label)
 	// The 32-block default radius, drawn: 65 × 65 blocks.
@@ -249,6 +249,11 @@ test('/sharing says what a link shows, answers three questions and ends on the i
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('Un lien vers un souvenir, ou vers tout un monde avec son curseur pour remonter le temps.')
 	expect(text).toContain('Télécharge la carte postale HD')
+	expect(text).toContain('Partager → Créer un lien → Copier')
+	// the warning an SMP player needs opens its section, before the list of what else the link shows
+	const warning = text.indexOf('Attention\u00a0: le lien montre les coordonnées de ta base')
+	expect(warning).toBeGreaterThan(-1)
+	expect(warning).toBeLessThan(text.indexOf('La scène 3D, son nom et sa date.'))
 	expect(text).toContain('la dimension, le biome, le nom du monde')
 	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
 	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')

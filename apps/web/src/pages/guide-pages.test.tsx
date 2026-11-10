@@ -114,7 +114,7 @@ test('/safety: the parents box, the checksum fold under #verifier, what goes onl
 	).toEqual(['Avant de connecter le jeu', 'Après avoir connecté le jeu'])
 	expect(table.textContent).toContain('sa graine (en solo)')
 	expect(table.textContent).toContain('au plus 8 en attente, gardés 7 jours au plus')
-	expect(document.body.textContent).toContain('Le lien montre aussi les coordonnées, la dimension, le biome')
+	expect(document.body.textContent).toContain('Attention\u00a0: le lien montre les coordonnées de ta base')
 	expect(document.body.textContent).toContain('Arrêter le partage bloque les nouvelles visites')
 	expect(document.body.textContent).toContain('30 jours de corbeille')
 	expect(document.body.textContent).toContain('l’adresse de contact arrive bientôt')
