@@ -115,3 +115,12 @@ Three pages from the site plan, written in the catalogues like every other page 
 - **`/guides/minecraft-blender`**: `/minemories export` (128 blocks, the command's default), `/minemories export <2-128>`, `select first|second` on the looked-at blocks then `export selection`, the `export` folder (`capture.glb` plus `history`), then Blender's glTF 2.0 import, one object per category and the scale to apply (see [GLB size](../features/glb-size.md)). It is an Article with a BreadcrumbList. There is no Blender screenshot yet, and no comparison table: only a sentence on tools that read the world save.
 
 The header gains "Server closing"; its links now stay on one row and wait in the menu up to 1240 px (1440 px when signed in, with the account name from 1600 px), the language selector up to 1440 px, and the landing bar's links up to 1320 px.
+
+## Copy pass in players' words (10 November 2026)
+
+Owner direction for every public page, French and English first, the other languages in the same spirit: relaxed, direct and natural, the way players talk; nothing that reads as written by a machine or rushed.
+
+- **Menu and footer links are the player's own question or a short spoken phrase**: "What is Minemories?", "How do I share a link?" (fr « Comment on partage un lien ? »), "See other players’ builds", "What if my server shuts down?" (fr « Et si mon serveur ferme ? »), "Open my build in Blender", "Is it safe?", "What’s new", "What’s coming next", "Found a bug? Tell us on GitHub". Page headings (H1) and route titles keep their search keyword.
+- **Landing**: "Show your base to your friends" (fr « Fais visiter ta base à tes potes »); the server-closing line is the owner's « Garde le souvenir de ta base en réserve avant de la perdre à tout jamais. »; the server question answers « Non, c’est côté client : ça s’installe uniquement chez le joueur. »
+- **English** uses contractions and plain verbs; no "unlock", "seamless", triple adjectives or poster slogans ("The game ends. The story continues." became "The server closes. Your base stays."). **French** keeps « tu », spoken turns (« ta base », « tes potes ») and a no-break space before `? ! : ;` and inside `« »` across both French catalogues.
+- In-game labels quoted on the site (M → Take a memory, Auto memories, Connect, Settings → Privacy) still match the mod's `lang` files word for word.
