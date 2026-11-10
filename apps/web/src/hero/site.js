@@ -539,7 +539,7 @@ export function createSite(ctx) {
 
 	function chooseSection(id) {
 		section = id
-		for (const a of doc.querySelectorAll('.mc-sitebar__nav a, .site-menu__links a')) {
+		for (const a of doc.querySelectorAll('a[data-section-link]')) {
 			if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true')
 			else a.removeAttribute('aria-current')
 		}

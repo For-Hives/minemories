@@ -1027,215 +1027,29 @@ html.is-leaving .site-nav {
 	margin: 0;
 }
 
-/* A label never breaks over two lines: the links wait in the menu until they fit on one row. */
-.site-nav a {
-	white-space: nowrap;
-}
-
 /* The site: solid header (the kit's `.is-solid`, set by hero.js). */
 .mc-sitebar.is-solid {
 	transition-duration: 0.3s;
 }
 
-.mc-sitebar__cta {
-	--_h: 44px; /* v9c: a 44 px target at every width (the kit's button is 40 px from 641 px) */
-	white-space: nowrap;
-	display: inline-flex; /* the kit hides it under 560 px: v9c keeps the install action on every screen (blind test: "no install button on mobile") */
-}
-
-.cta-short {
+/* --- the bar's menus, account, language and install button (SiteNav, site-nav.css: the same bar as every page's) -------------------------------------------
+   During the film the menus wait with the section links (.site-nav, above); the phones' panel keeps its button under 700 px, where it holds the language, and
+   its "On this page" group waits too: the sections do not exist yet, no dead links. */
+html[data-phase='film']:not(.is-leaving) [data-landing-sections] {
 	display: none;
 }
 
-/* --- the header on small screens (v9c) ----------------------------------------------------------------------------------------------------------------------
-   >= 1 100 px: brand, section links, language, install (the kit shows the links from 1 000 px; v9c: from 1 100). 700 to 1 099 px: the links move into the menu button. Under 700 px the language selector moves into the menu
-   too, and the install button gets its short label ("Install"; the long one stays in the accessible name). Under 360 px it is its icon. Every target is at least 44 px.
-   (700 and not 560: at 560 px the brand, the selector, the long label and the menu button need 600 px in French.) */
-.site-menu__btn {
-	display: none;
-	flex: none;
-}
-
-.site-menu__btn .i-close,
-.site-menu__btn[aria-expanded='true'] .i-open {
-	display: none;
-}
-
-.site-menu__btn[aria-expanded='true'] .i-close {
-	display: inline-block;
-}
-
-.site-menu {
-	position: fixed;
-	top: var(--header-h);
-	right: max(8px, var(--safe-r));
-	z-index: 45;
-	display: grid;
-	gap: 4px;
-	width: min(320px, calc(100vw - 16px));
-	box-sizing: border-box;
-	padding: 8px;
-	background: var(--night);
-	border: 2px solid var(--outline);
-	box-shadow: 0 4px 0 #3a322b;
-}
-
-.site-menu[hidden] {
-	display: none;
-}
-
-.site-menu ul {
-	display: grid;
-	gap: 2px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.site-menu a {
-	display: flex;
-	align-items: center;
-	min-height: 48px;
-	padding: 0 12px;
-	font: 16px/18px var(--f-ui);
-	color: var(--text);
-	text-decoration: none;
-	text-shadow: 2px 2px 0 var(--text-shadow);
-}
-
-.site-menu a:hover {
-	color: var(--ember);
-	background: rgb(255 255 255 / 0.06);
-}
-
-.site-menu a[aria-current='true'] {
-	box-shadow: inset 4px 0 0 var(--hover);
-}
-
-.site-menu__lang {
-	display: none;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 4px 12px 4px;
-}
-
-html[data-phase='film']:not(.is-leaving) .site-menu__links {
-	display: none; /* the sections do not exist during the film: no dead links */
-}
-
-@media (max-width: 1319px) {
-	.site-menu__btn {
-		display: inline-flex;
-	}
-
-	/* the kit shows the links from 1 000 px; with "Server closing" next to "How it works" and the FAQ, Russian needs about 1 305 px on one row: they come from 1 320 px */
-	.mc-sitebar__nav {
-		display: none;
-	}
-
-	/* the section links live in the menu there: the empty <nav> would only add a second 12 px gap between the brand and the buttons */
-	.site-nav {
-		display: none;
-	}
-}
-
-/* During the film, from 700 px up, the menu would hold nothing (the section links do not exist yet and the header's own language selector is on screen): the button waits for the site. */
 @media (min-width: 700px) {
-	html[data-phase='film']:not(.is-leaving) .site-menu__btn {
+	html[data-phase='film']:not(.is-leaving) .mm-nav-burger {
 		display: none;
 	}
 }
 
-@media (min-width: 1320px) {
-	.site-menu {
-		display: none;
-	}
-
-	.mc-sitebar__nav {
-		display: flex;
-	}
-}
-
-@media (max-width: 699px) {
-	.site-lang {
-		display: none;
-	}
-
-	.site-menu__lang {
-		display: flex;
-	}
-
-	.mc-sitebar__end {
-		gap: 8px;
-	}
-
-	.mc-sitebar__cta .cta-long {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
-	.mc-sitebar__cta .cta-short {
-		display: inline;
-	}
-
-	.mc-sitebar__cta {
-		min-width: 0;
-		padding-inline: 12px;
-	}
-}
-
-.cta-icon {
-	display: none;
-}
-
-/* v11b: 419 (was 399): the wordmark of the logo is 12 px wider at 16 px (M and m are drawn wider: they no longer read "H" and "n"), the Russian header at 400 px was 3 px too wide. */
+/* v11b: under 420 px the bar's sides come closer (the Russian header at 400 px was 3 px too wide). */
 @media (max-width: 419px) {
-	.mc-sitebar__brand {
-		gap: 6px;
-	}
-
 	.mc-sitebar {
 		padding-inline: max(8px, var(--safe-l)) max(8px, var(--safe-r));
 	}
-
-	.mc-sitebar__cta {
-		padding-inline: 8px;
-	}
-}
-
-/* Under 380 px the install action is its icon alone (the German "Installieren" would not fit beside the brand and the menu; v11: 380, the game font being wider than the old one); its name stays in full for screen readers. */
-@media (max-width: 379px) {
-	.mc-sitebar__cta .cta-icon {
-		display: inline-block;
-	}
-
-	.mc-sitebar__cta .cta-short {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
-	.mc-sitebar__cta {
-		width: 44px;
-		min-width: 44px;
-		padding-inline: 0;
-	}
-}
-
-.mc-sitebar__end .mc-select--compact {
-	flex: none;
 }
 
 /* --- the panel (#dock) ---------------------------------------------------------------------------------------------- */
@@ -2177,6 +1991,4 @@ html[data-dock='side'] .mc-sitebar {
 }
 
 /* ===== Additions for the app (not in the prototype): the way into the private space in the header, the list of site pages in the extra section ===== */
-.site-account { display: none; }
-@media (min-width: 1000px) { .site-account { display: inline-flex; } }
 .site-links { list-style: none; margin: 16px 0 24px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }

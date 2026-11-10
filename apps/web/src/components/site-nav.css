@@ -1,0 +1,571 @@
+/* The site's bar (SiteNav.tsx), the same on every page and on the landing: the menus of the whole site, the account, the language, "Install the
+   mod", and the phones' panel. The game's look: night panels with a bevel and a 2 px outline, the pixel font, square corners, a light outline on
+   hover as on the game's buttons. From 1100 px (DESKTOP_NAV) the menus sit in the bar; below, the three bars open the panel. */
+
+/* The pages' header (the landing's sets its own on <html>: site.js): the phones' panel opens under it. */
+.mm-header {
+	--header-h: 56px;
+}
+
+@media (min-width: 1000px) {
+	.mm-header {
+		--header-h: 64px;
+	}
+}
+
+/* --- The bar's two halves -------------------------------------------------------------------------------------------------------------------------- */
+
+.mm-nav {
+	display: none;
+	margin-left: var(--ds-sp-3);
+}
+
+.mm-nav__menus {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mm-nav__item {
+	position: relative;
+}
+
+.mm-nav-end {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	margin-left: auto;
+}
+
+.mm-nav-end__wide,
+.mm-nav-end .mm-file-control {
+	display: none;
+}
+
+/* --- A menu's button: text in the game font; open, it becomes the top of its panel ------------------------------------------------------------- */
+
+.mm-nav__trigger {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-2) 0 var(--ds-sp-3);
+	background: transparent;
+	border: var(--gp) solid transparent;
+	border-radius: 0;
+	color: var(--text);
+	font: 16px / 18px var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+	white-space: nowrap;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mm-nav__trigger:hover {
+	color: var(--ember);
+}
+
+/* The menu that holds the page on screen: a light bar under its name, as the old links had. */
+.mm-nav__trigger[data-current]::after {
+	content: "";
+	position: absolute;
+	inset: auto var(--ds-sp-3) 6px;
+	height: var(--gp);
+	background: var(--hover);
+}
+
+.mm-nav__trigger[aria-expanded="true"] {
+	background: var(--night-2);
+	border-color: var(--outline);
+	box-shadow: inset var(--gp) var(--gp) 0 #3a322b;
+	color: var(--ember);
+}
+
+.mm-nav__trigger:focus-visible,
+.mm-nav__link:focus-visible,
+.mm-drawer__toggle:focus-visible,
+.mm-lang__list:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+[aria-expanded="true"] > .mm-nav__chevron {
+	transform: rotate(180deg);
+}
+
+/* --- A menu's panel: a night window of the game (bevel, 2 px outline, a hard shadow) ------------------------------------------------------------- */
+
+.mm-nav__panel {
+	position: absolute;
+	top: calc(100% + var(--ds-sp-1));
+	left: 0;
+	z-index: 50;
+	box-sizing: border-box;
+	min-width: 240px;
+	max-width: min(360px, calc(100vw - 2 * var(--ds-sp-4)));
+	margin: 0;
+	padding: var(--ds-sp-2);
+	background: var(--night-2);
+	color: var(--text);
+	list-style: none;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #3a322b,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #0f0c0a,
+		var(--ds-notch),
+		0 calc(4 * var(--gp)) 0 calc(var(--gp)) rgb(0 0 0 / 0.45);
+}
+
+.mm-nav__panel[hidden] {
+	display: none;
+}
+
+.mm-nav__panel--end,
+.mm-lang__list {
+	left: auto;
+	right: 0;
+}
+
+.mm-nav__section ul {
+	display: grid;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mm-nav__section + .mm-nav__section {
+	margin-top: var(--ds-sp-2);
+	padding-top: var(--ds-sp-2);
+	box-shadow: inset 0 var(--gp) 0 #3a322b;
+}
+
+.mm-nav__heading {
+	margin: var(--ds-sp-1) var(--ds-sp-3) var(--ds-sp-2);
+	color: var(--text-3);
+	font: 16px / 18px var(--f-ui);
+	text-shadow: none;
+}
+
+/* A row of a menu: hovered or focused, it takes the light outline of the game's buttons. */
+.mm-nav__link,
+.mm-lang__option {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	box-sizing: border-box;
+	width: 100%;
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-3);
+	background: none;
+	border: var(--gp) solid transparent;
+	border-radius: 0;
+	color: var(--text);
+	font: 16px / 18px var(--f-ui);
+	text-align: left;
+	text-decoration: none;
+	text-shadow: var(--ds-text-shadow-1);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.mm-nav__link:hover,
+.mm-nav__link:focus-visible,
+.mm-lang__option.is-active {
+	background: var(--night-3);
+	border-color: var(--hover);
+	color: #fff;
+}
+
+/* The page on screen (and, on the landing, the section on screen: site.js). */
+.mm-nav__link[aria-current] {
+	color: var(--ember);
+	box-shadow: inset calc(2 * var(--gp)) 0 0 var(--ember);
+}
+
+/* --- The account: "Sign in", or the avatar opening the account's menu ---------------------------------------------------------------------------- */
+
+.mm-nav-account.mc-btn {
+	--_h: var(--ds-hit);
+	min-width: 0;
+	white-space: nowrap;
+}
+
+.mm-nav-account__button {
+	padding-left: var(--ds-sp-1);
+}
+
+.mm-nav-account__name {
+	max-width: 140px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- The language: a button with the language's own name, a list of every language ------------------------------------------------------------------ */
+
+.mm-lang {
+	position: relative;
+}
+
+.mm-lang__button.mc-btn {
+	--_h: var(--ds-hit);
+	min-width: 0;
+	gap: var(--ds-sp-2);
+	padding: 0 var(--ds-sp-2) var(--gp);
+	white-space: nowrap;
+}
+
+/* A pixel globe (8 x 8 texels, the kit's icon grid). */
+.mm-lang__globe {
+	flex: none;
+	width: calc(8 * var(--gp));
+	height: calc(8 * var(--gp));
+	background: currentColor;
+	-webkit-mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M2 0h4v1H2zM1 1h1v1H1zM3 1h2v1H3zM6 1h1v1H6zM0 2h1v2H0zM3 2h2v1H3zM7 2h1v2H7zM1 3h6v1H1zM0 4h1v2H0zM3 4h2v2H3zM7 4h1v2H7zM1 6h1v1H1zM3 6h2v1H3zM6 6h1v1H6zM2 7h4v1H2z'/%3E%3C/svg%3E")
+		center / 100% 100% no-repeat;
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M2 0h4v1H2zM1 1h1v1H1zM3 1h2v1H3zM6 1h1v1H6zM0 2h1v2H0zM3 2h2v1H3zM7 2h1v2H7zM1 3h6v1H1zM0 4h1v2H0zM3 4h2v2H3zM7 4h1v2H7zM1 6h1v1H1zM3 6h2v1H3zM6 6h1v1H6zM2 7h4v1H2z'/%3E%3C/svg%3E")
+		center / 100% 100% no-repeat;
+	image-rendering: pixelated;
+}
+
+.mm-lang__list {
+	min-width: 220px;
+	max-height: min(70vh, 540px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	outline: none;
+}
+
+.mm-lang__check {
+	visibility: hidden;
+}
+
+.mm-lang__option[aria-selected="true"] {
+	color: var(--ember);
+}
+
+.mm-lang__option[aria-selected="true"] .mm-lang__check {
+	visibility: visible;
+}
+
+.mm-lang__error {
+	position: absolute;
+	top: calc(100% + var(--ds-sp-2));
+	right: 0;
+	width: max-content;
+	max-width: 240px;
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	background: var(--tip-bg);
+	border: var(--gp) solid var(--tip-b);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+}
+
+/* --- The development file opener: a square stone button of the kit with its plus (the name stays for screen readers) ------------------------------ */
+
+.mm-nav-end .mm-file-control.mm-button {
+	--mc-bevel: inset var(--gp) var(--gp) 0 var(--_hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
+	width: var(--ds-hit);
+	min-width: var(--ds-hit);
+	padding-inline: 0;
+	background: var(--_face);
+	border-color: var(--outline);
+	color: #fff;
+}
+
+.mm-nav-end .mm-file-control.mm-button:hover {
+	border-color: var(--hover);
+}
+
+.mm-nav-end .mm-file-control > span:first-of-type {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.mm-nav-end .mm-file-control > span:last-of-type {
+	display: inline-block;
+}
+
+/* --- "Install the mod": the ember and its whole name, "Install" under 700 px, the ember alone under 380 px (the name stays for screen readers) -------------------- */
+
+.mm-nav-cta.mc-btn {
+	--_h: var(--ds-hit);
+	min-width: 0;
+	white-space: nowrap;
+}
+
+.mm-nav-cta__short {
+	display: none;
+}
+
+.mm-nav-cta--block.mc-btn {
+	width: 100%;
+}
+
+/* --- The three bars and the phones' panel --------------------------------------------------------------------------------------------------------- */
+
+.mm-nav-burger {
+	flex: none;
+}
+
+/* (two classes: the kit's .mc-icon, loaded after this file, shows every icon) */
+.mm-nav-burger .mm-nav-burger__close,
+.mm-nav-burger[aria-expanded="true"] .mm-nav-burger__open {
+	display: none;
+}
+
+.mm-nav-burger[aria-expanded="true"] .mm-nav-burger__close {
+	display: inline-block;
+}
+
+.mm-drawer__backdrop {
+	position: fixed;
+	inset: var(--header-h, 56px) 0 0;
+	z-index: 44;
+	background: rgb(10 8 6 / 0.62);
+}
+
+.mm-drawer {
+	position: fixed;
+	top: var(--header-h, 56px);
+	right: 0;
+	bottom: 0;
+	z-index: 45;
+	display: grid;
+	align-content: start;
+	gap: var(--ds-sp-3);
+	box-sizing: border-box;
+	width: min(420px, 100vw);
+	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-6);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		inset var(--gp) var(--gp) 0 #3a322b,
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #0f0c0a,
+		calc(-1 * var(--gp)) 0 0 0 var(--outline);
+}
+
+.mm-drawer[hidden],
+.mm-drawer__backdrop[hidden] {
+	display: none;
+}
+
+.mm-drawer nav {
+	display: grid;
+	gap: var(--ds-sp-2);
+}
+
+/* A group's button: a stone button of the game, its links unfold under it. */
+.mm-drawer__toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 48px;
+	margin: 0;
+	padding: 0 var(--ds-sp-3) var(--gp) var(--ds-sp-4);
+	background: var(--stone);
+	border: var(--gp) solid var(--outline);
+	border-radius: 0;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--stone-hi),
+		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
+	color: #fff;
+	font: 16px / 18px var(--f-ui);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	cursor: pointer;
+}
+
+.mm-drawer__toggle:hover {
+	border-color: var(--hover);
+}
+
+.mm-drawer__links {
+	padding: var(--ds-sp-1) 0 var(--ds-sp-2) var(--ds-sp-2);
+}
+
+.mm-drawer__links[hidden] {
+	display: none;
+}
+
+.mm-drawer__who {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	margin-inline: 0;
+	color: var(--text-2);
+}
+
+.mm-drawer__lang .mm-lang__button {
+	width: 100%;
+	justify-content: flex-start;
+}
+
+.mm-drawer__lang .mm-lang__button .mm-nav__chevron {
+	margin-left: auto;
+}
+
+.mm-drawer__lang .mm-lang__list {
+	position: static;
+	max-width: none;
+	margin-top: var(--ds-sp-1);
+	max-height: none;
+}
+
+/* While the panel is open the page under it stays still; the scrollbar keeps its room, so nothing moves. */
+html.mm-scroll-lock {
+	overflow: hidden;
+}
+
+html.mm-scroll-lock--gutter {
+	scrollbar-gutter: stable;
+}
+
+/* --- Widths ----------------------------------------------------------------------------------------------------------------------------------------- */
+
+@media (min-width: 1100px) {
+	.mm-nav {
+		display: block;
+	}
+	.mm-nav-end__wide {
+		display: contents;
+	}
+	.mm-nav-end .mm-file-control {
+		display: inline-flex;
+	}
+	.mm-nav-burger,
+	.mm-drawer,
+	.mm-drawer__backdrop {
+		display: none !important;
+	}
+}
+
+@media (min-width: 1100px) and (max-width: 1439px) {
+	.mm-nav-account__name {
+		display: none;
+	}
+}
+
+/* Up to 1280 px the menus and the whole install label do not fit together in German or Russian: the button says "Install" (its full name stays for screen readers). */
+@media (min-width: 1100px) and (max-width: 1279px) {
+	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__long {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
+		display: inline;
+	}
+}
+
+/* Under 700 px the language joins the panel. */
+@media (max-width: 699px) {
+	.mm-nav-end__lang {
+		display: none;
+	}
+	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__long {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
+		display: inline;
+	}
+	.mm-nav-cta.mc-btn:not(.mm-nav-cta--block) {
+		min-width: 0;
+		padding-inline: var(--ds-sp-3);
+	}
+}
+
+@media (max-width: 379px) {
+	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.mm-nav-cta.mc-btn:not(.mm-nav-cta--block) {
+		width: var(--ds-hit);
+		padding-inline: 0;
+	}
+}
+
+/* --- Motion: the panels drop 8 px while fading in; the cross arrives with a small bounce. None with reduced motion (system or option). -------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+	:root:not([data-mc-motion="reduced"]) .mm-nav__chevron {
+		transition: transform var(--ds-dur-2) var(--ds-ease);
+	}
+	:root:not([data-mc-motion="reduced"]) .mm-nav__panel:not([hidden]),
+	:root:not([data-mc-motion="reduced"]) .mm-drawer:not([hidden]) {
+		animation: mm-nav-drop var(--ds-dur-2) var(--ds-ease) both;
+	}
+	:root:not([data-mc-motion="reduced"]) .mm-nav-burger[aria-expanded="true"] .mm-nav-burger__close {
+		animation: mm-nav-pop var(--ds-dur-2) var(--ds-ease-pop) both;
+	}
+	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn,
+	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn,
+	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn {
+		transition:
+			border-color var(--ds-dur-1) var(--ds-ease),
+			transform var(--ds-dur-1) var(--ds-ease);
+	}
+	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn:hover,
+	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn:hover,
+	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn:hover {
+		transform: translateY(-1px);
+	}
+}
+
+@keyframes mm-nav-pop {
+	from {
+		transform: scale(0.5) rotate(-45deg);
+	}
+}
+
+@keyframes mm-nav-drop {
+	from {
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--ds-sp-2)));
+	}
+}
+
+@media (forced-colors: active) {
+	.mm-nav__panel,
+	.mm-drawer {
+		border: 1px solid CanvasText;
+	}
+	.mm-nav__link:hover,
+	.mm-nav__link:focus-visible,
+	.mm-lang__option.is-active {
+		outline: 2px solid Highlight;
+	}
+}

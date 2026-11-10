@@ -54,7 +54,10 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	])
 		expect(html, route).toContain(`href="${route}"`)
 	expect(html).not.toMatch(/href="[^"]*\.html"/)
-	expect(html.match(/<select/g)).toHaveLength(2) // the header one and the one of the menu of the small screens, which is hidden above 560 px
+	// One language picker, closed (the phones' panel draws its own only while open); every menu of the bar is in the page, closed.
+	expect(html).not.toContain('<select')
+	expect(html.match(/role="listbox"/g)).toHaveLength(1)
+	expect(html.match(/aria-expanded="true"/g)).toBeNull()
 	// no app header over the film's own one
 	expect(html).not.toContain('class="mm-header"')
 	// the first-paint script is injected by the prerender, not rendered by React

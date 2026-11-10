@@ -1,16 +1,5 @@
 import { repositoryUrl } from '../lib/repository'
 
-/**
- * The main links of the site's bar, the same on every page (the landing's film bar included). Sign in and the
- * "Install the mod" button follow them.
- */
-export const navigation = [
-	{ to: '/how-it-works', label: 'How it works' },
-	{ to: '/server-closing', label: 'Server closing' },
-	{ to: '/faq', label: 'FAQ' },
-	// { to: '/pricing', label: 'Pricing' }, // pricing disabled
-]
-
 export type FooterLink = { label: string } & ({ to: string } | { href: string })
 
 /**
@@ -55,3 +44,30 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 		],
 	},
 ]
+
+export type NavSection = { label?: string; links: FooterLink[] }
+export type NavMenu = { id: 'product' | 'guides' | 'help'; label: string; sections: NavSection[] }
+
+/** The landing's own sections, first in its "Product" menu: they glide to the section (hero.js) and wait for the end of the film. */
+export const landingSections = [
+	{ href: '#steps', label: 'How it works' },
+	{ href: '#share', label: 'Show it to the group' },
+	{ href: '#server-closing', label: 'Your server is closing?' },
+	{ href: '#faq', label: 'FAQ' },
+]
+
+const group = (label: string) => footerGroups.find(entry => entry.label === label)?.links ?? []
+
+/**
+ * The bar's menus, built from the footer's groups so that every page of the site is one click away from the bar: Product, Guides and Help
+ * (the legal pages at its bottom). On the landing, Product starts with the page's own sections.
+ */
+export function navMenus(landing = false): NavMenu[] {
+	const product: NavSection[] = [{ links: group('Product') }]
+	if (landing) product.unshift({ label: 'On this page', links: landingSections })
+	return [
+		{ id: 'product', label: 'Product', sections: product },
+		{ id: 'guides', label: 'Guides', sections: [{ links: group('Guides') }] },
+		{ id: 'help', label: 'Help', sections: [{ links: group('Help') }, { label: 'Legal', links: group('Legal') }] },
+	]
+}

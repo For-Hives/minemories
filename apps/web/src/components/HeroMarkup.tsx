@@ -5,7 +5,8 @@ import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
 import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
-import { HeroAccount, HeroFooterLinks, HeroLanguage, HeroNavLinks, HeroQuestions } from './HeroParts'
+import { HeroFooterLinks, HeroQuestions } from './HeroParts'
+import { SiteNav } from './SiteNav'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
@@ -195,51 +196,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				>
 					<BrandMark solo />
 				</a>
-				<nav className="site-nav" data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
-					<ul className="mc-sitebar__nav">
-						<HeroNavLinks />
-					</ul>
-				</nav>
-				<div className="mc-sitebar__end">
-					<HeroAccount />
-					<HeroLanguage className="site-lang" />
-					<Link className="mc-btn mc-btn--primary mc-btn--auto mc-sitebar__cta" to="/installation">
-						<span className="mc-icon mc-icon--ember cta-icon" aria-hidden="true" />
-						<span className="cta-long" data-i18n="Install the mod">
-							{t('Install the mod')}
-						</span>
-						<span className="cta-short" aria-hidden="true" data-i18n="Install it">
-							{t('Install it')}
-						</span>
-					</Link>
-					<button
-						className="mc-btn mc-btn--tool site-menu__btn"
-						type="button"
-						id="site-menu-btn"
-						aria-expanded="false"
-						aria-controls="site-menu"
-						data-i18n-attr="aria-label:Menu;title:Menu"
-						aria-label={t('Menu')}
-						title={t('Menu')}
-					>
-						<span className="mc-icon mc-icon--menu i-open" aria-hidden="true" />
-						<span className="mc-icon mc-icon--cross i-close" aria-hidden="true" />
-					</button>
-				</div>
-				<div className="site-menu" id="site-menu" hidden>
-					<nav data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
-						<ul className="site-menu__links">
-							<HeroNavLinks />
-						</ul>
-					</nav>
-					<HeroAccount menu />
-					<div className="site-menu__lang">
-						<label className="mc-formlabel" htmlFor="lang-menu" data-i18n="Language">
-							{t('Language')}
-						</label>
-						<HeroLanguage id="lang-menu" />
-					</div>
-				</div>
+				<SiteNav landing />
 			</header>
 			<FilmRail />
 			<div className="stage" id="stage">

@@ -121,8 +121,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 /* --- 3. Buttons: 44 px, game bevel, hover, press, focus ---------------------------------------------------------------------------------------------- */
 
-.site .mc-btn,
-.site-account {
+.site .mc-btn {
 	--_h: var(--ds-hit);
 	min-height: var(--ds-hit);
 	transition:
@@ -131,18 +130,15 @@ html[data-mc-font='read'] .site .mc-step__title {
 		transform var(--ds-dur-1) var(--ds-ease);
 }
 
-.site .mc-btn:hover:not([disabled]),
-.site-account:hover {
+.site .mc-btn:hover:not([disabled]):hover {
 	transform: translateY(-1px);
 }
 
-.site .mc-btn:active,
-.site-account:active {
+.site .mc-btn:active:active {
 	transform: translateY(0);
 }
 
-.site .mc-btn:focus-visible,
-.site-account:focus-visible {
+.site .mc-btn:focus-visible:focus-visible {
 	outline: var(--ds-focus);
 	outline-offset: var(--ds-focus-offset);
 }
@@ -266,8 +262,6 @@ html[data-mc-font='read'] .site .mc-step__title {
 	#site .ds-reveal,
 	.site .mc-btn,
 	.site .mc-btn:hover:not([disabled]),
-	.site-account,
-	.site-account:hover,
 	.site a.mc-link,
 	.site .mc-faq__q::after {
 		transition: none;
@@ -283,7 +277,6 @@ html[data-mc-font='read'] .site .mc-step__title {
 html[data-mc-motion='reduced'] #site .ds-reveal,
 html[data-mc-motion='reduced'] .site .mc-btn,
 html[data-mc-motion='reduced'] .site .mc-btn:hover:not([disabled]),
-html[data-mc-motion='reduced'] .site-account:hover,
 html[data-mc-motion='reduced'] .site a.mc-link {
 	transition: none;
 	transform: none;
@@ -389,8 +382,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	/* 9.3 Buttons: lift, press, responsive icon. The primary keeps its copper; only position and icon move. */
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]),
-	:root:not([data-mc-motion='reduced']) .site-account:hover {
+	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]) {
 		transform: translateY(calc(-1 * var(--ds-lift)));
 	}
 
@@ -413,7 +405,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transform: translateX(3px);
 	}
 
-	/* 9.4 Links: the underline moves away from the text on hover; the header navigation has a bar that slides in from the left. */
+	/* 9.4 Links: the underline moves away from the text on hover. */
 	:root:not([data-mc-motion='reduced']) .site a.mc-link,
 	:root:not([data-mc-motion='reduced']) .footer a.mc-link {
 		text-underline-offset: 3px;
@@ -426,26 +418,6 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover,
 	:root:not([data-mc-motion='reduced']) .footer a.mc-link:hover {
 		text-underline-offset: 6px;
-	}
-
-	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a {
-		position: relative;
-	}
-
-	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a::after {
-		content: '';
-		position: absolute;
-		inset: auto 4px 6px 4px;
-		height: var(--gp);
-		background: var(--ember);
-		transform: scaleX(0);
-		transform-origin: left center;
-		transition: transform var(--ds-dur-2) var(--ds-ease);
-	}
-
-	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:hover::after,
-	:root:not([data-mc-motion='reduced']) .mc-sitebar__nav a:focus-visible::after {
-		transform: scaleX(1);
 	}
 
 	/* 9.5 Step cards: the slot number "drops" into place on entry (6% bounce) and responds to hovering the card. */
@@ -499,45 +471,6 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__q::after,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more summary::after {
 		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
-	}
-
-	/* 9.7 Header menu (small screens): it slides down while fading in; the cross and the three bars swap with a bounce. */
-	:root:not([data-mc-motion='reduced']) .site-menu {
-		transition:
-			opacity var(--ds-dur-2) var(--ds-ease),
-			transform var(--ds-dur-2) var(--ds-ease),
-			display var(--ds-dur-2) allow-discrete;
-	}
-
-	:root:not([data-mc-motion='reduced']) .site-menu[hidden] {
-		display: none;
-		opacity: 0;
-		transform: translateY(calc(-1 * var(--ds-sp-2)));
-	}
-
-	@starting-style {
-		:root:not([data-mc-motion='reduced']) .site-menu:not([hidden]) {
-			opacity: 0;
-			transform: translateY(calc(-1 * var(--ds-sp-2)));
-		}
-	}
-
-	:root:not([data-mc-motion='reduced']) .site-menu__btn .mc-icon {
-		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site-menu__btn[aria-expanded='true'] .i-close {
-		animation: ds-pop var(--ds-dur-2) var(--ds-ease-pop) both;
-	}
-
-	:root:not([data-mc-motion='reduced']) .site-menu a {
-		transition:
-			color var(--ds-dur-1) var(--ds-ease),
-			transform var(--ds-dur-1) var(--ds-ease);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site-menu a:hover {
-		transform: translateX(var(--ds-sp-1));
 	}
 
 	/* 9.8 FAQ: one open panel at a time (`name` attribute), a copper edge that unfolds on the open card, the answer rising after opening,

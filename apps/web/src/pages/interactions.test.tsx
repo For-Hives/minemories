@@ -696,8 +696,9 @@ test('authentication keeps the site header with its language control', () => {
 		</MemoryRouter>
 	)
 	expect(screen.getByRole('main')).toBeTruthy()
-	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Language English (US)' }).getAttribute('aria-haspopup')).toBe('listbox')
 	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
+	fireEvent.click(screen.getAllByRole('button', { name: 'Product' })[0] as HTMLElement)
 	expect(screen.getAllByRole('link', { name: 'How it works' }).length).toBeGreaterThan(0)
 	expect(screen.getByRole('link', { name: 'Install the mod' }).getAttribute('href')).toBe('/installation')
 	expect(
@@ -750,6 +751,7 @@ test('signing out forgets every unsaved form draft kept in this browser', async 
 			</SiteLayout>
 		</MemoryRouter>
 	)
+	fireEvent.click(screen.getByRole('button', { name: 'Alex — My account' }))
 	fireEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0] as HTMLElement)
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))

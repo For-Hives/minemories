@@ -541,7 +541,6 @@ export function mountHero(host) {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	function wirePage() {
-		wireMenu()
 		// Scrolling is the browser's, always: passive listener, no preventDefault, no wheel listener, no scroll written (except "Watch the film again" and the reset at load).
 		on(
 			window,
@@ -578,17 +577,18 @@ export function mountHero(host) {
 				if (!SCRUB_ON) scrollTop0()
 			}
 		})
-		// The header's section links glide (the browser's own smooth scrolling, only when motion is welcome); every other jump or focus move is instant.
-		for (const link of $$('.mc-sitebar__nav a, .mc-sitebar__brand, .site-menu__links a')) {
-			link.addEventListener('click', event => {
-				const href = link.getAttribute('href') ?? ''
-				const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
-				if (!target || reduced()) return
-				event.preventDefault()
-				target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-				history.replaceState(null, '', link.getAttribute('href'))
-			})
-		}
+		// The bar's section links glide (the browser's own smooth scrolling, only when motion is welcome); every other jump or focus move is instant. One listener on the
+		// header: the menus (SiteNav) are React's and their links can be drawn again.
+		header?.addEventListener('click', event => {
+			const link =
+				event.target instanceof Element ? event.target.closest('a[data-section-link], .mc-sitebar__brand') : null
+			const href = link?.getAttribute('href') ?? ''
+			const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
+			if (!target || reduced()) return
+			event.preventDefault()
+			target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			history.replaceState(null, '', href)
+		})
 		for (const button of $$('[data-action="replay"]')) button.addEventListener('click', replay)
 		playBtn.addEventListener('click', () => {
 			if (!scene || !live) return
@@ -656,59 +656,6 @@ export function mountHero(host) {
 		}
 	}
 
-	// The menu of the small screens (a disclosure under the header: links to the sections, and the language under 700 px). Escape closes it FIRST and goes no further (during
-	// the film it would otherwise leave the film), a click or the focus going elsewhere closes it, a link closes it and the page glides to its section. No wheel or touch listener.
-	function wireMenu() {
-		const button = $('#site-menu-btn')
-		const menu = $('#site-menu')
-		if (!button || !menu) return
-		const setOpen = (open, { focus = false } = {}) => {
-			menu.hidden = !open
-			button.setAttribute('aria-expanded', open ? 'true' : 'false')
-			root.classList.toggle('is-menu-open', open)
-			if (!open && focus) button.focus({ preventScroll: true })
-		}
-		button.addEventListener('click', () => setOpen(menu.hidden))
-		on(
-			document,
-			'keydown',
-			event => {
-				if (event.key !== 'Escape' || menu.hidden) return
-				event.preventDefault()
-				event.stopPropagation()
-				setOpen(false, { focus: true })
-			},
-			true
-		)
-		on(
-			document,
-			'pointerdown',
-			event => {
-				if (!menu.hidden && event.target instanceof Element && !event.target.closest('#site-menu, #site-menu-btn'))
-					setOpen(false)
-			},
-			{ passive: true }
-		)
-		const leaves = event => {
-			const next = event.relatedTarget
-			if (!menu.hidden && !(next instanceof Node && (menu.contains(next) || button.contains(next)))) setOpen(false)
-		}
-		menu.addEventListener('focusout', leaves)
-		button.addEventListener('focusout', event => {
-			if (event.relatedTarget instanceof Node && menu.contains(event.relatedTarget)) return
-			// Shift+Tab from the button or a click elsewhere: closed; Tab from the button goes into the panel (next in the DOM) and stays open.
-			if (!menu.hidden && !menu.contains(event.relatedTarget)) setOpen(false)
-		})
-		for (const link of $$('.site-menu__links a')) link.addEventListener('click', () => setOpen(false))
-		on(matchMedia('(min-width: 1320px)'), 'change', event => {
-			if (event.matches) setOpen(false)
-		})
-		// The film hides the button from 700 px up (site.css): an open menu goes with it.
-		on(document, 'mm:phase', () => {
-			if (!button.getClientRects().length) setOpen(false)
-		})
-	}
-
 	function noteVisitorInput() {
 		visitorInput = true
 	}
@@ -749,7 +696,7 @@ export function mountHero(host) {
 		if (SCRUB_ON) return onKeyScrub(event)
 		if (event.altKey || event.ctrlKey || event.metaKey) return
 		const target = event.target instanceof Element ? event.target : document.body
-		if (target.closest('input, select, textarea, [contenteditable="true"]')) return
+		if (target.closest('input, select, textarea, [contenteditable="true"], [data-own-keys]')) return
 		if (phase() === 'site') return
 		if (event.key === 'Escape') {
 			handOver(phases.event({ type: 'key', key: 'Escape' }), 'key')
@@ -1754,7 +1701,8 @@ export function mountHero(host) {
 	}
 
 	const viewportH = () => root.clientHeight || innerHeight
-	const insideMenu = target => target instanceof Element && Boolean(target.closest('.site-menu'))
+	// The bar's popups scroll by themselves (SiteNav: the menus, the language list, the phones' panel): a wheel or a swipe there is never the film's.
+	const insideMenu = target => target instanceof Element && Boolean(target.closest('.mm-nav__panel, .mm-drawer'))
 
 	function onWheel(event) {
 		lastGestureAt = performance.now()
@@ -1819,7 +1767,7 @@ export function mountHero(host) {
 	function onKeyScrub(event) {
 		if (event.altKey || event.ctrlKey || event.metaKey) return
 		const target = event.target instanceof Element ? event.target : document.body
-		if (target.closest('input, select, textarea, [contenteditable="true"]')) return
+		if (target.closest('input, select, textarea, [contenteditable="true"], [data-own-keys]')) return
 		const key = event.key
 		if (phase() === 'site') {
 			// At the top of the site an upward key is the clock's (the detent, then the rewind); everywhere else the keys are the page's.
