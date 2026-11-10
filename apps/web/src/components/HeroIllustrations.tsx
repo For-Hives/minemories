@@ -1,154 +1,103 @@
 import { translate } from '../i18n/catalog'
 
 /**
- * The pictures of the landing's "Show it to the group" and "Your server is closing?" sections (hero/illus.css), built from real renders of the landing's
- * world (public/hero/illus: two crops of the chalet capture's render, and a dusk frame of the landing film) and HTML text, so every word is translated and crisp.
- * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
- * Each picture is one image for assistive technologies (role="img" + a translated label); the section's own text says the same thing.
- * The game words are the mod's own (lang/<locale>.json: minemories.hub.connected, connected_hint, take, sent); a test keeps them equal.
+ * The pictures of the landing's "Show it to the group" and "Your server is closing?" sections (hero/illus.css). Every picture is a real screenshot of real use,
+ * cropped and scaled only (public/hero/illus, sources in docs/features/landing-film.md): the mod's M menu over a real base of an old modded server, the same
+ * tower in Minecraft and in the viewer, the viewer showing a real memory, and the HD postcard its own Postcard button exported. Nothing is drawn on top; the
+ * words are HTML captions, so they are translated and crisp.
+ * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language. The in-game frame
+ * exists in French and in English: CSS shows the French one under `:lang(fr)` (fr, fr-CA) and the English one elsewhere, from the page's own `lang`.
  */
 const t = (key: string) => translate('fr', key)
 
-const shareLabel =
-	'In a group chat, you post a share link to the base, which opens in 3D in a browser with no Minecraft and no account, then its HD postcard. Lina answers: That’s our base! I’m spinning it around.'
-const closingLabel =
-	'A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!'
+const viewerAlt =
+	'The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:15, with its toolbar and its time of day.'
+const postcardAlt = 'The HD postcard of the same base, downloaded with the viewer’s Postcard button.'
+const menuAlt = 'The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.'
+const gameAlt = 'A tower in Minecraft.'
+const browserAlt = 'The same tower in the Minemories viewer.'
 
-/** "Show it to the group": you post the share link (it opens in 3D, no Minecraft, no account) and the HD postcard in the group chat; a friend answers. */
-export function ShareIllustration() {
+interface ShotProps {
+	readonly src: string
+	readonly alt: string
+	readonly width: number
+	readonly height: number
+	readonly className?: string
+}
+
+/** One real screenshot: lazy, of known size, with its description translated by the bridge. */
+function Shot({ src, alt, width, height, className }: ShotProps) {
 	return (
-		<div
-			className="mm-illus mm-illus--share"
-			role="img"
-			aria-label={t(shareLabel)}
-			data-i18n-attr={`aria-label:${shareLabel}`}
-		>
-			<p className="mm-illus__titlebar">
-				<span className="mc-icon mc-icon--share" />
-				<span data-i18n="Group chat">{t('Group chat')}</span>
-			</p>
-			<div className="mm-illus__msg">
-				<span className="mm-illus__avatar" />
-				<div className="mm-illus__body">
-					<span className="mm-illus__who" data-i18n="You">
-						{t('You')}
-					</span>
-					{/* the viewer's real share route is /share/:token; the token itself is never shown */}
-					<p className="mm-illus__url">
-						<span className="mm-illus__addr">minemories.net/share/…</span>
-						<span className="mm-illus__copy" />
-					</p>
-					<p className="mm-illus__desc">
-						<span className="mc-icon mc-icon--check" />
-						<span data-i18n="No Minecraft, no account">{t('No Minecraft, no account')}</span>
-					</p>
-					<div className="mm-illus__attach">
-						<div className="mm-illus__link">
-							<div className="mm-illus__thumb">
-								<img
-									src="/hero/illus/share-link.webp"
-									alt=""
-									width={416}
-									height={260}
-									loading="lazy"
-									decoding="async"
-								/>
-								<span className="mm-illus__drag">
-									<span className="mc-icon mc-icon--arrows-h" />
-									<span data-i18n="Drag to turn">{t('Drag to turn')}</span>
-								</span>
-							</div>
-						</div>
-						<div className="mm-illus__postcard">
-							<img src="/hero/illus/postcard.webp" alt="" width={256} height={144} loading="lazy" decoding="async" />
-							<span className="mm-illus__stamp">HD</span>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div className="mm-illus__msg">
-				<span className="mm-illus__avatar mm-illus__avatar--friend" />
-				<div className="mm-illus__body">
-					<span className="mm-illus__who">Lina</span>
-					<p className="mm-illus__said" data-i18n="That’s our base! I’m spinning it around.">
-						{t('That’s our base! I’m spinning it around.')}
-					</p>
-				</div>
-			</div>
-		</div>
+		<img
+			className={className}
+			src={src}
+			alt={t(alt)}
+			data-i18n-attr={`alt:${alt}`}
+			width={width}
+			height={height}
+			loading="lazy"
+			decoding="async"
+		/>
 	)
 }
 
-/**
- * "Your server is closing?": a dusk frame of the landing's world with the server's announcement in the chat, the M key, and a small drawing of the mod's
- * M menu (SimpleHubScreen, connected) with "Take a memory" hovered and its answer at the bottom, in the menu's own colours (UiTheme).
- * The mod's item icons are Mojang's: the site's own glyphs stand in for them, and the two other tiles keep their icon only.
- */
+/** "Show it to the group": the real viewer turning around a real memory, and the HD postcard its Postcard button exported from it. */
+export function ShareIllustration() {
+	return (
+		<figure className="mm-illus mm-illus--share">
+			<div className="mm-illus__frame">
+				<Shot src="/hero/illus/viewer-base.webp" alt={viewerAlt} width={960} height={734} />
+				<p className="mm-illus__label" data-i18n="In the browser">
+					{t('In the browser')}
+				</p>
+			</div>
+			<div className="mm-illus__print">
+				<Shot src="/hero/illus/postcard-hd.webp" alt={postcardAlt} width={640} height={360} />
+				<p className="mm-illus__label" data-i18n="HD postcard">
+					{t('HD postcard')}
+				</p>
+			</div>
+		</figure>
+	)
+}
+
+/** "Your server is closing?": the mod's real M menu over a real base (French or English frame), then the same tower in Minecraft and in the viewer. */
 export function ClosingIllustration() {
 	return (
-		<div
-			className="mm-illus mm-illus--closing"
-			role="img"
-			aria-label={t(closingLabel)}
-			data-i18n-attr={`aria-label:${closingLabel}`}
-		>
-			<img
-				className="mm-illus__scene"
-				src="/hero/illus/closing.webp"
-				alt=""
-				width={1120}
-				height={700}
-				loading="lazy"
-				decoding="async"
-			/>
-			<div className="mm-illus__over">
-				<span className="mm-illus__press">
-					<span className="mm-illus__key">M</span>
-					<span className="mc-icon mc-icon--arrow-r" />
-				</span>
-				<div className="mm-illus__hub">
-					<p className="mm-illus__hubtitle">
-						<img
-							className="mm-brand-mark"
-							src="/brand/minemories-mark.svg"
-							alt=""
-							width={16}
-							height={16}
-							loading="lazy"
-							decoding="async"
-						/>
-						<span>Minemories</span>
+		<figure className="mm-illus mm-illus--closing">
+			<div className="mm-illus__frame">
+				<Shot
+					className="mm-illus__menu mm-illus__menu--fr"
+					src="/hero/illus/menu-fr.webp"
+					alt={menuAlt}
+					width={760}
+					height={650}
+				/>
+				<Shot
+					className="mm-illus__menu mm-illus__menu--en"
+					src="/hero/illus/menu-en.webp"
+					alt={menuAlt}
+					width={760}
+					height={650}
+				/>
+				<p className="mm-illus__label" data-i18n="Press M → Take a memory.">
+					{t('Press M → Take a memory.')}
+				</p>
+			</div>
+			<div className="mm-illus__pair">
+				<div className="mm-illus__frame">
+					<Shot src="/hero/illus/game-tower.webp" alt={gameAlt} width={540} height={560} />
+					<p className="mm-illus__label" data-i18n="In Minecraft">
+						{t('In Minecraft')}
 					</p>
-					<div className="mm-illus__status">
-						<p className="mm-illus__ok">
-							<span data-i18n="Connected">{t('Connected')}</span>
-							{/* the mod draws an emerald here (a Mojang item): the site's check stands in for it */}
-							<span className="mc-icon mc-icon--check" />
-						</p>
-						<p className="mm-illus__hint" data-i18n="Your memories go to your gallery on their own.">
-							{t('Your memories go to your gallery on their own.')}
-						</p>
-					</div>
-					<div className="mm-illus__tiles">
-						<span className="mm-illus__tile is-hover">
-							<span className="mc-icon mc-icon--mod" />
-							<span data-i18n="Take a memory">{t('Take a memory')}</span>
-						</span>
-						<span className="mm-illus__tile">
-							<span className="mc-icon mc-icon--clock" />
-						</span>
-						<span className="mm-illus__tile">
-							<span className="mc-icon mc-icon--album" />
-						</span>
-					</div>
-					<p className="mm-illus__sent" data-i18n="Memory saved and sent!">
-						{t('Memory saved and sent!')}
+				</div>
+				<div className="mm-illus__frame">
+					<Shot src="/hero/illus/viewer-tower.webp" alt={browserAlt} width={540} height={560} />
+					<p className="mm-illus__label" data-i18n="In the browser">
+						{t('In the browser')}
 					</p>
 				</div>
 			</div>
-			<p className="mm-illus__chat" data-i18n="[Server] The server closes on December 1st.">
-				{t('[Server] The server closes on December 1st.')}
-			</p>
-		</div>
+		</figure>
 	)
 }
