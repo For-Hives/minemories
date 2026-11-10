@@ -9,7 +9,7 @@ import { SiteNav } from './SiteNav'
 
 const mocks = vi.hoisted(() => ({
 	context: {
-		session: null as null | { user: { id: string; name: string; image?: string | null } },
+		session: null as null | { user: { id: string; name: string; email?: string; image?: string | null } },
 		isPending: false,
 		refreshSession: vi.fn(),
 	},
@@ -66,6 +66,9 @@ function mount(path = '/installation', landing = false) {
 		<I18nProvider initialLocale="en">
 			<MemoryRouter initialEntries={[path]}>
 				<header>
+					<a className="mm-brand" href="/">
+						Minemories
+					</a>
 					<SiteNav landing={landing} extra={<span>extra</span>} />
 				</header>
 				<Link to="/roadmap">Elsewhere</Link>
@@ -114,6 +117,8 @@ test('every page of the site is in the bar, under Product, Guides and Help; the 
 		'/privacy',
 		'/terms',
 		'/legal',
+		'https://www.curseforge.com/minecraft/mc-mods/minemories',
+		'https://github.com/For-Hives/minemories',
 	])
 	// one menu open at a time; the page on screen is marked, and its menu too
 	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('false')
@@ -152,7 +157,10 @@ test('menus: Escape and a press outside close them, the arrows move along the ba
 	await waitFor(() => expect(document.activeElement?.textContent).toBe('FAQ'))
 	const panel = document.getElementById(trigger('Help').getAttribute('aria-controls') ?? '') as HTMLElement
 	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowUp' })
-	expect(document.activeElement?.textContent).toBe('About and legal notice')
+	expect(document.activeElement?.textContent).toBe('GitHub')
+	// the groups after the first are named lists
+	expect(within(panel).getByRole('list', { name: 'Legal' })).toBeTruthy()
+	expect(within(panel).getByRole('list', { name: 'Elsewhere' })).toBeTruthy()
 	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' })
 	expect(document.activeElement?.textContent).toBe('FAQ')
 	fireEvent.keyDown(panel, { key: 'a' })
@@ -192,12 +200,18 @@ test('on the landing, Product starts with the page sections, which glide in plac
 	const sections = within(panel)
 		.getAllByRole('link')
 		.filter(link => link.hasAttribute('data-section-link'))
+	// the sections have their own names, never a page's ("How it works" and "FAQ" are pages)
 	expect(sections.map(link => [link.textContent, link.getAttribute('href')])).toEqual([
-		['How it works', '#steps'],
+		['The three steps', '#steps'],
 		['Show it to the group', '#share'],
 		['Your server is closing?', '#server-closing'],
-		['FAQ', '#faq'],
+		['Questions', '#faq'],
 	])
+	expect(within(panel).getByRole('list', { name: 'Pages' })).toBeTruthy()
+	const names = within(panel)
+		.getAllByRole('link')
+		.map(link => link.textContent)
+	expect(new Set(names).size).toBe(names.length)
 	expect(sections[0]?.getAttribute('rel')).toBeNull()
 	fireEvent.click(sections[3] as HTMLElement)
 	expect(trigger('Product').getAttribute('aria-expanded')).toBe('false')
@@ -263,7 +277,7 @@ test('no administration link without a confirmed access', async () => {
 	expect(screen.queryByRole('link', { name: 'Administration' })).toBeNull()
 })
 
-test('the phones’ panel: a dialog with the groups, the account, the language and the install button; focus kept inside; Escape, outside and a link close it', () => {
+test('the phones’ panel: a modal dialog with the groups, the account and the language; focus kept inside; Escape, outside and a link close it', () => {
 	const view = mount('/faq')
 	const button = screen.getByRole('button', { name: 'Menu' })
 	expect(button.getAttribute('aria-controls')).toBe('site-menu')
@@ -281,9 +295,12 @@ test('the phones’ panel: a dialog with the groups, the account, the language a
 	expect(groups.length).toBeGreaterThan(0)
 	expect(within(dialog).getByRole('button', { name: /^Language / })).toBeTruthy()
 	expect(within(dialog).getByRole('link', { name: 'Sign in' }).getAttribute('href')).toBe('/login')
+	// the bar keeps the install button: the panel does not repeat it
+	expect(within(dialog).queryByRole('link', { name: 'Install the mod' })).toBeNull()
+	expect(dialog.getAttribute('aria-modal')).toBe('true')
 	expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Product' }))
 	// Tab wraps from the last control to the menu button, Shift+Tab back
-	const last = within(dialog).getAllByRole('link', { name: 'Install the mod' }).at(-1) as HTMLElement
+	const last = within(dialog).getByRole('button', { name: /^Language / })
 	last.focus()
 	fireEvent.keyDown(document, { key: 'Tab' })
 	expect(document.activeElement).toBe(button)
@@ -356,4 +373,151 @@ test('a page with a scrollbar keeps its room while the panel is open; the signed
 	fireEvent.click(within(dialog).getByRole('link', { name: 'My account' }))
 	expect(screen.getByTestId('where').textContent).toBe('/account')
 	expect(document.documentElement.classList.contains('mm-scroll-lock--gutter')).toBe(false)
+})
+
+test('menus and the keyboard: Down into an open menu, Escape never takes the focus from another button, Tab to another button closes', () => {
+	mount('/installation')
+	// Down on a menu already open goes into it; a later click on another menu leaves the focus on its button
+	act(() => trigger('Guides').focus())
+	fireEvent.click(trigger('Guides'))
+	fireEvent.keyDown(trigger('Guides'), { key: 'ArrowDown' })
+	expect(document.activeElement?.textContent).toBe('Install the mod')
+	act(() => trigger('Help').focus())
+	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('false')
+	fireEvent.click(trigger('Help'))
+	expect(trigger('Help').getAttribute('aria-expanded')).toBe('true')
+	expect(document.activeElement).toBe(trigger('Help'))
+	// Shift+Tab (or Tab) to another menu's button closes the open one; Escape then leaves the focus where it is
+	act(() => trigger('Guides').focus())
+	expect(trigger('Help').getAttribute('aria-expanded')).toBe('false')
+	fireEvent.click(trigger('Help'))
+	act(() => trigger('Guides').focus())
+	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+	expect(document.activeElement).toBe(trigger('Guides'))
+	// the link to the page on screen closes the menu and gives the focus back to its button
+	fireEvent.click(trigger('Guides'))
+	const here = screen.getAllByRole('link', { name: 'Install the mod' }).find(link => link.closest('nav')) as HTMLElement
+	act(() => here.focus())
+	fireEvent.click(here)
+	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('false')
+	expect(document.activeElement).toBe(trigger('Guides'))
+})
+
+test('the account behaves like the other menus: in the bar’s arrows, Down opens it on its first link, its full list ready', async () => {
+	mocks.context.session = { user: { id: 'u4', name: 'Aleksandra', email: 'aleksandra@example.test', image: null } }
+	mocks.access.admin = true
+	const access = vi.fn(async () => ({ allowed: true }))
+	const { apiClient } = await import('../api-client')
+	apiClient.admin.access = access
+	mount('/faq')
+	const account = screen.getByRole('button', { name: 'Aleksandra — My account' })
+	expect(account.className).toContain('mc-btn')
+	// the administration check starts on a hover or a focus, before the menu opens
+	expect(access).not.toHaveBeenCalled()
+	fireEvent.pointerEnter(account)
+	await waitFor(() => expect(access).toHaveBeenCalled())
+	// right from the last menu reaches the account, left comes back
+	trigger('Help').focus()
+	fireEvent.keyDown(trigger('Help'), { key: 'ArrowRight' })
+	expect(document.activeElement).toBe(account)
+	fireEvent.keyDown(account, { key: 'ArrowLeft' })
+	expect(document.activeElement).toBe(trigger('Help'))
+	fireEvent.keyDown(trigger('Help'), { key: 'End' })
+	expect(document.activeElement).toBe(account)
+	fireEvent.keyDown(account, { key: 'ArrowDown' })
+	await waitFor(() => expect(document.activeElement?.textContent).toBe('My gallery'))
+	const panel = document.getElementById(account.getAttribute('aria-controls') ?? '') as HTMLElement
+	// who is signed in heads the menu; administration and signing out come after a rule
+	expect(within(panel).getByText('Aleksandra')).toBeTruthy()
+	expect(within(panel).getByText('aleksandra@example.test')).toBeTruthy()
+	const groups = panel.querySelectorAll('.mm-nav__section')
+	expect(groups).toHaveLength(2)
+	expect(within(groups[1] as HTMLElement).getByRole('link', { name: 'Administration' })).toBeTruthy()
+	expect(within(groups[1] as HTMLElement).getByRole('button', { name: 'Sign out' })).toBeTruthy()
+	// Down on the open account's button goes back into its menu
+	account.focus()
+	fireEvent.keyDown(account, { key: 'ArrowDown' })
+	expect(document.activeElement?.textContent).toBe('My gallery')
+	fireEvent.keyDown(account, { key: 'Enter' })
+	expect(account.getAttribute('aria-expanded')).toBe('true')
+	// the link to the page on screen closes the menu, the focus back on its button
+	fireEvent.click(account)
+	fireEvent.click(account)
+	const gallery = within(panel).getByRole('link', { name: 'My gallery' })
+	fireEvent.click(gallery)
+	expect(screen.getByTestId('where').textContent).toBe('/gallery')
+})
+
+test('signing out goes home, the brand taking the focus', async () => {
+	mocks.context.session = { user: { id: 'u5', name: 'Noa', image: null } }
+	mocks.signOut.mockResolvedValue({})
+	mount('/faq')
+	const account = screen.getByRole('button', { name: 'Noa — My account' })
+	fireEvent.click(account)
+	fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
+	await waitFor(() => expect(document.activeElement?.textContent).toBe('Minemories'))
+})
+
+test('the open panel makes the rest of the page inert, gives back only what it changed, and Tab leaves the language list for the ring', () => {
+	const view = render(
+		<I18nProvider initialLocale="en">
+			<MemoryRouter initialEntries={['/faq']}>
+				<a href="#main">skip</a>
+				<header>
+					<SiteNav />
+				</header>
+				<main>page</main>
+				<footer inert>already inert</footer>
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	const button = screen.getByRole('button', { name: 'Menu' })
+	fireEvent.click(button)
+	const main = view.container.querySelector('main') as HTMLElement
+	const skip = view.container.querySelector('a[href="#main"]') as HTMLElement
+	const footer = view.container.querySelector('footer') as HTMLElement
+	expect(main.hasAttribute('inert')).toBe(true)
+	expect(skip.hasAttribute('inert')).toBe(true)
+	expect(view.container.querySelector('header')?.hasAttribute('inert')).toBe(false)
+	// from the language list (not in the Tab order) Tab goes on to the ring's next control, Shift+Tab to the previous one
+	const dialog = screen.getByRole('dialog')
+	const language = within(dialog).getByRole('button', { name: /^Language / })
+	fireEvent.click(language)
+	expect(document.activeElement).toBe(screen.getByRole('listbox'))
+	fireEvent.keyDown(document, { key: 'Tab' })
+	expect(document.activeElement).toBe(button)
+	fireEvent.click(language)
+	fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+	expect(document.activeElement).toBe(language)
+	// a link of a section before the list: Tab from outside the ring goes to the first control after it
+	const outside = document.createElement('button')
+	dialog.prepend(outside)
+	outside.tabIndex = -1
+	outside.focus()
+	fireEvent.keyDown(document, { key: 'Tab' })
+	expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Product' }))
+	outside.focus()
+	fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+	expect(document.activeElement).toBe(button)
+	outside.remove()
+	fireEvent.click(button)
+	expect(main.hasAttribute('inert')).toBe(false)
+	expect(skip.hasAttribute('inert')).toBe(false)
+	expect(footer.hasAttribute('inert')).toBe(true)
+})
+
+test('the phones’ panel lists the signed-in account in a group of its own; a link to the page on screen gives the focus back to the three bars', () => {
+	mocks.context.session = { user: { id: 'u6', name: 'Lou', email: 'lou@example.test', image: null } }
+	mount('/account')
+	const button = screen.getByRole('button', { name: 'Menu' })
+	fireEvent.click(button)
+	const dialog = screen.getByRole('dialog')
+	const group = within(dialog).getByRole('button', { name: 'Lou' })
+	// the account's page is on screen: its group starts unfolded
+	expect(group.getAttribute('aria-expanded')).toBe('true')
+	expect(within(dialog).getByText('lou@example.test')).toBeTruthy()
+	fireEvent.click(within(dialog).getByRole('link', { name: 'My account' }))
+	expect(screen.queryByRole('dialog')).toBeNull()
+	expect(document.activeElement).toBe(button)
 })

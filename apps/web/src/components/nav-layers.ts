@@ -52,3 +52,31 @@ export function focusables(container: HTMLElement | null): HTMLElement[] {
 		),
 	].filter(element => !(element.closest('[hidden], [inert]') || element.checkVisibility?.() === false))
 }
+
+/**
+ * While the phones' panel is open the rest of the page is inert (a modal dialog): screen readers' browse mode and Tab stay in the bar.
+ * Everything beside the bar's header, up to <body>, is made inert; only what this hook changed is given back on close.
+ */
+export function useInertOutside(open: boolean, inside: RefObject<HTMLElement | null>) {
+	useEffect(() => {
+		const anchor = inside.current
+		if (!(open && anchor)) return
+		const changed = inertAround(anchor.closest('header') ?? anchor)
+		return () => {
+			for (const element of changed) element.removeAttribute('inert')
+		}
+	}, [open, inside])
+}
+
+/** Makes inert every element beside `kept` and its ancestors up to <body>, and returns those it changed (not those already inert). */
+function inertAround(kept: Element): Element[] {
+	const changed: Element[] = []
+	for (let node: Element | null = kept; node && node !== document.body; node = node.parentElement) {
+		const siblings = [...(node.parentElement?.children ?? [])].filter(
+			sibling => sibling !== node && !sibling.hasAttribute('inert')
+		)
+		for (const sibling of siblings) sibling.setAttribute('inert', '')
+		changed.push(...siblings)
+	}
+	return changed
+}

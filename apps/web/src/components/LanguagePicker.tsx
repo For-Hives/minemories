@@ -1,18 +1,21 @@
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../i18n/I18n'
-import { localeOptions } from '../i18n/locales'
+import { localeCode, pickerLocales } from '../lib/locale-picker'
 import { listKeyIndex, typeaheadIndex } from '../lib/site-menu'
 import { useLayer } from './nav-layers'
 
-const labels = localeOptions.map(option => option.label)
+/** The picker's order (lib/locale-picker.ts): by each language's own name, its regions together. */
+const options = pickerLocales()
+const labels = options.map(option => option.label)
 const TYPEAHEAD_MS = 600
 
 /**
  * The language picker of the bar and of the phones' panel: a button that opens a list of every language under its own name (WAI-ARIA
  * listbox: arrows, Home, End, typeahead, Enter or Space to choose, Escape or a press outside to close, the focus back on the button).
- * The list is in the page, closed, from the prerender on.
+ * The list is in the page, closed, from the prerender on. `compact`: the bar's button, which shows the language's code alone where the
+ * menus leave little room (site-nav.css); its accessible name keeps the whole name.
  */
-export function LanguagePicker({ className = '' }: { className?: string }) {
+export function LanguagePicker({ className = '', compact = false }: { className?: string; compact?: boolean }) {
 	const { locale, pendingLocale, setLocale, localeError, t } = useI18n()
 	const id = useId()
 	const root = useRef<HTMLDivElement>(null)
@@ -23,7 +26,7 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 	const current = pendingLocale ?? locale
 	const selected = Math.max(
 		0,
-		localeOptions.findIndex(option => option.id === current)
+		options.findIndex(option => option.id === current)
 	)
 	const [active, setActive] = useState(selected)
 	const close = (focus: boolean) => {
@@ -42,7 +45,7 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 		setOpen(true)
 	}
 	const choose = (index: number) => {
-		const option = localeOptions[index]
+		const option = options[index]
 		if (option && option.id !== current) setLocale(option.id)
 		close(true)
 	}
@@ -55,6 +58,8 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 	const onListKey = (event: KeyboardEvent<HTMLDivElement>) => {
 		const moved = listKeyIndex(event.key, active, labels.length)
 		if (event.key === 'Tab') {
+			// From the button, Tab goes on as if the list had never opened (the list is not in the Tab order).
+			button.current?.focus()
 			setOpen(false)
 			return
 		}
@@ -74,7 +79,7 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 		event.stopPropagation()
 		show()
 	}
-	const option = localeOptions[selected]
+	const option = options[selected]
 	return (
 		<div ref={root} className={`mm-lang ${className}`.trim()} data-own-keys="">
 			<span id={`${id}-label`} hidden>
@@ -93,9 +98,14 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 				onKeyDown={onButtonKey}
 			>
 				<span className="mm-lang__globe" aria-hidden="true" />
-				<span id={`${id}-value`} lang={option?.tag}>
+				<span id={`${id}-value`} className="mm-lang__name" lang={option?.tag}>
 					{option?.label}
 				</span>
+				{compact && option && (
+					<span className="mm-lang__code" aria-hidden="true">
+						{localeCode(option.tag)}
+					</span>
+				)}
 				<span className="mc-icon mc-icon--chevron mm-nav__chevron" aria-hidden="true" />
 			</button>
 			<div
@@ -109,7 +119,7 @@ export function LanguagePicker({ className = '' }: { className?: string }) {
 				hidden={!open}
 				onKeyDown={onListKey}
 			>
-				{localeOptions.map((entry, index) => (
+				{options.map((entry, index) => (
 					// biome-ignore lint/a11y/useKeyWithClickEvents: the list itself takes the keys (aria-activedescendant), as the listbox pattern wants.
 					<div
 						key={entry.id}

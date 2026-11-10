@@ -35,18 +35,19 @@ test('the button names the language in its own words and opens a list of all ele
 	fireEvent.click(button())
 	expect(button().getAttribute('aria-expanded')).toBe('true')
 	const options = within(list()).getAllByRole('option')
+	// by each language's own name, its regions together (lib/locale-picker.ts)
 	expect(options.map(option => option.textContent)).toEqual([
-		'English (US)',
-		'Русский',
 		'Deutsch',
+		'English (US)',
 		'English (UK)',
-		'Français (FR)',
-		'한국어',
-		'Português (BR)',
-		'Polski',
 		'English (CA)',
+		'Français (FR)',
 		'Français (CA)',
+		'Polski',
+		'Português (BR)',
+		'Русский',
 		'日本語',
+		'한국어',
 	])
 	expect(within(list()).getByRole('option', { selected: true }).textContent).toBe('Français (FR)')
 	expect(document.activeElement).toBe(list())
@@ -75,17 +76,19 @@ test('the keyboard: arrows, Home, End, typeahead, Enter, Space, Escape and Tab',
 	fireEvent.keyDown(button(), { key: 'ArrowDown' })
 	expect(active()).toBe('Français (FR)')
 	fireEvent.keyDown(list(), { key: 'ArrowDown' })
-	expect(active()).toBe('한국어')
+	expect(active()).toBe('Français (CA)')
 	fireEvent.keyDown(list(), { key: 'End' })
-	expect(active()).toBe('日本語')
+	expect(active()).toBe('한국어')
 	fireEvent.keyDown(list(), { key: 'ArrowDown' })
-	expect(active()).toBe('English (US)')
+	expect(active()).toBe('Deutsch')
 	fireEvent.keyDown(list(), { key: 'ArrowUp' })
-	expect(active()).toBe('日本語')
+	expect(active()).toBe('한국어')
 	fireEvent.keyDown(list(), { key: 'Home' })
-	expect(active()).toBe('English (US)')
+	expect(active()).toBe('Deutsch')
 	// typeahead: one letter cycles, a quick word narrows, a later key starts again; modified keys and other keys are ignored
 	typeAt('e', 1000)
+	expect(active()).toBe('English (US)')
+	typeAt('e', 1100)
 	expect(active()).toBe('English (UK)')
 	typeAt('f', 3000)
 	expect(active()).toBe('Français (FR)')
@@ -97,6 +100,8 @@ test('the keyboard: arrows, Home, End, typeahead, Enter, Space, Escape and Tab',
 	fireEvent.keyDown(list(), { key: 'F5' })
 	expect(active()).toBe('Français (FR)')
 	typeAt('p', 12000)
+	expect(active()).toBe('Polski')
+	typeAt('p', 12100)
 	expect(active()).toBe('Português (BR)')
 	fireEvent.keyDown(list(), { key: ' ' })
 	expect(i18n.setLocale).toHaveBeenCalledWith('pt-BR')
@@ -108,9 +113,18 @@ test('the keyboard: arrows, Home, End, typeahead, Enter, Space, Escape and Tab',
 	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
 	expect(screen.queryByRole('listbox')).toBeNull()
 	expect(document.activeElement).toBe(button())
+	// Tab goes on from the button, as if the list had never opened
 	fireEvent.keyDown(button(), { key: 'ArrowDown' })
 	fireEvent.keyDown(list(), { key: 'Tab' })
 	expect(screen.queryByRole('listbox')).toBeNull()
+	expect(document.activeElement).toBe(button())
+})
+
+test('the bar’s compact button adds the language’s code; its name stays the accessible one', () => {
+	render(<LanguagePicker compact />)
+	expect(button().querySelector('.mm-lang__code')?.textContent).toBe('FR')
+	expect(button().querySelector('.mm-lang__code')?.getAttribute('aria-hidden')).toBe('true')
+	expect(button().getAttribute('aria-labelledby')).toMatch(/-value$/)
 })
 
 test('the keys of an open list stop there: the landing film never reads them', () => {

@@ -1,16 +1,49 @@
 /* The site's bar (SiteNav.tsx), the same on every page and on the landing: the menus of the whole site, the account, the language, "Install the
-   mod", and the phones' panel. The game's look: night panels with a bevel and a 2 px outline, the pixel font, square corners, a light outline on
-   hover as on the game's buttons. From 1100 px (DESKTOP_NAV) the menus sit in the bar; below, the three bars open the panel. */
+   mod", and the phones' panel. The game's look: night panels with the kit's bevel and a 2 px outline, the pixel font, square corners, a light
+   outline on hover as on the game's buttons. Ember means "the page on screen" or "open", nothing else. From 960 px (DESKTOP_NAV) the menus sit in
+   the bar; below, the three bars open the panel. */
 
-/* The pages' header (the landing's sets its own on <html>: site.js): the phones' panel opens under it. */
+/* One gutter for both bars (the pages' .mm-header and the landing's .mc-sitebar): the brand and the install button never move between them. */
+:root {
+	--mm-bar-gutter: 16px;
+}
+
+@media (min-width: 1000px) {
+	:root {
+		--mm-bar-gutter: 24px;
+	}
+}
+
+@media (max-width: 419px) {
+	:root {
+		--mm-bar-gutter: 8px;
+	}
+}
+
+/* The pages keep the scrollbar's room even when short, as the landing does (film.css html.is-scrub): the bar ends at the same place on both. */
+html:has(.mm-header) {
+	scrollbar-gutter: stable;
+}
+
+/* The pages' header (the landing's sets its own on <html>: site.js): the phones' panel opens under it. Same gap after the brand as the landing's. */
 .mm-header {
 	--header-h: 56px;
+	gap: var(--ds-sp-3);
+	padding-inline: max(var(--mm-bar-gutter), env(safe-area-inset-left))
+		max(var(--mm-bar-gutter), env(safe-area-inset-right));
 }
 
 @media (min-width: 1000px) {
 	.mm-header {
 		--header-h: 64px;
 	}
+}
+
+/* The kit's dark window (kit.css .mc-panel--dark): a 2-texel bevel, light top and left, dark bottom and right, inside a 2 px outline. */
+.mm-nav__panel,
+.mm-drawer {
+	--mm-panel-bevel:
+		inset calc(2 * var(--gp)) calc(2 * var(--gp)) 0 #3a322b, inset calc(-2 * var(--gp)) calc(-2 * var(--gp)) 0 #0f0c0a;
 }
 
 /* --- The bar's two halves -------------------------------------------------------------------------------------------------------------------------- */
@@ -45,7 +78,7 @@
 	display: none;
 }
 
-/* --- A menu's button: text in the game font; open, it becomes the top of its panel ------------------------------------------------------------- */
+/* --- A menu's button: text in the game font. Hovered, the game's light outline; open, ember text; the page's menu, an ember bar under it ---------- */
 
 .mm-nav__trigger {
 	position: relative;
@@ -67,23 +100,21 @@
 }
 
 .mm-nav__trigger:hover {
-	color: var(--ember);
-}
-
-/* The menu that holds the page on screen: a light bar under its name, as the old links had. */
-.mm-nav__trigger[data-current]::after {
-	content: "";
-	position: absolute;
-	inset: auto var(--ds-sp-3) 6px;
-	height: var(--gp);
-	background: var(--hover);
+	border-color: var(--hover);
+	color: #fff;
 }
 
 .mm-nav__trigger[aria-expanded="true"] {
-	background: var(--night-2);
-	border-color: var(--outline);
-	box-shadow: inset var(--gp) var(--gp) 0 #3a322b;
 	color: var(--ember);
+}
+
+/* The menu that holds the page on screen: an ember bar under its name, as thick as the ember edge of the page's row in the menu. */
+.mm-nav__trigger[data-current]::after {
+	content: "";
+	position: absolute;
+	inset: auto var(--ds-sp-3) 4px;
+	height: calc(2 * var(--gp));
+	background: var(--ember);
 }
 
 .mm-nav__trigger:focus-visible,
@@ -98,24 +129,25 @@
 	transform: rotate(180deg);
 }
 
-/* --- A menu's panel: a night window of the game (bevel, 2 px outline, a hard shadow) ------------------------------------------------------------- */
+/* --- A menu's panel: a night window of the game (bevel, 2 px outline, a hard shadow), its left edge on its button's ----------------------------- */
 
 .mm-nav__panel {
 	position: absolute;
 	top: calc(100% + var(--ds-sp-1));
-	left: 0;
+	/* the outline (--ds-notch) is drawn outside the box: the box starts one outline in, so the outline meets the button's edge */
+	left: var(--gp);
 	z-index: 50;
 	box-sizing: border-box;
+	width: max-content;
 	min-width: 240px;
-	max-width: min(360px, calc(100vw - 2 * var(--ds-sp-4)));
+	max-width: min(420px, calc(100vw - 2 * var(--ds-sp-4)));
 	margin: 0;
-	padding: var(--ds-sp-2);
+	padding: calc(2 * var(--gp) + var(--ds-sp-1));
 	background: var(--night-2);
 	color: var(--text);
 	list-style: none;
 	box-shadow:
-		inset var(--gp) var(--gp) 0 #3a322b,
-		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #0f0c0a,
+		var(--mm-panel-bevel),
 		var(--ds-notch),
 		0 calc(4 * var(--gp)) 0 calc(var(--gp)) rgb(0 0 0 / 0.45);
 }
@@ -127,7 +159,7 @@
 .mm-nav__panel--end,
 .mm-lang__list {
 	left: auto;
-	right: 0;
+	right: var(--gp);
 }
 
 .mm-nav__section ul {
@@ -138,20 +170,29 @@
 	list-style: none;
 }
 
-.mm-nav__section + .mm-nav__section {
+/* Groups after the first (Legal, Elsewhere, the landing's pages, the account's sign out) sit under a rule. */
+.mm-nav__section + .mm-nav__section,
+.mm-nav__who + .mm-nav__section {
 	margin-top: var(--ds-sp-2);
 	padding-top: var(--ds-sp-2);
 	box-shadow: inset 0 var(--gp) 0 #3a322b;
 }
 
+/* A group's name: muted but readable (--text-2, about 9:1 on the panel). */
 .mm-nav__heading {
 	margin: var(--ds-sp-1) var(--ds-sp-3) var(--ds-sp-2);
-	color: var(--text-3);
+	color: var(--text-2);
 	font: 16px / 18px var(--f-ui);
 	text-shadow: none;
 }
 
-/* A row of a menu: hovered or focused, it takes the light outline of the game's buttons. */
+/* The landing's own sections: an arrow says they are places on this page, not pages. */
+[data-landing-sections] .mm-nav__heading::before {
+	content: "↓ " / "";
+	color: var(--ember);
+}
+
+/* A row of a menu: hovered or focused, it takes the light outline of the game's buttons; a long name wraps instead of leaving the panel. */
 .mm-nav__link,
 .mm-lang__option {
 	display: flex;
@@ -159,9 +200,10 @@
 	gap: var(--ds-sp-2);
 	box-sizing: border-box;
 	width: 100%;
+	min-width: 0;
 	min-height: var(--ds-hit);
 	margin: 0;
-	padding: 0 var(--ds-sp-3);
+	padding: 6px var(--ds-sp-3);
 	background: none;
 	border: var(--gp) solid transparent;
 	border-radius: 0;
@@ -170,7 +212,8 @@
 	text-align: left;
 	text-decoration: none;
 	text-shadow: var(--ds-text-shadow-1);
-	white-space: nowrap;
+	white-space: normal;
+	overflow-wrap: break-word;
 	cursor: pointer;
 }
 
@@ -188,16 +231,19 @@
 	box-shadow: inset calc(2 * var(--gp)) 0 0 var(--ember);
 }
 
-/* --- The account: "Sign in", or the avatar opening the account's menu ---------------------------------------------------------------------------- */
+/* --- The account: "Sign in", or the avatar opening the account's menu (stone buttons like the language and install ones) ----------------------- */
 
-.mm-nav-account.mc-btn {
+.mm-nav-account.mc-btn,
+.mm-nav-account__button.mc-btn {
 	--_h: var(--ds-hit);
 	min-width: 0;
+	gap: var(--ds-sp-2);
 	white-space: nowrap;
 }
 
-.mm-nav-account__button {
+.mm-nav-account__button.mc-btn {
 	padding-left: var(--ds-sp-1);
+	padding-right: var(--ds-sp-2);
 }
 
 .mm-nav-account__name {
@@ -206,7 +252,58 @@
 	text-overflow: ellipsis;
 }
 
-/* --- The language: a button with the language's own name, a list of every language ------------------------------------------------------------------ */
+/* An open stone button stays pressed (the kit's :active bevel): ember text would not read on stone. */
+.mm-nav-account__button.mc-btn[aria-expanded="true"],
+.mm-lang__button.mc-btn[aria-expanded="true"] {
+	--mc-bevel: inset var(--gp) var(--gp) 0 var(--_lo);
+	border-color: var(--hover);
+}
+
+/* A pixel head (8 x 8 texels: a face with its eyes and mouth), the "Sign in" button's picture where its name does not fit. */
+.mm-nav-signin__head {
+	flex: none;
+	width: calc(8 * var(--gp));
+	height: calc(8 * var(--gp));
+	background: currentColor;
+	-webkit-mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M0 0h8v8H0zM1 4h2v1H1zM5 4h2v1H5zM3 6h2v1H3z'/%3E%3C/svg%3E")
+		center / 100% 100% no-repeat;
+	mask:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M0 0h8v8H0zM1 4h2v1H1zM5 4h2v1H5zM3 6h2v1H3z'/%3E%3C/svg%3E")
+		center / 100% 100% no-repeat;
+}
+
+/* Who is signed in, at the top of the account's menu. */
+.mm-nav__who {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+	padding: var(--ds-sp-1) var(--ds-sp-3) var(--ds-sp-2);
+}
+
+.mm-nav__who-text {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+
+.mm-nav__who-name {
+	color: var(--text);
+	font: 16px / 18px var(--f-ui);
+	overflow-wrap: anywhere;
+}
+
+.mm-nav__who-email {
+	margin: 0;
+	overflow: hidden;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* --- The language: a button with the language's own name (or its code), a list of every language ----------------------------------------------- */
 
 .mm-lang {
 	position: relative;
@@ -297,20 +394,12 @@
 	display: inline-block;
 }
 
-/* --- "Install the mod": the ember and its whole name, "Install" under 700 px, the ember alone under 380 px (the name stays for screen readers) -------------------- */
+/* --- "Install the mod": the ember and its whole name from 1280 px, "Install" below; never the ember alone ------------------------------------------ */
 
 .mm-nav-cta.mc-btn {
 	--_h: var(--ds-hit);
 	min-width: 0;
 	white-space: nowrap;
-}
-
-.mm-nav-cta__short {
-	display: none;
-}
-
-.mm-nav-cta--block.mc-btn {
-	width: 100%;
 }
 
 /* --- The three bars and the phones' panel --------------------------------------------------------------------------------------------------------- */
@@ -333,9 +422,10 @@
 	position: fixed;
 	inset: var(--header-h, 56px) 0 0;
 	z-index: 44;
-	background: rgb(10 8 6 / 0.62);
+	background: rgb(10 8 6 / 0.7);
 }
 
+/* The panel: one column that never grows past the panel (long names wrap), the kit's bevel and the bar's outline on its open side. */
 .mm-drawer {
 	position: fixed;
 	top: var(--header-h, 56px);
@@ -343,18 +433,19 @@
 	bottom: 0;
 	z-index: 45;
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	align-content: start;
 	gap: var(--ds-sp-3);
 	box-sizing: border-box;
 	width: min(420px, 100vw);
 	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-6);
+	overflow-x: hidden;
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	background: var(--night-2);
 	color: var(--text);
 	box-shadow:
-		inset var(--gp) var(--gp) 0 #3a322b,
-		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 #0f0c0a,
+		var(--mm-panel-bevel),
 		calc(-1 * var(--gp)) 0 0 0 var(--outline);
 }
 
@@ -365,7 +456,12 @@
 
 .mm-drawer nav {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ds-sp-2);
+}
+
+.mm-drawer__group {
+	min-width: 0;
 }
 
 /* A group's button: a stone button of the game, its links unfold under it. */
@@ -373,11 +469,13 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: var(--ds-sp-2);
 	box-sizing: border-box;
 	width: 100%;
+	min-width: 0;
 	min-height: 48px;
 	margin: 0;
-	padding: 0 var(--ds-sp-3) var(--gp) var(--ds-sp-4);
+	padding: var(--ds-sp-1) var(--ds-sp-3) calc(var(--ds-sp-1) + var(--gp)) var(--ds-sp-4);
 	background: var(--stone);
 	border: var(--gp) solid var(--outline);
 	border-radius: 0;
@@ -386,7 +484,9 @@
 		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 	color: #fff;
 	font: 16px / 18px var(--f-ui);
+	text-align: left;
 	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	white-space: normal;
 	cursor: pointer;
 }
 
@@ -394,7 +494,35 @@
 	border-color: var(--hover);
 }
 
+.mm-drawer__toggle .mm-nav__chevron {
+	flex: none;
+}
+
+.mm-drawer__label {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+/* The account's group: the avatar before the name, which ends with an ellipsis rather than widening the panel. */
+.mm-drawer__who {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+}
+
+.mm-drawer__who .mm-drawer__label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mm-drawer__email {
+	padding: var(--ds-sp-1) var(--ds-sp-3) var(--ds-sp-2);
+}
+
 .mm-drawer__links {
+	min-width: 0;
 	padding: var(--ds-sp-1) 0 var(--ds-sp-2) var(--ds-sp-2);
 }
 
@@ -402,17 +530,11 @@
 	display: none;
 }
 
-.mm-drawer__who {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	margin-inline: 0;
-	color: var(--text-2);
-}
-
-.mm-drawer__lang .mm-lang__button {
+.mm-drawer__lang .mm-lang__button.mc-btn {
 	width: 100%;
+	min-width: 0;
 	justify-content: flex-start;
+	white-space: normal;
 }
 
 .mm-drawer__lang .mm-lang__button .mm-nav__chevron {
@@ -421,6 +543,7 @@
 
 .mm-drawer__lang .mm-lang__list {
 	position: static;
+	width: auto;
 	max-width: none;
 	margin-top: var(--ds-sp-1);
 	max-height: none;
@@ -435,9 +558,52 @@ html.mm-scroll-lock--gutter {
 	scrollbar-gutter: stable;
 }
 
-/* --- Widths ----------------------------------------------------------------------------------------------------------------------------------------- */
+/* --- Widths: each label only ever gets shorter as the window narrows ----------------------------------------------------------------------------------
+   From 1440 px: everything whole, the signed-in name included. 1280 to 1439: the avatar alone. 960 (DESKTOP_NAV) to 1279: the language's code, a head
+   for "Sign in", "Install". Under 960: the three bars hold the menus and the account. Under 700: the language joins the panel. */
 
-@media (min-width: 1100px) {
+.mm-nav-cta__long,
+.mm-lang__name {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.mm-nav-cta__short {
+	display: inline;
+}
+
+.mm-drawer .mm-lang__name {
+	position: static;
+	width: auto;
+	height: auto;
+	margin: 0;
+	overflow: visible;
+	clip-path: none;
+}
+
+@media (min-width: 1280px) {
+	.mm-nav-cta__long,
+	.mm-lang__name {
+		position: static;
+		width: auto;
+		height: auto;
+		margin: 0;
+		overflow: visible;
+		clip-path: none;
+	}
+	.mm-nav-cta__short,
+	.mm-lang__code {
+		display: none;
+	}
+}
+
+@media (min-width: 960px) {
 	.mm-nav {
 		display: block;
 	}
@@ -454,33 +620,30 @@ html.mm-scroll-lock--gutter {
 	}
 }
 
-@media (min-width: 1100px) and (max-width: 1439px) {
+@media (max-width: 1439px) {
 	.mm-nav-account__name {
 		display: none;
 	}
 }
 
-/* Up to 1280 px the menus and the whole install label do not fit together in German or Russian: the button says "Install" (its full name stays for screen readers). */
-@media (min-width: 1100px) and (max-width: 1279px) {
-	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__long {
+@media (max-width: 1279px) {
+	.mm-nav-signin.mc-btn {
+		width: var(--ds-hit);
+		padding-inline: 0;
+	}
+	.mm-nav-signin .mm-nav-signin__label {
 		position: absolute;
 		width: 1px;
 		height: 1px;
 		margin: -1px;
-		padding: 0;
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
 	}
-	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
-		display: inline;
-	}
 }
 
-/* From 700 px the bar keeps the language and the install button in sight: the panel does not repeat them. */
-@media (min-width: 700px) {
-	.mm-drawer .mm-drawer__lang,
-	.mm-drawer .mm-nav-cta--block {
+@media (min-width: 1280px) {
+	.mm-nav-signin__head {
 		display: none;
 	}
 }
@@ -490,40 +653,24 @@ html.mm-scroll-lock--gutter {
 	.mm-nav-end__lang {
 		display: none;
 	}
-	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__long {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
-		display: inline;
-	}
-	.mm-nav-cta.mc-btn:not(.mm-nav-cta--block) {
-		min-width: 0;
+	.mm-nav-cta.mc-btn {
 		padding-inline: var(--ds-sp-3);
 	}
 }
 
+/* The narrowest phones: "Install" stays written (the bar's main action), a little smaller. */
 @media (max-width: 379px) {
-	.mm-nav-cta:not(.mm-nav-cta--block) .mm-nav-cta__short {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
+	.mm-nav-cta.mc-btn {
+		gap: var(--ds-sp-1);
+		padding-inline: var(--ds-sp-2);
+		font-size: 14px;
 	}
-	.mm-nav-cta.mc-btn:not(.mm-nav-cta--block) {
-		width: var(--ds-hit);
-		padding-inline: 0;
-	}
+}
+
+/* The readable font is smaller than the game's: its rows are tighter. */
+[data-mc-font="read"] .mm-nav__link,
+[data-mc-font="read"] .mm-lang__option {
+	min-height: 40px;
 }
 
 /* --- Motion: the panels drop 8 px while fading in; the cross arrives with a small bounce. None with reduced motion (system or option). -------------- */
@@ -541,6 +688,7 @@ html.mm-scroll-lock--gutter {
 	}
 	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn,
+	:root:not([data-mc-motion="reduced"]) .mm-nav-account__button.mc-btn,
 	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn {
 		transition:
 			border-color var(--ds-dur-1) var(--ds-ease),
@@ -548,6 +696,7 @@ html.mm-scroll-lock--gutter {
 	}
 	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn:hover,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn:hover,
+	:root:not([data-mc-motion="reduced"]) .mm-nav-account__button.mc-btn:hover,
 	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn:hover {
 		transform: translateY(-1px);
 	}
