@@ -69,9 +69,9 @@ test('both pictures are real screenshots: lazy, of known size, each described, t
 	}
 	// rendered in French, like the rest of the prerendered landing; no drawn interface, only captions
 	expect([...root.querySelectorAll('.mm-illus__label')].map(label => label.textContent)).toEqual([
-		'Dans le navigateur',
+		'Ta base dans le navigateur\u00a0: change l’heure, tourne autour',
 		'Carte postale HD',
-		'Appuie sur M → Prendre un souvenir.',
+		'Appuie sur M → Prendre un souvenir. Même pas besoin d’être admin.',
 		'Dans Minecraft',
 		'Dans le navigateur',
 	])

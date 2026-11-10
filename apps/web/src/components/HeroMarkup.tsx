@@ -346,10 +346,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</h1>
 							<p
 								className="mc-hero__lead"
-								data-i18n="The mod saves the spot where you play in 3D. You find it again in your browser and show it to anyone you like."
+								data-i18n="The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want."
 							>
 								{t(
-									'The mod saves the spot where you play in 3D. You find it again in your browser and show it to anyone you like.'
+									'The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want.'
 								)}
 							</p>
 							<div className="mc-hero__actions">
@@ -374,9 +374,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</p>
 							<p
 								className="mc-hero__compat"
-								data-i18n="Your world stays untouched · Nothing is sent until you connect the game · Private gallery"
+								data-i18n="No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery"
 							>
-								{t('Your world stays untouched · Nothing is sent until you connect the game · Private gallery')}
+								{t(
+									'No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery'
+								)}
 							</p>
 						</div>
 					</section>
@@ -388,7 +390,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							<Step
 								number={1}
 								title="Install."
-								body="With the CurseForge app, or drop the file into your mods folder."
+								body="Get it from the CurseForge app, or drop the .jar into your mods folder."
 							/>
 							<Step
 								number={2}
@@ -434,7 +436,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">
-									<span data-i18n="What if my server shuts down?">{t('What if my server shuts down?')}</span>
+									<span data-i18n="How do I keep my base?">{t('How do I keep my base?')}</span>
 								</Link>
 							</li>
 						</ul>

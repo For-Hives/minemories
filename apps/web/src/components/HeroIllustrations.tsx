@@ -47,8 +47,8 @@ export function ShareIllustration() {
 		<figure className="mm-illus mm-illus--share">
 			<div className="mm-illus__frame">
 				<Shot src="/hero/illus/viewer-base.webp" alt={viewerAlt} width={960} height={734} />
-				<p className="mm-illus__label" data-i18n="In the browser">
-					{t('In the browser')}
+				<p className="mm-illus__label" data-i18n="Your base in the browser: change the time, spin around">
+					{t('Your base in the browser: change the time, spin around')}
 				</p>
 			</div>
 			<div className="mm-illus__print">
@@ -80,8 +80,9 @@ export function ClosingIllustration() {
 					width={760}
 					height={650}
 				/>
-				<p className="mm-illus__label" data-i18n="Press M → Take a memory.">
-					{t('Press M → Take a memory.')}
+				<p className="mm-illus__label">
+					<span data-i18n="Press M → Take a memory.">{t('Press M → Take a memory.')}</span>{' '}
+					<span data-i18n="You don’t even need to be admin.">{t('You don’t even need to be admin.')}</span>
 				</p>
 			</div>
 			<div className="mm-illus__pair">

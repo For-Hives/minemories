@@ -85,10 +85,11 @@ test('the landing’s facts, guarantees and cards follow a language change made 
 	const lines = [...document.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 experimental · Fabric, Forge, NeoForge · single player and servers · beta',
-		'Your world stays untouched · Nothing is sent until you connect the game · Private gallery',
+		'No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery',
 	])
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('The mod saves the spot where you play in 3D.')
+	expect(text).toContain('The mod keeps a 3D copy of the spot where you play.')
+	expect(text).toContain('How do I keep my base?')
 	expect(text).toContain('Press M → Take a memory. Or just go AFK: the mod takes one for you.')
 	expect(text).toContain('Show your base to your friends')
 	document.body.innerHTML = ''

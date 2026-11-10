@@ -34,7 +34,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/',
 		title: 'Minemories: your Minecraft builds in 3D',
 		description:
-			'A Minecraft Java mod that keeps the corner where you play in 3D. Revisit it in your browser and show people around it with a link.',
+			'A Minecraft Java mod that keeps a 3D copy of your base. Open it in your browser and send your friends a link to walk around it.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
