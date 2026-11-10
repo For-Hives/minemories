@@ -68,7 +68,7 @@ public final class GlbScene {
         uv);
   }
 
-  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  /** A double-sided quad: see the overload taking {@code doubleSided}. */
   public void addQuad(
       GlbCategory category,
       int chunkX,
@@ -81,6 +81,44 @@ public final class GlbScene {
       int alphaMode,
       float emission,
       float opacity,
+      float[] xyz,
+      float[] uv) {
+    addQuad(
+        category,
+        chunkX,
+        chunkZ,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        true,
+        xyz,
+        uv);
+  }
+
+  /**
+   * Chunk coordinates are relative to the chunk holding the capture origin, or NONE. A single-sided
+   * quad is only visible from the side its counter-clockwise winding faces, as Minecraft draws
+   * chunk geometry with back-face culling; the flag is part of the material, so a culled and a
+   * double-sided use of the same key never share one.
+   */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      boolean doubleSided,
       float[] xyz,
       float[] uv) {
     if (xyz.length != 12 || uv.length != 8)
@@ -97,11 +135,12 @@ public final class GlbScene {
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
     Part part =
         parts.computeIfAbsent(
-            category.ordinal() + ":" + key,
+            category.ordinal() + (doubleSided ? ":2:" : ":1:") + key,
             ignored ->
                 new Part(
                     parts.size(),
                     category,
+                    doubleSided,
                     new ChunkRuns(runBudget),
                     materialName,
                     imageKey,
@@ -282,9 +321,8 @@ public final class GlbScene {
         textures.add("{\"sampler\":0,\"source\":" + image + "}");
         imageIndices.put(part.imageKey, texture);
       }
-      float r = ((part.tint >>> 16) & 255) / 255f,
-          g = ((part.tint >>> 8) & 255) / 255f,
-          b = (part.tint & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(part.tint);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       String alpha =
           part.alphaMode == 2
               ? ",\"alphaMode\":\"BLEND\""
@@ -316,7 +354,8 @@ public final class GlbScene {
               + part.opacity
               + "],\"baseColorTexture\":{\"index\":"
               + texture
-              + "},\"metallicFactor\":0,\"roughnessFactor\":1},\"doubleSided\":true"
+              + "},\"metallicFactor\":0,\"roughnessFactor\":1}"
+              + (part.doubleSided ? DOUBLE_SIDED : "")
               + alpha
               + emissive
               + "}");
@@ -340,9 +379,8 @@ public final class GlbScene {
     List<String> lights = new ArrayList<>();
     for (PointLight light : pointLights.values()) {
       int id = lights.size();
-      float r = ((light.color >>> 16) & 255) / 255f,
-          g = ((light.color >>> 8) & 255) / 255f,
-          b = (light.color & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(light.color);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       // KHR_lights_punctual uses candela. The previous 2 cd per Minecraft
       // light level was barely visible after Blender's glTF import and scene exposure.
       lights.add(
@@ -530,9 +568,13 @@ public final class GlbScene {
         + "]";
   }
 
+  /** glTF materials are single-sided (back-face culled) unless they carry this property. */
+  static final String DOUBLE_SIDED = ",\"doubleSided\":true";
+
   private static final class Part {
     final int id;
     final GlbCategory category;
+    final boolean doubleSided;
     final ChunkRuns runs;
     final String name, imageKey;
     final byte[] png;
@@ -554,6 +596,7 @@ public final class GlbScene {
     Part(
         int id,
         GlbCategory category,
+        boolean doubleSided,
         ChunkRuns runs,
         String name,
         String imageKey,
@@ -564,6 +607,7 @@ public final class GlbScene {
         float opacity) {
       this.id = id;
       this.category = category;
+      this.doubleSided = doubleSided;
       this.runs = runs;
       this.name = name;
       this.imageKey = imageKey;

@@ -172,7 +172,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         uv);
   }
 
-  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  /** A double-sided quad: see the overload taking {@code doubleSided}. */
   public void addQuad(
       GlbCategory category,
       int chunkX,
@@ -188,6 +188,44 @@ public final class SpoolingGlbScene implements AutoCloseable {
       float[] xyz,
       float[] uv)
       throws IOException {
+    addQuad(
+        category,
+        chunkX,
+        chunkZ,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        true,
+        xyz,
+        uv);
+  }
+
+  /**
+   * Chunk coordinates are relative to the chunk holding the capture origin, or NONE. Same contract
+   * as {@link GlbScene}: a single-sided quad is back-face culled and the flag is part of the
+   * material.
+   */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      boolean doubleSided,
+      float[] xyz,
+      float[] uv)
+      throws IOException {
     try {
       writable();
       if (xyz.length != 12 || uv.length != 8) {
@@ -198,7 +236,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       // A quad without any area renders nothing: drop it instead of writing a zero normal.
       if (!QuadGeometry.normal(xyz, normal)) return;
       checkedString(key);
-      String partKey = category.ordinal() + ":" + key;
+      String partKey = category.ordinal() + (doubleSided ? ":2:" : ":1:") + key;
       Part part = parts.get(partKey);
       if (part == null) {
         if (parts.size() >= limits.materials())
@@ -211,6 +249,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
             new Part(
                 id,
                 category,
+                doubleSided,
                 new ChunkRuns(runBudget),
                 materialName,
                 image,
@@ -804,9 +843,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
     index = 0;
     for (Part part : parts.values()) {
       if (index++ > 0) sink.text(",");
-      float r = ((part.tint >>> 16) & 255) / 255f,
-          g = ((part.tint >>> 8) & 255) / 255f,
-          b = (part.tint & 255) / 255f;
+      float[] rgb = GlbColor.linearRgb(part.tint);
+      float r = rgb[0], g = rgb[1], b = rgb[2];
       sink.text(
           "{\"name\":\""
               + escape(part.name)
@@ -820,7 +858,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
               + part.opacity
               + "],\"baseColorTexture\":{\"index\":"
               + part.image.index
-              + "},\"metallicFactor\":0,\"roughnessFactor\":1},\"doubleSided\":true");
+              + "},\"metallicFactor\":0,\"roughnessFactor\":1}");
+      if (part.doubleSided) sink.text(GlbScene.DOUBLE_SIDED);
       if (part.alphaMode == 2) sink.text(",\"alphaMode\":\"BLEND\"");
       else if (part.alphaMode == 1) sink.text(",\"alphaMode\":\"MASK\",\"alphaCutoff\":0.5");
       if (part.emission > 0) {
@@ -905,9 +944,8 @@ public final class SpoolingGlbScene implements AutoCloseable {
       index = 0;
       for (Light light : lights.values()) {
         if (index++ > 0) sink.text(",");
-        float r = ((light.color >>> 16) & 255) / 255f,
-            g = ((light.color >>> 8) & 255) / 255f,
-            b = (light.color & 255) / 255f;
+        float[] rgb = GlbColor.linearRgb(light.color);
+        float r = rgb[0], g = rgb[1], b = rgb[2];
         sink.text(
             "{\"type\":\"point\",\"color\":["
                 + r
@@ -1028,6 +1066,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private static final class Part {
     final int id;
     final GlbCategory category;
+    final boolean doubleSided;
     final ChunkRuns runs;
     final int[] corners = new int[4];
     boolean uvFits = true;
@@ -1045,6 +1084,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
     Part(
         int id,
         GlbCategory category,
+        boolean doubleSided,
         ChunkRuns runs,
         String name,
         Image image,
@@ -1058,6 +1098,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         StoredFile indices) {
       this.id = id;
       this.category = category;
+      this.doubleSided = doubleSided;
       this.runs = runs;
       this.name = name;
       this.image = image;

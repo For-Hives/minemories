@@ -33,6 +33,7 @@ vi.mock('../viewer-scene', () => ({
 		dispose = mocks.dispose
 		setCaptureContext = mocks.context
 		setMinutes = vi.fn()
+		setLighting = vi.fn()
 	},
 }))
 function mount(path = '/public/11111111-1111-4111-8111-111111111111', isPublic = true) {

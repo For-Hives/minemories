@@ -1,6 +1,7 @@
 /**
  * Pure helpers behind `bun brand:icons`: read the canonical logo SVG (`design/logo/minemories-logo.svg`),
- * keep its parts in drawing order and write the web logo and the square mark from them.
+ * keep its parts in drawing order and write the web logo, the square icon (the whole logo, for the favicons and app
+ * icons) and the square mark (the camera head, for the footer and the mod icon) from them.
  */
 
 /** Parts of the camera head. The neck, the tripod ring, the hub and the legs stay out of the square mark. */
@@ -9,12 +10,12 @@ export const HEAD_PARTS = ['Body', 'Grip', 'Lens', 'Barrel', 'Viewfinder', 'Butt
 /** Every output of the generator, relative to the repository root. `size` is in pixels. */
 export const ICONS = {
 	favicon: { file: 'apps/web/public/favicon.ico', sizes: [16, 32, 48] },
-	appleTouch: { file: 'apps/web/public/apple-touch-icon.png', size: 180, scale: 0.84 },
-	// The maskable safe zone is a centred circle of radius 0.4 × size, so the head (half-diagonal ≈ 0.61 of the
-	// mark's side) is drawn at 0.64 of the icon.
+	appleTouch: { file: 'apps/web/public/apple-touch-icon.png', size: 180, scale: 0.86 },
+	// The maskable safe zone is a centred circle of radius 0.4 × size. The whole logo is about 0.62 as wide as it is
+	// tall, so its half-diagonal is about 0.56 of the square's side: drawn at 0.66 of the icon, it stays inside.
 	app: [
-		{ file: 'apps/web/public/icon-192.png', size: 192, scale: 0.64 },
-		{ file: 'apps/web/public/icon-512.png', size: 512, scale: 0.64 },
+		{ file: 'apps/web/public/icon-192.png', size: 192, scale: 0.66 },
+		{ file: 'apps/web/public/icon-512.png', size: 512, scale: 0.66 },
 	],
 	mod: { file: 'mod/shared/brand/icon.png', size: 128 },
 	og: { file: 'apps/web/public/brand/og-image.png', width: 1200, height: 630 },
@@ -118,7 +119,10 @@ export function renderSvg({ gradient, gradientId, paths }, { viewBox, glowId }) 
 	return lines.join('\n')
 }
 
-/** The full logo (camera and tripod) and the square mark (camera head only) from the canonical SVG. */
+/**
+ * The full logo (camera and tripod), the square icon (the full logo centred in a square, for the favicons) and the
+ * square mark (camera head only) from the canonical SVG.
+ */
 export function buildLogos(svg, { padding = 0.03 } = {}) {
 	const logo = parseLogo(svg)
 	const size = svg.match(ROOT_VIEWBOX)
@@ -126,11 +130,14 @@ export function buildLogos(svg, { padding = 0.03 } = {}) {
 	const head = logo.paths.filter(path => HEAD_PARTS.includes(path.part))
 	const solidHead = head.filter(path => !path.fill.startsWith('url('))
 	const markBox = squareAround(boundsOf(solidHead), padding)
+	const iconBox = squareAround(boundsOf(logo.paths.filter(path => !path.fill.startsWith('url('))), padding)
 	return {
 		logo: renderSvg(logo, {
 			viewBox: { x: 0, y: 0, width: Number(size[1]), height: Number(size[2]) },
 			glowId: 'mm-logo-glow',
 		}),
+		icon: renderSvg(logo, { viewBox: iconBox, glowId: 'mm-icon-glow' }),
+		iconBox,
 		mark: renderSvg({ ...logo, paths: head }, { viewBox: markBox, glowId: 'mm-mark-glow' }),
 		markBox,
 		size: { width: Number(size[1]), height: Number(size[2]) },

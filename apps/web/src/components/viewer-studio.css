@@ -404,6 +404,15 @@ h2.cinema-panel-title {
 .viewer-weather:disabled button {
 	color: var(--text-3);
 }
+/* Two styles side by side: the realistic studio light and the game's own shading. */
+.cinema-page .viewer-lighting {
+	grid-template-columns: repeat(2, 1fr);
+	margin-top: var(--ds-sp-4);
+}
+.cinema-page .viewer-lighting button {
+	align-content: center;
+	padding: var(--ds-sp-2);
+}
 /* taste-skill-ignore: each swatch is a small picture of the sky it selects, not decoration. */
 .cinema-weather-swatch {
 	display: block;

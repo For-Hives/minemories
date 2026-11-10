@@ -110,6 +110,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js'
 import { ConvexHull } from 'three/addons/math/ConvexHull.js'
+import { emissiveToLegacy, hasLegacySrgbColours } from '../lib/glb-colours'
 // v11 (animation pass): pure curve tools (named eases, key tracks, closed-form springs). No state: the film stays a pure function of time.
 import { EASE, track, springKick, springStep, window4, smooth as smoothQuintic } from './anim/curves.js'
 
@@ -4264,7 +4265,8 @@ const FIXED_TINTS = {
 
 // Cleans a GLB: removes the KHR lights (their positions are kept), sets the materials,
 // and splits the meshes by kind (block, wolf, player, other entity).
-function prepareCapture(root) {
+function prepareCapture(root, asset) {
+	const legacy = hasLegacySrgbColours(asset)
 	const lights = []
 	const byKind = { block: [], wolf: [], player: [], entity: [] }
 	root.updateMatrixWorld(true)
@@ -4272,12 +4274,19 @@ function prepareCapture(root) {
 		if (o.isLight) lights.push(o)
 		if (!o.isMesh) return
 		const material = o.material
-		// The mod writes the biome tint in sRGB in baseColorFactor, which glTF reads as linear:
-		// without conversion, grass and foliage come out washed out.
+		// Before GLB format 3 the mod wrote the biome tint in sRGB in baseColorFactor, which glTF reads as linear:
+		// without conversion, grass and foliage come out washed out. Format 3 writes it linear: it is brought back to
+		// the sRGB factor first so the cobweb dimming, rawColor and the emissive look stay those of the shipped captures.
 		if (!material.userData.tintLinear) {
-			// Bug of the mod (0.14.0): the fixed tints 1.21.1 are negative ARGB, written as white.
-			const fixed = FIXED_TINTS[material.name.split(' / ')[1]]
-			if (fixed && material.color.getHex() === 0xffffff) material.color.setHex(fixed, THREE.LinearSRGBColorSpace)
+			if (legacy) {
+				// Bug of the mod (0.14.0): the fixed tints 1.21.1 are negative ARGB, written as white.
+				const fixed = FIXED_TINTS[material.name.split(' / ')[1]]
+				if (fixed && material.color.getHex() === 0xffffff) material.color.setHex(fixed, THREE.LinearSRGBColorSpace)
+			} else {
+				material.color.convertLinearToSRGB()
+				const e = material.emissive
+				if (e) e.setRGB(...emissiveToLegacy([e.r, e.g, e.b]), THREE.LinearSRGBColorSpace)
+			}
 			material.userData.rawColor = material.color.getHex(THREE.LinearSRGBColorSpace)
 			// Cobweb: white cross texture (normals upward), which stood out as a luminous spot at night and in the
 			// grey dawn. It is brought back to a web grey.
@@ -7017,7 +7026,7 @@ export function mount(target, opts = {}) {
 	}
 	const charTexturesFromGlb = async () => {
 		const gltf = await loadGlb(loader, CAPTURES, 'characters')
-		const { byKind } = prepareCapture(gltf.scene)
+		const { byKind } = prepareCapture(gltf.scene, gltf.asset)
 		const maps = { collarColor: null }
 		for (const m of [...byKind.wolf, ...byKind.player]) {
 			const name = m.material.name
@@ -7071,7 +7080,7 @@ export function mount(target, opts = {}) {
 		const root = gltf.scene
 		const og = metas[i]?.origin
 		if (og) root.position.fromArray(og.map((v, j) => v - origin[j]))
-		const { lightPositions, byKind } = prepareCapture(root)
+		const { lightPositions, byKind } = prepareCapture(root, gltf.asset)
 		const entities = [...byKind.wolf, ...byKind.player, ...byKind.entity]
 		if (entities.length) removeMeshes(entities)
 		root.visible = false

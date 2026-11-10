@@ -136,12 +136,47 @@ The local viewer, the gallery viewer and shared links now use the
 same HDR render chain: ACES, moderate bloom on a resolution pyramid, sRGB
 output and FXAA. The reflection environment is generated locally from the sky
 (PMREM) and recomputed only when the atmosphere changes, never every frame.
+By day a neutral grey veil sits between the sky and the scene while that
+environment is baked (`apps/web/src/lib/environment-veil.ts`): without it the
+blue sky tinted every face turned away from the sun, so purple concrete read
+navy and wood read grey-green. The veil fades out with daylight, so night
+keeps its blue moonlight, and skies without a sun (Nether, End) get none.
+Water reflections are a little greyer as a result but still read blue.
 Transparent surfaces get lower roughness; these are environment
 reflections, not reflections of neighboring objects or ray tracing. Textures
 stay pixelated up close, with interpolated mipmaps and anisotropy capped at 4.
 Point lights are grouped by cell and then capped at 12; the
 2048-pixel sun shadows are updated when the lighting/capture changes.
 No GLB format or Minecraft export is modified.
+
+The Atmosphere panel also offers a lighting style, remembered on the device
+(`minemories-viewer-lighting` in local storage, ignored when storage is blocked).
+**Realistic** (the default) is the chain above. **Faithful to the game**
+reproduces Minecraft's own block lighting: base colour (texture × material
+colour) × the game's face shade (top 1, north/south 0.8, east/west 0.6, bottom
+0.5) × the sky light of the hour from the game's light map (white by day, a dim
+moonlit blue of about 0.27/0.27/0.46 at night, darkened by 5/16 in rain, snow
+or overcast skies), all as sRGB multipliers. The light map follows the
+capture's place: the Nether has no sky light but a constant warm ambient light
+(about 0.35/0.27/0.22), the End forces its fixed light map (about
+0.47/0.52/0.48) day and night, and the deep dark gets no sky light at all, only
+block light over the light map's minimum of 0.03. The capture carries no light
+levels, so every face is lit as if it stood under the open sky (in the deep
+dark, as if fully enclosed): interiors and caves look brighter than in game, and
+a surface build in the deep dark darker. Captured lights and emissive blocks
+add block light on top, capped at the full-daylight face colour, so lamps stay
+bright at night. There is no tone mapping, visible sun shadow, environment
+reflection, bloom, haze or colour grading; the screen-space occlusion stays as the
+counterpart of the game's smooth lighting, and alpha, cut-outs and water
+transparency are unchanged. Every imported PBR material carries one shared
+shader branch (`viewer-faithful.ts`), so switching is a uniform flip without
+reloading the capture or recompiling the materials (the sun shadow pass keeps
+running in both styles, since the shadow count is part of every material's
+program key; only the final output pass changes its tone mapping), and
+switching back restores the realistic render pixel for pixel. The maths (face shade, light map) lives in `lib/viewer-lighting.ts`.
+On the zone 1 tour capture at 9:30 the faithful render averages (102, 108, 91)
+over the lower 70 % of the frame against (95, 100, 82) for the in-game frame;
+the realistic render gives (68, 96, 100).
 
 The desert/badlands/savanna, snow/ice and jungle/swamp palettes complement the
 Nether, End and deep dark atmospheres. The Clear, Mist and Overcast settings are

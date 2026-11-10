@@ -3,12 +3,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
+import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
+import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
 import { dayDelta, Glide } from './lib/transitions'
+import { faithfulSkyLight, type Rgb, srgbFactorToLinear, type ViewerLighting } from './lib/viewer-lighting'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
+import { createFaithfulUniforms, prepareFaithfulLighting } from './viewer-faithful'
 import { framingBounds, isLightBeam, orbitFocus, surfaceFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
@@ -72,6 +76,33 @@ export interface ViewerSceneEvents {
 	onQuality?(label: string): void
 }
 
+/**
+ * Captures before GLB format 3 stored 8-bit sRGB colours where glTF 2.0 (and GLTFLoader) expects linear ones:
+ * converts base colour (never opacity), the hue of the emissive colour (its strength is not a colour) and KHR light
+ * colours so old and new captures look the same. GLTFLoader shares one material between meshes, so each material is
+ * converted once.
+ */
+function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown }): void {
+	if (!hasLegacySrgbColours(gltf.asset)) return
+	const converted = new Set<THREE.Material>()
+	gltf.scene.traverse(object => {
+		if (object instanceof THREE.Light) {
+			object.color.convertSRGBToLinear()
+			return
+		}
+		if (!(object instanceof THREE.Mesh)) return
+		const materials: THREE.Material[] = Array.isArray(object.material) ? object.material : [object.material]
+		for (const material of materials) {
+			const pbrMaterial = material as THREE.MeshStandardMaterial
+			if (converted.has(material) || !pbrMaterial.isMeshStandardMaterial) continue
+			converted.add(material)
+			pbrMaterial.color.convertSRGBToLinear()
+			const { r, g, b } = pbrMaterial.emissive
+			pbrMaterial.emissive.setRGB(...legacyEmissiveToLinear([r, g, b]), THREE.LinearSRGBColorSpace)
+		}
+	})
+}
+
 interface ImportedLight {
 	light: THREE.PointLight
 	position: THREE.Vector3
@@ -118,6 +149,11 @@ export class ViewerScene {
 	private readonly navigation: ViewerNavigation
 	private atmosphere: Atmosphere = getAtmosphere(null, null)
 	private readonly sky: THREE.Mesh
+	/** Grey shell inside the sky while the environment map is baked: see `lib/environment-veil`. */
+	private readonly skyVeil = new THREE.Mesh(
+		new THREE.SphereGeometry(90, 32, 20),
+		new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, depthWrite: false, fog: false })
+	)
 	private readonly clouds = new MinecraftClouds()
 	private readonly hemisphere = new THREE.HemisphereLight(0xe2efff, 0x36352e, 0.65)
 	private readonly keyLight = new THREE.DirectionalLight(0xffedc2, 1.05)
@@ -133,6 +169,10 @@ export class ViewerScene {
 	private hasShadowDirection = false
 	private previousFrame = 0
 	private readonly waterTime = { value: 0 }
+	private readonly faithfulUniforms = createFaithfulUniforms()
+	private lighting: ViewerLighting = 'realistic'
+	/** Reused by the frame loop's day cycle. */
+	private readonly faithfulSkyLight: Rgb = [1, 1, 1]
 	private disposed = false
 	private preparingWorld = false
 	private loadingFile = false
@@ -331,6 +371,7 @@ export class ViewerScene {
 			this.events.onLoading('Loading the model and textures…')
 			const gltf = await parseEmbeddedGlb(buffer, data => this.loader.parseAsync(data, ''))
 			imported = gltf.scene
+			linearizeLegacyColours(gltf)
 			this.ensureLoadActive(options.signal)
 			const delta = options.originDelta
 			if (delta) imported.position.add(new THREE.Vector3(delta.x, delta.y, delta.z))
@@ -413,6 +454,7 @@ export class ViewerScene {
 		const root = gltf.scene
 		try {
 			this.ensureLoadActive(signal)
+			linearizeLegacyColours(gltf)
 			const layer = prepareLayer(root, capture.origin, capture.bounds)
 			const offset = new THREE.Vector3(capture.offset.x, capture.offset.y, capture.offset.z)
 			root.position.copy(offset)
@@ -611,6 +653,17 @@ export class ViewerScene {
 		this.updateEnvironment()
 	}
 
+	/** Realistic studio light or the game's own face shading; a uniform flip, the capture is not reloaded. */
+	setLighting(lighting: ViewerLighting): void {
+		if (lighting === this.lighting) return
+		this.lighting = lighting
+		const faithful = lighting === 'faithful'
+		this.faithfulUniforms.memoryFaithful.value = faithful ? 1 : 0
+		this.renderer.toneMapping = faithful ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping
+		this.effects.setFaithful(faithful)
+		this.updateDayCycle()
+	}
+
 	setFirstPerson(enabled: boolean): void {
 		this.controls.autoRotate = false
 		this.controls.enabled = !enabled
@@ -656,17 +709,21 @@ export class ViewerScene {
 
 	private updateEnvironment(): void {
 		if (this.modelRoot.children.length === 0) return
+		const daylight =
+			this.atmosphere.fixedDaylight ??
+			THREE.MathUtils.smoothstep(Math.sin((this.dayTime - 0.25) * Math.PI * 2), -0.12, 0.2)
 		const environmentScene = new THREE.Scene()
 		const sky = new THREE.Mesh(this.sky.geometry, this.sky.material)
 		sky.scale.setScalar(100)
-		environmentScene.add(sky)
+		const veil = environmentVeil(this.atmosphere, daylight, this.skyUniforms.uWeather.value)
+		this.skyVeil.material.color.setScalar(veil.grey)
+		this.skyVeil.material.opacity = veil.opacity
+		this.skyVeil.visible = veil.opacity > 0
+		environmentScene.add(sky, this.skyVeil)
 		const previous = this.environment
 		this.environment = this.environmentGenerator.fromScene(environmentScene, 0.08, 0.1, 200)
 		this.scene.environment = this.environment.texture
 		previous?.dispose()
-		const daylight =
-			this.atmosphere.fixedDaylight ??
-			THREE.MathUtils.smoothstep(Math.sin((this.dayTime - 0.25) * Math.PI * 2), -0.12, 0.2)
 		const horizon = new THREE.Color()
 			.setRGB(...this.atmosphere.nightHorizon)
 			.lerp(new THREE.Color().setRGB(...this.atmosphere.dayHorizon), daylight)
@@ -734,6 +791,8 @@ export class ViewerScene {
 		this.keyLight.shadow.dispose()
 		this.effects.dispose()
 		this.environment?.dispose()
+		this.skyVeil.geometry.dispose()
+		this.skyVeil.material.dispose()
 		this.environmentGenerator.dispose()
 		this.renderer.dispose()
 	}
@@ -865,6 +924,7 @@ export class ViewerScene {
 				pbrMaterial.emissiveIntensity = Math.min(pbrMaterial.emissiveIntensity, 1.6)
 				prepareWater(pbrMaterial, this.waterTime)
 			}
+			prepareFaithfulLighting(material, this.faithfulUniforms)
 			hasOpaqueSurface ||= !isLightBeam(material) && (!material.transparent || material.alphaTest > 0)
 			for (const texture of [
 				pbrMaterial.map,
@@ -936,6 +996,15 @@ export class ViewerScene {
 		this.skyUniforms.uMoonPhase.value = this.lunarAge
 		this.keyLight.intensity =
 			(0.025 + daylight * 4.8) * (['overcast', 'rain', 'snow'].includes(this.weather) ? 0.35 : 1)
+		const stormy = ['overcast', 'rain', 'snow'].includes(this.weather)
+		const skyLight = faithfulSkyLight(daylight, stormy, this.atmosphere.sky, this.faithfulSkyLight)
+		this.faithfulUniforms.memoryFaithfulSky.value.setRGB(
+			srgbFactorToLinear(skyLight[0]),
+			srgbFactorToLinear(skyLight[1]),
+			srgbFactorToLinear(skyLight[2])
+		)
+		// Independent of the lighting style: the shadow count is part of every material's program key, so toggling it
+		// would recompile them all. The faithful branch replaces the lit colour, so its shadows never show.
 		const shouldCastShadow = daylight > 0.08
 		if (this.keyLight.castShadow !== shouldCastShadow) {
 			this.keyLight.castShadow = shouldCastShadow

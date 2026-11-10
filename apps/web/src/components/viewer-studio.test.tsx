@@ -1,16 +1,18 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import type { ViewerScene } from '../viewer-scene'
 import { LoadingSkeleton } from './Loading'
 import { ViewerStudio } from './ViewerStudio'
 
+beforeEach(() => localStorage.clear())
 afterEach(cleanup)
 function mount(ready = true, layers: string[] = [], hidden: string[] = []) {
 	const scene = {
 		setWeather: vi.fn(),
 		setQuality: vi.fn(),
+		setLighting: vi.fn(),
 		setTour: vi.fn(),
 		setFirstPerson: vi.fn(),
 		moveFirstPerson: vi.fn(),
@@ -159,6 +161,7 @@ test('the capture time button returns the light to the moment the memory was rec
 	const scene = {
 		setWeather: vi.fn(),
 		setQuality: vi.fn(),
+		setLighting: vi.fn(),
 		setTour: vi.fn(),
 		setFirstPerson: vi.fn(),
 		moveFirstPerson: vi.fn(),
@@ -201,4 +204,29 @@ test('layers hidden earlier stay unchecked when the panel is mounted again', () 
 	mount(true, ['terrain', 'fluids'], ['fluids'])
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
 	expect(screen.getByRole('button', { name: 'Water and lava' }).getAttribute('aria-pressed')).toBe('false')
+})
+
+test('the lighting style switches live between realistic and faithful to the game, and is remembered', () => {
+	const scene = mount()
+	expect(scene.setLighting).toHaveBeenLastCalledWith('realistic')
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	const realistic = screen.getByRole('button', { name: 'Realistic' })
+	const faithful = screen.getByRole('button', { name: 'Faithful to the game' })
+	expect(realistic.getAttribute('aria-pressed')).toBe('true')
+	fireEvent.click(faithful)
+	expect(scene.setLighting).toHaveBeenLastCalledWith('faithful')
+	expect(faithful.getAttribute('aria-pressed')).toBe('true')
+	expect(localStorage.getItem('minemories-viewer-lighting')).toBe('faithful')
+	cleanup()
+	const next = mount()
+	expect(next.setLighting).toHaveBeenLastCalledWith('faithful')
+	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
+	fireEvent.click(screen.getByRole('button', { name: 'Realistic' }))
+	expect(next.setLighting).toHaveBeenLastCalledWith('realistic')
+	expect(localStorage.getItem('minemories-viewer-lighting')).toBe('realistic')
+})
+
+test('a loading viewer waits before applying the remembered lighting', () => {
+	const scene = mount(false)
+	expect(scene.setLighting).not.toHaveBeenCalled()
 })
