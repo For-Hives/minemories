@@ -602,7 +602,7 @@
 	"Sign in to vote": "투표하려면 로그인하세요",
 	"Sign out": "로그아웃",
 	"Sign-in methods": "로그인 방법",
-	"Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory taken with M → Take a memory, or while AFK, uploads to your gallery on its own.": "로그인은 세션 쿠키를 사용합니다. 업로드된 캡처와 해당 메타데이터는 내 계정에 속합니다. 갤러리는 기본적으로 비공개입니다. 아바타는 외부 서비스에서 로드될 수 있습니다. 게임을 연결하면 M → 추억 남기기로 남긴 추억도 AFK 추억도 갤러리에 자동으로 업로드됩니다.",
+	"Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory taken with M → Take a memory, or while AFK, uploads to your gallery on its own.": "로그인은 세션 쿠키를 사용합니다. 업로드된 캡처와 해당 메타데이터는 계정에 속합니다. 갤러리는 기본적으로 비공개입니다. 아바타는 외부 서비스에서 로드될 수 있습니다. 게임을 연결하면 M → 추억 남기기로 남긴 추억도 AFK 추억도 갤러리에 자동으로 업로드됩니다.",
 	"Skip to content": "콘텐츠로 건너뛰기",
 	"Sky colors follow the memory’s biome when available.": "하늘 색상은 가능한 경우 메모리의 생물 군계를 따릅니다.",
 	"Snapshot deleted forever.": "스냅샷이 완전히 삭제되었습니다.",
