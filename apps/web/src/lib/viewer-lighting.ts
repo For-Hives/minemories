@@ -33,16 +33,62 @@ function brighten(value: number): number {
 	return value + (1 - (1 - value) ** 4 - value) * GAME_BRIGHTNESS
 }
 
+/** The light map's last steps: the brightness option, then a 4 % pull towards 0.75. */
+function finishLightMap(value: number): number {
+	return brighten(Math.min(Math.max(value, 0), 1)) * 0.96 + 0.03
+}
+
 /**
- * Full sky light (level 15) for the viewer's daylight (0 at night, 1 at noon) as the game's light map computes it,
- * in sRGB: white by day, a dim moonlit blue at night (about 0.27, 0.27, 0.46), never black.
+ * Which sky lights a capture in the game's light map. `overworld` follows the hour; the Nether has no sky light
+ * and a constant ambient light of 0.1; the End forces its fixed bright light map; `underground` (the deep dark)
+ * gets no sky light at all, only block light over the light map's minimum.
  */
-export function faithfulSkyLight(daylight: number, stormy = false): Rgb {
-	const sun = Math.min(Math.max(daylight, 0), 1) * (stormy ? 1 - STORM_DARKENING : 1)
+export type FaithfulSky = 'overworld' | 'nether' | 'end' | 'underground'
+
+/** The Nether dimension's ambient light, which lifts every light level, and the game's average torch flicker. */
+const NETHER_AMBIENT = 0.1
+const BLOCK_FLICKER = 1.5
+/** The End's forced light map pulls every cell 25 % towards this colour. */
+const END_LIGHT_MAP: Rgb = [0.99, 1.12, 1]
+
+/**
+ * Sky light (or the dimension's ambient light where there is no sky) of a block-light-0 face, in sRGB, as the game's
+ * light map computes it. Overworld: full sky light (level 15) for the viewer's daylight (0 at night, 1 at noon),
+ * white by day, a dim moonlit blue at night (about 0.27, 0.27, 0.46), never black. Nether: a constant warm
+ * (0.35, 0.27, 0.22) from the dimension's ambient light. End: the forced, slightly green (0.47, 0.52, 0.48).
+ * Underground: the light map's minimum, 0.03. Writes into `out` so the frame loop allocates nothing.
+ */
+export function faithfulSkyLight(
+	daylight: number,
+	stormy = false,
+	sky: FaithfulSky = 'overworld',
+	out: Rgb = [0, 0, 0]
+): Rgb {
+	if (sky === 'end') {
+		out[0] = finishLightMap(END_LIGHT_MAP[0] * 0.25)
+		out[1] = finishLightMap(END_LIGHT_MAP[1] * 0.25)
+		out[2] = finishLightMap(END_LIGHT_MAP[2] * 0.25)
+		return out
+	}
+	if (sky === 'underground') {
+		out[0] = finishLightMap(0)
+		out[1] = out[0]
+		out[2] = out[0]
+		return out
+	}
+	// The Nether's fixed time is midnight, and its sky level 0 still gets the ambient light.
+	const nether = sky === 'nether'
+	const sun = nether ? 0 : Math.min(Math.max(daylight, 0), 1) * (stormy ? 1 - STORM_DARKENING : 1)
 	const darken = 0.2 + 0.8 * sun
-	const level = darken * 0.95 + 0.05
-	const tint: Rgb = [darken, darken, 1]
-	return tint.map(channel => brighten((channel + (1 - channel) * 0.35) * level) * 0.96 + 0.03) as Rgb
+	const level = (darken * 0.95 + 0.05) * (nether ? NETHER_AMBIENT : 1)
+	const grey = (darken + (1 - darken) * 0.35) * level
+	const blue = level
+	// Block light 0 only glows where the ambient light lifts it, with the game's warm block-light tint.
+	const block = nether ? NETHER_AMBIENT * BLOCK_FLICKER : 0
+	out[0] = finishLightMap(grey + block)
+	out[1] = finishLightMap(grey + block * ((block * 0.6 + 0.4) * 0.6 + 0.4))
+	out[2] = finishLightMap(blue + block * (block * block * 0.6 + 0.4))
+	return out
 }
 
 /** The renderer works in linear light; the game multiplies displayed (sRGB) colours. */
