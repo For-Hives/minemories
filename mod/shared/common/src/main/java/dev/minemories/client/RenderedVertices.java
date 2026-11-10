@@ -92,7 +92,11 @@ final class RenderedVertices {
     }
   }
 
+  /**
+   * Keeps the low byte, as Minecraft's own buffers do ({@code (byte) value}). Renderers such as
+   * Create's SuperByteBuffer pass signed bytes: opaque white arrives as {@code -1}, not 255.
+   */
   private static int channel(int value) {
-    return Math.max(0, Math.min(255, value));
+    return value & 255;
   }
 }
