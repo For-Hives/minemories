@@ -477,6 +477,14 @@ html.mm-scroll-lock--gutter {
 	}
 }
 
+/* From 700 px the bar keeps the language and the install button in sight: the panel does not repeat them. */
+@media (min-width: 700px) {
+	.mm-drawer .mm-drawer__lang,
+	.mm-drawer .mm-nav-cta--block {
+		display: none;
+	}
+}
+
 /* Under 700 px the language joins the panel. */
 @media (max-width: 699px) {
 	.mm-nav-end__lang {

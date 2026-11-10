@@ -43,12 +43,12 @@ export function useLayer(
 	}, [open])
 }
 
-/** The elements Tab can reach inside a container, in order (the hidden ones aside). */
+/** The elements Tab can reach inside a container, in order (the hidden ones aside, those a width's rules hide too). */
 export function focusables(container: HTMLElement | null): HTMLElement[] {
 	if (!container) return []
 	return [
 		...container.querySelectorAll<HTMLElement>(
 			'a[href], button:not([disabled]), input:not([disabled]), [tabindex="0"]'
 		),
-	].filter(element => !(element.closest('[hidden]') || element.closest('[inert]')))
+	].filter(element => !(element.closest('[hidden], [inert]') || element.checkVisibility?.() === false))
 }
