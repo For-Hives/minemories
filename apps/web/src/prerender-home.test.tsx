@@ -16,6 +16,11 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
 	expect(html).toContain('Rien ne part avant que tu connectes le jeu')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
+	// the pictures of the share and server-closing sections, in French, with their real frames
+	expect(html).toContain('Souvenir gardé et envoyé !')
+	expect(html).toContain('[Server] Le serveur ferme le 1er décembre.')
+	for (const image of ['/hero/illus/diorama.webp', '/hero/illus/postcard.webp', '/hero/illus/closing.webp'])
+		expect(html).toContain(image)
 	expect(html).toContain('Il faut un compte ?')
 	expect(html).toContain('href="/faq"')
 	for (const blocked of ['validé', 'en test', '→ 1.21', 'gratuit', 'open source', 'la plus utilisée'])

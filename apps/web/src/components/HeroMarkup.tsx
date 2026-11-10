@@ -4,6 +4,7 @@ import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
+import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
 import { HeroAccount, HeroFooterLinks, HeroLanguage, HeroNavLinks, HeroQuestions } from './HeroParts'
 
 /**
@@ -456,6 +457,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								'Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft.'
 							)}
 						</p>
+						<ShareIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/sharing">
@@ -471,6 +473,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<p className="mc-section__text" data-i18n="Take your base before the season ends.">
 							{t('Take your base before the season ends.')}
 						</p>
+						<ClosingIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">
