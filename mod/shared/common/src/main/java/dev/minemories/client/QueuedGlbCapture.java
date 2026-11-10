@@ -274,6 +274,7 @@ final class QueuedGlbCapture implements AutoCloseable {
             alpha,
             material.emission(),
             material.opacity(),
+            material.doubleSided(),
             positions,
             quad.uvs());
       }

@@ -76,6 +76,21 @@ class CaptureElementTest {
     assertThrows(IllegalStateException.class, tooLong::seal);
   }
 
+  @Test
+  void blockQuadsAreSingleSidedAndNeverShareAMaterialWithARendererQuad() throws Exception {
+    var capture = new CaptureElement();
+    add(capture);
+    capture.addRenderedQuad(
+        "key", "banner", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV, 0);
+    add(capture);
+    var quads = capture.seal().quads();
+    assertFalse(quads.get(0).material().doubleSided());
+    assertTrue(quads.get(1).material().doubleSided());
+    assertEquals("banner", quads.get(1).material().name());
+    assertSame(quads.get(0).material(), quads.get(2).material());
+    assertEquals(2, capture.materialCount());
+  }
+
   private static void add(CaptureElement capture) throws IOException {
     capture.addQuad("key", "name", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
   }

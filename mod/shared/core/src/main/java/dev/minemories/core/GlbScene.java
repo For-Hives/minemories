@@ -68,7 +68,7 @@ public final class GlbScene {
         uv);
   }
 
-  /** Chunk coordinates are relative to the chunk holding the capture origin, or NONE. */
+  /** A double-sided quad: see the overload taking {@code doubleSided}. */
   public void addQuad(
       GlbCategory category,
       int chunkX,
@@ -81,6 +81,44 @@ public final class GlbScene {
       int alphaMode,
       float emission,
       float opacity,
+      float[] xyz,
+      float[] uv) {
+    addQuad(
+        category,
+        chunkX,
+        chunkZ,
+        key,
+        materialName,
+        imageKey,
+        png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        true,
+        xyz,
+        uv);
+  }
+
+  /**
+   * Chunk coordinates are relative to the chunk holding the capture origin, or NONE. A single-sided
+   * quad is only visible from the side its counter-clockwise winding faces, as Minecraft draws
+   * chunk geometry with back-face culling; the flag is part of the material, so a culled and a
+   * double-sided use of the same key never share one.
+   */
+  public void addQuad(
+      GlbCategory category,
+      int chunkX,
+      int chunkZ,
+      String key,
+      String materialName,
+      String imageKey,
+      byte[] png,
+      int tint,
+      int alphaMode,
+      float emission,
+      float opacity,
+      boolean doubleSided,
       float[] xyz,
       float[] uv) {
     if (xyz.length != 12 || uv.length != 8)
@@ -97,11 +135,12 @@ public final class GlbScene {
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
     Part part =
         parts.computeIfAbsent(
-            category.ordinal() + ":" + key,
+            category.ordinal() + (doubleSided ? ":2:" : ":1:") + key,
             ignored ->
                 new Part(
                     parts.size(),
                     category,
+                    doubleSided,
                     new ChunkRuns(runBudget),
                     materialName,
                     imageKey,
@@ -315,7 +354,8 @@ public final class GlbScene {
               + part.opacity
               + "],\"baseColorTexture\":{\"index\":"
               + texture
-              + "},\"metallicFactor\":0,\"roughnessFactor\":1},\"doubleSided\":true"
+              + "},\"metallicFactor\":0,\"roughnessFactor\":1}"
+              + (part.doubleSided ? DOUBLE_SIDED : "")
               + alpha
               + emissive
               + "}");
@@ -528,9 +568,13 @@ public final class GlbScene {
         + "]";
   }
 
+  /** glTF materials are single-sided (back-face culled) unless they carry this property. */
+  static final String DOUBLE_SIDED = ",\"doubleSided\":true";
+
   private static final class Part {
     final int id;
     final GlbCategory category;
+    final boolean doubleSided;
     final ChunkRuns runs;
     final String name, imageKey;
     final byte[] png;
@@ -552,6 +596,7 @@ public final class GlbScene {
     Part(
         int id,
         GlbCategory category,
+        boolean doubleSided,
         ChunkRuns runs,
         String name,
         String imageKey,
@@ -562,6 +607,7 @@ public final class GlbScene {
         float opacity) {
       this.id = id;
       this.category = category;
+      this.doubleSided = doubleSided;
       this.runs = runs;
       this.name = name;
       this.imageKey = imageKey;

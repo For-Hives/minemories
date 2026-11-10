@@ -2,6 +2,7 @@ package dev.minemories.client;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.minemories.core.GlbCategory;
 import dev.minemories.core.GlbScene;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -91,6 +92,60 @@ class QueuedGlbCaptureTest {
     }
     try (var files = Files.list(directory.resolve(".minemories-work"))) {
       assertEquals(0, files.count());
+    }
+  }
+
+  @Test
+  void blockQuadsReachTheWorkerAsSingleSidedMaterials() throws Exception {
+    int[] rgba = {0xff0000ff, 0xff00ff00, 0xffff0000, 0xff00ffff};
+    byte[] png = RenderedTexture.fromRgba(2, 2, rgba).png();
+    var element = new CaptureElement();
+    element.addQuad("key", "stone", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV);
+    element.addRenderedQuad(
+        "key", "chest", "image", new byte[0], 0xffffff, 0, 0, 1, POSITIONS, UV, 0);
+    var snapshot = element.seal();
+    try (var worker = new QueuedGlbCapture(directory)) {
+      awaitOffer(() -> call(() -> worker.offerTexture("image", 2, 2)));
+      awaitOffer(() -> call(() -> worker.offerRows("image", 0, rgba)));
+      awaitOffer(() -> call(() -> worker.offerTextureEnd("image")));
+      awaitOffer(() -> call(() -> worker.offerGeometry(snapshot.quads(), snapshot.lights())));
+      awaitOffer(() -> call(() -> worker.finish(TIME, "{\"capturedAt\":\"" + TIME + "\"}")));
+      var result = worker.completion().toCompletableFuture().get(10, TimeUnit.SECONDS);
+      assertEquals(2, result.materials());
+      var reference = new GlbScene();
+      reference.addQuad(
+          GlbCategory.TERRAIN,
+          GlbScene.NO_CHUNK,
+          GlbScene.NO_CHUNK,
+          "key",
+          "stone",
+          "image",
+          png,
+          0xffffff,
+          0,
+          0,
+          1,
+          false,
+          POSITIONS,
+          UV);
+      reference.addQuad(
+          GlbCategory.TERRAIN,
+          GlbScene.NO_CHUNK,
+          GlbScene.NO_CHUNK,
+          "key",
+          "chest",
+          "image",
+          png,
+          0xffffff,
+          0,
+          0,
+          1,
+          true,
+          POSITIONS,
+          UV);
+      Path old = directory.resolve("sided-reference.glb");
+      reference.write(old);
+      assertArrayEquals(Files.readAllBytes(old), Files.readAllBytes(result.file()));
     }
   }
 

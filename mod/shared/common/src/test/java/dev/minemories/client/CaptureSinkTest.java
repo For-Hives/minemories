@@ -58,6 +58,8 @@ class CaptureSinkTest {
     sink.write(output);
     String json = new String(Files.readAllBytes(output), java.nio.charset.StandardCharsets.UTF_8);
     assertTrue(json.contains("{\"name\":\"fluids\",\"translation\":"));
+    // Block and fluid quads are back-face culled, as Minecraft draws chunk geometry.
+    assertFalse(json.contains("doubleSided"));
     assertTrue(json.contains("\"minemoriesChunks\":[-1,2,0,2]"));
     assertTrue(json.contains("\"loader\":\"neoforge-21.1.248\""));
     assertEquals(-1, CaptureSink.relativeChunk(15, 16));
