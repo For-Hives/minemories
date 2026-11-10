@@ -906,6 +906,28 @@
 	line-height: var(--ds-hit);
 }
 
+/* A command that wraps on a phone keeps readable lines instead of two 44 px rows. */
+.ex-commands .ex-command code {
+	padding-block: calc((var(--ds-hit) - var(--ds-lh-xs)) / 2);
+	line-height: var(--ds-lh-xs);
+}
+
+@media (max-width: 720px) {
+	/* On a phone, each command sits on its own line, with its explanation under it. */
+	.ex-commands .ex-command {
+		display: flex;
+		width: fit-content;
+	}
+
+	.ex-commands li {
+		line-height: var(--ds-rd-lh);
+	}
+}
+
+.ex-admin h3 {
+	margin-top: var(--ds-sp-5);
+}
+
 .ex-links {
 	display: flex;
 	flex-wrap: wrap;

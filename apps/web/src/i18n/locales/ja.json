@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Minemories を入れて、建築の真ん中に立ちます。チャットで：",
 	"{command} takes 128 blocks around you.": "{command} で、周囲 128 ブロックを書き出します。",
 	"{command} takes less: a radius from 2 to 128.": "{command} で範囲を狭められます（半径 2〜128）。",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "範囲を決めるなら、角のブロックを見て {first}、反対の角を見て {second}。最後に {export}。",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "範囲を決めるなら、角のブロックを見て、反対の角を見てから書き出そう。",
 	"2. Find the file": "2. ファイルを探す",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "ホームフォルダーの export フォルダーに保存されます。capture.glb が最新で、日付ごとの思い出はすべて history にあります。",
 	"No account needed.": "アカウントは不要です。",

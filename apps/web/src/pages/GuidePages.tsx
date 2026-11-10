@@ -98,7 +98,7 @@ export function ServerClosingPage() {
 					{t('Take your base while you still play there.')}
 				</p>
 			</section>
-			<section id="admin" aria-labelledby="admin-title">
+			<section id="admin" className="ex-admin" aria-labelledby="admin-title">
 				<h2 id="admin-title">{t('Are you the admin?')}</h2>
 				<ul>
 					<li>
@@ -152,12 +152,12 @@ export function SafetyPage() {
 			<section id="verifier" aria-labelledby="verifier-title">
 				<h2 id="verifier-title">{t('Download from the right place')}</h2>
 				<p>
-					{t('Only from this site or our CurseForge page.')} <Link to="/downloads">{t('Downloads')} →</Link>
+					{t('Only from this site or our CurseForge page.')} <Link to="/downloads">{`${t('Downloads')}\u00a0→`}</Link>
 					{curseForge && (
 						<>
 							{' '}
 							<a href={curseForge.url} rel="noopener">
-								CurseForge →
+								CurseForge&nbsp;→
 							</a>
 						</>
 					)}
@@ -232,6 +232,13 @@ export function SafetyPage() {
 	)
 }
 
+/** A selection export: the block looked at becomes each corner (ClientRuntime.selectCorner). */
+const selectionCommands = [
+	'/minemories select first',
+	'/minemories select second',
+	'/minemories export selection',
+] as const
+
 /** /guides/minecraft-blender: export an area from the game with the chat command, then import the GLB into Blender. */
 export function BlenderGuidePage() {
 	const { t } = useI18n()
@@ -257,19 +264,15 @@ export function BlenderGuidePage() {
 								slots={{ command: <Command text="/minemories export 48" /> }}
 							/>
 						</li>
-						<li>
-							<Rich
-								message={
-									'For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.'
-								}
-								slots={{
-									first: <Command text="/minemories select first" />,
-									second: <Command text="/minemories select second" />,
-									export: <Command text="/minemories export selection" />,
-								}}
-							/>
-						</li>
 					</ul>
+					<p>{t('For a precise area: look at one corner, then the opposite corner, then export.')}</p>
+					<ol className="ex-commands">
+						{selectionCommands.map(command => (
+							<li key={command}>
+								<Command text={command} />
+							</li>
+						))}
+					</ol>
 				</li>
 				<li>
 					<h2>{t('2. Find the file')}</h2>

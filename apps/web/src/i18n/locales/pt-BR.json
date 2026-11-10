@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Instale o Minemories e fique no meio da sua construção. No chat:",
 	"{command} takes 128 blocks around you.": "{command} pega 128 blocos ao seu redor.",
 	"{command} takes less: a radius from 2 to 128.": "{command} pega menos: um raio de 2 a 128.",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "Para uma área exata, olhe para um canto: {first}, depois para o canto oposto: {second}. Depois {export}.",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "Para uma área exata: olhe para um canto, depois para o canto oposto, depois exporte.",
 	"2. Find the file": "2. Encontre o arquivo",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "Ele vai para a pasta export da sua pasta pessoal: capture.glb é o mais recente, e cada memória datada fica em history.",
 	"No account needed.": "Não precisa de conta.",

@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Установи Minemories и встань в центр постройки. В чате:",
 	"{command} takes 128 blocks around you.": "{command} берёт 128 блоков вокруг тебя.",
 	"{command} takes less: a radius from 2 to 128.": "{command} берёт меньше: радиус от 2 до 128.",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "Для точной области посмотри на один угол: {first}, потом на противоположный: {second}. Затем {export}.",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "Для точной области: посмотри на один угол, потом на противоположный, потом экспортируй.",
 	"2. Find the file": "2. Найди файл",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "Он попадает в папку export в твоей домашней папке: capture.glb — последний, а каждое воспоминание с датой лежит в history.",
 	"No account needed.": "Аккаунт не нужен.",

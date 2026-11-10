@@ -95,8 +95,10 @@ test('/safety: the parents box, the checksum fold under #verifier, what goes onl
 	expect(within(parents).getAllByRole('listitem')).toHaveLength(5)
 	expect(parents.textContent).toContain('M → Souvenirs auto, M → Réglages → Confidentialité')
 	const verify = document.getElementById('verifier') as HTMLElement
-	expect(within(verify).getByRole('link', { name: 'CurseForge →' }).getAttribute('href')).toContain('curseforge.com')
-	expect(within(verify).getByRole('link', { name: 'Téléchargements →' }).getAttribute('href')).toBe('/downloads')
+	expect(within(verify).getByRole('link', { name: 'CurseForge\u00a0→' }).getAttribute('href')).toContain(
+		'curseforge.com'
+	)
+	expect(within(verify).getByRole('link', { name: 'Téléchargements\u00a0→' }).getAttribute('href')).toBe('/downloads')
 	expect(verify.querySelector('details summary')?.textContent).toBe('Vérifier l’empreinte (avancé)')
 	for (const command of [
 		'certutil -hashfile minemories.jar SHA256',

@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Minemories를 설치하고 건축물 한가운데에 서세요. 채팅에서:",
 	"{command} takes 128 blocks around you.": "{command}: 주변 128블록을 가져옵니다.",
 	"{command} takes less: a radius from 2 to 128.": "{command}: 더 작게, 반경 2~128.",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "정확한 구역을 원하면 한 모서리를 보고 {first}, 반대쪽 모서리를 보고 {second}. 그다음 {export}.",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "정확한 구역을 원하면 한 모서리를 보고, 반대쪽 모서리를 본 다음 내보내.",
 	"2. Find the file": "2. 파일 찾기",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "홈 폴더의 export 폴더에 저장돼요. capture.glb가 가장 최근 것이고, 날짜별 추억은 모두 history에 있습니다.",
 	"No account needed.": "계정은 필요 없어요.",

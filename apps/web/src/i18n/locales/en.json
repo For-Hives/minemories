@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Install Minemories and stand in the middle of your build. In the chat:",
 	"{command} takes 128 blocks around you.": "{command} takes 128 blocks around you.",
 	"{command} takes less: a radius from 2 to 128.": "{command} takes less: a radius from 2 to 128.",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "For a precise area: look at one corner, then the opposite corner, then export.",
 	"2. Find the file": "2. Find the file",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.",
 	"No account needed.": "No account needed.",

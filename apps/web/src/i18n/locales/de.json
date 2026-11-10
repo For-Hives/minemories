@@ -1509,7 +1509,7 @@
 	"Install Minemories and stand in the middle of your build. In the chat:": "Installiere Minemories und stell dich in die Mitte deines Baus. Im Chat:",
 	"{command} takes 128 blocks around you.": "{command} nimmt 128 Blöcke um dich herum.",
 	"{command} takes less: a radius from 2 to 128.": "{command} nimmt weniger: einen Radius von 2 bis 128.",
-	"For a precise area, look at one corner: {first}, then the opposite one: {second}. Then {export}.": "Für einen genauen Bereich schau auf eine Ecke: {first}, dann auf die gegenüberliegende: {second}. Danach {export}.",
+	"For a precise area: look at one corner, then the opposite corner, then export.": "Für einen genauen Bereich: schau auf eine Ecke, dann auf die gegenüberliegende, dann exportiere.",
 	"2. Find the file": "2. Die Datei finden",
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "Sie landet im Ordner export in deinem Benutzerordner: capture.glb ist die neueste, und jede datierte Erinnerung liegt in history.",
 	"No account needed.": "Kein Konto nötig.",
