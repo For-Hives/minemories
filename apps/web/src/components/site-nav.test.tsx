@@ -66,7 +66,7 @@ function mount(path = '/installation', landing = false) {
 		<I18nProvider initialLocale="en">
 			<MemoryRouter initialEntries={[path]}>
 				<header>
-					<a className="mm-brand" href="/">
+					<a className="mc-sitebar__brand" href="/">
 						Minemories
 					</a>
 					<SiteNav landing={landing} extra={<span>extra</span>} />
@@ -457,6 +457,29 @@ test('signing out goes home, the brand taking the focus', async () => {
 	fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
 	await waitFor(() => expect(document.activeElement?.textContent).toBe('Minemories'))
+})
+
+test('after signing out, the focus waits for the home page’s brand to be drawn', async () => {
+	mocks.context.session = { user: { id: 'u7', name: 'Eli', image: null } }
+	mocks.signOut.mockResolvedValue({})
+	const view = render(
+		<I18nProvider initialLocale="en">
+			<MemoryRouter initialEntries={['/faq']}>
+				<header>
+					<SiteNav />
+				</header>
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'Eli — My account' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
+	await new Promise(resolve => setTimeout(resolve, 50))
+	const brand = document.createElement('a')
+	brand.href = '/'
+	brand.className = 'mc-sitebar__brand'
+	view.container.append(brand)
+	await waitFor(() => expect(document.activeElement).toBe(brand))
 })
 
 test('the open panel makes the rest of the page inert, gives back only what it changed, and Tab leaves the language list for the ring', () => {

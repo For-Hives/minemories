@@ -228,9 +228,18 @@ function useSignOut() {
 		await authClient.signOut()
 		await refreshSession()
 		navigate('/')
-		// The home page's brand takes the focus (the account's menu that held it is gone).
-		requestAnimationFrame(() => document.querySelector<HTMLElement>('.mc-sitebar__brand, .mm-brand')?.focus())
+		// The home page's brand takes the focus (the account's menu that held it is gone), once the home page is drawn.
+		focusBrandSoon()
 	}
+}
+
+/** Focuses the home page's brand (the landing's) as soon as it is drawn: its chunk may still be arriving (two seconds at most). */
+function focusBrandSoon(frames = 120) {
+	requestAnimationFrame(() => {
+		const brand = document.querySelector<HTMLElement>('.mc-sitebar__brand')
+		if (brand) brand.focus()
+		else if (frames > 1) focusBrandSoon(frames - 1)
+	})
 }
 
 /**
