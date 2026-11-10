@@ -7,6 +7,7 @@ import { I18nProvider } from '../i18n/I18n'
 import { LegalPage } from './ContentPages'
 import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
+import { SharingPage } from './SharingPage'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
@@ -80,7 +81,7 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'In Minecraft: M → type the code → Connect.',
 		'Yes: M → Auto memories.',
 		'M → Settings → Privacy',
-		'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.',
+		'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.',
 	])
 		expect(howTo).toContain(label)
 	// The 32-block default radius, drawn: 65 × 65 blocks.
@@ -184,11 +185,13 @@ test('privacy page explains mod diagnostics and download requests and keeps the 
 		mountEnglish(<LegalPage kind="privacy" />)
 		expect(screen.getByRole('heading', { name: 'Diagnostics in the Minecraft mod' })).toBeTruthy()
 		const text = document.body.textContent ?? ''
-		expect(text).toContain('nothing is ever sent before you pair the game')
+		expect(text).toContain('nothing is ever sent before you connect the game')
+		expect(text).toContain('Nobody sees them without a link you create.')
+		expect(text).not.toMatch(/tutorial|estimates|changelog|Revocation/)
 		expect(text).toContain('at most eight pending reports, for at most seven days')
 		expect(text).toContain('M → Settings → Privacy → Diagnostics')
 		expect(screen.getByRole('heading', { name: 'Mod download list' })).toBeTruthy()
-		expect(text).toContain('which receives your IP address like any request to the service')
+		expect(text).toContain('the API receives your IP address like any request to the service')
 		expect(screen.getByRole('checkbox', { name: 'Allow public-page diagnostics' })).toBeTruthy()
 	} finally {
 		vi.unstubAllEnvs()
@@ -207,8 +210,11 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(screen.getByRole('heading', { name: 'Liste des téléchargements du mod' })).toBeTruthy()
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('rien n’est jamais envoyé avant que tu connectes le jeu')
-	expect(text).toContain('chaque souvenir, à la main ou AFK, est envoyé tout seul dans ta galerie')
-	expect(text).toContain('qui reçoit ton adresse IP comme pour toute requête au service')
+	expect(text).toContain('chaque souvenir pris avec M → Prendre un souvenir, ou en AFK, part tout seul dans ta galerie')
+	expect(text).toContain('Arrêter le partage bloque les nouvelles visites')
+	expect(text).toContain('Rien ne part sur Internet tant que le jeu n’est pas connecté à un compte.')
+	expect(text).toContain('l’API reçoit ton adresse IP comme pour toute requête au service')
+	expect(text).not.toMatch(/tutoriel|prénom|estimations|nouveautés|révocation/i)
 	// The diagram names the game's own code label, not the internal word for pairing.
 	expect(text).toContain('Code à 6 chiffres')
 	expect(text).not.toContain('Appairage')
@@ -228,4 +234,21 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('Le code source est public sur GitHub ; le mod se télécharge sur la page Téléchargements.')
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
+})
+
+test('/sharing says what a link shows, answers three questions and ends on the install button', () => {
+	renderUi(
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter>
+				<SharingPage />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	const text = document.body.textContent ?? ''
+	expect(text).toContain('Un lien pour un souvenir, ou pour tout un monde avec son curseur dans le temps.')
+	expect(text).toContain('Télécharge la carte postale HD')
+	expect(text).toContain('la dimension, le biome, le nom du monde')
+	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
+	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(text).not.toMatch(/démonstration|illustrations|Voir la démo/)
 })

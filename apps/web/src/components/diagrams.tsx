@@ -74,7 +74,7 @@ export type ShareState = 'private' | 'link' | 'revoked'
 const shareCaption: Record<ShareState, string> = {
 	private: 'Only you can see it.',
 	link: 'Anyone with the link can see it.',
-	revoked: 'Link revoked. Copies already saved stay.',
+	revoked: 'Sharing stopped. Copies already saved stay.',
 }
 
 /** A gallery card and three visitors: creating the link lights them up, revoking it closes the door. */

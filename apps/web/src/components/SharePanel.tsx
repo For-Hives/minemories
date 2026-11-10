@@ -210,7 +210,7 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 			{/* Interim warning until /api/shared stops returning the capture's location and world identity (decision D1). */}
 			<p className="memory-share-warning">
 				{t(
-					'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
+					'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
 				)}
 			</p>
 			{hasWorld && (

@@ -58,6 +58,11 @@ function PrivacyPanels({ sections }: { sections: Array<{ heading: string; body: 
 	const { locale, t } = useI18n()
 	return (
 		<>
+			<ul className="ex-parents">
+				<li>{t('Nothing goes online until the game is connected to an account.')}</li>
+				<li>{t('Once connected, the memories go to a private gallery.')}</li>
+				<li>{t('Nobody sees them without a link you create.')}</li>
+			</ul>
 			<DataFlow nodes={privacyNodes} edges={privacyEdges} />
 			<div className="ex-rows">
 				{sections.map(section => {

@@ -208,7 +208,7 @@ export const questions = {
 		question: 'What does someone with my link see?',
 		answer: [
 			'The 3D scene, its name and its date.',
-			'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.',
+			'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.',
 		],
 	},
 	'arreter-le-partage': {
@@ -332,6 +332,7 @@ export const pageQuestions = {
 	downloads: ['bedrock', 'versions'],
 	serverClosing: ['tout-le-monde', 'vieux-monde', 'droit'],
 	blender: ['mods', 'sur-un-serveur'],
+	sharing: ['regarder-un-lien', 'arreter-le-partage', 'galerie-publique'],
 } satisfies Record<string, QuestionId[]>
 
 /** One question, its answer as one paragraph, in the given translation. */

@@ -4,7 +4,7 @@ export const legalContent = {
 		sections: [
 			{
 				heading: 'Preferences on this device',
-				body: 'The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference, demo favorites/votes and estimates you choose to save are also stored on this device. Reset demo clears its favorites and votes; clear other preferences in your browser’s site data.',
+				body: 'Your browser keeps your language, the version and loader picked in the installation guide, the demo’s favorites and votes, some names you give in your gallery, and text you typed but did not save. Clear them in your browser’s site data.',
 			},
 			{
 				heading: 'Optional web diagnostics',
@@ -12,19 +12,19 @@ export const legalContent = {
 			},
 			{
 				heading: 'Diagnostics in the Minecraft mod',
-				body: "Technical diagnostics in the mod are on by default, but nothing is ever sent before you pair the game with your account. An explicit refusal is kept, even after pairing, disconnecting or changing API. Reports are sanitized: versions, the failed step and a short technical trace, without raw messages, full crash logs, URLs, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight pending reports, for at most seven days. Turning diagnostics off or changing account or API purges this queue; turning them off also asks the server to delete this device's reports, and if it cannot be reached, its retention applies. Turn them off in M → Settings → Privacy → Diagnostics.",
+				body: "Technical diagnostics in the mod are on by default, but nothing is ever sent before you connect the game to your account. An explicit refusal is kept, even after connecting, disconnecting or changing API. Reports are sanitized: versions, the failed step and a short technical trace, without raw messages, full crash logs, URLs, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight pending reports, for at most seven days. Turning diagnostics off or changing account or API purges this queue; turning them off also asks the server to delete this device's reports, and if it cannot be reached, its retention applies. Turn them off in M → Settings → Privacy → Diagnostics.",
 			},
 			{
 				heading: 'Account and gallery',
-				body: 'Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory, by hand or AFK, uploads to your gallery on its own.',
+				body: 'Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory taken with M → Take a memory, or while AFK, uploads to your gallery on its own.',
 			},
 			{
 				heading: 'Links and deletion',
-				body: 'A shared link can be forwarded and gives access without an account. Revocation stops future access, not copies already made. Trash retains captures for 30 days; permanent deletion frees space once processed.',
+				body: 'A shared link can be forwarded and gives access without an account. Stop sharing blocks new visits, not copies already made. Trash keeps captures for 30 days; Delete forever frees the space once processed.',
 			},
 			{
 				heading: 'Mod download list',
-				body: 'The installation, mod versions and changelog pages load the list of available mod files from the Minemories API, directly from your browser, which receives your IP address like any request to the service. JAR downloads also come from the Minemories API, without an account or cookie.',
+				body: 'The downloads and versions pages load the list of mod files from the Minemories API, directly from your browser; the API receives your IP address like any request to the service. JAR downloads also come from the Minemories API, without an account or cookie.',
 			},
 		],
 	},

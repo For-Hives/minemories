@@ -53,13 +53,13 @@ test('the sharing demo walks from private to a link to a revoked link', () => {
 	expect(screen.getByText('Anyone with the link can see it.')).toBeTruthy()
 	expect(create.hasAttribute('disabled')).toBe(true)
 	fireEvent.click(revoke)
-	expect(screen.getByText('Link revoked. Copies already saved stay.')).toBeTruthy()
+	expect(screen.getByText('Sharing stopped. Copies already saved stay.')).toBeTruthy()
 })
 
 test('the sharing page carries the demo', () => {
 	english(<SharingPage />, '/sharing')
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'My private gallery' })).toBeTruthy()
+	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
 	// The public gallery is live: no note may still announce it as coming.
 	expect(document.body.textContent).not.toContain('in preparation')
 })

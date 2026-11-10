@@ -29,7 +29,7 @@ test('opening sharing does not publish; an explicit action creates the link and 
 	// Before any link exists, the panel says what it exposes beyond the 3D scene.
 	expect(
 		screen.getByText(
-			'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
+			'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
 		)
 	).toBeTruthy()
 	fireEvent.click(create)
@@ -99,7 +99,7 @@ test('the French panel warns about coordinates, world name, seed and server befo
 	await screen.findByRole('button', { name: 'Créer un lien' })
 	expect(
 		screen.getByText(
-			'Le lien montre aussi les coordonnées, le nom du monde, la graine (en solo) ou le nom ou l’adresse du serveur.'
+			'Le lien montre aussi les coordonnées, la dimension, le biome, le nom du monde, la graine (en solo) ou le nom ou l’adresse du serveur.'
 		)
 	).toBeTruthy()
 })

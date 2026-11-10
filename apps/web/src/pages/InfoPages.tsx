@@ -183,7 +183,7 @@ export function HowItWorksPage() {
 					<ShareDemo />
 					<p className="ex-line">
 						{t(
-							'The link also shows the coordinates, the world name, the seed (in single player) or the server name or address.'
+							'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
 						)}
 					</p>
 				</li>
