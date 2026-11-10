@@ -25,7 +25,7 @@ const blocked = /gratuit|open source|la plus utilisée|validé|1\.18\.2 → |\bv
 
 test('/server-closing: three options, the Aternos and admin anchors, three questions and an install link with its source', () => {
 	mount(<ServerClosingPage />, 'fr', '/server-closing')
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton serveur va fermer. Ta base peut rester.')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton serveur ferme. Ta base, elle, peut rester.')
 	for (const option of [
 		'Demander le monde à l’admin',
 		'Faire une copie jouable',

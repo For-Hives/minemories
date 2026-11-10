@@ -154,7 +154,7 @@ function LoaderNotes({ choice }: { choice: Choice }) {
 			{target?.fabricApi && (
 				<p>
 					<Rich
-						message={'Also add {fabricApi}, otherwise the game does not start.'}
+						message={'Also add {fabricApi}, otherwise the game won’t start.'}
 						slots={{ fabricApi: <a href={fabricApiUrl(target)}>Fabric API</a> }}
 					/>
 				</p>
@@ -266,7 +266,7 @@ function InstallBlock({ target }: { target: LoaderTarget | null }) {
 					<T message={'Where is the mods folder?'} />
 				</summary>
 				<p>
-					<T message={'Open the mods folder. With the official Minecraft Launcher, it is here by default:'} />
+					<T message={'Open the mods folder. With the official Minecraft Launcher, it’s here by default:'} />
 				</p>
 				<ul className="install-paths">
 					{modsFolders.map(([system, path]) => (
@@ -277,7 +277,7 @@ function InstallBlock({ target }: { target: LoaderTarget | null }) {
 				</ul>
 			</details>
 			<p>
-				<T message={'In a world, press M: the Minemories menu opens. It is also in Options (the Minemories icon).'} />
+				<T message={'In a world, press M: the Minemories menu opens. It’s also in Options (the Minemories icon).'} />
 			</p>
 			<GameScreenshot id="minemoriesMenu" />
 		</section>
@@ -374,7 +374,7 @@ export function InstallationPage() {
 					<T message={'Install Minemories'} />
 				</h1>
 				<p className="install-lead">
-					<T message={'Minecraft Java on a computer · about 10 minutes · your worlds are not changed.'} />
+					<T message={'Minecraft Java on a computer · about 10 minutes · your worlds stay untouched.'} />
 				</p>
 			</header>
 			<CurseForgeWay />

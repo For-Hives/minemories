@@ -78,7 +78,7 @@ test('public catalogue uses server filters, sorting and pages; demo remains an e
 	await screen.findByRole('heading', { name: 'Village public' })
 	expect(discovery.list).toHaveBeenCalledTimes(1)
 	expect(discovery.list.mock.calls[0]?.[0]).toMatchObject({ sort: 'recent', page: 0 })
-	expect(screen.getByRole('link', { name: 'Essayer la démonstration' }).getAttribute('href')).toBe('/explore?demo=1')
+	expect(screen.getByRole('link', { name: 'Essayer la démo' }).getAttribute('href')).toBe('/explore?demo=1')
 	expect(screen.queryByRole('button', { name: 'Soumettre à la modération' })).toBeNull()
 	fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Village' } })
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ query: 'Village' }))

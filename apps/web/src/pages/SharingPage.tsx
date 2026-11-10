@@ -11,7 +11,7 @@ export function SharingPage() {
 	return (
 		<InfoPage title="Show people around your base, even those who don’t play">
 			<ShareDemo />
-			<p>{t('A link for one memory, or for a whole world with its slider through time.')}</p>
+			<p>{t('A link to one memory, or to a whole world with its timeline slider.')}</p>
 			<p>{t('Prefer a picture? Download the HD postcard and post it on Discord.')}</p>
 			<h2>{t('What someone with a link sees')}</h2>
 			<p>

@@ -107,7 +107,7 @@ export function ConceptPage() {
 					'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.'
 				)}
 			</p>
-			<h2>{t('What it is not')}</h2>
+			<h2>{t('What it isn’t')}</h2>
 			<ul className="ex-not">
 				{notThis.map(([glyph, label]) => (
 					<li key={label}>
@@ -140,7 +140,7 @@ export function HowItWorksPage() {
 					<p>
 						{t('Press M → Take a memory.')}{' '}
 						{t(
-							'Or leave the game for 5 minutes, even paused: the mod keeps one on its own (at most one every 4 hours).'
+							'Or go AFK for 5 minutes, even on the pause screen: the mod takes one by itself (one every 4 hours at most).'
 						)}{' '}
 						{t('About 32 blocks around you, adjusted to what you built.')}
 					</p>

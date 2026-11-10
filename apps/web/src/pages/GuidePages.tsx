@@ -70,10 +70,10 @@ export function ServerClosingPage() {
 	return (
 		<InfoPage title="Your server is closing. Your base can stay.">
 			<p className="ex-lead">
-				{t('If you take it before.')} {t('10 minutes to install, one key in your base.')}{' '}
+				{t('As long as you save it first.')} {t('10 minutes to install, one key in your base.')}{' '}
 				{t('Not an admin? You still can.')}
 			</p>
-			<h2>{t('Three honest options')}</h2>
+			<h2>{t('Your three options')}</h2>
 			<ol className="ex-steps">
 				<li>
 					<h3>{t('Ask the admin for the world')}</h3>
@@ -95,7 +95,7 @@ export function ServerClosingPage() {
 				<h2 id="aternos-title">{t('A server on Aternos?')}</h2>
 				<p>
 					{t('Aternos deletes a server nobody has started for several months.')}{' '}
-					{t('Take your base while you still play there.')}
+					{t('Save your base while you still play there.')}
 				</p>
 			</section>
 			<section id="admin" className="ex-admin" aria-labelledby="admin-title">
@@ -135,7 +135,7 @@ export function SafetyPage() {
 			<section className="ex-parents" aria-labelledby="parents-title">
 				<h2 id="parents-title">{t('For parents, in 5 lines')}</h2>
 				<ul>
-					<li>{t('It is a .jar file for Minecraft Java, never a .exe.')}</li>
+					<li>{t('It’s a .jar file for Minecraft Java, never a .exe.')}</li>
 					<li>{t('Nothing goes online until the game is connected to an account.')}</li>
 					<li>{t('Once connected, the memories go to a private gallery.')}</li>
 					<li>

@@ -36,7 +36,7 @@ function mountGuide() {
 test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
 	mountGuide()
 	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories ?' }))
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
 	expect(screen.queryByRole('tab')).toBeNull()
@@ -245,7 +245,7 @@ test('/sharing says what a link shows, answers three questions and ends on the i
 		</I18nProvider>
 	)
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('Un lien pour un souvenir, ou pour tout un monde avec son curseur dans le temps.')
+	expect(text).toContain('Un lien vers un souvenir, ou vers tout un monde avec son curseur pour remonter le temps.')
 	expect(text).toContain('Télécharge la carte postale HD')
 	expect(text).toContain('la dimension, le biome, le nom du monde')
 	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)

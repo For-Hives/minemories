@@ -133,7 +133,7 @@ export function RoadmapPage() {
 			eyebrow={t('MINEMORIES · ROADMAP')}
 			title={t('Roadmap')}
 			lead={t(
-				'What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.'
+				'What we’re building right now, what’s next and what shipped in the last 30 days, straight from the project’s GitHub issues.'
 			)}
 		>
 			<p className="mm-roadmap-note">{t('The same board is posted on the Minemories Discord.')}</p>

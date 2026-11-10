@@ -122,7 +122,7 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	const old = screen.getByRole('rowheader', { name: /1\.18\.2/ }).closest('tr') as HTMLElement
 	expect(within(old).getAllByText('Non disponible pour cette version')).toHaveLength(2)
 	expect(screen.getByText(/Installe Fabric API à part/).textContent).toContain('Quilt 0.30.1')
-	expect(screen.getByRole('link', { name: 'Ce qui change dans Minemories' }).getAttribute('href')).toBe('/versions')
+	expect(screen.getByRole('link', { name: 'Les nouveautés de Minemories' }).getAttribute('href')).toBe('/versions')
 	expect(screen.getByRole('link', { name: 'Pas sûr ? Le guide te pose deux questions.' }).getAttribute('href')).toBe(
 		'/installation'
 	)

@@ -135,7 +135,7 @@ export function DownloadsPage() {
 					<T message={'Not sure? The guide asks you two questions.'} />
 				</Link>
 				<Link to="/versions">
-					<T message={'What changes in Minemories'} />
+					<T message={'What’s new in Minemories'} />
 				</Link>
 				<Link to="/safety#verifier">
 					<T message={'Check your file'} />
