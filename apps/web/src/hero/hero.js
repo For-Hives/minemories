@@ -577,17 +577,22 @@ export function mountHero(host) {
 				if (!SCRUB_ON) scrollTop0()
 			}
 		})
-		// The bar's section links glide (the browser's own smooth scrolling, only when motion is welcome); every other jump or focus move is instant. One listener on the
-		// header: the menus (SiteNav) are React's and their links can be drawn again.
+		// The bar's section links glide (the browser's own smooth scrolling, only when motion is welcome; otherwise an instant jump). One listener on the
+		// header: the menus (SiteNav) are React's and their links can be drawn again. The section's heading then takes the focus (without a second scroll):
+		// the menu or the phones' panel that held the link closes, and the keyboard and screen readers go on from the section.
 		header?.addEventListener('click', event => {
 			const link =
 				event.target instanceof Element ? event.target.closest('a[data-section-link], .mc-sitebar__brand') : null
 			const href = link?.getAttribute('href') ?? ''
 			const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
-			if (!target || reduced()) return
+			if (!target) return
 			event.preventDefault()
-			target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			target.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' })
 			history.replaceState(null, '', href)
+			const heading = target.querySelector('h1, h2') ?? target
+			if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
+			// next frame: the phones' panel holding the link has closed and given the page back (it is inert while the panel is open)
+			requestAnimationFrame(() => heading.focus({ preventScroll: true }))
 		})
 		for (const button of $$('[data-action="replay"]')) button.addEventListener('click', replay)
 		playBtn.addEventListener('click', () => {
