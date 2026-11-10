@@ -1,6 +1,13 @@
 import { type ReactNode, type RefObject, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import {
+	browserStorage,
+	readViewerLighting,
+	storeViewerLighting,
+	type ViewerLighting,
+	viewerLightings,
+} from '../lib/viewer-lighting'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
@@ -41,6 +48,7 @@ export function ViewerStudio({
 	const { t } = useI18n()
 	const [weather, setWeather] = useState<ViewerWeather>('clear')
 	const [quality, setQuality] = useState<ViewerQuality>('auto')
+	const [lighting, setLighting] = useState<ViewerLighting>(() => readViewerLighting(browserStorage()))
 	const [tour, setTour] = useState(false)
 	const [firstPerson, setFirstPerson] = useState(false)
 	const [sharing, setSharing] = useState(false)
@@ -49,6 +57,10 @@ export function ViewerStudio({
 	const [immersed, setImmersed] = useState(false)
 	const [idle, setIdle] = useState(false)
 	const panelOpen = settings || sharing
+	// A remembered choice applies to every capture this viewer opens.
+	useEffect(() => {
+		if (ready) sceneRef.current?.setLighting(lighting)
+	}, [ready, lighting, sceneRef])
 	useEffect(() => {
 		if (panelOpen) return
 		let timer = window.setTimeout(() => setIdle(true), IDLE_MS)
@@ -241,6 +253,22 @@ export function ViewerStudio({
 							>
 								<span className={`cinema-weather-swatch ${value}`} aria-hidden="true" />
 								{[t('Clear'), t('Mist'), t('Overcast'), t('Rain'), t('Snow')][index]}
+							</button>
+						))}
+					</fieldset>
+					<fieldset disabled={!ready} className="viewer-weather viewer-lighting">
+						<legend>{t('Lighting')}</legend>
+						{viewerLightings.map(value => (
+							<button
+								type="button"
+								key={value}
+								aria-pressed={lighting === value}
+								onClick={() => {
+									setLighting(value)
+									storeViewerLighting(browserStorage(), value)
+								}}
+							>
+								{value === 'faithful' ? t('Faithful to the game') : t('Realistic')}
 							</button>
 						))}
 					</fieldset>

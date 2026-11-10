@@ -621,3 +621,24 @@ test('categories of a format 2 capture can be hidden and restored, including on 
 	;(scene as unknown as { applyCategories(root: THREE.Object3D): void }).applyCategories(later)
 	expect(later.visible).toBe(false)
 })
+
+test('switching the lighting style flips shared uniforms, tone mapping and post effects, and back', async () => {
+	const { createFaithfulUniforms } = await import('./viewer-faithful')
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const uniforms = createFaithfulUniforms()
+	const effects = { setFaithful: vi.fn() }
+	const renderer = { toneMapping: THREE.ACESFilmicToneMapping }
+	const updateDayCycle = vi.fn()
+	Object.assign(scene, { lighting: 'realistic', faithfulUniforms: uniforms, effects, renderer, updateDayCycle })
+	scene.setLighting('realistic')
+	expect(updateDayCycle).not.toHaveBeenCalled()
+	scene.setLighting('faithful')
+	expect(uniforms.memoryFaithful.value).toBe(1)
+	expect(renderer.toneMapping).toBe(THREE.NoToneMapping)
+	expect(effects.setFaithful).toHaveBeenLastCalledWith(true)
+	scene.setLighting('realistic')
+	expect(uniforms.memoryFaithful.value).toBe(0)
+	expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping)
+	expect(effects.setFaithful).toHaveBeenLastCalledWith(false)
+	expect(updateDayCycle).toHaveBeenCalledTimes(2)
+})

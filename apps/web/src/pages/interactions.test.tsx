@@ -72,6 +72,7 @@ vi.mock('../viewer-scene', () => ({
 		loadFile = mocks.loadFile
 		dispose = mocks.dispose
 		setMinutes = mocks.setMinutes
+		setLighting = vi.fn()
 		resetView = mocks.resetView
 		setCaptureContext = mocks.setCaptureContext
 		snapshot = () => null

@@ -36,6 +36,7 @@ vi.mock('../viewer-scene', () => ({
 		focusLayer = mocks.focusLayer
 		glideToLayer = mocks.glide
 		setMinutes = mocks.minutes
+		setLighting = vi.fn()
 		setCaptureContext = mocks.context
 		dispose = mocks.dispose
 		setFirstPerson = vi.fn()

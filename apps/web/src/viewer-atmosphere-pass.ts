@@ -17,7 +17,8 @@ export class AtmospherePass extends ShaderPass {
 		| 'fogColor'
 		| 'sun'
 		| 'shafts'
-		| 'daylight',
+		| 'daylight'
+		| 'grade',
 		THREE.IUniform
 	>
 
@@ -38,6 +39,8 @@ export class AtmospherePass extends ShaderPass {
 				sun: { value: new THREE.Vector2(0.5, 0.8) },
 				shafts: { value: 0 },
 				daylight: { value: 1 },
+				// 0 keeps only the occlusion, the counterpart of the game's smooth lighting: no haze, grading or vignette.
+				grade: { value: 1 },
 			},
 			vertexShader: 'varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
 			fragmentShader: `
@@ -46,7 +49,7 @@ export class AtmospherePass extends ShaderPass {
 			uniform mat4 projection, inverseProjection, cameraWorld;
 			uniform vec2 resolution, sun;
 			uniform vec3 fogColor;
-			uniform float radius, strength, fogDensity, fogHeight, shafts, daylight;
+			uniform float radius, strength, fogDensity, fogHeight, shafts, daylight, grade;
 			vec3 positionAt(vec2 uv) {
 				vec4 p = inverseProjection * vec4(uv*2.0-1.0, texture2D(tDepth,uv).r*2.0-1.0, 1.0);
 				return p.xyz / max(p.w,0.000001);
@@ -74,7 +77,7 @@ export class AtmospherePass extends ShaderPass {
 					}
 					color*=1.0-clamp(occlusion/12.0*strength*4.0,0.0,0.62);
 				}
-				if(depth < 0.999999) {
+				if(depth < 0.999999 && grade > 0.0) {
 					float height=(cameraWorld*vec4(p,1.0)).y;
 					float haze=1.0-exp(-length(p)*fogDensity*exp(-max(height-fogHeight,0.0)*0.025));
 					color=mix(color,fogColor,clamp(haze,0.0,0.55));
@@ -87,6 +90,7 @@ export class AtmospherePass extends ShaderPass {
 					}
 					color+=vec3(1.0,0.71,0.38)*rays/12.0*shafts*exp(-length(vUv-sun)*3.0);
 				}
+				if(grade <= 0.0) { gl_FragColor=vec4(max(color,vec3(0.0)),1.0); return; }
 				float luminance=dot(color,vec3(0.2126,0.7152,0.0722));
 				color=mix(vec3(luminance),color,1.06);
 				// Cool indirect light, warm highlights, subtle optical falloff.
