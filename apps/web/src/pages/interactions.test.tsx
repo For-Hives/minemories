@@ -4,7 +4,7 @@ import { act, type ReactNode } from 'react'
 import { Link, MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { SiteLayout } from '../components/SiteLayout'
-import { I18nProvider } from '../i18n/I18n'
+import { I18nProvider, translate } from '../i18n/I18n'
 import { UnsupportedGlbError } from '../lib/glb'
 import { AuthPage } from './AuthPage'
 import { ContentLayout } from './ContentPages'
@@ -1031,4 +1031,25 @@ test('code creation failure remains recoverable and releases the busy control', 
 	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
 	await screen.findByText('123 456')
 	expect(mocks.create).toHaveBeenCalledTimes(2)
+})
+test('in French, gallery and pairing failures render the translated sentence, not the English key', async () => {
+	mocks.list.mockRejectedValueOnce(new Error('private storage path'))
+	mocks.create.mockRejectedValueOnce(new Error('Pairing unavailable'))
+	render(
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter>
+				<GalleryPage />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	const loadError = translate('fr', 'The gallery is unavailable.')
+	expect(loadError).not.toBe('The gallery is unavailable.')
+	expect(await screen.findByText(loadError)).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: `${translate('fr', 'Get a code')} ↗` }))
+	const pairingError = translate('fr', 'Could not create the code.')
+	expect(pairingError).not.toBe('Could not create the code.')
+	await waitFor(() =>
+		expect(screen.getAllByRole('alert').some(alert => alert.textContent?.includes(pairingError))).toBe(true)
+	)
+	expect(screen.queryByText(/Could not create the code|The gallery is unavailable|Pairing unavailable/)).toBeNull()
 })
