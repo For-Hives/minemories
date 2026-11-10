@@ -4,7 +4,20 @@
 import { expect, test } from 'vitest'
 import { prepareRoot } from './first-paint.js'
 import { framePath, siteCameraFrom } from './scene.js'
-import { dockOf, dragOrbit, formatOf, gridOf, headerHeight, keyAction, largeBandOf, smallBandOf, textMaxOf, widenedRect } from './site.js'
+import {
+	REACH_BOXES,
+	REACH_OVERLAP,
+	dockOf,
+	dragOrbit,
+	formatOf,
+	gridOf,
+	headerHeight,
+	keyAction,
+	largeBandOf,
+	smallBandOf,
+	textMaxOf,
+	widenedRect,
+} from './site.js'
 
 const SIZES = [
 	[390, 844],
@@ -121,6 +134,17 @@ test('the panel takes the room the text leaves, never less than the grid gives i
 	expect(widenedRect(rect, { W: 1440, contentRight: 100 }).l).toBe(Math.round(1440 * 0.36)) // very narrow text: the floor
 	// quantised: two measures a few pixels apart give the same panel (no re-framing while scrolling)
 	expect(widenedRect(rect, { W: 1440, contentRight: 611 }).l).toBe(widenedRect(rect, { W: 1440, contentRight: 615 }).l)
+})
+
+test('the panel keeps clear of the section pictures, with 40 px more air than under text', () => {
+	const air = new Map(REACH_BOXES)
+	expect(air.get('.mm-illus')).toBe(REACH_OVERLAP + 40)
+	expect(air.get('.mc-step, .mc-faq__item')).toBe(0)
+	// a picture ending at 555 px: the panel widens left only to 555 + 68 + 24, so the framed model (28 px left of the panel) starts 64 px after the picture
+	const rect = { l: 700, t: 80, r: 974, b: 752 }
+	const l = widenedRect(rect, { W: 1024, contentRight: 555 + air.get('.mm-illus'), gap: 24, step: 1 }).l
+	expect(l).toBeLessThan(rect.l)
+	expect(l - REACH_OVERLAP - 555).toBe(64)
 })
 
 test('framePath: the size moves by a constant ratio and the centre follows the zoom about one fixed point', () => {

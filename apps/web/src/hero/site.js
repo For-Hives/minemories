@@ -29,6 +29,14 @@ export const MODEL_MARGIN = 16
 /** v12: the panel's left edge is `contentRight - overlap + gap`: the model may go a little UNDER the text (the page is above the canvas), and the panel moves by 1 px steps (continuous). */
 export const REACH = Object.freeze({ gap: 24, step: 1 })
 export const REACH_OVERLAP = 28
+/**
+ * What the panel keeps clear of besides the text's lines, each with the air (px) added to its right edge: cards by their box, and the section pictures
+ * (components/HeroIllustrations.tsx) with REACH_OVERLAP + 40 more, so the model, which may go a little under text, stays 40 px or more away from an image.
+ */
+export const REACH_BOXES = Object.freeze([
+	['.mc-step, .mc-faq__item', 0],
+	['.mm-illus', REACH_OVERLAP + 40],
+])
 
 /** Tallest text column (px), and the longest line of a paragraph (characters): 45 to 75 is comfortable, 68 is the target. */
 export const TEXT_MAX = 760
@@ -269,7 +277,6 @@ export function createSite(ctx) {
 	// The rectangle the model is framed in: the panel, extended to the left by REACH_OVERLAP in landscape (under the text); the panel itself (pointer area, hint) is not.
 	const framingRect = (d) => (d.layout === 'side' ? { ...d.rect, l: d.rect.l - REACH_OVERLAP } : d.rect)
 	const REACH_TEXT = '.mc-hero__kicker, .mc-hero__title, .mc-hero__lead, .mc-hero__compat, .mc-section__title, .mc-section__text, .site-links, .mc-hero__actions'
-	const REACH_BOX = '.mc-step, .mc-faq__item'
 	// The right edge of what the visitor reads right now: text by the extent of its lines, cards by their box; only what is on screen counts.
 	function contentRightNow() {
 		const { H } = sizeNow()
@@ -280,7 +287,8 @@ export function createSite(ctx) {
 			if (r.bottom <= top || r.top >= H || !(value > 0)) return
 			right = right == null ? value : Math.max(right, value)
 		}
-		for (const el of doc.querySelectorAll(`.site ${REACH_BOX.split(',').join(', .site ')}`)) take(el, el.getBoundingClientRect().right)
+		for (const [selector, air] of REACH_BOXES)
+			for (const el of doc.querySelectorAll(`.site ${selector.split(',').join(', .site ')}`)) take(el, el.getBoundingClientRect().right + air)
 		for (const el of doc.querySelectorAll(REACH_TEXT.split(',').map((x) => `.site ${x.trim()}`).join(', '))) {
 			const range = doc.createRange()
 			range.selectNodeContents(el)
