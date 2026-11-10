@@ -116,3 +116,29 @@ test('the French catalogues speak to the player with “tu” and call a capture
 			expect(message, key).not.toMatch(/snapshot/i)
 		}
 })
+
+// Capitalized "Sie" is also "they"/"it" at the start of a sentence; these strings use it that way.
+const germanPronounSie: Record<string, string> = {
+	'This page does not list the publisher, the host or a personal-data contact yet. It describes the current project; it is not a finalized legal notice.':
+		'“Sie beschreibt” refers to “Diese Seite”.',
+	'The CurseForge app is the simplest: it adds Fabric API on its own.': '“Sie fügt” refers to the CurseForge app.',
+	'It then goes to your gallery on its own.': '“Sie landet” refers to the capture.',
+	'It will show up here.': '“Sie erscheint” refers to the capture.',
+	'It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.':
+		'“Sie landet” refers to the memory.',
+	'End portals and End gateways are saved instead of leaving a hole. They appear as a still image of the portal on every Minecraft version supported by the mod.':
+		'“Sie erscheinen” refers to the portals.',
+	'Your players do not copy a playable world: they keep a 3D scene of their corner, not your map.':
+		'“Sie behalten” refers to the players.',
+}
+
+test('the German catalogue speaks to the player with “du”', async () => {
+	const load = catalogs['./locales/de.json']
+	if (!load) throw new Error('Missing locale catalogue')
+	const catalog = await load()
+	for (const key of Object.keys(germanPronounSie)) expect(catalog[key], key).toMatch(/\bSie\b/)
+	for (const [key, message] of Object.entries(catalog)) {
+		expect(message, key).not.toMatch(/\b(?:Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres|Ihnen)\b/)
+		if (!(key in germanPronounSie)) expect(message, key).not.toMatch(/\bSie\b/)
+	}
+})
