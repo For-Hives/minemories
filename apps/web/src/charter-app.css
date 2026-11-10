@@ -573,6 +573,20 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
+/* Signed in, the bar adds "My gallery" and the account (avatar, name, sign out): the links wait in the menu up to
+   1440 px, and the name shows from 1600 px (Russian needs about 1550 px with it). */
+@media (max-width: 1440px) {
+	.mm-header--session .mm-desktop-nav {
+		display: none;
+	}
+}
+
+@media (max-width: 1600px) {
+	.mm-header--session .mm-account a span {
+		display: none;
+	}
+}
+
 @media (max-width: 560px) {
 	.mm-header-actions > .mm-button {
 		white-space: nowrap;

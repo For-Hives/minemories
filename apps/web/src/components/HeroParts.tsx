@@ -52,14 +52,12 @@ export function HeroAccount({ menu = false }: { menu?: boolean }) {
 	)
 }
 
-/** The site's main links, as on every other page (the sections, then the gallery once signed in). */
+/** The site's main links, as on every other page. Signed in, the account button already opens the gallery. */
 export function HeroNavLinks() {
-	const { session } = useAppContext()
 	const { t } = useI18n()
-	const links = [...navigation, ...(session ? [{ to: '/gallery', label: 'My gallery' }] : [])]
 	return (
 		<>
-			{links.map(link => (
+			{navigation.map(link => (
 				<li key={link.to}>
 					<Link to={link.to}>{t(link.label)}</Link>
 				</li>

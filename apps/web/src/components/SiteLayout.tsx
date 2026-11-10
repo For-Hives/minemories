@@ -139,7 +139,7 @@ function SiteHeader() {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
 	return (
-		<header className="mm-header">
+		<header className={session ? 'mm-header mm-header--session' : 'mm-header'}>
 			<Brand solo />
 			<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
 				{navigation.map(link => (

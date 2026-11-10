@@ -681,7 +681,7 @@ export function mountHero(host) {
 			if (!menu.hidden && !menu.contains(event.relatedTarget)) setOpen(false)
 		})
 		for (const link of $$('.site-menu__links a')) link.addEventListener('click', () => setOpen(false))
-		on(matchMedia('(min-width: 1240px)'), 'change', event => {
+		on(matchMedia('(min-width: 1320px)'), 'change', event => {
 			if (event.matches) setOpen(false)
 		})
 		// The film hides the button from 700 px up (site.css): an open menu goes with it.

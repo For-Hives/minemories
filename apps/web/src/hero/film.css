@@ -1118,12 +1118,12 @@ html[data-phase='film'] .site-menu__links {
 	display: none; /* the sections do not exist during the film: no dead links */
 }
 
-@media (max-width: 1239px) {
+@media (max-width: 1319px) {
 	.site-menu__btn {
 		display: inline-flex;
 	}
 
-	/* the kit shows the links from 1 000 px; with "Server closing" next to "How it works" and the FAQ, Russian needs about 1 230 px on one row: they come from 1 240 px */
+	/* the kit shows the links from 1 000 px; with "Server closing" next to "How it works" and the FAQ, Russian needs about 1 305 px on one row: they come from 1 320 px */
 	.mc-sitebar__nav {
 		display: none;
 	}
@@ -1141,7 +1141,7 @@ html[data-phase='film'] .site-menu__links {
 	}
 }
 
-@media (min-width: 1240px) {
+@media (min-width: 1320px) {
 	.site-menu {
 		display: none;
 	}
