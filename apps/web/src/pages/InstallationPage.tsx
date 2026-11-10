@@ -341,6 +341,9 @@ function ConnectAndCapture() {
 						/>
 					</p>
 					<ExportFolders />
+					<p>
+						<Link to="/guides/minecraft-blender">{t('Minecraft to Blender')} →</Link>
+					</p>
 				</details>
 			</section>
 		</>
@@ -386,6 +389,7 @@ export function InstallationPage() {
 				<p className="install-actions">
 					<Link to="/downloads">{t('All downloads')}</Link>
 					<Link to="/faq">{t('All questions')}</Link>
+					<Link to="/safety#verifier">{t('Check your file')}</Link>
 				</p>
 			</section>
 		</article>

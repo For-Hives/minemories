@@ -42,6 +42,9 @@ test('the prerendered home page holds the whole site and the film markup, with n
 		'/how-it-works',
 		'/faq',
 		'/sharing',
+		'/server-closing',
+		'/safety',
+		'/guides/minecraft-blender',
 		'/login',
 	])
 		expect(html, route).toContain(`href="${route}"`)

@@ -464,6 +464,21 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</li>
 						</ul>
 					</section>
+					<section className="mc-section" id="server-closing" aria-labelledby="server-closing-title">
+						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Your server is closing?">
+							{t('Your server is closing?')}
+						</h2>
+						<p className="mc-section__text" data-i18n="Take your base before the season ends.">
+							{t('Take your base before the season ends.')}
+						</p>
+						<ul className="site-links">
+							<li>
+								<Link className="mc-link" to="/server-closing">
+									<span data-i18n="Server closing">{t('Server closing')}</span>
+								</Link>
+							</li>
+						</ul>
+					</section>
 					<section className="mc-section" id="faq" aria-labelledby="faq-title">
 						<h2 className="mc-section__title" id="faq-title" data-i18n="FAQ">
 							{t('FAQ')}

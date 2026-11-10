@@ -80,7 +80,8 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 	])
 		expect(hrefs, route).toContain(route)
 	// the home sends to the install guide, the share page and the whole FAQ; the gallery stays in the footer only
-	for (const target of ['/sharing', '/faq', '/explore']) expect(hrefs, target).toContain(target)
+	for (const target of ['/sharing', '/server-closing', '/safety', '/guides/minecraft-blender', '/faq', '/explore'])
+		expect(hrefs, target).toContain(target)
 	expect(hrefs).not.toContain('/explore?demo=1')
 	// the prototype's three dead root links are real routes now; nothing points at a file next to the page
 	expect(hrefs.filter(h => /\.html?$/.test(String(h)))).toEqual([])

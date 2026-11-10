@@ -722,6 +722,12 @@ test('the footer groups the site into product, guides, help, legal and elsewhere
 		'https://github.com/For-Hives/minemories/issues'
 	)
 	expect(within(footer).getByRole('link', { name: 'Share by link' }).getAttribute('href')).toBe('/sharing')
+	for (const [name, href] of [
+		['Server closing', '/server-closing'],
+		['Minecraft to Blender', '/guides/minecraft-blender'],
+		['Safety and parents', '/safety'],
+	] as const)
+		expect(within(footer).getByRole('link', { name }).getAttribute('href')).toBe(href)
 	expect(within(footer).getByRole('link', { name: 'CurseForge' })).toBeTruthy()
 	expect(within(footer).queryByRole('link', { name: 'Modrinth' })).toBeNull()
 	const hrefs = within(footer)
