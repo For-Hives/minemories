@@ -50,6 +50,38 @@ test('sky light follows the game light map: white at noon, dim moonlit blue at n
 	expect(STORM_DARKENING).toBe(5 / 16)
 })
 
+test('the Nether has no sky light: a constant warm ambient light map, whatever the hour or weather', () => {
+	const nether = faithfulSkyLight(1, false, 'nether')
+	expect(nether[0]).toBeCloseTo(0.35, 3)
+	expect(nether[1]).toBeCloseTo(0.272, 3)
+	expect(nether[2]).toBeCloseTo(0.216, 3)
+	expect(nether[0]).toBeGreaterThan(nether[1])
+	expect(nether[1]).toBeGreaterThan(nether[2])
+	expect(faithfulSkyLight(0, true, 'nether')).toEqual(nether)
+	expect(nether[0]).toBeGreaterThan(faithfulSkyLight(0)[0])
+})
+
+test('the End forces its fixed bright light map, day and night', () => {
+	const end = faithfulSkyLight(0, false, 'end')
+	expect(end[0]).toBeCloseTo(0.475, 3)
+	expect(end[1]).toBeCloseTo(0.515, 3)
+	expect(end[2]).toBeCloseTo(0.478, 3)
+	expect(faithfulSkyLight(1, true, 'end')).toEqual(end)
+})
+
+test('underground there is no sky light, only the light map minimum', () => {
+	expect(faithfulSkyLight(1, false, 'underground')).toEqual([0.03, 0.03, 0.03])
+	expect(faithfulSkyLight(0, false, 'underground')).toEqual([0.03, 0.03, 0.03])
+})
+
+test('the sky light is written into the given colour, without allocating', () => {
+	const out: [number, number, number] = [0, 0, 0]
+	expect(faithfulSkyLight(1, false, 'overworld', out)).toBe(out)
+	expect(out).toEqual(faithfulSkyLight(1))
+	expect(faithfulSkyLight(0, false, 'end', out)).toBe(out)
+	expect(faithfulSkyLight(0, false, 'underground', out)).toBe(out)
+})
+
 test('sRGB multipliers convert to linear light', () => {
 	expect(srgbFactorToLinear(1)).toBe(1)
 	expect(srgbFactorToLinear(0.5)).toBeCloseTo(0.2176, 4)

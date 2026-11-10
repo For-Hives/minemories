@@ -1,3 +1,5 @@
+import type { FaithfulSky } from './viewer-lighting'
+
 const dryBiome = /desert|badlands|savanna/
 const coldBiome = /snow|frozen|ice|:grove$/
 const humidBiome = /swamp|jungle/
@@ -10,6 +12,8 @@ export interface Atmosphere {
 	celestial: boolean
 	fixedDaylight: number | null
 	daylightScale: number
+	/** The sky the faithful lighting style lights faces with, as the game's light map does in this place. */
+	sky: FaithfulSky
 }
 
 const OVERWORLD: Atmosphere = {
@@ -21,6 +25,7 @@ const OVERWORLD: Atmosphere = {
 	celestial: true,
 	fixedDaylight: null,
 	daylightScale: 1,
+	sky: 'overworld',
 }
 
 export function getAtmosphere(dimension: string | null, biome: string | null): Atmosphere {
@@ -34,6 +39,7 @@ export function getAtmosphere(dimension: string | null, biome: string | null): A
 			celestial: false,
 			fixedDaylight: 0.85,
 			daylightScale: 1,
+			sky: 'nether',
 		}
 	}
 	if (dimension === 'minecraft:the_end') {
@@ -46,10 +52,11 @@ export function getAtmosphere(dimension: string | null, biome: string | null): A
 			celestial: false,
 			fixedDaylight: 0,
 			daylightScale: 1,
+			sky: 'end',
 		}
 	}
 	if (biome?.includes('deep_dark')) {
-		return { ...OVERWORLD, fixedDaylight: 0, starAlpha: 0.4, daylightScale: 1 }
+		return { ...OVERWORLD, fixedDaylight: 0, starAlpha: 0.4, daylightScale: 1, sky: 'underground' }
 	}
 	if (biome && dryBiome.test(biome)) {
 		return { ...OVERWORLD, dayZenith: [0.28, 0.48, 0.64], dayHorizon: [0.91, 0.73, 0.49] }

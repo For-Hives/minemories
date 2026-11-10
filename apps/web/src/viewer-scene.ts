@@ -137,6 +137,8 @@ export class ViewerScene {
 	private readonly waterTime = { value: 0 }
 	private readonly faithfulUniforms = createFaithfulUniforms()
 	private lighting: ViewerLighting = 'realistic'
+	/** Reused by the frame loop's day cycle. */
+	private readonly faithfulSkyLight: Rgb = [1, 1, 1]
 	private disposed = false
 	private preparingWorld = false
 	private loadingFile = false
@@ -953,10 +955,15 @@ export class ViewerScene {
 		this.keyLight.intensity =
 			(0.025 + daylight * 4.8) * (['overcast', 'rain', 'snow'].includes(this.weather) ? 0.35 : 1)
 		const stormy = ['overcast', 'rain', 'snow'].includes(this.weather)
-		const skyLight = faithfulSkyLight(daylight, stormy).map(srgbFactorToLinear) as Rgb
-		this.faithfulUniforms.memoryFaithfulSky.value.setRGB(...skyLight)
-		// The game's look has no sun shadow; skipping the shadow pass also saves its cost.
-		const shouldCastShadow = daylight > 0.08 && this.lighting === 'realistic'
+		const skyLight = faithfulSkyLight(daylight, stormy, this.atmosphere.sky, this.faithfulSkyLight)
+		this.faithfulUniforms.memoryFaithfulSky.value.setRGB(
+			srgbFactorToLinear(skyLight[0]),
+			srgbFactorToLinear(skyLight[1]),
+			srgbFactorToLinear(skyLight[2])
+		)
+		// Independent of the lighting style: the shadow count is part of every material's program key, so toggling it
+		// would recompile them all. The faithful branch replaces the lit colour, so its shadows never show.
+		const shouldCastShadow = daylight > 0.08
 		if (this.keyLight.castShadow !== shouldCastShadow) {
 			this.keyLight.castShadow = shouldCastShadow
 			this.keyLight.shadow.needsUpdate = true
