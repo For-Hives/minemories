@@ -200,11 +200,8 @@ function EmptyGallery({ connected, pending, onGetCode }: { connected: boolean; p
 		<div className="gallery-empty">
 			<GalleryIcon name="cube" />
 			<h3>{t('No memories yet')}</h3>
-			<p className="gallery-empty-note">
-				{pending
-					? t('In Minecraft: M → type this code → Connect.')
-					: t('Install the mod, then connect your game with a code.')}
-			</p>
+			{/* While a code is shown, the card beside says where to type it: no second copy here. */}
+			{!pending && <p className="gallery-empty-note">{t('Install the mod, then connect your game with a code.')}</p>}
 			<div className="gallery-empty-actions">
 				{import.meta.env.DEV && (
 					<button

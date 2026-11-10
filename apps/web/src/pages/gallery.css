@@ -690,6 +690,7 @@
 /* --- Empty state: a night panel with an empty slot --- */
 .gallery-empty {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	justify-items: center;
 	gap: var(--ds-sp-2);
 	margin: var(--gp);
@@ -727,6 +728,11 @@
 }
 .gallery-empty-actions .gallery-view {
 	flex: none;
+}
+/* On a phone the onward link wraps instead of widening the page. */
+.gallery-empty-actions > * {
+	max-width: 100%;
+	white-space: normal;
 }
 
 /* --- Trash and snapshot rows: night slots in a list --- */
