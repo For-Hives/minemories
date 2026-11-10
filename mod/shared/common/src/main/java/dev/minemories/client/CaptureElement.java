@@ -17,7 +17,14 @@ final class CaptureElement implements CaptureSink {
   static final int MAX_QUADS = 8192;
 
   record Material(
-      String key, String name, String image, int tint, int alpha, float emission, float opacity) {}
+      String key,
+      String name,
+      String image,
+      int tint,
+      int alpha,
+      float emission,
+      float opacity,
+      boolean doubleSided) {}
 
   record Light(float x, float y, float z, int color, int level, int chunkX, int chunkZ) {}
 
@@ -104,7 +111,7 @@ final class CaptureElement implements CaptureSink {
       float[] xyz,
       float[] uv)
       throws IOException {
-    addRenderedQuad(key, name, image, png, tint, alpha, emission, opacity, xyz, uv, 0);
+    copy(key, name, image, tint, alpha, emission, opacity, xyz, uv, 0, false);
   }
 
   @Override
@@ -121,9 +128,25 @@ final class CaptureElement implements CaptureSink {
       float[] uv,
       int layer)
       throws IOException {
+    copy(key, name, image, tint, alpha, emission, opacity, xyz, uv, layer, true);
+  }
+
+  private void copy(
+      String key,
+      String name,
+      String image,
+      int tint,
+      int alpha,
+      float emission,
+      float opacity,
+      float[] xyz,
+      float[] uv,
+      int layer,
+      boolean doubleSided)
+      throws IOException {
     writable();
     try {
-      copyQuad(key, name, image, tint, alpha, emission, opacity, xyz, uv, layer);
+      copyQuad(key, name, image, tint, alpha, emission, opacity, xyz, uv, layer, doubleSided);
     } catch (IOException error) {
       failed = true;
       throw error;
@@ -140,18 +163,21 @@ final class CaptureElement implements CaptureSink {
       float opacity,
       float[] xyz,
       float[] uv,
-      int layer)
+      int layer,
+      boolean doubleSided)
       throws IOException {
     if (++attempted > MAX_QUADS) throw new IOException("The model exceeds the primitive limit.");
     if (xyz.length != 12 || uv.length != 8) throw new IllegalArgumentException("Expected a quad");
     for (float value : xyz) if (!Float.isFinite(value)) return;
     for (float value : uv) if (!Float.isFinite(value)) return;
     if (quads.size() == MAX_QUADS) throw new IOException("The model exceeds the primitive limit.");
-    Material material = materials.get(key);
+    // A culled and a double-sided use of one key are two materials.
+    String materialKey = (doubleSided ? "2:" : "1:") + key;
+    Material material = materials.get(materialKey);
     if (material == null) {
       reserve(512L + 2L * (textBytes(key) + textBytes(name) + textBytes(image)));
-      material = new Material(key, name, image, tint, alpha, emission, opacity);
-      materials.put(key, material);
+      material = new Material(key, name, image, tint, alpha, emission, opacity, doubleSided);
+      materials.put(materialKey, material);
     }
     // Charge object/array/list overhead conservatively, independently of GC or array compression.
     reserve(256);
