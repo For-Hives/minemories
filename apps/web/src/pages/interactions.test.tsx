@@ -916,8 +916,10 @@ test('a connected game silent for two months asks to check the mod, never to con
 			'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
 		)
 	).toBeTruthy()
-	expect(screen.getByRole('heading', { level: 2, name: 'Connect your game to your gallery.' })).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'Get a code ↗' })).toBeTruthy()
+	expect(screen.getByRole('heading', { level: 2, name: 'Your game is connected.' })).toBeTruthy()
+	expect(screen.queryByRole('heading', { name: 'Connect your game to your gallery.' })).toBeNull()
+	expect(screen.queryByRole('button', { name: /Get a code/ })).toBeNull()
+	expect(screen.getByRole('button', { name: 'New code ↗' })).toBeTruthy()
 })
 
 test('leaving the private viewer aborts a pending download and never loads its late response', async () => {

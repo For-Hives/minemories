@@ -11,14 +11,16 @@ export function GalleryPairingCard({
 	const { t } = useI18n()
 	const { pairStatus, pairCode, pairBusy, createPairing, copyCode } = pairing
 	const pending = pairStatus === 'pending'
+	// A connected game stays connected (device tokens never expire), even after a long silence: never ask to connect again.
+	const connected = pairStatus === 'paired'
 	const note = pairingNote(pairedFresh, pairStatus)
 	return (
-		<section className="gallery-link" data-linked={pairedFresh} aria-live="polite">
+		<section className="gallery-link" data-linked={connected} aria-live="polite">
 			<span className="gallery-link-icon" aria-hidden="true">
-				<GalleryIcon name={pairedFresh ? 'check' : 'cube'} />
+				<GalleryIcon name={connected ? 'check' : 'cube'} />
 			</span>
 			<div className="gallery-link-text">
-				<h2>{pairedFresh ? t('Your game is connected.') : t('Connect your game to your gallery.')}</h2>
+				<h2>{connected ? t('Your game is connected.') : t('Connect your game to your gallery.')}</h2>
 				{note && <p>{t(note)}</p>}
 			</div>
 			{pending ? (
@@ -36,15 +38,16 @@ export function GalleryPairingCard({
 				</div>
 			) : (
 				<button className="gallery-view" type="button" onClick={() => void createPairing()} disabled={pairBusy}>
-					{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
+					{t(pairingButtonLabel(pairBusy, connected))} <span>↗</span>
 				</button>
 			)}
 		</section>
 	)
 }
-function pairingButtonLabel(busy: boolean, pairedFresh: boolean): string {
+function pairingButtonLabel(busy: boolean, connected: boolean): string {
 	if (busy) return 'Creating…'
-	return pairedFresh ? 'New code' : 'Get a code'
+	// A second code connects another computer.
+	return connected ? 'New code' : 'Get a code'
 }
 
 /** Only failures and a silent game deserve a sentence; the happy path stays quiet. */
