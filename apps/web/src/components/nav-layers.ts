@@ -1,4 +1,5 @@
-import { type RefObject, useEffect, useRef } from 'react'
+import { type PointerEvent as ReactPointerEvent, type RefObject, useEffect, useMemo, useRef } from 'react'
+import { canHoverOpen, hoverIntent } from '../lib/hover-intent'
 
 /*
  * The bar's popups (a menu, the language list, the phones' panel) are layers: Escape closes the most recent one only, and goes no
@@ -79,4 +80,52 @@ function inertAround(kept: Element): Element[] {
 		changed.push(...siblings)
 	}
 	return changed
+}
+
+/**
+ * Hover for the bar's menus (lib/hover-intent.ts), on a mouse with a fine-pointer screen only: resting on a menu opens it, leaving its button
+ * and panel closes it after a grace delay. A click or a key pins the menu (`pin`): the pointer leaving no longer closes it. A touch opens
+ * nothing; the click and the keys work as before everywhere. `handlers(key)` goes on the element holding a menu's button and panel.
+ */
+export function useHoverMenus<K>(open: K | null, setOpen: (key: K | null) => void) {
+	const pinned = useRef(false)
+	const latest = useRef({ open, setOpen })
+	latest.current = { open, setOpen }
+	const intent = useMemo(
+		() =>
+			hoverIntent<K>({
+				open: () => latest.current.open,
+				pinned: () => pinned.current,
+				show: key => {
+					pinned.current = false
+					latest.current.setOpen(key)
+				},
+				hide: () => latest.current.setOpen(null),
+			}),
+		[]
+	)
+	useEffect(() => intent.cancel, [intent])
+	// A menu closed another way (Escape, a press outside, a link) forgets its pin and anything pending.
+	useEffect(() => {
+		if (open !== null) return
+		pinned.current = false
+		intent.cancel()
+	}, [open, intent])
+	return {
+		handlers: (key: K) => ({
+			onPointerEnter: (event: ReactPointerEvent) => {
+				if (canHoverOpen(event.pointerType)) intent.enter(key)
+			},
+			onPointerLeave: (event: ReactPointerEvent) => {
+				if (canHoverOpen(event.pointerType)) intent.leave()
+			},
+		}),
+		/** A click or a key opened (or kept) the menu: it stays until closed on purpose. */
+		pin: () => {
+			intent.cancel()
+			pinned.current = true
+		},
+		/** Whether the open menu was opened by the pointer alone (a click then pins it instead of closing it). */
+		hovered: () => !pinned.current,
+	}
 }

@@ -19,7 +19,7 @@ import { hasCurrentPage, isCurrentPage, listKeyIndex, rowKeyIndex } from '../lib
 import { hasAnyAdminAccess, useAdminAccess } from '../pages/admin-access'
 import { LanguagePicker } from './LanguagePicker'
 import { LoadingSkeleton } from './Loading'
-import { focusables, useInertOutside, useLayer } from './nav-layers'
+import { focusables, useHoverMenus, useInertOutside, useLayer } from './nav-layers'
 
 /*
  * The site's bar, one design for every page and for the landing (HeroMarkup renders it in its own header): the menus of the whole site
@@ -144,23 +144,34 @@ function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 		setOpen(null)
 	}
 	useLayer(open !== null, close, [nav])
+	const hover = useHoverMenus(open, setOpen)
 	// A new page or section closes the menus.
 	useEffect(() => setOpen(null), [pathname, hash])
 	const onButtonKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
 		const moved = moveAlongBar(event)
 		if (moved) {
 			const next = buttons.current.indexOf(moved as HTMLButtonElement)
-			if (open !== null && next >= 0) setOpen(next)
+			if (open !== null && next >= 0) {
+				hover.pin()
+				setOpen(next)
+			}
 			return
 		}
 		if (event.key !== 'ArrowDown') return
 		event.preventDefault()
 		event.stopPropagation()
+		hover.pin()
 		if (open === index) focusables(panelOf(index))[0]?.focus()
 		else {
 			focusFirst.current = true
 			setOpen(index)
 		}
+	}
+	// A click opens and pins a menu; on a menu the pointer opened, it pins it instead of closing it; on a pinned one, it closes it.
+	const onTrigger = (index: number) => {
+		const keep = open === index && hover.hovered()
+		hover.pin()
+		setOpen(open === index && !keep ? null : index)
 	}
 	const onBlur = (event: FocusEvent<HTMLElement>) => {
 		if (!(event.relatedTarget instanceof Node && nav.current?.contains(event.relatedTarget))) setOpen(null)
@@ -173,7 +184,7 @@ function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 		<nav ref={nav} className="mm-nav site-nav" aria-label={t('Main navigation')} data-own-keys="" onBlur={onBlur}>
 			<ul className="mm-nav__menus">
 				{menus.map((menu, index) => (
-					<li key={menu.id} className="mm-nav__item">
+					<li key={menu.id} className="mm-nav__item" {...hover.handlers(index)}>
 						<button
 							ref={element => {
 								buttons.current[index] = element
@@ -184,14 +195,10 @@ function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 							aria-expanded={open === index}
 							aria-controls={panelId(index)}
 							data-current={hasCurrentPage(pathname, menuLinks(menu)) ? '' : undefined}
-							onClick={() => setOpen(open === index ? null : index)}
+							onClick={() => onTrigger(index)}
 							onFocus={() => {
 								// Focus on another menu's button (Tab, Shift+Tab) closes the open one; the arrows open the next one themselves.
 								if (open !== null && open !== index) setOpen(null)
-							}}
-							onPointerEnter={event => {
-								// A menu already open follows the pointer to its neighbours, as in the game's menu bars; none opens on a mere hover.
-								if (event.pointerType === 'mouse' && open !== null) setOpen(index)
 							}}
 							onKeyDown={event => onButtonKey(event, index)}
 						>
@@ -327,6 +334,7 @@ function AccountMenu() {
 	const button = useRef<HTMLButtonElement>(null)
 	const panel = useRef<HTMLDivElement>(null)
 	const [open, setOpen] = useState(false)
+	const hover = useHoverMenus<'account'>(open ? 'account' : null, key => setOpen(key !== null))
 	// The administration check starts once the account is about to open, and its answer stays while the bar does.
 	const [primed, setPrimed] = useState(false)
 	const access = useAdminAccess(primed)
@@ -350,6 +358,7 @@ function AccountMenu() {
 		event.preventDefault()
 		event.stopPropagation()
 		setPrimed(true)
+		hover.pin()
 		if (open) focusables(panel.current)[0]?.focus()
 		else {
 			focusFirst.current = true
@@ -362,6 +371,7 @@ function AccountMenu() {
 			ref={root}
 			className="mm-nav__item mm-nav-account"
 			data-own-keys=""
+			{...hover.handlers('account')}
 			onBlur={event => {
 				if (!(event.relatedTarget instanceof Node && root.current?.contains(event.relatedTarget))) setOpen(false)
 			}}
@@ -376,7 +386,9 @@ function AccountMenu() {
 				aria-label={`${session.user.name} — ${t('My account')}`}
 				onClick={() => {
 					setPrimed(true)
-					setOpen(!open)
+					const keep = open && hover.hovered()
+					hover.pin()
+					setOpen(!open || keep)
 				}}
 				onPointerEnter={() => setPrimed(true)}
 				onFocus={() => setPrimed(true)}

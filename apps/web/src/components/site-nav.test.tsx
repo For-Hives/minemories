@@ -44,6 +44,7 @@ beforeEach(() => {
 	)
 })
 afterEach(() => {
+	vi.useRealTimers()
 	cleanup()
 	mocks.context.session = null
 	mocks.context.isPending = false
@@ -149,7 +150,7 @@ test('every page of the site is in the bar, under Product, Guides and Help; the 
 	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('false')
 })
 
-test('menus: Escape and a press outside close them, the arrows move along the bar and into a menu, a hover follows an open menu', async () => {
+test('menus: Escape and a press outside close them, the arrows move along the bar and into a menu', async () => {
 	mount('/faq')
 	fireEvent.click(trigger('Product'))
 	fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
@@ -176,12 +177,10 @@ test('menus: Escape and a press outside close them, the arrows move along the ba
 	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' })
 	expect(document.activeElement?.textContent).toBe('FAQ')
 	fireEvent.keyDown(panel, { key: 'a' })
-	// an open menu follows the bar's keys and the mouse to its neighbours; a touch does not
+	// an open menu follows the bar's keys to its neighbours
 	fireEvent.keyDown(trigger('Help'), { key: 'ArrowLeft' })
 	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('true')
-	fireEvent.pointerEnter(trigger('Product'), { pointerType: 'mouse' })
-	expect(trigger('Product').getAttribute('aria-expanded')).toBe('true')
-	fireEvent.pointerEnter(trigger('Help'), { pointerType: 'touch' })
+	fireEvent.keyDown(trigger('Guides'), { key: 'ArrowLeft' })
 	expect(trigger('Product').getAttribute('aria-expanded')).toBe('true')
 	// focus leaving the bar closes it; a press outside too
 	fireEvent.blur(trigger('Product'), { relatedTarget: trigger('Guides') })
@@ -193,8 +192,6 @@ test('menus: Escape and a press outside close them, the arrows move along the ba
 	expect(trigger('Product').getAttribute('aria-expanded')).toBe('true')
 	fireEvent.pointerDown(screen.getByTestId('where'))
 	expect(trigger('Product').getAttribute('aria-expanded')).toBe('false')
-	fireEvent.pointerEnter(trigger('Help'), { pointerType: 'mouse' })
-	expect(trigger('Help').getAttribute('aria-expanded')).toBe('false')
 	// a click on the open menu's button closes it; a new page too
 	fireEvent.click(trigger('Help'))
 	fireEvent.click(trigger('Help'))
@@ -217,6 +214,118 @@ test('the menus list pages only, the landing’s too: no group of the page’s o
 	expect(document.querySelector('a[href^="#"]')).toBeNull()
 	fireEvent.click(trigger('Help'))
 	expect(screen.getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('rel')).toBe('noopener')
+})
+
+/** A screen whose main pointer is a mouse (or a phone's touch screen, `fine = false`): the bar asks it before opening on hover. */
+function pointerScreen(fine: boolean) {
+	vi.stubGlobal(
+		'matchMedia',
+		vi.fn((query: string) => ({
+			matches: fine && query === '(hover: hover) and (pointer: fine)',
+			addEventListener: () => undefined,
+			removeEventListener: () => undefined,
+		}))
+	)
+}
+const expanded = (name: string) => trigger(name).getAttribute('aria-expanded')
+const item = (name: string) => trigger(name).closest('li') as HTMLElement
+
+test('a mouse resting on a menu opens it, moves between menus, and leaving closes it after a grace delay', () => {
+	vi.useFakeTimers()
+	pointerScreen(true)
+	mount('/faq')
+	const mouse = { pointerType: 'mouse' }
+	// passing over a button opens nothing; resting on it opens its menu
+	fireEvent.pointerEnter(item('Product'), mouse)
+	act(() => vi.advanceTimersByTime(60))
+	fireEvent.pointerLeave(item('Product'), mouse)
+	act(() => vi.advanceTimersByTime(200))
+	expect(expanded('Product')).toBe('false')
+	fireEvent.pointerEnter(item('Product'), mouse)
+	act(() => vi.advanceTimersByTime(120))
+	expect(expanded('Product')).toBe('true')
+	// a diagonal move into the panel crosses Guides for a moment: Product stays
+	const panel = document.getElementById('mm-menu-product') as HTMLElement
+	fireEvent.pointerLeave(item('Product'), mouse)
+	fireEvent.pointerEnter(item('Guides'), mouse)
+	act(() => vi.advanceTimersByTime(50))
+	fireEvent.pointerLeave(item('Guides'), mouse)
+	fireEvent.pointerEnter(panel, mouse)
+	act(() => vi.advanceTimersByTime(400))
+	expect(expanded('Product')).toBe('true')
+	expect(expanded('Guides')).toBe('false')
+	// resting on a neighbour switches to it; leaving the bar closes it after the grace delay
+	fireEvent.pointerLeave(item('Product'), mouse)
+	fireEvent.pointerEnter(item('Help'), mouse)
+	act(() => vi.advanceTimersByTime(120))
+	expect(expanded('Help')).toBe('true')
+	expect(expanded('Product')).toBe('false')
+	fireEvent.pointerLeave(item('Help'), mouse)
+	act(() => vi.advanceTimersByTime(200))
+	expect(expanded('Help')).toBe('true')
+	act(() => vi.advanceTimersByTime(100))
+	expect(expanded('Help')).toBe('false')
+	vi.useRealTimers()
+})
+
+test('a click pins a menu the mouse opened, the next click closes it; a key pins too; Escape forgets the pin', () => {
+	vi.useFakeTimers()
+	pointerScreen(true)
+	mount('/faq')
+	const mouse = { pointerType: 'mouse' }
+	fireEvent.pointerEnter(item('Guides'), mouse)
+	act(() => vi.advanceTimersByTime(120))
+	fireEvent.click(trigger('Guides'))
+	expect(expanded('Guides')).toBe('true')
+	fireEvent.pointerLeave(item('Guides'), mouse)
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Guides')).toBe('true')
+	fireEvent.pointerEnter(item('Guides'), mouse)
+	fireEvent.click(trigger('Guides'))
+	expect(expanded('Guides')).toBe('false')
+	// a click before the intent delay opens and pins at once; the pending hover changes nothing
+	fireEvent.pointerLeave(item('Guides'), mouse)
+	fireEvent.pointerEnter(item('Help'), mouse)
+	fireEvent.click(trigger('Help'))
+	act(() => vi.advanceTimersByTime(120))
+	fireEvent.pointerLeave(item('Help'), mouse)
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Help')).toBe('true')
+	// Escape closes it and forgets the pin: the mouse opens it again, and leaving closes it
+	fireEvent.keyDown(trigger('Help'), { key: 'Escape' })
+	expect(expanded('Help')).toBe('false')
+	fireEvent.pointerEnter(item('Help'), mouse)
+	act(() => vi.advanceTimersByTime(120))
+	fireEvent.pointerLeave(item('Help'), mouse)
+	act(() => vi.advanceTimersByTime(300))
+	expect(expanded('Help')).toBe('false')
+	// Down opens on the first link, pinned
+	fireEvent.keyDown(trigger('Product'), { key: 'ArrowDown' })
+	act(() => vi.advanceTimersByTime(0))
+	fireEvent.pointerLeave(item('Product'), mouse)
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Product')).toBe('true')
+	vi.useRealTimers()
+})
+
+test('on a touch screen, or with a finger on a mouse screen, nothing opens on hover; a tap still does', () => {
+	vi.useFakeTimers()
+	pointerScreen(false)
+	mount('/faq')
+	fireEvent.pointerEnter(item('Product'), { pointerType: 'mouse' })
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Product')).toBe('false')
+	cleanup()
+	pointerScreen(true)
+	mount('/faq')
+	fireEvent.pointerEnter(item('Product'), { pointerType: 'touch' })
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Product')).toBe('false')
+	fireEvent.click(trigger('Product'))
+	fireEvent.pointerLeave(item('Product'), { pointerType: 'touch' })
+	act(() => vi.advanceTimersByTime(1000))
+	expect(expanded('Product')).toBe('true')
+	vi.useRealTimers()
 })
 
 test('the account: Sign in, a placeholder while the session loads, or the avatar opening the account menu', async () => {
@@ -266,6 +375,31 @@ test('the account: Sign in, a placeholder while the session loads, or the avatar
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
 	expect(mocks.signOut).toHaveBeenCalledOnce()
 	expect(mocks.context.refreshSession).toHaveBeenCalled()
+})
+
+test('the account opens on hover like the menus: a click pins it, leaving an unpinned one closes it', () => {
+	vi.useFakeTimers()
+	pointerScreen(true)
+	mocks.context.session = { user: { id: 'u5', name: 'Noa', email: 'noa@example.test', image: null } }
+	mount('/faq')
+	const mouse = { pointerType: 'mouse' }
+	const account = screen.getByRole('button', { name: 'Noa — My account' })
+	const root = account.closest('.mm-nav-account') as HTMLElement
+	fireEvent.pointerEnter(root, mouse)
+	act(() => vi.advanceTimersByTime(120))
+	expect(account.getAttribute('aria-expanded')).toBe('true')
+	fireEvent.pointerLeave(root, mouse)
+	act(() => vi.advanceTimersByTime(300))
+	expect(account.getAttribute('aria-expanded')).toBe('false')
+	fireEvent.pointerEnter(root, mouse)
+	act(() => vi.advanceTimersByTime(120))
+	fireEvent.click(account)
+	fireEvent.pointerLeave(root, mouse)
+	act(() => vi.advanceTimersByTime(1000))
+	expect(account.getAttribute('aria-expanded')).toBe('true')
+	fireEvent.click(account)
+	expect(account.getAttribute('aria-expanded')).toBe('false')
+	vi.useRealTimers()
 })
 
 test('no administration link without a confirmed access', async () => {
