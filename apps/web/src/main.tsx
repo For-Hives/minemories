@@ -2,6 +2,8 @@ import { createRoot, hydrateRoot } from 'react-dom/client'
 import { App, loadPrerenderedPage } from './App'
 import './theme.css'
 import './pages/installation.css'
+// The explainers' pictograms and diagrams (concept, how it works, FAQ, guides, sharing, legal): in the first stylesheet, so a prerendered page does not paint them unstyled and then jump when its chunk's CSS arrives.
+import './components/explainers.css'
 import './album.css'
 import './pages/auth.css'
 // The landing design system on every page: tokens, then the game kit (fonts, colours, buttons, panels), then the app pages' styling.
