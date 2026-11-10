@@ -128,6 +128,25 @@ export function mountHero(host) {
 	let lastStationShown = -1
 	let touchGesture = null
 	const heldDone = new Set() // stops already played in this viewing
+	// Andy (10/11/2026): the loading screen of index.html (#boot) is a show of its own, so the film waits for it to read 100 % before it starts, rather than
+	// playing its first seconds under it. The screen marks <html data-mm-boot-full> and sends mm:boot-full (scripts/boot-screen/chunk-screen.mjs). No screen
+	// (another entry, a later script): nothing to wait for. A screen that never says so (its script failed) is waited for 21 s at most, past its own 20 s stop.
+	const bootStartedAt = performance.now()
+	const BOOT_WAIT_MS = 21000
+	const bootHolds = () =>
+		Boolean(document.getElementById('boot')) &&
+		root.dataset.mmBootFull !== '1' &&
+		performance.now() - bootStartedAt < BOOT_WAIT_MS
+	const afterBoot = run => {
+		if (!bootHolds()) return run()
+		const go = () => {
+			clearTimeout(timer)
+			removeEventListener('mm:boot-full', go)
+			if (!signal.aborted) run()
+		}
+		const timer = setTimeout(go, Math.max(0, BOOT_WAIT_MS - (performance.now() - bootStartedAt)))
+		addEventListener('mm:boot-full', go, { signal })
+	}
 	let stationIndex = 0
 	let siteToken = 0 // invalidates a hand-over in progress when the visitor goes elsewhere
 	let appliedSize = { W: 0, H: 0 } // viewport size at the last resize the page acted on
@@ -452,7 +471,7 @@ export function mountHero(host) {
 		else if (SCRUB_ON) {
 			// The clock was created playing (or paused with ?autoplay=0); the first frame arms the page (loopScrub).
 			scene.setTime(0)
-		} else if (params.get('autoplay') !== '0') startFilm()
+		} else if (params.get('autoplay') !== '0') afterBoot(startFilm)
 		updatePlayUI()
 	}
 
@@ -1374,12 +1393,12 @@ export function mountHero(host) {
 	function loopScrub(now) {
 		if (!armedScrub) {
 			if (phase() === 'site') armedScrub = true
-			else if ((scene.probe.frames ?? 0) > 0) {
+			else if ((scene.probe.frames ?? 0) > 0 && !bootHolds()) {
 				armedScrub = true
 				phases.event({ type: 'frame' })
 				for (const type of ['wheel', 'touchstart', 'keydown'])
 					removeEventListener(type, noteVisitorInput, { capture: true })
-				scrub.rebase(now) // the film starts counting from the first rendered frame
+				scrub.rebase(now) // the film starts counting from the first rendered frame, once the loading screen reads 100 %
 				// A position nobody asked for (a restored scroll, a script) is still reset; a visitor who scrolled while the scene was loading goes to the site.
 				if (scrollY > 0) {
 					if (visitorInput) void jumpToSite('scroll')

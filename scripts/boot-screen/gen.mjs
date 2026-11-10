@@ -25,7 +25,6 @@ import {
 	mapDepth,
 	mapLevels,
 	mapPlan,
-	mapShift,
 	mapSides,
 	mapSize,
 	mapSpeck,
@@ -167,7 +166,6 @@ export function inlineRuntime(config) {
 		mapDepth,
 		mapSpeck,
 		mapLevels,
-		mapShift,
 		paintMap,
 		bootTarget,
 		bootPace,
@@ -187,8 +185,8 @@ export function inlineRuntime(config) {
  * centre, down and left as in the reference, and the view recentres from `at` of the fill). The tile is read back from the CSS (it is in the page once).
  */
 export function bootConfig() {
-	const timings = { lead: 350, fill: 4000, catchup: 2000, hold: 400, move: 400, out: 1100, pop: 200, stop: 20000 }
-	return { n: 38, seed: SEED, colors: MAP_COLORS, from: [-13, 13], at: 0.13, ...timings }
+	const timings = { lead: 350, fill: 4000, catchup: 2000, hold: 400, out: 1100, pop: 200, stop: 20000 }
+	return { n: 38, seed: SEED, colors: MAP_COLORS, at: 0.13, ...timings }
 }
 
 /**

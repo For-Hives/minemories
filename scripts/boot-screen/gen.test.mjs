@@ -10,7 +10,6 @@ import {
 	dissolvePlan,
 	mapLevels,
 	mapPlan,
-	mapShift,
 	mapSides,
 	mapSize,
 	paintMap,
@@ -279,11 +278,11 @@ test('light-grey speckles show inside the core near its edge while it loads, re-
 	assert.ok(!mapLevels(2, plan, 5).includes(4))
 })
 
-test('paintMap: three pixels per cell, the blue ring two pixels wide with its inner third green, the view shifted', () => {
+test('paintMap: three pixels per cell, the blue ring two pixels wide with its inner third green', () => {
 	// a 3 x 3 map: a blue ring around one green cell
 	const levels = Uint8Array.from([2, 2, 2, 2, 3, 2, 2, 2, 2])
 	const image = { data: new Uint8ClampedArray(9 * 9 * 4) }
-	paintMap(image, levels, MAP_COLORS, [0, 0])
+	paintMap(image, levels, MAP_COLORS)
 	const pixel = (u, w) => [...image.data.subarray((w * 9 + u) * 4, (w * 9 + u) * 4 + 4)]
 	const [blue, green] = [
 		[...MAP_COLORS[2], 255],
@@ -293,26 +292,6 @@ test('paintMap: three pixels per cell, the blue ring two pixels wide with its in
 	assert.deepEqual([pixel(4, 0), pixel(4, 1), pixel(4, 2)], [blue, blue, green])
 	assert.deepEqual(pixel(4, 4), green)
 	assert.deepEqual(pixel(0, 0), blue) // the corner, away from the green
-	// one cell right and one down: the first row and column are outside the plan (black)
-	paintMap(image, levels, MAP_COLORS, [1, 1])
-	assert.deepEqual(pixel(1, 1), [0, 0, 0, 255])
-	assert.deepEqual(pixel(4, 4), blue)
-	assert.deepEqual(pixel(7, 7), green)
-})
-
-test('the recentring eases from the start offset to the centre in whole cells', () => {
-	assert.deepEqual(mapShift(0, [-12, 13]), [-12, 13])
-	assert.deepEqual(mapShift(-1, [-12, 13]), [-12, 13])
-	assert.deepEqual(mapShift(0.5, [-12, 13]), [-6, 7])
-	assert.deepEqual(mapShift(1, [-12, 13]), [0, 0])
-	assert.deepEqual(mapShift(Number.POSITIVE_INFINITY, [-12, 13]), [0, 0])
-	let last = 13
-	for (let k = 0; k <= 1; k += 0.05) {
-		const [x, y] = mapShift(k, [-12, 13])
-		assert.ok(Number.isInteger(x) && Number.isInteger(y) && y <= last)
-		last = y
-	}
-	assert.ok(mapShift(0.1, [-12, 13])[1] >= 12) // eased: slow out of the start
 })
 
 test('the pace: nothing during the lead, then a straight line to 100 % over the fill', () => {
@@ -477,24 +456,42 @@ test('a busy main thread pauses the fill instead of skipping part of it', () => 
 	h.run(16)
 	const after = Number.parseInt(h.label.textContent, 10)
 	assert.ok(after - before <= 2, `${before} % then ${after} %`)
-	assert.ok(shownAt(h, HALF + C.from[0], HALF + C.from[1])) // the off-centre start is still on screen
+	assert.ok(shownAt(h, HALF, HALF)) // still the centre
 	const marks = timeline(h, 9000)
 	assert.ok(marks.full >= C.lead + C.fill + 1500 - 50, `100 % at ${marks.full} ms`) // later by the stall, but for the one 50 ms step
 })
 
-test('the map starts around the player, down and left, then recentres in about 0.4 s', () => {
+test('the map grows from the centre from its first frame: no off-centre start, no recentring (Andy, 10/11/2026)', () => {
 	const h = bootHarness({ readyState: 'complete', ready: true })
-	h.run(C.lead + 300)
-	assert.ok(shownAt(h, HALF + C.from[0], HALF + C.from[1]), `the blue dot, down and left: ${shownCentre(h)}`)
-	assert.ok(C.move >= 300 && C.move <= 500)
-	const start = C.lead + C.at * C.fill
-	h.run(start - 32 - h.now())
-	assert.ok(shownAt(h, HALF + C.from[0], HALF + C.from[1]), 'still off-centre just before the recentring')
-	h.run(C.move / 2 + 32)
-	const [x, y] = shownCentre(h)
-	assert.ok(x > HALF + C.from[0] + 1 && x < HALF - 1 && y < HALF + C.from[1] - 1 && y > HALF + 1, `halfway: ${x}, ${y}`)
-	h.run(C.move / 2 + 50)
-	assert.ok(shownAt(h, HALF, HALF), `centred: ${shownCentre(h)}`)
+	for (const at of [C.lead + 100, C.lead + 300, C.lead + C.at * C.fill, C.lead + C.fill / 2]) {
+		h.run(at - h.now())
+		assert.ok(shownAt(h, HALF, HALF), `centred at ${h.now()} ms: ${shownCentre(h)}`)
+	}
+})
+
+test('the film is let go once, when the percentage reads 100 %, before the hold and the reveal', () => {
+	const C = bootConfig()
+	const h = bootHarness({ readyState: 'complete', ready: true })
+	const marks = timeline(h, 8000, m => m.out)
+	assert.equal(h.sent().length, 1)
+	assert.equal(h.sent()[0].type, 'mm:boot-full')
+	assert.ok(
+		h.sent()[0].at >= marks.full - 16 && h.sent()[0].at <= marks.full,
+		`sent at ${h.sent()[0].at}, 100 % at ${marks.full}`
+	)
+	assert.ok(h.sent()[0].at < marks.out - C.hold + 32)
+	assert.equal(h.doc.documentElement.dataset.mmBootFull, '1')
+	h.run(2000)
+	assert.equal(h.sent().length, 1) // once, the screen's removal does not send it again
+})
+
+test('a screen that never reaches 100 % still lets the film go when it leaves', () => {
+	const h = bootHarness()
+	h.run(19_900)
+	assert.equal(h.sent().length, 0)
+	h.run(400)
+	assert.equal(h.sent().length, 1)
+	assert.equal(h.doc.documentElement.dataset.mmBootFull, '1')
 })
 
 test('reduced motion: the map fills centred from the start, then a short fade instead of the reveal', () => {
@@ -511,13 +508,10 @@ test('reduced motion: the map fills centred from the start, then a short fade in
 	assert.equal(h.boot.removed, true)
 })
 
-test("the site's own reduced-motion option, even set after the start, jumps the map to the centre and fades at the end", () => {
+test("the site's own reduced-motion option, even set after the start, fades at the end instead of the reveal", () => {
 	const h = bootHarness({ readyState: 'complete', ready: true })
 	h.run(C.lead + 300)
-	assert.ok(shownAt(h, HALF + C.from[0], HALF + C.from[1]))
 	h.doc.documentElement.dataset.mcMotion = 'reduced'
-	h.run(C.lead + C.at * C.fill + 32 - h.now())
-	assert.ok(shownAt(h, HALF, HALF), `at once in the centre: ${shownCentre(h)}`)
 	const marks = timeline(h, 8000)
 	assert.ok(marks.done)
 	assert.equal(marks.out, undefined)
@@ -581,7 +575,8 @@ test('the inline script as written into index.html runs the same screen', () => 
 		start: (doc, win) => runInNewContext(code, { document: doc, window: win, AbortController }),
 	})
 	h.run(C.lead + 300)
-	assert.ok(shownAt(h, HALF + C.from[0], HALF + C.from[1]), `off-centre first: ${shownCentre(h)}`)
+	assert.ok(shownAt(h, HALF, HALF), `centred first: ${shownCentre(h)}`)
+	assert.equal(h.sent().length, 0)
 	const marks = timeline(h, 8000)
 	assert.ok(marks.full >= C.lead + C.fill)
 	assert.ok(marks.out >= marks.full + C.hold)
@@ -608,6 +603,7 @@ function bootHarness(options = {}) {
 	const listeners = {}
 	const cleared = []
 	const pngs = []
+	const sent = []
 	let painted = new Uint8ClampedArray(9 * N * N * 4)
 	const context = () => ({
 		createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
@@ -682,6 +678,12 @@ function bootHarness(options = {}) {
 		innerWidth: 1280,
 		innerHeight: 720,
 		devicePixelRatio: 1,
+		Event: class {
+			constructor(type) {
+				this.type = type
+			}
+		},
+		dispatchEvent: event => sent.push({ type: event.type, at: time }),
 	}
 	if (start === bootScreen) bootScreen(doc, win, bootConfig())
 	else start(doc, win)
@@ -706,6 +708,7 @@ function bootHarness(options = {}) {
 		frames: () => frameCount,
 		listeners: () => Object.values(listeners).reduce((total, list) => total + list.length, 0),
 		tile: () => pngs,
+		sent: () => sent,
 		run(ms) {
 			for (let t = 0; t < ms; t += 16) tick()
 		},

@@ -97,18 +97,13 @@ else levels[i]=mapSpeck(done,x,y,q,rand())
 }
 return levels
 }
-function mapShift(k,from){
-const u=Math.min(1,Math.max(0,k))
-const ease=u<0.5?4*u**3:1-(2-2*u)**3/2
-return from.map(v=>Math.round(v*(1-ease))||0)
-}
-function paintMap(image,levels,colors,shift){
+function paintMap(image,levels,colors){
 const data=image.data
 const n=Math.round(Math.sqrt(levels.length))
 const level=(x,y)=>(x>=0&&x<n&&y>=0&&y<n?levels[y*n+x]:0)
 for(let i=0;i<9*n*n;i++){
 const[u,w]=[i%(3*n),Math.floor(i/(3*n))]
-const[x,y]=[Math.floor(u/3)-shift[0],Math.floor(w/3)-shift[1]]
+const[x,y]=[Math.floor(u/3),Math.floor(w/3)]
 const[dx,dy]=[(u%3)-1,(w%3)-1]
 let k=level(x,y)
 if(k===2&&[level(x+dx,y),level(x,y+dy),level(x+dx,y+dy)].includes(3))k=3
@@ -227,30 +222,31 @@ const tile=new win.Image()
 const css=win.getComputedStyle(boot,'::before').backgroundImage
 if(css.startsWith('url('))tile.src=css.slice(4,-1).replaceAll('"','')
 const listen=new AbortController()
-const s={floor:0,floorAt:t0,shown:0,fullAt:0,moveAt:0,key:'',last:t0,clock:0,over:false}
+const s={floor:0,floorAt:t0,shown:0,fullAt:0,key:'',last:t0,clock:0,over:false}
 s.loaded=doc.readyState==='complete'
 s.ready=doc.documentElement.dataset.mmReady==='1'
-if(reduced())s.moveAt=-Infinity
+const release=()=>{
+const root=doc.documentElement
+if(root.dataset.mmBootFull==='1')return
+root.dataset.mmBootFull='1'
+win.dispatchEvent(new win.Event('mm:boot-full'))
+}
 const remove=()=>{
+release()
 listen.abort()
 const reveal=boot.querySelector('.boot-cv')
 if(reveal)reveal.width=0
 boot.remove()
 }
-const shift=t=>{
-if(!s.moveAt&&s.shown>=C.at)s.moveAt=reduced()?-Infinity:t
-return mapShift(s.moveAt?(t-s.moveAt)/C.move:0,C.from)
-}
 const show=(p,at)=>{
 const pct=Math.floor(p*100)
-const view=shift(at)
 const q=s.fullAt?1+(at-s.fullAt)/C.hold:p
 const tick=Math.floor(at/150)
-const key=`${pct} ${view} ${tick} ${q >= 2}`
+const key=`${pct} ${tick} ${q >= 2}`
 if(key===s.key)return
 s.key=key
 label.textContent=`${pct}%`
-if(ctx)ctx.putImageData(paintMap(image,mapLevels(q,plan,tick),C.colors,view),0,0)
+if(ctx)ctx.putImageData(paintMap(image,mapLevels(q,plan,tick),C.colors),0,0)
 }
 const leave=()=>{
 s.over=true
@@ -273,7 +269,10 @@ const dt=Math.min(50,t-s.last)
 s.last=t
 s.clock+=dt
 s.shown=advance(t,dt)
-if(s.shown>=1&&!s.fullAt)s.fullAt=s.clock
+if(s.shown>=1&&!s.fullAt){
+s.fullAt=s.clock
+release()
+}
 show(s.shown,s.clock)
 if(s.fullAt&&s.clock>=s.fullAt+C.hold)leave()
 else win.requestAnimationFrame(frame)
@@ -296,11 +295,12 @@ win.addEventListener('mm:ready',onReady,{signal:listen.signal})
 win.setTimeout(()=>{
 if(s.over)return
 s.over=true
+release()
 bootFade(boot,win,remove)
 },C.stop)
 win.requestAnimationFrame(frame)
 }
-bootScreen(document,window,{"n":38,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[221,221,221],[255,255,255]],"from":[-13,13],"at":0.13,"lead":350,"fill":4000,"catchup":2000,"hold":400,"move":400,"out":1100,"pop":200,"stop":20000})}()</script><!-- boot:end -->
+bootScreen(document,window,{"n":38,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[221,221,221],[255,255,255]],"at":0.13,"lead":350,"fill":4000,"catchup":2000,"hold":400,"out":1100,"pop":200,"stop":20000})}()</script><!-- boot:end -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

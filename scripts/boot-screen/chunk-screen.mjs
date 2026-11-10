@@ -121,24 +121,17 @@ export function mapLevels(q, plan, tick) {
 	return levels
 }
 
-/** The view's offset from the player (whole cells) at k (0..1) of the recentring: an ease in and out from `from` to the centre. */
-export function mapShift(k, from) {
-	const u = Math.min(1, Math.max(0, k))
-	const ease = u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2
-	return from.map(v => Math.round(v * (1 - ease)) || 0)
-}
-
 /**
- * Writes the levels' colours into an ImageData of the map at three pixels per cell (3n x 3n), the player `shift` cells away from the centre (black
- * outside). The blue ring is two pixels wide, its inner third green, as the game's map reads at this size.
+ * Writes the levels' colours into an ImageData of the map at three pixels per cell (3n x 3n), the player at the centre. The blue ring is two pixels
+ * wide, its inner third green, as the game's map reads at this size.
  */
-export function paintMap(image, levels, colors, shift) {
+export function paintMap(image, levels, colors) {
 	const data = image.data
 	const n = Math.round(Math.sqrt(levels.length))
 	const level = (x, y) => (x >= 0 && x < n && y >= 0 && y < n ? levels[y * n + x] : 0)
 	for (let i = 0; i < 9 * n * n; i++) {
 		const [u, w] = [i % (3 * n), Math.floor(i / (3 * n))]
-		const [x, y] = [Math.floor(u / 3) - shift[0], Math.floor(w / 3) - shift[1]]
+		const [x, y] = [Math.floor(u / 3), Math.floor(w / 3)]
 		const [dx, dy] = [(u % 3) - 1, (w % 3) - 1]
 		let k = level(x, y)
 		if (k === 2 && [level(x + dx, y), level(x, y + dy), level(x + dx, y + dy)].includes(3)) k = 3
@@ -274,9 +267,10 @@ export function bootPace(t, C) {
  * Drives #boot. The screen only plays on the landing ("/"), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace),
  * holds `C.hold` ms, then the film is revealed block by block. Its percentage follows the app's milestones (`mm:boot-progress`) and an estimate, never
  * faster than bootPace, and reaches 100 % only once the page has loaded and the app says it is on screen (`mm:ready`: the film's first image is drawn).
- * Like the game, the map starts around the player off-centre, then recentres (`C.move` ms, or at once with reduced motion, which also fades instead of
- * the reveal). If anything stalls, the screen fades away after `C.stop` ms anyway (the CSS does the same without JavaScript). Once gone, it leaves
- * nothing behind: listeners removed, the reveal canvas freed.
+ * The map grows from the centre from its first frame (reduced motion fades instead of the reveal). The film waits for the screen: when the
+ * percentage reads 100 % (or the screen goes away without reaching it), <html> gets `data-mm-boot-full` and `mm:boot-full` is sent, and only then
+ * does hero.js start the film's clock, so the reveal uncovers its first second rather than its fifth. If anything stalls, the screen fades away
+ * after `C.stop` ms anyway (the CSS does the same without JavaScript). Once gone, it leaves nothing behind: listeners removed, the reveal canvas freed.
  */
 export function bootScreen(doc, win, C) {
 	const boot = doc.getElementById('boot')
@@ -302,34 +296,34 @@ export function bootScreen(doc, win, C) {
 	if (css.startsWith('url(')) tile.src = css.slice(4, -1).replaceAll('"', '')
 	const listen = new AbortController()
 	// clock: the screen's own time, in frames of 50 ms at most, so a busy main thread pauses the animation instead of skipping part of it
-	const s = { floor: 0, floorAt: t0, shown: 0, fullAt: 0, moveAt: 0, key: '', last: t0, clock: 0, over: false }
+	const s = { floor: 0, floorAt: t0, shown: 0, fullAt: 0, key: '', last: t0, clock: 0, over: false }
 	s.loaded = doc.readyState === 'complete'
 	s.ready = doc.documentElement.dataset.mmReady === '1'
-	// reduced motion: the map starts centred (its recentring is over before it starts)
-	if (reduced()) s.moveAt = -Infinity
+	// the film may start: once, at 100 % or when the screen leaves without it
+	const release = () => {
+		const root = doc.documentElement
+		if (root.dataset.mmBootFull === '1') return
+		root.dataset.mmBootFull = '1'
+		win.dispatchEvent(new win.Event('mm:boot-full'))
+	}
 	const remove = () => {
+		release()
 		listen.abort()
 		const reveal = boot.querySelector('.boot-cv')
 		// a full-screen canvas in device pixels: no width, no pixels; freed now, not with the page
 		if (reveal) reveal.width = 0
 		boot.remove()
 	}
-	const shift = t => {
-		// the site's own option may have been set since the start: no motion then, the view jumps to the centre
-		if (!s.moveAt && s.shown >= C.at) s.moveAt = reduced() ? -Infinity : t
-		return mapShift(s.moveAt ? (t - s.moveAt) / C.move : 0, C.from)
-	}
 	// the map at q: the fill, then 1 to 2 over the hold (the last light-grey cells fade); its speckles are re-drawn every 150 ms
 	const show = (p, at) => {
 		const pct = Math.floor(p * 100)
-		const view = shift(at)
 		const q = s.fullAt ? 1 + (at - s.fullAt) / C.hold : p
 		const tick = Math.floor(at / 150)
-		const key = `${pct} ${view} ${tick} ${q >= 2}`
+		const key = `${pct} ${tick} ${q >= 2}`
 		if (key === s.key) return
 		s.key = key
 		label.textContent = `${pct}%`
-		if (ctx) ctx.putImageData(paintMap(image, mapLevels(q, plan, tick), C.colors, view), 0, 0)
+		if (ctx) ctx.putImageData(paintMap(image, mapLevels(q, plan, tick), C.colors), 0, 0)
 	}
 	const leave = () => {
 		s.over = true
@@ -354,7 +348,10 @@ export function bootScreen(doc, win, C) {
 		s.last = t
 		s.clock += dt
 		s.shown = advance(t, dt)
-		if (s.shown >= 1 && !s.fullAt) s.fullAt = s.clock
+		if (s.shown >= 1 && !s.fullAt) {
+			s.fullAt = s.clock
+			release()
+		}
 		show(s.shown, s.clock)
 		if (s.fullAt && s.clock >= s.fullAt + C.hold) leave()
 		else win.requestAnimationFrame(frame)
@@ -377,6 +374,7 @@ export function bootScreen(doc, win, C) {
 	win.setTimeout(() => {
 		if (s.over) return
 		s.over = true
+		release()
 		bootFade(boot, win, remove)
 	}, C.stop)
 	win.requestAnimationFrame(frame)
