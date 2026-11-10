@@ -1,6 +1,6 @@
 # Mod release notes
 
-One file per mod release, named after the version without the `mod-v` prefix: the tag `mod-v0.36.1-beta.1` reads `0.36.1-beta.1.md`. These notes are what players see in the Discord `#changelog` release card and in the "Latest mod version" card on `/roadmap`. Without a file, both fall back to the subjects of the commits touching `mod/` since the previous tag, which are often terse or not in English.
+One file per mod release, named after the version without the `mod-v` prefix: the tag `mod-v0.36.1-beta.1` reads `0.36.1-beta.1.md`. These notes are what players see in the Discord `#changelog` release card, in the "Latest mod version" card on `/roadmap` and on the site's `/versions` page (the first three notes of the latest version, the first note of each earlier one). Without a file, both fall back to the subjects of the commits touching `mod/` since the previous tag, which are often terse or not in English.
 
 ## Format
 
@@ -19,7 +19,9 @@ One note per line, in English, written for players:
 - At most 12 notes are shown; the rest is counted as "+N more".
 - A pull request that adds or edits a notes file runs the Discord tests (not the Gradle build); they fail when a file holds no note.
 
-The same rules are implemented in `scripts/discord/release-info.mjs` and `apps/api/src/mod-release.ts`, and both test suites check them against `scripts/discord/fixtures/curated-notes.json`.
+The same rules are implemented in `scripts/discord/release-info.mjs`, `apps/api/src/mod-release.ts` and `apps/web/src/lib/release-notes.ts`, and the three test suites check them against `scripts/discord/fixtures/curated-notes.json`.
+
+`/versions` bundles the files at build time, so a new file shows on the site at its next deployment. The notes it shows are translated in the site catalogues (`apps/web/src/i18n/locales/`), keyed by their English text: a new or edited note appears in English until its translation is added. Put the most important note first, and keep the first line of each file free of version ranges ("1.18.2 to 1.21.11"): name the versions.
 
 ## When to add it
 

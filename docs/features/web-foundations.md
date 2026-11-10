@@ -22,7 +22,7 @@ To add a new page family: declare its route in `App.tsx`, its metadata in `route
 
 ## Prerendering and crawling
 
-`build-web.mjs` builds the Vite client, then a temporary React render entry in `work/web-ssr`. `prerender-web.mjs` writes seventeen complete public pages (HTML, titles, description, canonical, Open Graph, JSON-LD), `sitemap.xml`, `robots.txt`, a private `app.html` shell and a 404 page. The tutorial contains a full manual Windows walkthrough inside `noscript`. Pages hydrate in the browser; saved progress is restored after hydration.
+`build-web.mjs` builds the Vite client, then a temporary React render entry in `work/web-ssr`. `prerender-web.mjs` writes seventeen complete public pages (HTML, titles, description, canonical, Open Graph, JSON-LD), `sitemap.xml`, `robots.txt`, a private `app.html` shell and a 404 page. `/installation`, `/downloads` and `/versions` hold their whole content in the static HTML, with no `noscript` block. Pages hydrate in the browser; saved progress is restored after hydration.
 
 The gallery, the local viewer, `/share/` links and authentication are not in the sitemap. They use `noindex,nofollow` and are excluded in robots.txt. A shared capture stays reachable for its recipient without becoming an indexed marketing page. No account or authenticated API call is used during prerendering.
 
