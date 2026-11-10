@@ -46,7 +46,7 @@ test('the radius map grows the command, the square and a warning for a large are
 test('the sharing demo walks from private to a link to a revoked link', () => {
 	english(<ShareDemo />)
 	const create = screen.getByRole('button', { name: 'Create a link' })
-	const revoke = screen.getByRole('button', { name: 'Revoke the link' })
+	const revoke = screen.getByRole('button', { name: 'Stop sharing' })
 	expect(screen.getByText('Only you can see it.')).toBeTruthy()
 	expect(revoke.hasAttribute('disabled')).toBe(true)
 	fireEvent.click(create)

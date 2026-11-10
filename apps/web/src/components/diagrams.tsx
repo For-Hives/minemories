@@ -116,7 +116,7 @@ export function ShareDemo() {
 					disabled={!open}
 					onClick={() => setState('revoked')}
 				>
-					{t('Revoke the link')}
+					{t('Stop sharing')}
 				</button>
 			</div>
 		</div>
