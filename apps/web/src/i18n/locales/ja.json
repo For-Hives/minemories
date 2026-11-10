@@ -1266,5 +1266,11 @@
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Mineways や jmc2obj のようなツールはワールドのセーブデータを読むので、サーバーでは管理者のコピーが必要です。Minemories はゲームから直接書き出します。",
 	"Nobody sees them without a link you create.": "あなたが作ったリンクがなければ、誰も見られません。",
 	"A link for one memory, or for a whole world with its slider through time.": "思い出ひとつのリンクも、時間スライダー付きのワールド全体のリンクも作れます。",
-	"Prefer a picture? Download the HD postcard and post it on Discord.": "画像のほうがいい場合は、HD のポストカードをダウンロードして Discord に投稿できます。"
+	"Prefer a picture? Download the HD postcard and post it on Discord.": "画像のほうがいい場合は、HD のポストカードをダウンロードして Discord に投稿できます。",
+	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "共有リンクでブラウザに拠点が3Dで開き、拠点のHDポストカードはグループのチャットに投稿されるよ。",
+	"No Minecraft, no account": "Minecraftもアカウントも不要",
+	"That's our base! I'm turning around it on my phone.": "うちらの拠点だ！スマホでぐるっと回して見てるよ。",
+	"[Server] The server closes on December 1st.": "[Server] サーバーは12月1日に閉鎖します。",
+	"Memory saved and sent!": "思い出を保存して送信したよ！",
+	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "ゲーム内でサーバーが閉鎖を告知。プレイヤーがMを押して「思い出を残す」を選ぶと、Modが「思い出を保存して送信したよ！」と答える。"
 }

@@ -1266,5 +1266,11 @@
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Des outils comme Mineways ou jmc2obj lisent la sauvegarde du monde : sur un serveur, il te faut la copie de l’admin. Minemories exporte depuis ton jeu.",
 	"Nobody sees them without a link you create.": "Personne ne les voit sans un lien que tu crées.",
 	"A link for one memory, or for a whole world with its slider through time.": "Un lien pour un souvenir, ou pour tout un monde avec son curseur dans le temps.",
-	"Prefer a picture? Download the HD postcard and post it on Discord.": "Tu préfères une image ? Télécharge la carte postale HD et poste-la sur Discord."
+	"Prefer a picture? Download the HD postcard and post it on Discord.": "Tu préfères une image ? Télécharge la carte postale HD et poste-la sur Discord.",
+	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "Un lien de partage ouvre la base en 3D dans un navigateur, et une carte postale HD de la base est postée dans le chat du groupe.",
+	"No Minecraft, no account": "Sans Minecraft, sans compte",
+	"That's our base! I'm turning around it on my phone.": "C'est notre base ! Je tourne autour depuis mon téléphone.",
+	"[Server] The server closes on December 1st.": "[Server] Le serveur ferme le 1er décembre.",
+	"Memory saved and sent!": "Souvenir gardé et envoyé !",
+	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "Dans le jeu, le serveur annonce sa fermeture. Le joueur appuie sur M, puis Prendre un souvenir, et le mod répond Souvenir gardé et envoyé !"
 }

@@ -1266,5 +1266,11 @@
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.",
 	"Nobody sees them without a link you create.": "Nobody sees them without a link you create.",
 	"A link for one memory, or for a whole world with its slider through time.": "A link for one memory, or for a whole world with its slider through time.",
-	"Prefer a picture? Download the HD postcard and post it on Discord.": "Prefer a picture? Download the HD postcard and post it on Discord."
+	"Prefer a picture? Download the HD postcard and post it on Discord.": "Prefer a picture? Download the HD postcard and post it on Discord.",
+	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.",
+	"No Minecraft, no account": "No Minecraft, no account",
+	"That's our base! I'm turning around it on my phone.": "That's our base! I'm turning around it on my phone.",
+	"[Server] The server closes on December 1st.": "[Server] The server closes on December 1st.",
+	"Memory saved and sent!": "Memory saved and sent!",
+	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!"
 }

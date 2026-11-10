@@ -1266,5 +1266,11 @@
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Инструменты вроде Mineways или jmc2obj читают сохранение мира: на сервере нужна копия админа. Minemories экспортирует прямо из твоей игры.",
 	"Nobody sees them without a link you create.": "Никто их не увидит без ссылки, которую создашь ты.",
 	"A link for one memory, or for a whole world with its slider through time.": "Ссылка на одно воспоминание или на целый мир с ползунком во времени.",
-	"Prefer a picture? Download the HD postcard and post it on Discord.": "Хочешь картинку? Скачай открытку в HD и выложи её в Discord."
+	"Prefer a picture? Download the HD postcard and post it on Discord.": "Хочешь картинку? Скачай открытку в HD и выложи её в Discord.",
+	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "Ссылка открывает базу в 3D прямо в браузере, а HD-открытка с ней отправлена в чат группы.",
+	"No Minecraft, no account": "Без Minecraft и без аккаунта",
+	"That's our base! I'm turning around it on my phone.": "Это же наша база! Кручу её прямо с телефона.",
+	"[Server] The server closes on December 1st.": "[Server] Сервер закроется 1 декабря.",
+	"Memory saved and sent!": "Воспоминание сохранено и отправлено!",
+	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "В игре сервер объявляет о закрытии. Игрок нажимает M, затем «Сделать воспоминание», и мод отвечает «Воспоминание сохранено и отправлено!»"
 }

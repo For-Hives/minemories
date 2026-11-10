@@ -1266,5 +1266,11 @@
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Mineways나 jmc2obj 같은 도구는 월드 저장 파일을 읽어서, 서버에서는 관리자의 사본이 필요해요. Minemories는 게임에서 바로 내보냅니다.",
 	"Nobody sees them without a link you create.": "내가 만든 링크가 없으면 아무도 볼 수 없어요.",
 	"A link for one memory, or for a whole world with its slider through time.": "추억 하나의 링크도, 시간 슬라이더가 있는 월드 전체의 링크도 만들 수 있어요.",
-	"Prefer a picture? Download the HD postcard and post it on Discord.": "이미지가 좋다면 HD 엽서를 내려받아 Discord에 올리세요."
+	"Prefer a picture? Download the HD postcard and post it on Discord.": "이미지가 좋다면 HD 엽서를 내려받아 Discord에 올리세요.",
+	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "공유 링크로 브라우저에서 기지가 3D로 열리고, 기지의 HD 엽서는 그룹 채팅에 올라가요.",
+	"No Minecraft, no account": "Minecraft도 계정도 필요 없어요",
+	"That's our base! I'm turning around it on my phone.": "우리 기지다! 폰으로 이리저리 돌려 보는 중이야.",
+	"[Server] The server closes on December 1st.": "[Server] 서버가 12월 1일에 닫혀요.",
+	"Memory saved and sent!": "추억을 저장하고 보냈어요!",
+	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "게임에서 서버가 종료를 알려요. 플레이어가 M을 누르고 추억 남기기를 누르면, 모드가 추억을 저장하고 보냈어요!라고 답해요."
 }
