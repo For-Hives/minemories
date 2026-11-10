@@ -22,6 +22,8 @@ export class ViewerEffects {
 	private readonly projectedSun = new THREE.Vector3()
 	private daylight = 1
 	private cloudiness = 0
+	private quality: ViewerQuality = 'auto'
+	private faithful = false
 
 	constructor(
 		renderer: THREE.WebGLRenderer,
@@ -46,8 +48,16 @@ export class ViewerEffects {
 	}
 
 	setQuality(quality: ViewerQuality): void {
-		this.bloom.enabled = quality !== 'eco'
+		this.quality = quality
+		this.bloom.enabled = quality !== 'eco' && !this.faithful
 		this.atmosphere.uniforms.strength.value = quality === 'eco' ? 0 : 1.1
+	}
+
+	/** The game's look keeps the occlusion (its smooth lighting) but has no bloom, haze or colour grading; the realistic chain comes back as it was. */
+	setFaithful(faithful: boolean): void {
+		this.faithful = faithful
+		this.atmosphere.uniforms.grade.value = faithful ? 0 : 1
+		this.setQuality(this.quality)
 	}
 
 	resize(width: number, height: number, ratio: number): void {

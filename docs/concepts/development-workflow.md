@@ -143,6 +143,26 @@ Point lights are grouped by cell and then capped at 12; the
 2048-pixel sun shadows are updated when the lighting/capture changes.
 No GLB format or Minecraft export is modified.
 
+The Atmosphere panel also offers a lighting style, remembered on the device
+(`minemories-viewer-lighting` in local storage, ignored when storage is blocked).
+**Realistic** (the default) is the chain above. **Faithful to the game**
+reproduces Minecraft's own block lighting: base colour (texture × material
+colour) × the game's face shade (top 1, north/south 0.8, east/west 0.6, bottom
+0.5) × the sky light of the hour from the game's light map (white by day, a dim
+moonlit blue of about 0.27/0.27/0.46 at night, darkened by 5/16 in rain, snow
+or overcast skies), all as sRGB multipliers. Captured lights and emissive blocks
+add block light on top, capped at the full-daylight face colour, so lamps stay
+bright at night. There is no tone mapping, sun shadow, environment reflection,
+bloom, haze or colour grading; the screen-space occlusion stays as the
+counterpart of the game's smooth lighting, and alpha, cut-outs and water
+transparency are unchanged. Every imported PBR material carries one shared
+shader branch (`viewer-faithful.ts`), so switching is a uniform flip without
+reloading the capture, and switching back restores the realistic render pixel
+for pixel. The maths (face shade, light map) lives in `lib/viewer-lighting.ts`.
+On the zone 1 tour capture at 9:30 the faithful render averages (102, 108, 91)
+over the lower 70 % of the frame against (95, 100, 82) for the in-game frame;
+the realistic render gives (68, 96, 100).
+
 The desert/badlands/savanna, snow/ice and jungle/swamp palettes complement the
 Nether, End and deep dark atmospheres. The Clear, Mist and Overcast settings are
 local artistic variants, with no simulated rain and no change to the memory.

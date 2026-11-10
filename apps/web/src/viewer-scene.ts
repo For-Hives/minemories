@@ -6,9 +6,11 @@ import { CeilingGrid } from './lib/ceiling'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { dayDelta, Glide } from './lib/transitions'
+import { faithfulSkyLight, type Rgb, srgbFactorToLinear, type ViewerLighting } from './lib/viewer-lighting'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
+import { createFaithfulUniforms, prepareFaithfulLighting } from './viewer-faithful'
 import { framingBounds, isLightBeam, orbitFocus, surfaceFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
@@ -133,6 +135,8 @@ export class ViewerScene {
 	private hasShadowDirection = false
 	private previousFrame = 0
 	private readonly waterTime = { value: 0 }
+	private readonly faithfulUniforms = createFaithfulUniforms()
+	private lighting: ViewerLighting = 'realistic'
 	private disposed = false
 	private preparingWorld = false
 	private loadingFile = false
@@ -611,6 +615,17 @@ export class ViewerScene {
 		this.updateEnvironment()
 	}
 
+	/** Realistic studio light or the game's own face shading; a uniform flip, the capture is not reloaded. */
+	setLighting(lighting: ViewerLighting): void {
+		if (lighting === this.lighting) return
+		this.lighting = lighting
+		const faithful = lighting === 'faithful'
+		this.faithfulUniforms.memoryFaithful.value = faithful ? 1 : 0
+		this.renderer.toneMapping = faithful ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping
+		this.effects.setFaithful(faithful)
+		this.updateDayCycle()
+	}
+
 	setFirstPerson(enabled: boolean): void {
 		this.controls.autoRotate = false
 		this.controls.enabled = !enabled
@@ -865,6 +880,7 @@ export class ViewerScene {
 				pbrMaterial.emissiveIntensity = Math.min(pbrMaterial.emissiveIntensity, 1.6)
 				prepareWater(pbrMaterial, this.waterTime)
 			}
+			prepareFaithfulLighting(material, this.faithfulUniforms)
 			hasOpaqueSurface ||= !isLightBeam(material) && (!material.transparent || material.alphaTest > 0)
 			for (const texture of [
 				pbrMaterial.map,
@@ -936,7 +952,11 @@ export class ViewerScene {
 		this.skyUniforms.uMoonPhase.value = this.lunarAge
 		this.keyLight.intensity =
 			(0.025 + daylight * 4.8) * (['overcast', 'rain', 'snow'].includes(this.weather) ? 0.35 : 1)
-		const shouldCastShadow = daylight > 0.08
+		const stormy = ['overcast', 'rain', 'snow'].includes(this.weather)
+		const skyLight = faithfulSkyLight(daylight, stormy).map(srgbFactorToLinear) as Rgb
+		this.faithfulUniforms.memoryFaithfulSky.value.setRGB(...skyLight)
+		// The game's look has no sun shadow; skipping the shadow pass also saves its cost.
+		const shouldCastShadow = daylight > 0.08 && this.lighting === 'realistic'
 		if (this.keyLight.castShadow !== shouldCastShadow) {
 			this.keyLight.castShadow = shouldCastShadow
 			this.keyLight.shadow.needsUpdate = true
