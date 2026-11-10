@@ -654,7 +654,7 @@
 	"Drag to turn it.": "Перетащи, чтобы повернуть.",
 	"Film chapters (keys 1 to 5)": "Главы фильма (клавиши 1–5)",
 	"Film step {n} of {total}": "Шаг {n} из {total}",
-	"Install it": "Установить",
+	"Install it": "Установи",
 	"Installation": "Установка",
 	"Lead": "Поводок",
 	"Leaving": "Уход",
@@ -1277,5 +1277,7 @@
 	"[Server] The server closes on December 1st.": "[Server] Сервер закроется 1 декабря.",
 	"Memory saved and sent!": "Воспоминание сохранено и отправлено!",
 	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "Кадр из мира этой страницы в сумерках, в чате сервер объявляет о закрытии. Поверх — меню M мода, подключено: «Сделать воспоминание» и его ответ «Воспоминание сохранено и отправлено!»",
-	"On this page": "На этой странице"
+	"On this page": "На этой странице",
+	"The three steps": "Три шага",
+	"Pages": "Страницы"
 }

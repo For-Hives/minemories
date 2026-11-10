@@ -654,7 +654,7 @@
 	"Drag to turn it.": "Ziehen, um es zu drehen.",
 	"Film chapters (keys 1 to 5)": "Kapitel des Films (Tasten 1 bis 5)",
 	"Film step {n} of {total}": "Filmschritt {n} von {total}",
-	"Install it": "Installieren",
+	"Install it": "Installiere",
 	"Installation": "Installation",
 	"Lead": "Leine",
 	"Leaving": "Der Abschied",
@@ -1277,5 +1277,7 @@
 	"[Server] The server closes on December 1st.": "[Server] Der Server schließt am 1. Dezember.",
 	"Memory saved and sent!": "Erinnerung gespeichert und gesendet!",
 	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "Ein Bild aus der Welt der Seite in der Abenddämmerung, im Chat kündigt der Server seine Schließung an. Darüber das M-Menü des Mods, verbunden: Erinnerung festhalten, und seine Antwort Erinnerung gespeichert und gesendet!",
-	"On this page": "Auf dieser Seite"
+	"On this page": "Auf dieser Seite",
+	"The three steps": "Die drei Schritte",
+	"Pages": "Seiten"
 }

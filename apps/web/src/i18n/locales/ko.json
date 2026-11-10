@@ -654,7 +654,7 @@
 	"Drag to turn it.": "드래그하여 돌려 보세요.",
 	"Film chapters (keys 1 to 5)": "영상 챕터 (1~5 키)",
 	"Film step {n} of {total}": "영상 {n}/{total}단계",
-	"Install it": "설치하기",
+	"Install it": "설치하세요",
 	"Installation": "설치",
 	"Lead": "끈",
 	"Leaving": "떠남",
@@ -1277,5 +1277,7 @@
 	"[Server] The server closes on December 1st.": "[Server] 서버가 12월 1일에 닫혀요.",
 	"Memory saved and sent!": "추억을 저장하고 보냈어요!",
 	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "해 질 녘, 이 페이지 속 세계의 한 장면이에요. 채팅에는 서버 종료 공지가 떠 있어요. 그 위에 연결된 모드의 M 메뉴: 추억 남기기, 그리고 답 추억을 저장하고 보냈어요!",
-	"On this page": "이 페이지"
+	"On this page": "이 페이지",
+	"The three steps": "세 단계",
+	"Pages": "페이지"
 }

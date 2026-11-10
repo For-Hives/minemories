@@ -1,6 +1,8 @@
 import { repositoryUrl } from '../lib/repository'
+import { catalogLinks } from '../pages/installation-loaders'
 
-export type FooterLink = { label: string } & ({ to: string } | { href: string })
+/** A link of the footer or of the bar's menus; `plain` labels are names (CurseForge, GitHub), never translated. */
+export type FooterLink = { label: string; plain?: true } & ({ to: string } | { href: string })
 
 /**
  * The footer's groups, shared by every page's footer and the landing film's. A contact joins "Help" once one is
@@ -45,29 +47,53 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 	},
 ]
 
-export type NavSection = { label?: string; links: FooterLink[] }
+/** A group of a menu; `kind: 'sections'` marks the landing's own sections (a ↓ before their heading, hidden during the film). */
+export type NavSection = { label?: string; kind?: 'sections'; links: FooterLink[] }
 export type NavMenu = { id: 'product' | 'guides' | 'help'; label: string; sections: NavSection[] }
 
-/** The landing's own sections, first in its "Product" menu: they glide to the section (hero.js) and wait for the end of the film. */
+/**
+ * The landing's own sections, first in its "Product" menu: they glide to the section (hero.js) and wait for the end of the film. Their
+ * names are their own, never a page's ("How it works" and "FAQ" are pages of the menus too).
+ */
 export const landingSections = [
-	{ href: '#steps', label: 'How it works' },
+	{ href: '#steps', label: 'The three steps' },
 	{ href: '#share', label: 'Show it to the group' },
 	{ href: '#server-closing', label: 'Your server is closing?' },
-	{ href: '#faq', label: 'FAQ' },
+	{ href: '#faq', label: 'Questions' },
 ]
+
+/** The mod's catalogs and the source code, at the bottom of Help (and in the footers' "Elsewhere"). */
+export function elsewhereLinks(): FooterLink[] {
+	return [
+		...catalogLinks().map(catalog => ({ href: catalog.url, label: catalog.name, plain: true as const })),
+		{ href: repositoryUrl, label: 'GitHub', plain: true },
+	]
+}
 
 const group = (label: string) => footerGroups.find(entry => entry.label === label)?.links ?? []
 
 /**
  * The bar's menus, built from the footer's groups so that every page of the site is one click away from the bar: Product, Guides and Help
- * (the legal pages at its bottom). On the landing, Product starts with the page's own sections.
+ * (the legal pages and the outside links at its bottom). On the landing, Product starts with the page's own sections, then its pages.
  */
 export function navMenus(landing = false): NavMenu[] {
-	const product: NavSection[] = [{ links: group('Product') }]
-	if (landing) product.unshift({ label: 'On this page', links: landingSections })
+	const product: NavSection[] = landing
+		? [
+				{ label: 'On this page', kind: 'sections', links: landingSections },
+				{ label: 'Pages', links: group('Product') },
+			]
+		: [{ links: group('Product') }]
 	return [
 		{ id: 'product', label: 'Product', sections: product },
 		{ id: 'guides', label: 'Guides', sections: [{ links: group('Guides') }] },
-		{ id: 'help', label: 'Help', sections: [{ links: group('Help') }, { label: 'Legal', links: group('Legal') }] },
+		{
+			id: 'help',
+			label: 'Help',
+			sections: [
+				{ links: group('Help') },
+				{ label: 'Legal', links: group('Legal') },
+				{ label: 'Elsewhere', links: elsewhereLinks() },
+			],
+		},
 	]
 }

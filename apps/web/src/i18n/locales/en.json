@@ -654,7 +654,7 @@
 	"Drag to turn it.": "Drag to turn it.",
 	"Film chapters (keys 1 to 5)": "Film chapters (keys 1 to 5)",
 	"Film step {n} of {total}": "Film step {n} of {total}",
-	"Install it": "Install it",
+	"Install it": "Install",
 	"Installation": "Installation",
 	"Lead": "Lead",
 	"Leaving": "Leaving",
@@ -1277,5 +1277,7 @@
 	"[Server] The server closes on December 1st.": "[Server] The server closes on December 1st.",
 	"Memory saved and sent!": "Memory saved and sent!",
 	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!",
-	"On this page": "On this page"
+	"On this page": "On this page",
+	"The three steps": "The three steps",
+	"Pages": "Pages"
 }

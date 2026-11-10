@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
-import { type FooterLink, footerGroups } from '../content/navigation'
+import { elsewhereLinks, type FooterLink, footerGroups } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import {
 	applyDisplay,
@@ -10,8 +10,6 @@ import {
 	setDisplayOption,
 	storeDisplayOption,
 } from '../lib/display-preferences'
-import { repositoryUrl } from '../lib/repository'
-import { catalogLinks } from '../pages/installation-loaders'
 import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { SiteNav } from './SiteNav'
@@ -127,12 +125,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				))}
 				<nav aria-label={t('Elsewhere')}>
 					<h2 className="mm-footer-title">{t('Elsewhere')}</h2>
-					{catalogLinks().map(catalog => (
-						<a key={catalog.name} href={catalog.url}>
-							{catalog.name}
-						</a>
+					{elsewhereLinks().map(link => (
+						<FooterAnchor key={link.label} link={link} />
 					))}
-					<a href={repositoryUrl}>GitHub</a>
 					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>
 			</footer>
@@ -148,8 +143,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 /** A footer link: a page of the site, or an outside address. */
 function FooterAnchor({ link }: { link: FooterLink }) {
 	const { t } = useI18n()
-	if ('href' in link) return <a href={link.href}>{t(link.label)}</a>
-	return <Link to={link.to}>{t(link.label)}</Link>
+	const label = link.plain ? link.label : t(link.label)
+	if ('href' in link) return <a href={link.href}>{label}</a>
+	return <Link to={link.to}>{label}</Link>
 }
 
 function safeStorage() {
