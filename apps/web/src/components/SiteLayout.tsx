@@ -152,7 +152,9 @@ function SiteHeader() {
 			<div className="mm-header-actions">
 				<LanguageControl />
 				<FileControl />
-				<AccountControl />
+				<div className="mm-header-account">
+					<AccountControl />
+				</div>
 				<Link className={`${buttonLime} mm-install-cta`} to="/installation">
 					<span className="mm-install-long">{t('Install the mod')}</span>
 					<span className="mm-install-short" aria-hidden="true">
@@ -175,6 +177,11 @@ function SiteHeader() {
 								{t(link.label)}
 							</Link>
 						))}
+						{menuOpen && (
+							<div className="mm-menu-account">
+								<AccountControl />
+							</div>
+						)}
 						{menuOpen && <LanguageControl />}
 					</nav>
 				</details>

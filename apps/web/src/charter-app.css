@@ -624,7 +624,8 @@ html[data-mc-font="read"] .mm-brand {
 	gap: var(--ds-sp-4);
 }
 
-.mm-footer-title {
+/* A group's name, not a section title: the UI font at link size (beats `.mm-site h2`). */
+.mm-site .mm-footer .mm-footer-title {
 	margin: 0 0 var(--ds-sp-2);
 	font: 16px / 18px var(--f-ui);
 	color: var(--text);
@@ -685,17 +686,24 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* The header's install button: the whole label, then a shorter one where the bar is tight. */
-.mm-install-short {
+/* The header's install button: the whole label, then a shorter one where the bar is tight. On phones, as on the
+   landing, the account moves into the menu so the install button keeps its place. */
+.mm-install-short,
+.mm-menu-account {
 	display: none;
 }
 
 @media (max-width: 560px) {
-	.mm-install-long {
+	.mm-install-long,
+	.mm-header-account {
 		display: none;
 	}
 	.mm-install-short {
 		display: inline;
+	}
+	.mm-menu-account {
+		display: block;
+		margin-top: var(--ds-sp-3);
 	}
 }
 

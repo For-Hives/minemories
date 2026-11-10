@@ -22,7 +22,8 @@
 
 /* --- Steps: /how-it-works, one card per step, top to bottom ------------------------------------------------------------------------------------- */
 
-.ex-steps {
+/* Beats `.mm-info ol`: the step titles carry their number. */
+.mm-info .ex-steps {
 	display: grid;
 	gap: var(--ds-sp-5);
 	margin: var(--ds-sp-5) 0;
@@ -30,7 +31,8 @@
 	list-style: none;
 }
 
-.ex-steps > li {
+.mm-info .ex-steps > li {
+	margin: 0;
 	padding: var(--ds-sp-5);
 	background: var(--night-2);
 	box-shadow: var(--mm-card-shadow);
@@ -789,6 +791,10 @@
 .ex-faq-item h3 a:hover,
 .ex-faq-item:target h3 {
 	color: var(--ember);
+}
+
+.ex-faq-item p a {
+	white-space: nowrap;
 }
 
 .ex-faq-item p {
