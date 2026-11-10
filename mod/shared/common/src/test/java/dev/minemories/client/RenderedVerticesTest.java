@@ -36,11 +36,29 @@ class RenderedVerticesTest {
     consumer.addVertex(0, 0, 0).setColor(-10, 300, 8, 500).setUv(.5f, .5f);
     for (int index = 1; index < 4; index++) consumer.addVertex(index, 0, 0);
     consumer.finish();
-    assertEquals(0, quads.getFirst()[0].red());
-    assertEquals(255, quads.getFirst()[0].green());
-    assertEquals(255, quads.getFirst()[0].alpha());
+    // Minecraft's buffers keep the low byte ((byte) value), they do not clamp.
+    assertEquals(246, quads.getFirst()[0].red());
+    assertEquals(44, quads.getFirst()[0].green());
+    assertEquals(244, quads.getFirst()[0].alpha());
     assertEquals(
         new RenderedVertices.Vertex(3, 0, 0, 0, 0, 255, 255, 255, 255), quads.getFirst()[3]);
+  }
+
+  @Test
+  void signedByteColorsFromCreateStayOpaqueAndKeepRealTranslucency() {
+    // Create's SuperByteBuffer passes VertexList.getR/G/B/A bytes straight to color(int, ...):
+    // opaque white is (-1, -1, -1, -1). Clamping turned it into black with alpha 0 (invisible).
+    List<RenderedVertices.Vertex[]> quads = new ArrayList<>();
+    var consumer = new RenderedVertices(RenderedVertices.Mode.QUADS, quads::add);
+    for (int index = 0; index < 4; index++)
+      consumer.addVertex(index, 0, 0).setColor((byte) 255, (byte) 200, 127, (byte) 255);
+    for (int index = 0; index < 4; index++)
+      consumer.addVertex(index, 1, 0).setColor(-1, -1, -1, (byte) 128);
+    for (int index = 0; index < 4; index++) consumer.addVertex(index, 2, 0).setColor(9, 9, 9, 100);
+    consumer.finish();
+    assertEquals(new RenderedVertices.Vertex(0, 0, 0, 0, 0, 255, 200, 127, 255), quads.get(0)[0]);
+    assertEquals(new RenderedVertices.Vertex(0, 1, 0, 0, 0, 255, 255, 255, 128), quads.get(1)[0]);
+    assertEquals(100, quads.get(2)[3].alpha(), "A translucent part stays translucent");
   }
 
   @Test

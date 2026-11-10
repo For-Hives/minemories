@@ -26,6 +26,7 @@ final class RenderedModelCapture {
   private final AtlasUvIndex.SearchBudget atlasSearchBudget = new AtlasUvIndex.SearchBudget();
   private final java.util.Set<String> refused = new java.util.HashSet<>();
   private final RenderedBudget budget;
+  private final boolean constantAmbient;
 
   // Private ownership keeps the cached PNG inside the capture; no renderer can mutate it.
   private static final class Texture {
@@ -67,6 +68,8 @@ final class RenderedModelCapture {
     this.minecraft = minecraft;
     this.pixelCopies = pixelCopies;
     this.budget = budget;
+    // 26.3 replaced getShade with CardinalLighting (not ported yet): only the Overworld rule applies.
+    this.constantAmbient = false;
   }
 
   /** Logs what the limits dropped from this capture (counts only), once the capture is done. */
@@ -336,7 +339,10 @@ final class RenderedModelCapture {
       throw new UncheckedIOException(error);
     }
     if (texture == null) return;
-    int tint = ((red / 4) << 16) | ((green / 4) << 8) | (blue / 4);
+    // The viewer lights faces itself: drop the directional shade the renderer baked in.
+    int tint =
+        RenderedShade.unshade(
+            ((red / 4) << 16) | ((green / 4) << 8) | (blue / 4), xyz, constantAmbient);
     float opacity = alpha / (4f * 255f);
     int alphaMode = opacity < 1 ? 2 : texture.alphaMode;
     String key =
