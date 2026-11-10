@@ -27,6 +27,25 @@ that GPU region and remaps the UVs onto the extracted image; it does not copy
 the whole atlas. A primitive spanning several sprites is explicitly refused.
 Texture and pixel limits still apply.
 
+Vertex colours keep the low byte of what the renderer passes, as Minecraft's own
+buffers do (`(byte) value`), rather than being clamped to 0–255. Create's
+`SuperByteBuffer` (Create 0.5.1 on Fabric 1.20.1) passes its colours as signed
+bytes, so opaque white arrives as `-1`: clamping turned Create parts black with
+an opacity of 0, which made them invisible (mechanical crafter, spout, blaze
+heater, track station, rotation speed controller, saw, the train hat).
+Translucent parts keep their real alpha.
+
+Renderers also bake Minecraft's directional face shade into the vertex colour
+(0.5 on the bottom face, 0.6 east/west, 0.8 north/south, 1.0 on top; Create uses
+Flywheel's formula on the rotated normal, and in the Nether 0.9 for top and
+bottom). The viewer lights the scene itself, so a quad whose averaged colour is
+a grey equal to that shade for its world normal (within 2/255) is exported
+white. The capture pose only translates, so the quad's geometric normal is the
+one the renderer shaded with. Any other tint, including a grey that does not
+match the face's direction, is kept. A renderer that shades in model space
+before rotating its model is therefore left shaded. On 26.3 only the Overworld
+rule applies until its `CardinalLighting` is ported.
+
 Transparent secondary layers get a very small offset along the normal (2 mm for
 the first, 16 mm at most). This prevents a collar lying exactly on the body from
 making that body disappear in a ray-tracing engine such as Blender. Shape and
@@ -97,7 +116,9 @@ Minemories does not start a separate skin download.
 ## Validation
 
 Unit tests cover selection limits, non-finite positions, the last primitive,
-attributes, colours, triangle winding and processing a 40,000-vertex model
+attributes, colours (signed-byte colours from Create staying opaque, real
+translucency kept), baked face shade removal per direction, in the Nether and on
+rotated parts, triangle winding and processing a 40,000-vertex model
 without reusing its published arrays. PNG tests check channels, alpha, row order
 and limits before allocation. Validation of 14 October 2026: Minecraft 1.21.1 /
 NeoForge 21.1.248 loaded the `0.1.0-beta` JAR alone, together with a separate
