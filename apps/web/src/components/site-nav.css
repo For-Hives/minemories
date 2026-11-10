@@ -437,7 +437,7 @@ html:has(.mm-header) {
 	align-content: start;
 	gap: var(--ds-sp-3);
 	box-sizing: border-box;
-	width: min(420px, 100vw);
+	width: min(420px, 100%);
 	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-6);
 	overflow-x: hidden;
 	overflow-y: auto;

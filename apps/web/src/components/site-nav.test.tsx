@@ -87,6 +87,18 @@ test('every public page of the site, the home aside, is in the bar menus', () =>
 	for (const { path } of publicMetadata.filter(page => page.path !== '/')) expect(linked, path).toContain(path)
 })
 
+test('the menus and the bar’s language list keep fixed ids, so the prerendered panels are found once hydrated', () => {
+	mount('/installation')
+	expect(['Product', 'Guides', 'Help'].map(name => trigger(name).getAttribute('aria-controls'))).toEqual([
+		'mm-menu-product',
+		'mm-menu-guides',
+		'mm-menu-help',
+	])
+	expect(document.querySelector('.mm-nav-end__lang .mm-lang__button')?.getAttribute('aria-controls')).toBe(
+		'mm-lang-bar-list'
+	)
+})
+
 test('every page of the site is in the bar, under Product, Guides and Help; the page on screen marks its menu', () => {
 	mount('/installation')
 	const hrefs: string[] = []

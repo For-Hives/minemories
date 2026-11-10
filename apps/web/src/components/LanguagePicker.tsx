@@ -15,9 +15,19 @@ const TYPEAHEAD_MS = 600
  * The list is in the page, closed, from the prerender on. `compact`: the bar's button, which shows the language's code alone where the
  * menus leave little room (site-nav.css); its accessible name keeps the whole name.
  */
-export function LanguagePicker({ className = '', compact = false }: { className?: string; compact?: boolean }) {
+export function LanguagePicker({
+	className = '',
+	compact = false,
+	name,
+}: {
+	className?: string
+	compact?: boolean
+	/** A fixed id base for a picker in the prerendered markup: React's generated ids differ between the prerender's tree and the hydrated one. */
+	name?: string
+}) {
 	const { locale, pendingLocale, setLocale, localeError, t } = useI18n()
-	const id = useId()
+	const generated = useId()
+	const id = name ?? generated
 	const root = useRef<HTMLDivElement>(null)
 	const button = useRef<HTMLButtonElement>(null)
 	const list = useRef<HTMLDivElement>(null)

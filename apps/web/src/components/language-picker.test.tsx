@@ -162,3 +162,12 @@ test('a language being loaded keeps the button busy on it; a failed one says so'
 	expect(screen.getByRole('alert').textContent).toBe('Could not load this language. Select it again to retry.')
 	expect(button().closest('.mm-lang')?.className).toBe('mm-lang extra')
 })
+
+test('a named picker keeps fixed ids, the prerendered list and the hydrated one alike', () => {
+	render(<LanguagePicker name="mm-lang-bar" />)
+	expect(button().getAttribute('aria-controls')).toBe('mm-lang-bar-list')
+	fireEvent.click(button())
+	expect(list().id).toBe('mm-lang-bar-list')
+	expect(list().getAttribute('aria-activedescendant')).toMatch(/^mm-lang-bar-\d+$/)
+	expect(active()).toBe('Français (FR)')
+})

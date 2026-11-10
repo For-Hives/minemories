@@ -132,18 +132,20 @@ function focusWasIn(...containers: Array<HTMLElement | null | undefined>): boole
 function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 	const { t } = useI18n()
 	const { pathname, hash } = useLocation()
-	const id = useId()
 	const nav = useRef<HTMLElement>(null)
 	const buttons = useRef<Array<HTMLButtonElement | null>>([])
 	const [open, setOpen] = useState<number | null>(null)
-	const panelOf = (index: number) => document.getElementById(`${id}-${index}`)
+	// Fixed ids (one bar per page): React's generated ids differ between the prerender's tree and the hydrated one, so a lookup by a
+	// generated id would miss the prerendered panels.
+	const panelId = (index: number) => `mm-menu-${menus[index]?.id}`
+	const panelOf = (index: number) => document.getElementById(panelId(index))
 	// Down on a closed menu's button opens it on its first link, once it is drawn.
 	const focusFirst = useRef(false)
 	useEffect(() => {
 		if (open === null || !focusFirst.current) return
 		focusFirst.current = false
-		focusables(document.getElementById(`${id}-${open}`))[0]?.focus()
-	}, [open, id])
+		focusables(panelOf(open))[0]?.focus()
+	})
 	const close = (focus: boolean) => {
 		if (focus && open !== null && focusWasIn(buttons.current[open], panelOf(open))) buttons.current[open]?.focus()
 		setOpen(null)
@@ -187,7 +189,7 @@ function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 							className="mm-nav__trigger"
 							data-bar-menu=""
 							aria-expanded={open === index}
-							aria-controls={`${id}-${index}`}
+							aria-controls={panelId(index)}
 							data-current={hasCurrentPage(pathname, menuLinks(menu)) ? '' : undefined}
 							onClick={() => setOpen(open === index ? null : index)}
 							onFocus={() => {
@@ -205,7 +207,7 @@ function DesktopMenus({ menus }: { menus: NavMenu[] }) {
 						</button>
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: the arrows move between the links inside (the disclosure menu pattern); the panel itself is not a control. */}
 						<div
-							id={`${id}-${index}`}
+							id={panelId(index)}
 							className={`mm-nav__panel mm-nav__panel--${menu.id}`}
 							hidden={open !== index}
 							onKeyDown={onPanelKey}
@@ -603,7 +605,7 @@ function Drawer({ menus }: { menus: NavMenu[] }) {
 					))}
 				</nav>
 				<DrawerAccount open={open} onNavigate={close} />
-				{open && <LanguagePicker className="mm-drawer__lang" />}
+				{open && <LanguagePicker className="mm-drawer__lang" name="mm-lang-panel" />}
 			</div>
 		</>
 	)
@@ -622,7 +624,7 @@ export function SiteNav({ landing = false, extra }: { landing?: boolean; extra?:
 				<div className="mm-nav-end__wide">
 					<AccountMenu />
 				</div>
-				<LanguagePicker className="mm-nav-end__lang" compact />
+				<LanguagePicker className="mm-nav-end__lang" compact name="mm-lang-bar" />
 				{extra}
 				<InstallCta />
 				<Drawer menus={menus} />
