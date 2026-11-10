@@ -4,7 +4,7 @@ import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
-import { HeroAccount, HeroExtras, HeroFooterLinks, HeroLanguage, HeroNavLinks } from './HeroParts'
+import { HeroAccount, HeroFooterLinks, HeroLanguage, HeroNavLinks, HeroQuestions } from './HeroParts'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
@@ -16,16 +16,35 @@ const t = (key: string, values?: TranslateValues) => translate('fr', key, { name
 /** The published Minecraft versions, from mod/targets.json; the film's translation bridge re-reads them from `data-i18n-values`. */
 const supported = supportedMinecraft()
 const supportedValues = JSON.stringify(supported)
-/** The experimental versions, as a sentence after the validated ones; nothing when every published version is validated. */
-function Experimental({ prefix = ' ', message }: { prefix?: string; message: string }) {
+/** The experimental versions, after the validated ones; nothing when every published version is validated. */
+function Experimental() {
 	if (!supported.experimental) return null
 	return (
 		<>
-			{prefix}
-			<span data-i18n={message} data-i18n-values={supportedValues}>
-				{t(message, supported)}
+			{' · '}
+			<span data-i18n="{experimental} experimental" data-i18n-values={supportedValues}>
+				{t('{experimental} experimental', supported)}
 			</span>
 		</>
+	)
+}
+
+/** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge. */
+function Step({ number, title, body }: { number: number; title: string; body: string }) {
+	return (
+		<li className="mc-step">
+			<span className="mc-step__num">
+				<span className="mc-slot mc-slot--digit" aria-hidden="true">
+					{number}
+				</span>
+			</span>
+			<h3 className="mc-step__title" data-i18n={title}>
+				{t(title)}
+			</h3>
+			<p className="mc-step__body" data-i18n={body}>
+				{t(body)}
+			</p>
+		</li>
 	)
 }
 
@@ -369,10 +388,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</h1>
 							<p
 								className="mc-hero__lead"
-								data-i18n="Minemories keeps the corner of the world where you play, in 3D. Revisit it in your private gallery and share it with a simple link."
+								data-i18n="The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want."
 							>
 								{t(
-									'Minemories keeps the corner of the world where you play, in 3D. Revisit it in your private gallery and share it with a simple link.'
+									'The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want.'
 								)}
 							</p>
 							<div className="mc-hero__actions">
@@ -386,12 +405,20 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								</button>
 							</div>
 							<p className="mc-hero__compat">
-								<span data-i18n="Java {versions}" data-i18n-values={supportedValues}>
-									{t('Java {versions}', supported)}
+								<span data-i18n="Minecraft Java {versions}" data-i18n-values={supportedValues}>
+									{t('Minecraft Java {versions}', supported)}
 								</span>
-								<Experimental prefix=" · " message="{experimental} in testing" />
+								<Experimental />
 								{' · '}
-								<span data-i18n="Beta">{t('Beta')}</span>
+								<span data-i18n="Fabric, Forge, NeoForge · single player and servers · beta">
+									{t('Fabric, Forge, NeoForge · single player and servers · beta')}
+								</span>
+							</p>
+							<p
+								className="mc-hero__compat"
+								data-i18n="Does not change your world · Nothing leaves before you connect the game · Private gallery"
+							>
+								{t('Does not change your world · Nothing leaves before you connect the game · Private gallery')}
 							</p>
 						</div>
 					</section>
@@ -400,158 +427,48 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							{t('How it works')}
 						</h2>
 						<ol className="mc-steps">
-							<li className="mc-step">
-								<span className="mc-step__num">
-									<span className="mc-slot mc-slot--digit" aria-hidden="true">
-										1
-									</span>
-								</span>
-								<h3 className="mc-step__title" data-i18n="Add the mod to your game">
-									{t('Add the mod to your game')}
-								</h3>
-								<p
-									className="mc-step__body"
-									data-i18n="For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version."
-									data-i18n-values={supportedValues}
-								>
-									{t(
-										'For Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version.',
-										supported
-									)}
-								</p>
-							</li>
-							<li className="mc-step">
-								<span className="mc-step__num">
-									<span className="mc-slot mc-slot--digit" aria-hidden="true">
-										2
-									</span>
-								</span>
-								<h3 className="mc-step__title" data-i18n="Play, then stay still for a while">
-									{t('Play, then stay still for a while')}
-								</h3>
-								<p
-									className="mc-step__body"
-									data-i18n="When you stay still for a few minutes, or click “Take a memory” in the M menu, the mod keeps the area around you in 3D."
-								>
-									{t(
-										'When you stay still for a few minutes, or click “Take a memory” in the M menu, the mod keeps the area around you in 3D.'
-									)}
-								</p>
-								<p
-									className="mc-step__help"
-									id="afk-help"
-									data-i18n="AFK: you have not touched the game for 5 minutes. Locally: on your computer."
-								>
-									{t('AFK: you have not touched the game for 5 minutes. Locally: on your computer.')}
-								</p>
-								<details className="mc-step__more">
-									<summary data-i18n="Details">{t('Details')}</summary>
-									<p data-i18n="By default: after 5 minutes without moving, within 32 blocks around you, at most once every 4 hours. Press M to capture by hand or to turn it off. Until you link the game, memories stay on your computer.">
-										{t(
-											'By default: after 5 minutes without moving, within 32 blocks around you, at most once every 4 hours. Press M to capture by hand or to turn it off. Until you link the game, memories stay on your computer.'
-										)}
-									</p>
-								</details>
-							</li>
-							<li className="mc-step">
-								<span className="mc-step__num">
-									<span className="mc-slot mc-slot--digit" aria-hidden="true">
-										3
-									</span>
-								</span>
-								<h3 className="mc-step__title" data-i18n="Link the game to your gallery">
-									{t('Link the game to your gallery')}
-								</h3>
-								<p
-									className="mc-step__body"
-									data-i18n="A short code from the site links the game to your private gallery, where your memories then arrive."
-								>
-									{t(
-										'A short code from the site links the game to your private gallery, where your memories then arrive.'
-									)}
-								</p>
-								<details className="mc-step__more">
-									<summary data-i18n="Details">{t('Details')}</summary>
-									<p data-i18n="Create an account, then get a 6-digit code in your gallery. In Minecraft: M → type the code → Connect. From then on, your memories go to your private gallery on their own.">
-										{t(
-											'Create an account, then get a 6-digit code in your gallery. In Minecraft: M → type the code → Connect. From then on, your memories go to your private gallery on their own.'
-										)}
-									</p>
-								</details>
-							</li>
+							<Step
+								number={1}
+								title="Install."
+								body="From the CurseForge app, or a file to drop into the mods folder."
+							/>
+							<Step
+								number={2}
+								title="Play."
+								body="Press M → Take a memory. Otherwise, the mod takes one on its own when you stay AFK."
+							/>
+							<Step
+								number={3}
+								title="Revisit."
+								body="Connect the game to your gallery and walk around your world in 3D."
+							/>
 						</ol>
 					</section>
 					<section className="mc-section" id="share" aria-labelledby="share-title">
-						<h2 className="mc-section__title" id="share-title" data-i18n="One link, that’s all">
-							{t('One link, that’s all')}
+						<h2 className="mc-section__title" id="share-title" data-i18n="Show it to the group">
+							{t('Show it to the group')}
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Send a memory’s link: whoever opens it needs no account, no mod and no Minecraft. Your own gallery stays private, and needs an account."
+							data-i18n="Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft."
 						>
 							{t(
-								'Send a memory’s link: whoever opens it needs no account, no mod and no Minecraft. Your own gallery stays private, and needs an account.'
+								'Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft.'
 							)}
 						</p>
+						<ul className="site-links">
+							<li>
+								<Link className="mc-link" to="/sharing">
+									<span data-i18n="Share by link">{t('Share by link')}</span>
+								</Link>
+							</li>
+						</ul>
 					</section>
-					<HeroExtras />
 					<section className="mc-section" id="faq" aria-labelledby="faq-title">
 						<h2 className="mc-section__title" id="faq-title" data-i18n="FAQ">
 							{t('FAQ')}
 						</h2>
-						<div className="mc-faq">
-							<details className="mc-faq__item" name="faq">
-								<summary className="mc-faq__q" data-i18n="Do I need an account to view a shared memory?">
-									{t('Do I need an account to view a shared memory?')}
-								</summary>
-								<p
-									className="mc-faq__a"
-									data-i18n="No. The link opens in a browser, with no account, no mod and no Minecraft. Only your own gallery needs an account."
-								>
-									{t(
-										'No. The link opens in a browser, with no account, no mod and no Minecraft. Only your own gallery needs an account.'
-									)}
-								</p>
-							</details>
-							<details className="mc-faq__item" name="faq">
-								<summary className="mc-faq__q" data-i18n="Are my memories public?">
-									{t('Are my memories public?')}
-								</summary>
-								<p className="mc-faq__a" data-i18n="No. Your gallery is private by default. You choose what you share.">
-									{t('No. Your gallery is private by default. You choose what you share.')}
-								</p>
-							</details>
-							<details className="mc-faq__item" name="faq">
-								<summary className="mc-faq__q" data-i18n="Does the mod upload anything without asking?">
-									{t('Does the mod upload anything without asking?')}
-								</summary>
-								<p
-									className="mc-faq__a"
-									data-i18n="Nothing leaves your computer until you link the game to your account. After that, automatic memories arrive in your private gallery on their own (at most one every 4 hours), along with a short technical report, with no personal data, when something goes wrong. You can turn both off in the M menu: “Auto memories”, and Settings → Privacy for the reports."
-								>
-									{t(
-										'Nothing leaves your computer until you link the game to your account. After that, automatic memories arrive in your private gallery on their own (at most one every 4 hours), along with a short technical report, with no personal data, when something goes wrong. You can turn both off in the M menu: “Auto memories”, and Settings → Privacy for the reports.'
-									)}
-								</p>
-							</details>
-							<details className="mc-faq__item" name="faq">
-								<summary className="mc-faq__q" data-i18n="Which versions does it work with?">
-									{t('Which versions does it work with?')}
-								</summary>
-								<p className="mc-faq__a">
-									<span
-										data-i18n="Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta."
-										data-i18n-values={supportedValues}
-									>
-										{t(
-											'Minecraft Java {versions}, with NeoForge, Fabric or Forge depending on the version. It is a beta.',
-											supported
-										)}
-									</span>
-									<Experimental message="{experimental} is available for testing, not yet validated in game." />
-								</p>
-							</details>
-						</div>
+						<HeroQuestions />
 					</section>
 					<section className="film-words" id="words" aria-labelledby="words-note">
 						<p

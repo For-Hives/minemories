@@ -10,20 +10,23 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('<h1')
 	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
 	expect(html).toMatch(/<h1[^>]*>Garde tes constructions Minecraft en 3D<\/h1>/)
-	// the facts of the landing: every published Minecraft version, the M menu button and what leaves after linking
-	expect(html).toContain('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
-	expect(html).toContain('26.3 en test')
-	expect(html).toContain('quand tu cliques sur « Prendre un souvenir » dans le menu M')
-	expect(html).toContain('Rien ne part tant que tu n’as pas connecté le jeu à ton compte.')
-	expect(html).toContain('Réglages → Confidentialité')
+	// the facts of the landing: every published Minecraft version (never a range), the guarantees, the M menu button and the three questions
+	expect(html).toContain('Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
+	expect(html).toContain('26.3 expérimentale')
+	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
+	expect(html).toContain('Rien ne part avant que tu connectes le jeu')
+	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
+	expect(html).toContain('Il faut un compte ?')
+	expect(html).toContain('href="/faq"')
+	for (const blocked of ['validé', 'en test', '→ 1.21', 'gratuit', 'open source', 'la plus utilisée'])
+		expect(html, blocked).not.toContain(blocked)
 	expect(html).not.toContain('1.21.1 · NeoForge')
 	// the full trademark notice in the footer, and the connection path through the M menu
 	expect(html).toContain(
 		'Minemories n’est pas un produit officiel Minecraft. Ni approuvé par Mojang ou Microsoft, ni associé à eux.'
 	)
-	expect(html).toContain('Dans Minecraft : M → tape le code → Se connecter.')
 	expect(html).not.toContain('/minemories pair')
-	for (const id of ['id="steps"', 'id="share"', 'id="more"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)
+	for (const id of ['id="steps"', 'id="share"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)
 	// the story in words, which is also the description of the canvas for screen readers
 	expect(html).toContain('id="w1"')
 	// the film's markup and its stylesheet are there for the first paint; the canvas is empty until the film mounts
@@ -66,15 +69,17 @@ test('the first-paint script of the home page puts the film on <html> before the
 	expect(document.body.classList.contains('mc-root')).toBe(true)
 })
 
-test('the landing’s version line, step and FAQ follow a language change made by the film’s translation bridge', () => {
+test('the landing’s facts, guarantees and cards follow a language change made by the film’s translation bridge', () => {
 	document.body.innerHTML = renderPage('/')
 	createHeroI18n('en', document).apply()
-	const compat = document.querySelector('.mc-hero__compat')?.textContent
-	expect(compat).toBe('Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 in testing · Beta')
+	const lines = [...document.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
+	expect(lines).toEqual([
+		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 experimental · Fabric, Forge, NeoForge · single player and servers · beta',
+		'Does not change your world · Nothing leaves before you connect the game · Private gallery',
+	])
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('For Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, with NeoForge, Fabric or Forge')
-	expect(text).toContain('26.3 is available for testing, not yet validated in game.')
-	expect(text).toContain('or click “Take a memory” in the M menu')
-	expect(text).toContain('Nothing leaves your computer until you link the game to your account.')
+	expect(text).toContain('The mod keeps the area around you in 3D.')
+	expect(text).toContain('Press M → Take a memory. Otherwise, the mod takes one on its own when you stay AFK.')
+	expect(text).toContain('Show it to the group')
 	document.body.innerHTML = ''
 })

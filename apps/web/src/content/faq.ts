@@ -312,6 +312,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 
 /** The three questions (at most) a page other than /faq shows. */
 export const pageQuestions = {
+	home: ['serveur', 'compte', 'si-minemories-ferme'],
 	concept: ['bluemap', 'rejouer', 'sous-sols'],
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
 } satisfies Record<string, QuestionId[]>

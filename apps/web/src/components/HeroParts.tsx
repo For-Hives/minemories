@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
+import { faqText, pageQuestions } from '../content/faq'
 import { footerGroups, navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
@@ -114,47 +115,25 @@ export function HeroFooterLinks() {
 	)
 }
 
-/** What the home page said before the film and the film's site does not: why a memory is more than a backup, the discovery pages, the way into the album. */
-export function HeroExtras() {
-	const { session } = useAppContext()
+/** The landing's three questions, read from content/faq.ts like every other page's (the /faq list holds them all): a component, so it follows the app's language by itself. */
+export function HeroQuestions() {
 	const { t } = useI18n()
 	return (
-		<section className="mc-section" id="more" aria-labelledby="more-title">
-			<h2 className="mc-section__title" id="more-title">
-				{t('Every world has')} {t('a story.')}
-			</h2>
-			<p className="mc-section__text">
-				{t(
-					'Seasons end. Servers close. Minemories keeps a 3D capture of your places to revisit in your browser, without finding the right modpack. Your original world stays yours.'
-				)}
-			</p>
-			<ul className="site-links">
-				<li>
-					<Link className="mc-link" to="/sharing">
-						{t('Share by link')}
-					</Link>
-				</li>
-				<li>
-					<Link className="mc-link" to="/concept">
-						{t('The story behind Minemories')}
-					</Link>
-				</li>
-				<li>
-					<Link className="mc-link" to="/explore">
-						{t('Explore community memories')}
-					</Link>
-				</li>
-				<li>
-					<Link className="mc-link" to="/explore?demo=1">
-						{t('Explore the demo memories')}
-					</Link>
-				</li>
-			</ul>
-			<div className="mc-hero__actions">
-				<Link className="mc-btn" to={session ? '/gallery' : '/register'}>
-					{t(session ? 'Find my memories' : 'Keep my first memory')}
+		<div className="mc-faq">
+			{pageQuestions.home.map(id => {
+				const { question, answer } = faqText(id, t)
+				return (
+					<details key={id} className="mc-faq__item" name="faq">
+						<summary className="mc-faq__q">{question}</summary>
+						<p className="mc-faq__a">{answer}</p>
+					</details>
+				)
+			})}
+			<p>
+				<Link className="mc-link" to="/faq">
+					{t('All questions')} →
 				</Link>
-			</div>
-		</section>
+			</p>
+		</div>
 	)
 }
