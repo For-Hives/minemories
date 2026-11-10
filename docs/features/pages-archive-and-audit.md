@@ -117,7 +117,7 @@ Total size removed: about 12,000 lines of TSX, 3,400 lines of page-specific CSS 
 
 1. **Three visual systems side by side.** The landing follows the game's design system (pixel font, slate, copper, bevelled panels). The installation, account, admin and auth pages use the `mm-*` kit (`theme.css`, `album.css`, `auth.css`, 3,400 lines) with unrelated fonts and shadows. The information pages are raw Tailwind (`max-w-3xl`, `underline`). Going from one page to another feels like changing sites.
 2. **The jump from landing to app is abrupt.** The visitor leaves a full-screen film and lands on a white app page, with another banner, another footer and another visual language.
-3. **Routes that repeat the landing.** The language selector and the navigation existed twice (one version in the landing, one in `SiteLayout`).
+3. **Routes that repeat the landing.** The language selector and the navigation existed twice (one version in the landing, one in `SiteLayout`). Since November 2026 both use one bar, `SiteNav` (see [design system](design-system.md#site-bar)).
 4. **A promise bigger than the product.** The site talks about a public gallery, a ranking, timelapse, pricing and a blog, while the product delivers: capture, upload, view, share by link.
 5. **Texts that admit work in progress** ("information to complete", "demo, fictional data", "in preparation"). Honest, but they pull the perception toward a draft when they are everywhere.
 6. **Costly code**: 12,000 lines of pages to maintain under coverage thresholds, for pages few people visit.
@@ -154,7 +154,7 @@ Suspended (to bring back only once they have real content): blog, pricing, publi
 
 ### Motion (already in place, to reuse)
 
-FAQ disclosures, language selector and mobile menu (sections 9 and 10 of `charter.css`). To add for the product pages: staggered entrance of gallery cards, opening and closing of confirmation windows, an "uploading" state for the gauge, seamless transitions from the viewer to sharing.
+FAQ disclosures (sections 9 and 10 of `charter.css`); the bar's menus, language list and phones' panel (`components/site-nav.css`). To add for the product pages: staggered entrance of gallery cards, opening and closing of confirmation windows, an "uploading" state for the gauge, seamless transitions from the viewer to sharing.
 
 ### Rebuild order
 

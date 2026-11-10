@@ -11,6 +11,7 @@ The landing page (`/`) is the **reference**; since November 2026 every app page 
 | `hero/film.css` | The landing film (HUD, phases, header and 3D panel of `/`). Global styles (`html`, `body`): injected only on `/` by `HeroFilm.tsx`. |
 | `hero/charter.css` | Design system components below the film (`.site`), injected after `film.css` on `/`. |
 | `charter-app.css` | **The design system on app pages**: base, header, footer, app buttons, cards, notes, list loading. Loaded after the kit. |
+| `components/site-nav.css` | The site's bar (`SiteNav.tsx`) on every page and on the landing: menus, account, language picker, install button, phones' panel. Loaded after `charter-app.css` (`main.tsx`). |
 | `lib/reveal.ts` | Scroll-in of landing blocks (tested, 100% coverage). |
 | `lib/display-preferences.ts` | "Readable font" and "Reduced motion" options (keys `mcui-font`, `mcui-motion`) and the `html.mm-cjk` class, on every page. |
 
@@ -60,7 +61,7 @@ Colors (kit): background `--night` `#14110e`, panels `--night-2`, text `--text` 
 | FAQ | `mc-faq`, `mc-faq__item`, `__q`, `__a` | 48 px row, rotating chevron (200 ms), question turns amber once open. |
 | Link list | `site-links` | 44 px links, wrapping columns. |
 | Footer | `mc-footer`, `.footer` | two columns from 900 px (legal notices | 11 rem link grid), 44 px links. |
-| Form | `mc-select`, `mc-check` | compact language selector (44 px), checkboxes with a 44 px row. |
+| Form | `mc-select`, `mc-check` | select (44 px), checkboxes with a 44 px row. The bar's language picker is `LanguagePicker` (see Site bar), not a native select. |
 
 Screenshots (after):
 
@@ -133,7 +134,7 @@ Screenshots before:
 ## App pages
 
 - **Foundation**: `tokens.css` and `kit.css` are loaded everywhere, then `charter-app.css`. The Tailwind colors in `theme.css` (`paper`, `ink`, `forest`, `lime`…) point to the landing's night palette; `--font-sans` is the reading font, `--font-mono` the game font.
-- **Header and footer** (`SiteLayout.tsx`): the landing ones (night bar with a double rule, wordmark, links in the game font, the kit's language selector, dirt strip then a `night-2` footer). The footer carries both accessibility options.
+- **Header and footer** (`SiteLayout.tsx`): the landing ones (night bar with a double rule, the logo, the site's bar described below, dirt strip then a `night-2` footer). The footer carries both accessibility options.
 - **Buttons**: `buttonDark`, `buttonLime`, `buttonOutline`, `buttonQuiet` (`components/ui.tsx`) are the stone button, the copper button (only one per area), a night button and a flat button.
 - **Illustrations**: no more flat drawings. `MemoryScene`, the install illustration and the sign-in panel show isometric views of the landing captures (`public/hero/scenes/*.webp`: chalet, clearing and forest, then the overgrown and forgotten chalet, renders of `S0`, `S2` and `S4`, transparent background). The content header mark (`BlockMark`) is a real grass block with the capture's textures (`grass-block.webp`). The renders come from a throwaway three.js page (capture lights removed, foliage tints corrected like the film's `prepareCapture`, orthographic camera at 35.26°): redo them if the captures change.
 - **Titles** h1 to h3 on pages: game font at sizes 40/32/24 (32/32/16 in Korean and Japanese), one-texel shadow. Running text, fields and data stay in the reading font.
@@ -162,3 +163,14 @@ Rules: a new explainer string is short (a label, or one sentence) and exists in 
 - 16 px body everywhere, including on large screens (readable but small at 1920 px); the alternative is 24 px for the lead only (the current choice) or 20 px (not crisp with the pixel font).
 - Component demo page (`/design`): not created in this pass (the landing serves as reference); to do along with the page migration.
 - The old "48 px" hero and section sizes were a prototype decision (v11b): they are removed here.
+
+## Site bar
+
+One bar for every page and the landing (`components/SiteNav.tsx`, styles in `components/site-nav.css`); `SiteLayout` puts it after the brand in `.mm-header`, `HeroMarkup` in the landing's `.mc-sitebar`.
+
+- **Data**: `navMenus()` in `content/navigation.ts`, built from the footer's groups so that every public page is one click from the bar: Product (concept, how it works, share by link, public gallery; on the landing, the page's sections first under "On this page"), Guides (install, downloads, server closing, Minecraft to Blender), Help (FAQ, safety and parents, versions, roadmap, report a bug, then the legal pages). Keyboard moves and current-page checks are in `lib/site-menu.ts` (100% covered).
+- **From 1100 px** (`DESKTOP_NAV`): the three menus are disclosure buttons (`aria-expanded`, `aria-controls`) over night panels with the game's bevel and 2 px outline; a hovered or focused row takes the buttons' light outline; the page on screen is ember with an ember edge (`aria-current="page"`) and its menu's name is underlined. Click or Enter opens, Down opens on the first link, Up/Down/Home/End move through the links, Left/Right move along the bar (an open menu follows), Escape closes and gives the focus back, a press outside or focus leaving closes. A mouse moving over a neighbour while a menu is open switches to it; nothing opens on a mere hover. Then the account ("Sign in", or the avatar opening My gallery, My account, Administration when the server confirms the access, Sign out), the language and "Install the mod" ("Install" up to 1280 px).
+- **Language picker** (`LanguagePicker.tsx`): a button with a pixel globe and the language's own name, opening a WAI-ARIA listbox of the eleven languages in their own names (regions where two share a language: Français (FR) / Français (CA), English (US/UK/CA), Português (BR)), the current one checked: arrows, Home, End, typeahead, Enter or Space to choose, Escape, Tab or a press outside to close. It keeps the app's loading behaviour (`aria-busy`, the error message).
+- **Under 1100 px**: brand, language (from 700 px), install button and the three bars. They open a dialog under the header (night panel, dimmed page): the three groups as stone buttons that unfold their links (the group of the page on screen open), the account, the language and the install button (those two only under 700 px, where the bar no longer shows them). Focus stays between the button and the panel, Escape (after an open language list), a press outside or a link close it, the page does not scroll meanwhile (the scrollbar keeps its room). No band ever drops under the header on wide screens.
+- **Prerender**: every panel is in the HTML, closed (`hidden`); the phones' panel draws its language picker only while open, so one picker exists at a time.
+- **Motion**: panels drop 8 px while fading in, the close cross pops; none with reduced motion (system or option). Forced colours: outlined panels and rows.

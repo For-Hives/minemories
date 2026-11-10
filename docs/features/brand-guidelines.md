@@ -216,13 +216,13 @@ Motion serves to **confirm** (I clicked, it responds), **orient** (it comes from
 | Section titles | stepped left-to-right wipe (12 steps, like text being typed) when entering the screen |
 | Content blocks | 12 px + fade on scroll, once, siblings staggered by 60 ms |
 | Button | hover: rises 2 px + light outline; press: drops 1 px, 60 ms; the ember icon grows 20%, arrows move forward 3 px |
-| Link | the underline moves away from the text (3 px → 6 px); header navigation: ember bar entering from the left |
+| Link | the underline moves away from the text (3 px → 6 px) |
 | Step card | the number “drops” into place with a bounce on entrance, then grows 8% when the card is hovered or focused |
 | FAQ, step details, footer, “The film, in words” | height animates (360 ms) and content fades in; the chevron rotates with a bounce |
 | FAQ (additionally) | only one question open at a time (`name` attribute); a copper edge unfolds on the open card; the answer rises after opening; the question moves forward 4 px on hover and sinks one pixel on press; the chevron dips on hover before flipping |
 | Disclosure summaries | copper color and 4 px shift on hover, one-pixel press |
-| Language list (selector) | the panel opens by dropping 8 px while fading in (200 ms), game style (night background, relief), hovered option in ember, current option marked by an ember bar; the chevron flips. Chrome 135+ (`appearance: base-select`), native list elsewhere |
-| Header menu (small screens) | drops 8 px while fading in; the close cross arrives with a bounce |
+| Language list (the bar's picker) | the list opens by dropping 8 px while fading in (200 ms), game style (night background, relief), the active option outlined like a game button, the current one in ember with a check; the chevron flips |
+| Header menus and the phones' panel | drop 8 px while fading in; the close cross arrives with a bounce |
 | Film bar (right edge) | during the film only (it disappears on the slide to the site); vertical timeline: ember fill and handle that follow the film's time (full on the site); five chapter markers with tooltips; dragging moves the handle and the film jumps **only once**, on release (anti-flash safeguards); keyboard: up / down = previous / next chapter, Home, End |
 | Map, while reading the site | it **continuously** follows the space the text leaves (measured on every scroll, 0.18 s exponential smoothing, reframing without restarting an animation) and sits 28 px **under** the text (the page is above the canvas); the first measurement is taken before the end-of-film slide, so the map arrives directly at its final place |
 | End of film → site | the map shrinks at a constant rate (constant size ratio) and moves toward the panel like a camera pulling back around a fixed point; 1.8 s instead of 1.2 s; reframing the map when the text changes width: 1.1 s, symmetric curve |
@@ -234,7 +234,7 @@ Motion serves to **confirm** (I clicked, it responds), **orient** (it comes from
 - **Stepped** for anything that moves across a distance (`steps(n)`): an object advances one pixel at a time. Opacity stays continuous.
 - The film canvas and its HUD are never animated by the guidelines.
 - **Reduced motion** (system or footer option): no animation, no movement, not even on hover; content is there immediately. The motion code only exists behind `prefers-reduced-motion: no-preference` and the option, and a guidelines test checks it.
-- **Progressive enhancement**: the panel opening animation (`::details-content`) and the menu (discrete `display`) need a recent Chrome; elsewhere they open without animation, without breaking anything.
+- **Progressive enhancement**: the panel opening animation (`::details-content`) needs a recent Chrome; elsewhere it opens without animation, without breaking anything.
 - **Sound**: no sound by default, never autoplay, game sounds are not reused.
 
 ---
