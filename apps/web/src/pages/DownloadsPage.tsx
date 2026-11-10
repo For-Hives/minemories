@@ -120,12 +120,12 @@ export function DownloadsPage() {
 				<div className="mm-dl-feedback" role="alert">
 					<p>{t('The list of versions could not be loaded. Try again in a moment.')}</p>
 					<button type="button" className={buttonOutline} onClick={retry}>
-						{t('Retry download')}
+						{t('Retry')}
 					</button>
 				</div>
 			)}
 			<p className="mm-dl-note">
-				{t('Install Fabric API separately. This same JAR is also tested under Quilt {version}.', {
+				{t('Install Fabric API separately. In 1.21.1, the Fabric JAR is also tested under Quilt {version}.', {
 					version: quiltTestedVersion,
 				})}{' '}
 				{t('Check your file: its SHA-256 checksum must match the one shown here.')}

@@ -40,7 +40,8 @@ test('/server-closing: three options, the Aternos and admin anchors, three quest
 		'/installation?src=server-closing'
 	)
 	// the "already closed" answer points here, so its link is left out on this page
-	expect(screen.queryByRole('link', { name: 'Serveur qui ferme →' })).toBeNull()
+	expect(screen.getByRole('heading', { name: 'Le serveur a déjà fermé\u00a0?' })).toBeTruthy()
+	expect(screen.queryByRole('link', { name: 'Et si mon serveur ferme\u00a0? →' })).toBeNull()
 	expect(document.body.textContent).not.toMatch(blocked)
 })
 

@@ -60,8 +60,8 @@ export const questions = {
 	minemories: {
 		question: 'What is Minemories?',
 		answer: [
-			'A Minecraft Java mod that keeps the area around you in 3D.',
-			'You revisit it in your browser and show people around it with a link.',
+			'A Minecraft Java mod that keeps a 3D copy of the area around you.',
+			'Open it in your browser and share it with a link.',
 		],
 		link: { to: '/concept', label: 'The concept' },
 	},
@@ -156,7 +156,7 @@ export const questions = {
 		question: 'Does it work with my mods?',
 		answer: [
 			'Tested with Create, Mekanism and Cobblemon in 1.21.1.',
-			'Some blocks with special rendering may be missing: take a small memory first.',
+			'Some blocks with special rendering may be missing: take a small test memory first.',
 		],
 	},
 	joueurs: {
@@ -176,10 +176,10 @@ export const questions = {
 		],
 	},
 	'vieux-monde': {
-		question: 'My server is already closed, or I have a ZIP?',
+		question: 'Server already gone?',
 		answer: [
 			'Without a copy of the world, there’s nothing left to capture.',
-			'With a ZIP, reopen the world in single player in a compatible version and capture it.',
+			'If you have the world as a ZIP, open it in single player in a compatible version and take your memory there.',
 		],
 		link: { to: '/server-closing', label: 'What if my server shuts down?' },
 	},
@@ -222,7 +222,7 @@ export const questions = {
 	},
 	droit: {
 		question: 'Am I allowed to?',
-		answer: ['Capturing for yourself, yes.', 'To share or publish someone else’s base, ask them first.'],
+		answer: ['For yourself, yes.', 'To share or publish someone else’s base, ask them first.'],
 	},
 	fichier: {
 		question: 'Can I get the file back?',
@@ -235,7 +235,7 @@ export const questions = {
 	'envoi-automatique': {
 		question: 'Does the mod upload everything on its own?',
 		answer: [
-			'Nothing leaves before you connect the game.',
+			'Nothing is sent until you connect the game.',
 			'After that, your memories go to your private gallery, with cleaned-up error reports you can turn off in M → Settings → Privacy.',
 		],
 		link: { to: '/privacy', label: 'Privacy' },
@@ -286,7 +286,7 @@ export type QuestionId = keyof typeof questions
 /** The /faq page: questions asked before installing come first. */
 export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 	{ label: 'Before installing', ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde'] },
-	{ label: 'What is it?', ids: ['minemories', 'bluemap', 'si-minemories-ferme', 'qui'] },
+	{ label: 'The mod', ids: ['minemories', 'bluemap', 'si-minemories-ferme', 'qui'] },
 	{
 		label: 'Installing',
 		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'monde-modifie', 'compte', 'sodium'],

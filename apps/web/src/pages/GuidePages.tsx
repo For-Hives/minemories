@@ -70,8 +70,7 @@ export function ServerClosingPage() {
 	return (
 		<InfoPage title="Your server is closing. Your base can stay.">
 			<p className="ex-lead">
-				{t('As long as you save it first.')} {t('10 minutes to install, one key in your base.')}{' '}
-				{t('Not an admin? You still can.')}
+				{t('Capture it before it closes.')} {t('10 minutes to install, one key in your base.')} {t('No admin needed.')}
 			</p>
 			<h2>{t('Your three options')}</h2>
 			<ol className="ex-steps">
@@ -81,13 +80,13 @@ export function ServerClosingPage() {
 				</li>
 				<li>
 					<h3>{t('Make a playable copy')}</h3>
-					<p>{t('Mods like WorldTools download what you have seen. Ask the admin first.')}</p>
+					<p>{t('Mods like WorldTools download what you’ve seen. Ask the admin first.')}</p>
 				</li>
 				<li>
 					<h3>{t('Keep a 3D memory with Minemories')}</h3>
 					<p>
 						{t('Install the mod, go to your base, press M → Take a memory.')}{' '}
-						{t('You revisit it in your browser, and show the group around it with a link.')}
+						{t('Then open it in your browser and send your friends a link to walk around it.')}
 					</p>
 				</li>
 			</ol>
@@ -95,7 +94,7 @@ export function ServerClosingPage() {
 				<h2 id="aternos-title">{t('A server on Aternos?')}</h2>
 				<p>
 					{t('Aternos deletes a server nobody has started for several months.')}{' '}
-					{t('Save your base while you still play there.')}
+					{t('Capture your base while you still play there.')}
 				</p>
 			</section>
 			<section id="admin" className="ex-admin" aria-labelledby="admin-title">
@@ -106,7 +105,7 @@ export function ServerClosingPage() {
 							'Nothing to install on your side: the mod runs on the players’ computers and only reads what their game already shows.'
 						)}
 					</li>
-					<li>{t('Your players do not copy a playable world: they keep a 3D scene of their corner, not your map.')}</li>
+					<li>{t('Your players don’t get a playable copy of your world, just a 3D scene of their corner.')}</li>
 				</ul>
 				<h3>{t('An announcement to copy')}</h3>
 				{announcementLocales(locale).map(language => (

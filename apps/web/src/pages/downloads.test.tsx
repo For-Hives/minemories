@@ -161,7 +161,7 @@ test('while the index loads or fails, the cells keep the newest-JAR links, and a
 		loaderTargets.length
 	)
 	serve(modIndexFixture(published))
-	fireEvent.click(screen.getByRole('button', { name: 'Réessayer le téléchargement' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }))
 	await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
 	expect(
 		await screen.findByRole('link', { name: 'Télécharger Minemories pour Minecraft 1.21.1 avec NeoForge (0.2.0)' })
@@ -178,7 +178,7 @@ test.each([403, 500])('HTTP %s offers a retry', async status => {
 	)
 	mount()
 	await screen.findByRole('alert')
-	fireEvent.click(screen.getByRole('button', { name: 'Réessayer le téléchargement' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }))
 	await screen.findByRole('link', { name: /avec NeoForge \(0\.1\.0\)$/ })
 	expect(screen.queryByRole('alert')).toBeNull()
 })
@@ -213,7 +213,7 @@ test('a timed out response cannot overwrite a successful retry, and unmount abor
 		})
 		expect(fetchMock.mock.calls[0]?.[1].signal.aborted).toBe(true)
 		await act(async () => {
-			fireEvent.click(screen.getByRole('button', { name: 'Réessayer le téléchargement' }))
+			fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }))
 		})
 		expect(screen.getByRole('link', { name: /avec NeoForge \(0\.1\.0\)$/ })).toBeTruthy()
 		await act(async () => {

@@ -39,7 +39,7 @@
 	"This name stays in this browser.": "Ce nom reste dans ce navigateur.",
 	"Weather": "Météo",
 	"{count} worlds": "{count} mondes",
-	"Install Fabric API separately. This same JAR is also tested under Quilt {version}.": "Installe Fabric API séparément. Ce même JAR est aussi testé avec Quilt {version}.",
+	"Install Fabric API separately. In 1.21.1, the Fabric JAR is also tested under Quilt {version}.": "Installe Fabric API séparément. En 1.21.1, le JAR Fabric est aussi testé avec Quilt {version}.",
 	"Snapshot": "Capture",
 	"World": "Monde",
 	"Link to": "Lien vers",
@@ -91,5 +91,6 @@
 	"M → My memories → Send this memory.": "M → Mes souvenirs → Envoyer cette capture.",
 	"Everything turns off in the game (M → Auto memories, M → Settings → Privacy), and the account can be deleted.": "Tout se coupe dans le jeu (M → Photos auto, M → Réglages → Confidentialité), et le compte se supprime.",
 	"Show your base to your friends": "Fais visiter ta base à tes amis",
-	"Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.": "Tourne autour de ta base, trouve le bon angle et récupère une carte postale HD pour Discord. Ou envoie un lien : tes amis la visitent en 3D, sans avoir Minecraft."
+	"Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.": "Tourne autour de ta base, trouve le bon angle et récupère une carte postale HD pour Discord. Ou envoie un lien : tes amis la visitent en 3D, sans avoir Minecraft.",
+	"Then open it in your browser and send your friends a link to walk around it.": "Tu la retrouves dans ton navigateur et tu la fais visiter à tes amis avec un lien."
 }

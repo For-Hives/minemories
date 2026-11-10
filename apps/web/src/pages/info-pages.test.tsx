@@ -140,7 +140,7 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 	expect(screen.queryByRole('tab')).toBeNull()
 	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
 		'Before installing',
-		'What is it?',
+		'The mod',
 		'Installing',
 		'Capturing',
 		'Gallery and sharing',

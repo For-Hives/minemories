@@ -52,7 +52,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/how-it-works',
 		title: 'How Minemories captures your Minecraft build',
 		description:
-			'A memory on demand or while you are AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
+			'A memory on demand or while you’re AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
