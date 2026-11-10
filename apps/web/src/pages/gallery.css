@@ -203,7 +203,7 @@
 	position: relative;
 }
 /* album.css lays the live sidebar sections out as wrapping rows: each line of the storage card takes the full width. */
-.gallery-storage > :not(details) {
+.gallery-storage > * {
 	flex: 1 1 100%;
 }
 .gallery-storage-note {
@@ -218,7 +218,6 @@
 	width: 100%;
 	min-height: var(--ds-hit);
 	margin-bottom: var(--ds-sp-4);
-	padding-right: calc(var(--ds-hit) + var(--ds-sp-3));
 }
 .gallery-storage-head strong {
 	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
@@ -228,36 +227,6 @@
 .gallery-storage-head span {
 	font: 400 16px / 18px var(--f-ui);
 	color: var(--text-2);
-}
-/* The info button sits in the card's padding, so its right edge lines up with the percentage below it. */
-.gallery-storage details {
-	position: absolute;
-	top: var(--ds-sp-5);
-	right: var(--ds-sp-5);
-}
-.gallery-storage summary {
-	--_hi: var(--stone-hi);
-	--_lo: var(--stone-lo);
-	display: grid;
-	width: var(--ds-hit);
-	height: var(--ds-hit);
-	place-items: center;
-	border: var(--gp) solid var(--outline);
-	background: var(--stone);
-	color: #fff;
-	font: 400 16px / 1 var(--f-ui);
-	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
-	box-shadow:
-		inset var(--gp) var(--gp) 0 var(--_hi),
-		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
-	cursor: pointer;
-	list-style: none;
-}
-.gallery-storage summary::-webkit-details-marker {
-	display: none;
-}
-.gallery-storage summary:hover {
-	border-color: var(--hover);
 }
 .gallery-meter {
 	position: relative;
@@ -1426,20 +1395,6 @@ html[data-mc-motion="reduced"] .gallery-refresh[aria-busy="true"] .gallery-icon 
 .gallery-storage-note {
 	margin: var(--ds-sp-2) 0 0;
 }
-/* The note opens as the game's item tooltip. */
-.mm-site .gallery-page .gallery-storage details p {
-	position: absolute;
-	right: 0;
-	z-index: 2;
-	width: 260px;
-	margin-top: var(--ds-sp-2);
-	padding: var(--ds-sp-2) var(--ds-sp-3);
-	border: var(--gp) solid;
-	border-image: linear-gradient(var(--tip-a), var(--tip-b)) 1; /* taste-skill-ignore: the game's tooltip outline */
-	background: var(--tip-bg);
-	color: var(--text-2);
-}
-
 /* Korean and Japanese (Unifont): pixel text in multiples of 16 px only. */
 html.mm-cjk:not([data-mc-font="read"]) .gallery-storage-head strong,
 html.mm-cjk:not([data-mc-font="read"]) .mm-site .gallery-page .gallery-empty h3,

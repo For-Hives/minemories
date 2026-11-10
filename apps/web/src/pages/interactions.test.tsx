@@ -115,7 +115,7 @@ function credentials() {
 	fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long-test-password' } })
 }
 
-test('gallery explains a full quota, unfinished uploads and pending deletion without hiding captures', async () => {
+test('a full gallery says where new memories go and how to make room, in one line of numbers', async () => {
 	mocks.storage.mockResolvedValue({
 		usedBytes: 2 * 1024 ** 3,
 		limitBytes: 2 * 1024 ** 3,
@@ -125,12 +125,27 @@ test('gallery explains a full quota, unfinished uploads and pending deletion wit
 	})
 	mount(<GalleryPage />)
 	const storage = await screen.findByRole('region', { name: 'Gallery storage' })
-	expect(storage.textContent).toContain('0 B available of 2 GiB')
-	expect(storage.textContent).toContain('local GLB file on your computer')
-	expect(storage.textContent).toContain('Delete forever in Trash')
-	expect(storage.textContent).toContain('Deletion is still in progress for 2 KiB')
-	expect(storage.textContent).toContain('Uploads are reserving 1 KiB')
+	expect(storage.textContent).toContain('2 GiB/ 2 GiB')
+	expect(storage.textContent).toContain(
+		'Your gallery is full. New memories stay on your computer. To make room, use Delete forever in Trash.'
+	)
+	expect(storage.textContent).not.toMatch(/reserving|Deletion is still/)
+	expect(storage.querySelector('details')).toBeNull()
 	expect(screen.getByRole('link', { name: /Open a local GLB/ })).toBeTruthy()
+})
+
+test('a nearly full gallery still accepts uploads, so it does not claim to be full', async () => {
+	mocks.storage.mockResolvedValue({
+		usedBytes: 1000,
+		limitBytes: 1024,
+		availableBytes: 24,
+		reservedBytes: 0,
+		pendingDeletionBytes: 0,
+	})
+	mount(<GalleryPage />)
+	const storage = await screen.findByRole('region', { name: 'Gallery storage' })
+	expect(storage.querySelector('[data-level="full"]')).toBeTruthy()
+	expect(storage.textContent).not.toContain('Your gallery is full.')
 })
 
 test('gallery storage loads, refreshes and discards stale numbers after a failed refresh', async () => {
@@ -148,7 +163,7 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 	await act(async () => {
 		resolve?.({ usedBytes: 0, limitBytes: 1024, availableBytes: 1024, reservedBytes: 0, pendingDeletionBytes: 0 })
 	})
-	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('1 KiB available')
+	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 1 KiB')
 	mocks.storage.mockResolvedValueOnce({
 		usedBytes: 1024,
 		limitBytes: 1024,
@@ -159,7 +174,7 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(12_000)
 	})
-	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B available')
+	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('Your gallery is full.')
 	mocks.storage.mockRejectedValueOnce(new Error('private fixture failure'))
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(12_000)
@@ -191,12 +206,12 @@ test.each([false, true])(
 		await act(async () => {
 			fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 		})
-		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
+		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 2 GiB')
 		if (!finish) throw new Error('Missing pending request')
 		await act(async () => {
 			finish?.()
 		})
-		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('2 GiB available')
+		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 2 GiB')
 	}
 )
 test('login submits credentials, refreshes the session and opens the gallery', async () => {
@@ -280,21 +295,21 @@ test.each(['paired', 'expired', 'error'])('pairing polling reaches %s and stops 
 	else mocks.check.mockResolvedValue({ status })
 	const view = mount(<GalleryPage />)
 	await act(async () => {})
-	const button = screen.getAllByRole('button', { name: /Link my server/ })[0]
+	const button = screen.getAllByRole('button', { name: /Get a code/ })[0]
 	if (!button) throw new Error('Pairing button missing')
 	fireEvent.click(button)
 	await act(async () => {})
-	expect(screen.getByRole('button', { name: 'Copy the pairing code' }).textContent).toBe('123 456')
+	expect(screen.getByRole('button', { name: 'Copy the code' }).textContent).toBe('123 456')
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(1100)
 	})
 	const message = {
-		paired: 'Your mod is paired.',
+		paired: 'Your game is connected.',
 		expired: 'This code expired. Generate a new one.',
-		error: 'Verification failed. Check that the API is running.',
+		error: 'The code could not be checked. Get a new one.',
 	}[status]
 	if (!message) throw new Error('Missing status message')
-	expect(screen.getByText(message)).toBeTruthy()
+	expect(screen.getAllByText(message).length).toBeGreaterThan(0)
 	view.unmount()
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(20_000)
@@ -334,7 +349,7 @@ test('unmount cancels a pending pairing response without notifying or polling ag
 	)
 	const view = mount(<GalleryPage />)
 	await act(async () => {})
-	const button = screen.getAllByRole('button', { name: /Link my server/ })[0]
+	const button = screen.getAllByRole('button', { name: /Get a code/ })[0]
 	if (!button) throw new Error('Pairing button missing')
 	fireEvent.click(button)
 	await act(async () => {})
@@ -453,13 +468,19 @@ test('French translation does not change pairing state identifiers or hide the p
 		</I18nProvider>
 	)
 	await act(async () => {})
-	const button = screen.getAllByRole('button', { name: 'Relier mon Minecraft' })[0]
+	const button = screen.getAllByRole('button', { name: /Obtenir un code/ })[0]
 	if (!button) throw new Error('Pairing action missing')
 	fireEvent.click(button)
 	await act(async () => {})
-	expect(screen.getByRole('button', { name: 'Copier le code d’appairage' }).textContent).toBe('123 456')
+	expect(screen.getByRole('button', { name: 'Copier le code' }).textContent).toBe('123 456')
 	expect(screen.getByText('En attente de Minecraft…')).toBeTruthy()
+	expect(
+		screen.getByText('Dans Minecraft : M → tape ce code → Se connecter. Valable 5 minutes, une seule fois.')
+	).toBeTruthy()
+	// While a code waits, the empty gallery repeats where to type it instead of offering a second code.
 	expect(screen.getByText('Dans Minecraft : M → tape ce code → Se connecter.')).toBeTruthy()
+	expect(screen.queryByRole('button', { name: 'Obtenir un code' })).toBeNull()
+	expect(document.body.textContent).not.toMatch(/[Rr]elier|appair/)
 	view.unmount()
 	localStorage.clear()
 })
@@ -863,10 +884,40 @@ test('production gallery still loads remote captures and rejects local drops', a
 test('production empty gallery guides pairing without offering local imports', async () => {
 	vi.stubEnv('DEV', false)
 	mount(<GalleryPage />)
-	await screen.findByText('The first memory is still to come.')
+	await screen.findByRole('heading', { name: 'No memories yet' })
 	expect(screen.queryByRole('link', { name: /Open a local GLB/ })).toBeNull()
 	expect(screen.queryByRole('button', { name: /Choose a local file/ })).toBeNull()
-	expect(screen.getByText('Link your mod to send your first capture.')).toBeTruthy()
+	expect(screen.getByText('Install the mod, then connect your game with a code.')).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Get a code' })).toBeTruthy()
+	expect(screen.getByRole('link', { name: /No mod yet\? Install Minemories/ }).getAttribute('href')).toBe(
+		'/installation'
+	)
+})
+
+test('a connected game with no memory yet says how to take the first one and send older ones', async () => {
+	mocks.status.mockResolvedValue({ paired: true })
+	mount(<GalleryPage />)
+	expect(await screen.findByRole('heading', { level: 3, name: 'Your game is connected.' })).toBeTruthy()
+	expect(screen.getByRole('heading', { level: 2, name: 'Your game is connected.' })).toBeTruthy()
+	expect(screen.getByText('Press M → Take a memory. It will show up here.')).toBeTruthy()
+	expect(screen.getByText('Memories from before? M → My memories → Send this memory.')).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'New code ↗' })).toBeTruthy()
+	expect(screen.queryByRole('link', { name: /Install Minemories/ })).toBeNull()
+})
+
+test('a connected game silent for two months asks to check the mod, never to connect again', async () => {
+	mocks.status.mockResolvedValue({ paired: true })
+	mocks.list.mockResolvedValue([
+		{ id: 'old', name: 'Old base', size: 100, createdAt: '2020-01-01T12:00:00Z', metadata: { capturedAt: null } },
+	])
+	mount(<GalleryPage />)
+	expect(
+		await screen.findByText(
+			'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
+		)
+	).toBeTruthy()
+	expect(screen.getByRole('heading', { level: 2, name: 'Connect your game to your gallery.' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Get a code ↗' })).toBeTruthy()
 })
 
 test('leaving the private viewer aborts a pending download and never loads its late response', async () => {
@@ -931,7 +982,7 @@ test('a delayed previous pairing status cannot hide a newly requested code', asy
 		})
 	)
 	mount(<GalleryPage />)
-	fireEvent.click(await screen.findByRole('button', { name: 'Link my server ↗' }))
+	fireEvent.click(await screen.findByRole('button', { name: 'Get a code ↗' }))
 	await screen.findByText('123 456')
 	await act(async () => finish?.({ paired: true }))
 	expect(screen.getByText('123 456')).toBeTruthy()
@@ -947,7 +998,7 @@ test('leaving while a code is being created aborts both requests and never start
 		})
 	)
 	const view = mount(<GalleryPage />)
-	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
 	const statusSignal = mocks.status.mock.calls[0]?.[1]?.signal as AbortSignal
 	const createSignal = mocks.create.mock.calls[0]?.[1]?.signal as AbortSignal
 	view.unmount()
@@ -963,11 +1014,11 @@ test('leaving while a code is being created aborts both requests and never start
 test('code creation failure remains recoverable and releases the busy control', async () => {
 	mocks.create.mockRejectedValueOnce(new Error('Pairing unavailable'))
 	mount(<GalleryPage />)
-	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
 	// The raw transport message never reaches the page: the failure is shown with a translated sentence.
 	expect((await screen.findByRole('alert')).textContent).toContain('Could not create the code.')
 	expect(screen.queryByText(/Pairing unavailable/)).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'Link my server ↗' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
 	await screen.findByText('123 456')
 	expect(mocks.create).toHaveBeenCalledTimes(2)
 })

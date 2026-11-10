@@ -9,7 +9,7 @@ export function GalleryPairingCard({
 	pairedFresh: boolean
 }) {
 	const { t } = useI18n()
-	const { pairStatus, pairCode, pairExpires, pairBusy, createPairing, copyCode } = pairing
+	const { pairStatus, pairCode, pairBusy, createPairing, copyCode } = pairing
 	const pending = pairStatus === 'pending'
 	const note = pairingNote(pairedFresh, pairStatus)
 	return (
@@ -18,21 +18,20 @@ export function GalleryPairingCard({
 				<GalleryIcon name={pairedFresh ? 'check' : 'cube'} />
 			</span>
 			<div className="gallery-link-text">
-				<h2>{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}</h2>
+				<h2>{pairedFresh ? t('Your game is connected.') : t('Connect your game to your gallery.')}</h2>
 				{note && <p>{t(note)}</p>}
 			</div>
 			{pending ? (
 				<div className="gallery-link-code">
 					<small>{t('CODE FOR THE GAME')}</small>
-					<button type="button" onClick={copyCode} aria-label={t('Copy the pairing code')}>
+					<button type="button" onClick={copyCode} aria-label={t('Copy the code')}>
 						{pairCode.slice(0, 3)} {pairCode.slice(3)}
 					</button>
-					<small>{t('In Minecraft: M → type this code → Connect.')}</small>
+					<small>
+						{t('In Minecraft: M → type this code → Connect.')} {t('Valid for 5 minutes, once only.')}
+					</small>
 					<small className="gallery-link-wait">
 						<i aria-hidden="true" /> {t('Waiting for Minecraft…')}
-						<span>
-							{t('Expires at')} {pairExpires}
-						</span>
 					</small>
 				</div>
 			) : (
@@ -45,14 +44,15 @@ export function GalleryPairingCard({
 }
 function pairingButtonLabel(busy: boolean, pairedFresh: boolean): string {
 	if (busy) return 'Creating…'
-	return pairedFresh ? 'New code' : 'Link my server'
+	return pairedFresh ? 'New code' : 'Get a code'
 }
 
-/** Only failures and stale links deserve a sentence; the happy path stays quiet. */
+/** Only failures and a silent game deserve a sentence; the happy path stays quiet. */
 function pairingNote(pairedFresh: boolean, status: PairingStatus): string | null {
 	if (status === 'expired') return 'This code expired. Generate a new one.'
-	if (status === 'error') return 'Verification failed. Check that the API is running.'
+	if (status === 'error') return 'The code could not be checked. Get a new one.'
+	// Device tokens never expire: a long silence means the mod is missing or signed out, not a stale code.
 	if (status === 'paired' && !pairedFresh)
-		return 'No snapshot for two months. Link the mod again to resume auto-upload.'
+		return 'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
 	return null
 }
