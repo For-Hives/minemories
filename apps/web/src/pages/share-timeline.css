@@ -1,14 +1,29 @@
-/* A world link's snapshot slider: a kit slot floating at the top of the stage, over the 3D scene. */
-.share-timeline {
+/* The top of a shared scene: a world link's snapshot slider, then one line for the visitor (the welcome, then the
+   invitation). Above the studio layer, below the header and the loading cover. */
+.share-top {
 	position: absolute;
 	top: var(--ds-sp-4);
 	left: 50%;
-	z-index: 2;
+	z-index: 4;
 	transform: translateX(-50%);
+	display: grid;
+	justify-items: center;
+	gap: var(--ds-sp-2);
+	width: min(560px, calc(100% - 2 * var(--ds-sp-4)));
+	pointer-events: none;
+}
+.share-top > * {
+	pointer-events: auto;
+}
+.cinema-page:has(.is-immersed) .share-top {
+	display: none;
+}
+/* A world link's snapshot slider: a kit slot over the 3D scene. */
+.share-timeline {
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-3);
-	width: min(560px, calc(100% - 2 * var(--ds-sp-4)));
+	width: 100%;
 	padding: var(--ds-sp-2) var(--ds-sp-4);
 	background: var(--night);
 	box-shadow: 0 0 0 var(--gp) var(--outline);
@@ -38,5 +53,44 @@
 @media (max-width: 520px) {
 	.share-timeline span {
 		display: none;
+	}
+}
+
+/* The visitor's line, on the game's plaque so it reads over a bright sky. */
+.share-note {
+	margin: 0;
+	padding: var(--ds-sp-2) var(--ds-sp-4);
+	background: rgb(0 0 0 / var(--mc-plaque-alpha));
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-align: center;
+	text-wrap: balance;
+}
+/* The invitation: one line, its links in the game's font. */
+.share-call {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--ds-sp-2) var(--ds-sp-5);
+}
+.share-call a,
+.cinema-loading-card a {
+	color: var(--ember);
+	font: 400 16px / 24px var(--f-ui);
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+.share-call a:hover,
+.cinema-loading-card a:hover {
+	color: var(--hover);
+}
+.cinema-page .cinema-loading .cinema-loading-card > :is(button, a) {
+	margin-top: var(--ds-sp-5);
+}
+/* On a phone the header's title takes its own row, down to about 124 px. */
+@media (max-width: 800px) {
+	.share-top {
+		top: 136px;
 	}
 }

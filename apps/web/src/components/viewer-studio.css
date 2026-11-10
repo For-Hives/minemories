@@ -115,6 +115,7 @@
 .cinema-page .cinema-navigation button,
 .cinema-page .viewer-layers button,
 .cinema-page .timeline-error button,
+.cinema-page .cinema-loading-card button,
 .cinema-page .cinema-panel-heading button {
 	appearance: none;
 	display: inline-flex;

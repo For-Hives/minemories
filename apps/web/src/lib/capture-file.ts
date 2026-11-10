@@ -1,6 +1,9 @@
 import { type CaptureAvailability, captureAvailability } from '@minemories/api-contract'
 import { expandMeshoptGlb, VARIANT_HEADER, withMeshoptVariant } from './glb-meshopt'
 
+/** A server or storage failure, not a missing file: the same request can work a moment later. */
+export const SCENE_UNREACHABLE = 'The scene could not be loaded. Try again in a moment.'
+
 export class CaptureRestorationRequired extends Error {
 	constructor(readonly availability: CaptureAvailability) {
 		super('This memory needs restoration before it can be opened.')
@@ -12,6 +15,7 @@ export async function downloadCapture(url: string, name: string, signal: AbortSi
 	const response = await fetch(withMeshoptVariant(url), { credentials: 'include', signal })
 	signal.throwIfAborted()
 	await requireCaptureReady(response)
+	if (response.status >= 500) throw new Error(SCENE_UNREACHABLE)
 	if (!response.ok) throw new Error('This memory is unavailable or access was revoked.')
 	const blob = await response.blob()
 	signal.throwIfAborted()

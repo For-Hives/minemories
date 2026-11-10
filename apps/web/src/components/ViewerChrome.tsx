@@ -32,7 +32,16 @@ export function ViewerHeader({
 	)
 }
 
-export function ViewerLoadState({ loading, error }: { loading: string | null; error: string }) {
+/** `children` are the error's own actions (Retry, a link onward), shown under its sentence. */
+export function ViewerLoadState({
+	loading,
+	error,
+	children,
+}: {
+	loading: string | null
+	error: string
+	children?: ReactNode
+}) {
 	const { t } = useI18n()
 	if (!(loading || error)) return null
 	return (
@@ -41,6 +50,7 @@ export function ViewerLoadState({ loading, error }: { loading: string | null; er
 				<h2>{error ? t('This memory will have to wait.') : t('The light returns.')}</h2>
 				{loading && <div className="cinema-loading-line" />}
 				<p>{t(error || loading || '')}</p>
+				{children}
 			</div>
 		</div>
 	)
