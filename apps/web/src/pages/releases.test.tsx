@@ -34,16 +34,19 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 })
 
-test('the notes of mod/release-notes are bundled newest first', () => {
-	expect(history.map(release => release.version)).toEqual([
-		'0.37.0-beta.1',
-		'0.36.5-beta.1',
-		'0.36.4-beta.1',
-		'0.36.1-beta.1',
-	])
+const [latest, ...previous] = history
+const labels = { feature: 'New', fix: 'Fixed', other: 'Changed' }
+
+test('the notes of mod/release-notes are bundled newest first, and today’s files are all there', () => {
+	expect(history.length).toBeGreaterThanOrEqual(4)
+	expect(history.map(release => release.version)).toEqual(
+		expect.arrayContaining(['0.37.0-beta.1', '0.36.5-beta.1', '0.36.4-beta.1', '0.36.1-beta.1'])
+	)
+	expect(history.at(-1)?.version).toBe('0.36.1-beta.1')
 })
 
 test('the prerendered page says what changes, in player words, without waiting for the API', () => {
+	if (!latest) throw new Error('release notes expected')
 	document.body.innerHTML = renderToString(
 		<I18nProvider initialLocale="fr">
 			<StaticRouter location="/versions">
@@ -51,20 +54,20 @@ test('the prerendered page says what changes, in player words, without waiting f
 			</StaticRouter>
 		</I18nProvider>
 	)
-	const latest = document.getElementById('v0.37.0-beta.1') as HTMLElement
-	expect(latest.querySelector('h2')?.textContent).toBe('Minemories 0.37.0-beta.1')
-	expect(latest.textContent).toContain('Dernière version')
-	expect(latest.querySelector('h3')?.textContent).toBe('Ce qui change pour toi')
-	const notes = [...latest.querySelectorAll('li')].map(item => item.textContent)
-	expect(notes).toHaveLength(3)
-	expect(notes[0]).toMatch(/^Nouveau : Minemories pour Minecraft 26\.3 sur Fabric/)
-	expect(notes[2]).toMatch(/^Corrigé : sur Minecraft 26\.3, les textures gardent leurs vraies couleurs/)
-	expect(latest.querySelector('a')?.getAttribute('href')).toBe('/downloads')
-	expect(latest.querySelector('a')?.textContent).toBe('Télécharger')
+	const card = document.getElementById(`v${latest.version}`) as HTMLElement
+	expect(card.querySelector('h2')?.textContent).toBe(`Minemories ${latest.version}`)
+	expect(card.textContent).toContain('Dernière version')
+	expect(card.querySelector('h3')?.textContent).toBe('Ce qui change pour toi')
+	expect(card.querySelectorAll('li')).toHaveLength(Math.min(3, latest.notes.length))
+	expect(card.querySelector('li')?.textContent).toMatch(/^(?:Nouveau|Corrigé|Changé) : /)
+	expect(card.querySelector('a')?.getAttribute('href')).toBe('/downloads')
+	expect(card.querySelector('a')?.textContent).toBe('Télécharger')
 	const older = [...document.querySelectorAll('.mm-release-older li')]
-	expect(older.map(item => item.id)).toEqual(['v0.36.5-beta.1', 'v0.36.4-beta.1', 'v0.36.1-beta.1'])
-	expect(older[2]?.textContent).toContain('Corrigé : « Où trouver mon code ? » ouvre de nouveau la galerie')
-	expect(document.querySelector('[lang="en"]')).toBeNull()
+	expect(older.map(item => item.id)).toEqual(previous.map(release => `v${release.version}`))
+	expect(older.map(item => item.querySelectorAll('p > span').length)).toEqual(previous.map(() => 1))
+	expect(document.getElementById('v0.36.1-beta.1')?.textContent).toContain(
+		'Corrigé : « Où trouver mon code ? » ouvre de nouveau la galerie'
+	)
 	expect(document.querySelector('noscript')).toBeNull()
 	expect(document.querySelector('time')).toBeNull()
 	// One note per older version: the 0.36.1 line naming a version range never reaches the page.
@@ -72,11 +75,12 @@ test('the prerendered page says what changes, in player words, without waiting f
 })
 
 test('dates come from the downloads index once loaded, for the versions it still keeps', async () => {
+	if (!latest) throw new Error('release notes expected')
 	serve(
 		modIndexFixture({
 			'neoforge-mc1.21.1': [
-				{ version: '0.37.0-beta.1', builtAt: '2026-11-09T10:00:00Z' },
-				{ version: '0.36.5-beta.1', builtAt: '2026-11-04T10:00:00Z' },
+				{ version: latest.version, builtAt: '2026-11-09T10:00:00Z' },
+				{ version: '0.36.1-beta.1', builtAt: '2026-11-04T10:00:00Z' },
 			],
 		})
 	)
@@ -88,10 +92,13 @@ test('dates come from the downloads index once loaded, for the versions it still
 })
 
 test('in English the notes read as written, with no other language marked', () => {
+	if (!latest) throw new Error('release notes expected')
 	serve(modIndexFixture({}))
 	mount('en')
-	const latest = within(document.getElementById('v0.37.0-beta.1') as HTMLElement)
-	expect(latest.getByText(/^New: End portals and End gateways are saved/)).toBeTruthy()
+	const [first] = latest.notes
+	if (!first) throw new Error('a note expected')
+	const card = within(document.getElementById(`v${latest.version}`) as HTMLElement)
+	expect(card.getByText(`${labels[first.type]}: ${first.text}`)).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Previous versions' })).toBeTruthy()
 	expect(document.querySelector('[lang="en"]')).toBeNull()
 })

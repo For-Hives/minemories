@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react'
 import { renderToString } from 'react-dom/server'
 import { MemoryRouter, Route, Routes, StaticRouter } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
@@ -163,4 +163,63 @@ test('while the index loads or fails, the cells keep the newest-JAR links, and a
 	expect(
 		await screen.findByRole('link', { name: 'Télécharger Minemories pour Minecraft 1.21.1 avec NeoForge (0.2.0)' })
 	).toBeTruthy()
+})
+
+test.each([403, 500])('HTTP %s offers a retry', async status => {
+	vi.stubGlobal(
+		'fetch',
+		vi
+			.fn()
+			.mockResolvedValueOnce(new Response(null, { status }))
+			.mockResolvedValueOnce(Response.json(modIndexFixture({ 'neoforge-mc1.21.1': ['0.1.0'] })))
+	)
+	mount()
+	await screen.findByRole('alert')
+	fireEvent.click(screen.getByRole('button', { name: 'Réessayer le téléchargement' }))
+	await screen.findByRole('link', { name: /avec NeoForge \(0\.1\.0\)$/ })
+	expect(screen.queryByRole('alert')).toBeNull()
+})
+
+test.each([null, { message: 'oops' }, { schema: 1, generatedAt: 'x' }])(
+	'malformed API responses are errors, not empty successes',
+	async data => {
+		serve(data)
+		mount()
+		await screen.findByRole('alert')
+		expect(screen.queryByText('Pas encore publié')).toBeNull()
+	}
+)
+
+test('a timed out response cannot overwrite a successful retry, and unmount aborts requests', async () => {
+	vi.useFakeTimers()
+	let finish: (response: Response) => void = () => undefined
+	const fetchMock = vi
+		.fn()
+		.mockImplementationOnce(
+			() =>
+				new Promise<Response>(resolve => {
+					finish = resolve
+				})
+		)
+		.mockResolvedValueOnce(Response.json(modIndexFixture({ 'neoforge-mc1.21.1': ['0.1.0'] })))
+	vi.stubGlobal('fetch', fetchMock)
+	const view = mount()
+	try {
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(15000)
+		})
+		expect(fetchMock.mock.calls[0]?.[1].signal.aborted).toBe(true)
+		await act(async () => {
+			fireEvent.click(screen.getByRole('button', { name: 'Réessayer le téléchargement' }))
+		})
+		expect(screen.getByRole('link', { name: /avec NeoForge \(0\.1\.0\)$/ })).toBeTruthy()
+		await act(async () => {
+			finish(Response.json(modIndexFixture({ 'neoforge-mc1.21.1': ['9.9.9'] })))
+		})
+		expect(screen.queryByRole('link', { name: /\(9\.9\.9\)$/ })).toBeNull()
+		view.unmount()
+		expect(fetchMock.mock.calls[1]?.[1].signal.aborted).toBe(true)
+	} finally {
+		vi.useRealTimers()
+	}
 })
