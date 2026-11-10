@@ -1492,6 +1492,12 @@ export function mountHero(host) {
 			case 'return':
 				// Nothing is announced while the page rushes or returns; the HUD is emptied on the way (the phases do it).
 				sigSay.textContent = ''
+				// Andy (10/11/2026): a flick is a way out of the film, so the site's header (solid, with its links and menu) comes in as the rush starts,
+				// not 2 to 3 s later when the glide lands. A return to the start of the film gives the film's header back (changePhase, 'film').
+				if (e.type === 'flick' && e.phase === 'burst') {
+					root.classList.add('is-leaving')
+					header.classList.add('is-solid')
+				}
 				if (e.type === 'return' && e.phase === 'glide') pendingCause = 'return'
 				break
 			case 'jump':
@@ -1602,7 +1608,8 @@ export function mountHero(host) {
 			dropFilmFrame()
 			veil.classList.remove('is-on')
 		}
-		header.classList.toggle('is-solid', next === 'site')
+		header.classList.toggle('is-solid', next === 'site' || root.classList.contains('is-leaving'))
+		if (next !== 'glide') root.classList.remove('is-leaving')
 		const detail = {
 			phase: next,
 			cause,

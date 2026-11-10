@@ -1000,11 +1000,12 @@ html:not(.scene-on) .film-bar {
 	transition: opacity 0.3s linear;
 }
 
-html[data-phase='site'] .mc-sitebar::before {
+html[data-phase='site'] .mc-sitebar::before,
+html.is-leaving .mc-sitebar::before {
 	opacity: 0;
 }
 
-html[data-phase='film'] .site-nav {
+html[data-phase='film']:not(.is-leaving) .site-nav {
 	visibility: hidden;
 	opacity: 0;
 }
@@ -1015,6 +1016,11 @@ html[data-phase='film'] .site-nav {
 
 html.is-entering .site-nav {
 	transition-delay: 0.7s;
+}
+
+/* A flick leaves the film (hero.js is-leaving, from the rush to the landing): the site's header comes in at once, links included. */
+html.is-leaving .site-nav {
+	transition-delay: 0s;
 }
 
 .site-nav ul {
@@ -1114,7 +1120,7 @@ html.is-entering .site-nav {
 	padding: 4px 12px 4px;
 }
 
-html[data-phase='film'] .site-menu__links {
+html[data-phase='film']:not(.is-leaving) .site-menu__links {
 	display: none; /* the sections do not exist during the film: no dead links */
 }
 
@@ -1136,7 +1142,7 @@ html[data-phase='film'] .site-menu__links {
 
 /* During the film, from 700 px up, the menu would hold nothing (the section links do not exist yet and the header's own language selector is on screen): the button waits for the site. */
 @media (min-width: 700px) {
-	html[data-phase='film'] .site-menu__btn {
+	html[data-phase='film']:not(.is-leaving) .site-menu__btn {
 		display: none;
 	}
 }
@@ -1960,6 +1966,29 @@ html.is-scrub .site-nav {
 
 html.is-scrub:not(.is-live-pointer):not([data-phase='site']) .site-nav {
 	visibility: hidden;
+}
+
+/* A flick leaves the film (hero.js is-leaving, from the rush to the landing): the site's header comes in at once over 0.3 s, links and rule included,
+   instead of following g, which only starts moving once the rush and its cover are over (2 to 3 s later). */
+html.is-scrub.is-leaving .mc-sitebar {
+	transition: background-color 0.3s linear;
+}
+
+html.is-scrub.is-leaving.scene-on .mc-sitebar::before {
+	opacity: 0;
+	transition: opacity 0.3s linear;
+}
+
+html.is-scrub.is-leaving .mc-sitebar::after {
+	opacity: 1;
+	transition: opacity 0.3s linear;
+}
+
+/* as specific as the rule above that hides the links outside the site, and after it */
+html.is-scrub.is-leaving:not([data-phase='site']) .site-nav {
+	visibility: visible;
+	opacity: 1;
+	transition: opacity 0.3s linear !important;
 }
 
 html.is-scrub .film-bar {
