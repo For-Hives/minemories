@@ -1,28 +1,35 @@
 /* The top of a shared scene: a world link's snapshot slider, then one line for the visitor (the welcome, then the
-   invitation). Above the studio layer, below the header and the loading cover. */
+   invitation). It lives in the header's own full-width row under the title, so it never covers the title, and it hides
+   with the header in immersive mode. */
+.cinema-header:has(.cinema-header-below) {
+	flex-wrap: wrap;
+}
+.cinema-header-below {
+	box-sizing: border-box;
+	order: 2;
+	flex: 1 1 100%;
+	display: flex;
+	justify-content: center;
+}
 .share-top {
-	position: absolute;
-	top: var(--ds-sp-4);
-	left: 50%;
-	z-index: 4;
-	transform: translateX(-50%);
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	justify-items: center;
 	gap: var(--ds-sp-2);
-	width: min(560px, calc(100% - 2 * var(--ds-sp-4)));
-	pointer-events: none;
+	width: min(560px, 100%);
+}
+.share-top:empty {
+	display: none;
 }
 .share-top > * {
 	pointer-events: auto;
-}
-.cinema-page:has(.is-immersed) .share-top {
-	display: none;
 }
 /* A world link's snapshot slider: a kit slot over the 3D scene. */
 .share-timeline {
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-3);
+	box-sizing: border-box;
 	width: 100%;
 	padding: var(--ds-sp-2) var(--ds-sp-4);
 	background: var(--night);
@@ -88,9 +95,17 @@
 .cinema-page .cinema-loading .cinema-loading-card > :is(button, a) {
 	margin-top: var(--ds-sp-5);
 }
-/* On a phone the header's title takes its own row, down to about 124 px. */
+/* A link is inline: it needs a box for its top margin. */
+.cinema-loading-card > a {
+	display: inline-block;
+}
+/* On a phone the row keeps clear of the tool rail on the right, and the slider explains itself. */
 @media (max-width: 800px) {
-	.share-top {
-		top: 136px;
+	.cinema-header-below {
+		justify-content: flex-start;
+		padding-right: 64px;
+	}
+	.share-slider-hint {
+		display: none;
 	}
 }

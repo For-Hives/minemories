@@ -158,7 +158,8 @@ function ShareWelcome({ isPublic, moments }: { isPublic: boolean; moments: numbe
 			{moments > 1 && (
 				<>
 					{' '}
-					{worldCount(locale, moments)} {t('Drag the slider to watch it change.')}
+					{worldCount(locale, moments)}{' '}
+					<span className="share-slider-hint">{t('Drag the slider to watch it change.')}</span>
 				</>
 			)}
 		</p>
@@ -355,6 +356,16 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				subtitle={isPublic ? t('PUBLIC MEMORY') : t('SHARED MEMORY')}
 				back={isPublic ? publicBack : '/'}
 				backLabel={isPublic ? t(review ? 'Back to moderation' : 'Back to public gallery') : 'Minemories'}
+				below={
+					<ShareTop
+						snapshots={snapshots}
+						shown={shown}
+						onPick={setWanted}
+						invite={onScreen}
+						isPublic={isPublic}
+						engaged={engaged}
+					/>
+				}
 			/>
 			<div className="viewer-stage">
 				<canvas
@@ -364,17 +375,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					onPointerDown={engage}
 					onWheel={engage}
 				/>
-				<ShareTop
-					snapshots={snapshots}
-					shown={shown}
-					onPick={setWanted}
-					invite={onScreen}
-					isPublic={isPublic}
-					engaged={engaged}
-				/>
 				<CaptureRestorationPanel view={restoration.view} onRestore={restoration.resume} />
 				{!restoration.view && (
-					<ViewerLoadState loading={status} error={error}>
+					<ViewerLoadState loading={status} error={error} final={error === LINK_STOPPED}>
 						<ShareErrorActions error={error} invite={invite} isPublic={isPublic} onRetry={retry} />
 					</ViewerLoadState>
 				)}

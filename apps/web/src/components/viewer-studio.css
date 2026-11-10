@@ -1030,7 +1030,11 @@ h2.cinema-panel-title {
 	opacity: 0;
 	pointer-events: none;
 }
-.cinema-page:has(.is-idle:not(:focus-within)) .cinema-header {
+/* The header fades with the tools, except a shared scene's visitor row, which stays (see share-timeline.css). */
+.cinema-header > * {
+	transition: opacity var(--ds-dur-3) ease-out;
+}
+.cinema-page:has(.is-idle:not(:focus-within)) .cinema-header > :not(.cinema-header-below) {
 	opacity: 0;
 }
 .cinema-page:has(.is-idle) .cinema-canvas {
@@ -1038,7 +1042,8 @@ h2.cinema-panel-title {
 }
 @media (prefers-reduced-motion: reduce) {
 	.viewer-studio > *,
-	.cinema-header {
+	.cinema-header,
+	.cinema-header > * {
 		transition: none;
 	}
 }

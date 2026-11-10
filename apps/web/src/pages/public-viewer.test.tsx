@@ -179,6 +179,8 @@ test('a stopped link says who stopped it, offers no Retry and points to the guid
 		'/installation?src=share'
 	)
 	expect(document.body.textContent).not.toMatch(/expir/i)
+	// Nothing will come back: no "will have to wait" heading over the sentence.
+	expect(screen.queryByText('Ce souvenir attendra un instant.')).toBeNull()
 })
 
 test.each([

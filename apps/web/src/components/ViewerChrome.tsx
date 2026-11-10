@@ -6,12 +6,15 @@ export function ViewerHeader({
 	title,
 	subtitle,
 	children,
+	below,
 	back = '/gallery',
 	backLabel,
 }: {
 	title: string
 	subtitle: string
 	children?: ReactNode
+	/** A full-width row under the title (a shared scene's slider and visitor line): it never covers the title, whatever its length. */
+	below?: ReactNode
 	back?: string
 	backLabel?: string
 }) {
@@ -28,18 +31,24 @@ export function ViewerHeader({
 				<h1>{title}</h1>
 			</div>
 			<div className="cinema-header-actions">{children}</div>
+			{below && <div className="cinema-header-below">{below}</div>}
 		</header>
 	)
 }
 
-/** `children` are the error's own actions (Retry, a link onward), shown under its sentence. */
+/**
+ * `children` are the error's own actions (Retry, a link onward), shown under its sentence. A `final` error drops the
+ * "will have to wait" heading: nothing will come back.
+ */
 export function ViewerLoadState({
 	loading,
 	error,
+	final = false,
 	children,
 }: {
 	loading: string | null
 	error: string
+	final?: boolean
 	children?: ReactNode
 }) {
 	const { t } = useI18n()
@@ -47,7 +56,7 @@ export function ViewerLoadState({
 	return (
 		<div className="cinema-loading" role={error ? 'alert' : 'status'} aria-live="polite">
 			<div className="cinema-loading-card">
-				<h2>{error ? t('This memory will have to wait.') : t('The light returns.')}</h2>
+				{!(error && final) && <h2>{error ? t('This memory will have to wait.') : t('The light returns.')}</h2>}
 				{loading && <div className="cinema-loading-line" />}
 				<p>{t(error || loading || '')}</p>
 				{children}
