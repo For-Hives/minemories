@@ -982,7 +982,7 @@ html:not(.scene-on) .film-bar {
 .mc-sitebar {
 	position: fixed;
 	inset: 0 0 auto;
-	z-index: 40;
+	z-index: var(--ds-z-bar);
 	height: var(--header-h);
 	min-height: 0;
 	padding-block: 4px;

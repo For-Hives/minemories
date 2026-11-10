@@ -25,18 +25,13 @@ html:has(.mm-header) {
 	scrollbar-gutter: stable;
 }
 
-/* The pages' header (the landing's sets its own on <html>: site.js): the phones' panel opens under it. Same gap after the brand as the landing's. */
+/* The pages' header (the landing's sets its own on <html>: site.js): 64 px at every width (the 56 px brand and the bar's padding), the menus and the
+   phones' panel open under it. Same gap after the brand as the landing's. */
 .mm-header {
-	--header-h: 56px;
+	--header-h: 64px;
 	gap: var(--ds-sp-3);
 	padding-inline: max(var(--mm-bar-gutter), env(safe-area-inset-left))
 		max(var(--mm-bar-gutter), env(safe-area-inset-right));
-}
-
-@media (min-width: 1000px) {
-	.mm-header {
-		--header-h: 64px;
-	}
 }
 
 /* The kit's dark window (kit.css .mc-panel--dark): a 2-texel bevel, light top and left, dark bottom and right, inside a 2 px outline. */
@@ -131,12 +126,18 @@ html:has(.mm-header) {
 
 /* --- A menu's panel: a night window of the game (bevel, 2 px outline, a hard shadow), its left edge on its button's ----------------------------- */
 
+/* The panels hang from the bar's bottom rule, never over the bar: the button is centred in the bar, so from its middle (50 %) half the bar's height
+   (--header-h) reaches the bar's edge, then the 2-texel rule and the panel's own outline. They stack in the bar's layer (tokens.css --ds-z-bar), above
+   anything the page draws; a panel taller than the window scrolls instead of running off the screen. */
 .mm-nav__panel {
 	position: absolute;
-	top: calc(100% + var(--ds-sp-1));
+	top: calc(50% + var(--header-h, 56px) / 2 + 3 * var(--gp));
 	/* the outline (--ds-notch) is drawn outside the box: the box starts one outline in, so the outline meets the button's edge */
 	left: var(--gp);
-	z-index: 50;
+	z-index: 1;
+	max-height: calc(100dvh - var(--header-h, 56px) - 3 * var(--gp) - var(--ds-sp-4));
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	box-sizing: border-box;
 	width: max-content;
 	min-width: 240px;
@@ -328,7 +329,7 @@ html:has(.mm-header) {
 
 .mm-lang__list {
 	min-width: 220px;
-	max-height: min(70vh, 540px);
+	max-height: min(540px, calc(100dvh - var(--header-h, 56px) - 3 * var(--gp) - var(--ds-sp-4)));
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	outline: none;

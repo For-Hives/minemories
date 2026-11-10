@@ -808,7 +808,7 @@
 .gallery-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 60;
+	z-index: var(--ds-z-modal);
 	display: flex;
 	justify-content: flex-end;
 	background: rgb(10 8 6 / 0.72);
@@ -1118,7 +1118,7 @@ html[data-mc-motion="reduced"]
 /* --- Right-click menu: the game's item tooltip holding the card's own actions, at the pointer --- */
 .context-menu {
 	position: fixed;
-	z-index: 60;
+	z-index: var(--ds-z-modal);
 	display: grid;
 	min-width: 220px;
 	padding: var(--ds-sp-1);

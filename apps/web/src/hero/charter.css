@@ -657,7 +657,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 .film-rail {
 	--rail-p: 0;
 	position: fixed;
-	z-index: 40;
+	z-index: var(--ds-z-chrome);
 	top: 50%;
 	right: max(var(--ds-sp-2), env(safe-area-inset-right));
 	width: 28px;

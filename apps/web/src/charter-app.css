@@ -197,21 +197,16 @@ html[data-mc-font="read"] .mc-btn {
 
 /* --- 3. Header (the landing's bar, mc-sitebar) ---------------------------------------------------------------------------------------------------- */
 
-/* The header is sticky: what gets focus or a #anchor scrolls in below it, never under it (WCAG 2.4.11). Not on the landing (no .mm-header). */
+/* The header is sticky: what gets focus or a #anchor scrolls in below it, never under it (WCAG 2.4.11). Not on the landing (no .mm-header). It is 64 px
+   tall at every width (the 56 px brand and the bar's padding, site-nav.css --header-h). */
 html:has(.mm-header) {
-	scroll-padding-top: calc(56px + var(--ds-sp-3));
-}
-
-@media (min-width: 1000px) {
-	html:has(.mm-header) {
-		scroll-padding-top: calc(64px + var(--ds-sp-3));
-	}
+	scroll-padding-top: calc(64px + var(--ds-sp-3));
 }
 
 .mm-header {
 	position: sticky;
 	top: 0;
-	z-index: 20;
+	z-index: var(--ds-z-bar);
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-5);
@@ -352,7 +347,7 @@ html[data-mc-font="read"] .mm-brand {
 	position: fixed;
 	top: var(--ds-sp-2);
 	left: var(--ds-sp-4);
-	z-index: 100;
+	z-index: var(--ds-z-skip);
 	transform: translateY(-180%);
 	display: inline-flex;
 	align-items: center;
@@ -477,7 +472,7 @@ html[data-mc-font="read"] .mm-brand {
 	position: fixed;
 	right: var(--ds-sp-5);
 	bottom: var(--ds-sp-5);
-	z-index: 30;
+	z-index: var(--ds-z-page);
 	max-width: min(380px, calc(100% - 48px));
 	padding: var(--ds-sp-3) var(--ds-sp-4);
 	background: var(--toast);
