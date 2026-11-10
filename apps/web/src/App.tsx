@@ -77,11 +77,11 @@ const prerenderedPageChunks: Record<string, PageChunk<unknown>> = {
 	'/terms': ContentPages,
 	'/legal': ContentPages,
 }
-/** Resolves once the chunk of a prerendered page is loaded (at once for any other path). A failed load resolves too: the page is then fetched on demand, as before. */
-export function loadPrerenderedPage(pathname: string): Promise<void> {
-	const chunk = prerenderedPageChunks[pathname]
-	if (!chunk) return Promise.resolve()
-	return chunk.load().then(
+/** The prerendered paths whose chunk main.tsx waits for (kept in step with the prerendered pages by its test). */
+export const prerenderedChunkPaths = Object.keys(prerenderedPageChunks)
+/** The load of a prerendered page's chunk, or `undefined` for any other path (the landing then hydrates at once, as before). A failed load resolves too: the page is then fetched on demand. */
+export function loadPrerenderedPage(pathname: string): Promise<void> | undefined {
+	return prerenderedPageChunks[pathname]?.load().then(
 		() => undefined,
 		() => undefined
 	)

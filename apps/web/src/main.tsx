@@ -16,6 +16,9 @@ if (!container) throw new Error('Application root not found.')
 
 const initialPath = window.location.pathname.replace(/\/$/, '') || '/'
 // A prerendered page is hydrated once its chunk is loaded (the HTML stays on screen meanwhile): see loadPrerenderedPage.
-if (container.dataset.prerendered === 'true' && container.dataset.route === initialPath)
-	void loadPrerenderedPage(initialPath).then(() => hydrateRoot(container, <App />))
-else createRoot(container).render(<App />)
+if (container.dataset.prerendered === 'true' && container.dataset.route === initialPath) {
+	const hydrate = () => hydrateRoot(container, <App />)
+	const pageChunk = loadPrerenderedPage(initialPath)
+	if (pageChunk) void pageChunk.then(hydrate)
+	else hydrate()
+} else createRoot(container).render(<App />)
