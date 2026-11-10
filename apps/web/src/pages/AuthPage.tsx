@@ -14,7 +14,7 @@ const inputField = 'auth-input mc-field'
 
 function submitText(creating: boolean, busy: boolean) {
 	if (busy) return 'One moment…'
-	return creating ? 'Create my space' : 'Sign in'
+	return creating ? 'Create my account' : 'Sign in'
 }
 
 function authenticate(form: FormData, creating: boolean) {
@@ -84,16 +84,16 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							state={{ from, email }}
 							aria-current={creating ? 'page' : undefined}
 						>
-							{t('Create a space')}
+							{t('Create an account')}
 						</Link>
 					</nav>
 					<header className="auth-heading">
 						<span className="auth-eyebrow">{t('YOUR WORLDS ARE WAITING')}</span>
-						<h1>{creating ? t('Your album of worlds') : t('Good to see you again')}</h1>
+						<h1>{creating ? t('Your gallery starts here') : t('Good to see you again')}</h1>
 						<p>
 							{creating
-								? t('A space to keep your captures and choose who to share them with.')
-								: t('Find your captures, your builds and the moments that matter.')}
+								? t('Your memories land here once the game is connected. You choose who sees them.')
+								: t('Your memories are right where you left them.')}
 						</p>
 					</header>
 					<SocialSignIn destination={from} />
@@ -223,7 +223,7 @@ function AuthAtmosphere() {
 			</div>
 			<div className="auth-art-caption">
 				<span>01 / {t('THE MEMORY')}</span>
-				<p>{t('The game ends. The story continues.')}</p>
+				<p>{t('The server closes. Your base stays.')}</p>
 				<span>{t('Illustration')} · Minemories</span>
 			</div>
 		</aside>

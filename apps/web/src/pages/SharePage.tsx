@@ -175,7 +175,7 @@ function ShareCall({ isPublic }: { isPublic: boolean }) {
 	const { t } = useI18n()
 	return (
 		<p className="share-note share-call" data-share="call">
-			<Link to={installPath(isPublic)}>{t('You too, keep your worlds')} →</Link>
+			<Link to={installPath(isPublic)}>{t('Want the same for your own base?')} →</Link>
 			{isPublic && <Link to="/explore">{t('See other places')}</Link>}
 		</p>
 	)
@@ -229,7 +229,7 @@ function ShareErrorActions({
 				{t('Retry')}
 			</button>
 		)
-	return invite ? <Link to={installPath(isPublic)}>{t('You too, keep your worlds')} →</Link> : null
+	return invite ? <Link to={installPath(isPublic)}>{t('Want the same for your own base?')} →</Link> : null
 }
 
 /** The scene is in view: loaded, not empty, with no error or restoration card over it. */
