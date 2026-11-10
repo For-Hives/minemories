@@ -94,5 +94,6 @@
 	"Can I turn off auto memories?": "Je peux couper les photos auto ?",
 	"Yes: M → Auto memories.": "Oui : M → Photos auto.",
 	"You can change it in M → Settings → Memories.": "Tu peux le changer dans M → Réglages → Captures.",
-	"M → My memories → Send this memory.": "M → Mes souvenirs → Envoyer cette capture."
+	"M → My memories → Send this memory.": "M → Mes souvenirs → Envoyer cette capture.",
+	"Everything turns off in the game (M → Auto memories, M → Settings → Privacy), and the account can be deleted.": "Tout se coupe dans le jeu (M → Photos auto, M → Réglages → Confidentialité), et le compte se supprime."
 }

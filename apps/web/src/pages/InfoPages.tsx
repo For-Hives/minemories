@@ -28,7 +28,7 @@ export function InfoNavigation() {
 	)
 }
 
-function InfoPage({ title, children }: { title: string; children: ReactNode }) {
+export function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
 		<article lang={locale} className="mm-info">
@@ -190,6 +190,9 @@ export function HowItWorksPage() {
 			</ol>
 			<h2>{t('Questions')}</h2>
 			<Questions ids={pageQuestions.howItWorks} />
+			<p>
+				<Link to="/safety">{t('Is Minemories safe?')} →</Link>
+			</p>
 			<p>
 				<Link className={buttonLime} to="/installation">
 					{t('Install the mod')}

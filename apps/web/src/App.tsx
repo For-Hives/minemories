@@ -27,6 +27,10 @@ const InstallationPage = lazy(() =>
 const DownloadsPage = lazy(() => import('./pages/DownloadsPage').then(module => ({ default: module.DownloadsPage })))
 const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
 const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(module => ({ default: module.RoadmapPage })))
+const GuidePages = () => import('./pages/GuidePages')
+const ServerClosingPage = lazy(() => GuidePages().then(module => ({ default: module.ServerClosingPage })))
+const SafetyPage = lazy(() => GuidePages().then(module => ({ default: module.SafetyPage })))
+const BlenderGuidePage = lazy(() => GuidePages().then(module => ({ default: module.BlenderGuidePage })))
 const ContentPages = () => import('./pages/ContentPages')
 // Pricing is disabled for now (page kept in pages/PricingPage.tsx): re-enable this import and its route, the header/footer links and the metadata entry.
 // const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
@@ -46,6 +50,7 @@ const publicPageChunks = [
 	() => import('./pages/ReleasesPage'),
 	() => import('./pages/RoadmapPage'),
 	() => import('./pages/SharingPage'),
+	GuidePages,
 	() => import('./pages/AuthPage'),
 ]
 
@@ -158,6 +163,30 @@ export function App() {
 								element={
 									<Page>
 										<RoadmapPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/server-closing"
+								element={
+									<Page>
+										<ServerClosingPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/safety"
+								element={
+									<Page>
+										<SafetyPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/guides/minecraft-blender"
+								element={
+									<Page>
+										<BlenderGuidePage />
 									</Page>
 								}
 							/>

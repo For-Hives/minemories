@@ -51,7 +51,7 @@ export const questions = {
 			'No. It is a .jar file for Minecraft: download it only from this site or our CurseForge page.',
 			'Its SHA-256 checksum is shown on the downloads page.',
 		],
-		link: { to: '/downloads', label: 'Downloads' },
+		link: { to: '/safety#verifier', label: 'Check your file' },
 	},
 	sauvegarde: {
 		question: 'Is this a backup of my world?',
@@ -122,6 +122,7 @@ export const questions = {
 			'To revisit your memory in 3D in the browser, yes.',
 			'Without an account, it stays as a GLB file on your computer, to open in Blender.',
 		],
+		link: { to: '/guides/minecraft-blender', label: 'Minecraft to Blender' },
 	},
 	sodium: {
 		question: 'Does it work with Sodium, Iris or shaders?',
@@ -180,6 +181,11 @@ export const questions = {
 			'Without a copy of the world, nothing can be done.',
 			'With a ZIP, reopen the world in single player in a compatible version and capture it.',
 		],
+		link: { to: '/server-closing', label: 'Server closing' },
+	},
+	'sur-un-serveur': {
+		question: 'Does it work on a server?',
+		answer: ['Yes, it captures what your game shows.', 'Follow the server’s rules.'],
 	},
 	connecter: {
 		question: 'How do I connect the game?',
@@ -214,6 +220,10 @@ export const questions = {
 		answer: ['Pick a memory → Publish in the public gallery.', 'We review it before it appears.'],
 		link: { to: '/explore', label: 'Public gallery' },
 	},
+	droit: {
+		question: 'Am I allowed to?',
+		answer: ['Capturing for yourself, yes.', 'To share or publish someone else’s base, ask them first.'],
+	},
 	fichier: {
 		question: 'Can I get the file back?',
 		answer: ['Yes, every memory in your gallery downloads as a GLB file, and the viewer makes HD postcards.'],
@@ -236,6 +246,7 @@ export const questions = {
 			'Nobody, by default.',
 			'Only the people with a link your child created, or everyone if they publish a memory and it is accepted after review.',
 		],
+		link: { to: '/safety', label: 'Safety and parents' },
 	},
 	'tout-supprimer': {
 		question: 'How do I delete everything?',
@@ -291,6 +302,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 			'souvenirs-auto',
 			'ou-sont-mes-souvenirs',
 			'vieux-monde',
+			'sur-un-serveur',
 		],
 	},
 	{
@@ -302,6 +314,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 			'ce-que-voit-le-lien',
 			'arreter-le-partage',
 			'galerie-publique',
+			'droit',
 			'fichier',
 			'place',
 		],
@@ -317,6 +330,8 @@ export const pageQuestions = {
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
 	installation: ['plantage', 'code', 'touche-m'],
 	downloads: ['bedrock', 'versions'],
+	serverClosing: ['tout-le-monde', 'vieux-monde', 'droit'],
+	blender: ['mods', 'sur-un-serveur'],
 } satisfies Record<string, QuestionId[]>
 
 /** One question, its answer as one paragraph, in the given translation. */

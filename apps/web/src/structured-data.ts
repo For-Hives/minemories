@@ -26,7 +26,7 @@ function faqEntities(language: string) {
 
 /**
  * The page's JSON-LD, the one source for the prerendered HTML and the client head. Every page describes itself (WebPage,
- * or Article for a dated story); the home also names the site and who runs it, and /downloads names the mod. No price,
+ * or Article for a dated guide, with its breadcrumb); the home also names the site and who runs it, and /downloads names the mod. No price,
  * rating or contact is stated: none is decided yet.
  */
 export function structuredDataFor(page: PageMetadata, version = modVersion) {
@@ -45,6 +45,7 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 					datePublished: page.articleDate,
 					dateModified: page.updated,
 					mainEntityOfPage: canonical,
+					author: { '@type': 'Organization', name: 'For-Hives' },
 					publisher: organization,
 				}
 			: {
@@ -77,6 +78,15 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 				sameAs: [...catalogLinks().map(link => link.url), repositoryUrl],
 			}
 		)
+	// A guide sits one level under the home: its breadcrumb names both.
+	if (page.path.startsWith('/guides/'))
+		graph.push({
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{ '@type': 'ListItem', position: 1, name: 'Minemories', item: origin },
+				{ '@type': 'ListItem', position: 2, name: page.title, item: canonical },
+			],
+		})
 	if (page.path === '/downloads')
 		graph.push({
 			'@type': 'SoftwareApplication',

@@ -83,6 +83,34 @@ const metadataMessages: PageMetadata[] = [
 		updated: '2026-11-10',
 	},
 	{
+		path: '/server-closing',
+		title: 'Minecraft server closing: keep your builds',
+		description:
+			'End of season, wipe, SMP closing: keep your base in 3D before it closes, without being an admin and without installing anything on the server.',
+		indexable: true,
+		language: 'fr',
+		updated: '2026-11-10',
+	},
+	{
+		path: '/safety',
+		title: 'Is Minemories safe? Mod, children and privacy',
+		description:
+			'Where to download the mod, what goes online and when, who sees your child’s memories, how to delete everything.',
+		indexable: true,
+		language: 'fr',
+		updated: '2026-11-10',
+	},
+	{
+		path: '/guides/minecraft-blender',
+		title: 'Export a Minecraft build to Blender (GLB)',
+		description:
+			'Export an area of your Minecraft Java world as GLB from the game, textures and lights included, in multiplayer and with mods. Blender import step by step.',
+		indexable: true,
+		language: 'fr',
+		articleDate: '2026-11-10',
+		updated: '2026-11-10',
+	},
+	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
 		description: 'What the Minemories team is building now, what comes next and what shipped recently.',

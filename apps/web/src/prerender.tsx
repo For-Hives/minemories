@@ -8,6 +8,7 @@ import { I18nProvider } from './i18n/I18n'
 import { LegalPage, NotFoundPage } from './pages/ContentPages'
 import { ExplorerPage } from './pages/DiscoveryPages'
 import { DownloadsPage } from './pages/DownloadsPage'
+import { BlenderGuidePage, SafetyPage, ServerClosingPage } from './pages/GuidePages'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
@@ -52,6 +53,15 @@ export function renderPage(path: string) {
 			break
 		case '/roadmap':
 			content = <RoadmapPage />
+			break
+		case '/server-closing':
+			content = <ServerClosingPage />
+			break
+		case '/safety':
+			content = <SafetyPage />
+			break
+		case '/guides/minecraft-blender':
+			content = <BlenderGuidePage />
 			break
 		case '/faq':
 			content = <FaqPage />

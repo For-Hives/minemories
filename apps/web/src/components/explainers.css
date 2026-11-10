@@ -881,3 +881,55 @@
 .ex-compare td[data-verdict="yes"] {
 	color: var(--text);
 }
+
+/* Two columns fit a phone: no forced width, so the table wraps instead of scrolling. */
+.ex-compare--two {
+	min-width: 0;
+	width: 100%;
+}
+
+.ex-compare--two p {
+	margin: 0 0 var(--ds-sp-2);
+}
+
+/* --- Chat commands, one per line (Blender guide, checksum fold) -------------------------------------------------------------------------------------- */
+
+.ex-commands {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-4) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-commands li {
+	line-height: var(--ds-hit);
+}
+
+.ex-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-4);
+}
+
+/* --- An announcement to paste in the server's chat or Discord ---------------------------------------------------------------------------------------- */
+
+.ex-announce {
+	margin: var(--ds-sp-4) 0;
+	padding: var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+}
+
+.ex-announce figcaption {
+	color: var(--text-3);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-transform: capitalize;
+}
+
+.ex-announce blockquote {
+	margin: var(--ds-sp-2) 0 var(--ds-sp-3);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	overflow-wrap: anywhere;
+}

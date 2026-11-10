@@ -72,6 +72,29 @@ test('each page describes itself, with its date, and stories stay articles', () 
 	})
 })
 
+test('the Blender guide is an article by For-Hives with a breadcrumb back to the home', () => {
+	const [article, breadcrumb] = nodes('/guides/minecraft-blender')
+	expect(article).toMatchObject({
+		'@type': 'Article',
+		datePublished: '2026-11-10',
+		dateModified: '2026-11-10',
+		author: { '@type': 'Organization', name: 'For-Hives' },
+		headline: 'Exporter une construction Minecraft vers Blender (GLB)',
+	})
+	expect(breadcrumb).toMatchObject({
+		'@type': 'BreadcrumbList',
+		itemListElement: [
+			{ position: 1, name: 'Minemories', item: 'https://minemories.net/' },
+			{
+				position: 2,
+				name: 'Exporter une construction Minecraft vers Blender (GLB)',
+				item: 'https://minemories.net/guides/minecraft-blender',
+			},
+		],
+	})
+	expect(nodes('/safety').map(node => node['@type'])).toEqual(['WebPage'])
+})
+
 test('the FAQ page lists every visible question with its answer, in the page language', () => {
 	const faq = nodes('/faq')[0] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> }
 	expect(faq.mainEntity).toHaveLength(faqGroups.flatMap(group => group.ids).length)
