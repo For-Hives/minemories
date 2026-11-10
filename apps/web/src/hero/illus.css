@@ -1,5 +1,5 @@
 /* ==========================================================================================================================================================
-   The landing's section pictures (components/HeroIllustrations.tsx): "Show it to the group" and "Your server is closing?".
+   The landing's section pictures (components/HeroIllustrations.tsx): "Show your base to your friends" and "Server shutting down?".
    Real screenshots of real use (public/hero/illus), only cropped and scaled, each with a short HTML caption in the game font so every word is translated.
    They live in the text column (never under the dock: site.js counts them in the text's reach), at most 520 px wide. Static on purpose: nothing moves, so
    reduced motion has nothing to stop.
@@ -33,7 +33,7 @@
 	text-shadow: 2px 2px 0 #3f3f3f;
 }
 
-/* ---------- Show it to the group: the viewer, and the postcard it exported, laid on its corner like a print ---------- */
+/* ---------- Show your base to your friends: the viewer, and the postcard it exported, laid on its corner like a print ---------- */
 
 .mm-illus--share {
 	padding-bottom: 72px;
@@ -65,7 +65,24 @@
 	text-align: right;
 }
 
-/* ---------- Your server is closing?: the M menu in game (at most 1:1 at 2x, so its pixel font stays sharp), then the same tower in game and in the viewer ---------- */
+/* On a phone the viewer's caption (a full sentence) would wrap word by word beside the print: the print goes under it instead, still tilted. */
+@media (max-width: 599px) {
+	.mm-illus--share {
+		padding-bottom: 0;
+	}
+
+	.mm-illus--share .mm-illus__frame .mm-illus__label {
+		max-width: none;
+	}
+
+	.mm-illus__print {
+		position: relative;
+		width: 62%;
+		margin: var(--ds-sp-2) 0 0 auto;
+	}
+}
+
+/* ---------- Server shutting down?: the M menu in game (at most 1:1 at 2x, so its pixel font stays sharp), then the same tower in game and in the viewer ---------- */
 
 .mm-illus--closing {
 	display: grid;
