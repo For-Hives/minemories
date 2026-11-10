@@ -162,7 +162,9 @@ refused. The caps never silently drop materials or lights: exceeding a limit
 invalidates the whole capture.
 
 Alpha MASK/BLEND, tint, opacity, emissive textures and `KHR_lights_punctual`
-are preserved. The subtractions in the normal computation happen in double
+are preserved, and so is each material's side: block and fluid materials are
+single-sided, renderer materials double-sided ([face culling](glb-face-culling.md)).
+The subtractions in the normal computation happen in double
 before the cross product: even extreme finite positions do not become NaN
 normals through a float subtraction overflow.
 

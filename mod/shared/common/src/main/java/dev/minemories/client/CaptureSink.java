@@ -9,6 +9,11 @@ import java.nio.file.Path;
  * Geometry only: implementations must never require a world or renderer on their consumer thread.
  */
 interface CaptureSink {
+  /**
+   * A baked block-model or fluid quad. Minecraft draws chunk geometry with back-face culling, so
+   * these are single-sided: faces meant to be seen from both sides (plants, the underside of a
+   * water surface, fluid sides) are already emitted twice by the game, once per winding.
+   */
   void addQuad(
       String key,
       String name,
@@ -22,7 +27,12 @@ interface CaptureSink {
       float[] uv)
       throws IOException;
 
-  default void addRenderedQuad(
+  /**
+   * A quad from a block entity or entity renderer. Its render type may disable culling (banners,
+   * signs, entityCutoutNoCull...) and is not read portably across versions, so it stays
+   * double-sided.
+   */
+  void addRenderedQuad(
       String key,
       String name,
       String image,
@@ -34,10 +44,7 @@ interface CaptureSink {
       float[] xyz,
       float[] uv,
       int layer)
-      throws IOException {
-    if (alpha != 0) RenderedLayer.separate(xyz, layer);
-    addQuad(key, name, image, png, tint, alpha, emission, opacity, xyz, uv);
-  }
+      throws IOException;
 
   void addPointLight(float x, float y, float z, int color, int level) throws IOException;
 
@@ -84,7 +91,27 @@ interface CaptureSink {
         float[] xyz,
         float[] uv) {
       scene.addQuad(
-          category, chunkX, chunkZ, key, name, image, png, tint, alpha, emission, opacity, xyz, uv);
+          category, chunkX, chunkZ, key, name, image, png, tint, alpha, emission, opacity, false,
+          xyz, uv);
+    }
+
+    @Override
+    public void addRenderedQuad(
+        String key,
+        String name,
+        String image,
+        byte[] png,
+        int tint,
+        int alpha,
+        float emission,
+        float opacity,
+        float[] xyz,
+        float[] uv,
+        int layer) {
+      if (alpha != 0) RenderedLayer.separate(xyz, layer);
+      scene.addQuad(
+          category, chunkX, chunkZ, key, name, image, png, tint, alpha, emission, opacity, true,
+          xyz, uv);
     }
 
     @Override
