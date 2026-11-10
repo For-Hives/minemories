@@ -536,23 +536,20 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* The links, the language, the account, the install button and the file control do not fit beside each other under 1100 px: the menu takes the links. */
-@media (max-width: 1100px) {
-	.mm-desktop-nav {
-		display: none;
-	}
-	.mm-mobile-menu {
-		display: block;
-	}
-}
-
-/* The language moves into the menu on phones (as on the landing). */
+/*
+ * The bar steps down as the screen narrows, so the two links stay in it as long as possible: under 1100 px the
+ * language moves into the menu and the install button takes its short label; under 920 px the links join the
+ * menu too (room kept for the signed-in account); under 560 px the account (see the install button rules below).
+ */
 .mm-mobile-menu .mm-language {
 	display: none;
 	margin-top: var(--ds-sp-3);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 1100px) {
+	.mm-mobile-menu {
+		display: block;
+	}
 	.mm-header-actions > .mm-language {
 		display: none;
 	}
@@ -565,6 +562,15 @@ html[data-mc-font="read"] .mm-brand {
 		min-width: 200px;
 		max-width: 100%;
 	}
+}
+
+@media (max-width: 920px) {
+	.mm-desktop-nav {
+		display: none;
+	}
+}
+
+@media (max-width: 560px) {
 	.mm-header-actions > .mm-button {
 		white-space: nowrap;
 	}
@@ -686,20 +692,25 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* The header's install button: the whole label, then a shorter one where the bar is tight. On phones, as on the
-   landing, the account moves into the menu so the install button keeps its place. */
+/* The header's install button: the whole label, then a shorter one under 1100 px. On phones, as on the landing,
+   the account moves into the menu so the install button keeps its place. */
 .mm-install-short,
 .mm-menu-account {
 	display: none;
 }
 
-@media (max-width: 560px) {
-	.mm-install-long,
-	.mm-header-account {
+@media (max-width: 1100px) {
+	.mm-install-long {
 		display: none;
 	}
 	.mm-install-short {
 		display: inline;
+	}
+}
+
+@media (max-width: 560px) {
+	.mm-header-account {
+		display: none;
 	}
 	.mm-menu-account {
 		display: block;
