@@ -297,8 +297,8 @@ A page adopts the guidelines by: (1) putting `.ds-page` on its root; (2) using o
 |---|---|---|
 | Landing `/` | title screen + cinematic | already in production. The “What Minemories doesn't do” section (gold frame) was removed; its four limits (not a backup, nothing before the mod, one AFK capture every 4 h, Java 1.21.1 in beta) still need saying elsewhere if needed (FAQ, installation page) |
 | Guides (`/installation`, `/how-it-works`, `/faq`…) | book, help screen | `mc-step`, `mc-faq`, `mc-recipe`, `mc-section` |
-| Discovery (`/discover`, `/ranking`, `/explore`) | world selection | world row: square thumbnail, name in white, detail in gray, button on the right |
-| Long texts (`/blog`, `/privacy`, `/terms`) | signed book | `mc-prose`, 58-character measure |
+| Discovery (`/explore`) | world selection | world row: square thumbnail, name in white, detail in gray, button on the right |
+| Long texts (`/privacy`, `/terms`) | signed book | `mc-prose`, 58-character measure |
 | Sign-in, sign-up, account | settings screen | `mc-form`, `mc-field`, `mc-check`, `mc-select`, a single primary button |
 | Gallery, sharing | capture album | grid of slots, tooltip-style caption on hover and focus |
 | 3D viewer | the game itself | keeps its own interface: `mc-hotbar`, `mc-dock`, `mc-panel`, `mc-btn--icon` |
