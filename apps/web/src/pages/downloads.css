@@ -130,6 +130,12 @@
 	margin-top: var(--ds-sp-2);
 }
 
+.mm-dl-guide,
+.mm-dl-links a {
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+}
+
 /* No file for the pair: a grayed, hatched cell that says why. */
 .mm-dl-empty {
 	background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 255 255 / 0.03) 6px 12px);

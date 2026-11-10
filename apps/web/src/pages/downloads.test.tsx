@@ -126,6 +126,9 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	expect(screen.getByRole('link', { name: 'Pas sûr ? Le guide te pose deux questions.' }).getAttribute('href')).toBe(
 		'/installation'
 	)
+	// The "which versions?" answer links to /downloads: on /downloads itself that link is left out.
+	expect(screen.getByRole('heading', { name: 'Quelles versions ?' })).toBeTruthy()
+	expect(screen.queryByRole('link', { name: 'Téléchargements →' })).toBeNull()
 })
 
 test('every published cell opens the guide with its version and loader already picked', async () => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { RadiusMap, ShareDemo } from '../components/diagrams'
 import { FileTree, Glyph, type GlyphName } from '../components/explainers'
 import { buttonLime } from '../components/ui'
@@ -199,9 +199,13 @@ export function HowItWorksPage() {
 	)
 }
 
-/** Questions and their short answers, from content/faq.ts. On /faq each one carries its anchor (`/faq#ban`). */
+/**
+ * Questions and their short answers, from content/faq.ts. On /faq each one carries its anchor (`/faq#ban`). An answer's
+ * link to the page it is shown on is left out.
+ */
 export function Questions({ ids, anchors = false }: { ids: readonly QuestionId[]; anchors?: boolean }) {
 	const { t } = useI18n()
+	const { pathname } = useLocation()
 	return (
 		<div className="ex-faq">
 			{ids.map(id => {
@@ -212,7 +216,7 @@ export function Questions({ ids, anchors = false }: { ids: readonly QuestionId[]
 						<h3>{anchors ? <a href={`#${id}`}>{question}</a> : question}</h3>
 						<p>
 							{answer}
-							{entry.link && (
+							{entry.link && entry.link.to !== pathname && (
 								<>
 									{' '}
 									<Link to={entry.link.to}>{t(entry.link.label)} →</Link>
