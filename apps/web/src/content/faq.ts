@@ -42,20 +42,20 @@ export const questions = {
 		question: 'Can I get banned?',
 		answer: [
 			'The mod runs only in your game and sends nothing to the game server: it reads what your game shows, like a screenshot.',
-			'Some servers forbid any mod that is not on their list: check their rules.',
+			'Some servers ban any mod that isn’t on their list: check their rules.',
 		],
 	},
 	virus: {
 		question: 'Is it a virus?',
 		answer: [
-			'No. It is a .jar file for Minecraft: download it only from this site or our CurseForge page.',
+			'No. It’s a .jar file for Minecraft: only download it from this site or our CurseForge page.',
 			'Its SHA-256 checksum is shown on the downloads page.',
 		],
 		link: { to: '/safety#verifier', label: 'Check your file' },
 	},
 	sauvegarde: {
-		question: 'Is this a backup of my world?',
-		answer: ['No. It is a 3D copy to look at, not to play in.', 'Keep your Minecraft backup too.'],
+		question: 'Does it back up my world?',
+		answer: ['No. It’s a 3D copy to look at, not to play in.', 'Keep your Minecraft backup too.'],
 	},
 	minemories: {
 		question: 'What is Minemories?',
@@ -69,7 +69,7 @@ export const questions = {
 		question: 'How is it different from BlueMap?',
 		answer: [
 			'BlueMap maps a whole server and is installed on the server.',
-			'Minemories keeps one precise place, from your game, without asking the admin.',
+			'Minemories keeps one spot, from your own game, without asking the admin.',
 		],
 	},
 	rejouer: {
@@ -80,7 +80,7 @@ export const questions = {
 		question: 'What if Minemories shuts down?',
 		answer: [
 			'Your memories also stay on your computer, in the export folder, and every memory in your gallery downloads as a GLB file.',
-			'You do not depend on us.',
+			'You don’t depend on us.',
 		],
 	},
 	qui: {
@@ -110,7 +110,7 @@ export const questions = {
 	},
 	'tout-le-monde': {
 		question: 'Does everyone need to install it?',
-		answer: ['No. One person is enough to capture the group’s base.', 'The others visit it through the link.'],
+		answer: ['No. One person is enough to capture the group’s base.', 'The others just open the link.'],
 	},
 	'monde-modifie': {
 		question: 'Does it change my world?',
@@ -178,7 +178,7 @@ export const questions = {
 	'vieux-monde': {
 		question: 'My server is already closed, or I have a ZIP?',
 		answer: [
-			'Without a copy of the world, nothing can be done.',
+			'Without a copy of the world, there’s nothing left to capture.',
 			'With a ZIP, reopen the world in single player in a compatible version and capture it.',
 		],
 		link: { to: '/server-closing', label: 'What if my server shuts down?' },
@@ -233,7 +233,7 @@ export const questions = {
 		answer: ['2 GiB per account during the beta.', 'The trash counts too.'],
 	},
 	'envoi-automatique': {
-		question: 'Does the mod upload everything automatically?',
+		question: 'Does the mod upload everything on its own?',
 		answer: [
 			'Nothing leaves before you connect the game.',
 			'After that, your memories go to your private gallery, with cleaned-up error reports you can turn off in M → Settings → Privacy.',
@@ -241,10 +241,10 @@ export const questions = {
 		link: { to: '/privacy', label: 'Privacy' },
 	},
 	enfant: {
-		question: "Who can see my child's memories?",
+		question: 'Who can see my kid’s memories?',
 		answer: [
 			'Nobody, by default.',
-			'Only the people with a link your child created, or everyone if they publish a memory and it is accepted after review.',
+			'Only people with a link your kid created, or everyone if they publish a memory and it’s accepted after review.',
 		],
 		link: { to: '/safety', label: 'Is it safe?' },
 	},
@@ -257,7 +257,7 @@ export const questions = {
 		],
 	},
 	code: {
-		question: 'The code does not work?',
+		question: 'The code doesn’t work?',
 		answer: ['It expires after 5 minutes and works only once.', 'Generate another one.', 'Your local file is safe.'],
 	},
 	plantage: {
@@ -277,7 +277,7 @@ export const questions = {
 	},
 	'mot-de-passe': {
 		question: 'Forgot your password?',
-		answer: ['There is no automatic reset yet.', 'Write to us: the contact address is coming soon.'],
+		answer: ['There’s no automatic reset yet.', 'Write to us: the contact address is coming soon.'],
 	},
 } satisfies Record<string, FaqEntry>
 
