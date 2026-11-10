@@ -1262,7 +1262,7 @@
 	"3. Import it into Blender": "3. In Blender importieren",
 	"In Blender: File → Import → glTF 2.0 (.glb/.gltf).": "In Blender: Datei → Importieren → glTF 2.0 (.glb/.gltf).",
 	"Each part comes in as its own object: {parts}.": "Jeder Teil kommt als eigenes Objekt: {parts}.",
-	"Apply the scale before you model: Object → Apply → Scale.": "Wende vor dem Modellieren die Skalierung an: Objekt → Anwenden → Skalierung.",
+	"Apply the scale before you model: Object → Apply → Scale.": "Wende vor dem Modellieren die Skalierung an: Objekt → Anwenden → Skalieren.",
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Werkzeuge wie Mineways oder jmc2obj lesen den Weltspeicherstand: Auf einem Server brauchst du die Kopie des Admins. Minemories exportiert aus deinem Spiel.",
 	"Nobody sees them without a link you create.": "Niemand sieht sie ohne einen Link, den du erstellst.",
 	"A link for one memory, or for a whole world with its slider through time.": "Ein Link für eine Erinnerung oder für eine ganze Welt, mit ihrem Zeitregler.",

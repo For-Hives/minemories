@@ -1260,7 +1260,7 @@
 	"It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.": "Он попадает в папку export в твоей домашней папке: capture.glb — последний, а каждое воспоминание с датой лежит в history.",
 	"No account needed.": "Аккаунт не нужен.",
 	"3. Import it into Blender": "3. Импортируй в Blender",
-	"In Blender: File → Import → glTF 2.0 (.glb/.gltf).": "В Blender: Файл → Импорт → glTF 2.0 (.glb/.gltf).",
+	"In Blender: File → Import → glTF 2.0 (.glb/.gltf).": "В Blender: Файл → Импортировать → glTF 2.0 (.glb/.gltf).",
 	"Each part comes in as its own object: {parts}.": "Каждая часть приходит отдельным объектом: {parts}.",
 	"Apply the scale before you model: Object → Apply → Scale.": "Перед моделированием примени масштаб: Объект → Применить → Масштаб.",
 	"Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.": "Инструменты вроде Mineways или jmc2obj читают сохранение мира: на сервере нужна копия админа. Minemories экспортирует прямо из твоей игры.",
