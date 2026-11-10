@@ -315,6 +315,8 @@ export const pageQuestions = {
 	home: ['serveur', 'compte', 'si-minemories-ferme'],
 	concept: ['bluemap', 'rejouer', 'sous-sols'],
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
+	installation: ['plantage', 'code', 'touche-m'],
+	downloads: ['bedrock', 'versions'],
 } satisfies Record<string, QuestionId[]>
 
 /** One question, its answer as one paragraph, in the given translation. */

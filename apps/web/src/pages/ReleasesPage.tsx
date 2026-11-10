@@ -1,72 +1,96 @@
-import { useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router'
-import { LoadingSkeleton } from '../components/Loading'
-import { buttonOutline } from '../components/ui'
+import { Link } from 'react-router'
+import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
+import type { NotedRelease, ReleaseNote } from '../lib/release-notes'
 import { ContentLayout } from './ContentPages'
-import { indexUrl } from './mod-releases'
-import { ReleaseCard } from './ReleaseCard'
+import { releases as history } from './release-history'
 import { useModReleases } from './useModReleases'
 import './releases.css'
 
-export function ReleasesPage() {
-	const { releases, status, retry } = useModReleases()
+const noteLabels: Record<ReleaseNote['type'], string> = {
+	feature: 'New: {note}',
+	fix: 'Fixed: {note}',
+	other: 'Changed: {note}',
+}
+/** Notes on the latest version; an older one shows its first note only. */
+const latestNotes = 3
+
+/** One note in the visitor's language when it is translated, otherwise in its English original (marked as such). */
+function Note({ note }: { note: ReleaseNote }) {
+	const { t, locale } = useI18n()
+	const text = t(note.text)
+	const untranslated = text === note.text && !locale.startsWith('en')
+	return <span lang={untranslated ? 'en' : undefined}>{t(noteLabels[note.type], { note: text })}</span>
+}
+
+/** The build date the downloads index gives a version, once loaded; versions the storage no longer keeps have none. */
+function ReleaseDate({ published }: { published: number | undefined }) {
+	const { locale } = useI18n()
+	if (!published) return null
+	return (
+		<time dateTime={new Date(published).toISOString()}>
+			{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(published)}
+		</time>
+	)
+}
+
+function Latest({ release, published }: { release: NotedRelease; published: number | undefined }) {
 	const { t } = useI18n()
-	const { hash } = useLocation()
-	// The release named in the URL is opened and scrolled to once: loading older pages must not jump back to it.
-	const shownHash = useRef('')
-	useEffect(() => {
-		if (!hash || hash === shownHash.current) return
-		const target = document.getElementById(hash.slice(1))
-		if (!target) return
-		shownHash.current = hash
-		target.querySelector('details.mm-release-notes')?.setAttribute('open', '')
-		target.scrollIntoView?.({ block: 'start' })
-	}, [hash, releases])
+	const id = `v${release.version}`
+	return (
+		<section className="mm-release-card" id={id} aria-labelledby={`${id}-title`}>
+			<div className="mm-release-meta">
+				<span className="mm-release-badge">{t('Latest version')}</span>
+				<ReleaseDate published={published} />
+			</div>
+			<h2 id={`${id}-title`}>{`Minemories ${release.version}`}</h2>
+			<h3>{t('What changes for you')}</h3>
+			<ul className="mm-release-notes">
+				{release.notes.slice(0, latestNotes).map(note => (
+					<li key={note.text}>
+						<Note note={note} />
+					</li>
+				))}
+			</ul>
+			<Link className={buttonLime} to="/downloads">
+				{t('Download')}
+			</Link>
+		</section>
+	)
+}
+
+/**
+ * /versions: what each mod version changes, in player words, from the curated notes in mod/release-notes (prerendered at
+ * build time). The downloads index only adds the dates; the files themselves live on /downloads.
+ */
+export function ReleasesPage() {
+	const { t } = useI18n()
+	const { releases } = useModReleases()
+	const published = (version: string) => releases.find(release => release.version === version)?.published
+	const [latest, ...previous] = history
 	return (
 		<ContentLayout
 			eyebrow={t('MINEMORIES · RELEASES')}
 			title={t('What changes in Minemories')}
-			lead={t(
-				'The right file for your Minecraft profile, with its size and checksum. Direct downloads from Minemories.'
-			)}
+			lead={t('The notes of each Minemories mod version, dated.')}
 		>
-			<nav className="mm-release-tabs" aria-label={t('Downloads and updates')}>
-				<Link to="/installation">{t('Installation guide ↗')}</Link>
-			</nav>
-			<aside className="mm-release-guide">
-				<h2>{t('Your first memory starts here.')}</h2>
-				<p>
-					{t(
-						'Choose the latest version, then the JAR matching your Minecraft version and your loader: NeoForge, Fabric (also used under Quilt) or Forge. Close the game, then keep just one Minemories JAR in that profile’s mods folder.'
-					)}
-				</p>
-				<p className="mm-release-muted">
-					{t(
-						'Prereleases are built automatically; this does not guarantee an in-game test of every published JAR. Keep a backup of your world.'
-					)}
-				</p>
-			</aside>
-			<div className="mm-release-list" aria-busy={status === 'loading'}>
-				{releases.map((release, index) => (
-					<ReleaseCard key={release.version} release={release} recommended={index === 0} />
-				))}
-			</div>
-			{status === 'loading' && <LoadingSkeleton label={t('Loading releases…')} />}
-			{status === 'error' && (
-				<div className="mm-release-feedback" role="alert">
-					<p>{t('The list of versions could not be loaded. Try again in a moment.')}</p>
-					<button type="button" className={buttonOutline} onClick={retry}>
-						{t('Retry')}
-					</button>
-				</div>
+			{latest && <Latest release={latest} published={published(latest.version)} />}
+			{previous.length > 0 && (
+				<>
+					<h2>{t('Previous versions')}</h2>
+					<ol className="mm-release-older">
+						{previous.map(release => (
+							<li key={release.version} id={`v${release.version}`}>
+								<h3>{`Minemories ${release.version}`}</h3>
+								<ReleaseDate published={published(release.version)} />
+								<p>
+									<Note note={release.notes[0] as ReleaseNote} />
+								</p>
+							</li>
+						))}
+					</ol>
+				</>
 			)}
-			{status === 'ready' && releases.length === 0 && <p role="status">{t('No version is published yet.')}</p>}
-			<noscript>
-				<p>
-					{t('Enable JavaScript to see the available versions here.')} <a href={indexUrl}>index.json</a>
-				</p>
-			</noscript>
 		</ContentLayout>
 	)
 }

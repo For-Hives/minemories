@@ -69,3 +69,16 @@ export function supportedMinecraft(targets: LoaderTarget[] = loaderTargets): {
 		experimental: experimental.join(', '),
 	}
 }
+/**
+ * The published Minecraft versions in the order the guide and the download table list them: newest first, the
+ * experimental ones last (26.3 is the newest number but the least tried).
+ */
+export function listedMinecraft(targets: LoaderTarget[] = loaderTargets): string[] {
+	const versions = minecraftVersions(targets)
+	const experimental = versions.filter(version => isExperimentalMinecraft(version, targets))
+	return [...versions.filter(version => !experimental.includes(version)), ...experimental]
+}
+/** The Java version a Minecraft version's JARs need (the same for all its loaders), or null when none is published. */
+export function javaFor(minecraft: string, targets: LoaderTarget[] = loaderTargets): string | null {
+	return targets.find(target => target.minecraft === minecraft)?.java ?? null
+}

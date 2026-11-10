@@ -69,7 +69,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/downloads',
 		title: 'Download Minemories for Fabric, Forge and NeoForge',
 		description:
-			'The Minemories JAR for each supported Minecraft Java version and each loader, with its SHA-256 checksum.',
+			'The Minemories JAR for each supported Minecraft Java version and each loader, with the Java version it needs and its SHA-256 checksum.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',

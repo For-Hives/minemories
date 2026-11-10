@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { ConceptPage, FaqPage, HowItWorksPage } from '../pages/InfoPages'
 import { InstallationPage } from '../pages/InstallationPage'
-import { guideStorageKey } from '../pages/installation-state'
+import { choiceStorageKey } from '../pages/installation-state'
 import { I18nProvider, useI18n } from './I18n'
 
 beforeEach(() => {
@@ -46,47 +46,29 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 		expect(screen.getAllByRole('link', { name: 'Installer le mod' }).length).toBeGreaterThan(0)
 	}
 )
-test('every platform, version, loader and step uses English copy, preserving filenames and command payloads', async () => {
+test('every version and loader of the installation guide uses English copy', () => {
 	mount(<InstallationPage />)
-	fireEvent.click(screen.getByRole('button', { name: /^Guided installation/ }))
-	fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
-	for (const version of ['1.21.11', '1.18.2']) {
-		fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?!\\d)`) }))
-		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
-		// The last loader choice adds the loader installation screen, so all five installation screens are checked.
-		fireEvent.click(screen.getByRole('radio', { name: 'I have no mod loader yet' }))
-		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
-		for (let step = 0; step < 5; step++) {
+	for (const version of ['1.21.11', '1.21.1', '1.20.1', '1.19.2', '1.18.2', '26.3']) {
+		fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?![\\d.])`) }))
+		for (const loader of screen.getAllByRole('radio').filter(item => (item as HTMLInputElement).name === 'loader')) {
+			fireEvent.click(loader)
 			expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
-			fireEvent.click(screen.getByRole('button', { name: step === 4 ? 'My memory opens in 3D' : 'Continue' }))
 		}
-		expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
-		fireEvent.click(screen.getByRole('button', { name: 'Start again and clear my choices' }))
-		fireEvent.click(screen.getByRole('button', { name: /^Guided installation/ }))
-		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 	}
-	await waitFor(() => expect(localStorage.getItem(guideStorageKey)).toContain('"active":true'))
 })
-test('switching language preserves the chosen version, loader and screen', async () => {
+test('switching language keeps the chosen version and loader', async () => {
 	mount(<InstallationPage />, 'fr')
-	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
-	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
 	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
-	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
-	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
-	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
-	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Installer le loader')
+	fireEvent.click(screen.getByRole('radio', { name: 'Fabric' }))
+	expect(screen.getByRole('heading', { name: 'Ton premier souvenir' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
-	expect((document.querySelector('.install-panel h2') as HTMLElement).textContent).toBe('Install the loader')
-	expect(screen.getByText('Step 4 of 8')).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Your first memory' })).toBeTruthy()
+	expect(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ })).toHaveProperty('checked', true)
+	expect(screen.getByRole('radio', { name: 'Fabric' })).toHaveProperty('checked', true)
 	await waitFor(() =>
-		expect(JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}')).toMatchObject({
+		expect(JSON.parse(localStorage.getItem(choiceStorageKey) ?? '{}')).toEqual({
 			minecraft: '1.19.2',
 			loader: 'fabric',
-			step: 'install',
-			needsLoader: true,
 		})
 	)
-	fireEvent.click(screen.getByRole('button', { name: '← Back' }))
-	expect(screen.getByRole('radio', { name: 'I have no mod loader yet' })).toHaveProperty('checked', true)
 })

@@ -7,8 +7,6 @@ import { I18nProvider } from '../i18n/I18n'
 import { LegalPage } from './ContentPages'
 import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
-import { InstallationStep } from './InstallationSteps'
-import { targetFor } from './installation-state'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
@@ -44,9 +42,9 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
 	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ })).toBeTruthy()
-	const faqLink = screen.getAllByRole('link', { name: 'FAQ' }).at(0)
+	expect(screen.getByRole('heading', { name: 'Le plus simple : l’app CurseForge' })).toBeTruthy()
+	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' }).length).toBeGreaterThan(0)
+	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
 	expect(screen.getByRole('heading', { name: 'Dois-je installer quelque chose sur le serveur ?' })).toBeTruthy()
@@ -162,31 +160,14 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
 })
 
-test('the first memory step names the in-game button and the download step points to other versions', async () => {
-	mountEnglish(<InstallationStep step="memory" system="linux" target={targetFor('1.21.1', 'neoforge')} />)
-	expect(screen.getAllByText('Take a memory').length).toBeGreaterThan(0)
-	expect(screen.getByRole('heading', { name: 'With the menu' })).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'With a command' })).toBeTruthy()
-	expect(document.body.textContent).toContain('The radius in blocks around you, from 2 to 128.')
-	expect(document.body.textContent).toContain('You can turn them off with “Auto memories” in M.')
-	cleanup()
-	mountEnglish(<InstallationStep step="download" system="linux" target={targetFor('1.21.1', 'neoforge')} />)
-	await screen.findByRole('button', { name: 'Retry download' })
-	expect(screen.getByRole('link', { name: "Previous versions and what's new" }).getAttribute('href')).toBe('/versions')
-})
-
 test('each language quotes the labels of its own mod translation', async () => {
 	const memory = 'Take a memory'
-	const auto =
-		'AFK captures are enabled by default after 5 minutes of inactivity, at most once every 4 hours. Once your account is linked, they upload automatically to your private gallery. You can turn them off with “Auto memories” in M. Without a linked account, they stay on your computer.'
 	await Promise.all((['de', 'ja', 'en-GB', 'fr-CA'] as const).map(loadLocale))
 	expect(translate('fr', memory)).toBe('Prendre un souvenir')
 	expect(translate('de', memory)).toBe('Erinnerung festhalten')
 	expect(translate('ja', memory)).toBe('思い出を残す')
-	expect(translate('fr', auto)).toContain('« Souvenirs auto »')
-	expect(translate('fr-CA', auto)).toContain('« Photos auto »')
-	expect(translate('en-GB', auto)).toContain('“Auto photos”')
-	expect(translate('de', auto)).toContain('„Auto-Fotos“')
+	expect(translate('fr', 'Yes: M → Auto memories.')).toBe('Oui : M → Souvenirs auto.')
+	expect(translate('de', 'Yes: M → Auto memories.')).toBe('Ja: M → Auto-Fotos.')
 	const earlier = 'M → My memories → Send this memory.'
 	expect(translate('fr', earlier)).toBe('M → Mes souvenirs → Envoyer ce souvenir.')
 	expect(translate('fr-CA', earlier)).toBe('M → Mes souvenirs → Envoyer cette capture.')

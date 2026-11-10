@@ -5,7 +5,9 @@ import { type LoaderTarget, loaderTargets } from './mod-targets'
 export {
 	compareMinecraft,
 	isExperimentalMinecraft,
+	javaFor,
 	type LoaderTarget,
+	listedMinecraft,
 	loaderTargets,
 	minecraftVersions,
 	supportedMinecraft,
