@@ -17,7 +17,7 @@ One note per line, in English, written for players:
 - Every other line (headings, blank lines, comments, other bullets) is ignored. A file without any note counts as missing.
 - Notes keep the order of the file. Put the most important first.
 - At most 12 notes are shown; the rest is counted as "+N more".
-- A pull request that adds or edits a notes file runs the Discord tests (not the Gradle build); they fail when a file holds no note.
+- A pull request that adds or edits a notes file runs the Discord tests and the site tests (not the Gradle build); the Discord tests fail when a file holds no note.
 
 The same rules are implemented in `scripts/discord/release-info.mjs`, `apps/api/src/mod-release.ts` and `apps/web/src/lib/release-notes.ts`, and the three test suites check them against `scripts/discord/fixtures/curated-notes.json`.
 
