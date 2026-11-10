@@ -304,7 +304,7 @@
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
-/* "Open my capture": the stone button of the game, outlined on hover. */
+/* "Open a file": the stone button of the game, outlined on hover. */
 .auth-file {
 	--mc-bevel:
 		inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
