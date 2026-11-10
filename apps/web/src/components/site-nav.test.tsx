@@ -61,7 +61,7 @@ function Where() {
 		</p>
 	)
 }
-function mount(path = '/installation', landing = false) {
+function mount(path = '/installation') {
 	return render(
 		<I18nProvider initialLocale="en">
 			<MemoryRouter initialEntries={[path]}>
@@ -69,7 +69,7 @@ function mount(path = '/installation', landing = false) {
 					<a className="mc-sitebar__brand" href="/">
 						Minemories
 					</a>
-					<SiteNav landing={landing} extra={<span>extra</span>} />
+					<SiteNav extra={<span>extra</span>} />
 				</header>
 				<Link to="/roadmap">Elsewhere</Link>
 				<Where />
@@ -81,7 +81,7 @@ const bar = () => screen.getAllByRole('navigation', { name: 'Main navigation' })
 const trigger = (name: string) => within(bar()).getByRole('button', { name })
 
 test('every public page of the site, the home aside, is in the bar menus', () => {
-	const linked = navMenus(true).flatMap(menu =>
+	const linked = navMenus().flatMap(menu =>
 		menu.sections.flatMap(section => section.links.map(link => ('to' in link ? link.to : link.href)))
 	)
 	for (const { path } of publicMetadata.filter(page => page.path !== '/')) expect(linked, path).toContain(path)
@@ -204,29 +204,17 @@ test('menus: Escape and a press outside close them, the arrows move along the ba
 	expect(trigger('Help').getAttribute('aria-expanded')).toBe('false')
 })
 
-test('on the landing, Product starts with the page sections, which glide in place', () => {
-	mount('/', true)
+test('the menus list pages only, the landing’s too: no group of the page’s own sections; outside links open apart', () => {
+	mount('/')
 	fireEvent.click(trigger('Product'))
 	const panel = document.getElementById(trigger('Product').getAttribute('aria-controls') ?? '') as HTMLElement
-	expect(within(panel).getByText('On this page').closest('[data-landing-sections]')).toBeTruthy()
-	const sections = within(panel)
-		.getAllByRole('link')
-		.filter(link => link.hasAttribute('data-section-link'))
-	// the sections have their own names, never a page's ("How it works" and "FAQ" are pages)
-	expect(sections.map(link => [link.textContent, link.getAttribute('href')])).toEqual([
-		['The three steps', '#steps'],
-		['Show your base to your friends', '#share'],
-		['Server shutting down?', '#server-closing'],
-		['Questions', '#faq'],
-	])
-	expect(within(panel).getByRole('list', { name: 'Pages' })).toBeTruthy()
-	const names = within(panel)
-		.getAllByRole('link')
-		.map(link => link.textContent)
-	expect(new Set(names).size).toBe(names.length)
-	expect(sections[0]?.getAttribute('rel')).toBeNull()
-	fireEvent.click(sections[3] as HTMLElement)
-	expect(trigger('Product').getAttribute('aria-expanded')).toBe('false')
+	expect(panel.querySelector('.mm-nav__heading')).toBeNull()
+	expect(
+		within(panel)
+			.getAllByRole('link')
+			.map(link => link.getAttribute('href'))
+	).toEqual(['/concept', '/how-it-works', '/sharing', '/explore'])
+	expect(document.querySelector('a[href^="#"]')).toBeNull()
 	fireEvent.click(trigger('Help'))
 	expect(screen.getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('rel')).toBe('noopener')
 })

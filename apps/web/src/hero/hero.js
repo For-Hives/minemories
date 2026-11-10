@@ -577,12 +577,10 @@ export function mountHero(host) {
 				if (!SCRUB_ON) scrollTop0()
 			}
 		})
-		// The bar's section links glide (the browser's own smooth scrolling, only when motion is welcome; otherwise an instant jump). One listener on the
-		// header: the menus (SiteNav) are React's and their links can be drawn again. The section's heading then takes the focus (without a second scroll):
-		// the menu or the phones' panel that held the link closes, and the keyboard and screen readers go on from the section.
+		// On the site the brand glides back to the top (the browser's own smooth scrolling, only when motion is welcome; otherwise an instant jump), then
+		// the hero's heading takes the focus (without a second scroll): the keyboard and screen readers go on from there. The bar's menus list pages only.
 		header?.addEventListener('click', event => {
-			const link =
-				event.target instanceof Element ? event.target.closest('a[data-section-link], .mc-sitebar__brand') : null
+			const link = event.target instanceof Element ? event.target.closest('.mc-sitebar__brand') : null
 			const href = link?.getAttribute('href') ?? ''
 			const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
 			if (!target) return
@@ -591,7 +589,7 @@ export function mountHero(host) {
 			history.replaceState(null, '', href)
 			const heading = target.querySelector('h1, h2') ?? target
 			if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
-			// next frame: the phones' panel holding the link has closed and given the page back (it is inert while the panel is open)
+			// next frame: the phones' panel, if it was open, has closed and given the page back (it is inert while the panel is open)
 			requestAnimationFrame(() => heading.focus({ preventScroll: true }))
 		})
 		for (const button of $$('[data-action="replay"]')) button.addEventListener('click', replay)
@@ -644,7 +642,7 @@ export function mountHero(host) {
 		})
 	}
 
-	// A page opened on a section link (#steps, #share, #faq...) is scrolled by the browser as soon as the anchor exists, BEFORE the catalogue and the fonts change the height of
+	// A page opened on a section's address (#steps, #share, #faq...) is scrolled by the browser as soon as the anchor exists, BEFORE the catalogue and the fonts change the height of
 	// what lies above it (a longer French sentence, a pixel font): the title then ends under the header or the strip (v9b, point 2). In the first seconds, and only if the visitor has
 	// not moved the page since, the section is put back under the header and the strip: an instant scroll to the target (the only other position write besides "Watch again"
 	// and the reset at load; tests/t2-deeplink.cjs).

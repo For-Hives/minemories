@@ -539,10 +539,6 @@ export function createSite(ctx) {
 
 	function chooseSection(id) {
 		section = id
-		for (const a of doc.querySelectorAll('a[data-section-link]')) {
-			if (a.getAttribute('href') === `#${id}`) a.setAttribute('aria-current', 'true')
-			else a.removeAttribute('aria-current')
-		}
 		applySectionView()
 	}
 	// The view of the section on screen. During a drag and for 4 s after (the visitor is turning the model) it waits, then catches up with the section that is

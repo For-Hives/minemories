@@ -47,20 +47,9 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 	},
 ]
 
-/** A group of a menu; `kind: 'sections'` marks the landing's own sections (a ↓ before their heading, hidden during the film). */
-export type NavSection = { label?: string; kind?: 'sections'; links: FooterLink[] }
+/** A group of a menu; a named group's heading names its list. */
+export type NavSection = { label?: string; links: FooterLink[] }
 export type NavMenu = { id: 'product' | 'guides' | 'help'; label: string; sections: NavSection[] }
-
-/**
- * The landing's own sections, first in its "Product" menu: they glide to the section (hero.js) and wait for the end of the film. Their
- * names are their own, never a page's ("How it works" and "FAQ" are pages of the menus too).
- */
-export const landingSections = [
-	{ href: '#steps', label: 'The three steps' },
-	{ href: '#share', label: 'Show your base to your friends' },
-	{ href: '#server-closing', label: 'Server shutting down?' },
-	{ href: '#faq', label: 'Questions' },
-]
 
 /** The mod's catalogs and the source code, at the bottom of Help (and in the footers' "Elsewhere"). */
 export function elsewhereLinks(): FooterLink[] {
@@ -74,17 +63,11 @@ const group = (label: string) => footerGroups.find(entry => entry.label === labe
 
 /**
  * The bar's menus, built from the footer's groups so that every page of the site is one click away from the bar: Product, Guides and Help
- * (the legal pages and the outside links at its bottom). On the landing, Product starts with the page's own sections, then its pages.
+ * (the legal pages and the outside links at its bottom). The menus list pages only, the same on the landing as everywhere else.
  */
-export function navMenus(landing = false): NavMenu[] {
-	const product: NavSection[] = landing
-		? [
-				{ label: 'On this page', kind: 'sections', links: landingSections },
-				{ label: 'Pages', links: group('Product') },
-			]
-		: [{ links: group('Product') }]
+export function navMenus(): NavMenu[] {
 	return [
-		{ id: 'product', label: 'Product', sections: product },
+		{ id: 'product', label: 'Product', sections: [{ links: group('Product') }] },
 		{ id: 'guides', label: 'Guides', sections: [{ links: group('Guides') }] },
 		{
 			id: 'help',

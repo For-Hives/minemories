@@ -170,7 +170,7 @@ html:has(.mm-header) {
 	list-style: none;
 }
 
-/* Groups after the first (Legal, Elsewhere, the landing's pages, the account's sign out) sit under a rule. */
+/* Groups after the first (Legal, Elsewhere, the account's sign out) sit under a rule. */
 .mm-nav__section + .mm-nav__section,
 .mm-nav__who + .mm-nav__section {
 	margin-top: var(--ds-sp-2);
@@ -184,12 +184,6 @@ html:has(.mm-header) {
 	color: var(--text-2);
 	font: 16px / 18px var(--f-ui);
 	text-shadow: none;
-}
-
-/* The landing's own sections: an arrow says they are places on this page, not pages. */
-[data-landing-sections] .mm-nav__heading::before {
-	content: "↓ " / "";
-	color: var(--ember);
 }
 
 /* A row of a menu: hovered or focused, it takes the light outline of the game's buttons; a long name wraps instead of leaving the panel. */

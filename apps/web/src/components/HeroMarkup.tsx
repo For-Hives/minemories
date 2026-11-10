@@ -196,7 +196,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				>
 					<BrandMark solo />
 				</a>
-				<SiteNav landing />
+				<SiteNav />
 			</header>
 			<FilmRail />
 			<div className="stage" id="stage">

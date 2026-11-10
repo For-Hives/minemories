@@ -33,7 +33,7 @@ export const DESKTOP_NAV = 960
 /** What a menu does once one of its links is chosen; `stay` is a link to the page already on screen (the focus goes back to the menu's button). */
 type OnNavigate = (stay: boolean) => void
 
-/** A link of a menu: a page of the site (marked when on screen), a section of the landing (hero.js glides to it) or an outside address. */
+/** A link of a menu: a page of the site (marked when on screen) or an outside address. */
 function NavItemLink({ link, onNavigate }: { link: FooterLink; onNavigate: OnNavigate }) {
 	const { t } = useI18n()
 	const { pathname } = useLocation()
@@ -51,15 +51,8 @@ function NavItemLink({ link, onNavigate }: { link: FooterLink; onNavigate: OnNav
 			</Link>
 		)
 	}
-	const section = link.href.startsWith('#')
 	return (
-		<a
-			className="mm-nav__link"
-			href={link.href}
-			data-section-link={section ? '' : undefined}
-			rel={section ? undefined : 'noopener'}
-			onClick={() => onNavigate(false)}
-		>
+		<a className="mm-nav__link" href={link.href} rel="noopener" onClick={() => onNavigate(false)}>
 			{label}
 		</a>
 	)
@@ -70,7 +63,7 @@ function NavGroup({ section, onNavigate }: { section: NavSection; onNavigate: On
 	const { t } = useI18n()
 	const id = useId()
 	return (
-		<div className="mm-nav__section" data-landing-sections={section.kind === 'sections' ? '' : undefined}>
+		<div className="mm-nav__section">
 			{section.label && (
 				<p className="mm-nav__heading" id={id}>
 					{t(section.label)}
@@ -615,8 +608,8 @@ function Drawer({ menus }: { menus: NavMenu[] }) {
  * The bar after the brand: the menus, then the account, the language, `extra` (the development file opener) and the install button,
  * then the phones' menu button and its panel.
  */
-export function SiteNav({ landing = false, extra }: { landing?: boolean; extra?: ReactNode }) {
-	const menus = navMenus(landing)
+export function SiteNav({ extra }: { extra?: ReactNode }) {
+	const menus = navMenus()
 	return (
 		<>
 			<DesktopMenus menus={menus} />

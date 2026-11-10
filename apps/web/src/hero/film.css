@@ -990,7 +990,7 @@ html:not(.scene-on) .film-bar {
 	padding-inline: max(var(--mm-bar-gutter, 16px), var(--safe-l)) max(var(--mm-bar-gutter, 16px), var(--safe-r));
 }
 
-/* The film: transparent, with its own dark gradient so that the brand reads on the golden sky; the section links wait. */
+/* The film: transparent, with its own dark gradient so that the brand reads on the golden sky; the menus wait. */
 .scene-on .mc-sitebar::before {
 	content: '';
 	position: absolute;
@@ -1039,11 +1039,7 @@ html.is-leaving .mm-nav-end__wide > * {
 }
 
 /* --- the bar's menus, account, language and install button (SiteNav, site-nav.css: the same bar as every page's) -------------------------------------------
-   During the film the menus wait with the section links (.site-nav, above); the phones' panel keeps its button under 700 px, where it holds the language, and
-   its "On this page" group waits too: the sections do not exist yet, no dead links. */
-html[data-phase='film']:not(.is-leaving) [data-landing-sections] {
-	display: none;
-}
+   During the film the menus wait (.site-nav, above); the phones' panel keeps its button under 700 px, where it holds the language. */
 
 @media (min-width: 700px) {
 	html[data-phase='film']:not(.is-leaving) .mm-nav-burger {
