@@ -327,7 +327,8 @@ function DrawerGroup({ menu, onNavigate }: { menu: NavMenu; onNavigate: () => vo
 	)
 }
 
-function DrawerAccount({ onNavigate }: { onNavigate: () => void }) {
+/** The account in the phones' panel; its links (and the administration check) are drawn only while the panel is open. */
+function DrawerAccount({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
 	const { session } = useAppContext()
 	const { t } = useI18n()
 	if (!session)
@@ -342,9 +343,7 @@ function DrawerAccount({ onNavigate }: { onNavigate: () => void }) {
 				<Avatar user={session.user} />
 				<span>{session.user.name}</span>
 			</p>
-			<div className="mm-nav__section">
-				<AccountLinks onNavigate={onNavigate} />
-			</div>
+			<div className="mm-nav__section">{open && <AccountLinks onNavigate={onNavigate} />}</div>
 		</div>
 	)
 }
@@ -435,7 +434,6 @@ function Drawer({ menus }: { menus: NavMenu[] }) {
 				id="site-menu"
 				className="mm-drawer"
 				role="dialog"
-				aria-modal="true"
 				aria-label={t('Menu')}
 				hidden={!open}
 				data-own-keys=""
@@ -445,7 +443,7 @@ function Drawer({ menus }: { menus: NavMenu[] }) {
 						<DrawerGroup key={menu.id} menu={menu} onNavigate={() => setOpen(false)} />
 					))}
 				</nav>
-				<DrawerAccount onNavigate={() => setOpen(false)} />
+				<DrawerAccount open={open} onNavigate={() => setOpen(false)} />
 				{open && <LanguagePicker className="mm-drawer__lang" />}
 				<InstallCta block />
 			</div>

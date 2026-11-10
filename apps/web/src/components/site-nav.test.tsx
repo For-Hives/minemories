@@ -2,7 +2,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Link, MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { navMenus } from '../content/navigation'
 import { I18nProvider } from '../i18n/I18n'
+import { publicMetadata } from '../route-metadata'
 import { SiteNav } from './SiteNav'
 
 const mocks = vi.hoisted(() => ({
@@ -74,6 +76,13 @@ function mount(path = '/installation', landing = false) {
 }
 const bar = () => screen.getAllByRole('navigation', { name: 'Main navigation' })[0] as HTMLElement
 const trigger = (name: string) => within(bar()).getByRole('button', { name })
+
+test('every public page of the site, the home aside, is in the bar menus', () => {
+	const linked = navMenus(true).flatMap(menu =>
+		menu.sections.flatMap(section => section.links.map(link => ('to' in link ? link.to : link.href)))
+	)
+	for (const { path } of publicMetadata.filter(page => page.path !== '/')) expect(linked, path).toContain(path)
+})
 
 test('every page of the site is in the bar, under Product, Guides and Help; the page on screen marks its menu', () => {
 	mount('/installation')
@@ -332,8 +341,15 @@ test('the phones’ panel: a dialog with the groups, the account, the language a
 test('a page with a scrollbar keeps its room while the panel is open; the signed-in panel lists the account', async () => {
 	mocks.context.session = { user: { id: 'u3', name: 'Kim', image: null } }
 	vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(window.innerWidth - 15)
+	const access = vi.fn(async () => ({ allowed: false }))
+	const { apiClient } = await import('../api-client')
+	apiClient.admin.access = access
 	mount('/gallery')
+	// the administration check waits for a menu of the account to open
+	await new Promise(resolve => setTimeout(resolve, 0))
+	expect(access).not.toHaveBeenCalled()
 	fireEvent.click(screen.getByRole('button', { name: 'Menu' }))
+	await waitFor(() => expect(access).toHaveBeenCalled())
 	expect(document.documentElement.classList.contains('mm-scroll-lock--gutter')).toBe(true)
 	const dialog = screen.getByRole('dialog')
 	expect(within(dialog).getByText('Kim')).toBeTruthy()
