@@ -1180,6 +1180,7 @@
 	"Published by its author, reviewed before publication.": "Publicado pelo autor, revisado antes da publicação.",
 	"Drag the slider to watch it change.": "Arraste o controle para ver como ele muda.",
 	"Want the same for your own base?": "Quer o mesmo pra sua base?",
+	"Keep your own base in 3D too": "Guarde a sua base em 3D também",
 	"See other places": "Ver outros lugares",
 	"share.world.count.zero": "{count} memórias deste lugar.",
 	"share.world.count.one": "{count} memória deste lugar.",
@@ -1283,6 +1284,7 @@
 	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:15, with its toolbar and its time of day.": "O visualizador do Minemories num navegador, mostrando uma memória real de uma base de Minecraft às 17:15, com sua barra de ferramentas e a hora do dia.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "O cartão postal HD da mesma base, baixado com o botão Cartão postal do visualizador.",
 	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "O menu M do mod aberto sobre uma base real no Minecraft, com o ponteiro em Tirar uma memória.",
+	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "O menu M do mod (jogo em inglês) aberto sobre uma base real no Minecraft, com o ponteiro em Take a memory.",
 	"A tower in Minecraft.": "Uma torre no Minecraft.",
 	"The same tower in the Minemories viewer.": "A mesma torre no visualizador do Minemories."
 }

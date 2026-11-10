@@ -176,9 +176,11 @@ test('a stopped link says who stopped it, offers no Retry and points to the guid
 	mount('/share/stopped-token-0123456789', false)
 	expect(await screen.findByText('La personne qui a partagé ce lien l’a désactivé.')).toBeTruthy()
 	expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull()
-	expect(screen.getByRole('link', { name: /Tu veux la même chose pour ta base/ }).getAttribute('href')).toBe(
+	// no base is on screen, so the invitation does not say "the same"
+	expect(screen.getByRole('link', { name: 'Garde ta base en 3D, toi aussi →' }).getAttribute('href')).toBe(
 		'/installation?src=share'
 	)
+	expect(screen.queryByRole('link', { name: /la même chose/ })).toBeNull()
 	expect(document.body.textContent).not.toMatch(/expir/i)
 	// Nothing will come back: no "will have to wait" heading over the sentence.
 	expect(screen.queryByText('Ce souvenir attendra un instant.')).toBeNull()

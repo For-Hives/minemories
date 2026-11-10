@@ -13,7 +13,10 @@ const t = (key: string) => translate('fr', key)
 const viewerAlt =
 	'The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:15, with its toolbar and its time of day.'
 const postcardAlt = 'The HD postcard of the same base, downloaded with the viewer’s Postcard button.'
+/** The French frame shows the French label, quoted from the mod's fr_fr / fr_ca. */
 const menuAlt = 'The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.'
+/** The English frame, seen in every non-French language: its pointer is on the English label, whatever the visitor reads. */
+const menuEnAlt = 'The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.'
 const gameAlt = 'A tower in Minecraft.'
 const browserAlt = 'The same tower in the Minemories viewer.'
 
@@ -76,7 +79,7 @@ export function ClosingIllustration() {
 				<Shot
 					className="mm-illus__menu mm-illus__menu--en"
 					src="/hero/illus/menu-en.webp"
-					alt={menuAlt}
+					alt={menuEnAlt}
 					width={760}
 					height={650}
 				/>

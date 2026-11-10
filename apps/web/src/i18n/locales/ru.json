@@ -1180,6 +1180,7 @@
 	"Published by its author, reviewed before publication.": "Опубликовано автором и проверено перед публикацией.",
 	"Drag the slider to watch it change.": "Двигай ползунок, чтобы увидеть, как оно менялось.",
 	"Want the same for your own base?": "Хочешь так же для своей базы?",
+	"Keep your own base in 3D too": "Сохрани и свою базу в 3D",
 	"See other places": "Смотреть другие места",
 	"share.world.count.zero": "{count} воспоминаний об этом месте.",
 	"share.world.count.one": "{count} воспоминание об этом месте.",
@@ -1283,6 +1284,7 @@
 	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:15, with its toolbar and its time of day.": "3D-просмотр Minemories в браузере: настоящее воспоминание о базе в Minecraft в 17:15, с панелью инструментов и временем суток.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "HD-открытка той же базы, скачанная кнопкой «Открытка» в 3D-просмотре.",
 	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "Меню M мода, открытое над настоящей базой в Minecraft, курсор на «Сделать воспоминание».",
+	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "Меню M мода (игра на английском), открытое над настоящей базой в Minecraft, курсор на Take a memory.",
 	"A tower in Minecraft.": "Башня в Minecraft.",
 	"The same tower in the Minemories viewer.": "Та же башня в 3D-просмотре Minemories."
 }

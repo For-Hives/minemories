@@ -104,7 +104,11 @@ test('the film bridge rewrites every caption and description in the visitor lang
 	expect(root.textContent).toContain('Drück M → Erinnerung festhalten.')
 	expect(root.textContent).toContain('HD-Postkarte')
 	expect(root.textContent).toContain('In Minecraft')
-	expect(root.querySelector('img[src="/hero/illus/menu-en.webp"]')?.getAttribute('alt')).toContain(
+	// the English frame shows the English label, so its description quotes that one, in German words around it
+	expect(root.querySelector('img[src="/hero/illus/menu-en.webp"]')?.getAttribute('alt')).toBe(
+		'Das M-Menü des Mods (Spiel auf Englisch), geöffnet über einer echten Basis in Minecraft, der Zeiger auf Take a memory.'
+	)
+	expect(root.querySelector('img[src="/hero/illus/menu-fr.webp"]')?.getAttribute('alt')).toContain(
 		'Erinnerung festhalten'
 	)
 })
@@ -120,5 +124,10 @@ test('the menu’s words quoted under the frame are the mod’s own in every lan
 			i18n.t('The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.'),
 			locale
 		).toContain(take)
+		// the English frame's description quotes the English game's own label in every language
+		expect(
+			i18n.t('The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.'),
+			locale
+		).toContain(modLang('en_us')['minemories.hub.take'])
 	}
 })
