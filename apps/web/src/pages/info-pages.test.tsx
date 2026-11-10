@@ -35,7 +35,7 @@ function mountGuide() {
 
 test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
 	mountGuide()
-	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories ?' }))
+	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories\u00a0?' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
@@ -43,13 +43,13 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
 	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
-	expect(screen.getByRole('heading', { name: 'Le plus simple : l’app CurseForge' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Le plus simple\u00a0: l’app CurseForge' })).toBeTruthy()
 	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' }).length).toBeGreaterThan(0)
 	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
 	expect(screen.getByRole('heading', { name: 'Il faut installer quelque chose sur le serveur\u00a0?' })).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant ?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant\u00a0?' })).toBeTruthy()
 })
 
 function mountEnglish(ui: React.ReactNode) {
@@ -167,7 +167,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('fr', memory)).toBe('Prendre un souvenir')
 	expect(translate('de', memory)).toBe('Erinnerung festhalten')
 	expect(translate('ja', memory)).toBe('思い出を残す')
-	expect(translate('fr', 'Yes: M → Auto memories.')).toBe('Oui : M → Souvenirs auto.')
+	expect(translate('fr', 'Yes: M → Auto memories.')).toBe('Oui\u00a0: M → Souvenirs auto.')
 	expect(translate('de', 'Yes: M → Auto memories.')).toBe('Ja: M → Auto-Fotos.')
 	const earlier = 'M → My memories → Send this memory.'
 	expect(translate('fr', earlier)).toBe('M → Mes souvenirs → Envoyer ce souvenir.')
@@ -175,7 +175,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('en-GB', earlier)).toBe('M → My memories → Send this capture.')
 	expect(translate('de', earlier)).toBe('M → Meine Erinnerungen → Diese Aufnahme senden.')
 	expect(translate('en-GB', 'Yes: M → Auto memories.')).toBe('Yes: M → Auto photos.')
-	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui : M → Photos auto.')
+	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui\u00a0: M → Photos auto.')
 	expect(translate('ja', 'In Minecraft: M → type the code → Connect.')).toContain('接続する')
 })
 
@@ -232,7 +232,9 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 	)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Qui fait Minemories')
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('Le code source est public sur GitHub ; le mod se télécharge sur la page Téléchargements.')
+	expect(text).toContain(
+		'Le code source est public sur GitHub\u00a0; le mod se télécharge sur la page Téléchargements.'
+	)
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
 })
 

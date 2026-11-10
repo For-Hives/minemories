@@ -35,7 +35,7 @@ test('/server-closing: three options, the Aternos and admin anchors, three quest
 	expect(document.getElementById('aternos')?.textContent).toContain('Aternos')
 	expect(document.getElementById('admin')?.textContent).toContain('Rien à installer de ton côté')
 	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(3)
-	expect(screen.getByRole('heading', { name: 'Tout le monde doit l’installer ?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Tout le monde doit l’installer\u00a0?' })).toBeTruthy()
 	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe(
 		'/installation?src=server-closing'
 	)
@@ -52,7 +52,7 @@ test('the announcement is offered in French and English, with the site origin an
 	const quotes = [...document.querySelectorAll('.ex-announce blockquote')]
 	expect(quotes.map(quote => quote.getAttribute('lang'))).toEqual(['fr-FR', 'en-US'])
 	expect(quotes[0]?.textContent).toBe(
-		`Le serveur ferme le [date]. Pour garder ta base en 3D : installe Minemories (${announcementUrl}), va dans ta base, appuie sur M → Prendre un souvenir. Tu pourras la revoir en 3D et nous la montrer ici !`
+		`Le serveur ferme le [date]. Pour garder ta base en 3D\u00a0: installe Minemories (${announcementUrl}), va dans ta base, appuie sur M → Prendre un souvenir. Tu pourras la revoir en 3D et nous la montrer ici\u00a0!`
 	)
 	expect(quotes[1]?.textContent).toContain(`install Minemories (${announcementUrl})`)
 	expect(quotes[1]?.textContent).toContain('press M → Take a memory')
@@ -90,7 +90,7 @@ test('a German visitor reads the page and the announcement in German, with the E
 
 test('/safety: the parents box, the checksum fold under #verifier, what goes online, what a link shows and how to delete', () => {
 	mount(<SafetyPage />, 'fr', '/safety')
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Est-ce que Minemories est sûr ?')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Est-ce que Minemories est sûr\u00a0?')
 	const parents = screen.getByRole('region', { name: 'Pour les parents, en 5 lignes' })
 	expect(within(parents).getAllByRole('listitem')).toHaveLength(5)
 	expect(parents.textContent).toContain('M → Souvenirs auto, M → Réglages → Confidentialité')
@@ -167,8 +167,8 @@ test('the three pages are prerendered, indexable and dated, the guide as an arti
 	expect(renderPage('/server-closing')).toContain('id="aternos"')
 	expect(renderPage('/server-closing')).toContain('id="admin"')
 	expect(renderPage('/safety')).toContain('id="verifier"')
-	expect(metadataFor('/server-closing').title).toBe('Serveur Minecraft qui ferme : garde tes constructions')
-	expect(metadataFor('/safety').title).toBe('Minemories est-il sûr ? Mod, enfants et vie privée')
+	expect(metadataFor('/server-closing').title).toBe('Serveur Minecraft qui ferme\u00a0: garde tes constructions')
+	expect(metadataFor('/safety').title).toBe('Minemories est-il sûr\u00a0? Mod, enfants et vie privée')
 	expect(metadataFor('/guides/minecraft-blender').title).toBe('Exporter une construction Minecraft vers Blender (GLB)')
 	expect(metadataFor('/guides/minecraft-blender').articleDate).toBe('2026-11-10')
 })

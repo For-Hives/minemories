@@ -98,9 +98,9 @@ test('the Blender guide is an article by For-Hives with a breadcrumb back to the
 test('the FAQ page lists every visible question with its answer, in the page language', () => {
 	const faq = nodes('/faq')[0] as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> }
 	expect(faq.mainEntity).toHaveLength(faqGroups.flatMap(group => group.ids).length)
-	const ban = faq.mainEntity.find(entry => entry.name === 'Je risque un ban ?')
+	const ban = faq.mainEntity.find(entry => entry.name === 'Je risque un ban\u00a0?')
 	expect(ban?.acceptedAnswer.text).toContain('règles')
-	const versions = faq.mainEntity.find(entry => entry.name === 'Quelles versions ?')
+	const versions = faq.mainEntity.find(entry => entry.name === 'Quelles versions\u00a0?')
 	expect(versions?.acceptedAnswer.text).toContain('1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
 	expect(versions?.acceptedAnswer.text).not.toMatch(/1\.16\.5,|\{/)
 	const english = structuredDataFor(metadataFor('/faq', 'en'))['@graph'][0] as typeof faq

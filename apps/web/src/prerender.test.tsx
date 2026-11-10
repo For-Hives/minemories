@@ -28,8 +28,8 @@ test('the 404 page is readable, points back home and holds no film', () => {
 test('the installation guide is visible HTML from top to bottom, with no noscript and no pause-menu button', () => {
 	const html = renderPage('/installation')
 	expect(html).not.toContain('<noscript>')
-	expect(html).toContain('Le plus simple : l’app CurseForge')
-	expect(html).toContain('Tu joues sans mods ?')
+	expect(html).toContain('Le plus simple\u00a0: l’app CurseForge')
+	expect(html).toContain('Tu joues sans mods\u00a0?')
 	expect(html).toContain('<table')
 	expect(html).toContain('href="/downloads"')
 	expect(html).toContain('href="/gallery"')

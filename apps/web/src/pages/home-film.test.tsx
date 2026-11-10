@@ -113,8 +113,8 @@ test('the first screen: one install button, the facts and guarantees lines, thre
 	const faq = document.getElementById('faq') as HTMLElement
 	expect([...faq.querySelectorAll('summary')].map(summary => summary.textContent)).toEqual([
 		'Il faut installer quelque chose sur le serveur\u00a0?',
-		'Il faut un compte ?',
-		'Et si Minemories ferme ?',
+		'Il faut un compte\u00a0?',
+		'Et si Minemories ferme\u00a0?',
 	])
 	expect(within(faq).getByRole('link', { name: 'Toutes les questions →' }).getAttribute('href')).toBe('/faq')
 	// the questions follow the app's language by themselves

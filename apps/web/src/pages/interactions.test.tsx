@@ -479,7 +479,7 @@ test('French translation does not change pairing state identifiers or hide the p
 		screen.getByText('Dans Minecraft : M → tape ce code → Se connecter. Valable 5 minutes, une seule fois.')
 	).toBeTruthy()
 	// While a code waits, the empty gallery neither repeats where to type it nor offers a second code.
-	expect(screen.queryByText('Dans Minecraft : M → tape ce code → Se connecter.')).toBeNull()
+	expect(screen.queryByText('Dans Minecraft\u00a0: M → tape ce code → Se connecter.')).toBeNull()
 	expect(screen.queryByText('Installe le mod, puis connecte ton jeu avec un code.')).toBeNull()
 	expect(screen.queryByRole('button', { name: 'Obtenir un code' })).toBeNull()
 	expect(document.body.textContent).not.toMatch(/[Rr]elier|appair/)

@@ -87,8 +87,8 @@ test('the prerendered table already links every published JAR, with the Java col
 	expect(last.querySelector('th')?.textContent).toBe('26.3Expérimentale')
 	expect(last.querySelector('.mm-dl-java')?.textContent).toBe('25')
 	expect(last.textContent).toContain('Fabric 0.19.5')
-	expect(page).toContain('Ça marche sur Bedrock, console ou téléphone ?')
-	expect(page).toContain('1.12.2 et 1.16.5 : pas encore.')
+	expect(page).toContain('Ça marche sur Bedrock, console ou téléphone\u00a0?')
+	expect(page).toContain('1.12.2 et 1.16.5\u00a0: pas encore.')
 	expect(page).toContain('son empreinte SHA-256 doit être celle affichée ici')
 })
 
@@ -123,11 +123,11 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	expect(within(old).getAllByText('Non disponible pour cette version')).toHaveLength(2)
 	expect(screen.getByText(/Installe Fabric API à part/).textContent).toContain('Quilt 0.30.1')
 	expect(screen.getByRole('link', { name: 'Les nouveautés de Minemories' }).getAttribute('href')).toBe('/versions')
-	expect(screen.getByRole('link', { name: 'Pas sûr ? Le guide te pose deux questions.' }).getAttribute('href')).toBe(
-		'/installation'
-	)
+	expect(
+		screen.getByRole('link', { name: 'Pas sûr\u00a0? Le guide te pose deux questions.' }).getAttribute('href')
+	).toBe('/installation')
 	// The "which versions?" answer links to /downloads: on /downloads itself that link is left out.
-	expect(screen.getByRole('heading', { name: 'Quelles versions ?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Quelles versions\u00a0?' })).toBeTruthy()
 	expect(screen.queryByRole('link', { name: 'Téléchargements →' })).toBeNull()
 })
 

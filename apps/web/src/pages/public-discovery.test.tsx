@@ -168,7 +168,7 @@ test('publication requires explicit consent and chosen fields, confirms the subm
 	expect(screen.getByText('Rien n’a changé depuis ta dernière soumission.')).toBeTruthy()
 
 	fireEvent.click(screen.getByRole('button', { name: 'Retirer la publication' }))
-	expect(screen.getByRole('group', { name: 'Retirer la publication ?' })).toBeTruthy()
+	expect(screen.getByRole('group', { name: 'Retirer la publication\u00a0?' })).toBeTruthy()
 	expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Annuler' }))
 	fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
 	expect(discovery.revoke).not.toHaveBeenCalled()

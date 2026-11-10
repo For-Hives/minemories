@@ -20,7 +20,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Carte postale HD')
 	for (const image of ['viewer-base', 'postcard-hd', 'menu-fr', 'menu-en', 'game-tower', 'viewer-tower'])
 		expect(html).toContain(`/hero/illus/${image}.webp`)
-	expect(html).toContain('Il faut un compte ?')
+	expect(html).toContain('Il faut un compte\u00a0?')
 	expect(html).toContain('href="/faq"')
 	for (const blocked of ['validé', 'en test', '→ 1.21', 'gratuit', 'open source', 'la plus utilisée'])
 		expect(html, blocked).not.toContain(blocked)
