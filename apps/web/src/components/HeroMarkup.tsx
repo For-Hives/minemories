@@ -346,10 +346,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</h1>
 							<p
 								className="mc-hero__lead"
-								data-i18n="The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want."
+								data-i18n="The mod saves the spot where you play in 3D. You find it again in your browser and show it to anyone you like."
 							>
 								{t(
-									'The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want.'
+									'The mod saves the spot where you play in 3D. You find it again in your browser and show it to anyone you like.'
 								)}
 							</p>
 							<div className="mc-hero__actions">
@@ -374,9 +374,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</p>
 							<p
 								className="mc-hero__compat"
-								data-i18n="Does not change your world · Nothing leaves before you connect the game · Private gallery"
+								data-i18n="Your world stays untouched · Nothing is sent until you connect the game · Private gallery"
 							>
-								{t('Does not change your world · Nothing leaves before you connect the game · Private gallery')}
+								{t('Your world stays untouched · Nothing is sent until you connect the game · Private gallery')}
 							</p>
 						</div>
 					</section>
@@ -388,12 +388,12 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							<Step
 								number={1}
 								title="Install."
-								body="From the CurseForge app, or a file to drop into the mods folder."
+								body="With the CurseForge app, or drop the file into your mods folder."
 							/>
 							<Step
 								number={2}
 								title="Play."
-								body="Press M → Take a memory. Otherwise, the mod takes one on its own when you stay AFK."
+								body="Press M → Take a memory. Or just go AFK: the mod takes one for you."
 							/>
 							<Step
 								number={3}
@@ -403,38 +403,38 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						</ol>
 					</section>
 					<section className="mc-section" id="share" aria-labelledby="share-title">
-						<h2 className="mc-section__title" id="share-title" data-i18n="Show it to the group">
-							{t('Show it to the group')}
+						<h2 className="mc-section__title" id="share-title" data-i18n="Show your base to your friends">
+							{t('Show your base to your friends')}
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft."
+							data-i18n="Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed."
 						>
 							{t(
-								'Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft.'
+								'Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.'
 							)}
 						</p>
 						<ShareIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/sharing">
-									<span data-i18n="Share by link">{t('Share by link')}</span>
+									<span data-i18n="How do I share a link?">{t('How do I share a link?')}</span>
 								</Link>
 							</li>
 						</ul>
 					</section>
 					<section className="mc-section" id="server-closing" aria-labelledby="server-closing-title">
-						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Your server is closing?">
-							{t('Your server is closing?')}
+						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Server shutting down?">
+							{t('Server shutting down?')}
 						</h2>
-						<p className="mc-section__text" data-i18n="Take your base before the season ends.">
-							{t('Take your base before the season ends.')}
+						<p className="mc-section__text" data-i18n="Keep a memory of your base safe before you lose it for good.">
+							{t('Keep a memory of your base safe before you lose it for good.')}
 						</p>
 						<ClosingIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">
-									<span data-i18n="Server closing">{t('Server closing')}</span>
+									<span data-i18n="What if my server shuts down?">{t('What if my server shuts down?')}</span>
 								</Link>
 							</li>
 						</ul>
@@ -449,9 +449,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<p
 							className="fallback-note"
 							id="words-note"
-							data-i18n="Your browser does not show the 3D scene. Here is the story in words."
+							data-i18n="Your browser can’t show the 3D scene, so here’s the story in words."
 						>
-							{t('Your browser does not show the 3D scene. Here is the story in words.')}
+							{t('Your browser can’t show the 3D scene, so here’s the story in words.')}
 						</p>
 						<details className="words-fold">
 							<summary id="words-summary" data-i18n="The film, in words">

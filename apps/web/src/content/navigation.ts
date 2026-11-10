@@ -12,10 +12,10 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 	{
 		label: 'Product',
 		links: [
-			{ to: '/concept', label: 'The concept' },
+			{ to: '/concept', label: 'What is Minemories?' },
 			{ to: '/how-it-works', label: 'How it works' },
-			{ to: '/sharing', label: 'Share by link' },
-			{ to: '/explore', label: 'Public gallery' },
+			{ to: '/sharing', label: 'How do I share a link?' },
+			{ to: '/explore', label: 'See other players’ builds' },
 		],
 	},
 	{
@@ -23,18 +23,18 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 		links: [
 			{ to: '/installation', label: 'Install the mod' },
 			{ to: '/downloads', label: 'Downloads' },
-			{ to: '/server-closing', label: 'Server closing' },
-			{ to: '/guides/minecraft-blender', label: 'Minecraft to Blender' },
+			{ to: '/server-closing', label: 'What if my server shuts down?' },
+			{ to: '/guides/minecraft-blender', label: 'Open my build in Blender' },
 		],
 	},
 	{
 		label: 'Help',
 		links: [
 			{ to: '/faq', label: 'FAQ' },
-			{ to: '/safety', label: 'Safety and parents' },
-			{ to: '/versions', label: 'Versions' },
-			{ to: '/roadmap', label: 'Roadmap' },
-			{ href: `${repositoryUrl}/issues`, label: 'Report a bug (GitHub)' },
+			{ to: '/safety', label: 'Is it safe?' },
+			{ to: '/versions', label: 'What’s new' },
+			{ to: '/roadmap', label: 'What’s coming next' },
+			{ href: `${repositoryUrl}/issues`, label: 'Found a bug? Tell us on GitHub' },
 		],
 	},
 	{
@@ -57,8 +57,8 @@ export type NavMenu = { id: 'product' | 'guides' | 'help'; label: string; sectio
  */
 export const landingSections = [
 	{ href: '#steps', label: 'The three steps' },
-	{ href: '#share', label: 'Show it to the group' },
-	{ href: '#server-closing', label: 'Your server is closing?' },
+	{ href: '#share', label: 'Show your base to your friends' },
+	{ href: '#server-closing', label: 'Server shutting down?' },
 	{ href: '#faq', label: 'Questions' },
 ]
 

@@ -720,14 +720,14 @@ test('the footer groups the site into product, guides, help, legal and elsewhere
 	const footer = screen.getByRole('contentinfo')
 	for (const group of ['Product', 'Guides', 'Help', 'Legal', 'Elsewhere'])
 		expect(within(footer).getByRole('navigation', { name: group })).toBeTruthy()
-	expect(within(footer).getByRole('link', { name: 'Report a bug (GitHub)' }).getAttribute('href')).toBe(
+	expect(within(footer).getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('href')).toBe(
 		'https://github.com/For-Hives/minemories/issues'
 	)
-	expect(within(footer).getByRole('link', { name: 'Share by link' }).getAttribute('href')).toBe('/sharing')
+	expect(within(footer).getByRole('link', { name: 'How do I share a link?' }).getAttribute('href')).toBe('/sharing')
 	for (const [name, href] of [
-		['Server closing', '/server-closing'],
-		['Minecraft to Blender', '/guides/minecraft-blender'],
-		['Safety and parents', '/safety'],
+		['What if my server shuts down?', '/server-closing'],
+		['Open my build in Blender', '/guides/minecraft-blender'],
+		['Is it safe?', '/safety'],
 	] as const)
 		expect(within(footer).getByRole('link', { name }).getAttribute('href')).toBe(href)
 	expect(within(footer).getByRole('link', { name: 'CurseForge' })).toBeTruthy()

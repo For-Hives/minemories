@@ -215,8 +215,8 @@ test('on the landing, Product starts with the page sections, which glide in plac
 	// the sections have their own names, never a page's ("How it works" and "FAQ" are pages)
 	expect(sections.map(link => [link.textContent, link.getAttribute('href')])).toEqual([
 		['The three steps', '#steps'],
-		['Show it to the group', '#share'],
-		['Your server is closing?', '#server-closing'],
+		['Show your base to your friends', '#share'],
+		['Server shutting down?', '#server-closing'],
 		['Questions', '#faq'],
 	])
 	expect(within(panel).getByRole('list', { name: 'Pages' })).toBeTruthy()
@@ -228,7 +228,7 @@ test('on the landing, Product starts with the page sections, which glide in plac
 	fireEvent.click(sections[3] as HTMLElement)
 	expect(trigger('Product').getAttribute('aria-expanded')).toBe('false')
 	fireEvent.click(trigger('Help'))
-	expect(screen.getByRole('link', { name: 'Report a bug (GitHub)' }).getAttribute('rel')).toBe('noopener')
+	expect(screen.getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('rel')).toBe('noopener')
 })
 
 test('the account: Sign in, a placeholder while the session loads, or the avatar opening the account menu', async () => {
@@ -303,7 +303,7 @@ test('the phones’ panel: a modal dialog with the groups, the account and the l
 	expect(within(dialog).getByRole('button', { name: 'Help' }).getAttribute('aria-expanded')).toBe('true')
 	expect(within(dialog).getByRole('link', { name: 'FAQ' }).getAttribute('aria-current')).toBe('page')
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Product' }))
-	expect(within(dialog).getByRole('link', { name: 'The concept' })).toBeTruthy()
+	expect(within(dialog).getByRole('link', { name: 'What is Minemories?' })).toBeTruthy()
 	expect(groups.length).toBeGreaterThan(0)
 	expect(within(dialog).getByRole('button', { name: /^Language / })).toBeTruthy()
 	expect(within(dialog).getByRole('link', { name: 'Sign in' }).getAttribute('href')).toBe('/login')
@@ -343,7 +343,7 @@ test('the phones’ panel: a modal dialog with the groups, the account and the l
 	expect(screen.queryByRole('dialog')).toBeNull()
 	// a link closes it and goes to its page; the button closes it too
 	fireEvent.click(button)
-	fireEvent.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Roadmap' }))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'What’s coming next' }))
 	expect(screen.getByTestId('where').textContent).toBe('/roadmap')
 	expect(screen.queryByRole('dialog')).toBeNull()
 	fireEvent.click(button)

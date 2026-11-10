@@ -35,7 +35,7 @@ function mountGuide() {
 
 test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
 	mountGuide()
-	fireEvent.click(screen.getByRole('link', { name: 'Le concept' }))
+	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories ?' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
@@ -48,7 +48,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
-	expect(screen.getByRole('heading', { name: 'Dois-je installer quelque chose sur le serveur ?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Il faut installer quelque chose sur le serveur\u00a0?' })).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant ?' })).toBeTruthy()
 })
 

@@ -342,7 +342,7 @@ function ConnectAndCapture() {
 					</p>
 					<ExportFolders />
 					<p>
-						<Link to="/guides/minecraft-blender">{t('Minecraft to Blender')} →</Link>
+						<Link to="/guides/minecraft-blender">{t('Open my build in Blender')} →</Link>
 					</p>
 				</details>
 			</section>

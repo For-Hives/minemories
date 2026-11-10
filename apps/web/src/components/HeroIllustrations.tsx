@@ -1,7 +1,7 @@
 import { translate } from '../i18n/catalog'
 
 /**
- * The pictures of the landing's "Show it to the group" and "Your server is closing?" sections (hero/illus.css). Every picture is a real screenshot of real use,
+ * The pictures of the landing's "Show your base to your friends" and "Server shutting down?" sections (hero/illus.css). Every picture is a real screenshot of real use,
  * cropped and scaled only (public/hero/illus, sources in docs/features/landing-film.md): the mod's M menu over a real base of an old modded server, the same
  * tower in Minecraft and in the viewer, the viewer showing a real memory, and the HD postcard its own Postcard button exported. Nothing is drawn on top; the
  * words are HTML captions, so they are translated and crisp.
@@ -41,7 +41,7 @@ function Shot({ src, alt, width, height, className }: ShotProps) {
 	)
 }
 
-/** "Show it to the group": the real viewer turning around a real memory, and the HD postcard its Postcard button exported from it. */
+/** "Show your base to your friends": the real viewer turning around a real memory, and the HD postcard its Postcard button exported from it. */
 export function ShareIllustration() {
 	return (
 		<figure className="mm-illus mm-illus--share">
@@ -61,7 +61,7 @@ export function ShareIllustration() {
 	)
 }
 
-/** "Your server is closing?": the mod's real M menu over a real base (French or English frame), then the same tower in Minecraft and in the viewer. */
+/** "Server shutting down?": the mod's real M menu over a real base (French or English frame), then the same tower in Minecraft and in the viewer. */
 export function ClosingIllustration() {
 	return (
 		<figure className="mm-illus mm-illus--closing">

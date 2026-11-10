@@ -14,7 +14,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
 	expect(html).toContain('26.3 expérimentale')
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
-	expect(html).toContain('Rien ne part avant que tu connectes le jeu')
+	expect(html).toContain('Rien n’est envoyé tant que tu n’as pas connecté le jeu')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the share and server-closing sections: real screenshots with French captions
 	expect(html).toContain('Carte postale HD')
@@ -85,11 +85,11 @@ test('the landing’s facts, guarantees and cards follow a language change made 
 	const lines = [...document.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 experimental · Fabric, Forge, NeoForge · single player and servers · beta',
-		'Does not change your world · Nothing leaves before you connect the game · Private gallery',
+		'Your world stays untouched · Nothing is sent until you connect the game · Private gallery',
 	])
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('The mod keeps the area around you in 3D.')
-	expect(text).toContain('Press M → Take a memory. Otherwise, the mod takes one on its own when you stay AFK.')
-	expect(text).toContain('Show it to the group')
+	expect(text).toContain('The mod saves the spot where you play in 3D.')
+	expect(text).toContain('Press M → Take a memory. Or just go AFK: the mod takes one for you.')
+	expect(text).toContain('Show your base to your friends')
 	document.body.innerHTML = ''
 })

@@ -101,7 +101,7 @@ test('the first screen: one install button, the facts and guarantees lines, thre
 	const lines = [...hero.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 expérimentale · Fabric, Forge, NeoForge · solo et serveurs · bêta',
-		'Ne modifie pas ton monde · Rien ne part avant que tu connectes le jeu · Galerie privée',
+		'Ton monde reste intact · Rien n’est envoyé tant que tu n’as pas connecté le jeu · Galerie privée',
 	])
 	const steps = document.getElementById('steps') as HTMLElement
 	expect(
@@ -112,7 +112,7 @@ test('the first screen: one install button, the facts and guarantees lines, thre
 	expect(steps.textContent).toContain('Appuie sur M → Prendre un souvenir.')
 	const faq = document.getElementById('faq') as HTMLElement
 	expect([...faq.querySelectorAll('summary')].map(summary => summary.textContent)).toEqual([
-		'Dois-je installer quelque chose sur le serveur ?',
+		'Il faut installer quelque chose sur le serveur\u00a0?',
 		'Il faut un compte ?',
 		'Et si Minemories ferme ?',
 	])

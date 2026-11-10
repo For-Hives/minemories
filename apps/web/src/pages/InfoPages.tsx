@@ -7,7 +7,7 @@ import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, ques
 import { useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
-	{ to: '/concept', label: 'The concept' },
+	{ to: '/concept', label: 'What is Minemories?' },
 	{ to: '/how-it-works', label: 'How it works' },
 	{ to: '/installation', label: 'Install the mod' },
 	{ to: '/downloads', label: 'All downloads' },

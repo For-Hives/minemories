@@ -106,7 +106,7 @@ export const questions = {
 	},
 	serveur: {
 		question: 'Do I need to install anything on the server?',
-		answer: ['No, it is a client-side mod.'],
+		answer: ['No, it’s client-side: it only goes on the player’s computer.'],
 	},
 	'tout-le-monde': {
 		question: 'Does everyone need to install it?',
@@ -122,7 +122,7 @@ export const questions = {
 			'To revisit your memory in 3D in the browser, yes.',
 			'Without an account, it stays as a GLB file on your computer, to open in Blender.',
 		],
-		link: { to: '/guides/minecraft-blender', label: 'Minecraft to Blender' },
+		link: { to: '/guides/minecraft-blender', label: 'Open my build in Blender' },
 	},
 	sodium: {
 		question: 'Does it work with Sodium, Iris or shaders?',
@@ -181,7 +181,7 @@ export const questions = {
 			'Without a copy of the world, nothing can be done.',
 			'With a ZIP, reopen the world in single player in a compatible version and capture it.',
 		],
-		link: { to: '/server-closing', label: 'Server closing' },
+		link: { to: '/server-closing', label: 'What if my server shuts down?' },
 	},
 	'sur-un-serveur': {
 		question: 'Does it work on a server?',
@@ -246,7 +246,7 @@ export const questions = {
 			'Nobody, by default.',
 			'Only the people with a link your child created, or everyone if they publish a memory and it is accepted after review.',
 		],
-		link: { to: '/safety', label: 'Safety and parents' },
+		link: { to: '/safety', label: 'Is it safe?' },
 	},
 	'tout-supprimer': {
 		question: 'How do I delete everything?',
