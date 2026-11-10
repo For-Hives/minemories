@@ -1,16 +1,14 @@
 /* ==========================================================================================================================================================
    The landing's section pictures (components/HeroIllustrations.tsx): "Show it to the group" and "Your server is closing?".
-   Real frames of the landing's world (public/hero/illus) under HTML text in the game font, so every word is translated and stays crisp.
-   They live in the text column (never under the dock), at most 560 px wide; a container query lays them out from the width they get, not the screen's.
-   Static on purpose: nothing moves, so reduced motion has nothing to stop.
+   Real renders of the landing's world (public/hero/illus) under HTML text in the game font, so every word is translated and stays crisp.
+   They live in the text column (never under the dock: site.js counts them in the text's reach), at most 520 px wide; a container query lays them out from
+   the width they get, not the screen's. Static on purpose: nothing moves, so reduced motion has nothing to stop.
    ========================================================================================================================================================== */
 
 .mm-illus {
 	--mm-illus-ink: #fff;
-	--mm-illus-green: #55ff55; /* the game's green (§a) */
-	--mm-illus-gold: #ffff55;  /* the game's yellow (§e), the server's name */
 	position: relative;
-	width: min(100%, 560px);
+	width: min(100%, 520px);
 	margin: var(--ds-sp-2) 0 0;
 	container-type: inline-size;
 	font: 16px/18px var(--f-ui);
@@ -19,9 +17,16 @@
 	user-select: none;
 }
 
-.mm-illus__diorama,
-.mm-illus__postcard img,
-.mm-illus__scene {
+.mm-illus,
+.mm-illus * {
+	box-sizing: border-box;
+}
+
+.mm-illus p {
+	margin: 0;
+}
+
+.mm-illus img {
 	display: block;
 	width: 100%;
 	height: auto;
@@ -32,89 +37,150 @@
 	flex: none;
 }
 
-/* A frame drawn like the kit's windows: 2 px outline, a game bevel inside. */
-.mm-illus__browser,
-.mm-illus__game,
-.mm-illus__chatcard,
-.mm-illus__hub {
+/* ---------- Show it to the group: a group chat, drawn like the kit's windows ---------- */
+
+.mm-illus--share {
+	background: var(--night-2);
 	border: 2px solid var(--outline);
 	box-shadow: inset 2px 2px 0 #3a322b, inset -2px -2px 0 #0f0c0a, 6px 6px 0 rgb(0 0 0 / 0.35);
 }
 
-/* ---------- Show it to the group ---------- */
-
-.mm-illus__browser {
-	width: 86%;
-	background: var(--night-2);
-}
-
-.mm-illus__bar {
+.mm-illus__titlebar {
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-2);
-	min-width: 0;
-	padding: var(--ds-sp-2) var(--ds-sp-3);
+	padding: 6px var(--ds-sp-3) 4px;
 	background: var(--night-3);
 	border-bottom: 2px solid var(--outline);
 	color: var(--text-2);
 	text-shadow: none;
 }
 
-.mm-illus__dots {
-	flex: none;
-	width: 8px;
-	height: 8px;
-	margin-right: 20px;
-	background: #c0533f;
-	box-shadow: 12px 0 0 var(--ember), 24px 0 0 #6f9a46;
+.mm-illus__msg {
+	display: grid;
+	grid-template-columns: 24px 1fr;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-2) var(--ds-sp-3);
 }
 
-.mm-illus__url {
-	flex: 1 1 auto;
+.mm-illus__msg + .mm-illus__msg {
+	padding-top: 0;
+}
+
+/* A generic pixel avatar: four coloured squares, nobody's skin. */
+.mm-illus__avatar {
+	width: 24px;
+	height: 24px;
+	background: conic-gradient(#7aa7c7 25%, #4f7fa3 0 50%, #7aa7c7 0 75%, #4f7fa3 0);
+	border: 2px solid var(--outline);
+}
+
+.mm-illus__avatar--friend {
+	background: conic-gradient(#d9a066 25%, #b5683f 0 50%, #d9a066 0 75%, #b5683f 0);
+}
+
+.mm-illus__body {
+	display: grid;
+	gap: 6px;
 	min-width: 0;
-	overflow: hidden;
-	padding: 2px var(--ds-sp-2);
-	background: var(--night);
-	white-space: nowrap;
-	text-overflow: ellipsis;
 }
 
-.mm-illus__view {
+.mm-illus__who {
+	color: var(--ember);
+	text-shadow: none;
+}
+
+.mm-illus__said {
+	color: var(--text);
+	text-shadow: none;
+	overflow-wrap: anywhere;
+}
+
+/* The link's preview and the postcard, side by side under your name. */
+.mm-illus__attach {
+	display: grid;
+	grid-template-columns: 3fr 2fr;
+	align-items: start;
+	gap: var(--ds-sp-2);
+}
+
+.mm-illus__link {
+	min-width: 0;
+	border: 2px solid var(--night);
+	border-left: 4px solid var(--copper);
+}
+
+.mm-illus__thumb {
 	position: relative;
-	padding: var(--ds-sp-6) 12% var(--ds-sp-3);
-	background: radial-gradient(ellipse at 50% 45%, #3b2c1e 0%, #241c15 55%, var(--night-2) 100%);
 }
 
-.mm-illus__tag {
+.mm-illus__thumb img {
+	aspect-ratio: 8 / 5;
+	object-fit: cover;
+}
+
+/* The viewer's own hint (the dock's "Drag to turn"): the link opens a model you turn, not a picture. */
+.mm-illus__drag {
 	position: absolute;
-	left: var(--ds-sp-2);
-	top: var(--ds-sp-2);
+	left: 4px;
+	bottom: 4px;
 	display: inline-flex;
 	align-items: center;
-	gap: var(--ds-sp-2);
-	max-width: calc(100% - 16px);
-	padding: 3px 6px 3px 4px;
+	gap: 4px;
+	max-width: calc(100% - 8px);
+	padding: 2px 4px 0;
 	background: rgb(0 0 0 / 0.66);
 }
 
-.mm-illus__chatcard {
-	position: relative;
-	z-index: 1;
-	display: grid;
-	gap: var(--ds-sp-2);
-	width: 52%;
-	margin: -112px 0 0 auto; /* over the browser's lower right corner */
-	padding: var(--ds-sp-2);
-	background: var(--night-2);
+.mm-illus__url,
+.mm-illus__desc {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
 }
 
-/* The postcard: a print with a white edge and a slight tilt, its HD mark in the corner. */
+.mm-illus__desc {
+	color: var(--text-2);
+	text-shadow: none;
+}
+
+.mm-illus__desc .mc-icon {
+	color: #8fd694;
+}
+
+.mm-illus__addr {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	color: #7fb6e0;
+	white-space: nowrap;
+	text-overflow: clip; /* the "…" is in the address itself: the token is never shown */
+	text-shadow: none;
+}
+
+/* "Copy": two squares, the second over the first. */
+.mm-illus__copy {
+	flex: none;
+	position: relative;
+	width: 12px;
+	height: 12px;
+	margin: 0 2px 2px 0;
+	border: 2px solid var(--text-2);
+	box-shadow: 3px 3px 0 -1px var(--night), 3px 3px 0 1px var(--text-2);
+}
+
+/* The postcard: the downloaded HD picture, straight (a tilt would blur its pixel edges), its HD mark in the corner. */
 .mm-illus__postcard {
 	position: relative;
 	padding: 4px;
 	background: #f4efe6;
-	transform: rotate(-2deg);
-	box-shadow: 3px 3px 0 rgb(0 0 0 / 0.4);
+	box-shadow: 4px 4px 0 rgb(0 0 0 / 0.45);
+}
+
+.mm-illus__postcard img {
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
 }
 
 .mm-illus__stamp {
@@ -127,77 +193,46 @@
 	text-shadow: 2px 2px 0 #2b1b0e;
 }
 
-.mm-illus__bubble {
+/* ---------- Your server is closing?: a dusk frame, the M key, the mod's menu over it, the server's line in the chat ---------- */
+
+.mm-illus--closing {
 	display: grid;
-	gap: 2px;
-	margin: 0;
-	color: var(--text);
-	text-shadow: none;
-	overflow-wrap: anywhere;
-}
-
-.mm-illus__who {
-	color: var(--ember);
-}
-
-/* ---------- Your server is closing? ---------- */
-
-.mm-illus__game {
-	position: relative;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-3);
 	overflow: hidden;
 	background: var(--night-2);
+	border: 2px solid var(--outline);
+	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
 }
 
-/* the frame's bottom darkens a little, as the chat sits there */
-.mm-illus__game::after {
-	content: '';
+/* the frame fills the picture behind the menu; its subject (the empty bench, the wolf, the cold campfire) sits on the left */
+.mm-illus--closing > .mm-illus__scene {
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(transparent 55%, rgb(20 17 14 / 0.45));
-	pointer-events: none;
+	height: 100%;
+	object-fit: cover;
+	object-position: 18% 60%;
 }
 
-/* The chat line as the game draws it: white text, one texel of shadow, its own 66 % black band. */
-.mm-illus__chat {
-	position: absolute;
-	z-index: 1;
-	left: var(--ds-sp-2);
-	bottom: 28px; /* above the menu that overlaps the frame's edge on a narrow column */
-	max-width: calc(100% - 16px);
-	margin: 0;
-	padding: 2px 4px 0;
-	background: rgb(0 0 0 / 0.66);
-	overflow-wrap: anywhere;
-}
-
-/* The M menu (SimpleHubScreen), drawn small: the key, the title, the "Take a memory" button pressed, the mod's answer. */
-.mm-illus__hub {
+.mm-illus__over {
 	position: relative;
-	z-index: 1;
-	display: grid;
-	gap: var(--ds-sp-2);
-	width: 88%;
-	margin: -20px 0 0 auto;
-	padding: var(--ds-sp-3);
-	background: rgb(37 39 37 / 0.96);
-}
-
-.mm-illus__hubtitle .mm-brand-mark {
-	width: 16px;
-	height: 16px;
-}
-
-.mm-illus__hubtitle {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
+	justify-content: flex-end;
 	gap: var(--ds-sp-2);
-	margin: 0;
+}
+
+.mm-illus__press {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 6px;
 }
 
 .mm-illus__key {
 	display: inline-grid;
 	place-items: center;
-	flex: none;
 	min-width: 28px;
 	height: 28px;
 	padding-top: 2px;
@@ -206,78 +241,143 @@
 	box-shadow: inset 2px 2px 0 var(--stone-hi), inset -2px -4px 0 var(--stone-lo);
 }
 
-.mm-illus__take {
+/* SimpleHubScreen in its own colours (UiTheme: PANEL, BORDER, CARD, TEXT, MUTED, OK). */
+.mm-illus__hub {
+	display: grid;
+	gap: 6px;
+	flex: 0 1 auto;
+	min-width: 0;
+	width: min(100%, 300px);
+	padding: 6px var(--ds-sp-2) var(--ds-sp-2);
+	background: #252926;
+	border: 2px solid #667063;
+	box-shadow: 4px 4px 0 rgb(0 0 0 / 0.45);
+	color: #ece8dc;
+}
+
+.mm-illus__hubtitle {
 	display: flex;
 	align-items: center;
-	gap: var(--ds-sp-2);
-	min-height: 40px;
-	padding: var(--ds-sp-1) var(--ds-sp-3);
-	background: var(--stone-lo);
-	border: 2px solid var(--hover); /* the game's hovered button: a white outline */
-	box-shadow: inset 2px 2px 0 var(--stone-lo), inset -2px -2px 0 #3d3d3d;
+	gap: 6px;
+	font-weight: 700;
+}
+
+.mm-illus__hubtitle .mm-brand-mark {
+	width: 16px;
+	height: 16px;
+}
+
+.mm-illus__status {
+	display: grid;
+	gap: 2px;
+	padding: 4px 6px;
+	background: #30352f;
+}
+
+.mm-illus__ok {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: #8fd694;
+	font-weight: 700;
+}
+
+.mm-illus__hint {
+	color: #b2b6aa;
+	text-shadow: none;
 	overflow-wrap: anywhere;
 }
 
-.mm-illus__frame {
-	--mc-i: url('/hero/mcui/icons/frame.svg');
-	color: var(--mm-illus-gold);
+.mm-illus__tiles {
+	display: grid;
+	grid-template-columns: 1.6fr 1fr 1fr;
+	gap: 4px;
 }
 
+.mm-illus__tile {
+	display: grid;
+	justify-items: center;
+	align-content: center;
+	gap: 2px;
+	min-height: 44px;
+	padding: 4px 2px 2px;
+	background: #30352f;
+	border: 2px solid #4a5148;
+	text-align: center;
+	hyphens: auto;
+	overflow-wrap: anywhere;
+}
+
+.mm-illus__tile .mc-icon {
+	color: #b2b6aa;
+}
+
+/* the hovered tile: the game's white outline */
+.mm-illus__tile.is-hover {
+	border-color: #fff;
+}
+
+.mm-illus__tile.is-hover .mc-icon {
+	color: var(--ember);
+}
+
+/* The menu's answer, at the bottom of the panel, in its text colour. */
 .mm-illus__sent {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	margin: 0;
-	color: var(--mm-illus-green);
-	text-shadow: 2px 2px 0 #153f15;
+	text-wrap: balance;
+}
+
+/* The chat line as the game draws it: white text, one texel of shadow, its own 66 % black band. */
+.mm-illus__chat {
+	position: relative;
+	justify-self: start;
+	max-width: 100%;
+	padding: 2px 4px 0;
+	background: rgb(0 0 0 / 0.66);
 	overflow-wrap: anywhere;
 }
 
-/* Wide enough (a desktop text column): the menu sits over the frame's upper right, as it opens over the game. */
-@container (min-width: 480px) {
-	.mm-illus__chatcard {
-		width: 46%;
-		margin-top: -136px;
+/* A desktop column: the menu takes the width of its longest line (the answer stays on one line), up to two thirds of the frame; the key stands at the
+   frame's left, by the bench. */
+@container (min-width: 440px) {
+	.mm-illus__over {
+		justify-content: space-between;
 	}
 
 	.mm-illus__hub {
-		position: absolute;
-		top: var(--ds-sp-3);
-		right: var(--ds-sp-3);
-		width: min(58%, 320px);
-		margin: 0;
-	}
-
-	.mm-illus__chat {
-		bottom: var(--ds-sp-2);
+		width: max-content;
+		min-width: min(270px, 100%);
+		max-width: 68%;
 	}
 }
 
-/* A phone: the chat card sits under the browser, overlapping its edge, instead of beside it. */
+/* A phone: smaller paddings, the drag hint's words dropped (its arrows say it); the menu keeps its status sentence (where the memory goes). */
 @container (max-width: 419px) {
-	.mm-illus__browser {
+	.mm-illus__msg {
+		padding: 6px var(--ds-sp-2);
+	}
+
+	.mm-illus__drag > span:last-child {
+		display: none;
+	}
+
+	.mm-illus--closing {
+		padding: var(--ds-sp-2);
+	}
+
+	.mm-illus__hub {
 		width: 100%;
 	}
 
-	.mm-illus__view {
-		padding: 40px 8% var(--ds-sp-2);
+	.mm-illus__tiles {
+		grid-template-columns: 2fr 1fr 1fr;
 	}
+}
 
-	.mm-illus__chatcard {
-		position: relative;
-		grid-template-columns: 42% 1fr;
-		align-items: center;
-		width: 94%;
-		margin: -24px 0 0 auto;
-	}
-
-	.mm-illus__stamp {
-		top: 6px;
-		right: 6px;
-	}
-
-	.mm-illus__hub {
-		width: 92%;
+/* A desktop text column that leaves the dock little room (1000 to 1279 px wide screens): the pictures stay narrower than the column, so the model keeps
+   its air (site.js REACH_BOXES can only move the panel left, never right of the grid's). */
+@media (min-width: 1000px) and (max-width: 1279px) {
+	.mm-illus {
+		width: min(100% - 48px, 520px);
 	}
 }
 

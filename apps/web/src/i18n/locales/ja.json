@@ -1267,10 +1267,14 @@
 	"Nobody sees them without a link you create.": "あなたが作ったリンクがなければ、誰も見られません。",
 	"A link for one memory, or for a whole world with its slider through time.": "思い出ひとつのリンクも、時間スライダー付きのワールド全体のリンクも作れます。",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "画像のほうがいい場合は、HD のポストカードをダウンロードして Discord に投稿できます。",
-	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "共有リンクでブラウザに拠点が3Dで開き、拠点のHDポストカードはグループのチャットに投稿されるよ。",
+	"In a group chat, you post a share link to the base, which opens in 3D in a browser with no Minecraft and no account, then its HD postcard. Lina answers: That’s our base! I’m spinning it around.": "グループチャットに拠点の共有リンクを送ると、Minecraftもアカウントもなしでブラウザで3Dで開くよ。続けてHDポストカードも。リナの返事：うちらの拠点だ！ぐるぐる回して見てる。",
 	"No Minecraft, no account": "Minecraftもアカウントも不要",
-	"That's our base! I'm turning around it on my phone.": "うちらの拠点だ！スマホでぐるっと回して見てるよ。",
+	"Group chat": "グループチャット",
+	"You": "自分",
+	"That’s our base! I’m spinning it around.": "うちらの拠点だ！ぐるぐる回して見てる。",
+	"Connected": "接続済み",
+	"Your memories go to your gallery on their own.": "思い出は自動でギャラリーに送られるよ。",
 	"[Server] The server closes on December 1st.": "[Server] サーバーは12月1日に閉鎖します。",
 	"Memory saved and sent!": "思い出を保存して送信したよ！",
-	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "ゲーム内でサーバーが閉鎖を告知。プレイヤーがMを押して「思い出を残す」を選ぶと、Modが「思い出を保存して送信したよ！」と答える。"
+	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "夕暮れの、このページの世界の一場面。チャットではサーバーが閉鎖を告知。その上に、接続済みのModのMメニュー：思い出を残す、そして返事 思い出を保存して送信したよ！"
 }

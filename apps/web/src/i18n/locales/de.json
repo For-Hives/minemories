@@ -1267,10 +1267,14 @@
 	"Nobody sees them without a link you create.": "Niemand sieht sie ohne einen Link, den du erstellst.",
 	"A link for one memory, or for a whole world with its slider through time.": "Ein Link für eine Erinnerung oder für eine ganze Welt, mit ihrem Zeitregler.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Lieber ein Bild? Lade die HD-Postkarte herunter und poste sie auf Discord.",
-	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "Ein Freigabelink öffnet die Basis in 3D im Browser, und eine HD-Postkarte davon landet im Gruppenchat.",
+	"In a group chat, you post a share link to the base, which opens in 3D in a browser with no Minecraft and no account, then its HD postcard. Lina answers: That’s our base! I’m spinning it around.": "In einem Gruppenchat postest du einen Freigabelink zur Basis, der sich ohne Minecraft und ohne Konto in 3D im Browser öffnet, und danach ihre HD-Postkarte. Lina antwortet: Das ist unsere Basis! Ich dreh sie hin und her.",
 	"No Minecraft, no account": "Ohne Minecraft, ohne Konto",
-	"That's our base! I'm turning around it on my phone.": "Das ist unsere Basis! Ich dreh sie gerade auf dem Handy hin und her.",
+	"Group chat": "Gruppenchat",
+	"You": "Du",
+	"That’s our base! I’m spinning it around.": "Das ist unsere Basis! Ich dreh sie hin und her.",
+	"Connected": "Verbunden",
+	"Your memories go to your gallery on their own.": "Deine Erinnerungen landen von selbst in deiner Galerie.",
 	"[Server] The server closes on December 1st.": "[Server] Der Server schließt am 1. Dezember.",
 	"Memory saved and sent!": "Erinnerung gespeichert und gesendet!",
-	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "Im Spiel kündigt der Server seine Schließung an. Der Spieler drückt M, dann Erinnerung festhalten, und die Mod antwortet Erinnerung gespeichert und gesendet!"
+	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "Ein Bild aus der Welt der Seite in der Abenddämmerung, im Chat kündigt der Server seine Schließung an. Darüber das M-Menü des Mods, verbunden: Erinnerung festhalten, und seine Antwort Erinnerung gespeichert und gesendet!"
 }

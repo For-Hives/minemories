@@ -1267,10 +1267,14 @@
 	"Nobody sees them without a link you create.": "Nobody sees them without a link you create.",
 	"A link for one memory, or for a whole world with its slider through time.": "A link for one memory, or for a whole world with its slider through time.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Prefer a picture? Download the HD postcard and post it on Discord.",
-	"A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.": "A share link opens the base in 3D in a browser, and an HD postcard of it is posted in the group chat.",
+	"In a group chat, you post a share link to the base, which opens in 3D in a browser with no Minecraft and no account, then its HD postcard. Lina answers: That’s our base! I’m spinning it around.": "In a group chat, you post a share link to the base, which opens in 3D in a browser with no Minecraft and no account, then its HD postcard. Lina answers: That’s our base! I’m spinning it around.",
 	"No Minecraft, no account": "No Minecraft, no account",
-	"That's our base! I'm turning around it on my phone.": "That's our base! I'm turning around it on my phone.",
+	"Group chat": "Group chat",
+	"You": "You",
+	"That’s our base! I’m spinning it around.": "That’s our base! I’m spinning it around.",
+	"Connected": "Connected",
+	"Your memories go to your gallery on their own.": "Your memories go to your gallery on their own.",
 	"[Server] The server closes on December 1st.": "[Server] The server closes on December 1st.",
 	"Memory saved and sent!": "Memory saved and sent!",
-	"In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!": "In the game, the server announces it is closing. The player presses M, then Take a memory, and the mod answers Memory saved and sent!"
+	"A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!": "A frame of the landing’s world at dusk, the server announcing in the chat that it closes. Over it, the mod’s M menu, connected: Take a memory, and its answer Memory saved and sent!"
 }
