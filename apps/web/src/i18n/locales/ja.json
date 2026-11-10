@@ -1437,5 +1437,7 @@
 	"share.world.count.two": "この場所の思い出は{count}件です。",
 	"share.world.count.few": "この場所の思い出は{count}件です。",
 	"share.world.count.many": "この場所の思い出は{count}件です。",
-	"share.world.count.other": "この場所の思い出は{count}件です。"
+	"share.world.count.other": "この場所の思い出は{count}件です。",
+	"A Minecraft place in 3D, shared with you": "あなたと共有された、3D の Minecraft の場所",
+	"Open it in your browser and turn around it.": "ブラウザで開いて、ぐるっと回ってみよう。"
 }

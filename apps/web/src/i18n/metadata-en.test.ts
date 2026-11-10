@@ -16,7 +16,7 @@ test('every public page has translated metadata while retaining its existing can
 	expect(metadataFor('/share/private-token', 'en')).toMatchObject({
 		indexable: false,
 		language: 'en',
-		title: 'Minemories — Your space',
+		title: 'A Minecraft place in 3D, shared with you',
 	})
 })
 

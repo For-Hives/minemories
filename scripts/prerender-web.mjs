@@ -12,7 +12,15 @@ const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
 const withoutBootScreen = html => html.replace(bootPattern, '')
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
-	const { publicMetadata, renderPage, siteOrigin, structuredDataFor, firstPaintScripts = {}, socialImage } = entry
+	const {
+		publicMetadata,
+		renderPage,
+		siteOrigin,
+		structuredDataFor,
+		firstPaintScripts = {},
+		socialImage,
+		appShell,
+	} = entry
 	const origin = new URL(siteOrigin)
 	if (!['https:', 'http:'].includes(origin.protocol) || origin.pathname !== '/' || origin.search || origin.hash)
 		throw new Error('VITE_SITE_URL must be an HTTP(S) origin.')
@@ -64,9 +72,14 @@ export async function prerenderWeb(directory, entry) {
 			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
 			: 'User-agent: *\nDisallow: /\n'
 	)
+	// The private shell answers every private route, but only /share and /public links get pasted where a preview is
+	// drawn: it carries their neutral card (no canonical or og:url, since one file serves many URLs).
+	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.description)}" /><meta property="og:locale" content="fr_FR" />${socialTags}`
 	const fallback = withoutBootScreen(template)
-		.replace(titlePattern, '<title>Minemories — Espace personnel</title>')
-		.replace('</head>', '<meta name="robots" content="noindex,nofollow" /></head>')
+		.replace(htmlLanguagePattern, '<html lang="fr">')
+		.replace(titlePattern, `<title>${escapeHtml(appShell.title)}</title>`)
+		.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(appShell.description)}" />`)
+		.replace('</head>', `${shellHead}</head>`)
 	await writeFile(resolve(directory, 'app.html'), fallback)
 	await writeFile(
 		resolve(directory, '404.html'),

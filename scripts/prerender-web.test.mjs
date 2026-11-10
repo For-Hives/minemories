@@ -23,6 +23,7 @@ const entry = {
 		{ path: '/explore', title: 'Gallery', description: 'Public memories', indexable: false },
 	],
 	renderPage: path => `<h1>${path}</h1>`,
+	appShell: { title: 'A place & you', description: 'Turn <around>' },
 	structuredDataFor: page => ({
 		'@context': 'https://schema.org',
 		'@graph': [{ '@type': page.articleDate ? 'Article' : 'WebPage', name: '</script>', path: page.path }],
@@ -67,7 +68,20 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	assert.ok(robots.includes('Disallow: /public/'))
 	assert.ok(robots.includes('Disallow: /moderation'))
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
-	assert.ok((await readFile(join(directory, 'app.html'), 'utf8')).includes('noindex,nofollow'))
+	const shell = await readFile(join(directory, 'app.html'), 'utf8')
+	assert.ok(shell.includes('noindex,nofollow'))
+	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in French.
+	assert.ok(shell.includes('<html lang="fr">'))
+	assert.ok(shell.includes('<title>A place &amp; you</title>'))
+	assert.ok(shell.includes('<meta name="description" content="Turn &lt;around&gt;" />'))
+	assert.ok(shell.includes('<meta property="og:title" content="A place &amp; you" />'))
+	assert.ok(shell.includes('<meta property="og:description" content="Turn &lt;around&gt;" />'))
+	assert.ok(shell.includes('<meta property="og:site_name" content="Minemories" />'))
+	// One file serves every private URL: no canonical, no og:url, no page schema.
+	assert.ok(!shell.includes('canonical'))
+	assert.ok(!shell.includes('og:url'))
+	assert.ok(!shell.includes('ld+json'))
+	assert.ok(shell.includes('<div id="app"></div>'))
 })
 test('indexing is blocked by default without disabling readable HTML', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-private-preview-'))

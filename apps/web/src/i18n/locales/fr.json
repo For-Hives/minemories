@@ -1437,5 +1437,7 @@
 	"share.world.count.two": "{count} souvenirs de ce lieu.",
 	"share.world.count.few": "{count} souvenirs de ce lieu.",
 	"share.world.count.many": "{count} souvenirs de ce lieu.",
-	"share.world.count.other": "{count} souvenirs de ce lieu."
+	"share.world.count.other": "{count} souvenirs de ce lieu.",
+	"A Minecraft place in 3D, shared with you": "Un lieu Minecraft en 3D, partagé avec toi",
+	"Open it in your browser and turn around it.": "Ouvre-le dans ton navigateur et tourne autour."
 }

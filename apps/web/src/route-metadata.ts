@@ -140,6 +140,21 @@ const privateMessages: PageMetadata[] = [
 		language: 'fr',
 	},
 ]
+/**
+ * A shared link (/share/:token) or a public memory (/public/:id): one neutral card, since a per-link preview would need
+ * a server-side render. Link previews read it from app.html (the private shell, which crawlers get without JavaScript),
+ * and the tab shows it too.
+ */
+const sharedCard = {
+	title: 'A Minecraft place in 3D, shared with you',
+	description: 'Open it in your browser and turn around it.',
+}
+const sharedPath = /^\/(?:share|public)\//
+/** The private shell's head, in French like the prerendered pages. */
+export const appShell = {
+	title: translate('fr', sharedCard.title),
+	description: translate('fr', sharedCard.description),
+}
 export const publicMetadata = metadataMessages.map(page => ({
 	...page,
 	title: translate('fr', page.title),
@@ -150,8 +165,9 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 	const path = pathname.replace(trailingSlash, '') || '/'
 	const page: PageMetadata = [...metadataMessages, ...privateMessages].find(page => page.path === path) ?? {
 		path,
-		title: 'Minemories — Your space',
-		description: 'Your Minemories space.',
+		...(sharedPath.test(path)
+			? sharedCard
+			: { title: 'Minemories — Your space', description: 'Your Minemories space.' }),
 		indexable: false,
 		language: 'fr',
 	}

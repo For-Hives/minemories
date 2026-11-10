@@ -1437,5 +1437,7 @@
 	"share.world.count.two": "이 장소의 추억 {count}개.",
 	"share.world.count.few": "이 장소의 추억 {count}개.",
 	"share.world.count.many": "이 장소의 추억 {count}개.",
-	"share.world.count.other": "이 장소의 추억 {count}개."
+	"share.world.count.other": "이 장소의 추억 {count}개.",
+	"A Minecraft place in 3D, shared with you": "당신과 공유된 3D Minecraft 장소",
+	"Open it in your browser and turn around it.": "브라우저에서 열고 둘러보세요."
 }
