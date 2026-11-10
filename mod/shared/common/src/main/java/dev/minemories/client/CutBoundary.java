@@ -28,6 +28,28 @@ final class CutBoundary {
         || z > bounds.maxZ();
   }
 
+  /**
+   * Whether the seal of this cut cell must be seen from both sides. A solid block's cut face
+   * replaces its own outer face, seen from outside only; but the seal of an empty cell (a cave, an
+   * underground fluid) is also the floor or wall seen from inside it, and a single-sided outward
+   * face would show the sky there.
+   */
+  static boolean sealsBothSides(boolean air, boolean fluid) {
+    return air || fluid;
+  }
+
+  /**
+   * The same quad facing the other way: corners in reverse order (0, 3, 2, 1), each keeping its
+   * texture coordinates, so the texture stays in place and the winding, hence the normal, flips.
+   */
+  static void reverse(float[] xyz, float[] uv, float[] reversedXyz, float[] reversedUv) {
+    for (int corner = 0; corner < 4; corner++) {
+      int from = (4 - corner) % 4;
+      System.arraycopy(xyz, from * 3, reversedXyz, corner * 3, 3);
+      System.arraycopy(uv, from * 2, reversedUv, corner * 2, 2);
+    }
+  }
+
   static Material material(int y, int terrainTop, boolean air, boolean fluid, boolean opaqueCube) {
     // Keep the original top layer and non-cubic/transparent content (glass, leaves, stairs).
     // Air and underground fluids are sealed only at the cut plane, not filled throughout the

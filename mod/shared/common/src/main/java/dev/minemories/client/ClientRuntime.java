@@ -1395,7 +1395,8 @@ public final class ClientRuntime {
                     captured,
                     x - center.getX(),
                     y - center.getY(),
-                    z - center.getZ());
+                    z - center.getZ(),
+                    false);
               });
       count++;
     }
@@ -1484,6 +1485,7 @@ public final class ClientRuntime {
             !state.getFluidState().isEmpty(),
             state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
     if (material == CutBoundary.Material.NONE) return false;
+    boolean bothSides = CutBoundary.sealsBothSides(state.isAir(), !state.getFluidState().isEmpty());
     BlockState cut =
         (material == CutBoundary.Material.DIRT ? Blocks.DIRT : Blocks.STONE).defaultBlockState();
     ClientPlatforms.current()
@@ -1512,7 +1514,8 @@ public final class ClientRuntime {
                   captured,
                   pos.getX() - center.getX(),
                   pos.getY() - center.getY(),
-                  pos.getZ() - center.getZ());
+                  pos.getZ() - center.getZ(),
+                  bothSides);
             });
     return true;
   }
@@ -1527,7 +1530,8 @@ public final class ClientRuntime {
       ClientPlatform.ModelQuad captured,
       int x,
       int y,
-      int z)
+      int z,
+      boolean bothSides)
       throws IOException {
     BakedQuad quad = captured.baked();
     TextureAtlasSprite sprite = quad.getSprite();
@@ -1569,6 +1573,9 @@ public final class ClientRuntime {
             + alphaMode
             + "#"
             + opacity;
+    // Materials are single-sided: the inside of an empty cell's seal is a second, reversed quad.
+    float[] backXyz = bothSides ? new float[12] : null, backUv = bothSides ? new float[8] : null;
+    if (bothSides) CutBoundary.reverse(xyz, uv, backXyz, backUv);
     scene.addQuad(
         key,
         blockId + " / " + imageKey,
@@ -1580,6 +1587,18 @@ public final class ClientRuntime {
         opacity,
         xyz,
         uv);
+    if (!bothSides) return;
+    scene.addQuad(
+        key,
+        blockId + " / " + imageKey,
+        imageKey,
+        asset.png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        backXyz,
+        backUv);
   }
 
   private static void captureFluid(
