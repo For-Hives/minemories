@@ -53,8 +53,8 @@ test('catalogues support canonical English keys and safe interpolation', async (
 	await loadLocale('ja')
 	expect(translate('ja', 'Sign in')).toBe('ログイン')
 
-	expect(translate('ja', 'Your first memory, {name}.', { name: 'Alex' })).toContain('Alex')
-	expect(translate('ja', 'Same area · {count} captures', { count: 0 })).toContain('0')
+	expect(translate('ja', 'Rename {name}', { name: 'Alex' })).toContain('Alex')
+	expect(translate('ja', 'capture.count.other', { count: 0 })).toContain('0')
 	expect(translate('ja', 'Unknown {missing}')).toBe('Unknown {missing}')
 	expect(translate('ja', '__proto__')).toBe('__proto__')
 })
