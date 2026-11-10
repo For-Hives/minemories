@@ -9,6 +9,7 @@ import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
 import { legacyPaths } from './content/legacy-paths'
 import { I18nProvider } from './i18n/I18n'
+import { lazyExport, type PageChunk, pageChunk } from './lib/page-chunk'
 import { WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
@@ -17,42 +18,74 @@ const AccountPage = lazy(() => import('./pages/AccountPage').then(module => ({ d
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })))
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
 const SharePage = lazy(() => import('./pages/SharePage').then(module => ({ default: module.SharePage })))
-const InfoPages = () => import('./pages/InfoPages')
-const ConceptPage = lazy(() => InfoPages().then(module => ({ default: module.ConceptPage })))
-const HowItWorksPage = lazy(() => InfoPages().then(module => ({ default: module.HowItWorksPage })))
-const FaqPage = lazy(() => InfoPages().then(module => ({ default: module.FaqPage })))
-const InstallationPage = lazy(() =>
-	import('./pages/InstallationPage').then(module => ({ default: module.InstallationPage }))
-)
-const DownloadsPage = lazy(() => import('./pages/DownloadsPage').then(module => ({ default: module.DownloadsPage })))
-const ReleasesPage = lazy(() => import('./pages/ReleasesPage').then(module => ({ default: module.ReleasesPage })))
-const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then(module => ({ default: module.RoadmapPage })))
-const GuidePages = () => import('./pages/GuidePages')
-const ServerClosingPage = lazy(() => GuidePages().then(module => ({ default: module.ServerClosingPage })))
-const SafetyPage = lazy(() => GuidePages().then(module => ({ default: module.SafetyPage })))
-const BlenderGuidePage = lazy(() => GuidePages().then(module => ({ default: module.BlenderGuidePage })))
-const ContentPages = () => import('./pages/ContentPages')
+// The prerendered pages but the landing: once their chunk is loaded they render without suspending (lib/page-chunk.ts).
+const InfoPages = pageChunk(() => import('./pages/InfoPages'))
+const ConceptPage = lazy(lazyExport(InfoPages, module => module.ConceptPage))
+const HowItWorksPage = lazy(lazyExport(InfoPages, module => module.HowItWorksPage))
+const FaqPage = lazy(lazyExport(InfoPages, module => module.FaqPage))
+const InstallationChunk = pageChunk(() => import('./pages/InstallationPage'))
+const InstallationPage = lazy(lazyExport(InstallationChunk, module => module.InstallationPage))
+const DownloadsChunk = pageChunk(() => import('./pages/DownloadsPage'))
+const DownloadsPage = lazy(lazyExport(DownloadsChunk, module => module.DownloadsPage))
+const ReleasesChunk = pageChunk(() => import('./pages/ReleasesPage'))
+const ReleasesPage = lazy(lazyExport(ReleasesChunk, module => module.ReleasesPage))
+const RoadmapChunk = pageChunk(() => import('./pages/RoadmapPage'))
+const RoadmapPage = lazy(lazyExport(RoadmapChunk, module => module.RoadmapPage))
+const GuidePages = pageChunk(() => import('./pages/GuidePages'))
+const ServerClosingPage = lazy(lazyExport(GuidePages, module => module.ServerClosingPage))
+const SafetyPage = lazy(lazyExport(GuidePages, module => module.SafetyPage))
+const BlenderGuidePage = lazy(lazyExport(GuidePages, module => module.BlenderGuidePage))
+const ContentPages = pageChunk(() => import('./pages/ContentPages'))
 // Pricing is disabled for now (page kept in pages/PricingPage.tsx): re-enable this import and its route, the header/footer links and the metadata entry.
 // const PricingPage = lazy(() => import('./pages/PricingPage').then(module => ({ default: module.PricingPage })))
-const DiscoveryPages = () => import('./pages/DiscoveryPages')
-const ExplorerPage = lazy(() => DiscoveryPages().then(module => ({ default: module.ExplorerPage })))
-const SharingPage = lazy(() => import('./pages/SharingPage').then(module => ({ default: module.SharingPage })))
-const LegalPage = lazy(() => ContentPages().then(module => ({ default: module.LegalPage })))
-const NotFoundPage = lazy(() => ContentPages().then(module => ({ default: module.NotFoundPage })))
+const DiscoveryPages = pageChunk(() => import('./pages/DiscoveryPages'))
+const ExplorerPage = lazy(lazyExport(DiscoveryPages, module => module.ExplorerPage))
+const SharingChunk = pageChunk(() => import('./pages/SharingPage'))
+const SharingPage = lazy(lazyExport(SharingChunk, module => module.SharingPage))
+const LegalPage = lazy(lazyExport(ContentPages, module => module.LegalPage))
+const NotFoundPage = lazy(lazyExport(ContentPages, module => module.NotFoundPage))
 /** The pages reachable from the header and the footer: fetched once the browser is idle, so that a link opens its page without waiting. */
 const publicPageChunks = [
 	() => import('./pages/HomePage'),
-	InfoPages,
-	ContentPages,
-	DiscoveryPages,
-	() => import('./pages/InstallationPage'),
-	() => import('./pages/DownloadsPage'),
-	() => import('./pages/ReleasesPage'),
-	() => import('./pages/RoadmapPage'),
-	() => import('./pages/SharingPage'),
-	GuidePages,
+	InfoPages.load,
+	ContentPages.load,
+	DiscoveryPages.load,
+	InstallationChunk.load,
+	DownloadsChunk.load,
+	ReleasesChunk.load,
+	RoadmapChunk.load,
+	SharingChunk.load,
+	GuidePages.load,
 	() => import('./pages/AuthPage'),
 ]
+
+/** The chunk of each prerendered page but the landing (whose film loads itself). main.tsx waits for it before hydrating, so the page hydrates in place instead of flashing its empty fallback (lib/page-chunk.ts says why). */
+const prerenderedPageChunks: Record<string, PageChunk<unknown>> = {
+	'/concept': InfoPages,
+	'/how-it-works': InfoPages,
+	'/faq': InfoPages,
+	'/installation': InstallationChunk,
+	'/downloads': DownloadsChunk,
+	'/versions': ReleasesChunk,
+	'/roadmap': RoadmapChunk,
+	'/server-closing': GuidePages,
+	'/safety': GuidePages,
+	'/guides/minecraft-blender': GuidePages,
+	'/explore': DiscoveryPages,
+	'/sharing': SharingChunk,
+	'/privacy': ContentPages,
+	'/terms': ContentPages,
+	'/legal': ContentPages,
+}
+/** Resolves once the chunk of a prerendered page is loaded (at once for any other path). A failed load resolves too: the page is then fetched on demand, as before. */
+export function loadPrerenderedPage(pathname: string): Promise<void> {
+	const chunk = prerenderedPageChunks[pathname]
+	if (!chunk) return Promise.resolve()
+	return chunk.load().then(
+		() => undefined,
+		() => undefined
+	)
+}
 
 function LegacyRedirect({ to }: { to: string }) {
 	const { search, hash } = useLocation()

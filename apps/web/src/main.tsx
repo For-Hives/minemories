@@ -1,5 +1,5 @@
 import { createRoot, hydrateRoot } from 'react-dom/client'
-import { App } from './App'
+import { App, loadPrerenderedPage } from './App'
 import './theme.css'
 import './pages/installation.css'
 import './album.css'
@@ -13,5 +13,7 @@ const container = document.getElementById('app')
 if (!container) throw new Error('Application root not found.')
 
 const initialPath = window.location.pathname.replace(/\/$/, '') || '/'
-if (container.dataset.prerendered === 'true' && container.dataset.route === initialPath) hydrateRoot(container, <App />)
+// A prerendered page is hydrated once its chunk is loaded (the HTML stays on screen meanwhile): see loadPrerenderedPage.
+if (container.dataset.prerendered === 'true' && container.dataset.route === initialPath)
+	void loadPrerenderedPage(initialPath).then(() => hydrateRoot(container, <App />))
 else createRoot(container).render(<App />)
