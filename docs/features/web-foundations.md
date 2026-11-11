@@ -93,3 +93,12 @@ torch field showed 12 lit spots that never followed the camera.
 - Composed worlds (`showWorld`) hand their visible lights to the same pool; a light that survives a time step keeps
   its slot, the others fade.
 - Existing uploaded GLBs benefit unchanged; the mod's output is untouched.
+
+Browser measurement (headless Chromium with SwiftShader, so absolute frame times are not representative; a capture of
+the owner's export plus 1000 extra `KHR_lights_punctual` torches, 1128 lights): on `main` and on this branch every
+compiled program has exactly 12 point lights (`pointLights[ 12 ]`, 45 programs, none recompiled while orbiting), so
+`loadFile` never attached the raw lights to a rendered frame. The one real recompilation on `main` was the composed-world
+path: the 12 pooled lights were added to the scene only at the first `showWorld`, after the capture's materials were
+compiled without lights. The pool is now attached when the scene is built and before each compile, and a test asserts
+that `loadFile` and `addLayer` + `showWorld` compile and render with exactly 12 point lights while 1000 are imported.
+The landing hero (`hero/scene.js`) has its own fixed light set and does not use `ViewerScene`.
