@@ -18,10 +18,30 @@ quads only exist for cut-boundary seals.
 - Mod: `RenderedTexture.alphaMode` returns `BLEND` only when partial texels exceed 1/32 of the visible ones; a stray
   antialiased texel stays `MASK` (cutoff 0.5, as the game's cutout render types do). Stained glass, water and slime
   remain `BLEND`.
-- Viewer: for captures already uploaded, `lib/glb-alpha.ts` applies the same rule to the texels of a `BLEND` material's
-  map; a cutout is drawn with `alphaTest 0.5`, `transparent=false` and depth writes (`cutOutBinaryBlend` in
-  `viewer-scene.ts`).
+- Viewer (`lib/glb-alpha.ts`, `fixBlendedMaterial` in `viewer-scene.ts`), which also covers captures already uploaded:
+  - a `BLEND` material whose map is a cutout by the same rule is drawn with `alphaTest 0.5`, `transparent=false`
+    and depth writes;
+  - genuinely translucent content (water, stained glass, ice, slime) keeps blending but now **writes depth** with
+    `alphaTest 0.01` (so fully transparent glass texels write nothing), as Minecraft does. three's glTF default
+    (`depthWrite=false`, per-mesh sort) let the far faces of one merged mesh paint over its near faces. A depth
+    pre-pass per mesh was rejected: it has the same inter-mesh ordering limits with more draw calls. These materials
+    still do not cast shadows (`hasOpaqueSurface` ignores the 0.01 test).
+
+## What real captures contain
+
+`~/export/capture.glb` (mod 0.37.0-beta.1, format 2) has 108 `BLEND` materials: water (opacity 0.72, fully partial
+alpha), stained glass, portal, jars and gem cases (hundreds of partial texels), lava (all opaque: now a cutout),
+and `oak_leaves_waterlogged` (binary alpha: now a cutout). Every material of that file is `doubleSided`
+(format 2 predates `glb-face-culling.md`), so old captures still show back faces of open models; the viewer cannot
+tell a deliberate `doubleSided` from the old blanket flag. Modded leaves with soft alpha above 1/32 of the visible
+texels stay blended by design.
+
+## Depth precision (not a material issue)
+
+The camera uses near 0.02 on a 24-bit depth buffer: faces one block apart (leaf interiors, entity overlay layers 1/16
+apart) swap at long distances for opaque and `MASK` content alike. That is handled by the camera near plane, not here.
 
 ## Validation
 
-Unit tests (`RenderedTextureTest`, `glb-alpha.test.ts`). Not validated in game or visually in the viewer.
+Unit tests (`RenderedTextureTest`, `glb-alpha.test.ts`). Viewer checked in headless Chromium (SwiftShader) with the
+real capture and a synthetic leaves cluster; not validated in game.
