@@ -54,4 +54,33 @@ final class CaptureIdentityTest {
     assertEquals(
         Integer.MAX_VALUE - 1, metadata.getAsJsonObject("captureOrigin").get("x").getAsInt());
   }
+
+  @Test
+  void spellingsOfOneServerAddressCanonicalizeToOneIdentity() {
+    for (String alias :
+        new String[] {
+          " Example.COM ", "example.com.", "example.com:25565", "EXAMPLE.com.:25565", "example.com:"
+        }) assertEquals("example.com", CaptureIdentity.canonicalServer(alias), alias);
+    assertEquals("example.com:25566", CaptureIdentity.canonicalServer("Example.com:25566"));
+    assertEquals("[::1]", CaptureIdentity.canonicalServer("[::1]:25565"));
+    assertEquals("[::1]:1", CaptureIdentity.canonicalServer("[::1]:1"));
+    assertEquals("::1", CaptureIdentity.canonicalServer("::1"));
+    assertNotEquals(
+        CaptureIdentity.canonicalServer("example.com"), CaptureIdentity.canonicalServer("1.2.3.4"));
+  }
+
+  @Test
+  void remoteV2IsStableAcrossSessionsButSeparatesNamespacesDimensionsAndPlayers() {
+    String ns = "11111111-1111-4111-8111-111111111111";
+    String id = CaptureIdentity.remoteV2("example.com", "overworld", "p", ns);
+    assertEquals(id, CaptureIdentity.remoteV2("example.com", "overworld", "p", ns));
+    assertNotEquals(id, CaptureIdentity.remote("example.com", "overworld", "p", ns, true));
+    assertNotEquals(
+        id, CaptureIdentity.remoteV2("example.com", "overworld", "p", ns.replace('1', '2')));
+    assertNotEquals(id, CaptureIdentity.remoteV2("example.com", "nether", "p", ns));
+    assertNotEquals(id, CaptureIdentity.remoteV2("example.com", "overworld", "q", ns));
+    assertNotEquals(
+        CaptureIdentity.remoteSettingsKey("example.com"),
+        CaptureIdentity.remoteSettingsKeyV2("example.com"));
+  }
 }

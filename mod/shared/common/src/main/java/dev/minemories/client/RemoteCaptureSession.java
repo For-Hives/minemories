@@ -11,7 +11,8 @@ import java.util.function.Supplier;
  * change.
  */
 final class RemoteCaptureSession {
-  record Binding(String namespace, boolean configured) {}
+  /** {@code legacyServer} is non-null for a namespace configured under the v1 raw address. */
+  record Binding(String namespace, boolean configured, String legacyServer) {}
 
   record Exploration(ExplorationDepth depth, VisitedZones zones) {}
 
@@ -32,15 +33,19 @@ final class RemoteCaptureSession {
     return namespace;
   }
 
-  Binding binding(Object current, String endpoint, Supplier<String> configured) {
+  Binding binding(
+      Object current, String endpoint, Supplier<ClientSettings.RemoteWorld> configured) {
     String session = namespace(current);
     if (!Objects.equals(server, endpoint)) {
       server = endpoint;
       binding = null;
     }
     if (binding == null) {
-      String value = configured.get();
-      binding = value.isEmpty() ? new Binding(session, false) : new Binding(value, true);
+      var value = configured.get();
+      binding =
+          value == null
+              ? new Binding(session, false, null)
+              : new Binding(value.namespace(), true, value.legacyServer());
     }
     return binding;
   }

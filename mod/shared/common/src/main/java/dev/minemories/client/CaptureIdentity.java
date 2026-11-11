@@ -32,6 +32,40 @@ final class CaptureIdentity {
         Objects.requireNonNull(player));
   }
 
+  /**
+   * Current remote identity: the server is canonical ({@link #canonicalServer}) and the namespace
+   * is the persistent per-server UUID, so every session on one server lands in one stack.
+   */
+  static String remoteV2(String server, String dimension, String player, String namespace) {
+    return hash(
+        "minemories-remote-world-v2",
+        Objects.requireNonNull(server),
+        Objects.requireNonNull(namespace),
+        Objects.requireNonNull(dimension),
+        Objects.requireNonNull(player));
+  }
+
+  /**
+   * The same server reached as {@code Example.com}, {@code example.com.} or {@code
+   * example.com:25565} is one server; the Minecraft default port is dropped.
+   */
+  static String canonicalServer(String address) {
+    String value = Objects.requireNonNull(address).strip().toLowerCase(java.util.Locale.ROOT);
+    int colon = value.lastIndexOf(':');
+    boolean bracketed = value.startsWith("[");
+    boolean hasPort =
+        bracketed ? value.indexOf(']') < colon : colon >= 0 && value.indexOf(':') == colon;
+    String host = hasPort ? value.substring(0, colon) : value;
+    String port = hasPort ? value.substring(colon + 1) : "";
+    while (host.endsWith(".")) host = host.substring(0, host.length() - 1);
+    return port.isEmpty() || port.equals("25565") ? host : host + ":" + port;
+  }
+
+  static String remoteSettingsKeyV2(String canonicalServer) {
+    return "remoteWorld2."
+        + hash("minemories-remote-settings-v2", Objects.requireNonNull(canonicalServer));
+  }
+
   static String remoteSettingsKey(String server) {
     return "remoteWorld." + hash("minemories-remote-settings-v1", Objects.requireNonNull(server));
   }

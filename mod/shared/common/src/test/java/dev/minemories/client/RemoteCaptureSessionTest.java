@@ -43,10 +43,10 @@ final class RemoteCaptureSessionTest {
     var session = new RemoteCaptureSession();
     Object connection = new Object();
     var reads = new java.util.concurrent.atomic.AtomicInteger();
-    java.util.function.Supplier<String> empty =
+    java.util.function.Supplier<ClientSettings.RemoteWorld> empty =
         () -> {
           reads.incrementAndGet();
-          return "";
+          return null;
         };
     var first = session.binding(connection, "server", empty);
     assertFalse(first.configured());
@@ -57,9 +57,16 @@ final class RemoteCaptureSessionTest {
     assertEquals(2, reads.get());
     session.settingsChanged();
     assertEquals(
-        new RemoteCaptureSession.Binding("pinned", true),
-        session.binding(connection, "server", () -> "pinned"));
-    assertEquals("other", session.binding(connection, "other-server", () -> "other").namespace());
+        new RemoteCaptureSession.Binding("pinned", true, null),
+        session.binding(
+            connection, "server", () -> new ClientSettings.RemoteWorld("pinned", null)));
+    assertEquals(
+        "old",
+        session
+            .binding(
+                connection, "other-server", () -> new ClientSettings.RemoteWorld("other", "raw"))
+            .legacyServer()
+            .replace("raw", "old"));
     assertSame(connection, session.connection());
     session.clear();
     assertNull(session.connection());

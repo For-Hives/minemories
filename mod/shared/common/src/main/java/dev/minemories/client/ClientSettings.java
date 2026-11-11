@@ -106,6 +106,35 @@ final class ClientSettings {
     return Boolean.parseBoolean(settings.getProperty("afkSnapshots", "true"));
   }
 
+  /**
+   * Namespace of a server; {@code legacyServer} is set when it was configured under the raw v1 key.
+   */
+  record RemoteWorld(String namespace, String legacyServer) {}
+
+  /**
+   * The persistent identity of a server, or null when none exists yet. A namespace configured
+   * before the canonical address existed keeps producing its v1 identity, so already uploaded
+   * captures stay in their stack.
+   */
+  static RemoteWorld remoteWorld(Properties settings, String server) {
+    String stored =
+        settings.getProperty(
+            CaptureIdentity.remoteSettingsKeyV2(CaptureIdentity.canonicalServer(server)), "");
+    if (!stored.isBlank()) return new RemoteWorld(normalizeRemoteWorldNamespace(stored), null);
+    String legacy = remoteWorldNamespace(settings, server);
+    return legacy.isEmpty() ? null : new RemoteWorld(legacy, server);
+  }
+
+  /** Stores a fresh namespace for a server that has none; returns the one that wins. */
+  static RemoteWorld adoptRemoteWorld(Properties settings, String server, String fresh) {
+    RemoteWorld known = remoteWorld(settings, server);
+    if (known != null) return known;
+    String value = normalizeRemoteWorldNamespace(fresh);
+    settings.setProperty(
+        CaptureIdentity.remoteSettingsKeyV2(CaptureIdentity.canonicalServer(server)), value);
+    return new RemoteWorld(value, null);
+  }
+
   static String remoteWorldNamespace(Properties settings, String server) {
     return normalizeRemoteWorldNamespace(
         settings.getProperty(CaptureIdentity.remoteSettingsKey(server), ""));
@@ -115,6 +144,8 @@ final class ClientSettings {
     String value = normalizeRemoteWorldNamespace(namespace);
     String key = CaptureIdentity.remoteSettingsKey(server);
     String previous = settings.getProperty(key, "").strip().toLowerCase(java.util.Locale.ROOT);
+    // An explicit choice replaces the automatic namespace, which would otherwise win.
+    settings.remove(CaptureIdentity.remoteSettingsKeyV2(CaptureIdentity.canonicalServer(server)));
     if (value.isEmpty()) settings.remove(key);
     else settings.setProperty(key, value);
     return !value.equals(previous);
