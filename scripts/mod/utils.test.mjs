@@ -24,7 +24,7 @@ test('run returns the trimmed output and honours the working directory', () => {
 })
 
 test('isMain is true only for the entry point of the process', () => {
-	const probe = `import { isMain } from ${JSON.stringify(import.meta.resolve('./utils.mjs'))}; console.log(isMain(import.meta.url), isMain('file:///elsewhere.mjs'))`
+	const probe = `import { isMain } from ${JSON.stringify(import.meta.resolve('./utils.mjs'))}; console.log([isMain(import.meta.url), isMain('file:///elsewhere.mjs')].join(' '))`
 	const directory = mkdtempSync(join(tmpdir(), 'utils-'))
 	const file = join(directory, 'probe.mjs')
 	writeFileSync(file, probe)
