@@ -193,10 +193,12 @@ final class ChunkedUploader {
             throw new IOException("Invalid upload API response", error);
           }
         }
-        UploadException error = new UploadException(status, response.body());
+        UploadException error =
+            new UploadException(
+                status, response.body(), response.headers().firstValue("Retry-After").orElse(null));
+        // A 429 is the API asking us to wait: retrying here would only hammer it.
         boolean transientFailure =
             status == 408
-                || status == 429
                 || status >= 500
                 || (status == 409 && response.body().contains("upload_busy"));
         if (!transientFailure || attempt == 2) throw error;
@@ -269,10 +271,12 @@ final class ChunkedUploader {
   private static final class UploadException extends IOException {
     private static final long serialVersionUID = 1L;
     private final int status;
+    private final long retryAfterSeconds;
 
-    UploadException(int status, String body) {
+    UploadException(int status, String body, String retryAfter) {
       super(message(status, body));
       this.status = status;
+      this.retryAfterSeconds = status == 429 ? UploadFailure.parseRetryAfter(retryAfter) : -1;
     }
 
     private static String message(int status, String body) {
@@ -291,6 +295,27 @@ final class ChunkedUploader {
       }
       return "Upload refused (HTTP " + status + "). Retry /minemories upload to resume.";
     }
+  }
+
+  /** Classifies an upload error; anything that is not an API refusal is {@code OTHER}. */
+  static UploadFailure classify(Throwable error) {
+    Throwable cause = error;
+    while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) {
+      cause = cause.getCause();
+    }
+    if (!(cause instanceof UploadException failure)) {
+      return new UploadFailure(UploadFailure.Kind.OTHER, -1, String.valueOf(cause.getMessage()));
+    }
+    UploadFailure.Kind kind =
+        switch (failure.status) {
+          case 429 -> UploadFailure.Kind.RATE_LIMITED;
+          case 401, 403 -> UploadFailure.Kind.UNAUTHORIZED;
+          default ->
+              StorageQuota.NO_SPACE_MESSAGE.equals(failure.getMessage())
+                  ? UploadFailure.Kind.QUOTA
+                  : UploadFailure.Kind.OTHER;
+        };
+    return new UploadFailure(kind, failure.retryAfterSeconds, failure.getMessage());
   }
 
   static boolean isAuthorizationFailure(IOException error) {
