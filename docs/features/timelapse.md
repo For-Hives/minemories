@@ -51,20 +51,32 @@ one; clearing makes the next connection create a fresh namespace (a new
 stack), which is the way to say "the server replaced its map". No universal
 UUID provided by the server is claimed.
 
-Configured UUIDs are kept per address in `config/minemories.properties`
-(keys `remoteWorld.<fingerprint>`). The screen validates a complete UUID; an
-invalid configuration value falls back to per-connection mode and can be
-cleared from that screen. Editing these keys by hand requires a client
-restart. The setting's identifier is not sent to the Minecraft server: the
+There is no in-game screen for the namespace. It can be replaced by editing
+`config/minemories.properties` by hand (a complete UUID in
+`remoteWorld2.<fingerprint>`, or the legacy `remoteWorld.<fingerprint>` of the raw
+address) and restarting the client; removing both keys makes the next
+connection create a new namespace. A value that is not a complete UUID is
+ignored with a warning and the connection falls back to per-connection mode. The setting's identifier is not sent to the Minecraft server: the
 captures contain the declared scope and the computed fingerprints. Uploading to
 the API still requires pairing. Actually changing an identifier invalidates the
 context of in-progress AFK captures/uploads; saving the same value does not.
 AFK preferences, the API and the device token are kept.
 
+In the gallery, captures with no usable identity (no `worldId`, or an old remote
+tag with neither seed nor scope) never stack with another capture, except inside
+a group that is a specific world (name and seed). A server label such as the
+default "Minecraft Server" is shared by unrelated servers, so captures there
+stand alone instead of being merged by position. Server tiles are still grouped
+by the label, but identified captures of two servers never share a series.
+
+Singleplayer ids hash the absolute save folder, the seed, the dimension and the
+profile: deleting a save and re-creating one with the same folder name and seed
+yields the same identity.
+
 Exploration follows the same remote boundaries. In per-connection mode, depths
 and zones stay in memory for at most eight dimensions, evicting the least
 recently used; no file is created per session. Returning to a dimension
-recovers its state as long as it is within that window. In configured mode,
+recovers its state as long as it is within that window. In persistent mode (the default for servers),
 histories are persisted under the chosen identity and recovered after a
 restart. Existing local histories keep their keys. Old remote histories are not
 automatically reassigned to a newly identified world. The configured setting is

@@ -240,7 +240,7 @@ function WorldSections({
 			chronological(
 				groupCaptures(memories).map(group => ({
 					...group,
-					areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null),
+					areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null, group.seeded),
 				}))
 			),
 		[memories]

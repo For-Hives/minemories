@@ -164,3 +164,28 @@ it('reports the first and last snapshot instants of a world, falling back to upl
 		])
 	).toEqual({ first: '2026-02-01T00:00:00Z', last: '2026-04-01T00:00:00Z' })
 })
+
+it('never stacks captures without identity unless their group is a specific seeded world', () => {
+	const capture = (id: string, serverName: string | null, seed: string | null) => ({
+		id,
+		metadata: {
+			worldName: serverName ? null : 'Home',
+			serverName,
+			seed,
+			worldId: null,
+			worldScope: null,
+			dimension: null,
+			x: 0,
+			y: 64,
+			z: 0,
+		},
+	})
+	const captures = [capture('a', 'Minecraft Server', null), capture('b', 'Minecraft Server', null)]
+	const groups = groupCaptures(captures.map(item => item.metadata).map((metadata, i) => ({ id: String(i), metadata })))
+	expect(groups.map(group => group.seeded)).toEqual([false])
+	const isolated = captureAreas(captures, () => false, false)
+	expect(isolated.map(area => area.stack.captures.map(item => item.id))).toEqual([['a'], ['b']])
+	expect(new Set(isolated.map(area => area.stack.key)).size).toBe(2)
+	expect(captureAreas(captures, () => false).map(area => area.stack.captures.length)).toEqual([2])
+	expect(groupCaptures([capture('c', null, '42')]).map(group => group.seeded)).toEqual([true])
+})

@@ -4,14 +4,14 @@ interface Capture {
 }
 
 export function groupCaptures<T extends Capture>(captures: T[]) {
-	const groups = new Map<string, { key: string; name: string; captures: T[] }>()
+	const groups = new Map<string, { key: string; name: string; seeded: boolean; captures: T[] }>()
 	for (const capture of captures) {
 		const { worldName, serverName, seed } = capture.metadata
 		const name = worldName || serverName || 'Other captures'
 		const key = JSON.stringify(worldName ? ['world', worldName, seed] : ['server', serverName])
 		let group = groups.get(key)
 		if (!group) {
-			group = { key, name, captures: [] }
+			group = { key, name, seeded: Boolean(worldName && seed), captures: [] }
 			groups.set(key, group)
 		}
 		group.captures.push(capture)
@@ -181,10 +181,15 @@ export interface CaptureArea<T> {
 	evolving: boolean
 }
 
-/** Identified captures of one world form a single evolving area; the others stay grouped by position. */
+/**
+ * Identified captures of one world form a single evolving area. Captures without identity are only stacked by
+ * position when `byPosition` says their group is a specific world (name and seed); a server label such as the
+ * default "Minecraft Server" is shared by unrelated servers, so there each capture stands alone.
+ */
 export function captureAreas<T extends IdentifiedCapture & LocatedCapture>(
 	captures: T[],
-	identified: (capture: T) => boolean
+	identified: (capture: T) => boolean,
+	byPosition = true
 ): CaptureArea<T>[] {
 	const { worlds, others } = bundleWorlds(captures, identified)
 	return [
@@ -192,8 +197,18 @@ export function captureAreas<T extends IdentifiedCapture & LocatedCapture>(
 			stack: { key: `world:${world.key}`, x: null, y: null, z: null, captures: world.captures },
 			evolving: true,
 		})),
-		...stackCaptures(others).map(stack => ({ stack, evolving: false })),
+		...(byPosition ? stackCaptures(others) : isolatedStacks(others)).map(stack => ({ stack, evolving: false })),
 	]
+}
+
+function isolatedStacks<T extends LocatedCapture>(captures: T[]): CaptureStack<T>[] {
+	return captures.map(capture => ({
+		key: `capture:${capture.id}`,
+		x: capture.metadata.x,
+		y: capture.metadata.y,
+		z: capture.metadata.z,
+		captures: [capture],
+	}))
 }
 
 /** `minecraft:snowy_taiga` → `Snowy taiga`; modded namespaces are dropped the same way. */
