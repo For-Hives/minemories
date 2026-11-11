@@ -5,7 +5,14 @@ import { type ImageCost, ImageReader, ImageWork, MAX_TEXTURE_DECODE_BYTES, MAX_T
 import { ktxCost } from './ktx-dimensions'
 import { jpegCost, pngCost, webpCost } from './raster-dimensions'
 
-export const MAX_GLB_IMAGES = 1024
+/**
+ * The mod writes one image per distinct sprite, so a capture in a large modpack holds thousands of
+ * small textures (1,229 in a 300-mod Fabric 1.20.1 pack, 1.8 Mpx in all). The pixel and byte budgets
+ * below bound the decoding cost; this count only bounds the per-image overhead. A real PNG costs
+ * about 416 header bytes and 2 header reads, so 4,096 images stay well within MAX_IMAGE_HEADER_BYTES
+ * and MAX_IMAGE_HEADERS.
+ */
+export const MAX_GLB_IMAGES = 4096
 export const MAX_GLB_TEXTURES = 4096
 const dimensions = new Map([
 	['image/png', pngCost],

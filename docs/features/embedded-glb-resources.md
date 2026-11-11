@@ -177,7 +177,7 @@ does not bypass the total.
 | Total pixels, repeated sources included | 67,108,864 |
 | Estimated decompressed size per image | 128 MiB |
 | Total estimated decompressed size | 512 MiB |
-| Images / textures | 1,024 / 4,096 |
+| Images / textures | 4,096 / 4,096 |
 | Bytes read for headers, across all images | 8 MiB |
 | Chunk headers, markers, boxes and extents walked | 16,384 |
 | Image read window | 4 KiB |
