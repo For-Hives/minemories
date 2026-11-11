@@ -669,9 +669,9 @@ test('a snapshot is downloaded as a GLB from its details sheet and from the snap
 })
 
 test('a stack shows the latest available preview, lazily, and the placeholder when none exists', async () => {
-	const older = capture('older', 'Cabin')
+	const older: ReturnType<typeof capture> = capture('older', 'Cabin')
 	older.createdAt = '2026-10-01T12:00:00Z'
-	older.metadata.thumbnail = 'data:image/png;base64,OLD'
+	;(older.metadata as { thumbnail: string | null }).thumbnail = 'data:image/png;base64,OLD'
 	const newer = capture('newer', 'Cabin')
 	newer.createdAt = '2026-10-02T12:00:00Z'
 	memories = [older, newer]
