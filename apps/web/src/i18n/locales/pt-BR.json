@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "Um link para uma memória, ou para um mundo inteiro com o controle deslizante no tempo.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Prefere uma imagem? Baixe o cartão postal em HD e poste no Discord.",
 	"Your memories go to your gallery on their own.": "Suas memórias vão para a sua galeria sozinhas.",
-	"In Minecraft": "No Minecraft",
-	"In the browser": "No navegador",
-	"Your base in the browser: change the time, spin around": "Sua base no navegador: mude a hora, gire em volta",
 	"HD postcard": "Cartão postal HD",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "O visualizador do Minemories num navegador, mostrando uma memória real de uma base de Minecraft às 17:40, com sua barra de ferramentas e a hora do dia.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "O cartão postal HD da mesma base, baixado com o botão Cartão postal do visualizador.",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "O menu M do mod aberto sobre uma base real no Minecraft, com o ponteiro em Tirar uma memória.",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "O menu M do mod (jogo em inglês) aberto sobre uma base real no Minecraft, com o ponteiro em Take a memory.",
-	"A tower in Minecraft.": "Uma torre no Minecraft.",
-	"The same tower in the Minemories viewer.": "A mesma torre no visualizador do Minemories."
+	"Play the clip": "Reproduzir o vídeo",
+	"Pause the clip": "Pausar o vídeo",
+	"Walk around inside, in first person": "Passeie por dentro, em primeira pessoa",
+	"In Minecraft, then in your browser.": "No Minecraft, depois no seu navegador.",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "No Minecraft, o menu M do mod abre sobre uma base real e um clique guarda uma memória.",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Uma base real no visualizador do Minemories: a câmera gira em volta dela, depois a hora vai da manhã ao pôr do sol.",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Um passeio em primeira pessoa por um caminho de uma base real, no visualizador do Minemories.",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "Uma casa de praia num servidor real no Minecraft, depois o mesmo lugar no visualizador do Minemories."
 }

@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "Ein Link für eine Erinnerung oder für eine ganze Welt, mit ihrem Zeitregler.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Lieber ein Bild? Lade die HD-Postkarte herunter und poste sie auf Discord.",
 	"Your memories go to your gallery on their own.": "Deine Erinnerungen landen von selbst in deiner Galerie.",
-	"In Minecraft": "In Minecraft",
-	"In the browser": "Im Browser",
-	"Your base in the browser: change the time, spin around": "Deine Basis im Browser: Uhrzeit ändern, drumherum drehen",
 	"HD postcard": "HD-Postkarte",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "Der Minemories-Viewer im Browser zeigt eine echte Erinnerung an eine Minecraft-Basis um 17:40, mit seiner Werkzeugleiste und seiner Tageszeit.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "Die HD-Postkarte derselben Basis, heruntergeladen mit der Schaltfläche Postkarte des Viewers.",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "Das M-Menü des Mods, geöffnet über einer echten Basis in Minecraft, der Zeiger auf Erinnerung festhalten.",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "Das M-Menü des Mods (Spiel auf Englisch), geöffnet über einer echten Basis in Minecraft, der Zeiger auf Take a memory.",
-	"A tower in Minecraft.": "Ein Turm in Minecraft.",
-	"The same tower in the Minemories viewer.": "Derselbe Turm im Minemories-Viewer."
+	"Play the clip": "Video abspielen",
+	"Pause the clip": "Video pausieren",
+	"Walk around inside, in first person": "Lauf darin herum, in der Egoperspektive",
+	"In Minecraft, then in your browser.": "In Minecraft, dann in deinem Browser.",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "In Minecraft öffnet sich das M-Menü des Mods über einer echten Basis, ein Klick nimmt eine Erinnerung auf.",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Eine echte Basis im Minemories-Viewer: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Ein Spaziergang in der Egoperspektive über einen Weg einer echten Basis, im Minemories-Viewer.",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "Ein Strandhaus auf einem echten Server in Minecraft, dann dieselbe Stelle im Minemories-Viewer."
 }

@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "Ссылка на одно воспоминание или на целый мир с ползунком во времени.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Хочешь картинку? Скачай открытку в HD и выложи её в Discord.",
 	"Your memories go to your gallery on their own.": "Твои воспоминания сами попадают в твою галерею.",
-	"In Minecraft": "В Minecraft",
-	"In the browser": "В браузере",
-	"Your base in the browser: change the time, spin around": "Твоя база в браузере: меняй время, крути камеру",
 	"HD postcard": "HD-открытка",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "3D-просмотр Minemories в браузере: настоящее воспоминание о базе в Minecraft в 17:40, с панелью инструментов и временем суток.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "HD-открытка той же базы, скачанная кнопкой «Открытка» в 3D-просмотре.",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "Меню M мода, открытое над настоящей базой в Minecraft, курсор на «Сделать воспоминание».",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "Меню M мода (игра на английском), открытое над настоящей базой в Minecraft, курсор на Take a memory.",
-	"A tower in Minecraft.": "Башня в Minecraft.",
-	"The same tower in the Minemories viewer.": "Та же башня в 3D-просмотре Minemories."
+	"Play the clip": "Включить видео",
+	"Pause the clip": "Поставить видео на паузу",
+	"Walk around inside, in first person": "Прогуляйся внутри, от первого лица",
+	"In Minecraft, then in your browser.": "В Minecraft, а потом в твоём браузере.",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "В Minecraft меню M мода открывается над настоящей базой, и один клик сохраняет воспоминание.",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Настоящая база в 3D-просмотре Minemories: камера облетает её, потом время суток идёт от утра до заката.",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Прогулка от первого лица по дорожке настоящей базы в 3D-просмотре Minemories.",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "Пляжный дом на настоящем сервере в Minecraft, а потом то же место в 3D-просмотре Minemories."
 }

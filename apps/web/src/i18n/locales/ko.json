@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "추억 하나의 링크도, 시간 슬라이더가 있는 월드 전체의 링크도 만들 수 있어요.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "이미지가 좋다면 HD 엽서를 내려받아 Discord에 올리세요.",
 	"Your memories go to your gallery on their own.": "추억이 자동으로 내 갤러리에 저장돼요.",
-	"In Minecraft": "Minecraft에서",
-	"In the browser": "브라우저에서",
-	"Your base in the browser: change the time, spin around": "브라우저 속 내 기지: 시간을 바꾸고 빙 둘러보세요",
 	"HD postcard": "HD 엽서",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "브라우저 속 Minemories 뷰어가 Minecraft 기지의 실제 추억을 17:40의 빛으로 보여 주며, 도구 막대와 시간대가 함께 보입니다.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "같은 기지의 HD 엽서로, 뷰어의 엽서 버튼으로 내려받았습니다.",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "실제 Minecraft 기지 위에 열린 모드의 M 메뉴이며, 포인터가 ‘추억 남기기’ 위에 있습니다.",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "실제 Minecraft 기지 위에 열린 모드의 M 메뉴(영어 게임)이며, 포인터가 Take a memory 위에 있습니다.",
-	"A tower in Minecraft.": "Minecraft 속 탑.",
-	"The same tower in the Minemories viewer.": "Minemories 뷰어 속 같은 탑."
+	"Play the clip": "영상 재생",
+	"Pause the clip": "영상 일시 정지",
+	"Walk around inside, in first person": "1인칭으로 안을 걸어 다녀 봐요",
+	"In Minecraft, then in your browser.": "Minecraft에서, 그다음 브라우저에서.",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "Minecraft에서 실제 기지 위로 모드의 M 메뉴가 열리고, 클릭 한 번으로 추억을 남겨요.",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Minemories 뷰어 속 실제 기지: 시점이 주위를 돌고, 시간이 아침에서 해 질 녘으로 흘러가요.",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Minemories 뷰어에서 실제 기지의 길을 따라 1인칭으로 걷는 모습.",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "Minecraft의 실제 서버에 있는 해변 집, 그다음 Minemories 뷰어 속 같은 장소."
 }

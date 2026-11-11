@@ -1,8 +1,8 @@
 /* ==========================================================================================================================================================
-   The landing's section pictures (components/HeroIllustrations.tsx): "Show your base to your friends" and "Server shutting down?".
-   Real screenshots of real use (public/hero/illus), only cropped and scaled, each with a short HTML caption in the game font so every word is translated.
-   They live in the text column (never under the dock: site.js counts them in the text's reach), at most 520 px wide. Static on purpose: nothing moves, so
-   reduced motion has nothing to stop.
+   The landing's section pictures (components/HeroIllustrations.tsx): "Show your base to your friends" and "Server shutting down?", and the clips of the
+   steps (components/HeroClip.tsx). Real footage of real use (public/hero/clips, public/hero/illus), only cropped and scaled, each with a short HTML caption
+   in the game font so every word is translated. They live in the text column (never under the dock: site.js counts .mm-illus and .mc-step in the text's
+   reach), at most 520 px wide. A clip plays only on screen; reduced motion keeps its poster frame (HeroClip decides, no CSS animation here).
    ========================================================================================================================================================== */
 
 .mm-illus {
@@ -82,31 +82,10 @@
 	}
 }
 
-/* ---------- Server shutting down?: the M menu in game (at most 1:1 at 2x, so its pixel font stays sharp), then the same tower in game and in the viewer ---------- */
+/* ---------- Server shutting down?: one spot in Minecraft, then in the viewer (a portrait clip, kept narrow) ---------- */
 
 .mm-illus--closing {
-	display: grid;
-	gap: var(--ds-sp-3);
-	width: min(100%, 400px);
-}
-
-/* One frame per language, from the page's own lang (fr and fr-CA see the French one); scoped under .mm-illus to win over `.mm-illus img`. */
-.mm-illus .mm-illus__menu--fr {
-	display: none;
-}
-
-.mm-illus .mm-illus__menu--fr:lang(fr) {
-	display: block;
-}
-
-.mm-illus .mm-illus__menu--en:lang(fr) {
-	display: none;
-}
-
-.mm-illus__pair {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: var(--ds-sp-2);
+	width: min(100%, 360px);
 }
 
 /* A desktop text column that leaves the dock little room (1000 to 1279 px wide screens): the pictures stay narrower than the column, so the model keeps
@@ -117,7 +96,7 @@
 	}
 
 	.mm-illus--closing {
-		width: min(100% - 48px, 400px);
+		width: min(100% - 48px, 360px);
 	}
 }
 
@@ -126,4 +105,105 @@
 	text-shadow: none;
 	font-size: 15px;
 	line-height: 1.35;
+}
+
+/* ---------- A clip (HeroClip): the poster frame holds the place, the video lies on it once it really plays ---------- */
+
+.mm-clip {
+	position: relative;
+	display: block;
+}
+
+.mm-clip .mm-clip__poster,
+.mm-clip .mm-clip__video {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--night-2);
+	border: 2px solid var(--outline);
+	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
+}
+
+.mm-clip .mm-clip__video {
+	position: absolute;
+	inset: 0;
+	height: 100%;
+	opacity: 0;
+	box-shadow: none;
+}
+
+.mm-clip[data-state='playing'] .mm-clip__video {
+	opacity: 1;
+}
+
+/* Play / pause: a small slot in the top left corner (the postcard covers the bottom right one, the viewer's own toolbar sits on the right), the
+   game's look; its name is the visible state's label (the other one is display: none). */
+.mm-clip__toggle {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	display: grid;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	background: rgb(20 17 14 / 0.78);
+	border: 2px solid var(--outline);
+	color: #fff;
+	cursor: pointer;
+}
+
+.mm-clip__toggle:hover,
+.mm-clip__toggle:focus-visible {
+	background: rgb(20 17 14 / 0.95);
+	outline: 2px solid #fff;
+	outline-offset: 0;
+}
+
+.mm-clip__label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.mm-clip__toggle[data-playing='true'] .mm-clip__label--play,
+.mm-clip__toggle[data-playing='false'] .mm-clip__label--pause {
+	display: none;
+}
+
+/* The icon: a triangle to play, two bars to pause, in plain blocks. */
+.mm-clip__icon {
+	width: 12px;
+	height: 14px;
+	background: currentcolor;
+	clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.mm-clip__toggle[data-playing='true'] .mm-clip__icon {
+	clip-path: none;
+	background: linear-gradient(90deg, currentcolor 0 35%, transparent 35% 65%, currentcolor 65%);
+}
+
+/* In a step card the clip sits under the sentence on a phone, and beside it on a wider screen, so the three steps stay short. */
+.mc-step__clip {
+	grid-column: 2;
+	width: min(100%, 360px);
+	margin-top: var(--ds-sp-2);
+}
+
+@media (min-width: 720px) {
+	.mc-step:has(.mc-step__clip) {
+		grid-template-columns: auto minmax(0, 1fr) minmax(0, 340px);
+		grid-template-rows: auto 1fr;
+	}
+
+	.mc-step .mc-step__clip {
+		grid-column: 3;
+		grid-row: 1 / span 2;
+		width: 100%;
+		margin-top: 0;
+	}
 }

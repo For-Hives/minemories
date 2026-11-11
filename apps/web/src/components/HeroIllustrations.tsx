@@ -1,38 +1,30 @@
 import { translate } from '../i18n/catalog'
+import { HeroClip } from './HeroClip'
 
 /**
- * The pictures of the landing's "Show your base to your friends" and "Server shutting down?" sections (hero/illus.css). Every picture is a real screenshot of real use,
- * cropped and scaled only (public/hero/illus, sources in docs/features/landing-film.md): the mod's M menu over a real base of an old modded server, the same
- * tower in Minecraft and in the viewer, the viewer showing a real memory, and the HD postcard its own Postcard button exported. Nothing is drawn on top; the
- * words are HTML captions, so they are translated and crisp.
- * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language. The in-game frame
- * exists in French and in English: CSS shows the French one under `:lang(fr)` (fr, fr-CA) and the English one elsewhere, from the page's own `lang`.
+ * The pictures of the landing's "Show your base to your friends" and "Server shutting down?" sections (hero/illus.css). Every picture is real footage of real use,
+ * cropped and scaled only (public/hero/clips and public/hero/illus, sources in docs/features/landing-film.md): a first-person walk in the real viewer, the HD
+ * postcard its own Postcard button exported, and one spot of an old modded server in Minecraft then in the viewer. Nothing is drawn on top; the words are
+ * HTML captions, so they are translated and crisp.
+ * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
  */
 const t = (key: string) => translate('fr', key)
 
-const viewerAlt =
-	'The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.'
 const postcardAlt = 'The HD postcard of the same base, downloaded with the viewer’s Postcard button.'
-/** The French frame shows the French label, quoted from the mod's fr_fr / fr_ca. */
-const menuAlt = 'The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.'
-/** The English frame, seen in every non-French language: its pointer is on the English label, whatever the visitor reads. */
-const menuEnAlt = 'The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.'
-const gameAlt = 'A tower in Minecraft.'
-const browserAlt = 'The same tower in the Minemories viewer.'
+const walkAlt = 'A first-person walk along a path of a real base, in the Minemories viewer.'
+const gameBrowserAlt = 'A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.'
 
 interface ShotProps {
 	readonly src: string
 	readonly alt: string
 	readonly width: number
 	readonly height: number
-	readonly className?: string
 }
 
 /** One real screenshot: lazy, of known size, with its description translated by the bridge. */
-function Shot({ src, alt, width, height, className }: ShotProps) {
+function Shot({ src, alt, width, height }: ShotProps) {
 	return (
 		<img
-			className={className}
 			src={src}
 			alt={t(alt)}
 			data-i18n-attr={`alt:${alt}`}
@@ -44,14 +36,14 @@ function Shot({ src, alt, width, height, className }: ShotProps) {
 	)
 }
 
-/** "Show your base to your friends": the real viewer turning around a real memory, and the HD postcard its Postcard button exported from it. */
+/** "Show your base to your friends": a first-person walk in the real viewer, and the HD postcard its Postcard button exported from the same base. */
 export function ShareIllustration() {
 	return (
 		<figure className="mm-illus mm-illus--share">
 			<div className="mm-illus__frame">
-				<Shot src="/hero/illus/viewer-base.webp" alt={viewerAlt} width={960} height={734} />
-				<p className="mm-illus__label" data-i18n="Your base in the browser: change the time, spin around">
-					{t('Your base in the browser: change the time, spin around')}
+				<HeroClip name="walk" width={640} height={512} alt={walkAlt} />
+				<p className="mm-illus__label" data-i18n="Walk around inside, in first person">
+					{t('Walk around inside, in first person')}
 				</p>
 			</div>
 			<div className="mm-illus__print">
@@ -64,43 +56,16 @@ export function ShareIllustration() {
 	)
 }
 
-/** "Server shutting down?": the mod's real M menu over a real base (French or English frame), then the same tower in Minecraft and in the viewer. */
+/** "Server shutting down?": one spot of a real server in Minecraft, then the same camera move in the real viewer. */
 export function ClosingIllustration() {
 	return (
 		<figure className="mm-illus mm-illus--closing">
 			<div className="mm-illus__frame">
-				<Shot
-					className="mm-illus__menu mm-illus__menu--fr"
-					src="/hero/illus/menu-fr.webp"
-					alt={menuAlt}
-					width={760}
-					height={650}
-				/>
-				<Shot
-					className="mm-illus__menu mm-illus__menu--en"
-					src="/hero/illus/menu-en.webp"
-					alt={menuEnAlt}
-					width={760}
-					height={650}
-				/>
+				<HeroClip name="game-browser" width={540} height={676} alt={gameBrowserAlt} />
 				<p className="mm-illus__label">
-					<span data-i18n="Press M → Take a memory.">{t('Press M → Take a memory.')}</span>{' '}
+					<span data-i18n="In Minecraft, then in your browser.">{t('In Minecraft, then in your browser.')}</span>{' '}
 					<span data-i18n="You don’t even need to be admin.">{t('You don’t even need to be admin.')}</span>
 				</p>
-			</div>
-			<div className="mm-illus__pair">
-				<div className="mm-illus__frame">
-					<Shot src="/hero/illus/game-tower.webp" alt={gameAlt} width={540} height={560} />
-					<p className="mm-illus__label" data-i18n="In Minecraft">
-						{t('In Minecraft')}
-					</p>
-				</div>
-				<div className="mm-illus__frame">
-					<Shot src="/hero/illus/viewer-tower.webp" alt={browserAlt} width={540} height={560} />
-					<p className="mm-illus__label" data-i18n="In the browser">
-						{t('In the browser')}
-					</p>
-				</div>
 			</div>
 		</figure>
 	)

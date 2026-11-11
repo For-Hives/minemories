@@ -4,6 +4,7 @@ import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
+import { HeroClip, type HeroClipProps } from './HeroClip'
 import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
 import { HeroFooterLinks, HeroQuestions } from './HeroParts'
 import { SiteNav } from './SiteNav'
@@ -31,8 +32,23 @@ function Experimental() {
 	)
 }
 
-/** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge. */
-function Step({ number, title, body }: { number: number; title: string; body: string }) {
+/** "Play.": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. */
+const menuClip: HeroClipProps = {
+	name: { fr: 'menu-fr', en: 'menu-en' },
+	width: 720,
+	height: 720,
+	alt: 'In Minecraft, the M menu opens over a real base and the pointer clicks Take a memory.',
+}
+/** "Revisit.": the real viewer turning around a real memory, then its time of day going from morning to sunset. */
+const viewerClip: HeroClipProps = {
+	name: 'viewer-time',
+	width: 720,
+	height: 550,
+	alt: 'A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.',
+}
+
+/** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge, and the clip that shows it, if any. */
+function Step({ number, title, body, clip }: { number: number; title: string; body: string; clip?: HeroClipProps }) {
 	return (
 		<li className="mc-step">
 			<span className="mc-step__num">
@@ -46,6 +62,7 @@ function Step({ number, title, body }: { number: number; title: string; body: st
 			<p className="mc-step__body" data-i18n={body}>
 				{t(body)}
 			</p>
+			{clip && <HeroClip className="mc-step__clip" {...clip} />}
 		</li>
 	)
 }
@@ -396,11 +413,13 @@ export const HeroMarkup = memo(function HeroMarkup() {
 								number={2}
 								title="Play."
 								body="Press M → Take a memory. Or just go AFK: the mod takes one for you."
+								clip={menuClip}
 							/>
 							<Step
 								number={3}
 								title="Revisit."
 								body="Connect the game to your gallery and walk around your world in 3D."
+								clip={viewerClip}
 							/>
 						</ol>
 					</section>

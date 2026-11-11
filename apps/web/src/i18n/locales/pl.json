@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "Link do jednego wspomnienia albo do całego świata, z suwakiem czasu.",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "Wolisz obrazek? Pobierz pocztówkę HD i wrzuć ją na Discord.",
 	"Your memories go to your gallery on their own.": "Twoje wspomnienia trafiają do galerii same.",
-	"In Minecraft": "W Minecraft",
-	"In the browser": "W przeglądarce",
-	"Your base in the browser: change the time, spin around": "Twoja baza w przeglądarce: zmień porę dnia, obróć widok",
 	"HD postcard": "Pocztówka HD",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "Podgląd 3D Minemories w przeglądarce pokazuje prawdziwe wspomnienie bazy z Minecraft o 17:40, z paskiem narzędzi i porą dnia.",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "Pocztówka HD tej samej bazy, pobrana przyciskiem Pocztówka w podglądzie 3D.",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "Menu M moda otwarte nad prawdziwą bazą w Minecraft, kursor na Zrób wspomnienie.",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "Menu M moda (gra po angielsku) otwarte nad prawdziwą bazą w Minecraft, kursor na Take a memory.",
-	"A tower in Minecraft.": "Wieża w Minecraft.",
-	"The same tower in the Minemories viewer.": "Ta sama wieża w podglądzie 3D Minemories."
+	"Play the clip": "Odtwórz wideo",
+	"Pause the clip": "Wstrzymaj wideo",
+	"Walk around inside, in first person": "Przejdź się po niej w widoku pierwszoosobowym",
+	"In Minecraft, then in your browser.": "W Minecraft, a potem w twojej przeglądarce.",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "W Minecraft menu M moda otwiera się nad prawdziwą bazą, a jedno kliknięcie zapisuje wspomnienie.",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Prawdziwa baza w podglądzie 3D Minemories: widok krąży wokół niej, a pora dnia przechodzi od rana do zachodu słońca.",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Spacer w widoku pierwszoosobowym po ścieżce prawdziwej bazy, w podglądzie 3D Minemories.",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "Dom na plaży na prawdziwym serwerze w Minecraft, a potem to samo miejsce w podglądzie 3D Minemories."
 }

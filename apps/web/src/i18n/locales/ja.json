@@ -1274,14 +1274,14 @@
 	"A link to one memory, or to a whole world with its timeline slider.": "思い出ひとつのリンクも、時間スライダー付きのワールド全体のリンクも作れます。",
 	"Prefer a picture? Download the HD postcard and post it on Discord.": "画像のほうがいい場合は、HD のポストカードをダウンロードして Discord に投稿できます。",
 	"Your memories go to your gallery on their own.": "思い出は自動でギャラリーに送られるよ。",
-	"In Minecraft": "Minecraft で",
-	"In the browser": "ブラウザで",
-	"Your base in the browser: change the time, spin around": "ブラウザの中の拠点：時間を変えて、ぐるっと回れる",
 	"HD postcard": "HD ポストカード",
-	"The Minemories viewer in a browser, showing a real memory of a Minecraft base at 17:40, with its toolbar and its time of day.": "ブラウザで開いた Minemories ビューアが、Minecraft の拠点の本物の思い出を 17:40 の光で表示しています。ツールバーと時刻も見えます。",
 	"The HD postcard of the same base, downloaded with the viewer’s Postcard button.": "同じ拠点の HD ポストカード。ビューアの「ポストカード」ボタンで保存したものです。",
-	"The mod’s M menu open over a real base in Minecraft, the pointer on Take a memory.": "本物の Minecraft の拠点の上に開いた mod の M メニュー。ポインターは「思い出を残す」の上にあります。",
-	"The mod’s M menu (English game) open over a real base in Minecraft, the pointer on Take a memory.": "本物の Minecraft の拠点の上に開いた mod の M メニュー（英語版のゲーム）。ポインターは Take a memory の上にあります。",
-	"A tower in Minecraft.": "Minecraft の中の塔。",
-	"The same tower in the Minemories viewer.": "Minemories ビューアの中の同じ塔。"
+	"Play the clip": "動画を再生",
+	"Pause the clip": "動画を一時停止",
+	"Walk around inside, in first person": "一人称視点で中を歩き回ろう",
+	"In Minecraft, then in your browser.": "Minecraft で、そのあとブラウザで。",
+	"In Minecraft, the mod’s M menu opens over a real base and a click takes a memory.": "Minecraft で本物の拠点の上に Mod の M メニューが開き、クリックひとつで思い出を残します。",
+	"A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.": "Minemories ビューアの本物の拠点: 視点がぐるりと回り、時刻が朝から夕暮れへ進みます。",
+	"A first-person walk along a path of a real base, in the Minemories viewer.": "Minemories ビューアで、本物の拠点の小道を一人称視点で歩いています。",
+	"A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.": "本物のサーバーにある海辺の家を Minecraft で、そのあと Minemories ビューアで同じ場所を。"
 }
