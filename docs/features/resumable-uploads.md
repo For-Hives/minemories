@@ -49,8 +49,13 @@ database, in `uploads`. **Keep the database and this folder on a shared
 persistent volume** to resume after a restart. This implementation targets a
 single API process using that volume; in-memory locks do not coordinate several replicas.
 
-Limits: two incomplete sessions per device, 128 globally, 2 GiB of declared size
-reserved for temporary files and four concurrent mutations/finalizations.
+Limits: four incomplete sessions per device (it was two), 128 globally, 2 GiB of
+declared size reserved for temporary files and four concurrent
+mutations/finalizations. A session that received no chunk for 10 minutes is
+abandoned: when a limit is reached, such sessions are discarded before the
+request is refused, and a file rejected at completion releases its slot at once.
+Only live uploads can therefore cause `429 upload_quota_exceeded`, which carries
+a `Retry-After` header (seconds, 30 to 600).
 Sessions expire after 24 hours. Cleanup runs at startup, every hour and on
 initialization. It removes temporary files and S3 objects/parts abandoned after
 a storage attempt; unavailable storage keeps the session for a later cleanup.

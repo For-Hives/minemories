@@ -64,6 +64,13 @@ function chunk(token: string, id: string, bytes: Buffer, offset = 0) {
 	})
 }
 
+async function fourSessions(token: string) {
+	const ids: string[] = []
+	// biome-ignore lint/performance/noAwaitInLoops: initializations are serialized by the API.
+	for (let index = 0; index < 4; index++) ids.push(await initialize(token))
+	return ids as [string, string, string, string]
+}
+
 async function assertExternalUploadRejected(bytes: Buffer) {
 	const { owner, token } = device()
 	const id = await initialize(token, bytes)
@@ -73,11 +80,9 @@ async function assertExternalUploadRejected(bytes: Buffer) {
 	expect(await response.json()).toEqual({ error: 'invalid_glb_or_checksum' })
 	expect(listMemories(owner)).toEqual([])
 	expect(existsSync(join(root, 'objects', owner, `${id}.glb`))).toBe(false)
-	expect(database.query('SELECT completed, storage_started FROM mod_uploads WHERE id = ?').get(id)).toEqual({
-		completed: 0,
-		storage_started: 0,
-	})
-	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(200)
+	// The rejected session releases its quota slot at once.
+	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id)).toBeNull()
+	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(404)
 }
 
 test('resumable upload refuses external resources, replacing JSON and incoherent geometry without storing or publishing them', async () => {
@@ -180,8 +185,11 @@ test('initialization is replayable, bounds size/metadata, quota and expiration',
 	expect(
 		(await request(token, '/', 'POST', JSON.stringify({ ...data, id: randomUUID(), metadata: { x: 'bad' } }))).status
 	).toBe(400)
-	await initialize(token)
-	expect((await request(token, '/', 'POST', JSON.stringify({ ...data, id: randomUUID() }))).status).toBe(429)
+	for (let index = 0; index < 3; index++) await initialize(token)
+	const refused = await request(token, '/', 'POST', JSON.stringify({ ...data, id: randomUUID() }))
+	expect(refused.status).toBe(429)
+	expect(await refused.json()).toEqual({ error: 'upload_quota_exceeded' })
+	expect(Number(refused.headers.get('retry-after'))).toBeGreaterThanOrEqual(30)
 	database.query('UPDATE mod_uploads SET expires_at = 0 WHERE id = ?').run(id)
 	expect((await request(token, `/${id}`)).status).toBe(404)
 	await cleanupUploads()
@@ -201,7 +209,7 @@ test('checks chunk sizes, content types, offsets and the full-file checksum', as
 	const invalid = Buffer.alloc(minimalGlb().length)
 	expect((await chunk(token, id, invalid)).status).toBe(200)
 	expect((await request(token, `/${id}/complete`, 'POST')).status).toBe(400)
-	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(200)
+	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(404)
 })
 
 test('a 450 MiB GLB uploads in 113 bounded chunks and finalizes without a full-file buffer', async () => {
@@ -313,4 +321,34 @@ test('expiration removes an uncommitted object but preserves a completed memory'
 	await cleanupUploads()
 	expect(existsSync(join(target, `${complete}.glb`))).toBe(true)
 	expect(listMemories(owner)).toHaveLength(1)
+})
+
+test('a burst of normal uploads is never refused, and finished or aborted sessions release their slot', async () => {
+	const { owner, token } = device()
+	const bytes = minimalGlb()
+	// biome-ignore lint/performance/noAwaitInLoops: the mod uploads its pending captures one after the other.
+	for (let index = 0; index < 12; index++) {
+		const id = await initialize(token, bytes)
+		expect((await chunk(token, id, bytes)).status).toBe(200)
+		expect((await request(token, `/${id}/complete`, 'POST')).status).toBe(201)
+	}
+	expect(listMemories(owner)).toHaveLength(12)
+	const live = await fourSessions(token)
+	const body = JSON.stringify({ id: randomUUID(), size: bytes.length, sha256: hash(bytes) })
+	expect((await request(token, '/', 'POST', body)).status).toBe(429)
+	expect((await request(token, `/${live[0]}`, 'DELETE')).status).toBe(200)
+	expect((await request(token, '/', 'POST', body)).status).toBe(201)
+})
+
+test('abandoned sessions are reclaimed instead of locking the device out until they expire', async () => {
+	const { token } = device()
+	const bytes = minimalGlb()
+	const abandoned = await fourSessions(token)
+	const body = JSON.stringify({ id: randomUUID(), size: bytes.length, sha256: hash(bytes) })
+	expect((await request(token, '/', 'POST', body)).status).toBe(429)
+	database.query('UPDATE mod_uploads SET updated_at = ? WHERE id = ?').run(Date.now() - 11 * 60_000, abandoned[0])
+	expect((await request(token, '/', 'POST', body)).status).toBe(201)
+	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(abandoned[0])).toBeNull()
+	expect(existsSync(join(root, 'uploads', abandoned[0]))).toBe(false)
+	expect((await request(token, `/${abandoned[1]}`)).status).toBe(200)
 })
