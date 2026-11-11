@@ -264,7 +264,8 @@ export function bootPace(t, C) {
 }
 
 /**
- * Drives #boot. The screen only plays on the landing ("/"), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace),
+ * Drives #boot. The screen only plays on the landing ("/"), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace;
+ * `C.quick` on a link to one of `C.sections`, which opens on the site rather than the film),
  * holds `C.hold` ms, then the film is revealed block by block. Its percentage follows the app's milestones (`mm:boot-progress`) and an estimate, never
  * faster than bootPace, and reaches 100 % only once the page has loaded and the app says it is on screen (`mm:ready`: the film's first image is drawn).
  * The map grows from the centre from its first frame (reduced motion fades instead of the reveal). The film waits for the screen: when the
@@ -272,13 +273,17 @@ export function bootPace(t, C) {
  * does hero.js start the film's clock, so the reveal uncovers its first second rather than its fifth. If anything stalls, the screen fades away
  * after `C.stop` ms anyway (the CSS does the same without JavaScript). Once gone, it leaves nothing behind: listeners removed, the reveal canvas freed.
  */
-export function bootScreen(doc, win, C) {
+export function bootScreen(doc, win, config) {
 	const boot = doc.getElementById('boot')
 	if (!boot) return
 	if (win.location.pathname !== '/') {
 		boot.remove()
 		return
 	}
+	// A link to a section (#steps, #faq…) opens on the site, with no film to wait for: the map fills in `quick` ms, not the film's `fill`, and
+	// catches up with a late app at twice that pace.
+	const quick = config.sections.includes(win.location.hash.slice(1))
+	const C = quick ? { ...config, fill: config.quick, catchup: config.quick / 2 } : config
 	const now = () => win.performance.now()
 	const t0 = now()
 	const map = boot.querySelector('canvas')

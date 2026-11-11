@@ -485,6 +485,16 @@ test('the film is let go once, when the percentage reads 100 %, before the hold 
 	assert.equal(h.sent().length, 1) // once, the screen's removal does not send it again
 })
 
+test('a link to a section of the site fills the map quickly: there is no film to wait for', () => {
+	const C = bootConfig()
+	assert.ok(C.quick < C.fill / 2)
+	assert.ok(C.sections.includes('steps') && C.sections.includes('server-closing'))
+	const link = timeline(bootHarness({ readyState: 'complete', ready: true, hash: '#steps' }), 8000, m => m.out)
+	assert.ok(link.full <= C.lead + C.quick + 50, `100 % at ${link.full} ms`)
+	const film = timeline(bootHarness({ readyState: 'complete', ready: true, hash: '#chapter-2' }), 8000, m => m.out)
+	assert.ok(film.full >= C.lead + C.fill - 50, `100 % at ${film.full} ms`)
+})
+
 test('a screen that never reaches 100 % still lets the film go when it leaves', () => {
 	const h = bootHarness()
 	h.run(19_900)
@@ -588,6 +598,7 @@ test('the inline script as written into index.html runs the same screen', () => 
 function bootHarness(options = {}) {
 	const {
 		pathname = '/',
+		hash = '',
 		reduced = false,
 		motion,
 		readyState = 'interactive',
@@ -654,7 +665,7 @@ function bootHarness(options = {}) {
 		documentElement: { dataset: { ...(motion ? { mcMotion: motion } : {}), ...(ready ? { mmReady: '1' } : {}) } },
 	}
 	const win = {
-		location: { pathname },
+		location: { pathname, hash },
 		performance: { now: () => time },
 		requestAnimationFrame: callback => frames.push(callback),
 		setTimeout: (callback, ms) => timers.push({ at: time + ms, callback }),

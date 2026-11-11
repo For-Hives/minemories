@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
+import { SITE_HASHES } from '../../apps/web/src/hero/phase.js'
 import {
 	bootDissolve,
 	bootFade,
@@ -181,12 +182,13 @@ export function inlineRuntime(config) {
 }
 
 /**
- * What the inline script receives: the map size and seed, the colours, the timings (ms) and the recentring (the player starts `from` cells off the
+ * What the inline script receives: the map size and seed, the colours, the anchors that open on the site (phase.js), the timings (ms: `quick` is
+ * the fill on such a link) and the recentring (the player starts `from` cells off the
  * centre, down and left as in the reference, and the view recentres from `at` of the fill). The tile is read back from the CSS (it is in the page once).
  */
 export function bootConfig() {
-	const timings = { lead: 350, fill: 4000, catchup: 2000, hold: 400, out: 1100, pop: 200, stop: 20000 }
-	return { n: 38, seed: SEED, colors: MAP_COLORS, at: 0.13, ...timings }
+	const timings = { lead: 350, fill: 4000, quick: 1200, catchup: 2000, hold: 400, out: 1100, pop: 200, stop: 20000 }
+	return { n: 38, seed: SEED, colors: MAP_COLORS, at: 0.13, sections: SITE_HASHES, ...timings }
 }
 
 /**
