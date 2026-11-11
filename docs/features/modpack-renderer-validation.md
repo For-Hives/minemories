@@ -351,3 +351,9 @@ Not recoverable from the GLB's side: block entities, entities and items that the
 `BlockRenderDispatcher.renderSingleBlock` use `BlockColors` with a null level, and a provider that
 returns white there is white in game too. Not exercised in game for this change: modded foliage that
 bakes vertex colours (only the unit test covers it).
+
+Regression guard: `GlbReport` (every loader's in-game test) fails when the oak, spruce or birch leaves, the
+grass block top or the short grass export with a white `baseColorFactor`. It prints its success line last, so the
+headless harness, which stops on that line, can no longer hide a failed assertion. Before 07ede8e the colour
+`FoliageColor.getEvergreenColor()` / `getBirchColor()` (an opaque, hence negative, ARGB int in 1.21.x) was
+discarded as "no tint", which exported spruce and birch leaves white.

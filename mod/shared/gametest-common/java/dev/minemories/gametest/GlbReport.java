@@ -23,6 +23,9 @@ public final class GlbReport {
     "setblock 4 -60 0 minecraft:oak_leaves[persistent=true]", // placed leaves with no log nearby would decay
     "setblock 5 -60 0 minecraft:grass_block",
     "setblock 5 -59 0 minecraft:" + GRASS,
+    // Constant-colour leaves (the game's spruce and birch providers return opaque ARGB) next to the biome-tinted ones.
+    "setblock 4 -59 0 minecraft:spruce_leaves[persistent=true]",
+    "setblock 4 -58 0 minecraft:birch_leaves[persistent=true]",
     "setblock 6 -60 0 minecraft:chest",
     "setblock 7 -60 0 minecraft:water",
     "setblock -3 -60 0 minecraft:torch",
@@ -58,7 +61,6 @@ public final class GlbReport {
             + " images=" + images + " nodes=" + nodes + "\n"
             + root.getAsJsonArray("materials") + "\n" + root.getAsJsonArray("meshes") + "\n";
     Files.writeString(summary, text);
-    System.out.println("MINEMORIES-GLB " + text.lines().findFirst().orElse(""));
     if (meshes == 0 || materials == 0 || images == 0)
       throw new AssertionError("Empty GLB: " + text.lines().findFirst().orElse(""));
     // Standard blocks, alpha (glass blends, leaves cut out), tint, a block entity, entities, fluid.
@@ -70,10 +72,36 @@ public final class GlbReport {
           "minecraft:water", "minecraft:torch", "minecraft:end_portal / rendered/minemories"
         })
       if (!text.contains(expected)) throw new AssertionError("Missing from GLB: " + expected);
+    // Foliage is tinted by the game's colour pipeline: a white factor means the tint was lost.
+    for (String foliage :
+        new String[] {
+          "oak_leaves", "spruce_leaves", "birch_leaves", "grass_block_top", "minecraft:" + GRASS + " / "
+        })
+      requireTinted(root, foliage);
     if (!text.contains("\"alphaMode\":\"BLEND\"") || !text.contains("\"alphaMode\":\"MASK\""))
       throw new AssertionError("Modes alpha BLEND et MASK attendus");
     if (!sealedFromInside(root, data, 20 + jsonLength + 8))
       throw new AssertionError("The air pocket on the +x edge is not sealed from inside");
+    // Last, so the harness (which stops on this line) never hides a failed assertion above.
+    System.out.println("MINEMORIES-GLB " + text.lines().findFirst().orElse(""));
+  }
+
+  /** Every material whose name contains {@code name} must carry a non-white base colour. */
+  static void requireTinted(JsonObject root, String name) {
+    int found = 0;
+    for (var element : root.getAsJsonArray("materials")) {
+      JsonObject material = element.getAsJsonObject();
+      if (!material.get("name").getAsString().contains(name)) continue;
+      found++;
+      var factor =
+          material.getAsJsonObject("pbrMetallicRoughness").getAsJsonArray("baseColorFactor");
+      float lowest = 1;
+      for (int channel = 0; channel < 3; channel++)
+        lowest = Math.min(lowest, factor.get(channel).getAsFloat());
+      if (lowest > 0.97f)
+        throw new AssertionError("Foliage exported white (tint lost): " + material.get("name"));
+    }
+    if (found == 0) throw new AssertionError("No foliage material named " + name);
   }
 
   /**
