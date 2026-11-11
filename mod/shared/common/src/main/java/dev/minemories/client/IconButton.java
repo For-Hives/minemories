@@ -9,15 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
-/** Button showing a vanilla item: big puts the item above the label, compact puts it beside. */
-final class IconButton extends Button {
-  private static final int COLOR_LABEL = 0xFFECE8DC;
-  private static final int COLOR_LABEL_OFF = 0xFFA3A79B;
-  private static final int COLOR_BACK = 0xFF3A3F3B;
-  private static final int COLOR_BACK_HOVER = 0xFF4B5A47;
-  private static final int COLOR_BACK_OFF = 0xFF2B2E2C;
-  private static final int COLOR_BORDER = 0xFF667063;
-  private static final int COLOR_FOCUS = 0xFFB2D8A0;
+/**
+ * Button showing a vanilla item on the game's own button face: big puts the item above the label,
+ * compact puts it beside.
+ */
+final class IconButton extends FaceButton {
   private final ItemStack icon;
   private final boolean big;
   private boolean status;
@@ -31,37 +27,30 @@ final class IconButton extends Button {
       Component label,
       Button.OnPress onPress,
       boolean big) {
-    super(x, y, width, height, label, onPress, DEFAULT_NARRATION);
+    super(x, y, width, height, label, onPress);
     this.icon = icon;
     this.big = big;
   }
 
-  /** Marks a toggle as on with a green bar along its top edge. */
+  /** Marks a toggle as on with an accent bar along its top edge. */
   void setStatus(boolean on) {
     status = on;
   }
 
   @Override
-  public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-    int right = getX() + width;
-    int bottom = getY() + height;
-    graphics.fill(getX(), getY(), right, bottom, isFocused() ? COLOR_FOCUS : COLOR_BORDER);
-    graphics.fill(getX() + 1, getY() + 1, right - 1, bottom - 1, background());
+  void drawContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     Font font = Minecraft.getInstance().font;
     if (big) drawBig(graphics, font);
     else drawCompact(graphics, font);
-    if (status) graphics.fill(getX() + 1, getY() + 1, right - 1, getY() + 4, 0xFF8FD694);
-  }
-
-  private int background() {
-    if (!active) return COLOR_BACK_OFF;
-    return isHoveredOrFocused() ? COLOR_BACK_HOVER : COLOR_BACK;
+    if (status) {
+      graphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + 4, UiTheme.OK);
+    }
   }
 
   private void drawBig(GuiGraphics graphics, Font font) {
     int center = getX() + width / 2;
     drawScaled(graphics, icon, center - 16, getY() + 5);
-    int color = active ? COLOR_LABEL : COLOR_LABEL_OFF;
+    int color = active ? UiTheme.TEXT : UiTheme.DISABLED;
     List<FormattedCharSequence> lines = font.split(getMessage(), width - 8);
     for (int i = 0; i < Math.min(2, lines.size()); i++) {
       FormattedCharSequence line = lines.get(i);
@@ -73,7 +62,7 @@ final class IconButton extends Button {
     graphics.renderItem(icon, getX() + 4, getY() + (height - 16) / 2);
     List<FormattedCharSequence> lines = font.split(getMessage(), width - 28);
     if (lines.isEmpty()) return;
-    int color = active ? COLOR_LABEL : COLOR_LABEL_OFF;
+    int color = active ? UiTheme.TEXT : UiTheme.DISABLED;
     graphics.drawString(
         font, lines.get(0), getX() + 24, getY() + (height - font.lineHeight) / 2, color);
   }
