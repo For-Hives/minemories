@@ -1,5 +1,9 @@
-/** How long the pointer rests on a menu's button before the menu opens (or takes over from the open one). */
-export const HOVER_OPEN_MS = 120
+/** How long the pointer rests on a menu's button before it takes over from the menu already open. */
+export const HOVER_OPEN_MS = 100
+/** How long the pointer rests on a menu's button before the first menu opens, when none is open: a pointer on its way somewhere else opens nothing. */
+export const HOVER_FIRST_OPEN_MS = 200
+/** A pointer that moves further than this (px) is not resting: the wait starts again from where it is. */
+export const HOVER_REST_PX = 4
 /** How long an open menu waits once the pointer has left its button and its panel: a diagonal move into the panel never closes it. */
 export const HOVER_CLOSE_MS = 280
 
@@ -24,35 +28,64 @@ export type HoverMenus<K> = {
 }
 
 export type HoverIntent<K> = {
-	/** The pointer entered a menu (its button or its panel). */
-	enter: (key: K) => void
+	/** The pointer entered a menu (its button or its panel), at (x, y). */
+	enter: (key: K, x?: number, y?: number) => void
+	/** The pointer moved to (x, y) inside a menu: unless it is resting, a pending open waits again. */
+	move: (x: number, y: number) => void
 	/** The pointer left a menu's button and panel. */
 	leave: () => void
 	/** Forgets what was about to open or close (a click, a key, the menu closed another way). */
 	cancel: () => void
 }
 
+export interface HoverDelays {
+	/** Rest before the first menu opens. */
+	readonly firstOpenMs: number
+	/** Rest before a menu takes over from the open one. */
+	readonly openMs: number
+	/** Grace before a menu the pointer left closes. */
+	readonly closeMs: number
+}
+
+const delays: HoverDelays = { firstOpenMs: HOVER_FIRST_OPEN_MS, openMs: HOVER_OPEN_MS, closeMs: HOVER_CLOSE_MS }
+
 /**
- * Hover intent for a bar of menus: resting on a button opens its menu (or switches from the open one) after `openMs`, so a pointer crossing
- * the bar opens nothing; leaving a menu closes it after `closeMs` unless the pointer comes back to it, or it was pinned by a click or a key.
- * One timer each for the whole bar: entering any menu cancels a pending close.
+ * Hover intent for a bar of menus: a pointer that rests on a button opens its menu, after `firstOpenMs` when none is open and `openMs` to switch
+ * from the open one; any move of more than HOVER_REST_PX restarts the wait, so a pointer crossing the bar opens nothing, whatever its speed. Leaving
+ * a menu closes it after `closeMs` unless the pointer comes back to it, or it was pinned by a click or a key. One timer each for the whole bar:
+ * entering any menu cancels a pending close.
  */
-export function hoverIntent<K>(menus: HoverMenus<K>, openMs = HOVER_OPEN_MS, closeMs = HOVER_CLOSE_MS): HoverIntent<K> {
+export function hoverIntent<K>(menus: HoverMenus<K>, { firstOpenMs, openMs, closeMs } = delays): HoverIntent<K> {
 	let opening: ReturnType<typeof setTimeout> | undefined
 	let closing: ReturnType<typeof setTimeout> | undefined
+	let pending: { key: K; x: number; y: number } | undefined
 	const cancel = () => {
 		clearTimeout(opening)
 		clearTimeout(closing)
 		opening = closing = undefined
+		pending = undefined
+	}
+	const arm = (key: K) => {
+		clearTimeout(opening)
+		opening = setTimeout(
+			() => {
+				opening = pending = undefined
+				menus.show(key)
+			},
+			menus.open() === null ? firstOpenMs : openMs
+		)
 	}
 	return {
-		enter(key) {
+		enter(key, x = 0, y = 0) {
 			cancel()
 			if (menus.open() === key) return
-			opening = setTimeout(() => {
-				opening = undefined
-				menus.show(key)
-			}, openMs)
+			pending = { key, x, y }
+			arm(key)
+		},
+		move(x, y) {
+			if (!pending || Math.hypot(x - pending.x, y - pending.y) <= HOVER_REST_PX) return
+			pending = { key: pending.key, x, y }
+			arm(pending.key)
 		},
 		leave() {
 			cancel()

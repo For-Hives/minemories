@@ -83,7 +83,7 @@ function inertAround(kept: Element): Element[] {
 }
 
 /**
- * Hover for the bar's menus (lib/hover-intent.ts), on a mouse with a fine-pointer screen only: resting on a menu opens it, leaving its button
+ * Hover for the bar's menus (lib/hover-intent.ts), on a mouse with a fine-pointer screen only: resting on a menu opens it (moving restarts the wait), leaving its button
  * and panel closes it after a grace delay. A click or a key pins the menu (`pin`): the pointer leaving no longer closes it. A touch opens
  * nothing; the click and the keys work as before everywhere. `handlers(key)` goes on the element holding a menu's button and panel.
  */
@@ -114,7 +114,10 @@ export function useHoverMenus<K>(open: K | null, setOpen: (key: K | null) => voi
 	return {
 		handlers: (key: K) => ({
 			onPointerEnter: (event: ReactPointerEvent) => {
-				if (canHoverOpen(event.pointerType)) intent.enter(key)
+				if (canHoverOpen(event.pointerType)) intent.enter(key, event.clientX, event.clientY)
+			},
+			onPointerMove: (event: ReactPointerEvent) => {
+				if (canHoverOpen(event.pointerType)) intent.move(event.clientX, event.clientY)
 			},
 			onPointerLeave: (event: ReactPointerEvent) => {
 				if (canHoverOpen(event.pointerType)) intent.leave()

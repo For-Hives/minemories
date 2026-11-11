@@ -241,8 +241,14 @@ test('a mouse resting on a menu opens it, moves between menus, and leaving close
 	fireEvent.pointerLeave(item('Product'), mouse)
 	act(() => vi.advanceTimersByTime(200))
 	expect(expanded('Product')).toBe('false')
-	fireEvent.pointerEnter(item('Product'), mouse)
-	act(() => vi.advanceTimersByTime(120))
+	// sliding along a button keeps restarting the wait: only a pointer at rest opens
+	fireEvent.pointerEnter(item('Product'), { ...mouse, clientX: 0, clientY: 10 })
+	for (const clientX of [30, 60, 90]) {
+		act(() => vi.advanceTimersByTime(150))
+		fireEvent.pointerMove(item('Product'), { ...mouse, clientX, clientY: 10 })
+	}
+	expect(expanded('Product')).toBe('false')
+	act(() => vi.advanceTimersByTime(200))
 	expect(expanded('Product')).toBe('true')
 	// a diagonal move into the panel crosses Guides for a moment: Product stays
 	const panel = document.getElementById('mm-menu-product') as HTMLElement
@@ -274,7 +280,7 @@ test('a click pins a menu the mouse opened, the next click closes it; a key pins
 	mount('/faq')
 	const mouse = { pointerType: 'mouse' }
 	fireEvent.pointerEnter(item('Guides'), mouse)
-	act(() => vi.advanceTimersByTime(120))
+	act(() => vi.advanceTimersByTime(200))
 	fireEvent.click(trigger('Guides'))
 	expect(expanded('Guides')).toBe('true')
 	fireEvent.pointerLeave(item('Guides'), mouse)
@@ -295,7 +301,7 @@ test('a click pins a menu the mouse opened, the next click closes it; a key pins
 	fireEvent.keyDown(trigger('Help'), { key: 'Escape' })
 	expect(expanded('Help')).toBe('false')
 	fireEvent.pointerEnter(item('Help'), mouse)
-	act(() => vi.advanceTimersByTime(120))
+	act(() => vi.advanceTimersByTime(200))
 	fireEvent.pointerLeave(item('Help'), mouse)
 	act(() => vi.advanceTimersByTime(300))
 	expect(expanded('Help')).toBe('false')
@@ -386,13 +392,13 @@ test('the account opens on hover like the menus: a click pins it, leaving an unp
 	const account = screen.getByRole('button', { name: 'Noa — My account' })
 	const root = account.closest('.mm-nav-account') as HTMLElement
 	fireEvent.pointerEnter(root, mouse)
-	act(() => vi.advanceTimersByTime(120))
+	act(() => vi.advanceTimersByTime(200))
 	expect(account.getAttribute('aria-expanded')).toBe('true')
 	fireEvent.pointerLeave(root, mouse)
 	act(() => vi.advanceTimersByTime(300))
 	expect(account.getAttribute('aria-expanded')).toBe('false')
 	fireEvent.pointerEnter(root, mouse)
-	act(() => vi.advanceTimersByTime(120))
+	act(() => vi.advanceTimersByTime(200))
 	fireEvent.click(account)
 	fireEvent.pointerLeave(root, mouse)
 	act(() => vi.advanceTimersByTime(1000))
