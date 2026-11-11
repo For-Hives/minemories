@@ -27,13 +27,7 @@
 	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
 }
 
-/* A short caption under each screenshot: what it shows, in the visitor's language. */
-.mm-illus__label {
-	margin: 6px 0 0;
-	text-shadow: 2px 2px 0 #3f3f3f;
-}
-
-/* ---------- Show your base to your friends: the viewer, its caption on its whole width, and the postcard it exported under them, tilted like a print
+/* ---------- Show your base to your friends: the viewer, its caption on its whole width, and the postcard it exported under them, tilted like a print with no caption
    (it never covers the viewer's time panel or toolbar) ---------- */
 
 .mm-illus--share .mm-illus__frame {
@@ -50,10 +44,6 @@
 .mm-illus__print img {
 	border: 6px solid #f2ede4;
 	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.45);
-}
-
-.mm-illus__print .mm-illus__label {
-	text-align: right;
 }
 
 @media (max-width: 599px) {
@@ -82,13 +72,6 @@
 	.mm-illus--closing {
 		width: min(100% - 48px, 360px);
 	}
-}
-
-/* The readable font option: the same captions in the sans-serif, without the pixel shadow. */
-[data-mc-font='read'] .mm-illus__label {
-	text-shadow: none;
-	font-size: 15px;
-	line-height: 1.35;
 }
 
 /* ---------- A clip (HeroClip): the poster frame holds the place, the video lies on it once it really plays ---------- */

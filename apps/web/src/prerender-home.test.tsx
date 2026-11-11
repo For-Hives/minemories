@@ -17,7 +17,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Rien n’est envoyé tant que tu n’as pas connecté le jeu')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
-	expect(html).toContain('Carte postale HD')
+	expect(html).toContain('Choisis l’heure, du matin au coucher du soleil')
 	expect(html).toContain('/hero/illus/postcard-hd.webp')
 	for (const clip of ['menu-fr', 'menu-en', 'viewer-time', 'walk', 'game-browser'])
 		expect(html).toContain(`/hero/clips/${clip}.webp`)

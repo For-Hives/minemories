@@ -67,16 +67,15 @@ test('the pictures are real footage: two clips and the postcard, lazy, of known 
 	expect(root.querySelector('video')).toBeNull()
 	expect(root.querySelectorAll('.mm-clip')).toHaveLength(2)
 	// rendered in French, like the rest of the prerendered landing; no drawn interface, only captions and the game/browser chip
-	expect([...root.querySelectorAll('.mm-clip__caption, .mm-illus__label')].map(label => label.textContent)).toEqual([
+	expect([...root.querySelectorAll('.mm-clip__caption')].map(label => label.textContent)).toEqual([
 		'Choisis l’heure, du matin au coucher du soleil',
-		'Carte postale HD',
 		'Pas besoin d’être admin du serveur.',
 	])
 	expect([...root.querySelectorAll('.mm-clip__side')].map(side => side.textContent)).toEqual([
 		'Dans Minecraft',
 		'Dans ton navigateur',
 	])
-	expect(root.querySelector('.mm-illus__hub, .mm-illus__msg, .mm-illus__chat')).toBeNull()
+	expect(root.querySelector('.mm-illus__hub, .mm-illus__msg, .mm-illus__chat, .mm-illus__print p')).toBeNull()
 })
 
 test('the film bridge rewrites every caption, description and button label in the visitor language', async () => {
@@ -85,7 +84,6 @@ test('the film bridge rewrites every caption, description and button label in th
 	createHeroI18n('de', document).apply(root)
 	expect(root.textContent).toContain('In deinem Browser')
 	expect(root.textContent).toContain('Du musst nicht Admin des Servers sein.')
-	expect(root.textContent).toContain('HD-Postkarte')
 	expect(root.textContent).toContain('Video abspielen')
 	expect(root.querySelector('img[src="/hero/clips/viewer-time.webp"]')?.getAttribute('alt')).toBe(
 		'Eine echte Basis im Minemories-Viewer: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.'

@@ -5,7 +5,7 @@ import { HeroClip } from './HeroClip'
  * The pictures of the landing's "Show your base to your friends" and "Server shutting down?" sections (hero/illus.css). Every picture is real footage of real use,
  * cropped, scaled and cut only (public/hero/clips and public/hero/illus, sources in docs/features/landing-film.md): the real viewer turning around a base and
  * going from morning to sunset, the HD postcard its own Postcard button exported, and one spot of an old modded server in Minecraft then in the viewer.
- * Nothing is burned into the pictures; the words (captions, the game/browser chip) are HTML, so they are translated and crisp.
+ * Nothing is burned into the pictures; the words (clip captions, the game/browser chip) are HTML, so they are translated and crisp.
  * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
  */
 const t = (key: string) => translate('fr', key)
@@ -49,9 +49,6 @@ export function ShareIllustration() {
 			</div>
 			<div className="mm-illus__print">
 				<Shot src="/hero/illus/postcard-hd.webp" alt={postcardAlt} width={640} height={360} />
-				<p className="mm-illus__label" data-i18n="HD postcard">
-					{t('HD postcard')}
-				</p>
 			</div>
 		</figure>
 	)
