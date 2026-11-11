@@ -35,6 +35,19 @@ final class RenderedTextureTest {
   }
 
   @Test
+  void aStrayAntialiasedTexelDoesNotMakeACutoutTranslucent() throws IOException {
+    // 64 visible texels, one half-transparent, the rest cutout: like the creeper's skin.
+    int[] rgba = new int[65];
+    java.util.Arrays.fill(rgba, 0xffffffff);
+    rgba[0] = 0x00ffffff;
+    rgba[1] = 0x80ffffff;
+    assertEquals(1, RenderedTexture.fromRgba(65, 1, rgba).alphaMode());
+    assertEquals(1, RenderedTexture.alphaMode(false, 1, 100), "partial alpha only still cuts out");
+    assertEquals(0, RenderedTexture.alphaMode(false, 0, 100));
+    assertEquals(2, RenderedTexture.alphaMode(true, 4, 100), "stained glass stays translucent");
+  }
+
+  @Test
   void checksDimensionsBeforeAllocatingTheImage() throws IOException {
     RenderedTexture.checkDimensions(2048, 2048);
     for (int[] size : new int[][] {{0, 1}, {1, 0}, {-1, 1}, {2049, 2048}, {Integer.MAX_VALUE, 2}}) {

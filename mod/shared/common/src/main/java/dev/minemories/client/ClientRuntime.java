@@ -1924,12 +1924,14 @@ public final class ClientRuntime {
       BufferedImage image =
           new BufferedImage(
               sprite.contents().width(), sprite.contents().height(), BufferedImage.TYPE_INT_ARGB);
-      boolean transparent = false, translucent = false;
+      boolean transparent = false;
+      long partial = 0, visible = 0;
       for (int py = 0; py < image.getHeight(); py++)
         for (int px = 0; px < image.getWidth(); px++) {
           int pixel = ClientPlatforms.current().spritePixel(sprite, px, py), alpha = pixel >>> 24;
           transparent |= alpha == 0;
-          translucent |= alpha != 0 && alpha != 255;
+          if (alpha != 0) visible++;
+          if (alpha != 0 && alpha != 255) partial++;
           image.setRGB(
               px,
               py,
@@ -1938,7 +1940,7 @@ public final class ClientRuntime {
                   | (pixel & 0x0000FF00)
                   | ((pixel >>> 16) & 255));
         }
-      alphaMode = translucent ? 2 : transparent ? 1 : 0;
+      alphaMode = RenderedTexture.alphaMode(transparent, partial, visible);
       ByteArrayOutputStream bytes = new ByteArrayOutputStream();
       ImageIO.write(image, "png", bytes);
       png = bytes.toByteArray();
