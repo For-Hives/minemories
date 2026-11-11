@@ -58,12 +58,89 @@ export interface ClipMoment {
 	readonly pageVisible: boolean
 	/** `html[data-phase]`: 'film' and 'glide' while the landing's film runs; absent or 'site' once the page is there. */
 	readonly phase?: string | undefined
+	/** The loading screen (#boot) still covers the page: a link to a section is already in 'site' phase under it. */
+	readonly booting?: boolean | undefined
+	/** This clip is the most visible one (ClipStage): only one clip plays by itself at a time. Absent means it is. */
+	readonly foremost?: boolean | undefined
 }
 
-/** A clip plays only on screen, in a visible tab, once the film has handed over to the page, and when the visitor's settings or choice allow it. */
+/** The page is there for the visitor: the film has handed over and the loading screen is gone. */
+function pageShown(moment: Pick<ClipMoment, 'phase' | 'booting'>): boolean {
+	return !(moment.booting || moment.phase === 'film' || moment.phase === 'glide')
+}
+
+/**
+ * A clip plays only on screen, in a visible tab, once the film and the loading screen have handed over to the page, and when the visitor's settings
+ * or choice allow it. By itself, only the foremost clip plays; the visitor's play button overrides that.
+ */
 export function clipShouldPlay(moment: ClipMoment): boolean {
-	if (!(moment.inView && moment.pageVisible)) return false
-	if (moment.phase === 'film' || moment.phase === 'glide') return false
+	if (!(moment.inView && moment.pageVisible && pageShown(moment))) return false
 	if (moment.choice) return moment.choice === 'play'
-	return moment.mode === 'auto'
+	return moment.mode === 'auto' && moment.foremost !== false
+}
+
+/** Whether a clip close to the screen may fetch its file ahead of time: only one that would start by itself, and never under the film or the loading screen. */
+export function clipMayPreload(
+	moment: Pick<ClipMoment, 'mode' | 'phase' | 'booting'> & { readonly near: boolean }
+): boolean {
+	return moment.near && moment.mode === 'auto' && pageShown(moment)
+}
+
+/** A clip cut from one place to another (the game, then the browser): which side a frame at `time` seconds is on. */
+export function clipSide(time: number, cutAt: number): 'before' | 'after' {
+	return time >= cutAt ? 'after' : 'before'
+}
+
+/**
+ * The clips on the page and how much of each is on screen, so that only the most visible one plays by itself (several moving pictures at once
+ * compete). A clip reports its visible ratio; `foremost()` is the clip with the largest ratio at or above `seen`, the earliest registered on a tie.
+ */
+export interface ClipStage {
+	/** Registers a clip and returns its id. */
+	add: () => number
+	/** The clip's visible ratio (0 when off screen). */
+	report: (id: number, ratio: number) => void
+	remove: (id: number) => void
+	foremost: () => number | null
+	/** Called on every change of the foremost clip; returns the unsubscribe function. */
+	subscribe: (listener: () => void) => () => void
+}
+
+export function createClipStage(seen: number): ClipStage {
+	const ratios = new Map<number, number>()
+	const listeners = new Set<() => void>()
+	let next = 0
+	let current: number | null = null
+	const pick = () => {
+		let best: number | null = null
+		let bestRatio = seen
+		for (const [id, ratio] of ratios)
+			if (ratio > bestRatio || (best === null && ratio >= seen)) {
+				best = id
+				bestRatio = ratio
+			}
+		if (best === current) return
+		current = best
+		for (const listener of listeners) listener()
+	}
+	return {
+		add: () => {
+			next += 1
+			ratios.set(next, 0)
+			return next
+		},
+		report: (id, ratio) => {
+			ratios.set(id, ratio)
+			pick()
+		},
+		remove: id => {
+			ratios.delete(id)
+			pick()
+		},
+		foremost: () => current,
+		subscribe: listener => {
+			listeners.add(listener)
+			return () => listeners.delete(listener)
+		},
+	}
 }
