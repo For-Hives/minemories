@@ -792,6 +792,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
               + category.id()
               + "\""
               + Quantization.transform(plans.get(category))
+              + category.nodeExtras()
               + ",\"mesh\":"
               + index++
               + "}");

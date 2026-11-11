@@ -370,6 +370,7 @@ public final class GlbScene {
               + category.id()
               + "\""
               + Quantization.transform(plans.get(category))
+              + category.nodeExtras()
               + ",\"mesh\":"
               + meshes.size()
               + "}");

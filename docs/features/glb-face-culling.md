@@ -87,6 +87,23 @@ It is capped at 6,000,000 visited cells; past the cap nothing is sealed, which i
 The progressive capture runs it in slices of 20,000 cells before the first block, and treats chunks it
 has not received as solid.
 
+### Where the seals live in the GLB
+
+Seals are invented geometry, so they are kept apart from the world (`GlbCategory.CUT`):
+
+- their own node and mesh named `minemories:cut`, with `extras.minemories.virtual = true` on the node
+  (`categories["minemories:cut"]` in the asset metadata counts its quads);
+- their primitives are never shared with a real block's, even for the same texture, tint and alpha:
+  the category is part of the part key of both writers (`GlbScene`, `SpoolingGlbScene`);
+- their materials keep the `minemories:cut / <sprite>` name prefix;
+- they are not counted in the chunk statistics (`ChunkStats`), so they cannot move a chunk's score or
+  fingerprint.
+
+A reader can hide, restyle or drop that node without touching a real block. The viewer's layer toggles
+only know the five world categories (`apps/web/src/lib/glb-categories.ts`), so the node is rendered
+like any other and has no toggle yet; bounds, face counts and the derivative pipeline read geometry
+generically and are unaffected.
+
 The seal looks like the nearest opaque cube in the cell's column (`CutBoundary.nearestSolid`: the cave
 floor first, then the ceiling), so it is sand in a desert, netherrack in the Nether, end stone in the End.
 A column without any opaque cube falls back to the dimension's rock (`CutBoundary.fallback`: netherrack,

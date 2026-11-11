@@ -109,6 +109,68 @@ final class GlbStructureTest {
   }
 
   @Test
+  void inventedCutGeometryLivesInItsOwnNodeMeshAndPrimitivesWithAMarker() throws IOException {
+    GlbScene memory = new GlbScene();
+    Path a = temporary.resolve("cut-memory.glb"), b = temporary.resolve("cut-spool.glb");
+    try (SpoolingGlbScene spool = new SpoolingGlbScene(temporary)) {
+      for (int writer = 0; writer < 2; writer++) {
+        for (GlbCategory category : new GlbCategory[] {GlbCategory.TERRAIN, GlbCategory.CUT}) {
+          // Same key, same texture: only the category keeps the two apart.
+          if (writer == 0)
+            memory.addQuad(
+                category,
+                0,
+                0,
+                "stone",
+                "stone",
+                "sprite",
+                SpoolingGlbSceneTest.PNG,
+                0,
+                0,
+                0,
+                1,
+                square(category == GlbCategory.CUT ? 5 : 0, 0),
+                UV);
+          else
+            spool.addQuad(
+                category,
+                0,
+                0,
+                "stone",
+                "stone",
+                "sprite",
+                SpoolingGlbSceneTest.PNG,
+                0,
+                0,
+                0,
+                1,
+                square(category == GlbCategory.CUT ? 5 : 0, 0),
+                UV);
+        }
+      }
+      memory.write(a);
+      spool.write(b);
+    }
+    assertArrayEquals(Files.readAllBytes(a), Files.readAllBytes(b));
+    String text = json(a);
+    assertTrue(text.contains("\"minemories:cut\":{\"quads\":1}"), text);
+    assertTrue(text.contains("{\"name\":\"minemories:cut\",\"translation\""), text);
+    assertTrue(text.contains("\"extras\":{\"minemories\":{\"virtual\":true}}"), text);
+    assertEquals(
+        1, text.split("\\{\"name\":\"terrain\",\"translation\"", -1).length - 1, "one real node");
+    assertFalse(text.contains("{\"name\":\"terrain\"," + "\"extras\""));
+    assertTrue(text.contains("{\"name\":\"minemories:cut\",\"primitives\":["), text);
+    assertEquals(2, text.split("\"primitives\":\\[", -1).length - 1, "one primitive each");
+  }
+
+  @Test
+  void inventedGeometryDoesNotCountInTheChunkStatistics() {
+    ChunkStats stats = new ChunkStats();
+    stats.quad(GlbCategory.CUT, 0, 0, "minemories:cut / stone", square(0, 0));
+    assertEquals(0, stats.snapshot().size());
+  }
+
+  @Test
   void bothWritersEmitTheSameBytes() throws IOException {
     written(false);
     written(true);
