@@ -572,9 +572,18 @@ public final class ClientRuntime {
     if (currentServer == null || connection == null || !connection.getConnection().isConnected())
       return null;
     var binding = remoteWorldBinding(mc);
-    return "remote:"
-        + CaptureIdentity.remote(
-            currentServer.ip, "", "", binding.namespace(), binding.configured());
+    return "remote:" + remoteId(binding, currentServer.ip, "", "");
+  }
+
+  private static String remoteId(
+      RemoteCaptureSession.Binding binding, String server, String dimension, String player) {
+    if (!binding.configured())
+      return CaptureIdentity.remote(server, dimension, player, binding.namespace(), false);
+    if (binding.legacyServer() != null)
+      return CaptureIdentity.remote(
+          binding.legacyServer(), dimension, player, binding.namespace(), true);
+    return CaptureIdentity.remoteV2(
+        CaptureIdentity.canonicalServer(server), dimension, player, binding.namespace());
   }
 
   private static String capturePlayerIdentity(Minecraft mc) {
@@ -592,11 +601,11 @@ public final class ClientRuntime {
         server,
         () -> {
           try {
-            return PairingClient.remoteWorldNamespace(server);
+            return PairingClient.remoteWorld(server);
           } catch (RuntimeException error) {
             LOGGER.warn(
                 "Invalid remote world identifier; keeping captures separated by connection.");
-            return "";
+            return null;
           }
         });
   }
@@ -622,10 +631,8 @@ public final class ClientRuntime {
       if (currentServer == null) return;
       String server = currentServer.ip;
       var binding = remoteWorldBinding(mc);
-      boolean persistent = binding.configured();
-      String namespace = binding.namespace();
-      id = CaptureIdentity.remote(server, dimension, player, namespace, persistent);
-      metadata.addProperty("worldScope", persistent ? "namespace" : "session");
+      id = remoteId(binding, server, dimension, player);
+      metadata.addProperty("worldScope", binding.configured() ? "namespace" : "session");
     }
     metadata.addProperty("worldId", id);
     metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));

@@ -339,6 +339,33 @@ class ClientSettingsTest {
   }
 
   @Test
+  void aServerKeepsOnePersistentNamespaceWhateverItsAddressSpellingAndLegacyOnesSurvive() {
+    Properties settings = paired();
+    assertNull(ClientSettings.remoteWorld(settings, "Example.com:25565"));
+    String fresh = "abcdef12-3456-4789-8abc-def012345678";
+    var adopted = ClientSettings.adoptRemoteWorld(settings, "Example.com:25565", fresh);
+    assertEquals(new ClientSettings.RemoteWorld(fresh, null), adopted);
+    assertEquals(adopted, ClientSettings.remoteWorld(settings, "example.com."));
+    assertEquals(
+        adopted,
+        ClientSettings.adoptRemoteWorld(
+            settings, "example.com", "11111111-1111-4111-8111-111111111111"));
+    assertNull(ClientSettings.remoteWorld(settings, "other.com"));
+    String legacy = "11111111-1111-4111-8111-111111111111";
+    ClientSettings.configureRemoteWorld(settings, "Old.com", legacy);
+    assertEquals(
+        new ClientSettings.RemoteWorld(legacy, "Old.com"),
+        ClientSettings.remoteWorld(settings, "Old.com"));
+    assertNull(ClientSettings.remoteWorld(settings, "old.com"));
+    ClientSettings.adoptRemoteWorld(settings, "auto.com", fresh);
+    ClientSettings.configureRemoteWorld(settings, "auto.com", legacy);
+    assertEquals(legacy, ClientSettings.remoteWorld(settings, "auto.com").namespace());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> ClientSettings.adoptRemoteWorld(settings, "bad.com", "nope"));
+  }
+
+  @Test
   void manualSizeDefaultsToTheAutoRadiusAndRejectsNonsense() {
     Properties settings = new Properties();
     assertEquals(new ClientSettings.ManualSize(32, 0, 0), ClientSettings.manualSize(settings));

@@ -166,6 +166,19 @@ final class PairingClient {
     return ClientSettings.remoteWorldNamespace(readSettings(), server);
   }
 
+  /** The server's persistent world identity, created and saved on first use. */
+  static ClientSettings.RemoteWorld remoteWorld(String server) {
+    ClientSettings.RemoteWorld known = ClientSettings.remoteWorld(readSettings(), server);
+    if (known != null) return known;
+    var created = new ClientSettings.RemoteWorld[1];
+    updateSettings(
+        settings ->
+            created[0] =
+                ClientSettings.adoptRemoteWorld(
+                    settings, server, java.util.UUID.randomUUID().toString()));
+    return created[0];
+  }
+
   static void configureRemoteWorld(String server, String namespace) {
     // Namespace changes fence off in-flight captures/uploads, just like account rebinding.
     updateSettings(

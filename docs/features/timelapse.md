@@ -25,21 +25,31 @@ signed-in profile. No visible name or geographic proximity is enough to merge
 worlds. Copying or renaming a save can produce a new identity. The hash is
 neither proof of ownership nor an anonymization of the coordinates.
 
-On a remote server, an address is not a world UUID. The default mode
-(`worldScope: session`) uses a random connection identifier, with the address,
-dimension and signed-in profile. Reconnecting creates another series, even if
-the server keeps its map. Changing dimensions and then returning to the
-initial world keeps the session. This avoids implicitly assigning the captures
-of two connections to the same world when its seed is unknown.
+On a remote server, an address is not a world UUID. The client therefore
+creates, once per server, a random namespace and keeps it in
+`config/minemories.properties` (key `remoteWorld2.<fingerprint>`, the fingerprint
+being a hash of the canonical address). The identity (`minemories-remote-world-v2`,
+`worldScope: namespace`) combines that namespace, the canonical address
+(trimmed, lower-case, no trailing dot, default port `:25565` removed, so
+`Example.com`, `example.com.` and `example.com:25565` are one server), the
+dimension and the signed-in profile. Every session on a server, including
+after restarts, lands in the same series. Before this version the default
+was a random per-connection identifier (`worldScope: session`), which split
+one server into one stack per connection; those captures cannot be merged
+retroactively because their identifier was never stored. Session scope now only
+remains as a fallback when the settings cannot be read.
 
-For intentional continuity across connections, open **M → Advanced mode →
-World**, generate an identifier, then save. This local choice gives
-`worldScope: namespace`: with the same address, identifier, dimension and
-profile, future states stay in the same series after reconnecting and
-restarting. If the server replaces its map, generate and save another
-identifier. Clearing and then saving goes back to per-connection mode. This
-choice does not reassign older memories. No universal UUID provided by the
-server is claimed.
+Known limits: the client has no reliable signal to tell worlds apart behind
+one address (proxy networks) or a map reset on the same address; both share a
+stack until the local namespace is replaced. LAN guests see a random port on
+each launch and therefore a new server each time.
+
+Explicit namespaces configured before this version (`remoteWorld.<fingerprint>`
+on the raw address) keep producing their v1 identity unchanged, so existing
+captures are not orphaned. Saving or clearing a namespace replaces the automatic
+one; clearing makes the next connection create a fresh namespace (a new
+stack), which is the way to say "the server replaced its map". No universal
+UUID provided by the server is claimed.
 
 Configured UUIDs are kept per address in `config/minemories.properties`
 (keys `remoteWorld.<fingerprint>`). The screen validates a complete UUID; an
