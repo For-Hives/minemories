@@ -41,6 +41,63 @@ ext.adaptDir = { File root ->
         if (n == 'RenderedModelCapture.java') {
             t = rep(t, '!type.format().getElements().contains(VertexFormatElement.NORMAL)', 'type.format().getElements().stream().noneMatch(e -> e.getUsage() == VertexFormatElement.Usage.NORMAL)', n)
         }
+        // The shared VanillaGui draws sprites and list backgrounds that 1.20.1 does not have.
+        if (n == 'VanillaGui.java') t = '''package dev.minemories.client;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.ResourceLocation;
+
+// Minecraft 1.20.1: no sprites, list backgrounds or separator textures yet. Vanilla lists draw the
+// tiled options background darkened, with a shadow on their edges: the same textures, so resource
+// packs and UI mods that replace them restyle the panel. Replaces the shared class (adapt.gradle).
+final class VanillaGui {
+  private static final ResourceLocation TAB_BUTTON =
+      new ResourceLocation("textures/gui/tab_button.png");
+
+  private VanillaGui() {}
+
+  static void panel(GuiGraphics graphics, int left, int top, int width, int height) {
+    graphics.setColor(0.125f, 0.125f, 0.125f, 1f);
+    graphics.blit(
+        Screen.BACKGROUND_LOCATION, left, top, (float) left, (float) top, width, height, 32, 32);
+    graphics.setColor(1f, 1f, 1f, 1f);
+    shade(graphics, left, top, width, true);
+    shade(graphics, left, top + height - 4, width, false);
+    separator(graphics, left, top - 2, width, true);
+    separator(graphics, left, top + height, width, false);
+  }
+
+  /** Four rows of black fading out, like the edges of a vanilla list. */
+  private static void shade(GuiGraphics graphics, int left, int y, int width, boolean top) {
+    for (int row = 0; row < 4; row++) {
+      int alpha = 0xB0 >> row;
+      int rowY = top ? y + row : y + 3 - row;
+      graphics.fill(left, rowY, left + width, rowY + 1, alpha << 24);
+    }
+  }
+
+  /** A two pixel separator whose top edge is at y: the header one sits above a list, the footer one below. */
+  static void separator(GuiGraphics graphics, int left, int y, int width, boolean header) {
+    graphics.fill(left, y, left + width, y + 1, header ? 0xFF000000 : 0x80000000);
+    graphics.fill(left, y + 1, left + width, y + 2, header ? 0x80000000 : 0xFF000000);
+  }
+
+  /** The vanilla tab texture: raised for a selected tab, lighter when hovered or focused. */
+  static void tab(
+      GuiGraphics graphics,
+      int x,
+      int y,
+      int width,
+      int height,
+      boolean selected,
+      boolean highlighted) {
+    int row = selected ? (highlighted ? 1 : 0) : (highlighted ? 3 : 2);
+    // Vanilla passes a zero bottom border, which 1.20.1 only survives at the texture's own height of 24.
+    graphics.blitNineSliced(TAB_BUTTON, x, y, width, height, 2, 2, 2, 1, 130, 24, 0, row * 24);
+  }
+}
+'''
         if (t != o) f.setText(t, 'UTF-8')
     }
 }

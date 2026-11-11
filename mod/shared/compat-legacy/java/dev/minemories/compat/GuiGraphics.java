@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
  * drawing of Minecraft before 1.20. Shared by every pre-1.20 target (see mod/shared/compat-legacy).
  */
 public final class GuiGraphics {
+  private static final ResourceLocation WIDGETS = new ResourceLocation("textures/gui/widgets.png");
   private final PoseStack pose;
 
   public GuiGraphics(PoseStack pose) {
@@ -63,6 +64,51 @@ public final class GuiGraphics {
     RenderSystem.enableBlend();
     GuiComponent.blit(
         pose, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight);
+  }
+
+  /**
+   * A button face of any size cut from the button texture of Minecraft (widgets.png, so resource
+   * packs and UI mods that replace it restyle it). The pre-1.20 button renderer only knows 20
+   * pixel high faces, which is not enough for the tall buttons of the Minemories menu.
+   */
+  public void buttonFace(int x, int y, int width, int height, boolean active, boolean highlighted) {
+    int v = 46 + (!active ? 0 : highlighted ? 2 : 1) * 20;
+    int left = Math.min(20, width / 2);
+    int right = Math.min(20, width - left);
+    int top = Math.min(4, height / 2);
+    int bottom = Math.min(4, height - top);
+    int midWidth = width - left - right;
+    int midHeight = height - top - bottom;
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderTexture(0, WIDGETS);
+    RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+    RenderSystem.enableBlend();
+    RenderSystem.enableDepthTest();
+    int[] columns = {x, x + left, x + width - right};
+    int[] widths = {left, midWidth, right};
+    int[] sourceU = {0, 20, 200 - right};
+    int[] sourceWidths = {left, 160, right};
+    int[] rows = {y, y + top, y + height - bottom};
+    int[] heights = {top, midHeight, bottom};
+    int[] sourceV = {v, v + 4, v + 20 - bottom};
+    int[] sourceHeights = {top, 12, bottom};
+    for (int row = 0; row < 3; row++) {
+      for (int column = 0; column < 3; column++) {
+        if (widths[column] <= 0 || heights[row] <= 0) continue;
+        GuiComponent.blit(
+            pose,
+            columns[column],
+            rows[row],
+            widths[column],
+            heights[row],
+            sourceU[column],
+            sourceV[row],
+            sourceWidths[column],
+            sourceHeights[row],
+            256,
+            256);
+      }
+    }
   }
 
   public int drawString(Font font, Component text, int x, int y, int color) {

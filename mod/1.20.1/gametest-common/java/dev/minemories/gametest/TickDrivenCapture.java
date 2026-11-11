@@ -25,14 +25,12 @@ import org.apache.logging.log4j.Logger;
 /**
  * Minecraft 1.20.1 version of the loader test driver (see mod/1.21.11/gametest-common):
  * creates a flat world, builds the scene, runs /minemories export and checks the GLB, then opens
- * the Minemories hub and reads a pixel inside its panel from the frame buffer: the panel colour
- * proves the screen's background was drawn. The loader's test mod calls {@link #tick()} from its
- * client tick.
+ * the Minemories hub and reads a pixel inside its panel and one just outside it from the frame
+ * buffer: the panel is the game's list background, so the two must differ if it was drawn. The
+ * loader's test mod calls {@link #tick()} from its client tick.
  */
 public final class TickDrivenCapture {
   private static final Logger LOGGER = LogManager.getLogger("minemories-gametest");
-  // UiTheme.PANEL (0xFF252926) as NativeImage stores it: ABGR.
-  private static final int PANEL_ABGR = 0xFF262925;
 
   private TickDrivenCapture() {}
 
@@ -120,13 +118,14 @@ public final class TickDrivenCapture {
               int x = (int) ((left + 3) * scale);
               int y = (int) ((top + panelHeight / 2) * scale);
               int pixel = image.getPixelRGBA(x, y);
+              int outside = image.getPixelRGBA((int) ((left - 6) * scale), y);
               LOGGER.info(
-                  "MINEMORIES-SCREEN pixel=0x{} expected=0x{} at {},{}",
+                  "MINEMORIES-SCREEN panel=0x{} outside=0x{} at {},{}",
                   Integer.toHexString(pixel),
-                  Integer.toHexString(PANEL_ABGR),
+                  Integer.toHexString(outside),
                   x,
                   y);
-              if (pixel != PANEL_ABGR) throw new AssertionError("Screen background not drawn");
+              if (pixel == outside) throw new AssertionError("Screen background not drawn");
             }
             LOGGER.info("MINEMORIES-GAMETEST PASSED");
             step(Step.DONE);

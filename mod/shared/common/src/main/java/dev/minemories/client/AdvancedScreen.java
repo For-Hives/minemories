@@ -459,7 +459,7 @@ final class AdvancedScreen extends Screen {
     int barWidth = panelWidth - 28;
     int filled = (int) (barWidth * Math.min(1.0, (double) quota.usedBytes() / quota.limitBytes()));
     int barY = top + CONTENT_Y + 45;
-    graphics.fill(x, barY, x + barWidth, barY + 5, 0xFF1B1E1C);
+    graphics.fill(x, barY, x + barWidth, barY + 5, UiTheme.TRACK);
     graphics.fill(
         x, barY, x + filled, barY + 5, filled > barWidth * 0.9 ? UiTheme.WARN : UiTheme.OK);
   }

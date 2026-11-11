@@ -11,6 +11,60 @@ ext.adaptLegacyGui = { String t, String n ->
         if (r == text) throw new GradleException("adapt-legacy: /${pattern}/ not found in ${n}")
         r
     }
+    // The shared VanillaGui draws sprites and list backgrounds that these versions do not have.
+    if (n == 'VanillaGui.java') t = '''package dev.minemories.client;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
+
+// Before Minecraft 1.20: no sprites, list backgrounds, separator textures or tab widget. Vanilla
+// lists draw the tiled options background darkened, with a shadow on their edges; tabs are the
+// button texture. They are all Minecraft's textures, so resource packs and UI mods that replace
+// them restyle the panel. Replaces the shared class (adapt-legacy.gradle).
+final class VanillaGui {
+  private static final ResourceLocation BACKGROUND =
+      new ResourceLocation("textures/gui/options_background.png");
+
+  private VanillaGui() {}
+
+  static void panel(GuiGraphics graphics, int left, int top, int width, int height) {
+    graphics.setColor(0.125f, 0.125f, 0.125f, 1f);
+    graphics.blit(BACKGROUND, left, top, width, height, left, top, width, height, 32, 32);
+    graphics.setColor(1f, 1f, 1f, 1f);
+    shade(graphics, left, top, width, true);
+    shade(graphics, left, top + height - 4, width, false);
+    separator(graphics, left, top - 2, width, true);
+    separator(graphics, left, top + height, width, false);
+  }
+
+  /** Four rows of black fading out, like the edges of a vanilla list. */
+  private static void shade(GuiGraphics graphics, int left, int y, int width, boolean top) {
+    for (int row = 0; row < 4; row++) {
+      int alpha = 0xB0 >> row;
+      int rowY = top ? y + row : y + 3 - row;
+      graphics.fill(left, rowY, left + width, rowY + 1, alpha << 24);
+    }
+  }
+
+  /** A two pixel separator whose top edge is at y: the header one sits above a list, the footer one below. */
+  static void separator(GuiGraphics graphics, int left, int y, int width, boolean header) {
+    graphics.fill(left, y, left + width, y + 1, header ? 0xFF000000 : 0x80000000);
+    graphics.fill(left, y + 1, left + width, y + 2, header ? 0x80000000 : 0xFF000000);
+  }
+
+  /** No tab texture: the vanilla button, lit up for the selected tab. */
+  static void tab(
+      GuiGraphics graphics,
+      int x,
+      int y,
+      int width,
+      int height,
+      boolean selected,
+      boolean highlighted) {
+    graphics.buttonFace(x, y, width, height, true, selected || highlighted);
+  }
+}
+'''
     t = t.replace('net.minecraft.client.gui.GuiGraphics', 'dev.minemories.compat.GuiGraphics')
     t = t.replace('net.minecraft.client.gui.components.Tooltip', 'dev.minemories.compat.Tooltip')
     if (t.contains('.setTooltip(')) t = t.replaceAll(/(\w+)\.setTooltip\(/, 'dev.minemories.compat.Tooltips.set($1, ')
@@ -21,10 +75,16 @@ ext.adaptLegacyGui = { String t, String n ->
     t = t.replace('public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {\n    super.render(graphics, mouseX, mouseY, partialTick);',
         'public void render(com.mojang.blaze3d.vertex.PoseStack pose, int mouseX, int mouseY, float partialTick) {\n    renderBackground(pose);\n    super.render(pose, mouseX, mouseY, partialTick);\n    dev.minemories.compat.Tooltips.render(pose, this, mouseX, mouseY);\n    dev.minemories.compat.GuiGraphics graphics = new dev.minemories.compat.GuiGraphics(pose);')
     // Widgets: x and y are fields, renderWidget is renderButton, the narration argument is gone.
+    // FaceButton draws the vanilla face with the button texture (GuiGraphics.buttonFace: the
+    // pre-1.20 button renderer cannot draw a face taller than 20) and has no label to suppress.
     if (n == 'IconButton.java' || n == 'TabButton.java' || n == 'BrandButton.java' || n == 'GearButton.java') {
         t = regex(t, /\bgetX\(\)/, 'x')
         t = regex(t, /\bgetY\(\)/, 'y')
+    }
+    if (n == 'FaceButton.java') {
         t = rep(t, ', DEFAULT_NARRATION)', ')')
+        t = rep(t, 'super.renderWidget(graphics, mouseX, mouseY, partialTick);', 'graphics.buttonFace(x, y, width, height, active, isHoveredOrFocused());')
+        t = regex(t, /(?s)\n  \/\*\* The vanilla centred label.*?public void renderString\(GuiGraphics graphics, Font font, int color\) \{\}\n/, '\n')
         t = rep(t, 'public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {',
             'public void renderButton(com.mojang.blaze3d.vertex.PoseStack pose, int mouseX, int mouseY, float partialTick) {\n    dev.minemories.compat.GuiGraphics graphics = new dev.minemories.compat.GuiGraphics(pose);')
     }

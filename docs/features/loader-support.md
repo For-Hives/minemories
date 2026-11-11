@@ -122,7 +122,7 @@ In-game test: `./gradlew :forge:runClientGametest` (from `mod/1.18.2`), with a `
 
 Before 1.20.2, `Screen.render` does not draw the background: each screen calls it itself. The shared screens (written for 1.21.1) rely on `render` to do it, and the adaptation to 1.20.1 did not restore it: the mod screens' panel and background were not drawn. Measured in game (Forge 1.20.1): the pixel read inside the hub panel was the sky (`0xffdfc7b9`), not the panel color (`0xff262925`). `mod/1.20.1/adapt.gradle` now inserts a `renderBackground(graphics)` call at the start of `render`, which also fixes the Fabric 1.20.1 module; the same pixel then reads `0xff262925`.
 
-The check runs with `./gradlew :forge:runClientGametest` from `mod/1.20.1`: flat world, open the hub, read a panel pixel from the framebuffer. It checks the background, not the button layout or text. The 1.19.2 and 1.18.2 bridges call `renderBackground` explicitly (`mod/shared/compat-legacy/adapt-legacy.gradle`); they do not have this pixel check. Fabric 1.20.1 has not been rerun in game.
+The check runs with `./gradlew :forge:runClientGametest` from `mod/1.20.1`: flat world, open the hub, read a pixel inside the panel and one just outside it from the framebuffer, which must differ. Since the panel follows the game's own look ([mod-interface-look.md](mod-interface-look.md)) it has no fixed colour any more, so the check no longer compares against `0xff262925`. It checks the background, not the button layout or text. The 1.19.2 and 1.18.2 bridges call `renderBackground` explicitly (`mod/shared/compat-legacy/adapt-legacy.gradle`); they do not have this pixel check. Fabric 1.20.1 has not been rerun in game.
 
 ### Measured inventory: Forge 1.16.5 and Forge 1.12.2 (5 November 2026, nothing coded)
 

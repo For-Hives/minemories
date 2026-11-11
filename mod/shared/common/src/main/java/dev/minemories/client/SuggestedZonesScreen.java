@@ -94,7 +94,8 @@ final class SuggestedZonesScreen extends Screen {
         font, I18n.get("minemories.ui.heatmap_hint"), left + 14, top + 26, UiTheme.MUTED);
     int ox = originX();
     int oy = top + MAP_TOP;
-    graphics.fill(ox - 1, oy - 1, ox + columns * CELL + 1, oy + ROWS * CELL + 1, 0xFF667063);
+    graphics.fill(
+        ox - 1, oy - 1, ox + columns * CELL + 1, oy + ROWS * CELL + 1, UiTheme.CHART_FRAME);
     int hoverColumn = -1;
     int hoverRow = -1;
     for (int row = 0; row < ROWS; row++) {
@@ -107,7 +108,7 @@ final class SuggestedZonesScreen extends Screen {
             y,
             x + CELL - 1,
             y + CELL - 1,
-            zone == null ? 0xFF1B1E1C : color(heat(zone.seconds())));
+            zone == null ? UiTheme.CHART_EMPTY : color(heat(zone.seconds())));
         if (mouseX >= x && mouseX < x + CELL && mouseY >= y && mouseY < y + CELL) {
           hoverColumn = column;
           hoverRow = row;

@@ -275,7 +275,8 @@ final class SimpleHubScreen extends Screen {
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
     UiTheme.panel(graphics, left, top, panelWidth, panelHeight);
-    graphics.fill(left + 10, top + 34, left + panelWidth - 10, top + 88, UiTheme.CARD);
+    UiTheme.separatorBelow(graphics, left + 10, top + 34, panelWidth - 20);
+    UiTheme.separatorAbove(graphics, left + 10, top + 88, panelWidth - 20);
   }
 
   @Override

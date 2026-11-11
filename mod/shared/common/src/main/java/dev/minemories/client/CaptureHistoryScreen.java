@@ -232,9 +232,8 @@ final class CaptureHistoryScreen extends Screen {
   @Override
   public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.renderBackground(graphics, mouseX, mouseY, partialTick);
-    graphics.fill(left - 1, top - 1, left + panelWidth + 1, top + 237, 0xFF667063);
-    graphics.fill(left, top, left + panelWidth, top + 236, 0xFF252926);
-    graphics.drawString(font, title, left + 14, top + 14, 0xFFECE8DC);
+    UiTheme.panel(graphics, left, top, panelWidth, 236);
+    graphics.drawString(font, title, left + 14, top + 14, UiTheme.TEXT);
   }
 
   @Override
@@ -242,7 +241,7 @@ final class CaptureHistoryScreen extends Screen {
     super.render(graphics, mouseX, mouseY, partialTick);
     var lines = font.split(Component.literal(message()), panelWidth - 28);
     for (int i = 0; i < Math.min(2, lines.size()); i++) {
-      graphics.drawString(font, lines.get(i), left + 14, top + 30 + i * 10, 0xFFECE8DC);
+      graphics.drawString(font, lines.get(i), left + 14, top + 30 + i * 10, UiTheme.TEXT);
     }
     var list = view.lines();
     for (int i = 0; i < list.size(); i++) {
@@ -250,7 +249,7 @@ final class CaptureHistoryScreen extends Screen {
     }
     String pageText = (view.page() + 1) + " / " + view.pageCount();
     graphics.drawString(
-        font, pageText, left + (panelWidth - font.width(pageText)) / 2, top + 188, 0xFFB2B6AA);
+        font, pageText, left + (panelWidth - font.width(pageText)) / 2, top + 188, UiTheme.MUTED);
   }
 
   private void drawLine(GuiGraphics graphics, CaptureGroups.Line line, int y) {
@@ -261,20 +260,20 @@ final class CaptureHistoryScreen extends Screen {
       String name = group.unknown() ? I18n.get("minemories.ui.group_unknown") : group.label();
       String shown = font.plainSubstrByWidth(name, panelWidth - 28 - font.width(count));
       graphics.drawString(
-          font, shown + count, left + 14, y, group.server() ? 0xFF9CC4E4 : 0xFFA9D18E);
+          font, shown + count, left + 14, y, group.server() ? UiTheme.INFO : UiTheme.TEXT);
       return;
     }
     CaptureHistory.Entry entry = line.entry();
     String text = DATE.format(entry.capturedAt()) + " · " + StorageQuota.formatBytes(entry.bytes());
-    graphics.drawString(font, text, left + 22, y, 0xFFECE8DC);
+    graphics.drawString(font, text, left + 22, y, UiTheme.TEXT);
     String mark = null;
-    int color = 0xFFB2B6AA;
+    int color = UiTheme.MUTED;
     if (!entry.readable()) {
       mark = I18n.get("minemories.ui.unreadable");
-      color = 0xFFE07A6E;
+      color = UiTheme.ERROR;
     } else if (entry.uploaded()) {
       mark = "✓ " + I18n.get("minemories.ui.history_sent");
-      color = 0xFF7FD68A;
+      color = UiTheme.OK;
     }
     if (mark != null) graphics.drawString(font, mark, right - font.width(mark), y, color);
   }
