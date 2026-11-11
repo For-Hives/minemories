@@ -73,3 +73,23 @@ An old list response can no longer replace a recent refresh. Share, rename and t
 Gallery coordination is split into `gallery-data.ts` (lists, quota, actions and refresh), `gallery-pairing.ts` (code creation and checking) and `GalleryPairingCard.tsx` (presentation). Gallery polling resumes twelve seconds after the previous cycle ends: a slow response does not pile up automatic requests. A manual refresh stays available and keeps the protection against stale responses. Pairing checks keep their 1.1 then 1.6 second delays and stop when the page is left, including while the code is still being created. Folders stay open after a round trip through the trash. The two historical complexity exceptions in `GalleryPage` were removed after the interactions were added.
 
 Optional diagnostics on public pages are described in [web-observability.md](web-observability.md): an empty configuration and absent consent prevent the provider from loading, and private routes stay excluded.
+
+## Many light sources
+
+A capture can hold hundreds or thousands of `KHR_lights_punctual` point lights (a field of torches). Measured with
+a synthetic GLB of N lights (Bun, `GLTFLoader.parseAsync`): parsing 100/500/2000/5000 lights takes about 9/14/30/67 ms,
+traversal under 1 ms and the old per-load selection under 1 ms, so the CPU cost of the objects is not what hurts; the
+defect was that the 12 lit lights were chosen once at load, relative to the model centre and one per 6-block cell, so a
+torch field showed 12 lit spots that never followed the camera.
+
+- At load the viewer reads every `PointLight` into plain numbers (`Emitter` in `src/lib/light-pool.ts`) and drops the
+  objects: no live light outlives the load, whatever their count.
+- `mergeEmitters` merges the emitters of a 4-block cell into one area-like light: intensity-weighted centroid and
+  colour, summed intensity, reach covering the group.
+- `LightPool` keeps a constant 12 slots (the scene always holds 12 `PointLight`, so shaders never recompile). Every
+  frame it re-picks the most relevant emitters around the orbit target (or the camera when walking), gives the lights
+  already shown a 1.4x head start so ties do not flip, and eases each slot's level over 0.4 s so a source fades in
+  or out instead of popping. Per-frame cost with 2000 emitters is about 50 us.
+- Composed worlds (`showWorld`) hand their visible lights to the same pool; a light that survives a time step keeps
+  its slot, the others fade.
+- Existing uploaded GLBs benefit unchanged; the mod's output is untouched.
