@@ -115,7 +115,8 @@ test('nothing loads before the clip is seen after the film; it plays on screen a
 	expect(element.hasAttribute('playsinline')).toBe(true)
 	expect(element.getAttribute('preload')).toBe('auto')
 	expect(element.getAttribute('aria-hidden')).toBe('true')
-	expect(play).toHaveBeenCalled()
+	// the phase change comes through a MutationObserver, outside act: React commits the video before the effect that calls play() runs
+	await waitFor(() => expect(play).toHaveBeenCalled())
 	// the video shows over the poster only once it really plays
 	expect(clip.dataset.state).toBe('still')
 	fireEvent.playing(element)
@@ -207,7 +208,8 @@ test('a language switch swaps the in-game take, poster and video, and keeps it p
 	})
 	await waitFor(() => expect(video()?.getAttribute('src')).toBe('/hero/clips/menu-en.mp4'))
 	expect(clip.querySelector('.mm-clip__poster--en')?.matches(':lang(fr)')).toBe(false)
-	expect(play).toHaveBeenCalled()
+	// the lang change also comes through the MutationObserver: play() follows the new source a moment later
+	await waitFor(() => expect(play).toHaveBeenCalled())
 	act(() => {
 		document.documentElement.lang = 'fr-CA'
 	})
