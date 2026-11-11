@@ -50,14 +50,37 @@ bytes (`MaterialSidednessTest`).
   On zone 3, rewritten as the new code writes it, `terrain`, `decor` and `fluids` go from 595, 32,708
   and 8,382 z-fighting pairs to 0. The renderer pairs (31 and 85) remain.
 - The viewer applies the GLB's flag through `GLTFLoader` and does not force a side.
-- Seals of empty cells. A cut face on a solid block replaces that block's own outer face, so it faces out
-  of the capture only. A cut face on an air or fluid cell is also the floor or wall of the cave seen from
-  inside, so `ClientRuntime.addQuad` writes it a second time with its corners reversed
-  (`CutBoundary.reverse`): same material, texture in place, opposite normal. Single-sided outward seals
-  showed the sky through every cave or pool cut by the capture's bottom or sides (reported on a cave
-  floor of black sandstone that looked white in the viewer). The in-game test scene digs an air pocket
-  on its +x edge and `GlbReport` requires a cut face on that plane pointing back in: it fails without
-  the reversed seal.
+- Seals of empty cells. Solid blocks on the capture's sides and bottom keep their own faces: they
+  already close the model, whatever they are (a trunk, a wall, ore). Only a cell of air or fluid on that
+  shell gets a seal, and only when the terrain encloses it there (see below). Such a seal is also the
+  floor or wall of the cave seen from inside, so `ClientRuntime.addQuad` writes it a second time with its
+  corners reversed (`CutBoundary.reverse`): same material, texture in place, opposite normal.
+  Single-sided outward seals showed the sky through every cave or pool cut by the capture's bottom or
+  sides (reported on a cave floor of black sandstone that looked white in the viewer). The in-game test
+  scene digs an air pocket on its +x edge and `GlbReport` requires a cut face on that plane pointing back
+  in: it fails without the reversed seal.
+
+### Which cut cells are sealed
+
+`CutBoundary.Shell` floods the shell of the capture (its four sides and its bottom) from the top row,
+through every cell that is not an opaque full cube. A passable cell the fill never reaches is enclosed by
+terrain along the shell, and is sealed. There is no notion of "terrain height": a heightmap counts a
+canopy's logs, a roof or an overhang as ground, and used to wall off all the open air below them.
+
+| Cut cell | Reached from the top row? | Result |
+| --- | --- | --- |
+| Air beside a trunk, under leaves, a roof or a ledge, a floating island's underside | yes, around the obstacle | open |
+| Ocean or lake open to the sky | yes | open (keeps its water surface) |
+| Cave, pool or pocket the boundary slices through | no | sealed |
+| Anything in a capture taken inside a closed space (Nether, cave) | no, nothing opens on the shell | sealed like a cave |
+
+A cave with a mouth on the shell stays open. A room inside a build that the boundary slices through is
+enclosed too and is sealed; it reads as a solid cross-section.
+
+The seal looks like the nearest opaque cube in the cell's column (`CutBoundary.nearestSolid`: the cave
+floor first, then the ceiling), so it is sand in a desert, netherrack in the Nether, end stone in the End.
+A column without any opaque cube falls back to the dimension's rock (`CutBoundary.fallback`: netherrack,
+end stone, deepslate under y = 0, else stone).
 
 ## In-game validation
 
