@@ -74,31 +74,51 @@ Gallery coordination is split into `gallery-data.ts` (lists, quota, actions and 
 
 Optional diagnostics on public pages are described in [web-observability.md](web-observability.md): an empty configuration and absent consent prevent the provider from loading, and private routes stay excluded.
 
-## Many light sources
+## Block light volume (many light sources)
 
-A capture can hold hundreds or thousands of `KHR_lights_punctual` point lights (a field of torches). Measured with
-a synthetic GLB of N lights (Bun, `GLTFLoader.parseAsync`): parsing 100/500/2000/5000 lights takes about 9/14/30/67 ms,
-traversal under 1 ms and the old per-load selection under 1 ms, so the CPU cost of the objects is not what hurts; the
-defect was that the 12 lit lights were chosen once at load, relative to the model centre and one per 6-block cell, so a
-torch field showed 12 lit spots that never followed the camera.
+A capture can hold thousands of `KHR_lights_punctual` point lights (the mod writes up to 4095). The viewer does not
+render them as point lights: block light is a voxel field, like Minecraft's own.
 
-- At load the viewer reads every `PointLight` into plain numbers (`Emitter` in `src/lib/light-pool.ts`) and drops the
-  objects: no live light outlives the load, whatever their count.
-- `mergeEmitters` merges the emitters of a 4-block cell into one area-like light: intensity-weighted centroid and
-  colour, summed intensity, reach covering the group.
-- `LightPool` keeps a constant 12 slots (the scene always holds 12 `PointLight`, so shaders never recompile). Every
-  frame it re-picks the most relevant emitters around the orbit target (or the camera when walking), gives the lights
-  already shown a 1.4x head start so ties do not flip, and eases each slot's level over 0.4 s so a source fades in
-  or out instead of popping. Per-frame cost with 2000 emitters is about 50 us.
-- Composed worlds (`showWorld`) hand their visible lights to the same pool; a light that survives a time step keeps
-  its slot, the others fade.
-- Existing uploaded GLBs benefit unchanged; the mod's output is untouched.
+What was measured first (synthetic GLB of N lights, Bun, `GLTFLoader.parseAsync`): parsing 100/500/2000/5000 lights
+takes about 9/14/30/67 ms and traversal under 1 ms, so the loader objects were never the cost. In headless Chromium
+with 1128 lights, `main` compiled every program with exactly 12 point lights (no raw light was ever rendered). The real
+defects were that the 12 lit lights were chosen once at load (a torch field showed 12 lit spots), and that in the
+composed-world path the pooled lights were added after the materials compiled, forcing a recompile at the first step.
 
-Browser measurement (headless Chromium with SwiftShader, so absolute frame times are not representative; a capture of
-the owner's export plus 1000 extra `KHR_lights_punctual` torches, 1128 lights): on `main` and on this branch every
-compiled program has exactly 12 point lights (`pointLights[ 12 ]`, 45 programs, none recompiled while orbiting), so
-`loadFile` never attached the raw lights to a rendered frame. The one real recompilation on `main` was the composed-world
-path: the 12 pooled lights were added to the scene only at the first `showWorld`, after the capture's materials were
-compiled without lights. The pool is now attached when the scene is built and before each compile, and a test asserts
-that `loadFile` and `addLayer` + `showWorld` compile and render with exactly 12 point lights while 1000 are imported.
-The landing hero (`hero/scene.js`) has its own fixed light set and does not use `ViewerScene`.
+How it works now:
+
+- At load, every imported `PointLight` is read into flat arrays and removed from the scene: **no point light is ever
+  rendered for block light**, so programs are compiled for zero lights whatever the capture holds.
+- `lib/light-volume.ts` builds a 3D RGBA8 texture over the lights' bounds (padded by the light reach): one texel per
+  block, coarser (whole blocks per texel) when the volume would exceed the budget of 4 Mi texels (16 MiB) or 256
+  texels per side. A radius-128, full-height capture lands at 3 blocks per texel. Each light spreads its level
+  (`intensity / 100`, the mod's 100 cd per level, capped at 15) with the game's falloff, one level per block of
+  Manhattan distance, and a texel keeps the brightest level per colour channel, as the game takes the brightest light
+  and never a sum (a torch field must not blow out). Light colour is tinted warm as before.
+- Cost with 4000 lights at one texel per block (228 x 68 x 228): about 300 ms of CPU on the development machine
+  (varies with load). The load builds it in one go (the page is already preparing); the timelapse (`showWorld`)
+  builds it in 8 ms slices that yield to the page and drops a stale build when a newer step arrives.
+- Materials (`viewer-faithful.ts`, shared uniforms, no recompile on a swap or a lighting toggle) sample the volume at
+  the fragment's world position, half a block out along the normal, curve the level like the game's light map
+  (`level / (4 - 3 level)`, then the brightness option) and use it as the block light: the faithful look uses it
+  where the point-light result used to be; the realistic look adds it as diffuse light (gain 2.0). Emissive surfaces
+  and bloom are unchanged.
+- No occlusion: a splat ignores walls, as the point lights did. A flood fill over an occupancy grid derived from the
+  geometry was not attempted.
+
+Browser check (Chromium on the real GPU, RTX 2060, the owner's export plus 1000 torches around the player, at night):
+the frame time stays at the 60 Hz cap on both `main` and the branch, so a GPU gain is not measurable at this scale on
+this machine; the load takes about 2 s either way. Visually the 12-light pool on `main` leaves a torch field almost
+dark; the volume lights it everywhere, in both looks, while orbiting and walking, with no popping since nothing
+depends on the camera. The timelapse path is covered by unit tests only.
+
+### Not done: the mod baking the game's own light
+
+The exact option is for the mod to write Minecraft's real per-vertex block and sky light (what the game's smooth
+lighting reads) into the GLB, for example as a second colour attribute (`COLOR_0` block light, `COLOR_1` or a custom
+`_SKY` attribute for sky light, one byte per vertex per channel). The viewer would then shade with the vertex values
+instead of the volume: exact, occluded by walls and caves, independent of the light count, and no volume build at
+load. The cost is format: +2 bytes per vertex (about +8 % on a typical capture before meshopt, which compresses such
+attributes well), a `minemoriesFormat` bump with old files keeping the volume fallback, shared quad vertices that
+must be split where neighbouring light differs, and mod code in `mod/shared/core` per Minecraft version to read the
+light engine. It was not requested and is not implemented.

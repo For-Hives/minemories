@@ -76,7 +76,7 @@ vec3 memoryBlockCurve( vec3 level ) {
 `
 
 /** How much the studio look amplifies the block light so torches stand out against a sun-lit, tone-mapped scene. */
-const REALISTIC_GAIN = '2.5'
+const REALISTIC_GAIN = '2.0'
 
 const blockLightRead = `
 vec3 memoryVolumeUv = ( memoryWorldPosition + inverseTransformDirection( normal, viewMatrix ) * 0.5 - memoryLightOrigin ) * memoryLightScale;
