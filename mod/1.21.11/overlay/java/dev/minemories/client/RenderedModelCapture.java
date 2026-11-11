@@ -219,8 +219,18 @@ final class RenderedModelCapture {
         || mode == VertexFormat.Mode.TRIANGLE_FAN;
   }
 
+  /**
+   * A pass whose texture cannot be read (drawn by a shader, or bound outside the render type, as some
+   * modded entity renderers do) is dropped for this model, warned about once; the capture goes on.
+   */
+  private Texture unreadable(RenderType type, String reason) {
+    if (refused.add("pass/" + type)) LOGGER.warn("Render pass not captured ({}): {}", reason, type);
+    return null;
+  }
+
   private Texture texture(RenderType type) throws IOException {
     Identifier id = textureLocation(type);
+    if (id == null) return unreadable(type, "procedural texture");
     Texture existing = textures.get(id);
     if (existing != null) return existing;
     String refusal = "rendered/" + id;
@@ -242,10 +252,9 @@ final class RenderedModelCapture {
   }
 
   /** The first texture a render type samples; the pass's colour texture for every vanilla type. */
-  private static Identifier textureLocation(RenderType type) throws IOException {
+  private static Identifier textureLocation(RenderType type) {
     var bindings = type.state.textures;
-    if (bindings.isEmpty())
-      throw new IOException("The renderer uses a procedural texture that cannot be exported.");
+    if (bindings.isEmpty()) return null;
     return bindings.values().iterator().next().location();
   }
 

@@ -65,9 +65,12 @@ Name tags above entities and sign text are not exported. Text passes without
 normals, lines/leads, ground shadows, hitboxes, flames added by the dispatcher,
 glint and effects using special shaders are not part of this capture.
 Procedural renderers with no accessible texture and mod-specific GPU pipelines
-are not claimed as supported. A textured geometry pass that cannot be copied
-makes the capture fail before saving; the last complete memory remains
-available.
+are not claimed as supported. A pass whose texture cannot be identified (drawn
+by a shader, or bound outside the render type, as FaunaEngine 1.1 does on
+1.21.1) is dropped for that model with one warning in the log, and the capture
+goes on: the entity is exported without that pass, or not at all when it has no
+other. A texture that is identified but fails to copy still makes the capture
+fail before saving; the last complete memory remains available.
 
 Pikachu's secondary layer in Cobblemon 1.7.3 is copied with its texture, but its
 specific self-illumination remains a known limit: it gets no glTF emissive
