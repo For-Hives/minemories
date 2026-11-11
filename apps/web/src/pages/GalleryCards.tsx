@@ -8,7 +8,7 @@ import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { isDraftString } from '../lib/form-drafts'
-import { biomeLabel, blockCoordinates, type CaptureStack, latestCapture, viewPath } from '../lib/gallery'
+import { biomeLabel, blockCoordinates, type CaptureStack, latestCapture, stackPreview, viewPath } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
@@ -289,7 +289,7 @@ export function AreaCard({
 	if (!latest) return null
 	const snapshots = stack.captures.length
 	const timeline = snapshots > 1 && evolving
-	const thumbnail = latest.metadata.thumbnail ?? latest.metadata.icon
+	const thumbnail = stackPreview(stack.captures)
 	const ordered = [...stack.captures].sort((a, b) => stampOf(b) - stampOf(a))
 	const href = viewPath(latest.id, timeline)
 	const open = (tab: DialogTab) => setDialog({ tab, id: latest.id })
@@ -325,7 +325,16 @@ export function AreaCard({
 		>
 			<Link to={href} className="gallery-cover" tabIndex={-1} aria-hidden="true" onClick={() => setViewerFile(null)}>
 				{thumbnail ? (
-					<span className="gallery-cover-image" style={{ backgroundImage: `url("${thumbnail}")` }} />
+					<span className="gallery-cover-image">
+						<img
+							className="gallery-cover-picture"
+							src={thumbnail}
+							alt=""
+							loading="lazy"
+							decoding="async"
+							draggable={false}
+						/>
+					</span>
 				) : (
 					<span className="gallery-cover-empty" style={{ ['--tone' as string]: placeholderTone(stack.key) }}>
 						<GalleryIcon name="cube" />
