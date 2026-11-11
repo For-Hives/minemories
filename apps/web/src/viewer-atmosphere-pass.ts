@@ -54,12 +54,21 @@ export class AtmospherePass extends ShaderPass {
 				vec4 p = inverseProjection * vec4(uv*2.0-1.0, texture2D(tDepth,uv).r*2.0-1.0, 1.0);
 				return p.xyz / max(p.w,0.000001);
 			}
+			// Neighbour difference that stays on the same surface: a silhouette never feeds the normal.
+			vec3 surfaceDifference(vec3 before, vec3 here, vec3 after) {
+				vec3 backward = here - before;
+				vec3 forward = after - here;
+				return abs(forward.z) < abs(backward.z) ? forward : backward;
+			}
 			void main() {
 				vec3 color = texture2D(tDiffuse,vUv).rgb;
 				float depth = texture2D(tDepth,vUv).r;
 				vec3 p = positionAt(vUv);
-				// Never normalize a zero derivative (Firefox/NVIDIA can propagate NaNs into bloom).
-				vec3 crossNormal = cross(dFdx(p), dFdy(p));
+				vec2 texel = 1.0 / resolution;
+				vec3 dx = surfaceDifference(positionAt(vUv-vec2(texel.x,0.0)), p, positionAt(vUv+vec2(texel.x,0.0)));
+				vec3 dy = surfaceDifference(positionAt(vUv-vec2(0.0,texel.y)), p, positionAt(vUv+vec2(0.0,texel.y)));
+				// Never normalize a zero vector (Firefox/NVIDIA can propagate NaNs into bloom).
+				vec3 crossNormal = cross(dx, dy);
 				vec3 normal = crossNormal / max(length(crossNormal),0.000001);
 				if(dot(normal,-p)<0.0) normal=-normal;
 				float occlusion=0.0;
@@ -73,7 +82,9 @@ export class AtmospherePass extends ShaderPass {
 						vec3 delta=positionAt(uv)-p;
 						float distance=length(delta);
 						float facing=max(dot(normal,delta/max(distance,0.0001))-0.12,0.0);
-						occlusion+=facing*(1.0-smoothstep(radius*0.2,radius,distance));
+						// Quadratic range check: a body a block away from a wall does not paint its silhouette on it.
+						float range=1.0-clamp(distance/radius,0.0,1.0);
+						occlusion+=facing*range*range;
 					}
 					color*=1.0-clamp(occlusion/12.0*strength*4.0,0.0,0.62);
 				}
