@@ -5,7 +5,7 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
 import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
-import { isCutout } from './lib/glb-alpha'
+import { blendPlan, isCutout, TRANSLUCENT_ALPHA_TEST } from './lib/glb-alpha'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
 import { buildLightVolume, buildLightVolumeAsync, type ImportedLight, lightSourcesFrom } from './lib/light-volume'
@@ -131,16 +131,25 @@ function hasCutoutTexels(texture: THREE.Texture): boolean {
 }
 
 /**
- * A `BLEND` material whose texture is a cutout (older captures called every textured entity or leaf that way) is drawn
- * as an alpha-tested opaque one: it writes depth, so a model's far faces no longer show through its near ones.
+ * Draws a `BLEND` material the way Minecraft does: a cutout texture (older captures called every textured entity or
+ * leaf that way) becomes an alpha-tested opaque material, genuinely translucent content keeps blending but writes
+ * depth, so a model's far faces no longer show through its near ones.
  */
-function cutOutBinaryBlend(material: THREE.Material): void {
+function fixBlendedMaterial(material: THREE.Material): void {
 	const standard = material as THREE.MeshStandardMaterial
-	if (!material.transparent || material.opacity < 1 || !standard.map || material.alphaTest > 0) return
-	if (!hasCutoutTexels(standard.map)) return
-	material.transparent = false
-	material.alphaTest = 0.5
+	const plan = blendPlan(
+		{
+			transparent: material.transparent,
+			opacity: material.opacity,
+			alphaTest: material.alphaTest,
+			hasMap: !!standard.map,
+		},
+		() => !!standard.map && hasCutoutTexels(standard.map)
+	)
+	if (plan === 'keep') return
 	material.depthWrite = true
+	material.alphaTest = plan === 'cutout' ? 0.5 : TRANSLUCENT_ALPHA_TEST
+	if (plan === 'cutout') material.transparent = false
 }
 
 export class ViewerScene {
@@ -937,7 +946,7 @@ export class ViewerScene {
 		const materials = Array.isArray(object.material) ? object.material : [object.material]
 		let hasOpaqueSurface = false
 		for (const material of materials) {
-			cutOutBinaryBlend(material)
+			fixBlendedMaterial(material)
 			const pbrMaterial = material as THREE.MeshStandardMaterial
 			if (pbrMaterial.isMeshStandardMaterial) {
 				pbrMaterial.roughness = pbrMaterial.transparent ? 0.18 : 0.92
@@ -949,7 +958,8 @@ export class ViewerScene {
 				prepareWater(pbrMaterial, this.waterTime)
 			}
 			prepareFaithfulLighting(material, this.faithfulUniforms)
-			hasOpaqueSurface ||= !isLightBeam(material) && (!material.transparent || material.alphaTest > 0)
+			hasOpaqueSurface ||=
+				!isLightBeam(material) && (!material.transparent || material.alphaTest > TRANSLUCENT_ALPHA_TEST)
 			for (const texture of [
 				pbrMaterial.map,
 				pbrMaterial.emissiveMap,

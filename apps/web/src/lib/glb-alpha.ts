@@ -20,3 +20,25 @@ export function isCutout(rgba: ArrayLike<number>): boolean {
 	}
 	return partial * PARTIAL_SHARE <= visible
 }
+
+export interface BlendState {
+	transparent: boolean
+	opacity: number
+	alphaTest: number
+	hasMap: boolean
+}
+
+/** Smallest alpha test that keeps fully transparent texels (glass centres) from writing depth. */
+export const TRANSLUCENT_ALPHA_TEST = 0.01
+
+/**
+ * What a material loaded from the glTF should be drawn as: `keep` (opaque, already alpha-tested, or no texture to
+ * read), `cutout` (blended in the file but its texels only need an alpha test) or `translucent` (real partial alpha,
+ * drawn blended but writing depth, as Minecraft does, so a mesh's far faces never paint over its near ones).
+ * `texelsAreCutout` is only called when the answer depends on it.
+ */
+export function blendPlan(state: BlendState, texelsAreCutout: () => boolean): 'keep' | 'cutout' | 'translucent' {
+	if (!state.transparent || state.alphaTest > 0) return 'keep'
+	if (state.opacity >= 1 && state.hasMap && texelsAreCutout()) return 'cutout'
+	return 'translucent'
+}
