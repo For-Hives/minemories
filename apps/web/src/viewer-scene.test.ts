@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
 import { UnsupportedGlbError } from './lib/glb'
 import { legacyEmissiveToLinear, srgbToLinear } from './lib/glb-colours'
+import { LightPool } from './lib/light-pool'
 import { disposeImportedObject, ViewerScene } from './viewer-scene'
 
 test('viewer clears loading and refuses unsafe files before calling its texture loader', async () => {
@@ -261,23 +262,53 @@ test('lighting preparation preserves imported face normals instead of forcing de
 	material.dispose()
 })
 
-test('surface lights remain in the bounded lighting budget even when deeper lava is brighter', () => {
+test('hundreds of imported lights leave the scene graph and a constant pool lights the surface first', () => {
 	const root = new THREE.Group()
 	root.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32), new THREE.MeshStandardMaterial()))
 	const surfaceLight = new THREE.PointLight(0xff6600, 900, 14)
 	surfaceLight.position.set(0, 72, 0)
 	root.add(surfaceLight)
-	for (let i = 0; i < 16; i++) {
+	for (let i = 0; i < 600; i++) {
 		const light = new THREE.PointLight(0xffffff, 1400, 20)
-		light.position.set(i * 7, -70, 0)
+		light.position.set((i % 30) * 7, -70, Math.floor(i / 30) * 7)
 		root.add(light)
 	}
+	const pool = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
 	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
+	Object.assign(scene, { worldLights: pool, lightPool: new LightPool(12), scene: new THREE.Scene() })
 	scene.prepareWorldLighting(root)
-	const lights = root.children.filter(child => child instanceof THREE.PointLight)
-	expect(lights).toHaveLength(12)
-	expect(lights.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
+	expect(root.children.filter(child => child instanceof THREE.PointLight)).toHaveLength(0)
+	expect(pool.every(light => light.parent)).toBe(true)
+	expect(pool.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
+	expect(pool.filter(light => light.intensity > 0)).toHaveLength(12)
 	disposeImportedObject(root)
+})
+
+test('the light pool follows the orbit target or the walking camera and fades its lights', () => {
+	const pool = Array.from({ length: 2 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
+	const lightPool = new LightPool(2, 1)
+	lightPool.setEmitters([
+		{ x: 0, y: 0, z: 0, r: 1, g: 1, b: 1, intensity: 100, distance: 6 },
+		{ x: 90, y: 0, z: 0, r: 1, g: 1, b: 1, intensity: 100, distance: 6 },
+	])
+	const camera = new THREE.PerspectiveCamera()
+	camera.position.set(90, 0, 0)
+	const scene = Object.create(ViewerScene.prototype) as { updateWorldLights(seconds: number): void }
+	Object.assign(scene, {
+		worldLights: pool,
+		lightPool,
+		scene: new THREE.Scene(),
+		camera,
+		controls: { target: new THREE.Vector3() },
+		navigation: { active: false },
+	})
+	scene.updateWorldLights(0.5)
+	expect(pool.map(light => light.intensity)).toEqual([0.5, 0.5])
+	scene.updateWorldLights(1)
+	expect(pool.map(light => light.intensity)).toEqual([1, 1])
+	Object.assign(scene, { navigation: { active: true } })
+	scene.updateWorldLights(0)
+	expect(pool.map(light => light.intensity)).toEqual([1, 1])
 })
 
 test('orbit remains centered on the captured player when switching captures with a preserved view', () => {
@@ -312,6 +343,8 @@ function worldFixture() {
 		disposed: false,
 		prepareMesh: vi.fn(),
 		worldLights: Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2)),
+		lightPool: new LightPool(12),
+		scene: new THREE.Scene(),
 		controls: { target: new THREE.Vector3() },
 		captureFocus: null,
 		keyLight: { shadow: { needsUpdate: false } },

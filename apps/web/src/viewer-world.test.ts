@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
 import { WorldComposition } from './lib/world-evolution'
-import { applyLayer, chooseLights, prepareLayer } from './viewer-world'
+import { applyLayer, prepareLayer } from './viewer-world'
 
 function quadMesh(x: number) {
 	const geometry = new THREE.BufferGeometry()
@@ -54,16 +54,4 @@ test('layers detach lights, share rewritable index buffers and draw only compose
 	applyLayer(layer)
 	expect(layer.resident).toBe(true)
 	expect(disposed).toHaveBeenCalledTimes(1)
-})
-
-test('one light per cell, strongest and nearest first, within the limit', () => {
-	const light = (x: number, intensity: number) => ({
-		position: new THREE.Vector3(x, 0, 0),
-		color: new THREE.Color(),
-		intensity,
-		distance: 4,
-	})
-	const lights = [light(0, 1), light(1, 5), light(100, 50), light(20, 3)]
-	expect(chooseLights(lights, new THREE.Vector3(), 2).map(item => item.position.x)).toEqual([1, 100])
-	expect(chooseLights([light(1, 1), light(2, 0.5)], new THREE.Vector3())).toHaveLength(1)
 })
