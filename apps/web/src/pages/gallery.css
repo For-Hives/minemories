@@ -345,33 +345,23 @@
 .gallery-server-covers {
 	display: grid;
 	height: 96px;
-	grid-template-columns: 2fr 1fr;
-	grid-template-rows: 1fr 1fr;
-	gap: var(--gp);
+	place-items: center;
+	overflow: hidden;
 	background: var(--slot-lo);
 	color: var(--text-2);
 }
-.gallery-server-covers > span {
-	background: var(--night-3) center / cover;
+/* A 3D preview fills the slot; a server icon is a small square that keeps its shape, crisp, centred. */
+.gallery-server-picture {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.gallery-server-picture.is-icon {
+	width: auto;
+	height: 100%;
+	aspect-ratio: 1;
+	object-fit: contain;
 	image-rendering: pixelated;
-}
-.gallery-server-covers > span:first-child {
-	grid-row: 1 / -1;
-}
-.gallery-server-covers[data-count="1"] > span {
-	grid-column: 1 / -1;
-}
-.gallery-server-covers[data-count="2"] > span:last-child {
-	grid-row: 1 / -1;
-}
-.gallery-server-covers[data-count="0"] {
-	display: grid;
-	place-items: center;
-	grid-template: 1fr / 1fr;
-	background: var(--slot-lo);
-}
-.gallery-server-covers[data-count="0"] > span {
-	background: none;
 }
 .gallery-server-placeholder > svg {
 	width: 32px;
@@ -496,9 +486,11 @@
 	position: absolute;
 	inset: var(--gp);
 }
-.gallery-cover-image {
-	background: center / cover;
-	image-rendering: pixelated;
+.gallery-cover-picture {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 /* Hovering a slot: the game's white veil over the item. */
 .gallery-cover-image::after {
