@@ -145,8 +145,8 @@ Water reflections are a little greyer as a result but still read blue.
 Transparent surfaces get lower roughness; these are environment
 reflections, not reflections of neighboring objects or ray tracing. Textures
 stay pixelated up close, with interpolated mipmaps and anisotropy capped at 4.
-Point lights are served by a constant pool of 12 that follows the view (see
-`docs/features/web-foundations.md`, "Many light sources"); the
+Block light is a voxel light volume sampled by the materials, not point lights (see
+`docs/features/web-foundations.md`, "Block light volume"); the
 2048-pixel sun shadows are updated when the lighting/capture changes.
 No GLB format or Minecraft export is modified.
 
@@ -245,9 +245,8 @@ approximation, not a physical volume or an effect visible off screen.
 Lighting now contrasts a warm sun with a cooler, less intense ambient light. The 2048
 shadows are concentrated around the framed surface rather than the full depth of the
 underground. `beacon_beam` beams stay visible but no longer shift the framing
-and cast no shadow. The 12 pooled point lights are ranked by intensity and
-proximity to the view: deep lava must not push out every torch.
-Their intensity is rebalanced and stays capped, with no additional point-light shadows.
+and cast no shadow. Point lights no longer exist for block light: every captured light is baked into the light
+volume, so deep lava cannot push out a torch and there are no point-light shadows.
 
 Materials explicitly identified as Minecraft water get slightly
 rippled normals and stronger sky reflections. The patch is idempotent for
