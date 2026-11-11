@@ -113,8 +113,8 @@ export const minecraftUsername = z
 	.string()
 	.trim()
 	.regex(/^\w{3,16}$/)
-/** Head (face with its hat layer) of a Minecraft account, served by Minotar from the username. */
-export const minecraftHeadUrl = (username: string) => `https://minotar.net/helm/${encodeURIComponent(username)}/64.png`
+/** Face of a Minecraft account, served by head.sttr.io from the username. */
+export const minecraftHeadUrl = (username: string) => `https://head.sttr.io/face/${encodeURIComponent(username)}`
 
 export const apiContract = {
 	admin: adminContract,
