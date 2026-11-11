@@ -146,7 +146,7 @@ job, according to the identity and content checks described above.
 
 `Limits` lets you tune materials, textures, lights, UTF-8 bytes per string,
 JSON bytes, spool bytes, final GLB bytes and open files separately. The
-defaults are 4,096 materials, 1,024 textures, 128 lights, 4,096 bytes per
+defaults are 4,096 materials, 4,096 textures (the viewer and API cap, `MAX_GLB_IMAGES`), 128 lights, 4,096 bytes per
 string, 4 MiB of JSON, 256 MiB of spool, 200 MiB of GLB and 8 open files. At
 least two open files are required for the copy. The spool includes the
 unpadded JSON size; the final file limit includes headers, alignment, geometry,
