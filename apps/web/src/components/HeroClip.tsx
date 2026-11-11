@@ -58,6 +58,20 @@ const ratioSteps = [0, 0.1, 0.2, seenRatio, 0.5, 0.65, 0.8, 1]
 /** All the clips of the page: only the most visible one plays by itself. */
 const stage = createClipStage(seenRatio)
 
+/** How far (px) the element's centre is from the middle of the screen. */
+function middleDistance(element: Element): number {
+	const box = element.getBoundingClientRect()
+	return Math.abs(box.top + box.height / 2 - window.innerHeight / 2)
+}
+
+/** The element's visible ratio and distance to the middle of the screen, measured now; null before it has a size. */
+function viewOf(element: Element): { ratio: number; distance: number } | null {
+	const box = element.getBoundingClientRect()
+	if (box.height <= 0) return null
+	const visible = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0)
+	return { ratio: Math.max(0, visible) / box.height, distance: middleDistance(element) }
+}
+
 /** A cut from one place to another inside a clip: when it happens and the English keys of the chip on each side. */
 export interface ClipCut {
 	readonly at: number
@@ -146,10 +160,21 @@ export function HeroClip({
 				const entry = entries[entries.length - 1]
 				const ratio = entry?.isIntersecting ? entry.intersectionRatio : 0
 				setInView(ratio >= seenRatio)
-				stage.report(id, ratio)
+				stage.report(id, ratio, middleDistance(element))
 			},
 			{ threshold: ratioSteps }
 		)
+		// Two whole clips on a tall screen keep the same ratio while the page scrolls: the scroll tells the stage which one is nearer the middle.
+		let frame = 0
+		const scrolled = () => {
+			if (frame) return
+			frame = requestAnimationFrame(() => {
+				frame = 0
+				const view = viewOf(element)
+				if (view) stage.report(id, view.ratio, view.distance)
+			})
+		}
+		window.addEventListener('scroll', scrolled, { passive: true })
 		// Half a screen ahead, the file starts loading, so the clip is ready when it shows.
 		const ahead = new IntersectionObserver(entries => setNear(entries.some(entry => entry.isIntersecting)), {
 			rootMargin: '0px 0px 50% 0px',
@@ -159,6 +184,8 @@ export function HeroClip({
 		return () => {
 			seen.disconnect()
 			ahead.disconnect()
+			window.removeEventListener('scroll', scrolled)
+			cancelAnimationFrame(frame)
 			stage.remove(id)
 		}
 	}, [id])

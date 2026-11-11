@@ -93,31 +93,37 @@ export function clipSide(time: number, cutAt: number): 'before' | 'after' {
 
 /**
  * The clips on the page and how much of each is on screen, so that only the most visible one plays by itself (several moving pictures at once
- * compete). A clip reports its visible ratio; `foremost()` is the clip with the largest ratio at or above `seen`, the earliest registered on a tie.
+ * compete). A clip reports its visible ratio and how far its centre is from the screen's; `foremost()` is the clip with the largest ratio at or above
+ * `seen`, and between clips about as visible (two whole clips on a tall screen), the one nearest the middle of the screen.
  */
 export interface ClipStage {
 	/** Registers a clip and returns its id. */
 	add: () => number
-	/** The clip's visible ratio (0 when off screen). */
-	report: (id: number, ratio: number) => void
+	/** The clip's visible ratio (0 when off screen) and the distance (px) from its centre to the screen's. */
+	report: (id: number, ratio: number, distance?: number) => void
 	remove: (id: number) => void
 	foremost: () => number | null
 	/** Called on every change of the foremost clip; returns the unsubscribe function. */
 	subscribe: (listener: () => void) => () => void
 }
 
+/** Two visible ratios closer than this are "about as visible": the distance to the middle of the screen decides. */
+const sameRatio = 0.05
+
 export function createClipStage(seen: number): ClipStage {
-	const ratios = new Map<number, number>()
+	const ratios = new Map<number, { ratio: number; distance: number }>()
 	const listeners = new Set<() => void>()
 	let next = 0
 	let current: number | null = null
+	const better = (a: { ratio: number; distance: number }, b: { ratio: number; distance: number }) =>
+		Math.abs(a.ratio - b.ratio) < sameRatio ? a.distance < b.distance : a.ratio > b.ratio
 	const pick = () => {
 		let best: number | null = null
-		let bestRatio = seen
-		for (const [id, ratio] of ratios)
-			if (ratio > bestRatio || (best === null && ratio >= seen)) {
+		let bestView = { ratio: 0, distance: 0 }
+		for (const [id, view] of ratios)
+			if (view.ratio >= seen && (best === null || better(view, bestView))) {
 				best = id
-				bestRatio = ratio
+				bestView = view
 			}
 		if (best === current) return
 		current = best
@@ -126,11 +132,11 @@ export function createClipStage(seen: number): ClipStage {
 	return {
 		add: () => {
 			next += 1
-			ratios.set(next, 0)
+			ratios.set(next, { ratio: 0, distance: 0 })
 			return next
 		},
-		report: (id, ratio) => {
-			ratios.set(id, ratio)
+		report: (id, ratio, distance = 0) => {
+			ratios.set(id, { ratio, distance })
 			pick()
 		},
 		remove: id => {

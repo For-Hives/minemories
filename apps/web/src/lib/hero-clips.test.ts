@@ -97,3 +97,17 @@ test('the stage picks the most visible clip at or above the seen ratio, the firs
 	expect(stage.foremost()).toBeNull()
 	expect(changed).toHaveBeenCalledTimes(3)
 })
+
+test('between two clips about as visible, the one nearest the middle of the screen is the foremost', () => {
+	const stage = createClipStage(0.35)
+	const a = stage.add()
+	const b = stage.add()
+	stage.report(a, 1, 300)
+	stage.report(b, 1, 40)
+	expect(stage.foremost()).toBe(b)
+	stage.report(a, 0.98, 10)
+	expect(stage.foremost()).toBe(a)
+	// clearly more visible wins, however far
+	stage.report(b, 0.6, 0)
+	expect(stage.foremost()).toBe(a)
+})

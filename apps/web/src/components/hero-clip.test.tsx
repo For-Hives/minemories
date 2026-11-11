@@ -309,3 +309,40 @@ test('of two clips on screen only the most visible plays by itself; the other on
 	show(true, 0.2, second.clip)
 	expect(second.clip.querySelector('.mm-clip__toggle')?.getAttribute('data-playing')).toBe('false')
 })
+
+test('two whole clips on screen: scrolling hands the play to the one nearest the middle of the screen', async () => {
+	const frames: FrameRequestCallback[] = []
+	vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback))
+	vi.stubGlobal('cancelAnimationFrame', vi.fn())
+	const first = mount()
+	const second = mount()
+	const place = (clip: HTMLElement, top: number) => {
+		clip.getBoundingClientRect = () => ({ top, bottom: top + 200, height: 200 }) as DOMRect
+	}
+	place(first.clip, 300)
+	place(second.clip, 700)
+	show(true, 1)
+	await waitFor(() => expect(first.toggle().dataset.playing).toBe('true'))
+	expect(second.toggle().dataset.playing).toBe('false')
+	// the page scrolls: the second clip is now nearer the middle, both still whole
+	place(first.clip, 50)
+	place(second.clip, 450)
+	act(() => {
+		window.dispatchEvent(new Event('scroll'))
+		window.dispatchEvent(new Event('scroll'))
+	})
+	// one measure per clip and frame, however many scroll events
+	expect(frames).toHaveLength(2)
+	act(() => {
+		for (const frame of frames.splice(0)) frame(0)
+	})
+	expect(second.toggle().dataset.playing).toBe('true')
+	expect(first.toggle().dataset.playing).toBe('false')
+	// a clip without a size yet reports nothing
+	second.clip.getBoundingClientRect = () => ({ top: 0, bottom: 0, height: 0 }) as DOMRect
+	act(() => window.dispatchEvent(new Event('scroll')))
+	act(() => {
+		for (const frame of frames.splice(0)) frame(0)
+	})
+	expect(second.toggle().dataset.playing).toBe('true')
+})
