@@ -7,14 +7,14 @@ import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
-import { type Emitter, LightPool, type Point3 } from './lib/light-pool'
+import { buildLightVolume, buildLightVolumeAsync, type ImportedLight, lightSourcesFrom } from './lib/light-volume'
 import { dayDelta, Glide } from './lib/transitions'
 import { faithfulSkyLight, type Rgb, srgbFactorToLinear, type ViewerLighting } from './lib/viewer-lighting'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
-import { createFaithfulUniforms, prepareFaithfulLighting } from './viewer-faithful'
-import { framingBounds, isLightBeam, orbitFocus, surfaceFocus } from './viewer-framing'
+import { createFaithfulUniforms, prepareFaithfulLighting, setLightVolume } from './viewer-faithful'
+import { framingBounds, isLightBeam, orbitFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
 import { ViewerPrecipitation } from './viewer-precipitation'
@@ -104,15 +104,6 @@ function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown })
 	})
 }
 
-/** Plain numbers of an imported light: no live `PointLight` outlives the load, whatever their count. */
-function emitterOf(
-	position: THREE.Vector3,
-	light: { color: THREE.Color; intensity: number; distance: number }
-): Emitter {
-	const { r, g, b } = light.color
-	return { x: position.x, y: position.y, z: position.z, r, g, b, intensity: light.intensity, distance: light.distance }
-}
-
 export class ViewerScene {
 	private readonly canvas: HTMLCanvasElement
 	private readonly events: ViewerSceneEvents
@@ -136,9 +127,8 @@ export class ViewerScene {
 		uFixed: { value: -1 },
 	}
 	private readonly precipitation = new ViewerPrecipitation()
-	/** The only point lights of the scene: a constant count (no shader recompilation) fed by `lightPool`. */
-	private readonly worldLights = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
-	private readonly lightPool = new LightPool(12)
+	/** Bumped for every block light build: a slower, older build of a timelapse step never replaces a newer one. */
+	private lightBuild = 0
 	private readonly pivot = new ViewerPivot()
 	private readonly groundRay = new THREE.Raycaster()
 	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
@@ -319,7 +309,6 @@ export class ViewerScene {
 		this.controls.enableDamping = true
 		this.controls.dampingFactor = 0.08
 		this.scene.add(this.modelRoot, this.precipitation.object, this.pivot.object)
-		this.attachWorldLights()
 		this.effects = new ViewerEffects(this.renderer, this.scene, this.camera)
 		this.environmentGenerator = new THREE.PMREMGenerator(this.renderer)
 		this.controls.autoRotateSpeed = 0.35
@@ -469,7 +458,6 @@ export class ViewerScene {
 			})
 			const first = this.modelRoot.children.length === 0
 			this.modelRoot.add(root)
-			this.attachWorldLights()
 			this.applyCategories(root)
 			await this.renderer.compileAsync(root, this.camera, this.scene)
 			this.ensureLoadActive(signal)
@@ -486,12 +474,9 @@ export class ViewerScene {
 		}
 	}
 
-	/** Shows the composed world: constant light count (no shader recompilation) and refreshed shadows. */
+	/** Shows the composed world: its visible lights become the block light volume, and shadows are refreshed. */
 	showWorld(lights: readonly WorldLight[]): void {
-		this.setWorldEmitters(
-			lights.map(light => emitterOf(light.position, light)),
-			this.captureFocus ?? this.controls.target
-		)
+		this.buildBlockLight(lights, true)
 		this.keyLight.shadow.needsUpdate = true
 		this.renderer.shadowMap.needsUpdate = true
 		this.ceilingDirty = true
@@ -808,7 +793,6 @@ export class ViewerScene {
 
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
 		this.advanceGlides(deltaSeconds)
-		this.updateWorldLights(deltaSeconds)
 		if (this.navigation.active) this.navigation.update(deltaSeconds)
 		else this.controls.update(deltaSeconds)
 		if (this.ceilingDirty && (this.weather === 'rain' || this.weather === 'snow')) {
@@ -949,55 +933,46 @@ export class ViewerScene {
 
 	private prepareWorldLighting(root: THREE.Object3D): void {
 		const imported: THREE.PointLight[] = []
-		const emitters: Emitter[] = []
+		const lights: ImportedLight[] = []
 
 		root.updateMatrixWorld(true)
 		root.traverse(object => {
 			if (object instanceof THREE.PointLight) {
 				imported.push(object)
-				emitters.push(emitterOf(object.getWorldPosition(new THREE.Vector3()), object))
+				lights.push({
+					position: object.getWorldPosition(new THREE.Vector3()),
+					color: object.color,
+					intensity: object.intensity,
+				})
 				return
 			}
 			if (!(object instanceof THREE.Mesh)) return
 			this.prepareMesh(object)
 		})
 
+		// Block light is a voxel volume sampled by the materials: no live point light stays in the scene.
 		for (const light of imported) light.removeFromParent()
-		this.setWorldEmitters(emitters, surfaceFocus(framingBounds(root)))
-	}
-
-	/** Hands the capture's emitters to the pool and shows its first selection at once, before shaders compile. */
-	private setWorldEmitters(emitters: readonly Emitter[], focus: Point3): void {
-		this.attachWorldLights()
-		this.lightPool.setEmitters(emitters)
-		this.lightPool.update(focus, Number.POSITIVE_INFINITY)
-		this.applyLightPool()
-	}
-
-	/** Follows the view: the pool re-picks its lights around the orbit target or the walking camera and fades changes. */
-	private updateWorldLights(deltaSeconds: number): void {
-		this.lightPool.update(this.navigation.active ? this.camera.position : this.controls.target, deltaSeconds)
-		this.applyLightPool()
+		this.buildBlockLight(lights, false)
 	}
 
 	/**
-	 * The pool is the only source of point lights and is attached before any compilation or render: every program
-	 * is built for exactly `worldLights.length` lights, never for a capture's own, and never rebuilt for a change.
+	 * Fills the block light volume from the captured lights. A load builds it at once (the page is preparing anyway);
+	 * the timelapse builds it in the background, one step's build replacing the previous one only if it is the latest.
 	 */
-	private attachWorldLights(): void {
-		for (const light of this.worldLights) if (!light.parent) this.scene.add(light)
-	}
-
-	private applyLightPool(): void {
-		for (const [position, { emitter, level }] of this.lightPool.slots.entries()) {
-			const light = this.worldLights[position]
-			if (!light) continue
-			light.intensity = emitter ? Math.min(emitter.intensity * 0.01, 12) * level : 0
-			if (!emitter) continue
-			light.color.setRGB(emitter.r, emitter.g * 0.82, emitter.b * 0.65, THREE.LinearSRGBColorSpace)
-			light.distance = Math.min(Math.max(emitter.distance, 1), 10)
-			light.position.set(emitter.x, emitter.y, emitter.z)
+	private buildBlockLight(lights: readonly ImportedLight[], background: boolean): void {
+		const build = ++this.lightBuild
+		const sources = lightSourcesFrom(lights)
+		if (!background) {
+			setLightVolume(this.faithfulUniforms, buildLightVolume(sources))
+			return
 		}
+		void buildLightVolumeAsync(
+			sources,
+			() => new Promise(resolve => setTimeout(resolve, 0)),
+			() => this.disposed || build !== this.lightBuild
+		).then(volume => {
+			if (!this.disposed && build === this.lightBuild) setLightVolume(this.faithfulUniforms, volume)
+		})
 	}
 
 	private updateDayCycle(): void {

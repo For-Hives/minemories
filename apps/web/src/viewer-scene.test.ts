@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
 import { UnsupportedGlbError } from './lib/glb'
 import { legacyEmissiveToLinear, srgbToLinear } from './lib/glb-colours'
-import { LightPool } from './lib/light-pool'
+import { createFaithfulUniforms, type FaithfulUniforms } from './viewer-faithful'
 import { disposeImportedObject, ViewerScene } from './viewer-scene'
 
 test('viewer clears loading and refuses unsafe files before calling its texture loader', async () => {
@@ -262,55 +262,6 @@ test('lighting preparation preserves imported face normals instead of forcing de
 	material.dispose()
 })
 
-test('hundreds of imported lights leave the scene graph and a constant pool lights the surface first', () => {
-	const root = new THREE.Group()
-	root.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32), new THREE.MeshStandardMaterial()))
-	const surfaceLight = new THREE.PointLight(0xff6600, 900, 14)
-	surfaceLight.position.set(0, 72, 0)
-	root.add(surfaceLight)
-	for (let i = 0; i < 600; i++) {
-		const light = new THREE.PointLight(0xffffff, 1400, 20)
-		light.position.set((i % 30) * 7, -70, Math.floor(i / 30) * 7)
-		root.add(light)
-	}
-	const pool = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
-	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
-	Object.assign(scene, { worldLights: pool, lightPool: new LightPool(12), scene: new THREE.Scene() })
-	scene.prepareWorldLighting(root)
-	expect(root.children.filter(child => child instanceof THREE.PointLight)).toHaveLength(0)
-	expect(pool.every(light => light.parent)).toBe(true)
-	expect(pool.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
-	expect(pool.filter(light => light.intensity > 0)).toHaveLength(12)
-	disposeImportedObject(root)
-})
-
-test('the light pool follows the orbit target or the walking camera and fades its lights', () => {
-	const pool = Array.from({ length: 2 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
-	const lightPool = new LightPool(2, 1)
-	lightPool.setEmitters([
-		{ x: 0, y: 0, z: 0, r: 1, g: 1, b: 1, intensity: 100, distance: 6 },
-		{ x: 90, y: 0, z: 0, r: 1, g: 1, b: 1, intensity: 100, distance: 6 },
-	])
-	const camera = new THREE.PerspectiveCamera()
-	camera.position.set(90, 0, 0)
-	const scene = Object.create(ViewerScene.prototype) as { updateWorldLights(seconds: number): void }
-	Object.assign(scene, {
-		worldLights: pool,
-		lightPool,
-		scene: new THREE.Scene(),
-		camera,
-		controls: { target: new THREE.Vector3() },
-		navigation: { active: false },
-	})
-	scene.updateWorldLights(0.5)
-	expect(pool.map(light => light.intensity)).toEqual([0.5, 0.5])
-	scene.updateWorldLights(1)
-	expect(pool.map(light => light.intensity)).toEqual([1, 1])
-	Object.assign(scene, { navigation: { active: true } })
-	scene.updateWorldLights(0)
-	expect(pool.map(light => light.intensity)).toEqual([1, 1])
-})
-
 test('orbit remains centered on the captured player when switching captures with a preserved view', () => {
 	const root = new THREE.Group()
 	root.userData.minemoriesPlayerPosition = [4, 20, -3]
@@ -342,9 +293,8 @@ function worldFixture() {
 	Object.assign(f.scene, {
 		disposed: false,
 		prepareMesh: vi.fn(),
-		worldLights: Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2)),
-		lightPool: new LightPool(12),
-		scene: new THREE.Scene(),
+		faithfulUniforms: createFaithfulUniforms(),
+		lightBuild: 0,
 		controls: { target: new THREE.Vector3() },
 		captureFocus: null,
 		keyLight: { shadow: { needsUpdate: false } },
@@ -376,10 +326,9 @@ test('world layers stack without replacing each other and only the first one fra
 	expect(f.modelRoot.children).toEqual([f.next, second])
 	expect(f.fields.frameModel).toHaveBeenCalledOnce()
 	f.scene.showWorld(layer.lights)
-	const lights = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
-	expect(lights[0]?.intensity).toBe(3)
-	expect(lights[0]?.position.toArray()).toEqual([5, 0, -2])
-	expect(lights[1]?.intensity).toBe(0)
+	const uniforms = (f.scene as unknown as { faithfulUniforms: FaithfulUniforms }).faithfulUniforms
+	await vi.waitFor(() => expect(uniforms.memoryLightVolume.value.image.width).toBeGreaterThan(1))
+	expect(uniforms.memoryLightOrigin.value.toArray()).toEqual([5 - 3, 0 - 3, -2 - 3])
 	expect(f.shadowMap.needsUpdate).toBe(true)
 	f.scene.focusLayer(second)
 	expect(f.fields.frameModel).toHaveBeenLastCalledWith(second, false)
@@ -676,63 +625,55 @@ test('switching the lighting style flips shared uniforms, tone mapping and post 
 	expect(updateDayCycle).toHaveBeenCalledTimes(2)
 })
 
-/** Every point light a render or compilation of the scene would see. */
-function renderedPointLights(scene: THREE.Object3D): number {
-	let count = 0
-	scene.traverseVisible(object => {
-		if (object instanceof THREE.PointLight) count++
-	})
-	return count
-}
-
 function manyLights(count: number): THREE.Group {
 	const root = new THREE.Group()
 	root.add(new THREE.Mesh(new THREE.BoxGeometry(64, 8, 64), new THREE.MeshStandardMaterial()))
 	for (let i = 0; i < count; i++) {
-		const light = new THREE.PointLight(0xffaa55, 1500, 14)
+		const light = new THREE.PointLight(0xffaa55, 1400, 14)
 		light.position.set((i % 40) * 1.5 - 30, 1, Math.floor(i / 40) * 1.5 - 30)
 		root.add(light)
 	}
 	return root
 }
 
-test('no loader entry point ever compiles or renders more point lights than the pool holds', async () => {
-	const rendered: number[] = []
-	for (const entry of ['loadFile', 'addLayer'] as const) {
-		const f = worldFixture()
-		const three = new THREE.Scene()
-		three.add(f.modelRoot)
-		const imported = manyLights(1000)
-		f.fields.loader.parseAsync.mockResolvedValue({ scene: imported })
-		f.fields.renderer.compileAsync.mockImplementation(async () => {
-			rendered.push(renderedPointLights(three))
-		})
-		const internals = f.scene as unknown as Record<string, unknown>
-		Object.assign(internals, {
-			scene: three,
-			lightPool: new LightPool(12),
-			navigation: { active: false },
-			applyCategories: vi.fn(),
-			ceilingDirty: false,
-			preparingWorld: false,
-			loadingFile: false,
-			ensureLoadActive: vi.fn(),
-		})
-		const prepare = (ViewerScene.prototype as unknown as Record<string, unknown>).prepareWorldLighting
-		internals.prepareWorldLighting = prepare
-		f.compile.resolve()
-		if (entry === 'loadFile') await f.scene.loadFile(f.file)
-		else {
-			const layer = await f.scene.addLayer(f.file, capture)
-			rendered.push(renderedPointLights(three))
-			f.scene.showWorld(layer.lights)
-		}
-		rendered.push(renderedPointLights(three))
-		const pool = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
-		expect(pool.every(light => light.parent === three)).toBe(true)
-		expect(pool.filter(light => light.intensity > 0).length).toBeLessThanOrEqual(12)
-		expect(renderedPointLights(imported)).toBe(0)
-	}
-	expect(rendered.length).toBeGreaterThanOrEqual(5)
-	expect(new Set(rendered)).toEqual(new Set([12]))
+function pointLightCount(root: THREE.Object3D): number {
+	let count = 0
+	root.traverse(object => {
+		if (object instanceof THREE.PointLight) count++
+	})
+	return count
+}
+
+test('hundreds of imported lights become one block light volume and leave no point light in the scene', () => {
+	const root = manyLights(600)
+	const uniforms = createFaithfulUniforms()
+	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
+	Object.assign(scene, { faithfulUniforms: uniforms, lightBuild: 0, prepareMesh: vi.fn() })
+	scene.prepareWorldLighting(root)
+	expect(pointLightCount(root)).toBe(0)
+	const volume = uniforms.memoryLightVolume.value
+	expect(volume.image.width).toBeGreaterThan(40)
+	expect(volume.image.depth).toBeGreaterThan(40)
+	expect(uniforms.memoryLightScale.value.x).toBeGreaterThan(0)
+	disposeImportedObject(root)
+})
+
+test('a capture without lights samples the black volume, and a stale timelapse build never replaces a newer one', async () => {
+	const uniforms = createFaithfulUniforms()
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	Object.assign(scene, { faithfulUniforms: uniforms, lightBuild: 0, disposed: false })
+	const internals = scene as unknown as { buildBlockLight(lights: unknown[], background: boolean): void }
+	const torch = { position: new THREE.Vector3(1, 1, 1), color: new THREE.Color(1, 1, 1), intensity: 1400 }
+	internals.buildBlockLight([], false)
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(1)
+	internals.buildBlockLight([torch], true)
+	internals.buildBlockLight([], true)
+	await new Promise(resolve => setTimeout(resolve, 60))
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(1)
+	internals.buildBlockLight([torch], true)
+	await vi.waitFor(() => expect(uniforms.memoryLightVolume.value.image.width).toBe(29))
+	Object.assign(scene, { disposed: true })
+	internals.buildBlockLight([torch], true)
+	await new Promise(resolve => setTimeout(resolve, 60))
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(29)
 })
