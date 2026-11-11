@@ -35,7 +35,8 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private CaptureBounds bounds;
   private CaptureCursor cursor;
   private CaptureLevelView fluidView;
-  private CutBoundary.Shell shell;
+  private static final int FILL_SLICE = 20_000;
+  private CutBoundary.OpenAir shell;
   private BlockPos min, max, center;
   private int surfaceX, surfaceZ, surfaceFloor, entityIndex;
   private boolean surfaceDone, entitiesScanned, cancelled, suspended;
@@ -203,7 +204,9 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
 
   private CaptureElement.Snapshot copyNext() throws IOException {
     if (!surfaceDone) {
-      surface();
+      // The fill of the open air runs in slices after the surface walk, then the cells follow.
+      if (shell != null) surfaceDone = shell.advance(FILL_SLICE);
+      else surface();
       return null;
     }
     if (!cursor.done()) {
@@ -289,9 +292,8 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
               (min.getY() + max.getY()) / 2,
               (min.getZ() + max.getZ()) / 2);
       cursor = new CaptureCursor(bounds);
-      shell = new CutBoundary.Shell(bounds, ClientRuntime.passable(level));
+      shell = ClientRuntime.openAir(mc, bounds, true);
       fluidView = new CaptureLevelView(level, bounds);
-      surfaceDone = true;
     } else if (surfaceX == bounds.maxX()) {
       surfaceX = bounds.minX();
       surfaceZ++;
