@@ -698,7 +698,6 @@ function manyLights(count: number): THREE.Group {
 
 test('no loader entry point ever compiles or renders more point lights than the pool holds', async () => {
 	const rendered: number[] = []
-	const stage = THREE.Object3D.prototype
 	for (const entry of ['loadFile', 'addLayer'] as const) {
 		const f = worldFixture()
 		const three = new THREE.Scene()
@@ -709,7 +708,6 @@ test('no loader entry point ever compiles or renders more point lights than the 
 			rendered.push(renderedPointLights(three))
 		})
 		const internals = f.scene as unknown as Record<string, unknown>
-		delete internals.prepareWorldLighting
 		Object.assign(internals, {
 			scene: three,
 			lightPool: new LightPool(12),
@@ -733,9 +731,8 @@ test('no loader entry point ever compiles or renders more point lights than the 
 		const pool = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
 		expect(pool.every(light => light.parent === three)).toBe(true)
 		expect(pool.filter(light => light.intensity > 0).length).toBeLessThanOrEqual(12)
-		expect(renderedPointLights(imported)).toBe(entry === 'loadFile' ? 0 : 0)
+		expect(renderedPointLights(imported)).toBe(0)
 	}
-	expect(stage).toBeDefined()
 	expect(rendered.length).toBeGreaterThanOrEqual(5)
 	expect(new Set(rendered)).toEqual(new Set([12]))
 })
