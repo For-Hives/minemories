@@ -49,25 +49,109 @@ final class CutBoundary {
     boolean at(int x, int y, int z);
   }
 
-  /**
-   * The cells of the cut shell (the four sides and the bottom of the capture) that are open to the
-   * sky, found by flood fill along the shell from its top row. A cut cell of air or fluid that the
-   * fill never reaches is enclosed by the terrain on the shell: a cave, a pool or a pocket the
-   * boundary slices through, and the only cells that get a seal. Open air under a canopy, an
-   * overhang, a floating island or a build's roof reaches the top row around the obstacle, so it
-   * stays open. A capture taken inside a closed space (the Nether, a cave) has no way out on the
-   * shell either: its cavities are then sealed like any other cave, with the material around them.
-   */
-  static final class Shell {
-    private final CaptureBounds bounds;
-    private final long sizeX, sizeZ;
-    private final java.util.BitSet open = new java.util.BitSet();
+  /** Highest non-air row of a column (the world-surface heightmap), below the capture if none. */
+  interface Surface {
+    int at(int x, int z);
+  }
 
-    Shell(CaptureBounds bounds, Passable passable) {
+  /**
+   * The open air of a capture, found by flood fill through the volume. A cell is open when
+   * non-opaque cells connect it to the sky (the top layer of the capture, or any cell above its
+   * column's surface), or to the player's own cell at capture time. A cut cell of air or fluid that
+   * is not open is a pocket cut off from both (a cave, a pool, a sealed room) and the only kind
+   * that gets a seal. Open air under a canopy, an overhang, a floating island or a roof reaches the
+   * sky around the obstacle, and a cavern or a room the player stands in stays open however closed
+   * it is.
+   *
+   * <p>The cells above a column's surface are open by definition and are never visited, so the fill
+   * only walks the air under the surface: a cave, the air of a tree, a Nether cavern. It is capped
+   * at {@link #LIMIT} cells; past that nothing is sealed at all, never a wall too many. {@link
+   * #advance} works in slices so the progressive capture can spread it over frames.
+   */
+  static final class OpenAir {
+    static final int LIMIT = 6_000_000;
+
+    private final CaptureBounds bounds;
+    private final Passable passable;
+    private final long sizeX, sizeZ;
+    private final int[] surface;
+    private final java.util.BitSet open = new java.util.BitSet();
+    private final java.util.ArrayDeque<int[]> pending = new java.util.ArrayDeque<>();
+    private int count;
+    private boolean exceeded;
+
+    OpenAir(CaptureBounds bounds, Passable passable, Surface surface, int[][] playerCells) {
       this.bounds = bounds;
+      this.passable = passable;
       this.sizeX = (long) bounds.maxX() - bounds.minX() + 1;
       this.sizeZ = (long) bounds.maxZ() - bounds.minZ() + 1;
-      flood(passable);
+      this.surface = new int[(int) (sizeX * sizeZ)];
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++)
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++)
+          this.surface[column(x, z)] = surface.at(x, z);
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+          // Seeds: the top layer, and the sky cells that touch a higher neighbouring column.
+          reach(x, bounds.maxY(), z);
+          int top = Math.min(bounds.maxY(), neighbourSurface(x, z));
+          for (int y = Math.max(bounds.minY(), this.surface[column(x, z)] + 1); y <= top; y++)
+            pending.add(new int[] {x, y, z});
+        }
+      }
+      for (int[] cell : playerCells) reach(cell[0], cell[1], cell[2]);
+    }
+
+    private int neighbourSurface(int x, int z) {
+      int best = Integer.MIN_VALUE;
+      if (x > bounds.minX()) best = Math.max(best, surface[column(x - 1, z)]);
+      if (x < bounds.maxX()) best = Math.max(best, surface[column(x + 1, z)]);
+      if (z > bounds.minZ()) best = Math.max(best, surface[column(x, z - 1)]);
+      if (z < bounds.maxZ()) best = Math.max(best, surface[column(x, z + 1)]);
+      return best;
+    }
+
+    private int column(int x, int z) {
+      return (int) ((long) (z - bounds.minZ()) * sizeX + (x - bounds.minX()));
+    }
+
+    private int index(int x, int y, int z) {
+      return (int)
+          (((long) y - bounds.minY()) * sizeZ * sizeX
+              + ((long) z - bounds.minZ()) * sizeX
+              + ((long) x - bounds.minX()));
+    }
+
+    private boolean sky(int x, int y, int z) {
+      return y > surface[column(x, z)];
+    }
+
+    /** Marks a passable cell open and queues it, unless it is sky (open without a visit). */
+    private void reach(int x, int y, int z) {
+      if (outside(bounds, x, y, z)) return;
+      int i = index(x, y, z);
+      if (open.get(i)) return;
+      if (!sky(x, y, z) && !passable.at(x, y, z)) return;
+      open.set(i);
+      if (sky(x, y, z)) return;
+      if (++count > LIMIT) exceeded = true;
+      pending.add(new int[] {x, y, z});
+    }
+
+    /** Visits at most {@code cells} queued cells; true when the fill is finished. */
+    boolean advance(int cells) {
+      int[][] steps = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+      for (int n = 0; n < cells && !pending.isEmpty() && !exceeded; n++) {
+        int[] cell = pending.poll();
+        for (int[] step : steps) reach(cell[0] + step[0], cell[1] + step[1], cell[2] + step[2]);
+      }
+      return pending.isEmpty() || exceeded;
+    }
+
+    /** Runs the fill to its end. */
+    void settle() {
+      while (!advance(1 << 16)) {
+        // keep going
+      }
     }
 
     boolean onShell(int x, int y, int z) {
@@ -80,40 +164,11 @@ final class CutBoundary {
     }
 
     /**
-     * Whether this shell cell is cut off from the open air along the shell. Only meaningful for a
-     * passable cell (air, fluid): a solid cell is never reached by the fill.
+     * Whether this shell cell is a pocket cut off from the sky and the player. Only meaningful for
+     * a passable cell (air, fluid). Nothing is enclosed when the fill ran past its cap.
      */
     boolean enclosed(int x, int y, int z) {
-      return onShell(x, y, z) && !open.get(index(x, y, z));
-    }
-
-    private int index(int x, int y, int z) {
-      return (int)
-          (((long) y - bounds.minY()) * sizeZ * sizeX
-              + ((long) z - bounds.minZ()) * sizeX
-              + ((long) x - bounds.minX()));
-    }
-
-    private void flood(Passable passable) {
-      int[][] steps = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-      java.util.ArrayDeque<int[]> pending = new java.util.ArrayDeque<>();
-      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
-        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
-          if (onShell(x, bounds.maxY(), z) && passable.at(x, bounds.maxY(), z)) {
-            open.set(index(x, bounds.maxY(), z));
-            pending.add(new int[] {x, bounds.maxY(), z});
-          }
-        }
-      }
-      while (!pending.isEmpty()) {
-        int[] cell = pending.poll();
-        for (int[] step : steps) {
-          int x = cell[0] + step[0], y = cell[1] + step[1], z = cell[2] + step[2];
-          if (!onShell(x, y, z) || open.get(index(x, y, z)) || !passable.at(x, y, z)) continue;
-          open.set(index(x, y, z));
-          pending.add(new int[] {x, y, z});
-        }
-      }
+      return !exceeded && onShell(x, y, z) && !sky(x, y, z) && !open.get(index(x, y, z));
     }
   }
 

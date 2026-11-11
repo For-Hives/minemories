@@ -1253,10 +1253,12 @@ public final class ClientRuntime {
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
       var shell =
-          new CutBoundary.Shell(
+          openAir(
+              mc,
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
-              passable(level));
+              !selection);
+      shell.settle();
       int blockCount = 0;
       // Chunk-major, like the progressive cursor, so each primitive keeps few chunk ranges.
       for (int chunkZ = Math.floorDiv(min.getZ(), 16) * 16; chunkZ <= max.getZ(); chunkZ += 16) {
@@ -1332,7 +1334,7 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      CutBoundary.Shell shell)
+      CutBoundary.OpenAir shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
@@ -1461,13 +1463,33 @@ public final class ClientRuntime {
   /** Block id of the cross-section faces that close the capture's sides and bottom. */
   private static final String CUT_BLOCK_ID = "minemories:cut";
 
-  /** Whether a cell lets the outside through: anything but an opaque full cube. */
-  static CutBoundary.Passable passable(net.minecraft.world.level.Level level) {
+  /**
+   * The open air of the capture: sky, plus the player's own cells for an around-player capture (an
+   * explicit selection counts the sky only). Cells of chunks not received count as solid.
+   */
+  static CutBoundary.OpenAir openAir(Minecraft mc, CaptureBounds bounds, boolean aroundPlayer) {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
     var pos = new BlockPos.MutableBlockPos();
-    return (x, y, z) -> {
-      BlockState state = level.getBlockState(pos.set(x, y, z));
-      return !(state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
-    };
+    CutBoundary.Passable passable =
+        (x, y, z) -> {
+          if (!chunkLoaded(mc, x, z)) return false;
+          BlockState state = level.getBlockState(pos.set(x, y, z));
+          return !(state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
+        };
+    CutBoundary.Surface surface =
+        (x, z) ->
+            chunkLoaded(mc, x, z)
+                ? level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1
+                : Integer.MAX_VALUE - 1;
+    int[][] player = new int[0][];
+    if (aroundPlayer && mc.player != null) {
+      BlockPos feet = mc.player.blockPosition();
+      player =
+          new int[][] {
+            {feet.getX(), feet.getY(), feet.getZ()}, {feet.getX(), feet.getY() + 1, feet.getZ()}
+          };
+    }
+    return new CutBoundary.OpenAir(bounds, passable, surface, player);
   }
 
   /**
@@ -1509,7 +1531,7 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      CutBoundary.Shell shell)
+      CutBoundary.OpenAir shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     boolean fluid = !state.getFluidState().isEmpty();
