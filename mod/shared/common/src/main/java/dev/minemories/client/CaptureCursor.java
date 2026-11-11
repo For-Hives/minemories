@@ -4,9 +4,9 @@ package dev.minemories.client;
  * A cell stays pending until its copied output is admitted; backpressure must never lose a block.
  */
 final class CaptureCursor {
-  record Column(int top, int terrainTop) {}
+  record Column(int top) {}
 
-  record Cell(int x, int y, int z, int terrainTop) {}
+  record Cell(int x, int y, int z) {}
 
   interface Columns {
     Column get(int x, int z);
@@ -48,10 +48,10 @@ final class CaptureCursor {
         nextColumn();
         return null;
       }
-      column = new Column(Math.min(next.top(), bounds.maxY()), next.terrainTop());
+      column = new Column(Math.min(next.top(), bounds.maxY()));
       y = bounds.minY();
     }
-    pending = new Cell(x, y, z, column.terrainTop());
+    pending = new Cell(x, y, z);
     return pending;
   }
 

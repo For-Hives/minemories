@@ -35,6 +35,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private CaptureBounds bounds;
   private CaptureCursor cursor;
   private CaptureLevelView fluidView;
+  private CutBoundary.Shell shell;
   private BlockPos min, max, center;
   private int surfaceX, surfaceZ, surfaceFloor, entityIndex;
   private boolean surfaceDone, entitiesScanned, cancelled, suspended;
@@ -217,10 +218,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
                         Math.min(
                             bounds.maxY(),
                             level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-                    int terrain = ClientRuntime.terrainSurfaceY(level, x, z, bounds.minY());
-                    while (terrain >= bounds.minY()
-                        && !level.getFluidState(new BlockPos(x, terrain, z)).isEmpty()) terrain--;
-                    return new CaptureCursor.Column(top, terrain);
+                    return new CaptureCursor.Column(top);
                   } catch (IOException error) {
                     throw new java.io.UncheckedIOException(error);
                   }
@@ -246,7 +244,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
               min,
               max,
               center,
-              cell.terrainTop());
+              shell);
       var result = sink.element.seal();
       cursor.advance();
       return result;
@@ -291,6 +289,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
               (min.getY() + max.getY()) / 2,
               (min.getZ() + max.getZ()) / 2);
       cursor = new CaptureCursor(bounds);
+      shell = new CutBoundary.Shell(bounds, ClientRuntime.passable(level));
       fluidView = new CaptureLevelView(level, bounds);
       surfaceDone = true;
     } else if (surfaceX == bounds.maxX()) {

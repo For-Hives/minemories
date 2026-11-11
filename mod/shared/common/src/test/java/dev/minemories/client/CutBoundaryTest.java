@@ -27,18 +27,97 @@ class CutBoundaryTest {
     for (int[] p : neighbors) assertTrue(CutBoundary.outside(bounds, p[0], p[1], p[2]));
   }
 
+  private static final CaptureBounds BOX = new CaptureBounds(0, 0, 0, 4, 9, 4);
+
+  private static CutBoundary.Shell shell(CutBoundary.Passable passable) {
+    return new CutBoundary.Shell(BOX, passable);
+  }
+
   @Test
-  void closesSolidSectionsCavesAndUndergroundFluidsWithoutCoveringTheSurface() {
-    assertEquals(CutBoundary.Material.STONE, CutBoundary.material(20, 64, true, false, false));
-    assertEquals(CutBoundary.Material.STONE, CutBoundary.material(20, 64, false, true, false));
-    assertEquals(CutBoundary.Material.STONE, CutBoundary.material(60, 64, false, false, true));
-    assertEquals(CutBoundary.Material.DIRT, CutBoundary.material(61, 64, true, false, false));
-    assertEquals(CutBoundary.Material.NONE, CutBoundary.material(64, 64, false, false, true));
-    assertEquals(CutBoundary.Material.NONE, CutBoundary.material(70, 64, true, false, false));
-    assertEquals(CutBoundary.Material.NONE, CutBoundary.material(20, 64, false, false, false));
-    assertEquals(
-        CutBoundary.Material.STONE,
-        CutBoundary.material(Integer.MIN_VALUE, Integer.MAX_VALUE, true, false, false));
+  void openAirUnderACanopyOrOverhangAtTheBorderIsNeverSealed() {
+    // Ground up to y = 2; a trunk on the plane x = 0 with leaves (passable) on top; a roof slab
+    // over x 0..1 at y = 6, open on the other sides.
+    var shell =
+        shell(
+            (x, y, z) -> {
+              boolean ground = y <= 2;
+              boolean trunk = x == 0 && z == 2 && y >= 3 && y <= 5;
+              boolean roof = x <= 1 && y == 6;
+              return !(ground || trunk || roof);
+            });
+    assertFalse(shell.enclosed(0, 4, 0), "beside the trunk, under the roof");
+    assertFalse(shell.enclosed(0, 3, 4), "under the roof, far from the trunk");
+    assertFalse(shell.enclosed(0, 8, 2), "above the roof");
+    assertFalse(shell.enclosed(3, 3, 0), "open air on the z plane");
+  }
+
+  @Test
+  void aCaveCutByTheBoundaryIsSealedButNotTheAirAboveTheGround() {
+    var shell =
+        shell(
+            (x, y, z) -> {
+              boolean ground = y <= 5;
+              boolean cave = x <= 2 && z == 2 && y >= 2 && y <= 3;
+              return !ground || cave;
+            });
+    assertTrue(shell.enclosed(0, 2, 2));
+    assertTrue(shell.enclosed(0, 3, 2));
+    assertFalse(shell.enclosed(0, 7, 2));
+    assertFalse(shell.enclosed(4, 6, 4));
+  }
+
+  @Test
+  void aCaveWithAMouthOnTheShellStaysOpen() {
+    var shell =
+        shell(
+            (x, y, z) -> {
+              boolean ground = y <= 5;
+              boolean cave = x == 0 && z == 2 && y >= 2 && y <= 5;
+              return !ground || cave;
+            });
+    assertFalse(shell.enclosed(0, 2, 2));
+  }
+
+  @Test
+  void aFloatingIslandKeepsAnOpenUndersideAndBottom() {
+    var shell = shell((x, y, z) -> !(y == 5 && x >= 1 && x <= 3 && z >= 1 && z <= 3));
+    assertFalse(shell.enclosed(2, 0, 2));
+    assertFalse(shell.enclosed(0, 4, 0));
+  }
+
+  @Test
+  void aCaptureInsideAClosedSpaceSealsItsCavityConsistently() {
+    // Bedrock ceiling at y = 8 and a floor up to y = 1: a Nether-like cavity with no way out.
+    var shell = shell((x, y, z) -> y > 1 && y < 8);
+    for (int y = 2; y < 8; y++) assertTrue(shell.enclosed(0, y, 2), "side at y=" + y);
+    assertTrue(shell.enclosed(4, 5, 4));
+  }
+
+  @Test
+  void onlyShellCellsInsideTheBoundsCanBeEnclosed() {
+    var shell = shell((x, y, z) -> y > 1 && y < 8);
+    assertTrue(shell.onShell(0, 3, 2));
+    assertTrue(shell.onShell(2, 0, 2));
+    assertFalse(shell.onShell(2, 3, 2));
+    assertFalse(shell.onShell(-1, 3, 2));
+    assertFalse(shell.onShell(2, 10, 2));
+    assertFalse(shell.enclosed(2, 3, 2));
+  }
+
+  @Test
+  void nearestSolidPrefersTheFloorThenTheCeiling() {
+    assertEquals(4, CutBoundary.nearestSolid(7, 0, 9, y -> y == 4 || y == 8));
+    assertEquals(8, CutBoundary.nearestSolid(7, 5, 9, y -> y == 8));
+    assertEquals(Integer.MIN_VALUE, CutBoundary.nearestSolid(7, 0, 9, y -> false));
+  }
+
+  @Test
+  void fallbackFollowsTheDimension() {
+    assertEquals(CutBoundary.Fallback.NETHERRACK, CutBoundary.fallback("minecraft:the_nether", 40));
+    assertEquals(CutBoundary.Fallback.END_STONE, CutBoundary.fallback("minecraft:the_end", 40));
+    assertEquals(CutBoundary.Fallback.DEEPSLATE, CutBoundary.fallback("minecraft:overworld", -10));
+    assertEquals(CutBoundary.Fallback.STONE, CutBoundary.fallback("minecraft:overworld", 10));
+    assertEquals(CutBoundary.Fallback.STONE, CutBoundary.fallback("mod:dimension", 10));
   }
 
   @Test

@@ -1252,6 +1252,11 @@ public final class ClientRuntime {
               level,
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
+      var shell =
+          new CutBoundary.Shell(
+              new CaptureBounds(
+                  min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+              passable(level));
       int blockCount = 0;
       // Chunk-major, like the progressive cursor, so each primitive keeps few chunk ranges.
       for (int chunkZ = Math.floorDiv(min.getZ(), 16) * 16; chunkZ <= max.getZ(); chunkZ += 16) {
@@ -1263,10 +1268,6 @@ public final class ClientRuntime {
               if (!chunkLoaded(mc, x, z)) continue;
               int columnTop =
                   Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-              int terrainTop = terrainSurfaceY(level, x, z, min.getY());
-              // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
-              while (terrainTop >= min.getY()
-                  && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
               for (int y = min.getY(); y <= columnTop; y++) {
                 blockCount +=
                     captureCell(
@@ -1280,7 +1281,7 @@ public final class ClientRuntime {
                         min,
                         max,
                         center,
-                        terrainTop);
+                        shell);
               }
             }
           }
@@ -1331,7 +1332,7 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      int terrainTop)
+      CutBoundary.Shell shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
@@ -1339,7 +1340,7 @@ public final class ClientRuntime {
         chunkZ = CaptureSink.relativeChunk(z, center.getZ());
     BlockState state = level.getBlockState(pos);
     scene.classify(GlbCategory.TERRAIN, chunkX, chunkZ);
-    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
+    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, shell);
     if (state.isAir()) return 0;
     int lightEmission = state.getLightEmission();
     if (lightEmission >= 4) {
@@ -1460,6 +1461,45 @@ public final class ClientRuntime {
   /** Block id of the cross-section faces that close the capture's sides and bottom. */
   private static final String CUT_BLOCK_ID = "minemories:cut";
 
+  /** Whether a cell lets the outside through: anything but an opaque full cube. */
+  static CutBoundary.Passable passable(net.minecraft.world.level.Level level) {
+    var pos = new BlockPos.MutableBlockPos();
+    return (x, y, z) -> {
+      BlockState state = level.getBlockState(pos.set(x, y, z));
+      return !(state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
+    };
+  }
+
+  /**
+   * The block a seal looks like: the nearest opaque cube in the cell's column (the floor of a cave,
+   * the rock around a pocket), else the rock of the dimension.
+   */
+  private static BlockState sealState(
+      net.minecraft.world.level.Level level, BlockPos pos, BlockPos min, BlockPos max) {
+    var probe = new BlockPos.MutableBlockPos();
+    int row =
+        CutBoundary.nearestSolid(
+            pos.getY(),
+            min.getY(),
+            max.getY(),
+            y -> {
+              BlockState state = level.getBlockState(probe.set(pos.getX(), y, pos.getZ()));
+              return state.canOcclude() && state.isCollisionShapeFullBlock(level, probe);
+            });
+    if (row != Integer.MIN_VALUE)
+      return level.getBlockState(probe.set(pos.getX(), row, pos.getZ()));
+    return switch (CutBoundary.fallback(level.dimension().location().toString(), pos.getY())) {
+      case NETHERRACK -> Blocks.NETHERRACK.defaultBlockState();
+      case END_STONE -> Blocks.END_STONE.defaultBlockState();
+      case DEEPSLATE -> Blocks.DEEPSLATE.defaultBlockState();
+      case STONE -> Blocks.STONE.defaultBlockState();
+    };
+  }
+
+  /**
+   * Seals a cut cell of air or fluid that the terrain encloses on the shell (a cave or a pool the
+   * boundary slices through). Solid cells keep their own faces: they already close the capture.
+   */
   private static boolean captureCutFaces(
       CaptureSink scene,
       SpriteAssets sprites,
@@ -1469,25 +1509,14 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      int terrainTop)
+      CutBoundary.Shell shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
-    if (pos.getX() != min.getX()
-        && pos.getX() != max.getX()
-        && pos.getZ() != min.getZ()
-        && pos.getZ() != max.getZ()
-        && pos.getY() != min.getY()) return false;
-    var material =
-        CutBoundary.material(
-            pos.getY(),
-            terrainTop,
-            state.isAir(),
-            !state.getFluidState().isEmpty(),
-            state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
-    if (material == CutBoundary.Material.NONE) return false;
-    boolean bothSides = CutBoundary.sealsBothSides(state.isAir(), !state.getFluidState().isEmpty());
-    BlockState cut =
-        (material == CutBoundary.Material.DIRT ? Blocks.DIRT : Blocks.STONE).defaultBlockState();
+    boolean fluid = !state.getFluidState().isEmpty();
+    if (!(state.isAir() || fluid) || !shell.enclosed(pos.getX(), pos.getY(), pos.getZ()))
+      return false;
+    boolean bothSides = CutBoundary.sealsBothSides(state.isAir(), fluid);
+    BlockState cut = sealState(level, pos, min, max);
     ClientPlatforms.current()
         .emitBlockModel(
             mc,

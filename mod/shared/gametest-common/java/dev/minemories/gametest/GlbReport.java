@@ -64,7 +64,7 @@ public final class GlbReport {
     // Standard blocks, alpha (glass blends, leaves cut out), tint, a block entity, entities, fluid.
     for (String expected :
         new String[] {
-          "minemories:cut / minecraft:block/stone", "red_stained_glass", "oak_leaves", GRASS,
+          "minemories:cut / minecraft:block/dirt", "red_stained_glass", "oak_leaves", GRASS,
           "grass_block_top", "minecraft:chest", "minecraft:cow", "minecraft:armor_stand",
           // The gateway shares the portal's baked material, named after whichever was captured first.
           "minecraft:water", "minecraft:torch", "minecraft:end_portal / rendered/minemories"

@@ -1,13 +1,7 @@
 package dev.minemories.client;
 
-/** Export-only cross sections; never changes the world or adds a wall above its surface. */
+/** Export-only cross sections; never changes the world and never walls off open air. */
 final class CutBoundary {
-  enum Material {
-    NONE,
-    DIRT,
-    STONE
-  }
-
   private CutBoundary() {}
 
   static boolean onPlane(float[] vertices, int axis, float plane) {
@@ -50,11 +44,104 @@ final class CutBoundary {
     }
   }
 
-  static Material material(int y, int terrainTop, boolean air, boolean fluid, boolean opaqueCube) {
-    // Keep the original top layer and non-cubic/transparent content (glass, leaves, stairs).
-    // Air and underground fluids are sealed only at the cut plane, not filled throughout the
-    // volume.
-    if (y >= terrainTop || !(air || fluid || opaqueCube)) return Material.NONE;
-    return (long) terrainTop - y <= 3 ? Material.DIRT : Material.STONE;
+  /** Whether a cell lets the outside through: anything but an opaque full cube. */
+  interface Passable {
+    boolean at(int x, int y, int z);
+  }
+
+  /**
+   * The cells of the cut shell (the four sides and the bottom of the capture) that are open to the
+   * sky, found by flood fill along the shell from its top row. A cut cell of air or fluid that the
+   * fill never reaches is enclosed by the terrain on the shell: a cave, a pool or a pocket the
+   * boundary slices through, and the only cells that get a seal. Open air under a canopy, an
+   * overhang, a floating island or a build's roof reaches the top row around the obstacle, so it
+   * stays open. A capture taken inside a closed space (the Nether, a cave) has no way out on the
+   * shell either: its cavities are then sealed like any other cave, with the material around them.
+   */
+  static final class Shell {
+    private final CaptureBounds bounds;
+    private final long sizeX, sizeZ;
+    private final java.util.BitSet open = new java.util.BitSet();
+
+    Shell(CaptureBounds bounds, Passable passable) {
+      this.bounds = bounds;
+      this.sizeX = (long) bounds.maxX() - bounds.minX() + 1;
+      this.sizeZ = (long) bounds.maxZ() - bounds.minZ() + 1;
+      flood(passable);
+    }
+
+    boolean onShell(int x, int y, int z) {
+      return !outside(bounds, x, y, z)
+          && (x == bounds.minX()
+              || x == bounds.maxX()
+              || z == bounds.minZ()
+              || z == bounds.maxZ()
+              || y == bounds.minY());
+    }
+
+    /**
+     * Whether this shell cell is cut off from the open air along the shell. Only meaningful for a
+     * passable cell (air, fluid): a solid cell is never reached by the fill.
+     */
+    boolean enclosed(int x, int y, int z) {
+      return onShell(x, y, z) && !open.get(index(x, y, z));
+    }
+
+    private int index(int x, int y, int z) {
+      return (int)
+          (((long) y - bounds.minY()) * sizeZ * sizeX
+              + ((long) z - bounds.minZ()) * sizeX
+              + ((long) x - bounds.minX()));
+    }
+
+    private void flood(Passable passable) {
+      int[][] steps = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+      java.util.ArrayDeque<int[]> pending = new java.util.ArrayDeque<>();
+      for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+        for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+          if (onShell(x, bounds.maxY(), z) && passable.at(x, bounds.maxY(), z)) {
+            open.set(index(x, bounds.maxY(), z));
+            pending.add(new int[] {x, bounds.maxY(), z});
+          }
+        }
+      }
+      while (!pending.isEmpty()) {
+        int[] cell = pending.poll();
+        for (int[] step : steps) {
+          int x = cell[0] + step[0], y = cell[1] + step[1], z = cell[2] + step[2];
+          if (!onShell(x, y, z) || open.get(index(x, y, z)) || !passable.at(x, y, z)) continue;
+          open.set(index(x, y, z));
+          pending.add(new int[] {x, y, z});
+        }
+      }
+    }
+  }
+
+  /** What an enclosed cut cell is sealed with, when no block of its column says otherwise. */
+  enum Fallback {
+    STONE,
+    DEEPSLATE,
+    NETHERRACK,
+    END_STONE
+  }
+
+  /** Per-dimension fallback: the rock of that dimension, deepslate under y = 0 in the overworld. */
+  static Fallback fallback(String dimension, int y) {
+    return switch (dimension) {
+      case "minecraft:the_nether" -> Fallback.NETHERRACK;
+      case "minecraft:the_end" -> Fallback.END_STONE;
+      default -> y < 0 ? Fallback.DEEPSLATE : Fallback.STONE;
+    };
+  }
+
+  /**
+   * The row of the opaque cube that gives a seal its look: the nearest one below the cell (a cave
+   * floor, or the rock around it), else the nearest one above it. {@code Integer.MIN_VALUE} when
+   * the column has none within the capture.
+   */
+  static int nearestSolid(int y, int minY, int maxY, java.util.function.IntPredicate solidAt) {
+    for (int below = y - 1; below >= minY; below--) if (solidAt.test(below)) return below;
+    for (int above = y + 1; above <= maxY; above++) if (solidAt.test(above)) return above;
+    return Integer.MIN_VALUE;
   }
 }
