@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
+import { cameraNear } from './lib/camera-range'
 import { CeilingGrid } from './lib/ceiling'
 import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
@@ -862,6 +863,12 @@ export class ViewerScene {
 	private renderScene(): void {
 		// Camera framing can change before the next RAF, including thumbnail generation.
 		this.sky.position.copy(this.camera.position)
+		const near = cameraNear(this.camera.position.distanceTo(this.controls.target), this.navigation.active)
+		if (Math.abs(near - this.camera.near) > this.camera.near * 0.01) {
+			// Depth precision follows the near plane: see `lib/camera-range`. The atmosphere pass reads the matrices live.
+			this.camera.near = near
+			this.camera.updateProjectionMatrix()
+		}
 		this.sky.scale.setScalar(Math.max(this.camera.far * 0.88, this.camera.near * 2))
 		this.effects.renderFrame()
 	}

@@ -77,6 +77,8 @@ function sceneFixture() {
 		hiddenCategories: new Set(),
 		camera: new THREE.PerspectiveCamera(),
 		sky: new THREE.Mesh(),
+		controls: { target: new THREE.Vector3() },
+		navigation: { active: false },
 		loader: { parseAsync: vi.fn(async (): Promise<{ scene: THREE.Group; asset?: unknown }> => ({ scene: next })) },
 		events: { onLoading: vi.fn(), onFileInfo: vi.fn(), onEmptyChange: vi.fn() },
 		renderer: { compileAsync: vi.fn(() => compile.promise), render: vi.fn() },
