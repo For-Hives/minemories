@@ -33,26 +33,17 @@
 	text-shadow: 2px 2px 0 #3f3f3f;
 }
 
-/* ---------- Show your base to your friends: the viewer, and the postcard it exported, laid on its corner like a print ---------- */
-
-.mm-illus--share {
-	padding-bottom: 72px;
-}
+/* ---------- Show your base to your friends: the viewer, its caption on its whole width, and the postcard it exported under them, tilted like a print
+   (it never covers the viewer's time panel or toolbar) ---------- */
 
 .mm-illus--share .mm-illus__frame {
 	width: 86%;
 }
 
-/* The viewer's caption stays left of the print, which covers the right half of that line. */
-.mm-illus--share .mm-illus__frame .mm-illus__label {
-	max-width: 48%;
-}
-
 .mm-illus__print {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	width: 48%;
+	position: relative;
+	width: 52%;
+	margin: var(--ds-sp-2) 0 0 auto;
 	transform: rotate(-2deg);
 }
 
@@ -65,20 +56,13 @@
 	text-align: right;
 }
 
-/* On a phone the viewer's caption (a full sentence) would wrap word by word beside the print: the print goes under it instead, still tilted. */
 @media (max-width: 599px) {
-	.mm-illus--share {
-		padding-bottom: 0;
-	}
-
-	.mm-illus--share .mm-illus__frame .mm-illus__label {
-		max-width: none;
+	.mm-illus--share .mm-illus__frame {
+		width: 100%;
 	}
 
 	.mm-illus__print {
-		position: relative;
 		width: 62%;
-		margin: var(--ds-sp-2) 0 0 auto;
 	}
 }
 
@@ -149,21 +133,28 @@
 	opacity: 1;
 }
 
-/* Play / pause: a small slot in the top left corner (the postcard covers the bottom right one, the viewer's own toolbar sits on the right), the
-   game's look; its name is the visible state's label (the other one is display: none). */
+/* Play / pause: a small slot in the top left corner (the viewer's own toolbar sits on the right), or the bottom right one for a clip whose panel fills
+   the top (data-toggle='end': the M menu), the game's look; its name is the visible state's label (the other one is display: none). */
 .mm-clip__toggle {
 	position: absolute;
-	top: 8px;
-	left: 8px;
+	top: 6px;
+	left: 6px;
 	display: grid;
 	place-items: center;
-	width: 36px;
-	height: 36px;
+	width: 28px;
+	height: 28px;
 	padding: 0;
 	background: rgb(20 17 14 / 0.78);
 	border: 2px solid var(--outline);
 	color: #fff;
 	cursor: pointer;
+}
+
+.mm-clip[data-toggle='end'] .mm-clip__toggle {
+	top: auto;
+	left: auto;
+	right: 6px;
+	bottom: 6px;
 }
 
 .mm-clip__toggle:hover,
@@ -189,8 +180,8 @@
 
 /* The icon: a triangle to play, two bars to pause, in plain blocks. */
 .mm-clip__icon {
-	width: 12px;
-	height: 14px;
+	width: 10px;
+	height: 12px;
 	background: currentcolor;
 	clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
@@ -200,16 +191,49 @@
 	background: linear-gradient(90deg, currentcolor 0 35%, transparent 35% 65%, currentcolor 65%);
 }
 
-/* In a step card the clip sits under the sentence in a narrow card, and beside it in a wide one, so the three steps stay short. The switch reads the
-   cards' own width (the text column shrinks with the dock on a desktop), not the screen's. */
+/* A cut clip (the game, then the browser): a chip in the top right corner names the side on screen, in the game's look. It is HTML, never burned into
+   the footage, so it is translated; HeroClip moves data-side with the video's time (the poster's side while still). */
+.mm-clip__chip {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	padding: 4px 8px 5px;
+	background: rgb(20 17 14 / 0.82);
+	border: 2px solid var(--outline);
+	color: #fff;
+	font: 16px/18px var(--f-ui);
+	text-shadow: 2px 2px 0 #3f3f3f;
+	pointer-events: none;
+}
+
+.mm-clip[data-side='before'] .mm-clip__side--after,
+.mm-clip[data-side='after'] .mm-clip__side--before {
+	display: none;
+}
+
+[data-mc-font='read'] .mm-clip__chip {
+	font: 600 14px/18px var(--f-read);
+	text-shadow: none;
+}
+
+/* The line under a clip: the reading font, on the clip's whole width (the pixel font stays for titles), never one word alone on its last line. */
+.mm-clip__caption {
+	margin: 6px 0 0;
+	color: var(--text-2);
+	font: 400 14px/1.4 var(--f-read);
+	text-wrap: pretty;
+}
+
+/* In a step card the clip sits under the sentence on the card's whole width in a narrow card (a phone: its in-game text stays readable), and beside it
+   in a wide one, so the three steps stay short. The switch reads the cards' own width (the text column shrinks with the dock on a desktop), not the
+   screen's. */
 .site .mc-steps {
 	container-type: inline-size;
 }
 
 .mc-step__clip {
-	grid-column: 2;
-	width: min(100%, 360px);
-	margin-top: var(--ds-sp-2);
+	grid-column: 1 / -1;
+	margin: var(--ds-sp-2) calc(-5 * var(--gp)) 0;
 }
 
 @container (min-width: 640px) {
@@ -221,7 +245,6 @@
 	.mc-step .mc-step__clip {
 		grid-column: 3;
 		grid-row: 1 / span 2;
-		width: 100%;
-		margin-top: 0;
+		margin: 0;
 	}
 }

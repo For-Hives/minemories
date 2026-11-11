@@ -32,23 +32,39 @@ function Experimental() {
 	)
 }
 
-/** "Play.": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. */
+/** "Play.": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. Its poster is the menu
+   open with the pointer on Take a memory, so a still clip still shows the step. */
 const menuClip: HeroClipProps = {
 	name: { fr: 'menu-fr', en: 'menu-en' },
-	width: 720,
-	height: 720,
+	width: 640,
+	height: 448,
+	posterAt: 3.2,
+	toggleAt: 'end',
 	alt: 'In Minecraft, the M menu opens over a real base and the pointer clicks Take a memory.',
 }
-/** "Revisit.": the real viewer turning around a real memory, then its time of day going from morning to sunset. */
-const viewerClip: HeroClipProps = {
-	name: 'viewer-time',
-	width: 720,
-	height: 550,
-	alt: 'A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.',
+/** "Revisit.": a first-person walk in the real viewer, inside a real memory. */
+const walkClip: HeroClipProps = {
+	name: 'walk',
+	width: 640,
+	height: 512,
+	posterAt: 3,
+	alt: 'A first-person walk along a path of a real base, in the Minemories viewer.',
 }
 
 /** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge, and the clip that shows it, if any. */
-function Step({ number, title, body, clip }: { number: number; title: string; body: string; clip?: HeroClipProps }) {
+function Step({
+	number,
+	title,
+	body,
+	clip,
+	caption,
+}: {
+	number: number
+	title: string
+	body: string
+	clip?: HeroClipProps
+	caption?: string
+}) {
 	return (
 		<li className="mc-step">
 			<span className="mc-step__num">
@@ -62,7 +78,16 @@ function Step({ number, title, body, clip }: { number: number; title: string; bo
 			<p className="mc-step__body" data-i18n={body}>
 				{t(body)}
 			</p>
-			{clip && <HeroClip className="mc-step__clip" {...clip} />}
+			{clip && (
+				<div className="mc-step__clip">
+					<HeroClip {...clip} />
+					{caption && (
+						<p className="mm-clip__caption" data-i18n={caption}>
+							{t(caption)}
+						</p>
+					)}
+				</div>
+			)}
 		</li>
 	)
 }
@@ -407,19 +432,20 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							<Step
 								number={1}
 								title="Install."
-								body="Get it from the CurseForge app, or drop the .jar into your mods folder."
+								body="Get the mod from the CurseForge app, or drop the .jar into your mods folder."
 							/>
 							<Step
 								number={2}
 								title="Play."
-								body="Press M → Take a memory. Or just go AFK: the mod takes one for you."
+								body="Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you."
 								clip={menuClip}
+								caption="One click and it’s saved."
 							/>
 							<Step
 								number={3}
 								title="Revisit."
-								body="Connect the game to your gallery and walk around your world in 3D."
-								clip={viewerClip}
+								body="Connect the game to your gallery with a 6-digit code, then walk around your world in 3D."
+								clip={walkClip}
 							/>
 						</ol>
 					</section>
@@ -429,10 +455,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed."
+							data-i18n="Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed."
 						>
 							{t(
-								'Spin around your base, find the right angle and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.'
+								'Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.'
 							)}
 						</p>
 						<ShareIllustration />
@@ -448,8 +474,11 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Server shutting down?">
 							{t('Server shutting down?')}
 						</h2>
-						<p className="mc-section__text" data-i18n="Keep a memory of your base safe before you lose it for good.">
-							{t('Keep a memory of your base safe before you lose it for good.')}
+						<p
+							className="mc-section__text"
+							data-i18n="Save your base in 3D before the server goes dark. You can still walk around it afterwards."
+						>
+							{t('Save your base in 3D before the server goes dark. You can still walk around it afterwards.')}
 						</p>
 						<ClosingIllustration />
 						<ul className="site-links">

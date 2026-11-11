@@ -52,7 +52,7 @@ test('the pictures are real footage: two clips and the postcard, lazy, of known 
 	expect(root.querySelectorAll('figure.mm-illus')).toHaveLength(2)
 	const images = [...root.querySelectorAll('img')]
 	expect(images.map(image => image.getAttribute('src'))).toEqual([
-		'/hero/clips/walk.webp',
+		'/hero/clips/viewer-time.webp',
 		'/hero/illus/postcard-hd.webp',
 		'/hero/clips/game-browser.webp',
 	])
@@ -66,11 +66,15 @@ test('the pictures are real footage: two clips and the postcard, lazy, of known 
 	// no video in the markup: a clip gets its file only once it should play (HeroClip)
 	expect(root.querySelector('video')).toBeNull()
 	expect(root.querySelectorAll('.mm-clip')).toHaveLength(2)
-	// rendered in French, like the rest of the prerendered landing; no drawn interface, only captions
-	expect([...root.querySelectorAll('.mm-illus__label')].map(label => label.textContent)).toEqual([
-		'Balade-toi dedans, à la première personne',
+	// rendered in French, like the rest of the prerendered landing; no drawn interface, only captions and the game/browser chip
+	expect([...root.querySelectorAll('.mm-clip__caption, .mm-illus__label')].map(label => label.textContent)).toEqual([
+		'Choisis l’heure, du matin au coucher du soleil',
 		'Carte postale HD',
-		'Dans Minecraft, puis dans ton navigateur. Même pas besoin d’être admin.',
+		'Pas besoin d’être admin du serveur.',
+	])
+	expect([...root.querySelectorAll('.mm-clip__side')].map(side => side.textContent)).toEqual([
+		'Dans Minecraft',
+		'Dans ton navigateur',
 	])
 	expect(root.querySelector('.mm-illus__hub, .mm-illus__msg, .mm-illus__chat')).toBeNull()
 })
@@ -79,11 +83,12 @@ test('the film bridge rewrites every caption, description and button label in th
 	await loadLocale('de')
 	const root = mount()
 	createHeroI18n('de', document).apply(root)
-	expect(root.textContent).toContain('In Minecraft, dann in deinem Browser.')
+	expect(root.textContent).toContain('In deinem Browser')
+	expect(root.textContent).toContain('Du musst nicht Admin des Servers sein.')
 	expect(root.textContent).toContain('HD-Postkarte')
 	expect(root.textContent).toContain('Video abspielen')
-	expect(root.querySelector('img[src="/hero/clips/walk.webp"]')?.getAttribute('alt')).toBe(
-		'Ein Spaziergang in der Egoperspektive über einen Weg einer echten Basis, im Minemories-Viewer.'
+	expect(root.querySelector('img[src="/hero/clips/viewer-time.webp"]')?.getAttribute('alt')).toBe(
+		'Eine echte Basis im Minemories-Viewer: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.'
 	)
 })
 
@@ -93,6 +98,8 @@ test('the step that says where to click quotes the mod’s own words in every la
 	for (const [locale, file] of pairs) {
 		const i18n = createHeroI18n(locale, document)
 		const take = modLang(file)['minemories.hub.take'] ?? 'missing minemories.hub.take'
-		expect(i18n.t('Press M → Take a memory. Or just go AFK: the mod takes one for you.'), locale).toContain(take)
+		expect(i18n.t('Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you.'), locale).toContain(
+			take
+		)
 	}
 })

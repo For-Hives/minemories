@@ -93,7 +93,7 @@ test('the landing’s facts, guarantees and cards follow a language change made 
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('The mod keeps a 3D copy of the spot where you play.')
 	expect(text).toContain('How do I keep my base?')
-	expect(text).toContain('Press M → Take a memory. Or just go AFK: the mod takes one for you.')
+	expect(text).toContain('Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you.')
 	expect(text).toContain('Show your base to your friends')
 	document.body.innerHTML = ''
 })
