@@ -1609,11 +1609,13 @@ public final class ClientRuntime {
             ? mc.getBlockColors().getColor(state, mc.level, pos, quad.getTintIndex())
             : 0xFFFFFF;
     tint = VertexColors.blockTint(tint);
-    tint = VertexColors.multiplyTint(tint, captured.argb());
-    float opacity = (captured.argb() >>> 24) / 255f;
+    int[] packed = quad.getVertices();
+    // The renderer multiplies the colour baked into the vertices into the block tint.
+    int argb = VertexColors.quadColor(captured.argb(), packed, VERTEX_STRIDE);
+    tint = VertexColors.multiplyTint(tint, argb);
+    float opacity = (argb >>> 24) / 255f;
     int alphaMode = captured.translucent() || opacity < 1 ? 2 : asset.alphaMode;
     int blockLight = 0;
-    int[] packed = quad.getVertices();
     float[] xyz = new float[12], uv = new float[8];
     float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
     for (int vertex = 0; vertex < 4; vertex++) {

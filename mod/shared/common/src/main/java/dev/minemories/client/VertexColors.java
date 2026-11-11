@@ -19,6 +19,35 @@ public final class VertexColors {
     return (red << 16) | (green << 8) | blue;
   }
 
+  /**
+   * The colour a quad is drawn with besides its block tint, as RGB with full alpha. Vanilla's
+   * {@code putBulkData} multiplies the colour stored in each baked vertex (int 3, ABGR) into the
+   * block tint, so a model that bakes its green into the vertices (NeoForge {@code face_data}
+   * colours, quads built by code) is green in game and must be here. A platform that already read
+   * the colour itself (Fabric meshes) passes it as {@code explicit} and wins; a vertex whose alpha
+   * byte is 0 holds no colour (the layouts that do not store one) and counts as white. Baked alpha
+   * is ignored: the block renderer does not read it.
+   */
+  public static int quadColor(int explicit, int[] vertices, int stride) {
+    if (explicit != 0xFFFFFFFF) return explicit;
+    int red = 0, green = 0, blue = 0, count = 0;
+    for (int base = 3; base < vertices.length; base += stride) {
+      int abgr = vertices[base];
+      if ((abgr >>> 24) == 0) {
+        red += 255;
+        green += 255;
+        blue += 255;
+      } else {
+        red += abgr & 255;
+        green += (abgr >>> 8) & 255;
+        blue += (abgr >>> 16) & 255;
+      }
+      count++;
+    }
+    if (count == 0) return explicit;
+    return 0xFF000000 | ((red / count) << 16) | ((green / count) << 8) | (blue / count);
+  }
+
   public static int averageArgb(int first, int second, int third, int fourth) {
     int alpha = 0, red = 0, green = 0, blue = 0;
     for (int color : new int[] {first, second, third, fourth}) {

@@ -29,4 +29,23 @@ class VertexColorsTest {
         0x80FF0040, VertexColors.averageArgb(0x80FF0040, 0x80FF0040, 0x80FF0040, 0x80FF0040));
     assertEquals(0xFFFFFFFF, VertexColors.averageArgb(-1, -1, -1, -1));
   }
+
+  @Test
+  void readsTheColourBakedIntoVertexData() {
+    int stride = 8;
+    int[] vanilla = new int[4 * stride];
+    for (int v = 0; v < 4; v++) vanilla[v * stride + 3] = -1;
+    assertEquals(0xFFFFFFFF, VertexColors.quadColor(0xFFFFFFFF, vanilla, stride));
+    // ABGR 0xFF40C080 is RGB 80C040: a model that bakes its green into the vertices.
+    int[] green = new int[4 * stride];
+    for (int v = 0; v < 4; v++) green[v * stride + 3] = 0xFF40C080;
+    assertEquals(0xFF80C040, VertexColors.quadColor(0xFFFFFFFF, green, stride));
+    assertEquals(
+        0x80C040, VertexColors.multiplyTint(0xFFFFFF, VertexColors.quadColor(-1, green, stride)));
+    // Layouts without a stored colour (alpha byte 0) are white, not black.
+    assertEquals(0xFFFFFFFF, VertexColors.quadColor(0xFFFFFFFF, new int[4 * stride], stride));
+    // A colour the platform already read wins; no vertices means nothing to read.
+    assertEquals(0x80123456, VertexColors.quadColor(0x80123456, green, stride));
+    assertEquals(0xFFFFFFFF, VertexColors.quadColor(0xFFFFFFFF, new int[0], stride));
+  }
 }

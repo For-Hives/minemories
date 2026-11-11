@@ -330,3 +330,24 @@ Final evidence: `full-atmons/atlas-no-shader-afk/` and `vanilla/atlas-final/`,
 with the exact JAR, inventory, settings, GL results, geometry, special layers,
 API validation and renders. These trials validate this scope; they do not guarantee
 every modpack renderer and setting. CI still needed before merging.
+
+## How a block quad gets its colour
+
+`ClientRuntime.addQuad` is the single point where the colour of a block-model quad is resolved, on
+every loader and Minecraft version, the way the chunk renderer does it:
+
+1. the game's own `BlockColors` (26.x: the state's tint source) is asked for the quad's tint index
+   with the real level and position, so Fabric `ColorProviderRegistry`, Forge/NeoForge
+   `RegisterColorHandlersEvent` and biome blending are all consulted (they register into that same
+   object);
+2. that tint is multiplied by the colour the renderer applies on top: the colour the platform read
+   from a Fabric mesh, otherwise the colour baked into the quad's vertices (`VertexColors.quadColor`).
+   Vanilla's `putBulkData` multiplies the baked vertex colour into the tint, so a model that bakes its
+   green into the vertices (NeoForge `face_data` colours, quads built in code) used to export grey;
+3. the result becomes the material's `baseColorFactor` (`GlbColor`, linear) and the viewer multiplies it
+   with the texture.
+
+Not recoverable from the GLB's side: block entities, entities and items that the game draws through
+`BlockRenderDispatcher.renderSingleBlock` use `BlockColors` with a null level, and a provider that
+returns white there is white in game too. Not exercised in game for this change: modded foliage that
+bakes vertex colours (only the unit test covers it).
