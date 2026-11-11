@@ -7,6 +7,7 @@ import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
+import { type Emitter, LightPool, type Point3 } from './lib/light-pool'
 import { dayDelta, Glide } from './lib/transitions'
 import { faithfulSkyLight, type Rgb, srgbFactorToLinear, type ViewerLighting } from './lib/viewer-lighting'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
@@ -18,7 +19,7 @@ import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
 import { ViewerPrecipitation } from './viewer-precipitation'
 import { prepareWater } from './viewer-water'
-import { chooseLights, prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
+import { prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
 
 export interface ViewerLoadOptions {
 	signal?: AbortSignal
@@ -103,12 +104,13 @@ function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown })
 	})
 }
 
-interface ImportedLight {
-	light: THREE.PointLight
-	position: THREE.Vector3
-	color: THREE.Color
-	intensity: number
-	distance: number
+/** Plain numbers of an imported light: no live `PointLight` outlives the load, whatever their count. */
+function emitterOf(
+	position: THREE.Vector3,
+	light: { color: THREE.Color; intensity: number; distance: number }
+): Emitter {
+	const { r, g, b } = light.color
+	return { x: position.x, y: position.y, z: position.z, r, g, b, intensity: light.intensity, distance: light.distance }
 }
 
 export class ViewerScene {
@@ -134,7 +136,9 @@ export class ViewerScene {
 		uFixed: { value: -1 },
 	}
 	private readonly precipitation = new ViewerPrecipitation()
+	/** The only point lights of the scene: a constant count (no shader recompilation) fed by `lightPool`. */
 	private readonly worldLights = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
+	private readonly lightPool = new LightPool(12)
 	private readonly pivot = new ViewerPivot()
 	private readonly groundRay = new THREE.Raycaster()
 	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
@@ -482,17 +486,10 @@ export class ViewerScene {
 
 	/** Shows the composed world: constant light count (no shader recompilation) and refreshed shadows. */
 	showWorld(lights: readonly WorldLight[]): void {
-		const focus = this.captureFocus ?? this.controls.target
-		const selected = chooseLights(lights, focus)
-		for (const [position, light] of this.worldLights.entries()) {
-			if (!light.parent) this.modelRoot.add(light)
-			const source = selected[position]
-			light.intensity = source ? Math.min(source.intensity * 0.01, 12) : 0
-			if (!source) continue
-			light.color.copy(source.color).multiply(new THREE.Color(1, 0.82, 0.65))
-			light.distance = Math.min(Math.max(source.distance, 1), 10)
-			light.position.copy(source.position)
-		}
+		this.setWorldEmitters(
+			lights.map(light => emitterOf(light.position, light)),
+			this.captureFocus ?? this.controls.target
+		)
 		this.keyLight.shadow.needsUpdate = true
 		this.renderer.shadowMap.needsUpdate = true
 		this.ceilingDirty = true
@@ -809,6 +806,7 @@ export class ViewerScene {
 
 		this.clouds.update(this.camera.position, this.reducedMotion ? 0 : deltaSeconds)
 		this.advanceGlides(deltaSeconds)
+		this.updateWorldLights(deltaSeconds)
 		if (this.navigation.active) this.navigation.update(deltaSeconds)
 		else this.controls.update(deltaSeconds)
 		if (this.ceilingDirty && (this.weather === 'rain' || this.weather === 'snow')) {
@@ -948,35 +946,47 @@ export class ViewerScene {
 	}
 
 	private prepareWorldLighting(root: THREE.Object3D): void {
-		const importedLights: ImportedLight[] = []
+		const imported: THREE.PointLight[] = []
+		const emitters: Emitter[] = []
 
 		root.updateMatrixWorld(true)
 		root.traverse(object => {
 			if (object instanceof THREE.PointLight) {
-				importedLights.push({
-					light: object,
-					position: object.getWorldPosition(new THREE.Vector3()),
-					color: object.color.clone(),
-					intensity: object.intensity,
-					distance: object.distance,
-				})
+				imported.push(object)
+				emitters.push(emitterOf(object.getWorldPosition(new THREE.Vector3()), object))
 				return
 			}
 			if (!(object instanceof THREE.Mesh)) return
 			this.prepareMesh(object)
 		})
 
-		for (const light of importedLights) light.light.removeFromParent()
-		const selectedLights = chooseLights(importedLights, surfaceFocus(framingBounds(root)))
-		for (const imported of selectedLights) {
-			const light = new THREE.PointLight(
-				imported.color.clone().multiply(new THREE.Color(1, 0.82, 0.65)),
-				Math.min(imported.intensity * 0.01, 12),
-				Math.min(Math.max(imported.distance, 1), 10),
-				2
-			)
-			light.position.copy(root.worldToLocal(imported.position.clone()))
-			root.add(light)
+		for (const light of imported) light.removeFromParent()
+		this.setWorldEmitters(emitters, surfaceFocus(framingBounds(root)))
+	}
+
+	/** Hands the capture's emitters to the pool and shows its first selection at once, before shaders compile. */
+	private setWorldEmitters(emitters: readonly Emitter[], focus: Point3): void {
+		this.lightPool.setEmitters(emitters)
+		this.lightPool.update(focus, Number.POSITIVE_INFINITY)
+		this.applyLightPool()
+	}
+
+	/** Follows the view: the pool re-picks its lights around the orbit target or the walking camera and fades changes. */
+	private updateWorldLights(deltaSeconds: number): void {
+		this.lightPool.update(this.navigation.active ? this.camera.position : this.controls.target, deltaSeconds)
+		this.applyLightPool()
+	}
+
+	private applyLightPool(): void {
+		for (const [position, { emitter, level }] of this.lightPool.slots.entries()) {
+			const light = this.worldLights[position]
+			if (!light) continue
+			if (!light.parent) this.scene.add(light)
+			light.intensity = emitter ? Math.min(emitter.intensity * 0.01, 12) * level : 0
+			if (!emitter) continue
+			light.color.setRGB(emitter.r, emitter.g * 0.82, emitter.b * 0.65, THREE.LinearSRGBColorSpace)
+			light.distance = Math.min(Math.max(emitter.distance, 1), 10)
+			light.position.set(emitter.x, emitter.y, emitter.z)
 		}
 	}
 
