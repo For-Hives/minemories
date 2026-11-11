@@ -125,7 +125,7 @@ test('the Minecraft head is built server-side from a valid username and can be r
 		)
 	)
 	expect(await rpc(owner.cookie).account.setMinecraftHead({ username: ' Notch ' })).toEqual({ ok: true })
-	expect(await image()).toBe('https://minotar.net/helm/Notch/64.png')
+	expect(await image()).toBe('https://head.sttr.io/face/Notch')
 	expect(await rpc(owner.cookie).account.setMinecraftHead({ username: null })).toEqual({ ok: true })
 	expect(await image()).toBeNull()
 })
