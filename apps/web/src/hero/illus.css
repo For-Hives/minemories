@@ -216,12 +216,18 @@
 	text-shadow: none;
 }
 
-/* The line under a clip: the reading font, on the clip's whole width (the pixel font stays for titles), never one word alone on its last line. */
+/* The line under a clip: on the clip's whole width, never one word alone on its last line; charter.css gives it the steps' reading font (the pixel
+   font stays for titles, and for CJK and the readable option, as for the steps' sentences). */
 .mm-clip__caption {
 	margin: 6px 0 0;
 	color: var(--text-2);
 	font: 400 14px/1.4 var(--f-read);
 	text-wrap: pretty;
+}
+
+/* In a narrow step card the clip runs to the card's bevel; its caption lines up with the card's text. */
+.mc-step__clip .mm-clip__caption {
+	padding-inline: calc(5 * var(--gp));
 }
 
 /* In a step card the clip sits under the sentence on the card's whole width in a narrow card (a phone: its in-game text stays readable), and beside it
@@ -246,5 +252,9 @@
 		grid-column: 3;
 		grid-row: 1 / span 2;
 		margin: 0;
+	}
+
+	.mc-step .mc-step__clip .mm-clip__caption {
+		padding-inline: 0;
 	}
 }

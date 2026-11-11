@@ -299,7 +299,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :i
 	max-width: var(--ds-measure);
 }
 
-html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
+html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta, .mm-clip__caption) {
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	text-shadow: none;
 }
