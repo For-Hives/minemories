@@ -159,7 +159,7 @@ export function keyAction(key) {
 export const WHEEL_POLICY = Object.freeze({ passive: true, zoom: false, preventDefault: false })
 
 /** The section on screen decides the view of the model. */
-export const SECTION_VIEWS = Object.freeze({ hero: 'hero', steps: 'steps', share: 'share', limits: 'limits', faq: 'faq' })
+export const SECTION_VIEWS = Object.freeze({ hero: 'hero', steps: 'steps', share: 'share', 'server-closing': 'limits', faq: 'faq' })
 export const viewForSection = (id) => SECTION_VIEWS[id] ?? null
 
 // ---------------------------------------------------------------------------------------------------------------
