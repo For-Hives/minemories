@@ -64,8 +64,8 @@ invented.
 The scenario's ten GLBs pass the shared API validator. Blender renders of the
 first surface capture and of the return after the deep visit were inspected:
 the build is intact, the shallow volume stays short before the descent and the
-underlying volume extends after the visit. Dirt/stone cut faces keep the limits
-described in the #8 validation.
+underlying volume extends after the visit. The cut seals follow the rule of
+`glb-face-culling.md` (enclosed cave cells only).
 
 Local artifacts: `~/.local/state/minemories-validation/depth-zones-20261015/`
 (program, JAR checksum, events, bounds reports, GLBs, renders and logs of the
