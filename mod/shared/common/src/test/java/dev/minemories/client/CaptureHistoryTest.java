@@ -147,7 +147,7 @@ class CaptureHistoryTest {
     assertFalse(CaptureHistory.metadata(file).has("worldName"));
     save(TIME.plusSeconds(5), "new", "New world");
     var legacy = CaptureHistory.list(directory, null, 4).entries().getLast();
-    assertEquals("Unknown world", legacy.world());
+    assertEquals("", legacy.world());
     assertFalse(CaptureHistory.metadata(legacy.file()).has("worldName"));
   }
 
@@ -179,7 +179,7 @@ class CaptureHistoryTest {
     Files.writeString(file.resolveSibling("capture.json"), "[1]");
     var entry = CaptureHistory.list(directory, null, 4).entries().getFirst();
     assertFalse(entry.readable());
-    assertEquals("Unreadable metadata", entry.world());
+    assertEquals("", entry.world());
     assertThrows(IOException.class, () -> CaptureHistory.metadata(file));
     Files.write(file.resolveSibling("capture.json"), new byte[] {(byte) 0xc3, 0x28});
     assertThrows(IOException.class, () -> CaptureHistory.metadata(file));
@@ -269,5 +269,28 @@ class CaptureHistoryTest {
     assertThrows(
         UnsupportedOperationException.class,
         () -> CaptureHistory.list(directory, null, 4).entries().clear());
+  }
+
+  @Test
+  void entriesCarryTheWorldIdentityAndTheUploadedMarkerForTheWholeList() throws IOException {
+    Path first =
+        CaptureHistory.save(
+            directory,
+            TIME,
+            "{\"serverName\":\"play.example.com\",\"worldId\":\"abc\"}",
+            file -> Files.writeString(file, "model"));
+    save(TIME.plusSeconds(1), "other", "Island");
+    CaptureHistory.markUploaded(first);
+    var all = CaptureHistory.listAll(directory);
+    assertEquals(2, all.size());
+    assertEquals("Island", all.getFirst().world());
+    assertFalse(all.getFirst().server());
+    assertFalse(all.getFirst().uploaded());
+    assertEquals("play.example.com", all.getLast().world());
+    assertTrue(all.getLast().server());
+    assertEquals("abc", all.getLast().worldId());
+    assertTrue(all.getLast().uploaded());
+    assertTrue(all.getLast().withUploaded(false).equals(all.getLast().withUploaded(false)));
+    assertFalse(all.getLast().withUploaded(false).uploaded());
   }
 }

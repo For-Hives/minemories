@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -20,16 +19,19 @@ import net.minecraft.network.chat.Component;
 final class CaptureHistoryScreen extends Screen {
   private static final DateTimeFormatter DATE =
       DateTimeFormatter.ofPattern("dd/MM/yy HH:mm").withZone(ZoneId.systemDefault());
+  private static final int LIST_TOP = 58;
+  private static final int LINE_HEIGHT = 20;
+  private static final int SEND_WIDTH = 44;
   private final Screen parent;
-  private final CaptureHistoryView history = new CaptureHistoryView();
+  private final CaptureListView view = new CaptureListView();
+  private final UploadBatch batch = new UploadBatch();
   private final List<Button> rows = new ArrayList<>();
   private Path directory;
-  private Button send;
+  private Button sendAll;
   private Button previous;
   private Button next;
-  private Button refresh;
   private boolean paired;
-  private boolean sending;
+  private boolean closed;
   private String status;
   private int panelWidth;
   private int left;
@@ -46,25 +48,30 @@ final class CaptureHistoryScreen extends Screen {
     left = (width - panelWidth) / 2;
     top = Math.max(4, (height - 236) / 2);
     rows.clear();
-    for (int i = 0; i < CaptureHistory.PAGE_SIZE; i++) {
+    for (int i = 0; i < CaptureListView.LINES; i++) {
       int index = i;
-      rows.add(button("", 14, 62 + i * 22, panelWidth - 28, () -> history.select(index)));
+      Button row =
+          button(
+              I18n.get("minemories.ui.upload_row"),
+              panelWidth - 14 - SEND_WIDTH,
+              LIST_TOP + i * LINE_HEIGHT,
+              SEND_WIDTH,
+              () -> sendRow(index));
+      row.setTooltip(Tooltip.create(Component.translatable("minemories.ui.upload_row_hint")));
+      rows.add(row);
     }
-    int half = (panelWidth - 34) / 2;
-    send = button(I18n.get("minemories.ui.send_this_capture"), 14, 173, half, this::sendSelected);
-    send.setTooltip(
-        Tooltip.create(Component.translatable("minemories.ui.send_selected_only_hint")));
-    button(I18n.get("minemories.ui.back"), 20 + half, 173, half, this::onClose);
-    previous = button("‹", 14, 201, 36, () -> history.previous(this::fetch, minecraft::execute));
+    previous = button("‹", 14, 182, 36, () -> view.previous());
     previous.setTooltip(Tooltip.create(Component.translatable("minemories.ui.newer_captures")));
-    next =
-        button("›", panelWidth - 50, 201, 36, () -> history.next(this::fetch, minecraft::execute));
+    next = button("›", panelWidth - 50, 182, 36, () -> view.next());
     next.setTooltip(Tooltip.create(Component.translatable("minemories.ui.older_captures")));
-    refresh = button(I18n.get("minemories.ui.refresh"), 56, 201, panelWidth - 112, this::refresh);
+    int half = (panelWidth - 34) / 2;
+    sendAll = button("", 14, 208, half, this::sendAll);
+    sendAll.setTooltip(Tooltip.create(Component.translatable("minemories.ui.upload_all_hint")));
+    button(I18n.get("minemories.ui.back"), 20 + half, 208, half, this::onClose);
     try {
       directory = PairingClient.exportDirectory();
       paired = PairingClient.isPaired();
-      refresh();
+      reload();
     } catch (RuntimeException error) {
       status = I18n.get("minemories.ui.local_folder_unavailable");
     }
@@ -78,92 +85,147 @@ final class CaptureHistoryScreen extends Screen {
             .build());
   }
 
-  private CompletableFuture<CaptureHistory.Page> fetch(String before) {
+  private void reload() {
     Path folder = directory;
-    return CompletableFuture.supplyAsync(
-        () -> {
-          try {
-            return CaptureHistory.list(folder, before, CaptureHistory.PAGE_SIZE);
-          } catch (IOException error) {
-            throw new CompletionException(error);
-          }
-        });
+    view.refresh(
+        () ->
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    return CaptureHistory.listAll(folder);
+                  } catch (IOException error) {
+                    throw new CompletionException(error);
+                  }
+                }),
+        minecraft::execute);
   }
 
-  private void refresh() {
+  private boolean busy() {
+    return batch.running() || PairingClient.isUploading();
+  }
+
+  private void sendRow(int slot) {
+    var lines = view.lines();
+    if (slot >= lines.size() || lines.get(slot).entry() == null) return;
+    start(List.of(lines.get(slot).entry()));
+  }
+
+  private void sendAll() {
+    start(view.unsent());
+  }
+
+  private void start(List<CaptureHistory.Entry> captures) {
+    if (!paired || busy() || view.pending()) return;
+    if (!batch.start(captures)) {
+      status = I18n.get("minemories.ui.nothing_to_send");
+      return;
+    }
     status = null;
-    history.refresh(this::fetch, minecraft::execute);
+    pump();
   }
 
-  private void sendSelected() {
-    CaptureHistory.Entry selected = history.selected();
-    if (selected == null || !paired || sending || PairingClient.isUploading()) return;
-    sending = true;
-    status = I18n.get("minemories.ui.sending_selected_capture");
-    updateButtons();
+  /** Sends the next capture of the run, one at a time; called again when each one finishes. */
+  private void pump() {
+    if (!batch.running() || batch.inFlight() || PairingClient.isUploading()) return;
+    CaptureHistory.Entry entry = batch.next();
+    if (entry == null) {
+      finishBatch();
+      return;
+    }
     try {
-      PairingClient.uploadCapture(selected.file())
+      PairingClient.uploadCapture(entry.file())
           .whenComplete(
-              (message, error) ->
-                  Minecraft.getInstance()
-                      .execute(
-                          () -> {
-                            sending = false;
-                            if (error == null) refresh();
-                            status =
-                                error == null
-                                    ? I18n.get("minemories.ui.memory_sent_to_private_gallery")
-                                    : ClientRuntime.pairingError(error);
-                          }));
+              (message, error) -> Minecraft.getInstance().execute(() -> uploaded(entry, error)));
     } catch (RuntimeException error) {
-      sending = false;
-      status = ClientRuntime.pairingError(error);
+      uploaded(entry, error);
     }
   }
 
+  private void uploaded(CaptureHistory.Entry entry, Throwable error) {
+    if (error == null) {
+      batch.succeeded();
+      view.markUploaded(entry.id());
+    } else {
+      batch.failed(ChunkedUploader.classify(error));
+    }
+    if (closed) return;
+    if (batch.running()) pump();
+    else finishBatch();
+  }
+
+  private void finishBatch() {
+    UploadFailure stop = batch.stoppedBy();
+    if (stop == null) {
+      status =
+          batch.failed() == 0
+              ? I18n.get("minemories.ui.batch_done", batch.sent())
+              : I18n.get(
+                  "minemories.ui.batch_done_with_failures",
+                  batch.sent(),
+                  batch.failed(),
+                  batch.lastError());
+    } else if (stop.kind() == UploadFailure.Kind.RATE_LIMITED) {
+      status =
+          I18n.get(
+              "minemories.ui.batch_rate_limited",
+              batch.sent(),
+              batch.skipped(),
+              delay(stop.retryAfterSeconds()));
+    } else {
+      status =
+          I18n.get("minemories.ui.batch_stopped", batch.sent(), batch.skipped(), stop.message());
+    }
+    if (!closed && directory != null) reload();
+  }
+
+  private static String delay(long seconds) {
+    return seconds < 120 ? seconds + " s" : (seconds + 59) / 60 + " min";
+  }
+
+  private String message() {
+    if (status != null && !batch.running()) return status;
+    if (batch.running()) {
+      return I18n.get("minemories.ui.batch_progress", batch.position(), batch.total());
+    }
+    if (view.pending()) return I18n.get("minemories.ui.loading_captures");
+    if (view.failed()) return I18n.get("minemories.ui.history_unavailable");
+    if (view.empty()) return I18n.get("minemories.ui.no_captures");
+    if (!paired) return I18n.get("minemories.ui.connect_gallery_with_m_to_send");
+    int waiting = view.unsent().size();
+    return waiting == 0
+        ? I18n.get("minemories.ui.all_sent")
+        : I18n.get("minemories.ui.waiting_to_send", waiting);
+  }
+
   private void updateButtons() {
-    if (send == null) return;
-    var entries = history.page().entries();
-    CaptureHistory.Entry selected = history.selected();
-    boolean waiting = sending || PairingClient.isUploading();
-    send.active = paired && selected != null && selected.readable() && !waiting;
-    previous.active = !history.pending() && history.hasPrevious() && !waiting;
-    next.active = !history.pending() && history.page().hasMore() && !waiting;
-    refresh.active = directory != null && !history.pending() && !waiting;
+    if (sendAll == null) return;
+    boolean waiting = busy();
+    var lines = view.lines();
+    int unsent = view.unsent().size();
+    sendAll.setMessage(Component.literal(I18n.get("minemories.ui.upload_all", unsent)));
+    sendAll.active = paired && unsent > 0 && !waiting && !view.pending();
+    previous.active = view.hasPrevious();
+    next.active = view.hasNext();
     for (int i = 0; i < rows.size(); i++) {
       Button row = rows.get(i);
-      row.visible = i < entries.size();
-      row.active = !waiting;
-      if (!row.visible) continue;
-      CaptureHistory.Entry entry = entries.get(i);
-      String prefix =
-          (entry.equals(selected) ? "› " : "") + DATE.format(entry.capturedAt()) + " · ";
-      String tag =
-          I18n.get(entry.uploaded() ? "minemories.ui.history_sent" : "minemories.ui.history_local");
-      String suffix = " · " + StorageQuota.formatBytes(entry.bytes());
-      String world =
-          font.plainSubstrByWidth(
-              entry.world(),
-              Math.max(12, panelWidth - 40 - font.width(prefix + tag + " · " + suffix)));
-      row.setMessage(
-          Component.literal(prefix)
-              .append(
-                  Component.literal(tag)
-                      .withStyle(entry.uploaded() ? ChatFormatting.GREEN : ChatFormatting.GRAY))
-              .append(Component.literal(" · " + world + suffix)));
-      row.setTooltip(Tooltip.create(Component.literal(entry.world() + "\n" + entry.file())));
+      CaptureHistory.Entry entry = i < lines.size() ? lines.get(i).entry() : null;
+      row.visible = entry != null && entry.readable() && !entry.uploaded();
+      row.active = paired && !waiting && !view.pending();
     }
   }
 
   @Override
   public void tick() {
     super.tick();
+    pump();
     updateButtons();
   }
 
   @Override
   public void removed() {
-    history.close();
+    closed = true;
+    batch.cancel();
+    view.close();
     super.removed();
   }
 
@@ -178,17 +240,43 @@ final class CaptureHistoryScreen extends Screen {
   @Override
   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
     super.render(graphics, mouseX, mouseY, partialTick);
-    String message = status == null ? history.message() : status;
-    var lines = font.split(Component.literal(message), panelWidth - 28);
+    var lines = font.split(Component.literal(message()), panelWidth - 28);
     for (int i = 0; i < Math.min(2, lines.size()); i++) {
-      graphics.drawString(font, lines.get(i), left + 14, top + 34 + i * 10, 0xFFECE8DC);
+      graphics.drawString(font, lines.get(i), left + 14, top + 30 + i * 10, 0xFFECE8DC);
     }
-    String help =
-        paired
-            ? I18n.get("minemories.ui.send_only_with_button_below")
-            : I18n.get("minemories.ui.connect_gallery_with_m_to_send");
+    var list = view.lines();
+    for (int i = 0; i < list.size(); i++) {
+      drawLine(graphics, list.get(i), top + LIST_TOP + i * LINE_HEIGHT + 6);
+    }
+    String pageText = (view.page() + 1) + " / " + view.pageCount();
     graphics.drawString(
-        font, font.plainSubstrByWidth(help, panelWidth - 28), left + 14, top + 154, 0xFFB2B6AA);
+        font, pageText, left + (panelWidth - font.width(pageText)) / 2, top + 188, 0xFFB2B6AA);
+  }
+
+  private void drawLine(GuiGraphics graphics, CaptureGroups.Line line, int y) {
+    int right = left + panelWidth - 14;
+    if (line.header()) {
+      var group = line.group();
+      String count = " · " + group.entries().size();
+      String name = group.unknown() ? I18n.get("minemories.ui.group_unknown") : group.label();
+      String shown = font.plainSubstrByWidth(name, panelWidth - 28 - font.width(count));
+      graphics.drawString(
+          font, shown + count, left + 14, y, group.server() ? 0xFF9CC4E4 : 0xFFA9D18E);
+      return;
+    }
+    CaptureHistory.Entry entry = line.entry();
+    String text = DATE.format(entry.capturedAt()) + " · " + StorageQuota.formatBytes(entry.bytes());
+    graphics.drawString(font, text, left + 22, y, 0xFFECE8DC);
+    String mark = null;
+    int color = 0xFFB2B6AA;
+    if (!entry.readable()) {
+      mark = I18n.get("minemories.ui.unreadable");
+      color = 0xFFE07A6E;
+    } else if (entry.uploaded()) {
+      mark = "✓ " + I18n.get("minemories.ui.history_sent");
+      color = 0xFF7FD68A;
+    }
+    if (mark != null) graphics.drawString(font, mark, right - font.width(mark), y, color);
   }
 
   @Override

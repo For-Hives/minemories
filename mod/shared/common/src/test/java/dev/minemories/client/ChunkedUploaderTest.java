@@ -407,4 +407,61 @@ class ChunkedUploaderTest {
         IOException.class,
         () -> uploader().upload(url, "token", file, new JsonObject(), ignored -> {}));
   }
+
+  @Test
+  void rateLimitIsNotRetriedAndKeepsTheRetryAfterDelay() throws Exception {
+    Path file = capture(20);
+    AtomicInteger calls = new AtomicInteger();
+    String url =
+        start(
+            exchange -> {
+              calls.incrementAndGet();
+              exchange.getResponseHeaders().add("Retry-After", "42");
+              respond(exchange, 429, "{}");
+            });
+    IOException error =
+        assertThrows(
+            IOException.class,
+            () -> uploader().upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+    assertEquals(1, calls.get());
+    var failure = ChunkedUploader.classify(new java.util.concurrent.CompletionException(error));
+    assertEquals(UploadFailure.Kind.RATE_LIMITED, failure.kind());
+    assertEquals(42, failure.retryAfterSeconds());
+  }
+
+  @Test
+  void failuresAreClassifiedForBatchUploads() {
+    assertEquals(
+        UploadFailure.Kind.OTHER, ChunkedUploader.classify(new IllegalStateException("x")).kind());
+    assertEquals(
+        UploadFailure.Kind.OTHER, ChunkedUploader.classify(new IOException("network")).kind());
+  }
+
+  @Test
+  void unauthorizedAndFullGalleryStopBatchesButOtherRefusalsDoNot() throws Exception {
+    for (int status : new int[] {401, 403, 413, 422}) {
+      Path file = capture(20);
+      String url =
+          start(
+              exchange ->
+                  respond(
+                      exchange,
+                      status,
+                      status == 413 ? "{\"error\":\"storage_quota_exceeded\"}" : "{}"));
+      IOException error =
+          assertThrows(
+              IOException.class,
+              () -> uploader().upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+      server.stop(0);
+      server = null;
+      var kind = ChunkedUploader.classify(error).kind();
+      assertEquals(
+          switch (status) {
+            case 413 -> UploadFailure.Kind.QUOTA;
+            case 422 -> UploadFailure.Kind.OTHER;
+            default -> UploadFailure.Kind.UNAUTHORIZED;
+          },
+          kind);
+    }
+  }
 }
