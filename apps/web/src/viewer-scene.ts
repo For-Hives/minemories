@@ -319,6 +319,7 @@ export class ViewerScene {
 		this.controls.enableDamping = true
 		this.controls.dampingFactor = 0.08
 		this.scene.add(this.modelRoot, this.precipitation.object, this.pivot.object)
+		this.attachWorldLights()
 		this.effects = new ViewerEffects(this.renderer, this.scene, this.camera)
 		this.environmentGenerator = new THREE.PMREMGenerator(this.renderer)
 		this.controls.autoRotateSpeed = 0.35
@@ -468,6 +469,7 @@ export class ViewerScene {
 			})
 			const first = this.modelRoot.children.length === 0
 			this.modelRoot.add(root)
+			this.attachWorldLights()
 			this.applyCategories(root)
 			await this.renderer.compileAsync(root, this.camera, this.scene)
 			this.ensureLoadActive(signal)
@@ -966,6 +968,7 @@ export class ViewerScene {
 
 	/** Hands the capture's emitters to the pool and shows its first selection at once, before shaders compile. */
 	private setWorldEmitters(emitters: readonly Emitter[], focus: Point3): void {
+		this.attachWorldLights()
 		this.lightPool.setEmitters(emitters)
 		this.lightPool.update(focus, Number.POSITIVE_INFINITY)
 		this.applyLightPool()
@@ -977,11 +980,18 @@ export class ViewerScene {
 		this.applyLightPool()
 	}
 
+	/**
+	 * The pool is the only source of point lights and is attached before any compilation or render: every program
+	 * is built for exactly `worldLights.length` lights, never for a capture's own, and never rebuilt for a change.
+	 */
+	private attachWorldLights(): void {
+		for (const light of this.worldLights) if (!light.parent) this.scene.add(light)
+	}
+
 	private applyLightPool(): void {
 		for (const [position, { emitter, level }] of this.lightPool.slots.entries()) {
 			const light = this.worldLights[position]
 			if (!light) continue
-			if (!light.parent) this.scene.add(light)
 			light.intensity = emitter ? Math.min(emitter.intensity * 0.01, 12) * level : 0
 			if (!emitter) continue
 			light.color.setRGB(emitter.r, emitter.g * 0.82, emitter.b * 0.65, THREE.LinearSRGBColorSpace)

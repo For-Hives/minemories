@@ -675,3 +675,67 @@ test('switching the lighting style flips shared uniforms, tone mapping and post 
 	expect(effects.setFaithful).toHaveBeenLastCalledWith(false)
 	expect(updateDayCycle).toHaveBeenCalledTimes(2)
 })
+
+/** Every point light a render or compilation of the scene would see. */
+function renderedPointLights(scene: THREE.Object3D): number {
+	let count = 0
+	scene.traverseVisible(object => {
+		if (object instanceof THREE.PointLight) count++
+	})
+	return count
+}
+
+function manyLights(count: number): THREE.Group {
+	const root = new THREE.Group()
+	root.add(new THREE.Mesh(new THREE.BoxGeometry(64, 8, 64), new THREE.MeshStandardMaterial()))
+	for (let i = 0; i < count; i++) {
+		const light = new THREE.PointLight(0xffaa55, 1500, 14)
+		light.position.set((i % 40) * 1.5 - 30, 1, Math.floor(i / 40) * 1.5 - 30)
+		root.add(light)
+	}
+	return root
+}
+
+test('no loader entry point ever compiles or renders more point lights than the pool holds', async () => {
+	const rendered: number[] = []
+	const stage = THREE.Object3D.prototype
+	for (const entry of ['loadFile', 'addLayer'] as const) {
+		const f = worldFixture()
+		const three = new THREE.Scene()
+		three.add(f.modelRoot)
+		const imported = manyLights(1000)
+		f.fields.loader.parseAsync.mockResolvedValue({ scene: imported })
+		f.fields.renderer.compileAsync.mockImplementation(async () => {
+			rendered.push(renderedPointLights(three))
+		})
+		const internals = f.scene as unknown as Record<string, unknown>
+		delete internals.prepareWorldLighting
+		Object.assign(internals, {
+			scene: three,
+			lightPool: new LightPool(12),
+			navigation: { active: false },
+			applyCategories: vi.fn(),
+			ceilingDirty: false,
+			preparingWorld: false,
+			loadingFile: false,
+			ensureLoadActive: vi.fn(),
+		})
+		const prepare = (ViewerScene.prototype as unknown as Record<string, unknown>).prepareWorldLighting
+		internals.prepareWorldLighting = prepare
+		f.compile.resolve()
+		if (entry === 'loadFile') await f.scene.loadFile(f.file)
+		else {
+			const layer = await f.scene.addLayer(f.file, capture)
+			rendered.push(renderedPointLights(three))
+			f.scene.showWorld(layer.lights)
+		}
+		rendered.push(renderedPointLights(three))
+		const pool = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
+		expect(pool.every(light => light.parent === three)).toBe(true)
+		expect(pool.filter(light => light.intensity > 0).length).toBeLessThanOrEqual(12)
+		expect(renderedPointLights(imported)).toBe(entry === 'loadFile' ? 0 : 0)
+	}
+	expect(stage).toBeDefined()
+	expect(rendered.length).toBeGreaterThanOrEqual(5)
+	expect(new Set(rendered)).toEqual(new Set([12]))
+})
