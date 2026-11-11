@@ -75,7 +75,7 @@ tasks.named('processResources') {
 }
 
 dependencies {
-    minecraft 'com.mojang:minecraft:1.19.2'
+    minecraft 'com.mojang:minecraft:1.21.1'
     mappings loom.officialMojangMappings()
     forge "net.minecraftforge:forge:1.19.2-${loaderVersion}"
     gametestImplementation sourceSets.main.output
