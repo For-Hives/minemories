@@ -1539,6 +1539,11 @@ public final class ClientRuntime {
       return false;
     boolean bothSides = CutBoundary.sealsBothSides(state.isAir(), fluid);
     BlockState cut = sealState(level, pos, min, max);
+    // Own node, apart from the real blocks; the caller's classification comes back afterwards.
+    scene.classify(
+        GlbCategory.CUT,
+        CaptureSink.relativeChunk(pos.getX(), center.getX()),
+        CaptureSink.relativeChunk(pos.getZ(), center.getZ()));
     ClientPlatforms.current()
         .emitBlockModel(
             mc,
@@ -1568,6 +1573,10 @@ public final class ClientRuntime {
                   pos.getZ() - center.getZ(),
                   bothSides);
             });
+    scene.classify(
+        GlbCategory.TERRAIN,
+        CaptureSink.relativeChunk(pos.getX(), center.getX()),
+        CaptureSink.relativeChunk(pos.getZ(), center.getZ()));
     return true;
   }
 
