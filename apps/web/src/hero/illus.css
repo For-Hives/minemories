@@ -124,6 +124,19 @@
 	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
 }
 
+/* A clip with in-game text has a French and an English poster: the page's own lang shows one (fr and fr-CA see the French one). */
+.mm-clip .mm-clip__poster--fr {
+	display: none;
+}
+
+.mm-clip .mm-clip__poster--fr:lang(fr) {
+	display: block;
+}
+
+.mm-clip .mm-clip__poster--en:lang(fr) {
+	display: none;
+}
+
 .mm-clip .mm-clip__video {
 	position: absolute;
 	inset: 0;
@@ -187,14 +200,19 @@
 	background: linear-gradient(90deg, currentcolor 0 35%, transparent 35% 65%, currentcolor 65%);
 }
 
-/* In a step card the clip sits under the sentence on a phone, and beside it on a wider screen, so the three steps stay short. */
+/* In a step card the clip sits under the sentence in a narrow card, and beside it in a wide one, so the three steps stay short. The switch reads the
+   cards' own width (the text column shrinks with the dock on a desktop), not the screen's. */
+.site .mc-steps {
+	container-type: inline-size;
+}
+
 .mc-step__clip {
 	grid-column: 2;
 	width: min(100%, 360px);
 	margin-top: var(--ds-sp-2);
 }
 
-@media (min-width: 720px) {
+@container (min-width: 640px) {
 	.mc-step:has(.mc-step__clip) {
 		grid-template-columns: auto minmax(0, 1fr) minmax(0, 340px);
 		grid-template-rows: auto 1fr;

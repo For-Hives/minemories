@@ -31,8 +31,11 @@ function readEnvironment(): ClipEnvironment {
 /** The page signals a clip follows: its language, the film's phase and the motion settings. */
 function readPage() {
 	const root = document.documentElement
-	return { ready: true, lang: root.lang, phase: root.dataset.phase, mode: clipMode(readEnvironment()) }
+	return { lang: root.lang, phase: root.dataset.phase, mode: clipMode(readEnvironment()) }
 }
+
+/** How much of a clip must be on screen for it to play. */
+const seenRatio = 0.35
 
 export interface HeroClipProps {
 	/** File name in public/hero/clips, without extension; `{ fr, en }` for a clip with in-game text. */
@@ -47,16 +50,13 @@ export interface HeroClipProps {
 export function HeroClip({ name, width, height, alt, className }: HeroClipProps) {
 	const video = useRef<HTMLVideoElement>(null)
 	const root = useRef<HTMLDivElement>(null)
-	// The prerender and the first client render are still: the page's real state arrives with the first effect. A clip with a French and an English take
-	// gets its poster file only when it comes within a screen of the view, once the page's language is settled, so a visitor never downloads the other take.
+	// The prerender and the first client render are still: the page's real state arrives with the first effect.
 	const [page, setPage] = useState<ReturnType<typeof readPage>>({
-		ready: false,
 		lang: 'fr',
 		phase: 'film',
 		mode: 'poster',
 	})
 	const [inView, setInView] = useState(false)
-	const [near, setNear] = useState(false)
 	const [pageVisible, setPageVisible] = useState(true)
 	const [choice, setChoice] = useState<'play' | 'pause' | null>(null)
 	const [loaded, setLoaded] = useState(false)
@@ -85,22 +85,25 @@ export function HeroClip({ name, width, height, alt, className }: HeroClipProps)
 	useEffect(() => {
 		const element = root.current
 		if (!(element && 'IntersectionObserver' in window)) return
-		const seen = new IntersectionObserver(entries => setInView(entries.some(entry => entry.isIntersecting)), {
-			threshold: 0.35,
-		})
-		// a screen ahead: time enough to fetch the poster of the right language before it scrolls in
-		const close = new IntersectionObserver(entries => entries.some(entry => entry.isIntersecting) && setNear(true), {
-			rootMargin: '100% 0px',
-		})
+		// "seen" is a third of the clip on screen: isIntersecting alone would already be true for one visible pixel
+		const seen = new IntersectionObserver(
+			entries => setInView(entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= seenRatio)),
+			{ threshold: [0, seenRatio] }
+		)
 		seen.observe(element)
-		close.observe(element)
-		return () => {
-			seen.disconnect()
-			close.disconnect()
-		}
+		return () => seen.disconnect()
 	}, [])
 
 	const sources = clipSources(name, page.lang)
+	// A clip with a French and an English take has both posters in the markup, so the page reads right without JavaScript; CSS shows the one of the page's
+	// language (:lang(fr)), and a lazy image that is not displayed is never fetched.
+	const posters =
+		typeof name === 'string'
+			? [{ lang: 'all', src: sources.poster }]
+			: [
+					{ lang: 'fr', src: clipSources(name, 'fr').poster },
+					{ lang: 'en', src: clipSources(name, 'en').poster },
+				]
 	const play = clipShouldPlay({ mode: page.mode, choice, inView, pageVisible, phase: page.phase })
 	if (play && !loaded) setLoaded(true)
 
@@ -118,16 +121,19 @@ export function HeroClip({ name, width, height, alt, className }: HeroClipProps)
 			className={className ? `mm-clip ${className}` : 'mm-clip'}
 			data-state={playing && !stopped ? 'playing' : 'still'}
 		>
-			<img
-				className="mm-clip__poster"
-				src={typeof name === 'string' || (page.ready && near) ? sources.poster : undefined}
-				alt={t(alt)}
-				data-i18n-attr={`alt:${alt}`}
-				width={width}
-				height={height}
-				loading="lazy"
-				decoding="async"
-			/>
+			{posters.map(poster => (
+				<img
+					key={poster.lang}
+					className={`mm-clip__poster mm-clip__poster--${poster.lang}`}
+					src={poster.src}
+					alt={t(alt)}
+					data-i18n-attr={`alt:${alt}`}
+					width={width}
+					height={height}
+					loading="lazy"
+					decoding="async"
+				/>
+			))}
 			{loaded && (
 				<video
 					key={sources.video}

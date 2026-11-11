@@ -5,11 +5,11 @@ import { HeroClip } from './HeroClip'
 
 /** The IntersectionObserver of the page, driven by hand: `show(true)` puts every observed clip on screen. */
 const observers: { callback: IntersectionObserverCallback; elements: Element[] }[] = []
-function show(isIntersecting: boolean) {
+function show(isIntersecting: boolean, intersectionRatio = isIntersecting ? 1 : 0) {
 	act(() => {
 		for (const observer of observers)
 			observer.callback(
-				observer.elements.map(target => ({ target, isIntersecting }) as IntersectionObserverEntry),
+				observer.elements.map(target => ({ target, isIntersecting, intersectionRatio }) as IntersectionObserverEntry),
 				{} as IntersectionObserver
 			)
 	})
@@ -70,21 +70,20 @@ function mount() {
 	return {
 		clip,
 		video: () => clip.querySelector('video'),
-		poster: () => clip.querySelector('img') as HTMLImageElement,
+		posters: () => [...clip.querySelectorAll('img')].map(image => image.getAttribute('src')),
 		toggle: () => clip.querySelector('.mm-clip__toggle') as HTMLButtonElement,
 	}
 }
 
 test('nothing loads before the clip is seen after the film; it plays on screen and pauses off screen or in a hidden tab', async () => {
 	document.documentElement.dataset.phase = 'film'
-	const { clip, video, poster } = mount()
-	// the poster holds the place, lazily, without a file until it comes close (this clip has a French and an English take); the video has no file yet
-	expect(poster().getAttribute('src')).toBeNull()
-	expect(poster().getAttribute('loading')).toBe('lazy')
+	const { clip, video, posters } = mount()
+	// both lazy posters hold the place (CSS shows the page language's one); the video has no file yet
+	expect(posters()).toEqual(['/hero/clips/menu-fr.webp', '/hero/clips/menu-en.webp'])
+	for (const image of clip.querySelectorAll('img')) expect(image.getAttribute('loading')).toBe('lazy')
 	expect(video()).toBeNull()
-	// on screen while the film runs: the poster of the page's language, still no video
+	// on screen while the film runs: still no video
 	show(true)
-	expect(poster().getAttribute('src')).toBe('/hero/clips/menu-en.webp')
 	expect(video()).toBeNull()
 	// the film hands over to the page: the clip loads and plays, muted, inline, looping, hidden from screen readers
 	act(() => {
@@ -115,6 +114,18 @@ test('nothing loads before the clip is seen after the film; it plays on screen a
 		Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
 		document.dispatchEvent(new Event('visibilitychange'))
 	})
+	expect(pause).toHaveBeenCalled()
+})
+
+test('a clip barely on screen waits until a third of it shows', async () => {
+	const { video } = mount()
+	show(true, 0.2)
+	expect(video()).toBeNull()
+	show(true, 0.5)
+	await waitFor(() => expect(video()).not.toBeNull())
+	expect(play).toHaveBeenCalled()
+	pause.mockClear()
+	show(true, 0.1)
 	expect(pause).toHaveBeenCalled()
 })
 
@@ -165,16 +176,17 @@ test('Save-Data or a slow connection keeps the poster', () => {
 
 test('a language switch swaps the in-game take, poster and video, and keeps it playing', async () => {
 	document.documentElement.lang = 'fr'
-	const { video, poster } = mount()
+	const { clip, video } = mount()
 	show(true)
 	await waitFor(() => expect(video()?.getAttribute('src')).toBe('/hero/clips/menu-fr.mp4'))
-	expect(poster().getAttribute('src')).toBe('/hero/clips/menu-fr.webp')
+	// the French poster is the one the page's lang shows
+	expect(clip.querySelector('.mm-clip__poster--fr')?.matches(':lang(fr)')).toBe(true)
 	play.mockClear()
 	act(() => {
 		document.documentElement.lang = 'de'
 	})
 	await waitFor(() => expect(video()?.getAttribute('src')).toBe('/hero/clips/menu-en.mp4'))
-	expect(poster().getAttribute('src')).toBe('/hero/clips/menu-en.webp')
+	expect(clip.querySelector('.mm-clip__poster--en')?.matches(':lang(fr)')).toBe(false)
 	expect(play).toHaveBeenCalled()
 	act(() => {
 		document.documentElement.lang = 'fr-CA'

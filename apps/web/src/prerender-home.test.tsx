@@ -19,9 +19,8 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
 	expect(html).toContain('Carte postale HD')
 	expect(html).toContain('/hero/illus/postcard-hd.webp')
-	for (const clip of ['viewer-time', 'walk', 'game-browser']) expect(html).toContain(`/hero/clips/${clip}.webp`)
-	// the M menu exists in a French and an English take: its poster waits for the page's language
-	expect(html).not.toContain('/hero/clips/menu-')
+	for (const clip of ['menu-fr', 'menu-en', 'viewer-time', 'walk', 'game-browser'])
+		expect(html).toContain(`/hero/clips/${clip}.webp`)
 	expect(html).not.toContain('<video')
 	expect(html).not.toContain('.mp4')
 	expect(html).toContain('Il faut un compte\u00a0?')
