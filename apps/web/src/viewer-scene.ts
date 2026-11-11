@@ -5,6 +5,7 @@ import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
 import { CeilingGrid } from './lib/ceiling'
 import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
+import { isCutout } from './lib/glb-alpha'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
 import { buildLightVolume, buildLightVolumeAsync, type ImportedLight, lightSourcesFrom } from './lib/light-volume'
@@ -102,6 +103,44 @@ function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown })
 			pbrMaterial.emissive.setRGB(...legacyEmissiveToLinear([r, g, b]), THREE.LinearSRGBColorSpace)
 		}
 	})
+}
+
+const cutoutByImage = new WeakMap<object, boolean>()
+
+/** Whether a texture's image only holds (almost) fully opaque or fully transparent texels, cached per image. */
+function hasCutoutTexels(texture: THREE.Texture): boolean {
+	const image = texture.image as (CanvasImageSource & { width: number; height: number }) | null
+	if (!image) return false
+	const known = cutoutByImage.get(image)
+	if (known !== undefined) return known
+	let cutout = false
+	try {
+		const canvas = document.createElement('canvas')
+		canvas.width = image.width
+		canvas.height = image.height
+		const context = canvas.getContext('2d', { willReadFrequently: true })
+		if (context) {
+			context.drawImage(image, 0, 0)
+			cutout = isCutout(context.getImageData(0, 0, canvas.width, canvas.height).data)
+		}
+	} catch {
+		// Tainted or detached image: keep the material blended, as the file describes it.
+	}
+	cutoutByImage.set(image, cutout)
+	return cutout
+}
+
+/**
+ * A `BLEND` material whose texture is a cutout (older captures called every textured entity or leaf that way) is drawn
+ * as an alpha-tested opaque one: it writes depth, so a model's far faces no longer show through its near ones.
+ */
+function cutOutBinaryBlend(material: THREE.Material): void {
+	const standard = material as THREE.MeshStandardMaterial
+	if (!material.transparent || material.opacity < 1 || !standard.map || material.alphaTest > 0) return
+	if (!hasCutoutTexels(standard.map)) return
+	material.transparent = false
+	material.alphaTest = 0.5
+	material.depthWrite = true
 }
 
 export class ViewerScene {
@@ -898,6 +937,7 @@ export class ViewerScene {
 		const materials = Array.isArray(object.material) ? object.material : [object.material]
 		let hasOpaqueSurface = false
 		for (const material of materials) {
+			cutOutBinaryBlend(material)
 			const pbrMaterial = material as THREE.MeshStandardMaterial
 			if (pbrMaterial.isMeshStandardMaterial) {
 				pbrMaterial.roughness = pbrMaterial.transparent ? 0.18 : 0.92
