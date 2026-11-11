@@ -29,79 +29,141 @@ class CutBoundaryTest {
 
   private static final CaptureBounds BOX = new CaptureBounds(0, 0, 0, 4, 9, 4);
 
-  private static CutBoundary.Shell shell(CutBoundary.Passable passable) {
-    return new CutBoundary.Shell(BOX, passable);
+  private static CutBoundary.OpenAir air(CutBoundary.Passable passable, int[]... player) {
+    CutBoundary.Surface surface =
+        (x, z) -> {
+          int top = BOX.minY() - 1;
+          for (int y = BOX.minY(); y <= BOX.maxY(); y++) if (!passable.at(x, y, z)) top = y;
+          return top;
+        };
+    var air = new CutBoundary.OpenAir(BOX, passable, surface, player);
+    air.settle();
+    return air;
   }
 
   @Test
   void openAirUnderACanopyOrOverhangAtTheBorderIsNeverSealed() {
     // Ground up to y = 2; a trunk on the plane x = 0 with leaves (passable) on top; a roof slab
     // over x 0..1 at y = 6, open on the other sides.
-    var shell =
-        shell(
+    var air =
+        air(
             (x, y, z) -> {
               boolean ground = y <= 2;
               boolean trunk = x == 0 && z == 2 && y >= 3 && y <= 5;
               boolean roof = x <= 1 && y == 6;
               return !(ground || trunk || roof);
             });
-    assertFalse(shell.enclosed(0, 4, 0), "beside the trunk, under the roof");
-    assertFalse(shell.enclosed(0, 3, 4), "under the roof, far from the trunk");
-    assertFalse(shell.enclosed(0, 8, 2), "above the roof");
-    assertFalse(shell.enclosed(3, 3, 0), "open air on the z plane");
+    assertFalse(air.enclosed(0, 4, 0), "beside the trunk, under the roof");
+    assertFalse(air.enclosed(0, 3, 4), "under the roof, far from the trunk");
+    assertFalse(air.enclosed(0, 8, 2), "above the roof");
+    assertFalse(air.enclosed(3, 3, 0), "open air on the z plane");
   }
 
   @Test
   void aCaveCutByTheBoundaryIsSealedButNotTheAirAboveTheGround() {
-    var shell =
-        shell(
+    var air =
+        air(
             (x, y, z) -> {
               boolean ground = y <= 5;
               boolean cave = x <= 2 && z == 2 && y >= 2 && y <= 3;
               return !ground || cave;
             });
-    assertTrue(shell.enclosed(0, 2, 2));
-    assertTrue(shell.enclosed(0, 3, 2));
-    assertFalse(shell.enclosed(0, 7, 2));
-    assertFalse(shell.enclosed(4, 6, 4));
+    assertTrue(air.enclosed(0, 2, 2));
+    assertTrue(air.enclosed(0, 3, 2));
+    assertFalse(air.enclosed(0, 7, 2));
+    assertFalse(air.enclosed(4, 6, 4));
   }
 
   @Test
-  void aCaveWithAMouthOnTheShellStaysOpen() {
-    var shell =
-        shell(
+  void aCaveOpeningToTheSkyInsideTheVolumeStaysOpenEvenAwayFromTheShell() {
+    // The cave runs inwards from the plane x = 0 and a shaft climbs from it to the surface.
+    var air =
+        air(
             (x, y, z) -> {
               boolean ground = y <= 5;
-              boolean cave = x == 0 && z == 2 && y >= 2 && y <= 5;
-              return !ground || cave;
+              boolean cave = x <= 2 && z == 2 && y >= 2 && y <= 3;
+              boolean shaft = x == 2 && z == 2 && y >= 4;
+              return !ground || cave || shaft;
             });
-    assertFalse(shell.enclosed(0, 2, 2));
+    assertFalse(air.enclosed(0, 2, 2));
   }
 
   @Test
-  void aFloatingIslandKeepsAnOpenUndersideAndBottom() {
-    var shell = shell((x, y, z) -> !(y == 5 && x >= 1 && x <= 3 && z >= 1 && z <= 3));
-    assertFalse(shell.enclosed(2, 0, 2));
-    assertFalse(shell.enclosed(0, 4, 0));
+  void aFloatingIslandKeepsAnOpenUndersideAndNoSealOnTheBottomPlane() {
+    var air = air((x, y, z) -> !(y == 5 && x >= 1 && x <= 3 && z >= 1 && z <= 3));
+    for (int z = 0; z <= 4; z++)
+      for (int x = 0; x <= 4; x++) assertFalse(air.enclosed(x, 0, z), x + "," + z);
+    assertFalse(air.enclosed(0, 4, 0));
   }
 
   @Test
-  void aCaptureInsideAClosedSpaceSealsItsCavityConsistently() {
-    // Bedrock ceiling at y = 8 and a floor up to y = 1: a Nether-like cavity with no way out.
-    var shell = shell((x, y, z) -> y > 1 && y < 8);
-    for (int y = 2; y < 8; y++) assertTrue(shell.enclosed(0, y, 2), "side at y=" + y);
-    assertTrue(shell.enclosed(4, 5, 4));
+  void openAirOnTheBottomPlaneOfAnyBuildIsNotSealed() {
+    // A tower on a pillar standing in the air: the bottom plane is open sky all around.
+    var air =
+        air(
+            (x, y, z) ->
+                !((x == 2 && z == 2 && y >= 1 && y <= 4)
+                    || (y == 5 && x >= 1 && x <= 3 && z >= 1 && z <= 3)));
+    for (int z = 0; z <= 4; z++) for (int x = 0; x <= 4; x++) assertFalse(air.enclosed(x, 0, z));
+  }
+
+  @Test
+  void theCavityOfAClosedSpaceTheCaptureWasTakenInStaysOpen() {
+    // Bedrock ceiling at y = 8 and a floor up to y = 1: a Nether-like cavern, closed everywhere.
+    CutBoundary.Passable cavern = (x, y, z) -> y > 1 && y < 8;
+    var around = air(cavern, new int[] {2, 3, 2});
+    for (int y = 2; y < 8; y++) assertFalse(around.enclosed(0, y, 2), "side at y=" + y);
+    var selection = air(cavern);
+    for (int y = 2; y < 8; y++) assertTrue(selection.enclosed(0, y, 2), "side at y=" + y);
+  }
+
+  @Test
+  void aPocketCutOffFromTheSkyAndThePlayerIsSealedEvenInsideAClosedCapture() {
+    CutBoundary.Passable world =
+        (x, y, z) -> !(y <= 1 || y >= 8 || (x == 3 && z != 2) || (x > 3 && y == 4));
+    // The player's room is x < 3; the pocket x = 4, y 2..3 is walled off from it.
+    var air = air((x, y, z) -> world.at(x, y, z) && !(x == 3 && y < 8), new int[] {1, 3, 2});
+    assertFalse(air.enclosed(0, 3, 2));
+    assertTrue(air.enclosed(4, 3, 2));
+  }
+
+  @Test
+  void aRoomOpeningOutsideThroughAWindowInsideTheVolumeStaysOpen() {
+    // A one-cell corridor cut by the plane x = 0: walls at z = 1 and 3, end wall at x = 3, roof.
+    boolean[] window = {false};
+    CutBoundary.Passable room =
+        (x, y, z) -> {
+          boolean ground = y <= 1;
+          boolean wall = y >= 2 && y <= 4 && (z == 1 || z == 3 || x == 3);
+          boolean roof = y == 5 && x <= 3 && z >= 1 && z <= 3;
+          boolean opening = window[0] && x == 3 && z == 2 && y == 3;
+          return !(ground || (wall && !opening) || roof);
+        };
+    assertTrue(air(room).enclosed(0, 3, 2), "the room without a window is a pocket");
+    window[0] = true;
+    assertFalse(air(room).enclosed(0, 3, 2), "the window lets the room reach the sky");
   }
 
   @Test
   void onlyShellCellsInsideTheBoundsCanBeEnclosed() {
-    var shell = shell((x, y, z) -> y > 1 && y < 8);
-    assertTrue(shell.onShell(0, 3, 2));
-    assertTrue(shell.onShell(2, 0, 2));
-    assertFalse(shell.onShell(2, 3, 2));
-    assertFalse(shell.onShell(-1, 3, 2));
-    assertFalse(shell.onShell(2, 10, 2));
-    assertFalse(shell.enclosed(2, 3, 2));
+    var air = air((x, y, z) -> y > 1 && y < 8);
+    assertTrue(air.onShell(0, 3, 2));
+    assertTrue(air.onShell(2, 0, 2));
+    assertFalse(air.onShell(2, 3, 2));
+    assertFalse(air.onShell(-1, 3, 2));
+    assertFalse(air.onShell(2, 10, 2));
+    assertFalse(air.enclosed(2, 3, 2));
+  }
+
+  @Test
+  void theFillGivesTheSameResultInSmallSlices() {
+    var capped =
+        new CutBoundary.OpenAir(
+            BOX, (x, y, z) -> y > 1 && y < 8, (x, z) -> 9, new int[][] {{2, 3, 2}});
+    while (!capped.advance(3)) {
+      // slice by slice
+    }
+    assertFalse(capped.enclosed(0, 3, 2));
   }
 
   @Test

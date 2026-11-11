@@ -62,20 +62,30 @@ bytes (`MaterialSidednessTest`).
 
 ### Which cut cells are sealed
 
-`CutBoundary.Shell` floods the shell of the capture (its four sides and its bottom) from the top row,
-through every cell that is not an opaque full cube. A passable cell the fill never reaches is enclosed by
-terrain along the shell, and is sealed. There is no notion of "terrain height": a heightmap counts a
-canopy's logs, a roof or an overhang as ground, and used to wall off all the open air below them.
+`CutBoundary.OpenAir` floods the capture volume through every cell that is not an opaque full cube. A
+cell is open when it connects to the sky (the top layer of the capture, or any cell above its column's
+world-surface height) or, for an around-player capture, to the player's own cells at capture time. A
+cut cell of air or fluid that is not open is sealed. There is no notion of "terrain height" in the
+decision: a heightmap counts a canopy's logs, a roof or an overhang as ground, and used to wall off all
+the open air below them.
 
-| Cut cell | Reached from the top row? | Result |
+| Cut cell | Open? | Result |
 | --- | --- | --- |
-| Air beside a trunk, under leaves, a roof or a ledge, a floating island's underside | yes, around the obstacle | open |
+| Air beside a trunk, under leaves, a roof or a ledge | yes, reaches the sky around it | open |
+| Underside and bottom plane of a floating island, skyblock | yes | open: no bottom seal |
 | Ocean or lake open to the sky | yes | open (keeps its water surface) |
-| Cave, pool or pocket the boundary slices through | no | sealed |
-| Anything in a capture taken inside a closed space (Nether, cave) | no, nothing opens on the shell | sealed like a cave |
+| Cavern or Nether space the player stands in | yes, through the player's cell | open, reads as a diorama |
+| Room with a door or window to the outside inside the volume | yes | open |
+| Cave, pool or pocket cut off from the sky and the player | no | sealed |
 
-A cave with a mouth on the shell stays open. A room inside a build that the boundary slices through is
-enclosed too and is sealed; it reads as a solid cross-section.
+An explicit selection (the player may be outside it) uses the sky only, so a closed selection of caves
+seals their cuts. A room with no opening in the volume is a pocket and is sealed.
+
+Cost: cells above a column's surface are open by definition and never visited, so the fill only walks
+the air below the surface (caves, the air inside trees, a Nether cavern) and reads the blocks next to it.
+It is capped at 6,000,000 visited cells; past the cap nothing is sealed, which is never a wall too many.
+The progressive capture runs it in slices of 20,000 cells before the first block, and treats chunks it
+has not received as solid.
 
 The seal looks like the nearest opaque cube in the cell's column (`CutBoundary.nearestSolid`: the cave
 floor first, then the ceiling), so it is sand in a desert, netherrack in the Nether, end stone in the End.
