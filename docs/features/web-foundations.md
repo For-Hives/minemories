@@ -122,3 +122,9 @@ load. The cost is format: +2 bytes per vertex (about +8 % on a typical capture b
 attributes well), a `minemoriesFormat` bump with old files keeping the volume fallback, shared quad vertices that
 must be split where neighbouring light differs, and mod code in `mod/shared/core` per Minecraft version to read the
 light engine. It was not requested and is not implemented.
+
+## Viewer depth precision
+
+The viewer's depth texture is 24-bit. Its step at distance `z` is about `z² / (near · 2^24)`, so a fixed `near = 0.02` gave 0.03 block at 100 units and about 0.75 at 500. Everything reading depth suffered: z-testing (coplanar faces 1/16 apart fought at 200 units), and the atmosphere pass's ambient occlusion, which showed noisy speckle that crawled while orbiting. `lib/camera-range.ts` now derives the near plane every frame from the camera-to-pivot distance (3 %, minimum 0.02; first person keeps 0.02), applied in `renderScene`. The far plane is unchanged (the sky sphere, clouds and ground ray depend on it); precision depends on near. The atmosphere pass reads the projection matrices live, so it follows. The orbit minimum distance is 1.5 % of the capture size, so the nearest 3 % of the orbit distance can clip when the camera is very close to the pivot; this is the usual trade-off of an orbit camera.
+
+The orbit gizmo (`viewer-pivot.ts`) is deliberate: ring and cross at opacity 0.55, radius 4.5 % of the camera-to-pivot distance, a black soft disc on the ground below (up to 0.9 opacity, radius 1.8x the ring) and a stem; it shows while dragging or zooming and lingers 1.2 s. The hard-edged top/bottom shade over the canvas is `.cinema-page .viewer-stage::after` in `viewer-studio.css` (three steps of 30/20/15 % dark, 96 px at the top, 120 px at the bottom).
