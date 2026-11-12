@@ -43,7 +43,7 @@ class DiagnosticReportTest {
     assertEquals(CORRELATION.toString(), json.get("correlationId").getAsString());
     assertTrue(payload.get("consent").getAsBoolean());
     assertEquals(2, payload.size());
-    assertEquals(8, json.size());
+    assertEquals(9, json.size());
     assertEquals("mod", json.get("source").getAsString());
     assertEquals("capture", json.get("phase").getAsString());
     assertEquals("0.1.0", json.getAsJsonObject("versions").get("mod").getAsString());
@@ -194,7 +194,7 @@ class DiagnosticReportTest {
     Arrays.fill(trace, safe);
     Throwable error = new IllegalStateException();
     error.setStackTrace(trace);
-    assertEquals(12, frames(report(error, null)).size());
+    assertEquals(24, frames(report(error, null)).size());
     Arrays.fill(trace, new StackTraceElement("foreign.mod.Mod", "tick", "Mod.java", 1));
     trace[128] = safe;
     error.setStackTrace(trace);
@@ -239,21 +239,21 @@ class DiagnosticReportTest {
   }
 
   @Test
-  void keepsLastEightTypedBreadcrumbsClampsElapsedAndDetachesCallerData() {
+  void keepsLastSixteenTypedBreadcrumbsClampsElapsedAndDetachesCallerData() {
     List<DiagnosticReport.Breadcrumb> steps = new ArrayList<>();
-    for (int index = 0; index < 10; index++) {
+    for (int index = 0; index < 20; index++) {
       steps.add(new DiagnosticReport.Breadcrumb(DiagnosticReport.Step.UPLOAD_CHUNK, index));
     }
     DiagnosticReport value = report(new IllegalStateException(), steps);
     steps.clear();
     JsonArray result = content(value).getAsJsonArray("breadcrumbs");
-    assertEquals(8, result.size());
-    assertEquals(2, result.get(0).getAsJsonObject().get("elapsedMs").getAsLong());
-    assertEquals(9, result.get(7).getAsJsonObject().get("elapsedMs").getAsLong());
+    assertEquals(16, result.size());
+    assertEquals(4, result.get(0).getAsJsonObject().get("elapsedMs").getAsLong());
+    assertEquals(19, result.get(15).getAsJsonObject().get("elapsedMs").getAsLong());
     JsonObject changed = value.payload();
     changed.getAsJsonObject("report").getAsJsonArray("breadcrumbs").remove(0);
     changed.getAsJsonObject("report").addProperty("source", "private-world");
-    assertEquals(8, content(value).getAsJsonArray("breadcrumbs").size());
+    assertEquals(16, content(value).getAsJsonArray("breadcrumbs").size());
     assertEquals("mod", content(value).get("source").getAsString());
     List<DiagnosticReport.Breadcrumb> extremes =
         Arrays.asList(
@@ -278,7 +278,9 @@ class DiagnosticReportTest {
             "capture_failed",
             "upload_requested",
             "upload_started",
+            "upload_session",
             "upload_chunk",
+            "upload_completing",
             "upload_completed",
             "upload_failed",
             "pairing_started",
@@ -353,5 +355,82 @@ class DiagnosticReportTest {
     public StackTraceElement[] getStackTrace() {
       return new StackTraceElement[] {null, frame};
     }
+  }
+
+  /** A failure that names its reason with a fixed code. */
+  private static final class Reasoned extends java.io.IOException
+      implements DiagnosticReport.Detailed {
+    @Override
+    public String diagnosticDetail() {
+      return "scratch_symlink";
+    }
+  }
+
+  @Test
+  void reportsEnvironmentCauseChainAndTheCodeAFailureNamesItself() {
+    Throwable error = new IllegalStateException("outer", new Reasoned());
+    JsonObject context = content(report(error, null)).getAsJsonObject("context");
+    assertEquals("scratch_symlink", context.get("detail").getAsString());
+    assertEquals(
+        "java.lang.IllegalStateException", context.getAsJsonArray("causes").get(0).getAsString());
+    JsonObject environment = context.getAsJsonObject("environment");
+    assertTrue(
+        List.of("windows", "macos", "linux", "other")
+            .contains(environment.get("os").getAsString()));
+    assertTrue(environment.get("maxMemoryMb").getAsLong() > 0);
+    assertTrue(environment.get("processors").getAsInt() >= 1);
+  }
+
+  @Test
+  void keepsTheHttpExchangeAndUploadProgressWithinBoundsAndRestoresThem() {
+    DiagnosticReport.Context collected =
+        DiagnosticReport.Context.EMPTY
+            .withHttp(
+                new DiagnosticReport.Http("complete", 9, 400, "invalid_glb_or_checksum", 99_999))
+            .withUpload(new DiagnosticReport.Upload(-5, 4_194_304, 3))
+            .withDetail("Not A Code");
+    DiagnosticReport value =
+        DiagnosticReport.create(
+            DiagnosticReport.Phase.UPLOAD,
+            VERSIONS,
+            CORRELATION,
+            new IllegalStateException(),
+            List.of(),
+            collected);
+    JsonObject context = content(value).getAsJsonObject("context");
+    JsonObject http = context.getAsJsonObject("http");
+    assertEquals("complete", http.get("request").getAsString());
+    assertEquals(3, http.get("attempts").getAsInt());
+    assertEquals(400, http.get("status").getAsInt());
+    assertEquals("invalid_glb_or_checksum", http.get("error").getAsString());
+    assertEquals(86_400, http.get("retryAfterSeconds").getAsLong());
+    assertEquals(0, context.getAsJsonObject("upload").get("sizeBytes").getAsLong());
+    assertFalse(context.has("detail"));
+    JsonObject restored =
+        DiagnosticReport.restore(value.payload(), Instant.now()).getAsJsonObject("report");
+    assertEquals(
+        context.getAsJsonObject("http"),
+        restored.getAsJsonObject("context").getAsJsonObject("http"));
+    assertEquals(
+        context.getAsJsonObject("upload"),
+        restored.getAsJsonObject("context").getAsJsonObject("upload"));
+  }
+
+  @Test
+  void refusesAnUnknownRequestKindAndDropsAnythingInvalidFromARestoredContext() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new DiagnosticReport.Http("login", 1, 200, null, -1));
+    assertEquals(0, new DiagnosticReport.Http("chunk", 1, 99, "Bad Code", -1).status());
+    JsonObject payload = report(new IllegalStateException(), null).payload();
+    JsonObject context = new JsonObject();
+    JsonObject http = new JsonObject();
+    http.addProperty("request", "/home/someone/secret");
+    http.addProperty("attempts", 1);
+    context.add("http", http);
+    context.addProperty("detail", "C:\\Users\\someone");
+    payload.getAsJsonObject("report").add("context", context);
+    // Nothing in it validates, so no context is forwarded at all.
+    assertFalse(
+        DiagnosticReport.restore(payload, Instant.now()).getAsJsonObject("report").has("context"));
   }
 }

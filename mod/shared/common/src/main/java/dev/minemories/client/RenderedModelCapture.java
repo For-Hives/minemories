@@ -141,6 +141,7 @@ final class RenderedModelCapture {
     }
 
     private RenderedVertexConsumer consumer(RenderType type) {
+      if (refused.contains("pass/" + type)) return null;
       try {
         Texture texture = texture(type);
         if (texture == null) return null;
@@ -153,7 +154,10 @@ final class RenderedModelCapture {
         return new RenderedVertexConsumer(
             type.mode(), vertices -> add(model, texture, vertices, light, layer));
       } catch (IOException error) {
-        throw new UncheckedIOException(error);
+        // An oversized or unreadable texture drops this render pass only, as a refused one does;
+        // it must not abort the whole capture. The pass is logged once and not retried.
+        unreadable(type, error.getMessage());
+        return null;
       }
     }
 

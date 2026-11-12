@@ -481,6 +481,7 @@
 	"Status not saved. Refresh and try again.": "ステータスが保存されていません。更新して再試行してください。",
 	"Step inside the memory": "記憶の中へ足を踏み入れる",
 	"Steps before the error": "エラーが発生する前の手順",
+	"Failure context": "エラーの文脈",
 	"Stop sharing": "共有を停止",
 	"Storage": "ストレージ",
 	"Storage information is unavailable. Your captures remain accessible.": "ストレージ情報が利用できません。キャプチャには引き続きアクセスできます。",
