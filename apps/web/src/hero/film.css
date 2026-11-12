@@ -982,14 +982,15 @@ html:not(.scene-on) .film-bar {
 .mc-sitebar {
 	position: fixed;
 	inset: 0 0 auto;
-	z-index: 40;
+	z-index: var(--ds-z-bar);
 	height: var(--header-h);
 	min-height: 0;
 	padding-block: 4px;
-	padding-inline: max(16px, var(--safe-l)) max(16px, var(--safe-r));
+	/* the pages' gutter (site-nav.css --mm-bar-gutter): the brand and the install button stay put from the landing to a page */
+	padding-inline: max(var(--mm-bar-gutter, 16px), var(--safe-l)) max(var(--mm-bar-gutter, 16px), var(--safe-r));
 }
 
-/* The film: transparent, with its own dark gradient so that the brand reads on the golden sky; the section links wait. */
+/* The film: transparent, with its own dark gradient so that the brand reads on the golden sky; the menus wait. */
 .scene-on .mc-sitebar::before {
 	content: '';
 	position: absolute;
@@ -1000,30 +1001,36 @@ html:not(.scene-on) .film-bar {
 	transition: opacity 0.3s linear;
 }
 
-html[data-phase='site'] .mc-sitebar::before {
+html[data-phase='site'] .mc-sitebar::before,
+html.is-leaving .mc-sitebar::before {
 	opacity: 0;
 }
 
-html[data-phase='film'] .site-nav {
+/* The menus and the account wait for the end of the film (only the language and "Install the mod" stay over the opening shot). */
+html[data-phase='film']:not(.is-leaving) .site-nav,
+html[data-phase='film']:not(.is-leaving) .mm-nav-end__wide > * {
 	visibility: hidden;
 	opacity: 0;
 }
 
-.site-nav {
+.site-nav,
+.mm-nav-end__wide > * {
 	transition: opacity 0.3s linear;
 }
 
-html.is-entering .site-nav {
+html.is-entering .site-nav,
+html.is-entering .mm-nav-end__wide > * {
 	transition-delay: 0.7s;
+}
+
+/* A flick leaves the film (hero.js is-leaving, from the rush to the landing): the site's header comes in at once, links included. */
+html.is-leaving .site-nav,
+html.is-leaving .mm-nav-end__wide > * {
+	transition-delay: 0s;
 }
 
 .site-nav ul {
 	margin: 0;
-}
-
-/* A label never breaks over two lines: the links wait in the menu until they fit on one row. */
-.site-nav a {
-	white-space: nowrap;
 }
 
 /* The site: solid header (the kit's `.is-solid`, set by hero.js). */
@@ -1031,205 +1038,13 @@ html.is-entering .site-nav {
 	transition-duration: 0.3s;
 }
 
-.mc-sitebar__cta {
-	--_h: 44px; /* v9c: a 44 px target at every width (the kit's button is 40 px from 641 px) */
-	white-space: nowrap;
-	display: inline-flex; /* the kit hides it under 560 px: v9c keeps the install action on every screen (blind test: "no install button on mobile") */
-}
+/* --- the bar's menus, account, language and install button (SiteNav, site-nav.css: the same bar as every page's) -------------------------------------------
+   During the film the menus wait (.site-nav, above); the phones' panel keeps its button under 700 px, where it holds the language. */
 
-.cta-short {
-	display: none;
-}
-
-/* --- the header on small screens (v9c) ----------------------------------------------------------------------------------------------------------------------
-   >= 1 100 px: brand, section links, language, install (the kit shows the links from 1 000 px; v9c: from 1 100). 700 to 1 099 px: the links move into the menu button. Under 700 px the language selector moves into the menu
-   too, and the install button gets its short label ("Install"; the long one stays in the accessible name). Under 360 px it is its icon. Every target is at least 44 px.
-   (700 and not 560: at 560 px the brand, the selector, the long label and the menu button need 600 px in French.) */
-.site-menu__btn {
-	display: none;
-	flex: none;
-}
-
-.site-menu__btn .i-close,
-.site-menu__btn[aria-expanded='true'] .i-open {
-	display: none;
-}
-
-.site-menu__btn[aria-expanded='true'] .i-close {
-	display: inline-block;
-}
-
-.site-menu {
-	position: fixed;
-	top: var(--header-h);
-	right: max(8px, var(--safe-r));
-	z-index: 45;
-	display: grid;
-	gap: 4px;
-	width: min(320px, calc(100vw - 16px));
-	box-sizing: border-box;
-	padding: 8px;
-	background: var(--night);
-	border: 2px solid var(--outline);
-	box-shadow: 0 4px 0 #3a322b;
-}
-
-.site-menu[hidden] {
-	display: none;
-}
-
-.site-menu ul {
-	display: grid;
-	gap: 2px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.site-menu a {
-	display: flex;
-	align-items: center;
-	min-height: 48px;
-	padding: 0 12px;
-	font: 16px/18px var(--f-ui);
-	color: var(--text);
-	text-decoration: none;
-	text-shadow: 2px 2px 0 var(--text-shadow);
-}
-
-.site-menu a:hover {
-	color: var(--ember);
-	background: rgb(255 255 255 / 0.06);
-}
-
-.site-menu a[aria-current='true'] {
-	box-shadow: inset 4px 0 0 var(--hover);
-}
-
-.site-menu__lang {
-	display: none;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 4px 12px 4px;
-}
-
-html[data-phase='film'] .site-menu__links {
-	display: none; /* the sections do not exist during the film: no dead links */
-}
-
-@media (max-width: 1319px) {
-	.site-menu__btn {
-		display: inline-flex;
-	}
-
-	/* the kit shows the links from 1 000 px; with "Server closing" next to "How it works" and the FAQ, Russian needs about 1 305 px on one row: they come from 1 320 px */
-	.mc-sitebar__nav {
-		display: none;
-	}
-
-	/* the section links live in the menu there: the empty <nav> would only add a second 12 px gap between the brand and the buttons */
-	.site-nav {
-		display: none;
-	}
-}
-
-/* During the film, from 700 px up, the menu would hold nothing (the section links do not exist yet and the header's own language selector is on screen): the button waits for the site. */
 @media (min-width: 700px) {
-	html[data-phase='film'] .site-menu__btn {
+	html[data-phase='film']:not(.is-leaving) .mm-nav-burger {
 		display: none;
 	}
-}
-
-@media (min-width: 1320px) {
-	.site-menu {
-		display: none;
-	}
-
-	.mc-sitebar__nav {
-		display: flex;
-	}
-}
-
-@media (max-width: 699px) {
-	.site-lang {
-		display: none;
-	}
-
-	.site-menu__lang {
-		display: flex;
-	}
-
-	.mc-sitebar__end {
-		gap: 8px;
-	}
-
-	.mc-sitebar__cta .cta-long {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
-	.mc-sitebar__cta .cta-short {
-		display: inline;
-	}
-
-	.mc-sitebar__cta {
-		min-width: 0;
-		padding-inline: 12px;
-	}
-}
-
-.cta-icon {
-	display: none;
-}
-
-/* v11b: 419 (was 399): the wordmark of the logo is 12 px wider at 16 px (M and m are drawn wider: they no longer read "H" and "n"), the Russian header at 400 px was 3 px too wide. */
-@media (max-width: 419px) {
-	.mc-sitebar__brand {
-		gap: 6px;
-	}
-
-	.mc-sitebar {
-		padding-inline: max(8px, var(--safe-l)) max(8px, var(--safe-r));
-	}
-
-	.mc-sitebar__cta {
-		padding-inline: 8px;
-	}
-}
-
-/* Under 380 px the install action is its icon alone (the German "Installieren" would not fit beside the brand and the menu; v11: 380, the game font being wider than the old one); its name stays in full for screen readers. */
-@media (max-width: 379px) {
-	.mc-sitebar__cta .cta-icon {
-		display: inline-block;
-	}
-
-	.mc-sitebar__cta .cta-short {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
-	.mc-sitebar__cta {
-		width: 44px;
-		min-width: 44px;
-		padding-inline: 0;
-	}
-}
-
-.mc-sitebar__end .mc-select--compact {
-	flex: none;
 }
 
 /* --- the panel (#dock) ---------------------------------------------------------------------------------------------- */
@@ -1953,13 +1768,39 @@ html.is-scrub.scene-on .mc-sitebar::before {
 	transition: none;
 }
 
-html.is-scrub .site-nav {
+html.is-scrub .site-nav,
+html.is-scrub .mm-nav-end__wide > * {
 	opacity: clamp(0, calc((var(--g, 0) - 0.6) / 0.4), 1);
 	transition: none !important;
 }
 
-html.is-scrub:not(.is-live-pointer):not([data-phase='site']) .site-nav {
+html.is-scrub:not(.is-live-pointer):not([data-phase='site']) .site-nav,
+html.is-scrub:not(.is-live-pointer):not([data-phase='site']) .mm-nav-end__wide > * {
 	visibility: hidden;
+}
+
+/* A flick leaves the film (hero.js is-leaving, from the rush to the landing): the site's header comes in at once over 0.3 s, links and rule included,
+   instead of following g, which only starts moving once the rush and its cover are over (2 to 3 s later). */
+html.is-scrub.is-leaving .mc-sitebar {
+	transition: background-color 0.3s linear;
+}
+
+html.is-scrub.is-leaving.scene-on .mc-sitebar::before {
+	opacity: 0;
+	transition: opacity 0.3s linear;
+}
+
+html.is-scrub.is-leaving .mc-sitebar::after {
+	opacity: 1;
+	transition: opacity 0.3s linear;
+}
+
+/* as specific as the rule above that hides the links outside the site, and after it */
+html.is-scrub.is-leaving:not([data-phase='site']) .site-nav,
+html.is-scrub.is-leaving:not([data-phase='site']) .mm-nav-end__wide > * {
+	visibility: visible;
+	opacity: 1;
+	transition: opacity 0.3s linear !important;
 }
 
 html.is-scrub .film-bar {
@@ -2041,7 +1882,9 @@ html[data-dock='side'] .footer .mc-footer__inner {
 .site .mc-hero__title:focus,
 .site .mc-hero__title:focus-visible,
 h1[tabindex='-1']:focus,
-h1[tabindex='-1']:focus-visible {
+h1[tabindex='-1']:focus-visible,
+.mc-section__title[tabindex='-1']:focus,
+.mc-section__title[tabindex='-1']:focus-visible {
 	outline: none;
 	box-shadow: none;
 }
@@ -2142,12 +1985,12 @@ html[lang^='ko'] body {
 	overflow-wrap: break-word;
 }
 
-/* v10 (decisions-v10 6.1): in landscape the header's content sits on the grid: the brand at the text column's left edge, the install action at the panel's right edge; the bar itself stays edge to edge. */
-html[data-dock='side'] .mc-sitebar {
-	padding-inline: max(16px, var(--text-l, 16px));
-}
+/* (v10 put the landscape header's brand on the text column's edge; since the shared bar, the landing's header keeps the pages' gutter instead, so
+   that nothing moves from the landing to a page.) */
 
 /* ===== Additions for the app (not in the prototype): the way into the private space in the header, the list of site pages in the extra section ===== */
-.site-account { display: none; }
-@media (min-width: 1000px) { .site-account { display: inline-flex; } }
 .site-links { list-style: none; margin: 16px 0 24px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+
+/* With the scene the film's words are only read by screen readers: their "your browser can't show the 3D scene" note would be false, so it is gone
+   (hero.js already labels the section by its "The film, in words" summary then). */
+.scene-on .fallback-note { display: none; }

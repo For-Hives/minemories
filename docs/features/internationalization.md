@@ -1,6 +1,6 @@
 # Website localization — Minecraft Java markets
 
-The website's language picker covers the ten requested countries, with eleven language variants:
+The website's language picker covers the ten requested countries, with eleven language variants (the table follows `localeOptions`; the picker itself lists them by name, each language's regions together, `lib/locale-picker.ts`):
 
 | Country | Choice | HTML tag / regional format |
 | --- | --- | --- |

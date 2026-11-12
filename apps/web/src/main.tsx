@@ -8,6 +8,8 @@ import './pages/auth.css'
 import './hero/tokens.css'
 import './hero/kit.css'
 import './charter-app.css'
+// The site's bar (SiteNav), on every page and the landing: after the kit, so its rules win over the kit's buttons and icons.
+import './components/site-nav.css'
 // The explainers' pictograms and diagrams (concept, how it works, FAQ, guides, sharing, legal): in the first stylesheet, so a prerendered page does not paint them unstyled and then jump when its chunk's CSS arrives.
 // Last, as when they came with their page's chunk: their rules (the FAQ and question headings among them) must keep winning over charter-app.css.
 import './components/explainers.css'

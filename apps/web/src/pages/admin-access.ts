@@ -22,7 +22,8 @@ async function confirmed(check: () => Promise<{ allowed: boolean }>, signal: Abo
 	}
 }
 
-export function useAdminAccess(): AdminAccess {
+/** `enabled` false waits: the bar asks only once its account is about to open (a hover or a focus), never on every page. */
+export function useAdminAccess(enabled = true): AdminAccess {
 	const { session } = useAppContext()
 	const userId = session?.user.id
 	const [access, setAccess] = useState<AdminAccess>(noAdminAccess)
@@ -30,7 +31,7 @@ export function useAdminAccess(): AdminAccess {
 		const controller = new AbortController()
 		const { signal } = controller
 		setAccess(noAdminAccess)
-		if (!userId) return
+		if (!(userId && enabled)) return
 		void Promise.all([
 			confirmed(() => apiClient.admin.access(undefined, { signal }), signal),
 			confirmed(() => apiClient.discovery.moderator(undefined, { signal }), signal),
@@ -39,6 +40,6 @@ export function useAdminAccess(): AdminAccess {
 			if (!signal.aborted) setAccess({ ready: true, admin, moderator, operator })
 		})
 		return () => controller.abort()
-	}, [userId])
+	}, [userId, enabled])
 	return access
 }

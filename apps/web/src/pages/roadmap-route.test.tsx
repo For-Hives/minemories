@@ -22,7 +22,7 @@ test('the app serves /roadmap and the footer of every site page links to it', as
 	window.history.replaceState(null, '', '/faq')
 	render(<App />)
 	const footer = await screen.findByRole('contentinfo')
-	fireEvent.click(within(footer).getByRole('link', { name: 'Roadmap' }))
+	fireEvent.click(within(footer).getByRole('link', { name: 'What’s coming next' }))
 	expect(await screen.findByRole('heading', { level: 1, name: 'Roadmap' }, { timeout: 10000 })).toBeTruthy()
 	expect(window.location.pathname).toBe('/roadmap')
 	expect(await screen.findByRole('alert')).toBeTruthy()

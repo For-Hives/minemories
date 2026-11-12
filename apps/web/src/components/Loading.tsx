@@ -44,18 +44,3 @@ export function LoadingSkeleton({
 		</div>
 	)
 }
-
-/* The content pages' mark: a grass block of the landing's captures, rendered in the same isometric view as the scenes (public/hero/scenes/). */
-export function BlockMark({ className = '' }: { className?: string }) {
-	return (
-		<img
-			className={`mm-block-mark ${className}`}
-			src="/hero/scenes/grass-block.webp"
-			alt=""
-			aria-hidden="true"
-			width="214"
-			height="246"
-			decoding="async"
-		/>
-	)
-}

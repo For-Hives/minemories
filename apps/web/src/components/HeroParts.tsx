@@ -1,9 +1,8 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { faqText, pageQuestions } from '../content/faq'
-import { footerGroups, navigation } from '../content/navigation'
+import { footerGroups } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
-import { isLocale, localeOptions } from '../i18n/locales'
 import { repositoryUrl } from '../lib/repository'
 import { catalogLinks } from '../pages/installation-loaders'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
@@ -12,59 +11,6 @@ import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
  * The parts of the film's page that depend on the language or on the session. They are components of their own (the film's markup, HeroMarkup, is rendered once and never
  * re-rendered), so they follow the app's context by themselves; the film never touches their nodes.
  */
-
-/** The app's language selector, in the film's kit look: the only selector of the page (header, and the menu of the small screens). */
-export function HeroLanguage({ id, className = '' }: { id?: string; className?: string }) {
-	const { locale, pendingLocale, setLocale, t } = useI18n()
-	return (
-		<div className={`mc-select mc-select--compact ${className}`.trim()}>
-			<select
-				className="mc-select__control"
-				id={id}
-				aria-label={t('Language')}
-				aria-busy={pendingLocale !== null}
-				value={pendingLocale ?? locale}
-				onChange={event => {
-					if (isLocale(event.target.value)) setLocale(event.target.value)
-				}}
-			>
-				{localeOptions.map(option => (
-					<option key={option.id} value={option.id} lang={option.tag}>
-						{option.label}
-					</option>
-				))}
-			</select>
-		</div>
-	)
-}
-
-/** The way into the private space: a button in the header (wide screens), a row of the menu on small ones. */
-export function HeroAccount({ menu = false }: { menu?: boolean }) {
-	const { session } = useAppContext()
-	const { t } = useI18n()
-	return (
-		<Link
-			className={menu ? 'site-menu__account' : 'mc-btn mc-btn--auto site-account'}
-			to={session ? '/gallery' : '/login'}
-		>
-			{t(session ? 'My gallery' : 'Sign in')}
-		</Link>
-	)
-}
-
-/** The site's main links, as on every other page. Signed in, the account button already opens the gallery. */
-export function HeroNavLinks() {
-	const { t } = useI18n()
-	return (
-		<>
-			{navigation.map(link => (
-				<li key={link.to}>
-					<Link to={link.to}>{t(link.label)}</Link>
-				</li>
-			))}
-		</>
-	)
-}
 
 /** The site's pages, in the film's footer: every one is a real route of the app. */
 export function HeroFooterLinks() {

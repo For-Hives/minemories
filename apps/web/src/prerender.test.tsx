@@ -28,8 +28,8 @@ test('the 404 page is readable, points back home and holds no film', () => {
 test('the installation guide is visible HTML from top to bottom, with no noscript and no pause-menu button', () => {
 	const html = renderPage('/installation')
 	expect(html).not.toContain('<noscript>')
-	expect(html).toContain('Le plus simple : l’app CurseForge')
-	expect(html).toContain('Tu joues sans mods ?')
+	expect(html).toContain('Le plus simple\u00a0: l’app CurseForge')
+	expect(html).toContain('Tu joues sans mods\u00a0?')
 	expect(html).toContain('<table')
 	expect(html).toContain('href="/downloads"')
 	expect(html).toContain('href="/gallery"')
@@ -38,7 +38,7 @@ test('the installation guide is visible HTML from top to bottom, with no noscrip
 })
 test('/versions prerenders the curated notes of the latest release and the earlier ones, no API needed', () => {
 	const html = renderPage('/versions')
-	expect(html).toContain('Ce qui change dans Minemories')
+	expect(html).toContain('Les nouveautés de Minemories')
 	expect(html).toContain('Minemories 0.37.0-beta.1')
 	expect(html).toContain('Ce qui change pour toi')
 	expect(html).toContain('id="v0.36.1-beta.1"')

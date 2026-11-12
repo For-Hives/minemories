@@ -29,7 +29,7 @@ export const SCROLL_THRESHOLD = 32
 /** The film hands over to the site at this film time (STORY.site.start in the scene: the page reads the real value). */
 export const DEFAULT_SITE_START = 55.5
 /** Anchors that start directly on the site (the film is not played, the model is already in place). */
-export const SITE_HASHES = Object.freeze(['hero', 'main', 'steps', 'share', 'limits', 'faq'])
+export const SITE_HASHES = Object.freeze(['hero', 'main', 'steps', 'share', 'server-closing', 'faq'])
 
 /** A URL anchor naming a site section, or a browser without WebGL 2, starts on the site. */
 export function startPhase({ hash = '', webgl = true } = {}) {

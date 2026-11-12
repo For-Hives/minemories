@@ -71,8 +71,8 @@ export function ReleasesPage() {
 	return (
 		<ContentLayout
 			eyebrow={t('MINEMORIES · RELEASES')}
-			title={t('What changes in Minemories')}
-			lead={t('The notes of each Minemories mod version, dated.')}
+			title={t('What’s new in Minemories')}
+			lead={t('Every Minemories version and what it changed, with dates.')}
 		>
 			{latest && <Latest release={latest} published={published(latest.version)} />}
 			{previous.length > 0 && (

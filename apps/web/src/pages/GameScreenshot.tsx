@@ -20,7 +20,7 @@ const shots: Record<'minemoriesMenu', Shot> = {
 		size: [1280, 720],
 		mark: [368, 404, 176, 116],
 		alt: 'The Minemories menu with the Take a memory button',
-		caption: 'The Minemories menu (M key): “Take a memory” captures what is around you.',
+		caption: 'The Minemories menu (M key): “Take a memory” keeps a 3D copy of what’s around you.',
 	},
 }
 export type GameScreenshotId = keyof typeof shots

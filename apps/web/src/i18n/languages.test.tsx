@@ -8,6 +8,7 @@ import { SiteLayout } from '../components/SiteLayout'
 import { formatRelativeDate } from '../lib/dates'
 import { formatFileSize } from '../lib/glb'
 import { metadataFor, publicMetadata } from '../route-metadata'
+import { chooseLanguage } from '../testing/language'
 import { loadLocale } from './catalog'
 import { I18nProvider, useI18n } from './I18n'
 import { localeOptions, localeTag } from './locales'
@@ -56,7 +57,7 @@ function page(suggestLocale = false) {
 
 test('the actual selector changes editorial and shared text, persists the preference and restores it', async () => {
 	const view = page()
-	fireEvent.change(screen.getByRole('combobox', { name: 'Langue' }), { target: { value: 'ja' } })
+	chooseLanguage('Langue', 'ja')
 	await screen.findByText('ポストカード', {}, { timeout: 10000 })
 	expect(screen.getByText('雨 / 雪')).toBeTruthy()
 	expect(localStorage.getItem('minemories-locale')).toBe('ja')
@@ -103,7 +104,7 @@ test('legacy regional preferences are recognized even when preference writes are
 	})
 	page()
 	await screen.findByText('Cartão postal', {}, { timeout: 10000 })
-	fireEvent.change(screen.getByRole('combobox', { name: 'Idioma' }), { target: { value: 'pl' } })
+	chooseLanguage('Idioma', 'pl')
 	await waitFor(() => expect(document.documentElement.lang).toBe('pl-PL'))
 	expect(screen.getByText('Pocztówka')).toBeTruthy()
 })

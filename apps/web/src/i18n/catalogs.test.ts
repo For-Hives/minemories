@@ -128,7 +128,7 @@ const germanPronounSie: Record<string, string> = {
 		'“Sie landet” refers to the memory.',
 	'End portals and End gateways are saved instead of leaving a hole. They appear as a still image of the portal on every Minecraft version supported by the mod.':
 		'“Sie erscheinen” refers to the portals.',
-	'Your players do not copy a playable world: they keep a 3D scene of their corner, not your map.':
+	'Your players don’t get a playable copy of your world, just a 3D scene of their corner.':
 		'“Sie behalten” refers to the players.',
 }
 

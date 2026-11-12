@@ -70,10 +70,9 @@ export function ServerClosingPage() {
 	return (
 		<InfoPage title="Your server is closing. Your base can stay.">
 			<p className="ex-lead">
-				{t('If you take it before.')} {t('10 minutes to install, one key in your base.')}{' '}
-				{t('Not an admin? You still can.')}
+				{t('Capture it before it closes.')} {t('10 minutes to install, one key in your base.')} {t('No admin needed.')}
 			</p>
-			<h2>{t('Three honest options')}</h2>
+			<h2>{t('Your three options')}</h2>
 			<ol className="ex-steps">
 				<li>
 					<h3>{t('Ask the admin for the world')}</h3>
@@ -81,13 +80,13 @@ export function ServerClosingPage() {
 				</li>
 				<li>
 					<h3>{t('Make a playable copy')}</h3>
-					<p>{t('Mods like WorldTools download what you have seen. Ask the admin first.')}</p>
+					<p>{t('Mods like WorldTools download what you’ve seen. Ask the admin first.')}</p>
 				</li>
 				<li>
 					<h3>{t('Keep a 3D memory with Minemories')}</h3>
 					<p>
 						{t('Install the mod, go to your base, press M → Take a memory.')}{' '}
-						{t('You revisit it in your browser, and show the group around it with a link.')}
+						{t('Then open it in your browser and send your friends a link to walk around it.')}
 					</p>
 				</li>
 			</ol>
@@ -95,7 +94,7 @@ export function ServerClosingPage() {
 				<h2 id="aternos-title">{t('A server on Aternos?')}</h2>
 				<p>
 					{t('Aternos deletes a server nobody has started for several months.')}{' '}
-					{t('Take your base while you still play there.')}
+					{t('Capture your base while you still play there.')}
 				</p>
 			</section>
 			<section id="admin" className="ex-admin" aria-labelledby="admin-title">
@@ -106,7 +105,7 @@ export function ServerClosingPage() {
 							'Nothing to install on your side: the mod runs on the players’ computers and only reads what their game already shows.'
 						)}
 					</li>
-					<li>{t('Your players do not copy a playable world: they keep a 3D scene of their corner, not your map.')}</li>
+					<li>{t('Your players don’t get a playable copy of your world, just a 3D scene of their corner.')}</li>
 				</ul>
 				<h3>{t('An announcement to copy')}</h3>
 				{announcementLocales(locale).map(language => (
@@ -135,7 +134,7 @@ export function SafetyPage() {
 			<section className="ex-parents" aria-labelledby="parents-title">
 				<h2 id="parents-title">{t('For parents, in 5 lines')}</h2>
 				<ul>
-					<li>{t('It is a .jar file for Minecraft Java, never a .exe.')}</li>
+					<li>{t('It’s a .jar file for Minecraft Java, never a .exe.')}</li>
 					<li>{t('Nothing goes online until the game is connected to an account.')}</li>
 					<li>{t('Once connected, the memories go to a private gallery.')}</li>
 					<li>
@@ -209,11 +208,11 @@ export function SafetyPage() {
 			</section>
 			<h2>{t('What someone with a link sees')}</h2>
 			<p>
-				{t('The 3D scene, its name and its date.')}{' '}
 				{t(
-					'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+					'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
 				)}
 			</p>
+			<p>{t('The 3D scene, its name and its date.')}</p>
 			<p>
 				{t('Stop sharing blocks new visits, not a copy already made.')} {t('Players nearby appear with their skin.')}{' '}
 				{t('Ask them before you share.')}

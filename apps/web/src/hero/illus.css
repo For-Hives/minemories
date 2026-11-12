@@ -1,0 +1,243 @@
+/* ==========================================================================================================================================================
+   The landing's section pictures (components/HeroIllustrations.tsx): "Show your base to your friends" and "Server shutting down?", and the clips of the
+   steps (components/HeroClip.tsx). Real footage of real use (public/hero/clips, public/hero/illus), only cropped and scaled, each with a short HTML caption
+   in the game font so every word is translated. They live in the text column (never under the dock: site.js counts .mm-illus and .mc-step in the text's
+   reach), at most 520 px wide. A clip plays only on screen; reduced motion keeps its poster frame (HeroClip decides, no CSS animation here).
+   ========================================================================================================================================================== */
+
+.mm-illus {
+	position: relative;
+	width: min(100%, 520px);
+	margin: var(--ds-sp-2) 0 0;
+	font: 16px/18px var(--f-ui);
+	color: var(--text-2);
+}
+
+.mm-illus,
+.mm-illus * {
+	box-sizing: border-box;
+}
+
+.mm-illus img {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--night-2);
+	border: 2px solid var(--outline);
+	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
+}
+
+/* ---------- Show your base to your friends: the viewer, its caption on its whole width, and the postcard it exported under them, tilted like a print with no caption
+   (it never covers the viewer's time panel or toolbar) ---------- */
+
+.mm-illus--share .mm-illus__frame {
+	width: 86%;
+}
+
+.mm-illus__print {
+	position: relative;
+	width: 52%;
+	margin: var(--ds-sp-2) 0 0 auto;
+	transform: rotate(-2deg);
+}
+
+.mm-illus__print img {
+	border: 6px solid #f2ede4;
+	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.45);
+}
+
+@media (max-width: 599px) {
+	.mm-illus--share .mm-illus__frame {
+		width: 100%;
+	}
+
+	.mm-illus__print {
+		width: 62%;
+	}
+}
+
+/* ---------- Server shutting down?: one spot in Minecraft, then in the viewer (a portrait clip, kept narrow) ---------- */
+
+.mm-illus--closing {
+	width: min(100%, 360px);
+}
+
+/* A desktop text column that leaves the dock little room (1000 to 1279 px wide screens): the pictures stay narrower than the column, so the model keeps
+   its air (site.js REACH_BOXES can only move the panel left, never right of the grid's). */
+@media (min-width: 1000px) and (max-width: 1279px) {
+	.mm-illus {
+		width: min(100% - 48px, 520px);
+	}
+
+	.mm-illus--closing {
+		width: min(100% - 48px, 360px);
+	}
+}
+
+/* ---------- A clip (HeroClip): the poster frame holds the place, the video lies on it once it really plays ---------- */
+
+.mm-clip {
+	position: relative;
+	display: block;
+}
+
+.mm-clip .mm-clip__poster,
+.mm-clip .mm-clip__video {
+	display: block;
+	width: 100%;
+	height: auto;
+	background: var(--night-2);
+	border: 2px solid var(--outline);
+	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
+}
+
+/* A clip with in-game text has a French and an English poster: the page's own lang shows one (fr and fr-CA see the French one). */
+.mm-clip .mm-clip__poster--fr {
+	display: none;
+}
+
+.mm-clip .mm-clip__poster--fr:lang(fr) {
+	display: block;
+}
+
+.mm-clip .mm-clip__poster--en:lang(fr) {
+	display: none;
+}
+
+.mm-clip .mm-clip__video {
+	position: absolute;
+	inset: 0;
+	height: 100%;
+	opacity: 0;
+	box-shadow: none;
+}
+
+.mm-clip[data-state='playing'] .mm-clip__video {
+	opacity: 1;
+}
+
+/* Play / pause: a small slot in the top left corner (the viewer's own toolbar sits on the right), or the bottom right one for a clip whose panel fills
+   the top (data-toggle='end': the M menu), the game's look; its name is the visible state's label (the other one is display: none). */
+.mm-clip__toggle {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: rgb(20 17 14 / 0.78);
+	border: 2px solid var(--outline);
+	color: #fff;
+	cursor: pointer;
+}
+
+.mm-clip[data-toggle='end'] .mm-clip__toggle {
+	top: auto;
+	left: auto;
+	right: 6px;
+	bottom: 6px;
+}
+
+.mm-clip__toggle:hover,
+.mm-clip__toggle:focus-visible {
+	background: rgb(20 17 14 / 0.95);
+	outline: 2px solid #fff;
+	outline-offset: 0;
+}
+
+.mm-clip__label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.mm-clip__toggle[data-playing='true'] .mm-clip__label--play,
+.mm-clip__toggle[data-playing='false'] .mm-clip__label--pause {
+	display: none;
+}
+
+/* The icon: a triangle to play, two bars to pause, in plain blocks. */
+.mm-clip__icon {
+	width: 10px;
+	height: 12px;
+	background: currentcolor;
+	clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.mm-clip__toggle[data-playing='true'] .mm-clip__icon {
+	clip-path: none;
+	background: linear-gradient(90deg, currentcolor 0 35%, transparent 35% 65%, currentcolor 65%);
+}
+
+/* A cut clip (the game, then the browser): a chip in the top right corner names the side on screen, in the game's look. It is HTML, never burned into
+   the footage, so it is translated; HeroClip moves data-side with the video's time (the poster's side while still). */
+.mm-clip__chip {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	padding: 4px 8px 5px;
+	background: rgb(20 17 14 / 0.82);
+	border: 2px solid var(--outline);
+	color: #fff;
+	font: 16px/18px var(--f-ui);
+	text-shadow: 2px 2px 0 #3f3f3f;
+	pointer-events: none;
+}
+
+.mm-clip[data-side='before'] .mm-clip__side--after,
+.mm-clip[data-side='after'] .mm-clip__side--before {
+	display: none;
+}
+
+[data-mc-font='read'] .mm-clip__chip {
+	font: 600 14px/18px var(--f-read);
+	text-shadow: none;
+}
+
+/* The line under a clip: on the clip's whole width, never one word alone on its last line; charter.css gives it the steps' reading font (the pixel
+   font stays for titles, and for CJK and the readable option, as for the steps' sentences). */
+.mm-clip__caption {
+	margin: 6px 0 0;
+	color: var(--text-2);
+	font: 400 14px/1.4 var(--f-read);
+	text-wrap: pretty;
+}
+
+/* In a narrow step card the clip runs to the card's bevel; its caption lines up with the card's text. */
+.mc-step__clip .mm-clip__caption {
+	padding-inline: calc(5 * var(--gp));
+}
+
+/* In a step card the clip sits under the sentence on the card's whole width in a narrow card (a phone: its in-game text stays readable), and beside it
+   in a wide one, so the three steps stay short. The switch reads the cards' own width (the text column shrinks with the dock on a desktop), not the
+   screen's. */
+.site .mc-steps {
+	container-type: inline-size;
+}
+
+.mc-step__clip {
+	grid-column: 1 / -1;
+	margin: var(--ds-sp-2) calc(-5 * var(--gp)) 0;
+}
+
+@container (min-width: 640px) {
+	.mc-step:has(.mc-step__clip) {
+		grid-template-columns: auto minmax(0, 1fr) minmax(0, 340px);
+		grid-template-rows: auto 1fr;
+	}
+
+	.mc-step .mc-step__clip {
+		grid-column: 3;
+		grid-row: 1 / span 2;
+		margin: 0;
+	}
+
+	.mc-step .mc-step__clip .mm-clip__caption {
+		padding-inline: 0;
+	}
+}

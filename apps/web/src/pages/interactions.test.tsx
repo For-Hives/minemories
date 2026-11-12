@@ -229,7 +229,7 @@ test('registration submits the display name and exposes server errors', async ()
 	mount(<AuthPage mode="register" />)
 	credentials()
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: '  Builder  ' } })
-	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Email already used')
 	await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
 	expect(mocks.signUp).toHaveBeenCalledWith({
@@ -238,7 +238,7 @@ test('registration submits the display name and exposes server errors', async ()
 		password: 'long-test-password',
 	})
 	expect(mocks.navigate).not.toHaveBeenCalled()
-	expect(screen.getByRole('button', { name: /Create my space/ }).hasAttribute('disabled')).toBe(false)
+	expect(screen.getByRole('button', { name: /Create my account/ }).hasAttribute('disabled')).toBe(false)
 })
 test('gallery retries a failed refresh', async () => {
 	mocks.list.mockRejectedValueOnce(new Error('Storage unavailable'))
@@ -479,7 +479,7 @@ test('French translation does not change pairing state identifiers or hide the p
 		screen.getByText('Dans Minecraft : M → tape ce code → Se connecter. Valable 5 minutes, une seule fois.')
 	).toBeTruthy()
 	// While a code waits, the empty gallery neither repeats where to type it nor offers a second code.
-	expect(screen.queryByText('Dans Minecraft : M → tape ce code → Se connecter.')).toBeNull()
+	expect(screen.queryByText('Dans Minecraft\u00a0: M → tape ce code → Se connecter.')).toBeNull()
 	expect(screen.queryByText('Installe le mod, puis connecte ton jeu avec un code.')).toBeNull()
 	expect(screen.queryByRole('button', { name: 'Obtenir un code' })).toBeNull()
 	expect(document.body.textContent).not.toMatch(/[Rr]elier|appair/)
@@ -663,22 +663,22 @@ test('switching auth modes keeps the intended destination through successful reg
 		</MemoryRouter>
 	)
 	credentials()
-	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
+	fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
 	expect(screen.getByLabelText('Display name')).toBeTruthy()
 	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
 	expect(screen.getByLabelText('Password')).toHaveProperty('value', '')
 	fireEvent.click(screen.getByRole('link', { name: 'Sign in' }))
 	expect(screen.queryByLabelText('Display name')).toBeNull()
-	fireEvent.click(screen.getByRole('link', { name: 'Create a space' }))
+	fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
 	credentials()
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
-	fireEvent.click(screen.getByRole('button', { name: /Create my space/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/account', { replace: true }))
 })
 
 test('guests can open a local capture directly without authentication', () => {
 	mount(<AuthPage mode="login" />)
-	const input = screen.getByLabelText('Open my capture')
+	const input = screen.getByLabelText('Open a file')
 	fireEvent.change(input, { target: { files: [] } })
 	expect(mocks.navigate).not.toHaveBeenCalled()
 	const file = new File(['glb fixture'], 'cabin.glb', { type: 'model/gltf-binary' })
@@ -697,8 +697,9 @@ test('authentication keeps the site header with its language control', () => {
 		</MemoryRouter>
 	)
 	expect(screen.getByRole('main')).toBeTruthy()
-	expect(screen.getByRole('combobox', { name: 'Language' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Language English (US)' }).getAttribute('aria-haspopup')).toBe('listbox')
 	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
+	fireEvent.click(screen.getAllByRole('button', { name: 'Product' })[0] as HTMLElement)
 	expect(screen.getAllByRole('link', { name: 'How it works' }).length).toBeGreaterThan(0)
 	expect(screen.getByRole('link', { name: 'Install the mod' }).getAttribute('href')).toBe('/installation')
 	expect(
@@ -720,14 +721,14 @@ test('the footer groups the site into product, guides, help, legal and elsewhere
 	const footer = screen.getByRole('contentinfo')
 	for (const group of ['Product', 'Guides', 'Help', 'Legal', 'Elsewhere'])
 		expect(within(footer).getByRole('navigation', { name: group })).toBeTruthy()
-	expect(within(footer).getByRole('link', { name: 'Report a bug (GitHub)' }).getAttribute('href')).toBe(
+	expect(within(footer).getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('href')).toBe(
 		'https://github.com/For-Hives/minemories/issues'
 	)
-	expect(within(footer).getByRole('link', { name: 'Share by link' }).getAttribute('href')).toBe('/sharing')
+	expect(within(footer).getByRole('link', { name: 'How do I share a link?' }).getAttribute('href')).toBe('/sharing')
 	for (const [name, href] of [
-		['Server closing', '/server-closing'],
-		['Minecraft to Blender', '/guides/minecraft-blender'],
-		['Safety and parents', '/safety'],
+		['What if my server shuts down?', '/server-closing'],
+		['Open my build in Blender', '/guides/minecraft-blender'],
+		['Is it safe?', '/safety'],
 	] as const)
 		expect(within(footer).getByRole('link', { name }).getAttribute('href')).toBe(href)
 	expect(within(footer).getByRole('link', { name: 'CurseForge' })).toBeTruthy()
@@ -751,6 +752,7 @@ test('signing out forgets every unsaved form draft kept in this browser', async 
 			</SiteLayout>
 		</MemoryRouter>
 	)
+	fireEvent.click(screen.getByRole('button', { name: 'Alex — My account' }))
 	fireEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0] as HTMLElement)
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
@@ -841,7 +843,7 @@ test('production auth and site navigation offer discovery without local file inp
 			</SiteLayout>
 		</MemoryRouter>
 	)
-	expect(screen.queryByLabelText('Open my capture')).toBeNull()
+	expect(screen.queryByLabelText('Open a file')).toBeNull()
 	expect(view.container.querySelector('input[type=file]')).toBeNull()
 	view.unmount()
 	const site = mount(

@@ -23,6 +23,7 @@ const board = (columns: Record<string, unknown> = {}) => ({
 	columns: {
 		inProgress: { items: [issue(12, { title: 'AFK capture timeline', areas: ['mod', 'api'] })], more: 0 },
 		planned: { items: [issue(30, { title: 'Public gallery filters', areas: ['front'] })], more: 0 },
+		// the API still sends the issues closed in the last 30 days: the board leaves them out
 		done: { items: [issue(5, { title: 'Pairing codes', closedAt: '2026-11-04T12:00:00Z' })], more: 0 },
 		...columns,
 	},
@@ -72,18 +73,15 @@ afterEach(() => {
 	localStorage.clear()
 })
 
-test('loads the board from the API and shows the three columns in order with links, areas and dates', async () => {
+test('loads the board from the API and shows the two columns in order with links, areas and dates, never the done issues', async () => {
 	const fetch = serve(Response.json(board()))
 	mount()
 	expect(screen.getByRole('status').textContent).toContain('Loading the roadmap…')
 	expect(fetch).toHaveBeenCalledWith(`${apiBase}/api/roadmap`, expect.objectContaining({ signal: expect.anything() }))
 	expect(roadmapUrl).toBe(`${apiBase}/api/roadmap`)
 	const columns = await screen.findAllByRole('region')
-	expect(columns.map(column => within(column).getByRole('heading').textContent)).toEqual([
-		'In progress 1',
-		'Planned 1',
-		'Done 1',
-	])
+	expect(columns.map(column => within(column).getByRole('heading').textContent)).toEqual(['In progress 1', 'Planned 1'])
+	expect(screen.queryByText(/Pairing codes/)).toBeNull()
 	const link = screen.getByRole('link', { name: '#12 AFK capture timeline' })
 	expect(link.getAttribute('href')).toBe('https://github.com/For-Hives/minemories/issues/12')
 	expect(link.getAttribute('rel')).toContain('noopener')
@@ -100,11 +98,6 @@ test('loads the board from the API and shows the three columns in order with lin
 			.getByText('2 days ago')
 			.getAttribute('dateTime')
 	).toBe('2026-11-05T12:00:00Z')
-	expect(
-		within(columns[2] as HTMLElement)
-			.getByText('3 days ago')
-			.getAttribute('dateTime')
-	).toBe('2026-11-04T12:00:00Z')
 	expect(screen.getByText('Updated 1 hour ago').getAttribute('dateTime')).toBe('2026-11-07T11:00:00Z')
 	expect(screen.getByText('The same board is posted on the Minemories Discord.')).toBeTruthy()
 	expect(screen.queryByRole('status')).toBeNull()

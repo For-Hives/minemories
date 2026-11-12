@@ -174,11 +174,13 @@ function sceneReady() {
 test('a stopped link says who stopped it, offers no Retry and points to the guide', async () => {
 	vi.mocked(fetch).mockResolvedValueOnce(Response.json({ error: 'memory_not_found' }, { status: 404 }))
 	mount('/share/stopped-token-0123456789', false)
-	expect(await screen.findByText('Ce lien a été arrêté par la personne qui l’avait partagé.')).toBeTruthy()
+	expect(await screen.findByText('La personne qui a partagé ce lien l’a désactivé.')).toBeTruthy()
 	expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull()
-	expect(screen.getByRole('link', { name: /Toi aussi, garde tes mondes/ }).getAttribute('href')).toBe(
+	// no base is on screen, so the invitation does not say "the same"
+	expect(screen.getByRole('link', { name: 'Garde ta base en 3D, toi aussi →' }).getAttribute('href')).toBe(
 		'/installation?src=share'
 	)
+	expect(screen.queryByRole('link', { name: /la même chose/ })).toBeNull()
 	expect(document.body.textContent).not.toMatch(/expir/i)
 	// Nothing will come back: no "will have to wait" heading over the sentence.
 	expect(screen.queryByText('Ce souvenir attendra un instant.')).toBeNull()
@@ -228,7 +230,7 @@ test('a world link welcomes the visitor with the real count, then invites them a
 		act(() => vi.advanceTimersByTime(INVITE_DELAY_MS - 1))
 		expect(screen.queryByRole('link', { name: /Toi aussi/ })).toBeNull()
 		act(() => vi.advanceTimersByTime(1))
-		expect(screen.getByRole('link', { name: 'Toi aussi, garde tes mondes →' }).getAttribute('href')).toBe(
+		expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' }).getAttribute('href')).toBe(
 			'/installation?src=share'
 		)
 		expect(document.querySelector('[data-share="welcome"]')).toBeNull()
@@ -245,7 +247,7 @@ test('a single memory link says no count, and the first gesture on the scene bri
 	sceneReady()
 	expect(document.querySelector('[data-share="welcome"]')?.textContent).not.toMatch(/souvenirs? de ce lieu/)
 	fireEvent.pointerDown(screen.getByLabelText('Scène 3D partagée'))
-	expect(screen.getByRole('link', { name: 'Toi aussi, garde tes mondes →' })).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' })).toBeTruthy()
 })
 
 test('a public memory says it was reviewed, invites with its own source and leads to other places', async () => {
@@ -256,7 +258,7 @@ test('a public memory says it was reviewed, invites with its own source and lead
 		'Publié par son auteur, relu avant publication.'
 	)
 	fireEvent.wheel(screen.getByLabelText('Scène 3D partagée'))
-	expect(screen.getByRole('link', { name: 'Toi aussi, garde tes mondes →' }).getAttribute('href')).toBe(
+	expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' }).getAttribute('href')).toBe(
 		'/installation?src=public'
 	)
 	expect(screen.getByRole('link', { name: 'Voir d’autres lieux' }).getAttribute('href')).toBe('/explore')

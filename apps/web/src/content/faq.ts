@@ -42,26 +42,26 @@ export const questions = {
 		question: 'Can I get banned?',
 		answer: [
 			'The mod runs only in your game and sends nothing to the game server: it reads what your game shows, like a screenshot.',
-			'Some servers forbid any mod that is not on their list: check their rules.',
+			'Some servers ban any mod that isn’t on their list: check their rules.',
 		],
 	},
 	virus: {
 		question: 'Is it a virus?',
 		answer: [
-			'No. It is a .jar file for Minecraft: download it only from this site or our CurseForge page.',
+			'No. It’s a .jar file for Minecraft: only download it from this site or our CurseForge page.',
 			'Its SHA-256 checksum is shown on the downloads page.',
 		],
 		link: { to: '/safety#verifier', label: 'Check your file' },
 	},
 	sauvegarde: {
-		question: 'Is this a backup of my world?',
-		answer: ['No. It is a 3D copy to look at, not to play in.', 'Keep your Minecraft backup too.'],
+		question: 'Does it back up my world?',
+		answer: ['No. It’s a 3D copy to look at, not to play in.', 'Keep your Minecraft backup too.'],
 	},
 	minemories: {
 		question: 'What is Minemories?',
 		answer: [
-			'A Minecraft Java mod that keeps the area around you in 3D.',
-			'You revisit it in your browser and show people around it with a link.',
+			'A Minecraft Java mod that keeps a 3D copy of the area around you.',
+			'Open it in your browser and share it with a link.',
 		],
 		link: { to: '/concept', label: 'The concept' },
 	},
@@ -69,7 +69,15 @@ export const questions = {
 		question: 'How is it different from BlueMap?',
 		answer: [
 			'BlueMap maps a whole server and is installed on the server.',
-			'Minemories keeps one precise place, from your game, without asking the admin.',
+			'Minemories keeps one spot, from your own game, without asking the admin.',
+		],
+	},
+	litematica: {
+		question: 'Isn’t it just Litematica?',
+		answer: [
+			'No. Litematica saves the blocks of a build so you can rebuild it block by block, and you open it in Minecraft with the mod.',
+			'Minemories keeps what your build looks like, textures and lights included, and you walk around it in your browser, without Minecraft.',
+			'One is for copying a base, the other for revisiting it and showing it off: they go well together.',
 		],
 	},
 	rejouer: {
@@ -80,7 +88,7 @@ export const questions = {
 		question: 'What if Minemories shuts down?',
 		answer: [
 			'Your memories also stay on your computer, in the export folder, and every memory in your gallery downloads as a GLB file.',
-			'You do not depend on us.',
+			'You don’t depend on us.',
 		],
 	},
 	qui: {
@@ -106,11 +114,11 @@ export const questions = {
 	},
 	serveur: {
 		question: 'Do I need to install anything on the server?',
-		answer: ['No, it is a client-side mod.'],
+		answer: ['No, it’s client-side: it only goes on the player’s computer.'],
 	},
 	'tout-le-monde': {
 		question: 'Does everyone need to install it?',
-		answer: ['No. One person is enough to capture the group’s base.', 'The others visit it through the link.'],
+		answer: ['No. One person is enough to capture the group’s base.', 'The others just open the link.'],
 	},
 	'monde-modifie': {
 		question: 'Does it change my world?',
@@ -122,7 +130,7 @@ export const questions = {
 			'To revisit your memory in 3D in the browser, yes.',
 			'Without an account, it stays as a GLB file on your computer, to open in Blender.',
 		],
-		link: { to: '/guides/minecraft-blender', label: 'Minecraft to Blender' },
+		link: { to: '/guides/minecraft-blender', label: 'Open my build in Blender' },
 	},
 	sodium: {
 		question: 'Does it work with Sodium, Iris or shaders?',
@@ -150,13 +158,14 @@ export const questions = {
 		question: 'Are basements included?',
 		answer: [
 			'Yes, down to 5 blocks below the lowest point you visited, and further down if a build is connected to it.',
+			'And it’s adjustable: M → the gear next to Take a memory → Memory size → Depth below you.',
 		],
 	},
 	mods: {
 		question: 'Does it work with my mods?',
 		answer: [
 			'Tested with Create, Mekanism and Cobblemon in 1.21.1.',
-			'Some blocks with special rendering may be missing: take a small memory first.',
+			'Some blocks with special rendering may be missing: take a small test memory first.',
 		],
 	},
 	joueurs: {
@@ -176,12 +185,12 @@ export const questions = {
 		],
 	},
 	'vieux-monde': {
-		question: 'My server is already closed, or I have a ZIP?',
+		question: 'Server already gone?',
 		answer: [
-			'Without a copy of the world, nothing can be done.',
-			'With a ZIP, reopen the world in single player in a compatible version and capture it.',
+			'Without a copy of the world, there’s nothing left to capture.',
+			'If you have the world as a ZIP, open it in single player in a compatible version and take your memory there.',
 		],
-		link: { to: '/server-closing', label: 'Server closing' },
+		link: { to: '/server-closing', label: 'What if my server shuts down?' },
 	},
 	'sur-un-serveur': {
 		question: 'Does it work on a server?',
@@ -222,7 +231,7 @@ export const questions = {
 	},
 	droit: {
 		question: 'Am I allowed to?',
-		answer: ['Capturing for yourself, yes.', 'To share or publish someone else’s base, ask them first.'],
+		answer: ['For yourself, yes.', 'To share or publish someone else’s base, ask them first.'],
 	},
 	fichier: {
 		question: 'Can I get the file back?',
@@ -233,20 +242,20 @@ export const questions = {
 		answer: ['2 GiB per account during the beta.', 'The trash counts too.'],
 	},
 	'envoi-automatique': {
-		question: 'Does the mod upload everything automatically?',
+		question: 'Does the mod upload everything on its own?',
 		answer: [
-			'Nothing leaves before you connect the game.',
+			'Nothing is sent until you connect the game.',
 			'After that, your memories go to your private gallery, with cleaned-up error reports you can turn off in M → Settings → Privacy.',
 		],
 		link: { to: '/privacy', label: 'Privacy' },
 	},
 	enfant: {
-		question: "Who can see my child's memories?",
+		question: 'Who can see my kid’s memories?',
 		answer: [
 			'Nobody, by default.',
-			'Only the people with a link your child created, or everyone if they publish a memory and it is accepted after review.',
+			'Only people with a link your kid created, or everyone if they publish a memory and it’s accepted after review.',
 		],
-		link: { to: '/safety', label: 'Safety and parents' },
+		link: { to: '/safety', label: 'Is it safe?' },
 	},
 	'tout-supprimer': {
 		question: 'How do I delete everything?',
@@ -257,7 +266,7 @@ export const questions = {
 		],
 	},
 	code: {
-		question: 'The code does not work?',
+		question: 'The code doesn’t work?',
 		answer: ['It expires after 5 minutes and works only once.', 'Generate another one.', 'Your local file is safe.'],
 	},
 	plantage: {
@@ -277,7 +286,7 @@ export const questions = {
 	},
 	'mot-de-passe': {
 		question: 'Forgot your password?',
-		answer: ['There is no automatic reset yet.', 'Write to us: the contact address is coming soon.'],
+		answer: ['There’s no automatic reset yet.', 'Write to us: the contact address is coming soon.'],
 	},
 } satisfies Record<string, FaqEntry>
 
@@ -286,7 +295,7 @@ export type QuestionId = keyof typeof questions
 /** The /faq page: questions asked before installing come first. */
 export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 	{ label: 'Before installing', ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde'] },
-	{ label: 'What is it?', ids: ['minemories', 'bluemap', 'si-minemories-ferme', 'qui'] },
+	{ label: 'The mod', ids: ['minemories', 'bluemap', 'litematica', 'si-minemories-ferme', 'qui'] },
 	{
 		label: 'Installing',
 		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'monde-modifie', 'compte', 'sodium'],
@@ -325,7 +334,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 
 /** The three questions (at most) a page other than /faq shows. */
 export const pageQuestions = {
-	home: ['serveur', 'compte', 'si-minemories-ferme'],
+	home: ['serveur', 'litematica', 'si-minemories-ferme'],
 	concept: ['bluemap', 'rejouer', 'sous-sols'],
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
 	installation: ['plantage', 'code', 'touche-m'],

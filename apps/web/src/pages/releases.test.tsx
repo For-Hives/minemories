@@ -59,14 +59,14 @@ test('the prerendered page says what changes, in player words, without waiting f
 	expect(card.textContent).toContain('Dernière version')
 	expect(card.querySelector('h3')?.textContent).toBe('Ce qui change pour toi')
 	expect(card.querySelectorAll('li')).toHaveLength(Math.min(3, latest.notes.length))
-	expect(card.querySelector('li')?.textContent).toMatch(/^(?:Nouveau|Corrigé|Changé) : /)
+	expect(card.querySelector('li')?.textContent).toMatch(/^(?:Nouveau|Corrigé|Modifié)\u00a0: /)
 	expect(card.querySelector('a')?.getAttribute('href')).toBe('/downloads')
 	expect(card.querySelector('a')?.textContent).toBe('Télécharger')
 	const older = [...document.querySelectorAll('.mm-release-older li')]
 	expect(older.map(item => item.id)).toEqual(previous.map(release => `v${release.version}`))
 	expect(older.map(item => item.querySelectorAll('p > span').length)).toEqual(previous.map(() => 1))
 	expect(document.getElementById('v0.36.1-beta.1')?.textContent).toContain(
-		'Corrigé : « Où trouver mon code ? » ouvre de nouveau la galerie'
+		'Corrigé\u00a0: «\u00a0Où trouver mon code\u00a0?\u00a0» ouvre de nouveau la galerie'
 	)
 	expect(document.querySelector('noscript')).toBeNull()
 	expect(document.querySelector('time')).toBeNull()

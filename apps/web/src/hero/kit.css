@@ -556,15 +556,8 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 /* x3 (24 px) only from 1 280 px: at x3 the mark is 216 px wide, and the header (language, install action, menu button) needs the room below that width (measured, 11 widths x 5 languages) */
 @media (min-width: 1280px) { .mc-sitebar__brand { --gp: 3px; font-size: 24px; line-height: 27px; text-shadow: 3px 3px 0 #3f3f3f; } }
 .mc-sitebar__brand:hover { color: var(--ember); }
-.mc-sitebar__brand:focus-visible, .mc-sitebar__nav a:focus-visible { outline: var(--gp) solid var(--hover); outline-offset: var(--gp); box-shadow: 0 0 0 calc(3 * var(--gp)) var(--outline); }
-.mc-sitebar__nav { display: none; align-items: center; gap: 4px 20px; margin: 0 0 0 24px; padding: 0; list-style: none; }
-.mc-sitebar__nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; font: 16px/18px var(--f-ui); color: var(--text); text-decoration: none; text-shadow: 2px 2px 0 var(--text-shadow); }
-.mc-sitebar__nav a:hover { color: var(--ember); }
-.mc-sitebar__nav a[aria-current='true'] { box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover); }
-.mc-sitebar__end { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-.mc-sitebar__cta { display: none; }
-@media (min-width: 560px) { .mc-sitebar__cta { display: inline-flex; } }
-@media (min-width: 1000px) { .mc-sitebar__nav { display: flex; } .mc-sitebar { min-height: 64px; padding: 4px 24px; } }
+.mc-sitebar__brand:focus-visible { outline: var(--gp) solid var(--hover); outline-offset: var(--gp); box-shadow: 0 0 0 calc(3 * var(--gp)) var(--outline); }
+@media (min-width: 1000px) { .mc-sitebar { min-height: 64px; } }
 
 /* language selector: compact; the game font like the rest (the native names fit: 14 characters at most, about 170 px) */
 .mc-select--compact { display: inline-block; width: auto; max-width: 100%; }

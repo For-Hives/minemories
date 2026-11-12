@@ -41,15 +41,6 @@
 	color: var(--ember);
 	text-decoration-color: var(--ember);
 }
-.auth-topbar .mm-language {
-	width: auto;
-	min-width: 0;
-}
-.auth-topbar .mm-language .mc-select__control {
-	--_h: var(--ds-hit);
-	max-width: min(180px, 40vw);
-	text-overflow: ellipsis;
-}
 
 /* --- Background: dirt darkened by a flat veil (no gradient) --------------------------------------------------------------------------------------- */
 .auth-shell > main {
@@ -313,7 +304,7 @@
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
-/* "Open my capture": the stone button of the game, outlined on hover. */
+/* "Open a file": the stone button of the game, outlined on hover. */
 .auth-file {
 	--mc-bevel:
 		inset var(--gp) var(--gp) 0 var(--stone-hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
@@ -586,9 +577,6 @@ html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
 	.auth-topbar > div {
 		flex: 1 0 100%;
 		justify-content: space-between;
-	}
-	.auth-topbar .mm-language .mc-select__control {
-		max-width: none;
 	}
 	/* Each tab takes its label's width plus a share of the rest, on one line: both labels sit at the same height in every language. */
 	.auth-shell .auth-modes .mc-tab {

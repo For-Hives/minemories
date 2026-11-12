@@ -42,7 +42,7 @@ test('route changes set the page schema and remove public metadata on a private 
 	// A shared link's tab carries the same neutral card as its link preview (app.html), never "Your space".
 	expect(document.title).toBe('A Minecraft place in 3D, shared with you')
 	expect(document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content).toBe(
-		'Open it in your browser and turn around it.'
+		'Open it in your browser and walk around it in 3D.'
 	)
 	expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex,nofollow')
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
@@ -109,10 +109,10 @@ test('the private shell carries the shared-link card in French, and other privat
 	const { appShell, metadataFor } = await import('../route-metadata')
 	expect(appShell).toEqual({
 		title: 'Un lieu Minecraft en 3D, partagé avec toi',
-		description: 'Ouvre-le dans ton navigateur et tourne autour.',
+		description: 'Ouvre-le dans ton navigateur et fais-en le tour en 3D.',
 	})
 	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111').description).toBe(
-		'Ouvre-le dans ton navigateur et tourne autour.'
+		'Ouvre-le dans ton navigateur et fais-en le tour en 3D.'
 	)
 	expect(metadataFor('/gallery', 'en').title).toBe('Minemories — Your space')
 	expect(metadataFor('/share', 'en').title).toBe('Minemories — Your space')

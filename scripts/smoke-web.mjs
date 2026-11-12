@@ -66,6 +66,7 @@ export const expectations = [
 	{ path: '/brand/og-image.png', status: 200, robots: 'public', cache: /max-age=/, contentType: /^image\/png/ },
 	{ path: '/favicon.svg', status: 200, robots: 'public', cache: /max-age=/, contentType: /^image\/svg\+xml/ },
 	{ path: '/hero/posters/poster-phone.jpg', status: 200, robots: 'public', cache: /max-age=/ },
+	{ path: '/hero/clips/walk.mp4', status: 200, robots: 'public', cache: /max-age=/, contentType: /^video\/mp4/ },
 	{ path: '/textures/minecraft-clouds.png', status: 200, robots: 'public', cache: /max-age=/ },
 	{ path: '/site.webmanifest', status: 200, robots: 'public', contentType: /^application\/manifest\+json/ },
 	{ path: '/robots.txt', status: 200, robots: 'any', contentType: /^text\/plain/, lock: 'robots.txt' },

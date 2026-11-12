@@ -21,7 +21,7 @@ export function ExplorerPage() {
 			lead={
 				demo
 					? t('Illustrated demo: favorites and votes stay local.')
-					: t('Memories voluntarily published and reviewed before appearing here.')
+					: t('Builds other players chose to share. We check each one before it goes up.')
 			}
 		>
 			<div className="mm-actions">

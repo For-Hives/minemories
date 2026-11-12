@@ -75,6 +75,17 @@
 	--ds-lift: 2px;                  /* button lift on hover */
 	--ds-reveal-y: 12px;             /* entry offset: short, no layout shift (transform and opacity only) */
 	--ds-stagger: 60ms;              /* delay between siblings entering together */
+
+	/* Stacking: one scale for the whole site, lowest to highest. A layer inside a component or a section (a badge over its card, the viewer's
+	   own bars, the downloads' sticky rows) stays under 10 and never competes with these. The landing's fixed layers (the canvas strip 30,
+	   the dock 31, the film's held frame 34, the page veil 35) live in the page tier. The bar opens its menus, its language list and the
+	   phones' panel inside its own layer, so they cover everything the page draws, its toasts included; only a modal and the skip link go
+	   above it. */
+	--ds-z-page: 30;                 /* the page's fixed layers: the landing's canvas strip, dock and veils, the pages' toasts */
+	--ds-z-chrome: 39;               /* fixed controls over the page: the film's rail */
+	--ds-z-bar: 50;                  /* the site's bar (.mm-header, the landing's .mc-sitebar) and every popup it opens */
+	--ds-z-modal: 60;                /* a modal over the bar: the gallery's side sheet, its right-click menu */
+	--ds-z-skip: 100;                /* "Skip to content": the first focus stop, above everything */
 }
 
 @media (min-width: 640px) {
