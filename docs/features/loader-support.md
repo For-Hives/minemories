@@ -146,6 +146,28 @@ Identical result: 2507 blocks, 3 entities, 17 materials (180,704-byte GLB under 
 
 The first attempt failed on `oak_leaves`: this was not a mod bug. Leaves without a trunk decay before the export (the extra `minecraft:item` entity in the GLB was their drop); the shared scene now places `oak_leaves[persistent=true]`. The same run surfaced the accessibility screen of a fresh profile, which the driver now closes. Limits: GLB not opened in the viewer, manual selection and menus not tried.
 
+### Copycat blocks on Fabric 1.20.1: missing from captures, fixed (13 November 2026)
+
+Copycat blocks (Copycats+ `copycats:copycat` and `copycats:multistate_copycat`, Create's copycat step and panel) vanished from Fabric 1.20.1 captures. On Andy's Lalaland server, the tower at X 1324 Z -634 lost its turquoise eaves, its white pillar ornaments and its dark wooden steps: 204 copycat block entities around its roof, none of them in the GLB.
+
+Cause: a copycat model reads the copied block from its block entity, then asks that block's vanilla model to emit into the render context it was given. Fabric API 0.92's renderer (Indigo 1.5.3, also Indium with Sodium) gives every vanilla model an `emitBlockQuads` that casts the context to its own `AbstractBlockRenderContext`. Inside a capture the context is Minemories' `FabricModelCapture`, so the cast threw a `ClassCastException`; `FabricPlatform.emitModel` caught it and fell back to the copycat's plain quads, which are empty.
+
+Copycats+ then hits a second cast: it cuts the copied block in a mesh built by the renderer and calls `mesh.outputTo(context.getEmitter())`, and Indigo's `MeshImpl.outputTo` casts the target to its own `MutableQuadViewImpl`.
+
+Fix, two mixins in the 1.20.1 Fabric adapter (both `require = 0`, so a renderer that changes this never stops the game):
+- `VanillaModelContextMixin` (priority 1500, after the renderer's own mixin) intercepts the vanilla `emitBlockQuads` when the context is a Minemories capture and sends the model through the capture's own `bakedModelConsumer` (its quads, with the copycat's transforms and the face culling).
+- `MeshOutputMixin` (`@Pseudo`, Indigo's and Indium's `MeshImpl`) copies a mesh output to the capture's emitter quad by quad.
+
+The in-game test captures two copycat-style stone models (no plain quads): one delegating to the vanilla model through the context (0 quads before the fix, 6 after), one outputting its own mesh to the context's emitter (0 before `MeshOutputMixin`, 6 after). On Lalaland, the tower captured with the fix has its eaves, ornaments and steps back (`copycats:copycat_stairs`, `copycat_slab`, `copycat_layer`, `copycat_wall`... in the GLB, 100.6 MB against 81.7 MB), checked frame by frame against the game from the same camera.
+
+Other targets, checked in the code and the loaders' bytecode (each verdict re-checked independently), are not affected:
+- Fabric 1.19.2 (Fabric API 0.77): the default vanilla `emitBlockQuads` calls `context.bakedModelConsumer()`, with no cast, and its `Mesh` has no `outputTo`.
+- Fabric 1.21.1 (0.116): the vanilla path has no cast either, but its Indigo 1.7.1 `MeshImpl.outputTo` casts like 1.20.1 and this adapter has no per-block fallback, so a model outputting a mesh to the context's emitter would have failed the whole capture. `MeshOutputMixin` is applied there too (built and checked, not run in game: the 1.21.1 targets have no automated test).
+- Fabric 1.21.11 and 26.3: the newer renderer API hands models a mesh emitter, not a render context.
+- Forge 1.18.2, 1.19.2, 1.20.1, 1.21.1 and 1.21.11, and NeoForge 1.21.1 and 1.21.11: the capture passes the block entity's model data (or the level-aware `collectParts` on NeoForge 1.21.11) like the loaders' own chunk compiler, so a copycat gets its material.
+
+Only Fabric 1.20.1 was exercised with real copycats in game; the other verdicts come from code, not from a capture of Copycats+.
+
 ## Production JARs
 
 `bun mod build` produces production JARs by default: the Gradle property `minemories.prod` is `true` (`-Pminemories.prod=false`, or `bun mod build --dev`, leaves the loader plugin's JAR untouched). `mod/shared/prod.gradle`, applied by every adapter, rewrites the final JAR in place (`remapJar` with Loom, `jar` otherwise): classes lose their debug attributes (source file, line numbers, local variables) and their SpotBugs/JetBrains annotations, JSON is minified, language files keep only the keys that differ from `en_us` (the game falls back to it), signatures, module descriptors, Markdown and `.gitkeep` are removed, and every entry is compressed at level 9. Compilation, tests and run tasks are untouched. JAR names do not change.
