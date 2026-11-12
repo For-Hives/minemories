@@ -383,7 +383,7 @@ function AccountMenu() {
 				data-bar-menu=""
 				aria-expanded={open}
 				aria-controls={`${id}-account`}
-				aria-label={`${session.user.name} — ${t('My account')}`}
+				aria-label={`${session.user.name}, ${t('My account')}`}
 				onClick={() => {
 					setPrimed(true)
 					const keep = open && hover.hovered()

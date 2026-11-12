@@ -51,7 +51,7 @@ function Report({ item }: { item: DiagnosticDetail['items'][number] }) {
 			<details>
 				<summary>{t('Steps before the error')}</summary>
 				{report.breadcrumbs.length ? (
-					<pre>{report.breadcrumbs.map(step => `${step.elapsedMs} ms — ${step.step}`).join('\n')}</pre>
+					<pre>{report.breadcrumbs.map(step => `${step.elapsedMs} ms: ${step.step}`).join('\n')}</pre>
 				) : (
 					<p>{t('No recorded steps.')}</p>
 				)}

@@ -118,9 +118,9 @@ export function AdminCharts({ summary }: { summary: AdminSummary }) {
 							{[...summary.series].reverse().map(row => (
 								<tr key={row.at}>
 									<td>{hourLabel(row.at, locale)}</td>
-									<td>{row.coverage === 'none' ? '—' : row.signups}</td>
-									<td>{row.coverage === 'none' ? '—' : row.uploads}</td>
-									<td>{row.coverage === 'none' ? '—' : gigabytes(row.uploadedBytes, locale)}</td>
+									<td>{row.coverage === 'none' ? '-' : row.signups}</td>
+									<td>{row.coverage === 'none' ? '-' : row.uploads}</td>
+									<td>{row.coverage === 'none' ? '-' : gigabytes(row.uploadedBytes, locale)}</td>
 									<td>{row.coverage === 'full' ? t('Full') : t('Partial / unavailable')}</td>
 								</tr>
 							))}

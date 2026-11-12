@@ -113,7 +113,7 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/roadmap',
-		title: 'Roadmap — Minemories',
+		title: 'Roadmap · Minemories',
 		description: 'What the Minemories team is building right now and what’s coming next.',
 		indexable: false,
 		language: 'fr',
@@ -128,7 +128,7 @@ const metadataMessages: PageMetadata[] = [
 	},
 	{
 		path: '/privacy',
-		title: 'Privacy — Minemories',
+		title: 'Privacy · Minemories',
 		description:
 			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
@@ -156,14 +156,14 @@ const metadataMessages: PageMetadata[] = [
 const privateMessages: PageMetadata[] = [
 	{
 		path: '/login',
-		title: 'Sign in — Minemories',
+		title: 'Sign in · Minemories',
 		description: 'Your Minemories space.',
 		indexable: false,
 		language: 'fr',
 	},
 	{
 		path: '/register',
-		title: 'Create an account — Minemories',
+		title: 'Create an account · Minemories',
 		description: 'Your Minemories space.',
 		indexable: false,
 		language: 'fr',
@@ -179,15 +179,21 @@ const sharedCard = {
 	description: 'Open it in your browser and walk around it in 3D.',
 }
 const sharedPath = /^\/(?:share|public)\//
-/** The private shell's head, in French like the prerendered pages. */
+/** Link previews (og:title, og:description, og:locale) are in English on every page, whatever the page's language (owner decision, 12 November 2026). */
+export const linkPreviewLocale = 'en_US'
+/** The private shell's head: its title in French like the prerendered pages, its link preview in English. */
 export const appShell = {
 	title: translate('fr', sharedCard.title),
 	description: translate('fr', sharedCard.description),
+	ogTitle: translate('en', sharedCard.title),
+	ogDescription: translate('en', sharedCard.description),
 }
 export const publicMetadata = metadataMessages.map(page => ({
 	...page,
 	title: translate('fr', page.title),
 	description: translate('fr', page.description),
+	ogTitle: translate('en', page.title),
+	ogDescription: translate('en', page.description),
 }))
 const trailingSlash = /\/$/
 export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetadata {
@@ -196,7 +202,7 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 		path,
 		...(sharedPath.test(path)
 			? sharedCard
-			: { title: 'Minemories — Your space', description: 'Your Minemories space.' }),
+			: { title: 'Minemories · Your space', description: 'Your Minemories space.' }),
 		indexable: false,
 		language: 'fr',
 	}

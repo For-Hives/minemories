@@ -356,7 +356,7 @@ test('the account: Sign in, a placeholder while the session loads, or the avatar
 	mocks.access.admin = true
 	mocks.signOut.mockResolvedValue({})
 	mount('/gallery')
-	const account = screen.getByRole('button', { name: 'Alex — My account' })
+	const account = screen.getByRole('button', { name: 'Alex, My account' })
 	expect(account.textContent).toContain('A')
 	fireEvent.click(account)
 	const panel = document.getElementById(account.getAttribute('aria-controls') ?? '') as HTMLElement
@@ -390,7 +390,7 @@ test('the account opens on hover like the menus: a click pins it, leaving an unp
 	mocks.context.session = { user: { id: 'u5', name: 'Noa', email: 'noa@example.test', image: null } }
 	mount('/faq')
 	const mouse = { pointerType: 'mouse' }
-	const account = screen.getByRole('button', { name: 'Noa — My account' })
+	const account = screen.getByRole('button', { name: 'Noa, My account' })
 	const root = account.closest('.mm-nav-account') as HTMLElement
 	fireEvent.pointerEnter(root, mouse)
 	act(() => vi.advanceTimersByTime(200))
@@ -412,7 +412,7 @@ test('the account opens on hover like the menus: a click pins it, leaving an unp
 test('no administration link without a confirmed access', async () => {
 	mocks.context.session = { user: { id: 'u2', name: 'Sam' } }
 	mount('/faq')
-	fireEvent.click(screen.getByRole('button', { name: 'Sam — My account' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Sam, My account' }))
 	await screen.findByRole('link', { name: 'My gallery' })
 	await new Promise(resolve => setTimeout(resolve, 0))
 	expect(screen.queryByRole('link', { name: 'Administration' })).toBeNull()
@@ -551,7 +551,7 @@ test('the account behaves like the other menus: in the bar’s arrows, Down open
 	const { apiClient } = await import('../api-client')
 	apiClient.admin.access = access
 	mount('/faq')
-	const account = screen.getByRole('button', { name: 'Aleksandra — My account' })
+	const account = screen.getByRole('button', { name: 'Aleksandra, My account' })
 	expect(account.className).toContain('mc-btn')
 	// the administration check starts on a hover or a focus, before the menu opens
 	expect(access).not.toHaveBeenCalled()
@@ -593,7 +593,7 @@ test('signing out goes home, the brand taking the focus', async () => {
 	mocks.context.session = { user: { id: 'u5', name: 'Noa', image: null } }
 	mocks.signOut.mockResolvedValue({})
 	mount('/faq')
-	const account = screen.getByRole('button', { name: 'Noa — My account' })
+	const account = screen.getByRole('button', { name: 'Noa, My account' })
 	fireEvent.click(account)
 	fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
@@ -612,7 +612,7 @@ test('after signing out, the focus waits for the home page’s brand to be drawn
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Eli — My account' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Eli, My account' }))
 	fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))
 	await new Promise(resolve => setTimeout(resolve, 50))

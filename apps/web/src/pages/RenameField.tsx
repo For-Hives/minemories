@@ -4,12 +4,12 @@ import { useI18n } from '../i18n/I18n'
 import type { Draft } from './use-draft'
 import './editing.css'
 
-/** "Draft — not saved yet", with the way back to the saved value. */
+/** "Draft, not saved yet", with the way back to the saved value. */
 export function DraftMarker({ onDiscard, className = 'mm-draft' }: { onDiscard: () => void; className?: string }) {
 	const { t } = useI18n()
 	return (
 		<p className={className}>
-			<span className="mm-draft-chip">{t('Draft — not saved yet')}</span>
+			<span className="mm-draft-chip">{t('Draft, not saved yet')}</span>
 			<button type="button" className="mm-draft-discard" onClick={onDiscard}>
 				{t('Discard draft')}
 			</button>
@@ -124,7 +124,7 @@ export function RenameForm({
 export function DraftChip() {
 	const { t } = useI18n()
 	return (
-		<span className="mm-draft-chip is-small" title={t('Draft — not saved yet')}>
+		<span className="mm-draft-chip is-small" title={t('Draft, not saved yet')}>
 			{t('Draft')}
 		</span>
 	)

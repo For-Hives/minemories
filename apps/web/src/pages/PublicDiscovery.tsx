@@ -258,7 +258,7 @@ export function PublicationPanel({
 			setStatus({ ...result, submission: result.submission ?? sent })
 			form.clear()
 			setConsent(false)
-			setNotice('Submitted — awaiting moderation')
+			setNotice('Submitted, awaiting moderation')
 		} catch {
 			if (active.current) setError('Publication refused or limit reached. Try again later.')
 		} finally {

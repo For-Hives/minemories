@@ -105,15 +105,18 @@ test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of sear
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 })
 
-test('the private shell carries the shared-link card in French, and other private pages keep their own title', async () => {
+test('the private shell carries the shared-link card, French in the tab and English in link previews, and other private pages keep their own title', async () => {
 	const { appShell, metadataFor } = await import('../route-metadata')
+	// the tab title stays French, the link preview (Discord, WhatsApp...) is English
 	expect(appShell).toEqual({
 		title: 'Un lieu Minecraft en 3D, partagé avec toi',
 		description: 'Ouvre-le dans ton navigateur et fais-en le tour en 3D.',
+		ogTitle: 'A Minecraft place in 3D, shared with you',
+		ogDescription: 'Open it in your browser and walk around it in 3D.',
 	})
 	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111').description).toBe(
 		'Ouvre-le dans ton navigateur et fais-en le tour en 3D.'
 	)
-	expect(metadataFor('/gallery', 'en').title).toBe('Minemories — Your space')
-	expect(metadataFor('/share', 'en').title).toBe('Minemories — Your space')
+	expect(metadataFor('/gallery', 'en').title).toBe('Minemories · Your space')
+	expect(metadataFor('/share', 'en').title).toBe('Minemories · Your space')
 })

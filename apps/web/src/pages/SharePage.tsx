@@ -120,7 +120,7 @@ function SnapshotTimeline({
 	}, [position, snapshots, shown, onPick])
 	const stamp = new Date(snapshots[position]?.at ?? '')
 	const label = Number.isNaN(stamp.getTime())
-		? '—'
+		? '-'
 		: new Intl.DateTimeFormat(localeTag(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(stamp)
 	return (
 		<div className="share-timeline">
