@@ -1,4 +1,4 @@
-plugins { id 'net.fabricmc.fabric-loom' version '1.20.0-alpha.23' }
+plugins { id 'net.fabricmc.fabric-loom' version '1.20.0-alpha.31' }
 
 // Minecraft 26.3 (Java 25, unobfuscated: no mappings, no remap). The shared 1.21.1 sources are copied, adapted mechanically
 // (adapt.gradle) and overlaid with the classes that had to be rewritten (overlay/java).
