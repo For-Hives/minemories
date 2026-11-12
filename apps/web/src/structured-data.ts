@@ -3,6 +3,7 @@ import { faqGroups, faqText } from './content/faq'
 import { translate } from './i18n/catalog'
 import { resolveLocale } from './i18n/locales'
 import { discordInviteUrl } from './lib/discord'
+import { localizedUrl } from './lib/locale-path'
 import { repositoryUrl } from './lib/repository'
 import { catalogLinks } from './pages/installation-loaders'
 import { type PageMetadata, siteOrigin } from './route-metadata'
@@ -32,7 +33,10 @@ function faqEntities(language: string) {
  */
 export function structuredDataFor(page: PageMetadata, version = modVersion) {
 	const origin = new URL(siteOrigin).href
-	const canonical = new URL(page.path, siteOrigin).href
+	// The page's own URL in its language (/fr/faq): every language is a page of its own.
+	const locale = resolveLocale(page.language) ?? 'en'
+	const canonical = localizedUrl(page.path, siteOrigin, locale)
+	const home = localizedUrl('/', siteOrigin, locale)
 	// Named references, so a page other than the home still says whose site and work it is.
 	const website = { '@id': `${origin}#website`, name: 'Minemories' }
 	const organization = { '@id': `${origin}#organization`, name: 'Minemories' }
@@ -84,7 +88,7 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 		graph.push({
 			'@type': 'BreadcrumbList',
 			itemListElement: [
-				{ '@type': 'ListItem', position: 1, name: 'Minemories', item: origin },
+				{ '@type': 'ListItem', position: 1, name: 'Minemories', item: home },
 				{ '@type': 'ListItem', position: 2, name: page.title, item: canonical },
 			],
 		})

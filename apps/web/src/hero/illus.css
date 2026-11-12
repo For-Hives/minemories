@@ -91,7 +91,7 @@
 	box-shadow: 6px 6px 0 rgb(0 0 0 / 0.35);
 }
 
-/* A clip with in-game text has a French and an English poster: the page's own lang shows one (fr and fr-CA see the French one). */
+/* A clip with in-game text has a French and an English poster: the page's own lang shows one (a fr-CA browser reads the French page). */
 .mm-clip .mm-clip__poster--fr {
 	display: none;
 }

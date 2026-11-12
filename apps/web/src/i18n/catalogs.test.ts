@@ -12,12 +12,9 @@ const protocolPattern =
 	/\b(?:Minemories|Minecraft|GLB|AFK|NeoForge|Fabric|Forge|Quilt|Modrinth|CurseForge|Discord|Google|Mojang|Microsoft|WebGL|KiB|MiB|GiB|TiB)\b|(?<![\w/-])\/minemories(?: (?:pair|upload|export|select)(?: (?:first|second|status|clear))?)?(?: \d+)?|\b[\w.-]+\.(?:glb|json|jar|properties)\b/g
 const protocol = (message: string) => [...message.matchAll(protocolPattern)].map(match => match[0]).sort()
 
-test('eleven language choices cover the ten countries, including both Canadian languages', () => {
-	expect(localeOptions).toHaveLength(11)
-	expect(new Set(localeOptions.map(option => option.country))).toEqual(
-		new Set(['US', 'RU', 'DE', 'GB', 'FR', 'KR', 'BR', 'PL', 'CA', 'JP'])
-	)
-	expect(localeOptions.filter(option => option.country === 'CA').map(option => option.id)).toEqual(['en-CA', 'fr-CA'])
+test('eight languages, no regional variant, each with its own URL prefix (English has none)', () => {
+	expect(localeOptions.map(option => option.id)).toEqual(['en', 'ru', 'de', 'fr', 'ko', 'pt-BR', 'pl', 'ja'])
+	expect(localeOptions.map(option => option.prefix)).toEqual(['', 'ru', 'de', 'fr', 'ko', 'pt-br', 'pl', 'ja'])
 	for (const option of localeOptions) {
 		expect(isLocale(option.id)).toBe(true)
 		expect(resolveLocale(option.tag)).toBe(option.id)
@@ -28,7 +25,9 @@ test('eleven language choices cover the ten countries, including both Canadian l
 	expect(resolveLocale('de-AT')).toBe('de')
 	expect(resolveLocale('pt-PT')).toBe('pt-BR')
 	expect(preferredLocale(['es-MX', 'ko-KR', 'en-US'])).toBe('ko')
-	expect(preferredLocale(['fr-CA', 'en-CA'])).toBe('fr-CA')
+	// retired regional choices (a saved en-GB, a Canadian browser) read their language
+	expect(preferredLocale(['fr-CA', 'en-CA'])).toBe('fr')
+	expect(resolveLocale('en-GB')).toBe('en')
 	expect(preferredLocale(['zh-CN'])).toBe('en')
 })
 
@@ -59,14 +58,8 @@ test('catalogues support canonical English keys and safe interpolation', async (
 	expect(translate('ja', '__proto__')).toBe('__proto__')
 })
 
-test('regional variants preserve previous preferences and use country-appropriate terms', async () => {
-	await Promise.all([loadLocale('en-GB'), loadLocale('en-CA'), loadLocale('fr-CA')])
-	expect(resolveLocale('en')).toBe('en')
-	expect(resolveLocale('fr')).toBe('fr')
-	expect(translate('en', 'My favorites')).toBe('My favorites')
-	expect(translate('en-GB', 'My favorites')).toBe('My favourites')
-	expect(translate('en-CA', 'My favorites')).toBe('My favourites')
-	expect(translate('fr-CA', 'Email address')).toBe('Adresse courriel')
+test('a retired regional catalogue cannot be loaded', async () => {
+	await expect(loadLocale('fr-CA' as never)).rejects.toThrow('Unsupported language')
 	expect(translate('fr', 'Email address')).toBe('Adresse e-mail')
 })
 
@@ -104,7 +97,7 @@ test('production pages have one localization path and no bilingual copy helper',
 
 test('the French catalogues speak to the player with “tu” and call a capture a capture', async () => {
 	const french = await Promise.all(
-		['fr', 'fr-CA'].map(locale => {
+		['fr'].map(locale => {
 			const load = catalogs[`./locales/${locale}.json`]
 			if (!load) throw new Error('Missing locale catalogue')
 			return load()

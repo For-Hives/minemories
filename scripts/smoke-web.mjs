@@ -31,6 +31,13 @@ export const expectations = [
 	{ path: '/versions', status: 200, robots: 'public', notAppShell: true },
 	{ path: '/downloads', status: 200, robots: 'public', notAppShell: true },
 	{ path: '/legal', status: 200, robots: 'public', notAppShell: true },
+	// Every page in each language under its prefix; English is the unprefixed site, /en goes there.
+	{ path: '/fr', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/fr/concept', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/pt-br/faq', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/en/concept', status: 301, location: '/concept', robots: 'any' },
+	{ path: '/en', status: 301, location: '/', robots: 'any' },
+	{ path: '/fr/share/abc', status: 200, robots: 'private', appShell: true, language: 'fr' },
 	{ path: '/installation/', status: 301, location: '/installation', robots: 'any' },
 	{ path: '/concept/?a=b', status: 301, location: '/concept?a=b', robots: 'any' },
 	{ path: '/index.html', status: 301, location: '/', robots: 'any' },

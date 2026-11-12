@@ -23,7 +23,7 @@ test('left and right move along the bar, Home and End too', () => {
 })
 
 test('typeahead finds the next label starting with the typed text, accents and case aside', () => {
-	const labels = ['English (US)', 'Русский', 'Deutsch', 'English (UK)', 'Français (FR)', 'Polski', 'Français (CA)']
+	const labels = ['English', 'Русский', 'Deutsch', 'English', 'Français', 'Polski', 'Français']
 	expect(typeaheadIndex(labels, 'e', 0)).toBe(3)
 	expect(typeaheadIndex(labels, 'ee', 3)).toBe(0)
 	expect(typeaheadIndex(labels, 'fra', 0)).toBe(4)

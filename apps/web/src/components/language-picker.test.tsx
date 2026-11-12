@@ -26,32 +26,29 @@ const button = () => screen.getByRole('button', { name: /^Language / })
 const list = () => screen.getByRole('listbox', { name: 'Language' })
 const active = () => document.getElementById(list().getAttribute('aria-activedescendant') ?? '')?.textContent
 
-test('the button names the language in its own words and opens a list of all eleven, the current one checked', () => {
+test('the button names the language in its own words and opens a list of all eight, the current one checked', () => {
 	render(<LanguagePicker />)
 	expect(button().getAttribute('aria-haspopup')).toBe('listbox')
 	expect(button().getAttribute('aria-expanded')).toBe('false')
-	expect(within(button()).getByText('Français (FR)').getAttribute('lang')).toBe('fr-FR')
+	expect(within(button()).getByText('Français').getAttribute('lang')).toBe('fr-FR')
 	expect(screen.queryByRole('listbox')).toBeNull()
 	fireEvent.click(button())
 	expect(button().getAttribute('aria-expanded')).toBe('true')
 	const options = within(list()).getAllByRole('option')
-	// by each language's own name, its regions together (lib/locale-picker.ts)
+	// by each language's own name (lib/locale-picker.ts)
 	expect(options.map(option => option.textContent)).toEqual([
 		'Deutsch',
-		'English (US)',
-		'English (UK)',
-		'English (CA)',
-		'Français (FR)',
-		'Français (CA)',
+		'English',
+		'Français',
 		'Polski',
-		'Português (BR)',
+		'Português',
 		'Русский',
 		'日本語',
 		'한국어',
 	])
-	expect(within(list()).getByRole('option', { selected: true }).textContent).toBe('Français (FR)')
+	expect(within(list()).getByRole('option', { selected: true }).textContent).toBe('Français')
 	expect(document.activeElement).toBe(list())
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	// a click on the button again closes it; a click on a language picks it and gives the focus back
 	fireEvent.click(button())
 	expect(screen.queryByRole('listbox')).toBeNull()
@@ -74,9 +71,9 @@ test('the keyboard: arrows, Home, End, typeahead, Enter, Space, Escape and Tab',
 	fireEvent.keyDown(button(), { key: 'Enter' })
 	expect(screen.queryByRole('listbox')).toBeNull()
 	fireEvent.keyDown(button(), { key: 'ArrowDown' })
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	fireEvent.keyDown(list(), { key: 'ArrowDown' })
-	expect(active()).toBe('Français (CA)')
+	expect(active()).toBe('Polski')
 	fireEvent.keyDown(list(), { key: 'End' })
 	expect(active()).toBe('한국어')
 	fireEvent.keyDown(list(), { key: 'ArrowDown' })
@@ -87,22 +84,20 @@ test('the keyboard: arrows, Home, End, typeahead, Enter, Space, Escape and Tab',
 	expect(active()).toBe('Deutsch')
 	// typeahead: one letter cycles, a quick word narrows, a later key starts again; modified keys and other keys are ignored
 	typeAt('e', 1000)
-	expect(active()).toBe('English (US)')
-	typeAt('e', 1100)
-	expect(active()).toBe('English (UK)')
+	expect(active()).toBe('English')
 	typeAt('f', 3000)
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	typeAt('r', 3100)
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	typeAt('x', 6000)
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	typeAt('p', 9000, true)
 	fireEvent.keyDown(list(), { key: 'F5' })
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 	typeAt('p', 12000)
 	expect(active()).toBe('Polski')
 	typeAt('p', 12100)
-	expect(active()).toBe('Português (BR)')
+	expect(active()).toBe('Português')
 	fireEvent.keyDown(list(), { key: ' ' })
 	expect(i18n.setLocale).toHaveBeenCalledWith('pt-BR')
 	// Enter on the current language changes nothing; Escape and Tab close
@@ -169,5 +164,5 @@ test('a named picker keeps fixed ids, the prerendered list and the hydrated one 
 	fireEvent.click(button())
 	expect(list().id).toBe('mm-lang-bar-list')
 	expect(list().getAttribute('aria-activedescendant')).toMatch(/^mm-lang-bar-\d+$/)
-	expect(active()).toBe('Français (FR)')
+	expect(active()).toBe('Français')
 })

@@ -4,7 +4,7 @@ import { metadataFor, publicMetadata } from './route-metadata'
 import { modVersion, modVersionFrom, structuredDataFor } from './structured-data'
 
 const isoDate = /^\d{4}-\d{2}-\d{2}$/
-const nodes = (path: string) => structuredDataFor(metadataFor(path))['@graph']
+const nodes = (path: string) => structuredDataFor(metadataFor(path, 'fr'))['@graph']
 const ofType = (path: string, type: string) => nodes(path).find(node => node['@type'] === type)
 
 test('every indexable page says when it last changed, as a real calendar date the sitemap can use', () => {
@@ -19,7 +19,7 @@ test('every indexable page says when it last changed, as a real calendar date th
 test('the public gallery, the legal page and the roadmap are prerendered but kept out of search results', () => {
 	for (const path of ['/explore', '/legal', '/roadmap']) {
 		expect(publicMetadata.find(page => page.path === path)?.indexable, path).toBe(false)
-		expect(metadataFor(path).indexable, path).toBe(false)
+		expect(metadataFor(path, 'fr').indexable, path).toBe(false)
 	}
 })
 
@@ -47,29 +47,29 @@ test('the downloads page identifies the mod, without a price or a rating', () =>
 		name: 'Minemories',
 		applicationCategory: 'GameApplication',
 		softwareVersion: modVersion,
-		url: 'https://minemories.net/downloads',
+		url: 'https://minemories.net/fr/downloads',
 	})
 	expect(modVersion).toMatch(/^\d+\.\d+\.\d+/)
 	expect(application).not.toHaveProperty('offers')
 	expect(application).not.toHaveProperty('aggregateRating')
 	expect(ofType('/', 'SoftwareApplication')).toBeUndefined()
-	expect(structuredDataFor(metadataFor('/downloads'), '1.2.3')['@graph'].at(-1)?.softwareVersion).toBe('1.2.3')
+	expect(structuredDataFor(metadataFor('/downloads', 'fr'), '1.2.3')['@graph'].at(-1)?.softwareVersion).toBe('1.2.3')
 })
 
 test('each page describes itself, with its date, and stories stay articles', () => {
-	expect(nodes('/downloads')[0]).toMatchObject({ '@type': 'WebPage', url: 'https://minemories.net/downloads' })
+	expect(nodes('/downloads')[0]).toMatchObject({ '@type': 'WebPage', url: 'https://minemories.net/fr/downloads' })
 	expect(nodes('/faq')[0]).toMatchObject({
 		'@type': 'FAQPage',
-		url: 'https://minemories.net/faq',
-		dateModified: metadataFor('/faq').updated,
+		url: 'https://minemories.net/fr/faq',
+		dateModified: metadataFor('/faq', 'fr').updated,
 		isPartOf: { '@id': 'https://minemories.net/#website', name: 'Minemories' },
 	})
-	const story = { ...metadataFor('/faq'), path: '/story', articleDate: '2026-10-14' }
+	const story = { ...metadataFor('/faq', 'fr'), path: '/story', articleDate: '2026-10-14' }
 	const article = structuredDataFor(story)['@graph'][0]
 	expect(article).toMatchObject({
 		'@type': 'Article',
 		datePublished: '2026-10-14',
-		mainEntityOfPage: 'https://minemories.net/story',
+		mainEntityOfPage: 'https://minemories.net/fr/story',
 	})
 })
 
@@ -85,11 +85,11 @@ test('the Blender guide is an article by For-Hives with a breadcrumb back to the
 	expect(breadcrumb).toMatchObject({
 		'@type': 'BreadcrumbList',
 		itemListElement: [
-			{ position: 1, name: 'Minemories', item: 'https://minemories.net/' },
+			{ position: 1, name: 'Minemories', item: 'https://minemories.net/fr' },
 			{
 				position: 2,
 				name: 'Exporter une construction Minecraft vers Blender (GLB)',
-				item: 'https://minemories.net/guides/minecraft-blender',
+				item: 'https://minemories.net/fr/guides/minecraft-blender',
 			},
 		],
 	})

@@ -12,7 +12,7 @@ import { test } from 'vitest'
 import assert from 'node:assert/strict'
 
 
-const IDS = ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja', 'en-GB', 'en-CA', 'fr-CA']
+const IDS = ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja']
 const COMPLETE = ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja']
 await Promise.all(IDS.map(loadLocale))
 const catalogs = Object.fromEntries(
@@ -264,7 +264,7 @@ test('the arrival line of the return (v9d): 45.8 to 49.1 s, exactly when Efe app
 	assert.equal(HUD.hudAt(49.09, { plan }).chat, 'rejoin')
 	assert.equal(HUD.hudAt(49.1, { plan }).chat, null)
 	assert.equal(HUD.hudAt(45.9, { site: true, plan }).chat, null, 'nothing on the site')
-	for (const l of ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja', 'en-GB', 'en-CA', 'fr-CA']) assert.ok(tIn(l)('{name} joined the game').includes('Efe'), l)
+	for (const l of ['en', 'fr', 'ru', 'de', 'ko', 'pt-BR', 'pl', 'ja']) assert.ok(tIn(l)('{name} joined the game').includes('Efe'), l)
 })
 
 test('reduced-motion stations R0 to R12 (v9d: R10 = Efe is back, 46.8 s), chapters 1 to 5, holds', () => {

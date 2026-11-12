@@ -2,9 +2,9 @@ import { type Locale, localeOptions } from '../i18n/locales'
 
 /**
  * The language picker's own order (i18n/locales.ts keeps its historical one): the languages by their own name, the Latin scripts
- * first, then Cyrillic, Japanese and Korean, each language's regions together (the most used first).
+ * first, then Cyrillic, Japanese and Korean.
  */
-const pickerOrder: readonly Locale[] = ['de', 'en', 'en-GB', 'en-CA', 'fr', 'fr-CA', 'pl', 'pt-BR', 'ru', 'ja', 'ko']
+const pickerOrder: readonly Locale[] = ['de', 'en', 'fr', 'pl', 'pt-BR', 'ru', 'ja', 'ko']
 
 const region = /-.*/
 
