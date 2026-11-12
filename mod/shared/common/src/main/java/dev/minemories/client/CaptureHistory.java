@@ -40,6 +40,11 @@ final class CaptureHistory {
     void write(Path file) throws IOException;
   }
 
+  /**
+   * One local capture. {@code world} is the world or server name ("" when the capture has none),
+   * {@code server} tells which of the two it is, and {@code worldId} is the private identity hash
+   * ("" for captures made before identities existed). Only the sidecar next to the GLB is read.
+   */
   record Entry(
       String id,
       Path file,
@@ -47,9 +52,15 @@ final class CaptureHistory {
       long bytes,
       String world,
       boolean readable,
-      boolean uploaded) {
+      boolean uploaded,
+      boolean server,
+      String worldId) {
     Entry(String id, Path file, Instant capturedAt, long bytes, String world, boolean readable) {
-      this(id, file, capturedAt, bytes, world, readable, false);
+      this(id, file, capturedAt, bytes, world, readable, false, false, "");
+    }
+
+    Entry withUploaded(boolean value) {
+      return new Entry(id, file, capturedAt, bytes, world, readable, value, server, worldId);
     }
   }
 
@@ -270,8 +281,20 @@ final class CaptureHistory {
     }
   }
 
+  /** Most captures {@link #listAll} reads; older ones stay on disk but are not listed. */
+  static final int MAX_LISTED = 300;
+
+  /** Every local capture, newest first, bounded by {@link #MAX_LISTED}. */
+  static List<Entry> listAll(Path directory) throws IOException {
+    return scan(directory, null, MAX_LISTED).entries();
+  }
+
   static Page list(Path directory, String before, int limit) throws IOException {
     if (limit < 1 || limit > 100) throw new IllegalArgumentException("Page too large.");
+    return scan(directory, before, limit);
+  }
+
+  private static Page scan(Path directory, String before, int limit) throws IOException {
     if (before != null && !ID.matcher(before).matches()) {
       throw new IllegalArgumentException("Invalid page.");
     }
@@ -309,24 +332,29 @@ final class CaptureHistory {
     return new Page(entries, hasMore);
   }
 
+  private static String text(JsonObject json, String key, int limit) {
+    var value = json.get(key);
+    if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString())
+      return "";
+    String text = value.getAsString().replaceAll("[\\p{Cntrl}§]", " ").strip();
+    return text.substring(0, Math.min(text.length(), limit));
+  }
+
   private static Entry describe(Entry entry) {
-    String world = "Unknown world";
+    String world = "";
+    String worldId = "";
+    boolean server = false;
     boolean readable = true;
     try {
       JsonObject json = metadata(entry.file());
-      for (String key : List.of("worldName", "serverName")) {
-        var value = json.get(key);
-        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString())
-          continue;
-        String name = value.getAsString().replaceAll("[\\p{Cntrl}§]", " ").strip();
-        if (!name.isEmpty()) {
-          world = name.substring(0, Math.min(name.length(), 160));
-          break;
-        }
+      world = text(json, "worldName", 160);
+      if (world.isEmpty()) {
+        world = text(json, "serverName", 160);
+        server = !world.isEmpty();
       }
+      worldId = text(json, "worldId", 128);
     } catch (IOException error) {
       readable = false;
-      world = "Unreadable metadata";
     }
     return new Entry(
         entry.id(),
@@ -335,6 +363,8 @@ final class CaptureHistory {
         entry.bytes(),
         world,
         readable,
-        Files.isRegularFile(uploadedMarker(entry.file())));
+        Files.isRegularFile(uploadedMarker(entry.file())),
+        server,
+        worldId);
   }
 }

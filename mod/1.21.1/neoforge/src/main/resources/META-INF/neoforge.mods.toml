@@ -11,7 +11,7 @@ description='''Client-side voxel capture proof of concept.'''
 [[dependencies.minemories]]
 modId="neoforge"
 type="required"
-versionRange="[21.1.248,)"
+versionRange="[21.1.209,)"
 ordering="NONE"
 side="CLIENT"
 [[dependencies.minemories]]

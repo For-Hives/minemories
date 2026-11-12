@@ -25,36 +25,58 @@ signed-in profile. No visible name or geographic proximity is enough to merge
 worlds. Copying or renaming a save can produce a new identity. The hash is
 neither proof of ownership nor an anonymization of the coordinates.
 
-On a remote server, an address is not a world UUID. The default mode
-(`worldScope: session`) uses a random connection identifier, with the address,
-dimension and signed-in profile. Reconnecting creates another series, even if
-the server keeps its map. Changing dimensions and then returning to the
-initial world keeps the session. This avoids implicitly assigning the captures
-of two connections to the same world when its seed is unknown.
+On a remote server, an address is not a world UUID. The client therefore
+creates, once per server, a random namespace and keeps it in
+`config/minemories.properties` (key `remoteWorld2.<fingerprint>`, the fingerprint
+being a hash of the canonical address). The identity (`minemories-remote-world-v2`,
+`worldScope: namespace`) combines that namespace, the canonical address
+(trimmed, lower-case, no trailing dot, default port `:25565` removed, so
+`Example.com`, `example.com.` and `example.com:25565` are one server), the
+dimension and the signed-in profile. Every session on a server, including
+after restarts, lands in the same series. Before this version the default
+was a random per-connection identifier (`worldScope: session`), which split
+one server into one stack per connection; those captures cannot be merged
+retroactively because their identifier was never stored. Session scope now only
+remains as a fallback when the settings cannot be read.
 
-For intentional continuity across connections, open **M → Advanced mode →
-World**, generate an identifier, then save. This local choice gives
-`worldScope: namespace`: with the same address, identifier, dimension and
-profile, future states stay in the same series after reconnecting and
-restarting. If the server replaces its map, generate and save another
-identifier. Clearing and then saving goes back to per-connection mode. This
-choice does not reassign older memories. No universal UUID provided by the
-server is claimed.
+Known limits: the client has no reliable signal to tell worlds apart behind
+one address (proxy networks) or a map reset on the same address; both share a
+stack until the local namespace is replaced. LAN guests see a random port on
+each launch and therefore a new server each time.
 
-Configured UUIDs are kept per address in `config/minemories.properties`
-(keys `remoteWorld.<fingerprint>`). The screen validates a complete UUID; an
-invalid configuration value falls back to per-connection mode and can be
-cleared from that screen. Editing these keys by hand requires a client
-restart. The setting's identifier is not sent to the Minecraft server: the
+Explicit namespaces configured before this version (`remoteWorld.<fingerprint>`
+on the raw address) keep producing their v1 identity unchanged, so existing
+captures are not orphaned. Saving or clearing a namespace replaces the automatic
+one; clearing makes the next connection create a fresh namespace (a new
+stack), which is the way to say "the server replaced its map". No universal
+UUID provided by the server is claimed.
+
+There is no in-game screen for the namespace. It can be replaced by editing
+`config/minemories.properties` by hand (a complete UUID in
+`remoteWorld2.<fingerprint>`, or the legacy `remoteWorld.<fingerprint>` of the raw
+address) and restarting the client; removing both keys makes the next
+connection create a new namespace. A value that is not a complete UUID is
+ignored with a warning and the connection falls back to per-connection mode. The setting's identifier is not sent to the Minecraft server: the
 captures contain the declared scope and the computed fingerprints. Uploading to
 the API still requires pairing. Actually changing an identifier invalidates the
 context of in-progress AFK captures/uploads; saving the same value does not.
 AFK preferences, the API and the device token are kept.
 
+In the gallery, captures with no usable identity (no `worldId`, or an old remote
+tag with neither seed nor scope) never stack with another capture, except inside
+a group that is a specific world (name and seed). A server label such as the
+default "Minecraft Server" is shared by unrelated servers, so captures there
+stand alone instead of being merged by position. Server tiles are still grouped
+by the label, but identified captures of two servers never share a series.
+
+Singleplayer ids hash the absolute save folder, the seed, the dimension and the
+profile: deleting a save and re-creating one with the same folder name and seed
+yields the same identity.
+
 Exploration follows the same remote boundaries. In per-connection mode, depths
 and zones stay in memory for at most eight dimensions, evicting the least
 recently used; no file is created per session. Returning to a dimension
-recovers its state as long as it is within that window. In configured mode,
+recovers its state as long as it is within that window. In persistent mode (the default for servers),
 histories are persisted under the chosen identity and recovered after a
 restart. Existing local histories keep their keys. Old remote histories are not
 automatically reassigned to a newly identified world. The configured setting is

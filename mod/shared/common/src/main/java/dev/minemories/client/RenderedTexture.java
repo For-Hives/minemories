@@ -17,6 +17,17 @@ final class RenderedTexture {
     this.alphaMode = alphaMode;
   }
 
+  /**
+   * How a texture is blended: 0 opaque, 1 cutout (MASK), 2 translucent (BLEND). A cutout drawn as
+   * BLEND is sorted per mesh and writes no depth, so its far faces paint over its near ones: a
+   * texture is only translucent when partial alpha is a real share of its visible texels, not a
+   * stray antialiased texel (the creeper's skin has exactly one).
+   */
+  static int alphaMode(boolean transparent, long partial, long visible) {
+    if (partial * 32 > visible) return 2;
+    return transparent || partial > 0 ? 1 : 0;
+  }
+
   static void checkDimensions(int width, int height) throws IOException {
     if (width < 1
         || height < 1
@@ -39,7 +50,8 @@ final class RenderedTexture {
   static final class Rows {
     private final BufferedImage image;
     private int nextRow;
-    private boolean transparent, translucent, sealed;
+    private boolean transparent, sealed;
+    private long partial, visible;
 
     Rows(int width, int height) throws IOException {
       checkDimensions(width, height);
@@ -58,7 +70,8 @@ final class RenderedTexture {
           throw new java.io.InterruptedIOException("Texture copy interrupted");
         int pixel = rgba[index], alpha = pixel >>> 24;
         transparent |= alpha == 0;
-        translucent |= alpha != 0 && alpha != 255;
+        if (alpha != 0) visible++;
+        if (alpha != 0 && alpha != 255) partial++;
         int argb =
             (alpha << 24) | ((pixel & 255) << 16) | (pixel & 0x0000FF00) | ((pixel >>> 16) & 255);
         image.setRGB(index % image.getWidth(), row + index / image.getWidth(), argb);
@@ -72,7 +85,7 @@ final class RenderedTexture {
       sealed = true;
       BoundedPng bytes = new BoundedPng();
       if (!ImageIO.write(image, "png", bytes)) throw new IOException("PNG encoder unavailable");
-      return new RenderedTexture(bytes.toByteArray(), translucent ? 2 : transparent ? 1 : 0);
+      return new RenderedTexture(bytes.toByteArray(), alphaMode(transparent, partial, visible));
     }
   }
 

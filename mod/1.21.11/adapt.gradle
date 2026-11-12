@@ -23,8 +23,11 @@ ext.adaptDir = { File root ->
         t = t.replace('.dimension().location()', '.dimension().identifier()')
         t = t.replace('key.location().toString()', 'key.identifier().toString()')
         // Lot 2: GUI. AbstractButton.renderWidget is final, subclasses draw in renderContents.
-        if (n == 'IconButton.java' || n == 'TabButton.java' || n == 'BrandButton.java' || n == 'GearButton.java') {
+        // FaceButton draws the vanilla face itself (renderDefaultSprite) and has no label to suppress.
+        if (n == 'FaceButton.java') {
             t = rep(t, 'public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', 'public void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)', n)
+            t = rep(t, 'super.renderWidget(graphics, mouseX, mouseY, partialTick);', 'renderDefaultSprite(graphics);', n)
+            t = regex(t, /(?s)\n  \/\*\* The vanilla centred label.*?public void renderString\(GuiGraphics graphics, Font font, int color\) \{\}\n/, '\n', n)
         }
         if (n == 'IconButton.java') {
             t = rep(t, 'graphics.pose().pushPose();', 'graphics.pose().pushMatrix();', n)

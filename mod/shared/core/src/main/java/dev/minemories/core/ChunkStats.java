@@ -60,6 +60,8 @@ public final class ChunkStats {
   }
 
   void quad(GlbCategory category, int chunkX, int chunkZ, String materialName, float[] xyz) {
+    // Invented closing geometry is not part of the world: it must not move a chunk's score.
+    if (category.virtual()) return;
     Counters counters = counters(chunkX, chunkZ);
     if (counters == null) return;
     counters.quads++;

@@ -169,7 +169,9 @@ export function AccountPage() {
 				</form>
 				<form className="mm-account-card" aria-labelledby="head-heading" onSubmit={event => void submit('head', event)}>
 					<h2 id="head-heading">{t('Minecraft head')}</h2>
-					<p>{t('Use the head of your Minecraft skin as your picture. Only your username is sent, to Minotar.')}</p>
+					<p>
+						{t('Use the head of your Minecraft skin as your picture. Only your username is sent, to head.sttr.io.')}
+					</p>
 					<label>
 						{t('Minecraft username')}
 						<input

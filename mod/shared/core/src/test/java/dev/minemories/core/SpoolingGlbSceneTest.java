@@ -580,4 +580,10 @@ final class SpoolingGlbSceneTest {
             StandardCharsets.UTF_8)
         .trim();
   }
+
+  @Test
+  void defaultTextureLimitMatchesTheViewerAndApiImageCap() {
+    // packages/api-contract/src/glb-images.ts MAX_GLB_IMAGES: a capture the mod writes must open.
+    assertEquals(4096, SpoolingGlbScene.Limits.defaults().textures());
+  }
 }

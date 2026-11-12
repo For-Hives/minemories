@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
 import { UnsupportedGlbError } from './lib/glb'
 import { legacyEmissiveToLinear, srgbToLinear } from './lib/glb-colours'
+import { createFaithfulUniforms, type FaithfulUniforms } from './viewer-faithful'
 import { disposeImportedObject, ViewerScene } from './viewer-scene'
 
 test('viewer clears loading and refuses unsafe files before calling its texture loader', async () => {
@@ -76,6 +77,8 @@ function sceneFixture() {
 		hiddenCategories: new Set(),
 		camera: new THREE.PerspectiveCamera(),
 		sky: new THREE.Mesh(),
+		controls: { target: new THREE.Vector3() },
+		navigation: { active: false },
 		loader: { parseAsync: vi.fn(async (): Promise<{ scene: THREE.Group; asset?: unknown }> => ({ scene: next })) },
 		events: { onLoading: vi.fn(), onFileInfo: vi.fn(), onEmptyChange: vi.fn() },
 		renderer: { compileAsync: vi.fn(() => compile.promise), render: vi.fn() },
@@ -261,25 +264,6 @@ test('lighting preparation preserves imported face normals instead of forcing de
 	material.dispose()
 })
 
-test('surface lights remain in the bounded lighting budget even when deeper lava is brighter', () => {
-	const root = new THREE.Group()
-	root.add(new THREE.Mesh(new THREE.BoxGeometry(32, 160, 32), new THREE.MeshStandardMaterial()))
-	const surfaceLight = new THREE.PointLight(0xff6600, 900, 14)
-	surfaceLight.position.set(0, 72, 0)
-	root.add(surfaceLight)
-	for (let i = 0; i < 16; i++) {
-		const light = new THREE.PointLight(0xffffff, 1400, 20)
-		light.position.set(i * 7, -70, 0)
-		root.add(light)
-	}
-	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
-	scene.prepareWorldLighting(root)
-	const lights = root.children.filter(child => child instanceof THREE.PointLight)
-	expect(lights).toHaveLength(12)
-	expect(lights.some(light => light.position.y === 72 && light.intensity === 9)).toBe(true)
-	disposeImportedObject(root)
-})
-
 test('orbit remains centered on the captured player when switching captures with a preserved view', () => {
 	const root = new THREE.Group()
 	root.userData.minemoriesPlayerPosition = [4, 20, -3]
@@ -311,7 +295,8 @@ function worldFixture() {
 	Object.assign(f.scene, {
 		disposed: false,
 		prepareMesh: vi.fn(),
-		worldLights: Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2)),
+		faithfulUniforms: createFaithfulUniforms(),
+		lightBuild: 0,
 		controls: { target: new THREE.Vector3() },
 		captureFocus: null,
 		keyLight: { shadow: { needsUpdate: false } },
@@ -343,10 +328,9 @@ test('world layers stack without replacing each other and only the first one fra
 	expect(f.modelRoot.children).toEqual([f.next, second])
 	expect(f.fields.frameModel).toHaveBeenCalledOnce()
 	f.scene.showWorld(layer.lights)
-	const lights = (f.scene as unknown as { worldLights: THREE.PointLight[] }).worldLights
-	expect(lights[0]?.intensity).toBe(3)
-	expect(lights[0]?.position.toArray()).toEqual([5, 0, -2])
-	expect(lights[1]?.intensity).toBe(0)
+	const uniforms = (f.scene as unknown as { faithfulUniforms: FaithfulUniforms }).faithfulUniforms
+	await vi.waitFor(() => expect(uniforms.memoryLightVolume.value.image.width).toBeGreaterThan(1))
+	expect(uniforms.memoryLightOrigin.value.toArray()).toEqual([5 - 3, 0 - 3, -2 - 3])
 	expect(f.shadowMap.needsUpdate).toBe(true)
 	f.scene.focusLayer(second)
 	expect(f.fields.frameModel).toHaveBeenLastCalledWith(second, false)
@@ -641,4 +625,57 @@ test('switching the lighting style flips shared uniforms, tone mapping and post 
 	expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping)
 	expect(effects.setFaithful).toHaveBeenLastCalledWith(false)
 	expect(updateDayCycle).toHaveBeenCalledTimes(2)
+})
+
+function manyLights(count: number): THREE.Group {
+	const root = new THREE.Group()
+	root.add(new THREE.Mesh(new THREE.BoxGeometry(64, 8, 64), new THREE.MeshStandardMaterial()))
+	for (let i = 0; i < count; i++) {
+		const light = new THREE.PointLight(0xffaa55, 1400, 14)
+		light.position.set((i % 40) * 1.5 - 30, 1, Math.floor(i / 40) * 1.5 - 30)
+		root.add(light)
+	}
+	return root
+}
+
+function pointLightCount(root: THREE.Object3D): number {
+	let count = 0
+	root.traverse(object => {
+		if (object instanceof THREE.PointLight) count++
+	})
+	return count
+}
+
+test('hundreds of imported lights become one block light volume and leave no point light in the scene', () => {
+	const root = manyLights(600)
+	const uniforms = createFaithfulUniforms()
+	const scene = Object.create(ViewerScene.prototype) as { prepareWorldLighting(root: THREE.Object3D): void }
+	Object.assign(scene, { faithfulUniforms: uniforms, lightBuild: 0, prepareMesh: vi.fn() })
+	scene.prepareWorldLighting(root)
+	expect(pointLightCount(root)).toBe(0)
+	const volume = uniforms.memoryLightVolume.value
+	expect(volume.image.width).toBeGreaterThan(40)
+	expect(volume.image.depth).toBeGreaterThan(40)
+	expect(uniforms.memoryLightScale.value.x).toBeGreaterThan(0)
+	disposeImportedObject(root)
+})
+
+test('a capture without lights samples the black volume, and a stale timelapse build never replaces a newer one', async () => {
+	const uniforms = createFaithfulUniforms()
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	Object.assign(scene, { faithfulUniforms: uniforms, lightBuild: 0, disposed: false })
+	const internals = scene as unknown as { buildBlockLight(lights: unknown[], background: boolean): void }
+	const torch = { position: new THREE.Vector3(1, 1, 1), color: new THREE.Color(1, 1, 1), intensity: 1400 }
+	internals.buildBlockLight([], false)
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(1)
+	internals.buildBlockLight([torch], true)
+	internals.buildBlockLight([], true)
+	await new Promise(resolve => setTimeout(resolve, 60))
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(1)
+	internals.buildBlockLight([torch], true)
+	await vi.waitFor(() => expect(uniforms.memoryLightVolume.value.image.width).toBe(29))
+	Object.assign(scene, { disposed: true })
+	internals.buildBlockLight([torch], true)
+	await new Promise(resolve => setTimeout(resolve, 60))
+	expect(uniforms.memoryLightVolume.value.image.width).toBe(29)
 })
