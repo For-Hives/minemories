@@ -114,7 +114,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
-		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
+		description: 'What the Minemories team is building right now and what’s coming next.',
 		indexable: false,
 		language: 'fr',
 	},
