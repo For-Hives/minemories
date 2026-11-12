@@ -4,6 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 import { Hono } from 'hono'
 import * as z from 'zod'
+import { type McpAdminServices, registerAdminTools } from './mcp-admin'
 import { FailureLimiter, MIN_TOKEN_LENGTH, tokenMatches } from './mod-upload'
 import { pairingAddress } from './pairing-protection'
 import { logApiFailure } from './safe-errors'
@@ -28,6 +29,8 @@ export interface McpMemoryOperations {
 export interface McpOptions {
 	database: Database
 	memories: McpMemoryOperations
+	/** The administration-page services; when absent only the account and capture tools exist. */
+	admin?: McpAdminServices | undefined
 	env?: () => Env
 	now?: () => number
 }
@@ -68,13 +71,13 @@ function omitImages(metadata: Record<string, unknown>) {
  * Builds one MCP server per request (stateless Streamable HTTP: no session to keep, nothing to leak between callers).
  * Operator tools only: the bearer token is the release token, not an account.
  */
-export function createMcpServer({ database, memories, now = Date.now }: Omit<McpOptions, 'env'>) {
+export function createMcpServer({ database, memories, admin, now = Date.now }: Omit<McpOptions, 'env'>) {
 	const server = new McpServer(
 		{ name: 'minemories', version: '1.0.0' },
 		{
 			instructions:
-				'Operator tools for the Minemories API: read accounts, captures ("memories") and devices, rename or trash captures, ' +
-				'and set account names and Minecraft heads. Identifiers are Better Auth user ids and capture UUIDs. ' +
+				'Operator tools for the Minemories API: everything the admin page shows or changes (accounts, roles, e-mails, devices, ' +
+				'captures, share links, diagnostics, public-gallery moderation, metrics). Identifiers are Better Auth user ids and capture UUIDs. ' +
 				'Captures are never hard-deleted from here: trash is reversible with restore_memory.',
 		}
 	)
@@ -241,6 +244,7 @@ export function createMcpServer({ database, memories, now = Date.now }: Omit<Mcp
 		}
 	)
 
+	if (admin) registerAdminTools(server, { database, now, admin })
 	return server
 }
 
@@ -289,7 +293,12 @@ export function createMcpRoute(options: McpOptions) {
 			if (refusal.retryAfter) context.header('Retry-After', refusal.retryAfter)
 			return context.json({ error: refusal.error }, refusal.status, noStore)
 		}
-		const server = createMcpServer({ database: options.database, memories: options.memories, now })
+		const server = createMcpServer({
+			database: options.database,
+			memories: options.memories,
+			admin: options.admin,
+			now,
+		})
 		const transport = new WebStandardStreamableHTTPServerTransport({
 			enableJsonResponse: true,
 		})

@@ -16,13 +16,22 @@ const orders = {
 const NEAR_QUOTA_PERCENT = 90
 const filter = `(u.name LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR u.id LIKE ? ESCAPE '\\')
  AND (?='all' OR (?='admin')=EXISTS(SELECT 1 FROM user_roles r WHERE r.user_id=u.id))`
+/**
+ * Acting identity of the operator MCP endpoint (authenticated by `API_TOKEN`, not by an account). Real user ids come from
+ * Better Auth sessions and can never take this value, so it only ever reaches these classes from `mcp.ts`.
+ */
+export const OPERATOR_ACTOR = 'operator:mcp'
+
 export class AdminRoles {
 	constructor(private readonly database: Database) {
 		database.exec(`CREATE TABLE IF NOT EXISTS user_roles (user_id TEXT PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE);
    CREATE TABLE IF NOT EXISTS admin_role_audit (id INTEGER PRIMARY KEY,actor_id TEXT,target_id TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','admin')),created_at INTEGER NOT NULL);`)
 	}
 	allowed(userId: string | null): boolean {
-		return userId !== null && this.database.query('SELECT 1 FROM user_roles WHERE user_id=?').get(userId) !== null
+		return (
+			userId === OPERATOR_ACTOR ||
+			(userId !== null && this.database.query('SELECT 1 FROM user_roles WHERE user_id=?').get(userId) !== null)
+		)
 	}
 	require(userId: string | null): string {
 		if (!userId) throw new ORPCError('UNAUTHORIZED')

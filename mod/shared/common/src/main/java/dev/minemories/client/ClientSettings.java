@@ -229,7 +229,10 @@ final class ClientSettings {
   private static final java.util.regex.Pattern MINECRAFT_USERNAME =
       java.util.regex.Pattern.compile("\\w{3,16}");
 
-  /** The username when it is a valid Java Edition name (3 to 16 letters, digits, underscores), else null. */
+  /**
+   * The username when it is a valid Java Edition name (3 to 16 letters, digits, underscores), else
+   * null.
+   */
   static String minecraftUsername(String value) {
     return value != null && MINECRAFT_USERNAME.matcher(value).matches() ? value : null;
   }
