@@ -1,3 +1,4 @@
+import { discordInviteUrl } from '../lib/discord'
 import { repositoryUrl } from '../lib/repository'
 import { catalogLinks } from '../pages/installation-loaders'
 
@@ -6,7 +7,7 @@ export type FooterLink = { label: string; plain?: true } & ({ to: string } | { h
 
 /**
  * The footer's groups, shared by every page's footer and the landing film's. A contact joins "Help" once one is
- * decided; "Elsewhere" (CurseForge, GitHub) is drawn by the footers from the catalog links.
+ * decided; "Elsewhere" (CurseForge, GitHub, Discord) is drawn by the footers from the catalog links.
  */
 export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 	{
@@ -51,11 +52,12 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 export type NavSection = { label?: string; links: FooterLink[] }
 export type NavMenu = { id: 'product' | 'guides' | 'help'; label: string; sections: NavSection[] }
 
-/** The mod's catalogs and the source code, at the bottom of Help (and in the footers' "Elsewhere"). */
+/** The mod's catalogs, the source code and the Discord server, at the bottom of Help (and in the footers' "Elsewhere"). */
 export function elsewhereLinks(): FooterLink[] {
 	return [
 		...catalogLinks().map(catalog => ({ href: catalog.url, label: catalog.name, plain: true as const })),
 		{ href: repositoryUrl, label: 'GitHub', plain: true },
+		{ href: discordInviteUrl, label: 'Discord', plain: true },
 	]
 }
 

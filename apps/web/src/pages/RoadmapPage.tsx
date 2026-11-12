@@ -3,6 +3,7 @@ import { LoadingSkeleton } from '../components/Loading'
 import { buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
+import { discordInviteUrl } from '../lib/discord'
 import {
 	type LatestRelease,
 	pullRequestUrl,
@@ -132,7 +133,11 @@ export function RoadmapPage() {
 			title={t('Roadmap')}
 			lead={t('What we’re building right now and what’s coming next, straight from the project’s GitHub issues.')}
 		>
-			<p className="mm-roadmap-note">{t('The same board is posted on the Minemories Discord.')}</p>
+			<p className="mm-roadmap-note">
+				<a className="mc-link" href={discordInviteUrl}>
+					{t('The same board is posted on the Minemories Discord.')}
+				</a>
+			</p>
 			{roadmap && (
 				<>
 					<p className="mm-roadmap-updated">

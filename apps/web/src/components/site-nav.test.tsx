@@ -132,6 +132,7 @@ test('every page of the site is in the bar, under Product, Guides and Help; the 
 		'/legal',
 		'https://www.curseforge.com/minecraft/mc-mods/minemories',
 		'https://github.com/For-Hives/minemories',
+		'https://discord.gg/2tNxrUHDDD',
 	])
 	// one menu open at a time; the page on screen is marked, and its menu too
 	expect(trigger('Guides').getAttribute('aria-expanded')).toBe('false')
@@ -170,7 +171,7 @@ test('menus: Escape and a press outside close them, the arrows move along the ba
 	await waitFor(() => expect(document.activeElement?.textContent).toBe('FAQ'))
 	const panel = document.getElementById(trigger('Help').getAttribute('aria-controls') ?? '') as HTMLElement
 	fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowUp' })
-	expect(document.activeElement?.textContent).toBe('GitHub')
+	expect(document.activeElement?.textContent).toBe('Discord')
 	// the groups after the first are named lists
 	expect(within(panel).getByRole('list', { name: 'Legal' })).toBeTruthy()
 	expect(within(panel).getByRole('list', { name: 'Elsewhere' })).toBeTruthy()
