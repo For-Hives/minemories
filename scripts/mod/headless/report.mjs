@@ -37,6 +37,14 @@ export function parseLogMarkers(log) {
 	return { passed: text.includes(PASSED_MARKER), failed: text.includes(FAILED_MARKER) }
 }
 
+// What the game says when a resource of the mod is missing: the purple and black texture, a lost model or translation.
+const RESOURCE_PROBLEM = /(?:Failed to load texture|Missing (?:texture|sprite|model)|Unable to load model|Unable to parse)[^\n]*\bminemories:[^\n]*/gi
+
+/** Lines of the game log that report a missing or unreadable resource of the mod (deduplicated). */
+export function resourceProblems(log) {
+	return [...new Set(String(log ?? '').match(RESOURCE_PROBLEM) ?? [])].map(line => line.trim().slice(0, 200))
+}
+
 /** The most useful line of an in-game failure: the AssertionError / Exception line after the FAILED marker. */
 export function failureMessage(log) {
 	const lines = String(log ?? '').split('\n')

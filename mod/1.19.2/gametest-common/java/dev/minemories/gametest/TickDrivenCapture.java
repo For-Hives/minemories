@@ -27,10 +27,11 @@ public final class TickDrivenCapture {
 
   private TickDrivenCapture() {}
 
-  private enum Step { MENU, LOADING, SETTLING, EXPORTING, DONE }
+  private enum Step { MENU, LOADING, SETTLING, EXPORTING, FEATURES, DONE }
 
   private static Step step = Step.MENU;
   private static int ticks;
+  private static FeatureScenario features;
 
   public static void tick() {
     Minecraft mc = Minecraft.getInstance();
@@ -50,6 +51,7 @@ public final class TickDrivenCapture {
                     .registryOrThrow(Registry.WORLD_PRESET_REGISTRY)
                     .getOrThrow(WorldPresets.FLAT)
                     .createWorldGenSettings(1L, false, false);
+            GlbReport.freshWorld("MinemoriesTest");
             mc.createWorldOpenFlows()
                 .createFreshLevel(
                     "MinemoriesTest",
@@ -90,10 +92,17 @@ public final class TickDrivenCapture {
         case EXPORTING -> {
           if (Files.exists(GlbReport.exportedGlb()) && ticks > 60) {
             GlbReport.report(GlbReport.exportedGlb());
+            features = new FeatureScenario(mc.gameDirectory.toPath());
+            step(Step.FEATURES);
+          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+        }
+        case FEATURES -> {
+          if (features.tick(host(mc))) {
+            features.close();
             LOGGER.info("MINEMORIES-GAMETEST PASSED");
             step(Step.DONE);
             mc.stop();
-          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+          }
         }
         case DONE -> {}
       }
@@ -101,6 +110,27 @@ public final class TickDrivenCapture {
       LOGGER.error("MINEMORIES-GAMETEST FAILED", failure);
       Runtime.getRuntime().halt(1);
     }
+  }
+
+
+  private static FeatureScenario.Host host(Minecraft mc) {
+    return new FeatureScenario.Host() {
+      @Override
+      public void client(String command) {
+        // /minemories is a client command: it goes through the chat screen like typed input.
+        ChatScreen chat = new ChatScreen("");
+        mc.setScreen(chat);
+        chat.handleChatInput("/" + command, false);
+        mc.setScreen(null);
+      }
+
+      @Override
+      public void server(String command) {
+        MinecraftServer server = mc.getSingleplayerServer();
+        server.execute(
+            () -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
+      }
+    };
   }
 
   private static void step(Step next) {

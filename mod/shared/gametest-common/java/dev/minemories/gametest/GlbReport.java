@@ -16,6 +16,10 @@ public final class GlbReport {
 
   /** Server commands that build the test scene around the player at (0, -60, 0) in a flat world. */
   public static final String[] SCENE = {
+    // The air pocket exposes dirt, which a random tick turns into grass at an unpredictable moment: the seal's
+    // material would depend on timing. Without random ticks the scene stays as placed.
+    "gamerule randomTickSpeed 0",
+    "gamerule random_tick_speed 0", // the name since Minecraft 1.21.11; the other one is refused there and the reverse
     "tp @p 0 -60 0",
     "setblock 2 -61 0 minecraft:stone",
     "setblock 2 -60 0 minecraft:stone",
@@ -40,6 +44,19 @@ public final class GlbReport {
   public static final String EXPORT_COMMAND = "minemories export 12";
 
   private GlbReport() {}
+
+  /**
+   * Deletes a saved test world so the run starts from the generated flat world. A world left by an earlier run keeps
+   * its random-tick changes (dirt under the scene's air pocket turns into grass), which changes the seal's material.
+   */
+  public static void freshWorld(String name) throws IOException {
+    Path world = Path.of("saves", name);
+    if (!Files.exists(world)) return;
+    try (var paths = Files.walk(world)) {
+      for (Path path : (Iterable<Path>) paths.sorted(java.util.Comparator.reverseOrder())::iterator)
+        Files.delete(path);
+    }
+  }
 
   public static Path exportedGlb() {
     return Path.of(System.getProperty("user.home"), "export", "capture.glb");

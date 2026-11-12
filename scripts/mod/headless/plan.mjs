@@ -12,12 +12,12 @@ const TASK_NAME = { fabric: 'runClientGameTest' }
 
 /**
  * The in-game test of a target, or null when none exists. Exact tasks per loader/version are in
- * docs/features/loader-support.md. Minecraft 1.21.1 has no automated in-game test (validated by hand).
+ * docs/features/loader-support.md.
  */
 export function gametestSpec(target) {
 	if (!target || target.enabled === false) return null
 	const { minecraft, loader, project = loader } = target
-	if (minecraft === '1.21.1' || loader === 'quilt') return null
+	if (loader === 'quilt') return null
 	if (minecraft === '1.21.11' && loader === 'forge') {
 		return { gradleArgs: [`:${project}:runClient`, '-PgameTest=true'] }
 	}
@@ -31,7 +31,7 @@ export function gametestSpec(target) {
 export function noGametestReason(target) {
 	if (target?.enabled === false) return 'target disabled'
 	if (target?.loader === 'quilt') return 'Quilt has no Gradle project (the Fabric JAR is tried by hand)'
-	return `no automated client test for Minecraft ${target?.minecraft} (manual in-game validation)`
+	return `no automated client test for Minecraft ${target?.minecraft}`
 }
 
 /** Gradle root of a target (`dir`, default `mod/1.21.1`), relative to the repository root. */

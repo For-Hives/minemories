@@ -4,8 +4,10 @@ plugins {
     id 'com.github.spotbugs'
 }
 
+evaluationDependsOn(':core')
 evaluationDependsOn(':common')
 base { archivesName = 'minemories-forge' }
+sourceSets { gametest { compileClasspath += sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.runtimeClasspath } }
 loom {
     accessWidenerPath = project(':common').file('src/main/resources/minemories.accesswidener')
     forge {
@@ -13,16 +15,44 @@ loom {
         extraAccessWideners.add('minemories.accesswidener')
         mixinConfig('minemories.forge.mixins.json')
     }
+    mods {
+        minemories {
+            sourceSet sourceSets.main
+        }
+        minemories_gametest { sourceSet sourceSets.gametest }
+    }
+    runs {
+        // In-game validation: ./gradlew :forge:runClientGametest (opens a Minecraft window, isolated user.home).
+        clientGametest {
+            client()
+            vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            vmArg '-Dminemories.gametest=true'
+        }
+    }
 }
+// GlbReport and FeatureScenario are Minecraft-free and shared with every Minecraft version.
+def sharedReport = tasks.register('copyGlbReport', Copy) {
+    from('../../shared/gametest-common/java/dev/minemories/gametest') { include '*.java' }
+    into layout.buildDirectory.dir('gametest-shared/dev/minemories/gametest')
+}
+sourceSets.gametest.java.srcDir layout.buildDirectory.dir('gametest-shared')
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+tasks.named('compileGametestJava') { dependsOn sharedReport }
+tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
+// The test sources are not shipped code: no formatter or bug finder runs on them.
+tasks.matching { it.name == 'spotbugsGametest' }.configureEach { enabled = false }
 dependencies {
     minecraft 'com.mojang:minecraft:1.21.1'
     mappings loom.officialMojangMappings()
     forge 'net.minecraftforge:forge:1.21.1-52.1.19'
-    implementation project(':core')
-    implementation project(path: ':common', configuration: 'namedElements')
+    // Compile against :core and :common only: at run time their classes come from the mod's own output (below), a
+    // second copy on the classpath clashes with it.
+    compileOnly project(':core')
+    compileOnly project(path: ':common', configuration: 'namedElements')
+    gametestImplementation sourceSets.main.output
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-spotless { java { googleJavaFormat('1.36.0') } }
+spotless { java { target 'src/main/java/**/*.java'; googleJavaFormat('1.36.0') } }
 spotbugs { toolVersion = '4.10.5'; ignoreFailures = false }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
@@ -34,7 +64,23 @@ tasks.withType(ProcessResources).configureEach {
     inputs.properties props
     filesMatching('META-INF/mods.toml') { expand props }
 }
+// The dev launcher only treats this project's own folders as the mod: :core and :common are copied into them so their
+// classes load in the mod's class loader (as a plain library they clash with Minecraft's) and their resources
+// (translations, menu icon) are found. The jar already holds them once through the `from` lines below.
+def copyDevClasses = tasks.register('copyDevClasses', Copy) {
+    dependsOn ':core:classes', ':common:classes'
+    mustRunAfter 'compileJava'
+    from project(':core').sourceSets.main.output.classesDirs
+    from project(':common').sourceSets.main.output.classesDirs
+    into sourceSets.main.java.destinationDirectory
+}
+tasks.named('classes') { dependsOn copyDevClasses }
+tasks.named('processResources') {
+    dependsOn ':common:processResources'
+    from(project(':common').sourceSets.main.output.resourcesDir)
+}
 tasks.named('jar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':core').sourceSets.main.output
     from project(':common').sourceSets.main.output
     manifest.attributes('MixinConfigs': 'minemories.forge.mixins.json')

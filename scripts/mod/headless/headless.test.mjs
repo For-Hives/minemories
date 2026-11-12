@@ -22,6 +22,7 @@ import {
 	parseGlbStats,
 	parseLogMarkers,
 	parseSummary,
+	resourceProblems,
 	thresholdsFor,
 } from './report.mjs'
 
@@ -63,14 +64,16 @@ test('gametestSpec picks the exact Gradle task per loader and version', () => {
 	assert.deepEqual(gametestSpec(T('forge', '1.20.1')).gradleArgs, [':forge:runClientGametest'])
 	assert.deepEqual(gametestSpec(T('fabric', '1.19.2')).gradleArgs, [':fabric:runClientGametest'])
 	assert.deepEqual(gametestSpec(T('forge', '1.18.2')).gradleArgs, [':forge:runClientGametest'])
-	assert.equal(gametestSpec(T('neoforge', '1.21.1')), null)
+	assert.deepEqual(gametestSpec(T('neoforge', '1.21.1')).gradleArgs, [':neoforge:runClientGametest'])
+	assert.deepEqual(gametestSpec(T('fabric', '1.21.1')).gradleArgs, [':fabric:runClientGametest'])
+	assert.deepEqual(gametestSpec(T('forge', '1.21.1')).gradleArgs, [':forge:runClientGametest'])
 	assert.equal(gametestSpec(T('quilt', '1.21.1')), null)
 	assert.equal(gametestSpec(T('forge', '1.20.1', { enabled: false })), null)
 	assert.equal(gametestSpec(undefined), null)
 })
 
 test('skip reasons and paths', () => {
-	assert.ok(String(noGametestReason(T('neoforge', '1.21.1'))).includes('1.21.1'))
+	assert.ok(String(noGametestReason(T('neoforge', '1.26'))).includes('1.26'))
 	assert.ok(String(noGametestReason(T('quilt', '1.21.1'))).includes('Quilt'))
 	assert.ok(String(noGametestReason(T('forge', '1.20.1', { enabled: false }))).includes('disabled'))
 	assert.equal(gradleRoot(T('neoforge', '1.21.1')), 'mod/1.21.1')
@@ -547,4 +550,15 @@ test('a hung run is retried once, a finished test is judged on its report even i
 	assert.equal(failed.status, 'failed')
 	assert.match(failed.message, /stuck.*repetition/)
 	await rm(root, { recursive: true })
+})
+
+test('resourceProblems finds the mod resources the game could not load', () => {
+	const log = [
+		'[Render thread/WARN] Failed to load texture: minemories:textures/gui/icon.png',
+		'[Render thread/WARN] Failed to load texture: minemories:textures/gui/icon.png',
+		'[Render thread/WARN] Failed to load texture: other:textures/x.png',
+		'[Render thread/INFO] fine',
+	].join('\n')
+	assert.deepEqual(resourceProblems(log), ['Failed to load texture: minemories:textures/gui/icon.png'])
+	assert.deepEqual(resourceProblems(undefined), [])
 })

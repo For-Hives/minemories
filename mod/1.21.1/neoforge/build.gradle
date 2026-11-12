@@ -6,6 +6,12 @@ plugins {
 
 evaluationDependsOn(':common')
 
+// In-game validation: ./gradlew :neoforge:runClientGametest (opens a Minecraft window, isolated user.home).
+sourceSets { gametest { java.srcDir '../gametest-common/java'; java.srcDir '../../shared/gametest-common/java' } }
+dependencies { gametestImplementation sourceSets.main.output }
+// The test sources are not shipped code: no formatter or bug finder runs on them.
+tasks.matching { it.name == 'spotbugsGametest' }.configureEach { enabled = false }
+
 base { archivesName = 'minemories' }
 
 dependencies {
@@ -26,6 +32,7 @@ tasks.withType(Test).configureEach {
 
 spotless {
     java {
+        target 'src/main/java/**/*.java'
         googleJavaFormat('1.36.0')
     }
 }
@@ -43,10 +50,19 @@ tasks.withType(JavaCompile).configureEach {
 
 neoForge {
     version = '21.1.248'
+    addModdingDependenciesTo(sourceSets.gametest)
     runs {
         client {
             client()
             gameDirectory = rootProject.file('run')
+        }
+        clientGametest {
+            client()
+            gameDirectory = layout.buildDirectory.dir('run-gametest')
+            // The mod reads settings and the export folder under user.home; keep the developer's own untouched.
+            jvmArgument "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            sourceSet = sourceSets.gametest
+            systemProperty 'minemories.gametest', 'true'
         }
     }
     mods {
@@ -54,6 +70,9 @@ neoForge {
             sourceSet(sourceSets.main)
             sourceSet(project(':core').sourceSets.main)
             sourceSet(project(':common').sourceSets.main)
+        }
+        minemories_gametest {
+            sourceSet(sourceSets.gametest)
         }
     }
 }

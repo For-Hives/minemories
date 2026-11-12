@@ -34,10 +34,11 @@ public final class TickDrivenCapture {
 
   private TickDrivenCapture() {}
 
-  private enum Step { MENU, LOADING, SETTLING, EXPORTING, SCREEN, DONE }
+  private enum Step { MENU, LOADING, SETTLING, EXPORTING, FEATURES, SCREEN, DONE }
 
   private static Step step = Step.MENU;
   private static int ticks;
+  private static FeatureScenario features;
 
   public static void tick() {
     Minecraft mc = Minecraft.getInstance();
@@ -56,6 +57,7 @@ public final class TickDrivenCapture {
             mc.setScreen(new TitleScreen());
           }
           if (mc.screen instanceof TitleScreen && ticks > 40) {
+            GlbReport.freshWorld("MinemoriesScreen");
             mc.createWorldOpenFlows()
                 .createFreshLevel(
                     "MinemoriesScreen",
@@ -100,12 +102,19 @@ public final class TickDrivenCapture {
         case EXPORTING -> {
           if (Files.exists(GlbReport.exportedGlb()) && ticks > 60) {
             GlbReport.report(GlbReport.exportedGlb());
+            features = new FeatureScenario(mc.gameDirectory.toPath());
+            step(Step.FEATURES);
+          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+        }
+        case FEATURES -> {
+          if (features.tick(host(mc))) {
+            features.close();
             Class<?> hub = Class.forName("dev.minemories.client.SimpleHubScreen");
             var constructor = hub.getDeclaredConstructor(Screen.class);
             constructor.setAccessible(true);
             mc.setScreen((Screen) constructor.newInstance((Object) null));
             step(Step.SCREEN);
-          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+          }
         }
         case SCREEN -> {
           if (ticks > 40) {
@@ -144,6 +153,27 @@ public final class TickDrivenCapture {
     Field field = target.getClass().getDeclaredField(name);
     field.setAccessible(true);
     return field.getInt(target);
+  }
+
+
+  private static FeatureScenario.Host host(Minecraft mc) {
+    return new FeatureScenario.Host() {
+      @Override
+      public void client(String command) {
+        // /minemories is a client command: it goes through the chat screen like typed input.
+        ChatScreen chat = new ChatScreen("");
+        mc.setScreen(chat);
+        chat.handleChatInput("/" + command, false);
+        mc.setScreen(null);
+      }
+
+      @Override
+      public void server(String command) {
+        MinecraftServer server = mc.getSingleplayerServer();
+        server.execute(
+            () -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
+      }
+    };
   }
 
   private static void step(Step next) {
