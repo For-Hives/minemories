@@ -7,7 +7,7 @@ import { requestBodyLimit, UPLOAD_INIT_BODY_BYTES } from './body-limits'
 import { database } from './database'
 import { parseMetadata } from './memory-metadata'
 import { addMemory, getDeviceFromToken } from './pairing'
-import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
+import { logApiFailure, recordApiFailure, requestCorrelation, uploadRefusal } from './safe-errors'
 import { discardMemoryUpload, storeMemoryFile } from './storage'
 import { accountStorageFits } from './storage-quota'
 import { MAX_UPLOAD_BYTES, readUploadChunk, UPLOAD_CHUNK_BYTES, validateUploadFile } from './upload-files'
@@ -60,10 +60,16 @@ class QuotaExceeded extends HTTPException {
 
 export const uploadRouter = new Hono<{ Variables: { device: Device } }>()
 uploadRouter.onError((error, context) => {
-	if (error instanceof QuotaExceeded)
+	if (error instanceof QuotaExceeded) {
+		recordApiFailure(context.req.raw, error, uploadRefusal(context.req.raw, 429, error.message))
 		return context.json({ error: error.message }, 429, { 'Retry-After': String(error.retryAfter) })
-	if (error instanceof HTTPException) return context.json({ error: error.message }, error.status)
-	recordApiFailure(context.req.raw, error)
+	}
+	if (error instanceof HTTPException) {
+		// A refusal is reported with its route, status and error code so a 400 is told apart from a 409 or a 413.
+		recordApiFailure(context.req.raw, error, uploadRefusal(context.req.raw, error.status, error.message))
+		return context.json({ error: error.message }, error.status)
+	}
+	recordApiFailure(context.req.raw, error, uploadRefusal(context.req.raw, 503, 'upload_storage_unavailable'))
 	logApiFailure(
 		'chunk_upload_failed',
 		context.res.headers.get('X-Minemories-Correlation') ?? requestCorrelation(context.req.raw)

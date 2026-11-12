@@ -146,6 +146,7 @@ function deferred<T>() {
 	return { promise, resolve, reject }
 }
 test('capture moves to trash, restores, and is only permanently deleted after confirmation', async () => {
+	const confirm = vi.spyOn(window, 'confirm')
 	page()
 	await expand()
 	fireEvent.click(screen.getByRole('button', { name: 'Move Cabin to trash' }))
@@ -155,15 +156,113 @@ test('capture moves to trash, restores, and is only permanently deleted after co
 	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
 	expect(screen.getByRole('heading', { name: 'Cabin' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Move Cabin to trash' }))
-	await screen.findByRole('region', { name: 'Trash' })
-	const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-	fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }))
-	expect(confirm).toHaveBeenCalledWith('Delete this snapshot forever? This cannot be undone.')
+	const trashed = await screen.findByRole('region', { name: 'Trash' })
+	const opener = within(trashed).getByRole('button', { name: 'Delete forever' })
+	// The gallery's own panel asks, never the browser's confirm box; Cancel, Escape and the veil leave the capture.
+	opener.focus()
+	fireEvent.click(opener)
+	const ask = screen.getByRole('alertdialog', { name: 'Delete Cabin forever?' })
+	expect(ask.getAttribute('aria-describedby')).toBe('gallery-confirm-note')
+	expect(within(ask).getByText('This cannot be undone.')).toBeTruthy()
+	expect(document.activeElement).toBe(ask)
+	fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }))
+	expect(screen.queryByRole('alertdialog')).toBeNull()
+	expect(document.activeElement).toBe(opener)
+	fireEvent.click(opener)
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.queryByRole('alertdialog')).toBeNull()
+	fireEvent.click(opener)
+	fireEvent.click(document.querySelector('.gallery-backdrop-hit') as HTMLElement)
+	expect(screen.queryByRole('alertdialog')).toBeNull()
 	expect(mocks.remove).not.toHaveBeenCalled()
-	confirm.mockReturnValue(true)
-	fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }))
+	fireEvent.click(opener)
+	fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete forever' }))
+	expect(screen.queryByRole('alertdialog')).toBeNull()
 	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
-	expect(mocks.remove).toHaveBeenCalledWith({ id: 'one' })
+	expect(mocks.remove).toHaveBeenCalledExactlyOnceWith({ id: 'one' })
+	expect(mocks.notify).toHaveBeenCalledWith('Snapshot deleted forever.')
+	expect(confirm).not.toHaveBeenCalled()
+})
+test('delete forever answers at once, holds the card buttons and drops the card before the lists reload', async () => {
+	trash = [
+		{ ...capture(), deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 86400000).toISOString() },
+		{
+			...capture('two', 'Tower'),
+			deletedAt: new Date().toISOString(),
+			purgeAt: new Date(Date.now() + 86400000).toISOString(),
+		},
+	]
+	memories = []
+	page()
+	const bin = await screen.findByRole('region', { name: 'Trash' })
+	const erasing = deferred<void>()
+	mocks.remove.mockImplementationOnce(async ({ id }) => {
+		await erasing.promise
+		trash = trash.filter(m => m.id !== id)
+	})
+	const cabin = () => within(bin).getByRole('heading', { name: 'Cabin' }).closest('article') as HTMLElement
+	fireEvent.click(within(cabin()).getByRole('button', { name: 'Delete forever' }))
+	fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete forever' }))
+	// The opener is now disabled, so focus lands on the trash heading rather than on the page body.
+	expect(document.activeElement).toBe(within(bin).getByRole('heading', { level: 2 }))
+	// While the server erases the file, the card says so and both of its actions wait.
+	const busy = within(cabin()).getByRole('button', { name: 'Deleting…' }) as HTMLButtonElement
+	expect(busy.disabled).toBe(true)
+	expect((within(cabin()).getByRole('button', { name: '↩ Restore' }) as HTMLButtonElement).disabled).toBe(true)
+	expect(cabin().getAttribute('aria-busy')).toBe('true')
+	expect(cabin().classList.contains('is-deleting')).toBe(true)
+	expect(mocks.remove).toHaveBeenCalledTimes(1)
+	// The other card stays usable.
+	const tower = within(bin).getByRole('heading', { name: 'Tower' }).closest('article') as HTMLElement
+	expect((within(tower).getByRole('button', { name: 'Delete forever' }) as HTMLButtonElement).disabled).toBe(false)
+	// A reload that starts while the server erases (the Refresh button here) and answers late with the old list must
+	// neither hold the card back nor bring it back.
+	const stale = deferred<typeof trash>()
+	const before = structuredClone(trash)
+	mocks.trashList.mockImplementationOnce(() => stale.promise)
+	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+	// The reload after the deletion is slow too: the card leaves before it answers.
+	const after = deferred<typeof trash>()
+	mocks.trashList.mockImplementationOnce(() => after.promise)
+	await act(async () => {
+		erasing.resolve()
+		await erasing.promise
+	})
+	await waitFor(() => expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull())
+	expect(within(bin).getByRole('heading', { name: 'Tower' })).toBeTruthy()
+	expect(mocks.notify).toHaveBeenCalledWith('Snapshot deleted forever.')
+	await act(async () => {
+		stale.resolve(before)
+		await stale.promise
+	})
+	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
+	expect(within(bin).getByRole('heading', { name: 'Tower' })).toBeTruthy()
+	await act(async () => {
+		after.resolve(structuredClone(trash))
+		await after.promise
+	})
+	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
+	expect(mocks.trashList).toHaveBeenCalledTimes(3)
+})
+test('the confirmation closes by itself when its snapshot leaves the trash elsewhere, without deleting anything', async () => {
+	const stamp = { deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 86400000).toISOString() }
+	trash = [
+		{ ...capture(), ...stamp },
+		{ ...capture('two', 'Tower'), ...stamp },
+	]
+	memories = []
+	page()
+	const bin = await screen.findByRole('region', { name: 'Trash' })
+	const cabin = within(bin).getByRole('heading', { name: 'Cabin' }).closest('article') as HTMLElement
+	fireEvent.click(within(cabin).getByRole('button', { name: 'Delete forever' }))
+	expect(screen.getByRole('alertdialog', { name: 'Delete Cabin forever?' })).toBeTruthy()
+	// Restored from another device: the next refresh no longer lists it in the trash.
+	trash = trash.filter(item => item.id !== 'one')
+	memories = [capture()]
+	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+	await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
+	expect(mocks.remove).not.toHaveBeenCalled()
 })
 test.each(['trash', 'restore', 'remove'] as const)(
 	'a failed %s action keeps the capture available and supports retry',
@@ -175,7 +274,6 @@ test.each(['trash', 'restore', 'remove'] as const)(
 			memories = []
 		}
 		mocks[action].mockRejectedValueOnce(new Error('fixture network unavailable'))
-		vi.spyOn(window, 'confirm').mockReturnValue(true)
 		page()
 		if (action === 'trash') await expand()
 		else await screen.findByRole('region', { name: 'Trash' })
@@ -183,10 +281,18 @@ test.each(['trash', 'restore', 'remove'] as const)(
 			screen.getByRole('button', {
 				name: { trash: 'Move Cabin to trash', restore: '↩ Restore', remove: 'Delete forever' }[action],
 			})
-		fireEvent.click(button())
+		// Deleting for good goes through the gallery's confirmation panel each time.
+		const press = () => {
+			fireEvent.click(button())
+			const ask = screen.queryByRole('alertdialog')
+			if (ask) fireEvent.click(within(ask).getByRole('button', { name: 'Delete forever' }))
+		}
+		press()
 		await screen.findByRole('alert')
 		expect(screen.getByRole('heading', { name: 'Cabin' })).toBeTruthy()
-		fireEvent.click(button())
+		// A failed deletion gives the card its actions back for a retry.
+		await waitFor(() => expect((button() as HTMLButtonElement).disabled).toBe(false))
+		press()
 		await waitFor(() => expect(mocks[action]).toHaveBeenCalledTimes(2))
 	}
 )
@@ -202,10 +308,10 @@ test('snapshot renaming keeps a cancelled draft, discards it on request, trims, 
 	// A trailing space is typed as is, but it is no change worth a draft.
 	fireEvent.change(field, { target: { value: 'Cabin ' } })
 	expect(field.value).toBe('Cabin ')
-	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+	expect(screen.queryByText('Draft, not saved yet')).toBeNull()
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 	fireEvent.change(field, { target: { value: 'Discarded' } })
-	expect(screen.getByText('Draft — not saved yet')).toBeTruthy()
+	expect(screen.getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 	expect(mocks.rename).not.toHaveBeenCalled()
 	expect(screen.getByRole('heading', { name: 'Cabin' })).toBeTruthy()
@@ -221,7 +327,7 @@ test('snapshot renaming keeps a cancelled draft, discards it on request, trims, 
 	fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }))
 	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Cabin')
 	expect(document.activeElement).toBe(screen.getByLabelText('Snapshot name'))
-	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+	expect(screen.queryByText('Draft, not saved yet')).toBeNull()
 	// Enter on an unchanged name only closes the field.
 	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
 	expect(screen.queryByLabelText('Snapshot name')).toBeNull()
@@ -268,7 +374,7 @@ test('an unsaved area name survives leaving the gallery and is restored when edi
 	expect(screen.getByText('Draft')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
 	expect(screen.getByLabelText('Stack name')).toHaveProperty('value', 'Half typed')
-	expect(screen.getByText('Draft — not saved yet')).toBeTruthy()
+	expect(screen.getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'Typed in full' } })
 	fireEvent.keyDown(screen.getByLabelText('Stack name'), { key: 'Enter' })
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
@@ -523,7 +629,7 @@ test('a saved snapshot name shows at once, before the refreshed list brings it b
 	expect(screen.queryByText('Cabin')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Shed' }))
 	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Shed')
-	expect(screen.queryByText('Draft — not saved yet')).toBeNull()
+	expect(screen.queryByText('Draft, not saved yet')).toBeNull()
 })
 test('the server name keeps its draft across closing the sheet, can discard it, and confirms a save', async () => {
 	page()
@@ -531,7 +637,7 @@ test('the server name keeps its draft across closing the sheet, can discard it, 
 	let sheet = screen.getByRole('dialog', { name: 'World' })
 	expect(within(sheet).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
 	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends' } })
-	expect(within(sheet).getByText('Draft — not saved yet')).toBeTruthy()
+	expect(within(sheet).getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(screen.queryByRole('dialog')).toBeNull()
 	expect(screen.getByRole('heading', { level: 3, name: 'World' })).toBeTruthy()
@@ -543,10 +649,10 @@ test('the server name keeps its draft across closing the sheet, can discard it, 
 	fireEvent.click(screen.getByRole('button', { name: 'Rename World' }))
 	sheet = screen.getByRole('dialog', { name: 'World' })
 	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'Friends')
-	expect(within(sheet).getByText('Draft — not saved yet')).toBeTruthy()
+	expect(within(sheet).getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.click(within(sheet).getByRole('button', { name: 'Discard draft' }))
 	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'World')
-	expect(within(sheet).queryByText('Draft — not saved yet')).toBeNull()
+	expect(within(sheet).queryByText('Draft, not saved yet')).toBeNull()
 
 	// An empty name saves nothing, neither from the button nor from Enter.
 	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: '  ' } })
@@ -557,7 +663,7 @@ test('the server name keeps its draft across closing the sheet, can discard it, 
 	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
 	expect(screen.getByRole('dialog', { name: 'Friends SMP' })).toBeTruthy()
 	expect(within(sheet).getByRole('status').textContent).toBe('Saved')
-	expect(within(sheet).queryByText('Draft — not saved yet')).toBeNull()
+	expect(within(sheet).queryByText('Draft, not saved yet')).toBeNull()
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(screen.getByRole('heading', { level: 3, name: 'Friends SMP' })).toBeTruthy()

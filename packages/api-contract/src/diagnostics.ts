@@ -15,7 +15,9 @@ export const diagnosticStep = z.enum([
 	'capture_failed',
 	'upload_requested',
 	'upload_started',
+	'upload_session',
 	'upload_chunk',
+	'upload_completing',
 	'upload_completed',
 	'upload_failed',
 	'pairing_started',
@@ -29,6 +31,43 @@ const version = z
 	.min(1)
 	.max(64)
 	.regex(/^[A-Za-z0-9][A-Za-z0-9._+-]*$/)
+const code = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/)
+export const MAX_FRAMES = 24
+export const MAX_BREADCRUMBS = 16
+const javaType = z.string().min(1).max(160).regex(javaClass)
+/** Request kinds of the chunked upload protocol; the HTTP error body is reduced to its `error` code. */
+export const diagnosticHttp = z.strictObject({
+	request: z.enum(['initialize', 'chunk', 'complete']),
+	attempts: z.number().int().min(1).max(3),
+	status: z.number().int().min(100).max(599).optional(),
+	error: code.optional(),
+	retryAfterSeconds: z.number().int().min(0).max(86_400).optional(),
+})
+/** Typed, bounded context only: never a message, a path, a name or a free-form string. */
+export const diagnosticContext = z.strictObject({
+	environment: z
+		.strictObject({
+			os: z.enum(['windows', 'macos', 'linux', 'other']),
+			arch: z.string().regex(/^[a-z0-9_-]{1,16}$/),
+			java: version,
+			maxMemoryMb: z.number().int().min(0).max(1_048_576),
+			processors: z.number().int().min(1).max(1024),
+		})
+		.optional(),
+	http: diagnosticHttp.optional(),
+	upload: z
+		.strictObject({
+			sizeBytes: z.number().int().min(0).max(10_000_000_000),
+			offsetBytes: z.number().int().min(0).max(10_000_000_000),
+			chunks: z.number().int().min(0).max(100_000),
+		})
+		.optional(),
+	/** Classified reason of the failure (e.g. `scratch_symlink`), set where the failure is raised. */
+	detail: code.optional(),
+	/** Types of the wrapping exceptions, outermost first, the root cause excluded. */
+	causes: z.array(javaType).max(6).optional(),
+})
+export type DiagnosticContext = z.infer<typeof diagnosticContext>
 export const diagnosticFrame = z.strictObject({
 	className: z.string().min(1).max(160).regex(javaClass),
 	methodName: z.string().min(1).max(80).regex(javaMethod),
@@ -44,7 +83,7 @@ export const diagnosticReport = z.strictObject({
 	correlationId: z.string().uuid(),
 	exception: z.strictObject({
 		type: z.string().min(1).max(160).regex(javaClass),
-		frames: z.array(diagnosticFrame).max(12),
+		frames: z.array(diagnosticFrame).max(MAX_FRAMES),
 	}),
 	breadcrumbs: z
 		.array(
@@ -53,7 +92,8 @@ export const diagnosticReport = z.strictObject({
 				elapsedMs: z.number().int().min(0).max(86_400_000),
 			})
 		)
-		.max(8),
+		.max(MAX_BREADCRUMBS),
+	context: diagnosticContext.optional(),
 })
 export const diagnosticSubmission = z.strictObject({ consent: z.literal(true), report: diagnosticReport })
 export type ModDiagnostic = z.infer<typeof diagnosticReport>
@@ -79,9 +119,11 @@ export const apiDiagnosticReport = z.strictObject({
 					lineNumber: z.number().int().min(0).max(10_000_000).optional(),
 				})
 			)
-			.max(12),
+			.max(MAX_FRAMES),
 	}),
 	breadcrumbs: z.tuple([]),
+	/** What the API refused: the route and the HTTP status/error code, never the request content. */
+	context: z.strictObject({ http: diagnosticHttp.omit({ attempts: true, retryAfterSeconds: true }) }).optional(),
 })
 export type ApiDiagnostic = z.infer<typeof apiDiagnosticReport>
 export const storedDiagnostic = z.discriminatedUnion('source', [diagnosticReport, apiDiagnosticReport])

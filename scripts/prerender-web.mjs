@@ -26,9 +26,13 @@ export async function prerenderWeb(directory, entry) {
 		throw new Error('VITE_SITE_URL must be an HTTP(S) origin.')
 	const indexable = process.env.VITE_INDEXABLE === 'true'
 	// The link preview (og:image, twitter:image) is the same image on every page, with an absolute URL from the site's origin.
+	// Its text (og:title, og:description) is in English on every page (`ogTitle` / `ogDescription`), the page itself stays French.
 	const socialTags = socialImage
 		? `<meta property="og:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" /><meta property="og:image:width" content="${socialImage.width}" /><meta property="og:image:height" content="${socialImage.height}" /><meta property="og:image:alt" content="${escapeHtml(socialImage.alt)}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" />`
 		: ''
+	/** A public page's canonical URL, link preview (in English: `ogTitle` / `ogDescription`) and JSON-LD. */
+	const previewHead = (page, canonical) =>
+		`<link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:site_name" content="Minemories" /><meta property="og:title" content="${escapeHtml(page.ogTitle ?? page.title)}" /><meta property="og:description" content="${escapeHtml(page.ogDescription ?? page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="en_US" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
 	// Every indexable page names its own last change (route-metadata `updated`): the sitemap's lastmod.
 	const undated = publicMetadata.filter(page => page.indexable && !page.updated).map(page => page.path)
 	if (undated.length) throw new Error(`Indexable pages without an updated date: ${undated.join(', ')}`)
@@ -37,9 +41,7 @@ export async function prerenderWeb(directory, entry) {
 		publicMetadata.map(async page => {
 			const canonical = new URL(page.path, origin).href
 			// A page kept out of search results carries no canonical, link preview or JSON-LD, as in the client head (RouteMetadata).
-			const head = page.indexable
-				? `<link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:site_name" content="Minemories" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="fr_FR" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
-				: ''
+			const head = page.indexable ? previewHead(page, canonical) : ''
 			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" />${head}`
 			const html = (page.path === '/' ? template : withoutBootScreen(template))
 				.replace(htmlLanguagePattern, '<html lang="fr">')
@@ -74,7 +76,7 @@ export async function prerenderWeb(directory, entry) {
 	)
 	// The private shell answers every private route, but only /share and /public links get pasted where a preview is
 	// drawn: it carries their neutral card (no canonical or og:url, since one file serves many URLs).
-	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.description)}" /><meta property="og:locale" content="fr_FR" />${socialTags}`
+	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.ogTitle ?? appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.ogDescription ?? appShell.description)}" /><meta property="og:locale" content="en_US" />${socialTags}`
 	// The app fallback serves the viewers (nginx: /viewer, /share, /public) as well as the gallery or the account: it keeps the loading screen, whose
 	// inline script plays it on a viewer until its 3D scene is drawn and drops it at once everywhere else (bootRoute, scripts/boot-screen/chunk-screen.mjs).
 	const fallback = template

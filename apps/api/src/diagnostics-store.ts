@@ -157,6 +157,11 @@ export class DiagnosticsStore {
 					...report.exception.frames
 						.slice(0, 5)
 						.map(frame => [frame.className, frame.methodName, frame.fileName, frame.lineNumber]),
+					// Only reports that carry them are split by refusal and failure reason: older ones keep their fingerprint.
+					...(report.context?.http
+						? [[report.context.http.request, report.context.http.status, report.context.http.error]]
+						: []),
+					...(report.source === 'mod' && report.context?.detail ? [[report.context.detail]] : []),
 				])
 			)
 			.digest('hex')

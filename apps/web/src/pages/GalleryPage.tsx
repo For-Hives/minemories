@@ -1,5 +1,5 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
@@ -25,8 +25,9 @@ import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
 import './gallery-storage.css'
 import { AreaCard, TrashCard } from './GalleryCards'
+import { ConfirmDelete } from './GalleryConfirm'
 import { GalleryPairingCard } from './GalleryPairingCard'
-import { type Memories, type Storage, useGalleryData } from './gallery-data'
+import { type Memories, type Storage, type TrashMemories, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
 import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
@@ -113,6 +114,7 @@ export function GalleryPage() {
 		trashSnapshot,
 		restoreSnapshot,
 		deleteSnapshot,
+		deleting,
 	} = useGalleryData(notify)
 	const pairing = useGalleryPairing(notify, setLoadError)
 	const { createPairing } = pairing
@@ -155,29 +157,78 @@ export function GalleryPage() {
 					/>
 				)}
 				{!loading && trash.length > 0 && (
-					<section className="gallery-trash" aria-label={t('Trash')}>
-						<div>
-							<h2>
-								<T message={'Trash ·'} /> {trash.length}
-							</h2>
-							<p className="gallery-trash-note">
-								<T message={'Snapshots disappear forever 30 days after deletion.'} />
-							</p>
-						</div>
-						<div className="gallery-trash-list">
-							{trash.map(item => (
-								<TrashCard
-									key={item.id}
-									item={item}
-									onRestore={() => void restoreSnapshot(item.id)}
-									onDelete={() => void deleteSnapshot(item.id)}
-								/>
-							))}
-						</div>
-					</section>
+					<TrashSection
+						trash={trash}
+						deleting={deleting}
+						onRestore={id => void restoreSnapshot(id)}
+						onDelete={id => void deleteSnapshot(id)}
+					/>
 				)}
 			</section>
 		</div>
+	)
+}
+
+/** The trash: each card restores or deletes for good, and deleting for good asks first in the gallery's own panel. */
+function TrashSection({
+	trash,
+	deleting,
+	onRestore,
+	onDelete,
+}: {
+	trash: TrashMemories
+	deleting: ReadonlySet<string>
+	onRestore(id: string): void
+	onDelete(id: string): void
+}) {
+	const { t } = useI18n()
+	const [askingId, setAskingId] = useState<string | null>(null)
+	// Read from the live list: if the snapshot leaves the trash while the panel is open (restored or purged from another
+	// device, seen by the next refresh), the panel closes instead of deleting a capture that is no longer in the trash.
+	const asking = askingId === null ? undefined : trash.find(item => item.id === askingId)
+	const heading = useRef<HTMLHeadingElement>(null)
+	const [confirmed, setConfirmed] = useState(0)
+	useEffect(() => {
+		if (askingId !== null && !asking) setAskingId(null)
+	}, [askingId, asking])
+	// After a confirmation the card's buttons are disabled and the card then leaves, so the panel cannot hand focus back
+	// to its opener: the trash heading takes it. This runs after the panel's own clean-up.
+	useEffect(() => {
+		if (confirmed > 0) heading.current?.focus()
+	}, [confirmed])
+	return (
+		<section className="gallery-trash" aria-label={t('Trash')}>
+			<div>
+				<h2 ref={heading} tabIndex={-1}>
+					<T message={'Trash ·'} /> {trash.length}
+				</h2>
+				<p className="gallery-trash-note">
+					<T message={'Snapshots disappear forever 30 days after deletion.'} />
+				</p>
+			</div>
+			<div className="gallery-trash-list">
+				{trash.map(item => (
+					<TrashCard
+						key={item.id}
+						item={item}
+						deleting={deleting.has(item.id)}
+						onRestore={() => onRestore(item.id)}
+						onDelete={() => setAskingId(item.id)}
+					/>
+				))}
+			</div>
+			{asking && (
+				<ConfirmDelete
+					name={asking.name}
+					onCancel={() => setAskingId(null)}
+					onConfirm={() => {
+						setAskingId(null)
+						setConfirmed(count => count + 1)
+						onDelete(asking.id)
+					}}
+				/>
+			)}
+		</section>
 	)
 }
 

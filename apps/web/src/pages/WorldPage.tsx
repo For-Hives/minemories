@@ -367,7 +367,7 @@ const statusLabels: Record<FrameStatus, string> = {
 	waiting: 'Waiting',
 	loading: 'Loading…',
 	ready: 'Loaded',
-	archived: 'Archived — open it alone to restore it',
+	archived: 'Archived: open it alone to restore it',
 	failed: 'Could not load',
 	skipped: 'Not loaded',
 }

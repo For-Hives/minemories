@@ -133,7 +133,7 @@ test('every public page carries the link preview image as an absolute URL from t
 		assert.ok(html.includes('<meta property="og:image:width" content="1200" />'))
 		assert.ok(html.includes('<meta property="og:image:height" content="630" />'))
 		assert.ok(html.includes('<meta property="og:image:alt" content="Minemories &amp; co" />'))
-		assert.ok(html.includes('<meta property="og:locale" content="fr_FR" />'), 'pages are written in French')
+		assert.ok(html.includes('<meta property="og:locale" content="en_US" />'), 'link previews are in English')
 		assert.ok(html.includes('<meta name="twitter:card" content="summary_large_image" />'))
 		assert.ok(html.includes('<meta name="twitter:image" content="https://example.org/brand/og-image.png" />'))
 	}
@@ -142,6 +142,39 @@ test('every public page carries the link preview image as an absolute URL from t
 	await prerenderWeb(directory, entry)
 	assert.ok(!(await readFile(join(directory, 'index.html'), 'utf8')).includes('og:image'))
 })
+test('link previews are in English while the page and its title stay French', async t => {
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-prerender-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	await writeFile(join(directory, 'index.html'), template)
+	await prerenderWeb(directory, {
+		...entry,
+		publicMetadata: [
+			{
+				path: '/faq',
+				title: 'Questions fréquentes',
+				description: 'Réponses',
+				ogTitle: 'Frequently asked questions',
+				ogDescription: 'Answers',
+				indexable: true,
+				updated: '2026-11-12',
+			},
+		],
+		appShell: { title: 'Un lieu', description: 'Ouvre-le', ogTitle: 'A place', ogDescription: 'Open it' },
+	})
+	const faq = await readFile(join(directory, 'faq/index.html'), 'utf8')
+	assert.ok(faq.includes('<html lang="fr">'))
+	assert.ok(faq.includes('<title>Questions fréquentes</title>'))
+	assert.ok(faq.includes('<meta name="description" content="Réponses" />'))
+	assert.ok(faq.includes('<meta property="og:title" content="Frequently asked questions" />'))
+	assert.ok(faq.includes('<meta property="og:description" content="Answers" />'))
+	assert.ok(faq.includes('<meta property="og:locale" content="en_US" />'))
+	const shell = await readFile(join(directory, 'app.html'), 'utf8')
+	assert.ok(shell.includes('<title>Un lieu</title>'))
+	assert.ok(shell.includes('<meta property="og:title" content="A place" />'))
+	assert.ok(shell.includes('<meta property="og:description" content="Open it" />'))
+	assert.ok(shell.includes('<meta property="og:locale" content="en_US" />'))
+})
+
 test('the landing and the app fallback (the viewers) keep the loading screen: every other page and the 404 drop its three blocks', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-boot-screen-'))
 	t.after(() => rm(directory, { recursive: true, force: true }))

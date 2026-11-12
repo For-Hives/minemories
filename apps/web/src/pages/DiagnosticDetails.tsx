@@ -48,10 +48,16 @@ function Report({ item }: { item: DiagnosticDetail['items'][number] }) {
 			) : (
 				<p>{t('No permitted stack frame available.')}</p>
 			)}
+			{report.context ? (
+				<details>
+					<summary>{t('Failure context')}</summary>
+					<pre>{JSON.stringify(report.context, null, 2)}</pre>
+				</details>
+			) : null}
 			<details>
 				<summary>{t('Steps before the error')}</summary>
 				{report.breadcrumbs.length ? (
-					<pre>{report.breadcrumbs.map(step => `${step.elapsedMs} ms — ${step.step}`).join('\n')}</pre>
+					<pre>{report.breadcrumbs.map(step => `${step.elapsedMs} ms: ${step.step}`).join('\n')}</pre>
 				) : (
 					<p>{t('No recorded steps.')}</p>
 				)}
