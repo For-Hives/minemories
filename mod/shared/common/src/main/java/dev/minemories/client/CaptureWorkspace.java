@@ -39,8 +39,8 @@ final class CaptureWorkspace implements AutoCloseable {
 
   private record Owned(Path path, Object identity, boolean directory) {}
 
-  CaptureWorkspace(Path parent) throws IOException {
-    Files.createDirectories(parent);
+  CaptureWorkspace(Path requested) throws IOException {
+    Path parent = realParent(requested);
     requireDirectory(parent);
     directory = parent.resolve(".minemories-work-" + UUID.randomUUID());
     try {
@@ -86,9 +86,10 @@ final class CaptureWorkspace implements AutoCloseable {
     return directory;
   }
 
-  static int cleanupAbandoned(Path parent, int maximum) throws IOException {
+  static int cleanupAbandoned(Path requested, int maximum) throws IOException {
     if (maximum < 1 || maximum > 64) throw new IllegalArgumentException("Invalid cleanup budget");
-    if (!Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) return 0;
+    if (!Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) return 0;
+    Path parent = Files.isSymbolicLink(requested) ? requested.toRealPath() : requested;
     requireDirectory(parent);
     int inspected = 0, cleaned = 0, entries = 0;
     try (var paths = Files.newDirectoryStream(parent)) {
@@ -201,11 +202,42 @@ final class CaptureWorkspace implements AutoCloseable {
     return Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
   }
 
+  /** A scratch directory refusal that names its reason with a fixed code for diagnostics. */
+  static final class ScratchException extends IOException implements DiagnosticReport.Detailed {
+    private static final long serialVersionUID = 1L;
+    private final String detail;
+
+    ScratchException(String detail) {
+      super("Invalid scratch directory");
+      this.detail = detail;
+    }
+
+    @Override
+    public String diagnosticDetail() {
+      return detail;
+    }
+  }
+
+  /**
+   * A real directory, never a link. Some file systems (network shares, cloud-synced folders) have
+   * no file key: the replacement check then compares nothing rather than refusing every capture.
+   */
   private static BasicFileAttributes requireDirectory(Path path) throws IOException {
     var attributes = attributes(path);
-    if (!attributes.isDirectory() || attributes.fileKey() == null)
-      throw new IOException("Invalid scratch directory");
+    if (attributes.isSymbolicLink()) throw new ScratchException("scratch_symlink");
+    if (attributes.isOther()) throw new ScratchException("scratch_reparse_point");
+    if (!attributes.isDirectory()) throw new ScratchException("scratch_not_directory");
     return attributes;
+  }
+
+  /** The export folder may itself be a link (a redirected or synced folder): work in its target. */
+  private static Path realParent(Path parent) throws IOException {
+    try {
+      Files.createDirectories(parent);
+    } catch (java.nio.file.FileAlreadyExistsException exists) {
+      throw new ScratchException("scratch_not_directory");
+    }
+    return Files.isSymbolicLink(parent) ? parent.toRealPath() : parent;
   }
 
   private static void requireIdentity(Path path, Object identity) throws IOException {

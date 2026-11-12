@@ -481,6 +481,7 @@
 	"Status not saved. Refresh and try again.": "상태가 저장되지 않았습니다. 새로고침하고 다시 시도하세요.",
 	"Step inside the memory": "기억 속으로 들어가 보세요",
 	"Steps before the error": "오류 전 단계",
+	"Failure context": "오류 컨텍스트",
 	"Stop sharing": "공유 중지",
 	"Storage": "저장",
 	"Storage information is unavailable. Your captures remain accessible.": "저장소 정보를 사용할 수 없습니다. 캡처한 내용은 계속 액세스할 수 있습니다.",

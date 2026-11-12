@@ -14,6 +14,24 @@ class CaptureWorkspaceTest {
   @TempDir Path parent;
 
   @Test
+  void aLinkedExportFolderIsFollowedInsteadOfRefused() throws Exception {
+    Path real = Files.createDirectory(parent.resolve("real"));
+    Path link = Files.createSymbolicLink(parent.resolve("link"), real);
+    try (var workspace = new CaptureWorkspace(link)) {
+      assertEquals(real.toRealPath(), workspace.directory().getParent().toRealPath());
+    }
+    assertEquals(0, CaptureWorkspace.cleanupAbandoned(link, 1));
+  }
+
+  @Test
+  void aScratchEntryThatIsNotARealDirectoryNamesItsReasonForDiagnostics() throws Exception {
+    Path file = Files.writeString(parent.resolve("file"), "x");
+    var error =
+        assertThrows(CaptureWorkspace.ScratchException.class, () -> new CaptureWorkspace(file));
+    assertEquals("scratch_not_directory", error.diagnosticDetail());
+  }
+
+  @Test
   void aRealAbruptProcessExitLeavesSpoolFilesThatAreReclaimedWithoutTouchingHistory()
       throws Exception {
     Path complete = parent.resolve("capture.glb");

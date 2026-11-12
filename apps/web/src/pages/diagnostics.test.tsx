@@ -41,6 +41,7 @@ const issue: DiagnosticIssue = {
 			{ step: 'capture_started', elapsedMs: 0 },
 			{ step: 'client_crashed', elapsedMs: 500 },
 		],
+		context: { http: { request: 'complete', attempts: 1, status: 400, error: 'invalid_glb_or_checksum' } },
 	},
 }
 const detail: DiagnosticDetail = {
@@ -89,6 +90,7 @@ test('loads grouped crashes, details and breadcrumbs; closes with focus returned
 	fireEvent.click(open)
 	await screen.findByText('dev.minemories.neoforge.Minemories.export (Minemories.java:100)')
 	expect(screen.getByText(/500 ms: client_crashed/)).toBeTruthy()
+	expect(screen.getByText(/invalid_glb_or_checksum/)).toBeTruthy()
 	expect(document.activeElement?.id).toBe('diagnostic-detail-title')
 	fireEvent.click(screen.getByRole('button', { name: 'Fermer les détails' }))
 	expect(screen.queryByRole('heading', { name: 'Détail de l’erreur' })).toBeNull()

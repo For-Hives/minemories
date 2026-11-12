@@ -12,8 +12,8 @@ import java.util.regex.Pattern;
 
 /** Sanitized failure data. The sender must separately enforce current pairing and consent. */
 final class DiagnosticReport {
-  static final int MAX_FRAMES = 12;
-  static final int MAX_BREADCRUMBS = 8;
+  static final int MAX_FRAMES = 24;
+  static final int MAX_BREADCRUMBS = 16;
   static final long MAX_ELAPSED_MILLIS = 86_400_000;
   private static final int MAX_INSPECTED_FRAMES = 128;
   private static final int MAX_LINE_NUMBER = 10_000_000;
@@ -58,7 +58,9 @@ final class DiagnosticReport {
     CAPTURE_FAILED("capture_failed"),
     UPLOAD_REQUESTED("upload_requested"),
     UPLOAD_STARTED("upload_started"),
+    UPLOAD_SESSION("upload_session"),
     UPLOAD_CHUNK("upload_chunk"),
+    UPLOAD_COMPLETING("upload_completing"),
     UPLOAD_COMPLETED("upload_completed"),
     UPLOAD_FAILED("upload_failed"),
     PAIRING_STARTED("pairing_started"),
@@ -89,6 +91,79 @@ final class DiagnosticReport {
     }
   }
 
+  /** A failure that names its own reason with a fixed code (never a message). */
+  interface Detailed {
+    String diagnosticDetail();
+  }
+
+  private static final Pattern CODE = Pattern.compile("[a-z][a-z0-9_]{0,63}");
+  private static final Pattern ARCH = Pattern.compile("[a-z0-9_-]{1,16}");
+
+  /** The last HTTP exchange of an upload: its kind, the attempts made and what the API answered. */
+  record Http(String request, int attempts, int status, String error, long retryAfterSeconds) {
+    Http {
+      if (!List.of("initialize", "chunk", "complete").contains(request))
+        throw new IllegalArgumentException("request");
+      attempts = Math.max(1, Math.min(3, attempts));
+      status = status >= 100 && status <= 599 ? status : 0;
+      error = error != null && CODE.matcher(error).matches() ? error : null;
+      retryAfterSeconds = retryAfterSeconds < 0 ? -1 : Math.min(86_400, retryAfterSeconds);
+    }
+  }
+
+  record Upload(long sizeBytes, long offsetBytes, int chunks) {
+    Upload {
+      sizeBytes = Math.max(0, Math.min(10_000_000_000L, sizeBytes));
+      offsetBytes = Math.max(0, Math.min(10_000_000_000L, offsetBytes));
+      chunks = Math.max(0, Math.min(100_000, chunks));
+    }
+  }
+
+  record Environment(String os, String arch, String javaVersion, long maxMemoryMb, int processors) {
+    static Environment current() {
+      String name =
+          String.valueOf(System.getProperty("os.name")).toLowerCase(java.util.Locale.ROOT);
+      String os =
+          name.startsWith("windows")
+              ? "windows"
+              : name.startsWith("mac") ? "macos" : name.startsWith("linux") ? "linux" : "other";
+      String arch =
+          String.valueOf(System.getProperty("os.arch")).toLowerCase(java.util.Locale.ROOT);
+      Runtime runtime = Runtime.getRuntime();
+      return new Environment(
+          os,
+          ARCH.matcher(arch).matches() ? arch : "other",
+          safeVersion(System.getProperty("java.version")),
+          Math.min(1_048_576, runtime.maxMemory() / (1024 * 1024)),
+          Math.max(1, Math.min(1024, runtime.availableProcessors())));
+    }
+  }
+
+  /**
+   * Typed context of a failure. Every field is optional and bounded; none is a free-form string.
+   */
+  record Context(
+      Environment environment, Http http, Upload upload, String detail, List<String> causes) {
+    static final Context EMPTY = new Context(null, null, null, null, List.of());
+
+    Context {
+      detail = detail != null && CODE.matcher(detail).matches() ? detail : null;
+      causes = List.copyOf(causes);
+    }
+
+    Context withHttp(Http value) {
+      return new Context(environment, value, upload, detail, causes);
+    }
+
+    Context withUpload(Upload value) {
+      return new Context(environment, http, value, detail, causes);
+    }
+
+    Context withDetail(String value) {
+      return new Context(environment, http, upload, value, causes);
+    }
+  }
+
   private record Frame(String className, String methodName, String fileName, Integer lineNumber) {}
 
   private record ExceptionData(String type, List<Frame> frames) {
@@ -104,13 +179,15 @@ final class DiagnosticReport {
   private final UUID correlationId;
   private final ExceptionData exception;
   private final List<Breadcrumb> breadcrumbs;
+  private final Context context;
 
   private DiagnosticReport(
       Phase phase,
       Versions versions,
       UUID correlationId,
       ExceptionData exception,
-      List<Breadcrumb> breadcrumbs) {
+      List<Breadcrumb> breadcrumbs,
+      Context context) {
     id = UUID.randomUUID();
     occurredAt = Instant.now();
     this.phase = Objects.requireNonNull(phase, "phase");
@@ -118,6 +195,7 @@ final class DiagnosticReport {
     this.correlationId = Objects.requireNonNull(correlationId, "correlationId");
     this.exception = exception;
     this.breadcrumbs = List.copyOf(breadcrumbs);
+    this.context = Objects.requireNonNull(context, "context");
   }
 
   static DiagnosticReport create(
@@ -126,12 +204,69 @@ final class DiagnosticReport {
       UUID correlationId,
       Throwable error,
       List<Breadcrumb> breadcrumbs) {
+    return create(phase, versions, correlationId, error, breadcrumbs, Context.EMPTY);
+  }
+
+  /** The context the operation collected is completed with the environment and the cause chain. */
+  static DiagnosticReport create(
+      Phase phase,
+      Versions versions,
+      UUID correlationId,
+      Throwable error,
+      List<Breadcrumb> breadcrumbs,
+      Context collected) {
+    String detail = collected.detail();
+    if (detail == null) detail = detailOf(error);
+    Context context =
+        new Context(
+            Environment.current(), collected.http(), collected.upload(), detail, causes(error));
     return new DiagnosticReport(
         phase,
         versions,
         correlationId,
         sanitizeException(rootCause(error)),
-        recentBreadcrumbs(breadcrumbs));
+        recentBreadcrumbs(breadcrumbs),
+        context);
+  }
+
+  private static String detailOf(Throwable error) {
+    Throwable current = error;
+    for (int index = 0; current != null && index < 8; index++) {
+      if (current instanceof Detailed detailed) {
+        try {
+          return detailed.diagnosticDetail();
+        } catch (RuntimeException ignored) {
+          return null;
+        }
+      }
+      try {
+        current = current.getCause();
+      } catch (Throwable ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /** Types of the exceptions wrapped around the root cause, outermost first. */
+  private static List<String> causes(Throwable error) {
+    List<String> types = new ArrayList<>();
+    Throwable current = error;
+    var seen =
+        java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable, Boolean>());
+    for (int index = 0; current != null && index < 8 && seen.add(current); index++) {
+      Throwable cause;
+      try {
+        cause = current.getCause();
+      } catch (Throwable ignored) {
+        break;
+      }
+      if (cause == null || seen.contains(cause)) break;
+      if (types.size() < 6 && safeClassName(current.getClass().getName()))
+        types.add(current.getClass().getName());
+      current = cause;
+    }
+    return types;
   }
 
   /** Restore only typed fields; a modified local queue must never turn into a free-form upload. */
@@ -180,11 +315,81 @@ final class DiagnosticReport {
     }
     JsonObject restored =
         new DiagnosticReport(
-                phase, versions, correlation, new ExceptionData(type, frames), breadcrumbs)
+                phase,
+                versions,
+                correlation,
+                new ExceptionData(type, frames),
+                breadcrumbs,
+                restoreContext(report.get("context")))
             .payload();
     restored.getAsJsonObject("report").addProperty("id", id.toString());
     restored.getAsJsonObject("report").addProperty("occurredAt", occurred.toString());
     return restored;
+  }
+
+  /** Rebuilds the typed context; a part that does not validate is dropped, never forwarded. */
+  private static Context restoreContext(com.google.gson.JsonElement element) {
+    if (element == null || !element.isJsonObject()) return Context.EMPTY;
+    JsonObject json = element.getAsJsonObject();
+    Environment environment = null;
+    Http http = null;
+    Upload upload = null;
+    String detail = null;
+    List<String> causes = new ArrayList<>();
+    try {
+      if (json.has("environment")) {
+        JsonObject value = json.getAsJsonObject("environment");
+        String os = value.get("os").getAsString();
+        String arch = value.get("arch").getAsString();
+        if (List.of("windows", "macos", "linux", "other").contains(os)
+            && ARCH.matcher(arch).matches())
+          environment =
+              new Environment(
+                  os,
+                  arch,
+                  safeVersion(value.get("java").getAsString()),
+                  Math.max(0, Math.min(1_048_576, value.get("maxMemoryMb").getAsLong())),
+                  Math.max(1, Math.min(1024, value.get("processors").getAsInt())));
+      }
+    } catch (RuntimeException ignored) {
+      environment = null;
+    }
+    try {
+      if (json.has("http")) {
+        JsonObject value = json.getAsJsonObject("http");
+        http =
+            new Http(
+                value.get("request").getAsString(),
+                value.get("attempts").getAsInt(),
+                value.has("status") ? value.get("status").getAsInt() : 0,
+                value.has("error") ? value.get("error").getAsString() : null,
+                value.has("retryAfterSeconds") ? value.get("retryAfterSeconds").getAsLong() : -1);
+      }
+    } catch (RuntimeException ignored) {
+      http = null;
+    }
+    try {
+      if (json.has("upload")) {
+        JsonObject value = json.getAsJsonObject("upload");
+        upload =
+            new Upload(
+                value.get("sizeBytes").getAsLong(),
+                value.get("offsetBytes").getAsLong(),
+                value.get("chunks").getAsInt());
+      }
+    } catch (RuntimeException ignored) {
+      upload = null;
+    }
+    try {
+      if (json.has("detail")) detail = json.get("detail").getAsString();
+      if (json.has("causes"))
+        for (var value : json.getAsJsonArray("causes"))
+          if (causes.size() < 6 && safeClassName(value.getAsString()))
+            causes.add(value.getAsString());
+    } catch (RuntimeException ignored) {
+      causes.clear();
+    }
+    return new Context(environment, http, upload, detail, causes);
   }
 
   private static Throwable rootCause(Throwable error) {
@@ -237,10 +442,52 @@ final class DiagnosticReport {
       steps.add(json);
     }
     report.add("breadcrumbs", steps);
+    JsonObject contextJson = contextPayload();
+    if (contextJson.size() > 0) report.add("context", contextJson);
     JsonObject payload = new JsonObject();
     payload.addProperty("consent", true);
     payload.add("report", report);
     return payload;
+  }
+
+  private JsonObject contextPayload() {
+    JsonObject json = new JsonObject();
+    if (context.environment() != null) {
+      var value = context.environment();
+      JsonObject environment = new JsonObject();
+      environment.addProperty("os", value.os());
+      environment.addProperty("arch", value.arch());
+      environment.addProperty("java", value.javaVersion());
+      environment.addProperty("maxMemoryMb", value.maxMemoryMb());
+      environment.addProperty("processors", value.processors());
+      json.add("environment", environment);
+    }
+    if (context.http() != null) {
+      var value = context.http();
+      JsonObject http = new JsonObject();
+      http.addProperty("request", value.request());
+      http.addProperty("attempts", value.attempts());
+      if (value.status() != 0) http.addProperty("status", value.status());
+      if (value.error() != null) http.addProperty("error", value.error());
+      if (value.retryAfterSeconds() >= 0)
+        http.addProperty("retryAfterSeconds", value.retryAfterSeconds());
+      json.add("http", http);
+    }
+    if (context.upload() != null) {
+      var value = context.upload();
+      JsonObject upload = new JsonObject();
+      upload.addProperty("sizeBytes", value.sizeBytes());
+      upload.addProperty("offsetBytes", value.offsetBytes());
+      upload.addProperty("chunks", value.chunks());
+      json.add("upload", upload);
+    }
+    if (context.detail() != null) json.addProperty("detail", context.detail());
+    if (!context.causes().isEmpty()) {
+      JsonArray causes = new JsonArray();
+      for (String type : context.causes()) causes.add(type);
+      json.add("causes", causes);
+    }
+    return json;
   }
 
   private static ExceptionData sanitizeException(Throwable error) {
