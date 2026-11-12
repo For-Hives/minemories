@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { errorMessageKey } from '../i18n/error-messages'
-import { useI18n } from '../i18n/I18n'
 export type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 export type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
 export type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
@@ -68,7 +67,15 @@ function useGalleryLists() {
 		}
 	}, [])
 
-	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash }
+	/**
+	 * Takes a snapshot deleted for good out of the trash at once. The reload that follows starts a newer trash request, so
+	 * an older one answering late cannot bring it back.
+	 */
+	const dropFromTrash = useCallback((id: string) => {
+		setTrash(items => items.filter(item => item.id !== id))
+	}, [])
+
+	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash, dropFromTrash }
 }
 
 export function useLivePage() {
@@ -85,10 +92,21 @@ export function useLivePage() {
 function useTrashActions(
 	notify: (message: string) => void,
 	setLoadError: (message: string) => void,
-	refreshAll: () => Promise<void>
+	refreshAll: () => Promise<void>,
+	dropFromTrash: (id: string) => void
 ) {
 	const active = useLivePage()
-	const { t } = useI18n()
+	// Snapshots being deleted for good: their card shows it at once and its buttons wait while the server erases the
+	// file, which can take a few seconds for a large capture.
+	const [deleting, setDeleting] = useState<ReadonlySet<string>>(() => new Set())
+	function markDeleting(id: string, busy: boolean) {
+		setDeleting(current => {
+			const next = new Set(current)
+			if (busy) next.add(id)
+			else next.delete(id)
+			return next
+		})
+	}
 	async function trashSnapshot(id: string) {
 		try {
 			await apiClient.memories.trash({ id })
@@ -110,19 +128,24 @@ function useTrashActions(
 		}
 	}
 
+	/** Deletes a trashed snapshot for good. The caller has already asked the player (`ConfirmDelete`). */
 	async function deleteSnapshot(id: string) {
-		if (!window.confirm(t('Delete this snapshot forever? This cannot be undone.'))) return
+		markDeleting(id, true)
 		try {
 			await apiClient.memories.delete({ id })
 			if (!active.current) return
+			dropFromTrash(id)
 			notify('Snapshot deleted forever.')
-			await refreshAll()
+			// The card is already gone: the lists and the storage figure catch up without holding anything back.
+			void refreshAll()
 		} catch (error) {
 			if (active.current) setLoadError(errorMessageKey(error, 'Could not delete this snapshot.'))
+		} finally {
+			if (active.current) markDeleting(id, false)
 		}
 	}
 
-	return { trashSnapshot, restoreSnapshot, deleteSnapshot }
+	return { trashSnapshot, restoreSnapshot, deleteSnapshot, deleting }
 }
 
 export function useGalleryData(notify: (message: string) => void) {
@@ -146,6 +169,6 @@ export function useGalleryData(notify: (message: string) => void) {
 			window.clearTimeout(timer)
 		}
 	}, [refreshAll])
-	const actions = useTrashActions(notify, lists.setLoadError, refreshAll)
+	const actions = useTrashActions(notify, lists.setLoadError, refreshAll, lists.dropFromTrash)
 	return { ...lists, ...storage, ...actions, refreshAll }
 }
