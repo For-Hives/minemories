@@ -2,6 +2,7 @@ import gradleProperties from '../../../mod/1.21.1/gradle.properties?raw'
 import { faqGroups, faqText } from './content/faq'
 import { translate } from './i18n/catalog'
 import { resolveLocale } from './i18n/locales'
+import { discordInviteUrl } from './lib/discord'
 import { repositoryUrl } from './lib/repository'
 import { catalogLinks } from './pages/installation-loaders'
 import { type PageMetadata, siteOrigin } from './route-metadata'
@@ -75,7 +76,7 @@ export function structuredDataFor(page: PageMetadata, version = modVersion) {
 				...organization,
 				name: 'Minemories',
 				url: origin,
-				sameAs: [...catalogLinks().map(link => link.url), repositoryUrl],
+				sameAs: [...catalogLinks().map(link => link.url), repositoryUrl, discordInviteUrl],
 			}
 		)
 	// A guide sits one level under the home: its breadcrumb names both.

@@ -23,7 +23,7 @@ test('the public gallery, the legal page and the roadmap are prerendered but kep
 	}
 })
 
-test('the home page names the site and its organization, linked to CurseForge and GitHub only', () => {
+test('the home page names the site and its organization, linked to CurseForge, GitHub and Discord only', () => {
 	const website = ofType('/', 'WebSite')
 	const organization = ofType('/', 'Organization')
 	expect(website).toMatchObject({ '@id': 'https://minemories.net/#website', name: 'Minemories', inLanguage: 'fr' })
@@ -32,6 +32,7 @@ test('the home page names the site and its organization, linked to CurseForge an
 	expect(organization?.sameAs).toEqual([
 		'https://www.curseforge.com/minecraft/mc-mods/minemories',
 		'https://github.com/For-Hives/minemories',
+		'https://discord.gg/2tNxrUHDDD',
 	])
 	expect(JSON.stringify(organization)).not.toMatch(/modrinth|email|address|telephone/i)
 	for (const path of ['/faq', '/downloads']) {
