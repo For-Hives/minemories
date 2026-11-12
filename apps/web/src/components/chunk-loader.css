@@ -1,0 +1,119 @@
+/* The viewer's stage loader (ChunkLoader.tsx): the loading screen of index.html (scripts/boot-screen/gen.mjs, bootBlocks) over the stage, same scale,
+   same dirt, same map; the class names of its parts are the screen's own, so the screen's reveal (bootDissolve) and fade (bootFade) run on it as they are. */
+@font-face {
+	font-family: "MM Boot";
+	font-display: block;
+	src: url("/hero/assets/mc/fonts/mm-minecraft-regular.woff2") format("woff2");
+}
+.mm-chunk {
+	position: absolute;
+	inset: 0;
+	z-index: 6;
+	display: grid;
+	place-items: center;
+	overflow: hidden;
+	--c: 3px;
+	--f: 8px;
+	background: #1f1610;
+	image-rendering: pixelated;
+}
+/* the first 150 ms of a load, and while the page's own loading screen covers it: announced, not seen, never in the way */
+.mm-chunk.is-waiting {
+	opacity: 0;
+	pointer-events: none;
+}
+@media (min-height: 900px) {
+	.mm-chunk {
+		--c: 4px;
+		--f: 16px;
+	}
+}
+@media (min-height: 1300px) {
+	.mm-chunk {
+		--c: 5px;
+	}
+}
+.mm-chunk::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--mm-dirt, none) 0 0 / calc(16 * var(--c));
+	animation: mm-chunk-in 0.2s ease-out backwards;
+}
+.mm-chunk.is-done {
+	opacity: 0;
+	transition: opacity 0.25s ease-out;
+	pointer-events: none;
+}
+.mm-chunk.is-out {
+	background: none;
+	pointer-events: none;
+}
+.mm-chunk.is-out::before {
+	display: none;
+}
+.mm-chunk .boot-t {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+.mm-chunk .boot-map {
+	position: relative;
+	z-index: 1;
+	animation: mm-chunk-in 0.2s ease-out backwards;
+}
+.mm-chunk .boot-map canvas {
+	display: block;
+	box-sizing: content-box;
+	width: calc(38 * var(--c));
+	height: calc(38 * var(--c));
+	border: 2px solid #000;
+	background: #000;
+}
+.mm-chunk .boot-pc {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 100%;
+	margin: 0 0 calc(6 * var(--c));
+	font:
+		var(--f) / 1 "MM Boot",
+		monospace;
+	color: #fff;
+	text-align: center;
+	text-shadow: calc(var(--f) / 8) calc(var(--f) / 8) 0 #3f3f3f;
+	white-space: nowrap;
+}
+.mm-chunk .boot-cv {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+.mm-chunk.is-out .boot-map {
+	opacity: 0;
+	transform: scale(1.3);
+	transition:
+		transform 0.5s cubic-bezier(0.5, 0, 0.75, 0.2),
+		opacity 0.35s ease-in 0.15s;
+}
+.mm-chunk.is-out .boot-pc {
+	opacity: 0;
+	transition: opacity 0.12s ease-in;
+}
+@keyframes mm-chunk-in {
+	from {
+		opacity: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.mm-chunk * {
+		transition: none !important;
+	}
+}

@@ -447,7 +447,9 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 	)
 	mount(<ViewerPage />)
 	expect(screen.getByRole('status').textContent).toContain('Loading the model')
-	expect(screen.getByRole('status').querySelector('.cinema-loading-line')).toBeTruthy()
+	// the world-loading screen of the landing, over the stage: its chunk map and percentage
+	expect(screen.getByRole('status').querySelector('.boot-map canvas')).toBeTruthy()
+	expect(screen.getByRole('status').querySelector('.boot-pc')?.textContent).toBe('0%')
 	await act(async () => {
 		mocks.viewerEvents?.onLoading('Preparing the 3D display…')
 	})
@@ -457,7 +459,8 @@ test('viewer keeps an animated loading status through model and GPU preparation'
 		mocks.viewerEvents?.onLoading(null)
 		finish?.()
 	})
-	expect(screen.queryByRole('status')).toBeNull()
+	// a load that ended before the screen showed leaves without playing it
+	await waitFor(() => expect(screen.queryByRole('status')).toBeNull())
 })
 
 test('French translation does not change pairing state identifiers or hide the pending code', async () => {

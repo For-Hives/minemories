@@ -22,6 +22,7 @@ class PageBoundary extends Component<{ children: ReactNode; path: string }, { fa
 		if (this.state.failed)
 			return (
 				<div className="mm-content" role="alert">
+					<PageReady />
 					<h1>
 						<T message="Page loading interrupted" />
 					</h1>
@@ -36,12 +37,18 @@ class PageBoundary extends Component<{ children: ReactNode; path: string }, { fa
 		return this.props.children
 	}
 }
-/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing is left out: its film says so itself (hero.js `signalReady`), once it can play. */
+/** Tells the loading screen of index.html that the page is on screen: it is rendered inside the Suspense boundary, so it only commits once the lazy page has arrived. The landing and the viewers are left out: the landing's film says so itself (hero.js `signalReady`), once it can play, and a viewer once its 3D scene is drawn (useScenePageReady). */
 function PageReady() {
 	useEffect(() => signalPageReady(document.documentElement, window), [])
 	return null
 }
-// Only the landing has a loading screen (index.html's chunk-loading screen, first load only). Elsewhere (gallery and viewer included) a page that is still arriving is an empty area of the page's height, never a
+/** A viewer's page is on screen once its 3D scene is drawn, or once there is nothing left to wait for (an error, a restoration card): the loading screen then fills to 100 % and reveals it. */
+export function useScenePageReady(settled: boolean) {
+	useEffect(() => {
+		if (settled) signalPageReady(document.documentElement, window)
+	}, [settled])
+}
+// Only the landing and the viewers have a loading screen (index.html's chunk-loading screen, first load only; a viewer's stage shows the same one for each capture, ChunkLoader.tsx). Elsewhere (the gallery included) a page that is still arriving is an empty area of the page's height, never a
 // skeleton: navigations keep the current page on screen (PageBoundary), and the public pages' chunks are fetched ahead of time (preloadWhenIdle).
 function pendingPage(kind: PageKind) {
 	if (kind === 'home') return <div className="landing-pending" aria-hidden="true" />
@@ -54,7 +61,7 @@ export function Page({ children, kind = 'page' }: { children: ReactNode; kind?: 
 		<PageBoundary path={pathname}>
 			<Suspense fallback={fallback}>
 				{children}
-				{kind !== 'home' && <PageReady />}
+				{kind !== 'home' && kind !== 'viewer' && <PageReady />}
 			</Suspense>
 		</PageBoundary>
 	)

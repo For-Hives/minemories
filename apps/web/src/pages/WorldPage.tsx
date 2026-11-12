@@ -2,6 +2,8 @@ import type { TemporalFrame, WorldEvolution } from '@minemories/api-contract'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
+import { ChunkLoader } from '../components/ChunkLoader'
+import { useScenePageReady } from '../components/PageFrame'
 import { ViewerHeader } from '../components/ViewerChrome'
 import { ViewerIcon } from '../components/ViewerIcons'
 import { ViewerStudio } from '../components/ViewerStudio'
@@ -310,6 +312,10 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
 	const { world, statuses, error, step } = state
 	const ready = statuses.some(status => status === 'ready')
+	// on screen once a capture is drawn, or once none is left to come (all archived or failed): the loading screens leave then
+	const settled =
+		ready || Boolean(error) || (world !== null && statuses.length > 0 && !statuses.some(status => pending.has(status)))
+	useScenePageReady(settled)
 	const current = world?.frames[step]
 	return (
 		<section className="viewer-page cinema-page timelapse-page">
@@ -320,6 +326,7 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 			/>
 			<div className="viewer-stage">
 				<canvas ref={state.canvas} className="cinema-canvas" aria-label={t('Interactive 3D scene')} />
+				{!error && <ChunkLoader active={!settled} label="Loading capture…" />}
 			</div>
 			<ViewerStudio
 				sceneRef={state.scene}
