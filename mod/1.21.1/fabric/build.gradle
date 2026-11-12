@@ -6,7 +6,31 @@ plugins {
 
 evaluationDependsOn(':common')
 base { archivesName = 'minemories-fabric' }
-loom { accessWidenerPath = project(':common').file('src/main/resources/minemories.accesswidener') }
+sourceSets { gametest { compileClasspath += sourceSets.main.compileClasspath; runtimeClasspath += sourceSets.main.runtimeClasspath } }
+loom {
+    accessWidenerPath = project(':common').file('src/main/resources/minemories.accesswidener')
+    runs {
+        // In-game validation: ./gradlew :fabric:runClientGametest (opens a Minecraft window, isolated user.home).
+        clientGametest {
+            client()
+            vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
+            vmArg '-Dminemories.gametest=true'
+        }
+    }
+}
+// GlbReport and FeatureScenario are Minecraft-free and shared with every Minecraft version.
+def sharedReport = tasks.register('copyGlbReport', Copy) {
+    from('../../shared/gametest-common/java/dev/minemories/gametest') { include '*.java' }
+    into layout.buildDirectory.dir('gametest-shared/dev/minemories/gametest')
+}
+sourceSets.gametest.java.srcDir layout.buildDirectory.dir('gametest-shared')
+sourceSets.gametest.java.srcDir '../gametest-common/java'
+tasks.named('compileGametestJava') { dependsOn sharedReport }
+// The test mod rides the dev classpath (inactive unless -Dminemories.gametest=true, set by the test run only).
+sourceSets.main.runtimeClasspath += sourceSets.gametest.output
+tasks.matching { it.name == 'runClientGametest' }.configureEach { dependsOn 'gametestClasses' }
+// The test sources are not shipped code: no formatter or bug finder runs on them.
+tasks.matching { it.name == 'spotbugsGametest' }.configureEach { enabled = false }
 dependencies {
     minecraft 'com.mojang:minecraft:1.21.1'
     mappings loom.officialMojangMappings()
@@ -15,9 +39,10 @@ dependencies {
     compileOnly 'com.github.spotbugs:spotbugs-annotations:4.10.5'
     implementation project(':core')
     implementation project(path: ':common', configuration: 'namedElements')
+    gametestImplementation sourceSets.main.output
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-spotless { java { googleJavaFormat('1.36.0') } }
+spotless { java { target 'src/main/java/**/*.java'; googleJavaFormat('1.36.0') } }
 spotbugs { toolVersion = '4.10.5'; ignoreFailures = false }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
@@ -29,7 +54,14 @@ tasks.withType(ProcessResources).configureEach {
     inputs.properties props
     filesMatching('fabric.mod.json') { expand props }
 }
+// The dev launcher only sees this project's own folders as the mod: :common's resources (access widener, translations,
+// textures such as the menu icon) are copied next to fabric.mod.json, or the run fails or shows a missing texture
+// (the jar already holds them once through :common's output).
+tasks.named('processResources') {
+    from(project(':common').file('src/main/resources'))
+}
 tasks.named('jar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project(':core').sourceSets.main.output
     from project(':common').sourceSets.main.output
 }
