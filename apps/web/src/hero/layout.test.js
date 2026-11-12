@@ -105,15 +105,16 @@ test('an anchor or ?nowebgl=1 starts on the site, and the root is restored to wh
 	expect(plain.getAttribute('style')).toBeNull()
 })
 
-test('the stored accessibility options are applied before the first paint', () => {
+test('the retired accessibility options are forgotten before the first paint', () => {
 	localStorage.setItem('mcui-font', '1')
 	localStorage.setItem('mcui-motion', '1')
 	const root = rootOf(1440, 900)
 	const restore = prepareRoot(root, { hash: '', search: '' })
-	expect(root.getAttribute('data-mc-font')).toBe('read')
-	expect(root.getAttribute('data-mc-motion')).toBe('reduced')
-	restore()
 	expect(root.getAttribute('data-mc-font')).toBeNull()
+	expect(root.getAttribute('data-mc-motion')).toBeNull()
+	expect(localStorage.getItem('mcui-font')).toBeNull()
+	expect(localStorage.getItem('mcui-motion')).toBeNull()
+	restore()
 	localStorage.clear()
 })
 

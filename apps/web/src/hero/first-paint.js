@@ -60,10 +60,10 @@ export function prepareRoot(root, location) {
 		}
 	} catch (e) {}
 	if (!/[?&]nowebgl=1/.test(location.search)) root.classList.add('scene-on')
-	// Accessibility options kept on this device (same keys as the kit): applied before the first paint.
+	// The footer's readable font and reduced motion options are gone (12 November 2026): forget what an older visit stored.
 	try {
-		if (localStorage.getItem('mcui-font') === '1') root.setAttribute('data-mc-font', 'read')
-		if (localStorage.getItem('mcui-motion') === '1') root.setAttribute('data-mc-motion', 'reduced')
+		localStorage.removeItem('mcui-font')
+		localStorage.removeItem('mcui-motion')
 	} catch (e) {}
 	try {
 		history.scrollRestoration = 'manual'

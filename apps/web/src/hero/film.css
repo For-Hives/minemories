@@ -1392,7 +1392,8 @@ html:not(.is-scrub)[data-phase='film'] body {
 
 html[data-phase='film'] main > :not(.site-hero),
 html[data-phase='film'] .site > .mc-band,
-html[data-phase='film'] .site > .footer,
+html[data-phase='film'] .site > .site-film-note,
+html[data-phase='film'] .site > .mm-footer,
 html[data-phase='film'] [data-action='replay'] {
 	display: none;
 }
@@ -1440,45 +1441,6 @@ html[data-phase='film'] [data-action='replay'] {
 	min-height: 44px;
 	display: flex;
 	align-items: center;
-}
-
-/* --- footer ------------------------------------------------------------------------------------------------------------------------------ */
-
-.footer .mc-footer__right {
-	display: grid;
-	gap: 16px;
-	align-content: start;
-	justify-self: start;
-	text-align: left;
-}
-
-@media (min-width: 900px) {
-	.footer .mc-footer__right {
-		justify-self: end;
-	}
-}
-
-.footer .opts {
-	display: grid;
-	gap: 4px;
-	border: 0;
-	padding: 0;
-	margin: 0;
-}
-
-.footer .opts legend {
-	margin-bottom: 4px;
-	padding: 0;
-}
-
-.footer .mc-check {
-	font-family: var(--f-read);
-	font-size: 16px;
-	min-height: 44px;
-}
-
-.footer .mc-footer__nav a {
-	min-height: 44px;
 }
 
 html[lang^='fr'] .not-french {
@@ -1735,7 +1697,8 @@ html.is-scrub[data-phase='site'] .site {
 /* The glide shows the site's first screen only: the sections below it wait for the site phase (nothing can scroll to them before). */
 html.is-scrub[data-phase='glide'] main > :not(.site-hero),
 html.is-scrub[data-phase='glide'] .site > .mc-band,
-html.is-scrub[data-phase='glide'] .site > .footer,
+html.is-scrub[data-phase='glide'] .site > .site-film-note,
+html.is-scrub[data-phase='glide'] .site > .mm-footer,
 html.is-scrub[data-phase='glide'] [data-action='replay'] {
 	display: none;
 }
@@ -1811,31 +1774,6 @@ html.is-scrub .film-bar {
 html.is-scrub[data-phase='glide'] .film-bar {
 	visibility: hidden;
 	pointer-events: none;
-}
-
-/* --- the footer: edge to edge like the header, its content on the grid [e ; L - e] (§ 6.4) ----------------------------------------------------------------------- */
-
-.site .mc-band,
-.site .mc-footer {
-	margin-inline: 0;
-}
-
-.footer.mc-footer {
-	padding-inline: 0;
-}
-
-.footer .mc-footer__inner {
-	max-width: none;
-	margin: 0;
-	padding-inline: max(16px, var(--safe-l), calc((100% - var(--text-w, 720px)) / 2));
-}
-
-html[data-dock='side'] .footer .mc-footer__inner {
-	padding-inline: var(--text-l, 48px);
-}
-
-.footer .mc-disclaimer {
-	max-width: 68ch;
 }
 
 /* --- the text: more room, bigger body, a measure of 45 to 75 characters (§ 6.2) --------------------------------------------------------------------------------- */

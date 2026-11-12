@@ -148,12 +148,11 @@ test('one language selector is visible, it is the app one, and the whole page fo
 	expect(errors).toEqual([])
 })
 
-test('signed-in visitors see their gallery link instead of sign-in', async () => {
+test('signed-in visitors are not offered to sign in', async () => {
 	context.session = { user: { name: 'Alex' } }
 	mount()
 	await started()
 	expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull()
-	expect(screen.getAllByRole('link', { name: 'Ma galerie' })[0]?.getAttribute('href')).toBe('/gallery')
 	// The bar's brand: the whole logo alone, decorative; the link's aria-label names it.
 	const brand = document.querySelector('.mc-sitebar__brand')
 	const mark = brand?.querySelector('img')
@@ -199,12 +198,8 @@ test('keys, the menu and the replay button do nothing harmful while the scene is
 	fireEvent.click(screen.getAllByRole('button', { name: 'Revoir le film' })[0] as HTMLElement)
 	fireEvent.click(document.getElementById('film-play') as HTMLElement)
 	fireEvent.click(document.getElementById('film-skip') as HTMLElement)
-	// options: the readable font applies at once and is remembered
-	const font = screen.getByRole('checkbox', { name: 'Police lisible' })
-	fireEvent.click(font)
-	expect(html.dataset.mcFont).toBe('read')
-	expect(localStorage.getItem('mcui-font')).toBe('1')
-	fireEvent.click(font)
-	expect(html.dataset.mcFont).toBeUndefined()
+	// the footer is the site's: no display options, the same groups of links as every page
+	expect(screen.queryByRole('checkbox')).toBeNull()
+	expect(screen.getByRole('navigation', { name: 'Ailleurs' })).toBeTruthy()
 	expect(errors).toEqual([])
 })

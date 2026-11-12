@@ -66,10 +66,15 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).not.toContain('class="mm-header"')
 	// the first-paint script is injected by the prerender, not rendered by React
 	expect(html).not.toContain('<script')
-	// nothing preloads the still of the model (it only serves when WebGL is absent): React preloads only the bar's logo
+	// nothing preloads the still of the model (it only serves when WebGL is absent): React preloads only the bar's logo and the footer's mark
 	expect([...html.matchAll(/<link rel="preload"[^>]*href="([^"]+)"/g)].map(match => match[1])).toEqual([
 		'/brand/minemories-logo.svg',
+		'/brand/minemories-mark.svg',
 	])
+	// the footer is the same as on every page: SiteFooter, without the old display options
+	expect(html).toContain('class="mm-footer"')
+	expect(html).not.toContain('mcui-font')
+	expect(html).not.toContain('type="checkbox"')
 })
 
 test('the first-paint script of the home page puts the film on <html> before the page is drawn', () => {

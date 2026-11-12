@@ -57,15 +57,6 @@ export function mountHero(host) {
 		scrollTo({ top: 0, left: 0, behavior: 'instant' })
 		site?.rebaseScroll?.() // v9d: the page's own scroll is never the visitor's (it would take the "Drag to turn" hint away)
 	}
-	const store = (key, value) => {
-		try {
-			if (value === undefined) return localStorage.getItem(key)
-			localStorage.setItem(key, value)
-		} catch {
-			return null
-		}
-		return null
-	}
 
 	const params = new URLSearchParams(location.search)
 	const root = document.documentElement
@@ -603,30 +594,6 @@ export function mountHero(host) {
 			tick.addEventListener('click', () => jumpTo(HUD.chapterList()[Number(tick.dataset.chapterIndex)]?.t ?? 0))
 		for (const button of stepButtons) button.addEventListener('click', () => step(Number(button.dataset.step)))
 		wireRail()
-
-		// Accessibility options (same keys as the kit): the font is applied at once, motion reloads the page.
-		const optFont = $('#opt-font')
-		const optMotion = $('#opt-motion')
-		if (optFont) {
-			optFont.checked = root.dataset.mcFont === 'read'
-			optFont.addEventListener('change', () => {
-				store('mcui-font', optFont.checked ? '1' : '0')
-				if (optFont.checked) root.dataset.mcFont = 'read'
-				else delete root.dataset.mcFont
-				requestAnimationFrame(() => {
-					computeLayout()
-					hud?.reset()
-					site?.layout({ duration: 0 })
-				})
-			})
-		}
-		if (optMotion) {
-			optMotion.checked = root.dataset.mcMotion === 'reduced'
-			optMotion.addEventListener('change', () => {
-				store('mcui-motion', optMotion.checked ? '1' : '0')
-				location.reload()
-			})
-		}
 
 		let resizeFrame = 0
 		on(window, 'resize', () => {

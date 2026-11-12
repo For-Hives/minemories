@@ -6,7 +6,8 @@ import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
 import { HeroClip, type HeroClipProps } from './HeroClip'
 import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
-import { HeroFooterLinks, HeroQuestions } from './HeroParts'
+import { HeroQuestions } from './HeroParts'
+import { SiteFooter } from './SiteFooter'
 import { SiteNav } from './SiteNav'
 
 /**
@@ -559,61 +560,22 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						</details>
 					</section>
 				</main>
-				<div className="mc-band mc-bg-dirt" aria-hidden="true" />
-				<footer className="mc-footer footer">
-					<div className="mc-footer__inner">
-						<div className="mc-footer__legal">
-							<p
-								className="mc-disclaimer"
-								data-i18n="Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft."
-							>
-								{t(
-									'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
-								)}
-							</p>
-							<details className="mc-footer__notes">
-								<summary className="mc-footer__summary" data-i18n="About this film">
-									{t('About this film')}
-								</summary>
-								<p
-									className="mc-footer__meta"
-									data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only)."
-								>
-									{t(
-										'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only).'
-									)}
-								</p>
-							</details>
-						</div>
-						<div className="mc-footer__right">
-							<ul
-								className="mc-footer__nav"
-								data-i18n-attr="aria-label:Pages of the site"
-								aria-label={t('Pages of the site')}
-							>
-								<HeroFooterLinks />
-							</ul>
-							<fieldset className="mc-fieldset opts">
-								<legend className="mc-footer__ver" data-i18n="Accessibility">
-									{t('Accessibility')}
-								</legend>
-								<label className="mc-check">
-									<input type="checkbox" id="opt-font" />
-									<span className="mc-check__box" aria-hidden="true" />
-									<span data-i18n="Readable font">{t('Readable font')}</span>
-								</label>
-								<label className="mc-check">
-									<input type="checkbox" id="opt-motion" />
-									<span className="mc-check__box" aria-hidden="true" />
-									<span data-i18n="Reduced motion">{t('Reduced motion')}</span>
-								</label>
-							</fieldset>
-							<p className="mc-footer__ver" data-i18n="Minemories · beta">
-								{t('Minemories · beta')}
-							</p>
-						</div>
-					</div>
-				</footer>
+				<aside className="site-film-note">
+					<details className="mc-footer__notes">
+						<summary className="mc-footer__summary" data-i18n="About this film">
+							{t('About this film')}
+						</summary>
+						<p
+							className="mc-footer__meta"
+							data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only)."
+						>
+							{t(
+								'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only).'
+							)}
+						</p>
+					</details>
+				</aside>
+				<SiteFooter />
 			</div>
 			{/* biome-ignore lint/a11y/useSemanticElements: a <fieldset> groups form controls; this is the 3D panel, labelled and described for screen readers. */}
 			<aside

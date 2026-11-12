@@ -1,17 +1,9 @@
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
+import { type ReactNode, useLayoutEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
-import { elsewhereLinks, type FooterLink, footerGroups } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
-import {
-	applyDisplay,
-	type DisplayOption,
-	readDisplayOption,
-	setDisplayOption,
-	storeDisplayOption,
-} from '../lib/display-preferences'
-import { BrandMark } from './BrandMark'
-import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
+import { applyDisplay } from '../lib/display-preferences'
+import { Brand, SiteFooter } from './SiteFooter'
 import { SiteNav } from './SiteNav'
 import { buttonQuiet, fileInputHidden } from './ui'
 
@@ -20,15 +12,6 @@ const legalLinks = [
 	{ to: '/terms', label: 'Terms' },
 	{ to: '/legal', label: 'About and legal notice' },
 ]
-/** The link home: the logo alone in the header (`solo`), the small mark and the word Minemories in the footer. */
-export function Brand({ solo = false }: { solo?: boolean }) {
-	return (
-		<Link className="mm-brand" to="/" aria-label="Minemories">
-			<BrandMark solo={solo} />
-			{!solo && <span>Minemories</span>}
-		</Link>
-	)
-}
 function FileControl() {
 	const { setViewerFile } = useAppContext()
 	const { t } = useI18n()
@@ -68,12 +51,11 @@ function SiteHeader() {
 	)
 }
 export function SiteLayout({ notice = '', children }: { notice?: string; children?: ReactNode }) {
-	const { session } = useAppContext()
 	const { t, locale } = useI18n()
 	const { pathname } = useLocation()
-	// The landing's film resets <html> when it leaves: the stored display options and the Unifont class are put back on every page (lib/display-preferences.ts).
+	// The landing's film resets <html> when it leaves: the Unifont class of the locale is put back on every page (lib/display-preferences.ts).
 	useLayoutEffect(() => {
-		if (pathname !== '/') applyDisplay(document.documentElement, safeStorage(), locale)
+		if (pathname !== '/') applyDisplay(document.documentElement, locale)
 	}, [pathname, locale])
 	if (pathname === '/login' || pathname === '/register') return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
 	const cinema = pathname === '/viewer' || pathname.startsWith('/share/') || pathname.startsWith('/public/')
@@ -104,84 +86,13 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			<main id="main-content" tabIndex={-1} className="mm-main">
 				<div className="mm-page-transition">{children ?? <Outlet />}</div>
 			</main>
-			<div className="mm-footer-band mc-band mc-bg-dirt" aria-hidden="true" />
-			<footer className="mm-footer">
-				<div className="mm-footer-brand">
-					<Brand />
-					<p className="mm-fineprint">
-						{t(
-							'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
-						)}
-					</p>
-					<DisplayOptions />
-				</div>
-				{footerGroups.map(group => (
-					<nav key={group.label} aria-label={t(group.label)}>
-						<h2 className="mm-footer-title">{t(group.label)}</h2>
-						{group.links.map(link => (
-							<FooterAnchor key={link.label} link={link} />
-						))}
-					</nav>
-				))}
-				<nav aria-label={t('Elsewhere')}>
-					<h2 className="mm-footer-title">{t('Elsewhere')}</h2>
-					{elsewhereLinks().map(link => (
-						<FooterAnchor key={link.label} link={link} />
-					))}
-					{session && <DiagnosticsAccessLink key={session.user.id} />}
-				</nav>
-			</footer>
+			<SiteFooter />
 			{notice && (
 				<div className="mm-toast" role="status">
 					{t(notice)}
 				</div>
 			)}
 		</div>
-	)
-}
-
-/** A footer link: a page of the site, or an outside address. */
-function FooterAnchor({ link }: { link: FooterLink }) {
-	const { t } = useI18n()
-	const label = link.plain ? link.label : t(link.label)
-	if ('href' in link) return <a href={link.href}>{label}</a>
-	return <Link to={link.to}>{label}</Link>
-}
-
-function safeStorage() {
-	try {
-		return window.localStorage
-	} catch {
-		return undefined
-	}
-}
-/** The landing's two accessibility options, on every page: the readable font applies at once, reduced motion too (the pages have no film to restart). */
-function DisplayOptions() {
-	const { t } = useI18n()
-	// The prerendered HTML has no storage: both boxes start unchecked, as on the server, then take the stored choice once mounted (no hydration mismatch).
-	const [options, setOptions] = useState({ font: false, motion: false })
-	useEffect(() => {
-		setOptions({ font: readDisplayOption(safeStorage(), 'font'), motion: readDisplayOption(safeStorage(), 'motion') })
-	}, [])
-	const toggle = (option: DisplayOption, on: boolean) => {
-		storeDisplayOption(safeStorage(), option, on)
-		setDisplayOption(document.documentElement, option, on)
-		setOptions(current => ({ ...current, [option]: on }))
-	}
-	return (
-		<fieldset className="mc-fieldset mm-display-options">
-			<legend>{t('Accessibility')}</legend>
-			<label className="mc-check">
-				<input type="checkbox" checked={options.font} onChange={event => toggle('font', event.target.checked)} />
-				<span className="mc-check__box" aria-hidden="true" />
-				<span>{t('Readable font')}</span>
-			</label>
-			<label className="mc-check">
-				<input type="checkbox" checked={options.motion} onChange={event => toggle('motion', event.target.checked)} />
-				<span className="mc-check__box" aria-hidden="true" />
-				<span>{t('Reduced motion')}</span>
-			</label>
-		</fieldset>
 	)
 }
 
