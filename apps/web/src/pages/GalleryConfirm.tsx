@@ -4,7 +4,8 @@ import { useModal } from './GalleryDialog'
 
 /**
  * Asks before a snapshot in the trash is deleted for good: the gallery's own panel, centred over its veil, instead of
- * the browser's confirm box. Escape, the veil and Cancel close it; focus goes back to the button that opened it.
+ * the browser's confirm box. Escape, the veil and Cancel close it and give focus back to the button that opened it; after a
+ * confirmation the trash heading takes focus instead (`TrashSection`), since that button is then disabled.
  */
 export function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm(): void; onCancel(): void }) {
 	const { t } = useI18n()

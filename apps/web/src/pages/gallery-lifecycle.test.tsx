@@ -203,6 +203,8 @@ test('delete forever answers at once, holds the card buttons and drops the card 
 	const cabin = () => within(bin).getByRole('heading', { name: 'Cabin' }).closest('article') as HTMLElement
 	fireEvent.click(within(cabin()).getByRole('button', { name: 'Delete forever' }))
 	fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete forever' }))
+	// The opener is now disabled, so focus lands on the trash heading rather than on the page body.
+	expect(document.activeElement).toBe(within(bin).getByRole('heading', { level: 2 }))
 	// While the server erases the file, the card says so and both of its actions wait.
 	const busy = within(cabin()).getByRole('button', { name: 'Deleting…' }) as HTMLButtonElement
 	expect(busy.disabled).toBe(true)
@@ -241,6 +243,26 @@ test('delete forever answers at once, holds the card buttons and drops the card 
 	})
 	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
 	expect(mocks.trashList).toHaveBeenCalledTimes(3)
+})
+test('the confirmation closes by itself when its snapshot leaves the trash elsewhere, without deleting anything', async () => {
+	const stamp = { deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 86400000).toISOString() }
+	trash = [
+		{ ...capture(), ...stamp },
+		{ ...capture('two', 'Tower'), ...stamp },
+	]
+	memories = []
+	page()
+	const bin = await screen.findByRole('region', { name: 'Trash' })
+	const cabin = within(bin).getByRole('heading', { name: 'Cabin' }).closest('article') as HTMLElement
+	fireEvent.click(within(cabin).getByRole('button', { name: 'Delete forever' }))
+	expect(screen.getByRole('alertdialog', { name: 'Delete Cabin forever?' })).toBeTruthy()
+	// Restored from another device: the next refresh no longer lists it in the trash.
+	trash = trash.filter(item => item.id !== 'one')
+	memories = [capture()]
+	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+	await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
+	expect(mocks.remove).not.toHaveBeenCalled()
 })
 test.each(['trash', 'restore', 'remove'] as const)(
 	'a failed %s action keeps the capture available and supports retry',

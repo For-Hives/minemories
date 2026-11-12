@@ -1,5 +1,5 @@
 import { temporalIdentity } from '@minemories/api-contract'
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
@@ -182,11 +182,24 @@ function TrashSection({
 	onDelete(id: string): void
 }) {
 	const { t } = useI18n()
-	const [asking, setAsking] = useState<TrashMemories[number] | null>(null)
+	const [askingId, setAskingId] = useState<string | null>(null)
+	// Read from the live list: if the snapshot leaves the trash while the panel is open (restored or purged from another
+	// device, seen by the next refresh), the panel closes instead of deleting a capture that is no longer in the trash.
+	const asking = askingId === null ? undefined : trash.find(item => item.id === askingId)
+	const heading = useRef<HTMLHeadingElement>(null)
+	const [confirmed, setConfirmed] = useState(0)
+	useEffect(() => {
+		if (askingId !== null && !asking) setAskingId(null)
+	}, [askingId, asking])
+	// After a confirmation the card's buttons are disabled and the card then leaves, so the panel cannot hand focus back
+	// to its opener: the trash heading takes it. This runs after the panel's own clean-up.
+	useEffect(() => {
+		if (confirmed > 0) heading.current?.focus()
+	}, [confirmed])
 	return (
 		<section className="gallery-trash" aria-label={t('Trash')}>
 			<div>
-				<h2>
+				<h2 ref={heading} tabIndex={-1}>
 					<T message={'Trash ·'} /> {trash.length}
 				</h2>
 				<p className="gallery-trash-note">
@@ -200,16 +213,17 @@ function TrashSection({
 						item={item}
 						deleting={deleting.has(item.id)}
 						onRestore={() => onRestore(item.id)}
-						onDelete={() => setAsking(item)}
+						onDelete={() => setAskingId(item.id)}
 					/>
 				))}
 			</div>
 			{asking && (
 				<ConfirmDelete
 					name={asking.name}
-					onCancel={() => setAsking(null)}
+					onCancel={() => setAskingId(null)}
 					onConfirm={() => {
-						setAsking(null)
+						setAskingId(null)
+						setConfirmed(count => count + 1)
 						onDelete(asking.id)
 					}}
 				/>
