@@ -28,6 +28,8 @@ loom {
         // In-game validation: ./gradlew :forge:runClientGametest (opens a Minecraft window, isolated user.home).
         clientGametest {
             client()
+            // Its own game folder: the test writes the mod's settings there and must not touch the developer's `run`.
+            runDir 'build/run-gametest'
             vmArg "-Duser.home=${layout.buildDirectory.dir('gametest-home').get().asFile}"
             vmArg '-Dminemories.gametest=true'
             vmArg '-Dminemories.gametest.grass=grass'

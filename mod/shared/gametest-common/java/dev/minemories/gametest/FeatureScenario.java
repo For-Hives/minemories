@@ -68,6 +68,7 @@ public final class FeatureScenario {
   private long ticksInStep = -1;
   private String latestCaptureJson = "";
   private String uploadedBody = "";
+  private long uploadsBefore;
 
   /** Starts the mock API and points the mod's configuration at it. */
   public FeatureScenario(Path gameDir) throws IOException {
@@ -80,6 +81,8 @@ public final class FeatureScenario {
     Properties properties = new Properties();
     properties.setProperty("apiUrl", "http://127.0.0.1:" + server.getAddress().getPort());
     Files.createDirectories(config.getParent());
+    // State of an earlier run (consent, outbox) must not start this one "paired".
+    Files.deleteIfExists(config.resolveSibling("minemories-diagnostics.properties"));
     try (OutputStream out = Files.newOutputStream(config)) {
       properties.store(out, "in-game test: mock API");
     }
@@ -88,6 +91,14 @@ public final class FeatureScenario {
 
   public void close() {
     server.stop(0);
+    Path keep = export.resolve("area.glb.keep");
+    if (Files.exists(keep)) {
+      try {
+        Files.move(keep, export.resolve("capture.glb"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException ignored) {
+        // The run is already over; the area capture is only kept for the runner's statistics.
+      }
+    }
   }
 
   /** Advances the script by one client tick. Returns true when it is finished; throws AssertionError on failure. */
@@ -180,13 +191,19 @@ public final class FeatureScenario {
         after(1));
 
     // A failing upload sends a sanitized diagnostic report (consent is on by default once linked).
+    // The client may still be finishing the previous upload ("already running"): send again until the API sees a new one.
     step(
         "failing upload",
         () -> {
           failChunks = true;
+          uploadsBefore = count("POST", "/api/mod/uploads");
           host.client("minemories upload");
         },
-        () -> count("POST", "/api/mod/diagnostics") >= 1,
+        () -> {
+          if (count("POST", "/api/mod/diagnostics") >= 1) return true;
+          if (ticksInStep % 40 == 0 && count("POST", "/api/mod/uploads") == uploadsBefore) host.client("minemories upload");
+          return false;
+        },
         TICK_LIMIT * 2);
     step(
         "diagnostic report is sanitized",
@@ -239,7 +256,6 @@ public final class FeatureScenario {
           require(
               bounds.get("minZ").getAsInt() == 0 && bounds.get("maxZ").getAsInt() == 6,
               "selection Z bounds are not the corners: " + bounds);
-          // The scene's stone is at x = 2: outside this box, so the box GLB must be smaller than the area one.
           latestCaptureJson = read(export.resolve("capture.json"));
         },
         after(1));
