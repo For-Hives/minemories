@@ -60,9 +60,9 @@ test('the prerendered page is the whole guide: no version chosen, every step and
 	expect(document.querySelector('noscript')).toBeNull()
 	expect([...document.querySelectorAll('h1, h2')].map(heading => heading.textContent)).toEqual([
 		'Installer Minemories',
-		'Le plus simple : l’app CurseForge',
-		'À quelle version de Minecraft joues-tu ?',
-		'Quel loader de mods utilises-tu ?',
+		'Le plus simple\u00a0: l’app CurseForge',
+		'À quelle version de Minecraft joues-tu\u00a0?',
+		'Quel loader de mods utilises-tu\u00a0?',
 		'Installer le mod',
 		'Connecte le jeu',
 		'Ton premier souvenir',
@@ -80,7 +80,7 @@ test('the prerendered page is the whole guide: no version chosen, every step and
 	])
 	const page = document.body.textContent ?? ''
 	expect(page).toContain('Choisis d’abord ta version.')
-	expect(page).toContain('Tu joues sans mods ? Installe Fabric avec son installeur officiel, puis Fabric API')
+	expect(page).toContain('Tu joues sans mods\u00a0? Installe Fabric avec son installeur officiel, puis Fabric API')
 	expect(page).toContain('M → tape le code → Se connecter')
 	expect(page).toContain('M → Mes souvenirs → Envoyer ce souvenir.')
 	expect(page).toContain('C:\\Users\\<toi>\\export')
@@ -91,19 +91,19 @@ test('the prerendered page is the whole guide: no version chosen, every step and
 	expect(document.querySelector('a[href="https://www.curseforge.com/minecraft/mc-mods/minemories"]')).toBeTruthy()
 	expect(document.querySelector('a[href="/gallery"]')?.textContent).toBe('Ouvrir ma galerie')
 	// "Si ça coince": the three answers of the FAQ.
-	expect(page).toContain('Le jeu plante au lancement ?')
-	expect(page).toContain('Le code ne marche pas ?')
-	expect(page).toContain('M ouvre autre chose ?')
+	expect(page).toContain('Le jeu plante au lancement\u00a0?')
+	expect(page).toContain('Le code ne marche pas\u00a0?')
+	expect(page).toContain('M ouvre autre chose\u00a0?')
 	// Connecting comes before the first memory: pairing does not send memories taken earlier.
 	expect(page.indexOf('Connecte le jeu')).toBeLessThan(page.indexOf('Ton premier souvenir'))
 })
 
 test('the version comes first, then only its loaders; the download button follows the choice', () => {
 	mountGuide()
-	expect(screen.queryByRole('group', { name: 'Quel loader de mods utilises-tu ?' })).toBeNull()
+	expect(screen.queryByRole('group', { name: 'Quel loader de mods utilises-tu\u00a0?' })).toBeNull()
 	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' })[0]?.getAttribute('href')).toBe('/downloads')
 	fireEvent.click(version('1.21.11'))
-	const loaders = within(screen.getByRole('group', { name: 'Quel loader de mods utilises-tu ?' }))
+	const loaders = within(screen.getByRole('group', { name: 'Quel loader de mods utilises-tu\u00a0?' }))
 	expect(loaders.getAllByRole('radio').map(item => (item as HTMLInputElement).value)).toEqual([
 		'fabric',
 		'neoforge',
@@ -120,11 +120,11 @@ test('the version comes first, then only its loaders; the download button follow
 	// The same loader is kept on another version that has it; 1.21.1 adds the Quilt note.
 	fireEvent.click(version('1.21.1'))
 	expect(radio('Fabric').checked).toBe(true)
-	expect(text()).toContain('Quilt : prends le JAR Fabric.')
+	expect(text()).toContain('Quilt\u00a0: prends le JAR Fabric.')
 	// A version with a single loader selects it; without Fabric, the no-mods line installs that loader.
 	fireEvent.click(version('1.18.2'))
 	expect(radio('Forge').checked).toBe(true)
-	expect(text()).toContain('Tu joues sans mods ? Installe Forge avec son installeur officiel, puis Minemories.')
+	expect(text()).toContain('Tu joues sans mods\u00a0? Installe Forge avec son installeur officiel, puis Minemories.')
 	expect(screen.getByRole('link', { name: 'son installeur officiel' }).getAttribute('href')).toBe(
 		installerUrl(targetFor('1.18.2', 'forge') as LoaderTarget)
 	)

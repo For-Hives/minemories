@@ -25,7 +25,7 @@ The source of truth is the GitHub issues of `For-Hives/minemories` that carry th
 - **Planned**: any other open roadmap issue;
 - **Done**: roadmap issue closed as completed (or without a reason) during the last 30 days. Issues closed as "not planned" or "duplicate" never appear.
 
-Discord only shows **In progress** and **Planned**. The Done column is still computed (and still shown on the site's `/roadmap` for now; its removal there is tracked in issue #243), but the Discord message no longer includes it.
+Discord and the site's `/roadmap` only show **In progress** and **Planned**; finished work lives on the site's `/versions` page (issue #243). The API still computes Done and sends it in `GET /api/roadmap`, but the site ignores it.
 
 ## Mod release card
 

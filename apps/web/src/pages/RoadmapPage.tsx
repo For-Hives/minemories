@@ -13,7 +13,6 @@ import {
 	type RoadmapItem,
 	roadmapColumns,
 	roadmapIssuesUrl,
-	roadmapItemDate,
 } from '../lib/roadmap'
 import { ContentLayout } from './ContentPages'
 import { useRoadmap } from './useRoadmap'
@@ -22,7 +21,6 @@ import './roadmap.css'
 const columnTitles: Record<RoadmapColumnId, string> = {
 	inProgress: 'In progress',
 	planned: 'Planned',
-	done: 'Done',
 }
 const areaLabels: Record<RoadmapArea, string> = { mod: 'Mod', api: 'API', front: 'Website', socials: 'Socials' }
 const noteLabels: Record<ReleaseNoteType, string> = { feature: 'New', fix: 'Fixed', other: 'Changed' }
@@ -74,9 +72,9 @@ function LatestReleaseCard({ release }: { release: LatestRelease }) {
 	)
 }
 
-function RoadmapCard({ item, column, now }: { item: RoadmapItem; column: RoadmapColumnId; now: number }) {
+function RoadmapCard({ item, now }: { item: RoadmapItem; now: number }) {
 	const { locale, t } = useI18n()
-	const date = roadmapItemDate(item, column)
+	const date = item.updatedAt
 	return (
 		<li className="mm-roadmap-card">
 			<a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -111,7 +109,7 @@ function RoadmapColumnPanel({ id, column, now }: { id: RoadmapColumnId; column: 
 			) : (
 				<ol className="mm-roadmap-cards">
 					{column.items.map(item => (
-						<RoadmapCard key={item.number} item={item} column={id} now={now} />
+						<RoadmapCard key={item.number} item={item} now={now} />
 					))}
 				</ol>
 			)}
@@ -132,9 +130,7 @@ export function RoadmapPage() {
 		<ContentLayout
 			eyebrow={t('MINEMORIES · ROADMAP')}
 			title={t('Roadmap')}
-			lead={t(
-				'What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.'
-			)}
+			lead={t('What we’re building right now and what’s coming next, straight from the project’s GitHub issues.')}
 		>
 			<p className="mm-roadmap-note">{t('The same board is posted on the Minemories Discord.')}</p>
 			{roadmap && (

@@ -16,7 +16,8 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/explore',
 		title: 'Public gallery of Minecraft builds in 3D',
-		description: 'Explore Minecraft memories deliberately published after moderation and their rankings.',
+		description:
+			'Minecraft builds other players chose to share, checked before they go up. Walk around them in 3D in your browser.',
 		indexable: false,
 		language: 'fr',
 	},
@@ -33,7 +34,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/',
 		title: 'Minemories: your Minecraft builds in 3D',
 		description:
-			'A Minecraft Java mod that keeps the corner where you play in 3D. Revisit it in your browser and show people around it with a link.',
+			'A Minecraft Java mod that keeps a 3D copy of your base. Open it in your browser and send your friends a link to walk around it.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
@@ -42,7 +43,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/concept',
 		title: 'See your Minecraft world in 3D in the browser',
 		description:
-			'Minemories keeps an area of your Java world and makes it visitable in 3D in the browser. What it does, and what it does not.',
+			'Minemories keeps an area of your Java world and lets you walk around it in 3D in the browser. What it does, and what it doesn’t.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
@@ -51,7 +52,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/how-it-works',
 		title: 'How Minemories captures your Minecraft build',
 		description:
-			'A memory on demand or while you are AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
+			'A memory on demand or while you’re AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
@@ -77,7 +78,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/versions',
 		title: 'What’s new in Minemories, version by version',
-		description: 'The notes of each Minemories mod version, dated.',
+		description: 'Every Minemories version and what it changed, with dates.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
@@ -113,7 +114,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
-		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
+		description: 'What the Minemories team is building right now and what’s coming next.',
 		indexable: false,
 		language: 'fr',
 	},
@@ -137,7 +138,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/terms',
 		title: 'Minemories terms of use',
-		description: 'Guidance for using this experimental version, capturing and sharing with respect for others.',
+		description: 'The rules for this beta: keep your backups, and respect other players when you capture and share.',
 		indexable: true,
 		language: 'fr',
 		updated: '2026-11-10',
@@ -175,7 +176,7 @@ const privateMessages: PageMetadata[] = [
  */
 const sharedCard = {
 	title: 'A Minecraft place in 3D, shared with you',
-	description: 'Open it in your browser and turn around it.',
+	description: 'Open it in your browser and walk around it in 3D.',
 }
 const sharedPath = /^\/(?:share|public)\//
 /** The private shell's head, in French like the prerendered pages. */

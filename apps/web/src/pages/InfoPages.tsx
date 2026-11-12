@@ -4,26 +4,37 @@ import { RadiusMap, ShareDemo } from '../components/diagrams'
 import { FileTree, Glyph, type GlyphName } from '../components/explainers'
 import { buttonLime } from '../components/ui'
 import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
+import { navMenus } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 
-export const infoLinks = [
-	{ to: '/concept', label: 'The concept' },
-	{ to: '/how-it-works', label: 'How it works' },
-	{ to: '/installation', label: 'Install the mod' },
-	{ to: '/downloads', label: 'All downloads' },
-	{ to: '/faq', label: 'FAQ' },
-]
-
-export function InfoNavigation() {
+/**
+ * The side navigation of the guide pages: the site's pages grouped like the bar's menus (Product, Guides, Help), the current one marked.
+ * Only on wide screens (theme.css): below that, the bar's menus already list the same pages, so there is never a second bar.
+ */
+export function SideNavigation() {
 	const { t } = useI18n()
-
+	const { pathname } = useLocation()
 	return (
-		<nav aria-label={t('Minemories guides')} className="mm-info-nav">
-			{infoLinks.map(link => (
-				<Link key={link.to} to={link.to}>
-					{t(link.label)}
-				</Link>
-			))}
+		<nav aria-label={t('Minemories guides')} className="mm-side-nav">
+			{navMenus().map(menu => {
+				const links = menu.sections[0]?.links.flatMap(link => ('to' in link ? [link] : [])) ?? []
+				return (
+					<div key={menu.id} className="mm-side-nav__group">
+						<p className="mm-side-nav__title" id={`side-nav-${menu.id}`}>
+							{t(menu.label)}
+						</p>
+						<ul aria-labelledby={`side-nav-${menu.id}`}>
+							{links.map(link => (
+								<li key={link.to}>
+									<Link to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
+										{t(link.label)}
+									</Link>
+								</li>
+							))}
+						</ul>
+					</div>
+				)
+			})}
 		</nav>
 	)
 }
@@ -31,11 +42,13 @@ export function InfoNavigation() {
 export function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
-		<article lang={locale} className="mm-info">
-			<InfoNavigation />
-			<h1>{t(title)}</h1>
-			{children}
-		</article>
+		<div className="mm-info-shell">
+			<SideNavigation />
+			<article lang={locale} className="mm-info">
+				<h1>{t(title)}</h1>
+				{children}
+			</article>
+		</div>
 	)
 }
 
@@ -107,7 +120,7 @@ export function ConceptPage() {
 					'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.'
 				)}
 			</p>
-			<h2>{t('What it is not')}</h2>
+			<h2>{t('What it isn’t')}</h2>
 			<ul className="ex-not">
 				{notThis.map(([glyph, label]) => (
 					<li key={label}>
@@ -140,7 +153,7 @@ export function HowItWorksPage() {
 					<p>
 						{t('Press M → Take a memory.')}{' '}
 						{t(
-							'Or leave the game for 5 minutes, even paused: the mod keeps one on its own (at most one every 4 hours).'
+							'Or go AFK for 5 minutes, even on the pause screen: the mod takes one by itself (one every 4 hours at most).'
 						)}{' '}
 						{t('About 32 blocks around you, adjusted to what you built.')}
 					</p>
@@ -180,12 +193,12 @@ export function HowItWorksPage() {
 						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
 						{t('You stop sharing whenever you want.')}
 					</p>
-					<ShareDemo />
 					<p className="ex-line">
 						{t(
-							'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+							'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
 						)}
 					</p>
+					<ShareDemo />
 				</li>
 			</ol>
 			<h2>{t('Questions')}</h2>

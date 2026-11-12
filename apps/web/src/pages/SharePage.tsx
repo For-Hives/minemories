@@ -175,7 +175,7 @@ function ShareCall({ isPublic }: { isPublic: boolean }) {
 	const { t } = useI18n()
 	return (
 		<p className="share-note share-call" data-share="call">
-			<Link to={installPath(isPublic)}>{t('You too, keep your worlds')} →</Link>
+			<Link to={installPath(isPublic)}>{t('Want the same for your own base?')} →</Link>
 			{isPublic && <Link to="/explore">{t('See other places')}</Link>}
 		</p>
 	)
@@ -209,7 +209,7 @@ function ShareTop({
 	)
 }
 
-/** Retry for a failure that can pass; for a link that is gone, the way to keep one's own worlds instead. */
+/** Retry for a failure that can pass; for a link that is gone (no base on screen), the way to keep one's own base instead. */
 function ShareErrorActions({
 	error,
 	invite,
@@ -229,7 +229,7 @@ function ShareErrorActions({
 				{t('Retry')}
 			</button>
 		)
-	return invite ? <Link to={installPath(isPublic)}>{t('You too, keep your worlds')} →</Link> : null
+	return invite ? <Link to={installPath(isPublic)}>{t('Keep your own base in 3D too')} →</Link> : null
 }
 
 /** The scene is in view: loaded, not empty, with no error or restoration card over it. */

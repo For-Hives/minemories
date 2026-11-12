@@ -13,7 +13,7 @@ test('constants: scroll threshold 32 px, site starts at 55.5 s', () => {
 })
 
 test('start phase: an anchor in the URL, or no WebGL, starts on the site; nothing else does', () => {
-	for (const hash of ['#hero', '#steps', '#share', '#limits', '#faq']) assert.equal(P.startPhase({ hash, webgl: true }), 'site', hash)
+	for (const hash of ['#hero', '#steps', '#share', '#server-closing', '#faq']) assert.equal(P.startPhase({ hash, webgl: true }), 'site', hash)
 	assert.equal(P.startPhase({ hash: '', webgl: true }), 'film')
 	assert.equal(P.startPhase({ hash: '#unknown', webgl: true }), 'film')
 	assert.equal(P.startPhase({ hash: '#film', webgl: true }), 'film')

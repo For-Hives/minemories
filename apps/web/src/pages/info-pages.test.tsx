@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { loadLocale, translate } from '../i18n/catalog'
 import { I18nProvider } from '../i18n/I18n'
 import { LegalPage } from './ContentPages'
-import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
+import { ConceptPage, FaqPage, HowItWorksPage, SideNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
 import { SharingPage } from './SharingPage'
 
@@ -23,7 +23,7 @@ function mountGuide() {
 	return render(
 		<MemoryRouter initialEntries={['/']}>
 			<Routes>
-				<Route path="/" element={<InfoNavigation />} />
+				<Route path="/" element={<SideNavigation />} />
 				<Route path="/concept" element={<ConceptPage />} />
 				<Route path="/how-it-works" element={<HowItWorksPage />} />
 				<Route path="/installation" element={<InstallationPage />} />
@@ -35,21 +35,27 @@ function mountGuide() {
 
 test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
 	mountGuide()
-	fireEvent.click(screen.getByRole('link', { name: 'Le concept' }))
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, visitable en 3D')
+	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories\u00a0?' }))
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
+	// the side navigation marks the page you are on, and only that one
+	const side = screen.getByRole('navigation', { name: 'Guides Minemories' })
+	expect([...side.querySelectorAll('a[aria-current="page"]')].map(link => link.textContent)).toEqual([
+		'Comment ça marche',
+	])
+	expect(within(side).getByRole('list', { name: 'Guides' })).toBeTruthy()
 	expect(screen.queryByRole('tab')).toBeNull()
 	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
 	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
-	expect(screen.getByRole('heading', { name: 'Le plus simple : l’app CurseForge' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Le plus simple\u00a0: l’app CurseForge' })).toBeTruthy()
 	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' }).length).toBeGreaterThan(0)
 	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')
 	fireEvent.click(faqLink)
-	expect(screen.getByRole('heading', { name: 'Dois-je installer quelque chose sur le serveur ?' })).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant ?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Il faut installer quelque chose sur le serveur\u00a0?' })).toBeTruthy()
+	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant\u00a0?' })).toBeTruthy()
 })
 
 function mountEnglish(ui: React.ReactNode) {
@@ -81,7 +87,7 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'In Minecraft: M → type the code → Connect.',
 		'Yes: M → Auto memories.',
 		'M → Settings → Privacy',
-		'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.',
+		'Heads-up: the link shows your base’s coordinates and the server name or address.',
 	])
 		expect(howTo).toContain(label)
 	// The 32-block default radius, drawn: 65 × 65 blocks.
@@ -140,7 +146,7 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 	expect(screen.queryByRole('tab')).toBeNull()
 	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
 		'Before installing',
-		'What is it?',
+		'The mod',
 		'Installing',
 		'Capturing',
 		'Gallery and sharing',
@@ -167,7 +173,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('fr', memory)).toBe('Prendre un souvenir')
 	expect(translate('de', memory)).toBe('Erinnerung festhalten')
 	expect(translate('ja', memory)).toBe('思い出を残す')
-	expect(translate('fr', 'Yes: M → Auto memories.')).toBe('Oui : M → Souvenirs auto.')
+	expect(translate('fr', 'Yes: M → Auto memories.')).toBe('Oui\u00a0: M → Souvenirs auto.')
 	expect(translate('de', 'Yes: M → Auto memories.')).toBe('Ja: M → Auto-Fotos.')
 	const earlier = 'M → My memories → Send this memory.'
 	expect(translate('fr', earlier)).toBe('M → Mes souvenirs → Envoyer ce souvenir.')
@@ -175,7 +181,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('en-GB', earlier)).toBe('M → My memories → Send this capture.')
 	expect(translate('de', earlier)).toBe('M → Meine Erinnerungen → Diese Aufnahme senden.')
 	expect(translate('en-GB', 'Yes: M → Auto memories.')).toBe('Yes: M → Auto photos.')
-	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui : M → Photos auto.')
+	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui\u00a0: M → Photos auto.')
 	expect(translate('ja', 'In Minecraft: M → type the code → Connect.')).toContain('接続する')
 })
 
@@ -232,7 +238,9 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 	)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Qui fait Minemories')
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('Le code source est public sur GitHub ; le mod se télécharge sur la page Téléchargements.')
+	expect(text).toContain(
+		'Le code source est public sur GitHub\u00a0; le mod se télécharge sur la page Téléchargements.'
+	)
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
 })
 
@@ -245,8 +253,13 @@ test('/sharing says what a link shows, answers three questions and ends on the i
 		</I18nProvider>
 	)
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('Un lien pour un souvenir, ou pour tout un monde avec son curseur dans le temps.')
+	expect(text).toContain('Un lien vers un souvenir, ou vers tout un monde avec son curseur pour remonter le temps.')
 	expect(text).toContain('Télécharge la carte postale HD')
+	expect(text).toContain('Partager → Créer un lien → Copier')
+	// the warning an SMP player needs opens its section, before the list of what else the link shows
+	const warning = text.indexOf('Attention\u00a0: le lien montre les coordonnées de ta base')
+	expect(warning).toBeGreaterThan(-1)
+	expect(warning).toBeLessThan(text.indexOf('La scène 3D, son nom et sa date.'))
 	expect(text).toContain('la dimension, le biome, le nom du monde')
 	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
 	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')

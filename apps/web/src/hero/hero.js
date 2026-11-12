@@ -128,6 +128,25 @@ export function mountHero(host) {
 	let lastStationShown = -1
 	let touchGesture = null
 	const heldDone = new Set() // stops already played in this viewing
+	// Andy (10/11/2026): the loading screen of index.html (#boot) is a show of its own, so the film waits for it to read 100 % before it starts, rather than
+	// playing its first seconds under it. The screen marks <html data-mm-boot-full> and sends mm:boot-full (scripts/boot-screen/chunk-screen.mjs). No screen
+	// (another entry, a later script): nothing to wait for. A screen that never says so (its script failed) is waited for 21 s at most, past its own 20 s stop.
+	const bootStartedAt = performance.now()
+	const BOOT_WAIT_MS = 21000
+	const bootHolds = () =>
+		Boolean(document.getElementById('boot')) &&
+		root.dataset.mmBootFull !== '1' &&
+		performance.now() - bootStartedAt < BOOT_WAIT_MS
+	const afterBoot = run => {
+		if (!bootHolds()) return run()
+		const go = () => {
+			clearTimeout(timer)
+			removeEventListener('mm:boot-full', go)
+			if (!signal.aborted) run()
+		}
+		const timer = setTimeout(go, Math.max(0, BOOT_WAIT_MS - (performance.now() - bootStartedAt)))
+		addEventListener('mm:boot-full', go, { signal })
+	}
 	let stationIndex = 0
 	let siteToken = 0 // invalidates a hand-over in progress when the visitor goes elsewhere
 	let appliedSize = { W: 0, H: 0 } // viewport size at the last resize the page acted on
@@ -452,7 +471,7 @@ export function mountHero(host) {
 		else if (SCRUB_ON) {
 			// The clock was created playing (or paused with ?autoplay=0); the first frame arms the page (loopScrub).
 			scene.setTime(0)
-		} else if (params.get('autoplay') !== '0') startFilm()
+		} else if (params.get('autoplay') !== '0') afterBoot(startFilm)
 		updatePlayUI()
 	}
 
@@ -522,7 +541,6 @@ export function mountHero(host) {
 	// ---------------------------------------------------------------------------------------------------------------
 
 	function wirePage() {
-		wireMenu()
 		// Scrolling is the browser's, always: passive listener, no preventDefault, no wheel listener, no scroll written (except "Watch the film again" and the reset at load).
 		on(
 			window,
@@ -559,17 +577,21 @@ export function mountHero(host) {
 				if (!SCRUB_ON) scrollTop0()
 			}
 		})
-		// The header's section links glide (the browser's own smooth scrolling, only when motion is welcome); every other jump or focus move is instant.
-		for (const link of $$('.mc-sitebar__nav a, .mc-sitebar__brand, .site-menu__links a')) {
-			link.addEventListener('click', event => {
-				const href = link.getAttribute('href') ?? ''
-				const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
-				if (!target || reduced()) return
-				event.preventDefault()
-				target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-				history.replaceState(null, '', link.getAttribute('href'))
-			})
-		}
+		// On the site the brand glides back to the top (the browser's own smooth scrolling, only when motion is welcome; otherwise an instant jump), then
+		// the hero's heading takes the focus (without a second scroll): the keyboard and screen readers go on from there. The bar's menus list pages only.
+		header?.addEventListener('click', event => {
+			const link = event.target instanceof Element ? event.target.closest('.mc-sitebar__brand') : null
+			const href = link?.getAttribute('href') ?? ''
+			const target = phase() === 'site' && href.startsWith('#') ? document.querySelector(href) : null
+			if (!target) return
+			event.preventDefault()
+			target.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' })
+			history.replaceState(null, '', href)
+			const heading = target.querySelector('h1, h2') ?? target
+			if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1')
+			// next frame: the phones' panel, if it was open, has closed and given the page back (it is inert while the panel is open)
+			requestAnimationFrame(() => heading.focus({ preventScroll: true }))
+		})
 		for (const button of $$('[data-action="replay"]')) button.addEventListener('click', replay)
 		playBtn.addEventListener('click', () => {
 			if (!scene || !live) return
@@ -620,7 +642,7 @@ export function mountHero(host) {
 		})
 	}
 
-	// A page opened on a section link (#steps, #share, #faq...) is scrolled by the browser as soon as the anchor exists, BEFORE the catalogue and the fonts change the height of
+	// A page opened on a section's address (#steps, #share, #faq...) is scrolled by the browser as soon as the anchor exists, BEFORE the catalogue and the fonts change the height of
 	// what lies above it (a longer French sentence, a pixel font): the title then ends under the header or the strip (v9b, point 2). In the first seconds, and only if the visitor has
 	// not moved the page since, the section is put back under the header and the strip: an instant scroll to the target (the only other position write besides "Watch again"
 	// and the reset at load; tests/t2-deeplink.cjs).
@@ -635,59 +657,6 @@ export function mountHero(host) {
 			scrollTo({ top: Math.max(0, scrollY + top - want), left: 0, behavior: 'instant' })
 			site?.rebaseScroll?.()
 		}
-	}
-
-	// The menu of the small screens (a disclosure under the header: links to the sections, and the language under 700 px). Escape closes it FIRST and goes no further (during
-	// the film it would otherwise leave the film), a click or the focus going elsewhere closes it, a link closes it and the page glides to its section. No wheel or touch listener.
-	function wireMenu() {
-		const button = $('#site-menu-btn')
-		const menu = $('#site-menu')
-		if (!button || !menu) return
-		const setOpen = (open, { focus = false } = {}) => {
-			menu.hidden = !open
-			button.setAttribute('aria-expanded', open ? 'true' : 'false')
-			root.classList.toggle('is-menu-open', open)
-			if (!open && focus) button.focus({ preventScroll: true })
-		}
-		button.addEventListener('click', () => setOpen(menu.hidden))
-		on(
-			document,
-			'keydown',
-			event => {
-				if (event.key !== 'Escape' || menu.hidden) return
-				event.preventDefault()
-				event.stopPropagation()
-				setOpen(false, { focus: true })
-			},
-			true
-		)
-		on(
-			document,
-			'pointerdown',
-			event => {
-				if (!menu.hidden && event.target instanceof Element && !event.target.closest('#site-menu, #site-menu-btn'))
-					setOpen(false)
-			},
-			{ passive: true }
-		)
-		const leaves = event => {
-			const next = event.relatedTarget
-			if (!menu.hidden && !(next instanceof Node && (menu.contains(next) || button.contains(next)))) setOpen(false)
-		}
-		menu.addEventListener('focusout', leaves)
-		button.addEventListener('focusout', event => {
-			if (event.relatedTarget instanceof Node && menu.contains(event.relatedTarget)) return
-			// Shift+Tab from the button or a click elsewhere: closed; Tab from the button goes into the panel (next in the DOM) and stays open.
-			if (!menu.hidden && !menu.contains(event.relatedTarget)) setOpen(false)
-		})
-		for (const link of $$('.site-menu__links a')) link.addEventListener('click', () => setOpen(false))
-		on(matchMedia('(min-width: 1320px)'), 'change', event => {
-			if (event.matches) setOpen(false)
-		})
-		// The film hides the button from 700 px up (site.css): an open menu goes with it.
-		on(document, 'mm:phase', () => {
-			if (!button.getClientRects().length) setOpen(false)
-		})
 	}
 
 	function noteVisitorInput() {
@@ -730,7 +699,7 @@ export function mountHero(host) {
 		if (SCRUB_ON) return onKeyScrub(event)
 		if (event.altKey || event.ctrlKey || event.metaKey) return
 		const target = event.target instanceof Element ? event.target : document.body
-		if (target.closest('input, select, textarea, [contenteditable="true"]')) return
+		if (target.closest('input, select, textarea, [contenteditable="true"], [data-own-keys]')) return
 		if (phase() === 'site') return
 		if (event.key === 'Escape') {
 			handOver(phases.event({ type: 'key', key: 'Escape' }), 'key')
@@ -1374,12 +1343,12 @@ export function mountHero(host) {
 	function loopScrub(now) {
 		if (!armedScrub) {
 			if (phase() === 'site') armedScrub = true
-			else if ((scene.probe.frames ?? 0) > 0) {
+			else if ((scene.probe.frames ?? 0) > 0 && !bootHolds()) {
 				armedScrub = true
 				phases.event({ type: 'frame' })
 				for (const type of ['wheel', 'touchstart', 'keydown'])
 					removeEventListener(type, noteVisitorInput, { capture: true })
-				scrub.rebase(now) // the film starts counting from the first rendered frame
+				scrub.rebase(now) // the film starts counting from the first rendered frame, once the loading screen reads 100 %
 				// A position nobody asked for (a restored scroll, a script) is still reset; a visitor who scrolled while the scene was loading goes to the site.
 				if (scrollY > 0) {
 					if (visitorInput) void jumpToSite('scroll')
@@ -1473,6 +1442,12 @@ export function mountHero(host) {
 			case 'return':
 				// Nothing is announced while the page rushes or returns; the HUD is emptied on the way (the phases do it).
 				sigSay.textContent = ''
+				// Andy (10/11/2026): a flick is a way out of the film, so the site's header (solid, with its links and menu) comes in as the rush starts,
+				// not 2 to 3 s later when the glide lands. A return to the start of the film gives the film's header back (changePhase, 'film').
+				if (e.type === 'flick' && e.phase === 'burst') {
+					root.classList.add('is-leaving')
+					header.classList.add('is-solid')
+				}
 				if (e.type === 'return' && e.phase === 'glide') pendingCause = 'return'
 				break
 			case 'jump':
@@ -1583,7 +1558,8 @@ export function mountHero(host) {
 			dropFilmFrame()
 			veil.classList.remove('is-on')
 		}
-		header.classList.toggle('is-solid', next === 'site')
+		header.classList.toggle('is-solid', next === 'site' || root.classList.contains('is-leaving'))
+		if (next !== 'glide') root.classList.remove('is-leaving')
 		const detail = {
 			phase: next,
 			cause,
@@ -1728,7 +1704,8 @@ export function mountHero(host) {
 	}
 
 	const viewportH = () => root.clientHeight || innerHeight
-	const insideMenu = target => target instanceof Element && Boolean(target.closest('.site-menu'))
+	// The bar's popups scroll by themselves (SiteNav: the menus, the language list, the phones' panel): a wheel or a swipe there is never the film's.
+	const insideMenu = target => target instanceof Element && Boolean(target.closest('.mm-nav__panel, .mm-drawer'))
 
 	function onWheel(event) {
 		lastGestureAt = performance.now()
@@ -1793,7 +1770,7 @@ export function mountHero(host) {
 	function onKeyScrub(event) {
 		if (event.altKey || event.ctrlKey || event.metaKey) return
 		const target = event.target instanceof Element ? event.target : document.body
-		if (target.closest('input, select, textarea, [contenteditable="true"]')) return
+		if (target.closest('input, select, textarea, [contenteditable="true"], [data-own-keys]')) return
 		const key = event.key
 		if (phase() === 'site') {
 			// At the top of the site an upward key is the clock's (the detent, then the rewind); everywhere else the keys are the page's.

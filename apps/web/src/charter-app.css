@@ -197,21 +197,16 @@ html[data-mc-font="read"] .mc-btn {
 
 /* --- 3. Header (the landing's bar, mc-sitebar) ---------------------------------------------------------------------------------------------------- */
 
-/* The header is sticky: what gets focus or a #anchor scrolls in below it, never under it (WCAG 2.4.11). Not on the landing (no .mm-header). */
+/* The header is sticky: what gets focus or a #anchor scrolls in below it, never under it (WCAG 2.4.11). Not on the landing (no .mm-header). It is 64 px
+   tall at every width (the 56 px brand and the bar's padding, site-nav.css --header-h). */
 html:has(.mm-header) {
-	scroll-padding-top: calc(56px + var(--ds-sp-3));
-}
-
-@media (min-width: 1000px) {
-	html:has(.mm-header) {
-		scroll-padding-top: calc(64px + var(--ds-sp-3));
-	}
+	scroll-padding-top: calc(64px + var(--ds-sp-3));
 }
 
 .mm-header {
 	position: sticky;
 	top: 0;
-	z-index: 20;
+	z-index: var(--ds-z-bar);
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-5);
@@ -247,84 +242,6 @@ html[data-mc-font="read"] .mm-brand {
 	font: 700 20px / 24px var(--f-title);
 }
 
-.mm-desktop-nav {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-1) var(--ds-sp-4);
-}
-
-.mm-desktop-nav a {
-	display: inline-flex;
-	white-space: nowrap;
-	align-items: center;
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-1);
-	font: 16px / 18px var(--f-ui);
-	color: var(--text);
-	text-decoration: none;
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.mm-desktop-nav a:hover {
-	color: var(--ember);
-}
-
-.mm-desktop-nav a[aria-current="page"] {
-	color: var(--ember);
-	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
-}
-
-.mm-header-actions {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-	margin-left: auto;
-}
-
-.mm-language {
-	position: relative;
-}
-
-.mm-language .mc-select__control {
-	--_h: var(--ds-hit);
-	max-width: min(160px, 32vw);
-	text-overflow: ellipsis;
-}
-
-.mm-language-error {
-	position: absolute;
-	top: calc(100% + var(--ds-sp-2));
-	right: 0;
-	width: max-content;
-	max-width: 240px;
-	padding: var(--ds-sp-2) var(--ds-sp-3);
-	background: var(--tip-bg);
-	border: var(--gp) solid var(--tip-b);
-	color: var(--bad);
-	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
-}
-
-.mm-account {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-	font: 16px / 18px var(--f-ui);
-}
-
-.mm-account a {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	color: var(--text);
-	text-decoration: none;
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.mm-account a:hover {
-	color: var(--ember);
-}
-
 .mm-account-avatar {
 	position: relative;
 	display: grid;
@@ -348,30 +265,6 @@ html[data-mc-font="read"] .mm-brand {
 	width: calc(100% - 2 * var(--gp));
 	height: calc(100% - 2 * var(--gp));
 	image-rendering: pixelated;
-}
-
-.mm-account button {
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-1);
-	background: none;
-	border: 0;
-	color: var(--text-2);
-	font: inherit;
-	text-decoration: underline;
-	text-decoration-color: var(--text-3);
-	text-underline-offset: 4px;
-	cursor: pointer;
-}
-
-.mm-account button:hover {
-	color: var(--ember);
-}
-
-.mm-account a span {
-	max-width: 140px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
 .mm-file-control {
@@ -412,38 +305,10 @@ html[data-mc-font="read"] .mm-brand {
 	display: none;
 }
 
-.mm-mobile-menu {
-	display: none;
-}
-
-.mm-mobile-menu summary {
-	list-style: none;
-}
-
-.mm-mobile-menu summary::-webkit-details-marker {
-	display: none;
-}
-
-.mm-mobile-menu nav {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	right: 0;
-	display: grid;
-	padding: var(--ds-sp-3) var(--ds-sp-4) var(--ds-sp-5);
-	background: var(--night);
-	box-shadow:
-		0 var(--gp) 0 var(--outline),
-		0 calc(2 * var(--gp)) 0 #3a322b;
-}
 .mm-footer nav {
 	display: grid;
 	align-content: start;
 	gap: 0;
-}
-
-.mm-mobile-menu:not([open]) nav {
-	display: none;
 }
 
 .mm-footer a {
@@ -462,16 +327,6 @@ html[data-mc-font="read"] .mm-brand {
 	text-decoration-color: var(--text-3);
 }
 
-.mm-mobile-menu nav a {
-	display: flex;
-	align-items: center;
-	min-height: var(--ds-hit);
-	font: 16px / 18px var(--f-ui);
-	color: var(--text);
-	text-decoration: none;
-	text-shadow: var(--ds-text-shadow-1);
-}
-
 .mm-footer a:hover {
 	color: var(--ember);
 	text-decoration-color: var(--ember);
@@ -480,10 +335,6 @@ html[data-mc-font="read"] .mm-brand {
 .mm-prose a:hover {
 	color: var(--ember);
 	text-decoration-color: var(--ember);
-}
-
-.mm-mobile-menu nav a:hover {
-	color: var(--ember);
 }
 
 .mm-main {
@@ -496,7 +347,7 @@ html[data-mc-font="read"] .mm-brand {
 	position: fixed;
 	top: var(--ds-sp-2);
 	left: var(--ds-sp-4);
-	z-index: 100;
+	z-index: var(--ds-z-skip);
 	transform: translateY(-180%);
 	display: inline-flex;
 	align-items: center;
@@ -510,98 +361,6 @@ html[data-mc-font="read"] .mm-brand {
 
 .mm-skip:focus {
 	transform: none;
-}
-
-@media (max-width: 1050px) {
-	.mm-file-control > span:first-of-type {
-		display: none;
-	}
-	.mm-file-control > span:last-of-type {
-		display: inline-block;
-	}
-	/* Icon only: a square stone button of the kit, never a bare glyph. */
-	.mm-header .mm-button.mm-button-quiet.mm-file-control {
-		--mc-bevel: inset var(--gp) var(--gp) 0 var(--_hi), inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--_lo);
-		width: var(--ds-hit);
-		min-width: var(--ds-hit);
-		padding-inline: 0;
-		background: var(--_face);
-		border-color: var(--outline);
-		color: #fff;
-	}
-	.mm-header .mm-button.mm-button-quiet.mm-file-control:hover:not(:disabled) {
-		border-color: var(--hover);
-	}
-	.mm-account a span {
-		display: none;
-	}
-}
-
-/*
- * The bar steps down as the screen narrows, so the two links stay in it as long as possible: under 1100 px the
- * language moves into the menu and the install button takes its short label; under 920 px the links join the
- * menu too (room kept for the signed-in account); under 560 px the account (see the install button rules below).
- */
-.mm-mobile-menu .mm-language {
-	display: none;
-	margin-top: var(--ds-sp-3);
-}
-
-/* Three links, the language, the account and the install button need about 1340 px in Russian: the language waits
-   in the menu up to 1440 px, and the links up to 1240 px (Russian needs 1220 px without the language). */
-@media (max-width: 1440px) {
-	.mm-mobile-menu {
-		display: block;
-	}
-	.mm-header-actions > .mm-language {
-		display: none;
-	}
-	.mm-mobile-menu .mm-language {
-		display: inline-block;
-		justify-self: start;
-	}
-	/* The menu has the room: the whole language name, the chevron on the field. */
-	.mm-mobile-menu .mm-language .mc-select__control {
-		min-width: 200px;
-		max-width: 100%;
-	}
-}
-
-@media (max-width: 1240px) {
-	.mm-desktop-nav {
-		display: none;
-	}
-}
-
-/* Signed in, the bar adds "My gallery" and the account (avatar, name, sign out): the links wait in the menu up to
-   1440 px, and the name shows from 1600 px (Russian needs about 1550 px with it). */
-@media (max-width: 1440px) {
-	.mm-header--session .mm-desktop-nav {
-		display: none;
-	}
-}
-
-@media (max-width: 1600px) {
-	.mm-header--session .mm-account a span {
-		display: none;
-	}
-}
-
-@media (max-width: 560px) {
-	.mm-header-actions > .mm-button {
-		white-space: nowrap;
-	}
-	.mm-header {
-		gap: var(--ds-sp-2);
-		padding-inline: var(--ds-sp-3);
-	}
-	.mm-header-actions {
-		gap: var(--ds-sp-2);
-	}
-	.mm-header-actions > .mm-button {
-		min-width: 0;
-		padding-inline: calc(4 * var(--gp));
-	}
 }
 
 @media (min-width: 1000px) {
@@ -707,47 +466,13 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* The header's install button: the whole label, then a shorter one under 1100 px. As on the landing, the long label
-   stays the accessible name (the short one is aria-hidden), so it is only hidden visually. On phones the account
-   moves into the menu so the install button keeps its place. */
-.mm-install-short,
-.mm-menu-account {
-	display: none;
-}
-
-@media (max-width: 1100px) {
-	.mm-install-long {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-	.mm-install-short {
-		display: inline;
-	}
-}
-
-@media (max-width: 560px) {
-	.mm-header-account {
-		display: none;
-	}
-	.mm-menu-account {
-		display: block;
-		margin-top: var(--ds-sp-3);
-	}
-}
-
 /* --- 5. Toast (the kit's notification) ---------------------------------------------------------------------------------------------------------------- */
 
 .mm-toast {
 	position: fixed;
 	right: var(--ds-sp-5);
 	bottom: var(--ds-sp-5);
-	z-index: 30;
+	z-index: var(--ds-z-page);
 	max-width: min(380px, calc(100% - 48px));
 	padding: var(--ds-sp-3) var(--ds-sp-4);
 	background: var(--toast);
@@ -832,19 +557,10 @@ html[data-mc-motion="reduced"] .mm-toast {
 	max-width: var(--ds-measure);
 }
 
-/* The whole logo (camera and tripod) at the end of the content headers, at the grass block's former height. */
+/* The whole logo (camera and tripod) at the end of the content headers. */
 .mm-content-logo {
 	width: auto;
 	height: 112px;
-	flex-shrink: 0;
-	image-rendering: pixelated;
-	filter: drop-shadow(0 12px 10px rgb(0 0 0 / 45%));
-}
-
-/* The grass block of the blog cards: drawn texel for texel (nearest), with a ground shadow like the dock's stills. */
-.mm-block-mark {
-	width: 96px;
-	height: auto;
 	flex-shrink: 0;
 	image-rendering: pixelated;
 	filter: drop-shadow(0 12px 10px rgb(0 0 0 / 45%));

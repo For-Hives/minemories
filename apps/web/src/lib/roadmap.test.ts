@@ -5,10 +5,8 @@ import {
 	parseRoadmap,
 	parseRoadmapItem,
 	pullRequestUrl,
-	type RoadmapItem,
 	releaseNoteCap,
 	roadmapColumnCap,
-	roadmapItemDate,
 } from './roadmap'
 
 const issue = (number: number, extra: Record<string, unknown> = {}) => ({
@@ -25,7 +23,6 @@ const board = (columns: Record<string, unknown> = {}) => ({
 	columns: {
 		inProgress: { items: [issue(1)], more: 0 },
 		planned: { items: [], more: 0 },
-		done: { items: [], more: 0 },
 		...columns,
 	},
 })
@@ -37,10 +34,8 @@ test('keeps a valid issue, trimming its title, deduplicating known areas and ign
 		url: 'https://github.com/For-Hives/minemories/issues/7',
 		areas: ['api', 'front'],
 		updatedAt: '2026-11-01T10:00:00Z',
-		closedAt: null,
 	})
-	expect(parseRoadmapItem(issue(8, { areas: 'mod', closedAt: undefined }))).toMatchObject({ areas: [], closedAt: null })
-	expect(parseRoadmapItem(issue(9, { closedAt: '2026-11-02T10:00:00Z' }))?.closedAt).toBe('2026-11-02T10:00:00Z')
+	expect(parseRoadmapItem(issue(8, { areas: 'mod' }))).toMatchObject({ areas: [] })
 })
 
 test('links only ever point at the repository issue, whatever URL the response carries', () => {
@@ -60,26 +55,29 @@ test('drops issues with a missing or unusable field', () => {
 		issue(4, { title: '   ' }),
 		issue(5, { updatedAt: 'yesterday' }),
 		issue(6, { updatedAt: undefined }),
-		issue(7, { closedAt: 'never' }),
-		issue(8, { closedAt: 0 }),
 	])
 		expect(parseRoadmapItem(value)).toBeNull()
 })
 
-test('parses the three columns, keeping valid cards in the API order and counting the cut ones as more', () => {
+test('parses the two columns, keeping valid cards in the API order and counting the cut ones as more', () => {
 	const many = Array.from({ length: roadmapColumnCap + 3 }, (_, index) => issue(index + 1))
 	const roadmap = parseRoadmap(
 		board({
+			inProgress: { items: many, more: -2 },
 			planned: { items: [issue(10), { broken: true }, issue(11)], more: 4 },
-			done: { items: many, more: -2 },
 		})
 	)
 	expect(roadmap.updatedAt).toBe('2026-11-07T09:00:00Z')
-	expect(roadmap.columns.inProgress).toEqual({ items: [parseRoadmapItem(issue(1))], more: 0 })
+	expect(roadmap.columns.inProgress.items).toHaveLength(roadmapColumnCap)
+	expect(roadmap.columns.inProgress.more).toBe(3)
 	expect(roadmap.columns.planned.items.map(item => item.number)).toEqual([10, 11])
 	expect(roadmap.columns.planned.more).toBe(4)
-	expect(roadmap.columns.done.items).toHaveLength(roadmapColumnCap)
-	expect(roadmap.columns.done.more).toBe(3)
+})
+
+test('the issues the API still sends as done stay off the board, and the board does not need them', () => {
+	const roadmap = parseRoadmap(board({ done: { items: [issue(5)], more: 0 } }))
+	expect(Object.keys(roadmap.columns)).toEqual(['inProgress', 'planned'])
+	expect(parseRoadmap(board()).columns.inProgress).toEqual({ items: [parseRoadmapItem(issue(1))], more: 0 })
 })
 
 test('rejects a response that is not a roadmap', () => {
@@ -88,19 +86,10 @@ test('rejects a response that is not a roadmap', () => {
 		[],
 		{ ...board(), updatedAt: 'soon' },
 		{ updatedAt: '2026-11-07T09:00:00Z' },
-		board({ done: undefined }),
+		board({ inProgress: undefined }),
 		board({ planned: { items: 'none', more: 0 } }),
 	])
 		expect(() => parseRoadmap(value)).toThrow()
-})
-
-test('done cards show their closing date, other cards their last activity', () => {
-	const closed = parseRoadmapItem(issue(1, { closedAt: '2026-11-03T10:00:00Z' })) as RoadmapItem
-	const open = parseRoadmapItem(issue(2)) as RoadmapItem
-	expect(roadmapItemDate(closed, 'done')).toBe('2026-11-03T10:00:00Z')
-	expect(roadmapItemDate(closed, 'planned')).toBe('2026-11-01T10:00:00Z')
-	expect(roadmapItemDate(open, 'done')).toBe('2026-11-01T10:00:00Z')
-	expect(roadmapItemDate(open, 'inProgress')).toBe('2026-11-01T10:00:00Z')
 })
 
 const release = (extra: Record<string, unknown> = {}) => ({

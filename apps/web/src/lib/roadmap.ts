@@ -1,6 +1,7 @@
 /**
- * The public roadmap board served by GET /api/roadmap: GitHub issues labelled "roadmap", split into three columns,
- * plus the latest mod version computed from the repository's mod-v* tags.
+ * The public roadmap board served by GET /api/roadmap: GitHub issues labelled "roadmap" in two columns (in progress, planned),
+ * plus the latest mod version computed from the repository's mod-v* tags. The API also sends the issues closed in the last 30 days
+ * ("done"); the site ignores them, finished work lives on /versions (issue #243).
  */
 import {
 	ROADMAP_COLUMN_LIMIT,
@@ -12,7 +13,7 @@ import { repositoryUrl } from './repository'
 
 export type { RoadmapArea }
 
-export const roadmapColumns = ['inProgress', 'planned', 'done'] as const
+export const roadmapColumns = ['inProgress', 'planned'] as const
 export type RoadmapColumnId = (typeof roadmapColumns)[number]
 export const roadmapAreas: readonly RoadmapArea[] = roadmapArea.options
 /** The API caps each column at this many items and reports the rest as "more". */
@@ -31,7 +32,6 @@ export interface RoadmapItem {
 	url: string
 	areas: RoadmapArea[]
 	updatedAt: string
-	closedAt: string | null
 }
 export interface RoadmapColumn {
 	items: RoadmapItem[]
@@ -70,9 +70,9 @@ const isArea = (value: unknown): value is RoadmapArea => roadmapAreas.includes(v
 /** One card, or null when a field is missing or unusable: the board keeps the other cards. */
 export function parseRoadmapItem(value: unknown): RoadmapItem | null {
 	if (!isRecord(value)) return null
-	const { number, title, url, areas, updatedAt, closedAt } = value
+	const { number, title, url, areas, updatedAt } = value
 	if (!isCount(number) || number === 0 || typeof title !== 'string' || !title.trim()) return null
-	if (!(isDate(updatedAt) && (closedAt === null || closedAt === undefined || isDate(closedAt)))) return null
+	if (!isDate(updatedAt)) return null
 	// Links only ever point at this repository's issues, whatever the response says.
 	const expected = `${issueUrlPrefix}${number}`
 	return {
@@ -81,7 +81,6 @@ export function parseRoadmapItem(value: unknown): RoadmapItem | null {
 		url: url === expected ? url : expected,
 		areas: Array.isArray(areas) ? [...new Set(areas.filter(isArea))] : [],
 		updatedAt,
-		closedAt: closedAt ?? null,
 	}
 }
 
@@ -137,13 +136,7 @@ export function parseRoadmap(data: unknown): Roadmap {
 		columns: {
 			inProgress: parseColumn(columns.inProgress),
 			planned: parseColumn(columns.planned),
-			done: parseColumn(columns.done),
 		},
 		latestRelease: parseLatestRelease(data.latestRelease),
 	}
-}
-
-/** The date a card shows: when it was closed for the done column, its last activity otherwise. */
-export function roadmapItemDate(item: RoadmapItem, column: RoadmapColumnId): string {
-	return column === 'done' && item.closedAt ? item.closedAt : item.updatedAt
 }

@@ -3,7 +3,7 @@
 ## Organization
 
 - `app-context.tsx` holds only the session, the local file and notifications; pages no longer depend on `App.tsx`.
-- `components/SiteLayout.tsx` carries the brand, desktop/mobile navigation, language picker, GLB opening, account, footer and skip link. Actions are keyboard accessible and mobile navigation closes on page change.
+- `components/SiteLayout.tsx` carries the brand, the site's bar (`components/SiteNav.tsx`, shared with the landing: menus of every page, account menu, language picker, install button, phones' panel), GLB opening (development only), footer and skip link. Actions are keyboard accessible and every menu closes on page change.
 - `components/ui.tsx` groups buttons and section titles; `components/Loading.tsx` provides page, gallery, viewer and account skeletons plus an orbital SVG.
 - `App.tsx` loads every page family on demand, with Suspense and recovery from loading errors. Content pages do not import the Three.js module.
 - `theme.css` carries colors, spacing, spring transitions, entrances, SVG floating and shimmer. Every animation respects `prefers-reduced-motion`.

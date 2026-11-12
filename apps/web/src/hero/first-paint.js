@@ -22,7 +22,8 @@ export function prepareRoot(root, location) {
 		}
 	}
 	document.body?.classList.add('mc-root') // the kit's root class (colour, font, text rendering): on <body>, which the film does not own
-	const direct = /^#(hero|main|steps|share|limits|faq)$/.test(location.hash) || /[?&]nowebgl=1/.test(location.search)
+	const direct =
+		/^#(hero|main|steps|share|server-closing|faq)$/.test(location.hash) || /[?&]nowebgl=1/.test(location.search)
 	root.dataset.phase = direct ? 'site' : 'film'
 	// v10: the scroll drives the film unless ?scrub=0 (the v9d behaviour). The class locks the document during the film (site.css) and is read by hero.js.
 	if (!/[?&]scrub=0/.test(location.search)) root.classList.add('is-scrub')

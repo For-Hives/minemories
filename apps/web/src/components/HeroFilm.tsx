@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo } from 'react'
 import charterCss from '../hero/charter.css?raw'
 import filmCss from '../hero/film.css?raw'
 import { prepareRoot } from '../hero/first-paint.js'
+import illusCss from '../hero/illus.css?raw'
 import { useI18n } from '../i18n/I18n'
 import { BOOT_STEPS, reportBootProgress, signalPageReady, withBootProgress } from '../lib/boot-progress'
 import { createGlbFetcher, loadCaptureManifest } from '../lib/capture-delta'
@@ -11,7 +12,7 @@ import { reportWebFailure } from '../observability/WebObservability'
 import { HeroMarkup } from './HeroMarkup'
 
 /** The film, then the design system components (docs/features/design-system.md). The tokens (tokens.css) and the game kit (kit.css) are loaded on every page by main.tsx. */
-const styles = [filmCss, charterCss].join('\n')
+const styles = [filmCss, charterCss, illusCss].join('\n')
 /** Folder of the GLB captures (static files, apps/web/public/hero/captures). */
 export const capturesUrl = '/hero/captures/'
 /**

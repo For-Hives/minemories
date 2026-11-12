@@ -1,11 +1,8 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
-import { authClient } from '../auth-client'
-import { type FooterLink, footerGroups, navigation } from '../content/navigation'
+import { elsewhereLinks, type FooterLink, footerGroups } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
-import { isLocale, localeOptions } from '../i18n/locales'
-import { avatarUrl } from '../lib/avatar'
 import {
 	applyDisplay,
 	type DisplayOption,
@@ -13,13 +10,10 @@ import {
 	setDisplayOption,
 	storeDisplayOption,
 } from '../lib/display-preferences'
-import { clearAllDrafts } from '../lib/form-drafts'
-import { repositoryUrl } from '../lib/repository'
-import { catalogLinks } from '../pages/installation-loaders'
 import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
-import { LoadingSkeleton } from './Loading'
-import { buttonDark, buttonLime, buttonQuiet, fileInputHidden } from './ui'
+import { SiteNav } from './SiteNav'
+import { buttonQuiet, fileInputHidden } from './ui'
 
 const legalLinks = [
 	{ to: '/privacy', label: 'Privacy' },
@@ -33,42 +27,6 @@ export function Brand({ solo = false }: { solo?: boolean }) {
 			<BrandMark solo={solo} />
 			{!solo && <span>Minemories</span>}
 		</Link>
-	)
-}
-function AccountControl() {
-	const { session, isPending, refreshSession } = useAppContext()
-	const { t } = useI18n()
-	const navigate = useNavigate()
-	if (isPending) return <LoadingSkeleton kind="account" label="Loading your space…" />
-	if (!session)
-		return (
-			<Link className={buttonDark} to="/login">
-				{t('Sign in')}
-			</Link>
-		)
-	const avatar = avatarUrl(session.user)
-	return (
-		<div className="mm-account">
-			<Link to="/account" title={`${session.user.name} — ${t('My account')}`} aria-label={t('My account')}>
-				<b className="mm-account-avatar" aria-hidden="true">
-					{session.user.name.slice(0, 1).toUpperCase()}
-					{avatar && <img src={avatar} alt="" width={32} height={32} loading="lazy" />}
-				</b>
-				<span>{session.user.name}</span>
-			</Link>
-			<button
-				type="button"
-				onClick={async () => {
-					// Unsaved names and descriptions are private: they never outlive the session on a shared computer.
-					clearAllDrafts()
-					await authClient.signOut()
-					await refreshSession()
-					navigate('/')
-				}}
-			>
-				{t('Sign out')}
-			</button>
-		</div>
 	)
 }
 function FileControl() {
@@ -100,92 +58,12 @@ function FileControl() {
 		</label>
 	)
 }
-function LanguageControl() {
-	const { locale, setLocale, pendingLocale, localeError, t } = useI18n()
-	return (
-		<label className="mm-language mc-select mc-select--compact">
-			<span className="sr-only">{t('Language')}</span>
-			<select
-				className="mc-select__control"
-				value={pendingLocale ?? locale}
-				aria-busy={pendingLocale !== null}
-				onChange={event => {
-					if (isLocale(event.target.value)) setLocale(event.target.value)
-				}}
-			>
-				{localeOptions.map(option => (
-					<option key={option.id} value={option.id} lang={option.tag}>
-						{option.label}
-					</option>
-				))}
-			</select>
-			{localeError && (
-				<span role="alert" className="mm-language-error">
-					{t('Could not load this language. Select it again to retry.')}
-				</span>
-			)}
-		</label>
-	)
-}
-/** The site's bar, the same on every page that is not the landing film or the 3D viewer: brand, links, language, account and the phones' menu. */
+/** The site's bar, the same on every page that is not the 3D viewer, and on the landing (HeroMarkup): the brand, then SiteNav. */
 function SiteHeader() {
-	const { session } = useAppContext()
-	const { t } = useI18n()
-	const { pathname } = useLocation()
-	const mobile = useRef<HTMLDetailsElement>(null)
-	// The menu's own language picker (phones) only exists while the menu is open: one picker at a time.
-	const [menuOpen, setMenuOpen] = useState(false)
-	useEffect(() => {
-		mobile.current?.removeAttribute('open')
-	}, [pathname])
 	return (
-		<header className={session ? 'mm-header mm-header--session' : 'mm-header'}>
+		<header className="mm-header">
 			<Brand solo />
-			<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
-				{navigation.map(link => (
-					<NavLink key={link.to} to={link.to}>
-						{t(link.label)}
-					</NavLink>
-				))}
-				{session && <NavLink to="/gallery">{t('My gallery')}</NavLink>}
-			</nav>
-			<div className="mm-header-actions">
-				<LanguageControl />
-				<FileControl />
-				<div className="mm-header-account">
-					<AccountControl />
-				</div>
-				<Link className={`${buttonLime} mm-install-cta`} to="/installation">
-					<span className="mm-install-long">{t('Install the mod')}</span>
-					<span className="mm-install-short" aria-hidden="true">
-						{t('Install it')}
-					</span>
-				</Link>
-				<details ref={mobile} className="mm-mobile-menu" onToggle={event => setMenuOpen(event.currentTarget.open)}>
-					<summary className="mc-btn mc-btn--tool" aria-label={t('Open menu')}>
-						<span className="mc-icon mc-icon--menu" aria-hidden="true" />
-					</summary>
-					<nav aria-label={t('Main navigation')}>
-						{navigation.map(link => (
-							<Link key={link.to} to={link.to}>
-								{t(link.label)}
-							</Link>
-						))}
-						{session && <Link to="/gallery">{t('My gallery')}</Link>}
-						{legalLinks.map(link => (
-							<Link to={link.to} key={link.to}>
-								{t(link.label)}
-							</Link>
-						))}
-						{menuOpen && (
-							<div className="mm-menu-account">
-								<AccountControl />
-							</div>
-						)}
-						{menuOpen && <LanguageControl />}
-					</nav>
-				</details>
-			</div>
+			<SiteNav extra={<FileControl />} />
 		</header>
 	)
 }
@@ -247,12 +125,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 				))}
 				<nav aria-label={t('Elsewhere')}>
 					<h2 className="mm-footer-title">{t('Elsewhere')}</h2>
-					{catalogLinks().map(catalog => (
-						<a key={catalog.name} href={catalog.url}>
-							{catalog.name}
-						</a>
+					{elsewhereLinks().map(link => (
+						<FooterAnchor key={link.label} link={link} />
 					))}
-					<a href={repositoryUrl}>GitHub</a>
 					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>
 			</footer>
@@ -268,8 +143,9 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 /** A footer link: a page of the site, or an outside address. */
 function FooterAnchor({ link }: { link: FooterLink }) {
 	const { t } = useI18n()
-	if ('href' in link) return <a href={link.href}>{t(link.label)}</a>
-	return <Link to={link.to}>{t(link.label)}</Link>
+	const label = link.plain ? link.label : t(link.label)
+	if ('href' in link) return <a href={link.href}>{label}</a>
+	return <Link to={link.to}>{label}</Link>
 }
 
 function safeStorage() {

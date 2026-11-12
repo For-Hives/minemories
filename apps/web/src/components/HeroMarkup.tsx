@@ -4,7 +4,10 @@ import { translate } from '../i18n/catalog'
 import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
-import { HeroAccount, HeroFooterLinks, HeroLanguage, HeroNavLinks, HeroQuestions } from './HeroParts'
+import { HeroClip, type HeroClipProps } from './HeroClip'
+import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
+import { HeroFooterLinks, HeroQuestions } from './HeroParts'
+import { SiteNav } from './SiteNav'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
@@ -29,8 +32,39 @@ function Experimental() {
 	)
 }
 
-/** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge. */
-function Step({ number, title, body }: { number: number; title: string; body: string }) {
+/** "Play.": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. Its poster is the menu
+   open with the pointer on Take a memory, so a still clip still shows the step. */
+const menuClip: HeroClipProps = {
+	name: { fr: 'menu-fr', en: 'menu-en' },
+	width: 640,
+	height: 448,
+	posterAt: 3.2,
+	toggleAt: 'end',
+	alt: 'In Minecraft, the M menu opens over a real base and the pointer clicks Take a memory.',
+}
+/** "Revisit.": a first-person walk in the real viewer, inside a real memory. */
+const walkClip: HeroClipProps = {
+	name: 'walk',
+	width: 640,
+	height: 512,
+	posterAt: 3,
+	alt: 'A first-person walk along a path of a real base, in the Minemories viewer.',
+}
+
+/** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge, and the clip that shows it, if any. */
+function Step({
+	number,
+	title,
+	body,
+	clip,
+	caption,
+}: {
+	number: number
+	title: string
+	body: string
+	clip?: HeroClipProps
+	caption?: string
+}) {
 	return (
 		<li className="mc-step">
 			<span className="mc-step__num">
@@ -44,6 +78,16 @@ function Step({ number, title, body }: { number: number; title: string; body: st
 			<p className="mc-step__body" data-i18n={body}>
 				{t(body)}
 			</p>
+			{clip && (
+				<div className="mc-step__clip">
+					<HeroClip {...clip} />
+					{caption && (
+						<p className="mm-clip__caption" data-i18n={caption}>
+							{t(caption)}
+						</p>
+					)}
+				</div>
+			)}
 		</li>
 	)
 }
@@ -194,51 +238,7 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				>
 					<BrandMark solo />
 				</a>
-				<nav className="site-nav" data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
-					<ul className="mc-sitebar__nav">
-						<HeroNavLinks />
-					</ul>
-				</nav>
-				<div className="mc-sitebar__end">
-					<HeroAccount />
-					<HeroLanguage className="site-lang" />
-					<Link className="mc-btn mc-btn--primary mc-btn--auto mc-sitebar__cta" to="/installation">
-						<span className="mc-icon mc-icon--ember cta-icon" aria-hidden="true" />
-						<span className="cta-long" data-i18n="Install the mod">
-							{t('Install the mod')}
-						</span>
-						<span className="cta-short" aria-hidden="true" data-i18n="Install it">
-							{t('Install it')}
-						</span>
-					</Link>
-					<button
-						className="mc-btn mc-btn--tool site-menu__btn"
-						type="button"
-						id="site-menu-btn"
-						aria-expanded="false"
-						aria-controls="site-menu"
-						data-i18n-attr="aria-label:Menu;title:Menu"
-						aria-label={t('Menu')}
-						title={t('Menu')}
-					>
-						<span className="mc-icon mc-icon--menu i-open" aria-hidden="true" />
-						<span className="mc-icon mc-icon--cross i-close" aria-hidden="true" />
-					</button>
-				</div>
-				<div className="site-menu" id="site-menu" hidden>
-					<nav data-i18n-attr="aria-label:Site sections" aria-label={t('Site sections')}>
-						<ul className="site-menu__links">
-							<HeroNavLinks />
-						</ul>
-					</nav>
-					<HeroAccount menu />
-					<div className="site-menu__lang">
-						<label className="mc-formlabel" htmlFor="lang-menu" data-i18n="Language">
-							{t('Language')}
-						</label>
-						<HeroLanguage id="lang-menu" />
-					</div>
-				</div>
+				<SiteNav />
 			</header>
 			<FilmRail />
 			<div className="stage" id="stage">
@@ -388,10 +388,10 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							</h1>
 							<p
 								className="mc-hero__lead"
-								data-i18n="The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want."
+								data-i18n="The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want."
 							>
 								{t(
-									'The mod keeps the area around you in 3D. You revisit it in your browser, and show it to whoever you want.'
+									'The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want.'
 								)}
 							</p>
 							<div className="mc-hero__actions">
@@ -414,12 +414,6 @@ export const HeroMarkup = memo(function HeroMarkup() {
 									{t('Fabric, Forge, NeoForge · single player and servers · beta')}
 								</span>
 							</p>
-							<p
-								className="mc-hero__compat"
-								data-i18n="Does not change your world · Nothing leaves before you connect the game · Private gallery"
-							>
-								{t('Does not change your world · Nothing leaves before you connect the game · Private gallery')}
-							</p>
 						</div>
 					</section>
 					<section className="mc-section" id="steps" aria-labelledby="steps-title">
@@ -430,51 +424,67 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							<Step
 								number={1}
 								title="Install."
-								body="From the CurseForge app, or a file to drop into the mods folder."
+								body="Get the mod from the CurseForge app, or drop the .jar into your mods folder."
 							/>
 							<Step
 								number={2}
 								title="Play."
-								body="Press M → Take a memory. Otherwise, the mod takes one on its own when you stay AFK."
+								body="Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you."
+								clip={menuClip}
+								caption="One click and it’s saved."
 							/>
 							<Step
 								number={3}
 								title="Revisit."
-								body="Connect the game to your gallery and walk around your world in 3D."
+								body="Connect the game to your gallery with a 6-digit code, then walk around your world in 3D."
+								clip={walkClip}
 							/>
 						</ol>
 					</section>
 					<section className="mc-section" id="share" aria-labelledby="share-title">
-						<h2 className="mc-section__title" id="share-title" data-i18n="Show it to the group">
-							{t('Show it to the group')}
+						<h2 className="mc-section__title" id="share-title" data-i18n="Show your base to your friends">
+							{t('Show your base to your friends')}
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft."
+							data-i18n="Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed."
 						>
 							{t(
-								'Turn around your base, frame it, and download an HD postcard for Discord. Or send a link: your friend visits in 3D, without Minecraft.'
+								'Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.'
 							)}
 						</p>
+						<ShareIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/sharing">
-									<span data-i18n="Share by link">{t('Share by link')}</span>
+									<span data-i18n="How do I share a link?">{t('How do I share a link?')}</span>
 								</Link>
 							</li>
 						</ul>
 					</section>
 					<section className="mc-section" id="server-closing" aria-labelledby="server-closing-title">
-						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Your server is closing?">
-							{t('Your server is closing?')}
+						<h2 className="mc-section__title" id="server-closing-title" data-i18n="Server shutting down?">
+							{t('Server shutting down?')}
 						</h2>
-						<p className="mc-section__text" data-i18n="Take your base before the season ends.">
-							{t('Take your base before the season ends.')}
+						<p
+							className="mc-section__text"
+							data-i18n="Save your base in 3D before the server goes dark. You can still walk around it afterwards."
+						>
+							{t('Save your base in 3D before the server goes dark. You can still walk around it afterwards.')}
+						</p>
+						<ClosingIllustration />
+						<p
+							className="mc-section__text"
+							data-i18n="Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️"
+						>
+							{t(
+								'Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️'
+							)}
 						</p>
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">
-									<span data-i18n="Server closing">{t('Server closing')}</span>
+									<span data-i18n="How do I keep my base?">{t('How do I keep my base?')}</span>
 								</Link>
 							</li>
 						</ul>
@@ -489,9 +499,9 @@ export const HeroMarkup = memo(function HeroMarkup() {
 						<p
 							className="fallback-note"
 							id="words-note"
-							data-i18n="Your browser does not show the 3D scene. Here is the story in words."
+							data-i18n="Your browser can’t show the 3D scene, so here’s the story in words."
 						>
-							{t('Your browser does not show the 3D scene. Here is the story in words.')}
+							{t('Your browser can’t show the 3D scene, so here’s the story in words.')}
 						</p>
 						<details className="words-fold">
 							<summary id="words-summary" data-i18n="The film, in words">
