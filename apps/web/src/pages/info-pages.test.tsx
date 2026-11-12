@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { loadLocale, translate } from '../i18n/catalog'
 import { I18nProvider } from '../i18n/I18n'
 import { LegalPage } from './ContentPages'
-import { ConceptPage, FaqPage, HowItWorksPage, InfoNavigation } from './InfoPages'
+import { ConceptPage, FaqPage, HowItWorksPage, SideNavigation } from './InfoPages'
 import { InstallationPage } from './InstallationPage'
 import { SharingPage } from './SharingPage'
 
@@ -23,7 +23,7 @@ function mountGuide() {
 	return render(
 		<MemoryRouter initialEntries={['/']}>
 			<Routes>
-				<Route path="/" element={<InfoNavigation />} />
+				<Route path="/" element={<SideNavigation />} />
 				<Route path="/concept" element={<ConceptPage />} />
 				<Route path="/how-it-works" element={<HowItWorksPage />} />
 				<Route path="/installation" element={<InstallationPage />} />
@@ -39,6 +39,12 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
 	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
+	// the side navigation marks the page you are on, and only that one
+	const side = screen.getByRole('navigation', { name: 'Guides Minemories' })
+	expect([...side.querySelectorAll('a[aria-current="page"]')].map(link => link.textContent)).toEqual([
+		'Comment ça marche',
+	])
+	expect(within(side).getByRole('list', { name: 'Guides' })).toBeTruthy()
 	expect(screen.queryByRole('tab')).toBeNull()
 	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
 	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)

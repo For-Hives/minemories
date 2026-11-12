@@ -4,26 +4,37 @@ import { RadiusMap, ShareDemo } from '../components/diagrams'
 import { FileTree, Glyph, type GlyphName } from '../components/explainers'
 import { buttonLime } from '../components/ui'
 import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
+import { navMenus } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 
-export const infoLinks = [
-	{ to: '/concept', label: 'What is Minemories?' },
-	{ to: '/how-it-works', label: 'How it works' },
-	{ to: '/installation', label: 'Install the mod' },
-	{ to: '/downloads', label: 'All downloads' },
-	{ to: '/faq', label: 'FAQ' },
-]
-
-export function InfoNavigation() {
+/**
+ * The side navigation of the guide pages: the site's pages grouped like the bar's menus (Product, Guides, Help), the current one marked.
+ * Only on wide screens (theme.css): below that, the bar's menus already list the same pages, so there is never a second bar.
+ */
+export function SideNavigation() {
 	const { t } = useI18n()
-
+	const { pathname } = useLocation()
 	return (
-		<nav aria-label={t('Minemories guides')} className="mm-info-nav">
-			{infoLinks.map(link => (
-				<Link key={link.to} to={link.to}>
-					{t(link.label)}
-				</Link>
-			))}
+		<nav aria-label={t('Minemories guides')} className="mm-side-nav">
+			{navMenus().map(menu => {
+				const links = menu.sections[0]?.links.flatMap(link => ('to' in link ? [link] : [])) ?? []
+				return (
+					<div key={menu.id} className="mm-side-nav__group">
+						<p className="mm-side-nav__title" id={`side-nav-${menu.id}`}>
+							{t(menu.label)}
+						</p>
+						<ul aria-labelledby={`side-nav-${menu.id}`}>
+							{links.map(link => (
+								<li key={link.to}>
+									<Link to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
+										{t(link.label)}
+									</Link>
+								</li>
+							))}
+						</ul>
+					</div>
+				)
+			})}
 		</nav>
 	)
 }
@@ -31,11 +42,13 @@ export function InfoNavigation() {
 export function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
-		<article lang={locale} className="mm-info">
-			<InfoNavigation />
-			<h1>{t(title)}</h1>
-			{children}
-		</article>
+		<div className="mm-info-shell">
+			<SideNavigation />
+			<article lang={locale} className="mm-info">
+				<h1>{t(title)}</h1>
+				{children}
+			</article>
+		</div>
 	)
 }
 

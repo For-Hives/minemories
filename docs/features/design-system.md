@@ -156,6 +156,8 @@ The nine text-heavy pages (`/concept`, `/how-it-works`, `/faq`, `/privacy`, `/bl
 | Diagrams | `components/diagrams.tsx` | `RadiusMap` (top-down map, slider = `/minemories export <radius>`), `ShareDemo` (private, link, revoked), `SeasonDemo` (server closes, memory stays), `DataFlow` (computer, gallery, link), `Pipeline` (selectable boxes) |
 | Styles | `components/explainers.css` | same tokens and materials as the rest of the site; one narrow-screen block (grid rows, stacked diagrams) |
 
+**Side navigation.** The guide pages drawn by `InfoPage` (`/concept`, `/how-it-works`, `/faq`, `/sharing`, `/server-closing`, `/safety`, `/guides/minecraft-blender`) have no second bar under the site's: from 1100 px a sticky column (`SideNavigation` in `pages/InfoPages.tsx`, `.mm-side-nav` in `theme.css`, 264 px) left of the text lists the pages of the bar's Product, Guides and Help menus (`navMenus()`, internal links only) on a thin rail, the current page lit in ember (`aria-current="page"`). Below 1100 px it is hidden: the bar's menus already list the same pages.
+
 Rules: a new explainer string is short (a label, or one sentence) and exists in the 8 full catalogs; the CJK catalogs may only use glyphs already in the Unifont subset (regenerate the font before adding others). Do not move a fact out of the page to shorten it: move it under `More`. Each diagram needs an interaction test (`components/explainers.test.tsx`).
 
 ## Open decisions (Andy)
