@@ -793,31 +793,6 @@ h2.cinema-panel-title {
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	color: var(--text-2);
 }
-.cinema-loading-line {
-	position: relative;
-	height: 12px;
-	margin: 0 var(--ds-sp-6) var(--ds-sp-5);
-	padding: var(--gp);
-	background: #1a1612;
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-	overflow: hidden;
-}
-.cinema-loading-line::after {
-	content: "";
-	display: block;
-	width: 30%;
-	height: 100%;
-	background: var(--ember);
-	animation: cinema-loading 1.8s steps(7, end) infinite;
-}
-@keyframes cinema-loading {
-	from {
-		transform: translateX(-100%);
-	}
-	to {
-		transform: translateX(340%);
-	}
-}
 /* Restoring an archived memory: the same container, with the experience bar. */
 .cinema-restore {
 	position: absolute;
@@ -994,10 +969,6 @@ h2.cinema-panel-title {
 @media (prefers-reduced-motion: reduce) {
 	.cinema-canvas {
 		transition: none;
-	}
-	.cinema-loading-line::after {
-		animation: none;
-		width: 100%;
 	}
 }
 

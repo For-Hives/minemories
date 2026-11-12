@@ -292,3 +292,25 @@ test('previous and next buttons step through captures and older captures can be 
 	fireEvent.click(older)
 	expect(mocks.showWorld.mock.lastCall?.[0]).toHaveLength(2)
 })
+
+test('the loading screens wait for the capture on screen, not for a later one that arrived first', async () => {
+	delete document.documentElement.dataset.mmReady
+	let release!: () => void
+	const gate = new Promise<void>(resolve => {
+		release = resolve
+	})
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async (url: string) => {
+			if (String(url).includes(frame(1).id)) await gate // the oldest capture, the one shown first, is the slowest
+			return new Response(new Uint8Array([1, 2, 3]))
+		})
+	)
+	mount()
+	await waitFor(() => expect(loaded()).toBe(2))
+	expect(document.documentElement.dataset.mmReady).toBeUndefined()
+	expect(document.querySelector('.mm-chunk')).not.toBeNull()
+	release()
+	await waitFor(() => expect(loaded()).toBe(3))
+	expect(document.documentElement.dataset.mmReady).toBe('1')
+})

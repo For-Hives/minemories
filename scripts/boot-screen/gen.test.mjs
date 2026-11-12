@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm'
 import { inflateSync } from 'node:zlib'
 import {
 	bootPace,
+	bootRoute,
 	bootScreen,
 	bootTarget,
 	dissolvePlan,
@@ -495,6 +496,56 @@ test('a link to a section of the site fills the map quickly: there is no film to
 	assert.ok(film.full >= C.lead + C.fill - 50, `100 % at ${film.full} ms`)
 })
 
+test('the landing and the viewers play the screen; every other page drops it', () => {
+	for (const path of ['/viewer', '/viewer/', '/share/a1b2', '/public/0f-3c', '/share/a1b2/'])
+		assert.equal(bootRoute(path), 'viewer', path)
+	assert.equal(bootRoute('/'), 'landing')
+	for (const path of [
+		'/gallery',
+		'/account',
+		'/login',
+		'/faq',
+		'/share/',
+		'/share/a/b',
+		'/viewers',
+		'/public',
+		'/admin/moderation',
+	])
+		assert.equal(bootRoute(path), '', path)
+	const h = bootHarness({ pathname: '/gallery' })
+	assert.equal(h.boot.removed, true)
+	assert.equal(h.frames(), 0)
+})
+
+test("a viewer keeps the screen until its scene is drawn, fills quickly, and only gives up after the viewers' late safety stop", () => {
+	const C = bootConfig()
+	assert.ok(C.viewerStop >= 120_000)
+	const ready = timeline(
+		bootHarness({ pathname: '/share/a1b2', readyState: 'complete', ready: true }),
+		8000,
+		m => m.out
+	)
+	assert.ok(ready.full <= C.lead + C.quick + 50, `100 % at ${ready.full} ms`)
+	const h = bootHarness({ pathname: '/viewer' })
+	assert.equal(h.boot.style.animationDelay, `${C.viewerStop}ms`) // the CSS stop moves with the script's
+	h.run(60_000) // a large capture still downloading: the landing's 20 s stop does not apply
+	assert.equal(h.boot.removed, false)
+	assert.equal(h.label.textContent, '95%')
+	h.run(C.viewerStop - 60_000 + 400)
+	assert.equal(h.boot.removed, true)
+	assert.equal(bootHarness({ pathname: '/' }).boot.style.animationDelay, undefined) // the landing keeps the CSS stop of index.html
+})
+
+test('the reveal starts at the map wherever the screen sits: a stage below the header pops the same tiles first', () => {
+	const first = offset => {
+		const h = bootHarness({ readyState: 'complete', ready: true, offset })
+		h.run(5000)
+		return h.reveal.boxes().slice(0, 3)
+	}
+	assert.ok(first(0).length > 0)
+	assert.deepEqual(first(96), first(0))
+})
+
 test('a screen that never reaches 100 % still lets the film go when it leaves', () => {
 	const h = bootHarness()
 	h.run(19_900)
@@ -605,6 +656,7 @@ function bootHarness(options = {}) {
 		ready = false,
 		cell = 3,
 		start = bootScreen,
+		offset = 0,
 	} = options
 	const background = options.background ?? `url("${tilePng(dirtTile(1), DIRT)}")`
 	let time = 0
@@ -636,7 +688,7 @@ function bootHarness(options = {}) {
 		'.boot-map': {
 			getBoundingClientRect: () => ({
 				left: (1280 - side) / 2,
-				top: (720 - side) / 2 + 13 * cell,
+				top: offset + (720 - side) / 2 + 13 * cell,
 				width: side,
 				height: side,
 			}),
@@ -649,6 +701,8 @@ function bootHarness(options = {}) {
 		prepended: [],
 		clientWidth: 1280,
 		clientHeight: 720,
+		style: {},
+		getBoundingClientRect: () => ({ left: 0, top: offset, width: 1280, height: 720 }),
 		ownerDocument: { createElement: () => ({ getContext: context }) },
 		querySelector: selector => (selector === '.boot-cv' ? boot.prepended[0] : parts[selector]),
 		remove() {

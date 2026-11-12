@@ -161,8 +161,9 @@ canvas.height=Math.round(h*ratio)
 const g=canvas.getContext('2d')
 if(!g)return bootFade(boot,win,done)
 const box=map.getBoundingClientRect()
-const cx=(box.left+box.width/2)/size
-const cy=(box.top+box.height/2)/size
+const own=boot.getBoundingClientRect()
+const cx=(box.left-own.left+box.width/2)/size
+const cy=(box.top-own.top+box.height/2)/size
 const plan=dissolvePlan(cols,rows,cx,cy,C.seed,1-C.pop/C.out)
 const edge=c=>Math.round(c*size*ratio)
 const rect=i=>{
@@ -202,15 +203,31 @@ else end()
 win.requestAnimationFrame(step)
 win.setTimeout(end,C.out+400)
 }
+function bootRoute(path){
+if(path==='/')return 'landing'
+const parts=path.split('/')
+if(parts.at(-1)==='')parts.pop()
+const[,page,link]=parts
+const viewer=
+parts.length===2
+?page==='viewer'
+:parts.length===3&&Boolean(link)&&(page==='share'||page==='public')
+return viewer?'viewer':''
+}
 function bootScreen(doc,win,config){
 const boot=doc.getElementById('boot')
 if(!boot)return
-if(win.location.pathname!=='/'){
+const route=bootRoute(win.location.pathname)
+if(!route){
 boot.remove()
 return
 }
-const quick=config.sections.includes(win.location.hash.slice(1))
-const C=quick?{...config,fill:config.quick,catchup:config.quick/2}:config
+const viewer=route==='viewer'
+const quick=viewer||config.sections.includes(win.location.hash.slice(1))
+const C=quick
+?{...config,fill:config.quick,catchup:config.quick/2,stop:viewer?config.viewerStop:config.stop}
+:config
+if(viewer)boot.style.animationDelay=`${C.stop}ms`
 const now=()=>win.performance.now()
 const t0=now()
 const map=boot.querySelector('canvas')
@@ -302,7 +319,7 @@ bootFade(boot,win,remove)
 },C.stop)
 win.requestAnimationFrame(frame)
 }
-bootScreen(document,window,{"n":38,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[221,221,221],[255,255,255]],"at":0.13,"sections":["hero","main","steps","share","server-closing","faq"],"lead":350,"fill":4000,"quick":1200,"catchup":2000,"hold":400,"out":1100,"pop":200,"stop":20000})}()</script><!-- boot:end -->
+bootScreen(document,window,{"n":38,"seed":1835887731,"colors":[[0,0,0],[153,153,153],[49,47,124],[47,174,28],[221,221,221],[255,255,255]],"at":0.13,"sections":["hero","main","steps","share","server-closing","faq"],"lead":350,"fill":4000,"quick":1200,"catchup":2000,"hold":400,"out":1100,"pop":200,"stop":20000,"viewerStop":180000})}()</script><!-- boot:end -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

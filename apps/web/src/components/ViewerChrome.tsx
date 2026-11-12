@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import { ChunkLoader } from './ChunkLoader'
 
 export function ViewerHeader({
 	title,
@@ -52,13 +53,13 @@ export function ViewerLoadState({
 	children?: ReactNode
 }) {
 	const { t } = useI18n()
-	if (!(loading || error)) return null
+	// while it loads, the world-loading screen of the landing; an error drops it at once for its card
+	if (!error) return <ChunkLoader active={Boolean(loading)} label={loading ?? ''} />
 	return (
-		<div className="cinema-loading" role={error ? 'alert' : 'status'} aria-live="polite">
+		<div className="cinema-loading" role="alert" aria-live="polite">
 			<div className="cinema-loading-card">
-				{!(error && final) && <h2>{error ? t('This memory will have to wait.') : t('The light returns.')}</h2>}
-				{loading && <div className="cinema-loading-line" />}
-				<p>{t(error || loading || '')}</p>
+				{!final && <h2>{t('This memory will have to wait.')}</h2>}
+				<p>{t(error)}</p>
 				{children}
 			</div>
 		</div>

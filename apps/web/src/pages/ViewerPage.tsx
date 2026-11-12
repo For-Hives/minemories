@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
+import { useScenePageReady } from '../components/PageFrame'
 import { fileInputHidden } from '../components/ui'
 import { ViewerEmptyState, ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
@@ -36,10 +37,13 @@ function SingleViewerPage() {
 	const [empty, setEmpty] = useState(true)
 	const [loading, setLoading] = useState<string | null>(null)
 	const [loadError, setLoadError] = useState('')
+	const [opened, setOpened] = useState(false)
 	const [dragOver, setDragOver] = useState(false)
 	const memoryId = search.get('memory')
 	const restoration = useCaptureRestoration()
 	const restoreLoad = restoration.load
+	// the loading screen of index.html stays until the memory is drawn, or until there is nothing left to wait for
+	useScenePageReady(Boolean(loadError || restoration.view) || opened || !memoryId)
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -110,7 +114,9 @@ function SingleViewerPage() {
 				if (cancelled) return
 				applyCaptureMetadata(capture.metadata)
 				const ready = await openFile(capture.file)
-				if (!cancelled) afterMemoryOpened(id, capture.metadata.thumbnail, capture.metadata.icon, ready)
+				if (cancelled) return
+				setOpened(true)
+				afterMemoryOpened(id, capture.metadata.thumbnail, capture.metadata.icon, ready)
 			} catch (error) {
 				if (!cancelled) {
 					setLoading(null)

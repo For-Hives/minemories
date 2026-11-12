@@ -22,7 +22,7 @@ test('the loading screen is self-contained, labelled and cannot trap the visitor
 	expect(html).toContain("win.addEventListener('mm:ready',onReady,{signal:listen.signal})")
 	expect(html).toContain("win.addEventListener('mm:boot-progress',onProgress,{signal:listen.signal})") // the app's milestones (lib/boot-progress.ts)
 	expect(html).toContain('listen.abort()') // and once gone, no listener keeps it in memory
-	expect(html).toContain("if(win.location.pathname!=='/'){\nboot.remove()") // the landing's only (the prerender also drops it from every other page)
+	expect(html).toContain('const route=bootRoute(win.location.pathname)\nif(!route){\nboot.remove()') // the landing and the viewers only (the prerender also drops it from every other page but app.html)
 	expect(html).toContain('#boot.is-out{background:none;pointer-events:none}') // the reveal never catches a click
 })
 

@@ -175,7 +175,7 @@ test('link previews are in English while the page and its title stay French', as
 	assert.ok(shell.includes('<meta property="og:locale" content="en_US" />'))
 })
 
-test('only the landing keeps the loading screen: every other page, the app fallback and the 404 drop its three blocks', async t => {
+test('the landing and the app fallback (the viewers) keep the loading screen: every other page and the 404 drop its three blocks', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-boot-screen-'))
 	t.after(() => rm(directory, { recursive: true, force: true }))
 	const boot = [
@@ -190,7 +190,9 @@ test('only the landing keeps the loading screen: every other page, the app fallb
 	await prerenderWeb(directory, entry)
 	const homepage = await readFile(join(directory, 'index.html'), 'utf8')
 	for (const block of boot) assert.ok(homepage.includes(block))
-	const others = ['blog/story/index.html', 'app.html', '404.html']
+	const fallback = await readFile(join(directory, 'app.html'), 'utf8')
+	for (const block of boot) assert.ok(fallback.includes(block), 'app.html lost the loading screen of the viewers')
+	const others = ['blog/story/index.html', '404.html']
 	const pages = await Promise.all(others.map(file => readFile(join(directory, file), 'utf8')))
 	for (const [k, html] of pages.entries()) {
 		assert.ok(!html.includes('boot'), `${others[k]} still holds the loading screen`)

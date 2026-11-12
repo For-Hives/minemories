@@ -4,7 +4,7 @@ import { lazy, type ReactNode } from 'react'
 import { Link, MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { Page, preloadWhenIdle } from './PageFrame'
+import { Page, preloadWhenIdle, useScenePageReady } from './PageFrame'
 
 vi.mock('../observability/WebObservability', () => ({ reportWebFailure: vi.fn() }))
 
@@ -82,6 +82,7 @@ test('a page that fails is replaced by a reload notice, which clears on the next
 	function Broken(): ReactNode {
 		throw new Error('boom')
 	}
+	delete document.documentElement.dataset.mmReady
 	shell(
 		<Routes>
 			<Route
@@ -103,6 +104,7 @@ test('a page that fails is replaced by a reload notice, which clears on the next
 		</Routes>
 	)
 	expect(await screen.findByRole('alert')).toBeTruthy()
+	expect(document.documentElement.dataset.mmReady).toBe('1') // the loading screen leaves for the notice
 	fireEvent.click(screen.getByRole('link', { name: 'concept' }))
 	expect(await screen.findByRole('heading', { name: 'The concept' })).toBeTruthy()
 	expect(screen.queryByRole('alert')).toBeNull()
@@ -154,4 +156,35 @@ test('page chunks are fetched once the browser is idle, and the wait can be canc
 	expect(cancelIdle).toHaveBeenCalledWith(1)
 	if (saved) idle.requestIdleCallback = saved
 	else delete idle.requestIdleCallback
+})
+
+test('a viewer says itself when its scene is on screen: the loading screen waits for it, not for the page chunk', async () => {
+	delete document.documentElement.dataset.mmReady
+	const seen: string[] = []
+	const listen = () => seen.push('ready')
+	window.addEventListener('mm:ready', listen)
+	function Viewer({ settled }: { settled: boolean }) {
+		useScenePageReady(settled)
+		return <h1>Viewer</h1>
+	}
+	const view = shell(
+		<Page kind="viewer">
+			<Viewer settled={false} />
+		</Page>,
+		'/viewer'
+	)
+	expect(await screen.findByRole('heading', { name: 'Viewer' })).toBeTruthy()
+	expect(document.documentElement.dataset.mmReady).toBeUndefined()
+	view.rerender(
+		<I18nProvider>
+			<MemoryRouter initialEntries={['/viewer']}>
+				<Page kind="viewer">
+					<Viewer settled />
+				</Page>
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	expect(document.documentElement.dataset.mmReady).toBe('1')
+	expect(seen).toEqual(['ready'])
+	window.removeEventListener('mm:ready', listen)
 })

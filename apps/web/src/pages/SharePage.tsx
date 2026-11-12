@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { apiBase, apiClient } from '../api-client'
 import { CaptureRestorationPanel, useCaptureRestoration } from '../components/CaptureRestoration'
 import { GalleryIcon } from '../components/GalleryIcons'
+import { useScenePageReady } from '../components/PageFrame'
 import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { errorMessageKey } from '../i18n/error-messages'
@@ -232,6 +233,11 @@ function ShareErrorActions({
 	return invite ? <Link to={installPath(isPublic)}>{t('Keep your own base in 3D too')} →</Link> : null
 }
 
+/** Nothing left to wait for: the world is drawn (no status left), or an error or a restoration card takes its place. */
+function shareSettled(status: string | null, error: string, restoring: boolean): boolean {
+	return status === null || Boolean(error) || restoring
+}
+
 /** The scene is in view: loaded, not empty, with no error or restoration card over it. */
 function sceneOnScreen(state: { empty: boolean; status: string | null; error: string; restoring: boolean }): boolean {
 	return !(state.empty || state.status || state.error || state.restoring)
@@ -269,6 +275,8 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const [attempt, setAttempt] = useState(0)
 	const restoration = useCaptureRestoration()
 	const restoreLoad = restoration.load
+	// the loading screen of index.html stays until the shared world is drawn, or until there is nothing left to wait for
+	useScenePageReady(shareSettled(status, error, restoration.view !== null))
 
 	useEffect(() => {
 		const canvas = canvasRef.current
@@ -312,6 +320,8 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 		async function loadShared() {
 			const scene = sceneRef.current
 			if (!(scene && reference)) return
+			// another snapshot of the link: the stage shows the loading screen from its request on
+			setStatus('Loading the shared world…')
 			try {
 				const { capture, file } = await restoreLoad(
 					() =>

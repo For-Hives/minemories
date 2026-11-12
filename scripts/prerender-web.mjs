@@ -8,7 +8,7 @@ const titlePattern = /<title>[^<]*<\/title>/
 const descriptionPattern = /<meta name="description"[^>]*>/
 /** The landing's loading screen (scripts/boot-screen/gen.mjs): its style, markup and script, each between <!-- boot:begin --> and <!-- boot:end -->. */
 const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
-/** Only the landing keeps it: anywhere else its opaque cover would hide the page until the inline script drops it, or for 20 s without JavaScript. */
+/** Only the landing and the app fallback (the viewers) keep it: anywhere else its opaque cover would hide the page until the inline script drops it, or for 20 s without JavaScript. */
 const withoutBootScreen = html => html.replace(bootPattern, '')
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
@@ -77,7 +77,9 @@ export async function prerenderWeb(directory, entry) {
 	// The private shell answers every private route, but only /share and /public links get pasted where a preview is
 	// drawn: it carries their neutral card (no canonical or og:url, since one file serves many URLs).
 	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.ogTitle ?? appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.ogDescription ?? appShell.description)}" /><meta property="og:locale" content="en_US" />${socialTags}`
-	const fallback = withoutBootScreen(template)
+	// The app fallback serves the viewers (nginx: /viewer, /share, /public) as well as the gallery or the account: it keeps the loading screen, whose
+	// inline script plays it on a viewer until its 3D scene is drawn and drops it at once everywhere else (bootRoute, scripts/boot-screen/chunk-screen.mjs).
+	const fallback = template
 		.replace(htmlLanguagePattern, '<html lang="fr">')
 		.replace(titlePattern, `<title>${escapeHtml(appShell.title)}</title>`)
 		.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(appShell.description)}" />`)
