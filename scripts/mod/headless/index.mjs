@@ -26,8 +26,8 @@ import {
 	failureMessage,
 	parseGlbStats,
 	parseLogMarkers,
-	resourceProblems,
 	parseSummary,
+	resourceProblems,
 	thresholdsFor,
 } from './report.mjs'
 import { createWatchdog, DEFAULT_IDLE_SECONDS } from './watchdog.mjs'
