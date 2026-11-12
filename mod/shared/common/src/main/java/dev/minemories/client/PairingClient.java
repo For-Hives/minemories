@@ -321,27 +321,41 @@ final class PairingClient {
                 () -> !AFK_CANCELLED.get() && expected.equals(captureSettings()));
     return CompletableFuture.supplyAsync(
         () -> {
+          ChunkedUploader uploader = null;
           try {
             JsonObject metadata = CaptureHistory.metadata(file);
-            new ChunkedUploader(HTTP, 1000, diagnostics::headers, pacer)
-                .upload(
-                    apiUrl(settings),
-                    token,
-                    file,
-                    metadata,
-                    offset -> diagnostics.step(DiagnosticReport.Step.UPLOAD_CHUNK));
+            long size = Files.size(file);
+            int[] chunks = {0};
+            uploader = new ChunkedUploader(HTTP, 1000, diagnostics::headers, pacer);
+            uploader.upload(
+                apiUrl(settings),
+                token,
+                file,
+                metadata,
+                offset -> {
+                  if (chunks[0]++ == 0) diagnostics.step(DiagnosticReport.Step.UPLOAD_SESSION);
+                  else diagnostics.step(DiagnosticReport.Step.UPLOAD_CHUNK);
+                  diagnostics.upload(size, offset, chunks[0] - 1);
+                  if (offset >= size) diagnostics.step(DiagnosticReport.Step.UPLOAD_COMPLETING);
+                });
             diagnostics.success();
             CaptureHistory.markUploaded(file);
             return "Your memory is saved. Find it in your gallery.";
           } catch (InterruptedException error) {
+            if (uploader != null && uploader.lastHttp() != null)
+              diagnostics.http(uploader.lastHttp());
             diagnostics.failed(error);
             Thread.currentThread().interrupt();
             throw new CompletionException(error);
           } catch (IOException error) {
             if (ChunkedUploader.isAuthorizationFailure(error)) diagnostics.revoked();
+            if (uploader != null && uploader.lastHttp() != null)
+              diagnostics.http(uploader.lastHttp());
             diagnostics.failed(error);
             throw new CompletionException(error);
           } catch (RuntimeException error) {
+            if (uploader != null && uploader.lastHttp() != null)
+              diagnostics.http(uploader.lastHttp());
             diagnostics.failed(error);
             throw error;
           } finally {

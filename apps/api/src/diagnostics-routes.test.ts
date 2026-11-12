@@ -16,7 +16,8 @@ const { app, fetchApi } = await import('./index')
 const { database } = await import('./database')
 const { createPairingCode, exchangePairingCode } = await import('./pairing')
 const { diagnostics } = await import('./diagnostics-state')
-const { recordApiFailure, safeApiException, requestCorrelation, logApiFailure } = await import('./safe-errors')
+const { recordApiFailure, safeApiException, requestCorrelation, logApiFailure, uploadRefusal, uploadRequestKind } =
+	await import('./safe-errors')
 afterAll(() => {
 	database.close()
 	rmSync(directory, { recursive: true, force: true })
@@ -289,6 +290,29 @@ test('server errors strip messages, paths and unknown stack frames and require a
 	expect(JSON.parse(stored.report_json)).toMatchObject({ source: 'api', correlationId, versions: { api: version } })
 	expect(stored.report_json).not.toContain('secret')
 	expect(stored.report_json).not.toContain('/home')
+	// A refusal carries its route, status and error code, never the message of an unknown error.
+	expect(uploadRequestKind('PUT', '/api/mod/uploads/x')).toBe('chunk')
+	expect(uploadRequestKind('POST', '/api/mod/uploads/x/complete')).toBe('complete')
+	expect(uploadRequestKind('POST', '/api/mod/uploads')).toBe('initialize')
+	const refusal = new Request('http://localhost/api/mod/uploads/x/complete', { method: 'POST', headers })
+	expect(uploadRefusal(refusal, 400, 'invalid_glb_or_checksum')).toEqual({
+		request: 'complete',
+		status: 400,
+		error: 'invalid_glb_or_checksum',
+	})
+	expect(uploadRefusal(refusal, 400, 'Some free text /home/secret')).toEqual({ request: 'complete', status: 400 })
+	recordApiFailure(refusal, new Error('secret'), uploadRefusal(refusal, 409, 'upload_incomplete'))
+	const refused = database
+		.query('SELECT report_json FROM diagnostic_reports WHERE device_id = ? ORDER BY rowid DESC')
+		.get(deviceId) as { report_json: string }
+	expect(JSON.parse(refused.report_json).context).toEqual({
+		http: { request: 'complete', status: 409, error: 'upload_incomplete' },
+	})
+	expect(
+		database
+			.query('SELECT COUNT(DISTINCT fingerprint) AS count FROM diagnostic_reports WHERE device_id = ?')
+			.get(deviceId)
+	).toEqual({ count: 2 })
 	diagnostics.purge(deviceId)
 	recordApiFailure(make(), error)
 	expect(database.query('SELECT COUNT(*) AS count FROM diagnostic_reports WHERE device_id = ?').get(deviceId)).toEqual({
