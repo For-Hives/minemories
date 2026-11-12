@@ -48,7 +48,11 @@ const emptyColumns = {
 test('columnOf follows the shared spec', () => {
 	assert.equal(columnOf(issue(), NOW), 'planned')
 	assert.equal(columnOf(issue({ labels: ['roadmap', 'in-progress'] }), NOW), 'inProgress')
-	assert.equal(columnOf(issue({ labels: [{ name: 'in-progress' }] }), NOW), null)
+	// every open issue is on the roadmap, without the `roadmap` label too; `dependencies` and `no-roadmap` keep it off
+	assert.equal(columnOf(issue({ labels: [{ name: 'in-progress' }] }), NOW), 'inProgress')
+	assert.equal(columnOf(issue({ labels: [] }), NOW), 'planned')
+	assert.equal(columnOf(issue({ labels: ['dependencies', 'autonomous'] }), NOW), null)
+	assert.equal(columnOf(issue({ labels: [{ name: 'no-roadmap' }, 'in-progress'] }), NOW), null)
 	assert.equal(columnOf(issue({ pull_request: { url: 'x' } }), NOW), null)
 	assert.equal(columnOf(closed(1), NOW), 'done')
 	assert.equal(columnOf(closed(1, null), NOW), 'done')
@@ -59,7 +63,7 @@ test('columnOf follows the shared spec', () => {
 	assert.equal(columnOf(issue({ state: 'closed', closed_at: iso(NOW - DONE_WINDOW_MS - 1) }), NOW), null)
 	assert.equal(columnOf(issue({ state: 'closed', closed_at: null }), NOW), null)
 	assert.equal(columnOf(issue({ state: 'weird' }), NOW), null)
-	assert.equal(columnOf(issue({ labels: undefined }), NOW), null)
+	assert.equal(columnOf(issue({ labels: undefined }), NOW), 'planned')
 	assert.equal(columnOf(null, NOW), null)
 	assert.equal(columnOf(issue({ state_reason: undefined, state: 'closed', closed_at: iso(NOW) })), 'done')
 })
@@ -143,20 +147,23 @@ test('buildRoadmapPayload fits 60 long titles into the 6000-character message li
 	}
 })
 
-test('fetchRoadmapIssues follows Link pages and sends the token when present', async () => {
+test('fetchRoadmapIssues reads the open issues and the done window, following Link pages, with the token when present', async () => {
 	const calls = []
 	const pages = [
 		response(200, [issue()], { link: '<https://api.github.com/next?page=2>; rel="next", <x>; rel="last"' }),
 		response(200, [issue(), issue()]),
+		response(200, [closed(2)]),
 	]
 	const fetchImpl = (url, init) => {
 		calls.push({ url, init })
 		return Promise.resolve(pages.shift())
 	}
-	const issues = await fetchRoadmapIssues({ fetchImpl, token: 'ghs_test' })
-	assert.equal(issues.length, 3)
-	assert.ok(calls[0].url.includes('labels=roadmap&state=all&per_page=100'))
+	const issues = await fetchRoadmapIssues({ fetchImpl, token: 'ghs_test', now: NOW })
+	assert.equal(issues.length, 4)
+	assert.ok(calls[0].url.endsWith('/issues?per_page=100&state=open'))
+	assert.ok(!calls[0].url.includes('labels='))
 	assert.equal(calls[1].url, 'https://api.github.com/next?page=2')
+	assert.ok(calls[2].url.endsWith(`&state=closed&since=${iso(NOW - DONE_WINDOW_MS)}`))
 	assert.equal(calls[0].init.headers.authorization, 'Bearer ghs_test')
 	await fetchRoadmapIssues({ fetchImpl: () => Promise.resolve(response(200, [])) })
 	await assert.rejects(fetchRoadmapIssues({ fetchImpl: () => Promise.resolve(response(403, {})) }), /HTTP 403/)
@@ -188,6 +195,18 @@ const run = async (env, discord, extra = {}) => {
 	})
 	return { code, out, warnings, calls: fake.calls.filter(call => !call.url.startsWith('https://api.github.com/')) }
 }
+
+test('fetchRoadmapIssues keeps an issue read by both queries once, in its most recent state', async () => {
+	const open = issue({ number: 500, updated_at: iso(NOW - 2000) })
+	const done = { ...open, state: 'closed', state_reason: 'completed', updated_at: iso(NOW), closed_at: iso(NOW) }
+	const stale = { ...open, updated_at: iso(NOW - 5000) }
+	const bodies = [[open], [done, stale]]
+	const issues = await fetchRoadmapIssues({ fetchImpl: () => Promise.resolve(response(200, bodies.shift())), now: NOW })
+	assert.deepEqual(
+		issues.map(item => [item.number, item.state]),
+		[[500, 'closed']]
+	)
+})
 
 test('syncRoadmap edits the existing message without a username', async () => {
 	const result = await run({ DISCORD_WEBHOOK_URL: WEBHOOK, DISCORD_ROADMAP_MESSAGE_ID: '111' }, [response(200, {})])
@@ -268,7 +287,7 @@ test('syncRoadmap dry-run, missing webhook, bad id and GitHub failure', async ()
 	assert.ok(!warnings[0].includes('ghs_secretvalue'))
 })
 
-test('syncRoadmap only reads roadmap issues: no release lookup any more', async () => {
+test('syncRoadmap only reads the issues: no release lookup any more', async () => {
 	const fake = fakeFetch([issue()], [])
 	const out = []
 	const code = await syncRoadmap({
@@ -281,7 +300,10 @@ test('syncRoadmap only reads roadmap issues: no release lookup any more', async 
 	assert.equal(code, 0)
 	assert.deepEqual(
 		fake.calls.map(call => call.url),
-		['https://api.github.com/repos/For-Hives/minemories/issues?labels=roadmap&state=all&per_page=100']
+		[
+			'https://api.github.com/repos/For-Hives/minemories/issues?per_page=100&state=open',
+			`https://api.github.com/repos/For-Hives/minemories/issues?per_page=100&state=closed&since=${iso(NOW - DONE_WINDOW_MS)}`,
+		]
 	)
 	assert.equal(JSON.parse(out[0]).embeds.length, 2)
 })
