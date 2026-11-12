@@ -229,7 +229,7 @@ test('budget, archived and failed captures are explained and a failed capture ca
 		.mockImplementation(async () => new Response(new Uint8Array([1, 2, 3])))
 	vi.stubGlobal('fetch', fetch)
 	mount()
-	await screen.findByRole('button', { name: /^Capture 2 .*Archived — open it alone to restore it$/ })
+	await screen.findByRole('button', { name: /^Capture 2 .*Archived: open it alone to restore it$/ })
 	await screen.findByRole('button', { name: /^Capture 3 .*Could not load$/ })
 	expect(screen.getByText('Only the most recent captures are loaded to keep the viewer fast.')).toBeTruthy()
 	expect(screen.getByRole('button', { name: /^Capture 1 .*Not loaded$/ })).toBeTruthy()

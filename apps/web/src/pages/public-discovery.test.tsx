@@ -148,7 +148,7 @@ test('publication requires explicit consent and chosen fields, confirms the subm
 	expect(screen.getByRole('radio', { name: 'Construction' })).toHaveProperty('checked', false)
 	fireEvent.click(screen.getByRole('checkbox'))
 	fireEvent.click(submit)
-	await screen.findByText('Soumis — en attente de modération')
+	await screen.findByText('Soumis, en attente de modération')
 	expect(screen.getByText('En attente de modération')).toBeTruthy()
 	expect(discovery.publish).toHaveBeenCalledWith({
 		memoryId: 'memory',
@@ -159,7 +159,7 @@ test('publication requires explicit consent and chosen fields, confirms the subm
 		consent: true,
 	})
 	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(false)
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Titre choisi')
 	// The form now equals what is under moderation: only a change can be submitted.
 	fireEvent.click(screen.getByRole('checkbox'))
@@ -208,45 +208,45 @@ test('publication form starts from the current submission and submits changes on
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Village ' } })
 	expect(submit.hasAttribute('disabled')).toBe(true)
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Village ')
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: '' } })
 	expect(screen.getByText('Ajoute un titre public pour soumettre.')).toBeTruthy()
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Village du lac' } })
 	expect(submit.hasAttribute('disabled')).toBe(false)
 	fireEvent.submit(submit.closest('form') as HTMLFormElement)
-	await screen.findByText('Soumis — en attente de modération')
+	await screen.findByText('Soumis, en attente de modération')
 	expect(discovery.publish).toHaveBeenCalledTimes(1)
 	expect(discovery.publish.mock.lastCall?.[0]).toMatchObject({ title: 'Village du lac', category: 'landscape' })
 	expect(screen.getByText('En attente de modération')).toBeTruthy()
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 })
 
 test('an unsent publication form survives closing the panel, overrides the submission and can be discarded', async () => {
 	discovery.status.mockResolvedValue({ id: item.id, state: 'rejected', reason: 'Panneau privé', submission })
 	const first = mount(<PublicationPanel memory={memory} />)
 	await screen.findByText('Note du modérateur : Panneau privé')
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	fireEvent.change(screen.getByRole('textbox', { name: 'Description publique' }), {
 		target: { value: 'Sans le panneau' },
 	})
 	fireEvent.click(screen.getByRole('radio', { name: 'Autre' }))
-	expect(screen.getByText('Brouillon — pas encore enregistré')).toBeTruthy()
+	expect(screen.getByText('Brouillon, pas encore enregistré')).toBeTruthy()
 	first.unmount()
 
 	mount(<PublicationPanel memory={memory} />)
 	await screen.findByText('Refusé')
-	expect(screen.getByText('Brouillon — pas encore enregistré')).toBeTruthy()
+	expect(screen.getByText('Brouillon, pas encore enregistré')).toBeTruthy()
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Village')
 	expect(screen.getByRole('textbox', { name: 'Description publique' })).toHaveProperty('value', 'Sans le panneau')
 	expect(screen.getByRole('radio', { name: 'Autre' })).toHaveProperty('checked', true)
 	fireEvent.click(screen.getByRole('button', { name: 'Supprimer le brouillon' }))
 	expect(screen.getByRole('textbox', { name: 'Description publique' })).toHaveProperty('value', 'Au bord de l’eau')
 	expect(screen.getByRole('radio', { name: 'Paysage' })).toHaveProperty('checked', true)
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	// Typing back the submitted text is no draft either.
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Villages' } })
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Village' } })
-	expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull()
+	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 })
 
@@ -266,17 +266,17 @@ test('fields hold still while the status loads; a stored draft waits for it, the
 	expect(screen.getByRole('radio', { name: 'Paysage' }).matches(':disabled')).toBe(true)
 	// The stored draft shows at once and is not compared with a placeholder.
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Village')
-	expect(screen.getByText('Brouillon — pas encore enregistré')).toBeTruthy()
+	expect(screen.getByText('Brouillon, pas encore enregistré')).toBeTruthy()
 	await act(async () => answer({ id: item.id, state: 'pending', reason: null, submission }))
 	await screen.findByText('En attente de modération')
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('readOnly', false)
 	expect(screen.getByRole('radio', { name: 'Paysage' }).matches(':disabled')).toBe(false)
-	expect(screen.getByText('Brouillon — pas encore enregistré')).toBeTruthy()
+	expect(screen.getByText('Brouillon, pas encore enregistré')).toBeTruthy()
 	fireEvent.change(screen.getByRole('textbox', { name: 'Description publique' }), {
 		target: { value: 'Au bord de l’eau' },
 	})
 	fireEvent.click(screen.getByRole('radio', { name: 'Paysage' }))
-	await waitFor(() => expect(screen.queryByText('Brouillon — pas encore enregistré')).toBeNull())
+	await waitFor(() => expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull())
 })
 
 test('publication status and mutation failures never report a false success', async () => {

@@ -88,7 +88,7 @@ test('loads grouped crashes, details and breadcrumbs; closes with focus returned
 	open.focus()
 	fireEvent.click(open)
 	await screen.findByText('dev.minemories.neoforge.Minemories.export (Minemories.java:100)')
-	expect(screen.getByText(/500 ms — client_crashed/)).toBeTruthy()
+	expect(screen.getByText(/500 ms: client_crashed/)).toBeTruthy()
 	expect(document.activeElement?.id).toBe('diagnostic-detail-title')
 	fireEvent.click(screen.getByRole('button', { name: 'Fermer les détails' }))
 	expect(screen.queryByRole('heading', { name: 'Détail de l’erreur' })).toBeNull()

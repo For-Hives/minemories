@@ -63,7 +63,7 @@ describe('formatDateSpan', () => {
 		expect(formatDateSpan('2025-12-30T12:00:00', '2026-01-02T12:00:00')).toBe('Dec 30, 2025 → Jan 2, 2026')
 	})
 	it('shows a dash for dates it cannot read', () => {
-		expect(formatDateSpan('nope', '2026-11-08T12:00:00')).toBe('—')
-		expect(formatDateSpan('2026-11-08T12:00:00', 'nope')).toBe('—')
+		expect(formatDateSpan('nope', '2026-11-08T12:00:00')).toBe('-')
+		expect(formatDateSpan('2026-11-08T12:00:00', 'nope')).toBe('-')
 	})
 })
