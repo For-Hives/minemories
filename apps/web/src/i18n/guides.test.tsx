@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { ConceptPage, FaqPage, HowItWorksPage } from '../pages/InfoPages'
 import { InstallationPage } from '../pages/InstallationPage'
-import { choiceStorageKey } from '../pages/installation-state'
+import { guideStorageKey } from '../pages/installation-state'
 import { I18nProvider, useI18n } from './I18n'
 
 beforeEach(() => {
@@ -46,29 +46,36 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 		expect(screen.getAllByRole('link', { name: 'Installer le mod' }).length).toBeGreaterThan(0)
 	}
 )
+const radio = (name: string | RegExp) => screen.getByRole('radio', { name }) as HTMLInputElement
+const versionRadio = (version: string) => radio(new RegExp(`^${version.replaceAll('.', '\\.')}(?![\\d.])`))
 test('every version and loader of the installation guide uses English copy', () => {
 	mount(<InstallationPage />)
+	fireEvent.click(screen.getByRole('button', { name: /^Guided installation/ }))
 	for (const version of ['1.21.11', '1.21.1', '1.20.1', '1.19.2', '1.18.2', '26.3']) {
-		fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${version.replaceAll('.', '\\.')}(?![\\d.])`) }))
+		fireEvent.click(versionRadio(version))
+		fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 		for (const loader of screen.getAllByRole('radio').filter(item => (item as HTMLInputElement).name === 'loader')) {
 			fireEvent.click(loader)
 			expect(document.querySelector('article')?.textContent).not.toMatch(/[àâçéèêëîïôùûü]/i)
 		}
+		fireEvent.click(screen.getByRole('button', { name: '← Back' }))
 	}
 })
 test('switching language keeps the chosen version and loader', async () => {
 	mount(<InstallationPage />, 'fr')
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
-	fireEvent.click(screen.getByRole('radio', { name: 'Fabric' }))
-	expect(screen.getByRole('heading', { name: 'Ton premier souvenir' })).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: /^Installation guidée/ }))
+	fireEvent.click(versionRadio('1.19.2'))
+	fireEvent.click(screen.getByRole('button', { name: 'Continuer' }))
+	fireEvent.click(radio('Fabric'))
+	expect(screen.getByRole('heading', { name: 'Quel loader de mods utilises-tu\u00a0?' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
-	expect(screen.getByRole('heading', { name: 'Your first memory' })).toBeTruthy()
-	expect(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ })).toHaveProperty('checked', true)
-	expect(screen.getByRole('radio', { name: 'Fabric' })).toHaveProperty('checked', true)
+	expect(screen.getByRole('heading', { name: 'Which mod loader do you use?' })).toBeTruthy()
+	expect(radio('Fabric')).toHaveProperty('checked', true)
 	await waitFor(() =>
-		expect(JSON.parse(localStorage.getItem(choiceStorageKey) ?? '{}')).toEqual({
+		expect(JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}')).toMatchObject({
 			minecraft: '1.19.2',
 			loader: 'fabric',
+			step: 'loader',
 		})
 	)
 })

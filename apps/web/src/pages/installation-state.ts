@@ -1,72 +1,75 @@
-import { isExperimentalMinecraft, type LoaderTarget, loaderTargets } from './mod-releases'
+import { type GuideState, noAnswers, parseGuide } from '../lib/install-guide'
+import type { System } from '../lib/platform'
+import { catalogLinks } from './installation-loaders'
+import { isExperimentalMinecraft, type LoaderTarget, loaderTargets, mostTestedMinecraft } from './mod-targets'
 
-/** What the visitor picked on /installation: a Minecraft version, then one of its loaders. Empty until chosen. */
-export interface Choice {
-	minecraft: string
-	loader: string
-}
-
-export const choiceStorageKey = 'minemories-installation-v4'
-/** The guide preselects no version: the visitor names the one they play before anything else. */
-export const noChoice: Choice = { minecraft: '', loader: '' }
-/** The Minecraft version the owner validated in game, called "most tested" on the site. */
-export const validatedMinecraft = '1.21.1'
-
-/** The badge (a catalogue key) of a version: the one validated in game, or one not tried in game yet. */
-export function versionBadge(minecraft: string): string | null {
-	if (isExperimentalMinecraft(minecraft)) return 'Experimental'
-	return minecraft === validatedMinecraft ? 'Most tested' : null
-}
-
-/** Loaders published for a Minecraft version, in mod/targets.json order. */
-export function loadersFor(minecraft: string): LoaderTarget[] {
-	return loaderTargets.filter(target => target.minecraft === minecraft)
-}
-/** The published target of a version and loader, or null while the pair is not chosen or not published. */
-export function targetFor(minecraft: string, loader: string): LoaderTarget | null {
-	return loaderTargets.find(target => target.minecraft === minecraft && target.loader === loader) ?? null
-}
-
-/**
- * Picking a version keeps the loader when that version has it too. A version with a single loader selects it, since
- * there is nothing to choose; otherwise the loader waits for the visitor.
+/*
+ * The browser side of the /installation stepper: the published targets and catalogs it runs on, and the saved state.
+ * The rules themselves (screens, branching, validation) live in src/lib/install-guide.ts.
  */
-export function chooseMinecraft(current: Choice, minecraft: string): Choice {
-	const loaders = loadersFor(minecraft)
-	const kept = loaders.find(target => target.loader === current.loader)
-	const only = loaders.length === 1 ? loaders[0] : undefined
-	return { minecraft, loader: (kept ?? only)?.loader ?? '' }
+
+export const guideStorageKey = 'minemories-installation-v5'
+/** Earlier saves: v4 held the version and loader of the one-page guide, v3 the old stepper with a preselection. */
+const previousKeys = { v4: 'minemories-installation-v4', v3: 'minemories-installation-v3' }
+
+/** The catalog names the guide offers as a way to install (CurseForge while Modrinth is not public). */
+export const catalogNames = () => catalogLinks().map(catalog => catalog.name)
+
+/** The welcome screen, before any answer. */
+export const welcomeGuide = (system: System): GuideState => ({
+	...noAnswers,
+	step: 'version',
+	active: false,
+	system,
+})
+
+/** The badge (a catalogue key) of a version: the most tested one, or one not tried in game yet. */
+export function versionBadge(minecraft: string): 'Experimental' | 'Most tested' | null {
+	if (isExperimentalMinecraft(minecraft)) return 'Experimental'
+	return minecraft === mostTestedMinecraft ? 'Most tested' : null
 }
 
-/** The loader a player without mods installs: Fabric where it is published (the lightest), else the version's first. */
-export function starterLoader(minecraft: string): LoaderTarget | null {
-	const loaders = loadersFor(minecraft)
-	return loaders.find(target => target.loader === 'fabric') ?? loaders[0] ?? null
-}
-
-/** The version and loader a link from the download table names, or null when no published target matches. */
-export function presetFromSearch(search: URLSearchParams): Choice | null {
-	const target = targetFor(search.get('minecraft') ?? '', search.get('loader') ?? '')
-	return target ? { minecraft: target.minecraft, loader: target.loader } : null
-}
 export const guideLink = (target: Pick<LoaderTarget, 'minecraft' | 'loader'>) =>
 	`/installation?minecraft=${encodeURIComponent(target.minecraft)}&loader=${encodeURIComponent(target.loader)}`
 
-/** The saved choice, or null when nothing usable is stored (first visit, damaged value, blocked storage). */
-export function readChoice(): Choice | null {
+function storedJson(key: string): unknown {
 	try {
-		const data = JSON.parse(localStorage.getItem(choiceStorageKey) ?? 'null')
-		if (!data || typeof data !== 'object' || loadersFor(String(data.minecraft)).length === 0) return null
-		return chooseMinecraft({ minecraft: '', loader: String(data.loader) }, String(data.minecraft))
+		return JSON.parse(localStorage.getItem(key) ?? 'null')
 	} catch {
 		return null
 	}
 }
-
-export function saveChoice(choice: Choice) {
+function remove(key: string) {
 	try {
-		localStorage.setItem(choiceStorageKey, JSON.stringify(choice))
+		localStorage.removeItem(key)
+	} catch {
+		// Blocked storage: nothing was saved there either.
+	}
+}
+
+/**
+ * The saved guide, or null on a first visit or when nothing usable is stored (damaged value, blocked storage). `system`
+ * (detected in this browser) fills a save that has none, such as a v4 save. A v4 save keeps its version and loader and
+ * starts on the welcome screen; a v3 save is dropped (it carried a preselection).
+ */
+export function readGuide(system: System): GuideState | null {
+	remove(previousKeys.v3)
+	const saved = parseGuide(storedJson(guideStorageKey), loaderTargets, catalogNames(), system)
+	if (saved) return saved
+	const v4 = storedJson(previousKeys.v4)
+	remove(previousKeys.v4)
+	return v4 && typeof v4 === 'object'
+		? parseGuide({ ...v4, active: false }, loaderTargets, catalogNames(), system)
+		: null
+}
+
+export function saveGuide(guide: GuideState) {
+	try {
+		localStorage.setItem(guideStorageKey, JSON.stringify(guide))
 	} catch {
 		// The guide remains usable when browser storage is unavailable.
 	}
+}
+export function clearGuide() {
+	remove(guideStorageKey)
 }

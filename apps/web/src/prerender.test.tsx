@@ -28,12 +28,16 @@ test('the 404 page is readable, points back home and holds no film', () => {
 test('the installation guide is visible HTML from top to bottom, with no noscript and no pause-menu button', () => {
 	const html = renderPage('/installation')
 	expect(html).not.toContain('<noscript>')
-	expect(html).toContain('Le plus simple\u00a0: l’app CurseForge')
-	expect(html).toContain('Tu joues sans mods\u00a0?')
+	expect(html).toContain('Installation guidée')
+	expect(html).toContain('href="#etape-version"')
+	expect(html).toContain('Comment tu ajoutes tes mods\u00a0?')
+	expect(html).toContain('Installe-le avec l’app CurseForge')
 	expect(html).toContain('<table')
 	expect(html).toContain('href="/downloads"')
 	expect(html).toContain('href="/gallery"')
+	expect(html).toContain('href="#aide"')
 	expect(html).toContain('M → Mes souvenirs → Envoyer ce souvenir.')
+	expect(html).toContain('Le mod n’apparaît pas\u00a0?')
 	expect(html).not.toMatch(/menu pause|<progress|\/minemories export/)
 })
 test('/versions prerenders the curated notes of the latest release and the earlier ones, no API needed', () => {
