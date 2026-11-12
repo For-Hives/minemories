@@ -1601,5 +1601,9 @@
 	"Good to know": "Bom saber",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "Uma captura é um instantâneo 3D da área carregada. Dá para olhar ao redor, mas não retomar o jogo.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "Espere o terreno carregar e digite isto no chat. Um raio de 16 blocos é fácil de conferir.",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "A captura vai para a sua pasta de exportação. Emparelhe o mod para enviar capturas à sua galeria privada."
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "A captura vai para a sua pasta de exportação. Emparelhe o mod para enviar capturas à sua galeria privada.",
+	"Language suggestion": "Sugestão de idioma",
+	"Read Minemories in this language?": "Ler o Minemories em português?",
+	"Switch to this language": "Mudar para português",
+	"No thanks": "Agora não"
 }

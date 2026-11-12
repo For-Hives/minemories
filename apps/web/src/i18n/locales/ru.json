@@ -1601,5 +1601,9 @@
 	"Good to know": "Полезно знать",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "Снимок — это 3D-слепок загруженной области. Осмотреться можно, продолжить игру нельзя.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "Дождитесь загрузки местности и введите это в чате. Радиус в 16 блоков легко проверить.",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "Снимок сохраняется в папке экспорта. Выполните сопряжение мода, чтобы отправлять снимки в приватную галерею."
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "Снимок сохраняется в папке экспорта. Выполните сопряжение мода, чтобы отправлять снимки в приватную галерею.",
+	"Language suggestion": "Предложение языка",
+	"Read Minemories in this language?": "Читать Minemories на русском?",
+	"Switch to this language": "Перейти на русский",
+	"No thanks": "Нет, спасибо"
 }

@@ -129,7 +129,7 @@ The first visit to `/` opens on a **world-loading screen** in the spirit of the 
 
 - Repository: `public/hero` 8.5 MB (GLB captures 8 MB) + `src/hero` 1.2 MB.
 - On the first visit to `/`: film code ~185 KB gzip (in addition to `GLTFLoader`, shared with the viewer), then the `S0` base (138 KB brotli, 162 KB gzip); `S1` to `S4` in the background as deltas against `S0` (183 KB brotli in total). The raw captures (`public/hero/captures/*.glb`, 1.3 MB each) are only downloaded if the optimized path fails. Details and measurements: [film asset pipeline](film-assets-pipeline.md).
-- Cache (`deploy/nginx.web.conf`): `/assets/` and `/hero/captures-opt/*.glb|*.patch` immutable for a year (hashed names); `manifest.json` revalidated on every visit; `/hero/` one day then revalidation (not hashed; version the folder for a longer cache). **This file is not applied by the current production** (see the asset pipeline, "Server" section).
+- Cache (`deploy/nginx.web.conf`): `/assets/` and `/hero/captures-opt/*.glb|*.patch` immutable for a year (hashed names); `manifest.json` revalidated on every visit; `/hero/` one day then revalidation (not hashed; version the folder for a longer cache). It applies once pasted as the Coolify Custom Nginx Configuration (see the asset pipeline, "Server" section).
 
 ## Known limitations
 

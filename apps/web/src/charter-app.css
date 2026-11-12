@@ -700,6 +700,29 @@ html[data-mc-font="read"] .mm-brand {
 	animation: mm-enter var(--ds-dur-3) var(--ds-ease);
 }
 
+/* The language suggestion: the same card in the other bottom corner, so it never covers a notice and never moves the page. */
+.mm-language-suggestion {
+	right: auto;
+	left: var(--ds-sp-5);
+	display: grid;
+	gap: var(--ds-sp-3);
+}
+
+.mm-language-suggestion p {
+	margin: 0;
+}
+
+.mm-language-suggestion__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2);
+}
+
+/* A notice takes priority: both cards can be nearly full width on a phone, so the suggestion steps aside while it shows. */
+body:has(.mm-toast:not(.mm-language-suggestion)) .mm-language-suggestion {
+	display: none;
+}
+
 /* --- 6. Page transitions: a short fade, nothing more (no loader between pages) ------------------------------------------------------------------- */
 
 .mm-page-transition > :first-child {
@@ -957,6 +980,23 @@ a.mm-editorial-card:hover {
 	.mm-toast {
 		right: var(--ds-sp-4);
 		bottom: var(--ds-sp-4);
+	}
+	/* On a phone: one full-width strip above the home indicator, both buttons on one row, so it stays short. */
+	.mm-language-suggestion {
+		right: var(--ds-sp-4);
+		bottom: max(var(--ds-sp-4), env(safe-area-inset-bottom));
+		left: var(--ds-sp-4);
+		max-width: none;
+		gap: var(--ds-sp-2);
+		padding: var(--ds-sp-2) var(--ds-sp-3);
+	}
+	.mm-language-suggestion__actions {
+		flex-wrap: nowrap;
+	}
+	.mm-language-suggestion__actions .mc-btn {
+		flex: 1 1 0;
+		min-width: 0;
+		white-space: normal;
 	}
 }
 
