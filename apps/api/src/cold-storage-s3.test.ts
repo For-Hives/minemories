@@ -488,6 +488,7 @@ test('configured API restores an anonymous shared capture through real RPC, sche
 		expect(database.query('SELECT last_opened_at FROM memories').get()).toEqual({ last_opened_at: expect.any(Number) })
 		pairing.revokeShareLink('owner', id)
 		await expect(rpc.captureStorage.restore(access)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+		pairing.trashMemory('owner', id)
 		await pairing.deleteMemory('owner', id)
 		await timelapseMaintenance.maintain()
 		await coldStorageMaintenance.maintain()

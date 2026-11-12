@@ -125,6 +125,8 @@ test('simultaneous legacy uploads and multiple devices share one account budget 
 	expect((await initialize(second.token, randomUUID(), minimalGlb())).status).toBe(413)
 	expect(restoreMemory(first.owner, id)).toBe(true)
 	expect(accountStorageUsage(database, first.owner)).toBe(1024)
+	expect(deleteMemory(first.owner, id)).toBeNull()
+	expect(trashMemory(first.owner, id)).toBe(true)
 	const key = deleteMemory(first.owner, id)
 	if (!key) throw new Error('Missing deleted object')
 	expect(accountStorageUsage(database, first.owner)).toBe(1024)
