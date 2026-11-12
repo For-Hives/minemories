@@ -23,7 +23,7 @@ import {
 } from './index.mjs'
 
 const TOKEN = 't0ken-'.repeat(8)
-const env = { MOD_UPLOAD_TOKEN: TOKEN }
+const env = { API_TOKEN: TOKEN }
 const sha = bytes => createHash('sha256').update(bytes).digest('hex')
 const manifestOf = (id, version, extra = {}) => ({
 	id,
@@ -132,9 +132,9 @@ test('resolveApiUrl: production by default, MOD_API_URL, option, plain HTTP only
 
 test('the token comes from the environment: missing or too short is refused, never shown', () => {
 	assert.equal(readToken(env), TOKEN)
-	assert.throws(() => readToken({}), /MOD_UPLOAD_TOKEN is missing/)
+	assert.throws(() => readToken({}), /API_TOKEN is missing/)
 	assert.throws(
-		() => readToken({ MOD_UPLOAD_TOKEN: 'tiny-x' }),
+		() => readToken({ API_TOKEN: 'tiny-x' }),
 		error => error.message.includes('too short') && !error.message.includes('tiny-x')
 	)
 	assert.deepEqual(resolveRemote({ apiUrl: 'http://localhost:1', env }), { apiUrl: 'http://localhost:1', token: TOKEN })
@@ -368,7 +368,7 @@ test('a plain HTTP URL is refused before any upload, as is a missing token', asy
 	)
 	await assert.rejects(
 		uploadRelease({ version: '0.9.0', artifacts, env: {}, fetchImpl: s.fetchImpl, log: silent().log }),
-		/MOD_UPLOAD_TOKEN/
+		/API_TOKEN/
 	)
 	assert.equal(s.calls.length, 0)
 })

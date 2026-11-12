@@ -23,7 +23,7 @@ import { pairingAddress } from './pairing-protection'
 import { logApiFailure } from './safe-errors'
 import { s3Target } from './storage-s3'
 
-const MIN_TOKEN_LENGTH = 32
+export const MIN_TOKEN_LENGTH = 32
 const DEFAULT_MAX_BYTES = 16 * 1024 * 1024
 const DEFAULT_KEEP = 3
 const MANIFEST_HEADER_MAX = 4096
@@ -61,7 +61,7 @@ class Mutex {
 }
 
 /** Failed authentication attempts per address: past the cap, the route answers 429. */
-class FailureLimiter {
+export class FailureLimiter {
 	private readonly windows = new Map<string, { startedAt: number; failures: number }>()
 
 	blocked(address: string, now: number): boolean {
@@ -193,7 +193,7 @@ function validate(request: Request, params: { targetId: string; version: string 
 
 /**
  * JAR upload from the owner's PC: `PUT /:targetId/:version`, body = the JAR bytes. The API writes to S3
- * itself: S3 keys never leave the server. The route only exists (otherwise 404) when `MOD_UPLOAD_TOKEN`
+ * itself: S3 keys never leave the server. The route only exists (otherwise 404) when `API_TOKEN`
  * (at least 32 characters) is set. Only one API instance may serve this route (the lock is in memory).
  */
 export function createModUploads(options: ModUploadOptions = {}) {
@@ -209,7 +209,7 @@ export function createModUploads(options: ModUploadOptions = {}) {
 	let receiving = 0
 
 	function authenticate(request: Request, peerAddress: string | undefined, env: Env): Failure | null {
-		const token = env.MOD_UPLOAD_TOKEN ?? ''
+		const token = env.API_TOKEN ?? ''
 		if (token.length < MIN_TOKEN_LENGTH) return fail(404, 'not_found')
 		const trusted = new Set(
 			(env.TRUSTED_PROXY_IPS ?? '')

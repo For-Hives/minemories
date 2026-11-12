@@ -24,6 +24,7 @@ type ErrorEvent =
 	| 'diagnostics_failed'
 	| 'roadmap_unavailable'
 	| 'mod_release_unavailable'
+	| 'mcp_failed'
 	| 'release_notes_unavailable'
 	| 'roadmap_snapshot_failed'
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { apiContract, type CaptureStorageAccess, minecraftHeadUrl } from '@minemories/api-contract'
+import { apiContract, type CaptureStorageAccess, minecraftHeadUrl, minecraftUsername } from '@minemories/api-contract'
 import { implement, ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
@@ -30,6 +30,7 @@ import { PublicDiscovery } from './discovery'
 import { githubToken } from './github'
 import { createGithubWebhook, githubWebhookSecret } from './github-webhook'
 import { isGlbContainer } from './glb'
+import { createMcpRoute } from './mcp'
 import { parseMetadata } from './memory-metadata'
 import { modDownloads } from './mod-downloads'
 import { createModUploads } from './mod-upload'
@@ -38,6 +39,7 @@ import { CaptureArchivedError } from './object-tiers'
 import type { MemoryMetadata } from './pairing'
 import {
 	addMemory,
+	adoptMinecraftHead,
 	checkPairingCode,
 	createPairingCode,
 	createShareLink,
@@ -330,6 +332,12 @@ app.route('/downloads/upload', createModUploads({ onStored: () => modDownloads.i
 // GitHub webhook deliveries (server to server, never a browser): also mounted before CORS.
 app.route('/api/github/webhook', createGithubWebhook({ secret: githubWebhook, onChange: roadmap.refreshSoon }))
 
+// MCP endpoint (agents, never a browser): same release token as the uploads, also mounted BEFORE CORS.
+app.route(
+	'/mcp',
+	createMcpRoute({ database, memories: { rename: renameMemory, trash: trashMemory, restore: restoreMemory } })
+)
+
 app.use(
 	'*',
 	cors({
@@ -401,12 +409,16 @@ app.post('/api/mod/pair', async context => {
 		.object({
 			code: z.string().regex(pairingCodePattern),
 			name: z.string().trim().min(1).max(80).optional(),
+			minecraftUsername: minecraftUsername.optional(),
 		})
 		.safeParse(body.value)
 	if (!parsed.success) return context.json({ error: 'invalid_pairing_code' }, 400)
 
 	const paired = exchangePairingCode(parsed.data.code, parsed.data.name ?? 'Minecraft client')
 	if (!paired) return context.json({ error: 'pairing_code_invalid_or_expired' }, 401)
+	// First pairing of an account without a picture: use the player's head (an existing picture is never replaced).
+	const device = parsed.data.minecraftUsername ? getDeviceFromToken(paired.deviceToken) : null
+	if (device && parsed.data.minecraftUsername) adoptMinecraftHead(device.userId, parsed.data.minecraftUsername)
 	return context.json(paired)
 })
 

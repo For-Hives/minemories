@@ -231,6 +231,9 @@ final class PairingClient {
     JsonObject payload = new JsonObject();
     payload.addProperty("code", code);
     payload.addProperty("name", "Minecraft client");
+    // Lets the account adopt this player's head as its picture when it has none (the API never overwrites one).
+    String username = playerName();
+    if (username != null) payload.addProperty("minecraftUsername", username);
 
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(apiUrl(settings) + "/api/mod/pair"))
@@ -263,6 +266,16 @@ final class PairingClient {
                   });
               return "Mod paired. You can now use /minemories upload.";
             });
+  }
+
+  /** In-game username of the signed-in player, or null when Minecraft does not expose a valid one. */
+  static String playerName() {
+    try {
+      var user = Minecraft.getInstance().getUser();
+      return user == null ? null : ClientSettings.minecraftUsername(user.getName());
+    } catch (RuntimeException unavailable) {
+      return null;
+    }
   }
 
   static void cancelAfkUpload() {

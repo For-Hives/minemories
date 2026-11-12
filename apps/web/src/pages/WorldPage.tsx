@@ -226,6 +226,16 @@ function useWorldEvolution(memoryId: string) {
 		if (layer) current.scene.focusLayer(layer.root)
 	}, [])
 
+	// Double-click on a capture of the film: show it and frame the camera on it (like the recenter button).
+	const focusFrame = useCallback(
+		(position: number) => {
+			select(position)
+			const layer = runtime.current?.layers.get(position)
+			if (layer) runtime.current?.scene.focusLayer(layer.root)
+		},
+		[select]
+	)
+
 	return {
 		canvas,
 		scene,
@@ -240,6 +250,7 @@ function useWorldEvolution(memoryId: string) {
 		images,
 		select,
 		recenter,
+		focusFrame,
 		togglePlay: () => {
 			if (!playing && world && step >= world.frames.length - 1) setStep(0)
 			setPlaying(value => !value)
@@ -485,6 +496,7 @@ function FilmItem({
 					aria-label={`${frame.name} · ${new Date(frame.at).toLocaleString(locale)} · ${t(statusLabels[status])}`}
 					title={`${frame.name} · ${t(statusLabels[status])}`}
 					onClick={() => state.select(position)}
+					onDoubleClick={() => state.focusFrame(position)}
 				>
 					<span className="film-thumb" style={image ? { backgroundImage: `url("${image}")` } : undefined}>
 						<span className="film-status" aria-hidden="true" />

@@ -377,4 +377,14 @@ class ClientSettingsTest {
     assertEquals(64, ClientSettings.manualSize(settings).radius());
     assertThrows(IllegalArgumentException.class, () -> new ClientSettings.ManualSize(1, 0, 0));
   }
+
+  @Test
+  void onlyValidJavaEditionUsernamesAreSentAtPairing() {
+    assertEquals("Steve_01", ClientSettings.minecraftUsername("Steve_01"));
+    assertNull(ClientSettings.minecraftUsername(null));
+    assertNull(ClientSettings.minecraftUsername("ab"));
+    assertNull(ClientSettings.minecraftUsername("seventeen_chars_xx"));
+    assertNull(ClientSettings.minecraftUsername("bad name"));
+    assertNull(ClientSettings.minecraftUsername("Player\n"));
+  }
 }

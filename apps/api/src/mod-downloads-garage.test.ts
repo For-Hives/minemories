@@ -92,7 +92,7 @@ test.skipIf(!enabled)(
 		const { makeJar, sha256Hex } = await import('./test-support/jar-fixture')
 		const id = 'neoforge-mc1.21.1'
 		const token = 'garage-upload-token-with-more-than-32-chars'
-		process.env.MOD_UPLOAD_TOKEN = token
+		process.env.API_TOKEN = token
 		process.env.MOD_STORAGE_KEEP = '2'
 		const manifest = (version: string, day: number) =>
 			Buffer.from(
@@ -186,7 +186,7 @@ test.skipIf(!enabled)('a real Garage: same bucket as captures, foreign objects, 
 		...process.env,
 		MOD_STORAGE_BUCKET: bucket,
 		MOD_STORAGE_PREFIX: prefix,
-		MOD_UPLOAD_TOKEN: token,
+		API_TOKEN: token,
 		MOD_STORAGE_KEEP: '2',
 	}
 
