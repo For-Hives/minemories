@@ -77,7 +77,10 @@ test('loads the board from the API and shows the two columns in order with links
 	const fetch = serve(Response.json(board()))
 	mount()
 	expect(screen.getByRole('status').textContent).toContain('Loading the roadmap…')
-	expect(fetch).toHaveBeenCalledWith(`${apiBase}/api/roadmap`, expect.objectContaining({ signal: expect.anything() }))
+	expect(fetch).toHaveBeenCalledWith(
+		`${apiBase}/api/roadmap`,
+		expect.objectContaining({ signal: expect.anything(), cache: 'no-cache' })
+	)
 	expect(roadmapUrl).toBe(`${apiBase}/api/roadmap`)
 	const columns = await screen.findAllByRole('region')
 	expect(columns.map(column => within(column).getByRole('heading').textContent)).toEqual(['In progress 1', 'Planned 1'])
@@ -208,6 +211,76 @@ test('a failed request shows an error with a retry that loads the board', async 
 	expect(await screen.findByRole('link', { name: '#30 Public gallery filters' })).toBeTruthy()
 	expect(screen.queryByRole('alert')).toBeNull()
 	expect(fetch).toHaveBeenCalledTimes(2)
+})
+
+function setVisibility(state: 'visible' | 'hidden') {
+	Object.defineProperty(document, 'visibilityState', { configurable: true, value: state })
+	act(() => {
+		document.dispatchEvent(new Event('visibilitychange'))
+	})
+}
+
+test('coming back to the tab reloads the board quietly, at most every 30 seconds', async () => {
+	const fetch = serve(
+		Response.json(board()),
+		Response.json({ error: 'roadmap_unavailable' }, { status: 503 }),
+		Response.json(board({ planned: { items: [issue(31, { title: 'Server map' })], more: 0 } }))
+	)
+	mount()
+	expect(await screen.findByRole('link', { name: '#30 Public gallery filters' })).toBeTruthy()
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(1)
+	vi.setSystemTime(new Date('2026-11-07T12:00:30Z'))
+	setVisibility('hidden')
+	expect(fetch).toHaveBeenCalledTimes(1)
+	setVisibility('visible')
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(2)
+	await act(async () => {
+		await Promise.resolve()
+	})
+	expect(screen.getByRole('link', { name: '#30 Public gallery filters' })).toBeTruthy()
+	expect(screen.queryByRole('status')).toBeNull()
+	expect(screen.queryByRole('alert')).toBeNull()
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(3)
+	expect(screen.queryByRole('status')).toBeNull()
+	expect(await screen.findByRole('link', { name: '#31 Server map' })).toBeTruthy()
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(3)
+})
+
+test('a quiet reload that never answers is abandoned, and leaving the page cancels it', async () => {
+	vi.useRealTimers()
+	vi.useFakeTimers()
+	const signals: AbortSignal[] = []
+	let finish: (response: Response) => void = () => undefined
+	const fetch = vi.fn((_url: string, init: RequestInit) => {
+		signals.push(init.signal as AbortSignal)
+		if (signals.length === 1) return Promise.resolve(Response.json(board()))
+		return new Promise<Response>(resolve => {
+			finish = resolve
+		})
+	})
+	vi.stubGlobal('fetch', fetch)
+	const view = mount()
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(30000)
+	})
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(2)
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(15000)
+	})
+	expect(signals[1]?.aborted).toBe(true)
+	await act(async () => {
+		finish(Response.json(board({ planned: { items: [issue(31, { title: 'Server map' })], more: 0 } })))
+	})
+	expect(screen.queryByRole('link', { name: '#31 Server map' })).toBeNull()
+	setVisibility('visible')
+	expect(fetch).toHaveBeenCalledTimes(3)
+	view.unmount()
+	expect(signals[2]?.aborted).toBe(true)
 })
 
 test('an invalid body or a network failure is an error too', async () => {
