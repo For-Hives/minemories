@@ -231,7 +231,8 @@ final class PairingClient {
     JsonObject payload = new JsonObject();
     payload.addProperty("code", code);
     payload.addProperty("name", "Minecraft client");
-    // Lets the account adopt this player's head as its picture when it has none (the API never overwrites one).
+    // Lets the account adopt this player's head as its picture when it has none (the API never
+    // overwrites one).
     String username = playerName();
     if (username != null) payload.addProperty("minecraftUsername", username);
 
@@ -268,11 +269,12 @@ final class PairingClient {
             });
   }
 
-  /** In-game username of the signed-in player, or null when Minecraft does not expose a valid one. */
+  /**
+   * In-game username of the signed-in player, or null when Minecraft does not expose a valid one.
+   */
   static String playerName() {
     try {
-      var user = Minecraft.getInstance().getUser();
-      return user == null ? null : ClientSettings.minecraftUsername(user.getName());
+      return ClientSettings.minecraftUsername(Minecraft.getInstance().getUser().getName());
     } catch (RuntimeException unavailable) {
       return null;
     }

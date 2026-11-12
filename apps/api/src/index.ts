@@ -335,7 +335,18 @@ app.route('/api/github/webhook', createGithubWebhook({ secret: githubWebhook, on
 // MCP endpoint (agents, never a browser): same release token as the uploads, also mounted BEFORE CORS.
 app.route(
 	'/mcp',
-	createMcpRoute({ database, memories: { rename: renameMemory, trash: trashMemory, restore: restoreMemory } })
+	createMcpRoute({
+		database,
+		memories: { rename: renameMemory, trash: trashMemory, restore: restoreMemory },
+		admin: {
+			roles: adminRoles,
+			accounts: adminAccounts,
+			metrics: adminMetrics,
+			insights: adminInsights,
+			diagnostics: diagnosticsReview,
+			discovery,
+		},
+	})
 )
 
 app.use(
