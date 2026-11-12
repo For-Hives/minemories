@@ -1,6 +1,6 @@
 // "PC" mode: instead of writing to S3 with the S3 keys, the tool UPLOADS each JAR to the API
 // (`PUT {MOD_API_URL}/downloads/upload/<id>/<version>`), which writes to the bucket itself. The S3 keys stay on the
-// server; only the MOD_UPLOAD_TOKEN token (environment variable or .env, never an argument) leaves the PC.
+// server; only the API_TOKEN token (environment variable or .env, never an argument) leaves the PC.
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -30,7 +30,7 @@ export function resolveApiUrl({ flag, env = process.env } = {}) {
 	try {
 		url = new URL(raw)
 	} catch {
-		throw new Error(`Invalid API URL: ${maskToken(raw, env.MOD_UPLOAD_TOKEN)}`)
+		throw new Error(`Invalid API URL: ${maskToken(raw, env.API_TOKEN)}`)
 	}
 	if (url.username || url.password) throw new Error('The API URL must not contain any credentials.')
 	if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname)))
@@ -39,10 +39,10 @@ export function resolveApiUrl({ flag, env = process.env } = {}) {
 }
 
 export function readToken(env = process.env) {
-	const token = env.MOD_UPLOAD_TOKEN
-	if (!token) throw new Error('MOD_UPLOAD_TOKEN is missing (environment variable or .env, never as an argument).')
+	const token = env.API_TOKEN
+	if (!token) throw new Error('API_TOKEN is missing (environment variable or .env, never as an argument).')
 	if (token.length < MIN_TOKEN_LENGTH)
-		throw new Error(`MOD_UPLOAD_TOKEN is too short (${MIN_TOKEN_LENGTH} characters minimum).`)
+		throw new Error(`API_TOKEN is too short (${MIN_TOKEN_LENGTH} characters minimum).`)
 	return token
 }
 

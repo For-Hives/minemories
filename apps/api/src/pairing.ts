@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
-import { type CaptureIdentity, TRASH_RETENTION_MS } from '@minemories/api-contract'
+import { type CaptureIdentity, minecraftHeadUrl, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
 import { openShareToken, sealShareToken } from './share-token'
@@ -73,6 +73,14 @@ export function exchangePairingCode(code: string, name: string): { deviceId: str
 	})()
 
 	return paired
+}
+
+/** Gives the account the head of this Minecraft player, only when it has no picture yet (never replaces one). */
+export function adoptMinecraftHead(userId: string, username: string, now = Date.now()): boolean {
+	const result = database
+		.query("UPDATE user SET image=?,updatedAt=? WHERE id=? AND (image IS NULL OR image='')")
+		.run(minecraftHeadUrl(username), now, userId)
+	return result.changes === 1
 }
 
 export function getDeviceFromToken(token: string) {

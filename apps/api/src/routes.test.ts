@@ -68,6 +68,33 @@ test('pairing rejects malformed inputs and only accepts an unused code', async (
 	expect((await pairRequest({ code }, 'replay')).status).toBe(401)
 })
 
+test('pairing adopts the player head only when the account has no picture', async () => {
+	const insert = database.query(
+		'INSERT INTO user(id,name,email,emailVerified,image,createdAt,updatedAt) VALUES (?,?,?,?,?,?,?)'
+	)
+	insert.run('head-empty', 'Empty', 'empty@example.test', 1, null, Date.now(), Date.now())
+	insert.run('head-set', 'Set', 'set@example.test', 1, 'https://example.test/me.png', Date.now(), Date.now())
+	const image = (id: string) =>
+		(database.query('SELECT image FROM user WHERE id=?').get(id) as { image: string | null }).image
+
+	expect(
+		(await pairRequest({ code: createPairingCode('head-empty').code, minecraftUsername: 'bad name' }, 'head-bad'))
+			.status
+	).toBe(400)
+	expect(
+		(await pairRequest({ code: createPairingCode('head-empty').code, minecraftUsername: 'Steve_1' }, 'head-1')).status
+	).toBe(200)
+	expect(image('head-empty')).toBe('https://head.sttr.io/face/Steve_1')
+	expect(
+		(await pairRequest({ code: createPairingCode('head-empty').code, minecraftUsername: 'Alex' }, 'head-2')).status
+	).toBe(200)
+	expect(image('head-empty')).toBe('https://head.sttr.io/face/Steve_1')
+	expect(
+		(await pairRequest({ code: createPairingCode('head-set').code, minecraftUsername: 'Alex' }, 'head-3')).status
+	).toBe(200)
+	expect(image('head-set')).toBe('https://example.test/me.png')
+})
+
 test('pairing throttles a ninth attempt from one address', async () => {
 	for (let attempt = 0; attempt < 8; attempt += 1) {
 		// biome-ignore lint/performance/noAwaitInLoops: rate limit attempts must arrive in order.

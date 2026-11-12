@@ -280,7 +280,7 @@ test('--remote fails before any build when the API settings are invalid or the m
 		...h.full,
 		'./remote/index.mjs': () => ({
 			resolveRemote: () => {
-				throw new Error('MOD_UPLOAD_TOKEN is missing')
+				throw new Error('API_TOKEN is missing')
 			},
 		}),
 	}
@@ -288,7 +288,7 @@ test('--remote fails before any build when the API settings are invalid or the m
 	const invalid = await run(root, h, { remote: true })
 	assert.equal(invalid.exitCode, 1)
 	assert.ok(!h.calls.some(c => c[0] === 'build'))
-	assert.ok(h.logs.error.some(m => m.includes('MOD_UPLOAD_TOKEN')))
+	assert.ok(h.logs.error.some(m => m.includes('API_TOKEN')))
 	const absent = harness()
 	absent.loadModule = async name => (name === './remote/index.mjs' ? null : null)
 	assert.equal((await run(root, absent, { remote: true })).exitCode, 1)

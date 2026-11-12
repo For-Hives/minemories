@@ -8,7 +8,7 @@ export const usage =
 	'                [--remote [--api-url <url>] [--replace]]\n' +
 	'  --dry-run  shows the plan and which modules are present, without building or uploading anything\n' +
 	'  --remote   PC mode: uploads the JARs to the API (PUT /downloads/upload) instead of writing to S3; requires\n' +
-	'             MOD_UPLOAD_TOKEN (environment or .env); third-party publishing stays on the VPS\n' +
+	'             API_TOKEN (environment or .env); third-party publishing stays on the VPS\n' +
 	'  --api-url  API URL (default MOD_API_URL, then https://api.minemories.net)\n' +
 	'  --replace  replaces an already published version with different content (refused otherwise)'
 

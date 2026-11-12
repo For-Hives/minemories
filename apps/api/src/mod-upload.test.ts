@@ -73,7 +73,7 @@ function harness(env: Record<string, string | undefined> = {}, extra: Record<str
 	const stored: string[] = []
 	let clock = 1_000_000
 	const router = createModUploads({
-		env: () => ({ ...bucketEnv, MOD_UPLOAD_TOKEN: TOKEN, ...env }),
+		env: () => ({ ...bucketEnv, API_TOKEN: TOKEN, ...env }),
 		client: () => client,
 		onStored: () => stored.push('stored'),
 		now: () => clock,
@@ -110,11 +110,11 @@ function harness(env: Record<string, string | undefined> = {}, extra: Record<str
 const tempEntries = () =>
 	readdirSync(tmpdir()).filter(name => name.startsWith('minemories-mod-upload-') && !name.includes('test'))
 
-test('without a valid MOD_UPLOAD_TOKEN the route answers 404 and reveals nothing', async () => {
+test('without a valid API_TOKEN the route answers 404 and reveals nothing', async () => {
 	const jar = makeJar()
 	await Promise.all(
 		[undefined, '', 'short-token'].map(async token => {
-			const h = harness({ MOD_UPLOAD_TOKEN: token })
+			const h = harness({ API_TOKEN: token })
 			const response = await h.put(jar, { token: token ?? 'x' })
 			expect(response.status).toBe(404)
 			expect(await response.json()).toEqual({ error: 'not_found' })
@@ -365,13 +365,13 @@ test('constant-time token comparison: equal only for the same text', () => {
 })
 
 test('in the real API the route is disabled by default, without CORS, and requires the token', async () => {
-	const original = process.env.MOD_UPLOAD_TOKEN
+	const original = process.env.API_TOKEN
 	try {
-		delete process.env.MOD_UPLOAD_TOKEN
+		delete process.env.API_TOKEN
 		const origin = { Origin: 'http://localhost:5173' }
 		const off = await app.request(`/downloads/upload/${id}/0.5.0`, { method: 'PUT', headers: origin })
 		expect(off.status).toBe(404)
-		process.env.MOD_UPLOAD_TOKEN = TOKEN
+		process.env.API_TOKEN = TOKEN
 		const denied = await app.request(`/downloads/upload/${id}/0.5.0`, { method: 'PUT', headers: origin })
 		expect(denied.status).toBe(401)
 		expect(denied.headers.get('access-control-allow-origin')).toBeNull()
@@ -383,8 +383,8 @@ test('in the real API the route is disabled by default, without CORS, and requir
 		// Public download reads are not affected.
 		expect((await app.request('/downloads/upload')).status).toBe(404)
 	} finally {
-		if (original === undefined) delete process.env.MOD_UPLOAD_TOKEN
-		else process.env.MOD_UPLOAD_TOKEN = original
+		if (original === undefined) delete process.env.API_TOKEN
+		else process.env.API_TOKEN = original
 	}
 })
 

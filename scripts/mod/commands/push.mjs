@@ -11,7 +11,7 @@ export const usage =
 	'  --api-url   API URL (default MOD_API_URL, then https://api.minemories.net)\n' +
 	'  --replace   replaces an already published version with different content (refused otherwise)\n' +
 	'  --dry-run   lists what would be uploaded, without network\n' +
-	'Token: MOD_UPLOAD_TOKEN (environment or .env, never as an argument).'
+	'Token: API_TOKEN (environment or .env, never as an argument).'
 
 export async function run(args, { env, log, root, fetchImpl, sleep }) {
 	const { positionals, flags } = parseArgs(args, ['api-url'])

@@ -19,6 +19,7 @@
 		"@aws-sdk/lib-storage": "3.1167.0",
 		"@minemories/api-contract": "workspace:*",
 		"@minemories/mod-storage": "workspace:*",
+		"@modelcontextprotocol/sdk": "1.32.2",
 		"@orpc/server": "^1.14.0",
 		"@polar-sh/better-auth": "2.1.4",
 		"@polar-sh/sdk": "1.1.0",
