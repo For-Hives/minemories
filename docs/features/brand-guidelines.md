@@ -233,7 +233,7 @@ Motion serves to **confirm** (I clicked, it responds), **orient** (it comes from
 - **Never vary brightness**: no more than 2 flashes per second. Nothing loops under the film.
 - **Stepped** for anything that moves across a distance (`steps(n)`): an object advances one pixel at a time. Opacity stays continuous.
 - The film canvas and its HUD are never animated by the guidelines.
-- **Reduced motion** (system or footer option): no animation, no movement, not even on hover; content is there immediately. The motion code only exists behind `prefers-reduced-motion: no-preference` and the option, and a guidelines test checks it.
+- **Reduced motion** (system setting): no animation, no movement, not even on hover; content is there immediately. The motion code only exists behind `prefers-reduced-motion: no-preference` and the option, and a guidelines test checks it.
 - **Progressive enhancement**: the panel opening animation (`::details-content`) needs a recent Chrome; elsewhere it opens without animation, without breaking anything.
 - **Sound**: no sound by default, never autoplay, game sounds are not reused.
 

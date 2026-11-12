@@ -13,7 +13,7 @@ The landing page (`/`) is the **reference**; since November 2026 every app page 
 | `charter-app.css` | **The design system on app pages**: base, header, footer, app buttons, cards, notes, list loading. Loaded after the kit. |
 | `components/site-nav.css` | The site's bar (`SiteNav.tsx`) on every page and on the landing: menus, account, language picker, install button, phones' panel. Loaded after `charter-app.css` (`main.tsx`). |
 | `lib/reveal.ts` | Scroll-in of landing blocks (tested, 100% coverage). |
-| `lib/display-preferences.ts` | "Readable font" and "Reduced motion" options (keys `mcui-font`, `mcui-motion`) and the `html.mm-cjk` class, on every page. |
+| `lib/display-preferences.ts` | The `html.mm-cjk` class on every page. The footer's "Readable font" and "Reduced motion" options were removed on 12 November 2026: their attributes are cleared and the `mcui-font` / `mcui-motion` keys forgotten. |
 
 **Rule: a component never hardcodes a size, duration or distance; it reads a `--ds-*` token.**
 
@@ -60,7 +60,7 @@ Colors (kit): background `--night` `#14110e`, panels `--night-2`, text `--text` 
 | Section header | `mc-section`, `mc-section__title`, `mc-section__text` | 32 px title, 58ch text, `--ds-section-y` breathing room. |
 | FAQ | `mc-faq`, `mc-faq__item`, `__q`, `__a` | 48 px row, rotating chevron (200 ms), question turns amber once open. |
 | Link list | `site-links` | 44 px links, wrapping columns. |
-| Footer | `mc-footer`, `.footer` | two columns from 900 px (legal notices | 11 rem link grid), 44 px links. |
+| Footer | `SiteFooter` (`components/SiteFooter.tsx`), `.mm-footer` | one footer for the landing and every page, edge to edge on the bar's gutter: brand and disclaimer, then Product, Guides, Help, Legal, Elsewhere (5 columns from 1100 px, the brand joins the row from 1360 px), 44 px links. On the landing, the folded "About this film" note sits just above it (`.site-film-note`). |
 | Form | `mc-select`, `mc-check` | select (44 px), checkboxes with a 44 px row. The bar's language picker is `LanguagePicker` (see Site bar), not a native select. |
 
 Screenshots (after):
@@ -74,7 +74,7 @@ Screenshots (after):
 - Four durations (120, 200, 360 ms, plus 560 ms for the hero entrance) and three curves (including a 6% bounce reserved for badges, icons and numbers); nothing longer, nothing looping below the film. Full catalog: [brand-guidelines.md](brand-guidelines.md), section 9.
 - **Scroll-in** (`reveal.ts`): 12 px offset + fade, **transform and opacity only** (no layout shift), once per block, siblings staggered by 60 ms (up to 4). Selection: section titles and texts, steps, the "limits" panel, link list, FAQ rows, final call to action, footer.
 - Hover, press, focus and FAQ opening: 120 to 200 ms transitions on color, outline, transform and chevron.
-- **Reduced motion**: `prefers-reduced-motion`, or the "Reduced motion" option in the footer: no entrance, no transition, no movement; the content is simply there.
+- **Reduced motion**: `prefers-reduced-motion`: no entrance, no transition, no movement; the content is simply there.
 - **No more than two flashes per second**: no brightness animation; the film keeps its own safeguards (scrub.js, S1 to S16).
 - No animation gets in the way of reading: nothing moves inside a text block that is already displayed.
 
@@ -83,7 +83,6 @@ Screenshots (after):
 - Contrast ≥ 4.5:1 for all text (measured: the lowest is the primary button, 5.87:1).
 - Visible focus everywhere (2 px light ring); Tab order = DOM order: skip link, film bar, header, content, footer, 3D panel.
 - 44 px tall targets (still below 44 px: the checkboxes themselves, whose row is 44 px).
-- "Readable font" option (Atkinson Hyperlegible Next): titles follow the same scale.
 - Page language kept up to date (`<html lang>`), proper nouns and parameters preserved in all 11 languages.
 
 ## Landing audit (before)
@@ -134,7 +133,7 @@ Screenshots before:
 ## App pages
 
 - **Foundation**: `tokens.css` and `kit.css` are loaded everywhere, then `charter-app.css`. The Tailwind colors in `theme.css` (`paper`, `ink`, `forest`, `lime`…) point to the landing's night palette; `--font-sans` is the reading font, `--font-mono` the game font.
-- **Header and footer** (`SiteLayout.tsx`): the landing ones (night bar with a double rule, the logo, the site's bar described below, dirt strip then a `night-2` footer). The footer carries both accessibility options.
+- **Header and footer** (`SiteLayout.tsx`): the landing ones (night bar with a double rule, the logo, the site's bar described below, dirt strip then a `night-2` footer). The footer is `SiteFooter`, the same as the landing's.
 - **Buttons**: `buttonDark`, `buttonLime`, `buttonOutline`, `buttonQuiet` (`components/ui.tsx`) are the stone button, the copper button (only one per area), a night button and a flat button.
 - **Illustrations**: no more flat drawings. `MemoryScene`, the install illustration and the sign-in panel show isometric views of the landing captures (`public/hero/scenes/*.webp`: chalet, clearing and forest, then the overgrown and forgotten chalet, renders of `S0`, `S2` and `S4`, transparent background). The content headers show the whole logo (`BrandLogo`), not a block. The renders come from a throwaway three.js page (capture lights removed, foliage tints corrected like the film's `prepareCapture`, orthographic camera at 35.26°): redo them if the captures change.
 - **Titles** h1 to h3 on pages: game font at sizes 40/32/24 (32/32/16 in Korean and Japanese), one-texel shadow. Running text, fields and data stay in the reading font.

@@ -6,7 +6,6 @@ export const revealSelector = [
 	'.site-links',
 	'.mc-faq__item',
 	'.mc-section .mc-hero__actions',
-	'.footer .mc-footer__inner',
 ].join(',')
 
 interface ObserverLike {
