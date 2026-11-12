@@ -48,28 +48,50 @@ const githubIssue = z.object({
 const githubIssues = z.array(githubIssue)
 export type GithubIssue = z.infer<typeof githubIssue>
 
-function issuesUrl(page: number): string {
+/** Issues kept off the board: Renovate's dashboard and anything marked by hand. */
+export const ROADMAP_EXCLUDED_LABELS = new Set(['dependencies', 'no-roadmap'])
+
+function issuesUrl(state: 'open' | 'closed', page: number, since?: string): string {
 	const url = new URL(ISSUES_URL)
-	url.search = new URLSearchParams({
-		labels: 'roadmap',
-		state: 'all',
-		per_page: String(PAGE_SIZE),
-		page: String(page),
-	}).toString()
+	const query: Record<string, string> = { state, per_page: String(PAGE_SIZE), page: String(page) }
+	if (since) query.since = since
+	url.search = new URLSearchParams(query).toString()
 	return url.toString()
 }
 
-/** Reads the roadmap issues (pull requests included, filtered later), at most five pages of 100. */
-export async function fetchRoadmapIssues(fetcher: RoadmapFetch, token?: string): Promise<GithubIssue[]> {
+async function fetchPages(fetcher: RoadmapFetch, token: string | undefined, url: (page: number) => string) {
 	const issues: GithubIssue[] = []
 	for (let page = 1; page <= MAX_PAGES; page++) {
 		// biome-ignore lint/performance/noAwaitInLoops: GitHub pagination stops on the first short page.
-		const { body } = await githubGet(fetcher, issuesUrl(page), token)
+		const { body } = await githubGet(fetcher, url(page), token)
 		const batch = githubIssues.parse(body)
 		issues.push(...batch)
 		if (batch.length < PAGE_SIZE) break
 	}
 	return issues
+}
+
+/**
+ * Reads every open issue, and the issues updated since the done window opened (the closed ones among them can be done),
+ * at most five pages of 100 each. Pull requests come along and are filtered later.
+ */
+export async function fetchRoadmapIssues(
+	fetcher: RoadmapFetch,
+	token?: string,
+	now = Date.now()
+): Promise<GithubIssue[]> {
+	const since = new Date(now - ROADMAP_DONE_DAYS * DAY_MS).toISOString()
+	const [open, closed] = await Promise.all([
+		fetchPages(fetcher, token, page => issuesUrl('open', page)),
+		fetchPages(fetcher, token, page => issuesUrl('closed', page, since)),
+	])
+	// An issue that changed state between the two reads comes back twice: keep its most recent copy.
+	const latest = new Map<number, GithubIssue>()
+	for (const issue of [...open, ...closed]) {
+		const known = latest.get(issue.number)
+		if (!known || Date.parse(issue.updated_at) > Date.parse(known.updated_at)) latest.set(issue.number, issue)
+	}
+	return [...latest.values()]
 }
 
 function labelNames(issue: GithubIssue): Set<string> {
@@ -102,8 +124,9 @@ function column(items: RoadmapItem[], date: (item: RoadmapItem) => string | null
 }
 
 /**
- * Groups roadmap issues: open with `in-progress` -> inProgress, other open -> planned, closed as completed
- * (or without a reason) during the last 30 days -> done. Pull requests and `not_planned` closures are dropped.
+ * Groups the repository's issues: open with `in-progress` -> inProgress, other open -> planned, closed as completed
+ * (or without a reason) during the last 30 days -> done. Pull requests, `not_planned` closures and issues labelled
+ * `dependencies` or `no-roadmap` are dropped.
  */
 export function buildRoadmap(
 	issues: readonly GithubIssue[],
@@ -116,7 +139,7 @@ export function buildRoadmap(
 	const doneSince = now - ROADMAP_DONE_DAYS * DAY_MS
 	for (const issue of issues) {
 		const labels = labelNames(issue)
-		if (issue.pull_request !== undefined || !labels.has('roadmap')) continue
+		if (issue.pull_request !== undefined || [...labels].some(label => ROADMAP_EXCLUDED_LABELS.has(label))) continue
 		if (issue.state === 'open') (labels.has('in-progress') ? inProgress : planned).push(toItem(issue, labels))
 		else if (issue.state === 'closed' && isDone(issue, doneSince)) done.push(toItem(issue, labels))
 	}
@@ -232,7 +255,7 @@ export function createRoadmap(options: RoadmapOptions = {}) {
 	async function refresh(release: boolean, correlationId?: string): Promise<RoadmapResponse | null> {
 		try {
 			const [issues, latest] = await Promise.all([
-				fetchRoadmapIssues(fetcher, options.token),
+				fetchRoadmapIssues(fetcher, options.token, now()),
 				release || !releaseKnown ? refreshRelease(correlationId) : Promise.resolve(latestRelease),
 			])
 			const at = now()

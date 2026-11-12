@@ -13,17 +13,17 @@ Two channels, one webhook each:
 | --- | --- | --- |
 | Push to `main` | #changelog | One embed "main updated: N changes" linking to the compare view, with the commit subjects grouped into Features (`feat`), Fixes (`fix`), Performance (`perf`), Documentation (`docs`) and Other. `(#123)` becomes a link to the pull request. `chore(release)` commits, commits carrying the skip-ci marker and merge commits are dropped; nothing is posted when nothing is left, nor for a new branch or a force push. The footer shows the short SHA. |
 | Push of a `mod-v*` tag | #changelog | The release card "Minemories mod X" (see [Mod release card](#mod-release-card)). |
-| Issue opened, edited, closed, reopened, labelled, unlabelled or deleted (only when it carries, or just lost, the `roadmap` label), every day at 06:00 UTC, manual run | #roadmap | A single message, edited in place, with two embeds: In progress (N) and Planned (N). |
+| Issue opened, edited, closed, reopened, labelled, unlabelled or deleted (except Renovate's `dependencies` issues), every day at 06:00 UTC, manual run | #roadmap | A single message, edited in place, with two embeds: In progress (N) and Planned (N). |
 
 The changelog job posts to `#changelog` through the `DISCORD_CHANGELOG_WEBHOOK_URL` secret, and the roadmap job edits its single message in `#roadmap` through `DISCORD_WEBHOOK_URL`. Nobody posts by hand in `#roadmap`. Each secret may hold the full webhook URL, `<id>/<token>` or only the token: the workflow sets the matching webhook id (not a secret) next to it. Tag pushes no longer touch the roadmap message.
 
 ## How the roadmap works
 
-The source of truth is the GitHub issues of `For-Hives/minemories` that carry the **`roadmap`** label (pull requests are ignored). The site's `GET /api/roadmap` uses exactly the same rules:
+The source of truth is the GitHub issues of `For-Hives/minemories`: **every open issue is on the roadmap**, whatever its labels (since 12 November 2026; before, only issues labelled `roadmap` were). Pull requests and issues labelled **`dependencies`** (Renovate's dashboard) or **`no-roadmap`** are left out. Both readers fetch the open issues plus the issues updated during the last 30 days (for Done), and keep one copy per issue. The site's `GET /api/roadmap` uses exactly the same rules:
 
 - **In progress**: open issue that also has the **`in-progress`** label;
-- **Planned**: any other open roadmap issue;
-- **Done**: roadmap issue closed as completed (or without a reason) during the last 30 days. Issues closed as "not planned" or "duplicate" never appear.
+- **Planned**: any other open issue;
+- **Done**: issue closed as completed (or without a reason) during the last 30 days. Issues closed as "not planned" or "duplicate" never appear.
 
 Discord and the site's `/roadmap` only show **In progress** and **Planned**; finished work lives on the site's `/versions` page (issue #243). The API still computes Done and sends it in `GET /api/roadmap`, but the site ignores it.
 
@@ -70,7 +70,7 @@ It needs `DISCORD_WEBHOOK_URL` set to the #changelog webhook. When that value on
 
 In progress and Planned are sorted by last update, newest first (ties: highest issue number first). Each column shows at most 25 issues and a "+N more" line for the rest. Each line is `#123 title — areas`, linking to the issue, where the areas are the labels among `mod`, `api`, `front` and `socials` (community and videos). When the two columns together exceed Discord's 6000-character limit, the longest column loses lines (counted in its "+N more") until the message fits.
 
-To put something on the roadmap: add the `roadmap` label to the issue. To mark it as being worked on: add `in-progress`. Closing it removes it from the Discord message.
+Any open issue is on the roadmap; to keep one off, add `no-roadmap`. To mark it as being worked on: add `in-progress`. Closing it removes it from the Discord message and the site. The `roadmap` label is no longer needed (it does no harm).
 
 ## Safety
 
