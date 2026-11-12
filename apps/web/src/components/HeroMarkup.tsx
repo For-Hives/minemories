@@ -414,14 +414,6 @@ export const HeroMarkup = memo(function HeroMarkup() {
 									{t('Fabric, Forge, NeoForge · single player and servers · beta')}
 								</span>
 							</p>
-							<p
-								className="mc-hero__compat"
-								data-i18n="No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery"
-							>
-								{t(
-									'No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery'
-								)}
-							</p>
 						</div>
 					</section>
 					<section className="mc-section" id="steps" aria-labelledby="steps-title">

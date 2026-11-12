@@ -10,11 +10,11 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('<h1')
 	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
 	expect(html).toMatch(/<h1[^>]*>Garde tes constructions Minecraft en 3D<\/h1>/)
-	// the facts of the landing: every published Minecraft version (never a range), the guarantees, the M menu button and the three questions
+	// the facts of the landing: every published Minecraft version (never a range), the M menu button and the three questions (no guarantees line)
 	expect(html).toContain('Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
 	expect(html).toContain('26.3 expérimentale')
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
-	expect(html).toContain('Rien n’est envoyé tant que tu n’as pas connecté le jeu')
+	expect(html).not.toContain('Pas besoin d’être admin · Ton monde reste intact')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
 	expect(html).toContain('Choisis l’heure, du matin au coucher du soleil')
@@ -82,13 +82,12 @@ test('the first-paint script of the home page puts the film on <html> before the
 	expect(document.body.classList.contains('mc-root')).toBe(true)
 })
 
-test('the landing’s facts, guarantees and cards follow a language change made by the film’s translation bridge', () => {
+test('the landing’s facts and cards follow a language change made by the film’s translation bridge', () => {
 	document.body.innerHTML = renderPage('/')
 	createHeroI18n('en', document).apply()
 	const lines = [...document.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 experimental · Fabric, Forge, NeoForge · single player and servers · beta',
-		'No admin needed · Your world stays untouched · Nothing is sent until you connect the game · Private gallery',
 	])
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('The mod keeps a 3D copy of the spot where you play.')
