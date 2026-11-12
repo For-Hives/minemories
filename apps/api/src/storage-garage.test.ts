@@ -341,7 +341,9 @@ test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TE
 		process.env.PAIRING_PEPPER = 'garage-test-pepper-at-least-32-characters'
 		const { app } = await import('./index')
 		const { database } = await import('./database')
-		const { createPairingCode, exchangePairingCode, listMemories, deleteMemory } = await import('./pairing')
+		const { createPairingCode, exchangePairingCode, listMemories, trashMemory, deleteMemory } = await import(
+			'./pairing'
+		)
 		const { removeMemory } = await import('./storage')
 		const owner = randomUUID()
 		const pairing = exchangePairingCode(createPairingCode(owner).code, 'Garage recovery fixture')
@@ -387,6 +389,7 @@ test.skipIf(process.env.RUN_GARAGE_INTEGRATION !== '1' || !process.env.GARAGE_TE
 		} finally {
 			await execute('docker', ['start', container])
 			await waitForGarage()
+			trashMemory(owner, id)
 			deleteMemory(owner, id)
 			await removeMemory(`${owner}/${id}.glb`)
 			database.close()

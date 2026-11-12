@@ -190,6 +190,7 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	expect((await client.timelapse.frames({ memoryId: id })).totalFrames).toBe(1)
 	const restored = await app.request(`/api/memories/${id}/file`, { headers: { cookie: owner.cookie } })
 	expect(Buffer.from(await restored.arrayBuffer()).equals(data)).toBe(true)
+	await client.memories.trash({ id })
 	await client.memories.delete({ id })
 	await expect(client.timelapse.frames({ memoryId: id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
 	await timelapseMaintenance.maintain()

@@ -150,6 +150,9 @@ test('trash hides snapshots for thirty days before the purge removes them', () =
 
 	expect(deleteMemory('user-g', 'trash-1')).toBeNull()
 	expect(deleteMemory('user-h', 'missing')).toBeNull()
+	// Delete forever only empties the trash: the restored capture is live again, so it is refused and kept.
+	expect(deleteMemory('user-h', 'trash-1')).toBeNull()
+	expect(listMemories('user-h')).toMatchObject([{ id: 'trash-1' }])
 	expect(trashMemory('user-h', 'trash-1')).toBe(true)
 	database
 		.query('UPDATE memories SET deleted_at = ?, purge_after = ? WHERE id = ?')
@@ -177,16 +180,22 @@ test('deleting metadata and queueing its object are atomic and revoke shared acc
 	})
 	const link = createShareLink('delete-owner', 'delete-atomic')
 	if (!link) throw new Error('Share fixture failed')
+	expect(deleteMemory('delete-owner', 'delete-atomic')).toBeNull()
+	expect(getSharedMemory(link.token)).not.toBeNull()
+	expect(trashMemory('delete-owner', 'delete-atomic')).toBe(true)
 	database.exec(
 		`CREATE TRIGGER reject_deletion BEFORE INSERT ON object_deletions BEGIN SELECT RAISE(ABORT, 'fixture failure'); END`
 	)
 	try {
 		expect(() => deleteMemory('delete-owner', 'delete-atomic')).toThrow('fixture failure')
 		expect(getMemoryFile('delete-owner', 'delete-atomic')).not.toBeNull()
-		expect(getSharedMemory(link.token)).not.toBeNull()
 	} finally {
 		database.exec('DROP TRIGGER reject_deletion')
 	}
+	// The failed deletion kept the capture and its link: restored, it is shared again.
+	expect(restoreMemory('delete-owner', 'delete-atomic')).toBe(true)
+	expect(getSharedMemory(link.token)).not.toBeNull()
+	expect(trashMemory('delete-owner', 'delete-atomic')).toBe(true)
 	expect(deleteMemory('other-owner', 'delete-atomic')).toBeNull()
 	expect(deleteMemory('delete-owner', 'delete-atomic')).toBe('delete-owner/atomic.glb')
 	expect(getMemoryFile('delete-owner', 'delete-atomic')).toBeNull()

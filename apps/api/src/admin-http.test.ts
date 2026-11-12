@@ -118,6 +118,7 @@ test('real sessions isolate admin data, require password confirmation, preserve 
 	expect(directory.overview).toMatchObject({ accounts: 3, usedBytes: glb.length * 2, nearQuotaAccounts: 0 })
 	expect(JSON.stringify(directory)).not.toMatch(/objectKey|object_key|token|\.glb|password/i)
 	expect((await app.request(`/api/memories/${id}/file`, { headers: { cookie: other.cookie } })).status).toBe(404)
+	await owner.client.memories.trash({ id })
 	await owner.client.memories.delete({ id })
 	expect((await owner.client.admin.summary({ hours: 24 })).period.uploads).toBe(2)
 }, 15000)
