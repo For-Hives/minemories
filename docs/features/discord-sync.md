@@ -27,6 +27,26 @@ The source of truth is the GitHub issues of `For-Hives/minemories` that carry th
 
 Discord and the site's `/roadmap` only show **In progress** and **Planned**; finished work lives on the site's `/versions` page (issue #243). The API still computes Done and sends it in `GET /api/roadmap`, but the site ignores it.
 
+### How the site stays in sync
+
+The Discord message is refreshed by the workflow; the site's `GET /api/roadmap` (`apps/api/src/roadmap.ts`) is refreshed by the API itself:
+
+- **Pushed by GitHub.** A repository webhook calls `POST /api/github/webhook` (`apps/api/src/github-webhook.ts`) on every issue, label and milestone event, and on `mod-v*` tag creation/deletion and `mod-v*` releases. The API checks the `X-Hub-Signature-256` HMAC against `GITHUB_WEBHOOK_SECRET`, answers 202 at once and refreshes in the background: deliveries are coalesced for 2 seconds, one GitHub refresh runs at a time, and a delivery that lands during a refresh queues exactly one more. Issue events only re-read the issues; tag and release events also re-read the latest mod release. The next page load shows the change. Other events answer 202 `ignored`, `ping` answers 200, a bad or missing signature 401, a body over 1 MiB 413. Payloads, signatures and the secret are never logged; the route is mounted before CORS, so browsers cannot call it.
+- **Timed safety net.** The roadmap is also refreshed when it is older than 30 minutes with the webhook configured (10 minutes without). An expired roadmap is served at once while one background refresh runs. After a GitHub failure, nothing calls GitHub again for 60 seconds: page requests keep the last good roadmap, and webhook deliveries that arrive meanwhile are held until the backoff ends (one refresh for all of them). A failed refresh marks the roadmap stale, so the first page load after the backoff retries instead of waiting for the TTL. GitHub sends no `create` event when more than three tags are pushed at once: the timed refresh covers that case.
+- **Stored in SQLite.** Every good roadmap is saved in the single-row `roadmap_snapshot` table. After a restart the API serves that copy immediately (no 503 while GitHub is slow or down) and revalidates it in the background, which also picks up deliveries missed during the restart. `503 roadmap_unavailable` only happens when nothing was ever fetched or stored.
+- **Browser cache.** Responses carry `Cache-Control: public, no-cache` and a weak `ETag` from the refresh time: a reload always asks the API, which answers `304 Not Modified` when nothing changed. The page fetches with `cache: 'no-cache'` and quietly reloads the board when the tab becomes visible again (at most every 30 seconds).
+
+### Set up the GitHub webhook
+
+1. Generate a long random secret and set it as `GITHUB_WEBHOOK_SECRET` in the API's environment (Coolify), then redeploy the API. Never paste it in an issue, a commit or a log.
+   Set `GITHUB_TOKEN` (read-only) alongside it: each burst of deliveries re-reads every roadmap issue page (and, for tags and releases, the release data), and the unauthenticated limit of 60 GitHub requests per hour is quickly used up by bulk issue or label edits.
+2. In GitHub: Settings → Webhooks → Add webhook on `For-Hives/minemories`:
+   - **Payload URL**: `https://api.minemories.xenos.lightin.io/api/github/webhook`
+   - **Content type**: `application/json`
+   - **Secret**: the value of `GITHUB_WEBHOOK_SECRET`
+   - **Events**: "Let me select individual events" → **Issues**, **Labels**, **Milestones**, **Branch or tag creation**, **Branch or tag deletion**, **Releases**.
+3. Save: GitHub sends a `ping`, which must show a green 200 under "Recent Deliveries". A 404 means the variable is missing on the API; a 401 means the two secrets differ.
+
 ## Mod release card
 
 Posted to #changelog when a `mod-v*` tag is pushed. The site's "Latest mod version" card on `/roadmap` shows the same data (the `latestRelease` field of `GET /api/roadmap`, built by `apps/api/src/mod-release.ts`). The Discord side reads it from the public GitHub API in `scripts/discord/release-info.mjs`:

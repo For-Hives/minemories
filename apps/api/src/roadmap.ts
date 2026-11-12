@@ -7,15 +7,16 @@ import {
 	type RoadmapLatestRelease,
 	type RoadmapResponse,
 	roadmapArea,
+	roadmapResponse,
 } from '@minemories/api-contract'
 import { Hono } from 'hono'
 import * as z from 'zod'
-import { GITHUB_API, type GithubFetch, githubGet, githubToken } from './github'
+import { GITHUB_API, type GithubFetch, githubGet } from './github'
 import { fetchLatestModRelease } from './mod-release'
+import type { RoadmapSnapshotStore, StoredRoadmap } from './roadmap-snapshot'
 import { logApiFailure } from './safe-errors'
 
 export type RoadmapFetch = GithubFetch
-export { githubToken }
 
 const ISSUES_URL = `${GITHUB_API}/issues`
 const PAGE_SIZE = 100
@@ -24,7 +25,12 @@ const CACHE_MS = 10 * 60_000
 /** After a failed refresh, GitHub is not called again for a minute (60 requests/hour without a token). */
 const RETRY_MS = 60_000
 const DAY_MS = 86_400_000
-const PUBLIC_CACHE = 'public, max-age=300'
+/** Browsers and proxies may keep a copy but must revalidate it (ETag) before every use. */
+const REVALIDATE_CACHE = 'public, no-cache'
+/** With the GitHub webhook pushing changes, the timed refresh only covers missed deliveries. */
+export const WEBHOOK_CACHE_MS = 30 * 60_000
+const DEBOUNCE_MS = 2000
+const WEAK_PREFIX = /^W\//
 const DONE_REASONS = new Set<string | null>(['completed', null])
 
 const githubLabel = z.union([z.string(), z.object({ name: z.string().nullish() })])
@@ -125,28 +131,82 @@ export function buildRoadmap(
 	}
 }
 
+export type Cancel = () => void
+/** Runs `task` once after `ms`; returns a cancel function. The default timer never keeps the process alive. */
+export type Schedule = (task: () => void, ms: number) => Cancel
+
+const defaultSchedule: Schedule = (task, ms) => {
+	const timer = setTimeout(task, ms)
+	timer.unref?.()
+	return () => clearTimeout(timer)
+}
+
 export interface RoadmapOptions {
 	fetch?: RoadmapFetch
 	now?: () => number
 	token?: string | undefined
 	ttlMs?: number
 	retryMs?: number
+	/** Last good roadmap kept across restarts (SQLite in production). */
+	store?: RoadmapSnapshotStore | undefined
+	/** Delay that coalesces a burst of GitHub webhook deliveries into one refresh. */
+	debounceMs?: number
+	schedule?: Schedule
+}
+
+function etagFor(at: number): string {
+	return `W/"roadmap-${at}"`
+}
+
+function matchesEtag(header: string | undefined, etag: string): boolean {
+	if (!header) return false
+	const strip = (tag: string) => tag.trim().replace(WEAK_PREFIX, '')
+	return header.split(',').some(tag => tag.trim() === '*' || strip(tag) === strip(etag))
 }
 
 /**
- * `GET /api/roadmap`: public roadmap read from GitHub issues, with the latest mod release. Cached 10 minutes in
- * memory, one GitHub refresh at a time shared by concurrent requests, last good data served when GitHub fails, 503
- * when nothing was ever fetched.
+ * `GET /api/roadmap`: public roadmap read from GitHub issues, with the latest mod release.
+ * - Kept in memory for `ttlMs` (10 minutes, 30 when the GitHub webhook pushes changes), then served stale while one
+ *   background refresh runs; concurrent requests share that single GitHub refresh.
+ * - `refreshSoon` (GitHub webhook) coalesces deliveries during `debounceMs`, then refreshes the issues (and the release
+ *   when asked); a delivery that lands during a refresh queues exactly one more.
+ * - Every good roadmap is saved to `store`; on start the stored one is served at once and revalidated in the background.
+ * - After a GitHub failure, requests wait `retryMs` before trying again; 503 only when nothing was ever fetched or stored.
  */
 export function createRoadmap(options: RoadmapOptions = {}) {
 	const fetcher: RoadmapFetch = options.fetch ?? ((url, init) => fetch(url, init))
 	const now = options.now ?? Date.now
 	const ttlMs = options.ttlMs ?? CACHE_MS
 	const retryMs = options.retryMs ?? RETRY_MS
+	const debounceMs = options.debounceMs ?? DEBOUNCE_MS
+	const schedule = options.schedule ?? defaultSchedule
+	const store = options.store
 	let cached: { body: RoadmapResponse; at: number } | null = null
 	let failedAt: number | null = null
 	let pending: Promise<RoadmapResponse | null> | null = null
 	let latestRelease: RoadmapLatestRelease | null = null
+	let releaseKnown = false
+	/** The stored snapshot may predate deliveries missed while the API was down: revalidate it on first use. */
+	let revalidate = false
+	/** Refresh requested by the webhook and not started yet; true when the release must be read again too. */
+	let queued: boolean | null = null
+	let cancelTimer: Cancel | null = null
+
+	function restore(): void {
+		let stored: StoredRoadmap | null = null
+		try {
+			stored = store?.load() ?? null
+		} catch {
+			logApiFailure('roadmap_snapshot_failed')
+		}
+		const parsed = roadmapResponse.safeParse(stored?.body)
+		if (!(stored && parsed.success && Number.isFinite(stored.fetchedAt))) return
+		cached = { body: parsed.data, at: stored.fetchedAt }
+		latestRelease = parsed.data.latestRelease
+		releaseKnown = true
+		revalidate = true
+	}
+	restore()
 
 	/** Never rejects: a release failure keeps the last good release (or null) and the board is still served. */
 	async function refreshRelease(correlationId?: string): Promise<RoadmapLatestRelease | null> {
@@ -157,43 +217,106 @@ export function createRoadmap(options: RoadmapOptions = {}) {
 		} catch {
 			logApiFailure('mod_release_unavailable', correlationId)
 		}
+		releaseKnown = true
 		return latestRelease
 	}
 
-	async function refresh(correlationId?: string): Promise<RoadmapResponse | null> {
+	function persist(body: RoadmapResponse, at: number, correlationId?: string): void {
 		try {
-			const [issues, release] = await Promise.all([
+			store?.save(body, at)
+		} catch {
+			logApiFailure('roadmap_snapshot_failed', correlationId)
+		}
+	}
+
+	async function refresh(release: boolean, correlationId?: string): Promise<RoadmapResponse | null> {
+		try {
+			const [issues, latest] = await Promise.all([
 				fetchRoadmapIssues(fetcher, options.token),
-				refreshRelease(correlationId),
+				release || !releaseKnown ? refreshRelease(correlationId) : Promise.resolve(latestRelease),
 			])
 			const at = now()
-			cached = { body: buildRoadmap(issues, at, release), at }
+			cached = { body: buildRoadmap(issues, at, latest), at }
 			failedAt = null
+			revalidate = false
+			persist(cached.body, at, correlationId)
 		} catch {
 			failedAt = now()
+			// A failed webhook refresh must not hide the change until the TTL: the first request after the backoff retries.
+			revalidate = true
 			logApiFailure('roadmap_unavailable', correlationId)
 		}
 		return cached?.body ?? null
 	}
 
-	/** Current roadmap, refreshed when the cache expired; never rejects. */
-	function current(correlationId?: string): Promise<RoadmapResponse | null> {
-		const time = now()
-		if (cached && time - cached.at < ttlMs) return Promise.resolve(cached.body)
-		if (failedAt !== null && time - failedAt < retryMs) return Promise.resolve(cached?.body ?? null)
-		pending ??= refresh(correlationId).finally(() => {
+	/** Starts one refresh unless one is running; a queued webhook refresh runs right after it settles. */
+	function start(release: boolean, correlationId?: string): Promise<RoadmapResponse | null> {
+		pending ??= refresh(release, correlationId).finally(() => {
 			pending = null
+			runQueued()
 		})
 		return pending
+	}
+
+	/** Milliseconds left in the failure backoff (0 when GitHub last answered). */
+	function backoffLeft(): number {
+		return failedAt === null ? 0 : Math.max(0, failedAt + retryMs - now())
+	}
+
+	function arm(ms: number): void {
+		cancelTimer = schedule(() => {
+			cancelTimer = null
+			runQueued()
+		}, ms)
+	}
+
+	/** Runs the queued webhook refresh unless one is running or a timer is pending; waits out the failure backoff. */
+	function runQueued(): void {
+		if (queued === null || pending || cancelTimer) return
+		const wait = backoffLeft()
+		if (wait > 0) {
+			arm(wait)
+			return
+		}
+		const release = queued
+		queued = null
+		void start(release)
+	}
+
+	/**
+	 * Webhook entry point: refresh soon, once per burst, whatever the TTL. After a GitHub failure the refresh waits for
+	 * the backoff, so a burst of deliveries cannot keep hitting a rate-limited API.
+	 */
+	function refreshSoon(change: { release: boolean }): void {
+		queued = (queued ?? false) || change.release
+		if (!cancelTimer) arm(Math.max(debounceMs, backoffLeft()))
+	}
+
+	/** Current roadmap; never rejects. Stale data is served at once while a background refresh runs. */
+	function current(correlationId?: string): Promise<RoadmapResponse | null> {
+		const time = now()
+		if (cached && !revalidate && time - cached.at < ttlMs) return Promise.resolve(cached.body)
+		const backingOff = failedAt !== null && time - failedAt < retryMs
+		const refreshing = backingOff ? pending : start(true, correlationId)
+		if (cached) return Promise.resolve(cached.body)
+		return refreshing ?? Promise.resolve(null)
+	}
+
+	/** Resolves once no refresh is running (tests and shutdown). */
+	async function settled(): Promise<void> {
+		while (pending) {
+			// biome-ignore lint/performance/noAwaitInLoops: a queued refresh starts when the previous one settles.
+			await pending
+		}
 	}
 
 	const router = new Hono<{ Variables: { correlationId: string } }>()
 	router.get('/', async context => {
 		const body = await current(context.get('correlationId'))
-		if (!body) return context.json({ error: 'roadmap_unavailable' }, 503, { 'Cache-Control': 'no-store' })
-		return context.json(body, 200, { 'Cache-Control': PUBLIC_CACHE })
+		if (!(body && cached)) return context.json({ error: 'roadmap_unavailable' }, 503, { 'Cache-Control': 'no-store' })
+		const headers = { 'Cache-Control': REVALIDATE_CACHE, ETag: etagFor(cached.at) }
+		if (matchesEtag(context.req.header('If-None-Match'), headers.ETag)) return context.body(null, 304, headers)
+		return context.json(cached.body, 200, headers)
 	})
-	return Object.assign(router, { current })
+	return Object.assign(router, { current, refreshSoon, settled })
 }
-
-export const roadmap = createRoadmap({ token: githubToken(process.env) })

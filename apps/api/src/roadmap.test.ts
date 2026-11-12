@@ -1,4 +1,4 @@
-import { afterAll, expect, spyOn, test } from 'bun:test'
+import { afterAll, expect, mock, spyOn, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -169,7 +169,7 @@ function silenced() {
 	return spyOn(console, 'error').mockImplementation(() => {})
 }
 
-test('caches for ten minutes, then refreshes', async () => {
+test('caches for ten minutes, then serves the stale copy while one background refresh runs', async () => {
 	let now = NOW
 	const { calls, fetcher } = recorder(() => Promise.resolve(json([issue(1)])))
 	const roadmap = createRoadmap({ fetch: fetcher, now: () => now })
@@ -178,6 +178,10 @@ test('caches for ten minutes, then refreshes', async () => {
 	expect(await roadmap.current()).toBe(first)
 	expect(calls).toHaveLength(1)
 	now += 1
+	expect(await roadmap.current()).toBe(first)
+	expect(await roadmap.current()).toBe(first)
+	expect(calls).toHaveLength(2)
+	await roadmap.settled()
 	const second = await roadmap.current()
 	expect(calls).toHaveLength(2)
 	expect(second?.updatedAt).toBe(iso(now))
@@ -215,12 +219,15 @@ test('serves the last good roadmap when GitHub fails and waits before retrying',
 	healthy = false
 	now += 11 * 60_000
 	expect(await roadmap.current()).toBe(good)
+	await roadmap.settled()
 	expect(calls).toHaveLength(2)
 	now += 59_999
 	expect(await roadmap.current()).toBe(good)
 	expect(calls).toHaveLength(2)
 	now += 1
 	healthy = true
+	expect(await roadmap.current()).toBe(good)
+	await roadmap.settled()
 	const fresh = await roadmap.current()
 	expect(calls).toHaveLength(3)
 	expect(fresh?.updatedAt).toBe(iso(now))
@@ -244,7 +251,7 @@ test('answers 503 without cache while GitHub is unavailable, then recovers', asy
 	status = 200
 	const ok = await roadmap.request('/')
 	expect(ok.status).toBe(200)
-	expect(ok.headers.get('Cache-Control')).toBe('public, max-age=300')
+	expect(ok.headers.get('Cache-Control')).toBe('public, no-cache')
 	expect(calls).toHaveLength(2)
 	errors.mockRestore()
 })
@@ -258,7 +265,7 @@ test('GET /api/roadmap is served by the app with CORS for the web origin', async
 		const response = await app.request('/api/roadmap', { headers: { Origin: 'http://localhost:5173' } })
 		expect(response.status).toBe(200)
 		expect(response.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:5173')
-		expect(response.headers.get('Cache-Control')).toBe('public, max-age=300')
+		expect(response.headers.get('Cache-Control')).toBe('public, no-cache')
 		const body = roadmapResponse.parse(await response.json())
 		expect(body.columns.planned.items.map(item => [item.number, item.areas])).toEqual([[42, ['api']]])
 		expect(body.latestRelease).toBeNull()
@@ -304,6 +311,8 @@ test('adds the latest mod release, keeps the last good one when GitHub fails, an
 	})
 	releasesUp = false
 	now += 10 * 60_000
+	await roadmap.current()
+	await roadmap.settled()
 	const second = await roadmap.current()
 	expect(calls).toHaveLength(2)
 	expect(second?.updatedAt).toBe(iso(now))
@@ -338,4 +347,320 @@ test('a release failure without any earlier release serves the board with a null
 	expect(body?.columns.planned.items.map(item => item.number)).toEqual([1])
 	expect(body?.latestRelease).toBeNull()
 	errors.mockRestore()
+})
+
+function memoryStore(initial: { body: unknown; fetchedAt: number } | null = null) {
+	const saves: { body: unknown; fetchedAt: number }[] = []
+	return {
+		saves,
+		load: () => initial,
+		save: (body: unknown, fetchedAt: number) => {
+			saves.push({ body, fetchedAt })
+		},
+	}
+}
+
+test('starts from the stored snapshot when GitHub is down, revalidates once and never answers 503', async () => {
+	const errors = silenced()
+	const stored = buildRoadmap([issue(7)], NOW - DAY)
+	const store = memoryStore({ body: JSON.parse(JSON.stringify(stored)), fetchedAt: NOW - DAY })
+	const { calls, fetcher } = recorder(() => Promise.reject(new Error('network down')))
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => NOW, store })
+	const response = await roadmap.request('/')
+	expect(response.status).toBe(200)
+	expect(response.headers.get('ETag')).toBe(`W/"roadmap-${NOW - DAY}"`)
+	expect(roadmapResponse.parse(await response.json())).toEqual(stored)
+	await roadmap.settled()
+	expect(calls).toHaveLength(1)
+	expect((await roadmap.request('/')).status).toBe(200)
+	expect(calls).toHaveLength(1)
+	expect(store.saves).toHaveLength(0)
+	expect(errors.mock.calls.map(call => String(call[0]))).toEqual([expect.stringContaining('roadmap_unavailable')])
+	errors.mockRestore()
+})
+
+test('a fresh stored snapshot is still revalidated in the background and every good refresh is saved', async () => {
+	let now = NOW
+	const stored = buildRoadmap([issue(7)], NOW, null)
+	const store = memoryStore({ body: stored, fetchedAt: NOW })
+	const { calls, fetcher } = recorder(() => Promise.resolve(json([issue(1)])), releaseFixtures)
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => now, store })
+	expect(await roadmap.current()).toEqual(stored)
+	await roadmap.settled()
+	expect(calls).toHaveLength(1)
+	expect(store.saves).toHaveLength(1)
+	const saved = store.saves[0]
+	expect(saved?.fetchedAt).toBe(NOW)
+	expect(roadmapResponse.parse(saved?.body).columns.planned.items.map(item => item.number)).toEqual([1])
+	now += 1000
+	expect(await roadmap.current()).toBe(saved?.body as never)
+	expect(calls).toHaveLength(1)
+})
+
+test('ignores an invalid or unreadable snapshot and logs failed snapshot reads and writes', async () => {
+	const errors = silenced()
+	const { fetcher } = recorder(() => Promise.reject(new Error('network down')))
+	const invalid = createRoadmap({
+		fetch: fetcher,
+		now: () => NOW,
+		store: memoryStore({ body: { x: 1 }, fetchedAt: NOW }),
+	})
+	expect((await invalid.request('/')).status).toBe(503)
+	const badTime = createRoadmap({
+		fetch: fetcher,
+		now: () => NOW,
+		store: memoryStore({ body: buildRoadmap([], NOW), fetchedAt: Number.NaN }),
+	})
+	expect(await badTime.current()).toBeNull()
+	const throwing = {
+		load: () => {
+			throw new Error('database closed')
+		},
+		save: () => {
+			throw new Error('database closed')
+		},
+	}
+	const healthy = recorder(() => Promise.resolve(json([issue(1)])))
+	const roadmap = createRoadmap({ fetch: healthy.fetcher, now: () => NOW, store: throwing })
+	expect((await roadmap.current())?.columns.planned.items.map(item => item.number)).toEqual([1])
+	const events = errors.mock.calls.map(call => String(call[0]))
+	expect(events.filter(event => event.includes('roadmap_snapshot_failed'))).toHaveLength(2)
+	errors.mockRestore()
+})
+
+test('answers 304 to a matching If-None-Match and 200 with the new ETag once the roadmap changed', async () => {
+	let now = NOW
+	const { fetcher } = recorder(() => Promise.resolve(json([issue(1)])))
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => now })
+	const first = await roadmap.request('/')
+	const etag = first.headers.get('ETag') ?? ''
+	expect(etag).toBe(`W/"roadmap-${NOW}"`)
+	for (const header of [etag, etag.slice(2), `"other", ${etag}`, '*']) {
+		// biome-ignore lint/performance/noAwaitInLoops: one conditional request at a time keeps the failing header readable.
+		const cached = await roadmap.request('/', { headers: { 'If-None-Match': header } })
+		expect(cached.status).toBe(304)
+		expect(cached.headers.get('ETag')).toBe(etag)
+		expect(cached.headers.get('Cache-Control')).toBe('public, no-cache')
+		expect(await cached.text()).toBe('')
+	}
+	expect((await roadmap.request('/', { headers: { 'If-None-Match': '"other"' } })).status).toBe(200)
+	now += 10 * 60_000
+	await roadmap.current()
+	await roadmap.settled()
+	const changed = await roadmap.request('/', { headers: { 'If-None-Match': etag } })
+	expect(changed.status).toBe(200)
+	expect(changed.headers.get('ETag')).toBe(`W/"roadmap-${now}"`)
+})
+
+/** Lets pending promise callbacks run (no timers) until `condition` holds. */
+async function until(condition: () => boolean) {
+	for (let attempt = 0; attempt < 100 && !condition(); attempt++) {
+		// biome-ignore lint/performance/noAwaitInLoops: each turn lets one more promise callback run.
+		await Promise.resolve()
+	}
+	expect(condition()).toBe(true)
+}
+
+function manualSchedule() {
+	const tasks: { task: () => void; ms: number; cancelled: boolean }[] = []
+	const schedule = (task: () => void, ms: number) => {
+		const entry = { task, ms, cancelled: false }
+		tasks.push(entry)
+		return () => {
+			entry.cancelled = true
+		}
+	}
+	const run = () => {
+		const entry = tasks.shift()
+		if (entry && !entry.cancelled) entry.task()
+	}
+	return { tasks, schedule, run }
+}
+
+function releaseCounter() {
+	const urls: string[] = []
+	return {
+		urls,
+		fetch: (url: string) => {
+			urls.push(url)
+			return releaseFixtures(url)
+		},
+		tagReads: () => urls.filter(url => url.includes('/tags?')).length,
+	}
+}
+
+test('webhook refreshes coalesce a burst, skip the release for issue events and refetch it for tags', async () => {
+	let now = NOW
+	const releases = releaseCounter()
+	let open = [issue(1)]
+	const { calls, fetcher } = recorder(() => Promise.resolve(json(open)), releases.fetch)
+	const timers = manualSchedule()
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => now, schedule: timers.schedule, ttlMs: 30 * 60_000 })
+	await roadmap.current()
+	expect(releases.tagReads()).toBe(1)
+	open = [issue(1), issue(2, { labels: ['roadmap', 'in-progress'] })]
+	now += 1000
+	roadmap.refreshSoon({ release: false })
+	roadmap.refreshSoon({ release: false })
+	expect(timers.tasks).toHaveLength(1)
+	expect(timers.tasks[0]?.ms).toBe(2000)
+	timers.run()
+	await roadmap.settled()
+	expect(calls).toHaveLength(2)
+	expect(releases.tagReads()).toBe(1)
+	const body = await roadmap.current()
+	expect(body?.columns.inProgress.items.map(item => item.number)).toEqual([2])
+	expect(body?.latestRelease?.tag).toBe('mod-v0.36.1-beta.1')
+	roadmap.refreshSoon({ release: false })
+	roadmap.refreshSoon({ release: true })
+	timers.run()
+	await roadmap.settled()
+	expect(calls).toHaveLength(3)
+	expect(releases.tagReads()).toBe(2)
+})
+
+test('a webhook refresh before any request also reads the release, and one during a refresh queues exactly one more', async () => {
+	const releases = releaseCounter()
+	let resolveIssues: (response: Response) => void = () => {}
+	const { calls, fetcher } = recorder(
+		() =>
+			new Promise<Response>(resolve => {
+				resolveIssues = resolve
+			}),
+		releases.fetch
+	)
+	const timers = manualSchedule()
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => NOW, schedule: timers.schedule, debounceMs: 10 })
+	roadmap.refreshSoon({ release: false })
+	expect(timers.tasks[0]?.ms).toBe(10)
+	timers.run()
+	expect(calls).toHaveLength(1)
+	roadmap.refreshSoon({ release: false })
+	roadmap.refreshSoon({ release: false })
+	timers.run()
+	expect(calls).toHaveLength(1)
+	resolveIssues(json([issue(1)]))
+	await until(() => calls.length === 2)
+	resolveIssues(json([issue(1), issue(3)]))
+	await roadmap.settled()
+	expect(calls).toHaveLength(2)
+	expect(releases.tagReads()).toBe(1)
+	expect((await roadmap.current())?.columns.planned.items.map(item => item.number)).toEqual([1, 3])
+})
+
+test('a delivery whose timer is still pending when a refresh ends waits for that timer', async () => {
+	let resolveIssues: (response: Response) => void = () => {}
+	const { calls, fetcher } = recorder(
+		() =>
+			new Promise<Response>(resolve => {
+				resolveIssues = resolve
+			})
+	)
+	const timers = manualSchedule()
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => NOW, schedule: timers.schedule })
+	const first = roadmap.current()
+	roadmap.refreshSoon({ release: false })
+	resolveIssues(json([issue(1)]))
+	await first
+	await roadmap.settled()
+	expect(calls).toHaveLength(1)
+	timers.run()
+	resolveIssues(json([issue(2)]))
+	await roadmap.settled()
+	expect(calls).toHaveLength(2)
+	expect((await roadmap.current())?.columns.planned.items.map(item => item.number)).toEqual([2])
+})
+
+test('a failed webhook refresh is retried by the first request after the backoff, not after the TTL', async () => {
+	const errors = silenced()
+	let now = NOW
+	let status = 200
+	let open = [issue(1)]
+	const { calls, fetcher } = recorder(() => Promise.resolve(status === 200 ? json(open) : json({}, status)))
+	const timers = manualSchedule()
+	const roadmap = createRoadmap({
+		fetch: fetcher,
+		now: () => now,
+		schedule: timers.schedule,
+		ttlMs: 30 * 60_000,
+		retryMs: 60_000,
+	})
+	await roadmap.current()
+	open = [issue(1), issue(2, { labels: ['roadmap', 'in-progress'] })]
+	status = 503
+	roadmap.refreshSoon({ release: false })
+	timers.run()
+	await roadmap.settled()
+	expect(calls).toHaveLength(2)
+	expect((await roadmap.current())?.columns.inProgress.items).toEqual([])
+	expect(calls).toHaveLength(2)
+	status = 200
+	now += 60_000
+	await roadmap.current()
+	await roadmap.settled()
+	expect(calls).toHaveLength(3)
+	expect((await roadmap.current())?.columns.inProgress.items.map(item => item.number)).toEqual([2])
+	errors.mockRestore()
+})
+
+test('webhook deliveries after a GitHub failure wait for the backoff instead of calling GitHub again', async () => {
+	const errors = silenced()
+	let now = NOW
+	let status = 403
+	const { calls, fetcher } = recorder(() => Promise.resolve(status === 200 ? json([issue(1)]) : json({}, status)))
+	const timers = manualSchedule()
+	const roadmap = createRoadmap({ fetch: fetcher, now: () => now, schedule: timers.schedule, retryMs: 60_000 })
+	roadmap.refreshSoon({ release: false })
+	timers.run()
+	await roadmap.settled()
+	expect(calls).toHaveLength(1)
+	now += 10_000
+	roadmap.refreshSoon({ release: false })
+	roadmap.refreshSoon({ release: true })
+	expect(timers.tasks).toHaveLength(1)
+	expect(timers.tasks[0]?.ms).toBe(50_000)
+	now += 20_000
+	timers.run()
+	expect(calls).toHaveLength(1)
+	expect(timers.tasks).toHaveLength(1)
+	expect(timers.tasks[0]?.ms).toBe(30_000)
+	now += 30_000
+	status = 200
+	timers.run()
+	await roadmap.settled()
+	expect(calls).toHaveLength(2)
+	expect((await roadmap.current())?.columns.planned.items.map(item => item.number)).toEqual([1])
+	errors.mockRestore()
+})
+
+test('the default debounce timer runs the refresh and does not keep the process alive', async () => {
+	let task: (() => void) | null = null
+	const unref = mock(() => undefined)
+	const timer = spyOn(globalThis, 'setTimeout').mockImplementation(((callback: () => void, ms: number) => {
+		expect(ms).toBe(0)
+		task = callback
+		return { unref }
+	}) as unknown as typeof setTimeout)
+	try {
+		const { calls, fetcher } = recorder(() => Promise.resolve(json([issue(1)])))
+		const roadmap = createRoadmap({ fetch: fetcher, now: () => NOW, debounceMs: 0 })
+		roadmap.refreshSoon({ release: false })
+		expect(unref).toHaveBeenCalledTimes(1)
+		expect(calls).toHaveLength(0)
+		;(task as unknown as () => void)()
+		await roadmap.settled()
+		expect(calls).toHaveLength(1)
+	} finally {
+		timer.mockRestore()
+	}
+})
+
+test('POST /api/github/webhook is off without a secret and carries no CORS headers', async () => {
+	const response = await app.request('/api/github/webhook', {
+		method: 'POST',
+		headers: { Origin: 'http://localhost:5173', 'X-GitHub-Event': 'ping' },
+		body: '{}',
+	})
+	expect(response.status).toBe(404)
+	expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull()
 })
