@@ -6,8 +6,8 @@ import { firstPaintScript } from './components/HeroFilm'
 import { SiteLayout } from './components/SiteLayout'
 import { loadLocale } from './i18n/catalog'
 import { I18nProvider } from './i18n/I18n'
-import { localeOptions } from './i18n/locales'
-import { ogLocale } from './lib/link-language'
+import { type Locale, localeOptions } from './i18n/locales'
+import { localePrefix, localizedPath, ogLocale } from './lib/locale-path'
 import { LegalPage, NotFoundPage } from './pages/ContentPages'
 import { ExplorerPage } from './pages/DiscoveryPages'
 import { DownloadsPage } from './pages/DownloadsPage'
@@ -18,17 +18,22 @@ import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
 import { SharingPage } from './pages/SharingPage'
-import { headFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage } from './route-metadata'
+import { headFor, metadataFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage } from './route-metadata'
 import { structuredDataFor } from './structured-data'
 
-export { headFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage, structuredDataFor }
-/** English is the default head; every other language gets its own head variant, served for `?lang=<id>`. */
-export const previewLanguages = localeOptions
-	.filter(option => option.id !== 'en')
-	.map(option => ({ id: option.id, ogLocale: ogLocale(option.id) }))
-export async function loadPreviewLanguages() {
-	await Promise.all(previewLanguages.map(language => loadLocale(language.id)))
+export { headFor, metadataFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage, structuredDataFor }
+/** Every language of the site: English unprefixed (the default), each other one under its prefix (/fr, /pt-br…). */
+export const languages = localeOptions.map(option => ({
+	id: option.id,
+	tag: option.tag,
+	ogLocale: ogLocale(option.id),
+	prefix: localePrefix(option.id),
+}))
+export async function loadLanguages() {
+	await Promise.all(languages.map(language => loadLocale(language.id)))
 }
+/** A page's URL path in a language: ("/faq", "fr") is "/fr/faq". */
+export const pagePath = (path: string, locale: Locale) => localizedPath(path, locale)
 /** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
 export const firstPaintScripts: Record<string, string> = { '/': firstPaintScript }
 
@@ -40,7 +45,7 @@ const context = {
 	setViewerFile: () => undefined,
 	notify: () => undefined,
 }
-export function renderPage(path: string) {
+export function renderPage(path: string, locale: Locale = 'en') {
 	let content = <NotFoundPage />
 	switch (path) {
 		case '/':
@@ -93,9 +98,9 @@ export function renderPage(path: string) {
 			break
 	}
 	return renderToString(
-		<I18nProvider initialLocale="fr">
+		<I18nProvider initialLocale={locale}>
 			<AppContext.Provider value={context}>
-				<StaticRouter location={path}>
+				<StaticRouter basename={localePrefix(locale) || '/'} location={localizedPath(path, locale)}>
 					<SiteLayout>
 						<Suspense>{content}</Suspense>
 					</SiteLayout>

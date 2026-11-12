@@ -195,14 +195,17 @@ test('the build locks (robots.txt, meta robots) must follow the same switch as t
 
 test('the private routes are the same in nginx (shell + noindex), the indexable robots.txt and the smoke checks', () => {
 	const config = readFileSync(new URL('../deploy/nginx.web.conf', import.meta.url), 'utf8')
-	const alternations = [...config.matchAll(/\^\/\(([a-z|]+)\)\(\/\|\$\)/g)].map(match => match[1].split('|').sort())
+	// The private names, after the optional language prefix: (gallery|account|…)(/|$)
+	const alternations = [...config.matchAll(/\(([a-z|]+)\)\(\/\|\$\)/g)].map(match => match[1].split('|').sort())
 	assert.equal(alternations.length, 2, 'the location regex and the $mm_robots regex')
 	const prerender = readFileSync(new URL('./prerender-web.mjs', import.meta.url), 'utf8')
 	const disallowed = [...prerender.matchAll(/Disallow: \/([a-z]+)\/?\\n/g)].map(match => match[1]).sort()
 	assert.deepEqual(alternations[0], disallowed)
 	assert.deepEqual(alternations[1], disallowed)
 	const smoked = new Set(
-		expectations.filter(expectation => expectation.appShell).map(expectation => expectation.path.split('/')[1])
+		expectations
+			.filter(expectation => expectation.appShell && !expectation.language)
+			.map(expectation => expectation.path.split('/')[1])
 	)
 	assert.deepEqual([...smoked].sort(), disallowed)
 })

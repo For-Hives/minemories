@@ -9,9 +9,8 @@ import {
 	useRef,
 	useState,
 } from 'react'
-import { withoutLanguageParam } from '../lib/link-language'
 import { dismissedSuggestionKey, savedLocaleKey, suggestedLocale } from '../lib/locale-suggestion'
-import { loadLocale, translate } from './catalog'
+import { isLoaded, loadLocale, translate } from './catalog'
 import { isFrench, isLocale, type Locale, localeTag, resolveLocale } from './locales'
 
 export { translate } from './catalog'
@@ -19,8 +18,6 @@ export type { Locale } from './locales'
 
 const I18nContext = createContext<{
 	locale: Locale
-	/** The language comes from the link (`?lang=`), a saved choice or the switcher, not from the page's default. */
-	chosen: boolean
 	pendingLocale: Locale | null
 	localeError: boolean
 	setLocale: (value: Locale) => void
@@ -30,7 +27,6 @@ const I18nContext = createContext<{
 	t: (message: string, values?: Record<string, string | number>) => string
 }>({
 	locale: 'en',
-	chosen: false,
 	pendingLocale: null,
 	localeError: false,
 	setLocale: () => undefined,
@@ -38,7 +34,9 @@ const I18nContext = createContext<{
 	dismissSuggestion: () => undefined,
 	t: (message, values) => translate('en', message, values),
 })
+/** The first render must match the static HTML: a catalogue that is not here yet renders in its fallback language. */
 function initialLanguage(locale: Locale): Locale {
+	if (isLoaded(locale)) return locale
 	return isFrench(locale) ? 'fr' : 'en'
 }
 function readPreference(key: string): string | null {
@@ -50,8 +48,9 @@ function readPreference(key: string): string | null {
 	}
 }
 /**
- * The page renders in `initialLocale` unless the link names a language (`urlLocale`, from `?lang=`, not saved) or the
- * visitor saved a choice in the language switcher. The browser's languages never
+ * The page renders in `initialLocale`. With `onLocaleChange` (the routed site, where the URL names the language: /fr/…),
+ * that language is the URL's, and a choice saves it, then hands it to `onLocaleChange`, which moves to the page's URL in
+ * that language. Without it, a choice saved in the language switcher wins over `initialLocale`. The browser's languages never
  * switch the rendered text (a crawler and a visitor must read the same language on the same URL); with `suggestLocale` they only
  * feed `suggestedLocale`, which the language suggestion offers.
  */
@@ -59,27 +58,26 @@ export function I18nProvider({
 	children,
 	initialLocale = 'fr',
 	suggestLocale = false,
-	urlLocale = null,
+	onLocaleChange,
 }: {
 	children: ReactNode
 	initialLocale?: Locale
 	suggestLocale?: boolean
-	urlLocale?: Locale | null
+	onLocaleChange?: (locale: Locale) => void
 }) {
 	const [locale, setLocale] = useState<Locale>(() => initialLanguage(initialLocale))
-	const [chosen, setChosen] = useState(false)
 	const [pendingLocale, setPendingLocale] = useState<Locale | null>(null)
 	const [localeError, setLocaleError] = useState(false)
 	const [suggestion, setSuggestion] = useState<Locale | null>(null)
 	const revision = useRef(0)
-	const activate = useCallback((value: Locale, persist: boolean, explicit: boolean) => {
+	const routed = useRef(onLocaleChange)
+	routed.current = onLocaleChange
+	const activate = useCallback((value: Locale, persist: boolean) => {
 		if (!isLocale(value)) return
 		const version = ++revision.current
 		setLocaleError(false)
 		function commit() {
 			if (version !== revision.current) return
-			setLocale(value)
-			setChosen(explicit)
 			setPendingLocale(null)
 			if (persist)
 				try {
@@ -87,8 +85,11 @@ export function I18nProvider({
 				} catch {
 					/* Preferences are optional. */
 				}
+			// On the routed site a choice is a move to the page in that language (its catalogue is already here).
+			if (persist && routed.current) routed.current(value)
+			else setLocale(value)
 		}
-		if (value === 'fr' || value === 'en') {
+		if (isLoaded(value)) {
 			commit()
 			return
 		}
@@ -103,19 +104,17 @@ export function I18nProvider({
 	}, [])
 	useEffect(() => {
 		const saved = resolveLocale(readPreference(savedLocaleKey) ?? '')
-		const requested = urlLocale ?? saved
-		startTransition(() => activate(requested ?? initialLocale, false, requested !== null))
+		// The routed site's language is its URL's (main.tsx already sent a saved choice to its URL).
+		startTransition(() => activate(routed.current ? initialLocale : (saved ?? initialLocale), false))
 		let active = true
-		// A link that names its language is already an explicit choice: nothing to suggest.
-		const target =
-			suggestLocale && !urlLocale
-				? suggestedLocale({
-						current: initialLanguage(initialLocale),
-						saved,
-						dismissed: readPreference(dismissedSuggestionKey),
-						languages: navigator.languages,
-					})
-				: null
+		const target = suggestLocale
+			? suggestedLocale({
+					current: initialLanguage(initialLocale),
+					saved,
+					dismissed: readPreference(dismissedSuggestionKey),
+					languages: navigator.languages,
+				})
+			: null
 		// The suggestion speaks the target language: it appears once that catalogue is here, or not at all.
 		if (target)
 			void loadLocale(target)
@@ -128,7 +127,7 @@ export function I18nProvider({
 			revision.current += 1
 		}
 		// Initialization is intentionally stable; changing languages is an explicit action.
-	}, [activate, suggestLocale, initialLocale, urlLocale])
+	}, [activate, suggestLocale, initialLocale])
 	useEffect(() => {
 		document.documentElement.lang = localeTag(locale)
 	}, [locale])
@@ -150,15 +149,11 @@ export function I18nProvider({
 		<I18nContext.Provider
 			value={{
 				locale,
-				chosen,
 				pendingLocale,
 				localeError,
 				setLocale: value => {
 					setSuggestion(null)
-					// The switcher's choice replaces the link's: drop ?lang= so a reload keeps it.
-					const href = withoutLanguageParam(window.location.href)
-					if (href) window.history.replaceState(window.history.state, '', href)
-					activate(value, true, true)
+					activate(value, true)
 				},
 				suggestedLocale: suggestion,
 				dismissSuggestion,

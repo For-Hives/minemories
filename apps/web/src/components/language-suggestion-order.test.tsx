@@ -17,7 +17,7 @@ afterEach(() => {
 test('the language suggestion comes after the skip link and the site header in the Tab order', async () => {
 	vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
 	vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-US', 'en'])
-	window.history.replaceState(null, '', '/faq')
+	window.history.replaceState(null, '', '/fr/faq')
 	const { container } = render(<App />)
 	const card = await screen.findByRole('region', { name: 'Language suggestion' }, { timeout: 10000 })
 	const accept = within(card).getByRole('button', { name: 'Switch to English' })

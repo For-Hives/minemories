@@ -124,15 +124,6 @@ test('/safety: the parents box, the checksum fold under #verifier, what goes onl
 	expect(document.body.textContent).not.toMatch(blocked)
 })
 
-test('regional catalogues quote their own mod labels on /safety', async () => {
-	await Promise.all([loadLocale('fr-CA'), loadLocale('en-GB')])
-	mount(<SafetyPage />, 'fr-CA')
-	expect(await screen.findByText(/M → Photos auto/)).toBeTruthy()
-	cleanup()
-	mount(<SafetyPage />, 'en-GB')
-	expect(await screen.findByText(/M → Auto photos/)).toBeTruthy()
-})
-
 test('/guides/minecraft-blender: the real export commands, the folder, the Blender import and two questions', () => {
 	mount(<BlenderGuidePage />, 'fr', '/guides/minecraft-blender')
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
@@ -158,18 +149,20 @@ test('/guides/minecraft-blender: the real export commands, the folder, the Blend
 
 test('the three pages are prerendered, indexable and dated, the guide as an article', () => {
 	for (const path of ['/server-closing', '/safety', '/guides/minecraft-blender']) {
-		const html = renderPage(path)
+		const html = renderPage(path, 'fr')
 		expect(html, path).toContain('<h1')
-		expect(html, path).toContain('href="/installation')
-		const page = metadataFor(path)
+		expect(html, path).toContain('href="/fr/installation')
+		const page = metadataFor(path, 'fr')
 		expect(page.indexable, path).toBe(true)
 		expect(page.updated, path).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 	}
-	expect(renderPage('/server-closing')).toContain('id="aternos"')
-	expect(renderPage('/server-closing')).toContain('id="admin"')
-	expect(renderPage('/safety')).toContain('id="verifier"')
-	expect(metadataFor('/server-closing').title).toBe('Serveur Minecraft qui ferme\u00a0: garde tes constructions')
-	expect(metadataFor('/safety').title).toBe('Minemories est-il sûr\u00a0? Mod, enfants et vie privée')
-	expect(metadataFor('/guides/minecraft-blender').title).toBe('Exporter une construction Minecraft vers Blender (GLB)')
-	expect(metadataFor('/guides/minecraft-blender').articleDate).toBe('2026-11-10')
+	expect(renderPage('/server-closing', 'fr')).toContain('id="aternos"')
+	expect(renderPage('/server-closing', 'fr')).toContain('id="admin"')
+	expect(renderPage('/safety', 'fr')).toContain('id="verifier"')
+	expect(metadataFor('/server-closing', 'fr').title).toBe('Serveur Minecraft qui ferme\u00a0: garde tes constructions')
+	expect(metadataFor('/safety', 'fr').title).toBe('Minemories est-il sûr\u00a0? Mod, enfants et vie privée')
+	expect(metadataFor('/guides/minecraft-blender', 'fr').title).toBe(
+		'Exporter une construction Minecraft vers Blender (GLB)'
+	)
+	expect(metadataFor('/guides/minecraft-blender', 'fr').articleDate).toBe('2026-11-10')
 })

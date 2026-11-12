@@ -63,7 +63,7 @@ test.each(['/versions', '/downloads'])('release route %s retains the preview noi
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain(path)
 })
 
-test('switching locale updates titles, descriptions and schema without publishing fictitious alternate URLs', () => {
+test('switching locale updates titles, descriptions, schema and canonical', () => {
 	function Switch() {
 		const { setLocale } = useI18n()
 		return (
@@ -80,8 +80,7 @@ test('switching locale updates titles, descriptions and schema without publishin
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	// the head is English by default, over a French page
-	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
+	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
 	fireEvent.click(screen.getByRole('button', { name: 'English' }))
 	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	expect(document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content).toContain(
@@ -91,8 +90,9 @@ test('switching locale updates titles, descriptions and schema without publishin
 	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
 		'en'
 	)
-	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/installation')
-	expect(document.querySelector('link[hreflang]')).toBeNull()
+	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
+		'https://minemories.net/installation'
+	)
 })
 
 test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of search results', path => {
@@ -116,43 +116,33 @@ test('the private shell carries the shared-link card, English by default and tra
 		title: 'Un lieu Minecraft en 3D, partagé avec toi',
 		description: 'Ouvre-le dans ton navigateur et fais-en le tour en 3D.',
 	})
-	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111').description).toBe(
+	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111', 'fr').description).toBe(
 		'Ouvre-le dans ton navigateur et fais-en le tour en 3D.'
 	)
 	expect(metadataFor('/gallery', 'en').title).toBe('Minemories · Your space')
 	expect(metadataFor('/share', 'en').title).toBe('Minemories · Your space')
 })
 
-test('a link with ?lang= renders that language, takes the head, and the switcher replaces it', () => {
-	window.history.replaceState(null, '', '/installation?lang=fr&x=1')
-	function Switch() {
-		const { setLocale } = useI18n()
-		return (
-			<button type="button" onClick={() => setLocale('en')}>
-				English
-			</button>
-		)
-	}
+test('each language is its own page: canonical, og:url and hreflang alternates name every language', () => {
 	render(
-		<I18nProvider urlLocale="fr" suggestLocale>
-			<MemoryRouter initialEntries={['/installation?lang=fr']}>
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter initialEntries={['/installation']}>
 				<RouteMetadata />
-				<Switch />
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
-	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
-	expect(document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.content).toBe(
-		'https://minemories.net/installation?lang=fr'
-	)
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
-		'https://minemories.net/installation'
+		'https://minemories.net/fr/installation'
 	)
-	expect(localStorage.getItem('minemories-locale')).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'English' }))
-	expect(window.location.search).toBe('?x=1')
-	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
-	expect(localStorage.getItem('minemories-locale')).toBe('en')
-	window.history.replaceState(null, '', '/')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.content).toBe(
+		'https://minemories.net/fr/installation'
+	)
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
+	const alternates = [...document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]')].map(
+		element => `${element.hreflang} ${element.href}`
+	)
+	expect(alternates).toContain('en-US https://minemories.net/installation')
+	expect(alternates).toContain('pt-BR https://minemories.net/pt-br/installation')
+	expect(alternates).toContain('x-default https://minemories.net/installation')
+	expect(alternates).toHaveLength(9)
 })

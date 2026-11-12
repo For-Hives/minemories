@@ -4,7 +4,11 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider, useI18n } from './I18n'
 
 const mocks = vi.hoisted(() => ({ load: vi.fn() }))
-vi.mock('./catalog', () => ({ loadLocale: mocks.load, translate: (locale: string, key: string) => `${locale}:${key}` }))
+vi.mock('./catalog', () => ({
+	isLoaded: (locale: string) => locale === 'fr' || locale === 'en',
+	loadLocale: mocks.load,
+	translate: (locale: string, key: string) => `${locale}:${key}`,
+}))
 beforeEach(() => {
 	mocks.load.mockReset()
 	localStorage.clear()

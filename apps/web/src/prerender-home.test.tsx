@@ -4,7 +4,7 @@ import { createHeroI18n } from './lib/hero-i18n'
 import { firstPaintScripts, renderPage } from './prerender'
 
 test('the prerendered home page holds the whole site and the film markup, with no browser API and no WebGL', () => {
-	const html = renderPage('/')
+	const html = renderPage('/', 'fr')
 	expect(html).not.toContain('<!--$!-->')
 	// the site, in French (the prerender language), readable without JavaScript
 	expect(html).toContain('<h1')
@@ -26,7 +26,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).not.toContain('<video')
 	expect(html).not.toContain('.mp4')
 	expect(html).toContain('C’est pas juste Litematica\u00a0?')
-	expect(html).toContain('href="/faq"')
+	expect(html).toContain('href="/fr/faq"')
 	for (const blocked of ['validé', 'en test', '→ 1.21', 'gratuit', 'open source', 'la plus utilisée'])
 		expect(html, blocked).not.toContain(blocked)
 	expect(html).not.toContain('1.21.1 · NeoForge')
@@ -56,7 +56,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 		'/guides/minecraft-blender',
 		'/login',
 	])
-		expect(html, route).toContain(`href="${route}"`)
+		expect(html, route).toContain(`href="/fr${route}"`)
 	expect(html).not.toMatch(/href="[^"]*\.html"/)
 	// One language picker, closed (the phones' panel draws its own only while open); every menu of the bar is in the page, closed.
 	expect(html).not.toContain('<select')
@@ -90,7 +90,7 @@ test('the first-paint script of the home page puts the film on <html> before the
 })
 
 test('the landing’s facts and cards follow a language change made by the film’s translation bridge', () => {
-	document.body.innerHTML = renderPage('/')
+	document.body.innerHTML = renderPage('/', 'fr')
 	createHeroI18n('en', document).apply()
 	const lines = [...document.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
