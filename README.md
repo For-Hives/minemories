@@ -9,6 +9,8 @@
 >
 > You will find plenty more on our GitHub profiles and on our respective sites!
 
+Questions, bugs or ideas? Come talk with us on [Discord](https://discord.gg/2tNxrUHDDD).
+
 Minemories captures an area of Minecraft into a self-contained GLB file, opens it in a web viewer and, after explicit pairing, uploads it to a private gallery. The client mod targets **Minecraft 1.21.1**: NeoForge 21.1.248, Fabric Loader 0.19.5 with Fabric API 0.116.17+1.21.1, and Forge 52.1.19. The Fabric JAR has also been tested under Quilt 0.30.1. See the [validation matrix and its limits](docs/features/loader-support.md).
 
 ## Structure
