@@ -38,7 +38,6 @@
 	position: absolute;
 	inset: 0;
 	background: var(--mm-dirt, none) 0 0 / calc(16 * var(--c));
-	animation: mm-chunk-in 0.2s ease-out backwards;
 }
 .mm-chunk.is-done {
 	opacity: 0;
@@ -66,6 +65,10 @@
 .mm-chunk .boot-map {
 	position: relative;
 	z-index: 1;
+}
+/* the texture and the map fade in once the loader shows, not while it waits unseen */
+.mm-chunk:not(.is-waiting)::before,
+.mm-chunk:not(.is-waiting) .boot-map {
 	animation: mm-chunk-in 0.2s ease-out backwards;
 }
 .mm-chunk .boot-map canvas {

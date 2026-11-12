@@ -28,6 +28,9 @@ function dirtUrl(): string | null {
 	return dirt
 }
 
+/** The clock at the page screen's 95 %: no black lead, no refill. */
+const handOver = (): ChunkClock => ({ clock: C.lead + 0.95 * C.quick, shown: 0.95, fullAt: 0 })
+
 const reducedMotion = () =>
 	Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) ||
 	document.documentElement.dataset.mcMotion === 'reduced'
@@ -63,23 +66,36 @@ function playLoad(root: HTMLElement, loading: () => boolean, done: () => void) {
 	if (url) tile.src = url
 	let s = startChunkClock()
 	let waited = 0
+	let covered = false
 	let last = performance.now()
 	let frame = 0
 	const reveal = () => {
 		if (reducedMotion() || !(tile.complete && tile.naturalWidth)) bootFade(root, window, done)
 		else bootDissolve(root, window, C, tile, done)
 	}
+	// the waiting phase (transparent): true while the screen stays unseen
+	const unseen = (elapsed: number) => {
+		if (!root.classList.contains('is-waiting')) return false
+		waited += elapsed
+		const boot = document.getElementById('boot')
+		covered ||= Boolean(boot)
+		if (waited < CHUNK_DELAY || boot) return true
+		root.classList.remove('is-waiting')
+		// the page's screen gave up (its safety stop) while the capture still loads: carry on from where it stood, at 95 %
+		if (covered) s = handOver()
+		return true
+	}
 	const step = () => {
 		const now = performance.now()
 		const elapsed = now - last
 		last = now
-		if (root.classList.contains('is-waiting')) {
-			if (!loading()) return done()
-			waited += elapsed
-			if (waited >= CHUNK_DELAY && !document.getElementById('boot')) root.classList.remove('is-waiting')
+		if (root.classList.contains('is-waiting') && !loading()) return done()
+		if (unseen(elapsed)) {
 			frame = requestAnimationFrame(step)
 			return
 		}
+		// a new load during the hold at 100 %: a new map, the dirt stays (no reveal of a stage that is about to change)
+		if (s.fullAt && loading()) s = startChunkClock()
 		s = stepChunkClock(s, elapsed, !loading(), TIMINGS)
 		paint(s)
 		if (chunkHeld(s, TIMINGS)) reveal()

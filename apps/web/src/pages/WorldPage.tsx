@@ -312,9 +312,17 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 	const { t } = useI18n()
 	const { world, statuses, error, step } = state
 	const ready = statuses.some(status => status === 'ready')
-	// on screen once a capture is drawn, or once none is left to come (all archived or failed): the loading screens leave then
-	const settled =
-		ready || Boolean(error) || (world !== null && statuses.length > 0 && !statuses.some(status => pending.has(status)))
+	// on screen once the capture shown is drawn, or once it cannot come (archived, failed, not loaded), or once nothing is left to load; the stage loader
+	// does not come back when a later capture is still on its way
+	const shownNow =
+		world !== null &&
+		statuses.length > 0 &&
+		!(pending.has(statuses[step] as FrameStatus) && statuses.some(status => pending.has(status)))
+	const [drawn, setDrawn] = useState(false)
+	useEffect(() => {
+		if (shownNow) setDrawn(true)
+	}, [shownNow])
+	const settled = drawn || shownNow || Boolean(error)
 	useScenePageReady(settled)
 	const current = world?.frames[step]
 	return (
@@ -326,7 +334,7 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 			/>
 			<div className="viewer-stage">
 				<canvas ref={state.canvas} className="cinema-canvas" aria-label={t('Interactive 3D scene')} />
-				{!error && <ChunkLoader active={!settled} label="Loading capture…" />}
+				{!error && <ChunkLoader active={!(drawn || shownNow)} label="Loading capture…" />}
 			</div>
 			<ViewerStudio
 				sceneRef={state.scene}

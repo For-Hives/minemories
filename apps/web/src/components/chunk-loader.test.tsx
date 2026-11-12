@@ -104,6 +104,30 @@ test('the page loading screen gave up (its safety stop): the stage takes over fo
 	expect(loader()?.classList.contains('is-waiting')).toBe(false)
 })
 
+test('a new load during the hold at 100 % starts a new map on the same screen: the stage is never revealed in between', () => {
+	const view = mount(true)
+	advance(1000)
+	view.set(false)
+	advance(800)
+	expect(percent()).toBe('100%')
+	view.set(true)
+	advance(400)
+	expect(loader()?.classList.contains('is-done')).toBe(false)
+	expect(loader()?.classList.contains('is-waiting')).toBe(false)
+	expect(Number.parseInt(percent() ?? '', 10)).toBeLessThan(100)
+})
+
+test('the page screen gave up while the capture still loads: the stage one carries on from 95 %, not from 0', () => {
+	const boot = document.createElement('div')
+	boot.id = 'boot'
+	document.body.append(boot)
+	mount(true)
+	advance(5000)
+	boot.remove()
+	advance(64)
+	expect(percent()).toBe('95%')
+})
+
 test('a new load during the reveal starts a new map once the screen is gone', () => {
 	const view = mount(true)
 	advance(1000)
