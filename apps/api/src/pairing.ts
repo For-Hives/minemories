@@ -167,8 +167,14 @@ export function restoreMemory(userId: string, id: string): boolean {
 	return result.changes === 1
 }
 
+/**
+ * Deletes a capture for good, only from the trash: a live capture (never trashed, or restored meanwhile from another
+ * device) is refused with null, so a stale "Delete forever" can never erase a capture the player can still see.
+ */
 export function deleteMemory(userId: string, id: string): string | null {
-	const row = database.query('SELECT object_key, size FROM memories WHERE id = ? AND user_id = ?').get(id, userId) as {
+	const row = database
+		.query('SELECT object_key, size FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL')
+		.get(id, userId) as {
 		object_key: string
 		size: number
 	} | null
@@ -177,7 +183,7 @@ export function deleteMemory(userId: string, id: string): string | null {
 		database
 			.query('INSERT INTO object_deletions (object_key, created_at, user_id, size) VALUES (?, ?, ?, ?)')
 			.run(row.object_key, Date.now(), userId, row.size)
-		database.query('DELETE FROM memories WHERE id = ? AND user_id = ?').run(id, userId)
+		database.query('DELETE FROM memories WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL').run(id, userId)
 	})()
 	return row.object_key
 }
