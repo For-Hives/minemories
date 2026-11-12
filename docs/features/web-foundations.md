@@ -80,3 +80,68 @@ An old list response can no longer replace a recent refresh. Share, rename and t
 Gallery coordination is split into `gallery-data.ts` (lists, quota, actions and refresh), `gallery-pairing.ts` (code creation and checking) and `GalleryPairingCard.tsx` (presentation). Gallery polling resumes twelve seconds after the previous cycle ends: a slow response does not pile up automatic requests. A manual refresh stays available and keeps the protection against stale responses. Pairing checks keep their 1.1 then 1.6 second delays and stop when the page is left, including while the code is still being created. Folders stay open after a round trip through the trash. The two historical complexity exceptions in `GalleryPage` were removed after the interactions were added.
 
 Optional diagnostics on public pages are described in [web-observability.md](web-observability.md): an empty configuration and absent consent prevent the provider from loading, and private routes stay excluded.
+
+## Block light volume (many light sources)
+
+A capture can hold thousands of `KHR_lights_punctual` point lights (the mod writes up to 4095). The viewer does not
+render them as point lights: block light is a voxel field, like Minecraft's own.
+
+What was measured first (synthetic GLB of N lights, Bun, `GLTFLoader.parseAsync`): parsing 100/500/2000/5000 lights
+takes about 9/14/30/67 ms and traversal under 1 ms, so the loader objects were never the cost. In headless Chromium
+with 1128 lights, `main` compiled every program with exactly 12 point lights (no raw light was ever rendered). The real
+defects were that the 12 lit lights were chosen once at load (a torch field showed 12 lit spots), and that in the
+composed-world path the pooled lights were added after the materials compiled, forcing a recompile at the first step.
+
+How it works now:
+
+- At load, every imported `PointLight` is read into flat arrays and removed from the scene: **no point light is ever
+  rendered for block light**, so programs are compiled for zero lights whatever the capture holds.
+- `lib/light-volume.ts` builds a 3D RGBA8 texture over the lights' bounds (padded by the light reach): one texel per
+  block, coarser (whole blocks per texel) when the volume would exceed the budget of 4 Mi texels (16 MiB) or 256
+  texels per side. A radius-128, full-height capture lands at 3 blocks per texel. Each light spreads its level
+  (`intensity / 100`, the mod's 100 cd per level, capped at 15) with the game's falloff, one level per block of
+  Manhattan distance, and a texel keeps the brightest level per colour channel, as the game takes the brightest light
+  and never a sum (a torch field must not blow out). Light colour is tinted warm as before.
+- Cost with 4000 lights at one texel per block (228 x 68 x 228): about 300 ms of CPU on the development machine
+  (varies with load). The load builds it in one go (the page is already preparing); the timelapse (`showWorld`)
+  builds it in 8 ms slices that yield to the page and drops a stale build when a newer step arrives.
+- Materials (`viewer-faithful.ts`, shared uniforms, no recompile on a swap or a lighting toggle) sample the volume at
+  the fragment's world position, half a block out along the normal, curve the level like the game's light map
+  (`level / (4 - 3 level)`, then the brightness option) and use it as the block light: the faithful look uses it
+  where the point-light result used to be; the realistic look adds it as diffuse light (gain 2.0). Emissive surfaces
+  and bloom are unchanged.
+- No occlusion: a splat ignores walls, as the point lights did. A flood fill over an occupancy grid derived from the
+  geometry was not attempted.
+
+Browser check (Chromium on the real GPU, RTX 2060, the owner's export plus 1000 torches around the player, at night):
+the frame time stays at the 60 Hz cap on both `main` and the branch, so a GPU gain is not measurable at this scale on
+this machine; the load takes about 2 s either way. Visually the 12-light pool on `main` leaves a torch field almost
+dark; the volume lights it everywhere, in both looks, while orbiting and walking, with no popping since nothing
+depends on the camera. The timelapse path is covered by unit tests only.
+
+### Not done: the mod baking the game's own light
+
+The exact option is for the mod to write Minecraft's real per-vertex block and sky light (what the game's smooth
+lighting reads) into the GLB, for example as a second colour attribute (`COLOR_0` block light, `COLOR_1` or a custom
+`_SKY` attribute for sky light, one byte per vertex per channel). The viewer would then shade with the vertex values
+instead of the volume: exact, occluded by walls and caves, independent of the light count, and no volume build at
+load. The cost is format: +2 bytes per vertex (about +8 % on a typical capture before meshopt, which compresses such
+attributes well), a `minemoriesFormat` bump with old files keeping the volume fallback, shared quad vertices that
+must be split where neighbouring light differs, and mod code in `mod/shared/core` per Minecraft version to read the
+light engine. It was not requested and is not implemented.
+
+## Viewer depth precision
+
+The viewer's depth texture is 24-bit. Its step at distance `z` is about `z² / (near · 2^24)`, so a fixed `near = 0.02` gave 0.03 block at 100 units and about 0.75 at 500. Everything reading depth suffered: z-testing (coplanar faces 1/16 apart fought at 200 units), and the atmosphere pass's ambient occlusion, which showed noisy speckle that crawled while orbiting. `lib/camera-range.ts` now derives the near plane every frame from the camera-to-pivot distance (3 %, minimum 0.02; first person keeps 0.02), applied in `renderScene`. The far plane is unchanged (the sky sphere, clouds and ground ray depend on it); precision depends on near. The atmosphere pass reads the projection matrices live, so it follows. The orbit minimum distance is 1.5 % of the capture size, so the nearest 3 % of the orbit distance can clip when the camera is very close to the pivot; this is the usual trade-off of an orbit camera.
+
+The orbit gizmo (`viewer-pivot.ts`) is deliberate: ring and cross at opacity 0.55, radius 4.5 % of the camera-to-pivot distance, a black soft disc on the ground below (up to 0.9 opacity, radius 1.8x the ring) and a stem; it shows while dragging or zooming and lingers 1.2 s. The hard-edged top/bottom shade over the canvas is `.cinema-page .viewer-stage::after` in `viewer-studio.css` (three steps of 30/20/15 % dark, 96 px at the top, 120 px at the bottom).
+
+## Entity halo (ambient occlusion)
+
+Reproduced with a fixture (player-sized boxes with an overlay layer, `BLEND` or `MASK` material, standing in front of a wall) and two mechanisms found in the atmosphere pass:
+
+- **Occluders that do not write depth.** A `BLEND` material has `depthWrite = false`, so an entity is absent from the depth texture the pass reads. The occlusion computed for the surface behind it (for example the crease where a wall meets the ground) is painted over the entity's pixels: a dark band cuts through the body and the entity looks see-through; it also casts no occlusion of its own. The fix for this is upstream (`glb-alpha`: cutout-like materials are alpha-tested and real translucents write depth). The pass cannot recover what depth does not contain.
+- **Entities that do write depth leave a sharp ghost silhouette.** The occlusion range check was linear over a 1.8 block radius, then multiplied by 4.4: a body a block in front of a wall drew a dark, hard-edged copy of its silhouette on the wall and streaks on the ground. The range check is now quadratic (`range²`): contact occlusion stays, a body more than about half a block away barely registers (`lib/ambient-occlusion.ts` holds the tested reference formulas).
+- **Silhouette normals.** The surface normal now comes from neighbour taps, taking on each axis the side with the smaller depth step (`surfaceDifference`), instead of `dFdx`/`dFdy`, which mix foreground and background across an edge and gave a dark or light rim.
+
+Bloom (threshold 1.3, strength 0.05) did not contribute to the halo in any capture or fixture. Tested in software-rendered Chromium only.

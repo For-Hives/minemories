@@ -65,9 +65,10 @@ public final class SpoolingGlbScene implements AutoCloseable {
       }
     }
 
+    /** 4,096 textures: the viewer and the API refuse a GLB with more images (MAX_GLB_IMAGES). */
     public static Limits defaults() {
       return new Limits(
-          4096, 1024, 128, 4096, 4 * 1024 * 1024, 256L * 1024 * 1024, 200L * 1024 * 1024, 8);
+          4096, 4096, 128, 4096, 4 * 1024 * 1024, 256L * 1024 * 1024, 200L * 1024 * 1024, 8);
     }
   }
 
@@ -791,6 +792,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
               + category.id()
               + "\""
               + Quantization.transform(plans.get(category))
+              + category.nodeExtras()
               + ",\"mesh\":"
               + index++
               + "}");

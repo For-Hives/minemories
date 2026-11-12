@@ -2,23 +2,26 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { type Atmosphere, getAtmosphere } from './lib/atmosphere'
+import { cameraNear } from './lib/camera-range'
 import { CeilingGrid } from './lib/ceiling'
 import { environmentVeil } from './lib/environment-veil'
 import { isGlbFileName, parseEmbeddedGlb, UnsupportedGlbError } from './lib/glb'
+import { blendPlan, isCutout, TRANSLUCENT_ALPHA_TEST } from './lib/glb-alpha'
 import { type GlbCategory, isGlbCategory, meshVisible, presentCategories } from './lib/glb-categories'
 import { hasLegacySrgbColours, legacyEmissiveToLinear } from './lib/glb-colours'
+import { buildLightVolume, buildLightVolumeAsync, type ImportedLight, lightSourcesFrom } from './lib/light-volume'
 import { dayDelta, Glide } from './lib/transitions'
 import { faithfulSkyLight, type Rgb, srgbFactorToLinear, type ViewerLighting } from './lib/viewer-lighting'
 import type { BlockBounds, BlockPoint } from './lib/world-evolution'
 import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
-import { createFaithfulUniforms, prepareFaithfulLighting } from './viewer-faithful'
-import { framingBounds, isLightBeam, orbitFocus, surfaceFocus } from './viewer-framing'
+import { createFaithfulUniforms, prepareFaithfulLighting, setLightVolume } from './viewer-faithful'
+import { framingBounds, isLightBeam, orbitFocus } from './viewer-framing'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
 import { ViewerPrecipitation } from './viewer-precipitation'
 import { prepareWater } from './viewer-water'
-import { chooseLights, prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
+import { prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
 
 export interface ViewerLoadOptions {
 	signal?: AbortSignal
@@ -103,12 +106,51 @@ function linearizeLegacyColours(gltf: { scene: THREE.Object3D; asset: unknown })
 	})
 }
 
-interface ImportedLight {
-	light: THREE.PointLight
-	position: THREE.Vector3
-	color: THREE.Color
-	intensity: number
-	distance: number
+const cutoutByImage = new WeakMap<object, boolean>()
+
+/** Whether a texture's image only holds (almost) fully opaque or fully transparent texels, cached per image. */
+function hasCutoutTexels(texture: THREE.Texture): boolean {
+	const image = texture.image as (CanvasImageSource & { width: number; height: number }) | null
+	if (!image) return false
+	const known = cutoutByImage.get(image)
+	if (known !== undefined) return known
+	let cutout = false
+	try {
+		const canvas = document.createElement('canvas')
+		canvas.width = image.width
+		canvas.height = image.height
+		const context = canvas.getContext('2d', { willReadFrequently: true })
+		if (context) {
+			context.drawImage(image, 0, 0)
+			cutout = isCutout(context.getImageData(0, 0, canvas.width, canvas.height).data)
+		}
+	} catch {
+		// Tainted or detached image: keep the material blended, as the file describes it.
+	}
+	cutoutByImage.set(image, cutout)
+	return cutout
+}
+
+/**
+ * Draws a `BLEND` material the way Minecraft does: a cutout texture (older captures called every textured entity or
+ * leaf that way) becomes an alpha-tested opaque material, genuinely translucent content keeps blending but writes
+ * depth, so a model's far faces no longer show through its near ones.
+ */
+function fixBlendedMaterial(material: THREE.Material): void {
+	const standard = material as THREE.MeshStandardMaterial
+	const plan = blendPlan(
+		{
+			transparent: material.transparent,
+			opacity: material.opacity,
+			alphaTest: material.alphaTest,
+			hasMap: !!standard.map,
+		},
+		() => !!standard.map && hasCutoutTexels(standard.map)
+	)
+	if (plan === 'keep') return
+	material.depthWrite = true
+	material.alphaTest = plan === 'cutout' ? 0.5 : TRANSLUCENT_ALPHA_TEST
+	if (plan === 'cutout') material.transparent = false
 }
 
 export class ViewerScene {
@@ -134,7 +176,8 @@ export class ViewerScene {
 		uFixed: { value: -1 },
 	}
 	private readonly precipitation = new ViewerPrecipitation()
-	private readonly worldLights = Array.from({ length: 12 }, () => new THREE.PointLight(0xffffff, 0, 1, 2))
+	/** Bumped for every block light build: a slower, older build of a timelapse step never replaces a newer one. */
+	private lightBuild = 0
 	private readonly pivot = new ViewerPivot()
 	private readonly groundRay = new THREE.Raycaster()
 	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
@@ -480,19 +523,9 @@ export class ViewerScene {
 		}
 	}
 
-	/** Shows the composed world: constant light count (no shader recompilation) and refreshed shadows. */
+	/** Shows the composed world: its visible lights become the block light volume, and shadows are refreshed. */
 	showWorld(lights: readonly WorldLight[]): void {
-		const focus = this.captureFocus ?? this.controls.target
-		const selected = chooseLights(lights, focus)
-		for (const [position, light] of this.worldLights.entries()) {
-			if (!light.parent) this.modelRoot.add(light)
-			const source = selected[position]
-			light.intensity = source ? Math.min(source.intensity * 0.01, 12) : 0
-			if (!source) continue
-			light.color.copy(source.color).multiply(new THREE.Color(1, 0.82, 0.65))
-			light.distance = Math.min(Math.max(source.distance, 1), 10)
-			light.position.copy(source.position)
-		}
+		this.buildBlockLight(lights, true)
 		this.keyLight.shadow.needsUpdate = true
 		this.renderer.shadowMap.needsUpdate = true
 		this.ceilingDirty = true
@@ -830,6 +863,12 @@ export class ViewerScene {
 	private renderScene(): void {
 		// Camera framing can change before the next RAF, including thumbnail generation.
 		this.sky.position.copy(this.camera.position)
+		const near = cameraNear(this.camera.position.distanceTo(this.controls.target), this.navigation.active)
+		if (Math.abs(near - this.camera.near) > this.camera.near * 0.01) {
+			// Depth precision follows the near plane: see `lib/camera-range`. The atmosphere pass reads the matrices live.
+			this.camera.near = near
+			this.camera.updateProjectionMatrix()
+		}
 		this.sky.scale.setScalar(Math.max(this.camera.far * 0.88, this.camera.near * 2))
 		this.effects.renderFrame()
 	}
@@ -914,6 +953,7 @@ export class ViewerScene {
 		const materials = Array.isArray(object.material) ? object.material : [object.material]
 		let hasOpaqueSurface = false
 		for (const material of materials) {
+			fixBlendedMaterial(material)
 			const pbrMaterial = material as THREE.MeshStandardMaterial
 			if (pbrMaterial.isMeshStandardMaterial) {
 				pbrMaterial.roughness = pbrMaterial.transparent ? 0.18 : 0.92
@@ -925,7 +965,8 @@ export class ViewerScene {
 				prepareWater(pbrMaterial, this.waterTime)
 			}
 			prepareFaithfulLighting(material, this.faithfulUniforms)
-			hasOpaqueSurface ||= !isLightBeam(material) && (!material.transparent || material.alphaTest > 0)
+			hasOpaqueSurface ||=
+				!isLightBeam(material) && (!material.transparent || material.alphaTest > TRANSLUCENT_ALPHA_TEST)
 			for (const texture of [
 				pbrMaterial.map,
 				pbrMaterial.emissiveMap,
@@ -948,17 +989,17 @@ export class ViewerScene {
 	}
 
 	private prepareWorldLighting(root: THREE.Object3D): void {
-		const importedLights: ImportedLight[] = []
+		const imported: THREE.PointLight[] = []
+		const lights: ImportedLight[] = []
 
 		root.updateMatrixWorld(true)
 		root.traverse(object => {
 			if (object instanceof THREE.PointLight) {
-				importedLights.push({
-					light: object,
+				imported.push(object)
+				lights.push({
 					position: object.getWorldPosition(new THREE.Vector3()),
-					color: object.color.clone(),
+					color: object.color,
 					intensity: object.intensity,
-					distance: object.distance,
 				})
 				return
 			}
@@ -966,18 +1007,29 @@ export class ViewerScene {
 			this.prepareMesh(object)
 		})
 
-		for (const light of importedLights) light.light.removeFromParent()
-		const selectedLights = chooseLights(importedLights, surfaceFocus(framingBounds(root)))
-		for (const imported of selectedLights) {
-			const light = new THREE.PointLight(
-				imported.color.clone().multiply(new THREE.Color(1, 0.82, 0.65)),
-				Math.min(imported.intensity * 0.01, 12),
-				Math.min(Math.max(imported.distance, 1), 10),
-				2
-			)
-			light.position.copy(root.worldToLocal(imported.position.clone()))
-			root.add(light)
+		// Block light is a voxel volume sampled by the materials: no live point light stays in the scene.
+		for (const light of imported) light.removeFromParent()
+		this.buildBlockLight(lights, false)
+	}
+
+	/**
+	 * Fills the block light volume from the captured lights. A load builds it at once (the page is preparing anyway);
+	 * the timelapse builds it in the background, one step's build replacing the previous one only if it is the latest.
+	 */
+	private buildBlockLight(lights: readonly ImportedLight[], background: boolean): void {
+		const build = ++this.lightBuild
+		const sources = lightSourcesFrom(lights)
+		if (!background) {
+			setLightVolume(this.faithfulUniforms, buildLightVolume(sources))
+			return
 		}
+		void buildLightVolumeAsync(
+			sources,
+			() => new Promise(resolve => setTimeout(resolve, 0)),
+			() => this.disposed || build !== this.lightBuild
+		).then(volume => {
+			if (!this.disposed && build === this.lightBuild) setLightVolume(this.faithfulUniforms, volume)
+		})
 	}
 
 	private updateDayCycle(): void {

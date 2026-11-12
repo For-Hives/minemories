@@ -9,7 +9,9 @@ import {
 	groupCaptures,
 	latestCapture,
 	stackCaptures,
+	stackPreview,
 	viewPath,
+	worldCover,
 } from './gallery'
 
 it('groups worlds by name and seed, servers by name, and preserves newest-first order', () => {
@@ -163,4 +165,48 @@ it('reports the first and last snapshot instants of a world, falling back to upl
 			dated('d', '2026-03-15T00:00:00Z'),
 		])
 	).toEqual({ first: '2026-02-01T00:00:00Z', last: '2026-04-01T00:00:00Z' })
+})
+
+it('never stacks captures without identity unless their group is a specific seeded world', () => {
+	const capture = (id: string, serverName: string | null, seed: string | null) => ({
+		id,
+		metadata: {
+			worldName: serverName ? null : 'Home',
+			serverName,
+			seed,
+			worldId: null,
+			worldScope: null,
+			dimension: null,
+			x: 0,
+			y: 64,
+			z: 0,
+		},
+	})
+	const captures = [capture('a', 'Minecraft Server', null), capture('b', 'Minecraft Server', null)]
+	const groups = groupCaptures(captures.map(item => item.metadata).map((metadata, i) => ({ id: String(i), metadata })))
+	expect(groups.map(group => group.seeded)).toEqual([false])
+	const isolated = captureAreas(captures, () => false, false)
+	expect(isolated.map(area => area.stack.captures.map(item => item.id))).toEqual([['a'], ['b']])
+	expect(new Set(isolated.map(area => area.stack.key)).size).toBe(2)
+	expect(captureAreas(captures, () => false).map(area => area.stack.captures.length)).toEqual([2])
+	expect(groupCaptures([capture('c', null, '42')]).map(group => group.seeded)).toEqual([true])
+})
+
+it('picks the latest available preview for a stack and the icon-first cover for a world', () => {
+	const shot = (id: string, at: string | null, thumbnail: string | null, icon: string | null) => ({
+		id,
+		createdAt: '2026-01-01T00:00:00Z',
+		metadata: { capturedAt: at, thumbnail, icon },
+	})
+	const old = shot('old', '2026-01-02T00:00:00Z', 'old.png', null)
+	const mid = shot('mid', '2026-01-03T00:00:00Z', 'mid.png', 'icon.png')
+	const newest = shot('new', '2026-01-04T00:00:00Z', null, null)
+	expect(stackPreview([old, mid, newest])).toBe('mid.png')
+	expect(stackPreview([newest, mid, old])).toBe('mid.png')
+	expect(stackPreview([newest])).toBeNull()
+	expect(stackPreview([])).toBeNull()
+	expect(stackPreview([shot('a', null, 'a.png', null), shot('b', 'bad-date', 'b.png', null)])).toBe('a.png')
+	expect(worldCover([old, mid, newest])).toEqual({ kind: 'icon', src: 'icon.png' })
+	expect(worldCover([old, newest])).toEqual({ kind: 'preview', src: 'old.png' })
+	expect(worldCover([newest])).toBeNull()
 })

@@ -15,14 +15,14 @@ class CaptureCursorTest {
     CaptureCursor.Columns columns =
         (x, z) -> {
           lookups.incrementAndGet();
-          return new CaptureCursor.Column(50, 7);
+          return new CaptureCursor.Column(50);
         };
     var first = cursor.peek(columns);
-    assertEquals(new CaptureCursor.Cell(-1, -2, 3, 7), first);
+    assertEquals(new CaptureCursor.Cell(-1, -2, 3), first);
     assertSame(first, cursor.peek(columns));
     assertEquals(1, lookups.get());
     cursor.advance();
-    assertEquals(new CaptureCursor.Cell(-1, -1, 3, 7), cursor.peek(columns));
+    assertEquals(new CaptureCursor.Cell(-1, -1, 3), cursor.peek(columns));
     assertEquals(1, lookups.get());
   }
 
@@ -31,8 +31,7 @@ class CaptureCursorTest {
     var cursor = new CaptureCursor(new CaptureBounds(0, 0, 0, 2, 1, 1));
     List<CaptureCursor.Cell> cells = new ArrayList<>();
     while (!cursor.done()) {
-      var cell =
-          cursor.peek((x, z) -> x == 0 ? null : new CaptureCursor.Column(x == 1 ? -1 : 1, 10));
+      var cell = cursor.peek((x, z) -> x == 0 ? null : new CaptureCursor.Column(x == 1 ? -1 : 1));
       if (cell != null) {
         cells.add(cell);
         cursor.advance();
@@ -40,10 +39,10 @@ class CaptureCursorTest {
     }
     assertEquals(
         List.of(
-            new CaptureCursor.Cell(2, 0, 0, 10),
-            new CaptureCursor.Cell(2, 1, 0, 10),
-            new CaptureCursor.Cell(2, 0, 1, 10),
-            new CaptureCursor.Cell(2, 1, 1, 10)),
+            new CaptureCursor.Cell(2, 0, 0),
+            new CaptureCursor.Cell(2, 1, 0),
+            new CaptureCursor.Cell(2, 0, 1),
+            new CaptureCursor.Cell(2, 1, 1)),
         cells);
     assertNull(
         cursor.peek(
@@ -60,7 +59,7 @@ class CaptureCursorTest {
         new CaptureCursor(
             new CaptureBounds(
                 Integer.MAX_VALUE, 0, Integer.MAX_VALUE, Integer.MAX_VALUE, 0, Integer.MAX_VALUE));
-    assertNotNull(cursor.peek((x, z) -> new CaptureCursor.Column(0, 0)));
+    assertNotNull(cursor.peek((x, z) -> new CaptureCursor.Column(0)));
     cursor.advance();
     assertTrue(cursor.done());
     assertThrows(
@@ -76,7 +75,7 @@ class CaptureCursorTest {
     var cursor = new CaptureCursor(new CaptureBounds(-2, 0, 14, 17, 0, 17));
     List<String> visited = new ArrayList<>();
     while (!cursor.done()) {
-      var cell = cursor.peek((x, z) -> new CaptureCursor.Column(0, 0));
+      var cell = cursor.peek((x, z) -> new CaptureCursor.Column(0));
       if (cell == null) continue;
       visited.add(Math.floorDiv(cell.x(), 16) + "," + Math.floorDiv(cell.z(), 16));
       cursor.advance();

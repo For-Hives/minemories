@@ -24,6 +24,7 @@ ext.adaptDir = { File root ->
         t = t.replaceAll(/\bGuiGraphics\b/, 'GuiGraphicsExtractor')
         t = t.replace('graphics.drawString(', 'graphics.text(').replace('graphics.renderItem(', 'graphics.item(')
         t = t.replace('public void renderContents(', 'protected void extractContents(')
+        t = t.replace('renderDefaultSprite(graphics)', 'extractDefaultSprite(graphics)')
         t = t.replace('public void renderBackground(', 'public void extractBackground(').replace('super.renderBackground(', 'super.extractBackground(')
         t = t.replaceAll(/public void render\(GuiGraphicsExtractor/, 'public void extractRenderState(GuiGraphicsExtractor')
         t = t.replace('super.render(graphics, mouseX, mouseY, partialTick)', 'super.extractRenderState(graphics, mouseX, mouseY, partialTick)')
