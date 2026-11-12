@@ -12,6 +12,7 @@ test('a front change runs the web gate and nothing of the mod or the API', () =>
 	only(['apps/web/src/App.tsx', 'apps/web/src/hero/charter.css'], 'web')
 	only(['scripts/hero-assets/cli.mjs'], 'web')
 	only(['scripts/build-web.mjs'], 'web')
+	only(['scripts/smoke-web.mjs', 'deploy/nginx.web.conf'], 'web')
 	only(['scripts/brand/build-icons.mjs'], 'web')
 	only(['scripts/boot-screen/gen.mjs'], 'web')
 	only(['design/logo/minemories-logo.svg'], 'web')

@@ -1601,5 +1601,9 @@
 	"Good to know": "알아 두면 좋아요",
 	"A capture is a 3D snapshot of the loaded area. You can look around, not resume the game.": "캡처는 불러온 지역의 3D 스냅샷이에요. 둘러볼 수는 있지만 게임을 이어서 할 수는 없어요.",
 	"Wait for the terrain to load, then type this in chat. A 16-block radius is easy to check.": "지형이 불러와질 때까지 기다린 뒤 채팅에 이것을 입력하세요. 반경 16블록이면 확인하기 쉬워요.",
-	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "캡처는 내보내기 폴더에 저장됩니다. 모드를 페어링하면 비공개 갤러리로 보낼 수 있어요."
+	"The capture lands in your export folder. Pair the mod to send captures to your private gallery.": "캡처는 내보내기 폴더에 저장됩니다. 모드를 페어링하면 비공개 갤러리로 보낼 수 있어요.",
+	"Language suggestion": "언어 제안",
+	"Read Minemories in this language?": "Minemories를 한국어로 볼까요?",
+	"Switch to this language": "한국어로 전환",
+	"No thanks": "괜찮아요"
 }

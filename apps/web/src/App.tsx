@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { adminRoutes } from './admin-routes'
 import { AppContext, type AppContextValue, useAppContext } from './app-context'
 import { authClient } from './auth-client'
+import { LanguageSuggestion } from './components/LanguageSuggestion'
 import { Page, preloadWhenIdle } from './components/PageFrame'
 import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
@@ -92,7 +93,8 @@ export function App() {
 		return () => window.clearTimeout(timeout)
 	}, [notice])
 	return (
-		<I18nProvider detectLocale>
+		// Every page renders in its own language (or the visitor's saved choice); the browser's language is only suggested.
+		<I18nProvider suggestLocale>
 			<AppContext.Provider value={context}>
 				<BrowserRouter>
 					<RouteMetadata />
@@ -328,6 +330,8 @@ export function App() {
 							/>
 						</Route>
 					</Routes>
+					{/* After the routes: drawn in a corner, it must come after the skip link and the header in the Tab order. */}
+					<LanguageSuggestion />
 				</BrowserRouter>
 			</AppContext.Provider>
 		</I18nProvider>

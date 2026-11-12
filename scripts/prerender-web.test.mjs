@@ -96,6 +96,7 @@ test('every public page carries the link preview image as an absolute URL from t
 		assert.ok(html.includes('<meta property="og:image:width" content="1200" />'))
 		assert.ok(html.includes('<meta property="og:image:height" content="630" />'))
 		assert.ok(html.includes('<meta property="og:image:alt" content="Minemories &amp; co" />'))
+		assert.ok(html.includes('<meta property="og:locale" content="fr_FR" />'), 'pages are written in French')
 		assert.ok(html.includes('<meta name="twitter:card" content="summary_large_image" />'))
 		assert.ok(html.includes('<meta name="twitter:image" content="https://example.org/brand/og-image.png" />'))
 	}
