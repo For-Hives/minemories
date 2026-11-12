@@ -10,7 +10,8 @@
 		"TextureAtlasAccess",
 		"SpriteContentsAccess",
 		"FlywheelCaptureMixin",
-		"ClientCrashMixin"
+		"ClientCrashMixin",
+		"MeshOutputMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
