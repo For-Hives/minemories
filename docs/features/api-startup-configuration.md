@@ -33,6 +33,13 @@ In production, the additional checks are:
 Optional in every environment: `GITHUB_TOKEN` (a read-only token, never logged) only raises the GitHub
 rate limit of `GET /api/roadmap`, which reads public issues labelled `roadmap` and works without it.
 
+Optional in every environment: `GITHUB_WEBHOOK_SECRET` (never logged, nor the payloads or signatures it checks)
+turns on `POST /api/github/webhook`, which GitHub calls on issue, label, milestone, `mod-v*` tag and release
+events so `/roadmap` changes right away. Without it the route answers 404 and the roadmap refreshes every 10
+minutes; with it the timed refresh only covers missed deliveries (every 30 minutes). Pair it with `GITHUB_TOKEN`,
+since every burst of deliveries re-reads the roadmap issues from GitHub. Setup:
+[Set up the GitHub webhook](discord-sync.md#set-up-the-github-webhook).
+
 Before redeploying, set these variables following
 [the Coolify guide](coolify-railpack.md). Keep existing secrets when they
 pass the checks: changing them invalidates sessions or paired

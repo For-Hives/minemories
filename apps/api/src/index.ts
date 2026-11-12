@@ -27,6 +27,8 @@ import { DiagnosticsReview } from './diagnostics-review'
 import { diagnosticsRouter } from './diagnostics-routes'
 import { diagnostics } from './diagnostics-state'
 import { PublicDiscovery } from './discovery'
+import { githubToken } from './github'
+import { createGithubWebhook, githubWebhookSecret } from './github-webhook'
 import { isGlbContainer } from './glb'
 import { parseMetadata } from './memory-metadata'
 import { modDownloads } from './mod-downloads'
@@ -58,7 +60,8 @@ import {
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
 import { encodedCapture } from './response-encoding'
-import { roadmap } from './roadmap'
+import { createRoadmap, WEBHOOK_CACHE_MS } from './roadmap'
+import { roadmapSnapshotStore } from './roadmap-snapshot'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
@@ -71,6 +74,12 @@ import { cleanupUploads, uploadRouter } from './uploads'
 import { webOrigins } from './web-origins'
 
 const port = Number(process.env.API_PORT ?? 3001)
+const githubWebhook = githubWebhookSecret(process.env)
+const roadmap = createRoadmap({
+	token: githubToken(process.env),
+	store: roadmapSnapshotStore(database),
+	...(githubWebhook ? { ttlMs: WEBHOOK_CACHE_MS } : {}),
+})
 const MAX_MEMORY_BYTES = 100 * 1024 * 1024
 const pairingCodePattern = /^\d{6}$/
 
@@ -318,6 +327,8 @@ app.onError((_error, context) => {
 
 // Mod JAR uploads (release tool, never a browser): mounted BEFORE CORS, so without CORS headers.
 app.route('/downloads/upload', createModUploads({ onStored: () => modDownloads.invalidateIndex() }))
+// GitHub webhook deliveries (server to server, never a browser): also mounted before CORS.
+app.route('/api/github/webhook', createGithubWebhook({ secret: githubWebhook, onChange: roadmap.refreshSoon }))
 
 app.use(
 	'*',
