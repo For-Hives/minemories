@@ -1,4 +1,5 @@
-import { supportedMinecraft } from '../pages/mod-targets'
+import type { StepId } from '../lib/install-guide'
+import { mostTestedMinecraft, quiltTested, supportedMinecraft } from '../pages/mod-targets'
 
 /**
  * Every question the site answers, written once: the /faq list, the questions shown on other pages and the FAQPage
@@ -24,10 +25,10 @@ function versionsAnswer(): FaqEntry {
 			experimental
 				? 'In beta: Minecraft Java {versions}, plus {experimental} as an experimental version.'
 				: 'In beta: Minecraft Java {versions}.',
-			'The most tested is 1.21.1.',
+			'The most tested is {mostTested}.',
 			'1.12.2 and 1.16.5: not yet.',
 		],
-		values: { versions, experimental },
+		values: { versions, experimental, mostTested: mostTestedMinecraft },
 		link: { to: '/downloads', label: 'Downloads' },
 	}
 }
@@ -100,8 +101,9 @@ export const questions = {
 		answer: [
 			'Fabric, Forge or NeoForge, depending on your version.',
 			'On Fabric, add Fabric API.',
-			'In 1.21.1, Quilt works with the Fabric JAR.',
+			'In {minecraft}, Quilt works with the Fabric JAR.',
 		],
+		values: { minecraft: quiltTested.minecraft },
 		link: { to: '/downloads', label: 'Downloads' },
 	},
 	launcher: {
@@ -269,9 +271,28 @@ export const questions = {
 		question: 'The code doesn’t work?',
 		answer: ['It expires after 5 minutes and works only once.', 'Generate another one.', 'Your local file is safe.'],
 	},
+	installeur: {
+		question: 'The loader installer won’t open?',
+		answer: [
+			'It needs Java: install Temurin first.',
+			'Then right-click the installer → Open with → Java.',
+			'On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.',
+			'Don’t lower your security settings to get it running.',
+		],
+	},
+	'mod-absent': {
+		question: 'The mod doesn’t show up?',
+		answer: [
+			'The file must end in .jar, not .jar.zip, and sit in mods, not in saves.',
+			'Launch the profile of the loader you picked, in the same Minecraft version.',
+		],
+	},
 	plantage: {
 		question: 'The game crashes on launch?',
-		answer: ['Check that the JAR matches your version and your loader, and that Fabric API is there on Fabric.'],
+		answer: [
+			'Check that the JAR matches your version and your loader, and that Fabric API is there on Fabric.',
+			'To go back, take the Minemories JAR out of mods. Never delete your world to fix it.',
+		],
 	},
 	'touche-m': {
 		question: 'M opens something else?',
@@ -329,15 +350,41 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 		],
 	},
 	{ label: 'Safety and privacy', ids: ['envoi-automatique', 'enfant', 'tout-supprimer'] },
-	{ label: 'Problems', ids: ['code', 'plantage', 'touche-m', 'partie-manquante', 'mot-de-passe'] },
+	{
+		label: 'Problems',
+		ids: ['installeur', 'mod-absent', 'plantage', 'touche-m', 'code', 'partie-manquante', 'mot-de-passe'],
+	},
 ]
+
+/**
+ * /installation's "If a step gets stuck": what can break during the install, in the order it can happen. The guide
+ * shows the items of the current screen first (`installationHelpByStep`), then the others.
+ */
+export const installationHelp = [
+	'installeur',
+	'mod-absent',
+	'touche-m',
+	'plantage',
+	'code',
+	'partie-manquante',
+] as const satisfies readonly QuestionId[]
+export const installationHelpByStep: Partial<Record<StepId, readonly (typeof installationHelp)[number][]>> = {
+	version: ['plantage'],
+	loader: ['plantage'],
+	'loader-install': ['installeur', 'plantage'],
+	app: ['mod-absent', 'plantage'],
+	download: ['mod-absent'],
+	place: ['mod-absent', 'plantage'],
+	check: ['touche-m', 'mod-absent', 'plantage'],
+	connect: ['code'],
+	memory: ['partie-manquante', 'code'],
+}
 
 /** The three questions (at most) a page other than /faq shows. */
 export const pageQuestions = {
 	home: ['serveur', 'litematica', 'si-minemories-ferme'],
 	concept: ['bluemap', 'rejouer', 'sous-sols'],
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
-	installation: ['plantage', 'code', 'touche-m'],
 	downloads: ['bedrock', 'versions'],
 	serverClosing: ['tout-le-monde', 'vieux-monde', 'droit'],
 	blender: ['mods', 'sur-un-serveur'],

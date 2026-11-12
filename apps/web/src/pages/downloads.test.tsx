@@ -140,8 +140,11 @@ test('every published cell opens the guide with its version and loader already p
 	expect(guided.getAttribute('href')).toBe('/installation?minecraft=1.21.11&loader=fabric')
 	fireEvent.click(guided)
 	await screen.findByRole('heading', { name: 'Installer Minemories' })
-	expect(screen.getByRole('radio', { name: /^1\.21\.11/ })).toHaveProperty('checked', true)
-	expect(screen.getByRole('radio', { name: 'Fabric' })).toHaveProperty('checked', true)
+	// The questions are answered: the guide opens on the download of that very JAR.
+	expect(screen.getByRole('heading', { name: 'Télécharge le mod' })).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'Télécharger pour Minecraft 1.21.11 · Fabric' }).getAttribute('href')).toBe(
+		latestDownloadUrl('1.21.11', 'fabric')
+	)
 })
 
 test('while the index loads or fails, the cells keep the newest-JAR links, and a failure offers a retry', async () => {
