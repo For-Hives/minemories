@@ -23,7 +23,19 @@ const entry = {
 		{ path: '/explore', title: 'Gallery', description: 'Public memories', indexable: false },
 	],
 	renderPage: path => `<h1>${path}</h1>`,
-	appShell: { title: 'A place & you', description: 'Turn <around>' },
+	// The head's text in each language (route-metadata `headFor`): English here, as in the entry's default.
+	headFor: (path, locale) => {
+		const heads = {
+			'/': { title: 'Home & memories', description: 'A <memory>' },
+			'/blog/story': { title: 'Story', description: 'Read the story' },
+			'/explore': { title: 'Gallery', description: 'Public memories' },
+			'/faq': { title: 'Frequently asked questions', description: 'Answers' },
+			'/share/link': { title: 'A place & you', description: 'Turn <around>' },
+		}
+		const head = heads[path]
+		return locale === 'en' ? head : { title: `${locale}: ${head.title}`, description: `${locale}: ${head.description}` }
+	},
+	sharedLinkPath: '/share/link',
 	structuredDataFor: page => ({
 		'@context': 'https://schema.org',
 		'@graph': [{ '@type': page.articleDate ? 'Article' : 'WebPage', name: '</script>', path: page.path }],
@@ -70,7 +82,7 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
 	const shell = await readFile(join(directory, 'app.html'), 'utf8')
 	assert.ok(shell.includes('noindex,nofollow'))
-	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in French.
+	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in English.
 	assert.ok(shell.includes('<html lang="fr">'))
 	assert.ok(shell.includes('<title>A place &amp; you</title>'))
 	assert.ok(shell.includes('<meta name="description" content="Turn &lt;around&gt;" />'))
@@ -142,37 +154,52 @@ test('every public page carries the link preview image as an absolute URL from t
 	await prerenderWeb(directory, entry)
 	assert.ok(!(await readFile(join(directory, 'index.html'), 'utf8')).includes('og:image'))
 })
-test('link previews are in English while the page and its title stay French', async t => {
+test('heads are English by default, the body stays French, and every other language has a ?lang= variant', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-prerender-'))
 	t.after(() => rm(directory, { recursive: true, force: true }))
 	await writeFile(join(directory, 'index.html'), template)
+	let loaded = false
 	await prerenderWeb(directory, {
 		...entry,
 		publicMetadata: [
-			{
-				path: '/faq',
-				title: 'Questions fréquentes',
-				description: 'Réponses',
-				ogTitle: 'Frequently asked questions',
-				ogDescription: 'Answers',
-				indexable: true,
-				updated: '2026-11-12',
-			},
+			{ path: '/faq', title: 'Questions fréquentes', description: 'Réponses', indexable: true, updated: '2026-11-12' },
 		],
-		appShell: { title: 'Un lieu', description: 'Ouvre-le', ogTitle: 'A place', ogDescription: 'Open it' },
+		structuredDataFor: page => ({ name: page.title }),
+		previewLanguages: [{ id: 'fr', ogLocale: 'fr_FR' }],
+		loadPreviewLanguages: async () => {
+			loaded = true
+		},
 	})
+	assert.ok(loaded, 'catalogues are loaded before any head is written')
 	const faq = await readFile(join(directory, 'faq/index.html'), 'utf8')
 	assert.ok(faq.includes('<html lang="fr">'))
-	assert.ok(faq.includes('<title>Questions fréquentes</title>'))
-	assert.ok(faq.includes('<meta name="description" content="Réponses" />'))
+	assert.ok(faq.includes('<title>Frequently asked questions</title>'))
+	assert.ok(faq.includes('<meta name="description" content="Answers" />'))
 	assert.ok(faq.includes('<meta property="og:title" content="Frequently asked questions" />'))
 	assert.ok(faq.includes('<meta property="og:description" content="Answers" />'))
 	assert.ok(faq.includes('<meta property="og:locale" content="en_US" />'))
+	assert.ok(faq.includes('<meta property="og:url" content="https://example.org/faq" />'))
+	// The JSON-LD describes the page's French content.
+	assert.ok(faq.includes('{"name":"Questions fréquentes"}'))
+	const french = await readFile(join(directory, '_lang/fr/faq/index.html'), 'utf8')
+	assert.ok(french.includes('<title>fr: Frequently asked questions</title>'))
+	assert.ok(french.includes('<meta name="description" content="fr: Answers" />'))
+	assert.ok(french.includes('<meta property="og:title" content="fr: Frequently asked questions" />'))
+	assert.ok(french.includes('<meta property="og:locale" content="fr_FR" />'))
+	// Facebook re-reads og:url: it keeps the language. The canonical stays the bare page.
+	assert.ok(french.includes('<meta property="og:url" content="https://example.org/faq?lang=fr" />'))
+	assert.ok(french.includes('<link rel="canonical" href="https://example.org/faq" />'))
+	assert.ok(french.includes('<h1>/faq</h1>'))
 	const shell = await readFile(join(directory, 'app.html'), 'utf8')
-	assert.ok(shell.includes('<title>Un lieu</title>'))
-	assert.ok(shell.includes('<meta property="og:title" content="A place" />'))
-	assert.ok(shell.includes('<meta property="og:description" content="Open it" />'))
+	assert.ok(shell.includes('<title>A place &amp; you</title>'))
 	assert.ok(shell.includes('<meta property="og:locale" content="en_US" />'))
+	const frenchShell = await readFile(join(directory, '_lang/fr/app.html'), 'utf8')
+	assert.ok(frenchShell.includes('<title>fr: A place &amp; you</title>'))
+	assert.ok(frenchShell.includes('<meta property="og:description" content="fr: Turn &lt;around&gt;" />'))
+	assert.ok(frenchShell.includes('<meta property="og:locale" content="fr_FR" />'))
+	assert.ok(!frenchShell.includes('og:url'))
+	// Variants never reach the sitemap.
+	assert.ok(!(await readFile(join(directory, 'sitemap.xml'), 'utf8')).includes('lang'))
 })
 
 test('the landing and the app fallback (the viewers) keep the loading screen: every other page and the 404 drop its three blocks', async t => {

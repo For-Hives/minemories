@@ -4,7 +4,10 @@ import { StaticRouter } from 'react-router'
 import { AppContext } from './app-context'
 import { firstPaintScript } from './components/HeroFilm'
 import { SiteLayout } from './components/SiteLayout'
+import { loadLocale } from './i18n/catalog'
 import { I18nProvider } from './i18n/I18n'
+import { localeOptions } from './i18n/locales'
+import { ogLocale } from './lib/link-language'
 import { LegalPage, NotFoundPage } from './pages/ContentPages'
 import { ExplorerPage } from './pages/DiscoveryPages'
 import { DownloadsPage } from './pages/DownloadsPage'
@@ -15,10 +18,17 @@ import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
 import { SharingPage } from './pages/SharingPage'
-import { appShell, publicMetadata, siteOrigin, socialImage } from './route-metadata'
+import { headFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage } from './route-metadata'
 import { structuredDataFor } from './structured-data'
 
-export { appShell, publicMetadata, siteOrigin, socialImage, structuredDataFor }
+export { headFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage, structuredDataFor }
+/** English is the default head; every other language gets its own head variant, served for `?lang=<id>`. */
+export const previewLanguages = localeOptions
+	.filter(option => option.id !== 'en')
+	.map(option => ({ id: option.id, ogLocale: ogLocale(option.id) }))
+export async function loadPreviewLanguages() {
+	await Promise.all(previewLanguages.map(language => loadLocale(language.id)))
+}
 /** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
 export const firstPaintScripts: Record<string, string> = { '/': firstPaintScript }
 

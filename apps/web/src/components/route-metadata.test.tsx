@@ -80,7 +80,8 @@ test('switching locale updates titles, descriptions and schema without publishin
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
+	// the head is English by default, over a French page
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	fireEvent.click(screen.getByRole('button', { name: 'English' }))
 	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	expect(document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content).toContain(
@@ -105,18 +106,53 @@ test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of sear
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 })
 
-test('the private shell carries the shared-link card, French in the tab and English in link previews, and other private pages keep their own title', async () => {
-	const { appShell, metadataFor } = await import('../route-metadata')
-	// the tab title stays French, the link preview (Discord, WhatsApp...) is English
-	expect(appShell).toEqual({
+test('the private shell carries the shared-link card, English by default and translated on request, and other private pages keep their own title', async () => {
+	const { headFor, metadataFor, sharedLinkPath } = await import('../route-metadata')
+	expect(headFor(sharedLinkPath)).toEqual({
+		title: 'A Minecraft place in 3D, shared with you',
+		description: 'Open it in your browser and walk around it in 3D.',
+	})
+	expect(headFor(sharedLinkPath, 'fr')).toEqual({
 		title: 'Un lieu Minecraft en 3D, partagé avec toi',
 		description: 'Ouvre-le dans ton navigateur et fais-en le tour en 3D.',
-		ogTitle: 'A Minecraft place in 3D, shared with you',
-		ogDescription: 'Open it in your browser and walk around it in 3D.',
 	})
 	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111').description).toBe(
 		'Ouvre-le dans ton navigateur et fais-en le tour en 3D.'
 	)
 	expect(metadataFor('/gallery', 'en').title).toBe('Minemories · Your space')
 	expect(metadataFor('/share', 'en').title).toBe('Minemories · Your space')
+})
+
+test('a link with ?lang= renders that language, takes the head, and the switcher replaces it', () => {
+	window.history.replaceState(null, '', '/installation?lang=fr&x=1')
+	function Switch() {
+		const { setLocale } = useI18n()
+		return (
+			<button type="button" onClick={() => setLocale('en')}>
+				English
+			</button>
+		)
+	}
+	render(
+		<I18nProvider urlLocale="fr" suggestLocale>
+			<MemoryRouter initialEntries={['/installation?lang=fr']}>
+				<RouteMetadata />
+				<Switch />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.content).toBe(
+		'https://minemories.net/installation?lang=fr'
+	)
+	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
+		'https://minemories.net/installation'
+	)
+	expect(localStorage.getItem('minemories-locale')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'English' }))
+	expect(window.location.search).toBe('?x=1')
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
+	expect(localStorage.getItem('minemories-locale')).toBe('en')
+	window.history.replaceState(null, '', '/')
 })

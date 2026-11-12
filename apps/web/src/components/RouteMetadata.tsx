@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { useI18n } from '../i18n/I18n'
-import { linkPreviewLocale, metadataFor, siteOrigin, socialImage } from '../route-metadata'
+import type { Locale } from '../i18n/locales'
+import { ogLocale, previewUrl } from '../lib/link-language'
+import { metadataFor, siteOrigin, socialImage } from '../route-metadata'
 import { structuredDataFor } from '../structured-data'
 
 function meta(name: string, content: string, attribute: 'name' | 'property' = 'name') {
@@ -13,9 +15,9 @@ function meta(name: string, content: string, attribute: 'name' | 'property' = 'n
 	}
 	element.content = content
 }
-function publicHead(page: ReturnType<typeof metadataFor>) {
-	// The link preview is in English whatever the visitor's language: same card as the prerendered page.
-	const preview = metadataFor(page.path, 'en')
+/** `page` is in the rendered language (JSON-LD), `headLocale` names the head's: the same card as the prerendered page. */
+function publicHead(page: ReturnType<typeof metadataFor>, headLocale: Locale) {
+	const preview = metadataFor(page.path, headLocale)
 	const canonicalUrl = new URL(page.path, siteOrigin).href
 	let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
 	if (!canonical) {
@@ -27,8 +29,8 @@ function publicHead(page: ReturnType<typeof metadataFor>) {
 	meta('og:site_name', 'Minemories', 'property')
 	meta('og:title', preview.title, 'property')
 	meta('og:description', preview.description, 'property')
-	meta('og:url', canonicalUrl, 'property')
-	meta('og:locale', linkPreviewLocale, 'property')
+	meta('og:url', previewUrl(page.path, siteOrigin, headLocale), 'property')
+	meta('og:locale', ogLocale(headLocale), 'property')
 	meta('og:type', page.articleDate ? 'article' : 'website', 'property')
 	meta('og:image', new URL(socialImage.path, siteOrigin).href, 'property')
 	meta('og:image:width', String(socialImage.width), 'property')
@@ -44,15 +46,18 @@ function publicHead(page: ReturnType<typeof metadataFor>) {
 }
 export function RouteMetadata() {
 	const { pathname, hash } = useLocation()
-	const { locale } = useI18n()
+	const { locale, chosen } = useI18n()
 	const previous = useRef(pathname)
 	useEffect(() => {
 		const page = metadataFor(pathname, locale)
-		document.title = page.title
-		meta('description', page.description)
+		// The head is English unless a language was chosen (the link's ?lang=, a saved choice or the switcher).
+		const headLocale = chosen ? locale : 'en'
+		const head = metadataFor(pathname, headLocale)
+		document.title = head.title
+		meta('description', head.description)
 		meta('robots', page.indexable && import.meta.env.VITE_INDEXABLE === 'true' ? 'index,follow' : 'noindex,nofollow')
 		document.querySelector('[data-page-schema]')?.remove()
-		if (page.indexable) publicHead(page)
+		if (page.indexable) publicHead(page, headLocale)
 		else {
 			document.querySelector('link[rel="canonical"]')?.remove()
 			for (const element of document.head.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]'))
@@ -65,6 +70,6 @@ export function RouteMetadata() {
 				document.getElementById('main-content')?.focus({ preventScroll: true })
 			}
 		}
-	}, [pathname, hash, locale])
+	}, [pathname, hash, locale, chosen])
 	return null
 }
