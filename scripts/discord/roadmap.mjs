@@ -1,4 +1,4 @@
-// #roadmap message: GitHub issues labelled `roadmap`, rendered as one webhook message that is edited in place
+// #roadmap message: the repository's open GitHub issues (except `dependencies` / `no-roadmap`), rendered as one webhook message that is edited in place
 // (PATCH {webhook}/messages/{DISCORD_ROADMAP_MESSAGE_ID}). The classification mirrors GET /api/roadmap so Discord and
 // the site always agree; Discord only shows the In progress and Planned columns. Mod releases go to #changelog.
 import {
@@ -17,7 +17,8 @@ import {
 	webhookUrl,
 } from './discord.mjs'
 
-export const ROADMAP_LABEL = 'roadmap'
+/** Issues kept off the roadmap: Renovate's dashboard and anything marked by hand (same list as apps/api/src/roadmap.ts). */
+export const EXCLUDED_LABELS = ['dependencies', 'no-roadmap']
 export const IN_PROGRESS_LABEL = 'in-progress'
 export const AREAS = ['mod', 'api', 'front', 'socials']
 export const DONE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
@@ -32,7 +33,7 @@ const TITLE_MAX = 90
 const TOTAL_BUDGET = LIMITS.total - 100
 const PAGE_LIMIT = 20
 const NEXT_LINK = /<([^>]+)>;\s*rel="next"/
-const API_URL = `https://api.github.com/repos/${REPOSITORY}/issues?labels=${ROADMAP_LABEL}&state=all&per_page=100`
+const ISSUES_URL = `https://api.github.com/repos/${REPOSITORY}/issues?per_page=100`
 
 const labelNames = issue => (issue.labels ?? []).map(label => (typeof label === 'string' ? label : label?.name))
 const time = value => {
@@ -61,7 +62,7 @@ function column(items, sortKey) {
 export function columnOf(issue, now = Date.now()) {
 	if (!issue || issue.pull_request) return null
 	const labels = labelNames(issue)
-	if (!labels.includes(ROADMAP_LABEL)) return null
+	if (labels.some(label => EXCLUDED_LABELS.includes(label))) return null
 	if (issue.state === 'open') return labels.includes(IN_PROGRESS_LABEL) ? 'inProgress' : 'planned'
 	if (issue.state !== 'closed' || !DONE_REASONS.has(issue.state_reason ?? null)) return null
 	const closed = time(issue.closed_at)
@@ -115,7 +116,7 @@ export function buildRoadmapPayload(columns, now = Date.now()) {
 			...(index === 0 ? { url: `${SITE_URL}/roadmap` } : {}),
 			description: describe(lines, more),
 			color: COLORS.roadmap,
-			...(index === last ? { footer: { text: 'Minemories roadmap · GitHub issues labelled roadmap' } } : {}),
+			...(index === last ? { footer: { text: 'Minemories roadmap · open GitHub issues' } } : {}),
 			...(index === last ? { timestamp: new Date(now).toISOString() } : {}),
 		}))
 	let embeds = render()
@@ -135,16 +136,9 @@ export function buildRoadmapPayload(columns, now = Date.now()) {
 	}
 }
 
-/** Every issue labelled `roadmap` (pull requests included; `classify` drops them), following the Link header. */
-export async function fetchRoadmapIssues({ fetchImpl = globalThis.fetch, token } = {}) {
-	const headers = {
-		accept: 'application/vnd.github+json',
-		'x-github-api-version': '2022-11-28',
-		'user-agent': 'minemories-discord-sync',
-		...(token ? { authorization: `Bearer ${token}` } : {}),
-	}
+/** One query's issues, following the Link header (at most PAGE_LIMIT pages). */
+async function fetchPages(url, headers, fetchImpl) {
 	const issues = []
-	let url = API_URL
 	for (let page = 0; url && page < PAGE_LIMIT; page += 1) {
 		// biome-ignore lint/performance/noAwaitInLoops: pages are sequential (each one names the next).
 		const response = await fetchImpl(url, { headers })
@@ -155,6 +149,30 @@ export async function fetchRoadmapIssues({ fetchImpl = globalThis.fetch, token }
 		url = NEXT_LINK.exec(response.headers?.get?.('link') ?? '')?.[1] ?? null
 	}
 	return issues
+}
+
+/** An issue that changed state between the two reads comes back twice: keep its most recent copy. */
+function latestCopies(issues) {
+	const latest = new Map()
+	for (const issue of issues) {
+		const known = latest.get(issue?.number)
+		if (!known || time(issue?.updated_at) > time(known.updated_at)) latest.set(issue?.number, issue)
+	}
+	return [...latest.values()]
+}
+
+/** Every open issue, and the issues updated during the done window (pull requests included; `classify` drops them), following the Link headers. */
+export async function fetchRoadmapIssues({ fetchImpl = globalThis.fetch, token, now = Date.now() } = {}) {
+	const headers = {
+		accept: 'application/vnd.github+json',
+		'x-github-api-version': '2022-11-28',
+		'user-agent': 'minemories-discord-sync',
+		...(token ? { authorization: `Bearer ${token}` } : {}),
+	}
+	const since = new Date(now - DONE_WINDOW_MS).toISOString()
+	const open = await fetchPages(`${ISSUES_URL}&state=open`, headers, fetchImpl)
+	const closed = await fetchPages(`${ISSUES_URL}&state=closed&since=${since}`, headers, fetchImpl)
+	return latestCopies([...open, ...closed])
 }
 
 async function postNew(webhook, payload, deps) {
@@ -222,7 +240,7 @@ export async function syncRoadmap(options = {}) {
 		allowRepost: env.DISCORD_ROADMAP_ALLOW_REPOST === 'true',
 	}
 	try {
-		const issues = await fetchRoadmapIssues({ fetchImpl: deps.fetchImpl, token: env.GITHUB_TOKEN })
+		const issues = await fetchRoadmapIssues({ fetchImpl: deps.fetchImpl, token: env.GITHUB_TOKEN, now: options.now })
 		const payload = buildRoadmapPayload(classify(issues, options.now), options.now)
 		if (options.dryRun) {
 			io.out(JSON.stringify(payload, null, '\t'))

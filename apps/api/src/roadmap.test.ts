@@ -66,6 +66,8 @@ function recorder(
 	const calls: { url: string; init: RequestInit }[] = []
 	const fetcher = (url: string, init: RequestInit) => {
 		if (!url.startsWith(ISSUES)) return releases(url)
+		// The done-window query (state=closed) runs with every refresh: its calls are not counted, so one refresh is one call.
+		if (new URL(url).searchParams.get('state') === 'closed') return Promise.resolve(json([]))
 		calls.push({ url, init })
 		if (typeof pages === 'function') return pages()
 		return Promise.resolve(json(pages[calls.length - 1] ?? []))
@@ -87,13 +89,16 @@ test('classifies open, in-progress and recently completed issues and drops the r
 			issue(9, { state: 'closed', state_reason: 'completed', closed_at: null }),
 			issue(10, { state: 'closed', state_reason: 'duplicate', closed_at: iso(NOW - DAY) }),
 			issue(11, { state: 'locked' }),
+			issue(12, { labels: [{ name: 'dependencies' }, { name: 'autonomous' }] }),
+			issue(13, { labels: ['no-roadmap', 'in-progress'] }),
 		],
 		NOW
 	)
 	expect(roadmapResponse.parse(roadmap)).toEqual(roadmap)
 	expect(roadmap.latestRelease).toBeNull()
 	expect(roadmap.updatedAt).toBe(iso(NOW))
-	expect(roadmap.columns.planned.items.map(item => item.number)).toEqual([1])
+	// every open issue counts, with or without the `roadmap` label; `dependencies` and `no-roadmap` keep one off
+	expect(roadmap.columns.planned.items.map(item => item.number)).toEqual([1, 8])
 	expect(roadmap.columns.planned.items[0]).toEqual({
 		number: 1,
 		title: 'Issue 1',
@@ -131,21 +136,34 @@ test('sorts by most recent activity, caps each column at 25 and counts the rest'
 	expect(roadmap.columns.inProgress.items.map(item => item.number)).toEqual([201, 200])
 })
 
-test('requests GitHub with the expected headers and follows at most five full pages', async () => {
+test('reads every open issue and the done window, with the expected headers, at most five full pages each', async () => {
 	const full = (offset: number) => Array.from({ length: 100 }, (_, index) => issue(offset + index + 1))
-	const { calls, fetcher } = recorder([full(0), full(100), full(200), full(300), full(400), full(500)])
-	const issues = await fetchRoadmapIssues(fetcher, 'secret-token')
-	expect(issues).toHaveLength(500)
-	expect(calls).toHaveLength(5)
-	const first = new URL(calls[0]?.url ?? '')
-	expect(`${first.origin}${first.pathname}`).toBe('https://api.github.com/repos/For-Hives/minemories/issues')
-	expect(Object.fromEntries(first.searchParams)).toEqual({
-		labels: 'roadmap',
-		state: 'all',
+	const calls: { url: string; init: RequestInit }[] = []
+	// open: always a full page (the five-page cap stops it); closed: one short page
+	const fetcher = (url: string, init: RequestInit) => {
+		calls.push({ url, init })
+		const query = new URL(url).searchParams
+		const page = Number(query.get('page'))
+		return Promise.resolve(json(query.get('state') === 'open' ? full((page - 1) * 100) : [issue(900)]))
+	}
+	const issues = await fetchRoadmapIssues(fetcher, 'secret-token', NOW)
+	expect(issues).toHaveLength(501)
+	expect(calls).toHaveLength(6)
+	const urls = calls.map(call => new URL(call.url))
+	expect(`${urls[0]?.origin}${urls[0]?.pathname}`).toBe('https://api.github.com/repos/For-Hives/minemories/issues')
+	const open = urls.filter(url => url.searchParams.get('state') === 'open')
+	const closed = urls.filter(url => url.searchParams.get('state') === 'closed')
+	expect(open).toHaveLength(5)
+	expect(closed).toHaveLength(1)
+	expect(Object.fromEntries(open[0]?.searchParams ?? [])).toEqual({ state: 'open', per_page: '100', page: '1' })
+	expect(open.at(-1)?.searchParams.get('page')).toBe('5')
+	expect(Object.fromEntries(closed[0]?.searchParams ?? [])).toEqual({
+		state: 'closed',
 		per_page: '100',
 		page: '1',
+		since: iso(NOW - 30 * DAY),
 	})
-	expect(new URL(calls[4]?.url ?? '').searchParams.get('page')).toBe('5')
+	expect(urls.some(url => url.searchParams.has('labels'))).toBe(false)
 	const headers = headersOf(calls[0]?.init)
 	expect(headers.Accept).toBe('application/vnd.github+json')
 	expect(headers['User-Agent']).toBe('minemories-api')
@@ -153,11 +171,26 @@ test('requests GitHub with the expected headers and follows at most five full pa
 	expect(calls[0]?.init.signal).toBeInstanceOf(AbortSignal)
 })
 
-test('stops on the first short page and sends no authorization without a token', async () => {
+test('stops on the first short page of each query and sends no authorization without a token', async () => {
 	const { calls, fetcher } = recorder([Array.from({ length: 100 }, (_, index) => issue(index + 1)), [issue(101)]])
 	expect(await fetchRoadmapIssues(fetcher)).toHaveLength(101)
 	expect(calls).toHaveLength(2)
 	expect(headersOf(calls[0]?.init).Authorization).toBeUndefined()
+})
+
+test('an issue read by both queries is kept once, in its most recent state', async () => {
+	const fetcher = (url: string) => {
+		const state = new URL(url).searchParams.get('state')
+		const open = issue(7, { updated_at: iso(NOW - DAY) })
+		const closed = issue(7, { state: 'closed', state_reason: 'completed', updated_at: iso(NOW), closed_at: iso(NOW) })
+		const older = issue(8, { updated_at: iso(NOW - 2 * DAY) })
+		return Promise.resolve(json(state === 'open' ? [open, issue(8)] : [closed, older]))
+	}
+	const issues = await fetchRoadmapIssues(fetcher, undefined, NOW)
+	expect(issues.map(item => [item.number, item.state])).toEqual([
+		[7, 'closed'],
+		[8, 'open'],
+	])
 })
 
 test('rejects GitHub errors and malformed pages', async () => {

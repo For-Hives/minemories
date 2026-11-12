@@ -2,7 +2,7 @@ name: Discord sync
 
 # Posts to the project's Discord: #changelog after each push to main and a release card for each mod release tag
 # (curated English notes from mod/release-notes/), and keeps one #roadmap message in sync with the open GitHub issues
-# labelled `roadmap`. This is the owner's explicit exception (7 November 2026) to "CI publishes nothing": see
+# (all of them except `dependencies` / `no-roadmap`). This is the owner's explicit exception (7 November 2026) to "CI publishes nothing": see
 # docs/features/discord-sync.md. Scripts: scripts/discord/.
 
 on:
@@ -65,7 +65,7 @@ jobs:
           fi
 
   roadmap:
-    # Issue events only matter when the issue is (or just stopped being) on the roadmap. Mod releases go to #changelog,
+    # Every issue event matters (any open issue is on the roadmap) except Renovate's dashboard. Mod releases go to #changelog,
     # so pushes never update the roadmap. Manual runs only from the default branch, so unreviewed code never edits the
     # message (schedule and issue events always use it).
     if: >-
@@ -73,7 +73,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' &&
         github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
       (github.event_name == 'issues' &&
-        (contains(github.event.issue.labels.*.name, 'roadmap') || github.event.label.name == 'roadmap'))
+        !contains(github.event.issue.labels.*.name, 'dependencies') && github.event.label.name != 'dependencies')
     runs-on: ubuntu-latest
     permissions:
       contents: read
