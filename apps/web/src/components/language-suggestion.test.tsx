@@ -38,9 +38,9 @@ test('an English browser on a public page keeps the page in French and is offere
 	page('/installation', ['en-US', 'en'])
 	const card = await suggestion()
 	expect(screen.getByRole('heading', { name: 'Se connecter' })).toBeTruthy()
-	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
+	// the head (tab title, link preview) is English until a language is chosen; the page stays French
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	expect(document.documentElement.lang).toBe('fr-FR')
-	// the link preview is in English on every page, whatever the page's language
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('en_US')
 	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
 		'fr'
@@ -101,7 +101,8 @@ test('the suggestion speaks its own language once that catalogue has loaded', as
 	expect(screen.getByRole('heading', { name: 'Se connecter' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Auf Deutsch umstellen' }))
 	await waitFor(() => expect(document.documentElement.lang).toBe('de-DE'), { timeout: 10000 })
-	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('en_US')
+	// a chosen language also takes the head
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('de_DE')
 })
 
 test('a saved choice wins over the page language, with nothing to suggest', async () => {

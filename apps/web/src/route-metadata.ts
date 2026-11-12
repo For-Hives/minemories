@@ -172,29 +172,31 @@ const privateMessages: PageMetadata[] = [
 /**
  * A shared link (/share/:token) or a public memory (/public/:id): one neutral card, since a per-link preview would need
  * a server-side render. Link previews read it from app.html (the private shell, which crawlers get without JavaScript),
- * and the tab shows it too.
+ * and the tab shows it too (`sharedLinkPath`).
  */
 const sharedCard = {
 	title: 'A Minecraft place in 3D, shared with you',
 	description: 'Open it in your browser and walk around it in 3D.',
 }
 const sharedPath = /^\/(?:share|public)\//
-/** Link previews (og:title, og:description, og:locale) are in English on every page, whatever the page's language (owner decision, 12 November 2026). */
-export const linkPreviewLocale = 'en_US'
-/** The private shell's head: its title in French like the prerendered pages, its link preview in English. */
-export const appShell = {
-	title: translate('fr', sharedCard.title),
-	description: translate('fr', sharedCard.description),
-	ogTitle: translate('en', sharedCard.title),
-	ogDescription: translate('en', sharedCard.description),
-}
+/**
+ * The page's own text (body and JSON-LD) is French by default, but its head (title, description, Open Graph) is English
+ * unless the link names a language with `?lang=` (owner decision, 12 November 2026): a pasted link never previews in French
+ * unless asked to. `headFor` gives that head in any locale; the prerender writes the English one into each page and one
+ * variant per other locale, which nginx serves for `?lang=`.
+ */
 export const publicMetadata = metadataMessages.map(page => ({
 	...page,
 	title: translate('fr', page.title),
 	description: translate('fr', page.description),
-	ogTitle: translate('en', page.title),
-	ogDescription: translate('en', page.description),
 }))
+/** The title and description of a page's head in `locale` (catalogues other than French and English must be loaded). */
+export function headFor(path: string, locale: Locale = 'en') {
+	const { title, description } = metadataFor(path, locale)
+	return { title, description }
+}
+/** Any /share or /public link: the private shell (app.html) carries their card. */
+export const sharedLinkPath = '/share/link'
 const trailingSlash = /\/$/
 export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetadata {
 	const path = pathname.replace(trailingSlash, '') || '/'

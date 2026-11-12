@@ -9,6 +9,7 @@ import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
 import { legacyPaths } from './content/legacy-paths'
 import { I18nProvider } from './i18n/I18n'
+import { localeFromSearch } from './lib/link-language'
 import { lazyExport, type PageChunk, pageChunk } from './lib/page-chunk'
 import { WebObservability } from './observability/WebObservability'
 
@@ -119,8 +120,8 @@ export function App() {
 		return () => window.clearTimeout(timeout)
 	}, [notice])
 	return (
-		// Every page renders in its own language (or the visitor's saved choice); the browser's language is only suggested.
-		<I18nProvider suggestLocale>
+		// Every page renders in its own language (or the link's ?lang=, or the visitor's saved choice); the browser's language is only suggested.
+		<I18nProvider suggestLocale urlLocale={localeFromSearch(window.location.search)}>
 			<AppContext.Provider value={context}>
 				<BrowserRouter>
 					<RouteMetadata />
