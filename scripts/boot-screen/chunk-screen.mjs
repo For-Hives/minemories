@@ -205,9 +205,11 @@ export function bootDissolve(boot, win, C, tile, done) {
 	canvas.height = Math.round(h * ratio)
 	const g = canvas.getContext('2d')
 	if (!g) return bootFade(boot, win, done)
+	// the map's centre in the screen's own box: the full-page screen starts at the viewport's corner, the viewer's stage loader (ChunkLoader.tsx) below the header
 	const box = map.getBoundingClientRect()
-	const cx = (box.left + box.width / 2) / size
-	const cy = (box.top + box.height / 2) / size
+	const own = boot.getBoundingClientRect()
+	const cx = (box.left - own.left + box.width / 2) / size
+	const cy = (box.top - own.top + box.height / 2) / size
 	const plan = dissolvePlan(cols, rows, cx, cy, C.seed, 1 - C.pop / C.out)
 	const edge = c => Math.round(c * size * ratio)
 	const rect = i => {
@@ -263,8 +265,22 @@ export function bootPace(t, C) {
 	return Math.min(1, Math.max(0, (t - C.lead) / C.fill))
 }
 
+/** Which pages play the screen: the landing, and the viewers (a memory, a shared link, a public memory), which keep it until their 3D scene is drawn. */
+export function bootRoute(path) {
+	if (path === '/') return 'landing'
+	const parts = path.split('/')
+	if (parts.at(-1) === '') parts.pop()
+	// ['', 'viewer'], or ['', 'share' or 'public', the link]
+	const [, page, link] = parts
+	const viewer =
+		parts.length === 2
+			? page === 'viewer'
+			: parts.length === 3 && Boolean(link) && (page === 'share' || page === 'public')
+	return viewer ? 'viewer' : ''
+}
+
 /**
- * Drives #boot. The screen only plays on the landing ("/"), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace;
+ * Drives #boot. The screen only plays on the landing ("/") and the viewers (bootRoute), and always plays in full: the map fills from 0 to 100 % in at least `C.fill` ms (bootPace;
  * `C.quick` on a link to one of `C.sections`, which opens on the site rather than the film),
  * holds `C.hold` ms, then the film is revealed block by block. Its percentage follows the app's milestones (`mm:boot-progress`) and an estimate, never
  * faster than bootPace, and reaches 100 % only once the page has loaded and the app says it is on screen (`mm:ready`: the film's first image is drawn).
@@ -276,14 +292,20 @@ export function bootPace(t, C) {
 export function bootScreen(doc, win, config) {
 	const boot = doc.getElementById('boot')
 	if (!boot) return
-	if (win.location.pathname !== '/') {
+	const route = bootRoute(win.location.pathname)
+	if (!route) {
 		boot.remove()
 		return
 	}
 	// A link to a section (#steps, #faq…) opens on the site, with no film to wait for: the map fills in `quick` ms, not the film's `fill`, and
-	// catches up with a late app at twice that pace.
-	const quick = config.sections.includes(win.location.hash.slice(1))
-	const C = quick ? { ...config, fill: config.quick, catchup: config.quick / 2 } : config
+	// catches up with a late app at twice that pace. A viewer too, which waits for its 3D scene: there, the safety stop comes later (large captures
+	// take longer than 20 s to arrive), and the CSS stop moves with it.
+	const viewer = route === 'viewer'
+	const quick = viewer || config.sections.includes(win.location.hash.slice(1))
+	const C = quick
+		? { ...config, fill: config.quick, catchup: config.quick / 2, stop: viewer ? config.viewerStop : config.stop }
+		: config
+	if (viewer) boot.style.animationDelay = `${C.stop}ms`
 	const now = () => win.performance.now()
 	const t0 = now()
 	const map = boot.querySelector('canvas')
