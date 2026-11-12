@@ -151,6 +151,11 @@ test('loads every capture of the world oldest first, then glides camera and sun 
 	expect(current()).toBe(0)
 	fireEvent.click(screen.getByRole('button', { name: 'Recenter' }))
 	expect(mocks.focusLayer).toHaveBeenCalledTimes(2)
+	// Double-clicking a capture of the film shows it and frames the camera on it.
+	fireEvent.doubleClick(screen.getByRole('button', { name: /^Capture 3/ }))
+	expect(current()).toBe(2)
+	expect(mocks.focusLayer).toHaveBeenCalledTimes(3)
+	fireEvent.click(screen.getByRole('button', { name: /^Capture 1/ }))
 	expect(screen.getAllByRole('link', { name: /^Open alone/ })[1]?.getAttribute('href')).toBe(
 		`/viewer?memory=${frame(2).id}`
 	)

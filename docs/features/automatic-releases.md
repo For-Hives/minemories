@@ -119,7 +119,7 @@ flowchart LR
 | | Mode 1: VPS direct | Mode 2: PC through the API |
 | --- | --- | --- |
 | Command | `bun mod release` (systemd timer) | `bun mod release --remote`, or `bun mod push [<version>]` for what is already in `build/mod-dist/<version>/` |
-| Secret on the build machine | S3 write keys | `MOD_UPLOAD_TOKEN` only; S3 keys never leave the server |
+| Secret on the build machine | S3 write keys | `API_TOKEN` only; S3 keys never leave the server |
 | Who writes to S3 | the tool | the API (`PUT /downloads/upload/...`) |
 | `builtBy` in the index | `vps` (`MOD_BUILT_BY=vps` in the systemd unit) | `pc` (default) |
 | Modrinth / CurseForge publication | yes, when enabled | no: it stays on the VPS |
@@ -179,12 +179,12 @@ Versions are sorted from newest to oldest; `fabricApi`, `builtBy`, `pinned` and 
 | `MOD_STORAGE_WARN_BYTES` | 5 GiB | Alert threshold for `bun mod storage status`. |
 | `MOD_INDEX_CACHE_MS` | 15000 | Lifetime of the API's in-memory index cache (cleared right after an upload). |
 | `MOD_STORAGE_KEEP` | 3 | Versions kept per target after an upload through the API (the local tool uses `--keep`, 3 by default). |
-| `MOD_UPLOAD_TOKEN` | absent | **API**: enables `PUT /downloads/upload/...` (at least 32 characters, otherwise the route returns 404). **Tool**: token sent by `--remote` and `push`. |
+| `API_TOKEN` | absent | **API**: enables `PUT /downloads/upload/...` (at least 32 characters, otherwise the route returns 404). **Tool**: token sent by `--remote` and `push`. |
 | `MOD_UPLOAD_MAX_BYTES` | 16777216 (16 MiB) | Maximum size of a JAR received by the API. |
 | `MOD_API_URL` | `https://api.minemories.net` | **Tool**: API that receives the JARs (also `--api-url`). Plain HTTP is refused outside `localhost`, `127.0.0.1` and `[::1]`. |
 | `MOD_BUILT_BY` | `pc` | **Tool**: build machine, `pc` or `vps`, written to `manifest.json` and then to the index. |
 
-Outside production, the bucket is created if missing; in production (`NODE_ENV=production`) it must be provisioned explicitly. Without `MOD_UPLOAD_TOKEN`, the API only needs read access; with it, the API needs read and write access to the mods bucket (the API's `S3_*` credentials, as for captures).
+Outside production, the bucket is created if missing; in production (`NODE_ENV=production`) it must be provisioned explicitly. Without `API_TOKEN`, the API only needs read access; with it, the API needs read and write access to the mods bucket (the API's `S3_*` credentials, as for captures).
 
 ### Dedicated bucket or prefix
 
@@ -232,7 +232,7 @@ JARs are sent with `Content-Type: application/java-archive`, `Content-Dispositio
 
 | Header | Role |
 | --- | --- |
-| `Authorization: Bearer <MOD_UPLOAD_TOKEN>` | required |
+| `Authorization: Bearer <API_TOKEN>` | required |
 | `Content-Length` | required (411 without it), between 1 byte and `MOD_UPLOAD_MAX_BYTES` |
 | `X-Content-SHA256` | required, 64 lowercase hex characters; recomputed while receiving |
 | `X-Mod-Manifest` | required, base64url-encoded JSON (at most 4096 characters): `id` (`<loader>-mc<minecraft>`), `version`, `minecraft`, `loader`, `loaderVersion`, `java`, `fabricApi?`, `commit`, `builtAt` (ISO 8601), `builtBy` (`pc` or `vps`); `id` and `version` must match the URL, and `<loader>-mc<minecraft>` must give back the `id` |
@@ -244,7 +244,7 @@ Optional parameter: `?replace=1` to replace an existing version whose content di
 | 200 | `{ ok: true, targetId, version, sha256, bytes, latest, replaced }` | stored, or already present with the same bytes (idempotent: nothing is rewritten) |
 | 400 | `invalid_parameter`, `invalid_length`, `invalid_sha256`, `invalid_manifest`, `length_mismatch` | invalid parameter or header, body shorter than `Content-Length` |
 | 401 | `unauthorized` | missing or wrong token (same message in both cases) |
-| 404 | `not_found` | `MOD_UPLOAD_TOKEN` absent or shorter than 32 characters: the route does not reveal that it exists |
+| 404 | `not_found` | `API_TOKEN` absent or shorter than 32 characters: the route does not reveal that it exists |
 | 409 | `version_exists` | same version, different content, without `?replace=1` |
 | 411 | `length_required` | no `Content-Length` (chunked body) |
 | 413 | `too_large` | larger than `MOD_UPLOAD_MAX_BYTES` (refused from the header, or while receiving) |
@@ -254,20 +254,20 @@ Optional parameter: `?replace=1` to replace an existing version whose content di
 
 The token is compared in constant time (SHA-256 digests) and is never logged or returned. The body is streamed into a file in the OS temporary directory, hashed on the way (never more than one chunk in memory), then deleted no matter what. After successful storage, retention (`MOD_STORAGE_KEEP`) applies like `bun mod storage prune --yes`: never `latest`, nor a pinned or published version. The public index cache is cleared, so the new version is visible right away.
 
-**A single API instance.** Updating the index (read, modify, write) is protected by an in-process memory lock: with several instances, two simultaneous uploads could overwrite each other. The current Coolify deployment has a single instance; if the API is ever replicated, remove `MOD_UPLOAD_TOKEN` from all but one (the route then returns 404), or add a shared lock.
+**A single API instance.** Updating the index (read, modify, write) is protected by an in-process memory lock: with several instances, two simultaneous uploads could overwrite each other. The current Coolify deployment has a single instance; if the API is ever replicated, remove `API_TOKEN` from all but one (the route then returns 404), or add a shared lock.
 
 #### Generating, rotating and protecting the token
 
-- Generate: `openssl rand -hex 32` (64 characters). Put it in the API's variables (Coolify) and in the PC's `.env` (not versioned) or in the shell environment: `MOD_UPLOAD_TOKEN=… bun mod release --remote`.
-- Rotation: generate a new token, set it on the API and redeploy, then update the PC. The old one stops working on redeploy. If it leaks, removing `MOD_UPLOAD_TOKEN` from the API disables the route immediately (404).
+- Generate: `openssl rand -hex 32` (64 characters). Put it in the API's variables (Coolify) and in the PC's `.env` (not versioned) or in the shell environment: `API_TOKEN=… bun mod release --remote`.
+- Rotation: generate a new token, set it on the API and redeploy, then update the PC. The old one stops working on redeploy. If it leaks, removing `API_TOKEN` from the API disables the route immediately (404).
 - The token grants the right to add or replace public JARs: treat it as a publishing secret. JARs pass the checks above, but the API cannot know whether the code is trustworthy.
 
 #### Going live on Coolify (PC mode)
 
 1. Create the mods bucket in Garage (`MOD_STORAGE_BUCKET`, `minemories-mods` by default) and give the API's S3 key read and write access to it.
-2. In the Coolify API application: S3 variables for the mods bucket (`S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, as for captures), `MOD_STORAGE_BUCKET`, `MOD_UPLOAD_TOKEN` (token generated above), optionally `MOD_STORAGE_KEEP`, `MOD_UPLOAD_MAX_BYTES` and `TRUSTED_PROXY_IPS`. A single instance.
+2. In the Coolify API application: S3 variables for the mods bucket (`S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, as for captures), `MOD_STORAGE_BUCKET`, `API_TOKEN` (token generated above), optionally `MOD_STORAGE_KEEP`, `MOD_UPLOAD_MAX_BYTES` and `TRUSTED_PROXY_IPS`. A single instance.
 3. Deploy. Check that `curl -i -X PUT https://api.minemories.net/downloads/upload/x/1` returns 401 (route active) and that `GET /downloads/index.json` returns 200.
-4. On the PC: `MOD_UPLOAD_TOKEN=… bun mod release --remote` (or `bun mod build --all` then `bun mod push`), then `bun mod status --remote` and the `/installation` page.
+4. On the PC: `API_TOKEN=… bun mod release --remote` (or `bun mod build --all` then `bun mod push`), then `bun mod status --remote` and the `/installation` page.
 
 #### Limits
 
@@ -289,7 +289,7 @@ Tests of the storage package and the tool with a fake S3 client and a mocked `fe
 ## Go-live checklist
 
 1. Install the VPS with `ops/mod-builder/install.sh`, fill in `/etc/minemories/mod-builder.env` (S3, Discord webhook, catalog tokens when the time comes).
-2. Provision the mods bucket (`MOD_STORAGE_BUCKET`) and give the API read-only access (VPS mode only) or read and write access with `MOD_UPLOAD_TOKEN` (PC mode, see "Going live on Coolify").
+2. Provision the mods bucket (`MOD_STORAGE_BUCKET`) and give the API read-only access (VPS mode only) or read and write access with `API_TOKEN` (PC mode, see "Going live on Coolify").
 3. `bun mod notify --test`, `bun mod jdk`, then `bun mod release --dry-run` and `bun mod status`.
 4. Run the first `systemctl start minemories-mod-release.service` by hand, read `journalctl -fu minemories-mod-release`, check `/downloads/index.json` and the `/installation` page.
 5. Enable third-party publication once the projects exist (dedicated section above).
