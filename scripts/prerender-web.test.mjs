@@ -11,10 +11,23 @@ const template =
 const entry = {
 	siteOrigin: 'https://example.org',
 	publicMetadata: [
-		{ path: '/', title: 'Home & memories', description: 'A <memory>', indexable: true },
-		{ path: '/blog/story', title: 'Story', description: 'Read the story', articleDate: '2026-10-14', indexable: true },
+		{ path: '/', title: 'Home & memories', description: 'A <memory>', indexable: true, updated: '2026-11-10' },
+		{
+			path: '/blog/story',
+			title: 'Story',
+			description: 'Read the story',
+			articleDate: '2026-10-14',
+			indexable: true,
+			updated: '2026-10-20',
+		},
+		{ path: '/explore', title: 'Gallery', description: 'Public memories', indexable: false },
 	],
 	renderPage: path => `<h1>${path}</h1>`,
+	appShell: { title: 'A place & you', description: 'Turn <around>' },
+	structuredDataFor: page => ({
+		'@context': 'https://schema.org',
+		'@graph': [{ '@type': page.articleDate ? 'Article' : 'WebPage', name: '</script>', path: page.path }],
+	}),
 }
 test('writes real route HTML, canonical URLs, article schema, sitemap and private-route exclusions', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-prerender-'))
@@ -26,7 +39,7 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 		else process.env.VITE_INDEXABLE = prior
 	})
 	await writeFile(join(directory, 'index.html'), template)
-	assert.deepEqual(await prerenderWeb(directory, entry), ['/', '/blog/story'])
+	assert.deepEqual(await prerenderWeb(directory, entry), ['/', '/blog/story', '/explore'])
 	const homepage = await readFile(join(directory, 'index.html'), 'utf8')
 	assert.ok(homepage.includes('<h1>/</h1>'))
 	assert.ok(homepage.includes('Home &amp; memories'))
@@ -35,16 +48,40 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	const article = await readFile(join(directory, 'blog/story/index.html'), 'utf8')
 	assert.ok(article.includes('https://example.org/blog/story'))
 	assert.ok(article.includes('"@type":"Article"'))
-	assert.ok(article.includes('2026-10-14'))
+	assert.ok(homepage.includes('<meta property="og:site_name" content="Minemories" />'))
+	// The JSON-LD comes from the entry (route-metadata's one source), with "<" escaped so it cannot close the script.
+	assert.ok(homepage.includes('"name":"\\u003c/script>","path":"/"'))
 	const sitemap = await readFile(join(directory, 'sitemap.xml'), 'utf8')
-	assert.ok(sitemap.includes('/blog/story'))
+	assert.ok(sitemap.includes('<url><loc>https://example.org/blog/story</loc><lastmod>2026-10-20</lastmod></url>'))
+	assert.ok(sitemap.includes('<url><loc>https://example.org/</loc><lastmod>2026-11-10</lastmod></url>'))
+	// A public page kept out of search results is still written, readable, but noindex and without canonical, preview or schema.
+	assert.ok(!sitemap.includes('/explore'))
+	const gallery = await readFile(join(directory, 'explore/index.html'), 'utf8')
+	assert.ok(gallery.includes('<h1>/explore</h1>'))
+	assert.ok(gallery.includes('<meta name="robots" content="noindex,nofollow" />'))
+	assert.ok(!gallery.includes('canonical'))
+	assert.ok(!gallery.includes('og:'))
+	assert.ok(!gallery.includes('ld+json'))
 	assert.ok(!sitemap.includes('/gallery'))
 	const robots = await readFile(join(directory, 'robots.txt'), 'utf8')
 	assert.ok(robots.includes('Disallow: /share/'))
 	assert.ok(robots.includes('Disallow: /public/'))
 	assert.ok(robots.includes('Disallow: /moderation'))
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
-	assert.ok((await readFile(join(directory, 'app.html'), 'utf8')).includes('noindex,nofollow'))
+	const shell = await readFile(join(directory, 'app.html'), 'utf8')
+	assert.ok(shell.includes('noindex,nofollow'))
+	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in French.
+	assert.ok(shell.includes('<html lang="fr">'))
+	assert.ok(shell.includes('<title>A place &amp; you</title>'))
+	assert.ok(shell.includes('<meta name="description" content="Turn &lt;around&gt;" />'))
+	assert.ok(shell.includes('<meta property="og:title" content="A place &amp; you" />'))
+	assert.ok(shell.includes('<meta property="og:description" content="Turn &lt;around&gt;" />'))
+	assert.ok(shell.includes('<meta property="og:site_name" content="Minemories" />'))
+	// One file serves every private URL: no canonical, no og:url, no page schema.
+	assert.ok(!shell.includes('canonical'))
+	assert.ok(!shell.includes('og:url'))
+	assert.ok(!shell.includes('ld+json'))
+	assert.ok(shell.includes('<div id="app"></div>'))
 })
 test('indexing is blocked by default without disabling readable HTML', async t => {
 	const directory = await mkdtemp(join(tmpdir(), 'minemories-private-preview-'))
@@ -126,4 +163,14 @@ test('only the landing keeps the loading screen: every other page, the app fallb
 		assert.ok(!html.includes('boot'), `${others[k]} still holds the loading screen`)
 		assert.ok(html.includes('<script src="/client.js"></script>'), `${others[k]} lost the rest of the page`)
 	}
+})
+test('an indexable page without an updated date stops the build: the sitemap would lose its lastmod', async t => {
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-undated-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	await writeFile(join(directory, 'index.html'), template)
+	const undated = {
+		...entry,
+		publicMetadata: [{ path: '/faq', title: 'FAQ', description: 'Answers', indexable: true }],
+	}
+	await assert.rejects(prerenderWeb(directory, undated), /without an updated date: \/faq/)
 })

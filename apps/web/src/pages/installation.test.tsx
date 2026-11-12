@@ -1,27 +1,28 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
+import { cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
+import { MemoryRouter, Route, Routes, StaticRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import { InstallationPage } from './InstallationPage'
+import { installerUrl } from './installation-loaders'
 import {
-	defaults,
+	choiceStorageKey,
+	chooseMinecraft,
 	guideLink,
-	guideStorageKey,
-	loadersFor,
+	noChoice,
 	presetFromSearch,
-	readGuide,
-	recommendedLoader,
-	resetGuide,
-	saveGuide,
-	stepsFor,
+	readChoice,
+	saveChoice,
+	starterLoader,
 	targetFor,
+	versionBadge,
 } from './installation-state'
+import { type LoaderTarget, latestDownloadUrl } from './mod-releases'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
 	return renderUi(ui, { wrapper: I18nProvider })
 }
-
 function Where() {
 	return <output data-testid="where">{useLocation().pathname + useLocation().search}</output>
 }
@@ -31,337 +32,175 @@ function mountGuide(entry = '/installation') {
 			<Where />
 			<Routes>
 				<Route path="/installation" element={<InstallationPage />} />
-				<Route path="/downloads" element={<p>Downloads page</p>} />
 			</Routes>
 		</MemoryRouter>
 	)
 }
-const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
-const start = () => click(/^Installation guidée/)
-const panel = () => document.querySelector('.install-panel h2') as HTMLElement
-const next = () => click('Continuer')
-const title = () => panel().textContent
-const stored = () => JSON.parse(localStorage.getItem(guideStorageKey) ?? '{}')
-function platform(name: string, userAgent = '') {
-	vi.spyOn(navigator, 'platform', 'get').mockReturnValue(name)
-	vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent)
-}
+const radio = (name: string | RegExp) => screen.getByRole('radio', { name }) as HTMLInputElement
+const version = (value: string) => radio(new RegExp(`^${value.replaceAll('.', '\\.')}(?![\\d.])`))
+const stored = () => JSON.parse(localStorage.getItem(choiceStorageKey) ?? '{}')
+const text = () => document.querySelector('article')?.textContent ?? ''
 
-beforeEach(() => {
-	localStorage.clear()
-	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })))
-})
+beforeEach(() => localStorage.clear())
 afterEach(() => {
 	cleanup()
-	vi.unstubAllGlobals()
+	document.body.innerHTML = ''
 	vi.restoreAllMocks()
 })
 
-test('the welcome screen detects the system and offers only the two ways in, a way to correct the guess and the help', () => {
-	platform('MacIntel')
-	mountGuide()
-	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('macOS')
-	const choices = screen.getAllByRole('button').map(button => button.textContent)
-	expect(choices).toHaveLength(2)
-	expect(choices[0]).toBe('Ce n’est pas ça ? Changer')
-	expect(choices[1]).toMatch(/^Installation guidée/)
-	expect(screen.getByRole('link', { name: /Voir tous les téléchargements/ }).getAttribute('href')).toBe('/downloads')
-	expect(screen.getByRole('link', { name: 'Besoin d’aide ?' }).getAttribute('href')).toBe('#aide')
-	expect(document.getElementById('aide')).toBeTruthy()
-	expect(screen.queryByLabelText('Réduire les animations')).toBeNull()
-	expect(screen.queryByRole('progressbar')).toBeNull()
-	click('Ce n’est pas ça ? Changer')
-	expect(screen.getByRole('button', { name: 'Ce n’est pas ça ? Changer' }).getAttribute('aria-expanded')).toBe('true')
-	fireEvent.click(screen.getByRole('button', { name: 'Linux' }))
-	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('Linux')
-	expect(screen.queryByRole('button', { name: 'Windows' })).toBeNull()
-	expect(stored().system).toBe('linux')
-})
-
-test('an unrecognised browser falls back to Windows and the other link opens the download table', () => {
-	platform('Plan 9')
-	mountGuide()
-	expect(screen.getByText(/On dirait que tu es sur/).textContent).toContain('Windows')
-	fireEvent.click(screen.getByRole('link', { name: /Voir tous les téléchargements/ }))
-	expect(screen.getByText('Downloads page')).toBeTruthy()
-})
-
-test('the guided installation asks three light questions, then walks through the installation one screen at a time', async () => {
-	platform('Win32')
-	mountGuide()
-	start()
-	expect(title()).toBe('Sur quel ordinateur joues-tu ?')
-	expect(document.activeElement).toBe(panel())
-	expect(screen.getByText('Étape 1 sur 7')).toBeTruthy()
-	expect(screen.getByRole('progressbar').getAttribute('max')).toBe('7')
-	expect(screen.getByRole('radio', { name: 'Windows' })).toHaveProperty('checked', true)
-	expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Continuer', '← Retour'])
-	next()
-	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
-	// Only the version itself: no loader list or badge under it.
-	expect(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }).closest('label')?.textContent).toBe('1.21.11')
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }))
-	next()
-	expect(title()).toBe('Quel loader de mods utilises-tu ?')
-	// Only the loader names, then a last choice for visitors who have none.
-	expect(screen.getAllByRole('radio').map(radio => radio.closest('label')?.textContent)).toEqual([
-		'Fabric',
-		'NeoForge',
-		'Forge',
-		'Je n’ai pas encore de loader de mods',
+test('the prerendered page is the whole guide: no version chosen, every step and the loader table visible', () => {
+	const html = renderToString(
+		<I18nProvider initialLocale="fr">
+			<StaticRouter location="/installation">
+				<InstallationPage />
+			</StaticRouter>
+		</I18nProvider>
+	)
+	document.body.innerHTML = html
+	expect(document.querySelector('noscript')).toBeNull()
+	expect([...document.querySelectorAll('h1, h2')].map(heading => heading.textContent)).toEqual([
+		'Installer Minemories',
+		'Le plus simple : l’app CurseForge',
+		'À quelle version de Minecraft joues-tu ?',
+		'Quel loader de mods utilises-tu ?',
+		'Installer le mod',
+		'Connecte le jeu',
+		'Ton premier souvenir',
+		'Si ça coince',
 	])
-	expect(screen.getByText(/Pas encore de loader, ou pas sûr \?/)).toBeTruthy()
-	fireEvent.click(screen.getByRole('radio', { name: 'Fabric' }))
-	next()
-	// A visitor who already has a loader goes straight to the mod.
-	expect(title()).toBe('Télécharger le mod')
-	expect(screen.getByText('Étape 4 sur 7')).toBeTruthy()
-	await screen.findByRole('button', { name: 'Réessayer le téléchargement' })
-	expect(screen.getByRole('link', { name: /Fabric API 0\.141\.6\+1\.21\.11/ })).toBeTruthy()
-	next()
-	expect(title()).toBe('Ranger le fichier')
-	expect(screen.getByText('%APPDATA%\\.minecraft\\mods')).toBeTruthy()
-	expect(screen.getByText(/Windows \+ R/)).toBeTruthy()
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('minemories-fabric-mc1.21.11-X.Y.Z.jar')
-	expect(screen.getByLabelText('Emplacement du fichier').textContent).toContain('fabric-api-0.141.6+1.21.11.jar')
-	expect(screen.getByText(/CurseForge, Modrinth App ou un autre launcher/).closest('details')).toBeTruthy()
-	next()
-	expect(title()).toBe('Lancer le jeu')
-	expect(screen.getAllByText(/en haut à droite du menu pause/).length).toBeGreaterThan(0)
-	expect(screen.getByRole('img', { name: /Le menu pause de Minecraft/ }).getAttribute('src')).toContain(
-		'guide-pause-menu'
+	expect(document.querySelectorAll('input:checked')).toHaveLength(0)
+	const rows = [...document.querySelectorAll('.install-table tbody tr')].map(row => row.textContent)
+	expect(rows).toEqual([
+		'1.21.11Fabric, NeoForge, Forge',
+		'1.21.1La plus testéeNeoForge, Fabric, Forge',
+		'1.20.1Forge, Fabric',
+		'1.19.2Forge, Fabric',
+		'1.18.2Forge',
+		'26.3ExpérimentaleFabric',
+	])
+	const page = document.body.textContent ?? ''
+	expect(page).toContain('Choisis d’abord ta version.')
+	expect(page).toContain('Tu joues sans mods ? Installe Fabric avec son installeur officiel, puis Fabric API')
+	expect(page).toContain('M → tape le code → Se connecter')
+	expect(page).toContain('M → Mes souvenirs → Envoyer ce souvenir.')
+	expect(page).toContain('C:\\Users\\<toi>\\export')
+	expect(page).toContain('Il est aussi dans Options (l’icône Minemories).')
+	// The guide no longer points at the pause menu, which lost its Minemories button, nor at the export command.
+	expect(page).not.toMatch(/pause|Échap|\/minemories/i)
+	expect(page).not.toMatch(/validé|Most used|la plus utilisée|1\.18\.2 → 1\.21\.11/)
+	expect(document.querySelector('a[href="https://www.curseforge.com/minecraft/mc-mods/minemories"]')).toBeTruthy()
+	expect(document.querySelector('a[href="/gallery"]')?.textContent).toBe('Ouvrir ma galerie')
+	// "Si ça coince": the three answers of the FAQ.
+	expect(page).toContain('Le jeu plante au lancement ?')
+	expect(page).toContain('Le code ne marche pas ?')
+	expect(page).toContain('M ouvre autre chose ?')
+	// Connecting comes before the first memory: pairing does not send memories taken earlier.
+	expect(page.indexOf('Connecte le jeu')).toBeLessThan(page.indexOf('Ton premier souvenir'))
+})
+
+test('the version comes first, then only its loaders; the download button follows the choice', () => {
+	mountGuide()
+	expect(screen.queryByRole('group', { name: 'Quel loader de mods utilises-tu ?' })).toBeNull()
+	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' })[0]?.getAttribute('href')).toBe('/downloads')
+	fireEvent.click(version('1.21.11'))
+	const loaders = within(screen.getByRole('group', { name: 'Quel loader de mods utilises-tu ?' }))
+	expect(loaders.getAllByRole('radio').map(item => (item as HTMLInputElement).value)).toEqual([
+		'fabric',
+		'neoforge',
+		'forge',
+	])
+	expect(loaders.getAllByRole('radio').some(item => (item as HTMLInputElement).checked)).toBe(false)
+	expect(screen.queryByRole('link', { name: /^Télécharger pour Minecraft/ })).toBeNull()
+	fireEvent.click(radio('Fabric'))
+	expect(screen.getByRole('link', { name: 'Télécharger pour Minecraft 1.21.11 · Fabric' }).getAttribute('href')).toBe(
+		latestDownloadUrl('1.21.11', 'fabric')
 	)
-	expect(screen.getAllByText(/Options → Contrôles/).length).toBeGreaterThan(0)
-	next()
-	expect(title()).toBe('Créer un souvenir')
-	expect(screen.getByRole('heading', { name: 'Avec le menu' })).toBeTruthy()
-	expect(screen.getByRole('heading', { name: 'Avec une commande' })).toBeTruthy()
-	expect(screen.getByText('/minemories export 16')).toBeTruthy()
-	expect(screen.getByText(/de 2 à 128/)).toBeTruthy()
-	expect(screen.getByText('%USERPROFILE%\\export')).toBeTruthy()
-	expect(screen.getByText(/relie Minecraft à ta galerie privée/)).toBeTruthy()
-	expect(screen.getByText(/Les captures AFK sont actives par défaut/)).toBeTruthy()
-	click('Mon souvenir s’ouvre en 3D')
-	expect(title()).toBe('Ton premier souvenir est là.')
-	expect(document.activeElement).toBe(panel())
-	expect(screen.queryByRole('progressbar')).toBeNull()
-	expect(screen.getByRole('link', { name: /Explorer les captures/ }).getAttribute('href')).toBe('/how-it-works')
-	expect(stored()).toMatchObject({ step: 'done', minecraft: '1.21.11', loader: 'fabric', needsLoader: false })
-	click('Recommencer et effacer mes choix')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(stored()).toMatchObject({ active: false, step: 'system', minecraft: '1.21.1', loader: 'neoforge' })
-})
-
-test('without a loader, the guide installs the recommended one in a dedicated folder and places the mod there', () => {
-	platform('Win32')
-	mountGuide()
-	start()
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.21\.11(?!\d)/ }))
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
-	expect(stored()).toMatchObject({ needsLoader: true, loader: 'fabric' })
-	next()
-	expect(title()).toBe('Installer le loader')
-	expect(screen.getByText('Étape 4 sur 8')).toBeTruthy()
-	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]?.getAttribute('href')).toBe(
-		'https://fabricmc.net/use/installer/'
+	expect(screen.getByRole('link', { name: 'Fabric API' }).getAttribute('href')).toContain('g=1.21.11')
+	expect(text()).not.toContain('Quilt')
+	// The same loader is kept on another version that has it; 1.21.1 adds the Quilt note.
+	fireEvent.click(version('1.21.1'))
+	expect(radio('Fabric').checked).toBe(true)
+	expect(text()).toContain('Quilt : prends le JAR Fabric.')
+	// A version with a single loader selects it; without Fabric, the no-mods line installs that loader.
+	fireEvent.click(version('1.18.2'))
+	expect(radio('Forge').checked).toBe(true)
+	expect(text()).toContain('Tu joues sans mods ? Installe Forge avec son installeur officiel, puis Minemories.')
+	expect(screen.getByRole('link', { name: 'son installeur officiel' }).getAttribute('href')).toBe(
+		installerUrl(targetFor('1.18.2', 'forge') as LoaderTarget)
 	)
-	expect(screen.getAllByRole('link', { name: 'Java 21 (Temurin, site officiel)' }).length).toBeGreaterThan(0)
-	expect(screen.getAllByText('%APPDATA%\\.minecraft-minemories').length).toBeGreaterThan(0)
-	expect(screen.getByText('Pas à pas détaillé avec le Minecraft Launcher').closest('details')).toBeTruthy()
-	next()
-	next()
-	expect(title()).toBe('Ranger le fichier')
-	expect(screen.getByText('%APPDATA%\\.minecraft-minemories\\mods')).toBeTruthy()
-	click('← Retour')
-	click('← Retour')
-	click('← Retour')
-	expect(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' })).toHaveProperty('checked', true)
-	fireEvent.click(screen.getByRole('radio', { name: 'NeoForge' }))
-	expect(stored()).toMatchObject({ needsLoader: false, loader: 'neoforge' })
-	next()
-	expect(title()).toBe('Télécharger le mod')
+	expect(screen.queryByRole('link', { name: 'Fabric API' })).toBeNull()
+	expect(stored()).toEqual({ minecraft: '1.18.2', loader: 'forge' })
+	fireEvent.click(version('1.20.1'))
+	expect(stored()).toEqual({ minecraft: '1.20.1', loader: 'forge' })
+	fireEvent.click(version('26.3'))
+	expect(stored()).toEqual({ minecraft: '26.3', loader: 'fabric' })
+	fireEvent.click(version('1.21.11'))
+	expect(stored()).toEqual({ minecraft: '1.21.11', loader: 'fabric' })
 })
 
-test('Back returns one screen, and from the first screen to the welcome screen', () => {
+test('a link from the download table picks the version and loader and keeps its query string', () => {
+	mountGuide('/installation?minecraft=1.20.1&loader=fabric&src=downloads')
+	expect(version('1.20.1').checked).toBe(true)
+	expect(radio('Fabric').checked).toBe(true)
+	expect(screen.getByTestId('where').textContent).toBe('/installation?minecraft=1.20.1&loader=fabric&src=downloads')
+	expect(guideLink({ minecraft: '1.20.1', loader: 'fabric' })).toBe('/installation?minecraft=1.20.1&loader=fabric')
+})
+
+test('the choice is restored from this browser, and unusable storage leaves the guide working', () => {
+	saveChoice({ minecraft: '1.19.2', loader: 'fabric' })
 	mountGuide()
-	start()
-	next()
-	next()
-	expect(title()).toBe('Quel loader de mods utilises-tu ?')
-	click('← Retour')
-	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
-	click('← Retour')
-	click('← Retour')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(stored().active).toBe(false)
-})
-
-test('a version with a single loader still asks, to offer the no-loader choice', () => {
-	mountGuide()
-	start()
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.18\.2(?!\d)/ }))
-	next()
-	expect(title()).toBe('Quel loader de mods utilises-tu ?')
-	expect(screen.getAllByRole('radio')).toHaveLength(2)
-	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
-	next()
-	expect(title()).toBe('Installer le loader')
-	expect(screen.getAllByRole('link', { name: 'l’installateur Forge 40.3.12' })[0]?.getAttribute('href')).toBe(
-		'https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.2-40.3.12/forge-1.18.2-40.3.12-installer.jar'
-	)
-	click('← Retour')
-	expect(title()).toBe('Quel loader de mods utilises-tu ?')
-})
-
-test('a mac guide suggests its folders and a loader missing for a newly chosen version falls back', () => {
-	platform('MacIntel')
-	mountGuide()
-	start()
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: 'Fabric' }))
-	click('← Retour')
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.18\.2(?!\d)/ }))
-	expect(stored()).toMatchObject({ minecraft: '1.18.2', loader: 'forge' })
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
-	next()
-	expect(title()).toBe('Installer le loader')
-	expect(screen.getAllByText('~/Library/Application Support/minecraft-minemories').length).toBeGreaterThan(0)
-	expect(screen.getAllByRole('link', { name: 'l’installateur Forge 40.3.12' })[0]).toBeTruthy()
-	next()
-	next()
-	expect(screen.getByText('~/Library/Application Support/minecraft-minemories/mods')).toBeTruthy()
-	expect(screen.getByText(/Aller au dossier/)).toBeTruthy()
-})
-
-test('progress is saved and the guide resumes on the same screen after a reload without stealing focus', () => {
-	const view = mountGuide()
-	start()
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: /^1\.19\.2(?!\d)/ }))
-	next()
-	fireEvent.click(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' }))
-	next()
-	expect(title()).toBe('Installer le loader')
-	view.unmount()
-	mountGuide()
-	expect(title()).toBe('Installer le loader')
-	expect(screen.getByText('Étape 4 sur 8')).toBeTruthy()
-	expect(screen.getAllByRole('link', { name: 'l’installateur Fabric 0.20.1' })[0]).toBeTruthy()
-	expect(document.activeElement).not.toBe(panel())
-	click('← Retour')
-	expect(screen.getByRole('radio', { name: 'Je n’ai pas encore de loader de mods' })).toHaveProperty('checked', true)
-})
-
-test('a link from the download table pre-selects the version and loader and skips those two questions', () => {
-	mountGuide(guideLink(targetFor('1.21.11', 'fabric')))
-	expect(screen.getByTestId('where').textContent).toBe('/installation')
-	expect(title()).toBe('Sur quel ordinateur joues-tu ?')
-	expect(screen.getByText('Étape 1 sur 5')).toBeTruthy()
-	expect(stored()).toMatchObject({ minecraft: '1.21.11', loader: 'fabric', preset: true, active: true })
-	next()
-	expect(title()).toBe('Télécharger le mod')
-	click('← Retour')
-	click('← Retour')
-	start()
-	expect(screen.getByText('Étape 1 sur 7')).toBeTruthy()
-})
-
-test('an unknown pre-selection in the link is ignored', () => {
-	mountGuide('/installation?minecraft=9.9&loader=fabric')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(presetFromSearch(new URLSearchParams('minecraft=1.18.2&loader=fabric'))).toBeNull()
-	expect(presetFromSearch(new URLSearchParams('minecraft=1.18.2&loader=forge'))).toEqual({
-		minecraft: '1.18.2',
-		loader: 'forge',
-	})
-})
-
-test('copies the first capture command and gives a manual fallback when clipboard access fails', async () => {
-	const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('denied'))
-	Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-	platform('Linux x86_64')
-	mountGuide()
-	start()
-	for (let index = 0; index < 6; index++) next()
-	expect(title()).toBe('Créer un souvenir')
-	await act(async () => {
-		fireEvent.click(screen.getByRole('button', { name: 'Copier la commande de première capture' }))
-	})
-	expect(writeText).toHaveBeenCalledWith('/minemories export 16')
-	expect(screen.getByText('Copié !')).toBeTruthy()
-	await act(async () => {
-		fireEvent.click(screen.getByRole('button', { name: 'Copier le dossier du premier souvenir' }))
-	})
-	expect(screen.getByText('Sélectionne le texte ci-dessus pour le copier.')).toBeTruthy()
-	expect(writeText).toHaveBeenLastCalledWith('~/export')
-})
-
-test('the help stays reachable at the bottom of every screen', () => {
-	mountGuide()
-	const help = document.getElementById('aide') as HTMLElement
-	expect(within(help).getByRole('heading', { name: 'Si une étape coince' })).toBeTruthy()
-	start()
-	expect(document.getElementById('aide')).toBe(help)
-})
-
-test('the state helpers know which screens a choice needs', () => {
-	expect(stepsFor({ preset: false, needsLoader: true })).toHaveLength(8)
-	expect(stepsFor({ preset: false, needsLoader: false })).not.toContain('install')
-	expect(stepsFor({ preset: false, needsLoader: false })).toContain('loader')
-	expect(stepsFor({ preset: true, needsLoader: false })).toEqual(['system', 'download', 'place', 'verify', 'memory'])
-	expect(recommendedLoader('1.21.11')).toBe('fabric')
-	expect(recommendedLoader('1.21.1')).toBe('neoforge')
-	expect(recommendedLoader('1.18.2')).toBe('forge')
-	expect(loadersFor('1.18.2').map(item => item.loader)).toEqual(['forge'])
-	expect(guideLink({ minecraft: '1.21.1', loader: 'neoforge' })).toBe('/installation?minecraft=1.21.1&loader=neoforge')
-})
-
-test('ignores malformed stored state and remains usable if storage is blocked', () => {
-	localStorage.setItem(guideStorageKey, '{broken')
-	expect(readGuide()).toBeNull()
-	localStorage.setItem(guideStorageKey, 'null')
-	expect(readGuide()).toBeNull()
-	localStorage.setItem(
-		guideStorageKey,
-		JSON.stringify({ system: 'other', minecraft: '1.2.3', loader: 'other', step: 'nowhere', active: 'yes', preset: 1 })
-	)
-	expect(readGuide()).toEqual({ ...defaults, minecraft: '1.21.1', loader: 'neoforge' })
-	localStorage.setItem(
-		guideStorageKey,
-		JSON.stringify({ system: 'mac', minecraft: '1.18.2', loader: 'fabric', step: 'install' })
-	)
-	// The loader screen only exists for a visitor who said they have no loader.
-	expect(readGuide()).toMatchObject({ system: 'mac', minecraft: '1.18.2', loader: 'forge', step: 'system' })
-	localStorage.setItem(guideStorageKey, JSON.stringify({ minecraft: '1.18.2', step: 'install', needsLoader: true }))
-	expect(readGuide()).toMatchObject({ step: 'install', needsLoader: true })
-	localStorage.setItem(
-		guideStorageKey,
-		JSON.stringify({ system: 'linux', minecraft: '1.21.1', loader: 'forge', step: 'done', active: true })
-	)
-	expect(readGuide()).toMatchObject({ system: 'linux', loader: 'forge', step: 'done', active: true, preset: false })
+	expect(version('1.19.2').checked).toBe(true)
+	expect(radio('Fabric').checked).toBe(true)
+	cleanup()
+	localStorage.setItem(choiceStorageKey, '{broken')
+	expect(readChoice()).toBeNull()
+	localStorage.setItem(choiceStorageKey, JSON.stringify({ minecraft: '1.20.4', loader: 'fabric' }))
+	expect(readChoice()).toBeNull()
+	localStorage.setItem(choiceStorageKey, JSON.stringify({ minecraft: '1.21.1', loader: 'quilt' }))
+	expect(readChoice()).toEqual({ minecraft: '1.21.1', loader: '' })
+	localStorage.setItem(choiceStorageKey, 'null')
+	expect(readChoice()).toBeNull()
 	vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
 		throw new Error('blocked')
 	})
 	vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
 		throw new Error('blocked')
 	})
-	vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
-		throw new Error('blocked')
-	})
-	expect(readGuide()).toBeNull()
-	expect(() => saveGuide(defaults)).not.toThrow()
-	expect(resetGuide('mac')).toEqual({ ...defaults, system: 'mac' })
 	mountGuide()
-	start()
-	next()
-	expect(title()).toBe('À quelle version de Minecraft joues-tu ?')
-	click('← Retour')
-	click('← Retour')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
+	fireEvent.click(version('1.21.1'))
+	expect(version('1.21.1').checked).toBe(true)
+})
+
+test('the state helpers pick no default and install Fabric first for a player without mods', () => {
+	expect(noChoice).toEqual({ minecraft: '', loader: '' })
+	expect(chooseMinecraft(noChoice, '1.21.1')).toEqual({ minecraft: '1.21.1', loader: '' })
+	expect(chooseMinecraft({ minecraft: '1.21.1', loader: 'neoforge' }, '1.20.1')).toEqual({
+		minecraft: '1.20.1',
+		loader: '',
+	})
+	expect(starterLoader('1.21.1')?.loader).toBe('fabric')
+	expect(starterLoader('1.18.2')?.loader).toBe('forge')
+	expect(starterLoader('1.20.4')).toBeNull()
+	expect(targetFor('1.20.4', 'fabric')).toBeNull()
+	expect(presetFromSearch(new URLSearchParams('minecraft=1.20.4&loader=fabric'))).toBeNull()
+	expect(presetFromSearch(new URLSearchParams())).toBeNull()
+	expect(versionBadge('1.21.1')).toBe('Most tested')
+	expect(versionBadge('26.3')).toBe('Experimental')
+	expect(versionBadge('1.21.11')).toBeNull()
+})
+
+test('in English the guide quotes the mod’s own labels and the default folders', () => {
+	renderUi(
+		<I18nProvider initialLocale="en">
+			<MemoryRouter>
+				<InstallationPage />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	expect(text()).not.toMatch(/[àâçéèêëîïôùûü]/i)
+	expect(text()).toContain('Press M → Take a memory. It then goes to your gallery on its own.')
+	expect(text()).toContain('Memories taken before you connected? M → My memories → Send this memory.')
+	expect(text()).toContain('%APPDATA%\\.minecraft\\mods')
+	expect(text()).toContain('/Users/<you>/export')
+	expect(screen.getByRole('img', { name: 'The Minemories menu with the Take a memory button' })).toBeTruthy()
 })

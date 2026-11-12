@@ -39,7 +39,7 @@ const latestRelease = (extra: Record<string, unknown> = {}) => ({
 	],
 	more: 4,
 	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-	changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+	changelogUrl: 'https://minemories.xenos.lightin.io/versions',
 	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
 	...extra,
 })
@@ -133,7 +133,7 @@ test('the latest mod version sits above the board with its date, beta chip, note
 	expect(pr.getAttribute('rel')).toContain('noopener')
 	expect(within(card).getByText('+4 more changes')).toBeTruthy()
 	expect(within(card).getByRole('link', { name: 'Download' }).getAttribute('href')).toBe('/downloads')
-	expect(within(card).getByRole('link', { name: 'All changes' }).getAttribute('href')).toBe('/changelog')
+	expect(within(card).getByRole('link', { name: 'All changes' }).getAttribute('href')).toBe('/versions')
 	const compare = within(card).getByRole('link', { name: 'Compare on GitHub ↗' })
 	expect(compare.getAttribute('href')).toBe(
 		'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1'

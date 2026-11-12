@@ -9,49 +9,53 @@ export function GalleryPairingCard({
 	pairedFresh: boolean
 }) {
 	const { t } = useI18n()
-	const { pairStatus, pairCode, pairExpires, pairBusy, createPairing, copyCode } = pairing
+	const { pairStatus, pairCode, pairBusy, createPairing, copyCode } = pairing
 	const pending = pairStatus === 'pending'
+	// A connected game stays connected (device tokens never expire), even after a long silence: never ask to connect again.
+	const connected = pairStatus === 'paired'
 	const note = pairingNote(pairedFresh, pairStatus)
 	return (
-		<section className="gallery-link" data-linked={pairedFresh} aria-live="polite">
+		<section className="gallery-link" data-linked={connected} aria-live="polite">
 			<span className="gallery-link-icon" aria-hidden="true">
-				<GalleryIcon name={pairedFresh ? 'check' : 'cube'} />
+				<GalleryIcon name={connected ? 'check' : 'cube'} />
 			</span>
 			<div className="gallery-link-text">
-				<h2>{pairedFresh ? t('Your mod is paired.') : t('Link Minecraft to your gallery.')}</h2>
+				<h2>{connected ? t('Your game is connected.') : t('Connect your game to your gallery.')}</h2>
 				{note && <p>{t(note)}</p>}
 			</div>
 			{pending ? (
 				<div className="gallery-link-code">
 					<small>{t('CODE FOR THE GAME')}</small>
-					<button type="button" onClick={copyCode} aria-label={t('Copy the pairing code')}>
+					<button type="button" onClick={copyCode} aria-label={t('Copy the code')}>
 						{pairCode.slice(0, 3)} {pairCode.slice(3)}
 					</button>
+					<small>
+						{t('In Minecraft: M → type this code → Connect.')} {t('Valid for 5 minutes, once only.')}
+					</small>
 					<small className="gallery-link-wait">
 						<i aria-hidden="true" /> {t('Waiting for Minecraft…')}
-						<span>
-							{t('Expires at')} {pairExpires}
-						</span>
 					</small>
 				</div>
 			) : (
 				<button className="gallery-view" type="button" onClick={() => void createPairing()} disabled={pairBusy}>
-					{t(pairingButtonLabel(pairBusy, pairedFresh))} <span>↗</span>
+					{t(pairingButtonLabel(pairBusy, connected))} <span>↗</span>
 				</button>
 			)}
 		</section>
 	)
 }
-function pairingButtonLabel(busy: boolean, pairedFresh: boolean): string {
+function pairingButtonLabel(busy: boolean, connected: boolean): string {
 	if (busy) return 'Creating…'
-	return pairedFresh ? 'New code' : 'Link my server'
+	// A second code connects another computer.
+	return connected ? 'New code' : 'Get a code'
 }
 
-/** Only failures and stale links deserve a sentence; the happy path stays quiet. */
+/** Only failures and a silent game deserve a sentence; the happy path stays quiet. */
 function pairingNote(pairedFresh: boolean, status: PairingStatus): string | null {
 	if (status === 'expired') return 'This code expired. Generate a new one.'
-	if (status === 'error') return 'Verification failed. Check that the API is running.'
+	if (status === 'error') return 'The code could not be checked. Get a new one.'
+	// Device tokens never expire: a long silence means the mod is missing or signed out, not a stale code.
 	if (status === 'paired' && !pairedFresh)
-		return 'No snapshot for two months. Link the mod again to resume auto-upload.'
+		return 'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
 	return null
 }

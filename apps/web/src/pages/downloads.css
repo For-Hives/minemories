@@ -93,6 +93,14 @@
 	min-width: 168px;
 }
 
+/* The Java version a row needs: short, so the column stays narrow. */
+.mm-dl-table .mm-dl-java {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-align: center;
+	white-space: nowrap;
+}
+
 .mm-dl-button {
 	min-height: var(--ds-hit);
 }
@@ -120,6 +128,12 @@
 .mm-dl-guide {
 	display: inline-block;
 	margin-top: var(--ds-sp-2);
+}
+
+.mm-dl-guide,
+.mm-dl-links a {
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
 }
 
 /* No file for the pair: a grayed, hatched cell that says why. */

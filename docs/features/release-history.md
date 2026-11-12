@@ -1,9 +1,8 @@
 # Mod versions and changelog
 
-Issue [#61](https://github.com/For-Hives/minemories/issues/61) adds two public pages:
+Issue [#61](https://github.com/For-Hives/minemories/issues/61) adds the public `/versions` page: history of compatible JARs, with the latest release highlighted, mod version, Minecraft, loader, localized UTC date, pre-release status, size, direct download and a link to the built commit of each version. A `/versions#v<version>` link goes to the requested version.
 
-- `/versions`: history of compatible JARs, with the latest release highlighted, mod version, Minecraft, loader, localized UTC date, pre-release status, size and direct download.
-- `/changelog`: the same releases, with a link to the built commit for each version. A `/changelog#v<version>` link goes to the requested version.
+The former `/changelog` page showed the same releases; it now answers with a 301 to `/versions` (the fragment survives the redirect), as the site plan merges the two (#243).
 
 The `/installation` tutorial and the footer link to this history. To update or go back to an earlier version, close Minecraft and keep a single Minemories JAR in the `mods` folder of the compatible profile.
 

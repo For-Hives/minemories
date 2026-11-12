@@ -35,10 +35,11 @@ test('a mod change runs the mod gate only', () => {
 	only(['mod/targets.json', 'scripts/mod/cli.mjs'], 'web', 'mod')
 	only(['mod/1.19.2/forge/build.gradle', 'mod/shared/core/src/main/java/dev/minemories/core/GlbScene.java'], 'mod')
 })
-test('a Discord sync change runs the Discord gate only (the shared notes fixture also runs the API)', () => {
+test('a Discord sync change runs the Discord gate only (the shared notes fixture also runs the API and the site)', () => {
 	only(['scripts/discord/roadmap.mjs'], 'discord')
-	only(['scripts/discord/fixtures/curated-notes.json'], 'api', 'discord')
-	only(['mod/release-notes/0.37.0-beta.1.md', 'mod/release-notes/README.md'], 'discord')
+	only(['scripts/discord/fixtures/curated-notes.json'], 'web', 'api', 'discord')
+	// /versions bundles the notes at build time: a new notes file also runs the web gate.
+	only(['mod/release-notes/0.37.0-beta.1.md', 'mod/release-notes/README.md'], 'web', 'discord')
 	only(['.github/workflows/discord.yml'], 'discord')
 })
 test('documentation alone runs no gate', () => {

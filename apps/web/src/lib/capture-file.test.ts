@@ -6,6 +6,7 @@ import {
 	capturePollDelay,
 	downloadCapture,
 	requireCaptureReady,
+	SCENE_UNREACHABLE,
 } from './capture-file'
 
 const availability = {
@@ -49,6 +50,9 @@ test('revocation and cancellation cannot deliver a file after storage or body re
 		signal = controller.signal
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })))
 	await expect(downloadCapture('/revoked', 'f.glb', signal)).rejects.toThrow('unavailable')
+	// A storage outage is not a revocation: the visitor is told to try again.
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })))
+	await expect(downloadCapture('/outage', 'f.glb', signal)).rejects.toThrow(SCENE_UNREACHABLE)
 	controller.abort(new Error('stopped'))
 	await expect(downloadCapture('/stopped', 'f.glb', signal)).rejects.toThrow('stopped')
 	const bodyController = new AbortController(),

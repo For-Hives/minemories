@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import { type Locale, useI18n } from '../i18n/I18n'
 import { localeTag } from '../i18n/locales'
-import { metadataFor, siteOrigin, socialImage, structuredDataFor } from '../route-metadata'
+import { metadataFor, siteOrigin, socialImage } from '../route-metadata'
+import { structuredDataFor } from '../structured-data'
 
 function meta(name: string, content: string, attribute: 'name' | 'property' = 'name') {
 	let element = document.querySelector<HTMLMetaElement>(`meta[${attribute}="${name}"]`)
@@ -22,6 +23,7 @@ function publicHead(page: ReturnType<typeof metadataFor>, locale: Locale) {
 		document.head.append(canonical)
 	}
 	canonical.href = canonicalUrl
+	meta('og:site_name', 'Minemories', 'property')
 	meta('og:title', page.title, 'property')
 	meta('og:description', page.description, 'property')
 	meta('og:url', canonicalUrl, 'property')

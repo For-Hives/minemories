@@ -1,22 +1,10 @@
-import { type ReactNode, useState } from 'react'
-import { Link } from 'react-router'
-import { RadiusMap, SeasonDemo, ShareDemo } from '../components/diagrams'
-import {
-	Command,
-	FileTree,
-	Glyph,
-	type GlyphName,
-	More,
-	TabPanel,
-	type TabSpec,
-	TabStrip,
-	type Verdict,
-	VerdictChip,
-} from '../components/explainers'
-import { MemoryScene } from '../components/MemoryScene'
-import { buttonLime, buttonOutline } from '../components/ui'
-import type { DemoTheme } from '../content/discovery'
-import { T, useI18n } from '../i18n/I18n'
+import type { ReactNode } from 'react'
+import { Link, useLocation } from 'react-router'
+import { RadiusMap, ShareDemo } from '../components/diagrams'
+import { FileTree, Glyph, type GlyphName } from '../components/explainers'
+import { buttonLime } from '../components/ui'
+import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
+import { useI18n } from '../i18n/I18n'
 
 export const infoLinks = [
 	{ to: '/concept', label: 'The concept' },
@@ -40,519 +28,224 @@ export function InfoNavigation() {
 	)
 }
 
-function InfoPage({ title, children }: { title: string; children: ReactNode }) {
+export function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
 		<article lang={locale} className="mm-info">
 			<InfoNavigation />
 			<h1>{t(title)}</h1>
 			{children}
-			<InfoNavigation />
 		</article>
 	)
 }
 
-type Persona = 'admin' | 'parent' | 'player' | 'creator'
-const personas: Array<TabSpec<Persona> & { theme: DemoTheme; line: string }> = [
-	{
-		id: 'admin',
-		label: 'An admin',
-		glyph: 'shield',
-		theme: 'village',
-		line: 'Capture the places of the group before the server closes.',
-	},
-	{ id: 'parent', label: 'A parent', glyph: 'heart', theme: 'home', line: 'Keep a build made with your child.' },
-	{
-		id: 'player',
-		label: 'A casual player',
-		glyph: 'home',
-		theme: 'garden',
-		line: 'Revisit your house whenever you like.',
-	},
-	{
-		id: 'creator',
-		label: 'A modpack creator',
-		glyph: 'cube',
-		theme: 'village',
-		line: 'Keep a record of your modded builds.',
-	},
+const notThis: Array<[GlyphName, string]> = [
+	['refresh', 'Not playable'],
+	['pencil', 'Not editable'],
+	['disk', 'Not a backup'],
+	['cube', 'One area, not the whole world'],
+	['globe', 'Java on a computer only'],
 ]
-const canDo: Array<[GlyphName, string]> = [
-	['view', 'Look around in 3D'],
-	['globe', 'Open it in any browser'],
-	['link', 'Share it by link'],
-]
-const cannotDo: Array<[GlyphName, string]> = [
-	['refresh', 'Resume the game'],
-	['pencil', 'Break blocks'],
-	['disk', 'Replace your backup'],
-]
+type Cell = 'Yes' | 'No' | (string & {})
+/** The ways to keep a build, compared on what a player asks first. Dated: the other tools change. */
+const comparison: { columns: string[]; rows: Array<[string, Cell, Cell, Cell, Cell]> } = {
+	columns: [
+		'Nothing to install on the server',
+		'Viewable without Minecraft',
+		'Stays after the server closes',
+		'Playable again',
+	],
+	rows: [
+		['Minemories', 'Yes', 'Yes, in 3D', 'Yes, if captured before', 'No'],
+		['Screenshots, video', 'Yes', 'Yes, one view', 'Yes', 'No'],
+		['Replay Mod', 'Yes', 'No, it needs Minecraft and the mod', 'Yes', 'No'],
+		['World copy (WorldTools, ZIP)', 'With the admin’s consent', 'No', 'Yes', 'Yes'],
+		['BlueMap', 'No, it runs on the server', 'Yes', 'No, unless hosted separately', 'No'],
+	],
+}
 
-function CanList({ title, items, tone }: { title: string; items: Array<[GlyphName, string]>; tone: 'yes' | 'no' }) {
+function Comparison() {
 	const { t } = useI18n()
 	return (
-		<div className={`ex-can-${tone}`}>
-			<h2>{t(title)}</h2>
-			<ul>
-				{items.map(([glyph, label]) => (
+		// biome-ignore lint/a11y/noNoninteractiveTabindex: the table scrolls on its own on a phone; keyboard users need to reach it.
+		<section className="ex-table-scroll" tabIndex={0} aria-label={t('Compared in November 2026.')}>
+			<table className="ex-compare">
+				<caption>{t('Compared in November 2026.')}</caption>
+				<thead>
+					<tr>
+						<td />
+						{comparison.columns.map(column => (
+							<th key={column} scope="col">
+								{t(column)}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{comparison.rows.map(([name, ...cells]) => (
+						<tr key={name}>
+							<th scope="row">{t(name)}</th>
+							{cells.map((cell, index) => (
+								<td key={comparison.columns[index]} data-verdict={cell.startsWith('Yes') ? 'yes' : 'no'}>
+									{t(cell)}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</section>
+	)
+}
+
+export function ConceptPage() {
+	const { t } = useI18n()
+	return (
+		<InfoPage title="Your Minecraft world, ready to visit in 3D">
+			<p className="ex-lead">
+				{t(
+					'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.'
+				)}
+			</p>
+			<h2>{t('What it is not')}</h2>
+			<ul className="ex-not">
+				{notThis.map(([glyph, label]) => (
 					<li key={label}>
 						<Glyph name={glyph} />
 						{t(label)}
 					</li>
 				))}
 			</ul>
+			<h2>{t('Other ways to keep a build')}</h2>
+			<Comparison />
+			<h2>{t('Questions')}</h2>
+			<Questions ids={pageQuestions.concept} />
+			<p>
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
+				</Link>
+			</p>
+		</InfoPage>
+	)
+}
+
+/** The four steps, top to bottom, each with its drawing: what the mod takes, where the file lands, what connecting adds, what sharing shows. */
+export function HowItWorksPage() {
+	const { t } = useI18n()
+	return (
+		<InfoPage title="From Minecraft world to 3D memory">
+			<ol className="ex-steps">
+				<li>
+					<h2>{t('1. You play')}</h2>
+					<p>
+						{t('Press M → Take a memory.')}{' '}
+						{t(
+							'Or leave the game for 5 minutes, even paused: the mod keeps one on its own (at most one every 4 hours).'
+						)}{' '}
+						{t('About 32 blocks around you, adjusted to what you built.')}
+					</p>
+					<RadiusMap initial={32} />
+				</li>
+				<li>
+					<h2>{t('2. The file stays with you')}</h2>
+					<p>
+						{t('Each memory is a GLB file, textures and lights included, in the export folder of your home folder.')}
+					</p>
+					<FileTree />
+				</li>
+				<li>
+					<h2>{t('3. You connect the game, if you want')}</h2>
+					<p>
+						{t('On the site, create an account and get a 6-digit code.')}{' '}
+						{t('In Minecraft: M → type the code → Connect.')} {t('Your memories then go to your private gallery.')}
+					</p>
+					<ol className="ex-chain">
+						<li>
+							<Glyph name="key" />
+							<Link to="/gallery">{t('Get a code in your gallery')}</Link>
+						</li>
+						<li>
+							<Glyph name="code" />
+							{t('In Minecraft: M → type the code → Connect')}
+						</li>
+						<li>
+							<Glyph name="cloud" />
+							{t('Your memories go to your gallery on their own')}
+						</li>
+					</ol>
+				</li>
+				<li>
+					<h2>{t('4. You show it, if you want')}</h2>
+					<p>
+						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
+						{t('You stop sharing whenever you want.')}
+					</p>
+					<ShareDemo />
+					<p className="ex-line">
+						{t(
+							'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+						)}
+					</p>
+				</li>
+			</ol>
+			<h2>{t('Questions')}</h2>
+			<Questions ids={pageQuestions.howItWorks} />
+			<p>
+				<Link to="/safety">{t('Is Minemories safe?')} →</Link>
+			</p>
+			<p>
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
+				</Link>
+			</p>
+		</InfoPage>
+	)
+}
+
+/**
+ * Questions and their short answers, from content/faq.ts. On /faq each one carries its anchor (`/faq#ban`). An answer's
+ * link to the page it is shown on is left out.
+ */
+export function Questions({ ids, anchors = false }: { ids: readonly QuestionId[]; anchors?: boolean }) {
+	const { t } = useI18n()
+	const { pathname } = useLocation()
+	return (
+		<div className="ex-faq">
+			{ids.map(id => {
+				const entry: FaqEntry = questions[id]
+				const { question, answer } = faqText(id, t)
+				return (
+					<div key={id} className="ex-faq-item" id={anchors ? id : undefined}>
+						<h3>{anchors ? <a href={`#${id}`}>{question}</a> : question}</h3>
+						<p>
+							{answer}
+							{entry.link && entry.link.to !== pathname && (
+								<>
+									{' '}
+									<Link to={entry.link.to}>{t(entry.link.label)} →</Link>
+								</>
+							)}
+						</p>
+					</div>
+				)
+			})}
 		</div>
 	)
 }
 
-export function ConceptPage() {
-	const { t } = useI18n()
-	const [persona, setPersona] = useState<Persona>('admin')
-	return (
-		<InfoPage title="The builds remain, even when the season ends">
-			<SeasonDemo />
-			<div className="ex-can">
-				<CanList title="You can" items={canDo} tone="yes" />
-				<CanList title="You cannot" items={cannotDo} tone="no" />
-			</div>
-			<h2>
-				<T message={'Who is it for?'} />
-			</h2>
-			<TabStrip
-				base="persona"
-				label={t('Who is it for?')}
-				tabs={personas.map(item => ({ ...item, label: t(item.label) }))}
-				value={persona}
-				onChange={setPersona}
-			/>
-			{personas.map(item => (
-				<TabPanel key={item.id} base="persona" id={item.id} active={item.id === persona}>
-					<div className="ex-persona">
-						<MemoryScene theme={item.theme} label={t(item.label)} />
-						<p>{t(item.line)}</p>
-					</div>
-				</TabPanel>
-			))}
-			<p>
-				<Link className={buttonLime} to="/how-it-works">
-					<T message={'Create my first memory, step by step'} />
-				</Link>
-			</p>
-		</InfoPage>
-	)
-}
-
-type Step = 'install' | 'capture' | 'file' | 'upload' | 'share'
-const steps: Array<TabSpec<Step>> = [
-	{ id: 'install', label: 'Install', glyph: 'download' },
-	{ id: 'capture', label: 'Capture', glyph: 'crosshair' },
-	{ id: 'file', label: 'File', glyph: 'cube' },
-	{ id: 'upload', label: 'Upload', glyph: 'cloud' },
-	{ id: 'share', label: 'Share', glyph: 'link' },
-]
-
-function InstallStep() {
-	return (
-		<>
-			<h2>
-				<T message={'1. Install and open the world'} />
-			</h2>
-			<ul className="ex-loaders">
-				{['NeoForge', 'Fabric', 'Forge'].map(loader => (
-					<li key={loader}>
-						<Glyph name="cube" />
-						{loader}
-					</li>
-				))}
-			</ul>
-			<p>
-				<Link className={buttonLime} to="/installation">
-					<T message={'guides.install.action'} />
-				</Link>
-			</p>
-			<More>
-				<p>
-					<Link to="/installation">
-						<T message={'guides.install.action'} />
-					</Link>{' '}
-					<T
-						message={
-							'on your computer, then open your world or join your server using its usual compatible profile. The server must still be accessible to capture its builds.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function CaptureStep() {
-	return (
-		<>
-			<h2>
-				<T message={'2. Choose a small area and capture it'} />
-			</h2>
-			<RadiusMap />
-			<More>
-				<p>
-					<T message={'For your first attempt, stand near the build and type'} /> <code>/minemories export 16</code>{' '}
-					<T
-						message={
-							'in chat. 16 is the radius in blocks around you; accepted values range from 2 to 128. Start small: a large area can slow the game. The mod captures what the client has loaded, not the entire server.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'By default, underground capture is limited to the depth visited in this area, with at least five blocks of margin below the visited position. Entering a cave extends future captures of that area. Tracking starts with this mod version and stays on your computer. Cavities above this limit may still appear. In M → Settings → Memories → Auto captures, “Captured depth” can switch to the full dimension; an explicit selection keeps the height of its two corners.'
-						}
-					/>
-				</p>
-				<p>
-					<T message={'For a precise area, stand at the first corner and enter'} />{' '}
-					<code>/minemories select first</code>
-					<T message={', then at the opposite corner with'} /> <code>/minemories select second</code>
-					<T message={'. These positions also define the height. Check with'} /> <code>/minemories select status</code>
-					<T message={', then run'} /> <code>/minemories export selection</code>.<code> /minemories select clear</code>{' '}
-					<T message={'clears the selection.'} />
-				</p>
-				<p>
-					<T
-						message={
-							'The M key opens the Minemories menu. To connect your gallery, type the six-digit code generated in it and click “Connect”. “Take a memory” works as soon as a world is open: without an account, the memory stays on your computer; once connected, it is also sent to your private gallery. If M is already assigned, change its shortcut in Minecraft controls.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'The sides and bottom of the capture are closed with a dirt/stone appearance, like an extracted piece of world. These faces are added to the 3D memory: no blocks are changed in Minecraft.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function FileStep() {
-	return (
-		<>
-			<h2>
-				<T message={'3. Find the file on your computer'} />
-			</h2>
-			<FileTree />
-			<More>
-				<p>
-					<T message={'The result is a file named'} /> <code>capture.glb</code> <T message={'in the folder'} />{' '}
-					<code>export</code> <T message={'under your user directory ('} />
-					<code>~/export/capture.glb</code>
-					<T
-						message={
-							') by default, not in the world folder. In M → Settings → Memories, you can choose another folder and click “Save”; “Save here” exports without connecting an account. Here GLB means a 3D file containing shapes and textures. With the current mod version, every dated capture and its information are also kept in the subfolder'
-						}
-					/>{' '}
-					<code>history</code>. <code>capture.glb</code>
-					<T
-						message={
-							'points to the latest export. In the M menu, “My memories” lets you choose an older memory and send it to your gallery. Keep your own backups: the history takes up space on your computer.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'To revisit it on the site, send this memory from M → My memories, then open it in your private gallery.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function UploadStep() {
-	return (
-		<>
-			<h2>
-				<T message={'4. Upload to your gallery, if you choose'} />
-			</h2>
-			<ol className="ex-chain">
-				<li>
-					<Glyph name="key" />
-					<Link to="/gallery">
-						<T message={'Get a code in your gallery'} />
-					</Link>
-				</li>
-				<li>
-					<Glyph name="code" />
-					<T message={'Enter it in chat'} />
-					<Command text="/minemories pair CODE" />
-				</li>
-				<li>
-					<Glyph name="cloud" />
-					<T message={'Upload the capture'} />
-					<Command text="/minemories upload" />
-				</li>
-			</ol>
-			<p className="ex-line">
-				<T message={'The code lasts 5 minutes and works once.'} />
-			</p>
-			<More>
-				<ol>
-					<li>
-						<Link to="/register">
-							<T message={'Create your account'} />
-						</Link>{' '}
-						<T message={'or'} />{' '}
-						<Link to="/login">
-							<T message={'sign in'} />
-						</Link>
-						<T message={', then open'} />{' '}
-						<Link to="/gallery">
-							<T message={'My gallery'} />
-						</Link>
-						.
-					</li>
-					<li>
-						<T
-							message={
-								'Generate a pairing code in the gallery. Pairing links this Minecraft installation to your Minemories account.'
-							}
-						/>
-					</li>
-					<li>
-						<T message={'In Minecraft chat, enter'} /> <code>/minemories pair CODE</code>{' '}
-						<T
-							message={
-								'replacing CODE with the six digits. The code expires after five minutes and can only be used once. Never type your password in Minecraft.'
-							}
-						/>
-					</li>
-					<li>
-						<T message={'Enter'} /> <code>/minemories upload</code>{' '}
-						<T
-							message={
-								'to upload the capture, then check that it appears in the gallery. The mod accepts files up to 450 MiB (about 472 MB). If the limit is exceeded, capture a smaller area.'
-							}
-						/>
-					</li>
-				</ol>
-				<p>
-					<T
-						message={
-							'AFK captures are enabled by default: after 5 minutes of inactivity, at most once every 4 hours, even in the pause menu or while Minecraft is in the background. Without a connected account, they stay in your local folder. With a connected account, they also upload to your private gallery. The “Auto memories” button in M turns them on or off; M → Settings → Memories → Auto captures adjusts the delays and capture radius (32 blocks by default). A previously saved disable preference is preserved.'
-						}
-					/>
-				</p>
-				<p>
-					<strong>
-						<T message={'Use your own API (advanced)'} />
-					</strong>
-				</p>
-				<p>
-					<T message={'The mod uses'} /> <code>https://api.minemories.net</code>{' '}
-					<T
-						message={
-							'by default. In M → Settings → Account, you can enter the HTTPS address of a compatible self-hosted Minemories API, then click “Save”. HTTP is accepted only for an API on localhost. Changing API disconnects the account: generate a new code in the gallery belonging to that API. The “Official address” button restores the official address; save to apply it.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-function ShareStep() {
-	return (
-		<>
-			<h2>
-				<T message={'5. Share only what you choose'} />
-			</h2>
-			<ShareDemo />
-			<More>
-				<p>
-					<T
-						message={
-							'The gallery is private by default. On a capture, “Share” then “Create a link” creates a link accessible to anyone who has it; they can forward it too. You can revoke the link from this panel, but this does not delete copies someone has already saved.'
-						}
-					/>
-				</p>
-				<p>
-					<T
-						message={
-							'Before sharing, check the capture and its associated information: coordinates, server or world name, and single-player world seed may be recorded. Avoid places or text containing personal information and ask the other builders for permission.'
-						}
-					/>
-				</p>
-			</More>
-		</>
-	)
-}
-
-const stepBody: Record<Step, () => ReactNode> = {
-	install: InstallStep,
-	capture: CaptureStep,
-	file: FileStep,
-	upload: UploadStep,
-	share: ShareStep,
-}
-
-export function HowItWorksPage() {
-	const { t } = useI18n()
-	const [step, setStep] = useState<Step>('install')
-	return (
-		<InfoPage title="From Minecraft world to 3D memory">
-			<TabStrip
-				base="step"
-				label={t('From Minecraft world to 3D memory')}
-				tabs={steps.map(item => ({ ...item, label: t(item.label) }))}
-				value={step}
-				onChange={setStep}
-			/>
-			{steps.map(item => {
-				const Body = stepBody[item.id]
-				return (
-					<TabPanel key={item.id} base="step" id={item.id} active={item.id === step}>
-						<Body />
-					</TabPanel>
-				)
-			})}
-		</InfoPage>
-	)
-}
-
-interface Question {
-	topic: Topic
-	glyph: GlyphName
-	question: string
-	answer: string
-	verdict?: Verdict
-}
-type Topic = 'world' | 'captures' | 'sharing'
-const topics: Array<TabSpec<Topic>> = [
-	{ id: 'world', label: 'Your world', glyph: 'home' },
-	{ id: 'captures', label: 'Captures', glyph: 'cube' },
-	{ id: 'sharing', label: 'Sharing', glyph: 'link' },
-]
-const questions: Question[] = [
-	{
-		topic: 'world',
-		glyph: 'disk',
-		question: 'Is this a backup of my world?',
-		answer: 'It is a static 3D view of one area. Keep your Minecraft backup too.',
-		verdict: 'no',
-	},
-	{
-		topic: 'world',
-		glyph: 'cube',
-		question: 'Can I keep a vanilla build?',
-		answer:
-			'Yes, if you can open a copy on Java 1.21.1 with NeoForge, Fabric or Forge and Minemories; Quilt uses the Fabric JAR. No Bedrock or consoles.',
-		verdict: 'yes',
-	},
-	{
-		topic: 'world',
-		glyph: 'code',
-		question: 'Do I need to install anything on the server?',
-		answer: 'It is a client mod. Ask the admin first and capture only what you may.',
-		verdict: 'no',
-	},
-	{
-		topic: 'world',
-		glyph: 'clock',
-		question: 'Can I recover a closed server or import a ZIP?',
-		answer: 'Not directly. The world must reopen in a compatible setup to be captured.',
-		verdict: 'later',
-	},
-	{
-		topic: 'captures',
-		glyph: 'layers',
-		question: 'Is it compatible with every mod?',
-		answer: 'Not guaranteed. Custom-rendered blocks can be incomplete: try a small capture first.',
-		verdict: 'depends',
-	},
-	{
-		topic: 'captures',
-		glyph: 'view',
-		question: 'Why is part of the build missing?',
-		answer: 'Move closer, check your corners and height, or capture a smaller area.',
-	},
-	{
-		topic: 'captures',
-		glyph: 'key',
-		question: 'The code does not work or uploading fails: what should I do?',
-		answer: 'Codes expire after 5 minutes and work once. Generate a new one and retry; your local file is safe.',
-	},
-	{
-		topic: 'captures',
-		glyph: 'restore',
-		question: 'How can I find an older capture?',
-		answer: 'M → My memories lists dated captures from the history folder.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'globe',
-		question: 'Do I need an account or mod to view a memory?',
-		answer: 'A shared link opens in any browser. You only need an account to upload.',
-		verdict: 'no',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'heart',
-		question: "Who can see my child's memories?",
-		answer: 'Private by default. Anyone with a link you create can see it until you revoke it.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'refresh',
-		question: 'Does the mod upload everything automatically?',
-		answer: 'AFK captures upload only once paired. Turn them off with “Auto memories” in M.',
-	},
-	{
-		topic: 'sharing',
-		glyph: 'clock',
-		question: 'Is there timelapse, 3D printing or a subscription?',
-		answer: 'Timelapse links dated captures. 3D printing is only an idea, and no price is confirmed.',
-	},
-]
-
 export function FaqPage() {
 	const { t } = useI18n()
-	const [topic, setTopic] = useState<Topic>('world')
 	return (
 		<InfoPage title="Frequently asked questions">
-			<TabStrip
-				base="faq"
-				label={t('Frequently asked questions')}
-				tabs={topics.map(item => ({ ...item, label: t(item.label) }))}
-				value={topic}
-				onChange={setTopic}
-			/>
-			{topics.map(item => (
-				<TabPanel key={item.id} base="faq" id={item.id} active={item.id === topic}>
-					<div className="ex-rows ex-rows--flat">
-						{questions
-							.filter(entry => entry.topic === item.id)
-							.map(entry => (
-								<details key={entry.question} className="ex-row">
-									<summary>
-										<Glyph name={entry.glyph} />
-										<h2 className="ex-q">{t(entry.question)}</h2>
-										{entry.verdict && <VerdictChip verdict={entry.verdict} />}
-									</summary>
-									<div className="ex-row-body">
-										<p>{t(entry.answer)}</p>
-									</div>
-								</details>
-							))}
-					</div>
-				</TabPanel>
+			{faqGroups.map(group => (
+				<section key={group.label} className="ex-faq-group">
+					<h2>{t(group.label)}</h2>
+					<Questions ids={group.ids} anchors />
+				</section>
 			))}
 			<p>
-				<Link className={buttonOutline} to="/how-it-works">
-					<T message={'All the steps to capture, upload and share'} />
+				<Link className={buttonLime} to="/installation">
+					{t('Install the mod')}
 				</Link>
 			</p>
 		</InfoPage>

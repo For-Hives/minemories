@@ -19,6 +19,9 @@ const rules = {
 		/^packages\/api-contract\//,
 		// The versions page reads the loader list.
 		/^mod\/targets\.json$/,
+		// /versions bundles the curated release notes and checks its parser against the shared fixture.
+		/^mod\/release-notes\//,
+		/^scripts\/discord\/fixtures\//,
 		/^scripts\/(hero-assets\/|brand\/|boot-screen\/|build-web|prerender-web|smoke-web)/,
 		// The nginx configuration of the static front end.
 		/^deploy\/nginx\.web\.conf$/,
@@ -31,7 +34,7 @@ const rules = {
 		/^packages\/api-contract\//,
 		/^scripts\/(check-api-coverage|garage-integration)/,
 		/^docker-compose\.yml$/,
-		// The API parses curated release notes against the fixture shared with the Discord script.
+		// The API parses curated release notes against the fixture shared with the Discord script and the site.
 		/^scripts\/discord\/fixtures\//,
 	],
 	// Curated release notes are not built by Gradle: the Discord tests check them instead.

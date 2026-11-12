@@ -25,7 +25,8 @@ export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 		'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.',
 		'Storage unavailable',
 		'This memory is unavailable or access was revoked.',
-		'This link is invalid or was revoked.',
+		'This link was stopped by the person who shared it.',
+		'The scene could not be loaded. Try again in a moment.',
 		'Restoration information could not be loaded. Try again.',
 		'WebGL is unavailable. Try another browser or enable hardware acceleration.',
 	].map(message => [message, message])

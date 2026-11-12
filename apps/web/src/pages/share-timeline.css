@@ -1,14 +1,36 @@
-/* A world link's snapshot slider: a kit slot floating at the top of the stage, over the 3D scene. */
+/* The top of a shared scene: a world link's snapshot slider, then one line for the visitor (the welcome, then the
+   invitation). It lives in the header's own full-width row under the title, so it never covers the title, and it hides
+   with the header in immersive mode. */
+.cinema-header:has(.cinema-header-below) {
+	flex-wrap: wrap;
+}
+.cinema-header-below {
+	box-sizing: border-box;
+	order: 2;
+	flex: 1 1 100%;
+	display: flex;
+	justify-content: center;
+}
+.share-top {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	gap: var(--ds-sp-2);
+	width: min(560px, 100%);
+}
+.share-top:empty {
+	display: none;
+}
+.share-top > * {
+	pointer-events: auto;
+}
+/* A world link's snapshot slider: a kit slot over the 3D scene. */
 .share-timeline {
-	position: absolute;
-	top: var(--ds-sp-4);
-	left: 50%;
-	z-index: 2;
-	transform: translateX(-50%);
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-3);
-	width: min(560px, calc(100% - 2 * var(--ds-sp-4)));
+	box-sizing: border-box;
+	width: 100%;
 	padding: var(--ds-sp-2) var(--ds-sp-4);
 	background: var(--night);
 	box-shadow: 0 0 0 var(--gp) var(--outline);
@@ -37,6 +59,53 @@
 }
 @media (max-width: 520px) {
 	.share-timeline span {
+		display: none;
+	}
+}
+
+/* The visitor's line, on the game's plaque so it reads over a bright sky. */
+.share-note {
+	margin: 0;
+	padding: var(--ds-sp-2) var(--ds-sp-4);
+	background: rgb(0 0 0 / var(--mc-plaque-alpha));
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-align: center;
+	text-wrap: balance;
+}
+/* The invitation: one line, its links in the game's font. */
+.share-call {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--ds-sp-2) var(--ds-sp-5);
+}
+.share-call a,
+.cinema-loading-card a {
+	color: var(--ember);
+	font: 400 16px / 24px var(--f-ui);
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+.share-call a:hover,
+.cinema-loading-card a:hover {
+	color: var(--hover);
+}
+.cinema-page .cinema-loading .cinema-loading-card > :is(button, a) {
+	margin-top: var(--ds-sp-5);
+}
+/* A link is inline: it needs a box for its top margin. */
+.cinema-loading-card > a {
+	display: inline-block;
+}
+/* On a phone the row keeps clear of the tool rail on the right, and the slider explains itself. */
+@media (max-width: 800px) {
+	.cinema-header-below {
+		justify-content: flex-start;
+		padding-right: 64px;
+	}
+	.share-slider-hint {
 		display: none;
 	}
 }

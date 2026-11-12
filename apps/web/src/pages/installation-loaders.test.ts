@@ -1,9 +1,8 @@
 import { expect, test } from 'vitest'
 import { catalogLinks } from './installation-loaders'
 
-test('the guide links to the real CurseForge and Modrinth project pages', () => {
+test('the guide links to the live CurseForge project and hides Modrinth until its listing is public', () => {
 	expect(catalogLinks()).toEqual([
 		{ name: 'CurseForge', url: 'https://www.curseforge.com/minecraft/mc-mods/minemories' },
-		{ name: 'Modrinth', url: 'https://modrinth.com/mod/minemories-3d' },
 	])
 })

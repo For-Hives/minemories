@@ -1,9 +1,10 @@
 import {
+	javaFor,
 	type LoaderDownload,
 	type LoaderTarget,
+	listedMinecraft,
 	loaderTargets,
 	type ModRelease,
-	minecraftVersions,
 } from './mod-releases'
 
 /** Column order of the download table. */
@@ -19,6 +20,8 @@ export interface GridCell {
 }
 export interface GridRow {
 	minecraft: string
+	/** The Java version the JARs of this Minecraft version need. */
+	java: string
 	cells: GridCell[]
 }
 export interface DownloadGrid {
@@ -27,15 +30,17 @@ export interface DownloadGrid {
 }
 
 /**
- * The Minecraft version x loader table, newest version first: each cell holds the newest published JAR of its target.
+ * The Minecraft version x loader table, newest version first and the experimental ones last: each cell holds the newest
+ * published JAR of its target.
  * `releases` come newest first from the API index, so the first release with a download for a pair is the latest one.
  */
 export function downloadGrid(releases: ModRelease[], targets: LoaderTarget[] = loaderTargets): DownloadGrid {
 	const loaders = loaderOrder
 		.filter(loader => targets.some(target => target.loader === loader))
 		.map(loader => ({ loader, name: targets.find(target => target.loader === loader)?.name ?? loader }))
-	const rows = minecraftVersions(targets).map(minecraft => ({
+	const rows = listedMinecraft(targets).map(minecraft => ({
 		minecraft,
+		java: javaFor(minecraft, targets) as string,
 		cells: loaders.map(({ loader }) => {
 			const target = targets.find(item => item.minecraft === minecraft && item.loader === loader) ?? null
 			const release = target ? releases.find(item => findDownload(item, target)) : undefined

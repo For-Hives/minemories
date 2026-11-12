@@ -1,6 +1,17 @@
 import { modIndex } from '@minemories/api-contract'
-import modTargets from '../../../../mod/targets.json'
 import { apiBase } from '../api-client'
+import { type LoaderTarget, loaderTargets } from './mod-targets'
+
+export {
+	compareMinecraft,
+	isExperimentalMinecraft,
+	javaFor,
+	type LoaderTarget,
+	listedMinecraft,
+	loaderTargets,
+	minecraftVersions,
+	supportedMinecraft,
+} from './mod-targets'
 
 /** Versions kept per target by the storage retention (scripts/mod/storage); the page never shows more. */
 export const retainedVersions = 3
@@ -16,15 +27,6 @@ const commitPattern = /^[0-9a-f]{7,40}$/
 /** Quilt has no JAR of its own: the Fabric JAR is tested under this Quilt Loader (docs/features/loader-support.md). */
 export const quiltTestedVersion = '0.30.1'
 
-export interface LoaderTarget {
-	id: string
-	loader: string
-	name: string
-	minecraft: string
-	loaderVersion: string
-	java: string
-	fabricApi: string | null
-}
 export interface LoaderDownload {
 	target: LoaderTarget
 	url: string
@@ -41,23 +43,6 @@ export interface ModRelease {
 	published: number
 }
 
-/** Enabled publication targets, read at build time from mod/targets.json. */
-export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =>
-	target.enabled && target.loaderVersion
-		? [
-				{
-					id: target.id,
-					loader: target.loader,
-					name: target.name,
-					minecraft: target.minecraft,
-					loaderVersion: target.loaderVersion,
-					java: target.java,
-					fabricApi: 'fabricApi' in target ? target.fabricApi : null,
-				},
-			]
-		: []
-)
-
 export function downloadFor(release: ModRelease, loader: string, minecraft?: string): LoaderDownload | null {
 	return (
 		release.downloads.find(
@@ -66,15 +51,6 @@ export function downloadFor(release: ModRelease, loader: string, minecraft?: str
 		) ?? null
 	)
 }
-/** Minecraft versions with at least one published target, newest first (26.3 after the 1.x line ends). */
-export function minecraftVersions(targets: LoaderTarget[] = loaderTargets): string[] {
-	const parts = (version: string) => version.split('.').map(Number)
-	return [...new Set(targets.map(target => target.minecraft))].sort((a, b) => {
-		const [x, y] = [parts(a), parts(b)]
-		return (y[0] ?? 0) - (x[0] ?? 0) || (y[1] ?? 0) - (x[1] ?? 0) || (y[2] ?? 0) - (x[2] ?? 0)
-	})
-}
-
 /** Turns the API index into releases: one per version, grouping the loader JARs published for it. */
 export function parseIndex(data: unknown): ModRelease[] {
 	const parsed = modIndex.safeParse(data)

@@ -273,7 +273,7 @@ select.mc-field.mm-field-fill {
 }
 
 /* Slider (timeline, projection length): the kit's black rail and stone handle (mc-range). */
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"] {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"] {
 	display: block;
 	width: 100%;
 	height: var(--ds-hit);
@@ -285,19 +285,17 @@ select.mc-field.mm-field-fill {
 	cursor: pointer;
 }
 
-.mm-site
-	:is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field)
-	input[type="range"]::-webkit-slider-runnable-track {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]::-webkit-slider-runnable-track {
 	height: 100%;
 	background: transparent;
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]::-moz-range-track {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]::-moz-range-track {
 	height: 100%;
 	background: transparent;
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]::-webkit-slider-thumb {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]::-webkit-slider-thumb {
 	width: 16px;
 	height: 40px;
 	appearance: none;
@@ -309,7 +307,7 @@ select.mc-field.mm-field-fill {
 		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]::-moz-range-thumb {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]::-moz-range-thumb {
 	width: 12px;
 	height: 36px;
 	background: var(--stone);
@@ -320,26 +318,24 @@ select.mc-field.mm-field-fill {
 		inset calc(-1 * var(--gp)) calc(-2 * var(--gp)) 0 var(--stone-lo);
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]:hover {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]:hover {
 	border-color: #d6d0c6;
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]:focus-visible {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]:focus-visible {
 	border-color: #fff;
 	outline: var(--ds-focus);
 	outline-offset: var(--ds-focus-offset);
 	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
 }
 
-.mm-site :is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field) input[type="range"]:disabled {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]:disabled {
 	background: var(--off);
 	border-color: var(--night-3);
 	cursor: default;
 }
 
-.mm-site
-	:is(.mm-simulator-fields, .mm-timeline-preview, .ex-range-field)
-	input[type="range"]:disabled::-webkit-slider-thumb {
+.mm-site :is(.mm-simulator-fields, .ex-range-field) input[type="range"]:disabled::-webkit-slider-thumb {
 	background: var(--off);
 	box-shadow: none;
 }
@@ -512,7 +508,7 @@ select.mc-field.mm-field-fill {
 	outline-offset: calc(-3 * var(--gp));
 }
 
-.mm-site :is(.mm-callout, .mm-timeline-preview, .mm-section-heading, .mm-price-simulator, .mm-demo-detail) h2 {
+.mm-site :is(.mm-callout, .mm-section-heading, .mm-price-simulator, .mm-demo-detail) h2 {
 	margin: var(--ds-sp-3) 0;
 	color: #fff;
 }
@@ -522,11 +518,6 @@ select.mc-field.mm-field-fill {
 	color: #fff;
 }
 
-.mm-timeline-preview p {
-	margin: var(--ds-sp-3) 0;
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
-}
 .mm-plan p {
 	margin: var(--ds-sp-3) 0;
 	color: var(--text-2);
@@ -572,7 +563,6 @@ select.mc-field.mm-field-fill {
 
 .mm-angle-grid,
 .mm-plan-grid,
-.mm-timeline-preview,
 .mm-price-simulator,
 .mm-demo-detail {
 	display: grid;
@@ -613,7 +603,6 @@ select.mc-field.mm-field-fill {
 .mm-angle-card,
 .mm-plan,
 .mm-price-simulator,
-.mm-timeline-preview,
 .mm-demo-detail,
 .mm-memory-card {
 	margin: var(--gp);
@@ -653,7 +642,7 @@ select.mc-field.mm-field-fill {
 }
 
 /* The illustration sits in a recess, like an item in a slot. */
-:is(.mm-angle-card, .mm-timeline-preview, .mm-demo-detail) > .mm-memory-scene {
+:is(.mm-angle-card, .mm-demo-detail) > .mm-memory-scene {
 	background: var(--night);
 	box-shadow: var(--mm-recess-shadow);
 }
@@ -684,26 +673,6 @@ select.mc-field.mm-field-fill {
 }
 
 /* --- Discovery: a path (MarketingPage) ------------------------------------------------------------------------------------------------------------------ */
-
-.mm-timeline-preview {
-	align-items: center;
-	margin-top: var(--ds-sp-7);
-}
-
-.mm-timeline-preview label {
-	display: block;
-	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
-	color: var(--text);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-}
-
-.mm-timeline-preview output {
-	display: block;
-	margin-top: var(--ds-sp-3);
-	color: var(--ember);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: 2px 2px 0 var(--mm-ember-shadow);
-}
 
 /* --- Demo gallery (GalleryPreview, DemoDetail) ------------------------------------------------------------------------------------------------------- */
 
@@ -1117,7 +1086,6 @@ html[data-mc-font="read"] :is(.mm-plan .mm-big-price, .mm-estimate-total, .mm-pr
 	}
 	.mm-angle-grid,
 	.mm-plan-grid,
-	.mm-timeline-preview,
 	.mm-price-simulator,
 	.mm-demo-detail {
 		grid-template-columns: 1fr;
@@ -1132,7 +1100,6 @@ html[data-mc-font="read"] :is(.mm-plan .mm-big-price, .mm-estimate-total, .mm-pr
 @media (max-width: 480px) {
 	.mm-angle-card,
 	.mm-plan,
-	.mm-timeline-preview,
 	.mm-price-simulator,
 	.mm-demo-detail {
 		padding: var(--ds-sp-5);
@@ -1187,7 +1154,6 @@ html[data-mc-motion="reduced"] :is(.mm-angle-card:hover, .mm-scene-button:hover 
 	.mm-angle-card,
 	.mm-plan,
 	.mm-price-simulator,
-	.mm-timeline-preview,
 	.mm-demo-detail,
 	.mm-memory-card,
 	.ex-rows,

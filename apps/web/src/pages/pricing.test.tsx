@@ -23,7 +23,7 @@ function pricing() {
 test('calculator updates quantities, projection and cloud choice, then saves and restores without purchase', () => {
 	const mounted = pricing()
 	expect(screen.getByRole('status', { name: 'Total estimé' }).textContent).toBe('20 €')
-	fireEvent.change(screen.getByRole('spinbutton', { name: 'Nombre de snapshots' }), { target: { value: '3' } })
+	fireEvent.change(screen.getByRole('spinbutton', { name: 'Nombre de captures' }), { target: { value: '3' } })
 	fireEvent.change(screen.getByRole('slider'), { target: { value: '5' } })
 	expect(screen.getByRole('status', { name: 'Total estimé' }).textContent).toBe('69 €')
 	fireEvent.click(screen.getByRole('checkbox'))

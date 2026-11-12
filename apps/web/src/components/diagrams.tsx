@@ -1,4 +1,4 @@
-import { type ReactNode, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { useI18n } from '../i18n/I18n'
 import { Command, Glyph, type GlyphName } from './explainers'
 import { MemoryScene } from './MemoryScene'
@@ -74,7 +74,7 @@ export type ShareState = 'private' | 'link' | 'revoked'
 const shareCaption: Record<ShareState, string> = {
 	private: 'Only you can see it.',
 	link: 'Anyone with the link can see it.',
-	revoked: 'Link revoked. Copies already saved stay.',
+	revoked: 'Sharing stopped. Copies already saved stay.',
 }
 
 /** A gallery card and three visitors: creating the link lights them up, revoking it closes the door. */
@@ -116,42 +116,9 @@ export function ShareDemo() {
 					disabled={!open}
 					onClick={() => setState('revoked')}
 				>
-					{t('Revoke the link')}
+					{t('Stop sharing')}
 				</button>
 			</div>
-		</div>
-	)
-}
-
-/** The server closes, the memory stays: the same build twice, one of them goes dark. */
-export function SeasonDemo() {
-	const { t } = useI18n()
-	const [closed, setClosed] = useState(false)
-	return (
-		<div className="ex-season" data-closed={closed}>
-			<figure className="ex-season-side ex-season-server">
-				<MemoryScene theme="home" stage={closed ? 2 : 3} label={t('The server')} />
-				<figcaption>
-					<Glyph name={closed ? 'close' : 'check'} />
-					{closed ? t('Closed') : t('Online')}
-				</figcaption>
-			</figure>
-			<span className="ex-season-arrow" aria-hidden="true" />
-			<figure className="ex-season-side ex-season-memory">
-				<MemoryScene theme="home" label={t('Your 3D memory')} />
-				<figcaption>
-					<Glyph name="cube" />
-					{t('Still here')}
-				</figcaption>
-			</figure>
-			<button
-				type="button"
-				className="mm-button mc-btn mc-btn--auto mm-button-outline ex-season-button"
-				aria-pressed={closed}
-				onClick={() => setClosed(!closed)}
-			>
-				{closed ? t('Reopen the server') : t('Close the server')}
-			</button>
 		</div>
 	)
 }
@@ -184,46 +151,5 @@ export function DataFlow({ nodes, edges }: { nodes: readonly FlowNode[]; edges: 
 				)
 			})}
 		</ol>
-	)
-}
-
-interface PipelineNode {
-	id: string
-	glyph: GlyphName
-	label: string
-	point: string
-	extra?: ReactNode
-}
-
-/** A small pipeline whose boxes can be selected; the selected one says in one line why it matters. */
-export function Pipeline({ nodes }: { nodes: readonly PipelineNode[] }) {
-	const { t } = useI18n()
-	const [selected, setSelected] = useState(nodes[0]?.id)
-	const current = nodes.find(node => node.id === selected) ?? nodes[0]
-	return (
-		<div className="ex-pipeline">
-			<div className="ex-pipeline-row">
-				{nodes.map((node, index) => (
-					<span key={node.id} className="ex-pipeline-item">
-						<button
-							type="button"
-							className="ex-pipeline-node"
-							aria-pressed={node.id === current?.id}
-							onClick={() => setSelected(node.id)}
-						>
-							<Glyph name={node.glyph} />
-							<span>{t(node.label)}</span>
-						</button>
-						{index < nodes.length - 1 && <span className="ex-pipeline-arrow" aria-hidden="true" />}
-					</span>
-				))}
-			</div>
-			{current && (
-				<div className="ex-pipeline-point" role="status">
-					<strong>{t(current.point)}</strong>
-					{current.extra}
-				</div>
-			)}
-		</div>
 	)
 }

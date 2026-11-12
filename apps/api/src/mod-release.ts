@@ -235,7 +235,7 @@ export async function fetchLatestModRelease(
 		more,
 		source: curated ? 'curated' : 'commits',
 		downloadUrl: `${SITE_URL}/downloads`,
-		changelogUrl: `${SITE_URL}/changelog`,
+		changelogUrl: `${SITE_URL}/versions`,
 		compareUrl: previous
 			? `${GITHUB_URL}/compare/${previous.name}...${latest.name}`
 			: `${GITHUB_URL}/tree/${latest.name}`,

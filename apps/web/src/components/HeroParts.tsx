@@ -1,9 +1,10 @@
 import { Link } from 'react-router'
 import { useAppContext } from '../app-context'
-import { discoveryPages } from '../content/discovery'
-import { navigation } from '../content/navigation'
+import { faqText, pageQuestions } from '../content/faq'
+import { footerGroups, navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
+import { repositoryUrl } from '../lib/repository'
 import { catalogLinks } from '../pages/installation-loaders'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 
@@ -51,43 +52,19 @@ export function HeroAccount({ menu = false }: { menu?: boolean }) {
 	)
 }
 
-/** The site's main links, as on every other page (home first, then the sections, then the gallery once signed in). */
+/** The site's main links, as on every other page. Signed in, the account button already opens the gallery. */
 export function HeroNavLinks() {
-	const { session } = useAppContext()
 	const { t } = useI18n()
-	const links = [
-		{ to: '/', label: 'Home' },
-		...navigation,
-		...(session ? [{ to: '/gallery', label: 'My gallery' }] : []),
-	]
 	return (
 		<>
-			{links.map(link => (
+			{navigation.map(link => (
 				<li key={link.to}>
-					<Link to={link.to} aria-current={link.to === '/' ? 'page' : undefined}>
-						{t(link.label)}
-					</Link>
+					<Link to={link.to}>{t(link.label)}</Link>
 				</li>
 			))}
 		</>
 	)
 }
-
-const footerPages = [
-	{ to: '/installation', label: 'Installation' },
-	{ to: '/concept', label: 'The concept' },
-	{ to: '/how-it-works', label: 'How it works' },
-	{ to: '/faq', label: 'FAQ' },
-	{ to: '/versions', label: 'Mod versions' },
-	{ to: '/changelog', label: 'What’s new' },
-	{ to: '/roadmap', label: 'Roadmap' },
-	{ to: '/discover', label: 'Discover' },
-	{ to: '/explore', label: 'Public gallery' },
-	{ to: '/blog', label: 'Blog' },
-	{ to: '/privacy', label: 'Privacy' },
-	{ to: '/terms', label: 'Terms' },
-	{ to: '/legal', label: 'Legal notice' },
-] as const
 
 /** The site's pages, in the film's footer: every one is a real route of the app. */
 export function HeroFooterLinks() {
@@ -100,20 +77,28 @@ export function HeroFooterLinks() {
 					{t(session ? 'My gallery' : 'Sign in')}
 				</Link>
 			</li>
-			{footerPages.map(page => (
-				<li key={page.to}>
-					<Link className="mc-link" to={page.to}>
-						{t(page.label)}
-					</Link>
-				</li>
-			))}
+			{footerGroups.flatMap(group =>
+				group.links.map(link => (
+					<li key={link.label}>
+						{'href' in link ? (
+							<a className="mc-link" href={link.href}>
+								{t(link.label)}
+							</a>
+						) : (
+							<Link className="mc-link" to={link.to}>
+								{t(link.label)}
+							</Link>
+						)}
+					</li>
+				))
+			)}
 			{session && (
 				<li>
 					<DiagnosticsAccessLink key={session.user.id} />
 				</li>
 			)}
 			<li>
-				<a className="mc-link" href="https://github.com/For-Hives/minemories">
+				<a className="mc-link" href={repositoryUrl}>
 					GitHub
 				</a>
 			</li>
@@ -128,49 +113,25 @@ export function HeroFooterLinks() {
 	)
 }
 
-/** What the home page said before the film and the film's site does not: why a memory is more than a backup, the discovery pages, the way into the album. */
-export function HeroExtras() {
-	const { session } = useAppContext()
+/** The landing's three questions, read from content/faq.ts like every other page's (the /faq list holds them all): a component, so it follows the app's language by itself. */
+export function HeroQuestions() {
 	const { t } = useI18n()
 	return (
-		<section className="mc-section" id="more" aria-labelledby="more-title">
-			<h2 className="mc-section__title" id="more-title">
-				{t('Every world has')} {t('a story.')}
-			</h2>
-			<p className="mc-section__text">
-				{t(
-					'Seasons end. Servers close. Minemories keeps a 3D capture of your places to revisit in your browser, without finding the right modpack. Your original world stays yours.'
-				)}
-			</p>
-			<ul className="site-links">
-				{discoveryPages.map(page => (
-					<li key={page.path}>
-						<Link className="mc-link" to={page.path}>
-							{t(page.label)}
-						</Link>
-					</li>
-				))}
-				<li>
-					<Link className="mc-link" to="/concept">
-						{t('The story behind Minemories')}
-					</Link>
-				</li>
-				<li>
-					<Link className="mc-link" to="/explore">
-						{t('Explore community memories')}
-					</Link>
-				</li>
-				<li>
-					<Link className="mc-link" to="/explore?demo=1">
-						{t('Explore the demo memories')}
-					</Link>
-				</li>
-			</ul>
-			<div className="mc-hero__actions">
-				<Link className="mc-btn" to={session ? '/gallery' : '/register'}>
-					{t(session ? 'Find my memories' : 'Keep my first memory')}
+		<div className="mc-faq">
+			{pageQuestions.home.map(id => {
+				const { question, answer } = faqText(id, t)
+				return (
+					<details key={id} className="mc-faq__item" name="faq">
+						<summary className="mc-faq__q">{question}</summary>
+						<p className="mc-faq__a">{answer}</p>
+					</details>
+				)
+			})}
+			<p>
+				<Link className="mc-link" to="/faq">
+					{t('All questions')} →
 				</Link>
-			</div>
-		</section>
+			</p>
+		</div>
 	)
 }

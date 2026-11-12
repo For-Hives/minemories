@@ -43,7 +43,9 @@ export function PasswordField({ creating, className }: { creating: boolean; clas
 				</button>
 			</div>
 			<p id={`${id}-hint`} className="auth-field-hint">
-				{t(creating ? 'At least 12 characters. A memorable phrase can help.' : 'Use your Minemories account password.')}
+				{creating
+					? t('At least 12 characters. A memorable phrase can help.')
+					: `${t('Forgot your password?')} ${t('There is no automatic reset yet.')} ${t('Write to us: the contact address is coming soon.')}`}
 			</p>
 			<p id={`${id}-caps`} role="status" className="auth-caps-warning">
 				{capsLock ? t('Caps Lock is on.') : ''}

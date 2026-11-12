@@ -89,7 +89,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					</nav>
 					<header className="auth-heading">
 						<span className="auth-eyebrow">{t('YOUR WORLDS ARE WAITING')}</span>
-						<h1>{creating ? t('Your album starts here.') : t('Welcome home.')}</h1>
+						<h1>{creating ? t('Your album of worlds') : t('Good to see you again')}</h1>
 						<p>
 							{creating
 								? t('A space to keep your captures and choose who to share them with.')
@@ -163,7 +163,11 @@ function GuestEntry() {
 		<aside className="auth-guest" aria-label={t('Visit without an account')}>
 			<div className="auth-guest-title">
 				<span aria-hidden="true">↗</span>
-				<h2>{t('Just visiting?')}</h2>
+				<h2>
+					<Link className="auth-guest-link" to="/explore">
+						{t('Just visiting?')}
+					</Link>
+				</h2>
 				<span>{t('NO ACCOUNT')}</span>
 			</div>
 			{import.meta.env.DEV ? (

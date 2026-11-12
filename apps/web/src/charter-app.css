@@ -255,6 +255,7 @@ html[data-mc-font="read"] .mm-brand {
 
 .mm-desktop-nav a {
 	display: inline-flex;
+	white-space: nowrap;
 	align-items: center;
 	min-height: var(--ds-hit);
 	padding: 0 var(--ds-sp-1);
@@ -536,23 +537,22 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* Six links, the language, the account and the file control do not fit beside each other under 1100 px: the menu takes the links. */
-@media (max-width: 1100px) {
-	.mm-desktop-nav {
-		display: none;
-	}
-	.mm-mobile-menu {
-		display: block;
-	}
-}
-
-/* The language moves into the menu on phones (as on the landing). */
+/*
+ * The bar steps down as the screen narrows, so the two links stay in it as long as possible: under 1100 px the
+ * language moves into the menu and the install button takes its short label; under 920 px the links join the
+ * menu too (room kept for the signed-in account); under 560 px the account (see the install button rules below).
+ */
 .mm-mobile-menu .mm-language {
 	display: none;
 	margin-top: var(--ds-sp-3);
 }
 
-@media (max-width: 560px) {
+/* Three links, the language, the account and the install button need about 1340 px in Russian: the language waits
+   in the menu up to 1440 px, and the links up to 1240 px (Russian needs 1220 px without the language). */
+@media (max-width: 1440px) {
+	.mm-mobile-menu {
+		display: block;
+	}
 	.mm-header-actions > .mm-language {
 		display: none;
 	}
@@ -565,6 +565,29 @@ html[data-mc-font="read"] .mm-brand {
 		min-width: 200px;
 		max-width: 100%;
 	}
+}
+
+@media (max-width: 1240px) {
+	.mm-desktop-nav {
+		display: none;
+	}
+}
+
+/* Signed in, the bar adds "My gallery" and the account (avatar, name, sign out): the links wait in the menu up to
+   1440 px, and the name shows from 1600 px (Russian needs about 1550 px with it). */
+@media (max-width: 1440px) {
+	.mm-header--session .mm-desktop-nav {
+		display: none;
+	}
+}
+
+@media (max-width: 1600px) {
+	.mm-header--session .mm-account a span {
+		display: none;
+	}
+}
+
+@media (max-width: 560px) {
 	.mm-header-actions > .mm-button {
 		white-space: nowrap;
 	}
@@ -618,25 +641,18 @@ html[data-mc-font="read"] .mm-brand {
 		inset 0 calc(2 * var(--gp)) 0 #3a322b;
 }
 
-.mm-footer .album-footer-heading {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: end;
-	justify-content: space-between;
+.mm-footer-brand {
+	display: grid;
+	align-content: start;
 	gap: var(--ds-sp-4);
-	grid-column: 1 / -1;
-	padding-bottom: var(--ds-sp-5);
-	border-bottom: var(--gp) solid #3a322b;
 }
 
-.mm-footer .album-footer-heading > span {
-	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+/* A group's name, not a section title: the UI font at link size (beats `.mm-site h2`). */
+.mm-site .mm-footer .mm-footer-title {
+	margin: 0 0 var(--ds-sp-2);
+	font: 16px / 18px var(--f-ui);
 	color: var(--text);
-	text-shadow: var(--ds-text-shadow-2);
-}
-
-.mm-footer .album-footer-heading em {
-	color: var(--ember);
+	text-shadow: var(--ds-text-shadow-1);
 }
 
 .mm-footer p {
@@ -668,16 +684,60 @@ html[data-mc-font="read"] .mm-brand {
 	line-height: 20px;
 }
 
-@media (min-width: 640px) {
+/* The brand takes a whole row, above the groups of links. */
+@media (min-width: 480px) {
 	.mm-footer {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
+	.mm-footer-brand {
+		grid-column: 1 / -1;
+	}
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 760px) {
 	.mm-footer {
-		/* The last column (display options) takes its labels' width, so they stay on one line inside it. */
-		grid-template-columns: 2fr repeat(3, minmax(0, 1fr)) max-content;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+/* Five groups in one row; the brand keeps its own row above them, since its wordmark is wider than a sixth column. */
+@media (min-width: 1100px) {
+	.mm-footer {
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+	}
+}
+
+/* The header's install button: the whole label, then a shorter one under 1100 px. As on the landing, the long label
+   stays the accessible name (the short one is aria-hidden), so it is only hidden visually. On phones the account
+   moves into the menu so the install button keeps its place. */
+.mm-install-short,
+.mm-menu-account {
+	display: none;
+}
+
+@media (max-width: 1100px) {
+	.mm-install-long {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.mm-install-short {
+		display: inline;
+	}
+}
+
+@media (max-width: 560px) {
+	.mm-header-account {
+		display: none;
+	}
+	.mm-menu-account {
+		display: block;
+		margin-top: var(--ds-sp-3);
 	}
 }
 
@@ -1004,12 +1064,6 @@ a.mm-editorial-card:hover {
 
 .cinema-layout {
 	min-height: 100svh;
-}
-
-/* The footer tagline in Korean and Japanese: Unifont is a 16 px grid, so 32 px rather than 24 (kept last: it outranks the footer rules). */
-html.mm-cjk:not([data-mc-font="read"]) .mm-footer .album-footer-heading > span {
-	font-size: 32px;
-	line-height: 40px;
 }
 
 /* Forced colours (Windows): the reliefs disappear, outlines stay. */

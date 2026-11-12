@@ -2,9 +2,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 're
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
-import { discoveryPages } from '../content/discovery'
-import { navigation } from '../content/navigation'
-import { translate } from '../i18n/catalog'
+import { type FooterLink, footerGroups, navigation } from '../content/navigation'
 import { useI18n } from '../i18n/I18n'
 import { isLocale, localeOptions } from '../i18n/locales'
 import { avatarUrl } from '../lib/avatar'
@@ -16,16 +14,17 @@ import {
 	storeDisplayOption,
 } from '../lib/display-preferences'
 import { clearAllDrafts } from '../lib/form-drafts'
+import { repositoryUrl } from '../lib/repository'
 import { catalogLinks } from '../pages/installation-loaders'
 import { BrandMark } from './BrandMark'
 import { DiagnosticsAccessLink } from './DiagnosticsAccessLink'
 import { LoadingSkeleton } from './Loading'
-import { buttonDark, buttonQuiet, fileInputHidden } from './ui'
+import { buttonDark, buttonLime, buttonQuiet, fileInputHidden } from './ui'
 
 const legalLinks = [
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
-	{ to: '/legal', label: 'Legal' },
+	{ to: '/legal', label: 'About and legal notice' },
 ]
 /** The link home: the logo alone in the header (`solo`), the small mark and the word Minemories in the footer. */
 export function Brand({ solo = false }: { solo?: boolean }) {
@@ -140,12 +139,9 @@ function SiteHeader() {
 		mobile.current?.removeAttribute('open')
 	}, [pathname])
 	return (
-		<header className="mm-header">
+		<header className={session ? 'mm-header mm-header--session' : 'mm-header'}>
 			<Brand solo />
 			<nav className="mm-desktop-nav" aria-label={t('Main navigation')}>
-				<NavLink to="/" end>
-					{t('Home')}
-				</NavLink>
 				{navigation.map(link => (
 					<NavLink key={link.to} to={link.to}>
 						{t(link.label)}
@@ -156,13 +152,20 @@ function SiteHeader() {
 			<div className="mm-header-actions">
 				<LanguageControl />
 				<FileControl />
-				<AccountControl />
+				<div className="mm-header-account">
+					<AccountControl />
+				</div>
+				<Link className={`${buttonLime} mm-install-cta`} to="/installation">
+					<span className="mm-install-long">{t('Install the mod')}</span>
+					<span className="mm-install-short" aria-hidden="true">
+						{t('Install it')}
+					</span>
+				</Link>
 				<details ref={mobile} className="mm-mobile-menu" onToggle={event => setMenuOpen(event.currentTarget.open)}>
 					<summary className="mc-btn mc-btn--tool" aria-label={t('Open menu')}>
 						<span className="mc-icon mc-icon--menu" aria-hidden="true" />
 					</summary>
 					<nav aria-label={t('Main navigation')}>
-						<Link to="/">{t('Home')}</Link>
 						{navigation.map(link => (
 							<Link key={link.to} to={link.to}>
 								{t(link.label)}
@@ -174,6 +177,11 @@ function SiteHeader() {
 								{t(link.label)}
 							</Link>
 						))}
+						{menuOpen && (
+							<div className="mm-menu-account">
+								<AccountControl />
+							</div>
+						)}
 						{menuOpen && <LanguageControl />}
 					</nav>
 				</details>
@@ -220,57 +228,33 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			</main>
 			<div className="mm-footer-band mc-band mc-bg-dirt" aria-hidden="true" />
 			<footer className="mm-footer">
-				<div className="album-footer-heading">
-					<span>
-						{t('Worlds change.')}
-						<br />
-						<em>{t('What they leave us stays.')}</em>
-					</span>
-					<Link to="/explore">{t('Explore memories')} ↗</Link>
-				</div>
-				<div>
+				<div className="mm-footer-brand">
 					<Brand />
-					<p>{t('Your worlds stay yours.')}</p>
-					<p className="mm-fineprint">{t('Not affiliated with Mojang or Microsoft.')}</p>
+					<p className="mm-fineprint">
+						{t(
+							'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+						)}
+					</p>
+					<DisplayOptions />
 				</div>
-				<nav aria-label={t('Guides')}>
-					<Link to="/concept">{t('The concept')}</Link>
-					<Link to="/how-it-works">{t('How it works')}</Link>
-					<Link to="/installation">{t('Install the mod')}</Link>
-					<Link to="/versions">{t('Mod versions')}</Link>
-					<Link to="/changelog">{t('What’s new')}</Link>
-					<Link to="/roadmap">{t('Roadmap')}</Link>
-					<Link to="/faq">{t('FAQ')}</Link>
-				</nav>
-				<nav aria-label="Minemories">
-					{navigation
-						.filter(link => link.to !== '/installation')
-						.map(link => (
-							<Link to={link.to} key={link.to}>
-								{t(link.label)}
-							</Link>
+				{footerGroups.map(group => (
+					<nav key={group.label} aria-label={t(group.label)}>
+						<h2 className="mm-footer-title">{t(group.label)}</h2>
+						{group.links.map(link => (
+							<FooterAnchor key={link.label} link={link} />
 						))}
-					{[...discoveryPages, { path: '/explore', label: 'Public gallery' }].map(page => (
-						<Link key={page.path} to={page.path}>
-							{translate(locale, page.label)}
-						</Link>
-					))}
-					<a href="https://github.com/For-Hives/minemories">GitHub</a>
+					</nav>
+				))}
+				<nav aria-label={t('Elsewhere')}>
+					<h2 className="mm-footer-title">{t('Elsewhere')}</h2>
 					{catalogLinks().map(catalog => (
 						<a key={catalog.name} href={catalog.url}>
 							{catalog.name}
 						</a>
 					))}
+					<a href={repositoryUrl}>GitHub</a>
 					{session && <DiagnosticsAccessLink key={session.user.id} />}
 				</nav>
-				<nav aria-label={t('Legal')}>
-					{legalLinks.map(link => (
-						<Link to={link.to} key={link.to}>
-							{t(link.label)}
-						</Link>
-					))}
-				</nav>
-				<DisplayOptions />
 			</footer>
 			{notice && (
 				<div className="mm-toast" role="status">
@@ -279,6 +263,13 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 			)}
 		</div>
 	)
+}
+
+/** A footer link: a page of the site, or an outside address. */
+function FooterAnchor({ link }: { link: FooterLink }) {
+	const { t } = useI18n()
+	if ('href' in link) return <a href={link.href}>{t(link.label)}</a>
+	return <Link to={link.to}>{t(link.label)}</Link>
 }
 
 function safeStorage() {
@@ -331,6 +322,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
 			</main>
 			<footer className="auth-footer">
 				<span>© Minemories</span>
+				<p>
+					{t(
+						'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
+					)}
+				</p>
 				<nav aria-label={t('Legal')}>
 					{legalLinks.map(link => (
 						<Link key={link.to} to={link.to}>

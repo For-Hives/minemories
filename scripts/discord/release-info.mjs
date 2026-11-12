@@ -215,7 +215,7 @@ export async function fetchRelease({ tag, fetchImpl = globalThis.fetch, token, n
 		more,
 		source: curated ? 'curated' : 'commits',
 		downloadUrl: `${SITE_URL}/downloads`,
-		changelogUrl: `${SITE_URL}/changelog`,
+		changelogUrl: `${SITE_URL}/versions`,
 		compareUrl: previous
 			? `${REPOSITORY_URL}/compare/${previous.name}...${release.name}`
 			: `${REPOSITORY_URL}/tree/${release.name}`,

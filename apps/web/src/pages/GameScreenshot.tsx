@@ -3,7 +3,8 @@ import { T, useI18n } from '../i18n/I18n'
 /**
  * Real in-game screenshots of the guide, taken by the Fabric 1.21.11 client game test
  * (mod/1.21.11/fabric/src/gametest/.../GuideScreenshotsGameTest.java). Refresh them whenever the mod's
- * button, menu or command changes: see src/assets/tutorial/game/README.md.
+ * button, menu or command changes: see src/assets/tutorial/game/README.md. The pause-menu and command shots are no
+ * longer shown: the Minemories button left the pause menu for Options, and the guide no longer teaches the command.
  */
 interface Shot {
 	file: string
@@ -13,28 +14,13 @@ interface Shot {
 	alt: string
 	caption: string
 }
-const shots: Record<'pauseMenu' | 'minemoriesMenu' | 'exportCommand', Shot> = {
-	pauseMenu: {
-		file: 'guide-pause-menu',
-		size: [1280, 720],
-		// The Minemories button, in pixels of the image: x, y, width, height.
-		mark: [1056, 16, 208, 40],
-		alt: 'Minecraft pause menu with the Minemories button in its top-right corner',
-		caption: 'Press Esc in game: the Minemories button is in the top-right corner of the pause menu.',
-	},
+const shots: Record<'minemoriesMenu', Shot> = {
 	minemoriesMenu: {
 		file: 'guide-minemories-menu',
 		size: [1280, 720],
 		mark: [368, 404, 176, 116],
 		alt: 'The Minemories menu with the Take a memory button',
 		caption: 'The Minemories menu (M key): “Take a memory” captures what is around you.',
-	},
-	exportCommand: {
-		file: 'guide-export-command',
-		// Cropped to the chat line: the command is unreadable on a full 1280 x 720 frame.
-		size: [460, 58],
-		alt: 'Minecraft chat with the command /minemories export 16 typed in',
-		caption: 'The same capture with a command: open chat with T, type it, then press Enter.',
 	},
 }
 export type GameScreenshotId = keyof typeof shots

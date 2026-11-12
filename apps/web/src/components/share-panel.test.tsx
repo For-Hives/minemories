@@ -26,6 +26,12 @@ test('opening sharing does not publish; an explicit action creates the link and 
 	)
 	const create = await screen.findByRole('button', { name: 'Create a link' })
 	expect(api.createShare).not.toHaveBeenCalled()
+	// Before any link exists, the panel says what it exposes beyond the 3D scene.
+	expect(
+		screen.getByText(
+			'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
+		)
+	).toBeTruthy()
 	fireEvent.click(create)
 	const link = (await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement
 	expect(api.createShare).toHaveBeenCalledWith({ id: 'private-memory', scope: 'memory' })
@@ -79,4 +85,21 @@ test('a world offers two independent links, a snapshot one and a world one, each
 	expect(((await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement).value).toContain(
 		'/share/snap'
 	)
+})
+
+test('the French panel warns about coordinates, world name, seed and server before a link is created', async () => {
+	api.shareStatus.mockImplementation(({ scope }: { scope: string }) =>
+		scope === 'world' ? Promise.reject(new Error('NOT_FOUND')) : Promise.resolve({ shared: false })
+	)
+	render(
+		<I18nProvider initialLocale="fr">
+			<SharePanel memoryId="private-memory" />
+		</I18nProvider>
+	)
+	await screen.findByRole('button', { name: 'Créer un lien' })
+	expect(
+		screen.getByText(
+			'Le lien montre aussi les coordonnées, la dimension, le biome, le nom du monde, la graine (en solo) ou le nom ou l’adresse du serveur.'
+		)
+	).toBeTruthy()
 })

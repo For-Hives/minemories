@@ -299,7 +299,7 @@ test('adds the latest mod release, keeps the last good one when GitHub fails, an
 		more: 0,
 		source: 'commits',
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+		changelogUrl: 'https://minemories.xenos.lightin.io/versions',
 		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1-beta.1',
 	})
 	releasesUp = false

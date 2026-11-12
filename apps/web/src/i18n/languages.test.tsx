@@ -30,7 +30,7 @@ function Example() {
 	return (
 		<>
 			<p>{t('Sign in')}</p>
-			<p>{t('Share by link')}</p>
+			<p>{t('Postcard')}</p>
 			<p>{[t('Rain'), t('Snow')].join(' / ')}</p>
 			<output>{locale}</output>
 			<button type="button" onClick={() => setLocale('fr')}>
@@ -57,27 +57,27 @@ function page(suggestLocale = false) {
 test('the actual selector changes editorial and shared text, persists the preference and restores it', async () => {
 	const view = page()
 	fireEvent.change(screen.getByRole('combobox', { name: 'Langue' }), { target: { value: 'ja' } })
-	await screen.findByText('リンクで共有', {}, { timeout: 10000 })
+	await screen.findByText('ポストカード', {}, { timeout: 10000 })
 	expect(screen.getByText('雨 / 雪')).toBeTruthy()
 	expect(localStorage.getItem('minemories-locale')).toBe('ja')
 	await waitFor(() => expect(document.documentElement.lang).toBe('ja-JP'))
 	view.unmount()
 	page()
-	await screen.findByText('リンクで共有', {}, { timeout: 10000 })
+	await screen.findByText('ポストカード', {}, { timeout: 10000 })
 	fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
-	expect(screen.getByText('Partager par lien')).toBeTruthy()
+	expect(screen.getByText('Carte postale')).toBeTruthy()
 })
 
 test('browser preference is only suggested, in its priority order, while a saved choice silences it', async () => {
 	vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['ko-KR', 'en-US'])
 	const view = page(true)
 	await screen.findByRole('region', { name: '언어 제안' }, { timeout: 10000 })
-	expect(screen.getByText('Partager par lien')).toBeTruthy()
+	expect(screen.getByText('Carte postale')).toBeTruthy()
 	expect(document.documentElement.lang).toBe('fr-FR')
 	view.unmount()
 	localStorage.setItem('minemories-locale', 'ja')
 	page(true)
-	await screen.findByText('リンクで共有', {}, { timeout: 10000 })
+	await screen.findByText('ポストカード', {}, { timeout: 10000 })
 	expect(screen.queryByRole('region', { name: '언어 제안' })).toBeNull()
 })
 
@@ -102,8 +102,8 @@ test('legacy regional preferences are recognized even when preference writes are
 		throw new Error('blocked')
 	})
 	page()
-	await screen.findByText('Compartilhar por link', {}, { timeout: 10000 })
+	await screen.findByText('Cartão postal', {}, { timeout: 10000 })
 	fireEvent.change(screen.getByRole('combobox', { name: 'Idioma' }), { target: { value: 'pl' } })
 	await waitFor(() => expect(document.documentElement.lang).toBe('pl-PL'))
-	expect(screen.getByText('Udostępnij przez link')).toBeTruthy()
+	expect(screen.getByText('Pocztówka')).toBeTruthy()
 })

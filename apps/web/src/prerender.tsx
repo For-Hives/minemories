@@ -1,21 +1,24 @@
 import { Suspense } from 'react'
 import { renderToString } from 'react-dom/server'
-import { Route, Routes, StaticRouter } from 'react-router'
+import { StaticRouter } from 'react-router'
 import { AppContext } from './app-context'
 import { firstPaintScript } from './components/HeroFilm'
 import { SiteLayout } from './components/SiteLayout'
 import { I18nProvider } from './i18n/I18n'
-import { ArticlePage, BlogPage, LegalPage, NotFoundPage } from './pages/ContentPages'
-import { DiscoveryPage, ExplorerPage, MarketingPage } from './pages/DiscoveryPages'
+import { LegalPage, NotFoundPage } from './pages/ContentPages'
+import { ExplorerPage } from './pages/DiscoveryPages'
 import { DownloadsPage } from './pages/DownloadsPage'
+import { BlenderGuidePage, SafetyPage, ServerClosingPage } from './pages/GuidePages'
 import { HomePage } from './pages/HomePage'
 import { ConceptPage, FaqPage, HowItWorksPage } from './pages/InfoPages'
 import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
-import { publicMetadata, siteOrigin, socialImage, structuredDataFor } from './route-metadata'
+import { SharingPage } from './pages/SharingPage'
+import { appShell, publicMetadata, siteOrigin, socialImage } from './route-metadata'
+import { structuredDataFor } from './structured-data'
 
-export { publicMetadata, siteOrigin, socialImage, structuredDataFor }
+export { appShell, publicMetadata, siteOrigin, socialImage, structuredDataFor }
 /** Inline scripts that run before the markup of a prerendered page paints (the home page's film sets <html> up there). */
 export const firstPaintScripts: Record<string, string> = { '/': firstPaintScript }
 
@@ -48,31 +51,26 @@ export function renderPage(path: string) {
 		case '/versions':
 			content = <ReleasesPage />
 			break
-		case '/changelog':
-			content = <ReleasesPage changelog />
-			break
 		case '/roadmap':
 			content = <RoadmapPage />
+			break
+		case '/server-closing':
+			content = <ServerClosingPage />
+			break
+		case '/safety':
+			content = <SafetyPage />
+			break
+		case '/guides/minecraft-blender':
+			content = <BlenderGuidePage />
 			break
 		case '/faq':
 			content = <FaqPage />
 			break
-		case '/blog':
-			content = <BlogPage />
-			break
-		case '/discover':
-			content = <DiscoveryPage />
-			break
 		case '/explore':
 			content = <ExplorerPage />
 			break
-		case '/ranking':
-			content = <ExplorerPage ranking />
-			break
-		case '/open-source':
-		case '/nostalgia':
 		case '/sharing':
-			content = <MarketingPage />
+			content = <SharingPage />
 			break
 		case '/privacy':
 			content = <LegalPage kind="privacy" />
@@ -83,27 +81,16 @@ export function renderPage(path: string) {
 		case '/legal':
 			content = <LegalPage kind="legal" />
 			break
-		default:
-			if (path.startsWith('/blog/')) content = <ArticlePage />
 	}
-	// Routes supply article params consistently with the browser router.
 	return renderToString(
 		<I18nProvider initialLocale="fr">
 			<AppContext.Provider value={context}>
 				<StaticRouter location={path}>
 					<SiteLayout>
-						<Suspense>{path.startsWith('/blog/') ? <StaticArticle path={path} /> : content}</Suspense>
+						<Suspense>{content}</Suspense>
 					</SiteLayout>
 				</StaticRouter>
 			</AppContext.Provider>
 		</I18nProvider>
-	)
-}
-
-function StaticArticle({ path }: { path: string }) {
-	return (
-		<Routes location={path}>
-			<Route path="/blog/:slug" element={<ArticlePage />} />
-		</Routes>
 	)
 }

@@ -20,98 +20,30 @@
 	white-space: nowrap;
 }
 
-/* A pixel arrow, drawn once and reused between the boxes of every diagram. */
-.ex-arrow,
-.ex-flow-edge::after,
-.ex-pipeline-arrow,
-.ex-season-arrow {
-	display: block;
-	flex: none;
-	width: 24px;
-	height: 24px;
-	background: currentColor;
-	clip-path: polygon(0 38%, 58% 38%, 58% 12%, 100% 50%, 58% 88%, 58% 62%, 0 62%);
+/* --- Steps: /how-it-works, one card per step, top to bottom ------------------------------------------------------------------------------------- */
+
+/* Beats `.mm-info ol`: the step titles carry their number. */
+.mm-info .ex-steps {
+	display: grid;
+	gap: var(--ds-sp-5);
+	margin: var(--ds-sp-5) 0;
+	padding: 0;
+	list-style: none;
 }
 
-/* --- Tabs: the kit's tab strip, one pictogram per tab ----------------------------------------------------------------------------------------------- */
-
-.ex-tabs {
-	display: flex;
-	flex-wrap: wrap;
-	margin: var(--ds-sp-5) 0 var(--ds-sp-4);
-	background: rgb(0 0 0 / 0.75);
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		inset 0 var(--gp) 0 rgb(255 255 255 / 0.2);
-}
-
-.ex-tab {
-	display: inline-flex;
-	flex: 1 1 auto;
-	align-items: center;
-	justify-content: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-4);
-	border: 0;
-	background: none;
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
-	transition:
-		color var(--ds-dur-1) var(--ds-ease),
-		background-color var(--ds-dur-1) var(--ds-ease);
-}
-
-.ex-tab:hover {
-	color: #fff;
-	box-shadow: inset 0 calc(-1 * var(--gp)) 0 var(--hover);
-}
-
-.ex-tab[aria-selected="true"] {
-	background: var(--night-3);
-	color: #fff;
-	box-shadow: inset 0 calc(-2 * var(--gp)) 0 var(--ember);
-}
-
-.ex-tab:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(-3 * var(--gp));
-}
-
-.ex-tabpanel {
+.mm-info .ex-steps > li {
+	margin: 0;
 	padding: var(--ds-sp-5);
 	background: var(--night-2);
 	box-shadow: var(--mm-card-shadow);
 }
 
-/* A panel that only holds rows (FAQ) is not a card inside a card: the rows are the card. */
-.ex-tabpanel:has(> .ex-rows) {
-	padding: 0;
-	background: none;
-	box-shadow: none;
-}
-
-.ex-tabpanel > :first-child {
+.ex-steps > li > :first-child {
 	margin-top: 0;
 }
 
-.ex-tabpanel > :last-child {
+.ex-steps > li > :last-child {
 	margin-bottom: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	html:not([data-mc-motion="reduced"]) .ex-tabpanel:not([hidden]) {
-		animation: ex-in var(--ds-dur-2) var(--ds-ease);
-	}
-}
-
-@keyframes ex-in {
-	from {
-		opacity: 0;
-		transform: translateY(var(--ds-reveal-y));
-	}
 }
 
 .ex-line {
@@ -211,40 +143,6 @@
 }
 
 /* --- Verdict chip ------------------------------------------------------------------------------------------------------------------------------------ */
-
-.ex-verdict {
-	display: inline-flex;
-	flex: none;
-	align-items: center;
-	gap: var(--ds-sp-1);
-	padding: 0 var(--ds-sp-3) 0 var(--ds-sp-2);
-	background: rgb(0 0 0 / 0.6);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-	color: var(--ex-tone, var(--text));
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.ex-verdict .ex-glyph {
-	width: 16px;
-	height: 16px;
-}
-
-.ex-verdict--yes {
-	--ex-tone: var(--c-green);
-}
-
-.ex-verdict--no {
-	--ex-tone: var(--bad);
-}
-
-.ex-verdict--later {
-	--ex-tone: var(--c-blue);
-}
-
-.ex-verdict--depends {
-	--ex-tone: var(--ember);
-}
 
 /* --- Capture radius map ------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -421,59 +319,6 @@
 
 /* --- Season demo: the server goes dark, the memory stays ------------------------------------------------------------------------------------------- */
 
-.ex-season {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-	gap: var(--ds-sp-4) var(--ds-sp-5);
-	align-items: center;
-	justify-items: center;
-	margin: var(--ds-sp-5) 0;
-}
-
-.ex-season-side {
-	width: 100%;
-	margin: 0;
-	background: var(--night-2);
-	box-shadow: var(--mm-card-shadow);
-}
-
-.ex-season-side img {
-	background: var(--night);
-	box-shadow: var(--mm-recess-shadow);
-	transition: filter var(--ds-dur-3) var(--ds-ease);
-}
-
-.ex-season-side figcaption {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	color: var(--c-green);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.ex-season[data-closed="true"] .ex-season-server img {
-	filter: grayscale(1) brightness(0.55);
-}
-
-.ex-season[data-closed="true"] .ex-season-server figcaption {
-	color: var(--bad);
-}
-
-.ex-season-memory figcaption {
-	color: var(--ember);
-}
-
-.ex-season-arrow {
-	color: var(--text-3);
-}
-
-.ex-season-button {
-	grid-column: 1 / -1;
-}
-
 /* --- Flow diagram (privacy) -------------------------------------------------------------------------------------------------------------------------- */
 
 .ex-flow {
@@ -532,88 +377,6 @@
 
 .ex-flow-edge::after {
 	content: "";
-}
-
-/* --- Pipeline (open source) -------------------------------------------------------------------------------------------------------------------------- */
-
-.ex-pipeline {
-	display: grid;
-	gap: var(--ds-sp-4);
-	margin: var(--ds-sp-5) 0;
-}
-
-.ex-pipeline-row {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-3);
-}
-
-.ex-pipeline-item {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-}
-
-.ex-pipeline-node {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	min-width: 128px;
-	min-height: var(--ds-hit);
-	padding: var(--ds-sp-4);
-	border: 0;
-	background: var(--night-2);
-	box-shadow: var(--mm-card-shadow);
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
-	transition:
-		color var(--ds-dur-1) var(--ds-ease),
-		transform var(--ds-dur-1) var(--ds-ease);
-}
-
-.ex-pipeline-node .ex-glyph {
-	width: 32px;
-	height: 32px;
-}
-
-.ex-pipeline-node:hover {
-	color: #fff;
-	transform: translateY(calc(-1 * var(--ds-lift)));
-}
-
-.ex-pipeline-node[aria-pressed="true"] {
-	background: var(--night-3);
-	color: #fff;
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		0 0 0 calc(2 * var(--gp)) var(--ember);
-}
-
-.ex-pipeline-node:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(3 * var(--gp));
-}
-
-.ex-pipeline-arrow {
-	color: var(--text-3);
-}
-
-.ex-pipeline-point {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--ds-sp-4);
-	min-height: calc(2 * var(--ds-hit));
-	padding: var(--ds-sp-4) var(--ds-sp-5);
-	background: var(--night-2);
-	box-shadow: var(--mm-recess-shadow);
-	color: var(--text);
-	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-2);
 }
 
 /* --- Rows that open (FAQ, privacy) ------------------------------------------------------------------------------------------------------------------ */
@@ -899,11 +662,6 @@
 		flex: 1 1 auto;
 	}
 
-	.ex-flow-edge::after,
-	.ex-pipeline-arrow {
-		transform: rotate(90deg);
-	}
-
 	.ex-flow-node {
 		flex-direction: row;
 		justify-content: flex-start;
@@ -920,14 +678,6 @@
 	.ex-flow-edge {
 		flex-direction: row;
 		padding: var(--ds-sp-1) var(--ds-sp-4);
-	}
-
-	.ex-season {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.ex-season-arrow {
-		transform: rotate(90deg);
 	}
 
 	.ex-share-stage {
@@ -969,7 +719,7 @@
 		grid-row: 1;
 	}
 
-	.ex-row > summary > :is(.ex-chip, .ex-verdict) {
+	.ex-row > summary > .ex-chip {
 		grid-column: 2;
 		grid-row: 2;
 		justify-self: start;
@@ -977,44 +727,23 @@
 	}
 
 	.ex-map,
-	.ex-share-card,
-	.ex-season-side {
+	.ex-share-card {
 		max-width: 260px;
 	}
 
-	.ex-radius,
-	.ex-season {
+	.ex-radius {
 		justify-items: start;
-	}
-
-	.ex-tab {
-		flex-basis: 40%;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.ex-map-area,
-	.ex-share-people,
-	.ex-season-side img,
-	.ex-tab,
-	.ex-pipeline-node {
+	.ex-share-people {
 		transition: none;
 	}
 }
 
-html[data-mc-motion="reduced"]
-	:is(.ex-map-area, .ex-share-people, .ex-season-side img, .ex-tab, .ex-pipeline-node, .ex-more > summary::before) {
-	transition: none;
-}
-
-@media (forced-colors: active) {
-	.ex-tab[aria-selected="true"],
-	.ex-pipeline-node[aria-pressed="true"] {
-		outline: 2px solid Highlight;
-	}
-}
-
-/* --- Discovery: tiles and timeline stops -------------------------------------------------------------------------------------------------------------- */
+/* --- Discovery: tiles -------------------------------------------------------------------------------------------------------------- */
 
 .mm-angle-card h2 {
 	display: flex;
@@ -1031,65 +760,72 @@ html[data-mc-motion="reduced"]
 	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 
-.ex-ticks {
+/* --- Questions: the FAQ and the three questions of the other pages, a visible list with short answers --------------------------------------------- */
+
+.ex-faq-group + .ex-faq-group {
+	margin-top: var(--ds-sp-7);
+}
+
+.ex-faq {
 	display: grid;
-	gap: 0;
-	margin: var(--ds-sp-3) 0 0;
-	padding: 0;
-	list-style: none;
+	gap: var(--ds-sp-5);
+	margin: var(--ds-sp-4) 0;
 }
 
-.ex-ticks li {
-	margin: 0;
-	padding: 0;
+.ex-faq-item {
+	scroll-margin-top: 88px;
 }
 
-.ex-ticks button {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-3);
-	border: 0;
-	background: none;
-	color: var(--text-2);
+.ex-faq-item h3 {
+	margin: 0 0 var(--ds-sp-2);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-align: left;
+	color: var(--text);
 	text-shadow: var(--ds-text-shadow-1);
-	cursor: pointer;
 }
 
-.ex-ticks button:hover {
-	color: #fff;
+.ex-faq-item h3 a {
+	color: inherit;
+	text-decoration: none;
 }
 
-.ex-ticks button[aria-pressed="true"] {
-	background: var(--night-3);
+.ex-faq-item h3 a:hover,
+.ex-faq-item:target h3 {
 	color: var(--ember);
-	box-shadow: inset calc(2 * var(--gp)) 0 0 var(--ember);
 }
 
-.ex-ticks button:focus-visible {
-	outline: var(--ds-focus) solid var(--hover);
-	outline-offset: calc(-3 * var(--gp));
+.ex-faq-item p a {
+	white-space: nowrap;
 }
 
-/* The three loaders the mod runs on: boxes, not a sentence. */
-.ex-loaders {
+.ex-faq-item p {
+	max-width: var(--ds-measure);
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+
+/* --- /concept: what it is not, and the dated comparison ----------------------------------------------------------------------------------------- */
+
+.ex-lead {
+	max-width: var(--ds-measure);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	color: var(--text);
+}
+
+.ex-not {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--ds-sp-4);
+	gap: var(--ds-sp-3);
 	margin: var(--ds-sp-4) 0;
 	padding: 0;
 	list-style: none;
 }
 
-.ex-loaders li {
+.ex-not li {
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-3);
 	min-height: var(--ds-hit);
-	margin: 0;
 	padding: 0 var(--ds-sp-4);
 	background: var(--night);
 	box-shadow: var(--mm-recess-shadow);
@@ -1098,28 +834,124 @@ html[data-mc-motion="reduced"]
 	text-shadow: var(--ds-text-shadow-1);
 }
 
-.ex-loaders .ex-glyph {
+.ex-not .ex-glyph {
 	color: var(--ember);
 }
 
-/* /discover: the four paths side by side, so the whole choice (and the call to action) fits the first screen. */
-.mm-angle-grid--paths .mm-angle-card {
-	padding: var(--ds-sp-4);
+/* Five columns do not fit a phone: the table scrolls inside its own box, never the page. */
+.ex-table-scroll {
+	max-width: 100%;
+	margin: var(--ds-sp-4) 0;
+	overflow-x: auto;
 }
 
-.mm-angle-grid--paths .mm-angle-card > .mm-memory-scene {
-	padding: var(--ds-sp-2);
+.ex-table-scroll:focus-visible {
+	outline: var(--ds-focus) solid var(--hover);
 }
 
-.mm-site .mm-angle-grid--paths .mm-angle-card h2 {
-	margin-top: var(--ds-sp-2);
-	font-size: var(--ds-fs-xs);
+.ex-compare {
+	min-width: 640px;
+	border-collapse: collapse;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+
+.ex-compare caption {
+	padding-bottom: var(--ds-sp-2);
+	color: var(--text-3);
+	text-align: left;
+}
+
+.ex-compare :is(th, td) {
+	padding: var(--ds-sp-2) var(--ds-sp-3);
+	border-bottom: var(--gp) solid var(--night-3);
+	text-align: left;
+	vertical-align: top;
+}
+
+.ex-compare th {
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+}
+
+.ex-compare tbody tr:first-child {
+	background: var(--night);
+}
+
+.ex-compare td[data-verdict="yes"] {
+	color: var(--text);
+}
+
+/* Two columns fit a phone: no forced width, so the table wraps instead of scrolling. */
+.ex-compare--two {
+	min-width: 0;
+	width: 100%;
+}
+
+.ex-compare--two p {
+	margin: 0 0 var(--ds-sp-2);
+}
+
+/* --- Chat commands, one per line (Blender guide, checksum fold) -------------------------------------------------------------------------------------- */
+
+.ex-commands {
+	display: grid;
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-4) 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ex-commands li {
+	line-height: var(--ds-hit);
+}
+
+/* A command that wraps on a phone keeps readable lines instead of two 44 px rows. */
+.ex-commands .ex-command code {
+	padding-block: calc((var(--ds-hit) - var(--ds-lh-xs)) / 2);
 	line-height: var(--ds-lh-xs);
 }
 
-@media (min-width: 1000px) {
-	.mm-angle-grid--paths {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: var(--ds-sp-4);
+@media (max-width: 720px) {
+	/* On a phone, each command sits on its own line, with its explanation under it. */
+	.ex-commands .ex-command {
+		display: flex;
+		width: fit-content;
 	}
+
+	.ex-commands li {
+		line-height: var(--ds-rd-lh);
+	}
+}
+
+.ex-admin h3 {
+	margin-top: var(--ds-sp-5);
+}
+
+.ex-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-4);
+}
+
+/* --- An announcement to paste in the server's chat or Discord ---------------------------------------------------------------------------------------- */
+
+.ex-announce {
+	margin: var(--ds-sp-4) 0;
+	padding: var(--ds-sp-4);
+	background: var(--night);
+	box-shadow: var(--mm-recess-shadow);
+}
+
+.ex-announce figcaption {
+	color: var(--text-3);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-transform: capitalize;
+}
+
+.ex-announce blockquote {
+	margin: var(--ds-sp-2) 0 var(--ds-sp-3);
+	color: var(--text);
+	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
+	overflow-wrap: anywhere;
 }

@@ -1,5 +1,6 @@
 import {
 	createContext,
+	Fragment,
 	type ReactNode,
 	startTransition,
 	useCallback,
@@ -158,4 +159,20 @@ export function useI18n() {
 export function T({ message, params }: { message: string; params?: Record<string, string | number> }) {
 	const { t } = useI18n()
 	return <>{t(message, params)}</>
+}
+/** Splits a translated sentence on its slots so that links or bold text keep their place in every language. */
+const slotMark = '\u0000'
+export function Rich({ message, slots }: { message: string; slots: Record<string, ReactNode> }) {
+	const { t } = useI18n()
+	const marks = Object.fromEntries(Object.keys(slots).map(name => [name, `${slotMark}${name}${slotMark}`]))
+	const parts = t(message, marks).split(slotMark)
+	return (
+		<>
+			{parts.map((part, index) => (
+				// Parts are positional: a sentence never reorders between renders.
+				// biome-ignore lint/suspicious/noArrayIndexKey: the split position is the only stable identity of a text part.
+				<Fragment key={index}>{index % 2 === 1 ? slots[part] : part}</Fragment>
+			))}
+		</>
+	)
 }
