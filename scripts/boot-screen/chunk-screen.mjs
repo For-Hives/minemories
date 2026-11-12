@@ -268,8 +268,15 @@ export function bootPace(t, C) {
 /** Which pages play the screen: the landing, and the viewers (a memory, a shared link, a public memory), which keep it until their 3D scene is drawn. */
 export function bootRoute(path) {
 	if (path === '/') return 'landing'
-	// biome-ignore lint/performance/useTopLevelRegex: gen.mjs inlines each function on its own (no module-level value); it runs once per page load
-	return /^\/(viewer|share\/[^/]+|public\/[^/]+)\/?$/.test(path) ? 'viewer' : ''
+	const parts = path.split('/')
+	if (parts.at(-1) === '') parts.pop()
+	// ['', 'viewer'], or ['', 'share' or 'public', the link]
+	const [, page, link] = parts
+	const viewer =
+		parts.length === 2
+			? page === 'viewer'
+			: parts.length === 3 && Boolean(link) && (page === 'share' || page === 'public')
+	return viewer ? 'viewer' : ''
 }
 
 /**

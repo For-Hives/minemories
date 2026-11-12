@@ -205,7 +205,14 @@ win.setTimeout(end,C.out+400)
 }
 function bootRoute(path){
 if(path==='/')return 'landing'
-return/^\/(viewer|share\/[^/]+|public\/[^/]+)\/?$/.test(path)?'viewer':''
+const parts=path.split('/')
+if(parts.at(-1)==='')parts.pop()
+const[,page,link]=parts
+const viewer=
+parts.length===2
+?page==='viewer'
+:parts.length===3&&Boolean(link)&&(page==='share'||page==='public')
+return viewer?'viewer':''
 }
 function bootScreen(doc,win,config){
 const boot=doc.getElementById('boot')
