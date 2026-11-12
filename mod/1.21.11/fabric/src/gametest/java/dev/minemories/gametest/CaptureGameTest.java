@@ -40,8 +40,29 @@ public final class CaptureGameTest implements FabricClientGameTest {
       context.waitFor(client -> Files.exists(glb), 20 * 60);
       context.waitTicks(20);
       context.takeScreenshot("after-capture");
-    } catch (RuntimeException error) {
-      throw error;
+      // Pairing, upload, diagnostics and selection, against a mock API (see FeatureScenario).
+      var gameDir = new java.util.concurrent.atomic.AtomicReference<Path>();
+      context.runOnClient(client -> gameDir.set(Path.of(client.gameDirectory.getAbsolutePath())));
+      FeatureScenario features = new FeatureScenario(gameDir.get());
+      var host =
+          new FeatureScenario.Host() {
+            @Override
+            public void client(String command) {
+              context.runOnClient(client -> client.player.connection.sendCommand(command));
+            }
+
+            @Override
+            public void server(String command) {
+              world.getServer().runCommand(command);
+            }
+          };
+      try {
+        while (!features.tick(host)) context.waitTicks(1);
+      } finally {
+        features.close();
+      }
+    } catch (IOException error) {
+      throw new AssertionError("Test setup failed: " + error, error);
     }
     try {
       GlbReport.report(glb);

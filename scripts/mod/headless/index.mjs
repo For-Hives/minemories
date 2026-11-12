@@ -26,6 +26,7 @@ import {
 	failureMessage,
 	parseGlbStats,
 	parseLogMarkers,
+	resourceProblems,
 	parseSummary,
 	thresholdsFor,
 } from './report.mjs'
@@ -60,7 +61,7 @@ async function readStats(paths) {
 	}
 }
 
-function interpret({ outcome, stats, error, thresholds, spec }) {
+function interpret({ outcome, stats, error, thresholds, spec, log }) {
 	const markers = parseLogMarkers(outcome.tail)
 	if (outcome.stuck) return { status: 'failed', message: `Minecraft stuck (${outcome.stuck}), stopped` }
 	if (outcome.timedOut && !outcome.completed) return { status: 'failed', message: 'timed out, Minecraft was stopped' }
@@ -72,6 +73,8 @@ function interpret({ outcome, stats, error, thresholds, spec }) {
 	if (error) return { status: 'failed', message: error }
 	const problems = evaluateStats(stats, thresholds)
 	if (problems.length > 0) return { status: 'failed', message: problems.join('; ') }
+	const missing = resourceProblems(log)
+	if (missing.length > 0) return { status: 'failed', message: `missing resource: ${missing.join(' | ')}` }
 	return { status: 'passed' }
 }
 
@@ -127,7 +130,8 @@ async function runTarget(target, context) {
 	const outcome = await execWithRetry({ context, plan, target, logFile, gradleJdk })
 	const { stats, error } = await readStats(paths)
 	const thresholds = thresholdsFor(thresholdsFile, target.id)
-	const verdict = interpret({ outcome, stats, error, thresholds, spec })
+	const log = await readFile(logFile, 'utf8').catch(() => '')
+	const verdict = interpret({ outcome, stats, error, thresholds, spec, log })
 	const report = { stats: stats ?? null, thresholds, logFile: relative(root, logFile) }
 	if (verdict.status === 'passed' && !keepLogs) await rm(logFile, { force: true })
 	return { ...verdict, report, logTail: verdict.status === 'failed' ? outcome.tail : undefined }

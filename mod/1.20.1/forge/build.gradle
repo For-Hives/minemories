@@ -36,7 +36,7 @@ loom {
 }
 // GlbReport is Minecraft-free and shared with the 1.21.11 tests.
 def sharedReport = tasks.register('copyGlbReport', Copy) {
-    from('../../shared/gametest-common/java/dev/minemories/gametest/GlbReport.java')
+    from('../../shared/gametest-common/java/dev/minemories/gametest') { include '*.java' }
     into layout.buildDirectory.dir('gametest-shared/dev/minemories/gametest')
 }
 sourceSets.gametest.java.srcDir layout.buildDirectory.dir('gametest-shared')

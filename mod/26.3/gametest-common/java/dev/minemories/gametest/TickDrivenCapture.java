@@ -19,10 +19,11 @@ public final class TickDrivenCapture {
   private static final Logger LOGGER = LoggerFactory.getLogger("minemories-gametest");
   private TickDrivenCapture() {}
 
-  private enum Step { MENU, CREATING, LOADING, SETTLING, EXPORTING, DONE }
+  private enum Step { MENU, CREATING, LOADING, SETTLING, EXPORTING, FEATURES, DONE }
 
   private static Step step = Step.MENU;
   private static int ticks;
+  private static FeatureScenario features;
 
   public static void tick() {
     Minecraft mc = Minecraft.getInstance();
@@ -82,10 +83,17 @@ public final class TickDrivenCapture {
         case EXPORTING -> {
           if (Files.exists(GlbReport.exportedGlb()) && ticks > 60) {
             GlbReport.report(GlbReport.exportedGlb());
+            features = new FeatureScenario(java.nio.file.Path.of(mc.gameDirectory.getAbsolutePath()));
+            step(Step.FEATURES);
+          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+        }
+        case FEATURES -> {
+          if (features.tick(host(mc))) {
+            features.close();
             LOGGER.info("MINEMORIES-GAMETEST PASSED");
             step(Step.DONE);
             mc.stop();
-          } else if (ticks > 20 * 90) throw new AssertionError("Export timed out");
+          }
         }
         case DONE -> {}
       }
@@ -93,6 +101,22 @@ public final class TickDrivenCapture {
       LOGGER.error("MINEMORIES-GAMETEST FAILED", failure);
       Runtime.getRuntime().halt(1);
     }
+  }
+
+
+  private static FeatureScenario.Host host(Minecraft mc) {
+    return new FeatureScenario.Host() {
+      @Override
+      public void client(String command) {
+        mc.player.connection.sendCommand(command);
+      }
+
+      @Override
+      public void server(String command) {
+        var server = mc.getSingleplayerServer();
+        server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
+      }
+    };
   }
 
   private static void step(Step next) {
