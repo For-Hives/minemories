@@ -25,8 +25,9 @@ import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
 import './gallery-storage.css'
 import { AreaCard, TrashCard } from './GalleryCards'
+import { ConfirmDelete } from './GalleryConfirm'
 import { GalleryPairingCard } from './GalleryPairingCard'
-import { type Memories, type Storage, useGalleryData } from './gallery-data'
+import { type Memories, type Storage, type TrashMemories, useGalleryData } from './gallery-data'
 import { useGalleryPairing } from './gallery-pairing'
 import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
@@ -113,6 +114,7 @@ export function GalleryPage() {
 		trashSnapshot,
 		restoreSnapshot,
 		deleteSnapshot,
+		deleting,
 	} = useGalleryData(notify)
 	const pairing = useGalleryPairing(notify, setLoadError)
 	const { createPairing } = pairing
@@ -155,29 +157,64 @@ export function GalleryPage() {
 					/>
 				)}
 				{!loading && trash.length > 0 && (
-					<section className="gallery-trash" aria-label={t('Trash')}>
-						<div>
-							<h2>
-								<T message={'Trash ·'} /> {trash.length}
-							</h2>
-							<p className="gallery-trash-note">
-								<T message={'Snapshots disappear forever 30 days after deletion.'} />
-							</p>
-						</div>
-						<div className="gallery-trash-list">
-							{trash.map(item => (
-								<TrashCard
-									key={item.id}
-									item={item}
-									onRestore={() => void restoreSnapshot(item.id)}
-									onDelete={() => void deleteSnapshot(item.id)}
-								/>
-							))}
-						</div>
-					</section>
+					<TrashSection
+						trash={trash}
+						deleting={deleting}
+						onRestore={id => void restoreSnapshot(id)}
+						onDelete={id => void deleteSnapshot(id)}
+					/>
 				)}
 			</section>
 		</div>
+	)
+}
+
+/** The trash: each card restores or deletes for good, and deleting for good asks first in the gallery's own panel. */
+function TrashSection({
+	trash,
+	deleting,
+	onRestore,
+	onDelete,
+}: {
+	trash: TrashMemories
+	deleting: ReadonlySet<string>
+	onRestore(id: string): void
+	onDelete(id: string): void
+}) {
+	const { t } = useI18n()
+	const [asking, setAsking] = useState<TrashMemories[number] | null>(null)
+	return (
+		<section className="gallery-trash" aria-label={t('Trash')}>
+			<div>
+				<h2>
+					<T message={'Trash ·'} /> {trash.length}
+				</h2>
+				<p className="gallery-trash-note">
+					<T message={'Snapshots disappear forever 30 days after deletion.'} />
+				</p>
+			</div>
+			<div className="gallery-trash-list">
+				{trash.map(item => (
+					<TrashCard
+						key={item.id}
+						item={item}
+						deleting={deleting.has(item.id)}
+						onRestore={() => onRestore(item.id)}
+						onDelete={() => setAsking(item)}
+					/>
+				))}
+			</div>
+			{asking && (
+				<ConfirmDelete
+					name={asking.name}
+					onCancel={() => setAsking(null)}
+					onConfirm={() => {
+						setAsking(null)
+						onDelete(asking.id)
+					}}
+				/>
+			)}
+		</section>
 	)
 }
 

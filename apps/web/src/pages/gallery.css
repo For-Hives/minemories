@@ -754,7 +754,13 @@
 	box-shadow: var(--g-panel);
 }
 .gallery-trash-card {
+	flex-wrap: wrap;
 	background: var(--night);
+}
+/* The name takes the room it needs before the two buttons; when they no longer fit beside it, they drop to their own row
+   instead of pushing the page sideways (the French labels are long). */
+.gallery-trash-card .gallery-snapshot-text {
+	flex: 1 1 10rem;
 }
 .gallery-snapshot-thumb {
 	width: 56px;
@@ -834,6 +840,57 @@
 .gallery-dialog:focus-visible {
 	outline: var(--ds-focus);
 	outline-offset: calc(-3 * var(--gp));
+}
+/* --- Delete for good: a small container panel centred over the same veil, the trash's last word before erasing --- */
+.gallery-backdrop.is-centered {
+	align-items: center;
+	justify-content: center;
+	padding: var(--ds-sp-4);
+}
+.gallery-confirm {
+	position: relative;
+	display: grid;
+	gap: var(--ds-sp-3);
+	width: min(520px, 100%);
+	padding: var(--ds-sp-6);
+	background: var(--night-2);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset calc(2 * var(--gp)) calc(2 * var(--gp)) 0 #3a322b,
+		inset calc(-2 * var(--gp)) calc(-2 * var(--gp)) 0 #0f0c0a;
+	color: var(--text);
+	outline: 0;
+	animation: gallery-fade var(--ds-dur-2) linear;
+}
+.gallery-confirm:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: calc(-3 * var(--gp));
+}
+.gallery-confirm h2 {
+	margin: 0;
+	overflow-wrap: anywhere;
+	font: 700 var(--ds-fs-h3) / 1.3 var(--ds-f-text);
+	color: var(--text);
+}
+.gallery-confirm p {
+	margin: 0;
+	color: var(--text-2);
+}
+.gallery-confirm-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--ds-sp-2);
+	margin-top: var(--ds-sp-2);
+}
+/* The panel's one irreversible action is red at rest, not only on hover. */
+.gallery-confirm .gallery-text-button.is-danger {
+	border-color: var(--bad);
+	color: var(--bad);
+}
+/* A card the server is erasing fades while it waits, so the click reads as taken. */
+.gallery-trash-card.is-deleting {
+	opacity: 0.6;
 }
 @keyframes gallery-slide {
 	from {
@@ -1072,6 +1129,19 @@
 	.gallery-tabs {
 		margin-inline: var(--ds-sp-4);
 	}
+	/* On a phone the trash card's buttons share a full row, and the confirmation panel stacks its two. */
+	.gallery-trash-card .gallery-snapshot-actions {
+		flex: 1 1 100%;
+	}
+	.gallery-trash-card .gallery-snapshot-actions > button {
+		flex: 1 1 auto;
+	}
+	.gallery-confirm {
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+	.gallery-confirm-actions {
+		flex-direction: column;
+	}
 }
 /* Reduced motion (the system's or the site's option): the buttons keep still on hover. */
 html[data-mc-motion="reduced"]
@@ -1100,6 +1170,7 @@ html[data-mc-motion="reduced"]
 		transition: none;
 	}
 	.gallery-dialog,
+	.gallery-confirm,
 	.gallery-backdrop,
 	.context-menu,
 	.gallery-link-wait i {
@@ -1311,6 +1382,7 @@ html[data-mc-motion="reduced"]
 	.gallery-card,
 	.gallery-server,
 	.gallery-dialog,
+	.gallery-confirm,
 	.gallery-facts,
 	.context-menu,
 	.gallery-empty,

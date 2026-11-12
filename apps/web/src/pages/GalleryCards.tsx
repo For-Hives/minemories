@@ -393,10 +393,13 @@ function UpdatedAt({ memory }: { memory: Memory }) {
 
 export function TrashCard({
 	item,
+	deleting = false,
 	onRestore,
 	onDelete,
 }: {
 	item: TrashMemories[number]
+	/** The server is erasing it: both actions wait, and the card says so. */
+	deleting?: boolean
 	onRestore: () => void
 	onDelete: () => void
 }) {
@@ -404,7 +407,7 @@ export function TrashCard({
 	const remaining = daysUntilPurge(item.deletedAt, item.purgeAt)
 	const thumbnail = item.metadata.thumbnail ?? item.metadata.icon
 	return (
-		<article className="gallery-trash-card">
+		<article className={deleting ? 'gallery-trash-card is-deleting' : 'gallery-trash-card'} aria-busy={deleting}>
 			<span
 				aria-hidden="true"
 				className="gallery-snapshot-thumb"
@@ -418,11 +421,11 @@ export function TrashCard({
 				</span>
 			</div>
 			<div className="gallery-snapshot-actions">
-				<button type="button" className="gallery-text-button" onClick={onRestore}>
+				<button type="button" className="gallery-text-button" onClick={onRestore} disabled={deleting}>
 					{t('↩ Restore')}
 				</button>
-				<button type="button" className="gallery-text-button is-danger" onClick={onDelete}>
-					{t('Delete forever')}
+				<button type="button" className="gallery-text-button is-danger" onClick={onDelete} disabled={deleting}>
+					{deleting ? t('Deleting…') : t('Delete forever')}
 				</button>
 			</div>
 		</article>
