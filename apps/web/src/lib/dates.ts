@@ -28,7 +28,7 @@ export function formatRelativeDate(isoDate: string, now: number = Date.now(), lo
 export function formatDateSpan(first: string, last: string, locale: Locale = 'en'): string {
 	const start = new Date(first)
 	const end = new Date(last)
-	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '—'
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '-'
 	const tag = localeTag(locale)
 	const full = new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year: 'numeric' })
 	if (full.format(start) === full.format(end)) return full.format(end)

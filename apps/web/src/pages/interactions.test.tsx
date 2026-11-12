@@ -752,7 +752,7 @@ test('signing out forgets every unsaved form draft kept in this browser', async 
 			</SiteLayout>
 		</MemoryRouter>
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Alex — My account' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Alex, My account' }))
 	fireEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0] as HTMLElement)
 	expect(localStorage.getItem('minemories-form-drafts')).toBeNull()
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/'))

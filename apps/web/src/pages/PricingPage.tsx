@@ -169,7 +169,7 @@ export function PriceSimulator() {
 			<div className="mm-estimate">
 				<span className="mm-kicker">{t('Your estimate')}</span>
 				<output className="mm-estimate-total" aria-live="polite" aria-label={t('Estimated total')}>
-					{quote ? money(quote.totalCents) : '—'}
+					{quote ? money(quote.totalCents) : '-'}
 				</output>
 				<p>
 					{cloud

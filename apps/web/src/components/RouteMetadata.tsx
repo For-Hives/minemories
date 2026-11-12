@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
-import { type Locale, useI18n } from '../i18n/I18n'
-import { localeTag } from '../i18n/locales'
-import { metadataFor, siteOrigin, socialImage } from '../route-metadata'
+import { useI18n } from '../i18n/I18n'
+import { linkPreviewLocale, metadataFor, siteOrigin, socialImage } from '../route-metadata'
 import { structuredDataFor } from '../structured-data'
 
 function meta(name: string, content: string, attribute: 'name' | 'property' = 'name') {
@@ -14,7 +13,9 @@ function meta(name: string, content: string, attribute: 'name' | 'property' = 'n
 	}
 	element.content = content
 }
-function publicHead(page: ReturnType<typeof metadataFor>, locale: Locale) {
+function publicHead(page: ReturnType<typeof metadataFor>) {
+	// The link preview is in English whatever the visitor's language: same card as the prerendered page.
+	const preview = metadataFor(page.path, 'en')
 	const canonicalUrl = new URL(page.path, siteOrigin).href
 	let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
 	if (!canonical) {
@@ -24,10 +25,10 @@ function publicHead(page: ReturnType<typeof metadataFor>, locale: Locale) {
 	}
 	canonical.href = canonicalUrl
 	meta('og:site_name', 'Minemories', 'property')
-	meta('og:title', page.title, 'property')
-	meta('og:description', page.description, 'property')
+	meta('og:title', preview.title, 'property')
+	meta('og:description', preview.description, 'property')
 	meta('og:url', canonicalUrl, 'property')
-	meta('og:locale', localeTag(locale).replace('-', '_'), 'property')
+	meta('og:locale', linkPreviewLocale, 'property')
 	meta('og:type', page.articleDate ? 'article' : 'website', 'property')
 	meta('og:image', new URL(socialImage.path, siteOrigin).href, 'property')
 	meta('og:image:width', String(socialImage.width), 'property')
@@ -51,7 +52,7 @@ export function RouteMetadata() {
 		meta('description', page.description)
 		meta('robots', page.indexable && import.meta.env.VITE_INDEXABLE === 'true' ? 'index,follow' : 'noindex,nofollow')
 		document.querySelector('[data-page-schema]')?.remove()
-		if (page.indexable) publicHead(page, locale)
+		if (page.indexable) publicHead(page)
 		else {
 			document.querySelector('link[rel="canonical"]')?.remove()
 			for (const element of document.head.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]'))
