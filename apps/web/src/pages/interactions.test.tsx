@@ -487,6 +487,7 @@ test('French translation does not change pairing state identifiers or hide the p
 	localStorage.clear()
 })
 
+// Old remote tags without scope or seed are unidentified: they never stack with another capture.
 test('gallery View opens the newest snapshot, with the timeline once an area holds several complete snapshots', async () => {
 	const identity = {
 		worldId: 'a'.repeat(64),
@@ -575,7 +576,7 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 		within(card)
 			.getAllByRole('menuitem')
 			.map(item => item.textContent)
-	).toEqual(['View', 'Details', 'Share', 'Public publication', 'Snapshots', 'Rename this area'])
+	).toEqual(['View', 'Details', 'Share', 'Public publication', 'Rename this snapshot', 'Move to trash'])
 	fireEvent.click(within(card).getByRole('menuitem', { name: 'Details' }))
 	const details = screen.getByRole('dialog', { name: 'Remote two' })
 	expect(within(details).getByRole('tab', { name: 'Details' }).getAttribute('aria-selected')).toBe('true')

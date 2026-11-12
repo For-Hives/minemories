@@ -177,14 +177,14 @@ test('the Minecraft head is saved from the username and can be removed once set'
 	await screen.findByText('Tête Minecraft enregistrée.')
 	expect(mocks.refresh).toHaveBeenCalledOnce()
 	cleanup()
-	mocks.image.value = 'https://minotar.net/helm/Notch/64.png'
+	mocks.image.value = 'https://head.sttr.io/face/Notch'
 	page()
 	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
 	await waitFor(() => expect(mocks.head).toHaveBeenLastCalledWith({ username: null }))
 	await screen.findByText('Photo retirée.')
 })
 test('a failed picture removal shows a safe error', async () => {
-	mocks.image.value = 'https://minotar.net/helm/Notch/64.png'
+	mocks.image.value = 'https://head.sttr.io/face/Notch'
 	mocks.head.mockRejectedValue(new Error('private details'))
 	page()
 	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))

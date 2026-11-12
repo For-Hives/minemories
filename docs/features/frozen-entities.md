@@ -65,9 +65,12 @@ Name tags above entities and sign text are not exported. Text passes without
 normals, lines/leads, ground shadows, hitboxes, flames added by the dispatcher,
 glint and effects using special shaders are not part of this capture.
 Procedural renderers with no accessible texture and mod-specific GPU pipelines
-are not claimed as supported. A textured geometry pass that cannot be copied
-makes the capture fail before saving; the last complete memory remains
-available.
+are not claimed as supported. A pass whose texture cannot be identified (drawn
+by a shader, or bound outside the render type, as FaunaEngine 1.1 does on
+1.21.1) is dropped for that model with one warning in the log, and the capture
+goes on: the entity is exported without that pass, or not at all when it has no
+other. A texture that is identified but fails to copy still makes the capture
+fail before saving; the last complete memory remains available.
 
 Pikachu's secondary layer in Cobblemon 1.7.3 is copied with its texture, but its
 specific self-illumination remains a known limit: it gets no glTF emissive
@@ -91,7 +94,7 @@ and other entities are kept, and the local log shows a line
 (counts only, no identifier, name or path). A refused texture is refused once for the whole
 capture. Manual and AFK captures go through the same code.
 
-Why 512: the AFK spooled writer accepts 1,024 textures in total, shared with the terrain and
+Why 512: the AFK spooled writer accepted 1,024 textures in total when this cap was set (4,096 since 11/11/2026), shared with the terrain and
 block entities; a real modpack capture has 83 (38 KiB of PNG in total, after atlas cropping),
 67 for the largest native capture. 512 entity textures therefore leave at least 512 slots for the
 rest, and the 64 MiB PNG budget, which remains the real memory cap, is not reached by 512
@@ -104,9 +107,9 @@ textures, 14 refused and 3 kept; with 1 pass, 7 passes skipped; with 2,000 bytes
 viewer and API validator and import into Blender 5.2.2 (kept entities render). A real modpack
 was not exercised.
 
-Remaining limit: the spooled writer still fails if the **total** number of textures exceeds 1,024
-(terrain and block entities included); with at most 512 entity textures, that would require more
-than 512 non-entity textures.
+Remaining limit: the spooled writer still fails if the **total** number of textures exceeds 4,096
+(terrain and block entities included). It was 1,024 until 11/11/2026, when a 300-mod Fabric 1.20.1
+capture reached 1,229 distinct block sprites.
 
 Reading models and textures stays on the game thread, with the OpenGL read state
 restored. No change to blocks, entity poses or world saves is needed for the

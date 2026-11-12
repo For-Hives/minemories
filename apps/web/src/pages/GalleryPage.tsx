@@ -17,6 +17,7 @@ import {
 	groupCaptures,
 	latestCapture,
 	viewPath,
+	worldCover,
 } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
@@ -245,7 +246,7 @@ function WorldSections({
 			chronological(
 				groupCaptures(memories).map(group => ({
 					...group,
-					areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null),
+					areas: captureAreas(group.captures, capture => temporalIdentity(capture.metadata) !== null, group.seeded),
 				}))
 			),
 		[memories]
@@ -290,19 +291,22 @@ function WorldSections({
 }
 
 function ServerCovers({ captures }: { captures: Memories }) {
-	const images = captures
-		// Keyed by capture: two captures can share the same thumbnail.
-		.map(capture => ({ id: capture.id, image: capture.metadata.thumbnail ?? capture.metadata.icon }))
-		.filter((cover): cover is { id: string; image: string } => typeof cover.image === 'string')
-		.slice(0, 3)
+	const cover = worldCover(captures)
 	return (
-		<span className="gallery-server-covers" data-count={images.length} aria-hidden="true">
-			{images.length === 0 ? (
+		<span className="gallery-server-covers" data-kind={cover?.kind ?? 'none'} aria-hidden="true">
+			{cover ? (
+				<img
+					className={cover.kind === 'icon' ? 'gallery-server-picture is-icon' : 'gallery-server-picture'}
+					src={cover.src}
+					alt=""
+					loading="lazy"
+					decoding="async"
+					draggable={false}
+				/>
+			) : (
 				<span className="gallery-server-placeholder">
 					<GalleryIcon name="cube" />
 				</span>
-			) : (
-				images.map(({ id, image }) => <span key={id} style={{ backgroundImage: `url("${image}")` }} />)
 			)}
 		</span>
 	)

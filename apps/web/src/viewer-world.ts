@@ -105,17 +105,3 @@ export function applyLayer(layer: WorldLayer): void {
 		index.needsUpdate = true
 	}
 }
-
-/** One light per 6-block cell, strongest first, weighted by distance: far lava must not use the whole budget. */
-export function chooseLights<T extends WorldLight>(lights: readonly T[], focus: THREE.Vector3, limit = 12): T[] {
-	const cellSize = 6
-	const cells = new Map<string, T>()
-	for (const light of lights) {
-		const { x, y, z } = light.position
-		const cell = `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)},${Math.floor(z / cellSize)}`
-		const current = cells.get(cell)
-		if (!current || light.intensity > current.intensity) cells.set(cell, light)
-	}
-	const relevance = (light: T) => light.intensity / (1 + light.position.distanceToSquared(focus) / 400)
-	return [...cells.values()].sort((left, right) => relevance(right) - relevance(left)).slice(0, limit)
-}

@@ -572,9 +572,18 @@ public final class ClientRuntime {
     if (currentServer == null || connection == null || !connection.getConnection().isConnected())
       return null;
     var binding = remoteWorldBinding(mc);
-    return "remote:"
-        + CaptureIdentity.remote(
-            currentServer.ip, "", "", binding.namespace(), binding.configured());
+    return "remote:" + remoteId(binding, currentServer.ip, "", "");
+  }
+
+  private static String remoteId(
+      RemoteCaptureSession.Binding binding, String server, String dimension, String player) {
+    if (!binding.configured())
+      return CaptureIdentity.remote(server, dimension, player, binding.namespace(), false);
+    if (binding.legacyServer() != null)
+      return CaptureIdentity.remote(
+          binding.legacyServer(), dimension, player, binding.namespace(), true);
+    return CaptureIdentity.remoteV2(
+        CaptureIdentity.canonicalServer(server), dimension, player, binding.namespace());
   }
 
   private static String capturePlayerIdentity(Minecraft mc) {
@@ -592,11 +601,11 @@ public final class ClientRuntime {
         server,
         () -> {
           try {
-            return PairingClient.remoteWorldNamespace(server);
+            return PairingClient.remoteWorld(server);
           } catch (RuntimeException error) {
             LOGGER.warn(
                 "Invalid remote world identifier; keeping captures separated by connection.");
-            return "";
+            return null;
           }
         });
   }
@@ -622,10 +631,8 @@ public final class ClientRuntime {
       if (currentServer == null) return;
       String server = currentServer.ip;
       var binding = remoteWorldBinding(mc);
-      boolean persistent = binding.configured();
-      String namespace = binding.namespace();
-      id = CaptureIdentity.remote(server, dimension, player, namespace, persistent);
-      metadata.addProperty("worldScope", persistent ? "namespace" : "session");
+      id = remoteId(binding, server, dimension, player);
+      metadata.addProperty("worldScope", binding.configured() ? "namespace" : "session");
     }
     metadata.addProperty("worldId", id);
     metadata.addProperty("zoneId", CaptureIdentity.zone(id, bounds, selection));
@@ -1252,6 +1259,13 @@ public final class ClientRuntime {
               level,
               new CaptureBounds(
                   min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()));
+      var shell =
+          openAir(
+              mc,
+              new CaptureBounds(
+                  min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ()),
+              !selection);
+      shell.settle();
       int blockCount = 0;
       // Chunk-major, like the progressive cursor, so each primitive keeps few chunk ranges.
       for (int chunkZ = Math.floorDiv(min.getZ(), 16) * 16; chunkZ <= max.getZ(); chunkZ += 16) {
@@ -1263,10 +1277,6 @@ public final class ClientRuntime {
               if (!chunkLoaded(mc, x, z)) continue;
               int columnTop =
                   Math.min(max.getY(), level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
-              int terrainTop = terrainSurfaceY(level, x, z, min.getY());
-              // Water above the seabed retains its fluid surface rather than acquiring a dirt wall.
-              while (terrainTop >= min.getY()
-                  && !level.getFluidState(new BlockPos(x, terrainTop, z)).isEmpty()) terrainTop--;
               for (int y = min.getY(); y <= columnTop; y++) {
                 blockCount +=
                     captureCell(
@@ -1280,7 +1290,7 @@ public final class ClientRuntime {
                         min,
                         max,
                         center,
-                        terrainTop);
+                        shell);
               }
             }
           }
@@ -1331,7 +1341,7 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      int terrainTop)
+      CutBoundary.OpenAir shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
     int x = pos.getX(), y = pos.getY(), z = pos.getZ(), count = 0;
@@ -1339,7 +1349,7 @@ public final class ClientRuntime {
         chunkZ = CaptureSink.relativeChunk(z, center.getZ());
     BlockState state = level.getBlockState(pos);
     scene.classify(GlbCategory.TERRAIN, chunkX, chunkZ);
-    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, terrainTop);
+    boolean capped = captureCutFaces(scene, sprites, mc, state, pos, min, max, center, shell);
     if (state.isAir()) return 0;
     int lightEmission = state.getLightEmission();
     if (lightEmission >= 4) {
@@ -1395,7 +1405,8 @@ public final class ClientRuntime {
                     captured,
                     x - center.getX(),
                     y - center.getY(),
-                    z - center.getZ());
+                    z - center.getZ(),
+                    false);
               });
       count++;
     }
@@ -1459,6 +1470,65 @@ public final class ClientRuntime {
   /** Block id of the cross-section faces that close the capture's sides and bottom. */
   private static final String CUT_BLOCK_ID = "minemories:cut";
 
+  /**
+   * The open air of the capture: sky, plus the player's own cells for an around-player capture (an
+   * explicit selection counts the sky only). Cells of chunks not received count as solid.
+   */
+  static CutBoundary.OpenAir openAir(Minecraft mc, CaptureBounds bounds, boolean aroundPlayer) {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    var pos = new BlockPos.MutableBlockPos();
+    CutBoundary.Passable passable =
+        (x, y, z) -> {
+          if (!chunkLoaded(mc, x, z)) return false;
+          BlockState state = level.getBlockState(pos.set(x, y, z));
+          return !(state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
+        };
+    CutBoundary.Surface surface =
+        (x, z) ->
+            chunkLoaded(mc, x, z)
+                ? level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1
+                : Integer.MAX_VALUE - 1;
+    int[][] player = new int[0][];
+    if (aroundPlayer && mc.player != null) {
+      BlockPos feet = mc.player.blockPosition();
+      player =
+          new int[][] {
+            {feet.getX(), feet.getY(), feet.getZ()}, {feet.getX(), feet.getY() + 1, feet.getZ()}
+          };
+    }
+    return new CutBoundary.OpenAir(bounds, passable, surface, player);
+  }
+
+  /**
+   * The block a seal looks like: the nearest opaque cube in the cell's column (the floor of a cave,
+   * the rock around a pocket), else the rock of the dimension.
+   */
+  private static BlockState sealState(
+      net.minecraft.world.level.Level level, BlockPos pos, BlockPos min, BlockPos max) {
+    var probe = new BlockPos.MutableBlockPos();
+    int row =
+        CutBoundary.nearestSolid(
+            pos.getY(),
+            min.getY(),
+            max.getY(),
+            y -> {
+              BlockState state = level.getBlockState(probe.set(pos.getX(), y, pos.getZ()));
+              return state.canOcclude() && state.isCollisionShapeFullBlock(level, probe);
+            });
+    if (row != Integer.MIN_VALUE)
+      return level.getBlockState(probe.set(pos.getX(), row, pos.getZ()));
+    return switch (CutBoundary.fallback(level.dimension().location().toString(), pos.getY())) {
+      case NETHERRACK -> Blocks.NETHERRACK.defaultBlockState();
+      case END_STONE -> Blocks.END_STONE.defaultBlockState();
+      case DEEPSLATE -> Blocks.DEEPSLATE.defaultBlockState();
+      case STONE -> Blocks.STONE.defaultBlockState();
+    };
+  }
+
+  /**
+   * Seals a cut cell of air or fluid that the terrain encloses on the shell (a cave or a pool the
+   * boundary slices through). Solid cells keep their own faces: they already close the capture.
+   */
   private static boolean captureCutFaces(
       CaptureSink scene,
       SpriteAssets sprites,
@@ -1468,24 +1538,19 @@ public final class ClientRuntime {
       BlockPos min,
       BlockPos max,
       BlockPos center,
-      int terrainTop)
+      CutBoundary.OpenAir shell)
       throws IOException {
     var level = Objects.requireNonNull(mc.level, "No capture level");
-    if (pos.getX() != min.getX()
-        && pos.getX() != max.getX()
-        && pos.getZ() != min.getZ()
-        && pos.getZ() != max.getZ()
-        && pos.getY() != min.getY()) return false;
-    var material =
-        CutBoundary.material(
-            pos.getY(),
-            terrainTop,
-            state.isAir(),
-            !state.getFluidState().isEmpty(),
-            state.canOcclude() && state.isCollisionShapeFullBlock(level, pos));
-    if (material == CutBoundary.Material.NONE) return false;
-    BlockState cut =
-        (material == CutBoundary.Material.DIRT ? Blocks.DIRT : Blocks.STONE).defaultBlockState();
+    boolean fluid = !state.getFluidState().isEmpty();
+    if (!(state.isAir() || fluid) || !shell.enclosed(pos.getX(), pos.getY(), pos.getZ()))
+      return false;
+    boolean bothSides = CutBoundary.sealsBothSides(state.isAir(), fluid);
+    BlockState cut = sealState(level, pos, min, max);
+    // Own node, apart from the real blocks; the caller's classification comes back afterwards.
+    scene.classify(
+        GlbCategory.CUT,
+        CaptureSink.relativeChunk(pos.getX(), center.getX()),
+        CaptureSink.relativeChunk(pos.getZ(), center.getZ()));
     ClientPlatforms.current()
         .emitBlockModel(
             mc,
@@ -1512,8 +1577,13 @@ public final class ClientRuntime {
                   captured,
                   pos.getX() - center.getX(),
                   pos.getY() - center.getY(),
-                  pos.getZ() - center.getZ());
+                  pos.getZ() - center.getZ(),
+                  bothSides);
             });
+    scene.classify(
+        GlbCategory.TERRAIN,
+        CaptureSink.relativeChunk(pos.getX(), center.getX()),
+        CaptureSink.relativeChunk(pos.getZ(), center.getZ()));
     return true;
   }
 
@@ -1527,7 +1597,8 @@ public final class ClientRuntime {
       ClientPlatform.ModelQuad captured,
       int x,
       int y,
-      int z)
+      int z,
+      boolean bothSides)
       throws IOException {
     BakedQuad quad = captured.baked();
     TextureAtlasSprite sprite = quad.getSprite();
@@ -1538,11 +1609,13 @@ public final class ClientRuntime {
             ? mc.getBlockColors().getColor(state, mc.level, pos, quad.getTintIndex())
             : 0xFFFFFF;
     tint = VertexColors.blockTint(tint);
-    tint = VertexColors.multiplyTint(tint, captured.argb());
-    float opacity = (captured.argb() >>> 24) / 255f;
+    int[] packed = quad.getVertices();
+    // The renderer multiplies the colour baked into the vertices into the block tint.
+    int argb = VertexColors.quadColor(captured.argb(), packed, VERTEX_STRIDE);
+    tint = VertexColors.multiplyTint(tint, argb);
+    float opacity = (argb >>> 24) / 255f;
     int alphaMode = captured.translucent() || opacity < 1 ? 2 : asset.alphaMode;
     int blockLight = 0;
-    int[] packed = quad.getVertices();
     float[] xyz = new float[12], uv = new float[8];
     float ur = sprite.getU1() - sprite.getU0(), vr = sprite.getV1() - sprite.getV0();
     for (int vertex = 0; vertex < 4; vertex++) {
@@ -1569,6 +1642,9 @@ public final class ClientRuntime {
             + alphaMode
             + "#"
             + opacity;
+    // Materials are single-sided: the inside of an empty cell's seal is a second, reversed quad.
+    float[] backXyz = bothSides ? new float[12] : null, backUv = bothSides ? new float[8] : null;
+    if (bothSides) CutBoundary.reverse(xyz, uv, backXyz, backUv);
     scene.addQuad(
         key,
         blockId + " / " + imageKey,
@@ -1580,6 +1656,18 @@ public final class ClientRuntime {
         opacity,
         xyz,
         uv);
+    if (!bothSides) return;
+    scene.addQuad(
+        key,
+        blockId + " / " + imageKey,
+        imageKey,
+        asset.png,
+        tint,
+        alphaMode,
+        emission,
+        opacity,
+        backXyz,
+        backUv);
   }
 
   private static void captureFluid(
@@ -1836,12 +1924,14 @@ public final class ClientRuntime {
       BufferedImage image =
           new BufferedImage(
               sprite.contents().width(), sprite.contents().height(), BufferedImage.TYPE_INT_ARGB);
-      boolean transparent = false, translucent = false;
+      boolean transparent = false;
+      long partial = 0, visible = 0;
       for (int py = 0; py < image.getHeight(); py++)
         for (int px = 0; px < image.getWidth(); px++) {
           int pixel = ClientPlatforms.current().spritePixel(sprite, px, py), alpha = pixel >>> 24;
           transparent |= alpha == 0;
-          translucent |= alpha != 0 && alpha != 255;
+          if (alpha != 0) visible++;
+          if (alpha != 0 && alpha != 255) partial++;
           image.setRGB(
               px,
               py,
@@ -1850,7 +1940,7 @@ public final class ClientRuntime {
                   | (pixel & 0x0000FF00)
                   | ((pixel >>> 16) & 255));
         }
-      alphaMode = translucent ? 2 : transparent ? 1 : 0;
+      alphaMode = RenderedTexture.alphaMode(transparent, partial, visible);
       ByteArrayOutputStream bytes = new ByteArrayOutputStream();
       ImageIO.write(image, "png", bytes);
       png = bytes.toByteArray();
