@@ -379,19 +379,24 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* --- 4. Footer (the landing's: a dirt band, then the night-2 bar) ---------------------------------------------------------------------------------- */
+/* --- 4. Footer (SiteFooter.tsx, the same on every page and on the landing): a dirt band, then the night-2 bar, edge to edge on the bar's gutter -- */
 
 .mm-footer-band {
 	margin-top: var(--ds-sp-8);
+}
+
+/* The landing's sections already end with their own space: the band follows the film note directly. */
+.site > .mm-footer-band {
+	margin-top: var(--ds-sp-6);
 }
 
 .mm-footer {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: var(--ds-sp-6) var(--ds-sp-7);
-	/* Same left edge as .mm-content (1120 px column, 24 px gutter; 16 px under 730 px). */
-	--_gutter: var(--ds-sp-5);
-	padding: var(--ds-sp-6) max(var(--_gutter), calc((100% - 1120px) / 2 + var(--_gutter))) var(--ds-sp-7);
+	/* The header's gutter (site-nav.css --mm-bar-gutter, plus the notch): the brand sits under the header's logo, the last group near the right edge. */
+	padding: var(--ds-sp-6) max(var(--mm-bar-gutter), env(safe-area-inset-right)) var(--ds-sp-7)
+		max(var(--mm-bar-gutter), env(safe-area-inset-left));
 	background: var(--night-2);
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
@@ -406,8 +411,8 @@ html[data-mc-font="read"] .mm-brand {
 	gap: var(--ds-sp-4);
 }
 
-/* A group's name, not a section title: the UI font at link size (beats `.mm-site h2`). */
-.mm-site .mm-footer .mm-footer-title {
+/* A group's name, not a section title: the UI font at link size (beats `.mm-site h2` and the landing's `.site h2`). */
+.mm-footer .mm-footer-title {
 	margin: 0 0 var(--ds-sp-2);
 	font: 16px / 18px var(--f-ui);
 	color: var(--text);
@@ -421,26 +426,6 @@ html[data-mc-font="read"] .mm-brand {
 
 .mm-fineprint {
 	color: var(--text-3);
-}
-
-.mm-display-options {
-	align-content: start;
-}
-
-.mm-display-options legend {
-	margin-bottom: var(--ds-sp-2);
-	font: 16px / 18px var(--f-ui);
-	color: var(--text-2);
-}
-
-.mm-display-options .mc-check {
-	min-height: var(--ds-hit);
-}
-
-/* Two short labels: one line each; if a long translation still wraps, its lines keep a 20 px step. */
-.mm-display-options .mc-check > span:last-child {
-	white-space: nowrap;
-	line-height: 20px;
 }
 
 /* The brand takes a whole row, above the groups of links. */
@@ -459,10 +444,20 @@ html[data-mc-font="read"] .mm-brand {
 	}
 }
 
-/* Five groups in one row; the brand keeps its own row above them, since its wordmark is wider than a sixth column. */
+/* Five groups in one row, the brand still on its own row above them. */
 @media (min-width: 1100px) {
 	.mm-footer {
 		grid-template-columns: repeat(5, minmax(0, 1fr));
+	}
+}
+
+/* Wide screens: the brand and its line become the first column of the same row. */
+@media (min-width: 1360px) {
+	.mm-footer {
+		grid-template-columns: minmax(0, 1.6fr) repeat(5, minmax(0, 1fr));
+	}
+	.mm-footer-brand {
+		grid-column: auto;
 	}
 }
 
@@ -733,9 +728,6 @@ a.mm-editorial-card:hover {
 @media (max-width: 730px) {
 	.mm-content {
 		padding: var(--ds-sp-7) var(--ds-sp-4) var(--ds-sp-8);
-	}
-	.mm-footer {
-		--_gutter: var(--ds-sp-4);
 	}
 	.mm-content-header {
 		align-items: start;

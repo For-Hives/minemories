@@ -1,7 +1,7 @@
 /* ==========================================================================================================================================================
    MINEMORIES DESIGN SYSTEM: shared landing components (below the film). Reference: docs/features/design-system.md
    Loaded after film.css (the kit: buttons, panels, FAQ...); reads only the tokens from tokens.css. Nothing here touches the film canvas or its HUD (.hud8, .film-bar):
-   everything sits under `.site` (the content), `.footer`, or is scoped by a component selector.
+   everything sits under `.site` (the content), `.site-film-note`, or is scoped by a component selector.
    To extend the design system to another page: the page puts `.site` or `.ds-page` on its root, uses the mc-* classes below, and hard-codes no size.
    ========================================================================================================================================================== */
 
@@ -145,8 +145,7 @@ html[data-mc-font='read'] .site .mc-step__title {
 
 /* --- 4. Links: 44 px target, underline that thickens on hover ------------------------------------------------------------------------------------------ */
 
-.site a.mc-link,
-.footer a.mc-link {
+.site a.mc-link {
 	display: inline-flex;
 	align-items: center;
 	min-height: var(--ds-hit);
@@ -155,13 +154,11 @@ html[data-mc-font='read'] .site .mc-step__title {
 		text-decoration-color var(--ds-dur-1) var(--ds-ease);
 }
 
-.site a.mc-link:hover,
-.footer a.mc-link:hover {
+.site a.mc-link:hover {
 	text-decoration-thickness: 2px;
 }
 
-.site a.mc-link:focus-visible,
-.footer a.mc-link:focus-visible {
+.site a.mc-link:focus-visible {
 	outline: var(--ds-focus);
 	outline-offset: var(--ds-focus-offset);
 }
@@ -203,42 +200,23 @@ html[data-mc-font='read'] .site .mc-step__title {
 	cursor: pointer;
 }
 
-/* --- 6. Footer: two readable columns, links in a grid ---------------------------------------------------------------------------------------------------- */
+/* --- 6. The film note above the footer (HeroMarkup): "About this film", folded; the footer itself is the site's (SiteFooter, charter-app.css) ---------------- */
 
-.footer .mc-footer__inner {
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--ds-sp-6);
+.site-film-note {
+	padding: var(--ds-sp-5) max(16px, var(--safe-l, 0px), calc((100% - var(--text-w, 720px)) / 2)) 0;
 }
 
-@media (min-width: 900px) {
-	.footer .mc-footer__inner {
-		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-	}
+html[data-dock='side'] .site-film-note {
+	padding-inline: var(--text-l, 48px);
 }
 
-.footer .mc-footer__right {
-	justify-self: stretch;
-	width: 100%;
-	text-align: left;
-}
-
-.footer .mc-footer__nav {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-	gap: 0 var(--ds-sp-5);
-}
-
-.footer .mc-footer__nav a {
-	min-height: var(--ds-hit);
-}
-
-.footer .mc-disclaimer,
-.footer .mc-footer__meta {
+.site-film-note .mc-footer__meta {
+	max-width: 68ch;
 	font-size: var(--ds-fs-xs);
 	line-height: var(--ds-lh-xs);
 }
 
-.footer .mc-footer__summary {
+.site-film-note .mc-footer__summary {
 	min-height: var(--ds-hit);
 	display: flex;
 	align-items: center;
@@ -406,8 +384,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	/* 9.4 Links: the underline moves away from the text on hover. */
-	:root:not([data-mc-motion='reduced']) .site a.mc-link,
-	:root:not([data-mc-motion='reduced']) .footer a.mc-link {
+	:root:not([data-mc-motion='reduced']) .site a.mc-link {
 		text-underline-offset: 3px;
 		transition:
 			color var(--ds-dur-1) var(--ds-ease),
@@ -415,8 +392,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 			text-underline-offset var(--ds-dur-2) var(--ds-ease);
 	}
 
-	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover,
-	:root:not([data-mc-motion='reduced']) .footer a.mc-link:hover {
+	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover {
 		text-underline-offset: 6px;
 	}
 
@@ -450,7 +426,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	:root:not([data-mc-motion='reduced']) .mc-faq__item::details-content,
 	:root:not([data-mc-motion='reduced']) .words-fold::details-content,
 	:root:not([data-mc-motion='reduced']) .mc-step__more::details-content,
-	:root:not([data-mc-motion='reduced']) .footer details::details-content {
+	:root:not([data-mc-motion='reduced']) .site-film-note details::details-content {
 		block-size: 0;
 		overflow: clip;
 		opacity: 0;
@@ -463,7 +439,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	:root:not([data-mc-motion='reduced']) .mc-faq__item[open]::details-content,
 	:root:not([data-mc-motion='reduced']) .words-fold[open]::details-content,
 	:root:not([data-mc-motion='reduced']) .mc-step__more[open]::details-content,
-	:root:not([data-mc-motion='reduced']) .footer details[open]::details-content {
+	:root:not([data-mc-motion='reduced']) .site-film-note details[open]::details-content {
 		block-size: auto;
 		opacity: 1;
 	}
@@ -534,7 +510,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 
 	/* 9.9 Other disclosures ("The film, in words" fallback, footer notes, step details): the summary responds to hover and press like a FAQ question. */
 	:root:not([data-mc-motion='reduced']) .words-fold summary,
-	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary,
+	:root:not([data-mc-motion='reduced']) .site-film-note .mc-footer__summary,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary {
 		transition:
 			color var(--ds-dur-1) var(--ds-ease),
@@ -542,14 +518,14 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	:root:not([data-mc-motion='reduced']) .words-fold summary:hover,
-	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary:hover,
+	:root:not([data-mc-motion='reduced']) .site-film-note .mc-footer__summary:hover,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary:hover {
 		color: var(--ember);
 		transform: translateX(var(--ds-sp-1));
 	}
 
 	:root:not([data-mc-motion='reduced']) .words-fold summary:active,
-	:root:not([data-mc-motion='reduced']) .footer .mc-footer__summary:active,
+	:root:not([data-mc-motion='reduced']) .site-film-note .mc-footer__summary:active,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary:active {
 		transform: translateY(1px);
 		transition-duration: calc(var(--ds-dur-1) / 2);
