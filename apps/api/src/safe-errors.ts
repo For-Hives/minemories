@@ -28,6 +28,18 @@ type ErrorEvent =
 	| 'release_notes_unavailable'
 	| 'roadmap_snapshot_failed'
 
+type UploadRefusal = NonNullable<ApiDiagnostic['context']>['http']
+const errorCode = /^[a-z][a-z0-9_]{0,63}$/
+/** The upload route a request reached, from its method and path only. */
+export function uploadRequestKind(method: string, path: string): UploadRefusal['request'] {
+	if (method === 'PUT') return 'chunk'
+	return path.endsWith('/complete') ? 'complete' : 'initialize'
+}
+/** What an upload refusal reports: the route, the status and the error code (never the message text). */
+export function uploadRefusal(request: Request, status: number, message: string): UploadRefusal {
+	const kind = uploadRequestKind(request.method, new URL(request.url).pathname)
+	return { request: kind, status, ...(errorCode.test(message) ? { error: message } : {}) }
+}
 export function requestCorrelation(request: Request): string {
 	const supplied = request.headers.get('x-minemories-correlation') ?? ''
 	return uuid.test(supplied) ? supplied.toLowerCase() : randomUUID()
@@ -68,7 +80,7 @@ export function safeApiException(error: unknown): ApiDiagnostic['exception'] {
 	}
 	return result
 }
-export function recordApiFailure(request: Request, error: unknown): void {
+export function recordApiFailure(request: Request, error: unknown, http?: UploadRefusal): void {
 	if (request.headers.get('x-minemories-diagnostics-consent') !== 'true') return
 	const correlationId = request.headers.get('x-minemories-correlation') ?? ''
 	if (!uuid.test(correlationId)) return
@@ -90,6 +102,7 @@ export function recordApiFailure(request: Request, error: unknown): void {
 				correlationId: correlationId.toLowerCase(),
 				exception: safeApiException(error),
 				breadcrumbs: [],
+				...(http ? { context: { http } } : {}),
 			},
 			permit
 		)

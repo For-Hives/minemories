@@ -409,6 +409,51 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void remembersTheLastExchangeSoADiagnosticNamesTheStatusAndTheErrorCode() throws Exception {
+    Path file = capture(20);
+    String url =
+        start(
+            exchange -> {
+              if (exchange.getRequestURI().getPath().endsWith("/complete"))
+                respond(exchange, 400, "{\"error\":\"invalid_glb_or_checksum\"}");
+              else if (exchange.getRequestMethod().equals("PUT"))
+                respond(exchange, 200, "{\"offset\":20}");
+              else respond(exchange, 200, session(0, false));
+            });
+    var uploader = uploader();
+    assertNull(uploader.lastHttp());
+    assertThrows(
+        IOException.class,
+        () -> uploader.upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+    var http = uploader.lastHttp();
+    assertEquals("complete", http.request());
+    assertEquals(400, http.status());
+    assertEquals("invalid_glb_or_checksum", http.error());
+    assertEquals(1, http.attempts());
+  }
+
+  @Test
+  void countsTheAttemptsOfATransientFailureAndReadsRetryAfter() throws Exception {
+    Path file = capture(20);
+    String url =
+        start(
+            exchange -> {
+              exchange.getResponseHeaders().add("Retry-After", "7");
+              respond(exchange, 503, "<html>proxy</html>");
+            });
+    var uploader = uploader();
+    assertThrows(
+        IOException.class,
+        () -> uploader.upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+    var http = uploader.lastHttp();
+    assertEquals("initialize", http.request());
+    assertEquals(3, http.attempts());
+    assertEquals(503, http.status());
+    assertNull(http.error());
+    assertEquals(7, http.retryAfterSeconds());
+  }
+
+  @Test
   void rateLimitIsNotRetriedAndKeepsTheRetryAfterDelay() throws Exception {
     Path file = capture(20);
     AtomicInteger calls = new AtomicInteger();

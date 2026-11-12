@@ -109,3 +109,22 @@ test('disabled service and implausible times never persist a report', () => {
 	expect(store.beginConsent(device.id, now)).toBeNull()
 	database.close()
 })
+
+test('a failure reason and an HTTP refusal split issues; reports without them keep their fingerprint', () => {
+	const { database, store, device, permit, now } = fixture({ perHour: 20 })
+	const base = report(now)
+	const accept = (change: Partial<ModDiagnostic>) =>
+		store.accept(device, { ...base, id: randomUUID(), correlationId: randomUUID(), ...change }, permit, now)
+	const http = (status: number, error: string) => ({
+		http: { request: 'complete' as const, attempts: 1, status, error },
+	})
+	expect(accept({})).toBe('accepted')
+	expect(accept({ context: { environment: undefined, causes: [] } })).toBe('accepted')
+	expect(accept({ context: http(400, 'invalid_glb_or_checksum') })).toBe('accepted')
+	expect(accept({ context: { ...http(400, 'invalid_glb_or_checksum'), detail: 'x_y' } })).toBe('accepted')
+	expect(accept({ context: http(409, 'upload_incomplete') })).toBe('accepted')
+	expect(accept({ context: { detail: 'scratch_symlink' } })).toBe('accepted')
+	expect(database.query('SELECT COUNT(DISTINCT fingerprint) AS count FROM diagnostic_reports').get()).toEqual({
+		count: 5,
+	})
+})

@@ -79,6 +79,7 @@ final class DiagnosticsClient {
     private final long started;
     private final ArrayDeque<DiagnosticReport.Breadcrumb> breadcrumbs = new ArrayDeque<>();
     private boolean finished;
+    private DiagnosticReport.Context context = DiagnosticReport.Context.EMPTY;
 
     private Operation(
         DiagnosticsClient owner,
@@ -95,6 +96,22 @@ final class DiagnosticsClient {
 
     void step(DiagnosticReport.Step step) {
       owner.step(this, step);
+    }
+
+    /** The last HTTP exchange of the operation, recorded when it fails. */
+    void http(DiagnosticReport.Http http) {
+      owner.context(this, context.withHttp(http));
+    }
+
+    /** How much of the file the upload had sent. */
+    void upload(long sizeBytes, long offsetBytes, int chunks) {
+      owner.context(
+          this, context.withUpload(new DiagnosticReport.Upload(sizeBytes, offsetBytes, chunks)));
+    }
+
+    /** A fixed reason code for a failure the caller classified itself. */
+    void detail(String code) {
+      owner.context(this, context.withDetail(code));
     }
 
     void success() {
@@ -388,9 +405,14 @@ final class DiagnosticsClient {
 
   private synchronized void step(Operation operation, DiagnosticReport.Step step) {
     if (!eligible(operation)) return;
-    if (operation.breadcrumbs.size() == 8) operation.breadcrumbs.removeFirst();
+    if (operation.breadcrumbs.size() == DiagnosticReport.MAX_BREADCRUMBS)
+      operation.breadcrumbs.removeFirst();
     long elapsed = Math.max(0, (System.nanoTime() - operation.started) / 1_000_000);
     operation.breadcrumbs.addLast(new DiagnosticReport.Breadcrumb(step, elapsed));
+  }
+
+  private synchronized void context(Operation operation, DiagnosticReport.Context context) {
+    if (eligible(operation)) operation.context = context;
   }
 
   private synchronized void revoke(Operation operation) {
@@ -441,7 +463,8 @@ final class DiagnosticsClient {
               versions.get(),
               operation.correlation,
               error,
-              new ArrayList<>(operation.breadcrumbs));
+              new ArrayList<>(operation.breadcrumbs),
+              operation.context);
     } catch (RuntimeException ignored) {
       return;
     }

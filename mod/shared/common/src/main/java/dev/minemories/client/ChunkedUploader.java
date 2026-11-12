@@ -37,6 +37,7 @@ final class ChunkedUploader {
   private final HttpClient http;
   private final UploadPacer pacer;
   private final long retryDelayMillis;
+  private volatile DiagnosticReport.Http lastHttp;
   private final UnaryOperator<HttpRequest.Builder> diagnosticHeaders;
 
   ChunkedUploader(HttpClient http, long retryDelayMillis) {
@@ -171,8 +172,40 @@ final class ChunkedUploader {
     }
   }
 
+  /** The last exchange with the API (kind, attempts, status, error code) for diagnostics. */
+  DiagnosticReport.Http lastHttp() {
+    return lastHttp;
+  }
+
+  private static String requestKind(HttpRequest request) {
+    if (request.method().equals("PUT")) return "chunk";
+    return request.uri().getPath().endsWith("/complete") ? "complete" : "initialize";
+  }
+
+  /** The API's {@code error} code, only when it is a plain lowercase identifier. */
+  private static long seconds(String value) {
+    try {
+      return Long.parseLong(value.trim());
+    } catch (NumberFormatException ignored) {
+      return -1;
+    }
+  }
+
+  private static String errorCode(String body) {
+    try {
+      var error = JsonParser.parseString(body).getAsJsonObject().get("error");
+      return error != null && error.isJsonPrimitive() && error.getAsJsonPrimitive().isString()
+          ? error.getAsString()
+          : null;
+    } catch (RuntimeException ignored) {
+      return null;
+    }
+  }
+
   private JsonObject request(HttpRequest request) throws IOException, InterruptedException {
+    String kind = requestKind(request);
     for (int attempt = 0; attempt < 3; attempt++) {
+      lastHttp = new DiagnosticReport.Http(kind, attempt + 1, 0, null, -1);
       try {
         beforeRequest.check(request);
         if (pacer != null) pacer.check();
@@ -186,6 +219,17 @@ final class ChunkedUploader {
                 .build();
         HttpResponse<String> response = http.send(current, ApiResponseBody.bounded());
         int status = response.statusCode();
+        lastHttp =
+            new DiagnosticReport.Http(
+                kind,
+                attempt + 1,
+                status,
+                status >= 400 ? errorCode(response.body()) : null,
+                response
+                    .headers()
+                    .firstValue("Retry-After")
+                    .map(ChunkedUploader::seconds)
+                    .orElse(-1L));
         if (status >= 200 && status < 300) {
           try {
             return JsonParser.parseString(response.body()).getAsJsonObject();
