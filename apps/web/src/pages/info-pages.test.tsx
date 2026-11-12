@@ -49,7 +49,7 @@ test('public guides let a visitor move from concept to capture, installation and
 	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
 	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
-	expect(screen.getByRole('heading', { name: 'Le plus simple\u00a0: l’app CurseForge' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
 	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' }).length).toBeGreaterThan(0)
 	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
 	if (!faqLink) throw new Error('FAQ navigation is missing')

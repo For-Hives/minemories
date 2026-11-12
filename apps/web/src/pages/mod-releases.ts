@@ -10,6 +10,8 @@ export {
 	listedMinecraft,
 	loaderTargets,
 	minecraftVersions,
+	mostTestedMinecraft,
+	quiltTested,
 	supportedMinecraft,
 } from './mod-targets'
 
@@ -24,8 +26,6 @@ export const latestDownloadUrl = (minecraft: string, loader: string) => {
 }
 const commitUrl = 'https://github.com/For-Hives/minemories/commit'
 const commitPattern = /^[0-9a-f]{7,40}$/
-/** Quilt has no JAR of its own: the Fabric JAR is tested under this Quilt Loader (docs/features/loader-support.md). */
-export const quiltTestedVersion = '0.30.1'
 
 export interface LoaderDownload {
 	target: LoaderTarget

@@ -6,7 +6,7 @@ import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
 import { Questions } from './InfoPages'
 import { guideLink, versionBadge } from './installation-state'
-import { latestDownloadUrl, quiltTestedVersion } from './mod-releases'
+import { latestDownloadUrl, quiltTested } from './mod-releases'
 import { useModReleases } from './useModReleases'
 import './downloads.css'
 
@@ -125,8 +125,9 @@ export function DownloadsPage() {
 				</div>
 			)}
 			<p className="mm-dl-note">
-				{t('Install Fabric API separately. In 1.21.1, the Fabric JAR is also tested under Quilt {version}.', {
-					version: quiltTestedVersion,
+				{t('Install Fabric API separately. In {minecraft}, the Fabric JAR is also tested under Quilt {version}.', {
+					minecraft: quiltTested.minecraft,
+					version: quiltTested.loaderVersion,
 				})}{' '}
 				{t('Check your file: its SHA-256 checksum must match the one shown here.')}
 			</p>

@@ -17,6 +17,16 @@ export interface LoaderTarget {
 	/** False while the target is published but not yet exercised in game (an experimental Minecraft version). */
 	validated: boolean
 }
+/*
+ * Test facts that mod/targets.json does not carry (its `validatedInGame` is true on most targets, and Quilt has no
+ * target of its own). This is the one place to update them: the guide's badge and Quilt note, the download table's
+ * Quilt note and the FAQ read them from here.
+ */
+/** The Minecraft version the owner tested the most in game, badged "Most tested". */
+export const mostTestedMinecraft = '1.21.1'
+/** Quilt has no JAR of its own: the Fabric JAR of this Minecraft version was tested under this Quilt Loader. */
+export const quiltTested = { minecraft: '1.21.1', loaderVersion: '0.30.1' } as const
+
 /** Enabled publication targets, read at build time from mod/targets.json. */
 export const loaderTargets: LoaderTarget[] = modTargets.targets.flatMap(target =>
 	target.enabled && target.loaderVersion

@@ -39,7 +39,7 @@
 	"This name stays in this browser.": "Ce nom reste dans ce navigateur.",
 	"Weather": "Météo",
 	"{count} worlds": "{count} mondes",
-	"Install Fabric API separately. In 1.21.1, the Fabric JAR is also tested under Quilt {version}.": "Installe Fabric API séparément. En 1.21.1, le JAR Fabric est aussi testé avec Quilt {version}.",
+	"Install Fabric API separately. In {minecraft}, the Fabric JAR is also tested under Quilt {version}.": "Installe Fabric API séparément. En {minecraft}, le JAR Fabric est aussi testé avec Quilt {version}.",
 	"Snapshot": "Capture",
 	"World": "Monde",
 	"Link to": "Lien vers",

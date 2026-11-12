@@ -1,6 +1,6 @@
 # Site languages and URL publication
 
-The site offers French and English flows in a single shell. `I18nProvider` selects the language and stores only that preference on the device. The concept/how-it-works/FAQ guides, the six installation steps (every launcher), and the captions and alt text of tutorial screenshots have an explicit English catalog in `i18n/guide-messages.ts`. The shared interface keeps its source keys and the French catalog `messages.ts`; editorial texts that are already paired stay in `content/`.
+The site offers French and English flows in a single shell. `I18nProvider` selects the language and stores only that preference on the device. The concept/how-it-works/FAQ guides, the screens of the installation guide, and the captions and alt text of tutorial screenshots have an explicit English catalog in `i18n/guide-messages.ts`. The shared interface keeps its source keys and the French catalog `messages.ts`; editorial texts that are already paired stay in `content/`.
 
 Switching language only changes presentation: the values `windows`, `manuel`, `curseforge`, `autre`, step numbers, screenshot identifiers, Minecraft dimensions, commands, file names and paths do not change. The tutorial's first name, progress and checked boxes are kept. Command texts stay copyable exactly as they are.
 

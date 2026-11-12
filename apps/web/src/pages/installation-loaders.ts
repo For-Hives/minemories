@@ -27,14 +27,10 @@ export function installerUrl(target: LoaderTarget): string {
 		return `https://maven.minecraftforge.net/net/minecraftforge/forge/${minecraft}-${version}/forge-${minecraft}-${version}-installer.jar`
 	return 'https://fabricmc.net/use/installer/'
 }
-export function guideUrl(target: LoaderTarget): string {
-	if (target.loader === 'neoforge') return 'https://docs.neoforged.net/user/docs/'
-	if (target.loader === 'forge') return 'https://docs.minecraftforge.net/en/latest/gettingstarted/'
-	return 'https://wiki.fabricmc.net/player:tutorials:install_mcl:windows'
-}
 export function fabricApiUrl(target: LoaderTarget): string {
 	return `https://modrinth.com/mod/fabric-api/versions?g=${target.minecraft}`
 }
+/** Temurin, the free official Java build, at the version the target needs (loader installers run with Java). */
 export function javaUrl(target: LoaderTarget): string {
 	return `https://adoptium.net/temurin/releases/?version=${target.java}`
 }
