@@ -61,9 +61,9 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 	expect(html.dataset.phase).toBe('site')
 	expect(html.classList.contains('scene-off')).toBe(true)
 	expect(html.classList.contains('scene-on')).toBe(false)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Il y a des soirs qu’on aimerait garder.')
-	for (const id of ['hero', 'steps', 'share', 'more', 'faq', 'words'])
-		expect(document.getElementById(id)).not.toBeNull()
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Garde tes constructions Minecraft en 3D')
+	for (const id of ['hero', 'steps', 'share', 'faq', 'words']) expect(document.getElementById(id)).not.toBeNull()
+	expect(document.getElementById('more')).toBeNull()
 	// the story is readable as text for people who cannot see the canvas
 	expect(document.getElementById('w1')?.textContent?.length).toBeGreaterThan(40)
 	const hrefs = [...document.querySelectorAll('a[href^="/"]')].map(a => a.getAttribute('href'))
@@ -75,24 +75,54 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 		'/concept',
 		'/how-it-works',
 		'/faq',
-		'/blog',
+		'/sharing',
 		'/login',
 	])
 		expect(hrefs, route).toContain(route)
-	// every target of the former home page is still linked (the demo memories, the community, the concept, the discovery pages, the album)
-	for (const target of [
-		'/explore?demo=1',
-		'/explore',
-		'/concept',
-		'/open-source',
-		'/nostalgia',
-		'/sharing',
-		'/ranking',
-		'/register',
-	])
+	// the home sends to the install guide, the share page and the whole FAQ; the gallery stays in the footer only
+	for (const target of ['/sharing', '/server-closing', '/safety', '/guides/minecraft-blender', '/faq', '/explore'])
 		expect(hrefs, target).toContain(target)
+	expect(hrefs).not.toContain('/explore?demo=1')
 	// the prototype's three dead root links are real routes now; nothing points at a file next to the page
 	expect(hrefs.filter(h => /\.html?$/.test(String(h)))).toEqual([])
+	expect(errors).toEqual([])
+})
+
+test('the first screen: one install button, the facts and guarantees lines, three cards, then three questions and the whole FAQ', async () => {
+	mount()
+	await started()
+	const hero = document.getElementById('hero') as HTMLElement
+	expect(
+		within(hero)
+			.getAllByRole('link')
+			.map(link => link.getAttribute('href'))
+	).toEqual(['/installation'])
+	const lines = [...hero.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
+	expect(lines).toEqual([
+		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 expérimentale · Fabric, Forge, NeoForge · solo et serveurs · bêta',
+		'Ne modifie pas ton monde · Rien ne part avant que tu connectes le jeu · Galerie privée',
+	])
+	const steps = document.getElementById('steps') as HTMLElement
+	expect(
+		within(steps)
+			.getAllByRole('heading', { level: 3 })
+			.map(title => title.textContent)
+	).toEqual(['Installe.', 'Joue.', 'Revois.'])
+	expect(steps.textContent).toContain('Appuie sur M → Prendre un souvenir.')
+	const faq = document.getElementById('faq') as HTMLElement
+	expect([...faq.querySelectorAll('summary')].map(summary => summary.textContent)).toEqual([
+		'Dois-je installer quelque chose sur le serveur ?',
+		'Il faut un compte ?',
+		'Et si Minemories ferme ?',
+	])
+	expect(within(faq).getByRole('link', { name: 'Toutes les questions →' }).getAttribute('href')).toBe('/faq')
+	// the questions follow the app's language by themselves
+	act(() => {
+		fireEvent.change(screen.getByRole('combobox', { name: 'Langue' }), { target: { value: 'en' } })
+	})
+	await waitFor(() =>
+		expect(faq.querySelector('summary')?.textContent).toBe('Do I need to install anything on the server?')
+	)
 	expect(errors).toEqual([])
 })
 
@@ -106,7 +136,7 @@ test('one language selector is visible, it is the app one, and the whole page fo
 		fireEvent.change(selector, { target: { value: 'en' } })
 	})
 	await waitFor(() =>
-		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('There are evenings we wish we could keep.')
+		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Keep your Minecraft builds in 3D')
 	)
 	expect(html.lang).toBe('en-US')
 	expect(screen.getAllByRole('link', { name: 'Sign in' })[0]?.getAttribute('href')).toBe('/login')
@@ -125,7 +155,6 @@ test('signed-in visitors see their gallery link instead of sign-in', async () =>
 	await started()
 	expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull()
 	expect(screen.getAllByRole('link', { name: 'Ma galerie' })[0]?.getAttribute('href')).toBe('/gallery')
-	expect(screen.getByRole('link', { name: 'Retrouver mes souvenirs' }).getAttribute('href')).toBe('/gallery')
 	// The bar's brand: the whole logo alone, decorative; the link's aria-label names it.
 	const brand = document.querySelector('.mc-sitebar__brand')
 	const mark = brand?.querySelector('img')

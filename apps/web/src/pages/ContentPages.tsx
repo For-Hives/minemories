@@ -1,12 +1,10 @@
 import type { ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link } from 'react-router'
 import { BrandLogo } from '../components/BrandMark'
-import { DataFlow, RadiusMap } from '../components/diagrams'
-import { FileTree, Glyph, type GlyphName } from '../components/explainers'
-import { BlockMark } from '../components/Loading'
-import { MemoryScene } from '../components/MemoryScene'
-import { buttonLime, buttonOutline, Eyebrow } from '../components/ui'
-import { type ArticleVisual, articles, legalContent } from '../content/site-content'
+import { DataFlow } from '../components/diagrams'
+import { Glyph, type GlyphName } from '../components/explainers'
+import { buttonOutline, Eyebrow } from '../components/ui'
+import { legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
@@ -37,74 +35,6 @@ export function ContentLayout({
 		</article>
 	)
 }
-export function BlogPage() {
-	const { locale, t } = useI18n()
-	return (
-		<ContentLayout
-			eyebrow="MINEMORIES"
-			title={t('The memory journal')}
-			lead={t('Ideas for capturing, keeping and revisiting the places built together.')}
-		>
-			<div className="mm-content-grid">
-				{articles.map(article => (
-					<Link className="mm-editorial-card" key={article.slug} to={`/blog/${article.slug}`}>
-						<BlockMark />
-						<time dateTime={article.published}>
-							{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
-								new Date(`${article.published}T12:00:00Z`)
-							)}
-						</time>
-						<h2>{translate(locale, article.title)}</h2>
-						<p>{translate(locale, article.summary)}</p>
-						<span>{t('Read article →')}</span>
-					</Link>
-				))}
-			</div>
-		</ContentLayout>
-	)
-}
-export function ArticlePage() {
-	const { locale, t } = useI18n()
-	const { slug } = useParams()
-	const article = articles.find(item => item.slug === slug)
-	if (!article) return <NotFoundPage />
-	return (
-		<ContentLayout eyebrow="JOURNAL" title={translate(locale, article.title)} lead={translate(locale, article.summary)}>
-			<time dateTime={article.published}>
-				{new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
-					new Date(`${article.published}T12:00:00Z`)
-				)}
-			</time>
-			<div className="ex-story">
-				{article.sections.map(section => (
-					<section key={section.heading} className="ex-story-block">
-						<div className="ex-story-visual">
-							<StoryVisual visual={section.visual} label={translate(locale, section.heading)} />
-						</div>
-						<div className="ex-story-text">
-							<h2>{translate(locale, section.heading)}</h2>
-							<p>{translate(locale, section.body)}</p>
-						</div>
-					</section>
-				))}
-			</div>
-			<Link className={buttonLime} to="/installation">
-				{t('Create my first memory')}
-			</Link>
-			<p>
-				<Link className="mc-link" to="/blog">
-					{t('← Back to the journal')}
-				</Link>
-			</p>
-		</ContentLayout>
-	)
-}
-function StoryVisual({ visual, label }: { visual: ArticleVisual; label: string }) {
-	if (visual.kind === 'scene') return <MemoryScene theme={visual.theme} label={label} />
-	if (visual.kind === 'radius') return <RadiusMap />
-	return <FileTree />
-}
-
 /** What each privacy section is about, as a pictogram and a status read before the fine print. */
 const privacySummary: Record<string, { glyph: GlyphName; status: string }> = {
 	'Preferences on this device': { glyph: 'disk', status: 'Stays on this device' },
@@ -120,7 +50,7 @@ const privacyNodes = [
 	{ glyph: 'globe', label: 'Anyone with your link' },
 ] satisfies Array<{ glyph: GlyphName; label: string }>
 const privacyEdges = [
-	{ glyph: 'key', label: 'Pairing' },
+	{ glyph: 'key', label: '6-digit code' },
 	{ glyph: 'link', label: 'A link you create' },
 ] satisfies Array<{ glyph: GlyphName; label: string }>
 
@@ -128,6 +58,11 @@ function PrivacyPanels({ sections }: { sections: Array<{ heading: string; body: 
 	const { locale, t } = useI18n()
 	return (
 		<>
+			<ul className="ex-parents">
+				<li>{t('Nothing goes online until the game is connected to an account.')}</li>
+				<li>{t('Once connected, the memories go to a private gallery.')}</li>
+				<li>{t('Nobody sees them without a link you create.')}</li>
+			</ul>
 			<DataFlow nodes={privacyNodes} edges={privacyEdges} />
 			<div className="ex-rows">
 				{sections.map(section => {

@@ -53,8 +53,8 @@ test('catalogues support canonical English keys and safe interpolation', async (
 	await loadLocale('ja')
 	expect(translate('ja', 'Sign in')).toBe('ログイン')
 
-	expect(translate('ja', 'Your first memory, {name}.', { name: 'Alex' })).toContain('Alex')
-	expect(translate('ja', 'Same area · {count} captures', { count: 0 })).toContain('0')
+	expect(translate('ja', 'Rename {name}', { name: 'Alex' })).toContain('Alex')
+	expect(translate('ja', 'capture.count.other', { count: 0 })).toContain('0')
 	expect(translate('ja', 'Unknown {missing}')).toBe('Unknown {missing}')
 	expect(translate('ja', '__proto__')).toBe('__proto__')
 })
@@ -100,4 +100,60 @@ test('production pages have one localization path and no bilingual copy helper',
 		if (path.includes('.test.')) continue
 		expect(source, path).not.toMatch(/useLocalizedCopy|translateCopy|\blocalize\(/)
 	}
+})
+
+test('the French catalogues speak to the player with “tu” and call a capture a capture', async () => {
+	const french = await Promise.all(
+		['fr', 'fr-CA'].map(locale => {
+			const load = catalogs[`./locales/${locale}.json`]
+			if (!load) throw new Error('Missing locale catalogue')
+			return load()
+		})
+	)
+	for (const catalog of french)
+		for (const [key, message] of Object.entries(catalog)) {
+			expect(message, key).not.toMatch(/\b(?:vous|votre|vos)\b/i)
+			expect(message, key).not.toMatch(/snapshot/i)
+		}
+})
+
+// Capitalized "Sie" is also "they"/"it" at the start of a sentence; these strings use it that way.
+const germanPronounSie: Record<string, string> = {
+	'This page does not list the publisher, the host or a personal-data contact yet. It describes the current project; it is not a finalized legal notice.':
+		'“Sie beschreibt” refers to “Diese Seite”.',
+	'The CurseForge app is the simplest: it adds Fabric API on its own.': '“Sie fügt” refers to the CurseForge app.',
+	'It then goes to your gallery on its own.': '“Sie landet” refers to the capture.',
+	'It will show up here.': '“Sie erscheint” refers to the capture.',
+	'It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.':
+		'“Sie landet” refers to the memory.',
+	'End portals and End gateways are saved instead of leaving a hole. They appear as a still image of the portal on every Minecraft version supported by the mod.':
+		'“Sie erscheinen” refers to the portals.',
+	'Your players do not copy a playable world: they keep a 3D scene of their corner, not your map.':
+		'“Sie behalten” refers to the players.',
+}
+
+test('the German catalogue speaks to the player with “du”', async () => {
+	const load = catalogs['./locales/de.json']
+	if (!load) throw new Error('Missing locale catalogue')
+	const catalog = await load()
+	for (const key of Object.keys(germanPronounSie)) expect(catalog[key], key).toMatch(/\bSie\b/)
+	for (const [key, message] of Object.entries(catalog)) {
+		expect(message, key).not.toMatch(/\b(?:Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres|Ihnen)\b/)
+		if (!(key in germanPronounSie)) expect(message, key).not.toMatch(/\bSie\b/)
+	}
+})
+
+// Plural "you": the group playing together, not a formal address to one player.
+const russianPluralYou = new Set([
+	'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.',
+])
+
+test('the Russian catalogue speaks to the player with “ты”', async () => {
+	const load = catalogs['./locales/ru.json']
+	if (!load) throw new Error('Missing locale catalogue')
+	const catalog = await load()
+	for (const key of russianPluralYou) expect(catalog[key], key).toMatch(/ваш/u)
+	for (const [key, message] of Object.entries(catalog))
+		if (!russianPluralYou.has(key))
+			expect(message, key).not.toMatch(/(?<!\p{L})(?:вы|вас|вам|вами|ваш\p{L}*)(?!\p{L})/iu)
 })

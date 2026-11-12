@@ -66,38 +66,16 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 				</div>
 				<em>{used}%</em>
 			</div>
-			<p>
-				{formatFileSize(storage.availableBytes, locale)} <T message={'available of'} />{' '}
-				{formatFileSize(storage.limitBytes, locale)} · {formatFileSize(storage.usedBytes, locale)}{' '}
-				<T message={'used or reserved.'} />{' '}
-			</p>
+			{/* Only a gallery with no byte left refuses uploads; a nearly full one still accepts them. */}
 			{storage.availableBytes === 0 && (
 				<p>
 					<T
-						message={'Your gallery has no space available. Refused uploads keep their local GLB file on your computer.'}
+						message={
+							'Your gallery is full. New memories stay on your computer. To make room, use Delete forever in Trash.'
+						}
 					/>
 				</p>
 			)}
-			{storage.pendingDeletionBytes > 0 && (
-				<p>
-					{' '}
-					<T message={'Deletion is still in progress for'} /> {formatFileSize(storage.pendingDeletionBytes, locale)}
-					<T message={'. That space becomes available when deletion finishes.'} />{' '}
-				</p>
-			)}
-			{storage.reservedBytes > 0 && (
-				<p>
-					{' '}
-					<T message={'Uploads are reserving'} /> {formatFileSize(storage.reservedBytes, locale)}{' '}
-					<T message={'until they finish or their cleanup completes.'} />{' '}
-				</p>
-			)}
-			<details>
-				<summary aria-label={t('Gallery storage')}>i</summary>
-				<p>
-					<T message={'To free space, use Delete forever in Trash. Moving a capture to Trash keeps its space used.'} />
-				</p>
-			</details>
 		</section>
 	)
 }
@@ -170,29 +148,11 @@ export function GalleryPage() {
 					onTrashed={id => void trashSnapshot(id)}
 				/>
 				{!loading && memories.length === 0 && (
-					<div className="gallery-empty">
-						<GalleryIcon name="cube" />
-						<h3>
-							<T message={'The first memory is still to come.'} />
-						</h3>
-						<p className="gallery-empty-note">
-							<T message={'Link your mod to send your first capture.'} />
-						</p>
-						<div className="gallery-empty-actions">
-							{import.meta.env.DEV && (
-								<button
-									className="gallery-text-button"
-									type="button"
-									onClick={() => document.getElementById('global-file-input')?.click()}
-								>
-									<T message={'Choose a local file'} />
-								</button>
-							)}
-							<button className="gallery-view" type="button" onClick={() => void createPairing()}>
-								{pairedFresh ? t('New code') : t('Link my server')}
-							</button>
-						</div>
-					</div>
+					<EmptyGallery
+						connected={pairedFresh}
+						pending={pairing.pairStatus === 'pending'}
+						onGetCode={() => void createPairing()}
+					/>
 				)}
 				{!loading && trash.length > 0 && (
 					<section className="gallery-trash" aria-label={t('Trash')}>
@@ -217,6 +177,51 @@ export function GalleryPage() {
 					</section>
 				)}
 			</section>
+		</div>
+	)
+}
+
+/** The empty gallery says the one next step: connect the game, or take the first memory once it is connected. */
+function EmptyGallery({ connected, pending, onGetCode }: { connected: boolean; pending: boolean; onGetCode(): void }) {
+	const { t } = useI18n()
+	if (connected)
+		return (
+			<div className="gallery-empty">
+				<GalleryIcon name="check" />
+				<h3>{t('Your game is connected.')}</h3>
+				<p className="gallery-empty-note">
+					{t('Press M → Take a memory.')} {t('It will show up here.')}
+				</p>
+				<p className="gallery-empty-note">
+					{t('Memories from before?')} {t('M → My memories → Send this memory.')}
+				</p>
+			</div>
+		)
+	return (
+		<div className="gallery-empty">
+			<GalleryIcon name="cube" />
+			<h3>{t('No memories yet')}</h3>
+			{/* While a code is shown, the card beside says where to type it: no second copy here. */}
+			{!pending && <p className="gallery-empty-note">{t('Install the mod, then connect your game with a code.')}</p>}
+			<div className="gallery-empty-actions">
+				{import.meta.env.DEV && (
+					<button
+						className="gallery-text-button"
+						type="button"
+						onClick={() => document.getElementById('global-file-input')?.click()}
+					>
+						{t('Choose a local file')}
+					</button>
+				)}
+				{!pending && (
+					<button className="gallery-view" type="button" onClick={onGetCode}>
+						{t('Get a code')}
+					</button>
+				)}
+				<Link className="gallery-text-button" to="/installation">
+					{t('No mod yet? Install Minemories')} <span aria-hidden="true">→</span>
+				</Link>
+			</div>
 		</div>
 	)
 }

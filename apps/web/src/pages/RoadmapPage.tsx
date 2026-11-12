@@ -65,7 +65,7 @@ function LatestReleaseCard({ release }: { release: LatestRelease }) {
 			)}
 			<p className="mm-roadmap-release-links">
 				<Link to="/downloads">{t('Download')}</Link>
-				<Link to="/changelog">{t('All changes')}</Link>
+				<Link to="/versions">{t('All changes')}</Link>
 				<a href={release.compareUrl} target="_blank" rel="noopener noreferrer">
 					{t('Compare on GitHub ↗')}
 				</a>
@@ -130,7 +130,7 @@ export function RoadmapPage() {
 	const now = Date.now()
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES · ROADMAP"
+			eyebrow={t('MINEMORIES · ROADMAP')}
 			title={t('Roadmap')}
 			lead={t(
 				'What is being built now, what comes next and what shipped in the last 30 days, straight from the project’s GitHub issues.'

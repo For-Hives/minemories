@@ -8,10 +8,11 @@ export interface CatalogLink {
 /**
  * Where the mod can be installed from inside the CurseForge and Modrinth apps. A catalog without a URL is left
  * out; the guide then falls back to the manual download. Releases are mirrored there by `bun mod sync --remote`.
+ * The Modrinth project is not public yet (its API answers 404): its link stays hidden until it is.
  */
 export const catalogs: { name: string; url: string | null }[] = [
 	{ name: 'CurseForge', url: 'https://www.curseforge.com/minecraft/mc-mods/minemories' },
-	{ name: 'Modrinth', url: 'https://modrinth.com/mod/minemories-3d' },
+	{ name: 'Modrinth', url: null },
 ]
 export function catalogLinks(): CatalogLink[] {
 	return catalogs.flatMap(catalog => (catalog.url ? [{ name: catalog.name, url: catalog.url }] : []))

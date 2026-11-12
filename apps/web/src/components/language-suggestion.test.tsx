@@ -38,10 +38,12 @@ test('an English browser on a public page keeps the page in French and is offere
 	page('/installation', ['en-US', 'en'])
 	const card = await suggestion()
 	expect(screen.getByRole('heading', { name: 'Se connecter' })).toBeTruthy()
-	expect(document.title).toBe('Installer le mod — Minemories')
+	expect(document.title).toBe('Installer Minemories sur Fabric, Forge ou NeoForge')
 	expect(document.documentElement.lang).toBe('fr-FR')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
-	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}').inLanguage).toBe('fr')
+	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
+		'fr'
+	)
 	expect(card.getAttribute('lang')).toBe('en-US')
 	expect(card.hasAttribute('data-nosnippet')).toBe(true)
 	expect(card.textContent).toContain('Read Minemories in English?')
@@ -53,7 +55,7 @@ test('accepting switches the whole page to the suggested language and saves it a
 	await suggestion()
 	fireEvent.click(screen.getByRole('button', { name: 'Switch to English' }))
 	expect(screen.getByRole('heading', { name: 'Sign in' })).toBeTruthy()
-	expect(document.title).toBe('Install the mod — Minemories')
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('en_US')
 	expect(screen.queryByRole('region', { name: 'Language suggestion' })).toBeNull()
 	expect(localStorage.getItem('minemories-locale')).toBe('en')
@@ -107,7 +109,7 @@ test('a saved choice wins over the page language, with nothing to suggest', asyn
 	await screen.findByRole('heading', { name: 'Sign in' })
 	await new Promise(resolve => setTimeout(resolve, 0))
 	expect(screen.queryByRole('region')).toBeNull()
-	expect(document.title).toBe('Install the mod — Minemories')
+	expect(document.title).toBe('Install Minemories on Fabric, Forge or NeoForge')
 })
 
 test('private app routes follow the same rule: French until the visitor chooses, English only suggested', async () => {

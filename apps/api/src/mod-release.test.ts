@@ -201,7 +201,7 @@ test('fetches the latest release with its date, notes since the previous tag and
 		more: 0,
 		source: 'commits',
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+		changelogUrl: 'https://minemories.xenos.lightin.io/versions',
 		compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.1-beta.1...mod-v0.36.1',
 	})
 })
@@ -291,7 +291,7 @@ test('older bodies without a notes source still parse, as commit notes', () => {
 		notes: [],
 		more: 0,
 		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-		changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+		changelogUrl: 'https://minemories.xenos.lightin.io/versions',
 		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1',
 	}
 	expect(roadmapLatestRelease.parse(body).source).toBe('commits')

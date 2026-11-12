@@ -1,70 +1,81 @@
 import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
+import { pageQuestions } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
-import { guideLink, mostUsed, validatedMinecraft } from './installation-state'
-import { indexUrl, latestDownloadUrl, loaderTargets, quiltTestedVersion } from './mod-releases'
+import { Questions } from './InfoPages'
+import { guideLink, versionBadge } from './installation-state'
+import { latestDownloadUrl, quiltTestedVersion } from './mod-releases'
 import { useModReleases } from './useModReleases'
 import './downloads.css'
 
-function rowBadge(minecraft: string): string | null {
-	if (minecraft === mostUsed.minecraft) return 'Most used'
-	return minecraft === validatedMinecraft ? 'Validated in game' : null
-}
+type Status = 'loading' | 'ready' | 'error'
 
-function Cell({ cell, status, name }: { cell: GridCell; status: 'loading' | 'ready' | 'error'; name: string }) {
+/**
+ * A published pair is a download link from the first paint: the prerendered page and a slow or failed index link the
+ * API's newest JAR. Once the index is read, the cell names the exact version, its size and its SHA-256.
+ */
+function Cell({ cell, status, name }: { cell: GridCell; status: Status; name: string }) {
 	const { t, locale } = useI18n()
 	const { download, release, target } = cell
-	if (release && download && target)
+	if (!target)
 		return (
-			<td className="mm-dl-cell">
-				<a
-					className={`${buttonOutline} mm-dl-button`}
-					href={download.url}
-					aria-label={t('Download Minemories {version} for Minecraft {minecraft} with {loader}', {
-						version: release.version,
-						minecraft: target.minecraft,
-						loader: name,
-					})}
-				>
-					<T message={'Download'} />
-				</a>
-				<span className="mm-dl-meta">
-					{release.version} · {(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} MiB
-				</span>
-				<details>
-					<summary>SHA-256</summary>
-					<code>{download.sha256}</code>
-				</details>
-				<Link className="mm-dl-guide" to={guideLink(target)}>
-					<T message={'Guided installation'} />
-				</Link>
+			<td className="mm-dl-cell mm-dl-empty">
+				<span>{t('Not available for this version')}</span>
 			</td>
 		)
-	let message = 'Not published yet'
-	if (!target) message = 'Not available for this version'
-	else if (status === 'loading') message = 'Checking…'
-	else if (status === 'error') message = 'Unavailable right now'
+	if (status === 'ready' && !(release && download))
+		return (
+			<td className="mm-dl-cell mm-dl-empty">
+				<span>{t('Not published yet')}</span>
+			</td>
+		)
+	const label = t('Download Minemories for Minecraft {minecraft} with {loader}', {
+		minecraft: target.minecraft,
+		loader: name,
+	})
 	return (
-		<td className="mm-dl-cell mm-dl-empty">
-			<span>{t(message)}</span>
+		<td className="mm-dl-cell">
+			<a
+				className={`${buttonOutline} mm-dl-button`}
+				href={download?.url ?? latestDownloadUrl(target.minecraft, target.loader)}
+				aria-label={release ? `${label} (${release.version})` : label}
+			>
+				<T message={'Download'} />
+			</a>
+			{release && download ? (
+				<>
+					<span className="mm-dl-meta">
+						{release.version} · {(download.bytes / 1048576).toLocaleString(locale, { maximumFractionDigits: 2 })} MiB
+					</span>
+					<details>
+						<summary>SHA-256</summary>
+						<code>{download.sha256}</code>
+					</details>
+				</>
+			) : (
+				<span className="mm-dl-meta">
+					{name} {target.loaderVersion}
+				</span>
+			)}
+			<Link className="mm-dl-guide" to={guideLink(target)}>
+				<T message={'Guided installation'} />
+			</Link>
 		</td>
 	)
 }
 
-/** Every Minecraft version x loader with its newest JAR: the grid of the terminal's `bun mod status`, for the web. */
+/** Every Minecraft version x loader with its Java version and newest JAR, readable in the prerendered HTML. */
 export function DownloadsPage() {
 	const { t } = useI18n()
 	const { releases, status, retry } = useModReleases()
 	const grid = downloadGrid(releases)
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES · DOWNLOADS"
-			title={t('All downloads')}
-			lead={t(
-				'Pick your Minecraft version and your loader, then download the matching file. A grayed cell has no file yet.'
-			)}
+			eyebrow={t('MINEMORIES · DOWNLOADS')}
+			title={t('Download Minemories')}
+			lead={t('One JAR per Minecraft version and loader.')}
 		>
 			<div className="mm-dl-scroll" aria-busy={status === 'loading'}>
 				<table className="mm-dl-table">
@@ -72,6 +83,7 @@ export function DownloadsPage() {
 					<thead>
 						<tr>
 							<th scope="col">Minecraft</th>
+							<th scope="col">Java</th>
 							{grid.loaders.map(item => (
 								<th key={item.loader} scope="col">
 									{item.name}
@@ -82,13 +94,14 @@ export function DownloadsPage() {
 					</thead>
 					<tbody>
 						{grid.rows.map(row => {
-							const badge = rowBadge(row.minecraft)
+							const badge = versionBadge(row.minecraft)
 							return (
 								<tr key={row.minecraft}>
 									<th scope="row">
 										<span>{row.minecraft}</span>
 										{badge && <em>{t(badge)}</em>}
 									</th>
+									<td className="mm-dl-java">{row.java}</td>
 									{row.cells.map(cell => (
 										<Cell
 											key={cell.loader}
@@ -111,33 +124,24 @@ export function DownloadsPage() {
 					</button>
 				</div>
 			)}
-			<noscript>
-				<p className="mm-dl-note">
-					{t('Enable JavaScript to see the available versions here.')} <a href={indexUrl}>index.json</a>
-				</p>
-				<ul className="mm-dl-note">
-					{loaderTargets.map(item => (
-						<li key={item.id}>
-							<a href={latestDownloadUrl(item.minecraft, item.loader)}>
-								{item.name} · Minecraft {item.minecraft}
-							</a>
-						</li>
-					))}
-				</ul>
-			</noscript>
 			<p className="mm-dl-note">
 				{t('Install Fabric API separately. This same JAR is also tested under Quilt {version}.', {
 					version: quiltTestedVersion,
-				})}
+				})}{' '}
+				{t('Check your file: its SHA-256 checksum must match the one shown here.')}
 			</p>
 			<p className="mm-dl-links">
 				<Link to="/installation">
-					<T message={'Not sure? Follow the guided installation'} />
+					<T message={'Not sure? The guide asks you two questions.'} />
 				</Link>
 				<Link to="/versions">
-					<T message={"Previous versions and what's new"} />
+					<T message={'What changes in Minemories'} />
+				</Link>
+				<Link to="/safety#verifier">
+					<T message={'Check your file'} />
 				</Link>
 			</p>
+			<Questions ids={pageQuestions.downloads} />
 		</ContentLayout>
 	)
 }

@@ -12,7 +12,15 @@ const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
 const withoutBootScreen = html => html.replace(bootPattern, '')
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
-	const { publicMetadata, renderPage, siteOrigin, firstPaintScripts = {}, socialImage } = entry
+	const {
+		publicMetadata,
+		renderPage,
+		siteOrigin,
+		structuredDataFor,
+		firstPaintScripts = {},
+		socialImage,
+		appShell,
+	} = entry
 	const origin = new URL(siteOrigin)
 	if (!['https:', 'http:'].includes(origin.protocol) || origin.pathname !== '/' || origin.search || origin.hash)
 		throw new Error('VITE_SITE_URL must be an HTTP(S) origin.')
@@ -21,27 +29,18 @@ export async function prerenderWeb(directory, entry) {
 	const socialTags = socialImage
 		? `<meta property="og:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" /><meta property="og:image:width" content="${socialImage.width}" /><meta property="og:image:height" content="${socialImage.height}" /><meta property="og:image:alt" content="${escapeHtml(socialImage.alt)}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" />`
 		: ''
+	// Every indexable page names its own last change (route-metadata `updated`): the sitemap's lastmod.
+	const undated = publicMetadata.filter(page => page.indexable && !page.updated).map(page => page.path)
+	if (undated.length) throw new Error(`Indexable pages without an updated date: ${undated.join(', ')}`)
 	// Public pages are written in French (the client renders them in French too, unless the visitor chose a language).
 	await Promise.all(
 		publicMetadata.map(async page => {
 			const canonical = new URL(page.path, origin).href
-			const schema = page.articleDate
-				? {
-						'@context': 'https://schema.org',
-						'@type': 'Article',
-						headline: page.title,
-						description: page.description,
-						datePublished: page.articleDate,
-						mainEntityOfPage: canonical,
-					}
-				: {
-						'@context': 'https://schema.org',
-						'@type': 'WebPage',
-						name: page.title,
-						description: page.description,
-						url: canonical,
-					}
-			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" /><link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="fr_FR" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(schema).replaceAll('<', '\\u003c')}</script>`
+			// A page kept out of search results carries no canonical, link preview or JSON-LD, as in the client head (RouteMetadata).
+			const head = page.indexable
+				? `<link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:site_name" content="Minemories" /><meta property="og:title" content="${escapeHtml(page.title)}" /><meta property="og:description" content="${escapeHtml(page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="fr_FR" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
+				: ''
+			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" />${head}`
 			const html = (page.path === '/' ? template : withoutBootScreen(template))
 				.replace(htmlLanguagePattern, '<html lang="fr">')
 				.replace(titlePattern, `<title>${escapeHtml(page.title)}</title>`)
@@ -60,7 +59,7 @@ export async function prerenderWeb(directory, entry) {
 		.filter(page => page.indexable)
 		.map(
 			page =>
-				`<url><loc>${escapeHtml(new URL(page.path, origin).href)}</loc>${page.articleDate ? `<lastmod>${page.articleDate}</lastmod>` : ''}</url>`
+				`<url><loc>${escapeHtml(new URL(page.path, origin).href)}</loc>${page.updated ? `<lastmod>${page.updated}</lastmod>` : ''}</url>`
 		)
 		.join('\n')
 	await writeFile(
@@ -73,9 +72,14 @@ export async function prerenderWeb(directory, entry) {
 			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
 			: 'User-agent: *\nDisallow: /\n'
 	)
+	// The private shell answers every private route, but only /share and /public links get pasted where a preview is
+	// drawn: it carries their neutral card (no canonical or og:url, since one file serves many URLs).
+	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.description)}" /><meta property="og:locale" content="fr_FR" />${socialTags}`
 	const fallback = withoutBootScreen(template)
-		.replace(titlePattern, '<title>Minemories — Espace personnel</title>')
-		.replace('</head>', '<meta name="robots" content="noindex,nofollow" /></head>')
+		.replace(htmlLanguagePattern, '<html lang="fr">')
+		.replace(titlePattern, `<title>${escapeHtml(appShell.title)}</title>`)
+		.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(appShell.description)}" />`)
+		.replace('</head>', `${shellHead}</head>`)
 	await writeFile(resolve(directory, 'app.html'), fallback)
 	await writeFile(
 		resolve(directory, '404.html'),

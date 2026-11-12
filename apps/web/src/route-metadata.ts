@@ -1,5 +1,3 @@
-import { discoveryPages } from './content/discovery.ts'
-import { articles } from './content/site-content.ts'
 import { translate } from './i18n/catalog.ts'
 import type { Locale } from './i18n/I18n.tsx'
 import { localeTag } from './i18n/locales.ts'
@@ -10,102 +8,122 @@ export interface PageMetadata {
 	indexable: boolean
 	language: string
 	articleDate?: string
+	/** The day the page's content last changed (YYYY-MM-DD): the sitemap's lastmod, required on every indexable page (the production build has no `.git` to read it from). */
+	updated?: string
 }
 const metadataMessages: PageMetadata[] = [
-	{
-		path: '/discover',
-		title: 'Discover Minemories — One world, many memories',
-		description: 'Open source, nostalgia, sharing and discovery: explore ways to use Minemories.',
-		indexable: true,
-		language: 'fr',
-	},
+	// The public gallery stays out of search results until it holds 20 real published memories.
 	{
 		path: '/explore',
-		title: 'Public gallery — Minemories',
+		title: 'Public gallery of Minecraft builds in 3D',
 		description: 'Explore Minecraft memories deliberately published after moderation and their rankings.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
-	...discoveryPages.map(page => ({
-		path: page.path,
-		title: `${page.label} — Minemories`,
-		description: page.lead,
-		indexable: true,
-		language: 'fr' as const,
-	})),
 	{
-		path: '/',
-		title: 'Minemories — Worlds built together',
+		path: '/sharing',
+		title: 'Share a Minecraft build in 3D with a link',
 		description:
-			'Capture a Minecraft area as a 3D memory and revisit it in your browser. Installation, a private gallery and sharing you choose.',
+			'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
+	},
+	{
+		path: '/',
+		title: 'Minemories: your Minecraft builds in 3D',
+		description:
+			'A Minecraft Java mod that keeps the corner where you play in 3D. Revisit it in your browser and show people around it with a link.',
+		indexable: true,
+		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/concept',
-		title: 'The concept — Minemories',
-		description: 'Keep places built together: a 3D memory to revisit alongside your Minecraft world backup.',
+		title: 'See your Minecraft world in 3D in the browser',
+		description:
+			'Minemories keeps an area of your Java world and makes it visitable in 3D in the browser. What it does, and what it does not.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/how-it-works',
-		title: 'How it works — Minemories',
-		description: 'From Minecraft world to 3D memory: local capture, pairing, private gallery and sharing.',
+		title: 'How Minemories captures your Minecraft build',
+		description:
+			'A memory on demand or while you are AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/installation',
-		title: 'Install the mod — Minemories',
+		title: 'Install Minemories on Fabric, Forge or NeoForge',
 		description:
-			'Step-by-step guide for Minecraft Java 1.21.1 and NeoForge 21.1.248. Download the JAR, install it and create your first memory.',
+			'Choose your Minecraft Java version and your loader, install the mod, then connect the game to your gallery.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/downloads',
-		title: 'All downloads — Minemories',
+		title: 'Download Minemories for Fabric, Forge and NeoForge',
 		description:
-			'Every Minecraft Java version and mod loader in one table: download the Minemories JAR for NeoForge, Fabric or Forge.',
+			'The Minemories JAR for each supported Minecraft Java version and each loader, with the Java version it needs and its SHA-256 checksum.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/versions',
-		title: 'Mod versions — Minemories',
-		description:
-			'Download Minemories JARs for Minecraft Java 1.21.1 with NeoForge, Fabric or Forge, and find previous releases.',
+		title: 'What’s new in Minemories, version by version',
+		description: 'The notes of each Minemories mod version, dated.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
-		path: '/changelog',
-		title: 'Mod updates — Minemories',
-		description: 'Official Minemories mod builds: dates, sizes and checksums.',
+		path: '/server-closing',
+		title: 'Minecraft server closing: keep your builds',
+		description:
+			'End of season, wipe, SMP closing: keep your base in 3D before it closes, without being an admin and without installing anything on the server.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
+	},
+	{
+		path: '/safety',
+		title: 'Is Minemories safe? Mod, children and privacy',
+		description:
+			'Where to download the mod, what goes online and when, who sees your child’s memories, how to delete everything.',
+		indexable: true,
+		language: 'fr',
+		updated: '2026-11-10',
+	},
+	{
+		path: '/guides/minecraft-blender',
+		title: 'Export a Minecraft build to Blender (GLB)',
+		description:
+			'Export an area of your Minecraft Java world as GLB from the game, textures and lights included, in multiplayer and with mods. Blender import step by step.',
+		indexable: true,
+		language: 'fr',
+		articleDate: '2026-11-10',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/roadmap',
 		title: 'Roadmap — Minemories',
 		description: 'What the Minemories team is building now, what comes next and what shipped recently.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
 	{
 		path: '/faq',
-		title: 'Frequently asked questions — Minemories',
-		description: 'Mod compatibility, GLB files, AFK captures, privacy and sharing: answers to get started.',
+		title: 'Minemories questions: versions, safety, sharing',
+		description: 'Bedrock? Your version? The server? What goes online? Who sees your memories? The short answers.',
 		indexable: true,
 		language: 'fr',
-	},
-	{
-		path: '/blog',
-		title: 'The memory journal — Minemories',
-		description: 'Guides and ideas for keeping and revisiting your Minecraft memories.',
-		indexable: true,
-		language: 'fr',
+		updated: '2026-11-10',
 	},
 	{
 		path: '/privacy',
@@ -114,30 +132,57 @@ const metadataMessages: PageMetadata[] = [
 			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-09',
 	},
 	{
 		path: '/terms',
-		title: 'Terms of use — Minemories',
+		title: 'Minemories terms of use',
 		description: 'Guidance for using this experimental version, capturing and sharing with respect for others.',
 		indexable: true,
 		language: 'fr',
+		updated: '2026-11-10',
 	},
+	// Kept out of search results until the publisher, the host and a contact are named.
 	{
 		path: '/legal',
-		title: 'About the service — Minemories',
+		title: 'About Minemories and legal notice',
 		description: 'Independent project, public repository and legal information still to be completed.',
-		indexable: true,
+		indexable: false,
 		language: 'fr',
 	},
-	...articles.map(article => ({
-		path: `/blog/${article.slug}`,
-		title: `${article.title} — Minemories`,
-		description: article.summary,
-		indexable: true,
-		language: 'fr' as const,
-		articleDate: article.published,
-	})),
 ]
+/** Private pages that still deserve their own tab title: never prerendered, never indexed. */
+const privateMessages: PageMetadata[] = [
+	{
+		path: '/login',
+		title: 'Sign in — Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'fr',
+	},
+	{
+		path: '/register',
+		title: 'Create an account — Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'fr',
+	},
+]
+/**
+ * A shared link (/share/:token) or a public memory (/public/:id): one neutral card, since a per-link preview would need
+ * a server-side render. Link previews read it from app.html (the private shell, which crawlers get without JavaScript),
+ * and the tab shows it too.
+ */
+const sharedCard = {
+	title: 'A Minecraft place in 3D, shared with you',
+	description: 'Open it in your browser and turn around it.',
+}
+const sharedPath = /^\/(?:share|public)\//
+/** The private shell's head, in French like the prerendered pages. */
+export const appShell = {
+	title: translate('fr', sharedCard.title),
+	description: translate('fr', sharedCard.description),
+}
 export const publicMetadata = metadataMessages.map(page => ({
 	...page,
 	title: translate('fr', page.title),
@@ -146,10 +191,11 @@ export const publicMetadata = metadataMessages.map(page => ({
 const trailingSlash = /\/$/
 export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetadata {
 	const path = pathname.replace(trailingSlash, '') || '/'
-	const page: PageMetadata = metadataMessages.find(page => page.path === path) ?? {
+	const page: PageMetadata = [...metadataMessages, ...privateMessages].find(page => page.path === path) ?? {
 		path,
-		title: 'Minemories — Your space',
-		description: 'Your Minemories space.',
+		...(sharedPath.test(path)
+			? sharedCard
+			: { title: 'Minemories — Your space', description: 'Your Minemories space.' }),
 		indexable: false,
 		language: 'fr',
 	}
@@ -163,25 +209,3 @@ export function metadataFor(pathname: string, locale: Locale = 'fr'): PageMetada
 export const siteOrigin = import.meta.env?.VITE_SITE_URL ?? 'https://minemories.net'
 /** The link preview of every public page (og:image, twitter:image): the logo on the night background, built by `bun run brand:icons`. */
 export const socialImage = { path: '/brand/og-image.png', width: 1200, height: 630, alt: 'Minemories' } as const
-
-export function structuredDataFor(page: PageMetadata) {
-	const canonical = new URL(page.path, siteOrigin).href
-	if (page.articleDate)
-		return {
-			'@context': 'https://schema.org',
-			'@type': 'Article',
-			inLanguage: page.language,
-			headline: page.title,
-			description: page.description,
-			datePublished: page.articleDate,
-			mainEntityOfPage: canonical,
-		}
-	return {
-		'@context': 'https://schema.org',
-		'@type': 'WebPage',
-		inLanguage: page.language,
-		name: page.title,
-		description: page.description,
-		url: canonical,
-	}
-}

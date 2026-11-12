@@ -158,6 +158,7 @@ test('capture moves to trash, restores, and is only permanently deleted after co
 	await screen.findByRole('region', { name: 'Trash' })
 	const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
 	fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }))
+	expect(confirm).toHaveBeenCalledWith('Delete this snapshot forever? This cannot be undone.')
 	expect(mocks.remove).not.toHaveBeenCalled()
 	confirm.mockReturnValue(true)
 	fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }))

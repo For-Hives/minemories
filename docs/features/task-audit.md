@@ -83,7 +83,7 @@ another world and another player. See [how it works and the evidence](visited-zo
 
 ## Real public gallery and ranking
 
-Issue #69 connects `/explore` and `/ranking` to voluntary, revocable and
+Issue #69 connects `/explore` (and the former `/ranking`, now a redirect to it) to voluntary, revocable and
 moderated publication, separate from the `?demo=1` examples. Votes are unique
 per account and limits are persisted; trash/restore, concurrency and
 revocation before the feed responds are tested. The owner and moderators

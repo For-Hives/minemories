@@ -96,6 +96,7 @@
 /* The panel: night-2, 2 px outline, the game's bevel. */
 .auth-form-wrap {
 	width: 100%;
+	min-width: 0;
 	padding: var(--ds-sp-6);
 	background: var(--night-2);
 	color: var(--text);
@@ -292,6 +293,11 @@
 	font: 400 var(--ds-fs-xs) / 18px var(--f-title);
 	text-shadow: var(--ds-text-shadow-1);
 }
+.auth-guest-link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
 /* "No account": a game tag. */
 .auth-guest-title > span:last-child {
 	margin-left: auto;
@@ -452,6 +458,9 @@
 		inset 0 var(--gp) 0 var(--outline),
 		inset 0 calc(2 * var(--gp)) 0 var(--app-line);
 }
+.auth-footer p {
+	margin: 0;
+}
 .auth-footer nav {
 	display: flex;
 	flex-wrap: wrap;
@@ -589,6 +598,10 @@ html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
 	}
 }
 @media (max-width: 400px) {
+	/* Below 400 px the two labels no longer fit on one line each ("Créer un espace" at 375 px): they may wrap rather than push the panel past the screen. */
+	.auth-shell .auth-modes .mc-tab {
+		white-space: normal;
+	}
 	.auth-guest-title {
 		flex-wrap: wrap;
 	}

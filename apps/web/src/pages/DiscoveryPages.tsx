@@ -1,154 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router'
-import { Pipeline, ShareDemo } from '../components/diagrams'
-import { More } from '../components/explainers'
+import { Link, useSearchParams } from 'react-router'
 import { MemoryScene } from '../components/MemoryScene'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useDemoPreferences } from '../content/demo-preferences'
-import { type DemoTheme, demoMemories, discoveryPages } from '../content/discovery'
+import { demoMemories } from '../content/discovery'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
-import { ContentLayout, NotFoundPage } from './ContentPages'
+import { ContentLayout } from './ContentPages'
 import { PublicGallery } from './PublicCatalog'
 
-const trailingSlash = /\/$/
-/** One distinct still per path, so the four tiles never look alike. */
-const pathScenes: Record<string, { theme: DemoTheme; stage?: number }> = {
-	'/open-source': { theme: 'garden' },
-	'/nostalgia': { theme: 'home', stage: 2 },
-	'/sharing': { theme: 'village' },
-	'/ranking': { theme: 'home' },
-}
-export function DiscoveryPage() {
-	const { locale, t } = useI18n()
-	return (
-		<ContentLayout eyebrow="MINEMORIES / PLAYGROUND" title={t('One world. Many reasons to keep it.')}>
-			<div className="mm-angle-grid mm-angle-grid--paths">
-				{discoveryPages.map(page => (
-					<Link key={page.path} to={page.path} className={`mm-angle-card mm-accent-${page.accent}`}>
-						<MemoryScene {...(pathScenes[page.path] ?? { theme: 'home' })} label={translate(locale, page.label)} />
-						<h2>{translate(locale, page.label)}</h2>
-						<span>{t('Explore this path ↗')}</span>
-					</Link>
-				))}
-			</div>
-			<section className="mm-callout">
-				<h2>{t('Start with a visit.')}</h2>
-				<Link className={buttonLime} to="/explore">
-					{t('Explore the gallery')}
-				</Link>
-			</section>
-		</ContentLayout>
-	)
-}
-const repository = 'https://github.com/For-Hives/minemories'
-function OpenSourcePipeline({ points }: { points: string[] }) {
-	const { t } = useI18n()
-	return (
-		<Pipeline
-			nodes={[
-				{
-					id: 'mod',
-					glyph: 'code',
-					label: 'Mod',
-					point: points[0] ?? '',
-					extra: (
-						<a className={buttonOutline} href={repository}>
-							GitHub ↗
-						</a>
-					),
-				},
-				{ id: 'glb', glyph: 'cube', label: 'GLB', point: points[1] ?? '' },
-				{
-					id: 'files',
-					glyph: 'disk',
-					label: 'Your computer',
-					point: points[2] ?? '',
-					extra: (
-						<a className={buttonOutline} href={`${repository}/blob/main/README.md`}>
-							{t('Read the documentation')}
-						</a>
-					),
-				},
-			]}
-		/>
-	)
-}
-export function MarketingPage() {
-	const { pathname } = useLocation()
-	const { locale, t } = useI18n()
-	const page = discoveryPages.find(item => item.path === pathname.replace(trailingSlash, ''))
-	if (!page) return <NotFoundPage />
-	return (
-		<ContentLayout eyebrow={`MINEMORIES / ${translate(locale, page.label)}`} title={translate(locale, page.title)}>
-			{page.path === '/nostalgia' && <TimelinePreview />}
-			{page.path === '/open-source' && <OpenSourcePipeline points={page.points} />}
-			{page.path === '/sharing' && <ShareDemo />}
-			<div className="mm-actions">
-				{page.path === '/sharing' && (
-					<>
-						<Link className={buttonOutline} to="/explore?demo=1">
-							{t('View the demo')}
-						</Link>
-						<Link className={buttonLime} to="/gallery">
-							{t('My private gallery')}
-						</Link>
-					</>
-				)}
-				{page.path !== '/sharing' && (
-					<Link className={buttonLime} to="/installation">
-						{t('Create my first memory')}
-					</Link>
-				)}
-				<Link to="/discover" className={buttonOutline}>
-					{t('All paths')}
-				</Link>
-			</div>
-			<More label={t('Good to know')}>
-				<p>{translate(locale, page.note)}</p>
-			</More>
-		</ContentLayout>
-	)
-}
-function TimelinePreview() {
-	const { t } = useI18n()
-	const [stage, setStage] = useState(1)
-	const labels = [t('The beginning'), t('The first evenings'), t('A small village')]
-	return (
-		<section className="mm-timeline-preview">
-			<MemoryScene theme="home" stage={stage} label={labels[stage - 1] ?? ''} />
-			<div className="ex-range-field">
-				<label htmlFor="memory-timeline">{t('Memory moment')}</label>
-				<input
-					id="memory-timeline"
-					type="range"
-					min="1"
-					max="3"
-					value={stage}
-					aria-valuetext={labels[stage - 1]}
-					onChange={event => setStage(Number(event.target.value))}
-				/>
-				<ol className="ex-ticks">
-					{labels.map((label, index) => (
-						<li key={label}>
-							<button type="button" aria-pressed={stage === index + 1} onClick={() => setStage(index + 1)}>
-								{label}
-							</button>
-						</li>
-					))}
-				</ol>
-			</div>
-		</section>
-	)
-}
-export function ExplorerPage({ ranking = false }: { ranking?: boolean }) {
+export function ExplorerPage() {
 	const { t } = useI18n()
 	const [params] = useSearchParams()
 	const demo = params.get('demo') === '1'
-	const base = ranking ? '/ranking' : '/explore'
-	let title = t('Memories to explore')
-	if (ranking) title = t('Most loved memories')
-	if (demo) title = t('A little visit, just to see.')
+	const title = demo ? t('A little visit, just to see.') : t('Places to visit')
 	return (
 		<ContentLayout
 			eyebrow="MINEMORIES"
@@ -160,23 +25,23 @@ export function ExplorerPage({ ranking = false }: { ranking?: boolean }) {
 			}
 		>
 			<div className="mm-actions">
-				<Link className={buttonOutline} to={demo ? base : `${base}?demo=1`}>
+				<Link className={buttonOutline} to={demo ? '/explore' : '/explore?demo=1'}>
 					{demo ? t('View public memories') : t('Try the demo')}
 				</Link>
 				<Link className={buttonLime} to="/gallery">
 					{t('My private gallery')}
 				</Link>
 			</div>
-			{demo ? <GalleryPreview ranking={ranking} /> : <PublicGallery ranking={ranking} />}
+			{demo ? <GalleryPreview /> : <PublicGallery />}
 		</ContentLayout>
 	)
 }
-export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
+export function GalleryPreview() {
 	const { locale, t } = useI18n()
 	const [query, setQuery] = useState('')
 	const [category, setCategory] = useState('all')
 	const [favoritesOnly, setFavoritesOnly] = useState(false)
-	const [sort, setSort] = useState(ranking ? 'hearts' : 'title')
+	const [sort, setSort] = useState('title')
 	const { preferences, toggle, reset } = useDemoPreferences()
 	const [params, setParams] = useSearchParams()
 	const trigger = useRef<HTMLButtonElement | null>(null)
@@ -203,7 +68,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 			<div className="mm-section-heading">
 				<div>
 					<span className="mm-kicker">{t('Demo · sample data')}</span>
-					<h2>{ranking ? t('Try the favorites ranking') : t('Three places to explore')}</h2>
+					<h2>{t('Three places to explore')}</h2>
 				</div>
 				<button
 					type="button"
@@ -213,8 +78,8 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 						setQuery('')
 						setCategory('all')
 						setFavoritesOnly(false)
-						setSort(ranking ? 'hearts' : 'title')
-						setParams({})
+						setSort('title')
+						setParams({ demo: '1' })
 					}}
 				>
 					{t('Reset demo')}
@@ -269,7 +134,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 							aria-label={`${t('Visit')} ${translate(locale, memory.title)}`}
 							onClick={event => {
 								trigger.current = event.currentTarget
-								setParams({ souvenir: memory.id })
+								setParams({ demo: '1', souvenir: memory.id })
 							}}
 						>
 							<MemoryScene theme={memory.theme} label={t('Demo illustration')} />
@@ -314,7 +179,7 @@ export function GalleryPreview({ ranking = false }: { ranking?: boolean }) {
 					key={selected.id}
 					memory={selected}
 					close={() => {
-						setParams({})
+						setParams({ demo: '1' })
 						trigger.current?.focus()
 					}}
 				/>
@@ -333,6 +198,7 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 	}, [])
 	async function share() {
 		const url = new URL('/explore', window.location.origin)
+		url.searchParams.set('demo', '1')
 		url.searchParams.set('souvenir', memory.id)
 		setLink(url.href)
 		try {

@@ -22,12 +22,33 @@ export const expectations = [
 	{ path: '/', status: 200, robots: 'public', notAppShell: true, cache: /no-cache/, lock: 'meta' },
 	{ path: '/installation', status: 200, robots: 'public', notAppShell: true },
 	{ path: '/concept', status: 200, robots: 'public', notAppShell: true },
-	{ path: '/blog/premier-souvenir', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/sharing', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/server-closing', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/safety', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/guides/minecraft-blender', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/explore', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/how-it-works', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/versions', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/downloads', status: 200, robots: 'public', notAppShell: true },
+	{ path: '/legal', status: 200, robots: 'public', notAppShell: true },
 	{ path: '/installation/', status: 301, location: '/installation', robots: 'any' },
 	{ path: '/concept/?a=b', status: 301, location: '/concept?a=b', robots: 'any' },
 	{ path: '/index.html', status: 301, location: '/', robots: 'any' },
 	{ path: '/concept/index.html', status: 301, location: '/concept', robots: 'any' },
-	{ path: '/decouvrir?x=1', status: 301, location: '/discover?x=1', robots: 'any' },
+	// Retired pages and former French slugs (apps/web/src/content/legacy-paths.ts): one hop to the final page, query kept.
+	{ path: '/discover', status: 301, location: '/concept', robots: 'any' },
+	{ path: '/decouvrir?x=1', status: 301, location: '/concept?x=1', robots: 'any' },
+	{ path: '/nostalgia', status: 301, location: '/concept', robots: 'any' },
+	{ path: '/nostalgie/', status: 301, location: '/concept', robots: 'any' },
+	{ path: '/open-source', status: 301, location: '/legal', robots: 'any' },
+	{ path: '/ranking?demo=1', status: 301, location: '/explore?demo=1', robots: 'any' },
+	{ path: '/classement', status: 301, location: '/explore', robots: 'any' },
+	{ path: '/explorer', status: 301, location: '/explore', robots: 'any' },
+	{ path: '/changelog', status: 301, location: '/versions', robots: 'any' },
+	{ path: '/blog', status: 301, location: '/how-it-works', robots: 'any' },
+	{ path: '/blog/premier-souvenir', status: 301, location: '/how-it-works', robots: 'any' },
+	{ path: '/fonctionnement', status: 301, location: '/how-it-works', robots: 'any' },
+	{ path: '/partager', status: 301, location: '/sharing', robots: 'any' },
 	{ path: '/telechargements', status: 301, location: '/downloads', robots: 'any' },
 	{ path: '/gallery', status: 200, robots: 'private', appShell: true },
 	{ path: '/gallery/abc', status: 200, robots: 'private', appShell: true },
@@ -139,6 +160,13 @@ export function checkResponse(expectation, response, { base, indexable = false }
 	]
 }
 
+/** The response at the end of a redirect: anything but a 200 page means a chain or a dead target. */
+export function hopFailures(target) {
+	return target.status === 200
+		? []
+		: [`redirect target answers ${target.status}, not 200 (redirect chain or dead page)`]
+}
+
 /** The first hashed script referenced by the home page, to check the immutable cache of /assets/. */
 export function firstAssetPath(html) {
 	return html.match(assetScriptPattern)?.[0]
@@ -173,6 +201,11 @@ export async function runSmoke({ base, indexable }, fetchImpl = fetch) {
 		list.map(async expectation => {
 			const response = await request(base, expectation.path, fetchImpl)
 			const failures = checkResponse(expectation, response, { base, indexable })
+			// One hop only: the page a redirect names must answer itself, not redirect again.
+			if (expectation.status === 301 && expectation.location && !failures.length) {
+				const target = await request(base, expectation.location, fetchImpl)
+				failures.push(...hopFailures(target))
+			}
 			return { path: expectation.path, status: response.status, failures }
 		})
 	)

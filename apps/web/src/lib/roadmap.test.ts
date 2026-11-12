@@ -111,7 +111,7 @@ const release = (extra: Record<string, unknown> = {}) => ({
 	notes: [{ type: 'feature', text: 'AFK captures', pr: 210 }],
 	more: 0,
 	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-	changelogUrl: 'https://minemories.xenos.lightin.io/changelog',
+	changelogUrl: 'https://minemories.xenos.lightin.io/versions',
 	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
 	...extra,
 })

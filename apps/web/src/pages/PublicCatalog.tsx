@@ -25,7 +25,7 @@ function useCategoryLabels() {
 	}
 }
 
-export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
+export function PublicGallery() {
 	const { t } = useI18n()
 	const session = useContext(AppContext)?.session
 	const [moderator, setModerator] = useState(false)
@@ -49,7 +49,7 @@ export function PublicGallery({ ranking = false }: { ranking?: boolean }) {
 	const [query, setQuery] = useState('')
 	const [category, setCategory] = useState<Category | ''>('')
 	const [page, setPage] = useState(0)
-	const [sort, setSort] = useState<'recent' | 'votes'>(ranking ? 'votes' : 'recent')
+	const [sort, setSort] = useState<'recent' | 'votes'>('recent')
 	const [result, setResult] = useState<{ items: Capture[]; hasMore: boolean }>({ items: [], hasMore: false })
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')

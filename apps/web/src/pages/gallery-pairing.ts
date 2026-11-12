@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
-import { useI18n } from '../i18n/I18n'
+import { errorMessageKey } from '../i18n/error-messages'
 export type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
 export function useGalleryPairing(notify: (message: string) => void, onError: (message: string) => void) {
-	const { locale } = useI18n()
 	const [pairCode, setPairCode] = useState(''),
 		[pairStatus, setPairStatus] = useState<PairingStatus>('idle'),
-		[pairExpiresAt, setPairExpiresAt] = useState<string | null>(null),
 		[pairBusy, setPairBusy] = useState(false)
 	const revision = useRef(0),
 		creation = useRef<AbortController | null>(null)
@@ -30,7 +28,7 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 		if (!pairCode || pairStatus !== 'pending') return
 		return watchPairing(pairCode, status => {
 			setPairStatus(status)
-			if (status === 'paired') notify('The mod is linked to your account. Send a capture from Minecraft.')
+			if (status === 'paired') notify('Your game is connected.')
 		})
 	}, [pairCode, pairStatus, notify])
 	async function createPairing() {
@@ -45,12 +43,11 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 			const pairing = await apiClient.pairing.create(undefined, { signal: controller.signal })
 			if (version !== revision.current) return
 			setPairCode(pairing.code)
-			setPairExpiresAt(pairing.expiresAt)
 			setPairStatus('pending')
 		} catch (error) {
 			if (version !== revision.current) return
 			setPairStatus('error')
-			onError(error instanceof Error ? error.message : 'Could not create the code.')
+			onError(errorMessageKey(error, 'Could not create the code.'))
 		} finally {
 			if (version === revision.current) setPairBusy(false)
 		}
@@ -64,10 +61,7 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 			if (version === revision.current) notify('Could not copy this code.')
 		}
 	}
-	const pairExpires = pairExpiresAt
-		? new Date(pairExpiresAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-		: ''
-	return { pairCode, pairStatus, pairExpires, pairBusy, createPairing, copyCode }
+	return { pairCode, pairStatus, pairBusy, createPairing, copyCode }
 }
 
 function watchPairing(code: string, onStatus: (status: PairingStatus) => void) {

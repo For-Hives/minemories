@@ -12,7 +12,11 @@ test('all public routes render readable content and navigation without browser A
 		expect(html).not.toContain('data-nosnippet')
 		expect(html).not.toContain('Read Minemories in')
 	}
-	expect(renderPage('/blog/premier-souvenir')).toContain('Un premier souvenir')
+	for (const retired of ['/discover', '/nostalgia', '/open-source', '/ranking', '/changelog', '/blog'])
+		expect(
+			publicMetadata.some(page => page.path === retired),
+			retired
+		).toBe(false)
 })
 test('the 404 page is readable, points back home and holds no film', () => {
 	const html = renderPage('/404')
@@ -21,41 +25,39 @@ test('the 404 page is readable, points back home and holds no film', () => {
 	expect(html).not.toContain('<!--$!-->')
 	expect(html).not.toContain('id="mm-scene"')
 })
-test('the manual tutorial includes a complete no-JavaScript path, not only its first interactive step', () => {
+test('the installation guide is visible HTML from top to bottom, with no noscript and no pause-menu button', () => {
 	const html = renderPage('/installation')
-	expect(html).toContain('<noscript>')
-	expect(html).toContain('/minemories export 16')
-	expect(html).toContain('Install client')
-	expect(html).toContain('capture.glb')
+	expect(html).not.toContain('<noscript>')
+	expect(html).toContain('Le plus simple : l’app CurseForge')
+	expect(html).toContain('Tu joues sans mods ?')
+	expect(html).toContain('<table')
+	expect(html).toContain('href="/downloads"')
+	expect(html).toContain('href="/gallery"')
+	expect(html).toContain('M → Mes souvenirs → Envoyer ce souvenir.')
+	expect(html).not.toMatch(/menu pause|<progress|\/minemories export/)
 })
-test('release history and changelog render headings, navigation and a direct API index link without JavaScript', () => {
-	for (const path of ['/versions', '/changelog']) {
-		const html = renderPage(path)
-		expect(html).toContain('href="/versions"')
-		expect(html).toContain('href="/changelog"')
-		expect(html).toContain('/downloads/index.json')
-		expect(html).toContain('<noscript>')
-		expect(html).not.toContain('Minemories 0.2.')
-	}
-	expect(renderPage('/versions')).toContain('Versions du mod')
-	expect(renderPage('/changelog')).toContain('Les nouveautés')
+test('/versions prerenders the curated notes of the latest release and the earlier ones, no API needed', () => {
+	const html = renderPage('/versions')
+	expect(html).toContain('Ce qui change dans Minemories')
+	expect(html).toContain('Minemories 0.37.0-beta.1')
+	expect(html).toContain('Ce qui change pour toi')
+	expect(html).toContain('id="v0.36.1-beta.1"')
+	expect(html).toContain('href="/downloads"')
+	expect(html).not.toContain('href="/changelog')
+	expect(html).not.toContain('<noscript>')
 })
-test('the download table and the guide welcome render without JavaScript, with the two ways in', () => {
+test('the download table renders without JavaScript: Java column and a link per published JAR', () => {
 	const table = renderPage('/downloads')
 	expect(table).toContain('<h1')
-	expect(table).toContain('Tous les téléchargements')
+	expect(table).toContain('Télécharger Minemories')
 	expect(table).toContain('<table')
-	expect(table).toContain('scope="col"')
+	expect(table).toContain('scope="col">Java</th>')
 	expect(table).toContain('scope="row"')
-	expect(table).toContain('<noscript>')
+	expect(table).not.toContain('<noscript>')
 	expect(table).toContain('/downloads/neoforge-mc1.21.1/latest')
-	expect(table).toContain('/downloads/index.json')
+	expect(table).toContain('/downloads/fabric-mc26.3/latest')
 	expect(table).toContain('href="/versions"')
-	const welcome = renderPage('/installation')
-	expect(welcome).toContain('Installation guidée')
-	expect(welcome).toContain('href="/downloads"')
-	expect(welcome).toContain('href="#aide"')
-	expect(welcome).not.toContain('<progress')
+	expect(table).toContain('href="/installation"')
 	expect(publicMetadata.some(page => page.path === '/downloads' && page.indexable)).toBe(true)
 })
 test('private data, shared links and account routes are excluded from indexing and static rendering', () => {
@@ -77,12 +79,12 @@ test('private data, shared links and account routes are excluded from indexing a
 		expect(metadataFor(path).indexable).toBe(false)
 		expect(publicMetadata.some(page => page.path === path)).toBe(false)
 	}
-	expect(metadataFor('/blog/')).toEqual(metadataFor('/blog'))
+	expect(metadataFor('/faq/')).toEqual(metadataFor('/faq'))
 })
 
-test('public ranking prerenders the real catalogue shell and keeps demo opt-in', () => {
-	const html = renderPage('/ranking')
-	expect(html).toContain('Les coups de cœur')
-	expect(html).toContain('/ranking?demo=1')
-	expect(html).not.toContain('Les coups de cœur, pour essayer')
+test('the public gallery prerenders the real catalogue shell and keeps demo opt-in', () => {
+	const html = renderPage('/explore')
+	expect(html).toContain('Des lieux à visiter')
+	expect(html).toContain('/explore?demo=1')
+	expect(html).not.toContain('/ranking')
 })
