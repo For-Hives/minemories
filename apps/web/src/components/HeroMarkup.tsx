@@ -473,6 +473,14 @@ export const HeroMarkup = memo(function HeroMarkup() {
 							{t('Save your base in 3D before the server goes dark. You can still walk around it afterwards.')}
 						</p>
 						<ClosingIllustration />
+						<p
+							className="mc-section__text"
+							data-i18n="Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️"
+						>
+							{t(
+								'Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️'
+							)}
+						</p>
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">

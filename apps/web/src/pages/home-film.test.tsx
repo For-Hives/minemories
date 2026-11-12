@@ -112,7 +112,7 @@ test('the first screen: one install button, the facts line, three cards, then th
 	const faq = document.getElementById('faq') as HTMLElement
 	expect([...faq.querySelectorAll('summary')].map(summary => summary.textContent)).toEqual([
 		'Il faut installer quelque chose sur le serveur\u00a0?',
-		'Il faut un compte\u00a0?',
+		'C’est pas juste Litematica\u00a0?',
 		'Et si Minemories ferme\u00a0?',
 	])
 	expect(within(faq).getByRole('link', { name: 'Toutes les questions →' }).getAttribute('href')).toBe('/faq')

@@ -72,6 +72,14 @@ export const questions = {
 			'Minemories keeps one spot, from your own game, without asking the admin.',
 		],
 	},
+	litematica: {
+		question: 'Isn’t it just Litematica?',
+		answer: [
+			'No. Litematica saves the blocks of a build so you can rebuild it block by block, and you open it in Minecraft with the mod.',
+			'Minemories keeps what your build looks like, textures and lights included, and you walk around it in your browser, without Minecraft.',
+			'One is for copying a base, the other for revisiting it and showing it off: they go well together.',
+		],
+	},
 	rejouer: {
 		question: 'Can I play in it again?',
 		answer: ['No. To play again, keep your world save.'],
@@ -150,6 +158,7 @@ export const questions = {
 		question: 'Are basements included?',
 		answer: [
 			'Yes, down to 5 blocks below the lowest point you visited, and further down if a build is connected to it.',
+			'And it’s adjustable: M → the gear next to Take a memory → Memory size → Depth below you.',
 		],
 	},
 	mods: {
@@ -286,7 +295,7 @@ export type QuestionId = keyof typeof questions
 /** The /faq page: questions asked before installing come first. */
 export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 	{ label: 'Before installing', ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde'] },
-	{ label: 'The mod', ids: ['minemories', 'bluemap', 'si-minemories-ferme', 'qui'] },
+	{ label: 'The mod', ids: ['minemories', 'bluemap', 'litematica', 'si-minemories-ferme', 'qui'] },
 	{
 		label: 'Installing',
 		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'monde-modifie', 'compte', 'sodium'],
@@ -325,7 +334,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 
 /** The three questions (at most) a page other than /faq shows. */
 export const pageQuestions = {
-	home: ['serveur', 'compte', 'si-minemories-ferme'],
+	home: ['serveur', 'litematica', 'si-minemories-ferme'],
 	concept: ['bluemap', 'rejouer', 'sous-sols'],
 	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
 	installation: ['plantage', 'code', 'touche-m'],

@@ -15,6 +15,8 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('26.3 expérimentale')
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
 	expect(html).not.toContain('Pas besoin d’être admin · Ton monde reste intact')
+	// under the server-closing clip: the capture stays on the PC, sending it is the player's choice
+	expect(html).toContain('Tout se passe sur ton PC\u00a0: la capture est enregistrée chez toi.')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
 	expect(html).toContain('Choisis l’heure, du matin au coucher du soleil')
@@ -23,7 +25,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 		expect(html).toContain(`/hero/clips/${clip}.webp`)
 	expect(html).not.toContain('<video')
 	expect(html).not.toContain('.mp4')
-	expect(html).toContain('Il faut un compte\u00a0?')
+	expect(html).toContain('C’est pas juste Litematica\u00a0?')
 	expect(html).toContain('href="/faq"')
 	for (const blocked of ['validé', 'en test', '→ 1.21', 'gratuit', 'open source', 'la plus utilisée'])
 		expect(html, blocked).not.toContain(blocked)
