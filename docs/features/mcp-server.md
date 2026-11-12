@@ -14,7 +14,15 @@ The API exposes a [Model Context Protocol](https://modelcontextprotocol.io) endp
 | `list_users`, `get_user` | Accounts (role, captures, storage, devices). Device tokens are never returned. |
 | `list_memories`, `get_memory` | Captures and their metadata, live or trashed; inline thumbnails/icons are left out. |
 | `rename_memory`, `trash_memory`, `restore_memory` | Edit a capture through the same functions as the account RPC. Trash is reversible (30 days); there is deliberately no hard delete. |
-| `set_user_name`, `set_user_minecraft_head` | Edit an account name or picture (head built server-side from a validated username). |
+| `set_user_name`, `set_user_minecraft_head`, `set_user_image`, `set_user_email` | Edit an account name, picture (Minecraft head or https URL) or e-mail (+ verified flag; unique). |
+| `admin_summary`, `admin_insights`, `admin_list_users`, `admin_role_audit` | The admin page: sign-up/upload series, versions, share statistics, activity, account table with quota, role audit. |
+| `set_user_role`, `delete_user` | Promote/demote (the last administrator is protected). Deletion is irreversible, refuses administrators and needs `confirm` equal to the account id; objects go through the durable deletion queue. |
+| `revoke_device` | Unpairs a device immediately. |
+| `list_share_links`, `revoke_share_link` | Share links (never the link secret) and their revocation. |
+| `list_diagnostics`, `get_diagnostic`, `set_diagnostic_state` | Sanitized diagnostic issues and triage (open, in_progress, resolved, ignored). |
+| `moderation_summary`, `moderation_queue`, `moderate_publication`, `unpublish_memory` | Public-gallery review queue, approve/reject, take a capture out of the gallery. |
+
+The admin tools call the same services as the admin page (`mcp-admin.ts`), acting as the reserved identity `OPERATOR_ACTOR` (`operator:mcp`, which no Better Auth session can carry), so role rules, the last-administrator guard and moderation logic stay identical. There is deliberately no raw SQL tool and no hard delete of captures: the database also holds sessions and password hashes.
 
 ## Connect a client
 
