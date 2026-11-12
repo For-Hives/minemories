@@ -34,6 +34,28 @@
 			"matchPackageNames": ["net.minecraftforge:forge"],
 			"allowedVersions": "/^1\\.21\\.1\\-52\\.1\\.19$/",
 			"registryUrls": ["https://maven.minecraftforge.net/"]
+		},
+		{
+			"description": "Each mod/<minecraft version>/ folder pins its own Minecraft, loader and Fabric API versions (mod/targets.json); never move them to another Minecraft version.",
+			"matchFileNames": ["mod/**"],
+			"matchPackageNames": [
+				"com.mojang:minecraft",
+				"net.fabricmc:fabric-loader",
+				"net.fabricmc.fabric-api:fabric-api",
+				"net.minecraftforge:forge"
+			],
+			"enabled": false
+		},
+		{
+			"description": "Only the 1.21.1 root and the shared code follow the pinned 1.21.1 versions above.",
+			"matchFileNames": ["mod/1.21.1/**", "mod/shared/**"],
+			"matchPackageNames": [
+				"com.mojang:minecraft",
+				"net.fabricmc:fabric-loader",
+				"net.fabricmc.fabric-api:fabric-api",
+				"net.minecraftforge:forge"
+			],
+			"enabled": true
 		}
 	]
 }
