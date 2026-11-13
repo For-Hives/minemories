@@ -1379,5 +1379,9 @@
 	"Launch Minecraft with the {loader} profile, then open a world and wait for it to load.": "Starte Minecraft mit dem {loader}-Profil, öffne dann eine Welt und warte, bis sie geladen ist.",
 	"On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.": "Unter macOS oder Linux öffne ein Terminal in seinem Ordner und tippe java -jar, gefolgt vom Dateinamen.",
 	"Don’t lower your security settings to get it running.": "Senk dafür nicht deine Sicherheitseinstellungen.",
-	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "Um zurückzugehen, nimm das Minemories-JAR aus mods. Lösch nie deine Welt, um das zu beheben."
+	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "Um zurückzugehen, nimm das Minemories-JAR aus mods. Lösch nie deine Welt, um das zu beheben.",
+	"Include this view": "Diese Ansicht einschließen",
+	"Camera, time of day, weather and layers, as on your screen now.": "Kamera, Tageszeit, Wetter und Ebenen, so wie gerade auf deinem Bildschirm.",
+	"Copy a link to this view": "Link zu dieser Ansicht kopieren",
+	"Link to this view copied.": "Link zu dieser Ansicht kopiert."
 }

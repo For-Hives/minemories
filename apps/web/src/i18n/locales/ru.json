@@ -1379,5 +1379,9 @@
 	"Launch Minecraft with the {loader} profile, then open a world and wait for it to load.": "Запусти Minecraft с профилем {loader}, открой мир и дождись, пока он загрузится.",
 	"On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.": "На macOS или Linux открой терминал в его папке и набери java -jar, а затем имя файла.",
 	"Don’t lower your security settings to get it running.": "Не снижай настройки безопасности, чтобы его запустить.",
-	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "Чтобы откатиться, убери JAR Minemories из mods. Никогда не удаляй мир, чтобы это исправить."
+	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "Чтобы откатиться, убери JAR Minemories из mods. Никогда не удаляй мир, чтобы это исправить.",
+	"Include this view": "Включить этот вид",
+	"Camera, time of day, weather and layers, as on your screen now.": "Камера, время суток, погода и слои — как сейчас на твоём экране.",
+	"Copy a link to this view": "Скопировать ссылку на этот вид",
+	"Link to this view copied.": "Ссылка на этот вид скопирована."
 }

@@ -1379,5 +1379,9 @@
 	"Launch Minecraft with the {loader} profile, then open a world and wait for it to load.": "{loader} 프로필로 Minecraft를 실행하고, 월드를 열어 다 불러올 때까지 기다리세요.",
 	"On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.": "macOS나 Linux에서는 그 폴더에서 터미널을 열고 java -jar 뒤에 파일 이름을 입력하세요.",
 	"Don’t lower your security settings to get it running.": "실행하려고 보안 설정을 낮추지 마세요.",
-	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "되돌리려면 mods에서 Minemories JAR를 빼세요. 고치려고 월드를 지우지는 마세요."
+	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "되돌리려면 mods에서 Minemories JAR를 빼세요. 고치려고 월드를 지우지는 마세요.",
+	"Include this view": "이 시점 포함",
+	"Camera, time of day, weather and layers, as on your screen now.": "카메라, 시간, 날씨, 레이어를 지금 화면 그대로 공유합니다.",
+	"Copy a link to this view": "이 시점 링크 복사",
+	"Link to this view copied.": "이 시점 링크를 복사했습니다."
 }

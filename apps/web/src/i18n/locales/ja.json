@@ -1379,5 +1379,9 @@
 	"Launch Minecraft with the {loader} profile, then open a world and wait for it to load.": "{loader} のプロファイルで Minecraft を起動し、ワールドを開いて読み込みが終わるまで待ちます。",
 	"On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.": "macOS や Linux では、そのフォルダーでターミナルを開き、java -jar に続けてファイル名を入力します。",
 	"Don’t lower your security settings to get it running.": "動かすためにセキュリティ設定を下げないでください。",
-	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "元に戻すには、Minemories の JAR を mods から取り出してください。直すためにワールドを削除するのは絶対にやめてください。"
+	"To go back, take the Minemories JAR out of mods. Never delete your world to fix it.": "元に戻すには、Minemories の JAR を mods から取り出してください。直すためにワールドを削除するのは絶対にやめてください。",
+	"Include this view": "この視点を含める",
+	"Camera, time of day, weather and layers, as on your screen now.": "カメラ、時刻、天気、レイヤーを今の画面のまま共有します。",
+	"Copy a link to this view": "この視点へのリンクをコピー",
+	"Link to this view copied.": "この視点へのリンクをコピーしました。"
 }
