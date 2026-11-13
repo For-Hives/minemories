@@ -1103,6 +1103,22 @@ h2.cinema-panel-title {
 .memory-share-panel [role="alert"] {
 	color: var(--bad);
 }
+/* Whether the link reopens the view on screen: the kit checkbox (theme.css), its detail under the label. */
+.memory-share-view {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ds-sp-2);
+	color: var(--text);
+	cursor: pointer;
+}
+.memory-share-view > span {
+	display: grid;
+	gap: 2px;
+}
+.memory-share-view small {
+	color: var(--text-2);
+	font-size: inherit;
+}
 /* What a link exposes beyond the scene, said before a link exists. */
 .memory-share-panel .memory-share-warning {
 	padding-left: var(--ds-sp-2);

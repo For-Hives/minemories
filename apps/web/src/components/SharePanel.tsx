@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
+import { type ViewLink, withViewLink } from '../lib/view-link'
 import { GalleryIcon } from './GalleryIcons'
 import { buttonDark, buttonQuiet } from './ui'
 // The panel also opens in the gallery's side sheet: its rules travel with it.
@@ -71,10 +72,10 @@ function useShare(memoryId: string, scope: Scope) {
 		}
 	}
 
-	async function copyLink() {
+	async function copyLink(text = url) {
 		const version = revision.current
 		try {
-			await navigator.clipboard.writeText(url)
+			await navigator.clipboard.writeText(text)
 			if (version === revision.current) notify('Link copied to the clipboard.')
 		} catch {
 			if (version === revision.current) notify('Could not copy this link.')
@@ -121,9 +122,30 @@ function ScopeSwitch({
 	)
 }
 
-function ShareBody({ scope, share }: { scope: Scope; share: Share }) {
+/** Whether the copied link carries the current view, and the link it then gives. */
+interface ViewChoice {
+	include: boolean
+	onInclude(include: boolean): void
+	link(url: string): string
+}
+
+function ViewToggle({ choice }: { choice: ViewChoice }) {
 	const { t } = useI18n()
-	const { status, url, busy, create, revoke, copyLink } = share
+	return (
+		<label className="mm-checkbox memory-share-view">
+			<input type="checkbox" checked={choice.include} onChange={event => choice.onInclude(event.target.checked)} />
+			<span>
+				{t('Include this view')}
+				<small>{t('Camera, time of day, weather and layers, as on your screen now.')}</small>
+			</span>
+		</label>
+	)
+}
+
+function ShareBody({ scope, share, view }: { scope: Scope; share: Share; view?: ViewChoice | undefined }) {
+	const { t } = useI18n()
+	const { status, busy, create, revoke, copyLink } = share
+	const url = share.url && view ? view.link(share.url) : share.url
 	return (
 		<>
 			{status === 'error' && <p role="alert">{t('Could not check sharing. Close and reopen this panel to retry.')}</p>}
@@ -142,6 +164,7 @@ function ShareBody({ scope, share }: { scope: Scope; share: Share }) {
 			)}
 			{status === 'on' && (
 				<>
+					{view && share.url && <ViewToggle choice={view} />}
 					{url ? (
 						<span className="memory-share-row">
 							<input
@@ -151,7 +174,11 @@ function ShareBody({ scope, share }: { scope: Scope; share: Share }) {
 								onFocus={event => event.currentTarget.select()}
 								className="mc-field memory-share-url"
 							/>
-							<button type="button" onClick={() => void copyLink()} className={buttonDark}>
+							<button
+								type="button"
+								onClick={() => void copyLink(view ? view.link(share.url) : url)}
+								className={buttonDark}
+							>
 								{' '}
 								<T message={'Copy'} />{' '}
 							</button>
@@ -195,9 +222,14 @@ function ShareBody({ scope, share }: { scope: Scope; share: Share }) {
 	)
 }
 
-export function SharePanel({ memoryId }: { memoryId: string }) {
+/**
+ * `view`, from the viewer, reads the current view so the link can reopen it (camera, hour, weather, layers and, for
+ * a world link, this snapshot); the gallery's side sheet has none and shares plain links.
+ */
+export function SharePanel({ memoryId, view }: { memoryId: string; view?: () => ViewLink }) {
 	const { t } = useI18n()
 	const [scope, setScope] = useState<Scope>('memory')
+	const [include, setInclude] = useState(true)
 	const memory = useShare(memoryId, 'memory')
 	const world = useShare(memoryId, 'world')
 	// A capture without a temporal identity belongs to no evolving world: only the snapshot link applies.
@@ -220,7 +252,24 @@ export function SharePanel({ memoryId }: { memoryId: string }) {
 					live={{ memory: memory.status === 'on', world: world.status === 'on' }}
 				/>
 			)}
-			<ShareBody key={active} scope={active} share={active === 'world' ? world : memory} />
+			<ShareBody
+				key={active}
+				scope={active}
+				share={active === 'world' ? world : memory}
+				view={
+					view && {
+						include,
+						onInclude: setInclude,
+						link: url => {
+							if (!include) return url
+							// The copy is read when asked for, so a camera moved since the panel opened is still caught.
+							const current = view()
+							if (active === 'world') current.snapshot = memoryId
+							return withViewLink(url, current)
+						},
+					}
+				}
+			/>
 		</div>
 	)
 }

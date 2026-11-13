@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
 	context: vi.fn(),
 	restore: vi.fn(),
 	status: vi.fn(),
+	minutes: vi.fn(),
+	view: vi.fn(),
+	weather: vi.fn(),
+	hide: vi.fn(),
 	events: null as null | { onEmptyChange(empty: boolean): void; onLoading(message: string | null): void },
 }))
 vi.mock('../api-client', () => ({
@@ -32,8 +36,14 @@ vi.mock('../viewer-scene', () => ({
 		loadFile = mocks.load
 		dispose = mocks.dispose
 		setCaptureContext = mocks.context
-		setMinutes = vi.fn()
+		setMinutes = mocks.minutes
 		setLighting = vi.fn()
+		setWeather = mocks.weather
+		applyView = mocks.view
+		setCategoryVisible = mocks.hide
+		currentView = () => ({ camera: [10.5, 80, -4], target: [2, 64, 3] })
+		categories = () => ['terrain', 'entities']
+		isCategoryVisible = (category: string) => category !== 'entities'
 	},
 }))
 function mount(path = '/public/11111111-1111-4111-8111-111111111111', isPublic = true) {
@@ -271,4 +281,47 @@ test('a candidate under review is never called reviewed and carries no invitatio
 	fireEvent.pointerDown(screen.getByLabelText('Scène 3D partagée'))
 	expect(document.querySelector('[data-share]')).toBeNull()
 	expect(document.body.textContent).not.toContain('relu avant publication')
+})
+
+test('a link carrying a view opens that snapshot, hour, weather, layers and camera, once', async () => {
+	const snapshots = ['a', 'b'].map((id, index) => ({ id, at: `2026-0${index + 1}-01T12:00:00Z` }))
+	vi.mocked(fetch).mockImplementation(async url =>
+		String(url).includes('/file') ? glb() : sharedMeta({ id: 'b', snapshots, metadata: { dayTime: 1000 } })
+	)
+	mount('/share/world-token-0123456789?cam=1,2,3&at=4,5,6&time=17:30&weather=rain&hide=entities&snap=b', false)
+	await waitFor(() => expect(mocks.view).toHaveBeenCalledWith([1, 2, 3], [4, 5, 6]))
+	expect(fetch).toHaveBeenNthCalledWith(
+		1,
+		'http://example.test/api/shared/world-token-0123456789?snapshot=b',
+		expect.anything()
+	)
+	expect(mocks.hide).toHaveBeenCalledWith('entities', false)
+	// The link's hour comes after the capture's own.
+	expect(mocks.minutes.mock.calls.at(-1)).toEqual([1050])
+	expect(mocks.load.mock.invocationCallOrder[0]).toBeLessThan(mocks.view.mock.invocationCallOrder[0] as number)
+	sceneReady()
+	await waitFor(() => expect(mocks.weather).toHaveBeenCalledWith('rain'))
+	// The visitor can pass their own view on: this page's address with the current view.
+	const writeText = vi.fn().mockResolvedValue(undefined)
+	vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de cette vue' }))
+	await waitFor(() => expect(writeText).toHaveBeenCalled())
+	const copied = new URL(writeText.mock.calls[0]?.[0] as string)
+	expect(Object.fromEntries(copied.searchParams)).toMatchObject({
+		cam: '10.5,80,-4',
+		at: '2,64,3',
+		weather: 'rain',
+		hide: 'entities',
+		snap: 'b',
+	})
+	expect(await screen.findByText('Lien de cette vue copié.')).toBeTruthy()
+})
+
+test('a link without a view keeps the default framing and the capture’s hour', async () => {
+	vi.mocked(fetch).mockImplementation(async url => (String(url).includes('/file') ? glb() : sharedMeta()))
+	mount('/share/plain-token-0123456789?cam=1,2,3', false)
+	await waitFor(() => expect(mocks.load).toHaveBeenCalled())
+	expect(mocks.view).not.toHaveBeenCalled()
+	expect(mocks.hide).not.toHaveBeenCalled()
+	expect(fetch).toHaveBeenNthCalledWith(1, 'http://example.test/api/shared/plain-token-0123456789', expect.anything())
 })

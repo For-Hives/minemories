@@ -1413,5 +1413,9 @@
 	"How Minemories handles your data is explained on the privacy page.": "How Minemories handles your data is explained on the privacy page.",
 	"Read the privacy policy": "Read the privacy policy",
 	"Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.": "Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.",
-	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}."
+	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.",
+	"Include this view": "Include this view",
+	"Camera, time of day, weather and layers, as on your screen now.": "Camera, time of day, weather and layers, as on your screen now.",
+	"Copy a link to this view": "Copy a link to this view",
+	"Link to this view copied.": "Link to this view copied."
 }

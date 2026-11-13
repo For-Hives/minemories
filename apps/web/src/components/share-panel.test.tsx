@@ -103,3 +103,39 @@ test('the French panel warns about coordinates, world name, seed and server befo
 		)
 	).toBeTruthy()
 })
+
+test('from the viewer, the link carries the view on screen unless asked not to, and a world link its snapshot', async () => {
+	const live = { memory: { shared: true, urlPath: '/share/snap' }, world: { shared: true, urlPath: '/share/wide' } }
+	api.shareStatus.mockImplementation(({ scope }: { scope: string }) =>
+		Promise.resolve(live[scope as 'memory' | 'world'])
+	)
+	let minutes = 600
+	const view = vi.fn(() => ({ camera: [1, 2, 3] as const, target: [4, 5, 6] as const, minutes }))
+	const writeText = vi.fn().mockResolvedValue(undefined)
+	vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+	render(
+		<I18nProvider initialLocale="en">
+			<SharePanel memoryId="frame-7" view={view} />
+		</I18nProvider>
+	)
+	const link = (await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement
+	expect(link.value).toBe(`${window.location.origin}/share/snap?cam=1,2,3&at=4,5,6&time=10:00`)
+	// The copy reads the view again: a camera or clock moved since the panel opened is caught.
+	minutes = 615
+	fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+	await waitFor(() =>
+		expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/share/snap?cam=1,2,3&at=4,5,6&time=10:15`)
+	)
+	fireEvent.click(screen.getByRole('button', { name: 'World · Link active' }))
+	expect(((await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement).value).toContain(
+		'/share/wide?cam=1,2,3&at=4,5,6&time=10:15&snap=frame-7'
+	)
+	fireEvent.click(screen.getByRole('checkbox', { name: /Include this view/ }))
+	expect((screen.getByRole('textbox', { name: 'Share link' }) as HTMLInputElement).value).toBe(
+		`${window.location.origin}/share/wide`
+	)
+	expect(screen.getByRole('link', { name: 'Open link ↗' }).getAttribute('href')).toBe(
+		`${window.location.origin}/share/wide`
+	)
+	vi.unstubAllGlobals()
+})

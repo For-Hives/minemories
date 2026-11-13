@@ -312,5 +312,6 @@ test('the loading screens wait for the capture on screen, not for a later one th
 	expect(document.querySelector('.mm-chunk')).not.toBeNull()
 	release()
 	await waitFor(() => expect(loaded()).toBe(3))
-	expect(document.documentElement.dataset.mmReady).toBe('1')
+	// The page signals ready on the render after the capture is drawn, not in the same tick.
+	await waitFor(() => expect(document.documentElement.dataset.mmReady).toBe('1'))
 })

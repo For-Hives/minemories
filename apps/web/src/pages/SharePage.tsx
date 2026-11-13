@@ -11,6 +11,7 @@ import { translate, useI18n } from '../i18n/I18n'
 import { type Locale, localeTag } from '../i18n/locales'
 import { downloadCapture, SCENE_UNREACHABLE } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
+import { readViewLink, type ViewLink } from '../lib/view-link'
 import { ViewerScene } from '../viewer-scene'
 import { ticksToMinutes } from './ViewerPage'
 import './share-timeline.css'
@@ -80,6 +81,26 @@ async function fetchPublicCapture(
 			metadata: { x: null, y: null, z: null, dayTime: null, dimension: null, seed: null, biome: null },
 		},
 	}
+}
+
+function linkSnapshot(view: ViewLink): string | null {
+	return view.snapshot ?? null
+}
+
+/** Only a world link has snapshots to point at; a snapshot link always shows its own. */
+function worldSnapshot(snapshots: SharedSnapshot[] | null, shown: string | null): string | null {
+	return snapshots ? shown : null
+}
+
+/** Hidden before the first load, so the capture never flashes in with them. */
+function hideLinkLayers(scene: ViewerScene, view: ViewLink): void {
+	for (const category of view.hidden ?? []) scene.setCategoryVisible(category, false)
+}
+
+/** The link's hour and camera, over the capture's own hour and the default framing. */
+function applyLinkView(scene: ViewerScene, view: ViewLink | null): void {
+	if (view?.minutes !== undefined) scene.setMinutes(view.minutes)
+	if (view?.camera && view.target) scene.applyView(view.camera, view.target)
 }
 
 function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle: (name: string) => void): void {
@@ -260,6 +281,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const { token, id } = useParams()
 	const [params] = useSearchParams()
 	const review = isPublic && params.get('review') === '1'
+	// A view carried by the link (camera, hour, weather, layers, snapshot), applied once, on the first load.
+	const [linkView] = useState(() => readViewLink(params))
+	const pendingView = useRef<ViewLink | null>(linkView)
 	const reference = isPublic ? id : token
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const sceneRef = useRef<ViewerScene | null>(null)
@@ -269,7 +293,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const [empty, setEmpty] = useState(true)
 	const [snapshots, setSnapshots] = useState<SharedSnapshot[] | null>(null)
 	const [shown, setShown] = useState<string | null>(null)
-	const [wanted, setWanted] = useState<string | null>(null)
+	const [wanted, setWanted] = useState<string | null>(() => linkSnapshot(linkView))
 	const [status, setStatus] = useState<string | null>('Loading the shared world…')
 	const [error, setError] = useState('')
 	const [attempt, setAttempt] = useState(0)
@@ -297,6 +321,7 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 			return
 		}
 
+		hideLinkLayers(scene, linkView)
 		sceneRef.current = scene
 		return () => {
 			scene.dispose()
@@ -336,6 +361,8 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 				setSnapshots(capture.snapshots ?? null)
 				setShown(capture.id ?? null)
 				await scene.loadFile(file)
+				applyLinkView(scene, pendingView.current)
+				pendingView.current = null
 			} catch (cause) {
 				reportError(cause)
 			}
@@ -398,6 +425,9 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 					ready={!(status || restoration.view)}
 					minutes={minutes}
 					fileInfo={fileInfo ? `${fileInfo.name} · ${formatFileSize(fileInfo.size, locale)}` : ''}
+					initialView={linkView}
+					viewLink
+					snapshot={worldSnapshot(snapshots, shown)}
 				/>
 			)}
 		</section>

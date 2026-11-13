@@ -1,6 +1,7 @@
 import { type ReactNode, type RefObject, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import { type ViewLink, withViewLink } from '../lib/view-link'
 import {
 	browserStorage,
 	readViewerLighting,
@@ -26,6 +27,71 @@ function isTyping(event: KeyboardEvent): boolean {
 	return field || event.metaKey || event.ctrlKey || event.altKey
 }
 
+function startingWeather(view: ViewLink | undefined): ViewerWeather {
+	return view?.weather ?? 'clear'
+}
+
+function startingLighting(view: ViewLink | undefined): ViewerLighting {
+	return view?.lighting ?? readViewerLighting(browserStorage())
+}
+
+/** A visitor's Share (no memory of their own here): copies this page's address with the current view. */
+function CopyViewButton({
+	shown,
+	owner,
+	ready,
+	onCopy,
+}: {
+	shown: boolean | undefined
+	owner: string | null | undefined
+	ready: boolean
+	onCopy(): void
+}) {
+	const { t } = useI18n()
+	if (!shown || owner) return null
+	return (
+		<button type="button" disabled={!ready} aria-label={t('Copy a link to this view')} onClick={onCopy}>
+			<ViewerIcon name="share" />
+			<span>{t('Copy a link to this view')}</span>
+		</button>
+	)
+}
+
+/** A link's weather, once the scene can show it (the buttons set it directly afterwards). */
+function useLinkWeather(sceneRef: RefObject<ViewerScene | null>, ready: boolean, view: ViewLink | undefined): void {
+	const weather = view?.weather
+	useEffect(() => {
+		if (ready && weather) sceneRef.current?.setWeather(weather)
+	}, [ready, weather, sceneRef])
+}
+
+/** Copies this page's address with `view`, reporting the outcome. */
+async function copyViewLink(
+	view: ViewLink,
+	snapshot: string | null | undefined,
+	report: (message: string) => void
+): Promise<void> {
+	if (snapshot) view.snapshot = snapshot
+	try {
+		await navigator.clipboard.writeText(withViewLink(window.location.href, view))
+		report('Link to this view copied.')
+	} catch {
+		report('Could not copy this link.')
+	}
+}
+
+/** Everything a share link needs to reopen this exact view. */
+function studioView(scene: ViewerScene | null, view: ViewLink): ViewLink {
+	const place = scene?.currentView()
+	if (place) {
+		view.camera = place.camera
+		view.target = place.target
+	}
+	const hidden = scene?.categories().filter(category => !scene.isCategoryVisible(category)) ?? []
+	if (hidden.length) view.hidden = hidden
+	return view
+}
+
 export function ViewerStudio({
 	sceneRef,
 	memoryId,
@@ -34,6 +100,9 @@ export function ViewerStudio({
 	captureMinutes = null,
 	fileInfo = '',
 	onRecenter,
+	initialView,
+	viewLink,
+	snapshot,
 	children,
 }: {
 	sceneRef: RefObject<ViewerScene | null>
@@ -44,13 +113,20 @@ export function ViewerStudio({
 	fileInfo?: string
 	/** A page that frames its own content (a composed world) supplies how to recenter. */
 	onRecenter?: () => void
+	/** A view opened from a link: its weather and lighting start the studio (the page applies the rest). */
+	initialView?: ViewLink
+	/** A visitor's page (no `memoryId`): Share copies this page's address with the current view. */
+	viewLink?: boolean
+	/** The snapshot shown on a world link, carried in the view. */
+	snapshot?: string | null
 	/** Extra chrome (the capture film of a world) that rests and hides with the rest of the controls. */
 	children?: ReactNode
 }) {
 	const { t } = useI18n()
-	const [weather, setWeather] = useState<ViewerWeather>('clear')
+	const [weather, setWeather] = useState<ViewerWeather>(() => startingWeather(initialView))
 	const [quality, setQuality] = useState<ViewerQuality>('auto')
-	const [lighting, setLighting] = useState<ViewerLighting>(() => readViewerLighting(browserStorage()))
+	// A link's lighting applies to this visit only; the remembered choice is not overwritten.
+	const [lighting, setLighting] = useState<ViewerLighting>(() => startingLighting(initialView))
 	const [tour, setTour] = useState(false)
 	const [firstPerson, setFirstPerson] = useState(false)
 	const [sharing, setSharing] = useState(false)
@@ -71,6 +147,9 @@ export function ViewerStudio({
 	useEffect(() => {
 		if (ready) sceneRef.current?.setLighting(lighting)
 	}, [ready, lighting, sceneRef])
+	useLinkWeather(sceneRef, ready, initialView)
+	const currentView = () => studioView(sceneRef.current, { minutes, weather, lighting })
+	const copyView = () => copyViewLink(currentView(), snapshot, text => notify(t(text)))
 	useEffect(() => {
 		if (panelOpen) return
 		let timer = window.setTimeout(() => setIdle(true), IDLE_MS)
@@ -188,6 +267,7 @@ export function ViewerStudio({
 						<ViewerIcon name="camera" />
 						<span>{t('Postcard')}</span>
 					</button>
+					<CopyViewButton shown={viewLink} owner={memoryId} ready={ready} onCopy={() => void copyView()} />
 					{memoryId && (
 						<button
 							type="button"
@@ -331,7 +411,7 @@ export function ViewerStudio({
 							</button>
 						</div>
 						<p>{t('Anyone with the link can explore this memory. You can revoke access at any time.')}</p>
-						<SharePanel key={memoryId} memoryId={memoryId} />
+						<SharePanel key={memoryId} memoryId={memoryId} view={currentView} />
 						<Link className={buttonLime} to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
 							{t('Publish in the public gallery')}
 						</Link>
