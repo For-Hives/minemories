@@ -110,6 +110,24 @@ test('roles, e-mails, images and devices can be edited', async () => {
 	expect((await tool('revoke_device', { deviceId: 'd1' })).error).toBe(true)
 })
 
+test('role storage limits are listed and set as the operator', async () => {
+	const listed = (await tool('list_role_storage')).json() as Array<{ role: string; limitBytes: number | null }>
+	expect(listed.map(row => [row.role, row.limitBytes])).toEqual([
+		['user', null],
+		['admin', null],
+	])
+	expect((await tool('set_role_storage', { role: 'admin', quotaBytes: 5_000_000_000 })).json()).toEqual({ ok: true })
+	expect(database.query("SELECT limit_bytes,updated_by FROM role_storage_limits WHERE role='admin'").get()).toEqual({
+		limit_bytes: 5_000_000_000,
+		updated_by: 'operator:mcp',
+	})
+	expect((await tool('list_role_storage')).json()[1]).toMatchObject({ limitBytes: 5_000_000_000, effectiveBytes: 5e9 })
+	expect((await tool('set_role_storage', { role: 'admin', quotaBytes: 0 })).error).toBe(true)
+	expect((await tool('set_role_storage', { role: 'alpha', quotaBytes: 1 })).error).toBe(true)
+	expect((await tool('set_role_storage', { role: 'admin', quotaBytes: null })).error).toBe(false)
+	expect(database.query('SELECT COUNT(*) AS n FROM role_storage_limits').get()).toEqual({ n: 0 })
+})
+
 test('share links are listed and revoked', async () => {
 	database
 		.query('INSERT INTO share_links(token_hash,memory_id,user_id,created_at) VALUES (?,?,?,?)')

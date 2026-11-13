@@ -8,6 +8,7 @@ import { boundColdStorageProvider, verifyColdStorageTarget } from './cold-storag
 import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateRoadmapSnapshot } from './roadmap-snapshot'
+import { migrateRoleStorage } from './role-storage'
 import { configureS3StorageProvider } from './storage-s3'
 import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTimelapseIndex } from './timelapse-index'
@@ -62,6 +63,8 @@ database.exec(`CREATE TABLE IF NOT EXISTS object_deletions (
  attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER NOT NULL DEFAULT 0
 ); CREATE INDEX IF NOT EXISTS object_deletions_due_idx ON object_deletions(next_attempt_at, created_at);`)
 migrateObjectDeletionClaims(database)
+// The quota reads the role tables, so they exist before the first upload or summary.
+migrateRoleStorage(database)
 const memoryColumns = database.query('PRAGMA table_info(memories)').all() as Array<{ name: string }>
 if (!memoryColumns.some(column => column.name === 'metadata_json')) {
 	database.exec('ALTER TABLE memories ADD COLUMN metadata_json TEXT')

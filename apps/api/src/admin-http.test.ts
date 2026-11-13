@@ -161,3 +161,40 @@ test('insights and account deletion need an administrator and the current passwo
 	expect(database.query('SELECT 1 FROM user WHERE id=?').get(victim.id)).toBeNull()
 	expect((await admin.client.admin.users({ query: 'insights-victim', role: 'all', page: 1 })).total).toBe(0)
 }, 15000)
+
+test('role storage limits go through real sessions: admin only, validated, applied to the account summary', async () => {
+	const admin = await register('storage-admin@example.com'),
+		member = await register('storage-member@example.com')
+	promoteAdministrator(['--email', admin.email], process.env)
+	await expect(rpc().admin.storageRoles()).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+	await expect(member.client.admin.storageRoles()).rejects.toMatchObject({ code: 'FORBIDDEN' })
+	await expect(member.client.admin.setRoleStorage({ role: 'user', quotaBytes: 1 })).rejects.toMatchObject({
+		code: 'FORBIDDEN',
+	})
+	await Promise.all(
+		[0, 1.5, 10 ** 12 + 1].map(quotaBytes =>
+			expect(admin.client.admin.setRoleStorage({ role: 'user', quotaBytes })).rejects.toMatchObject({
+				code: 'BAD_REQUEST',
+			})
+		)
+	)
+	await expect(admin.client.admin.setRoleStorage({ role: 'alpha' as 'user', quotaBytes: 1 })).rejects.toMatchObject({
+		code: 'BAD_REQUEST',
+	})
+	const base = (await member.client.account.storage()).limitBytes
+	expect(await admin.client.admin.setRoleStorage({ role: 'admin', quotaBytes: 5_000_000_000 })).toEqual({ ok: true })
+	expect((await admin.client.account.storage()).limitBytes).toBe(5_000_000_000)
+	expect((await member.client.account.storage()).limitBytes).toBe(base)
+	const rows = await admin.client.admin.storageRoles()
+	expect(rows.find(row => row.role === 'admin')).toMatchObject({
+		limitBytes: 5_000_000_000,
+		effectiveBytes: 5_000_000_000,
+	})
+	const listed = await admin.client.admin.users({ query: 'storage-', role: 'all', page: 1 })
+	expect(Object.fromEntries(listed.users.map(user => [user.email, user.quotaBytes]))).toEqual({
+		'storage-admin@example.com': 5_000_000_000,
+		'storage-member@example.com': base,
+	})
+	await admin.client.admin.setRoleStorage({ role: 'admin', quotaBytes: null })
+	expect((await admin.client.account.storage()).limitBytes).toBe(base)
+}, 15000)

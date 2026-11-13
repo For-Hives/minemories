@@ -17,6 +17,7 @@ The API exposes a [Model Context Protocol](https://modelcontextprotocol.io) endp
 | `set_user_name`, `set_user_minecraft_head`, `set_user_image`, `set_user_email` | Edit an account name, picture (Minecraft head or https URL) or e-mail (+ verified flag; unique). |
 | `admin_summary`, `admin_insights`, `admin_list_users`, `admin_role_audit` | The admin page: sign-up/upload series, versions, share statistics, activity, account table with quota, role audit. |
 | `set_user_role`, `delete_user` | Promote/demote (the last administrator is protected). Deletion is irreversible, refuses administrators and needs `confirm` equal to the account id; objects go through the durable deletion queue. |
+| `list_role_storage`, `set_role_storage` | Storage limit per role (`user`, `admin`): configured limit, what holders get, holder count. `set_role_storage` takes `{ role, quotaBytes }` in decimal bytes (at most 1e12) or `null` to remove a limit; the change is recorded with `updated_by = operator:mcp`. See [limits by role](account-storage-quota.md#limits-by-role). |
 | `revoke_device` | Unpairs a device immediately. |
 | `list_share_links`, `revoke_share_link` | Share links (never the link secret) and their revocation. |
 | `list_diagnostics`, `get_diagnostic`, `set_diagnostic_state` | Sanitized diagnostic issues and triage (open, in_progress, resolved, ignored). |

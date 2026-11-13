@@ -1,4 +1,4 @@
-import type { AdminSummary, AdminUser, AdminUserSort } from '@minemories/api-contract'
+import type { AdminSummary, AdminUser, AdminUserSort, RoleStorage } from '@minemories/api-contract'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { buttonLime } from '../components/ui'
@@ -7,6 +7,7 @@ import { AdminCharts, gigabytes } from './AdminCharts'
 import { Directory, type RoleFilter } from './AdminDirectory'
 import { AdminInsights } from './AdminInsights'
 import { AdminRoleDialog } from './AdminRoleDialog'
+import { RoleStorageDialog, RoleStorageSection } from './AdminRoleStorage'
 import { type AdminDataset, useAdminData } from './admin-data'
 import './admin.css'
 
@@ -112,6 +113,7 @@ export function AdminPage() {
 	})
 	const [target, setTarget] = useState<AdminUser | null>(null)
 	const [removal, setRemoval] = useState<AdminUser | null>(null)
+	const [limit, setLimit] = useState<RoleStorage | null>(null)
 	const load = useAdminData(filters)
 	return (
 		<section className="mm-content mm-admin-page">
@@ -180,11 +182,22 @@ export function AdminPage() {
 						onSelect={setTarget}
 						onDelete={setRemoval}
 					/>
+					<RoleStorageSection roles={load.data.storageRoles} onEdit={setLimit} />
 					<div className="mm-admin-lower">
 						<Operations data={load.data.summary.totals} />
 						<Audit rows={load.data.audit} />
 					</div>
 				</>
+			)}
+			{limit && (
+				<RoleStorageDialog
+					row={limit}
+					onClose={() => setLimit(null)}
+					onSuccess={() => {
+						setLimit(null)
+						load.reload()
+					}}
+				/>
 			)}
 			{removal && (
 				<AdminRoleDialog
