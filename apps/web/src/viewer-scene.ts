@@ -769,10 +769,41 @@ export class ViewerScene {
 		this.effects.setAtmosphere(sun, daylight, this.weather, this.shadowCenter.y, horizon, this.atmosphere.celestial)
 	}
 
+	/** The capture on screen: the one last focused in a world, else the first one. */
+	private shownCapture(): THREE.Object3D | undefined {
+		return this.focusRoot?.parent ? this.focusRoot : this.modelRoot.children[0]
+	}
+
 	/** Frames the capture last focused (the one shown in a world), else the first one. */
 	resetView(): void {
-		const model = this.focusRoot?.parent ? this.focusRoot : this.modelRoot.children[0]
+		const model = this.shownCapture()
 		if (model) this.frameModel(model)
+	}
+
+	/**
+	 * Where the camera stands and what it looks at, in the shown capture's own space: a world layer's offset is
+	 * removed, so the same view opens on that capture loaded alone (a share link). In first person, the camera
+	 * looks at a point four blocks ahead.
+	 */
+	currentView(): { camera: [number, number, number]; target: [number, number, number] } | null {
+		const root = this.shownCapture()
+		if (!root) return null
+		const target = this.navigation.active
+			? this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(4).add(this.camera.position)
+			: this.controls.target.clone()
+		const camera = this.camera.position.clone().sub(root.position)
+		target.sub(root.position)
+		return { camera: [camera.x, camera.y, camera.z], target: [target.x, target.y, target.z] }
+	}
+
+	/** Puts the orbit camera on a view taken by `currentView`, relative to the shown capture. */
+	applyView(camera: readonly [number, number, number], target: readonly [number, number, number]): void {
+		const root = this.shownCapture()
+		if (!root || this.navigation.active) return
+		this.cameraGlide = null
+		this.controls.target.set(...target).add(root.position)
+		this.camera.position.set(...camera).add(root.position)
+		this.controls.update()
 	}
 
 	snapshot(targetWidth = 400, targetHeight = 250): string | null {

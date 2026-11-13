@@ -694,3 +694,46 @@ test('a capture without lights samples the black volume, and a stale timelapse b
 	await new Promise(resolve => setTimeout(resolve, 60))
 	expect(uniforms.memoryLightVolume.value.image.width).toBe(29)
 })
+
+test('a view is read and applied in the shown capture’s own space, a world layer’s offset removed', () => {
+	const scene = Object.create(ViewerScene.prototype) as ViewerScene
+	const modelRoot = new THREE.Group()
+	const first = new THREE.Group()
+	const layer = new THREE.Group()
+	layer.position.set(100, -10, 5)
+	modelRoot.add(first, layer)
+	const camera = new THREE.PerspectiveCamera()
+	camera.position.set(110, 0, 25)
+	const target = new THREE.Vector3(100, -10, 5)
+	const update = vi.fn()
+	const navigation = { active: false }
+	Object.assign(scene, {
+		modelRoot,
+		camera,
+		controls: { target, update },
+		navigation,
+		focusRoot: layer,
+		cameraGlide: {},
+	})
+	const internals = scene as unknown as { cameraGlide: unknown; focusRoot: THREE.Object3D | null }
+	expect(scene.currentView()).toEqual({ camera: [10, 10, 20], target: [0, 0, 0] })
+	scene.applyView([1, 2, 3], [4, 5, 6])
+	expect(camera.position.toArray()).toEqual([101, -8, 8])
+	expect(target.toArray()).toEqual([104, -5, 11])
+	expect(internals.cameraGlide).toBeNull()
+	expect(update).toHaveBeenCalledOnce()
+	// Without a focused layer, the first capture is the reference; in first person the camera looks four blocks ahead.
+	internals.focusRoot = null
+	navigation.active = true
+	camera.position.set(0, 0, 0)
+	camera.lookAt(0, 0, -1)
+	const view = scene.currentView()
+	expect(view?.camera).toEqual([0, 0, 0])
+	expect(view?.target[2]).toBeCloseTo(-4)
+	scene.applyView([9, 9, 9], [0, 0, 0])
+	expect(camera.position.toArray()).toEqual([0, 0, 0])
+	const empty = Object.create(ViewerScene.prototype) as ViewerScene
+	Object.assign(empty, { modelRoot: new THREE.Group(), focusRoot: null, navigation })
+	expect(empty.currentView()).toBeNull()
+	empty.applyView([1, 1, 1], [0, 0, 0])
+})

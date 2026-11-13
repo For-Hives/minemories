@@ -1413,5 +1413,9 @@
 	"How Minemories handles your data is explained on the privacy page.": "Wie Minemories mit deinen Daten umgeht, steht auf der Datenschutzseite.",
 	"Read the privacy policy": "Datenschutzerklärung lesen",
 	"Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.": "Wer Minemories herausgibt, wer es hostet und wie du Kontakt aufnimmst: ein unabhängiges Projekt, nicht mit Mojang oder Microsoft verbunden.",
-	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "Bei Fragen, Anfragen zu deinen personenbezogenen Daten oder um eine Aufnahme oder einen geteilten Link zu melden, wende dich per Telefon, per Post oder über {site} an den Herausgeber."
+	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "Bei Fragen, Anfragen zu deinen personenbezogenen Daten oder um eine Aufnahme oder einen geteilten Link zu melden, wende dich per Telefon, per Post oder über {site} an den Herausgeber.",
+	"Include this view": "Diese Ansicht einschließen",
+	"Camera, time of day, weather and layers, as on your screen now.": "Kamera, Tageszeit, Wetter und Ebenen, so wie gerade auf deinem Bildschirm.",
+	"Copy a link to this view": "Link zu dieser Ansicht kopieren",
+	"Link to this view copied.": "Link zu dieser Ansicht kopiert."
 }

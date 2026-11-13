@@ -1413,5 +1413,9 @@
 	"How Minemories handles your data is explained on the privacy page.": "Как Minemories обращается с твоими данными, объясняется на странице конфиденциальности.",
 	"Read the privacy policy": "Прочитать политику конфиденциальности",
 	"Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.": "Кто издаёт Minemories, кто обеспечивает хостинг и как с ними связаться: независимый проект, не связанный с Mojang или Microsoft.",
-	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "С вопросом, запросом о своих персональных данных или чтобы пожаловаться на снимок или ссылку для доступа, свяжись с издателем по телефону, обычной почтой или через {site}."
+	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "С вопросом, запросом о своих персональных данных или чтобы пожаловаться на снимок или ссылку для доступа, свяжись с издателем по телефону, обычной почтой или через {site}.",
+	"Include this view": "Включить этот вид",
+	"Camera, time of day, weather and layers, as on your screen now.": "Камера, время суток, погода и слои — как сейчас на твоём экране.",
+	"Copy a link to this view": "Скопировать ссылку на этот вид",
+	"Link to this view copied.": "Ссылка на этот вид скопирована."
 }

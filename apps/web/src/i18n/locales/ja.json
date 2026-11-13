@@ -1413,5 +1413,9 @@
 	"How Minemories handles your data is explained on the privacy page.": "Minemories があなたのデータをどう扱うかは、プライバシーのページで説明しています。",
 	"Read the privacy policy": "プライバシーポリシーを読む",
 	"Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.": "Minemories の運営者とホスティング事業者、その連絡先について。Minemories は Mojang や Microsoft とは関係のない独立したプロジェクトです。",
-	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "質問、個人データに関する依頼、キャプチャや共有リンクの報告があるときは、電話、郵便、または {site} から運営者に連絡してください。"
+	"For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.": "質問、個人データに関する依頼、キャプチャや共有リンクの報告があるときは、電話、郵便、または {site} から運営者に連絡してください。",
+	"Include this view": "この視点を含める",
+	"Camera, time of day, weather and layers, as on your screen now.": "カメラ、時刻、天気、レイヤーを今の画面のまま共有します。",
+	"Copy a link to this view": "この視点へのリンクをコピー",
+	"Link to this view copied.": "この視点へのリンクをコピーしました。"
 }
