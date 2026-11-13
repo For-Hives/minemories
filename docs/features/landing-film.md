@@ -89,7 +89,7 @@ Andy's request: more human control (acceleration, deceleration), and a visitor w
 | Section pictures and clips | `public/hero/illus/*.webp`, `public/hero/clips/*` | Real screenshots and screen recordings of Minecraft 1.20.1 (Fabric + Create) on Andy's old Lalaland server and of the viewer showing its capture: **Minecraft** textures and textures from **third-party mods** (Create and the server's other mods) | Recapture with a free resource pack and mods, or get the mod authors' agreement. |
 | Game texts reused verbatim (join, leave, pause menu, item names), per language | catalogs (`{name} joined the game`, `Back to Game`…) | Game language files | Rewrite them, or clear them with Mojang. |
 
-Notices to keep while these files are present: "Not an official Minecraft product…" (film footer) and the `/legal` page. **Publisher and contact**: still to be confirmed before the public launch (the app's `/legal` page is the reference).
+Notices to keep while these files are present: "Not an official Minecraft product…" (film footer) and the `/legal` page. **Publisher and contact**: named on the app's `/legal` page, which is the reference (`docs/features/legal-notice.md`).
 
 ### Regenerating fonts and assets
 

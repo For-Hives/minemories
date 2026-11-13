@@ -112,8 +112,6 @@ test('the French catalogues speak to the player with “tu” and call a capture
 
 // Capitalized "Sie" is also "they"/"it" at the start of a sentence; these strings use it that way.
 const germanPronounSie: Record<string, string> = {
-	'This page does not list the publisher, the host or a personal-data contact yet. It describes the current project; it is not a finalized legal notice.':
-		'“Sie beschreibt” refers to “Diese Seite”.',
 	'The CurseForge app is the simplest: it adds Fabric API on its own.': '“Sie fügt” refers to the CurseForge app.',
 	'It then goes to your gallery on its own.': '“Sie landet” refers to the capture.',
 	'It will show up here.': '“Sie erscheint” refers to the capture.',

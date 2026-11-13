@@ -133,7 +133,7 @@ const metadataMessages: PageMetadata[] = [
 			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
 		language: 'en',
-		updated: '2026-11-09',
+		updated: '2026-11-13',
 	},
 	{
 		path: '/terms',
@@ -143,13 +143,14 @@ const metadataMessages: PageMetadata[] = [
 		language: 'en',
 		updated: '2026-11-10',
 	},
-	// Kept out of search results until the publisher, the host and a contact are named.
 	{
 		path: '/legal',
 		title: 'About Minemories and legal notice',
-		description: 'Independent project, public repository and legal information still to be completed.',
-		indexable: false,
+		description:
+			'Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.',
+		indexable: true,
 		language: 'en',
+		updated: '2026-11-13',
 	},
 ]
 /** Private pages that still deserve their own tab title: never prerendered, never indexed. */
