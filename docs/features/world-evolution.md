@@ -86,8 +86,8 @@ These measurements do not replace in-game validation with real AFK captures and 
   raycast's rules: drawn range, the side a material shows, 256 blocks up and 512 down. A composed world's
   layers are indexed from their stable triangle order (`sorted`), and `shown` tells which triangles the
   current composition draws, so a timeline step never makes a grid stale. Faces wider than 64 columns sit in
-  one shared column. A turned, upside-down or multi-material mesh, or one whose grid failed to build, is
-  still raycast. A capture adds ground only once its grid is ready, a moment after it loads.
+  one shared column. A turned, upside-down, multi-material, instanced, skinned or morphed mesh, or one
+  whose grid failed to build, is still raycast. A capture adds ground only once its grid is ready, a moment after it loads.
 
 - **Rain and snow** stop at the highest block of each column, as in Minecraft: nothing falls under
   a roof, a tree or an overhang. The height map is computed from the visible triangles, only

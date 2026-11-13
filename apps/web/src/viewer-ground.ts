@@ -45,6 +45,15 @@ interface Entry {
 	failed: boolean
 }
 
+/** Instances, skinning and morph targets move vertices at draw time: only three's raycast sees where they end up. */
+function moving(mesh: THREE.Mesh): boolean {
+	return (
+		mesh instanceof THREE.InstancedMesh ||
+		mesh instanceof THREE.SkinnedMesh ||
+		Boolean((mesh.geometry as THREE.BufferGeometry).morphAttributes.position)
+	)
+}
+
 function layerSource(geometry: THREE.BufferGeometry): GroundSource | undefined {
 	return geometry.userData.ground as GroundSource | undefined
 }
@@ -101,13 +110,13 @@ export class GroundIndex {
 		const until = now() + budgetMs
 		while (this.queue.length > 0 && now() < until) {
 			const geometry = this.queue[0] as THREE.BufferGeometry
-			const entry = this.entries.get(geometry) as Entry
+			const entry = this.entries.get(geometry)
 			let done = true
 			try {
-				done = entry.builder.step(STEP_TRIANGLES) !== null
+				if (entry) done = entry.builder.step(STEP_TRIANGLES) !== null
 			} catch {
 				// Out of memory on a hostile file, for instance: never break the frame, raycast this mesh instead.
-				entry.failed = true
+				;(entry as Entry).failed = true
 			}
 			if (done) {
 				this.queue.shift()
@@ -121,7 +130,7 @@ export class GroundIndex {
 		const geometry = mesh.geometry as THREE.BufferGeometry
 		const material = mesh.material as THREE.Material | THREE.Material[]
 		const entry = this.entries.get(geometry)
-		if (Array.isArray(material) || !upright(mesh.matrixWorld) || entry?.failed) {
+		if (Array.isArray(material) || !upright(mesh.matrixWorld) || moving(mesh) || entry?.failed) {
 			this.cast(mesh, x, z, top, visit)
 			return
 		}

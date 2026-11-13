@@ -220,3 +220,35 @@ test('the raycast fallback really applies to turned and mirrored meshes', () => 
 	expect(expected[0]).toBeCloseTo(0.3)
 	expectSame(viaIndex(index, [mirrored], -3, 10.1, GROUND_ABOVE), expected)
 })
+
+test('instanced, skinned and morphed meshes are raycast, since their vertices move at draw time', () => {
+	const index = new GroundIndex()
+	const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)
+	const instanced = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial(), 2)
+	instanced.setMatrixAt(0, new THREE.Matrix4().makeTranslation(10, 5, 0))
+	instanced.setMatrixAt(1, new THREE.Matrix4().makeTranslation(20, 7, 0))
+	const morphed = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2))
+	morphed.geometry.morphAttributes.position = [morphed.geometry.getAttribute('position').clone()]
+	morphed.morphTargetInfluences = [0]
+	const skinned = new THREE.SkinnedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2))
+	const root = new THREE.Group().add(instanced, morphed, skinned)
+	root.updateMatrixWorld(true)
+	index.track(root)
+	drain(index)
+	expect(viaIndex(index, [instanced], 0.1, 0.1, GROUND_ABOVE)).toEqual([])
+	expectSame(viaIndex(index, [instanced], 10.1, 0.1, GROUND_ABOVE), [5])
+	expectSame(viaIndex(index, [morphed], 0.1, 0.1, GROUND_ABOVE), viaRay([morphed], 0.1, 0.1, GROUND_ABOVE))
+	// No bones in this fixture: check the route only, three's skinned raycast is its own business.
+	const spy = vi.spyOn(skinned, 'raycast').mockImplementation(() => undefined)
+	viaIndex(index, [skinned], 0.1, 0.1, GROUND_ABOVE)
+	expect(spy).toHaveBeenCalled()
+})
+
+test('a queued geometry whose entry went missing is dropped from the queue', () => {
+	const index = new GroundIndex()
+	const mesh = new THREE.Mesh(new THREE.BoxGeometry())
+	index.track(mesh)
+	;(index as unknown as { entries: WeakMap<object, unknown> }).entries.delete(mesh.geometry)
+	drain(index)
+	expect(index.pending).toBe(false)
+})
