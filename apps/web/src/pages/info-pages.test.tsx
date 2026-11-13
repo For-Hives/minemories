@@ -238,6 +238,47 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 		'Le code source est public sur GitHub\u00a0; le mod se télécharge sur la page Téléchargements.'
 	)
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
+	// The legal notice: the publisher and the host with their registered details, then how to reach the publisher.
+	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
+		'Éditeur',
+		'Hébergement',
+		'Contact',
+		'Projet indépendant',
+	])
+	expect(text).toContain('SIRET880 505 276 00035')
+	expect(text).toContain('Contabo GmbH')
+	expect(text).toContain('81541 München, Allemagne')
+	expect(text).toContain('HRB 180722')
+	expect(screen.getByRole('link', { name: '+33 6 21 58 26 84' }).getAttribute('href')).toBe('tel:+33621582684')
+	expect(screen.getByRole('link', { name: 'Lire la politique de confidentialité' }).getAttribute('href')).toBe(
+		'/privacy'
+	)
+	expect(text).not.toMatch(/Informations à compléter|pas encore l’éditeur/)
+})
+
+test('the privacy page names who is responsible, the service providers, the rights and the last update', () => {
+	renderUi(
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter>
+				<LegalPage kind="privacy" />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	const text = document.body.textContent ?? ''
+	for (const heading of [
+		'Qui est responsable de tes données',
+		'Prestataires',
+		'Aucun pistage',
+		'Tes droits',
+		'Sites tiers',
+	])
+		expect(screen.getByRole('heading', { level: 2, name: heading })).toBeTruthy()
+	expect(text).toContain('Contabo GmbH (Allemagne)')
+	expect(text).toContain('Cloudflare (États-Unis)')
+	expect(text).toContain('head.sttr.io')
+	expect(screen.getAllByRole('listitem').filter(item => item.textContent?.includes('Contabo'))).toHaveLength(1)
+	expect(text).toContain('CNIL')
+	expect(text).toMatch(/Dernière mise à jour\u00a0: 13 novembre 2026/)
 })
 
 test('/sharing says what a link shows, answers three questions and ends on the install button', () => {

@@ -4,11 +4,13 @@ import { BrandLogo } from '../components/BrandMark'
 import { DataFlow } from '../components/diagrams'
 import { Glyph, type GlyphName } from '../components/explainers'
 import { buttonOutline, Eyebrow } from '../components/ui'
-import { legalContent } from '../content/site-content'
+import { type LegalSection, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
 import { catalogLinks } from './installation-loaders'
+import { LegalNotice } from './LegalNotice'
+import './legal.css'
 
 export function ContentLayout({
 	eyebrow,
@@ -43,6 +45,30 @@ const privacySummary: Record<string, { glyph: GlyphName; status: string }> = {
 	'Account and gallery': { glyph: 'lock', status: 'Private by default' },
 	'Links and deletion': { glyph: 'link', status: 'You control the link' },
 	'Mod download list': { glyph: 'download', status: 'No account needed' },
+	'Who is responsible for your data': { glyph: 'person', status: 'Contact on the legal notice' },
+	'Service providers': { glyph: 'globe', status: 'Hosted in Germany' },
+	'No tracking': { glyph: 'shield', status: 'No ads, no tracking' },
+	'Your rights': { glyph: 'key', status: 'Under the GDPR' },
+	'Third-party sites': { glyph: 'link', status: 'Their own policies' },
+}
+/** When the privacy policy last changed, shown under its sections. */
+const privacyUpdated = '2026-11-13'
+
+/** A section's text, then its list of facts when it has one. */
+function SectionBody({ section }: { section: LegalSection }) {
+	const { locale } = useI18n()
+	return (
+		<>
+			<p>{translate(locale, section.body)}</p>
+			{section.items && (
+				<ul className="mm-legal-list">
+					{section.items.map(item => (
+						<li key={item}>{translate(locale, item)}</li>
+					))}
+				</ul>
+			)}
+		</>
+	)
 }
 const privacyNodes = [
 	{ glyph: 'disk', label: 'Your computer' },
@@ -54,7 +80,7 @@ const privacyEdges = [
 	{ glyph: 'link', label: 'A link you create' },
 ] satisfies Array<{ glyph: GlyphName; label: string }>
 
-function PrivacyPanels({ sections }: { sections: Array<{ heading: string; body: string }> }) {
+function PrivacyPanels({ sections }: { sections: readonly LegalSection[] }) {
 	const { locale, t } = useI18n()
 	return (
 		<>
@@ -75,13 +101,20 @@ function PrivacyPanels({ sections }: { sections: Array<{ heading: string; body: 
 								{summary && <span className="ex-chip">{t(summary.status)}</span>}
 							</summary>
 							<div className="ex-row-body">
-								<p>{translate(locale, section.body)}</p>
+								<SectionBody section={section} />
 								{section.heading === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
 							</div>
 						</details>
 					)
 				})}
 			</div>
+			<p className="mm-legal-updated">
+				{t('Last updated: {date}', {
+					date: new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+						new Date(privacyUpdated)
+					),
+				})}
+			</p>
 		</>
 	)
 }
@@ -94,14 +127,17 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 			{kind === 'privacy' ? (
 				<PrivacyPanels sections={content.sections} />
 			) : (
-				<div className="mm-prose">
-					{content.sections.map(section => (
-						<section key={section.heading}>
-							<h2>{translate(locale, section.heading)}</h2>
-							<p>{translate(locale, section.body)}</p>
-						</section>
-					))}
-				</div>
+				<>
+					{kind === 'legal' && <LegalNotice />}
+					<div className="mm-prose">
+						{content.sections.map(section => (
+							<section key={section.heading}>
+								<h2>{translate(locale, section.heading)}</h2>
+								<SectionBody section={section} />
+							</section>
+						))}
+					</div>
+				</>
 			)}
 			<p>
 				<a className="mc-link" href="https://github.com/For-Hives/minemories">
