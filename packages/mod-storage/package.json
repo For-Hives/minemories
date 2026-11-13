@@ -9,6 +9,6 @@
 		"./fake-client": "./src/fake-client.mjs"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "3.1168.0"
+		"@aws-sdk/client-s3": "3.1169.0"
 	}
 }

@@ -15,8 +15,8 @@
 		"seed": "bun --env-file=../../.env scripts/seed-dev.ts"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "3.1168.0",
-		"@aws-sdk/lib-storage": "3.1168.0",
+		"@aws-sdk/client-s3": "3.1169.0",
+		"@aws-sdk/lib-storage": "3.1169.0",
 		"@minemories/api-contract": "workspace:*",
 		"@minemories/mod-storage": "workspace:*",
 		"@modelcontextprotocol/sdk": "1.32.2",
