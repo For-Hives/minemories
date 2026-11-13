@@ -56,7 +56,8 @@ Only one primitive is pending per pass: the collector does not keep a second
 full list of the renderer's vertices. The AFK capture now uses the progressive
 traversal and the on-disk writer described in the capture flow.
 
-The Create/Flywheel CPU path is re-enabled only while the model is collected;
+The Create/Flywheel CPU path (Flywheel 1.0 with Create 6, Flywheel 0.6 with
+Create 0.5.1) is re-enabled only while the model is collected;
 the game backend returns to its initial state afterwards. The versions,
 before/after evidence and validations still needed are tracked in
 [modpack renderer validation](modpack-renderer-validation.md).

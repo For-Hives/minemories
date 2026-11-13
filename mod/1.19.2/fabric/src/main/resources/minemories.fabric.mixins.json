@@ -10,6 +10,7 @@
 		"TextureAtlasAccess",
 		"SpriteImageAccess",
 		"FlywheelCaptureMixin",
+		"FlywheelLegacyCaptureMixin",
 		"ClientCrashMixin"
 	],
 	"injectors": {

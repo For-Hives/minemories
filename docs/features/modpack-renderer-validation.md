@@ -331,6 +331,46 @@ with the exact JAR, inventory, settings, GL results, geometry, special layers,
 API validation and renders. These trials validate this scope; they do not guarantee
 every modpack renderer and setting. CI still needed before merging.
 
+## Flywheel 0.6 (Create 0.5.1), 13 November 2026
+
+Create 0.5.1 bundles Flywheel 0.6 (`com.jozufozu.flywheel`), not Flywheel 1.0
+(`dev.engine_room.flywheel`). The mixin above only knew the 1.0 API, so on the
+targets that run Create 0.5.1 (Forge 1.18.2, Forge and Fabric 1.19.2 and 1.20.1)
+the probe saw no Flywheel and the capture went ahead with the GPU path still on.
+33 Create renderers start with `if (Backend.canUseInstancing(level)) return;`:
+curved tracks, shafts, cogs, belts, presses, mixers, fans, deployers, arms,
+gauges, funnels, steam engines, pulleys, bearings and train bogeys. With
+Flywheel's default `INSTANCING` backend they drew nothing into the capture.
+
+On Andy's Lalaland server (Fabric 1.20.1, Create 0.5.1, Steam 'n' Rails 1.6.9,
+Flywheel 0.6.11), zone 3 (origin 1193 166 -549, radius 128) had only its
+straight track pieces (`railways:track_oak` block models). Every curve was
+missing, leaving the deepslate tile slab beds under them bare, and the
+`block_entities` layer held 108 quads (track station, beacon, bellows).
+
+Fix: `FlywheelLegacyCaptureMixin` (`@Pseudo`, `require = 0`) answers false from
+`Backend.canUseInstancing` inside `CaptureRenderScope`, in the five adapters
+that can meet Flywheel 0.6. `FlywheelCaptureBridge` now probes both generations
+and fails the capture if either one still claims the level, instead of saving a
+model with missing parts.
+
+The same zone recaptured with the fixed Fabric 1.20.1 JAR from the same origin
+and bounds: `block_entities` goes from 108 to 25,874 quads, with `create:track`
+(the curves), `create:steam_engine` and `create:hose_pulley` added. Stills
+rendered from the same camera before and after show the curves back on their
+beds up to the tower.
+
+Limits:
+- Only Fabric 1.20.1 was exercised in game. Forge 1.18.2, 1.19.2 and 1.20.1 and
+  Fabric 1.19.2 carry the same mixin against the same Flywheel 0.6 method, and
+  build, but were not run with Create.
+- A train's body (its contraption blocks) is drawn by Create in its own layer
+  pass, not by the entity renderer, so it is still not captured; its bogeys
+  should be. No train stood in the recaptured zone.
+- A build cut by the capture box keeps only the part inside it. Zone 3's box
+  stops at X 1321, so the castle at X 1311 to 1324 lost its back; that is the
+  bounds, not this renderer.
+
 ## How a block quad gets its colour
 
 `ClientRuntime.addQuad` is the single point where the colour of a block-model quad is resolved, on
