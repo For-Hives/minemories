@@ -26,7 +26,10 @@ export interface GroundGrid {
 	readonly cell: number
 	readonly width: number
 	readonly depth: number
-	/** `triangles[starts[c]..starts[c + 1]]` are the triangles (first corner / 3) whose XZ box overlaps column `c`. */
+	/**
+	 * `triangles[starts[c]..starts[c + 1]]` are the triangles (first corner / 3) whose XZ box overlaps column `c`;
+	 * the extra column `width * depth` holds faces too wide to copy into every column they cover.
+	 */
 	readonly starts: Uint32Array
 	readonly triangles: Uint32Array
 }
@@ -35,6 +38,8 @@ export interface GroundGrid {
 const EDGE_ON = 1e-9
 /** Columns per side grow with the square root of the triangle count, up to this. */
 const MAX_SIDE = 256
+/** A face covering more columns than this is kept once, in the shared column every query reads. */
+export const MAX_SPAN = 64
 
 interface Corners {
 	ax: number
@@ -107,7 +112,7 @@ export class GroundGridBuilder {
 		this.minZ = bounds.minZ
 		this.width = Math.min(side, Math.floor(spanX / this.cell) + 1)
 		this.depth = Math.min(side, Math.floor(spanZ / this.cell) + 1)
-		this.counts = new Uint32Array(this.width * this.depth)
+		this.counts = new Uint32Array(this.width * this.depth + 1)
 	}
 
 	/** The finished grid, or null while triangles remain. */
@@ -139,13 +144,17 @@ export class GroundGridBuilder {
 		const x1 = this.column(Math.max(t.ax, t.bx, t.cx), this.minX, this.width)
 		const z0 = this.column(Math.min(t.az, t.bz, t.cz), this.minZ, this.depth)
 		const z1 = this.column(Math.max(t.az, t.bz, t.cz), this.minZ, this.depth)
-		for (let z = z0; z <= z1; z++)
-			for (let x = x0; x <= x1; x++) {
-				const c = z * this.width + x
-				const seen = this.counts[c] as number
-				this.counts[c] = seen + 1
-				if (this.starts && this.triangles) this.triangles[(this.starts[c] as number) + seen] = triangle
-			}
+		if ((x1 - x0 + 1) * (z1 - z0 + 1) > MAX_SPAN) {
+			this.add(this.width * this.depth, triangle)
+			return
+		}
+		for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) this.add(z * this.width + x, triangle)
+	}
+
+	private add(column: number, triangle: number): void {
+		const seen = this.counts[column] as number
+		this.counts[column] = seen + 1
+		if (this.starts && this.triangles) this.triangles[(this.starts[column] as number) + seen] = triangle
 	}
 
 	/** Every face counted: size each column, then read the faces again to store them. */
@@ -181,6 +190,8 @@ export interface GroundQuery {
 	/** Drawn corners `[start, end)`, as three's drawRange. */
 	start: number
 	end: number
+	/** When set, only triangles marked 1 here are drawn (a composed world layer). */
+	shown?: Uint8Array
 }
 
 /**
@@ -196,13 +207,37 @@ export function groundHeights(
 ): void {
 	const cx = Math.floor((query.x - grid.minX) / grid.cell)
 	const cz = Math.floor((query.z - grid.minZ) / grid.cell)
-	if (cx < 0 || cz < 0 || cx >= grid.width || cz >= grid.depth) return
-	const column = cz * grid.width + cx
-	const t: Corners = { ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, cx: 0, cy: 0, cz: 0 }
+	const reader = {
+		grid,
+		positions,
+		corners,
+		query,
+		visit,
+		t: { ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, cx: 0, cy: 0, cz: 0 },
+	}
+	if (cx >= 0 && cz >= 0 && cx < grid.width && cz < grid.depth) visitColumn(reader, cz * grid.width + cx)
+	visitColumn(reader, grid.width * grid.depth)
+}
+
+interface ColumnReader {
+	grid: GroundGrid
+	positions: GroundPositions
+	corners: GroundCorners | null
+	query: GroundQuery
+	visit: (height: number) => void
+	t: Corners
+}
+
+function drawn(query: GroundQuery, triangle: number): boolean {
+	if (query.shown) return query.shown[triangle] === 1
+	return triangle * 3 >= query.start && triangle * 3 + 3 <= query.end
+}
+
+function visitColumn({ grid, positions, corners, query, visit, t }: ColumnReader, column: number): void {
 	const last = grid.starts[column + 1] as number
 	for (let k = grid.starts[column] as number; k < last; k++) {
 		const triangle = grid.triangles[k] as number
-		if (triangle * 3 < query.start || triangle * 3 + 3 > query.end) continue
+		if (!drawn(query, triangle)) continue
 		readTriangle(positions, corners, triangle, t)
 		const area = upArea(t)
 		if ((query.facing === 'up' && area < 0) || (query.facing === 'down' && area > 0)) continue

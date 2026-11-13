@@ -27,6 +27,8 @@ export interface EvolutionPrimitive {
 	readonly blocks: Int32Array
 	readonly cells: readonly CellRange[]
 	readonly visible: Uint32Array
+	/** 1 for each triangle of `sorted` currently copied into `visible`, so other readers need not parse the index. */
+	readonly shown: Uint8Array
 	count: number
 }
 
@@ -132,7 +134,14 @@ export function buildPrimitive(
 		}
 		extendCell(cells, keys[source] as number, target, blocks)
 	}
-	return { sorted, blocks, cells, visible: new Uint32Array(sorted.length), count: 0 }
+	return {
+		sorted,
+		blocks,
+		cells,
+		visible: new Uint32Array(sorted.length),
+		shown: new Uint8Array(order.length),
+		count: 0,
+	}
 }
 
 function extendCell(cells: CellRange[], key: number, triangle: number, blocks: Int32Array) {
@@ -243,6 +252,7 @@ export class WorldComposition {
 
 	private fill(primitive: EvolutionPrimitive, position: number, step: number, floor: number): void {
 		primitive.count = 0
+		primitive.shown.fill(0)
 		if (position > step || position < floor) return
 		for (const cell of primitive.cells) {
 			const covering = this.coveringBounds(position, step, cell.key).filter(bounds => intersects(bounds, cell.box))
@@ -255,6 +265,7 @@ export class WorldComposition {
 
 function copyTriangles(primitive: EvolutionPrimitive, start: number, end: number) {
 	primitive.visible.set(primitive.sorted.subarray(start * 3, end * 3), primitive.count)
+	primitive.shown.fill(1, start, end)
 	primitive.count += (end - start) * 3
 }
 

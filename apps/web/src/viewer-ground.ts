@@ -1,5 +1,12 @@
 import * as THREE from 'three'
-import { type GroundFacing, type GroundGrid, GroundGridBuilder, groundHeights } from './lib/ground-index'
+import {
+	type GroundCorners,
+	type GroundFacing,
+	type GroundGrid,
+	GroundGridBuilder,
+	type GroundQuery,
+	groundHeights,
+} from './lib/ground-index'
 
 /** Triangles read per builder step; small enough that the time budget is checked often. */
 const STEP_TRIANGLES = 8192
@@ -21,12 +28,35 @@ function upright(matrix: THREE.Matrix4): boolean {
 }
 
 /**
+ * Set on `geometry.userData.ground` by a composed world layer, whose index buffer is rewritten at each composition:
+ * the grid is then built over the layer's stable triangle order, and `shown` says which of them are drawn.
+ */
+export interface GroundSource {
+	corners: Uint32Array
+	shown: Uint8Array
+}
+
+interface Entry {
+	builder: GroundGridBuilder
+	/** The index the grid was built from; a different one later means the grid is stale. */
+	index: THREE.BufferAttribute | null
+	corners: GroundCorners | null
+	shown?: Uint8Array
+	failed: boolean
+}
+
+function layerSource(geometry: THREE.BufferGeometry): GroundSource | undefined {
+	return geometry.userData.ground as GroundSource | undefined
+}
+
+/**
  * Finds the surfaces straight above and below a point without casting a ray through every face of a capture: each
  * geometry gets a column grid (`lib/ground-index`), built in the background a few milliseconds per frame. Until a
- * geometry's grid is ready it is skipped, so the pivot's shadow may appear a moment after a capture loads.
+ * geometry's grid is ready it is skipped, so the pivot's shadow may appear a moment after a capture loads. A
+ * turned, mirrored or multi-material mesh, or one whose grid could not be built, is raycast as before.
  */
 export class GroundIndex {
-	private readonly builders = new WeakMap<THREE.BufferGeometry, GroundGridBuilder>()
+	private readonly entries = new WeakMap<THREE.BufferGeometry, Entry>()
 	private readonly queue: THREE.BufferGeometry[] = []
 	private readonly ray = new THREE.Raycaster()
 	private readonly forget = (event: { target: THREE.BufferGeometry }) => {
@@ -37,17 +67,28 @@ export class GroundIndex {
 	/** Queues the meshes under `root` for indexing. */
 	track(root: THREE.Object3D): void {
 		root.traverse(object => {
-			if (!(object instanceof THREE.Mesh)) return
-			const geometry = object.geometry as THREE.BufferGeometry
-			const position = geometry.getAttribute('position') as THREE.BufferAttribute | undefined
-			if (!position || this.builders.has(geometry)) return
-			if (!geometry.boundingBox) geometry.computeBoundingBox()
-			const box = geometry.boundingBox as THREE.Box3
-			const bounds = { minX: box.min.x, minZ: box.min.z, maxX: box.max.x, maxZ: box.max.z }
-			this.builders.set(geometry, new GroundGridBuilder(position, geometry.index, bounds))
+			if (object instanceof THREE.Mesh && !this.entries.has(object.geometry)) this.enqueue(object.geometry)
+		})
+	}
+
+	private enqueue(geometry: THREE.BufferGeometry): void {
+		const position = geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+		if (!position) return
+		if (!geometry.boundingBox) geometry.computeBoundingBox()
+		const box = geometry.boundingBox as THREE.Box3
+		const bounds = { minX: box.min.x, minZ: box.min.z, maxX: box.max.x, maxZ: box.max.z }
+		const layer = layerSource(geometry)
+		const corners: GroundCorners | null = layer
+			? { count: layer.corners.length, getX: i => layer.corners[i] as number }
+			: geometry.index
+		const builder = new GroundGridBuilder(position, corners, bounds)
+		const entry: Entry = { builder, index: geometry.index, corners, failed: false }
+		if (layer) entry.shown = layer.shown
+		this.entries.set(geometry, entry)
+		if (!this.queue.includes(geometry)) {
 			geometry.addEventListener('dispose', this.forget)
 			this.queue.push(geometry)
-		})
+		}
 	}
 
 	/** True while some tracked geometry still waits for its grid. */
@@ -60,7 +101,15 @@ export class GroundIndex {
 		const until = now() + budgetMs
 		while (this.queue.length > 0 && now() < until) {
 			const geometry = this.queue[0] as THREE.BufferGeometry
-			if ((this.builders.get(geometry) as GroundGridBuilder).step(STEP_TRIANGLES)) {
+			const entry = this.entries.get(geometry) as Entry
+			let done = true
+			try {
+				done = entry.builder.step(STEP_TRIANGLES) !== null
+			} catch {
+				// Out of memory on a hostile file, for instance: never break the frame, raycast this mesh instead.
+				entry.failed = true
+			}
+			if (done) {
 				this.queue.shift()
 				geometry.removeEventListener('dispose', this.forget)
 			}
@@ -71,26 +120,46 @@ export class GroundIndex {
 	heights(mesh: THREE.Mesh, x: number, z: number, top: number, visit: (height: number) => void): void {
 		const geometry = mesh.geometry as THREE.BufferGeometry
 		const material = mesh.material as THREE.Material | THREE.Material[]
-		if (Array.isArray(material) || !upright(mesh.matrixWorld)) {
+		const entry = this.entries.get(geometry)
+		if (Array.isArray(material) || !upright(mesh.matrixWorld) || entry?.failed) {
 			this.cast(mesh, x, z, top, visit)
 			return
 		}
-		const grid: GroundGrid | null | undefined = this.builders.get(geometry)?.grid
-		if (!grid) return
+		if (entry && !entry.shown && entry.index !== geometry.index) {
+			// The geometry got a new index since its grid was made: rebuild it rather than read stale triangles.
+			this.entries.delete(geometry)
+			this.enqueue(geometry)
+			return
+		}
+		const grid = entry?.builder.grid
+		if (!(entry && grid)) return
+		this.read(mesh, entry, grid, material, { x, z, top }, visit)
+	}
+
+	private read(
+		mesh: THREE.Mesh,
+		entry: Entry,
+		grid: GroundGrid,
+		material: THREE.Material,
+		point: { x: number; z: number; top: number },
+		visit: (height: number) => void
+	): void {
+		const geometry = mesh.geometry as THREE.BufferGeometry
 		const e = mesh.matrixWorld.elements
 		const position = geometry.getAttribute('position') as THREE.BufferAttribute
-		const corners = geometry.index ? geometry.index.count : position.count
+		const total = entry.corners ? entry.corners.count : position.count
 		const start = Math.max(0, geometry.drawRange.start)
-		const query = {
-			x: (x - e[12]) / e[0],
-			z: (z - e[14]) / e[10],
+		const query: GroundQuery = {
+			x: (point.x - e[12]) / e[0],
+			z: (point.z - e[14]) / e[10],
 			facing: FACING[material.side],
 			start,
-			end: Math.min(corners, start + geometry.drawRange.count),
+			end: Math.min(total, start + geometry.drawRange.count),
 		}
-		groundHeights(grid, position, geometry.index, query, height => {
+		if (entry.shown) query.shown = entry.shown
+		groundHeights(grid, position, entry.corners, query, height => {
 			const world = height * e[5] + e[13]
-			if (world <= top && world >= top - GROUND_ABOVE - GROUND_BELOW) visit(world)
+			if (world <= point.top && world >= point.top - GROUND_ABOVE - GROUND_BELOW) visit(world)
 		})
 	}
 

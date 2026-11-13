@@ -78,8 +78,16 @@ These measurements do not replace in-game validation with real AFK captures and 
 - **Zoom**: the mouse wheel no longer moves the pivot toward the cursor (`zoomToCursor` disabled); only
   panning moves it.
 - **Pivot**: during an interaction, a soft shadow is placed on the visible surface right below the pivot,
-  connected by a vertical line; it widens and fades with height. The surface is measured by a downward raycast
-  on the visible meshes, at most every 120 ms and only when the pivot moves.
+  connected by a vertical line; it widens and fades with height. The surface is measured on the visible meshes,
+  at most every 120 ms and only when the pivot moves. A raycast through every face cost about 33 ms on a
+  1.3 M-face capture and froze panning (shift + drag), so each geometry gets a column grid instead
+  (`lib/ground-index.ts`, `viewer-ground.ts`). Grids are built in the background, 3 ms at most per frame
+  (about 110 ms in all for such a capture), and a probe then reads one column: 0.3 to 0.6 ms. It keeps the
+  raycast's rules: drawn range, the side a material shows, 256 blocks up and 512 down. A composed world's
+  layers are indexed from their stable triangle order (`sorted`), and `shown` tells which triangles the
+  current composition draws, so a timeline step never makes a grid stale. Faces wider than 64 columns sit in
+  one shared column. A turned, upside-down or multi-material mesh, or one whose grid failed to build, is
+  still raycast. A capture adds ground only once its grid is ready, a moment after it loads.
 
 - **Rain and snow** stop at the highest block of each column, as in Minecraft: nothing falls under
   a roof, a tree or an overhang. The height map is computed from the visible triangles, only

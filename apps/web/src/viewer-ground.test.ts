@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import { expect, test, vi } from 'vitest'
+import { GroundGridBuilder } from './lib/ground-index'
+import { WorldComposition } from './lib/world-evolution'
 import { GROUND_ABOVE, GROUND_BELOW, GroundIndex } from './viewer-ground'
+import { applyLayer, prepareLayer } from './viewer-world'
 
 function drain(index: GroundIndex) {
 	while (index.pending) index.work(1000)
@@ -125,4 +128,95 @@ test('builds within its time budget, a geometry once, and forgets a geometry dis
 	index.track(later)
 	index.dispose()
 	expect(index.pending).toBe(false)
+})
+
+/** A strip of one-block floor tiles over [x0, x1) at height `y`, each tile its own two triangles. */
+function floor(x0: number, x1: number, y: number): THREE.Mesh {
+	const points: number[] = []
+	for (let x = x0; x < x1; x++) points.push(x, y, 0, x, y, 1, x + 1, y, 1, x, y, 0, x + 1, y, 1, x + 1, y, 0)
+	const geometry = new THREE.BufferGeometry()
+	geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
+	return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial())
+}
+
+test('a composed world is indexed from its stable triangle order, and follows each new composition', () => {
+	const origin = { x: 0, y: 63, z: 0 }
+	const older = new THREE.Group().add(floor(0, 4, 1))
+	const newer = new THREE.Group().add(floor(0, 2, 3))
+	const layers = [
+		prepareLayer(older, origin, { minX: -8, minY: 0, minZ: -8, maxX: 8, maxY: 100, maxZ: 8 }),
+		prepareLayer(newer, origin, { minX: 0, minY: 0, minZ: -8, maxX: 1, maxY: 100, maxZ: 8 }),
+	]
+	// Indexed before any composition, while the layers' index buffers are still empty, as `addLayer` does.
+	const index = new GroundIndex()
+	for (const root of [older, newer]) index.track(root)
+	drain(index)
+	const composition = new WorldComposition(2)
+	for (const [position, layer] of layers.entries()) composition.set(position, layer.capture)
+	const meshes = () => layers.flatMap(layer => layer.meshes.map(entry => entry.mesh)).filter(mesh => mesh.visible)
+	const probe = (x: number) => {
+		const expected = viaRay(meshes(), x, 0.4, GROUND_ABOVE)
+		expectSame(viaIndex(index, meshes(), x, 0.4, GROUND_ABOVE), expected)
+		return expected.map(height => Math.round(height * 1e6) / 1e6)
+	}
+	composition.compose(0)
+	for (const layer of layers) applyLayer(layer)
+	expect(probe(0.5)).toEqual([1])
+	expect(probe(3.5)).toEqual([1])
+	composition.compose(1)
+	for (const layer of layers) applyLayer(layer)
+	expect(probe(0.5)).toEqual([3])
+	expect(probe(1.5)).toEqual([3])
+	expect(probe(3.5)).toEqual([1])
+	composition.compose(0)
+	for (const layer of layers) applyLayer(layer)
+	expect(probe(0.5)).toEqual([1])
+})
+
+test('rebuilds a grid whose geometry got a new index, and raycasts a mesh whose grid could not be built', () => {
+	const index = new GroundIndex()
+	const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4))
+	mesh.updateMatrixWorld(true)
+	index.track(mesh)
+	drain(index)
+	expect(viaIndex(index, [mesh], 0.3, 0.2, GROUND_ABOVE)).toEqual([0.5])
+	const flat = new THREE.PlaneGeometry(4, 4).rotateX(-Math.PI / 2)
+	mesh.geometry.setIndex(flat.index)
+	mesh.geometry.setAttribute('position', flat.getAttribute('position'))
+	mesh.geometry.computeBoundingBox()
+	expect(viaIndex(index, [mesh], 0.3, 0.2, GROUND_ABOVE)).toEqual([])
+	expect(index.pending).toBe(true)
+	drain(index)
+	expectSame(viaIndex(index, [mesh], 0.3, 0.2, GROUND_ABOVE), [0])
+	const broken = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 4))
+	broken.updateMatrixWorld(true)
+	index.track(broken)
+	const failing = vi.spyOn(GroundGridBuilder.prototype, 'step').mockImplementationOnce(() => {
+		throw new RangeError('Out of memory')
+	})
+	expect(() => drain(index)).not.toThrow()
+	failing.mockRestore()
+	expectSame(viaIndex(index, [broken], 0.3, 0.2, GROUND_ABOVE), viaRay([broken], 0.3, 0.2, GROUND_ABOVE))
+	expect(viaIndex(index, [broken], 0.3, 0.2, GROUND_ABOVE)).toEqual([0.5])
+})
+
+test('the raycast fallback really applies to turned and mirrored meshes', () => {
+	const index = new GroundIndex()
+	// A long thin bar turned a quarter: its unturned footprint would answer at x = 3, the turned one at z = 3.
+	const turned = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 0.5))
+	turned.rotation.y = Math.PI / 2
+	// Upside down, a falling ray goes up in the mesh's own space and meets its bottom face, now on top.
+	const mirrored = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1).translate(-3, 0.2, 0))
+	mirrored.position.z = 10
+	mirrored.scale.y = -1
+	const root = new THREE.Group().add(turned, mirrored)
+	root.updateMatrixWorld(true)
+	index.track(root)
+	drain(index)
+	expect(viaIndex(index, [turned], 3, 0.1, GROUND_ABOVE)).toEqual([])
+	expectSame(viaIndex(index, [turned], 0.1, 3, GROUND_ABOVE), [0.5])
+	const expected = viaRay([mirrored], -3, 10.1, GROUND_ABOVE)
+	expect(expected).toHaveLength(1)
+	expect(expected[0]).toBeCloseTo(0.3)
+	expectSame(viaIndex(index, [mirrored], -3, 10.1, GROUND_ABOVE), expected)
 })

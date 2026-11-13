@@ -5,6 +5,7 @@ import {
 	GroundGridBuilder,
 	type GroundPositions,
 	groundHeights,
+	MAX_SPAN,
 } from './ground-index'
 
 function positions(points: number[]): GroundPositions {
@@ -43,14 +44,27 @@ function heights(
 	source: GroundPositions,
 	x: number,
 	z: number,
-	more: Partial<{ facing: 'up' | 'down' | 'both'; start: number; end: number; index: GroundCorners | null }> = {}
+	more: Partial<{
+		facing: 'up' | 'down' | 'both'
+		start: number
+		end: number
+		index: GroundCorners | null
+		shown: Uint8Array
+	}> = {}
 ) {
 	const found: number[] = []
 	groundHeights(
 		grid,
 		source,
 		more.index ?? null,
-		{ x, z, facing: more.facing ?? 'up', start: more.start ?? 0, end: more.end ?? 1e9 },
+		{
+			x,
+			z,
+			facing: more.facing ?? 'up',
+			start: more.start ?? 0,
+			end: more.end ?? 1e9,
+			...(more.shown ? { shown: more.shown } : {}),
+		},
 		h => found.push(h)
 	)
 	return found.sort((a, b) => a - b)
@@ -118,4 +132,28 @@ it('finishes at once on an empty or flat geometry', () => {
 	const grid = empty.step(0) as GroundGrid
 	expect(grid).toMatchObject({ width: 1, depth: 1 })
 	expect(heights(grid, positions([]), 0, 0)).toEqual([])
+})
+
+it('keeps faces too wide for the columns in one shared column, read by every query', () => {
+	const points: number[] = []
+	for (let x = 0; x < 32; x++) for (let z = 0; z < 32; z++) points.push(...square(x, z, x + 1, z + 1, 1))
+	points.push(...square(0, 0, 32, 32, 9))
+	const source = positions(points)
+	const builder = new GroundGridBuilder(source, null, { minX: 0, minZ: 0, maxX: 32, maxZ: 32 })
+	const grid = build(builder)
+	expect(grid.width * grid.depth).toBeGreaterThan(MAX_SPAN)
+	const shared = grid.width * grid.depth
+	// The two halves of the wide square, once each, instead of a copy in every column.
+	expect((grid.starts[shared + 1] as number) - (grid.starts[shared] as number)).toBe(2)
+	// Each small square spans at most 2 x 2 columns; the wide one adds two entries, not two per column.
+	expect(grid.triangles.length).toBeLessThanOrEqual(2048 * 4 + 2)
+	expect(heights(grid, source, 20.7, 11.2)).toEqual([1, 9])
+	expect(heights(grid, source, 40, 11.2)).toEqual([])
+})
+
+it('draws only the triangles a composed world marks as shown', () => {
+	const source = positions([...square(0, 0, 4, 4, 1), ...square(0, 0, 4, 4, 5)])
+	const grid = build(new GroundGridBuilder(source, null, bounds))
+	expect(heights(grid, source, 1.7, 1.2, { shown: new Uint8Array([1, 1, 0, 0]) })).toEqual([1])
+	expect(heights(grid, source, 1.7, 1.2, { shown: new Uint8Array([0, 0, 1, 1]), end: 0 })).toEqual([5])
 })
