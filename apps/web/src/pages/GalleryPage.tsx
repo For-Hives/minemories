@@ -404,15 +404,6 @@ function ServerTile({
 					<div className="gallery-title">
 						<h3>{name}</h3>
 						{waiting && <DraftChip />}
-						<button
-							type="button"
-							className="gallery-icon-button"
-							title={t('Rename this server')}
-							aria-label={t('Rename {name}', { name })}
-							onClick={() => setSheet(true)}
-						>
-							<GalleryIcon name="pencil" />
-						</button>
 					</div>
 					{span && (
 						<p className="gallery-seed">
@@ -443,12 +434,23 @@ function ServerTile({
 						</div>
 					</dl>
 				</div>
-				{openPath && (
-					<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
-						{t('Open')}
-						<GalleryIcon name="view" />
-					</Link>
-				)}
+				<div className="gallery-server-actions">
+					{openPath && (
+						<Link className="gallery-server-go" to={openPath} aria-label={`${t('Open')} · ${name}`}>
+							{t('Open')}
+							<GalleryIcon name="view" />
+						</Link>
+					)}
+					<button
+						type="button"
+						className="gallery-icon-button"
+						title={t('Rename this server')}
+						aria-label={t('Rename {name}', { name })}
+						onClick={() => setSheet(true)}
+					>
+						<GalleryIcon name="pencil" />
+					</button>
+				</div>
 			</div>
 			{children}
 			{menu.element}

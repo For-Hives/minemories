@@ -403,6 +403,13 @@
 		display: none;
 	}
 }
+/* The row's own actions, Open then rename, sit together in the top right corner. */
+.gallery-server-actions {
+	display: flex;
+	align-self: start;
+	align-items: center;
+	gap: var(--ds-sp-2);
+}
 .gallery-server-go {
 	flex: none;
 	padding-inline: var(--ds-sp-3);
@@ -536,7 +543,6 @@
 /* A waiting draft also keeps its edit button visible: the owner sees where the unsaved name is. */
 .gallery-title:has(.mm-draft-chip) .gallery-icon-button,
 .gallery-card:hover .gallery-title .gallery-icon-button,
-.gallery-server-card:hover .gallery-title .gallery-icon-button,
 .gallery-title .gallery-icon-button:focus-visible {
 	opacity: 1;
 }
@@ -1112,8 +1118,11 @@
 		gap: var(--ds-sp-3);
 		padding-right: var(--ds-sp-2);
 	}
-	.gallery-server-go {
+	.gallery-server-actions {
 		grid-column: 1 / -1;
+	}
+	.gallery-server-go {
+		flex: 1;
 		justify-content: center;
 	}
 	.gallery-server-covers {
@@ -1394,16 +1403,13 @@ html[data-mc-motion="reduced"]
 	}
 }
 
-/* On a server row the rename button follows the name; the row's right column keeps Open alone. Its 44 px target
-   does not make the name row taller than the name; a card's icon buttons never shrink under 44 px. */
+/* On a server row the name keeps its own width; rename lives with Open in the top right corner. A card's icon
+   buttons never shrink under 44 px. */
 .mm-site .gallery-page .gallery-server-body .gallery-title h3 {
 	flex: 0 1 auto;
 }
-.mm-site .gallery-page .gallery-actions .gallery-icon-button {
+.mm-site .gallery-page :is(.gallery-actions, .gallery-server-actions) .gallery-icon-button {
 	flex: none;
-}
-.mm-site .gallery-page .gallery-server-body .gallery-title .gallery-icon-button {
-	margin-block: -10px;
 }
 /* Refresh: a stone-framed button with the pixel arrow, which turns a quarter at a time while the gallery reloads. */
 .gallery-refresh .gallery-icon {
