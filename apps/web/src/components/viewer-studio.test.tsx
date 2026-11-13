@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
 import type { ViewerScene } from '../viewer-scene'
 import { LoadingSkeleton } from './Loading'
-import { ViewerStudio } from './ViewerStudio'
+import { TOAST_MS, ViewerStudio } from './ViewerStudio'
 
 beforeEach(() => localStorage.clear())
 afterEach(cleanup)
@@ -53,6 +53,28 @@ test('postcard requests a high resolution snapshot and downloads it locally', ()
 	expect(click).toHaveBeenCalledTimes(1)
 	expect(screen.getByRole('status').textContent).toContain('ready')
 	click.mockRestore()
+})
+
+test('the postcard notice leaves on its own, restarts with a new postcard and closes on its cross', () => {
+	vi.useFakeTimers()
+	const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+	const scene = mount()
+	scene.snapshot.mockReturnValue('data:image/jpeg;base64,AA')
+	const postcard = screen.getByRole('button', { name: /Postcard/ })
+	fireEvent.click(postcard)
+	act(() => vi.advanceTimersByTime(TOAST_MS - 1000))
+	fireEvent.click(postcard)
+	act(() => vi.advanceTimersByTime(TOAST_MS - 1000))
+	expect(screen.getByRole('status').textContent).toContain('ready')
+	act(() => vi.advanceTimersByTime(1000))
+	expect(screen.queryByRole('status')).toBeNull()
+	fireEvent.click(postcard)
+	fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+	expect(screen.queryByRole('status')).toBeNull()
+	act(() => vi.advanceTimersByTime(TOAST_MS))
+	expect(screen.queryByRole('status')).toBeNull()
+	click.mockRestore()
+	vi.useRealTimers()
 })
 
 test('a loading viewer disables capture actions and does not offer public sharing for local files', () => {
