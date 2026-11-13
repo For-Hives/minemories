@@ -12,10 +12,7 @@ import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
 /** Each site language and the mod's own language file it quotes (mod/shared/common/.../lang/<file>.json). */
 const modLanguages: Record<Locale, string> = {
 	en: 'en_us',
-	'en-GB': 'en_gb',
-	'en-CA': 'en_ca',
 	fr: 'fr_fr',
-	'fr-CA': 'fr_ca',
 	de: 'de_de',
 	ru: 'ru_ru',
 	ko: 'ko_kr',

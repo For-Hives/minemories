@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import { splitLocalePath } from '../lib/locale-path'
 import { diagnosticDsn, preferenceKey, publicDiagnosticRoute, type WebFailure } from './policy'
 
 const preferenceEvent = 'minemories-web-diagnostics-change'
@@ -39,7 +40,7 @@ export function WebObservability() {
 		if (!(dsn && route && enabled)) return
 		let stopped = false
 		let stop: () => void = () => undefined
-		const allowed = () => !stopped && consented() && window.location.pathname === route
+		const allowed = () => !stopped && consented() && splitLocalePath(window.location.pathname).path === route
 		const runtime = () => reportWebFailure('runtime')
 		const rejection = () => reportWebFailure('unhandled-promise')
 		void import('./sentry')

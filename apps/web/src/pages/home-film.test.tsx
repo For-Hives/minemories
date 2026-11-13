@@ -129,12 +129,12 @@ test('one language selector is visible, it is the app one, and the whole page fo
 	await started()
 	// One picker in the bar (the phones' panel draws its own only while open), every language under its own name, the current one selected.
 	expect(screen.getAllByRole('button', { name: /^Langue / })).toHaveLength(1)
-	fireEvent.click(screen.getByRole('button', { name: 'Langue Français (FR)' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Langue Français' }))
 	const list = screen.getByRole('listbox', { name: 'Langue' })
-	expect(within(list).getAllByRole('option')).toHaveLength(11)
-	expect(within(list).getByRole('option', { selected: true }).textContent).toBe('Français (FR)')
+	expect(within(list).getAllByRole('option')).toHaveLength(8)
+	expect(within(list).getByRole('option', { selected: true }).textContent).toBe('Français')
 	act(() => {
-		fireEvent.click(within(list).getByRole('option', { name: 'English (US)' }))
+		fireEvent.click(within(list).getByRole('option', { name: 'English' }))
 	})
 	await waitFor(() =>
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Keep your Minecraft builds in 3D')

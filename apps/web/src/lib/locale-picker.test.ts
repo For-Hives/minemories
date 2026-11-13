@@ -2,16 +2,13 @@ import { expect, test } from 'vitest'
 import { localeOptions } from '../i18n/locales'
 import { localeCode, pickerLocales } from './locale-picker'
 
-test('the picker lists every language by its own name, each language’s regions together', () => {
+test('the picker lists every language by its own name, no regional variant', () => {
 	expect(pickerLocales().map(option => option.label)).toEqual([
 		'Deutsch',
-		'English (US)',
-		'English (UK)',
-		'English (CA)',
-		'Français (FR)',
-		'Français (CA)',
+		'English',
+		'Français',
 		'Polski',
-		'Português (BR)',
+		'Português',
 		'Русский',
 		'日本語',
 		'한국어',

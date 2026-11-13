@@ -1,37 +1,35 @@
 # Website localization — Minecraft Java markets
 
-The website's language picker covers the ten requested countries, with eleven language variants (the table follows `localeOptions`; the picker itself lists them by name, each language's regions together, `lib/locale-picker.ts`):
+The website speaks eight languages, one per language with no regional variant (owner decision, 12 November 2026; the en-GB, en-CA and fr-CA catalogs were removed). The table follows `localeOptions`; the picker lists them by their own name (`lib/locale-picker.ts`):
 
-| Country | Choice | HTML tag / regional format |
+| Choice | HTML tag | URL prefix |
 | --- | --- | --- |
-| United States | English (US) | en-US |
-| Russia | Русский | ru-RU |
-| Germany | Deutsch | de-DE |
-| United Kingdom | English (UK) | en-GB |
-| France | Français (FR) | fr-FR |
-| South Korea | 한국어 | ko-KR |
-| Brazil | Português (BR) | pt-BR |
-| Poland | Polski | pl-PL |
-| Canada | English (CA), Français (CA) | en-CA, fr-CA |
-| Japan | 日本語 | ja-JP |
+| English | en-US | none (`/concept`) |
+| Русский | ru-RU | `/ru` |
+| Deutsch | de-DE | `/de` |
+| Français | fr-FR | `/fr` |
+| 한국어 | ko-KR | `/ko` |
+| Português | pt-BR | `/pt-br` |
+| Polski | pl-PL | `/pl` |
+| 日本語 | ja-JP | `/ja` |
 
-The legacy identifiers `en` and `fr` remain valid in the local preference, so choices already stored are preserved. Every page renders in French unless the visitor saved a language in the switcher; the browser's ordered language list never changes the rendered text, so a crawler and a visitor read the same language on the same URL. When the browser prefers another supported language (or an unsupported one, which falls back to English), a dismissible card (`LanguageSuggestion`, bottom-left, `data-nosnippet`, written in the suggested language) offers it once that catalog has loaded. Accepting saves the choice like the switcher; declining stores the declined language on the device under `minemories-locale-suggestion-dismissed`, which silences every regional variant of that language. No suggestion appears once a choice is saved or when the browser already reads French (fr-CA included). No geolocation or IP-based country detection is used. Regional tags feed the HTML document; dates, numbers, sizes and counters go through Intl, including the Russian and Polish plural categories.
+**The URL names the language.** Every page, public or private, exists under each prefix (`/fr/concept`, `/de/gallery`, `/pt-br/share/<token>`); English is the unprefixed site and `/en/…` redirects to it (301, nginx). The router works under the prefix (its `basename`, `App.tsx`), so internal links and route checks never name a language: a `<Link to="/faq">` on `/fr/…` points to `/fr/faq`. Helpers live in `lib/locale-path.ts`. A choice in the picker or the suggestion saves the language and moves to the same page, query and anchor under the new prefix (the tree remounts under the new basename; Back and Forward across languages do the same). A saved choice sends an unprefixed URL to its language before anything renders (`main.tsx`); a prefixed URL is never redirected, and crawlers save nothing, so a crawler and a visitor read the same language on the same URL. A retired regional choice still stored on a device (`en-GB`, `fr-CA`) resolves to its language. The browser's language is only ever suggested (`LanguageSuggestion`), never applied.
 
 ## Catalogs and scope
 
-The website uses a single engine: `translate(locale, key, values)` in `i18n/catalog.ts`. The `useI18n().t()` hook and the `T` JSX component call that same engine. Text lives only in `i18n/locales/*.json`: `en.json` is the canonical source, `fr.json` and the six other languages are full catalogs. Regional variants only contain their differences and inherit from the catalog of their main language.
+The website uses a single engine: `translate(locale, key, values)` in `i18n/catalog.ts`. The `useI18n().t()` hook and the `T` JSX component call that same engine. Text lives only in `i18n/locales/*.json`: `en.json` is the canonical source, `fr.json` and the six other languages are full catalogs.
 
 The old `copy(fr, en)` pairs, `{ fr, en }` editorial objects, inverted guide dictionaries and separate metadata tables have been removed. Components, editorial content, guides, diagnostics labels, metadata, immediate relative dates and counters use the same keys. Plurals are selected by `Intl.PluralRules`, then resolved in the catalogs; numbers are formatted by `Intl.NumberFormat`.
 
 API identifiers, paths, file names, Minecraft commands and parameters such as `{name}`, `{count}`, etc. keep their technical form. User-entered content stays literal. Commercial currencies are not converted automatically when the language changes.
 
-New catalogs are imported on demand and shipped with the website: the application never calls a translation service. While a catalog loads, the previous language stays active; an error offers a retry. A late response does not override a more recent choice, and a response after unmount does not change the preference. The initial static render keeps the existing French routes and the client renders them in French too; metadata and content only change after a saved or explicit choice of language (`<html lang>` and JSON-LD `inLanguage` follow the rendered language). Link previews are the exception: `og:title`, `og:description` and `og:locale` (`en_US`) are always in English, on the prerendered pages, the private shell (`app.html`, read by Discord for share links) and after client navigation (owner decision, 12 November 2026; `linkPreviewLocale` and `ogTitle` / `ogDescription` in `route-metadata.ts`). The site's copy uses no em dash (`—`) in any language. No translation URL or hreflang tag points to a page that does not exist.
+New catalogs are imported on demand and shipped with the website: the application never calls a translation service. While a catalog loads, the previous language stays active; an error offers a retry. A late response does not override a more recent choice, and a response after unmount does not change the preference. Every page is prerendered in every language (`scripts/prerender-web.mjs`, 16 pages x 8 languages): `<html lang>`, title, description, `og:title`, `og:description`, `og:locale` (plus `og:locale:alternate`), a self-referencing canonical and `og:url`, reciprocal `hreflang` alternates for the eight languages plus `x-default` (English), and JSON-LD in the page's language. A pasted unprefixed link previews in English, a `/fr` link in French. The sitemap lists every page in every language with its `xhtml:link` alternates. The private shell exists per language too (`/fr/app.html` for `/fr/share/…`: the shared-link card in French). The site's copy uses no em dash (`—`) in any language.
 
 The six new catalogs started from a Google Translate pre-translation of the public text. The main navigation, account, authentication, sharing and viewer terms have been reviewed; product names, commands and parameters are checked automatically. An editorial review by native speakers is still worthwhile for long texts, especially the guides and legal pages.
 
 ## Maintenance and validation
 
-To add a message, pick a stable key in `locales/en.json` and fill in every full catalog. In a component, use `t(key, values)` or `T`; in editorial data, store only the key and translate it at render time. Never recreate per-language text pairs in components. Variants only contain their regional differences.
+To add a message, pick a stable key in `locales/en.json` and fill in every full catalog. In a component, use `t(key, values)` or `T`; in editorial data, store only the key and translate it at render time. Never recreate per-language text pairs in components.
 
 The tests check key parity, parameters, commands and files, plurals, the English fallback and the absence of the old system from the sources. The interaction tests cover the real picker, preferences, blocked storage, concurrent loads and their failures, the guides and their checked steps, metadata and titles entered by owners.
 

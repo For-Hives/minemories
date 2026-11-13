@@ -63,7 +63,7 @@ test.each(['/versions', '/downloads'])('release route %s retains the preview noi
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain(path)
 })
 
-test('switching locale updates titles, descriptions and schema without publishing fictitious alternate URLs', () => {
+test('switching locale updates titles, descriptions, schema and canonical', () => {
 	function Switch() {
 		const { setLocale } = useI18n()
 		return (
@@ -90,8 +90,9 @@ test('switching locale updates titles, descriptions and schema without publishin
 	expect(JSON.parse(document.querySelector('[data-page-schema]')?.textContent ?? '{}')['@graph'][0].inLanguage).toBe(
 		'en'
 	)
-	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain('/installation')
-	expect(document.querySelector('link[hreflang]')).toBeNull()
+	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
+		'https://minemories.net/installation'
+	)
 })
 
 test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of search results', path => {
@@ -105,18 +106,43 @@ test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of sear
 	expect(document.querySelector('script[data-page-schema]')).toBeNull()
 })
 
-test('the private shell carries the shared-link card, French in the tab and English in link previews, and other private pages keep their own title', async () => {
-	const { appShell, metadataFor } = await import('../route-metadata')
-	// the tab title stays French, the link preview (Discord, WhatsApp...) is English
-	expect(appShell).toEqual({
+test('the private shell carries the shared-link card, English by default and translated on request, and other private pages keep their own title', async () => {
+	const { headFor, metadataFor, sharedLinkPath } = await import('../route-metadata')
+	expect(headFor(sharedLinkPath)).toEqual({
+		title: 'A Minecraft place in 3D, shared with you',
+		description: 'Open it in your browser and walk around it in 3D.',
+	})
+	expect(headFor(sharedLinkPath, 'fr')).toEqual({
 		title: 'Un lieu Minecraft en 3D, partagé avec toi',
 		description: 'Ouvre-le dans ton navigateur et fais-en le tour en 3D.',
-		ogTitle: 'A Minecraft place in 3D, shared with you',
-		ogDescription: 'Open it in your browser and walk around it in 3D.',
 	})
-	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111').description).toBe(
+	expect(metadataFor('/public/11111111-1111-4111-8111-111111111111', 'fr').description).toBe(
 		'Ouvre-le dans ton navigateur et fais-en le tour en 3D.'
 	)
 	expect(metadataFor('/gallery', 'en').title).toBe('Minemories · Your space')
 	expect(metadataFor('/share', 'en').title).toBe('Minemories · Your space')
+})
+
+test('each language is its own page: canonical, og:url and hreflang alternates name every language', () => {
+	render(
+		<I18nProvider initialLocale="fr">
+			<MemoryRouter initialEntries={['/installation']}>
+				<RouteMetadata />
+			</MemoryRouter>
+		</I18nProvider>
+	)
+	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe(
+		'https://minemories.net/fr/installation'
+	)
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.content).toBe(
+		'https://minemories.net/fr/installation'
+	)
+	expect(document.querySelector<HTMLMetaElement>('meta[property="og:locale"]')?.content).toBe('fr_FR')
+	const alternates = [...document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]')].map(
+		element => `${element.hreflang} ${element.href}`
+	)
+	expect(alternates).toContain('en-US https://minemories.net/installation')
+	expect(alternates).toContain('pt-BR https://minemories.net/pt-br/installation')
+	expect(alternates).toContain('x-default https://minemories.net/installation')
+	expect(alternates).toHaveLength(9)
 })
