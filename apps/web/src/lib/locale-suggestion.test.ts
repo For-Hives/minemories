@@ -6,7 +6,7 @@ const base = { current: 'fr', saved: null, dismissed: null } as const
 test('a browser in another supported language is suggested, never applied', () => {
 	expect(suggestedLocale({ ...base, languages: ['en-US', 'en'] })).toBe('en')
 	expect(suggestedLocale({ ...base, languages: ['es-MX', 'de-AT'] })).toBe('de')
-	expect(suggestedLocale({ ...base, languages: ['en-GB'] })).toBe('en-GB')
+	expect(suggestedLocale({ ...base, languages: ['en-GB'] })).toBe('en')
 })
 test('an unsupported browser language falls back to an English suggestion, as the switcher does', () => {
 	expect(suggestedLocale({ ...base, languages: ['zh-CN'] })).toBe('en')

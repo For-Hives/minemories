@@ -13,13 +13,14 @@ const loaders: Partial<Record<Locale, () => Promise<Catalog>>> = {
 	'pt-BR': () => import('./locales/pt-BR.json').then(module => module.default),
 	pl: () => import('./locales/pl.json').then(module => module.default),
 	ja: () => import('./locales/ja.json').then(module => module.default),
-	'en-GB': () => import('./locales/en-GB.json').then(module => module.default),
-	'en-CA': () => import('./locales/en-CA.json').then(module => module.default),
-	'fr-CA': () => import('./locales/fr-CA.json').then(module => module.default),
 }
 const interpolationPattern = /\{(\w+)\}/g
 function own(catalog: Catalog, key: string): string | undefined {
 	return Object.hasOwn(catalog, key) ? catalog[key] : undefined
+}
+/** French and English ship with the page; another catalogue is usable once loadLocale has resolved. */
+export function isLoaded(locale: Locale): boolean {
+	return locale === 'fr' || locale === 'en' || Boolean(catalogs[locale])
 }
 export function loadLocale(locale: Locale): Promise<void> {
 	if (!isLocale(locale)) return Promise.reject(new Error('Unsupported language'))

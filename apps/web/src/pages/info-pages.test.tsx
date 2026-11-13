@@ -169,7 +169,7 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 
 test('each language quotes the labels of its own mod translation', async () => {
 	const memory = 'Take a memory'
-	await Promise.all((['de', 'ja', 'en-GB', 'fr-CA'] as const).map(loadLocale))
+	await Promise.all((['de', 'ja'] as const).map(loadLocale))
 	expect(translate('fr', memory)).toBe('Prendre un souvenir')
 	expect(translate('de', memory)).toBe('Erinnerung festhalten')
 	expect(translate('ja', memory)).toBe('思い出を残す')
@@ -177,11 +177,7 @@ test('each language quotes the labels of its own mod translation', async () => {
 	expect(translate('de', 'Yes: M → Auto memories.')).toBe('Ja: M → Auto-Fotos.')
 	const earlier = 'M → My memories → Send this memory.'
 	expect(translate('fr', earlier)).toBe('M → Mes souvenirs → Envoyer ce souvenir.')
-	expect(translate('fr-CA', earlier)).toBe('M → Mes souvenirs → Envoyer cette capture.')
-	expect(translate('en-GB', earlier)).toBe('M → My memories → Send this capture.')
 	expect(translate('de', earlier)).toBe('M → Meine Erinnerungen → Diese Aufnahme senden.')
-	expect(translate('en-GB', 'Yes: M → Auto memories.')).toBe('Yes: M → Auto photos.')
-	expect(translate('fr-CA', 'Yes: M → Auto memories.')).toBe('Oui\u00a0: M → Photos auto.')
 	expect(translate('ja', 'In Minecraft: M → type the code → Connect.')).toContain('接続する')
 })
 

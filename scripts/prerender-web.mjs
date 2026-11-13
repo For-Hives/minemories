@@ -10,89 +10,122 @@ const descriptionPattern = /<meta name="description"[^>]*>/
 const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
 /** Only the landing and the app fallback (the viewers) keep it: anywhere else its opaque cover would hide the page until the inline script drops it, or for 20 s without JavaScript. */
 const withoutBootScreen = html => html.replace(bootPattern, '')
+/** The private routes: the app shell, never indexed (kept in step with deploy/nginx.web.conf by smoke-web.test.mjs). */
+const privateRoutes = ['gallery', 'account', 'admin', 'viewer', 'share/', 'public/', 'moderation', 'login', 'register']
+const robotsFor = origin =>
+	`User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\n${privateRoutes.map(route => `Disallow: /*/${route}\n`).join('')}Sitemap: ${new URL('/sitemap.xml', origin).href}\n`
+/**
+ * Every public page in every language: English unprefixed (the default, what a pasted link previews), each other
+ * language under its prefix (/fr/concept). Each one is a page of its own: <html lang>, title, description, Open Graph,
+ * canonical, hreflang alternates (x-default = English) and JSON-LD in its language, and a body rendered in it.
+ */
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
 	const {
 		publicMetadata,
+		metadataFor,
 		renderPage,
 		siteOrigin,
 		structuredDataFor,
 		firstPaintScripts = {},
 		socialImage,
-		appShell,
+		headFor,
+		sharedLinkPath,
+		languages,
+		loadLanguages,
+		pagePath,
 	} = entry
 	const origin = new URL(siteOrigin)
 	if (!['https:', 'http:'].includes(origin.protocol) || origin.pathname !== '/' || origin.search || origin.hash)
 		throw new Error('VITE_SITE_URL must be an HTTP(S) origin.')
+	await loadLanguages()
 	const indexable = process.env.VITE_INDEXABLE === 'true'
-	// The link preview (og:image, twitter:image) is the same image on every page, with an absolute URL from the site's origin.
-	// Its text (og:title, og:description) is in English on every page (`ogTitle` / `ogDescription`), the page itself stays French.
+	const url = (path, language) => new URL(pagePath(path, language.id), origin).href
+	// The link preview image is the same on every page, with an absolute URL from the site's origin.
 	const socialTags = socialImage
 		? `<meta property="og:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" /><meta property="og:image:width" content="${socialImage.width}" /><meta property="og:image:height" content="${socialImage.height}" /><meta property="og:image:alt" content="${escapeHtml(socialImage.alt)}" /><meta name="twitter:card" content="summary_large_image" /><meta name="twitter:image" content="${escapeHtml(new URL(socialImage.path, origin).href)}" />`
 		: ''
-	/** A public page's canonical URL, link preview (in English: `ogTitle` / `ogDescription`) and JSON-LD. */
-	const previewHead = (page, canonical) =>
-		`<link rel="canonical" href="${escapeHtml(canonical)}" /><meta property="og:site_name" content="Minemories" /><meta property="og:title" content="${escapeHtml(page.ogTitle ?? page.title)}" /><meta property="og:description" content="${escapeHtml(page.ogDescription ?? page.description)}" /><meta property="og:url" content="${escapeHtml(canonical)}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" /><meta property="og:locale" content="en_US" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
+	/** <html lang>, <title> and description in one language. */
+	const headText = (html, head, language) =>
+		html
+			.replace(htmlLanguagePattern, `<html lang="${language.tag}">`)
+			.replace(titlePattern, `<title>${escapeHtml(head.title)}</title>`)
+			.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(head.description)}" />`)
+	const previewText = (head, language) =>
+		`<meta property="og:site_name" content="Minemories" /><meta property="og:title" content="${escapeHtml(head.title)}" /><meta property="og:description" content="${escapeHtml(head.description)}" /><meta property="og:locale" content="${language.ogLocale}" />${languages
+			.filter(other => other.id !== language.id)
+			.map(other => `<meta property="og:locale:alternate" content="${other.ogLocale}" />`)
+			.join('')}`
+	const alternates = path =>
+		`${languages.map(language => `<link rel="alternate" hreflang="${language.tag}" href="${escapeHtml(url(path, language))}" />`).join('')}<link rel="alternate" hreflang="x-default" href="${escapeHtml(url(path, languages[0]))}" />`
+	/** A public page's canonical URL (its own language), alternates, link preview and JSON-LD. */
+	const previewHead = (page, language) =>
+		`<link rel="canonical" href="${escapeHtml(url(page.path, language))}" />${alternates(page.path)}${previewText(page, language)}<meta property="og:url" content="${escapeHtml(url(page.path, language))}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
 	// Every indexable page names its own last change (route-metadata `updated`): the sitemap's lastmod.
 	const undated = publicMetadata.filter(page => page.indexable && !page.updated).map(page => page.path)
 	if (undated.length) throw new Error(`Indexable pages without an updated date: ${undated.join(', ')}`)
-	// Public pages are written in French (the client renders them in French too, unless the visitor chose a language).
-	await Promise.all(
-		publicMetadata.map(async page => {
-			const canonical = new URL(page.path, origin).href
-			// A page kept out of search results carries no canonical, link preview or JSON-LD, as in the client head (RouteMetadata).
-			const head = page.indexable ? previewHead(page, canonical) : ''
-			const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" />${head}`
-			const html = (page.path === '/' ? template : withoutBootScreen(template))
-				.replace(htmlLanguagePattern, '<html lang="fr">')
-				.replace(titlePattern, `<title>${escapeHtml(page.title)}</title>`)
-				.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(page.description)}" />`)
-				.replace('</head>', `${tags}</head>`)
-				.replace(
-					'<div id="app"></div>',
-					`${firstPaintScripts[page.path] ? `<script>${firstPaintScripts[page.path]}</script>` : ''}<div id="app" data-prerendered="true" data-route="${escapeHtml(page.path)}">${renderPage(page.path)}</div>`
-				)
-			const folder = page.path === '/' ? directory : resolve(directory, `.${page.path}`)
-			await mkdir(folder, { recursive: true })
-			await writeFile(resolve(folder, 'index.html'), html)
-		})
-	)
+	const writePage = async (path, language) => {
+		const page = metadataFor(path, language.id)
+		const route = pagePath(path, language.id)
+		// A page kept out of search results carries no canonical, alternates, link preview or JSON-LD, as in the client head.
+		const preview = page.indexable ? previewHead(page, language) : ''
+		const tags = `<meta name="robots" content="${indexable && page.indexable ? 'index,follow' : 'noindex,nofollow'}" />${preview}`
+		const html = headText(path === '/' ? template : withoutBootScreen(template), page, language)
+			.replace('</head>', `${tags}</head>`)
+			.replace(
+				'<div id="app"></div>',
+				`${firstPaintScripts[path] ? `<script>${firstPaintScripts[path]}</script>` : ''}<div id="app" data-prerendered="true" data-route="${escapeHtml(route)}">${renderPage(path, language.id)}</div>`
+			)
+		const folder = resolve(directory, `.${route}`)
+		await mkdir(folder, { recursive: true })
+		await writeFile(resolve(folder, 'index.html'), html)
+	}
+	await Promise.all(publicMetadata.flatMap(page => languages.map(language => writePage(page.path, language))))
+	// One entry per page and language, each naming all its alternates (Google reads hreflang from the sitemap too).
 	const urls = publicMetadata
 		.filter(page => page.indexable)
-		.map(
-			page =>
-				`<url><loc>${escapeHtml(new URL(page.path, origin).href)}</loc>${page.updated ? `<lastmod>${page.updated}</lastmod>` : ''}</url>`
+		.flatMap(page =>
+			languages.map(
+				language =>
+					`<url><loc>${escapeHtml(url(page.path, language))}</loc>${page.updated ? `<lastmod>${page.updated}</lastmod>` : ''}${languages
+						.map(
+							other =>
+								`<xhtml:link rel="alternate" hreflang="${other.tag}" href="${escapeHtml(url(page.path, other))}" />`
+						)
+						.join(
+							''
+						)}<xhtml:link rel="alternate" hreflang="x-default" href="${escapeHtml(url(page.path, languages[0]))}" /></url>`
+			)
 		)
 		.join('\n')
 	await writeFile(
 		resolve(directory, 'sitemap.xml'),
-		`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${indexable ? urls : ''}</urlset>\n`
+		`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${indexable ? urls : ''}</urlset>\n`
 	)
-	await writeFile(
-		resolve(directory, 'robots.txt'),
-		indexable
-			? `User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\nSitemap: ${new URL('/sitemap.xml', origin).href}\n`
-			: 'User-agent: *\nDisallow: /\n'
+	await writeFile(resolve(directory, 'robots.txt'), indexable ? robotsFor(origin) : 'User-agent: *\nDisallow: /\n')
+	// The private shell answers every private route, one per language (/fr/share/… is the French one), but only /share
+	// and /public links get pasted where a preview is drawn: it carries their neutral card (no canonical or og:url, since
+	// one file serves many URLs). It keeps the loading screen: the viewers open behind it.
+	await Promise.all(
+		languages.map(async language => {
+			const head = headFor(sharedLinkPath, language.id)
+			const shell = headText(template, head, language).replace(
+				'</head>',
+				`<meta name="robots" content="noindex,nofollow" /><meta property="og:type" content="website" />${previewText(head, language)}${socialTags}</head>`
+			)
+			const folder = resolve(directory, `.${language.prefix || '/'}`)
+			await mkdir(folder, { recursive: true })
+			await writeFile(resolve(folder, 'app.html'), shell)
+		})
 	)
-	// The private shell answers every private route, but only /share and /public links get pasted where a preview is
-	// drawn: it carries their neutral card (no canonical or og:url, since one file serves many URLs).
-	const shellHead = `<meta name="robots" content="noindex,nofollow" /><meta property="og:site_name" content="Minemories" /><meta property="og:type" content="website" /><meta property="og:title" content="${escapeHtml(appShell.ogTitle ?? appShell.title)}" /><meta property="og:description" content="${escapeHtml(appShell.ogDescription ?? appShell.description)}" /><meta property="og:locale" content="en_US" />${socialTags}`
-	// The app fallback serves the viewers (nginx: /viewer, /share, /public) as well as the gallery or the account: it keeps the loading screen, whose
-	// inline script plays it on a viewer until its 3D scene is drawn and drops it at once everywhere else (bootRoute, scripts/boot-screen/chunk-screen.mjs).
-	const fallback = template
-		.replace(htmlLanguagePattern, '<html lang="fr">')
-		.replace(titlePattern, `<title>${escapeHtml(appShell.title)}</title>`)
-		.replace(descriptionPattern, `<meta name="description" content="${escapeHtml(appShell.description)}" />`)
-		.replace('</head>', `${shellHead}</head>`)
-	await writeFile(resolve(directory, 'app.html'), fallback)
 	await writeFile(
 		resolve(directory, '404.html'),
 		withoutBootScreen(template)
 			.replace('</head>', '<meta name="robots" content="noindex,follow" /></head>')
 			.replace(
 				'<div id="app"></div>',
-				`<div id="app" data-prerendered="true" data-route="/404">${renderPage('/404')}</div>`
+				`<div id="app" data-prerendered="true" data-route="/404">${renderPage('/404', 'en')}</div>`
 			)
 	)
-	return publicMetadata.map(page => page.path)
+	return publicMetadata.flatMap(page => languages.map(language => pagePath(page.path, language.id)))
 }

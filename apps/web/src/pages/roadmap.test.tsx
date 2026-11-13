@@ -318,10 +318,10 @@ test('a request that never answers times out into the error state, and its late 
 })
 
 test('the roadmap is a public, prerendered page linked from the footer and readable without JavaScript', () => {
-	const html = renderPage('/roadmap')
+	const html = renderPage('/roadmap', 'fr')
 	expect(html).toContain('<h1')
 	expect(html).toContain('Feuille de route')
-	expect(html).toContain('href="/roadmap"')
+	expect(html).toContain('href="/fr/roadmap"')
 	expect(html).toContain(`href="${roadmapIssuesUrl.replaceAll('&', '&amp;')}"`)
 	expect(html).toContain('Discord de Minemories')
 	expect(html).not.toContain('mm-roadmap-board')

@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState } from 'react'
+import { lazy, useCallback, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { adminRoutes } from './admin-routes'
 import { AppContext, type AppContextValue, useAppContext } from './app-context'
@@ -9,6 +9,8 @@ import { RouteMetadata } from './components/RouteMetadata'
 import { SiteLayout } from './components/SiteLayout'
 import { legacyPaths } from './content/legacy-paths'
 import { I18nProvider } from './i18n/I18n'
+import type { Locale } from './i18n/locales'
+import { splitLocalePath, switchedHref } from './lib/locale-path'
 import { lazyExport, type PageChunk, pageChunk } from './lib/page-chunk'
 import { WebObservability } from './observability/WebObservability'
 
@@ -113,16 +115,33 @@ export function App() {
 		notify: setNotice,
 	}
 	useEffect(() => preloadWhenIdle(publicPageChunks), [])
+	// The URL names the language (/fr/…, nothing for English): the router works under that prefix (its basename), so
+	// links and routes never name a language. A choice moves to the same page in the other language and remounts the
+	// tree under the new prefix; Back and Forward across languages do the same.
+	const [route, setRoute] = useState(() => splitLocalePath(window.location.pathname))
+	useEffect(() => {
+		const follow = () =>
+			setRoute(current => {
+				const next = splitLocalePath(window.location.pathname)
+				return next.prefix === current.prefix ? current : next
+			})
+		window.addEventListener('popstate', follow)
+		return () => window.removeEventListener('popstate', follow)
+	}, [])
+	const changeLanguage = useCallback((locale: Locale) => {
+		window.history.pushState(null, '', switchedHref(window.location, locale))
+		setRoute(splitLocalePath(window.location.pathname))
+	}, [])
 	useEffect(() => {
 		if (!notice) return
 		const timeout = window.setTimeout(() => setNotice(''), 5200)
 		return () => window.clearTimeout(timeout)
 	}, [notice])
 	return (
-		// Every page renders in its own language (or the visitor's saved choice); the browser's language is only suggested.
-		<I18nProvider suggestLocale>
+		// Every page renders in its URL's language; the browser's language is only suggested.
+		<I18nProvider key={route.prefix} initialLocale={route.locale} suggestLocale onLocaleChange={changeLanguage}>
 			<AppContext.Provider value={context}>
-				<BrowserRouter>
+				<BrowserRouter basename={route.prefix || '/'}>
 					<RouteMetadata />
 					<WebObservability />
 					<Routes>

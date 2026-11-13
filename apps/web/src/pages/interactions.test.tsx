@@ -700,7 +700,7 @@ test('authentication keeps the site header with its language control', () => {
 		</MemoryRouter>
 	)
 	expect(screen.getByRole('main')).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'Language English (US)' }).getAttribute('aria-haspopup')).toBe('listbox')
+	expect(screen.getByRole('button', { name: 'Language English' }).getAttribute('aria-haspopup')).toBe('listbox')
 	expect(screen.getAllByRole('navigation', { name: 'Main navigation' }).length).toBeGreaterThan(0)
 	fireEvent.click(screen.getAllByRole('button', { name: 'Product' })[0] as HTMLElement)
 	expect(screen.getAllByRole('link', { name: 'How it works' }).length).toBeGreaterThan(0)
