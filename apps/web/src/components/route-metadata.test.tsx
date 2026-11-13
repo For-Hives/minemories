@@ -95,7 +95,7 @@ test('switching locale updates titles, descriptions, schema and canonical', () =
 	)
 })
 
-test.each(['/explore', '/legal', '/roadmap'])('%s is public but kept out of search results', path => {
+test.each(['/explore', '/roadmap'])('%s is public but kept out of search results', path => {
 	render(
 		<MemoryRouter initialEntries={[path]}>
 			<RouteMetadata />

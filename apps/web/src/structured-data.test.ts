@@ -16,11 +16,16 @@ test('every indexable page says when it last changed, as a real calendar date th
 	}
 })
 
-test('the public gallery, the legal page and the roadmap are prerendered but kept out of search results', () => {
-	for (const path of ['/explore', '/legal', '/roadmap']) {
+test('the public gallery and the roadmap are prerendered but kept out of search results', () => {
+	for (const path of ['/explore', '/roadmap']) {
 		expect(publicMetadata.find(page => page.path === path)?.indexable, path).toBe(false)
 		expect(metadataFor(path, 'fr').indexable, path).toBe(false)
 	}
+})
+
+test('the legal notice names its publisher and host, so search engines may index it', () => {
+	expect(publicMetadata.find(page => page.path === '/legal')?.indexable).toBe(true)
+	expect(metadataFor('/legal', 'fr').indexable).toBe(true)
 })
 
 test('the home page names the site and its organization, linked to CurseForge, GitHub and Discord only', () => {

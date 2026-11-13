@@ -1,0 +1,59 @@
+/* Legal notice: each company is a dark card of facts, a label in the game font on the left and the registered value on the
+   right, read in the text font. A phone puts the label above its value. */
+.mm-legal-card {
+	display: grid;
+	gap: var(--ds-sp-3);
+	max-width: var(--ds-measure);
+	margin: 0 var(--gp) var(--ds-sp-6);
+	padding: var(--ds-sp-4) var(--ds-sp-5);
+	background: var(--night-2);
+	box-shadow: var(--mm-card-shadow);
+}
+.mm-legal-card > div {
+	display: grid;
+	grid-template-columns: 15em minmax(0, 1fr);
+	gap: var(--ds-sp-4);
+	align-items: baseline;
+}
+.mm-legal-card dt {
+	color: var(--text-3);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-legal-card dd {
+	margin: 0;
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+	overflow-wrap: anywhere;
+}
+.mm-legal-card a {
+	color: var(--text);
+}
+/* A domain in running text never breaks at its hyphen. */
+.mm-legal .mm-nowrap {
+	white-space: nowrap;
+}
+@media (max-width: 639px) {
+	.mm-legal-card {
+		padding: var(--ds-sp-4);
+	}
+	.mm-legal-card > div {
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--ds-sp-1);
+	}
+}
+.mm-legal-list {
+	display: grid;
+	gap: var(--ds-sp-2);
+	margin: 0 0 var(--ds-sp-3);
+	padding-left: var(--ds-sp-5);
+	list-style: square;
+}
+.mm-legal-list li::marker {
+	color: var(--ember);
+}
+.mm-legal-updated {
+	margin: var(--ds-sp-4) var(--gp) 0;
+	color: var(--text-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
