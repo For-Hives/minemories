@@ -116,7 +116,8 @@
 .cinema-page .viewer-layers button,
 .cinema-page .timeline-error button,
 .cinema-page .cinema-loading-card button,
-.cinema-page .cinema-panel-heading button {
+.cinema-page .cinema-panel-heading button,
+.cinema-page .cinema-toast > button {
 	appearance: none;
 	display: inline-flex;
 	align-items: center;
@@ -143,14 +144,16 @@
 .cinema-page .cinema-navigation button:hover,
 .cinema-page .viewer-layers button:hover,
 .cinema-page .timeline-error button:hover,
-.cinema-page .cinema-panel-heading button:hover {
+.cinema-page .cinema-panel-heading button:hover,
+.cinema-page .cinema-toast > button:hover {
 	border-color: var(--hover);
 }
 .cinema-back:active,
 .cinema-page .cinema-immerse:active,
 .cinema-page .cinema-navigation button:active,
 .cinema-page .viewer-layers button:active,
-.cinema-page .timeline-error button:active {
+.cinema-page .timeline-error button:active,
+.cinema-page .cinema-toast > button:active {
 	box-shadow: inset var(--gp) var(--gp) 0 var(--stone-lo);
 	padding-top: var(--gp);
 	padding-bottom: 0;
@@ -678,11 +681,17 @@ h2.cinema-panel-title {
 .cinema-page .cinema-toast {
 	position: absolute;
 	top: 100px;
+	z-index: 6;
 	left: 50%;
 	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	width: max-content;
 	max-width: calc(100% - 32px);
+	box-sizing: border-box;
 	margin: 0;
-	padding: var(--ds-sp-3) var(--ds-sp-5);
+	padding: var(--ds-sp-2) var(--ds-sp-2) var(--ds-sp-2) var(--ds-sp-5);
 	background: var(--toast);
 	color: #fff;
 	font: 400 16px / 20px var(--f-ui);
@@ -690,6 +699,18 @@ h2.cinema-panel-title {
 	box-shadow:
 		0 0 0 var(--gp) var(--outline),
 		inset 0 0 0 var(--gp) var(--toast-ring);
+}
+/* The panels' close button, a step smaller to sit inside the notice. */
+.cinema-toast > p {
+	margin: 0;
+}
+.cinema-page .cinema-toast > button {
+	flex: none;
+	width: 32px;
+	min-height: 32px;
+	padding: 0 0 var(--gp);
+	font-size: 20px;
+	line-height: 1;
 }
 
 /* --- Empty studio: the landing's hero, centred --- */
