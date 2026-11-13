@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
 	insights: vi.fn(),
 	setRole: vi.fn(),
 	deleteUser: vi.fn(),
+	storageRoles: vi.fn(),
+	setRoleStorage: vi.fn(),
 }))
 vi.mock('../api-client', () => ({ apiClient: { admin: mocks } }))
 vi.mock('../app-context', () => ({ useAppContext: () => ({ session: { user: { id: 'admin' } } }) }))
@@ -30,8 +32,13 @@ const user = {
 	reservedBytes: 0,
 	pendingDeletionBytes: 0,
 	devices: 1,
+	quotaBytes: 2147483648,
 }
 const quotaBytes = 2147483648
+const storageRoles = [
+	{ role: 'user', limitBytes: null, effectiveBytes: quotaBytes, accounts: 26, updatedAt: null },
+	{ role: 'admin', limitBytes: 5_000_000_000, effectiveBytes: 5_000_000_000, accounts: 1, updatedAt: 1000 },
+]
 beforeEach(() => {
 	vi.resetAllMocks()
 	localStorage.clear()
@@ -125,6 +132,8 @@ beforeEach(() => {
 	})
 	mocks.setRole.mockResolvedValue({ ok: true })
 	mocks.deleteUser.mockResolvedValue({ ok: true })
+	mocks.storageRoles.mockResolvedValue(storageRoles)
+	mocks.setRoleStorage.mockResolvedValue({ ok: true })
 })
 afterEach(cleanup)
 function page(element = <AdminPage />) {
@@ -210,6 +219,7 @@ test('each account shows its storage as a labelled progress bar, in text and in 
 				pendingDeletionBytes: 50_000_000,
 			},
 			{ ...user, id: 'full', name: 'Full', usedBytes: quotaBytes + 5 },
+			{ ...user, id: 'big', name: 'Big admin', role: 'admin', usedBytes: 2_500_000_000, quotaBytes: 5_000_000_000 },
 		],
 		total: 3,
 		page: 1,
@@ -224,12 +234,78 @@ test('each account shows its storage as a labelled progress bar, in text and in 
 	expect(bar('Stockage de Nearly full').getAttribute('aria-valuenow')).toBe('88')
 	expect(bar('Stockage de Nearly full').getAttribute('aria-valuetext')).toMatch(/1,9\s+Go.*2,15\s+Go.*88\s%/)
 	expect(bar('Stockage de Full').getAttribute('aria-valuenow')).toBe('100')
+	// Each account is measured against its own limit, not the base quota.
+	expect(bar('Stockage de Big admin').getAttribute('aria-valuenow')).toBe('50')
+	expect(screen.getByText(/Quota de base par compte : 2,15\sGo/)).toBeTruthy()
 	expect(screen.getByText('Quota atteint')).toBeTruthy()
 	expect(screen.getAllByText(/1\u202f900\u202f000\u202f000 octets|1 900 000 000 octets/).length).toBeGreaterThan(0)
 	expect(screen.getByText(/50\sMo réservés pour des envois, 50\sMo en attente de suppression/)).toBeTruthy()
 	const totals = screen.getByText('Stockage total utilisé').closest('div') as HTMLElement
 	expect(totals.textContent).toMatch(/4\sGo/)
 	expect(screen.getByText('Comptes proches de leur quota').closest('div')?.textContent).toContain('2')
+})
+test('storage limits are listed per role and edited in decimal gigabytes, with reset and safe errors', async () => {
+	page()
+	const section = (await screen.findByRole('heading', { name: 'Stockage par rôle' })).closest('section') as HTMLElement
+	expect(within(section).getByText(/2,15\sGo \(valeur par défaut du serveur\)/)).toBeTruthy()
+	expect(within(section).getByText(/^5\sGo$/)).toBeTruthy()
+	expect(within(section).getByText('26')).toBeTruthy()
+	// The base role has nothing configured: no reset is offered, the form starts empty with the default as a hint,
+	// so saving it untouched is rejected instead of pinning the server default.
+	fireEvent.click(within(section).getByRole('button', { name: 'Modifier la limite (Utilisateur)' }))
+	let dialog = screen.getByRole('dialog')
+	expect(within(dialog).queryByRole('button', { name: 'Rétablir la valeur par défaut' })).toBeNull()
+	const field = within(dialog).getByLabelText('Limite en Go') as HTMLInputElement
+	expect(field.value).toBe('')
+	expect(field.placeholder).toBe('2.15')
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+	expect((await within(dialog).findByRole('alert')).textContent).toContain('supérieure à 0')
+	expect(mocks.setRoleStorage).not.toHaveBeenCalled()
+	fireEvent.change(field, { target: { value: '0' } })
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+	expect((await within(dialog).findByRole('alert')).textContent).toContain('supérieure à 0')
+	expect(document.activeElement).toBe(field)
+	expect(field.getAttribute('aria-invalid')).toBe('true')
+	expect(field.getAttribute('aria-describedby')).toBe('role-storage-hint role-storage-error')
+	expect(document.getElementById('role-storage-error')?.textContent).toContain('supérieure à 0')
+	expect(mocks.setRoleStorage).not.toHaveBeenCalled()
+	fireEvent.change(field, { target: { value: '0,5' } })
+	mocks.setRoleStorage.mockRejectedValueOnce(new Error('private database internals'))
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+	expect((await within(dialog).findByRole('alert')).textContent).toBe(
+		'Impossible d’enregistrer cette limite. Réessaie.'
+	)
+	expect(screen.queryByText('private database internals')).toBeNull()
+	// A server failure is not the value's fault: the field is no longer marked invalid.
+	expect(field.getAttribute('aria-invalid')).toBeNull()
+	expect(field.getAttribute('aria-describedby')).toBe('role-storage-hint')
+	expect(mocks.setRoleStorage).toHaveBeenLastCalledWith({ role: 'user', quotaBytes: 500_000_000 })
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+	await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+	await waitFor(() => expect(mocks.storageRoles).toHaveBeenCalledTimes(2))
+	expect(mocks.users).toHaveBeenCalledTimes(2)
+	// A configured role can go back to the default; cancelling sends nothing.
+	fireEvent.click(await screen.findByRole('button', { name: 'Modifier la limite (Admin)' }))
+	dialog = screen.getByRole('dialog')
+	expect((within(dialog).getByLabelText('Limite en Go') as HTMLInputElement).value).toBe('5')
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }))
+	expect(screen.queryByRole('dialog')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier la limite (Admin)' }))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Rétablir la valeur par défaut' }))
+	await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+	expect(mocks.setRoleStorage).toHaveBeenLastCalledWith({ role: 'admin', quotaBytes: null })
+	await waitFor(() => expect(mocks.storageRoles).toHaveBeenCalledTimes(3))
+})
+test('a role without a configured limit shows that its holders get the base quota', async () => {
+	mocks.storageRoles.mockResolvedValue([
+		{ role: 'user', limitBytes: 3_000_000_000, effectiveBytes: 3_000_000_000, accounts: 2, updatedAt: 1 },
+		{ role: 'admin', limitBytes: null, effectiveBytes: 3_000_000_000, accounts: 1, updatedAt: null },
+	])
+	page()
+	const section = (await screen.findByRole('heading', { name: 'Stockage par rôle' })).closest('section') as HTMLElement
+	expect(within(section).getByText('Non définie')).toBeTruthy()
+	expect(within(section).getByText(/Les comptes ayant ce rôle reçoivent 3\sGo/)).toBeTruthy()
+	expect(within(section).getAllByText(/^3\sGo$/)).toHaveLength(1)
 })
 test('network failures can be retried and revoked permissions hide private data', async () => {
 	mocks.summary.mockRejectedValueOnce(new Error('network'))

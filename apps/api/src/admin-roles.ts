@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
-import type { AdminUserSort } from '@minemories/api-contract'
+import { type AdminUserSort, MAX_ROLE_STORAGE_BYTES, type StorageRole, storageRole } from '@minemories/api-contract'
 import { ORPCError } from '@orpc/server'
-import { ACCOUNT_STORAGE_BYTES } from './configuration'
+import { accountLimitSql, BASE_LIMIT_SQL, migrateRoleStorage, ROLE_MEMBERSHIP } from './role-storage'
 import { ACCOUNT_USAGE_SQL } from './storage-quota'
 
 const wildcard = /[\\%_]/g
@@ -24,8 +24,10 @@ export const OPERATOR_ACTOR = 'operator:mcp'
 
 export class AdminRoles {
 	constructor(private readonly database: Database) {
-		database.exec(`CREATE TABLE IF NOT EXISTS user_roles (user_id TEXT PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE);
-   CREATE TABLE IF NOT EXISTS admin_role_audit (id INTEGER PRIMARY KEY,actor_id TEXT,target_id TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','admin')),created_at INTEGER NOT NULL);`)
+		migrateRoleStorage(database)
+		database.exec(
+			`CREATE TABLE IF NOT EXISTS admin_role_audit (id INTEGER PRIMARY KEY,actor_id TEXT,target_id TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('user','admin')),created_at INTEGER NOT NULL);`
+		)
 	}
 	allowed(userId: string | null): boolean {
 		return (
@@ -118,7 +120,8 @@ export class AdminRoles {
    COALESCE(g.usedBytes,0) AS usedBytes,
    COALESCE(g.reservedBytes,0) AS reservedBytes,
    COALESCE(g.pendingDeletionBytes,0) AS pendingDeletionBytes,
-   (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id AND d.revoked_at IS NULL) AS devices
+   (SELECT COUNT(*) FROM devices d WHERE d.user_id=u.id AND d.revoked_at IS NULL) AS devices,
+   ${accountLimitSql('u.id')} AS quotaBytes
    FROM user u LEFT JOIN usage g ON g.user_id=u.id WHERE ${filter} ORDER BY ${orders[input.sort ?? 'registered_desc']},u.id LIMIT 25 OFFSET ?`)
 			.all(...values, (input.page - 1) * 25) as Array<{
 			id: string
@@ -133,13 +136,22 @@ export class AdminRoles {
 			reservedBytes: number
 			pendingDeletionBytes: number
 			devices: number
+			quotaBytes: number
 		}>
+		// "Near" compares each account with its own limit, still in SQL (a correlated expression, no per-account loop).
 		const overview = this.database
 			.query(`WITH usage AS (${ACCOUNT_USAGE_SQL})
    SELECT COUNT(*) AS accounts,COALESCE(SUM(g.usedBytes),0) AS usedBytes,
-   COALESCE(SUM(CASE WHEN COALESCE(g.usedBytes,0)*100>=?*${NEAR_QUOTA_PERCENT} THEN 1 ELSE 0 END),0) AS nearQuotaAccounts
+   COALESCE(SUM(CASE WHEN COALESCE(g.usedBytes,0)*100>=${accountLimitSql('u.id')}*${NEAR_QUOTA_PERCENT} THEN 1 ELSE 0 END),0) AS nearQuotaAccounts,
+   ${BASE_LIMIT_SQL} AS quotaBytes
    FROM user u LEFT JOIN usage g ON g.user_id=u.id`)
-			.get(ACCOUNT_STORAGE_BYTES) as { accounts: number; usedBytes: number; nearQuotaAccounts: number }
+			.get() as {
+			accounts: number
+			usedBytes: number
+			nearQuotaAccounts: number
+			quotaBytes: number
+		}
+		const { quotaBytes, ...counts } = overview
 		return {
 			users: users.map(u => ({
 				...u,
@@ -149,9 +161,47 @@ export class AdminRoles {
 			total,
 			page: input.page,
 			pageSize: 25 as const,
-			quotaBytes: ACCOUNT_STORAGE_BYTES,
-			overview,
+			quotaBytes,
+			overview: counts,
 		}
+	}
+	/** Every role of `storageRole`, configured or not, with its limit and its holders. */
+	storageRoles(actorId: string | null) {
+		this.require(actorId)
+		const base = (this.database.query(`SELECT ${BASE_LIMIT_SQL} AS bytes`).get() as { bytes: number }).bytes
+		return storageRole.options.map(role => {
+			const row = this.database
+				.query(`SELECT (SELECT COUNT(*) FROM user u WHERE ${ROLE_MEMBERSHIP[role]('u.id')}) AS accounts,
+   s.limit_bytes AS limitBytes,s.updated_at AS updatedAt FROM (SELECT 1) LEFT JOIN role_storage_limits s ON s.role=?`)
+				.get(role) as { accounts: number; limitBytes: number | null; updatedAt: number | null }
+			return { role, ...row, effectiveBytes: Math.max(base, row.limitBytes ?? 0) }
+		})
+	}
+	/**
+	 * Sets (or with `null` removes) the limit of one role. Lowering it deletes nothing: it only refuses new allocations
+	 * beyond it. Validated here too, since the operator MCP and future callers do not all go through the contract.
+	 */
+	setRoleStorage(
+		actorId: string | null,
+		input: { role: StorageRole; quotaBytes: number | null },
+		now = Date.now()
+	): { ok: true } {
+		const actor = this.require(actorId)
+		if (!storageRole.safeParse(input.role).success) throw new ORPCError('BAD_REQUEST', { message: 'UNKNOWN_ROLE' })
+		const bytes = input.quotaBytes
+		if (bytes !== null && !(Number.isSafeInteger(bytes) && bytes > 0 && bytes <= MAX_ROLE_STORAGE_BYTES))
+			throw new ORPCError('BAD_REQUEST', { message: 'INVALID_QUOTA' })
+		return this.database
+			.transaction(() => {
+				if (bytes === null) this.database.query('DELETE FROM role_storage_limits WHERE role=?').run(input.role)
+				else
+					this.database
+						.query(`INSERT INTO role_storage_limits(role,limit_bytes,updated_at,updated_by) VALUES (?,?,?,?)
+   ON CONFLICT(role) DO UPDATE SET limit_bytes=excluded.limit_bytes,updated_at=excluded.updated_at,updated_by=excluded.updated_by`)
+						.run(input.role, bytes, now, actor)
+				return { ok: true as const }
+			})
+			.immediate()
 	}
 	audit(actorId: string | null) {
 		this.require(actorId)

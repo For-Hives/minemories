@@ -1,5 +1,6 @@
 import { oc } from '@orpc/contract'
 import * as z from 'zod'
+import { roleStorage, roleStorageBytes, storageRole } from './account-roles'
 
 const role = z.enum(['user', 'admin'])
 export const adminUser = z.object({
@@ -18,6 +19,8 @@ export const adminUser = z.object({
 	/** Part of `usedBytes` still awaiting object deletion. */
 	pendingDeletionBytes: z.number().nonnegative(),
 	devices: z.number().int().nonnegative(),
+	/** The account's own limit: the largest limit among the roles it holds (see `storageRole`). */
+	quotaBytes: z.number().int().positive(),
 })
 export const adminUserSort = z.enum(['registered_desc', 'registered_asc', 'storage_desc', 'storage_asc'])
 export const adminSummary = z.object({
@@ -113,8 +116,9 @@ export const adminContract = {
 				total: z.number(),
 				page: z.number(),
 				pageSize: z.literal(25),
+				/** Base limit every account gets (the `user` role); an account's own limit is its `quotaBytes`. */
 				quotaBytes: z.number().positive(),
-				/** Counts over every account, whatever the filter or page. */
+				/** Counts over every account, whatever the filter or page; "near" compares with each account's own limit. */
 				overview: z.object({
 					accounts: z.number().int().nonnegative(),
 					usedBytes: z.number().nonnegative(),
@@ -126,6 +130,12 @@ export const adminContract = {
 		.input(z.object({ userId: z.string().min(1).max(200), role, currentPassword: z.string().min(1).max(128) }))
 		.output(z.object({ ok: z.literal(true) })),
 	insights: oc.output(adminInsights),
+	/** Storage limit of every role, with its holders. */
+	storageRoles: oc.output(z.array(roleStorage)),
+	/** Sets a role's limit in bytes; `null` removes it (for `user`, back to `ACCOUNT_STORAGE_BYTES`). Deletes nothing. */
+	setRoleStorage: oc
+		.input(z.object({ role: storageRole, quotaBytes: roleStorageBytes.nullable() }))
+		.output(z.object({ ok: z.literal(true) })),
 	deleteUser: oc
 		.input(z.object({ userId: z.string().min(1).max(200), currentPassword: z.string().min(1).max(128) }))
 		.output(z.object({ ok: z.literal(true) })),

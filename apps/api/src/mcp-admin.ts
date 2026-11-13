@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite'
+import { roleStorageBytes, storageRole } from '@minemories/api-contract'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { ORPCError } from '@orpc/server'
 import * as z from 'zod'
@@ -34,6 +35,32 @@ function guarded<T>(run: () => T) {
 		if (error instanceof ORPCError) return failure(`${error.code}${error.message ? `: ${error.message}` : ''}`)
 		throw error
 	}
+}
+
+/** Storage limits per role (`role-storage.ts`), set as the operator so `updated_by` reads `operator:mcp`. */
+function registerRoleStorageTools(tool: McpServer['registerTool'], roles: AdminRoles, now: () => number) {
+	const as = OPERATOR_ACTOR
+	tool(
+		'list_role_storage',
+		{
+			title: 'Storage by role',
+			description:
+				'Storage limit of every role (user = every account, admin = administrators) in bytes, whether it is ' +
+				'configured, the limit its holders get and how many accounts hold it. An account gets its largest role limit.',
+		},
+		() => guarded(() => roles.storageRoles(as))
+	)
+	tool(
+		'set_role_storage',
+		{
+			title: 'Set role storage',
+			description:
+				'Sets the storage limit of a role in bytes (decimal: 5 GB = 5000000000, at most 1e12), or removes it with ' +
+				'`null` (user then returns to ACCOUNT_STORAGE_BYTES). Lowering a limit deletes nothing; it blocks new uploads.',
+			inputSchema: { role: storageRole, quotaBytes: roleStorageBytes.nullable() },
+		},
+		input => guarded(() => roles.setRoleStorage(as, input, now()))
+	)
 }
 
 /** Everything the administration page shows or changes, plus the matching account and device edits. */
@@ -87,6 +114,7 @@ export function registerAdminTools(
 		},
 		input => guarded(() => admin.roles.setRole(as, input, now()))
 	)
+	registerRoleStorageTools(tool, admin.roles, now)
 	tool(
 		'delete_user',
 		{

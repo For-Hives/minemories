@@ -122,12 +122,65 @@ test('the directory sums quota usage for the whole page in one grouped query, wi
 				'id',
 				'name',
 				'pendingDeletionBytes',
+				'quotaBytes',
 				'reservedBytes',
 				'role',
 				'storedBytes',
 				'usedBytes',
 			].sort()
 		)
+	} finally {
+		db.close()
+	}
+})
+test('storage limits are set per role by administrators and drive each account quota and the overview', () => {
+	const { db, roles } = fixture()
+	try {
+		roles.bootstrap('owner@example.com')
+		const base = roles.users('owner', { query: '', role: 'all', page: 1 }).quotaBytes
+		expect(() => roles.storageRoles(null)).toThrow('Unauthorized')
+		expect(() => roles.storageRoles('other')).toThrow('Forbidden')
+		expect(() => roles.setRoleStorage(null, { role: 'user', quotaBytes: 1 })).toThrow('Unauthorized')
+		expect(() => roles.setRoleStorage('other', { role: 'admin', quotaBytes: 10 ** 12 })).toThrow('Forbidden')
+		for (const quotaBytes of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 10 ** 12 + 1])
+			expect(() => roles.setRoleStorage('owner', { role: 'user', quotaBytes })).toThrow('INVALID_QUOTA')
+		expect(() => roles.setRoleStorage('owner', { role: 'alpha' as 'user', quotaBytes: 1 })).toThrow('UNKNOWN_ROLE')
+		expect(roles.storageRoles('owner')).toEqual([
+			{ role: 'user', limitBytes: null, effectiveBytes: base, accounts: 2, updatedAt: null },
+			{ role: 'admin', limitBytes: null, effectiveBytes: base, accounts: 1, updatedAt: null },
+		])
+		// Both accounts use 95% of the base: only the one without a larger role limit is near its quota.
+		const used = Math.round(base * 0.95)
+		db.query("INSERT INTO memories VALUES ('o','owner',?,NULL),('x','other',?,NULL)").run(used, used)
+		expect(roles.users('owner', { query: '', role: 'all', page: 1 }).overview.nearQuotaAccounts).toBe(2)
+		expect(roles.setRoleStorage('owner', { role: 'admin', quotaBytes: 5_000_000_000 }, 1000)).toEqual({ ok: true })
+		roles.setRoleStorage('owner', { role: 'admin', quotaBytes: 5_000_000_001 }, 2000)
+		expect(db.query("SELECT * FROM role_storage_limits WHERE role='admin'").get()).toEqual({
+			role: 'admin',
+			limit_bytes: 5_000_000_001,
+			updated_at: 2000,
+			updated_by: 'owner',
+		})
+		const page = roles.users('owner', { query: '', role: 'all', page: 1 })
+		expect(page.quotaBytes).toBe(base)
+		expect(Object.fromEntries(page.users.map(u => [u.id, u.quotaBytes]))).toEqual({ owner: 5_000_000_001, other: base })
+		expect(page.overview.nearQuotaAccounts).toBe(1)
+		roles.setRoleStorage('owner', { role: 'user', quotaBytes: 6_000_000_000 }, 3000)
+		expect(roles.storageRoles('owner')).toEqual([
+			{ role: 'user', limitBytes: 6_000_000_000, effectiveBytes: 6_000_000_000, accounts: 2, updatedAt: 3000 },
+			{ role: 'admin', limitBytes: 5_000_000_001, effectiveBytes: 6_000_000_000, accounts: 1, updatedAt: 2000 },
+		])
+		const raised = roles.users('owner', { query: '', role: 'all', page: 1 })
+		expect(raised.quotaBytes).toBe(6_000_000_000)
+		expect(raised.users.map(u => u.quotaBytes)).toEqual([6_000_000_000, 6_000_000_000])
+		expect(raised.overview.nearQuotaAccounts).toBe(0)
+		roles.setRoleStorage('owner', { role: 'user', quotaBytes: null })
+		roles.setRoleStorage('owner', { role: 'admin', quotaBytes: null })
+		expect(roles.storageRoles('owner').map(r => [r.limitBytes, r.effectiveBytes])).toEqual([
+			[null, base],
+			[null, base],
+		])
+		expect(roles.users('owner', { query: '', role: 'all', page: 1 }).overview.nearQuotaAccounts).toBe(2)
 	} finally {
 		db.close()
 	}

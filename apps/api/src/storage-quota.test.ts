@@ -19,6 +19,8 @@ process.env.PAIRING_PEPPER = 'quota-fixture-pepper-secret-at-least-32-characters
 const { app } = await import('./index')
 const { database } = await import('./database')
 const { accountStorageUsage, accountStorageFits, accountStorageSummary } = await import('./storage-quota')
+const { migrateRoleStorage, accountRoles, accountStorageLimit } = await import('./role-storage')
+const { AdminRoles } = await import('./admin-roles')
 const { createPairingCode, exchangePairingCode, deleteMemory, trashMemory, restoreMemory, purgeDeletedMemories } =
 	await import('./pairing')
 const { removeMemory } = await import('./storage')
@@ -67,6 +69,7 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 			INSERT INTO memories VALUES ('one', 100, NULL), ('one', 200, 1), ('two', 9000, NULL);
 			INSERT INTO mod_uploads VALUES ('one', 300, 0, 0), ('one', 9000, 1, 0), ('two', 9000, 0, 0);
 			INSERT INTO object_deletions VALUES ('one', 336, 0), ('one', 64, 1), ('two', 9000, 0), (NULL, NULL, 0);`)
+		migrateRoleStorage(fixture)
 		expect(accountStorageUsage(fixture, 'missing')).toBe(0)
 		expect(accountStorageUsage(fixture, 'one')).toBe(1000)
 		expect(accountStorageSummary(fixture, 'one')).toEqual({
@@ -103,6 +106,93 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 		expect(accountStorageFits(fixture, 'invalid', 0)).toBe(false)
 	} finally {
 		fixture.close()
+	}
+})
+
+test('an account gets the largest limit among its roles; changes apply on the next check and delete nothing', () => {
+	const fixture = new Database(':memory:')
+	try {
+		fixture.exec(`CREATE TABLE user (id TEXT PRIMARY KEY, name TEXT, email TEXT);
+			CREATE TABLE memories (user_id TEXT, size INTEGER, deleted_at INTEGER);
+			CREATE TABLE mod_uploads (user_id TEXT, size INTEGER, completed INTEGER, expires_at INTEGER);
+			CREATE TABLE object_deletions (user_id TEXT, size INTEGER, discard_upload INTEGER);
+			INSERT INTO user VALUES ('root', 'Root', 'root@example.test'), ('member', 'Member', 'member@example.test'),
+				('peer', 'Peer', 'peer@example.test');
+			INSERT INTO memories VALUES ('root', 1000, NULL), ('member', 1000, NULL);`)
+		const roles = new AdminRoles(fixture)
+		roles.bootstrapById('root')
+		const limit = (id: string) => accountStorageSummary(fixture, id).limitBytes
+		// Nothing configured: every role falls back to ACCOUNT_STORAGE_BYTES (1024 here).
+		expect([limit('root'), limit('member'), accountStorageLimit(fixture, 'nobody')]).toEqual([1024, 1024, 1024])
+		expect(accountRoles(fixture, 'root')).toEqual(['user', 'admin'])
+		expect(accountRoles(fixture, 'member')).toEqual(['user'])
+		expect(accountStorageFits(fixture, 'member', 24)).toBe(true)
+		expect(accountStorageFits(fixture, 'member', 25)).toBe(false)
+		// Raising `user` raises everyone, other accounts keep their own usage.
+		roles.setRoleStorage('root', { role: 'user', quotaBytes: 2000 })
+		expect(accountStorageFits(fixture, 'member', 1000)).toBe(true)
+		expect(accountStorageFits(fixture, 'member', 1001)).toBe(false)
+		expect(accountStorageSummary(fixture, 'peer')).toMatchObject({
+			usedBytes: 0,
+			limitBytes: 2000,
+			availableBytes: 2000,
+		})
+		// `admin` above the base: only administrators get it.
+		roles.setRoleStorage('root', { role: 'admin', quotaBytes: 5000 })
+		expect([limit('root'), limit('member')]).toEqual([5000, 2000])
+		expect(accountStorageFits(fixture, 'root', 4000)).toBe(true)
+		expect(accountStorageFits(fixture, 'root', 4001)).toBe(false)
+		// `admin` below the base: the base wins.
+		roles.setRoleStorage('root', { role: 'admin', quotaBytes: 1500 })
+		expect(limit('root')).toBe(2000)
+		// Lowering below the usage keeps every capture and only refuses new bytes.
+		roles.setRoleStorage('root', { role: 'user', quotaBytes: 500 })
+		expect(accountStorageSummary(fixture, 'member')).toMatchObject({
+			usedBytes: 1000,
+			limitBytes: 500,
+			availableBytes: 0,
+		})
+		expect(accountStorageFits(fixture, 'member', 0)).toBe(false)
+		expect(fixture.query("SELECT COUNT(*) AS n FROM memories WHERE user_id = 'member'").get()).toEqual({ n: 1 })
+		// Promotion and demotion change the limit at once.
+		roles.setRole('root', { userId: 'member', role: 'admin' })
+		expect(limit('member')).toBe(1500)
+		expect(accountStorageFits(fixture, 'member', 500)).toBe(true)
+		expect(accountStorageFits(fixture, 'member', 501)).toBe(false)
+		roles.setRole('root', { userId: 'member', role: 'user' })
+		expect(limit('member')).toBe(500)
+		// Removing the limits goes back to the server default.
+		roles.setRoleStorage('root', { role: 'user', quotaBytes: null })
+		expect(limit('member')).toBe(1024)
+		expect(limit('root')).toBe(1500)
+		roles.setRoleStorage('root', { role: 'admin', quotaBytes: null })
+		expect(limit('root')).toBe(1024)
+	} finally {
+		fixture.close()
+	}
+})
+
+test('a role limit set in SQLite reaches uploads and the mod status immediately', async () => {
+	const { owner, token } = paired()
+	try {
+		expect((await legacy(token)).status).toBe(201)
+		expect((await legacy(token)).status).toBe(413)
+		database
+			.query(
+				"INSERT INTO role_storage_limits (role, limit_bytes, updated_at, updated_by) VALUES ('user', 2048, 1, 'test')"
+			)
+			.run()
+		const status = await app.request('/api/mod/status', { headers: headers(token) })
+		expect(((await status.json()) as { storage: unknown }).storage).toMatchObject({
+			usedBytes: 1024,
+			limitBytes: 2048,
+			availableBytes: 1024,
+		})
+		expect((await legacy(token)).status).toBe(201)
+		expect((await legacy(token)).status).toBe(413)
+		expect(accountStorageUsage(database, owner)).toBe(2048)
+	} finally {
+		database.query("DELETE FROM role_storage_limits WHERE role = 'user'").run()
 	}
 })
 
