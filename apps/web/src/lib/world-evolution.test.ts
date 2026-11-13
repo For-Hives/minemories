@@ -143,3 +143,22 @@ it('rejects invalid or duplicated positions', () => {
 	expect(() => composition.set(0, capture)).toThrow(RangeError)
 	expect(composition.compose(0)).toEqual([0])
 })
+
+it('marks the sorted triangles each composition draws, for readers that cannot parse the index', () => {
+	const primitive = buildPrimitive([0, 1, 0, 0, 1, 1, 1, 1, 1, 20, 1, 0, 20, 1, 1, 21, 1, 1], null, {
+		x: 0,
+		y: 63,
+		z: 0,
+	})
+	const composition = new WorldComposition(2)
+	composition.set(0, createCapture(bounds(-8, 40), [primitive]))
+	composition.compose(0)
+	expect([...primitive.shown]).toEqual([1, 1])
+	const newer = buildPrimitive([20, 1, 0, 20, 1, 1, 21, 1, 1], null, { x: 0, y: 63, z: 0 })
+	composition.set(1, createCapture(bounds(16, 40), [newer]))
+	composition.compose(1)
+	expect(primitive.shown.reduce((sum, value) => sum + value, 0) * 3).toBe(primitive.count)
+	expect([...primitive.shown]).toEqual([1, 0])
+	composition.compose(1, 1)
+	expect([...primitive.shown]).toEqual([0, 0])
+})

@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { UnsupportedGlbError } from './lib/glb'
 import { legacyEmissiveToLinear, srgbToLinear } from './lib/glb-colours'
 import { createFaithfulUniforms, type FaithfulUniforms } from './viewer-faithful'
+import { GroundIndex } from './viewer-ground'
 import { disposeImportedObject, ViewerScene } from './viewer-scene'
 
 test('viewer clears loading and refuses unsafe files before calling its texture loader', async () => {
@@ -75,6 +76,7 @@ function sceneFixture() {
 	const fields = {
 		modelRoot,
 		hiddenCategories: new Set(),
+		groundIndex: new GroundIndex(),
 		camera: new THREE.PerspectiveCamera(),
 		sky: new THREE.Mesh(),
 		controls: { target: new THREE.Vector3() },
@@ -512,12 +514,18 @@ test('the ground below the pivot is measured on visible surfaces only, throttled
 	modelRoot.updateMatrixWorld(true)
 	const pivot = { wanted: true }
 	const target = new THREE.Vector3(0, 0, 0)
+	const groundIndex = new GroundIndex()
+	const index = (root: THREE.Object3D) => {
+		groundIndex.track(root)
+		while (groundIndex.pending) groundIndex.work(50)
+	}
+	index(modelRoot)
 	Object.assign(scene, {
 		modelRoot,
 		pivot,
 		navigation: { active: false },
 		controls: { target },
-		groundRay: new THREE.Raycaster(),
+		groundIndex,
 		probedTarget: new THREE.Vector3(Number.NaN, 0, 0),
 		ground: null,
 		lastProbe: 0,
@@ -529,6 +537,12 @@ test('the ground below the pivot is measured on visible surfaces only, throttled
 	roof.position.y = 2
 	modelRoot.add(roof)
 	modelRoot.updateMatrixWorld(true)
+	groundIndex.track(roof)
+	target.set(0, 0.05, 0)
+	// Until its grid is built in the background, a new capture is not part of the ground yet.
+	internals.probeGround(1100)
+	expect(internals.ground).toBeCloseTo(-4.5)
+	index(roof)
 	target.set(0, 0.1, 0)
 	internals.probeGround(1150)
 	expect(internals.ground).toBeCloseTo(2.5)
@@ -584,6 +598,7 @@ test('categories of a format 2 capture can be hidden and restored, including on 
 	Object.assign(scene, {
 		modelRoot,
 		hiddenCategories: new Set(),
+		groundIndex: new GroundIndex(),
 		keyLight: { shadow: { needsUpdate: false } },
 		renderer: { shadowMap: { needsUpdate: false } },
 	})

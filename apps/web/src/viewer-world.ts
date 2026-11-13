@@ -77,6 +77,8 @@ export function prepareLayer(root: THREE.Object3D, origin: BlockPoint, bounds: B
 		index.setUsage(THREE.DynamicDrawUsage)
 		geometry.setIndex(index)
 		geometry.setDrawRange(0, 0)
+		// The pivot's ground index reads the stable triangle order, not this rewritable buffer (see viewer-ground).
+		geometry.userData.ground = { corners: primitive.sorted, shown: primitive.shown }
 		meshes.push({ mesh: object, primitive })
 	})
 	for (const light of detached) light.removeFromParent()

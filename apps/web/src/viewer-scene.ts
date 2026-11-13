@@ -17,6 +17,7 @@ import { type CloudContext, MinecraftClouds } from './viewer-clouds'
 import { ViewerEffects, type ViewerQuality, type ViewerWeather } from './viewer-effects'
 import { createFaithfulUniforms, prepareFaithfulLighting, setLightVolume } from './viewer-faithful'
 import { framingBounds, isLightBeam, orbitFocus } from './viewer-framing'
+import { GROUND_ABOVE, GroundIndex } from './viewer-ground'
 import { ViewerNavigation } from './viewer-navigation'
 import { ViewerPivot } from './viewer-pivot'
 import { ViewerPrecipitation } from './viewer-precipitation'
@@ -179,7 +180,7 @@ export class ViewerScene {
 	/** Bumped for every block light build: a slower, older build of a timelapse step never replaces a newer one. */
 	private lightBuild = 0
 	private readonly pivot = new ViewerPivot()
-	private readonly groundRay = new THREE.Raycaster()
+	private readonly groundIndex = new GroundIndex()
 	private readonly probedTarget = new THREE.Vector3(Number.NaN, 0, 0)
 	private ground: number | null = null
 	private lastProbe = 0
@@ -424,6 +425,7 @@ export class ViewerScene {
 			for (const child of previous) child.visible = false
 			this.modelRoot.add(imported)
 			attached = true
+			this.groundIndex.track(imported)
 			this.applyCategories(imported)
 			this.prepareWorldLighting(imported)
 			this.ceilingDirty = true
@@ -507,6 +509,7 @@ export class ViewerScene {
 			})
 			const first = this.modelRoot.children.length === 0
 			this.modelRoot.add(root)
+			this.groundIndex.track(root)
 			this.applyCategories(root)
 			await this.renderer.compileAsync(root, this.camera, this.scene)
 			this.ensureLoadActive(signal)
@@ -654,16 +657,15 @@ export class ViewerScene {
 		if (target.distanceToSquared(this.probedTarget) < 0.0025 || timestamp - this.lastProbe < 120) return
 		this.lastProbe = timestamp
 		this.probedTarget.copy(target)
-		const meshes: THREE.Object3D[] = []
-		this.modelRoot.traverseVisible(object => {
-			if (object instanceof THREE.Mesh && !isLightBeam(object.material as THREE.Material)) meshes.push(object)
-		})
 		// A framed pivot often sits inside the terrain: take the surface vertically closest to it, above or below.
-		this.groundRay.set(new THREE.Vector3(target.x, target.y + 256, target.z), new THREE.Vector3(0, -1, 0))
-		this.groundRay.far = 768
 		let nearest: number | null = null
-		for (const hit of this.groundRay.intersectObjects(meshes, false))
-			if (nearest === null || Math.abs(hit.point.y - target.y) < Math.abs(nearest - target.y)) nearest = hit.point.y
+		const keep = (height: number) => {
+			if (nearest === null || Math.abs(height - target.y) < Math.abs(nearest - target.y)) nearest = height
+		}
+		this.modelRoot.traverseVisible(object => {
+			if (object instanceof THREE.Mesh && !isLightBeam(object.material as THREE.Material))
+				this.groundIndex.heights(object, target.x, target.z, target.y + GROUND_ABOVE, keep)
+		})
 		this.ground = nearest
 	}
 
@@ -818,6 +820,7 @@ export class ViewerScene {
 		this.clouds.dispose()
 		this.scene.remove(this.precipitation.object, this.pivot.object)
 		this.pivot.dispose()
+		this.groundIndex.dispose()
 		this.precipitation.dispose()
 		this.clouds.removeFromParent()
 		disposeImportedObject(this.scene)
@@ -855,6 +858,8 @@ export class ViewerScene {
 			this.quality !== 'eco' && !this.reducedMotion && this.atmosphere.celestial,
 			this.daylight
 		)
+		// Index the ground in the background, a little each frame, so the pivot never raycasts a whole capture.
+		if (this.groundIndex.pending) this.groundIndex.work(3)
 		this.probeGround(timestamp)
 		this.pivot.update(deltaSeconds, this.camera, this.controls.target, !this.navigation.active, this.ground)
 		this.renderScene()
