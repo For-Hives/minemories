@@ -26,7 +26,7 @@ function Overview({ directory }: { directory: AdminDataset['directory'] }) {
 				))}
 			</dl>
 			<p className="mm-admin-note">
-				{t('Quota per account: {quota}', { quota: formatBytes(directory.quotaBytes, locale) })}
+				{t('Base quota per account: {quota}', { quota: formatBytes(directory.quotaBytes, locale) })}
 			</p>
 		</>
 	)
@@ -36,10 +36,11 @@ function levelLabel(level: ReturnType<typeof quotaLevel>, t: Translate): string 
 	return level === 'near' ? t('Near quota') : null
 }
 
-/** Quota use of one account: a labelled bar plus the same facts in text, so colour is never the only signal. */
-function StorageMeter({ user, quotaBytes }: { user: AdminUser; quotaBytes: number }) {
+/** Quota use of one account against its own limit (its largest role limit), with the same facts in text. */
+function StorageMeter({ user }: { user: AdminUser }) {
 	const { t, locale } = useI18n()
-	const percent = quotaPercent(user.usedBytes, quotaBytes),
+	const quotaBytes = user.quotaBytes,
+		percent = quotaPercent(user.usedBytes, quotaBytes),
 		level = quotaLevel(percent),
 		used = formatBytes(user.usedBytes, locale),
 		quota = formatBytes(quotaBytes, locale),
@@ -181,7 +182,7 @@ export function Directory({
 								<td data-label={t('Registered')}>{new Date(user.createdAt).toLocaleDateString(locale)}</td>
 								<td data-label={t('Captures')}>{user.captures.toLocaleString(locale)}</td>
 								<td data-label={t('Storage')}>
-									<StorageMeter user={user} quotaBytes={directory.quotaBytes} />
+									<StorageMeter user={user} />
 								</td>
 								<td className="mm-admin-actions">
 									<button

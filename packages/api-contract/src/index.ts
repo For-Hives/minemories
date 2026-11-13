@@ -106,6 +106,14 @@ const memorySchema = z.object({
 	}),
 })
 
+export {
+	MAX_ROLE_STORAGE_BYTES,
+	type RoleStorage,
+	roleStorage,
+	roleStorageBytes,
+	type StorageRole,
+	storageRole,
+} from './account-roles'
 export type { AdminInsights, AdminSummary, AdminUser, AdminUserSort } from './admin'
 
 /** Java Edition usernames: 3 to 16 letters, digits and underscores. */

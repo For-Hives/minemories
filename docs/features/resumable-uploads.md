@@ -60,12 +60,14 @@ Sessions expire after 24 hours. Cleanup runs at startup, every hour and on
 initialization. It removes temporary files and S3 objects/parts abandoned after
 a storage attempt; unavailable storage keeps the session for a later cleanup.
 
-A [per-account GLB quota](account-storage-quota.md), 2 GiB by default and
-configurable with `ACCOUNT_STORAGE_BYTES`, comes on top of global staging. It
-shares the budget across all devices, legacy and resumable uploads, the trash
-and pending deletions. Exceeding it returns `storage_quota_exceeded`
-(HTTP 413); a reservation already obtained is not charged twice on replay
-or finalization. Space is released only after successful cleanup.
+A [per-account GLB quota](account-storage-quota.md) comes on top of global
+staging. Each account gets the largest limit among its roles, which an
+administrator sets [per role](account-storage-quota.md#limits-by-role);
+`ACCOUNT_STORAGE_BYTES` (2 GiB by default) is only the server default for the
+`user` role. The quota shares the budget across all devices, legacy and
+resumable uploads, the trash and pending deletions. Exceeding it returns
+`storage_quota_exceeded` (HTTP 413); a reservation already obtained is not
+charged twice on replay or finalization. Space is released only after successful cleanup.
 
 Finalization streams the file to S3 with **8 MiB** SDK parts, sent one at a
 time with AWS SDK v3. Durable cleanup walks every page of multipart uploads and

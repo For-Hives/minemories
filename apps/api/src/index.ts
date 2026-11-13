@@ -159,6 +159,10 @@ const router = os.router({
 		summary: os.admin.summary.handler(({ context, input }) => adminMetrics.summary(context.userId, input.hours)),
 		users: os.admin.users.handler(({ context, input }) => adminRoles.users(context.userId, input)),
 		insights: os.admin.insights.handler(({ context }) => adminInsights.read(context.userId)),
+		storageRoles: os.admin.storageRoles.handler(({ context }) => adminRoles.storageRoles(context.userId)),
+		setRoleStorage: os.admin.setRoleStorage.handler(({ context, input }) =>
+			adminRoles.setRoleStorage(context.userId, input)
+		),
 		deleteUser: os.admin.deleteUser.handler(({ context, input }) => {
 			const actorId = adminRoles.require(context.userId)
 			return accountSecurity.confirmed(accountIdentity(context), input.currentPassword, () =>

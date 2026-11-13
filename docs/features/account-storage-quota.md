@@ -1,10 +1,50 @@
 # Per-account storage quota
 
-The API caps the GLB bytes allocated to an account. The default limit is
-**2 GiB**, i.e. 2,147,483,648 bytes. `ACCOUNT_STORAGE_BYTES` changes it at
-startup; the value must be a positive integer that JavaScript can represent
-exactly. An invalid value stops the API before SQLite is opened. This technical
-limit does not define a commercial offer or a subscription.
+The API caps the GLB bytes allocated to an account. The limit is set per role
+([limits by role](#limits-by-role)); without any configured limit every account
+gets **2 GiB**, i.e. 2,147,483,648 bytes. `ACCOUNT_STORAGE_BYTES` changes that
+server default at startup; the value must be a positive integer that JavaScript
+can represent exactly. An invalid value stops the API before SQLite is opened.
+This technical limit does not define a commercial offer or a subscription.
+
+## Limits by role
+
+Every account holds the `user` role; accounts in `user_roles` also hold
+`admin`. The list of roles is `storageRole` in
+`packages/api-contract/src/account-roles.ts`, the single source shared by the
+API, the admin page and the operator MCP.
+
+An administrator sets a limit per role from the admin page (“Storage by role”)
+or the operator MCP (`set_role_storage`). Limits live in the SQLite table
+`role_storage_limits(role, limit_bytes, updated_at, updated_by)`, created by an
+additive migration (`migrateRoleStorage`, run by `database.ts` at startup and
+by `AdminRoles`). Values are decimal bytes, like every size the web and the mod
+show: 5 GB is 5,000,000,000 bytes. A limit is a positive integer up to
+1,000,000,000,000 bytes (1 TB).
+
+An account's limit is the **largest** limit among the roles it holds:
+
+- `user` uses its configured limit, otherwise `ACCOUNT_STORAGE_BYTES`. Setting
+  it changes the base for everyone; removing it returns to the server default.
+- Any other role contributes its configured limit, or nothing when it has none.
+  An `admin` limit below the base therefore changes nothing: admins keep the
+  base.
+
+The rule is one SQL expression (`accountLimitSql` in
+`apps/api/src/role-storage.ts`) used by the upload check, the account summary,
+the mod status and the admin account list. It is read inside the same
+`IMMEDIATE` transactions as the usage. Promoting or demoting an administrator,
+or changing a limit, applies to the next allocation and the next summary.
+Lowering a limit deletes nothing: an account above it keeps its captures, shows
+no available space and cannot reserve new bytes until it frees some.
+
+To add a role later (alpha testers, paid tiers): add it to `storageRole`, give
+it a membership source in `ROLE_MEMBERSHIP` (`role-storage.ts`, a SQL condition
+on the account id, e.g. a table filled by hand or by billing) and a label in
+`AdminRoleStorage.tsx`. Both are typed records over the role list, so the
+typecheck fails until they exist; no migration is needed. Billing
+([billing](billing.md)) grants no role today: a paid tier will only change
+quotas once billing feeds such a membership source.
 
 For a given owner, the total adds up:
 
@@ -35,7 +75,8 @@ Replaying the same initialization returns its receipt without a new allocation.
 Finalization converts the reservation into a capture in a single transaction.
 Replaying it adds no bytes. A legacy reservation that already puts the account
 over the limit cannot be finalized until space is freed; existing captures stay
-accessible. Changing the limit causes no additional automatic deletion.
+accessible. Changing a limit (or a role) causes no additional automatic
+deletion.
 
 Before anything is sent to storage, the legacy endpoint records a cleanup intent
 with the key, the owner and the byte count in `object_deletions`. That record
@@ -89,14 +130,15 @@ header is also applied to the other private RPC responses.
 | Field | Meaning, in bytes |
 | --- | --- |
 | `usedBytes` | Total of captures, trash, reserved uploads and pending deletions. |
-| `limitBytes` | Limit configured on this API. |
+| `limitBytes` | Limit of this account: the largest limit among its roles. |
 | `availableBytes` | Reservable space, never below zero, even for a legacy account over the limit. |
 | `reservedBytes` | Incomplete resumable sessions and unpublished legacy intents, including their cleanup after a failure. |
 | `pendingDeletionBytes` | Permanently deleted or purged captures whose object is still waiting to be erased. |
 
-The summary is computed in a single SQLite query, without reading GLBs or
-querying the bucket. A per-owner index backs the cleanup queue. Old jobs with no
-size/owner stay out of the summary, as they do from the quota.
+The summary, including the account's limit, is computed in a single SQLite
+query, without reading GLBs or querying the bucket. A per-owner index backs the
+cleanup queue. Old jobs with no size/owner stay out of the summary, as they do
+from the quota.
 
 The gallery refreshes the summary along with its captures every twelve seconds
 and after its actions. It shows the available space, the permanent deletion
@@ -148,6 +190,12 @@ profile.
 
 ## Checks
 
+- Role limits: raising and lowering `user` and `admin`, the largest limit
+  winning, the server default when `user` is reset, promotion and demotion
+  applied on the next check, exact boundary, nothing deleted when lowered;
+  real oRPC sessions (anonymous, non-admin, invalid and unknown values), a
+  legacy upload and `GET /api/mod/status` following a new limit, and the
+  operator MCP tools.
 - Boundary tests, isolation between owners/devices, reservations and trash
   added together, invalid numeric values, migration and replay.
 - Concurrent legacy/legacy and legacy/resumable requests: a single allocation at
