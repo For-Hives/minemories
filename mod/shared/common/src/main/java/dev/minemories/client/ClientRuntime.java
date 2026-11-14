@@ -1835,6 +1835,31 @@ public final class ClientRuntime {
               dispatcher.getPackedLightCoords(entity, 1f));
           buffers.finish();
         });
+    if (ContraptionCapture.isContraption(entity)) captureContraption(capture, mc, entity, center);
+  }
+
+  /**
+   * A Create contraption's assembled blocks (windmill sails, machines on a bearing, train bodies):
+   * its renderer leaves them to a pass of their own. Filed with the machines, not the creatures, so
+   * hiding creatures in the viewer keeps the windmills.
+   */
+  private static void captureContraption(
+      RenderedModelCapture capture, Minecraft mc, Entity entity, BlockPos center) {
+    capture.classify(
+        GlbCategory.BLOCK_ENTITIES,
+        CaptureSink.relativeChunk(entity.getBlockX(), center.getX()),
+        CaptureSink.relativeChunk(entity.getBlockZ(), center.getZ()));
+    var buffers = capture.buffers("create:contraption", 0f);
+    PoseStack pose = new PoseStack();
+    pose.translate(
+        entity.getX() - center.getX(),
+        entity.getY() - center.getY(),
+        entity.getZ() - center.getZ());
+    CaptureRenderScope.render(
+        () -> {
+          ContraptionCapture.render(entity, pose, buffers, mc.getBlockRenderer());
+          buffers.finish();
+        });
   }
 
   private static class FluidVertexConsumer implements VertexConsumer {

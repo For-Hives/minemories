@@ -365,11 +365,49 @@ Limits:
   Fabric 1.19.2 carry the same mixin against the same Flywheel 0.6 method, and
   build, but were not run with Create.
 - A train's body (its contraption blocks) is drawn by Create in its own layer
-  pass, not by the entity renderer, so it is still not captured; its bogeys
-  should be. No train stood in the recaptured zone.
+  pass, not by the entity renderer: see contraptions below.
 - A build cut by the capture box keeps only the part inside it. Zone 3's box
   stops at X 1321, so the castle at X 1311 to 1324 lost its back; that is the
   bounds, not this renderer.
+
+### Create contraptions (windmills, bearings, pistons, pulleys, trains)
+
+Everything Create has assembled into a moving structure is a contraption entity: windmill sails, a
+harvester or saw arm on a mechanical bearing, a piston's or pulley's moving blocks, a gantry, a
+train carriage. Create draws those blocks in a render pass of its own; the entity renderer only
+draws the actors and the empty pivot. A capture therefore kept the bearings but not the sails or
+the arms.
+
+`ContraptionCapture` draws them again, right after the contraption entity: it reads the blocks
+with `getContraption().getBlocks()`, applies the contraption's own pose with
+`applyLocalTransforms(PoseStack, float)` (the same call Create makes before drawing it, so a
+windmill keeps its current angle), then draws each block model with the game's block renderer.
+Create is not a compile dependency: the class is found by its simple name
+`AbstractContraptionEntity` under `com.simibubi.create.`, the methods by name, and any failure
+only drops that contraption's blocks. They are filed under `block_entities` with the machines,
+not under `entities`, so hiding creatures in the viewer keeps the windmills.
+
+On Lalaland (Fabric 1.20.1, Create 0.5.1) the world save holds 11 windmill bearings and 13
+mechanical bearings, all running, carrying sails, linear and radial chassis, harvesters, saws,
+deployers and portable storage interfaces. Recaptured with the same origin and bounds before and
+after the change:
+
+| Zone | `block_entities` quads before | after | Contraption primitives |
+|---|---|---|---|
+| White cliffs house, 1262 183 -745, r64 | 1,894 | 7,259 | 29 (sails `frame` and `canvas_white`, chassis, harvesters) |
+| Base A, 1008 155 220, r64 | 2,863 | 21,419 | 21 (sails, chassis, the farm's harvester arms) |
+
+Stills from the same camera show the windmill on the black tower with its sails at their real
+angle, and the round farm with its rotating harvester arms, both missing before.
+
+Limits:
+- Only block models are drawn. Parts Create animates on top of a block (a harvester's blades, a
+  saw's blade, a deployer's hand, a train's bogeys inside a carriage) keep their static model.
+- Blocks are drawn whole, without hiding the faces between neighbours: more quads than the
+  same blocks in the world.
+- Only Fabric 1.20.1 with Create 0.5.1 was exercised in game. Older families read the
+  structure block's fields instead of its record accessors (`adapt.gradle`); Create 6 on 1.21.1
+  keeps the same names but was not run.
 
 ## How a block quad gets its colour
 
