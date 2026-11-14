@@ -12,6 +12,16 @@ Minecraft renderer. `ENTITYBLOCK_ANIMATED` blocks no longer receive the block
 manager's placeholder model. A block combining a baked model and a renderer
 keeps both parts.
 
+A block entity is captured wherever it is in the area. In game, Minecraft draws
+one only within its renderer's view distance of the camera (64 blocks by
+default), and until 14 November 2026 the capture went through that same check:
+an export wider than 64 blocks, or an around-player capture going deeper than
+that, lost the lids, signs and machine parts past it while their bases stayed.
+The capture now calls the renderer itself, as the dispatcher does but without
+the distance check; 1.21.11 and later already extracted the render state
+directly. The render bench (`bun mod bench`) checks it with wide tiles
+(`tileSpan`).
+
 ## Geometry and textures
 
 The collector receives the positions transformed by the renderer and its UVs. It

@@ -77,7 +77,19 @@ ext.adaptDir = { File root ->
         2f);''', n)
             // Lots 4-5: block entities and entities go through the submit pipeline.
             t = rep(t, 'beRenderer.prepare(level, mc.gameRenderer.getMainCamera(), captureHitResult(mc));', 'beRenderer.prepare(mc.gameRenderer.getMainCamera());', n)
-            t = rep(t, 'dispatcher.render(blockEntity, 1f, pose, buffers);', 'SubmitCapture.blockEntity(dispatcher, blockEntity, pose, buffers);', n)
+            // SubmitCapture extracts the render state itself, past the camera's view distance too.
+            t = rep(t, '''    var renderer = dispatcher.getRenderer(blockEntity);
+    var level = blockEntity.getLevel();
+    if (renderer == null
+        || level == null
+        || !blockEntity.getType().isValid(blockEntity.getBlockState())) return;
+    renderer.render(
+        blockEntity,
+        1f,
+        pose,
+        buffers,
+        LevelRenderer.getLightColor(level, blockEntity.getBlockPos()),
+        OverlayTexture.NO_OVERLAY);''', '''    SubmitCapture.blockEntity(dispatcher, blockEntity, pose, buffers);''', n)
             t = rep(t, '''dispatcher.prepare(
         level,
         mc.gameRenderer.getMainCamera(),''', '''dispatcher.prepare(
