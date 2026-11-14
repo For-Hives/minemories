@@ -4,6 +4,8 @@
 
 - Code, comments, docs, commit messages and PR text are written in English. French only lives in translation catalogs (`apps/web/src/i18n/locales/*.json` other than the English ones, and the mod's `lang/*.json` files other than `en_*.json`) and in tests that check those translations.
 
+- Site copy is short and plain: one idea per sentence, a person or the mod as the subject ("you", "the mod"), no stacked nouns or filler. Readers skim, so fewer words get read more. Changing an English string renames its key in every `locales/*.json`; French uses "tu" and "capture" (not "snapshot").
+
 ## Monorepo Map
 
 - `apps/web/` — React + Three.js SPA (Bun workspace `@minemories/web`).

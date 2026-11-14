@@ -128,7 +128,7 @@ export function AccountPage() {
 			<p className="mm-account-note">
 				{hasPassword
 					? t(
-							'Confirm email and password changes with your current password. Every device will be signed out; sign in with your updated credentials. Your memories and paired devices stay linked to the same account.'
+							'Changing your email or password asks for your current password. You’ll be signed out everywhere and sign in again. Your memories and connected games stay on your account.'
 						)
 					: t('Manage your email and password with your sign-in provider.')}
 			</p>
