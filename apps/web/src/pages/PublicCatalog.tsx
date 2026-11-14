@@ -13,7 +13,6 @@ type Category = Capture['category']
 // The game's text field (kit .mc-field): black, grey 2 px edge, white on focus; the value in the reading font, at the 44 px target.
 const fieldClass = 'mc-field w-full! h-11! [font-family:var(--ds-f-text)]!'
 const areaClass = 'mc-textarea w-full! [font-family:var(--ds-f-text)]!'
-const selectClass = 'mc-select__control h-11! [font-family:var(--ds-f-text)]!'
 // Labels in the game's font.
 const labelClass = 'grid gap-2 [font:400_var(--ds-fs-xs)/var(--ds-lh-xs)_var(--f-ui)]'
 const categories: Category[] = ['build', 'landscape', 'adventure', 'other']
