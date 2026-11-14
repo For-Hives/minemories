@@ -10,7 +10,8 @@ a new one.
 | Baked block models in the chunk mesh | terrain, most modded blocks | terrain walk (`captureCell`) | captured |
 | A renderer per block entity or entity, on the CPU | chests, beds, mobs, Create parts | rendered collector (`RenderedModelCapture`) | captured |
 | The same renderers moved to the GPU by an instancing backend | Flywheel 1.0 (Create 6), Flywheel 0.6 (Create 0.5.1) | `CaptureRenderScope` + Flywheel mixins force the CPU path while one model is collected | captured, see [modpack renderer validation](modpack-renderer-validation.md) |
-| **Blocks stored away from where they are drawn** | Sable sub-levels: Create Aeronautics planes and balloons, Simulated physics assemblies, Offroad cars | detached volumes (`CaptureVolume`) | captured for Sable, below |
+| **Blocks stored away from where they are drawn** | Sable sub-levels: Create Aeronautics planes and balloons, Simulated physics assemblies, Offroad cars | detached volumes (`CaptureVolume`, `SableVolumes`) | captured for Sable, below |
+| The same, through Valkyrien Skies 2 | VS2 ships: Eureka, Clockwork, Trackwork (Minecraft 1.20.1 and older) | detached volumes (`CaptureVolume`, `ValkyrienVolumes`) | captured, [below](#valkyrien-skies-2-ships) |
 | Blocks drawn by a level-render pass instead of the entity renderer | Create 0.5.1 contraption bodies (bearings, trains, minecart contraptions on Minecraft 1.18.2 to 1.20.1) | none yet | missing |
 | Pure GPU effects | shaders, glint, particles | none | out of scope ([capture limits](frozen-entities.md)) |
 
@@ -54,10 +55,32 @@ with this Sable version` once and the capture goes on without the sub-levels (un
 probe, which fails the capture: a missing plane leaves the rest of the memory intact, a half-drawn
 build does not).
 
+### Valkyrien Skies 2 ships
+
+Valkyrien Skies 2 (the library of Eureka, Clockwork and Trackwork) stores a ship's blocks in a
+"shipyard" chunk claim about 28 million blocks from the origin and draws them with the ship's
+ship-to-world transform. `ValkyrienVolumes` asks VS2's public API
+(`VSGameUtilsKt.getShipsIntersecting(Level, AABB)`) for the ships whose world box meets the capture
+box, and for each one returns:
+
+- its shipyard block box (`Ship.getShipAABB()`; VS2 2.4.11's maximum is exclusive, it is read as
+  inclusive so another version's inclusive box is never cut, at the cost of a layer of air; a ship
+  without one falls back to its world box mapped back into the shipyard);
+- a `Placement` from `Ship.getTransform()`: VS2 builds its matrix as `translate(positionInWorld) ·
+  rotate(rotation) · scale(scaling) · translate(−positionInModel)`, which is the placement's
+  convention with the position in the ship as pivot. The getters of older VS cores
+  (`getPositionInShip`, `getShipToWorldRotation`, `getShipToWorldScaling`) are read when the newer
+  ones are absent;
+- the ownership test `Ship.getChunkClaim().contains(chunkX, chunkZ)`.
+
+The transform is the client's latest tick, like Sable's `logicalPose`. VS2 only exists for Minecraft
+1.20.1 and older (2.4.11 is the last, April 2026); the class ships in every JAR and does nothing
+where VS2 is absent. A VS2 version whose API no longer matches logs `Valkyrien Skies ships are not
+captured with this Valkyrien Skies version` once.
+
 ### Adding another mod that stores blocks elsewhere
 
-Valkyrien Skies 2 ships (Eureka, Clockwork, Trackwork) work the same way: blocks in a "shipyard",
-drawn with a ship-to-world transform. A new integration is one class implementing
+A new integration is one class implementing
 `CaptureVolume.Source` that returns, for each ship drawn inside the box, its storage cells, a
 `Placement` and the test telling whether a storage chunk belongs to it, then one line in
 `CaptureVolume.SOURCES`. Use the mod's public API by reflection, return nothing when the mod is
@@ -70,7 +93,9 @@ Unit tests: `PlacementTest` (rotation about a pivot, inverse, normalization, sub
 precision twenty million blocks away, storage cells covering a drawn box, invalid placements),
 `PlacedSinkTest` (quads, rendered quads and lights moved into the capture frame, chunk of the drawn
 position, mirrored placements keep their winding), `CaptureVolumeTest` (plot ownership, per-capture
-limits, a volume is never sealed).
+limits, a volume is never sealed), `ValkyrienVolumesTest` (a VS2 transform gives the same world
+point as VS2's own ship-to-world matrix, older getter names, VS2 implementation classes called
+through their public interface, an unknown transform is rejected, the shipyard box).
 
 In game, 14 November 2026: Minecraft 1.21.1 / NeoForge 21.1.248 dev client (`runClientGametest`),
 with the exact JARs of the `mc breval` profile: Create 6.0.10, Sable 2.0.5 and Create Aeronautics
@@ -94,3 +119,29 @@ renders, scene script): `~/.local/state/minemories-validation/moving-structures-
 Not exercised: a Create contraption carried by a sub-level (the bench's on-board bearing lost its
 contraption when `/sable assemble` moved it, in game too, so there was nothing to capture), ships
 built with Aeronautics' physics assembler in survival, Fabric, and a full modpack.
+
+### Valkyrien Skies 2
+
+In game, 14 November 2026: Minecraft 1.20.1 / Fabric Loader 0.19.5 + Fabric API 0.92.12 dev client
+(`runClientGametest`) with Valkyrien Skies 2.4.11 and Eureka 1.6.4 (Modrinth Fabric JARs, SHA-512
+checked; the mods they bundle extracted next to them, since the dev client does not open nested
+JARs). The Forge 1.20.1 dev client cannot run VS2 (its bundled libraries and newer Mixin are not
+loaded outside a production install), so Forge was not exercised. A flat world gets a 5 × 5 ship
+(planks, a red wool wall, an Eureka oak ship helm, a white balloon, a chest, a lantern, glass) about
+nine blocks above the ground, assembled with VS2's `ShipAssembler.assembleToShip` (40 blocks) and
+teleported turned 30° about Y with VS2's own `teleportShip`; it settles on the ground.
+`/minemories export 12`:
+
+| | Without `ValkyrienVolumes` | With it |
+| --- | --- | --- |
+| Ship blocks (planks, wool, glass, lantern, helm, balloon) | absent | present, turned 30° (a glass cube spans 1.36 = cos 30° + sin 30°, the 5-block deck 6.83) |
+| Chest and helm block entities on the ship | absent | present |
+| Drawn deck extent vs VS2's own `getWorldAABB()` | — | same to 0.01 block (x −9.59 … −2.76) |
+| Log | — | `Moving structures captured: 1` |
+
+The Blender 5.2.2 renders of both GLBs from the same camera show the ship only with the change.
+Evidence (GLBs, logs, client transform probe, renders, scene, bench harness patch):
+`~/.local/state/minemories-validation/valkyrien-ships-20261114/`.
+
+Not exercised: Forge, Minecraft 1.18.2 and 1.19.2, Clockwork and Trackwork, a ship in flight (the
+pose is the latest client tick either way), a scaled ship, and a full modpack.
