@@ -28,9 +28,11 @@ Where the viewer differs from the game:
 
 - In 1.21.1 a double tap starts a sprint only on the ground. The viewer always flies, so it accepts a double tap in
   the air.
-- The viewer's own field of view (45°) is the flying one: entering flight does not widen it; only sprinting does
-  (×1.15). Turned off with "Wider view when flying fast" or `prefers-reduced-motion`. A postcard always uses the
-  camera's own field of view.
+- The viewer's own field of view (45° vertical) is the flying one: entering flight does not widen it; only
+  sprinting does (×1.15). Turned off with "Wider view when flying fast" or `prefers-reduced-motion`.
+- A narrow screen gets a wider view while flying (`comfortableFov`): the vertical field of view rises until the view
+  is 50° across, up to 90° vertical. A phone held upright goes from 22° across to about 49°; a laptop keeps 45°
+  vertical (67° across). It follows resizes and rotations. A postcard always uses the camera's own 45°.
 - The wheel never goes below 0.005 (10%), so the flight cannot stop. A trackpad's stream of small deltas adds up to
   whole notches (100 pixels each) instead of jumping to the top speed.
 
@@ -45,7 +47,9 @@ Where the viewer differs from the game:
   on QWERTY (W), AZERTY (Z) and QWERTZ (W) with the same binding.
 - While flying, a key bound to flight never also triggers the viewer's shortcuts (R recentres, T starts the tour).
 - Ctrl+W, Ctrl+T and Ctrl+N cannot be stopped by a page outside fullscreen with Keyboard Lock, so no default uses
-  Ctrl. Browser shortcuts (Ctrl+F…) pass through unless the modifier itself is bound.
+  Ctrl. Browser shortcuts (Ctrl+F…) pass through, unless a bound modifier is the one held: with Ctrl bound to
+  sprint, W pressed with Ctrl down still flies (the tab may still close on Ctrl+W outside fullscreen, hence the
+  warning).
 
 ## Key sets and settings (`apps/web/src/lib/flight-controls.ts`, `components/FlightControls.tsx`)
 
@@ -85,8 +89,13 @@ laptop with a touch screen switches both ways):
 - the other thumb drags on the scene to look, turning twice as far per pixel as a mouse at the same sensitivity;
 - each finger keeps its role (stick, button or look), so two thumbs work together.
 
-While flying on touch, the hour strip and the caption make way for the controls. iOS's double-tap and pinch zoom are
-blocked on the controls (`touch-action: none` and `gesturestart`). Safe areas are respected.
+While flying on touch, the hour strip and the caption make way for the controls, which sit left of the toolbar's
+column and above the Immerse button. The flight card folds at the first gesture outside it, down to its Controls
+and Show help buttons. iOS's double-tap and pinch zoom are blocked on the controls (`touch-action: none` and
+`gesturestart`). Safe areas are respected.
+
+A phone on its side (under 520 px tall, coarse pointer) no longer gets the viewer's 520 px minimum height, which made
+the page scroll and pushed the controls off screen; the toolbar then sits under the header and scrolls if needed.
 
 ## Where the flight starts
 
@@ -99,9 +108,12 @@ the flight continues from there, at rest.
 - Unit tests: `lib/flight.test.ts` and `lib/flight-controls.test.ts` (100% coverage), `viewer-navigation.test.ts`,
   `components/flight-controls.test.tsx` (rebinding, layouts, presets, settings, touch stick with two fingers,
   shortcuts while flying, speed notice).
-- In a real Chromium with WebGL (Playwright, GPU, 14 November 2026), on `tour-r128/zone-4.glb`: AZERTY guessed from
-  `fr-FR` (the card reads "Z Q S D fly"), flying forward and up, the wheel at 130%, the Controls panel, a mouse lock
-  click that leaves the view still; on a 390×844 phone viewport with touch, the stick and buttons with two thumbs at
-  once (CDP touch events).
-- Not checked yet: real phones and tablets (iOS Safari, Android Chrome), a real mouse lock (headless Chromium does
-  not grant it), gamepads.
+- In a real Chromium with WebGL (Playwright, GPU, 15 November 2026), on `tour-r128/zone-4.glb`: AZERTY guessed from
+  `fr-FR` (the card reads "Z Q S D fly"), flying forward and up, the wheel at 130%, the Controls panel, a click that
+  leaves the view still (Chrome sent a -660/-400 px "move" when locking: now ignored); with touch, the stick and
+  buttons with two thumbs at once (CDP touch events), the card folding, and no overlap on a phone upright
+  (390×844), a phone on its side (844×390) and a tablet (1180×820), measured from the elements' boxes. On
+  `capture-20261109-1340.glb`, looking down from where the flight starts shows the captured player's head below the
+  camera (#273).
+- Not checked: real phones and tablets (iOS Safari, Android Chrome); looking around with a granted mouse lock
+  (headless Chromium reports made-up movements while locked, so that path rests on unit tests); gamepads.

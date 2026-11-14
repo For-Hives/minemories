@@ -70,9 +70,9 @@ Effort: S (hours), M (a day or two), L (more).
 
 | # | Change | Why | Effort |
 |---|---|---|---|
-| 1 | **Keep a minimum horizontal field of view** in flight: raise the vertical one until the horizontal reaches about 50°, capped at 90° vertical (a portrait phone goes from 22° to about 50° wide). Apply the same rule, more gently, to orbit in portrait. | Problem 1, the largest one | S |
+| 1 | **Keep a minimum horizontal field of view** in flight: raise the vertical one until the horizontal reaches 50°, capped at 90° vertical (a portrait phone goes from 22° to about 49° wide). **Done for flight.** Still to do: the same rule, more gently, for orbit in portrait. | Problem 1, the largest one | S |
 | 2 | **Start the flight from the orbit camera** when the focus is inside blocks, or lift the start until it is in the air, using the ground index the pivot already has (`viewer-ground.ts`). | Problem 2 | S–M |
-| 3 | **Fold the flight card on touch** after the first stick or look gesture: keep a small "?" and Controls button; show the help again on tap. Hide the language banner while flying. | Problems 3, 4 | S |
+| 3 | **Fold the flight card on touch** after the first gesture: only Controls and Show help stay. **Done**, with the touch controls moved clear of the toolbar and the Immerse button, and a phone on its side no longer scrolling. Still to do: hide the language banner while flying. | Problems 3, 4 | S |
 | 4 | **Touch look curve**: slow for small moves, faster for long swipes (an exponent of about 1.3 on the swipe speed, as most mobile games do), with the sensitivity setting on top. | Problem 6 | S |
 
 ### P1: a middle ground between orbit and flight
