@@ -66,7 +66,10 @@ Coverage of `discovery.ts` is 100% lines/functions.
 and its server votes; the former `/ranking` URL redirects there. The "Try the demo" option opens `?demo=1`: favorites, votes and shares
 of these examples stay separate and publish no private capture. A private
 capture's card offers "Public publication", with title, description, category,
-consent unchecked by default and withdrawal. States and reasons come from the
+consent and withdrawal. The consent box starts unticked on a capture never
+submitted or withdrawn; a submission pending, published or rejected already
+carries the owner's consent, so the box shows it ticked and stays ticked after
+a new submission. Unticking it holds the next submission back. States and reasons come from the
 API. `discovery.status`, `publish`, `revoke` and `moderate` also return
 `submission` (`{ title, description, category }` of the current or latest
 publication, whatever its state, or `null` if the memory was never submitted),
