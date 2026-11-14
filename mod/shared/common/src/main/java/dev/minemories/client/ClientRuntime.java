@@ -33,6 +33,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
@@ -1763,9 +1764,35 @@ public final class ClientRuntime {
     CaptureRenderScope.render(
         () -> {
           FlywheelCaptureBridge.verify(blockEntity.getLevel());
-          dispatcher.render(blockEntity, 1f, pose, buffers);
+          drawBlockEntity(dispatcher, blockEntity, pose, buffers);
           buffers.finish();
         });
+  }
+
+  /**
+   * BlockEntityRenderDispatcher.render without its distance check: the dispatcher skips a block
+   * entity further from the camera than its renderer's view distance (64 blocks by default), which
+   * dropped chests, signs and machine parts from captures wider or deeper than that. The rest is
+   * what the dispatcher does: a renderer, a block entity valid for its block, the light at its
+   * position, no overlay.
+   */
+  private static void drawBlockEntity(
+      BlockEntityRenderDispatcher dispatcher,
+      BlockEntity blockEntity,
+      PoseStack pose,
+      RenderedModelCapture.Buffers buffers) {
+    var renderer = dispatcher.getRenderer(blockEntity);
+    var level = blockEntity.getLevel();
+    if (renderer == null
+        || level == null
+        || !blockEntity.getType().isValid(blockEntity.getBlockState())) return;
+    renderer.render(
+        blockEntity,
+        1f,
+        pose,
+        buffers,
+        LevelRenderer.getLightColor(level, blockEntity.getBlockPos()),
+        OverlayTexture.NO_OVERLAY);
   }
 
   static net.minecraft.world.phys.HitResult captureHitResult(Minecraft mc) {
