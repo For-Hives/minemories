@@ -87,7 +87,7 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'In Minecraft: M → type the code → Connect.',
 		'Yes: M → Auto memories.',
 		'M → Settings → Privacy',
-		'Heads-up: the link shows your base’s coordinates and the server name or address.',
+		'Heads-up: the link shows your base’s coordinates, dimension and biome',
 	])
 		expect(howTo).toContain(label)
 	// The 32-block default radius, drawn: 65 × 65 blocks.
@@ -103,7 +103,7 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 test('the concept page says what it is, what it is not, compares the other ways with a date, then asks three questions', () => {
 	mountEnglish(<ConceptPage />)
 	const text = document.querySelector('article')?.textContent ?? ''
-	expect(text).toContain('Minemories is a mod for Minecraft Java.')
+	expect(text).toContain('Minemories is a Minecraft Java mod')
 	for (const item of [
 		'Not playable',
 		'Not editable',
@@ -187,13 +187,13 @@ test('privacy page explains mod diagnostics and download requests and keeps the 
 		mountEnglish(<LegalPage kind="privacy" />)
 		expect(screen.getByRole('heading', { name: 'Diagnostics in the Minecraft mod' })).toBeTruthy()
 		const text = document.body.textContent ?? ''
-		expect(text).toContain('nothing is ever sent before you connect the game')
+		expect(text).toContain('nothing is sent until you connect the game')
 		expect(text).toContain('Nobody sees them without a link you create.')
 		expect(text).not.toMatch(/tutorial|estimates|changelog|Revocation/)
-		expect(text).toContain('at most eight pending reports, for at most seven days')
+		expect(text).toContain('at most eight reports, for at most seven days')
 		expect(text).toContain('M → Settings → Privacy → Diagnostics')
 		expect(screen.getByRole('heading', { name: 'Mod download list' })).toBeTruthy()
-		expect(text).toContain('the API receives your IP address like any request to the service')
+		expect(text).toContain('so it sees your IP address, like any request')
 		expect(screen.getByRole('checkbox', { name: 'Allow public-page diagnostics' })).toBeTruthy()
 	} finally {
 		vi.unstubAllEnvs()
@@ -211,11 +211,11 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(screen.getByRole('heading', { name: 'Diagnostics dans le mod Minecraft' })).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Liste des téléchargements du mod' })).toBeTruthy()
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('rien n’est jamais envoyé avant que tu connectes le jeu')
-	expect(text).toContain('chaque souvenir pris avec M → Prendre un souvenir, ou en AFK, part tout seul dans ta galerie')
+	expect(text).toContain('rien n’est envoyé tant que tu n’as pas connecté le jeu')
+	expect(text).toContain('chaque souvenir pris, à la main ou en AFK, part tout seul dans ta galerie')
 	expect(text).toContain('Arrêter le partage bloque les nouvelles visites')
 	expect(text).toContain('Rien ne part sur Internet tant que le jeu n’est pas connecté à un compte.')
-	expect(text).toContain('l’API reçoit ton adresse IP comme pour toute requête au service')
+	expect(text).toContain('elle voit donc ton adresse IP, comme pour toute requête')
 	expect(text).not.toMatch(/tutoriel|prénom|estimations|nouveautés|révocation/i)
 	// The diagram names the game's own code label, not the internal word for pairing.
 	expect(text).toContain('Code à 6 chiffres')
@@ -234,9 +234,7 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 	)
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Qui fait Minemories')
 	const text = document.body.textContent ?? ''
-	expect(text).toContain(
-		'Le code source est public sur GitHub\u00a0; le mod se télécharge sur la page Téléchargements.'
-	)
+	expect(text).toContain('Le code est public sur GitHub\u00a0; le mod se trouve sur la page Téléchargements.')
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
 	// The legal notice: the publisher and the host with their registered details, then how to reach the publisher.
 	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([
@@ -294,10 +292,10 @@ test('/sharing says what a link shows, answers three questions and ends on the i
 	expect(text).toContain('Télécharge la carte postale HD')
 	expect(text).toContain('Partager → Créer un lien → Copier')
 	// the warning an SMP player needs opens its section, before the list of what else the link shows
-	const warning = text.indexOf('Attention\u00a0: le lien montre les coordonnées de ta base')
+	const warning = text.indexOf('Attention\u00a0: le lien montre les coordonnées, la dimension et le biome de ta base')
 	expect(warning).toBeGreaterThan(-1)
 	expect(warning).toBeLessThan(text.indexOf('La scène 3D, son nom et sa date.'))
-	expect(text).toContain('la dimension, le biome, le nom du monde')
+	expect(text).toContain('le nom du monde et la seed en solo')
 	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
 	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
 	expect(text).not.toMatch(/démonstration|illustrations|Voir la démo/)

@@ -206,15 +206,15 @@ By default, capture.glb is in the export folder of your user directory. Pair the
 **Your memories, your choices (privacy).**
 Preferences on this device: The tutorial stores your choices and optional name in your browser; you can clear them. Your language preference, demo favorites/votes and estimates you choose to save are also stored on this device.
 Optional web diagnostics: Web diagnostics are off by default. If this deployment configures Sentry, you can allow them and withdraw consent on this page for this device. Only fixed error categories and public editorial page routes are transmitted, without raw messages, account details, captures, codes or private URLs. Sign-in, gallery, viewer and sharing pages are excluded. The receiving server sees the connection IP address; its region and retention must be documented before activating the service.
-Account and gallery: Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. After pairing, AFK captures can upload automatically.
+Account and gallery: You stay signed in with a session cookie. Your captures belong to your account, and the gallery is private by default. Avatars may load from an external service. Once the game is connected, each memory you take, by hand or while AFK, goes to your gallery on its own.
 Links and deletion: A shared link can be forwarded and gives access without an account. Revocation stops future access, not copies already made. Trash retains captures for 30 days; permanent deletion frees space once processed.
 
 **Using Minemories (terms).**
-An experimental version: Keep your Minecraft backups and local files. Compatibility with every modpack, permanent availability and lifetime online storage are not guaranteed.
-Capture and share: Respect server rules and the rights of people whose builds or information appear in your captures. Check the contents before creating a shared link.
+An experimental version: This is a beta. Keep your Minecraft backups. We can’t promise it works with every modpack, or that your memories stay online forever.
+Capture and share: Follow the server’s rules and respect the people whose builds appear in your captures. Check what’s in a memory before you share it.
 
 **About this service (legal).**
-Independent project: Minemories is an independent, unofficial project, not endorsed by Mojang or Microsoft. Source code and mod releases are available in the public For-Hives/minemories repository.
+Independent project: Minemories is an independent project, not endorsed by Mojang or Microsoft. The code and mod releases are in the public For-Hives/minemories repository.
 Information to complete: Publisher and hosting details and the personal-data contact still need to be completed before commercial launch.
 
 ### Pricing (`content/pricing.ts`)

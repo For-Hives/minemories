@@ -117,7 +117,7 @@ const germanPronounSie: Record<string, string> = {
 	'It will show up here.': '“Sie erscheint” refers to the capture.',
 	'It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.':
 		'“Sie landet” refers to the memory.',
-	'End portals and End gateways are saved instead of leaving a hole. They appear as a still image of the portal on every Minecraft version supported by the mod.':
+	'End portals and End gateways are saved instead of leaving a hole, as a still image of the portal, on every supported Minecraft version.':
 		'“Sie erscheinen” refers to the portals.',
 	'Your players don’t get a playable copy of your world, just a 3D scene of their corner.':
 		'“Sie behalten” refers to the players.',
@@ -136,7 +136,7 @@ test('the German catalogue speaks to the player with “du”', async () => {
 
 // Plural "you": the group playing together, not a formal address to one player.
 const russianPluralYou = new Set([
-	'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.',
+	'Minemories is a Minecraft Java mod that keeps a 3D copy of the area around you: your house, your village, your group’s base. You can walk around it in your browser, even after the server is gone.',
 ])
 
 test('the Russian catalogue speaks to the player with “ты”', async () => {

@@ -10,9 +10,7 @@ export function PricingPage() {
 		<ContentLayout
 			eyebrow="MINEMORIES / CLOUD"
 			title={t('Keep your worlds. Plan for the future.')}
-			lead={t(
-				'€2 per snapshot. Long-term cloud storage from €6/year, decreasing to €3/year as your memory grows older.'
-			)}
+			lead={t('€2 per snapshot. Storage starts at €6 a year and drops to €3 as your memory gets older.')}
 		>
 			<p className="mm-release-label">{t('Offer in preparation · working calculator · payments not enabled')}</p>
 			<div className="mm-plan-grid">
@@ -38,7 +36,7 @@ export function PricingPage() {
 					<p className="mm-big-price">
 						6 <span>→</span> 3 € <span>{t('/ year')}</span>
 					</p>
-					<p>{t('Per stored snapshot. The price decreases each year, then stays at €3/year from the fourth year.')}</p>
+					<p>{t('Per snapshot. The price drops each year, down to €3 a year from the fourth.')}</p>
 					<ol className="mm-price-steps">
 						{cloudScheduleCents.map((cents, index) => (
 							<li key={cents}>
@@ -60,13 +58,13 @@ export function PricingPage() {
 				<h2>{t('What you can do today')}</h2>
 				<p>
 					{t(
-						'Install the mod, export a 3D memory as a GLB, find it in your private gallery after pairing. Commercial snapshots and long-term storage are in preparation. A 3D capture does not replace a playable world backup; full-save archiving still needs development.'
+						'Install the mod, take a 3D memory, find it in your private gallery. Paid storage is still being prepared. A 3D capture is not a backup of your world.'
 					)}
 				</p>
 				<h2>{t('How does the decreasing price work?')}</h2>
 				<p>
 					{t(
-						'The calculator counts €6 for the first year of each snapshot, €5 for the second, €4 for the third, then €3/year. Renewals are annual; the multi-year total is a projection, not an amount charged today.'
+						'Each snapshot costs €6 the first year, €5 the second, €4 the third, then €3 a year. This is an estimate, not a charge.'
 					)}
 				</p>
 			</div>
@@ -215,7 +213,7 @@ export function PriceSimulator() {
 			</div>
 			<p className="mm-simulator-note">
 				{t(
-					'This projection assumes snapshots created together and continuous storage. Billing rules, taxes and storage terms will be finalized before payments open.'
+					'This estimate assumes all snapshots start together and are kept without a break. Final prices and terms will be set before payments open.'
 				)}
 			</p>
 		</section>

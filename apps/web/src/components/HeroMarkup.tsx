@@ -253,10 +253,10 @@ function HeroPage() {
 				<canvas
 					id="mm-scene"
 					role="img"
-					data-i18n-attr="aria-label:Silent film: a player and their dog by the fire, in front of a Minecraft chalet. The player tells the dog to stay, writes “stay, I'll be back soon...” and leaves the game. The dog turns toward you, sad, and lies down. The seasons pass, the world fades. An ember brightens the evening again: the player is back, the dog celebrates, exactly as it was."
+					data-i18n-attr="aria-label:A silent film: a player and their dog by the fire in front of a chalet. The player tells the dog to stay and leaves the game. The seasons pass and the world fades. An ember brightens, the player is back and the dog celebrates, just as it was."
 					aria-describedby="w1 w2 w3 w4 w5 stage-help"
 					aria-label={t(
-						"Silent film: a player and their dog by the fire, in front of a Minecraft chalet. The player tells the dog to stay, writes “stay, I'll be back soon...” and leaves the game. The dog turns toward you, sad, and lies down. The seasons pass, the world fades. An ember brightens the evening again: the player is back, the dog celebrates, exactly as it was."
+						'A silent film: a player and their dog by the fire in front of a chalet. The player tells the dog to stay and leaves the game. The seasons pass and the world fades. An ember brightens, the player is back and the dog celebrates, just as it was.'
 					)}
 				/>
 				<p
@@ -450,10 +450,10 @@ function HeroPage() {
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed."
+							data-i18n="Pick the hour and angle, then save an HD postcard for Discord. Or send a link: your friends walk around your base in 3D, no Minecraft needed."
 						>
 							{t(
-								'Spin around your base, pick the hour and the angle, and grab an HD postcard for Discord. Or send a link: your friends walk around it in 3D, no Minecraft needed.'
+								'Pick the hour and angle, then save an HD postcard for Discord. Or send a link: your friends walk around your base in 3D, no Minecraft needed.'
 							)}
 						</p>
 						<ShareIllustration />
@@ -478,10 +478,10 @@ function HeroPage() {
 						<ClosingIllustration />
 						<p
 							className="mc-section__text"
-							data-i18n="Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️"
+							data-i18n="The capture is saved on your computer. Sending it to our servers is up to you. We don’t use your captures: they’re for you and the friends you show them to ❤️"
 						>
 							{t(
-								'Everything happens on your PC: the capture is saved on your computer. Then it’s up to you whether you send it to our servers so we host it. We don’t use your captures: they’re just for you and the friends you show them to ❤️'
+								'The capture is saved on your computer. Sending it to our servers is up to you. We don’t use your captures: they’re for you and the friends you show them to ❤️'
 							)}
 						</p>
 						<ul className="site-links">
@@ -514,49 +514,49 @@ function HeroPage() {
 								className="words"
 								id="w1"
 								data-i18n={
-									'An evening in Minecraft. A player, {name}, arrives near their chalet and the chat says they joined the game. They feed the fire and sit on the bench; their dog sits at their feet. They stop moving. After five minutes, the mod keeps the play area and says so in the chat. A spark from the fire stays hanging in the air: that is the memory, kept in 3D.'
+									'An evening in Minecraft. {name} joins the game near their chalet, feeds the fire and sits on the bench, their dog at their feet. They stop moving. After five minutes the mod keeps the area and says so in the chat. A spark hangs in the air above the fire: that’s the memory, kept in 3D.'
 								}
 							>
 								{t(
-									'An evening in Minecraft. A player, {name}, arrives near their chalet and the chat says they joined the game. They feed the fire and sit on the bench; their dog sits at their feet. They stop moving. After five minutes, the mod keeps the play area and says so in the chat. A spark from the fire stays hanging in the air: that is the memory, kept in 3D.'
+									'An evening in Minecraft. {name} joins the game near their chalet, feeds the fire and sits on the bench, their dog at their feet. They stop moving. After five minutes the mod keeps the area and says so in the chat. A spark hangs in the air above the fire: that’s the memory, kept in 3D.'
 								)}
 							</p>
 							<p
 								className="words"
 								id="w2"
 								data-i18n={
-									"Night falls. {name} stands, tells their dog to stay, crouches and types “stay, I'll be back soon...”. They stand again, open the game menu and go straight to “Save and Quit to Title”. They disappear and the chat says they left the game. The dog turns toward you, sad, then lies down."
+									'Night falls. {name} stands up, tells their dog to stay, types “stay, I’ll be back soon...”, then goes to “Save and Quit to Title”. They leave and the chat says so. The dog turns toward you, sad, and lies down.'
 								}
 							>
 								{t(
-									"Night falls. {name} stands, tells their dog to stay, crouches and types “stay, I'll be back soon...”. They stand again, open the game menu and go straight to “Save and Quit to Title”. They disappear and the chat says they left the game. The dog turns toward you, sad, then lies down."
+									'Night falls. {name} stands up, tells their dog to stay, types “stay, I’ll be back soon...”, then goes to “Save and Quit to Title”. They leave and the chat says so. The dog turns toward you, sad, and lies down.'
 								)}
 							</p>
 							<p
 								className="words"
 								id="w3"
-								data-i18n="The sun rises on the empty bench, then the seasons pass, months, years: the house decays, the colours fade. The dog sits in the snow, and the ember still glows."
+								data-i18n="The sun rises on the empty bench, then months and years pass: the house decays, the colours fade. The dog sits in the snow and the ember still glows."
 							>
 								{t(
-									'The sun rises on the empty bench, then the seasons pass, months, years: the house decays, the colours fade. The dog sits in the snow, and the ember still glows.'
+									'The sun rises on the empty bench, then months and years pass: the house decays, the colours fade. The dog sits in the snow and the ember still glows.'
 								)}
 							</p>
 							<p
 								className="words"
 								id="w4"
-								data-i18n="One grey morning the ember brightens and a warm wave leaves it: everything comes back, the colours, the fire. The bench stays empty for a moment, then the player appears on it and the chat says they joined the game. The dog jumps up and celebrates the return."
+								data-i18n="One grey morning the ember brightens and everything comes back, the colours, the fire. The player appears on the bench, the chat says they joined, and the dog jumps up to celebrate."
 							>
 								{t(
-									'One grey morning the ember brightens and a warm wave leaves it: everything comes back, the colours, the fire. The bench stays empty for a moment, then the player appears on it and the chat says they joined the game. The dog jumps up and celebrates the return.'
+									'One grey morning the ember brightens and everything comes back, the colours, the fire. The player appears on the bench, the chat says they joined, and the dog jumps up to celebrate.'
 								)}
 							</p>
 							<p
 								className="words"
 								id="w5"
-								data-i18n="The memory is kept, the dog included. In your private gallery on the site, once the game is linked to your account, it can be revisited in 3D like a small model."
+								data-i18n="The memory is kept, dog included. Once the game is connected, you can walk around it in 3D from your private gallery."
 							>
 								{t(
-									'The memory is kept, the dog included. In your private gallery on the site, once the game is linked to your account, it can be revisited in 3D like a small model.'
+									'The memory is kept, dog included. Once the game is connected, you can walk around it in 3D from your private gallery.'
 								)}
 							</p>
 						</details>
@@ -569,10 +569,10 @@ function HeroPage() {
 						</summary>
 						<p
 							className="mc-footer__meta"
-							data-i18n="The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only)."
+							data-i18n="The film is staged. In single player, the game shows no join or leave message, and the typing bubble, the dog’s reactions, the titles and the colour changes are film effects. Only “Minemories: world capture done.” comes from the mod, which words it differently today (English only)."
 						>
 							{t(
-								'The film is staged from real captures. In single player, the game shows no arrival or departure message; the typing bubble, the held screen, the dog’s gaze, his celebration on the return, the titles, the freeze frame and the return of the colours are effects of the film. Only the line “Minemories: world capture done.” is modelled on a message of the mod, which words it differently today (in English only).'
+								'The film is staged. In single player, the game shows no join or leave message, and the typing bubble, the dog’s reactions, the titles and the colour changes are film effects. Only “Minemories: world capture done.” comes from the mod, which words it differently today (English only).'
 							)}
 						</p>
 					</details>
@@ -596,10 +596,10 @@ function HeroPage() {
 					src="/hero/assets/mc/renders/end-diorama.jpg"
 					width="672"
 					height="629"
-					data-i18n-attr="alt:The model of the chalet, seen from above: the corner of the world that was kept, the chalet, the fire lit and the forest, just as it was that evening."
+					data-i18n-attr="alt:The chalet seen from above: the kept corner of the world, the fire lit, the forest, just as it was that evening."
 					decoding="async"
 					alt={t(
-						'The model of the chalet, seen from above: the corner of the world that was kept, the chalet, the fire lit and the forest, just as it was that evening.'
+						'The chalet seen from above: the kept corner of the world, the fire lit, the forest, just as it was that evening.'
 					)}
 				/>
 				<p className="dock-loading" data-i18n="Loading the 3D memory…">

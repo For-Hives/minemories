@@ -87,7 +87,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/server-closing',
 		title: 'Minecraft server closing: keep your builds',
 		description:
-			'End of season, wipe, SMP closing: keep your base in 3D before it closes, without being an admin and without installing anything on the server.',
+			'End of season, wipe, SMP closing: keep your base in 3D before it goes, with no admin rights and nothing to install on the server.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
