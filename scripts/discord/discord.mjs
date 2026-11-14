@@ -7,7 +7,7 @@ export { clip, redactSecrets }
 
 export const REPOSITORY = 'For-Hives/minemories'
 export const REPOSITORY_URL = `https://github.com/${REPOSITORY}`
-export const SITE_URL = 'https://minemories.xenos.lightin.io'
+export const SITE_URL = 'https://minemories.net'
 export const LIMITS = { title: 256, description: 4096, fieldValue: 1024, embeds: 10, total: 6000, content: 2000 }
 export const COLORS = { changelog: 0x5865f2, release: 0x2ecc71, roadmap: 0xe67e22 }
 

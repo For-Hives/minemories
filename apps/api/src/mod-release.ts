@@ -9,7 +9,7 @@ import { GITHUB_API, GITHUB_REPOSITORY, GITHUB_URL, type GithubFetch, githubGet 
 
 // Mirrors scripts/discord/release-info.mjs so the Discord #changelog release card and /roadmap show the same release.
 export const MOD_TAG = /^mod-v(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/
-export const SITE_URL = 'https://minemories.xenos.lightin.io'
+export const SITE_URL = 'https://minemories.net'
 const TAG_PAGES = 3
 const RELEASE_COMMIT = /^chore\(release\)/i
 const SKIP_CI = /\[skip ci\]/i

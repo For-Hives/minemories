@@ -41,7 +41,7 @@ The Discord message is refreshed by the workflow; the site's `GET /api/roadmap` 
 1. Generate a long random secret and set it as `GITHUB_WEBHOOK_SECRET` in the API's environment (Coolify), then redeploy the API. Never paste it in an issue, a commit or a log.
    Set `GITHUB_TOKEN` (read-only) alongside it: each burst of deliveries re-reads every roadmap issue page (and, for tags and releases, the release data), and the unauthenticated limit of 60 GitHub requests per hour is quickly used up by bulk issue or label edits.
 2. In GitHub: Settings → Webhooks → Add webhook on `For-Hives/minemories`:
-   - **Payload URL**: `https://api.minemories.xenos.lightin.io/api/github/webhook`
+   - **Payload URL**: `https://api.minemories.net/api/github/webhook`
    - **Content type**: `application/json`
    - **Secret**: the value of `GITHUB_WEBHOOK_SECRET`
    - **Events**: "Let me select individual events" → **Issues**, **Labels**, **Milestones**, **Branch or tag creation**, **Branch or tag deletion**, **Releases**.

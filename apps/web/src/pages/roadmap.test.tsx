@@ -39,8 +39,8 @@ const latestRelease = (extra: Record<string, unknown> = {}) => ({
 		{ type: 'other', text: 'Faster export', pr: 199 },
 	],
 	more: 4,
-	downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-	changelogUrl: 'https://minemories.xenos.lightin.io/versions',
+	downloadUrl: 'https://minemories.net/downloads',
+	changelogUrl: 'https://minemories.net/versions',
 	compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0...mod-v0.36.1-beta.1',
 	...extra,
 })
