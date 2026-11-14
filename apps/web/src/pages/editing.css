@@ -223,6 +223,35 @@
 	border: 0;
 }
 
+/* Moderation: the queues as pills in one bar, the refresh at its end. */
+.mm-moderation-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+	margin-bottom: var(--ds-sp-5);
+	padding: var(--ds-sp-3);
+	background: var(--night-2);
+	border: var(--gp) solid var(--night-3);
+}
+
+.mm-moderation-queues {
+	display: grid;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.mm-moderation-queues legend {
+	margin-bottom: var(--ds-sp-2);
+	padding: 0;
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	color: var(--text);
+}
+
 .mm-segmented {
 	display: flex;
 	flex-wrap: wrap;
