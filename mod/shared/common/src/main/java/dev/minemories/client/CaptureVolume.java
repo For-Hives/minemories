@@ -34,7 +34,7 @@ record CaptureVolume(String source, CaptureBounds cells, Placement placement, Ow
   }
 
   /** Every integration, in a fixed order. Add one line for a new physics or ship mod. */
-  private static final List<Source> SOURCES = List.of(new SableVolumes());
+  private static final List<Source> SOURCES = List.of(new SableVolumes(), new ValkyrienVolumes());
 
   long cellCount() {
     return ((long) cells.maxX() - cells.minX() + 1)
