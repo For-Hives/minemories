@@ -189,7 +189,8 @@ html:has(.mm-header) {
 
 /* A row of a menu: hovered or focused, it takes the light outline of the game's buttons; a long name wraps instead of leaving the panel. */
 .mm-nav__link,
-.mm-lang__option {
+.mm-lang__option,
+.mm-select__option {
 	display: flex;
 	align-items: center;
 	gap: var(--ds-sp-2);
@@ -214,7 +215,8 @@ html:has(.mm-header) {
 
 .mm-nav__link:hover,
 .mm-nav__link:focus-visible,
-.mm-lang__option.is-active {
+.mm-lang__option.is-active,
+.mm-select__option.is-active {
 	background: var(--night-3);
 	border-color: var(--hover);
 	color: #fff;
@@ -249,7 +251,8 @@ html:has(.mm-header) {
 
 /* An open stone button stays pressed (the kit's :active bevel): ember text would not read on stone. */
 .mm-nav-account__button.mc-btn[aria-expanded="true"],
-.mm-lang__button.mc-btn[aria-expanded="true"] {
+.mm-lang__button.mc-btn[aria-expanded="true"],
+.mm-select__button.mc-btn[aria-expanded="true"] {
 	--mc-bevel: inset var(--gp) var(--gp) 0 var(--_lo);
 	border-color: var(--hover);
 }
@@ -335,15 +338,18 @@ html:has(.mm-header) {
 	outline: none;
 }
 
-.mm-lang__check {
+.mm-lang__check,
+.mm-select__check {
 	visibility: hidden;
 }
 
-.mm-lang__option[aria-selected="true"] {
+.mm-lang__option[aria-selected="true"],
+.mm-select__option[aria-selected="true"] {
 	color: var(--ember);
 }
 
-.mm-lang__option[aria-selected="true"] .mm-lang__check {
+.mm-lang__option[aria-selected="true"] .mm-lang__check,
+.mm-select__option[aria-selected="true"] .mm-select__check {
 	visibility: visible;
 }
 
@@ -664,7 +670,8 @@ html.mm-scroll-lock--gutter {
 
 /* The readable font is smaller than the game's: its rows are tighter. */
 [data-mc-font="read"] .mm-nav__link,
-[data-mc-font="read"] .mm-lang__option {
+[data-mc-font="read"] .mm-lang__option,
+[data-mc-font="read"] .mm-select__option {
 	min-height: 40px;
 }
 
@@ -684,7 +691,8 @@ html.mm-scroll-lock--gutter {
 	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account__button.mc-btn,
-	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn {
+	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn,
+	:root:not([data-mc-motion="reduced"]) .mm-select__button.mc-btn:not(:disabled) {
 		transition:
 			border-color var(--ds-dur-1) var(--ds-ease),
 			transform var(--ds-dur-1) var(--ds-ease);
@@ -692,7 +700,8 @@ html.mm-scroll-lock--gutter {
 	:root:not([data-mc-motion="reduced"]) .mm-nav-cta.mc-btn:hover,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account.mc-btn:hover,
 	:root:not([data-mc-motion="reduced"]) .mm-nav-account__button.mc-btn:hover,
-	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn:hover {
+	:root:not([data-mc-motion="reduced"]) .mm-lang__button.mc-btn:hover,
+	:root:not([data-mc-motion="reduced"]) .mm-select__button.mc-btn:hover:not(:disabled) {
 		transform: translateY(-1px);
 	}
 }
@@ -717,7 +726,8 @@ html.mm-scroll-lock--gutter {
 	}
 	.mm-nav__link:hover,
 	.mm-nav__link:focus-visible,
-	.mm-lang__option.is-active {
+	.mm-lang__option.is-active,
+	.mm-select__option.is-active {
 		outline: 2px solid Highlight;
 	}
 }

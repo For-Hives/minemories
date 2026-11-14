@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { AdminAccessLink } from '../components/AdminAccessLink'
 import { I18nProvider } from '../i18n/I18n'
+import { chooseOption } from '../testing/site-select'
 import { AdminPage } from './AdminPage'
 
 const mocks = vi.hoisted(() => ({
@@ -155,7 +156,7 @@ test('directory searches, role filters, pagination and periods reach the server'
 	await screen.findByText('Candidate')
 	expect(screen.getByRole('button', { name: 'Retirer le rôle admin (Owner)' })).toHaveProperty('disabled', true)
 	fireEvent.change(screen.getByLabelText('Rechercher un compte'), { target: { value: 'candidate' } })
-	fireEvent.change(screen.getByLabelText('Rôle'), { target: { value: 'user' } })
+	chooseOption('Rôle', 'Utilisateurs')
 	fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
 	await waitFor(() =>
 		expect(mocks.users).toHaveBeenLastCalledWith(
@@ -171,7 +172,7 @@ test('directory searches, role filters, pagination and periods reach the server'
 			expect.anything()
 		)
 	)
-	fireEvent.change(screen.getByLabelText('Trier par'), { target: { value: 'storage_desc' } })
+	chooseOption('Trier par', 'Plus gros stockage d’abord')
 	fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
 	await waitFor(() =>
 		expect(mocks.users).toHaveBeenLastCalledWith(
@@ -179,7 +180,7 @@ test('directory searches, role filters, pagination and periods reach the server'
 			expect.anything()
 		)
 	)
-	fireEvent.change(screen.getByLabelText('Période'), { target: { value: '168' } })
+	chooseOption('Période', '7 jours')
 	await waitFor(() => expect(mocks.summary).toHaveBeenLastCalledWith({ hours: 168 }, expect.anything()))
 })
 test('role changes require confirmation, show safe errors and refresh after success', async () => {

@@ -66,8 +66,8 @@
 }
 
 /* Labels in the game's font, fields as the game's text fields (black, grey edge, white on focus), values in Atkinson. */
-.mm-admin-controls label,
-.mm-admin-search label,
+.mm-admin-controls :is(label, .mm-select),
+.mm-admin-search :is(label, .mm-select),
 .mm-admin-dialog label {
 	display: grid;
 	gap: var(--ds-sp-2);
@@ -76,8 +76,7 @@
 	text-shadow: var(--ds-text-shadow-1);
 }
 .mm-admin-page input,
-.mm-admin-dialog input,
-.mm-admin-page .mc-select__control {
+.mm-admin-dialog input {
 	--_h: var(--ds-hit);
 	width: 100%;
 	max-width: 100%;
@@ -92,13 +91,6 @@
 	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
 	text-shadow: none;
 	caret-color: #fff;
-}
-.mm-admin-page .mc-select__control {
-	padding-right: calc(12 * var(--gp));
-}
-.mm-admin-page .mc-select {
-	width: auto;
-	min-width: 160px;
 }
 .mm-admin-page input::placeholder,
 .mm-admin-dialog input::placeholder {
@@ -512,7 +504,7 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	.mm-admin-controls {
 		width: 100%;
 	}
-	.mm-admin-controls label {
+	.mm-admin-controls :is(label, .mm-select) {
 		flex: 1;
 	}
 	.mm-admin-kpis {
@@ -611,8 +603,11 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 	color: var(--bad);
 	box-shadow: inset 0 0 0 var(--gp) var(--bad);
 }
-.mm-admin-search .mc-select {
+.mm-admin-search .mm-select {
 	min-width: 190px;
+}
+.mm-admin-controls .mm-select {
+	min-width: 160px;
 }
 .mm-admin-dialog .mm-admin-dialog-target {
 	display: grid;
@@ -628,7 +623,7 @@ html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
 		gap: var(--ds-sp-3);
 	}
 	.mm-admin-search > label,
-	.mm-admin-search .mc-select {
+	.mm-admin-search .mm-select {
 		width: 100%;
 	}
 }

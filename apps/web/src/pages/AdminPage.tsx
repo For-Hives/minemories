@@ -1,6 +1,7 @@
 import type { AdminSummary, AdminUser, AdminUserSort, RoleStorage } from '@minemories/api-contract'
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { AdminCharts, gigabytes } from './AdminCharts'
@@ -125,23 +126,16 @@ export function AdminPage() {
 					<Link to="/account">← {t('My account')}</Link>
 				</div>
 				<div className="mm-admin-controls">
-					<label>
-						{t('Period')}
-						<span className="mc-select">
-							<select
-								aria-label={t('Period')}
-								className="mc-select__control"
-								value={filters.hours}
-								onChange={event =>
-									setFilters(previous => ({ ...previous, hours: Number(event.target.value) as 24 | 168 | 720 }))
-								}
-							>
-								<option value={24}>{t('24 hours')}</option>
-								<option value={168}>{t('7 days')}</option>
-								<option value={720}>{t('30 days')}</option>
-							</select>
-						</span>
-					</label>
+					<SiteSelect
+						label={t('Period')}
+						value={String(filters.hours) as '24' | '168' | '720'}
+						options={[
+							{ value: '24', label: t('24 hours') },
+							{ value: '168', label: t('7 days') },
+							{ value: '720', label: t('30 days') },
+						]}
+						onChange={hours => setFilters(previous => ({ ...previous, hours: Number(hours) as 24 | 168 | 720 }))}
+					/>
 					<button
 						type="button"
 						className={`mm-admin-primary ${buttonLime}`}

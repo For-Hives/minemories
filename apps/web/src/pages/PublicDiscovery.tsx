@@ -232,6 +232,16 @@ function useServerPlace(memoryId: string): string | null | undefined {
 	return place
 }
 
+/**
+ * The consent box: null until the owner touches it. A submission under moderation, published or rejected already
+ * carries their consent, so the box shows it ticked; a capture never submitted, or withdrawn, starts unticked.
+ * Setting null again falls back to that.
+ */
+function useConsent(current: boolean) {
+	const [choice, setChoice] = useState<boolean | null>(null)
+	return [choice ?? current, setChoice] as const
+}
+
 export function PublicationPanel({
 	memory,
 }: {
@@ -257,9 +267,6 @@ export function PublicationPanel({
 		normalize: trimmed,
 		ready: status !== null && place !== undefined,
 	})
-	// null until the owner touches the box: a submission under moderation, published or rejected already carries
-	// their consent, so the box shows it ticked; a capture never submitted, or withdrawn, starts unticked.
-	const [consentChoice, setConsent] = useState<boolean | null>(null)
 	const [busy, setBusy] = useState<'submit' | 'withdraw' | null>(null)
 	const [error, setError] = useState('')
 	const [notice, setNotice] = useState('')
@@ -268,7 +275,7 @@ export function PublicationPanel({
 		form.setValue({ ...form.value, ...patch })
 	}
 	const current = status !== null && submittedStates.includes(status.state)
-	const consent = consentChoice ?? current
+	const [consent, setConsent] = useConsent(current)
 	const unchanged = current && submission !== null && sameForm(trimmed(form.value), submission)
 	const hint = submitHint(form.value, consent, unchanged)
 
