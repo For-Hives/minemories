@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { translate } from '../i18n/catalog'
 import {
 	type ClipEnvironment,
 	type ClipName,
@@ -10,6 +9,7 @@ import {
 	clipSources,
 	createClipStage,
 } from '../lib/hero-clips'
+import { useHeroT } from './HeroLocale'
 
 /**
  * One short silent clip of the landing (public/hero/clips, sources in docs/features/landing-film.md): real footage, looping, never loaded before it is needed.
@@ -20,10 +20,9 @@ import {
  * - A clip cut from the game to the browser (`cut`) shows an HTML chip naming the side on screen, following the video's time.
  * - Reduced motion (the media query or the site's option) and Save-Data or a slow connection keep the poster, with a play button; the button also pauses a playing clip.
  * - A clip that shows in-game text has a French and an English take: the page's own `lang` picks it, and a language switch swaps the file.
- * Same text contract as HeroMarkup: rendered in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language. React never changes
+ * Same text contract as HeroMarkup: rendered in the page's language, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language. React never changes
  * those nodes after the first render (the play and pause labels are both in the markup, CSS shows the right one), so the two never fight.
  */
-const t = (key: string) => translate('fr', key)
 
 interface Connection {
 	readonly saveData?: boolean
@@ -105,6 +104,7 @@ export function HeroClip({
 	cut,
 	toggleAt = 'start',
 }: HeroClipProps) {
+	const t = useHeroT()
 	const video = useRef<HTMLVideoElement>(null)
 	const root = useRef<HTMLDivElement>(null)
 	// The prerender and the first client render are still: the page's real state arrives with the first effect.

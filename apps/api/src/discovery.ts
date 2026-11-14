@@ -278,9 +278,8 @@ export class PublicDiscovery {
 		this.moderator(userId)
 		return this.db
 			.transaction(() => {
-				const row = this.publication(id, userId, true)
-				if (row.user_id === userId)
-					throw new ORPCError('FORBIDDEN', { message: 'Another moderator must review your publication.' })
+				// Moderators are the administrators: an administrator may also decide on their own publication.
+				this.publication(id, userId, true)
 				this.db
 					.query('UPDATE public_publications SET state=?,reason=?,reviewed_at=?,reviewed_by=? WHERE id=?')
 					.run(decision, reason || null, this.now(), userId, id)

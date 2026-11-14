@@ -142,6 +142,30 @@ function lockFailures(expectation, response, indexable) {
 	return []
 }
 
+/** The absolute URLs a crawler takes as the site's own: canonical, hreflang alternates, og:url, sitemap entries, robots.txt's Sitemap line. */
+const seoUrlPattern =
+	/<link rel="(?:canonical|alternate)"[^>]*\shref="([^"]+)"|<meta property="og:url" content="([^"]+)"|<loc>([^<]+)<\/loc>|^Sitemap: (\S+)$/gm
+
+function hostOf(url) {
+	try {
+		return new URL(url).host
+	} catch {
+		return url
+	}
+}
+
+/** After launch, every SEO URL must name the host under test: a build made with another VITE_SITE_URL announces the wrong site. */
+function hostFailures(response, base, indexable) {
+	if (!indexable || response.status !== 200 || typeof response.body !== 'string') return []
+	const host = new URL(base).host
+	const foreign = new Set(
+		[...response.body.matchAll(seoUrlPattern)]
+			.map(match => hostOf(match[1] ?? match[2] ?? match[3] ?? match[4] ?? ''))
+			.filter(found => found !== host)
+	)
+	return foreign.size ? [`SEO URLs name another host: ${[...foreign].join(', ')}`] : []
+}
+
 function headerFailures(expectation, response) {
 	const failures = []
 	const { 'cache-control': cache = '', 'content-type': contentType = '' } = response.headers
@@ -165,6 +189,7 @@ export function checkResponse(expectation, response, { base, indexable = false }
 		...headerFailures(expectation, response),
 		...bodyFailures(expectation, response),
 		...lockFailures(expectation, response, indexable),
+		...hostFailures(response, base, indexable),
 	]
 }
 

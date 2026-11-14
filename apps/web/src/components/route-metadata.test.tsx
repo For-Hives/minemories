@@ -141,7 +141,7 @@ test('each language is its own page: canonical, og:url and hreflang alternates n
 	const alternates = [...document.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]')].map(
 		element => `${element.hreflang} ${element.href}`
 	)
-	expect(alternates).toContain('en-US https://minemories.net/installation')
+	expect(alternates).toContain('en https://minemories.net/installation')
 	expect(alternates).toContain('pt-BR https://minemories.net/pt-br/installation')
 	expect(alternates).toContain('x-default https://minemories.net/installation')
 	expect(alternates).toHaveLength(9)

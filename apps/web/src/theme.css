@@ -225,8 +225,9 @@ select.mc-field.mm-field-fill {
 	border-color: var(--bad);
 }
 
-/* Checkbox of these pages (existing <input>): the kit's black square recess, a white pixel tick. */
-.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"] {
+/* Checkbox of these pages (existing <input>): the kit's black square recess, a white pixel tick. The gallery dialog
+   is portalled outside .mm-site, so it is named too. */
+:is(.mm-site, .gallery-dialog-body) :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"] {
 	flex: none;
 	width: 20px;
 	height: 20px;
@@ -238,11 +239,11 @@ select.mc-field.mm-field-fill {
 	cursor: pointer;
 }
 
-.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:hover {
+:is(.mm-site, .gallery-dialog-body) :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:hover {
 	border-color: #d6d0c6;
 }
 
-.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:checked {
+:is(.mm-site, .gallery-dialog-body) :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:checked {
 	background:
 		var(--field)
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 1h2v1H6zM5 2h2v1H5zM0 3h1v1H0zM4 3h2v1H4zM0 4h2v1H0zM3 4h2v1H3zM1 5h3v1H1zM2 6h1v1H2z'/%3E%3C/svg%3E")
@@ -250,7 +251,9 @@ select.mc-field.mm-field-fill {
 	image-rendering: pixelated;
 }
 
-.mm-site :is(.mm-checkbox, .mm-publication, .install-motion) input[type="checkbox"]:focus-visible {
+:is(.mm-site, .gallery-dialog-body)
+	:is(.mm-checkbox, .mm-publication, .install-motion)
+	input[type="checkbox"]:focus-visible {
 	border-color: #fff;
 	outline: var(--ds-focus);
 	outline-offset: var(--ds-focus-offset);
@@ -363,7 +366,7 @@ select.mc-field.mm-field-fill {
 	cursor: pointer;
 }
 
-.mm-site .mm-publication-consent input[type="checkbox"] {
+:is(.mm-site, .gallery-dialog-body) .mm-publication-consent input[type="checkbox"] {
 	margin-top: 2px;
 }
 

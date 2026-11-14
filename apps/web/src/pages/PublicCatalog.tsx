@@ -6,6 +6,7 @@ import { SiteSelect } from '../components/SiteSelect'
 import { buttonDark, buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
+import './editing.css'
 
 type Capture = Awaited<ReturnType<typeof apiClient.discovery.get>>
 type Category = Capture['category']
@@ -16,6 +17,7 @@ const selectClass = 'mc-select__control h-11! [font-family:var(--ds-f-text)]!'
 // Labels in the game's font.
 const labelClass = 'grid gap-2 [font:400_var(--ds-fs-xs)/var(--ds-lh-xs)_var(--f-ui)]'
 const categories: Category[] = ['build', 'landscape', 'adventure', 'other']
+const queues = ['pending', 'reported', 'approved', 'rejected'] as const
 function useCategoryLabels() {
 	const { t } = useI18n()
 	return {
@@ -269,7 +271,7 @@ export function ModerationPage() {
 	const { t } = useI18n()
 	const [allowed, setAllowed] = useState(false)
 	const [reasons, setReasons] = useState<Record<string, string>>({})
-	const [state, setState] = useState<'pending' | 'approved' | 'rejected' | 'reported'>('pending')
+	const [state, setState] = useState<(typeof queues)[number]>('pending')
 	const [page, setPage] = useState(0)
 	const [items, setItems] = useState<Awaited<ReturnType<typeof apiClient.discovery.queue>>['items']>([])
 	const [more, setMore] = useState(false)
@@ -318,7 +320,7 @@ export function ModerationPage() {
 			await apiClient.discovery.moderate({ id, decision, reason: reason.slice(0, 500) })
 			setRefresh(n => n + 1)
 		} catch {
-			setError(t('Decision refused. Another person must review their own publication.'))
+			setError(t('Decision refused. Try again later.'))
 		} finally {
 			setBusy(false)
 		}
@@ -327,27 +329,34 @@ export function ModerationPage() {
 		<ContentLayout eyebrow="MINEMORIES" title={t('Moderation')} lead={t('Review submitted memories and reports.')}>
 			{loading && <p role="status">{t('Loading…')}</p>}
 			{error && <p role="alert">{error}</p>}
-			{allowed && !loading && (
+			{allowed && (
 				<>
-					<label className={labelClass}>
-						{t('Queue')}
-						<span className="mc-select w-full!">
-							<select
-								className={selectClass}
-								value={state}
-								onChange={event => {
-									setState(event.target.value as typeof state)
-									setPage(0)
-								}}
-							>
-								{(['pending', 'reported', 'approved', 'rejected'] as const).map(value => (
-									<option key={value} value={value}>
-										{queueLabels[value]}
-									</option>
+					{/* The queues side by side: one press shows another, like the publication's categories. */}
+					<div className="mm-moderation-bar">
+						<fieldset className="mm-moderation-queues">
+							<legend>{t('Queue')}</legend>
+							<div className="mm-segmented">
+								{queues.map(value => (
+									<label key={value}>
+										<input
+											type="radio"
+											name="moderation-queue"
+											value={value}
+											checked={state === value}
+											onChange={() => {
+												setState(value)
+												setPage(0)
+											}}
+										/>
+										<span>{queueLabels[value]}</span>
+									</label>
 								))}
-							</select>
-						</span>
-					</label>
+							</div>
+						</fieldset>
+						<button type="button" className={buttonOutline} disabled={loading} onClick={() => setRefresh(n => n + 1)}>
+							{t('Refresh')}
+						</button>
+					</div>
 					<div className="mm-angle-grid">
 						{items.map(item => (
 							<article className="mm-angle-card" key={item.id}>

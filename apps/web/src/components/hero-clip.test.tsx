@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { HeroClip, type HeroClipProps } from './HeroClip'
+import { HeroLocaleFixed } from './HeroLocale'
 
 /** The IntersectionObserver of the page, driven by hand: `show(true)` puts every observed clip on screen. */
 const observers: { callback: IntersectionObserverCallback; elements: Element[]; ahead: boolean }[] = []
@@ -83,7 +84,12 @@ afterEach(() => {
 
 const menu = { fr: 'menu-fr', en: 'menu-en' }
 function mount(props: Partial<HeroClipProps> = {}) {
-	const view = render(<HeroClip name={menu} width={720} height={720} alt="Play the clip" {...props} />)
+	// Written in the page's language: French here, as the film's French page.
+	const view = render(
+		<HeroLocaleFixed locale="fr">
+			<HeroClip name={menu} width={720} height={720} alt="Play the clip" {...props} />
+		</HeroLocaleFixed>
+	)
 	const clip = view.container.querySelector('.mm-clip') as HTMLElement
 	return {
 		clip,

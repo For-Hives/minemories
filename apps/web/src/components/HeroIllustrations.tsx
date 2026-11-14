@@ -1,14 +1,13 @@
-import { translate } from '../i18n/catalog'
 import { HeroClip } from './HeroClip'
+import { useHeroT } from './HeroLocale'
 
 /**
  * The pictures of the landing's "Show your base to your friends" and "Server shutting down?" sections (hero/illus.css). Every picture is real footage of real use,
  * cropped, scaled and cut only (public/hero/clips and public/hero/illus, sources in docs/features/landing-film.md): the real viewer turning around a base and
  * going from morning to sunset, the HD postcard its own Postcard button exported, and one spot of an old modded server in Minecraft then in the viewer.
  * Nothing is burned into the pictures; the words (clip captions, the game/browser chip) are HTML, so they are translated and crisp.
- * Same contract as HeroMarkup: rendered once in French, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
+ * Same contract as HeroMarkup: rendered once in the page's language, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
  */
-const t = (key: string) => translate('fr', key)
 
 const postcardAlt = 'The HD postcard of the same base, downloaded with the viewer’s Postcard button.'
 const viewerAlt =
@@ -24,6 +23,7 @@ interface ShotProps {
 
 /** One real screenshot: lazy, of known size, with its description translated by the bridge. */
 function Shot({ src, alt, width, height }: ShotProps) {
+	const t = useHeroT()
 	return (
 		<img
 			src={src}
@@ -39,6 +39,7 @@ function Shot({ src, alt, width, height }: ShotProps) {
 
 /** "Show your base to your friends": the real viewer turning around a base and changing its hour, and the HD postcard its Postcard button exported. */
 export function ShareIllustration() {
+	const t = useHeroT()
 	return (
 		<figure className="mm-illus mm-illus--share">
 			<div className="mm-illus__frame">
@@ -59,6 +60,7 @@ const gameToBrowser = { at: 2.5, before: 'In Minecraft', after: 'In your browser
 
 /** "Server shutting down?": one spot of a real server in Minecraft, then the same camera move in the real viewer, a chip naming each side. */
 export function ClosingIllustration() {
+	const t = useHeroT()
 	return (
 		<figure className="mm-illus mm-illus--closing">
 			<div className="mm-illus__frame">

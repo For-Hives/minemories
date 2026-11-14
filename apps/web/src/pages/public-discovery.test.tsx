@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -160,11 +160,11 @@ test('publication requires explicit consent and chosen fields, confirms the subm
 		thumbnail: null,
 		consent: true,
 	})
-	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(false)
+	// The consent was given with the submission: the box stays ticked.
+	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
 	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Titre choisi')
 	// The form now equals what is under moderation: only a change can be submitted.
-	fireEvent.click(screen.getByRole('checkbox'))
 	const resubmit = screen.getByRole('button', { name: 'Soumettre les modifications à la modération' })
 	expect(resubmit.hasAttribute('disabled')).toBe(true)
 	expect(screen.getByText('Rien n’a changé depuis ta dernière soumission.')).toBeTruthy()
@@ -185,6 +185,10 @@ test('publication requires explicit consent and chosen fields, confirms the subm
 	)
 	// Withdrawn keeps the last submission in the form and offers a fresh submission.
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Titre choisi')
+	// A fresh submission asks for consent again.
+	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(false)
+	expect(screen.getByRole('button', { name: 'Soumettre à la modération' }).hasAttribute('disabled')).toBe(true)
+	fireEvent.click(screen.getByRole('checkbox'))
 	expect(screen.getByRole('button', { name: 'Soumettre à la modération' }).hasAttribute('disabled')).toBe(false)
 	expect(screen.queryByRole('button', { name: 'Retirer la publication' })).toBeNull()
 })
@@ -203,7 +207,8 @@ test('publication form starts from the current submission and submits changes on
 	expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Village')
 	expect(screen.getByRole('textbox', { name: 'Description publique' })).toHaveProperty('value', 'Au bord de l’eau')
 	expect(screen.getByRole('radio', { name: 'Paysage' })).toHaveProperty('checked', true)
-	fireEvent.click(screen.getByRole('checkbox'))
+	// Published means consent was given: the box opens ticked, and unticking it holds the submission back.
+	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
 	const submit = screen.getByRole('button', { name: 'Soumettre les modifications à la modération' })
 	expect(submit.hasAttribute('disabled')).toBe(true)
 	// Trailing spaces are trimmed by the server, so they are no change.
@@ -215,10 +220,16 @@ test('publication form starts from the current submission and submits changes on
 	expect(screen.getByText('Ajoute un titre public pour soumettre.')).toBeTruthy()
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Village du lac' } })
 	expect(submit.hasAttribute('disabled')).toBe(false)
+	fireEvent.click(screen.getByRole('checkbox'))
+	expect(submit.hasAttribute('disabled')).toBe(true)
+	expect(screen.getByText('Coche la case de consentement pour soumettre.')).toBeTruthy()
+	fireEvent.click(screen.getByRole('checkbox'))
+	expect(submit.hasAttribute('disabled')).toBe(false)
 	fireEvent.submit(submit.closest('form') as HTMLFormElement)
 	await screen.findByText('Soumis, en attente de modération')
 	expect(discovery.publish).toHaveBeenCalledTimes(1)
 	expect(discovery.publish.mock.lastCall?.[0]).toMatchObject({ title: 'Village du lac', category: 'landscape' })
+	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
 	expect(screen.getByText('En attente de modération')).toBeTruthy()
 	expect(screen.queryByText('Brouillon, pas encore enregistré')).toBeNull()
 })
@@ -302,7 +313,8 @@ test('publication status and mutation failures never report a false success', as
 	mount(<PublicationPanel memory={memory} />)
 	await screen.findByText('Note du modérateur : Private sign')
 	expect(screen.getByText('Refusé')).toBeTruthy()
-	fireEvent.click(screen.getByRole('checkbox'))
+	// A rejected submission was consented to: the box opens ticked.
+	expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
 	fireEvent.click(screen.getByRole('button', { name: 'Soumettre les modifications à la modération' }))
 	await screen.findByText('Publication refusée ou limite atteinte. Réessaie plus tard.')
 	expect(screen.queryByText('En attente de modération')).toBeNull()
@@ -323,7 +335,6 @@ test('a publication answer arriving after the panel closed changes nothing', asy
 	const view = mount(<PublicationPanel memory={memory} />)
 	await screen.findByText('En attente de modération')
 	fireEvent.change(screen.getByRole('textbox', { name: 'Titre public' }), { target: { value: 'Autre titre' } })
-	fireEvent.click(screen.getByRole('checkbox'))
 	fireEvent.click(screen.getByRole('button', { name: 'Soumettre les modifications à la modération' }))
 	expect(screen.getByRole('button', { name: 'Envoi…' }).hasAttribute('disabled')).toBe(true)
 	view.unmount()
@@ -353,13 +364,31 @@ test('moderation checks role, exposes reported queue and sends explicit approve/
 		expect(discovery.moderate).toHaveBeenCalledWith({ id: item.id, decision: 'approved', reason: 'Reviewed' })
 	)
 	await waitFor(() => expect(discovery.queue).toHaveBeenCalledTimes(2))
-	fireEvent.change(screen.getByRole('combobox', { name: 'File' }), { target: { value: 'reported' } })
+	// The queues are a bar of radios, not a dropdown: the pending one is shown first.
+	const queues = screen.getByRole('group', { name: 'File' })
+	expect(
+		within(queues)
+			.getAllByRole('radio')
+			.map(radio => radio.getAttribute('value'))
+	).toEqual(['pending', 'reported', 'approved', 'rejected'])
+	expect(screen.getByRole('radio', { name: 'En attente' })).toHaveProperty('checked', true)
+	fireEvent.click(screen.getByRole('radio', { name: 'Signalés' }))
 	await waitFor(() => expect(discovery.queue.mock.lastCall?.[0]).toMatchObject({ state: 'reported', page: 0 }))
+	expect(screen.getByRole('radio', { name: 'Signalés' })).toHaveProperty('checked', true)
 	await screen.findByRole('button', { name: 'Refuser' })
 	fireEvent.click(screen.getByRole('button', { name: 'Refuser' }))
 	await waitFor(() =>
 		expect(discovery.moderate).toHaveBeenLastCalledWith({ id: item.id, decision: 'rejected', reason: 'Reviewed' })
 	)
+	await waitFor(() => expect(screen.getByRole('button', { name: 'Actualiser' }).hasAttribute('disabled')).toBe(false))
+	const calls = discovery.queue.mock.calls.length
+	fireEvent.click(screen.getByRole('button', { name: 'Actualiser' }))
+	await waitFor(() => expect(discovery.queue).toHaveBeenCalledTimes(calls + 1))
+	expect(discovery.queue.mock.lastCall?.[0]).toMatchObject({ state: 'reported', page: 0 })
+	discovery.moderate.mockRejectedValueOnce(new Error('refused'))
+	await waitFor(() => expect(screen.getByRole('button', { name: 'Approuver' }).hasAttribute('disabled')).toBe(false))
+	fireEvent.click(screen.getByRole('button', { name: 'Approuver' }))
+	await screen.findByText('Décision refusée. Réessaie plus tard.')
 })
 
 test('non-moderators never receive a moderation queue', async () => {

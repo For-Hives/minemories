@@ -5,9 +5,11 @@ import { fileURLToPath } from 'node:url'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, test } from 'vitest'
 import { loadLocale } from '../i18n/catalog'
+import { I18nProvider } from '../i18n/I18n'
 import type { Locale } from '../i18n/locales'
 import { createHeroI18n } from '../lib/hero-i18n'
 import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
+import { HeroLocaleProvider } from './HeroLocale'
 
 /** Each site language and the mod's own language file it quotes (mod/shared/common/.../lang/<file>.json). */
 const modLanguages: Record<Locale, string> = {
@@ -29,11 +31,14 @@ const modLang = (file: string): Record<string, string> =>
 function mount() {
 	const root = document.createElement('div')
 	root.className = 'site'
+	// The film's page is written in the page's language: French here, the language of these captions.
 	root.innerHTML = renderToStaticMarkup(
-		<>
-			<ShareIllustration />
-			<ClosingIllustration />
-		</>
+		<I18nProvider initialLocale="fr">
+			<HeroLocaleProvider>
+				<ShareIllustration />
+				<ClosingIllustration />
+			</HeroLocaleProvider>
+		</I18nProvider>
 	)
 	document.body.append(root)
 	return root
