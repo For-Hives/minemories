@@ -1835,7 +1835,7 @@ public final class ClientRuntime {
               dispatcher.getPackedLightCoords(entity, 1f));
           buffers.finish();
         });
-    if (ContraptionCapture.isContraption(entity)) captureContraption(capture, mc, entity, center);
+    if (ContraptionCapture.needsBlocks(entity)) captureContraption(capture, mc, entity, center);
   }
 
   /**
