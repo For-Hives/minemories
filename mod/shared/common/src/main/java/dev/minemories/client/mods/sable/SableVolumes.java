@@ -1,5 +1,10 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.sable;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.util.Reflect;
+import dev.minemories.client.util.WarnOnce;
+import dev.minemories.client.volume.CaptureVolume;
+import dev.minemories.client.volume.Placement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -14,7 +19,7 @@ import net.minecraft.world.level.Level;
  * pose. Only Sable's public companion API is used, by name, so no Sable class is linked unless
  * Sable is there; the exact plot box comes from the sub-level when it exposes one.
  */
-final class SableVolumes implements CaptureVolume.Source {
+public final class SableVolumes implements CaptureVolume.Source {
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   private static final String COMPANION = "dev.ryanhcode.sable.companion.SableCompanion";
   private static final String BOX = "dev.ryanhcode.sable.companion.math.BoundingBox3d";
@@ -24,7 +29,9 @@ final class SableVolumes implements CaptureVolume.Source {
       Object companion, Method intersecting, Method containing, Constructor<?> box) {}
 
   private Api api;
-  private boolean resolved, warned;
+  private final WarnOnce unsupported =
+      new WarnOnce(LOGGER, "Sable sub-levels are not captured with this Sable version");
+  private boolean resolved;
 
   @Override
   public List<CaptureVolume> intersecting(Level level, CaptureBounds world) {
@@ -43,7 +50,7 @@ final class SableVolumes implements CaptureVolume.Source {
       for (Object subLevel : (Iterable<?>) sable.intersecting.invoke(sable.companion, level, query))
         volumes.add(volume(sable, level, subLevel));
     } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-      unsupported(error);
+      unsupported.warn(error);
       return List.of();
     }
     return volumes;
@@ -51,37 +58,37 @@ final class SableVolumes implements CaptureVolume.Source {
 
   private static CaptureVolume volume(Api sable, Level level, Object subLevel)
       throws ReflectiveOperationException {
-    Object pose = call(subLevel, "logicalPose");
-    Object position = call(pose, "position");
-    Object rotation = call(pose, "orientation");
-    Object pivot = call(pose, "rotationPoint");
-    Object scale = call(pose, "scale");
+    Object pose = Reflect.call(subLevel, "logicalPose");
+    Object position = Reflect.call(pose, "position");
+    Object rotation = Reflect.call(pose, "orientation");
+    Object pivot = Reflect.call(pose, "rotationPoint");
+    Object scale = Reflect.call(pose, "scale");
     Placement placement =
         new Placement(
-            number(position, "x"),
-            number(position, "y"),
-            number(position, "z"),
-            number(rotation, "x"),
-            number(rotation, "y"),
-            number(rotation, "z"),
-            number(rotation, "w"),
-            number(pivot, "x"),
-            number(pivot, "y"),
-            number(pivot, "z"),
-            number(scale, "x"),
-            number(scale, "y"),
-            number(scale, "z"));
+            Reflect.number(position, "x"),
+            Reflect.number(position, "y"),
+            Reflect.number(position, "z"),
+            Reflect.number(rotation, "x"),
+            Reflect.number(rotation, "y"),
+            Reflect.number(rotation, "z"),
+            Reflect.number(rotation, "w"),
+            Reflect.number(pivot, "x"),
+            Reflect.number(pivot, "y"),
+            Reflect.number(pivot, "z"),
+            Reflect.number(scale, "x"),
+            Reflect.number(scale, "y"),
+            Reflect.number(scale, "z"));
     CaptureBounds cells = plotCells(subLevel);
     if (cells == null) {
-      Object drawn = call(subLevel, "boundingBox");
+      Object drawn = Reflect.call(subLevel, "boundingBox");
       cells =
           placement.localCells(
-              number(drawn, "minX"),
-              number(drawn, "minY"),
-              number(drawn, "minZ"),
-              number(drawn, "maxX"),
-              number(drawn, "maxY"),
-              number(drawn, "maxZ"));
+              Reflect.number(drawn, "minX"),
+              Reflect.number(drawn, "minY"),
+              Reflect.number(drawn, "minZ"),
+              Reflect.number(drawn, "maxX"),
+              Reflect.number(drawn, "maxY"),
+              Reflect.number(drawn, "maxZ"));
     }
     int bottom = level.getMinBuildHeight(), top = level.getMaxBuildHeight() - 1;
     cells =
@@ -113,10 +120,10 @@ final class SableVolumes implements CaptureVolume.Source {
   /** The exact block box of the sub-level's plot, or null when this Sable does not expose it. */
   private static CaptureBounds plotCells(Object subLevel) {
     try {
-      Object box = call(call(subLevel, "getPlot"), "getBoundingBox");
-      int minX = (int) number(box, "minX"), maxX = (int) number(box, "maxX");
-      int minY = (int) number(box, "minY"), maxY = (int) number(box, "maxY");
-      int minZ = (int) number(box, "minZ"), maxZ = (int) number(box, "maxZ");
+      Object box = Reflect.call(Reflect.call(subLevel, "getPlot"), "getBoundingBox");
+      int minX = (int) Reflect.number(box, "minX"), maxX = (int) Reflect.number(box, "maxX");
+      int minY = (int) Reflect.number(box, "minY"), maxY = (int) Reflect.number(box, "maxY");
+      int minZ = (int) Reflect.number(box, "minZ"), maxZ = (int) Reflect.number(box, "maxZ");
       // An empty plot reports a single cell at the world origin, which no plot ever covers.
       if (minX == 0 && maxX == 0 && minY == 0 && maxY == 0 && minZ == 0 && maxZ == 0) return null;
       if (minX > maxX || minY > maxY || minZ > maxZ) return null;
@@ -148,26 +155,9 @@ final class SableVolumes implements CaptureVolume.Source {
     } catch (ClassNotFoundException absent) {
       api = null;
     } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-      unsupported(error);
+      unsupported.warn(error);
       api = null;
     }
     return api;
-  }
-
-  private void unsupported(Throwable error) {
-    if (warned) return;
-    warned = true;
-    LOGGER.warn("Sable sub-levels are not captured with this Sable version: {}", error.toString());
-  }
-
-  private static Object call(Object target, String method) throws ReflectiveOperationException {
-    if (target == null) throw new NoSuchMethodException(method);
-    return target.getClass().getMethod(method).invoke(target);
-  }
-
-  private static double number(Object target, String method) throws ReflectiveOperationException {
-    Object value = call(target, method);
-    if (!(value instanceof Number number)) throw new NoSuchMethodException(method);
-    return number.doubleValue();
   }
 }

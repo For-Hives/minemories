@@ -1,7 +1,8 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.minemories.client.CaptureBounds;
 import org.junit.jupiter.api.Test;
 
 class PlacementTest {

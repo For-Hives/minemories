@@ -1,4 +1,4 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.flywheel;
 
 import static org.junit.jupiter.api.Assertions.*;
 

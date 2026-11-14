@@ -1,5 +1,7 @@
 package dev.minemories.client;
 
+import dev.minemories.client.mods.ModVolumes;
+import dev.minemories.client.volume.VolumeCapture;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -33,6 +35,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private final Map<Long, Object> chunks = new LinkedHashMap<>();
   private final List<Integer> entities = new ArrayList<>();
   private VolumeCapture volumes;
+  private VolumeCapture.Walker volumeWalker;
   private CaptureBounds bounds;
   private CaptureCursor cursor;
   private CaptureLevelView fluidView;
@@ -264,12 +267,13 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
     }
     if (entityIndex >= entities.size()) {
       if (volumes == null) {
-        volumes = new VolumeCapture(mc, CaptureVolume.around(level, bounds), center);
+        volumes = new VolumeCapture(ModVolumes.around(level, bounds), center);
+        volumeWalker = ClientRuntime.volumeWalker(sprites, models, mc);
         return null;
       }
       if (!volumes.done()) {
         sink.element = new CaptureElement();
-        volumes.step(sink, sprites, models);
+        volumes.step(sink, volumeWalker);
         return sink.element.seal();
       }
       if (!skippedReported) {

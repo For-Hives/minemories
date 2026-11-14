@@ -10,10 +10,27 @@ a new one.
 | Baked block models in the chunk mesh | terrain, most modded blocks | terrain walk (`captureCell`) | captured |
 | A renderer per block entity or entity, on the CPU | chests, beds, mobs, Create parts | rendered collector (`RenderedModelCapture`) | captured |
 | The same renderers moved to the GPU by an instancing backend | Flywheel 1.0 (Create 6), Flywheel 0.6 (Create 0.5.1) | `CaptureRenderScope` + Flywheel mixins force the CPU path while one model is collected | captured, see [modpack renderer validation](modpack-renderer-validation.md) |
-| **Blocks stored away from where they are drawn** | Sable sub-levels: Create Aeronautics planes and balloons, Simulated physics assemblies, Offroad cars | detached volumes (`CaptureVolume`, `SableVolumes`) | captured for Sable, below |
-| The same, through Valkyrien Skies 2 | VS2 ships: Eureka, Clockwork, Trackwork (Minecraft 1.20.1 and older) | detached volumes (`CaptureVolume`, `ValkyrienVolumes`) | captured, [below](#valkyrien-skies-2-ships) |
-| Blocks drawn by a level-render pass instead of the entity renderer | Create 0.5.1 contraption bodies (bearings, trains, minecart contraptions on Minecraft 1.18.2 to 1.20.1) | `LegacyContraptions` draws the contraption's structure buffers when its entity is captured | captured, see [modpack renderer validation](modpack-renderer-validation.md#create-051-contraption-bodies-14-november-2026) |
+| **Blocks stored away from where they are drawn** | Sable sub-levels: Create Aeronautics planes and balloons, Simulated physics assemblies, Offroad cars | detached volumes (`volume.CaptureVolume`, `mods.sable.SableVolumes`) | captured for Sable, below |
+| The same, through Valkyrien Skies 2 | VS2 ships: Eureka, Clockwork, Trackwork (Minecraft 1.20.1 and older) | detached volumes (`volume.CaptureVolume`, `mods.valkyrien.ValkyrienVolumes`) | captured, [below](#valkyrien-skies-2-ships) |
+| Blocks drawn by a level-render pass instead of the entity renderer | Create 0.5.1 contraption bodies (bearings, trains, minecart contraptions on Minecraft 1.18.2 to 1.20.1) | `mods.create.CreateContraptions` draws the contraption's body when its entity is captured: Create's structure buffers, or block by block for a Create 0.5 it does not know | captured, see [modpack renderer validation](modpack-renderer-validation.md#create-contraptions-windmills-bearings-pistons-pulleys-trains) |
 | Pure GPU effects | shaders, glint, particles | none | out of scope ([capture limits](frozen-entities.md)) |
+
+## Where the code lives
+
+Everything is under `mod/shared/common/src/main/java/dev/minemories/client/`, one package per
+responsibility, so a new integration never touches the capture itself:
+
+| Package | Holds | Depends on |
+| --- | --- | --- |
+| `client` | the capture itself (`ClientRuntime`, sinks, bounds, the rendered collector) | Minecraft |
+| `client.volume` | detached volumes, for any mod: `Placement` (where a volume is drawn), `CaptureVolume` (what to walk, and the `Source` a mod implements), `PlacedSink` (moves what the terrain code writes), `VolumeCapture` (the step-by-step walk) | `CaptureSink`, `CaptureBounds` |
+| `client.mods.<mod>` | one optional mod each: `sable`, `valkyrien`, `create`, `flywheel`. Reflection only, never a compile dependency | `client.volume`, `client.util` |
+| `client.mods` | `ModVolumes`, the list of the mods that provide volumes | the mod packages |
+| `client.util` | helpers with no Minecraft or mod in them: `Reflect` (call a mod's API by name through its public types), `WarnOnce` (one log line for a problem that would repeat) | nothing |
+
+`client.volume` does not call the capture or hold the level: `ClientRuntime.volumeWalker` hands
+it the terrain code, the entity code and the level's entities as a `VolumeCapture.Walker`. The per-version `adapt.gradle` files find a class by its
+file name, so a package move needs no change there; an `overlay/java` file must follow its class.
 
 ## Detached volumes (Sable sub-levels)
 
@@ -31,14 +48,15 @@ captures of 15 October 2026.
 
 How it works:
 
-1. `CaptureVolume.around(level, box)` asks every registered `CaptureVolume.Source` for the volumes
+1. `ModVolumes.around(level, box)` asks every registered `CaptureVolume.Source` for the volumes
    drawn inside the capture box. `SableVolumes` uses Sable's public companion API
    (`SableCompanion.INSTANCE.getAllIntersecting`) by reflection, so no Sable class is linked when
    Sable is absent; the plot box comes from the sub-level's plot when it exposes one, otherwise from
    its drawn bounding box mapped back into the plot.
 2. `VolumeCapture` walks each volume's cells with the ordinary terrain code (models, tints, fluids,
    point lights, block entity renderers), then the entities stored in the plot, one step at a time
-   so the AFK capture spreads it over frames.
+   so the AFK capture spreads it over frames. The terrain and entity code reach it as a
+   `VolumeCapture.Walker` (`ClientRuntime.volumeWalker`).
 3. `PlacedSink` wraps the capture's sink: the terrain code writes relative to a block of the plot,
    and every primitive and light is moved by the volume's `Placement` (double precision, so twenty
    million blocks away stays exact) into the capture's frame. A whole volume belongs to the chunk it
@@ -80,11 +98,11 @@ captured with this Valkyrien Skies version` once.
 
 ### Adding another mod that stores blocks elsewhere
 
-A new integration is one class implementing
-`CaptureVolume.Source` that returns, for each ship drawn inside the box, its storage cells, a
-`Placement` and the test telling whether a storage chunk belongs to it, then one line in
-`CaptureVolume.SOURCES`. Use the mod's public API by reflection, return nothing when the mod is
-absent, and log once when its API is not recognized. Nothing else in the capture changes, on any
+A new integration is one class in a package of its own, `client.mods.<mod>`, implementing
+`CaptureVolume.Source`: it returns, for each ship drawn inside the box, its storage cells, a
+`Placement` and the test telling whether a storage chunk belongs to it. Then one line in
+`ModVolumes.SOURCES`. Use the mod's public API through `Reflect`, return nothing when the mod is
+absent, and log once (`WarnOnce`) when its API is not recognized. Nothing else in the capture changes, on any
 loader or Minecraft version: the pass only uses `Level`, chunk coordinates and the existing sink.
 
 ## Validation
@@ -93,7 +111,8 @@ Unit tests: `PlacementTest` (rotation about a pivot, inverse, normalization, sub
 precision twenty million blocks away, storage cells covering a drawn box, invalid placements),
 `PlacedSinkTest` (quads, rendered quads and lights moved into the capture frame, chunk of the drawn
 position, mirrored placements keep their winding), `CaptureVolumeTest` (plot ownership, per-capture
-limits, a volume is never sealed), `ValkyrienVolumesTest` (a VS2 transform gives the same world
+limits), `CutBoundaryTest` (a volume is never sealed), `ReflectTest` and `WarnOnceTest` (the shared
+helpers), `ValkyrienVolumesTest` (a VS2 transform gives the same world
 point as VS2's own ship-to-world matrix, older getter names, VS2 implementation classes called
 through their public interface, an unknown transform is rejected, the shipyard box).
 

@@ -1,5 +1,6 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
+import dev.minemories.client.CaptureBounds;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.level.Level;
@@ -13,15 +14,15 @@ import net.minecraft.world.level.Level;
  * @param cells storage cells to walk (inclusive), in the level's own block coordinates
  * @param owns whether a storage chunk column belongs to this volume (plots are shared grids)
  */
-record CaptureVolume(String source, CaptureBounds cells, Placement placement, Owner owns) {
+public record CaptureVolume(String source, CaptureBounds cells, Placement placement, Owner owns) {
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
   /** Volumes past these limits are skipped with a log line; the rest of the capture is kept. */
-  static final int MAX_VOLUMES = 256;
+  public static final int MAX_VOLUMES = 256;
 
-  static final long MAX_CELLS = 8_000_000L;
+  public static final long MAX_CELLS = 8_000_000L;
 
-  interface Owner {
+  public interface Owner {
     boolean chunk(int chunkX, int chunkZ);
   }
 
@@ -29,29 +30,27 @@ record CaptureVolume(String source, CaptureBounds cells, Placement placement, Ow
    * One mod's way of finding its volumes. An implementation stays optional: a missing mod returns
    * nothing, an API it no longer recognizes returns nothing and logs why once.
    */
-  interface Source {
+  public interface Source {
     List<CaptureVolume> intersecting(Level level, CaptureBounds world);
   }
 
-  /** Every integration, in a fixed order. Add one line for a new physics or ship mod. */
-  private static final List<Source> SOURCES = List.of(new SableVolumes(), new ValkyrienVolumes());
-
-  long cellCount() {
+  public long cellCount() {
     return ((long) cells.maxX() - cells.minX() + 1)
         * ((long) cells.maxY() - cells.minY() + 1)
         * ((long) cells.maxZ() - cells.minZ() + 1);
   }
 
-  boolean contains(double x, double y, double z) {
+  public boolean contains(double x, double y, double z) {
     return cells.containsEntity(x, y, z)
         && owns.chunk(
             Math.floorDiv((int) Math.floor(x), 16), Math.floorDiv((int) Math.floor(z), 16));
   }
 
-  /** The volumes drawn inside the capture box, within the per-capture limits. */
-  static List<CaptureVolume> around(Level level, CaptureBounds world) {
+  /** The volumes {@code sources} draw inside the capture box, within the per-capture limits. */
+  public static List<CaptureVolume> around(
+      List<? extends Source> sources, Level level, CaptureBounds world) {
     List<CaptureVolume> found = new ArrayList<>();
-    for (Source source : SOURCES) found.addAll(source.intersecting(level, world));
+    for (Source source : sources) found.addAll(source.intersecting(level, world));
     return within(found);
   }
 

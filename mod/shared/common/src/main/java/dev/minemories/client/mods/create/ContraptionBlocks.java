@@ -1,4 +1,4 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.create;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.lang.reflect.Method;
@@ -12,17 +12,18 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
- * Create contraptions (windmill sails, machines on a bearing, pistons, pulleys, gantries, train
- * carriages) draw their assembled blocks in a render pass of their own, not in their entity
- * renderer, so an entity capture alone keeps only an empty pivot. This draws those blocks again,
- * block by block, at the contraption's current pose.
+ * The simple way to draw a Create 0.5 contraption's assembled blocks (windmill sails, machines on a
+ * bearing, pistons, pulleys, gantries, train carriages): block by block, each with the game's block
+ * renderer, at the contraption's current pose. It needs almost nothing from Create, so {@link
+ * CreateContraptions} falls back on it when {@link ContraptionStructure} does not know this Create;
+ * it also answers whether a contraption's blocks are missing from its entity render at all.
  *
  * <p>Create is optional and its classes are not on the compile classpath: everything goes through
  * reflection on names that every Create version since 0.5 keeps ({@code AbstractContraptionEntity},
  * {@code getContraption}, {@code Contraption.getBlocks}, {@code applyLocalTransforms}). Anything
  * unexpected drops this contraption's blocks, never the capture.
  */
-final class ContraptionCapture {
+final class ContraptionBlocks {
   static final String ENTITY_CLASS = "AbstractContraptionEntity";
   static final String CREATE_PACKAGE = "com.simibubi.create.";
 
@@ -40,7 +41,7 @@ final class ContraptionCapture {
   private static final Map<Class<?>, Method> METHODS = new ConcurrentHashMap<>();
   private static final Map<ClassLoader, Boolean> LAYER_PASSES = new ConcurrentHashMap<>();
 
-  private ContraptionCapture() {}
+  private ContraptionBlocks() {}
 
   /** True when the entity is a Create contraption, by its class hierarchy. */
   static boolean isContraption(Object entity) {
@@ -86,7 +87,7 @@ final class ContraptionCapture {
    * pose}, as Create does before drawing it. False when the entity has no such method.
    */
   static boolean applyLocalTransforms(Object entity, Object pose, float partialTick) {
-    Method method = METHODS.computeIfAbsent(entity.getClass(), ContraptionCapture::findTransform);
+    Method method = METHODS.computeIfAbsent(entity.getClass(), ContraptionBlocks::findTransform);
     if (method == null) return false;
     try {
       method.invoke(entity, pose, partialTick);

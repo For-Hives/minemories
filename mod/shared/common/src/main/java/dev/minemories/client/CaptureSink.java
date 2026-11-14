@@ -8,7 +8,7 @@ import java.nio.file.Path;
 /**
  * Geometry only: implementations must never require a world or renderer on their consumer thread.
  */
-interface CaptureSink {
+public interface CaptureSink {
   /**
    * A baked block-model or fluid quad. Minecraft draws chunk geometry with back-face culling, so
    * these are single-sided: faces meant to be seen from both sides (plants, the underside of a
