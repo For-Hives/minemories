@@ -250,24 +250,30 @@ public final class ClientRuntime {
    * Explains every command in the chat. Each command is clickable: it is typed into the chat box
    * (never run), so the player can still aim at a block or add the missing argument.
    */
+  /** One chat line for the player, never sent to the server. */
+  private static void chat(Minecraft mc, Component message) {
+    if (mc.player != null) mc.player.displayClientMessage(message, false);
+  }
+
   private static int help() {
     Minecraft mc = Minecraft.getInstance();
     if (mc.player == null) return 0;
-    mc.player.displayClientMessage(
+    chat(
+        mc,
         Component.literal("Minemories")
             .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
             .append(
                 Component.literal(" · " + I18n.get("minemories.help.title"))
-                    .withStyle(ChatFormatting.GRAY)),
-        false);
+                    .withStyle(ChatFormatting.GRAY)));
     for (List<Object> section : helpSections()) {
-      mc.player.displayClientMessage(
-          Component.literal(I18n.get((String) section.get(0))).withStyle(ChatFormatting.YELLOW),
-          false);
+      chat(
+          mc,
+          Component.literal(I18n.get((String) section.get(0))).withStyle(ChatFormatting.YELLOW));
       for (Object entry : section.subList(1, section.size())) {
         HelpRow row = (HelpRow) entry;
         String shown = cmd(row.command()) + (row.needsArgument() ? argumentHint(row) : "");
-        mc.player.displayClientMessage(
+        chat(
+            mc,
             Component.literal("  " + shown)
                 .withStyle(
                     style ->
@@ -282,8 +288,7 @@ public final class ClientRuntime {
                                     Component.translatable("minemories.help.click_to_type"))))
                 .append(
                     Component.literal(" – " + I18n.get(row.key(), row.args()))
-                        .withStyle(ChatFormatting.GRAY)),
-            false);
+                        .withStyle(ChatFormatting.GRAY)));
       }
     }
     say("minemories.help.footer");
