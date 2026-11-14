@@ -230,7 +230,9 @@ export function PublicationPanel({
 		normalize: trimmed,
 		ready: status !== null,
 	})
-	const [consent, setConsent] = useState(false)
+	// null until the owner touches the box: a submission under moderation, published or rejected already carries
+	// their consent, so the box shows it ticked; a capture never submitted, or withdrawn, starts unticked.
+	const [consentChoice, setConsent] = useState<boolean | null>(null)
 	const [busy, setBusy] = useState<'submit' | 'withdraw' | null>(null)
 	const [error, setError] = useState('')
 	const [notice, setNotice] = useState('')
@@ -239,6 +241,7 @@ export function PublicationPanel({
 		form.setValue({ ...form.value, ...patch })
 	}
 	const current = status !== null && submittedStates.includes(status.state)
+	const consent = consentChoice ?? current
 	const unchanged = current && submission !== null && sameForm(trimmed(form.value), submission)
 	const hint = submitHint(form.value, consent, unchanged)
 
@@ -257,7 +260,8 @@ export function PublicationPanel({
 			if (!active.current) return
 			setStatus({ ...result, submission: result.submission ?? sent })
 			form.clear()
-			setConsent(false)
+			// The submission now carries the consent: the box stays ticked.
+			setConsent(null)
 			setNotice('Submitted, awaiting moderation')
 		} catch {
 			if (active.current) setError('Publication refused or limit reached. Try again later.')
@@ -274,6 +278,8 @@ export function PublicationPanel({
 			const result = await apiClient.discovery.revoke({ memoryId: memory.id })
 			if (!active.current) return
 			setStatus(previous => ({ ...result, submission: result.submission ?? previous?.submission ?? null }))
+			// Withdrawn: a fresh submission asks for consent again.
+			setConsent(null)
 		} catch {
 			if (active.current) setError('Could not withdraw the publication. Try again later.')
 		} finally {
