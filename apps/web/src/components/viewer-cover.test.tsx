@@ -40,6 +40,7 @@ function mount(memoryId: string | null = 'frame-1') {
 		categories: vi.fn(() => []),
 		isCategoryVisible: vi.fn(() => true),
 		currentView: vi.fn(() => null),
+		flight: { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null },
 	}
 	render(
 		<I18nProvider initialLocale="en">

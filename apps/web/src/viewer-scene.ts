@@ -24,6 +24,12 @@ import { ViewerPrecipitation } from './viewer-precipitation'
 import { prepareWater } from './viewer-water'
 import { prepareLayer, type WorldLayer, type WorldLight } from './viewer-world'
 
+/**
+ * Eye height when the flight starts above the capture's focus (the player's position): a player's eyes (1.62) plus
+ * one block, so the view never starts inside the captured player.
+ */
+const FLIGHT_EYE = 2.62
+
 export interface ViewerLoadOptions {
 	signal?: AbortSignal
 	originDelta?: { x: number; y: number; z: number }
@@ -703,7 +709,7 @@ export class ViewerScene {
 		this.controls.autoRotate = false
 		this.controls.enabled = !enabled
 		if (enabled) {
-			this.camera.position.copy(this.captureFocus ?? this.controls.target).add(new THREE.Vector3(0, 1.62, 0))
+			this.camera.position.copy(this.captureFocus ?? this.controls.target).add(new THREE.Vector3(0, FLIGHT_EYE, 0))
 			const rotation = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ')
 			rotation.x = 0
 			rotation.z = 0
@@ -718,8 +724,9 @@ export class ViewerScene {
 		this.navigation.setActive(enabled)
 	}
 
-	moveFirstPerson(direction: 'forward' | 'back' | 'up' | 'down', pressed: boolean): void {
-		this.navigation.move(direction, pressed)
+	/** The free flight: touch controls, flying speed and the visitor's key bindings. */
+	get flight(): ViewerNavigation {
+		return this.navigation
 	}
 
 	setTour(enabled: boolean): void {
@@ -809,6 +816,8 @@ export class ViewerScene {
 	snapshot(targetWidth = 400, targetHeight = 250, quality = 0.8): string | null {
 		if (this.modelRoot.children.length === 0) return null
 		if (!this.navigation.active) this.controls.update()
+		// A postcard keeps the camera's own field of view, never the sprint's widening.
+		this.navigation.resetFov()
 		this.renderScene()
 		const sourceWidth = this.canvas.width
 		const sourceHeight = this.canvas.height
@@ -944,7 +953,8 @@ export class ViewerScene {
 		const distance = footprint * 0.78 * Math.max(1, 1 / this.camera.aspect)
 		if (!preserveView)
 			this.camera.position.copy(focus).add(new THREE.Vector3(distance, distance * 0.46, distance * 0.85))
-		if (!preserveView && this.navigation.active) this.camera.position.copy(focus).add(new THREE.Vector3(0, 1.62, 0))
+		if (!preserveView && this.navigation.active)
+			this.camera.position.copy(focus).add(new THREE.Vector3(0, FLIGHT_EYE, 0))
 		this.camera.near = 0.02
 		this.camera.far = Math.max(4000, largest * 30)
 		this.camera.updateProjectionMatrix()

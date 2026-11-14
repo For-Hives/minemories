@@ -1346,3 +1346,125 @@ html[data-mc-font="read"]
 	margin-top: var(--ds-sp-2);
 	color: var(--text-2);
 }
+
+/* Flight: speed notice, controls panel, touch stick and climb buttons. */
+.cinema-navigation .flight-speed {
+	color: #fff;
+}
+.flight-controls table {
+	width: 100%;
+	margin: var(--ds-sp-3) 0;
+	border-collapse: collapse;
+}
+.flight-controls th {
+	padding: var(--ds-sp-1) var(--ds-sp-2) var(--ds-sp-1) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+	text-align: left;
+}
+.flight-controls td {
+	padding: 2px;
+}
+.cinema-page .flight-controls :is(td, .flight-reset) > button {
+	width: 100%;
+	min-height: var(--ds-hit);
+	border: var(--gp) solid var(--outline);
+	background: var(--stone);
+	color: #fff;
+	font: 400 16px / 18px var(--f-ui);
+	text-shadow: var(--gp) var(--gp) 0 #3f3f3f;
+	box-shadow: var(--v-stone);
+	cursor: pointer;
+}
+.cinema-page .flight-controls td > button[aria-pressed="true"] {
+	border-color: var(--hover);
+}
+.flight-controls small {
+	display: block;
+	margin-bottom: var(--ds-sp-3);
+	color: var(--text-2);
+}
+.flight-controls .flight-warning {
+	color: #ffd27a;
+}
+.flight-slider,
+.flight-check {
+	display: flex;
+	gap: var(--ds-sp-2);
+	margin: var(--ds-sp-2) 0;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text);
+}
+.flight-slider {
+	flex-direction: column;
+}
+.flight-check input {
+	width: 20px;
+	height: 20px;
+	accent-color: var(--hover);
+}
+
+.touch-flight {
+	position: absolute;
+	inset: auto 0 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	padding: 0 calc(var(--ds-sp-5) + env(safe-area-inset-right)) calc(76px + env(safe-area-inset-bottom))
+		calc(var(--ds-sp-5) + env(safe-area-inset-left));
+	pointer-events: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+.touch-stick {
+	display: grid;
+	place-items: center;
+	width: 136px;
+	height: 136px;
+	border: var(--gp) solid rgb(255 255 255 / 0.4);
+	background: rgb(0 0 0 / 0.3);
+	pointer-events: auto;
+	touch-action: none;
+}
+.touch-stick > span {
+	width: 56px;
+	height: 56px;
+	border: var(--gp) solid var(--outline);
+	background: var(--stone);
+	box-shadow: var(--v-stone);
+	pointer-events: none;
+}
+.touch-climb {
+	display: grid;
+	gap: var(--ds-sp-3);
+	pointer-events: auto;
+}
+.cinema-page .touch-climb button {
+	display: grid;
+	place-items: center;
+	width: 64px;
+	height: 64px;
+	border: var(--gp) solid var(--outline);
+	background: var(--stone);
+	color: #fff;
+	box-shadow: var(--v-stone);
+	touch-action: none;
+}
+.cinema-page .touch-climb button:active {
+	box-shadow: inset var(--gp) var(--gp) 0 var(--stone-lo);
+}
+/* Flying with thumbs: the hour strip and the caption make way for the stick and buttons. */
+.viewer-studio.is-touch-flying > :is(.cinema-time, .cinema-caption) {
+	display: none;
+}
+.is-immersed .touch-flight {
+	padding-bottom: calc(var(--ds-sp-5) + env(safe-area-inset-bottom));
+}
+@media (forced-colors: active) {
+	.touch-stick,
+	.touch-stick > span,
+	.cinema-page .touch-climb button {
+		border-color: ButtonText;
+	}
+}

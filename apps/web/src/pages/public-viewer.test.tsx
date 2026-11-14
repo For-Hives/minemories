@@ -30,6 +30,7 @@ vi.mock('../api-client', () => ({
 vi.mock('../viewer-scene', () => ({
 	formatClock: () => '',
 	ViewerScene: class {
+		flight = { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null }
 		constructor(_canvas: HTMLCanvasElement, events: NonNullable<typeof mocks.events>) {
 			mocks.events = events
 		}
