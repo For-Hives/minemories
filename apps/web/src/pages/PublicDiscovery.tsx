@@ -207,6 +207,31 @@ function usePublicationStatus(memoryId: string) {
 	return { status, failed, setStatus, retry }
 }
 
+function firstSubmission(place: string | null | undefined, name: string) {
+	return { title: (place || name).slice(0, TITLE_MAX), description: '', category: 'build' as Category }
+}
+
+/** The name the owner gave this capture's server; undefined while asking, null when none or unreachable. */
+function useServerPlace(memoryId: string): string | null | undefined {
+	const [place, setPlace] = useState<string | null | undefined>(undefined)
+	useEffect(() => {
+		let active = true
+		setPlace(undefined)
+		Promise.resolve()
+			.then(() => apiClient.memories.serverProfile({ id: memoryId }))
+			.then(profile => {
+				if (active) setPlace(profile.name)
+			})
+			.catch(() => {
+				if (active) setPlace(null)
+			})
+		return () => {
+			active = false
+		}
+	}, [memoryId])
+	return place
+}
+
 export function PublicationPanel({
 	memory,
 }: {
@@ -225,10 +250,12 @@ export function PublicationPanel({
 	const loading = status === null && !failed
 	// Older APIs omit the submission: the form then starts from the capture.
 	const submission = status?.submission ?? null
-	const base = submission ?? { title: memory.name.slice(0, TITLE_MAX), description: '', category: 'build' as Category }
+	// A first submission starts from the name the owner gave this server, else the capture's.
+	const place = useServerPlace(memory.id)
+	const base = submission ?? firstSubmission(place, memory.name)
 	const form = useDraft('publication', memory.id, base, isPublicationForm, {
 		normalize: trimmed,
-		ready: status !== null,
+		ready: status !== null && place !== undefined,
 	})
 	const [consent, setConsent] = useState(false)
 	const [busy, setBusy] = useState<'submit' | 'withdraw' | null>(null)

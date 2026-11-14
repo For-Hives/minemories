@@ -108,6 +108,10 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 		(client: ReturnType<typeof rpc>) => client.memories.createShare(input),
 		(client: ReturnType<typeof rpc>) => client.memories.revokeShare(input),
 		(client: ReturnType<typeof rpc>) => client.memories.shareStatus(input),
+		(client: ReturnType<typeof rpc>) => client.memories.serverProfile({ id }),
+		(client: ReturnType<typeof rpc>) => client.memories.setCover({ id, image }),
+		(client: ReturnType<typeof rpc>) => client.memories.serverProfiles(),
+		(client: ReturnType<typeof rpc>) => client.memories.renameServer({ key: '["server",null]', name: 'Mine' }),
 	]
 	await Promise.all(
 		operations.map(async operation => {
@@ -127,6 +131,15 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	expect(await owner.memories.list()).toMatchObject([
 		{ id, name: 'Cabin', metadata: { thumbnail: image, icon: image } },
 	])
+	// The server profile: a picture chosen in the viewer, a name kept on the account, per owner.
+	await expect(other.memories.serverProfile({ id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+	await expect(other.memories.setCover({ id, image })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+	const profile = await owner.memories.serverProfile({ id })
+	expect(profile).toMatchObject({ name: null, cover: null })
+	await owner.memories.setCover({ id, image, name: 'Our base' })
+	await owner.memories.renameServer({ key: profile.key, name: 'Our base, renamed' })
+	expect(await owner.memories.serverProfiles()).toEqual([{ key: profile.key, name: 'Our base, renamed', cover: image }])
+	expect(await other.memories.serverProfiles()).toEqual([])
 	const file = await app.request(`/api/memories/${id}/file`, { headers: { cookie } })
 	expect(file.status).toBe(200)
 	expect(file.headers.get('cache-control')).toBe('private, no-store')

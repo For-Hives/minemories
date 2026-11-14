@@ -1417,5 +1417,17 @@
 	"Include this view": "この視点を含める",
 	"Camera, time of day, weather and layers, as on your screen now.": "カメラ、時刻、天気、レイヤーを今の画面のまま共有します。",
 	"Copy a link to this view": "この視点へのリンクをコピー",
-	"Link to this view copied.": "この視点へのリンクをコピーしました。"
+	"Link to this view copied.": "この視点へのリンクをコピーしました。",
+	"Server picture": "サーバー画像",
+	"Your server’s picture": "サーバーの画像",
+	"The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.": "画面のビューが、ギャラリーでのこのサーバーの画像になり、公開するときはこのスナップショットの画像にもなります。",
+	"In your gallery": "ギャラリーでの表示",
+	"When published": "公開後の表示",
+	"Retake from this view": "このビューで撮り直す",
+	"Use this picture": "この画像を使う",
+	"Move the camera, then retake.": "カメラを動かしてから撮り直してください。",
+	"This view could not be captured. Move the camera, then retake.": "このビューを撮影できませんでした。カメラを動かしてから撮り直してください。",
+	"Could not save the picture. Try again.": "画像を保存できませんでした。もう一度お試しください。",
+	"Saved: this view is now your server’s picture.": "保存しました。このビューがサーバーの画像になりました。",
+	"Could not rename this server.": "このサーバーの名前を変更できませんでした。"
 }

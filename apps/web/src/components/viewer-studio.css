@@ -1285,3 +1285,75 @@ html[data-mc-font="read"]
 	height: calc(3 * var(--gp));
 	background: var(--c-green);
 }
+
+/* --- Server picture: the sharing panel's container, two previews of the view on screen --- */
+.cinema-page .viewer-cover {
+	max-height: calc(100% - 140px);
+	overflow-y: auto;
+}
+.viewer-cover-previews {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: var(--ds-sp-3);
+	margin: var(--ds-sp-3) 0;
+}
+.viewer-cover-previews figure {
+	display: grid;
+	gap: var(--ds-sp-1);
+	margin: 0;
+}
+.viewer-cover-previews figcaption {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
+.viewer-cover-previews strong {
+	overflow: hidden;
+	color: var(--text);
+	font: 400 14px / 20px var(--f-title);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* The gallery's server card: a wide slot (180 × 96 there) over its name. */
+.viewer-cover-server,
+.viewer-cover-public {
+	display: grid;
+	gap: var(--ds-sp-2);
+	padding: var(--ds-sp-2);
+	background: var(--slot-lo);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.viewer-cover-server img,
+.viewer-cover-public img {
+	display: block;
+	width: 100%;
+	object-fit: cover;
+}
+.viewer-cover-server img {
+	aspect-ratio: 180 / 96;
+}
+/* A public card shows the whole picture (16:10). */
+.viewer-cover-public img {
+	aspect-ratio: 16 / 10;
+}
+.viewer-cover-name {
+	display: grid;
+	gap: var(--ds-sp-1);
+	margin: var(--ds-sp-2) 0;
+	color: var(--text);
+}
+.viewer-cover-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-2);
+	margin-top: var(--ds-sp-2);
+}
+.viewer-cover small {
+	display: block;
+	margin-top: var(--ds-sp-2);
+	color: var(--text-2);
+}
+@media (max-width: 520px) {
+	.viewer-cover-previews {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

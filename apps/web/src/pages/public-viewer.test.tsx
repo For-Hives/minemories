@@ -325,3 +325,11 @@ test('a link without a view keeps the default framing and the capture’s hour',
 	expect(mocks.hide).not.toHaveBeenCalled()
 	expect(fetch).toHaveBeenNthCalledWith(1, 'http://example.test/api/shared/plain-token-0123456789', expect.anything())
 })
+
+test('a shared link is titled with the name its owner gave the place, else the capture’s', async () => {
+	vi.mocked(fetch).mockImplementation(async url =>
+		String(url).includes('/file') ? glb() : sharedMeta({ place: 'Lalaland, our town' })
+	)
+	mount('/share/placed-token-0123456789', false)
+	expect(await screen.findByRole('heading', { name: 'Lalaland, our town' })).toBeTruthy()
+})

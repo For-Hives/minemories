@@ -13,6 +13,7 @@ import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
 import { buttonLime } from './ui'
+import { ViewerCover } from './ViewerCover'
 import { ViewerIcon } from './ViewerIcons'
 import { ViewerLayers } from './ViewerLayers'
 import { ViewerTime } from './ViewerTime'
@@ -33,6 +34,45 @@ function startingWeather(view: ViewLink | undefined): ViewerWeather {
 
 function startingLighting(view: ViewLink | undefined): ViewerLighting {
 	return view?.lighting ?? readViewerLighting(browserStorage())
+}
+
+/** The owner's way to pick their server's picture: only in the viewer, from the view on screen. */
+function CoverButton({
+	owner,
+	ready,
+	open,
+	onToggle,
+}: {
+	owner: string | null | undefined
+	ready: boolean
+	open: boolean
+	onToggle(): void
+}) {
+	const { t } = useI18n()
+	if (!owner) return null
+	return (
+		<button type="button" disabled={!ready} aria-label={t('Server picture')} aria-expanded={open} onClick={onToggle}>
+			<ViewerIcon name="picture" />
+			<span>{t('Server picture')}</span>
+		</button>
+	)
+}
+
+function CoverPanel({
+	open,
+	memoryId,
+	sceneRef,
+	onClose,
+	onSaved,
+}: {
+	open: boolean
+	memoryId: string | null | undefined
+	sceneRef: RefObject<ViewerScene | null>
+	onClose(): void
+	onSaved(): void
+}) {
+	if (!(open && memoryId)) return null
+	return <ViewerCover key={memoryId} sceneRef={sceneRef} memoryId={memoryId} onClose={onClose} onSaved={onSaved} />
 }
 
 /** A visitor's Share (no memory of their own here): copies this page's address with the current view. */
@@ -130,11 +170,12 @@ export function ViewerStudio({
 	const [tour, setTour] = useState(false)
 	const [firstPerson, setFirstPerson] = useState(false)
 	const [sharing, setSharing] = useState(false)
+	const [covering, setCovering] = useState(false)
 	const [toast, setToast] = useState({ text: '', id: 0 })
 	const [settings, setSettings] = useState(false)
 	const [immersed, setImmersed] = useState(false)
 	const [idle, setIdle] = useState(false)
-	const panelOpen = settings || sharing
+	const panelOpen = settings || sharing || covering
 	// Each notice gets its own id, so a second postcard restarts the countdown.
 	const notify = (text: string) => setToast(current => ({ text, id: current.id + 1 }))
 	const dismiss = () => setToast(current => ({ ...current, text: '' }))
@@ -189,6 +230,7 @@ export function ViewerStudio({
 			if (event.key === 'Escape') {
 				setSettings(false)
 				setSharing(false)
+				setCovering(false)
 				setImmersed(false)
 			} else if (!isTyping(event)) shortcuts[event.key.toLowerCase()]?.()
 		}
@@ -224,6 +266,7 @@ export function ViewerStudio({
 						aria-label={t('Atmosphere')}
 						onClick={() => {
 							setSharing(false)
+							setCovering(false)
 							setSettings(!settings)
 						}}
 					>
@@ -267,6 +310,16 @@ export function ViewerStudio({
 						<ViewerIcon name="camera" />
 						<span>{t('Postcard')}</span>
 					</button>
+					<CoverButton
+						owner={memoryId}
+						ready={ready}
+						open={covering}
+						onToggle={() => {
+							setSettings(false)
+							setSharing(false)
+							setCovering(!covering)
+						}}
+					/>
 					<CopyViewButton shown={viewLink} owner={memoryId} ready={ready} onCopy={() => void copyView()} />
 					{memoryId && (
 						<button
@@ -276,6 +329,7 @@ export function ViewerStudio({
 							aria-expanded={sharing}
 							onClick={() => {
 								setSettings(false)
+								setCovering(false)
 								setSharing(!sharing)
 							}}
 						>
@@ -402,6 +456,16 @@ export function ViewerStudio({
 					<span>{t(immersed ? 'Show controls' : 'Immerse')}</span>
 					<kbd>H</kbd>
 				</button>
+				<CoverPanel
+					open={covering}
+					memoryId={memoryId}
+					sceneRef={sceneRef}
+					onClose={() => setCovering(false)}
+					onSaved={() => {
+						setCovering(false)
+						notify(t('Saved: this view is now your server’s picture.'))
+					}}
+				/>
 				{sharing && memoryId && (
 					<section className="viewer-sharing">
 						<div className="cinema-panel-heading">

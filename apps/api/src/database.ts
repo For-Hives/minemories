@@ -9,6 +9,7 @@ import { migrateDiscovery } from './discovery'
 import { migrateObjectDeletionClaims } from './object-deletions'
 import { migrateRoadmapSnapshot } from './roadmap-snapshot'
 import { migrateRoleStorage } from './role-storage'
+import { migrateServerProfiles } from './server-profiles'
 import { configureS3StorageProvider } from './storage-s3'
 import { migrateTimelapse } from './timelapse-catalog'
 import { migrateTimelapseIndex } from './timelapse-index'
@@ -89,6 +90,7 @@ database.exec(`
 `)
 
 migrateDiscovery(database)
+migrateServerProfiles(database)
 
 migrateTimelapse(database)
 

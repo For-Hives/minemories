@@ -1417,5 +1417,17 @@
 	"Include this view": "Diese Ansicht einschließen",
 	"Camera, time of day, weather and layers, as on your screen now.": "Kamera, Tageszeit, Wetter und Ebenen, so wie gerade auf deinem Bildschirm.",
 	"Copy a link to this view": "Link zu dieser Ansicht kopieren",
-	"Link to this view copied.": "Link zu dieser Ansicht kopiert."
+	"Link to this view copied.": "Link zu dieser Ansicht kopiert.",
+	"Server picture": "Serverbild",
+	"Your server’s picture": "Das Bild deines Servers",
+	"The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.": "Die Ansicht auf dem Bildschirm wird zum Bild dieses Servers in deiner Galerie und zum Bild dieses Schnappschusses, wenn du ihn veröffentlichst.",
+	"In your gallery": "In deiner Galerie",
+	"When published": "Nach dem Veröffentlichen",
+	"Retake from this view": "Aus dieser Ansicht neu aufnehmen",
+	"Use this picture": "Dieses Bild verwenden",
+	"Move the camera, then retake.": "Bewege die Kamera und nimm dann neu auf.",
+	"This view could not be captured. Move the camera, then retake.": "Diese Ansicht konnte nicht aufgenommen werden. Bewege die Kamera und nimm dann neu auf.",
+	"Could not save the picture. Try again.": "Das Bild konnte nicht gespeichert werden. Versuche es erneut.",
+	"Saved: this view is now your server’s picture.": "Gespeichert: Diese Ansicht ist jetzt das Bild deines Servers.",
+	"Could not rename this server.": "Dieser Server konnte nicht umbenannt werden."
 }
