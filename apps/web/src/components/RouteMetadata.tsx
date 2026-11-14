@@ -26,7 +26,7 @@ function link(rel: string, href: string, hreflang?: string) {
 function publicHead(page: ReturnType<typeof metadataFor>, locale: Locale) {
 	const url = localizedUrl(page.path, siteOrigin, locale)
 	link('canonical', url)
-	for (const option of localeOptions) link('alternate', localizedUrl(page.path, siteOrigin, option.id), option.tag)
+	for (const option of localeOptions) link('alternate', localizedUrl(page.path, siteOrigin, option.id), option.id)
 	link('alternate', localizedUrl(page.path, siteOrigin, 'en'), 'x-default')
 	meta('og:site_name', 'Minemories', 'property')
 	meta('og:title', page.title, 'property')

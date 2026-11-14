@@ -90,7 +90,7 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	// every entry names all its languages, English as x-default
 	assert.ok(
 		sitemap.includes(
-			'<xhtml:link rel="alternate" hreflang="fr-FR" href="https://example.org/fr" /><xhtml:link rel="alternate" hreflang="x-default" href="https://example.org/" /></url>'
+			'<xhtml:link rel="alternate" hreflang="fr" href="https://example.org/fr" /><xhtml:link rel="alternate" hreflang="x-default" href="https://example.org/" /></url>'
 		)
 	)
 	assert.equal(sitemap.match(/<url>/g)?.length, 4)
@@ -104,13 +104,14 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	assert.ok(!gallery.includes('ld+json'))
 	assert.ok(!sitemap.includes('/gallery'))
 	const robots = await readFile(join(directory, 'robots.txt'), 'utf8')
-	assert.ok(robots.includes('Disallow: /share/'))
-	assert.ok(robots.includes('Disallow: /public/'))
+	// Share and public links stay readable, so crawlers see their noindex instead of listing a blocked URL.
+	assert.ok(!robots.includes('/share'))
+	assert.ok(!robots.includes('/public'))
 	assert.ok(robots.includes('Disallow: /moderation'))
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
 	// the private routes under every language prefix too
 	assert.ok(robots.includes('Disallow: /*/gallery\n'))
-	assert.ok(robots.includes('Disallow: /*/share/\n'))
+	assert.ok(robots.includes('Disallow: /*/login\n'))
 	const shell = await readFile(join(directory, 'app.html'), 'utf8')
 	assert.ok(shell.includes('noindex,nofollow'))
 	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in English.
@@ -206,7 +207,7 @@ test('every page exists in every language, each with its own head, alternates an
 	assert.ok(english.includes('<link rel="canonical" href="https://example.org/blog/story" />'))
 	assert.ok(english.includes('<meta property="og:url" content="https://example.org/blog/story" />'))
 	const alternates =
-		'<link rel="alternate" hreflang="en-US" href="https://example.org/blog/story" /><link rel="alternate" hreflang="fr-FR" href="https://example.org/fr/blog/story" /><link rel="alternate" hreflang="x-default" href="https://example.org/blog/story" />'
+		'<link rel="alternate" hreflang="en" href="https://example.org/blog/story" /><link rel="alternate" hreflang="fr" href="https://example.org/fr/blog/story" /><link rel="alternate" hreflang="x-default" href="https://example.org/blog/story" />'
 	assert.ok(english.includes(alternates))
 	assert.ok(english.includes('data-route="/blog/story"><h1>en/blog/story</h1>'))
 	const french = await readFile(join(directory, 'fr/blog/story/index.html'), 'utf8')
