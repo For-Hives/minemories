@@ -97,7 +97,7 @@ export function DiagnosticsPage() {
 		>
 			<p className="mm-note">
 				{t(
-					'Private technical reports with limited retention. No reports before pairing; players can turn diagnostics off in the game. Crash reports may arrive after the next game launch.'
+					'Private error reports, kept for a short time. Nothing is sent before you connect the game, and you can turn it off in the game. Crash reports may arrive the next time you launch.'
 				)}
 			</p>
 			{error && <p role="alert">{error}</p>}

@@ -12,19 +12,19 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 			sections: [
 				{
 					heading: 'Preferences on this device',
-					body: 'Your browser keeps your language, the version and loader picked in the installation guide, the demo’s favorites and votes, some names you give in your gallery, and text you typed but did not save. Clear them in your browser’s site data.',
+					body: 'Your browser remembers your language, the version and loader you picked in the installation guide, the demo’s favorites and votes, and some names and drafts. You can clear all of it in your browser’s site data.',
 				},
 				{
 					heading: 'Optional web diagnostics',
-					body: 'Web diagnostics are off by default. When they are available, a switch on this page lets you allow them and withdraw consent for this device. Only fixed error categories and public editorial page routes are transmitted, without raw messages, account details, captures, codes or private URLs. Sign-in, gallery, viewer and sharing pages are excluded. The receiving server sees the connection IP address.',
+					body: 'Web diagnostics are off by default. When they exist, a switch on this page turns them on, and off again, for this device. They only send an error category and the public page it happened on: no messages, account details, captures, codes or private links. Sign-in, gallery, viewer and sharing pages are never included. Like any request, the server sees your IP address.',
 				},
 				{
 					heading: 'Diagnostics in the Minecraft mod',
-					body: "Technical diagnostics in the mod are on by default, but nothing is ever sent before you connect the game to your account. An explicit refusal is kept, even after connecting, disconnecting or changing API. Reports are sanitized: versions, the failed step and a short technical trace, without raw messages, full crash logs, URLs, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight pending reports, for at most seven days. Turning diagnostics off or changing account or API purges this queue; turning them off also asks the server to delete this device's reports, and if it cannot be reached, its retention applies. Turn them off in M → Settings → Privacy → Diagnostics.",
+					body: 'Error reports from the mod are on by default, but nothing is sent until you connect the game to your account. If you turn them off, that choice is kept, even if you reconnect or change API. Reports hold only versions, the step that failed and a short technical trace. They never include messages, full crash logs, links, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight reports, for at most seven days. Turning reports off, or changing account or API, empties that queue; turning them off also asks the server to delete this device’s reports (if it can’t be reached, its retention period applies). To turn them off: M → Settings → Privacy → Diagnostics.',
 				},
 				{
 					heading: 'Account and gallery',
-					body: 'Sign-in uses a session cookie. Uploaded captures and their metadata belong to your account; the gallery is private by default. Avatars may load from an external service. Once the game is connected, every memory taken with M → Take a memory, or while AFK, uploads to your gallery on its own.',
+					body: 'You stay signed in with a session cookie. Your captures belong to your account, and the gallery is private by default. Avatars may load from an external service. Once the game is connected, each memory you take, by hand or while AFK, goes to your gallery on its own.',
 				},
 				{
 					heading: 'Links and deletion',
@@ -32,11 +32,11 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 				},
 				{
 					heading: 'Mod download list',
-					body: 'The downloads and versions pages load the list of mod files from the Minemories API, directly from your browser; the API receives your IP address like any request to the service. JAR downloads also come from the Minemories API, without an account or cookie.',
+					body: 'The downloads and versions pages fetch the list of mod files from the Minemories API straight from your browser, so it sees your IP address, like any request. JAR downloads come from the API too, with no account or cookie.',
 				},
 				{
 					heading: 'Who is responsible for your data',
-					body: 'Andy Cinquin publishes Minemories and is responsible for the personal data it processes. The publisher’s details are on the legal notice page: send any question or request about your data there.',
+					body: 'Andy Cinquin publishes Minemories and is responsible for the personal data it handles. Send any question or request about your data through the legal notice page.',
 				},
 				{
 					heading: 'Service providers',
@@ -67,11 +67,11 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 			sections: [
 				{
 					heading: 'An experimental version',
-					body: 'Keep your Minecraft backups and local files. Compatibility with every modpack, permanent availability and lifetime online storage are not guaranteed.',
+					body: 'This is a beta. Keep your Minecraft backups. We can’t promise it works with every modpack, or that your memories stay online forever.',
 				},
 				{
 					heading: 'Capture and share',
-					body: 'Respect server rules and the rights of people whose builds or information appear in your captures. Check the contents before creating a shared link.',
+					body: 'Follow the server’s rules and respect the people whose builds appear in your captures. Check what’s in a memory before you share it.',
 				},
 			],
 		},
@@ -80,7 +80,7 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 			sections: [
 				{
 					heading: 'Independent project',
-					body: 'Minemories is an independent, unofficial project, not endorsed by Mojang or Microsoft. The source code is public on GitHub; the mod is downloaded from the Downloads page.',
+					body: 'Minemories is an independent project, not endorsed by Mojang or Microsoft. The code is public on GitHub; the mod is on the Downloads page.',
 				},
 			],
 		},

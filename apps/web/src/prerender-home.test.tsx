@@ -16,7 +16,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
 	expect(html).not.toContain('Pas besoin d’être admin · Ton monde reste intact')
 	// under the server-closing clip: the capture stays on the PC, sending it is the player's choice
-	expect(html).toContain('Tout se passe sur ton PC\u00a0: la capture est enregistrée chez toi.')
+	expect(html).toContain('La capture est enregistrée sur ton ordinateur.')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
 	expect(html).toContain('Choisis l’heure, du matin au coucher du soleil')

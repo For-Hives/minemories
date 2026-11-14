@@ -117,7 +117,7 @@ export function ConceptPage() {
 		<InfoPage title="Your Minecraft world, ready to visit in 3D">
 			<p className="ex-lead">
 				{t(
-					'Minemories is a mod for Minecraft Java. In the game, it keeps a 3D copy of the area around you: your house, your village, the group’s base. You find it again in your browser, even once the server is gone.'
+					'Minemories is a Minecraft Java mod that keeps a 3D copy of the area around you: your house, your village, your group’s base. You can walk around it in your browser, even after the server is gone.'
 				)}
 			</p>
 			<h2>{t('What it isn’t')}</h2>
@@ -195,7 +195,7 @@ export function HowItWorksPage() {
 					</p>
 					<p className="ex-line">
 						{t(
-							'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
+							'Heads-up: the link shows your base’s coordinates, dimension and biome, and the server name or address (or the world name and seed in single player). Think before posting it publicly.'
 						)}
 					</p>
 					<ShareDemo />

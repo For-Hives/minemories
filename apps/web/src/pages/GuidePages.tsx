@@ -209,7 +209,7 @@ export function SafetyPage() {
 			<h2>{t('What someone with a link sees')}</h2>
 			<p>
 				{t(
-					'Heads-up: the link shows your base’s coordinates and the server name or address. Think before posting it publicly. It also shows the dimension, biome, world name and seed (in single player).'
+					'Heads-up: the link shows your base’s coordinates, dimension and biome, and the server name or address (or the world name and seed in single player). Think before posting it publicly.'
 				)}
 			</p>
 			<p>{t('The 3D scene, its name and its date.')}</p>
