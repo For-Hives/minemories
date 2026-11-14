@@ -1,4 +1,4 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.flywheel;
 
 import java.lang.reflect.Method;
 import net.minecraft.world.level.Level;
@@ -11,9 +11,10 @@ import net.minecraft.world.level.LevelAccessor;
  * VisualizationManager.supportsVisualization}; Flywheel 0.6 (Create 0.5.1 on Minecraft 1.18.2 to
  * 1.20.1) asks {@code Backend.canUseInstancing}, and Create's renderers (tracks, shafts, cogs,
  * belts, presses, bogeys...) return without drawing when it answers true. The loader adapters'
- * mixins answer false inside {@link CaptureRenderScope}; this probe checks they did.
+ * mixins answer false inside {@link dev.minemories.client.CaptureRenderScope}; this probe checks
+ * they did.
  */
-final class FlywheelCaptureBridge {
+public final class FlywheelCaptureBridge {
   /** One Flywheel generation and its static "the GPU draws this level" switch. */
   record Probe(String name, boolean present, Method gpuDraws) {
     static Probe find(String name, String className, String method, Class<?> parameter) {
@@ -57,7 +58,7 @@ final class FlywheelCaptureBridge {
 
   private FlywheelCaptureBridge() {}
 
-  static void verify(LevelAccessor level) {
+  public static void verify(LevelAccessor level) {
     FLYWHEEL.verify(level);
     FLYWHEEL_0_6.verify(level instanceof Level world ? world : null);
   }

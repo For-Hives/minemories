@@ -1,5 +1,7 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.CaptureSink;
 import dev.minemories.core.GlbCategory;
 import java.io.IOException;
 import java.nio.file.Path;

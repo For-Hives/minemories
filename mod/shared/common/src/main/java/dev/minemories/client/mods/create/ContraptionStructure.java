@@ -1,12 +1,14 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.create;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.minemories.client.util.WarnOnce;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
 /**
- * Optional integration: the blocks of Create 0.5.1 contraptions (Minecraft 1.18.2 to 1.20.1).
+ * The precise way to draw a Create 0.5.1 contraption's blocks (Minecraft 1.18.2 to 1.20.1): with
+ * Create's own structure buffers, so faces between neighbours are hidden as in game.
  *
  * <p>Create 0.5.1 does not draw a contraption's blocks from its entity renderer. The renderer only
  * draws the block entities and actors, with matrices that {@code ContraptionRenderDispatcher} set
@@ -22,10 +24,10 @@ import java.util.function.Function;
  * it up from the camera again.
  *
  * <p>Create 6 draws its contraptions from the entity renderer and has none of these classes. A
- * Create 0.5.1 whose API no longer matches is logged once and its contraptions keep what the entity
- * renderer draws: the rest of the capture is not lost for it.
+ * Create 0.5.1 whose API no longer matches is logged once and {@link CreateContraptions} draws its
+ * contraptions block by block instead ({@link ContraptionBlocks}).
  */
-final class LegacyContraptions {
+final class ContraptionStructure {
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
   /** Where the classes live in Create 0.5.1 and the Flywheel 0.6 it bundles. */
@@ -138,26 +140,29 @@ final class LegacyContraptions {
   interface Drawing {
     /**
      * Draws the contraption's blocks, one call per chunk layer, then gives the render info back to
-     * the camera.
+     * the camera. False when nothing was drawn because this Create is not the one this code knows:
+     * the caller draws the blocks another way. A contraption Create itself does not draw answers
+     * true.
      *
      * @param layers the chunk render layers ({@code RenderType.chunkBufferLayers()})
      * @param buffers the capture's vertex consumer for one of those layers
      */
-    void finish(Iterable<?> layers, Function<Object, Object> buffers);
+    boolean finish(Iterable<?> layers, Function<Object, Object> buffers);
   }
 
-  static final Drawing NONE = (layers, buffers) -> {};
+  static final Drawing NONE = (layers, buffers) -> false;
 
   private static final Object UNBOUND = new Object();
+  private static final WarnOnce UNSUPPORTED =
+      new WarnOnce(LOGGER, "Create contraptions are not fully captured with this Create version");
   private static Object api = UNBOUND;
-  private static boolean warned;
 
-  private LegacyContraptions() {}
+  private ContraptionStructure() {}
 
   /**
    * Call before the entity renderer, inside {@link CaptureRenderScope}, with the translation of its
    * pose (the capture pose only translates). Returns {@link #NONE} for anything that is not a
-   * Create 0.5.1 contraption.
+   * Create 0.5.1 contraption this code knows.
    */
   static Drawing prepare(Object entity, Object level, double x, double y, double z) {
     Api bound = api();
@@ -185,10 +190,15 @@ final class LegacyContraptions {
             && Boolean.TRUE.equals(api.readyForRender().invoke(entity));
     Drawing drawing =
         (layers, buffers) -> {
+          int[] drawn = new int[1];
           try {
-            if (visible) drawStructure(api, renderWorld, contraption, matrices, layers, buffers);
+            if (visible)
+              drawStructure(api, renderWorld, contraption, matrices, layers, buffers, drawn);
+            return true;
           } catch (ReflectiveOperationException | RuntimeException error) {
             warn(error);
+            // Layers already written stay: drawing the blocks again would double them.
+            return drawn[0] > 0;
           } finally {
             release(api, matrices);
           }
@@ -225,7 +235,8 @@ final class LegacyContraptions {
       Object contraption,
       Object matrices,
       Iterable<?> layers,
-      Function<Object, Object> buffers)
+      Function<Object, Object> buffers,
+      int[] drawn)
       throws ReflectiveOperationException {
     Object model = api.model().invoke(matrices);
     Object viewProjection = api.viewProjection().invoke(matrices);
@@ -235,6 +246,7 @@ final class LegacyContraptions {
         if (Boolean.TRUE.equals(api.empty().invoke(structure))) continue;
         api.transform().invoke(structure, model);
         api.renderInto().invoke(structure, viewProjection, buffers.apply(layer));
+        drawn[0]++;
       } finally {
         api.delete().invoke(structure);
       }
@@ -253,17 +265,13 @@ final class LegacyContraptions {
     return (Api) api;
   }
 
-  private static synchronized void warn(Throwable error) {
-    if (warned) return;
-    warned = true;
-    LOGGER.warn(
-        "Create contraptions are not fully captured with this Create version: {}",
-        error.toString());
+  private static void warn(Throwable error) {
+    UNSUPPORTED.warn(error);
   }
 
   /** Tests only: forget the bound API and the logged warning. */
   static synchronized void reset() {
     api = UNBOUND;
-    warned = false;
+    UNSUPPORTED.reset();
   }
 }

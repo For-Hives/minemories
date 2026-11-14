@@ -1,7 +1,11 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.valkyrien;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.util.Reflect;
+import dev.minemories.client.util.WarnOnce;
+import dev.minemories.client.volume.CaptureVolume;
+import dev.minemories.client.volume.Placement;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,12 +18,15 @@ import net.minecraft.world.phys.AABB;
  * "shipyard" chunk claim millions of blocks away and drawn with the ship's ship-to-world transform.
  * Only VS2's public API is used, by name, so no VS2 class is linked unless VS2 is there.
  */
-final class ValkyrienVolumes implements CaptureVolume.Source {
+public final class ValkyrienVolumes implements CaptureVolume.Source {
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   private static final String UTILS = "org.valkyrienskies.mod.common.VSGameUtilsKt";
 
   private Method intersecting;
-  private boolean resolved, warned;
+  private final WarnOnce unsupported =
+      new WarnOnce(
+          LOGGER, "Valkyrien Skies ships are not captured with this Valkyrien Skies version");
+  private boolean resolved;
 
   @Override
   public List<CaptureVolume> intersecting(Level level, CaptureBounds world) {
@@ -38,7 +45,7 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
       for (Object ship : (Iterable<?>) ships.invoke(null, level, query))
         volumes.add(volume(level, ship));
     } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-      unsupported(error);
+      unsupported.warn(error);
       return List.of();
     }
     return volumes;
@@ -46,18 +53,18 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
 
   private static CaptureVolume volume(Level level, Object ship)
       throws ReflectiveOperationException {
-    Placement placement = placement(call(ship, "getTransform"));
-    CaptureBounds cells = shipyardCells(call(ship, "getShipAABB"));
+    Placement placement = placement(Reflect.call(ship, "getTransform"));
+    CaptureBounds cells = shipyardCells(Reflect.call(ship, "getShipAABB"));
     if (cells == null) {
-      Object drawn = call(ship, "getWorldAABB");
+      Object drawn = Reflect.call(ship, "getWorldAABB");
       cells =
           placement.localCells(
-              number(drawn, "minX"),
-              number(drawn, "minY"),
-              number(drawn, "minZ"),
-              number(drawn, "maxX"),
-              number(drawn, "maxY"),
-              number(drawn, "maxZ"));
+              Reflect.number(drawn, "minX"),
+              Reflect.number(drawn, "minY"),
+              Reflect.number(drawn, "minZ"),
+              Reflect.number(drawn, "maxX"),
+              Reflect.number(drawn, "maxY"),
+              Reflect.number(drawn, "maxZ"));
     }
     int bottom = level.getMinBuildHeight(), top = level.getMaxBuildHeight() - 1;
     cells =
@@ -68,8 +75,8 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
             cells.maxX(),
             Math.min(top, cells.maxY()),
             cells.maxZ());
-    Object claim = call(ship, "getChunkClaim");
-    Method contains = method(claim, "contains", int.class, int.class);
+    Object claim = Reflect.call(ship, "getChunkClaim");
+    Method contains = Reflect.method(claim, "contains", int.class, int.class);
     Map<Long, Boolean> owned = new HashMap<>();
     return new CaptureVolume(
         "valkyrienskies",
@@ -94,24 +101,24 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
    * as pivot. Newer VS cores renamed the getters; both spellings are read.
    */
   static Placement placement(Object transform) throws ReflectiveOperationException {
-    Object position = call(transform, "getPositionInWorld");
-    Object pivot = call(transform, "getPositionInModel", "getPositionInShip");
-    Object rotation = call(transform, "getRotation", "getShipToWorldRotation");
-    Object scale = call(transform, "getScaling", "getShipToWorldScaling");
+    Object position = Reflect.call(transform, "getPositionInWorld");
+    Object pivot = Reflect.call(transform, "getPositionInModel", "getPositionInShip");
+    Object rotation = Reflect.call(transform, "getRotation", "getShipToWorldRotation");
+    Object scale = Reflect.call(transform, "getScaling", "getShipToWorldScaling");
     return new Placement(
-        number(position, "x"),
-        number(position, "y"),
-        number(position, "z"),
-        number(rotation, "x"),
-        number(rotation, "y"),
-        number(rotation, "z"),
-        number(rotation, "w"),
-        number(pivot, "x"),
-        number(pivot, "y"),
-        number(pivot, "z"),
-        number(scale, "x"),
-        number(scale, "y"),
-        number(scale, "z"));
+        Reflect.number(position, "x"),
+        Reflect.number(position, "y"),
+        Reflect.number(position, "z"),
+        Reflect.number(rotation, "x"),
+        Reflect.number(rotation, "y"),
+        Reflect.number(rotation, "z"),
+        Reflect.number(rotation, "w"),
+        Reflect.number(pivot, "x"),
+        Reflect.number(pivot, "y"),
+        Reflect.number(pivot, "z"),
+        Reflect.number(scale, "x"),
+        Reflect.number(scale, "y"),
+        Reflect.number(scale, "z"));
   }
 
   /**
@@ -120,9 +127,9 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
    */
   static CaptureBounds shipyardCells(Object box) throws ReflectiveOperationException {
     if (box == null) return null;
-    int minX = (int) number(box, "minX"), maxX = (int) number(box, "maxX");
-    int minY = (int) number(box, "minY"), maxY = (int) number(box, "maxY");
-    int minZ = (int) number(box, "minZ"), maxZ = (int) number(box, "maxZ");
+    int minX = (int) Reflect.number(box, "minX"), maxX = (int) Reflect.number(box, "maxX");
+    int minY = (int) Reflect.number(box, "minY"), maxY = (int) Reflect.number(box, "maxY");
+    int minZ = (int) Reflect.number(box, "minZ"), maxZ = (int) Reflect.number(box, "maxZ");
     if (minX > maxX || minY > maxY || minZ > maxZ) return null;
     return new CaptureBounds(minX, minY, minZ, maxX, maxY, maxZ);
   }
@@ -136,64 +143,9 @@ final class ValkyrienVolumes implements CaptureVolume.Source {
     } catch (ClassNotFoundException absent) {
       intersecting = null;
     } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
-      unsupported(error);
+      unsupported.warn(error);
       intersecting = null;
     }
     return intersecting;
-  }
-
-  private void unsupported(Throwable error) {
-    if (warned) return;
-    warned = true;
-    LOGGER.warn(
-        "Valkyrien Skies ships are not captured with this Valkyrien Skies version: {}",
-        error.toString());
-  }
-
-  /** The first of {@code names} the target answers, called with no argument. */
-  private static Object call(Object target, String... names) throws ReflectiveOperationException {
-    if (target == null) throw new NoSuchMethodException(names[0]);
-    NoSuchMethodException missing = null;
-    for (String name : names) {
-      try {
-        return method(target, name).invoke(target);
-      } catch (NoSuchMethodException error) {
-        missing = error;
-      }
-    }
-    throw missing;
-  }
-
-  private static double number(Object target, String method) throws ReflectiveOperationException {
-    Object value = call(target, method);
-    if (!(value instanceof Number number)) throw new NoSuchMethodException(method);
-    return number.doubleValue();
-  }
-
-  /**
-   * The public declaration of a method: VS2's implementation classes are not always public, and
-   * reflection may only call them through the public interface they implement.
-   */
-  static Method method(Object target, String name, Class<?>... parameters)
-      throws NoSuchMethodException {
-    Method found = publicMethod(target.getClass(), name, parameters);
-    if (found == null) throw new NoSuchMethodException(name);
-    return found;
-  }
-
-  private static Method publicMethod(Class<?> type, String name, Class<?>... parameters) {
-    if (type == null) return null;
-    if (Modifier.isPublic(type.getModifiers())) {
-      try {
-        return type.getMethod(name, parameters);
-      } catch (NoSuchMethodException absent) {
-        return null;
-      }
-    }
-    for (Class<?> contract : type.getInterfaces()) {
-      Method found = publicMethod(contract, name, parameters);
-      if (found != null) return found;
-    }
-    return publicMethod(type.getSuperclass(), name, parameters);
   }
 }

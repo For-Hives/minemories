@@ -4,6 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import dev.minemories.client.mods.ModVolumes;
+import dev.minemories.client.mods.create.CreateContraptions;
+import dev.minemories.client.mods.flywheel.FlywheelCaptureBridge;
+import dev.minemories.client.volume.CaptureVolume;
+import dev.minemories.client.volume.VolumeCapture;
 import dev.minemories.core.GlbCategory;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -1402,13 +1407,13 @@ public final class ClientRuntime {
       int entityCount = captureEntities(renderedModels, mc, min, max, center);
       VolumeCapture volumes =
           new VolumeCapture(
-              mc,
-              CaptureVolume.around(
+              ModVolumes.around(
                   level,
                   new CaptureBounds(
                       min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ())),
               center);
-      while (!volumes.done()) volumes.step(scene, sprites, renderedModels);
+      VolumeCapture.Walker walker = volumeWalker(sprites, renderedModels, mc);
+      while (!volumes.done()) volumes.step(scene, walker);
       blockCount += volumes.blocks();
       entityCount += volumes.entities();
       if (volumes.volumes() > 0) LOGGER.info("Moving structures captured: {}", volumes.volumes());
@@ -1961,8 +1966,8 @@ public final class ClientRuntime {
         entity.getX() - center.getX() + offset.x,
         entity.getY() - center.getY() + offset.y,
         entity.getZ() - center.getZ() + offset.z);
-    // Create 0.5.1 draws a contraption's blocks in a level pass, not from its entity renderer
-    // (LegacyContraptions). Contraption renderers have no render offset.
+    // Create 0.5 draws a contraption's blocks in a level pass, not from its entity renderer
+    // (CreateContraptions). Contraption renderers have no render offset.
     double x = entity.getX() - center.getX();
     double y = entity.getY() - center.getY();
     double z = entity.getZ() - center.getZ();
@@ -1971,7 +1976,7 @@ public final class ClientRuntime {
     CaptureRenderScope.render(
         () -> {
           FlywheelCaptureBridge.verify(level);
-          var contraption = LegacyContraptions.prepare(entity, level, x, y, z);
+          var contraption = CreateContraptions.prepare(entity, level, x, y, z);
           renderer.render(
               entity,
               entity.getYRot(),
@@ -1979,20 +1984,24 @@ public final class ClientRuntime {
               pose,
               buffers,
               dispatcher.getPackedLightCoords(entity, 1f));
-          var layers = RenderType.chunkBufferLayers();
-          contraption.finish(layers, layer -> buffers.getBuffer((RenderType) layer));
           buffers.finish();
+          if (contraption.present())
+            captureContraptionBody(capture, mc, entity, center, contraption);
         });
-    if (ContraptionCapture.needsBlocks(entity)) captureContraption(capture, mc, entity, center);
   }
 
   /**
-   * A Create contraption's assembled blocks (windmill sails, machines on a bearing, train bodies):
-   * its renderer leaves them to a pass of their own. Filed with the machines, not the creatures, so
-   * hiding creatures in the viewer keeps the windmills.
+   * A Create 0.5 contraption's assembled blocks (windmill sails, machines on a bearing, train
+   * bodies): its renderer leaves them to a pass of their own. Filed with the machines, not the
+   * creatures, so hiding creatures in the viewer keeps the windmills. Runs inside the entity's
+   * render scope, while Create's matrices are still at the capture pose.
    */
-  private static void captureContraption(
-      RenderedModelCapture capture, Minecraft mc, Entity entity, BlockPos center) {
+  private static void captureContraptionBody(
+      RenderedModelCapture capture,
+      Minecraft mc,
+      Entity entity,
+      BlockPos center,
+      CreateContraptions.Body contraption) {
     capture.classify(
         GlbCategory.BLOCK_ENTITIES,
         CaptureSink.relativeChunk(entity.getBlockX(), center.getX()),
@@ -2003,11 +2012,72 @@ public final class ClientRuntime {
         entity.getX() - center.getX(),
         entity.getY() - center.getY(),
         entity.getZ() - center.getZ());
-    CaptureRenderScope.render(
-        () -> {
-          ContraptionCapture.render(entity, pose, buffers, mc.getBlockRenderer());
-          buffers.finish();
-        });
+    contraption.draw(
+        RenderType.chunkBufferLayers(),
+        layer -> buffers.getBuffer((RenderType) layer),
+        pose,
+        buffers,
+        mc.getBlockRenderer());
+    buffers.finish();
+  }
+
+  /** The terrain and entity code, as the walker of the capture's detached volumes. */
+  static VolumeCapture.Walker volumeWalker(
+      SpriteAssets sprites, RenderedModelCapture models, Minecraft mc) {
+    var level = Objects.requireNonNull(mc.level, "No capture level");
+    return new VolumeCapture.Walker() {
+      private CaptureVolume walked;
+      private CaptureLevelView view;
+      private CutBoundary.OpenAir sky;
+      private BlockPos min, max;
+
+      @Override
+      public Iterable<Entity> entities() {
+        return level.entitiesForRendering();
+      }
+
+      @Override
+      public Entity entity(int id) {
+        return level.getEntity(id);
+      }
+
+      @Override
+      public int cell(CaptureSink placed, CaptureVolume volume, BlockPos pos, BlockPos origin)
+          throws IOException {
+        if (volume != walked) {
+          CaptureBounds cells = volume.cells();
+          walked = volume;
+          view = new CaptureLevelView(level, cells);
+          // A volume is captured whole, like an entity: the box's cut faces never seal it.
+          sky = CutBoundary.OpenAir.sky(cells);
+          min = new BlockPos(cells.minX(), cells.minY(), cells.minZ());
+          max = new BlockPos(cells.maxX(), cells.maxY(), cells.maxZ());
+        }
+        int[] blocks = new int[1];
+        models.through(
+            placed,
+            () ->
+                blocks[0] =
+                    captureCell(
+                        placed,
+                        sprites,
+                        models,
+                        mc,
+                        mc.getBlockEntityRenderDispatcher(),
+                        view,
+                        pos,
+                        min,
+                        max,
+                        origin,
+                        sky));
+        return blocks[0];
+      }
+
+      @Override
+      public void entity(CaptureSink placed, Entity entity, BlockPos origin) throws IOException {
+        models.through(placed, () -> captureEntity(models, mc, entity, origin));
+      }
+    };
   }
 
   private static class FluidVertexConsumer implements VertexConsumer {

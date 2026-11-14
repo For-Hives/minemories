@@ -41,7 +41,7 @@ ext.adaptDir = { File root ->
         t = t.replace('import net.minecraft.core.registries.BuiltInRegistries;', 'import net.minecraft.core.Registry;').replace('BuiltInRegistries.', 'Registry.')
         if (n == 'SimpleHubScreen.java') t = rep(t, 'codeInput.setHint(Component.translatable("minemories.hub.code_hint"));', 'codeInput.setSuggestion(Component.translatable("minemories.hub.code_hint").getString());', n)
         // Before 1.20 a structure block is a class with public fields, not a record.
-        if (n == 'ContraptionCapture.java') {
+        if (n == 'ContraptionBlocks.java') {
             t = rep(t, 'var state = info.state();', 'var state = info.state;', n)
             t = rep(t, 'var position = info.pos();', 'var position = info.pos;', n)
         }

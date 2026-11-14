@@ -216,4 +216,11 @@ class CutBoundaryTest {
     float bx = q[6] - q[0], by = q[7] - q[1], bz = q[8] - q[2];
     return new float[] {ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx};
   }
+
+  @Test
+  void aWholeVolumeIsNeverSealed() {
+    var sky = CutBoundary.OpenAir.sky(new CaptureBounds(-2, 5, -2, 2, 9, 2));
+    sky.settle();
+    for (int y = 5; y <= 9; y++) assertFalse(sky.enclosed(-2, y, 0));
+  }
 }

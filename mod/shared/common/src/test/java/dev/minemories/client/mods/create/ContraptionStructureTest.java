@@ -1,4 +1,4 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.create;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -9,7 +9,7 @@ import org.joml.Vector3f;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class LegacyContraptionsTest {
+class ContraptionStructureTest {
   /** Stands in for Create 0.5.1's {@code AbstractContraptionEntity}. */
   public static class FakeEntity {
     Object contraption = "contraption";
@@ -155,9 +155,9 @@ class LegacyContraptionsTest {
     public void get(String a) {}
   }
 
-  private static LegacyContraptions.Names names(String entity) {
-    String prefix = LegacyContraptionsTest.class.getName() + "$";
-    return new LegacyContraptions.Names(
+  private static ContraptionStructure.Names names(String entity) {
+    String prefix = ContraptionStructureTest.class.getName() + "$";
+    return new ContraptionStructure.Names(
         entity,
         prefix + "FakeDispatcher",
         prefix + "FakeRenderingWorld",
@@ -167,8 +167,8 @@ class LegacyContraptionsTest {
         Object.class.getName());
   }
 
-  private static LegacyContraptions.Api api() throws ReflectiveOperationException {
-    return LegacyContraptions.Api.find(names(FakeEntity.class.getName()));
+  private static ContraptionStructure.Api api() throws ReflectiveOperationException {
+    return ContraptionStructure.Api.find(names(FakeEntity.class.getName()));
   }
 
   private static FakeMatrices matrices() {
@@ -184,41 +184,42 @@ class LegacyContraptionsTest {
     FakeDispatcher.WORLDS.reset();
     FakeDispatcher.INSTANCING.set(false);
     FakeDispatcher.BUILT.clear();
-    LegacyContraptions.reset();
+    ContraptionStructure.reset();
   }
 
   @Test
   void withoutCreate051NothingIsBoundAndNoEntityIsTouched() throws Exception {
-    assertNull(LegacyContraptions.Api.find(LegacyContraptions.Names.CREATE_0_5_1));
-    assertNull(LegacyContraptions.Api.find(names("com.example.NoCreate")));
+    assertNull(ContraptionStructure.Api.find(ContraptionStructure.Names.CREATE_0_5_1));
+    assertNull(ContraptionStructure.Api.find(names("com.example.NoCreate")));
     assertSame(
-        LegacyContraptions.NONE, LegacyContraptions.prepare(new FakeEntity(), "level", 0, 0, 0));
+        ContraptionStructure.NONE,
+        ContraptionStructure.prepare(new FakeEntity(), "level", 0, 0, 0));
   }
 
   @Test
   void aCreateWhoseApiChangedIsRefusedWhenBound() {
     var wrong = names(FakeEntity.class.getName());
     var renamed =
-        new LegacyContraptions.Names(
+        new ContraptionStructure.Names(
             wrong.entity(),
             wrong.dispatcher(),
             wrong.renderingWorld(),
             wrong.renderInfo(),
             wrong.matrices(),
-            LegacyContraptionsTest.class.getName() + "$Ambiguous",
+            ContraptionStructureTest.class.getName() + "$Ambiguous",
             wrong.flywheelWorld());
-    assertThrows(ReflectiveOperationException.class, () -> LegacyContraptions.Api.find(renamed));
+    assertThrows(ReflectiveOperationException.class, () -> ContraptionStructure.Api.find(renamed));
     var error =
         assertThrows(
             NoSuchMethodException.class,
-            () -> LegacyContraptions.Api.method(Ambiguous.class, "get", 1));
+            () -> ContraptionStructure.Api.method(Ambiguous.class, "get", 1));
     assertTrue(error.getMessage().endsWith("Ambiguous.get is ambiguous"));
   }
 
   @Test
   void theEntityRendererSeesCreatesMatricesAtTheCapturePose() throws Exception {
     var entity = new FakeEntity();
-    var drawing = LegacyContraptions.prepare(api(), entity, "level", 3, 4, -5);
+    var drawing = ContraptionStructure.prepare(api(), entity, "level", 3, 4, -5);
 
     var matrices = matrices();
     assertTrue(matrices.ready, "renderFromEntity only draws block entities when ready");
@@ -227,17 +228,18 @@ class LegacyContraptionsTest {
     assertEquals(new Vector3f(0, 2, 0), origin(matrices.getModel()));
     assertEquals(List.of(1f, 1f), entity.partialTicks, "the latest tick, like every entity");
 
-    drawing.finish(List.of(), layer -> fail("no layer"));
+    assertTrue(drawing.finish(List.of(), layer -> fail("no layer")));
     assertFalse(matrices.ready, "the next frame sets the matrices up from the camera again");
   }
 
   @Test
   void everyNonEmptyChunkLayerIsDrawnWithTheContraptionMatrices() throws Exception {
-    var drawing = LegacyContraptions.prepare(api(), new FakeEntity(), "level", 1, 0, 0);
+    var drawing = ContraptionStructure.prepare(api(), new FakeEntity(), "level", 1, 0, 0);
     var model = matrices().getModel();
     var view = matrices().getViewProjection();
 
-    drawing.finish(List.of("solid", "translucent", "cutout"), layer -> "buffer of " + layer);
+    assertTrue(
+        drawing.finish(List.of("solid", "translucent", "cutout"), layer -> "buffer of " + layer));
 
     assertEquals(3, FakeDispatcher.BUILT.size());
     var solid = FakeDispatcher.BUILT.get(0);
@@ -254,23 +256,40 @@ class LegacyContraptionsTest {
   void aContraptionNotDrawnInGameIsNotDrawnInTheCapture() throws Exception {
     var entity = new FakeEntity();
     entity.alive = false;
-    LegacyContraptions.prepare(api(), entity, "level", 0, 0, 0).finish(List.of("solid"), l -> l);
+    var hidden = ContraptionStructure.prepare(api(), entity, "level", 0, 0, 0);
+    assertTrue(hidden.finish(List.of("solid"), l -> l), "not drawn in game: no other way either");
     assertTrue(FakeDispatcher.BUILT.isEmpty());
 
     entity.contraption = null;
     assertSame(
-        LegacyContraptions.NONE, LegacyContraptions.prepare(api(), entity, "level", 0, 0, 0));
+        ContraptionStructure.NONE, ContraptionStructure.prepare(api(), entity, "level", 0, 0, 0));
   }
 
   @Test
   void aFailingLayerKeepsTheCaptureAndStillHandsTheMatricesBack() throws Exception {
     FakeDispatcher.INSTANCING.set(true); // a missing mixin is logged, the blocks are still drawn
-    var drawing = LegacyContraptions.prepare(api(), new FakeEntity(), "level", 0, 0, 0);
-    drawing.finish(List.of("broken", "solid"), layer -> layer);
+    var drawing = ContraptionStructure.prepare(api(), new FakeEntity(), "level", 0, 0, 0);
+    assertFalse(
+        drawing.finish(List.of("broken", "solid"), layer -> layer),
+        "nothing drawn: the blocks are drawn another way");
 
     assertEquals(1, FakeDispatcher.BUILT.size(), "drawing stops at the failing layer");
     assertTrue(FakeDispatcher.BUILT.get(0).deleted);
     assertFalse(matrices().ready);
-    LegacyContraptions.NONE.finish(List.of("solid"), layer -> fail("nothing to draw"));
+    assertFalse(
+        ContraptionStructure.NONE.finish(List.of("solid"), layer -> fail("nothing to draw")));
+  }
+
+  @Test
+  void aLayerFailingAfterAnotherWasDrawnDoesNotAskForTheBlocksAgain() throws Exception {
+    var drawing = ContraptionStructure.prepare(api(), new FakeEntity(), "level", 0, 0, 0);
+    assertTrue(
+        drawing.finish(List.of("solid", "broken", "cutout"), layer -> layer),
+        "drawing the blocks again would double the solid layer");
+
+    assertEquals(2, FakeDispatcher.BUILT.size());
+    assertEquals("solid", FakeDispatcher.BUILT.get(0).consumer);
+    assertTrue(FakeDispatcher.BUILT.stream().allMatch(buffer -> buffer.deleted));
+    assertFalse(matrices().ready);
   }
 }

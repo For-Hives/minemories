@@ -377,23 +377,55 @@ Limits:
 
 Everything Create has assembled into a moving structure is a contraption entity: windmill sails, a
 harvester or saw arm on a mechanical bearing, a piston's or pulley's moving blocks, a gantry, a
-train carriage. Create draws those blocks in a render pass of its own; the entity renderer only
-draws the actors and the empty pivot. A capture therefore kept the bearings but not the sails or
-the arms.
+minecart contraption, a train carriage. Create 0.5 (Minecraft 1.18.2 to 1.20.1) draws those blocks
+in a level render pass of its own, one `SuperByteBuffer` per chunk layer; the entity renderer only
+draws the block entities and actors, with matrices that `ContraptionRenderDispatcher` set up from
+the camera during that pass. A capture therefore kept the bearings and bogeys but not the sails,
+arms or carriage bodies, and when a frame had already set those matrices up, the contraption's
+block entities and bogey parts were written camera-relative (about 188 blocks above the scene on
+the bench below).
 
-`ContraptionCapture` draws them again, right after the contraption entity: it reads the blocks
-with `getContraption().getBlocks()`, applies the contraption's own pose with
-`applyLocalTransforms(PoseStack, float)` (the same call Create makes before drawing it, so a
-windmill keeps its current angle), then draws each block model with the game's block renderer.
-Create is not a compile dependency: the class is found by its simple name
-`AbstractContraptionEntity` under `com.simibubi.create.`, the methods by name, and any failure
-only drops that contraption's blocks. They are filed under `block_entities` with the machines,
-not under `entities`, so hiding creatures in the viewer keeps the windmills.
+Create 6 (Forge 1.20.1, NeoForge 1.21.1) has no such pass: once the capture turns Flywheel off,
+its contraption renderer draws the blocks itself. Nothing below runs there
+(`ContraptionBlocks.needsBlocks` asks for Create 0.5's `ContraptionRenderDispatcher`); drawing the
+blocks again would double them.
 
-On Lalaland (Fabric 1.20.1, Create 0.5.1) the world save holds 11 windmill bearings and 13
-mechanical bearings, all running, carrying sails, linear and radial chassis, harvesters, saws,
-deployers and portable storage interfaces. Recaptured with the same origin and bounds before and
-after the change:
+Two changes were written for this the same week (#351/#353, and the work of this page's
+14 November bench). They are now one integration, `dev.minemories.client.mods.create`, which keeps
+the precise way first and the simple one as its fallback:
+
+| Class | What it does |
+|---|---|
+| `CreateContraptions` | Entry point, called around the entity renderer. Decides whether the entity is a Create 0.5 contraption, then draws its body the first way that works. |
+| `ContraptionStructure` | The precise way. Sets the contraption's `ContraptionMatrices` to the capture pose (latest tick) before the entity renderer runs, so block entities, actors and bogeys land in the capture; then builds each chunk layer with `ContraptionRenderDispatcher.buildStructureBuffer` on the CPU and draws it with the same matrices; then clears the matrices so the next frame uses the camera again. Faces between neighbours are hidden as in game. |
+| `ContraptionBlocks` | The simple way. Reads `getContraption().getBlocks()`, applies the contraption's own `applyLocalTransforms(PoseStack, float)` (a windmill keeps its angle), and draws each block model with the game's block renderer. Used when `ContraptionStructure` does not know this Create's rendering API, or fails before drawing anything. |
+
+`CreateLegacyContraptionMixin` (`@Pseudo`, `require = 0`, the five adapters that can meet Create
+0.5.1) answers false from `ContraptionRenderDispatcher.canInstance` inside `CaptureRenderScope`:
+Create asks that method, not `Backend.canUseInstancing`, before skipping the shafts, cogs, drills
+and saws of a contraption that Flywheel instances.
+
+Create is not a compile dependency: everything is reflection, and no failure costs more than that
+contraption's body. A Create 0.5.1 whose rendering API changed logs `Create contraptions are not
+fully captured with this Create version` once. Either way the body is filed under
+`block_entities` (material `create:contraption`) with the machines, not under `entities`, so
+hiding creatures in the viewer keeps the windmills. Older families read the structure block's
+fields instead of its record accessors (`adapt.gradle`); 1.21.11 and 26.3 have no Create 0.5 and
+adapt the calls away.
+
+Unit tests: `CreateContraptionsTest` (no body for other entities, fallback when the rendering API
+is unknown), `ContraptionStructureTest` (absent Create 0.5.1, changed API, matrices at the capture
+pose for the entity renderer, every non-empty chunk layer drawn and freed, a contraption Create
+does not draw is not drawn, a layer failing first asks for the fallback, a layer failing later
+does not), `ContraptionBlocksTest` (contraptions recognised by class hierarchy, blocks and
+transform read by reflection, Create 0.5 only).
+
+#### In-game evidence gathered with each way, before they were merged
+
+With `ContraptionBlocks` alone (#351, #353). On Lalaland (Fabric 1.20.1, Create 0.5.1) the world
+save holds 11 windmill bearings and 13 mechanical bearings, all running, carrying sails, linear
+and radial chassis, harvesters, saws, deployers and portable storage interfaces. Recaptured with
+the same origin and bounds before and after:
 
 | Zone | `block_entities` quads before | after | Contraption primitives |
 |---|---|---|---|
@@ -401,104 +433,50 @@ after the change:
 | Base A, 1008 155 220, r64 | 2,863 | 21,419 | 21 (sails, chassis, the farm's harvester arms) |
 
 Stills from the same camera show the windmill on the black tower with its sails at their real
-angle, and the round farm with its rotating harvester arms, both missing before.
-
-Create 6 (Forge 1.20.1, NeoForge 1.21.1) has no such separate pass: once the capture turns Flywheel
-off, its contraption renderer draws the blocks itself. `ContraptionCapture.needsBlocks` therefore
-draws them only when Create 0.5's `ContraptionRenderDispatcher` exists; on Create 6 it would have
-doubled every block.
-
-In-game checks (`runClientGametest` with Create on the run classpath, headless): a creative motor
-turns a mechanical bearing carrying one wool block, the bearing is assembled, the area exported, and
-the GLB must hold geometry in the wool's cell above the bearing (by position: the capture groups
-geometry by material, so the wool may sit in a primitive named after the motor).
+angle, and the round farm with its rotating harvester arms, both missing before. Headless
+`runClientGametest` checks with Create on the run classpath (a creative motor turns a mechanical
+bearing carrying one wool block; the GLB must hold geometry in the wool's cell):
 
 | Target | Create | Result |
 |---|---|---|
-| Forge 1.18.2 | 0.5.1.i | wool captured by `ContraptionCapture` (`block_entities`) |
+| Forge 1.18.2 | 0.5.1.i | wool captured |
 | Forge 1.19.2 | 0.5.1.i | same; without the change the cell is empty and the check fails |
 | Forge 1.20.1 | 6.0.8 | wool drawn once, by Create's renderer (`entities`); doubled before `needsBlocks` |
-| Fabric 1.20.1 | 0.5.1-j | Lalaland recaptures above |
 
-Not run: NeoForge 1.21.1 (Create 6.0.10) and Fabric 1.19.2. In a development run Create's nested
-mods (Flywheel, Ponder, Registrate) must be extracted next to it, and on Forge 1.20.1 two Create
-mixins that capture locals fail against the development Minecraft: the check used a copy of the
-jar without them.
+In a development run Create's nested mods (Flywheel, Ponder, Registrate) must be extracted next
+to it, and on Forge 1.20.1 two Create mixins that capture locals fail against the development
+Minecraft: the check used a copy of the jar without them.
 
-Limits:
-- Only block models are drawn. Parts Create animates on top of a block (a harvester's blades, a
-  saw's blade, a deployer's hand, a train's bogeys inside a carriage) keep their static model.
-- Blocks are drawn whole, without hiding the faces between neighbours: more quads than the
-  same blocks in the world.
-- Older families read the structure block's fields instead of its record accessors
-  (`adapt.gradle`).
+With `ContraptionStructure` alone (14 November 2026). Minecraft 1.20.1 / Fabric dev client
+(`runClientGametest`, `--local`), Create 0.5.1-j build 1631 (Flywheel 0.6.11 bundled,
+`INSTANCING` backend), flat world: a mechanical bearing turned by a creative motor carrying a
+glued 3 x 3 body (planks, red and blue wool, glass) with a cogwheel on top, and a one-bogey train
+carriage (controls, two andesite casings, glass, red wool, a cogwheel) assembled by hand at a
+station. The saved world exported from the same position (`/minemories export 12`):
 
-## Create 0.5.1 contraption bodies, 14 November 2026
-
-Create 0.5.1 (Minecraft 1.18.2 to 1.20.1) does not draw a contraption's blocks
-from its entity renderer. `ContraptionEntityRenderer.render` only draws the block
-entities and actors, with matrices that `ContraptionRenderDispatcher` set up from
-the camera during the level's layer pass; the blocks themselves are one
-`SuperByteBuffer` per chunk layer, drawn by that layer pass. The capture's entity
-pass never reaches it, so bearings, pistons, pulleys, minecart contraptions and
-train carriages came out without their body. Worse, when the capture ran after a
-frame had set those matrices up, the block entities and bogey parts of the
-contraption were written camera-relative: on the bench below they landed about
-188 blocks above the scene.
-
-Fix: `LegacyContraptions` (shared client, reflection only, no Create class
-linked) runs around the entity renderer of a Create 0.5.1 contraption entity:
-
-1. it takes the contraption's own render info (`ContraptionRenderDispatcher.WORLDS`)
-   and sets its `ContraptionMatrices` to the capture pose instead of the camera,
-   at the latest tick like every other entity, so the entity renderer puts block
-   entities, actors and bogeys where the capture expects them;
-2. after the entity renderer, it builds each chunk layer's structure with
-   `ContraptionRenderDispatcher.buildStructureBuffer` on the CPU and draws it into
-   the capture with the same matrices (the buffer is freed right away);
-3. it clears the matrices again, so the next frame sets them up from the camera.
-
-`CreateLegacyContraptionMixin` (`@Pseudo`, `require = 0`, the five adapters that
-can meet Create 0.5.1) answers false from `ContraptionRenderDispatcher.canInstance`
-inside `CaptureRenderScope`: Create asks that method, not
-`Backend.canUseInstancing`, before skipping the shafts, cogs, drills and saws of
-a contraption that Flywheel instances. Create 6 has none of these classes and
-draws its contraptions from the entity renderer, so nothing changes there. A
-Create 0.5.1 whose API no longer matches logs `Create contraptions are not fully
-captured with this Create version` once and the capture goes on with what the
-entity renderer draws.
-
-Bench, Minecraft 1.20.1 / Fabric dev client (`runClientGametest`, `--local`),
-Create 0.5.1-j build 1631 (Flywheel 0.6.11 bundled, `INSTANCING` backend), flat world: a mechanical
-bearing turned by a creative motor carrying a glued 3 x 3 body (planks, red and
-blue wool, glass) with a cogwheel on top, and a one-bogey train carriage (controls,
-two andesite casings, glass, red wool, a cogwheel) assembled at a station. The
-train was assembled by hand from the station screen; the saved world was then
-exported with the code of `main` and with this change, from the same position
-(`/minemories export 12`):
-
-| | Code of `main` | This change |
+| | Without it | With it |
 | --- | --- | --- |
 | Bearing body (planks, wool, glass, cogwheel) | absent | present, turned with the bearing (a 3-block body spans 4.18 blocks) |
 | Carriage body (controls, casings, glass, wool, cogwheel) | absent | present on its bogey |
 | Carriage bogey | present | present |
 | Carriage parts written camera-relative | yes (up to Y +2.76 in capture space, 188 blocks above the scene) | none |
-| `entities` quads | 1,009 | 1,182 |
 
-Blender renders of both GLBs from the same camera show the bearing's body and
-the carriage's body only after the change. Evidence (GLBs, logs, renders, bench
-commands and world, bench patch): `~/.local/state/minemories-validation/create-contraptions-20261114/`.
+Evidence (GLBs, logs, renders, bench commands and world, bench patch):
+`~/.local/state/minemories-validation/create-contraptions-20261114/`.
 
-Unit tests: `LegacyContraptionsTest` (absent Create 0.5.1, changed API, matrices
-at the capture pose for the entity renderer, every non-empty chunk layer drawn
-and freed, a contraption Create does not draw is not drawn, a failing layer keeps
-the capture and hands the matrices back).
-
-Not exercised: Forge 1.18.2, 1.19.2 and 1.20.1 and Fabric 1.19.2 (same Create
-API, checked against Create's 1.18 and 1.19 sources, and they build), pistons,
-pulleys, minecart contraptions, a moving train, the AFK progressive capture of a
-contraption, and the `BATCHING` and `OFF` Flywheel backends. A scripted train assembly (calling the station's `assemble` from the
-bench) did nothing in Create 0.5.1, so the train needs a hand at the station.
+Limits:
+- The merged integration (structure buffers first, block by block as fallback, body filed under
+  `block_entities`) has its unit tests and builds on every target; it has not been run in game
+  yet as one piece.
+- With the fallback, blocks are drawn whole, without hiding the faces between neighbours, parts
+  Create animates on top of a block (a harvester's blades, a saw's blade, a deployer's hand)
+  keep their static model, and the matrices stay the camera's, so the contraption's block
+  entities can be misplaced as before.
+- Not exercised with either way: Fabric 1.19.2, NeoForge 1.21.1 (Create 6.0.10) for the
+  no-doubling guard, pistons, pulleys, minecart contraptions, a moving train, the AFK progressive
+  capture of a contraption, and the `BATCHING` and `OFF` Flywheel backends. A scripted train
+  assembly (calling the station's `assemble` from the bench) did nothing in Create 0.5.1, so a
+  train needs a hand at the station.
 
 ## How a block quad gets its colour
 
