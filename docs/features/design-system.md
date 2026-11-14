@@ -61,7 +61,7 @@ Colors (kit): background `--night` `#14110e`, panels `--night-2`, text `--text` 
 | FAQ | `mc-faq`, `mc-faq__item`, `__q`, `__a` | 48 px row, rotating chevron (200 ms), question turns amber once open. |
 | Link list | `site-links` | 44 px links, wrapping columns. |
 | Footer | `SiteFooter` (`components/SiteFooter.tsx`), `.mm-footer` | one footer for the landing and every page, edge to edge on the bar's gutter: brand and disclaimer, then Product, Guides, Help, Legal, Elsewhere (5 columns from 1100 px, the brand joins the row from 1360 px), 44 px links. On the landing, the folded "About this film" note sits just above it (`.site-film-note`). |
-| Form | `mc-select`, `mc-check` | select (44 px), checkboxes with a 44 px row. The bar's language picker is `LanguagePicker` (see Site bar), not a native select. |
+| Form | `SiteSelect`, `mc-check` | dropdowns are `SiteSelect` (`components/SiteSelect.tsx`), never a native select: a stone button (44 px) showing the value and the bar's night panel listing the choices, with the language picker's listbox keys (arrows, Home, End, typeahead, Enter, Space, Escape, a press outside). `name` adds a hidden field for a form; a container that styles its labels also names `.mm-select`. Checkboxes with a 44 px row. The bar's language picker is `LanguagePicker` (see Site bar). |
 
 Screenshots (after):
 

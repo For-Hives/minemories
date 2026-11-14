@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { DiagnosticsAccessLink } from '../components/DiagnosticsAccessLink'
 import { I18nProvider } from '../i18n/I18n'
+import { chooseOption } from '../testing/site-select'
 import { DiagnosticsPage } from './DiagnosticsPage'
 import type { DiagnosticDetail, DiagnosticIssue } from './diagnostics-data'
 
@@ -102,12 +103,12 @@ test('filters status, phase, source and version, with paginated results and no s
 	mount()
 	fireEvent.click(await screen.findByRole('button', { name: 'Page suivante' }))
 	await waitFor(() => expect(rpc.list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 })))
-	fireEvent.change(screen.getByLabelText('Statut'), { target: { value: 'resolved' } })
+	chooseOption('Statut', 'Résolu')
 	await waitFor(() =>
 		expect(rpc.list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, state: 'resolved' }))
 	)
-	fireEvent.change(screen.getByLabelText('Étape'), { target: { value: 'crash' } })
-	fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'mod' } })
+	chooseOption('Étape', 'Crash client')
+	chooseOption('Source', 'Mod')
 	fireEvent.change(screen.getByLabelText('Version du mod / API'), { target: { value: '0.2.1-beta.1' } })
 	fireEvent.click(screen.getByRole('button', { name: 'Filtrer' }))
 	await waitFor(() =>
@@ -124,7 +125,8 @@ test('filters status, phase, source and version, with paginated results and no s
 test('saving a triage decision uses the observed revision and refreshes the list', async () => {
 	mount()
 	fireEvent.click(await screen.findByRole('button', { name: /Examiner l’erreur/ }))
-	fireEvent.change(await screen.findByLabelText('Statut de traitement'), { target: { value: 'resolved' } })
+	await screen.findByText('Statut de traitement', { selector: '.mm-select__label' })
+	chooseOption('Statut de traitement', 'Résolu')
 	fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le statut' }))
 	await waitFor(() => expect(rpc.update).toHaveBeenCalledWith({ fingerprint, state: 'resolved', revision: 1 }))
 	await waitFor(() => expect(rpc.list).toHaveBeenCalledTimes(2))

@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { AppContext } from '../app-context'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonDark, buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { ContentLayout } from './ContentPages'
@@ -123,42 +124,32 @@ export function PublicGallery() {
 						maxLength={80}
 					/>
 				</label>
-				<label className={labelClass}>
-					{t('Category')}{' '}
-					<span className="mc-select w-full!">
-						<select
-							className={selectClass}
-							value={category}
-							onChange={event => {
-								setCategory(event.target.value as Category | '')
-								setPage(0)
-							}}
-						>
-							<option value="">{t('All')}</option>
-							{categories.map(value => (
-								<option key={value} value={value}>
-									{labels[value]}
-								</option>
-							))}
-						</select>
-					</span>
-				</label>
-				<label className={labelClass}>
-					{t('Sort')}{' '}
-					<span className="mc-select w-full!">
-						<select
-							className={selectClass}
-							value={sort}
-							onChange={event => {
-								setSort(event.target.value as 'recent' | 'votes')
-								setPage(0)
-							}}
-						>
-							<option value="recent">{t('Recent')}</option>
-							<option value="votes">{t('Most loved')}</option>
-						</select>
-					</span>
-				</label>
+				<SiteSelect
+					className={labelClass}
+					label={t('Category')}
+					value={category}
+					options={[
+						{ value: '' as const, label: t('All') },
+						...categories.map(value => ({ value, label: labels[value] })),
+					]}
+					onChange={value => {
+						setCategory(value)
+						setPage(0)
+					}}
+				/>
+				<SiteSelect
+					className={labelClass}
+					label={t('Sort')}
+					value={sort}
+					options={[
+						{ value: 'recent' as const, label: t('Recent') },
+						{ value: 'votes' as const, label: t('Most loved') },
+					]}
+					onChange={value => {
+						setSort(value)
+						setPage(0)
+					}}
+				/>
 			</div>
 			{loading && <p role="status">{t('Loading gallery…')}</p>}
 			{error && (

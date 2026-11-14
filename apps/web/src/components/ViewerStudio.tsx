@@ -12,6 +12,7 @@ import {
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
 import { SharePanel } from './SharePanel'
+import { SiteSelect } from './SiteSelect'
 import { buttonLime } from './ui'
 import { ViewerCover } from './ViewerCover'
 import { ViewerIcon } from './ViewerIcons'
@@ -24,7 +25,9 @@ const IDLE_MS = 4000
 export const TOAST_MS = 5000
 
 function isTyping(event: KeyboardEvent): boolean {
-	const field = event.target instanceof HTMLElement && event.target.matches('input, select, textarea')
+	// A control that takes its own keys (the dropdowns' lists) keeps them: 'r' there jumps to a choice, it does not recenter.
+	const field =
+		event.target instanceof HTMLElement && event.target.closest('input, select, textarea, [data-own-keys]') !== null
 	return field || event.metaKey || event.ctrlKey || event.altKey
 }
 
@@ -417,22 +420,21 @@ export function ViewerStudio({
 								</button>
 							))}
 						</fieldset>
-						<label className="viewer-quality">
-							{t('Rendering quality')}
-							<select
-								disabled={!ready}
-								value={quality}
-								onChange={event => {
-									const value = event.target.value as ViewerQuality
-									setQuality(value)
-									sceneRef.current?.setQuality(value)
-								}}
-							>
-								<option value="auto">{t('Auto · balanced')}</option>
-								<option value="cinematic">{t('Cinematic · every detail')}</option>
-								<option value="eco">{t('Eco · lightweight')}</option>
-							</select>
-						</label>
+						<SiteSelect
+							className="viewer-quality"
+							label={t('Rendering quality')}
+							disabled={!ready}
+							value={quality}
+							options={[
+								{ value: 'auto' as const, label: t('Auto · balanced') },
+								{ value: 'cinematic' as const, label: t('Cinematic · every detail') },
+								{ value: 'eco' as const, label: t('Eco · lightweight') },
+							]}
+							onChange={value => {
+								setQuality(value)
+								sceneRef.current?.setQuality(value)
+							}}
+						/>
 						<ViewerLayers sceneRef={sceneRef} ready={ready} />
 						<small>{t('Sky colors follow the memory’s biome when available.')}</small>
 					</section>

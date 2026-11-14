@@ -21,8 +21,8 @@
 		0 0 0 var(--gp) var(--outline),
 		var(--ds-panel-bevel);
 }
-.mm-diagnostic-filters label,
-.mm-diagnostic-toolbar label {
+.mm-diagnostic-filters :is(label, .mm-select),
+.mm-diagnostic-toolbar :is(label, .mm-select) {
 	display: grid;
 	gap: var(--ds-sp-2);
 	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
@@ -31,9 +31,7 @@
 }
 
 /* The game's text field and select (black, grey 2 px edge, white on focus), values in Atkinson. */
-.mm-diagnostic-filters input,
-.mm-diagnostic-filters .mc-select__control,
-.mm-diagnostic-toolbar .mc-select__control {
+.mm-diagnostic-filters input {
 	--_h: var(--ds-hit);
 	width: 100%;
 	max-width: 100%;
@@ -48,13 +46,8 @@
 	text-shadow: none;
 	caret-color: #fff;
 }
-.mm-diagnostic-filters .mc-select__control,
-.mm-diagnostic-toolbar .mc-select__control {
-	padding-right: calc(12 * var(--gp));
-}
-.mm-diagnostic-filters .mc-select,
-.mm-diagnostic-toolbar .mc-select {
-	width: auto;
+.mm-diagnostic-filters .mm-select,
+.mm-diagnostic-toolbar .mm-select {
 	min-width: 160px;
 }
 .mm-diagnostic-filters input::placeholder {

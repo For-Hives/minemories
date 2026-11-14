@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
+import { chooseOption, selectButton } from '../testing/site-select'
 import type { ViewerScene } from '../viewer-scene'
 import { LoadingSkeleton } from './Loading'
 import { TOAST_MS, ViewerStudio } from './ViewerStudio'
@@ -37,7 +38,7 @@ test('weather, quality and contemplation controls update the active scene', () =
 	fireEvent.click(screen.getByRole('button', { name: /Mist/ }))
 	expect(scene.setWeather).toHaveBeenCalledWith('mist')
 	expect(screen.getByRole('button', { name: /Mist/ }).getAttribute('aria-pressed')).toBe('true')
-	fireEvent.change(screen.getByRole('combobox'), { target: { value: 'eco' } })
+	chooseOption('Rendering quality', 'Eco · lightweight')
 	expect(scene.setQuality).toHaveBeenCalledWith('eco')
 	fireEvent.click(screen.getByRole('button', { name: /Take a moment/ }))
 	fireEvent.click(screen.getByRole('button', { name: /Take a moment/ }))
@@ -85,11 +86,11 @@ test('a loading viewer disables capture actions and does not offer public sharin
 
 test('the studio reveals settings on request and restores controls after immersion', () => {
 	const scene = mount()
-	expect(screen.queryByRole('combobox')).toBeNull()
+	expect(screen.queryByText('Rendering quality')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
-	expect(screen.getByRole('combobox')).toBeTruthy()
+	expect(selectButton('Rendering quality')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: /Close settings/ }))
-	expect(screen.queryByRole('combobox')).toBeNull()
+	expect(screen.queryByText('Rendering quality')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: /Golden hour/ }))
 	expect(scene.setMinutes).toHaveBeenCalledWith(1035)
 	fireEvent.change(screen.getByRole('slider'), { target: { value: '600' } })
@@ -112,7 +113,7 @@ test('Escape restores the interface and closes the atmosphere panel', () => {
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
 	fireEvent.click(screen.getByRole('button', { name: /Immerse/ }))
 	fireEvent.keyDown(window, { key: 'Escape' })
-	expect(screen.queryByRole('combobox')).toBeNull()
+	expect(screen.queryByText('Rendering quality')).toBeNull()
 	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
 })
 
@@ -152,7 +153,10 @@ test('keyboard shortcuts drive recenter, tour and immersion but ignore form fiel
 	expect(screen.getByRole('button', { name: /Show controls/ })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: /Show controls/ }))
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
-	fireEvent.keyDown(screen.getByRole('combobox'), { key: 'r' })
+	// Keys typed in a dropdown's list stay there: 'r' looks for a choice, it does not recenter.
+	fireEvent.click(selectButton('Rendering quality'))
+	fireEvent.keyDown(screen.getByRole('listbox', { name: 'Rendering quality' }), { key: 'r' })
+	fireEvent.keyDown(selectButton('Rendering quality'), { key: 'r' })
 	fireEvent.keyDown(window, { key: 'r', ctrlKey: true })
 	expect(scene.resetView).toHaveBeenCalledOnce()
 })

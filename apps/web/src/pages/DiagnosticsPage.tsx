@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { LoadingSkeleton } from '../components/Loading'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonOutline } from '../components/ui'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
@@ -122,74 +123,46 @@ export function DiagnosticsPage() {
 							setFilters(value => ({ ...value, version: version.trim() || undefined, page: 0 }))
 						}}
 					>
-						<label>
-							{t('Status')}
-							<span className="mc-select">
-								<select
-									className="mc-select__control"
-									aria-label={t('Status')}
-									value={filters.state}
-									onChange={event => {
-										close()
-										setFilters(value => ({ ...value, state: event.target.value as IssueFilters['state'], page: 0 }))
-									}}
-								>
-									<option value="all">{t('filters.allStates')}</option>
-									{issueStates.map(value => (
-										<option value={value} key={value}>
-											{translate(locale, stateLabels[value])}
-										</option>
-									))}
-								</select>
-							</span>
-						</label>
-						<label>
-							{t('Phase')}
-							<span className="mc-select">
-								<select
-									className="mc-select__control"
-									aria-label={t('Phase')}
-									value={filters.phase ?? ''}
-									onChange={event => {
-										close()
-										setFilters(value => ({
-											...value,
-											phase: (event.target.value || undefined) as IssueFilters['phase'],
-											page: 0,
-										}))
-									}}
-								>
-									<option value="">{t('All')}</option>
-									{Object.entries(phaseLabels).map(([value, label]) => (
-										<option key={value} value={value}>
-											{translate(locale, label)}
-										</option>
-									))}
-								</select>
-							</span>
-						</label>
-						<label>
-							{t('Source')}
-							<span className="mc-select">
-								<select
-									className="mc-select__control"
-									aria-label={t('Source')}
-									value={filters.source ?? ''}
-									onChange={event => {
-										close()
-										setFilters(value => ({
-											...value,
-											source: (event.target.value || undefined) as IssueFilters['source'],
-											page: 0,
-										}))
-									}}
-								>
-									<option value="">{t('All')}</option>
-									<option value="mod">Mod</option>
-									<option value="api">API</option>
-								</select>
-							</span>
-						</label>
+						<SiteSelect
+							label={t('Status')}
+							value={filters.state ?? 'all'}
+							options={[
+								{ value: 'all' as const, label: t('filters.allStates') },
+								...issueStates.map(value => ({ value, label: translate(locale, stateLabels[value]) })),
+							]}
+							onChange={state => {
+								close()
+								setFilters(value => ({ ...value, state, page: 0 }))
+							}}
+						/>
+						<SiteSelect
+							label={t('Phase')}
+							value={filters.phase ?? ''}
+							options={[
+								{ value: '' as const, label: t('All') },
+								...(Object.keys(phaseLabels) as Array<keyof typeof phaseLabels>).map(value => ({
+									value,
+									label: translate(locale, phaseLabels[value]),
+								})),
+							]}
+							onChange={phase => {
+								close()
+								setFilters(value => ({ ...value, phase: phase || undefined, page: 0 }))
+							}}
+						/>
+						<SiteSelect
+							label={t('Source')}
+							value={filters.source ?? ''}
+							options={[
+								{ value: '' as const, label: t('All') },
+								{ value: 'mod' as const, label: 'Mod' },
+								{ value: 'api' as const, label: 'API' },
+							]}
+							onChange={source => {
+								close()
+								setFilters(value => ({ ...value, source: source || undefined, page: 0 }))
+							}}
+						/>
 						<label>
 							{t('Mod / API version')}
 							<input

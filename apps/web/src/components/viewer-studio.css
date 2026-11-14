@@ -443,24 +443,9 @@ h2.cinema-panel-title {
 	font: 400 16px / 24px var(--f-ui);
 	color: var(--text);
 }
-/* The kit's black field. */
-.cinema-page .viewer-quality select {
-	width: 100%;
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-3);
-	border: var(--gp) solid var(--field-edge);
-	border-radius: 0;
-	background: var(--field);
-	color: var(--field-ink);
-	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
-}
-.cinema-page .viewer-quality select:hover:not(:disabled) {
-	border-color: #d6d0c6;
-}
-.cinema-page .viewer-quality select:disabled {
-	background: var(--off);
-	color: var(--off-ink);
-	border-color: var(--night-3);
+/* The settings panel scrolls: the quality list keeps to its button's width so the panel never clips it. */
+.cinema-page .viewer-quality .mm-select__list.mm-nav__panel {
+	max-width: calc(100% - 2 * var(--gp));
 }
 .cinema-settings small {
 	display: block;
