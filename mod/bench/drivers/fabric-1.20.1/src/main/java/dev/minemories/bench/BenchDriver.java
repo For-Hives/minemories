@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -41,16 +42,19 @@ import org.slf4j.LoggerFactory;
 /**
  * Render bench driver (test only, never shipped): with -Dminemories.bench=<dir>/plan.json it creates a fresh flat
  * creative world, lays every block of the plan's namespaces out on a grid, assembles Create bearings when asked,
- * records which blocks stayed in place, runs /minemories export around the grid and quits. Its outputs go next to
- * the plan: placed.json (what each cell holds), done.json (the export it made). The `bun mod bench` tool reads them.
+ * then exports the grid tile by tile: the player stands at each tile's centre, the driver records which blocks
+ * stayed in place and runs /minemories export around the tile. Minecraft draws a block entity only within 64
+ * blocks of the camera, so a tile keeps every block well inside that. Outputs go next to the plan: tile-<n>.glb and
+ * tile-<n>.json (each export), placed.json (what each cell holds, its tile), done.json. `bun mod bench` reads them.
  */
 public final class BenchDriver implements ClientModInitializer {
   private static final Logger LOG = LoggerFactory.getLogger("minemories-bench");
   private static final int FLOOR = -60;
   private static final int PER_TICK = 200;
-  private static final int MAX_RADIUS = 128;
+  /** Largest tile side in blocks: its corners stay within 64 blocks of the player standing at its centre. */
+  private static final int TILE_SPAN = 80;
 
-  private enum Step { MENU, LOADING, PLACING, SETTLING, ACTING, READING, EXPORTING, DONE }
+  private enum Step { MENU, LOADING, PLACING, SETTLING, ACTING, MOVING, EXPORTING, DONE }
 
   private Path plan;
   private JsonObject config;
@@ -58,12 +62,17 @@ public final class BenchDriver implements ClientModInitializer {
   private int ticks;
   private final List<Cell> cells = new ArrayList<>();
   private int placed;
-  private int radius;
+  private final List<Tile> tiles = new ArrayList<>();
+  private int tile;
+  private final JsonArray rows = new JsonArray();
   /** Blocks apart on the grid: 4 keeps a 3x3 block (a large water wheel) out of its neighbours' cells. */
   private int spacing = 4;
   private long exportStarted;
 
-  private record Cell(BlockPos pos, ResourceLocation id) {}
+  private record Cell(BlockPos pos, ResourceLocation id, int tile) {}
+
+  /** A square of the grid exported on its own, the player at (x, z), within `radius` blocks. */
+  private record Tile(int x, int z, int radius, int minX, int minZ, int maxX, int maxZ) {}
 
   @Override
   public void onInitializeClient() {
@@ -84,7 +93,7 @@ public final class BenchDriver implements ClientModInitializer {
           if (ticks > 100) next(Step.ACTING);
         }
         case ACTING -> acting(mc);
-        case READING -> reading(mc);
+        case MOVING -> moving(mc);
         case EXPORTING -> exporting(mc);
         case DONE -> {}
       }
@@ -147,21 +156,23 @@ public final class BenchDriver implements ClientModInitializer {
     }
     ids.sort(java.util.Comparator.comparing(ResourceLocation::toString));
     int columns = Math.max(1, (int) Math.ceil(Math.sqrt(ids.size())));
+    int perTile = Math.max(1, TILE_SPAN / spacing);
+    int tilesPerSide = (columns + perTile - 1) / perTile;
+    for (int row = 0; row < tilesPerSide; row++)
+      for (int col = 0; col < tilesPerSide; col++) {
+        int minX = 4 + col * perTile * spacing, minZ = 4 + row * perTile * spacing;
+        int maxX = minX + (perTile - 1) * spacing, maxZ = minZ + (perTile - 1) * spacing;
+        // Its blocks and the ring around them, with a margin: never more than 44 blocks.
+        int radius = (perTile - 1) * spacing / 2 + spacing + 2;
+        tiles.add(new Tile((minX + maxX) / 2, (minZ + maxZ) / 2, radius, minX, minZ, maxX, maxZ));
+      }
     for (int i = 0; i < ids.size(); i++) {
       int col = i % columns, row = i / columns;
-      cells.add(new Cell(new BlockPos(4 + col * spacing, FLOOR, 4 + row * spacing), ids.get(i)));
+      int index = (row / perTile) * tilesPerSide + col / perTile;
+      cells.add(new Cell(new BlockPos(4 + col * spacing, FLOOR, 4 + row * spacing), ids.get(i), index));
     }
-    int extent = 4 + columns * spacing;
-    radius = Math.max(8, extent / 2 + 4);
-    // /minemories export stops at 128: past it the far rows would read "missing" instead of failing.
-    if (radius > MAX_RADIUS)
-      throw new IllegalStateException(
-          ids.size() + " blocks need an export radius of " + radius + " (at most " + MAX_RADIUS
-              + "): split the namespaces across configurations or lower the spacing");
-    LOG.info("MINEMORIES-BENCH {} blocks from {} on a {}x{} grid, radius {}", ids.size(), namespaces, columns, columns, radius);
-    MinecraftServer server = mc.getSingleplayerServer();
-    int centre = extent / 2;
-    server.execute(() -> server.getPlayerList().getPlayers().get(0).teleportTo(centre + 0.5, FLOOR + 1, centre + 0.5));
+    LOG.info(
+        "MINEMORIES-BENCH {} blocks from {} on a {}x{} grid, {} tiles", ids.size(), namespaces, columns, columns, tiles.size());
     next(Step.PLACING);
   }
 
@@ -211,22 +222,77 @@ public final class BenchDriver implements ClientModInitializer {
         LOG.warn("MINEMORIES-BENCH no bearing to assemble");
       });
     }
-    if (ticks > 120) next(Step.READING);
+    if (ticks > 120) {
+      tile = 0;
+      next(Step.MOVING);
+    }
   }
 
-  private void reading(Minecraft mc) {
-    JsonArray out = new JsonArray();
+  /** The player goes to the tile's centre; the export waits until the client holds every chunk of the tile. */
+  private void moving(Minecraft mc) {
+    Tile current = tiles.get(tile);
+    MinecraftServer server = mc.getSingleplayerServer();
+    if (ticks == 1)
+      server.execute(
+          () -> server.getPlayerList().getPlayers().get(0).teleportTo(current.x() + 0.5, FLOOR + 1, current.z() + 0.5));
+    boolean loaded = ticks > 40;
+    for (int cx = (current.minX() - 2) >> 4; loaded && cx <= (current.maxX() + 2) >> 4; cx++)
+      for (int cz = (current.minZ() - 2) >> 4; loaded && cz <= (current.maxZ() + 2) >> 4; cz++)
+        loaded = mc.level.hasChunk(cx, cz);
+    if (loaded && mc.player.blockPosition().getX() == current.x() && mc.player.blockPosition().getZ() == current.z()) {
+      read(mc);
+      export(mc);
+    } else if (ticks > 20 * 120) throw new IllegalStateException("tile " + tile + " did not load");
+  }
+
+  /** What the world kept in this tile's cells, seen from the client that exports them. */
+  private void read(Minecraft mc) {
     for (Cell cell : cells) {
+      if (cell.tile() != tile) continue;
       JsonObject row = new JsonObject();
       row.addProperty("id", cell.id().toString());
       row.addProperty("x", cell.pos().getX());
       row.addProperty("y", cell.pos().getY());
       row.addProperty("z", cell.pos().getZ());
+      row.addProperty("tile", cell.tile());
       row.addProperty("actual", BuiltInRegistries.BLOCK.getKey(mc.level.getBlockState(cell.pos()).getBlock()).toString());
-      out.add(row);
+      rows.add(row);
     }
+  }
+
+  private void export(Minecraft mc) {
+    exportStarted = System.currentTimeMillis();
+    var source = (FabricClientCommandSource) mc.getConnection().getSuggestionsProvider();
+    try {
+      ClientCommandManager.getActiveDispatcher().execute("minemories export " + tiles.get(tile).radius(), source);
+    } catch (Exception error) {
+      throw new IllegalStateException("export command failed", error);
+    }
+    next(Step.EXPORTING);
+  }
+
+  private void exporting(Minecraft mc) throws Exception {
+    Path glb = Path.of(System.getProperty("user.home"), "export", "capture.glb");
+    if (Files.exists(glb) && Files.getLastModifiedTime(glb).toMillis() >= exportStarted && ticks > 20) {
+      // The next export replaces capture.glb: each tile's files are copied out first.
+      Files.copy(glb, plan.resolveSibling("tile-" + tile + ".glb"), StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(
+          glb.resolveSibling("capture.json"), plan.resolveSibling("tile-" + tile + ".json"), StandardCopyOption.REPLACE_EXISTING);
+      if (++tile < tiles.size()) {
+        next(Step.MOVING);
+        return;
+      }
+      write("placed.json", placed(mc).toString());
+      write("done.json", "{\"tiles\":" + tiles.size() + "}");
+      LOG.info("MINEMORIES-BENCH DONE");
+      next(Step.DONE);
+      mc.stop();
+    } else if (ticks > 20 * 600) throw new IllegalStateException("export of tile " + tile + " timed out");
+  }
+
+  private JsonObject placed(Minecraft mc) {
     JsonObject result = new JsonObject();
-    result.add("cells", out);
+    result.add("cells", rows);
     long contraptions = 0;
     for (var entity : mc.level.entitiesForRendering())
       if (entity.getClass().getName().contains("Contraption")) contraptions++;
@@ -236,10 +302,19 @@ public final class BenchDriver implements ClientModInitializer {
       contraption.addProperty("x", 1);
       contraption.addProperty("y", FLOOR + 1);
       contraption.addProperty("z", 1);
+      contraption.addProperty("tile", 0);
       contraption.addProperty("id", "minecraft:white_wool");
       result.add("contraption", contraption);
     }
-    result.addProperty("radius", radius);
+    JsonArray tileList = new JsonArray();
+    for (Tile each : tiles) {
+      JsonObject entry = new JsonObject();
+      entry.addProperty("x", each.x());
+      entry.addProperty("z", each.z());
+      entry.addProperty("radius", each.radius());
+      tileList.add(entry);
+    }
+    result.add("tiles", tileList);
     result.addProperty("spacing", spacing);
     // Flywheel and shaders behave differently on software rendering: every result says which renderer drew it.
     result.addProperty("renderer", com.mojang.blaze3d.platform.GlUtil.getRenderer());
@@ -248,25 +323,7 @@ public final class BenchDriver implements ClientModInitializer {
     for (var mod : net.fabricmc.loader.api.FabricLoader.getInstance().getAllMods())
       mods.addProperty(mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString());
     result.add("mods", mods);
-    write("placed.json", result.toString());
-    exportStarted = System.currentTimeMillis();
-    var source = (FabricClientCommandSource) mc.getConnection().getSuggestionsProvider();
-    try {
-      ClientCommandManager.getActiveDispatcher().execute("minemories export " + radius, source);
-    } catch (Exception error) {
-      throw new IllegalStateException("export command failed", error);
-    }
-    next(Step.EXPORTING);
-  }
-
-  private void exporting(Minecraft mc) throws Exception {
-    Path glb = Path.of(System.getProperty("user.home"), "export", "capture.glb");
-    if (Files.exists(glb) && Files.getLastModifiedTime(glb).toMillis() >= exportStarted && ticks > 60) {
-      write("done.json", "{\"glb\":" + quote(glb.toString()) + ",\"json\":" + quote(glb.resolveSibling("capture.json").toString()) + "}");
-      LOG.info("MINEMORIES-BENCH DONE");
-      next(Step.DONE);
-      mc.stop();
-    } else if (ticks > 20 * 600) throw new IllegalStateException("export timed out");
+    return result;
   }
 
   private void next(Step step) {

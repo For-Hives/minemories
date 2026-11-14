@@ -10,13 +10,21 @@ const escapeHtml = text =>
 		char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
 	)
 
-/** Two configurations draw the same block with more than this ratio of triangles between them: worth a look. */
-export const COUNT_RATIO = 2
+/**
+ * Two configurations draw the same block with at least this ratio of triangles between them: worth a look. A block
+ * drawn twice through two paths (different textures, so "layered", not "doubled") has exactly twice the triangles.
+ */
+export const COUNT_RATIO = 1.5
 
-/** Whether the drawn blocks' triangle counts differ by more than COUNT_RATIO between configurations. */
+/**
+ * Whether the drawn blocks' triangle counts differ by COUNT_RATIO or more between configurations, or layered faces
+ * appear in one and not another (the sign of a second drawing path).
+ */
 function countsDiffer(cells) {
-	const counts = cells.filter(cell => cell.triangles > 0).map(cell => cell.triangles)
-	return counts.length > 1 && Math.max(...counts) > COUNT_RATIO * Math.min(...counts)
+	const drawn = cells.filter(cell => cell.triangles > 0)
+	const counts = drawn.map(cell => cell.triangles)
+	if (counts.length > 1 && Math.max(...counts) >= COUNT_RATIO * Math.min(...counts)) return true
+	return new Set(drawn.map(cell => (cell.overlaps ?? 0) > 0)).size > 1
 }
 
 /**
@@ -84,7 +92,7 @@ thead th{position:sticky;top:0;background:#222}small{display:block;color:#999;fo
 tr.differs th{outline:2px solid #4a7fd0}
 </style></head><body>
 <h1>Minemories render bench</h1>
-<p>Generated ${escapeHtml(generatedAt)}. A block is <em>missing</em> when it stayed in the world but nothing was captured in its area, <em>doubled</em> when some of its triangles were drawn twice with the same texture, <em>not placed</em> when the world did not keep it. <em>Layered</em> triangles repeat a face with another texture (an overlay, or two drawing paths): shown, not judged. Rows outlined in blue differ between configurations, by status or by more than ${COUNT_RATIO}x in triangles.</p>
+<p>Generated ${escapeHtml(generatedAt)}. A block is <em>missing</em> when it stayed in the world but nothing was captured in its area, <em>doubled</em> when some of its triangles were drawn twice with the same texture, <em>not placed</em> when the world did not keep it. <em>Layered</em> triangles repeat a face with another texture (an overlay, or two drawing paths): shown, not judged. Rows outlined in blue differ between configurations, by status, by ${COUNT_RATIO}x or more in triangles, or by layered faces present in one and not another.</p>
 <ul>${summary}</ul>
 <table><thead><tr><th>Block</th>${head}</tr></thead><tbody>
 ${body}

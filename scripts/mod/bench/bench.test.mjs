@@ -284,6 +284,8 @@ test('the report puts problems first and marks blocks that differ between config
 				{ id: 'm:<b>', status: 'ok', triangles: 12, duplicates: 0, categories: { decor: 12 } },
 				{ id: 'm:gear', status: 'ok', triangles: 100, duplicates: 0, overlaps: 3, categories: { decor: 100 } },
 				{ id: 'm:pipe', status: 'ok', triangles: 30, duplicates: 0, categories: { decor: 30 } },
+				{ id: 'm:twin', status: 'ok', triangles: 30, duplicates: 0, categories: { decor: 30 } },
+				{ id: 'm:path', status: 'ok', triangles: 40, duplicates: 0, overlaps: 2, categories: { decor: 40 } },
 			],
 		},
 		{
@@ -293,7 +295,10 @@ test('the report puts problems first and marks blocks that differ between config
 				{ id: 'm:wheel', status: 'doubled', triangles: 40, duplicates: 20, categories: { block_entities: 40 } },
 				{ id: 'm:only', status: 'unplaced', actual: 'minecraft:air' },
 				{ id: 'm:gear', status: 'ok', triangles: 30, duplicates: 0, categories: { decor: 30 } },
-				{ id: 'm:pipe', status: 'ok', triangles: 50, duplicates: 0, categories: { decor: 50 } },
+				{ id: 'm:pipe', status: 'ok', triangles: 40, duplicates: 0, categories: { decor: 40 } },
+				// Drawn twice through two paths: exactly twice the triangles.
+				{ id: 'm:twin', status: 'ok', triangles: 60, duplicates: 0, overlaps: 30, categories: { decor: 60 } },
+				{ id: 'm:path', status: 'ok', triangles: 40, duplicates: 0, categories: { decor: 40 } },
 			],
 		},
 		{ config: { id: 'three' }, error: 'Exception in world tick: <NPE>' },
@@ -305,6 +310,8 @@ test('the report puts problems first and marks blocks that differ between config
 			['m:wheel', true, 'missing/doubled'],
 			['m:only', false, 'absent/unplaced'],
 			['m:gear', true, 'ok/ok'],
+			['m:path', true, 'ok/ok'],
+			['m:twin', true, 'ok/ok'],
 			['m:<b>', false, 'ok/absent'],
 			['m:pipe', false, 'ok/ok'],
 		]
@@ -464,4 +471,34 @@ test('a game that stopped early says why', () => {
 		'[3] [Render thread/ERROR]: last'
 	)
 	assert.equal(failureCause(''), 'The game ended before the export (see game.log)')
+})
+
+test('each block is judged from the export of its own tile', () => {
+	// Tile 1's export also holds tile 0's corner block, without its block entity (too far from the camera there).
+	const tiles = [
+		new Map([['0,0,0', cell(72)]]),
+		new Map([
+			['0,0,0', cell(12)],
+			['40,0,0', cell(20)],
+		]),
+	]
+	const placed = {
+		cells: [
+			{ id: 'a:box', x: 0, y: 0, z: 0, tile: 0, actual: 'a:box' },
+			{ id: 'a:far', x: 40, y: 0, z: 0, tile: 1, actual: 'a:far' },
+			{ id: 'a:lost', x: 80, y: 0, z: 0, tile: 2, actual: 'a:lost' },
+		],
+		contraptions: 1,
+		contraption: { x: 40, y: 0, z: 0, tile: 1 },
+	}
+	const result = evaluate(placed, tiles)
+	assert.deepEqual(
+		result.rows.map(row => [row.id, row.status, row.triangles]),
+		[
+			['a:box', 'ok', 72],
+			['a:far', 'ok', 20],
+			['a:lost', 'missing', 0],
+		]
+	)
+	assert.equal(result.contraption.triangles, 20)
 })

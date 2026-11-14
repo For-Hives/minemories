@@ -41,14 +41,17 @@ files are cached. A configuration that fails (missing JDK, download, crash) is l
    There is no dedicated server, so nobody accepts the server EULA on anyone's behalf.
 3. It lists every registered block of the plan's `namespaces`, minus `exclude`, air and blocks with an invisible
    render shape, and places their default states on a grid, `spacing` blocks apart (4 by default), on the
-   server thread. `/minemories export` stops at a radius of 128: a grid that would need more (about 3,600 blocks
-   at spacing 4) stops the run with an error rather than reporting the far rows as missing. Split the namespaces
-   across configurations instead.
+   server thread.
 4. With `contraption: true` it also builds a Create bearing on a creative motor with one wool block, and
    assembles it.
-5. It writes `placed.json` (each block's position and the block the world actually kept, the renderer, the
-   loaded mods), runs `/minemories export <radius>` and stops the game when the GLB is written.
-6. Node reads the GLB without a 3D engine (`scripts/mod/bench/glb-cells.mjs`): every triangle goes to the block
+5. It exports the grid tile by tile. Minecraft draws a block entity (a chest lid, a Create machine's moving
+   parts) only within 64 blocks of the camera, and the capture goes through the same dispatcher, so a block
+   further away would be judged without its block entity. Each tile is at most 80 blocks wide. The player
+   stands at its centre, waits for its chunks, records what the world kept in its cells, and runs
+   `/minemories export <radius>` (44 blocks at most). Each export is copied to `tile-<n>.glb`/`.json`, then
+   `placed.json` (each block's position, tile and the block the world kept, the renderer, the loaded mods) is
+   written and the game stops.
+6. Node reads each tile's GLB without a 3D engine (`scripts/mod/bench/glb-cells.mjs`): every triangle goes to the block
    holding its centroid, using `captureOrigin` and each node's scale and translation (a rotated or nested mesh
    node is refused rather than misplaced). Positions, not names, decide: the capture groups geometry by material
    under the first model that used it.
@@ -74,8 +77,9 @@ triangles are counted over the 3x3 cells around it: `unassembled` (no contraptio
 `partial` (fewer than 12), `doubled` (more than 12, or exact repeats: two copies at two angles are not exact
 repeats, so the count is what catches them) or `ok`.
 
-The report outlines a row when its status differs between configurations, or when its triangle counts differ
-by more than 2x.
+The report outlines a row when its status differs between configurations, when its triangle counts differ by
+1.5x or more (a block drawn twice through two paths has exactly twice the triangles), or when it has layered
+faces in one configuration and none in another.
 
 ## Configurations
 
@@ -117,7 +121,8 @@ by more than 2x.
 
 ## Results, 14 November 2026
 
-Fabric 1.20.1, production JAR 0.38.3-beta.1, llvmpipe. Two runs from a clean output gave the same counts.
+Fabric 1.20.1, production JAR 0.38.3-beta.1, llvmpipe, 4 tiles per configuration. Runs from a clean output give
+the same counts.
 
 | Configuration | Blocks | ok | missing | doubled | not placed | Contraption |
 |---|---|---|---|---|---|---|
@@ -133,3 +138,10 @@ Fabric 1.20.1, production JAR 0.38.3-beta.1, llvmpipe. Two runs from a clean out
   only), the three scaffoldings (2 each). Not investigated; some may come from the models themselves.
 - Layered, not doubled: `controller_rail` (4), both cuckoo clocks (2), `rotation_speed_controller` (48).
 - Not placed: `belt` and `gantry_carriage` (both versions), `factory_gauge` (Create 6): they need a support.
+- Differ between the two Create versions by 1.5x or more, all fluid blocks: the sixteen valve handles (120
+  triangles on Create 6, 280 on 0.5), `spout`, `item_drain`, `hose_pulley`, `portable_fluid_interface`,
+  `fluid_valve`. Likely redesigned models; not checked visually yet.
+- Before tiling, one grid ran 65 blocks from the player: every block past 64 blocks lost its block entity
+  geometry (a toolbox kept 12 of its 72 triangles, a backtank 46 of 162). This is a Minemories limit, not only a
+  bench one: `/minemories export` with a radius above 64 drops the block entities further than 64 blocks from the
+  player.

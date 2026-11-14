@@ -253,9 +253,8 @@ export async function runConfig(root, config, { env = process.env, local = false
 	// biome-ignore lint/performance/noAwaitInLoops: a handful of JARs.
 	for (const jar of jars) await copyFile(jar, join(mods, jar.split('/').pop()))
 	const plan = join(game, 'bench', 'plan.json')
+	await rm(join(game, 'bench'), { recursive: true, force: true })
 	await mkdir(join(game, 'bench'), { recursive: true })
-	// biome-ignore lint/performance/noAwaitInLoops: two files.
-	for (const name of ['placed.json', 'done.json']) await rm(join(game, 'bench', name), { force: true })
 	await writeFile(plan, JSON.stringify(driverPlan(config), null, 2))
 	await disableAfk(game)
 	const { command, args } = gameCommand({
@@ -286,28 +285,31 @@ export async function runConfig(root, config, { env = process.env, local = false
 		const log = await readFile(join(out, 'game.log'), 'utf8').catch(() => '')
 		return { config, seconds, error: done?.error ?? failureCause(log) }
 	}
-	await Promise.all([
-		copyFile(done.glb, join(out, 'capture.glb')),
-		copyFile(done.json, join(out, 'capture.json')),
-		copyFile(join(game, 'bench', 'placed.json'), join(out, 'placed.json')),
-	])
+	const files = ['placed.json']
+	for (let tile = 0; tile < done.tiles; tile++) files.push(`tile-${tile}.glb`, `tile-${tile}.json`)
+	await Promise.all(files.map(name => copyFile(join(game, 'bench', name), join(out, name))))
 	const result = { ...(await evaluateDir(out, config)), seconds, minemoriesJar: minemories.split('/').pop() }
 	await writeFile(join(out, 'result.json'), JSON.stringify(result, null, 2))
 	return result
 }
 
-/** Evaluates the outputs kept in a configuration's build/mod-bench folder. */
+/** Evaluates the outputs kept in a configuration's build/mod-bench folder: one GLB per tile of the grid. */
 export async function evaluateDir(dir, config) {
 	const placed = JSON.parse(await readFile(join(dir, 'placed.json'), 'utf8'))
-	const origin = JSON.parse(await readFile(join(dir, 'capture.json'), 'utf8')).captureOrigin
-	const cells = cellTriangles(parseGlb(await readFile(join(dir, 'capture.glb'))), origin)
+	const tiles = await Promise.all(
+		(placed.tiles ?? []).map(async (_, tile) => {
+			const origin = JSON.parse(await readFile(join(dir, `tile-${tile}.json`), 'utf8')).captureOrigin
+			return cellTriangles(parseGlb(await readFile(join(dir, `tile-${tile}.glb`))), origin)
+		})
+	)
 	const drawsNothing = Object.keys(config.drawsNothing ?? {})
 	return {
 		config,
 		renderer: placed.renderer,
 		minecraft: placed.minecraft,
 		mods: placed.mods,
-		...evaluate(placed, cells, { drawsNothing }),
+		tiles: tiles.length,
+		...evaluate(placed, tiles, { drawsNothing }),
 	}
 }
 
