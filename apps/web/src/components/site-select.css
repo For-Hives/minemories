@@ -1,0 +1,49 @@
+/* The site's dropdown (SiteSelect.tsx): a label, a stone button as wide as its column, the bar's night panel under it. The rows, the check and the
+   pressed button share the language list's rules (site-nav.css). A container that styles its labels names .mm-select beside label. */
+
+.mm-select {
+	display: grid;
+	gap: var(--ds-sp-2);
+	min-width: 0;
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+
+.mm-select__field {
+	position: relative;
+	min-width: 0;
+}
+
+.mm-select__button.mc-btn {
+	--_h: var(--ds-hit);
+	justify-content: space-between;
+	width: 100%;
+	min-width: 0;
+	gap: var(--ds-sp-2);
+	padding: 0 var(--ds-sp-2) var(--gp) var(--ds-sp-3);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.mm-select__value {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Under its button rather than under the bar; above the page's cards, as wide as the button at least. */
+.mm-select__list.mm-nav__panel {
+	top: calc(100% + 3 * var(--gp));
+	right: auto;
+	left: var(--gp);
+	z-index: 30;
+	min-width: calc(100% - 2 * var(--gp));
+	max-height: min(360px, 60dvh);
+	outline: none;
+}
+
+.mm-select__list:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}

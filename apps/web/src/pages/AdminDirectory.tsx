@@ -1,5 +1,6 @@
 import type { AdminUser, AdminUserSort } from '@minemories/api-contract'
-import type { SyntheticEvent } from 'react'
+import { type SyntheticEvent, useState } from 'react'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonDark } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import { formatBytes, formatExactBytes, quotaLevel, quotaPercent } from '../lib/bytes'
@@ -85,6 +86,9 @@ function Search({
 	onSearch(query: string, role: RoleFilter, sort: AdminUserSort): void
 }) {
 	const { t } = useI18n()
+	// The choices wait for Search, like the query field: the form reads them from SiteSelect's hidden fields.
+	const [role, setRole] = useState(filters.role)
+	const [sort, setSort] = useState(filters.sort)
 	function search(event: SyntheticEvent<HTMLFormElement>) {
 		event.preventDefault()
 		const data = new FormData(event.currentTarget)
@@ -100,27 +104,29 @@ function Search({
 				{t('Find an account')}
 				<input name="query" defaultValue={filters.query} placeholder={t('Name, email or ID')} maxLength={100} />
 			</label>
-			<label>
-				{t('Role')}
-				<span className="mc-select">
-					<select name="role" defaultValue={filters.role} className="mc-select__control">
-						<option value="all">{t('filters.allStates')}</option>
-						<option value="admin">{t('Administrators')}</option>
-						<option value="user">{t('Users')}</option>
-					</select>
-				</span>
-			</label>
-			<label>
-				{t('Sort by')}
-				<span className="mc-select">
-					<select name="sort" defaultValue={filters.sort} className="mc-select__control">
-						<option value="registered_desc">{t('Newest first')}</option>
-						<option value="registered_asc">{t('Oldest first')}</option>
-						<option value="storage_desc">{t('Most storage used')}</option>
-						<option value="storage_asc">{t('Least storage used')}</option>
-					</select>
-				</span>
-			</label>
+			<SiteSelect
+				name="role"
+				label={t('Role')}
+				value={role}
+				options={[
+					{ value: 'all', label: t('filters.allStates') },
+					{ value: 'admin', label: t('Administrators') },
+					{ value: 'user', label: t('Users') },
+				]}
+				onChange={setRole}
+			/>
+			<SiteSelect
+				name="sort"
+				label={t('Sort by')}
+				value={sort}
+				options={[
+					{ value: 'registered_desc', label: t('Newest first') },
+					{ value: 'registered_asc', label: t('Oldest first') },
+					{ value: 'storage_desc', label: t('Most storage used') },
+					{ value: 'storage_asc', label: t('Least storage used') },
+				]}
+				onChange={setSort}
+			/>
 			<button type="submit" className={`mm-admin-secondary ${buttonDark}`}>
 				{t('Search')}
 			</button>

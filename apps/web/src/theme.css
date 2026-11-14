@@ -163,7 +163,6 @@ html {
 
 /* Fields of these pages: the kit's black field (mc-field), the reading font inside. */
 .mm-demo-toolbar input,
-.mm-demo-toolbar select,
 .mm-simulator-fields input[type="number"],
 .mm-share-result input,
 .mc-field.mm-field-fill {
@@ -188,7 +187,6 @@ textarea.mc-field.mm-field-fill {
 	resize: vertical;
 }
 
-.mm-demo-toolbar select,
 select.mc-field.mm-field-fill {
 	padding-right: calc(var(--ds-sp-3) + 16px + var(--ds-sp-2));
 	background: var(--field) url("/hero/mcui/icons/chevron-light.svg") no-repeat right var(--ds-sp-3) center / 16px 16px;
@@ -196,20 +194,13 @@ select.mc-field.mm-field-fill {
 	cursor: pointer;
 }
 
-:is(
-	.mm-demo-toolbar input,
-	.mm-demo-toolbar select,
-	.mm-simulator-fields input,
-	.mm-share-result input,
-	.mc-field.mm-field-fill
-)::placeholder {
+:is(.mm-demo-toolbar input, .mm-simulator-fields input, .mm-share-result input, .mc-field.mm-field-fill)::placeholder {
 	color: var(--text-3);
 	opacity: 1;
 }
 
 :is(
 	.mm-demo-toolbar input,
-	.mm-demo-toolbar select,
 	.mm-simulator-fields input[type="number"],
 	.mm-share-result input,
 	.mc-field.mm-field-fill
@@ -220,7 +211,6 @@ select.mc-field.mm-field-fill {
 .mm-site
 	:is(
 		.mm-demo-toolbar input,
-		.mm-demo-toolbar select,
 		.mm-simulator-fields input[type="number"],
 		.mm-share-result input,
 		.mc-field.mm-field-fill
@@ -755,7 +745,7 @@ select.mc-field.mm-field-fill {
 	align-items: end;
 }
 
-.mm-demo-toolbar label,
+.mm-demo-toolbar :is(label, .mm-select),
 .mm-simulator-fields label,
 .mm-share-result {
 	display: grid;

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonDark, buttonOutline } from '../components/ui'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
@@ -161,24 +162,13 @@ export function DiagnosticDetails({
 			{detail && !pending && (
 				<>
 					<div className="mm-diagnostic-toolbar">
-						<label>
-							{t('Triage status')}
-							<span className="mc-select">
-								<select
-									className="mc-select__control"
-									aria-label={t('Triage status')}
-									value={state}
-									disabled={busy}
-									onChange={event => setState(event.target.value as IssueState)}
-								>
-									{issueStates.map(value => (
-										<option value={value} key={value}>
-											{translate(locale, stateLabels[value])}
-										</option>
-									))}
-								</select>
-							</span>
-						</label>
+						<SiteSelect
+							label={t('Triage status')}
+							value={state}
+							disabled={busy}
+							options={issueStates.map(value => ({ value, label: translate(locale, stateLabels[value]) }))}
+							onChange={setState}
+						/>
 						<button type="button" className={buttonDark} disabled={busy} onClick={() => void update()}>
 							{busy ? t('Saving…') : t('Save status')}
 						</button>

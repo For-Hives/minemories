@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { AppContext, type AppContextValue } from '../app-context'
 import { I18nProvider } from '../i18n/I18n'
+import { chooseOption } from '../testing/site-select'
 import { ExplorerPage } from './DiscoveryPages'
 import { ModerationPage, PublicGallery } from './PublicCatalog'
 import { PublicationPanel } from './PublicDiscovery'
@@ -83,9 +84,9 @@ test('public catalogue uses server filters, sorting and pages; demo remains an e
 	expect(screen.queryByRole('button', { name: 'Soumettre à la modération' })).toBeNull()
 	fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Village' } })
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ query: 'Village' }))
-	fireEvent.change(screen.getByRole('combobox', { name: 'Trier' }), { target: { value: 'votes' } })
+	chooseOption('Trier', 'Coups de cœur')
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ sort: 'votes' }))
-	fireEvent.change(screen.getByRole('combobox', { name: 'Catégorie' }), { target: { value: 'landscape' } })
+	chooseOption('Catégorie', 'Paysage')
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ category: 'landscape' }))
 	fireEvent.click(await screen.findByRole('button', { name: 'Suivant' }))
 	await waitFor(() => expect(discovery.list.mock.lastCall?.[0]).toMatchObject({ page: 1 }))

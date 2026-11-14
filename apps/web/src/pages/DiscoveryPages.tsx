@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { MemoryScene } from '../components/MemoryScene'
+import { SiteSelect } from '../components/SiteSelect'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useDemoPreferences } from '../content/demo-preferences'
 import { demoMemories } from '../content/discovery'
@@ -95,24 +96,24 @@ export function GalleryPreview() {
 						placeholder={t('House, garden…')}
 					/>
 				</label>
-				<label>
-					{t('Theme')}
-					<select value={category} onChange={event => setCategory(event.target.value)}>
-						<option value="all">{t('All themes')}</option>
-						{categories.map(([value, label]) => (
-							<option key={value} value={value}>
-								{label}
-							</option>
-						))}
-					</select>
-				</label>
-				<label>
-					{t('Sort by')}
-					<select value={sort} onChange={event => setSort(event.target.value)}>
-						<option value="title">{t('Place name')}</option>
-						<option value="hearts">{t('Hearts')}</option>
-					</select>
-				</label>
+				<SiteSelect
+					label={t('Theme')}
+					value={category}
+					options={[
+						{ value: 'all', label: t('All themes') },
+						...categories.map(([value, label]) => ({ value, label })),
+					]}
+					onChange={setCategory}
+				/>
+				<SiteSelect
+					label={t('Sort by')}
+					value={sort}
+					options={[
+						{ value: 'title', label: t('Place name') },
+						{ value: 'hearts', label: t('Hearts') },
+					]}
+					onChange={setSort}
+				/>
 				<button
 					className={buttonOutline}
 					type="button"

@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
+import { chooseOption } from '../testing/site-select'
 import { ExplorerPage, GalleryPreview } from './DiscoveryPages'
 
 beforeEach(() => {
@@ -36,7 +37,7 @@ test('search, themes, favorites and empty states work without an account and res
 	expect(screen.getByRole('button', { name: 'Favori : Le jardin des détours' }).getAttribute('aria-pressed')).toBe(
 		'true'
 	)
-	fireEvent.change(screen.getByRole('combobox', { name: 'Thème' }), { target: { value: 'village' } })
+	chooseOption('Thème', 'Construction')
 	expect(screen.getAllByRole('article')).toHaveLength(1)
 	fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser la démo' }))
 	expect(screen.getAllByRole('article')).toHaveLength(3)
@@ -44,7 +45,7 @@ test('search, themes, favorites and empty states work without an account and res
 })
 test('ranking votes add once, can be removed and remain local', () => {
 	gallery('/explore?demo=1')
-	fireEvent.change(screen.getByRole('combobox', { name: 'Trier par' }), { target: { value: 'hearts' } })
+	chooseOption('Trier par', 'Coups de cœur')
 	const first = screen.getAllByRole('article')[0]
 	if (!first) throw new Error('Demo has no entries')
 	expect(within(first).getByRole('heading').textContent).toBe('Le village au bord de l’eau')
