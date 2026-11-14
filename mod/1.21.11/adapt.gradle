@@ -55,6 +55,7 @@ ext.adaptDir = { File root ->
             t = rep(t, 'mc.getToasts()', 'mc.getToastManager()', n)
             t = rep(t, 'connection.getLocalGameProfile().getId()', 'connection.getLocalGameProfile().id()', n)
             t = rep(t, 'new ClickEvent(ClickEvent.Action.RUN_COMMAND, ', 'new ClickEvent.RunCommand(', n)
+            t = regex(t, /new ClickEvent\(\s*ClickEvent\.Action\.SUGGEST_COMMAND,\s*/, 'new ClickEvent.SuggestCommand(', n)
             t = regex(t, /new HoverEvent\(\s*HoverEvent\.Action\.SHOW_TEXT,\s*/, 'new HoverEvent.ShowText(', n)
             t = rep(t, 'Block.shouldRenderFace(state, level, pos, direction, neighborPos)', 'Block.shouldRenderFace(state, level.getBlockState(neighborPos), direction)', n)
             // Lot 3: BakedQuad became a record; BakedQuads packs it back into the old vertex layout.

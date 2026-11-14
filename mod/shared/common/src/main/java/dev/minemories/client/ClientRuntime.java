@@ -115,7 +115,7 @@ public final class ClientRuntime {
     if (CAPTURES.job == null) return true;
     CAPTURES.job.cancel("Manual capture requested.");
     lastActivityMs = System.currentTimeMillis();
-    captureFailure = "Stopping the AFK capture. Retry the manual capture in a moment.";
+    captureFailure = I18n.get("minemories.chat.afk_running");
     tell(captureFailure);
     return false;
   }
@@ -209,11 +209,101 @@ public final class ClientRuntime {
     return metadata;
   }
 
+  private static final String COMMAND = "/minemories";
+
+  /**
+   * One help row: the command as typed, the translated line that explains it, and its arguments.
+   */
+  private record HelpRow(String command, boolean needsArgument, String key, Object... args) {}
+
+  /** The help follows what players do in order: save, pick an area, send, open a screen. */
+  private static List<List<Object>> helpSections() {
+    return List.of(
+        List.of(
+            "minemories.help.section_save",
+            new HelpRow("export", false, "minemories.help.export"),
+            new HelpRow(
+                "export ", true, "minemories.help.export_radius", 2, DEFAULT_CAPTURE_RADIUS)),
+        List.of(
+            "minemories.help.section_area",
+            new HelpRow("select first", false, "minemories.help.select_first"),
+            new HelpRow("select second", false, "minemories.help.select_second"),
+            new HelpRow("export selection", false, "minemories.help.export_selection"),
+            new HelpRow("select status", false, "minemories.help.select_status"),
+            new HelpRow("select clear", false, "minemories.help.select_clear")),
+        List.of(
+            "minemories.help.section_gallery",
+            new HelpRow("pair ", true, "minemories.help.pair"),
+            new HelpRow("upload", false, "minemories.help.upload")),
+        List.of(
+            "minemories.help.section_screens",
+            new HelpRow("settings", false, "minemories.help.settings"),
+            new HelpRow("suggestions", false, "minemories.help.suggestions")));
+  }
+
+  /** The command to type, as a short text the translated messages can quote. */
+  private static String cmd(String arguments) {
+    return COMMAND + " " + arguments;
+  }
+
+  /**
+   * Explains every command in the chat. Each command is clickable: it is typed into the chat box
+   * (never run), so the player can still aim at a block or add the missing argument.
+   */
+  private static int help() {
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.player == null) return 0;
+    mc.player.displayClientMessage(
+        Component.literal("Minemories")
+            .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
+            .append(
+                Component.literal(" · " + I18n.get("minemories.help.title"))
+                    .withStyle(ChatFormatting.GRAY)),
+        false);
+    for (List<Object> section : helpSections()) {
+      mc.player.displayClientMessage(
+          Component.literal(I18n.get((String) section.get(0))).withStyle(ChatFormatting.YELLOW),
+          false);
+      for (Object entry : section.subList(1, section.size())) {
+        HelpRow row = (HelpRow) entry;
+        String shown = cmd(row.command()) + (row.needsArgument() ? argumentHint(row) : "");
+        mc.player.displayClientMessage(
+            Component.literal("  " + shown)
+                .withStyle(
+                    style ->
+                        style
+                            .withColor(ChatFormatting.AQUA)
+                            .withClickEvent(
+                                new ClickEvent(
+                                    ClickEvent.Action.SUGGEST_COMMAND, cmd(row.command())))
+                            .withHoverEvent(
+                                new HoverEvent(
+                                    HoverEvent.Action.SHOW_TEXT,
+                                    Component.translatable("minemories.help.click_to_type"))))
+                .append(
+                    Component.literal(" – " + I18n.get(row.key(), row.args()))
+                        .withStyle(ChatFormatting.GRAY)),
+            false);
+      }
+    }
+    say("minemories.help.footer");
+    return 1;
+  }
+
+  private static String argumentHint(HelpRow row) {
+    return row.command().startsWith("pair") ? "<code>" : "<radius>";
+  }
+
   public static <S> void registerCommands(com.mojang.brigadier.CommandDispatcher<S> dispatcher) {
     dispatcher.register(
         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("minemories")
+            .executes(ctx -> guarded(ClientRuntime::help))
+            .then(
+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("help")
+                    .executes(ctx -> guarded(ClientRuntime::help)))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("select")
+                    .executes(ctx -> guarded(ClientRuntime::help))
                     .then(
                         com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("first")
                             .executes(ctx -> guarded(() -> selectCorner(true))))
@@ -243,6 +333,7 @@ public final class ClientRuntime {
                                                 IntegerArgumentType.getInteger(ctx, "radius"))))))
             .then(
                 com.mojang.brigadier.builder.LiteralArgumentBuilder.<S>literal("pair")
+                    .executes(ctx -> guarded(ClientRuntime::pairUsage))
                     .then(
                         com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, String>argument(
                                 "code", StringArgumentType.word())
@@ -973,7 +1064,7 @@ public final class ClientRuntime {
 
   private static int pair(String code) {
     if (!code.matches("\\d{6}")) {
-      say("minemories.chat.pair_code_hint");
+      pairUsage();
       return 0;
     }
     say("minemories.chat.pairing");
@@ -991,6 +1082,11 @@ public final class ClientRuntime {
                           diagnosticsToast();
                         }));
     return 1;
+  }
+
+  private static int pairUsage() {
+    say("minemories.chat.pair_usage", cmd("pair 123456"));
+    return 0;
   }
 
   private static int uploadCapture() {
@@ -1013,7 +1109,7 @@ public final class ClientRuntime {
     while (cause instanceof java.util.concurrent.CompletionException && cause.getCause() != null) {
       cause = cause.getCause();
     }
-    return "Failed: " + cause.getMessage();
+    return I18n.get("minemories.chat.error", cause.getMessage());
   }
 
   public static void renderSelection(PoseStack pose, Vec3 camera) {
@@ -1042,7 +1138,7 @@ public final class ClientRuntime {
         || mc.player == null
         || !(mc.hitResult instanceof BlockHitResult hit)
         || hit.getType() == HitResult.Type.MISS) {
-      tell("Look at a block then run /minemories select " + (first ? "first" : "second"));
+      say("minemories.chat.select_aim", cmd(first ? "select first" : "select second"));
       return 0;
     }
     if (selectionDimension != null && selectionDimension != mc.level.dimension()) {
@@ -1052,19 +1148,14 @@ public final class ClientRuntime {
     selectionDimension = mc.level.dimension();
     if (first) selectionFirst = hit.getBlockPos().immutable();
     else selectionSecond = hit.getBlockPos().immutable();
-    tell((first ? "Corner A" : "Corner B") + " set: " + hit.getBlockPos().toShortString());
+    say(
+        first ? "minemories.chat.corner_first_set" : "minemories.chat.corner_second_set",
+        hit.getBlockPos().toShortString());
     if (selectionFirst != null && selectionSecond != null) {
       long sizeX = Math.abs(selectionFirst.getX() - selectionSecond.getX()) + 1L;
       long sizeY = Math.abs(selectionFirst.getY() - selectionSecond.getY()) + 1L;
       long sizeZ = Math.abs(selectionFirst.getZ() - selectionSecond.getZ()) + 1L;
-      tell(
-          "Area: "
-              + sizeX
-              + " × "
-              + sizeY
-              + " × "
-              + sizeZ
-              + " blocks. /minemories export to generate.");
+      say("minemories.chat.select_area", sizeX, sizeY, sizeZ, cmd("export selection"));
     }
     return 1;
   }
@@ -1073,20 +1164,24 @@ public final class ClientRuntime {
     selectionFirst = null;
     selectionSecond = null;
     selectionDimension = null;
-    tell("Selection cleared.");
+    say("minemories.chat.select_cleared");
     return 1;
   }
 
   private static int selectionStatus() {
+    String unset = I18n.get("minemories.chat.corner_unset");
+    say(
+        "minemories.chat.select_status",
+        selectionFirst == null ? unset : selectionFirst.toShortString(),
+        selectionSecond == null ? unset : selectionSecond.toShortString());
     if (selectionFirst == null || selectionSecond == null)
-      tell("Incomplete selection. Aim at a block then use /minemories select first and second.");
-    else tell("A " + selectionFirst.toShortString() + " · B " + selectionSecond.toShortString());
+      say("minemories.chat.select_incomplete", cmd("select first"), cmd("select second"));
     return 1;
   }
 
   /** A plain, translated line in the chat: no technical detail (that goes to the log). */
-  static void say(String key) {
-    tell(I18n.get(key));
+  static void say(String key, Object... args) {
+    tell(I18n.get(key, args));
   }
 
   /** A toast (like an advancement) saying diagnostics start with the connection, if they did. */
@@ -1108,7 +1203,9 @@ public final class ClientRuntime {
 
   static int exportSelection() {
     if (!manualCaptureAllowed()) return 0;
-    captureFailure = "Set both selection corners in the current world.";
+    captureFailure =
+        I18n.get(
+            "minemories.chat.export_need_selection", cmd("select first"), cmd("select second"));
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
       int result = exportSelection(diagnostics);
@@ -1127,7 +1224,7 @@ public final class ClientRuntime {
         || selectionFirst == null
         || selectionSecond == null
         || selectionDimension != mc.level.dimension()) {
-      tell("Select the corners with /minemories select first then second.");
+      say("minemories.chat.export_need_selection", cmd("select first"), cmd("select second"));
       return 0;
     }
     BlockPos min =
@@ -1154,7 +1251,7 @@ public final class ClientRuntime {
 
   private static int export(ClientSettings.ManualSize size) {
     if (!manualCaptureAllowed()) return 0;
-    captureFailure = "Capture failed. Check the world and the area.";
+    captureFailure = I18n.get("minemories.chat.capture_failed");
     var diagnostics = PairingClient.beginCaptureDiagnostics();
     try {
       int result = export(size, diagnostics);
@@ -1223,8 +1320,8 @@ public final class ClientRuntime {
         sy = (long) max.getY() - min.getY() + 1,
         sz = (long) max.getZ() - min.getZ() + 1;
     if (sx > 257 || sy > 1024 || sz > 257 || sx * sy * sz > 70_000_000L) {
-      captureFailure = "Area too large. Shrink the selection or the capture radius.";
-      tell("Area too large. Maximum: 257 blocks wide, 1024 blocks tall.");
+      captureFailure = I18n.get("minemories.chat.too_large");
+      tell(captureFailure);
       return 0;
     }
     BlockPos center =
@@ -1300,8 +1397,7 @@ public final class ClientRuntime {
       int entityCount = captureEntities(renderedModels, mc, min, max, center);
       renderedModels.reportSkipped();
       if (!scene.hasGeometry()) {
-        captureFailure =
-            "No visible blocks in the area. Wait for the terrain to load or pick another area, then retry.";
+        captureFailure = I18n.get("minemories.chat.no_blocks");
         tell(captureFailure);
         return 0;
       }
@@ -1322,7 +1418,7 @@ public final class ClientRuntime {
           saved);
       say("minemories.chat.memory_saved");
     } catch (Exception e) {
-      captureFailure = "Capture failed: " + e.getMessage();
+      captureFailure = I18n.get("minemories.chat.error", e.getMessage());
       diagnostics.failed(e);
       say("minemories.chat.memory_failed");
       LOGGER.error("Capture export failed", e);
