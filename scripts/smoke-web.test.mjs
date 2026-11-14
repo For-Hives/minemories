@@ -209,3 +209,33 @@ test('the private routes are the same in nginx (shell + noindex), the indexable 
 	)
 	assert.deepEqual([...smoked].sort(), disallowed)
 })
+
+test('after launch, canonical, alternates, og:url and sitemap entries must name the host under test', () => {
+	const page = { path: '/concept', status: 200, robots: 'public', notAppShell: true }
+	const headers = { 'content-type': 'text/html', 'cache-control': 'no-cache' }
+	const right =
+		'<link rel="canonical" href="https://example.org/concept" /><link rel="alternate" hreflang="fr" href="https://example.org/fr/concept" /><meta property="og:url" content="https://example.org/concept" />'
+	const wrong = right.replaceAll('https://example.org', 'https://staging.example.net')
+	assert.deepEqual(checkResponse(page, { status: 200, headers, body: right }, { base, indexable: true }), [])
+	assert.deepEqual(checkResponse(page, { status: 200, headers, body: wrong }, { base, indexable: true }), [
+		'SEO URLs name another host: staging.example.net',
+	])
+	// Before launch the staging host is expected: nothing is indexed.
+	assert.ok(
+		!checkResponse(page, { status: 200, headers, body: wrong }, { base, indexable: false }).some(failure =>
+			failure.startsWith('SEO URLs')
+		)
+	)
+	const sitemap = { path: '/sitemap.xml', status: 200, robots: 'public' }
+	assert.deepEqual(
+		checkResponse(
+			sitemap,
+			{ status: 200, headers, body: '<url><loc>https://staging.example.net/</loc></url>' },
+			{
+				base,
+				indexable: true,
+			}
+		).filter(failure => failure.startsWith('SEO URLs')),
+		['SEO URLs name another host: staging.example.net']
+	)
+})

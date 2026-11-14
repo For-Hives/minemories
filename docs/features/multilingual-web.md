@@ -14,7 +14,7 @@ The guides were also updated: a bottom margin of at least five blocks below the 
 
 ## URLs: shipped state
 
-Each language has its own URLs: English unprefixed (`/installation`), the others under their prefix (`/fr/installation`, `/pt-br/installation`), as described in [internationalization](internationalization.md). Each page is prerendered in its URL's language with a self-referencing canonical, reciprocal `hreflang` alternates and `x-default` pointing to English, and the sitemap lists them all. A local preference never overrides the language set by a prefixed URL. Private routes, share links, authentication, account and administration keep no public canonical, no public schema and `noindex,nofollow`, whatever the language. General indexing stays disabled unless `VITE_INDEXABLE` is explicitly enabled.
+Each language has its own URLs: English unprefixed (`/installation`), the others under their prefix (`/fr/installation`, `/pt-br/installation`), as described in [internationalization](internationalization.md). Each page is prerendered in its URL's language with a self-referencing canonical, reciprocal `hreflang` alternates and `x-default` pointing to English, and the sitemap lists them all. A local preference never overrides the language set by a prefixed URL. Private routes, share links, authentication, account and administration keep no public canonical, no public schema and `noindex,nofollow`, whatever the language. Indexing is open in production since the launch on `minemories.net` (14 November 2026); a build without `VITE_INDEXABLE=true` stays blocked.
 
 GitHub release notes remain official documents in their original language, not invented translations. Legal texts remain provisional until #89 is finalized.
 

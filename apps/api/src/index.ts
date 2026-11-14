@@ -324,6 +324,8 @@ app.use('*', (context, next) => {
 	const correlationId = requestCorrelation(context.req.raw)
 	context.set('correlationId', correlationId)
 	context.header('X-Minemories-Correlation', correlationId)
+	// The API is never a search result: JSON, captures and JAR downloads stay out of every index.
+	context.header('X-Robots-Tag', 'noindex, nofollow')
 	return next()
 })
 app.onError((_error, context) => {
@@ -376,6 +378,8 @@ app.use(
 app.get('/api/auth-providers', context => context.json(Object.keys(auth.options.socialProviders ?? {})))
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
+// Crawlers have nothing to read here; the site's own robots.txt lives on the web host.
+app.get('/robots.txt', context => context.text('User-agent: *\nDisallow: /\n'))
 app.route('/downloads', modDownloads)
 app.route('/api/roadmap', roadmap)
 app.use('/api/auth/*', (context, next) =>

@@ -90,7 +90,7 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	// every entry names all its languages, English as x-default
 	assert.ok(
 		sitemap.includes(
-			'<xhtml:link rel="alternate" hreflang="fr-FR" href="https://example.org/fr" /><xhtml:link rel="alternate" hreflang="x-default" href="https://example.org/" /></url>'
+			'<xhtml:link rel="alternate" hreflang="fr" href="https://example.org/fr" /><xhtml:link rel="alternate" hreflang="x-default" href="https://example.org/" /></url>'
 		)
 	)
 	assert.equal(sitemap.match(/<url>/g)?.length, 4)
@@ -206,7 +206,7 @@ test('every page exists in every language, each with its own head, alternates an
 	assert.ok(english.includes('<link rel="canonical" href="https://example.org/blog/story" />'))
 	assert.ok(english.includes('<meta property="og:url" content="https://example.org/blog/story" />'))
 	const alternates =
-		'<link rel="alternate" hreflang="en-US" href="https://example.org/blog/story" /><link rel="alternate" hreflang="fr-FR" href="https://example.org/fr/blog/story" /><link rel="alternate" hreflang="x-default" href="https://example.org/blog/story" />'
+		'<link rel="alternate" hreflang="en" href="https://example.org/blog/story" /><link rel="alternate" hreflang="fr" href="https://example.org/fr/blog/story" /><link rel="alternate" hreflang="x-default" href="https://example.org/blog/story" />'
 	assert.ok(english.includes(alternates))
 	assert.ok(english.includes('data-route="/blog/story"><h1>en/blog/story</h1>'))
 	const french = await readFile(join(directory, 'fr/blog/story/index.html'), 'utf8')

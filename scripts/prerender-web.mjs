@@ -17,7 +17,7 @@ const robotsFor = origin =>
 /**
  * Every public page in every language: English unprefixed (the default, what a pasted link previews), each other
  * language under its prefix (/fr/concept). Each one is a page of its own: <html lang>, title, description, Open Graph,
- * canonical, hreflang alternates (x-default = English) and JSON-LD in its language, and a body rendered in it.
+ * canonical, hreflang alternates by language only (`fr`, not `fr-FR`, so every French-speaking country matches; `pt-BR` keeps its region; x-default = English) and JSON-LD in its language, and a body rendered in it.
  */
 export async function prerenderWeb(directory, entry) {
 	const template = (await readFile(resolve(directory, 'index.html'), 'utf8')).replace(/<meta name="robots"[^>]*>/g, '')
@@ -57,7 +57,7 @@ export async function prerenderWeb(directory, entry) {
 			.map(other => `<meta property="og:locale:alternate" content="${other.ogLocale}" />`)
 			.join('')}`
 	const alternates = path =>
-		`${languages.map(language => `<link rel="alternate" hreflang="${language.tag}" href="${escapeHtml(url(path, language))}" />`).join('')}<link rel="alternate" hreflang="x-default" href="${escapeHtml(url(path, languages[0]))}" />`
+		`${languages.map(language => `<link rel="alternate" hreflang="${language.id}" href="${escapeHtml(url(path, language))}" />`).join('')}<link rel="alternate" hreflang="x-default" href="${escapeHtml(url(path, languages[0]))}" />`
 	/** A public page's canonical URL (its own language), alternates, link preview and JSON-LD. */
 	const previewHead = (page, language) =>
 		`<link rel="canonical" href="${escapeHtml(url(page.path, language))}" />${alternates(page.path)}${previewText(page, language)}<meta property="og:url" content="${escapeHtml(url(page.path, language))}" /><meta property="og:type" content="${page.articleDate ? 'article' : 'website'}" />${socialTags}<script type="application/ld+json" data-page-schema>${JSON.stringify(structuredDataFor(page)).replaceAll('<', '\\u003c')}</script>`
@@ -90,7 +90,7 @@ export async function prerenderWeb(directory, entry) {
 					`<url><loc>${escapeHtml(url(page.path, language))}</loc>${page.updated ? `<lastmod>${page.updated}</lastmod>` : ''}${languages
 						.map(
 							other =>
-								`<xhtml:link rel="alternate" hreflang="${other.tag}" href="${escapeHtml(url(page.path, other))}" />`
+								`<xhtml:link rel="alternate" hreflang="${other.id}" href="${escapeHtml(url(page.path, other))}" />`
 						)
 						.join(
 							''
