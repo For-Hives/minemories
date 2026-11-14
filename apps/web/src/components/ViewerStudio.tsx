@@ -11,6 +11,7 @@ import {
 } from '../lib/viewer-lighting'
 import type { ViewerQuality, ViewerWeather } from '../viewer-effects'
 import type { ViewerScene } from '../viewer-scene'
+import { FlightLayer, useFlight } from './FlightControls'
 import { SharePanel } from './SharePanel'
 import { SiteSelect } from './SiteSelect'
 import { buttonLime } from './ui'
@@ -135,6 +136,15 @@ function studioView(scene: ViewerScene | null, view: ViewLink): ViewLink {
 	return view
 }
 
+/** The studio's state classes: immersed, idle, flying with touch controls. */
+function studioClass(state: { immersed: boolean; idle: boolean; touchFlying: boolean }): string {
+	const names = ['viewer-studio']
+	if (state.immersed) names.push('is-immersed')
+	if (state.idle) names.push('is-idle')
+	if (state.touchFlying) names.push('is-touch-flying')
+	return names.join(' ')
+}
+
 export function ViewerStudio({
 	sceneRef,
 	memoryId,
@@ -172,13 +182,14 @@ export function ViewerStudio({
 	const [lighting, setLighting] = useState<ViewerLighting>(() => startingLighting(initialView))
 	const [tour, setTour] = useState(false)
 	const [firstPerson, setFirstPerson] = useState(false)
+	const flight = useFlight(sceneRef, ready)
 	const [sharing, setSharing] = useState(false)
 	const [covering, setCovering] = useState(false)
 	const [toast, setToast] = useState({ text: '', id: 0 })
 	const [settings, setSettings] = useState(false)
 	const [immersed, setImmersed] = useState(false)
 	const [idle, setIdle] = useState(false)
-	const panelOpen = settings || sharing || covering
+	const panelOpen = settings || sharing || covering || flight.open
 	// Each notice gets its own id, so a second postcard restarts the countdown.
 	const notify = (text: string) => setToast(current => ({ text, id: current.id + 1 }))
 	const dismiss = () => setToast(current => ({ ...current, text: '' }))
@@ -234,8 +245,11 @@ export function ViewerStudio({
 				setSettings(false)
 				setSharing(false)
 				setCovering(false)
+				flight.setOpen(false)
 				setImmersed(false)
-			} else if (!isTyping(event)) shortcuts[event.key.toLowerCase()]?.()
+			} else if (!(isTyping(event) || (firstPerson && flight.flies(event.code))))
+				// A key that flies while flying never also toggles the tour or recentres.
+				shortcuts[event.key.toLowerCase()]?.()
 		}
 		window.addEventListener('keydown', onKey)
 		return () => window.removeEventListener('keydown', onKey)
@@ -260,7 +274,7 @@ export function ViewerStudio({
 	}
 	return (
 		<>
-			<div className={`viewer-studio ${immersed ? 'is-immersed' : ''} ${idle && !panelOpen ? 'is-idle' : ''}`}>
+			<div className={studioClass({ immersed, idle: idle && !panelOpen, touchFlying: firstPerson && flight.touch })}>
 				<div className="cinema-toolbar" role="toolbar" aria-orientation="vertical" aria-label={t('Explore')}>
 					<button
 						type="button"
@@ -347,36 +361,16 @@ export function ViewerStudio({
 						</span>
 					</button>
 				</div>
-				{firstPerson && (
-					<section className="cinema-navigation" aria-label={t('Explore')}>
-						<strong>{t('Step inside the memory')}</strong>
-						<p>{t('Drag to look · WASD or arrows · E / Space: up · Q: down · Shift: fast · Alt: precise')}</p>
-						<div>
-							{(['forward', 'back', 'up', 'down'] as const).map((direction, index) => (
-								<button
-									key={direction}
-									type="button"
-									onPointerDown={event => {
-										event.currentTarget.setPointerCapture(event.pointerId)
-										sceneRef.current?.moveFirstPerson(direction, true)
-									}}
-									onPointerUp={() => sceneRef.current?.moveFirstPerson(direction, false)}
-									onPointerCancel={() => sceneRef.current?.moveFirstPerson(direction, false)}
-									onBlur={() => sceneRef.current?.moveFirstPerson(direction, false)}
-									onKeyDown={event => {
-										if (event.key === ' ' || event.key === 'Enter') {
-											event.preventDefault()
-											sceneRef.current?.moveFirstPerson(direction, true)
-										}
-									}}
-									onKeyUp={() => sceneRef.current?.moveFirstPerson(direction, false)}
-								>
-									{[t('Forward'), t('Back'), t('Up'), t('Down')][index]}
-								</button>
-							))}
-						</div>
-					</section>
-				)}
+				<FlightLayer
+					flight={flight}
+					flying={firstPerson}
+					sceneRef={sceneRef}
+					onOpen={() => {
+						setSettings(false)
+						setSharing(false)
+						setCovering(false)
+					}}
+				/>
 				{settings && (
 					<section id="cinema-settings" className="cinema-settings">
 						<div className="cinema-panel-heading">

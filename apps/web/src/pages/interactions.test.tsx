@@ -82,6 +82,7 @@ vi.mock('../viewer-scene', () => ({
 		resetView = mocks.resetView
 		setCaptureContext = mocks.setCaptureContext
 		snapshot = () => null
+		flight = { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null }
 	},
 }))
 beforeEach(() => {
