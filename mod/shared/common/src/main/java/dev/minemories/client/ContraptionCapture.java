@@ -29,7 +29,16 @@ final class ContraptionCapture {
   /** Full sky and block light: the capture lights the scene itself. */
   private static final int FULL_BRIGHT = 0xF000F0;
 
+  /**
+   * Create 0.5's separate render pass for contraption blocks. Create 6 has none: its contraption
+   * renderer draws the blocks itself once instancing is off during the capture, so drawing them
+   * here too would double them.
+   */
+  static final String LAYER_PASS =
+      "com.simibubi.create.content.contraptions.render.ContraptionRenderDispatcher";
+
   private static final Map<Class<?>, Method> METHODS = new ConcurrentHashMap<>();
+  private static final Map<ClassLoader, Boolean> LAYER_PASSES = new ConcurrentHashMap<>();
 
   private ContraptionCapture() {}
 
@@ -40,6 +49,25 @@ final class ContraptionCapture {
         return true;
     }
     return false;
+  }
+
+  /**
+   * True when this contraption's blocks are missing from its entity render and must be drawn here:
+   * a Create contraption from a Create that draws them in a pass of its own (0.5).
+   */
+  static boolean needsBlocks(Object entity) {
+    if (!isContraption(entity)) return false;
+    ClassLoader loader = entity.getClass().getClassLoader();
+    return LAYER_PASSES.computeIfAbsent(loader, found -> exists(LAYER_PASS, found));
+  }
+
+  static boolean exists(String name, ClassLoader loader) {
+    try {
+      Class.forName(name, false, loader);
+      return true;
+    } catch (ClassNotFoundException | LinkageError missing) {
+      return false;
+    }
   }
 
   /**
@@ -132,5 +160,6 @@ final class ContraptionCapture {
   /** For tests: forgets the methods found so far. */
   static void reset() {
     METHODS.clear();
+    LAYER_PASSES.clear();
   }
 }

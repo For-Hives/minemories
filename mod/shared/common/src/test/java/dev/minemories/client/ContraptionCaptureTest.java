@@ -48,4 +48,17 @@ class ContraptionCaptureTest {
         ContraptionCapture.applyLocalTransforms(new AbstractContraptionEntity.Broken(), pose, 1f));
     assertFalse(ContraptionCapture.applyLocalTransforms(new Object(), pose, 1f));
   }
+
+  @Test
+  void drawsBlocksOnlyForACreateWithASeparateBlockPass() {
+    // The test classpath has a stand-in Create 0.5 layer pass.
+    assertTrue(ContraptionCapture.needsBlocks(new AbstractContraptionEntity.Windmill()));
+    assertTrue(ContraptionCapture.needsBlocks(new AbstractContraptionEntity.Windmill()));
+    assertFalse(ContraptionCapture.needsBlocks(new Object()));
+    // Create 6 has no such pass: its renderer already draws the blocks.
+    assertFalse(
+        ContraptionCapture.exists("com.simibubi.create.Missing", getClass().getClassLoader()));
+    assertTrue(
+        ContraptionCapture.exists(ContraptionCapture.LAYER_PASS, getClass().getClassLoader()));
+  }
 }
