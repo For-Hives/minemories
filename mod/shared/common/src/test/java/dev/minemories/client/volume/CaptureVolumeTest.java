@@ -1,7 +1,8 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.minemories.client.CaptureBounds;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,5 @@ class CaptureVolumeTest {
     var small = volume(4, (x, z) -> true);
     assertTrue(huge.cellCount() > CaptureVolume.MAX_CELLS);
     assertEquals(List.of(small), CaptureVolume.within(List.of(huge, small)));
-  }
-
-  @Test
-  void aWholeVolumeIsNeverSealed() {
-    var sky = CutBoundary.OpenAir.sky(new CaptureBounds(-2, 5, -2, 2, 9, 2));
-    sky.settle();
-    for (int y = 5; y <= 9; y++) assertFalse(sky.enclosed(-2, y, 0));
   }
 }

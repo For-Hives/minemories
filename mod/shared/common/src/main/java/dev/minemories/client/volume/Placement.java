@@ -1,11 +1,13 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
+
+import dev.minemories.client.CaptureBounds;
 
 /**
  * Where a detached block volume is drawn: {@code world = rotation · ((local − pivot) ∘ scale) +
  * position}, the convention of Sable's {@code Pose3d} and of a ship-to-world matrix without shear.
  * Kept in double precision: a volume's storage can sit tens of millions of blocks away.
  */
-record Placement(
+public record Placement(
     double positionX,
     double positionY,
     double positionZ,
@@ -20,7 +22,7 @@ record Placement(
     double scaleY,
     double scaleZ) {
 
-  Placement {
+  public Placement {
     double length =
         Math.sqrt(
             rotationX * rotationX
@@ -44,15 +46,15 @@ record Placement(
   }
 
   /** A translation only, as drawn by a volume that never turns. */
-  static Placement translation(double x, double y, double z) {
+  public static Placement translation(double x, double y, double z) {
     return new Placement(x, y, z, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1);
   }
 
-  double[] toWorld(double x, double y, double z) {
+  public double[] toWorld(double x, double y, double z) {
     return rotate((x - pivotX) * scaleX, (y - pivotY) * scaleY, (z - pivotZ) * scaleZ, false);
   }
 
-  double[] toLocal(double x, double y, double z) {
+  public double[] toLocal(double x, double y, double z) {
     double[] turned = rotate(x - positionX, y - positionY, z - positionZ, true);
     return new double[] {
       turned[0] / scaleX + pivotX, turned[1] / scaleY + pivotY, turned[2] / scaleZ + pivotZ
@@ -60,7 +62,7 @@ record Placement(
   }
 
   /** The block cells whose storage can be drawn inside the world box (inclusive cell bounds). */
-  CaptureBounds localCells(
+  public CaptureBounds localCells(
       double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
     double[] low = {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
     double[] high = {-Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
@@ -90,7 +92,7 @@ record Placement(
    * Maps a primitive written relative to the local block {@code origin} into the capture's frame,
    * relative to the capture {@code center}. Returns a new array.
    */
-  float[] toCapture(float[] xyz, int[] origin, int[] center) {
+  public float[] toCapture(float[] xyz, int[] origin, int[] center) {
     float[] mapped = new float[xyz.length];
     for (int index = 0; index + 2 < xyz.length; index += 3) {
       double[] world =
@@ -108,7 +110,7 @@ record Placement(
   /**
    * Whether the rotation and scale keep a quad's winding (a mirror would turn faces inside out).
    */
-  boolean keepsWinding() {
+  public boolean keepsWinding() {
     return scaleX * scaleY * scaleZ > 0;
   }
 

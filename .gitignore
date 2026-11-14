@@ -33,3 +33,6 @@ design/logo/.venv/
 # IDE (Eclipse/Buildship) build output and launch configs
 bin/
 *.launch
+
+# Log4j output of the shared client unit tests
+mod/shared/common/logs/

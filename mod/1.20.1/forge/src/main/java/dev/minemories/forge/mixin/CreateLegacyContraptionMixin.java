@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
     targets = "com.simibubi.create.content.contraptions.render.ContraptionRenderDispatcher",
     remap = false)
 public abstract class CreateLegacyContraptionMixin {
-  // Optional API changes must not prevent startup; LegacyContraptions logs when the answer is
+  // Optional API changes must not prevent startup; ContraptionStructure logs when the answer is
   // still true during a capture.
   @Inject(method = "canInstance", at = @At("HEAD"), cancellable = true, require = 0)
   private static void minemories$drawOnCpu(CallbackInfoReturnable<Boolean> result) {

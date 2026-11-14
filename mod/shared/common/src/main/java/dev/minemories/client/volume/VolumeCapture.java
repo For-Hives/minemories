@@ -1,11 +1,10 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.CaptureSink;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 
@@ -15,92 +14,89 @@ import net.minecraft.world.entity.Entity;
  * passenger stored with the ship), all moved by a {@link PlacedSink}. The manual export runs it to
  * the end, the AFK capture one step per call.
  */
-final class VolumeCapture {
+public final class VolumeCapture {
   static final int MAX_ENTITIES = 2048;
 
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
 
-  private final Minecraft mc;
-  private final ClientLevel level;
+  /**
+   * The capture's ordinary block and entity code, and the level it reads. It writes relative to
+   * {@code origin}, a block of the volume's storage, into the placed sink it is handed.
+   */
+  public interface Walker {
+    /** Every entity the client would draw, wherever it is stored. */
+    Iterable<Entity> entities();
+
+    /** The entity of that id, or null once it is gone. */
+    Entity entity(int id);
+
+    /** Captures one storage cell of {@code volume}; returns how many blocks it wrote. */
+    int cell(CaptureSink placed, CaptureVolume volume, BlockPos pos, BlockPos origin)
+        throws IOException;
+
+    /** Captures one entity stored in a volume. */
+    void entity(CaptureSink placed, Entity entity, BlockPos origin) throws IOException;
+  }
+
   private final List<CaptureVolume> volumes;
   private final int[] center;
   private int index = -1;
   private CaptureVolume volume;
-  private CaptureLevelView view;
-  private CutBoundary.OpenAir sky;
   private int x, y, z;
   private boolean cellsDone;
   private List<Integer> stored;
   private int storedIndex, blocks, entities;
   private boolean entitiesCapped;
 
-  VolumeCapture(Minecraft mc, List<CaptureVolume> volumes, BlockPos center) {
-    this.mc = mc;
-    this.level = Objects.requireNonNull(mc.level, "No capture level");
+  public VolumeCapture(List<CaptureVolume> volumes, BlockPos center) {
     this.volumes = List.copyOf(volumes);
     this.center = new int[] {center.getX(), center.getY(), center.getZ()};
     open();
   }
 
-  boolean done() {
+  public boolean done() {
     return volume == null;
   }
 
-  int blocks() {
+  public int blocks() {
     return blocks;
   }
 
-  int entities() {
+  public int entities() {
     return entities;
   }
 
-  int volumes() {
+  public int volumes() {
     return volumes.size();
   }
 
   /** Captures the next cell or stored entity of the current volume into {@code sink}. */
-  void step(CaptureSink sink, ClientRuntime.SpriteAssets sprites, RenderedModelCapture models)
-      throws IOException {
+  public void step(CaptureSink sink, Walker walker) throws IOException {
     if (volume == null) return;
     PlacedSink placed = new PlacedSink(sink, volume.placement(), volume.cells(), center);
     int[] origin = placed.origin();
     BlockPos local = new BlockPos(origin[0], origin[1], origin[2]);
     if (!cellsDone) {
-      CaptureBounds cells = volume.cells();
       BlockPos pos = new BlockPos(x, y, z);
       if (!volume.owns().chunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16))) {
-        y = cells.maxY();
+        y = volume.cells().maxY();
         nextCell();
         return;
       }
+      CaptureVolume current = volume;
       nextCell();
-      models.through(
-          placed,
-          () ->
-              blocks +=
-                  ClientRuntime.captureCell(
-                      placed,
-                      sprites,
-                      models,
-                      mc,
-                      mc.getBlockEntityRenderDispatcher(),
-                      view,
-                      pos,
-                      new BlockPos(cells.minX(), cells.minY(), cells.minZ()),
-                      new BlockPos(cells.maxX(), cells.maxY(), cells.maxZ()),
-                      local,
-                      sky));
+      blocks += walker.cell(placed, current, pos, local);
       return;
     }
     if (stored == null) {
-      stored = storedEntities();
+      stored = storedEntities(walker);
       return;
     }
     if (storedIndex >= stored.size()) {
       open();
       return;
     }
-    Entity entity = level.getEntity(stored.get(storedIndex++));
+    Entity entity = walker.entity(stored.get(storedIndex++));
     if (entity == null || entity.isRemoved() || entity.isInvisible()) return;
     if (entities >= MAX_ENTITIES) {
       if (!entitiesCapped) LOGGER.warn("Moving structures hold too many entities; extras skipped");
@@ -108,12 +104,12 @@ final class VolumeCapture {
       return;
     }
     entities++;
-    models.through(placed, () -> ClientRuntime.captureEntity(models, mc, entity, local));
+    walker.entity(placed, entity, local);
   }
 
-  private List<Integer> storedEntities() {
+  private List<Integer> storedEntities(Walker walker) {
     List<Integer> ids = new ArrayList<>();
-    for (Entity entity : level.entitiesForRendering()) {
+    for (Entity entity : walker.entities()) {
       if (!entity.isRemoved()
           && !entity.isInvisible()
           && volume.contains(entity.getX(), entity.getY(), entity.getZ())) ids.add(entity.getId());
@@ -129,8 +125,6 @@ final class VolumeCapture {
     }
     volume = volumes.get(index);
     CaptureBounds cells = volume.cells();
-    view = new CaptureLevelView(level, cells);
-    sky = CutBoundary.OpenAir.sky(cells);
     x = cells.minX();
     y = cells.minY();
     z = cells.minZ();

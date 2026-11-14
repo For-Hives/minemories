@@ -1,7 +1,10 @@
-package dev.minemories.client;
+package dev.minemories.client.mods.valkyrien;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.util.Reflect;
+import dev.minemories.client.volume.Placement;
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
@@ -163,11 +166,9 @@ class ValkyrienVolumesTest {
   void callsHiddenClassesThroughTheirPublicInterface() throws NoSuchMethodException {
     Hidden hidden =
         new Hidden(new Vector3d(), new Vector3d(), new Quaterniond(), new Vector3d(1, 1, 1));
-    assertEquals(
-        Transform.class, ValkyrienVolumes.method(hidden, "getRotation").getDeclaringClass());
-    assertThrows(NoSuchMethodException.class, () -> ValkyrienVolumes.method(hidden, "getMass"));
-    assertEquals(
-        Object.class, ValkyrienVolumes.method(new Object() {}, "hashCode").getDeclaringClass());
+    assertEquals(Transform.class, Reflect.method(hidden, "getRotation").getDeclaringClass());
+    assertThrows(NoSuchMethodException.class, () -> Reflect.method(hidden, "getMass"));
+    assertEquals(Object.class, Reflect.method(new Object() {}, "hashCode").getDeclaringClass());
   }
 
   @Test

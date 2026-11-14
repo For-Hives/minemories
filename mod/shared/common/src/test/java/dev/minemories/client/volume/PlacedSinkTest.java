@@ -1,7 +1,9 @@
-package dev.minemories.client;
+package dev.minemories.client.volume;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import dev.minemories.client.CaptureBounds;
+import dev.minemories.client.CaptureSink;
 import dev.minemories.core.GlbCategory;
 import java.nio.file.Path;
 import java.util.ArrayList;

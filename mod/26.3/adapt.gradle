@@ -66,17 +66,19 @@ ext.adaptDir = { File root ->
     return world.cardinalLighting();''', n)
         }
         // No Create for 26.x, and its renderer has neither MultiBufferSource nor BlockRenderDispatcher:
-        // contraptions are not captured here.
-        if (n == 'ContraptionCapture.java') t = '''package dev.minemories.client;
+        // the block-by-block way and the entry point are emptied (their calls are already removed by
+        // the 1.21.11 adaptation).
+        if (n == 'ContraptionBlocks.java' || n == 'CreateContraptions.java') {
+            def type = n - '.java'
+            t = """package dev.minemories.client.mods.create;
 
 /** Create is not available for Minecraft 26.x: no contraption to capture (adapt.gradle). */
-final class ContraptionCapture {
-  private ContraptionCapture() {}
+public final class ${type} {
+  private ${type}() {}
 }
-'''
+""".toString()
+        }
         if (n == 'ClientRuntime.java') {
-            t = rep(t, '    if (ContraptionCapture.needsBlocks(entity)) captureContraption(capture, mc, entity, center);\n', '', n)
-            t = regex(t, ~/(?s)  \/\*\*\n   \* A Create contraption's assembled blocks.*?\n  \}\n/, '', n)
             t = rep(t, 'level.getDayTime()', 'level.getDefaultClockTime()', n)
             t = rep(t, 'worldData.worldGenOptions().seed()', 'localServer.overworld().getSeed()', n)
             t = rep(t, 'quad.sprite()', 'quad.materialInfo().sprite()', n)

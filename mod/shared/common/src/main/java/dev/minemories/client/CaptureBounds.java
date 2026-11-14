@@ -1,10 +1,10 @@
 package dev.minemories.client;
 
-record CaptureBounds(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+public record CaptureBounds(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
   static final int DEFAULT_RADIUS = 8 * 16;
 
   /** Include a whole frozen model when its anchor is inside the selected block volume. */
-  boolean containsEntity(double x, double y, double z) {
+  public boolean containsEntity(double x, double y, double z) {
     return Double.isFinite(x)
         && Double.isFinite(y)
         && Double.isFinite(z)
