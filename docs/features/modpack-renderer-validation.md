@@ -464,16 +464,37 @@ station. The saved world exported from the same position (`/minemories export 12
 Evidence (GLBs, logs, renders, bench commands and world, bench patch):
 `~/.local/state/minemories-validation/create-contraptions-20261114/`.
 
+#### The merged integration in game, 14 November 2026
+
+Same bench as above (Fabric 1.20.1, Create 0.5.1-j build 1631, `INSTANCING` backend), on the
+saved world with the bearing and the hand-assembled carriage, exported with `ContraptionStructure`
+alone and with the merged integration:
+
+| | `ContraptionStructure` alone | Merged |
+| --- | --- | --- |
+| Bearing body | present | present, 4.17 x 4.17 blocks for the turned 3 x 3 body, filed under `block_entities` |
+| Carriage body | present | present on its bogey, 3 x 3 blocks, filed under `block_entities` |
+| Triangles above the ground, bearing area / train area | 240 / 526 | 240 / 526: nothing doubled |
+| `block_entities` / `entities` quads | 57 / 1,182 | 146 / 1,093: the 89 body quads moved, none added |
+| Geometry written camera-relative | none | none |
+| `Create contraptions are not fully captured` in the log | no | no: the structure buffers ran, not the fallback |
+
+The contraption's own block entities (the cogwheel) and the bogey stay under `entities`, where the
+entity renderer writes them. Evidence:
+`~/.local/state/minemories-validation/create-contraptions-20261114/merged/`.
+
+On NeoForge 1.21.1 with Create 6.0.10 (the Sable bench of
+[render pipelines](render-pipelines.md#validation)), the ground bearing's contraption is drawn
+once, by Create's renderer, with the same 24 vertices as before the merge.
+
 Limits:
-- The merged integration (structure buffers first, block by block as fallback, body filed under
-  `block_entities`) has its unit tests and builds on every target; it has not been run in game
-  yet as one piece.
+- The fallback (`ContraptionBlocks` after a `ContraptionStructure` that does not bind) has its
+  unit test but was not provoked in game.
 - With the fallback, blocks are drawn whole, without hiding the faces between neighbours, parts
   Create animates on top of a block (a harvester's blades, a saw's blade, a deployer's hand)
   keep their static model, and the matrices stay the camera's, so the contraption's block
   entities can be misplaced as before.
-- Not exercised with either way: Fabric 1.19.2, NeoForge 1.21.1 (Create 6.0.10) for the
-  no-doubling guard, pistons, pulleys, minecart contraptions, a moving train, the AFK progressive
+- Not exercised with either way: Fabric 1.19.2, pistons, pulleys, minecart contraptions, a moving train, the AFK progressive
   capture of a contraption, and the `BATCHING` and `OFF` Flywheel backends. A scripted train
   assembly (calling the station's `assemble` from the bench) did nothing in Create 0.5.1, so a
   train needs a hand at the station.

@@ -135,6 +135,11 @@ chest, lantern, motor and bearing (two AFK cycles, 187 and 189 frames). The Blen
 of both GLBs from the same camera show the ship only after the change. Evidence (GLBs, logs,
 renders, scene script): `~/.local/state/minemories-validation/moving-structures-20261114/`.
 
+After the code moved into `client.volume` and `client.mods` (same day), the manual export of the
+same scene gives the same GLB: same vertex counts and extents for the ship's planks, wool, glass,
+lantern, chest, motor, bearing and armor stand, same quads per category; only the turning bearing's
+angle differs. The AFK capture was not run again. Evidence: `merged/` in the same folder.
+
 Not exercised: a Create contraption carried by a sub-level (the bench's on-board bearing lost its
 contraption when `/sable assemble` moved it, in game too, so there was nothing to capture), ships
 built with Aeronautics' physics assembler in survival, Fabric, and a full modpack.
