@@ -1,3 +1,5 @@
+import { defaultServerName, serverKey } from '@minemories/api-contract'
+
 interface Capture {
 	id: string
 	metadata: { worldName: string | null; serverName: string | null; seed: string | null }
@@ -6,9 +8,10 @@ interface Capture {
 export function groupCaptures<T extends Capture>(captures: T[]) {
 	const groups = new Map<string, { key: string; name: string; seeded: boolean; captures: T[] }>()
 	for (const capture of captures) {
-		const { worldName, serverName, seed } = capture.metadata
-		const name = worldName || serverName || 'Other captures'
-		const key = JSON.stringify(worldName ? ['world', worldName, seed] : ['server', serverName])
+		const { worldName, seed } = capture.metadata
+		// The API keys the owner's server profile (name, picture) the same way.
+		const name = defaultServerName(capture.metadata)
+		const key = serverKey(capture.metadata)
 		let group = groups.get(key)
 		if (!group) {
 			group = { key, name, seeded: Boolean(worldName && seed), captures: [] }

@@ -1417,5 +1417,17 @@
 	"Include this view": "Include this view",
 	"Camera, time of day, weather and layers, as on your screen now.": "Camera, time of day, weather and layers, as on your screen now.",
 	"Copy a link to this view": "Copy a link to this view",
-	"Link to this view copied.": "Link to this view copied."
+	"Link to this view copied.": "Link to this view copied.",
+	"Server picture": "Server picture",
+	"Your server’s picture": "Your server’s picture",
+	"The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.": "The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.",
+	"In your gallery": "In your gallery",
+	"When published": "When published",
+	"Retake from this view": "Retake from this view",
+	"Use this picture": "Use this picture",
+	"Move the camera, then retake.": "Move the camera, then retake.",
+	"This view could not be captured. Move the camera, then retake.": "This view could not be captured. Move the camera, then retake.",
+	"Could not save the picture. Try again.": "Could not save the picture. Try again.",
+	"Saved: this view is now your server’s picture.": "Saved: this view is now your server’s picture.",
+	"Could not rename this server.": "Could not rename this server."
 }

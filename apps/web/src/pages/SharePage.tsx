@@ -35,6 +35,8 @@ interface SharedSnapshot {
 
 interface SharedCapture {
 	name: string
+	/** The name the owner gave this server or world in their gallery; absent from public pages and older APIs. */
+	place?: string | null
 	size: number
 	/** Present on a world link: every snapshot of the world, oldest first. The served one is `id`. */
 	id?: string
@@ -114,7 +116,7 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 		biome: capture.metadata.biome,
 	})
 	if (capture.metadata.dayTime !== null) scene.setMinutes(ticksToMinutes(capture.metadata.dayTime))
-	onTitle(capture.name)
+	onTitle(capture.place || capture.name)
 }
 
 /** A world link: a slider over the snapshots, oldest to newest, committed once the visitor stops moving. */

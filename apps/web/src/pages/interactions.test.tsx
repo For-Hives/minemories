@@ -55,7 +55,13 @@ vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
 	apiClient: {
 		account: { storage: mocks.storage },
-		memories: { list: mocks.list, listTrash: mocks.listTrash, restore: mocks.restore },
+		memories: {
+			list: mocks.list,
+			listTrash: mocks.listTrash,
+			restore: mocks.restore,
+			serverProfiles: async () => [],
+			renameServer: async () => ({ ok: true }),
+		},
 		pairing: { status: mocks.status, create: mocks.create, check: mocks.check },
 	},
 }))
@@ -588,7 +594,8 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 	fireEvent.contextMenu(screen.getByRole('article', { name: 'Remote two' }))
 	fireEvent.pointerDown(document.body)
 	expect(screen.queryByRole('menu')).toBeNull()
-	expect(localStorage.getItem('minemories-stack-names')).not.toContain('Remote')
+	// Server names live on the account now: nothing about this server is kept in the browser.
+	expect(localStorage.getItem('minemories-stack-names') ?? '').not.toContain('Remote')
 })
 
 test('private viewer reports disabled restoration instead of parsing HTTP 202 and aborts its pending action on leave', async () => {

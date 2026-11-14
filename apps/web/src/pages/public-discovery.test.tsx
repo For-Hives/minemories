@@ -20,7 +20,8 @@ const discovery = vi.hoisted(() => ({
 	queue: vi.fn(),
 	moderate: vi.fn(),
 }))
-vi.mock('../api-client', () => ({ apiClient: { discovery } }))
+const memories = vi.hoisted(() => ({ serverProfile: vi.fn() }))
+vi.mock('../api-client', () => ({ apiClient: { discovery, memories } }))
 const item = {
 	id: '11111111-1111-4111-8111-111111111111',
 	title: 'Village public',
@@ -366,4 +367,14 @@ test('non-moderators never receive a moderation queue', async () => {
 	await screen.findByRole('alert')
 	expect(discovery.queue).not.toHaveBeenCalled()
 	expect(screen.queryByRole('button', { name: 'Approuver' })).toBeNull()
+})
+
+test('a first publication proposes the name the owner gave the server as its title', async () => {
+	memories.serverProfile.mockResolvedValueOnce({ key: 'k', name: 'Notre village', cover: null, defaultName: 'x' })
+	mount(<PublicationPanel memory={memory} />)
+	await screen.findByText('Privé')
+	await waitFor(() =>
+		expect(screen.getByRole('textbox', { name: 'Titre public' })).toHaveProperty('value', 'Notre village')
+	)
+	expect(memories.serverProfile).toHaveBeenCalledWith({ id: memory.id })
 })

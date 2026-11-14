@@ -73,6 +73,35 @@ export const thumbnailDataUrl = z
 	.max(96_000)
 	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
 
+/**
+ * The gallery's server (or single-player world) a capture belongs to: a world by name and seed, else a server by
+ * name. The web gallery groups by it and the API keys the owner's server profile (name, picture) by it.
+ */
+export function serverKey(metadata: {
+	worldName: string | null
+	serverName: string | null
+	seed: string | null
+}): string {
+	return JSON.stringify(
+		metadata.worldName ? ['world', metadata.worldName, metadata.seed] : ['server', metadata.serverName]
+	)
+}
+
+/** The name the gallery shows before the owner names a server. */
+export function defaultServerName(metadata: { worldName: string | null; serverName: string | null }): string {
+	return metadata.worldName || metadata.serverName || 'Other captures'
+}
+
+export const serverProfileKey = z.string().min(2).max(600)
+export const serverProfileName = z.string().trim().min(1).max(80)
+/** What the owner chose for one server: its name and its picture, `null` until chosen. */
+export const serverProfile = z.object({
+	key: serverProfileKey,
+	name: z.string().nullable(),
+	cover: z.string().nullable(),
+})
+export type ServerProfile = z.infer<typeof serverProfile>
+
 /** A share link opens one snapshot ("memory") or every snapshot of its evolving world ("world"). */
 export const shareScope = z.enum(['memory', 'world']).default('memory')
 export type ShareScope = z.infer<typeof shareScope>
@@ -182,8 +211,28 @@ export const apiContract = {
 		trash: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
 		restore: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
 		delete: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		/** The viewer's automatic preview; ignored once the owner has chosen this capture's picture (`setCover`). */
 		setThumbnail: oc
 			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl, icon: thumbnailDataUrl.nullish() }))
+			.output(z.object({ ok: z.literal(true) })),
+		/** Profiles the owner gave their servers (name, picture), for the gallery. */
+		serverProfiles: oc.output(z.array(serverProfile)),
+		/** The server profile of one capture, with the name the gallery shows without one. */
+		serverProfile: oc
+			.input(z.object({ id: z.string().uuid() }))
+			.output(serverProfile.extend({ defaultName: z.string() })),
+		/** Renames a server; `null` goes back to the name from the game. */
+		renameServer: oc
+			.input(z.object({ key: serverProfileKey, name: serverProfileName.nullable() }))
+			.output(z.object({ ok: z.literal(true) })),
+		/**
+		 * A view picked in the viewer becomes this capture's picture (kept for good, used when it is published) and
+		 * its server's picture in the gallery; `name`, when given, renames the server at the same time.
+		 */
+		setCover: oc
+			.input(
+				z.object({ id: z.string().uuid(), image: thumbnailDataUrl, name: serverProfileName.nullable().optional() })
+			)
 			.output(z.object({ ok: z.literal(true) })),
 		createShare: oc
 			.input(z.object({ id: z.string().uuid(), scope: shareScope }))

@@ -806,7 +806,7 @@ export class ViewerScene {
 		this.controls.update()
 	}
 
-	snapshot(targetWidth = 400, targetHeight = 250): string | null {
+	snapshot(targetWidth = 400, targetHeight = 250, quality = 0.8): string | null {
 		if (this.modelRoot.children.length === 0) return null
 		if (!this.navigation.active) this.controls.update()
 		this.renderScene()
@@ -836,7 +836,7 @@ export class ViewerScene {
 			targetWidth,
 			targetHeight
 		)
-		return output.toDataURL('image/jpeg', 0.8)
+		return output.toDataURL('image/jpeg', quality)
 	}
 
 	dispose(): void {

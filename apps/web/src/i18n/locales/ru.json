@@ -1417,5 +1417,17 @@
 	"Include this view": "Включить этот вид",
 	"Camera, time of day, weather and layers, as on your screen now.": "Камера, время суток, погода и слои — как сейчас на твоём экране.",
 	"Copy a link to this view": "Скопировать ссылку на этот вид",
-	"Link to this view copied.": "Ссылка на этот вид скопирована."
+	"Link to this view copied.": "Ссылка на этот вид скопирована.",
+	"Server picture": "Картинка сервера",
+	"Your server’s picture": "Картинка твоего сервера",
+	"The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.": "Вид на экране станет картинкой этого сервера в твоей галерее и картинкой этого снимка, когда ты его опубликуешь.",
+	"In your gallery": "В твоей галерее",
+	"When published": "После публикации",
+	"Retake from this view": "Снять заново с этого вида",
+	"Use this picture": "Использовать эту картинку",
+	"Move the camera, then retake.": "Подвинь камеру и сними заново.",
+	"This view could not be captured. Move the camera, then retake.": "Не удалось снять этот вид. Подвинь камеру и сними заново.",
+	"Could not save the picture. Try again.": "Не удалось сохранить картинку. Попробуй ещё раз.",
+	"Saved: this view is now your server’s picture.": "Сохранено: этот вид теперь картинка твоего сервера.",
+	"Could not rename this server.": "Не удалось переименовать этот сервер."
 }

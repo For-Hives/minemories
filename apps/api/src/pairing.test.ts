@@ -257,7 +257,11 @@ test('share links open one snapshot without an account until revoked', () => {
 	expect(shareStatus('user-i', 'share-1')).toEqual({ shared: true })
 	expect(getSharedMemory('short')).toBeNull()
 	expect(getSharedMemory('A'.repeat(43))).toBeNull()
-	expect(getSharedMemory(link.token)).toMatchObject({ id: 'share-1', name: 'Shared cabin' })
+	expect(getSharedMemory(link.token)).toMatchObject({ id: 'share-1', name: 'Shared cabin', place: null })
+	database
+		.query('INSERT INTO server_profiles (user_id, server_key, name, cover, updated_at) VALUES (?, ?, ?, NULL, 0)')
+		.run('user-i', JSON.stringify(['world', 'Home', '42']), 'Our cabin world')
+	expect(getSharedMemory(link.token)).toMatchObject({ place: 'Our cabin world' })
 	expect(createShareLink('user-j', 'share-1')).toBeNull()
 	revokeShareLink('user-i', 'share-1')
 	revokeShareLink('user-i', 'share-1')
@@ -273,7 +277,7 @@ test('share links open one snapshot without an account until revoked', () => {
 	expect(getSharedMemory(rotated.token)).toMatchObject({ id: 'share-1' })
 })
 
-test('model-rendered thumbnails persist on the owner memory only', () => {
+test('model-rendered thumbnails persist on the owner memory only', async () => {
 	const { code } = createPairingCode('user-f')
 	const paired = exchangePairingCode(code, 'Thumbnail device')
 	if (!paired) throw new Error('Pairing unexpectedly failed.')
@@ -293,6 +297,12 @@ test('model-rendered thumbnails persist on the owner memory only', () => {
 	database.query('UPDATE memories SET metadata_json = ? WHERE id = ?').run('{broken', 'thumb-1')
 	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg, jpeg)).toBe(true)
 	expect(listMemories('user-f')[0]).toMatchObject({ metadata: { thumbnail: jpeg, icon: jpeg } })
+	// A picture chosen in the viewer stays: the automatic preview reports success and changes nothing.
+	const chosen = `data:image/jpeg;base64,${'B'.repeat(64)}`
+	const { ServerProfiles } = await import('./server-profiles')
+	expect(new ServerProfiles(database).setCover('user-f', 'thumb-1', chosen)).toBe(true)
+	expect(setMemoryThumbnail('user-f', 'thumb-1', jpeg, jpeg)).toBe(true)
+	expect(listMemories('user-f')[0]).toMatchObject({ metadata: { thumbnail: chosen } })
 })
 
 test('a world link and a snapshot link coexist and each replaces only its own kind', async () => {

@@ -21,7 +21,6 @@ import {
 } from '../lib/gallery'
 import { formatFileSize } from '../lib/glb'
 import { shouldShowPaired } from '../lib/pairing'
-import { getStackName, setStackName } from '../lib/stack-names'
 import './gallery.css'
 import './gallery-storage.css'
 import { AreaCard, TrashCard } from './GalleryCards'
@@ -32,6 +31,7 @@ import { useGalleryPairing } from './gallery-pairing'
 import { DraftChip } from './RenameField'
 import { ServerSheet } from './ServerSheet'
 import { useWaitingDraft } from './use-draft'
+import { useServerProfiles } from './useServerProfiles'
 
 /** The bar and its percentage change colour as the gallery fills: green, gold, ember, then red when it is almost or fully used. */
 export function storageLevel(storage: Pick<Storage, 'availableBytes'>, used: number): StorageLevel {
@@ -277,8 +277,6 @@ function EmptyGallery({ connected, pending, onGetCode }: { connected: boolean; p
 	)
 }
 
-const SERVER_NAME = '#server'
-
 type Server = ReturnType<typeof groupCaptures<Memories[number]>>[number] & { areas: CaptureArea<Memories[number]>[] }
 
 function WorldSections({
@@ -303,12 +301,14 @@ function WorldSections({
 		[memories]
 	)
 	const [selectedKey, setSelectedKey] = useState<string | null>(null)
-	const [, setRenamed] = useState(0)
+	const { notify } = useAppContext()
+	// Names and pictures live on the account; a gallery refresh reads them again.
+	const keys = useMemo(() => servers.map(server => server.key), [servers])
+	const { profiles, rename } = useServerProfiles(keys, memories)
 	const selected = servers.find(server => server.key === selectedKey) ?? servers[0]
 	const publishId = new URLSearchParams(window.location.search).get('publish')
 	if (!selected) return null
-	// Server names live in this browser, like area names; a rename re-reads them.
-	const name = (server: Server) => getStackName(server.key, SERVER_NAME) ?? server.name
+	const name = (server: Server) => profiles.get(server.key)?.name ?? server.name
 	return (
 		<ol className="gallery-servers" aria-label={t('Servers')}>
 			{servers.map(server => (
@@ -316,9 +316,10 @@ function WorldSections({
 					key={server.key}
 					server={server}
 					name={name(server)}
+					cover={profiles.get(server.key)?.cover ?? null}
 					selected={server === selected}
 					onSelect={() => setSelectedKey(server.key)}
-					onRenamed={() => setRenamed(value => value + 1)}
+					onRename={next => rename(server.key, next).catch(() => notify('Could not rename this server.'))}
 				>
 					{server === selected && (
 						<div className="gallery-areas">
@@ -341,8 +342,9 @@ function WorldSections({
 	)
 }
 
-function ServerCovers({ captures }: { captures: Memories }) {
-	const cover = worldCover(captures)
+/** The picture the owner chose in the viewer; without one, the server icon or the newest preview. */
+function ServerCovers({ captures, chosen }: { captures: Memories; chosen: string | null }) {
+	const cover = chosen ? { kind: 'preview' as const, src: chosen } : worldCover(captures)
 	return (
 		<span className="gallery-server-covers" data-kind={cover?.kind ?? 'none'} aria-hidden="true">
 			{cover ? (
@@ -366,16 +368,18 @@ function ServerCovers({ captures }: { captures: Memories }) {
 function ServerTile({
 	server,
 	name,
+	cover,
 	selected,
 	onSelect,
-	onRenamed,
+	onRename,
 	children,
 }: {
 	server: Server
 	name: string
+	cover: string | null
 	selected: boolean
 	onSelect(): void
-	onRenamed(): void
+	onRename(name: string): void
 	children?: ReactNode
 }) {
 	const { t, locale } = useI18n()
@@ -397,7 +401,7 @@ function ServerTile({
 		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
 			<div className="gallery-server-card">
 				<button type="button" className="gallery-server-open" aria-pressed={selected} onClick={onSelect}>
-					<ServerCovers captures={server.captures} />
+					<ServerCovers captures={server.captures} chosen={cover} />
 					<span className="gallery-sr-only">{name}</span>
 				</button>
 				<div className="gallery-server-body">
@@ -454,17 +458,7 @@ function ServerTile({
 			</div>
 			{children}
 			{menu.element}
-			{sheet && (
-				<ServerSheet
-					server={server}
-					name={name}
-					onClose={() => setSheet(false)}
-					onRename={next => {
-						setStackName(server.key, SERVER_NAME, next)
-						onRenamed()
-					}}
-				/>
-			)}
+			{sheet && <ServerSheet server={server} name={name} onClose={() => setSheet(false)} onRename={onRename} />}
 		</li>
 	)
 }
