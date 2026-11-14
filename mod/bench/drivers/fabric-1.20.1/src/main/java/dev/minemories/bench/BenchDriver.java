@@ -51,8 +51,13 @@ public final class BenchDriver implements ClientModInitializer {
   private static final Logger LOG = LoggerFactory.getLogger("minemories-bench");
   private static final int FLOOR = -60;
   private static final int PER_TICK = 200;
-  /** Largest tile side in blocks: its corners stay within 64 blocks of the player standing at its centre. */
+  /**
+   * Largest tile side in blocks by default: its corners stay within 64 blocks of the player at its centre. A plan's
+   * `tileSpan` can widen it to check captures past that distance; the export radius stays at most 128.
+   */
   private static final int TILE_SPAN = 80;
+
+  private static final int MAX_RADIUS = 128;
 
   private enum Step { MENU, LOADING, PLACING, SETTLING, ACTING, MOVING, EXPORTING, DONE }
 
@@ -156,14 +161,17 @@ public final class BenchDriver implements ClientModInitializer {
     }
     ids.sort(java.util.Comparator.comparing(ResourceLocation::toString));
     int columns = Math.max(1, (int) Math.ceil(Math.sqrt(ids.size())));
-    int perTile = Math.max(1, TILE_SPAN / spacing);
+    int span = config.has("tileSpan") ? config.get("tileSpan").getAsInt() : TILE_SPAN;
+    int perTile = Math.max(1, span / spacing);
     int tilesPerSide = (columns + perTile - 1) / perTile;
     for (int row = 0; row < tilesPerSide; row++)
       for (int col = 0; col < tilesPerSide; col++) {
         int minX = 4 + col * perTile * spacing, minZ = 4 + row * perTile * spacing;
         int maxX = minX + (perTile - 1) * spacing, maxZ = minZ + (perTile - 1) * spacing;
-        // Its blocks and the ring around them, with a margin: never more than 44 blocks.
+        // Its blocks and the ring around them, with a margin: 44 blocks with the default span.
         int radius = (perTile - 1) * spacing / 2 + spacing + 2;
+        if (radius > MAX_RADIUS)
+          throw new IllegalStateException("tileSpan " + span + " needs an export radius of " + radius + " (at most " + MAX_RADIUS + ")");
         tiles.add(new Tile((minX + maxX) / 2, (minZ + maxZ) / 2, radius, minX, minZ, maxX, maxZ));
       }
     for (int i = 0; i < ids.size(); i++) {

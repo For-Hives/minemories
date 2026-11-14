@@ -51,6 +51,8 @@ files are cached. A configuration that fails (missing JDK, download, crash) is l
    `/minemories export <radius>` (44 blocks at most). Each export is copied to `tile-<n>.glb`/`.json`, then
    `placed.json` (each block's position, tile and the block the world kept, the renderer, the loaded mods) is
    written and the game stops.
+   A plan's `tileSpan` (blocks, 80 by default) widens the tiles, up to an export radius of 128, to check how a
+   capture behaves past 64 blocks from the player.
 6. Node reads each tile's GLB without a 3D engine (`scripts/mod/bench/glb-cells.mjs`): every triangle goes to the block
    holding its centroid, using `captureOrigin` and each node's scale and translation (a rotated or nested mesh
    node is refused rather than misplaced). Positions, not names, decide: the capture groups geometry by material
