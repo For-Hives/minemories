@@ -75,7 +75,7 @@ final class ContraptionCapture {
 }
 '''
         if (n == 'ClientRuntime.java') {
-            t = rep(t, '    if (ContraptionCapture.isContraption(entity)) captureContraption(capture, mc, entity, center);\n', '', n)
+            t = rep(t, '    if (ContraptionCapture.needsBlocks(entity)) captureContraption(capture, mc, entity, center);\n', '', n)
             t = regex(t, ~/(?s)  \/\*\*\n   \* A Create contraption's assembled blocks.*?\n  \}\n/, '', n)
             t = rep(t, 'level.getDayTime()', 'level.getDefaultClockTime()', n)
             t = rep(t, 'worldData.worldGenOptions().seed()', 'localServer.overworld().getSeed()', n)

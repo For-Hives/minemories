@@ -400,14 +400,35 @@ after the change:
 Stills from the same camera show the windmill on the black tower with its sails at their real
 angle, and the round farm with its rotating harvester arms, both missing before.
 
+Create 6 (Forge 1.20.1, NeoForge 1.21.1) has no such separate pass: once the capture turns Flywheel
+off, its contraption renderer draws the blocks itself. `ContraptionCapture.needsBlocks` therefore
+draws them only when Create 0.5's `ContraptionRenderDispatcher` exists; on Create 6 it would have
+doubled every block.
+
+In-game checks (`runClientGametest` with Create on the run classpath, headless): a creative motor
+turns a mechanical bearing carrying one wool block, the bearing is assembled, the area exported, and
+the GLB must hold geometry in the wool's cell above the bearing (by position: the capture groups
+geometry by material, so the wool may sit in a primitive named after the motor).
+
+| Target | Create | Result |
+|---|---|---|
+| Forge 1.18.2 | 0.5.1.i | wool captured by `ContraptionCapture` (`block_entities`) |
+| Forge 1.19.2 | 0.5.1.i | same; without the change the cell is empty and the check fails |
+| Forge 1.20.1 | 6.0.8 | wool drawn once, by Create's renderer (`entities`); doubled before `needsBlocks` |
+| Fabric 1.20.1 | 0.5.1-j | Lalaland recaptures above |
+
+Not run: NeoForge 1.21.1 (Create 6.0.10) and Fabric 1.19.2. In a development run Create's nested
+mods (Flywheel, Ponder, Registrate) must be extracted next to it, and on Forge 1.20.1 two Create
+mixins that capture locals fail against the development Minecraft: the check used a copy of the
+jar without them.
+
 Limits:
 - Only block models are drawn. Parts Create animates on top of a block (a harvester's blades, a
   saw's blade, a deployer's hand, a train's bogeys inside a carriage) keep their static model.
 - Blocks are drawn whole, without hiding the faces between neighbours: more quads than the
   same blocks in the world.
-- Only Fabric 1.20.1 with Create 0.5.1 was exercised in game. Older families read the
-  structure block's fields instead of its record accessors (`adapt.gradle`); Create 6 on 1.21.1
-  keeps the same names but was not run.
+- Older families read the structure block's fields instead of its record accessors
+  (`adapt.gradle`).
 
 ## How a block quad gets its colour
 
