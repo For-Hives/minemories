@@ -7,6 +7,9 @@ Personal saves are neither used nor modified. The test benches have their
 own settings; the full-profile trials also reproduce the pack's compatibility
 settings explicitly listed below.
 
+Every block of a mod set, across several configurations at once, is checked automatically by the
+[render bench](render-bench.md) (`bun mod bench`); this page keeps the manual, in-game evidence.
+
 This validation covers Minecraft 1.21.1, with the NeoForge JAR lists of the
 `mc breval` and `All the Mons - ATMons` profiles. The local DeceasedCraft
 profile runs Minecraft 1.20.1 / Forge 47.4.0: it does not receive this NeoForge
