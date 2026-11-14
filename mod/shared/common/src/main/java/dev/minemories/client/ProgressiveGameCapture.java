@@ -32,6 +32,7 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
   private final RenderedModelCapture models;
   private final Map<Long, Object> chunks = new LinkedHashMap<>();
   private final List<Integer> entities = new ArrayList<>();
+  private VolumeCapture volumes;
   private CaptureBounds bounds;
   private CaptureCursor cursor;
   private CaptureLevelView fluidView;
@@ -181,8 +182,13 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
 
   @Override
   public boolean exhausted() throws IOException {
-    if (!surfaceDone || !cursor.done() || !entitiesScanned || entityIndex < entities.size())
-      return false;
+    if (!surfaceDone
+        || !cursor.done()
+        || !entitiesScanned
+        || entityIndex < entities.size()
+        || volumes == null
+        || !volumes.done()
+        || !skippedReported) return false;
     for (var entry : chunks.entrySet()) {
       int x = (int) (entry.getKey() >> 32), z = (int) (long) entry.getKey();
       if (level.getChunkSource().getChunk(x, z, ChunkStatus.FULL, false) != entry.getValue())
@@ -257,7 +263,20 @@ final class ProgressiveGameCapture implements ProgressiveCapturePump.Producer {
       return null;
     }
     if (entityIndex >= entities.size()) {
-      if (!skippedReported) models.reportSkipped();
+      if (volumes == null) {
+        volumes = new VolumeCapture(mc, CaptureVolume.around(level, bounds), center);
+        return null;
+      }
+      if (!volumes.done()) {
+        sink.element = new CaptureElement();
+        volumes.step(sink, sprites, models);
+        return sink.element.seal();
+      }
+      if (!skippedReported) {
+        models.reportSkipped();
+        blocks += volumes.blocks();
+        entityCount += volumes.entities();
+      }
       skippedReported = true;
       return null;
     }
