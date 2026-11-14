@@ -1287,6 +1287,10 @@ html[data-mc-font="read"]
 }
 
 /* --- Server picture: the sharing panel's container, two previews of the view on screen --- */
+/* Above a world's capture film, which comes later in the studio (the sharing panel too). */
+.cinema-page :is(.viewer-sharing, .viewer-cover) {
+	z-index: 2;
+}
 .cinema-page .viewer-cover {
 	max-height: calc(100% - 140px);
 	overflow-y: auto;
@@ -1341,6 +1345,11 @@ html[data-mc-font="read"]
 	margin: var(--ds-sp-2) 0;
 	color: var(--text);
 }
+.viewer-cover-name input {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+}
 .viewer-cover-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -1351,9 +1360,4 @@ html[data-mc-font="read"]
 	display: block;
 	margin-top: var(--ds-sp-2);
 	color: var(--text-2);
-}
-@media (max-width: 520px) {
-	.viewer-cover-previews {
-		grid-template-columns: minmax(0, 1fr);
-	}
 }
