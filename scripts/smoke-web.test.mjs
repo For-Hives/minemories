@@ -199,15 +199,19 @@ test('the private routes are the same in nginx (shell + noindex), the indexable 
 	const alternations = [...config.matchAll(/\(([a-z|]+)\)\(\/\|\$\)/g)].map(match => match[1].split('|').sort())
 	assert.equal(alternations.length, 2, 'the location regex and the $mm_robots regex')
 	const prerender = readFileSync(new URL('./prerender-web.mjs', import.meta.url), 'utf8')
-	const disallowed = [...prerender.matchAll(/Disallow: \/([a-z]+)\/?\\n/g)].map(match => match[1]).sort()
-	assert.deepEqual(alternations[0], disallowed)
-	assert.deepEqual(alternations[1], disallowed)
+	const disallowed = JSON.parse(
+		(prerender.match(/const privateRoutes = (\[[^\]]*\])/)?.[1] ?? '[]').replaceAll("'", '"')
+	).sort()
+	// Share and public links are noindex but not disallowed: crawlers must be able to read their noindex.
+	const readable = [...disallowed, 'public', 'share'].sort()
+	assert.deepEqual(alternations[0], readable)
+	assert.deepEqual(alternations[1], readable)
 	const smoked = new Set(
 		expectations
 			.filter(expectation => expectation.appShell && !expectation.language)
 			.map(expectation => expectation.path.split('/')[1])
 	)
-	assert.deepEqual([...smoked].sort(), disallowed)
+	assert.deepEqual([...smoked].sort(), readable)
 })
 
 test('after launch, canonical, alternates, og:url and sitemap entries must name the host under test', () => {

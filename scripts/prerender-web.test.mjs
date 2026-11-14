@@ -104,13 +104,14 @@ test('writes real route HTML, canonical URLs, article schema, sitemap and privat
 	assert.ok(!gallery.includes('ld+json'))
 	assert.ok(!sitemap.includes('/gallery'))
 	const robots = await readFile(join(directory, 'robots.txt'), 'utf8')
-	assert.ok(robots.includes('Disallow: /share/'))
-	assert.ok(robots.includes('Disallow: /public/'))
+	// Share and public links stay readable, so crawlers see their noindex instead of listing a blocked URL.
+	assert.ok(!robots.includes('/share'))
+	assert.ok(!robots.includes('/public'))
 	assert.ok(robots.includes('Disallow: /moderation'))
 	assert.ok(robots.includes('Sitemap: https://example.org/sitemap.xml'))
 	// the private routes under every language prefix too
 	assert.ok(robots.includes('Disallow: /*/gallery\n'))
-	assert.ok(robots.includes('Disallow: /*/share/\n'))
+	assert.ok(robots.includes('Disallow: /*/login\n'))
 	const shell = await readFile(join(directory, 'app.html'), 'utf8')
 	assert.ok(shell.includes('noindex,nofollow'))
 	// The private shell carries the neutral card that link previews of /share and /public read, escaped, in English.

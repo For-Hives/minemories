@@ -10,10 +10,15 @@ const descriptionPattern = /<meta name="description"[^>]*>/
 const bootPattern = /<!-- boot:begin -->.*?<!-- boot:end -->/gs
 /** Only the landing and the app fallback (the viewers) keep it: anywhere else its opaque cover would hide the page until the inline script drops it, or for 20 s without JavaScript. */
 const withoutBootScreen = html => html.replace(bootPattern, '')
-/** The private routes: the app shell, never indexed (kept in step with deploy/nginx.web.conf by smoke-web.test.mjs). */
-const privateRoutes = ['gallery', 'account', 'admin', 'viewer', 'share/', 'public/', 'moderation', 'login', 'register']
+/**
+ * The private routes crawlers may not open (kept in step with deploy/nginx.web.conf by smoke-web.test.mjs). Share and
+ * public links are left out on purpose: they get pasted on Reddit or Discord, and a blocked URL can still be listed
+ * without its noindex being seen. Crawlers may open their shell, which answers noindex; the capture itself comes from
+ * the API, whose own robots.txt disallows everything.
+ */
+const privateRoutes = ['gallery', 'account', 'admin', 'viewer', 'moderation', 'login', 'register']
 const robotsFor = origin =>
-	`User-agent: *\nAllow: /\nDisallow: /gallery\nDisallow: /account\nDisallow: /admin\nDisallow: /viewer\nDisallow: /share/\nDisallow: /public/\nDisallow: /moderation\nDisallow: /login\nDisallow: /register\n${privateRoutes.map(route => `Disallow: /*/${route}\n`).join('')}Sitemap: ${new URL('/sitemap.xml', origin).href}\n`
+	`User-agent: *\nAllow: /\n${privateRoutes.map(route => `Disallow: /${route}\n`).join('')}${privateRoutes.map(route => `Disallow: /*/${route}\n`).join('')}Sitemap: ${new URL('/sitemap.xml', origin).href}\n`
 /**
  * Every public page in every language: English unprefixed (the default, what a pasted link previews), each other
  * language under its prefix (/fr/concept). Each one is a page of its own: <html lang>, title, description, Open Graph,
