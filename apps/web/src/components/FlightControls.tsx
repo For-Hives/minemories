@@ -80,7 +80,47 @@ function firstKey(bindings: Bindings, action: FlightAction, label: (code: string
 	return label(first) ?? label(second) ?? '—'
 }
 
-/** The card shown while flying: what each key does, the flying speed, and the controls settings. */
+/** What each key does, with the visitor's bindings and keyboard labels. */
+function KeyboardHelp({ controls }: { controls: ControlSettings }) {
+	const { t } = useI18n()
+	const label = useKeyLabels(controls.layout)
+	const key = (action: FlightAction) => firstKey(controls.bindings, action, label)
+	return (
+		<>
+			<p>{t('Click to look around · Esc frees the mouse')}</p>
+			<p>
+				{t(
+					'{forward} {left} {back} {right} fly · {up} up · {down} down · {sprint} or {forward} twice: sprint · Wheel: speed',
+					{
+						forward: key('forward'),
+						left: key('left'),
+						back: key('back'),
+						right: key('right'),
+						up: key('up'),
+						down: key('down'),
+						sprint: key('sprint'),
+					}
+				)}
+			</p>
+		</>
+	)
+}
+
+/** On touch the card folds at the first gesture elsewhere, so the view gets the screen back. */
+function useFoldOnTouch(touch: boolean, card: RefObject<HTMLElement | null>): [boolean, (folded: boolean) => void] {
+	const [folded, setFolded] = useState(false)
+	useEffect(() => {
+		if (!touch || folded) return
+		const fold = (event: PointerEvent) => {
+			if (event.pointerType === 'touch' && !card.current?.contains(event.target as Node)) setFolded(true)
+		}
+		window.addEventListener('pointerdown', fold, { capture: true, passive: true })
+		return () => window.removeEventListener('pointerdown', fold, { capture: true })
+	}, [touch, folded, card])
+	return [touch && folded, setFolded]
+}
+
+/** The card shown while flying: what each control does, the flying speed, and the controls settings. */
 export function FlightPanel({
 	controls,
 	touch,
@@ -93,32 +133,17 @@ export function FlightPanel({
 	onSettings: () => void
 }) {
 	const { t } = useI18n()
-	const label = useKeyLabels(controls.layout)
-	const key = (action: FlightAction) => firstKey(controls.bindings, action, label)
+	const card = useRef<HTMLElement>(null)
+	const [folded, setFolded] = useFoldOnTouch(touch, card)
 	return (
-		<section className="cinema-navigation" aria-label={t('Explore')}>
-			<strong>{t('Step inside the memory')}</strong>
-			{touch ? (
-				<p>{t('Left thumb flies, right thumb looks. Push the stick to its edge to sprint.')}</p>
-			) : (
-				<>
-					<p>{t('Click to look around · Esc frees the mouse')}</p>
-					<p>
-						{t(
-							'{forward} {left} {back} {right} fly · {up} up · {down} down · {sprint} or {forward} twice: sprint · Wheel: speed',
-							{
-								forward: key('forward'),
-								left: key('left'),
-								back: key('back'),
-								right: key('right'),
-								up: key('up'),
-								down: key('down'),
-								sprint: key('sprint'),
-							}
-						)}
-					</p>
-				</>
-			)}
+		<section ref={card} className={`cinema-navigation ${folded ? 'is-folded' : ''}`} aria-label={t('Explore')}>
+			{!folded && <strong>{t('Step inside the memory')}</strong>}
+			{!folded &&
+				(touch ? (
+					<p>{t('Left thumb flies, right thumb looks. Push the stick to its edge to sprint.')}</p>
+				) : (
+					<KeyboardHelp controls={controls} />
+				))}
 			{speed !== null && (
 				<p className="flight-speed" role="status">
 					{t('Flying speed {percent}%', { percent: Math.round(speed * 100) })}
@@ -128,6 +153,11 @@ export function FlightPanel({
 				<button type="button" onClick={onSettings}>
 					{t('Controls')}
 				</button>
+				{touch && (
+					<button type="button" aria-expanded={!folded} onClick={() => setFolded(!folded)}>
+						{folded ? t('Show help') : t('Hide help')}
+					</button>
+				)}
 			</div>
 		</section>
 	)

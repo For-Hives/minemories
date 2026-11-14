@@ -1462,5 +1462,7 @@
 	"Touch sensitivity {percent}%": "Чувствительность касания {percent}%",
 	"Invert vertical look": "Инвертировать вертикальный обзор",
 	"Wider view when flying fast": "Шире обзор на большой скорости",
-	"Reset controls": "Сбросить управление"
+	"Reset controls": "Сбросить управление",
+	"Show help": "Показать подсказку",
+	"Hide help": "Скрыть подсказку"
 }

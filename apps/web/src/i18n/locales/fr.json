@@ -1462,5 +1462,7 @@
 	"Touch sensitivity {percent}%": "Sensibilité tactile {percent} %",
 	"Invert vertical look": "Inverser le regard vertical",
 	"Wider view when flying fast": "Vue élargie en vol rapide",
-	"Reset controls": "Réinitialiser les commandes"
+	"Reset controls": "Réinitialiser les commandes",
+	"Show help": "Afficher l’aide",
+	"Hide help": "Masquer l’aide"
 }

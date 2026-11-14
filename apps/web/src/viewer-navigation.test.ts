@@ -9,7 +9,8 @@ const TICK = 1 / 20
 function setup() {
 	const canvas = document.createElement('canvas')
 	document.body.append(canvas)
-	const camera = new THREE.PerspectiveCamera(45)
+	// A laptop's shape: the camera keeps its own 45 degrees.
+	const camera = new THREE.PerspectiveCamera(45, 1.6)
 	const navigation = new ViewerNavigation(camera, canvas)
 	const key = (type: string, code: string, init: KeyboardEventInit = {}) =>
 		canvas.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true, ...init }))
@@ -77,7 +78,8 @@ test('custom bindings, a bound modifier and the sprint key are honoured', () => 
 	})
 	navigation.setActive(true)
 	key('keydown', 'ControlLeft', { ctrlKey: true })
-	key('keydown', 'KeyW')
+	// With Ctrl held the browser sends W with ctrlKey: it still flies.
+	key('keydown', 'KeyW', { ctrlKey: true })
 	ticks(200)
 	const before = camera.position.z
 	ticks(20)
@@ -219,4 +221,20 @@ test('reduced motion keeps the field of view still', () => {
 	expect(camera.fov).toBeGreaterThan(45)
 	navigation.dispose()
 	Reflect.deleteProperty(window, 'matchMedia')
+})
+
+test("a phone held upright flies with a wider view, and a postcard still gets the camera's own", () => {
+	const { camera, navigation, ticks } = setup()
+	camera.aspect = 390 / 844
+	navigation.setControls({ ...defaultControls, fovEffects: false })
+	navigation.setActive(true)
+	ticks(1)
+	expect(camera.fov).toBeCloseTo(90, 0)
+	navigation.resetFov()
+	expect(camera.fov).toBe(45)
+	// Turned to landscape: the camera's own view is wide enough.
+	camera.aspect = 844 / 390
+	ticks(1)
+	expect(camera.fov).toBe(45)
+	navigation.dispose()
 })

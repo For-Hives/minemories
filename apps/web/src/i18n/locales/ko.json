@@ -1462,5 +1462,7 @@
 	"Touch sensitivity {percent}%": "터치 감도 {percent}%",
 	"Invert vertical look": "세로 시점 반전",
 	"Wider view when flying fast": "빠르게 날 때 시야 넓히기",
-	"Reset controls": "조작 초기화"
+	"Reset controls": "조작 초기화",
+	"Show help": "도움말 보기",
+	"Hide help": "도움말 숨기기"
 }

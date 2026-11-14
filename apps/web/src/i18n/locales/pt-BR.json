@@ -1462,5 +1462,7 @@
 	"Touch sensitivity {percent}%": "Sensibilidade do toque {percent}%",
 	"Invert vertical look": "Inverter o olhar vertical",
 	"Wider view when flying fast": "Visão mais ampla ao voar rápido",
-	"Reset controls": "Redefinir controles"
+	"Reset controls": "Redefinir controles",
+	"Show help": "Mostrar ajuda",
+	"Hide help": "Ocultar ajuda"
 }

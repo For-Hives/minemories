@@ -206,3 +206,18 @@ export class WheelNotches {
 		return notches + 0
 	}
 }
+
+/** Narrowest horizontal field of view a flight keeps, in degrees: a portrait phone would otherwise see 22°. */
+export const MIN_HORIZONTAL_FOV = 50
+/** Widest vertical field of view that rule may reach, in degrees, before the edges stretch too much. */
+export const MAX_VERTICAL_FOV = 90
+
+/**
+ * Vertical field of view (degrees) for a screen of `aspect` (width / height): the camera's own `base`, raised until
+ * the view is at least MIN_HORIZONTAL_FOV wide, never past MAX_VERTICAL_FOV.
+ */
+export function comfortableFov(base: number, aspect: number): number {
+	const half = (MIN_HORIZONTAL_FOV / 2) * (Math.PI / 180)
+	const needed = 2 * Math.atan(Math.tan(half) / Math.max(aspect, 1e-3)) * (180 / Math.PI)
+	return Math.min(MAX_VERTICAL_FOV, Math.max(base, needed))
+}

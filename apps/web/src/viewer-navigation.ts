@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {
+	comfortableFov,
 	createFlight,
 	FLYING_SPEED,
 	FlightClock,
@@ -121,7 +122,7 @@ export class ViewerNavigation {
 		return this.flight.flyingSpeed / FLYING_SPEED
 	}
 
-	/** The camera's own field of view, without the flight's widening: for postcards. */
+	/** The camera's own field of view, without the flight's widening or the narrow screen's: for postcards. */
 	resetFov(): void {
 		if (this.camera.fov === this.baseFov) return
 		this.camera.fov = this.baseFov
@@ -136,9 +137,10 @@ export class ViewerNavigation {
 		const alpha = this.clock.advance(delta, () => tickFlight(this.flight, input, this.yaw))
 		this.camera.position.set(...flightPosition(this.flight, alpha))
 		this.rendered.copy(this.camera.position)
-		if (!this.controls.fovEffects || this.reducedMotion) return
-		// Minecraft widens 1.1x while flying: the viewer's own field of view is the flying one.
-		const fov = (this.baseFov * flightFov(this.flight, alpha)) / 1.1
+		// A narrow screen (a phone held upright) gets a wider view; resizes and rotations follow.
+		let fov = comfortableFov(this.baseFov, this.camera.aspect)
+		// Minecraft widens 1.1x while flying: the viewer's own field of view is the flying one, sprinting widens it.
+		if (this.controls.fovEffects && !this.reducedMotion) fov = (fov * flightFov(this.flight, alpha)) / 1.1
 		if (Math.abs(fov - this.camera.fov) < 1e-4) return
 		this.camera.fov = fov
 		this.camera.updateProjectionMatrix()
@@ -190,8 +192,9 @@ export class ViewerNavigation {
 
 	private keyDown = (event: KeyboardEvent) => {
 		if (!this.active) return
-		// Browser shortcuts (Ctrl+F…) pass through, unless the modifier itself is a bound key.
-		if ((event.ctrlKey || event.metaKey) && !riskyKey(event.code)) return
+		// Browser shortcuts (Ctrl+F…) pass through, unless a bound modifier (Ctrl to sprint) is the one held.
+		const modifierFlies = riskyKey(event.code) || [...this.keys.keys()].some(riskyKey)
+		if ((event.ctrlKey || event.metaKey) && !modifierFlies) return
 		const action = actionFor(this.controls.bindings, event.code)
 		if (!action) return
 		event.preventDefault()

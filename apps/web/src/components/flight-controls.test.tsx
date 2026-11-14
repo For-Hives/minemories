@@ -174,6 +174,16 @@ test('a finger brings the stick and climb buttons; the stick sprints at its edge
 	})
 	fireEvent.pointerMove(stick, { pointerId: 7, pointerType: 'touch', clientX: 0, clientY: -48 })
 	fireEvent.pointerCancel(stick)
+	// The first gesture folded the card: only its buttons stay, the help comes back on request.
+	const card = () => screen.getByRole('region', { name: 'Explore' })
+	expect(card().textContent).not.toContain('Left thumb flies')
+	fireEvent.click(screen.getByRole('button', { name: 'Show help' }))
+	expect(card().textContent).toContain('Left thumb flies')
+	// A touch on the card itself does not fold it.
+	fireEvent.pointerDown(card(), { pointerType: 'touch' })
+	expect(card().textContent).toContain('Left thumb flies')
+	fireEvent.click(screen.getByRole('button', { name: 'Hide help' }))
+	expect(card().classList.contains('is-folded')).toBe(true)
 	const up = screen.getByRole('button', { name: 'Fly up' })
 	fireEvent.pointerDown(up, { pointerId: 9, pointerType: 'touch' })
 	expect(scene.flight.setTouch).toHaveBeenLastCalledWith(expect.objectContaining({ up: true }))

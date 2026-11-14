@@ -1410,7 +1410,8 @@ html[data-mc-font="read"]
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-end;
-	padding: 0 calc(var(--ds-sp-5) + env(safe-area-inset-right)) calc(76px + env(safe-area-inset-bottom))
+	/* Left of the toolbar's column, above the Immerse button; the hour strip and caption are hidden while flying. */
+	padding: 0 calc(76px + env(safe-area-inset-right)) calc(64px + env(safe-area-inset-bottom))
 		calc(var(--ds-sp-5) + env(safe-area-inset-left));
 	pointer-events: none;
 	user-select: none;
@@ -1466,5 +1467,23 @@ html[data-mc-font="read"]
 	.touch-stick > span,
 	.cinema-page .touch-climb button {
 		border-color: ButtonText;
+	}
+}
+/* Folded on touch: just the buttons, out of the view's way. */
+.cinema-navigation.is-folded {
+	width: auto;
+	padding: var(--ds-sp-2);
+}
+/* A phone on its side is about 390 px tall: the page fits the screen instead of scrolling past 520 px. */
+@media (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+	.cinema-page {
+		min-height: 0;
+	}
+	/* Under the header and above the Immerse button; it scrolls rather than shrinking its 44 px buttons. */
+	.cinema-toolbar {
+		top: 76px;
+		transform: none;
+		max-height: calc(100% - 156px);
+		overflow-y: auto;
 	}
 }

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 import {
 	clampSpeed,
+	comfortableFov,
 	createFlight,
 	FLYING_SPEED,
 	FlightClock,
@@ -172,4 +173,17 @@ test('mouse turning matches the game: 0.15 degrees per pixel at the default sens
 	expect(turnDegreesPerPixel(0)).toBeCloseTo(0.0096)
 	expect(turnDegreesPerPixel(1)).toBeCloseTo(0.6144)
 	expect(turnDegreesPerPixel(5)).toBeCloseTo(0.6144)
+})
+
+test('a narrow screen widens the vertical field of view until the view is 50 degrees across, up to 90', () => {
+	const across = (vertical: number, aspect: number) =>
+		2 * Math.atan(Math.tan((vertical / 2) * (Math.PI / 180)) * aspect) * (180 / Math.PI)
+	// A laptop keeps the camera's own 45 degrees (67 across).
+	expect(comfortableFov(45, 1280 / 800)).toBe(45)
+	// A tablet in portrait reaches 50 across.
+	expect(across(comfortableFov(45, 820 / 1180), 820 / 1180)).toBeCloseTo(50)
+	// A phone in portrait stops at 90 vertical, about 49 across instead of 22.
+	expect(comfortableFov(45, 390 / 844)).toBeCloseTo(90, 0)
+	expect(across(comfortableFov(45, 390 / 844), 390 / 844)).toBeGreaterThan(45)
+	expect(comfortableFov(45, 0)).toBe(90)
 })
