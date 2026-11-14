@@ -110,6 +110,9 @@ ext.adaptDir = { File root ->
               pose,
               buffers,
               dispatcher.getPackedLightCoords(entity, 1f));''', '''          SubmitCapture.entity(dispatcher, entity, pose, buffers);''', n)
+            // Create 0.5.1 contraptions (LegacyContraptions) end at Minecraft 1.20.1: no chunk layers to draw.
+            t = rep(t, '''          var layers = RenderType.chunkBufferLayers();
+          contraption.finish(layers, layer -> buffers.getBuffer((RenderType) layer));''', '''          contraption.finish(java.util.List.of(), layer -> null);''', n)
         }
         if (n == 'ProgressiveGameCapture.java') {
             t = rep(t, '''dispatcher.prepare(

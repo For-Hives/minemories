@@ -6,6 +6,7 @@
 	"client": [
 		"FlywheelCaptureMixin",
 		"FlywheelLegacyCaptureMixin",
+		"CreateLegacyContraptionMixin",
 		"ClientCrashMixin"
 	]
 }

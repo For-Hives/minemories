@@ -433,6 +433,73 @@ Limits:
 - Older families read the structure block's fields instead of its record accessors
   (`adapt.gradle`).
 
+## Create 0.5.1 contraption bodies, 14 November 2026
+
+Create 0.5.1 (Minecraft 1.18.2 to 1.20.1) does not draw a contraption's blocks
+from its entity renderer. `ContraptionEntityRenderer.render` only draws the block
+entities and actors, with matrices that `ContraptionRenderDispatcher` set up from
+the camera during the level's layer pass; the blocks themselves are one
+`SuperByteBuffer` per chunk layer, drawn by that layer pass. The capture's entity
+pass never reaches it, so bearings, pistons, pulleys, minecart contraptions and
+train carriages came out without their body. Worse, when the capture ran after a
+frame had set those matrices up, the block entities and bogey parts of the
+contraption were written camera-relative: on the bench below they landed about
+188 blocks above the scene.
+
+Fix: `LegacyContraptions` (shared client, reflection only, no Create class
+linked) runs around the entity renderer of a Create 0.5.1 contraption entity:
+
+1. it takes the contraption's own render info (`ContraptionRenderDispatcher.WORLDS`)
+   and sets its `ContraptionMatrices` to the capture pose instead of the camera,
+   at the latest tick like every other entity, so the entity renderer puts block
+   entities, actors and bogeys where the capture expects them;
+2. after the entity renderer, it builds each chunk layer's structure with
+   `ContraptionRenderDispatcher.buildStructureBuffer` on the CPU and draws it into
+   the capture with the same matrices (the buffer is freed right away);
+3. it clears the matrices again, so the next frame sets them up from the camera.
+
+`CreateLegacyContraptionMixin` (`@Pseudo`, `require = 0`, the five adapters that
+can meet Create 0.5.1) answers false from `ContraptionRenderDispatcher.canInstance`
+inside `CaptureRenderScope`: Create asks that method, not
+`Backend.canUseInstancing`, before skipping the shafts, cogs, drills and saws of
+a contraption that Flywheel instances. Create 6 has none of these classes and
+draws its contraptions from the entity renderer, so nothing changes there. A
+Create 0.5.1 whose API no longer matches logs `Create contraptions are not fully
+captured with this Create version` once and the capture goes on with what the
+entity renderer draws.
+
+Bench, Minecraft 1.20.1 / Fabric dev client (`runClientGametest`, `--local`),
+Create 0.5.1-j build 1631 (Flywheel 0.6.11 bundled, `INSTANCING` backend), flat world: a mechanical
+bearing turned by a creative motor carrying a glued 3 x 3 body (planks, red and
+blue wool, glass) with a cogwheel on top, and a one-bogey train carriage (controls,
+two andesite casings, glass, red wool, a cogwheel) assembled at a station. The
+train was assembled by hand from the station screen; the saved world was then
+exported with the code of `main` and with this change, from the same position
+(`/minemories export 12`):
+
+| | Code of `main` | This change |
+| --- | --- | --- |
+| Bearing body (planks, wool, glass, cogwheel) | absent | present, turned with the bearing (a 3-block body spans 4.18 blocks) |
+| Carriage body (controls, casings, glass, wool, cogwheel) | absent | present on its bogey |
+| Carriage bogey | present | present |
+| Carriage parts written camera-relative | yes (up to Y +2.76 in capture space, 188 blocks above the scene) | none |
+| `entities` quads | 1,009 | 1,182 |
+
+Blender renders of both GLBs from the same camera show the bearing's body and
+the carriage's body only after the change. Evidence (GLBs, logs, renders, bench
+commands and world, bench patch): `~/.local/state/minemories-validation/create-contraptions-20261114/`.
+
+Unit tests: `LegacyContraptionsTest` (absent Create 0.5.1, changed API, matrices
+at the capture pose for the entity renderer, every non-empty chunk layer drawn
+and freed, a contraption Create does not draw is not drawn, a failing layer keeps
+the capture and hands the matrices back).
+
+Not exercised: Forge 1.18.2, 1.19.2 and 1.20.1 and Fabric 1.19.2 (same Create
+API, checked against Create's 1.18 and 1.19 sources, and they build), pistons,
+pulleys, minecart contraptions, a moving train, the AFK progressive capture of a
+contraption, and the `BATCHING` and `OFF` Flywheel backends. A scripted train assembly (calling the station's `assemble` from the
+bench) did nothing in Create 0.5.1, so the train needs a hand at the station.
+
 ## How a block quad gets its colour
 
 `ClientRuntime.addQuad` is the single point where the colour of a block-model quad is resolved, on

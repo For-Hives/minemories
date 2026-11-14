@@ -72,7 +72,10 @@ traversal and the on-disk writer described in the capture flow.
 
 The Create/Flywheel CPU path (Flywheel 1.0 with Create 6, Flywheel 0.6 with
 Create 0.5.1) is re-enabled only while the model is collected;
-the game backend returns to its initial state afterwards. The versions,
+the game backend returns to its initial state afterwards. Create 0.5.1 draws a
+contraption's blocks in a level pass rather than from its entity renderer;
+`LegacyContraptions` draws them into the contraption entity while it is
+collected. The versions,
 before/after evidence and validations still needed are tracked in
 [modpack renderer validation](modpack-renderer-validation.md).
 

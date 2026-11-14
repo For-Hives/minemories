@@ -1956,11 +1956,17 @@ public final class ClientRuntime {
         entity.getX() - center.getX() + offset.x,
         entity.getY() - center.getY() + offset.y,
         entity.getZ() - center.getZ() + offset.z);
+    // Create 0.5.1 draws a contraption's blocks in a level pass, not from its entity renderer
+    // (LegacyContraptions). Contraption renderers have no render offset.
+    double x = entity.getX() - center.getX();
+    double y = entity.getY() - center.getY();
+    double z = entity.getZ() - center.getZ();
     // The model and its layers freeze at the latest client tick. Dispatcher-only shadows,
     // flames, hitboxes and nameplate text are not part of the memory geometry.
     CaptureRenderScope.render(
         () -> {
           FlywheelCaptureBridge.verify(level);
+          var contraption = LegacyContraptions.prepare(entity, level, x, y, z);
           renderer.render(
               entity,
               entity.getYRot(),
@@ -1968,6 +1974,8 @@ public final class ClientRuntime {
               pose,
               buffers,
               dispatcher.getPackedLightCoords(entity, 1f));
+          var layers = RenderType.chunkBufferLayers();
+          contraption.finish(layers, layer -> buffers.getBuffer((RenderType) layer));
           buffers.finish();
         });
     if (ContraptionCapture.needsBlocks(entity)) captureContraption(capture, mc, entity, center);
