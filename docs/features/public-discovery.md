@@ -8,7 +8,7 @@ explicitly submits a title, a description, a category, an optional thumbnail
 and `consent: true`. The candidate is `pending`; it stays out of the catalog
 and its GLB can only be viewed by a moderator.
 
-Another moderator can approve it or reject it with a reason. Every new
+A moderator can approve it or reject it with a reason. Every new
 submission gets a new UUID and goes back to pending: it keeps neither approval
 nor votes. Revocation removes the catalog entry and the public file; moving to
 the trash does the same within the SQLite transaction, even if another server
@@ -25,8 +25,9 @@ consent shown to the owner. Private link sharing is separate.
 ## Moderation and safeguards
 
 Moderators are Better Auth administrators (`user_roles` table). Without an
-administrator, submissions stay pending. An account cannot approve its own
-publication. No client can grant itself this role. The `pending`, `approved`,
+administrator, submissions stay pending. Since moderators are the
+administrators, an administrator may also approve or reject their own
+publication; any other owner cannot moderate at all. No client can grant itself this role. The `pending`, `approved`,
 `rejected` and `reported` queues are reserved for these roles. Reports do not
 automatically hide a memory; a moderator reviews the GLB and decides. The last
 twenty reasons are shown per candidate and reports are cleared after the
@@ -75,7 +76,8 @@ API. `discovery.status`, `publish`, `revoke` and `moderate` also return
 publication, whatever its state, or `null` if the memory was never submitted),
 so the form starts from what the owner last sent. The contract defaults a
 missing `submission` to `null`, so payloads from an older API still parse.
-The moderator role gives access to the **Moderation** link, the queues and GLB
+The moderator role gives access to the **Moderation** link, the queues (a bar
+of pills, Pending, Reported, Approved, Rejected, with a Refresh button) and GLB
 review through `/public/:id?review=1`; the server enforces this mode,
 the URL parameter grants no role.
 
