@@ -113,9 +113,9 @@ test('buildRoadmapPayload renders In progress and Planned only, empty columns an
 		payload.embeds.map(embed => embed.title),
 		['In progress (1)', 'Planned (27)']
 	)
-	assert.equal(payload.embeds[0].url, 'https://minemories.xenos.lightin.io/roadmap')
+	assert.equal(payload.embeds[0].url, 'https://minemories.net/roadmap')
 	assert.equal(payload.embeds[0].footer, undefined)
-	assert.ok(payload.content.includes('https://minemories.xenos.lightin.io/roadmap'))
+	assert.ok(payload.content.includes('https://minemories.net/roadmap'))
 	assert.ok(payload.embeds[1].description.endsWith('+2 more'))
 	assert.equal(payload.embeds[1].timestamp, iso(NOW))
 	assert.match(payload.embeds[1].footer.text, /Minemories roadmap/)

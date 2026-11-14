@@ -338,8 +338,8 @@ test('adds the latest mod release, keeps the last good one when GitHub fails, an
 		notes: [{ type: 'feature', text: 'faster export', pr: 210 }],
 		more: 0,
 		source: 'commits',
-		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-		changelogUrl: 'https://minemories.xenos.lightin.io/versions',
+		downloadUrl: 'https://minemories.net/downloads',
+		changelogUrl: 'https://minemories.net/versions',
 		compareUrl: 'https://github.com/For-Hives/minemories/tree/mod-v0.36.1-beta.1',
 	})
 	releasesUp = false
