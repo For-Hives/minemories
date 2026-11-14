@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "minemories_bench_driver",
+  "version": "1.0.0",
+  "name": "Minemories render bench driver (test only)",
+  "environment": "client",
+  "entrypoints": { "client": ["dev.minemories.bench.BenchDriver"] },
+  "depends": { "fabricloader": "*", "fabric-api": "*", "minecraft": "1.20.1" }
+}
