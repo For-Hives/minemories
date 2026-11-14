@@ -65,6 +65,7 @@ import { encodedCapture } from './response-encoding'
 import { createRoadmap, WEBHOOK_CACHE_MS } from './roadmap'
 import { roadmapSnapshotStore } from './roadmap-snapshot'
 import { logApiFailure, recordApiFailure, requestCorrelation } from './safe-errors'
+import { ServerProfiles } from './server-profiles'
 import { discardMemoryUpload, readMemoryStream, removeMemory, storeMemory } from './storage'
 import { accountStorageFits, accountStorageSummary } from './storage-quota'
 import { s3Target } from './storage-s3'
@@ -108,6 +109,7 @@ const objectDeletions = new ObjectDeletionQueue(database, (key, discardUpload) =
 	tieredObjects.remove(key, discardUpload ? discardMemoryUpload : removeMemory)
 )
 const temporalIndex = new TimelapseIndex(database)
+const serverProfiles = new ServerProfiles(database)
 const captureFiles = new TimelapseFiles(database, tieredObjects)
 export const coldStorageMaintenance = coldStorageConfiguration
 	? new ColdStorageMaintenance(
@@ -311,6 +313,26 @@ const router = os.router({
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
 			if (!setMemoryThumbnail(context.userId, input.id, input.thumbnail, input.icon ?? null))
 				throw new ORPCError('NOT_FOUND')
+			return { ok: true as const }
+		}),
+		serverProfiles: os.memories.serverProfiles.handler(({ context }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			return serverProfiles.list(context.userId)
+		}),
+		serverProfile: os.memories.serverProfile.handler(({ context, input }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			const profile = serverProfiles.forMemory(context.userId, input.id)
+			if (!profile) throw new ORPCError('NOT_FOUND')
+			return profile
+		}),
+		renameServer: os.memories.renameServer.handler(({ context, input }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			serverProfiles.rename(context.userId, input.key, input.name)
+			return { ok: true as const }
+		}),
+		setCover: os.memories.setCover.handler(({ context, input }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			if (!serverProfiles.setCover(context.userId, input.id, input.image, input.name)) throw new ORPCError('NOT_FOUND')
 			return { ok: true as const }
 		}),
 	},

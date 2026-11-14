@@ -1417,5 +1417,17 @@
 	"Include this view": "이 시점 포함",
 	"Camera, time of day, weather and layers, as on your screen now.": "카메라, 시간, 날씨, 레이어를 지금 화면 그대로 공유합니다.",
 	"Copy a link to this view": "이 시점 링크 복사",
-	"Link to this view copied.": "이 시점 링크를 복사했습니다."
+	"Link to this view copied.": "이 시점 링크를 복사했습니다.",
+	"Server picture": "서버 이미지",
+	"Your server’s picture": "서버 이미지",
+	"The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.": "화면의 시점이 갤러리에서 이 서버의 이미지가 되고, 게시할 때 이 스냅샷의 이미지가 됩니다.",
+	"In your gallery": "갤러리에서",
+	"When published": "게시 후",
+	"Retake from this view": "이 시점으로 다시 찍기",
+	"Use this picture": "이 이미지 사용",
+	"Move the camera, then retake.": "카메라를 움직인 다음 다시 찍으세요.",
+	"This view could not be captured. Move the camera, then retake.": "이 시점을 찍을 수 없습니다. 카메라를 움직인 다음 다시 찍으세요.",
+	"Could not save the picture. Try again.": "이미지를 저장할 수 없습니다. 다시 시도하세요.",
+	"Saved: this view is now your server’s picture.": "저장했습니다. 이제 이 시점이 서버 이미지입니다.",
+	"Could not rename this server.": "이 서버의 이름을 바꿀 수 없습니다."
 }

@@ -2,6 +2,7 @@ import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { type CaptureIdentity, minecraftHeadUrl, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
+import { ServerProfiles } from './server-profiles'
 import { openShareToken, sealShareToken } from './share-token'
 import { TimelapseIndex } from './timelapse-index'
 
@@ -329,6 +330,8 @@ export function getSharedMemory(token: string, snapshot?: string) {
 		createdAt: new Date(row.created_at).toISOString(),
 		objectKey: row.object_key,
 		metadata,
+		// The name the owner gave this server or world, shown as the place's title on the shared page.
+		place: new ServerProfiles(database).nameForMemory(link.user_id, row.id),
 		scope: link.scope,
 		...(snapshots ? { snapshots } : {}),
 	}
@@ -396,6 +399,8 @@ export function setMemoryThumbnail(userId: string, id: string, thumbnail: string
 			// Keep the defaults and only store the new thumbnail.
 		}
 	}
+	// A picture the owner chose in the viewer stays: the automatic preview never replaces it.
+	if ((metadata as { thumbnailChosen?: unknown }).thumbnailChosen === true) return true
 	metadata.thumbnail = thumbnail
 	if (icon !== null) metadata.icon = icon
 	database

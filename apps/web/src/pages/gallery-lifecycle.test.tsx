@@ -9,6 +9,8 @@ import { GalleryPage } from './GalleryPage'
 import { ServerSheet } from './ServerSheet'
 
 const mocks = vi.hoisted(() => ({
+	serverProfiles: vi.fn(async () => [] as { key: string; name: string | null; cover: string | null }[]),
+	renameServer: vi.fn(async () => ({ ok: true as const })),
 	list: vi.fn(),
 	trashList: vi.fn(),
 	trash: vi.fn(),
@@ -53,6 +55,8 @@ vi.mock('../api-client', () => ({
 			shareStatus: mocks.shareStatus,
 			createShare: mocks.createShare,
 			revokeShare: mocks.revokeShare,
+			serverProfiles: mocks.serverProfiles,
+			renameServer: mocks.renameServer,
 		},
 	},
 }))
@@ -77,7 +81,7 @@ function capture(id = 'one', name = 'Cabin') {
 			biome: null,
 			dimension: null,
 			thumbnail: null,
-			icon: null,
+			icon: null as string | null,
 			capturedAt: null,
 			raining: false,
 			thundering: false,
@@ -117,6 +121,8 @@ beforeEach(() => {
 	mocks.shareStatus.mockResolvedValue({ shared: false })
 	mocks.createShare.mockResolvedValue({ urlPath: '/share/fixture-token' })
 	mocks.revokeShare.mockResolvedValue({ ok: true })
+	mocks.serverProfiles.mockResolvedValue([])
+	mocks.renameServer.mockResolvedValue({ ok: true })
 })
 afterEach(() => {
 	cleanup()
@@ -793,4 +799,55 @@ test('a stack shows the latest available preview, lazily, and the placeholder wh
 	await expand()
 	expect(bare.container.querySelector('.gallery-card img')).toBeNull()
 	expect(bare.container.querySelector('.gallery-cover-empty')).not.toBeNull()
+})
+
+const worldKey = JSON.stringify(['world', 'World', '1'])
+const chosen = 'data:image/jpeg;base64,Q0hPU0VO'
+
+test('a server shows the name and the picture saved on the account, whatever capture is newest', async () => {
+	memories = [
+		{ ...capture('one'), metadata: { ...capture().metadata, icon: 'data:image/png;base64,SUNPTg==' } },
+		{ ...capture('two', 'Newer'), createdAt: '2026-10-05T12:00:00Z' },
+	]
+	mocks.serverProfiles.mockResolvedValue([{ key: worldKey, name: 'Our town', cover: chosen }])
+	page()
+	expect(await screen.findByRole('heading', { level: 3, name: 'Our town' })).toBeTruthy()
+	expect(document.querySelector('.gallery-server-picture')?.getAttribute('src')).toBe(chosen)
+	expect(document.querySelector('.gallery-server-picture')?.classList.contains('is-icon')).toBe(false)
+})
+
+test('a name kept in this browser moves to the account once, then the browser forgets it', async () => {
+	localStorage.setItem('minemories-stack-names', JSON.stringify({ [`${worldKey}/#server`]: 'Old local name' }))
+	page()
+	expect(await screen.findByRole('heading', { level: 3, name: 'Old local name' })).toBeTruthy()
+	expect(mocks.renameServer).toHaveBeenCalledWith({ key: worldKey, name: 'Old local name' })
+	expect(localStorage.getItem('minemories-stack-names')).toBe('{}')
+	// An account name wins over a stale local one, which is forgotten without being sent.
+	cleanup()
+	mocks.renameServer.mockClear()
+	localStorage.setItem('minemories-stack-names', JSON.stringify({ [`${worldKey}/#server`]: 'Stale' }))
+	mocks.serverProfiles.mockResolvedValue([{ key: worldKey, name: 'From the account', cover: null }])
+	page()
+	expect(await screen.findByRole('heading', { level: 3, name: 'From the account' })).toBeTruthy()
+	expect(mocks.renameServer).not.toHaveBeenCalled()
+	expect(localStorage.getItem('minemories-stack-names')).toBe('{}')
+})
+
+test('renaming a server saves on the account; a refusal brings the previous name back and says so', async () => {
+	page()
+	fireEvent.click(await screen.findByRole('button', { name: 'Rename World' }))
+	const sheet = screen.getByRole('dialog', { name: 'World' })
+	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends' } })
+	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	expect(mocks.renameServer).toHaveBeenCalledWith({ key: worldKey, name: 'Friends' })
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.getByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
+	mocks.renameServer.mockRejectedValueOnce(new Error('offline'))
+	fireEvent.click(screen.getByRole('button', { name: 'Rename Friends' }))
+	const again = screen.getByRole('dialog', { name: 'Friends' })
+	fireEvent.change(within(again).getByLabelText('Server name'), { target: { value: 'Lost' } })
+	fireEvent.submit(within(again).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(await screen.findByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
+	expect(mocks.notify).toHaveBeenCalledWith('Could not rename this server.')
 })
