@@ -12,7 +12,7 @@ a new one.
 | The same renderers moved to the GPU by an instancing backend | Flywheel 1.0 (Create 6), Flywheel 0.6 (Create 0.5.1) | `CaptureRenderScope` + Flywheel mixins force the CPU path while one model is collected | captured, see [modpack renderer validation](modpack-renderer-validation.md) |
 | **Blocks stored away from where they are drawn** | Sable sub-levels: Create Aeronautics planes and balloons, Simulated physics assemblies, Offroad cars | detached volumes (`CaptureVolume`, `SableVolumes`) | captured for Sable, below |
 | The same, through Valkyrien Skies 2 | VS2 ships: Eureka, Clockwork, Trackwork (Minecraft 1.20.1 and older) | detached volumes (`CaptureVolume`, `ValkyrienVolumes`) | captured, [below](#valkyrien-skies-2-ships) |
-| Blocks drawn by a level-render pass instead of the entity renderer | Create 0.5.1 contraption bodies (bearings, trains, minecart contraptions on Minecraft 1.18.2 to 1.20.1) | none yet | missing |
+| Blocks drawn by a level-render pass instead of the entity renderer | Create 0.5.1 contraption bodies (bearings, trains, minecart contraptions on Minecraft 1.18.2 to 1.20.1) | `LegacyContraptions` draws the contraption's structure buffers when its entity is captured | captured, see [modpack renderer validation](modpack-renderer-validation.md#create-051-contraption-bodies-14-november-2026) |
 | Pure GPU effects | shaders, glint, particles | none | out of scope ([capture limits](frozen-entities.md)) |
 
 ## Detached volumes (Sable sub-levels)
