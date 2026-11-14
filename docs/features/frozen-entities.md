@@ -8,10 +8,8 @@ client's last tick, including when the game is paused. The GLB remains a frozen
 3D image: it contains no AI, no inventory and no playable animation.
 
 Beds, chests and other blocks with a block entity renderer go through their
-Minecraft renderer, wherever they are in the capture: the dispatcher's camera
-distance test (64 blocks) is not applied, so a 128-block capture keeps its far
-chests and a plane's chest is drawn although its storage is millions of blocks
-away. Planes, cars and other structures whose blocks are stored elsewhere are
+Minecraft renderer, wherever they are in the capture (below), including a
+plane's chest whose storage is millions of blocks away. Planes, cars and other structures whose blocks are stored elsewhere are
 covered by [render pipelines](render-pipelines.md). `ENTITYBLOCK_ANIMATED` blocks no longer receive the block
 manager's placeholder model. A block combining a baked model and a renderer
 keeps both parts.
