@@ -50,7 +50,7 @@ function fixture() {
 }
 const listing = { query: '', sort: 'recent' as const, page: 0 }
 
-test('private by default, consent candidate hidden until another moderator approves', () => {
+test('private by default, consent candidate hidden until a moderator approves', () => {
 	const f = fixture()
 	const memoryId = f.memory()
 	expect(f.service.status('owner', memoryId)).toEqual({ id: null, state: 'private', reason: null, submission: null })
@@ -78,8 +78,12 @@ test('private by default, consent candidate hidden until another moderator appro
 		'votes',
 	])
 	expect(f.service.file(candidate.id, null).object_key).toContain(memoryId)
+	// Moderators are the administrators: one may decide on their own publication, an owner who is not may not.
 	const self = f.publish(f.memory('owner-moderator'), 'owner-moderator')
-	expect(() => f.service.moderate('owner-moderator', self.id, 'approved', '')).toThrow('Another moderator')
+	expect(f.service.moderate('owner-moderator', self.id, 'approved', '').state).toBe('approved')
+	expect(f.service.get(self.id, null).title).toBe('Village')
+	const own = f.publish(f.memory())
+	expect(() => f.service.moderate('owner', own.id, 'approved', '')).toThrow('Forbidden')
 })
 
 test('owner authorization, rejection reason, revocation and republication invalidate old IDs', () => {
