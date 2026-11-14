@@ -1,0 +1,63 @@
+{
+	"$comment": "Render bench configurations (bun mod bench, docs/features/render-bench.md). Each one is a real game client: a loader, pinned Modrinth versions, and the plan the driver lays out. Not part of the release.",
+	"configs": [
+		{
+			"id": "fabric-1.20.1-create-6",
+			"minecraft": "1.20.1",
+			"loader": "fabric",
+			"loaderVersion": "0.17.2",
+			"java": 17,
+			"target": "fabric-mc1.20.1",
+			"driver": "fabric-1.20.1",
+			"mods": [
+				{
+					"project": "fabric-api",
+					"version": "rvI2dfzR"
+				},
+				{
+					"project": "create-fabric",
+					"version": "HAqwA6X1"
+				}
+			],
+			"plan": {
+				"namespaces": ["create"],
+				"contraption": true,
+				"exclude": {
+					"create:lectern_controller": "its block entity needs the controller item: a bare set crashes the world tick"
+				}
+			},
+			"drawsNothing": {
+				"create:fake_track": "a technical block under train tracks: the game draws nothing for it"
+			}
+		},
+		{
+			"id": "fabric-1.20.1-create-0.5",
+			"minecraft": "1.20.1",
+			"loader": "fabric",
+			"loaderVersion": "0.17.2",
+			"java": 17,
+			"target": "fabric-mc1.20.1",
+			"driver": "fabric-1.20.1",
+			"mods": [
+				{
+					"project": "fabric-api",
+					"version": "rvI2dfzR"
+				},
+				{
+					"project": "create-fabric",
+					"version": "7Ub71nPb"
+				}
+			],
+			"plan": {
+				"namespaces": ["create"],
+				"contraption": true,
+				"exclude": {
+					"create:lectern_controller": "its block entity needs the controller item: a bare set crashes the world tick"
+				}
+			},
+			"drawsNothing": {
+				"create:fake_track": "a technical block under train tracks: the game draws nothing for it"
+			}
+		}
+	]
+}
