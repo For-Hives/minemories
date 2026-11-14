@@ -10,16 +10,29 @@ const escapeHtml = text =>
 		char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
 	)
 
-/** Rows of the comparison: every block of any configuration, with its result in each one. */
+/** Two configurations draw the same block with more than this ratio of triangles between them: worth a look. */
+export const COUNT_RATIO = 2
+
+/** Whether the drawn blocks' triangle counts differ by more than COUNT_RATIO between configurations. */
+function countsDiffer(cells) {
+	const counts = cells.filter(cell => cell.triangles > 0).map(cell => cell.triangles)
+	return counts.length > 1 && Math.max(...counts) > COUNT_RATIO * Math.min(...counts)
+}
+
+/**
+ * Rows of the comparison: every block of any configuration that ran, with its result in each one. A row `differs`
+ * when its statuses differ, or when its triangle counts do by more than COUNT_RATIO.
+ */
 export function compare(results) {
+	const ran = results.filter(result => result.rows)
 	const ids = new Set()
-	for (const result of results) for (const row of result.rows) ids.add(row.id)
-	const byConfig = results.map(result => new Map(result.rows.map(row => [row.id, row])))
+	for (const result of ran) for (const row of result.rows) ids.add(row.id)
+	const byConfig = ran.map(result => new Map(result.rows.map(row => [row.id, row])))
 	const rows = [...ids].map(id => {
 		const cells = byConfig.map(map => map.get(id) ?? { id, status: 'absent' })
 		const worst = Math.min(...cells.map(cell => RANK[cell.status]))
 		const statuses = new Set(cells.filter(cell => cell.status !== 'absent').map(cell => cell.status))
-		return { id, cells, worst, differs: statuses.size > 1 }
+		return { id, cells, worst, differs: statuses.size > 1 || countsDiffer(cells) }
 	})
 	rows.sort((a, b) => a.worst - b.worst || Number(b.differs) - Number(a.differs) || a.id.localeCompare(b.id))
 	return rows
@@ -29,25 +42,31 @@ function cellHtml(cell) {
 	if (cell.status === 'absent' || cell.status === 'unplaced')
 		return `<td class="${cell.status}">${LABEL[cell.status]}</td>`
 	const twice = cell.duplicates ? ` · ${cell.duplicates} twice` : ''
-	return `<td class="${cell.status}" title="${escapeHtml(JSON.stringify(cell.categories))}">${LABEL[cell.status]}<small>${cell.triangles} tris${twice}</small></td>`
+	const layered = cell.overlaps ? ` · ${cell.overlaps} layered` : ''
+	return `<td class="${cell.status}" title="${escapeHtml(JSON.stringify(cell.categories))}">${LABEL[cell.status]}<small>${cell.triangles} tris${twice}${layered}</small></td>`
+}
+
+function summaryHtml(result) {
+	const name = `<strong>${escapeHtml(result.config.id)}</strong>`
+	if (!result.rows) return `<li class="missing">${name}: failed, ${escapeHtml(result.error ?? 'no result')}</li>`
+	const s = result.summary
+	const version = result.mods?.minemories ? ` · Minemories ${escapeHtml(result.mods.minemories)}` : ''
+	const c = result.contraption
+	const contraption = c ? ` · contraption ${c.status} (${c.triangles}/${c.expected} triangles)` : ''
+	return `<li>${name}: ${s.blocks} blocks, ${s.ok} ok, ${s.missing} missing, ${s.doubled} doubled, ${s.unplaced} not placed${contraption}${version}</li>`
 }
 
 /** A self-contained HTML page (no script, no external resource). */
 export function reportHtml(results, { generatedAt = new Date().toISOString() } = {}) {
 	const rows = compare(results)
-	const head = results
+	const ran = results.filter(result => result.rows)
+	const head = ran
 		.map(
 			result =>
 				`<th><strong>${escapeHtml(result.config.id)}</strong><small>${escapeHtml(result.renderer ?? 'renderer unknown')}</small></th>`
 		)
 		.join('')
-	const summary = results
-		.map(result => {
-			const s = result.summary
-			const contraption = result.contraption ? ` · contraption ${result.contraption.status}` : ''
-			return `<li><strong>${escapeHtml(result.config.id)}</strong>: ${s.blocks} blocks, ${s.ok} ok, ${s.missing} missing, ${s.doubled} doubled, ${s.unplaced} not placed${contraption}</li>`
-		})
-		.join('')
+	const summary = results.map(summaryHtml).join('')
 	const body = rows
 		.map(
 			row =>
@@ -65,7 +84,7 @@ thead th{position:sticky;top:0;background:#222}small{display:block;color:#999;fo
 tr.differs th{outline:2px solid #4a7fd0}
 </style></head><body>
 <h1>Minemories render bench</h1>
-<p>Generated ${escapeHtml(generatedAt)}. A block is <em>missing</em> when it stayed in the world but nothing was captured in its area, <em>doubled</em> when some of its triangles were drawn twice, <em>not placed</em> when the world did not keep it. Rows outlined in blue differ between configurations.</p>
+<p>Generated ${escapeHtml(generatedAt)}. A block is <em>missing</em> when it stayed in the world but nothing was captured in its area, <em>doubled</em> when some of its triangles were drawn twice with the same texture, <em>not placed</em> when the world did not keep it. <em>Layered</em> triangles repeat a face with another texture (an overlay, or two drawing paths): shown, not judged. Rows outlined in blue differ between configurations, by status or by more than ${COUNT_RATIO}x in triangles.</p>
 <ul>${summary}</ul>
 <table><thead><tr><th>Block</th>${head}</tr></thead><tbody>
 ${body}

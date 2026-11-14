@@ -5,12 +5,13 @@
 
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { buildEnvironment, XVFB_SCREEN } from '../headless/plan.mjs'
 import { detectJdks, jdkFor, pickGradleJdk } from '../jdk.mjs'
+import { readModVersion } from '../version.mjs'
 import { evaluate } from './evaluate.mjs'
 import { cellTriangles, parseGlb } from './glb-cells.mjs'
 
@@ -18,6 +19,9 @@ export const PORTABLEMC_VERSION = '5.0.6'
 export const DEFAULT_BENCH_TIMEOUT_SECONDS = 1800
 const USER_AGENT = 'minemories-render-bench'
 const noop = () => undefined
+const AFK_SETTING = /^\s*afkSnapshots\s*[=:]/
+const EXCEPTION_LINE = /^(Caused by|java\.\S+(Exception|Error)):?/
+const ERROR_LINE = /\/(ERROR|FATAL)\]/
 
 /** Where downloads, the launcher and each configuration's game folder live (outside the repository). */
 export function benchHome(env = process.env) {
@@ -71,14 +75,13 @@ export function primaryFile(version) {
 	return file
 }
 
-/** Downloads a pinned Modrinth version once, checking its SHA-512; returns the cached path. */
+/**
+ * Downloads a pinned Modrinth version once, checking its SHA-512; returns the cached path. The version's JSON is kept
+ * next to it, so a later run works offline.
+ */
 export async function fetchMod(home, mod, { fetchImpl = fetch } = {}) {
-	const response = await fetchImpl(`https://api.modrinth.com/v2/version/${encodeURIComponent(mod.version)}`, {
-		headers: { 'User-Agent': USER_AGENT },
-	})
-	if (!response.ok) throw new Error(`Modrinth version ${mod.version} (${mod.project}): HTTP ${response.status}`)
-	const file = primaryFile(await response.json())
 	const dir = join(home, 'mods')
+	const file = primaryFile(await modVersion(dir, mod, fetchImpl))
 	const path = join(dir, file.filename)
 	if (existsSync(path) && sha512(await readFile(path)) === file.hashes.sha512) return path
 	const download = await fetchImpl(file.url, { headers: { 'User-Agent': USER_AGENT } })
@@ -88,6 +91,20 @@ export async function fetchMod(home, mod, { fetchImpl = fetch } = {}) {
 	await mkdir(dir, { recursive: true })
 	await writeFile(path, bytes)
 	return path
+}
+
+async function modVersion(dir, mod, fetchImpl) {
+	const cached = join(dir, `${encodeURIComponent(mod.version)}.version.json`)
+	const known = await readJson(cached)
+	if (known) return known
+	const response = await fetchImpl(`https://api.modrinth.com/v2/version/${encodeURIComponent(mod.version)}`, {
+		headers: { 'User-Agent': USER_AGENT },
+	})
+	if (!response.ok) throw new Error(`Modrinth version ${mod.version} (${mod.project}): HTTP ${response.status}`)
+	const version = await response.json()
+	await mkdir(dir, { recursive: true })
+	await writeFile(cached, JSON.stringify(version))
+	return version
 }
 
 const sha512 = bytes => createHash('sha512').update(bytes).digest('hex')
@@ -138,7 +155,7 @@ export async function ensureLauncher(home, { log = noop } = {}) {
 	return launcher
 }
 
-/** The bench driver's JAR, built with the project's Gradle wrapper when missing or older than its sources. */
+/** The bench driver's JAR, built with its Gradle wrapper when missing or older than its sources or build files. */
 export async function ensureDriver(root, name, jdks, { log = noop } = {}) {
 	const dir = join(root, 'mod', 'bench', 'drivers', name)
 	const jar = join(dir, 'build', 'libs', 'zz-minemories-bench-driver-1.0.0.jar')
@@ -169,21 +186,45 @@ async function newestSource(dir) {
 		}
 	}
 	await walk(join(dir, 'src'))
+	for (const name of ['build.gradle', 'settings.gradle', 'gradle.properties'])
+		if (existsSync(join(dir, name))) newest = Math.max(newest, statSync(join(dir, name)).mtimeMs)
 	return newest
 }
 
-/** Minemories' production JAR for a target, from build/mod-dist (bun mod build <target> makes it). */
+/**
+ * Minemories' production JAR for a target at the version the tree declares (mod/1.21.1/gradle.properties), from
+ * build/mod-dist: never an older build left there.
+ */
 export async function minemoriesJar(root, target) {
-	const dist = join(root, 'build', 'mod-dist')
-	const versions = existsSync(dist) ? await readdir(dist) : []
-	for (const version of versions.sort().reverse()) {
-		const dir = join(dist, version, target)
-		if (!existsSync(dir)) continue
-		// biome-ignore lint/performance/noAwaitInLoops: newest version first, stops at the first match.
-		const jar = (await readdir(dir)).find(name => name.endsWith('.jar'))
-		if (jar) return join(dir, jar)
-	}
-	throw new Error(`No ${target} JAR in build/mod-dist: run bun mod build ${target}`)
+	const version = await readModVersion(root)
+	const dir = join(root, 'build', 'mod-dist', version, target)
+	const jar = existsSync(dir) ? (await readdir(dir)).find(name => name.endsWith('.jar')) : null
+	if (!jar) throw new Error(`No ${target} JAR for ${version} in build/mod-dist: run bun mod build ${target}`)
+	return join(dir, jar)
+}
+
+/**
+ * Turns AFK captures off in the game folder's Minemories settings, keeping the other keys: an AFK capture during a
+ * slow run would replace the export the bench waits for.
+ */
+export async function disableAfk(gameDir) {
+	const path = join(gameDir, 'config', 'minemories.properties')
+	const lines = existsSync(path) ? (await readFile(path, 'utf8')).split('\n') : []
+	const kept = lines.filter(line => line.trim() !== '' && !AFK_SETTING.test(line))
+	await mkdir(join(gameDir, 'config'), { recursive: true })
+	await writeFile(path, `${[...kept, 'afkSnapshots=false'].join('\n')}\n`)
+}
+
+/** Why a game ended without exporting, from its log: the driver's failure, a crash report, or the last error. */
+export function failureCause(log) {
+	const lines = log.split('\n')
+	const driver = lines.findIndex(line => line.includes('MINEMORIES-BENCH FAILED'))
+	if (driver >= 0 && lines[driver + 1]) return lines[driver + 1].trim()
+	const description = lines.find(line => line.startsWith('Description: '))
+	const cause = lines.find(line => EXCEPTION_LINE.test(line.trim()))
+	if (description) return [description.slice('Description: '.length), cause?.trim()].filter(Boolean).join(': ')
+	const error = lines.findLast(line => ERROR_LINE.test(line))
+	return error ? error.trim() : 'The game ended before the export (see game.log)'
 }
 
 /**
@@ -205,7 +246,8 @@ export async function runConfig(root, config, { env = process.env, local = false
 	await rm(mods, { recursive: true, force: true })
 	await mkdir(mods, { recursive: true })
 	await rm(join(game, 'export'), { recursive: true, force: true })
-	const jars = [await minemoriesJar(root, config.target), driver]
+	const minemories = await minemoriesJar(root, config.target)
+	const jars = [minemories, driver]
 	// biome-ignore lint/performance/noAwaitInLoops: a few pinned downloads, one at a time.
 	for (const mod of config.mods) jars.push(await fetchMod(home, mod))
 	// biome-ignore lint/performance/noAwaitInLoops: a handful of JARs.
@@ -215,6 +257,7 @@ export async function runConfig(root, config, { env = process.env, local = false
 	// biome-ignore lint/performance/noAwaitInLoops: two files.
 	for (const name of ['placed.json', 'done.json']) await rm(join(game, 'bench', name), { force: true })
 	await writeFile(plan, JSON.stringify(driverPlan(config), null, 2))
+	await disableAfk(game)
 	const { command, args } = gameCommand({
 		config,
 		launcher,
@@ -239,16 +282,18 @@ export async function runConfig(root, config, { env = process.env, local = false
 	})
 	const seconds = Math.round((Date.now() - started) / 1000)
 	const done = await readJson(join(game, 'bench', 'done.json'))
-	if (!done || done.error)
-		return { config, seconds, error: done?.error ?? 'The game ended before the export (see game.log)' }
+	if (!done || done.error) {
+		const log = await readFile(join(out, 'game.log'), 'utf8').catch(() => '')
+		return { config, seconds, error: done?.error ?? failureCause(log) }
+	}
 	await Promise.all([
 		copyFile(done.glb, join(out, 'capture.glb')),
 		copyFile(done.json, join(out, 'capture.json')),
 		copyFile(join(game, 'bench', 'placed.json'), join(out, 'placed.json')),
 	])
-	const result = await evaluateDir(out, config)
-	await writeFile(join(out, 'result.json'), JSON.stringify({ ...result, seconds }, null, 2))
-	return { ...result, seconds }
+	const result = { ...(await evaluateDir(out, config)), seconds, minemoriesJar: minemories.split('/').pop() }
+	await writeFile(join(out, 'result.json'), JSON.stringify(result, null, 2))
+	return result
 }
 
 /** Evaluates the outputs kept in a configuration's build/mod-bench folder. */

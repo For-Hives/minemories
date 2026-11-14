@@ -1,13 +1,16 @@
 // Reads a Minemories GLB and counts its triangles per world block, by category, without a 3D engine.
 //
 // A triangle belongs to the block holding its centroid. Positions are decoded as glTF says (float or quantized
-// integers, normalized or not, any byte stride), then moved by the node's scale and translation (Minemories nodes
-// never rotate) and by the capture origin from capture.json: world = local + origin. Names are not used: the
+// integers, normalized or not, any byte stride), then moved by the node's scale and translation and by the capture
+// origin from capture.json: world = local + origin. Minemories writes flat, unrotated mesh nodes; a rotated or
+// nested one is refused rather than misplaced. Names are not used: the
 // capture groups geometry by material under the first model that used it, so a block can sit in a primitive named
 // after another one; positions are the only reliable owner.
 //
-// "Duplicates" are triangles whose three corners repeat another triangle of the same block exactly: the signature
-// of geometry drawn twice (z-fighting), which a count alone hides.
+// "Duplicates" are triangles that repeat another triangle of the same block exactly, corners, winding, material and
+// texture coordinates alike: the signature of geometry drawn twice, which a count alone hides. The same face with
+// another texture is an "overlap": a layer drawn on purpose (the tinted overlay on a grass block's side) or a face
+// drawn twice through two paths; reported, not judged.
 
 const GLB_MAGIC = 0x46546c67
 const JSON_CHUNK = 0x4e4f534a
@@ -97,32 +100,65 @@ const corner = point => point.map(value => Math.round(value * 4096)).join(':')
 function facing(corners) {
 	let first = 0
 	for (let i = 1; i < 3; i++) if (corners[i] < corners[first]) first = i
-	return [0, 1, 2].map(k => corners[(first + k) % 3]).join('|')
+	const indices = [0, 1, 2].map(k => (first + k) % 3)
+	return { corners: indices.map(i => corners[i]).join('|'), indices }
+}
+
+/** A vertex's material and texture coordinates: what tells a drawn-twice face from a layer drawn on purpose. */
+function surfaceKeys(glb, primitive) {
+	const uvs = primitive.attributes.TEXCOORD_0 == null ? null : readAccessor(glb, primitive.attributes.TEXCOORD_0)
+	const material = primitive.material ?? 'none'
+	return index => (uvs ? `${material}:${uvs[index].map(value => Math.round(value * 65536)).join(',')}` : `${material}`)
+}
+
+const IDENTITY_ROTATION = [0, 0, 0, 1]
+
+/** Positions are read with each mesh node's own scale and translation only: anything else is refused. */
+function requireFlatNodes(nodes) {
+	const parents = new Set(nodes.flatMap(node => node.children ?? []))
+	for (const [index, node] of nodes.entries()) {
+		if (node.mesh == null) continue
+		const rotated = node.rotation?.some((value, k) => value !== IDENTITY_ROTATION[k])
+		if (node.matrix || rotated || node.children?.length || parents.has(index))
+			throw new Error(`Node ${node.name ?? index} is rotated or nested: the bench reads flat nodes only`)
+	}
 }
 
 const primitiveIndices = (glb, primitive) =>
 	primitive.indices == null ? null : readAccessor(glb, primitive.indices).map(([i]) => i)
 
-/** Counts one triangle (world positions) in its block, noting it when the same face is already there. */
-function addTriangle(cells, seen, points, category) {
+/**
+ * Counts one triangle (world positions) in its block. The same face already there with the same surface is a
+ * duplicate (drawn twice); with another surface it is an overlap (a layer on purpose, or the same face drawn by two
+ * paths with different textures: the bench cannot tell, so overlaps are reported, not judged).
+ */
+function addTriangle(cells, seen, points, surface, category) {
 	const cellKey = key(...inside(points))
-	const cell = cells.get(cellKey) ?? { triangles: 0, duplicates: 0, categories: {} }
+	const cell = cells.get(cellKey) ?? { triangles: 0, duplicates: 0, overlaps: 0, categories: {} }
 	cell.triangles++
 	cell.categories[category] = (cell.categories[category] ?? 0) + 1
-	const signature = `${cellKey}|${facing(points.map(corner))}`
-	if (seen.has(signature)) cell.duplicates++
-	else seen.add(signature)
+	const order = facing(points.map(corner))
+	const geometry = `${cellKey}|${order.corners}`
+	const look = order.indices.map(i => surface[i]).join('|')
+	const looks = seen.get(geometry)
+	if (!looks) seen.set(geometry, new Set([look]))
+	else if (looks.has(look)) cell.duplicates++
+	else {
+		cell.overlaps++
+		looks.add(look)
+	}
 	cells.set(cellKey, cell)
 }
 
 /**
- * Triangles per world block: Map "x,y,z" → { triangles, duplicates, categories: { name: count } }. `origin` is
+ * Triangles per world block: Map "x,y,z" → { triangles, duplicates, overlaps, categories: { name: count } }. `origin` is
  * capture.json's captureOrigin.
  */
 export function cellTriangles(glb, origin) {
 	const cells = new Map()
-	const seen = new Set()
+	const seen = new Map()
 	const offset = [origin.x, origin.y, origin.z]
+	requireFlatNodes(glb.json.nodes ?? [])
 	for (const node of glb.json.nodes ?? []) {
 		if (node.mesh == null) continue
 		const scale = node.scale ?? [1, 1, 1]
@@ -131,8 +167,15 @@ export function cellTriangles(glb, origin) {
 		for (const primitive of glb.json.meshes[node.mesh].primitives) {
 			if (primitive.attributes?.POSITION == null) continue
 			const positions = readAccessor(glb, primitive.attributes.POSITION).map(world)
+			const surface = surfaceKeys(glb, primitive)
 			for (const [a, b, c] of triangles(primitive, positions, primitiveIndices(glb, primitive)))
-				addTriangle(cells, seen, [positions[a], positions[b], positions[c]], node.name)
+				addTriangle(
+					cells,
+					seen,
+					[positions[a], positions[b], positions[c]],
+					[surface(a), surface(b), surface(c)],
+					node.name
+				)
 		}
 	}
 	return cells

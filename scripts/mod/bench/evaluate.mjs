@@ -1,24 +1,33 @@
 // What a bench run says about each block: placed or not, geometry found in its area, triangles drawn twice.
 //
 // A block's area is its cell and the ring around it, and the layer above (not below: that is the floor the grid
-// stands on): the driver spaces blocks
-// `spacing` apart (4 by default), so a 3x3 block such as a large water wheel stays inside its own area and never
-// reaches a neighbour's.
+// stands on): the driver spaces blocks `spacing` apart (4 by default), so a 3x3 block such as a large water wheel
+// stays inside its own area and never reaches a neighbour's.
 
-/** Sums the cells of `cells` (from cellTriangles) around (x, y, z): ±reach horizontally, its layer and the next. */
-export function areaTriangles(cells, x, y, z, reach = 1) {
-	const area = { triangles: 0, duplicates: 0, categories: {} }
+/**
+ * The driver's contraption carries one white wool block: a full cube, 12 triangles once drawn. It turns while the
+ * capture runs, so its triangles can sit in the cells next to its own: they are counted over a 3x3 area.
+ */
+export const CONTRAPTION_TRIANGLES = 12
+
+/** Sums the cells of `cells` (from cellTriangles) around (x, y, z): ±reach horizontally, layers y to y + above. */
+export function areaTriangles(cells, x, y, z, reach = 1, above = 1) {
+	const area = { triangles: 0, duplicates: 0, overlaps: 0, categories: {} }
 	for (let dx = -reach; dx <= reach; dx++)
-		for (let dy = 0; dy <= 1; dy++)
+		for (let dy = 0; dy <= above; dy++)
 			for (let dz = -reach; dz <= reach; dz++) {
 				const cell = cells.get(`${x + dx},${y + dy},${z + dz}`)
-				if (!cell) continue
-				area.triangles += cell.triangles
-				area.duplicates += cell.duplicates
-				for (const [name, count] of Object.entries(cell.categories))
-					area.categories[name] = (area.categories[name] ?? 0) + count
+				if (cell) addCell(area, cell)
 			}
 	return area
+}
+
+function addCell(area, cell) {
+	area.triangles += cell.triangles
+	area.duplicates += cell.duplicates
+	area.overlaps += cell.overlaps ?? 0
+	for (const [name, count] of Object.entries(cell.categories))
+		area.categories[name] = (area.categories[name] ?? 0) + count
 }
 
 /**
@@ -42,18 +51,20 @@ export function evaluate(placed, cells, { drawsNothing = [] } = {}) {
 	let contraption = null
 	if (placed.contraption) {
 		const { x, y, z } = placed.contraption
-		const cell = cells.get(`${x},${y},${z}`) ?? { triangles: 0, duplicates: 0, categories: {} }
-		contraption = {
-			entities: placed.contraptions ?? 0,
-			...cell,
-			status: contraptionStatus(placed.contraptions ?? 0, cell),
-		}
+		const area = areaTriangles(cells, x, y, z, 1, 0)
+		const entities = placed.contraptions ?? 0
+		contraption = { entities, expected: CONTRAPTION_TRIANGLES, ...area, status: contraptionStatus(entities, area) }
 	}
 	return { summary, rows, contraption }
 }
 
-function contraptionStatus(entities, cell) {
+/**
+ * `unassembled` (no contraption entity), `missing` (nothing drawn), `partial` (fewer triangles than the block has),
+ * `doubled` (more: drawn twice, possibly at two angles while it turns, so not always exact duplicates) or `ok`.
+ */
+function contraptionStatus(entities, area) {
 	if (entities === 0) return 'unassembled'
-	if (cell.triangles === 0) return 'missing'
-	return cell.duplicates > 0 ? 'doubled' : 'ok'
+	if (area.triangles === 0) return 'missing'
+	if (area.triangles > CONTRAPTION_TRIANGLES || area.duplicates > 0) return 'doubled'
+	return area.triangles < CONTRAPTION_TRIANGLES ? 'partial' : 'ok'
 }

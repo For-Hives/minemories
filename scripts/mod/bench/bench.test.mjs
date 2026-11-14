@@ -1,44 +1,76 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { parseArgs, selectConfigs } from '../commands/bench.mjs'
-import { areaTriangles, evaluate } from './evaluate.mjs'
+import { areaTriangles, CONTRAPTION_TRIANGLES, evaluate } from './evaluate.mjs'
 import { cellTriangles, parseGlb, readAccessor } from './glb-cells.mjs'
 import { compare, reportHtml } from './report.mjs'
-import { benchHome, driverPlan, fetchMod, gameCommand, launcherVersion, primaryFile } from './runner.mjs'
+import {
+	benchHome,
+	disableAfk,
+	driverPlan,
+	failureCause,
+	fetchMod,
+	gameCommand,
+	launcherVersion,
+	minemoriesJar,
+	primaryFile,
+} from './runner.mjs'
 
-/** A GLB with one node: `positions` as float32 VEC3 (or int16 when `quantized`), `indices` as uint16. */
-function makeGlb({ positions, indices, quantized = false, scale, translation, mode, name = 'terrain', stride }) {
-	const componentSize = quantized ? 2 : 4
-	const tuple = stride ?? componentSize * 3
-	const positionBytes = Buffer.alloc(positions.length * tuple)
-	for (const [i, point] of positions.entries())
-		for (const [k, value] of point.entries()) {
-			if (quantized) positionBytes.writeInt16LE(value, i * tuple + k * 2)
-			else positionBytes.writeFloatLE(value, i * tuple + k * 4)
-		}
-	const indexBytes = Buffer.alloc(indices.length * 2)
-	for (const [i, value] of indices.entries()) indexBytes.writeUInt16LE(value, i * 2)
-	const bin = Buffer.concat([
-		positionBytes,
-		indexBytes,
-		Buffer.alloc((4 - ((positionBytes.length + indexBytes.length) % 4)) % 4),
-	])
+/** Tuples written `size` bytes per number, `stride` bytes per tuple. */
+function packed(tuples, size, stride, write) {
+	const bytes = Buffer.alloc(tuples.length * stride)
+	for (const [i, tuple] of tuples.entries())
+		for (const [k, value] of tuple.entries()) write(bytes, value, i * stride + k * size)
+	return bytes
+}
+
+/**
+ * A GLB with one node: `positions` as float32 VEC3 (or int16 when `quantized`), `indices` as uint16, and optional
+ * float32 `uvs`.
+ */
+function makeGlb({ positions, indices, uvs, quantized = false, scale, translation, mode, name = 'terrain', stride }) {
+	const positionBytes = quantized
+		? packed(positions, 2, stride ?? 6, (bytes, value, at) => bytes.writeInt16LE(value, at))
+		: packed(positions, 4, stride ?? 12, (bytes, value, at) => bytes.writeFloatLE(value, at))
+	const indexBytes = packed(
+		indices.map(value => [value]),
+		2,
+		2,
+		(bytes, value, at) => bytes.writeUInt16LE(value, at)
+	)
+	const indexPadding = Buffer.alloc((4 - (indexBytes.length % 4)) % 4)
+	const uvBytes = packed(uvs ?? [], 4, 8, (bytes, value, at) => bytes.writeFloatLE(value, at))
+	const bin = Buffer.concat([positionBytes, indexBytes, indexPadding, uvBytes])
+	const uvOffset = positionBytes.length + indexBytes.length + indexPadding.length
 	const json = {
 		asset: { version: '2.0' },
 		buffers: [{ byteLength: bin.length }],
 		bufferViews: [
 			{ buffer: 0, byteOffset: 0, byteLength: positionBytes.length, ...(stride ? { byteStride: stride } : {}) },
 			{ buffer: 0, byteOffset: positionBytes.length, byteLength: indexBytes.length },
+			{ buffer: 0, byteOffset: uvOffset, byteLength: uvBytes.length },
 		],
 		accessors: [
 			{ bufferView: 0, componentType: quantized ? 5122 : 5126, count: positions.length, type: 'VEC3' },
 			{ bufferView: 1, componentType: 5123, count: indices.length, type: 'SCALAR' },
+			{ bufferView: 2, componentType: 5126, count: uvs?.length ?? 0, type: 'VEC2' },
 		],
-		meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, ...(mode == null ? {} : { mode }) }] }],
+		meshes: [
+			{
+				primitives: [
+					{
+						attributes: { POSITION: 0, ...(uvs ? { TEXCOORD_0: 2 } : {}) },
+						indices: 1,
+						material: 0,
+						...(mode == null ? {} : { mode }),
+					},
+				],
+			},
+		],
 		nodes: [{ name, mesh: 0, ...(scale ? { scale } : {}), ...(translation ? { translation } : {}) }, { name: 'empty' }],
 	}
 	let text = Buffer.from(JSON.stringify(json))
@@ -69,13 +101,38 @@ test('a face on a block boundary belongs to the block it covers, not the one bey
 	const glb = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2, 0, 2, 3] }))
 	const cells = cellTriangles(glb, ORIGIN)
 	assert.deepEqual([...cells.keys()], ['0,0,0'])
-	assert.deepEqual(cells.get('0,0,0'), { triangles: 2, duplicates: 0, categories: { terrain: 2 } })
+	assert.deepEqual(cells.get('0,0,0'), { triangles: 2, duplicates: 0, overlaps: 0, categories: { terrain: 2 } })
 	// The same face turned down covers the block above.
 	const down = cellTriangles(parseGlb(makeGlb({ positions: TOP, indices: [0, 2, 1, 0, 3, 2] })), ORIGIN)
 	assert.deepEqual([...down.keys()], ['0,1,0'])
 })
 
 test('a face drawn twice counts as duplicated; its back face does not', () => {
+	// Same corners, same texture coordinates: drawn twice. Another texture on the same face: a layer (an overlay).
+	const quad = [...TOP, ...TOP]
+	const uvs = [
+		[0, 0],
+		[0, 1],
+		[1, 1],
+		[1, 0],
+		[0.5, 0],
+		[0.5, 1],
+		[1, 1],
+		[1, 0],
+	]
+	const layered = cellTriangles(
+		parseGlb(makeGlb({ positions: quad, uvs, indices: [0, 1, 2, 4, 5, 6, 1, 2, 0] })),
+		ORIGIN
+	)
+	assert.deepEqual(layered.get('0,0,0'), { triangles: 3, duplicates: 1, overlaps: 1, categories: { terrain: 3 } })
+	const material = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2, 0, 1, 2] }))
+	material.json.meshes[0].primitives.push({ ...material.json.meshes[0].primitives[0], material: 1 })
+	assert.deepEqual(cellTriangles(material, ORIGIN).get('0,0,0'), {
+		triangles: 4,
+		duplicates: 2,
+		overlaps: 1,
+		categories: { terrain: 4 },
+	})
 	const twice = cellTriangles(parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2, 1, 2, 0] })), ORIGIN)
 	assert.equal(twice.get('0,0,0').duplicates, 1)
 	const back = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2, 0, 2, 1] }))
@@ -123,20 +180,51 @@ test('lines and primitives without positions are ignored; broken files are refus
 	glb.json.accessors[0].componentType = 5126
 	glb.json.accessors[0].type = 'MAT4'
 	assert.throws(() => readAccessor(glb, 0), /accessor type/)
+	const nested = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2] }))
+	nested.json.nodes[0].rotation = [0, 0, 0, 1]
+	assert.equal(cellTriangles(nested, ORIGIN).size, 1)
+	for (const change of [
+		node => {
+			node.rotation = [0, Math.SQRT1_2, 0, Math.SQRT1_2]
+		},
+		node => {
+			node.matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+		},
+		node => {
+			node.children = [1]
+		},
+	]) {
+		const bad = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2] }))
+		change(bad.json.nodes[0])
+		assert.throws(() => cellTriangles(bad, ORIGIN), /rotated or nested/)
+	}
+	const child = parseGlb(makeGlb({ positions: TOP, indices: [0, 1, 2] }))
+	child.json.nodes[1].children = [0]
+	assert.throws(() => cellTriangles(child, ORIGIN), /Node terrain is rotated or nested/)
 })
 
-const cell = (triangles, duplicates = 0, categories = { decor: triangles }) => ({ triangles, duplicates, categories })
+const cell = (triangles, duplicates = 0, categories = { decor: triangles }, overlaps = 0) => ({
+	triangles,
+	duplicates,
+	overlaps,
+	categories,
+})
 
 test('each block gets a verdict from the geometry in its area', () => {
 	const cells = new Map([
 		['0,0,0', cell(10)],
-		['1,1,0', cell(4, 2, { block_entities: 4 })],
+		['1,1,0', cell(4, 2, { block_entities: 4 }, 1)],
 		['8,0,0', cell(12)],
-		['20,1,20', cell(6)],
+		// The contraption's wool cube turned a little: its 12 triangles over three cells.
+		['20,1,20', cell(8, 0, { entities: 8 })],
+		['21,1,20', cell(2, 0, { entities: 2 })],
+		['20,1,19', { triangles: 2, duplicates: 0, categories: { entities: 2 } }],
+		['20,2,20', cell(5)],
 	])
 	assert.deepEqual(areaTriangles(cells, 0, 0, 0), {
 		triangles: 14,
 		duplicates: 2,
+		overlaps: 1,
 		categories: { decor: 10, block_entities: 4 },
 	})
 	const placed = {
@@ -163,10 +251,23 @@ test('each block gets a verdict from the geometry in its area', () => {
 		]
 	)
 	assert.deepEqual(result.summary, { blocks: 5, ok: 2, missing: 1, doubled: 1, unplaced: 1 })
-	assert.equal(result.contraption.status, 'ok')
-	assert.equal(evaluate({ ...placed, contraptions: 0 }, cells).contraption.status, 'unassembled')
-	assert.equal(evaluate({ ...placed, contraption: { x: 50, y: 0, z: 0 } }, cells).contraption.status, 'missing')
-	assert.equal(evaluate({ ...placed, contraption: { x: 1, y: 1, z: 0 } }, cells).contraption.status, 'doubled')
+	assert.deepEqual(result.contraption, {
+		entities: 1,
+		expected: CONTRAPTION_TRIANGLES,
+		triangles: 12,
+		duplicates: 0,
+		overlaps: 0,
+		categories: { entities: 12 },
+		status: 'ok',
+	})
+	const status = (contraption, extra = {}) =>
+		evaluate({ ...placed, contraption, ...extra }, new Map([...cells, ['30,0,30', cell(24)], ['40,0,40', cell(6)]]))
+			.contraption.status
+	assert.equal(status(placed.contraption, { contraptions: 0 }), 'unassembled')
+	assert.equal(status({ x: 50, y: 0, z: 0 }), 'missing')
+	assert.equal(status({ x: 1, y: 1, z: 0 }), 'doubled')
+	assert.equal(status({ x: 30, y: 0, z: 30 }), 'doubled')
+	assert.equal(status({ x: 40, y: 0, z: 40 }), 'partial')
 	assert.equal(evaluate({ cells: [] }, cells).contraption, null)
 })
 
@@ -176,10 +277,13 @@ test('the report puts problems first and marks blocks that differ between config
 			config: { id: 'one' },
 			renderer: 'llvmpipe',
 			summary: { blocks: 2, ok: 1, missing: 1, doubled: 0, unplaced: 0 },
-			contraption: { status: 'ok' },
+			mods: { minemories: '0.38.3-beta.1' },
+			contraption: { status: 'ok', triangles: 12, expected: 12 },
 			rows: [
 				{ id: 'm:wheel', status: 'missing', triangles: 0, duplicates: 0, categories: {} },
 				{ id: 'm:<b>', status: 'ok', triangles: 12, duplicates: 0, categories: { decor: 12 } },
+				{ id: 'm:gear', status: 'ok', triangles: 100, duplicates: 0, overlaps: 3, categories: { decor: 100 } },
+				{ id: 'm:pipe', status: 'ok', triangles: 30, duplicates: 0, categories: { decor: 30 } },
 			],
 		},
 		{
@@ -188,8 +292,11 @@ test('the report puts problems first and marks blocks that differ between config
 			rows: [
 				{ id: 'm:wheel', status: 'doubled', triangles: 40, duplicates: 20, categories: { block_entities: 40 } },
 				{ id: 'm:only', status: 'unplaced', actual: 'minecraft:air' },
+				{ id: 'm:gear', status: 'ok', triangles: 30, duplicates: 0, categories: { decor: 30 } },
+				{ id: 'm:pipe', status: 'ok', triangles: 50, duplicates: 0, categories: { decor: 50 } },
 			],
 		},
+		{ config: { id: 'three' }, error: 'Exception in world tick: <NPE>' },
 	]
 	const rows = compare(results)
 	assert.deepEqual(
@@ -197,15 +304,20 @@ test('the report puts problems first and marks blocks that differ between config
 		[
 			['m:wheel', true, 'missing/doubled'],
 			['m:only', false, 'absent/unplaced'],
+			['m:gear', true, 'ok/ok'],
 			['m:<b>', false, 'ok/absent'],
+			['m:pipe', false, 'ok/ok'],
 		]
 	)
 	const html = reportHtml(results, { generatedAt: 'now' })
 	assert.match(
 		html,
-		/<li><strong>one<\/strong>: 2 blocks, 1 ok, 1 missing, 0 doubled, 0 not placed · contraption ok<\/li>/
+		/<li><strong>one<\/strong>: 2 blocks, 1 ok, 1 missing, 0 doubled, 0 not placed · contraption ok \(12\/12 triangles\) · Minemories 0\.38\.3-beta\.1<\/li>/
 	)
 	assert.match(html, /20 twice/)
+	assert.match(html, /3 layered/)
+	assert.match(html, /<strong>three<\/strong>: failed, Exception in world tick: &lt;NPE&gt;/)
+	assert.equal((html.match(/<th><strong>/g) ?? []).length, 2)
 	assert.match(html, /renderer unknown/)
 	assert.match(html, /m:&lt;b&gt;/)
 	assert.match(html, /class="differs"/)
@@ -255,8 +367,12 @@ test('pinned Modrinth files are downloaded once and checked against their SHA-51
 	}
 	const path = await fetchMod(home, { project: 'p', version: 'v1' }, { fetchImpl })
 	assert.deepEqual(await readFile(path), bytes)
-	await fetchMod(home, { project: 'p', version: 'v1' }, { fetchImpl })
-	assert.equal(calls.filter(url => url === 'https://cdn/mod.jar').length, 1)
+	// Second time: from the cache, without the network.
+	const offline = async () => {
+		throw new Error('offline')
+	}
+	assert.equal(await fetchMod(home, { project: 'p', version: 'v1' }, { fetchImpl: offline }), path)
+	assert.equal(calls.length, 2)
 	const bad = { ...version, files: [{ ...version.files[0], filename: 'bad.jar', hashes: { sha512: 'nope' } }] }
 	await assert.rejects(
 		fetchMod(
@@ -298,4 +414,54 @@ test('the command line selects configurations by id, all of them, or lists them'
 	assert.deepEqual(selectConfigs(configs, { ids: ['b'], all: false }), [{ id: 'b' }])
 	assert.equal(selectConfigs(configs, { ids: [], all: true }).length, 2)
 	assert.throws(() => selectConfigs(configs, { ids: ['z'], all: false }), /Unknown bench configuration: z/)
+})
+
+test('the Minemories JAR is the one of the version the tree declares, never an older build', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'bench-root-'))
+	await mkdir(join(root, 'mod', '1.21.1'), { recursive: true })
+	await writeFile(join(root, 'mod', '1.21.1', 'gradle.properties'), 'mod_version=0.38.10-beta.1\n')
+	await Promise.all(
+		['0.38.9-beta.1', '0.38.10-beta.1'].map(async version => {
+			const dir = join(root, 'build', 'mod-dist', version, 'fabric-mc1.20.1')
+			await mkdir(dir, { recursive: true })
+			await writeFile(join(dir, `minemories-${version}.jar`), '')
+		})
+	)
+	assert.match(
+		await minemoriesJar(root, 'fabric-mc1.20.1'),
+		/0\.38\.10-beta\.1\/fabric-mc1\.20\.1\/minemories-0\.38\.10/
+	)
+	await writeFile(join(root, 'mod', '1.21.1', 'gradle.properties'), 'mod_version=0.39.0-beta.1\n')
+	await assert.rejects(minemoriesJar(root, 'fabric-mc1.20.1'), /No fabric-mc1\.20\.1 JAR for 0\.39\.0-beta\.1/)
+})
+
+test('AFK captures are turned off in the game folder, other settings kept', async () => {
+	const game = await mkdtemp(join(tmpdir(), 'bench-game-'))
+	await disableAfk(game)
+	const path = join(game, 'config', 'minemories.properties')
+	assert.equal(await readFile(path, 'utf8'), 'afkSnapshots=false\n')
+	await writeFile(path, '# comment\nafkSnapshots = true\nexportFolder=/x\n')
+	await disableAfk(game)
+	assert.equal(await readFile(path, 'utf8'), '# comment\nexportFolder=/x\nafkSnapshots=false\n')
+})
+
+test('a game that stopped early says why', () => {
+	assert.equal(
+		failureCause(
+			'[12:00] [Render thread/ERROR]: MINEMORIES-BENCH FAILED\njava.lang.IllegalStateException: too big\n\tat x'
+		),
+		'java.lang.IllegalStateException: too big'
+	)
+	assert.equal(
+		failureCause(
+			'---- Minecraft Crash Report ----\nDescription: Exception ticking world\n\njava.lang.NullPointerException: boom\n'
+		),
+		'Exception ticking world: java.lang.NullPointerException: boom'
+	)
+	assert.equal(failureCause('Description: Watchdog\n'), 'Watchdog')
+	assert.equal(
+		failureCause('[1] [main/INFO]: a\n[2] [Server thread/ERROR]: first\n[3] [Render thread/ERROR]: last\n'),
+		'[3] [Render thread/ERROR]: last'
+	)
+	assert.equal(failureCause(''), 'The game ended before the export (see game.log)')
 })

@@ -48,6 +48,7 @@ public final class BenchDriver implements ClientModInitializer {
   private static final Logger LOG = LoggerFactory.getLogger("minemories-bench");
   private static final int FLOOR = -60;
   private static final int PER_TICK = 200;
+  private static final int MAX_RADIUS = 128;
 
   private enum Step { MENU, LOADING, PLACING, SETTLING, ACTING, READING, EXPORTING, DONE }
 
@@ -151,7 +152,12 @@ public final class BenchDriver implements ClientModInitializer {
       cells.add(new Cell(new BlockPos(4 + col * spacing, FLOOR, 4 + row * spacing), ids.get(i)));
     }
     int extent = 4 + columns * spacing;
-    radius = Math.max(8, Math.min(128, extent / 2 + 4));
+    radius = Math.max(8, extent / 2 + 4);
+    // /minemories export stops at 128: past it the far rows would read "missing" instead of failing.
+    if (radius > MAX_RADIUS)
+      throw new IllegalStateException(
+          ids.size() + " blocks need an export radius of " + radius + " (at most " + MAX_RADIUS
+              + "): split the namespaces across configurations or lower the spacing");
     LOG.info("MINEMORIES-BENCH {} blocks from {} on a {}x{} grid, radius {}", ids.size(), namespaces, columns, columns, radius);
     MinecraftServer server = mc.getSingleplayerServer();
     int centre = extent / 2;

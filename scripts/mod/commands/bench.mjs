@@ -41,14 +41,16 @@ export async function run(args, ctx) {
 	const results = []
 	for (const config of selected) {
 		// biome-ignore lint/performance/noAwaitInLoops: one game at a time, the machine runs a single Minecraft client.
-		const result = await runConfig(ctx.root, config, { env: ctx.env, local: options.local, log: ctx.log })
+		const result = await runConfig(ctx.root, config, { env: ctx.env, local: options.local, log: ctx.log }).catch(
+			error => ({ config, error: error.message })
+		)
+		results.push(result)
 		if (result.error) ctx.log(`FAILED ${config.id}: ${result.error}`)
 		else {
 			const s = result.summary
 			ctx.log(
 				`${config.id}: ${s.ok}/${s.blocks} ok, ${s.missing} missing, ${s.doubled} doubled, ${s.unplaced} not placed${result.contraption ? `, contraption ${result.contraption.status}` : ''} (${result.seconds} s, ${result.renderer})`
 			)
-			results.push(result)
 		}
 	}
 	if (results.length > 0) {
@@ -57,5 +59,5 @@ export async function run(args, ctx) {
 		await writeFile(join(dir, 'report.html'), reportHtml(results))
 		ctx.log(`Report: ${join(dir, 'report.html')}`)
 	}
-	return results.length === selected.length ? 0 : 1
+	return results.every(result => !result.error) ? 0 : 1
 }
