@@ -165,8 +165,8 @@ test('fetchLatestRelease builds the release from the two newest tags', async () 
 		],
 		more: 0,
 		source: 'commits',
-		downloadUrl: 'https://minemories.xenos.lightin.io/downloads',
-		changelogUrl: 'https://minemories.xenos.lightin.io/versions',
+		downloadUrl: 'https://minemories.net/downloads',
+		changelogUrl: 'https://minemories.net/versions',
 		compareUrl: 'https://github.com/For-Hives/minemories/compare/mod-v0.36.0-beta.1...mod-v0.36.1-beta.1',
 	})
 	assert.equal(calls.length, 5)
