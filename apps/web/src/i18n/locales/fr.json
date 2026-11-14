@@ -1429,5 +1429,14 @@
 	"This view could not be captured. Move the camera, then retake.": "Impossible de prendre cette vue. Bouge la caméra, puis reprends l’image.",
 	"Could not save the picture. Try again.": "Impossible d’enregistrer l’image. Réessaie.",
 	"Saved: this view is now your server’s picture.": "Enregistré : cette vue est maintenant l’image de ton serveur.",
-	"Could not rename this server.": "Impossible de renommer ce serveur."
+	"Could not rename this server.": "Impossible de renommer ce serveur.",
+	"Empty trash": "Vider la corbeille",
+	"Emptying…": "Vidage…",
+	"Empty the trash?": "Vider la corbeille ?",
+	"Everything in it is deleted forever: {captures}. This cannot be undone.": "Tout ce qu’elle contient est supprimé définitivement : {captures}. Impossible de revenir en arrière.",
+	"Trash emptied.": "Corbeille vidée.",
+	"Could not empty the trash.": "Impossible de vider la corbeille.",
+	"Includes {size} in the trash.": "Dont {size} dans la corbeille.",
+	"{size} reserved for uploads in progress.": "{size} réservés pour des envois en cours.",
+	"{size} being deleted.": "{size} en cours de suppression."
 }

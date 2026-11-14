@@ -75,7 +75,10 @@ function useGalleryLists() {
 		setTrash(items => items.filter(item => item.id !== id))
 	}, [])
 
-	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash, dropFromTrash }
+	/** Empties the shown trash at once after it was emptied for good; the reload that follows guards it as above. */
+	const clearTrash = useCallback(() => setTrash([]), [])
+
+	return { memories, trash, loading, loadError, setLoadError, refreshMemories, refreshTrash, dropFromTrash, clearTrash }
 }
 
 export function useLivePage() {
@@ -93,9 +96,11 @@ function useTrashActions(
 	notify: (message: string) => void,
 	setLoadError: (message: string) => void,
 	refreshAll: () => Promise<void>,
-	dropFromTrash: (id: string) => void
+	dropFromTrash: (id: string) => void,
+	clearTrash: () => void
 ) {
 	const active = useLivePage()
+	const [emptying, setEmptying] = useState(false)
 	// Snapshots being deleted for good: their card shows it at once and its buttons wait while the server erases the
 	// file, which can take a few seconds for a large capture.
 	const [deleting, setDeleting] = useState<ReadonlySet<string>>(() => new Set())
@@ -145,7 +150,28 @@ function useTrashActions(
 		}
 	}
 
-	return { trashSnapshot, restoreSnapshot, deleteSnapshot, deleting }
+	/**
+	 * Deletes everything in the trash for good, in one request. The caller has already asked the player. Resolves true
+	 * once the trash is empty, so the page can move the focus off the section that leaves.
+	 */
+	async function emptyTrash(): Promise<boolean> {
+		setEmptying(true)
+		try {
+			await apiClient.memories.emptyTrash()
+			if (!active.current) return false
+			clearTrash()
+			notify('Trash emptied.')
+			void refreshAll()
+			return true
+		} catch (error) {
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not empty the trash.'))
+			return false
+		} finally {
+			if (active.current) setEmptying(false)
+		}
+	}
+
+	return { trashSnapshot, restoreSnapshot, deleteSnapshot, deleting, emptyTrash, emptying }
 }
 
 export function useGalleryData(notify: (message: string) => void) {
@@ -169,6 +195,6 @@ export function useGalleryData(notify: (message: string) => void) {
 			window.clearTimeout(timer)
 		}
 	}, [refreshAll])
-	const actions = useTrashActions(notify, lists.setLoadError, refreshAll, lists.dropFromTrash)
+	const actions = useTrashActions(notify, lists.setLoadError, refreshAll, lists.dropFromTrash, lists.clearTrash)
 	return { ...lists, ...storage, ...actions, refreshAll }
 }

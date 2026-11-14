@@ -112,6 +112,7 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 		(client: ReturnType<typeof rpc>) => client.memories.setCover({ id, image }),
 		(client: ReturnType<typeof rpc>) => client.memories.serverProfiles(),
 		(client: ReturnType<typeof rpc>) => client.memories.renameServer({ key: '["server",null]', name: 'Mine' }),
+		(client: ReturnType<typeof rpc>) => client.memories.emptyTrash(),
 	]
 	await Promise.all(
 		operations.map(async operation => {
@@ -202,6 +203,9 @@ test('real sessions enforce ownership and memory lifecycle through HTTP/oRPC', a
 	expect(await owner.memories.list()).toEqual([])
 	const trashed = await owner.memories.listTrash()
 	expect(trashed).toMatchObject([{ id }])
+	// Another account emptying its own trash never reaches this one.
+	expect(await other.memories.emptyTrash()).toEqual({ deleted: 0 })
+	expect(await owner.memories.listTrash()).toMatchObject([{ id }])
 	const trashEntry = trashed[0]
 	if (!trashEntry?.purgeAt) throw new Error('Missing trash deadline from RPC contract')
 	expect(Date.parse(trashEntry.purgeAt) - Date.parse(trashEntry.deletedAt)).toBe(2_592_000_000)
@@ -287,6 +291,10 @@ test('authenticated readers recover a resumable mod capture across the 4 MiB chu
 	expect(file.status).toBe(200)
 	expect(Buffer.from(await file.arrayBuffer()).equals(bytes)).toBe(true)
 	await owner.memories.trash({ id: memoryId })
-	await owner.memories.delete({ id: memoryId })
+	// A capture in the trash still counts, and the storage figure says how much of it is the trash.
+	expect(await owner.account.storage()).toMatchObject({ trashBytes: bytes.length })
+	expect(await owner.memories.emptyTrash()).toEqual({ deleted: 1 })
+	expect(await owner.memories.listTrash()).toEqual([])
 	expect((await app.request(`/api/memories/${memoryId}/file`, { headers: { cookie } })).status).toBe(404)
+	expect(await owner.memories.emptyTrash()).toEqual({ deleted: 0 })
 })

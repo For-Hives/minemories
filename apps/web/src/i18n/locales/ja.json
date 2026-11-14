@@ -1429,5 +1429,14 @@
 	"This view could not be captured. Move the camera, then retake.": "このビューを撮影できませんでした。カメラを動かしてから撮り直してください。",
 	"Could not save the picture. Try again.": "画像を保存できませんでした。もう一度お試しください。",
 	"Saved: this view is now your server’s picture.": "保存しました。このビューがサーバーの画像になりました。",
-	"Could not rename this server.": "このサーバーの名前を変更できませんでした。"
+	"Could not rename this server.": "このサーバーの名前を変更できませんでした。",
+	"Empty trash": "ゴミ箱を空にする",
+	"Emptying…": "空にしています…",
+	"Empty the trash?": "ゴミ箱を空にしますか？",
+	"Everything in it is deleted forever: {captures}. This cannot be undone.": "中身はすべて完全に削除されます：{captures}。元に戻せません。",
+	"Trash emptied.": "ゴミ箱を空にしました。",
+	"Could not empty the trash.": "ゴミ箱を空にできませんでした。",
+	"Includes {size} in the trash.": "うち {size} はゴミ箱にあります。",
+	"{size} reserved for uploads in progress.": "{size} はアップロード中のために予約されています。",
+	"{size} being deleted.": "{size} を削除中です。"
 }

@@ -1429,5 +1429,14 @@
 	"This view could not be captured. Move the camera, then retake.": "This view could not be captured. Move the camera, then retake.",
 	"Could not save the picture. Try again.": "Could not save the picture. Try again.",
 	"Saved: this view is now your server’s picture.": "Saved: this view is now your server’s picture.",
-	"Could not rename this server.": "Could not rename this server."
+	"Could not rename this server.": "Could not rename this server.",
+	"Empty trash": "Empty trash",
+	"Emptying…": "Emptying…",
+	"Empty the trash?": "Empty the trash?",
+	"Everything in it is deleted forever: {captures}. This cannot be undone.": "Everything in it is deleted forever: {captures}. This cannot be undone.",
+	"Trash emptied.": "Trash emptied.",
+	"Could not empty the trash.": "Could not empty the trash.",
+	"Includes {size} in the trash.": "Includes {size} in the trash.",
+	"{size} reserved for uploads in progress.": "{size} reserved for uploads in progress.",
+	"{size} being deleted.": "{size} being deleted."
 }
