@@ -1,27 +1,26 @@
 import { memo } from 'react'
 import { Link } from 'react-router'
-import { translate } from '../i18n/catalog'
-import type { TranslateValues } from '../lib/hero-i18n'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
 import { HeroClip, type HeroClipProps } from './HeroClip'
 import { ClosingIllustration, ShareIllustration } from './HeroIllustrations'
+import { HeroLocaleProvider, useHeroT } from './HeroLocale'
 import { HeroQuestions } from './HeroParts'
 import { SiteFooter } from './SiteFooter'
 import { SiteNav } from './SiteNav'
 
 /**
  * The film's page, as JSX (the markup of the prototype's hero.html, same classes and ids: the film code and its CSS address it as is).
- * It is rendered once and never re-rendered (no props, memoised): the prerender, the hydration and the first client render are all French (the site's prerender language),
- * and the film's own `apply()` writes the visitor's language into the `data-i18n` elements once it starts. React and the film therefore never write the same node twice.
+ * It is rendered once and never re-rendered (no props, memoised): the prerender, the hydration and the first client render are in the page's language (its URL),
+ * and the film's own `apply()` rewrites the `data-i18n` elements if the visitor's language changes afterwards. React and the film therefore never write the same node twice.
  * What depends on the session or the language is in HeroParts.tsx, as separate components that update themselves.
  */
-const t = (key: string, values?: TranslateValues) => translate('fr', key, { name: 'Efe', ...values })
 /** The published Minecraft versions, from mod/targets.json; the film's translation bridge re-reads them from `data-i18n-values`. */
 const supported = supportedMinecraft()
 const supportedValues = JSON.stringify(supported)
 /** The experimental versions, after the validated ones; nothing when every published version is validated. */
 function Experimental() {
+	const t = useHeroT()
 	if (!supported.experimental) return null
 	return (
 		<>
@@ -66,6 +65,7 @@ function Step({
 	clip?: HeroClipProps
 	caption?: string
 }) {
+	const t = useHeroT()
 	return (
 		<li className="mc-step">
 			<span className="mc-step__num">
@@ -95,6 +95,7 @@ function Step({
 
 /** The timeline on the right edge of the film (charter.css section 11; wired by hero.js `wireRail`): the five chapters are marks, the thumb is a vertical slider. */
 function FilmRail() {
+	const t = useHeroT()
 	return (
 		<div className="film-rail" id="film-rail">
 			<div className="film-rail__track" data-rail-track>
@@ -150,7 +151,8 @@ function FilmRail() {
 	)
 }
 
-export const HeroMarkup = memo(function HeroMarkup() {
+function HeroPage() {
+	const t = useHeroT()
 	return (
 		<>
 			<a className="mc-btn mc-btn--auto mc-skip" href="#hero-title">
@@ -627,5 +629,14 @@ export const HeroMarkup = memo(function HeroMarkup() {
 				</div>
 			</aside>
 		</>
+	)
+}
+
+/** The film's page, in the page's language; memoised and never re-rendered (see HeroLocale.tsx). */
+export const HeroMarkup = memo(function HeroMarkup() {
+	return (
+		<HeroLocaleProvider>
+			<HeroPage />
+		</HeroLocaleProvider>
 	)
 })
