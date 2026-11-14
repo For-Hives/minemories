@@ -67,6 +67,7 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 				</div>
 				<em>{used}%</em>
 			</div>
+			<StorageParts storage={storage} />
 			{/* Only a gallery with no byte left refuses uploads; a nearly full one still accepts them. */}
 			{storage.availableBytes === 0 && (
 				<p>
@@ -78,6 +79,29 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 				</p>
 			)}
 		</section>
+	)
+}
+
+/**
+ * What the figure holds besides the captures on show: the trash, uploads still arriving and files still being erased all
+ * count against the limit, so a gallery that looks empty can still use space.
+ */
+function StorageParts({ storage }: { storage: Storage }) {
+	const { t, locale } = useI18n()
+	const parts = [
+		storage.trashBytes > 0 && t('Includes {size} in the trash.', { size: formatFileSize(storage.trashBytes, locale) }),
+		storage.reservedBytes > 0 &&
+			t('{size} reserved for uploads in progress.', { size: formatFileSize(storage.reservedBytes, locale) }),
+		storage.pendingDeletionBytes > 0 &&
+			t('{size} being deleted.', { size: formatFileSize(storage.pendingDeletionBytes, locale) }),
+	].filter(part => part !== false)
+	if (parts.length === 0) return null
+	return (
+		<ul className="gallery-storage-parts">
+			{parts.map(part => (
+				<li key={part}>{part}</li>
+			))}
+		</ul>
 	)
 }
 
@@ -115,7 +139,11 @@ export function GalleryPage() {
 		restoreSnapshot,
 		deleteSnapshot,
 		deleting,
+		emptyTrash,
+		emptying,
 	} = useGalleryData(notify)
+	// Once the trash is emptied its section leaves with the focus in it: the page title takes it.
+	const title = useRef<HTMLHeadingElement>(null)
 	const pairing = useGalleryPairing(notify, setLoadError)
 	const { createPairing } = pairing
 	const pairedFresh = shouldShowPaired(pairing.pairStatus === 'paired', memories)
@@ -124,7 +152,9 @@ export function GalleryPage() {
 		<div className="album-gallery gallery-page">
 			<div className="album-gallery-heading gallery-heading">
 				<div>
-					<h1>{t('Your memories')}</h1>
+					<h1 ref={title} tabIndex={-1}>
+						{t('Your memories')}
+					</h1>
 					<p>{gallerySummary(memories, locale)}</p>
 				</div>
 				<div className="gallery-heading-actions">
@@ -160,8 +190,14 @@ export function GalleryPage() {
 					<TrashSection
 						trash={trash}
 						deleting={deleting}
+						emptying={emptying}
 						onRestore={id => void restoreSnapshot(id)}
 						onDelete={id => void deleteSnapshot(id)}
+						onEmpty={() =>
+							void emptyTrash().then(done => {
+								if (done) title.current?.focus()
+							})
+						}
 					/>
 				)}
 			</section>
@@ -173,16 +209,21 @@ export function GalleryPage() {
 function TrashSection({
 	trash,
 	deleting,
+	emptying,
 	onRestore,
 	onDelete,
+	onEmpty,
 }: {
 	trash: TrashMemories
 	deleting: ReadonlySet<string>
+	emptying: boolean
 	onRestore(id: string): void
 	onDelete(id: string): void
+	onEmpty(): void
 }) {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	const [askingId, setAskingId] = useState<string | null>(null)
+	const [askingAll, setAskingAll] = useState(false)
 	// Read from the live list: if the snapshot leaves the trash while the panel is open (restored or purged from another
 	// device, seen by the next refresh), the panel closes instead of deleting a capture that is no longer in the trash.
 	const asking = askingId === null ? undefined : trash.find(item => item.id === askingId)
@@ -198,28 +239,54 @@ function TrashSection({
 	}, [confirmed])
 	return (
 		<section className="gallery-trash" aria-label={t('Trash')}>
-			<div>
-				<h2 ref={heading} tabIndex={-1}>
-					<T message={'Trash ·'} /> {trash.length}
-				</h2>
-				<p className="gallery-trash-note">
-					<T message={'Snapshots disappear forever 30 days after deletion.'} />
-				</p>
+			<div className="gallery-trash-head">
+				<div>
+					<h2 ref={heading} tabIndex={-1}>
+						<T message={'Trash ·'} /> {trash.length}
+					</h2>
+					<p className="gallery-trash-note">
+						<T message={'Snapshots disappear forever 30 days after deletion.'} />
+					</p>
+				</div>
+				<button
+					type="button"
+					className="gallery-text-button is-danger"
+					disabled={emptying}
+					aria-busy={emptying}
+					onClick={() => setAskingAll(true)}
+				>
+					{emptying ? t('Emptying…') : t('Empty trash')}
+				</button>
 			</div>
 			<div className="gallery-trash-list">
 				{trash.map(item => (
 					<TrashCard
 						key={item.id}
 						item={item}
-						deleting={deleting.has(item.id)}
+						deleting={emptying || deleting.has(item.id)}
 						onRestore={() => onRestore(item.id)}
 						onDelete={() => setAskingId(item.id)}
 					/>
 				))}
 			</div>
+			{askingAll && (
+				<ConfirmDelete
+					title={t('Empty the trash?')}
+					note={t('Everything in it is deleted forever: {captures}. This cannot be undone.', {
+						captures: formatCaptureCount(locale, trash.length),
+					})}
+					confirmLabel={t('Empty trash')}
+					onCancel={() => setAskingAll(false)}
+					onConfirm={() => {
+						setAskingAll(false)
+						setConfirmed(count => count + 1)
+						onEmpty()
+					}}
+				/>
+			)}
 			{asking && (
 				<ConfirmDelete
-					name={asking.name}
+					title={t('Delete {name} forever?', { name: asking.name })}
 					onCancel={() => setAskingId(null)}
 					onConfirm={() => {
 						setAskingId(null)

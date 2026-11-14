@@ -44,6 +44,7 @@ import {
 	createPairingCode,
 	createShareLink,
 	deleteMemory,
+	emptyTrash,
 	exchangePairingCode,
 	getDeviceFromToken,
 	getMemoryFile,
@@ -293,6 +294,13 @@ const router = os.router({
 			if (!objectKey) throw new ORPCError('NOT_FOUND')
 			await objectDeletions.drain(objectKey)
 			return { ok: true as const }
+		}),
+		emptyTrash: os.memories.emptyTrash.handler(({ context }) => {
+			if (!context.userId) throw new ORPCError('UNAUTHORIZED')
+			const deleted = emptyTrash(context.userId).length
+			// The rows are gone and their files queued: the store catches up in the background (and every minute after).
+			if (deleted > 0) void objectDeletions.maintain()
+			return { deleted }
 		}),
 		createShare: os.memories.createShare.handler(({ context, input }) => {
 			if (!context.userId) throw new ORPCError('UNAUTHORIZED')

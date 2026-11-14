@@ -168,7 +168,14 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 	mount(<GalleryPage />)
 	expect(screen.getByText('Checking available storage…')).toBeTruthy()
 	await act(async () => {
-		resolve?.({ usedBytes: 0, limitBytes: 1024, availableBytes: 1024, reservedBytes: 0, pendingDeletionBytes: 0 })
+		resolve?.({
+			usedBytes: 0,
+			limitBytes: 1024,
+			availableBytes: 1024,
+			reservedBytes: 0,
+			pendingDeletionBytes: 0,
+			trashBytes: 0,
+		})
 	})
 	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 1 KiB')
 	mocks.storage.mockResolvedValueOnce({

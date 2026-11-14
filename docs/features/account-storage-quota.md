@@ -134,6 +134,7 @@ header is also applied to the other private RPC responses.
 | `availableBytes` | Reservable space, never below zero, even for a legacy account over the limit. |
 | `reservedBytes` | Incomplete resumable sessions and unpublished legacy intents, including their cleanup after a failure. |
 | `pendingDeletionBytes` | Permanently deleted or purged captures whose object is still waiting to be erased. |
+| `trashBytes` | Captures in the trash (part of `usedBytes`): they count until they are deleted for good. An older API omits it; the contract defaults it to 0. |
 
 The summary, including the account's limit, is computed in a single SQLite
 query, without reading GLBs or querying the bucket. A per-owner index backs the
@@ -141,8 +142,10 @@ cleanup queue. Old jobs with no size/owner stay out of the summary, as they do
 from the quota.
 
 The gallery refreshes the summary along with its captures every twelve seconds
-and after its actions. It shows the available space, the permanent deletion
-needed to free the trash, the reservations and the deletions still in progress.
+and after its actions. Under the bar it says what the figure holds besides the
+captures on show, one line each when not zero: the trash, the uploads still
+arriving and the files still being erased. A gallery that looks empty can
+therefore still use space; **Empty trash** frees the trash in one action.
 A full quota reminds the user that a rejected upload keeps the local GLB. When a
 refresh fails, the previous figures are removed and an unavailability message
 is shown; captures stay accessible. An old slow response, successful or failed,

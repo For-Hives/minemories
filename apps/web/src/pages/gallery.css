@@ -737,6 +737,17 @@
 .gallery-trash {
 	margin-top: var(--ds-sp-7);
 }
+/* The heading and its note on the left, "Empty trash" on the right; the button drops below them when the row is narrow. */
+.gallery-trash-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+}
+.gallery-trash-head > button {
+	flex: none;
+}
 .gallery-trash-note {
 	margin: var(--ds-sp-1) 0 var(--ds-sp-4);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);

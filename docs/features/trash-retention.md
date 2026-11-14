@@ -1,5 +1,18 @@
 # Memory recovery windows
 
+## Emptying the trash
+
+The Trash section has **Empty trash**: after one confirmation in the gallery's
+own panel (it says how many captures go), `memories.emptyTrash` deletes every
+capture of the owner's trash for good in one SQLite transaction and answers
+`{ deleted }`. Like Delete forever, it only takes captures that are in the
+trash, never a live one or another account's; their files join
+[the durable deletion queue](durable-deletions.md), which the call wakes
+without waiting for the store. The cards wait while it runs, the section
+leaves as soon as it answers, and a late trash listing cannot bring it back.
+
+## Retention
+
 Moving a memory to the trash now keeps it for thirty 24-hour days, i.e.
 2,592,000,000 ms. The deletion date and the deadline are stored together in
 `deleted_at` and `purge_after`. Restoring the memory clears both dates; moving

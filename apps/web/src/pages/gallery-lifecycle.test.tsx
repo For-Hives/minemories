@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
 	trash: vi.fn(),
 	restore: vi.fn(),
 	remove: vi.fn(),
+	emptyTrash: vi.fn(),
+	storage: vi.fn(),
 	rename: vi.fn(),
 	shareStatus: vi.fn(),
 	createShare: vi.fn(),
@@ -36,13 +38,7 @@ vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
 	apiClient: {
 		account: {
-			storage: async () => ({
-				availableBytes: 1000,
-				limitBytes: 1000,
-				usedBytes: 0,
-				pendingDeletionBytes: 0,
-				reservedBytes: 0,
-			}),
+			storage: () => mocks.storage(),
 		},
 		pairing: { status: async () => ({ paired: false }) },
 		memories: {
@@ -51,6 +47,7 @@ vi.mock('../api-client', () => ({
 			trash: mocks.trash,
 			restore: mocks.restore,
 			delete: mocks.remove,
+			emptyTrash: mocks.emptyTrash,
 			rename: mocks.rename,
 			shareStatus: mocks.shareStatus,
 			createShare: mocks.createShare,
@@ -114,6 +111,19 @@ beforeEach(() => {
 	})
 	mocks.remove.mockImplementation(async ({ id }) => {
 		trash = trash.filter(m => m.id !== id)
+	})
+	mocks.emptyTrash.mockImplementation(async () => {
+		const deleted = trash.length
+		trash = []
+		return { deleted }
+	})
+	mocks.storage.mockResolvedValue({
+		availableBytes: 1000,
+		limitBytes: 1000,
+		usedBytes: 0,
+		pendingDeletionBytes: 0,
+		reservedBytes: 0,
+		trashBytes: 0,
 	})
 	mocks.rename.mockImplementation(async ({ id, name }) => {
 		memories = memories.map(m => (m.id === id ? { ...m, name } : m))
@@ -250,6 +260,124 @@ test('delete forever answers at once, holds the card buttons and drops the card 
 	expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull()
 	expect(mocks.trashList).toHaveBeenCalledTimes(3)
 })
+test('empty trash asks once, deletes every trashed capture in one request and moves the focus to the page title', async () => {
+	const trashed = (id: string, name: string) => ({
+		...capture(id, name),
+		deletedAt: new Date().toISOString(),
+		purgeAt: new Date(Date.now() + 86400000).toISOString(),
+	})
+	trash = [trashed('one', 'Cabin'), trashed('two', 'Tower'), trashed('three', 'Mill')]
+	memories = []
+	page()
+	const bin = await screen.findByRole('region', { name: 'Trash' })
+	const empty = within(bin).getByRole('button', { name: 'Empty trash' })
+	// Cancel asks nothing of the server and gives the focus back.
+	empty.focus()
+	fireEvent.click(empty)
+	const ask = screen.getByRole('alertdialog', { name: 'Empty the trash?' })
+	expect(ask.textContent).toContain('Everything in it is deleted forever: 3 captures. This cannot be undone.')
+	fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }))
+	expect(screen.queryByRole('alertdialog')).toBeNull()
+	expect(document.activeElement).toBe(empty)
+	expect(mocks.emptyTrash).not.toHaveBeenCalled()
+	// Confirmed: one request, every card waits while it runs, and the trash leaves at once when it answers.
+	const erasing = deferred<void>()
+	mocks.emptyTrash.mockImplementationOnce(async () => {
+		await erasing.promise
+		const deleted = trash.length
+		trash = []
+		return { deleted }
+	})
+	fireEvent.click(empty)
+	fireEvent.click(
+		within(screen.getByRole('alertdialog', { name: 'Empty the trash?' })).getByRole('button', { name: 'Empty trash' })
+	)
+	expect(mocks.emptyTrash).toHaveBeenCalledTimes(1)
+	expect((within(bin).getByRole('button', { name: 'Emptying…' }) as HTMLButtonElement).disabled).toBe(true)
+	for (const name of ['Cabin', 'Tower', 'Mill']) {
+		const item = within(bin).getByRole('heading', { name }).closest('article') as HTMLElement
+		expect((within(item).getByRole('button', { name: 'Deleting…' }) as HTMLButtonElement).disabled).toBe(true)
+	}
+	// A reload that answers late with the old trash cannot bring it back.
+	const stale = deferred<typeof trash>()
+	const before = structuredClone(trash)
+	mocks.trashList.mockImplementationOnce(() => stale.promise)
+	fireEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+	// The reload after emptying is slow too: the trash leaves before it answers.
+	const after = deferred<typeof trash>()
+	mocks.trashList.mockImplementationOnce(() => after.promise)
+	await act(async () => {
+		erasing.resolve()
+		await erasing.promise
+	})
+	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
+	expect(mocks.notify).toHaveBeenCalledWith('Trash emptied.')
+	expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your memories', level: 1 }))
+	await act(async () => {
+		stale.resolve(before)
+		await stale.promise
+	})
+	expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull()
+	await act(async () => {
+		after.resolve([])
+		await after.promise
+	})
+	expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull()
+	expect(mocks.remove).not.toHaveBeenCalled()
+})
+
+test('a refused empty trash keeps every capture in it and says so', async () => {
+	trash = [
+		{ ...capture(), deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 86400000).toISOString() },
+	]
+	memories = []
+	mocks.emptyTrash.mockRejectedValueOnce(new Error('offline'))
+	page()
+	const bin = await screen.findByRole('region', { name: 'Trash' })
+	fireEvent.click(within(bin).getByRole('button', { name: 'Empty trash' }))
+	fireEvent.click(
+		within(screen.getByRole('alertdialog', { name: 'Empty the trash?' })).getByRole('button', { name: 'Empty trash' })
+	)
+	expect((await screen.findByRole('alert')).textContent).toBe('Could not empty the trash.')
+	expect(within(bin).getByRole('heading', { name: 'Cabin' })).toBeTruthy()
+	expect((within(bin).getByRole('button', { name: 'Empty trash' }) as HTMLButtonElement).disabled).toBe(false)
+	expect(mocks.notify).not.toHaveBeenCalledWith('Trash emptied.')
+})
+
+test('the storage card says what the figure holds besides the captures on show', async () => {
+	mocks.storage.mockResolvedValue({
+		availableBytes: 0,
+		limitBytes: 3072,
+		usedBytes: 3072,
+		pendingDeletionBytes: 1024,
+		reservedBytes: 512,
+		trashBytes: 1536,
+	})
+	memories = []
+	trash = []
+	page()
+	const card = await screen.findByRole('region', { name: 'Gallery storage' })
+	await waitFor(() =>
+		expect(
+			within(card)
+				.getAllByRole('listitem')
+				.map(item => item.textContent)
+		).toEqual(['Includes 1.5 KiB in the trash.', '512 B reserved for uploads in progress.', '1 KiB being deleted.'])
+	)
+	cleanup()
+	mocks.storage.mockResolvedValue({
+		availableBytes: 1000,
+		limitBytes: 1000,
+		usedBytes: 0,
+		pendingDeletionBytes: 0,
+		reservedBytes: 0,
+		trashBytes: 0,
+	})
+	page()
+	const clean = await screen.findByRole('region', { name: 'Gallery storage' })
+	expect(within(clean).queryByRole('list')).toBeNull()
+})
+
 test('the confirmation closes by itself when its snapshot leaves the trash elsewhere, without deleting anything', async () => {
 	const stamp = { deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 86400000).toISOString() }
 	trash = [

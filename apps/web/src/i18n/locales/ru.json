@@ -1429,5 +1429,14 @@
 	"This view could not be captured. Move the camera, then retake.": "Не удалось снять этот вид. Подвинь камеру и сними заново.",
 	"Could not save the picture. Try again.": "Не удалось сохранить картинку. Попробуй ещё раз.",
 	"Saved: this view is now your server’s picture.": "Сохранено: этот вид теперь картинка твоего сервера.",
-	"Could not rename this server.": "Не удалось переименовать этот сервер."
+	"Could not rename this server.": "Не удалось переименовать этот сервер.",
+	"Empty trash": "Очистить корзину",
+	"Emptying…": "Очистка…",
+	"Empty the trash?": "Очистить корзину?",
+	"Everything in it is deleted forever: {captures}. This cannot be undone.": "Всё, что в ней есть, будет удалено навсегда: {captures}. Это действие нельзя отменить.",
+	"Trash emptied.": "Корзина очищена.",
+	"Could not empty the trash.": "Не удалось очистить корзину.",
+	"Includes {size} in the trash.": "Из них {size} в корзине.",
+	"{size} reserved for uploads in progress.": "{size} зарезервировано для текущих загрузок.",
+	"{size} being deleted.": "{size} удаляется."
 }
