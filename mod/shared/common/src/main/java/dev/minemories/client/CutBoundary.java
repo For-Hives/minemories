@@ -137,6 +137,11 @@ final class CutBoundary {
       pending.add(new int[] {x, y, z});
     }
 
+    /** All sky: nothing is ever sealed, for a volume that is captured whole. */
+    static OpenAir sky(CaptureBounds bounds) {
+      return new OpenAir(bounds, (x, y, z) -> true, (x, z) -> bounds.minY() - 1, new int[0][]);
+    }
+
     /** Visits at most {@code cells} queued cells; true when the fill is finished. */
     boolean advance(int cells) {
       int[][] steps = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};

@@ -1395,6 +1395,18 @@ public final class ClientRuntime {
         }
       }
       int entityCount = captureEntities(renderedModels, mc, min, max, center);
+      VolumeCapture volumes =
+          new VolumeCapture(
+              mc,
+              CaptureVolume.around(
+                  level,
+                  new CaptureBounds(
+                      min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ())),
+              center);
+      while (!volumes.done()) volumes.step(scene, sprites, renderedModels);
+      blockCount += volumes.blocks();
+      entityCount += volumes.entities();
+      if (volumes.volumes() > 0) LOGGER.info("Moving structures captured: {}", volumes.volumes());
       renderedModels.reportSkipped();
       if (!scene.hasGeometry()) {
         captureFailure = I18n.get("minemories.chat.no_blocks");

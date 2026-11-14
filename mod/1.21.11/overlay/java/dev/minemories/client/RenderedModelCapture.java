@@ -18,7 +18,7 @@ import net.minecraft.resources.Identifier;
 /** Captures the renderer's transformed primitives and the texture actually used by that pass. */
 final class RenderedModelCapture {
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
-  private final CaptureSink scene;
+  private CaptureSink scene;
   private final Minecraft minecraft;
   private final CapturePixels pixelCopies;
   private final Map<Identifier, Texture> textures = new LinkedHashMap<>();
@@ -76,6 +76,24 @@ final class RenderedModelCapture {
         level != null
             && level.getShade(net.minecraft.core.Direction.DOWN, true)
                 == level.getShade(net.minecraft.core.Direction.UP, true);
+  }
+
+  interface Action {
+    void run() throws IOException;
+  }
+
+  /**
+   * Runs {@code action} with this capture's textures and limits, its primitives going to {@code
+   * target} (a moved volume, for instance) instead of the capture's own sink.
+   */
+  void through(CaptureSink target, Action action) throws IOException {
+    CaptureSink previous = scene;
+    scene = target;
+    try {
+      action.run();
+    } finally {
+      scene = previous;
+    }
   }
 
   /** Logs what the limits dropped from this capture (counts only), once the capture is done. */
