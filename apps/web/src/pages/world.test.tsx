@@ -28,6 +28,7 @@ vi.mock('../api-client', () => ({
 vi.mock('../viewer-scene', () => ({
 	formatClock: (minutes: number) => String(minutes),
 	ViewerScene: class {
+		flight = { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null }
 		constructor() {
 			mocks.construct()
 		}

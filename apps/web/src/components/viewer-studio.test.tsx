@@ -16,7 +16,7 @@ function mount(ready = true, layers: string[] = [], hidden: string[] = []) {
 		setLighting: vi.fn(),
 		setTour: vi.fn(),
 		setFirstPerson: vi.fn(),
-		moveFirstPerson: vi.fn(),
+		flight: { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null },
 		setMinutes: vi.fn(),
 		resetView: vi.fn(),
 		snapshot: vi.fn(),
@@ -128,19 +128,17 @@ test('the lazy viewer opens with a full-screen loading surface rather than galle
 	expect(document.querySelector('.mm-skeleton-card')).toBeNull()
 })
 
-test('first person stops contemplation, offers movement controls and returns to orbit', () => {
+test('first person stops contemplation, explains the keys and returns to orbit', () => {
 	const scene = mount()
 	fireEvent.click(screen.getByRole('button', { name: 'First person' }))
 	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(true)
 	expect(screen.getByRole('button', { name: 'Take a moment' }).getAttribute('aria-pressed')).toBe('false')
-	const forward = screen.getByRole('button', { name: 'Forward' })
-	fireEvent.keyDown(forward, { key: 'Enter' })
-	expect(scene.moveFirstPerson).toHaveBeenLastCalledWith('forward', true)
-	fireEvent.keyUp(forward, { key: 'Enter' })
-	expect(scene.moveFirstPerson).toHaveBeenLastCalledWith('forward', false)
+	expect(screen.getByRole('region', { name: 'Explore' }).textContent).toContain(
+		'W A S D fly · Space up · C down · Left Shift or W twice: sprint · Wheel: speed'
+	)
 	fireEvent.click(screen.getByRole('button', { name: 'Recenter' }))
 	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(false)
-	expect(screen.queryByRole('button', { name: 'Forward' })).toBeNull()
+	expect(screen.queryByRole('region', { name: 'Explore' })).toBeNull()
 })
 
 test('keyboard shortcuts drive recenter, tour and immersion but ignore form fields', () => {
@@ -190,7 +188,7 @@ test('the capture time button returns the light to the moment the memory was rec
 		setLighting: vi.fn(),
 		setTour: vi.fn(),
 		setFirstPerson: vi.fn(),
-		moveFirstPerson: vi.fn(),
+		flight: { setControls: vi.fn(), setTouch: vi.fn(), onSpeedChange: null },
 		setMinutes: vi.fn(),
 		resetView: vi.fn(),
 		snapshot: vi.fn(),
