@@ -78,6 +78,7 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 			availableBytes: 24,
 			reservedBytes: 364,
 			pendingDeletionBytes: 336,
+			trashBytes: 200,
 		})
 		expect(accountStorageSummary(fixture, 'two')).toEqual({
 			usedBytes: 27000,
@@ -85,6 +86,7 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 			availableBytes: 0,
 			reservedBytes: 9000,
 			pendingDeletionBytes: 9000,
+			trashBytes: 0,
 		})
 		expect(accountStorageSummary(fixture, 'missing')).toEqual({
 			usedBytes: 0,
@@ -92,6 +94,7 @@ test('usage includes trash, expired reservations and pending cleanup, but exclud
 			availableBytes: 1024,
 			reservedBytes: 0,
 			pendingDeletionBytes: 0,
+			trashBytes: 0,
 		})
 		expect(accountStorageFits(fixture, 'one', 24)).toBe(true)
 		expect(accountStorageFits(fixture, 'one', 25)).toBe(false)

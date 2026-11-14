@@ -14,6 +14,7 @@ const {
 	createPairingCode,
 	createShareLink,
 	deleteMemory,
+	emptyTrash,
 	exchangePairingCode,
 	getDeviceFromToken,
 	getMemoryFile,
@@ -371,4 +372,40 @@ test('a world link and a snapshot link coexist and each replaces only its own ki
 	if (!last) throw new Error('Share creation unexpectedly failed.')
 	for (const id of ['world-1', 'world-2', 'world-3']) trashMemory('user-w', id)
 	expect(getSharedMemory(last.token)).toBeNull()
+})
+
+test('emptying the trash deletes every trashed capture of its owner for good, and nothing else', () => {
+	const { code } = createPairingCode('empty-owner')
+	const paired = exchangePairingCode(code, 'Fixture')
+	const { code: otherCode } = createPairingCode('empty-other')
+	const other = exchangePairingCode(otherCode, 'Fixture')
+	if (!(paired && other)) throw new Error('Pairing fixture failed')
+	const add = (userId: string, deviceId: string, id: string) =>
+		addMemory({ id, userId, deviceId, name: id, objectKey: `${userId}/${id}.glb`, size: 7 })
+	add('empty-owner', paired.deviceId, 'empty-live')
+	add('empty-owner', paired.deviceId, 'empty-old')
+	add('empty-owner', paired.deviceId, 'empty-recent')
+	add('empty-other', other.deviceId, 'empty-foreign')
+	for (const [userId, id] of [
+		['empty-owner', 'empty-old'],
+		['empty-owner', 'empty-recent'],
+		['empty-other', 'empty-foreign'],
+	] as const)
+		expect(trashMemory(userId, id)).toBe(true)
+
+	expect(emptyTrash('empty-owner').sort()).toEqual(['empty-owner/empty-old.glb', 'empty-owner/empty-recent.glb'])
+	expect(listTrash('empty-owner')).toEqual([])
+	// The live capture and another account's trash stay; the files wait in the deletion queue with their size.
+	expect(listMemories('empty-owner')).toMatchObject([{ id: 'empty-live' }])
+	expect(listTrash('empty-other')).toMatchObject([{ id: 'empty-foreign' }])
+	expect(
+		database
+			.query("SELECT object_key, user_id, size FROM object_deletions WHERE user_id = 'empty-owner' ORDER BY object_key")
+			.all()
+	).toEqual([
+		{ object_key: 'empty-owner/empty-old.glb', user_id: 'empty-owner', size: 7 },
+		{ object_key: 'empty-owner/empty-recent.glb', user_id: 'empty-owner', size: 7 },
+	])
+	expect(emptyTrash('empty-owner')).toEqual([])
+	expect(emptyTrash('nobody')).toEqual([])
 })

@@ -189,6 +189,23 @@ export function deleteMemory(userId: string, id: string): string | null {
 	return row.object_key
 }
 
+/**
+ * Empties the owner's trash: every capture in it is deleted for good in one transaction, the live ones never. Returns the
+ * storage keys queued for deletion, one per capture.
+ */
+export function emptyTrash(userId: string): string[] {
+	return database.transaction(() => {
+		database
+			.query(`INSERT INTO object_deletions (object_key, created_at, user_id, size)
+			SELECT object_key, ?, user_id, size FROM memories WHERE user_id = ? AND deleted_at IS NOT NULL`)
+			.run(Date.now(), userId)
+		const rows = database
+			.query('DELETE FROM memories WHERE user_id = ? AND deleted_at IS NOT NULL RETURNING object_key')
+			.all(userId) as Array<{ object_key: string }>
+		return rows.map(row => row.object_key)
+	})()
+}
+
 export function purgeDeletedMemories(now = Date.now()): string[] {
 	return database.transaction(() => {
 		database

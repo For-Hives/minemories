@@ -1429,5 +1429,14 @@
 	"This view could not be captured. Move the camera, then retake.": "이 시점을 찍을 수 없습니다. 카메라를 움직인 다음 다시 찍으세요.",
 	"Could not save the picture. Try again.": "이미지를 저장할 수 없습니다. 다시 시도하세요.",
 	"Saved: this view is now your server’s picture.": "저장했습니다. 이제 이 시점이 서버 이미지입니다.",
-	"Could not rename this server.": "이 서버의 이름을 바꿀 수 없습니다."
+	"Could not rename this server.": "이 서버의 이름을 바꿀 수 없습니다.",
+	"Empty trash": "휴지통 비우기",
+	"Emptying…": "비우는 중…",
+	"Empty the trash?": "휴지통을 비울까요?",
+	"Everything in it is deleted forever: {captures}. This cannot be undone.": "안에 있는 모든 항목이 완전히 삭제됩니다: {captures}. 되돌릴 수 없습니다.",
+	"Trash emptied.": "휴지통을 비웠습니다.",
+	"Could not empty the trash.": "휴지통을 비울 수 없습니다.",
+	"Includes {size} in the trash.": "이 중 {size}는 휴지통에 있습니다.",
+	"{size} reserved for uploads in progress.": "{size}는 진행 중인 업로드용으로 예약되어 있습니다.",
+	"{size} being deleted.": "{size} 삭제 중입니다."
 }

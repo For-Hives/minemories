@@ -30,3 +30,14 @@
 .gallery-storage-bar .gallery-meter-fill {
 	background: var(--_level, var(--c-green));
 }
+
+/* What the figure holds besides the captures on show (trash, uploads arriving, files being erased): one short line each. */
+.gallery-storage-parts {
+	display: grid;
+	gap: var(--ds-sp-1);
+	margin: var(--ds-sp-2) 0 0;
+	padding: 0;
+	list-style: none;
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+}

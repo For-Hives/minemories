@@ -180,6 +180,8 @@ export const apiContract = {
 				availableBytes: z.number().int().nonnegative(),
 				reservedBytes: z.number().int().nonnegative(),
 				pendingDeletionBytes: z.number().int().nonnegative(),
+				/** Captures in the trash: they count until they are deleted for good. An older API omits it. */
+				trashBytes: z.number().int().nonnegative().default(0),
 			})
 		),
 	},
@@ -211,6 +213,8 @@ export const apiContract = {
 		trash: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
 		restore: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
 		delete: oc.input(z.object({ id: z.string().uuid() })).output(z.object({ ok: z.literal(true) })),
+		/** Deletes every capture in the trash for good; `deleted` counts them. */
+		emptyTrash: oc.output(z.object({ deleted: z.number().int().nonnegative() })),
 		/** The viewer's automatic preview; ignored once the owner has chosen this capture's picture (`setCover`). */
 		setThumbnail: oc
 			.input(z.object({ id: z.string().uuid(), thumbnail: thumbnailDataUrl, icon: thumbnailDataUrl.nullish() }))
