@@ -251,6 +251,55 @@ files pass the viewer and API validators; the viewer (headless Chromium, SwiftSh
 visible difference. In-game validation: not done (entity, bed, chest and sign atlases are handled the same way; to
 be checked with the next JAR on modded textures).
 
+## Shared sprite pages (`SpriteAtlas`, 15 November 2026)
+
+Each block texture used to get its own image, material and primitive. In the viewer each primitive is one draw call.
+A modded capture had over 1,000 materials. A very varied area went over the API limits ([spooling GLB](spooling-glb.md#limits-and-format)).
+Both writers now pack the small sprites into shared 512 × 512 pages while quads arrive. Quads that differed only by
+their sprite then share one material and one primitive.
+
+- **What is packed**: OPAQUE and MASK quads whose image is a square power-of-two PNG of 8 to 64 texels, with UVs
+  inside the sprite (a 1e-4 overshoot is clamped). BLEND materials keep their own image, because the viewer checks a
+  blended texture as a whole for cutout texels. Water (`minecraft:water`, `block/water_still|flow`), beacon beams
+  (`beacon_beam`) and cut faces (`minemories:cut…`) also keep theirs, because the viewer and the writer recognise
+  them by name or key. Repeating UVs, animated strips (taller than wide), larger textures and renderer atlases
+  (`rendered/…/textures/atlas/…`, handled by the repack above) are not packed either.
+- **Layout**: a sprite of side S takes a 2S slot aligned on 2S. The sprite sits in the middle, and S/2 texels of it
+  are repeated around it, wrapping as the REPEAT sampler would. Each page holds one sprite size. Placement follows
+  arrival order, so the same quads always give the same pages.
+- **Sampling**: the viewer samples with mipmaps and anisotropic filtering. Up to the mip level where one texel covers
+  the whole slot (level 5 for a 16-texel sprite), every sample reads the same texels as the sprite's own image would,
+  borders included. Further away, a texel averages the slot with its neighbours. This only shows on very distant
+  faces at grazing angles, where the colour was already one averaged texel.
+- **Material**: the key becomes page + tint + emission + alpha mode + opacity. Its name is `minemories:atlas/<page>`,
+  with ` (cutout)` for MASK. The page's name no longer gives the block, so the material lists the original names of
+  the materials packed into it, in arrival order, in `extras.minemoriesMaterials` (the in-game tests read
+  them there). The per-chunk statistics
+  (`asset.extras.minemories`) and the chunk fingerprints ([chunk score](chunk-score.md)) still use the block's own
+  name, so a chunk captured before and after this change keeps its fingerprint. The viewer only reads names for water
+  and beams, and those are never packed. Old captures open unchanged.
+- **Identity**: a packed sprite never goes through the spool's image check, so `SpoolingGlbScene` checks it itself:
+  the same image key with other bytes is refused, as for any other image.
+- **Writing**: pages are drawn at write time (`GlbScene.write`, `SpoolingGlbScene` when sealed, before the atlas
+  optimisation). In the spool, a sprite's PNG stays in memory until then: at most 16 KiB per 64² sprite.
+
+Measured on Lalaland (Fabric 1.21.1 modpack). "Before" is a capture of the place with the JAR without packing,
+"after" a new capture of the same place, radius and origin with packing. Both were uploaded and accepted by the API:
+
+| Capture | Materials | Images | Buffer views | JSON | File |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Farm, radius 64 | 1,090 → 327 | 920 → 108 | 5,280 → 1,416 | 1.35 → 0.40 MB | 23.5 → 25.3 MB |
+| Test sector, every block, radius 7 | 1,652 → 218 | 1,458 → 114 | 8,066 → 986 | 1.95 → 0.25 MB | 5.4 → 4.5 MB |
+| 263 item frames and chests, radius 56 | 807 → 228 | 634 → 55 | 3,862 → 967 | 1.04 → 0.28 MB | 32.2 → 32.7 MB |
+| Three test sectors (6,000 blocks), radius 64 | refused (JSON over 4 MiB) → 560 | 310 | 2,550 | 0.68 MB | 61.1 MB |
+
+Draw calls per frame in the viewer (headless Chromium on the GPU, 1280 × 800, default framing of each file): farm
+1,111 → 358, sector 267 → 51, item frames 248 → 85. Pixel comparison of the two views: 0.19%, 0.04% and 3.8% of
+pixels differ by more than 24/255. On the item frames the difference follows edges (the two captures are framed one
+pixel apart) and distant textures; enlarged crops look the same. Blender 5.2.2 LTS (EEVEE) imports the packed farm
+and sector with no bleeding between sprites. In the core tests, a column
+of 8,000 different blocks that used to take 9,275 materials now fits in a few pages, under a tenth of the JSON limit.
+
 ## Preparation cost
 
 Local measurements on a Ryzen 5 3600, Btrfs, Temurin 21.0.12.1+1, 512 MiB heap:

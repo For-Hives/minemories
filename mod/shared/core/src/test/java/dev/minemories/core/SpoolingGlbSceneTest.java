@@ -285,6 +285,45 @@ final class SpoolingGlbSceneTest {
   }
 
   @Test
+  void smallSpritesAreDrawnIntoSharedPagesWhenTheSceneIsWritten() throws IOException {
+    Path output = temporary.resolve("atlas.glb");
+    try (SpoolingGlbScene scene = new SpoolingGlbScene(temporary)) {
+      for (int i = 0; i < 300; i++)
+        scene.addQuad(
+            "block" + i,
+            "mod:block" + i,
+            "block/" + i,
+            SpriteAtlasTest.sprite(16, i),
+            0x70ff98,
+            0,
+            0,
+            1,
+            XYZ,
+            UV);
+      // A blended sprite keeps its own image.
+      scene.addQuad(
+          "glass",
+          "glass",
+          "block/glass",
+          SpriteAtlasTest.sprite(16, 999),
+          0xffffff,
+          2,
+          0,
+          1,
+          XYZ,
+          UV);
+      scene.write(output);
+      assertEquals(3, scene.metrics().textures());
+    }
+    String json = json(output);
+    // 300 sprites: two pages (256 a page) and the glass.
+    assertTrue(json.contains("\"name\":\"minemories:atlas/0\""));
+    assertTrue(json.contains("\"name\":\"minemories:atlas/1\""));
+    assertTrue(json.contains("\"name\":\"block/glass\""));
+    noSpools();
+  }
+
+  @Test
   void aSceneOverTheApiLimitsIsRefusedBeforeWritingEvenWithWiderOwnLimits() throws IOException {
     var wide = limits(5000, 5000, 1, 4096, 64 * 1024 * 1024, 1_000_000_000, 1_000_000_000, 2);
     Path output = temporary.resolve("varied.glb");
@@ -406,6 +445,68 @@ final class SpoolingGlbSceneTest {
       }
       noSpools();
     }
+    // A packed sprite never reaches image(): redefining it is refused all the same.
+    try (SpoolingGlbScene scene = scene()) {
+      byte[] stone = SpriteAtlasTest.sprite(16, 1);
+      scene.addQuad("stone", "stone", "block/stone", stone, 0, 0, 0, 1, XYZ, UV);
+      scene.addQuad("again", "stone", "block/stone", stone.clone(), 0, 0, 0, 1, XYZ, UV);
+      byte[] other = SpriteAtlasTest.sprite(16, 2);
+      assertThrows(
+          IOException.class,
+          () -> scene.addQuad("other", "stone", "block/stone", other, 0, 0, 0, 1, XYZ, UV));
+    }
+    noSpools();
+  }
+
+  @Test
+  void bothWritersPackTheSameSpritesIntoTheSameBytes() throws IOException {
+    GlbScene legacy = new GlbScene();
+    SpriteAtlas expected = new SpriteAtlas();
+    Path old = temporary.resolve("old-pages.glb"), output = temporary.resolve("new-pages.glb");
+    float[] tiled = {0, 0, 2, 0, 2, 1, 0, 1};
+    try (SpoolingGlbScene scene = scene()) {
+      for (int i = 0; i < 300; i++) {
+        // Opaque, cutout and glowing sprites of two sizes: 294 of 16 texels (two pages) and six
+        // of 32 (one page).
+        int size = i % 50 == 0 ? 32 : 16;
+        int alpha = i % 3 == 1 ? 1 : 0;
+        float emission = i % 7 == 0 ? 0.5f : 0;
+        byte[] png = SpriteAtlasTest.sprite(size, i);
+        String image = "block/" + i, name = "mod:block" + i + " / " + image;
+        legacy.addQuad("b" + i, name, image, png, 0x70ff98, alpha, emission, 1, XYZ, UV);
+        scene.addQuad("b" + i, name, image, png, 0x70ff98, alpha, emission, 1, XYZ, UV);
+        expected.route("b" + i, name, image, png, 0x70ff98, alpha, emission, 1, UV.clone());
+      }
+      // A tiled quad of a packed sprite and a blended sprite keep their own image.
+      byte[] first = SpriteAtlasTest.sprite(32, 0);
+      legacy.addQuad("tiled", "tiled", "block/0", first, 0xffffff, 0, 0, 1, XYZ, tiled);
+      scene.addQuad("tiled", "tiled", "block/0", first, 0xffffff, 0, 0, 1, XYZ, tiled);
+      byte[] glass = SpriteAtlasTest.sprite(16, 999);
+      legacy.addQuad("glass", "glass", "block/glass", glass, 0xffffff, 2, 0, 1, XYZ, UV);
+      scene.addQuad("glass", "glass", "block/glass", glass, 0xffffff, 2, 0, 1, XYZ, UV);
+      legacy.write(old);
+      scene.write(output);
+      assertEquals(5, scene.metrics().textures());
+    }
+    byte[] bytes = Files.readAllBytes(output);
+    assertArrayEquals(Files.readAllBytes(old), bytes);
+    assertEquals(3, expected.pageCount());
+    // Every page is embedded as drawn, wrap borders included; packed sprites are not.
+    for (int page = 0; page < 3; page++)
+      assertTrue(contains(bytes, expected.png(SpriteAtlas.PREFIX + page)), "page " + page);
+    assertFalse(contains(bytes, SpriteAtlasTest.sprite(16, 1)));
+    assertTrue(contains(bytes, SpriteAtlasTest.sprite(32, 0)));
+    assertTrue(contains(bytes, SpriteAtlasTest.sprite(16, 999)));
+    noSpools();
+  }
+
+  private static boolean contains(byte[] haystack, byte[] needle) {
+    outer:
+    for (int start = 0; start <= haystack.length - needle.length; start++) {
+      for (int i = 0; i < needle.length; i++) if (haystack[start + i] != needle[i]) continue outer;
+      return true;
+    }
+    return false;
   }
 
   @Test

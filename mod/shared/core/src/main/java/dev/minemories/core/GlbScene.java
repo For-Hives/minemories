@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
@@ -34,6 +36,7 @@ public final class GlbScene {
   private final GlbMetadata metadata = new GlbMetadata();
   private final int[] quadsByCategory = new int[GlbCategory.values().length];
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
+  private final SpriteAtlas spriteAtlas = new SpriteAtlas();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
   /** Non-personal technical description written into {@code asset.extras.minemories}. */
@@ -133,22 +136,35 @@ public final class GlbScene {
     if (!QuadGeometry.normal(xyz, normal)) return;
     float safeEmission = Float.isFinite(emission) ? emission : 0;
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
+    // Small sprites share pages: the quad's UVs move into its page (on a copy: callers reuse
+    // arrays).
+    float[] quadUv = uv.clone();
+    SpriteAtlas.Route route =
+        spriteAtlas.route(
+            key, materialName, imageKey, png, tint, alphaMode, safeEmission, safeOpacity, quadUv);
+    String partName = route == null ? materialName : route.name();
+    String partImage = route == null ? imageKey : route.imageKey();
+    byte[] partPng = route == null ? png : null;
     Part part =
         parts.computeIfAbsent(
-            category.ordinal() + (doubleSided ? ":2:" : ":1:") + key,
+            category.ordinal()
+                + (doubleSided ? ":2:" : ":1:")
+                + (route == null ? key : route.key()),
             ignored ->
                 new Part(
                     parts.size(),
                     category,
                     doubleSided,
                     new ChunkRuns(runBudget),
-                    materialName,
-                    imageKey,
-                    png,
+                    partName,
+                    partImage,
+                    partPng,
                     tint,
                     alphaMode,
                     safeEmission,
                     safeOpacity));
+    uv = quadUv;
+    if (route != null) part.packed.add(materialName);
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
     stats.quad(category, chunkX, chunkZ, materialName, xyz);
     int before = part.indexCount / 3;
@@ -303,10 +319,10 @@ public final class GlbScene {
       if (texture == null) {
         align(binary);
         int offset = binary.size();
-        byte[] png =
-            repacked.containsKey(part.imageKey)
-                ? repacked.get(part.imageKey)
-                : atlasUsage.get(part.imageKey).optimize(part.png);
+        byte[] png;
+        if (SpriteAtlas.isPage(part.imageKey)) png = spriteAtlas.png(part.imageKey);
+        else if (repacked.containsKey(part.imageKey)) png = repacked.get(part.imageKey);
+        else png = atlasUsage.get(part.imageKey).optimize(part.png);
         binary.write(png);
         int view = views.size();
         views.add("{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + png.length + "}");
@@ -358,6 +374,7 @@ public final class GlbScene {
               + (part.doubleSided ? DOUBLE_SIDED : "")
               + alpha
               + emissive
+              + packedNames(part.packed)
               + "}");
       materialIndex++;
     }
@@ -584,6 +601,18 @@ public final class GlbScene {
   /** glTF materials are single-sided (back-face culled) unless they carry this property. */
   static final String DOUBLE_SIDED = ",\"doubleSided\":true";
 
+  /**
+   * The names of the materials packed into a shared page material ({@link SpriteAtlas}), which the
+   * page's own name no longer tells: kept in its extras for tools and people reading the file.
+   */
+  static String packedNames(Set<String> names) {
+    if (names.isEmpty()) return "";
+    StringBuilder json = new StringBuilder(",\"extras\":{\"minemoriesMaterials\":[");
+    int index = 0;
+    for (String name : names) json.append(index++ > 0 ? ",\"" : "\"").append(esc(name)).append('"');
+    return json.append("]}").toString();
+  }
+
   private static final class Part {
     final int id;
     final GlbCategory category;
@@ -605,6 +634,9 @@ public final class GlbScene {
     final UvBounds uvBounds = new UvBounds();
     double[] uvTransform;
     int vertices, indexCount;
+
+    /** The materials of the sprites packed into this one, in arrival order. */
+    final Set<String> packed = new LinkedHashSet<>();
 
     Part(
         int id,
