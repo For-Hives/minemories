@@ -3,7 +3,6 @@ import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { buttonDark, buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
-import { formatBytes, formatExactBytes } from '../lib/bytes'
 import { gigabytesInput, parseGigabytes } from '../lib/storage-limits'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -15,71 +14,6 @@ function roleLabels(t: Translate): Record<StorageRole, { name: string; holders: 
 		admin: { name: t('Admin'), holders: t('Administrators') },
 	}
 }
-function LimitCell({ row }: { row: RoleStorage }) {
-	const { t, locale } = useI18n()
-	const size = formatBytes(row.effectiveBytes, locale)
-	if (row.limitBytes === null && row.role === 'user') return <strong>{t('{size} (server default)', { size })}</strong>
-	return (
-		<>
-			<strong>{row.limitBytes === null ? t('Not set') : formatBytes(row.limitBytes, locale)}</strong>
-			{row.role !== 'user' && <small>{t('Accounts with this role get {size}', { size })}</small>}
-			{row.limitBytes !== null && <small>{formatExactBytes(row.limitBytes, locale)}</small>}
-		</>
-	)
-}
-
-/** Storage limit of each role. An account gets the largest limit among the roles it holds. */
-export function RoleStorageSection({ roles, onEdit }: { roles: RoleStorage[]; onEdit(row: RoleStorage): void }) {
-	const { t, locale } = useI18n(),
-		labels = roleLabels(t)
-	return (
-		<section className="mm-admin-card" aria-labelledby="role-storage-title">
-			<h2 id="role-storage-title">{t('Storage by role')}</h2>
-			<p>
-				{t(
-					'An account gets the largest limit among its roles. Lowering a limit deletes nothing: it only blocks new uploads.'
-				)}
-			</p>
-			<div className="mm-admin-table-wrap">
-				<table className="mm-admin-users">
-					<thead>
-						<tr>
-							<th>{t('Role')}</th>
-							<th>{t('Holders')}</th>
-							<th>{t('Limit')}</th>
-							<th>{t('Actions')}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{roles.map(row => (
-							<tr key={row.role}>
-								<td className="mm-admin-account">
-									<strong>{labels[row.role].name}</strong>
-									<small>{labels[row.role].holders}</small>
-								</td>
-								<td data-label={t('Holders')}>{row.accounts.toLocaleString(locale)}</td>
-								<td data-label={t('Limit')}>
-									<LimitCell row={row} />
-								</td>
-								<td className="mm-admin-actions">
-									<button
-										type="button"
-										className={`mm-admin-secondary ${buttonDark}`}
-										aria-label={`${t('Change the limit')} (${labels[row.role].name})`}
-										onClick={() => onEdit(row)}
-									>
-										{t('Change the limit')}
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
-		</section>
-	)
-}
-
 /** Edits one role's limit in decimal gigabytes, or removes it (the role then falls back to the base quota). */
 export function RoleStorageDialog({
 	row,

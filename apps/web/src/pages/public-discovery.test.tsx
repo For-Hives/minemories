@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -7,7 +7,7 @@ import { AppContext, type AppContextValue } from '../app-context'
 import { I18nProvider } from '../i18n/I18n'
 import { chooseOption } from '../testing/site-select'
 import { ExplorerPage } from './DiscoveryPages'
-import { ModerationPage, PublicGallery } from './PublicCatalog'
+import { PublicGallery } from './PublicCatalog'
 import { PublicationPanel } from './PublicDiscovery'
 
 const discovery = vi.hoisted(() => ({
@@ -348,55 +348,6 @@ test('a publication answer arriving after the panel closed changes nothing', asy
 	again.unmount()
 	await act(async () => fail(new Error('late')))
 	expect(screen.queryByRole('alert')).toBeNull()
-})
-
-test('moderation checks role, exposes reported queue and sends explicit approve/reject decisions', async () => {
-	discovery.moderate.mockResolvedValue({ id: item.id, state: 'approved', reason: null })
-
-	mount(<ModerationPage />, true)
-	await screen.findByRole('heading', { name: item.title })
-	expect(screen.getByRole('link', { name: 'Examiner le GLB' }).getAttribute('href')).toBe(`/public/${item.id}?review=1`)
-	fireEvent.change(screen.getByRole('textbox', { name: 'Motif de la décision (facultatif)' }), {
-		target: { value: 'Reviewed' },
-	})
-	fireEvent.click(screen.getByRole('button', { name: 'Approuver' }))
-	await waitFor(() =>
-		expect(discovery.moderate).toHaveBeenCalledWith({ id: item.id, decision: 'approved', reason: 'Reviewed' })
-	)
-	await waitFor(() => expect(discovery.queue).toHaveBeenCalledTimes(2))
-	// The queues are a bar of radios, not a dropdown: the pending one is shown first.
-	const queues = screen.getByRole('group', { name: 'File' })
-	expect(
-		within(queues)
-			.getAllByRole('radio')
-			.map(radio => radio.getAttribute('value'))
-	).toEqual(['pending', 'reported', 'approved', 'rejected'])
-	expect(screen.getByRole('radio', { name: 'En attente' })).toHaveProperty('checked', true)
-	fireEvent.click(screen.getByRole('radio', { name: 'Signalés' }))
-	await waitFor(() => expect(discovery.queue.mock.lastCall?.[0]).toMatchObject({ state: 'reported', page: 0 }))
-	expect(screen.getByRole('radio', { name: 'Signalés' })).toHaveProperty('checked', true)
-	await screen.findByRole('button', { name: 'Refuser' })
-	fireEvent.click(screen.getByRole('button', { name: 'Refuser' }))
-	await waitFor(() =>
-		expect(discovery.moderate).toHaveBeenLastCalledWith({ id: item.id, decision: 'rejected', reason: 'Reviewed' })
-	)
-	await waitFor(() => expect(screen.getByRole('button', { name: 'Actualiser' }).hasAttribute('disabled')).toBe(false))
-	const calls = discovery.queue.mock.calls.length
-	fireEvent.click(screen.getByRole('button', { name: 'Actualiser' }))
-	await waitFor(() => expect(discovery.queue).toHaveBeenCalledTimes(calls + 1))
-	expect(discovery.queue.mock.lastCall?.[0]).toMatchObject({ state: 'reported', page: 0 })
-	discovery.moderate.mockRejectedValueOnce(new Error('refused'))
-	await waitFor(() => expect(screen.getByRole('button', { name: 'Approuver' }).hasAttribute('disabled')).toBe(false))
-	fireEvent.click(screen.getByRole('button', { name: 'Approuver' }))
-	await screen.findByText('Décision refusée. Réessaie plus tard.')
-})
-
-test('non-moderators never receive a moderation queue', async () => {
-	discovery.moderator.mockResolvedValue({ allowed: false })
-	mount(<ModerationPage />, true)
-	await screen.findByRole('alert')
-	expect(discovery.queue).not.toHaveBeenCalled()
-	expect(screen.queryByRole('button', { name: 'Approuver' })).toBeNull()
 })
 
 test('a first publication proposes the name the owner gave the server as its title', async () => {

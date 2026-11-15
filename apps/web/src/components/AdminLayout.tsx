@@ -1,50 +1,108 @@
-import { NavLink, Outlet, useOutletContext } from 'react-router'
+import { type ReactNode, useMemo, ViewTransition } from 'react'
+import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import { ConsoleContext, parsePeriod, periodHours, useConsoleData } from '../pages/admin/console'
 import { type AdminAccess, hasAnyAdminAccess, useAdminAccess } from '../pages/admin-access'
-import '../pages/admin-hub.css'
+import '../pages/admin-console.css'
 
-/** Every administration section, in display order, with the capability that unlocks it. */
-const adminSections = [
+type Capability = 'admin' | 'moderator' | 'operator'
+/** Every administration page, in display order, with the capability that unlocks it (`null`: any of them). */
+const adminSections: ReadonlyArray<{ path: string; end: boolean; capability: Capability | null }> = [
 	{ path: '/admin', end: true, capability: null },
 	{ path: '/admin/users', end: false, capability: 'admin' },
 	{ path: '/admin/moderation', end: false, capability: 'moderator' },
 	{ path: '/admin/diagnostics', end: false, capability: 'operator' },
-] as const
+	{ path: '/admin/platform', end: false, capability: 'admin' },
+]
 
-export function AdminNav({ access }: { access: AdminAccess }) {
+type Badge = { count: number; tone: 'warn' | 'bad' } | null
+
+export function AdminRail({ access, badges }: { access: AdminAccess; badges: Record<string, Badge> }) {
 	const { t } = useI18n()
 	if (!hasAnyAdminAccess(access)) return null
-	const labels = {
-		'/admin': t('Overview'),
-		'/admin/users': t('Accounts and roles'),
+	const labels: Record<string, string> = {
+		'/admin': t('Pulse'),
+		'/admin/users': t('Accounts'),
 		'/admin/moderation': t('Moderation'),
-		'/admin/diagnostics': t('Diagnostics'),
+		'/admin/diagnostics': t('Health'),
+		'/admin/platform': t('Platform'),
 	}
 	return (
-		<nav className="mm-admin-nav" aria-label={t('Administration sections')}>
-			<ul>
-				{adminSections
-					.filter(section => section.capability === null || access[section.capability])
-					.map(section => (
-						<li key={section.path}>
-							<NavLink to={section.path} end={section.end}>
-								{labels[section.path]}
-							</NavLink>
-						</li>
-					))}
-			</ul>
+		<nav className="mm-con-rail" aria-label={t('Administration sections')}>
+			{adminSections
+				.filter(section => section.capability === null || access[section.capability])
+				.map(section => {
+					const badge = badges[section.path]
+					return (
+						<NavLink key={section.path} to={section.path} end={section.end}>
+							{labels[section.path]}
+							{badge && badge.count > 0 && (
+								<span className={`mm-con-count is-${badge.tone}`}>{badge.count.toLocaleString()}</span>
+							)}
+						</NavLink>
+					)
+				})}
 		</nav>
 	)
 }
 
-/** Shared frame of the administration routes: the section bar (only for accounts with a capability) above the page. */
+/** Shared frame of the administration routes: the rail, and the page beside it, which fades in on every navigation. */
 export function AdminLayout() {
+	const { t } = useI18n()
 	const access = useAdminAccess()
+	const { pathname } = useLocation()
+	const [params, setParams] = useSearchParams()
+	const { data, reload } = useConsoleData(access)
+	const period = parsePeriod(params.get('period'))
+	const compare = params.get('compare') !== '0'
+	const value = useMemo(() => {
+		const update = (key: string, next: string | null) =>
+			setParams(
+				previous => {
+					const copy = new URLSearchParams(previous)
+					if (next === null) copy.delete(key)
+					else copy.set(key, next)
+					return copy
+				},
+				{ replace: true }
+			)
+		return {
+			access,
+			period,
+			hours: periodHours[period],
+			setPeriod: (next: typeof period) => update('period', next === '30d' ? null : next),
+			compare,
+			setCompare: (next: boolean) => update('compare', next ? null : '0'),
+			data,
+			reload,
+		}
+	}, [access, period, compare, data, reload, setParams])
+	const badges: Record<string, Badge> = {
+		'/admin/moderation': data.queue ? { count: data.queue.pending + data.queue.reported, tone: 'warn' } : null,
+		'/admin/diagnostics': data.openIssues ? { count: data.openIssues.count, tone: 'bad' } : null,
+	}
+	let page: ReactNode = <Outlet />
+	if (access.ready && !hasAnyAdminAccess(access))
+		page = (
+			<section role="alert" className="mm-con-card">
+				<h1>{t('Administrator access required')}</h1>
+				<p className="mm-con-note">{t('Your account does not have these permissions.')}</p>
+			</section>
+		)
 	return (
-		<>
-			<AdminNav access={access} />
-			<Outlet context={access} />
-		</>
+		<ConsoleContext.Provider value={value}>
+			<div className="mm-con">
+				<AdminRail access={access} badges={badges} />
+				{!access.ready ? (
+					<p role="status" className="mm-con-sub">
+						{t('Loading the dashboard…')}
+					</p>
+				) : (
+					<ViewTransition key={pathname} default="none" enter="mm-con-enter" exit="mm-con-exit">
+						<div className="mm-con-main">{page}</div>
+					</ViewTransition>
+				)}
+			</div>
+		</ConsoleContext.Provider>
 	)
 }
-export const useAdminOutletAccess = () => useOutletContext<AdminAccess>()
