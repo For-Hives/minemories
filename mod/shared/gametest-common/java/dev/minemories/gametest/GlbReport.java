@@ -106,12 +106,17 @@ public final class GlbReport {
     System.out.println("MINEMORIES-GLB " + text.lines().findFirst().orElse(""));
   }
 
-  /** Every material whose name contains {@code name} must carry a non-white base colour. */
+  /**
+   * Every material whose name contains {@code name} must carry a non-white base colour. A sprite
+   * packed into a shared page keeps its material's name in the page material's extras.
+   */
   static void requireTinted(JsonObject root, String name) {
     int found = 0;
     for (var element : root.getAsJsonArray("materials")) {
       JsonObject material = element.getAsJsonObject();
-      if (!material.get("name").getAsString().contains(name)) continue;
+      String names = material.get("name").getAsString();
+      if (material.has("extras")) names += " " + material.get("extras");
+      if (!names.contains(name)) continue;
       found++;
       var factor =
           material.getAsJsonObject("pbrMetallicRoughness").getAsJsonArray("baseColorFactor");

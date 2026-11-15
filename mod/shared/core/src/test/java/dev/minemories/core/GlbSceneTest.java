@@ -24,6 +24,68 @@ final class GlbSceneTest {
 
   @TempDir Path tempDir;
 
+  private static int count(String text, String needle) {
+    int found = 0;
+    for (int at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + 1)) found++;
+    return found;
+  }
+
+  private static String sceneJson(Path output) throws IOException {
+    byte[] glb = Files.readAllBytes(output);
+    int jsonLength = ByteBuffer.wrap(glb).order(ByteOrder.LITTLE_ENDIAN).getInt(12);
+    return new String(glb, 20, jsonLength, StandardCharsets.UTF_8);
+  }
+
+  private static void block(GlbScene scene, int i, byte[] png, int alphaMode) {
+    scene.addQuad(
+        "block" + i + "#" + alphaMode,
+        "mod:block" + i + " / block/" + i,
+        "block/" + i,
+        png,
+        0xFFFFFF,
+        alphaMode,
+        0,
+        1,
+        new float[] {i, 0, 0, i + 1, 0, 0, i + 1, 1, 0, i, 1, 0},
+        new float[] {0, 0, 1, 0, 1, 1, 0, 1});
+  }
+
+  @Test
+  void smallSpritesShareOnePageMaterialWhileBlendedOnesKeepTheirOwn() throws IOException {
+    GlbScene scene = new GlbScene();
+    for (int i = 0; i < 3; i++) block(scene, i, SpriteAtlasTest.sprite(16, i), 0);
+    block(scene, 3, SpriteAtlasTest.sprite(16, 3), 2);
+    assertEquals(2, scene.materialCount());
+    Path output = tempDir.resolve("atlas.glb");
+    scene.write(output);
+    String json = sceneJson(output);
+    assertEquals(2, count(json, "\"mimeType\""));
+    assertEquals(2, count(json, "pbrMetallicRoughness"));
+    assertTrue(json.contains("\"name\":\"minemories:atlas/0\""));
+    assertTrue(json.contains("\"name\":\"block/3\""));
+    // The page's name no longer tells which blocks it holds: its extras do, in arrival order.
+    assertTrue(
+        json.contains(
+            "\"extras\":{\"minemoriesMaterials\":"
+                + "[\"mod:block0 / block/0\",\"mod:block1 / block/1\",\"mod:block2 / block/2\"]}"));
+    assertEquals(1, count(json, "minemoriesMaterials"));
+  }
+
+  @Test
+  void eightThousandDifferentBlocksNowFitTheOnlineLimits() throws IOException {
+    GlbScene scene = new GlbScene();
+    // A column of 8,000 different blocks was 9,275 materials; packed, a handful of pages.
+    for (int i = 0; i < 8000; i++) block(scene, i, SpriteAtlasTest.sprite(16, i), i % 2);
+    Path output = tempDir.resolve("varied.glb");
+    scene.write(output);
+    String json = sceneJson(output);
+    int pages = (8000 + 255) / 256;
+    assertEquals(pages, count(json, "\"mimeType\""));
+    assertTrue(scene.materialCount() <= pages * 2, "materials " + scene.materialCount());
+    assertTrue(json.contains("\"mod:block7999 / block/7999\""));
+    assertTrue(json.length() < GlbLimits.JSON_BYTES / 10, "JSON " + json.length());
+  }
+
   @Test
   void aSceneOverTheOnlineLimitsIsRefusedAndNothingIsWritten() {
     GlbScene scene = new GlbScene();

@@ -163,10 +163,14 @@ Until 15 November 2026 the manual export wrote such files, the API refused them 
 upload (`invalid_glb_or_checksum`, HTTP 400) and the mod suggested a retry that could not succeed;
 it now says that retrying will not help. A very varied area reaches these limits at about 3,300
 different materials (each one takes a primitive, four accessors, four or five buffer views and about
-1.2 KB of JSON); a 16 × 16 column holding 8,000 different blocks had 9,275.
+1.2 KB of JSON); a 16 × 16 column holding 8,000 different blocks had 9,275. Since small sprites share
+512 × 512 pages ([shared sprite pages](glb-size.md#shared-sprite-pages-spriteatlas-15-november-2026)),
+that column takes a handful of materials. Only blended, water, beam and large textures still get one
+material each.
 
 Shared PNGs are spooled only once. A new material that redefines an image with
-different bytes is refused. As with `GlbScene`, a material's first descriptor
+different bytes is refused; a packed sprite (drawn into a shared page, not spooled
+on its own) is checked the same way on every quad. As with `GlbScene`, a material's first descriptor
 is kept for subsequent quads with the same key. Quads with non-finite
 positions/UVs and invalid lights are ignored. An export without geometry is
 refused. The caps never silently drop materials or lights: exceeding a limit
