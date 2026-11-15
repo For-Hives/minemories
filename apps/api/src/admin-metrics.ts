@@ -22,7 +22,7 @@ export class AdminMetrics {
    END;`)
 		database.query('INSERT OR IGNORE INTO admin_metrics_meta VALUES (1,?)').run(now)
 	}
-	summary(actorId: string | null, hours: 24 | 168 | 720, now = Date.now()): AdminSummary {
+	summary(actorId: string | null, hours: 24 | 168 | 720 | 1440, now = Date.now()): AdminSummary {
 		this.roles.require(actorId)
 		const from = Math.floor(now / HOUR) * HOUR - (hours - 1) * HOUR
 		const started = (

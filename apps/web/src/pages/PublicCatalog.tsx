@@ -3,9 +3,8 @@ import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { AppContext } from '../app-context'
 import { SiteSelect } from '../components/SiteSelect'
-import { buttonDark, buttonLime, buttonOutline } from '../components/ui'
+import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
-import { ContentLayout } from './ContentPages'
 import './editing.css'
 
 type Capture = Awaited<ReturnType<typeof apiClient.discovery.get>>
@@ -16,7 +15,6 @@ const areaClass = 'mc-textarea w-full! [font-family:var(--ds-f-text)]!'
 // Labels in the game's font.
 const labelClass = 'grid gap-2 [font:400_var(--ds-fs-xs)/var(--ds-lh-xs)_var(--f-ui)]'
 const categories: Category[] = ['build', 'landscape', 'adventure', 'other']
-const queues = ['pending', 'reported', 'approved', 'rejected'] as const
 function useCategoryLabels() {
 	const { t } = useI18n()
 	return {
@@ -263,162 +261,5 @@ export function PublicGallery() {
 				</button>
 			</div>
 		</section>
-	)
-}
-
-export function ModerationPage() {
-	const { t } = useI18n()
-	const [allowed, setAllowed] = useState(false)
-	const [reasons, setReasons] = useState<Record<string, string>>({})
-	const [state, setState] = useState<(typeof queues)[number]>('pending')
-	const [page, setPage] = useState(0)
-	const [items, setItems] = useState<Awaited<ReturnType<typeof apiClient.discovery.queue>>['items']>([])
-	const [more, setMore] = useState(false)
-	const [error, setError] = useState('')
-	const [loading, setLoading] = useState(true)
-	const [busy, setBusy] = useState(false)
-	const [refresh, setRefresh] = useState(0)
-	const queueLabels = {
-		pending: t('Pending'),
-		reported: t('Reported'),
-		approved: t('Approved'),
-		rejected: t('Rejected'),
-	}
-	useEffect(() => {
-		let live = true
-		setLoading(true)
-		setError('')
-		apiClient.discovery
-			.moderator()
-			.then(async role => {
-				if (!role.allowed) throw new Error('Forbidden')
-				const queue = await apiClient.discovery.queue({ state, page })
-				if (live) {
-					setAllowed(true)
-					setItems(queue.items)
-					setMore(queue.hasMore)
-				}
-			})
-			.catch(() => {
-				if (live) {
-					setAllowed(false)
-					setError(t('Moderation unavailable or access denied.'))
-				}
-			})
-			.finally(() => {
-				if (live) setLoading(false)
-			})
-		return () => {
-			live = false
-		}
-	}, [state, page, refresh, t])
-	async function moderate(id: string, decision: 'approved' | 'rejected') {
-		const reason = reasons[id] ?? ''
-		setBusy(true)
-		try {
-			await apiClient.discovery.moderate({ id, decision, reason: reason.slice(0, 500) })
-			setRefresh(n => n + 1)
-		} catch {
-			setError(t('Decision refused. Try again later.'))
-		} finally {
-			setBusy(false)
-		}
-	}
-	return (
-		<ContentLayout eyebrow="MINEMORIES" title={t('Moderation')} lead={t('Review submitted memories and reports.')}>
-			{loading && <p role="status">{t('Loading…')}</p>}
-			{error && <p role="alert">{error}</p>}
-			{allowed && (
-				<>
-					{/* The queues side by side: one press shows another, like the publication's categories. */}
-					<div className="mm-moderation-bar">
-						<fieldset className="mm-moderation-queues">
-							<legend>{t('Queue')}</legend>
-							<div className="mm-segmented">
-								{queues.map(value => (
-									<label key={value}>
-										<input
-											type="radio"
-											name="moderation-queue"
-											value={value}
-											checked={state === value}
-											onChange={() => {
-												setState(value)
-												setPage(0)
-											}}
-										/>
-										<span>{queueLabels[value]}</span>
-									</label>
-								))}
-							</div>
-						</fieldset>
-						<button type="button" className={buttonOutline} disabled={loading} onClick={() => setRefresh(n => n + 1)}>
-							{t('Refresh')}
-						</button>
-					</div>
-					<div className="mm-angle-grid">
-						{items.map(item => (
-							<article className="mm-angle-card" key={item.id}>
-								<h2>{item.title}</h2>
-								<p>{item.description}</p>
-								{item.reason && <p>{item.reason}</p>}
-								{item.reports.map(report => (
-									<p key={report.id}>{report.reason}</p>
-								))}
-								<label className={`my-3 ${labelClass}`}>
-									{t('Decision reason (optional)')}
-									<input
-										className={fieldClass}
-										maxLength={500}
-										value={reasons[item.id] ?? ''}
-										onChange={event => setReasons(previous => ({ ...previous, [item.id]: event.target.value }))}
-									/>
-								</label>
-								<Link className="mc-link" to={`/public/${item.id}?review=1`}>
-									{t('Review GLB')}
-								</Link>
-								<div className="mm-actions">
-									<button
-										type="button"
-										className={buttonLime}
-										disabled={busy}
-										onClick={() => void moderate(item.id, 'approved')}
-									>
-										{t('Approve')}
-									</button>
-									<button
-										type="button"
-										className={buttonDark}
-										disabled={busy}
-										onClick={() => void moderate(item.id, 'rejected')}
-									>
-										{t('Reject')}
-									</button>
-								</div>
-							</article>
-						))}
-					</div>
-					{!loading && items.length === 0 && <p>{t('No memories in this queue.')}</p>}
-					<div className="mm-actions">
-						<button
-							type="button"
-							className={buttonOutline}
-							disabled={page === 0 || loading}
-							onClick={() => setPage(n => n - 1)}
-						>
-							{t('Previous')}
-						</button>
-						<button
-							type="button"
-							className={buttonOutline}
-							disabled={!more || loading}
-							onClick={() => setPage(n => n + 1)}
-						>
-							{t('Next')}
-						</button>
-					</div>
-				</>
-			)}
-		</ContentLayout>
 	)
 }

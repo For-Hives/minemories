@@ -3,14 +3,19 @@ import { Navigate, Route } from 'react-router'
 import { AdminLayout } from './components/AdminLayout'
 import { Page } from './components/PageFrame'
 
-const AdminHome = lazy(() => import('./pages/AdminHome').then(module => ({ default: module.AdminHome })))
-const AdminPage = lazy(() => import('./pages/AdminPage').then(module => ({ default: module.AdminPage })))
-const ModerationPage = lazy(() => import('./pages/PublicCatalog').then(module => ({ default: module.ModerationPage })))
-const DiagnosticsPage = lazy(() =>
-	import('./pages/DiagnosticsPage').then(module => ({ default: module.DiagnosticsPage }))
+const AdminPulse = lazy(() => import('./pages/admin/AdminPulse').then(module => ({ default: module.AdminPulse })))
+const AdminAccounts = lazy(() =>
+	import('./pages/admin/AdminAccounts').then(module => ({ default: module.AdminAccounts }))
+)
+const AdminModeration = lazy(() =>
+	import('./pages/admin/AdminModeration').then(module => ({ default: module.AdminModeration }))
+)
+const AdminHealth = lazy(() => import('./pages/admin/AdminHealth').then(module => ({ default: module.AdminHealth })))
+const AdminPlatform = lazy(() =>
+	import('./pages/admin/AdminPlatform').then(module => ({ default: module.AdminPlatform }))
 )
 
-/** The administration routes (all private, behind a session): overview, accounts, moderation, diagnostics, and the old `/moderation` URL. */
+/** The administration routes (all private, behind a session): the pulse, accounts, moderation, health (diagnostics), the platform, and the old `/moderation` URL. */
 export const adminRoutes = (
 	<>
 		<Route path="/admin" element={<AdminLayout />}>
@@ -18,7 +23,7 @@ export const adminRoutes = (
 				index
 				element={
 					<Page>
-						<AdminHome />
+						<AdminPulse />
 					</Page>
 				}
 			/>
@@ -26,7 +31,7 @@ export const adminRoutes = (
 				path="users"
 				element={
 					<Page>
-						<AdminPage />
+						<AdminAccounts />
 					</Page>
 				}
 			/>
@@ -34,7 +39,7 @@ export const adminRoutes = (
 				path="moderation"
 				element={
 					<Page>
-						<ModerationPage />
+						<AdminModeration />
 					</Page>
 				}
 			/>
@@ -42,7 +47,15 @@ export const adminRoutes = (
 				path="diagnostics"
 				element={
 					<Page>
-						<DiagnosticsPage />
+						<AdminHealth />
+					</Page>
+				}
+			/>
+			<Route
+				path="platform"
+				element={
+					<Page>
+						<AdminPlatform />
 					</Page>
 				}
 			/>

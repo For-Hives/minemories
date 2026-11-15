@@ -248,6 +248,7 @@ test('series fill empty tracked hours and current totals distinguish storage, tr
 		})
 		expect(metrics.summary('owner', 168, now).series).toHaveLength(168)
 		expect(metrics.summary('owner', 720, now).series).toHaveLength(720)
+		expect(metrics.summary('owner', 1440, now).series).toHaveLength(1440)
 	} finally {
 		db.close()
 	}

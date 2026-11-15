@@ -1,6 +1,29 @@
 # Service administration
 
-The `/admin` dashboard shows the sections available to the account (accounts and roles, moderation, diagnostics); the accounts and metrics panel lives under `/admin/users`. It is reachable from “My account” once the server has checked the permissions. It shows finalized volumes in decimal GB per hour, sign-ups, 24-hour, 7-day and 30-day periods, a paginated account search with a role filter, storage and activity counters, and the 50 most recent role changes. Hours are grouped in UTC. Administrator rights grant no additional access to private files.
+## Admin console
+
+Every `/admin` page shares one frame (`components/AdminLayout.tsx`): a rail on the left with the pages the account may open, and the page beside it. Pages come from the capabilities the server confirms (administrator, moderator, operator); a badge on Moderation and Health counts what is waiting. Navigating between pages fades the new one in with React's `<ViewTransition>`; sheets slide in with `motion` (both respect `prefers-reduced-motion`).
+
+| Page | Route | Question it answers |
+| --- | --- | --- |
+| Pulse | `/admin` | Is the service healthy, and what needs someone today? |
+| Accounts | `/admin/users` | Who is this account, and what can I do? |
+| Moderation | `/admin/moderation` | What should I approve or reject? |
+| Health | `/admin/diagnostics` | What breaks, for whom, and since which version? |
+| Platform | `/admin/platform` | Where are the bytes, what may each role store, who changed access? |
+
+Rules every page follows:
+
+- **Period and comparison live in the address** (`?period=24h|7d`, `?compare=0`; 30 days and comparing are the defaults). The console loads one 1,440-hour series (`admin.summary({ hours: 1440 })`) and cuts the period and the period before it from it on the client, so changing the period asks for nothing. A previous period that predates tracking is never compared.
+- **Lists open a sheet, not a page.** Accounts and Health keep the selection in the address (`?user=`, `?issue=`); arrow keys move through rows and Escape closes. Where the sheet does not fit beside the list (under 1,300 px), it slides in over the page.
+- **Pressing Refresh in the header reloads the page's own data too** (`ConsoleData.loads`).
+- **Derived figures are pure and tested**: `src/lib/admin-insight.ts` (windows, deltas, daily buckets, the weekday heatmap, chart paths, storage growth, error share by version, moderation keys). Components only draw them.
+
+Figures that come from existing data only: key figures and their change, the activity series, the heatmap (uploads by UTC weekday and 2-hour slot, last 30 days), storage by state and its 90-day projection (linear, labelled as an estimate), the share of an error held by each mod version against the installed fleet (a ratio above 2 flags a regression), the moderation queue and its keys (A, R, J, K), and the role limits and audit.
+
+Not built yet, because each needs new server-side figures: the Growth page (activation funnel, retention by sign-up week, time to first capture, storage concentration), the Worlds page (biomes, dimensions, server or solo) and hourly counters for JAR downloads, API errors and pairing failures. They would follow the rule of the metrics below: aggregates only, no identity, no IP.
+
+The sections below describe the data behind these pages.
 
 ## First administrator
 

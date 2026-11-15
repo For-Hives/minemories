@@ -46,7 +46,7 @@ Consequences to know before going further:
 | `/gallery` | Private gallery: captures, storage, pairing, sharing, trash, publishing | session | 871 + 103 | The core of the product, to redo first |
 | `/viewer` | 3D viewer (local file or capture) with studio (sky, weather, time) | public | 264 + 240 | The core of the product |
 | `/share/:token`, `/public/:id` | Viewer for a shared capture | link | 183 | The core of sharing |
-| `/admin`, `/admin/users`, `/admin/moderation`, `/admin/diagnostics` (`/moderation` redirects) | Operator tools: service figures, roles, mod diagnostics, moderation queue | operator | 302 + 256 + 105 | Outside the public site, keep separate |
+| `/admin`, `/admin/users`, `/admin/moderation`, `/admin/diagnostics`, `/admin/platform` (`/moderation` redirects) | Operator tools: service figures, roles, mod diagnostics, moderation queue | operator | 302 + 256 + 105 | Outside the public site, keep separate |
 | `*` | 404 page | public | in ContentPages | Kept (minimal) |
 
 Total size removed: about 12,000 lines of TSX, 3,400 lines of page-specific CSS (excluding `theme.css`), 8 languages of text.
@@ -87,9 +87,9 @@ Total size removed: about 12,000 lines of TSX, 3,400 lines of page-specific CSS 
 
 ### Operator path
 
-**`/admin`**: dashboard (cards to the allowed sections, counters of pending and reported publications for moderators, a section bar shared by every admin page). **`/admin/users`**: service figures (accounts, captures, volume, paired devices, archived objects), account search, granting and removing the administrator role, log of the last 50 changes.
+**`/admin`** (Pulse): what needs attention, key figures with their change since the previous period, the activity chart and the weekday heatmap. **`/admin/users`** (Accounts): the account list with a sheet beside it, role and account deletion. **`/admin/platform`** (Platform): storage by state, role limits, the access audit. The admin console section of [admin-dashboard.md](admin-dashboard.md) describes the layout they share.
 
-**`/admin/diagnostics`**: mod diagnostics sent with consent, grouped by error, filters by mod and API version. Administrators only.
+**`/admin/diagnostics`** (Health): mod diagnostics sent with consent, grouped by error and sorted by impact, with the detail in a sheet. Administrators only.
 
 **`/admin/moderation`** (old URL `/moderation`, redirected): queue of publications and reports, decision with a reason, no deciding on one's own publication.
 
