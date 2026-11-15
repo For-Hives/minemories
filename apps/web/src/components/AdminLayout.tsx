@@ -1,6 +1,7 @@
-import { type ReactNode, useMemo, ViewTransition } from 'react'
+import { type ReactNode, useEffect, useMemo, useState, ViewTransition } from 'react'
 import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
 import { useI18n } from '../i18n/I18n'
+import { ConsolePalette } from '../pages/admin/ConsolePalette'
 import { ConsoleContext, parsePeriod, periodHours, useConsoleData } from '../pages/admin/console'
 import { type AdminAccess, hasAnyAdminAccess, useAdminAccess } from '../pages/admin-access'
 import '../pages/admin-console.css'
@@ -57,6 +58,16 @@ export function AdminLayout() {
 	const { pathname } = useLocation()
 	const [params, setParams] = useSearchParams()
 	const { data, reload } = useConsoleData(access)
+	const [paletteOpen, setPaletteOpen] = useState(false)
+	useEffect(() => {
+		function onKey(event: KeyboardEvent) {
+			if (!((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k')) return
+			event.preventDefault()
+			setPaletteOpen(true)
+		}
+		window.addEventListener('keydown', onKey)
+		return () => window.removeEventListener('keydown', onKey)
+	}, [])
 	const period = parsePeriod(params.get('period'))
 	const compare = params.get('compare') !== '0'
 	const value = useMemo(() => {
@@ -79,6 +90,7 @@ export function AdminLayout() {
 			setCompare: (next: boolean) => update('compare', next ? null : '0'),
 			data,
 			reload,
+			openPalette: () => setPaletteOpen(true),
 		}
 	}, [access, period, compare, data, reload, setParams])
 	const badges: Record<string, Badge> = {
@@ -96,6 +108,9 @@ export function AdminLayout() {
 	return (
 		<ConsoleContext.Provider value={value}>
 			<div className="mm-con">
+				{hasAnyAdminAccess(access) && (
+					<ConsolePalette access={access} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+				)}
 				<AdminRail access={access} badges={badges} />
 				{!access.ready ? (
 					<p role="status" className="mm-con-sub">

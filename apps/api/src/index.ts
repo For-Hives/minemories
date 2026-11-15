@@ -11,6 +11,7 @@ import { AdminAccounts } from './admin-accounts'
 import { AdminAnalyticsReader } from './admin-analytics'
 import { bootstrapAdministratorsFromEnvironment, bootstrapTemporaryAdministrator } from './admin-bootstrap'
 import { AdminInsightsReader } from './admin-insights'
+import { AdminJournalReader } from './admin-journal'
 import { AdminMetrics } from './admin-metrics'
 import { AdminRoles } from './admin-roles'
 import { auth, billing, handleAuthRequest } from './auth'
@@ -103,6 +104,7 @@ bootstrapTemporaryAdministrator(database, adminRoles)
 bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
 const requestCounters = new RequestCounters(database)
+const adminJournal = new AdminJournalReader(database, adminRoles)
 const adminInsights = new AdminInsightsReader(database, adminRoles)
 const adminAnalytics = new AdminAnalyticsReader(database, adminRoles, requestCounters)
 const adminAccounts = new AdminAccounts(database, adminRoles)
@@ -167,6 +169,7 @@ const router = os.router({
 		users: os.admin.users.handler(({ context, input }) => adminRoles.users(context.userId, input)),
 		insights: os.admin.insights.handler(({ context }) => adminInsights.read(context.userId)),
 		analytics: os.admin.analytics.handler(({ context }) => adminAnalytics.read(context.userId)),
+		journal: os.admin.journal.handler(({ context }) => adminJournal.read(context.userId)),
 		storageRoles: os.admin.storageRoles.handler(({ context }) => adminRoles.storageRoles(context.userId)),
 		setRoleStorage: os.admin.setRoleStorage.handler(({ context, input }) =>
 			adminRoles.setRoleStorage(context.userId, input)

@@ -193,3 +193,13 @@ test('retention rows and rates', async () => {
 	expect(shareOf(1, 0)).toBe(0)
 	expect(lorenzPath([0.5, 1], 100, 50)).toBe('M0.0 50.0L50.0 25.0L100.0 0.0')
 })
+
+test('typed words filter entries', async () => {
+	const { matchEntries } = await import('./admin-insight')
+	const entries = [{ label: 'Accounts' }, { label: 'Moderation queue' }, { label: 'Platform' }]
+	expect(matchEntries(entries, '')).toEqual(entries)
+	expect(matchEntries(entries, '  ')).toEqual(entries)
+	expect(matchEntries(entries, 'MOD')).toEqual([{ label: 'Moderation queue' }])
+	expect(matchEntries(entries, 'queue mod')).toEqual([{ label: 'Moderation queue' }])
+	expect(matchEntries(entries, 'zzz')).toEqual([])
+})

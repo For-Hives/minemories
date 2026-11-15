@@ -122,6 +122,8 @@ fieldset.mm-con-chips {
 /* Segmented choice and chips: real buttons, one pressed. */
 .mm-con-seg {
 	display: inline-flex;
+	flex-wrap: wrap;
+	max-width: 100%;
 	background: var(--night);
 	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
@@ -749,4 +751,79 @@ a.mm-con-kpi:hover {
 	font: 400 var(--ds-fs-xs) / 16px var(--f-ui);
 	color: var(--text-3);
 	text-shadow: none;
+}
+
+/* Command palette. */
+.mm-con-palette {
+	margin: 12vh auto auto;
+	width: min(520px, calc(100% - 32px));
+	padding: var(--ds-sp-4);
+	border: 0;
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+.mm-con-palette::backdrop {
+	background: rgb(10 8 6 / 0.75);
+}
+.mm-con-palette input {
+	width: 100%;
+	height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+}
+.mm-con-palette ul {
+	margin: var(--ds-sp-3) 0 0;
+	padding: 0;
+	list-style: none;
+}
+.mm-con-palette button {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--ds-sp-3);
+	width: 100%;
+	min-height: var(--ds-hit);
+	padding: 0 var(--ds-sp-3);
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: var(--text);
+	font: 400 var(--ds-rd-fs-sm) / 1.3 var(--ds-f-text);
+	cursor: pointer;
+	text-align: left;
+}
+.mm-con-palette button[aria-current="true"],
+.mm-con-palette button:hover {
+	background: var(--night-3);
+	box-shadow: inset 4px 0 0 var(--ember);
+}
+.mm-con-palette small {
+	color: var(--text-3);
+}
+.mm-con-chip kbd {
+	color: var(--text-3);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+}
+
+/* Phones and narrow windows: the rail becomes one scrollable row instead of a tall block above the page. */
+@media (max-width: 899px) {
+	.mm-con-rail {
+		display: flex;
+		flex: 1 1 100%;
+		max-width: none;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+	}
+	.mm-con-rail h2 {
+		display: none;
+	}
+	.mm-con-rail a {
+		flex: none;
+	}
 }

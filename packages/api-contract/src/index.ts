@@ -143,7 +143,7 @@ export {
 	type StorageRole,
 	storageRole,
 } from './account-roles'
-export type { AdminAnalytics, AdminInsights, AdminSummary, AdminUser, AdminUserSort } from './admin'
+export type { AdminAnalytics, AdminInsights, AdminJournalEntry, AdminSummary, AdminUser, AdminUserSort } from './admin'
 
 /** Java Edition usernames: 3 to 16 letters, digits and underscores. */
 export const minecraftUsername = z

@@ -14,6 +14,7 @@ const rpc = vi.hoisted(() => ({
 		analytics: vi.fn(),
 		users: vi.fn(),
 		audit: vi.fn(),
+		journal: vi.fn(),
 		storageRoles: vi.fn(),
 		setRole: vi.fn(),
 		deleteUser: vi.fn(),
@@ -167,6 +168,7 @@ const queueItem = (id: string, title: string, extra: Record<string, unknown> = {
 	state: 'pending',
 	reason: null,
 	reports: [],
+	owner: { submissions: 3, approved: 2, rejected: 1 },
 	...extra,
 })
 const issue = {
@@ -264,7 +266,14 @@ beforeEach(() => {
 	rpc.admin.insights.mockResolvedValue(insights)
 	rpc.admin.analytics.mockResolvedValue(analytics)
 	rpc.admin.users.mockResolvedValue(directory)
-	rpc.admin.audit.mockResolvedValue([{ id: 1, at: now, actorName: 'Alex', targetName: 'Bea', role: 'admin' }])
+	rpc.admin.journal.mockResolvedValue([
+		{ at: now, area: 'roles', action: 'role_granted', actor: 'Alex', target: 'Bea' },
+		{ at: now - 1, area: 'moderation', action: 'publication_approved', actor: null, target: 'Village' },
+		{ at: now - 2, area: 'health', action: 'issue_resolved', actor: 'Alex', target: 'abcdef01' },
+		{ at: now - 3, area: 'quota', action: 'quota_set', actor: 'Alex', target: 'user' },
+		{ at: now - 4, area: 'deletions', action: 'account_deleted', actor: 'Alex', target: null },
+		{ at: now - 5, area: 'roles', action: 'something_new', actor: 'Alex', target: 'Bea' },
+	])
 	rpc.admin.storageRoles.mockResolvedValue([
 		{ role: 'user', limitBytes: null, effectiveBytes: 3_000_000_000, accounts: 42, updatedAt: null },
 		{ role: 'admin', limitBytes: 8_000_000_000, effectiveBytes: 8_000_000_000, accounts: 2, updatedAt: 1 },
@@ -446,6 +455,22 @@ test('moderation: the queue, the capture and the decision share the screen; A ap
 	expect(rpc.discovery.moderate).toHaveBeenCalledTimes(2)
 })
 
+test('moderation: the owner history and the first-submission tag help the reviewer', async () => {
+	grant({ moderator: true })
+	rpc.discovery.queue.mockResolvedValue({
+		items: [
+			queueItem('p1', 'Cherry Estate'),
+			queueItem('p2', 'Basalt Outpost', { owner: { submissions: 0, approved: 0, rejected: 0 } }),
+		],
+		hasMore: false,
+	})
+	mount('/admin/moderation')
+	await screen.findByText('About Cherry Estate')
+	const history = screen.getByText('Earlier submissions').parentElement as HTMLElement
+	expect(within(history).getByText('3')).toBeTruthy()
+	expect(screen.getAllByText('First submission')).toHaveLength(1)
+})
+
 test('moderation: another queue, an empty queue and a refused decision', async () => {
 	grant({ moderator: true })
 	mount('/admin/moderation')
@@ -542,6 +567,14 @@ test('platform: storage figures, role limits (changed in a dialog) and the acces
 	mount('/admin/platform')
 	await screen.findByRole('heading', { name: 'Platform' })
 	await screen.findByText('Administrator access granted')
+	expect(screen.getByText('Publication approved')).toBeTruthy()
+	expect(screen.getByText('Error group: Resolved')).toBeTruthy()
+	expect(screen.getByText('Role limit changed')).toBeTruthy()
+	expect(screen.getByText('Account deleted')).toBeTruthy()
+	expect(screen.getByText('something_new')).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Moderation' }))
+	await waitFor(() => expect(screen.queryByText('Administrator access granted')).toBeNull())
+	expect(screen.getByText('Publication approved')).toBeTruthy()
 	expect(await screen.findByText('Where the bytes are, and what is still waiting')).toBeTruthy()
 	const buttons = screen.getAllByRole('button', { name: 'Change the limit' })
 	expect(buttons).toHaveLength(2)
@@ -551,7 +584,7 @@ test('platform: storage figures, role limits (changed in a dialog) and the acces
 
 test('platform: a failure to load is said', async () => {
 	grant({ admin: true })
-	rpc.admin.audit.mockRejectedValue(new Error('down'))
+	rpc.admin.journal.mockRejectedValue(new Error('down'))
 	mount('/admin/platform')
 	expect((await screen.findByRole('alert')).textContent).toBe('Could not load the dashboard. Try Refresh again.')
 })
@@ -636,4 +669,52 @@ test('platform: counters with nothing in them say so', async () => {
 	mount('/admin/platform')
 	await screen.findByText('Where the bytes are, and what is still waiting')
 	await waitFor(() => expect(screen.getAllByText('Nothing counted yet.')).toHaveLength(2))
+})
+
+test('the palette opens with Ctrl+K, filters pages by the rights, finds accounts and navigates', async () => {
+	grant({ admin: true })
+	mount('/admin')
+	await screen.findByRole('heading', { name: 'Pulse' })
+	fireEvent.keyDown(window, { key: 'x', ctrlKey: true })
+	expect(screen.queryByRole('dialog')).toBeNull()
+	fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+	const palette = await screen.findByRole('dialog', { name: 'Jump to…' })
+	const input = within(palette).getByRole('textbox', { name: 'Search pages and accounts' })
+	expect(within(palette).getAllByRole('button')).toHaveLength(5)
+	fireEvent.change(input, { target: { value: 'plat' } })
+	expect(
+		within(palette)
+			.getAllByRole('button')
+			.map(button => button.textContent)
+	).toEqual(['Platform/admin/platform'])
+	fireEvent.change(input, { target: { value: 'zzz' } })
+	await waitFor(() => expect(within(palette).getByText('No match.')).toBeTruthy())
+	fireEvent.change(input, { target: { value: 'al' } })
+	await waitFor(() =>
+		expect(rpc.admin.users).toHaveBeenLastCalledWith({ query: 'al', role: 'all', page: 1 }, expect.anything())
+	)
+})
+
+test('the palette moves with the arrows, Enter goes there, and a moderator only sees their pages', async () => {
+	grant({ moderator: true })
+	mount('/admin')
+	await screen.findByRole('heading', { name: 'Pulse' })
+	fireEvent.click(screen.getByRole('button', { name: /Jump to…/ }))
+	const palette = await screen.findByRole('dialog', { name: 'Jump to…' })
+	expect(
+		within(palette)
+			.getAllByRole('button')
+			.map(button => button.textContent)
+	).toEqual(['Pulse/admin', 'Moderation/admin/moderation'])
+	const input = within(palette).getByRole('textbox')
+	fireEvent.keyDown(input, { key: 'ArrowDown' })
+	fireEvent.keyDown(input, { key: 'ArrowUp' })
+	fireEvent.keyDown(input, { key: 'ArrowDown' })
+	fireEvent.keyDown(input, { key: 'Enter' })
+	await waitFor(() => expect(where()).toBe('/admin/moderation'))
+	fireEvent.keyDown(window, { key: 'K', metaKey: true })
+	const again = await screen.findByRole('dialog', { name: 'Jump to…' })
+	fireEvent.change(within(again).getByRole('textbox'), { target: { value: 'zzz' } })
+	fireEvent.keyDown(within(again).getByRole('textbox'), { key: 'Enter' })
+	expect(where()).toBe('/admin/moderation')
 })

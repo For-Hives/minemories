@@ -12,13 +12,14 @@ Every `/admin` page shares one frame (`components/AdminLayout.tsx`): a rail on t
 | Worlds | `/admin/worlds` | What do players capture, and where? |
 | Moderation | `/admin/moderation` | What should I approve or reject? |
 | Health | `/admin/diagnostics` | What breaks, for whom, and since which version? |
-| Platform | `/admin/platform` | Where are the bytes, what may each role store, who changed access? |
+| Platform | `/admin/platform` | Where are the bytes, what may each role store, what is the traffic, who did what? |
 
 Rules every page follows:
 
 - **Period and comparison live in the address** (`?period=24h|7d`, `?compare=0`; 30 days and comparing are the defaults). The console loads one 1,440-hour series (`admin.summary({ hours: 1440 })`) and cuts the period and the period before it from it on the client, so changing the period asks for nothing. A previous period that predates tracking is never compared.
 - **Lists open a sheet, not a page.** Accounts and Health keep the selection in the address (`?user=`, `?issue=`); arrow keys move through rows and Escape closes. Where the sheet does not fit beside the list (under 1,300 px), it slides in over the page.
 - **Pressing Refresh in the header reloads the page's own data too** (`ConsoleData.loads`).
+- **Ctrl+K (Cmd+K) opens a palette**: jump to a page the account may open, or to an account found by name or e-mail.
 - **Derived figures are pure and tested**: `src/lib/admin-insight.ts` (windows, deltas, daily buckets, the weekday heatmap, chart paths, storage growth, error share by version, moderation keys). Components only draw them.
 
 Figures that come from existing data only: key figures and their change, the activity series, the heatmap (uploads by UTC weekday and 2-hour slot, last 30 days), storage by state and its 90-day projection (linear, labelled as an estimate), the share of an error held by each mod version against the installed fleet (a ratio above 2 flags a regression), the moderation queue and its keys (A, R, J, K), and the role limits and audit.
@@ -31,6 +32,10 @@ Growth and Worlds read `admin.analytics` (`apps/api/src/admin-analytics.ts`, adm
 - **Concentration**: the share of live bytes held by the top tenth of accounts, the Gini index and the Lorenz curve.
 - **Worlds**: biomes, dimensions, server or singleplayer, capture sizes and the median, from `metadata_json`. Coordinates, seeds and world names are never returned. A server is named only when at least two accounts captured it, and only the five biggest are listed.
 - **Publication funnel**: live captures, shared by link, submitted, approved, voted, and with five votes or more.
+
+**Journal** (`apps/api/src/admin-journal.ts`, Platform): `admin.journal` merges the latest 100 sensitive actions from `admin_role_audit`, `admin_account_deletions`, `public_publications` (reviewer and decision), `diagnostic_issues` (triage state) and `role_storage_limits`. Entries carry a fixed action code, the actor's name and a target (a name, a role, or the first 8 characters of an error fingerprint). An unknown code is shown as it is.
+
+**Moderation hints**: each queue item carries the owner's earlier submissions, approvals and rejections (`owner` in `discovery.queue`), shown beside the capture. They inform the reviewer; nothing is decided from them.
 
 **Request counters** (`apps/api/src/request-counters.ts`, shown on Platform): one Hono middleware counts every finished request by fixed label into `request_counters` (hour, kind, key, count, summed duration). Stored: mod downloads by target id (a successful `GET /downloads/<target>/...` only), requests and server errors (5xx) by API group (`rpc`, `auth`, `mod`, `public`, `memories`, `downloads`, `github`, `roadmap`) with their mean time, and pairing outcomes (`done`, `rejected`, `limited`). Never stored: a path, a query, a token, an address, an account. Rows older than 70 days are deleted; the panel reads 30 days of downloads and 24 hours of the rest. Counting starts when this version is deployed, and the date is shown.
 

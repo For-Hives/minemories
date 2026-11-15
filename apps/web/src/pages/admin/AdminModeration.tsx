@@ -99,6 +99,7 @@ function QueuePanel({
 							<span>
 								<strong>{item.title}</strong>
 								<small>{ageLabel(item.publishedAt, now, locale)}</small>
+								{item.owner.submissions === 0 && <span className="mm-con-tag">{t('First submission')}</span>}
 								{item.reports.length > 0 && (
 									<span className="mm-con-tag is-bad">{t('{count} reported', { count: item.reports.length })}</span>
 								)}
@@ -159,6 +160,15 @@ function PreviewPanel({ item }: { item: Item | null }) {
 						<p className="mm-con-note">{item.reason}</p>
 					</>
 				)}
+				<h3>{t('Owner history')}</h3>
+				<dl className="mm-con-kv">
+					<dt>{t('Earlier submissions')}</dt>
+					<dd>{item.owner.submissions}</dd>
+					<dt>{t('Approved')}</dt>
+					<dd>{item.owner.approved}</dd>
+					<dt>{t('Rejected')}</dt>
+					<dd>{item.owner.rejected}</dd>
+				</dl>
 				{item.reports.length > 0 && (
 					<>
 						<h3>{t('Reports')}</h3>

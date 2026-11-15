@@ -83,6 +83,7 @@ export type Console = {
 	setCompare(compare: boolean): void
 	data: ConsoleData
 	reload(): void
+	openPalette(): void
 }
 export const ConsoleContext = createContext<Console | null>(null)
 export function useConsole(): Console {
