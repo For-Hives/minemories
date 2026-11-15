@@ -100,7 +100,9 @@ export const adminInsights = z.object({
 })
 export const adminContract = {
 	access: oc.output(z.object({ allowed: z.boolean() })),
-	summary: oc.input(z.object({ hours: z.union([z.literal(24), z.literal(168), z.literal(720)]) })).output(adminSummary),
+	summary: oc
+		.input(z.object({ hours: z.union([z.literal(24), z.literal(168), z.literal(720), z.literal(1440)]) }))
+		.output(adminSummary),
 	users: oc
 		.input(
 			z.object({

@@ -76,6 +76,7 @@ test('private data, shared links and account routes are excluded from indexing a
 		'/admin',
 		'/admin/diagnostics',
 		'/admin/users',
+		'/admin/platform',
 		'/admin/moderation',
 		'/login',
 		'/register',

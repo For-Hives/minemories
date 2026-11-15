@@ -1,0 +1,129 @@
+/* The password and storage-limit dialogs of the administration console: the kit's dark panel over a flat veil. Labels in the game's font,
+   fields as the game's text fields (black, grey edge, white on focus), values in Atkinson. */
+
+.mm-admin-dialog {
+	margin: auto; /* the global reset zeroes margins, which pinned the modal to the top-left corner */
+	width: min(520px, calc(100% - 32px));
+	padding: var(--ds-sp-6);
+	border: 0;
+	border-radius: 0;
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+.mm-admin-dialog::backdrop {
+	background: rgb(10 8 6 / 0.75);
+}
+.mm-admin-dialog .mm-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--text-2);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-admin-dialog .mm-kicker::before {
+	content: "";
+	flex: none;
+	width: 8px;
+	height: 8px;
+	background: var(--ember);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-site .mm-admin-dialog h2 {
+	margin: var(--ds-sp-3) 0;
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
+	text-shadow: var(--ds-text-shadow-2);
+}
+html[data-mc-font="read"] .mm-site .mm-admin-dialog h2 {
+	font-weight: 700;
+}
+.mm-admin-dialog p {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+	overflow-wrap: anywhere;
+}
+.mm-admin-dialog p strong {
+	color: var(--text);
+}
+.mm-admin-dialog label {
+	display: grid;
+	gap: var(--ds-sp-2);
+	margin-top: var(--ds-sp-4);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-admin-dialog input {
+	width: 100%;
+	max-width: 100%;
+	height: var(--ds-hit);
+	min-height: var(--ds-hit);
+	margin: 0;
+	padding: 0 var(--ds-sp-3);
+	background: var(--field);
+	color: var(--field-ink);
+	border: var(--gp) solid var(--field-edge);
+	border-radius: 0;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
+	caret-color: #fff;
+}
+.mm-admin-dialog input::placeholder {
+	color: var(--text-3);
+	opacity: 1;
+}
+.mm-admin-dialog input:hover {
+	border-color: #d6d0c6;
+}
+.mm-admin-dialog input:focus {
+	border-color: #fff;
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+	box-shadow: 0 0 0 calc(4 * var(--gp)) var(--outline);
+}
+.mm-admin-dialog input:disabled {
+	background: var(--off);
+	color: var(--off-ink);
+	border-color: var(--night-3);
+}
+.mm-admin-dialog .mc-btn {
+	--_h: var(--ds-hit);
+	white-space: nowrap;
+}
+.mm-admin-dialog :focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+.mm-admin-error {
+	margin-top: var(--ds-sp-4);
+	padding: var(--ds-sp-3) var(--ds-sp-4);
+	background: var(--tip-bg);
+	color: var(--bad);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset 0 0 0 var(--gp) var(--bad);
+}
+.mm-admin-dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
+	margin-top: var(--ds-sp-6);
+}
+@media (max-width: 650px) {
+	.mm-admin-dialog {
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+}
+@media (forced-colors: active) {
+	.mm-admin-dialog,
+	.mm-admin-error {
+		border: 1px solid CanvasText;
+	}
+}
