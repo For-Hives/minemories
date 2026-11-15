@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite'
 import { expect, test } from 'bun:test'
 import { AdminAnalyticsReader, bucketOf, concentration, median } from './admin-analytics'
 import { AdminRoles } from './admin-roles'
+import { RequestCounters } from './request-counters'
 
 const DAY = 86_400_000
 const WEEK = 7 * DAY
@@ -24,7 +25,7 @@ function fixture() {
  INSERT INTO user VALUES ('admin','Admin','a@x',1,1);`)
 	const roles = new AdminRoles(db)
 	roles.bootstrap('a@x')
-	return { db, reader: new AdminAnalyticsReader(db, roles) }
+	return { db, reader: new AdminAnalyticsReader(db, roles, new RequestCounters(db)) }
 }
 
 test('only administrators read analytics', () => {
@@ -198,7 +199,7 @@ test('a database without the discovery tables still answers', () => {
  INSERT INTO user VALUES ('admin','Admin','a@x',1,1);`)
 	const roles = new AdminRoles(db)
 	roles.bootstrap('a@x')
-	const result = new AdminAnalyticsReader(db, roles).read('admin', NOW)
+	const result = new AdminAnalyticsReader(db, roles, new RequestCounters(db)).read('admin', NOW)
 	expect(result.funnel.submitted).toBe(0)
 	expect(result.publication).toEqual({ captures: 0, shared: 0, submitted: 0, approved: 0, voted: 0, wellVoted: 0 })
 	db.close()
