@@ -11,6 +11,7 @@ const rpc = vi.hoisted(() => ({
 		access: vi.fn(),
 		summary: vi.fn(),
 		insights: vi.fn(),
+		analytics: vi.fn(),
 		users: vi.fn(),
 		audit: vi.fn(),
 		storageRoles: vi.fn(),
@@ -81,6 +82,41 @@ const insights = {
 			},
 		],
 	},
+}
+const analytics = {
+	funnel: { accounts: 100, verified: 80, paired: 60, captured: 50, shared: 20, submitted: 10 },
+	firstCapture: { buckets: [5, 20, 10, 8, 4, 3], samples: 50, medianMinutes: 26 },
+	cohorts: [
+		{ weekStart: now - 3 * 7 * 24 * HOUR, size: 10, active: [10, 6, 4, 3] },
+		{ weekStart: now - 2 * 7 * 24 * HOUR, size: 0, active: [0, 0, 0] },
+		{ weekStart: now - 7 * 24 * HOUR, size: 8, active: [8, 5] },
+		{ weekStart: now, size: 4, active: [4] },
+	],
+	concentration: {
+		accounts: 100,
+		topTenShare: 0.55,
+		gini: 0.74,
+		lorenz: [0.01, 0.02, 0.04, 0.07, 0.1, 0.15, 0.22, 0.32, 0.39, 1],
+	},
+	worlds: {
+		captures: 200,
+		withBiome: 180,
+		biomes: [
+			{ name: 'plains', count: 40 },
+			{ name: 'forest', count: 20 },
+		],
+		dimensions: [
+			{ name: 'overworld', count: 170 },
+			{ name: 'the_nether', count: 30 },
+		],
+		onServer: 120,
+		singleplayer: 80,
+		distinctServers: 9,
+		topServers: [{ name: 'Shared SMP', captures: 30, accounts: 4 }],
+		sizes: [10, 50, 60, 40, 30, 10],
+		medianBytes: 28_000_000,
+	},
+	publication: { captures: 200, shared: 40, submitted: 12, approved: 10, voted: 8, wellVoted: 2 },
 }
 const user = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
 	id,
@@ -214,6 +250,7 @@ beforeEach(() => {
 	})
 	rpc.admin.summary.mockResolvedValue(summary)
 	rpc.admin.insights.mockResolvedValue(insights)
+	rpc.admin.analytics.mockResolvedValue(analytics)
 	rpc.admin.users.mockResolvedValue(directory)
 	rpc.admin.audit.mockResolvedValue([{ id: 1, at: now, actorName: 'Alex', targetName: 'Bea', role: 'admin' }])
 	rpc.admin.storageRoles.mockResolvedValue([
@@ -241,7 +278,9 @@ test('the rail shows what each capability opens, with the waiting counts', async
 	grant({ admin: true, moderator: true, operator: true })
 	mount('/admin')
 	await screen.findByRole('heading', { name: 'Pulse' })
-	await waitFor(() => expect(railLinks()).toEqual(['Pulse', 'Accounts', 'Moderation4', 'Health1', 'Platform']))
+	await waitFor(() =>
+		expect(railLinks()).toEqual(['Pulse', 'Growth', 'Accounts', 'Worlds', 'Moderation4', 'Health1', 'Platform'])
+	)
 	cleanup()
 	grant({ moderator: true })
 	mount('/admin/moderation')
@@ -509,4 +548,56 @@ test('old links keep working: /moderation lands on the moderation page', async (
 	mount('/moderation')
 	await screen.findByRole('heading', { name: 'Moderation' })
 	expect(where()).toBe('/admin/moderation')
+})
+
+test('growth: the funnel, the first-capture delay, retention by week and who holds the storage', async () => {
+	grant({ admin: true })
+	mount('/admin/growth')
+	await screen.findByRole('heading', { name: 'Growth' })
+	const figures = await screen.findByRole('region', { name: 'Key figures' })
+	expect(within(figures).getByText('50 %')).toBeTruthy()
+	expect(within(figures).getByText('26 min')).toBeTruthy()
+	expect(within(figures).getByText('55 %')).toBeTruthy()
+	expect(within(figures).getByText('61 %')).toBeTruthy()
+	expect(screen.getByText('80 · 80 %')).toBeTruthy()
+	expect(screen.getByRole('img', { name: 'Time to first capture' })).toBeTruthy()
+	expect(screen.getByText('Median: 26 min, over 50 accounts')).toBeTruthy()
+	expect(screen.getAllByRole('img', { name: 'Top 10% of accounts hold 55 % of the bytes' }).length).toBeGreaterThan(0)
+	expect(screen.getByRole('columnheader', { name: 'W7' })).toBeTruthy()
+	expect(screen.getByText('12 · 6 %')).toBeTruthy()
+	expect(screen.getByText('10 · 83 %')).toBeTruthy()
+})
+
+test('growth: without uploads or cohorts old enough, the figures say so', async () => {
+	grant({ admin: true })
+	rpc.admin.analytics.mockResolvedValue({
+		...analytics,
+		firstCapture: { buckets: [0, 0, 0, 0, 0, 0], samples: 0, medianMinutes: null },
+		cohorts: [{ weekStart: now, size: 3, active: [3] }],
+	})
+	mount('/admin/growth')
+	expect(await screen.findByText('No account has uploaded yet.')).toBeTruthy()
+	expect(screen.getAllByText('–').length).toBe(2)
+})
+
+test('worlds: biomes, dimensions, server share, sizes and the servers that two accounts share', async () => {
+	grant({ admin: true })
+	mount('/admin/worlds')
+	await screen.findByRole('heading', { name: 'Worlds' })
+	const figures = await screen.findByRole('region', { name: 'Key figures' })
+	expect(within(figures).getByText('90 %')).toBeTruthy()
+	expect(within(figures).getByText('60 %')).toBeTruthy()
+	expect(within(figures).getByText('9')).toBeTruthy()
+	expect(screen.getByText('plains')).toBeTruthy()
+	expect(screen.getByRole('img', { name: 'Dimension: overworld 85 %, the_nether 15 %' })).toBeTruthy()
+	expect(screen.getByText('Median: 28 MB')).toBeTruthy()
+	expect(screen.getByRole('cell', { name: 'Shared SMP' })).toBeTruthy()
+})
+
+test('worlds: no server table when no server is shared, and the data waits while loading', async () => {
+	grant({ admin: true })
+	rpc.admin.analytics.mockResolvedValue({ ...analytics, worlds: { ...analytics.worlds, topServers: [] } })
+	mount('/admin/worlds')
+	await screen.findByRole('region', { name: 'Key figures' })
+	expect(screen.queryByRole('cell', { name: 'Shared SMP' })).toBeNull()
 })

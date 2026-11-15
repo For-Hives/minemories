@@ -8,6 +8,7 @@ import { cors } from 'hono/cors'
 import * as z from 'zod'
 import { AccountSecurity } from './account-security'
 import { AdminAccounts } from './admin-accounts'
+import { AdminAnalyticsReader } from './admin-analytics'
 import { bootstrapAdministratorsFromEnvironment, bootstrapTemporaryAdministrator } from './admin-bootstrap'
 import { AdminInsightsReader } from './admin-insights'
 import { AdminMetrics } from './admin-metrics'
@@ -101,6 +102,7 @@ bootstrapTemporaryAdministrator(database, adminRoles)
 bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
 const adminInsights = new AdminInsightsReader(database, adminRoles)
+const adminAnalytics = new AdminAnalyticsReader(database, adminRoles)
 const adminAccounts = new AdminAccounts(database, adminRoles)
 // Administrators (Better Auth accounts promoted in `user_roles`) are also the diagnostics operators and the public-gallery moderators.
 const administrators = { has: (userId: string) => adminRoles.allowed(userId) }
@@ -162,6 +164,7 @@ const router = os.router({
 		summary: os.admin.summary.handler(({ context, input }) => adminMetrics.summary(context.userId, input.hours)),
 		users: os.admin.users.handler(({ context, input }) => adminRoles.users(context.userId, input)),
 		insights: os.admin.insights.handler(({ context }) => adminInsights.read(context.userId)),
+		analytics: os.admin.analytics.handler(({ context }) => adminAnalytics.read(context.userId)),
 		storageRoles: os.admin.storageRoles.handler(({ context }) => adminRoles.storageRoles(context.userId)),
 		setRoleStorage: os.admin.setRoleStorage.handler(({ context, input }) =>
 			adminRoles.setRoleStorage(context.userId, input)

@@ -7,7 +7,9 @@ Every `/admin` page shares one frame (`components/AdminLayout.tsx`): a rail on t
 | Page | Route | Question it answers |
 | --- | --- | --- |
 | Pulse | `/admin` | Is the service healthy, and what needs someone today? |
+| Growth | `/admin/growth` | Do people arrive, reach their first capture and stay? |
 | Accounts | `/admin/users` | Who is this account, and what can I do? |
+| Worlds | `/admin/worlds` | What do players capture, and where? |
 | Moderation | `/admin/moderation` | What should I approve or reject? |
 | Health | `/admin/diagnostics` | What breaks, for whom, and since which version? |
 | Platform | `/admin/platform` | Where are the bytes, what may each role store, who changed access? |
@@ -21,9 +23,16 @@ Rules every page follows:
 
 Figures that come from existing data only: key figures and their change, the activity series, the heatmap (uploads by UTC weekday and 2-hour slot, last 30 days), storage by state and its 90-day projection (linear, labelled as an estimate), the share of an error held by each mod version against the installed fleet (a ratio above 2 flags a regression), the moderation queue and its keys (A, R, J, K), and the role limits and audit.
 
-Not built yet, because each needs new server-side figures: the Growth page (activation funnel, retention by sign-up week, time to first capture, storage concentration), the Worlds page (biomes, dimensions, server or solo) and hourly counters for JAR downloads, API errors and pairing failures. They would follow the rule of the metrics below: aggregates only, no identity, no IP.
+Growth and Worlds read `admin.analytics` (`apps/api/src/admin-analytics.ts`, administrators only), computed from tables the service already holds, with nothing tracked for it:
 
-The sections below describe the data behind these pages.
+- **Funnel**: accounts, verified e-mail, paired device, first capture, shared link, submitted to the gallery (each counted once per account, ever).
+- **Time to first capture**: from the account's first paired device to its first capture, in six buckets and a median.
+- **Retention by sign-up week**: eight Monday-to-Sunday (UTC) cohorts; an account is active in a week with a login (a Better Auth session still held), an upload, or a paired device last seen. Expired sessions are gone, so every rate is a minimum.
+- **Concentration**: the share of live bytes held by the top tenth of accounts, the Gini index and the Lorenz curve.
+- **Worlds**: biomes, dimensions, server or singleplayer, capture sizes and the median, from `metadata_json`. Coordinates, seeds and world names are never returned. A server is named only when at least two accounts captured it, and only the five biggest are listed.
+- **Publication funnel**: live captures, shared by link, submitted, approved, voted, and with five votes or more.
+
+Still to build: hourly counters for JAR downloads, API errors and pairing failures. They would follow the rule of the metrics below: aggregates only, no identity, no IP.
 
 ## First administrator
 

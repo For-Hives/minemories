@@ -11,6 +11,8 @@ const AdminModeration = lazy(() =>
 	import('./pages/admin/AdminModeration').then(module => ({ default: module.AdminModeration }))
 )
 const AdminHealth = lazy(() => import('./pages/admin/AdminHealth').then(module => ({ default: module.AdminHealth })))
+const AdminGrowth = lazy(() => import('./pages/admin/AdminGrowth').then(module => ({ default: module.AdminGrowth })))
+const AdminWorlds = lazy(() => import('./pages/admin/AdminWorlds').then(module => ({ default: module.AdminWorlds })))
 const AdminPlatform = lazy(() =>
 	import('./pages/admin/AdminPlatform').then(module => ({ default: module.AdminPlatform }))
 )
@@ -24,6 +26,22 @@ export const adminRoutes = (
 				element={
 					<Page>
 						<AdminPulse />
+					</Page>
+				}
+			/>
+			<Route
+				path="growth"
+				element={
+					<Page>
+						<AdminGrowth />
+					</Page>
+				}
+			/>
+			<Route
+				path="worlds"
+				element={
+					<Page>
+						<AdminWorlds />
 					</Page>
 				}
 			/>

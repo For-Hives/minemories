@@ -1,4 +1,4 @@
-import type { AdminInsights, AdminSummary } from '@minemories/api-contract'
+import type { AdminAnalytics, AdminInsights, AdminSummary } from '@minemories/api-contract'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { apiClient } from '../../api-client'
 import type { AdminAccess } from '../admin-access'
@@ -12,6 +12,7 @@ export const parsePeriod = (value: string | null): Period => PERIODS.find(period
 export type ConsoleData = {
 	summary: AdminSummary | null
 	insights: AdminInsights | null
+	analytics: AdminAnalytics | null
 	queue: { pending: number; reported: number } | null
 	openIssues: { count: number; more: boolean } | null
 	/** Accounts, bytes in use and accounts at 90 % of their own quota, over every account. */
@@ -24,6 +25,7 @@ export type ConsoleData = {
 const empty: ConsoleData = {
 	summary: null,
 	insights: null,
+	analytics: null,
 	queue: null,
 	openIssues: null,
 	overview: null,
@@ -50,12 +52,14 @@ export function useConsoleData(access: AdminAccess) {
 			admin
 				? apiClient.admin.users({ query: '', role: 'all', page: 1 }, options)
 				: Promise.reject(new Error('skipped')),
-		]).then(([summary, insights, queue, issues, users]) => {
+			admin ? apiClient.admin.analytics(undefined, options) : Promise.reject(new Error('skipped')),
+		]).then(([summary, insights, queue, issues, users, analytics]) => {
 			if (controller.signal.aborted) return
 			const list = settled(issues)
 			setData(previous => ({
 				summary: settled(summary),
 				insights: settled(insights),
+				analytics: settled(analytics),
 				queue: settled(queue),
 				openIssues: list ? { count: list.items.length, more: list.hasMore } : null,
 				overview: settled(users)?.overview ?? null,
