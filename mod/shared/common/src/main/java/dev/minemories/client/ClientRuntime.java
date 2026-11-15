@@ -10,6 +10,7 @@ import dev.minemories.client.mods.flywheel.FlywheelCaptureBridge;
 import dev.minemories.client.volume.CaptureVolume;
 import dev.minemories.client.volume.VolumeCapture;
 import dev.minemories.core.GlbCategory;
+import dev.minemories.core.GlbLimitException;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -1442,11 +1443,20 @@ public final class ClientRuntime {
     } catch (Exception e) {
       captureFailure = I18n.get("minemories.chat.error", e.getMessage());
       diagnostics.failed(e);
-      say("minemories.chat.memory_failed");
+      GlbLimitException limit = glbLimit(e);
+      if (limit == null) say("minemories.chat.memory_failed");
+      else say("minemories.chat.memory_too_varied");
       LOGGER.error("Capture export failed", e);
       return 0;
     }
     return 1;
+  }
+
+  /** The online limit a failed capture went over, if that is why it failed. */
+  static GlbLimitException glbLimit(Throwable error) {
+    for (Throwable cause = error; cause != null; cause = cause.getCause())
+      if (cause instanceof GlbLimitException limit) return limit;
+    return null;
   }
 
   static int captureCell(

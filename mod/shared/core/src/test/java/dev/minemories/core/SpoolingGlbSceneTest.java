@@ -285,11 +285,26 @@ final class SpoolingGlbSceneTest {
   }
 
   @Test
+  void aSceneOverTheApiLimitsIsRefusedBeforeWritingEvenWithWiderOwnLimits() throws IOException {
+    var wide = limits(5000, 5000, 1, 4096, 64 * 1024 * 1024, 1_000_000_000, 1_000_000_000, 2);
+    Path output = temporary.resolve("varied.glb");
+    try (SpoolingGlbScene scene = new SpoolingGlbScene(temporary, wide)) {
+      for (int i = 0; i <= GlbLimits.PRIMITIVES; i++) add(scene, "block" + i);
+      var refused = assertThrows(GlbLimitException.class, () -> scene.write(output));
+      assertEquals("primitives", refused.limit());
+    }
+    assertFalse(Files.exists(output));
+    noSpools();
+  }
+
+  @Test
   void materialTextureAndLightLimitsInvalidateRatherThanTruncate() throws IOException {
     var materialLimits = limits(1, 1, 1, 4096, 65536, 1_000_000, 1_000_000, 2);
     try (SpoolingGlbScene scene = new SpoolingGlbScene(temporary, materialLimits)) {
       add(scene, "one");
-      assertThrows(IOException.class, () -> add(scene, "two"));
+      var refused = assertThrows(GlbLimitException.class, () -> add(scene, "two"));
+      // One material, one primitive: the client tells the player to capture a smaller area.
+      assertEquals("primitives", refused.limit());
       assertFalse(scene.hasGeometry());
     }
     noSpools();

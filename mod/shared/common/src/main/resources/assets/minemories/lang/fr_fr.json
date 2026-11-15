@@ -159,6 +159,7 @@
   "minemories.chat.memory_saved": "Souvenir enregistré.",
   "minemories.chat.memory_sent": "Souvenir envoyé dans ta galerie.",
   "minemories.chat.memory_failed": "Impossible d’enregistrer le souvenir. Réessaie.",
+  "minemories.chat.memory_too_varied": "Cette zone a trop de blocs et de textures différents pour un seul souvenir. Capture une zone plus petite.",
   "minemories.chat.auto_saved": "Souvenir automatique enregistré.",
   "minemories.chat.auto_sent": "Souvenir automatique envoyé dans ta galerie.",
   "minemories.chat.auto_failed": "Le souvenir automatique a échoué. Nouvel essai plus tard.",

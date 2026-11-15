@@ -110,6 +110,12 @@ and other entities are kept, and the local log shows a line
 (counts only, no identifier, name or path). A refused texture is refused once for the whole
 capture. Manual and AFK captures go through the same code.
 
+The same goes for the sprites a renderer reads from a block atlas (`AtlasUvIndex`): an atlas keeps
+512 distinct sprites per capture (as many as the texture budget). Until 15 November 2026 it kept 256
+and the 257th failed the whole capture ("Too many sprites used by renderers."): a room of 263 item
+frames with different items did. The sprite past the limit is now dropped and counted in
+`skippedTextures`, once per atlas region.
+
 Why 512: the AFK spooled writer accepted 1,024 textures in total when this cap was set (4,096 since 11/11/2026), shared with the terrain and
 block entities; a real modpack capture has 83 (38 KiB of PNG in total, after atlas cropping),
 67 for the largest native capture. 512 entity textures therefore leave at least 512 slots for the

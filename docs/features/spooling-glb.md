@@ -154,6 +154,17 @@ JSON and textures. Peak disk usage can reach spool + final file, plus the
 compatibility copies made by the history. The file system cache also uses
 memory outside the Java heap.
 
+Both writers (`SpoolingGlbScene` and `GlbScene`, the manual export) also check the API's own GLB
+limits before writing (`GlbLimits`, kept equal to `packages/api-contract` by
+`scripts/mod/glb-limits.test.mjs`): 4 MiB of JSON, 4,096 images, textures, primitives and nodes,
+16,384 entries in any top-level array. A capture over any of them is not written: the player reads
+"This area has too many different blocks and textures for one memory. Capture a smaller area."
+Until 15 November 2026 the manual export wrote such files, the API refused them at the end of the
+upload (`invalid_glb_or_checksum`, HTTP 400) and the mod suggested a retry that could not succeed;
+it now says that retrying will not help. A very varied area reaches these limits at about 3,300
+different materials (each one takes a primitive, four accessors, four or five buffer views and about
+1.2 KB of JSON); a 16 × 16 column holding 8,000 different blocks had 9,275.
+
 Shared PNGs are spooled only once. A new material that redefines an image with
 different bytes is refused. As with `GlbScene`, a material's first descriptor
 is kept for subsequent quads with the same key. Quads with non-finite

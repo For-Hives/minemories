@@ -7,7 +7,12 @@ import java.util.Objects;
 
 /** Bounded UV lookup: copying a renderer's sprite must not require copying its entire atlas. */
 final class AtlasUvIndex<T> {
-  private static final int MAX_MATCHES = 256;
+  /**
+   * Distinct sprites kept per atlas: as many as the renderers' texture budget ({@link
+   * RenderedBudget}).
+   */
+  static final int MAX_MATCHES = RenderedBudget.MAX_TEXTURES;
+
   private static final int MAX_SCAN = 1_048_576;
   private static final long MAX_TOTAL_SCAN = 32L * MAX_SCAN;
   private final Iterable<Region<T>> regions;
@@ -19,6 +24,17 @@ final class AtlasUvIndex<T> {
 
     NoMatchingSpriteException() {
       super("The renderer UVs do not map to a single exportable sprite.");
+    }
+  }
+
+  /**
+   * One sprite more than the index keeps: the capture drops it as a refused texture and goes on.
+   */
+  static final class TooManySpritesException extends IOException {
+    @java.io.Serial private static final long serialVersionUID = 1L;
+
+    TooManySpritesException() {
+      super("Too many sprites used by renderers.");
     }
   }
 
@@ -78,7 +94,7 @@ final class AtlasUvIndex<T> {
     if (minU < 0 || minV < 0 || maxU > 1 || maxV > 1)
       throw new IOException("Renderer UVs outside the atlas.");
     for (Region<T> region : matches) if (region.contains(minU, minV, maxU, maxV)) return region;
-    if (matches.size() == MAX_MATCHES) throw new IOException("Too many sprites used by renderers.");
+    if (matches.size() == MAX_MATCHES) throw new TooManySpritesException();
     int visited = 0;
     for (Region<T> region : regions) {
       if (++visited > MAX_SCAN)

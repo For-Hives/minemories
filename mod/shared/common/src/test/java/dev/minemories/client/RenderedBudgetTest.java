@@ -20,6 +20,14 @@ class RenderedBudgetTest {
   }
 
   @Test
+  void aSpriteDroppedByItsAtlasIndexCountsAsASkippedTexture() {
+    RenderedBudget budget = new RenderedBudget();
+    budget.skipTexture();
+    assertEquals(1, budget.skippedTextures());
+    assertTrue(budget.anySkipped());
+  }
+
+  @Test
   void textureBytesAreReservedUntilTheBudgetIsFull() {
     var budget = new RenderedBudget(10, 100, 4, 10);
     assertTrue(budget.admitBytes(60));

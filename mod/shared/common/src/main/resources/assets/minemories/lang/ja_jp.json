@@ -159,6 +159,7 @@
   "minemories.chat.memory_saved": "Memory saved.",
   "minemories.chat.memory_sent": "Memory sent to your gallery.",
   "minemories.chat.memory_failed": "Couldn't save the memory. Try again.",
+  "minemories.chat.memory_too_varied": "このエリアは1つの思い出には異なるブロックとテクスチャが多すぎます。もっと小さいエリアをキャプチャしてください。",
   "minemories.chat.auto_saved": "Auto memory saved.",
   "minemories.chat.auto_sent": "Auto memory sent to your gallery.",
   "minemories.chat.auto_failed": "The auto memory failed. It will try again later.",
