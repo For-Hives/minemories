@@ -140,6 +140,13 @@ export const adminAnalytics = z.object({
 		sizes: z.array(count).length(6),
 		medianBytes: z.number().nonnegative(),
 	}),
+	/** Hourly request counters (totals only, no address or account): downloads by mod target over 30 days, the API and pairing over 24 hours. */
+	traffic: z.object({
+		trackingStartedAt: z.number(),
+		downloads: z.array(z.object({ target: z.string(), count })),
+		api: z.array(z.object({ route: z.string(), requests: count, serverErrors: count, meanMs: count })),
+		pairing: z.object({ done: count, rejected: count, limited: count }),
+	}),
 	publication: z.object({
 		captures: count,
 		shared: count,

@@ -1574,5 +1574,18 @@
 	"Week of": "週の開始",
 	"What players capture, and where. Counts only: no coordinates, seeds or world names.": "プレイヤーが何をどこで撮るか。件数のみ。座標・シード・ワールド名は含みません。",
 	"Where they are": "場所",
-	"Who holds the storage": "誰がストレージを使っているか"
+	"Who holds the storage": "誰がストレージを使っているか",
+	"Mod downloads": "MODのダウンロード",
+	"Downloads in the last 30 days, by target": "直近30日のダウンロード(ターゲット別)",
+	"Nothing counted yet.": "まだ集計されていません。",
+	"Pairing, last 24 hours": "ペアリング(直近24時間)",
+	"How the 6-digit code exchanges ended": "6桁コードの交換結果",
+	"Done": "成功",
+	"Too many attempts": "試行回数超過",
+	"API, last 24 hours": "API(直近24時間)",
+	"Counting started {date}. Totals only: no address, account or path is stored.": "{date} から集計中。合計のみで、アドレス・アカウント・パスは保存しません。",
+	"Route": "ルート",
+	"Requests": "リクエスト",
+	"Server errors": "サーバーエラー",
+	"Mean time": "平均時間"
 }

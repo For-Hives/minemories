@@ -1574,5 +1574,18 @@
 	"Week of": "주 시작",
 	"What players capture, and where. Counts only: no coordinates, seeds or world names.": "플레이어가 무엇을 어디서 캡처하는지. 숫자만 표시: 좌표, 시드, 월드 이름 없음.",
 	"Where they are": "어디에 있는가",
-	"Who holds the storage": "누가 저장소를 차지하는가"
+	"Who holds the storage": "누가 저장소를 차지하는가",
+	"Mod downloads": "모드 다운로드",
+	"Downloads in the last 30 days, by target": "최근 30일 다운로드(대상별)",
+	"Nothing counted yet.": "아직 집계된 항목이 없습니다.",
+	"Pairing, last 24 hours": "연결, 최근 24시간",
+	"How the 6-digit code exchanges ended": "6자리 코드 교환 결과",
+	"Done": "완료",
+	"Too many attempts": "시도 횟수 초과",
+	"API, last 24 hours": "API, 최근 24시간",
+	"Counting started {date}. Totals only: no address, account or path is stored.": "{date}부터 집계 중. 합계만 저장하며 주소, 계정, 경로는 저장하지 않습니다.",
+	"Route": "경로",
+	"Requests": "요청",
+	"Server errors": "서버 오류",
+	"Mean time": "평균 시간"
 }

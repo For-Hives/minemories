@@ -6,11 +6,100 @@ import { useI18n } from '../../i18n/I18n'
 import { formatBytes } from '../../lib/bytes'
 import { RoleStorageDialog } from '../AdminRoleStorage'
 import '../admin-dialog.css'
-import { Card, Kpi, Meter } from './AdminKit'
+import { BarRow, Card, Kpi, Meter } from './AdminKit'
 import { ConsoleHeader } from './ConsoleHeader'
 import { useConsole } from './console'
 
 type Audit = Awaited<ReturnType<typeof apiClient.admin.audit>>
+
+type Traffic = NonNullable<ReturnType<typeof useConsole>['data']['analytics']>['traffic']
+
+/** Hourly request counters: which mod builds are downloaded, how the API answers, how pairing ends. Totals only. */
+function TrafficCards({ traffic }: { traffic: Traffic }) {
+	const { t, locale } = useI18n()
+	const top = Math.max(1, ...traffic.downloads.map(row => row.count))
+	const pairing = traffic.pairing
+	const attempts = pairing.done + pairing.rejected + pairing.limited
+	return (
+		<>
+			<div className="mm-con-grid is-wide">
+				<Card title={t('Mod downloads')} hint={t('Downloads in the last 30 days, by target')}>
+					{traffic.downloads.length === 0 ? (
+						<p className="mm-con-note">{t('Nothing counted yet.')}</p>
+					) : (
+						<ul className="mm-con-rows">
+							{traffic.downloads.slice(0, 8).map(row => (
+								<BarRow
+									key={row.target}
+									label={row.target}
+									share={row.count / top}
+									text={row.count.toLocaleString(locale)}
+								/>
+							))}
+						</ul>
+					)}
+				</Card>
+				<Card title={t('Pairing, last 24 hours')} hint={t('How the 6-digit code exchanges ended')}>
+					<Meter
+						label={t('Pairing, last 24 hours')}
+						total={attempts}
+						parts={[
+							{ label: t('Done'), value: pairing.done, tone: 'ok', text: pairing.done.toLocaleString(locale) },
+							{
+								label: t('Rejected'),
+								value: pairing.rejected,
+								tone: 'warn',
+								text: pairing.rejected.toLocaleString(locale),
+							},
+							{
+								label: t('Too many attempts'),
+								value: pairing.limited,
+								tone: 'bad',
+								text: pairing.limited.toLocaleString(locale),
+							},
+						]}
+					/>
+				</Card>
+			</div>
+			<Card
+				title={t('API, last 24 hours')}
+				hint={t('Counting started {date}. Totals only: no address, account or path is stored.', {
+					date: new Date(traffic.trackingStartedAt).toLocaleDateString(locale),
+				})}
+			>
+				{traffic.api.length === 0 ? (
+					<p className="mm-con-note">{t('Nothing counted yet.')}</p>
+				) : (
+					<div className="mm-con-table-wrap">
+						<table className="mm-con-table">
+							<thead>
+								<tr>
+									<th>{t('Route')}</th>
+									<th className="is-num">{t('Requests')}</th>
+									<th className="is-num">{t('Server errors')}</th>
+									<th className="is-num">{t('Mean time')}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{traffic.api.map(row => (
+									<tr key={row.route}>
+										<td>{row.route}</td>
+										<td className="is-num">{row.requests.toLocaleString(locale)}</td>
+										<td className="is-num">
+											{row.serverErrors.toLocaleString(locale)}
+											{row.serverErrors > 0 && ` · ${((row.serverErrors / row.requests) * 100).toFixed(1)} %`}
+										</td>
+										<td className="is-num">{row.meanMs.toLocaleString(locale)} ms</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				)}
+			</Card>
+		</>
+	)
+}
 
 /** `/admin/platform`: where the bytes are and what is waiting, what each role may store, and who changed access. */
 export function AdminPlatform() {
@@ -136,6 +225,7 @@ export function AdminPlatform() {
 					</div>
 				</>
 			)}
+			{data.analytics && <TrafficCards traffic={data.analytics.traffic} />}
 			<Card title={t('Access audit')} hint={t('The latest 50 role changes.')}>
 				{audit.length === 0 ? (
 					<p className="mm-con-note">{t('No changes recorded.')}</p>

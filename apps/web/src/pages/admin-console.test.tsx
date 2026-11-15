@@ -116,6 +116,18 @@ const analytics = {
 		sizes: [10, 50, 60, 40, 30, 10],
 		medianBytes: 28_000_000,
 	},
+	traffic: {
+		trackingStartedAt: now - 3 * 24 * HOUR,
+		downloads: [
+			{ target: 'neoforge-mc1.21.1', count: 412 },
+			{ target: 'fabric-mc1.21.1', count: 236 },
+		],
+		api: [
+			{ route: 'rpc', requests: 1000, serverErrors: 5, meanMs: 42 },
+			{ route: 'auth', requests: 20, serverErrors: 0, meanMs: 8 },
+		],
+		pairing: { done: 8, rejected: 1, limited: 1 },
+	},
 	publication: { captures: 200, shared: 40, submitted: 12, approved: 10, voted: 8, wellVoted: 2 },
 }
 const user = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
@@ -438,12 +450,13 @@ test('moderation: another queue, an empty queue and a refused decision', async (
 	grant({ moderator: true })
 	mount('/admin/moderation')
 	await screen.findByRole('button', { name: /Cherry Estate/ })
-	rpc.discovery.queue.mockResolvedValueOnce({ items: [], hasMore: false })
+	rpc.discovery.queue.mockImplementation(async ({ state }: { state: string }) =>
+		state === 'approved' ? { items: [], hasMore: false } : { items: [queueItem('p1', 'Cherry Estate')], hasMore: true }
+	)
 	fireEvent.click(screen.getByRole('button', { name: /Approved/ }))
 	await screen.findByText('No memories in this queue.')
 	expect(rpc.discovery.queue).toHaveBeenLastCalledWith({ state: 'approved', page: 0 })
 	expect(screen.getByText('Select a memory in the queue.')).toBeTruthy()
-	rpc.discovery.queue.mockResolvedValue({ items: [queueItem('p1', 'Cherry Estate')], hasMore: true })
 	fireEvent.click(screen.getByRole('button', { name: /^Pending/ }))
 	await screen.findByRole('button', { name: /Cherry Estate/ })
 	rpc.discovery.moderate.mockRejectedValueOnce(new Error('refused'))
@@ -600,4 +613,27 @@ test('worlds: no server table when no server is shared, and the data waits while
 	mount('/admin/worlds')
 	await screen.findByRole('region', { name: 'Key figures' })
 	expect(screen.queryByRole('cell', { name: 'Shared SMP' })).toBeNull()
+})
+
+test('platform: downloads by target, pairing outcomes and the API counters', async () => {
+	grant({ admin: true })
+	mount('/admin/platform')
+	expect(await screen.findByText('neoforge-mc1.21.1')).toBeTruthy()
+	expect(screen.getByText('412')).toBeTruthy()
+	expect(
+		screen.getByRole('img', { name: /Pairing, last 24 hours: Done 8, Rejected 1, Too many attempts 1/ })
+	).toBeTruthy()
+	expect(screen.getByText('5 · 0.5 %')).toBeTruthy()
+	expect(screen.getByText('42 ms')).toBeTruthy()
+})
+
+test('platform: counters with nothing in them say so', async () => {
+	grant({ admin: true })
+	rpc.admin.analytics.mockResolvedValue({
+		...analytics,
+		traffic: { ...analytics.traffic, downloads: [], api: [], pairing: { done: 0, rejected: 0, limited: 0 } },
+	})
+	mount('/admin/platform')
+	await screen.findByText('Where the bytes are, and what is still waiting')
+	await waitFor(() => expect(screen.getAllByText('Nothing counted yet.')).toHaveLength(2))
 })

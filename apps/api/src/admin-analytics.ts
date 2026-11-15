@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { AdminAnalytics } from '@minemories/api-contract'
 import type { AdminRoles } from './admin-roles'
+import type { RequestCounters } from './request-counters'
 
 const MINUTE = 60_000
 const DAY = 86_400_000
@@ -59,7 +60,8 @@ const num = (value: unknown) => Number(value ?? 0)
 export class AdminAnalyticsReader {
 	constructor(
 		private readonly database: Database,
-		private readonly roles: AdminRoles
+		private readonly roles: AdminRoles,
+		private readonly counters: RequestCounters
 	) {}
 	read(actorId: string | null, now = Date.now()): AdminAnalytics {
 		this.roles.require(actorId)
@@ -70,6 +72,7 @@ export class AdminAnalyticsReader {
 			concentration: this.concentration(),
 			worlds: this.worlds(),
 			publication: this.publication(),
+			traffic: this.counters.summary(),
 		}
 	}
 	private count(sql: string): number {
