@@ -1175,7 +1175,7 @@ h2.cinema-panel-title {
 
 /* Korean and Japanese (Unifont): pixel text in multiples of 16 px only. */
 html.mm-cjk:not([data-mc-font="read"])
-:is(.cinema-title h1, .cinema-settings h2, .viewer-sharing h2, .cinema-loading h2, .cinema-restore-card h2) {
+	:is(.cinema-title h1, .cinema-settings h2, .viewer-sharing h2, .cinema-loading h2, .cinema-restore-card h2) {
 	font-size: 16px;
 	line-height: 24px;
 }
@@ -1191,18 +1191,18 @@ html.mm-cjk:not([data-mc-font="read"]) .cinema-drop {
 
 /* Readable font: titles in bold with a 2 px shadow, no pixel shadow on running text (charter-app's rule). */
 html[data-mc-font="read"]
-:is(
-	.cinema-title h1,
-	.cinema-settings h2,
-	.viewer-sharing h2,
-	.cinema-loading h2,
-	.cinema-restore-card h2,
-	.cinema-empty h2,
-	.cinema-drop,
-	.cinema-panel-title,
-	.cinema-navigation strong,
-	.memory-share-panel h3
-) {
+	:is(
+		.cinema-title h1,
+		.cinema-settings h2,
+		.viewer-sharing h2,
+		.cinema-loading h2,
+		.cinema-restore-card h2,
+		.cinema-empty h2,
+		.cinema-drop,
+		.cinema-panel-title,
+		.cinema-navigation strong,
+		.memory-share-panel h3
+	) {
 	font-weight: 700;
 	text-shadow: 2px 2px 0 var(--text-shadow);
 }

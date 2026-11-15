@@ -77,7 +77,7 @@ To quickly test the local flow, run `bun api:dev`, `bun web:dev` and `bun mod:de
 
 `bun <script>` is Bun's shortcut for `bun run <script>`, except for built-in commands such as `build`: use `bun run build` for the repository script. In CI, `bun check` does not rewrite any file.
 
-`bun format` applies the Biome 2.5.15 configuration: tabs, 120 columns and optional semicolons. For Java, `bun mod:check` applies Spotless and runs JUnit, JaCoCo and SpotBugs; `bun mod:check:ci` checks without modifying. The `:core` tests also check the GLB container with invalid inputs and extreme coordinates. Menu trials and in-game GLB rendering are still required before claiming support for a loader.
+`bun format` applies the Biome 2.6.7 configuration: tabs, 120 columns and optional semicolons. For Java, `bun mod:check` applies Spotless and runs JUnit, JaCoCo and SpotBugs; `bun mod:check:ci` checks without modifying. The `:core` tests also check the GLB container with invalid inputs and extreme coordinates. Menu trials and in-game GLB rendering are still required before claiming support for a loader.
 
 ## Storage and data
 

@@ -10,7 +10,7 @@ services:
       GARAGE_RPC_SECRET: ${SERVICE_HEX_64_RPCSECRET:?Set SERVICE_HEX_64_RPCSECRET in Coolify}
       GARAGE_ADMIN_TOKEN: ${SERVICE_PASSWORD_GARAGE:?Set SERVICE_PASSWORD_GARAGE in Coolify}
       GARAGE_METRICS_TOKEN: ${SERVICE_PASSWORD_GARAGEMETRICS:?Set SERVICE_PASSWORD_GARAGEMETRICS in Coolify}
-      GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
+      GARAGE_ALLOW_WORLD_READABLE_SECRETS: 'true'
     volumes:
       - garage-meta-v2:/var/lib/garage/meta
       - garage-data-v2:/var/lib/garage/data
@@ -18,9 +18,9 @@ services:
       - source: garage-config
         target: /etc/garage.toml
     expose:
-      - "3900"
-      - "3902"
-      - "3903"
+      - '3900'
+      - '3902'
+      - '3903'
     healthcheck:
       test: [CMD, /garage, stats, -a]
       interval: 10s

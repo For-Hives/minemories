@@ -7,7 +7,7 @@ services:
       GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       GARAGE_DEFAULT_BUCKET: ${S3_BUCKET:-minemories}
     ports:
-      - "127.0.0.1:3900:3900"
+      - '127.0.0.1:3900:3900'
     volumes:
       - ./garage.toml:/etc/garage.toml:ro
       - garage_meta:/var/lib/garage/meta
