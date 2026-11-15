@@ -259,6 +259,10 @@ export class PublicDiscovery {
 				memoryId: row.memory_id,
 				state: row.state,
 				reason: row.reason,
+				owner: this.db
+					.query(`SELECT COUNT(*) AS submissions,COALESCE(SUM(state='approved'),0) AS approved,COALESCE(SUM(state='rejected'),0) AS rejected
+ FROM public_publications WHERE user_id=? AND id<>?`)
+					.get(row.user_id, row.id) as { submissions: number; approved: number; rejected: number },
 				reports: (
 					this.db
 						.query(`SELECT rowid AS id,reason,created_at FROM public_reports

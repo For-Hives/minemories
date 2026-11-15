@@ -254,3 +254,22 @@ test('status payloads from an API without submission still parse with submission
 	const submission = { title: 'Village', description: '', category: 'other' as const }
 	expect(publicationStatus.parse({ ...legacy, submission }).submission).toEqual(submission)
 })
+
+test('the moderation queue tells what the owner submitted before, without counting the one under review', () => {
+	const f = fixture()
+	const first = f.publish(f.memory(), 'owner', 'First')
+	f.advance()
+	const second = f.publish(f.memory(), 'owner', 'Second')
+	f.advance()
+	f.service.moderate('moderator', first.id, 'approved', '')
+	const other = f.publish(f.memory('stranger'), 'stranger', 'Other')
+	const items = f.service.queue('moderator', { state: 'pending', page: 0 }).items
+	expect(items.map(item => [item.title, item.owner])).toEqual([
+		['Second', { submissions: 1, approved: 1, rejected: 0 }],
+		['Other', { submissions: 0, approved: 0, rejected: 0 }],
+	])
+	f.service.moderate('moderator', second.id, 'rejected', 'No')
+	f.service.moderate('moderator', other.id, 'rejected', 'No')
+	const approved = f.service.queue('moderator', { state: 'approved', page: 0 }).items
+	expect(approved[0]?.owner).toEqual({ submissions: 1, approved: 0, rejected: 1 })
+})

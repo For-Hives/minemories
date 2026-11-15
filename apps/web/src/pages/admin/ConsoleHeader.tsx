@@ -14,7 +14,7 @@ export function ConsoleHeader({
 	periodTools?: boolean
 }) {
 	const { t, locale } = useI18n()
-	const { period, setPeriod, compare, setCompare, reload, data } = useConsole()
+	const { period, setPeriod, compare, setCompare, reload, data, openPalette } = useConsole()
 	const labels: Record<Period, string> = { '24h': t('24 hours'), '7d': t('7 days'), '30d': t('30 days') }
 	return (
 		<header className="mm-con-bar">
@@ -37,6 +37,9 @@ export function ConsoleHeader({
 						</button>
 					</>
 				)}
+				<button type="button" className="mm-con-chip" onClick={openPalette}>
+					{t('Jump to…')} <kbd>Ctrl K</kbd>
+				</button>
 				<button type="button" className={buttonOutline} disabled={data.loading} onClick={reload}>
 					{t('Refresh')}
 				</button>

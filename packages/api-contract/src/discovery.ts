@@ -82,6 +82,12 @@ export const discoveryContract = {
 						memoryId: id,
 						state: publicationState,
 						reason: z.string().nullable(),
+						/** What the owner submitted before this one: a hint for the reviewer, never a decision. */
+						owner: z.object({
+							submissions: z.number().int().nonnegative(),
+							approved: z.number().int().nonnegative(),
+							rejected: z.number().int().nonnegative(),
+						}),
 						reports: z.array(
 							z.object({ id: z.number().int().positive(), reason: z.string(), createdAt: z.string().datetime() })
 						),

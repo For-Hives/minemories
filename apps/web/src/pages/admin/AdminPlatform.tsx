@@ -2,15 +2,19 @@ import type { RoleStorage } from '@minemories/api-contract'
 import { useEffect, useState } from 'react'
 import { apiClient } from '../../api-client'
 import { buttonDark } from '../../components/ui'
+import { translate } from '../../i18n/catalog'
 import { useI18n } from '../../i18n/I18n'
 import { formatBytes } from '../../lib/bytes'
 import { RoleStorageDialog } from '../AdminRoleStorage'
+import { stateLabels } from '../diagnostics-data'
 import '../admin-dialog.css'
 import { BarRow, Card, Kpi, Meter } from './AdminKit'
 import { ConsoleHeader } from './ConsoleHeader'
 import { useConsole } from './console'
 
-type Audit = Awaited<ReturnType<typeof apiClient.admin.audit>>
+type Journal = Awaited<ReturnType<typeof apiClient.admin.journal>>
+type Area = Journal[number]['area']
+const AREAS: readonly Area[] = ['roles', 'deletions', 'moderation', 'health', 'quota']
 
 type Traffic = NonNullable<ReturnType<typeof useConsole>['data']['analytics']>['traffic']
 
@@ -101,23 +105,42 @@ function TrafficCards({ traffic }: { traffic: Traffic }) {
 	)
 }
 
+type Translate = ReturnType<typeof useI18n>['t']
+const issueStatePrefix = 'issue_'
+/** The sentence for an action code; an unknown code is shown as it is rather than hidden. */
+function journalAction(action: string, t: Translate, locale: ReturnType<typeof useI18n>['locale']): string {
+	const known: Record<string, string> = {
+		role_granted: t('Administrator access granted'),
+		role_removed: t('Administrator access removed'),
+		account_deleted: t('Account deleted'),
+		publication_approved: t('Publication approved'),
+		publication_rejected: t('Publication rejected'),
+		quota_set: t('Role limit changed'),
+	}
+	const state = action.startsWith(issueStatePrefix) ? action.slice(issueStatePrefix.length) : null
+	if (state && state in stateLabels)
+		return t('Error group: {state}', { state: translate(locale, stateLabels[state as keyof typeof stateLabels]) })
+	return known[action] ?? action
+}
+
 /** `/admin/platform`: where the bytes are and what is waiting, what each role may store, and who changed access. */
 export function AdminPlatform() {
 	const { t, locale } = useI18n()
 	const { data, reload } = useConsole()
 	const [roles, setRoles] = useState<RoleStorage[]>([])
-	const [audit, setAudit] = useState<Audit>([])
+	const [journal, setJournal] = useState<Journal>([])
+	const [area, setArea] = useState<Area | null>(null)
 	const [limit, setLimit] = useState<RoleStorage | null>(null)
 	const [revision, setRevision] = useState(0)
 	const [failed, setFailed] = useState(false)
 	useEffect(() => {
 		let live = true
 		setFailed(false)
-		Promise.all([apiClient.admin.storageRoles(), apiClient.admin.audit()])
-			.then(([nextRoles, nextAudit]) => {
+		Promise.all([apiClient.admin.storageRoles(), apiClient.admin.journal()])
+			.then(([nextRoles, nextJournal]) => {
 				if (!live) return
 				setRoles(nextRoles)
-				setAudit(nextAudit)
+				setJournal(nextJournal)
 			})
 			.catch(() => live && setFailed(true))
 		return () => {
@@ -126,6 +149,15 @@ export function AdminPlatform() {
 	}, [revision, data.loads])
 	const totals = data.summary?.totals
 	const roleName = { user: t('User'), admin: t('Admin') }
+	const areaLabels: Record<Area, string> = {
+		roles: t('Roles'),
+		deletions: t('Deletions'),
+		moderation: t('Moderation'),
+		health: t('Health'),
+		quota: t('Role limit'),
+	}
+	const shown = area ? journal.filter(entry => entry.area === area) : journal
+	const actionLabel = (action: string) => journalAction(action, t, locale)
 	return (
 		<>
 			<ConsoleHeader title={t('Platform')} lead={t('Storage, queues, limits and who changed access.')} />
@@ -226,29 +258,46 @@ export function AdminPlatform() {
 				</>
 			)}
 			{data.analytics && <TrafficCards traffic={data.analytics.traffic} />}
-			<Card title={t('Access audit')} hint={t('The latest 50 role changes.')}>
-				{audit.length === 0 ? (
+			<Card title={t('Journal')} hint={t('Every sensitive action, from every page. The latest 100.')}>
+				<div className="mm-con-chips" style={{ marginBottom: 12 }}>
+					<button type="button" className="mm-con-chip" aria-pressed={area === null} onClick={() => setArea(null)}>
+						{t('filters.allStates')}
+					</button>
+					{AREAS.map(value => (
+						<button
+							key={value}
+							type="button"
+							className="mm-con-chip"
+							aria-pressed={area === value}
+							onClick={() => setArea(value)}
+						>
+							{areaLabels[value]}
+						</button>
+					))}
+				</div>
+				{shown.length === 0 ? (
 					<p className="mm-con-note">{t('No changes recorded.')}</p>
 				) : (
 					<div className="mm-con-table-wrap">
 						<table className="mm-con-table">
 							<thead>
 								<tr>
-									<th>{t('Account')}</th>
-									<th>{t('Role')}</th>
-									<th>{t('Actions')}</th>
 									<th>{t('Date')}</th>
+									<th>{t('Area')}</th>
+									<th>{t('Action')}</th>
 								</tr>
 							</thead>
 							<tbody>
-								{audit.map(row => (
-									<tr key={row.id}>
-										<td>{row.targetName ?? t('Deleted account')}</td>
+								{shown.map(entry => (
+									<tr key={`${entry.at}-${entry.area}-${entry.action}-${entry.target}`}>
+										<td>{new Date(entry.at).toLocaleString(locale)}</td>
+										<td>{areaLabels[entry.area]}</td>
 										<td>
-											{row.role === 'admin' ? t('Administrator access granted') : t('Administrator access removed')}
+											<strong>{actionLabel(entry.action)}</strong>
+											<small>
+												{entry.target ?? t('Deleted account')} · {entry.actor ?? t('Server console')}
+											</small>
 										</td>
-										<td>{row.actorName ?? t('Server console')}</td>
-										<td>{new Date(row.at).toLocaleString(locale)}</td>
 									</tr>
 								))}
 							</tbody>
