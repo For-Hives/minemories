@@ -159,6 +159,7 @@
   "minemories.chat.memory_saved": "Memory saved.",
   "minemories.chat.memory_sent": "Memory sent to your gallery.",
   "minemories.chat.memory_failed": "Couldn't save the memory. Try again.",
+  "minemories.chat.memory_too_varied": "Dieser Bereich hat zu viele verschiedene Blöcke und Texturen für eine Erinnerung. Nimm einen kleineren Bereich auf.",
   "minemories.chat.auto_saved": "Auto memory saved.",
   "minemories.chat.auto_sent": "Auto memory sent to your gallery.",
   "minemories.chat.auto_failed": "The auto memory failed. It will try again later.",

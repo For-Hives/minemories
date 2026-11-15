@@ -310,6 +310,27 @@ class ChunkedUploaderTest {
   }
 
   @Test
+  void aFileTheApiRefusesSaysRetryingWillNotHelp() throws Exception {
+    Path file = capture(20);
+    String url =
+        start(
+            exchange -> {
+              String path = exchange.getRequestURI().getPath();
+              if (path.endsWith("/complete"))
+                respond(exchange, 400, "{\"error\":\"invalid_glb_or_checksum\"}");
+              else if (exchange.getRequestMethod().equals("PUT"))
+                respond(exchange, 200, "{\"offset\":20}");
+              else respond(exchange, 200, session(0, false));
+            });
+    IOException error =
+        assertThrows(
+            IOException.class,
+            () -> uploader().upload(url, "test-token", file, new JsonObject(), ignored -> {}));
+    assertEquals(ChunkedUploader.INVALID_GLB_MESSAGE, error.getMessage());
+    assertFalse(error.getMessage().contains("Retry"));
+  }
+
+  @Test
   void quotaRefusalPreservesLocalCaptureAndSessionForRetryAfterSpaceIsFreed() throws Exception {
     Path file = capture(20);
     byte[] original = Files.readAllBytes(file);

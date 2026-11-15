@@ -159,6 +159,7 @@
   "minemories.chat.memory_saved": "Memory saved.",
   "minemories.chat.memory_sent": "Memory sent to your gallery.",
   "minemories.chat.memory_failed": "Couldn't save the memory. Try again.",
+  "minemories.chat.memory_too_varied": "이 구역에는 하나의 기억에 담기에 너무 많은 종류의 블록과 텍스처가 있어요. 더 작은 구역을 캡처하세요.",
   "minemories.chat.auto_saved": "Auto memory saved.",
   "minemories.chat.auto_sent": "Auto memory sent to your gallery.",
   "minemories.chat.auto_failed": "The auto memory failed. It will try again later.",

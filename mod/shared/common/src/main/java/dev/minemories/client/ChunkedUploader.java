@@ -312,6 +312,14 @@ final class ChunkedUploader {
     }
   }
 
+  /**
+   * Shown when the API refuses the file itself: it is over the online limits, so retrying cannot
+   * help.
+   */
+  static final String INVALID_GLB_MESSAGE =
+      "The server refused this memory: it is over the online limits (too many different textures)."
+          + " Capture a smaller area; retrying will not help.";
+
   private static final class UploadException extends IOException {
     private static final long serialVersionUID = 1L;
     private final int status;
@@ -324,19 +332,12 @@ final class ChunkedUploader {
     }
 
     private static String message(int status, String body) {
-      if (status == 413) {
-        try {
-          var error = JsonParser.parseString(body).getAsJsonObject().get("error");
-          if (error != null
-              && error.isJsonPrimitive()
-              && error.getAsJsonPrimitive().isString()
-              && error.getAsString().equals("storage_quota_exceeded")) {
-            return StorageQuota.NO_SPACE_MESSAGE;
-          }
-        } catch (RuntimeException ignored) {
-          // An unknown response keeps the generic HTTP message.
-        }
-      }
+      String code = errorCode(body);
+      if (status == 413 && "storage_quota_exceeded".equals(code))
+        return StorageQuota.NO_SPACE_MESSAGE;
+      // The API deletes a refused file: resuming cannot succeed, the area has to be captured again,
+      // smaller.
+      if (status == 400 && "invalid_glb_or_checksum".equals(code)) return INVALID_GLB_MESSAGE;
       return "Upload refused (HTTP " + status + "). Retry /minemories upload to resume.";
     }
   }
