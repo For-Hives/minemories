@@ -700,3 +700,53 @@ a.mm-con-kpi:hover {
 			-12px 12px 0 rgb(0 0 0 / 0.45);
 	}
 }
+
+/* Cohort grid: each cell is tinted by its rate, the number is the percentage. */
+.mm-con-cohorts td.is-rate {
+	background: color-mix(in srgb, var(--c-name) calc(var(--level) * 0.7%), var(--night));
+	color: var(--text);
+}
+.mm-con-cohorts td.is-rate:hover {
+	background: color-mix(in srgb, var(--c-name) calc(var(--level) * 0.7%), var(--night));
+}
+
+/* Histogram: bars rise from a shared baseline, count above and range below. */
+.mm-con-hist {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--ds-sp-3);
+	height: 190px;
+	padding-bottom: 20px;
+	border-bottom: var(--gp) solid var(--outline);
+}
+.mm-con-hist > div {
+	position: relative;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	height: 100%;
+	gap: var(--ds-sp-1);
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / 1.2 var(--ds-f-text);
+}
+.mm-con-hist i {
+	display: block;
+	width: 100%;
+	min-height: 2px;
+	background: var(--c-name);
+	box-shadow: 0 0 0 var(--gp) var(--outline);
+}
+.mm-con-hist small {
+	position: absolute;
+	bottom: -22px;
+	color: var(--text-3);
+	white-space: nowrap;
+}
+.mm-con .mm-con-subhead {
+	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 16px var(--f-ui);
+	color: var(--text-3);
+	text-shadow: none;
+}

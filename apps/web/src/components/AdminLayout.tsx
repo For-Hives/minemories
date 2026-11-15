@@ -9,7 +9,9 @@ type Capability = 'admin' | 'moderator' | 'operator'
 /** Every administration page, in display order, with the capability that unlocks it (`null`: any of them). */
 const adminSections: ReadonlyArray<{ path: string; end: boolean; capability: Capability | null }> = [
 	{ path: '/admin', end: true, capability: null },
+	{ path: '/admin/growth', end: false, capability: 'admin' },
 	{ path: '/admin/users', end: false, capability: 'admin' },
+	{ path: '/admin/worlds', end: false, capability: 'admin' },
 	{ path: '/admin/moderation', end: false, capability: 'moderator' },
 	{ path: '/admin/diagnostics', end: false, capability: 'operator' },
 	{ path: '/admin/platform', end: false, capability: 'admin' },
@@ -22,7 +24,9 @@ export function AdminRail({ access, badges }: { access: AdminAccess; badges: Rec
 	if (!hasAnyAdminAccess(access)) return null
 	const labels: Record<string, string> = {
 		'/admin': t('Pulse'),
+		'/admin/growth': t('Growth'),
 		'/admin/users': t('Accounts'),
+		'/admin/worlds': t('Worlds'),
 		'/admin/moderation': t('Moderation'),
 		'/admin/diagnostics': t('Health'),
 		'/admin/platform': t('Platform'),

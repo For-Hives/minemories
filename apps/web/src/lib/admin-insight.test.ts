@@ -171,3 +171,25 @@ test('moderation keys', async () => {
 		null,
 	])
 })
+
+test('retention rows and rates', async () => {
+	const { retentionRows, retentionAt, shareOf, lorenzPath } = await import('./admin-insight')
+	const cohorts = [
+		{ weekStart: 0, size: 10, active: [10, 5, 2] },
+		{ weekStart: 1, size: 10, active: [10, 7] },
+		{ weekStart: 2, size: 0, active: [0] },
+		{ weekStart: 3, size: 4, active: [4] },
+	]
+	expect(retentionRows(cohorts)).toEqual([
+		{ weekStart: 0, size: 10, rates: [1, 0.5, 0.2] },
+		{ weekStart: 1, size: 10, rates: [1, 0.7] },
+		{ weekStart: 2, size: 0, rates: [] },
+		{ weekStart: 3, size: 4, rates: [1] },
+	])
+	expect(retentionAt(cohorts, 1)).toBe(0.6)
+	expect(retentionAt(cohorts, 2)).toBe(0.2)
+	expect(retentionAt(cohorts, 5)).toBeNull()
+	expect(shareOf(1, 4)).toBe(0.25)
+	expect(shareOf(1, 0)).toBe(0)
+	expect(lorenzPath([0.5, 1], 100, 50)).toBe('M0.0 50.0L50.0 25.0L100.0 0.0')
+})
