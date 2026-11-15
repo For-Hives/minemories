@@ -156,6 +156,15 @@ export const adminAnalytics = z.object({
 		wellVoted: count,
 	}),
 })
+export const adminJournalArea = z.enum(['roles', 'deletions', 'moderation', 'health', 'quota'])
+/** One sensitive action, from any admin page. `action` is a fixed code (`role_granted`, `issue_resolved`...), `target` a name or a short id, never a secret. */
+export const adminJournalEntry = z.object({
+	at: z.number(),
+	area: adminJournalArea,
+	action: z.string(),
+	actor: z.string().nullable(),
+	target: z.string().nullable(),
+})
 export const adminContract = {
 	access: oc.output(z.object({ allowed: z.boolean() })),
 	summary: oc
@@ -191,6 +200,8 @@ export const adminContract = {
 		.output(z.object({ ok: z.literal(true) })),
 	insights: oc.output(adminInsights),
 	analytics: oc.output(adminAnalytics),
+	/** The latest 100 sensitive actions across roles, account deletions, moderation, diagnostics triage and role limits. */
+	journal: oc.output(z.array(adminJournalEntry)),
 	/** Storage limit of every role, with its holders. */
 	storageRoles: oc.output(z.array(roleStorage)),
 	/** Sets a role's limit in bytes; `null` removes it (for `user`, back to `ACCOUNT_STORAGE_BYTES`). Deletes nothing. */
@@ -216,4 +227,5 @@ export type AdminSummary = z.infer<typeof adminSummary>
 export type AdminUserSort = z.infer<typeof adminUserSort>
 export type AdminUser = z.infer<typeof adminUser>
 export type AdminInsights = z.infer<typeof adminInsights>
+export type AdminJournalEntry = z.infer<typeof adminJournalEntry>
 export type AdminAnalytics = z.infer<typeof adminAnalytics>

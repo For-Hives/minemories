@@ -219,3 +219,11 @@ export function lorenzPath(lorenz: readonly number[], width: number, height: num
 	)
 	return points.join('')
 }
+
+const SPACES = /\s+/
+
+/** Entries whose label contains every word typed (any case); all of them when nothing is typed. */
+export function matchEntries<T extends { label: string }>(entries: readonly T[], text: string): T[] {
+	const words = text.toLowerCase().split(SPACES).filter(Boolean)
+	return entries.filter(entry => words.every(word => entry.label.toLowerCase().includes(word)))
+}
