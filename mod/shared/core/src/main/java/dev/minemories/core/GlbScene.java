@@ -34,6 +34,7 @@ public final class GlbScene {
   private final GlbMetadata metadata = new GlbMetadata();
   private final int[] quadsByCategory = new int[GlbCategory.values().length];
   private final Map<String, AtlasTexture.Usage> atlasUsage = new LinkedHashMap<>();
+  private final SpriteAtlas spriteAtlas = new SpriteAtlas();
   private final Map<String, PointLight> pointLights = new LinkedHashMap<>();
 
   /** Non-personal technical description written into {@code asset.extras.minemories}. */
@@ -133,22 +134,34 @@ public final class GlbScene {
     if (!QuadGeometry.normal(xyz, normal)) return;
     float safeEmission = Float.isFinite(emission) ? emission : 0;
     float safeOpacity = Float.isFinite(opacity) ? opacity : 1;
+    // Small sprites share pages: the quad's UVs move into its page (on a copy: callers reuse
+    // arrays).
+    float[] quadUv = uv.clone();
+    SpriteAtlas.Route route =
+        spriteAtlas.route(
+            key, materialName, imageKey, png, tint, alphaMode, safeEmission, safeOpacity, quadUv);
+    String partName = route == null ? materialName : route.name();
+    String partImage = route == null ? imageKey : route.imageKey();
+    byte[] partPng = route == null ? png : null;
     Part part =
         parts.computeIfAbsent(
-            category.ordinal() + (doubleSided ? ":2:" : ":1:") + key,
+            category.ordinal()
+                + (doubleSided ? ":2:" : ":1:")
+                + (route == null ? key : route.key()),
             ignored ->
                 new Part(
                     parts.size(),
                     category,
                     doubleSided,
                     new ChunkRuns(runBudget),
-                    materialName,
-                    imageKey,
-                    png,
+                    partName,
+                    partImage,
+                    partPng,
                     tint,
                     alphaMode,
                     safeEmission,
                     safeOpacity));
+    uv = quadUv;
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
     stats.quad(category, chunkX, chunkZ, materialName, xyz);
     int before = part.indexCount / 3;
@@ -303,10 +316,10 @@ public final class GlbScene {
       if (texture == null) {
         align(binary);
         int offset = binary.size();
-        byte[] png =
-            repacked.containsKey(part.imageKey)
-                ? repacked.get(part.imageKey)
-                : atlasUsage.get(part.imageKey).optimize(part.png);
+        byte[] png;
+        if (SpriteAtlas.isPage(part.imageKey)) png = spriteAtlas.png(part.imageKey);
+        else if (repacked.containsKey(part.imageKey)) png = repacked.get(part.imageKey);
+        else png = atlasUsage.get(part.imageKey).optimize(part.png);
         binary.write(png);
         int view = views.size();
         views.add("{\"buffer\":0,\"byteOffset\":" + offset + ",\"byteLength\":" + png.length + "}");

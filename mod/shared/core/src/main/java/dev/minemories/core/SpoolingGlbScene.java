@@ -81,6 +81,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
   private final Object directoryIdentity;
   private final Map<String, Part> parts = new LinkedHashMap<>();
   private final Map<String, Image> images = new LinkedHashMap<>();
+  private final SpriteAtlas spriteAtlas = new SpriteAtlas();
   private final Map<String, Light> lights = new LinkedHashMap<>();
   private final List<StoredFile> files = new ArrayList<>();
   private final Map<Path, OutputStream> streams = new LinkedHashMap<>(16, 0.75f, true);
@@ -237,6 +238,29 @@ public final class SpoolingGlbScene implements AutoCloseable {
       // A quad without any area renders nothing: drop it instead of writing a zero normal.
       if (!QuadGeometry.normal(xyz, normal)) return;
       checkedString(key);
+      // Small sprites share pages: the quad's UVs move into its page (on a copy: callers reuse
+      // arrays). A packed sprite never reaches image(): its identity is checked here.
+      if (spriteAtlas.conflicts(imageKey, png))
+        throw new IOException("Conflicting GLB texture identity");
+      float[] quadUv = uv.clone();
+      SpriteAtlas.Route route =
+          spriteAtlas.route(
+              key,
+              materialName,
+              imageKey,
+              png,
+              tint,
+              alphaMode,
+              Float.isFinite(emission) ? emission : 0,
+              Float.isFinite(opacity) ? opacity : 1,
+              quadUv);
+      uv = quadUv;
+      String statsName = materialName;
+      if (route != null) {
+        key = route.key();
+        materialName = route.name();
+        imageKey = route.imageKey();
+      }
       String partKey = category.ordinal() + (doubleSided ? ":2:" : ":1:") + key;
       Part part = parts.get(partKey);
       if (part == null) {
@@ -245,7 +269,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
           throw new GlbLimitException("primitives", parts.size() + 1L, limits.materials());
         checkedString(materialName);
         checkedString(imageKey);
-        Image image = image(imageKey, png);
+        Image image = route == null ? image(imageKey, png) : page(imageKey);
         int id = parts.size();
         part =
             new Part(
@@ -270,7 +294,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
       part.image.usage.include(uv);
-      stats.quad(category, chunkX, chunkZ, materialName, xyz);
+      stats.quad(category, chunkX, chunkZ, statsName, xyz);
       int before = part.indexCount / 3;
       encode(part, xyz, uv);
       part.runs.record(chunkX, chunkZ, before, part.indexCount / 3);
@@ -312,6 +336,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (!sealed) {
         sealed = true;
         closeStreams();
+        drawPages();
         optimizeAtlases();
         plans = quantizationPlans();
         layout = layout();
@@ -389,6 +414,31 @@ public final class SpoolingGlbScene implements AutoCloseable {
     Image image = new Image(key, file, images.size(), digest(png), new AtlasTexture.Usage(key));
     images.put(key, image);
     return image;
+  }
+
+  /**
+   * A sprite page's image: its file stays empty until the page is drawn when the scene is sealed.
+   */
+  private Image page(String key) throws IOException {
+    Image known = images.get(key);
+    if (known != null) return known;
+    if (images.size() >= limits.textures()) throw new IOException("GLB texture limit exceeded");
+    Image image =
+        new Image(
+            key, create("image-" + images.size()), images.size(), "", new AtlasTexture.Usage(key));
+    images.put(key, image);
+    return image;
+  }
+
+  /** Draws every sprite page into its image file, once all quads are in. */
+  private void drawPages() throws IOException {
+    for (Image image : images.values()) {
+      if (!SpriteAtlas.isPage(image.name)) continue;
+      interrupted();
+      byte[] png = spriteAtlas.png(image.name);
+      append(image.file, png, 0, png.length);
+    }
+    closeStreams();
   }
 
   private void optimizeAtlases() throws IOException {
