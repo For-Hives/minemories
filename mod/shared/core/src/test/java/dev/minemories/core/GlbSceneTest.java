@@ -25,6 +25,28 @@ final class GlbSceneTest {
   @TempDir Path tempDir;
 
   @Test
+  void aSceneOverTheOnlineLimitsIsRefusedAndNothingIsWritten() {
+    GlbScene scene = new GlbScene();
+    // One more material (and primitive) than the API accepts.
+    for (int i = 0; i <= GlbLimits.PRIMITIVES; i++)
+      scene.addQuad(
+          "block" + i,
+          "block" + i,
+          "minecraft:block/stone",
+          ONE_PIXEL_PNG,
+          0xFFFFFF,
+          0,
+          0,
+          1,
+          new float[] {i, 0, 0, i + 1, 0, 0, i + 1, 1, 0, i, 1, 0},
+          new float[] {0, 0, 1, 0, 1, 1, 0, 1});
+    Path output = tempDir.resolve("varied.glb");
+    var refused = assertThrows(GlbLimitException.class, () -> scene.write(output));
+    assertEquals("primitives", refused.limit());
+    assertFalse(Files.exists(output));
+  }
+
+  @Test
   void writesTexturedEmissiveGlbWithPunctualLight() throws IOException {
     GlbScene scene = new GlbScene();
     scene.addQuad(

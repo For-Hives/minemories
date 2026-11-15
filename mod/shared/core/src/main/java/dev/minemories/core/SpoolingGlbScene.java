@@ -240,8 +240,9 @@ public final class SpoolingGlbScene implements AutoCloseable {
       String partKey = category.ordinal() + (doubleSided ? ":2:" : ":1:") + key;
       Part part = parts.get(partKey);
       if (part == null) {
+        // One material, one primitive: the API's 4,096 primitives are the cap.
         if (parts.size() >= limits.materials())
-          throw new IOException("GLB material limit exceeded");
+          throw new GlbLimitException("primitives", parts.size() + 1L, limits.materials());
         checkedString(materialName);
         checkedString(imageKey);
         Image image = image(imageKey, png);
@@ -314,6 +315,17 @@ public final class SpoolingGlbScene implements AutoCloseable {
         optimizeAtlases();
         plans = quantizationPlans();
         layout = layout();
+        // Each primitive has four accessors and four views plus one per image; the JSON is checked
+        // as it is written.
+        GlbLimits.check(
+            0,
+            images.size(),
+            images.size(),
+            parts.size(),
+            parts.size(),
+            GlbCategory.values().length + lights.size(),
+            parts.size() * 4,
+            layout.segments.size());
         json = create("scene-json");
         try (JsonSink sink = new JsonSink()) {
           writeJson(sink);
@@ -1004,7 +1016,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
     void text(String value) throws IOException {
       byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
       if (bytes.length > limits.jsonBytes() - json.bytes)
-        throw new IOException("GLB JSON limit exceeded");
+        throw new GlbLimitException("json-bytes", json.bytes + bytes.length, limits.jsonBytes());
       append(json, bytes, 0, bytes.length);
     }
 

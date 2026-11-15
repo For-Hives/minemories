@@ -95,14 +95,22 @@ class AtlasUvIndexTest {
   @Test
   void boundsTheNumberOfRetainedMatches() throws Exception {
     var regions = new java.util.ArrayList<AtlasUvIndex.Region<Integer>>();
-    for (int i = 0; i < 257; i++)
-      regions.add(new AtlasUvIndex.Region<>(i / 257f, 0, (i + 1) / 257f, 1, i));
+    int max = AtlasUvIndex.MAX_MATCHES;
+    assertEquals(RenderedBudget.MAX_TEXTURES, max);
+    for (int i = 0; i <= max; i++)
+      regions.add(new AtlasUvIndex.Region<>(i / (max + 1f), 0, (i + 1) / (max + 1f), 1, i));
     var index = new AtlasUvIndex<>(regions);
-    for (int i = 0; i < 256; i++) {
-      float u = (i + .5f) / 257;
+    for (int i = 0; i < max; i++) {
+      float u = (i + .5f) / (max + 1);
       assertEquals(i, index.find(new float[] {u, 0, u, 0, u, 1, u, 1}).value());
     }
-    float u = 256.5f / 257;
-    assertThrows(IOException.class, () -> index.find(new float[] {u, 0, u, 0, u, 1, u, 1}));
+    float u = (max + .5f) / (max + 1);
+    // A dedicated exception, so the capture drops this sprite instead of failing.
+    assertThrows(
+        AtlasUvIndex.TooManySpritesException.class,
+        () -> index.find(new float[] {u, 0, u, 0, u, 1, u, 1}));
+    // Sprites already kept are still found.
+    float first = .5f / (max + 1);
+    assertEquals(0, index.find(new float[] {first, 0, first, 0, first, 1, first, 1}).value());
   }
 }

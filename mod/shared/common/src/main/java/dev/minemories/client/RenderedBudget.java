@@ -49,6 +49,11 @@ final class RenderedBudget {
     return true;
   }
 
+  /** Counts a texture dropped elsewhere (one sprite past what an atlas index keeps). */
+  void skipTexture() {
+    skippedTextures++;
+  }
+
   /** Whether a model may open one more render pass; counts a skip otherwise. */
   boolean admitPass(int open) {
     if (open < maxPasses) return true;

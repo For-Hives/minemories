@@ -440,7 +440,19 @@ public final class GlbScene {
             + "}]"
             + lightExtension
             + "}";
-    byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8), bin = binary.toByteArray();
+    byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
+    // A file the API would refuse is never written: the player is told to capture a smaller area
+    // instead.
+    GlbLimits.check(
+        jsonBytes.length,
+        images.size(),
+        textures.size(),
+        materials.size(),
+        parts.size(),
+        nodes.size(),
+        accessors.size(),
+        views.size());
+    byte[] bin = binary.toByteArray();
     int jsonLength = align4(jsonBytes.length),
         binLength = align4(bin.length),
         total = 12 + 8 + jsonLength + 8 + binLength;

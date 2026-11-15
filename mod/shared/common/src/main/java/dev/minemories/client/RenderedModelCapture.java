@@ -361,6 +361,13 @@ final class RenderedModelCapture {
     AtlasUvIndex.Region<TextureAtlasSprite> region;
     try {
       region = atlas.index().find(uv);
+    } catch (AtlasUvIndex.TooManySpritesException full) {
+      // Past the sprites an atlas keeps, the quad is dropped like a refused texture, counted once
+      // per region:
+      // a very varied area (hundreds of item frames, a showroom) used to lose the whole capture
+      // here.
+      if (refused.add(cropKey)) budget.skipTexture();
+      return null;
     } catch (AtlasUvIndex.NoMatchingSpriteException missing) {
       Texture copied =
           copyRegion(cropKey, atlas.location(), crop.x(), crop.y(), crop.width(), crop.height());
