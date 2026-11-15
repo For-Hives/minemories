@@ -1574,5 +1574,18 @@
 	"Week of": "Week of",
 	"What players capture, and where. Counts only: no coordinates, seeds or world names.": "What players capture, and where. Counts only: no coordinates, seeds or world names.",
 	"Where they are": "Where they are",
-	"Who holds the storage": "Who holds the storage"
+	"Who holds the storage": "Who holds the storage",
+	"Mod downloads": "Mod downloads",
+	"Downloads in the last 30 days, by target": "Downloads in the last 30 days, by target",
+	"Nothing counted yet.": "Nothing counted yet.",
+	"Pairing, last 24 hours": "Pairing, last 24 hours",
+	"How the 6-digit code exchanges ended": "How the 6-digit code exchanges ended",
+	"Done": "Done",
+	"Too many attempts": "Too many attempts",
+	"API, last 24 hours": "API, last 24 hours",
+	"Counting started {date}. Totals only: no address, account or path is stored.": "Counting started {date}. Totals only: no address, account or path is stored.",
+	"Route": "Route",
+	"Requests": "Requests",
+	"Server errors": "Server errors",
+	"Mean time": "Mean time"
 }

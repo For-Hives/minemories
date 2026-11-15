@@ -32,7 +32,7 @@ Growth and Worlds read `admin.analytics` (`apps/api/src/admin-analytics.ts`, adm
 - **Worlds**: biomes, dimensions, server or singleplayer, capture sizes and the median, from `metadata_json`. Coordinates, seeds and world names are never returned. A server is named only when at least two accounts captured it, and only the five biggest are listed.
 - **Publication funnel**: live captures, shared by link, submitted, approved, voted, and with five votes or more.
 
-Still to build: hourly counters for JAR downloads, API errors and pairing failures. They would follow the rule of the metrics below: aggregates only, no identity, no IP.
+**Request counters** (`apps/api/src/request-counters.ts`, shown on Platform): one Hono middleware counts every finished request by fixed label into `request_counters` (hour, kind, key, count, summed duration). Stored: mod downloads by target id (a successful `GET /downloads/<target>/...` only), requests and server errors (5xx) by API group (`rpc`, `auth`, `mod`, `public`, `memories`, `downloads`, `github`, `roadmap`) with their mean time, and pairing outcomes (`done`, `rejected`, `limited`). Never stored: a path, a query, a token, an address, an account. Rows older than 70 days are deleted; the panel reads 30 days of downloads and 24 hours of the rest. Counting starts when this version is deployed, and the date is shown.
 
 ## First administrator
 

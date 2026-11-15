@@ -1574,5 +1574,18 @@
 	"Week of": "Semana de",
 	"What players capture, and where. Counts only: no coordinates, seeds or world names.": "O que os jogadores capturam e onde. Só contagens: sem coordenadas, seeds ou nomes de mundo.",
 	"Where they are": "Onde estão",
-	"Who holds the storage": "Quem ocupa o armazenamento"
+	"Who holds the storage": "Quem ocupa o armazenamento",
+	"Mod downloads": "Downloads do mod",
+	"Downloads in the last 30 days, by target": "Downloads dos últimos 30 dias, por alvo",
+	"Nothing counted yet.": "Nada contado ainda.",
+	"Pairing, last 24 hours": "Pareamento, últimas 24 h",
+	"How the 6-digit code exchanges ended": "Como terminaram as trocas do código de 6 dígitos",
+	"Done": "Concluídos",
+	"Too many attempts": "Tentativas demais",
+	"API, last 24 hours": "API, últimas 24 h",
+	"Counting started {date}. Totals only: no address, account or path is stored.": "Contagem iniciada em {date}. Só totais: nenhum endereço, conta ou caminho é guardado.",
+	"Route": "Rota",
+	"Requests": "Requisições",
+	"Server errors": "Erros do servidor",
+	"Mean time": "Tempo médio"
 }

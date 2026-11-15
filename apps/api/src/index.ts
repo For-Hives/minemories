@@ -63,6 +63,7 @@ import {
 	trashMemory,
 } from './pairing'
 import { PairingAttemptLimiter, pairingAddress, readPairingBody } from './pairing-protection'
+import { RequestCounters } from './request-counters'
 import { encodedCapture } from './response-encoding'
 import { createRoadmap, WEBHOOK_CACHE_MS } from './roadmap'
 import { roadmapSnapshotStore } from './roadmap-snapshot'
@@ -101,8 +102,9 @@ const adminRoles = new AdminRoles(database)
 bootstrapTemporaryAdministrator(database, adminRoles)
 bootstrapAdministratorsFromEnvironment(database, adminRoles)
 const adminMetrics = new AdminMetrics(database, adminRoles)
+const requestCounters = new RequestCounters(database)
 const adminInsights = new AdminInsightsReader(database, adminRoles)
-const adminAnalytics = new AdminAnalyticsReader(database, adminRoles)
+const adminAnalytics = new AdminAnalyticsReader(database, adminRoles, requestCounters)
 const adminAccounts = new AdminAccounts(database, adminRoles)
 // Administrators (Better Auth accounts promoted in `user_roles`) are also the diagnostics operators and the public-gallery moderators.
 const administrators = { has: (userId: string) => adminRoles.allowed(userId) }
@@ -352,6 +354,14 @@ const router = os.router({
 const rpcHandler = new RPCHandler(router, {
 	interceptors: [onError((_error, options) => logApiFailure('rpc_failed', options.context.correlationId))],
 })
+async function countRequest(
+	context: { req: { method: string; path: string }; res: { status: number } },
+	next: () => Promise<void>
+) {
+	const started = performance.now()
+	await next()
+	requestCounters.record(context.req.method, context.req.path, context.res.status, performance.now() - started)
+}
 export const app = new Hono<{ Bindings: { peerAddress: string | undefined }; Variables: { correlationId: string } }>()
 app.use('*', (context, next) => {
 	const correlationId = requestCorrelation(context.req.raw)
@@ -359,7 +369,7 @@ app.use('*', (context, next) => {
 	context.header('X-Minemories-Correlation', correlationId)
 	// The API is never a search result: JSON, captures and JAR downloads stay out of every index.
 	context.header('X-Robots-Tag', 'noindex, nofollow')
-	return next()
+	return countRequest(context, next)
 })
 app.onError((_error, context) => {
 	logApiFailure('request_failed', context.get('correlationId'))

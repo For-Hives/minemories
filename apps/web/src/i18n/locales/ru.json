@@ -1574,5 +1574,18 @@
 	"Week of": "Неделя с",
 	"What players capture, and where. Counts only: no coordinates, seeds or world names.": "Что снимают игроки и где. Только счётчики: без координат, сидов и названий миров.",
 	"Where they are": "Где это",
-	"Who holds the storage": "Кто занимает хранилище"
+	"Who holds the storage": "Кто занимает хранилище",
+	"Mod downloads": "Загрузки мода",
+	"Downloads in the last 30 days, by target": "Загрузки за 30 дней по целям",
+	"Nothing counted yet.": "Пока ничего не подсчитано.",
+	"Pairing, last 24 hours": "Сопряжение, 24 часа",
+	"How the 6-digit code exchanges ended": "Чем закончился обмен 6-значного кода",
+	"Done": "Успешно",
+	"Too many attempts": "Слишком много попыток",
+	"API, last 24 hours": "API, 24 часа",
+	"Counting started {date}. Totals only: no address, account or path is stored.": "Подсчёт начат {date}. Только итоги: адреса, аккаунты и пути не сохраняются.",
+	"Route": "Маршрут",
+	"Requests": "Запросы",
+	"Server errors": "Ошибки сервера",
+	"Mean time": "Среднее время"
 }
