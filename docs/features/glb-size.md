@@ -272,7 +272,9 @@ their sprite then share one material and one primitive.
   borders included. Further away, a texel averages the slot with its neighbours. This only shows on very distant
   faces at grazing angles, where the colour was already one averaged texel.
 - **Material**: the key becomes page + tint + emission + alpha mode + opacity. Its name is `minemories:atlas/<page>`,
-  with ` (cutout)` for MASK. The material name no longer gives the block. The per-chunk statistics
+  with ` (cutout)` for MASK. The page's name no longer gives the block, so the material lists the original names of
+  the materials packed into it, in arrival order, in `extras.minemoriesMaterials` (the in-game tests read
+  them there). The per-chunk statistics
   (`asset.extras.minemories`) and the chunk fingerprints ([chunk score](chunk-score.md)) still use the block's own
   name, so a chunk captured before and after this change keeps its fingerprint. The viewer only reads names for water
   and beams, and those are never packed. Old captures open unchanged.

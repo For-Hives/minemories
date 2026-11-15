@@ -63,6 +63,12 @@ final class GlbSceneTest {
     assertEquals(2, count(json, "pbrMetallicRoughness"));
     assertTrue(json.contains("\"name\":\"minemories:atlas/0\""));
     assertTrue(json.contains("\"name\":\"block/3\""));
+    // The page's name no longer tells which blocks it holds: its extras do, in arrival order.
+    assertTrue(
+        json.contains(
+            "\"extras\":{\"minemoriesMaterials\":"
+                + "[\"mod:block0 / block/0\",\"mod:block1 / block/1\",\"mod:block2 / block/2\"]}"));
+    assertEquals(1, count(json, "minemoriesMaterials"));
   }
 
   @Test
@@ -76,7 +82,8 @@ final class GlbSceneTest {
     int pages = (8000 + 255) / 256;
     assertEquals(pages, count(json, "\"mimeType\""));
     assertTrue(scene.materialCount() <= pages * 2, "materials " + scene.materialCount());
-    assertTrue(json.length() < GlbLimits.JSON_BYTES / 10);
+    assertTrue(json.contains("\"mod:block7999 / block/7999\""));
+    assertTrue(json.length() < GlbLimits.JSON_BYTES / 10, "JSON " + json.length());
   }
 
   @Test

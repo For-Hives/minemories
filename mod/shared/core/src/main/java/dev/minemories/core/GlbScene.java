@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Loader-independent GLB scene builder. All inputs are plain copied data. */
 public final class GlbScene {
@@ -162,6 +164,7 @@ public final class GlbScene {
                     safeEmission,
                     safeOpacity));
     uv = quadUv;
+    if (route != null) part.packed.add(materialName);
     atlasUsage.computeIfAbsent(part.imageKey, AtlasTexture.Usage::new).include(uv);
     stats.quad(category, chunkX, chunkZ, materialName, xyz);
     int before = part.indexCount / 3;
@@ -371,6 +374,7 @@ public final class GlbScene {
               + (part.doubleSided ? DOUBLE_SIDED : "")
               + alpha
               + emissive
+              + packedNames(part.packed)
               + "}");
       materialIndex++;
     }
@@ -597,6 +601,18 @@ public final class GlbScene {
   /** glTF materials are single-sided (back-face culled) unless they carry this property. */
   static final String DOUBLE_SIDED = ",\"doubleSided\":true";
 
+  /**
+   * The names of the materials packed into a shared page material ({@link SpriteAtlas}), which the
+   * page's own name no longer tells: kept in its extras for tools and people reading the file.
+   */
+  static String packedNames(Set<String> names) {
+    if (names.isEmpty()) return "";
+    StringBuilder json = new StringBuilder(",\"extras\":{\"minemoriesMaterials\":[");
+    int index = 0;
+    for (String name : names) json.append(index++ > 0 ? ",\"" : "\"").append(esc(name)).append('"');
+    return json.append("]}").toString();
+  }
+
   private static final class Part {
     final int id;
     final GlbCategory category;
@@ -618,6 +634,9 @@ public final class GlbScene {
     final UvBounds uvBounds = new UvBounds();
     double[] uvTransform;
     int vertices, indexCount;
+
+    /** The materials of the sprites packed into this one, in arrival order. */
+    final Set<String> packed = new LinkedHashSet<>();
 
     Part(
         int id,

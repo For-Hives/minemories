@@ -18,9 +18,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /** Single-owner scene builder. Input arrays are consumed before return; geometry lives on disk. */
 public final class SpoolingGlbScene implements AutoCloseable {
@@ -293,6 +295,10 @@ public final class SpoolingGlbScene implements AutoCloseable {
       if (part.indexCount > Integer.MAX_VALUE - 6)
         throw new IOException("GLB index limit exceeded");
       reserve(QUAD_BYTES);
+      if (route != null && !part.packed.contains(statsName)) {
+        checkedString(statsName);
+        part.packed.add(statsName);
+      }
       part.image.usage.include(uv);
       stats.quad(category, chunkX, chunkZ, statsName, xyz);
       int before = part.indexCount / 3;
@@ -938,6 +944,7 @@ public final class SpoolingGlbScene implements AutoCloseable {
                 + part.image.index
                 + "}");
       }
+      sink.text(GlbScene.packedNames(part.packed));
       sink.text("}");
     }
     sink.text("],\"textures\":[");
@@ -1141,6 +1148,10 @@ public final class SpoolingGlbScene implements AutoCloseable {
     final int tint, alphaMode;
     final float emission, opacity;
     final StoredFile positions, normals, uvs, indices;
+
+    /** The materials of the sprites packed into this one ({@link GlbScene#packedNames}). */
+    final Set<String> packed = new LinkedHashSet<>();
+
     final float[] min = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY};
     final float[] max = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
     int vertices, indexCount;
