@@ -98,6 +98,57 @@ export const adminInsights = z.object({
 		),
 	}),
 })
+const count = z.number().int().nonnegative()
+const named = z.object({ name: z.string(), count })
+/** Figures crossed from tables the service already holds: nothing is tracked for them, and no account, server name or world name leaves in them beyond what is listed. */
+export const adminAnalytics = z.object({
+	funnel: z.object({
+		accounts: count,
+		verified: count,
+		paired: count,
+		captured: count,
+		shared: count,
+		submitted: count,
+	}),
+	/** Time from an account's first paired device to its first capture, in six buckets (under 5 min, to 30 min, to 2 h, to 24 h, to 7 d, longer). */
+	firstCapture: z.object({
+		buckets: z.array(count).length(6),
+		samples: count,
+		medianMinutes: z.number().nonnegative().nullable(),
+	}),
+	/** Sign-up weeks, newest last; `active[n]` is how many of the cohort were active n weeks after joining (`active[0]` is its size). */
+	cohorts: z.array(z.object({ weekStart: z.number(), size: count, active: z.array(count) })),
+	concentration: z.object({
+		accounts: count,
+		/** Share of the stored bytes held by the 10 % of accounts that store the most (0 to 1). */
+		topTenShare: z.number().min(0).max(1),
+		gini: z.number().min(0).max(1),
+		/** Cumulative share of bytes held by the smallest 10 %, 20 % ... 100 % of the accounts. */
+		lorenz: z.array(z.number().min(0).max(1)).length(10),
+	}),
+	worlds: z.object({
+		captures: count,
+		withBiome: count,
+		biomes: z.array(named),
+		dimensions: z.array(named),
+		onServer: count,
+		singleplayer: count,
+		distinctServers: count,
+		/** Servers that at least two accounts captured: a server only one account used is never named. */
+		topServers: z.array(z.object({ name: z.string(), captures: count, accounts: count })),
+		/** Capture sizes in six buckets (under 5 MB, to 20, 50, 100, 250, larger). */
+		sizes: z.array(count).length(6),
+		medianBytes: z.number().nonnegative(),
+	}),
+	publication: z.object({
+		captures: count,
+		shared: count,
+		submitted: count,
+		approved: count,
+		voted: count,
+		wellVoted: count,
+	}),
+})
 export const adminContract = {
 	access: oc.output(z.object({ allowed: z.boolean() })),
 	summary: oc
@@ -132,6 +183,7 @@ export const adminContract = {
 		.input(z.object({ userId: z.string().min(1).max(200), role, currentPassword: z.string().min(1).max(128) }))
 		.output(z.object({ ok: z.literal(true) })),
 	insights: oc.output(adminInsights),
+	analytics: oc.output(adminAnalytics),
 	/** Storage limit of every role, with its holders. */
 	storageRoles: oc.output(z.array(roleStorage)),
 	/** Sets a role's limit in bytes; `null` removes it (for `user`, back to `ACCOUNT_STORAGE_BYTES`). Deletes nothing. */
@@ -157,3 +209,4 @@ export type AdminSummary = z.infer<typeof adminSummary>
 export type AdminUserSort = z.infer<typeof adminUserSort>
 export type AdminUser = z.infer<typeof adminUser>
 export type AdminInsights = z.infer<typeof adminInsights>
+export type AdminAnalytics = z.infer<typeof adminAnalytics>

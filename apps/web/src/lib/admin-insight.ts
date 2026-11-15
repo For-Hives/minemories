@@ -188,3 +188,34 @@ export type DecisionKey = 'approved' | 'rejected' | 'next' | 'previous'
 export function decisionKey(key: string): DecisionKey | null {
 	return ({ a: 'approved', r: 'rejected', j: 'next', k: 'previous' } as const)[key.toLowerCase() as 'a'] ?? null
 }
+
+export type Cohort = { weekStart: number; size: number; active: number[] }
+export type RetentionRow = { weekStart: number; size: number; rates: number[] }
+
+/** Each cohort's activity as shares of its size (0 to 1); an empty cohort has no rates to show. */
+export const retentionRows = (cohorts: readonly Cohort[]): RetentionRow[] =>
+	cohorts.map(cohort => ({
+		weekStart: cohort.weekStart,
+		size: cohort.size,
+		rates: cohort.size === 0 ? [] : cohort.active.map(count => count / cohort.size),
+	}))
+
+/** Share of accounts still active `weeks` weeks after joining, over every cohort old enough to tell; null when none is. */
+export function retentionAt(cohorts: readonly Cohort[], weeks: number): number | null {
+	const old = cohorts.filter(cohort => cohort.size > 0 && cohort.active.length > weeks)
+	const size = old.reduce((sum, cohort) => sum + cohort.size, 0)
+	if (size === 0) return null
+	return old.reduce((sum, cohort) => sum + (cohort.active[weeks] as number), 0) / size
+}
+
+/** Share of `part` in `whole`, 0 when there is no whole. */
+export const shareOf = (part: number, whole: number) => (whole > 0 ? part / whole : 0)
+
+/** The Lorenz curve as a path through (0, 0) and the ten cumulative shares, in a `width` x `height` box (the origin is bottom left). */
+export function lorenzPath(lorenz: readonly number[], width: number, height: number): string {
+	const points = [0, ...lorenz].map(
+		(value, index) =>
+			`${index === 0 ? 'M' : 'L'}${((index / lorenz.length) * width).toFixed(1)} ${(height - value * height).toFixed(1)}`
+	)
+	return points.join('')
+}
