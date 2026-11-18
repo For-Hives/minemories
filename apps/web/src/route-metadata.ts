@@ -171,9 +171,10 @@ const privateMessages: PageMetadata[] = [
 	},
 ]
 /**
- * A shared link (/share/:token) or a public memory (/public/:id): one neutral card, since a per-link preview would need
- * a server-side render. Link previews read it from app.html (the private shell, which crawlers get without JavaScript),
- * and the tab shows it too (`sharedLinkPath`).
+ * A shared link (/share/:token) or a public memory (/public/:id): the neutral card of app.html (the private shell), shown
+ * in the tab too (`sharedLinkPath`). Link-preview robots never read it: nginx sends them to the API's card of that very
+ * build, with its picture and name (deploy/nginx.web.conf, apps/api/src/link-cards.ts, docs/features/link-previews.md).
+ * The API reuses this title and description, translated from the web catalogs, when the build has no name.
  */
 const sharedCard = {
 	title: 'A Minecraft place in 3D, shared with you',

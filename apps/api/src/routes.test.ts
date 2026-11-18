@@ -48,10 +48,10 @@ test('health and CORS keep the web origin explicit', async () => {
 	expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
 })
 
-test('the API keeps crawlers out: robots.txt disallows everything and every response is noindex', async () => {
+test('the API keeps crawlers out: robots.txt disallows everything but link cards and every response is noindex', async () => {
 	const robots = await app.request('/robots.txt')
 	expect(robots.status).toBe(200)
-	expect(await robots.text()).toBe('User-agent: *\nDisallow: /\n')
+	expect(await robots.text()).toBe('User-agent: *\nAllow: /api/cards/\nDisallow: /\n')
 	expect(robots.headers.get('x-robots-tag')).toBe('noindex, nofollow')
 	const health = await app.request('/healthz')
 	expect(health.headers.get('x-robots-tag')).toBe('noindex, nofollow')

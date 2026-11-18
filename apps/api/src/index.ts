@@ -32,9 +32,11 @@ import { PublicDiscovery } from './discovery'
 import { githubToken } from './github'
 import { createGithubWebhook, githubWebhookSecret } from './github-webhook'
 import { isGlbContainer } from './glb'
+import { createLinkCards } from './link-cards'
 import { createMcpRoute } from './mcp'
 import { parseMetadata } from './memory-metadata'
 import { modDownloads } from './mod-downloads'
+import { SITE_URL } from './mod-release'
 import { createModUploads } from './mod-upload'
 import { ObjectDeletionQueue } from './object-deletions'
 import { CaptureArchivedError } from './object-tiers'
@@ -51,6 +53,7 @@ import {
 	getDeviceFromToken,
 	getMemoryFile,
 	getSharedMemory,
+	getSharedPreview,
 	hasPairedDevice,
 	listMemories,
 	listTrash,
@@ -425,7 +428,24 @@ app.get('/api/auth-providers', context => context.json(Object.keys(auth.options.
 
 app.get('/healthz', context => context.json({ status: 'ok' as const }))
 // Crawlers have nothing to read here; the site's own robots.txt lives on the web host.
-app.get('/robots.txt', context => context.text('User-agent: *\nDisallow: /\n'))
+// Link-preview cards are the one exception: some preview robots (X) read robots.txt before a card or its image.
+app.get('/robots.txt', context => context.text('User-agent: *\nAllow: /api/cards/\nDisallow: /\n'))
+app.route(
+	'/api/cards',
+	createLinkCards({
+		shared: getSharedPreview,
+		published: id => {
+			try {
+				const publication = discovery.get(id, null)
+				return { title: publication.title, description: publication.description, image: publication.thumbnail }
+			} catch {
+				return null
+			}
+		},
+		siteUrl: SITE_URL,
+		apiUrl: (process.env.BETTER_AUTH_URL ?? 'http://localhost:3001').replace(/\/+$/, ''),
+	})
+)
 app.route('/downloads', modDownloads)
 app.route('/api/roadmap', roadmap)
 app.use('/api/auth/*', (context, next) =>

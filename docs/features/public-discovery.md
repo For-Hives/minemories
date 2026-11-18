@@ -22,6 +22,9 @@ UUID, storage key or private metadata. The GLB itself becomes public after
 approval; its textures and captured content must therefore be part of the
 consent shown to the owner. Private link sharing is separate.
 
+A public link pasted on Discord or elsewhere previews the publication's title, description and
+thumbnail, only once approved ([link-previews.md](link-previews.md)).
+
 ## Moderation and safeguards
 
 Moderators are Better Auth administrators (`user_roles` table). Without an
