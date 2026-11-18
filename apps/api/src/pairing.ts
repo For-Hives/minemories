@@ -354,6 +354,27 @@ export function getSharedMemory(token: string, snapshot?: string) {
 	}
 }
 
+/** Snapshots a world link's preview looks through for a picture, newest first. */
+const PREVIEW_SNAPSHOTS = 12
+
+/**
+ * What a link preview shows of a shared link: the name its owner gave the place and the newest picture. Never the file
+ * name, coordinates, seed or owner. Not counted as an opening (only `GET /api/shared/:token` is).
+ */
+export function getSharedPreview(
+	token: string
+): { title: string | null; description: null; image: string | null } | null {
+	const shared = getSharedMemory(token)
+	if (!shared) return null
+	let image = shared.metadata.thumbnail
+	// A world link shows its newest snapshot, which often has no picture yet: take the newest one that has.
+	for (const snapshot of (shared.snapshots ?? []).slice(-PREVIEW_SNAPSHOTS).reverse()) {
+		if (image) break
+		image = getSharedMemory(token, snapshot.id)?.metadata.thumbnail ?? null
+	}
+	return { title: shared.place, description: null, image }
+}
+
 type OptionalCaptureIdentity = { [Key in keyof CaptureIdentity]?: CaptureIdentity[Key] | undefined }
 
 export interface MemoryMetadata extends OptionalCaptureIdentity {
