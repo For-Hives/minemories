@@ -26,7 +26,12 @@ site is static and its shell (`app.html`) cannot know which build a link points 
 |---|---|---|---|
 | Shared memory or world | The name the owner gave the place in the gallery, else the neutral title | The neutral description | The memory's thumbnail; a world link takes the newest of its last 12 snapshots that has one |
 | Public memory (approved) | The publication title | The publication description | The publication thumbnail |
-| Stopped, unknown or not approved (404) | Neutral title | Neutral description | `/brand/og-image.png` |
+| Stopped, unknown or not approved | Neutral title | Neutral description | `/brand/og-image.png` |
+
+The card always answers 200, so a stopped link still previews (neutrally) and the answer tells nothing about whether a
+token exists; only the `/image` route answers 404. `og:image:width`/`height` are given (400 x 250 or 1200 x 630) so
+Facebook draws the picture on the first share. Card fetches are counted under the fixed `cards` group of the request
+counters (admin dashboard), never with their token.
 
 Never shown: the file name, coordinates, seed, biome, dimension, world or server name from the game, the owner.
 Pending, rejected and revoked publications never preview (only `discovery.get`, which reads approved ones). A card or
@@ -44,15 +49,21 @@ a while (Discord re-fetches after some hours); that is outside our control.
 
 ## Deploying
 
-The API part ships with the API. The nginx part is the application's **Custom Nginx Configuration** in Coolify (the
-whole file, see the head of `deploy/nginx.web.conf`): paste it again after merging, then check with a robot's user agent:
+**Order matters: the API first.** If nginx sends robots to `/api/cards` before the API serves it, every preview breaks.
+
+1. Merge and let the API deploy; check `curl -s https://api.minemories.net/api/cards/shared/x | grep og:title`.
+2. Paste the whole `deploy/nginx.web.conf` as the web application's **Custom Nginx Configuration** in Coolify (see the
+   head of the file) and redeploy the web application.
+3. Check with a robot's user agent, in English and in French (the French text needs the web catalogs in the API image;
+   the API build copies the whole repository, and a missing catalog falls back to English):
 
 ```bash
 curl -sI -A Discordbot https://minemories.net/share/<a real token> | grep -i location
 curl -s -A Discordbot -L https://minemories.net/share/<a real token> | grep og:image
+curl -s -A Discordbot -L https://minemories.net/fr/share/<a real token> | grep og:title
 ```
 
-Then paste a real link in a private Discord channel. Discord's preview is the only proof that matters.
+4. Paste a real link in a private Discord channel. Discord's preview is the only proof that matters.
 
 ## Limits
 

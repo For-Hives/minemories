@@ -5,7 +5,7 @@ const HOUR = 3_600_000
 const DAY = 24 * HOUR
 const KEEP_MS = 70 * DAY
 export type CounterKind = 'download' | 'api' | 'api_error' | 'pairing'
-const API_GROUPS = new Set(['rpc', 'auth', 'mod', 'public', 'memories', 'downloads', 'github', 'roadmap'])
+const API_GROUPS = new Set(['rpc', 'auth', 'mod', 'public', 'memories', 'downloads', 'github', 'roadmap', 'cards'])
 
 export type Classified = { kind: CounterKind; key: string }[]
 

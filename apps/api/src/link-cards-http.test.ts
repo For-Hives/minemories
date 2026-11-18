@@ -78,6 +78,7 @@ test('a shared link previews its picture and owner-given name, never its file na
 	expect(html).toContain('<html lang="fr">')
 	expect(html).toContain('Un lieu Minecraft en 3D, partagé avec toi')
 	expect(html).toContain(`content="https://api.example.test/api/cards/shared/${link.token}/image"`)
+	expect(html).toContain('<meta property="og:image:width" content="400">')
 	expect(html).toContain(`content="https://minemories.net/fr/share/${link.token}"`)
 	for (const hidden of ['card-memory-capture', '424242', '1234', '-987', 'plains', 'Secret world', 'card-owner'])
 		expect(html).not.toContain(hidden)
@@ -100,10 +101,11 @@ test('a shared link previews its picture and owner-given name, never its file na
 
 	revokeShareLink('card-owner', 'card-memory')
 	const stopped = await app.request(`/api/cards/shared/${link.token}`)
-	expect(stopped.status).toBe(404)
+	expect(stopped.status).toBe(200)
 	const neutral = await stopped.text()
 	expect(neutral).toContain('A Minecraft place in 3D, shared with you')
 	expect(neutral).toContain('content="https://minemories.net/brand/og-image.png"')
+	expect(neutral).toContain('<meta property="og:image:height" content="630">')
 	expect((await app.request(`/api/cards/shared/${link.token}/image`)).status).toBe(404)
 })
 
@@ -134,7 +136,7 @@ test('a public card shows only approved publications, with the text their owner 
 	const id = '0f0e0d0c-0b0a-4908-8706-050403020100'
 	insert.run(id, 'card-public', 'My "sister\'s" home', `A ${'very '.repeat(80)}big house`, picture, 'pending')
 
-	expect((await app.request(`/api/cards/public/${id}`)).status).toBe(404)
+	expect(await (await app.request(`/api/cards/public/${id}`)).text()).not.toContain('sister')
 	expect((await app.request(`/api/cards/public/${id}/image`)).status).toBe(404)
 
 	database.query("UPDATE public_publications SET state='approved' WHERE id=?").run(id)
@@ -155,6 +157,13 @@ test('a public card shows only approved publications, with the text their owner 
 test('robots may read the cards, and nothing else on the API', async () => {
 	expect(await (await app.request('/robots.txt')).text()).toBe('User-agent: *\nAllow: /api/cards/\nDisallow: /\n')
 	const unknown = await app.request('/api/cards/public/not-a-publication?lang=xx')
-	expect(unknown.status).toBe(404)
+	expect(unknown.status).toBe(200)
 	expect(await unknown.text()).toContain('content="https://minemories.net/public/not-a-publication"')
+})
+
+test('card fetches are counted under a fixed label, never with their token', async () => {
+	const { classify } = await import('./request-counters')
+	const token = 'a-share-token-that-must-never-be-stored'
+	expect(classify('GET', `/api/cards/shared/${token}`, 200)).toEqual([{ kind: 'api', key: 'cards' }])
+	expect(classify('GET', `/api/cards/shared/${token}/image`, 404)).toEqual([{ kind: 'api', key: 'cards' }])
 })

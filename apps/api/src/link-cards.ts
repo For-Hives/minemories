@@ -57,6 +57,10 @@ export function translateCard(lang: string | undefined, message: string): string
 	return catalog[message] || message
 }
 
+/** The gallery thumbnail (ViewerScene.snapshot) and the site's own link image (route-metadata.ts `socialImage`). */
+const THUMBNAIL = { width: 400, height: 250 }
+const SITE_IMAGE = { width: 1200, height: 630 }
+
 const DEFAULT_TITLE = 'A Minecraft place in 3D, shared with you'
 const DEFAULT_DESCRIPTION = 'Open it in your browser and walk around it in 3D.'
 
@@ -89,7 +93,7 @@ export function cardHtml(input: {
 	content: CardContent | null
 	lang: string | undefined
 	pageUrl: string
-	imageUrl: string
+	image: { url: string; width: number; height: number }
 }): string {
 	const title = line(input.content?.title ?? null, 120) ?? translateCard(input.lang, DEFAULT_TITLE)
 	const description = line(input.content?.description ?? null, 300) ?? translateCard(input.lang, DEFAULT_DESCRIPTION)
@@ -110,12 +114,14 @@ export function cardHtml(input: {
 		meta('property', 'og:title', title),
 		meta('property', 'og:description', description),
 		meta('property', 'og:url', input.pageUrl),
-		meta('property', 'og:image', input.imageUrl),
+		meta('property', 'og:image', input.image.url),
+		meta('property', 'og:image:width', String(input.image.width)),
+		meta('property', 'og:image:height', String(input.image.height)),
 		meta('property', 'og:image:alt', title),
 		meta('name', 'twitter:card', 'summary_large_image'),
 		meta('name', 'twitter:title', title),
 		meta('name', 'twitter:description', description),
-		meta('name', 'twitter:image', input.imageUrl),
+		meta('name', 'twitter:image', input.image.url),
 		'</head>',
 		`<body><a href="${escapeHtml(input.pageUrl)}">${escapeHtml(title)}</a></body>`,
 		'</html>',
@@ -143,10 +149,12 @@ export function createLinkCards(sources: LinkCardSources) {
 			const content = find(sources, key)
 			const prefix = lang && catalogs[lang] ? `/${lang}` : ''
 			const pageUrl = `${sources.siteUrl}${prefix}/${page}/${encodeURIComponent(key)}`
-			const imageUrl = decodeImage(content?.image ?? null)
-				? `${sources.apiUrl}/api/cards/${kind}/${encodeURIComponent(key)}/image`
-				: `${sources.siteUrl}/brand/og-image.png`
-			return context.html(cardHtml({ content, lang, pageUrl, imageUrl }), content ? 200 : 404)
+			const image = decodeImage(content?.image ?? null)
+				? { url: `${sources.apiUrl}/api/cards/${kind}/${encodeURIComponent(key)}/image`, ...THUMBNAIL }
+				: { url: `${sources.siteUrl}/brand/og-image.png`, ...SITE_IMAGE }
+			// Always 200: a stopped or unknown link still previews, with the neutral card (a 404 would drop the preview),
+			// and the answer tells nothing about whether a token exists.
+			return context.html(cardHtml({ content, lang, pageUrl, image }), 200)
 		})
 		cards.get(`/${kind}/:key/image`, context => {
 			const image = decodeImage(find(sources, context.req.param('key'))?.image ?? null)
