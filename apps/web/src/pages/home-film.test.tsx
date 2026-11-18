@@ -89,7 +89,7 @@ test('without WebGL the film falls back to the site: the story in words, the sit
 	expect(errors).toEqual([])
 })
 
-test('the first screen: one install button, the facts line, three cards, then three questions and the whole FAQ', async () => {
+test('the first screen: the install button and CurseForge, the facts line, three cards, then three questions and the whole FAQ', async () => {
 	mount()
 	await started()
 	const hero = document.getElementById('hero') as HTMLElement
@@ -97,7 +97,8 @@ test('the first screen: one install button, the facts line, three cards, then th
 		within(hero)
 			.getAllByRole('link')
 			.map(link => link.getAttribute('href'))
-	).toEqual(['/installation'])
+	).toEqual(['/installation', 'https://www.curseforge.com/minecraft/mc-mods/minemories'])
+	expect(within(hero).getByRole('link', { name: 'Minemories sur CurseForge' }).getAttribute('rel')).toBe('noopener')
 	const lines = [...hero.querySelectorAll('.mc-hero__compat')].map(line => line.textContent)
 	expect(lines).toEqual([
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 expérimentale · Fabric, Forge, NeoForge · solo et serveurs · bêta',
@@ -109,6 +110,9 @@ test('the first screen: one install button, the facts line, three cards, then th
 			.map(title => title.textContent)
 	).toEqual(['Installe.', 'Joue.', 'Revois.'])
 	expect(steps.textContent).toContain('Appuie sur M → Prendre un souvenir.')
+	expect(within(steps).getByRole('link', { name: 'Minemories sur CurseForge' }).getAttribute('href')).toBe(
+		'https://www.curseforge.com/minecraft/mc-mods/minemories'
+	)
 	const faq = document.getElementById('faq') as HTMLElement
 	expect([...faq.querySelectorAll('summary')].map(summary => summary.textContent)).toEqual([
 		'Il faut installer quelque chose sur le serveur\u00a0?',

@@ -1,8 +1,9 @@
 import { Link } from 'react-router'
-import { buttonLime } from '../components/ui'
+import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import type { NotedRelease, ReleaseNote } from '../lib/release-notes'
 import { ContentLayout } from './ContentPages'
+import { catalogLinks } from './installation-loaders'
 import { releases as history } from './release-history'
 import { useModReleases } from './useModReleases'
 import './releases.css'
@@ -52,9 +53,16 @@ function Latest({ release, published }: { release: NotedRelease; published: numb
 					</li>
 				))}
 			</ul>
-			<Link className={buttonLime} to="/downloads">
-				{t('Download')}
-			</Link>
+			<div className="mm-release-actions">
+				<Link className={buttonLime} to="/downloads">
+					{t('Download')}
+				</Link>
+				{catalogLinks().map(catalog => (
+					<a key={catalog.name} className={buttonOutline} href={catalog.url} rel="noopener">
+						{t('Minemories on {app}', { app: catalog.name })}
+					</a>
+				))}
+			</div>
 		</section>
 	)
 }

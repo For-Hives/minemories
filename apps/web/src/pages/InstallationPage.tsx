@@ -85,6 +85,16 @@ function Welcome({
 						<GuidedWay />
 					</a>
 				)}
+				{catalogLinks().map(catalog => (
+					<a key={catalog.name} className="install-way" href={catalog.url} rel="noopener">
+						<strong>
+							<T message={'With the {app} app'} params={{ app: catalog.name }} />
+						</strong>
+						<span>
+							<T message={'The app installs Minemories and what it needs.'} />
+						</span>
+					</a>
+				))}
 				<Link className="install-way" to="/downloads">
 					<strong>
 						<T message={'See all downloads'} />

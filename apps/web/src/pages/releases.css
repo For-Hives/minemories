@@ -87,3 +87,10 @@
 		border: 1px solid CanvasText;
 	}
 }
+
+/* Download, then the catalog page (CurseForge), on one line while they fit. */
+.mm-release-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-3);
+}

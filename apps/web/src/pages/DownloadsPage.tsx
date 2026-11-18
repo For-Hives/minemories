@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
 import { pageQuestions } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
+import { CatalogCallout } from './CatalogCallout'
 import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
 import { Questions } from './InfoPages'
@@ -77,6 +78,7 @@ export function DownloadsPage() {
 			title={t('Download Minemories')}
 			lead={t('One JAR per Minecraft version and loader.')}
 		>
+			<CatalogCallout />
 			<div className="mm-dl-scroll" aria-busy={status === 'loading'}>
 				<table className="mm-dl-table">
 					<caption className="mm-dl-sr-only">{t('Minemories downloads by Minecraft version and mod loader')}</caption>

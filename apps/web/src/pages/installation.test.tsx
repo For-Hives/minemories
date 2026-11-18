@@ -167,7 +167,7 @@ test('hydrating the prerendered page matches it, then leaves the welcome screen 
 	expect(container.querySelector('.install-detected')?.hasAttribute('aria-hidden')).toBe(false)
 })
 
-test('the welcome screen guesses the computer, lets the visitor correct it and offers two ways in', () => {
+test('the welcome screen guesses the computer, lets the visitor correct it and offers three ways in', () => {
 	vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel')
 	mountGuide()
 	expect(text()).toContain('On dirait que tu es sur macOS.')
@@ -178,6 +178,9 @@ test('the welcome screen guesses the computer, lets the visitor correct it and o
 	expect(document.activeElement).toBe(button('Ce n’est pas ça\u00a0? Changer'))
 	expect(stored().system).toBe('linux')
 	expect(screen.getByRole('link', { name: /^Voir tous les téléchargements/ }).getAttribute('href')).toBe('/downloads')
+	expect(screen.getByRole('link', { name: /^Avec l’app CurseForge/ }).getAttribute('href')).toBe(
+		'https://www.curseforge.com/minecraft/mc-mods/minemories'
+	)
 	expect(screen.getByRole('link', { name: 'Besoin d’aide\u00a0?' }).getAttribute('href')).toBe('#aide')
 	expect(document.querySelector('progress, .install-static')).toBeNull()
 })
