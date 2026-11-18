@@ -90,6 +90,17 @@ test('the prerendered table already links every published JAR, with the Java col
 	expect(page).toContain('Ça marche sur Bedrock, console ou téléphone\u00a0?')
 	expect(page).toContain('1.12.2 et 1.16.5\u00a0: pas encore.')
 	expect(page).toContain('son empreinte SHA-256 doit être celle affichée ici')
+	// The CurseForge app comes first, above the table: it installs Fabric API too.
+	const callout = document.querySelector('.mm-catalog-callout') as HTMLElement
+	expect(callout.textContent).toBe(
+		'Avec l’app CurseForgeL’app installe Minemories et ce qu’il lui faut.Minemories sur CurseForge'
+	)
+	expect(callout.querySelector('a')?.getAttribute('href')).toBe(
+		'https://www.curseforge.com/minecraft/mc-mods/minemories'
+	)
+	expect(callout.compareDocumentPosition(document.querySelector('.mm-dl-table') as Node)).toBe(
+		Node.DOCUMENT_POSITION_FOLLOWING
+	)
 })
 
 test('once the index is read, cells name the exact version, size and checksum; the others say why they are empty', async () => {

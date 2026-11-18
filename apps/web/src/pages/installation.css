@@ -506,7 +506,8 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 
 .install-ways {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	/* The guide, the catalog app (CurseForge) and the downloads table side by side. */
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 	gap: var(--ds-sp-5);
 	margin: var(--ds-sp-5) var(--gp);
 }

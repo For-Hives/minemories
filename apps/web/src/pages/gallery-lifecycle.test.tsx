@@ -962,6 +962,14 @@ test('a name kept in this browser moves to the account once, then the browser fo
 })
 
 test('renaming a server saves on the account; a refusal brings the previous name back and says so', async () => {
+	// The account keeps each accepted name, as the API does: a gallery reload at any moment reads it back.
+	const saved = new Map<string, string | null>()
+	mocks.serverProfiles.mockImplementation(async () => [...saved].map(([key, name]) => ({ key, name, cover: null })))
+	mocks.renameServer.mockImplementation(async (...args: unknown[]) => {
+		const { key, name } = args[0] as { key: string; name: string | null }
+		saved.set(key, name)
+		return { ok: true as const }
+	})
 	page()
 	fireEvent.click(await screen.findByRole('button', { name: 'Rename World' }))
 	const sheet = screen.getByRole('dialog', { name: 'World' })
@@ -978,4 +986,11 @@ test('renaming a server saves on the account; a refusal brings the previous name
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(await screen.findByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
 	expect(mocks.notify).toHaveBeenCalledWith('Could not rename this server.')
+	// A gallery reload re-reads the profiles from the account, which kept the last accepted name.
+	fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+	await waitFor(() => expect(mocks.serverProfiles).toHaveBeenCalledTimes(2))
+	await act(async () => {
+		await mocks.serverProfiles.mock.results[1]?.value
+	})
+	expect(screen.getByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
 })

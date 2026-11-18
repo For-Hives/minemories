@@ -62,6 +62,9 @@ test('the prerendered page says what changes, in player words, without waiting f
 	expect(card.querySelector('li')?.textContent).toMatch(/^(?:Nouveau|Corrigé|Modifié)\u00a0: /)
 	expect(card.querySelector('a')?.getAttribute('href')).toBe('/downloads')
 	expect(card.querySelector('a')?.textContent).toBe('Télécharger')
+	const curseForge = card.querySelectorAll('.mm-release-actions a')[1]
+	expect(curseForge?.textContent).toBe('Minemories sur CurseForge')
+	expect(curseForge?.getAttribute('href')).toBe('https://www.curseforge.com/minecraft/mc-mods/minemories')
 	const older = [...document.querySelectorAll('.mm-release-older li')]
 	expect(older.map(item => item.id)).toEqual(previous.map(release => `v${release.version}`))
 	expect(older.map(item => item.querySelectorAll('p > span').length)).toEqual(previous.map(() => 1))

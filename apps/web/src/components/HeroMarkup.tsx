@@ -1,5 +1,6 @@
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { catalogLinks } from '../pages/installation-loaders'
 import { supportedMinecraft } from '../pages/mod-releases'
 import { BrandMark } from './BrandMark'
 import { HeroClip, type HeroClipProps } from './HeroClip'
@@ -18,6 +19,21 @@ import { SiteNav } from './SiteNav'
 /** The published Minecraft versions, from mod/targets.json; the film's translation bridge re-reads them from `data-i18n-values`. */
 const supported = supportedMinecraft()
 const supportedValues = JSON.stringify(supported)
+/** The mod's public catalog pages (CurseForge), offered beside the guided install. */
+const catalogs = catalogLinks()
+
+/** "Minemories on CurseForge": a link to the catalog page, translated by the film's bridge like the rest. */
+function CatalogLink({ name, url, className }: { name: string; url: string; className: string }) {
+	const t = useHeroT()
+	const values = { app: name }
+	return (
+		<a className={className} href={url} rel="noopener">
+			<span data-i18n="Minemories on {app}" data-i18n-values={JSON.stringify(values)}>
+				{t('Minemories on {app}', values)}
+			</span>
+		</a>
+	)
+}
 /** The experimental versions, after the validated ones; nothing when every published version is validated. */
 function Experimental() {
 	const t = useHeroT()
@@ -58,12 +74,14 @@ function Step({
 	body,
 	clip,
 	caption,
+	children,
 }: {
 	number: number
 	title: string
 	body: string
 	clip?: HeroClipProps
 	caption?: string
+	children?: ReactNode
 }) {
 	const t = useHeroT()
 	return (
@@ -79,6 +97,7 @@ function Step({
 			<p className="mc-step__body" data-i18n={body}>
 				{t(body)}
 			</p>
+			{children}
 			{clip && (
 				<div className="mc-step__clip">
 					<HeroClip {...clip} />
@@ -402,6 +421,9 @@ function HeroPage() {
 									<span className="mc-icon mc-icon--ember" aria-hidden="true" />
 									<span data-i18n="Install the mod">{t('Install the mod')}</span>
 								</Link>
+								{catalogs.map(catalog => (
+									<CatalogLink key={catalog.name} className="mc-btn" name={catalog.name} url={catalog.url} />
+								))}
 								<button className="mc-btn" type="button" data-action="replay">
 									<span className="mc-icon mc-icon--replay" aria-hidden="true" />
 									<span data-i18n="Watch the film again">{t('Watch the film again')}</span>
@@ -428,7 +450,15 @@ function HeroPage() {
 								number={1}
 								title="Install."
 								body="Get the mod from the CurseForge app, or drop the .jar into your mods folder."
-							/>
+							>
+								{catalogs.length > 0 && (
+									<p className="mc-step__links">
+										{catalogs.map(catalog => (
+											<CatalogLink key={catalog.name} className="mc-link" name={catalog.name} url={catalog.url} />
+										))}
+									</p>
+								)}
+							</Step>
 							<Step
 								number={2}
 								title="Play."

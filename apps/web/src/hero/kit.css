@@ -591,6 +591,8 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 .mc-step__title { margin: 0; font: 400 24px/30px var(--f-title); color: #fff; text-shadow: 3px 3px 0 var(--text-shadow); }
 .mc-step__body { grid-column: 2; margin: 0; font: 400 16px/24px var(--f-read); color: var(--text-2); text-shadow: 2px 2px 0 var(--text-2-shadow); }
 .mc-step__num .mc-slot { --gp: 3px; }
+/* a step's own link (Install. → the mod's CurseForge page), under its text */
+.mc-step__links { grid-column: 2; margin: 4px 0 0; font: 400 16px/24px var(--f-read); }
 
 /* the "what it does not do" list: the item card of the kit (.mc-tip) holding a list */
 .mc-limits.mc-tip { width: min(100%, 560px); max-width: calc(100% - 4 * var(--gp)); }

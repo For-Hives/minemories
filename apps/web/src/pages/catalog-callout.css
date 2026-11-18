@@ -1,0 +1,43 @@
+/* The catalog block (CurseForge): a night panel with the ember border of the highlighted cards, text then button. */
+
+.mm-catalog-callout {
+	max-width: 780px;
+	margin: var(--ds-sp-6) var(--gp);
+	padding: var(--ds-sp-5);
+	background: var(--night-2);
+	color: var(--text);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		0 0 0 calc(2 * var(--gp)) var(--ember-deep),
+		0 0 0 calc(3 * var(--gp)) var(--outline),
+		var(--ds-panel-bevel);
+}
+
+.mm-catalog-callout__row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--ds-sp-4);
+	align-items: center;
+	justify-content: space-between;
+}
+
+.mm-catalog-callout__row + .mm-catalog-callout__row {
+	margin-top: var(--ds-sp-4);
+}
+
+.mm-catalog-callout__row > div {
+	display: grid;
+	flex: 1 1 260px;
+	gap: var(--ds-sp-1);
+}
+
+.mm-catalog-callout strong {
+	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-2);
+}
+
+.mm-catalog-callout span {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+}
