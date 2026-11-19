@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
+import { authProtection } from './auth-protection'
 import { createBilling } from './billing'
 import { authSecret } from './configuration'
 import { database } from './database'
@@ -8,8 +9,11 @@ import { logApiFailure } from './safe-errors'
 import { webOrigins } from './web-origins'
 
 export const billing = createBilling(database, process.env)
+const protection = authProtection(process.env)
 export const auth = betterAuth({
-	plugins: billing.plugins,
+	plugins: [...billing.plugins, ...protection.plugins],
+	rateLimit: protection.rateLimit,
+	advanced: protection.advanced,
 	socialProviders: oauthProviders(process.env),
 	account: { accountLinking: { enabled: true, disableImplicitLinking: true } },
 	...(billing.config

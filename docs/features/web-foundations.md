@@ -31,6 +31,7 @@ Build variables:
 - `VITE_SITE_URL`: public origin, default `https://minemories.net`; set it for another domain.
 - `VITE_INDEXABLE`: only the exact value `true` allows indexing in the build. By default, including when the variable is absent: `noindex,nofollow` everywhere, an empty sitemap and `robots.txt` with `Disallow: /`. The source HTML and client-side route changes also stay noindex. The `railpack.web.json` command forces the value (`true` since the launch), whatever a Coolify variable says.
 - `VITE_API_URL`: API origin, already used by Better Auth/oRPC.
+- `VITE_TURNSTILE_SITE_KEY`: optional Cloudflare Turnstile site key for the sign-up form. Production builds default to the `minemories.net` widget (`0x4AAAAAAGJBjAbVI1VYsiiZ`), other builds to Cloudflare's always-passing test key `1x00000000000000000000AA`. The script is loaded from `challenges.cloudflare.com` on `/register` only; the site sends no Content-Security-Policy, so nothing else needs to allow it.
 
 ## Coolify static server
 

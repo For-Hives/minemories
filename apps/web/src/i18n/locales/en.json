@@ -1605,5 +1605,8 @@
 	"First submission": "First submission",
 	"Jump to…": "Jump to…",
 	"Search pages and accounts": "Search pages and accounts",
-	"No match.": "No match."
+	"No match.": "No match.",
+	"Complete the human check, then try again.": "Complete the human check, then try again.",
+	"The human check failed. Try again.": "The human check failed. Try again.",
+	"Sign-up is paused for now. Try again later.": "Sign-up is paused for now. Try again later."
 }

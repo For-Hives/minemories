@@ -1605,5 +1605,8 @@
 	"First submission": "Первая отправка",
 	"Jump to…": "Перейти…",
 	"Search pages and accounts": "Поиск страниц и аккаунтов",
-	"No match.": "Ничего не найдено."
+	"No match.": "Ничего не найдено.",
+	"Complete the human check, then try again.": "Пройди проверку на робота и попробуй ещё раз.",
+	"The human check failed. Try again.": "Проверка на робота не пройдена. Попробуй ещё раз.",
+	"Sign-up is paused for now. Try again later.": "Регистрация временно приостановлена. Попробуй позже."
 }

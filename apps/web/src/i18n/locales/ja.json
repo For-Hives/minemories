@@ -1605,5 +1605,8 @@
 	"First submission": "初めての送信",
 	"Jump to…": "移動…",
 	"Search pages and accounts": "ページとアカウントを検索",
-	"No match.": "該当なし。"
+	"No match.": "該当なし。",
+	"Complete the human check, then try again.": "ロボットでないことの確認を済ませてから、もう一度試してください。",
+	"The human check failed. Try again.": "ロボットでないことの確認に失敗しました。もう一度試してください。",
+	"Sign-up is paused for now. Try again later.": "現在、新規登録を一時停止しています。しばらくしてからもう一度試してください。"
 }
