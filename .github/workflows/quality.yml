@@ -149,7 +149,9 @@ jobs:
             25
       # One Gradle cache per cell: with a single shared key, the first cell to finish saved only its own
       # dependencies, and the other cells downloaded theirs from Maven Central at once (HTTP 429).
-      - uses: actions/cache@v6
+      # A full set weighs about 7 GiB against GitHub's 10 GB, so only pushes to main save it; PRs read main's.
+      - uses: actions/cache/restore@v6
+        id: gradle-cache
         with:
           path: |
             ~/.gradle/caches
@@ -160,6 +162,13 @@ jobs:
         env:
           MINEMORIES_MOD_DIR: ${{ matrix.dir }}
         run: node scripts/gradle.mjs ":${{ matrix.project }}:build"
+      - uses: actions/cache/save@v6
+        if: github.ref == 'refs/heads/main' && steps.gradle-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
 
   # The one check to read: green when every gate that had to run passed. A gate skipped because the change does not concern it counts as passed.
   quality:
