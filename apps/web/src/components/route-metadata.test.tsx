@@ -63,15 +63,15 @@ test.each(['/versions', '/downloads'])('release route %s retains the preview noi
 	expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toContain(path)
 })
 
+function Switch() {
+	const { setLocale } = useI18n()
+	return (
+		<button type="button" onClick={() => setLocale('en')}>
+			English
+		</button>
+	)
+}
 test('switching locale updates titles, descriptions, schema and canonical', () => {
-	function Switch() {
-		const { setLocale } = useI18n()
-		return (
-			<button type="button" onClick={() => setLocale('en')}>
-				English
-			</button>
-		)
-	}
 	render(
 		<I18nProvider>
 			<MemoryRouter initialEntries={['/installation']}>

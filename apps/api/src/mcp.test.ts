@@ -90,6 +90,7 @@ test('it refuses a missing or wrong token, browsers and non-POST methods', async
 
 test('repeated bad tokens are rate limited', async () => {
 	const app = route()
+	// biome-ignore lint/performance/noAwaitInLoops: the limiter counts bad tokens one request after the other.
 	for (let i = 0; i < 10; i++) await call(app, {}, { authorization: 'Bearer bad' })
 	expect((await call(app, {}, { authorization: 'Bearer bad' })).status).toBe(429)
 	clock += 61_000

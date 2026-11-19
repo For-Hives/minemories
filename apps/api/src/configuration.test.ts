@@ -92,6 +92,16 @@ test('production requires explicit URLs, paths, credentials, bucket and region',
 	expect(() => validateProductionConfiguration({ ...production, S3_SECRET_KEY: DEV_S3_SECRET_KEY })).toThrow('fixture')
 })
 
+// The message of the error a call throws, or a marker that fails every assertion on the name.
+function thrownBy(call: () => unknown) {
+	try {
+		call()
+	} catch (error) {
+		return String(error)
+	}
+	return 'nothing thrown'
+}
+
 test('production rejects malformed or unsafe URLs without echoing their contents', () => {
 	for (const value of [
 		'invalid',
@@ -102,13 +112,9 @@ test('production rejects malformed or unsafe URLs without echoing their contents
 		'https://example.test#private',
 	]) {
 		for (const name of ['BETTER_AUTH_URL', 'WEB_ORIGIN']) {
-			try {
-				validateProductionConfiguration({ ...production, [name]: value })
-				throw new Error('Invalid URL accepted')
-			} catch (error) {
-				expect(String(error)).toContain(name)
-				expect(String(error)).not.toContain(value)
-			}
+			const error = thrownBy(() => validateProductionConfiguration({ ...production, [name]: value }))
+			expect(error).toContain(name)
+			expect(error).not.toContain(value)
 		}
 	}
 	expect(() => validateProductionConfiguration({ ...production, WEB_ORIGIN: 'https://example.test/path' })).toThrow(

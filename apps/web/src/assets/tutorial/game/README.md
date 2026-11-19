@@ -1,10 +1,10 @@
 # In-game screenshots for the installation guide
 
-| File | Shown on | What it shows |
-| --- | --- | --- |
-| `guide-minemories-menu` | `/installation`, "Check that it works" step | Minemories menu opened with M: code field, Connect, "Take a memory", "My memories" |
-| `guide-pause-menu` | nowhere since 10 November 2026 | Pause menu (Esc) with the Minemories button at the top right. Outdated: the mod moved the button to an icon in Options. To retake on the Options screen. |
-| `guide-export-command` | nowhere since 10 November 2026 | Chat with `/minemories export 16` typed, not yet sent. Kept for the Blender guide. |
+| File                    | Shown on                                    | What it shows                                                                                                                                            |
+| ----------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `guide-minemories-menu` | `/installation`, "Check that it works" step | Minemories menu opened with M: code field, Connect, "Take a memory", "My memories"                                                                       |
+| `guide-pause-menu`      | nowhere since 10 November 2026              | Pause menu (Esc) with the Minemories button at the top right. Outdated: the mod moved the button to an icon in Options. To retake on the Options screen. |
+| `guide-export-command`  | nowhere since 10 November 2026              | Chat with `/minemories export 16` typed, not yet sent. Kept for the Blender guide.                                                                       |
 
 These are real game screenshots, taken by the Fabric 1.21.11 client test (`mod/1.21.11/fabric/src/gametest/java/dev/minemories/gametest/GuideScreenshotsGameTest.java`), in English, 1280 × 720, GUI scale 2 (the command is cropped to the chat line). Without a file, the page shows nothing in that spot.
 

@@ -3,6 +3,8 @@ import { afterAll, expect, test } from 'bun:test'
 let authorized = false
 let bucketExists = false
 let creations = 0
+const creationBodies: string[] = []
+const objectAuthorizations: string[] = []
 const server = Bun.serve({
 	port: 0,
 	async fetch(request) {
@@ -10,13 +12,13 @@ const server = Bun.serve({
 		const url = new URL(request.url)
 		if (request.method === 'HEAD') return new Response(null, { status: bucketExists ? 200 : 404 })
 		if (request.method === 'PUT' && url.pathname === '/minemories/') {
-			expect(await request.text()).toBe('')
+			creationBodies.push(await request.text())
 			creations++
 			bucketExists = true
 			return new Response(null)
 		}
 		if (request.method === 'PUT') {
-			expect(request.headers.get('authorization')).toContain('/us-east-1/s3/aws4_request')
+			objectAuthorizations.push(request.headers.get('authorization') ?? '')
 			return new Response(null, { headers: { etag: '"test-etag"' } })
 		}
 		return new Response('Unexpected S3 request', { status: 400 })
@@ -35,4 +37,6 @@ test('authorization errors do not create a bucket; us-east-1 creation omits its 
 	authorized = true
 	await storeMemory('owner/capture.glb', Buffer.from('glTF'))
 	expect(creations).toBe(1)
+	expect(creationBodies).toEqual([''])
+	expect(objectAuthorizations).toEqual([expect.stringContaining('/us-east-1/s3/aws4_request')])
 })

@@ -48,15 +48,18 @@ test('the first-paint variables equal dockOf / gridOf at every size', () => {
 		expect(px(root, '--header-h'), `${W}x${H}`).toBe(headerHeight(W))
 		expect(px(root, '--text-w'), `${W}x${H}`).toBe(dock.text.w)
 		expect(px(root, '--text-l'), `${W}x${H}`).toBe(dock.text.l)
-		if (dock.layout === 'side') {
-			expect(px(root, '--dock-l'), `${W}x${H}`).toBe(dock.rect.l)
-			expect(px(root, '--dock-w'), `${W}x${H}`).toBe(dock.rect.r - dock.rect.l)
-			expect(px(root, '--dock-t'), `${W}x${H}`).toBe(dock.rect.t)
-			expect(px(root, '--dock-h'), `${W}x${H}`).toBe(dock.rect.b - dock.rect.t)
-		} else {
-			expect(px(root, '--dock-h-large'), `${W}x${H}`).toBe(largeBandOf(H, W))
-			expect(px(root, '--dock-h-small'), `${W}x${H}`).toBe(smallBandOf(H))
-		}
+		// A side dock sets its rectangle; a band sets its two heights.
+		const dockVariables =
+			dock.layout === 'side'
+				? {
+						'--dock-l': dock.rect.l,
+						'--dock-w': dock.rect.r - dock.rect.l,
+						'--dock-t': dock.rect.t,
+						'--dock-h': dock.rect.b - dock.rect.t,
+					}
+				: { '--dock-h-large': largeBandOf(H, W), '--dock-h-small': smallBandOf(H) }
+		const actual = Object.fromEntries(Object.keys(dockVariables).map(name => [name, px(root, name)]))
+		expect(actual, `${W}x${H}`).toEqual(dockVariables)
 	}
 })
 

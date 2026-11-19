@@ -462,14 +462,17 @@ test('prune arguments and formats', () => {
 test('the command uses console.log or an object logger without a log function', async () => {
 	const client = createFakeClient()
 	const lines = []
-	await storage.run(['ls'], { env, log: { info: message => lines.push(message) }, storageClient: client })
+	await storage.run(['status'], { env, log: { info: message => lines.push(message) }, storageClient: client })
+	const printed = []
 	const original = console.log
-	console.log = () => undefined
+	console.log = message => printed.push(message)
 	try {
-		await storage.run(['ls'], { env, storageClient: client })
+		await storage.run(['status'], { env, storageClient: client })
 	} finally {
 		console.log = original
 	}
+	assert.ok(lines.length > 0)
+	assert.deepEqual(printed, lines)
 })
 
 test('bun mod storage under MOD_STORAGE_PREFIX: status, ls and prune ignore the rest of the bucket', async () => {

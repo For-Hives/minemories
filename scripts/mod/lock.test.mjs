@@ -29,9 +29,14 @@ test('an unreadable lock file counts as stale and a foreign host is not trusted'
 	const path = await tmp()
 	await await acquireLock(path)
 	await writeFile(path, 'not json')
-	await (await acquireLock(path))()
+	const afterUnreadable = await acquireLock(path, { label: 'after unreadable' })
+	assert.equal(JSON.parse(await readFile(path, 'utf8')).label, 'after unreadable')
+	await afterUnreadable()
 	await writeFile(path, JSON.stringify({ pid: process.pid, host: `${hostname()}-other`, label: 'x', since: '' }))
-	await (await acquireLock(path))()
+	const afterForeign = await acquireLock(path, { label: 'after foreign host' })
+	assert.equal(JSON.parse(await readFile(path, 'utf8')).host, hostname())
+	await afterForeign()
+	assert.equal(existsSync(path), false)
 })
 
 test('withLock releases on error and pidAlive reflects the process table', async () => {

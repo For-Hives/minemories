@@ -73,11 +73,11 @@ test('a demo link opens its memory, copies a real URL and provides a fallback wh
 	expect(screen.queryByRole('region', { name: 'Aperçu du souvenir' })).toBeNull()
 	vi.unstubAllGlobals()
 })
+function Address() {
+	const location = useLocation()
+	return <output aria-label="address">{location.search}</output>
+}
 test('opening and closing a demo memory keeps the demo mode in the address', () => {
-	function Address() {
-		const location = useLocation()
-		return <output aria-label="address">{location.search}</output>
-	}
 	render(
 		<I18nProvider>
 			<MemoryRouter initialEntries={['/explore?demo=1']}>

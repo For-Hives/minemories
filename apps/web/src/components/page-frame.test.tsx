@@ -77,11 +77,11 @@ test('a navigation keeps the current page on screen while the next one arrives, 
 	expect(screen.queryByRole('heading', { name: 'Questions' })).toBeNull()
 })
 
+function Broken(): ReactNode {
+	throw new Error('boom')
+}
 test('a page that fails is replaced by a reload notice, which clears on the next page', async () => {
 	vi.spyOn(console, 'error').mockImplementation(() => undefined)
-	function Broken(): ReactNode {
-		throw new Error('boom')
-	}
 	delete document.documentElement.dataset.mmReady
 	shell(
 		<Routes>
@@ -158,15 +158,15 @@ test('page chunks are fetched once the browser is idle, and the wait can be canc
 	else delete idle.requestIdleCallback
 })
 
+function Viewer({ settled }: { settled: boolean }) {
+	useScenePageReady(settled)
+	return <h1>Viewer</h1>
+}
 test('a viewer says itself when its scene is on screen: the loading screen waits for it, not for the page chunk', async () => {
 	delete document.documentElement.dataset.mmReady
 	const seen: string[] = []
 	const listen = () => seen.push('ready')
 	window.addEventListener('mm:ready', listen)
-	function Viewer({ settled }: { settled: boolean }) {
-		useScenePageReady(settled)
-		return <h1>Viewer</h1>
-	}
 	const view = shell(
 		<Page kind="viewer">
 			<Viewer settled={false} />

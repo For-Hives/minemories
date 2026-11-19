@@ -2,6 +2,7 @@ import { afterAll, expect, test } from 'bun:test'
 
 const key = 'owner/capture.glb'
 const aborted: string[] = []
+const abortPaths: string[] = []
 const deleted: string[] = []
 const markers: string[][] = []
 let mode: 'pages' | 'empty' | 'cycle' | 'missing-marker' | 'missing-id' | 'denied' = 'pages'
@@ -39,7 +40,7 @@ const server = Bun.serve({
 		if (request.method === 'HEAD') return new Response(null)
 		if (request.method === 'GET' && url.searchParams.has('uploads')) return listUploads(url)
 		if (request.method === 'DELETE' && url.searchParams.has('uploadId')) {
-			expect(url.pathname).toBe(`/minemories/${key}`)
+			abortPaths.push(url.pathname)
 			if (mode === 'denied') return new Response('<Error><Code>AccessDenied</Code></Error>', { status: 403 })
 			aborted.push(url.searchParams.get('uploadId') ?? '')
 			return new Response(null, { status: 204 })
@@ -62,6 +63,7 @@ function reset(next: typeof mode) {
 	mode = next
 	pageCount = 0
 	aborted.length = 0
+	abortPaths.length = 0
 	deleted.length = 0
 	markers.length = 0
 }
@@ -70,6 +72,7 @@ test('cleanup traverses both markers for one key and leaves prefix siblings unto
 	reset('pages')
 	await discardMemoryUpload(key)
 	expect(aborted).toEqual(['attempt-1', 'attempt-2', 'attempt-3'])
+	expect(abortPaths).toEqual(Array(3).fill(`/minemories/${key}`))
 	expect(markers).toEqual([
 		['', ''],
 		[key, 'part-1'],

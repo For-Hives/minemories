@@ -8,6 +8,7 @@ import { Readable } from 'node:stream'
 
 const root = mkdtempSync(join(tmpdir(), 'minemories-s3-stream-'))
 const partSizes: number[] = []
+const initiations: { contentType: string | null; checksumAlgorithm: boolean }[] = []
 let digest = createHash('sha256')
 let completed = false
 let pending = false
@@ -53,8 +54,10 @@ const server = Bun.serve({
 				`<ListMultipartUploadsResult><IsTruncated>false</IsTruncated>${pending ? '<Upload><Key>owner/large.glb</Key><UploadId>test-upload</UploadId><Initiated>2026-09-30T15:00:00Z</Initiated></Upload>' : ''}</ListMultipartUploadsResult>`
 			)
 		if (request.method === 'POST' && url.searchParams.has('uploads')) {
-			expect(request.headers.get('content-type')).toBe('model/gltf-binary')
-			expect(request.headers.has('x-amz-sdk-checksum-algorithm')).toBe(false)
+			initiations.push({
+				contentType: request.headers.get('content-type'),
+				checksumAlgorithm: request.headers.has('x-amz-sdk-checksum-algorithm'),
+			})
 			pending = true
 			return xml('<InitiateMultipartUploadResult><UploadId>test-upload</UploadId></InitiateMultipartUploadResult>')
 		}
@@ -91,6 +94,7 @@ test('finalization streams through 8 MiB S3 parts rather than buffering the whol
 	await storeMemoryFile('owner/large.glb', path, size)
 	expect(partSizes).toEqual([8 * 1024 * 1024, 8 * 1024 * 1024, 4 * 1024 * 1024])
 	expect(completed).toBe(true)
+	expect(initiations).toEqual([{ contentType: 'model/gltf-binary', checksumAlgorithm: false }])
 	const expected = createHash('sha256')
 	const zeros = Buffer.alloc(1024 * 1024)
 	for (let part = 0; part < 20; part++) {

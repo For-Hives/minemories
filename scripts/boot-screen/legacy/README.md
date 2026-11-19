@@ -4,9 +4,9 @@ Until 08/11/2026 the landing's loading screen (`apps/web/index.html`, the three 
 
 Nothing in the build, the tests or CI reads this folder.
 
-| File | What it is |
-| --- | --- |
-| `steve-ore.py` | The generator, unchanged apart from its header. It reads the player, pickaxe, diamond and breaking textures from a local Minecraft 1.21.1 client JAR (Mojang files: see `docs/features/brand-guidelines.md`, section 12). |
+| File                  | What it is                                                                                                                                                                                                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `steve-ore.py`        | The generator, unchanged apart from its header. It reads the player, pickaxe, diamond and breaking textures from a local Minecraft 1.21.1 client JAR (Mojang files: see `docs/features/brand-guidelines.md`, section 12).                                              |
 | `steve-ore.boot.html` | Its exact last output, as it stood in `apps/web/index.html` at commit `fa61632`: line 1 is the `<style>` block (end of `<head>`), line 2 the `#boot` markup (just before `<div id="app"></div>`), line 3 the inline script (just before the `main.tsx` module script). |
 
 ## Restoring it

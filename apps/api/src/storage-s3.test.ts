@@ -7,6 +7,8 @@ import { Readable } from 'node:stream'
 // Exercise the actual SDK over HTTP. This fixture is not a real Garage deployment.
 const objects = new Map<string, Buffer>()
 const requests: string[] = []
+const bucketBodies: string[] = []
+const objectPuts: { contentType: string | null; authorization: string | null }[] = []
 let available = false
 let bucketExists = false
 const server = Bun.serve({
@@ -23,15 +25,17 @@ const server = Bun.serve({
 		if (isBucket) {
 			if (request.method === 'HEAD') return new Response(null, { status: bucketExists ? 200 : 404 })
 			if (request.method === 'PUT') {
-				expect(await request.text()).toContain('<LocationConstraint>garage</LocationConstraint>')
+				bucketBodies.push(await request.text())
 				bucketExists = true
 				return new Response(null)
 			}
 		}
 		if (request.method === 'PUT') {
 			objects.set(path, Buffer.from(await request.arrayBuffer()))
-			expect(request.headers.get('content-type')).toBe('model/gltf-binary')
-			expect(request.headers.get('authorization')).toContain('AWS4-HMAC-SHA256')
+			objectPuts.push({
+				contentType: request.headers.get('content-type'),
+				authorization: request.headers.get('authorization'),
+			})
 			return new Response(null, { headers: { etag: '"test-etag"' } })
 		}
 		if (request.method === 'DELETE') {
@@ -51,6 +55,8 @@ process.env.S3_REGION = 'garage'
 const { storeMemory, readMemory, removeMemory, storeMemoryFile, readMemoryStream } = await import('./storage')
 afterAll(() => server.stop(true))
 
+const signedGlbPut = { contentType: 'model/gltf-binary', authorization: expect.stringContaining('AWS4-HMAC-SHA256') }
+
 test('S3 initialization retries after failure, shares its bucket check and preserves binary bytes', async () => {
 	const bytes = Buffer.from([0, 1, 127, 128, 255])
 	await expect(storeMemory('owner/failed.glb', bytes)).rejects.toThrow()
@@ -59,6 +65,8 @@ test('S3 initialization retries after failure, shares its bucket check and prese
 	await Promise.all([storeMemory('owner/one.glb', bytes), storeMemory('owner/two.glb', bytes)])
 	expect(requests.slice(failedChecks).filter(request => request === 'HEAD /minemories')).toHaveLength(1)
 	expect(requests.filter(request => request === 'PUT /minemories')).toHaveLength(1)
+	expect(bucketBodies).toEqual([expect.stringContaining('<LocationConstraint>garage</LocationConstraint>')])
+	expect(objectPuts).toEqual([signedGlbPut, signedGlbPut])
 	expect(await readMemory('owner/one.glb')).toEqual(bytes)
 	await removeMemory('owner/one.glb')
 	await expect(readMemory('owner/one.glb')).rejects.toThrow()
@@ -76,6 +84,7 @@ test('S3 file uploads and downloads stream exact bytes and reject a storage outa
 	await writeFile(path, bytes)
 	try {
 		await storeMemoryFile('owner/stream.glb', path, bytes.length)
+		expect(objectPuts.at(-1)).toEqual(signedGlbPut)
 		const stream = await readMemoryStream('owner/stream.glb')
 		const recovered = await new Response(Readable.toWeb(stream) as unknown as ReadableStream).arrayBuffer()
 		expect(Buffer.from(recovered).equals(bytes)).toBe(true)
