@@ -12,6 +12,7 @@ import { errorMessageKey } from '../i18n/error-messages'
 import { T, useI18n } from '../i18n/I18n'
 import { downloadCapture } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
+import { track } from '../observability/insight'
 import { ViewerScene } from '../viewer-scene'
 import { WorldPage } from './WorldPage'
 
@@ -148,6 +149,7 @@ function SingleViewerPage() {
 	}
 
 	function afterMemoryOpened(id: string, thumbnail: string | null, icon: string | null, ready: boolean) {
+		if (ready) track('viewer-open', { source: 'gallery' })
 		const scene = sceneRef.current
 		if (!(ready && scene) || (thumbnail !== null && icon !== null)) return
 		const snapshot = scene.snapshot()

@@ -12,6 +12,7 @@ import { type Locale, localeTag } from '../i18n/locales'
 import { downloadCapture, SCENE_UNREACHABLE } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { readViewLink, type ViewLink } from '../lib/view-link'
+import { track } from '../observability/insight'
 import { ViewerScene } from '../viewer-scene'
 import { ticksToMinutes } from './ViewerPage'
 import './share-timeline.css'
@@ -381,6 +382,13 @@ export function SharePage({ isPublic = false }: { isPublic?: boolean }) {
 	const invite = !review
 	const onScreen = invite && sceneOnScreen({ empty, status, error, restoring: restoration.view !== null })
 	const [engaged, engage] = useEngagement(onScreen)
+	// Counted once per link opened: the share funnel's "they saw it" step.
+	const counted = useRef<string | undefined>(undefined)
+	useEffect(() => {
+		if (!onScreen || counted.current === reference) return
+		counted.current = reference
+		track('viewer-open', { source: isPublic ? 'public' : 'share' })
+	}, [onScreen, reference, isPublic])
 	function retry() {
 		setError('')
 		setStatus('Loading the shared world…')

@@ -4,6 +4,7 @@ import { loadLocale } from './i18n/catalog'
 import { resolveLocale } from './i18n/locales'
 import { savedLanguageRedirect, splitLocalePath } from './lib/locale-path'
 import { savedLocaleKey } from './lib/locale-suggestion'
+import { startInsight } from './observability/insight'
 import './theme.css'
 import './pages/installation.css'
 import './album.css'
@@ -47,4 +48,8 @@ if (!container) throw new Error('Application root not found.')
 // A saved language opens its own page (/fr/faq for /faq) before anything renders; a prefixed URL is never redirected.
 const redirect = savedLanguageRedirect(window.location, savedLocale())
 if (redirect) window.location.replace(redirect)
-else void start(container)
+else {
+	void start(container)
+	// Visit statistics load after the page, through the API's /api/insight (docs/features/visit-statistics.md).
+	startInsight()
+}

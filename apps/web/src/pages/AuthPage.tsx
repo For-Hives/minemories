@@ -10,6 +10,7 @@ import { SocialSignIn } from '../components/SocialSignIn'
 import { fileInputHidden } from '../components/ui'
 import { errorMessageKey } from '../i18n/error-messages'
 import { useI18n } from '../i18n/I18n'
+import { rememberAuthProvider } from '../observability/Insight'
 
 const inputField = 'auth-input mc-field'
 
@@ -71,6 +72,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 		}
 		setBusy(true)
 		setError('')
+		rememberAuthProvider('email')
 		const form = new FormData(event.currentTarget)
 		try {
 			const result = await authenticate(form, creating, humanCheck)

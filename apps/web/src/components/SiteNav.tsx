@@ -16,6 +16,7 @@ import { useI18n } from '../i18n/I18n'
 import { avatarUrl } from '../lib/avatar'
 import { clearAllDrafts } from '../lib/form-drafts'
 import { hasCurrentPage, isCurrentPage, listKeyIndex, rowKeyIndex } from '../lib/site-menu'
+import { track } from '../observability/insight'
 import { hasAnyAdminAccess, useAdminAccess } from '../pages/admin-access'
 import { LanguagePicker } from './LanguagePicker'
 import { LoadingSkeleton } from './Loading'
@@ -227,6 +228,7 @@ function useSignOut() {
 	return async () => {
 		// Unsaved names and descriptions are private: they never outlive the session on a shared computer.
 		clearAllDrafts()
+		track('signout')
 		await authClient.signOut()
 		await refreshSession()
 		navigate('/')

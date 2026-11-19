@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react'
 import { apiBase } from '../api-client'
 import { authClient } from '../auth-client'
 import { useI18n } from '../i18n/I18n'
+import { insightRoute } from '../lib/insight'
+import { rememberAuthProvider } from '../observability/Insight'
+import { track } from '../observability/insight'
 
 type Provider = 'google' | 'discord'
+function authMode(link: boolean) {
+	if (link) return 'link'
+	return insightRoute(window.location.pathname).page === '/register' ? 'register' : 'login'
+}
 export function SocialSignIn({
 	destination,
 	link = false,
@@ -37,6 +44,8 @@ export function SocialSignIn({
 			destination.startsWith('/') && !destination.startsWith('//') && !destination.includes('\\')
 				? destination
 				: '/gallery'
+		if (!link) rememberAuthProvider(provider)
+		track('auth-start', { provider, mode: authMode(link) })
 		try {
 			const authenticate = link ? authClient.linkSocial : authClient.signIn.social
 			const result = await authenticate({

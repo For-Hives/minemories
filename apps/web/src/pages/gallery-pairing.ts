@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { errorMessageKey } from '../i18n/error-messages'
+import { sessionData, track } from '../observability/insight'
 export type PairingStatus = 'idle' | 'pending' | 'paired' | 'expired' | 'error'
 
 export function useGalleryPairing(notify: (message: string) => void, onError: (message: string) => void) {
@@ -15,7 +16,9 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 		void apiClient.pairing
 			.status(undefined, { signal: controller.signal })
 			.then(result => {
-				if (version === revision.current && result.paired) setPairStatus('paired')
+				if (version !== revision.current) return
+				sessionData({ paired: result.paired })
+				if (result.paired) setPairStatus('paired')
 			})
 			.catch(() => undefined)
 		return () => {
@@ -28,7 +31,11 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 		if (!pairCode || pairStatus !== 'pending') return
 		return watchPairing(pairCode, status => {
 			setPairStatus(status)
-			if (status === 'paired') notify('Your game is connected.')
+			if (status === 'paired') {
+				track('pairing-done')
+				sessionData({ paired: true })
+				notify('Your game is connected.')
+			}
 		})
 	}, [pairCode, pairStatus, notify])
 	async function createPairing() {
@@ -44,6 +51,7 @@ export function useGalleryPairing(notify: (message: string) => void, onError: (m
 			if (version !== revision.current) return
 			setPairCode(pairing.code)
 			setPairStatus('pending')
+			track('pairing-code')
 		} catch (error) {
 			if (version !== revision.current) return
 			setPairStatus('error')

@@ -32,6 +32,7 @@ import { PublicDiscovery } from './discovery'
 import { githubToken } from './github'
 import { createGithubWebhook, githubWebhookSecret } from './github-webhook'
 import { isGlbContainer } from './glb'
+import { createInsightProxy, insightClientIp, insightConfiguration } from './insight-proxy'
 import { createLinkCards } from './link-cards'
 import { createMcpRoute } from './mcp'
 import { parseMetadata } from './memory-metadata'
@@ -421,6 +422,10 @@ app.use(
 			'X-Minemories-Diagnostics-Permit',
 			// Cloudflare Turnstile token sent with email sign-up (auth-protection.ts).
 			'X-Captcha-Response',
+			// Umami's tracker, through the visit statistics proxy (insight-proxy.ts).
+			'X-Umami-Cache',
+			'X-Umami-Website-Id',
+			'X-Umami-Hostname',
 		],
 		exposeHeaders: ['X-Minemories-Correlation', 'X-Minemories-Variant'],
 	})
@@ -450,6 +455,16 @@ app.route(
 )
 app.route('/downloads', modDownloads)
 app.route('/api/roadmap', roadmap)
+// Visit statistics: the site's Umami tracker and collect endpoint, first-party (docs/features/visit-statistics.md).
+const insight = insightConfiguration(process.env)
+if (insight)
+	app.route(
+		'/api/insight',
+		createInsightProxy({
+			...insight,
+			clientIp: (request, peerAddress) => insightClientIp(request, peerAddress, trustedProxies),
+		})
+	)
 app.use('/api/auth/*', (context, next) =>
 	requestBodyLimit(
 		billing.config && context.req.path === '/api/auth/polar/webhooks' ? BILLING_WEBHOOK_BODY_BYTES : AUTH_BODY_BYTES

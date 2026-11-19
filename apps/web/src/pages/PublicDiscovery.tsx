@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
+import { track } from '../observability/insight'
 import { useLivePage } from './gallery-data'
 import { DraftMarker } from './RenameField'
 import { useDraft } from './use-draft'
@@ -291,6 +292,7 @@ export function PublicationPanel({
 				thumbnail: memory.metadata.thumbnail,
 				consent: true,
 			})
+			track('public-publish')
 			if (!active.current) return
 			setStatus({ ...result, submission: result.submission ?? sent })
 			form.clear()
@@ -310,6 +312,7 @@ export function PublicationPanel({
 		setNotice('')
 		try {
 			const result = await apiClient.discovery.revoke({ memoryId: memory.id })
+			track('public-revoke')
 			if (!active.current) return
 			setStatus(previous => ({ ...result, submission: result.submission ?? previous?.submission ?? null }))
 			// Withdrawn: a fresh submission asks for consent again.

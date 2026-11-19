@@ -7,6 +7,7 @@ import { buttonOutline, Eyebrow } from '../components/ui'
 import { type LegalSection, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
+import { InsightPreference } from '../observability/Insight'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
 import { catalogLinks } from './installation-loaders'
 import { LegalNotice } from './LegalNotice'
@@ -47,12 +48,12 @@ const privacySummary: Record<string, { glyph: GlyphName; status: string }> = {
 	'Mod download list': { glyph: 'download', status: 'No account needed' },
 	'Who is responsible for your data': { glyph: 'person', status: 'Contact on the legal notice' },
 	'Service providers': { glyph: 'globe', status: 'Hosted in Germany' },
-	'No tracking': { glyph: 'shield', status: 'No ads, no tracking' },
+	'Visit statistics': { glyph: 'shield', status: 'No ads, no cookies' },
 	'Your rights': { glyph: 'key', status: 'Under the GDPR' },
 	'Third-party sites': { glyph: 'link', status: 'Their own policies' },
 }
 /** When the privacy policy last changed, shown under its sections. */
-const privacyUpdated = '2026-11-13'
+const privacyUpdated = '2026-11-19'
 
 /** A section's text, then its list of facts when it has one. */
 function SectionBody({ section }: { section: LegalSection }) {
@@ -103,6 +104,7 @@ function PrivacyPanels({ sections }: { sections: readonly LegalSection[] }) {
 							<div className="ex-row-body">
 								<SectionBody section={section} />
 								{section.heading === 'Optional web diagnostics' && <WebDiagnosticsPreference />}
+								{section.heading === 'Visit statistics' && <InsightPreference />}
 							</div>
 						</details>
 					)

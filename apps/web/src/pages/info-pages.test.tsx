@@ -266,7 +266,7 @@ test('the privacy page names who is responsible, the service providers, the righ
 	for (const heading of [
 		'Qui est responsable de tes données',
 		'Prestataires',
-		'Aucun pistage',
+		'Statistiques de visite',
 		'Tes droits',
 		'Sites tiers',
 	])
@@ -276,7 +276,7 @@ test('the privacy page names who is responsible, the service providers, the righ
 	expect(text).toContain('head.sttr.io')
 	expect(screen.getAllByRole('listitem').filter(item => item.textContent?.includes('Contabo'))).toHaveLength(1)
 	expect(text).toContain('CNIL')
-	expect(text).toMatch(/Dernière mise à jour\u00a0: 13 novembre 2026/)
+	expect(text).toMatch(/Dernière mise à jour\u00a0: 19 novembre 2026/)
 })
 
 test('/sharing says what a link shows, answers three questions and ends on the install button', () => {

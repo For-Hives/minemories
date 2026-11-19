@@ -5,6 +5,7 @@ import { AppContext } from '../app-context'
 import { SiteSelect } from '../components/SiteSelect'
 import { buttonLime, buttonOutline } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
+import { track } from '../observability/insight'
 import './editing.css'
 
 type Capture = Awaited<ReturnType<typeof apiClient.discovery.get>>
@@ -80,6 +81,7 @@ export function PublicGallery() {
 		setNotice('')
 		try {
 			await apiClient.discovery.vote({ id: item.id, voted: !item.voted })
+			if (!item.voted) track('explore-vote')
 			setRefresh(n => n + 1)
 		} catch {
 			setNotice(t('Vote refused or limit reached. Try again later.'))
@@ -93,6 +95,7 @@ export function PublicGallery() {
 		setBusy(item.id)
 		try {
 			await apiClient.discovery.report({ id: item.id, reason: reason.slice(0, 500) })
+			track('explore-report')
 			setNotice(t('Report sent to moderators.'))
 			setReportId('')
 			setReportReason('')

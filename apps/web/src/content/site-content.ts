@@ -42,15 +42,15 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 					heading: 'Service providers',
 					body: 'Minemories relies on these providers to run the service. It never sells or rents your data.',
 					items: [
-						'Contabo GmbH (Germany): hosting of the site, the API, the database (account, connected games, gallery details) and the storage of captures and mod files.',
+						'Contabo GmbH (Germany): hosting of the site, the API, the database (account, connected games, gallery details), the visit statistics and the storage of captures and mod files.',
 						'Cloudflare (United States): domain name and DNS of minemories.net.',
 						'head.sttr.io: the head of your Minecraft skin, if you choose it as your picture. Your browser sends it your Minecraft username, nothing else.',
 						'Google or Discord, only if you sign in with them when the option is offered: they share your name, email address and profile picture with Minemories.',
 					],
 				},
 				{
-					heading: 'No tracking',
-					body: 'Minemories has no audience measurement, no advertising and no tracking cookie. The only cookies keep you signed in.',
+					heading: 'Visit statistics',
+					body: 'Minemories counts visits with Umami, an open-source tool the publisher hosts at Contabo, in Germany. No other company sees these statistics. It sets no cookie and shows no ads. It records the page, the site you came from, your browser, your country, page speed and page errors. Share links and public links are never recorded in full. When you are signed in, visits are tied to a code made from your account, never to your name or email. Your IP address gives the country and is not kept. The switch below turns it off on this device, as does your browser’s Do Not Track or Global Privacy Control.',
 				},
 				{
 					heading: 'Your rights',
