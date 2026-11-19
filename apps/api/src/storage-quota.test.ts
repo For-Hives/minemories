@@ -237,13 +237,15 @@ test('legacy and resumable uploads compete for the same durable reservation and 
 	const [resumable, old] = await Promise.all([initialize(token, id), legacy(token)])
 	expect([resumable.status, old.status].sort()).toEqual([201, 413])
 	expect(accountStorageUsage(database, owner)).toBe(1024)
-	if (resumable.status === 413) {
-		expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id)).toBeNull()
-		expect(existsSync(join(root, 'uploads', id))).toBe(false)
-	} else {
-		expect((await mutate(token, id, 'DELETE')).status).toBe(200)
-		expect(accountStorageUsage(database, owner)).toBe(0)
-	}
+	// Either request may win the race: a refused resumable session leaves nothing behind, a winning one can be released.
+	const resumableRefused = resumable.status === 413
+	const outcome = resumableRefused
+		? {
+				session: database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id),
+				staged: existsSync(join(root, 'uploads', id)),
+			}
+		: { release: (await mutate(token, id, 'DELETE')).status, usage: accountStorageUsage(database, owner) }
+	expect(outcome).toEqual(resumableRefused ? { session: null, staged: false } : { release: 200, usage: 0 })
 })
 
 test('resumable reservations are replayable, survive restart and become memories once without double charging', async () => {

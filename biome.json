@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -76,6 +76,8 @@
 				"noNonNullAssertedOptionalChain": "error",
 				"noTsIgnore": "error",
 				"useAwait": "error",
+				"useExpect": "error",
+				"noConditionalExpect": "error",
 				"noConsole": {
 					"level": "warn",
 					"options": {
@@ -152,6 +154,7 @@
 						"useOptionalChain": "off",
 						"useSimplifiedLogicExpression": "off",
 						"noCommaOperator": "off",
+						"useMathMinMax": "off",
 						"useLiteralKeys": "off",
 						"noUselessLoneBlockStatements": "off"
 					},
@@ -171,6 +174,7 @@
 					"correctness": {
 						"noUnusedVariables": "off",
 						"noUnusedFunctionParameters": "off",
+						"noComponentHookFactories": "off",
 						"noUnusedImports": "off"
 					},
 					"performance": {

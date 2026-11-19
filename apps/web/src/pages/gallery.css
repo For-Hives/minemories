@@ -1165,7 +1165,7 @@
 }
 /* Reduced motion (the system's or the site's option): the buttons keep still on hover. */
 html[data-mc-motion="reduced"]
-:is(.gallery-text-button, .gallery-icon-button, .gallery-view, .gallery-field-button, .gallery-server-go):hover,
+	:is(.gallery-text-button, .gallery-icon-button, .gallery-view, .gallery-field-button, .gallery-server-go):hover,
 html[data-mc-motion="reduced"]
 	.gallery-dialog-body
 	:where(button:not(.mc-btn, .gallery-icon-button, .gallery-field-button, .gallery-sheet-reset)):hover {
@@ -1492,18 +1492,18 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .gallery-page .gallery-trash h2 
 
 /* Readable font: game-font labels and buttons in bold, titles with a 2 px shadow (charter-app's rule). */
 html[data-mc-font="read"]
-:is(
-	.gallery-text-button,
-	.gallery-icon-button,
-	.gallery-view,
-	.gallery-field-button,
-	.gallery-server-go,
-	.gallery-tab,
-	.gallery-badge,
-	.context-menu button,
-	.gallery-storage-head strong,
-	.gallery-link-code button
-) {
+	:is(
+		.gallery-text-button,
+		.gallery-icon-button,
+		.gallery-view,
+		.gallery-field-button,
+		.gallery-server-go,
+		.gallery-tab,
+		.gallery-badge,
+		.context-menu button,
+		.gallery-storage-head strong,
+		.gallery-link-code button
+	) {
 	font-weight: 700;
 }
 html[data-mc-font="read"]

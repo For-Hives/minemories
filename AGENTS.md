@@ -34,7 +34,7 @@
 - Core JaCoCo (runs on `check`): 90% line, 60% branch. Fix coverage with tests, not threshold edits.
 - SpotBugs `ignoreFailures = false`: fix findings locally with a justifying comment; never add broad suppressions.
 - `mod/shared/core` compiles with `-Werror -Xlint:all`; the NeoForge adapter keeps upstream 1.21.1 deprecations visible (`-Xlint:all` only). Do not silence javac output or swap NeoForge APIs without in-game validation.
-- Biome 2.5.15: tabs, single quotes, optional semicolons, 120 columns, recommended rules plus the explicit rules in `biome.json` (complexity <= 15, `noForEach`, no nested ternaries). Run `bun format` after changing TypeScript/CSS/JSON; new suppressions need a local reason. CSS parser supports Tailwind v4 `@theme`.
+- Biome 2.6.8: tabs, single quotes, optional semicolons, 120 columns, recommended rules plus the explicit rules in `biome.json` (complexity <= 15, `noForEach`, no nested ternaries). Run `bun format` after changing TypeScript/CSS/JSON; new suppressions need a local reason. CSS parser supports Tailwind v4 `@theme`.
 - API coverage requires 90% lines and 80% functions per reported file (`apps/api/bunfig.toml`); an LCOV inventory gate rejects missing production sources. Keep text + LCOV reporters enabled.
 - API Bun tests run in separate processes (`--parallel`) so temporary SQLite paths and environment variables cannot leak between suites. Keep HTTP route tests and real oRPC contract tests when upgrading Hono, Better Auth, Bun or oRPC.
 

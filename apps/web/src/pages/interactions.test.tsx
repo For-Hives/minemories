@@ -748,11 +748,11 @@ test('registration keeps password guidance accessible and announces Caps Lock', 
 	expect(screen.getByText(/At least 12 characters/)).toBeTruthy()
 })
 
+function AuthRoute() {
+	const location = useLocation()
+	return <AuthPage key={location.pathname} mode={location.pathname === '/register' ? 'register' : 'login'} />
+}
 test('switching auth modes keeps the intended destination through successful registration', async () => {
-	function AuthRoute() {
-		const location = useLocation()
-		return <AuthPage key={location.pathname} mode={location.pathname === '/register' ? 'register' : 'login'} />
-	}
 	render(
 		<MemoryRouter initialEntries={[{ pathname: '/login', state: { from: '/account' } }]}>
 			<AuthRoute />
@@ -952,16 +952,16 @@ test('production auth and site navigation offer discovery without local file inp
 	expect(site.container.querySelector('input[type=file]')).toBeNull()
 })
 
+function CurrentPath() {
+	return <output>{useLocation().pathname}</output>
+}
 test('production viewer without a memory opens discovery and ignores a stored local file', () => {
 	vi.stubEnv('DEV', false)
 	mocks.context.viewerFile = new File(['old'], 'previous.glb')
-	function Location() {
-		return <output>{useLocation().pathname}</output>
-	}
 	const view = render(
 		<MemoryRouter initialEntries={['/viewer']}>
 			<ViewerPage />
-			<Location />
+			<CurrentPath />
 		</MemoryRouter>
 	)
 	expect(screen.getByText('/gallery')).toBeTruthy()

@@ -67,10 +67,11 @@ test('one story block at a time on [0 ; 60] (quit line is nested in the promise 
 		on.delete('rejoin') // v9c: the game's arrival line of the return is a system message, not a story block (plan.blocks[].system)
 		assert.ok(on.size <= 1, `blocks at ${t.toFixed(2)}: ${[...on]}`)
 		const h = HUD.hudAt(t, { plan })
-		if (h.title && h.chat !== 'rejoin') assert.equal(h.chat, null, `title ${h.title} over chat ${h.chat} at ${t.toFixed(2)}`)
-		if (h.chat === 'rejoin') assert.ok(h.title === null || h.title === 't-echo', 'the only title that may stand over the arrival line is T4')
-		if (h.title) assert.equal(h.typing, null, `title over the bubble at ${t.toFixed(2)}`)
-		if (h.title) assert.equal(h.menu, null, `title over the held screen at ${t.toFixed(2)}`)
+		const titled = Boolean(h.title)
+		assert.ok(!titled || h.chat === null || h.chat === 'rejoin', `title ${h.title} over chat ${h.chat} at ${t.toFixed(2)}`)
+		assert.ok(h.chat !== 'rejoin' || h.title === null || h.title === 't-echo', 'the only title that may stand over the arrival line is T4')
+		assert.ok(!titled || h.typing === null, `title over the bubble at ${t.toFixed(2)}`)
+		assert.ok(!titled || h.menu === null, `title over the held screen at ${t.toFixed(2)}`)
 	}
 })
 

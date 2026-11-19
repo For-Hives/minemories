@@ -130,7 +130,7 @@ test('an unavailable SQLite maintenance pass is contained', async () => {
 	try {
 		const task = worker(f)
 		f.db.exec('DROP TABLE timelapse_work')
-		await task.maintain()
+		await expect(task.maintain()).resolves.toBeUndefined()
 		await task.stop()
 	} finally {
 		await f.close()

@@ -26,7 +26,6 @@ const target = (overrides = {}) => ({
 	...overrides,
 })
 const raw = (extra = {}) => ({ minecraft: ['1.21.1', '26.3'], targets: [target()], planned: [], ...extra })
-const rejects = (value, pattern) => assert.throws(() => validateConfig(value), pattern)
 
 test('the real mod/targets.json is valid and every enabled target is buildable', async () => {
 	const config = await readConfig(repositoryRoot)
@@ -44,19 +43,22 @@ test('versions such as 26.3 are accepted and nothing assumes a 1.x scheme', () =
 })
 
 test('invalid shapes are rejected', () => {
-	rejects(raw({ minecraft: ['1.x'] }), /minecraft/)
-	rejects(raw({ targets: [] }), /targets/)
-	rejects(raw({ targets: [target({ id: 'forge-1.0' })] }), /id/)
-	rejects(raw({ targets: [target({ dir: 'mod/1.21.1' })] }), /dir/)
-	rejects(raw({ targets: [target({ java: 'x' })] }), /java/)
-	rejects(raw({ targets: [target({ minecraft: '1.0', id: 'forge-mc1.0', dir: 'mod/1.0' })] }), /missing from/)
-	rejects(raw({ targets: [target(), target()] }), /duplicate/)
-	rejects(raw({ targets: [target({ jar: undefined })] }), /buildable/)
-	rejects(raw({ targets: [target({ jar: 'no-placeholder.jar' })] }), /jar/)
-	rejects(raw({ targets: [target({ enabled: 'yes' })] }), /name\/enabled/)
-	rejects(raw({ targets: [target({ loaderVersion: 'a b' })] }), /loaderVersion/)
-	rejects(raw({ planned: [{ ...target(), jar: undefined }] }), /both built and planned/)
-	rejects(undefined, /minecraft/)
+	assert.throws(() => validateConfig(raw({ minecraft: ['1.x'] })), /minecraft/)
+	assert.throws(() => validateConfig(raw({ targets: [] })), /targets/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ id: 'forge-1.0' })] })), /id/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ dir: 'mod/1.21.1' })] })), /dir/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ java: 'x' })] })), /java/)
+	assert.throws(
+		() => validateConfig(raw({ targets: [target({ minecraft: '1.0', id: 'forge-mc1.0', dir: 'mod/1.0' })] })),
+		/missing from/
+	)
+	assert.throws(() => validateConfig(raw({ targets: [target(), target()] })), /duplicate/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ jar: undefined })] })), /buildable/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ jar: 'no-placeholder.jar' })] })), /jar/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ enabled: 'yes' })] })), /name\/enabled/)
+	assert.throws(() => validateConfig(raw({ targets: [target({ loaderVersion: 'a b' })] })), /loaderVersion/)
+	assert.throws(() => validateConfig(raw({ planned: [{ ...target(), jar: undefined }] })), /both built and planned/)
+	assert.throws(() => validateConfig(undefined), /minecraft/)
 })
 
 test('a disabled target without a Gradle project is allowed but not selectable', () => {

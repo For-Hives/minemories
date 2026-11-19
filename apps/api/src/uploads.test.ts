@@ -71,18 +71,31 @@ async function fourSessions(token: string) {
 	return ids as [string, string, string, string]
 }
 
-async function assertExternalUploadRejected(bytes: Buffer) {
+// What the API did with an upload: everything a rejected GLB must leave untouched.
+async function externalUploadOutcome(bytes: Buffer) {
 	const { owner, token } = device()
 	const id = await initialize(token, bytes)
-	expect((await chunk(token, id, bytes)).status).toBe(200)
+	const chunkStatus = (await chunk(token, id, bytes)).status
 	const response = await request(token, `/${id}/complete`, 'POST')
-	expect(response.status).toBe(400)
-	expect(await response.json()).toEqual({ error: 'invalid_glb_or_checksum' })
-	expect(listMemories(owner)).toEqual([])
-	expect(existsSync(join(root, 'objects', owner, `${id}.glb`))).toBe(false)
-	// The rejected session releases its quota slot at once.
-	expect(database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id)).toBeNull()
-	expect((await request(token, `/${id}`, 'DELETE')).status).toBe(404)
+	return {
+		chunk: chunkStatus,
+		complete: response.status,
+		body: await response.json(),
+		memories: listMemories(owner),
+		stored: existsSync(join(root, 'objects', owner, `${id}.glb`)),
+		// The rejected session releases its quota slot at once.
+		session: database.query('SELECT id FROM mod_uploads WHERE id = ?').get(id),
+		deletion: (await request(token, `/${id}`, 'DELETE')).status,
+	}
+}
+const rejectedUpload = {
+	chunk: 200,
+	complete: 400,
+	body: { error: 'invalid_glb_or_checksum' },
+	memories: [],
+	stored: false,
+	session: null,
+	deletion: 404,
 }
 
 test('resumable upload refuses external resources, replacing JSON and incoherent geometry without storing or publishing them', async () => {
@@ -93,7 +106,7 @@ test('resumable upload refuses external resources, replacing JSON and incoherent
 		...malformedImageGlbs(),
 	]) {
 		// biome-ignore lint/performance/noAwaitInLoops: initialization holds a global lock, so fixtures must run sequentially.
-		await assertExternalUploadRejected(bytes)
+		expect(await externalUploadOutcome(bytes)).toEqual(rejectedUpload)
 	}
 })
 
@@ -185,6 +198,7 @@ test('initialization is replayable, bounds size/metadata, quota and expiration',
 	expect(
 		(await request(token, '/', 'POST', JSON.stringify({ ...data, id: randomUUID(), metadata: { x: 'bad' } }))).status
 	).toBe(400)
+	// biome-ignore lint/performance/noAwaitInLoops: initializations are serialized by the API.
 	for (let index = 0; index < 3; index++) await initialize(token)
 	const refused = await request(token, '/', 'POST', JSON.stringify({ ...data, id: randomUUID() }))
 	expect(refused.status).toBe(429)
@@ -326,8 +340,8 @@ test('expiration removes an uncommitted object but preserves a completed memory'
 test('a burst of normal uploads is never refused, and finished or aborted sessions release their slot', async () => {
 	const { owner, token } = device()
 	const bytes = minimalGlb()
-	// biome-ignore lint/performance/noAwaitInLoops: the mod uploads its pending captures one after the other.
 	for (let index = 0; index < 12; index++) {
+		// biome-ignore lint/performance/noAwaitInLoops: the mod uploads its pending captures one after the other.
 		const id = await initialize(token, bytes)
 		expect((await chunk(token, id, bytes)).status).toBe(200)
 		expect((await request(token, `/${id}/complete`, 'POST')).status).toBe(201)

@@ -380,10 +380,10 @@ test.each(['GLACIER', 'DEEP_ARCHIVE', 'STANDARD_IA'] as const)(
 				physicalKey: 'owner/tiers/33333333-3333-4333-8333-333333333333.glb',
 			}
 			const restoreWork = { ...work, state: 'restoring' as const }
-			if (archiveClass !== 'STANDARD_IA') {
-				expect(await f.provider().prepare(restoreWork, restore, signal)).toBe(false)
-				f.state.restore = `ongoing-request="false", expiry-date="${new Date(NOW + 86_400_000).toUTCString()}"`
-			}
+			// STANDARD_IA reads at once; the archive classes wait for a restore request to finish.
+			const instant = archiveClass === 'STANDARD_IA'
+			expect(await f.provider().prepare(restoreWork, restore, signal)).toBe(instant)
+			f.state.restore = `ongoing-request="false", expiry-date="${new Date(NOW + 86_400_000).toUTCString()}"`
 			expect(await f.provider().prepare(restoreWork, restore, signal)).toBe(true)
 			await f.provider().copy(restoreWork, restore, signal)
 			expect(f.objects.get(restore.physicalKey)?.bytes).toEqual(f.objects.get(sourceKey)?.bytes)

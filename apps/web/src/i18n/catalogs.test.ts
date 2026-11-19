@@ -128,10 +128,10 @@ test('the German catalogue speaks to the player with “du”', async () => {
 	if (!load) throw new Error('Missing locale catalogue')
 	const catalog = await load()
 	for (const key of Object.keys(germanPronounSie)) expect(catalog[key], key).toMatch(/\bSie\b/)
-	for (const [key, message] of Object.entries(catalog)) {
+	for (const [key, message] of Object.entries(catalog))
 		expect(message, key).not.toMatch(/\b(?:Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres|Ihnen)\b/)
-		if (!(key in germanPronounSie)) expect(message, key).not.toMatch(/\bSie\b/)
-	}
+	for (const [key, message] of Object.entries(catalog).filter(([key]) => !(key in germanPronounSie)))
+		expect(message, key).not.toMatch(/\bSie\b/)
 })
 
 // Plural "you": the group playing together, not a formal address to one player.
@@ -144,7 +144,6 @@ test('the Russian catalogue speaks to the player with “ты”', async () => {
 	if (!load) throw new Error('Missing locale catalogue')
 	const catalog = await load()
 	for (const key of russianPluralYou) expect(catalog[key], key).toMatch(/ваш/u)
-	for (const [key, message] of Object.entries(catalog))
-		if (!russianPluralYou.has(key))
-			expect(message, key).not.toMatch(/(?<!\p{L})(?:вы|вас|вам|вами|ваш\p{L}*)(?!\p{L})/iu)
+	for (const [key, message] of Object.entries(catalog).filter(([key]) => !russianPluralYou.has(key)))
+		expect(message, key).not.toMatch(/(?<!\p{L})(?:вы|вас|вам|вами|ваш\p{L}*)(?!\p{L})/iu)
 })

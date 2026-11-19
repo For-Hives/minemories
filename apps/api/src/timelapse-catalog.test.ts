@@ -266,18 +266,23 @@ test('a reader pins the snapshot after purge and releases it on close or crash e
 test('reader reservations enforce both per-owner and global bounds', () => {
 	const { db, catalog } = fixture()
 	try {
-		for (let owner = 0; owner < 9; owner++) {
+		const publish = (owner: number) => {
 			const id = `m${owner}`
 			memory(db, id, `owner${owner}`, 7)
 			const lease = required(catalog.begin(id, 0)),
 				claim = catalog.claim(lease.id, b, 7, 0)
 			catalog.stored(lease.id, claim.objectKey, 0)
-			const key = catalog.publish(lease.id, frameHash, 0)
-			if (owner < 8) {
-				for (let reader = 0; reader < 8; reader++) expect(catalog.open(key, 0)).not.toBeNull()
-			}
+			return catalog.publish(lease.id, frameHash, 0)
+		}
+		// Eight owners each fill their eight reader slots, and a ninth reader is refused.
+		for (let owner = 0; owner < 8; owner++) {
+			const key = publish(owner)
+			for (let reader = 0; reader < 8; reader++) expect(catalog.open(key, 0)).not.toBeNull()
 			expect(() => catalog.open(key, 0)).toThrow('Too many active')
 		}
+		// A ninth owner then finds the global limit reached on its first reader.
+		const key = publish(8)
+		expect(() => catalog.open(key, 0)).toThrow('Too many active')
 		catalog.collect(TIMELAPSE_LEASE_MS)
 		expect(db.query('SELECT COUNT(*) AS count FROM timelapse_readers').get()).toEqual({ count: 0 })
 	} finally {
