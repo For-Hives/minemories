@@ -17,6 +17,9 @@ test('known protocol codes and messages produce keys translated in both language
 		'USER_ALREADY_EXISTS',
 		'EMAIL_NOT_VERIFIED',
 		'PASSWORD_TOO_SHORT',
+		'MISSING_RESPONSE',
+		'VERIFICATION_FAILED',
+		'SIGN_UP_UNAVAILABLE',
 	]) {
 		const key = errorMessageKey({ code, message: 'internal private path /home/player' }, 'fallback')
 		expect(key).not.toBe('fallback')
@@ -27,6 +30,14 @@ test('known protocol codes and messages produce keys translated in both language
 		expect(errorMessageKey(new Error(message), 'fallback')).toBe(key)
 		expect(translate('fr', key)).not.toBe(key)
 	}
+})
+test('a rate-limited auth request reads as too many attempts', () => {
+	const limited = {
+		status: 429,
+		statusText: 'Too Many Requests',
+		message: 'Too many requests. Please try again later.',
+	}
+	expect(errorMessageKey(limited, 'fallback')).toBe('Too many attempts. Wait a moment and try again.')
 })
 test('unknown errors use the stable contextual fallback and never expose raw server text', () => {
 	for (const error of [

@@ -12,6 +12,10 @@ const codes: Record<string, string> = {
 	USER_ALREADY_EXISTS: 'Email already used',
 	EMAIL_NOT_VERIFIED: 'Verify your email address before signing in.',
 	PASSWORD_TOO_SHORT: 'The password does not meet the requirements.',
+	// Sign-up protection (apps/api/src/auth-protection.ts and Better Auth's captcha plugin).
+	MISSING_RESPONSE: 'Complete the human check, then try again.',
+	VERIFICATION_FAILED: 'The human check failed. Try again.',
+	SIGN_UP_UNAVAILABLE: 'Sign-up is paused for now. Try again later.',
 }
 export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 	[
@@ -35,7 +39,9 @@ export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 /** Store stable message keys, so changing language also updates an error already on screen. */
 export function errorMessageKey(error: unknown, fallback: string): string {
 	if (!error || typeof error !== 'object') return fallback
-	const record = error as { message?: unknown; code?: unknown }
+	const record = error as { message?: unknown; code?: unknown; status?: unknown }
+	// Better Auth's rate limit answers 429 with a message but no code.
+	if (record.status === 429) return codes.TOO_MANY_REQUESTS as string
 	const message =
 		typeof record.message === 'string' && Object.hasOwn(stableErrorMessages, record.message)
 			? stableErrorMessages[record.message]

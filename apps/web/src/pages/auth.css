@@ -159,6 +159,10 @@
 	display: grid;
 	gap: var(--ds-sp-4);
 }
+/* Cloudflare Turnstile (sign-up only): reserve the widget's height so the button does not jump when it appears. */
+.auth-human-check {
+	min-height: 65px;
+}
 .auth-label,
 .auth-password {
 	display: grid;

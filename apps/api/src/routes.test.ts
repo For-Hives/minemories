@@ -48,6 +48,19 @@ test('health and CORS keep the web origin explicit', async () => {
 	expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
 })
 
+test('the web origin may send the Turnstile token header on cross-origin sign-up', async () => {
+	const response = await app.request('/api/auth/sign-up/email', {
+		method: 'OPTIONS',
+		headers: {
+			origin: 'http://localhost:5173',
+			'access-control-request-method': 'POST',
+			'access-control-request-headers': 'content-type,x-captcha-response',
+		},
+	})
+	expect(response.status).toBe(204)
+	expect(response.headers.get('access-control-allow-headers')?.toLowerCase()).toContain('x-captcha-response')
+})
+
 test('the API keeps crawlers out: robots.txt disallows everything but link cards and every response is noindex', async () => {
 	const robots = await app.request('/robots.txt')
 	expect(robots.status).toBe(200)

@@ -2,6 +2,7 @@ import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
+import { HumanCheck } from '../components/HumanCheck'
 import { LoadingSkeleton } from '../components/Loading'
 import { MemoryScene } from '../components/MemoryScene'
 import { PasswordField } from '../components/PasswordField'
@@ -17,11 +18,19 @@ function submitText(creating: boolean, busy: boolean) {
 	return creating ? 'Create my account' : 'Sign in'
 }
 
-function authenticate(form: FormData, creating: boolean) {
+const missingHumanCheck = 'Complete the human check, then try again.'
+
+function authenticate(form: FormData, creating: boolean, humanCheck: string) {
 	const email = String(form.get('email') ?? '').trim()
 	const password = String(form.get('password') ?? '')
 	return creating
-		? authClient.signUp.email({ email, password, name: String(form.get('name') ?? '').trim() })
+		? authClient.signUp.email({
+				email,
+				password,
+				name: String(form.get('name') ?? '').trim(),
+				// The API refuses an email sign-up without a Turnstile token (apps/api/src/auth-protection.ts).
+				fetchOptions: { headers: { 'x-captcha-response': humanCheck } },
+			})
 		: authClient.signIn.email({ email, password })
 }
 
@@ -31,6 +40,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	const { session, isPending, refreshSession } = useAppContext()
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
+	const [humanCheck, setHumanCheck] = useState('')
+	const [humanCheckRound, setHumanCheckRound] = useState(0)
 	const errorRef = useRef<HTMLParagraphElement>(null)
 	const active = useRef(true)
 	useEffect(() => {
@@ -54,11 +65,15 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	async function submit(event: SyntheticEvent<HTMLFormElement>) {
 		event.preventDefault()
 		if (busy) return
+		if (creating && !humanCheck) {
+			setError(missingHumanCheck)
+			return
+		}
 		setBusy(true)
 		setError('')
 		const form = new FormData(event.currentTarget)
 		try {
-			const result = await authenticate(form, creating)
+			const result = await authenticate(form, creating, humanCheck)
 			if (!active.current) return
 			if (result.error) throw result.error
 			await refreshSession()
@@ -67,6 +82,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 			setError(errorMessageKey(cause, 'Could not connect right now.'))
 		} finally {
 			setBusy(false)
+			// A Turnstile token is single use: the next sign-up attempt needs a fresh one (no widget on sign-in).
+			setHumanCheckRound(round => round + 1)
 		}
 	}
 
@@ -129,6 +146,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 							/>
 						</label>
 						<PasswordField key={mode} creating={creating} className={inputField} />
+						{creating && <HumanCheck onToken={setHumanCheck} resetKey={humanCheckRound} />}
 						{error && (
 							<p ref={errorRef} tabIndex={-1} className="auth-error" role="alert">
 								{t(error)}

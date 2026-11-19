@@ -419,6 +419,8 @@ app.use(
 			'X-Minemories-Correlation',
 			'X-Minemories-Diagnostics-Consent',
 			'X-Minemories-Diagnostics-Permit',
+			// Cloudflare Turnstile token sent with email sign-up (auth-protection.ts).
+			'X-Captcha-Response',
 		],
 		exposeHeaders: ['X-Minemories-Correlation', 'X-Minemories-Variant'],
 	})

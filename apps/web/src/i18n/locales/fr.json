@@ -1605,5 +1605,8 @@
 	"First submission": "Première soumission",
 	"Jump to…": "Aller à…",
 	"Search pages and accounts": "Chercher une page ou un compte",
-	"No match.": "Aucun résultat."
+	"No match.": "Aucun résultat.",
+	"Complete the human check, then try again.": "Termine la vérification anti-robot, puis réessaie.",
+	"The human check failed. Try again.": "La vérification anti-robot a échoué. Réessaie.",
+	"Sign-up is paused for now. Try again later.": "Les inscriptions sont en pause pour le moment. Réessaie plus tard."
 }

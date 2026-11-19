@@ -11,6 +11,17 @@ import { ContentLayout } from './ContentPages'
 import { GalleryPage } from './GalleryPage'
 import { ViewerPage } from './ViewerPage'
 
+interface TurnstileOptions {
+	sitekey: string
+	callback(token: string): void
+	'expired-callback'(): void
+	'error-callback'(): void
+}
+/** The options the page gave the stubbed Turnstile widget (read through a call, so TypeScript keeps the type). */
+function turnstileOptions(): TurnstileOptions | null {
+	return mocks.turnstileOptions
+}
+
 const mocks = vi.hoisted(() => ({
 	viewerEvents: null as null | { onLoading(message: string | null): void; onEmptyChange(empty: boolean): void },
 	context: {
@@ -22,6 +33,12 @@ const mocks = vi.hoisted(() => ({
 		setViewerFile: vi.fn(),
 	},
 	signIn: vi.fn(),
+	turnstile: {
+		render: vi.fn(),
+		reset: vi.fn(),
+		remove: vi.fn(),
+	},
+	turnstileOptions: null as TurnstileOptions | null,
 	signUp: vi.fn(),
 	signOut: vi.fn(),
 	navigate: vi.fn(),
@@ -94,6 +111,14 @@ beforeEach(() => {
 	mocks.context.viewerFile = null
 	mocks.signIn.mockResolvedValue({ error: null })
 	mocks.signUp.mockResolvedValue({ error: null })
+	mocks.turnstileOptions = null
+	mocks.turnstile.render.mockImplementation((_container: HTMLElement, options: TurnstileOptions) => {
+		mocks.turnstileOptions = options
+		options.callback('turnstile-token')
+		return 'widget-1'
+	})
+	mocks.turnstile.reset.mockImplementation(() => turnstileOptions()?.callback('turnstile-token-2'))
+	vi.stubGlobal('turnstile', mocks.turnstile)
 	mocks.list.mockResolvedValue([])
 	mocks.storage.mockResolvedValue({
 		usedBytes: 0,
@@ -241,6 +266,8 @@ test('login submits credentials, refreshes the session and opens the gallery', a
 test('registration submits the display name and exposes server errors', async () => {
 	mocks.signUp.mockResolvedValue({ error: { message: 'Email already used' } })
 	mount(<AuthPage mode="register" />)
+	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
+	expect(turnstileOptions()?.sitekey).toBe('1x00000000000000000000AA')
 	credentials()
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: '  Builder  ' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
@@ -250,9 +277,60 @@ test('registration submits the display name and exposes server errors', async ()
 		name: 'Builder',
 		email: 'test@example.com',
 		password: 'long-test-password',
+		fetchOptions: { headers: { 'x-captcha-response': 'turnstile-token' } },
 	})
 	expect(mocks.navigate).not.toHaveBeenCalled()
 	expect(screen.getByRole('button', { name: /Create my account/ }).hasAttribute('disabled')).toBe(false)
+	// A Turnstile token works once: the retry carries the fresh one.
+	expect(mocks.turnstile.reset).toHaveBeenCalledWith('widget-1')
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
+	await waitFor(() => expect(mocks.signUp).toHaveBeenCalledTimes(2))
+	expect(mocks.signUp.mock.lastCall?.[0].fetchOptions).toEqual({
+		headers: { 'x-captcha-response': 'turnstile-token-2' },
+	})
+})
+test('registration waits for the human check and never sends an expired token', async () => {
+	mocks.turnstile.render.mockImplementation((_container: HTMLElement, options: TurnstileOptions) => {
+		mocks.turnstileOptions = options
+		return 'widget-1'
+	})
+	mount(<AuthPage mode="register" />)
+	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
+	credentials()
+	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
+	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Complete the human check, then try again.')
+	act(() => turnstileOptions()?.callback('turnstile-token'))
+	act(() => turnstileOptions()?.['expired-callback']())
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
+	act(() => turnstileOptions()?.callback('turnstile-token'))
+	act(() => turnstileOptions()?.['error-callback']())
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
+	expect(mocks.signUp).not.toHaveBeenCalled()
+	cleanup()
+	expect(mocks.turnstile.remove).toHaveBeenCalledWith('widget-1')
+})
+test('sign-in shows no human check and loads nothing from Cloudflare', async () => {
+	mount(<AuthPage mode="login" />)
+	credentials()
+	fireEvent.click(screen.getByRole('button', { name: /Sign in/ }))
+	await waitFor(() => expect(mocks.signIn).toHaveBeenCalledOnce())
+	expect(mocks.turnstile.render).not.toHaveBeenCalled()
+	expect(document.querySelector('script[src*="challenges.cloudflare.com"]')).toBeNull()
+})
+test('the Turnstile script loads once on demand and a blocked script can be retried', async () => {
+	vi.unstubAllGlobals()
+	const script = () => document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com"]')
+	mount(<AuthPage mode="register" />)
+	expect(script()?.src).toBe('https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit')
+	script()?.dispatchEvent(new Event('error'))
+	await waitFor(() => expect(script()).toBeNull())
+	cleanup()
+	mount(<AuthPage mode="register" />)
+	vi.stubGlobal('turnstile', mocks.turnstile)
+	script()?.dispatchEvent(new Event('load'))
+	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
+	script()?.remove()
 })
 test('gallery retries a failed refresh', async () => {
 	mocks.list.mockRejectedValueOnce(new Error('Storage unavailable'))
@@ -689,6 +767,7 @@ test('switching auth modes keeps the intended destination through successful reg
 	expect(screen.queryByLabelText('Display name')).toBeNull()
 	fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
 	credentials()
+	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalled())
 	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/account', { replace: true }))
