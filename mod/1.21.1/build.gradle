@@ -10,7 +10,11 @@ allprojects {
     version = rootProject.providers.gradleProperty('modVersion').getOrElse(rootProject.property('mod_version'))
     group = 'dev.minemories'
     repositories {
-        mavenCentral()
+        // Loader artifacts come from the loaders' own mavens: asking Central first only adds requests, and a 429 there
+        // fails the build instead of falling through to the next repository.
+        mavenCentral {
+            content { excludeGroupByRegex 'net\\.(fabricmc|neoforged|minecraftforge)(\\..*)?' }
+        }
     }
 }
 

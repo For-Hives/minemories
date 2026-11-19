@@ -147,7 +147,15 @@ jobs:
             ${{ matrix.java }}
             21
             25
-          cache: gradle
+      # One Gradle cache per cell: with a single shared key, the first cell to finish saved only its own
+      # dependencies, and the other cells downloaded theirs from Maven Central at once (HTTP 429).
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ matrix.id }}-${{ hashFiles('mod/**/*.gradle', 'mod/**/gradle-wrapper.properties', 'mod/**/gradle.properties') }}
+          restore-keys: gradle-${{ runner.os }}-${{ matrix.id }}-
       - name: Check and build ${{ matrix.loader }} for Minecraft ${{ matrix.minecraft }}
         env:
           MINEMORIES_MOD_DIR: ${{ matrix.dir }}

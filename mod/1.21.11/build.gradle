@@ -58,7 +58,11 @@ subprojects {
     group = 'dev.minemories'
     version = rootProject.version
     repositories {
-        mavenCentral()
+        // Loader artifacts come from the loaders' own mavens: asking Central first only adds requests, and a 429 there
+        // fails the build instead of falling through to the next repository.
+        mavenCentral {
+            content { excludeGroupByRegex 'net\\.(fabricmc|neoforged|minecraftforge)(\\..*)?' }
+        }
         maven { url = 'https://maven.fabricmc.net/' }
         maven { url = 'https://maven.neoforged.net/releases' }
         maven { url = 'https://maven.minecraftforge.net/' }
