@@ -34,8 +34,11 @@ function staticRouting(): Plugin {
 		},
 	}
 }
+/** The build's release for error reports: the deployed commit (Coolify's SOURCE_COMMIT) when there is one. */
+const release = process.env.VITE_RELEASE || process.env.SOURCE_COMMIT?.slice(0, 12) || ''
 export default defineConfig({
 	plugins: [tailwindcss(), staticRouting()],
 	server: { host: '0.0.0.0' },
+	define: { 'import.meta.env.VITE_RELEASE': JSON.stringify(release) },
 	build: { chunkSizeWarningLimit: 650 },
 })

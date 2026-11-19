@@ -4,6 +4,7 @@ import { useAppContext } from '../app-context'
 import { GalleryIcon } from '../components/GalleryIcons'
 import { useI18n } from '../i18n/I18n'
 import { CaptureRestorationRequired, captureFileName, downloadCapture } from '../lib/capture-file'
+import { track } from '../observability/insight'
 import './download-glb.css'
 
 /** Saves a snapshot the account owns as a self-contained `.glb`, through the owner-scoped download route. */
@@ -38,6 +39,7 @@ export function DownloadGlb({
 			link.href = url
 			link.download = file.name
 			link.click()
+			track('glb-download')
 			setTimeout(() => URL.revokeObjectURL(url), 10_000)
 		} catch (cause) {
 			if (abort.signal.aborted) return

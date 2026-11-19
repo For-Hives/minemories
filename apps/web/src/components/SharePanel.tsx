@@ -3,6 +3,7 @@ import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { T, useI18n } from '../i18n/I18n'
 import { type ViewLink, withViewLink } from '../lib/view-link'
+import { track } from '../observability/insight'
 import { GalleryIcon } from './GalleryIcons'
 import { buttonDark, buttonQuiet } from './ui'
 // The panel also opens in the gallery's side sheet: its rules travel with it.
@@ -49,6 +50,7 @@ function useShare(memoryId: string, scope: Scope) {
 			if (version !== revision.current) return
 			setUrl(`${window.location.origin}${link.urlPath}`)
 			setStatus('on')
+			track('share-create', { scope })
 		} catch {
 			if (version === revision.current) notify('Could not create this link.')
 		} finally {
@@ -62,6 +64,7 @@ function useShare(memoryId: string, scope: Scope) {
 		setBusy(true)
 		try {
 			await apiClient.memories.revokeShare({ id: memoryId, scope })
+			track('share-revoke', { scope })
 			if (version !== revision.current) return
 			setStatus('off')
 			setUrl('')

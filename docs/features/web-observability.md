@@ -1,6 +1,6 @@
 # Optional web diagnostics
 
-Site observability (#68) uses the official `@sentry/browser` client, loaded on demand. It is separate from the Minecraft diagnostics consent and enables neither Umami, nor browsing analytics, nor session replay. It does not measure visits and does not collect capture errors.
+Site observability (#68) uses the official `@sentry/browser` client, loaded on demand. It is separate from the Minecraft diagnostics consent and from [visit statistics](visit-statistics.md) (Umami), and enables no session replay. It does not measure visits and does not collect capture errors.
 
 ## Enabling and withdrawal
 

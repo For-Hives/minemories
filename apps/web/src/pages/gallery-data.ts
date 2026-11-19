@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { errorMessageKey } from '../i18n/error-messages'
+import { countBucket } from '../lib/insight'
+import { sessionData, track } from '../observability/insight'
 export type Memories = Awaited<ReturnType<typeof apiClient.memories.list>>
 export type TrashMemories = Awaited<ReturnType<typeof apiClient.memories.listTrash>>
 export type Storage = Awaited<ReturnType<typeof apiClient.account.storage>>
@@ -49,7 +51,10 @@ function useGalleryLists() {
 		setLoadError('')
 		try {
 			const result = await apiClient.memories.list()
-			if (version === memoriesVersion.current) setMemories(result)
+			if (version === memoriesVersion.current) {
+				setMemories(result)
+				sessionData({ captures: countBucket(result.length) })
+			}
 		} catch (error) {
 			if (version === memoriesVersion.current) setLoadError(errorMessageKey(error, 'The gallery is unavailable.'))
 		} finally {
@@ -115,6 +120,7 @@ function useTrashActions(
 	async function trashSnapshot(id: string) {
 		try {
 			await apiClient.memories.trash({ id })
+			track('capture-trash')
 			if (!active.current) return
 			notify('Snapshot moved to trash. It disappears forever after 30 days.')
 			await refreshAll()
@@ -126,6 +132,7 @@ function useTrashActions(
 	async function restoreSnapshot(id: string) {
 		try {
 			await apiClient.memories.restore({ id })
+			track('capture-restore')
 			if (!active.current) return
 			await refreshAll()
 		} catch (error) {
@@ -138,6 +145,7 @@ function useTrashActions(
 		markDeleting(id, true)
 		try {
 			await apiClient.memories.delete({ id })
+			track('capture-delete')
 			if (!active.current) return
 			dropFromTrash(id)
 			notify('Snapshot deleted forever.')
@@ -158,6 +166,7 @@ function useTrashActions(
 		setEmptying(true)
 		try {
 			await apiClient.memories.emptyTrash()
+			track('trash-empty')
 			if (!active.current) return false
 			clearTrash()
 			notify('Trash emptied.')

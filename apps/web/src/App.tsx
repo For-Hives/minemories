@@ -12,6 +12,8 @@ import { I18nProvider } from './i18n/I18n'
 import type { Locale } from './i18n/locales'
 import { splitLocalePath, switchedHref } from './lib/locale-path'
 import { lazyExport, type PageChunk, pageChunk } from './lib/page-chunk'
+import { InsightIdentity } from './observability/Insight'
+import { track } from './observability/insight'
 import { WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
@@ -129,6 +131,7 @@ export function App() {
 		return () => window.removeEventListener('popstate', follow)
 	}, [])
 	const changeLanguage = useCallback((locale: Locale) => {
+		track('language-change', { from: splitLocalePath(window.location.pathname).locale, to: locale })
 		window.history.pushState(null, '', switchedHref(window.location, locale))
 		setRoute(splitLocalePath(window.location.pathname))
 	}, [])
@@ -144,6 +147,7 @@ export function App() {
 				<BrowserRouter basename={route.prefix || '/'}>
 					<RouteMetadata />
 					<WebObservability />
+					<InsightIdentity />
 					<Routes>
 						<Route element={<SiteLayout notice={notice} />}>
 							<Route

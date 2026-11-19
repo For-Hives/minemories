@@ -17,7 +17,8 @@ Names, registration numbers and addresses are written as registered and never tr
 - Publisher: Andy Cinquin, the same details as the ForVoyez legal pages.
 - Host: the Coolify server `xenos` (site, API, SQLite database, Garage storage of captures and mod JARs) answers on `38.242.251.119`, in Contabo GmbH's network (AS51167). Contabo's registration details are the ones ForVoyez lists for its database server.
 - `minemories.net`: registrar and DNS at Cloudflare; its records point straight to the server, without Cloudflare's proxy.
-- No email is sent by the API, no audience measurement or advertising runs on the site, and the only cookies are Better Auth's session cookies.
+- No email is sent by the API, no advertising runs on the site, and the only cookies are Better Auth's session cookies.
+- Visit statistics (19 November 2026): self-hosted Umami at `umami.wadefade.fr` (`95.111.249.120`, Contabo, Germany, per RIPE), relayed by the API's `/api/insight`; no cookie, pseudonymous account link, opt-out on `/privacy` ([visit statistics](visit-statistics.md)).
 - Google and Discord sign-in exist in code (`apps/api/src/oauth-config.ts`) but are off in production (`GET /api/auth-providers` returns `[]`); the policy mentions them conditionally.
 - The Minecraft head avatar comes from `head.sttr.io`, which receives only the Minecraft username.
 - Account deletion (administrator, on request) removes captures, connected games and links, and keeps an audit row with the account name and date (`apps/api/src/admin-accounts.ts`).
