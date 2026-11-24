@@ -24,6 +24,10 @@ Exploration history and suggested areas are always on, local and bounded. Nothin
 - The message exists only on the client: it is never sent to the Minecraft server.
 - Clicking the message runs `/minemories settings`, which opens the Minemories menu on the next tick. Opening is deferred: a screen opened while the chat is closing would be replaced immediately.
 
+## Menu key on every keyboard layout
+
+The Minemories menu opens with the key that types M. Minecraft binds keys by their place on a US keyboard, so the default `key.keyboard.m` is the comma on AZERTY. On the first tick of each session, while the menu is still on that default, the mod looks for the key whose name on this keyboard is "m" (`MenuKey`), moves the menu there (`key.keyboard.semicolon` on AZERTY) and saves `options.txt`. A key the player chose is never moved, and the menu never takes a key another binding uses. Texts that name the key (the chat help footer, the capture history) show the key actually bound, as the Controls screen names it.
+
 ## Not yet validated
 
 The logic (default consent, preserving an explicit refusal, reminder cadence) is unit tested. Rendering, clicking in chat on NeoForge, Fabric and Forge (single player and remote server) and comprehension by real players (#87) still need in-game validation.

@@ -71,6 +71,7 @@ public final class ClientRuntime {
   private static final int VERTEX_STRIDE = 8;
   private static final KeyMapping OPEN_SCREEN =
       new KeyMapping("key.minemories.open", GLFW.GLFW_KEY_M, "key.categories.minemories");
+  private static boolean menuKeyChecked;
   private static WeakReference<Button> optionsButton = new WeakReference<>(null);
   private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
   // All exploration state is owned by the Minecraft client thread, including pause rendering.
@@ -297,7 +298,7 @@ public final class ClientRuntime {
                         .withStyle(ChatFormatting.GRAY)));
       }
     }
-    say("minemories.help.footer");
+    say("minemories.help.footer", menuKeyName());
     return 1;
   }
 
@@ -399,6 +400,47 @@ public final class ClientRuntime {
     register.accept(OPEN_SCREEN);
   }
 
+  /**
+   * The key that opens the Minemories menu, as the Controls screen shows it ("M" on most
+   * keyboards).
+   */
+  static String menuKeyName() {
+    return OPEN_SCREEN.getTranslatedKeyMessage().getString();
+  }
+
+  /**
+   * Once per session, once the options are loaded: moves the menu from the default key to the one
+   * that types "m" on this keyboard (the comma's place on AZERTY). Key names come from the window
+   * system, hence not at registration, which can run before it starts.
+   */
+  private static void followKeyboardLayout(Minecraft mc) {
+    if (menuKeyChecked || mc.options == null) return;
+    menuKeyChecked = true;
+    String target =
+        MenuKey.follow(
+            OPEN_SCREEN.isDefault(), ClientRuntime::typedBy, key -> boundElsewhere(mc, key));
+    if (target == null) return;
+    OPEN_SCREEN.setKey(com.mojang.blaze3d.platform.InputConstants.getKey(target));
+    KeyMapping.resetMapping();
+    mc.options.save();
+    LOGGER.info("Minemories menu moved to {}, the key that types M on this keyboard.", target);
+  }
+
+  private static String typedBy(String key) {
+    try {
+      return com.mojang.blaze3d.platform.InputConstants.getKey(key).getDisplayName().getString();
+    } catch (RuntimeException unknownKey) {
+      return null;
+    }
+  }
+
+  private static boolean boundElsewhere(Minecraft mc, String key) {
+    for (KeyMapping mapping : mc.options.keyMappings) {
+      if (mapping != OPEN_SCREEN && key.equals(mapping.saveString())) return true;
+    }
+    return false;
+  }
+
   public static void resourcesReloaded() {
     resourceEpoch++;
     if (CAPTURES.job != null) CAPTURES.job.cancel("Resources reloaded.");
@@ -483,6 +525,7 @@ public final class ClientRuntime {
   public static void openFromShortcut() {
     // Record short descents during active play; the wall-clock render check remains for pause.
     trackExploration(Minecraft.getInstance(), System.currentTimeMillis());
+    followKeyboardLayout(Minecraft.getInstance());
     while (OPEN_SCREEN.consumeClick()) {
       Minecraft mc = Minecraft.getInstance();
       if (!(mc.screen instanceof SimpleHubScreen || mc.screen instanceof AdvancedScreen)) {
