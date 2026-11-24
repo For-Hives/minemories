@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
 		setViewerFile: vi.fn(),
 	},
 	signIn: vi.fn(),
+	signInName: vi.fn(),
 	turnstile: {
 		render: vi.fn(),
 		reset: vi.fn(),
@@ -66,7 +67,11 @@ vi.mock('../components/ui', () => ({
 	Eyebrow: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }))
 vi.mock('../auth-client', () => ({
-	authClient: { signIn: { email: mocks.signIn }, signUp: { email: mocks.signUp }, signOut: mocks.signOut },
+	authClient: {
+		signIn: { email: mocks.signIn, username: mocks.signInName },
+		signUp: { email: mocks.signUp },
+		signOut: mocks.signOut,
+	},
 }))
 vi.mock('../api-client', () => ({
 	apiBase: 'http://localhost:3001',
@@ -110,6 +115,7 @@ beforeEach(() => {
 	mocks.context.isPending = false
 	mocks.context.viewerFile = null
 	mocks.signIn.mockResolvedValue({ error: null })
+	mocks.signInName.mockResolvedValue({ error: null })
 	mocks.signUp.mockResolvedValue({ error: null })
 	mocks.turnstileOptions = null
 	mocks.turnstile.render.mockImplementation((_container: HTMLElement, options: TurnstileOptions) => {
@@ -143,8 +149,9 @@ afterEach(() => {
 function mount(children: ReactNode) {
 	return render(<MemoryRouter>{children}</MemoryRouter>)
 }
-function credentials() {
-	fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'test@example.com' } })
+function credentials(identifier = 'test@example.com') {
+	const field = screen.queryByLabelText('Email address') ?? screen.getByLabelText('Email or Minecraft name')
+	fireEvent.change(field, { target: { value: identifier } })
 	fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'long-test-password' } })
 }
 
@@ -263,18 +270,28 @@ test('login submits credentials, refreshes the session and opens the gallery', a
 	expect(mocks.signIn).toHaveBeenCalledWith({ email: 'test@example.com', password: 'long-test-password' })
 	expect(mocks.context.refreshSession).toHaveBeenCalledOnce()
 })
-test('registration submits the display name and exposes server errors', async () => {
+test('login with a Minecraft name signs in by name, and the forgotten-password link carries what was typed', async () => {
+	mount(<AuthPage mode="login" />)
+	credentials('  Diablox ')
+	expect(screen.getByRole('link', { name: 'Forgot your password?' }).getAttribute('href')).toBe('/login/forgot')
+	fireEvent.click(screen.getByRole('button', { name: /Sign in/ }))
+	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))
+	expect(mocks.signInName).toHaveBeenCalledWith({ username: 'Diablox', password: 'long-test-password' })
+	expect(mocks.signIn).not.toHaveBeenCalled()
+})
+test('registration submits the Minecraft name as sign-in name and exposes server errors', async () => {
 	mocks.signUp.mockResolvedValue({ error: { message: 'Email already used' } })
 	mount(<AuthPage mode="register" />)
 	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
 	expect(turnstileOptions()?.sitekey).toBe('1x00000000000000000000AA')
 	credentials()
-	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: '  Builder  ' } })
+	fireEvent.change(screen.getByLabelText('Minecraft name'), { target: { value: '  Builder  ' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Email already used')
 	await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
 	expect(mocks.signUp).toHaveBeenCalledWith({
 		name: 'Builder',
+		username: 'Builder',
 		email: 'test@example.com',
 		password: 'long-test-password',
 		fetchOptions: { headers: { 'x-captcha-response': 'turnstile-token' } },
@@ -289,6 +306,16 @@ test('registration submits the display name and exposes server errors', async ()
 		headers: { 'x-captcha-response': 'turnstile-token-2' },
 	})
 })
+test('a display name that is not a Minecraft name still signs up, without a sign-in name', async () => {
+	mount(<AuthPage mode="register" />)
+	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
+	credentials()
+	fireEvent.change(screen.getByLabelText('Minecraft name'), { target: { value: 'Gold D. Diablox' } })
+	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
+	await waitFor(() => expect(mocks.signUp).toHaveBeenCalledOnce())
+	expect(mocks.signUp.mock.lastCall?.[0]).not.toHaveProperty('username')
+	expect(mocks.signUp.mock.lastCall?.[0].name).toBe('Gold D. Diablox')
+})
 test('registration waits for the human check and never sends an expired token', async () => {
 	mocks.turnstile.render.mockImplementation((_container: HTMLElement, options: TurnstileOptions) => {
 		mocks.turnstileOptions = options
@@ -297,7 +324,7 @@ test('registration waits for the human check and never sends an expired token', 
 	mount(<AuthPage mode="register" />)
 	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalledOnce())
 	credentials()
-	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
+	fireEvent.change(screen.getByLabelText('Minecraft name'), { target: { value: 'Builder' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Complete the human check, then try again.')
 	act(() => turnstileOptions()?.callback('turnstile-token'))
@@ -723,7 +750,7 @@ test('password visibility preserves the value, never submits, and resets outside
 	fireEvent.click(hide)
 	expect(input.type).toBe('password')
 	fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
-	fireEvent.blur(input, { relatedTarget: screen.getByLabelText('Email address') })
+	fireEvent.blur(input, { relatedTarget: screen.getByLabelText('Email or Minecraft name') })
 	expect(input.type).toBe('password')
 	expect(input.autocomplete).toBe('current-password')
 })
@@ -760,15 +787,15 @@ test('switching auth modes keeps the intended destination through successful reg
 	)
 	credentials()
 	fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
-	expect(screen.getByLabelText('Display name')).toBeTruthy()
+	expect(screen.getByLabelText('Minecraft name')).toBeTruthy()
 	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
 	expect(screen.getByLabelText('Password')).toHaveProperty('value', '')
 	fireEvent.click(screen.getByRole('link', { name: 'Sign in' }))
-	expect(screen.queryByLabelText('Display name')).toBeNull()
+	expect(screen.queryByLabelText('Minecraft name')).toBeNull()
 	fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
 	credentials()
 	await waitFor(() => expect(mocks.turnstile.render).toHaveBeenCalled())
-	fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Builder' } })
+	fireEvent.change(screen.getByLabelText('Minecraft name'), { target: { value: 'Builder' } })
 	fireEvent.click(screen.getByRole('button', { name: /Create my account/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/account', { replace: true }))
 })
@@ -908,7 +935,7 @@ test('pending authentication prevents duplicate submission and lets the user ret
 	await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
 	expect(button).toHaveProperty('disabled', false)
 	expect(button.closest('form')?.getAttribute('aria-busy')).toBe('false')
-	expect(screen.getByLabelText('Email address')).toHaveProperty('value', 'test@example.com')
+	expect(screen.getByLabelText('Email or Minecraft name')).toHaveProperty('value', 'test@example.com')
 	fireEvent.click(button)
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))
 })

@@ -10,11 +10,18 @@ import { credentialChangeComplete } from './account-navigation'
 import './account.css'
 import { AdminAccessLink } from '../components/AdminAccessLink'
 
-type Kind = 'email' | 'password' | 'name' | 'head'
+type Kind = 'email' | 'password' | 'name' | 'head' | 'signInName'
 function errorCode(error: unknown): string {
 	return error !== null && typeof error === 'object' && 'message' in error ? String(error.message) : ''
 }
+/** Better Auth answers with `{ error }` instead of throwing: its code becomes the message accountError reads. */
+async function changeSignInName(username: string) {
+	// displayUsername keeps the capitals the player typed; username is the lowercased copy sign-in compares.
+	const result = await authClient.updateUser({ username, displayUsername: username })
+	if (result.error) throw new Error(result.error.code ?? 'UPDATE_FAILED')
+}
 function requestChange(kind: Kind, data: FormData) {
+	if (kind === 'signInName') return changeSignInName(String(data.get('signInName') ?? '').trim())
 	if (kind === 'head')
 		return apiClient.account.setMinecraftHead({ username: String(data.get('username') ?? '').trim() })
 	if (kind === 'name') return apiClient.account.changeName({ name: String(data.get('name') ?? '').trim() })
@@ -27,10 +34,18 @@ function passwordsMatch(kind: Kind, data: FormData): boolean {
 	return kind !== 'password' || data.get('newPassword') === data.get('confirmation')
 }
 type Translator = ReturnType<typeof useI18n>['t']
+const savedMessages = {
+	name: 'Display name saved.',
+	head: 'Minecraft head saved.',
+	signInName: 'Sign-in name saved.',
+} as const
 function accountError(cause: unknown, t: Translator): string {
 	const code = errorCode(cause)
 	if (code === 'CURRENT_PASSWORD_INVALID') return t('The current password is incorrect.')
 	if (code === 'EMAIL_UNAVAILABLE') return t('This email address cannot be used.')
+	if (code === 'USERNAME_IS_ALREADY_TAKEN') return t('Another account already signs in with this name.')
+	if (code === 'INVALID_USERNAME' || code === 'USERNAME_TOO_SHORT' || code === 'USERNAME_TOO_LONG')
+		return t('A Minecraft name has 3 to 16 letters, numbers or _.')
 	return t('Could not update your account. Check your connection and try again; sign in if your session expired.')
 }
 export function AccountPage() {
@@ -66,9 +81,9 @@ export function AccountPage() {
 	}, [])
 	async function complete(kind: Kind, form: HTMLFormElement) {
 		if (!alive.current) return
-		if (kind === 'name' || kind === 'head') {
+		if (kind === 'name' || kind === 'head' || kind === 'signInName') {
 			await refreshSession()
-			if (alive.current) setSuccess(kind === 'name' ? t('Display name saved.') : t('Minecraft head saved.'))
+			if (alive.current) setSuccess(t(savedMessages[kind]))
 			return
 		}
 		form.reset()
@@ -167,6 +182,34 @@ export function AccountPage() {
 						{pending === 'name' ? t('Saving…') : t('Save display name')}
 					</button>
 				</form>
+				{hasPassword && (
+					<form
+						className="mm-account-card"
+						aria-labelledby="sign-in-name-heading"
+						onSubmit={event => void submit('signInName', event)}
+					>
+						<h2 id="sign-in-name-heading">{t('Sign-in name')}</h2>
+						<p>{t('Type it instead of your email when you sign in.')}</p>
+						<label>
+							{t('Minecraft name')}
+							<input
+								className="mc-field"
+								name="signInName"
+								autoComplete="username"
+								pattern="\w{3,16}"
+								minLength={3}
+								maxLength={16}
+								required
+								spellCheck={false}
+								defaultValue={session?.user.displayUsername ?? ''}
+								disabled={pending !== null}
+							/>
+						</label>
+						<button className={buttonLime} type="submit" disabled={pending !== null}>
+							{pending === 'signInName' ? t('Saving…') : t('Save sign-in name')}
+						</button>
+					</form>
+				)}
 				<form className="mm-account-card" aria-labelledby="head-heading" onSubmit={event => void submit('head', event)}>
 					<h2 id="head-heading">{t('Minecraft head')}</h2>
 					<p>

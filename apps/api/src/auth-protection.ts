@@ -5,12 +5,19 @@ type Environment = Readonly<Record<string, string | undefined>>
 
 export const SIGN_UP_PATH = '/sign-up/email'
 export const SIGN_IN_PATH = '/sign-in/email'
+export const SIGN_IN_NAME_PATH = '/sign-in/username'
+export const RESET_REQUEST_PATH = '/request-password-reset'
+export const RESET_PATH = '/reset-password'
 export const SIGN_UP_UNAVAILABLE = 'SIGN_UP_UNAVAILABLE'
 
 /** Per client IP. They replace Better Auth's built-in `/sign-*` rule (3 requests per 10 seconds). */
 export const AUTH_RATE_LIMIT_RULES = {
 	[SIGN_UP_PATH]: { window: 60 * 60, max: 3 },
 	[SIGN_IN_PATH]: { window: 10 * 60, max: 10 },
+	[SIGN_IN_NAME_PATH]: { window: 10 * 60, max: 10 },
+	// Each request may send an email: tight enough that nobody fills an inbox from one address.
+	[RESET_REQUEST_PATH]: { window: 60 * 60, max: 3 },
+	[RESET_PATH]: { window: 10 * 60, max: 10 },
 }
 
 /**

@@ -209,6 +209,24 @@
 	color: var(--text-2);
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
+/* "Forgot your password?" under the password field (sign-in only). */
+.auth-forgot {
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.auth-forgot:hover {
+	color: var(--text);
+}
+.auth-forgot:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+/* The line under the Minecraft name field (sign-up) sits against it, not a full form gap away. */
+.auth-form > .auth-field-hint {
+	margin-top: calc(-1 * var(--ds-sp-2));
+}
 .auth-caps-warning {
 	margin: 0;
 	color: var(--ember);

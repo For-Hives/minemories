@@ -18,6 +18,12 @@ import { WebObservability } from './observability/WebObservability'
 
 const HomePage = lazy(() => import('./pages/HomePage').then(module => ({ default: module.HomePage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })))
+const ForgotPasswordPage = lazy(() =>
+	import('./pages/PasswordResetPages').then(module => ({ default: module.ForgotPasswordPage }))
+)
+const ResetPasswordPage = lazy(() =>
+	import('./pages/PasswordResetPages').then(module => ({ default: module.ResetPasswordPage }))
+)
 const AccountPage = lazy(() => import('./pages/AccountPage').then(module => ({ default: module.AccountPage })))
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })))
 const ViewerPage = lazy(() => import('./pages/ViewerPage').then(module => ({ default: module.ViewerPage })))
@@ -293,6 +299,22 @@ export function App() {
 								element={
 									<Page>
 										<AuthPage mode="login" />
+									</Page>
+								}
+							/>
+							<Route
+								path="/login/forgot"
+								element={
+									<Page>
+										<ForgotPasswordPage />
+									</Page>
+								}
+							/>
+							<Route
+								path="/login/reset"
+								element={
+									<Page>
+										<ResetPasswordPage />
 									</Page>
 								}
 							/>

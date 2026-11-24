@@ -12,6 +12,15 @@ const codes: Record<string, string> = {
 	USER_ALREADY_EXISTS: 'Email already used',
 	EMAIL_NOT_VERIFIED: 'Verify your email address before signing in.',
 	PASSWORD_TOO_SHORT: 'The password does not meet the requirements.',
+	// Sign-in names (Better Auth's username plugin, apps/api/src/sign-in-name.ts).
+	INVALID_USERNAME_OR_PASSWORD: 'Invalid email, name or password.',
+	USERNAME_IS_ALREADY_TAKEN: 'This Minecraft name already has an account. Sign in, or choose another name.',
+	INVALID_USERNAME: 'A Minecraft name has 3 to 16 letters, numbers or _.',
+	USERNAME_TOO_SHORT: 'A Minecraft name has 3 to 16 letters, numbers or _.',
+	USERNAME_TOO_LONG: 'A Minecraft name has 3 to 16 letters, numbers or _.',
+	// Forgotten password (apps/api/src/password-reset.ts).
+	RESET_PASSWORD_DISABLED: 'Password reset is unavailable right now. Try again later.',
+	INVALID_TOKEN: 'This link no longer works. Ask for a new one.',
 	// Sign-up protection (apps/api/src/auth-protection.ts and Better Auth's captcha plugin).
 	MISSING_RESPONSE: 'Complete the human check, then try again.',
 	VERIFICATION_FAILED: 'The human check failed. Try again.',

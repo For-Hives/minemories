@@ -45,6 +45,7 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 						'Contabo GmbH (Germany): hosting of the site, the API, the database (account, connected games, gallery details), the visit statistics and the storage of captures and mod files.',
 						'Cloudflare (United States): domain name and DNS of minemories.net.',
 						'head.sttr.io: the head of your Minecraft skin, if you choose it as your picture. Your browser sends it your Minecraft username, nothing else.',
+						'Resend (United States): sends the email with the link when you ask for a new password. It receives your email address and your name.',
 						'Google or Discord, only if you sign in with them when the option is offered: they share your name, email address and profile picture with Minemories.',
 					],
 				},

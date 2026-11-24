@@ -21,18 +21,29 @@ function submitText(creating: boolean, busy: boolean) {
 
 const missingHumanCheck = 'Complete the human check, then try again.'
 
+/** A Minecraft Java name, the sign-in name of apps/api/src/sign-in-name.ts. */
+const signInNamePattern = /^\w{3,16}$/
+
+function signUp(form: FormData, identifier: string, password: string, humanCheck: string) {
+	const name = String(form.get('name') ?? '').trim()
+	return authClient.signUp.email({
+		email: identifier,
+		password,
+		name,
+		// A valid Minecraft name is also the sign-in name; any other display name signs in with the email only.
+		...(signInNamePattern.test(name) ? { username: name } : {}),
+		// The API refuses an email sign-up without a Turnstile token (apps/api/src/auth-protection.ts).
+		fetchOptions: { headers: { 'x-captcha-response': humanCheck } },
+	})
+}
+
 function authenticate(form: FormData, creating: boolean, humanCheck: string) {
-	const email = String(form.get('email') ?? '').trim()
+	const identifier = String(form.get('email') ?? '').trim()
 	const password = String(form.get('password') ?? '')
-	return creating
-		? authClient.signUp.email({
-				email,
-				password,
-				name: String(form.get('name') ?? '').trim(),
-				// The API refuses an email sign-up without a Turnstile token (apps/api/src/auth-protection.ts).
-				fetchOptions: { headers: { 'x-captcha-response': humanCheck } },
-			})
-		: authClient.signIn.email({ email, password })
+	if (creating) return signUp(form, identifier, password, humanCheck)
+	return identifier.includes('@')
+		? authClient.signIn.email({ email: identifier, password })
+		: authClient.signIn.username({ username: identifier, password })
 }
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
@@ -118,36 +129,20 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					<SocialSignIn destination={from} />
 					{!creating && <CredentialsNotice />}
 					<form className="auth-form" onSubmit={submit} aria-busy={busy}>
-						{creating && (
-							<label className="auth-label">
-								{t('Display name')}
-								<input
-									name="name"
-									autoComplete="nickname"
-									required
-									maxLength={80}
-									placeholder={t('Your Minecraft name, for example')}
-									className={inputField}
-								/>
-							</label>
-						)}
-						<label className="auth-label">
-							{t('Email address')}
-							<input
-								name="email"
-								type="email"
-								inputMode="email"
-								autoCapitalize="none"
-								spellCheck={false}
-								autoComplete="email"
-								required
-								placeholder={t('you@example.com')}
-								className={inputField}
-								value={email}
-								onChange={event => setEmail(event.target.value)}
-							/>
-						</label>
-						<PasswordField key={mode} creating={creating} className={inputField} />
+						{creating && <MinecraftNameField />}
+						<IdentifierField creating={creating} value={email} onChange={setEmail} />
+						<PasswordField
+							key={mode}
+							creating={creating}
+							className={inputField}
+							hint={
+								creating ? undefined : (
+									<Link className="auth-forgot" to="/login/forgot" state={{ identifier: email }}>
+										{t('Forgot your password?')}
+									</Link>
+								)
+							}
+						/>
 						{creating && <HumanCheck onToken={setHumanCheck} resetKey={humanCheckRound} />}
 						{error && (
 							<p ref={errorRef} tabIndex={-1} className="auth-error" role="alert">
@@ -219,7 +214,7 @@ function GuestEntry() {
 	)
 }
 
-function AuthAtmosphere() {
+export function AuthAtmosphere() {
 	const { t } = useI18n()
 	return (
 		<aside className="auth-atmosphere" aria-label={t('The spirit of Minemories')}>
@@ -259,5 +254,69 @@ function CredentialsNotice() {
 		<p role="status" className="auth-notice">
 			{t('Credentials updated. Sign in again to continue.')}
 		</p>
+	)
+}
+
+function MinecraftNameField() {
+	const { t } = useI18n()
+	return (
+		<>
+			<label className="auth-label">
+				{t('Minecraft name')}
+				<input
+					name="name"
+					autoComplete="nickname"
+					autoCapitalize="none"
+					spellCheck={false}
+					required
+					maxLength={80}
+					placeholder="Steve"
+					aria-describedby="auth-name-hint"
+					className={inputField}
+				/>
+			</label>
+			<p id="auth-name-hint" className="auth-field-hint">
+				{t('You can sign in with it too.')}
+			</p>
+		</>
+	)
+}
+
+/** Sign-up asks for an email; sign-in takes the email or the Minecraft name in the same field. */
+function IdentifierField({
+	creating,
+	value,
+	onChange,
+}: {
+	creating: boolean
+	value: string
+	onChange: (value: string) => void
+}) {
+	const { t } = useI18n()
+	const field = creating
+		? { label: 'Email address', type: 'email', autoComplete: 'email', placeholder: 'you@example.com' }
+		: {
+				label: 'Email or Minecraft name',
+				type: 'text',
+				autoComplete: 'username',
+				placeholder: 'you@example.com or Steve',
+			}
+	return (
+		<label className="auth-label">
+			{t(field.label)}
+			<input
+				name="email"
+				type={field.type}
+				inputMode={creating ? 'email' : 'text'}
+				autoCapitalize="none"
+				spellCheck={false}
+				autoComplete={field.autoComplete}
+				required
+				placeholder={t(field.placeholder)}
+				className={inputField}
+				value={value}
+				onChange={event => onChange(event.target.value)}
+			/>
+		</label>
 	)
 }
