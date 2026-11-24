@@ -29,11 +29,16 @@ vi.mock('../api-client', () => ({
 vi.mock('../app-context', () => ({
 	useAppContext: () => ({
 		refreshSession: mocks.refresh,
-		session: { user: { name: 'Tester', email: 'tester@example.com', image: mocks.image.value } },
+		session: {
+			user: { name: 'Tester', email: 'tester@example.com', image: mocks.image.value, displayUsername: 'Tester_1' },
+		},
 	}),
 }))
 vi.mock('../auth-client', () => ({
-	authClient: { listAccounts: vi.fn().mockResolvedValue({ data: [{ providerId: 'credential' }] }) },
+	authClient: {
+		listAccounts: vi.fn().mockResolvedValue({ data: [{ providerId: 'credential' }] }),
+		updateUser: vi.fn(),
+	},
 }))
 vi.mock('./account-navigation', () => ({ credentialChangeComplete: mocks.complete }))
 beforeEach(() => {
@@ -190,4 +195,34 @@ test('a failed picture removal shows a safe error', async () => {
 	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
 	await screen.findByRole('alert')
 	expect(screen.queryByText('private details')).toBeNull()
+})
+
+test('the sign-in name is saved with its capitals, and a taken or invalid one is explained', async () => {
+	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: { status: true }, error: null } as never)
+	page()
+	const form = await screen.findByRole('form', { name: 'Pseudo de connexion' })
+	const field = within(form).getByLabelText('Pseudo de connexion') as HTMLInputElement
+	expect(field.value).toBe('Tester_1')
+	fireEvent.change(field, { target: { value: ' Diablox ' } })
+	fireEvent.submit(form)
+	expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Pseudo de connexion enregistré.')
+	expect(authClient.updateUser).toHaveBeenCalledWith({ username: 'Diablox', displayUsername: 'Diablox' })
+	expect(mocks.refresh).toHaveBeenCalledOnce()
+	vi.mocked(authClient.updateUser).mockResolvedValueOnce({
+		data: null,
+		error: { code: 'USERNAME_IS_ALREADY_TAKEN' },
+	} as never)
+	fireEvent.submit(form)
+	expect(await screen.findByRole('alert')).toHaveProperty(
+		'textContent',
+		'Un autre compte se connecte déjà avec ce pseudo.'
+	)
+	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: null, error: { code: 'INVALID_USERNAME' } } as never)
+	fireEvent.submit(form)
+	await waitFor(() =>
+		expect(screen.getByRole('alert').textContent).toBe('Un pseudo Minecraft a 3 à 16 lettres, chiffres ou _.')
+	)
+	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: null, error: {} } as never)
+	fireEvent.submit(form)
+	await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Modification impossible'))
 })

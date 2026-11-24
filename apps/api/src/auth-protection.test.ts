@@ -9,6 +9,9 @@ import {
 	AUTH_RATE_LIMIT_RULES,
 	authProtection,
 	CLIENT_IP_HEADER,
+	RESET_PATH,
+	RESET_REQUEST_PATH,
+	SIGN_IN_NAME_PATH,
 	SIGN_IN_PATH,
 	SIGN_UP_PATH,
 	SIGN_UP_UNAVAILABLE,
@@ -78,13 +81,16 @@ test('outside production the limits stay off and sign-up needs no Turnstile, so 
 	expect(protection.advanced).toEqual({ ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] } })
 })
 
-test('production limits sign-up to 3 an hour and sign-in to 10 per 10 minutes per client address', () => {
+test('production limits sign-up and reset emails to 3 an hour, sign-in and resets to 10 per 10 minutes per address', () => {
 	const protection = authProtection({ NODE_ENV: 'production', TURNSTILE_SECRET_KEY: 'secret' })
 	expect(protection.rateLimit.enabled).toBe(true)
 	expect(protection.rateLimit.storage).toBe('database')
 	expect(protection.rateLimit.customRules).toEqual({
 		[SIGN_UP_PATH]: { window: 3600, max: 3 },
 		[SIGN_IN_PATH]: { window: 600, max: 10 },
+		[SIGN_IN_NAME_PATH]: { window: 600, max: 10 },
+		[RESET_REQUEST_PATH]: { window: 3600, max: 3 },
+		[RESET_PATH]: { window: 600, max: 10 },
 	})
 	expect(protection.plugins.map(plugin => plugin.id)).toEqual(['captcha'])
 	expect(protection.advanced.ipAddress?.ipAddressHeaders).toEqual(['x-forwarded-for'])

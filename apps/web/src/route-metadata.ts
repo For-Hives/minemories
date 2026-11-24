@@ -133,7 +133,7 @@ const metadataMessages: PageMetadata[] = [
 			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
 		indexable: true,
 		language: 'en',
-		updated: '2026-11-13',
+		updated: '2026-11-24',
 	},
 	{
 		path: '/terms',
@@ -158,6 +158,20 @@ const privateMessages: PageMetadata[] = [
 	{
 		path: '/login',
 		title: 'Sign in · Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'en',
+	},
+	{
+		path: '/login/forgot',
+		title: 'Forgot your password? · Minemories',
+		description: 'Your Minemories space.',
+		indexable: false,
+		language: 'en',
+	},
+	{
+		path: '/login/reset',
+		title: 'Choose a new password · Minemories',
 		description: 'Your Minemories space.',
 		indexable: false,
 		language: 'en',

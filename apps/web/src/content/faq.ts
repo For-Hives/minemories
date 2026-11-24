@@ -307,7 +307,11 @@ export const questions = {
 	},
 	'mot-de-passe': {
 		question: 'Forgot your password?',
-		answer: ['There’s no automatic reset yet.', 'Write to us: the contact address is coming soon.'],
+		answer: [
+			'On the sign-in page, choose “Forgot your password?”.',
+			'Type your email or your Minecraft name: you get a link to choose a new one.',
+		],
+		link: { to: '/login/forgot', label: 'Choose a new password' },
 	},
 } satisfies Record<string, FaqEntry>
 

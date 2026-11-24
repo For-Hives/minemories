@@ -5,13 +5,18 @@ import { createBilling } from './billing'
 import { authSecret } from './configuration'
 import { database } from './database'
 import { oauthProviders } from './oauth-config'
+import { passwordResetSender, RESET_TOKEN_SECONDS } from './password-reset'
 import { logApiFailure } from './safe-errors'
+import { backfillSignInNames, resetByName, signInName } from './sign-in-name'
 import { webOrigins } from './web-origins'
 
 export const billing = createBilling(database, process.env)
+const sendResetPassword = passwordResetSender(process.env)
 const protection = authProtection(process.env)
 export const auth = betterAuth({
-	plugins: [...billing.plugins, ...protection.plugins],
+	plugins: [...billing.plugins, ...protection.plugins, signInName(), resetByName],
+	// It would tell anyone which names have an account; sign-up already refuses a taken one.
+	disabledPaths: ['/is-username-available'],
 	rateLimit: protection.rateLimit,
 	advanced: protection.advanced,
 	socialProviders: oauthProviders(process.env),
@@ -33,11 +38,16 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		minPasswordLength: 12,
+		...(sendResetPassword ? { sendResetPassword } : {}),
+		resetPasswordTokenExpiresIn: RESET_TOKEN_SECONDS,
+		revokeSessionsOnPasswordReset: true,
 	},
 })
 
 const { runMigrations } = await getMigrations(auth.options)
 await runMigrations()
+const named = backfillSignInNames(database)
+if (named > 0) console.warn(`Sign-in names: ${named} existing accounts got their display name`)
 
 export function handleAuthRequest(request: Request): Promise<Response> {
 	return billing.handle(request, incoming => auth.handler(incoming))

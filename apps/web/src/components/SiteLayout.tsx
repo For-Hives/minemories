@@ -57,7 +57,8 @@ export function SiteLayout({ notice = '', children }: { notice?: string; childre
 	useLayoutEffect(() => {
 		if (pathname !== '/') applyDisplay(document.documentElement, locale)
 	}, [pathname, locale])
-	if (pathname === '/login' || pathname === '/register') return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
+	if (pathname === '/login' || pathname.startsWith('/login/') || pathname === '/register')
+		return <AuthLayout>{children ?? <Outlet />}</AuthLayout>
 	const cinema = pathname === '/viewer' || pathname.startsWith('/share/') || pathname.startsWith('/public/')
 	if (cinema)
 		return (
