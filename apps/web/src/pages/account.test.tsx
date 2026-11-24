@@ -201,7 +201,7 @@ test('the sign-in name is saved with its capitals, and a taken or invalid one is
 	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: { status: true }, error: null } as never)
 	page()
 	const form = await screen.findByRole('form', { name: 'Pseudo de connexion' })
-	const field = within(form).getByLabelText('Pseudo Minecraft') as HTMLInputElement
+	const field = within(form).getByLabelText('Pseudo de connexion') as HTMLInputElement
 	expect(field.value).toBe('Tester_1')
 	fireEvent.change(field, { target: { value: ' Diablox ' } })
 	fireEvent.submit(form)

@@ -191,7 +191,7 @@ export function AccountPage() {
 						<h2 id="sign-in-name-heading">{t('Sign-in name')}</h2>
 						<p>{t('Type it instead of your email when you sign in.')}</p>
 						<label>
-							{t('Minecraft name')}
+							{t('Sign-in name')}
 							<input
 								className="mc-field"
 								name="signInName"

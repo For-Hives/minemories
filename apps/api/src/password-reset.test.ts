@@ -1,5 +1,5 @@
 import { afterEach, expect, spyOn, test } from 'bun:test'
-import { passwordResetSender, RESET_BODY, RESET_SUBJECT, resetMessage } from './password-reset'
+import { passwordResetSender, RESET_BODY, RESET_SUBJECT, resetEmailsSettled, resetMessage } from './password-reset'
 import { siteLanguage } from './web-catalog'
 
 const link = (callback: string) =>
@@ -49,6 +49,7 @@ test('with a Resend key the link is sent to the account’s address, from the co
 		}
 	)
 	await send?.({ user, url: link('https://minemories.net/login/reset') })
+	await resetEmailsSettled()
 	expect(calls).toHaveLength(1)
 	expect(calls[0]?.input).toBe('https://api.resend.com/emails')
 	expect(calls[0]?.init.headers).toMatchObject({ authorization: 'Bearer re_key' })
@@ -67,7 +68,14 @@ test('a refused email is logged by status only, never with the address or the li
 		Promise.resolve(new Response('nope', { status: 422 }))
 	)
 	await send?.({ user, url: link('x') })
+	await resetEmailsSettled()
 	expect(error).toHaveBeenCalledWith('Password reset email failed: Resend answered 422')
+	const offline = passwordResetSender({ RESEND_API_KEY: 'key', MAIL_FROM: 'from@example.com' }, () =>
+		Promise.reject(new Error('getaddrinfo ENOTFOUND player@example.com'))
+	)
+	await offline?.({ user, url: link('x') })
+	await resetEmailsSettled()
+	expect(error).toHaveBeenLastCalledWith('Password reset email failed: Resend unreachable')
 })
 
 test('production without a sender refuses resets; local runs write the link to the log', async () => {

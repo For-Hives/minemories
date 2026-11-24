@@ -12,6 +12,11 @@ export type SendResetPassword = (mail: ResetMail) => Promise<void>
 /** One hour, Better Auth's default, written down because the email promises it. */
 export const RESET_TOKEN_SECONDS = 60 * 60
 const RESEND_URL = 'https://api.resend.com/emails'
+const pending = new Set<Promise<void>>()
+/** Resolves once every email handed to Resend so far got its answer (tests, graceful stops). */
+export function resetEmailsSettled(): Promise<unknown> {
+	return Promise.all(pending)
+}
 
 // English source messages, translated in the web catalogs (apps/web/src/i18n/locales/*.json).
 export const RESET_SUBJECT = 'Choose a new Minemories password'
@@ -54,15 +59,22 @@ export function passwordResetSender(environment: Environment, fetcher: Fetch = f
 	const key = environment.RESEND_API_KEY?.trim()
 	const from = environment.MAIL_FROM?.trim()
 	if (key && from) {
-		return async mail => {
+		return mail => {
 			const message = resetMessage(mail)
-			const response = await fetcher(RESEND_URL, {
+			// Not awaited: a known account must not answer slower than an unknown one. Never the address or the link in
+			// the log: the status is enough to find a failure.
+			const sending = fetcher(RESEND_URL, {
 				method: 'POST',
 				headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
 				body: JSON.stringify({ from, to: [mail.user.email], ...message }),
 			})
-			// Never the address or the link in the log: the status is enough to find a failure.
-			if (!response.ok) console.error(`Password reset email failed: Resend answered ${response.status}`)
+				.then(response => {
+					if (!response.ok) console.error(`Password reset email failed: Resend answered ${response.status}`)
+				})
+				.catch(() => console.error('Password reset email failed: Resend unreachable'))
+			pending.add(sending)
+			void sending.finally(() => pending.delete(sending))
+			return Promise.resolve()
 		}
 	}
 	if (environment.NODE_ENV === 'production') {

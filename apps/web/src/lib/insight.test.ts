@@ -43,6 +43,8 @@ describe('cleanUrl', () => {
 			`${origin}/share/:token?utm_source=discord&UTM_Campaign=x`
 		)
 		expect(cleanUrl('/viewer?memory=abc', origin)).toBe('/viewer')
+		// The password reset link's token never reaches the statistics.
+		expect(cleanUrl('/fr/login/reset?token=K3td92LFX8kNn1FL', origin)).toBe('/fr/login/reset')
 		expect(cleanUrl('/faq?gclid=1&ref=reddit', origin)).toBe('/faq?gclid=1&ref=reddit')
 	})
 	it('refuses excluded pages and unreadable values', () => {

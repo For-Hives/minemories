@@ -46,7 +46,8 @@ export const auth = betterAuth({
 
 const { runMigrations } = await getMigrations(auth.options)
 await runMigrations()
-backfillSignInNames(database)
+const named = backfillSignInNames(database)
+if (named > 0) console.warn(`Sign-in names: ${named} existing accounts got their display name`)
 
 export function handleAuthRequest(request: Request): Promise<Response> {
 	return billing.handle(request, incoming => auth.handler(incoming))
