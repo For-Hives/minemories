@@ -49,7 +49,7 @@ afterEach(() => {
 	document.documentElement.lang = ''
 })
 
-test('the pictures are real footage: two clips and the postcard, lazy, of known size, each described, with French captions', () => {
+test('the pictures are real footage: two clips and the postcard, lazy, of known size, each described, without captions', () => {
 	const root = mount()
 	expect(root.querySelectorAll('figure.mm-illus')).toHaveLength(2)
 	const images = [...root.querySelectorAll('img')]
@@ -68,11 +68,8 @@ test('the pictures are real footage: two clips and the postcard, lazy, of known 
 	// no video in the markup: a clip gets its file only once it should play (HeroClip)
 	expect(root.querySelector('video')).toBeNull()
 	expect(root.querySelectorAll('.mm-clip')).toHaveLength(2)
-	// rendered in French, like the rest of the prerendered landing; no drawn interface, only captions and the game/browser chip
-	expect([...root.querySelectorAll('.mm-clip__caption')].map(label => label.textContent)).toEqual([
-		'Choisis l’heure, du matin au coucher du soleil',
-		'Pas besoin d’être admin du serveur.',
-	])
+	// rendered in French, like the rest of the prerendered landing; no drawn interface and no caption repeating its section, only the game/browser chip
+	expect(root.querySelector('p')).toBeNull()
 	expect([...root.querySelectorAll('.mm-clip__side')].map(side => side.textContent)).toEqual([
 		'Dans Minecraft',
 		'Dans ton navigateur',
@@ -80,12 +77,11 @@ test('the pictures are real footage: two clips and the postcard, lazy, of known 
 	expect(root.querySelector('.mm-illus__hub, .mm-illus__msg, .mm-illus__chat, .mm-illus__print p')).toBeNull()
 })
 
-test('the film bridge rewrites every caption, description and button label in the visitor language', async () => {
+test('the film bridge rewrites every chip, description and button label in the visitor language', async () => {
 	await loadLocale('de')
 	const root = mount()
 	createHeroI18n('de', document).apply(root)
 	expect(root.textContent).toContain('In deinem Browser')
-	expect(root.textContent).toContain('Du musst nicht Admin des Servers sein.')
 	expect(root.textContent).toContain('Video abspielen')
 	expect(root.querySelector('img[src="/hero/clips/viewer-time.webp"]')?.getAttribute('alt')).toBe(
 		'Eine echte Basis im Minemories-Viewer: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.'

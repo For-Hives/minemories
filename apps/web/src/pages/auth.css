@@ -127,24 +127,8 @@
 .auth-heading {
 	margin: var(--ds-sp-6) 0 var(--ds-sp-5);
 }
-.auth-eyebrow {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	color: var(--text-2);
-	text-shadow: var(--ds-text-shadow-1);
-}
-.auth-eyebrow::before {
-	content: "";
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--ember);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
 .auth-shell .auth-heading h1 {
-	margin: var(--ds-sp-3) 0;
+	margin: 0 0 var(--ds-sp-3);
 	color: var(--text);
 }
 .auth-heading p {
@@ -242,9 +226,6 @@
 .auth-shell .auth-submit:disabled {
 	cursor: wait;
 }
-.auth-submit > span:last-child {
-	margin-left: var(--ds-sp-1);
-}
 .auth-private {
 	display: flex;
 	align-items: center;
@@ -292,39 +273,17 @@
 		)
 		top / 100% var(--gp) no-repeat;
 }
-.auth-guest-title {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-}
-.auth-guest-title > span:first-child {
-	color: var(--ember);
-	font: 400 var(--ds-fs-xs) / 1 var(--f-ui);
-}
-.auth-shell .auth-guest h2 {
-	margin: 0;
-	font: 400 var(--ds-fs-xs) / 18px var(--f-title);
-	text-shadow: var(--ds-text-shadow-1);
+.auth-guest p {
+	margin: 0 0 var(--ds-sp-3);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 }
 .auth-guest-link {
-	color: inherit;
+	color: var(--text);
 	text-decoration: underline;
 	text-underline-offset: 0.2em;
 }
-/* "No account": a game tag. */
-.auth-guest-title > span:last-child {
-	margin-left: auto;
-	padding: 2px var(--ds-sp-2);
-	background: var(--night);
-	color: var(--c-name);
-	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
-	white-space: nowrap;
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-.auth-guest p {
-	margin: var(--ds-sp-3) 0;
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+.auth-guest-link:hover {
+	color: var(--ember);
 }
 /* "Open a file": the stone button of the game, outlined on hover. */
 .auth-file {
@@ -354,75 +313,21 @@
 		var(--mc-bevel),
 		0 0 0 calc(4 * var(--gp)) var(--outline);
 }
-.auth-shell .auth-explore {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	min-height: var(--ds-hit);
-	margin-top: var(--ds-sp-1);
-	color: var(--text);
-	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
-}
-.auth-shell .auth-explore:hover {
-	color: var(--ember);
-}
-
-/* --- Illustration: a night window over the world (square sun, stepped hills, no blur) ---------------------------------------------------------------- */
+/* --- Illustration: a night window over the world, with one line under it ------------------------------------------------------------------------ */
 .auth-atmosphere {
-	position: relative;
-	min-height: 720px;
-	overflow: hidden;
-	isolation: isolate;
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
+	gap: var(--ds-sp-5);
 	padding: var(--ds-sp-6);
 	background: var(--night);
 	box-shadow:
 		0 0 0 var(--gp) var(--outline),
 		var(--ds-panel-bevel);
 }
-.auth-art-sky {
-	position: absolute;
-	inset: 4px;
-	z-index: -1;
-	overflow: hidden;
-	/* The low sun of the landing's poster, behind the world. */
-	background: radial-gradient(60% 50% at 70% 70%, rgb(255 179 71 / 18%), transparent 70%), var(--night);
-}
-.auth-art-label {
-	display: flex;
-	justify-content: space-between;
-	gap: var(--ds-sp-3);
-	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
-	color: var(--text-2);
-	text-shadow: var(--ds-text-shadow-1);
-}
-.auth-art-copy {
-	position: relative;
-	z-index: 1;
-	margin-top: var(--ds-sp-7);
-}
-.auth-art-copy p {
-	margin: 0 0 var(--ds-sp-4);
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
-}
-.auth-shell .auth-art-copy h2 {
-	margin: 0;
-	font-size: 40px;
-	line-height: 48px;
-	color: var(--text);
-	text-shadow: var(--ds-text-shadow-4);
-}
-.auth-art-copy em {
-	color: var(--ember);
-}
 .auth-art-world {
-	position: absolute;
-	bottom: 130px;
-	right: 4%;
-	width: 66%;
+	width: min(100%, 640px);
+	margin-inline: auto;
 	pointer-events: none;
 }
 .auth-art-world img {
@@ -431,25 +336,9 @@
 	padding: 0;
 	filter: drop-shadow(0 18px 24px rgb(0 0 0 / 45%));
 }
-.auth-art-caption {
-	position: relative;
-	margin-top: auto;
-	padding: var(--ds-sp-4) var(--ds-sp-5);
-	background: var(--tip-bg);
-	box-shadow:
-		0 0 0 var(--gp) var(--outline),
-		inset 0 0 0 var(--gp) var(--tip-b);
-}
-.auth-art-caption > span {
-	display: block;
-	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
-	color: var(--text-2);
-}
-.auth-art-caption > span:first-child {
-	color: var(--c-name);
-}
-.auth-art-caption p {
-	margin: var(--ds-sp-2) 0;
+.auth-shell .auth-art-line {
+	margin: 0;
+	text-align: center;
 	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-title);
 	color: var(--text);
 	text-shadow: var(--ds-text-shadow-2);
@@ -528,11 +417,7 @@
 }
 
 /* --- Readable font and Korean/Japanese ------------------------------------------------------------------------------------------------------------- */
-html.mm-cjk:not([data-mc-font="read"]) .auth-shell .auth-art-copy h2 {
-	font-size: 32px;
-	line-height: 40px;
-}
-html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
+html.mm-cjk:not([data-mc-font="read"]) .auth-shell .auth-art-line {
 	font-size: 16px;
 	line-height: 24px;
 }
@@ -545,19 +430,6 @@ html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
 	}
 	.auth-atmosphere {
 		padding: var(--ds-sp-5);
-	}
-	.auth-art-label > span:last-child {
-		display: none;
-	}
-	.auth-shell .auth-art-copy h2 {
-		font-size: 32px;
-		line-height: 40px;
-	}
-	.auth-art-world {
-		bottom: 130px;
-		right: auto;
-		width: 110%;
-		left: -5%;
 	}
 }
 @media (max-width: 760px) {
@@ -612,12 +484,6 @@ html.mm-cjk:not([data-mc-font="read"]) .auth-art-caption p {
 	.auth-shell .auth-modes .mc-tab {
 		white-space: normal;
 	}
-	.auth-guest-title {
-		flex-wrap: wrap;
-	}
-	.auth-guest-title > span:last-child {
-		margin-left: 0;
-	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -637,8 +503,7 @@ html[data-mc-motion="reduced"] .auth-spinner {
 	.auth-atmosphere,
 	.auth-error,
 	.auth-notice,
-	.auth-file,
-	.auth-guest-title > span:last-child {
+	.auth-file {
 		border: 1px solid CanvasText;
 	}
 }

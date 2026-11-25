@@ -23,7 +23,7 @@ function mount(ui: React.ReactNode, locale: Locale = 'fr', path = '/') {
 
 const blocked = /gratuit|open source|la plus utilisée|validé|1\.18\.2 → |\bvous\b|\bvotre\b|\bvos\b/i
 
-test('/server-closing: three options, the Aternos and admin anchors, three questions and an install link with its source', () => {
+test('/server-closing: three options, the Aternos and admin anchors, then one link to its FAQ group', () => {
 	mount(<ServerClosingPage />, 'fr', '/server-closing')
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton serveur ferme. Ta base, elle, peut rester.')
 	for (const option of [
@@ -34,14 +34,12 @@ test('/server-closing: three options, the Aternos and admin anchors, three quest
 		expect(screen.getByRole('heading', { name: option })).toBeTruthy()
 	expect(document.getElementById('aternos')?.textContent).toContain('Aternos')
 	expect(document.getElementById('admin')?.textContent).toContain('Rien à installer de ton côté')
-	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(3)
-	expect(screen.getByRole('heading', { name: 'Tout le monde doit l’installer\u00a0?' })).toBeTruthy()
-	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe(
-		'/installation?src=server-closing'
+	// the answers live on /faq; the page links to its group and leaves the install button to the bar
+	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(0)
+	expect(screen.getByRole('link', { name: 'Questions\u00a0: Capturer\u00a0→' }).getAttribute('href')).toBe(
+		'/faq#capturing'
 	)
-	// the "already closed" answer points here, so its link is left out on this page
-	expect(screen.getByRole('heading', { name: 'Le serveur a déjà fermé\u00a0?' })).toBeTruthy()
-	expect(screen.queryByRole('link', { name: 'Et si mon serveur ferme\u00a0? →' })).toBeNull()
+	expect(screen.queryByRole('link', { name: 'Installer le mod' })).toBeNull()
 	expect(document.body.textContent).not.toMatch(blocked)
 })
 
@@ -116,17 +114,17 @@ test('/safety: the parents box, the checksum fold under #verifier, what goes onl
 	expect(table.textContent).toContain('sa graine (en solo)')
 	expect(table.textContent).toContain('au plus 8 en attente, gardés 7 jours au plus')
 	expect(document.body.textContent).toContain(
-		'Attention\u00a0: le lien montre les coordonnées, la dimension et le biome de ta base'
+		'Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.'
 	)
 	expect(document.body.textContent).toContain('Arrêter le partage bloque les nouvelles visites')
 	expect(document.body.textContent).toContain('30 jours de corbeille')
 	expect(document.body.textContent).toContain('l’adresse de contact arrive bientôt')
-	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(screen.queryByRole('link', { name: 'Installer le mod' })).toBeNull()
 	expect(screen.getByRole('link', { name: 'Confidentialité' }).getAttribute('href')).toBe('/privacy')
 	expect(document.body.textContent).not.toMatch(blocked)
 })
 
-test('/guides/minecraft-blender: the real export commands, the folder, the Blender import and two questions', () => {
+test('/guides/minecraft-blender: the real export commands, the folder, the Blender import and a link to its questions', () => {
 	mount(<BlenderGuidePage />, 'fr', '/guides/minecraft-blender')
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
 		'Ta construction Minecraft dans Blender, en un fichier'
@@ -144,7 +142,10 @@ test('/guides/minecraft-blender: the real export commands, the folder, the Blend
 	expect(document.body.textContent).toContain('capture.glb est le dernier')
 	expect(document.body.textContent).toContain('Fichier → Importer → glTF 2.0 (.glb/.gltf)')
 	expect(document.body.textContent).toContain('terrain, decor, fluids, block_entities, entities')
-	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(2)
+	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(0)
+	expect(screen.getByRole('link', { name: 'Questions\u00a0: Capturer\u00a0→' }).getAttribute('href')).toBe(
+		'/faq#capturing'
+	)
 	expect(document.querySelector('img')).toBeNull()
 	expect(document.body.textContent).not.toMatch(blocked)
 })

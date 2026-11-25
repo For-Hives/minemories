@@ -160,7 +160,8 @@ test('a world link opens the composed world with the owner’s film, without fil
 	expect(metaRequests()).toEqual([`http://example.test/api/shared/${TOKEN}`])
 	await waitFor(() => expect(mocks.track).toHaveBeenCalledWith('viewer-open', { source: 'share' }))
 	expect(screen.getByRole('heading', { name: 'Our lake' })).toBeTruthy()
-	expect(document.querySelector('.cinema-title span')?.textContent).toBe('minemories / MONDE PARTAGÉ')
+	// the title stands alone: no "minemories / SHARED WORLD" crumb above it
+	expect(document.querySelector('.cinema-title')?.textContent).toBe('Our lake')
 	expect(screen.getByRole('link', { name: 'Minemories' }).getAttribute('href')).toBe('/')
 	expect(document.body.textContent).not.toContain('secret-file-name')
 	expect(screen.queryByRole('link', { name: /Ouvrir seule/ })).toBeNull()

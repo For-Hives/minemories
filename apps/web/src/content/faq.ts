@@ -317,15 +317,31 @@ export const questions = {
 
 export type QuestionId = keyof typeof questions
 
+/** The anchor of a /faq group (`/faq#sharing`): stable, never derived from a translation, distinct from every question's. */
+export type FaqGroupId =
+	| 'before-installing'
+	| 'the-mod'
+	| 'installing'
+	| 'capturing'
+	| 'sharing'
+	| 'safety'
+	| 'problems'
+
 /** The /faq page: questions asked before installing come first. */
-export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
-	{ label: 'Before installing', ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde'] },
-	{ label: 'The mod', ids: ['minemories', 'bluemap', 'litematica', 'si-minemories-ferme', 'qui'] },
+export const faqGroups: Array<{ id: FaqGroupId; label: string; ids: QuestionId[] }> = [
 	{
+		id: 'before-installing',
+		label: 'Before installing',
+		ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde', 'rejouer'],
+	},
+	{ id: 'the-mod', label: 'The mod', ids: ['minemories', 'bluemap', 'litematica', 'si-minemories-ferme', 'qui'] },
+	{
+		id: 'installing',
 		label: 'Installing',
 		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'monde-modifie', 'compte', 'sodium'],
 	},
 	{
+		id: 'capturing',
 		label: 'Capturing',
 		ids: [
 			'prendre-un-souvenir',
@@ -340,6 +356,7 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 		],
 	},
 	{
+		id: 'sharing',
 		label: 'Gallery and sharing',
 		ids: [
 			'connecter',
@@ -353,8 +370,9 @@ export const faqGroups: Array<{ label: string; ids: QuestionId[] }> = [
 			'place',
 		],
 	},
-	{ label: 'Safety and privacy', ids: ['envoi-automatique', 'enfant', 'tout-supprimer'] },
+	{ id: 'safety', label: 'Safety and privacy', ids: ['envoi-automatique', 'enfant', 'tout-supprimer'] },
 	{
+		id: 'problems',
 		label: 'Problems',
 		ids: ['installeur', 'mod-absent', 'plantage', 'touche-m', 'code', 'partie-manquante', 'mot-de-passe'],
 	},
@@ -384,16 +402,23 @@ export const installationHelpByStep: Partial<Record<StepId, readonly (typeof ins
 	memory: ['partie-manquante', 'code'],
 }
 
-/** The three questions (at most) a page other than /faq shows. */
+/** The short warning every page that offers a link shows; the full list of what a link shows is the FAQ's (`/faq#ce-que-voit-le-lien`). */
+export const linkWarning = 'The link shows where your base is, and on which server. Think before posting it in public.'
+
+/** The three questions the landing shows. The other pages answer nothing themselves: they link to their group of /faq (`pageFaqGroups`). */
 export const pageQuestions = {
 	home: ['serveur', 'litematica', 'si-minemories-ferme'],
-	concept: ['bluemap', 'rejouer', 'sous-sols'],
-	howItWorks: ['envoi-automatique', 'souvenirs-auto'],
-	downloads: ['bedrock', 'versions'],
-	serverClosing: ['tout-le-monde', 'vieux-monde', 'droit'],
-	blender: ['mods', 'sur-un-serveur'],
-	sharing: ['regarder-un-lien', 'arreter-le-partage', 'galerie-publique'],
 } satisfies Record<string, QuestionId[]>
+
+/** The /faq group a guide page links to at its end, written once here so that the anchor and the group stay together. */
+export const pageFaqGroups = {
+	concept: 'the-mod',
+	howItWorks: 'capturing',
+	downloads: 'before-installing',
+	serverClosing: 'capturing',
+	blender: 'capturing',
+	sharing: 'sharing',
+} satisfies Record<string, FaqGroupId>
 
 /** One question, its answer as one paragraph, in the given translation. */
 export function faqText(id: QuestionId, translate: (message: string, values?: Record<string, string>) => string) {

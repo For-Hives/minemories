@@ -36,7 +36,6 @@ export function AccountProfile({
 	const { t } = useI18n()
 	return (
 		<header className="mm-account-heading">
-			<span className="mm-kicker">MINEMORIES / {t('MY ACCOUNT')}</span>
 			<div className="mm-account-profile">
 				<button
 					type="button"

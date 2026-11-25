@@ -20,12 +20,12 @@
 	white-space: nowrap;
 }
 
-/* --- Steps: /how-it-works, one card per step, top to bottom ------------------------------------------------------------------------------------- */
+/* --- Steps: /how-it-works, one step after the other, top to bottom: no card around them, the drawings are the only frames -------------------------- */
 
 /* Beats `.mm-info ol`: the step titles carry their number. */
 .mm-info .ex-steps {
 	display: grid;
-	gap: var(--ds-sp-5);
+	gap: var(--ds-sp-7);
 	margin: var(--ds-sp-5) 0;
 	padding: 0;
 	list-style: none;
@@ -33,9 +33,6 @@
 
 .mm-info .ex-steps > li {
 	margin: 0;
-	padding: var(--ds-sp-5);
-	background: var(--night-2);
-	box-shadow: var(--mm-card-shadow);
 }
 
 .ex-steps > li > :first-child {
@@ -745,24 +742,17 @@
 
 /* --- Discovery: tiles -------------------------------------------------------------------------------------------------------------- */
 
-.mm-angle-card h2 {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-}
+/* --- Questions: the FAQ, a visible list with short answers; the other pages end on one link to their group ----------------------------------------- */
 
-.mm-angle-card h2::before {
-	content: "";
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--mm-accent, var(--ember));
-	box-shadow: 0 0 0 var(--gp) var(--outline);
+.ex-faq-group {
+	scroll-margin-top: 88px;
 }
-
-/* --- Questions: the FAQ and the three questions of the other pages, a visible list with short answers --------------------------------------------- */
 
 .ex-faq-group + .ex-faq-group {
+	margin-top: var(--ds-sp-7);
+}
+
+.ex-faq-link {
 	margin-top: var(--ds-sp-7);
 }
 
@@ -812,30 +802,19 @@
 	color: var(--text);
 }
 
-.ex-not {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-3);
+/* A plain bulleted list ("What it isn't"). */
+.mm-info .ex-list {
 	margin: var(--ds-sp-4) 0;
-	padding: 0;
-	list-style: none;
+	padding-left: var(--ds-sp-6);
+	list-style: disc;
 }
 
-.ex-not li {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-	min-height: var(--ds-hit);
-	padding: 0 var(--ds-sp-4);
-	background: var(--night);
-	box-shadow: var(--mm-recess-shadow);
-	color: var(--text);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
+.mm-info .ex-list li {
+	margin: var(--ds-sp-1) 0;
 }
 
-.ex-not .ex-glyph {
-	color: var(--ember);
+.mm-info .ex-list li::marker {
+	color: var(--text-3);
 }
 
 /* Five columns do not fit a phone: the table scrolls inside its own box, never the page. */

@@ -43,8 +43,8 @@ test('the installation guide is visible HTML from top to bottom, with no noscrip
 test('/versions prerenders the curated notes of the latest release and the earlier ones, no API needed', () => {
 	const html = renderPage('/versions', 'fr')
 	expect(html).toContain('Les nouveautés de Minemories')
-	expect(html).toContain('Minemories 0.37.0-beta.1')
-	expect(html).toContain('Ce qui change pour toi')
+	expect(html).toMatch(/<h[23][^>]*>0\.37\.0-beta\.1<\/h[23]>/)
+	expect(html).not.toContain('Ce qui change pour toi')
 	expect(html).toContain('id="v0.36.1-beta.1"')
 	expect(html).toContain('href="/fr/downloads"')
 	expect(html).not.toContain('href="/fr/changelog')

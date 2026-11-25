@@ -16,17 +16,3 @@ export function BrandMark({ solo = false }: { solo?: boolean }) {
 		/>
 	)
 }
-
-/** The whole logo, camera and tripod (584 × 938): the large brand visual of the content pages' header. */
-export function BrandLogo({ className = '' }: { className?: string }) {
-	return (
-		<img
-			className={`mm-brand-logo ${className}`.trim()}
-			src="/brand/minemories-logo.svg"
-			alt=""
-			width="584"
-			height="938"
-			decoding="async"
-		/>
-	)
-}

@@ -565,7 +565,6 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 
 /* site hero */
 .mc-hero { display: grid; gap: 20px; max-width: 640px; padding: 32px 0; }
-.mc-hero__kicker { justify-self: start; display: inline-block; padding: var(--gp) calc(3 * var(--gp)); background: rgb(0 0 0 / 0.6); font: 16px/18px var(--f-ui); color: var(--text-2); }
 .mc-hero__title { margin: 0; font: 400 32px/40px var(--f-title); color: #fff; text-shadow: 4px 4px 0 var(--text-shadow); text-wrap: balance; }
 .mc-hero__lead { margin: 0; font: 400 16px/24px var(--f-read); color: var(--text-2); max-width: 560px; text-shadow: 2px 2px 0 var(--text-2-shadow); }
 .mc-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -591,8 +590,6 @@ em, i, cite, dfn, address, var { font-style: normal; } /* the game has no italic
 .mc-step__title { margin: 0; font: 400 24px/30px var(--f-title); color: #fff; text-shadow: 3px 3px 0 var(--text-shadow); }
 .mc-step__body { grid-column: 2; margin: 0; font: 400 16px/24px var(--f-read); color: var(--text-2); text-shadow: 2px 2px 0 var(--text-2-shadow); }
 .mc-step__num .mc-slot { --gp: 3px; }
-/* a step's own link (Install. → the mod's CurseForge page), under its text */
-.mc-step__links { grid-column: 2; margin: 4px 0 0; font: 400 16px/24px var(--f-read); }
 
 /* the "what it does not do" list: the item card of the kit (.mc-tip) holding a list */
 .mc-limits.mc-tip { width: min(100%, 560px); max-width: calc(100% - 4 * var(--gp)); }

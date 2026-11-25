@@ -119,6 +119,12 @@ html[data-mc-font='read'] .site .mc-step__title {
 	gap: var(--ds-sp-3);
 }
 
+/* The replay button is an icon alone, square, next to Install. */
+.site .mc-hero__actions .mc-btn--icon {
+	width: var(--_h);
+	min-width: var(--_h);
+}
+
 /* --- 3. Buttons: 44 px, game bevel, hover, press, focus ---------------------------------------------------------------------------------------------- */
 
 .site .mc-btn {
@@ -128,14 +134,6 @@ html[data-mc-font='read'] .site .mc-step__title {
 		border-color var(--ds-dur-1) var(--ds-ease),
 		background-color var(--ds-dur-1) var(--ds-ease),
 		transform var(--ds-dur-1) var(--ds-ease);
-}
-
-.site .mc-btn:hover:not([disabled]):hover {
-	transform: translateY(-1px);
-}
-
-.site .mc-btn:active:active {
-	transform: translateY(0);
 }
 
 .site .mc-btn:focus-visible:focus-visible {
@@ -277,7 +275,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :i
 	max-width: var(--ds-measure);
 }
 
-html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta, .mm-clip__caption) {
+html:not(.mm-cjk):not([data-mc-font='read']) :is(.site, .ds-page, .mc-footer) :is(.mc-step__body, .mc-step__help, .mc-step__more p, .mc-hero__compat, .mc-hint, .mc-error, .mc-disclaimer, .mc-faq__a, .mc-tile__meta) {
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
 	text-shadow: none;
 }
@@ -289,12 +287,6 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-faq__q {
 
 html:not(.mm-cjk):not([data-mc-font='read']) .mc-footer {
 	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
-}
-
-html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__kicker {
-	font: 700 var(--ds-rd-fs-label) / 18px var(--ds-f-text);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
 }
 
 html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
@@ -311,7 +303,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		interpolate-size: allow-keywords;
 	}
 
-	/* 9.1 Hero entrance on load: kicker, title, lead, buttons and compatibility arrive one after another. Done in under a second, once. */
+	/* 9.1 Hero entrance on load: title, lead, buttons and compatibility arrive one after another. Done in under a second, once. */
 	@keyframes ds-rise {
 		from {
 			opacity: 0;
@@ -344,43 +336,10 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		animation-delay: calc(var(--ds-stagger) * 4);
 	}
 
-	/* 9.2 Section titles: stepped wipe (one "pixel" at a time, like text being typed) on top of the reveal.ts fade. */
-	@keyframes ds-wipe {
-		from {
-			clip-path: inset(0 100% 0 0);
-		}
-
-		to {
-			clip-path: inset(0 0 0 0);
-		}
-	}
-
-	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-section__title.is-in {
-		animation: ds-wipe var(--ds-dur-3) steps(12, end) both;
-	}
-
-	/* 9.3 Buttons: lift, press, responsive icon. The primary keeps its copper; only position and icon move. */
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover:not([disabled]) {
-		transform: translateY(calc(-1 * var(--ds-lift)));
-	}
-
+	/* 9.3 Buttons: a press that sinks them by one pixel. Nothing moves on hover. */
 	:root:not([data-mc-motion='reduced']) .site .mc-btn:active:not([disabled]) {
 		transform: translateY(1px);
 		transition-duration: calc(var(--ds-dur-1) / 2);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-btn .mc-icon {
-		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember,
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--ember-spark {
-		transform: translateY(-1px) scale(1.2);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--arrow-r,
-	:root:not([data-mc-motion='reduced']) .site .mc-btn:hover .mc-icon--chevron {
-		transform: translateX(3px);
 	}
 
 	/* 9.4 Links: the underline moves away from the text on hover. */
@@ -394,32 +353,6 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 
 	:root:not([data-mc-motion='reduced']) .site a.mc-link:hover {
 		text-underline-offset: 6px;
-	}
-
-	/* 9.5 Step cards: the slot number "drops" into place on entry (6% bounce) and responds to hovering the card. */
-	@keyframes ds-pop {
-		from {
-			opacity: 0;
-			transform: scale(0.6);
-		}
-
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-
-	:root:not([data-mc-motion='reduced']) #site[data-reveal='on'] .mc-step.is-in .mc-step__num {
-		animation: ds-pop var(--ds-dur-3) var(--ds-ease-pop) calc(var(--ds-i, 0) * var(--ds-stagger) + var(--ds-dur-1)) both;
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-step__num {
-		transition: transform var(--ds-dur-2) var(--ds-ease-pop);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-step:hover .mc-step__num,
-	:root:not([data-mc-motion='reduced']) .site .mc-step:focus-within .mc-step__num {
-		transform: scale(1.08);
 	}
 
 	/* 9.6 Opening panels (FAQ, step details, footer): height animates, content fades in; the chevron bounces. */
@@ -450,7 +383,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	}
 
 	/* 9.8 FAQ: one open panel at a time (`name` attribute), a copper edge that unfolds on the open card, the answer rising after opening,
-	   the question shifting forward on hover, a press that sinks it by one pixel, the chevron dipping before it flips. */
+	   a press that sinks the question by one pixel, the chevron flipping. */
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__item {
 		position: relative;
 	}
@@ -477,23 +410,13 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 			transform var(--ds-dur-2) var(--ds-ease);
 	}
 
-	:root:not([data-mc-motion='reduced']) .site .mc-faq__q:hover {
-		transform: translateX(var(--ds-sp-1));
-	}
-
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__q:active {
 		transform: translateY(1px);
 		transition-duration: calc(var(--ds-dur-1) / 2);
 	}
 
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__q::after {
-		transition:
-			transform var(--ds-dur-3) var(--ds-ease-pop),
-			translate var(--ds-dur-2) var(--ds-ease);
-	}
-
-	:root:not([data-mc-motion='reduced']) .site .mc-faq__item:not([open]) > .mc-faq__q:hover::after {
-		translate: 0 var(--ds-sp-1);
+		transition: transform var(--ds-dur-3) var(--ds-ease-pop);
 	}
 
 	:root:not([data-mc-motion='reduced']) .site .mc-faq__a {
@@ -508,7 +431,7 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 		transition-delay: 0s;
 	}
 
-	/* 9.9 Other disclosures ("The film, in words" fallback, footer notes, step details): the summary responds to hover and press like a FAQ question. */
+	/* 9.9 Other disclosures ("The film, in words" fallback, footer notes, step details): the summary turns ember on hover and sinks on press, like a FAQ question. */
 	:root:not([data-mc-motion='reduced']) .words-fold summary,
 	:root:not([data-mc-motion='reduced']) .site-film-note .mc-footer__summary,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary {
@@ -521,7 +444,6 @@ html:not(.mm-cjk):not([data-mc-font='read']) .site .mc-hero__lead {
 	:root:not([data-mc-motion='reduced']) .site-film-note .mc-footer__summary:hover,
 	:root:not([data-mc-motion='reduced']) .site .mc-step__more > summary:hover {
 		color: var(--ember);
-		transform: translateX(var(--ds-sp-1));
 	}
 
 	:root:not([data-mc-motion='reduced']) .words-fold summary:active,

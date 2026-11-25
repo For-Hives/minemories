@@ -64,7 +64,6 @@ vi.mock('../components/ui', () => ({
 	buttonQuiet: '',
 	fileInputHidden: '',
 	useAppContext: () => mocks.context,
-	Eyebrow: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }))
 vi.mock('../auth-client', () => ({
 	authClient: {
@@ -263,7 +262,13 @@ test.each([false, true])(
 )
 test('login submits credentials, refreshes the session and opens the gallery', async () => {
 	mount(<AuthPage mode="login" />)
-	expect(screen.getByRole('link', { name: 'Just visiting?' }).getAttribute('href')).toBe('/explore')
+	// The guest way in is one line, and the panel beside the form is the illustration with one line under it.
+	expect(screen.getByRole('link', { name: 'Just visiting? See what others share\u00a0→' }).getAttribute('href')).toBe(
+		'/explore'
+	)
+	const art = screen.getByRole('complementary', { name: 'The spirit of Minemories' })
+	expect(art.textContent).toBe('The server closes. Your base stays.')
+	expect(screen.getByRole('button', { name: 'Sign in' }).textContent).toBe('Sign in')
 	credentials()
 	fireEvent.click(screen.getByRole('button', { name: /Sign in/ }))
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/gallery', { replace: true }))
@@ -884,11 +889,11 @@ test('signing out forgets every unsaved form draft kept in this browser', async 
 	expect(mocks.context.refreshSession).toHaveBeenCalled()
 })
 
-test('the header and footer brand show the logo camera before the word, and a content page header the whole logo', () => {
+test('the header and footer brand show the logo camera before the word, and a content page header the title alone', () => {
 	const view = render(
 		<MemoryRouter initialEntries={['/missing-page']}>
 			<SiteLayout>
-				<ContentLayout eyebrow="404" title="Page not found">
+				<ContentLayout title="Page not found">
 					<p>Body</p>
 				</ContentLayout>
 			</SiteLayout>
@@ -909,9 +914,10 @@ test('the header and footer brand show the logo camera before the word, and a co
 	expect(screen.getByRole('contentinfo').textContent).toContain(
 		'Minemories is not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'
 	)
-	const logo = view.container.querySelector('.mm-content-header img')
-	expect(logo?.getAttribute('src')).toBe('/brand/minemories-logo.svg')
-	expect(logo?.className).toBe('mm-brand-logo mm-content-logo')
+	// The content header holds the h1 alone: no logo, no label above it (the bar already shows the brand).
+	const contentHeader = view.container.querySelector('.mm-content-header')
+	expect(contentHeader?.querySelector('img')).toBeNull()
+	expect(contentHeader?.firstElementChild?.tagName).toBe('H1')
 })
 
 test('pending authentication prevents duplicate submission and lets the user retry after failure', async () => {

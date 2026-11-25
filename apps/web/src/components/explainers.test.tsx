@@ -59,7 +59,9 @@ test('the sharing demo walks from private to a link to a revoked link', () => {
 test('the sharing page carries the demo', () => {
 	english(<SharingPage />, '/sharing')
 	expect(screen.getByRole('button', { name: 'Create a link' })).toBeTruthy()
-	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(screen.getByRole('link', { name: 'Questions: Gallery and sharing\u00a0→' }).getAttribute('href')).toBe(
+		'/faq#sharing'
+	)
 	// The public gallery is live: no note may still announce it as coming.
 	expect(document.body.textContent).not.toContain('in preparation')
 })

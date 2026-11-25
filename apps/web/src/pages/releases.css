@@ -15,31 +15,14 @@
 		var(--ds-panel-bevel);
 }
 
-.mm-release-meta {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-3) var(--ds-sp-5);
-}
-
-.mm-release-meta time,
+.mm-release-card time,
 .mm-release-older time {
 	color: var(--text-2);
 	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
 }
 
-/* Badge: the game's name tag, in gold. */
-.mm-release-badge {
-	padding: 0 var(--ds-sp-2);
-	background: rgb(0 0 0 / 0.7);
-	color: var(--c-gold);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: 2px 2px 0 #3f3416;
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-
 .mm-site .mm-release-card h2 {
-	margin: var(--ds-sp-4) 0 var(--ds-sp-2);
+	margin: 0 0 var(--ds-sp-2);
 	overflow-wrap: anywhere;
 }
 
@@ -48,11 +31,7 @@
 	gap: var(--ds-sp-3);
 	margin: var(--ds-sp-4) 0 var(--ds-sp-5);
 	padding-left: var(--ds-sp-5);
-	list-style: square;
-}
-
-.mm-release-notes li::marker {
-	color: var(--ember);
+	list-style: disc;
 }
 
 .mm-release-older {

@@ -11,9 +11,6 @@ export function InstallationHelp({ step }: { step: StepId | 'done' | null }) {
 	const { t } = useI18n()
 	return (
 		<section id="aide" className="install-help" aria-labelledby="help-title">
-			<span className="install-eyebrow">
-				<T message={'A little help'} />
-			</span>
 			<h2 id="help-title">
 				<T message={'If a step gets stuck'} />
 			</h2>

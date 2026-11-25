@@ -367,7 +367,6 @@ function SharedCapturePage({ isPublic = false, first }: { isPublic?: boolean; fi
 		<section className="viewer-page cinema-page">
 			<ViewerHeader
 				title={title ?? t('A shared world.')}
-				subtitle={isPublic ? t('PUBLIC MEMORY') : t('SHARED MEMORY')}
 				back={isPublic ? publicBack : '/'}
 				backLabel={isPublic ? t(review ? 'Back to moderation' : 'Back to public gallery') : 'Minemories'}
 				below={<ShareTop invite={onScreen} isPublic={isPublic} engaged={engaged} moments={0} />}
@@ -445,7 +444,6 @@ function SharedWorldPage({ token, capture }: { token: string; capture: SharedCap
 		<section className="viewer-page cinema-page timelapse-page">
 			<ViewerHeader
 				title={capture.place || world?.name || t('A shared world.')}
-				subtitle={t('SHARED WORLD')}
 				back="/"
 				backLabel="Minemories"
 				below={

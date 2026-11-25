@@ -8,12 +8,6 @@ import { CaptureRestorationRequired } from '../lib/capture-file'
 import { RestorationNeeded } from '../lib/world-load'
 import { fetchTemporalFile } from './temporal-files'
 
-const dimensionLabels: Record<string, string> = {
-	'minecraft:overworld': 'Overworld',
-	'minecraft:the_nether': 'Nether',
-	'minecraft:the_end': 'The End',
-}
-
 async function download(frame: TemporalFrame, signal: AbortSignal): Promise<File> {
 	try {
 		return await fetchTemporalFile(frame, signal)
@@ -67,11 +61,7 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 	const { world, step } = state
 	return (
 		<section className="viewer-page cinema-page timelapse-page">
-			<ViewerHeader
-				title={world?.name ?? t('Your world through time')}
-				subtitle={world?.dimension ? t(dimensionLabels[world.dimension] ?? world.dimension) : ''}
-				backLabel={t('My gallery')}
-			/>
+			<ViewerHeader title={world?.name ?? t('Your world through time')} backLabel={t('My gallery')} />
 			<WorldStage
 				state={state}
 				actions={actions}

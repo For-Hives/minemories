@@ -16,7 +16,6 @@ function ResetShell({ title, lead, children }: { title: string; lead: string; ch
 			<div className="auth-workspace">
 				<div className="auth-form-wrap">
 					<header className="auth-heading">
-						<span className="auth-eyebrow">{t('YOUR GALLERY')}</span>
 						<h1>{t(title)}</h1>
 						<p>{t(lead)}</p>
 					</header>

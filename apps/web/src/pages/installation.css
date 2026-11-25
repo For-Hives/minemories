@@ -25,25 +25,6 @@
 	color: #fff;
 }
 
-/* Eyebrow: the landing's (game font, ember square in front). */
-.install-eyebrow {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	color: var(--text-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.install-eyebrow::before {
-	content: "";
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--ember);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-
 .install-success > span[aria-hidden="true"] {
 	flex: none;
 	width: 32px;
@@ -85,7 +66,7 @@
 }
 
 .mm-site .installation .install-hero h1 {
-	margin: var(--ds-sp-4) 0 0;
+	margin: 0;
 	color: #fff;
 	font: 400 var(--ds-fs-h1) / var(--ds-lh-h1) var(--f-title);
 	text-shadow: var(--ds-text-shadow-4);
@@ -104,12 +85,6 @@
 
 .install-hero-art {
 	text-align: center;
-}
-
-.install-hero-art > span {
-	color: var(--text-3);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	text-shadow: var(--ds-text-shadow-1);
 }
 
 .install-scene {
@@ -342,7 +317,7 @@
 }
 
 .mm-site .installation .install-help h2 {
-	margin: var(--ds-sp-3) 0 var(--ds-sp-5);
+	margin: 0 0 var(--ds-sp-5);
 }
 
 /* First memory done: the featured panel (an ember frame), the landing's ember in place of a star. */

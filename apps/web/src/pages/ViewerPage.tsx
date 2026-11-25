@@ -184,10 +184,7 @@ function SingleViewerPage() {
 
 	return (
 		<section className="viewer-page cinema-page">
-			<ViewerHeader
-				title={memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('The memory studio'))}
-				subtitle="STUDIO"
-			>
+			<ViewerHeader title={memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('The memory studio'))}>
 				{import.meta.env.DEV && (
 					<label className="cinema-open">
 						<T message={'Choose a GLB'} />

@@ -1,11 +1,11 @@
 import { Link } from 'react-router'
 import { buttonOutline } from '../components/ui'
-import { pageQuestions } from '../content/faq'
+import { pageFaqGroups } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
 import { CatalogCallout } from './CatalogCallout'
 import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
-import { Questions } from './InfoPages'
+import { FaqLink } from './InfoPages'
 import { guideLink, versionBadge } from './installation-state'
 import { latestDownloadUrl, quiltTested } from './mod-releases'
 import { useModReleases } from './useModReleases'
@@ -73,11 +73,7 @@ export function DownloadsPage() {
 	const { releases, status, retry } = useModReleases()
 	const grid = downloadGrid(releases)
 	return (
-		<ContentLayout
-			eyebrow={t('MINEMORIES · DOWNLOADS')}
-			title={t('Download Minemories')}
-			lead={t('One JAR per Minecraft version and loader.')}
-		>
+		<ContentLayout title={t('Download Minemories')} lead={t('One JAR per Minecraft version and loader.')}>
 			<CatalogCallout />
 			<div className="mm-dl-scroll" aria-busy={status === 'loading'}>
 				<table className="mm-dl-table">
@@ -144,7 +140,7 @@ export function DownloadsPage() {
 					<T message={'Check your file'} />
 				</Link>
 			</p>
-			<Questions ids={pageQuestions.downloads} />
+			<FaqLink group={pageFaqGroups.downloads} />
 		</ContentLayout>
 	)
 }

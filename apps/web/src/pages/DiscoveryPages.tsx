@@ -17,7 +17,6 @@ export function ExplorerPage() {
 	const title = demo ? t('A little visit, just to see.') : t('Places to visit')
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES"
 			title={title}
 			lead={
 				demo
@@ -67,10 +66,7 @@ export function GalleryPreview() {
 	return (
 		<section className="mm-demo-gallery" aria-label={t('Demo gallery')}>
 			<div className="mm-section-heading">
-				<div>
-					<span className="mm-kicker">{t('Demo · sample data')}</span>
-					<h2>{t('Three places to explore')}</h2>
-				</div>
+				<h2>{t('Three places to explore')}</h2>
 				<button
 					type="button"
 					className="mm-text-button"
@@ -142,7 +138,6 @@ export function GalleryPreview() {
 							{sort === 'hearts' && <span className="mm-rank">#{index + 1}</span>}
 						</button>
 						<div className="mm-memory-card-body">
-							<span className="mm-kicker">{translate(locale, memory.category)}</span>
 							<h3>{translate(locale, memory.title)}</h3>
 							<p>{translate(locale, memory.story)}</p>
 							<div className="mm-memory-actions">
@@ -212,7 +207,6 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 	return (
 		<section className="mm-demo-detail" aria-label={t('Memory preview')}>
 			<div>
-				<span className="mm-kicker">{t('Illustration · shareable preview')}</span>
 				<h2 ref={heading} tabIndex={-1}>
 					{translate(locale, memory.title)}
 				</h2>

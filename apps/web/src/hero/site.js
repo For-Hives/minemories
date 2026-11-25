@@ -276,7 +276,7 @@ export function createSite(ctx) {
 	}
 	// The rectangle the model is framed in: the panel, extended to the left by REACH_OVERLAP in landscape (under the text); the panel itself (pointer area, hint) is not.
 	const framingRect = (d) => (d.layout === 'side' ? { ...d.rect, l: d.rect.l - REACH_OVERLAP } : d.rect)
-	const REACH_TEXT = '.mc-hero__kicker, .mc-hero__title, .mc-hero__lead, .mc-hero__compat, .mc-section__title, .mc-section__text, .site-links, .mc-hero__actions'
+	const REACH_TEXT = '.mc-hero__title, .mc-hero__lead, .mc-hero__compat, .mc-section__title, .mc-section__text, .site-links, .mc-hero__actions'
 	// The right edge of what the visitor reads right now: text by the extent of its lines, cards by their box; only what is on screen counts.
 	function contentRightNow() {
 		const { H } = sizeNow()

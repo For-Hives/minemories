@@ -5,25 +5,6 @@
 	max-width: 1100px;
 }
 
-/* Kicker: the landing's eyebrow (ember square, game font). */
-.mm-account-heading .mm-kicker {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	letter-spacing: 0;
-	text-transform: none;
-	color: var(--text-2);
-	text-shadow: var(--ds-text-shadow-1);
-}
-.mm-account-heading .mm-kicker::before {
-	content: "";
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--ember);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
 .mm-account-heading h1 {
 	margin: var(--ds-sp-3) 0;
 }
@@ -80,22 +61,6 @@
 	box-shadow:
 		0 0 0 var(--gp) var(--outline),
 		var(--ds-panel-bevel);
-}
-
-/* The card's symbol sits in an inventory slot. */
-.mm-account-symbol {
-	display: grid;
-	place-items: center;
-	align-self: start;
-	width: calc(24 * var(--gp));
-	height: calc(24 * var(--gp));
-	background: var(--slot);
-	color: #fff;
-	font: 400 var(--ds-fs-h3) / 1 var(--f-ui);
-	text-shadow: 2px 2px 0 #3a352f;
-	box-shadow:
-		inset var(--gp) var(--gp) 0 var(--slot-lo),
-		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
 }
 
 .mm-site .mm-account-card h2 {
@@ -440,16 +405,10 @@
 	}
 }
 
-/* Unifont (ko/ja) only stays sharp at multiples of 16 px: the slot's 24 px symbol grows to 32 px (the slot is 48 px). */
-html.mm-cjk:not([data-mc-font="read"]) .mm-account-symbol {
-	font-size: 32px;
-}
-
 @media (forced-colors: active) {
 	.mm-account-card,
 	.mm-account-note,
 	.mm-account-error,
-	.mm-account-symbol,
 	.mm-avatar-dialog,
 	.mm-avatar-preview {
 		border: 1px solid CanvasText;

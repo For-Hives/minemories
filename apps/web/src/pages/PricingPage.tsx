@@ -8,7 +8,6 @@ export function PricingPage() {
 	const { t } = useI18n()
 	return (
 		<ContentLayout
-			eyebrow="MINEMORIES / CLOUD"
 			title={t('Keep your worlds. Plan for the future.')}
 			lead={t('€2 per snapshot. Storage starts at €6 a year and drops to €3 as your memory gets older.')}
 		>

@@ -7,7 +7,7 @@ import { GalleryIcon } from '../components/GalleryIcons'
 import { LoadingSkeleton } from '../components/Loading'
 import { buttonDark } from '../components/ui'
 import { formatCaptureCount } from '../i18n/counts'
-import { type Locale, T, translate, useI18n } from '../i18n/I18n'
+import { T, useI18n } from '../i18n/I18n'
 import { formatDateSpan, formatRelativeDate } from '../lib/dates'
 import {
 	type CaptureArea,
@@ -105,25 +105,8 @@ function StorageParts({ storage }: { storage: Storage }) {
 	)
 }
 
-/** The title row's one finding: how much is kept, across how many worlds, and when the last capture arrived. */
-function gallerySummary(memories: Memories, locale: Locale): string {
-	if (memories.length === 0) return translate(locale, 'Every capture keeps a place here, ready to revisit.')
-	const newest = latestCapture(memories)
-	const parts = [
-		formatCaptureCount(locale, memories.length),
-		translate(locale, '{count} worlds', { count: groupCaptures(memories).length }),
-	]
-	if (newest)
-		parts.push(
-			translate(locale, 'Last visit {date}', {
-				date: formatRelativeDate(newest.metadata.capturedAt ?? newest.createdAt, Date.now(), locale),
-			})
-		)
-	return parts.join(' · ')
-}
-
 export function GalleryPage() {
-	const { t, locale } = useI18n()
+	const { t } = useI18n()
 
 	const { notify } = useAppContext()
 	const {
@@ -155,7 +138,8 @@ export function GalleryPage() {
 					<h1 ref={title} tabIndex={-1}>
 						{t('Your memories')}
 					</h1>
-					<p>{gallerySummary(memories, locale)}</p>
+					{/* The cards below already count the memories and date them: the title stands alone once there are some. */}
+					{!loading && memories.length === 0 && <p>{t('Every capture keeps a place here, ready to revisit.')}</p>}
 				</div>
 				<div className="gallery-heading-actions">
 					<RefreshButton onRefresh={refreshAll} />
