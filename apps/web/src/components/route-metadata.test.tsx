@@ -123,6 +123,14 @@ test('the private shell carries the shared-link card, English by default and tra
 	expect(metadataFor('/share', 'en').title).toBe('Minemories · Your space')
 })
 
+test('sign in, register and the password pages get a prerendered shell with their own title', async () => {
+	const { headFor, sharedLinkPath, titledPrivatePaths } = await import('../route-metadata')
+	expect([...titledPrivatePaths].sort()).toEqual(['/login', '/login/forgot', '/login/reset', '/register'])
+	const titles = new Set(titledPrivatePaths.map(path => headFor(path, 'fr').title))
+	expect(titles.size).toBe(titledPrivatePaths.length)
+	expect(titles.has(headFor(sharedLinkPath, 'fr').title)).toBe(false)
+})
+
 test('each language is its own page: canonical, og:url and hreflang alternates name every language', () => {
 	render(
 		<I18nProvider initialLocale="fr">

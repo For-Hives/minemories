@@ -243,3 +243,13 @@ test('after launch, canonical, alternates, og:url and sitemap entries must name 
 		['SEO URLs name another host: staging.example.net']
 	)
 })
+
+test('sign-in pages must carry their own title, not the share card of the generic shell', () => {
+	const login = find('/fr/login')
+	const shell = title => `<html><head><title>${title}</title></head><body>${appShellMarker}</body></html>`
+	const response = title => ({ status: 200, headers: { ...blocked, ...htmlHeaders }, body: shell(title) })
+	assert.deepEqual(checkResponse(login, response(login.title), { base, indexable: true }), [])
+	assert.deepEqual(checkResponse(login, response('Un lieu Minecraft en 3D'), { base, indexable: true }), [
+		`title is not "${login.title}"`,
+	])
+})

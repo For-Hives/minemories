@@ -202,6 +202,11 @@ export function headFor(path: string, locale: Locale = 'en') {
 }
 /** Any /share or /public link: the private shell (app.html) carries their card. */
 export const sharedLinkPath = '/share/link'
+/**
+ * The private pages with a tab title of their own (sign in, register…): the prerender writes them a copy of the private
+ * shell with that title (/fr/login/app.html), so the tab never shows the share-link card before the app starts.
+ */
+export const titledPrivatePaths = privateMessages.map(page => page.path)
 const trailingSlash = /\/$/
 export function metadataFor(pathname: string, locale: Locale = 'en'): PageMetadata {
 	const path = pathname.replace(trailingSlash, '') || '/'
