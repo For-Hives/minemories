@@ -349,3 +349,35 @@ test('an index created before world keys gains the column and is rebuilt', async
 		await f.close()
 	}
 })
+
+test('a shared world names every capture after the place, keeps valid icons only and is empty once nothing is left', async () => {
+	const f = await temporalFixture()
+	try {
+		const index = new TimelapseIndex(f.db)
+		const icon = 'data:image/png;base64,iVBORw0KGgo='
+		const first = await f.add(
+			{ ...frameMetadata, worldName: 'Lake base', captureStartedAt: `${base}.1Z`, icon },
+			payload
+		)
+		const second = await f.add({ ...frameMetadata, captureStartedAt: `${base}.2Z` }, payload)
+		const third = await f.add({ ...frameMetadata, captureStartedAt: `${base}.3Z` }, payload)
+		const key = index.worldKeyOf('owner', first.id)
+		expect(index.world('owner', first.id).frames).toHaveLength(3)
+		// Rows written before the icon was validated, or by hand, must not reach a visitor.
+		f.db.query('UPDATE memories SET metadata_json=? WHERE id=?').run('{not json', second.id)
+		f.db.query('UPDATE memories SET metadata_json=? WHERE id=?').run('{"icon":"javascript:alert(1)"}', third.id)
+		const named = index.sharedWorld('owner', key, 'My base')
+		expect(named?.name).toBe('My base')
+		expect(named?.frames.map(frame => [frame.id, frame.name, frame.image])).toEqual([
+			[first.id, 'My base', icon],
+			[second.id, 'My base', null],
+			[third.id, 'My base', null],
+		])
+		expect(named).not.toHaveProperty('worldKey')
+		expect(index.sharedWorld('owner', key, null)?.name).toBe(index.world('owner', third.id).name)
+		f.db.query('UPDATE memories SET deleted_at=1').run()
+		expect(index.sharedWorld('owner', key, null)).toBeNull()
+	} finally {
+		await f.close()
+	}
+})

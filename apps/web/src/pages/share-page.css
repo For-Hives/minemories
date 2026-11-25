@@ -1,5 +1,4 @@
-/* The top of a shared scene: a world link's snapshot slider, then one line for the visitor (the welcome, then the
-   invitation). It lives in the header's own full-width row under the title, so it never covers the title, and it hides
+/* The top of a shared scene: one line for the visitor (the welcome, then the invitation). It lives in the header's own full-width row under the title, so it never covers the title, and it hides
    with the header in immersive mode. */
 .cinema-header:has(.cinema-header-below) {
 	flex-wrap: wrap;
@@ -24,45 +23,6 @@
 .share-top > * {
 	pointer-events: auto;
 }
-/* A world link's snapshot slider: a kit slot over the 3D scene. */
-.share-timeline {
-	display: flex;
-	align-items: center;
-	gap: var(--ds-sp-3);
-	box-sizing: border-box;
-	width: 100%;
-	padding: var(--ds-sp-2) var(--ds-sp-4);
-	background: var(--night);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs-sm) / 1 var(--ds-f-text);
-}
-.share-timeline .gallery-icon {
-	flex: none;
-	width: 16px;
-	height: 16px;
-}
-.share-timeline input[type="range"] {
-	flex: 1 1 auto;
-	min-width: 0;
-	min-height: var(--ds-hit);
-	accent-color: var(--ember);
-	cursor: pointer;
-}
-.share-timeline time {
-	color: var(--text);
-	white-space: nowrap;
-}
-.share-timeline span {
-	color: var(--off-ink);
-	white-space: nowrap;
-}
-@media (max-width: 520px) {
-	.share-timeline span {
-		display: none;
-	}
-}
-
 /* The visitor's line, on the game's plaque so it reads over a bright sky. */
 .share-note {
 	margin: 0;
@@ -99,13 +59,10 @@
 .cinema-loading-card > a {
 	display: inline-block;
 }
-/* On a phone the row keeps clear of the tool rail on the right, and the slider explains itself. */
+/* On a phone the row keeps clear of the tool rail on the right. */
 @media (max-width: 800px) {
 	.cinema-header-below {
 		justify-content: flex-start;
 		padding-right: 64px;
-	}
-	.share-slider-hint {
-		display: none;
 	}
 }

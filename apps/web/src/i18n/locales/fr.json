@@ -429,6 +429,7 @@
 	"Right-click": "Clic droit",
 	"Role": "Rôle",
 	"SHARED MEMORY": "SOUVENIR PARTAGÉ",
+	"SHARED WORLD": "MONDE PARTAGÉ",
 	"Save": "Enregistrer",
 	"Save status": "Enregistrer le statut",
 	"Save this estimate": "Garder cette estimation",
@@ -627,6 +628,7 @@
 	"Waiting": "En attente",
 	"Loaded": "Chargée",
 	"Archived: open it alone to restore it": "Archivée : ouvre-la seule pour la restaurer",
+	"Archived: restore it to see it": "Archivée : restaure-la pour la voir",
 	"Could not load": "Chargement impossible",
 	"Not loaded": "Non chargée",
 	"Captures of this world": "Captures de ce monde",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "On n’arrive pas à charger la scène. Réessaie dans un moment.",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "Un lieu Minecraft en 3D, partagé avec toi. Fais glisser pour tourner autour.",
 	"Published by its author, reviewed before publication.": "Publié par son auteur, relu avant publication.",
-	"Drag the slider to watch it change.": "Fais glisser le curseur pour le voir changer.",
+	"Press Play to watch it change.": "Appuie sur Lire pour le voir changer.",
 	"Want the same for your own base?": "Tu veux la même chose pour ta base ?",
 	"Keep your own base in 3D too": "Garde ta base en 3D, toi aussi",
 	"See other places": "Voir d’autres lieux",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "Avatar enregistré.",
 	"Avatar removed.": "Avatar retiré.",
 	"Edit name": "Modifier le pseudo",
-	"You sign in with this name or your email.": "Tu te connectes avec ce pseudo ou ton e-mail."
+	"You sign in with this name or your email.": "Tu te connectes avec ce pseudo ou ton e-mail.",
+	"This shared world could not be loaded. Try again.": "Ce monde partagé n’a pas pu se charger. Réessaie."
 }

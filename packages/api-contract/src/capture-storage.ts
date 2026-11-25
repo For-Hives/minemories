@@ -10,6 +10,8 @@ export const captureStorageAccess = z.discriminatedUnion('kind', [
 			.min(20)
 			.max(200)
 			.regex(/^[A-Za-z0-9_-]+$/),
+		/** On a world link, the capture to restore; the newest one without it. */
+		snapshot: z.string().uuid().optional(),
 	}),
 	z.object({ kind: z.literal('public'), id: z.string().uuid() }),
 ])

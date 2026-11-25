@@ -197,3 +197,73 @@ test('real API routes serve deduplicated captures privately, by share and after 
 	expect((await client.account.storage()).usedBytes).toBe(0)
 	expect(await Array.fromAsync(storageInventory().objects(`${owner.id}/`))).toEqual([])
 })
+
+test('a world link opens its composed world to anyone, without file names, until it is revoked', async () => {
+	const client = rpc(owner.cookie),
+		pairing = await client.pairing.create()
+	const paired = await app.request('/api/mod/pair', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ code: pairing.code }),
+	})
+	const { deviceToken } = (await paired.json()) as { deviceToken: string }
+	const icon = 'data:image/png;base64,iVBORw0KGgo='
+	async function upload(second: number, extra: Record<string, unknown>) {
+		const response = await app.request('/api/mod/memories', {
+			method: 'POST',
+			headers: {
+				authorization: `Bearer ${deviceToken}`,
+				'content-type': 'model/gltf-binary',
+				'x-memory-metadata': JSON.stringify({
+					...frameMetadata,
+					worldId: 'e'.repeat(64),
+					worldName: 'Lake base',
+					captureStartedAt: `2026-11-02T10:00:0${second}Z`,
+					...extra,
+				}),
+			},
+			body: Uint8Array.from(minimalGlb()).buffer,
+		})
+		expect([response.status, response.status === 201 ? '' : await response.text()]).toEqual([201, ''])
+		return ((await response.json()) as { id: string }).id
+	}
+	const older = await upload(1, { icon })
+	// Another place of the same world: its own zone, bounds and origin.
+	const newer = await upload(2, {
+		zoneId: 'd'.repeat(64),
+		captureBounds: { ...frameMetadata.captureBounds, minX: 2, maxX: 4 },
+		captureOrigin: { x: 3, y: 1, z: 1 },
+	})
+	database.query("UPDATE memories SET name='secret-file-name' WHERE id IN (?,?)").run(older, newer)
+	const link = await client.memories.createShare({ id: newer, scope: 'world' })
+	const single = await client.memories.createShare({ id: older })
+	const openings = () =>
+		database.query('SELECT open_count AS n FROM share_links WHERE token_hash IS NOT NULL AND scope=?').get('world')
+
+	const visitor = rpc('')
+	const world = await visitor.timelapse.shared({ token: link.token })
+	expect(world).toMatchObject({ name: 'Lake base', totalFrames: 2, truncated: false, dimension: 'minecraft:overworld' })
+	expect(world).not.toHaveProperty('worldKey')
+	expect(world.frames.map(frame => [frame.id, frame.name, frame.image])).toEqual([
+		[older, 'Lake base', icon],
+		[newer, 'Lake base', null],
+	])
+	expect(world.frames[1]?.origin).toEqual({ x: 3, y: 1, z: 1 })
+	expect(JSON.stringify(world)).not.toContain('secret-file-name')
+	// Only the page's first request counts an opening; loading the world behind it does not.
+	expect(openings()).toEqual({ n: 0 })
+	await expect(visitor.timelapse.shared({ token: single.token })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+	await expect(visitor.timelapse.shared({ token: 'unknown-token-that-is-long-enough' })).rejects.toMatchObject({
+		code: 'NOT_FOUND',
+	})
+
+	// An archived capture of the world restores by its own snapshot, not the newest one.
+	const status = await visitor.captureStorage.status({ kind: 'shared', token: link.token, snapshot: older })
+	expect(status.state).toBe('ready')
+	await expect(
+		visitor.captureStorage.status({ kind: 'shared', token: link.token, snapshot: crypto.randomUUID() })
+	).rejects.toMatchObject({ code: 'NOT_FOUND' })
+
+	await client.memories.revokeShare({ id: newer, scope: 'world' })
+	await expect(visitor.timelapse.shared({ token: link.token })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+})

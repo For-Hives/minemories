@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto'
-import { type CaptureIdentity, minecraftHeadUrl, TRASH_RETENTION_MS } from '@minemories/api-contract'
+import { type CaptureIdentity, minecraftHeadUrl, type SharedWorld, TRASH_RETENTION_MS } from '@minemories/api-contract'
 import { pairingPepper } from './configuration'
 import { database } from './database'
 import { ServerProfiles } from './server-profiles'
@@ -352,6 +352,22 @@ export function getSharedMemory(token: string, snapshot?: string) {
 		scope: link.scope,
 		...(snapshots ? { snapshots } : {}),
 	}
+}
+
+/**
+ * The composed world a world link opens, for a visitor without an account. Null for a revoked, unknown or single-capture
+ * link, or once its world has no live capture. Not counted as an opening (only `GET /api/shared/:token` is).
+ */
+export function getSharedWorld(token: string): SharedWorld | null {
+	if (!token || token.length < 20) return null
+	const link = database
+		.query(
+			"SELECT memory_id, user_id, world_key FROM share_links WHERE token_hash = ? AND revoked_at IS NULL AND scope = 'world'"
+		)
+		.get(codeHash(token)) as { memory_id: string; user_id: string; world_key: string | null } | null
+	if (!link?.world_key) return null
+	const place = new ServerProfiles(database).nameForMemory(link.user_id, link.memory_id)
+	return new TimelapseIndex(database).sharedWorld(link.user_id, link.world_key, place)
 }
 
 /** Snapshots a world link's preview looks through for a picture, newest first. */

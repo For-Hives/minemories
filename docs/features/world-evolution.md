@@ -6,6 +6,26 @@ Each world now has **a single view**: all its
 identified captures are loaded into the same scene and the left filmstrip moves the world from the oldest
 capture to the most recent.
 
+## The same view for the owner and for a world link
+
+The owner's page (`WorldPage`, `/viewer?memory=…&timelapse=1`) and a world share link (`/share/:token` whose link
+has `scope: 'world'`) use one component, `components/WorldViewer.tsx`: the composed scene, the capture film, Play,
+previous/next, the arrow keys, the older-captures toggle and the camera glide. Only the source changes:
+
+| | Owner | World link |
+|---|---|---|
+| World | `timelapse.world({ memoryId })` (session) | `timelapse.shared({ token })` (no account) |
+| Files | `/api/memories/:id/file` | `/api/shared/:token/file?snapshot=:id` |
+| Film pictures | the gallery's icons (`memories.list`) | each frame's `image` (its small icon only) |
+| Beside a capture | Open alone (where an archived one restores) | Restore, in place, then it joins the world |
+| Around | back to the gallery, share panel | welcome, install invitation after 10 s, back to the site |
+
+`timelapse.shared` returns the same captures as `timelapse.world`, in the same order and with the same limit, for an
+active world link only (a revoked, unknown or single-capture link is `NOT_FOUND`). It has no owner-scoped key and
+every name is the place's name, never a capture's file name. It is not an opening: only the page's first
+`GET /api/shared/:token` counts one. `captureStorage.status`/`restore` take an optional `snapshot` on a shared
+access, so an archived capture of a world link restores itself, not the newest one.
+
 ## Principle: nothing changes in the mod or the format
 
 The review of the previous attempt showed that splitting on the mod side (aligned tiles, `.mmtiles` bundle) made

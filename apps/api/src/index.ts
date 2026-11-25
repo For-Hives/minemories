@@ -55,6 +55,7 @@ import {
 	getMemoryFile,
 	getSharedMemory,
 	getSharedPreview,
+	getSharedWorld,
 	hasPairedDevice,
 	listMemories,
 	listTrash,
@@ -146,7 +147,7 @@ function accountIdentity(context: ApiContext) {
 }
 function captureObjectKey(access: CaptureStorageAccess, context: ApiContext): string | null {
 	if (access.kind === 'owner') return getMemoryFile(authenticated(context), access.id)?.object_key ?? null
-	if (access.kind === 'shared') return getSharedMemory(access.token)?.objectKey ?? null
+	if (access.kind === 'shared') return getSharedMemory(access.token, access.snapshot)?.objectKey ?? null
 	try {
 		return discovery.file(access.id, context.userId).object_key
 	} catch {
@@ -213,6 +214,11 @@ const router = os.router({
 		world: os.timelapse.world.handler(({ context, input }) =>
 			temporalIndex.world(authenticated(context), input.memoryId)
 		),
+		shared: os.timelapse.shared.handler(({ input }) => {
+			const world = getSharedWorld(input.token)
+			if (!world) throw new ORPCError('NOT_FOUND')
+			return world
+		}),
 	},
 	discovery: {
 		list: os.discovery.list.handler(({ context, input }) => discovery.list(context.userId, input)),

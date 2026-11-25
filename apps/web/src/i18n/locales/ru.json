@@ -429,6 +429,7 @@
 	"Right-click": "Правый клик",
 	"Role": "Роль",
 	"SHARED MEMORY": "ОБЩАЯ ПАМЯТЬ",
+	"SHARED WORLD": "ОБЩИЙ МИР",
 	"Save": "Сохранить",
 	"Save status": "Сохранить статус",
 	"Save this estimate": "Сохранить эту оценку",
@@ -627,6 +628,7 @@
 	"Waiting": "Ожидание",
 	"Loaded": "Загружено",
 	"Archived: open it alone to restore it": "В архиве: открой отдельно, чтобы восстановить",
+	"Archived: restore it to see it": "В архиве: восстанови, чтобы увидеть",
 	"Could not load": "Не удалось загрузить",
 	"Not loaded": "Не загружено",
 	"Captures of this world": "Снимки этого мира",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "Не удалось загрузить сцену. Попробуй ещё раз чуть позже.",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "Место из Minecraft в 3D, которым поделились с тобой. Потяни, чтобы повернуть.",
 	"Published by its author, reviewed before publication.": "Опубликовано автором и проверено перед публикацией.",
-	"Drag the slider to watch it change.": "Двигай ползунок, чтобы увидеть, как оно менялось.",
+	"Press Play to watch it change.": "Нажми «Воспроизвести», чтобы увидеть, как оно менялось.",
 	"Want the same for your own base?": "Хочешь так же для своей базы?",
 	"Keep your own base in 3D too": "Сохрани и свою базу в 3D",
 	"See other places": "Смотреть другие места",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "Аватар сохранён.",
 	"Avatar removed.": "Аватар убран.",
 	"Edit name": "Изменить имя",
-	"You sign in with this name or your email.": "Ты входишь с этим именем или своим e-mail."
+	"You sign in with this name or your email.": "Ты входишь с этим именем или своим e-mail.",
+	"This shared world could not be loaded. Try again.": "Не удалось загрузить этот общий мир. Попробуй ещё раз."
 }

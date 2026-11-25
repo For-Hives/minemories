@@ -429,6 +429,7 @@
 	"Right-click": "右クリック",
 	"Role": "役割",
 	"SHARED MEMORY": "共有メモリ",
+	"SHARED WORLD": "共有ワールド",
 	"Save": "保存",
 	"Save status": "ステータスの保存",
 	"Save this estimate": "この見積もりを保存します",
@@ -627,6 +628,7 @@
 	"Waiting": "待機中",
 	"Loaded": "読み込み済み",
 	"Archived: open it alone to restore it": "アーカイブ済み：復元するには単独で開いてください",
+	"Archived: restore it to see it": "アーカイブ済み：表示するには復元してください",
 	"Could not load": "読み込めませんでした",
 	"Not loaded": "未読み込み",
 	"Captures of this world": "このワールドのキャプチャ",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "シーンを読み込めませんでした。少し待ってからもう一度試してください。",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "あなたと共有された、3D の Minecraft の場所です。ドラッグして回してみよう。",
 	"Published by its author, reviewed before publication.": "作者が公開し、公開前に確認されています。",
-	"Drag the slider to watch it change.": "スライダーを動かすと、移り変わりが見られます。",
+	"Press Play to watch it change.": "再生を押すと、移り変わりが見られます。",
 	"Want the same for your own base?": "自分の拠点も残したい？",
 	"Keep your own base in 3D too": "自分の拠点も3Dで残そう",
 	"See other places": "ほかの場所を見る",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "アバターを保存しました。",
 	"Avatar removed.": "アバターを削除しました。",
 	"Edit name": "名前を編集",
-	"You sign in with this name or your email.": "この名前かメールアドレスでログインします。"
+	"You sign in with this name or your email.": "この名前かメールアドレスでログインします。",
+	"This shared world could not be loaded. Try again.": "この共有ワールドを読み込めませんでした。もう一度お試しください。"
 }
