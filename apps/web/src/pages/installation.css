@@ -482,7 +482,7 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 .install-ways {
 	display: grid;
 	/* The guide, the catalog app (CurseForge) and the downloads table side by side. */
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 	gap: var(--ds-sp-5);
 	margin: var(--ds-sp-5) var(--gp);
 }
@@ -530,7 +530,8 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 }
 
 .installation .install-way strong {
-	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
+	overflow-wrap: break-word;
+	font: 400 20px / 28px var(--f-ui);
 	text-shadow: var(--ds-text-shadow-2);
 }
 

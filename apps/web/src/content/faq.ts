@@ -26,7 +26,7 @@ function versionsAnswer(): FaqEntry {
 				? 'In beta: Minecraft Java {versions}, plus {experimental} as an experimental version.'
 				: 'In beta: Minecraft Java {versions}.',
 			'The most tested is {mostTested}.',
-			'1.12.2 and 1.16.5: not yet.',
+			'Not yet: 1.12.2 and 1.16.5.',
 		],
 		values: { versions, experimental, mostTested: mostTestedMinecraft },
 		link: { to: '/downloads', label: 'Downloads' },

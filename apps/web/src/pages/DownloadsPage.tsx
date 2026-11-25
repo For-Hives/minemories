@@ -23,7 +23,8 @@ function Cell({ cell, status, name }: { cell: GridCell; status: Status; name: st
 	if (!target)
 		return (
 			<td className="mm-dl-cell mm-dl-empty">
-				<span>{t('Not available for this version')}</span>
+				<span aria-hidden="true">—</span>
+				<span className="sr-only">{t('Not available for this version')}</span>
 			</td>
 		)
 	if (status === 'ready' && !(release && download))
