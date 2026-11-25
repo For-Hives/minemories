@@ -68,8 +68,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/downloads',
 		title: 'Download Minemories for Fabric, Forge and NeoForge',
-		description:
-			'The Minemories JAR for each supported Minecraft Java version and each loader, with the Java version it needs and its SHA-256 checksum.',
+		description: 'The Minemories mod file for each Minecraft Java version and loader, with the Java version it needs.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -86,16 +85,15 @@ const metadataMessages: PageMetadata[] = [
 		path: '/server-closing',
 		title: 'Minecraft server closing: keep your builds',
 		description:
-			'End of season, wipe, SMP closing: keep your base in 3D before it goes, with no admin rights and nothing to install on the server.',
+			'Keep your base in 3D before your server closes or wipes. No admin rights needed, nothing to install on the server.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
 	},
 	{
 		path: '/safety',
-		title: 'Is Minemories safe? Mod, children and privacy',
-		description:
-			'Where to download the mod, what goes online and when, who sees your child’s memories, how to delete everything.',
+		title: 'Minemories safety: the mod, children and privacy',
+		description: 'Where to get the mod, what goes online, who sees your child’s memories and how to delete everything.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -104,7 +102,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/guides/minecraft-blender',
 		title: 'Export a Minecraft build to Blender (GLB)',
 		description:
-			'Export an area of your Minecraft Java world as GLB from the game, textures and lights included, in multiplayer and with mods. Blender import step by step.',
+			'Export part of your Minecraft Java world as a GLB from the game, with textures and lights, in multiplayer and with mods. Then import it into Blender.',
 		indexable: true,
 		language: 'en',
 		articleDate: '2026-11-10',
@@ -113,7 +111,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/roadmap',
 		title: 'Roadmap · Minemories',
-		description: 'What the Minemories team is building right now and what’s coming next.',
+		description: 'What we’re building now, and what’s next.',
 		indexable: false,
 		language: 'en',
 	},
@@ -136,16 +134,16 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/terms',
 		title: 'Minemories terms of use',
-		description: 'The rules for this beta: keep your backups, and respect other players when you capture and share.',
+		description: 'The rules for this beta: keep your backups and respect other players.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
 	},
 	{
 		path: '/legal',
-		title: 'About Minemories and legal notice',
+		title: 'Minemories legal notice',
 		description:
-			'Who publishes Minemories, who hosts it and how to reach them: an independent project, not affiliated with Mojang or Microsoft.',
+			'Who publishes and hosts Minemories, and how to reach them. An independent project, not affiliated with Mojang or Microsoft.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-13',

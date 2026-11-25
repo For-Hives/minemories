@@ -34,7 +34,7 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).not.toContain('1.21.1 · NeoForge')
 	// the full trademark notice in the footer, and the connection path through the M menu
 	expect(html).toContain(
-		'Minemories n’est pas un produit officiel Minecraft. Ni approuvé par Mojang ou Microsoft, ni associé à eux.'
+		'Minemories n’est pas un produit officiel Minecraft. Pas approuvé par Mojang ni Microsoft, et sans lien avec eux.'
 	)
 	expect(html).not.toContain('/minemories pair')
 	for (const id of ['id="steps"', 'id="share"', 'id="faq"', 'id="words"']) expect(html, id).toContain(id)

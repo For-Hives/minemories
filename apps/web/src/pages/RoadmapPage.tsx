@@ -19,7 +19,7 @@ const columnTitles: Record<RoadmapColumnId, string> = {
 	inProgress: 'In progress',
 	planned: 'Planned',
 }
-const areaLabels: Record<RoadmapArea, string> = { mod: 'Mod', api: 'API', front: 'Website', socials: 'Socials' }
+const areaLabels: Record<RoadmapArea, string> = { mod: 'Mod', api: 'Server', front: 'Website', socials: 'Socials' }
 
 function RoadmapCard({ item, now }: { item: RoadmapItem; now: number }) {
 	const { locale, t } = useI18n()
@@ -76,15 +76,7 @@ export function RoadmapPage() {
 	const { locale, t } = useI18n()
 	const now = Date.now()
 	return (
-		<ContentLayout
-			title={t('Roadmap')}
-			lead={t('What we’re building right now and what’s coming next, straight from the project’s GitHub issues.')}
-		>
-			<p className="mm-roadmap-note">
-				<a className="mc-link" href={discordInviteUrl}>
-					{t('The same board is posted on the Minemories Discord.')}
-				</a>
-			</p>
+		<ContentLayout title={t('Roadmap')} lead={t('What we’re building now, and what’s next.')}>
 			{roadmap && (
 				<>
 					<p className="mm-roadmap-updated">
@@ -110,7 +102,12 @@ export function RoadmapPage() {
 			)}
 			<p className="mm-roadmap-source">
 				<a href={roadmapIssuesUrl} target="_blank" rel="noopener noreferrer">
-					{t('Every roadmap issue on GitHub ↗')}
+					{t('The full list on GitHub ↗')}
+				</a>
+			</p>
+			<p className="mm-roadmap-note">
+				<a className="mc-link" href={discordInviteUrl}>
+					{t('Also on our Discord →')}
 				</a>
 			</p>
 		</ContentLayout>

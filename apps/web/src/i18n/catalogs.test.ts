@@ -115,12 +115,8 @@ const germanPronounSie: Record<string, string> = {
 	'The CurseForge app is the simplest: it adds Fabric API on its own.': '“Sie fügt” refers to the CurseForge app.',
 	'It then goes to your gallery on its own.': '“Sie landet” refers to the capture.',
 	'It will show up here.': '“Sie erscheint” refers to the capture.',
-	'It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.':
-		'“Sie landet” refers to the memory.',
 	'End portals and End gateways are saved instead of leaving a hole, as a still image of the portal, on every supported Minecraft version.':
 		'“Sie erscheinen” refers to the portals.',
-	'Your players don’t get a playable copy of your world, just a 3D scene of their corner.':
-		'“Sie behalten” refers to the players.',
 }
 
 test('the German catalogue speaks to the player with “du”', async () => {

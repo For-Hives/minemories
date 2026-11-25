@@ -304,7 +304,7 @@ function LoaderNotes({ guide }: { guide: GuideState }) {
 			)}
 			{guide.minecraft === quiltTested.minecraft && (
 				<p>
-					<T message={'Quilt: take the Fabric JAR.'} />
+					<T message={'Quilt: use the Fabric file.'} />
 				</p>
 			)}
 		</>
@@ -398,7 +398,10 @@ export function StaticLoader() {
 			</p>
 			<p>
 				<T message={'On Fabric, add Fabric API.'} />{' '}
-				<T message={'In {minecraft}, Quilt works with the Fabric JAR.'} params={{ minecraft: quiltTested.minecraft }} />
+				<T
+					message={'In {minecraft}, Quilt works with the Fabric file.'}
+					params={{ minecraft: quiltTested.minecraft }}
+				/>
 			</p>
 		</>
 	)
@@ -626,7 +629,7 @@ export function DownloadStep({ target }: { target: LoaderTarget | null }) {
 			{target ? (
 				<>
 					<Goal>
-						<T message={'Download the Minemories JAR: the single file that adds the mod to your game.'} />
+						<T message={'It’s a single .jar file.'} />
 					</Goal>
 					<DownloadButton target={target} />
 					{target.fabricApi && (
@@ -646,7 +649,7 @@ export function DownloadStep({ target }: { target: LoaderTarget | null }) {
 					</OnlyIf>
 					<p>
 						<Rich
-							message={'Get the JAR that matches your version and loader: {downloads}.'}
+							message={'Take the file for your version and loader: {downloads}.'}
 							slots={{
 								downloads: (
 									<Link to="/downloads">
@@ -710,7 +713,7 @@ export function PlaceStep({
 					<T message={'No mods folder? Create one called mods, all lowercase.'} />
 				</li>
 				<li>
-					<T message={'Copy the JAR into it. Keep only one Minemories JAR: remove the old one when you update.'} />
+					<T message={'Drop the file in it. When you update, remove the old one.'} />
 				</li>
 			</ol>
 			<figure className="install-folder" aria-label={t('File location')}>
@@ -819,9 +822,7 @@ export function MemoryStep() {
 					<T message={'Without an account'} />
 				</summary>
 				<p>
-					<T
-						message={'Your memory stays as a GLB file in the export folder of your home folder. It opens in Blender.'}
-					/>
+					<T message={'Your memory stays on your computer, in the export folder. It opens in Blender.'} />
 				</p>
 				<ExportFolders />
 				<p>

@@ -80,16 +80,16 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 				},
 				{
 					heading: 'Capture and share',
-					body: 'Follow the server’s rules and respect the people whose builds appear in your captures. Check what’s in a memory before you share it.',
+					body: 'Follow the server’s rules and respect the people whose builds appear in your memories. Check what’s in a memory before you share it.',
 				},
 			],
 		},
 		legal: {
-			title: 'Who makes Minemories',
+			title: 'Legal notice',
 			sections: [
 				{
 					heading: 'Independent project',
-					body: 'Minemories is an independent project, not endorsed by Mojang or Microsoft. The code is public on GitHub; the mod is on the Downloads page.',
+					body: 'Minemories is an independent project, not endorsed by Mojang or Microsoft. Its code is public on GitHub.',
 				},
 			],
 		},

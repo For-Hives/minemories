@@ -52,14 +52,6 @@
 	text-shadow: var(--ds-text-shadow-1);
 }
 
-.mm-dl-table thead small {
-	display: block;
-	margin-top: var(--ds-sp-1);
-	color: var(--text-3);
-	font: 400 var(--ds-rd-fs-sm) / 1.2 var(--ds-f-text);
-	text-shadow: none;
-}
-
 /* The version stays visible while the loaders scroll. */
 .mm-dl-table tbody th {
 	position: sticky;
@@ -125,12 +117,6 @@
 	font-size: 12px;
 }
 
-.mm-dl-guide {
-	display: inline-block;
-	margin-top: var(--ds-sp-2);
-}
-
-.mm-dl-guide,
 .mm-dl-links a,
 .mm-dl-catalog a {
 	text-decoration: underline;

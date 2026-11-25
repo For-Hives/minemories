@@ -13,10 +13,10 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 	{
 		label: 'Product',
 		links: [
-			{ to: '/concept', label: 'What is Minemories?' },
+			{ to: '/concept', label: 'The concept' },
 			{ to: '/how-it-works', label: 'How it works' },
-			{ to: '/sharing', label: 'How do I share a link?' },
-			{ to: '/explore', label: 'See other players’ builds' },
+			{ to: '/sharing', label: 'Sharing' },
+			{ to: '/explore', label: 'Public gallery' },
 		],
 	},
 	{
@@ -24,7 +24,7 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 		links: [
 			{ to: '/installation', label: 'Install the mod' },
 			{ to: '/downloads', label: 'Downloads' },
-			{ to: '/server-closing', label: 'What if my server shuts down?' },
+			{ to: '/server-closing', label: 'Server shutting down?' },
 			{ to: '/guides/minecraft-blender', label: 'Open my build in Blender' },
 		],
 	},
@@ -32,10 +32,10 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 		label: 'Help',
 		links: [
 			{ to: '/faq', label: 'FAQ' },
-			{ to: '/safety', label: 'Is it safe?' },
+			{ to: '/safety', label: 'Safety' },
 			{ to: '/versions', label: 'What’s new' },
-			{ to: '/roadmap', label: 'What’s coming next' },
-			{ href: `${repositoryUrl}/issues`, label: 'Found a bug? Tell us on GitHub' },
+			{ to: '/roadmap', label: 'Roadmap' },
+			{ href: `${repositoryUrl}/issues`, label: 'Report a bug' },
 		],
 	},
 	{
@@ -43,7 +43,7 @@ export const footerGroups: Array<{ label: string; links: FooterLink[] }> = [
 		links: [
 			{ to: '/privacy', label: 'Privacy' },
 			{ to: '/terms', label: 'Terms' },
-			{ to: '/legal', label: 'About and legal notice' },
+			{ to: '/legal', label: 'Legal notice' },
 		],
 	},
 ]

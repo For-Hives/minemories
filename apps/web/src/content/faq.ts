@@ -177,7 +177,7 @@ export const questions = {
 			'If you have the world as a ZIP, open it in single player and take your memory there.',
 			'Without a copy, there’s nothing left to capture.',
 		],
-		link: { to: '/server-closing', label: 'What if my server shuts down?' },
+		link: { to: '/server-closing', label: 'Server shutting down?' },
 	},
 	connecter: {
 		question: 'How do I connect the game?',
@@ -232,7 +232,7 @@ export const questions = {
 			'Nobody, by default.',
 			'Only people with a link from your kid, or everyone if your kid makes a memory public and we accept it.',
 		],
-		link: { to: '/safety', label: 'Is it safe?' },
+		link: { to: '/safety', label: 'Safety' },
 	},
 	'tout-supprimer': {
 		question: 'How do I delete everything?',
@@ -240,7 +240,7 @@ export const questions = {
 			'A memory: from your gallery. It stays 30 days in the trash.',
 			'Your account: write to us through the legal notice, and we delete everything.',
 		],
-		link: { to: '/legal', label: 'About and legal notice' },
+		link: { to: '/legal', label: 'Legal notice' },
 	},
 	code: {
 		question: 'The code doesn’t work?',

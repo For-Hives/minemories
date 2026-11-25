@@ -6,7 +6,7 @@ import { CatalogCallout } from './CatalogCallout'
 import { ContentLayout } from './ContentPages'
 import { downloadGrid, type GridCell } from './downloads-grid'
 import { FaqLink } from './InfoPages'
-import { guideLink, versionBadge } from './installation-state'
+import { versionBadge } from './installation-state'
 import { latestDownloadUrl, quiltTested } from './mod-releases'
 import { useModReleases } from './useModReleases'
 import './downloads.css'
@@ -60,9 +60,6 @@ function Cell({ cell, status, name }: { cell: GridCell; status: Status; name: st
 					{name} {target.loaderVersion}
 				</span>
 			)}
-			<Link className="mm-dl-guide" to={guideLink(target)}>
-				<T message={'Guided installation'} />
-			</Link>
 		</td>
 	)
 }
@@ -73,7 +70,7 @@ export function DownloadsPage() {
 	const { releases, status, retry } = useModReleases()
 	const grid = downloadGrid(releases)
 	return (
-		<ContentLayout title={t('Download Minemories')} lead={t('One JAR per Minecraft version and loader.')}>
+		<ContentLayout title={t('Download Minemories')} lead={t('One file per Minecraft version and loader.')}>
 			<CatalogCallout />
 			<div className="mm-dl-scroll" aria-busy={status === 'loading'}>
 				<table className="mm-dl-table">
@@ -85,7 +82,6 @@ export function DownloadsPage() {
 							{grid.loaders.map(item => (
 								<th key={item.loader} scope="col">
 									{item.name}
-									{item.loader === 'fabric' && <small>+ Fabric API</small>}
 								</th>
 							))}
 						</tr>
@@ -123,18 +119,15 @@ export function DownloadsPage() {
 				</div>
 			)}
 			<p className="mm-dl-note">
-				{t('Install Fabric API separately. In {minecraft}, the Fabric JAR is also tested under Quilt {version}.', {
-					minecraft: quiltTested.minecraft,
-					version: quiltTested.loaderVersion,
-				})}{' '}
-				{t('Check your file: its SHA-256 checksum must match the one shown here.')}
+				{t('On Fabric, add Fabric API.')}{' '}
+				{t('In {minecraft}, Quilt works with the Fabric file.', { minecraft: quiltTested.minecraft })}
 			</p>
 			<p className="mm-dl-links">
 				<Link to="/installation">
-					<T message={'Not sure? The guide asks you two questions.'} />
+					<T message={'Not sure? Follow the guide.'} />
 				</Link>
 				<Link to="/versions">
-					<T message={'What’s new in Minemories'} />
+					<T message={'What’s new'} />
 				</Link>
 				<Link to="/safety#verifier">
 					<T message={'Check your file'} />

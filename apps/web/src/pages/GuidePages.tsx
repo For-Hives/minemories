@@ -57,10 +57,8 @@ function Announcement({ language }: { language: Locale }) {
 export function ServerClosingPage() {
 	const { locale, t } = useI18n()
 	return (
-		<InfoPage title="Your server is closing. Your base can stay.">
-			<p className="ex-lead">
-				{t('Capture it before it closes.')} {t('10 minutes to install, one key in your base.')} {t('No admin needed.')}
-			</p>
+		<InfoPage title="Keep your base before your server closes">
+			<p className="ex-lead">{t('Install the mod (10 minutes), go to your base and press M. No admin needed.')}</p>
 			<h2>{t('Your three options')}</h2>
 			<ol className="ex-steps">
 				<li>
@@ -74,7 +72,7 @@ export function ServerClosingPage() {
 				<li>
 					<h3>{t('Keep a 3D memory with Minemories')}</h3>
 					<p>
-						{t('Install the mod, go to your base, press M → Take a memory.')}{' '}
+						{t('Press M → Take a memory.')}{' '}
 						{t('Then open it in your browser and send your friends a link to walk around it.')}
 					</p>
 				</li>
@@ -89,12 +87,8 @@ export function ServerClosingPage() {
 			<section id="admin" className="ex-admin" aria-labelledby="admin-title">
 				<h2 id="admin-title">{t('Are you the admin?')}</h2>
 				<ul>
-					<li>
-						{t(
-							'Nothing to install on your side: the mod runs on the players’ computers and only reads what their game already shows.'
-						)}
-					</li>
-					<li>{t('Your players don’t get a playable copy of your world, just a 3D scene of their corner.')}</li>
+					<li>{t('You install nothing. The mod runs in each player’s game and only sees what they see.')}</li>
+					<li>{t('Players don’t get a playable copy of your world, only a 3D memory of their corner.')}</li>
 				</ul>
 				<h3>{t('An announcement to copy')}</h3>
 				{announcementLocales(locale).map(language => (
@@ -117,7 +111,7 @@ export function SafetyPage() {
 	const { t } = useI18n()
 	const curseForge = catalogLinks().find(link => link.name === 'CurseForge')
 	return (
-		<InfoPage title="Is Minemories safe?">
+		<InfoPage title="Safety">
 			<section className="ex-parents" aria-labelledby="parents-title">
 				<h2 id="parents-title">{t('For parents, in 5 lines')}</h2>
 				<ul>
@@ -138,7 +132,7 @@ export function SafetyPage() {
 			<section id="verifier" aria-labelledby="verifier-title">
 				<h2 id="verifier-title">{t('Download from the right place')}</h2>
 				<p>
-					{t('Only from this site or our CurseForge page.')} <Link to="/downloads">{`${t('Downloads')}\u00a0→`}</Link>
+					{t('Only from this site or CurseForge.')} <Link to="/downloads">{`${t('Downloads')}\u00a0→`}</Link>
 					{curseForge && (
 						<>
 							{' '}
@@ -177,16 +171,13 @@ export function SafetyPage() {
 						<tr>
 							<td>{t('Nothing')}</td>
 							<td>
+								<p>{t('Your memories, with when and where you took them. Only you see them.')}</p>
 								<p>
-									{t(
-										'Your memories, with their date, position, dimension, biome and weather, and the world name and seed (single player) or the server name or address and its icon. Only you see them.'
-									)}
+									{t('Error reports, with nothing personal in them.')}{' '}
+									{t('Turn them off in M → Settings → Privacy → Diagnostics.')}
 								</p>
 								<p>
-									{t(
-										'Cleaned-up error reports: at most 8 waiting, kept 7 days at most, without messages, paths, names, coordinates, seed or passwords.'
-									)}{' '}
-									{t('Turn them off in M → Settings → Privacy → Diagnostics.')}
+									<Link to="/privacy">{`${t('Privacy')}\u00a0→`}</Link>
 								</p>
 							</td>
 						</tr>
@@ -195,7 +186,7 @@ export function SafetyPage() {
 			</section>
 			<h2>{t('What someone with a link sees')}</h2>
 			<p>{t(linkWarning)}</p>
-			<p>{t('The 3D scene, its name and its date.')}</p>
+			<p>{t('The memory, its name and its date.')}</p>
 			<p>
 				{t('Stop sharing blocks new visits, not a copy already made.')} {t('Players nearby appear with their skin.')}{' '}
 				{t('Ask them before you share.')}
@@ -203,11 +194,11 @@ export function SafetyPage() {
 			<h2>{t('Delete everything')}</h2>
 			<p>
 				{t('A memory: from your gallery (30 days in the trash).')}{' '}
-				{t('Your account: write to us, the contact address is coming soon.')}{' '}
-				{t('We then delete the account, its memories, its links and its devices.')}
+				{t('Your account: write to us through the legal notice, and we delete everything.')}{' '}
+				<Link to="/legal">{`${t('Legal notice')}\u00a0→`}</Link>
 			</p>
 			<p className="ex-links">
-				<Link to="/privacy">{t('Privacy')}</Link> <Link to="/faq">{t('All questions')}</Link>
+				<Link to="/faq">{t('All questions')}</Link>
 			</p>
 		</InfoPage>
 	)
@@ -259,7 +250,7 @@ export function BlenderGuidePage() {
 					<h2>{t('2. Find the file')}</h2>
 					<p>
 						{t(
-							'It lands in the export folder of your home folder: capture.glb is the latest, and every dated memory is in history.'
+							'It lands in the export folder of your home folder. capture.glb is the latest, the others are in history.'
 						)}{' '}
 						{t('No account needed.')}
 					</p>

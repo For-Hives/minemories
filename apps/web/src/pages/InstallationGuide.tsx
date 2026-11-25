@@ -14,15 +14,15 @@ function Success({ onRestart }: { onRestart: () => void }) {
 			<span aria-hidden="true">✦</span>
 			<div>
 				<p>
-					<T message={'If it opens, you’re all set. Keep a world backup too: a 3D memory cannot resume your game.'} />
+					<T message={'It opens? You’re all set. Keep backing up your world: you can’t play in a memory.'} />
 				</p>
 				<p>
 					<Link to="/how-it-works">
-						<T message={'Explore captures, the gallery and sharing →'} />
+						<T message={'See how it works →'} />
 					</Link>
 				</p>
 				<button type="button" className="install-quiet" onClick={onRestart}>
-					<T message={'Start again and clear my choices'} />
+					<T message={'Start over'} />
 				</button>
 			</div>
 		</div>
@@ -112,9 +112,7 @@ export function InstallationGuide({
 				)}
 			</div>
 			<p className="install-caption">
-				<T
-					message={'Your choices and progress stay in this browser on this device. You can close this page and return.'}
-				/>
+				<T message={'Your progress is saved in this browser. You can close the page.'} />
 			</p>
 		</section>
 	)

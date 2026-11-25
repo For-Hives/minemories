@@ -10,7 +10,7 @@ import { buttonQuiet, fileInputHidden } from './ui'
 const legalLinks = [
 	{ to: '/privacy', label: 'Privacy' },
 	{ to: '/terms', label: 'Terms' },
-	{ to: '/legal', label: 'About and legal notice' },
+	{ to: '/legal', label: 'Legal notice' },
 ]
 function FileControl() {
 	const { setViewerFile } = useAppContext()
