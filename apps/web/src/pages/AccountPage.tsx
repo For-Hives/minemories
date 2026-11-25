@@ -1,30 +1,37 @@
 import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { authClient } from '../auth-client'
+import { AdminAccessLink } from '../components/AdminAccessLink'
 import { SocialSignIn } from '../components/SocialSignIn'
 import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
+import { avatarUrl } from '../lib/avatar'
+import { AccountProfile } from './AccountProfile'
+import { AvatarDialog } from './AvatarDialog'
 import { credentialChangeComplete } from './account-navigation'
 import './account.css'
-import { AdminAccessLink } from '../components/AdminAccessLink'
 
-type Kind = 'email' | 'password' | 'name' | 'head' | 'signInName'
+type Kind = 'email' | 'password' | 'name' | 'avatar'
 function errorCode(error: unknown): string {
 	return error !== null && typeof error === 'object' && 'message' in error ? String(error.message) : ''
 }
-/** Better Auth answers with `{ error }` instead of throwing: its code becomes the message accountError reads. */
-async function changeSignInName(username: string) {
-	// displayUsername keeps the capitals the player typed; username is the lowercased copy sign-in compares.
-	const result = await authClient.updateUser({ username, displayUsername: username })
+/**
+ * One name per account. With a password it is also the sign-in name (Better Auth's username plugin, see
+ * apps/api/src/sign-in-name.ts): one update writes the shown name, the lowercased `username` sign-in compares and
+ * `displayUsername` with the capitals typed. Better Auth answers with `{ error }`: its code becomes the message
+ * accountError reads. Accounts without a password sign in at their provider and keep a free display name.
+ */
+async function changeName(name: string, signsInWithName: boolean) {
+	if (!signsInWithName) {
+		await apiClient.account.changeName({ name })
+		return
+	}
+	const result = await authClient.updateUser({ name, username: name, displayUsername: name })
 	if (result.error) throw new Error(result.error.code ?? 'UPDATE_FAILED')
 }
-function requestChange(kind: Kind, data: FormData) {
-	if (kind === 'signInName') return changeSignInName(String(data.get('signInName') ?? '').trim())
-	if (kind === 'head')
-		return apiClient.account.setMinecraftHead({ username: String(data.get('username') ?? '').trim() })
-	if (kind === 'name') return apiClient.account.changeName({ name: String(data.get('name') ?? '').trim() })
+function requestChange(kind: Exclude<Kind, 'avatar'>, data: FormData, hasPassword: boolean) {
+	if (kind === 'name') return changeName(String(data.get('name') ?? '').trim(), hasPassword)
 	const currentPassword = String(data.get('currentPassword') ?? '')
 	if (kind === 'email')
 		return apiClient.account.changeEmail({ email: String(data.get('email') ?? '').trim(), currentPassword })
@@ -34,11 +41,6 @@ function passwordsMatch(kind: Kind, data: FormData): boolean {
 	return kind !== 'password' || data.get('newPassword') === data.get('confirmation')
 }
 type Translator = ReturnType<typeof useI18n>['t']
-const savedMessages = {
-	name: 'Display name saved.',
-	head: 'Minecraft head saved.',
-	signInName: 'Sign-in name saved.',
-} as const
 function accountError(cause: unknown, t: Translator): string {
 	const code = errorCode(cause)
 	if (code === 'CURRENT_PASSWORD_INVALID') return t('The current password is incorrect.')
@@ -56,6 +58,8 @@ export function AccountPage() {
 	const [success, setSuccess] = useState('')
 	const [hasPassword, setHasPassword] = useState(true)
 	const [linkedProviders, setLinkedProviders] = useState<string[]>([])
+	const [choosingAvatar, setChoosingAvatar] = useState(false)
+	const [editingName, setEditingName] = useState(false)
 	useEffect(() => {
 		let live = true
 		void authClient
@@ -79,17 +83,19 @@ export function AccountPage() {
 			alive.current = false
 		}
 	}, [])
-	async function complete(kind: Kind, form: HTMLFormElement) {
+	async function complete(kind: Exclude<Kind, 'avatar'>, form: HTMLFormElement) {
 		if (!alive.current) return
-		if (kind === 'name' || kind === 'head' || kind === 'signInName') {
+		if (kind === 'name') {
 			await refreshSession()
-			if (alive.current) setSuccess(t(savedMessages[kind]))
+			if (!alive.current) return
+			setEditingName(false)
+			setSuccess(t('Display name saved.'))
 			return
 		}
 		form.reset()
 		if (alive.current) credentialChangeComplete(kind)
 	}
-	async function submit(kind: Kind, event: SyntheticEvent<HTMLFormElement>) {
+	async function submit(kind: Exclude<Kind, 'avatar'>, event: SyntheticEvent<HTMLFormElement>) {
 		event.preventDefault()
 		if (busy.current) return
 		const form = event.currentTarget,
@@ -103,7 +109,7 @@ export function AccountPage() {
 		setError('')
 		setSuccess('')
 		try {
-			await requestChange(kind, data)
+			await requestChange(kind, data, hasPassword)
 			await complete(kind, form)
 		} catch (cause) {
 			if (!alive.current) return
@@ -113,33 +119,52 @@ export function AccountPage() {
 			if (alive.current) setPending(null)
 		}
 	}
-	async function removeHead() {
-		if (busy.current) return
+	/** Saves a head (`username`) or removes the avatar (`null`); rejects on failure so the dialog stays open. */
+	async function changeAvatar(username: string | null) {
+		if (busy.current) throw new Error('BUSY')
 		busy.current = true
-		setPending('head')
+		setPending('avatar')
 		setError('')
 		setSuccess('')
 		try {
-			await apiClient.account.setMinecraftHead({ username: null })
+			await apiClient.account.setMinecraftHead({ username })
 			await refreshSession()
-			if (alive.current) setSuccess(t('Picture removed.'))
+			if (alive.current) setSuccess(username === null ? t('Avatar removed.') : t('Avatar saved.'))
 		} catch (cause) {
 			if (alive.current) setError(accountError(cause, t))
+			throw cause
 		} finally {
 			busy.current = false
 			if (alive.current) setPending(null)
 		}
 	}
+	function closeAvatar() {
+		setChoosingAvatar(false)
+		setError('')
+	}
+	const avatar = session ? avatarUrl(session.user) : null
+	const name = session?.user.name ?? ''
 	return (
 		<section className="mm-content mm-account-page">
-			<header className="mm-account-heading">
-				<span className="mm-kicker">MINEMORIES / {t('MY ACCOUNT')}</span>
-				<h1>{t('Your space, your access.')}</h1>
-				<p>
-					{session?.user.name} · {session?.user.email}
-				</p>
-				<Link to="/gallery">← {t('Back to my gallery')}</Link>
-			</header>
+			<AccountProfile
+				name={name}
+				email={session?.user.email ?? ''}
+				avatar={avatar}
+				editingName={editingName}
+				signsInWithName={hasPassword}
+				pending={pending !== null}
+				pendingName={pending === 'name'}
+				onAvatar={() => setChoosingAvatar(true)}
+				onEditName={() => {
+					setSuccess('')
+					setEditingName(true)
+				}}
+				onCancelName={() => {
+					setError('')
+					setEditingName(false)
+				}}
+				onSaveName={event => void submit('name', event)}
+			/>
 			<p className="mm-account-note">
 				{hasPassword
 					? t(
@@ -147,7 +172,7 @@ export function AccountPage() {
 						)
 					: t('Manage your email and password with your sign-in provider.')}
 			</p>
-			{error && (
+			{error && !choosingAvatar && (
 				<p className="mm-account-error" role="alert">
 					{error}
 				</p>
@@ -155,89 +180,6 @@ export function AccountPage() {
 			{success && <p role="status">{success}</p>}
 			<AdminAccessLink />
 			<div className="mm-account-grid">
-				<section className="mm-account-card">
-					<h2>{t('Sign-in methods')}</h2>
-					<p>{t('Link a provider using the same email address to access this account on your next sign-in.')}</p>
-					{linkedProviders.map(provider => (
-						<p key={provider}>{provider === 'credential' ? t('Email and password') : provider} ✓</p>
-					))}
-					<SocialSignIn destination="/account" link linkedProviders={linkedProviders} />
-				</section>
-				<form className="mm-account-card" aria-labelledby="name-heading" onSubmit={event => void submit('name', event)}>
-					<h2 id="name-heading">{t('Profile')}</h2>
-					<label>
-						{t('Display name')}
-						<input
-							className="mc-field"
-							name="name"
-							autoComplete="nickname"
-							defaultValue={session?.user.name}
-							required
-							minLength={1}
-							maxLength={80}
-							disabled={pending !== null}
-						/>
-					</label>
-					<button className={buttonLime} type="submit" disabled={pending !== null}>
-						{pending === 'name' ? t('Saving…') : t('Save display name')}
-					</button>
-				</form>
-				{hasPassword && (
-					<form
-						className="mm-account-card"
-						aria-labelledby="sign-in-name-heading"
-						onSubmit={event => void submit('signInName', event)}
-					>
-						<h2 id="sign-in-name-heading">{t('Sign-in name')}</h2>
-						<p>{t('Type it instead of your email when you sign in.')}</p>
-						<label>
-							{t('Sign-in name')}
-							<input
-								className="mc-field"
-								name="signInName"
-								autoComplete="username"
-								pattern="\w{3,16}"
-								minLength={3}
-								maxLength={16}
-								required
-								spellCheck={false}
-								defaultValue={session?.user.displayUsername ?? ''}
-								disabled={pending !== null}
-							/>
-						</label>
-						<button className={buttonLime} type="submit" disabled={pending !== null}>
-							{pending === 'signInName' ? t('Saving…') : t('Save sign-in name')}
-						</button>
-					</form>
-				)}
-				<form className="mm-account-card" aria-labelledby="head-heading" onSubmit={event => void submit('head', event)}>
-					<h2 id="head-heading">{t('Minecraft head')}</h2>
-					<p>
-						{t('Use the head of your Minecraft skin as your picture. Only your username is sent, to head.sttr.io.')}
-					</p>
-					<label>
-						{t('Minecraft username')}
-						<input
-							className="mc-field"
-							name="username"
-							autoComplete="off"
-							pattern="\w{3,16}"
-							minLength={3}
-							maxLength={16}
-							required
-							spellCheck={false}
-							disabled={pending !== null}
-						/>
-					</label>
-					<button className={buttonLime} type="submit" disabled={pending !== null}>
-						{pending === 'head' ? t('Saving…') : t('Use my Minecraft head')}
-					</button>
-					{session?.user.image && (
-						<button type="button" disabled={pending !== null} onClick={() => void removeHead()}>
-							{t('Remove my picture')}
-						</button>
-					)}
-				</form>
 				{hasPassword && (
 					<>
 						<form
@@ -333,7 +275,26 @@ export function AccountPage() {
 						</form>
 					</>
 				)}
+				<section className="mm-account-card mm-account-card--wide">
+					<h2>{t('Sign-in methods')}</h2>
+					<p>{t('Link a provider using the same email address to access this account on your next sign-in.')}</p>
+					{linkedProviders.map(provider => (
+						<p key={provider}>{provider === 'credential' ? t('Email and password') : provider} ✓</p>
+					))}
+					<SocialSignIn destination="/account" link linkedProviders={linkedProviders} />
+				</section>
 			</div>
+			{choosingAvatar && (
+				<AvatarDialog
+					current={avatar}
+					initial={name.slice(0, 1).toUpperCase()}
+					busy={pending === 'avatar'}
+					error={error}
+					onSave={username => changeAvatar(username)}
+					onRemove={() => changeAvatar(null)}
+					onClose={closeAvatar}
+				/>
+			)}
 		</section>
 	)
 }

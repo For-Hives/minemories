@@ -153,6 +153,253 @@
 	text-shadow: var(--ds-text-shadow-1);
 }
 
+/* The head in an inventory slot; the name's initial shows through when there is no head. */
+.mm-avatar-preview {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 64px;
+	height: 64px;
+	flex: none;
+	overflow: hidden;
+	background: var(--slot);
+	color: var(--ember);
+	font: 400 var(--ds-fs-h3) / 1 var(--f-ui);
+	text-shadow: none;
+	text-decoration: none;
+	box-shadow:
+		inset var(--gp) var(--gp) 0 var(--slot-lo),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
+}
+.mm-avatar-preview img {
+	position: absolute;
+	inset: calc(2 * var(--gp));
+	width: calc(100% - 4 * var(--gp));
+	height: calc(100% - 4 * var(--gp));
+	image-rendering: pixelated;
+}
+
+/* Profile: a large avatar slot (a button that opens the avatar dialog) beside the name, the email and the way back. */
+.mm-account-profile {
+	display: flex;
+	align-items: center;
+	gap: var(--ds-sp-6);
+	margin-top: var(--ds-sp-5);
+}
+.mm-account-identity {
+	display: grid;
+	justify-items: start;
+	gap: var(--ds-sp-2);
+	flex: 1;
+	min-width: 0;
+}
+.mm-account-heading .mm-account-identity h1 {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+.mm-account-name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: var(--ds-sp-4);
+}
+.mm-account-name-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ds-sp-3);
+	width: min(720px, 100%);
+}
+.mm-account-name-form input {
+	--_h: calc(24 * var(--gp));
+	flex: 1 1 240px;
+	min-width: 0;
+	font: 400 var(--ds-fs-h3) / 1 var(--ds-f-text);
+}
+.mm-account-name-actions {
+	display: flex;
+	gap: var(--ds-sp-3);
+}
+.mm-account-name-actions .mm-button {
+	--_h: calc(24 * var(--gp));
+}
+
+.mm-account-heading .mm-account-hint {
+	flex-basis: 100%;
+	font-size: var(--ds-rd-fs-sm);
+	color: var(--text-3);
+}
+
+/* Text button with the page's link look (the name's "Edit"). */
+.mm-account-link {
+	min-height: var(--ds-hit);
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--text);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	text-decoration: underline;
+	text-decoration-color: var(--text-3);
+	text-shadow: var(--ds-text-shadow-1);
+	cursor: pointer;
+}
+.mm-account-link:hover:not(:disabled) {
+	color: var(--ember);
+	text-decoration-color: var(--ember);
+}
+.mm-account-link:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+
+.mm-account-avatar-button {
+	position: relative;
+	flex: none;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+.mm-account-avatar-button .mm-avatar-preview {
+	width: 128px;
+	height: 128px;
+	font-size: 64px;
+}
+.mm-account-avatar-button:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: var(--ds-focus-offset);
+}
+.mm-account-avatar-button:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+/* The pencil: a small stone button on the slot's corner, ember when the avatar is hovered. */
+.mm-account-avatar-badge {
+	position: absolute;
+	right: calc(-3 * var(--gp));
+	bottom: calc(-3 * var(--gp));
+	display: grid;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	background: var(--slot-hi);
+	color: #1b1714;
+	font: 400 20px / 1 var(--f-ui);
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		inset var(--gp) var(--gp) 0 rgb(255 255 255 / 0.35),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 rgb(0 0 0 / 0.35);
+}
+.mm-account-avatar-button:hover:not(:disabled) .mm-account-avatar-badge {
+	background: var(--ember);
+}
+.mm-account-avatar-button:hover:not(:disabled) .mm-avatar-preview {
+	box-shadow:
+		0 0 0 var(--gp) var(--ember),
+		inset var(--gp) var(--gp) 0 var(--slot-lo),
+		inset calc(-1 * var(--gp)) calc(-1 * var(--gp)) 0 var(--slot-hi);
+}
+
+/* Sign-in methods spans the grid under the email and password cards. */
+.mm-account-card--wide {
+	grid-column: 1 / -1;
+}
+
+/* Avatar dialog: a night panel centred over a veil. */
+.mm-avatar-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: var(--ds-z-modal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--ds-sp-4);
+	background: rgb(10 8 6 / 0.72);
+}
+.mm-avatar-backdrop-hit {
+	position: absolute;
+	inset: 0;
+	border: 0;
+	background: transparent;
+	cursor: default;
+}
+.mm-avatar-dialog {
+	position: relative;
+	display: grid;
+	gap: var(--ds-sp-4);
+	width: min(560px, 100%);
+	max-height: 100%;
+	overflow-y: auto;
+	padding: var(--ds-sp-6);
+	background: var(--app-panel);
+	color: var(--text);
+	outline: 0;
+	box-shadow:
+		0 0 0 var(--gp) var(--outline),
+		var(--ds-panel-bevel);
+}
+.mm-avatar-dialog:focus-visible {
+	outline: var(--ds-focus);
+	outline-offset: calc(-3 * var(--gp));
+}
+.mm-avatar-title {
+	margin: 0;
+	font-family: var(--f-title);
+	font-weight: 400;
+	letter-spacing: 0;
+	color: var(--text);
+	font-size: var(--ds-fs-h3);
+	line-height: var(--ds-lh-h3);
+	text-shadow: var(--ds-text-shadow-2);
+}
+.mm-avatar-dialog p {
+	margin: 0;
+	color: var(--text-2);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh) var(--ds-f-text);
+}
+.mm-avatar-form {
+	display: grid;
+	gap: var(--ds-sp-4);
+}
+.mm-avatar-dialog-preview {
+	justify-self: center;
+	width: 96px;
+	height: 96px;
+	font-size: 48px;
+}
+.mm-avatar-form label {
+	display: grid;
+	gap: var(--ds-sp-2);
+	font: 400 var(--ds-fs-xs) / 18px var(--f-ui);
+	color: var(--text);
+	text-shadow: var(--ds-text-shadow-1);
+}
+.mm-avatar-form input {
+	--_h: calc(24 * var(--gp));
+	width: 100%;
+	font: 400 var(--ds-fs-md) / 1 var(--ds-f-text);
+	text-shadow: none;
+}
+.mm-avatar-form .mm-account-error {
+	margin: 0;
+}
+.mm-avatar-dialog .mm-avatar-note {
+	font-size: var(--ds-fs-xs);
+	color: var(--text-3);
+}
+.mm-avatar-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--ds-sp-3);
+}
+.mm-avatar-actions .mm-button {
+	--_h: calc(24 * var(--gp));
+}
+.mm-avatar-actions .mm-avatar-remove {
+	margin-right: auto;
+}
+
 /* Entry to the administration (AdminAccessLink): the kit's stone button. */
 .mm-admin-entry.mc-btn {
 	margin: var(--ds-sp-2) 0;
@@ -169,6 +416,28 @@
 		align-self: stretch;
 		width: 100%;
 	}
+	.mm-avatar-dialog {
+		padding: var(--ds-sp-5) var(--ds-sp-4);
+	}
+	.mm-account-profile {
+		gap: var(--ds-sp-4);
+	}
+	.mm-account-avatar-button .mm-avatar-preview {
+		width: 88px;
+		height: 88px;
+		font-size: 48px;
+	}
+	.mm-account-avatar-badge {
+		width: 28px;
+		height: 28px;
+		font-size: 16px;
+	}
+	.mm-avatar-actions .mm-button {
+		flex: 1 1 100%;
+	}
+	.mm-avatar-actions .mm-avatar-remove {
+		margin-right: 0;
+	}
 }
 
 /* Unifont (ko/ja) only stays sharp at multiples of 16 px: the slot's 24 px symbol grows to 32 px (the slot is 48 px). */
@@ -180,7 +449,9 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-account-symbol {
 	.mm-account-card,
 	.mm-account-note,
 	.mm-account-error,
-	.mm-account-symbol {
+	.mm-account-symbol,
+	.mm-avatar-dialog,
+	.mm-avatar-preview {
 		border: 1px solid CanvasText;
 	}
 }

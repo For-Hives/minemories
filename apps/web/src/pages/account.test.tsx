@@ -43,6 +43,7 @@ vi.mock('../auth-client', () => ({
 vi.mock('./account-navigation', () => ({ credentialChangeComplete: mocks.complete }))
 beforeEach(() => {
 	vi.clearAllMocks()
+	vi.mocked(authClient.updateUser).mockResolvedValue({ data: { status: true }, error: null } as never)
 	mocks.image.value = null
 	mocks.head.mockResolvedValue({ ok: true })
 	localStorage.clear()
@@ -140,15 +141,52 @@ test('an obsolete mutation response does not navigate after leaving the account 
 	expect(mocks.complete).not.toHaveBeenCalled()
 })
 
-test('display name is trimmed, saved and refreshes the visible session without signing out', async () => {
+test('the name is edited in place and is also the sign-in name: one update, with its capitals', async () => {
 	page()
-	const form = screen.getByRole('form', { name: 'Profil' })
-	fill(form, 'Pseudo', '  Nouveau pseudo  ')
+	expect(screen.getByRole('heading', { level: 1, name: 'Tester' })).toBeTruthy()
+	expect(screen.getByText('Tu te connectes avec ce pseudo ou ton e-mail.')).toBeTruthy()
+	expect(screen.queryByRole('textbox', { name: 'Pseudo' })).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	const form = screen.getByRole('form', { name: 'Pseudo' })
+	expect(document.activeElement).toBe(within(form).getByRole('textbox', { name: 'Pseudo' }))
+	expect(within(form).getByText('Un pseudo Minecraft a 3 à 16 lettres, chiffres ou _.')).toBeTruthy()
+	fill(form, 'Pseudo', '  Diablox  ')
 	fireEvent.submit(form)
-	await waitFor(() => expect(mocks.name).toHaveBeenCalledWith({ name: 'Nouveau pseudo' }))
+	await waitFor(() =>
+		expect(authClient.updateUser).toHaveBeenCalledWith({
+			name: 'Diablox',
+			username: 'Diablox',
+			displayUsername: 'Diablox',
+		})
+	)
 	await screen.findByText('Pseudo enregistré.')
+	expect(mocks.name).not.toHaveBeenCalled()
 	expect(mocks.refresh).toHaveBeenCalledOnce()
 	expect(mocks.complete).not.toHaveBeenCalled()
+	expect(screen.queryByRole('form', { name: 'Pseudo' })).toBeNull()
+})
+
+test('Escape or Cancel leaves the name edit without saving', () => {
+	page()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	fireEvent.keyDown(screen.getByRole('textbox', { name: 'Pseudo' }), { key: 'Escape' })
+	expect(screen.queryByRole('form', { name: 'Pseudo' })).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	fireEvent.keyDown(screen.getByRole('textbox', { name: 'Pseudo' }), { key: 'a' })
+	expect(screen.getByRole('form', { name: 'Pseudo' })).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+	expect(screen.queryByRole('form', { name: 'Pseudo' })).toBeNull()
+	expect(authClient.updateUser).not.toHaveBeenCalled()
+})
+
+test('a failed name change keeps the field open with a safe error', async () => {
+	vi.mocked(authClient.updateUser).mockRejectedValue(new Error('private details'))
+	page()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	fireEvent.submit(screen.getByRole('form', { name: 'Pseudo' }))
+	await screen.findByRole('alert')
+	expect(screen.queryByText('private details')).toBeNull()
+	expect(screen.getByRole('form', { name: 'Pseudo' })).toBeTruthy()
 })
 
 test('social accounts manage credentials at their provider and retain display-name editing', async () => {
@@ -169,45 +207,77 @@ test('social accounts manage credentials at their provider and retain display-na
 	page()
 	await screen.findByText('Ton e-mail et ton mot de passe se gèrent auprès de ton fournisseur de connexion.')
 	expect(screen.queryByRole('form', { name: 'Mot de passe' })).toBeNull()
-	expect(screen.getByRole('form', { name: 'Profil' })).toBeTruthy()
+	expect(screen.queryByText('Tu te connectes avec ce pseudo ou ton e-mail.')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	const form = screen.getByRole('form', { name: 'Pseudo' })
+	expect(within(form).queryByText('Un pseudo Minecraft a 3 à 16 lettres, chiffres ou _.')).toBeNull()
+	fill(form, 'Pseudo', '  Jean Dupont ')
+	fireEvent.submit(form)
+	await waitFor(() => expect(mocks.name).toHaveBeenCalledWith({ name: 'Jean Dupont' }))
+	expect(authClient.updateUser).not.toHaveBeenCalled()
 })
 
-test('the Minecraft head is saved from the username and can be removed once set', async () => {
+test('the avatar dialog previews the typed Minecraft head, then saves it', async () => {
 	page()
-	expect(screen.queryByRole('button', { name: 'Retirer ma photo' })).toBeNull()
-	const form = screen.getByRole('form', { name: 'Tête Minecraft' })
-	fill(form, 'Pseudo Minecraft', '  Notch ')
-	fireEvent.submit(form)
+	expect(screen.queryByText('Tester · tester@example.com')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Changer d’avatar' }))
+	const dialog = screen.getByRole('dialog', { name: 'Avatar' })
+	expect(within(dialog).queryByRole('button', { name: 'Retirer l’avatar' })).toBeNull()
+	const save = within(dialog).getByRole('button', { name: 'Enregistrer l’avatar' }) as HTMLButtonElement
+	expect(save.disabled).toBe(true)
+	fireEvent.change(within(dialog).getByLabelText('Compte Minecraft'), { target: { value: '  Notch ' } })
+	const preview = (await within(dialog).findByRole('img', { name: 'Aperçu de l’avatar' })) as HTMLImageElement
+	expect(preview.src).toBe('https://head.sttr.io/face/Notch')
+	expect(save.disabled).toBe(false)
+	fireEvent.submit(within(dialog).getByRole('form', { name: 'Avatar' }))
 	await waitFor(() => expect(mocks.head).toHaveBeenCalledWith({ username: 'Notch' }))
-	await screen.findByText('Tête Minecraft enregistrée.')
+	await screen.findByText('Avatar enregistré.')
 	expect(mocks.refresh).toHaveBeenCalledOnce()
-	cleanup()
+	expect(screen.queryByRole('dialog')).toBeNull()
+})
+test('an invalid name shows no preview, and Cancel closes the dialog', async () => {
+	page()
+	fireEvent.click(screen.getByRole('button', { name: 'Changer d’avatar' }))
+	const dialog = screen.getByRole('dialog', { name: 'Avatar' })
+	fireEvent.change(within(dialog).getByLabelText('Compte Minecraft'), { target: { value: 'a b' } })
+	await new Promise(resolve => setTimeout(resolve, 450))
+	expect(within(dialog).queryByRole('img')).toBeNull()
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }))
+	expect(screen.queryByRole('dialog')).toBeNull()
+	expect(mocks.head).not.toHaveBeenCalled()
+})
+test('the current avatar can be removed from the dialog', async () => {
 	mocks.image.value = 'https://head.sttr.io/face/Notch'
 	page()
-	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Changer d’avatar' }))
+	const dialog = screen.getByRole('dialog', { name: 'Avatar' })
+	expect((within(dialog).getByRole('img', { name: 'Aperçu de l’avatar' }) as HTMLImageElement).src).toBe(
+		'https://head.sttr.io/face/Notch'
+	)
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Retirer l’avatar' }))
 	await waitFor(() => expect(mocks.head).toHaveBeenLastCalledWith({ username: null }))
-	await screen.findByText('Photo retirée.')
+	await screen.findByText('Avatar retiré.')
+	expect(screen.queryByRole('dialog')).toBeNull()
 })
-test('a failed picture removal shows a safe error', async () => {
+test('a failed avatar change keeps the dialog open with a safe error', async () => {
 	mocks.image.value = 'https://head.sttr.io/face/Notch'
 	mocks.head.mockRejectedValue(new Error('private details'))
 	page()
-	fireEvent.click(screen.getByRole('button', { name: 'Retirer ma photo' }))
-	await screen.findByRole('alert')
+	fireEvent.click(screen.getByRole('button', { name: 'Changer d’avatar' }))
+	const dialog = screen.getByRole('dialog', { name: 'Avatar' })
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Retirer l’avatar' }))
+	await within(dialog).findByRole('alert')
 	expect(screen.queryByText('private details')).toBeNull()
+	expect(screen.getByRole('dialog', { name: 'Avatar' })).toBeTruthy()
+	fireEvent.keyDown(document, { key: 'Escape' })
+	expect(screen.queryByRole('alert')).toBeNull()
 })
 
-test('the sign-in name is saved with its capitals, and a taken or invalid one is explained', async () => {
-	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: { status: true }, error: null } as never)
+test('a taken or invalid sign-in name is explained', async () => {
 	page()
-	const form = await screen.findByRole('form', { name: 'Pseudo de connexion' })
-	const field = within(form).getByLabelText('Pseudo de connexion') as HTMLInputElement
-	expect(field.value).toBe('Tester_1')
-	fireEvent.change(field, { target: { value: ' Diablox ' } })
-	fireEvent.submit(form)
-	expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Pseudo de connexion enregistré.')
-	expect(authClient.updateUser).toHaveBeenCalledWith({ username: 'Diablox', displayUsername: 'Diablox' })
-	expect(mocks.refresh).toHaveBeenCalledOnce()
+	fireEvent.click(screen.getByRole('button', { name: 'Modifier le pseudo' }))
+	const form = screen.getByRole('form', { name: 'Pseudo' })
+	fill(form, 'Pseudo', 'Diablox')
 	vi.mocked(authClient.updateUser).mockResolvedValueOnce({
 		data: null,
 		error: { code: 'USERNAME_IS_ALREADY_TAKEN' },
@@ -225,4 +295,5 @@ test('the sign-in name is saved with its capitals, and a taken or invalid one is
 	vi.mocked(authClient.updateUser).mockResolvedValueOnce({ data: null, error: {} } as never)
 	fireEvent.submit(form)
 	await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Modification impossible'))
+	expect(screen.getByRole('form', { name: 'Pseudo' })).toBeTruthy()
 })
