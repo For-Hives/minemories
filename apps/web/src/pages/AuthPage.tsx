@@ -119,7 +119,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 					</nav>
 					<header className="auth-heading">
 						<h1>{creating ? t('Your gallery starts here') : t('Good to see you again')}</h1>
-						{creating && <p>{t('Your memories land here once the game is connected. You choose who sees them.')}</p>}
+						{creating && <p>{t('Your memories land here once the game is connected.')}</p>}
 					</header>
 					<SocialSignIn destination={from} />
 					{!creating && <CredentialsNotice />}
@@ -220,7 +220,7 @@ function CredentialsNotice() {
 	if (updated !== 'email' && updated !== 'password') return null
 	return (
 		<p role="status" className="auth-notice">
-			{t('Credentials updated. Sign in again to continue.')}
+			{t('Saved. Sign in again.')}
 		</p>
 	)
 }

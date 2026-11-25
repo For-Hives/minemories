@@ -714,10 +714,6 @@ h2.cinema-panel-title {
 	text-shadow: var(--ds-text-shadow-3);
 	text-wrap: balance;
 }
-.cinema-empty h2 em {
-	color: var(--ember);
-	font-style: normal;
-}
 .cinema-empty p {
 	max-width: 400px;
 	margin: 0 0 var(--ds-sp-6);
@@ -1317,11 +1313,6 @@ html[data-mc-font="read"]
 	flex-wrap: wrap;
 	gap: var(--ds-sp-2);
 	margin-top: var(--ds-sp-2);
-}
-.viewer-cover small {
-	display: block;
-	margin-top: var(--ds-sp-2);
-	color: var(--text-2);
 }
 
 /* Flight: speed notice, controls panel, touch stick and climb buttons. */

@@ -34,7 +34,7 @@ test('forgot password sends what was typed on the sign-in page, then answers the
 		email: 'Diablox',
 		redirectTo: `${window.location.origin}/login/reset`,
 	})
-	expect(screen.getByRole('status').textContent).toContain('The link works for one hour.')
+	expect(screen.getByRole('status').textContent).toContain('It works for one hour.')
 	expect(screen.getByRole('link', { name: '← Back to sign-in' }).getAttribute('href')).toBe('/login')
 })
 

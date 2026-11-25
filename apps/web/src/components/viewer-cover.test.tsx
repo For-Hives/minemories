@@ -53,8 +53,8 @@ function mount(memoryId: string | null = 'frame-1') {
 }
 
 function open() {
-	fireEvent.click(screen.getByRole('button', { name: 'Server picture' }))
-	return screen.getByRole('region', { name: 'Your server’s picture' })
+	fireEvent.click(screen.getByRole('button', { name: 'Cover' }))
+	return screen.getByRole('region', { name: 'Cover' })
 }
 
 test('the view on screen shows as the gallery card and the public card, named as the server, then is saved', async () => {
@@ -66,19 +66,19 @@ test('the view on screen shows as the gallery card and the public card, named as
 	const name = (await within(panel).findByDisplayValue('Lalaland')) as HTMLInputElement
 	expect(within(panel).getAllByText('Lalaland')).toHaveLength(2)
 	// Typed as the game names it, the server keeps the game's name (no rename).
-	fireEvent.click(within(panel).getByRole('button', { name: 'Use this picture' }))
+	fireEvent.click(within(panel).getByRole('button', { name: 'Use as cover' }))
 	await waitFor(() => expect(api.setCover).toHaveBeenCalledWith({ id: 'frame-1', image: shot('A'), name: null }))
-	expect(await screen.findByText('Saved: this view is now your server’s picture.')).toBeTruthy()
-	expect(screen.queryByRole('region', { name: 'Your server’s picture' })).toBeNull()
+	expect(await screen.findByText('Cover saved.')).toBeTruthy()
+	expect(screen.queryByRole('region', { name: 'Cover' })).toBeNull()
 	// A new name and a retaken view after moving the camera.
 	const again = open()
 	await within(again).findByDisplayValue('Lalaland')
-	fireEvent.change(within(again).getByLabelText('Server name'), { target: { value: '  Our town ' } })
+	fireEvent.change(within(again).getByLabelText('World name'), { target: { value: '  Our town ' } })
 	expect(within(again).getAllByText('Our town')).toHaveLength(2)
 	snapshot.mockReturnValue(shot('B'))
-	fireEvent.click(within(again).getByRole('button', { name: 'Retake from this view' }))
+	fireEvent.click(within(again).getByRole('button', { name: 'Retake' }))
 	expect(again.querySelector('img')?.getAttribute('src')).toBe(shot('B'))
-	fireEvent.click(within(again).getByRole('button', { name: 'Use this picture' }))
+	fireEvent.click(within(again).getByRole('button', { name: 'Use as cover' }))
 	await waitFor(() =>
 		expect(api.setCover).toHaveBeenLastCalledWith({ id: 'frame-1', image: shot('B'), name: 'Our town' })
 	)
@@ -90,18 +90,18 @@ test('a failed save keeps the panel with a message; Escape and the cross close i
 	let panel = open()
 	await within(panel).findByDisplayValue('Lalaland')
 	api.setCover.mockRejectedValueOnce(new Error('offline'))
-	fireEvent.click(within(panel).getByRole('button', { name: 'Use this picture' }))
-	expect(await within(panel).findByText('Could not save the picture. Try again.')).toBeTruthy()
-	expect(within(panel).getByRole('button', { name: 'Use this picture' }).hasAttribute('disabled')).toBe(false)
+	fireEvent.click(within(panel).getByRole('button', { name: 'Use as cover' }))
+	expect(await within(panel).findByText('Could not save the cover. Try again.')).toBeTruthy()
+	expect(within(panel).getByRole('button', { name: 'Use as cover' }).hasAttribute('disabled')).toBe(false)
 	fireEvent.keyDown(window, { key: 'Escape' })
-	expect(screen.queryByRole('region', { name: 'Your server’s picture' })).toBeNull()
+	expect(screen.queryByRole('region', { name: 'Cover' })).toBeNull()
 	panel = open()
 	fireEvent.click(within(panel).getByRole('button', { name: 'Close' }))
-	expect(screen.queryByRole('region', { name: 'Your server’s picture' })).toBeNull()
+	expect(screen.queryByRole('region', { name: 'Cover' })).toBeNull()
 	// Opening Atmosphere or Share closes it, and the reverse.
 	open()
 	fireEvent.click(screen.getByRole('button', { name: 'Atmosphere' }))
-	expect(screen.queryByRole('region', { name: 'Your server’s picture' })).toBeNull()
+	expect(screen.queryByRole('region', { name: 'Cover' })).toBeNull()
 })
 
 test('without a profile the name is only sent when typed; a view that cannot be captured cannot be saved', async () => {
@@ -109,23 +109,21 @@ test('without a profile the name is only sent when typed; a view that cannot be 
 	const { snapshot } = mount()
 	let panel = open()
 	await act(async () => undefined)
-	fireEvent.click(within(panel).getByRole('button', { name: 'Use this picture' }))
+	fireEvent.click(within(panel).getByRole('button', { name: 'Use as cover' }))
 	await waitFor(() => expect(api.setCover).toHaveBeenCalledWith({ id: 'frame-1', image: shot('A') }))
 	panel = open()
-	fireEvent.change(within(panel).getByLabelText('Server name'), { target: { value: 'Typed' } })
-	fireEvent.click(within(panel).getByRole('button', { name: 'Use this picture' }))
+	fireEvent.change(within(panel).getByLabelText('World name'), { target: { value: 'Typed' } })
+	fireEvent.click(within(panel).getByRole('button', { name: 'Use as cover' }))
 	await waitFor(() => expect(api.setCover).toHaveBeenLastCalledWith({ id: 'frame-1', image: shot('A'), name: 'Typed' }))
 	snapshot.mockReturnValue(null as unknown as string)
 	panel = open()
-	expect(within(panel).getByRole('alert').textContent).toBe(
-		'This view could not be captured. Move the camera, then retake.'
-	)
-	expect(within(panel).getByRole('button', { name: 'Use this picture' }).hasAttribute('disabled')).toBe(true)
+	expect(within(panel).getByRole('alert').textContent).toBe('Could not take this view. Move the camera and retake.')
+	expect(within(panel).getByRole('button', { name: 'Use as cover' }).hasAttribute('disabled')).toBe(true)
 })
 
 test('only the owner of a capture gets the button', () => {
 	mount(null)
-	expect(screen.queryByRole('button', { name: 'Server picture' })).toBeNull()
+	expect(screen.queryByRole('button', { name: 'Cover' })).toBeNull()
 })
 
 test('a busy view is saved at a lower quality until it fits, or not at all', () => {

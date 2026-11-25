@@ -122,10 +122,10 @@ function useTrashActions(
 			await apiClient.memories.trash({ id })
 			track('capture-trash')
 			if (!active.current) return
-			notify('Snapshot moved to trash. It disappears forever after 30 days.')
+			notify('Moved to trash.')
 			await refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(errorMessageKey(error, 'Could not trash this snapshot.'))
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not move this memory to the trash.'))
 		}
 	}
 
@@ -136,7 +136,7 @@ function useTrashActions(
 			if (!active.current) return
 			await refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(errorMessageKey(error, 'Could not restore this snapshot.'))
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not restore this memory.'))
 		}
 	}
 
@@ -148,11 +148,11 @@ function useTrashActions(
 			track('capture-delete')
 			if (!active.current) return
 			dropFromTrash(id)
-			notify('Snapshot deleted forever.')
+			notify('Memory deleted forever.')
 			// The card is already gone: the lists and the storage figure catch up without holding anything back.
 			void refreshAll()
 		} catch (error) {
-			if (active.current) setLoadError(errorMessageKey(error, 'Could not delete this snapshot.'))
+			if (active.current) setLoadError(errorMessageKey(error, 'Could not delete this memory.'))
 		} finally {
 			if (active.current) markDeleting(id, false)
 		}

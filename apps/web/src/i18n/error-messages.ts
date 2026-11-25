@@ -33,15 +33,15 @@ export const stableErrorMessages: Record<string, string> = Object.fromEntries(
 		'Email already used',
 		'Choose a .glb file',
 		'A model is already loading',
-		'Could not read this GLB',
+		'Could not read this 3D file.',
 		'Invalid GLB',
-		'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.',
+		'This 3D file is broken or too big. Capture a smaller area.',
 		'Storage unavailable',
-		'This memory is unavailable or access was revoked.',
+		'This memory is gone, or its link was turned off.',
 		'This link was stopped by the person who shared it.',
 		'The scene could not be loaded. Try again in a moment.',
-		'Restoration information could not be loaded. Try again.',
-		'WebGL is unavailable. Try another browser or enable hardware acceleration.',
+		'Could not check this memory. Try again.',
+		'Your browser can’t show 3D. Try Chrome or Firefox.',
 	].map(message => [message, message])
 )
 

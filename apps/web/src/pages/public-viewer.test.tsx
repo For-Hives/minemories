@@ -109,7 +109,7 @@ test('a refused review never requests the file', async () => {
 test('a revoked file after catalogue lookup is shown as unavailable', async () => {
 	vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 404 }))
 	mount()
-	await screen.findByText('Ce souvenir est indisponible ou son accès a été révoqué.')
+	await screen.findByText('Ce souvenir n’existe plus, ou son lien a été coupé.')
 	expect(mocks.load).not.toHaveBeenCalled()
 })
 test('private shared links retain their existing metadata and file route', async () => {
@@ -150,7 +150,7 @@ test('public viewer displays a cold capture in French and restores only after th
 	await screen.findByRole('heading', { name: 'Ce souvenir est archivé.' })
 	expect(mocks.load).not.toHaveBeenCalled()
 	expect(mocks.restore).not.toHaveBeenCalled()
-	fireEvent.click(screen.getByRole('button', { name: 'Restaurer le souvenir' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Le récupérer' }))
 	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1))
 	expect(mocks.restore).toHaveBeenCalledWith(
 		{ kind: 'public', id: '11111111-1111-4111-8111-111111111111' },
@@ -188,13 +188,13 @@ test('a stopped link says who stopped it, offers no Retry and points to the guid
 	expect(await screen.findByText('La personne qui a partagé ce lien l’a désactivé.')).toBeTruthy()
 	expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull()
 	// no base is on screen, so the invitation does not say "the same"
-	expect(screen.getByRole('link', { name: 'Garde ta base en 3D, toi aussi →' }).getAttribute('href')).toBe(
+	expect(screen.getByRole('link', { name: 'Fais pareil avec ta base →' }).getAttribute('href')).toBe(
 		'/installation?src=share'
 	)
 	expect(screen.queryByRole('link', { name: /la même chose/ })).toBeNull()
 	expect(document.body.textContent).not.toMatch(/expir/i)
 	// Nothing will come back: no "will have to wait" heading over the sentence.
-	expect(screen.queryByText('Ce souvenir attendra un instant.')).toBeNull()
+	expect(screen.queryByText('Impossible d’ouvrir ce souvenir.')).toBeNull()
 })
 
 test.each([
@@ -228,30 +228,27 @@ test('a single memory link says no count, and the first gesture on the scene bri
 	sceneReady()
 	expect(document.querySelector('[data-share="welcome"]')?.textContent).not.toMatch(/souvenirs? de ce lieu/)
 	fireEvent.pointerDown(screen.getByLabelText('Scène 3D partagée'))
-	expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' })).toBeTruthy()
+	expect(screen.getByRole('link', { name: 'Fais pareil avec ta base →' })).toBeTruthy()
 })
 
-test('a public memory says it was reviewed, invites with its own source and leads to other places', async () => {
+test('a public memory shows the drag hint, invites with its own source and leads to other places', async () => {
 	mount()
 	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1))
 	sceneReady()
-	expect(document.querySelector('[data-share="welcome"]')?.textContent).toContain(
-		'Publié par son auteur, relu avant publication.'
-	)
+	expect(document.querySelector('[data-share="welcome"]')?.textContent).toBe('Fais glisser pour regarder.')
 	fireEvent.wheel(screen.getByLabelText('Scène 3D partagée'))
-	expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' }).getAttribute('href')).toBe(
+	expect(screen.getByRole('link', { name: 'Fais pareil avec ta base →' }).getAttribute('href')).toBe(
 		'/installation?src=public'
 	)
 	expect(screen.getByRole('link', { name: 'Voir d’autres lieux' }).getAttribute('href')).toBe('/explore')
 })
 
-test('a candidate under review is never called reviewed and carries no invitation', async () => {
+test('a candidate under review carries no welcome and no invitation', async () => {
 	mount('/public/11111111-1111-4111-8111-111111111111?review=1')
 	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1))
 	sceneReady()
 	fireEvent.pointerDown(screen.getByLabelText('Scène 3D partagée'))
 	expect(document.querySelector('[data-share]')).toBeNull()
-	expect(document.body.textContent).not.toContain('relu avant publication')
 })
 
 test('a link carrying a view opens that hour, weather, layers and camera, once', async () => {

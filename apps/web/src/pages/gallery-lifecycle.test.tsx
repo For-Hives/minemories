@@ -196,7 +196,7 @@ test('capture moves to trash, restores, and is only permanently deleted after co
 	expect(screen.queryByRole('alertdialog')).toBeNull()
 	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
 	expect(mocks.remove).toHaveBeenCalledExactlyOnceWith({ id: 'one' })
-	expect(mocks.notify).toHaveBeenCalledWith('Snapshot deleted forever.')
+	expect(mocks.notify).toHaveBeenCalledWith('Memory deleted forever.')
 	expect(confirm).not.toHaveBeenCalled()
 })
 test('delete forever answers at once, holds the card buttons and drops the card before the lists reload', async () => {
@@ -246,7 +246,7 @@ test('delete forever answers at once, holds the card buttons and drops the card 
 	})
 	await waitFor(() => expect(within(bin).queryByRole('heading', { name: 'Cabin' })).toBeNull())
 	expect(within(bin).getByRole('heading', { name: 'Tower' })).toBeTruthy()
-	expect(mocks.notify).toHaveBeenCalledWith('Snapshot deleted forever.')
+	expect(mocks.notify).toHaveBeenCalledWith('Memory deleted forever.')
 	await act(async () => {
 		stale.resolve(before)
 		await stale.promise
@@ -275,7 +275,7 @@ test('empty trash asks once, deletes every trashed capture in one request and mo
 	empty.focus()
 	fireEvent.click(empty)
 	const ask = screen.getByRole('alertdialog', { name: 'Empty the trash?' })
-	expect(ask.textContent).toContain('Everything in it is deleted forever: 3 captures. This cannot be undone.')
+	expect(ask.textContent).toContain('Deletes 3 memories forever. You can’t undo this.')
 	fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }))
 	expect(screen.queryByRole('alertdialog')).toBeNull()
 	expect(document.activeElement).toBe(empty)
@@ -312,7 +312,7 @@ test('empty trash asks once, deletes every trashed capture in one request and mo
 	})
 	await waitFor(() => expect(screen.queryByRole('region', { name: 'Trash' })).toBeNull())
 	expect(mocks.notify).toHaveBeenCalledWith('Trash emptied.')
-	expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your memories', level: 1 }))
+	expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your gallery', level: 1 }))
 	await act(async () => {
 		stale.resolve(before)
 		await stale.promise
@@ -356,13 +356,13 @@ test('the storage card says what the figure holds besides the captures on show',
 	memories = []
 	trash = []
 	page()
-	const card = await screen.findByRole('region', { name: 'Gallery storage' })
+	const card = await screen.findByRole('region', { name: 'Space used' })
 	await waitFor(() =>
 		expect(
 			within(card)
 				.getAllByRole('listitem')
 				.map(item => item.textContent)
-		).toEqual(['Includes 1.5 KiB in the trash.', '512 B reserved for uploads in progress.', '1 KiB being deleted.'])
+		).toEqual(['Includes 1.5 KiB in the trash.', '512 B still uploading.', '1 KiB being deleted.'])
 	)
 	cleanup()
 	mocks.storage.mockResolvedValue({
@@ -374,7 +374,7 @@ test('the storage card says what the figure holds besides the captures on show',
 		trashBytes: 0,
 	})
 	page()
-	const clean = await screen.findByRole('region', { name: 'Gallery storage' })
+	const clean = await screen.findByRole('region', { name: 'Space used' })
 	expect(within(clean).queryByRole('list')).toBeNull()
 })
 
@@ -435,7 +435,7 @@ test('snapshot renaming keeps a cancelled draft, discards it on request, trims, 
 	await expand()
 	const pencil = screen.getByRole('button', { name: 'Rename Cabin' })
 	fireEvent.click(pencil)
-	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	const field = screen.getByLabelText('Memory name') as HTMLInputElement
 	expect(document.activeElement).toBe(field)
 	expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5])
 	expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
@@ -457,23 +457,23 @@ test('snapshot renaming keeps a cancelled draft, discards it on request, trims, 
 	])
 
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Discarded')
+	expect(screen.getByLabelText('Memory name')).toHaveProperty('value', 'Discarded')
 	fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }))
-	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Cabin')
-	expect(document.activeElement).toBe(screen.getByLabelText('Snapshot name'))
+	expect(screen.getByLabelText('Memory name')).toHaveProperty('value', 'Cabin')
+	expect(document.activeElement).toBe(screen.getByLabelText('Memory name'))
 	expect(screen.queryByText('Draft, not saved yet')).toBeNull()
 	// Enter on an unchanged name only closes the field.
-	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
-	expect(screen.queryByLabelText('Snapshot name')).toBeNull()
+	fireEvent.submit(screen.getByLabelText('Memory name').closest('form') as HTMLFormElement)
+	expect(screen.queryByLabelText('Memory name')).toBeNull()
 	expect(mocks.rename).not.toHaveBeenCalled()
 
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: '  New cabin  ' } })
+	fireEvent.change(screen.getByLabelText('Memory name'), { target: { value: '  New cabin  ' } })
 	mocks.rename.mockRejectedValueOnce(new Error('offline'))
-	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
+	fireEvent.submit(screen.getByLabelText('Memory name').closest('form') as HTMLFormElement)
 	expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Could not save this name.')
 	expect(mocks.notify).toHaveBeenCalledWith('Could not save this name.')
-	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', '  New cabin  ')
+	expect(screen.getByLabelText('Memory name')).toHaveProperty('value', '  New cabin  ')
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 	await screen.findByRole('heading', { name: 'New cabin' })
 	expect(mocks.rename).toHaveBeenLastCalledWith({ id: 'one', name: 'New cabin' })
@@ -486,9 +486,9 @@ test('renaming from the right-click menu leaves focus in the field, caret at the
 	await expand()
 	fireEvent.contextMenu(card(), { clientX: 10, clientY: 10 })
 	fireEvent.click(
-		within(screen.getByRole('menu', { name: 'Cabin' })).getByRole('menuitem', { name: 'Rename this snapshot' })
+		within(screen.getByRole('menu', { name: 'Cabin' })).getByRole('menuitem', { name: 'Rename this memory' })
 	)
-	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	const field = screen.getByLabelText('Memory name') as HTMLInputElement
 	expect(screen.queryByRole('menu')).toBeNull()
 	expect(document.activeElement).toBe(field)
 	expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5])
@@ -497,20 +497,20 @@ test('an unsaved area name survives leaving the gallery and is restored when edi
 	memories.push(capture('two', 'Barn'))
 	const view = page()
 	await expand()
-	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
-	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'Half typed' } })
-	fireEvent.keyDown(screen.getByLabelText('Stack name'), { key: 'Escape' })
-	expect(screen.queryByLabelText('Stack name')).toBeNull()
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this place' }))
+	fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Half typed' } })
+	fireEvent.keyDown(screen.getByLabelText('Place name'), { key: 'Escape' })
+	expect(screen.queryByLabelText('Place name')).toBeNull()
 	expect(screen.getByText('Draft')).toBeTruthy()
 	view.unmount()
 	page()
 	await expand()
 	expect(screen.getByText('Draft')).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
-	expect(screen.getByLabelText('Stack name')).toHaveProperty('value', 'Half typed')
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this place' }))
+	expect(screen.getByLabelText('Place name')).toHaveProperty('value', 'Half typed')
 	expect(screen.getByText('Draft, not saved yet')).toBeTruthy()
-	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'Typed in full' } })
-	fireEvent.keyDown(screen.getByLabelText('Stack name'), { key: 'Enter' })
+	fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Typed in full' } })
+	fireEvent.keyDown(screen.getByLabelText('Place name'), { key: 'Enter' })
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 	expect(await screen.findByRole('heading', { name: 'Typed in full' })).toBeTruthy()
 	expect(screen.queryByText('Draft')).toBeNull()
@@ -519,12 +519,12 @@ test('area names are local, support cancellation and survive reopening the galle
 	memories.push(capture('two', 'Barn'))
 	const view = page()
 	await expand()
-	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
-	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: 'My area' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this place' }))
+	fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'My area' } })
 	fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 	expect(screen.queryByText('My area')).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'Rename this area' }))
-	fireEvent.change(screen.getByLabelText('Stack name'), { target: { value: '  My area  ' } })
+	fireEvent.click(screen.getByRole('button', { name: 'Rename this place' }))
+	fireEvent.change(screen.getByLabelText('Place name'), { target: { value: '  My area  ' } })
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 	expect(await screen.findByText('My area')).toBeTruthy()
 	expect(mocks.rename).not.toHaveBeenCalled()
@@ -544,7 +544,7 @@ test('share panel creates, copies, replaces and revokes an explicit link', async
 	fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
 	await waitFor(() => expect(copy).toHaveBeenCalledWith(`${window.location.origin}/share/fixture-token`))
 	mocks.createShare.mockResolvedValueOnce({ urlPath: '/share/replaced-token' })
-	fireEvent.click(screen.getByRole('button', { name: 'Replace active link' }))
+	fireEvent.click(screen.getByRole('button', { name: 'New link' }))
 	await waitFor(() =>
 		expect(screen.getByLabelText('Share link')).toHaveProperty(
 			'value',
@@ -612,7 +612,7 @@ test('a rename rejected after leaving does not notify the next page', async () =
 	const view = page()
 	await expand()
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'New cabin' } })
+	fireEvent.change(screen.getByLabelText('Memory name'), { target: { value: 'New cabin' } })
 	fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 	view.unmount()
 	await act(async () => request.reject(new Error('late failure')))
@@ -636,15 +636,15 @@ test('an area with several snapshots has one View action and a dialog to manage 
 	opener.focus()
 	fireEvent.click(opener)
 	const dialog = await screen.findByRole('dialog', { name: 'Barn' })
-	expect(within(dialog).getByRole('tab', { name: 'Snapshots', selected: true })).toBeTruthy()
+	expect(within(dialog).getByRole('tab', { name: 'Memories', selected: true })).toBeTruthy()
 	expect(within(dialog).getAllByRole('listitem')).toHaveLength(2)
 	fireEvent.click(within(dialog).getByRole('tab', { name: 'Share' }))
 	fireEvent.click(await within(dialog).findByRole('button', { name: 'Create a link' }))
 	await waitFor(() => expect(mocks.createShare).toHaveBeenCalledWith({ id: 'two', scope: 'memory' }))
-	fireEvent.click(within(dialog).getByRole('tab', { name: 'Snapshots' }))
-	fireEvent.click(within(dialog).getByRole('button', { name: 'Share this snapshot: Cabin' }))
+	fireEvent.click(within(dialog).getByRole('tab', { name: 'Memories' }))
+	fireEvent.click(within(dialog).getByRole('button', { name: 'Share this memory: Cabin' }))
 	await waitFor(() => expect(mocks.shareStatus).toHaveBeenCalledWith({ id: 'one', scope: 'memory' }))
-	fireEvent.click(within(dialog).getByRole('tab', { name: 'Snapshots' }))
+	fireEvent.click(within(dialog).getByRole('tab', { name: 'Memories' }))
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Move Cabin to trash' }))
 	await waitFor(() => expect(mocks.trash).toHaveBeenCalledWith({ id: 'one' }))
 	fireEvent.keyDown(document, { key: 'Escape' })
@@ -657,7 +657,7 @@ test('snapshots can be renamed from the manage dialog and the dialog traps keybo
 	fireEvent.click(await screen.findByRole('button', { name: 'Manage Barn' }))
 	const dialog = await screen.findByRole('dialog', { name: 'Barn' })
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(within(dialog).getByLabelText('Snapshot name'), { target: { value: '  Shed  ' } })
+	fireEvent.change(within(dialog).getByLabelText('Memory name'), { target: { value: '  Shed  ' } })
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
 	await waitFor(() => expect(mocks.rename).toHaveBeenCalledWith({ id: 'one', name: 'Shed' }))
 	await within(dialog).findByText('Shed')
@@ -680,10 +680,10 @@ test('Escape in a snapshot rename stops editing but keeps the dialog open and th
 	fireEvent.click(await screen.findByRole('button', { name: 'Manage Barn' }))
 	const dialog = await screen.findByRole('dialog', { name: 'Barn' })
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(within(dialog).getByLabelText('Snapshot name'), { target: { value: 'Cab' } })
-	fireEvent.keyDown(within(dialog).getByLabelText('Snapshot name'), { key: 'Escape' })
+	fireEvent.change(within(dialog).getByLabelText('Memory name'), { target: { value: 'Cab' } })
+	fireEvent.keyDown(within(dialog).getByLabelText('Memory name'), { key: 'Escape' })
 	expect(screen.getByRole('dialog', { name: 'Barn' })).toBeTruthy()
-	expect(within(dialog).queryByLabelText('Snapshot name')).toBeNull()
+	expect(within(dialog).queryByLabelText('Memory name')).toBeNull()
 	expect(within(dialog).getByText('Draft')).toBeTruthy()
 	expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Rename Cabin' }))
 	fireEvent.keyDown(document, { key: 'Escape' })
@@ -692,7 +692,7 @@ test('Escape in a snapshot rename stops editing but keeps the dialog open and th
 	const reopened = await screen.findByRole('dialog', { name: 'Barn' })
 	expect(within(reopened).getByText('Draft')).toBeTruthy()
 	fireEvent.click(within(reopened).getByRole('button', { name: 'Rename Cabin' }))
-	expect(within(reopened).getByLabelText('Snapshot name')).toHaveProperty('value', 'Cab')
+	expect(within(reopened).getByLabelText('Memory name')).toHaveProperty('value', 'Cab')
 })
 test('a parent re-render (the 12 s refresh) never moves focus or the caret out of a dialog field', async () => {
 	memories = [capture('two', 'Barn'), capture('one', 'Cabin')]
@@ -710,7 +710,7 @@ test('a parent re-render (the 12 s refresh) never moves focus or the caret out o
 		</MemoryRouter>
 	)
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	const field = screen.getByLabelText('Snapshot name') as HTMLInputElement
+	const field = screen.getByLabelText('Memory name') as HTMLInputElement
 	fireEvent.change(field, { target: { value: 'Cabin by the lake' } })
 	field.setSelectionRange(5, 5)
 	view.rerender(
@@ -728,7 +728,7 @@ test('a parent re-render (the 12 s refresh) never moves focus or the caret out o
 			<ServerSheet server={server} name="World" onRename={vi.fn()} onClose={() => undefined} />
 		</MemoryRouter>
 	)
-	const name = screen.getByLabelText('Server name') as HTMLInputElement
+	const name = screen.getByLabelText('World name') as HTMLInputElement
 	name.focus()
 	fireEvent.change(name, { target: { value: 'Worldwide' } })
 	name.setSelectionRange(3, 3)
@@ -756,13 +756,13 @@ test('a saved snapshot name shows at once, before the refreshed list brings it b
 		</MemoryRouter>
 	)
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Cabin' }))
-	fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Shed' } })
-	fireEvent.submit(screen.getByLabelText('Snapshot name').closest('form') as HTMLFormElement)
+	fireEvent.change(screen.getByLabelText('Memory name'), { target: { value: 'Shed' } })
+	fireEvent.submit(screen.getByLabelText('Memory name').closest('form') as HTMLFormElement)
 	await screen.findByText('Saved')
 	expect(screen.getByText('Shed').tagName).toBe('STRONG')
 	expect(screen.queryByText('Cabin')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Shed' }))
-	expect(screen.getByLabelText('Snapshot name')).toHaveProperty('value', 'Shed')
+	expect(screen.getByLabelText('Memory name')).toHaveProperty('value', 'Shed')
 	expect(screen.queryByText('Draft, not saved yet')).toBeNull()
 })
 test('the server name keeps its draft across closing the sheet, can discard it, and confirms a save', async () => {
@@ -770,7 +770,7 @@ test('the server name keeps its draft across closing the sheet, can discard it, 
 	fireEvent.click(await screen.findByRole('button', { name: 'Rename World' }))
 	let sheet = screen.getByRole('dialog', { name: 'World' })
 	expect(within(sheet).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
-	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends' } })
+	fireEvent.change(within(sheet).getByLabelText('World name'), { target: { value: 'Friends' } })
 	expect(within(sheet).getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(screen.queryByRole('dialog')).toBeNull()
@@ -782,19 +782,19 @@ test('the server name keeps its draft across closing the sheet, can discard it, 
 
 	fireEvent.click(screen.getByRole('button', { name: 'Rename World' }))
 	sheet = screen.getByRole('dialog', { name: 'World' })
-	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'Friends')
+	expect(within(sheet).getByLabelText('World name')).toHaveProperty('value', 'Friends')
 	expect(within(sheet).getByText('Draft, not saved yet')).toBeTruthy()
 	fireEvent.click(within(sheet).getByRole('button', { name: 'Discard draft' }))
-	expect(within(sheet).getByLabelText('Server name')).toHaveProperty('value', 'World')
+	expect(within(sheet).getByLabelText('World name')).toHaveProperty('value', 'World')
 	expect(within(sheet).queryByText('Draft, not saved yet')).toBeNull()
 
 	// An empty name saves nothing, neither from the button nor from Enter.
-	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: '  ' } })
+	fireEvent.change(within(sheet).getByLabelText('World name'), { target: { value: '  ' } })
 	expect(within(sheet).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
-	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	fireEvent.submit(within(sheet).getByLabelText('World name').closest('form') as HTMLFormElement)
 	expect(within(sheet).getByRole('status').textContent).toBe('')
-	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: ' Friends SMP ' } })
-	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	fireEvent.change(within(sheet).getByLabelText('World name'), { target: { value: ' Friends SMP ' } })
+	fireEvent.submit(within(sheet).getByLabelText('World name').closest('form') as HTMLFormElement)
 	expect(screen.getByRole('dialog', { name: 'Friends SMP' })).toBeTruthy()
 	expect(within(sheet).getByRole('status').textContent).toBe('Saved')
 	expect(within(sheet).queryByText('Draft, not saved yet')).toBeNull()
@@ -880,7 +880,7 @@ test('a snapshot is downloaded as a GLB from its details sheet and from the snap
 			<GalleryDialog {...props} target={{ tab: 'details', id: 'two' }} />
 		</MemoryRouter>
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Download (for Blender)' }))
 	await waitFor(() => expect(click).toHaveBeenCalledOnce())
 	expect(mocks.download).toHaveBeenCalledWith(
 		expect.stringContaining('/api/memories/two/file'),
@@ -901,11 +901,11 @@ test('a snapshot is downloaded as a GLB from its details sheet and from the snap
 			<GalleryDialog {...props} target={{ tab: 'snapshots', id: 'two' }} />
 		</MemoryRouter>
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file: Cabin' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Download (for Blender): Cabin' }))
 	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining('archived')))
 	mocks.download.mockRejectedValueOnce(new Error('network'))
-	fireEvent.click(screen.getByRole('button', { name: 'Download the GLB file: Cabin' }))
-	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('Could not download this snapshot.'))
+	fireEvent.click(screen.getByRole('button', { name: 'Download (for Blender): Cabin' }))
+	await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('Could not download this memory.'))
 	click.mockRestore()
 })
 
@@ -973,19 +973,19 @@ test('renaming a server saves on the account; a refusal brings the previous name
 	page()
 	fireEvent.click(await screen.findByRole('button', { name: 'Rename World' }))
 	const sheet = screen.getByRole('dialog', { name: 'World' })
-	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends' } })
-	fireEvent.submit(within(sheet).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	fireEvent.change(within(sheet).getByLabelText('World name'), { target: { value: 'Friends' } })
+	fireEvent.submit(within(sheet).getByLabelText('World name').closest('form') as HTMLFormElement)
 	expect(mocks.renameServer).toHaveBeenCalledWith({ key: worldKey, name: 'Friends' })
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(screen.getByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
 	mocks.renameServer.mockRejectedValueOnce(new Error('offline'))
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Friends' }))
 	const again = screen.getByRole('dialog', { name: 'Friends' })
-	fireEvent.change(within(again).getByLabelText('Server name'), { target: { value: 'Lost' } })
-	fireEvent.submit(within(again).getByLabelText('Server name').closest('form') as HTMLFormElement)
+	fireEvent.change(within(again).getByLabelText('World name'), { target: { value: 'Lost' } })
+	fireEvent.submit(within(again).getByLabelText('World name').closest('form') as HTMLFormElement)
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(await screen.findByRole('heading', { level: 3, name: 'Friends' })).toBeTruthy()
-	expect(mocks.notify).toHaveBeenCalledWith('Could not rename this server.')
+	expect(mocks.notify).toHaveBeenCalledWith('Could not rename this world.')
 	// A gallery reload re-reads the profiles from the account, which kept the last accepted name.
 	fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 	await waitFor(() => expect(mocks.serverProfiles).toHaveBeenCalledTimes(2))

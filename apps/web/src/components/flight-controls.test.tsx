@@ -84,9 +84,9 @@ test('keys are rebound by pressing them, remembered, and shown with the chosen l
 	expect(screen.getByRole('button', { name: 'Minecraft Java' }).getAttribute('aria-pressed')).toBe('true')
 	expect(lastControls(scene).bindings.down).toEqual(['ShiftLeft', null])
 	expect(screen.getByRole('region', { name: 'Explore' }).textContent).toContain(
-		'Z Q S D fly · Space up · Left Shift down · R or Z twice'
+		'Z Q S D fly · Space up · Left Shift down · R sprint'
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Viewer' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Default' }))
 	expect(lastControls(scene).bindings.sprint).toEqual(['ShiftLeft', 'ShiftRight'])
 	cleanup()
 	// Remembered for the next visit.

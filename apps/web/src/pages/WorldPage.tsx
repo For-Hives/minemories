@@ -61,7 +61,7 @@ export function WorldPage({ memoryId }: { memoryId: string }) {
 	const { world, step } = state
 	return (
 		<section className="viewer-page cinema-page timelapse-page">
-			<ViewerHeader title={world?.name ?? t('Your world through time')} backLabel={t('My gallery')} />
+			<ViewerHeader title={world?.name ?? t('World')} backLabel={t('My gallery')} />
 			<WorldStage
 				state={state}
 				actions={actions}

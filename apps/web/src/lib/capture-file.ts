@@ -16,7 +16,7 @@ export async function downloadCapture(url: string, name: string, signal: AbortSi
 	signal.throwIfAborted()
 	await requireCaptureReady(response)
 	if (response.status >= 500) throw new Error(SCENE_UNREACHABLE)
-	if (!response.ok) throw new Error('This memory is unavailable or access was revoked.')
+	if (!response.ok) throw new Error('This memory is gone, or its link was turned off.')
 	const blob = await response.blob()
 	signal.throwIfAborted()
 	if (response.headers.get(VARIANT_HEADER) !== 'meshopt') return new File([blob], name, { type: 'model/gltf-binary' })
@@ -50,7 +50,7 @@ export async function requireCaptureReady(response: Response): Promise<void> {
 			const body = await response.json()
 			availability = captureAvailability.parse(body.availability)
 		} catch {
-			throw new Error('Restoration information could not be loaded. Try again.')
+			throw new Error('Could not check this memory. Try again.')
 		}
 		throw new CaptureRestorationRequired(availability)
 	}

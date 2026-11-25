@@ -232,9 +232,9 @@ test('budget, archived and failed captures are explained and a failed capture ca
 		.mockImplementation(async () => new Response(new Uint8Array([1, 2, 3])))
 	vi.stubGlobal('fetch', fetch)
 	mount()
-	await screen.findByRole('button', { name: /^Capture 2 .*Archived: open it alone to restore it$/ })
+	await screen.findByRole('button', { name: /^Capture 2 .*Archived: open it alone to bring it back$/ })
 	await screen.findByRole('button', { name: /^Capture 3 .*Could not load$/ })
-	expect(screen.getByText('Only the most recent captures are loaded to keep the viewer fast.')).toBeTruthy()
+	expect(screen.getByText('Only the latest memories are loaded, to keep it fast.')).toBeTruthy()
 	expect(screen.getByRole('button', { name: /^Capture 1 .*Not loaded$/ })).toBeTruthy()
 	expect(current()).toBe(1)
 	await waitFor(() => expect(loaded()).toBe(1))
@@ -254,7 +254,7 @@ test('an unavailable world can be retried and a missing WebGL context is reporte
 		throw new Error('no webgl')
 	})
 	mount()
-	await screen.findByText('The 3D viewer could not start. Enable WebGL and reload this page.')
+	await screen.findByText('Your browser can’t show 3D. Try Chrome or Firefox.')
 	await flush()
 	expect(mocks.world).toHaveBeenCalledTimes(2)
 })
@@ -277,8 +277,8 @@ test('leaving the page cancels pending loads', async () => {
 test('previous and next buttons step through captures and older captures can be hidden', async () => {
 	mount()
 	await waitFor(() => expect(loaded()).toBe(3))
-	const previous = screen.getByRole('button', { name: 'Previous capture' }) as HTMLButtonElement
-	const next = screen.getByRole('button', { name: 'Next capture' }) as HTMLButtonElement
+	const previous = screen.getByRole('button', { name: 'Previous memory' }) as HTMLButtonElement
+	const next = screen.getByRole('button', { name: 'Next memory' }) as HTMLButtonElement
 	expect(previous.disabled).toBe(true)
 	fireEvent.click(next)
 	fireEvent.click(next)
@@ -286,7 +286,7 @@ test('previous and next buttons step through captures and older captures can be 
 	expect(next.disabled).toBe(true)
 	fireEvent.click(previous)
 	expect(current()).toBe(1)
-	const older = screen.getByRole('button', { name: 'Older captures' })
+	const older = screen.getByRole('button', { name: 'Older memories' })
 	expect(older.getAttribute('aria-pressed')).toBe('true')
 	mocks.showWorld.mockClear()
 	fireEvent.click(older)

@@ -57,20 +57,11 @@ function useCategoryLabels() {
 function StateCard({ status, card }: { status: Publication; card: Ref<HTMLDivElement> }) {
 	const { t } = useI18n()
 	const states: Record<PublicationState, [string, string]> = {
-		private: [
-			t('Private'),
-			t('Only you can see this capture. Nothing is public until a moderator approves a submission.'),
-		],
-		pending: [
-			t('Awaiting moderation'),
-			t('A moderator reviews your submission before it appears in the public gallery.'),
-		],
-		approved: [t('Published'), t('Everyone can see this capture in the public gallery.')],
-		rejected: [t('publication.state.rejected'), t('A moderator refused this submission. Change it and submit again.')],
-		revoked: [
-			t('Withdrawn'),
-			t('You withdrew this capture from the public gallery. You can submit it again at any time.'),
-		],
+		private: [t('Private'), t('Only you can see this memory.')],
+		pending: [t('Awaiting moderation'), t('We check it before it goes public.')],
+		approved: [t('Published'), t('Everyone can see it in the public gallery.')],
+		rejected: [t('publication.state.rejected'), t('We turned it down. Change it and send it again.')],
+		revoked: [t('Withdrawn'), t('You took it out of the public gallery. You can send it again anytime.')],
 	}
 	const [label, meaning] = states[status.state]
 	return (
@@ -150,7 +141,7 @@ function WithdrawControl({ busy, onConfirm }: { busy: boolean; onConfirm: () => 
 	return (
 		<fieldset className="mm-publication-confirm">
 			<legend>{t('Withdraw publication?')}</legend>
-			<p>{t('The capture leaves the public gallery but stays in yours.')}</p>
+			<p>{t('It leaves the public gallery and stays in yours.')}</p>
 			<div>
 				<button
 					type="button"

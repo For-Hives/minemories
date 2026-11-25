@@ -34,7 +34,7 @@ export function ViewerHeader({
 
 /**
  * `children` are the error's own actions (Retry, a link onward), shown under its sentence. A `final` error drops the
- * "will have to wait" heading: nothing will come back.
+ * "Could not open" heading: its sentence says it all.
  */
 export function ViewerLoadState({
 	loading,
@@ -53,7 +53,7 @@ export function ViewerLoadState({
 	return (
 		<div className="cinema-loading" role="alert" aria-live="polite">
 			<div className="cinema-loading-card">
-				{!final && <h2>{t('This memory will have to wait.')}</h2>}
+				{!final && <h2>{t('Could not open this memory.')}</h2>}
 				<p>{t(error)}</p>
 				{children}
 			</div>
@@ -68,23 +68,18 @@ export function ViewerEmptyState() {
 			<div className="cinema-orbit" aria-hidden="true">
 				<span className="mc-icon mc-icon--ember" />
 			</div>
-			<h2>
-				{t('Some places')}
-				<br />
-				<em>{t('stay with you.')}</em>
-			</h2>
-			<p>{t('Find the morning light, your first home, the paths you know by heart.')}</p>
+			<h2>{t('Open a memory')}</h2>
 			{import.meta.env.DEV ? (
 				<>
 					{' '}
 					<label className="cinema-open-primary" htmlFor="local-file-input">
-						{t('Open a memory')} <span>↗</span>
+						{t('Choose a local file')}
 					</label>
 					<small>{t('Drop a .glb here · It stays on your device')}</small>
 				</>
 			) : (
 				<Link className="cinema-open-primary" to="/gallery">
-					{t('My gallery')} ↗
+					{t('My gallery')} →
 				</Link>
 			)}
 		</div>

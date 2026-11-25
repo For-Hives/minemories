@@ -37,7 +37,7 @@ test('archived capture requires an explicit action, displays object progress, th
 	const panel = render(
 		<CaptureRestorationPanel view={hook.result.current.view} onRestore={hook.result.current.resume} />
 	)
-	fireEvent.click(screen.getByRole('button', { name: 'Restore memory' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }))
 	await act(async () => {
 		await Promise.resolve()
 	})

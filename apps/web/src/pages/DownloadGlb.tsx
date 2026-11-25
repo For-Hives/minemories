@@ -45,14 +45,14 @@ export function DownloadGlb({
 			if (abort.signal.aborted) return
 			notify(
 				cause instanceof CaptureRestorationRequired
-					? t('This snapshot is archived. Open it once to restore it, then download it again.')
-					: t('Could not download this snapshot.')
+					? t('This memory is archived. Open it to bring it back, then download it.')
+					: t('Could not download this memory.')
 			)
 		} finally {
 			if (!abort.signal.aborted) setBusy(false)
 		}
 	}
-	const label = t('Download the GLB file')
+	const label = t('Download (for Blender)')
 	return compact ? (
 		<button
 			type="button"

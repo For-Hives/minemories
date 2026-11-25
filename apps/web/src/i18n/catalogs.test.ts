@@ -66,16 +66,20 @@ test('a retired regional catalogue cannot be loaded', async () => {
 test('Russian and Polish capture counters follow CLDR rather than an English singular/plural rule', async () => {
 	await Promise.all((['ru', 'pl', 'ja', 'ko', 'de'] as const).map(loadLocale))
 	expect([1, 2, 5, 21].map(count => formatCaptureCount('ru', count))).toEqual([
-		'1 снимок',
-		'2 снимка',
-		'5 снимков',
-		'21 снимок',
+		'1 воспоминание',
+		'2 воспоминания',
+		'5 воспоминаний',
+		'21 воспоминание',
 	])
-	expect([1, 2, 5].map(count => formatCaptureCount('pl', count))).toEqual(['1 zrzut', '2 zrzuty', '5 zrzutów'])
-	expect(formatCaptureCount('ja', 2)).toBe('キャプチャ2件')
-	expect(formatCaptureCount('ko', 2)).toBe('캡처 2개')
-	expect(formatCaptureCount('de', 1)).toBe('1 Aufnahme')
-	expect(formatCaptureCount('de', 2)).toBe('2 Aufnahmen')
+	expect([1, 2, 5].map(count => formatCaptureCount('pl', count))).toEqual([
+		'1 wspomnienie',
+		'2 wspomnienia',
+		'5 wspomnień',
+	])
+	expect(formatCaptureCount('ja', 2)).toBe('思い出2件')
+	expect(formatCaptureCount('ko', 2)).toBe('추억 2개')
+	expect(formatCaptureCount('de', 1)).toBe('1 Erinnerung')
+	expect(formatCaptureCount('de', 2)).toBe('2 Erinnerungen')
 })
 
 test('concurrent requests share one catalogue download and unknown interpolation keys stay readable', async () => {
