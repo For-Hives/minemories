@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { embedSize, LIMITS, payloadSize } from './discord.mjs'
 import {
@@ -9,6 +10,7 @@ import {
 	DONE_WINDOW_MS,
 	fetchRoadmapIssues,
 	formatItem,
+	roadmapTitle,
 	syncRoadmap,
 } from './roadmap.mjs'
 
@@ -65,7 +67,25 @@ test('columnOf follows the shared spec', () => {
 	assert.equal(columnOf(issue({ state: 'weird' }), NOW), null)
 	assert.equal(columnOf(issue({ labels: undefined }), NOW), 'planned')
 	assert.equal(columnOf(null, NOW), null)
+	assert.equal(columnOf(issue({ title: 'Dependency Dashboard', labels: [], user: { type: 'Bot' } }), NOW), null)
+	assert.equal(columnOf(issue({ user: { type: 'User' } }), NOW), 'planned')
 	assert.equal(columnOf(issue({ state_reason: undefined, state: 'closed', closed_at: iso(NOW) })), 'done')
+})
+
+/** Shared with apps/api/src/roadmap.test.ts: both readers must give players exactly these titles. */
+const TITLES = JSON.parse(readFileSync(new URL('./fixtures/roadmap-titles.json', import.meta.url), 'utf8'))
+
+test('roadmapTitle cleans titles exactly like GET /api/roadmap (shared fixture)', () => {
+	assert.ok(TITLES.length >= 8)
+	for (const fixture of TITLES)
+		assert.deepEqual(
+			{ [fixture.name]: roadmapTitle(fixture.title, fixture.body) },
+			{ [fixture.name]: fixture.expected }
+		)
+	assert.equal(
+		classify([issue({ title: 'web: hide clouds', body: undefined })], NOW).planned.items[0].title,
+		'Hide clouds'
+	)
 })
 
 test('classify sorts, caps at 25 per column and maps items', () => {

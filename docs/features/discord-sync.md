@@ -19,7 +19,7 @@ The changelog job posts to `#changelog` through the `DISCORD_CHANGELOG_WEBHOOK_U
 
 ## How the roadmap works
 
-The source of truth is the GitHub issues of `For-Hives/minemories`: **every open issue is on the roadmap**, whatever its labels (since 12 November 2026; before, only issues labelled `roadmap` were). Pull requests and issues labelled **`dependencies`** (Renovate's dashboard) or **`no-roadmap`** are left out. Both readers fetch the open issues plus the issues updated during the last 30 days (for Done), and keep one copy per issue. The site's `GET /api/roadmap` uses exactly the same rules:
+The source of truth is the GitHub issues of `For-Hives/minemories`: **every open issue is on the roadmap**, whatever its labels (since 12 November 2026; before, only issues labelled `roadmap` were). Pull requests, issues opened by a bot (Renovate's dashboard, even without its label) and issues labelled **`dependencies`** or **`no-roadmap`** are left out. Both readers fetch the open issues plus the issues updated during the last 30 days (for Done), and keep one copy per issue. The site's `GET /api/roadmap` uses exactly the same rules:
 
 - **In progress**: open issue that also has the **`in-progress`** label;
 - **Planned**: any other open issue;
@@ -69,6 +69,8 @@ It needs `DISCORD_WEBHOOK_URL` set to the #changelog webhook. When that value on
 ## Columns
 
 In progress and Planned are sorted by last update, newest first (ties: highest issue number first). Each column shows at most 25 issues and a "+N more" line for the rest. Each line is `#123 title — areas`, linking to the issue, where the areas are the labels among `mod`, `api`, `front` and `socials` (community and videos). When the two columns together exceed Discord's 6000-character limit, the longest column loses lines (counted in its "+N more") until the message fits.
+
+Players read the titles, so both readers clean them the same way (`roadmapTitle` in `apps/api/src/roadmap.ts` and `scripts/discord/roadmap.mjs`, checked against the shared fixture `scripts/discord/fixtures/roadmap-titles.json`): leading area or commit prefixes go away (`web:`, `seo:`, `feat(web):`, `fix(api,web)!:`, `[mod]`), and the first letter is capitalised. When an issue's title is written for the team (French, jargon), add a line `Roadmap: <title for players>` to its body: that line wins, and gets the same cleaning.
 
 Any open issue is on the roadmap; to keep one off, add `no-roadmap`. To mark it as being worked on: add `in-progress`. Closing it removes it from the Discord message and the site. The `roadmap` label is no longer needed (it does no harm).
 

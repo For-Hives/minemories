@@ -1,4 +1,4 @@
-// #roadmap message: the repository's open GitHub issues (except `dependencies` / `no-roadmap`), rendered as one webhook message that is edited in place
+// #roadmap message: the repository's open GitHub issues (except bots' and `dependencies` / `no-roadmap`), rendered as one webhook message that is edited in place
 // (PATCH {webhook}/messages/{DISCORD_ROADMAP_MESSAGE_ID}). The classification mirrors GET /api/roadmap so Discord and
 // the site always agree; Discord only shows the In progress and Planned columns. Mod releases go to #changelog.
 import {
@@ -35,6 +35,25 @@ const PAGE_LIMIT = 20
 const NEXT_LINK = /<([^>]+)>;\s*rel="next"/
 const ISSUES_URL = `https://api.github.com/repos/${REPOSITORY}/issues?per_page=100`
 
+/** A leading area or commit prefix: `[mod]`, `web:`, `feat(web):`, `fix(api,web)!:`, `Feedback :`. */
+const TITLE_PREFIX = /^\s*(?:\[[^\]\n]{1,24}\]|[a-z][\w-]{0,15}(?:\([^)\n]{0,40}\))?!?\s*:)\s*/i
+/** A `Roadmap: <title>` line in the issue body: the title players read, when the issue's own is written for the team. */
+const ROADMAP_LINE = /^[ \t]*roadmap[ \t]*:[ \t]*(.*)$/im
+
+/**
+ * The title players read (same rule as roadmapTitle in apps/api/src/roadmap.ts, shared fixture fixtures/roadmap-titles.json):
+ * the body's `Roadmap:` line when it has one, else the issue title, without its area or commit prefixes, first letter
+ * capitalised.
+ */
+export function roadmapTitle(title, body) {
+	const chosen = ROADMAP_LINE.exec(String(body ?? ''))?.[1]?.trim() || String(title ?? '').trim()
+	let clean = chosen
+	for (let match = TITLE_PREFIX.exec(clean); match; match = TITLE_PREFIX.exec(clean))
+		clean = clean.slice(match[0].length)
+	const text = clean.trim() || chosen
+	return text.charAt(0).toLocaleUpperCase('en') + text.slice(1)
+}
+
 const labelNames = issue => (issue.labels ?? []).map(label => (typeof label === 'string' ? label : label?.name))
 const time = value => {
 	const parsed = Date.parse(value ?? '')
@@ -45,7 +64,7 @@ function toItem(issue) {
 	const labels = labelNames(issue)
 	return {
 		number: issue.number,
-		title: String(issue.title ?? ''),
+		title: roadmapTitle(issue.title, issue.body),
 		url: issue.html_url,
 		areas: AREAS.filter(area => labels.includes(area)),
 		updatedAt: issue.updated_at,
@@ -60,7 +79,8 @@ function column(items, sortKey) {
 
 /** Which column an issue belongs to, or null when it is not on the roadmap. */
 export function columnOf(issue, now = Date.now()) {
-	if (!issue || issue.pull_request) return null
+	// Pull requests and issues opened by a bot (Renovate's dashboard) are never on the roadmap.
+	if (!issue || issue.pull_request || issue.user?.type === 'Bot') return null
 	const labels = labelNames(issue)
 	if (labels.some(label => EXCLUDED_LABELS.includes(label))) return null
 	if (issue.state === 'open') return labels.includes(IN_PROGRESS_LABEL) ? 'inProgress' : 'planned'

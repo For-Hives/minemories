@@ -1,0 +1,58 @@
+[
+	{ "name": "area prefix", "title": "seo: configure seo", "body": null, "expected": "Configure seo" },
+	{
+		"name": "area prefix and lower case",
+		"title": "web: minecraft head api not working + form not good",
+		"body": "",
+		"expected": "Minecraft head api not working + form not good"
+	},
+	{
+		"name": "conventional commit with scopes and bang",
+		"title": "fix(api,web)!: keep the session after a reset",
+		"body": null,
+		"expected": "Keep the session after a reset"
+	},
+	{
+		"name": "bracket area",
+		"title": "[mod] Add a bug report button",
+		"body": null,
+		"expected": "Add a bug report button"
+	},
+	{
+		"name": "several prefixes and a spaced colon",
+		"title": "[web] feat(viewer) : double click to recenter",
+		"body": null,
+		"expected": "Double click to recenter"
+	},
+	{
+		"name": "a plain title is kept",
+		"title": "Cut seal of an underground pocket takes the grass above",
+		"body": "Steps: 1. capture",
+		"expected": "Cut seal of an underground pocket takes the grass above"
+	},
+	{
+		"name": "a colon later in the title is not a prefix",
+		"title": "Captures on 1.20.1: the sky is black",
+		"body": null,
+		"expected": "Captures on 1.20.1: the sky is black"
+	},
+	{
+		"name": "player-facing title from the body",
+		"title": "Check le tracking des erreurs du mod ~ admin issues",
+		"body": "Context for the team.\r\n\r\nRoadmap: Better crash reports from the mod\r\nMore text",
+		"expected": "Better crash reports from the mod"
+	},
+	{
+		"name": "the body title is cleaned too",
+		"title": "web: something",
+		"body": "roadmap:   web: a button to hide the clouds  ",
+		"expected": "A button to hide the clouds"
+	},
+	{
+		"name": "an empty body title falls back to the issue title",
+		"title": "seo: add llms.txt",
+		"body": "Roadmap:   \n",
+		"expected": "Add llms.txt"
+	},
+	{ "name": "a prefix alone is kept as written", "title": "web:", "body": null, "expected": "Web:" }
+]
