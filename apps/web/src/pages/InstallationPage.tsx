@@ -83,7 +83,7 @@ function Welcome({
 				))}
 				<Link className="install-way" to="/downloads">
 					<strong>
-						<T message={'See all downloads'} />
+						<T message={'All downloads'} />
 					</strong>
 				</Link>
 			</div>

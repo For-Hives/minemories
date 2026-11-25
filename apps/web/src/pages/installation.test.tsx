@@ -177,7 +177,7 @@ test('the welcome screen guesses the computer, lets the visitor correct it and o
 	// The chosen button disappears with the list: focus returns to the toggle, not to the top of the page.
 	expect(document.activeElement).toBe(button('Ce n’est pas ça\u00a0? Changer'))
 	expect(stored().system).toBe('linux')
-	expect(screen.getByRole('link', { name: /^Voir tous les téléchargements/ }).getAttribute('href')).toBe('/downloads')
+	expect(document.querySelector('a.install-way[href="/downloads"]')?.textContent).toBe('Tous les téléchargements')
 	expect(screen.getByRole('link', { name: /^Avec l’app CurseForge/ }).getAttribute('href')).toBe(
 		'https://www.curseforge.com/minecraft/mc-mods/minemories'
 	)
