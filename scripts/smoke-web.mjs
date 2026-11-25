@@ -38,22 +38,6 @@ export const expectations = [
 	{ path: '/en/concept', status: 301, location: '/concept', robots: 'any' },
 	{ path: '/en', status: 301, location: '/', robots: 'any' },
 	{ path: '/fr/share/abc', status: 200, robots: 'private', appShell: true, language: 'fr' },
-	// Sign in and register: the shell with their own title (prerendered /fr/login/app.html), never the share card.
-	{
-		path: '/fr/login',
-		status: 200,
-		robots: 'private',
-		appShell: true,
-		language: 'fr',
-		title: 'Connexion · Minemories',
-	},
-	{
-		path: '/login/forgot',
-		status: 200,
-		robots: 'private',
-		appShell: true,
-		title: 'Forgot your password? · Minemories',
-	},
 	{ path: '/installation/', status: 301, location: '/installation', robots: 'any' },
 	{ path: '/concept/?a=b', status: 301, location: '/concept?a=b', robots: 'any' },
 	{ path: '/index.html', status: 301, location: '/', robots: 'any' },
@@ -140,8 +124,6 @@ function bodyFailures(expectation, response) {
 	const isShell = response.body.includes(appShellMarker)
 	if (expectation.appShell && !isShell) failures.push('body is not the app.html shell')
 	if (expectation.notAppShell && isShell) failures.push('body is the app.html shell instead of the prerendered page')
-	if (expectation.title && !response.body.includes(`<title>${expectation.title}</title>`))
-		failures.push(`title is not "${expectation.title}"`)
 	return failures
 }
 

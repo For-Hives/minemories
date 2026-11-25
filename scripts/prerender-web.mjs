@@ -36,7 +36,6 @@ export async function prerenderWeb(directory, entry) {
 		socialImage,
 		headFor,
 		sharedLinkPath,
-		titledPrivatePaths = [],
 		languages,
 		loadLanguages,
 		pagePath,
@@ -123,21 +122,6 @@ export async function prerenderWeb(directory, entry) {
 			await mkdir(folder, { recursive: true })
 			await writeFile(resolve(folder, 'app.html'), shell)
 		})
-	)
-	// Sign in, register and the password pages: the same shell with their own title, so the tab does not show the share
-	// card until the app starts. nginx serves /fr/login from /fr/login/app.html, falling back to /fr/app.html.
-	await Promise.all(
-		titledPrivatePaths.flatMap(path =>
-			languages.map(async language => {
-				const shell = headText(template, headFor(path, language.id), language).replace(
-					'</head>',
-					'<meta name="robots" content="noindex,nofollow" /></head>'
-				)
-				const folder = resolve(directory, `.${language.prefix}${path}`)
-				await mkdir(folder, { recursive: true })
-				await writeFile(resolve(folder, 'app.html'), shell)
-			})
-		)
 	)
 	await writeFile(
 		resolve(directory, '404.html'),
