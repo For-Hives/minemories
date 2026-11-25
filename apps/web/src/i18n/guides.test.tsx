@@ -40,10 +40,10 @@ test.each([ConceptPage, HowItWorksPage, FaqPage])(
 		expect(document.querySelector('article')?.lang).toBe('en')
 		// Bréval is a name (who makes Minemories), not French copy left untranslated.
 		expect(document.querySelector('article')?.textContent?.replaceAll('Bréval', '')).not.toMatch(/[àâçéèêëîïôùûü]/i)
-		expect(screen.getAllByRole('link', { name: 'Install the mod' }).length).toBeGreaterThan(0)
+		const english = screen.getByRole('heading', { level: 1 }).textContent
 		fireEvent.click(screen.getByRole('button', { name: 'Switch language' }))
 		expect(document.querySelector('article')?.lang).toBe('fr')
-		expect(screen.getAllByRole('link', { name: 'Installer le mod' }).length).toBeGreaterThan(0)
+		expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(english)
 	}
 )
 const radio = (name: string | RegExp) => screen.getByRole('radio', { name }) as HTMLInputElement

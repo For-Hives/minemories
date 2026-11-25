@@ -5,14 +5,12 @@ import { ChunkLoader } from './ChunkLoader'
 
 export function ViewerHeader({
 	title,
-	subtitle,
 	children,
 	below,
 	back = '/gallery',
 	backLabel,
 }: {
 	title: string
-	subtitle: string
 	children?: ReactNode
 	/** A full-width row under the title (a shared scene's slider and visitor line): it never covers the title, whatever its length. */
 	below?: ReactNode
@@ -26,9 +24,6 @@ export function ViewerHeader({
 				←
 			</Link>
 			<div className="cinema-title">
-				<span>
-					minemories <i>/</i> {subtitle}
-				</span>
 				<h1>{title}</h1>
 			</div>
 			<div className="cinema-header-actions">{children}</div>

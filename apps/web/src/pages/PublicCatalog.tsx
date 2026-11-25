@@ -175,7 +175,6 @@ export function PublicGallery() {
 									style={{ backgroundImage: `url("${item.thumbnail}")` }}
 								/>
 							)}
-							<span className="mm-kicker">{labels[item.category]}</span>
 							<h2>{item.title}</h2>
 							<p>{item.description}</p>
 							<div className="mm-actions">
@@ -211,7 +210,6 @@ export function PublicGallery() {
 									</Link>
 								)}
 							</div>
-							<Link to={`/public/${item.id}`}>{t('Public memory link ↗')}</Link>
 							{reportId === item.id && (
 								<form
 									onSubmit={event => {

@@ -55,9 +55,6 @@ function Welcome({
 		<>
 			<header className="install-hero">
 				<div>
-					<span className="install-eyebrow">
-						<T message={'Your first memory starts here'} />
-					</span>
 					<h1>
 						<T message={'Install Minemories'} />
 					</h1>
@@ -67,9 +64,6 @@ function Welcome({
 				</div>
 				<div className="install-hero-art">
 					<InstallationScene />
-					<span>
-						<T message={'Build. Capture. Return.'} />
-					</span>
 				</div>
 			</header>
 			{/* Hidden until the browser has detected the system: before that, Windows would only be a guess. */}

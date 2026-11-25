@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
+import { linkWarning } from '../content/faq'
 import { T, useI18n } from '../i18n/I18n'
 import { type ViewLink, withViewLink } from '../lib/view-link'
 import { track } from '../observability/insight'
@@ -243,11 +244,7 @@ export function SharePanel({ memoryId, view }: { memoryId: string; view?: () => 
 			<h3>{t('Share by link')}</h3>
 			<p>{t('Anyone with the link can visit without an account. This memory stays out of the public gallery.')}</p>
 			{/* Interim warning until /api/shared stops returning the capture's location and world identity (decision D1). */}
-			<p className="memory-share-warning">
-				{t(
-					'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
-				)}
-			</p>
+			<p className="memory-share-warning">{t(linkWarning)}</p>
 			{hasWorld && (
 				<ScopeSwitch
 					scope={active}

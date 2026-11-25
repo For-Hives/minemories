@@ -171,18 +171,6 @@
 	gap: var(--ds-sp-1);
 	min-width: 0;
 }
-.cinema-title > span {
-	padding: var(--gp) calc(3 * var(--gp));
-	background: rgb(0 0 0 / var(--mc-plaque-alpha));
-	font: 400 16px / 18px var(--f-ui);
-	color: var(--text-2);
-	text-transform: uppercase;
-	white-space: nowrap;
-}
-.cinema-title i {
-	padding: 0 var(--ds-sp-2);
-	color: var(--text-3);
-}
 /* On a plaque, the kit's rule for a title over a light image (the sky can be bright). */
 .cinema-title h1 {
 	margin: 0;
@@ -359,17 +347,17 @@
 	color: #fff;
 	text-shadow: var(--ds-text-shadow-2);
 }
+.cinema-settings p {
+	margin: 0 0 var(--ds-sp-5);
+	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
+	color: var(--text-2);
+}
 h2.cinema-panel-title {
 	margin: 0;
 	font-size: 16px;
 	line-height: 24px;
 	color: var(--text-2);
 	text-shadow: var(--ds-text-shadow-1);
-}
-.cinema-settings p {
-	margin: 0 0 var(--ds-sp-5);
-	font: 400 var(--ds-rd-fs-sm) / var(--ds-rd-lh-sm) var(--ds-f-text);
-	color: var(--text-2);
 }
 .cinema-page .viewer-weather {
 	display: grid;
@@ -607,13 +595,6 @@ h2.cinema-panel-title {
 .cinema-gesture {
 	margin-left: var(--ds-sp-3);
 	color: var(--text-2);
-}
-.cinema-live-dot {
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--ember);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 .cinema-page .cinema-immerse {
 	position: absolute;
@@ -905,10 +886,6 @@ h2.cinema-panel-title {
 		font-size: 16px;
 		line-height: 24px;
 		text-shadow: var(--ds-text-shadow-1);
-	}
-	.cinema-title > span {
-		max-width: 100%;
-		white-space: normal;
 	}
 	.cinema-header-actions {
 		flex: none;

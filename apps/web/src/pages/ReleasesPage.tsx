@@ -1,9 +1,8 @@
 import { Link } from 'react-router'
-import { buttonLime, buttonOutline } from '../components/ui'
+import { buttonLime } from '../components/ui'
 import { useI18n } from '../i18n/I18n'
 import type { NotedRelease, ReleaseNote } from '../lib/release-notes'
 import { ContentLayout } from './ContentPages'
-import { catalogLinks } from './installation-loaders'
 import { releases as history } from './release-history'
 import { useModReleases } from './useModReleases'
 import './releases.css'
@@ -40,12 +39,8 @@ function Latest({ release, published }: { release: NotedRelease; published: numb
 	const id = `v${release.version}`
 	return (
 		<section className="mm-release-card" id={id} aria-labelledby={`${id}-title`}>
-			<div className="mm-release-meta">
-				<span className="mm-release-badge">{t('Latest version')}</span>
-				<ReleaseDate published={published} />
-			</div>
-			<h2 id={`${id}-title`}>{`Minemories ${release.version}`}</h2>
-			<h3>{t('What changes for you')}</h3>
+			<h2 id={`${id}-title`}>{release.version}</h2>
+			<ReleaseDate published={published} />
 			<ul className="mm-release-notes">
 				{release.notes.slice(0, latestNotes).map(note => (
 					<li key={note.text}>
@@ -57,11 +52,6 @@ function Latest({ release, published }: { release: NotedRelease; published: numb
 				<Link className={buttonLime} to="/downloads">
 					{t('Download')}
 				</Link>
-				{catalogLinks().map(catalog => (
-					<a key={catalog.name} className={buttonOutline} href={catalog.url} rel="noopener">
-						{t('Minemories on {app}', { app: catalog.name })}
-					</a>
-				))}
 			</div>
 		</section>
 	)
@@ -78,7 +68,6 @@ export function ReleasesPage() {
 	const [latest, ...previous] = history
 	return (
 		<ContentLayout
-			eyebrow={t('MINEMORIES · RELEASES')}
 			title={t('What’s new in Minemories')}
 			lead={t('Every Minemories version and what it changed, with dates.')}
 		>
@@ -89,7 +78,7 @@ export function ReleasesPage() {
 					<ol className="mm-release-older">
 						{previous.map(release => (
 							<li key={release.version} id={`v${release.version}`}>
-								<h3>{`Minemories ${release.version}`}</h3>
+								<h3>{release.version}</h3>
 								<ReleaseDate published={published(release.version)} />
 								<p>
 									<Note note={release.notes[0] as ReleaseNote} />

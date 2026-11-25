@@ -26,11 +26,9 @@ test('opening sharing does not publish; an explicit action creates the link and 
 	)
 	const create = await screen.findByRole('button', { name: 'Create a link' })
 	expect(api.createShare).not.toHaveBeenCalled()
-	// Before any link exists, the panel says what it exposes beyond the 3D scene.
+	// Before any link exists, the panel says in one line that the link gives the base's place away (the full list is the FAQ's).
 	expect(
-		screen.getByText(
-			'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.'
-		)
+		screen.getByText('The link shows where your base is, and on which server. Think before posting it in public.')
 	).toBeTruthy()
 	fireEvent.click(create)
 	const link = (await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement
@@ -98,9 +96,7 @@ test('the French panel warns about coordinates, world name, seed and server befo
 	)
 	await screen.findByRole('button', { name: 'Créer un lien' })
 	expect(
-		screen.getByText(
-			'Le lien montre aussi les coordonnées, la dimension, le biome, le nom du monde, la graine (en solo) ou le nom ou l’adresse du serveur.'
-		)
+		screen.getByText('Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.')
 	).toBeTruthy()
 })
 

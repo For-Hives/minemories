@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render as renderUi, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render as renderUi, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { faqGroups, questions } from '../content/faq'
 import { loadLocale, translate } from '../i18n/catalog'
 import { I18nProvider } from '../i18n/I18n'
 import { LegalPage } from './ContentPages'
-import { ConceptPage, FaqPage, HowItWorksPage, SideNavigation } from './InfoPages'
-import { InstallationPage } from './InstallationPage'
+import { ConceptPage, FaqPage, HowItWorksPage } from './InfoPages'
 import { SharingPage } from './SharingPage'
 
 function render(ui: Parameters<typeof renderUi>[0]) {
@@ -21,41 +21,35 @@ afterEach(() => {
 
 function mountGuide() {
 	return render(
-		<MemoryRouter initialEntries={['/']}>
+		<MemoryRouter initialEntries={['/concept']}>
 			<Routes>
-				<Route path="/" element={<SideNavigation />} />
 				<Route path="/concept" element={<ConceptPage />} />
-				<Route path="/how-it-works" element={<HowItWorksPage />} />
-				<Route path="/installation" element={<InstallationPage />} />
 				<Route path="/faq" element={<FaqPage />} />
 			</Routes>
 		</MemoryRouter>
 	)
 }
 
-test('public guides let a visitor move from concept to capture, installation and FAQ', () => {
+test('public guides let a visitor move from concept to its FAQ group, then to installation', () => {
 	mountGuide()
-	fireEvent.click(screen.getByRole('link', { name: 'C’est quoi, Minemories\u00a0?' }))
 	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
-	fireEvent.click(screen.getAllByRole('link', { name: 'Comment ça marche' })[0] as HTMLElement)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Du monde Minecraft au souvenir 3D')
-	// the side navigation marks the page you are on, and only that one
-	const side = screen.getByRole('navigation', { name: 'Guides Minemories' })
-	expect([...side.querySelectorAll('a[aria-current="page"]')].map(link => link.textContent)).toEqual([
-		'Comment ça marche',
-	])
-	expect(within(side).getByRole('list', { name: 'Guides' })).toBeTruthy()
-	expect(screen.queryByRole('tab')).toBeNull()
-	expect(screen.getByRole('slider', { name: 'Rayon en blocs' })).toBeTruthy()
-	fireEvent.click(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1) as HTMLElement)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Installer Minemories')
-	expect(screen.getByRole('button', { name: /^Installation guidée/ })).toBeTruthy()
-	expect(screen.getAllByRole('link', { name: 'Tous les téléchargements' }).length).toBeGreaterThan(0)
-	const faqLink = screen.getAllByRole('link', { name: 'Toutes les questions' }).at(0)
-	if (!faqLink) throw new Error('FAQ navigation is missing')
+	// no side navigation copies the bar's menus, and the page ends on one link to its group of the FAQ, not on answers
+	expect(screen.queryByRole('navigation')).toBeNull()
+	expect(document.querySelector('.ex-faq-item')).toBeNull()
+	const faqLink = screen.getByRole('link', { name: 'Questions\u00a0: Le mod\u00a0→' })
+	expect(faqLink.getAttribute('href')).toBe('/faq#the-mod')
 	fireEvent.click(faqLink)
 	expect(screen.getByRole('heading', { name: 'Il faut installer quelque chose sur le serveur\u00a0?' })).toBeTruthy()
 	expect(screen.getByRole('heading', { name: 'Qui peut voir les souvenirs de mon enfant\u00a0?' })).toBeTruthy()
+	expect(screen.queryByRole('link', { name: 'Installer le mod' })).toBeNull()
+})
+
+test('how it works links to its FAQ group and to safety; the install button lives in the bar only', () => {
+	mountEnglish(<HowItWorksPage />)
+	expect(screen.getByRole('link', { name: 'Questions: Capturing\u00a0→' }).getAttribute('href')).toBe('/faq#capturing')
+	expect(screen.getByRole('link', { name: 'Is Minemories safe? →' }).getAttribute('href')).toBe('/safety')
+	expect(screen.queryByRole('link', { name: 'Install the mod' })).toBeNull()
+	expect(screen.getByRole('slider', { name: 'Radius in blocks' })).toBeTruthy()
 })
 
 function mountEnglish(ui: React.ReactNode) {
@@ -80,14 +74,11 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'2. The file stays with you',
 		'3. You connect the game, if you want',
 		'4. You show it, if you want',
-		'Questions',
 	])
 	for (const label of [
 		'Press M → Take a memory.',
 		'In Minecraft: M → type the code → Connect.',
-		'Yes: M → Auto memories.',
-		'M → Settings → Privacy',
-		'Heads-up: the link shows your base’s coordinates, dimension and biome',
+		'The link shows where your base is, and on which server. Think before posting it in public.',
 	])
 		expect(howTo).toContain(label)
 	// The 32-block default radius, drawn: 65 × 65 blocks.
@@ -97,10 +88,10 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 	expect(howTo).not.toContain('/minemories upload')
 	// Not before the owner confirms the measure (D13).
 	expect(howTo).not.toMatch(/lag|slow the game down/i)
-	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2)
+	expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
 })
 
-test('the concept page says what it is, what it is not, compares the other ways with a date, then asks three questions', () => {
+test('the concept page says what it is, what it is not as a plain list, compares the other ways with a date, then links to its questions', () => {
 	mountEnglish(<ConceptPage />)
 	const text = document.querySelector('article')?.textContent ?? ''
 	expect(text).toContain('Minemories is a Minecraft Java mod')
@@ -111,7 +102,9 @@ test('the concept page says what it is, what it is not, compares the other ways 
 		'One area, not the whole world',
 		'Java on a computer only',
 	])
-		expect(screen.getByText(item)).toBeTruthy()
+		expect(screen.getByText(item).tagName).toBe('LI')
+	// a plain list: no pictogram in front of each item
+	expect(screen.getByText('Not playable').closest('ul')?.querySelector('svg')).toBeNull()
 	const table = screen.getByRole('table')
 	expect(table.querySelector('caption')?.textContent).toBe('Compared in November 2026.')
 	expect(screen.getAllByRole('columnheader').map(cell => cell.textContent)).toEqual([
@@ -127,15 +120,12 @@ test('the concept page says what it is, what it is not, compares the other ways 
 		'World copy (WorldTools, ZIP)',
 		'BlueMap',
 	])
-	expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent)).toEqual([
-		'How is it different from BlueMap?',
-		'Can I play in it again?',
-		'Are basements included?',
-	])
+	expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+	expect(screen.getByRole('link', { name: 'Questions: The mod\u00a0→' }).getAttribute('href')).toBe('/faq#the-mod')
 	// No before/after slider until real dated captures of one place exist.
 	expect(screen.queryByRole('slider')).toBeNull()
 	expect(document.getElementById('avant-apres')).toBeNull()
-	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(screen.queryByRole('link', { name: 'Install the mod' })).toBeNull()
 })
 
 test('the FAQ is one visible list, grouped, with an anchor per question and the supported versions', () => {
@@ -155,6 +145,9 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 	])
 	for (const anchor of ['ban', 'sodium', 'vieux-monde', 'versions'])
 		expect(document.getElementById(anchor)?.querySelector('a')?.getAttribute('href')).toBe(`#${anchor}`)
+	// every group is an anchor the guide pages link to, and every question written is on the page, so no answer lives only on another page
+	for (const group of faqGroups) expect(document.getElementById(group.id)?.tagName).toBe('SECTION')
+	expect(faqGroups.flatMap(group => group.ids).sort()).toEqual(Object.keys(questions).sort())
 	expect(faq).toContain(
 		'In beta: Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, plus 26.3 as an experimental version.'
 	)
@@ -164,7 +157,7 @@ test('the FAQ is one visible list, grouped, with an anchor per question and the 
 	expect(faq).not.toMatch(/free|open source|modpack|lag/i)
 	expect(faq).not.toMatch(/@[\w-]+\.\w+/)
 	expect(faq).not.toContain('1.18.2 → 1.21.11')
-	expect(screen.getAllByRole('link', { name: 'Install the mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(screen.queryByRole('link', { name: 'Install the mod' })).toBeNull()
 })
 
 test('each language quotes the labels of its own mod translation', async () => {
@@ -279,7 +272,7 @@ test('the privacy page names who is responsible, the service providers, the righ
 	expect(text).toMatch(/Dernière mise à jour\u00a0: 19 novembre 2026/)
 })
 
-test('/sharing says what a link shows, answers three questions and ends on the install button', () => {
+test('/sharing says what a link shows in one short line and ends on a link to its FAQ group', () => {
 	renderUi(
 		<I18nProvider initialLocale="fr">
 			<MemoryRouter>
@@ -291,12 +284,17 @@ test('/sharing says what a link shows, answers three questions and ends on the i
 	expect(text).toContain('Un lien vers un souvenir, ou vers tout un monde avec son curseur pour remonter le temps.')
 	expect(text).toContain('Télécharge la carte postale HD')
 	expect(text).toContain('Partager → Créer un lien → Copier')
-	// the warning an SMP player needs opens its section, before the list of what else the link shows
-	const warning = text.indexOf('Attention\u00a0: le lien montre les coordonnées, la dimension et le biome de ta base')
+	// the warning an SMP player needs opens its section, before the list of what else the link shows; the full list is the FAQ's
+	const warning = text.indexOf(
+		'Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.'
+	)
 	expect(warning).toBeGreaterThan(-1)
 	expect(warning).toBeLessThan(text.indexOf('La scène 3D, son nom et sa date.'))
-	expect(text).toContain('le nom du monde et la seed en solo')
-	expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3)
-	expect(screen.getAllByRole('link', { name: 'Installer le mod' }).at(-1)?.getAttribute('href')).toBe('/installation')
+	expect(text).not.toContain('le nom du monde et la seed en solo')
+	expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+	expect(screen.getByRole('link', { name: 'Questions\u00a0: Galerie et partage\u00a0→' }).getAttribute('href')).toBe(
+		'/faq#sharing'
+	)
+	expect(screen.queryByRole('link', { name: 'Installer le mod' })).toBeNull()
 	expect(text).not.toMatch(/démonstration|illustrations|Voir la démo/)
 })

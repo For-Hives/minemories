@@ -187,9 +187,6 @@ export function AccountPage() {
 							aria-labelledby="email-heading"
 							onSubmit={event => void submit('email', event)}
 						>
-							<span aria-hidden="true" className="mm-account-symbol">
-								@
-							</span>
 							<h2 id="email-heading">{t('Email address')}</h2>
 							<p>{t('Choose the address for your next sign-in.')}</p>
 							<label>
@@ -226,9 +223,6 @@ export function AccountPage() {
 							aria-labelledby="password-heading"
 							onSubmit={event => void submit('password', event)}
 						>
-							<span aria-hidden="true" className="mm-account-symbol">
-								✳
-							</span>
 							<h2 id="password-heading">{t('Password')}</h2>
 							<p>{t('Use at least 12 characters and a unique password.')}</p>
 							<label>

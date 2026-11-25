@@ -1,63 +1,35 @@
 import type { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Link } from 'react-router'
 import { RadiusMap, ShareDemo } from '../components/diagrams'
-import { FileTree, Glyph, type GlyphName } from '../components/explainers'
-import { buttonLime } from '../components/ui'
-import { type FaqEntry, faqGroups, faqText, pageQuestions, type QuestionId, questions } from '../content/faq'
-import { navMenus } from '../content/navigation'
+import { FileTree, Glyph } from '../components/explainers'
+import {
+	type FaqEntry,
+	type FaqGroupId,
+	faqGroups,
+	faqText,
+	linkWarning,
+	pageFaqGroups,
+	type QuestionId,
+	questions,
+} from '../content/faq'
 import { useI18n } from '../i18n/I18n'
-
-/**
- * The side navigation of the guide pages: the site's pages grouped like the bar's menus (Product, Guides, Help), the current one marked.
- * Only on wide screens (theme.css): below that, the bar's menus already list the same pages, so there is never a second bar.
- */
-export function SideNavigation() {
-	const { t } = useI18n()
-	const { pathname } = useLocation()
-	return (
-		<nav aria-label={t('Minemories guides')} className="mm-side-nav">
-			{navMenus().map(menu => {
-				const links = menu.sections[0]?.links.flatMap(link => ('to' in link ? [link] : [])) ?? []
-				return (
-					<div key={menu.id} className="mm-side-nav__group">
-						<p className="mm-side-nav__title" id={`side-nav-${menu.id}`}>
-							{t(menu.label)}
-						</p>
-						<ul aria-labelledby={`side-nav-${menu.id}`}>
-							{links.map(link => (
-								<li key={link.to}>
-									<Link to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
-										{t(link.label)}
-									</Link>
-								</li>
-							))}
-						</ul>
-					</div>
-				)
-			})}
-		</nav>
-	)
-}
 
 export function InfoPage({ title, children }: { title: string; children: ReactNode }) {
 	const { locale, t } = useI18n()
 	return (
-		<div className="mm-info-shell">
-			<SideNavigation />
-			<article lang={locale} className="mm-info">
-				<h1>{t(title)}</h1>
-				{children}
-			</article>
-		</div>
+		<article lang={locale} className="mm-info">
+			<h1>{t(title)}</h1>
+			{children}
+		</article>
 	)
 }
 
-const notThis: Array<[GlyphName, string]> = [
-	['refresh', 'Not playable'],
-	['pencil', 'Not editable'],
-	['disk', 'Not a backup'],
-	['cube', 'One area, not the whole world'],
-	['globe', 'Java on a computer only'],
+const notThis = [
+	'Not playable',
+	'Not editable',
+	'Not a backup',
+	'One area, not the whole world',
+	'Java on a computer only',
 ]
 type Cell = 'Yes' | 'No' | (string & {})
 /** The ways to keep a build, compared on what a player asks first. Dated: the other tools change. */
@@ -121,23 +93,14 @@ export function ConceptPage() {
 				)}
 			</p>
 			<h2>{t('What it isn’t')}</h2>
-			<ul className="ex-not">
-				{notThis.map(([glyph, label]) => (
-					<li key={label}>
-						<Glyph name={glyph} />
-						{t(label)}
-					</li>
+			<ul className="ex-list">
+				{notThis.map(label => (
+					<li key={label}>{t(label)}</li>
 				))}
 			</ul>
 			<h2>{t('Other ways to keep a build')}</h2>
 			<Comparison />
-			<h2>{t('Questions')}</h2>
-			<Questions ids={pageQuestions.concept} />
-			<p>
-				<Link className={buttonLime} to="/installation">
-					{t('Install the mod')}
-				</Link>
-			</p>
+			<FaqLink group={pageFaqGroups.concept} />
 		</InfoPage>
 	)
 }
@@ -193,46 +156,45 @@ export function HowItWorksPage() {
 						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
 						{t('You stop sharing whenever you want.')}
 					</p>
-					<p className="ex-line">
-						{t(
-							'Heads-up: the link shows your base’s coordinates, dimension and biome, and the server name or address (or the world name and seed in single player). Think before posting it publicly.'
-						)}
-					</p>
+					<p className="ex-line">{t(linkWarning)}</p>
 					<ShareDemo />
 				</li>
 			</ol>
-			<h2>{t('Questions')}</h2>
-			<Questions ids={pageQuestions.howItWorks} />
 			<p>
 				<Link to="/safety">{t('Is Minemories safe?')} →</Link>
 			</p>
-			<p>
-				<Link className={buttonLime} to="/installation">
-					{t('Install the mod')}
-				</Link>
-			</p>
+			<FaqLink group={pageFaqGroups.howItWorks} />
 		</InfoPage>
 	)
 }
 
-/**
- * Questions and their short answers, from content/faq.ts. On /faq each one carries its anchor (`/faq#ban`). An answer's
- * link to the page it is shown on is left out.
- */
-export function Questions({ ids, anchors = false }: { ids: readonly QuestionId[]; anchors?: boolean }) {
+/** The end of a guide page: one link to its group of /faq, in place of answers copied from it. */
+export function FaqLink({ group }: { group: FaqGroupId }) {
 	const { t } = useI18n()
-	const { pathname } = useLocation()
+	const label = faqGroups.find(entry => entry.id === group)?.label ?? 'FAQ'
+	return (
+		<p className="ex-faq-link">
+			<Link to={`/faq#${group}`}>{t('Questions: {topic}', { topic: t(label) })}&nbsp;→</Link>
+		</p>
+	)
+}
+
+/** The questions of one /faq group and their short answers, from content/faq.ts, each with its anchor (`/faq#ban`). */
+function Questions({ ids }: { ids: readonly QuestionId[] }) {
+	const { t } = useI18n()
 	return (
 		<div className="ex-faq">
 			{ids.map(id => {
 				const entry: FaqEntry = questions[id]
 				const { question, answer } = faqText(id, t)
 				return (
-					<div key={id} className="ex-faq-item" id={anchors ? id : undefined}>
-						<h3>{anchors ? <a href={`#${id}`}>{question}</a> : question}</h3>
+					<div key={id} className="ex-faq-item" id={id}>
+						<h3>
+							<a href={`#${id}`}>{question}</a>
+						</h3>
 						<p>
 							{answer}
-							{entry.link && entry.link.to !== pathname && (
+							{entry.link && (
 								<>
 									{' '}
 									<Link to={entry.link.to}>{t(entry.link.label)} →</Link>
@@ -251,16 +213,11 @@ export function FaqPage() {
 	return (
 		<InfoPage title="Frequently asked questions">
 			{faqGroups.map(group => (
-				<section key={group.label} className="ex-faq-group">
+				<section key={group.id} id={group.id} className="ex-faq-group">
 					<h2>{t(group.label)}</h2>
-					<Questions ids={group.ids} anchors />
+					<Questions ids={group.ids} />
 				</section>
 			))}
-			<p>
-				<Link className={buttonLime} to="/installation">
-					{t('Install the mod')}
-				</Link>
-			</p>
 		</InfoPage>
 	)
 }

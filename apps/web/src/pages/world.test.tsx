@@ -125,7 +125,9 @@ test('loads every capture of the world oldest first, then glides camera and sun 
 	])
 	expect(mocks.context).toHaveBeenCalledWith(expect.objectContaining({ x: 10, dimension: 'minecraft:overworld' }))
 	expect(mocks.minutes).toHaveBeenCalledWith(720)
-	expect(screen.getByText(/Overworld/)).toBeTruthy()
+	// the header holds the world's name alone: no "minemories / Overworld" crumb
+	expect(document.querySelector('.cinema-title')?.children).toHaveLength(1)
+	expect(screen.queryByText(/Overworld/)).toBeNull()
 	expect(current()).toBe(0)
 	expect(screen.queryByRole('progressbar')).toBeNull()
 	await waitFor(() =>

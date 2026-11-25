@@ -87,14 +87,16 @@ test('the prerendered table already links every published JAR, with the Java col
 	expect(last.querySelector('th')?.textContent).toBe('26.3Expérimentale')
 	expect(last.querySelector('.mm-dl-java')?.textContent).toBe('25')
 	expect(last.textContent).toContain('Fabric 0.19.5')
-	expect(page).toContain('Ça marche sur Bedrock, console ou téléphone\u00a0?')
-	expect(page).toContain('1.12.2 et 1.16.5\u00a0: pas encore.')
-	expect(page).toContain('son empreinte SHA-256 doit être celle affichée ici')
-	// The CurseForge app comes first, above the table: it installs Fabric API too.
-	const callout = document.querySelector('.mm-catalog-callout') as HTMLElement
-	expect(callout.textContent).toBe(
-		'Avec l’app CurseForgeL’app installe Minemories et ce qu’il lui faut.Minemories sur CurseForge'
+	// The questions live on /faq: the page links to the group asked before installing.
+	expect(page).not.toContain('Ça marche sur Bedrock, console ou téléphone\u00a0?')
+	expect(document.querySelector('a[href="/faq#before-installing"]')?.textContent).toBe(
+		'Questions\u00a0: Avant d’installer\u00a0→'
 	)
+	expect(page).toContain('son empreinte SHA-256 doit être celle affichée ici')
+	// The CurseForge app comes first, above the table, as one line: it installs Fabric API too.
+	const callout = document.querySelector('.mm-dl-catalog') as HTMLElement
+	expect(callout.tagName).toBe('P')
+	expect(callout.textContent).toBe('Minemories sur CurseForge\u00a0→ L’app installe Minemories et ce qu’il lui faut.')
 	expect(callout.querySelector('a')?.getAttribute('href')).toBe(
 		'https://www.curseforge.com/minecraft/mc-mods/minemories'
 	)
@@ -121,7 +123,8 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	expect(link.textContent).toBe('Télécharger')
 	const row = link.closest('tr') as HTMLElement
 	expect(within(row).getByRole('rowheader').textContent).toBe('1.21.1La plus testée')
-	expect(screen.getByText('MINEMORIES · TÉLÉCHARGEMENTS')).toBeTruthy()
+	// the title stands alone: no label above it
+	expect(screen.getByRole('heading', { level: 1 }).previousElementSibling).toBeNull()
 	expect(within(row).getAllByText(/0\.2\.0 · 0,29 MiB/)).toHaveLength(2)
 	expect(within(row).getByText('a'.repeat(64))).toBeTruthy()
 	expect(within(row).getAllByText('SHA-256')[0]?.closest('details')).toBeTruthy()
@@ -137,9 +140,11 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	expect(
 		screen.getByRole('link', { name: 'Pas sûr\u00a0? Le guide te pose deux questions.' }).getAttribute('href')
 	).toBe('/installation')
-	// The "which versions?" answer links to /downloads: on /downloads itself that link is left out.
-	expect(screen.getByRole('heading', { name: 'Quelles versions\u00a0?' })).toBeTruthy()
-	expect(screen.queryByRole('link', { name: 'Téléchargements →' })).toBeNull()
+	// The answers are not copied here: one link leads to the questions asked before installing.
+	expect(screen.queryByRole('heading', { name: 'Quelles versions\u00a0?' })).toBeNull()
+	expect(screen.getByRole('link', { name: 'Questions\u00a0: Avant d’installer\u00a0→' }).getAttribute('href')).toBe(
+		'/faq#before-installing'
+	)
 })
 
 test('every published cell opens the guide with its version and loader already picked', async () => {

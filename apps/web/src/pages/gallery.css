@@ -556,78 +556,6 @@
 	font: 400 var(--ds-rd-fs-sm) / 1.4 var(--ds-f-text);
 	color: var(--text-2);
 }
-/* Chips: small dark slots of recorded data. */
-.gallery-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--ds-sp-2);
-	margin: 0;
-	padding: var(--gp);
-	list-style: none;
-}
-.gallery-chips li {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	max-width: 100%;
-	min-height: 28px;
-	padding: 2px var(--ds-sp-2);
-	background: var(--night);
-	box-shadow: 0 0 0 var(--gp) var(--g-line);
-	font: 400 var(--ds-rd-fs-sm) / 1.25 var(--ds-f-text);
-	color: var(--text);
-}
-.gallery-chips li > svg {
-	width: 16px;
-	height: 16px;
-	flex: none;
-}
-.gallery-chips li[data-kind="biome"] > svg {
-	color: var(--c-green);
-}
-.gallery-chips li[data-kind="place"] > svg,
-.gallery-chips li[data-kind="size"] > svg {
-	color: var(--text-3);
-}
-.gallery-chips li[data-kind="weather"] > svg {
-	color: var(--c-blue);
-}
-.gallery-chips li[data-kind="size"] {
-	color: var(--text-2);
-}
-/* The dimension's colour, as an 8 px block. */
-.gallery-dimension-dot {
-	width: 8px;
-	height: 8px;
-	flex: none;
-	background: #6fa456;
-	box-shadow: 0 0 0 var(--gp) var(--outline);
-}
-[data-dimension="Nether"] .gallery-dimension-dot {
-	background: #c8503c;
-}
-[data-dimension="The End"] .gallery-dimension-dot {
-	background: #b49ae0;
-}
-[data-dimension="modded"] .gallery-dimension-dot {
-	background: var(--text-3);
-}
-.gallery-axis {
-	font-variant-numeric: tabular-nums;
-}
-.gallery-axis + .gallery-axis {
-	margin-left: var(--ds-sp-2);
-}
-.gallery-axis b {
-	margin-right: var(--ds-sp-1);
-	font: 400 16px / 1 var(--f-ui);
-	color: var(--text-2);
-}
-.gallery-chip-text {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
 .gallery-actions {
 	display: flex;
 	align-items: center;
@@ -1407,8 +1335,7 @@ html[data-mc-motion="reduced"]
 	.context-menu,
 	.gallery-empty,
 	.gallery-trash-card,
-	.gallery-snapshots li,
-	.gallery-chips li {
+	.gallery-snapshots li {
 		border: 1px solid CanvasText;
 		border-image: none;
 	}

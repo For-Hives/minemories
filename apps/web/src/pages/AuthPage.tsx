@@ -118,13 +118,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						</Link>
 					</nav>
 					<header className="auth-heading">
-						<span className="auth-eyebrow">{t('YOUR GALLERY')}</span>
 						<h1>{creating ? t('Your gallery starts here') : t('Good to see you again')}</h1>
-						<p>
-							{creating
-								? t('Your memories land here once the game is connected. You choose who sees them.')
-								: t('Your memories are right where you left them.')}
-						</p>
+						{creating && <p>{t('Your memories land here once the game is connected. You choose who sees them.')}</p>}
 					</header>
 					<SocialSignIn destination={from} />
 					{!creating && <CredentialsNotice />}
@@ -152,7 +147,6 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 						<button className="auth-submit mc-btn mc-btn--primary mc-btn--block" type="submit" disabled={busy}>
 							{busy && <span className="auth-spinner" aria-hidden="true" />}
 							{t(submitText(creating, busy))}
-							<span aria-hidden="true">↗</span>
 						</button>
 						<p className="auth-private">
 							<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true">
@@ -170,77 +164,51 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 	)
 }
 
+/** One line to the public gallery; in development, also a local .glb opener. */
 function GuestEntry() {
 	const { t } = useI18n()
 	const { setViewerFile } = useAppContext()
 	const navigate = useNavigate()
 	return (
-		<aside className="auth-guest" aria-label={t('Visit without an account')}>
-			<div className="auth-guest-title">
-				<span aria-hidden="true">↗</span>
-				<h2>
-					<Link className="auth-guest-link" to="/explore">
-						{t('Just visiting?')}
-					</Link>
-				</h2>
-				<span>{t('NO ACCOUNT')}</span>
-			</div>
-			{import.meta.env.DEV ? (
-				<>
-					<p>{t('Open a .glb file from your computer. It isn’t sent anywhere.')}</p>
-					<label className="auth-file">
-						{t('Open a file')}
-						<span aria-hidden="true">＋</span>
-						<input
-							type="file"
-							className={fileInputHidden}
-							accept=".glb,model/gltf-binary"
-							aria-label={t('Open a file')}
-							onChange={event => {
-								const file = event.currentTarget.files?.[0]
-								if (file) {
-									setViewerFile(file)
-									navigate('/viewer')
-								}
-								event.currentTarget.value = ''
-							}}
-						/>
-					</label>
-				</>
-			) : (
-				<p>{t('Explore memories shared by the community, without creating an account.')}</p>
+		<div className="auth-guest">
+			<p>
+				<Link className="auth-guest-link" to="/explore">
+					{t('Just visiting? See what others share')}&nbsp;→
+				</Link>
+			</p>
+			{import.meta.env.DEV && (
+				<label className="auth-file">
+					{t('Open a file')}
+					<span aria-hidden="true">＋</span>
+					<input
+						type="file"
+						className={fileInputHidden}
+						accept=".glb,model/gltf-binary"
+						aria-label={t('Open a file')}
+						onChange={event => {
+							const file = event.currentTarget.files?.[0]
+							if (file) {
+								setViewerFile(file)
+								navigate('/viewer')
+							}
+							event.currentTarget.value = ''
+						}}
+					/>
+				</label>
 			)}
-		</aside>
+		</div>
 	)
 }
 
+/** The illustration beside the form, with one line under it. */
 export function AuthAtmosphere() {
 	const { t } = useI18n()
 	return (
 		<aside className="auth-atmosphere" aria-label={t('The spirit of Minemories')}>
-			<div className="auth-art-sky" aria-hidden="true" />
-			<div className="auth-art-label">
-				<span>MINEMORIES</span>
-				<span>{t('IN 3D, IN YOUR BROWSER')}</span>
-			</div>
-			<div className="auth-art-copy">
-				<p>{t('Your house, your village, your group’s base.')}</p>
-				<h2>
-					{t('Go back')}
-					<br />
-					{t('whenever')}
-					<br />
-					<em>{t('you want.')}</em>
-				</h2>
-			</div>
 			<div className="auth-art-world">
 				<MemoryScene theme="village" label={t('Illustration of a village on an island')} />
 			</div>
-			<div className="auth-art-caption">
-				<span>01 / {t('THE MEMORY')}</span>
-				<p>{t('The server closes. Your base stays.')}</p>
-				<span>{t('Illustration')} · Minemories</span>
-			</div>
+			<p className="auth-art-line">{t('The server closes. Your base stays.')}</p>
 		</aside>
 	)
 }

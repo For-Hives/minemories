@@ -94,7 +94,7 @@ html[data-mc-font="read"] :is(.mm-site, .auth-shell) :is(h1, h2, h3) {
 }
 
 .mm-content-header h1 {
-	margin: var(--ds-sp-4) 0;
+	margin: 0 0 var(--ds-sp-4);
 	max-width: 760px;
 }
 
@@ -118,24 +118,6 @@ html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h2 {
 html.mm-cjk:not([data-mc-font="read"]) :is(.mm-site, .auth-shell) h3 {
 	font-size: 16px;
 	line-height: 24px;
-}
-
-/* Small label in the game's font (Eyebrow): the ember square of the landing in front. */
-.mm-eyebrow {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--ds-sp-2);
-	font: 400 var(--ds-fs-xs) / var(--ds-lh-xs) var(--f-ui);
-	color: var(--text-2);
-	text-shadow: var(--ds-text-shadow-1);
-}
-
-.mm-eyebrow-mark {
-	flex: none;
-	width: 8px;
-	height: 8px;
-	background: var(--ember);
-	box-shadow: 0 0 0 var(--gp) var(--outline);
 }
 
 /* --- 2. Buttons: the kit's button, plus two quieter ones -------------------------------------------------------------------------------------------- */
@@ -540,25 +522,12 @@ html[data-mc-motion="reduced"] .mm-toast {
 }
 
 .mm-content-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--ds-sp-6);
 	margin-bottom: var(--ds-sp-7);
 }
 
 .mm-content-header p {
 	color: var(--text-2);
 	max-width: var(--ds-measure);
-}
-
-/* The whole logo (camera and tripod) at the end of the content headers. */
-.mm-content-logo {
-	width: auto;
-	height: 112px;
-	flex-shrink: 0;
-	image-rendering: pixelated;
-	filter: drop-shadow(0 12px 10px rgb(0 0 0 / 45%));
 }
 
 .mm-content-grid {
@@ -728,13 +697,6 @@ a.mm-editorial-card:hover {
 @media (max-width: 730px) {
 	.mm-content {
 		padding: var(--ds-sp-7) var(--ds-sp-4) var(--ds-sp-8);
-	}
-	.mm-content-header {
-		align-items: start;
-		gap: var(--ds-sp-3);
-	}
-	.mm-content-header .mm-content-logo {
-		height: 64px;
 	}
 	.mm-editorial-card {
 		padding: var(--ds-sp-5);

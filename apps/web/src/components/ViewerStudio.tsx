@@ -379,8 +379,6 @@ export function ViewerStudio({
 								×
 							</button>
 						</div>
-						<h2>{t('A different light.')}</h2>
-						<p>{t('The same story, a new atmosphere.')}</p>
 						<fieldset disabled={!ready} className="viewer-weather">
 							<legend>{t('The sky')}</legend>
 							{(['clear', 'mist', 'overcast', 'rain', 'snow'] as const).map((value, index) => (
@@ -441,7 +439,6 @@ export function ViewerStudio({
 					/>
 				)}
 				<div className="cinema-caption">
-					<span className="cinema-live-dot" />
 					{fileInfo || t('A world to revisit')}
 					<span className="cinema-gesture">
 						{firstPerson ? t('Drag to look · Keyboard to move') : t('Drag to explore · Scroll to move closer')}

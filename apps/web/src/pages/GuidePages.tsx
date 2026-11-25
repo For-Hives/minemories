@@ -1,25 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { Command, FileTree, More } from '../components/explainers'
-import { buttonLime, buttonOutline } from '../components/ui'
-import { pageQuestions } from '../content/faq'
+import { buttonOutline } from '../components/ui'
+import { linkWarning, pageFaqGroups } from '../content/faq'
 import { translate } from '../i18n/catalog'
 import { type Locale, Rich, useI18n } from '../i18n/I18n'
 import { localeTag } from '../i18n/locales'
 import { siteOrigin } from '../route-metadata'
-import { InfoPage, Questions } from './InfoPages'
+import { FaqLink, InfoPage } from './InfoPages'
 import { catalogLinks } from './installation-loaders'
-
-function InstallButton({ source }: { source?: string }) {
-	const { t } = useI18n()
-	return (
-		<p>
-			<Link className={buttonLime} to={source ? `/installation?src=${source}` : '/installation'}>
-				{t('Install the mod')}
-			</Link>
-		</p>
-	)
-}
 
 /** The announcement an admin pastes in the server's chat or Discord: the install link carries `src=server`. */
 export const announcementUrl = new URL('/installation?src=server', siteOrigin).href
@@ -112,9 +101,7 @@ export function ServerClosingPage() {
 					<Announcement key={language} language={language} />
 				))}
 			</section>
-			<h2>{t('Questions')}</h2>
-			<Questions ids={pageQuestions.serverClosing} />
-			<InstallButton source="server-closing" />
+			<FaqLink group={pageFaqGroups.serverClosing} />
 		</InfoPage>
 	)
 }
@@ -207,11 +194,7 @@ export function SafetyPage() {
 				</table>
 			</section>
 			<h2>{t('What someone with a link sees')}</h2>
-			<p>
-				{t(
-					'Heads-up: the link shows your base’s coordinates, dimension and biome, and the server name or address (or the world name and seed in single player). Think before posting it publicly.'
-				)}
-			</p>
+			<p>{t(linkWarning)}</p>
 			<p>{t('The 3D scene, its name and its date.')}</p>
 			<p>
 				{t('Stop sharing blocks new visits, not a copy already made.')} {t('Players nearby appear with their skin.')}{' '}
@@ -226,7 +209,6 @@ export function SafetyPage() {
 			<p className="ex-links">
 				<Link to="/privacy">{t('Privacy')}</Link> <Link to="/faq">{t('All questions')}</Link>
 			</p>
-			<InstallButton />
 		</InfoPage>
 	)
 }
@@ -299,9 +281,7 @@ export function BlenderGuidePage() {
 					'Tools such as Mineways or jmc2obj read the world save: on a server, you need the admin’s copy. Minemories exports from your game.'
 				)}
 			</p>
-			<h2>{t('Questions')}</h2>
-			<Questions ids={pageQuestions.blender} />
-			<InstallButton />
+			<FaqLink group={pageFaqGroups.blender} />
 		</InfoPage>
 	)
 }

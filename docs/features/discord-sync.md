@@ -49,7 +49,7 @@ The Discord message is refreshed by the workflow; the site's `GET /api/roadmap` 
 
 ## Mod release card
 
-Posted to #changelog when a `mod-v*` tag is pushed. The site's "Latest mod version" card on `/roadmap` shows the same data (the `latestRelease` field of `GET /api/roadmap`, built by `apps/api/src/mod-release.ts`). The Discord side reads it from the public GitHub API in `scripts/discord/release-info.mjs`:
+Posted to #changelog when a `mod-v*` tag is pushed. `GET /api/roadmap` still carries the same data in its `latestRelease` field (built by `apps/api/src/mod-release.ts`), but `/roadmap` no longer draws it: `/versions` is the one page that lists what each version changes. The Discord side reads it from the public GitHub API in `scripts/discord/release-info.mjs`:
 
 - **Version**: the pushed tag, among the `mod-v*` tags (`mod-vX.Y.Z` or `mod-vX.Y.Z-beta.N`, at most three pages of 100 tags) sorted by semver with a release above its betas (`0.36.1` > `0.36.1-beta.3` > `0.36.1-beta.1` > `0.36.0`). Its previous release is the next older tag. A beta is marked as such. The site uses the newest tag.
 - **Date**: the committer date of the tag's commit, shown as a Discord date (`<t:…:D>`, in each reader's locale).

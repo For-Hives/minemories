@@ -55,16 +55,14 @@ test('the prerendered page says what changes, in player words, without waiting f
 		</I18nProvider>
 	)
 	const card = document.getElementById(`v${latest.version}`) as HTMLElement
-	expect(card.querySelector('h2')?.textContent).toBe(`Minemories ${latest.version}`)
-	expect(card.textContent).toContain('Dernière version')
-	expect(card.querySelector('h3')?.textContent).toBe('Ce qui change pour toi')
+	// the version alone: no "Latest version" badge, no sub-heading, no product name in front
+	expect(card.querySelector('h2')?.textContent).toBe(latest.version)
+	expect(card.querySelector('h3')).toBeNull()
 	expect(card.querySelectorAll('li')).toHaveLength(Math.min(3, latest.notes.length))
 	expect(card.querySelector('li')?.textContent).toMatch(/^(?:Nouveau|Corrigé|Modifié)\u00a0: /)
 	expect(card.querySelector('a')?.getAttribute('href')).toBe('/downloads')
 	expect(card.querySelector('a')?.textContent).toBe('Télécharger')
-	const curseForge = card.querySelectorAll('.mm-release-actions a')[1]
-	expect(curseForge?.textContent).toBe('Minemories sur CurseForge')
-	expect(curseForge?.getAttribute('href')).toBe('https://www.curseforge.com/minecraft/mc-mods/minemories')
+	expect(card.querySelectorAll('.mm-release-actions a')).toHaveLength(1)
 	const older = [...document.querySelectorAll('.mm-release-older li')]
 	expect(older.map(item => item.id)).toEqual(previous.map(release => `v${release.version}`))
 	expect(older.map(item => item.querySelectorAll('p > span').length)).toEqual(previous.map(() => 1))

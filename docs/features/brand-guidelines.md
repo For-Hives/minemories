@@ -207,20 +207,18 @@ Motion serves to **confirm** (I clicked, it responds), **orient** (it comes from
 | `--ds-ease` | `cubic-bezier(.2,.8,.2,1)` | soft arrival (default) |
 | `--ds-ease-std` | `cubic-bezier(.4,0,.2,1)` | there and back |
 | `--ds-ease-pop` | `cubic-bezier(.34,1.56,.64,1)` | 6% bounce: badges, icons, numbers, **never** a block of text |
-| `--ds-lift` | 2 px | button lift |
+| `--ds-lift` | 2 px | small lift of some app cards on hover (not the landing's buttons) |
 
 ### Catalog (every interactive or appearing element)
 | Element | Motion |
 |---|---|
-| Hero on load | kicker, title, lead, buttons and notice arrive one after another (12 px + fade, 60 ms stagger) |
-| Section titles | stepped left-to-right wipe (12 steps, like text being typed) when entering the screen |
+| Hero on load | title, lead, buttons and notice arrive one after another (12 px + fade, 60 ms stagger) |
 | Content blocks | 12 px + fade on scroll, once, siblings staggered by 60 ms |
-| Button | hover: rises 2 px + light outline; press: drops 1 px, 60 ms; the ember icon grows 20%, arrows move forward 3 px |
+| Button | hover: light outline, nothing moves; press: drops 1 px, 60 ms |
 | Link | the underline moves away from the text (3 px → 6 px) |
-| Step card | the number “drops” into place with a bounce on entrance, then grows 8% when the card is hovered or focused |
 | FAQ, step details, footer, “The film, in words” | height animates (360 ms) and content fades in; the chevron rotates with a bounce |
-| FAQ (additionally) | only one question open at a time (`name` attribute); a copper edge unfolds on the open card; the answer rises after opening; the question moves forward 4 px on hover and sinks one pixel on press; the chevron dips on hover before flipping |
-| Disclosure summaries | copper color and 4 px shift on hover, one-pixel press |
+| FAQ (additionally) | only one question open at a time (`name` attribute); a copper edge unfolds on the open card; the answer rises after opening; the question sinks one pixel on press; the chevron flips |
+| Disclosure summaries | copper color on hover, one-pixel press |
 | Language list (the bar's picker) | the list opens by dropping 8 px while fading in (200 ms), game style (night background, relief), the active option outlined like a game button, the current one in ember with a check; the chevron flips |
 | Header menus and the phones' panel | drop 8 px while fading in; the close cross arrives with a bounce |
 | Film bar (right edge) | during the film only (it disappears on the slide to the site); vertical timeline: ember fill and handle that follow the film's time (full on the site); five chapter markers with tooltips; dragging moves the handle and the film jumps **only once**, on release (anti-flash safeguards); keyboard: up / down = previous / next chapter, Home, End |

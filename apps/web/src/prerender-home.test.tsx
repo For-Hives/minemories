@@ -8,7 +8,8 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).not.toContain('<!--$!-->')
 	// the site, in French (the prerender language), readable without JavaScript
 	expect(html).toContain('<h1')
-	expect(html).toContain('Il y a des soirs qu’on aimerait garder.')
+	// the h1 stands alone: no kicker above it
+	expect(html).not.toContain('mc-hero__kicker')
 	expect(html).toMatch(/<h1[^>]*>Garde tes constructions Minecraft en 3D<\/h1>/)
 	// the facts of the landing: every published Minecraft version (never a range), the M menu button and the three questions (no guarantees line)
 	expect(html).toContain('Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11')
@@ -18,8 +19,9 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	// under the server-closing clip: the capture stays on the PC, sending it is the player's choice
 	expect(html).toContain('La capture est enregistrée sur ton ordinateur.')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
-	// the pictures of the steps and of the share and server-closing sections: real footage with French captions, the clips as poster frames only
-	expect(html).toContain('Choisis l’heure, du matin au coucher du soleil')
+	// the pictures of the steps and of the share and server-closing sections: real footage without captions repeating their section, the clips as poster frames only
+	expect(html).not.toContain('mm-clip__caption')
+	expect(html).not.toContain('❤️')
 	expect(html).toContain('/hero/illus/postcard-hd.webp')
 	for (const clip of ['menu-fr', 'menu-en', 'viewer-time', 'walk', 'game-browser'])
 		expect(html).toContain(`/hero/clips/${clip}.webp`)

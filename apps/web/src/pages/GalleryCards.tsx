@@ -1,87 +1,22 @@
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { apiClient } from '../api-client'
 import { useAppContext } from '../app-context'
 import { type MenuItem, useContextMenu } from '../components/ContextMenu'
-import { GalleryIcon, type GalleryIconName } from '../components/GalleryIcons'
+import { GalleryIcon } from '../components/GalleryIcons'
 import { formatCaptureCount } from '../i18n/counts'
 import { useI18n } from '../i18n/I18n'
 import { formatRelativeDate } from '../lib/dates'
 import { isDraftString } from '../lib/form-drafts'
-import { biomeLabel, blockCoordinates, type CaptureStack, latestCapture, stackPreview, viewPath } from '../lib/gallery'
-import { formatFileSize } from '../lib/glb'
+import { type CaptureStack, latestCapture, stackPreview, viewPath } from '../lib/gallery'
 import { getStackName, setStackName } from '../lib/stack-names'
 import { daysUntilPurge } from '../lib/trash'
 import { type DialogTab, type DialogTarget, GalleryDialog } from './GalleryDialog'
-import { dimensionLabels } from './GalleryFacts'
 import { type Memories, type TrashMemories, useLivePage } from './gallery-data'
 import { DraftChip, RenameForm, SavedNote, useReturnFocus } from './RenameField'
 import { trimText, useDraft, useFlash } from './use-draft'
 
 type Memory = Memories[number]
-
-function Chip({ icon, kind, children }: { icon?: GalleryIconName; kind: string; children: ReactNode }) {
-	return (
-		<li data-kind={kind}>
-			{icon && <GalleryIcon name={icon} />}
-			<span className="gallery-chip-text">{children}</span>
-		</li>
-	)
-}
-
-function Coordinates({ metadata }: { metadata: Memory['metadata'] }) {
-	const place = blockCoordinates(metadata)
-	if (!place) return null
-	const axes: [string, number | null][] = [
-		['X', place.x],
-		['Y', place.y],
-		['Z', place.z],
-	]
-	return (
-		<Chip icon="pin" kind="place">
-			{axes
-				.filter(([, value]) => value !== null)
-				.map(([axis, value]) => (
-					<span key={axis} className="gallery-axis">
-						<b>{axis}</b>
-						{value}
-					</span>
-				))}
-		</Chip>
-	)
-}
-
-function CaptureChips({ memory, bytes }: { memory: Memory; bytes: number }) {
-	const { t, locale } = useI18n()
-	const { metadata } = memory
-	const weather = [metadata.raining && t('Rain'), metadata.thundering && t('Thunder')].filter(Boolean).join(' · ')
-	const dimension = metadata.dimension
-	const dimensionKey = dimension ? dimensionLabels[dimension] : undefined
-	return (
-		<ul className="gallery-chips">
-			{dimension && (
-				<li data-kind="dimension" data-dimension={dimensionKey ?? 'modded'}>
-					<span className="gallery-dimension-dot" aria-hidden="true" />
-					<span className="gallery-chip-text">{dimensionKey ? t(dimensionKey) : dimension}</span>
-				</li>
-			)}
-			{metadata.biome && (
-				<Chip icon="leaf" kind="biome">
-					{biomeLabel(metadata.biome)}
-				</Chip>
-			)}
-			<Coordinates metadata={metadata} />
-			{weather && (
-				<Chip icon="cloud" kind="weather">
-					{weather}
-				</Chip>
-			)}
-			<Chip icon="disk" kind="size">
-				{formatFileSize(bytes, locale)}
-			</Chip>
-		</ul>
-	)
-}
 
 function placeholderTone(key: string): number {
 	let hash = 0
@@ -350,7 +285,6 @@ export function AreaCard({
 			<div className="gallery-body">
 				<AreaTitle rename={rename} />
 				<UpdatedAt memory={latest} />
-				<CaptureChips memory={latest} bytes={stack.captures.reduce((total, capture) => total + capture.size, 0)} />
 			</div>
 			<AreaActions
 				name={rename.name}

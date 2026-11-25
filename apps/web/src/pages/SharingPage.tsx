@@ -1,9 +1,7 @@
-import { Link } from 'react-router'
 import { ShareDemo } from '../components/diagrams'
-import { buttonLime } from '../components/ui'
-import { pageQuestions } from '../content/faq'
+import { linkWarning, pageFaqGroups } from '../content/faq'
 import { useI18n } from '../i18n/I18n'
-import { InfoPage, Questions } from './InfoPages'
+import { FaqLink, InfoPage } from './InfoPages'
 
 /** /sharing: how a memory is shown to others by link, what the visitor sees, and how sharing stops. */
 export function SharingPage() {
@@ -15,22 +13,12 @@ export function SharingPage() {
 			<p>{t('A link to one memory, or to a whole world with its timeline slider.')}</p>
 			<p>{t('Prefer a picture? Download the HD postcard and post it on Discord.')}</p>
 			<h2>{t('What someone with a link sees')}</h2>
-			<p>
-				{t(
-					'Heads-up: the link shows your base’s coordinates, dimension and biome, and the server name or address (or the world name and seed in single player). Think before posting it publicly.'
-				)}
-			</p>
+			<p>{t(linkWarning)}</p>
 			<p>{t('The 3D scene, its name and its date.')}</p>
 			<p>
 				{t('Players nearby appear with their skin.')} {t('Ask them before you share.')}
 			</p>
-			<h2>{t('Questions')}</h2>
-			<Questions ids={pageQuestions.sharing} />
-			<p>
-				<Link className={buttonLime} to="/installation">
-					{t('Install the mod')}
-				</Link>
-			</p>
+			<FaqLink group={pageFaqGroups.sharing} />
 		</InfoPage>
 	)
 }

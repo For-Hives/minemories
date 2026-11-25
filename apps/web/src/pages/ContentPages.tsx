@@ -1,38 +1,23 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { BrandLogo } from '../components/BrandMark'
 import { DataFlow } from '../components/diagrams'
 import { Glyph, type GlyphName } from '../components/explainers'
-import { buttonOutline, Eyebrow } from '../components/ui'
+import { buttonOutline } from '../components/ui'
 import { type LegalSection, legalContent } from '../content/site-content'
 import { translate } from '../i18n/catalog'
 import { useI18n } from '../i18n/I18n'
 import { InsightPreference } from '../observability/Insight'
 import { WebDiagnosticsPreference } from '../observability/WebObservability'
-import { catalogLinks } from './installation-loaders'
 import { LegalNotice } from './LegalNotice'
 import './legal.css'
 
-export function ContentLayout({
-	eyebrow,
-	title,
-	lead,
-	children,
-}: {
-	eyebrow: string
-	title: string
-	lead?: string
-	children: ReactNode
-}) {
+/** A content page: its title alone (the bar already shows the brand), an optional lead, then the page. */
+export function ContentLayout({ title, lead, children }: { title: string; lead?: string; children: ReactNode }) {
 	return (
 		<article className="mm-content">
 			<header className="mm-content-header">
-				<div>
-					<Eyebrow>{eyebrow}</Eyebrow>
-					<h1>{title}</h1>
-					{lead && <p>{lead}</p>}
-				</div>
-				<BrandLogo className="mm-content-logo" />
+				<h1>{title}</h1>
+				{lead && <p>{lead}</p>}
 			</header>
 			{children}
 		</article>
@@ -122,10 +107,10 @@ function PrivacyPanels({ sections }: { sections: readonly LegalSection[] }) {
 }
 
 export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
-	const { locale, t } = useI18n()
+	const { locale } = useI18n()
 	const content = legalContent[kind]
 	return (
-		<ContentLayout eyebrow="MINEMORIES" title={translate(locale, content.title)}>
+		<ContentLayout title={translate(locale, content.title)}>
 			{kind === 'privacy' ? (
 				<PrivacyPanels sections={content.sections} />
 			) : (
@@ -141,30 +126,13 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 					</div>
 				</>
 			)}
-			<p>
-				<a className="mc-link" href="https://github.com/For-Hives/minemories">
-					{t('Project repository')}
-				</a>
-				{catalogLinks().map(catalog => (
-					<span key={catalog.name}>
-						{' · '}
-						<a className="mc-link" href={catalog.url}>
-							{catalog.name}
-						</a>
-					</span>
-				))}
-			</p>
 		</ContentLayout>
 	)
 }
 export function NotFoundPage() {
 	const { t } = useI18n()
 	return (
-		<ContentLayout
-			eyebrow="404"
-			title={t('Page not found')}
-			lead={t('This address does not lead to a Minemories page.')}
-		>
+		<ContentLayout title={t('Page not found')} lead={t('This address does not lead to a Minemories page.')}>
 			<Link className={buttonOutline} to="/">
 				{t('Back home')}
 			</Link>
