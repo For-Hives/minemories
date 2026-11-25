@@ -89,7 +89,7 @@ test('private data, shared links and account routes are excluded from indexing a
 
 test('the public gallery prerenders the real catalogue shell and keeps demo opt-in', () => {
 	const html = renderPage('/explore', 'fr')
-	expect(html).toContain('Des lieux à visiter')
+	expect(html).toContain('Galerie publique')
 	expect(html).toContain('/explore?demo=1')
 	expect(html).not.toContain('/ranking')
 })

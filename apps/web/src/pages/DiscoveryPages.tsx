@@ -14,14 +14,14 @@ export function ExplorerPage() {
 	const { t } = useI18n()
 	const [params] = useSearchParams()
 	const demo = params.get('demo') === '1'
-	const title = demo ? t('A little visit, just to see.') : t('Places to visit')
+	const title = demo ? t('Demo gallery') : t('Public gallery')
 	return (
 		<ContentLayout
 			title={title}
 			lead={
 				demo
-					? t('Illustrated demo: favorites and votes stay local.')
-					: t('Builds other players chose to share. We check each one before it goes up.')
+					? t('Your favorites and hearts stay on this device.')
+					: t('Builds other players chose to share. We check each one first.')
 			}
 		>
 			<div className="mm-actions">
@@ -120,7 +120,7 @@ export function GalleryPreview() {
 				</button>
 			</div>
 			<p role="status" className="mm-fineprint">
-				{visible.length} {t('place(s) · favorites and votes saved on this device only')}
+				{visible.length} {t('place(s)')}
 			</p>
 			<div className="mm-demo-grid">
 				{visible.map((memory, index) => (
@@ -211,7 +211,7 @@ function DemoDetail({ memory, close }: { memory: (typeof demoMemories)[number]; 
 					{translate(locale, memory.title)}
 				</h2>
 				<p>{translate(locale, memory.story)}</p>
-				<p>{t('This link opens this illustration. Share your real memories from your private gallery.')}</p>
+				<p>{t('This link opens the demo. Share your real memories from your gallery.')}</p>
 				<div className="mm-actions">
 					<button
 						type="button"

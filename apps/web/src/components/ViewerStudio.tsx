@@ -470,7 +470,7 @@ export function ViewerStudio({
 						<p>{t('Anyone with the link can explore this memory. You can revoke access at any time.')}</p>
 						<SharePanel key={memoryId} memoryId={memoryId} view={currentView} />
 						<Link className={buttonLime} to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
-							{t('Publish in the public gallery')}
+							{t('Make public')}
 						</Link>
 					</section>
 				)}

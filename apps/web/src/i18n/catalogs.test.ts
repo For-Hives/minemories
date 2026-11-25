@@ -134,16 +134,10 @@ test('the German catalogue speaks to the player with “du”', async () => {
 		expect(message, key).not.toMatch(/\bSie\b/)
 })
 
-// Plural "you": the group playing together, not a formal address to one player.
-const russianPluralYou = new Set([
-	'Minemories is a Minecraft Java mod that keeps a 3D copy of the area around you: your house, your village, your group’s base. You can walk around it in your browser, even after the server is gone.',
-])
-
 test('the Russian catalogue speaks to the player with “ты”', async () => {
 	const load = catalogs['./locales/ru.json']
 	if (!load) throw new Error('Missing locale catalogue')
 	const catalog = await load()
-	for (const key of russianPluralYou) expect(catalog[key], key).toMatch(/ваш/u)
-	for (const [key, message] of Object.entries(catalog).filter(([key]) => !russianPluralYou.has(key)))
+	for (const [key, message] of Object.entries(catalog))
 		expect(message, key).not.toMatch(/(?<!\p{L})(?:вы|вас|вам|вами|ваш\p{L}*)(?!\p{L})/iu)
 })

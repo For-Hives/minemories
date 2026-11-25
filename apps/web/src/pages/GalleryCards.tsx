@@ -165,8 +165,8 @@ function AreaActions({
 			<button
 				type="button"
 				className="gallery-icon-button"
-				title={t('Public publication')}
-				aria-label={t('Public publication')}
+				title={t('Make public')}
+				aria-label={t('Make public')}
 				onClick={() => onOpen('publish')}
 			>
 				<GalleryIcon name="globe" />
@@ -239,7 +239,7 @@ export function AreaCard({
 		},
 		{ label: t('Details'), icon: 'cube', onSelect: () => open('details') },
 		{ label: t('Share'), icon: 'link', onSelect: () => open('share') },
-		{ label: t('Public publication'), icon: 'globe', onSelect: () => open('publish') },
+		{ label: t('Make public'), icon: 'globe', onSelect: () => open('publish') },
 		...(snapshots > 1
 			? [{ label: t('Snapshots'), icon: 'layers', onSelect: () => open('snapshots') } as MenuItem]
 			: []),

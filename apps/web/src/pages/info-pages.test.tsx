@@ -32,7 +32,7 @@ function mountGuide() {
 
 test('public guides let a visitor move from concept to its FAQ group, then to installation', () => {
 	mountGuide()
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, à visiter en 3D')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton monde Minecraft, en 3D')
 	// no side navigation copies the bar's menus, and the page ends on one link to its group of the FAQ, not on answers
 	expect(screen.queryByRole('navigation')).toBeNull()
 	expect(document.querySelector('.ex-faq-item')).toBeNull()
@@ -47,7 +47,7 @@ test('public guides let a visitor move from concept to its FAQ group, then to in
 test('how it works links to its FAQ group and to safety; the install button lives in the bar only', () => {
 	mountEnglish(<HowItWorksPage />)
 	expect(screen.getByRole('link', { name: 'Questions: Capturing\u00a0→' }).getAttribute('href')).toBe('/faq#capturing')
-	expect(screen.getByRole('link', { name: 'Is Minemories safe? →' }).getAttribute('href')).toBe('/safety')
+	expect(screen.getByRole('link', { name: 'Safety and privacy →' }).getAttribute('href')).toBe('/safety')
 	expect(screen.queryByRole('link', { name: 'Install the mod' })).toBeNull()
 	expect(screen.getByRole('slider', { name: 'Radius in blocks' })).toBeTruthy()
 })
@@ -73,11 +73,11 @@ test('how it works is one linear page of four steps that quotes the M menu and w
 		'1. You play',
 		'2. The file stays with you',
 		'3. You connect the game, if you want',
-		'4. You show it, if you want',
+		'4. You share it, if you want',
 	])
 	for (const label of [
 		'Press M → Take a memory.',
-		'In Minecraft: M → type the code → Connect.',
+		'In Minecraft: M → type the code → Connect',
 		'The link shows where your base is, and on which server. Think before posting it in public.',
 	])
 		expect(howTo).toContain(label)
@@ -96,15 +96,14 @@ test('the concept page says what it is, what it is not as a plain list, compares
 	const text = document.querySelector('article')?.textContent ?? ''
 	expect(text).toContain('Minemories is a Minecraft Java mod')
 	for (const item of [
-		'Not playable',
-		'Not editable',
-		'Not a backup',
-		'One area, not the whole world',
-		'Java on a computer only',
+		'You can’t play in it or edit it.',
+		'It isn’t a backup of your world.',
+		'It saves one area, not the whole world.',
+		'Only Minecraft Java, on a computer.',
 	])
 		expect(screen.getByText(item).tagName).toBe('LI')
 	// a plain list: no pictogram in front of each item
-	expect(screen.getByText('Not playable').closest('ul')?.querySelector('svg')).toBeNull()
+	expect(screen.getByText('It isn’t a backup of your world.').closest('ul')?.querySelector('svg')).toBeNull()
 	const table = screen.getByRole('table')
 	expect(table.querySelector('caption')?.textContent).toBe('Compared in November 2026.')
 	expect(screen.getAllByRole('columnheader').map(cell => cell.textContent)).toEqual([
@@ -282,14 +281,14 @@ test('/sharing says what a link shows in one short line and ends on a link to it
 	)
 	const text = document.body.textContent ?? ''
 	expect(text).toContain('Un lien vers un souvenir, ou vers tout un monde avec son curseur pour remonter le temps.')
-	expect(text).toContain('Télécharge la carte postale HD')
+	expect(text).toContain('Ou télécharge une carte postale HD.')
 	expect(text).toContain('Partager → Créer un lien → Copier')
-	// the warning an SMP player needs opens its section, before the list of what else the link shows; the full list is the FAQ's
-	const warning = text.indexOf(
-		'Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.'
+	// the answer first, then the warning an SMP player needs; the full list of what a link shows is the FAQ's
+	const answer = text.indexOf('Ta base en 3D, son nom et sa date.')
+	expect(answer).toBeGreaterThan(-1)
+	expect(answer).toBeLessThan(
+		text.indexOf('Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.')
 	)
-	expect(warning).toBeGreaterThan(-1)
-	expect(warning).toBeLessThan(text.indexOf('La scène 3D, son nom et sa date.'))
 	expect(text).not.toContain('le nom du monde et la seed en solo')
 	expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
 	expect(screen.getByRole('link', { name: 'Questions\u00a0: Galerie et partage\u00a0→' }).getAttribute('href')).toBe(

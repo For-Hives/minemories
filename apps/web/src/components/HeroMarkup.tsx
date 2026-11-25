@@ -32,7 +32,7 @@ function Experimental() {
 	)
 }
 
-/** "Play.": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. Its poster is the menu
+/** "Play as usual": the mod's real M menu in game, the French take for French readers (in-game text), the English one for everyone else. Its poster is the menu
    open with the pointer on Take a memory, so a still clip still shows the step. */
 const menuClip: HeroClipProps = {
 	name: { fr: 'menu-fr', en: 'menu-en' },
@@ -42,7 +42,7 @@ const menuClip: HeroClipProps = {
 	toggleAt: 'end',
 	alt: 'In Minecraft, the M menu opens over a real base and the pointer clicks Take a memory.',
 }
-/** "Revisit.": a first-person walk in the real viewer, inside a real memory. */
+/** "Come back to it": a first-person walk in the real viewer, inside a real memory. */
 const walkClip: HeroClipProps = {
 	name: 'walk',
 	width: 640,
@@ -371,10 +371,10 @@ function HeroPage() {
 							</h1>
 							<p
 								className="mc-hero__lead"
-								data-i18n="The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want."
+								data-i18n="The mod saves the spot where you play. You walk around it in your browser and send the link to your friends."
 							>
 								{t(
-									'The mod keeps a 3D copy of the spot where you play. Open it in your browser and show it to anyone you want.'
+									'The mod saves the spot where you play. You walk around it in your browser and send the link to your friends.'
 								)}
 							</p>
 							<div className="mc-hero__actions">
@@ -412,19 +412,19 @@ function HeroPage() {
 						<ol className="mc-steps">
 							<Step
 								number={1}
-								title="Install."
-								body="Get the mod from the CurseForge app, or drop the .jar into your mods folder."
+								title="Install"
+								body="Use the CurseForge app, or drop the .jar file into your mods folder."
 							/>
 							<Step
 								number={2}
-								title="Play."
+								title="Play as usual"
 								body="Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you."
 								clip={menuClip}
 							/>
 							<Step
 								number={3}
-								title="Revisit."
-								body="Connect the game to your gallery with a 6-digit code, then walk around your world in 3D."
+								title="Come back to it"
+								body="Find it in your gallery and walk around it in 3D."
 								clip={walkClip}
 							/>
 						</ol>
@@ -435,17 +435,15 @@ function HeroPage() {
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Pick the hour and angle, then save an HD postcard for Discord. Or send a link: your friends walk around your base in 3D, no Minecraft needed."
+							data-i18n="Send a link: they walk around your base, no Minecraft needed. Or save an HD postcard for Discord."
 						>
-							{t(
-								'Pick the hour and angle, then save an HD postcard for Discord. Or send a link: your friends walk around your base in 3D, no Minecraft needed.'
-							)}
+							{t('Send a link: they walk around your base, no Minecraft needed. Or save an HD postcard for Discord.')}
 						</p>
 						<ShareIllustration />
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/sharing">
-									<span data-i18n="How do I share a link?">{t('How do I share a link?')}</span>
+									<span data-i18n="Sharing, step by step">{t('Sharing, step by step')}</span>
 								</Link>
 							</li>
 						</ul>
@@ -456,23 +454,18 @@ function HeroPage() {
 						</h2>
 						<p
 							className="mc-section__text"
-							data-i18n="Save your base in 3D before the server goes dark. You can still walk around it afterwards."
+							data-i18n="Capture your base before it goes dark. You can still walk around it afterwards."
 						>
-							{t('Save your base in 3D before the server goes dark. You can still walk around it afterwards.')}
+							{t('Capture your base before it goes dark. You can still walk around it afterwards.')}
 						</p>
 						<ClosingIllustration />
-						<p
-							className="mc-section__text"
-							data-i18n="The capture is saved on your computer. Sending it to our servers is up to you. We don’t use your captures: they’re for you and the friends you show them to."
-						>
-							{t(
-								'The capture is saved on your computer. Sending it to our servers is up to you. We don’t use your captures: they’re for you and the friends you show them to.'
-							)}
+						<p className="mc-section__text" data-i18n="The memory stays on your computer. You choose what goes online.">
+							{t('The memory stays on your computer. You choose what goes online.')}
 						</p>
 						<ul className="site-links">
 							<li>
 								<Link className="mc-link" to="/server-closing">
-									<span data-i18n="How do I keep my base?">{t('How do I keep my base?')}</span>
+									<span data-i18n="Before your server closes">{t('Before your server closes')}</span>
 								</Link>
 							</li>
 						</ul>
@@ -554,10 +547,10 @@ function HeroPage() {
 						</summary>
 						<p
 							className="mc-footer__meta"
-							data-i18n="The film is staged. In single player, the game shows no join or leave message, and the typing bubble, the dog’s reactions, the titles and the colour changes are film effects. Only “Minemories: world capture done.” comes from the mod, which words it differently today (English only)."
+							data-i18n="The film is staged: only the chat line “Minemories: world capture done.” comes from the mod, and it reads differently today."
 						>
 							{t(
-								'The film is staged. In single player, the game shows no join or leave message, and the typing bubble, the dog’s reactions, the titles and the colour changes are film effects. Only “Minemories: world capture done.” comes from the mod, which words it differently today (English only).'
+								'The film is staged: only the chat line “Minemories: world capture done.” comes from the mod, and it reads differently today.'
 							)}
 						</p>
 					</details>

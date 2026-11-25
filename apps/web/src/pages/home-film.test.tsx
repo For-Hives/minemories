@@ -111,7 +111,7 @@ test('the first screen: the install button and an icon replay button, the facts 
 		within(steps)
 			.getAllByRole('heading', { level: 3 })
 			.map(title => title.textContent)
-	).toEqual(['Installe.', 'Joue.', 'Revois.'])
+	).toEqual(['Installe', 'Joue comme d’habitude', 'Reviens-y'])
 	expect(steps.textContent).toContain('Appuie sur M → Prendre un souvenir.')
 	// CurseForge lives in the footer, on /downloads and in the install guide, not in the steps
 	expect(within(steps).queryByRole('link')).toBeNull()

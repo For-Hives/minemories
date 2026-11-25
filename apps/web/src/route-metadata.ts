@@ -16,8 +16,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/explore',
 		title: 'Public gallery of Minecraft builds in 3D',
-		description:
-			'Minecraft builds other players chose to share, checked before they go up. Walk around them in 3D in your browser.',
+		description: 'Minecraft builds other players chose to share. Walk around them in 3D in your browser.',
 		indexable: false,
 		language: 'en',
 	},
@@ -25,7 +24,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/sharing',
 		title: 'Share a Minecraft build in 3D with a link',
 		description:
-			'A link to your 3D memory. The other person opens it in their browser, without Minecraft or an account. You stop sharing whenever you want.',
+			'Send a link to your base in 3D. Your friends open it in their browser, no Minecraft or account needed.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -34,7 +33,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/',
 		title: 'Minemories: your Minecraft builds in 3D',
 		description:
-			'A Minecraft Java mod that keeps a 3D copy of your base. Open it in your browser and send your friends a link to walk around it.',
+			'A Minecraft Java mod that saves your base in 3D. Walk around it in your browser and send your friends the link.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -43,7 +42,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/concept',
 		title: 'See your Minecraft world in 3D in the browser',
 		description:
-			'Minemories keeps an area of your Java world and lets you walk around it in 3D in the browser. What it does, and what it doesn’t.',
+			'Minemories saves an area of your Java world in 3D, and you walk around it in your browser. What it does and doesn’t do.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -52,7 +51,7 @@ const metadataMessages: PageMetadata[] = [
 		path: '/how-it-works',
 		title: 'How Minemories captures your Minecraft build',
 		description:
-			'A memory on demand or while you’re AFK, a 3D file on your computer, a private gallery if you connect the game. What goes online, and when.',
+			'Press M or go AFK: the mod saves a 3D file on your computer. Connect the game to find it in your private gallery.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -121,7 +120,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/faq',
 		title: 'Minemories questions: versions, safety, sharing',
-		description: 'Bedrock? Your version? The server? What goes online? Who sees your memories? The short answers.',
+		description: 'Short answers about versions, servers, what goes online and who sees your memories.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-10',
@@ -129,8 +128,7 @@ const metadataMessages: PageMetadata[] = [
 	{
 		path: '/privacy',
 		title: 'Privacy · Minemories',
-		description:
-			'Your account, private gallery, sharing links, capture retention, mod diagnostics, optional public-page diagnostics and mod download requests.',
+		description: 'What Minemories keeps, what it sends, and how to delete everything.',
 		indexable: true,
 		language: 'en',
 		updated: '2026-11-24',

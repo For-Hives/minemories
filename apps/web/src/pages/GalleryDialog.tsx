@@ -93,7 +93,7 @@ export function GalleryDialog({
 	const tabs: Array<[DialogTab, string]> = [
 		['details', t('Details')],
 		['share', t('Share')],
-		['publish', t('Public publication')],
+		['publish', t('Make public')],
 		...(memories.length > 1 ? [['snapshots', t('Snapshots')] as [DialogTab, string]] : []),
 	]
 	if (!selected) return null
@@ -310,8 +310,8 @@ function SnapshotRow({
 				<button
 					type="button"
 					className="gallery-icon-button"
-					title={t('Public publication')}
-					aria-label={`${t('Public publication')}: ${shown}`}
+					title={t('Make public')}
+					aria-label={`${t('Make public')}: ${shown}`}
 					onClick={() => onTarget({ tab: 'publish', id: memory.id })}
 				>
 					<GalleryIcon name="globe" />

@@ -8,34 +8,28 @@ export function PricingPage() {
 	const { t } = useI18n()
 	return (
 		<ContentLayout
-			title={t('Keep your worlds. Plan for the future.')}
-			lead={t('€2 per snapshot. Storage starts at €6 a year and drops to €3 as your memory gets older.')}
+			title={t('Pricing')}
+			lead={t('€2 per memory. Online storage costs €6 the first year, then less each year, down to €3.')}
 		>
-			<p className="mm-release-label">{t('Offer in preparation · working calculator · payments not enabled')}</p>
+			<p className="mm-release-label">{t('Not open yet: nothing can be paid for now.')}</p>
 			<div className="mm-plan-grid">
 				<section className="mm-plan">
-					<span className="mm-kicker">{t('The memory')}</span>
-					<h2>Snapshot</h2>
+					<h2>{t('Memory')}</h2>
 					<p className="mm-big-price">
-						2 € <span>{t('/ snapshot')}</span>
+						2 € <span>{t('/ memory')}</span>
 					</p>
-					<p>{t('A one-time fee at creation, to freeze a moment of your world.')}</p>
+					<p>{t('Paid once, when you take it.')}</p>
 					<ul>
-						<li>{t('One-time payment per snapshot')}</li>
-						<li>{t('Optional cloud, billed separately')}</li>
-						<li>{t('Keep a local copy too')}</li>
+						<li>{t('Online storage is optional')}</li>
+						<li>{t('The file stays on your computer too')}</li>
 					</ul>
-					<a href="#simulator" className={buttonOutline}>
-						{t('Calculate my budget')}
-					</a>
 				</section>
 				<section className="mm-plan mm-plan-featured">
-					<span className="mm-kicker">{t('Preservation')}</span>
-					<h2>{t('Long-term cloud')}</h2>
+					<h2>{t('Online storage')}</h2>
 					<p className="mm-big-price">
 						6 <span>→</span> 3 € <span>{t('/ year')}</span>
 					</p>
-					<p>{t('Per snapshot. The price drops each year, down to €3 a year from the fourth.')}</p>
+					<p>{t('Per memory. It costs less each year, then €3 a year from the fourth.')}</p>
 					<ol className="mm-price-steps">
 						{cloudScheduleCents.map((cents, index) => (
 							<li key={cents}>
@@ -47,32 +41,22 @@ export function PricingPage() {
 							</li>
 						))}
 					</ol>
-					<a href="#simulator" className={buttonLime}>
-						{t('Plan my storage')}
-					</a>
 				</section>
 			</div>
 			<PriceSimulator />
 			<div className="mm-prose">
-				<h2>{t('What you can do today')}</h2>
+				<h2>{t('For now')}</h2>
 				<p>
-					{t(
-						'Install the mod, take a 3D memory, find it in your private gallery. Paid storage is still being prepared. A 3D capture is not a backup of your world.'
-					)}
-				</p>
-				<h2>{t('How does the decreasing price work?')}</h2>
-				<p>
-					{t(
-						'Each snapshot costs €6 the first year, €5 the second, €4 the third, then €3 a year. This is an estimate, not a charge.'
-					)}
+					{t('Install the mod, take a memory and find it in your gallery. Paid storage isn’t open yet.')}{' '}
+					{t('A memory isn’t a backup of your world.')}
 				</p>
 			</div>
 			<div className="mm-actions">
 				<Link to="/installation" className={buttonLime}>
-					{t('Create my first memory')}
+					{t('Install the mod')}
 				</Link>
 				<Link to="/terms" className={buttonOutline}>
-					{t('Project terms')}
+					{t('Terms')}
 				</Link>
 			</div>
 		</ContentLayout>
@@ -103,19 +87,17 @@ export function PriceSimulator() {
 		if (!valid) return
 		try {
 			localStorage.setItem(quoteStorageKey, JSON.stringify({ snapshots: count, years, cloud }))
-			setSaved(t('Estimate saved on this device. No purchase made.'))
+			setSaved(t('Saved on this device. Nothing was bought.'))
 		} catch {
-			setSaved(t('Your browser cannot save it. The estimate remains visible.'))
+			setSaved(t('Your browser can’t save it, but the estimate stays on screen.'))
 		}
 	}
 	return (
 		<section id="simulator" className="mm-price-simulator" aria-labelledby="simulator-title">
 			<div>
-				<span className="mm-kicker">{t('At your pace')}</span>
-				<h2 id="simulator-title">{t('Imagine your collection.')}</h2>
-				<p>{t('Adjust its size and duration. The amounts update immediately.')}</p>
+				<h2 id="simulator-title">{t('Estimate a price')}</h2>
 				<div className="mm-simulator-fields">
-					<label htmlFor="snapshot-count">{t('Number of snapshots')}</label>
+					<label htmlFor="snapshot-count">{t('Number of memories')}</label>
 					<input
 						id="snapshot-count"
 						type="number"
@@ -144,10 +126,10 @@ export function PriceSimulator() {
 								setSaved('')
 							}}
 						/>
-						{t('Add long-term cloud')}
+						{t('Add online storage')}
 					</label>
 					<label htmlFor="storage-years">
-						{t('Projection length')} : {years} {t('year(s)')}
+						{t('Storage length')} : {years} {t('year(s)')}
 					</label>
 					<input
 						id="storage-years"
@@ -164,29 +146,28 @@ export function PriceSimulator() {
 				</div>
 			</div>
 			<div className="mm-estimate">
-				<span className="mm-kicker">{t('Your estimate')}</span>
 				<output className="mm-estimate-total" aria-live="polite" aria-label={t('Estimated total')}>
 					{quote ? money(quote.totalCents) : '-'}
 				</output>
 				<p>
 					{cloud
-						? t('{years}-year projection, including creation').replace('{years}', String(years))
-						: t('Creation only, without cloud')}
+						? t('Memories plus {years} year(s) of storage', { years: String(years) })
+						: t('Memories only, no storage')}
 				</p>
 				{quote && (
 					<>
 						<dl>
 							<div>
-								<dt>{t('Snapshots · once')}</dt>
+								<dt>{t('Memories, paid once')}</dt>
 								<dd>{money(quote.captureCents)}</dd>
 							</div>
 							<div>
-								<dt>{t('Cloud · projected total')}</dt>
+								<dt>{t('Storage, every year added up')}</dt>
 								<dd>{money(quote.storageCents)}</dd>
 							</div>
 						</dl>
 						{cloud && (
-							<ol className="mm-estimate-years" aria-label={t('Annual schedule')}>
+							<ol className="mm-estimate-years" aria-label={t('Price per year')}>
 								{quote.annualPayments.map(({ cents, year }) => (
 									<li key={year}>
 										<span>
@@ -207,14 +188,10 @@ export function PriceSimulator() {
 					{t('Save this estimate')}
 				</button>
 				<p role="status" className="mm-fineprint">
-					{saved || t('No account needed. No payment.')}
+					{saved || t('No account, no payment.')}
 				</p>
 			</div>
-			<p className="mm-simulator-note">
-				{t(
-					'This estimate assumes all snapshots start together and are kept without a break. Final prices and terms will be set before payments open.'
-				)}
-			</p>
+			<p className="mm-simulator-note">{t('Prices may change before payments open.')}</p>
 		</section>
 	)
 }

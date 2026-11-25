@@ -703,7 +703,7 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 		within(card)
 			.getAllByRole('menuitem')
 			.map(item => item.textContent)
-	).toEqual(['View', 'Details', 'Share', 'Public publication', 'Rename this snapshot', 'Move to trash'])
+	).toEqual(['View', 'Details', 'Share', 'Make public', 'Rename this snapshot', 'Move to trash'])
 	fireEvent.click(within(card).getByRole('menuitem', { name: 'Details' }))
 	const details = screen.getByRole('dialog', { name: 'Remote two' })
 	expect(within(details).getByRole('tab', { name: 'Details' }).getAttribute('aria-selected')).toBe('true')
