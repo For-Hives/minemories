@@ -48,7 +48,7 @@ const walkClip: HeroClipProps = {
 	width: 640,
 	height: 512,
 	posterAt: 3,
-	alt: 'A first-person walk along a path of a real base, in the Minemories viewer.',
+	alt: 'A first-person walk along a path of a real base, in the browser.',
 }
 
 /** One card of the landing's three steps: a short title and one sentence, both translated by the film's bridge, and the clip that shows it, if any. */

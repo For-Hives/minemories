@@ -222,7 +222,7 @@ export const questions = {
 		answer: [
 			'Nothing is sent until you connect the game.',
 			'After that, your memories go to your private gallery.',
-			'Error reports, with nothing personal, turn off in M → Settings → Privacy.',
+			'Error reports hold nothing personal. You can turn them off in M → Settings → Privacy.',
 		],
 		link: { to: '/privacy', label: 'Privacy' },
 	},

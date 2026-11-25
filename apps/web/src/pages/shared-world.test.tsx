@@ -179,7 +179,7 @@ test('the visitor is welcomed with the drag and Play hints, then invited after 1
 	mount()
 	await waitFor(() => expect(loaded()).toBe(3))
 	const welcome = document.querySelector('[data-share="welcome"]')
-	expect(welcome?.textContent).toBe('Fais glisser pour regarder. Appuie sur Lire pour le voir grandir.')
+	expect(welcome?.textContent).toBe('Glisse pour regarder. Appuie sur Lire pour le voir grandir.')
 	// Once the scene's effects have run (the opening is counted), the invitation's clock is running.
 	await waitFor(() => expect(mocks.track).toHaveBeenCalled())
 	act(() => vi.advanceTimersByTime(INVITE_DELAY_MS))
