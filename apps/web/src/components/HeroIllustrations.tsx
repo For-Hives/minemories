@@ -9,10 +9,10 @@ import { useHeroT } from './HeroLocale'
  * Same contract as HeroMarkup: rendered once in the page's language, the film's bridge rewrites `data-i18n` / `data-i18n-attr` in the visitor's language.
  */
 
-const postcardAlt = 'The HD postcard of the same base, downloaded with the viewer’s Postcard button.'
+const postcardAlt = 'The HD postcard of the same base, downloaded with the Postcard button.'
 const viewerAlt =
-	'A real base in the Minemories viewer: the view turns around it, then the time of day goes from morning to sunset.'
-const gameBrowserAlt = 'A beach house on a real server in Minecraft, then the same spot in the Minemories viewer.'
+	'A real base in the browser: the view turns around it, then the time of day goes from morning to sunset.'
+const gameBrowserAlt = 'A beach house on a real server in Minecraft, then the same spot in the browser.'
 
 interface ShotProps {
 	readonly src: string

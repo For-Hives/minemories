@@ -235,7 +235,7 @@ test('a public memory shows the drag hint, invites with its own source and leads
 	mount()
 	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1))
 	sceneReady()
-	expect(document.querySelector('[data-share="welcome"]')?.textContent).toBe('Fais glisser pour regarder.')
+	expect(document.querySelector('[data-share="welcome"]')?.textContent).toBe('Glisse pour regarder.')
 	fireEvent.wheel(screen.getByLabelText('Scène 3D partagée'))
 	expect(screen.getByRole('link', { name: 'Fais pareil avec ta base →' }).getAttribute('href')).toBe(
 		'/installation?src=public'

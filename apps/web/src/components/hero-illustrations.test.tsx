@@ -84,7 +84,7 @@ test('the film bridge rewrites every chip, description and button label in the v
 	expect(root.textContent).toContain('In deinem Browser')
 	expect(root.textContent).toContain('Video abspielen')
 	expect(root.querySelector('img[src="/hero/clips/viewer-time.webp"]')?.getAttribute('alt')).toBe(
-		'Eine echte Basis im Minemories-Viewer: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.'
+		'Eine echte Basis im Browser: Die Ansicht dreht sich um sie, dann geht die Tageszeit vom Morgen bis zum Sonnenuntergang.'
 	)
 })
 
