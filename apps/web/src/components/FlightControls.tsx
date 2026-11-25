@@ -87,20 +87,17 @@ function KeyboardHelp({ controls }: { controls: ControlSettings }) {
 	const key = (action: FlightAction) => firstKey(controls.bindings, action, label)
 	return (
 		<>
-			<p>{t('Click to look around · Esc frees the mouse')}</p>
+			<p>{t('Click to look · Esc to stop')}</p>
 			<p>
-				{t(
-					'{forward} {left} {back} {right} fly · {up} up · {down} down · {sprint} or {forward} twice: sprint · Wheel: speed',
-					{
-						forward: key('forward'),
-						left: key('left'),
-						back: key('back'),
-						right: key('right'),
-						up: key('up'),
-						down: key('down'),
-						sprint: key('sprint'),
-					}
-				)}
+				{t('{forward} {left} {back} {right} fly · {up} up · {down} down · {sprint} sprint · Wheel: speed', {
+					forward: key('forward'),
+					left: key('left'),
+					back: key('back'),
+					right: key('right'),
+					up: key('up'),
+					down: key('down'),
+					sprint: key('sprint'),
+				})}
 			</p>
 		</>
 	)
@@ -137,10 +134,9 @@ export function FlightPanel({
 	const [folded, setFolded] = useFoldOnTouch(touch, card)
 	return (
 		<section ref={card} className={`cinema-navigation ${folded ? 'is-folded' : ''}`} aria-label={t('Explore')}>
-			{!folded && <strong>{t('Step inside the memory')}</strong>}
 			{!folded &&
 				(touch ? (
-					<p>{t('Left thumb flies, right thumb looks. Push the stick to its edge to sprint.')}</p>
+					<p>{t('Left thumb flies, right thumb looks. Push to the edge to sprint.')}</p>
 				) : (
 					<KeyboardHelp controls={controls} />
 				))}
@@ -313,7 +309,7 @@ export function ControlsPanel({
 			<fieldset className="viewer-weather">
 				<legend>{t('Key set')}</legend>
 				<button type="button" aria-pressed={matches('viewer')} onClick={() => preset('viewer')}>
-					{t('Viewer')}
+					{t('Default')}
 				</button>
 				<button type="button" aria-pressed={matches('minecraft')} onClick={() => preset('minecraft')}>
 					Minecraft Java
@@ -355,7 +351,7 @@ export function ControlsPanel({
 					))}
 				</tbody>
 			</table>
-			<small>{t('Escape cancels, Backspace empties a key. Double-tapping forward always sprints.')}</small>
+			<small>{t('Esc cancels. Backspace clears the key. Double-tap forward to sprint.')}</small>
 			{risky && (
 				<p className="flight-warning" role="alert">
 					{t('Ctrl, Alt and Cmd can trigger browser shortcuts: Ctrl+W closes the tab.')}

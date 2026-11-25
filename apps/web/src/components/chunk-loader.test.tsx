@@ -167,7 +167,7 @@ test('the viewer load state: the loading screen while it loads, the card alone f
 		</I18nProvider>
 	)
 	expect(loader()).toBeNull() // dropped at once: nothing to reveal
-	expect(screen.getByRole('alert').textContent).toContain('This memory will have to wait.')
+	expect(screen.getByRole('alert').textContent).toContain('Could not open this memory.')
 	view.rerender(
 		<I18nProvider initialLocale="en">
 			<ViewerLoadState loading={null} error="This link has stopped." final />

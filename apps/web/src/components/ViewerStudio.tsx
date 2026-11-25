@@ -55,9 +55,9 @@ function CoverButton({
 	const { t } = useI18n()
 	if (!owner) return null
 	return (
-		<button type="button" disabled={!ready} aria-label={t('Server picture')} aria-expanded={open} onClick={onToggle}>
+		<button type="button" disabled={!ready} aria-label={t('Cover')} aria-expanded={open} onClick={onToggle}>
 			<ViewerIcon name="picture" />
-			<span>{t('Server picture')}</span>
+			<span>{t('Cover')}</span>
 		</button>
 	)
 }
@@ -145,6 +145,20 @@ function studioClass(state: { immersed: boolean; idle: boolean; touchFlying: boo
 	return names.join(' ')
 }
 
+/** The gesture hint has done its job once the visitor has pressed on the 3D view. */
+function useFirstDrag(): boolean {
+	const [dragged, setDragged] = useState(false)
+	useEffect(() => {
+		if (dragged) return
+		const press = (event: PointerEvent) => {
+			if (event.target instanceof HTMLCanvasElement) setDragged(true)
+		}
+		window.addEventListener('pointerdown', press, { passive: true })
+		return () => window.removeEventListener('pointerdown', press)
+	}, [dragged])
+	return dragged
+}
+
 export function ViewerStudio({
 	sceneRef,
 	memoryId,
@@ -189,6 +203,7 @@ export function ViewerStudio({
 	const [settings, setSettings] = useState(false)
 	const [immersed, setImmersed] = useState(false)
 	const [idle, setIdle] = useState(false)
+	const dragged = useFirstDrag()
 	const panelOpen = settings || sharing || covering || flight.open
 	// Each notice gets its own id, so a second postcard restarts the countdown.
 	const notify = (text: string) => setToast(current => ({ text, id: current.id + 1 }))
@@ -294,12 +309,12 @@ export function ViewerStudio({
 						type="button"
 						disabled={!ready}
 						aria-pressed={tour}
-						aria-label={t('Take a moment')}
+						aria-label={t('Auto-rotate')}
 						onClick={toggleTour}
 					>
 						<ViewerIcon name={tour ? 'pause' : 'play'} />
 						<span>
-							{t('Take a moment')} <kbd>T</kbd>
+							{t('Auto-rotate')} <kbd>T</kbd>
 						</span>
 					</button>
 					<button type="button" disabled={!ready} aria-label={t('Recenter')} onClick={recenter}>
@@ -380,7 +395,7 @@ export function ViewerStudio({
 							</button>
 						</div>
 						<fieldset disabled={!ready} className="viewer-weather">
-							<legend>{t('The sky')}</legend>
+							<legend>{t('Sky')}</legend>
 							{(['clear', 'mist', 'overcast', 'rain', 'snow'] as const).map((value, index) => (
 								<button
 									type="button"
@@ -414,13 +429,13 @@ export function ViewerStudio({
 						</fieldset>
 						<SiteSelect
 							className="viewer-quality"
-							label={t('Rendering quality')}
+							label={t('Quality')}
 							disabled={!ready}
 							value={quality}
 							options={[
-								{ value: 'auto' as const, label: t('Auto · balanced') },
-								{ value: 'cinematic' as const, label: t('Cinematic · every detail') },
-								{ value: 'eco' as const, label: t('Eco · lightweight') },
+								{ value: 'auto' as const, label: t('Auto') },
+								{ value: 'cinematic' as const, label: t('High') },
+								{ value: 'eco' as const, label: t('Low') },
 							]}
 							onChange={value => {
 								setQuality(value)
@@ -428,7 +443,6 @@ export function ViewerStudio({
 							}}
 						/>
 						<ViewerLayers sceneRef={sceneRef} ready={ready} />
-						<small>{t('Sky colors follow the memory’s biome when available.')}</small>
 					</section>
 				)}
 				{ready && (
@@ -439,14 +453,16 @@ export function ViewerStudio({
 					/>
 				)}
 				<div className="cinema-caption">
-					{fileInfo || t('A world to revisit')}
-					<span className="cinema-gesture">
-						{firstPerson ? t('Drag to look · Keyboard to move') : t('Drag to explore · Scroll to move closer')}
-					</span>
+					{fileInfo}
+					{!dragged && (
+						<span className="cinema-gesture">
+							{firstPerson ? t('Drag to look · Keys to move') : t('Drag to look around · Scroll to zoom')}
+						</span>
+					)}
 				</div>
 				<button className="cinema-immerse" type="button" aria-pressed={immersed} onClick={() => setImmersed(!immersed)}>
 					<ViewerIcon name={immersed ? 'eye' : 'eyeOff'} />
-					<span>{t(immersed ? 'Show controls' : 'Immerse')}</span>
+					<span>{t(immersed ? 'Show controls' : 'Hide controls')}</span>
 					<kbd>H</kbd>
 				</button>
 				<CoverPanel
@@ -456,18 +472,17 @@ export function ViewerStudio({
 					onClose={() => setCovering(false)}
 					onSaved={() => {
 						setCovering(false)
-						notify(t('Saved: this view is now your server’s picture.'))
+						notify(t('Cover saved.'))
 					}}
 				/>
 				{sharing && memoryId && (
 					<section className="viewer-sharing">
 						<div className="cinema-panel-heading">
-							<h2>{t('Invite someone back.')}</h2>
+							<h2>{t('Share')}</h2>
 							<button type="button" aria-label={t('Close sharing')} onClick={() => setSharing(false)}>
 								×
 							</button>
 						</div>
-						<p>{t('Anyone with the link can explore this memory. You can revoke access at any time.')}</p>
 						<SharePanel key={memoryId} memoryId={memoryId} view={currentView} />
 						<Link className={buttonLime} to={`/gallery?publish=${encodeURIComponent(memoryId)}`}>
 							{t('Make public')}

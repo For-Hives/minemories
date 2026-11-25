@@ -125,7 +125,7 @@ function mount(query = '') {
 }
 const film = () => screen.getAllByRole('button', { name: /^Lake base · / })
 const current = () => film().findIndex(item => item.getAttribute('aria-current') === 'step')
-const loaded = () => screen.queryAllByRole('button', { name: /· Chargée$/ }).length
+const loaded = () => screen.queryAllByRole('button', { name: /· Chargé$/ }).length
 
 beforeEach(() => {
 	vi.resetAllMocks()
@@ -168,24 +168,22 @@ test('a world link opens the composed world with the owner’s film, without fil
 	expect(document.querySelector('.film-thumb')?.getAttribute('style')).toContain('data:image/png;base64,AA==')
 	// It opens on the oldest capture, so Play shows the place growing; the next one glides the camera there.
 	expect(current()).toBe(0)
-	fireEvent.click(screen.getByRole('button', { name: 'Capture suivante' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Souvenir suivant' }))
 	expect(current()).toBe(1)
 	expect(mocks.glide).toHaveBeenCalledTimes(1)
 	expect(mocks.addLayer).toHaveBeenCalledTimes(3)
 })
 
-test('the visitor is welcomed with the count and Play, then invited after 10 s', async () => {
+test('the visitor is welcomed with the drag and Play hints, then invited after 10 s', async () => {
 	vi.useFakeTimers({ shouldAdvanceTime: true })
 	mount()
 	await waitFor(() => expect(loaded()).toBe(3))
 	const welcome = document.querySelector('[data-share="welcome"]')
-	expect(welcome?.textContent).toBe(
-		'Un lieu Minecraft en 3D, partagé avec toi. Fais glisser pour tourner autour. 3 souvenirs de ce lieu. Appuie sur Lire pour le voir changer.'
-	)
+	expect(welcome?.textContent).toBe('Fais glisser pour regarder. Appuie sur Lire pour le voir grandir.')
 	// Once the scene's effects have run (the opening is counted), the invitation's clock is running.
 	await waitFor(() => expect(mocks.track).toHaveBeenCalled())
 	act(() => vi.advanceTimersByTime(INVITE_DELAY_MS))
-	expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base ? →' }).getAttribute('href')).toBe(
+	expect(screen.getByRole('link', { name: 'Fais pareil avec ta base →' }).getAttribute('href')).toBe(
 		'/installation?src=share'
 	)
 	expect(document.querySelector('[data-share="welcome"]')).toBeNull()
@@ -202,7 +200,7 @@ test('a link carrying a view opens on its capture, hour, layers and camera, and 
 	await waitFor(() => expect(mocks.weather).toHaveBeenCalledWith('rain'))
 	const writeText = vi.fn().mockResolvedValue(undefined)
 	vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
-	fireEvent.click(screen.getByRole('button', { name: 'Capture suivante' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Souvenir suivant' }))
 	fireEvent.click(screen.getByRole('button', { name: 'Copier le lien de cette vue' }))
 	await waitFor(() => expect(writeText).toHaveBeenCalled())
 	const copied = new URL(writeText.mock.calls[0]?.[0] as string)
@@ -231,13 +229,13 @@ test('an archived capture is restored in place by the visitor, then joins the wo
 	mount()
 	await waitFor(() => expect(loaded()).toBe(2))
 	expect(mocks.restore).not.toHaveBeenCalled()
-	const restore = await screen.findByRole('button', { name: 'Restaurer le souvenir · Lake base' })
-	expect(film()[1]?.getAttribute('aria-label')).toContain('Archivée : restaure-la pour la voir')
+	const restore = await screen.findByRole('button', { name: 'Le récupérer · Lake base' })
+	expect(film()[1]?.getAttribute('aria-label')).toContain('Archivé\u00a0: récupère-le pour le voir')
 	fireEvent.click(restore)
 	// The restoration card asks before anything is restored, as on a capture opened alone.
 	await screen.findByRole('heading', { name: 'Ce souvenir est archivé.' })
 	expect(current()).toBe(1)
-	fireEvent.click(screen.getByRole('button', { name: 'Restaurer le souvenir' }))
+	fireEvent.click(screen.getByRole('button', { name: 'Le récupérer' }))
 	await waitFor(() => expect(loaded()).toBe(3))
 	expect(mocks.restore).toHaveBeenCalledWith(
 		{ kind: 'shared', token: TOKEN, snapshot: archived },

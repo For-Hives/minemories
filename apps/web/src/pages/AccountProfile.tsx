@@ -54,11 +54,11 @@ export function AccountProfile({
 				</button>
 				<div className="mm-account-identity">
 					{editingName ? (
-						<form className="mm-account-name-form" aria-label={t('Display name')} onSubmit={onSaveName}>
+						<form className="mm-account-name-form" aria-label={t('Minecraft name')} onSubmit={onSaveName}>
 							<input
 								className="mc-field"
 								name="name"
-								aria-label={t('Display name')}
+								aria-label={t('Minecraft name')}
 								autoComplete="nickname"
 								defaultValue={name}
 								required

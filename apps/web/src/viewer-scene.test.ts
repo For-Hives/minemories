@@ -178,7 +178,7 @@ test('a shader compilation failure restores the previous capture and allows a la
 	f.fields.renderer.compileAsync.mockRejectedValueOnce(new Error('GPU compilation failed'))
 	const mesh = f.next.children[0] as THREE.Mesh
 	const dispose = vi.spyOn(mesh.geometry, 'dispose')
-	await expect(f.scene.loadFile(f.file)).rejects.toThrow('Could not read this GLB')
+	await expect(f.scene.loadFile(f.file)).rejects.toThrow('Could not read this 3D file.')
 	expect(f.modelRoot.children).toEqual([f.previous])
 	expect(f.previous.visible).toBe(true)
 	expect(dispose).toHaveBeenCalledOnce()

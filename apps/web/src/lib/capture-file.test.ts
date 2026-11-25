@@ -49,7 +49,7 @@ test('revocation and cancellation cannot deliver a file after storage or body re
 	const controller = new AbortController(),
 		signal = controller.signal
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 404 })))
-	await expect(downloadCapture('/revoked', 'f.glb', signal)).rejects.toThrow('unavailable')
+	await expect(downloadCapture('/revoked', 'f.glb', signal)).rejects.toThrow('This memory is gone')
 	// A storage outage is not a revocation: the visitor is told to try again.
 	vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })))
 	await expect(downloadCapture('/outage', 'f.glb', signal)).rejects.toThrow(SCENE_UNREACHABLE)

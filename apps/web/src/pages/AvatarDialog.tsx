@@ -80,14 +80,14 @@ export function AvatarDialog({
 				<h2 id="avatar-dialog-title" className="mm-avatar-title">
 					{t('Avatar')}
 				</h2>
-				<p>{t('Your avatar is the head of a Minecraft skin. It shows next to your name at the top of the site.')}</p>
+				<p>{t('Type a Minecraft name to use its head.')}</p>
 				<form className="mm-avatar-form" aria-labelledby="avatar-dialog-title" onSubmit={submit}>
 					<span className="mm-avatar-preview mm-avatar-dialog-preview">
 						<span aria-hidden="true">{initial}</span>
 						{shown && <img src={shown} alt={t('Avatar preview')} width={96} height={96} />}
 					</span>
 					<label>
-						{t('Minecraft account')}
+						{t('Minecraft name')}
 						<input
 							ref={field}
 							className="mc-field"

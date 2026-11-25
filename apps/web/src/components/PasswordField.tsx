@@ -54,7 +54,7 @@ export function PasswordField({
 				</button>
 			</div>
 			<p id={`${id}-hint`} className="auth-field-hint">
-				{hint ?? (creating ? t('At least 12 characters. A memorable phrase can help.') : null)}
+				{hint ?? (creating ? t('12 characters minimum.') : null)}
 			</p>
 			<p id={`${id}-caps`} role="status" className="auth-caps-warning">
 				{capsLock ? t('Caps Lock is on.') : ''}

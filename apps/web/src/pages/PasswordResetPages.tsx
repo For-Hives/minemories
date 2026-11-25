@@ -97,17 +97,14 @@ export function ForgotPasswordPage() {
 
 	if (sent)
 		return (
-			<ResetShell title="Check your inbox" lead="If an account matches, we sent it a link to choose a new password.">
+			<ResetShell title="Check your inbox" lead="If this account exists, we sent you a link.">
 				<p role="status" className="auth-field-hint">
-					{t('The link works for one hour. Nothing came? Look in your spam, or try your other email address.')}
+					{t('It works for one hour. Nothing came? Check your spam.')}
 				</p>
 			</ResetShell>
 		)
 	return (
-		<ResetShell
-			title="Forgot your password?"
-			lead="Type your email or your Minecraft name. We send a link to choose a new password."
-		>
+		<ResetShell title="Forgot your password?" lead="Type your email or Minecraft name. We’ll send you a link.">
 			<form className="auth-form" onSubmit={submit} aria-busy={busy}>
 				<label className="auth-label">
 					{t('Email or Minecraft name')}

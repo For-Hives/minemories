@@ -60,7 +60,7 @@ function SingleViewerPage() {
 				onLoading: setLoading,
 			})
 		} catch {
-			setLoadError('WebGL is unavailable. Try another browser or enable hardware acceleration.')
+			setLoadError('Your browser can’t show 3D. Try Chrome or Firefox.')
 			return
 		}
 
@@ -79,7 +79,7 @@ function SingleViewerPage() {
 			await scene.loadFile(file)
 			return true
 		} catch (error) {
-			setLoadError(errorMessageKey(error, 'Could not read this GLB'))
+			setLoadError(errorMessageKey(error, 'Could not read this 3D file.'))
 			return false
 		}
 	}, [])
@@ -184,7 +184,7 @@ function SingleViewerPage() {
 
 	return (
 		<section className="viewer-page cinema-page">
-			<ViewerHeader title={memoryId ? t('A world to find again.') : (viewerFile?.name ?? t('The memory studio'))}>
+			<ViewerHeader title={(!memoryId && viewerFile?.name) || t('Memory')}>
 				{import.meta.env.DEV && (
 					<label className="cinema-open">
 						<T message={'Choose a GLB'} />

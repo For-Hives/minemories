@@ -66,7 +66,7 @@ test('a world offers two independent links, a snapshot one and a world one, each
 			<SharePanel memoryId="evolving" />
 		</I18nProvider>
 	)
-	const snapshot = await screen.findByRole('button', { name: 'Snapshot · Link active' })
+	const snapshot = await screen.findByRole('button', { name: 'Memory · Link active' })
 	const world = screen.getByRole('button', { name: 'World' })
 	expect(snapshot.getAttribute('aria-pressed')).toBe('true')
 	expect(world.getAttribute('aria-pressed')).toBe('false')
@@ -78,8 +78,8 @@ test('a world offers two independent links, a snapshot one and a world one, each
 	expect(((await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement).value).toContain(
 		'/share/wide'
 	)
-	expect(screen.getByRole('button', { name: 'Snapshot · Link active' })).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: 'Snapshot · Link active' }))
+	expect(screen.getByRole('button', { name: 'Memory · Link active' })).toBeTruthy()
+	fireEvent.click(screen.getByRole('button', { name: 'Memory · Link active' }))
 	expect(((await screen.findByRole('textbox', { name: 'Share link' })) as HTMLInputElement).value).toContain(
 		'/share/snap'
 	)

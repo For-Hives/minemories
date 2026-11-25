@@ -103,7 +103,7 @@ function ScopeSwitch({
 }) {
 	const { t } = useI18n()
 	const options: [Scope, 'cube' | 'layers', string][] = [
-		['memory', 'cube', t('Snapshot')],
+		['memory', 'cube', t('Memory')],
 		['world', 'layers', t('World')],
 	]
 	return (
@@ -140,7 +140,7 @@ function ViewToggle({ choice }: { choice: ViewChoice }) {
 			<input type="checkbox" checked={choice.include} onChange={event => choice.onInclude(event.target.checked)} />
 			<span>
 				{t('Include this view')}
-				<small>{t('Camera, time of day, weather and layers, as on your screen now.')}</small>
+				<small>{t('The link opens on what you see now.')}</small>
 			</span>
 		</label>
 	)
@@ -160,7 +160,7 @@ function ShareBody({ scope, share, view }: { scope: Scope; share: Share; view?: 
 			)}
 			{status === 'off' && (
 				<>
-					<p>{scope === 'world' ? t('Every snapshot, as the world grows.') : t('This moment only.')}</p>
+					<p>{scope === 'world' ? t('Every memory of this world.') : t('This memory only.')}</p>
 					<button type="button" onClick={() => void create()} disabled={busy} className={buttonDark}>
 						{busy ? '…' : t('Create a link')}
 					</button>
@@ -188,11 +188,7 @@ function ShareBody({ scope, share, view }: { scope: Scope; share: Share; view?: 
 							</button>
 						</span>
 					) : (
-						<p>
-							{t(
-								'A link is active. Use your saved copy to retrieve it. Creating a new link will disable the previous one.'
-							)}
-						</p>
+						<p>{t('You already have a link. A new link turns the old one off.')}</p>
 					)}
 					{url && (
 						<a href={url} target="_blank" rel="noreferrer">
@@ -200,15 +196,9 @@ function ShareBody({ scope, share, view }: { scope: Scope; share: Share; view?: 
 						</a>
 					)}
 					<span className="memory-share-row">
-						<button
-							type="button"
-							onClick={() => void create()}
-							disabled={busy}
-							title={t('Replace the active link with a new one')}
-							className={buttonQuiet}
-						>
+						<button type="button" onClick={() => void create()} disabled={busy} className={buttonQuiet}>
 							{' '}
-							{t('Replace active link')}{' '}
+							{t('New link')}{' '}
 						</button>
 						<button
 							type="button"
@@ -228,7 +218,7 @@ function ShareBody({ scope, share, view }: { scope: Scope; share: Share; view?: 
 
 /**
  * `view`, from the viewer, reads the current view so the link can reopen it (camera, hour, weather, layers and, for
- * a world link, this snapshot); the gallery's side sheet has none and shares plain links.
+ * a world link, this memory); the gallery's side sheet has none and shares plain links.
  */
 export function SharePanel({ memoryId, view }: { memoryId: string; view?: () => ViewLink }) {
 	const { t } = useI18n()
@@ -241,8 +231,7 @@ export function SharePanel({ memoryId, view }: { memoryId: string; view?: () => 
 	const active = hasWorld && scope === 'world' ? 'world' : 'memory'
 	return (
 		<div className="memory-share-panel" aria-live="polite">
-			<h3>{t('Share by link')}</h3>
-			<p>{t('Anyone with the link can visit without an account. This memory stays out of the public gallery.')}</p>
+			<p>{t('Anyone with the link can look around. No account needed.')}</p>
 			{/* Interim warning until /api/shared stops returning the capture's location and world identity (decision D1). */}
 			<p className="memory-share-warning">{t(linkWarning)}</p>
 			{hasWorld && (

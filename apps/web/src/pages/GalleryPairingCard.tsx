@@ -38,7 +38,7 @@ export function GalleryPairingCard({
 				</div>
 			) : (
 				<button className="gallery-view" type="button" onClick={() => void createPairing()} disabled={pairBusy}>
-					{t(pairingButtonLabel(pairBusy, connected))} <span>↗</span>
+					{t(pairingButtonLabel(pairBusy, connected))}
 				</button>
 			)}
 		</section>
@@ -47,15 +47,15 @@ export function GalleryPairingCard({
 function pairingButtonLabel(busy: boolean, connected: boolean): string {
 	if (busy) return 'Creating…'
 	// A second code connects another computer.
-	return connected ? 'New code' : 'Get a code'
+	return connected ? 'Connect another computer' : 'Get a code'
 }
 
 /** Only failures and a silent game deserve a sentence; the happy path stays quiet. */
 function pairingNote(pairedFresh: boolean, status: PairingStatus): string | null {
-	if (status === 'expired') return 'This code expired. Generate a new one.'
-	if (status === 'error') return 'The code could not be checked. Get a new one.'
+	if (status === 'expired') return 'Code expired.'
+	if (status === 'error') return 'Could not check the code.'
 	// Device tokens never expire: a long silence means the mod is missing or signed out, not a stale code.
 	if (status === 'paired' && !pairedFresh)
-		return 'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
+		return 'Nothing new for two months. In Minecraft, press M: does it say Connected?'
 	return null
 }

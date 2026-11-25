@@ -98,8 +98,8 @@ function AreaTitle({ rename }: { rename: ReturnType<typeof useAreaName> }) {
 				className="gallery-rename"
 				draft={draft}
 				saved={name}
-				label={single ? t('Snapshot name') : t('Stack name')}
-				placeholder={t('Name this area…')}
+				label={single ? t('Memory name') : t('Place name')}
+				placeholder={t('Name this place…')}
 				saving={saving}
 				error={error}
 				onSave={() => void save()}
@@ -116,8 +116,8 @@ function AreaTitle({ rename }: { rename: ReturnType<typeof useAreaName> }) {
 				type="button"
 				className="gallery-icon-button"
 				onClick={start}
-				title={single ? t('Rename this snapshot') : t('Rename this area')}
-				aria-label={single ? t('Rename {name}', { name }) : t('Rename this area')}
+				title={single ? t('Rename this memory') : t('Rename this place')}
+				aria-label={single ? t('Rename {name}', { name }) : t('Rename this place')}
 			>
 				<GalleryIcon name="pencil" />
 			</button>
@@ -156,7 +156,7 @@ function AreaActions({
 			<button
 				type="button"
 				className="gallery-icon-button"
-				title={t('Share this snapshot')}
+				title={t('Share this memory')}
 				aria-label={t('Share')}
 				onClick={() => onOpen('share')}
 			>
@@ -175,7 +175,7 @@ function AreaActions({
 				<button
 					type="button"
 					className="gallery-icon-button"
-					title={t('Snapshots')}
+					title={t('Memories')}
 					aria-label={t('Manage {name}', { name })}
 					onClick={() => onOpen('snapshots')}
 				>
@@ -240,11 +240,9 @@ export function AreaCard({
 		{ label: t('Details'), icon: 'cube', onSelect: () => open('details') },
 		{ label: t('Share'), icon: 'link', onSelect: () => open('share') },
 		{ label: t('Make public'), icon: 'globe', onSelect: () => open('publish') },
-		...(snapshots > 1
-			? [{ label: t('Snapshots'), icon: 'layers', onSelect: () => open('snapshots') } as MenuItem]
-			: []),
+		...(snapshots > 1 ? [{ label: t('Memories'), icon: 'layers', onSelect: () => open('snapshots') } as MenuItem] : []),
 		{
-			label: rename.single ? t('Rename this snapshot') : t('Rename this area'),
+			label: rename.single ? t('Rename this memory') : t('Rename this place'),
 			icon: 'pencil',
 			onSelect: rename.start,
 		},

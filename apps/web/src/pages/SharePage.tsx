@@ -7,8 +7,7 @@ import { ViewerHeader, ViewerLoadState } from '../components/ViewerChrome'
 import { ViewerStudio } from '../components/ViewerStudio'
 import { type FilmActions, useWorldEvolution, type WorldSource, WorldStage } from '../components/WorldViewer'
 import { errorMessageKey } from '../i18n/error-messages'
-import { translate, useI18n } from '../i18n/I18n'
-import { type Locale, localeTag } from '../i18n/locales'
+import { useI18n } from '../i18n/I18n'
 import { CaptureRestorationRequired, downloadCapture, SCENE_UNREACHABLE } from '../lib/capture-file'
 import { formatFileSize } from '../lib/glb'
 import { readViewLink, type ViewLink } from '../lib/view-link'
@@ -25,7 +24,7 @@ const RETRYABLE = new Set([
 	SCENE_UNREACHABLE,
 	'The service is temporarily unavailable. Try again.',
 	'Too many attempts. Wait a moment and try again.',
-	'Restoration information could not be loaded. Try again.',
+	'Could not check this memory. Try again.',
 ])
 /** The invitation to install waits for the first gesture on the scene, or this long once it is on screen. */
 export const INVITE_DELAY_MS = 10_000
@@ -121,24 +120,13 @@ function applySharedCapture(scene: ViewerScene, capture: SharedCapture, onTitle:
 	onTitle(capture.place || capture.name)
 }
 
-function worldCount(locale: Locale, count: number): string {
-	const category = new Intl.PluralRules(localeTag(locale)).select(count)
-	return translate(locale, `share.world.count.${category}`, { count })
-}
-
-/** The first line a visitor reads: what this is and the one gesture it needs; a world link adds how many moments it holds. */
-function ShareWelcome({ isPublic, moments }: { isPublic: boolean; moments: number }) {
-	const { t, locale } = useI18n()
+/** The first line a visitor reads: the one gesture it needs; a world link adds how to watch it change. */
+function ShareWelcome({ moments }: { moments: number }) {
+	const { t } = useI18n()
 	return (
 		<p className="share-note" data-share="welcome">
-			{t('A Minecraft place in 3D, shared with you. Drag to turn around it.')}
-			{isPublic && <> {t('Published by its author, reviewed before publication.')}</>}
-			{moments > 1 && (
-				<>
-					{' '}
-					{worldCount(locale, moments)} {t('Press Play to watch it change.')}
-				</>
-			)}
+			{t('Drag to look around.')}
+			{moments > 1 && <> {t('Press Play to watch it grow.')}</>}
 		</p>
 	)
 }
@@ -152,7 +140,7 @@ function ShareCall({ isPublic }: { isPublic: boolean }) {
 	const { t } = useI18n()
 	return (
 		<p className="share-note share-call" data-share="call">
-			<Link to={installPath(isPublic)}>{t('Want the same for your own base?')} →</Link>
+			<Link to={installPath(isPublic)}>{t('Do the same with your base')} →</Link>
 			{isPublic && <Link to="/explore">{t('See other places')}</Link>}
 		</p>
 	)
@@ -171,8 +159,7 @@ function ShareTop({
 	moments: number
 }): ReactNode {
 	let line: ReactNode = null
-	if (invite)
-		line = engaged ? <ShareCall isPublic={isPublic} /> : <ShareWelcome isPublic={isPublic} moments={moments} />
+	if (invite) line = engaged ? <ShareCall isPublic={isPublic} /> : <ShareWelcome moments={moments} />
 	return <div className="share-top">{line}</div>
 }
 
@@ -196,7 +183,7 @@ function ShareErrorActions({
 				{t('Retry')}
 			</button>
 		)
-	return invite ? <Link to={installPath(isPublic)}>{t('Keep your own base in 3D too')} →</Link> : null
+	return invite ? <Link to={installPath(isPublic)}>{t('Do the same with your base')} →</Link> : null
 }
 
 /** Nothing left to wait for: the world is drawn (no status left), or an error or a restoration card takes its place. */
@@ -293,7 +280,7 @@ function SharedCapturePage({ isPublic = false, first }: { isPublic?: boolean; fi
 				onLoading: setStatus,
 			})
 		} catch {
-			setError('WebGL is unavailable. Try another browser or enable hardware acceleration.')
+			setError('Your browser can’t show 3D. Try Chrome or Firefox.')
 			setStatus(null)
 			return
 		}
@@ -366,7 +353,7 @@ function SharedCapturePage({ isPublic = false, first }: { isPublic?: boolean; fi
 	return (
 		<section className="viewer-page cinema-page">
 			<ViewerHeader
-				title={title ?? t('A shared world.')}
+				title={title ?? t('Shared with you')}
 				back={isPublic ? publicBack : '/'}
 				backLabel={isPublic ? t(review ? 'Back to moderation' : 'Back to public gallery') : 'Minemories'}
 				below={<ShareTop invite={onScreen} isPublic={isPublic} engaged={engaged} moments={0} />}
@@ -443,7 +430,7 @@ function SharedWorldPage({ token, capture }: { token: string; capture: SharedCap
 	return (
 		<section className="viewer-page cinema-page timelapse-page">
 			<ViewerHeader
-				title={capture.place || world?.name || t('A shared world.')}
+				title={capture.place || world?.name || t('Shared with you')}
 				back="/"
 				backLabel="Minemories"
 				below={

@@ -41,7 +41,7 @@ function NameField({
 	const [saved, flashSaved] = useFlash()
 	const custom = name !== server.name
 	const next = draft.value.trim()
-	// An empty field saves nothing: "Restore" is the one way back to the game's name.
+	// An empty field saves nothing: "Back to" is the one way back to the game's name.
 	const unchanged = !next || next === name
 	function rename(value: string) {
 		onRename(value)
@@ -56,7 +56,7 @@ function NameField({
 				if (!unchanged) rename(next === server.name ? '' : next)
 			}}
 		>
-			<label htmlFor="server-name">{t('Server name')}</label>
+			<label htmlFor="server-name">{t('World name')}</label>
 			<div>
 				<input
 					id="server-name"
@@ -73,7 +73,7 @@ function NameField({
 			<SavedNote visible={saved} />
 			{custom && (
 				<button type="button" className="gallery-sheet-reset" onClick={() => rename('')}>
-					{t('Restore “{name}”', { name: server.name })}
+					{t('Back to “{name}”', { name: server.name })}
 				</button>
 			)}
 			<small>{t('This name stays in this browser.')}</small>
@@ -124,7 +124,7 @@ export function ServerSheet({
 				<div className="gallery-dialog-body gallery-sheet">
 					<NameField server={server} name={name} onRename={onRename} />
 					<dl className="gallery-facts">
-						<Fact icon="layers" label={t('Snapshots')}>
+						<Fact icon="layers" label={t('Memories')}>
 							{server.captures.length}
 						</Fact>
 						<Fact icon="disk" label={t('Size')}>
@@ -161,7 +161,7 @@ export function ServerSheet({
 							</Fact>
 						)}
 					</dl>
-					<h3>{t('Areas')}</h3>
+					<h3>{t('Places')}</h3>
 					<ul className="gallery-snapshots">
 						{server.areas.map(area => {
 							const latest = latestCapture(area.stack.captures)

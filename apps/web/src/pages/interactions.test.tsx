@@ -163,10 +163,10 @@ test('a full gallery says where new memories go and how to make room, in one lin
 		pendingDeletionBytes: 2048,
 	})
 	mount(<GalleryPage />)
-	const storage = await screen.findByRole('region', { name: 'Gallery storage' })
+	const storage = await screen.findByRole('region', { name: 'Space used' })
 	expect(storage.textContent).toContain('2 GiB/ 2 GiB')
 	expect(storage.textContent).toContain(
-		'Your gallery is full. New memories stay on your computer. To make room, use Delete forever in Trash.'
+		'Your gallery is full. New memories stay on your computer. Empty the trash to make room.'
 	)
 	expect(storage.textContent).not.toMatch(/reserving|Deletion is still/)
 	expect(storage.querySelector('details')).toBeNull()
@@ -182,7 +182,7 @@ test('a nearly full gallery still accepts uploads, so it does not claim to be fu
 		pendingDeletionBytes: 0,
 	})
 	mount(<GalleryPage />)
-	const storage = await screen.findByRole('region', { name: 'Gallery storage' })
+	const storage = await screen.findByRole('region', { name: 'Space used' })
 	expect(storage.querySelector('[data-level="full"]')).toBeTruthy()
 	expect(storage.textContent).not.toContain('Your gallery is full.')
 })
@@ -198,7 +198,7 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 		})
 	)
 	mount(<GalleryPage />)
-	expect(screen.getByText('Checking available storage…')).toBeTruthy()
+	expect(screen.getByText('Checking the space used…')).toBeTruthy()
 	await act(async () => {
 		resolve?.({
 			usedBytes: 0,
@@ -209,7 +209,7 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 			trashBytes: 0,
 		})
 	})
-	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 1 KiB')
+	expect(screen.getByRole('region', { name: 'Space used' }).textContent).toContain('0 B/ 1 KiB')
 	mocks.storage.mockResolvedValueOnce({
 		usedBytes: 1024,
 		limitBytes: 1024,
@@ -220,13 +220,13 @@ test('gallery storage loads, refreshes and discards stale numbers after a failed
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(12_000)
 	})
-	expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('Your gallery is full.')
+	expect(screen.getByRole('region', { name: 'Space used' }).textContent).toContain('Your gallery is full.')
 	mocks.storage.mockRejectedValueOnce(new Error('private fixture failure'))
 	await act(async () => {
 		await vi.advanceTimersByTimeAsync(12_000)
 	})
-	expect(screen.queryByRole('region', { name: 'Gallery storage' })).toBeNull()
-	expect(screen.getByText('Storage information is unavailable. Your captures remain accessible.')).toBeTruthy()
+	expect(screen.queryByRole('region', { name: 'Space used' })).toBeNull()
+	expect(screen.getByText('Could not check the space used.')).toBeTruthy()
 })
 
 test.each([false, true])(
@@ -252,12 +252,12 @@ test.each([false, true])(
 		await act(async () => {
 			fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 		})
-		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 2 GiB')
+		expect(screen.getByRole('region', { name: 'Space used' }).textContent).toContain('0 B/ 2 GiB')
 		if (!finish) throw new Error('Missing pending request')
 		await act(async () => {
 			finish?.()
 		})
-		expect(screen.getByRole('region', { name: 'Gallery storage' }).textContent).toContain('0 B/ 2 GiB')
+		expect(screen.getByRole('region', { name: 'Space used' }).textContent).toContain('0 B/ 2 GiB')
 	}
 )
 test('login submits credentials, refreshes the session and opens the gallery', async () => {
@@ -430,8 +430,8 @@ test.each(['paired', 'expired', 'error'])('pairing polling reaches %s and stops 
 	})
 	const message = {
 		paired: 'Your game is connected.',
-		expired: 'This code expired. Generate a new one.',
-		error: 'The code could not be checked. Get a new one.',
+		expired: 'Code expired.',
+		error: 'Could not check the code.',
 	}[status]
 	if (!message) throw new Error('Missing status message')
 	expect(screen.getAllByText(message).length).toBeGreaterThan(0)
@@ -526,7 +526,7 @@ test('failed memory downloads replace the progress indicator with an error', asy
 			<ViewerPage />
 		</MemoryRouter>
 	)
-	expect(await screen.findByText('This memory is unavailable or access was revoked.')).toBeTruthy()
+	expect(await screen.findByText('This memory is gone, or its link was turned off.')).toBeTruthy()
 	expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	expect(mocks.loadFile).not.toHaveBeenCalled()
 	vi.unstubAllGlobals()
@@ -534,7 +534,7 @@ test('failed memory downloads replace the progress indicator with an error', asy
 })
 
 test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error and clears loading', async source => {
-	const message = 'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
+	const message = 'This 3D file is broken or too big. Capture a smaller area.'
 	mocks.loadFile.mockImplementation(() => {
 		mocks.viewerEvents?.onLoading(null)
 		return Promise.reject(new UnsupportedGlbError(message))
@@ -547,11 +547,7 @@ test.each(['local', 'gallery'])('the %s viewer shows the embedded-resource error
 				<ViewerPage />
 			</MemoryRouter>
 		)
-		expect(
-			await screen.findByText(
-				'Invalid or overly complex GLB. Export a smaller area with embedded textures and geometry.'
-			)
-		).toBeTruthy()
+		expect(await screen.findByText('This 3D file is broken or too big. Capture a smaller area.')).toBeTruthy()
 		expect(screen.getByRole('alert').querySelector('.cinema-loading-line')).toBeNull()
 		expect(screen.queryByText('Téléchargement du souvenir…')).toBeNull()
 	} finally {
@@ -673,7 +669,7 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 	fireEvent.click(screen.getByRole('button', { name: 'Rename Remote' }))
 	const sheet = screen.getByRole('dialog', { name: 'Remote' })
 	expect(within(sheet).getByText('Remote two')).toBeTruthy()
-	fireEvent.change(within(sheet).getByLabelText('Server name'), { target: { value: 'Friends SMP' } })
+	fireEvent.change(within(sheet).getByLabelText('World name'), { target: { value: 'Friends SMP' } })
 	fireEvent.click(within(sheet).getByRole('button', { name: 'Save' }))
 	expect(screen.getByRole('dialog', { name: 'Friends SMP' })).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: 'Close' }))
@@ -685,12 +681,12 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 		within(menu)
 			.getAllByRole('menuitem')
 			.map(item => item.textContent)
-	).toEqual(['Open', 'Details', 'Rename this server'])
+	).toEqual(['Open', 'Details', 'Rename this world'])
 	fireEvent.keyDown(menu, { key: 'ArrowDown' })
 	fireEvent.keyDown(menu, { key: 'ArrowUp' })
-	fireEvent.click(within(menu).getByRole('menuitem', { name: 'Rename this server' }))
+	fireEvent.click(within(menu).getByRole('menuitem', { name: 'Rename this world' }))
 	expect(screen.queryByRole('menu')).toBeNull()
-	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore “Remote”' }))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Back to “Remote”' }))
 	fireEvent.keyDown(document, { key: 'Escape' })
 	expect(screen.getByRole('button', { name: 'Remote' })).toBeTruthy()
 	fireEvent.contextMenu(screen.getByRole('button', { name: 'Remote' }))
@@ -703,7 +699,7 @@ test('gallery View opens the newest snapshot, with the timeline once an area hol
 		within(card)
 			.getAllByRole('menuitem')
 			.map(item => item.textContent)
-	).toEqual(['View', 'Details', 'Share', 'Make public', 'Rename this snapshot', 'Move to trash'])
+	).toEqual(['View', 'Details', 'Share', 'Make public', 'Rename this memory', 'Move to trash'])
 	fireEvent.click(within(card).getByRole('menuitem', { name: 'Details' }))
 	const details = screen.getByRole('dialog', { name: 'Remote two' })
 	expect(within(details).getByRole('tab', { name: 'Details' }).getAttribute('aria-selected')).toBe('true')
@@ -770,14 +766,14 @@ test('registration keeps password guidance accessible and announces Caps Lock', 
 		?.split(' ')
 		.map(id => document.getElementById(id)?.textContent)
 		.join(' ')
-	expect(described).toContain('At least 12 characters')
+	expect(described).toContain('12 characters minimum.')
 	const event = new KeyboardEvent('keydown', { bubbles: true, key: 'A' })
 	Object.defineProperty(event, 'getModifierState', { value: () => true })
 	fireEvent(input, event)
 	expect(screen.getByRole('status').textContent).toBe('Caps Lock is on.')
 	fireEvent.keyUp(input, { key: 'CapsLock' })
 	expect(screen.getByRole('status').textContent).toBe('')
-	expect(screen.getByText(/At least 12 characters/)).toBeTruthy()
+	expect(screen.getByText('12 characters minimum.')).toBeTruthy()
 })
 
 function AuthRoute() {
@@ -1029,7 +1025,7 @@ test('production empty gallery guides pairing without offering local imports', a
 	expect(screen.queryByRole('link', { name: /Open a local GLB/ })).toBeNull()
 	expect(screen.queryByRole('button', { name: /Choose a local file/ })).toBeNull()
 	expect(screen.getByText('Install the mod, then connect your game with a code.')).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'Get a code' })).toBeTruthy()
+	expect(screen.getAllByRole('button', { name: 'Get a code' })).toHaveLength(2)
 	expect(screen.getByRole('link', { name: /No mod yet\? Install Minemories/ }).getAttribute('href')).toBe(
 		'/installation'
 	)
@@ -1042,7 +1038,7 @@ test('a connected game with no memory yet says how to take the first one and sen
 	expect(screen.getByRole('heading', { level: 2, name: 'Your game is connected.' })).toBeTruthy()
 	expect(screen.getByText('Press M → Take a memory. It will show up here.')).toBeTruthy()
 	expect(screen.getByText('Memories from before? M → My memories → Send this memory.')).toBeTruthy()
-	expect(screen.getByRole('button', { name: 'New code ↗' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Connect another computer' })).toBeTruthy()
 	expect(screen.queryByRole('link', { name: /Install Minemories/ })).toBeNull()
 })
 
@@ -1053,14 +1049,12 @@ test('a connected game silent for two months asks to check the mod, never to con
 	])
 	mount(<GalleryPage />)
 	expect(
-		await screen.findByText(
-			'No new memory for two months. Check that the mod is installed: in Minecraft, M should show Connected.'
-		)
+		await screen.findByText('Nothing new for two months. In Minecraft, press M: does it say Connected?')
 	).toBeTruthy()
 	expect(screen.getByRole('heading', { level: 2, name: 'Your game is connected.' })).toBeTruthy()
 	expect(screen.queryByRole('heading', { name: 'Connect your game to your gallery.' })).toBeNull()
 	expect(screen.queryByRole('button', { name: /Get a code/ })).toBeNull()
-	expect(screen.getByRole('button', { name: 'New code ↗' })).toBeTruthy()
+	expect(screen.getByRole('button', { name: 'Connect another computer' })).toBeTruthy()
 })
 
 test('leaving the private viewer aborts a pending download and never loads its late response', async () => {
@@ -1102,13 +1096,13 @@ test('changing the remote capture aborts its old request and ignores the late fi
 	vi.stubGlobal('fetch', fetcher)
 	render(
 		<MemoryRouter initialEntries={['/viewer?memory=old']}>
-			<Link to="/viewer?memory=next">Next capture</Link>
+			<Link to="/viewer?memory=next">Next memory</Link>
 			<ViewerPage />
 		</MemoryRouter>
 	)
 	await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1))
 	const signal = fetcher.mock.calls[0]?.[1]?.signal as AbortSignal
-	fireEvent.click(screen.getByRole('link', { name: 'Next capture' }))
+	fireEvent.click(screen.getByRole('link', { name: 'Next memory' }))
 	await waitFor(() => expect(mocks.loadFile).toHaveBeenCalledTimes(1))
 	expect(signal.aborted).toBe(true)
 	expect(fetcher.mock.calls[1]?.[0]).toContain('/api/memories/next/file')
@@ -1125,7 +1119,7 @@ test('a delayed previous pairing status cannot hide a newly requested code', asy
 		})
 	)
 	mount(<GalleryPage />)
-	fireEvent.click(await screen.findByRole('button', { name: 'Get a code ↗' }))
+	fireEvent.click((await screen.findAllByRole('button', { name: 'Get a code' }))[0] as HTMLElement)
 	await screen.findByText('123 456')
 	await act(async () => finish?.({ paired: true }))
 	expect(screen.getByText('123 456')).toBeTruthy()
@@ -1141,7 +1135,7 @@ test('leaving while a code is being created aborts both requests and never start
 		})
 	)
 	const view = mount(<GalleryPage />)
-	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
+	fireEvent.click(screen.getAllByRole('button', { name: 'Get a code' })[0] as HTMLElement)
 	const statusSignal = mocks.status.mock.calls[0]?.[1]?.signal as AbortSignal
 	const createSignal = mocks.create.mock.calls[0]?.[1]?.signal as AbortSignal
 	view.unmount()
@@ -1157,11 +1151,11 @@ test('leaving while a code is being created aborts both requests and never start
 test('code creation failure remains recoverable and releases the busy control', async () => {
 	mocks.create.mockRejectedValueOnce(new Error('Pairing unavailable'))
 	mount(<GalleryPage />)
-	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
+	fireEvent.click(screen.getAllByRole('button', { name: 'Get a code' })[0] as HTMLElement)
 	// The raw transport message never reaches the page: the failure is shown with a translated sentence.
 	expect((await screen.findByRole('alert')).textContent).toContain('Could not create the code.')
 	expect(screen.queryByText(/Pairing unavailable/)).toBeNull()
-	fireEvent.click(screen.getByRole('button', { name: 'Get a code ↗' }))
+	fireEvent.click(screen.getAllByRole('button', { name: 'Get a code' })[0] as HTMLElement)
 	await screen.findByText('123 456')
 	expect(mocks.create).toHaveBeenCalledTimes(2)
 })
@@ -1178,7 +1172,7 @@ test('in French, gallery and pairing failures render the translated sentence, no
 	const loadError = translate('fr', 'The gallery is unavailable.')
 	expect(loadError).not.toBe('The gallery is unavailable.')
 	expect(await screen.findByText(loadError)).toBeTruthy()
-	fireEvent.click(screen.getByRole('button', { name: `${translate('fr', 'Get a code')} ↗` }))
+	fireEvent.click(screen.getAllByRole('button', { name: translate('fr', 'Get a code') })[0] as HTMLElement)
 	const pairingError = translate('fr', 'Could not create the code.')
 	expect(pairingError).not.toBe('Could not create the code.')
 	await waitFor(() =>

@@ -177,7 +177,7 @@ export function useWorldEvolution(source: WorldSource, start: WorldStart = {}) {
 				onLoading: () => undefined,
 			})
 		} catch {
-			setError('The 3D viewer could not start. Enable WebGL and reload this page.')
+			setError('Your browser can’t show 3D. Try Chrome or Firefox.')
 			return
 		}
 		scene.current = viewer
@@ -395,7 +395,7 @@ export function WorldStage({
 					onPointerDown={onEngage}
 					onWheel={onEngage}
 				/>
-				{!error && <ChunkLoader active={!(drawn || shownNow)} label="Loading capture…" />}
+				{!error && <ChunkLoader active={!(drawn || shownNow)} label="Loading memory…" />}
 				{overlay}
 			</div>
 			<ViewerStudio
@@ -432,13 +432,13 @@ const statusLabels: Record<FrameStatus, string> = {
 	waiting: 'Waiting',
 	loading: 'Loading…',
 	ready: 'Loaded',
-	archived: 'Archived: open it alone to restore it',
+	archived: 'Archived: open it alone to bring it back',
 	failed: 'Could not load',
 	skipped: 'Not loaded',
 }
 
 function statusLabel(status: FrameStatus, restorable: boolean | undefined): string {
-	if (status === 'archived' && restorable) return 'Archived: restore it to see it'
+	if (status === 'archived' && restorable) return 'Archived: bring it back to see it'
 	return statusLabels[status]
 }
 
@@ -457,7 +457,7 @@ function LoadProgress({ statuses }: { statuses: FrameStatus[] }) {
 		<div
 			className="film-progress"
 			role="progressbar"
-			aria-label={t('Loading capture…')}
+			aria-label={t('Loading memory…')}
 			aria-valuemin={0}
 			aria-valuemax={planned}
 			aria-valuenow={settled}
@@ -477,7 +477,7 @@ function CaptureFilm({ state, world, actions }: { state: WorldState; world: Worl
 	const first = world.frames[0]
 	const last = world.frames.at(-1)
 	return (
-		<nav aria-label={t('Captures of this world')} className="film">
+		<nav aria-label={t('Memories of this world')} className="film">
 			<header className="film-head">
 				<button
 					type="button"
@@ -503,8 +503,8 @@ function CaptureFilm({ state, world, actions }: { state: WorldState; world: Worl
 			<div className="film-steps">
 				<button
 					type="button"
-					aria-label={t('Previous capture')}
-					title={t('Previous capture')}
+					aria-label={t('Previous memory')}
+					title={t('Previous memory')}
 					disabled={step <= 0}
 					onClick={() => state.select(step - 1)}
 				>
@@ -512,8 +512,8 @@ function CaptureFilm({ state, world, actions }: { state: WorldState; world: Worl
 				</button>
 				<button
 					type="button"
-					aria-label={t('Next capture')}
-					title={t('Next capture')}
+					aria-label={t('Next memory')}
+					title={t('Next memory')}
 					disabled={step >= world.frames.length - 1}
 					onClick={() => state.select(step + 1)}
 				>
@@ -522,8 +522,8 @@ function CaptureFilm({ state, world, actions }: { state: WorldState; world: Worl
 				<button
 					type="button"
 					aria-pressed={!state.onlyCurrent}
-					aria-label={t('Older captures')}
-					title={t('Older captures')}
+					aria-label={t('Older memories')}
+					title={t('Older memories')}
 					onClick={() => state.setOnlyCurrent(!state.onlyCurrent)}
 				>
 					<ViewerIcon name="layers" />
@@ -547,9 +547,7 @@ function CaptureFilm({ state, world, actions }: { state: WorldState; world: Worl
 					)
 				})}
 			</ol>
-			{world.truncated && (
-				<p className="film-note">{t('Only the most recent captures are loaded to keep the viewer fast.')}</p>
-			)}
+			{world.truncated && <p className="film-note">{t('Only the latest memories are loaded, to keep it fast.')}</p>}
 		</nav>
 	)
 }
@@ -575,8 +573,8 @@ function FilmSide({
 			<button
 				type="button"
 				className="film-side"
-				aria-label={restore ? `${t('Restore memory')} · ${frame.name}` : t('Retry')}
-				title={t(restore ? 'Restore memory' : 'Retry')}
+				aria-label={restore ? `${t('Bring it back')} · ${frame.name}` : t('Retry')}
+				title={t(restore ? 'Bring it back' : 'Retry')}
 				onClick={() => (restore ? state.restoreFrame(position) : state.retryFrame(position))}
 			>
 				<ViewerIcon name="refresh" />

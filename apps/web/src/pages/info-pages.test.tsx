@@ -207,7 +207,7 @@ test('French privacy page translates the new mod diagnostics and download list s
 	expect(text).toContain('chaque souvenir pris, à la main ou en AFK, part tout seul dans ta galerie')
 	expect(text).toContain('Arrêter le partage bloque les nouvelles visites')
 	expect(text).toContain('Rien ne part sur Internet tant que le jeu n’est pas connecté à un compte.')
-	expect(text).toContain('elle voit donc ton adresse IP, comme pour toute requête')
+	expect(text).toContain('il voit donc ton adresse IP, comme pour toute requête')
 	expect(text).not.toMatch(/tutoriel|prénom|estimations|nouveautés|révocation/i)
 	// The diagram names the game's own code label, not the internal word for pairing.
 	expect(text).toContain('Code à 6 chiffres')

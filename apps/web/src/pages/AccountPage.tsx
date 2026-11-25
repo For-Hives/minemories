@@ -48,7 +48,7 @@ function accountError(cause: unknown, t: Translator): string {
 	if (code === 'USERNAME_IS_ALREADY_TAKEN') return t('Another account already signs in with this name.')
 	if (code === 'INVALID_USERNAME' || code === 'USERNAME_TOO_SHORT' || code === 'USERNAME_TOO_LONG')
 		return t('A Minecraft name has 3 to 16 letters, numbers or _.')
-	return t('Could not update your account. Check your connection and try again; sign in if your session expired.')
+	return t('Could not save. Check your connection, or sign in again.')
 }
 export function AccountPage() {
 	const { session, refreshSession } = useAppContext()
@@ -89,7 +89,7 @@ export function AccountPage() {
 			await refreshSession()
 			if (!alive.current) return
 			setEditingName(false)
-			setSuccess(t('Display name saved.'))
+			setSuccess(t('Name saved.'))
 			return
 		}
 		form.reset()
@@ -165,13 +165,9 @@ export function AccountPage() {
 				}}
 				onSaveName={event => void submit('name', event)}
 			/>
-			<p className="mm-account-note">
-				{hasPassword
-					? t(
-							'Changing your email or password asks for your current password. You’ll be signed out everywhere and sign in again. Your memories and connected games stay on your account.'
-						)
-					: t('Manage your email and password with your sign-in provider.')}
-			</p>
+			{!hasPassword && (
+				<p className="mm-account-note">{t('You sign in with Google or Discord, so there’s no password here.')}</p>
+			)}
 			{error && !choosingAvatar && (
 				<p className="mm-account-error" role="alert">
 					{error}
@@ -188,7 +184,7 @@ export function AccountPage() {
 							onSubmit={event => void submit('email', event)}
 						>
 							<h2 id="email-heading">{t('Email address')}</h2>
-							<p>{t('Choose the address for your next sign-in.')}</p>
+							<p>{t('You need your current password. Your memories stay.')}</p>
 							<label>
 								{t('New email address')}
 								<input
@@ -224,7 +220,7 @@ export function AccountPage() {
 							onSubmit={event => void submit('password', event)}
 						>
 							<h2 id="password-heading">{t('Password')}</h2>
-							<p>{t('Use at least 12 characters and a unique password.')}</p>
+							<p>{t('12 characters minimum.')}</p>
 							<label>
 								{t('Current password')}
 								<input
@@ -271,7 +267,7 @@ export function AccountPage() {
 				)}
 				<section className="mm-account-card mm-account-card--wide">
 					<h2>{t('Sign-in methods')}</h2>
-					<p>{t('Link a provider using the same email address to access this account on your next sign-in.')}</p>
+					<p>{t('You can also sign in with Google or Discord.')}</p>
 					{linkedProviders.map(provider => (
 						<p key={provider}>{provider === 'credential' ? t('Email and password') : provider} ✓</p>
 					))}

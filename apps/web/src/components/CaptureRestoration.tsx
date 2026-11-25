@@ -18,7 +18,7 @@ const stateTitles = {
 	ready: 'Memory ready.',
 	archiving: 'Archiving this memory…',
 	cold: 'This memory is archived.',
-	restoring: 'Restoring this memory…',
+	restoring: 'Bringing it back…',
 }
 function revoked(error: unknown): boolean {
 	return (
@@ -29,10 +29,9 @@ function revoked(error: unknown): boolean {
 	)
 }
 function restorationMessage(view: RestorationView): string {
-	if (!view.availability.restorationAvailable) return 'Restoration is temporarily unavailable. Please try again later.'
-	if (view.busy || view.availability.state === 'restoring')
-		return 'You can leave this page and return later while restoration continues.'
-	return 'Restore this memory to open it. Restoration may take a while.'
+	if (!view.availability.restorationAvailable) return 'You can’t bring it back right now. Try again later.'
+	if (view.busy || view.availability.state === 'restoring') return 'You can leave and come back.'
+	return 'Bring it back to open it. It can take a while.'
 }
 
 export function useCaptureRestoration() {
@@ -103,7 +102,7 @@ export function useCaptureRestoration() {
 			}
 			function checkFailure(error: unknown) {
 				signal.throwIfAborted()
-				if (revoked(error)) throw new Error('This memory is unavailable or access was revoked.')
+				if (revoked(error)) throw new Error('This memory is gone, or its link was turned off.')
 			}
 			show(null)
 			try {
@@ -138,20 +137,16 @@ export function CaptureRestorationPanel({ view, onRestore }: { view: Restoration
 	return (
 		<div className="cinema-restore">
 			<div role="status" aria-live="polite" className="cinema-restore-card">
-				<h2>{t(busy ? 'Restoring this memory…' : stateTitles[availability.state])}</h2>
+				<h2>{t(busy ? 'Bringing it back…' : stateTitles[availability.state])}</h2>
 				<p>{t(restorationMessage(view))}</p>
-				<progress
-					aria-label={t('Restoration progress')}
-					max={availability.totalObjects}
-					value={availability.readyObjects}
-				/>
+				<progress aria-label={t('Progress')} max={availability.totalObjects} value={availability.readyObjects} />
 				<p className="cinema-restore-count">
 					{availability.readyObjects} / {availability.totalObjects} {t('parts ready')}
 				</p>
-				{error && <p role="alert">{t('Restoration could not be checked. Try again.')}</p>}
+				{error && <p role="alert">{t('Could not check this memory. Try again.')}</p>}
 				{!busy && (
 					<button type="button" className={buttonLime} onClick={onRestore}>
-						{t(availability.restorationAvailable ? 'Restore memory' : 'Check again')}
+						{t(availability.restorationAvailable ? 'Bring it back' : 'Check again')}
 					</button>
 				)}
 			</div>

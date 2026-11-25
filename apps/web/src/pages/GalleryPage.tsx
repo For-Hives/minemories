@@ -47,16 +47,14 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 	if (!storage) {
 		return (
 			<p aria-live="polite" className="gallery-storage-note">
-				{failed
-					? t('Storage information is unavailable. Your captures remain accessible.')
-					: t('Checking available storage…')}
+				{failed ? t('Could not check the space used.') : t('Checking the space used…')}
 			</p>
 		)
 	}
 	const used = Math.min(100, Math.round((storage.usedBytes / storage.limitBytes) * 100))
 	const level = storageLevel(storage, used)
 	return (
-		<section aria-label={t('Gallery storage')} aria-live="polite" className="gallery-storage">
+		<section aria-label={t('Space used')} aria-live="polite" className="gallery-storage">
 			<div className="gallery-storage-head">
 				<strong>{formatFileSize(storage.usedBytes, locale)}</strong>
 				<span>/ {formatFileSize(storage.limitBytes, locale)}</span>
@@ -71,11 +69,7 @@ function StorageSummary({ storage, failed }: { storage: Storage | null; failed: 
 			{/* Only a gallery with no byte left refuses uploads; a nearly full one still accepts them. */}
 			{storage.availableBytes === 0 && (
 				<p>
-					<T
-						message={
-							'Your gallery is full. New memories stay on your computer. To make room, use Delete forever in Trash.'
-						}
-					/>
+					<T message={'Your gallery is full. New memories stay on your computer. Empty the trash to make room.'} />
 				</p>
 			)}
 		</section>
@@ -90,8 +84,7 @@ function StorageParts({ storage }: { storage: Storage }) {
 	const { t, locale } = useI18n()
 	const parts = [
 		storage.trashBytes > 0 && t('Includes {size} in the trash.', { size: formatFileSize(storage.trashBytes, locale) }),
-		storage.reservedBytes > 0 &&
-			t('{size} reserved for uploads in progress.', { size: formatFileSize(storage.reservedBytes, locale) }),
+		storage.reservedBytes > 0 && t('{size} still uploading.', { size: formatFileSize(storage.reservedBytes, locale) }),
 		storage.pendingDeletionBytes > 0 &&
 			t('{size} being deleted.', { size: formatFileSize(storage.pendingDeletionBytes, locale) }),
 	].filter(part => part !== false)
@@ -136,10 +129,8 @@ export function GalleryPage() {
 			<div className="album-gallery-heading gallery-heading">
 				<div>
 					<h1 ref={title} tabIndex={-1}>
-						{t('Your memories')}
+						{t('Your gallery')}
 					</h1>
-					{/* The cards below already count the memories and date them: the title stands alone once there are some. */}
-					{!loading && memories.length === 0 && <p>{t('Every capture keeps a place here, ready to revisit.')}</p>}
 				</div>
 				<div className="gallery-heading-actions">
 					<RefreshButton onRefresh={refreshAll} />
@@ -157,7 +148,7 @@ export function GalleryPage() {
 						{t(loadError)}
 					</div>
 				)}
-				{loading && <LoadingSkeleton kind="gallery" label="Gathering your memories…" />}
+				{loading && <LoadingSkeleton kind="gallery" label="Loading…" />}
 				<WorldSections
 					memories={memories}
 					onChanged={() => void refreshAll()}
@@ -229,7 +220,7 @@ function TrashSection({
 						<T message={'Trash ·'} /> {trash.length}
 					</h2>
 					<p className="gallery-trash-note">
-						<T message={'Snapshots disappear forever 30 days after deletion.'} />
+						<T message={'Memories in the trash are deleted after 30 days.'} />
 					</p>
 				</div>
 				<button
@@ -256,7 +247,7 @@ function TrashSection({
 			{askingAll && (
 				<ConfirmDelete
 					title={t('Empty the trash?')}
-					note={t('Everything in it is deleted forever: {captures}. This cannot be undone.', {
+					note={t('Deletes {captures} forever. You can’t undo this.', {
 						captures: formatCaptureCount(locale, trash.length),
 					})}
 					confirmLabel={t('Empty trash')}
@@ -361,7 +352,7 @@ function WorldSections({
 	if (!selected) return null
 	const name = (server: Server) => profiles.get(server.key)?.name ?? server.name
 	return (
-		<ol className="gallery-servers" aria-label={t('Servers')}>
+		<ol className="gallery-servers" aria-label={t('Worlds')}>
 			{servers.map(server => (
 				<ServerTile
 					key={server.key}
@@ -370,7 +361,7 @@ function WorldSections({
 					cover={profiles.get(server.key)?.cover ?? null}
 					selected={server === selected}
 					onSelect={() => setSelectedKey(server.key)}
-					onRename={next => rename(server.key, next).catch(() => notify('Could not rename this server.'))}
+					onRename={next => rename(server.key, next).catch(() => notify('Could not rename this world.'))}
 				>
 					{server === selected && (
 						<div className="gallery-areas">
@@ -446,7 +437,7 @@ function ServerTile({
 	const actions: MenuItem[] = [
 		{ label: t('Open'), icon: 'view', onSelect },
 		{ label: t('Details'), icon: 'cube', onSelect: () => setSheet(true) },
-		{ label: t('Rename this server'), icon: 'pencil', onSelect: () => setSheet(true) },
+		{ label: t('Rename this world'), icon: 'pencil', onSelect: () => setSheet(true) },
 	]
 	return (
 		<li className="gallery-server" data-selected={selected} onContextMenu={event => menu.open(event, name, actions)}>
@@ -466,7 +457,7 @@ function ServerTile({
 							<time className="gallery-seed-when" dateTime={span.last}>
 								{formatRelativeDate(span.last, Date.now(), locale)}
 							</time>
-							<span className="gallery-seed-span" title={t('First and last snapshot')}>
+							<span className="gallery-seed-span" title={t('First and last memory')}>
 								<span aria-hidden="true">·</span>
 								{formatDateSpan(span.first, span.last, locale)}
 							</span>
@@ -476,7 +467,7 @@ function ServerTile({
 						<div>
 							<dt>
 								<GalleryIcon name="layers" />
-								<span className="gallery-sr-only">{t('Snapshots')}</span>
+								<span className="gallery-sr-only">{t('Memories')}</span>
 							</dt>
 							<dd>{formatCaptureCount(locale, server.captures.length)}</dd>
 						</div>
@@ -499,7 +490,7 @@ function ServerTile({
 					<button
 						type="button"
 						className="gallery-icon-button"
-						title={t('Rename this server')}
+						title={t('Rename this world')}
 						aria-label={t('Rename {name}', { name })}
 						onClick={() => setSheet(true)}
 					>

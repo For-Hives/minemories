@@ -73,7 +73,7 @@ export function ViewerCover({
 			await apiClient.memories.setCover({ id: memoryId, image, ...renaming(profile, name.trim()) })
 			onSaved()
 		} catch {
-			setError(t('Could not save the picture. Try again.'))
+			setError(t('Could not save the cover. Try again.'))
 			setBusy(false)
 		}
 	}
@@ -81,16 +81,12 @@ export function ViewerCover({
 	return (
 		<section className="viewer-sharing viewer-cover" aria-labelledby="viewer-cover-title">
 			<div className="cinema-panel-heading">
-				<h2 id="viewer-cover-title">{t('Your server’s picture')}</h2>
+				<h2 id="viewer-cover-title">{t('Cover')}</h2>
 				<button type="button" aria-label={t('Close')} onClick={onClose}>
 					×
 				</button>
 			</div>
-			<p>
-				{t(
-					'The view on screen becomes this server’s picture in your gallery, and this capture’s picture when you publish it.'
-				)}
-			</p>
+			<p>{t('The view on screen becomes the cover.')}</p>
 			{image ? (
 				<div className="viewer-cover-previews">
 					<figure>
@@ -101,7 +97,7 @@ export function ViewerCover({
 						</div>
 					</figure>
 					<figure>
-						<figcaption>{t('When published')}</figcaption>
+						<figcaption>{t('When public')}</figcaption>
 						<div className="viewer-cover-public">
 							<img src={image} alt="" />
 							<strong>{shownName}</strong>
@@ -109,10 +105,10 @@ export function ViewerCover({
 					</figure>
 				</div>
 			) : (
-				<p role="alert">{t('This view could not be captured. Move the camera, then retake.')}</p>
+				<p role="alert">{t('Could not take this view. Move the camera and retake.')}</p>
 			)}
 			<label className="viewer-cover-name">
-				{t('Server name')}
+				{t('World name')}
 				<input
 					className="mc-field"
 					value={name}
@@ -124,13 +120,12 @@ export function ViewerCover({
 			{error && <p role="alert">{error}</p>}
 			<div className="viewer-cover-actions">
 				<button type="button" className={buttonDark} onClick={() => setImage(pictureOf(sceneRef.current))}>
-					{t('Retake from this view')}
+					{t('Retake')}
 				</button>
 				<button type="button" className={buttonLime} disabled={!image || busy} onClick={() => void save()}>
-					{busy ? '…' : t('Use this picture')}
+					{busy ? '…' : t('Use as cover')}
 				</button>
 			</div>
-			<small>{t('Move the camera, then retake.')}</small>
 		</section>
 	)
 }

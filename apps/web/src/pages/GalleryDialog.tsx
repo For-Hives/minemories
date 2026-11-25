@@ -94,7 +94,7 @@ export function GalleryDialog({
 		['details', t('Details')],
 		['share', t('Share')],
 		['publish', t('Make public')],
-		...(memories.length > 1 ? [['snapshots', t('Snapshots')] as [DialogTab, string]] : []),
+		...(memories.length > 1 ? [['snapshots', t('Memories')] as [DialogTab, string]] : []),
 	]
 	if (!selected) return null
 	// Portalled so a hovered card's transform cannot become the containing block of the fixed overlay.
@@ -255,7 +255,7 @@ function SnapshotRow({
 					<RenameForm
 						draft={draft}
 						saved={shown}
-						label={t('Snapshot name')}
+						label={t('Memory name')}
 						saving={saving}
 						error={error}
 						onSave={() => void save()}
@@ -279,8 +279,8 @@ function SnapshotRow({
 				<Link
 					className="gallery-icon-button"
 					to={viewPath(memory.id, timeline)}
-					title={t('Open this snapshot')}
-					aria-label={`${t('Open this snapshot')}: ${shown}`}
+					title={t('Open this memory')}
+					aria-label={`${t('Open this memory')}: ${shown}`}
 				>
 					<GalleryIcon name="view" />
 				</Link>
@@ -289,7 +289,7 @@ function SnapshotRow({
 					ref={pencil}
 					type="button"
 					className="gallery-icon-button"
-					title={t('Rename this snapshot')}
+					title={t('Rename this memory')}
 					aria-label={t('Rename {name}', { name: shown })}
 					onClick={() => {
 						setError('')
@@ -301,8 +301,8 @@ function SnapshotRow({
 				<button
 					type="button"
 					className="gallery-icon-button"
-					title={t('Share this snapshot')}
-					aria-label={`${t('Share this snapshot')}: ${shown}`}
+					title={t('Share this memory')}
+					aria-label={`${t('Share this memory')}: ${shown}`}
 					onClick={() => onTarget({ tab: 'share', id: memory.id })}
 				>
 					<GalleryIcon name="link" />

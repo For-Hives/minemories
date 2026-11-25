@@ -38,10 +38,10 @@ test('weather, quality and contemplation controls update the active scene', () =
 	fireEvent.click(screen.getByRole('button', { name: /Mist/ }))
 	expect(scene.setWeather).toHaveBeenCalledWith('mist')
 	expect(screen.getByRole('button', { name: /Mist/ }).getAttribute('aria-pressed')).toBe('true')
-	chooseOption('Rendering quality', 'Eco · lightweight')
+	chooseOption('Quality', 'Low')
 	expect(scene.setQuality).toHaveBeenCalledWith('eco')
-	fireEvent.click(screen.getByRole('button', { name: /Take a moment/ }))
-	fireEvent.click(screen.getByRole('button', { name: /Take a moment/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Auto-rotate/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Auto-rotate/ }))
 	expect(scene.setTour.mock.calls).toEqual([[true], [false]])
 })
 
@@ -86,18 +86,18 @@ test('a loading viewer disables capture actions and does not offer public sharin
 
 test('the studio reveals settings on request and restores controls after immersion', () => {
 	const scene = mount()
-	expect(screen.queryByText('Rendering quality')).toBeNull()
+	expect(screen.queryByText('Quality')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
-	expect(selectButton('Rendering quality')).toBeTruthy()
+	expect(selectButton('Quality')).toBeTruthy()
 	fireEvent.click(screen.getByRole('button', { name: /Close settings/ }))
-	expect(screen.queryByText('Rendering quality')).toBeNull()
+	expect(screen.queryByText('Quality')).toBeNull()
 	fireEvent.click(screen.getByRole('button', { name: /Golden hour/ }))
 	expect(scene.setMinutes).toHaveBeenCalledWith(1035)
 	fireEvent.change(screen.getByRole('slider'), { target: { value: '600' } })
 	expect(scene.setMinutes).toHaveBeenCalledWith(600)
 	fireEvent.click(screen.getByRole('button', { name: /Recenter/ }))
 	expect(scene.resetView).toHaveBeenCalledOnce()
-	fireEvent.click(screen.getByRole('button', { name: /Immerse/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Hide controls|Show controls/ }))
 	expect(
 		screen
 			.getByRole('button', { name: /Show controls/ })
@@ -105,16 +105,16 @@ test('the studio reveals settings on request and restores controls after immersi
 			?.classList.contains('is-immersed')
 	).toBe(true)
 	fireEvent.click(screen.getByRole('button', { name: /Show controls/ }))
-	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
+	expect(screen.getByRole('button', { name: /Hide controls|Show controls/ }).getAttribute('aria-pressed')).toBe('false')
 })
 
 test('Escape restores the interface and closes the atmosphere panel', () => {
 	mount()
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
-	fireEvent.click(screen.getByRole('button', { name: /Immerse/ }))
+	fireEvent.click(screen.getByRole('button', { name: /Hide controls|Show controls/ }))
 	fireEvent.keyDown(window, { key: 'Escape' })
-	expect(screen.queryByText('Rendering quality')).toBeNull()
-	expect(screen.getByRole('button', { name: /Immerse/ }).getAttribute('aria-pressed')).toBe('false')
+	expect(screen.queryByText('Quality')).toBeNull()
+	expect(screen.getByRole('button', { name: /Hide controls|Show controls/ }).getAttribute('aria-pressed')).toBe('false')
 })
 
 test('the lazy viewer opens with a full-screen loading surface rather than gallery cards', () => {
@@ -132,9 +132,9 @@ test('first person stops contemplation, explains the keys and returns to orbit',
 	const scene = mount()
 	fireEvent.click(screen.getByRole('button', { name: 'First person' }))
 	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(true)
-	expect(screen.getByRole('button', { name: 'Take a moment' }).getAttribute('aria-pressed')).toBe('false')
+	expect(screen.getByRole('button', { name: 'Auto-rotate' }).getAttribute('aria-pressed')).toBe('false')
 	expect(screen.getByRole('region', { name: 'Explore' }).textContent).toContain(
-		'W A S D fly · Space up · C down · Left Shift or W twice: sprint · Wheel: speed'
+		'W A S D fly · Space up · C down · Left Shift sprint · Wheel: speed'
 	)
 	fireEvent.click(screen.getByRole('button', { name: 'Recenter' }))
 	expect(scene.setFirstPerson).toHaveBeenLastCalledWith(false)
@@ -152,9 +152,9 @@ test('keyboard shortcuts drive recenter, tour and immersion but ignore form fiel
 	fireEvent.click(screen.getByRole('button', { name: /Show controls/ }))
 	fireEvent.click(screen.getByRole('button', { name: /Atmosphere/ }))
 	// Keys typed in a dropdown's list stay there: 'r' looks for a choice, it does not recenter.
-	fireEvent.click(selectButton('Rendering quality'))
-	fireEvent.keyDown(screen.getByRole('listbox', { name: 'Rendering quality' }), { key: 'r' })
-	fireEvent.keyDown(selectButton('Rendering quality'), { key: 'r' })
+	fireEvent.click(selectButton('Quality'))
+	fireEvent.keyDown(screen.getByRole('listbox', { name: 'Quality' }), { key: 'r' })
+	fireEvent.keyDown(selectButton('Quality'), { key: 'r' })
 	fireEvent.keyDown(window, { key: 'r', ctrlKey: true })
 	expect(scene.resetView).toHaveBeenCalledOnce()
 })

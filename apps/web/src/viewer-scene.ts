@@ -452,7 +452,7 @@ export class ViewerScene {
 		} catch (error) {
 			this.rollbackImport(imported, attached)
 			if (error instanceof UnsupportedGlbError || (error instanceof Error && error.name === 'AbortError')) throw error
-			throw new Error('Could not read this GLB')
+			throw new Error('Could not read this 3D file.')
 		} finally {
 			this.events.onLoading(null)
 			this.preparingWorld = false
