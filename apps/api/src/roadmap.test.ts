@@ -1,5 +1,5 @@
 import { afterAll, expect, mock, spyOn, test } from 'bun:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { roadmapResponse } from '@minemories/api-contract'
@@ -13,7 +13,7 @@ process.env.BETTER_AUTH_SECRET = 'test-auth-secret-at-least-32-characters'
 process.env.PAIRING_PEPPER = 'test-pairing-pepper-at-least-32-characters'
 process.env.GITHUB_TOKEN = ''
 
-const { buildRoadmap, createRoadmap, fetchRoadmapIssues } = await import('./roadmap')
+const { buildRoadmap, createRoadmap, fetchRoadmapIssues, roadmapTitle } = await import('./roadmap')
 const { app } = await import('./index')
 const { database } = await import('./database')
 
@@ -33,6 +33,9 @@ interface IssueFields {
 	updated_at?: string
 	closed_at?: string | null
 	pull_request?: unknown
+	title?: string
+	body?: string | null
+	user?: { type?: string | null } | null
 }
 function issue(number: number, fields: IssueFields = {}) {
 	return {
@@ -111,6 +114,35 @@ test('classifies open, in-progress and recently completed issues and drops the r
 	expect(roadmap.columns.done.items.map(item => [item.number, item.closedAt])).toEqual([
 		[3, iso(NOW - 2 * DAY)],
 		[4, iso(NOW - 30 * DAY)],
+	])
+})
+
+/** Shared with scripts/discord/roadmap.test.mjs: both readers must give players exactly these titles. */
+const TITLES = JSON.parse(
+	readFileSync(new URL('../../../scripts/discord/fixtures/roadmap-titles.json', import.meta.url), 'utf8')
+) as { name: string; title: string; body: string | null; expected: string }[]
+
+test('cleans titles exactly like the Discord script (shared fixture)', () => {
+	expect(TITLES.length).toBeGreaterThanOrEqual(8)
+	for (const fixture of TITLES)
+		expect({ [fixture.name]: roadmapTitle(fixture.title, fixture.body) }).toEqual({ [fixture.name]: fixture.expected })
+	expect(roadmapTitle('  [front]  ')).toBe('[front]')
+})
+
+test('the board shows player-facing titles and drops issues opened by a bot', () => {
+	const roadmap = buildRoadmap(
+		[
+			issue(1, { title: 'seo: configure seo', body: null }),
+			issue(2, { title: 'Dependency Dashboard', labels: [], user: { type: 'Bot' } }),
+			issue(3, { title: 'Check le tracking', body: 'Roadmap: Better crash reports', user: { type: 'User' } }),
+			issue(4, { user: null }),
+		],
+		NOW
+	)
+	expect(roadmap.columns.planned.items.map(item => [item.number, item.title])).toEqual([
+		[1, 'Configure seo'],
+		[3, 'Better crash reports'],
+		[4, 'Issue 4'],
 	])
 })
 

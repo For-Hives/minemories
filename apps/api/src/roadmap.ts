@@ -37,6 +37,7 @@ const githubLabel = z.union([z.string(), z.object({ name: z.string().nullish() }
 const githubIssue = z.object({
 	number: z.number().int().positive(),
 	title: z.string(),
+	body: z.string().nullish(),
 	html_url: z.string(),
 	state: z.string(),
 	state_reason: z.string().nullish(),
@@ -44,6 +45,7 @@ const githubIssue = z.object({
 	updated_at: z.string(),
 	closed_at: z.string().nullish(),
 	pull_request: z.unknown().optional(),
+	user: z.object({ type: z.string().nullish() }).nullish(),
 })
 const githubIssues = z.array(githubIssue)
 export type GithubIssue = z.infer<typeof githubIssue>
@@ -94,8 +96,33 @@ export async function fetchRoadmapIssues(
 	return [...latest.values()]
 }
 
+/** A leading area or commit prefix: `[mod]`, `web:`, `feat(web):`, `fix(api,web)!:`, `Feedback :`. */
+const TITLE_PREFIX = /^\s*(?:\[[^\]\n]{1,24}\]|[a-z][\w-]{0,15}(?:\([^)\n]{0,40}\))?!?\s*:)\s*/i
+/** A `Roadmap: <title>` line in the issue body: the title players read, when the issue's own is written for the team. */
+const ROADMAP_LINE = /^[ \t]*roadmap[ \t]*:[ \t]*(.*)$/im
+
+/**
+ * The title players read (same rule as scripts/discord/roadmap.mjs, shared fixture scripts/discord/fixtures/roadmap-titles.json):
+ * the body's `Roadmap:` line when it has one, else the issue title, without its area or commit prefixes, first letter
+ * capitalised.
+ */
+export function roadmapTitle(title: string, body?: string | null): string {
+	const chosen = ROADMAP_LINE.exec(body ?? '')?.[1]?.trim() || title.trim()
+	let clean = chosen
+	for (let match = TITLE_PREFIX.exec(clean); match; match = TITLE_PREFIX.exec(clean))
+		clean = clean.slice(match[0].length)
+	const text = clean.trim() || chosen
+	return text.charAt(0).toLocaleUpperCase('en') + text.slice(1)
+}
+
 function labelNames(issue: GithubIssue): Set<string> {
 	return new Set(issue.labels.map(label => (typeof label === 'string' ? label : (label.name ?? ''))))
+}
+
+/** Pull requests, issues opened by a bot (Renovate's dashboard) and excluded labels never reach the board. */
+function onRoadmap(issue: GithubIssue, labels: Set<string>): boolean {
+	if (issue.pull_request !== undefined || issue.user?.type === 'Bot') return false
+	return ![...labels].some(label => ROADMAP_EXCLUDED_LABELS.has(label))
 }
 
 function isDone(issue: GithubIssue, doneSince: number): boolean {
@@ -106,7 +133,7 @@ function isDone(issue: GithubIssue, doneSince: number): boolean {
 function toItem(issue: GithubIssue, labels: Set<string>): RoadmapItem {
 	return {
 		number: issue.number,
-		title: issue.title,
+		title: roadmapTitle(issue.title, issue.body),
 		url: issue.html_url,
 		areas: roadmapArea.options.filter((area: RoadmapArea) => labels.has(area)),
 		updatedAt: issue.updated_at,
@@ -125,8 +152,8 @@ function column(items: RoadmapItem[], date: (item: RoadmapItem) => string | null
 
 /**
  * Groups the repository's issues: open with `in-progress` -> inProgress, other open -> planned, closed as completed
- * (or without a reason) during the last 30 days -> done. Pull requests, `not_planned` closures and issues labelled
- * `dependencies` or `no-roadmap` are dropped.
+ * (or without a reason) during the last 30 days -> done. Pull requests, `not_planned` closures, issues opened by a bot
+ * and issues labelled `dependencies` or `no-roadmap` are dropped. Titles go through `roadmapTitle`.
  */
 export function buildRoadmap(
 	issues: readonly GithubIssue[],
@@ -139,7 +166,7 @@ export function buildRoadmap(
 	const doneSince = now - ROADMAP_DONE_DAYS * DAY_MS
 	for (const issue of issues) {
 		const labels = labelNames(issue)
-		if (issue.pull_request !== undefined || [...labels].some(label => ROADMAP_EXCLUDED_LABELS.has(label))) continue
+		if (!onRoadmap(issue, labels)) continue
 		if (issue.state === 'open') (labels.has('in-progress') ? inProgress : planned).push(toItem(issue, labels))
 		else if (issue.state === 'closed' && isDone(issue, doneSince)) done.push(toItem(issue, labels))
 	}
