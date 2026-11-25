@@ -189,8 +189,10 @@ final class CaptureHistoryScreen extends Screen {
     }
     if (view.pending()) return I18n.get("minemories.ui.loading_captures");
     if (view.failed()) return I18n.get("minemories.ui.history_unavailable");
-    if (view.empty()) return I18n.get("minemories.ui.no_captures");
-    if (!paired) return I18n.get("minemories.ui.connect_gallery_with_m_to_send");
+    if (view.empty()) return I18n.get("minemories.ui.no_captures", ClientRuntime.menuKeyName());
+    if (!paired) {
+      return I18n.get("minemories.ui.connect_gallery_with_m_to_send", ClientRuntime.menuKeyName());
+    }
     int waiting = view.unsent().size();
     return waiting == 0
         ? I18n.get("minemories.ui.all_sent")
